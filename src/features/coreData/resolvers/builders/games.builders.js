@@ -1,0 +1,44 @@
+import {
+  safeArr,
+  safeId,
+  safeStr,
+  toMillis,
+  getWeekStartFromDate,
+  getWeekEndFromStart,
+  buildWeekIdFromStart
+} from '../../utils/data.utils.js'
+import { uniqBy } from '../../utils/map.utils.js'
+
+export const normalizeGame = (game={})=>{
+  const eventDate = toMillis(game?.gameDate || game?.date)
+  const weekStart = getWeekStartFromDate(eventDate)
+
+  return {
+    ...game,
+    id:safeId(game?.id),
+    teamId:safeId(game?.teamId),
+    weekId:safeStr(game?.weekId)||buildWeekIdFromStart(weekStart),
+    weekStart,
+    weekEnd:getWeekEndFromStart(weekStart),
+    eventDate,
+    eventSortTime:eventDate
+  }
+}
+
+export const buildGamesByTeamId = (gamesArr)=>{
+  const map = new Map()
+
+  for(const raw of safeArr(gamesArr)){
+    const g = normalizeGame(raw)
+    const tid = safeId(g.teamId)
+    if(!tid) continue
+    if(!map.has(tid)) map.set(tid,[])
+    map.get(tid).push(g)
+  }
+
+  for(const [k,arr] of map.entries()){
+    map.set(k,uniqBy(arr,x=>x.id))
+  }
+
+  return map
+}

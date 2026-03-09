@@ -1,0 +1,31 @@
+import {
+  ViewTimeline,
+  AccessTime,
+  Scoreboard,
+  ThumbUp,
+  ThumbDown,
+  Handshake,
+  Leaderboard,
+  Home,
+  SportsSoccer,
+  EmojiEvents,
+  Recycling,
+  DragHandle,
+} from '@mui/icons-material';
+
+export const gameIcons = {
+  game: <ViewTimeline />,
+  games: <ViewTimeline />,
+  duration: <AccessTime />,
+  results: <Scoreboard />,
+  result: <Scoreboard />,
+  win: <ThumbUp />,
+  loss: <ThumbDown />,
+  draw: <Handshake />,
+  league: <Leaderboard />,
+  home: <Home />,
+  friendly: <SportsSoccer />,
+  cup: <EmojiEvents />,
+  easy: <Recycling />,
+  equal: <DragHandle />,
+};

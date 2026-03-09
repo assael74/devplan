@@ -1,0 +1,27 @@
+// C:\projects\devplan\src\ui\patterns\listVideosToolbar\listToolbarRow.sx.js
+export const listToolbarRowSx = {
+  root: (dense) => ({
+    position: 'sticky',
+    top: 0,
+    zIndex: 5,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    py: dense ? 0.75 : 1,
+    px: dense ? 0.75 : 1,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 'sm',
+    bgcolor: 'background.body',
+    backdropFilter: 'blur(6px)',
+  }),
+  left: { display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 },
+  right: { display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 },
+  title: { maxWidth: 140 },
+  search: { minWidth: 220, maxWidth: 340, width: '100%' },
+  filters: { display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 },
+  sort: { minWidth: 190 },
+  actions: { display: 'flex', alignItems: 'center', gap: 0.5 },
+  clearBtn: { '--IconButton-size': '32px' },
+}

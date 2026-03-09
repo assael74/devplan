@@ -1,0 +1,37 @@
+import React, { useMemo } from 'react'
+import GenericFabMenu from '../../../../ui/actions/GenericFabMenu'
+import { buildFabActions } from '../../../../ui/actions/fabActions.factory'
+
+export default function HubFabMenu({ mode, context, handlers, permissions }) {
+  const actions = useMemo(
+    () => buildFabActions({ area: 'hub', mode, context, handlers, permissions }),
+    [mode, context, handlers, permissions]
+  )
+
+  const tooltip =
+    mode === 'players'
+      ? 'הוספת שחקן'
+      : mode === 'teams'
+      ? 'הוספת קבוצה'
+      : mode === 'clubs'
+      ? 'הוספת מועדון'
+      : mode === 'staff'
+      ? 'הוספת איש צוות'
+      : mode === 'scouting'
+      ? 'הוספת שחקן למעקב'
+      : 'פתיחת אובייקט'
+
+  return (
+    <GenericFabMenu
+      id="hub-fab"
+      placement="br"
+      tooltip={tooltip}
+      ariaLabel="פתיחת אובייקט"
+      actions={actions}
+      variant="solid"
+      context={context}
+      entityType={mode}
+      fabSx={{ color: '#fff' }}
+    />
+  )
+}

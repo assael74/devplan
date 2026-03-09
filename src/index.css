@@ -11,3 +11,59 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ===== Modal transition (react-transition-group) ===== */
+.dpModal-enter {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+}
+
+.dpModal-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 160ms ease, transform 180ms ease;
+}
+
+.dpModal-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.dpModal-exit-active {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transition: opacity 120ms ease, transform 140ms ease;
+}
+
+/* Optional: smoother backdrop fade */
+.MuiModal-backdrop {
+  transition: opacity 160ms ease;
+}
+
+/* Thin scrollbar (scoped) */
+.dpScrollThin {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: rgba(0,0,0,.28) transparent;
+}
+
+.dpScrollThin::-webkit-scrollbar {
+  width: 8px;                            /* Chrome/Edge */
+  height: 8px;
+}
+
+.dpScrollThin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dpScrollThin::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.28);
+  border-radius: 999px;
+  border: 2px solid transparent;         /* נותן "אוויר" ומקטין ויזואלית */
+  background-clip: content-box;
+}
+
+.dpScrollThin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,.38);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
