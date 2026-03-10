@@ -7,11 +7,14 @@ import { resolveTeamVideosDomain } from './logic/teamVideos.domain.logic.js'
 import TeamVideosKpi from './components/TeamVideosKpi.js'
 import TeamVideosFilters from './components/TeamVideosFilters.js'
 import TeamVideosTable from './components/TeamVideosTable.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
+
+import DriveVideoPlayer from '../../../../../../../../ui/domains/video/DriveVideoPlayer.js'
 
 export default function TeamVideosDomainModal({
   entity,
   context,
-  videoActions,
   onClose,
 }) {
   const team = entity || null
@@ -20,6 +23,10 @@ export default function TeamVideosDomainModal({
   const [month, setMonth] = useState('all')
   const [onlyTagged, setOnlyTagged] = useState(false)
   const [onlyKey, setOnlyKey] = useState(false)
+
+  const [editingVideo, setEditingVideo] = useState(null)
+  const [watchVideo, setWatchVideo] = useState(null)
+  const [openCreateVideo, setOpenCreateVideo] = useState(false)
 
   const tags = useMemo(() => {
     const t1 = context?.tags
@@ -44,33 +51,37 @@ export default function TeamVideosDomainModal({
 
   const { summary, options, videos } = resolved
 
-  const actions = useMemo(() => {
-    const v = videoActions || {}
-
-    return {
-      onWatch: typeof v.watch === 'function' ? v.watch : null,
-      onEdit: typeof v.edit === 'function' ? v.edit : null,
-      onLink: typeof v.link === 'function' ? v.link : null,
-      onShare: typeof v.share === 'function' ? v.share : null,
-    }
-  }, [videoActions])
-
-  const handoff = (fn, payload) => {
-    if (!fn) return
-    onClose?.()
-    queueMicrotask(() => fn(payload))
-  }
-
-  const handleWatch = (row) => handoff(actions.onWatch, { video: row?.video || row, entity: team, context })
-  const handleEdit = (row) => handoff(actions.onEdit, { video: row?.video || row, entity: team, context })
-  const handleLink = (row) => handoff(actions.onLink, { video: row?.video || row, entity: team, context })
-  const handleShare = (row) => handoff(actions.onShare, { video: row?.video || row, entity: team, context })
-
   const handleReset = () => {
     setQ('')
     setMonth('all')
     setOnlyTagged(false)
     setOnlyKey(false)
+  }
+
+  const handleWatch = (video) => {
+    if (!video) return
+    setWatchVideo(video)
+  }
+
+  const handleEdit = (video) => {
+    if (!video) return
+    setEditingVideo(video)
+  }
+
+  const handleEditSaved = (patch, updatedVideo) => {
+    setEditingVideo(updatedVideo || null)
+  }
+
+  const handleOpenCreate = () => {
+    setOpenCreateVideo(true)
+  }
+
+  const handleCloseCreate = () => {
+    setOpenCreateVideo(false)
+  }
+
+  const handleCreateSaved = () => {
+    setOpenCreateVideo(false)
   }
 
   return (
@@ -101,6 +112,7 @@ export default function TeamVideosDomainModal({
           onChangeOnlyTagged={setOnlyTagged}
           onChangeOnlyKey={setOnlyKey}
           onReset={handleReset}
+          onCreateVideo={handleOpenCreate}
         />
       </Box>
 
@@ -108,8 +120,29 @@ export default function TeamVideosDomainModal({
         rows={videos}
         onWatch={handleWatch}
         onEdit={handleEdit}
-        onLink={handleLink}
-        onShare={handleShare}
+      />
+
+      <EditDrawer
+        open={!!editingVideo}
+        video={editingVideo}
+        onClose={() => setEditingVideo(null)}
+        onSaved={handleEditSaved}
+        context={context}
+      />
+
+      <NewFormDrawer
+        open={openCreateVideo}
+        onClose={handleCloseCreate}
+        onSaved={handleCreateSaved}
+        context={{ ...context, teamId: team?.id || '', team, }}
+      />
+
+      <DriveVideoPlayer
+        open={!!watchVideo}
+        onClose={() => setWatchVideo(null)}
+        videoLink={watchVideo?.link || ''}
+        videoName={watchVideo?.name || 'וידאו'}
+        variant="analysis"
       />
     </Box>
   )

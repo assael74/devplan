@@ -37,10 +37,7 @@ const CREATE_ACTIONS_BY_ENTITY = {
   team: () => [
     { type: 'meeting', label: 'פגישה קבוצתית', iconKey: 'meeting' },
     { type: 'abilities', label: 'טופס יכולות שחקן', iconKey: 'abilities' },
-    { type: 'game', label: 'משחק חדש', iconKey: 'game' },
     { type: 'player', label: 'שחקן חדש', iconKey: 'player' },
-    { type: 'training', label: 'יצירת אימון', iconKey: 'training' },
-    { type: 'videoAnalysis', label: 'טופס יצירת וידאו', iconKey: 'addVideo' },
   ],
 
   club: () => [

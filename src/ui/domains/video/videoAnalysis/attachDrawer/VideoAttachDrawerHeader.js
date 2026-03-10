@@ -2,7 +2,7 @@
 import React from 'react'
 import { Box, Typography, IconButton } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { videoAttachDrawerSx as sx } from './videoAttachDrawer.sx'
+import { videoAttachDrawerSx as sx } from '../sx/videoAttachDrawer.sx'
 
 export default function VideoAttachDrawerHeader({ title, onClose }) {
   return (

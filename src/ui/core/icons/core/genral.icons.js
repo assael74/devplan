@@ -17,6 +17,7 @@ import {
   AccessTime,
   Today,
   AddLocationAlt,
+  LiveHelp
 } from '@mui/icons-material';
 
 export const genralIcons = {
@@ -40,5 +41,6 @@ export const genralIcons = {
   hour: <AccessTime />,
   date: <Today />,
   addLocation: <AddLocationAlt />,
-  duration: <AccessTime />
+  duration: <AccessTime />,
+  help: <LiveHelp />
 };

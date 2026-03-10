@@ -138,8 +138,8 @@ export const heroSx = {
   },
 
   kpiValueSx: {
-    fontWeight: 800,
-    fontSize: 18,
+    fontWeight: 700,
+    fontSize: 16,
     lineHeight: 1.05,
     color: c.accent,
   },

@@ -1,16 +1,41 @@
 // src/shared/entityLifecycle/useEntityLifecycle.js
+
 import { useCallback, useMemo, useState } from 'react'
 import { resolveDeletePolicy } from './resolveDeletePolicy.js'
 import { buildLifecycleMessage } from './lifecycle.messages.js'
 
 export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
-  const [archiveState, setArchiveState] = useState({ open: false, entity: null })
-  const [restoreState, setRestoreState] = useState({ open: false, entity: null })
-  const [lifecycleState, setLifecycleState] = useState({ open: false, entity: null, meta: null })
+  const [archiveState, setArchiveState] = useState({
+    open: false,
+    entity: null,
+    onAfterSuccessLocal: null,
+  })
+
+  const [restoreState, setRestoreState] = useState({
+    open: false,
+    entity: null,
+    onAfterSuccessLocal: null,
+  })
+
+  const [lifecycleState, setLifecycleState] = useState({
+    open: false,
+    entity: null,
+    meta: null,
+    onAfterSuccessLocal: null,
+  })
 
   const [archiveBusy, setArchiveBusy] = useState(false)
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [lifecycleBusy, setLifecycleBusy] = useState(false)
+
+  const safeRunLocalAfterSuccess = useCallback((fn, payload) => {
+    if (typeof fn !== 'function') return
+    try {
+      fn(payload)
+    } catch (err) {
+      console.warn('[useEntityLifecycle] local onAfterSuccess failed', err)
+    }
+  }, [])
 
   const safeAfterSuccess = useCallback(
     ({ action, entityType, id }) => {
@@ -27,28 +52,38 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
   const closeArchive = useCallback(() => {
     if (archiveBusy) return
     setArchiveBusy(false)
-    setArchiveState({ open: false, entity: null })
+    setArchiveState({ open: false, entity: null, onAfterSuccessLocal: null })
   }, [archiveBusy])
 
   const closeRestore = useCallback(() => {
     if (restoreBusy) return
     setRestoreBusy(false)
-    setRestoreState({ open: false, entity: null })
+    setRestoreState({ open: false, entity: null, onAfterSuccessLocal: null })
   }, [restoreBusy])
 
   const closeLifecycle = useCallback(() => {
     if (lifecycleBusy) return
-    setLifecycleState({ open: false, entity: null, meta: null })
+    setLifecycleState({ open: false, entity: null, meta: null, onAfterSuccessLocal: null })
   }, [lifecycleBusy])
 
-  const openArchive = useCallback((entity) => {
+  const openArchive = useCallback((entity, options = {}) => {
     setArchiveBusy(false)
-    setArchiveState({ open: true, entity })
+    setArchiveState({
+      open: true,
+      entity,
+      onAfterSuccessLocal:
+        typeof options?.onAfterSuccess === 'function' ? options.onAfterSuccess : null,
+    })
   }, [])
 
-  const openRestore = useCallback((entity) => {
+  const openRestore = useCallback((entity, options = {}) => {
     setRestoreBusy(false)
-    setRestoreState({ open: true, entity })
+    setRestoreState({
+      open: true,
+      entity,
+      onAfterSuccessLocal:
+        typeof options?.onAfterSuccess === 'function' ? options.onAfterSuccess : null,
+    })
   }, [])
 
   const openLifecycle = useCallback(
@@ -65,7 +100,13 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
       const metaAuto = !hasGuard && deps?.getMeta ? await deps.getMeta(entity, metaIn) : null
       const resolvedMeta = { ...(metaIn || {}), ...(metaAuto || {}) }
 
-      setLifecycleState({ open: true, entity, meta: resolvedMeta })
+      setLifecycleState({
+        open: true,
+        entity,
+        meta: resolvedMeta,
+        onAfterSuccessLocal:
+          typeof metaIn?.onAfterSuccess === 'function' ? metaIn.onAfterSuccess : null,
+      })
     },
     [deps]
   )
@@ -104,14 +145,17 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
       await deps.archive({ entityType: e.entityType, id: e.id })
       emit({ status: 'success', action: 'archive', entityType: e.entityType, entityName: e.name })
 
-      safeAfterSuccess({ action: 'archive', entityType: e.entityType, id: e.id })
-      setArchiveState({ open: false, entity: null })
+      const payload = { action: 'archive', entityType: e.entityType, id: e.id }
+      safeAfterSuccess(payload)
+      safeRunLocalAfterSuccess(archiveState.onAfterSuccessLocal, payload)
+
+      setArchiveState({ open: false, entity: null, onAfterSuccessLocal: null })
     } catch (error) {
       emit({ status: 'error', action: 'archive', entityType: e.entityType, entityName: e.name, error })
     } finally {
       setArchiveBusy(false)
     }
-  }, [archiveState.entity, archiveBusy, deps, emit, safeAfterSuccess])
+  }, [archiveState.entity, archiveState.onAfterSuccessLocal, archiveBusy, deps, emit, safeAfterSuccess, safeRunLocalAfterSuccess])
 
   const confirmRestore = useCallback(async () => {
     const e = restoreState.entity
@@ -121,17 +165,21 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
     setRestoreBusy(true)
     try {
       if (!deps?.restore) throw new Error('Missing deps.restore')
+
       await deps.restore({ entityType: e.entityType, id: e.id })
       emit({ status: 'success', action: 'restore', entityType: e.entityType, entityName: e.name })
 
-      safeAfterSuccess({ action: 'restore', entityType: e.entityType, id: e.id })
-      setRestoreState({ open: false, entity: null })
+      const payload = { action: 'restore', entityType: e.entityType, id: e.id }
+      safeAfterSuccess(payload)
+      safeRunLocalAfterSuccess(restoreState.onAfterSuccessLocal, payload)
+
+      setRestoreState({ open: false, entity: null, onAfterSuccessLocal: null })
     } catch (error) {
       emit({ status: 'error', action: 'restore', entityType: e.entityType, entityName: e.name, error })
     } finally {
       setRestoreBusy(false)
     }
-  }, [restoreState.entity, restoreBusy, deps, emit, safeAfterSuccess])
+  }, [restoreState.entity, restoreState.onAfterSuccessLocal, restoreBusy, deps, emit, safeAfterSuccess, safeRunLocalAfterSuccess])
 
   const confirmDeleteOrArchiveFromLifecycle = useCallback(async () => {
     const e = lifecycleState.entity
@@ -149,8 +197,11 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
         await deps.remove({ entityType: e.entityType, id: e.id })
         emit({ status: 'success', action: 'delete', entityType: e.entityType, entityName: e.name })
 
-        safeAfterSuccess({ action: 'delete', entityType: e.entityType, id: e.id })
-        setLifecycleState({ open: false, entity: null, meta: null })
+        const payload = { action: 'delete', entityType: e.entityType, id: e.id }
+        safeAfterSuccess(payload)
+        safeRunLocalAfterSuccess(lifecycleState.onAfterSuccessLocal, payload)
+
+        setLifecycleState({ open: false, entity: null, meta: null, onAfterSuccessLocal: null })
         return
       }
 
@@ -159,8 +210,11 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
       await deps.archive({ entityType: e.entityType, id: e.id })
       emit({ status: 'success', action: 'archive', entityType: e.entityType, entityName: e.name })
 
-      safeAfterSuccess({ action: 'archive', entityType: e.entityType, id: e.id })
-      setLifecycleState({ open: false, entity: null, meta: null })
+      const payload = { action: 'archive', entityType: e.entityType, id: e.id }
+      safeAfterSuccess(payload)
+      safeRunLocalAfterSuccess(lifecycleState.onAfterSuccessLocal, payload)
+
+      setLifecycleState({ open: false, entity: null, meta: null, onAfterSuccessLocal: null })
     } catch (error) {
       emit({
         status: 'error',
@@ -172,7 +226,16 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
     } finally {
       setLifecycleBusy(false)
     }
-  }, [lifecycleState.entity, lifecycleState.meta, lifecycleBusy, deps, emit, safeAfterSuccess])
+  }, [
+    lifecycleState.entity,
+    lifecycleState.meta,
+    lifecycleState.onAfterSuccessLocal,
+    lifecycleBusy,
+    deps,
+    emit,
+    safeAfterSuccess,
+    safeRunLocalAfterSuccess,
+  ])
 
   const archiveDialogProps = useMemo(() => {
     const e = archiveState.entity

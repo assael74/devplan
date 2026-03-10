@@ -39,6 +39,7 @@ const resolveRouterEntityType = (entityType) => {
   if (entityType === 'club') return 'clubs'
   if (entityType === 'role') return 'roles'
   if (entityType === 'tag') return 'tags'
+  if (entityType === 'game') return 'games'
   if (entityType === 'videoAnalysis') return 'videoAnalysis'
   if (entityType === 'videoAGeneral') return 'videoGeneral'
   return null

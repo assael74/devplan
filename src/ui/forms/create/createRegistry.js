@@ -60,7 +60,7 @@ export const CREATE_TYPES = {
     iconKey: 'addGame',
     entityType: 'team',
     form: GameCreateForm,
-    required: ['gameDuration', 'rivel', 'type', 'home', 'gameDate'],
+    required: ['gameDuration', 'rivel', 'type', 'gameDate'],
     surface: 'modal',
   },
 

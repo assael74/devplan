@@ -2,8 +2,8 @@
 
 import InfoDomainSummary from './domains/player/info/InfoDomainSummary'
 import InfoDomainModal from './domains/player/info/InfoDomainModal'
-import MeetingsDomainSummary from './domains/player/meetings/MeetingsDomainSummary'
-import MeetingsDomainModal from './domains/player/meetings/MeetingsDomainModal'
+import PlayerMeetingsDomainSummary from './domains/player/meetings/PlayerMeetingsDomainSummary'
+import PlayerMeetingsDomainModal from './domains/player/meetings/PlayerMeetingsDomainModal'
 import PaymentsDomainSummary from './domains/player/payments/PaymentsDomainSummary'
 import PaymentsDomainModal from './domains/player/payments/PaymentsDomainModal'
 import PerformanceDomainSummary from './domains/player/performance/performanceDomainSummary.js'
@@ -62,8 +62,8 @@ export const DOMAIN_REGISTRY = {
       key: 'meetings',
       image: meetingsImg,
       iconId: 'meetings',
-      Summary: MeetingsDomainSummary,
-      Modal: MeetingsDomainModal,
+      Summary: PlayerMeetingsDomainSummary,
+      Modal: PlayerMeetingsDomainModal,
       container: 'modal',
       visualType: 'image',
     },

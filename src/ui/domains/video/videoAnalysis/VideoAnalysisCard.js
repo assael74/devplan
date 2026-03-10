@@ -7,7 +7,7 @@ import VideoCardHeader from './VideoCardHeader'
 import VideoTagsBar from './VideoTagsBar'
 import { VideoCardLinkage } from './VideoCardLinkage'
 
-import { buildVideoAnalysisSx } from './videoAnalysis.sx'
+import { buildVideoAnalysisSx } from './sx/videoAnalysis.sx'
 import { VIDEO_ANALYSIS_CARD_PRESETS } from './videoAnalysisCard.presets'
 
 export default function VideoAnalysisCard({

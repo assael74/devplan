@@ -22,15 +22,6 @@ export default function VideoCommentsField({
         onChange={(e) => onChange(e.target.value)}
         error={error}
         size={size}
-        sx={{
-          direction: 'rtl',
-          textAlign: 'right',
-          '& input': {
-            direction: 'rtl',
-            textAlign: 'right',
-          },
-          '&:hover': { backgroundColor: '#eef4ff' },
-        }}
       />
     </FormControl>
   );

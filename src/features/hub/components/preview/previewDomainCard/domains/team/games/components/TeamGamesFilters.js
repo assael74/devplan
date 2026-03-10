@@ -60,6 +60,7 @@ export default function TeamGamesFilters({
   onChangeResultFilter,
   onChangeDiffFilter,
   onReset,
+  onCreateGame,
 }) {
   const typeOptions = useMemo(buildTypeOptions, [])
   const diffOptions = useMemo(buildDiffOptions, [])
@@ -157,6 +158,19 @@ export default function TeamGamesFilters({
               onClick={onReset}
             >
               {iconUi({ id: 'reset', size: 'sm' })}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="יצירת משחק חדש">
+          <span>
+            <IconButton
+              size="sm"
+              variant='outlined'
+              onClick={onCreateGame}
+              sx={sx.icoAddSx}
+            >
+              {iconUi({ id: 'addGame', size: 'sm' })}
             </IconButton>
           </span>
         </Tooltip>

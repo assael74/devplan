@@ -15,6 +15,14 @@ const pickStats = (row) => row?.stats || row || {}
 const typeMetaById = Object.fromEntries((GAME_TYPE || []).map((x) => [x.id, x]))
 const diffMetaById = Object.fromEntries((GAME_DIFFICULTY || []).map((x) => [x.id, x]))
 
+export const getGameDifficultyLabelH = (difficultyId) => {
+  if (!difficultyId) return 'לא הוגדר'
+
+  const meta = GAME_DIFFICULTY.find((x) => x.id === difficultyId)
+
+  return meta?.labelH || 'לא הוגדר'
+}
+
 const normalizeRow = createGameRowNormalizer({
   formatDateH: (dateRaw) => {
     const v = safe(getFullDateIl(dateRaw)).trim()
@@ -92,7 +100,6 @@ const buildHaystack = (x) =>
     x?.type,
     x?.typeH,
     x?.difficulty,
-    x?.difficultyH,
     x?.homeLabel,
     x?.score,
     x?.result,

@@ -22,7 +22,7 @@ export default function GameDifficultySelectField({
         size={size}
         value={value}
         onChange={(_, val) => onChange(val)}
-        placeholder='בחר רמת קושי למשחק'
+        placeholder='רמת קושי'
         slotProps={gameSlot.listbox}
       >
       {GAME_DIFFICULTY.map(opt=> {

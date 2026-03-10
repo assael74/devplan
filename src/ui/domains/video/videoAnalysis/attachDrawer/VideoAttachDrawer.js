@@ -14,7 +14,7 @@ import { VIDEOANALYSIS_CONTEXTTYPES } from '../../../../../shared/videoAnalysis/
 import VideoAttachDrawerHeader from './VideoAttachDrawerHeader'
 import VideoAttachDrawerBody from './VideoAttachDrawerBody'
 import VideoAttachDrawerFooter from './VideoAttachDrawerFooter'
-import { videoAttachDrawerSx as sx } from './videoAttachDrawer.sx'
+import { videoAttachDrawerSx as sx } from '../sx/videoAttachDrawer.sx'
 
 export default function VideoAttachDrawer({ open, onClose, video, context, onSave }) {
   // avoid `{}` identity churn when missing

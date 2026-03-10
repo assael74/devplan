@@ -1,91 +1,70 @@
 // ui/fields/selectUi/clubs/ClubSelectField.js
-import React, { useMemo } from 'react'
-import { Autocomplete, Typography, FormControl, FormLabel, FormHelperText } from '@mui/joy'
-import Avatar from '@mui/joy/Avatar'
-import Box from '@mui/joy/Box'
-import Input from '@mui/joy/Input'
 
-import { iconUi } from '../../../core/icons/iconUi.js'
-import { buildFallbackAvatar } from '../../../core/avatars/fallbackAvatar.js'
-//import clubImage from '../../../images/clubImage.png'
+import React, { useMemo, useCallback } from 'react'
+import { Select, Option, FormControl, FormLabel } from '@mui/joy'
+
+import { playersSlot } from '../select.sx.js'
+
+import { buildOptions, findSelected } from './logic/clubSelect.logic'
+import ClubSelectValue from './ui/ClubSelectValue'
+import ClubOptionRow from './ui/ClubOptionRow'
+
+const clean = (v) => String(v ?? '').trim()
 
 export default function ClubSelectField({
-  required,
   value,
   onChange,
   options = [],
   disabled,
+  required,
   error,
-  helperText,
   size = 'sm',
   readOnly,
+  label = 'שייך מועדון',
+  placeholder = 'בחר…',
 }) {
-  const mappedOptions = useMemo(
-    () =>
-      options.map((c) => ({
-        label: c.clubName,
-        value: c.id,
-        photo: c.photo || buildFallbackAvatar({ entityType: 'club', id: c.id, name: c.clubName }),
-      })),
+
+  const normalizedOptions = useMemo(
+    () => buildOptions(options),
     [options]
   )
 
-  const selectedOption = mappedOptions.find((o) => o.value === value) || null
+  const selectedOpt = useMemo(
+    () => findSelected(value, normalizedOptions),
+    [value, normalizedOptions]
+  )
+
+  const handleChange = useCallback(
+    (_, nextValue) => {
+      if (!readOnly) onChange(clean(nextValue))
+    },
+    [onChange, readOnly]
+  )
 
   return (
-    <FormControl sx={{ width: '100%' }}>
+    <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
       <FormLabel required={required} sx={{ fontSize: '12px' }}>
-        שייך מועדון
+        {label}
       </FormLabel>
 
-      <Autocomplete
+      <Select
         size={size}
-        readOnly={readOnly}
         disabled={disabled}
-        color={error ? 'danger' : 'neutral'}
-        options={mappedOptions}
-        value={selectedOption}
-        onChange={(_, opt) => onChange(opt?.value || '')}
-        getOptionLabel={(option) => option.label}
-        isOptionEqualToValue={(opt, val) => opt.value === val.value}
-        variant="soft"
-        renderOption={(props, option) => (
-          <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75 }}>
-            <Avatar
-              src={option.photo}
-              alt={option.label}
-              size="sm"
-              variant="soft"
-            >
-              {option.label?.[0]}
-            </Avatar>
-
-            <Typography level="body-sm">{option.label}</Typography>
-          </Box>
+        readOnly={readOnly}
+        value={clean(value) || null}
+        onChange={handleChange}
+        placeholder={placeholder}
+        slotProps={playersSlot}
+        renderValue={() => (
+          <ClubSelectValue opt={selectedOpt} />
         )}
-        renderInput={(params) => (
-          <Input
-            {...params}
-            placeholder="בחר מועדון"
-            startDecorator={
-              selectedOption ? (
-                <Avatar
-                  src={selectedOption.photo}
-                  size="sm"
-                  variant="soft"
-                >
-                  {selectedOption.label[0]}
-                </Avatar>
-              ) : (
-                iconUi({ id: 'clubs' })
-              )
-            }
-          />
-        )}
-        sx={{ '&:hover': { backgroundColor: '#eef4ff' } }}
-      />
-
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      >
+        {normalizedOptions.map((opt) => (
+          <Option key={opt.value} value={opt.value}>
+            <ClubOptionRow opt={opt} />
+          </Option>
+        ))}
+      </Select>
     </FormControl>
   )
 }

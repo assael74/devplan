@@ -4,7 +4,7 @@ import { Drawer, Sheet } from '@mui/joy'
 import VideoEditDrawerFooter from './VideoEditDrawerFooter'
 import VideoEditDrawerHeader from './VideoEditDrawerHeader'
 import VideoEditDrawerBody from './VideoEditDrawerBody'
-import { buildVideoEditDrawerSx } from './videoEditDrawer.sx.js'
+import { buildVideoEditDrawerSx } from '../sx/videoEditDrawer.sx.js'
 
 export default function VideoEditDrawer({
   open,

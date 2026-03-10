@@ -23,7 +23,7 @@ export default function GameTypeSelectField({
         value={value}
         size={size}
         onChange={(_, val) => onChange(val)}
-        placeholder='בחר סוג משחק'
+        placeholder='סוג משחק'
         slotProps={{...gameSlot.listbox, ...gameSlot.button}}
       >
       {GAME_TYPE.map(opt=> {

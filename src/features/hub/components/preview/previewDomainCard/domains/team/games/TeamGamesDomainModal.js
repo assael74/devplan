@@ -8,6 +8,8 @@ import TeamGamesFilters from './components/TeamGamesFilters.js'
 import TeamGamesTable from './components/TeamGamesTable.js'
 import EditDrawer from './components/drawer/EditDrawer.js'
 
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
+
 export default function TeamGamesDomainModal({ entity, context }) {
   const liveTeam = useMemo(() => {
     const teams = Array.isArray(context?.teams) ? context.teams : []
@@ -22,6 +24,7 @@ export default function TeamGamesDomainModal({ entity, context }) {
   const [resultFilter, setResultFilter] = useState('all')
   const [diffFilter, setDiffFilter] = useState('all')
   const [activeGame, setActiveGame] = useState(null)
+  const [openCreateGame, setOpenCreateGame] = useState(false)
 
   const filtered = useMemo(() => {
     return filterTeamGames(rows, {
@@ -39,6 +42,18 @@ export default function TeamGamesDomainModal({ entity, context }) {
     setHomeFilter('all')
     setResultFilter('all')
     setDiffFilter('all')
+  }
+
+  const handleOpenCreate = () => {
+    setOpenCreateGame(true)
+  }
+
+  const handleCloseCreate = () => {
+    setOpenCreateGame(false)
+  }
+
+  const handleCreateSaved = () => {
+    setOpenCreateGame(false)
   }
 
   return (
@@ -59,6 +74,7 @@ export default function TeamGamesDomainModal({ entity, context }) {
             onChangeResultFilter={setResultFilter}
             onChangeDiffFilter={setDiffFilter}
             onReset={handleReset}
+            onCreateGame={handleOpenCreate}
           />
         </Box>
 
@@ -67,6 +83,13 @@ export default function TeamGamesDomainModal({ entity, context }) {
           onEditGame={(row) => setActiveGame(row?.raw || row || null)}
         />
       </Box>
+
+      <NewFormDrawer
+        open={openCreateGame}
+        onClose={handleCloseCreate}
+        onSaved={handleCreateSaved}
+        context={{ ...context, teamId: entity?.id || '', entity }}
+      />
 
       <EditDrawer
         open={!!activeGame}

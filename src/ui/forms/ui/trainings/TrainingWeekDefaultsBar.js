@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\ui\forms\ui\trainings\TrainingWeekDefaultsBar.js
+// ui/forms/ui/trainings/TrainingWeekDefaultsBar.js
+
 import React, { useMemo } from 'react'
 import Box from '@mui/joy/Box'
 import Button from '@mui/joy/Button'

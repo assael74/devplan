@@ -1,5 +1,6 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
+import { buildGameInfoItem, buildGameTimeItem, buildGameResultItem } from '../helpers/gameForm.helpers.js'
 import { createShort } from '../../../services/firestore/shorts/shortsCreate'
 import { makeId } from '../../../utils/id.js'
 
@@ -134,6 +135,36 @@ export const createActions = {
         type: draft.type,
       },
     })
+  },
+
+  game: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+
+    const gameInfoItem = buildGameInfoItem({ id, draft, now })
+    const gameTimeItem = buildGameTimeItem({ id, draft })
+    const gameResultItem = buildGameResultItem({ id, draft })
+
+    await createShort({
+      shortKey: 'games.gameInfo',
+      item: gameInfoItem,
+    })
+
+    await createShort({
+      shortKey: 'games.gameTime',
+      item: gameTimeItem,
+    })
+
+    await createShort({
+      shortKey: 'games.gameResult',
+      item: gameResultItem,
+    })
+
+    return {
+      ...gameInfoItem,
+      ...gameTimeItem,
+      ...gameResultItem,
+    }
   },
 
   videoAnalysis: async ({ draft }) => {

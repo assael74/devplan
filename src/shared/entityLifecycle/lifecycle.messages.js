@@ -6,6 +6,7 @@ const ENTITY_LABEL = {
   role: 'איש צוות',
   scouting: 'שחקן במעקב',
   tag: 'וידאו תג',
+  game: 'משחק',
   videoAnalysis: 'ניתוח וידאו',
   videoGeneral: 'וידאו כללי'
 }

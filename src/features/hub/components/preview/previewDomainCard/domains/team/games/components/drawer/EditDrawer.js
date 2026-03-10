@@ -1,10 +1,11 @@
 // previewDomainCard/domains/team/games/components/drawer/EditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
+import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditFormDrawer from './EditFormDrawer.js'
@@ -20,6 +21,7 @@ import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditDrawer({ open, game, onClose, onSaved }) {
   const initial = useMemo(() => buildInitialDraft(game), [game])
+  const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -80,6 +82,23 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
 
   const handleReset = () => setDraft(initial)
 
+  const handleDelete = useCallback(() => {
+    if (!game?.id) return
+
+    lifecycle.openLifecycle(
+      { entityType: 'game', id: game.id, name: `${game?.rivel || 'משחק'} ${game?.gameDate || ''}`, },
+      {
+        onAfterSuccess: ({ action, entityType, id }) => {
+          if (action !== 'delete') return
+          if (entityType !== 'game') return
+          if (id !== game.id) return
+
+          onClose()
+        },
+      }
+    )
+  }, [lifecycle, game?.id, game?.rivel, game?.gameDate, onClose])
+
   return (
     <Drawer
       open={!!open}
@@ -123,7 +142,7 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
                 ביטול
               </Button>
 
-              <Tooltip title="איפוס טופס">
+              <Tooltip title="איפוס השינויים">
                 <span>
                   <IconButton
                     disabled={!isDirty}
@@ -133,6 +152,19 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
                     onClick={handleReset}
                   >
                     {iconUi({ id: 'reset' })}
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip title="מחיקת משחק">
+                <span>
+                  <IconButton
+                    size="sm"
+                    color='danger'
+                    variant="solid"
+                    onClick={handleDelete}
+                  >
+                    {iconUi({ id: 'delete' })}
                   </IconButton>
                 </span>
               </Tooltip>

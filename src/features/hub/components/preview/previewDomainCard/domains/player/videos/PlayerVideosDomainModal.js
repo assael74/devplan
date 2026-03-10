@@ -1,132 +1,149 @@
-// src/features/hub/components/preview/previewDomainCard/domains/player/videos/PlayerVideosDomainModal.js
+// domains/player/videos/PlayerVideosDomainModal.js
+
 import React, { useMemo, useState } from 'react'
-import { Box, Typography } from '@mui/joy'
-import { getMonthKey, getMonthLabel } from './playerVideos.domain.logic.js'
+import { Box } from '@mui/joy'
 
-import VideoAnalysisCard from '../../../../../../../../ui/domains/video/videoAnalysis/VideoAnalysisCard.js'
-import ListVideosToolbarRow from '../../../../../../../../ui/patterns/listVideosToolbar/ListVideosToolbarRow.js'
-import StickySectionsByMonth from '../../../../../../../../ui/patterns/stickySections/StickySectionsByMonth.js'
+import { resolvePlayerVideosDomain } from './logic/playerVideos.domain.logic.js'
+import PlayerVideosKpi from './components/PlayerVideosKpi.js'
+import PlayerVideosFilters from './components/PlayerVideosFilters.js'
+import PlayerVideosTable from './components/PlayerVideosTable.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
 
-import { enrichVideoAnalysisForPlayer } from '../../../../../../../../shared/videoAnalysis/videoAnalysis.enrich'
+import DriveVideoPlayer from '../../../../../../../../ui/domains/video/DriveVideoPlayer.js'
 
 export default function PlayerVideosDomainModal({
   entity,
   context,
-  videoActions,
   onClose,
 }) {
-  const player = entity
+  const player = entity || null
 
-  const [query, setQuery] = useState('')
-  const [sortId, setSortId] = useState('date_desc')
+  const [q, setQ] = useState('')
+  const [month, setMonth] = useState('all')
+  const [onlyTagged, setOnlyTagged] = useState(false)
+  const [onlyKey, setOnlyKey] = useState(false)
 
-  const sortOptions = useMemo(() => ([
-    { id: 'date_desc', label: 'תאריך · מהחדש לישן' },
-    { id: 'date_asc', label: 'תאריך · מהישן לחדש' },
-    { id: 'title_asc', label: 'שם · א-ת' },
-  ]), [])
-
-  const items = useMemo(
-    () => (Array.isArray(player?.videos) ? player.videos : []),
-    [player?.videos]
-  )
+  const [editingVideo, setEditingVideo] = useState(null)
+  const [watchVideo, setWatchVideo] = useState(null)
+  const [openCreateVideo, setOpenCreateVideo] = useState(false)
 
   const tags = useMemo(() => {
-    const t = context?.tags
+    const t1 = context?.tags
     const t2 = context?.tagsArr
-    return Array.isArray(t) ? t : Array.isArray(t2) ? t2 : []
+    return Array.isArray(t1) ? t1 : Array.isArray(t2) ? t2 : []
   }, [context?.tags, context?.tagsArr])
 
-  const actions = useMemo(() => {
-    const v = videoActions || {}
-    return {
-      onWatch: typeof v.watch === 'function' ? v.watch : null,
-      onEdit: typeof v.edit === 'function' ? v.edit : null,
-      onLink: typeof v.link === 'function' ? v.link : null,
-      onShare: typeof v.share === 'function' ? v.share : null,
-    }
-  }, [videoActions])
+  const resolved = useMemo(
+    () =>
+      resolvePlayerVideosDomain(
+        player,
+        {
+          q,
+          month: month === 'all' ? '' : month,
+          onlyTagged,
+          onlyKey,
+        },
+        { tags }
+      ),
+    [player, q, month, onlyTagged, onlyKey, tags]
+  )
 
-  const handoff = (fn, payload) => {
-    if (!fn) return
-    const snap = payload
-    onClose?.()
-    queueMicrotask(() => fn(snap))
+  const { summary, options, videos } = resolved
+
+  const handleReset = () => {
+    setQ('')
+    setMonth('all')
+    setOnlyTagged(false)
+    setOnlyKey(false)
   }
 
-  const onEdit = (video) => handoff(actions.onEdit, { video, entity: player, context })
-  const onLink = (video) => handoff(actions.onLink, { video, entity: player, context })
+  const handleWatch = (video) => {
+    if (!video) return
+    setWatchVideo(video)
+  }
 
-  const filtered = useMemo(() => {
-    const q = String(query || '').trim().toLowerCase()
-    if (!q) return items
-    return items.filter((v) => {
-      const title = String(v?.title || v?.name || '').toLowerCase()
-      return title.includes(q)
-    })
-  }, [items, query])
+  const handleEdit = (video) => {
+    if (!video) return
+    setEditingVideo(video)
+  }
 
-  const sorted = useMemo(() => {
-    const arr = [...filtered]
-    if (sortId === 'title_asc') {
-      arr.sort((a, b) => String(a?.title || a?.name || '').localeCompare(String(b?.title || b?.name || '')))
-      return arr
-    }
-    const dir = sortId === 'date_asc' ? 1 : -1
-    arr.sort((a, b) => {
-      const da = new Date(a?.date || a?.videoDate || a?.createdAt || 0).getTime()
-      const db = new Date(b?.date || b?.videoDate || b?.createdAt || 0).getTime()
-      return (da - db) * dir
-    })
-    return arr
-  }, [filtered, sortId])
+  const handleEditSaved = (patch, updatedVideo) => {
+    setEditingVideo(updatedVideo || null)
+  }
+
+  const handleOpenCreate = () => {
+    setOpenCreateVideo(true)
+  }
+
+  const handleCloseCreate = () => {
+    setOpenCreateVideo(false)
+  }
+
+  const handleCreateSaved = () => {
+    setOpenCreateVideo(false)
+  }
 
   return (
-    <Box sx={{ width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <ListVideosToolbarRow
-        query={query}
-        onQuery={setQuery}
-        sortId={sortId}
-        onSort={setSortId}
-        sortOptions={sortOptions}
-        tags={tags}
+    <Box sx={{ minWidth: 0, display: 'grid', gap: 1 }}>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -15,
+          zIndex: 5,
+          borderRadius: 'xl',
+          bgcolor: 'background.body',
+        }}
+      >
+        <PlayerVideosKpi
+          entity={player}
+          summary={summary}
+          filteredCount={videos.length}
+        />
+
+        <PlayerVideosFilters
+          q={q}
+          month={month}
+          monthOptions={options?.months || []}
+          onlyTagged={onlyTagged}
+          onlyKey={onlyKey}
+          onChangeQ={setQ}
+          onChangeMonth={setMonth}
+          onChangeOnlyTagged={setOnlyTagged}
+          onChangeOnlyKey={setOnlyKey}
+          onReset={handleReset}
+          onCreateVideo={handleOpenCreate}
+        />
+      </Box>
+
+      <PlayerVideosTable
+        rows={videos}
+        onWatch={handleWatch}
+        onEdit={handleEdit}
+      />
+
+      <EditDrawer
+        open={!!editingVideo}
+        video={editingVideo}
+        onClose={() => setEditingVideo(null)}
+        onSaved={handleEditSaved}
         context={context}
       />
 
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', px: 1, pt: 1 }}>
-        {!sorted.length ? (
-          <Typography level="body-sm" sx={{ opacity: 0.75 }}>
-            אין קטעי וידאו לשחקן
-          </Typography>
-        ) : (
-          <StickySectionsByMonth
-            items={sorted}
-            getMonthKey={getMonthKey}
-            getMonthLabel={getMonthLabel}
-            headerTop={0}
-            gridSx={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              justifyContent: 'start',
-            }}
-            renderItem={(video) => {
-              const videoEnriched = enrichVideoAnalysisForPlayer(video, player, context)
-              return (
-                <VideoAnalysisCard
-                  key={video?.id}
-                  video={videoEnriched}
-                  preset="domainModal"
-                  from="domainModal"
-                  onWatch={actions.onWatch}
-                  onEdit={onEdit}
-                  onLink={onLink}
-                  onShare={actions.onShare}
-                  context={context}
-                />
-              )
-            }}
-          />
-        )}
-      </Box>
+      <NewFormDrawer
+        open={openCreateVideo}
+        onClose={handleCloseCreate}
+        onSaved={handleCreateSaved}
+        context={{ ...context, playerId: player?.id || '', player, }}
+      />
+
+      <DriveVideoPlayer
+        open={!!watchVideo}
+        onClose={() => setWatchVideo(null)}
+        videoLink={watchVideo?.link || ''}
+        videoName={watchVideo?.name || 'וידאו'}
+        variant="analysis"
+      />
     </Box>
   )
 }

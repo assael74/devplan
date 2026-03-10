@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\ui\forms\ui\abilities\StickyHeaderSection.js
+
 import React, { useMemo } from 'react'
 import { Box, Typography, Sheet, Divider, Chip, Tooltip, IconButton } from '@mui/joy'
 

@@ -5,7 +5,7 @@ import { Box, Checkbox, IconButton, Input, Option, Select, Sheet, Tooltip, Typog
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { filtersSx as sx } from '../sx/teamVideosFilters.sx.js'
-import { getMonthLabel } from '../teamVideos.domain.logic.js'
+import { getMonthLabel } from '../logic/teamVideos.domain.logic.js'
 
 function SelectValue({ label }) {
   return (
@@ -28,6 +28,7 @@ export default function TeamVideosFilters({
   onChangeOnlyTagged,
   onChangeOnlyKey,
   onReset,
+  onCreateVideo,
 }) {
   const isDirty = !!q || month !== 'all' || onlyTagged || onlyKey
 
@@ -72,13 +73,6 @@ export default function TeamVideosFilters({
             checked={onlyTagged}
             onChange={(e) => onChangeOnlyTagged(e.target.checked)}
           />
-
-          <Checkbox
-            size="sm"
-            label="רק שחקני מפתח"
-            checked={onlyKey}
-            onChange={(e) => onChangeOnlyKey(e.target.checked)}
-          />
         </Sheet>
 
         <Tooltip title="איפוס פילטרים">
@@ -91,6 +85,18 @@ export default function TeamVideosFilters({
               onClick={onReset}
             >
               {iconUi({ id: 'reset', size: 'sm' })}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="יצירת וידאו חדש">
+          <span>
+            <IconButton
+              size="sm"
+              onClick={onCreateVideo}
+              sx={sx.icoAddSx}
+            >
+              {iconUi({ id: 'addVideo', size: 'sm' })}
             </IconButton>
           </span>
         </Tooltip>

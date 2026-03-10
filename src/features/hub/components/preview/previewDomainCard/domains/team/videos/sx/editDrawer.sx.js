@@ -7,13 +7,14 @@ const c = getEntityColors('videoAnalysis')
 export const drawerSx = {
   drawerSheetSx: {
     borderRadius: { xs: 0, md: 'lg' },
-    p: 2,
+    p: { xs: 1.25, md: 1.5 },
     display: 'flex',
     flexDirection: 'column',
-    gap: 2,
+    gap: 1.25,
     height: '100%',
     overflow: 'hidden',
     bgcolor: 'background.body',
+    boxShadow: 'lg',
   },
 
   drawerRootSx: {
@@ -21,28 +22,32 @@ export const drawerSx = {
     display: 'grid',
     gridTemplateRows: 'auto 1fr auto',
     bgcolor: 'background.body',
+    minHeight: 0,
   },
 
   headerRowSx: {
     p: 0,
-    mb: 1,
+    pb: 0.75,
+    mb: 0.75,
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
   },
 
   heroSx: {
     display: 'flex',
     alignItems: 'center',
-    gap: 1,
+    gap: 0.85,
     minWidth: 0,
   },
 
   heroTextSx: {
     minWidth: 0,
     display: 'grid',
-    gap: 0.2,
+    gap: 0.1,
   },
 
   heroNameSx: {
@@ -51,6 +56,7 @@ export const drawerSx = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    letterSpacing: '-0.01em',
   },
 
   heroMetaSx: {
@@ -63,30 +69,32 @@ export const drawerSx = {
 
   sectionCardSx: {
     p: 1,
-    borderRadius: 'xl',
-    bgcolor: c.bg,
+    borderRadius: 'lg',
+    bgcolor: 'background.level1',
     border: '1px solid',
-    borderColor: c.accent,
+    borderColor: 'divider',
     display: 'grid',
-    gap: 0.85,
+    gap: 0.75,
+    boxShadow: 'xs',
   },
 
   sectionTitleSx: {
     fontWeight: 700,
     color: 'text.secondary',
     fontSize: 12,
+    lineHeight: 1.1,
   },
 
   statusRowSx: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 0.65,
+    gap: 0.5,
     alignItems: 'center',
   },
 
   footerSx: {
-    pt: 1,
-    mt: 1,
+    pt: 0.85,
+    mt: 0.85,
     borderTop: '1px solid',
     borderColor: 'divider',
     display: 'flex',
@@ -100,12 +108,13 @@ export const drawerSx = {
   footerActionsSx: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.75,
+    gap: 0.6,
+    flexWrap: 'wrap',
   },
 
   icoRes: {
-    height: 36,
-    width: 36,
+    height: 34,
+    width: 34,
     flexShrink: 0,
     border: '1px solid',
     borderColor: c.accent,

@@ -9,49 +9,90 @@ import TeamVideoEmpty from './TeamVideoEmpty.js'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { tableSx as sx } from '../sx/teamVideosTable.sx.js'
 
+const safe = (v) => (v == null ? '' : String(v).trim().toLowerCase())
+
 export default function TeamVideosTable({
   rows = [],
+  context,
   onWatch,
   onEdit,
-  onLink,
-  onShare,
 }) {
-  const [dateSort, setDateSort] = useState('desc')
+  const [sortBy, setSortBy] = useState('date')
+  const [sortDir, setSortDir] = useState({
+    name: 'desc',
+    date: 'desc'
+  })
+
+  const handleSort = (key) => {
+    setSortBy(key)
+
+    setSortDir((prev) => ({
+      ...prev,
+      [key]: prev[key] === 'asc' ? 'desc' : 'asc'
+    }))
+  }
+
+  const sortIconId = (key) => {
+    return sortDir[key] === 'asc' ? 'sortDown' : 'sortUp'
+  }
 
   const sortedRows = useMemo(() => {
     const list = [...rows]
-
     list.sort((a, b) => {
-      const da = new Date(a?.date || 0).getTime()
-      const db = new Date(b?.date || 0).getTime()
-      return dateSort === 'asc' ? da - db : db - da
+      if (sortBy === 'name') {
+        const an = safe(a?.name)
+        const bn = safe(b?.name)
+        const cmp = an.localeCompare(bn, 'he')
+        return sortDir.name === 'asc' ? cmp : -cmp
+      }
+
+      if (sortBy === 'date') {
+        const da = safe(a?.ym)
+        const db = safe(b?.ym)
+        const cmp = da.localeCompare(db)
+        return sortDir.date === 'asc' ? cmp : -cmp
+      }
+      return 0
     })
-
     return list
-  }, [rows, dateSort])
-
-  const toggleDateSort = () => {
-    setDateSort((s) => (s === 'asc' ? 'desc' : 'asc'))
-  }
+  }, [rows, sortBy, sortDir])
 
   return (
     <Sheet variant="plain" sx={sx.tableWrapSx}>
       <Box sx={sx.headRowSx}>
+        <Typography level="title-sm" sx={sx.headTextSx}></Typography>
+
         <Typography
           level="title-sm"
-          sx={{ ...sx.headTextSx, cursor: 'pointer' }}
-          onClick={toggleDateSort}
-          startDecorator={iconUi({ id: dateSort === 'desc' ? 'sortUp' : 'sortDown' })}
+          sx={sx.headTextSx}
+          onClick={() => handleSort('name')}
+          startDecorator={iconUi({ id: sortIconId('name'), size: 'sm' })}
+        >
+          שם
+        </Typography>
+
+        <Typography level="title-sm" sx={sx.headTextSx}>
+          שיוך
+        </Typography>
+
+        <Typography
+          level="title-sm"
+          sx={sx.headTextSx}
+          onClick={() => handleSort('date')}
+          startDecorator={iconUi({ id: sortIconId('date'), size: 'sm' })}
         >
           תאריך
         </Typography>
 
-        <Typography level="title-sm" sx={sx.headTextSx}>כותרת</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>שחקן</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>סוג שחקן</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>תגים</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>קישור</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>פעולות</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>
+          תגים
+        </Typography>
+
+        <Typography level="title-sm" sx={sx.headTextSx}>
+          הערות
+        </Typography>
+
+        <Typography level="title-sm" sx={sx.headTextSx}></Typography>
       </Box>
 
       {!sortedRows.length ? (
@@ -61,10 +102,9 @@ export default function TeamVideosTable({
           <TeamVideosRow
             key={row.id}
             row={row}
-            onWatch={() => onWatch?.(row)}
-            onEdit={() => onEdit?.(row)}
-            onLink={() => onLink?.(row)}
-            onShare={() => onShare?.(row)}
+            context={context}
+            onWatch={onWatch}
+            onEdit={onEdit}
           />
         ))
       )}

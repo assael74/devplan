@@ -8,6 +8,7 @@ const titleFor = (entityType) => {
   if (entityType === 'club') return 'מועדון'
   if (entityType === 'role') return 'איש צוות'
   if (entityType === 'tag') return 'תג וידאו'
+  if (entityType === 'game') return 'משחק'
   if (entityType === 'videoAnalysis') return 'ניתוח וידאו'
   if (entityType === 'videoGeneral') return 'וידאו כללי'
   return 'יישות'

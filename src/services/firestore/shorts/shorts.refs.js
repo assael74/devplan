@@ -37,6 +37,7 @@ export const shortsRefs = {
    gameInfo: { collection: 'gamesShorts', docId: 'N7XGvQajspQjInGeic5H' },
    gameTime: { collection: 'gamesShorts', docId: 'ieMXdjDAkhbe0W2DlJw8' },
    gameResult: { collection: 'gamesShorts', docId: 'xrSqD98vpvQOMwB9cp4b' },
+   gamePlayers: { collection: 'gamesShorts', docId: '41kNZj14UWekfr8KBBK8' },
  },
 
  videos: {
@@ -60,7 +61,7 @@ export const shortsRefs = {
    playersInfo: { collection: 'scoutingShorts', docId: 'P2qROYuW7zveaJKah3xA' },
    playersGames: { collection: 'scoutingShorts', docId: 'SfAIsZkn1XtMYNrsY5HN' },
  },
- 
+
  tags: {
    tagInfo: { collection: 'tagsShorts', docId: 'LkifVVOk7xhkjB8wYEBz' },
  }

@@ -26,11 +26,11 @@ function KpiCard({ label, value, subValue, icon }) {
 }
 
 export default function TeamVideosKpi({ entity, summary, filteredCount }) {
+  const last2 = Array.isArray(summary?.last2MonthsAnalysis) ? summary.last2MonthsAnalysis : []
+  const last2Label = last2.length ? last2.map((m) => `${m.label} ${m.count}`).join(' · ') : 'אין נתונים'
   const topTag = Array.isArray(summary?.topTagsAll) ? summary.topTagsAll[0] : null
-  const topTagLabel = topTag
-    ? `${topTag?.tag?.tagName || topTag?.tag?.label || 'תג'} · ${topTag?.count || 0}`
-    : 'אין תגים'
-
+  const topTagLabel = topTag ? `${topTag?.tag?.tagName || topTag?.tag?.label || 'תג'} · ${topTag?.count || 0}` : 'אין תגים'
+  //console.log(summary)
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
       <Box sx={sx.heroGlowSx} />
@@ -68,13 +68,6 @@ export default function TeamVideosKpi({ entity, summary, filteredCount }) {
           />
 
           <KpiCard
-            label="שחקנים עם וידאו"
-            value={summary?.playersWithVideos ?? 0}
-            subValue={`שחקני מפתח ${summary?.keyPlayersWithVideos ?? 0}`}
-            icon={iconUi({ id: 'players', size: 'sm' })}
-          />
-
-          <KpiCard
             label="וידאו מתויג"
             value={summary?.taggedVideos ?? 0}
             subValue={`ללא תיוג ${summary?.untaggedVideos ?? 0}`}
@@ -82,10 +75,17 @@ export default function TeamVideosKpi({ entity, summary, filteredCount }) {
           />
 
           <KpiCard
+            label="ניתוחים בחודשיים האחרונים"
+            value={last2Label}
+            icon={iconUi({ id: 'videoAnalysis', size: 'sm' })}
+            subValue={`חודשים פעילים ${summary?.monthsCount ?? 0}`}
+          />
+
+          <KpiCard
             label="תג מוביל"
             value={topTagLabel}
-            subValue={`חודשים פעילים ${summary?.monthsCount ?? 0}`}
-            icon={iconUi({ id: 'analytics', size: 'sm' })}
+            icon={iconUi({ id: 'tag', size: 'sm' })}
+            subValue={`סה״כ תגים ${summary?.totalTags ?? 0}`}
           />
         </Box>
       </Box>

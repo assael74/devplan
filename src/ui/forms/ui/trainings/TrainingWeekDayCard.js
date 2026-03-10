@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\ui\forms\ui\trainings\TrainingWeekDayCard.js
+// ui/forms/ui/trainings/TrainingWeekDayCard.js
+
 import React, { useMemo } from 'react'
 import Box from '@mui/joy/Box'
 import Chip from '@mui/joy/Chip'

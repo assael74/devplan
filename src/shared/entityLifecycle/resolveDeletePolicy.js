@@ -85,6 +85,16 @@ export function resolveDeletePolicy(entityType, meta = {}) {
       }
     }
 
+    case 'game': {
+      const canDelete = true
+
+      return {
+        canDelete,
+        canArchive: true,
+        reason: null
+      }
+    }
+
     case 'role':
       return {
         canDelete: true,

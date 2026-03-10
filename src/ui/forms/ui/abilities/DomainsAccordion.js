@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\ui\forms\ui\abilities\DomainsAccordion.js
+
 import React from 'react'
 import { AccordionGroup, Accordion, AccordionSummary, AccordionDetails, Box, Typography } from '@mui/joy'
 import { iconUi } from '../../../core/icons/iconUi'

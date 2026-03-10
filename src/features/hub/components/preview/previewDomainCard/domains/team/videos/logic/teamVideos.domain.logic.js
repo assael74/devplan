@@ -1,7 +1,7 @@
 // preview/PreviewDomainCard/domains/team/videos/teamVideos.domain.logic.js
 
-import { DOMAIN_STATE, getDomainState } from '../../../../preview.state'
-import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
+import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
+import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])
@@ -12,6 +12,64 @@ const normalizeIds = (v) => {
   if (Array.isArray(v)) return v.map((x) => safe(x)).filter(Boolean)
   const id = safe(v)
   return id ? [id] : []
+}
+
+const MONTHS_HE = [
+  '',
+  'ינואר',
+  'פברואר',
+  'מרץ',
+  'אפריל',
+  'מאי',
+  'יוני',
+  'יולי',
+  'אוגוסט',
+  'ספטמבר',
+  'אוקטובר',
+  'נובמבר',
+  'דצמבר',
+]
+
+const buildPrevMonthKey = (year, month) => {
+  const y = month === 1 ? year - 1 : year
+  const m = month === 1 ? 12 : month - 1
+  return `${y}-${String(m).padStart(2, '0')}`
+}
+
+const getLast2MonthsKeys = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+
+  const prev1 = buildPrevMonthKey(year, month)
+  const [y1, m1] = prev1.split('-').map(Number)
+  const prev2 = buildPrevMonthKey(y1, m1)
+
+  return [prev1, prev2]
+}
+
+const getMonthNameHe = (key) => {
+  const [, mm] = safe(key).split('-')
+  const month = Number(mm)
+  return MONTHS_HE[month] || '—'
+}
+
+const buildLast2MonthsAnalysis = (videos) => {
+  const keys = getLast2MonthsKeys()
+  const counts = new Map(keys.map((key) => [key, 0]))
+
+  for (const video of videos || []) {
+    const key = getMonthKey(video)
+    if (counts.has(key)) {
+      counts.set(key, counts.get(key) + 1)
+    }
+  }
+
+  return keys.map((key) => ({
+    key,
+    label: getMonthNameHe(key),
+    count: counts.get(key) || 0,
+  }))
 }
 
 export const getMonthKey = (v) => {
@@ -44,14 +102,11 @@ export const getMonthLabel = (key) => {
 const pickVideoDate = (video) =>
   safe(video?.videoDate || video?.date || video?.createdAt || video?.meetingDate || video?.ts)
 
-const pickVideoUrl = (video) =>
-  safe(video?.videoUrl || video?.url || video?.vLink || video?.link)
+const pickVideoUrl = (video) => safe(video?.link)
 
-const pickVideoTitle = (video) =>
-  safe(video?.title || video?.videoTitle || video?.name || 'קטע וידאו')
+const pickVideoTitle = (video) => safe(video?.name || 'קטע וידאו')
 
-const pickVideoNotes = (video) =>
-  safe(video?.notes || video?.videoNotes || video?.description)
+const pickVideoNotes = (video) => safe(video?.notes)
 
 const pickPlayerId = (player) => safe(player?.id || player?.playerId)
 
@@ -134,10 +189,7 @@ const resolveTagsFullForVideo = (video, tagsMap) => {
   const ids = getTagIdsFromVideo(video)
   if (!ids.length || !tagsMap) return []
 
-  return ids
-    .map((id) => tagsMap.get(safe(id)) || null)
-    .filter(Boolean)
-    .filter((t) => t?.isActive !== false)
+  return ids.map((id) => tagsMap.get(safe(id)) || null).filter(Boolean).filter((t) => t?.isActive !== false)
 }
 
 const buildTagCounters = (videos, tagsMap) => {
@@ -170,18 +222,34 @@ const topTagModels = (countsMap, tagsMap, limit = 4) =>
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
 
+function pickAssignmentType(video) {
+  const type = safe(video?.contextType).trim().toLowerCase()
+
+  if (type === 'entity') return 'entity'
+  if (type === 'meeting') return 'meeting'
+  return 'none'
+}
+
+function pickAssignmentText(video) {
+  const type = pickAssignmentType(video)
+
+  if (type === 'entity') return 'ניתוח קבוצה'
+
+  if (type === 'meeting') {
+    const rawMeetingDate = safe(video?.meetingDate || video?.date || '')
+    return rawMeetingDate
+      ? `פגישה בתאריך ${getFullDateIl(rawMeetingDate)}`
+      : 'פגישה'
+  }
+
+  return 'ללא שיוך'
+}
+
 export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
   const team = entity || null
   const videosAll = asArr(team?.videos)
 
-  const state =
-    team == null
-      ? DOMAIN_STATE.PARTIAL
-      : getDomainState({
-          count: videosAll.length,
-          isLocked: false,
-          isStale: false,
-        })
+  const state = team == null ? DOMAIN_STATE.PARTIAL : getDomainState({ count: videosAll.length, isLocked: false, isStale: false })
 
   const f = {
     q: hasText(filters.q) ? safe(filters.q) : '',
@@ -236,6 +304,10 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
 
   const tagCountsAll = buildTagCounters(videosFiltered, tagsMap)
   const topTagsAll = topTagModels(tagCountsAll, tagsMap, 4)
+  const totalTags = (entity?.videos || []).reduce((sum, video) => {
+    const count = Array.isArray(video?.tagIds) ? video.tagIds.length : 0
+    return sum + count
+  }, 0)
 
   const playerIdsWithVideos = new Set()
   let keyPlayersWithVideos = 0
@@ -252,6 +324,7 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
       const date = pickVideoDate(video)
       const monthKey = getMonthKey(video)
       const tagIds = getTagIdsFromVideo(video)
+      const hasNotes = !!safe(video?.notes).trim()
 
       if (playerId) {
         playerIdsWithVideos.add(playerId)
@@ -262,15 +335,11 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
       }
 
       return {
-        id:
-          safe(video?.id) ||
-          `${pickVideoUrl(video)}_${date}_${index}`,
-        video,
-        title: pickVideoTitle(video),
-        notes: pickVideoNotes(video),
+        id: video?.id,
+        ...video,
         date,
         dateLabel: date ? getFullDateIl(date) : '—',
-        month: monthKey,
+        monthKey,
         monthLabel: monthKey ? getMonthLabel(monthKey) : '—',
         player,
         playerId,
@@ -279,8 +348,11 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
         videoUrl: pickVideoUrl(video),
         hasLink: !!pickVideoUrl(video),
         tagIds,
+        hasNotes,
         tagsFull: resolveTagsFullForVideo(video, tagsMap),
         tagsCount: tagIds.length,
+        assignmentType: pickAssignmentType(video),
+        assignmentText: pickAssignmentText(video),
       }
     })
 
@@ -294,11 +366,11 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
     monthsCount: new Set(videos.map((x) => x.month).filter(Boolean)).size,
     topTagsAll,
     month: f.month || '',
+    last2MonthsAnalysis: buildLast2MonthsAnalysis(videos),
+    totalTags
   }
 
-  const options = {
-    months: Array.from(new Set(videosAll.map(getMonthKey).filter(Boolean))).sort().reverse(),
-  }
+  const options = {months: Array.from(new Set(videosAll.map(getMonthKey).filter(Boolean))).sort().reverse()}
 
   return {
     state,

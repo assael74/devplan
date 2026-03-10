@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\ui\domains\video\videoAnalysis\VideoCardMedia.js
+// ui/domains/video/videoAnalysis/VideoCardMedia.js
+
 import React, { useMemo, useState, useCallback } from 'react'
 import {
   Box,

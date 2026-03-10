@@ -10,7 +10,7 @@ import MeetingSelectField from '../../../../../ui/fields/selectUi/meetings/Meeti
 import YearPicker from '../../../../../ui/fields/dateUi/YearPicker.js'
 import MonthPicker from '../../../../../ui/fields/dateUi/MonthPicker.js'
 
-import { videoAttachDrawerSx as sx } from './videoAttachDrawer.sx'
+import { videoAttachDrawerSx as sx } from '../sx/videoAttachDrawer.sx'
 
 export default function VideoAttachDrawerBody({
   draft,

@@ -1,4 +1,5 @@
 // ui/domains/tags/TagsContainer.js
+
 import React, { useState, useMemo, useCallback } from 'react'
 import { Box, Chip, Input, IconButton, Typography, Autocomplete } from '@mui/joy'
 import CloseRounded from '@mui/icons-material/CloseRounded'
@@ -29,6 +30,9 @@ export default function TagsContainer({
   maxTags = 20,
   showCounter = true,
   type,
+  chipVariant = 'solid',
+  typeColor: typeColorProp,
+  chipSx,
 }) {
   const [input, setInput] = useState('')
 
@@ -42,7 +46,6 @@ export default function TagsContainer({
 
   const buckets = useTagPickerOptions({ options, selectedIds })
   const bucket = buckets[scopeType] || buckets.general
-
   const { selectedTags, availableOptions } = bucket
 
   const iconId = type === 'analysis' ? 'videoAnalysis' : 'videoGeneral'
@@ -59,23 +62,16 @@ export default function TagsContainer({
     (id) => {
       if (!onChange) return
       const clean = safeId(id)
-      if (!clean) return
-      if (selectedIds.includes(clean)) return
-      if (selectedIds.length >= maxTags) return
+      if (!clean || selectedIds.includes(clean) || selectedIds.length >= maxTags) return
       onChange([...selectedIds, clean])
     },
     [selectedIds, onChange, maxTags]
   )
 
-  const commitCustom = useCallback(() => {
-    if (!allowCustom) return
-    setInput('')
-  }, [allowCustom])
-
-  const typeColor = useMemo(() => {
-    const bg = getEntityColors(iconId)?.bg
-    return bg || 'neutral.softBg'
-  }, [iconId])
+  const resolvedTypeColor = useMemo(() => {
+    if (typeColorProp) return typeColorProp
+    return getEntityColors(iconId)?.accent || getEntityColors(iconId)?.bg || 'neutral.500'
+  }, [typeColorProp, iconId])
 
   return (
     <Box sx={sx.root}>
@@ -100,13 +96,14 @@ export default function TagsContainer({
           selectedTags.map((t) => {
             const id = safeId(t?.id)
             const label = safeLabel(t?.tagName || t?.slug || id)
+
             return (
               <Box key={id} onClick={!readonly ? () => removeId(id) : undefined}>
                 <Chip
                   size="sm"
-                  variant="soft"
+                  variant={chipVariant}
                   endDecorator={!readonly ? <CloseRounded /> : null}
-                  sx={sx.chip(typeColor, readonly)}
+                  sx={[ sx.chip(resolvedTypeColor, readonly, chipVariant), chipSx ]}
                 >
                   {label}
                 </Chip>
@@ -148,8 +145,13 @@ export default function TagsContainer({
 
                 return (
                   <Box component="li" {...props} sx={sx.optionRow}>
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0 }} startDecorator={iconUi({id: iconId, sx: { color: typeColor }})}>
-                       {label}
+                    <Typography
+                      level="body-sm"
+                      noWrap
+                      sx={{ minWidth: 0 }}
+                      startDecorator={iconUi({ id: iconId, sx: { color: resolvedTypeColor } })}
+                    >
+                      {label}
                     </Typography>
 
                     {useCount != null ? (
@@ -161,27 +163,6 @@ export default function TagsContainer({
                 )
               }}
             />
-          )}
-
-          {allowCustom && (
-            <Box sx={sx.inputRow}>
-              <Input
-                size="sm"
-                value={input}
-                placeholder="הוסף תג חופשי"
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    commitCustom()
-                  }
-                }}
-                sx={sx.input}
-              />
-              <IconButton size="sm" variant="soft" onClick={commitCustom} disabled={!input.trim()}>
-                <AddRounded />
-              </IconButton>
-            </Box>
           )}
         </Box>
       )}

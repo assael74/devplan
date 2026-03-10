@@ -5,6 +5,7 @@ import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { tableSx as sx } from '../sx/teamGamesTable.sx.js'
+import { getGameDifficultyLabelH } from '../logic/teamGames.domain.logic.js'
 
 const resultColorById = {
   win: 'success',
@@ -27,6 +28,7 @@ export default function TeamGamesRow({ row, onEdit }) {
   const iconVlink = hasVlink ? 'addLink' : 'noLink'
   const colorIcon = hasVlink ? 'success' : 'danger'
   const tipVlink = hasVlink ? 'יש קישור למשחק' : 'אין קישור למשחק'
+  const difficultyText = getGameDifficultyLabelH(row?.difficulty)
 
   const rowHoverSx = {
     ...sx.rowCardSx,
@@ -76,11 +78,11 @@ export default function TeamGamesRow({ row, onEdit }) {
       </Box>
 
       <Box sx={sx.centerCellSx}>
-        <Tooltip title={row?.difficultyH || '—'}>
+        <Tooltip title={difficultyText}>
           <Chip
             size="sm"
             variant="soft"
-            startDecorator={row?.difficulty ? iconUi({ id: row.difficulty, size: 'sm' }) : null}
+            startDecorator={iconUi({ id: row.difficulty || 'help', size: 'sm' })}
           />
         </Tooltip>
       </Box>

@@ -1,79 +1,72 @@
-// previewDomainCard/domains/team/games/components/drawer/EditDrawer.js
+// previewDomainCard/domains/team/videos/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
+import { useVideoUpdate } from '../../../../../../../../hooks/useVideoUpdate.js'
 
-//import EditDrawerHeader from './EditDrawerHeader.js'
-//import EditFormDrawer from './EditFormDrawer.js'
+import EditDrawerHeader from './EditDrawerHeader.js'
+import EditFormDrawer from './EditFormDrawer.js'
 
 import {
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-  calcResultByGoals,
 } from './editDrawer.utils.js'
 
 import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
-export default function EditDrawer({ open, game, onClose, onSaved }) {
-  const initial = useMemo(() => buildInitialDraft(game), [game])
+export default function EditDrawer({ open, video, onClose, onSaved, context }) {
+  const initial = useMemo(() => buildInitialDraft(video), [video])
   const [draft, setDraft] = useState(initial)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
+    setIsSaving(false)
   }, [open, initial])
-
-  useEffect(() => {
-    const autoResult = calcResultByGoals(draft.goalsFor, draft.goalsAgainst)
-    if (!autoResult) return
-
-    setDraft((prev) => {
-      if (prev.result === autoResult) return prev
-      return { ...prev, result: autoResult }
-    })
-  }, [draft.goalsFor, draft.goalsAgainst])
-
-  const liveGame = useMemo(() => {
-    const gf = draft.goalsFor
-    const ga = draft.goalsAgainst
-    const result = calcResultByGoals(gf, ga) || draft.result || ''
-
-    return {
-      ...initial.raw,
-
-    }
-  }, [initial.raw, draft])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
-  const { run, pending } = useGameHubUpdate(initial.raw)
-  const canSave = !!initial.id && isDirty && !pending
+  const { run, pending } = useVideoUpdate(initial.raw)
+
+  const saving = isSaving || pending
+  const canSave = !!initial.id && isDirty && !saving
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('gameQuickEdit', patch, {
-      section: 'teamGameQuickEdit',
-      gameId: initial.id,
-    })
+    try {
+      setIsSaving(true)
 
-    onSaved(patch, { ...initial.raw, ...patch })
-    onClose()
+      await run('videoQuickEdit', patch, {
+        section: 'teamVideoQuickEdit',
+        videoId: initial.id,
+      })
+
+      onSaved(patch, { ...initial.raw, ...patch })
+      onClose()
+    } catch (error) {
+      console.error('EditDrawer save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleReset = () => setDraft(initial)
+  const handleReset = () => {
+    if (saving) return
+    setDraft(initial)
+  }
 
   return (
     <Drawer
       open={!!open}
       size="md"
       anchor="right"
-      onClose={pending ? undefined : onClose}
+      onClose={saving ? undefined : onClose}
       slotProps={{
         content: {
           sx: {
@@ -86,27 +79,33 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
     >
       <Sheet sx={sx.drawerSheetSx}>
         <Box sx={sx.drawerRootSx}>
-          
+          <EditDrawerHeader video={video} />
 
-
+          <EditFormDrawer
+            draft={draft}
+            setDraft={setDraft}
+            video={video}
+            context={context}
+          />
 
           <Box sx={sx.footerSx}>
             <Box sx={sx.footerActionsSx}>
               <Button
-                loading={pending}
+                loading={saving}
+                loadingPosition="start"
                 disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
+                startDecorator={!saving ? iconUi({ id: 'save' }) : null}
                 onClick={handleSave}
                 sx={sx.conBut}
               >
-                שמירה
+                {saving ? 'שומר...' : 'שמירה'}
               </Button>
 
               <Button
                 color="neutral"
                 variant="outlined"
                 onClick={onClose}
-                disabled={pending}
+                disabled={saving}
               >
                 ביטול
               </Button>
@@ -114,7 +113,7 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
               <Tooltip title="איפוס טופס">
                 <span>
                   <IconButton
-                    disabled={!isDirty}
+                    disabled={!isDirty || saving}
                     size="sm"
                     variant="soft"
                     sx={sx.icoRes}
@@ -127,7 +126,7 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
             </Box>
 
             <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+              {saving ? 'שומר עדכון...' : isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
             </Typography>
           </Box>
         </Box>
