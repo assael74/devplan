@@ -1,9 +1,10 @@
 // preview/previewDomainCard/domains/player/videos/components/PlayerVideosKpi.js
 
 import React from 'react'
-import { Box, Chip, Sheet, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
 import { heroSx as sx } from '../sx/playerVideosKpi.sx.js'
 
 function KpiCard({ label, value, subValue, icon }) {
@@ -41,7 +42,7 @@ export default function PlayerVideosKpi({ entity, summary, filteredCount }) {
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
             <Box sx={sx.heroIconBoxSx}>
-              {iconUi({ id: 'video', size: 'md', sx: { color: '#fff' } })}
+              <Avatar src={entity?.photo || playerImage} />
             </Box>
 
             <Box sx={sx.heroTextWrapSx}>

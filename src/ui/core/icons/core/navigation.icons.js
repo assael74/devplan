@@ -20,7 +20,6 @@ export const navigationIcons = {
   games: <ViewTimeline />,
   payments: <Payment />,
   clubs: <Business />,
-  meetings: <CalendarMonth />,
   teams: <Groups />,
   players: <PeopleAlt />,
   videos: <VideoLibrary />,

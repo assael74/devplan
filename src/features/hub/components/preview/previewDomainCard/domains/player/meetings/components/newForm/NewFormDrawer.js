@@ -1,4 +1,4 @@
-// previewDomainCard/domains/team/games/components/newForm/NewFormDrawer.js
+// previewDomainCard/domains/player/meetings/components/newForm/NewFormDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, ModalClose, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
@@ -7,7 +7,7 @@ import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { createActions } from '../../../../../../../../../../ui/forms/create/createActions.js'
 
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import GameCreateForm from '../../../../../../../../../../ui/forms/GameCreateForm.js'
+import MeetingCreateForm from '../../../../../../../../../../ui/forms/MeetingCreateForm.js'
 
 import {
   buildInitialDraft,
@@ -40,12 +40,12 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
     try {
       setIsSaving(true)
 
-      const res = await createActions.game({ draft })
+      const res = await createActions.meeting({ draft })
 
       onSaved(res || draft)
       onClose()
     } catch (error) {
-      console.error('create game failed:', error)
+      console.error('create meeting failed:', error)
     } finally {
       setIsSaving(false)
     }
@@ -78,7 +78,7 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
           <ModalClose sx={{ mt: 2, mr: 2 }} />
 
           <Box sx={{ position: 'sticky', zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-            <GameCreateForm
+            <MeetingCreateForm
               draft={draft}
               onDraft={setDraft}
               onValidChange={setIsValid}

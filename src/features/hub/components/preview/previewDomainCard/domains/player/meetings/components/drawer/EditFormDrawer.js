@@ -8,13 +8,13 @@ import DateInputField from '../../../../../../../../../../ui/fields/dateUi/DateI
 import HourInputField from '../../../../../../../../../../ui/fields/dateUi/HourInputField'
 import MonthYearPicker from '../../../../../../../../../../ui/fields/dateUi/MonthYearPicker'
 import MeetingTypeSelectField from '../../../../../../../../../../ui/fields/selectUi/meetings/MeetingTypeSelectField'
-import MeetingStatusSelectField from '../../../../../../../../../../ui/fields/checkUi/meetings/MeetingStatusSelector.js'
-import VideoLinkField from '../../../../../../../../../../ui/fields/inputUi/videos/VideoLinkField'
+import MeetingStatusSelectField from '../../../../../../../../../../ui/fields/selectUi/meetings/MeetingStatusField.js'
+import VideoSelectField from '../../../../../../../../../../ui/fields/selectUi/videos/VideoSelectField'
 import MeetingsCommentsField from '../../../../../../../../../../ui/fields/inputUi/meetings/MeetingCommentsField.js'
 
 import { drawerFormrSx as sx } from '../../sx/editFormDrawer.sx.js'
 
-export default function EditFormDrawer({ draft, setDraft }) {
+export default function EditFormDrawer({ draft, setDraft, context }) {
   const onChange = (key) => (value) => {
     setDraft((prev) => ({
       ...prev,
@@ -29,13 +29,15 @@ export default function EditFormDrawer({ draft, setDraft }) {
     }))
   }
 
+  const videoAnalysisOption = context.videoAnalysis.filter(v=>v.contextType === 'floating')
+  
   return (
     <Box sx={sx.bodySx} className="dpScrollThin">
       <Box sx={sx.sectionCardSx}>
         <Typography sx={sx.sectionTitleSx}>פרטי הפגישה</Typography>
 
         <Box sx={{ display: 'grid', gap: 0.85 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1.5fr .5fr', gap: 0.85 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0.85 }}>
             <DateInputField
               label="תאריך"
               value={draft?.meetingDate || ''}
@@ -49,7 +51,7 @@ export default function EditFormDrawer({ draft, setDraft }) {
             />
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.85 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0.85 }}>
             <MeetingTypeSelectField
               label="סוג פגישה"
               value={draft?.type || ''}
@@ -59,23 +61,24 @@ export default function EditFormDrawer({ draft, setDraft }) {
 
             <MeetingStatusSelectField
               label="סטטוס"
-              value={draft?.status || ''}
+              value={draft?.statusId || ''}
+              currentId={draft?.statusId || ''}
               options={MEETING_STATUSES}
-              onChange={onChange('status')}
+              onChange={onChange('statusId')}
             />
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.85 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0.85 }}>
             <MonthYearPicker
               label="חודש / שנה"
               value={draft?.meetingFor || ''}
               onChange={onChange('meetingFor')}
             />
 
-            <VideoLinkField
-              label="קישור לוידאו"
-              value={draft?.videoLink || ''}
-              onChange={onInputChange('videoLink')}
+            <VideoSelectField
+              value={draft?.videoId || ''}
+              options={videoAnalysisOption}
+              onChange={onChange('videoId')}
             />
           </Box>
 

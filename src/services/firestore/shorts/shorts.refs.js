@@ -28,7 +28,6 @@ export const shortsRefs = {
 
  meetings: {
    meetingDate: { collection: 'meetingShorts', docId: '8V1UmfUSpQwdx9LdWzeD' },
-   meetingVideo: { collection: 'meetingShorts', docId: 'Kc1fm8c1RdrBQhAuavuK' },
    meetingPlayer: { collection: 'meetingShorts', docId: 'ZTSPHFV9uAfYNxw33I0b' },
    meetingNotes: { collection: 'meetingShorts', docId: 'osfDQ7rWAKa3dwpey6zE' },
  },

@@ -1,21 +1,25 @@
 // ui/forms/MeetingCreateForm.js
-import React, { useEffect, useMemo } from 'react'
-import { Box, Divider, FormControl, FormLabel, Input, Typography } from '@mui/joy'
 
-import DateInputField from '../fields/dateUi/DateInputField'
-import MonthYearPicker from '../fields/dateUi/MonthYearPicker'
-import MeetingTypeSelectField from '../fields/selectUi/meetings/MeetingTypeSelectField'
-import PlayerSelectField from '../fields/selectUi/players/PlayerSelectField'
+import React, { useEffect, useMemo } from 'react'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+
+import MeetingCreateFields from './ui/meetings/MeetingCreateFields.js'
+import { getMeetingCreateFormLayout } from './layouts/meetingCreateForm.layout.js'
 
 const clean = (v) => String(v ?? '').trim()
 
-export default function MeetingCreateForm({ draft, onDraft, onValidChange, context }) {
-  const players =
-    context?.playersList ||
-    context?.players ||
-    context?.teamPlayers ||
-    context?.clubPlayers ||
-    []
+export default function MeetingCreateForm({
+  draft = {},
+  onDraft,
+  onValidChange,
+  context = {},
+  variant = 'modal',
+  forceMobile = false,
+}) {
+  const theme = useTheme()
+  const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = forceMobile || isMobileViewport
 
   const validity = useMemo(() => {
     const meetingDate = clean(draft?.meetingDate)
@@ -40,54 +44,18 @@ export default function MeetingCreateForm({ draft, onDraft, onValidChange, conte
     onValidChange(validity.isValid)
   }, [validity.isValid, onValidChange])
 
+  const layout = useMemo(() => {
+    return getMeetingCreateFormLayout({ variant, isMobile })
+  }, [variant, isMobile])
+
   return (
-    <Box sx={{ display: 'grid', gap: 2 }}>
-
-      <Box sx={{ display: 'grid', gap: 1.5, mb: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-        <PlayerSelectField
-          label="שחקן"
-          value={draft?.playerId || ''}
-          size="sm"
-          readOnly={true}
-          options={players}
-          context={context}
-        />
-        <MeetingTypeSelectField
-          value={draft?.type || ''}
-          onChange={(v) => onDraft({ ...draft, type: v })}
-          required
-          error={!validity.okType}
-          size="sm"
-        />
-      </Box>
-
-      <Divider />
-
-      <Typography level="title-sm">פרטי פגישה</Typography>
-
-      <Box sx={{ display: 'grid', alignItems: 'center', gap: 1, gridTemplateColumns: { xs: '1fr', md: '1fr 0fr 1fr' } }}>
-        <DateInputField
-          label="תאריך"
-          value={draft?.meetingDate || ''}
-          timeValue={draft?.meetingHour || ''}
-          onChange={(v) => onDraft({ ...draft, meetingDate: v })}
-          onTimeChange={(v) => onDraft({ ...draft, meetingHour: v })}
-          error={!validity.okDate}
-          required
-          size="sm"
-          context='meeting'
-        />
-        <Divider orientation="vertical" />
-        <MonthYearPicker
-          label="חודש"
-          value={draft?.meetingFor || ''}
-          onChange={(v) => onDraft({ ...draft, meetingFor: v })}
-          error={!validity.okFor}
-          required
-          size="sm"
-        />
-      </Box>
-
-    </Box>
+    <MeetingCreateFields
+      draft={draft}
+      onDraft={onDraft}
+      onValidChange={onValidChange}
+      context={context}
+      validity={validity}
+      layout={layout}
+    />
   )
 }

@@ -1,73 +1,75 @@
-import React from 'react';
-import { Autocomplete, Typography, Box } from '@mui/joy';
-import { iconUi } from '../../../core/icons/iconUi.js';
-import { FormControl, FormLabel, FormHelperText } from '@mui/joy';
+// src/ui/fields/selectUi/videos/VideoSelectField.js
 
-export default function TeamSelectField({
+import React, { useMemo, useCallback } from 'react'
+import {
+  Select,
+  Option,
+  FormControl,
+  FormLabel,
+} from '@mui/joy'
+
+import playerImage from '../../../core/images/playerImage.jpg'
+import { playersSlot } from '../select.sx.js'
+
+import { buildOptions, findSelected } from './logic/videoSelect.logic.js'
+import VideoSelectValue from './ui/VideoSelectValue.js'
+import VideoOptionRow from './ui/VideoOptionRow.js'
+
+const clean = (v) => String(v ?? '').trim()
+
+export default function VideoSelectField({
   value,
   onChange,
   options = [],
-  clubId = '',
   disabled,
-  helperText,
   required,
-  readOnly,
+  error,
   size = 'sm',
-  error
+  readOnly,
+  label = 'שיוך וידאו',
+  placeholder = 'בחר וידאו…',
+  playerId,
+  teamId,
 }) {
-  const filteredOptions = options
-    .filter((t) => t.clubId === clubId)
-    .map((t) => ({ label: t.teamName, value: t.id, teamYear: t.teamYear }));
-  const selectedOption = filteredOptions.find((t) => t.value === value) || null;
+  const normalizedOptions = useMemo(
+    () => buildOptions(options, { playerId, teamId, fallbackImage: playerImage }),
+    [options, playerId, teamId]
+  )
+
+  const selectedOpt = useMemo(
+    () => findSelected(value, normalizedOptions),
+    [value, normalizedOptions]
+  )
+
+  const handleChange = useCallback(
+    (_, nextValue) => {
+      if (!readOnly) onChange(clean(nextValue))
+    },
+    [onChange, readOnly]
+  )
 
   return (
-    <>
-      <FormControl sx={{ width: '100%' }}>
-        <FormLabel required={required} sx={{ fontSize: '12px' }}>שייך קבוצה</FormLabel>
-        <Autocomplete
-          size={size}
-          readOnly={readOnly}
-          color={error ? 'danger' : 'neutral'}
-          options={filteredOptions}
-          value={selectedOption}
-          onChange={(_, val) => onChange(val?.value || '')}
-          getOptionLabel={(option) => option.label}
-          isOptionEqualToValue={(option, value) => option.value === value.value}
-          startDecorator={iconUi({id: 'teams'})}
-          placeholder="בחר קבוצה"
-          disabled={disabled || !clubId}
-          variant="soft"
-          sx={{ '&:hover': { backgroundColor: '#eef4ff' } }}
-          renderOption={(props, option) => {
-            const { ownerState, ...rest } = props;
-            return (
-              <li
-                {...rest}
-                style={{
-                  listStyle: 'none',
-                  paddingTop: 1,
-                  paddingBottom: 1,
-                  backgroundColor: ownerState.focused
-                    ? '#e6f0ff'  // ריחוף — כחול מאוד עדין
-                    : ownerState.selected
-                    ? '#d0e1ff'  // בחירה — כחול טיפונת יותר כהה
-                    : 'transparent',
-                  transition: 'background-color 0.2s ease',
-                  borderRadius: 8,
-                  margin: 2,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-start', direction: 'rtl', pr: 1 }}>
-                  <Typography level="body-xs" color="neutral">
-                    {option.label} | {option.teamYear}
-                  </Typography>
-                </Box>
-              </li>
-            );
-          }}
-        />
-        <FormHelperText>{helperText}</FormHelperText>
-      </FormControl>
-    </>
-  );
+    <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
+      <FormLabel required={required} sx={{ fontSize: '12px' }}>
+        {label}
+      </FormLabel>
+
+      <Select
+        size={size}
+        disabled={disabled}
+        readOnly={readOnly}
+        value={clean(value) || null}
+        onChange={handleChange}
+        placeholder={placeholder}
+        slotProps={playersSlot}
+        renderValue={() => <VideoSelectValue opt={selectedOpt} />}
+      >
+        {normalizedOptions.map((opt) => (
+          <Option key={opt.value} value={opt.value}>
+            <VideoOptionRow opt={opt} />
+          </Option>
+        ))}
+      </Select>
+    </FormControl>
+  )
 }

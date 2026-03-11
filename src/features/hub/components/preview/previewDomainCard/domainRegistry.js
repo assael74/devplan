@@ -4,8 +4,8 @@ import InfoDomainSummary from './domains/player/info/InfoDomainSummary'
 import InfoDomainModal from './domains/player/info/InfoDomainModal'
 import PlayerMeetingsDomainSummary from './domains/player/meetings/PlayerMeetingsDomainSummary'
 import PlayerMeetingsDomainModal from './domains/player/meetings/PlayerMeetingsDomainModal'
-import PaymentsDomainSummary from './domains/player/payments/PaymentsDomainSummary'
-import PaymentsDomainModal from './domains/player/payments/PaymentsDomainModal'
+import PlayerPaymentsDomainSummary from './domains/player/payments/PlayerPaymentsDomainSummary'
+import PlayerPaymentsDomainModal from './domains/player/payments/PlayerPaymentsDomainModal'
 import PerformanceDomainSummary from './domains/player/performance/performanceDomainSummary.js'
 import PerformanceDomainModal from './domains/player/performance/performanceDomainModal.js'
 import PlayerAbilitiesDomainSummary from './domains/player/abilities/PlayerAbilitiesDomainSummary.js'
@@ -72,8 +72,8 @@ export const DOMAIN_REGISTRY = {
       key: 'payments',
       image: paymentsImg,
       iconId: 'payments',
-      Summary: PaymentsDomainSummary,
-      Modal: PaymentsDomainModal,
+      Summary: PlayerPaymentsDomainSummary,
+      Modal: PlayerPaymentsDomainModal,
       container: 'modal',
       visualType: 'image',
     },

@@ -4,121 +4,215 @@ import { getFullDateIl } from '../../../../../../../../../../shared/format/dateU
 
 export const safe = (v) => (v == null ? '' : String(v))
 
-export const toNumOrEmpty = (v) => {
-  if (v === '' || v == null) return ''
-  const n = Number(v)
-  return Number.isFinite(n) ? n : ''
+const clean = (v) => safe(v).trim()
+
+export const getMeetingStatusId = (status) => {
+  if (!status) return ''
+  if (typeof status === 'string') return status.trim()
+
+  if (typeof status === 'object') {
+    return clean(status?.current?.id || status?.id)
+  }
+
+  return ''
+}
+
+export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
+  const cleanNext = clean(nextStatusId)
+  if (!cleanNext) return null
+
+  const now = Date.now()
+
+  if (prevStatus && typeof prevStatus === 'object') {
+    const prevHistory = Array.isArray(prevStatus?.history) ? prevStatus.history : []
+    const prevCurrentId = clean(prevStatus?.current?.id || prevStatus?.id)
+
+    if (prevCurrentId === cleanNext) {
+      return {
+        ...prevStatus,
+        current: {
+          ...(prevStatus?.current || {}),
+          id: cleanNext,
+          time: prevStatus?.current?.time || now,
+        },
+        history: prevHistory,
+      }
+    }
+
+    return {
+      current: {
+        id: cleanNext,
+        time: now,
+      },
+      history: [
+        ...prevHistory,
+        {
+          id: cleanNext,
+          time: now,
+        },
+      ],
+    }
+  }
+
+  const prevFlat = typeof prevStatus === 'string' ? prevStatus.trim() : ''
+  const history = []
+
+  if (prevFlat) {
+    history.push({
+      id: prevFlat,
+      time: now,
+    })
+  }
+
+  history.push({
+    id: cleanNext,
+    time: now,
+  })
+
+  return {
+    current: {
+      id: cleanNext,
+      time: now,
+    },
+    history,
+  }
 }
 
 export const buildMeetingName = (meeting) => {
-  const typeLabel =
-    safe(meeting?.typeLabel).trim() ||
-    safe(meeting?.meetingTypeLabel).trim() ||
-    safe(meeting?.title).trim() ||
-    safe(meeting?.type).trim()
+  const date = clean(meeting?.meetingDate)
+  const hour = clean(meeting?.meetingHour)
+  const type = clean(meeting?.typeLabel || meeting?.type)
+  const meetingFor = clean(meeting?.meetingFor)
 
-  const date =
-    safe(meeting?.meetingDate).trim() ||
-    safe(meeting?.dateRaw).trim() ||
-    safe(meeting?.date).trim()
-
-  return [typeLabel, date].filter(Boolean).join(' • ') || 'פגישה'
+  return [type, meetingFor, date, hour].filter(Boolean).join(' • ') || 'פגישה'
 }
 
 export const buildMeetingMeta = (meeting) => {
-  const playerName =
-    safe(meeting?.playerName).trim() ||
-    safe(meeting?.player?.name).trim() ||
-    safe(meeting?.player?.fullName).trim()
-
-  const rawDate =
-    safe(meeting?.meetingDate).trim() ||
-    safe(meeting?.dateRaw).trim() ||
-    safe(meeting?.date).trim()
-
-  const dateLabel =
-    safe(meeting?.dateLabel).trim() ||
-    safe(getFullDateIl(rawDate)).trim()
-
-  const hour =
-    safe(meeting?.meetingHour).trim() ||
-    safe(meeting?.hourRaw).trim() ||
-    safe(meeting?.hour).trim()
+  const playerName = `${meeting?.player?.playerFirstName || ''} ${meeting?.player?.playerLastName || ''}`.trim()
+  const rawDate = clean(meeting?.meetingDate)
+  const dateLabel = clean(meeting?.dateLabel) || clean(getFullDateIl(rawDate))
+  const hour = clean(meeting?.meetingHour)
 
   return [playerName, dateLabel, hour].filter(Boolean).join(' | ') || 'פרטי פגישה'
 }
 
 export const buildInitialDraft = (meeting) => {
-  const m = meeting || {}
-  const source = m?.meeting || m || {}
+  const source = meeting || {}
+  const linkedVideo = source?.video || null
 
   return {
-    id: source?.id || m?.id || m?.meetingId || '',
+    id: source?.id || '',
     name: buildMeetingName(source),
-    photo:
-      source?.photo ||
-      source?.playerPhoto ||
-      source?.player?.photo ||
-      '',
-    playerName:
-      source?.playerName ||
-      source?.player?.name ||
-      source?.player?.fullName ||
-      '',
-    meetingDate: source?.meetingDate || source?.dateRaw || source?.date || '',
-    meetingHour: source?.meetingHour || source?.hourRaw || source?.hour || '',
-    type: source?.type || '',
-    status: source?.status || '',
+    meetingDate: source?.meetingDate || '',
+    meetingHour: source?.meetingHour || '',
     meetingFor: source?.meetingFor || '',
-    videoLink: source?.videoLink || source?.vLink || '',
-    notes:
-      source?.notes ||
-      source?.summary ||
-      '',
+    type: source?.type || '',
+    statusId: getMeetingStatusId(source?.status),
+    notes: source?.notes || '',
+
+    videoId: linkedVideo?.id || '',
+    rawVideoId: linkedVideo?.id || '',
+    rawVideoInfo: linkedVideo?.videoInfo || null,
+    rawVideo: linkedVideo || null,
+
     raw: source,
     metaLabel: buildMeetingMeta(source),
   }
 }
 
-export const buildPatch = (draft, initial) => {
+export const buildMeetingPatch = (initial, draft) => {
   const next = {}
 
-  if (draft.meetingDate !== initial.meetingDate) {
-    next.meetingDate = draft.meetingDate || ''
+  if ((draft?.meetingDate || '') !== (initial?.meetingDate || '')) {
+    next.meetingDate = draft?.meetingDate || ''
   }
 
-  if (draft.meetingHour !== initial.meetingHour) {
-    next.meetingHour = draft.meetingHour || ''
+  if ((draft?.meetingHour || '') !== (initial?.meetingHour || '')) {
+    next.meetingHour = draft?.meetingHour || ''
   }
 
-  if (draft.type !== initial.type) {
-    next.type = draft.type || ''
+  if ((draft?.meetingFor || '') !== (initial?.meetingFor || '')) {
+    next.meetingFor = draft?.meetingFor || ''
   }
 
-  if (draft.status !== initial.status) {
-    next.status = draft.status || ''
+  if ((draft?.type || '') !== (initial?.type || '')) {
+    next.type = draft?.type || ''
   }
 
-  if (draft.meetingFor !== initial.meetingFor) {
-    next.meetingFor = draft.meetingFor || ''
+  if ((draft?.statusId || '') !== (initial?.statusId || '')) {
+    next.status = buildMeetingStatusObject(initial?.raw?.status, draft?.statusId)
   }
 
-  if (draft.videoLink !== initial.videoLink) {
-    next.videoLink = draft.videoLink || ''
-  }
-
-  if (draft.notes !== initial.notes) {
-    next.notes = draft.notes || ''
+  if ((draft?.notes || '') !== (initial?.notes || '')) {
+    next.notes = draft?.notes || ''
   }
 
   return next
 }
 
-export const getIsDirty = (draft, initial) =>
-  draft.meetingDate !== initial.meetingDate ||
-  draft.meetingHour !== initial.meetingHour ||
-  draft.type !== initial.type ||
-  draft.status !== initial.status ||
-  draft.meetingFor !== initial.meetingFor ||
-  draft.videoLink !== initial.videoLink ||
-  draft.notes !== initial.notes
+export const buildVideoPlan = (initial, draft) => {
+  const initialVideoId = clean(initial?.rawVideoId)
+  const nextVideoId = clean(draft?.videoId)
+
+  if (initialVideoId === nextVideoId) {
+    return {
+      unlinkPrev: null,
+      linkNext: null,
+    }
+  }
+
+  const meetingId = clean(initial?.id || initial?.raw?.id)
+  const playerId = clean(
+    initial?.raw?.playerId ||
+    initial?.raw?.player?.id
+  )
+
+  const unlinkPrev =
+    initialVideoId && initial?.rawVideoInfo
+      ? {
+          videoId: initialVideoId,
+          videoInfo: initial.rawVideoInfo,
+          patch: {
+            contextType: 'floating',
+            objectType: null,
+            meetingId: null,
+            playerId: null,
+          },
+        }
+      : null
+
+  const linkNext =
+    nextVideoId
+      ? {
+          videoId: nextVideoId,
+          patch: {
+            contextType: 'meeting',
+            objectType: 'meeting',
+            meetingId,
+            playerId,
+          },
+        }
+      : null
+
+  return {
+    unlinkPrev,
+    linkNext,
+  }
+}
+
+export const buildPatch = (initial, draft) => {
+  return {
+    meetingPatch: buildMeetingPatch(initial, draft),
+    videoPlan: buildVideoPlan(initial, draft),
+  }
+}
+
+export const getIsDirty = (initial, draft) => {
+  const { meetingPatch, videoPlan } = buildPatch(initial, draft)
+
+  return (
+    Object.keys(meetingPatch).length > 0 ||
+    !!videoPlan?.unlinkPrev ||
+    !!videoPlan?.linkNext
+  )
+}

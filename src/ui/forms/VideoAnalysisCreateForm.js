@@ -1,20 +1,15 @@
 // ui/forms/VideoAnalysisCreateForm.js
 import React, { useEffect, useMemo } from 'react'
 import{ Box, Sheet, Divider, Typography } from '@mui/joy'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 import { vaSx } from './sx/form.sx.js'
-import { getVideoModes, getVideoDisabled } from './helpers/videoForm.helpers.js'
+import { getVideoModes, getVideoDisabled, getVideoVisible } from './helpers/videoForm.helpers.js'
 import { iconUi } from '../core/icons/iconUi.js'
 
-import VideoLinkField from '../fields/inputUi/videos/VideoLinkField'
-import VideoNameField from '../fields/inputUi/videos/VideoNameField'
-import YearPicker from '../fields/dateUi/YearPicker.js'
-import MonthPicker from '../fields/dateUi/MonthPicker.js'
-import MeetingSelectField from '../fields/selectUi/meetings/MeetingSelectField.js'
-import TeamSelectField from '../fields/selectUi/teams/TeamSelectField.js'
-import PlayerSelectField from '../fields/selectUi/players/PlayerSelectField.js'
-import VideoObjectTypeSelectField from '../fields/selectUi/videos/videoAnalysis/VideoObjectTypeSelectField.js'
-import VideoContextTypeSelectField from '../fields/selectUi/videos/videoAnalysis/VideoContextTypeSelectField.js'
+import VideoAnalysisCreateFields from './ui/videoAnalysis/VideoAnalysisCreateFields.js'
+import { getVideoAnalysisCreateFormLayout } from './layouts/videoAnalysisCreateForm.layout.js'
 
 import {
   VIDEOANALYSIS_OBJECTTYPES,
@@ -23,7 +18,14 @@ import {
 
 const clean = (v) => String(v ?? '').trim()
 
-export default function VideoAnalysisCreateForm({ draft, onDraft, onValidChange, context }) {
+export default function VideoAnalysisCreateForm({
+  draft = {},
+  onDraft,
+  onValidChange,
+  context = {},
+  variant = 'modal',
+  forceMobile = false,
+}) {
   const {
     name = '',
     link = '',
@@ -35,6 +37,10 @@ export default function VideoAnalysisCreateForm({ draft, onDraft, onValidChange,
     teamId = '',
     playerId = '',
   } = draft
+
+  const theme = useTheme()
+  const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = forceMobile || isMobileViewport
 
   const hasContext = !!context
   const locks = draft?.__locks || {}
@@ -48,6 +54,11 @@ export default function VideoAnalysisCreateForm({ draft, onDraft, onValidChange,
   const disabled = useMemo(
     () => getVideoDisabled(contextType, objectType, hasContext, locks),
     [contextType, objectType, hasContext, locks]
+  )
+
+  const visible = useMemo(
+    () => getVideoVisible(contextType, objectType, locks, draft),
+    [contextType, objectType, locks, draft]
   )
 
   const showLockNote = !!(
@@ -172,104 +183,25 @@ export default function VideoAnalysisCreateForm({ draft, onDraft, onValidChange,
     onValidChange(validity.isValid)
   }, [validity.isValid, onValidChange])
 
+  const layout = useMemo(() => {
+    return getVideoAnalysisCreateFormLayout({ variant, isMobile })
+  }, [variant, isMobile])
+
   return (
-    <Box sx={vaSx.root}>
-      {/* Basic */}
-      <Box sx={vaSx.grid2}>
-        <Box sx={vaSx.cell}>
-          <VideoNameField value={name} onChange={(v) => onDraft({ ...draft, name: v })} required />
-        </Box>
-        <Box sx={vaSx.cell}>
-          <VideoLinkField value={link} onChange={(v) => onDraft({ ...draft, link: v })} required />
-        </Box>
-      </Box>
-
-      <Divider sx={vaSx.divider}>
-        <Typography level="body-sm">שיוך הוידאו</Typography>
-      </Divider>
-
-      {showLockNote && (
-        <Sheet variant="soft" color="warning" sx={vaSx.showLo} >
-          {iconUi({ id: 'lock' })}
-          <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
-            השיוך נקבע לפי מקור הפתיחה ולא ניתן לשינוי
-          </Typography>
-        </Sheet>
-      )}
-
-      {/* Context + Object */}
-      <Box sx={vaSx.grid2}>
-        <Box sx={vaSx.cell}>
-          <VideoContextTypeSelectField
-            required
-            value={contextType}
-            disabled={!!locks.lockContextType}
-            onChange={(v) => onDraft({ ...draft, contextType: v, objectType: '', meetingId: null, teamId: null, playerId: null })}
-            options={contextTypeOptions}
-          />
-        </Box>
-
-        <Box sx={vaSx.cell}>
-          <VideoObjectTypeSelectField
-            required
-            value={objectType}
-            onChange={(v) => onDraft({ ...draft, objectType: v })}
-            options={objectTypeOptions}
-            disabled={disabled.disableObjectType}
-            readOnly={isMeetingMode || !!locks.lockObjectType}
-          />
-        </Box>
-      </Box>
-
-      <Box sx={vaSx.grid3}>
-        <Box sx={vaSx.cell}>
-          <MeetingSelectField
-            value={meetingId || ''}
-            onChange={(v) => onDraft({ ...draft, meetingId: v })}
-            options={context?.meetings || []}
-            context={context}
-            disabled={disabled.disableMeeting}
-            required={isMeetingMode}
-          />
-        </Box>
-
-        <Box sx={vaSx.cell}>
-          <PlayerSelectField
-            value={playerId || ''}
-            onChange={(v) => onDraft({ ...draft, playerId: v })}
-            context={context}
-            options={context?.players}
-            disabled={disabled.disablePlayer}
-            required={isEntityMode && objectType === 'player'}
-          />
-        </Box>
-
-        <Box sx={vaSx.cell}>
-          <TeamSelectField
-            value={teamId || ''}
-            onChange={(v) => onDraft({ ...draft, teamId: v })}
-            context={context}
-            options={context?.teams}
-            clubId={draft?.clubId || ''}
-            disabled={disabled.disableTeam}
-            required={isEntityMode && objectType === 'team'}
-          />
-        </Box>
-      </Box>
-
-      <Divider sx={vaSx.divider}>
-        <Typography level="body-sm">זמנים</Typography>
-      </Divider>
-
-      {/* Time */}
-      <Box sx={vaSx.grid2}>
-        <Box sx={vaSx.cell}>
-          <YearPicker value={year} onChange={(v) => onDraft({ ...draft, year: v })} />
-        </Box>
-        <Box sx={vaSx.cell}>
-          <MonthPicker value={month} onChange={(v) => onDraft({ ...draft, month: v })} />
-        </Box>
-      </Box>
-    </Box>
+    <VideoAnalysisCreateFields
+      locks={locks}
+      draft={draft}
+      layout={layout}
+      onDraft={onDraft}
+      context={context}
+      visible={visible}
+      validity={validity}
+      disabled={disabled}
+      isEntityMode={isEntityMode}
+      onValidChange={onValidChange}
+      isMeetingMode={isMeetingMode}
+      objectTypeOptions={objectTypeOptions}
+      contextTypeOptions={contextTypeOptions}
+    />
   )
 }

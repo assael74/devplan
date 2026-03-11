@@ -38,3 +38,27 @@ export const getVideoDisabled = (contextType, objectType, hasContext = true, loc
 
   return { disableMeeting, disablePlayer, disableTeam, disableObjectType }
 }
+
+export const getVideoVisible = (contextType, objectType, locks = {}, draft = {}) => {
+  const isMeetingMode = contextType === 'meeting'
+  const hasPlayer = !!String(draft?.playerId || '').trim()
+  const hasTeam = !!String(draft?.teamId || '').trim()
+
+  if (isMeetingMode) {
+    return {
+      showContextTypeField: !locks?.lockContextType,
+      showObjectTypeField: false,
+      showMeetingField: true,
+      showPlayerField: hasPlayer,
+      showTeamField: !hasPlayer && hasTeam,
+    }
+  }
+
+  return {
+    showContextTypeField: !locks?.lockContextType,
+    showObjectTypeField: !locks?.lockObjectType,
+    showMeetingField: false,
+    showPlayerField: objectType === 'player',
+    showTeamField: objectType === 'team',
+  }
+}

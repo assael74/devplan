@@ -13,7 +13,7 @@ const findOpt = (options, value) => {
 }
 
 function SelectValue({ option, textKey = 'labelH' }) {
-  const label = option?.[textKey] || option?.label || ''
+  const label = option[textKey] || option?.label || ''
 
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
@@ -38,7 +38,7 @@ const buildStatusOptions = () => [
 const videoOptions = [
   { id: 'all', label: 'כל הווידאו', idIcon: 'video' },
   { id: 'withVideo', label: 'עם וידאו', idIcon: 'video' },
-  { id: 'noVideo', label: 'ללא וידאו', idIcon: 'videoOff' },
+  { id: 'noVideo', label: 'ללא וידאו', idIcon: 'noVideo' },
 ]
 
 export default function PlayerMeetingsFilters({

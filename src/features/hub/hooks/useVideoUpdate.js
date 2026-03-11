@@ -1,18 +1,20 @@
 // features/hub/hooks/useVideoHubUpdate.js
 import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
 
-export function useVideoUpdate(active) {
+export function useVideoUpdate(active, fallbackId = '') {
+  const resolvedId = fallbackId || active?.id || ''
+
   const analysisUpdate = useUpdateAction({
     routerEntityType: 'videoAnalysis',
     snackEntityType: 'video',
-    id: active?.id,
+    id: resolvedId,
     entityName: active?.name || active?.title || 'וידאו',
     requireAnyUpdated: true,
   })
 
   const run = (type, patch, meta) => {
     const update = analysisUpdate
-    const videoId = meta?.videoId || active?.id
+    const videoId = meta?.videoId || resolvedId
     const shouldCreate = Array.isArray(patch?.tagIds)
 
     return update.runUpdate(patch, {

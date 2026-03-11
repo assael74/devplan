@@ -6,7 +6,7 @@ import PlayerMeetingEmpty from './PlayerMeetingEmpty.js'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { tableSx as sx } from '../sx/playerMeetingsTable.sx.js'
 
-export default function PlayerMeetingsTable({ rows = [], onEditMeeting }) {
+export default function PlayerMeetingsTable({ rows = [], onEditMeeting, onCreateVideo }) {
   const [dateSort, setDateSort] = useState('desc')
 
   const sortedRows = useMemo(() => {
@@ -45,7 +45,12 @@ export default function PlayerMeetingsTable({ rows = [], onEditMeeting }) {
         <PlayerMeetingEmpty />
       ) : (
         sortedRows.map((row) => (
-          <PlayerMeetingsRow key={row.id || `${row.dateRaw}-${row.typeId}`} row={row} onEdit={() => onEditMeeting(row)} />
+          <PlayerMeetingsRow
+            key={row.id || `${row.dateRaw}-${row.typeId}`}
+            row={row}
+            onEdit={() => onEditMeeting(row)} 
+            onCreate={() => onCreateVideo(row)}
+          />
         ))
       )}
     </Sheet>

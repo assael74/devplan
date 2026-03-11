@@ -70,7 +70,7 @@ export default function HubPage() {
   const navigate = useNavigate()
   const { openCreate } = useCreateModal()
 
-  const { players, clubs, teams, roles, scouting, meetings, tags, loading, error } = useCoreData()
+  const { players, clubs, teams, roles, scouting, meetings, videoAnalysis, tags, loading, error } = useCoreData()
   const s = useHubState({
     corePlayers: players,
     coreClubs: clubs,
@@ -79,8 +79,7 @@ export default function HubPage() {
     coreScouting: scouting,
     coreMeetings: meetings,
   })
-  //const createModal = useCreateModal()
-
+  
   const tabsMeta = useMemo(() => buildTabsMeta(s.MODE), [s.MODE])
 
   const routesByType = useMemo(() => buildRoutesByType(), [])
@@ -143,9 +142,10 @@ export default function HubPage() {
       roles: roles || [],
       meetings: meetings || [],
       tags: tags || [],
+      videoAnalysis: videoAnalysis || [],
       video: videoApi,
     }
-  }, [s.previewSelection, clubs, teams, players, roles, meetings, tags, videoApi])
+  }, [s.previewSelection, clubs, teams, players, roles, meetings, tags, videoApi, videoAnalysis])
 
   const permissions = useMemo(() => ({ allowCreate: true }), [])
 

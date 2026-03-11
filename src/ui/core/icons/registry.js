@@ -7,6 +7,7 @@ import { genralIcons } from './core/genral.icons';
 import { playerIcons } from './entities/players.icons';
 import { gameIcons } from './entities/games.icons';
 import { teamIcons } from './entities/teams.icons';
+import { meetingIcons } from './entities/meetings.icons';
 import { videoIcons } from './entities/video.icons';
 import { tagIcons } from './entities/tags.icons';
 import { entitiesIcons } from './entities/entities.icons.js'
@@ -31,4 +32,5 @@ export const appIconMap = {
   ...abilitiesIcon,
   ...entitiesIcons,
   ...gameIcons,
+  ...meetingIcons
 };

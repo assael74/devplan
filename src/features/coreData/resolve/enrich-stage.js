@@ -111,14 +111,21 @@ export function enrichPlayers(merged, indexes, teams) {
   })
 }
 
-export function enrichMeetings(merged, indexes) {
+export function enrichMeetings(merged, indexes, players = []) {
   const { meetingsBase = [] } = merged
   const { videosByMeetingId } = indexes
 
-  return meetingsBase.map((meeting) => ({
-    ...meeting,
-    videos: videosByMeetingId.get(String(meeting.id)) || [],
-  }))
+  const playerById = new Map(players.map((player) => [safeId(player.id), player]))
+
+  return meetingsBase.map((meeting) => {
+    const playerId = safeId(meeting?.playerId)
+
+    return {
+      ...meeting,
+      player: playerId ? playerById.get(playerId) || null : null,
+      videos: videosByMeetingId.get(String(meeting.id)) || [],
+    }
+  })
 }
 
 export function enrichScouting(merged) {

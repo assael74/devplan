@@ -22,9 +22,7 @@ import { getEntityColors } from '../core/theme/Colors'
 const CREATE_ACTIONS_BY_ENTITY = {
   player: ({ isProject }) => {
     const actions = [
-      { type: 'meeting', label: 'פגישה חדשה', iconKey: 'meeting' },
       { type: 'abilities', label: 'טופס יכולות חדש', iconKey: 'abilities' },
-      { type: 'videoAnalysis', label: 'טופס יצירת וידאו', iconKey: 'addVideo' },
     ]
 
     if (isProject) {
@@ -41,7 +39,6 @@ const CREATE_ACTIONS_BY_ENTITY = {
   ],
 
   club: () => [
-    { type: 'meeting', label: 'פגישה', iconKey: 'meeting' },
     { type: 'team', label: 'קבוצה חדשה', iconKey: 'team' },
   ],
 

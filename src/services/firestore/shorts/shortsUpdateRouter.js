@@ -101,6 +101,14 @@ export const shortsUpdateRouterMap = {
     tags: { shortKey: 'meetings.meetingNotes', path: 'tags', mode: 'merge' },
   },
 
+  payments: {
+    status: { shortKey: 'payments.paymentOperative', path: 'status', mode: 'merge' },
+
+    paymentFor: { shortKey: 'payments.paymentProfit', path: 'paymentFor', mode: 'merge' },
+    price: { shortKey: 'payments.paymentProfit', path: 'price', mode: 'merge' },
+    type: { shortKey: 'payments.paymentProfit', path: 'type', mode: 'merge' },
+  },
+
   games: {
     difficulty: { shortKey: 'games.gameInfo', path: 'difficulty', mode: 'merge' },
     home: { shortKey: 'games.gameInfo', path: 'home', mode: 'merge' },

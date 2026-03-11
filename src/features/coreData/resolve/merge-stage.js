@@ -60,12 +60,7 @@ export function mergeCoreShorts({
 
   const playersBase = mergeShorts(playersShorts, 'playersInfo', PLAYER_MERGE_DOCS, 'id')
   const scoutingBase = mergeShorts(scoutingShorts, 'playersInfo', ['playersGames'], 'id')
-  const meetingsBase = mergeShorts(
-    meetingsShorts,
-    'meetingDate',
-    ['meetingNotes', 'meetingVideo', 'meetingPlayer'],
-    'id'
-  )
+  const meetingsBase = mergeShorts(meetingsShorts,'meetingDate',['meetingNotes', 'meetingPlayer'],'id')
   const paymentsBase = mergeShorts(
     paymentsShorts,
     'paymentOperative',

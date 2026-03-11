@@ -1,6 +1,7 @@
 import React from 'react'
-import { Box, Chip, Sheet, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 
+import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { heroSx as sx } from '../sx/playerMeetingsKpi.sx.js'
 
@@ -14,7 +15,9 @@ function KpiCard({ label, value, subValue, icon }) {
 
       <Typography sx={sx.kpiValueSx}>{value}</Typography>
 
-      {!!subValue && <Typography sx={sx.kpiSubValueSx}>{subValue}</Typography>}
+      <Box sx={sx.kpiSubBoxSx}>
+        <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
+      </Box>
     </Sheet>
   )
 }
@@ -22,7 +25,6 @@ function KpiCard({ label, value, subValue, icon }) {
 export default function PlayerMeetingsKpi({ entity, summary, filteredCount }) {
   const nextMeeting = summary?.nextMeeting || null
   const playerName =  `${entity?.playerFirstName} ${entity?.playerLastName}`.trim()
-
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
       <Box sx={sx.heroGlowSx} />
@@ -31,7 +33,9 @@ export default function PlayerMeetingsKpi({ entity, summary, filteredCount }) {
       <Box sx={sx.heroContentSx}>
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
-            <Box sx={sx.heroIconBoxSx}>{iconUi({ id: 'meetings', size: 'md', sx: { color: '#fff' } })}</Box>
+            <Box sx={sx.heroIconBoxSx}>
+              <Avatar src={entity?.photo || playerImage} />
+            </Box>
 
             <Box sx={sx.heroTextWrapSx}>
               <Typography level="title-md" sx={sx.heroTitleSx}>
@@ -53,29 +57,26 @@ export default function PlayerMeetingsKpi({ entity, summary, filteredCount }) {
           <KpiCard
             label="סה״כ מפגשים"
             value={summary?.total ?? 0}
-            icon={iconUi({ id: 'meetings', size: 'sm' })}
-            subValue='d'
+            icon={iconUi({ id: 'meetingDone', size: 'sm' })}
           />
 
           <KpiCard
             label="עתידיים"
             value={summary?.upcomingCount ?? 0}
-            icon={iconUi({ id: 'calendar', size: 'sm' })}
-            subValue='d'
+            icon={iconUi({ id: 'meetingReminder', size: 'sm' })}
+            subValue={nextMeeting ? `${nextMeeting.dateLabel}${nextMeeting.hourRaw ? ` • ${nextMeeting.hourRaw}` : ''}` : 'אין מפגש קרוב'}
           />
 
           <KpiCard
             label="עם וידאו"
             value={summary?.withVideo ?? 0}
             icon={iconUi({ id: 'video', size: 'sm' })}
-            subValue='d'
           />
 
           <KpiCard
             label="עם הערות"
             value={summary?.withNotes ?? 0}
             icon={iconUi({ id: 'notes', size: 'sm' })}
-            subValue={nextMeeting ? `${nextMeeting.dateLabel}${nextMeeting.hourRaw ? ` • ${nextMeeting.hourRaw}` : ''}` : 'אין מפגש קרוב'}
           />
         </Box>
       </Box>

@@ -10,8 +10,6 @@ import {
 export const entitiesIcons = {
   payment: <Payments />,
   payments: <Payments />,
-  meeting: <Event />,
-  meetings: <Event />,
   player: <Person />,
   players: <Person />,
   team: <Groups />,

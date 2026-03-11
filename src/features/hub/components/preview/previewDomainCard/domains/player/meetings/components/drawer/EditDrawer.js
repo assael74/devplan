@@ -1,27 +1,27 @@
-// previewDomainCard/domains/team/games/components/drawer/EditDrawer.js
+// previewDomainCard/domains/player/meetings/components/drawer/EditDrawer.js
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { useMeetingHubUpdate } from '../../../../../../../../hooks/useMeetingHubUpdate.js'
+import { useVideoUpdate } from '../../../../../../../../hooks/useVideoUpdate.js'
 import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditFormDrawer from './EditFormDrawer.js'
 
-import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-} from './editDrawer.utils.js'
-
+import { buildInitialDraft, buildPatch, getIsDirty } from './editDrawer.utils.js'
 import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
-export default function EditDrawer({ open, meeting, onClose, onSaved }) {
+export default function EditDrawer({ open, meeting, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(meeting), [meeting])
   const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
+
+  useEffect(() => {
+    setDraft(initial)
+  }, [initial])
 
   const liveMeeting = useMemo(() => {
     return {
@@ -30,22 +30,43 @@ export default function EditDrawer({ open, meeting, onClose, onSaved }) {
     }
   }, [initial?.raw, draft])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => getIsDirty(initial, draft), [initial, draft])
+  const { meetingPatch, videoPlan } = useMemo(() => buildPatch(initial, draft), [initial, draft])
+  const videoRuntimeId = videoPlan?.unlinkPrev?.videoId || videoPlan?.linkNext?.videoId || draft?.videoId || ''
 
-  const { run, pending } = useMeetingHubUpdate(initial?.raw)
+  const { run: runMeetingUpdate, pending: meetingPending } = useMeetingHubUpdate(initial?.raw)
+  const { run: runVideoUpdate, pending: videoPending } = useVideoUpdate(initial?.rawVideo || null, videoRuntimeId)
+
+  const pending = meetingPending || videoPending
   const canSave = !!initial?.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('meetingQuickEdit', patch, {
-      section: 'playerMeetingsQuickEdit',
-      id: initial.id,
-      meetingId: initial.id,
-    })
+    if (Object.keys(meetingPatch).length > 0) {
+      await runMeetingUpdate('meetingQuickEdit', meetingPatch, {
+        section: 'playerMeetingsQuickEdit',
+        id: initial.id,
+        meetingId: initial.id,
+      })
+    }
 
-    onSaved(patch, { ...initial.raw, ...patch })
+    if (videoPlan?.unlinkPrev) {
+      await runVideoUpdate('meetingVideoUnlink', videoPlan.unlinkPrev.patch, {
+        section: 'meetingVideoUnlink',
+        videoId: videoPlan.unlinkPrev.videoId,
+      })
+    }
+
+    if (videoPlan?.linkNext) {
+      await runVideoUpdate('meetingVideoLink', videoPlan.linkNext.patch, {
+        section: 'meetingVideoLink',
+        videoId: videoPlan.linkNext.videoId,
+      })
+    }
+
+    onSaved({ meetingPatch, videoPlan, }, { ...initial.raw, ...meetingPatch, })
+
     onClose()
   }
 
@@ -66,8 +87,8 @@ export default function EditDrawer({ open, meeting, onClose, onSaved }) {
           if (entityType !== 'meeting') return
           if (id !== meeting.id) return
 
-          onClose?.()
-          onSaved?.(null, null, { deletedId: meeting.id })
+          onClose()
+          onSaved(null, null, { deletedId: meeting.id })
         },
       }
     )
@@ -96,6 +117,7 @@ export default function EditDrawer({ open, meeting, onClose, onSaved }) {
           <EditFormDrawer
             draft={draft}
             setDraft={setDraft}
+            context={context}
             liveMeeting={liveMeeting}
           />
 

@@ -49,7 +49,7 @@ export function resolveCoreDataNext(input) {
 
   const teams = enrichTeams(merged, indexes)
   const players = enrichPlayers(merged, indexes, teams)
-  const meetings = enrichMeetings(merged, indexes)
+  const meetings = enrichMeetings(merged, indexes, players)
   const scouting = enrichScouting(merged)
 
   const playersWithVideos = attachPlayerStatsAndVideos(players, merged, indexes, teams)

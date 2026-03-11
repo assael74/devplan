@@ -113,28 +113,37 @@ export const createActions = {
 
     const initialStatus = { id: 'new', time: now }
 
+    const meetingDateItem = {
+      id,
+      meetingDate: draft.meetingDate,
+      meetingFor: draft.meetingFor,
+      meetingHour: draft.meetingHour,
+    }
+
+    const meetingPlayerItem = {
+      id,
+      playerId: draft.playerId,
+      status: {
+        current: initialStatus,
+        history: [initialStatus],
+      },
+      type: draft.type,
+    }
+
     await createShort({
       shortKey: 'meetings.meetingDate',
-      item: {
-        id,
-        meetingDate: draft.meetingDate,
-        meetingFor: draft.meetingFor,
-        meetingHour: draft.meetingHour,
-      },
+      item: meetingDateItem,
     })
 
     await createShort({
       shortKey: 'meetings.meetingPlayer',
-      item: {
-        id,
-        playerId: draft.playerId,
-        status: {
-          current: initialStatus,
-          history: [initialStatus],
-        },
-        type: draft.type,
-      },
+      item: meetingPlayerItem,
     })
+
+    return {
+      ...meetingDateItem,
+      ...meetingPlayerItem,
+    }
   },
 
   game: async ({ draft }) => {
