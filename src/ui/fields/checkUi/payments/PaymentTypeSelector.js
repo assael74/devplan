@@ -1,6 +1,6 @@
 /// ui/fields/checkUi/payments/PaymentTypeSelector.js
 import * as React from 'react';
-import { chipActiveProps } from '../X_Style';
+import { chipActiveProps } from './sx/checkUiPayments.sx.js';
 import { iconUi } from '../../../core/icons/iconUi.js';
 import { Box, FormControl, FormLabel, Chip, Typography } from '@mui/joy';
 
@@ -23,7 +23,7 @@ export default function PaymentTypeSelector({
   return (
     <FormControl sx={{ width: '100%' }} disabled={disabled}>
       {label && (
-        <Typography level="body-sm" sx={{ fontSize: '12px', lineHeight: 1.4, mb: 0.5, fontWeight: 500 }}>
+        <Typography level="body-sm" sx={{ fontSize: '12px', lineHeight: 1.2, fontWeight: 700 }}>
           {label} {required && '*'}
         </Typography>
       )}

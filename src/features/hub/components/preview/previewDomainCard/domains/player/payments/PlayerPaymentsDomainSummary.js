@@ -32,15 +32,11 @@ export default function PlayerPaymentsDomainSummary({ entity, context }) {
 
   const lastLabel = formatPaymentsLabel(summary?.lastPayment)
   const nextLabel = formatPaymentsLabel(summary?.nextOpenPayment)
-  //const hasNext = !!summary?.nextMeeting
-  //const count = summary?.total || 0
-
-  //const nextColor = count === 0 ? 'neutral' : hasNext ? 'primary' : 'success'
 
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, px: 0.5, width: '100%' }}>
       <Row label="אחרון" value={lastLabel} color="neutral" />
-      <Row label="הבא" value={nextLabel} color='neutral' />
+      <Row label="תשלום פתוח" value={nextLabel} color='danger' />
     </Box>
   )
 }

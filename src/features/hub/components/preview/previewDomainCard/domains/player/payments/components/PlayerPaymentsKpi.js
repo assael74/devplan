@@ -57,19 +57,26 @@ export default function PlayerPaymentsKpi({ entity, summary, filteredCount }) {
           <KpiCard
             label='סה"כ תשלומים'
             value={summary?.total ?? 0}
-            icon={iconUi({ id: 'payments', size: 'sm' })}
+            icon={iconUi({ id: 'payments', size: 'md' })}
           />
 
           <KpiCard
             label="שולמו"
-            value={summary.paidCount || 0}
-            icon={iconUi({ id: 'payments', size: 'sm' })}
+            value={summary.doneCount || 0}
+            icon={iconUi({ id: 'paymentRequst', size: 'md', sx: { color: '#6aa84f' } })}
           />
 
           <KpiCard
             label="פתוחים"
             value={summary.openCount || 0}
-            icon={iconUi({ id: 'payments', size: 'sm' })}
+            icon={iconUi({ id: 'isNotPaid', size: 'md', sx: { color: '#f44336' } })}
+          />
+
+          <KpiCard
+            label='סה"כ שולם'
+            value={`${summary?.doneAmount ?? 0} ₪`}
+            subValue={`ללא מע"מ ${summary?.doneAmountNoVat ?? 0} ₪`}
+            icon={iconUi({ id: 'isInvoice', size: 'md', sx: { color: '#6aa84f' } })}
           />
         </Box>
       </Box>

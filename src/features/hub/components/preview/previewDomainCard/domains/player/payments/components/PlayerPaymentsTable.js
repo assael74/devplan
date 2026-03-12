@@ -30,14 +30,14 @@ export default function PlayerPaymentsTable({ rows = [], onEditPayment }) {
           onClick={() => setDateSort((s) => (s === 'asc' ? 'desc' : 'asc'))}
           startDecorator={iconUi({ id: dateSort === 'desc' ? 'sortUp' : 'sortDown', size: 'sm' })}
         >
-          1
+          תשלום עבור
         </Typography>
 
-        <Typography level="title-sm" sx={sx.headTextSx}>2</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>3</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>4</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>5</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>6</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>סכום</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>סוג</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>סטטוס</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>תאריך</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>סכום ללא מעמ</Typography>
         <Typography level="title-sm" sx={sx.headTextSx}></Typography>
       </Box>
 

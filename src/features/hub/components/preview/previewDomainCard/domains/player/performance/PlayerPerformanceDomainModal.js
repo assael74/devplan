@@ -80,7 +80,7 @@ const buildHaystack = (pg) => {
 }
 // ---------- end helpers ----------
 
-export default function PerformanceDomainModal({ items, entity, onClose }) {
+export default function PlayerPerformanceDomainModal({ items, entity, onClose }) {
   const playerGames = useMemo(() => {
     if (Array.isArray(items) && items.length) return items
     return entity?.playerGames || []

@@ -155,7 +155,7 @@ export const heroSx = {
     minHeight: 16,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
 
   nextGameBoxSx: {

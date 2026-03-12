@@ -29,7 +29,7 @@ export default function JoyStarRatingStatic({
           style: { color },
         };
 
-        if (full) return <StarIcon key={index} sx={{ fontSize: iconSize, color }} />;
+        if (full) return <StarIcon key={index} sx={{ fontSize: iconSize, color, }} />;
         if (half) {
           return (
             <Box key={index} sx={{ position: 'relative', width: iconSize, height: iconSize, mt: size === 'xs' ? -0.3 : 0 }} >
@@ -44,7 +44,7 @@ export default function JoyStarRatingStatic({
                   overflow: 'hidden',
                 }}
               >
-                <StarBorderIcon sx={{ fontSize: iconSize, color: '#888', }} />
+                <StarBorderIcon sx={{ fontSize: iconSize, color: '#888' }} />
               </Box>
 
               {/* חצי ימני - צהוב */}
@@ -63,7 +63,7 @@ export default function JoyStarRatingStatic({
             </Box>
           );
         }
-        return <StarBorderIcon key={index} sx={{ fontSize: iconSize, color: '#888', }} />;
+        return <StarBorderIcon key={index} sx={{ fontSize: iconSize, color: '#888' }} />;
       })}
     </Box>
   );

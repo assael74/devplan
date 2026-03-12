@@ -15,6 +15,16 @@ const pickStats = (row) => row?.stats || row || {}
 const typeMetaById = Object.fromEntries((GAME_TYPE || []).map((x) => [x.id, x]))
 const diffMetaById = Object.fromEntries((GAME_DIFFICULTY || []).map((x) => [x.id, x]))
 
+export function getLeaguePointsSummary(summary) {
+  const leaguePoints = summary?.leaguePoints || {}
+
+  return {
+    leaguePossible: leaguePoints?.possible ?? 0,
+    leagueAchieved: leaguePoints?.achieved ?? 0,
+    leagueSuccessPct: leaguePoints?.successPct ?? 0,
+  }
+}
+
 export const getGameDifficultyLabelH = (difficultyId) => {
   if (!difficultyId) return 'לא הוגדר'
 

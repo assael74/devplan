@@ -9,35 +9,59 @@ export default function PlayerPaymentsRow({ row, onEdit, onCreate }) {
     <Box sx={sx.rowCardSx}>
       <Box sx={sx.mainCellSx}>
         <Typography level="body-sm" sx={sx.mainValueSx}>
-          1
+          {row?.paymentFor}
         </Typography>
-
       </Box>
 
       <Box sx={sx.mainCellSx}>
-        2
+        <Typography level="body-sm" sx={sx.mainValueSx}>
+          {row?.onlyPriceLable}
+        </Typography>
       </Box>
 
       <Box sx={sx.centerCellSx}>
-        3
+        <Typography
+          level="body-sm"
+          sx={sx.mainValueSx}
+          startDecorator={iconUi({id: row?.type.idIcon})}
+        >
+          {row?.type.labelH}
+        </Typography>
       </Box>
 
       <Box sx={sx.centerCellSx}>
-      4
+        <Chip
+          size="md"
+          color={row?.status.color}
+          variant='solid'
+          startDecorator={iconUi({id: row?.status.idIcon})}
+        >
+          {row?.status.labelH || '—'}
+        </Chip>
       </Box>
 
       <Box sx={sx.centerCellSx}>
-      5
+        <Typography
+          level="body-sm"
+          sx={sx.subValueSx}
+        >
+          {row?.statusTime}
+        </Typography>
       </Box>
 
       <Box sx={sx.centerCellSx}>
-        6
+        <Typography
+          level="body-sm"
+          sx={sx.subValueSx}
+        >
+          {row?.priceVatLable}
+        </Typography>
       </Box>
 
       <Box sx={sx.centerCellSx}>
         <Tooltip title="עריכת תשלום">
-          <IconButton size="sm" variant="soft" onClick={() => onEdit(row)}>
-            {iconUi({ id: 'more', size: 'sm' })}
+          <IconButton size="md" variant="soft" onClick={() => onEdit(row)}>
+            {iconUi({ id: 'more' })}
           </IconButton>
         </Tooltip>
       </Box>

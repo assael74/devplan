@@ -18,7 +18,7 @@ const Row = ({ label, value, color }) => {
   )
 }
 
-export default function PerformanceDomainSummary({ entity }) {
+export default function PlayerPerformanceDomainSummary({ entity }) {
   const { stats } = useMemo(
     () => resolvePerformanceDomain(entity),
     [entity]

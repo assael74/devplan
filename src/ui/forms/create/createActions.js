@@ -146,6 +146,41 @@ export const createActions = {
     }
   },
 
+  payment: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+
+    const initialStatus = { id: 'new', time: now }
+
+    const paymentProfitItem = {
+      id,
+      paymentFor: draft.paymentFor,
+      price: draft.price,
+      type: draft.type,
+    }
+
+    const paymentOperativeItem = {
+      id,
+      playerId: draft.playerId,
+      status: initialStatus,
+    }
+
+    await createShort({
+      shortKey: 'payments.paymentProfit',
+      item: paymentProfitItem,
+    })
+
+    await createShort({
+      shortKey: 'payments.paymentOperative',
+      item: paymentOperativeItem,
+    })
+
+    return {
+      ...paymentProfitItem,
+      ...paymentOperativeItem,
+    }
+  },
+
   game: async ({ draft }) => {
     const id = makeId()
     const now = Date.now()

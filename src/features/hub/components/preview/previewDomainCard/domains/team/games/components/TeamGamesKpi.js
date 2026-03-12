@@ -4,6 +4,8 @@ import React from 'react'
 import { Box, Chip, Sheet, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
+
+import { getLeaguePointsSummary } from '../logic/teamGames.domain.logic.js'
 import { heroSx as sx } from '../sx/teamGamesKpi.sx.js'
 
 function KpiCard({ label, value, subValue, icon }) {
@@ -34,10 +36,7 @@ export default function TeamGamesKpi({ entity, summary, filteredCount }) {
     ? `${summary.nextGame.rival} | ${summary.nextGame.homeLabel}`
     : 'אין משחק עתידי'
 
-  const leaguePoints = summary?.leaguePoints || {}
-  const leaguePossible = leaguePoints?.possible ?? 0
-  const leagueAchieved = leaguePoints?.achieved ?? 0
-  const leagueSuccessPct = leaguePoints?.successPct ?? 0
+  const { leaguePossible, leagueAchieved, leagueSuccessPct } = getLeaguePointsSummary(summary)
 
   return (
     <Sheet variant="plain" sx={sx.rootSx}>

@@ -1,41 +1,43 @@
-/// src/features/players/components/preview/PreviewDomainCard/domains/abilities/player/abilitiesDomainSummary.js
+/// preview/PreviewDomainCard/domains/abilities/player/abilitiesDomainSummary.js
+
 import React, { useMemo } from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
-import { resolveAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic.js'
 import { domainBoxSx } from '../../domain.sx'
+import { resolveAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic'
 
-const Row = ({ label, value, value2, color = 'neutral' }) => {
-  const has = value != null && String(value) !== ''
+const Row = ({ label, value, color = 'neutral' }) => {
+  const hasValue = value != null && String(value).trim() !== '' && value !== '—'
+
   return (
     <Box {...domainBoxSx}>
-      <Typography level="body-xs" sx={{ fontWeight: 700, opacity: 0.9 }}>
+      <Typography
+        level="body-xs"
+        sx={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.85 }}
+      >
         {label}
       </Typography>
-      <Chip size="sm" variant="soft" color={has ? color : 'neutral'}>
-        {has ? value : '—'}
+
+      <Chip size="sm" variant="soft" color={hasValue ? color : 'neutral'}>
+        {hasValue ? value : '—'}
       </Chip>
     </Box>
   )
 }
 
 export default function PlayerAbilitiesDomainSummary({ entity }) {
-  const { summary } = useMemo(
-    () => resolveAbilitiesDomain(entity),
-    [entity]
-  )
+  const { summary } = useMemo(() => resolveAbilitiesDomain(entity), [entity])
+
+  const completion = summary?.total ? `${summary.filled}/${summary.total}` : '—'
+  const avgAll = summary?.avgAll != null ? summary.avgAll : '—'
+  const strongest = summary?.strongest ? `${summary.strongest.domainLabel} ${summary.strongest.avg}` : '—'
+  const weakest = summary?.weakest ? `${summary.weakest.domainLabel} ${summary.weakest.avg}` : '—'
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.6, width: '100%' }}>
-      <Row
-        label="חוזקה:"
-        value={summary?.strongest ? `${summary.strongest.domainLabel} (${summary.strongest.avg})` : '—'}
-        color="success"
-      />
-      <Row
-        label="חולשה:"
-        value={summary?.weakest ? `${summary.weakest.domainLabel} (${summary.weakest.avg})` : '—'}
-        color="danger"
-      />
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 0.75, width: '100%' }}>
+      <Row label="הושלמו" value={completion} color="primary" />
+      <Row label="ממוצע" value={avgAll} color="success" />
+      <Row label="חוזקה" value={strongest} color="neutral" />
+      <Row label="חולשה" value={weakest} color="warning" />
     </Box>
   )
 }

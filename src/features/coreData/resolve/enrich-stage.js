@@ -23,6 +23,7 @@
  * - חיבור סרטונים לישויות
  */
  import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
+ import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
  import {
    buildPlayersWithStats,
    buildTeamsWithStats,
@@ -31,6 +32,7 @@
    buildTrainingWeeksSummary,
    buildTeamEventsByWeek,
    buildPlayerEventsByWeek,
+   buildPlayerGames
  } from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
@@ -89,10 +91,12 @@ export function enrichPlayers(merged, indexes, teams) {
     const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
     const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
     const teamGames = teamGamesByTeamId.get(teamId) || []
+    const playerGames = buildPlayerGames(teamGames, player.id)
     const generalPosition = getPlayerGeneralPosition(player.positions)
-
+    
     const paymentsIds = paymentsIdsByPlayerId.get(safeId(player.id)) || []
     const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
+    const age = getPlayerAge(player)
 
     return {
       ...player,
@@ -102,7 +106,9 @@ export function enrichPlayers(merged, indexes, teams) {
       teamMeetings,
       trainingWeeks,
       teamGames,
+      playerGames,
       payments,
+      age,
       generalPosition: {
         layerKey: generalPosition.layerKey,
         layerLabel: generalPosition.layerLabel,

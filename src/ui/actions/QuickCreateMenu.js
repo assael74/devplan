@@ -23,11 +23,7 @@ const CREATE_ACTIONS_BY_ENTITY = {
   player: ({ isProject }) => {
     const actions = [
       { type: 'abilities', label: 'טופס יכולות חדש', iconKey: 'abilities' },
-    ]
-
-    if (isProject) {
-      actions.push({ type: 'payment', label: 'תשלום חדש', iconKey: 'payment' })
-    }
+    ]    
 
     return actions
   },

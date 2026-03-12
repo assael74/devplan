@@ -1,13 +1,15 @@
 // src/features/players/components/preview/PreviewDomainCard/domainRegistry.js
 
-import InfoDomainSummary from './domains/player/info/InfoDomainSummary'
-import InfoDomainModal from './domains/player/info/InfoDomainModal'
+import PlayerInfoDomainSummary from './domains/player/info/PlayerInfoDomainSummary'
+import PlayerInfoDomainModal from './domains/player/info/PlayerInfoDomainModal'
+import PlayerGamesDomainModal from './domains/player/games/PlayerGamesDomainModal'
+import PlayerGamesDomainSummary from './domains/player/games/PlayerGamesDomainSummary'
 import PlayerMeetingsDomainSummary from './domains/player/meetings/PlayerMeetingsDomainSummary'
 import PlayerMeetingsDomainModal from './domains/player/meetings/PlayerMeetingsDomainModal'
 import PlayerPaymentsDomainSummary from './domains/player/payments/PlayerPaymentsDomainSummary'
 import PlayerPaymentsDomainModal from './domains/player/payments/PlayerPaymentsDomainModal'
-import PerformanceDomainSummary from './domains/player/performance/performanceDomainSummary.js'
-import PerformanceDomainModal from './domains/player/performance/performanceDomainModal.js'
+import PlayerPerformanceDomainSummary from './domains/player/performance/PlayerPerformanceDomainSummary.js'
+import PlayerPerformanceDomainModal from './domains/player/performance/PlayerPerformanceDomainModal.js'
 import PlayerAbilitiesDomainSummary from './domains/player/abilities/PlayerAbilitiesDomainSummary.js'
 import PlayerAbilitiesDomainModal from './domains/player/abilities/PlayerAbilitiesDomainModal.js'
 import PlayerVideosDomainSummary from './domains/player/videos/PlayerVideosDomainSummary.js'
@@ -52,8 +54,8 @@ export const DOMAIN_REGISTRY = {
       key: 'info',
       image: infoImg,
       iconId: 'info',
-      Summary: InfoDomainSummary,
-      Modal: InfoDomainModal,
+      Summary: PlayerInfoDomainSummary,
+      Modal: PlayerInfoDomainModal,
       container: 'modal',
       visualType: 'image',
     },
@@ -64,6 +66,16 @@ export const DOMAIN_REGISTRY = {
       iconId: 'meetings',
       Summary: PlayerMeetingsDomainSummary,
       Modal: PlayerMeetingsDomainModal,
+      container: 'modal',
+      visualType: 'image',
+    },
+
+    games: {
+      key: 'games',
+      image: gamesImg,
+      iconId: 'games',
+      Summary: PlayerGamesDomainSummary,
+      Modal: PlayerGamesDomainModal,
       container: 'modal',
       visualType: 'image',
     },
@@ -82,8 +94,8 @@ export const DOMAIN_REGISTRY = {
       key: 'performance',
       image: performanceImg,
       iconId: 'performance',
-      Summary: PerformanceDomainSummary,
-      Modal: PerformanceDomainModal,
+      Summary: PlayerPerformanceDomainSummary,
+      Modal: PlayerPerformanceDomainModal,
       container: 'modal',
       visualType: 'image',
     },

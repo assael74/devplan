@@ -1,18 +1,15 @@
 // shared/abilities/abilities.domain.logic.js
-import { abilitiesList } from './abilities.list'
-import { isRated, roundTo, toNum, scoreColor } from './abilities.utils'
 
-// משקלים – תומך ב־entity.abilityWeights או items
+import { abilitiesList } from './abilities.list'
+import { isRated, roundTo, toNum, scoreColor, fmtScore } from './abilities.utils'
+
 function resolveWeights(entity) {
-  const w1 = entity?.abilityWeights
-  if (w1 && typeof w1 === 'object') {
-    if (w1.items && typeof w1.items === 'object') return w1.items
-    return w1
-  }
-  return {}
+  const w = entity?.abilityWeights
+  if (!w || typeof w !== 'object') return {}
+  if (w.items && typeof w.items === 'object') return w.items
+  return w
 }
 
-// ערכי יכולות – תומך בכמה מבנים + קריאה עם { abilities }
 function resolveAbilitiesValues(entity) {
   return (
     entity?.abilities ||
@@ -23,26 +20,7 @@ function resolveAbilitiesValues(entity) {
   )
 }
 
-// ממוצע דומיין (משוקלל אם יש weights>0), תוך החרגת weight<=0 מה־level
-function calcDomainAvg(items = []) {
-  const filled = items.filter((i) => isRated(i.value))
-
-  // abilities עם weight<=0 לא נכנסות למדד level
-  const effective = filled.filter((i) => (toNum(i.weight, 1) || 0) > 0)
-  if (!effective.length) return NaN
-
-  const hasWeights = effective.some((i) => Number.isFinite(i.weight) && i.weight > 0)
-  if (hasWeights) {
-    const wSum = effective.reduce((s, i) => s + (toNum(i.weight, 0) || 0), 0)
-    if (!wSum) return NaN
-    return effective.reduce((s, i) => s + toNum(i.value, 0) * (toNum(i.weight, 0) || 0), 0) / wSum
-  }
-
-  return effective.reduce((s, i) => s + toNum(i.value, 0), 0) / effective.length
-}
-
-// בניית דומיינים לפי abilitiesList (SoT)
-function buildDomainsFromList({ values, weights }) {
+function buildDomainsFromList({ values = {}, weights = {} }) {
   const map = new Map()
 
   for (const a of abilitiesList) {
@@ -54,12 +32,12 @@ function buildDomainsFromList({ values, weights }) {
       })
     }
 
-    const rawVal = values?.[a.id]
-    const value = Number.isFinite(Number(rawVal)) ? Number(rawVal) : NaN
+    const rawValue = values?.[a.id]
+    const value = Number.isFinite(Number(rawValue)) ? Number(rawValue) : null
 
-    const wRaw = weights?.[a.id]
-    const weight = Number.isFinite(Number(wRaw))
-      ? Number(wRaw)
+    const rawWeight = weights?.[a.id]
+    const weight = Number.isFinite(Number(rawWeight))
+      ? Number(rawWeight)
       : Number.isFinite(Number(a.weight))
       ? Number(a.weight)
       : 1
@@ -76,64 +54,86 @@ function buildDomainsFromList({ values, weights }) {
   return Array.from(map.values())
 }
 
-// --- API גנרי ---
+function calcDomainAvg(items = []) {
+  const effective = items.filter((i) => (toNum(i.weight, 1) || 0) > 0 && isRated(i.value))
+  if (!effective.length) return null
+
+  const hasWeights = effective.some((i) => Number.isFinite(i.weight) && i.weight > 0)
+
+  if (hasWeights) {
+    const weightSum = effective.reduce((sum, i) => sum + (toNum(i.weight, 0) || 0), 0)
+    if (!weightSum) return null
+
+    const weightedSum = effective.reduce(
+      (sum, i) => sum + toNum(i.value, 0) * (toNum(i.weight, 0) || 0),
+      0
+    )
+
+    return roundTo(weightedSum / weightSum, 1)
+  }
+
+  return roundTo(
+    effective.reduce((sum, i) => sum + toNum(i.value, 0), 0) / effective.length,
+    1
+  )
+}
+
 export function resolveAbilitiesDomain(entity = {}) {
   const values = resolveAbilitiesValues(entity)
   const weights = resolveWeights(entity)
 
-  const domainsBase = buildDomainsFromList({ values, weights })
-
-  const domains = domainsBase.map((d) => {
-    const items = d.items || []
-
-    // Completion: נספר רק יכולות עם weight>0 (weight=0 = מידע נלווה)
+  const domains = buildDomainsFromList({ values, weights }).map((domain) => {
+    const items = domain.items || []
     const countable = items.filter((i) => (toNum(i.weight, 1) || 0) > 0)
-    const filled = countable.filter((i) => isRated(i.value)).length
-    const total = countable.length
-
-    const avgRaw = calcDomainAvg(items)
-    const avg = roundTo(avgRaw, 1)
-    const avgNum = Number.isFinite(Number(avg)) ? Number(avg) : NaN
+    const ratedItems = countable.filter((i) => isRated(i.value))
+    const avg = calcDomainAvg(items)
 
     return {
-      domain: d.domain,
-      domainLabel: d.domainLabel,
-      filled,
-      total,
-      avg: Number.isFinite(avgNum) ? avgNum : NaN,
-      color: scoreColor(avgNum),
+      domain: domain.domain,
+      domainLabel: domain.domainLabel,
       items,
+      total: countable.length,
+      filled: ratedItems.length,
+      avg,
+      avgLabel: fmtScore(avg),
+      color: scoreColor(avg),
+      hasRated: ratedItems.length > 0,
     }
   })
 
-  // סיכום כללי: completion + avgAll רק על weight>0
-  const totalAll = domains.reduce((s, d) => s + (d.total || 0), 0)
-  const filledAll = domains.reduce((s, d) => s + (d.filled || 0), 0)
+  const ratedDomains = domains.filter((d) => d.hasRated && Number.isFinite(Number(d.avg)))
 
-  const allFilledVals = []
+  const allRatedValues = []
   for (const d of domains) {
-    for (const it of d.items || []) {
-      if ((toNum(it.weight, 1) || 0) <= 0) continue
-      if (isRated(it.value)) allFilledVals.push(toNum(it.value, NaN))
+    for (const item of d.items || []) {
+      if ((toNum(item.weight, 1) || 0) <= 0) continue
+      if (!isRated(item.value)) continue
+      allRatedValues.push(toNum(item.value, 0))
     }
   }
 
-  const avgAllRaw = allFilledVals.length
-    ? allFilledVals.reduce((s, x) => s + toNum(x, 0), 0) / allFilledVals.length
-    : NaN
+  const total = domains.reduce((sum, d) => sum + (d.total || 0), 0)
+  const filled = domains.reduce((sum, d) => sum + (d.filled || 0), 0)
 
-  const avgAll = roundTo(avgAllRaw, 1)
-  const avgAllNum = Number.isFinite(Number(avgAll)) ? Number(avgAll) : NaN
+  const avgAll = allRatedValues.length
+    ? roundTo(allRatedValues.reduce((sum, x) => sum + x, 0) / allRatedValues.length, 1)
+    : null
 
-  const withAvg = domains.filter((d) => Number.isFinite(d.avg))
-  const strongest = withAvg.length ? withAvg.reduce((a, b) => (a.avg >= b.avg ? a : b)) : null
-  const weakest = withAvg.length ? withAvg.reduce((a, b) => (a.avg <= b.avg ? a : b)) : null
+  const strongest = ratedDomains.length
+    ? ratedDomains.reduce((a, b) => (a.avg >= b.avg ? a : b))
+    : null
+
+  const weakest = ratedDomains.length
+    ? ratedDomains.reduce((a, b) => (a.avg <= b.avg ? a : b))
+    : null
 
   return {
     summary: {
-      total: totalAll,
-      filled: filledAll,
-      avgAll: Number.isFinite(avgAllNum) ? avgAllNum : NaN,
+      total,
+      filled,
+      completionPct: total > 0 ? roundTo((filled / total) * 100, 0) : 0,
+      avgAll,
+      avgAllLabel: fmtScore(avgAll),
       strongest,
       weakest,
     },

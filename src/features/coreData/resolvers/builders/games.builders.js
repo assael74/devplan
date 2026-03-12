@@ -42,3 +42,18 @@ export const buildGamesByTeamId = (gamesArr)=>{
 
   return map
 }
+
+export function buildPlayerGames(teamGames, playerId) {
+  return (teamGames || []).reduce((acc, game) => {
+    const players = Array.isArray(game?.players) ? game.players : []
+    const playerGame = players.find((p) => String(p?.playerId || p?.id) === String(playerId))
+    if (!playerGame) return acc
+
+    acc.push({
+      ...game,
+      playerGame,
+    })
+
+    return acc
+  }, [])
+}

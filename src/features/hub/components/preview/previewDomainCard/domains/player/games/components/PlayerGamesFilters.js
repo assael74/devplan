@@ -1,0 +1,167 @@
+// preview/previewDomainCard/domains/player/games/components/PlayerGamesFilters.js
+
+import React, { useMemo } from 'react'
+import { Box, IconButton, Input, Option, Select, Sheet, Tooltip, Typography } from '@mui/joy'
+
+import { GAME_TYPE, GAME_DIFFICULTY } from '../../../../../../../../../shared/games/games.constants.js'
+import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
+import { filtersSx as sx } from '../sx/playerGamesFilters.sx.js'
+
+const homeOptions = [
+  { id: 'all', label: 'בית/חוץ', idIcon: 'home' },
+  { id: 'home', label: 'בית', idIcon: 'home' },
+  { id: 'away', label: 'חוץ', idIcon: 'away' },
+]
+
+const resultOptions = [
+  { id: 'all', label: 'תוצאה', idIcon: 'result' },
+  { id: 'win', label: 'ניצחון', idIcon: 'win' },
+  { id: 'draw', label: 'תיקו', idIcon: 'draw' },
+  { id: 'loss', label: 'הפסד', idIcon: 'loss' },
+]
+
+const buildTypeOptions = () => [
+  { id: 'all', labelH: 'סוג משחק', idIcon: 'games' },
+  ...(GAME_TYPE || []).filter((x) => !x.disabled),
+]
+
+const buildDiffOptions = () => [
+  { id: 'all', labelH: 'קושי', idIcon: 'difficulty' },
+  ...(GAME_DIFFICULTY || []).filter((x) => !x.disabled),
+]
+
+const findOpt = (options, value) => {
+  const id = value == null ? 'all' : String(value)
+  return options.find((o) => o.id === id) || options[0] || null
+}
+
+function SelectValue({ option, textKey = 'labelH' }) {
+  const label = option[textKey] || option?.label || ''
+
+  return (
+    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+      {option?.idIcon ? iconUi({ id: option.idIcon, size: 'sm' }) : null}
+      <Typography level="body-sm" noWrap>
+        {label}
+      </Typography>
+    </Box>
+  )
+}
+
+export default function PlayerGamesFilters({
+  q,
+  typeFilter,
+  homeFilter,
+  resultFilter,
+  diffFilter,
+  onChangeQ,
+  onChangeTypeFilter,
+  onChangeHomeFilter,
+  onChangeResultFilter,
+  onChangeDiffFilter,
+  onReset,
+  onCreateGame,
+}) {
+  const typeOptions = useMemo(buildTypeOptions, [])
+  const diffOptions = useMemo(buildDiffOptions, [])
+
+  const isDirty =
+    !!q ||
+    typeFilter !== 'all' ||
+    homeFilter !== 'all' ||
+    resultFilter !== 'all' ||
+    diffFilter !== 'all'
+
+  return (
+    <Sheet variant="plain" sx={sx.filtersBoxSx}>
+      <Box sx={sx.filtersTopRowSx}>
+        <Input
+          size="sm"
+          placeholder="חיפוש לפי יריב, תאריך, סוג, תוצאה או קושי"
+          value={q}
+          onChange={(e) => onChangeQ(e.target.value)}
+          startDecorator={iconUi({ id: 'search', size: 'sm' })}
+          sx={sx.searchBoxSx}
+        />
+
+        <Select
+          size="sm"
+          value={typeFilter}
+          onChange={(e, v) => onChangeTypeFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(typeOptions, selected?.value)} textKey="labelH" />
+          )}
+          sx={sx.selectSx}
+        >
+          {typeOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="labelH" />
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={diffFilter}
+          onChange={(e, v) => onChangeDiffFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(diffOptions, selected?.value)} textKey="labelH" />
+          )}
+          sx={sx.selectSx}
+        >
+          {diffOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="labelH" />
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={homeFilter}
+          onChange={(e, v) => onChangeHomeFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(homeOptions, selected?.value)} textKey="label" />
+          )}
+          sx={sx.selectSmallSx}
+        >
+          {homeOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="label" />
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={resultFilter}
+          onChange={(e, v) => onChangeResultFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(resultOptions, selected?.value)} textKey="label" />
+          )}
+          sx={sx.selectSmallSx}
+        >
+          {resultOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="label" />
+            </Option>
+          ))}
+        </Select>
+
+        <Tooltip title="איפוס פילטרים">
+          <span>
+            <IconButton
+              disabled={!isDirty}
+              size="sm"
+              variant="soft"
+              sx={sx.icoRes}
+              onClick={onReset}
+            >
+              {iconUi({ id: 'reset', size: 'sm' })}
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+    </Sheet>
+  )
+}

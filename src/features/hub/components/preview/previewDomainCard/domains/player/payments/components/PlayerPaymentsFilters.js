@@ -70,6 +70,38 @@ export default function PlayerPaymentsFilters({
           startDecorator={iconUi({ id: 'search', size: 'sm' })}
         />
 
+        <Select
+          size="sm"
+          value={statusFilter}
+          onChange={(e, v) => onChangeStatusFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(statusOptions, selected?.value)} textKey="labelH" />
+          )}
+          sx={sx.selectSx}
+        >
+          {statusOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="labelH" />
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={typeFilter}
+          onChange={(e, v) => onChangeTypeFilter(v || 'all')}
+          renderValue={(selected) => (
+            <SelectValue option={findOpt(typeOptions, selected?.value)} textKey="labelH" />
+          )}
+          sx={sx.selectSx}
+        >
+          {typeOptions.map((o) => (
+            <Option key={o.id} value={o.id}>
+              <SelectValue option={o} textKey="labelH" />
+            </Option>
+          ))}
+        </Select>
+
 
 
 

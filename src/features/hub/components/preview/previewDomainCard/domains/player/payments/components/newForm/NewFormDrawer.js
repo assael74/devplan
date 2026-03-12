@@ -7,7 +7,7 @@ import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { createActions } from '../../../../../../../../../../ui/forms/create/createActions.js'
 
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import MeetingCreateForm from '../../../../../../../../../../ui/forms/MeetingCreateForm.js'
+import PaymentCreateForm from '../../../../../../../../../../ui/forms/PaymentCreateForm.js'
 
 import {
   buildInitialDraft,
@@ -40,12 +40,12 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
     try {
       setIsSaving(true)
 
-      const res = await createActions.meeting({ draft })
+      const res = await createActions.payment({ draft })
 
       onSaved(res || draft)
       onClose()
     } catch (error) {
-      console.error('create meeting failed:', error)
+      console.error('create payment failed:', error)
     } finally {
       setIsSaving(false)
     }
@@ -78,7 +78,7 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
           <ModalClose sx={{ mt: 2, mr: 2 }} />
 
           <Box sx={{ position: 'sticky', zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-            <MeetingCreateForm
+            <PaymentCreateForm
               draft={draft}
               onDraft={setDraft}
               onValidChange={setIsValid}
@@ -126,7 +126,7 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
 
             <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
               {saving
-                ? 'שומר משחק חדש...'
+                ? 'שומר תשלום חדש'
                 : !isDirty
                   ? 'אין שינויים'
                   : !isValid

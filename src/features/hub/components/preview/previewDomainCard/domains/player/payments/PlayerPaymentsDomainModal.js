@@ -10,6 +10,8 @@ import {
 import PlayerPaymentsKpi from './components/PlayerPaymentsKpi.js'
 import PlayerPaymentsFilters from './components/PlayerPaymentsFilters.js'
 import PlayerPaymentsTable from './components/PlayerPaymentsTable.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
 
 export default function PlayerPaymentsDomainModal({ entity, context }) {
   const livePlayer = useMemo(() => {
@@ -69,8 +71,20 @@ export default function PlayerPaymentsDomainModal({ entity, context }) {
         />
       </Box>
 
+      <NewFormDrawer
+        open={openCreatePayment}
+        onClose={() => setOpenCreatePayment(false)}
+        onSaved={() => setOpenCreatePayment(false)}
+        context={{ ...context, playerId: entity?.id || '', entity: livePlayer }}
+      />
 
-
+      <EditDrawer
+        open={!!activePayment}
+        payment={activePayment}
+        context={context}
+        onClose={() => setActivePayment(null)}
+        onSaved={() => setActivePayment(null)}
+      />
     </>
   )
 }

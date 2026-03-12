@@ -123,28 +123,6 @@ export default function PlayerPreviewView({
             שנתון {ui.birthYear}
           </Chip>
         ) : null}
-
-        <Box sx={{ flex: 1 }} />
-
-        <QuickCreateMenu
-          isProject={isProject}
-          seed={{
-            playerId: player?.id,
-            clubId: player?.clubId || ui?.clubId,
-            teamId: player?.teamId || ui?.teamId,
-            evalDate: new Date().toISOString().slice(0, 10),
-            contextType: 'entity',
-            objectType: 'player',
-            __locks: {
-              lockContextType: true,
-              lockObjectType: true,
-              lockPlayerId: true,
-            },
-          }}
-          iconOnly={false}
-          entityType="player"
-          label="הוספה"
-        />
       </Box>
 
       {/* --- גריד קופסאות --- */}

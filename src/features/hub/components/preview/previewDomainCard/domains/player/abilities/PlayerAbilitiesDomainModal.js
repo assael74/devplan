@@ -1,4 +1,5 @@
-// src/features/players/components/preview/PreviewDomainCard/domains/abilities/player/abilitiesDomainModal.js
+// preview/PreviewDomainCard/domains/abilities/player/abilitiesDomainModal.js
+
 import React, { useMemo, useState } from 'react'
 import {
   Box,
@@ -17,8 +18,11 @@ import {
   CircularProgress
 } from '@mui/joy'
 import SearchRounded from '@mui/icons-material/SearchRounded'
+import PlayerAbilitiesKpi from './components/PlayerAbilitiesKpi.js'
+import PlayerAbilitiesFilters from './components/PlayerAbilitiesFilters.js'
 import { resolveAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
+import { sx } from './sx/playerAbilities.modal.sx.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const isFilled = (v) => Number.isFinite(v) && v > 0
@@ -103,56 +107,25 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
   return (
     <Box sx={{ minWidth: 0 }}>
       {/* KPI strip */}
-      <Sheet variant="soft" sx={{ p: 1, borderRadius: 'md' }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Chip size="sm" variant="soft">{`הושלמו: ${summary?.filled ?? 0}/${summary?.total ?? 0}`}</Chip>
-            <Chip size="sm" variant="soft" color={summary?.color || 'neutral'}>{`ממוצע כללי: ${toFixed1(summary?.avgAll)}`}</Chip>
-            <Chip size="sm" variant="soft" color={summary?.strongest?.color || 'neutral'}>
-              {summary?.strongest ? `חוזקה: ${summary.strongest.domainLabel} (${toFixed1(summary.strongest.avg)})` : 'חוזקה: —'}
-            </Chip>
-            <Chip size="sm" variant="soft" color={summary?.weakest?.color || 'neutral'}>
-              {summary?.weakest ? `חולשה: ${summary.weakest.domainLabel} (${toFixed1(summary.weakest.avg)})` : 'חולשה: —'}
-            </Chip>
-          </Box>
+      <Box sx={{ position: 'sticky', top: -10, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
+        <PlayerAbilitiesKpi entity={entity} summary={summary} globalCount={globalCount} />
 
-          <Chip size="sm" variant="soft">{`מוצג: ${globalCount.filled}/${globalCount.total}`}</Chip>
-        </Box>
-      </Sheet>
-
-      <Divider sx={{ my: 1.25 }} />
-
-      {/* Filters */}
-      <Sheet variant="soft" sx={{ p: 1, borderRadius: 'md' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <SearchRounded fontSize="small" />
-          <Input
-            size="sm"
-            placeholder="חיפוש לפי שם יכולת."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            sx={{ flex: 1, minWidth: 220 }}
-          />
-
-          <Select size="sm" value={domainFilter} onChange={(e, v) => setDomainFilter(v || 'all')} sx={{ minWidth: 180 }}>
-            {domainOptions.map((o) => (
-              <Option key={o.id} value={o.id}>
-                {o.label}
-              </Option>
-            ))}
-          </Select>
-
-          <Select size="sm" value={filledFilter} onChange={(e, v) => setFilledFilter(v || 'all')} sx={{ minWidth: 150 }}>
-            {filledOptions.map((o) => (
-              <Option key={o.id} value={o.id}>
-                {o.label}
-              </Option>
-            ))}
-          </Select>
-        </Box>
-      </Sheet>
-
-      <Divider sx={{ my: 1.25 }} />
+        <PlayerAbilitiesFilters
+          q={q}
+          domainFilter={domainFilter}
+          filledFilter={filledFilter}
+          domainOptions={domainOptions}
+          filledOptions={filledOptions}
+          onChangeQ={setQ}
+          onChangeDomainFilter={setDomainFilter}
+          onChangeFilledFilter={setFilledFilter}
+          onReset={() => {
+            setQ('')
+            setDomainFilter('all')
+            setFilledFilter('all')
+          }}
+        />
+      </Box>
 
       {/* Domains */}
       {!filteredDomains.length ? (
@@ -171,10 +144,10 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
             const filledCount = items.filter((i) => isFilled(i.value)).length
 
             return (
-              <Grid key={domain.domain} xs={12} sm={6} lg={4}>
+              <Grid key={domain.domain} xs={12} sm={6} lg={4} sx={{ mt: 2 }}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ gap: 1 }}>
+                    <Stack sx={sx.cardStack}>
                       <Typography level="title-sm" sx={{ minWidth: 0 }} noWrap startDecorator={iconUi({ id: domain.domain })}>
                         {domain.domainLabel}
                       </Typography>
@@ -182,29 +155,28 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
                     </Stack>
 
                     <Stack direction="row" spacing={1.5} alignItems="center" sx={{ my: 1 }}>
-                    <Box sx={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
-                      <CircularProgress
-                        determinate
-                        value={pct}
-                        color={dColor}
-                        sx={{ width: 48, height: 48  }}
-                      />
+                      <Box sx={sx.domainBox}>
+                        <CircularProgress
+                          determinate
+                          value={pct}
+                          color={dColor}
+                          sx={{ width: 48, height: 48  }}
+                        />
 
-                      <Typography
-                        level="body-xs"
-                        sx={{
-                          position: 'absolute',
-                          left: '50%',
-                          top: '50%',
-                          transform: 'translate(-50%, -50%) translateY(1px)',
-                          lineHeight: 1,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {toFixed1(domainAvg)}
-                      </Typography>
-                    </Box>
-
+                        <Typography
+                          level="body-xs"
+                          sx={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            transform: 'translate(-50%, -50%) translateY(1px)',
+                            lineHeight: 1,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {toFixed1(domainAvg)}
+                        </Typography>
+                      </Box>
 
                       <Stack spacing={0.25} sx={{ minWidth: 0 }}>
                         <Typography level="body-xs" sx={{ color: 'neutral.500' }}>

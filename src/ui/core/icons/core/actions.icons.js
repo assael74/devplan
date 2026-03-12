@@ -34,19 +34,21 @@ import {
 
 export const actionIcons = {
   add: <Add />,
+
   addLink: <AddLink />,
   addClub: <DomainAdd />,
-  addMeeting: <LibraryAdd />,
-  addPayment: <AddShoppingCart />,
   addPlayer: <PersonAdd />,
   addTeam: <GroupAdd />,
-  addVideo: <AddToQueue />,
-  addGame: <PlaylistAddCircle />,
-  addRole: <Engineering />,
-  addGameStats: <DashboardCustomize />,
-  addAbilities: <PlaylistAdd />,
   addTag: <LocalOffer />,
   addStats: <Addchart />,
+  addVideo: <AddToQueue />,
+  addRole: <Engineering />,
+  addMeeting: <LibraryAdd />,
+  addAbilities: <PlaylistAdd />,
+  addGame: <PlaylistAddCircle />,
+  addPayment: <AddShoppingCart />,
+  addGameStats: <DashboardCustomize />,
+
   delete: <Delete />,
   edit: <EditNote />,
   save: <Save />,

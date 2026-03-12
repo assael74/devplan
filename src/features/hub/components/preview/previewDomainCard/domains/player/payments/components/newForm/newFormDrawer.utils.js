@@ -7,11 +7,10 @@ export function buildInitialDraft(context = {}) {
   const playerId = safe(context?.playerId || entity?.id || context?.player?.id)
 
   return {
-    meetingDate: '',
-    meetingHour: '',
-    meetingFor: '',
+    paymentFor: '',
     playerId,
-    type: '',
+    type: 'monthlyPayment',
+    price: ''
   }
 }
 

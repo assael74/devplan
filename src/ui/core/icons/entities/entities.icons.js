@@ -1,6 +1,5 @@
 import {
   Engineering,
-  Payments,
   Event,
   Person,
   Groups,
@@ -8,8 +7,6 @@ import {
 } from '@mui/icons-material';
 
 export const entitiesIcons = {
-  payment: <Payments />,
-  payments: <Payments />,
   player: <Person />,
   players: <Person />,
   team: <Groups />,

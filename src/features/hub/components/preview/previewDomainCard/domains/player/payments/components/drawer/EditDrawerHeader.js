@@ -9,15 +9,15 @@ import { getFullDateIl } from '../../../../../../../../../../shared/format/dateU
 
 const c = getEntityColors('players')
 
-export default function EditDrawerHeader({ meeting }) {
+export default function EditDrawerHeader({ payment }) {
   return (
     <DialogTitle sx={{...sx.headerRowSx, mb: 2}}>
       <Box sx={sx.heroSx}>
-        {iconUi({ id: 'Payments', size: 'lg', sx: { color: c.accent, ml: 1.5 } })}
+        {iconUi({ id: 'payments', size: 'lg', sx: { color: c.accent, ml: 1.5 } })}
 
         <Box sx={sx.heroTextSx}>
           <Typography level="title-md" sx={sx.heroNameSx}>
-            {meeting.metaLabel || 'פגישה'}
+            {payment.metaLabel || 'תשלום'}
           </Typography>
         </Box>
       </Box>
