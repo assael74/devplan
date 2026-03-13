@@ -90,20 +90,23 @@ export default function PreviewDomainCard({
         </Box>
       </Sheet>
 
-     <PreviewDomainCardOverlay
-       d={d}
-       entity={entity}
-       open={open}
-       setOpen={setOpen}
-       onClose={() => setOpen(false)}
-       playerPhoto={playerPhoto}
-       fullName={fullName}
-       birthYearText={birthYearText}
-       onSaveInfo={onSaveInfo}
-       context={context}
-       videoActions={videoActions}
-     />
-
+      <Transition nodeRef={nodeRef} in={open} timeout={320} mountOnEnter unmountOnExit>
+        {(state) => (
+          <PreviewDomainCardOverlay
+            d={d}
+            entity={entity}
+            open={open}
+            onClose={() => setOpen(false)}
+            state={state}
+            playerPhoto={playerPhoto}
+            fullName={fullName}
+            birthYearText={birthYearText}
+            onSaveInfo={onSaveInfo}
+            context={context}
+            videoActions={videoActions}
+          />
+        )}
+      </Transition>
     </>
   )
 }

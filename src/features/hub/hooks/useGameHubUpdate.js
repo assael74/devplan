@@ -23,7 +23,7 @@ export function useGameHubUpdate(active) {
       ...meta,
       id: gameId,
       gameId,
-      createIfMissing: false,
+      createIfMissing: meta?.createIfMissing ?? false,
     })
   }
 

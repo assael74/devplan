@@ -65,7 +65,7 @@ export default function PlayerMeetingsFilters({
           ...sx.filtersTopRowSx,
           gridTemplateColumns: {
             xs: '1fr',
-            md: 'minmax(220px,1fr) 180px 180px 150px auto auto',
+            md: 'minmax(220px,1fr) auto auto auto auto auto',
           },
         }}
       >

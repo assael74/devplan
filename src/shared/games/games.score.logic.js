@@ -1,4 +1,5 @@
 /// shared/games/games.score.logic.js
+
 import { n } from './games.summary.logic.js'
 
 export const buildScoreText = (gf, ga, hasAny) => {

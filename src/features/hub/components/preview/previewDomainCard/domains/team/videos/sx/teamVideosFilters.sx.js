@@ -21,7 +21,7 @@ export const filtersSx = {
     gap: 0.75,
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'minmax(260px,1fr) 180px minmax(220px,auto) auto auto',
+      md: 'minmax(150px,1fr) auto auto auto auto',
     },
     alignItems: 'center',
   },

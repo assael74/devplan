@@ -137,7 +137,7 @@ export const heroSx = {
   },
 
   kpiValueSx: {
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: 18,
     lineHeight: 1,
     color: c.accent,
@@ -147,39 +147,5 @@ export const heroSx = {
     color: 'text.secondary',
     fontSize: 12,
     lineHeight: 1.1,
-  },
-
-  nextGameBoxSx: {
-    p: 0.9,
-    borderRadius: 'lg',
-    bgcolor: 'background.surface',
-    border: '1px solid',
-    borderColor: c.accent,
-    boxShadow: 'xs',
-    display: 'grid',
-    gap: 0.25,
-  },
-
-  nextGameTopSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.5,
-    color: 'text.secondary',
-  },
-
-  nextGameTitleSx: {
-    fontWeight: 700,
-    fontSize: 12,
-  },
-
-  nextGameValueSx: {
-    fontWeight: 700,
-    lineHeight: 1.1,
-    color: c.accent,
-  },
-
-  nextGameMetaSx: {
-    color: 'text.secondary',
-    fontSize: 12,
   },
 }

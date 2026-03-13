@@ -64,6 +64,7 @@ export const tableSx = {
     minWidth: 0,
     display: 'grid',
     gap: 0.15,
+    justifyContent: 'center'
   },
 
   mainValueSx: {

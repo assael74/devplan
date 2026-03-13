@@ -21,7 +21,7 @@ export const buildPlayerGamesByPlayerId = (games = []) => {
 
   for (const game of safeArr(games)) {
     const players = safeArr(game?.players || game?.gamePlayers)
-
+    
     for (const p of players) {
       const pid = safeId(p?.playerId || p?.p)
       if (!pid) continue
@@ -32,11 +32,11 @@ export const buildPlayerGamesByPlayerId = (games = []) => {
         gameId: game.id,
         game,
         stats: {
-          squad: !!p?.squad || !!p?.s,
-          lineup: !!p?.lineup || !!p?.l,
-          minutes: Number(p?.minutes ?? p?.m ?? 0),
-          goals: Number(p?.goals ?? p?.g ?? 0),
-          assists: Number(p?.assists ?? p?.a ?? 0),
+          isSelected: !!p?.isSelected,
+          isStarting: !!p?.isStarting,
+          timePlayed: Number(p?.timePlayed ?? 0),
+          goals: Number(p?.goals ?? 0),
+          assists: Number(p?.assists ?? 0),
         },
       })
     }

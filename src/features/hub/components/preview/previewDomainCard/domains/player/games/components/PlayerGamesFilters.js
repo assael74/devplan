@@ -60,7 +60,7 @@ export default function PlayerGamesFilters({
   onChangeResultFilter,
   onChangeDiffFilter,
   onReset,
-  onCreateGame,
+  onAddPlayerToGame,
 }) {
   const typeOptions = useMemo(buildTypeOptions, [])
   const diffOptions = useMemo(buildDiffOptions, [])
@@ -158,6 +158,19 @@ export default function PlayerGamesFilters({
               onClick={onReset}
             >
               {iconUi({ id: 'reset', size: 'sm' })}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="עדכון משחק לשחקן">
+          <span>
+            <IconButton
+              size="sm"
+              variant='outlined'
+              onClick={onAddPlayerToGame}
+              sx={sx.icoAddSx}
+            >
+              {iconUi({ id: 'addGame', size: 'sm' })}
             </IconButton>
           </span>
         </Tooltip>

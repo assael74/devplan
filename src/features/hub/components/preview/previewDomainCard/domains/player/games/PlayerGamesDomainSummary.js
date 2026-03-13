@@ -23,14 +23,38 @@ export default function PlayerGamesDomainSummary({ entity }) {
   const { summary } = useMemo(() => resolvePlayerGamesDomain(entity), [entity])
   const next = summary?.nextGame
 
-  const nextText = next
-    ? `${getFullDateIl(next.dateRaw)} | ${next.rival}`
-    : 'אין משחק עתידי'
+  const nextText = next ? `${next.dateLabel} | ${next.rival}` : 'אין משחק עתידי'
+  const gridTemp = next ? '0.8fr 1fr 1.8fr' : '0.8fr 1fr 0.8fr'
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.6, px: 0.5, width: '100%' }}>
-      <Row label="ליגה" value={summary?.league || '—'} />
-      <Row label="משחק קרוב" value={nextText} />
+    <Box sx={{ display: 'grid', gridTemplateColumns: gridTemp, gap: 0.75, px: 0.5, width: '100%', }}>
+      <Row
+        label="משחקים"
+        value={`${summary?.teamGamesTotal ?? 0}/${summary?.gamesIncluded ?? 0}`}
+        color="primary"
+      />
+
+      <Row
+        label="דקות"
+        value={`${summary?.minutesPossible ?? 0}/${summary?.minutesPlayed ?? 0} - (${summary?.minutesPct ?? 0}%)`}
+        color="warning"
+      />
+
+      {!next && (
+        <Row
+          label="פתח"
+          value={`${summary?.starts ?? 0} פעמים`}
+          color="success"
+        />
+      )}
+
+      {next && (
+        <Row
+          label="משחק קרוב"
+          value={nextText}
+          color="neutral"
+        />
+      )}
     </Box>
   )
 }

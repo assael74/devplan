@@ -123,6 +123,8 @@ export const shortsUpdateRouterMap = {
     goalsAgainst: { shortKey: 'games.gameResult', path: 'goalsAgainst', mode: 'merge' },
     goalsFor: { shortKey: 'games.gameResult', path: 'goalsFor', mode: 'merge' },
     result: { shortKey: 'games.gameResult', path: 'result', mode: 'merge' },
+
+    gamePlayers: { shortKey: 'games.gamePlayers', path: 'gamePlayers', mode: 'merge' },
   },
 
   videoAnalysis: {

@@ -41,14 +41,13 @@ function buildDomain({ key, label, route, entity, counts, lockedMap, staleMap })
 function playerDomains({ entity, routes, counts, locked, stale, isProject }) {
   const base = [
     buildDomain({ key: 'info', label: 'מידע', route: routes?.info, entity, counts, lockedMap: locked, staleMap: stale }),
-    buildDomain({ key: 'performance', label: 'ביצועי שחקן', route: routes?.performance, entity, counts, lockedMap: locked, staleMap: stale }),
+    buildDomain({ key: 'meetings', label: 'מפגשים', route: routes?.meetings, entity, counts, lockedMap: locked, staleMap: stale }),
     buildDomain({ key: 'games', label: 'משחקי שחקן', route: routes?.performance, entity, counts, lockedMap: locked, staleMap: stale }),
     buildDomain({ key: 'abilities', label: 'יכולות שחקן', route: routes?.abilities, entity, counts, lockedMap: locked, staleMap: stale }),
   ]
 
   if (isProject) {
     base.push(
-      buildDomain({ key: 'meetings', label: 'מפגשים', route: routes?.meetings, entity, counts, lockedMap: locked, staleMap: stale }),
       buildDomain({ key: 'payments', label: 'תשלומים', route: routes?.payments, entity, counts, lockedMap: locked, staleMap: stale }),
       buildDomain({ key: 'video', label: 'וידאו', route: routes?.video, entity, counts, lockedMap: locked, staleMap: stale }),
     )

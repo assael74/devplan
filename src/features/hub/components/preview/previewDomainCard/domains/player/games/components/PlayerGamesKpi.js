@@ -5,8 +5,6 @@ import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 
 import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
-
-import { getLeaguePointsSummary } from '../logic/playerGames.domain.logic.js'
 import { heroSx as sx } from '../sx/playerGamesKpi.sx.js'
 
 function KpiCard({ label, value, subValue, icon }) {
@@ -17,7 +15,7 @@ function KpiCard({ label, value, subValue, icon }) {
         {icon}
       </Box>
 
-      <Typography sx={sx.kpiValueSx}>{value}</Typography>
+      <Typography level='title-xs' sx={sx.kpiValueSx}>{value}</Typography>
 
       {!!subValue && (
         <Typography sx={sx.kpiSubValueSx}>
@@ -29,16 +27,21 @@ function KpiCard({ label, value, subValue, icon }) {
 }
 
 export default function PlayerGamesKpi({ entity, summary, filteredCount }) {
-  const playerName =  `${entity?.playerFirstName} ${entity?.playerLastName}`.trim()
-  const nextLabel = summary?.nextGame
-    ? `${summary.nextGame.dateLabel}${summary.nextGame.hourRaw ? ` | ${summary.nextGame.hourRaw}` : ''}`
-    : '—'
+  const playerName = `${entity?.playerFirstName || ''} ${entity?.playerLastName || ''}`.trim()
 
-  const nextSub = summary?.nextGame
-    ? `${summary.nextGame.rival} | ${summary.nextGame.homeLabel}`
-    : 'אין משחק עתידי'
+  const gamesIncluded = summary?.gamesIncluded ?? 0
+  const teamGamesTotal = summary?.teamGamesTotal ?? 0
+  const gamesPct = summary?.gamesPct ?? 0
 
-  const { leaguePossible, leagueAchieved, leagueSuccessPct } = getLeaguePointsSummary(summary)
+  const minutesPlayed = summary?.minutesPlayed ?? 0
+  const minutesPossible = summary?.minutesPossible ?? 0
+  const minutesPct = summary?.minutesPct ?? 0
+
+  const starts = summary?.starts ?? 0
+  const startsPctFromPlayed = summary?.startsPctFromPlayed ?? 0
+
+  const goals = summary?.goals ?? summary?.gf ?? 0
+  const assists = summary?.assists ?? 0
 
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
@@ -70,29 +73,31 @@ export default function PlayerGamesKpi({ entity, summary, filteredCount }) {
 
         <Box sx={sx.kpiGridSx}>
           <KpiCard
-            label="סה״כ משחקים"
-            value={summary?.total ?? 0}
-            icon={iconUi({ id: 'games', size: 'sm' })}
+            label="משחקים"
+            value={`${gamesIncluded} / ${teamGamesTotal}`}
+            subValue={`${gamesPct}% השתתפות`}
+            icon={iconUi({ id: 'games', size: 'md' })}
           />
 
           <KpiCard
-            label="נקודות ליגה"
-            value={`${leagueAchieved} / ${leaguePossible}`}
-            subValue={`${leagueSuccessPct}% הצלחה`}
-            icon={iconUi({ id: 'league', size: 'sm' })}
+            label="דקות משחק"
+            value={`${minutesPlayed} / ${minutesPossible}`}
+            subValue={`${minutesPct}% מזמן הקבוצה`}
+            icon={iconUi({ id: 'time', size: 'md' })}
           />
 
           <KpiCard
-            label="יחס שערים"
-            value={`${summary?.gf ?? 0} - ${summary?.ga ?? 0}`}
+            label="תרומה"
+            value={`${summary?.contributedPoints ?? 0} / ${summary?.contributedPointsPossible ?? 0} נק׳`}
+            subValue={`${summary?.goals ?? 0} שערים · ${summary?.assists ?? 0} בישולים`}
             icon={iconUi({ id: 'goals', size: 'sm' })}
           />
 
           <KpiCard
-            label="המשחק הבא"
-            value={nextLabel}
-            subValue={nextSub}
-            icon={iconUi({ id: 'calendar', size: 'sm' })}
+            label="פתח ב 11"
+            value={starts}
+            subValue={`${startsPctFromPlayed}% מהמשחקים שלו`}
+            icon={iconUi({ id: 'isStart', size: 'md' })}
           />
         </Box>
       </Box>

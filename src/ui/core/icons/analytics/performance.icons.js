@@ -23,8 +23,4 @@ export const performanceIcons = {
   offensive_key: <ElectricBolt />,
   hard: <Whatshot />,
   pro: <Insights />,
-  isSquad: <Hail />,
-  isStart: <Adjust />,
-  isNotSquad: <EventSeat />,
-  isNotStart: <EventSeat />,
 };

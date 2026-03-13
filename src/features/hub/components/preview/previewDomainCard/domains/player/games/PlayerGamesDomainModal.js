@@ -1,4 +1,5 @@
 // domains/player/games/PlayerGamesDomainModal.js
+
 import React, { useMemo, useState } from 'react'
 import { Box } from '@mui/joy'
 
@@ -6,13 +7,14 @@ import { resolvePlayerGamesDomain, filterPlayerGames } from './logic/playerGames
 import PlayerGamesKpi from './components/PlayerGamesKpi.js'
 import PlayerGamesFilters from './components/PlayerGamesFilters.js'
 import PlayerGamesTable from './components/PlayerGamesTable.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
 
 export default function PlayerGamesDomainModal({ entity, context }) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
-    return players.find((t) => t?.id === entity?.id) || entity || null
+    return players.find((p) => p?.id === entity?.id) || entity || null
   }, [context?.players, entity])
-  //console.log(entity)
 
   const { rows, summary } = useMemo(() => resolvePlayerGamesDomain(livePlayer), [livePlayer])
 
@@ -21,6 +23,7 @@ export default function PlayerGamesDomainModal({ entity, context }) {
   const [homeFilter, setHomeFilter] = useState('all')
   const [resultFilter, setResultFilter] = useState('all')
   const [diffFilter, setDiffFilter] = useState('all')
+  const [addPlayerGame, setAddPlayerGame] = useState(false)
   const [activeGame, setActiveGame] = useState(null)
 
   const filtered = useMemo(() => {
@@ -41,11 +44,27 @@ export default function PlayerGamesDomainModal({ entity, context }) {
     setDiffFilter('all')
   }
 
+  const handleEdit = (game) => {
+    setActiveGame(game)
+  }
+
   return (
     <>
       <Box sx={{ minWidth: 0, display: 'grid', gap: 1 }}>
-        <Box sx={{ position: 'sticky', top: -15, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-          <PlayerGamesKpi entity={livePlayer} summary={summary} filteredCount={filtered.length} />
+        <Box
+          sx={{
+            position: 'sticky',
+            top: -15,
+            zIndex: 5,
+            borderRadius: 12,
+            bgcolor: 'background.body',
+          }}
+        >
+          <PlayerGamesKpi
+            entity={livePlayer}
+            summary={summary}
+            filteredCount={filtered.length}
+          />
 
           <PlayerGamesFilters
             q={q}
@@ -59,16 +78,40 @@ export default function PlayerGamesDomainModal({ entity, context }) {
             onChangeResultFilter={setResultFilter}
             onChangeDiffFilter={setDiffFilter}
             onReset={handleReset}
+            onAddPlayerToGame={() => setAddPlayerGame(true)}
           />
         </Box>
 
-        <PlayerGamesTable
-          rows={filtered}
-          onEditGame={(row) => setActiveGame(row?.raw || row || null)}
-        />
+        <PlayerGamesTable rows={filtered} onEditGame={handleEdit} />
       </Box>
 
+      <NewFormDrawer
+        open={addPlayerGame}
+        onClose={() => setAddPlayerGame(false)}
+        context={{
+          ...context,
+          player: livePlayer,
+          playerId: livePlayer?.id || '',
+          entity: livePlayer,
+          teamId: livePlayer?.teamId || context?.teamId || '',
+          clubId: livePlayer?.clubId || context?.clubId || '',
+        }}
+      />
 
+      <EditDrawer
+        open={!!activeGame}
+        game={{...activeGame, playerId: livePlayer?.id || ''}}
+        context={{
+          ...context,
+          player: livePlayer,
+          playerId: livePlayer?.id || '',
+          entity: livePlayer,
+          teamId: livePlayer?.teamId || context?.teamId || '',
+          clubId: livePlayer?.clubId || context?.clubId || '',
+        }}
+        onClose={() => setActiveGame(null)}
+        onSaved={() => setActiveGame(null)}
+      />
     </>
   )
 }

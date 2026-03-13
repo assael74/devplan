@@ -11,6 +11,10 @@ import {
   EmojiEvents,
   Recycling,
   DragHandle,
+  Outbound,
+  Hail,
+  EventSeat,
+  Adjust
 } from '@mui/icons-material';
 
 export const gameIcons = {
@@ -24,8 +28,13 @@ export const gameIcons = {
   draw: <Handshake />,
   league: <Leaderboard />,
   home: <Home />,
+  away: <Outbound />,
   friendly: <SportsSoccer />,
   cup: <EmojiEvents />,
   easy: <Recycling />,
   equal: <DragHandle />,
+  isSquad: <Hail />,
+  isNotSquad: <EventSeat />,
+  isStart: <Adjust />,
+  isNotStart: <EventSeat />,
 };

@@ -1,103 +1,77 @@
 // previewDomainCard/domains/player/games/components/drawer/EditDrawer.js
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, ModalClose } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
-import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
-import EditFormDrawer from './EditFormDrawer.js'
+import EditDrawerFields from './EditDrawerFields.js'
 
 import {
   buildInitialDraft,
-  buildPatch,
+  buildUpdateGamePlayersPatch,
+  buildRemovePlayerFromGamePatch,
   getIsDirty,
-  calcResultByGoals,
 } from './editDrawer.utils.js'
 
 import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
-export default function EditDrawer({ open, game, onClose, onSaved }) {
+export default function EditDrawer({ open, game, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(game), [game])
-  const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
+  
+  const player = context?.player || {}
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
   }, [open, initial])
 
-  useEffect(() => {
-    const autoResult = calcResultByGoals(draft.goalsFor, draft.goalsAgainst)
-    if (!autoResult) return
-
-    setDraft((prev) => {
-      if (prev.result === autoResult) return prev
-      return { ...prev, result: autoResult }
-    })
-  }, [draft.goalsFor, draft.goalsAgainst])
-
-  const liveGame = useMemo(() => {
-    const gf = draft.goalsFor
-    const ga = draft.goalsAgainst
-    const result = calcResultByGoals(gf, ga) || draft.result || ''
-
-    return {
-      ...initial.raw,
-      rivel: draft.rivel,
-      gameDate: draft.gameDate,
-      gameHour: draft.gameHour,
-      home: draft.home,
-      type: draft.type,
-      difficulty: draft.difficulty,
-      gameDuration: draft.gameDuration,
-      goalsFor: gf,
-      goalsAgainst: ga,
-      vLink: draft.vLink,
-      result,
-      score: gf !== '' && ga !== '' ? `${gf} - ${ga}` : '',
-      points: result === 'win' ? 3 : result === 'draw' ? 1 : 0,
-    }
-  }, [initial.raw, draft])
+  const activeGame = game|| null
+  const { run, pending } = useGameHubUpdate(activeGame)
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const canSave = !!draft?.gameId && !!draft?.playerId && isDirty && !pending
 
-  const { run, pending } = useGameHubUpdate(initial.raw)
-  const canSave = !!initial.id && isDirty && !pending
-
-  const handleSave = async () => {
-    if (!canSave) return
-
-    await run('gameQuickEdit', patch, {
-      section: 'teamGameQuickEdit',
-      gameId: initial.id,
-    })
-
-    onSaved(patch, { ...initial.raw, ...patch })
-    onClose()
+  const setField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleReset = () => setDraft(initial)
 
-  const handleDelete = useCallback(() => {
-    if (!game?.id) return
+  const handleSave = async () => {
+    if (!canSave) return
 
-    lifecycle.openLifecycle(
-      { entityType: 'game', id: game.id, name: `${game?.rivel || 'משחק'} ${game?.gameDate || ''}`, },
-      {
-        onAfterSuccess: ({ action, entityType, id }) => {
-          if (action !== 'delete') return
-          if (entityType !== 'game') return
-          if (id !== game.id) return
+    const patch = buildUpdateGamePlayersPatch({
+      game: activeGame,
+      draft,
+    })
 
-          onClose()
-        },
-      }
-    )
-  }, [lifecycle, game?.id, game?.rivel, game?.gameDate, onClose])
+    await run('updateGamePlayers', patch, {
+      gameId: activeGame?.id,
+      createIfMissing: true,
+    })
+
+    onSaved(patch)
+    onClose()
+  }
+
+  const handleRemoveFromGame = async () => {
+    const patch = buildRemovePlayerFromGamePatch({
+      game: activeGame,
+      playerId: draft?.playerId,
+    })
+
+    await run('removePlayerFromGame', patch, {
+      gameId: activeGame?.id,
+      createIfMissing: false,
+    })
+
+    onSaved(patch)
+    onClose()
+  }
 
   return (
     <Drawer
@@ -117,16 +91,24 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
     >
       <Sheet sx={sx.drawerSheetSx}>
         <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader game={liveGame} />
+          <EditDrawerHeader game={game} player={player} />
+          <ModalClose sx={{ mt: 2, mr: 2 }} />
 
-          <EditFormDrawer draft={draft} setDraft={setDraft} liveGame={liveGame} />
+          <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, p: 1.25, pt: 1, overflow: 'auto' }}>
+            <EditDrawerFields
+              draft={draft}
+              setField={setField}
+              player={player}
+              pending={pending}
+            />
+          </Box>
 
           <Box sx={sx.footerSx}>
             <Box sx={sx.footerActionsSx}>
               <Button
                 loading={pending}
                 disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
+                startDecorator={!pending ? iconUi({ id: 'save' }) : null}
                 onClick={handleSave}
                 sx={sx.conBut}
               >
@@ -145,7 +127,7 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
               <Tooltip title="איפוס השינויים">
                 <span>
                   <IconButton
-                    disabled={!isDirty}
+                    disabled={!isDirty || pending}
                     size="sm"
                     variant="soft"
                     sx={sx.icoRes}
@@ -156,13 +138,14 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
                 </span>
               </Tooltip>
 
-              <Tooltip title="מחיקת משחק">
+              <Tooltip title="הסרת השחקן מהמשחק">
                 <span>
                   <IconButton
                     size="sm"
-                    color='danger'
+                    color="danger"
                     variant="solid"
-                    onClick={handleDelete}
+                    onClick={handleRemoveFromGame}
+                    disabled={pending}
                   >
                     {iconUi({ id: 'delete' })}
                   </IconButton>

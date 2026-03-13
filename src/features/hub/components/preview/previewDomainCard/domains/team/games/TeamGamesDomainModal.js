@@ -57,32 +57,30 @@ export default function TeamGamesDomainModal({ entity, context }) {
   }
 
   return (
-    <>
-      <Box sx={{ minWidth: 0, display: 'grid', gap: 1 }}>
-        <Box sx={{ position: 'sticky', top: -15, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-          <TeamGamesKpi entity={liveTeam} summary={summary} filteredCount={filtered.length} />
+    <Box sx={{ minWidth: 0, display: 'grid', gap: 1 }}>
+      <Box sx={{ position: 'sticky', top: -15, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
+        <TeamGamesKpi entity={liveTeam} summary={summary} filteredCount={filtered.length} />
 
-          <TeamGamesFilters
-            q={q}
-            typeFilter={typeFilter}
-            homeFilter={homeFilter}
-            resultFilter={resultFilter}
-            diffFilter={diffFilter}
-            onChangeQ={setQ}
-            onChangeTypeFilter={setTypeFilter}
-            onChangeHomeFilter={setHomeFilter}
-            onChangeResultFilter={setResultFilter}
-            onChangeDiffFilter={setDiffFilter}
-            onReset={handleReset}
-            onCreateGame={handleOpenCreate}
-          />
-        </Box>
-
-        <TeamGamesTable
-          rows={filtered}
-          onEditGame={(row) => setActiveGame(row?.raw || row || null)}
+        <TeamGamesFilters
+          q={q}
+          typeFilter={typeFilter}
+          homeFilter={homeFilter}
+          resultFilter={resultFilter}
+          diffFilter={diffFilter}
+          onChangeQ={setQ}
+          onChangeTypeFilter={setTypeFilter}
+          onChangeHomeFilter={setHomeFilter}
+          onChangeResultFilter={setResultFilter}
+          onChangeDiffFilter={setDiffFilter}
+          onReset={handleReset}
+          onCreateGame={handleOpenCreate}
         />
       </Box>
+
+      <TeamGamesTable
+        rows={filtered}
+        onEditGame={(row) => setActiveGame(row?.raw || row || null)}
+      />
 
       <NewFormDrawer
         open={openCreateGame}
@@ -97,6 +95,6 @@ export default function TeamGamesDomainModal({ entity, context }) {
         onClose={() => setActiveGame(null)}
         onSaved={() => setActiveGame(null)}
       />
-    </>
+    </Box>
   )
 }

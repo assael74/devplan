@@ -8,8 +8,6 @@ import PlayerMeetingsDomainSummary from './domains/player/meetings/PlayerMeeting
 import PlayerMeetingsDomainModal from './domains/player/meetings/PlayerMeetingsDomainModal'
 import PlayerPaymentsDomainSummary from './domains/player/payments/PlayerPaymentsDomainSummary'
 import PlayerPaymentsDomainModal from './domains/player/payments/PlayerPaymentsDomainModal'
-import PlayerPerformanceDomainSummary from './domains/player/performance/PlayerPerformanceDomainSummary.js'
-import PlayerPerformanceDomainModal from './domains/player/performance/PlayerPerformanceDomainModal.js'
 import PlayerAbilitiesDomainSummary from './domains/player/abilities/PlayerAbilitiesDomainSummary.js'
 import PlayerAbilitiesDomainModal from './domains/player/abilities/PlayerAbilitiesDomainModal.js'
 import PlayerVideosDomainSummary from './domains/player/videos/PlayerVideosDomainSummary.js'
@@ -94,8 +92,8 @@ export const DOMAIN_REGISTRY = {
       key: 'performance',
       image: performanceImg,
       iconId: 'performance',
-      Summary: PlayerPerformanceDomainSummary,
-      Modal: PlayerPerformanceDomainModal,
+      Summary: null,
+      Modal: null,
       container: 'modal',
       visualType: 'image',
     },

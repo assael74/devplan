@@ -1,37 +1,10 @@
-// previewDomainCard/domains/player/games/sx/editDrawer.sx.js
+// previewDomainCard/domains/player/games/sx/newFormDrawer.sx.js
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 
-export const drawerSx = {
-  headerRowSx: {
-    p: 0,
-    mb: 1,
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 1,
-  },
-
-  heroSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    minWidth: 0,
-  },
-
-  heroTextSx: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.2,
-  },
-
-  heroNameSx: {
-    fontWeight: 700,
-    lineHeight: 1.1,
-  },
-
+export const drawerNewFormSx = {
   drawerSheetSx: {
     borderRadius: { xs: 0, md: 'lg' },
     p: 2,
@@ -47,6 +20,60 @@ export const drawerSx = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
+  },
+
+  drawerContent: {
+    bgcolor: 'transparent',
+    p: { xs: 0, md: 2 },
+    boxShadow: 'none',
+  },
+
+  modalClose: {
+    mt: 2,
+    mr: 2,
+  },
+
+  body: {
+    display: 'grid',
+    gap: 1,
+    p: 1.25,
+    pt: 1,
+    overflowY: 'auto',
+    minHeight: 0,
+  },
+
+  fieldsRoot: {
+    display: 'grid',
+    gap: 1,
+  },
+
+  statusText: {
+    px: 0.25,
+    textAlign: 'center',
+    fontWeight: 600,
+    pt: 5
+  },
+
+  fieldsBlock: (isGameChosen = false) => ({
+    display: 'grid',
+    gap: 1,
+    opacity: isGameChosen ? 1 : 0.56,
+    transition: 'opacity .18s ease',
+  }),
+
+  booleanGrid: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
+    pt: 3
+  },
+
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
   },
 
   footerSx: {

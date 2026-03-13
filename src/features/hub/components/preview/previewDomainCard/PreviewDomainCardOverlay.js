@@ -1,45 +1,47 @@
 // src/features/players/components/preview/PreviewDomainCard/PreviewDomainCardOverlay.js
-import React, { useMemo } from 'react'
-import {
-  Modal,
-  ModalDialog,
-  Divider,
-  Drawer,
-  Sheet,
-  Box,
-  ModalClose,
-  DialogContent,
-  IconButton,
-} from '@mui/joy'
-import CloseRounded from '@mui/icons-material/CloseRounded'
+
+import React, { useRef, useState, useMemo } from 'react'
+import AspectRatio from '@mui/joy/AspectRatio';
+import Box from '@mui/joy/Box';
+import Drawer from '@mui/joy/Drawer';
+import Button from '@mui/joy/Button';
+import Card from '@mui/joy/Card';
+import CardContent from '@mui/joy/CardContent';
+import Checkbox from '@mui/joy/Checkbox';
+import DialogTitle from '@mui/joy/DialogTitle';
+import DialogContent from '@mui/joy/DialogContent';
+import ModalClose from '@mui/joy/ModalClose';
+import Divider from '@mui/joy/Divider';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import FormHelperText from '@mui/joy/FormHelperText';
+import List from '@mui/joy/List';
+import ListItem from '@mui/joy/ListItem';
+import Stack from '@mui/joy/Stack';
+import RadioGroup from '@mui/joy/RadioGroup';
+import Radio from '@mui/joy/Radio';
+import Sheet from '@mui/joy/Sheet';
+import Switch from '@mui/joy/Switch';
+import Typography from '@mui/joy/Typography';
+import TuneIcon from '@mui/icons-material/TuneRounded';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import ApartmentRoundedIcon from '@mui/icons-material/ApartmentRounded';
+import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
+import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
+import Done from '@mui/icons-material/Done';
 
 import PreviewDomainCardHeader from './PreviewDomainCardHeader'
+import { overlaySx as sx } from './PreviewDomainCardOverlay.sx'
+
 import { getDomainDef } from './domainRegistry'
 import { getEntityKind } from './utils/getEntityKind'
-
-import {
-  dialogContentSx,
-  dividerSx,
-  drawerSlotProps,
-  drawerSheetSx,
-  handleWrapSx,
-  handleBarSx,
-  headerWrapSx,
-  headerMainSx,
-  closeBtnSx,
-  bodyScrollSx,
-  modalDialogFrameSx,
-} from './PreviewDomainCardOverlay.sx'
 
 export default function PreviewDomainCardOverlay({
   d,
   entity,
   open,
   onClose,
-  state,
-  nodeRef,
-  modalSx,
-  modalDialogSx,
+  setOpen,
   playerPhoto,
   fullName,
   context,
@@ -56,7 +58,6 @@ export default function PreviewDomainCardOverlay({
   const domainImg = def?.image || null
   const DomainModal = def?.Modal
   const container = def?.container || 'modal'
-
   const content = DomainModal ? (
     <DomainModal
       d={d}
@@ -68,54 +69,59 @@ export default function PreviewDomainCardOverlay({
       onSave={onSaveInfo}
     />
   ) : (
-    <DialogContent sx={dialogContentSx}>תוכן יתווסף בהמשך</DialogContent>
+    <DialogContent>תוכן יתווסף בהמשך</DialogContent>
   )
-
-  if (container === 'modal') {
-    return (
-      <Modal open={open} onClose={onClose} sx={modalSx(nodeRef, state)}>
-        <ModalDialog sx={{ ...modalDialogSx(state), ...modalDialogFrameSx }}>
-          <ModalClose />
-          <PreviewDomainCardHeader
-            label={d?.label}
-            playerPhoto={playerPhoto}
-            fullName={fullName}
-            birthYearText={birthYearText}
-            domainImg={domainImg}
-          />
-          <Divider sx={dividerSx} />
-          <Box sx={bodyScrollSx}>{content}</Box>
-        </ModalDialog>
-      </Modal>
-    )
-  }
 
   return (
-    <Drawer open={open} onClose={onClose} anchor="bottom" size="sm" slotProps={drawerSlotProps}>
-      <Sheet variant="outlined" sx={drawerSheetSx}>
-        <Box sx={handleWrapSx}>
-          <Box sx={handleBarSx} />
-        </Box>
-
-        <Box sx={headerWrapSx}>
-          <Box sx={headerMainSx}>
-            <PreviewDomainCardHeader
-              variant="drawer"
-              label={d?.label}
-              playerPhoto={playerPhoto}
-              fullName={fullName}
-              birthYearText={birthYearText}
-              domainImg={domainImg}
-            />
-          </Box>
-
-          <IconButton size="sm" variant="soft" sx={closeBtnSx} onClick={onClose}>
-            <CloseRounded />
-          </IconButton>
-        </Box>
-
-        <Box sx={bodyScrollSx}>{content}</Box>
+    <Drawer
+      size="md"
+      variant="plain"
+      anchor='bottom'
+      open={open}
+      onClose={() => setOpen(false)}
+      slotProps={{
+        content: {
+          sx: {
+            bgcolor: 'transparent',
+            p: { md: 3, sm: 0 },
+            boxShadow: 'none',
+            top: 50,
+            height: 'calc(100vh - 90px)',
+            overflow: 'hidden',
+          },
+        },
+      }}
+    >
+      <Sheet
+        sx={{
+          borderRadius: 'md',
+          px: 2,
+          pt: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          height: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          maxWidth: { xs: '100%', sm: 500, md: 800 },
+          mx: 'auto',
+        }}
+      >
+        <ModalClose />
+        <PreviewDomainCardHeader
+          label={d?.label}
+          playerPhoto={playerPhoto}
+          fullName={fullName}
+          birthYearText={birthYearText}
+          domainImg={domainImg}
+        />
+        <Divider sx={{ mt: 'auto' }} />
+        <DialogContent sx={{ gap: 2 }}>
+          <Box sx={sx.bodyScrollSx} className="dpScrollThin">{content}</Box>
+        </DialogContent>
+        <Box sx={{ height: 5 }} />
       </Sheet>
     </Drawer>
-  )
+  );
 }

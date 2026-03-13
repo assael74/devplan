@@ -44,6 +44,7 @@ code {
 .dpScrollThin {
   scrollbar-width: thin;                 /* Firefox */
   scrollbar-color: rgba(0,0,0,.28) transparent;
+  scrollbar-gutter: stable;
 }
 
 .dpScrollThin::-webkit-scrollbar {

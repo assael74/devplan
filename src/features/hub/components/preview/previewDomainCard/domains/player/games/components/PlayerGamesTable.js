@@ -1,4 +1,4 @@
-// // preview/previewDomainCard/domains/player/games/components/PlayerGamesTable.js
+// preview/previewDomainCard/domains/player/games/components/PlayerGamesTable.js
 
 import React, { useMemo, useState } from 'react'
 import { Box, Sheet, Typography } from '@mui/joy'
@@ -10,7 +10,6 @@ import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { tableSx as sx } from '../sx/playerGamesTable.sx.js'
 
 export default function PlayerGamesTable({ rows = [], onEditGame }) {
-
   const [dateSort, setDateSort] = useState('desc')
 
   const sortedRows = useMemo(() => {
@@ -33,25 +32,23 @@ export default function PlayerGamesTable({ rows = [], onEditGame }) {
   return (
     <Sheet variant="plain" sx={sx.tableWrapSx}>
       <Box sx={sx.headRowSx}>
-
         <Typography
           level="title-sm"
           sx={{ ...sx.headTextSx, cursor: 'pointer' }}
           onClick={toggleDateSort}
-          startDecorator={iconUi({id: dateSort === 'desc' ? 'sortUp' : 'sortDown' })}
+          startDecorator={iconUi({ id: dateSort === 'desc' ? 'sortUp' : 'sortDown' })}
         >
           תאריך
         </Typography>
 
         <Typography level="title-sm" sx={sx.headTextSx}>יריב</Typography>
         <Typography level="title-sm" sx={sx.headTextSx}>בית/חוץ</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>סוג</Typography>
         <Typography level="title-sm" sx={sx.headTextSx}>תוצאה</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>נק׳</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>קושי</Typography>
-        <Typography level="title-sm" sx={sx.headTextSx}>וידאו</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>סטטוס</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>דקות</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>שערים</Typography>
+        <Typography level="title-sm" sx={sx.headTextSx}>בישולים</Typography>
         <Typography level="title-sm" sx={sx.headTextSx}></Typography>
-
       </Box>
 
       {!sortedRows.length ? (

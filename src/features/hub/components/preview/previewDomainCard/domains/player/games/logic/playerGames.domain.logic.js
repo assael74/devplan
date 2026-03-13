@@ -6,39 +6,21 @@ import { GAME_TYPE, GAME_DIFFICULTY } from '../../../../../../../../../shared/ga
 import { createGameRowNormalizer } from '../../../../../../../../../shared/games/games.normalize.logic.js'
 import { buildGamesView } from '../../../../../../../../../shared/games/games.view.logic.js'
 import { aggSummary, n } from '../../../../../../../../../shared/games/games.summary.logic.js'
+import { calcPlayerParticipationSummary } from '../../../../../../../../../shared/games/games.player.logic.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 
 const pickGame = (row) => row?.game || row || {}
 const pickStats = (row) => row?.stats || row || {}
 
-const typeMetaById = Object.fromEntries((GAME_TYPE || []).map((x) => [x.id, x]))
-const diffMetaById = Object.fromEntries((GAME_DIFFICULTY || []).map((x) => [x.id, x]))
-
-export function getLeaguePointsSummary(summary) {
-  const leaguePoints = summary?.leaguePoints || {}
-
-  return {
-    leaguePossible: leaguePoints?.possible ?? 0,
-    leagueAchieved: leaguePoints?.achieved ?? 0,
-    leagueSuccessPct: leaguePoints?.successPct ?? 0,
-  }
-}
-
-export const getGameDifficultyLabelH = (difficultyId) => {
-  if (!difficultyId) return 'לא הוגדר'
-
-  const meta = GAME_DIFFICULTY.find((x) => x.id === difficultyId)
-
-  return meta?.labelH || 'לא הוגדר'
-}
+const typeMetaById = Object.fromEntries((GAME_TYPE || []).map((item) => [item.id, item]))
+const diffMetaById = Object.fromEntries((GAME_DIFFICULTY || []).map((item) => [item.id, item]))
 
 const normalizeRow = createGameRowNormalizer({
   formatDateH: (dateRaw) => {
-    const v = safe(getFullDateIl(dateRaw)).trim()
-    return v || '—'
+    const value = safe(getFullDateIl(dateRaw)).trim()
+    return value || '—'
   },
-
   pick: {
     pickId: (row) => safe(row?.gameId) || safe(row?.game?.id) || safe(row?.id),
     pickGame,
@@ -47,8 +29,46 @@ const normalizeRow = createGameRowNormalizer({
   },
 })
 
+const getResolvedResult = ({ row, game }) => {
+  const rawResult = safe(row?.result).trim()
+  if (rawResult) return rawResult
+
+  const goalsForRaw = game?.goalsFor
+  const goalsAgainstRaw = game?.goalsAgainst
+
+  const hasGoalsFor = goalsForRaw !== '' && goalsForRaw != null && Number.isFinite(Number(goalsForRaw))
+  const hasGoalsAgainst = goalsAgainstRaw !== '' && goalsAgainstRaw != null && Number.isFinite(Number(goalsAgainstRaw))
+
+  if (!hasGoalsFor || !hasGoalsAgainst) return ''
+
+  const goalsFor = Number(goalsForRaw)
+  const goalsAgainst = Number(goalsAgainstRaw)
+
+  if (goalsFor > goalsAgainst) return 'win'
+  if (goalsFor < goalsAgainst) return 'loss'
+  return 'draw'
+}
+
+const getResolvedPoints = ({ row, result }) => {
+  const rawPoints = Number(row?.points)
+  if (Number.isFinite(rawPoints)) return rawPoints
+
+  if (result === 'win') return 3
+  if (result === 'draw') return 1
+  if (result === 'loss') return 0
+  return 0
+}
+
 const enrichRow = (row) => {
   const game = row?.game || {}
+  const stats = row?.stats || {}
+
+  const timePlayed = Number(stats?.timePlayed) || 0
+  const goals = Number(stats?.goals) || 0
+  const assists = Number(stats?.assists) || 0
+  const isSelected = stats?.isSelected === true
+  const isStarting = stats?.isStarting === true
+
   const typeMeta = typeMetaById[row?.type] || null
   const diffMeta = diffMetaById[row?.difficulty] || null
   const isHome = !!row?.isHome
@@ -61,36 +81,19 @@ const enrichRow = (row) => {
 
   const goalsFor = hasGoalsFor ? Number(goalsForRaw) : ''
   const goalsAgainst = hasGoalsAgainst ? Number(goalsAgainstRaw) : ''
-
-  const result =
-    safe(row?.result).trim() ||
-    (hasGoalsFor && hasGoalsAgainst
-      ? goalsFor > goalsAgainst
-        ? 'win'
-        : goalsFor < goalsAgainst
-        ? 'loss'
-        : 'draw'
-      : '')
-
-  const points =
-    Number.isFinite(Number(row?.points))
-      ? Number(row.points)
-      : result === 'win'
-      ? 3
-      : result === 'draw'
-      ? 1
-      : result === 'loss'
-      ? 0
-      : 0
-
+  const result = getResolvedResult({ row, game })
+  const points = getResolvedPoints({ row, result })
+  
   return {
     ...row,
     goalsFor,
     goalsAgainst,
-    score:
-      hasGoalsFor && hasGoalsAgainst
-        ? `${goalsFor} - ${goalsAgainst}`
-        : safe(row?.score).trim(),
+    timePlayed,
+    goals,
+    assists,
+    isSelected,
+    isStarting,
+    score: hasGoalsFor && hasGoalsAgainst ? `${goalsFor} - ${goalsAgainst}` : safe(row?.score).trim(),
     result,
     points,
     dateLabel: row?.dateH || '—',
@@ -101,32 +104,33 @@ const enrichRow = (row) => {
   }
 }
 
-const buildHaystack = (x) =>
+const buildHaystack = (row) =>
   [
-    x?.dateRaw,
-    x?.dateLabel,
-    x?.hourRaw,
-    x?.rival,
-    x?.type,
-    x?.typeH,
-    x?.difficulty,
-    x?.homeLabel,
-    x?.score,
-    x?.result,
-    x?.id,
-    x?.vLink,
+    row?.dateRaw,
+    row?.dateLabel,
+    row?.hourRaw,
+    row?.rival,
+    row?.type,
+    row?.typeH,
+    row?.difficulty,
+    row?.homeLabel,
+    row?.score,
+    row?.result,
+    row?.id,
+    row?.vLink,
   ]
     .join(' ')
     .toLowerCase()
 
 const calcLeaguePointsSummary = (rows) => {
-  const leagueRows = (rows || []).filter((x) => x?.type === 'league')
-  const playedLeagueRows = leagueRows.filter((x) => {
-    const r = safe(x?.result).trim().toLowerCase()
-    return r === 'win' || r === 'draw' || r === 'loss'
+  const leagueRows = (rows || []).filter((row) => row?.type === 'league')
+
+  const playedLeagueRows = leagueRows.filter((row) => {
+    const result = safe(row?.result).trim().toLowerCase()
+    return result === 'win' || result === 'draw' || result === 'loss'
   })
 
-  const achieved = playedLeagueRows.reduce((sum, x) => sum + n(x?.points), 0)
+  const achieved = playedLeagueRows.reduce((sum, row) => sum + n(row?.points), 0)
   const possible = playedLeagueRows.length * 3
   const successPct = possible > 0 ? Math.round((achieved / possible) * 100) : 0
 
@@ -139,13 +143,25 @@ const calcLeaguePointsSummary = (rows) => {
   }
 }
 
-export const resolvePlayerGamesDomain = (player) => {
-  const baseRows = Array.isArray(player?.playerGames) ? player?.playerGames : []
+const buildNextGameSummary = (nextGame) => {
+  if (!nextGame) return null
 
+  return {
+    rival: nextGame.rival || nextGame.rivel || '—',
+    dateRaw: nextGame.dateRaw || '',
+    dateLabel: nextGame.dateLabel || nextGame.dateH || '—',
+    hourRaw: nextGame.hourRaw || '',
+    homeLabel: nextGame.homeLabel || '—',
+    typeH: nextGame.typeH || '—',
+  }
+}
+
+export const resolvePlayerGamesDomain = (player) => {
+  const baseRows = Array.isArray(player?.playerGames) ? player.playerGames : []
   const built = buildGamesView(baseRows, (row) => enrichRow(normalizeRow(row)))
   const rows = built?.rows || []
-  const summary = built?.summary || aggSummary([])
-  const nextGame = built?.nextGame || null
+
+  const participation = calcPlayerParticipationSummary({ player, rows })
   const leaguePoints = calcLeaguePointsSummary(rows)
 
   return {
@@ -154,20 +170,12 @@ export const resolvePlayerGamesDomain = (player) => {
     playedGames: built?.playedGames || [],
     upcomingGames: built?.upcomingGames || [],
     summary: {
-      ...summary,
+      ...(built?.summary || aggSummary([])),
+      ...participation,
       league: safe(player?.team?.league) || '—',
       position: safe(player?.team?.position) || '—',
       leaguePoints,
-      nextGame: nextGame
-        ? {
-            rival: nextGame.rival || nextGame.rivel || '—',
-            dateRaw: nextGame.dateRaw || '',
-            dateLabel: nextGame.dateLabel || nextGame.dateH || '—',
-            hourRaw: nextGame.hourRaw || '',
-            homeLabel: nextGame.homeLabel || '—',
-            typeH: nextGame.typeH || '—',
-          }
-        : null,
+      nextGame: buildNextGameSummary(built?.nextGame),
     },
   }
 }
@@ -182,13 +190,14 @@ export const filterPlayerGames = (
   const rf = safe(resultFilter).trim().toLowerCase()
   const df = safe(diffFilter).trim().toLowerCase()
 
-  return (rows || []).filter((x) => {
-    if (tf && tf !== 'all' && x.type !== tf) return false
-    if (hf === 'home' && !x.isHome) return false
-    if (hf === 'away' && x.isHome) return false
-    if (rf && rf !== 'all' && x.result !== rf) return false
-    if (df && df !== 'all' && x.difficulty !== df) return false
+  return (rows || []).filter((row) => {
+    if (tf && tf !== 'all' && row.type !== tf) return false
+    if (hf === 'home' && !row.isHome) return false
+    if (hf === 'away' && row.isHome) return false
+    if (rf && rf !== 'all' && row.result !== rf) return false
+    if (df && df !== 'all' && row.difficulty !== df) return false
     if (!search) return true
-    return buildHaystack(x).includes(search)
+
+    return buildHaystack(row).includes(search)
   })
 }

@@ -1,3 +1,4 @@
+// playerGames.domain.logic.js
 export const GAME_TYPE = [
   { id: 'league', label: '', labelH: 'משחק ליגה', idIcon: 'league', disabled: false },
   { id: 'cup', label: '', labelH: 'משחק גביע', idIcon: 'cup', disabled: false },

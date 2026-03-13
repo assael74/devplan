@@ -9,10 +9,8 @@ export { default as TagSelectorField } from './AutoUi/TagSelectorField'
 //// checkUi
 // games
 export { default as GameHomeSelector } from './checkUi/games/GameHomeSelector'
-export { default as GameViewTypeSelector } from './checkUi/games/GameViewTypeSelector'
 export { default as OnSquadSelector } from './checkUi/games/OnSquadSelector'
 export { default as OnSquadStart } from './checkUi/games/OnSquadStart'
-export { default as StartElevenSelector } from './checkUi/games/StartElevenSelector'
 
 // meetings
 export { default as MeetingStatusSelector } from './checkUi/meetings/MeetingStatusSelector'
