@@ -4,8 +4,8 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { useMeetingHubUpdate } from '../../../../../../../../hooks/useMeetingHubUpdate.js'
-import { useVideoUpdate } from '../../../../../../../../hooks/useVideoUpdate.js'
+import { useMeetingHubUpdate } from '../../../../../../../../hooks/meetings/useMeetingHubUpdate.js'
+import { useVideoUpdate } from '../../../../../../../../hooks/videoAnalysis/useVideoUpdate.js'
 import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import EditDrawerHeader from './EditDrawerHeader.js'

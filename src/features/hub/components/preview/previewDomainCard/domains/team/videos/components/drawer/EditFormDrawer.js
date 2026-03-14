@@ -9,7 +9,7 @@ import VideoNameField from '../../../../../../../../../../ui/fields/inputUi/vide
 import TagsContainer from '../../../../../../../../../../ui/domains/tags/TagInputContainer.js'
 import VideoCommentsField from '../../../../../../../../../../ui/fields/inputUi/videos/VideoCommentsField.js'
 
-import { drawerFormrSx as sx } from '../../sx/editFormDrawer.sx.js'
+import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditFormDrawer({ draft, setDraft, context }) {
   return (

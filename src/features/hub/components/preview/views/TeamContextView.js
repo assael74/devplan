@@ -161,22 +161,6 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
             <span>פרויקט</span>
           </Box>
         ) : null}
-
-        <Box sx={{ flex: 1 }} />
-
-        <QuickCreateMenu
-          seed={{
-            playerId: null,
-            clubId: t?.club?.id || t?.clubId,
-            teamId: t?.id,
-            evalDate: new Date().toISOString().slice(0, 10),
-            contextType: 'entity',
-            objectType: 'team',
-          }}
-          iconOnly={false}
-          entityType="team"
-          label="הוספה"
-        />
       </Box>
 
       <PreviewDomainsGrid

@@ -47,34 +47,35 @@ export const createActions = {
     const id = makeId()
     const ifaLink = pickIfaLink(draft)
 
-    await createShort({
-      shortKey: 'players.playersInfo',
-      item: {
-        id,
-        birth: draft.birth,
-        active: true,
-        type: 'noneType',
-        ...(ifaLink ? { ifaLink } : {}),
-      },
-    })
+    const infoItem = {
+      id,
+      birth: draft.birth,
+      active: true,
+      type: 'noneType',
+      ...(ifaLink ? { ifaLink } : {}),
+    }
 
-    await createShort({
-      shortKey: 'players.playersNames',
-      item: {
-        id,
-        playerLastName: draft.playerLastName,
-        playerFirstName: draft.playerFirstName,
-      },
-    })
+    const namesItem = {
+      id,
+      playerLastName: draft.playerLastName,
+      playerFirstName: draft.playerFirstName,
+    }
 
-    await createShort({
-      shortKey: 'players.playersTeam',
-      item: {
-        id,
-        clubId: draft.clubId,
-        teamId: draft.teamId,
-      },
-    })
+    const teamItem = {
+      id,
+      clubId: draft.clubId,
+      teamId: draft.teamId,
+    }
+
+    await createShort({ shortKey: 'players.playersInfo', item: infoItem })
+    await createShort({ shortKey: 'players.playersNames', item: namesItem })
+    await createShort({ shortKey: 'players.playersTeam', item: teamItem })
+
+    return {
+      ...infoItem,
+      ...namesItem,
+      ...teamItem,
+    }
   },
 
   role: async ({ draft }) => {

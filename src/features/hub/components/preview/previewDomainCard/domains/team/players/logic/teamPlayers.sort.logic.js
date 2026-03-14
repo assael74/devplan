@@ -33,6 +33,8 @@ export const getPlayerPosition = (row) =>
 
 export const getPlayerMinutesPct = (row) =>
   num(
+    row?.timeRateNum ??
+    row?.timeRef?.playTimeRate ??
     row?.minutesPct ??
     row?.timePlayedPct ??
     row?.percentMinutes ??

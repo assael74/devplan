@@ -44,6 +44,15 @@ export const drawerSx = {
     minWidth: 0,
   },
 
+  bodySx: {
+    display: 'grid',
+    gap: 1,
+    p: 1.25,
+    pt: 1,
+    overflowY: 'auto',
+    minHeight: 0,
+  },
+
   heroTextSx: {
     minWidth: 0,
     display: 'grid',
@@ -70,7 +79,7 @@ export const drawerSx = {
   sectionCardSx: {
     p: 1,
     borderRadius: 'lg',
-    bgcolor: 'background.level1',
+    bgcolor: c.bg,
     border: '1px solid',
     borderColor: 'divider',
     display: 'grid',

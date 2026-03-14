@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, ModalClose, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { createActions } from '../../../../../../../../../../ui/forms/create/createActions.js'
+import usePaymentHubCreate from '../../../../../../../../hooks/payments/usePaymentHubCreate.js'
 
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
 import PaymentCreateForm from '../../../../../../../../../../ui/forms/PaymentCreateForm.js'
@@ -20,34 +20,28 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(context), [context])
 
   const [draft, setDraft] = useState(initial)
-  const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState(false)
 
   useEffect(() => {
     if (!open) return
+
     setDraft(initial)
-    setIsSaving(false)
     setIsValid(false)
-  }, [open, initial])
+  }, [open])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const saving = isSaving
+  const { saving, runCreatePayment } = usePaymentHubCreate()
   const canSave = isDirty && isValid && !saving
 
   const handleSave = async () => {
-    if (!canSave) return
+    if (!canSave || saving) return
 
     try {
-      setIsSaving(true)
-
-      const res = await createActions.payment({ draft })
-
-      onSaved(res || draft)
+      const res = await runCreatePayment({ draft, context })
       onClose()
+      onSaved(res || draft)
     } catch (error) {
       console.error('create payment failed:', error)
-    } finally {
-      setIsSaving(false)
     }
   }
 

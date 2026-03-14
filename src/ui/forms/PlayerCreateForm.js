@@ -1,26 +1,34 @@
 /// ui/forms/PlayerCreateForm.js
+
 import React, { useEffect, useMemo } from 'react'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+
 import Box from '@mui/joy/Box'
 
-import PlayerFirstNameField from '../fields/inputUi/players/PlayerFirstNameField'
-import PlayerLastNameField from '../fields/inputUi/players/PlayerLastNameField'
-import ClubSelectField from '../fields/selectUi/clubs/ClubSelectField'
-import TeamSelectField from '../fields/selectUi/teams/TeamSelectField'
-import MonthYearPicker from '../fields/dateUi/MonthYearPicker'
+import PlayerCreateFields from './ui/players/PlayerCreateFields.js'
+
+import { getPlayerCreateFormLayout } from './layouts/playerCreateForm.layout.js'
 
 const clean = (v) => String(v ?? '').trim()
 
 export default function PlayerCreateForm({
-  draft,
+  draft = {},
   onDraft,
   onValidChange,
-  context,
+  context = {},
+  variant = 'modal',
+  forceMobile = false,
 }) {
-  const playerFirstName = draft?.playerFirstName ?? ''
-  const playerLastName = draft?.playerLastName ?? ''
-  const clubId = draft?.clubId ?? ''
-  const teamId = draft?.teamId ?? ''
-  const birth = draft?.birth ?? ''
+  const theme = useTheme()
+  const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = forceMobile || isMobileViewport
+
+  const playerFirstName = draft?.playerFirstName || ''
+  const playerLastName = draft?.playerLastName || ''
+  const clubId = draft?.clubId || ''
+  const teamId = draft?.teamId || ''
+  const birth = draft?.birth || ''
   const clubs = context?.clubs || []
   const teams = context?.teams || []
 
@@ -37,60 +45,18 @@ export default function PlayerCreateForm({
     onValidChange(validity.isValid)
   }, [validity.isValid, onValidChange])
 
+  const layout = useMemo(() => {
+    return getPlayerCreateFormLayout({ variant, isMobile })
+  }, [variant, isMobile])
+
   return (
-    <Box sx={{ display: 'grid', gap: 2 }}>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-        <PlayerFirstNameField
-          required
-          value={playerFirstName}
-          onChange={(v) => onDraft({ ...draft, playerFirstName: v })}
-          error={!validity.okFirst && clean(playerFirstName).length > 0}
-          size="sm"
-        />
-        <PlayerLastNameField
-          required
-          value={playerLastName}
-          onChange={(v) => onDraft({ ...draft, playerLastName: v })}
-          error={!validity.okLast && clean(playerLastName).length > 0}
-          size="sm"
-        />
-      </Box>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-        <ClubSelectField
-          required
-          value={clubId}
-          options={clubs}
-          onChange={(v) => {
-            const nextClubId = v || ''
-            onDraft({ ...draft, clubId: nextClubId, teamId: '' })
-          }}
-          error={!validity.okClub && clean(clubId).length > 0}
-          size="sm"
-        />
-        <TeamSelectField
-          required
-          value={teamId}
-          clubId={clubId}
-          options={teams}
-          onChange={(v) => onDraft({ ...draft, teamId: v })}
-          error={!validity.okTeam && clean(teamId).length > 0}
-          size="sm"
-        />
-      </Box>
-
-      <Box sx={{ display: 'grid', gap: 1 }}>
-        <MonthYearPicker
-          context="birth"
-          required
-          value={birth}
-          onChange={(v) => onDraft({ ...draft, birth: v })}
-          size="sm"
-          error={!validity.okBirth && clean(birth).length > 0}
-        />
-      </Box>
-
-    </Box>
+    <PlayerCreateFields
+      draft={draft}
+      onDraft={onDraft}
+      onValidChange={onValidChange}
+      context={context}
+      validity={validity}
+      layout={layout}
+    />
   )
 }

@@ -1,12 +1,12 @@
 import {
-  Tag,
   CallSplit,
-  Layers
+  Layers,
+  Tag,
 } from '@mui/icons-material';
 
 export const tagIcons = {
-  tags: <Tag />,
+  children: <CallSplit />,
+  parents: <Layers />,
   tag: <Tag />,
-  children: <CallSplit  />,
-  parents: <Layers />
+  tags: <Tag />,
 };

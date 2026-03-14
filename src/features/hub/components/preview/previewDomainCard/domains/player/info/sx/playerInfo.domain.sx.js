@@ -8,7 +8,7 @@ export const sx = {
   root: {
     minWidth: 0,
     display: 'grid',
-    gap: 1.25,
+    gap: 1,
   },
 
   header: {
@@ -16,7 +16,6 @@ export const sx = {
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: 1,
-    mb: 0.5,
     p: 1,
     borderRadius: 'md',
     bgcolor: c.bg,
@@ -118,7 +117,6 @@ export const sx = {
   },
 
   divider: {
-    my: 0.25,
     opacity: 0.6,
   },
 

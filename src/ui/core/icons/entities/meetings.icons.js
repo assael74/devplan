@@ -1,19 +1,19 @@
 import {
-  Event,
-  EventBusy,
-  EventAvailable,
-  AlarmOn,
   AlarmOff,
+  AlarmOn,
+  CalendarMonth,
   EditCalendar,
-  CalendarMonth
+  Event,
+  EventAvailable,
+  EventBusy,
 } from '@mui/icons-material';
 
 export const meetingIcons = {
   meeting: <Event />,
-  meetings: <CalendarMonth />,
-  meetingsPlan: <EditCalendar />,
   meetingCancel: <EventBusy />,
   meetingDone: <EventAvailable />,
-  meetingReminder: <AlarmOn />,
   meetingOffReminder: <AlarmOff />,
+  meetingReminder: <AlarmOn />,
+  meetings: <CalendarMonth />,
+  meetingsPlan: <EditCalendar />,
 };

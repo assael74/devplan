@@ -1,40 +1,13 @@
 // src/features/players/components/preview/PreviewDomainCard/PreviewDomainCardOverlay.js
 
 import React, { useRef, useState, useMemo } from 'react'
-import AspectRatio from '@mui/joy/AspectRatio';
-import Box from '@mui/joy/Box';
-import Drawer from '@mui/joy/Drawer';
-import Button from '@mui/joy/Button';
-import Card from '@mui/joy/Card';
-import CardContent from '@mui/joy/CardContent';
-import Checkbox from '@mui/joy/Checkbox';
-import DialogTitle from '@mui/joy/DialogTitle';
-import DialogContent from '@mui/joy/DialogContent';
-import ModalClose from '@mui/joy/ModalClose';
-import Divider from '@mui/joy/Divider';
-import FormControl from '@mui/joy/FormControl';
-import FormLabel from '@mui/joy/FormLabel';
-import FormHelperText from '@mui/joy/FormHelperText';
-import List from '@mui/joy/List';
-import ListItem from '@mui/joy/ListItem';
-import Stack from '@mui/joy/Stack';
-import RadioGroup from '@mui/joy/RadioGroup';
-import Radio from '@mui/joy/Radio';
-import Sheet from '@mui/joy/Sheet';
-import Switch from '@mui/joy/Switch';
-import Typography from '@mui/joy/Typography';
-import TuneIcon from '@mui/icons-material/TuneRounded';
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
-import ApartmentRoundedIcon from '@mui/icons-material/ApartmentRounded';
-import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
-import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
-import Done from '@mui/icons-material/Done';
+import { Box, Drawer, DialogContent, ModalClose, Divider, Sheet, Typography } from '@mui/joy';
 
 import PreviewDomainCardHeader from './PreviewDomainCardHeader'
-import { overlaySx as sx } from './PreviewDomainCardOverlay.sx'
 
 import { getDomainDef } from './domainRegistry'
 import { getEntityKind } from './utils/getEntityKind'
+import { overlaySx as sx } from './sx/previewDomainCardOverlay.sx.js'
 
 export default function PreviewDomainCardOverlay({
   d,
@@ -81,33 +54,11 @@ export default function PreviewDomainCardOverlay({
       onClose={() => setOpen(false)}
       slotProps={{
         content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { md: 3, sm: 0 },
-            boxShadow: 'none',
-            top: 50,
-            height: 'calc(100vh - 90px)',
-            overflow: 'hidden',
-          },
+          sx: sx.drawerSlot,
         },
       }}
     >
-      <Sheet
-        sx={{
-          borderRadius: 'md',
-          px: 2,
-          pt: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1,
-          height: '100%',
-          minWidth: 0,
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          maxWidth: { xs: '100%', sm: 500, md: 800 },
-          mx: 'auto',
-        }}
-      >
+      <Sheet sx={sx.dialogSheetSx}>
         <ModalClose />
         <PreviewDomainCardHeader
           label={d?.label}

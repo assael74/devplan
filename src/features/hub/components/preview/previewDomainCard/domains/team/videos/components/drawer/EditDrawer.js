@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { useVideoUpdate } from '../../../../../../../../hooks/useVideoUpdate.js'
+import { useVideoUpdate } from '../../../../../../../../hooks/videoAnalysis/useVideoUpdate.js'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditFormDrawer from './EditFormDrawer.js'

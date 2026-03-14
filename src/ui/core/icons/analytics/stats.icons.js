@@ -1,94 +1,96 @@
 import {
-  BarChart,
-  Scoreboard,
-  Leaderboard,
-  QueryStats,
-  SyncAlt,
-  HealthAndSafety,
-  Hail,
-  Adjust,
-  EventSeat,
-  SportsSoccer,
-  QueryBuilder,
-  VolunteerActivism,
-  ThumbUp,
-  ThumbDown,
-  Handshake,
-  EmojiEvents,
-  Recycling,
-  DragHandle,
-  CalendarMonth,
   AccessTime,
-  DonutSmall,
-  OndemandVideo,
-  TrendingFlat,
+  BarChart,
+  CalendarMonth,
   DataArray,
-  DataSaverOn
+  DataSaverOn,
+  DonutSmall,
+  DragHandle,
+  Hail,
+  HealthAndSafety,
+  OndemandVideo,
+  QueryBuilder,
+  QueryStats,
+  Recycling,
+  SportsSoccer,
+  SportsHandball,
+  SyncAlt,
+  ThumbDown,
+  ThumbUp,
+  TrendingFlat,
+  VolunteerActivism,
+  PlaylistAddCircle,
 } from '@mui/icons-material';
 
 export const statsIcons = {
-  stats: <BarChart />,
-  statsParm: <BarChart />,
-  performance: <QueryStats />,
-  interceptions: <HealthAndSafety />,
-  goal: <SportsSoccer />,
-  goals: <SportsSoccer />,
-  time: <QueryBuilder />,
   assist: <VolunteerActivism />,
   assists: <VolunteerActivism />,
-  gamesCount: <CalendarMonth />,
-  timePlayed: <AccessTime />,
-  playTimeRate: <DonutSmall />,
-  timeVideoStats: <OndemandVideo />,
-  position: <SportsSoccer />,
-  positions: <SportsSoccer />,
-  notNormalize: <DataArray />,
-  normalize: <DataSaverOn />,
 
-  passes: <SyncAlt />,
-  passesTotal: <SyncAlt />,
-  passesSuccess: <SyncAlt />,
-  passesSuccessRate: <SyncAlt />,
-
-  keyPassesTotal: <SyncAlt />,
-  keyPassesSuccess: <SyncAlt />,
-  keyPassesSuccessRate: <SyncAlt />,
-
-  crossesTotal: <TrendingFlat />,
-  crossesSuccess: <TrendingFlat />,
-  crossesSuccessRate: <TrendingFlat />,
-
-  dribblesTotal: <DragHandle />,
-  dribblesSuccess: <DragHandle />,
-  dribblesSuccessRate: <DragHandle />,
-
-  shotsTotal: <SportsSoccer />,
-  shotsOnTarget: <SportsSoccer />,
-  shotsOnTargetSuccessRate: <SportsSoccer />,
-
-  xG: <SportsSoccer />,
-
-  tacklesTotal: <HealthAndSafety />,
-  tacklesSuccess: <HealthAndSafety />,
-  tacklesSuccessRate: <HealthAndSafety />,
-
-  keyTacklesTotal: <HealthAndSafety />,
-  keyTacklesSuccess: <HealthAndSafety />,
-  keyTacklesSuccessRate: <HealthAndSafety />,
-
+  ballClearancesSuccess: <Recycling />,
+  ballClearancesSuccessRate: <Recycling />,
+  ballClearancesTotal: <Recycling />,
   ballLoss: <ThumbDown />,
 
-  interceptions: <Recycling />,
+  crossesSuccess: <TrendingFlat />,
+  crossesSuccessRate: <TrendingFlat />,
+  crossesTotal: <TrendingFlat />,
+
+  dribblesSuccess: <DragHandle />,
+  dribblesSuccessRate: <DragHandle />,
+  dribblesTotal: <DragHandle />,
 
   foulsCommitted: <ThumbDown />,
   foulsDrawn: <ThumbUp />,
 
-  personalPressuresTotal: <Hail />,
+  gamesCount: <CalendarMonth />,
+
+  goal: <SportsSoccer />,
+  goals: <SportsSoccer />,
+  goalkeeping: <SportsHandball />,
+
+  interceptions: <Recycling />,
+
+  keyPasses: <PlaylistAddCircle />,
+  keyPassesSuccess: <SyncAlt />,
+  keyPassesSuccessRate: <SyncAlt />,
+  keyPassesTotal: <SyncAlt />,
+
+  keyTacklesSuccess: <HealthAndSafety />,
+  keyTacklesSuccessRate: <HealthAndSafety />,
+  keyTacklesTotal: <HealthAndSafety />,
+
+  normalize: <DataSaverOn />,
+  notNormalize: <DataArray />,
+
+  passes: <SyncAlt />,
+  passesSuccess: <SyncAlt />,
+  passesSuccessRate: <SyncAlt />,
+  passesTotal: <SyncAlt />,
+
+  performance: <QueryStats />,
+
   personalPressuresSuccess: <Hail />,
   personalPressuresSuccessRate: <Hail />,
+  personalPressuresTotal: <Hail />,
 
-  ballClearancesTotal: <Recycling />,
-  ballClearancesSuccess: <Recycling />,
-  ballClearancesSuccessRate: <Recycling />,
+  playTimeRate: <DonutSmall />,
+  position: <SportsSoccer />,
+  positions: <SportsSoccer />,
 
+  shotsOnTarget: <SportsSoccer />,
+  shotsOnTargetSuccessRate: <SportsSoccer />,
+  shotsTotal: <SportsSoccer />,
+
+  stats: <BarChart />,
+  statsParm: <BarChart />,
+
+  tacklesSuccess: <HealthAndSafety />,
+  tacklesSuccessRate: <HealthAndSafety />,
+  tacklesTotal: <HealthAndSafety />,
+
+  time: <QueryBuilder />,
+  timePlayed: <AccessTime />,
+  timeVideoStats: <OndemandVideo />,
+
+  xG: <SportsSoccer />,
 };

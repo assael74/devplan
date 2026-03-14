@@ -11,7 +11,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/joy'
-import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
+import { useGameHubUpdate } from '../../../../../../../../hooks/games/useGameHubUpdate.js'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
 import NewFormFieldsDrawer from './NewFormFieldsDrawer.js'

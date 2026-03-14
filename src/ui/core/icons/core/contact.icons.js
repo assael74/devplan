@@ -1,13 +1,15 @@
 import {
-  Phone,
+  Badge,
   Email,
-  Badge
+  Phone,
+  ContactPage
 } from '@mui/icons-material';
 
 export const contactIcons = {
-  phone: <Phone />,
+  birth: <Badge />,
   email: <Email />,
   name: <Badge />,
   names: <Badge />,
-  birth: <Badge />
+  phone: <Phone />,
+  contact: <ContactPage />,
 };

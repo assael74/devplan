@@ -21,8 +21,8 @@ import { buildRoutesByType, buildCountsByType } from './hub.routes'
 import { useCreateModal } from '../../../ui/forms/create/CreateModalProvider'
 import { buildTabsMeta, buildContextFromSelection, buildCreateHandlers } from './HubPage.helpers'
 
-import { useVideoModal } from '../hooks/useVideoModal'
-import { useVideoUpdate } from '../hooks/useVideoUpdate'
+import { useVideoModal } from '../hooks/videoAnalysis/useVideoModal'
+import { useVideoUpdate } from '../hooks/videoAnalysis/useVideoUpdate'
 
 import VideoAttachDrawer from '../../../ui/domains/video/videoAnalysis/attachDrawer/VideoAttachDrawer.js'
 import VideoEditDrawer from '../../../ui/domains/video/videoAnalysis/editDrawer/VideoEditDrawer.js'
@@ -79,7 +79,7 @@ export default function HubPage() {
     coreScouting: scouting,
     coreMeetings: meetings,
   })
-  
+
   const tabsMeta = useMemo(() => buildTabsMeta(s.MODE), [s.MODE])
 
   const routesByType = useMemo(() => buildRoutesByType(), [])

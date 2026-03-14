@@ -2,9 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+
 import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect'
+
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
-import { usePlayerHubUpdate } from '../../../../../../../../hooks/usePlayerHubUpdate.js'
+import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
+
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditDrawerStatus from './EditDrawerStatus.js'
 import {

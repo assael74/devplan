@@ -6,8 +6,8 @@ import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import ProfileShell from '../../hub/sharedProfile/ProfileShell'
 
-import { useVideoModal } from '../hooks/useVideoModal'
-import { useVideoUpdate } from '../hooks/useVideoUpdate'
+import { useVideoModal } from '../hooks/videoAnalysis/useVideoModal'
+import { useVideoUpdate } from '../hooks/videoAnalysis/useVideoUpdate'
 
 import { getTabFromUrl } from './playerProfile.routes'
 import PlayerHeader from './components/PlayerHeader'

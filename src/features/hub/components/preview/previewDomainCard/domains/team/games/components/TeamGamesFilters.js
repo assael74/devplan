@@ -170,7 +170,7 @@ export default function TeamGamesFilters({
               onClick={onCreateGame}
               sx={sx.icoAddSx}
             >
-              {iconUi({ id: 'addGame', size: 'sm' })}
+              {iconUi({ id: 'addGame' })}
             </IconButton>
           </span>
         </Tooltip>

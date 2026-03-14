@@ -1,57 +1,43 @@
-// src/features/players/components/preview/PreviewDomainCard/domains/team/abilities/TeamAbilitiesDomainSummary.js
+/// preview/PreviewDomainCard/domains/abilities/team/TeamAbilitiesDomainSummary.js
 
 import React, { useMemo } from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
-import { resolveTeamAbilitiesDomain } from './abilities.team.domain.logic'
 import { domainBoxSx } from '../../domain.sx'
+import { resolveTeamAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic'
 
-function hasDomains(summary) {
-  return Boolean(summary && (summary.strongest || summary.weakest))
-}
+const Row = ({ label, value, color = 'neutral' }) => {
+  const hasValue = value != null && String(value).trim() !== '' && value !== '—'
 
-const Row = ({ label, value, value2, color = 'neutral' }) => {
-  const has = value != null && String(value) !== ''
   return (
     <Box {...domainBoxSx}>
-      <Typography level="body-xs" sx={{ fontWeight: 700, opacity: 0.9 }}>
+      <Typography
+        level="body-xs"
+        sx={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.85 }}
+      >
         {label}
       </Typography>
-      <Chip size="sm" variant="soft" color={has ? color : 'neutral'}>
-        {has ? value : '—'}
+
+      <Chip size="sm" variant="soft" color={hasValue ? color : 'neutral'}>
+        {hasValue ? value : '—'}
       </Chip>
     </Box>
   )
 }
 
-export default function TeamAbilitiesDomainSummary({ entity, scope = 'global', scopeKey = null }) {
-  const model = useMemo(() => resolveTeamAbilitiesDomain({ entity, scope, key: scopeKey }), [entity, scope, scopeKey])
-  //console.log(model)
-  const summary = model?.summary || {}
-  const cov = model?.coverageSummary || { count: 0, total: 0, pct: 0 }
-  const showDomains = hasDomains(summary)
+export default function TeamAbilitiesDomainSummary({ entity, context }) {
+  const { summary } = useMemo(() => resolveTeamAbilitiesDomain(entity, context), [entity, context])
 
-  if (!showDomains) {
-    return (
-      <Box sx={{ mt: 2, mx: 1 }}>
-        <Chip size="sm" variant="soft">
-          {`אין מספיק נתונים לחישוב ממוצעים. כיסוי: ${cov.count}/${cov.total} (${cov.pct}%)`}
-        </Chip>
-      </Box>
-    )
-  }
+  const completion = summary?.total ? `${summary.filled}/${summary.total}` : '—'
+  const avgAll = summary?.avgAll != null ? summary.avgAll : '—'
+  const strongest = summary?.strongest ? `${summary.strongest.domainLabel} ${summary.strongest.avg}` : '—'
+  const weakest = summary?.weakest ? `${summary.weakest.domainLabel} ${summary.weakest.avg}` : '—'
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.6, width: '100%' }}>
-      <Row
-        label="חוזקה:"
-        value={summary?.strongest ? `${summary.strongest.domainLabel} (${summary.strongest.avg})` : '—'}
-        color="success"
-      />
-      <Row
-        label="חולשה:"
-        value={summary?.weakest ? `${summary.weakest.domainLabel} (${summary.weakest.avg})` : '—'}
-        color="danger"
-      />
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 0.75, width: '100%' }}>
+      <Row label="הושלמו" value={completion} color="primary" />
+      <Row label="ממוצע" value={avgAll} color="neutral" />
+      <Row label="חוזקה" value={strongest} color="success" />
+      <Row label="חולשה" value={weakest} color="warning" />
     </Box>
   )
 }

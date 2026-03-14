@@ -14,6 +14,7 @@ export default function PlayerInfoDomainActions({
   return (
     <Box sx={sx.actions}>
       <Button
+        size='sm'
         variant="solid"
         disabled={!dirty || pending}
         loading={pending}
@@ -25,6 +26,7 @@ export default function PlayerInfoDomainActions({
       </Button>
 
       <Button
+        size='sm'
         variant="soft"
         color="neutral"
         disabled={!dirty || pending}
@@ -34,6 +36,7 @@ export default function PlayerInfoDomainActions({
       </Button>
 
       <Button
+        size='sm'
         variant="outlined"
         color="neutral"
         disabled={pending}

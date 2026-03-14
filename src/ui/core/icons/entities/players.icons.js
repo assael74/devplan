@@ -1,20 +1,16 @@
 import {
-  Person,
-  PersonAdd,
-  PersonSearch,
   Badge,
+  PersonSearch,
   Psychology,
   SportsSoccer,
   Star,
 } from '@mui/icons-material';
 
 export const playerIcons = {
-  player: <Person />,
-  newPlayer: <PersonAdd />,
+  level: <Star />,
+  position: <SportsSoccer />,
+  psychologist: <Psychology />,
   scout: <PersonSearch />,
   scouting: <PersonSearch />,
   shortName: <Badge />,
-  psychologist: <Psychology />,
-  position: <SportsSoccer />,
-  level: <Star />,
 };

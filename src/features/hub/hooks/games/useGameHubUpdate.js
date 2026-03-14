@@ -1,6 +1,6 @@
-// src/features/hub/hooks/useGameHubUpdate.js
+// src/features/hub/hooks/games/useGameHubUpdate.js
 
-import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
+import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
 export function useGameHubUpdate(active) {
   const gameUpdate = useUpdateAction({

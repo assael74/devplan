@@ -38,11 +38,23 @@ const getProjectStatus = (player) => {
   return player?.projectStatus || 'approved'
 }
 
-const getPositionLabel = (player) =>
-  safe(player?.generalPosition?.layerLabel).trim() || 'ללא עמדה'
+const getPositionLabel = (player) => safe(player?.generalPosition?.layerLabel).trim() || 'ללא עמדה'
 
-const getTimeRateNumber = (player) =>
-  clamp(num(player?.playerFullStats?.playTimeRate), 0, 100)
+const buildTimeRef = (player, team) => {
+  const timePlayed = num(player?.playerFullStats?.timePlayed)
+  const totalTeamGameTime = num(team?.teamFullStats?.totalGameTime)
+
+  const playTimeRate =
+    totalTeamGameTime > 0
+      ? clamp(Math.round((timePlayed / totalTeamGameTime) * 100), 0, 100)
+      : 0
+
+  return {
+    timePlayed,
+    totalTeamGameTime,
+    playTimeRate,
+  }
+}
 
 export function resolveTeamPlayersDomain(entity, filters = {}) {
   const team = entity || null
@@ -58,7 +70,7 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
     onlyKey: filters.onlyKey === true || filters.onlyKey === 'true',
     minutesBelow:
       filters?.minutesBelow === '' || filters?.minutesBelow == null
-        ? 50
+        ? 100
         : clamp(num(filters.minutesBelow), 0, 100),
   }
 
@@ -72,13 +84,14 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
 
       const levelPotential = num(player?.levelPotential)
       const level = num(player?.level)
-      const timeRef = num(player?.timePlayed || player?.timeVideoStats || 0)
+      const timeRef = buildTimeRef(player, team)
+      const timeRateNum = timeRef.playTimeRate
+
       const isKey = player?.isKey === true || keySet.has(id)
       const potentialBand = pickPotentialBand(levelPotential)
       const projectStatus = getProjectStatus(player)
       const position = getPositionLabel(player)
-      const timeRateNum = getTimeRateNumber(player)
-      const active = player.active
+      const active = player?.active === true
 
       return {
         id,
@@ -87,12 +100,14 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
         isKey,
         levelPotential,
         level,
-        timeRef,
         potentialBand,
         projectStatus,
         position,
-        timeRateNum,
+        timeRef,
         active,
+        timeRateNum,
+        minutesPct: timeRateNum,
+        timePlayedPct: timeRateNum,
         timeRate: `${timeRateNum}%`,
         isBelowMinutes: timeRateNum < f.minutesBelow,
       }
@@ -102,11 +117,12 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
   const rows = rowsAll
     .filter((r) => (!qn ? true : norm(r.name).includes(qn)))
     .filter((r) => (f.onlyKey ? r.isKey === true : true))
+    .filter((r) => r.timeRateNum < f.minutesBelow)
     .sort((a, b) => {
       if (a.isKey !== b.isKey) return a.isKey ? -1 : 1
       if (b.levelPotential !== a.levelPotential) return b.levelPotential - a.levelPotential
       if (b.level !== a.level) return b.level - a.level
-      return b.timeRef - a.timeRef
+      return b.timeRateNum - a.timeRateNum
     })
 
   const playersCount = rowsAll.length
@@ -121,8 +137,8 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
     ? Math.round((rowsAll.reduce((sum, r) => sum + num(r.level), 0) / playersCount) * 10) / 10
     : 0
 
-  const withMinutesCount = rowsAll.filter((r) => r.timeRef > 0).length
-  const belowMinutesCount = rowsAll.filter((r) => r.isBelowMinutes).length
+  const withMinutesCount = rowsAll.filter((r) => r.timeRef.timePlayed > 0).length
+  const belowMinutesCount = rowsAll.filter((r) => r.timeRateNum < f.minutesBelow).length
 
   const positionsMap = rowsAll.reduce((acc, row) => {
     const key = row.position || 'ללא עמדה'

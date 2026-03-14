@@ -135,7 +135,7 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
           </Typography>
         </Sheet>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={1}>
           {filteredDomains.map((domain) => {
             const items = domain.items || []
             const domainAvg = calcDomainScore(items)
@@ -154,13 +154,13 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
                       <Chip size="sm" variant="soft">{`${filledCount}/${items.length}`}</Chip>
                     </Stack>
 
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ my: 1 }}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ my: 0.5 }}>
                       <Box sx={sx.domainBox}>
                         <CircularProgress
                           determinate
                           value={pct}
                           color={dColor}
-                          sx={{ width: 48, height: 48  }}
+                          sx={{ width: 42, height: 42  }}
                         />
 
                         <Typography

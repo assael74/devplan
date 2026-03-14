@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
+import { useGameHubUpdate } from '../../../../../../../../hooks/games/useGameHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
@@ -19,7 +19,7 @@ import {
 
 import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
-export default function EditDrawer({ open, game, onClose, onSaved }) {
+export default function EditDrawer({ open, game, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(game), [game])
   const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
@@ -117,7 +117,7 @@ export default function EditDrawer({ open, game, onClose, onSaved }) {
     >
       <Sheet sx={sx.drawerSheetSx}>
         <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader game={liveGame} />
+          <EditDrawerHeader game={liveGame} team={game?.team} />
 
           <EditFormDrawer draft={draft} setDraft={setDraft} liveGame={liveGame} />
 

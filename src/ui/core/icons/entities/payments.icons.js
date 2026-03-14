@@ -1,18 +1,19 @@
 import {
+  Autorenew,
+  CurrencyExchange,
+  MonetizationOn,
   Payments,
   PublishedWithChanges,
-  CurrencyExchange,
-  Autorenew,
   VolunteerActivism,
-  MonetizationOn,
 } from '@mui/icons-material';
 
-export const paymentIcon = {
-  payment: <Payments />,
-  payments: <Payments />,
+export const paymentsIcons = {
   isInvoice: <PublishedWithChanges />,
   isNotPaid: <CurrencyExchange />,
   monthlyPayment: <Autorenew />,
-  paymentRequst: <VolunteerActivism />,
   oneTimePayment: <MonetizationOn />,
+  payment: <Payments />,
+  paymentRequest: <VolunteerActivism />,
+  paymentRequst: <VolunteerActivism />,
+  payments: <Payments />,
 };

@@ -137,7 +137,7 @@ export default function PlayerMeetingsFilters({
         <Tooltip title="יצירת פגישה חדשה">
           <span>
             <IconButton size="sm" variant="outlined" onClick={onCreateMeeting} sx={sx.icoAddSx}>
-              {iconUi({ id: 'add', size: 'sm' })}
+              {iconUi({ id: 'addMeeting' })}
             </IconButton>
           </span>
         </Tooltip>

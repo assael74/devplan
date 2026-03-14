@@ -1,6 +1,6 @@
-// src/features/hub/hooks/usePaymentHubUpdate.js
+// src/features/hub/hooks/payments/usePaymentHubUpdate.js
 
-import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
+import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
 export function usePaymentHubUpdate(active) {
   const paymentUpdate = useUpdateAction({

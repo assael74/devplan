@@ -17,6 +17,10 @@ export default function TeamVideosDomainModal({
   context,
   onClose,
 }) {
+  const liveTeam = useMemo(() => {
+    const teams = Array.isArray(context?.teams) ? context.teams : []
+    return teams.find((t) => t?.id === entity?.id) || entity || null
+  }, [context?.teams, entity])
   const team = entity || null
 
   const [q, setQ] = useState('')
@@ -134,7 +138,7 @@ export default function TeamVideosDomainModal({
         open={openCreateVideo}
         onClose={handleCloseCreate}
         onSaved={handleCreateSaved}
-        context={{ ...context, teamId: team?.id || '', team, }}
+        context={{ ...context, teamId: team?.id || '', team: liveTeam }}
       />
 
       <DriveVideoPlayer

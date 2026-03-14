@@ -1,19 +1,18 @@
 import {
   Engineering,
-  Event,
-  Person,
   Groups,
-  Home
+  Home,
+  Person,
 } from '@mui/icons-material';
 
 export const entitiesIcons = {
+  club: <Home />,
+  clubs: <Home />,
   player: <Person />,
   players: <Person />,
+  role: <Engineering />,
+  roles: <Engineering />,
+  staff: <Engineering />,
   team: <Groups />,
   teams: <Groups />,
-  clubs: <Home />,
-  club: <Home />,
-  roles: <Engineering />,
-  role: <Engineering />,
-  staff: <Engineering />,
 };

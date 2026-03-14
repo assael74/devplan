@@ -9,18 +9,20 @@ export default function TeamPlayersFilters({
   q,
   onlyKey,
   summary,
-  minutesBelow = 50,
+  minutesBelow = 100,
   onChangeQ,
+  onCreatePlayer,
   onChangeOnlyKey,
   onChangeMinutesBelow,
+  openCreatePlayer
 }) {
 
-  const isDirty = q || onlyKey || minutesBelow !== 50
+  const isDirty = q || onlyKey || minutesBelow !== 100
 
   const handleReset = () => {
     onChangeQ('')
     onChangeOnlyKey(false)
-    onChangeMinutesBelow(50)
+    onChangeMinutesBelow(100)
   }
 
   return (
@@ -73,6 +75,18 @@ export default function TeamPlayersFilters({
           <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
             {iconUi({id: 'reset'})}
           </IconButton>
+        </Tooltip>
+
+        <Tooltip title="יצירת שחקן חדש">
+          <span>
+            <IconButton
+              size="sm"
+              onClick={openCreatePlayer}
+              sx={sx.icoAddSx}
+            >
+              {iconUi({ id: 'addPlayer', size: 'sm' })}
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
     </Sheet>

@@ -53,6 +53,14 @@ export const drawerSx = {
     textOverflow: 'ellipsis',
   },
 
+  bodySx: {
+    p: 0.25,
+    overflow: 'auto',
+    display: 'grid',
+    alignContent: 'start',
+    gap: 1.1,
+  },
+
   heroMetaSx: {
     color: 'text.secondary',
     fontSize: 12,

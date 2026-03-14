@@ -1,6 +1,6 @@
-// src/features/hub/hooks/usePlayerHubUpdate.js
+// src/features/hub/hooks/players/usePlayerHubUpdate.js
 
-import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
+import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
 export function usePlayerHubUpdate(active) {
   const playerUpdate = useUpdateAction({
@@ -23,7 +23,7 @@ export function usePlayerHubUpdate(active) {
       ...meta,
       id: playerId,
       playerId,
-      createIfMissing: false,
+      createIfMissing: meta?.createIfMissing ?? false,
     })
   }
 

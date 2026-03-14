@@ -1,6 +1,6 @@
-// src/features/hub/hooks/useMeetingHubUpdate.js
+// src/features/hub/hooks/meetings/useMeetingHubUpdate.js
 
-import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
+import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
 export function useMeetingHubUpdate(active) {
   const meetingUpdate = useUpdateAction({

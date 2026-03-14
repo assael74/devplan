@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { createActions } from '../../../../../../../../../../ui/forms/create/createActions.js'
+import useVideoAnalysisHubCreate from '../../../../../../../../hooks/videoAnalysis/useVideoAnalysisHubCreate.js'
 
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
 import VideoAnalysisCreateForm from '../../../../../../../../../../ui/forms/VideoAnalysisCreateForm.js'
@@ -14,40 +14,34 @@ import {
   getIsDirty,
 } from './newFormDrawer.utils.js'
 
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
+import { drawerNewFormSx as sx } from '../../sx/newFormDrawer.sx.js'
 
 export default function NewFormDrawer({ open, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(context), [context])
 
   const [draft, setDraft] = useState(initial)
-  const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState(false)
 
   useEffect(() => {
     if (!open) return
+
     setDraft(initial)
-    setIsSaving(false)
     setIsValid(false)
-  }, [open, initial])
+  }, [open])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const saving = isSaving
+  const { saving, runCreateVideoAnalysis } = useVideoAnalysisHubCreate()
   const canSave = isDirty && isValid && !saving
 
   const handleSave = async () => {
-    if (!canSave) return
+    if (!canSave || saving) return
 
     try {
-      setIsSaving(true)
-
-      await createActions.videoAnalysis({ draft })
-
-      onSaved?.(draft)
-      onClose?.()
+      const res = await runCreateVideoAnalysis({ draft, context })
+      onClose()
+      onSaved(res || draft)
     } catch (error) {
       console.error('create videoAnalysis failed:', error)
-    } finally {
-      setIsSaving(false)
     }
   }
 
@@ -74,7 +68,7 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
     >
       <Sheet sx={sx.drawerSheetSx}>
         <Box sx={sx.drawerRootSx}>
-          <NewFormDrawerHeader draft={draft} />
+          <NewFormDrawerHeader draft={draft} team={context.team} />
 
           <VideoAnalysisCreateForm
             draft={draft}

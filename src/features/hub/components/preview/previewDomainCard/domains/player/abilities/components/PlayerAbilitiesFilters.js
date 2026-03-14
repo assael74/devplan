@@ -32,15 +32,7 @@ export default function PlayerAbilitiesFilters({
 
   return (
     <Sheet variant="plain" sx={sx.filtersBoxSx}>
-      <Box
-        sx={{
-          ...sx.filtersTopRowSx,
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'minmax(220px,1fr) 180px 180px 150px auto auto',
-          },
-        }}
-      >
+      <Box sx={sx.filtersTopRowSx}>
       <Input
         size="sm"
         placeholder="חיפוש לפי שם יכולת."

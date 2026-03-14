@@ -102,9 +102,6 @@ export default function PlayerPaymentsFilters({
           ))}
         </Select>
 
-
-
-
         <Tooltip title="איפוס פילטרים">
           <span>
             <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={onReset}>
@@ -116,7 +113,7 @@ export default function PlayerPaymentsFilters({
         <Tooltip title="יצירת תשלום חדש">
           <span>
             <IconButton size="sm" variant="outlined" onClick={onCreatePayment} sx={sx.icoAddSx}>
-              {iconUi({ id: 'add', size: 'sm' })}
+              {iconUi({ id: 'addPayment' })}
             </IconButton>
           </span>
         </Tooltip>

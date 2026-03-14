@@ -16,7 +16,7 @@ import GameTypeSelectField from '../../../../../../../../../../ui/fields/selectU
 import GameRivelField from '../../../../../../../../../../ui/fields/inputUi/games/GameRivelField.js'
 import GameVideoLinkField from '../../../../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
 
-import { drawerFormrSx as sx } from '../../sx/editFormDrawer.sx.js'
+import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 const resultOptions = [
   { id: '', label: 'ללא תוצאה' },

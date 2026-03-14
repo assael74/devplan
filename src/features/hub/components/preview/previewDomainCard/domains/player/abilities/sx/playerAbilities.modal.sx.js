@@ -15,8 +15,8 @@ export const sx = {
 
   domainBox: {
     position: 'relative',
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     flexShrink: 0
   },
 

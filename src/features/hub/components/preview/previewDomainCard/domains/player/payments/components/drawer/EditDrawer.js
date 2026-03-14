@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { usePaymentHubUpdate } from '../../../../../../../../hooks/usePaymentHubUpdate.js'
+import { usePaymentHubUpdate } from '../../../../../../../../hooks/payments/usePaymentHubUpdate.js'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditFormDrawer from './EditFormDrawer.js'

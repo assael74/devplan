@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, ModalClose } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { useGameHubUpdate } from '../../../../../../../../hooks/useGameHubUpdate.js'
+import { useGameHubUpdate } from '../../../../../../../../hooks/games/useGameHubUpdate.js'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditDrawerFields from './EditDrawerFields.js'
@@ -21,7 +21,7 @@ import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 export default function EditDrawer({ open, game, onClose, onSaved, context }) {
   const initial = useMemo(() => buildInitialDraft(game), [game])
   const [draft, setDraft] = useState(initial)
-  
+
   const player = context?.player || {}
 
   useEffect(() => {

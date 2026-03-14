@@ -1,26 +1,22 @@
 import {
-  FitnessCenter,
-  Psychology,
+  BarChart,
   ElectricBolt,
-  Whatshot,
+  FitnessCenter,
   Insights,
+  Psychology,
   Security,
-  SyncAlt,
-  Hail,
-  Adjust,
-  EventSeat,
-  BarChart
+  Whatshot,
 } from '@mui/icons-material';
 
 export const performanceIcons = {
   abilities: <FitnessCenter />,
-  fitness: <FitnessCenter />,
-  mental: <Psychology />,
-  general: <BarChart />,
-  offensive: <ElectricBolt />,
   defensive: <Security />,
   defensive_key: <Security />,
-  offensive_key: <ElectricBolt />,
+  fitness: <FitnessCenter />,
+  general: <BarChart />,
   hard: <Whatshot />,
+  mental: <Psychology />,
+  offensive: <ElectricBolt />,
+  offensive_key: <ElectricBolt />,
   pro: <Insights />,
 };

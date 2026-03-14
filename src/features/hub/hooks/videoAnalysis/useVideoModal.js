@@ -1,4 +1,5 @@
-// features/hub/hooks/useVideoHubModal.js
+// features/hub/hooks/videoAnalysis/useVideoHubModal.js
+
 import { useState, useCallback } from 'react'
 
 const emptyState = {

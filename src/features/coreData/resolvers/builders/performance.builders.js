@@ -20,8 +20,8 @@ export const buildPlayerGamesByPlayerId = (games = []) => {
   const map = new Map()
 
   for (const game of safeArr(games)) {
-    const players = safeArr(game?.players || game?.gamePlayers)
-    
+    const players = Array.isArray(game?.players) && game.players.length ? game.players : safeArr(game?.gamePlayers)
+
     for (const p of players) {
       const pid = safeId(p?.playerId || p?.p)
       if (!pid) continue

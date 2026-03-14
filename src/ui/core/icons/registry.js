@@ -1,38 +1,40 @@
+import { actionIcons } from './core/actions.icons';
+import { contactIcons } from './core/contact.icons';
+import { generalIcons } from './core/general.icons';
 import { navigationIcons } from './core/navigation.icons';
 import { statusIcons } from './core/status.icons';
-import { contactIcons } from './core/contact.icons';
-import { actionIcons } from './core/actions.icons';
-import { genralIcons } from './core/genral.icons';
 
-import { playerIcons } from './entities/players.icons';
+import { entitiesIcons } from './entities/entities.icons.js';
 import { gameIcons } from './entities/games.icons';
-import { teamIcons } from './entities/teams.icons';
 import { meetingIcons } from './entities/meetings.icons';
-import { paymentIcon } from './entities/payments.icons';
-import { videoIcons } from './entities/video.icons';
+import { paymentsIcons } from './entities/payments.icons';
+import { playerIcons } from './entities/players.icons';
 import { tagIcons } from './entities/tags.icons';
-import { entitiesIcons } from './entities/entities.icons.js'
+import { teamIcons } from './entities/teams.icons';
+import { videoIcons } from './entities/video.icons';
 
-import { statsIcons } from './analytics/stats.icons';
 import { performanceIcons } from './analytics/performance.icons';
+import { statsIcons } from './analytics/stats.icons';
 
-import { abilitiesIcon } from './abilities.Icons'
+import { abilitiesIcon } from './abilities.Icons';
 
 export const appIconMap = {
+  ...actionIcons,
+  ...contactIcons,
+  ...generalIcons,
   ...navigationIcons,
   ...statusIcons,
-  ...contactIcons,
-  ...genralIcons,
-  ...actionIcons,
-  ...playerIcons,
-  ...teamIcons,
-  ...videoIcons,
-  ...tagIcons,
-  ...statsIcons,
-  ...performanceIcons,
-  ...abilitiesIcon,
+
   ...entitiesIcons,
   ...gameIcons,
   ...meetingIcons,
-  ...paymentIcon
+  ...paymentsIcons,
+  ...playerIcons,
+  ...tagIcons,
+  ...teamIcons,
+  ...videoIcons,
+
+  ...statsIcons,
+  ...performanceIcons,
+  ...abilitiesIcon,
 };

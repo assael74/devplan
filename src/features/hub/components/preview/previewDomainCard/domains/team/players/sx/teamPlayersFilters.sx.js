@@ -1,5 +1,9 @@
 // previewDomainCard/domains/team/players/sx/teamPlayersFilters.sx.js
 
+import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('players')
+
 export const filtterSx = {
   filtersBoxSx: {
     p: 1,
@@ -14,7 +18,7 @@ export const filtterSx = {
   filtersTopRowSx: {
     display: 'grid',
     gap: 0.75,
-    gridTemplateColumns: { xs: '1fr', md: '1fr auto auto auto' },
+    gridTemplateColumns: { xs: '1fr', md: '1fr auto auto auto auto' },
     alignItems: 'center',
   },
 
@@ -49,5 +53,20 @@ export const filtterSx = {
     height: 36,
     width: 36,
     flexShrink: 0,
-  }
+  },
+
+  icoAddSx: {
+    height: 36,
+    width: 36,
+    bgcolor: c.bg,
+    color: c.text,
+    transition: 'filter .15s ease, transform .12s ease',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
+  },
 }

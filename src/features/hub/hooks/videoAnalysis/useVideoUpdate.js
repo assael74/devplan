@@ -1,5 +1,6 @@
-// features/hub/hooks/useVideoHubUpdate.js
-import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
+// features/hub/hooks/videoAnalysis/useVideoHubUpdate.js
+
+import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
 export function useVideoUpdate(active, fallbackId = '') {
   const resolvedId = fallbackId || active?.id || ''
