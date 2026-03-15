@@ -1,5 +1,8 @@
-// teamProfile/modules/players/useTeamPlayersCrud.js
+// teamProfile/modules/players/logic/useTeamPlayersCrud.js
+
 import { useCallback, useMemo, useState } from 'react'
+import { resolveTeamPlayers } from './teamPlayers.logic.js'
+import { filterTeamPlayersRows } from './teamPlayers.filters.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const norm = (v) => safe(v).trim()
@@ -14,54 +17,80 @@ const ensurePack = (pack) => {
   const r = p?.raw || p
   const id = norm(p?.playerId || r?.playerId || r?.player?.id || p?.id || r?.id)
   if (!id) return null
-  return { ...r, ...p, playerId: id }
+
+  return {
+    ...r,
+    ...p,
+    playerId: id,
+  }
 }
 
 export function useTeamPlayersCrud(team, onEntityChange) {
-  // ---- modals state
+  const [pending] = useState(false)
+
   const [editOpen, setEditOpen] = useState(false)
-  const [editMode, setEditMode] = useState('create')
   const [editRow, setEditRow] = useState(null)
 
   const [posOpen, setPosOpen] = useState(false)
   const [posRow, setPosRow] = useState(null)
 
-  // ---- base list
+  const [createOpen, setCreateOpen] = useState(false)
+
+  const [filters, setFilters] = useState({
+    search: '',
+    onlyActive: false,
+    onlyKey: false,
+    onlyProject: false,
+  })
+
   const base = useMemo(() => (Array.isArray(team?.players) ? team.players : []), [team?.players])
+  const { rows } = useMemo(() => resolveTeamPlayers(team), [team])
+
+  const filteredRows = useMemo(() => {
+    return filterTeamPlayersRows(rows, filters)
+  }, [rows, filters])
 
   const commitTeam = useCallback(
     (nextPlayers) => {
       const next = Array.isArray(nextPlayers) ? nextPlayers : []
-      const nextTeam = { ...(team || {}), players: next }
-      if (typeof onEntityChange === 'function') onEntityChange(nextTeam)
-      else console.warn('[useTeamPlayersCrud] missing onEntityChange(entity)')
+      const nextTeam = {
+        ...(team || {}),
+        players: next,
+      }
+
+      if (typeof onEntityChange === 'function') {
+        onEntityChange(nextTeam)
+        return
+      }
+
+      console.warn('[useTeamPlayersCrud] missing onEntityChange(entity)')
     },
     [team, onEntityChange]
   )
 
-  // ---- modal controls
-  const openCreate = useCallback(() => {
-    setEditMode('create')
-    setEditRow(null)
-    setEditOpen(true)
-  }, [])
-
   const openEdit = useCallback((row) => {
-    setEditMode('edit')
     setEditRow(row || null)
     setEditOpen(true)
   }, [])
 
-  const closeEdit = useCallback(() => setEditOpen(false), [])
+  const closeEdit = useCallback(() => {
+    setEditOpen(false)
+    setEditRow(null)
+  }, [])
 
   const openPositions = useCallback((row) => {
     setPosRow(row || null)
     setPosOpen(true)
   }, [])
 
-  const closePositions = useCallback(() => setPosOpen(false), [])
+  const closePositions = useCallback(() => {
+    setPosOpen(false)
+    setPosRow(null)
+  }, [])
 
-  // ---- ops
+  const openCreate = useCallback(() => setCreateOpen(true), [])
+  const closeCreate = useCallback(() => setCreateOpen(false), [])
+
   const upsert = useCallback(
     (nextPack) => {
       const pack = ensurePack(nextPack)
@@ -71,9 +100,10 @@ export function useTeamPlayersCrud(team, onEntityChange) {
       const next = []
       let replaced = false
 
-      for (let i = 0; i < base.length; i++) {
+      for (let i = 0; i < base.length; i += 1) {
         const r = base[i]
         const rid = pickRowId(r)
+
         if (rid && rid === nextId) {
           next.push(pack)
           replaced = true
@@ -87,14 +117,16 @@ export function useTeamPlayersCrud(team, onEntityChange) {
       commitTeam(next)
       closeEdit()
       closePositions()
+      closeCreate()
     },
-    [base, commitTeam, closeEdit, closePositions]
+    [base, commitTeam, closeEdit, closePositions, closeCreate]
   )
 
   const remove = useCallback(
     (playerId) => {
       const id = norm(playerId)
       if (!id) return
+
       const next = base.filter((r) => pickRowId(r) !== id)
       commitTeam(next)
       closeEdit()
@@ -110,17 +142,62 @@ export function useTeamPlayersCrud(team, onEntityChange) {
       if (!id) return
 
       const curActive = !!(r?.active ?? r?.player?.active ?? true)
-      upsert({ ...r, playerId: id, active: !curActive })
+
+      upsert({
+        ...r,
+        playerId: id,
+        active: !curActive,
+      })
     },
     [upsert]
   )
 
+  const setSearch = useCallback((value) => {
+    setFilters((prev) => ({
+      ...prev,
+      search: value || '',
+    }))
+  }, [])
+
+  const toggleOnlyActive = useCallback(() => {
+    setFilters((prev) => ({
+      ...prev,
+      onlyActive: !prev.onlyActive,
+    }))
+  }, [])
+
+  const toggleOnlyKey = useCallback(() => {
+    setFilters((prev) => ({
+      ...prev,
+      onlyKey: !prev.onlyKey,
+    }))
+  }, [])
+
+  const toggleOnlyProject = useCallback(() => {
+    setFilters((prev) => ({
+      ...prev,
+      onlyProject: !prev.onlyProject,
+    }))
+  }, [])
+
+  const resetFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      onlyActive: false,
+      onlyKey: false,
+      onlyProject: false,
+    })
+  }, [])
+
   return {
-    // ui state
+    pending,
+
+    rows,
+    filteredRows,
+    filters,
+
     editOpen,
-    editMode,
     editRow,
-    openCreate,
     openEdit,
     closeEdit,
 
@@ -129,9 +206,18 @@ export function useTeamPlayersCrud(team, onEntityChange) {
     openPositions,
     closePositions,
 
-    // ops
+    createOpen,
+    openCreate,
+    closeCreate,
+
     upsert,
     remove,
     toggleActive,
+
+    setSearch,
+    toggleOnlyActive,
+    toggleOnlyKey,
+    toggleOnlyProject,
+    resetFilters,
   }
 }

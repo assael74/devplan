@@ -12,13 +12,13 @@ export const PLAYERS_TYPES = [
 
 export const PROJECT_STATUS_CANDIDATE = [
   { id: 'candidate', labelH: 'מועמד', idIcon: 'candidate', color: succssesColor, icCol: black },
-  { id: 'messageSent', labelH: 'נשלחה הודעה ראשונית', idIcon: 'messageSent', color: '#a5c9ea', icCol: black },
+  { id: 'messageSent', labelH: 'נשלחה הודעה', idIcon: 'messageSent', color: '#a5c9ea', icCol: black },
   { id: 'awaitingReply', labelH: 'בהמתנה לתגובה', idIcon: 'awaitingReply',  color: warningColor, icCol: gray },
   { id: 'callscheduled', labelH: 'שיחה מתואמת', idIcon: 'callscheduled',  color: warningColor, icCol: gray },
   { id: 'reschedule', labelH: 'דחיית שיחה', idIcon: 'reschedule', color: dangerColor, icCol: white },
   { id: 'thinking', labelH: 'זמן מחשבה', idIcon: 'thinking', color: warningColor, icCol: gray },
   { id: 'approved', labelH: 'אושרה הצטרפות', idIcon: 'approved', color: succssesColor, icCol: black },
-  { id: 'declined', labelH: 'סירוב הצטרפות', idIcon: 'declined', color: dangerColor, icCol: white },
+  { id: 'declined', labelH: 'סירוב', idIcon: 'declined', color: dangerColor, icCol: white },
 ];
 
 export const POSITION_LAYERS = {

@@ -27,7 +27,7 @@ export default function SectionPanel({ title, subtitle, right, children }) {
         {right ? <Box sx={{ flexShrink: 0 }}>{right}</Box> : null}
       </Box>
 
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', minWidth: 0, pt: 0.75, pr: 0.5 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', minWidth: 0, pt: 0.75, pr: 0.5, pb: 6 }} className="dpScrollThin">
         {children}
       </Box>
     </Sheet>

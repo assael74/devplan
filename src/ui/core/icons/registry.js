@@ -9,6 +9,7 @@ import { gameIcons } from './entities/games.icons';
 import { meetingIcons } from './entities/meetings.icons';
 import { paymentsIcons } from './entities/payments.icons';
 import { playerIcons } from './entities/players.icons';
+import { roleIcons } from './entities/roles.icons';
 import { tagIcons } from './entities/tags.icons';
 import { teamIcons } from './entities/teams.icons';
 import { videoIcons } from './entities/video.icons';
@@ -30,6 +31,7 @@ export const appIconMap = {
   ...meetingIcons,
   ...paymentsIcons,
   ...playerIcons,
+  ...roleIcons,
   ...tagIcons,
   ...teamIcons,
   ...videoIcons,

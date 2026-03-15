@@ -1,4 +1,5 @@
-// teamProfile/modules/players/components/TeamPlayerEditModal.js
+// teamProfile/modules/players/components/drawer/TeamPlayerEditModal.js
+
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Modal, ModalDialog, Typography, Box, Button, Divider, Chip, Avatar } from '@mui/joy'
 

@@ -1,112 +1,176 @@
 // teamProfile/modules/players/TeamPlayersModule.js
+
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, Avatar, Typography, IconButton, Tooltip, Divider } from '@mui/joy'
-import EditRounded from '@mui/icons-material/EditRounded'
-import ToggleOnRounded from '@mui/icons-material/ToggleOnRounded'
-import PersonRounded from '@mui/icons-material/PersonRounded'
+import { Box } from '@mui/joy'
 
-import SectionPanel from '../../../sharedProfile/SectionPanel'
-import EmptyState from '../../../sharedProfile/EmptyState'
+import SectionPanel from '../../../sharedProfile/SectionPanel.js'
+import EmptyState from '../../../sharedProfile/EmptyState.js'
 
-import { resolveTeamPlayers } from './teamPlayers.logic'
-import { useTeamPlayersCrud } from './useTeamPlayersCrud'
-import TeamPlayerEditModal from './components/TeamPlayerEditModal'
-import TeamPlayerRow from './components/TeamPlayerRow'
-import TeamPlayerPositionsModal from './components/TeamPlayerPositionsModal'
-import { teamPlayersModuleSx as sx } from './players.sx'
+import { resolveTeamPlayers } from './logic/teamPlayers.logic.js'
+import { useTeamPlayersCrud } from './logic/useTeamPlayersCrud.js'
 
-import { FiltersDrawer, FiltersTrigger, useFilters } from '../../../../../ui/patterns/filters'
-import { playerFilterGroups } from '../../../../../shared/players/filters/playerFilterGroups'
-import { playerFilterRules, playerInitialFilters } from '../../../../../shared/players/filters/playerFilters.config'
-import playerImage from '../../../../../ui/core/images/playerImage.jpg'
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import TeamPlayersHeaderStats from './components/TeamPlayersHeaderStats.js'
+import TeamPlayersToolbar from './components/TeamPlayersToolbar.js'
+import TeamPlayersList from './components/TeamPlayersList.js'
 
-import JoyStarRatingStatic from '../../../../../ui/domains/ratings/JoyStarRating'
-import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal'
+import TeamPlayerQuickEditDrawer from './components/drawer/TeamPlayerQuickEditDrawer.js'
+import TeamPlayerPositionsDrawer from './components/drawer/TeamPlayerPositionsModal.js'
+
+import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersInsightsDrawer.js'
+
+import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 
-const typeLabel = (t) => (t === 'project' ? 'פרויקט' : 'כללי')
-const typeColor = (t) => (t === 'project' ? 'primary' : 'neutral')
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('players')
+
+const safe = (v) => (v == null ? '' : String(v))
+const norm = (v) => safe(v).trim().toLowerCase()
 
 export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer }) {
   const [imgRow, setImgRow] = useState(null)
   const [openImg, setOpenImg] = useState(false)
   const [rowPhoto, setRowPhoto] = useState('')
+  const [insightsOpen, setInsightsOpen] = useState(false)
+
+  const [filters, setFilters] = useState({
+    search: '',
+    onlyActive: false,
+    onlyKey: false,
+    onlyProject: false,
+    positionLayer: '',
+  })
 
   const { rows, summary } = useMemo(() => resolveTeamPlayers(entity), [entity])
-
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const { filters, filtered, onChange, onReset, hasActive } = useFilters(rows, playerInitialFilters, playerFilterRules)
-
   const crud = useTeamPlayersCrud(entity, onEntityChange)
 
+  const filteredRows = useMemo(() => {
+    let next = Array.isArray(rows) ? [...rows] : []
+
+    const q = norm(filters.search)
+    if (q) {
+      next = next.filter((row) => {
+        const text = norm(row?.searchText)
+        return text.includes(q)
+      })
+    }
+
+    if (filters.onlyActive) {
+      next = next.filter((row) => row?.active === true)
+    }
+
+    if (filters.onlyKey) {
+      next = next.filter((row) => row?.isKey === true)
+    }
+
+    if (filters.onlyProject) {
+      next = next.filter((row) => row?.type === 'project')
+    }
+
+    if (filters.positionLayer) {
+      next = next.filter((row) => row?.generalPositionKey === filters.positionLayer)
+    }
+
+    return next
+  }, [rows, filters])
+
+  const onChangePositionLayer = (value) => {
+    setFilters((prev) => ({ ...prev, positionLayer: value || '' }))
+  }
+
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      onlyActive: false,
+      onlyKey: false,
+      onlyProject: false,
+      positionLayer: '',
+    })
+  }
+
   return (
-    <Box sx={sx.root}>
-      {/* KPI */}
-      <Box sx={sx.kpiRow}>
-        <Box sx={sx.kpiLeft}>
-          <Chip startDecorator={iconUi({ id: 'team' })}>שחקנים: {summary?.total ?? 0}</Chip>
-          <Chip startDecorator={iconUi({ id: 'active' })} color="success">
-            פעילים: {summary?.active ?? 0}
-          </Chip>
-          <Chip startDecorator={iconUi({ id: 'notActive' })} color="danger">
-            לא פעילים: {summary?.nonActive ?? 0}
-          </Chip>
+    <>
+      <SectionPanel>
+        <Box
+          sx={{
+            position: 'sticky',
+            top: -6,
+            zIndex: 5,
+            display: 'grid',
+            gap: 1,
+            borderRadius: 12,
+            bgcolor: 'background.body',
+            mb: 0.5,
+            boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+          }}
+        >
+          <TeamPlayersToolbar
+            summary={summary}
+            filters={filters}
+            filteredCount={filteredRows.length}
+            onOpenInsights={() => setInsightsOpen(true)}
+            onChangeSearch={(value) =>
+              setFilters((prev) => ({ ...prev, search: value }))
+            }
+            onToggleOnlyActive={() =>
+              setFilters((prev) => ({ ...prev, onlyActive: !prev.onlyActive }))
+            }
+            onToggleOnlyKey={() =>
+              setFilters((prev) => ({ ...prev, onlyKey: !prev.onlyKey }))
+            }
+            onToggleOnlyProject={() =>
+              setFilters((prev) => ({ ...prev, onlyProject: !prev.onlyProject }))
+            }
+            onChangePositionLayer={onChangePositionLayer}
+            onResetFilters={handleResetFilters}
+          />
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <FiltersTrigger hasActive={hasActive} onClick={() => setFiltersOpen(true)} label="פילטרים" />
-        </Box>
-
-        <FiltersDrawer
-          open={filtersOpen}
-          onClose={() => setFiltersOpen(false)}
-          title="פילטר שחקנים"
-          filters={filters}
-          groups={playerFilterGroups}
-          onChange={onChange}
-          onReset={onReset}
-        />
-      </Box>
-
-      <SectionPanel title="שחקנים">
-        {filtered.length === 0 ? (
-          <EmptyState title="אין שחקנים להצגה" subtitle="בדוק פילטרים או הוסף שחקן חדש" />
+        {filteredRows.length === 0 ? (
+          <EmptyState
+            title="אין שחקנים להצגה"
+            subtitle="בדוק פילטרים או הוסף שחקן חדש"
+          />
         ) : (
-          <Box sx={sx.list}>
-            {filtered.map((r) => (
-              <TeamPlayerRow
-                key={r.id}
-                r={r}
-                sx={sx}
-                crud={crud}
-                onAvatarClick={(row) => {
-                  setImgRow(row)
-                  setRowPhoto(row.photo || '')
-                  setOpenImg(true)
-                }}
-              />
-            ))}
-          </Box>
+          <TeamPlayersList
+            rows={filteredRows}
+            onOpenPlayer={onOpenPlayer}
+            onAvatarClick={(row) => {
+              setImgRow(row)
+              setRowPhoto(row.photo || '')
+              setOpenImg(true)
+            }}
+            onOpenEdit={crud.openEdit}
+            onOpenPositions={crud.openPositions}
+            onToggleActive={crud.toggleActive}
+          />
         )}
       </SectionPanel>
 
-      <TeamPlayerEditModal
+      <TeamPlayerQuickEditDrawer
         open={crud.editOpen}
-        mode={crud.editMode}
         row={crud.editRow}
+        pending={crud.pending}
         onClose={crud.closeEdit}
         onSave={crud.upsert}
-        onDelete={crud.remove}
-        pending={crud.pending}
+        onRemove={crud.remove}
       />
 
-      <TeamPlayerPositionsModal
+      <TeamPlayerPositionsDrawer
         open={crud.posOpen}
         row={crud.posRow}
+        pending={crud.pending}
         onClose={crud.closePositions}
         onSave={crud.upsert}
-        pending={crud.pending}
+      />
+
+      <TeamPlayersInsightsDrawer
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
+        rows={rows}
+        summary={summary}
+        entity={entity}
       />
 
       <EntityImageModal
@@ -120,13 +184,8 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
         onAfterSave={(url) => {
           const next = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
           setRowPhoto(next)
-          const idx = filtered.findIndex((x) => x.id === imgRow?.id)
-          if (idx !== -1) {
-            filtered[idx].photo = next
-          }
         }}
       />
-
-    </Box>
+    </>
   )
 }

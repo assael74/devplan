@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\features\hub\sharedProfile\ProfileShell.js
+// src/features/hub/sharedProfile/ProfileShell.js
+
 import React from 'react'
 import { Sheet, Box } from '@mui/joy'
 
@@ -14,7 +15,6 @@ export default function ProfileShell({
   rendererProps,
   FabComp,
   fabProps,
-  sx,
 }) {
   const isMeetings = tab === 'meetings'
 
@@ -26,7 +26,6 @@ export default function ProfileShell({
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
-        ...sx,
       }}
     >
 
@@ -44,7 +43,6 @@ export default function ProfileShell({
           flex: 1,
           minHeight: 0,
           overflow: isMeetings ? 'hidden' : 'auto',
-          px: 1.25,
           pt: 1.25,
           pb: 2,
           scrollPaddingBottom: 8,
