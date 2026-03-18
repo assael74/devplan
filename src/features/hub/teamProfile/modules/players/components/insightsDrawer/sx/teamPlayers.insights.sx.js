@@ -81,7 +81,7 @@ export const teamPlayersInsightsSx = {
 
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: 1,
   },
 
@@ -92,6 +92,14 @@ export const teamPlayersInsightsSx = {
     minHeight: 40,
     bgcolor: `${p.bg}14`,
     boxShadow: `inset 0 0 0 1px ${p.accent}10`,
+  },
+
+  statsVlaue: {
+    fontWeight: 700,
+    ml: 'auto',
+    borderRadius: 'sm',
+    bgcolor: c.accent,
+    color: c.textAcc,
   },
 
   statCardHead: {

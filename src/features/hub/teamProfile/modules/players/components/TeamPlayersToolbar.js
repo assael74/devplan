@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Box, Button, Chip, Input, Option, Select, ListItemDecorator } from '@mui/joy'
-import SearchRounded from '@mui/icons-material/SearchRounded'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -61,7 +60,7 @@ export default function TeamPlayersToolbar({
         <Input
           value={filters?.search || ''}
           onChange={(e) => onChangeSearch(e.target.value)}
-          startDecorator={<SearchRounded />}
+          startDecorator={iconUi({id: 'search'})}
           placeholder="חיפוש שחקן לפי שם / שנתון / עמדה"
           size="sm"
           sx={sx.searchInput}

@@ -8,10 +8,10 @@ import { teamPlayersListSx as sx } from '../sx/teamPlayers.list.sx.js'
 
 export default function TeamPlayersList({
   rows,
-  onOpenPlayer,
+  onEditPlayer,
   onAvatarClick,
   onOpenEdit,
-  onOpenPositions,
+  onEditPosition,
   onToggleActive,
 }) {
   if (!rows?.length) {
@@ -31,10 +31,9 @@ export default function TeamPlayersList({
         <TeamPlayerRow
           key={row.id}
           row={row}
-          onOpenPlayer={onOpenPlayer}
           onAvatarClick={onAvatarClick}
-          onOpenEdit={onOpenEdit}
-          onOpenPositions={onOpenPositions}
+          onEditPlayer={onEditPlayer}
+          onEditPosition={onEditPosition}
           onToggleActive={onToggleActive}
         />
       ))}

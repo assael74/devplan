@@ -60,6 +60,70 @@ const buildTagUseCountMap = (videosArr = []) => {
   return counts
 }
 
+const getTagLabel = (tag) => String(tag?.label || tag?.tagName || tag?.name || '').trim()
+
+const buildTagUiChild = (tag) => ({
+  id: String(tag?.id || ''),
+  label: getTagLabel(tag),
+  kind: String(tag?.kind || ''),
+  slug: String(tag?.slug || ''),
+  parentId: tag?.parentId ? String(tag.parentId) : null,
+  useCount: safeNum(tag?.useCount),
+  order: Number.isFinite(Number(tag?.order)) ? Number(tag.order) : 0,
+})
+
+const sortTagsByOrderAndLabel = (a, b) => {
+  const ao = Number.isFinite(Number(a?.order)) ? Number(a.order) : 0
+  const bo = Number.isFinite(Number(b?.order)) ? Number(b.order) : 0
+
+  if (ao !== bo) return ao - bo
+  return String(a?.label || '').localeCompare(String(b?.label || ''), 'he')
+}
+
+const buildTagsHierarchy = (tags = []) => {
+  const base = tags.map((tag) => ({
+    ...tag,
+
+    id: String(tag?.id || ''),
+    slug: String(tag?.slug || ''),
+    kind: String(tag?.kind || ''),
+    tagType: String(tag?.tagType || ''),
+    label: getTagLabel(tag),
+
+    isActive: tag?.isActive !== false,
+    parentId: tag?.parentId ? String(tag.parentId) : null,
+
+    parentLabel: '',
+    parentKind: '',
+    parentSlug: '',
+
+    childrenIds: [],
+    children: [],
+  }))
+
+  const byId = new Map(base.map((tag) => [tag.id, tag]))
+
+  for (const tag of base) {
+    if (!tag.parentId) continue
+
+    const parent = byId.get(tag.parentId)
+    if (!parent) continue
+
+    tag.parentLabel = getTagLabel(parent)
+    tag.parentKind = String(parent?.kind || '')
+    tag.parentSlug = String(parent?.slug || '')
+
+    parent.childrenIds.push(tag.id)
+    parent.children.push(buildTagUiChild(tag))
+  }
+
+  return base.map((tag) => ({
+    ...tag,
+    childrenIds: Array.from(new Set(tag.childrenIds)),
+    children: [...tag.children].sort(sortTagsByOrderAndLabel),
+  }))
+}
+
 export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
   const {
     clubs = [],
@@ -99,18 +163,22 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
     ...videosBase,
   ])
 
-  const tags = tagsBase
+  const rawTags = tagsBase
     .map((tag) => ({
       ...tag,
       id: String(tag?.id || ''),
       slug: String(tag?.slug || ''),
       tagType: String(tag?.tagType || ''),
+      kind: String(tag?.kind || ''),
+      label: getTagLabel(tag),
       isActive: tag?.isActive !== false,
       parentId: tag?.parentId ? String(tag.parentId) : null,
       useCount: safeNum(tagUseCountById.get(String(tag?.id || ''))),
       order: Number.isFinite(Number(tag?.order)) ? Number(tag.order) : 0,
     }))
     .filter((tag) => Boolean(tag.id))
+
+  const tags = buildTagsHierarchy(rawTags)
 
   return {
     clubById,

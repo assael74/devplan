@@ -15,7 +15,7 @@ export const teamPlayersListSx = {
     borderRadius: 12,
     border: '1px solid',
     borderColor: 'divider',
-    bgcolor: 'background.surface',
+    bgcolor: "background.level3",
     position: 'relative',
     overflow: 'hidden',
     transition:

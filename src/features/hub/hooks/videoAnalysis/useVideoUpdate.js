@@ -16,7 +16,7 @@ export function useVideoUpdate(active, fallbackId = '') {
   const run = (type, patch, meta) => {
     const update = analysisUpdate
     const videoId = meta?.videoId || resolvedId
-    const shouldCreate = Array.isArray(patch?.tagIds)
+    const shouldCreate = Object.keys(patch || {}).length > 0
 
     return update.runUpdate(patch, {
       ...meta,
@@ -26,5 +26,5 @@ export function useVideoUpdate(active, fallbackId = '') {
     })
   }
 
-  return { run }
+  return { run, pending: analysisUpdate?.pending || false, }
 }

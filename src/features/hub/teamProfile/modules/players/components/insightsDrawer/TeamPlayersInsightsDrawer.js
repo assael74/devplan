@@ -39,7 +39,7 @@ export default function TeamPlayersInsightsDrawer({
 
   return (
     <Drawer
-      size="md"
+      size="lg"
       variant="plain"
       anchor="right"
       open={open}

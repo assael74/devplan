@@ -28,14 +28,18 @@ export default function PlayerVideosDomainSummary({ entity, tags }) {
     [entity, tags]
   )
 
-  const topTags = Array.isArray(summary?.topTagsAll) ? summary.topTagsAll : []
-  const firstTag = topTags[0]
-  const topTagLabel = firstTag ? `${firstTag?.tag?.tagName || firstTag?.tag?.label || 'תג'} · ${firstTag?.count || 0}` : 'אין תגים'
+  const firstTopic = Array.isArray(summary?.topTopics)? summary.topTopics[0]: null
+
+  const topTopicLabel = firstTopic?.label || 'אין נושא'
+  const paceLabel =summary?.avgVideosPerActiveMonth > 0? `${summary.avgVideosPerActiveMonth} לחודש`: 'אין קצב'
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.6, px: 0.5, width: '100%' }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0.6, px: 0.5, width: '100%' }}>
       <Row label="וידאו:" value={summary?.totalVideos ?? 0} color="primary" />
-      <Row label="תגים:" value={topTagLabel} color="success" />
+
+      <Row label="קצב:" value={paceLabel} color="success" />
+
+      <Row label="נושא:" value={topTopicLabel} color="neutral" />
     </Box>
   )
 }

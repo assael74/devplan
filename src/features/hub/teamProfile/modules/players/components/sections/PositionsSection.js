@@ -8,9 +8,9 @@ import { teamPlayersSectionsSx as sx } from '../../sx/teamPlayers.sections.sx.js
 
 export default function PositionsSection({
   row,
-  onOpenPositions,
+  onEditPosition,
 }) {
-  const clickablePositions = typeof onOpenPositions === 'function'
+  const clickablePositions = typeof onEditPosition === 'function'
 
   const visiblePositions = Array.isArray(row?.positions) ? row.positions.slice(0, 3) : []
   const restPositions = Math.max((row?.positions?.length || 0) - visiblePositions.length, 0)
@@ -27,7 +27,7 @@ export default function PositionsSection({
               size="sm"
               variant={idx === 0 ? 'soft' : 'outlined'}
               color={idx === 0 ? 'primary' : 'neutral'}
-              onClick={clickablePositions ? () => onOpenPositions(row) : undefined}
+              onClick={clickablePositions ? () => onEditPosition(row) : undefined}
               sx={clickablePositions ? sx.positionChipClickable : sx.positionChip}
             >
               {pos}
@@ -38,7 +38,7 @@ export default function PositionsSection({
             size="sm"
             variant="outlined"
             color="danger"
-            onClick={clickablePositions ? () => onOpenPositions(row) : undefined}
+            onClick={clickablePositions ? () => onEditPosition(row) : undefined}
             sx={clickablePositions ? sx.positionChipClickable : sx.positionChip}
           >
             ללא עמדה
@@ -50,7 +50,7 @@ export default function PositionsSection({
             size="sm"
             variant="outlined"
             color="neutral"
-            onClick={clickablePositions ? () => onOpenPositions(row) : undefined}
+            onClick={clickablePositions ? () => onEditPosition(row) : undefined}
             sx={clickablePositions ? sx.positionChipClickable : sx.positionChip}
           >
             +{restPositions}
@@ -65,7 +65,7 @@ export default function PositionsSection({
             variant="soft"
             color="neutral"
             startDecorator={iconUi({ id: generalPositionIcon })}
-            onClick={clickablePositions ? () => onOpenPositions(row) : undefined}
+            onClick={clickablePositions ? () => onEditPosition(row) : undefined}
             sx={clickablePositions ? sx.generalPositionChipClickable : sx.generalPositionChip}
           >
             {generalPositionLabel}

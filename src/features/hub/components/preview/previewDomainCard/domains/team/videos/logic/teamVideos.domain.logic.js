@@ -2,6 +2,10 @@
 
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
+import { buildVideoInsights } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
+import { VIDEO_INSIGHTS_DEFAULT_TAG_TYPE } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.constants.js'
+import { buildTagsByIdObject, getVideoType } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.helpers.js'
+import { resolveVideoMonthKey } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.months.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])
@@ -14,81 +18,7 @@ const normalizeIds = (v) => {
   return id ? [id] : []
 }
 
-const MONTHS_HE = [
-  '',
-  'ינואר',
-  'פברואר',
-  'מרץ',
-  'אפריל',
-  'מאי',
-  'יוני',
-  'יולי',
-  'אוגוסט',
-  'ספטמבר',
-  'אוקטובר',
-  'נובמבר',
-  'דצמבר',
-]
-
-const buildPrevMonthKey = (year, month) => {
-  const y = month === 1 ? year - 1 : year
-  const m = month === 1 ? 12 : month - 1
-  return `${y}-${String(m).padStart(2, '0')}`
-}
-
-const getLast2MonthsKeys = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-
-  const prev1 = buildPrevMonthKey(year, month)
-  const [y1, m1] = prev1.split('-').map(Number)
-  const prev2 = buildPrevMonthKey(y1, m1)
-
-  return [prev1, prev2]
-}
-
-const getMonthNameHe = (key) => {
-  const [, mm] = safe(key).split('-')
-  const month = Number(mm)
-  return MONTHS_HE[month] || '—'
-}
-
-const buildLast2MonthsAnalysis = (videos) => {
-  const keys = getLast2MonthsKeys()
-  const counts = new Map(keys.map((key) => [key, 0]))
-
-  for (const video of videos || []) {
-    const key = getMonthKey(video)
-    if (counts.has(key)) {
-      counts.set(key, counts.get(key) + 1)
-    }
-  }
-
-  return keys.map((key) => ({
-    key,
-    label: getMonthNameHe(key),
-    count: counts.get(key) || 0,
-  }))
-}
-
-export const getMonthKey = (v) => {
-  const y = String(v?.year || '').padStart(4, '0')
-  const m = String(v?.month || '').padStart(2, '0')
-
-  if (y !== '0000' && m !== '00') return `${y}-${m}`
-
-  const raw = v?.videoDate || v?.date || v?.createdAt || v?.meetingDate || v?.ts
-  if (!raw) return ''
-
-  const dt = new Date(raw)
-  if (Number.isNaN(dt.getTime())) {
-    const s = safe(raw)
-    return s.length >= 7 ? s.slice(0, 7) : ''
-  }
-
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
-}
+export const getMonthKey = (video) => resolveVideoMonthKey(video)
 
 export const getMonthLabel = (key) => {
   const [yy, mm] = safe(key).split('-')
@@ -102,9 +32,9 @@ export const getMonthLabel = (key) => {
 const pickVideoDate = (video) =>
   safe(video?.videoDate || video?.date || video?.createdAt || video?.meetingDate || video?.ts)
 
-const pickVideoUrl = (video) => safe(video?.link)
+const pickVideoUrl = (video) => safe(video?.link || video?.videoUrl)
 
-const pickVideoTitle = (video) => safe(video?.name || 'קטע וידאו')
+const pickVideoTitle = (video) => safe(video?.name || video?.title || 'קטע וידאו')
 
 const pickVideoNotes = (video) => safe(video?.notes)
 
@@ -129,22 +59,6 @@ const pickPlayerName = (player) => {
 const pickKeyIds = (team) => {
   const arr = asArr(team?.keyPlayers)
   return new Set(arr.map((x) => safe(x?.id || x?.playerId)).filter(Boolean))
-}
-
-const buildTagsMap = (tagsArr) => {
-  const map = new Map()
-
-  for (const tag of tagsArr || []) {
-    if (!tag) continue
-
-    const id = safe(tag?.id || tag?.tagId)
-    const slug = safe(tag?.slug)
-
-    if (id) map.set(id, tag)
-    if (slug) map.set(slug, tag)
-  }
-
-  return map
 }
 
 const collectTagsFromVideos = (videos) => {
@@ -182,51 +96,63 @@ const getTagIdsFromVideo = (video) => {
   return normalizeIds(raw)
 }
 
-const resolveTagsFullForVideo = (video, tagsMap) => {
+const resolveTagsFullForVideo = (video, tagsById = {}) => {
   const pre = asArr(video?.tagsFull).filter(Boolean).filter((t) => t?.isActive !== false)
   if (pre.length) return pre
 
   const ids = getTagIdsFromVideo(video)
-  if (!ids.length || !tagsMap) return []
+  if (!ids.length) return []
 
-  return ids.map((id) => tagsMap.get(safe(id)) || null).filter(Boolean).filter((t) => t?.isActive !== false)
+  return ids
+    .map((id) => tagsById[String(id)] || null)
+    .filter(Boolean)
+    .filter((t) => t?.isActive !== false)
 }
 
-const buildTagCounters = (videos, tagsMap) => {
-  const counts = new Map()
+const getSeasonStartYear = (team, videos = []) => {
+  const direct =
+    Number(team?.seasonStartYear) ||
+    Number(team?.season?.startYear) ||
+    Number(team?.seasonStart)
 
-  for (const video of videos || []) {
-    const ids = getTagIdsFromVideo(video)
+  if (direct) return direct
 
-    for (const id of ids) {
-      const tagId = safe(id)
-      if (!tagId) continue
+  const monthKeys = asArr(videos)
+    .map((video) => getMonthKey(video))
+    .filter(Boolean)
+    .sort()
 
-      const model = tagsMap ? tagsMap.get(tagId) : null
-      if (model?.isActive === false) continue
+  if (!monthKeys.length) return null
 
-      counts.set(tagId, (counts.get(tagId) || 0) + 1)
-    }
-  }
+  const firstKey = monthKeys[0]
+  const [yearStr, monthStr] = firstKey.split('-')
+  const year = Number(yearStr)
+  const month = Number(monthStr)
 
-  return counts
+  if (!year || !month) return null
+  return month >= 8 ? year : year - 1
 }
 
-const topTagModels = (countsMap, tagsMap, limit = 4) =>
-  Array.from(countsMap.entries())
-    .map(([id, count]) => ({
-      id,
-      count,
-      tag: tagsMap ? tagsMap.get(id) || null : null,
+const buildRecentActivity = (monthlyActivity = [], limit = 2) => {
+  return asArr(monthlyActivity)
+    .filter((item) => item?.hasActivity)
+    .slice(-limit)
+    .reverse()
+    .map((item) => ({
+      key: item.monthKey,
+      label: item.monthLabel,
+      count: Number(item.totalVideos || 0),
+      analysis: Number(item.analysisVideos || 0),
+      meeting: Number(item.meetingVideos || 0),
     }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit)
+}
 
 function pickAssignmentType(video) {
-  const type = safe(video?.contextType).trim().toLowerCase()
+  const contextType = norm(video?.contextType)
+  const videoType = getVideoType(video)
 
-  if (type === 'entity') return 'entity'
-  if (type === 'meeting') return 'meeting'
+  if (contextType === 'entity') return 'entity'
+  if (videoType === 'meeting') return 'meeting'
   return 'none'
 }
 
@@ -251,6 +177,10 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
 
   const state = team == null ? DOMAIN_STATE.PARTIAL : getDomainState({ count: videosAll.length, isLocked: false, isStale: false })
 
+  const passedTags = asArr(deps?.tags)
+  const passedSeasonStartYear = Number(deps?.seasonStartYear) || null
+  const tagType = deps?.tagType || VIDEO_INSIGHTS_DEFAULT_TAG_TYPE
+
   const f = {
     q: hasText(filters.q) ? safe(filters.q) : '',
     month: hasText(filters.month) ? safe(filters.month) : '',
@@ -261,10 +191,9 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
   const qn = norm(f.q)
   const keySet = pickKeyIds(team)
 
-  const depTags = asArr(deps?.tags)
   const fallbackTags = uniqTags(collectTagsFromVideos(videosAll))
-  const tagsArr = depTags.length ? depTags : fallbackTags
-  const tagsMap = tagsArr.length ? buildTagsMap(tagsArr) : null
+  const tagsArr = passedTags.length ? passedTags : fallbackTags
+  const tagsById = buildTagsByIdObject(tagsArr)
 
   const playersById = new Map()
   for (const player of asArr(team?.players)) {
@@ -302,22 +231,13 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
     )
   })
 
-  const tagCountsAll = buildTagCounters(videosFiltered, tagsMap)
-  const topTagsAll = topTagModels(tagCountsAll, tagsMap, 4)
-  const totalTags = (entity?.videos || []).reduce((sum, video) => {
-    const count = Array.isArray(video?.tagIds) ? video.tagIds.length : 0
-    return sum + count
-  }, 0)
-
   const playerIdsWithVideos = new Set()
-  let keyPlayersWithVideos = 0
-
   const keyPlayersUsed = new Set()
 
   const videos = videosFiltered
     .slice()
     .sort((a, b) => pickVideoDate(b).localeCompare(pickVideoDate(a)))
-    .map((video, index) => {
+    .map((video) => {
       const playerId = pickVideoPlayerId(video)
       const player = playerId ? playersById.get(playerId) || null : null
       const isKey = playerId ? keySet.has(playerId) : false
@@ -325,13 +245,11 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
       const monthKey = getMonthKey(video)
       const tagIds = getTagIdsFromVideo(video)
       const hasNotes = !!safe(video?.notes).trim()
+      const tagsFull = resolveTagsFullForVideo(video, tagsById)
 
       if (playerId) {
         playerIdsWithVideos.add(playerId)
-        if (isKey && !keyPlayersUsed.has(playerId)) {
-          keyPlayersUsed.add(playerId)
-          keyPlayersWithVideos += 1
-        }
+        if (isKey) keyPlayersUsed.add(playerId)
       }
 
       return {
@@ -349,28 +267,57 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
         hasLink: !!pickVideoUrl(video),
         tagIds,
         hasNotes,
-        tagsFull: resolveTagsFullForVideo(video, tagsMap),
+        tagsFull,
         tagsCount: tagIds.length,
         assignmentType: pickAssignmentType(video),
         assignmentText: pickAssignmentText(video),
+        videoType: getVideoType(video),
       }
     })
+
+  const seasonStartYear = deps?.seasonStartYear
+
+  const insights = buildVideoInsights({
+    videos,
+    tags: tagsArr,
+    seasonStartYear: seasonStartYear,
+  })
+
+  const taggedVideos = videos.filter((x) => x.tagsCount > 0).length
+  const untaggedVideos = videos.length - taggedVideos
 
   const summary = {
     totalVideos: videos.length,
     totalVideosAll: videosAll.length,
+    taggedVideos,
+    untaggedVideos,
     playersWithVideos: playerIdsWithVideos.size,
-    keyPlayersWithVideos,
-    taggedVideos: videos.filter((x) => x.tagsCount > 0).length,
-    untaggedVideos: videos.filter((x) => x.tagsCount === 0).length,
-    monthsCount: new Set(videos.map((x) => x.month).filter(Boolean)).size,
-    topTagsAll,
-    month: f.month || '',
-    last2MonthsAnalysis: buildLast2MonthsAnalysis(videos),
-    totalTags
+    keyPlayersWithVideos: keyPlayersUsed.size,
+
+    seasonStartYear,
+    tagsCount: tagsArr.length,
+    insights,
+
+    analysisVideos: insights?.totals?.analysisVideos || 0,
+    meetingVideos: insights?.totals?.meetingVideos || 0,
+    activeMonths: insights?.totals?.activeMonths || 0,
+    totalCategories: insights?.totals?.totalCategories || 0,
+    totalTopics: insights?.totals?.totalTopics || 0,
+
+    seasonMonths: insights?.pace?.seasonMonths || 0,
+    avgVideosPerMonth: insights?.pace?.avgVideosPerMonth || 0,
+    avgAnalysisPerMonth: insights?.pace?.avgAnalysisPerMonth || 0,
+    avgMeetingsPerMonth: insights?.pace?.avgMeetingsPerMonth || 0,
+    avgVideosPerActiveMonth: insights?.pace?.avgVideosPerActiveMonth || 0,
+
+    topCategories: asArr(insights?.topCategories),
+    topTopics: asArr(insights?.topTopics),
+    monthlyActivity: asArr(insights?.monthlyActivity),
   }
 
-  const options = {months: Array.from(new Set(videosAll.map(getMonthKey).filter(Boolean))).sort().reverse()}
+  const options = {
+    months: Array.from(new Set(videosAll.map(getMonthKey).filter(Boolean))).sort().reverse(),
+  }
 
   return {
     state,

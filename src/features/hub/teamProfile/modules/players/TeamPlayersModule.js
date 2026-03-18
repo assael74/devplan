@@ -7,9 +7,7 @@ import SectionPanel from '../../../sharedProfile/SectionPanel.js'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 
 import { resolveTeamPlayers } from './logic/teamPlayers.logic.js'
-import { useTeamPlayersCrud } from './logic/useTeamPlayersCrud.js'
 
-import TeamPlayersHeaderStats from './components/TeamPlayersHeaderStats.js'
 import TeamPlayersToolbar from './components/TeamPlayersToolbar.js'
 import TeamPlayersList from './components/TeamPlayersList.js'
 
@@ -28,11 +26,18 @@ const c = getEntityColors('players')
 const safe = (v) => (v == null ? '' : String(v))
 const norm = (v) => safe(v).trim().toLowerCase()
 
-export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer }) {
+export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer, context }) {
+  const liveTeam = useMemo(() => {
+    const teams = Array.isArray(context?.teams) ? context.teams : []
+    return teams.find((t) => t?.id === entity?.id) || entity || null
+  }, [context?.teams, entity])
+
   const [imgRow, setImgRow] = useState(null)
   const [openImg, setOpenImg] = useState(false)
   const [rowPhoto, setRowPhoto] = useState('')
   const [insightsOpen, setInsightsOpen] = useState(false)
+  const [editingPlayer, setEditingPlayer] = useState(null)
+  const [editingPosition, setEditingPosition] = useState(null)
 
   const [filters, setFilters] = useState({
     search: '',
@@ -43,7 +48,6 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
   })
 
   const { rows, summary } = useMemo(() => resolveTeamPlayers(entity), [entity])
-  const crud = useTeamPlayersCrud(entity, onEntityChange)
 
   const filteredRows = useMemo(() => {
     let next = Array.isArray(rows) ? [...rows] : []
@@ -65,7 +69,7 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
     }
 
     if (filters.onlyProject) {
-      next = next.filter((row) => row?.type === 'project')
+      next = next.filter((row) => row?.isProject)
     }
 
     if (filters.positionLayer) {
@@ -141,28 +145,24 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
               setRowPhoto(row.photo || '')
               setOpenImg(true)
             }}
-            onOpenEdit={crud.openEdit}
-            onOpenPositions={crud.openPositions}
-            onToggleActive={crud.toggleActive}
+            onEditPlayer={(row) => setEditingPlayer(row?.player || null)}
+            onEditPosition={(row) => setEditingPosition(row?.player || null)}
           />
         )}
       </SectionPanel>
 
       <TeamPlayerQuickEditDrawer
-        open={crud.editOpen}
-        row={crud.editRow}
-        pending={crud.pending}
-        onClose={crud.closeEdit}
-        onSave={crud.upsert}
-        onRemove={crud.remove}
+        open={!!editingPlayer}
+        player={editingPlayer}
+        onClose={() => setEditingPlayer(null)}
+        onSaved={() => {}}
       />
 
       <TeamPlayerPositionsDrawer
-        open={crud.posOpen}
-        row={crud.posRow}
-        pending={crud.pending}
-        onClose={crud.closePositions}
-        onSave={crud.upsert}
+        open={!!editingPosition}
+        player={editingPosition}
+        onClose={() => setEditingPosition(null)}
+        onSaved={() => {}}
       />
 
       <TeamPlayersInsightsDrawer

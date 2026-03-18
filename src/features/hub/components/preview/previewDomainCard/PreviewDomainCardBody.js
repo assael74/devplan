@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { getDomainDef } from './domainRegistry'
 import { getEntityKind } from './utils/getEntityKind'
 
-export default function PreviewDomainCardBody({ d, entity }) {
+export default function PreviewDomainCardBody({ d, entity, context }) {
   const def = useMemo(() => {
     if (!d?.key) return null
     const entityKind = getEntityKind(entity)
@@ -13,5 +13,5 @@ export default function PreviewDomainCardBody({ d, entity }) {
   const Summary = def?.Summary
   if (!Summary) return null
 
-  return <Summary entity={entity} d={d} />
+  return <Summary entity={entity} d={d} context={context} />
 }

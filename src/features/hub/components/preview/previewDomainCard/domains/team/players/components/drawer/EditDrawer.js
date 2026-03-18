@@ -1,7 +1,7 @@
 // previewDomainCard/domains/team/players/components/drawer/TeamPlayerEditDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, Snackbar } from '@mui/joy'
 
 import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect'
 
@@ -26,6 +26,7 @@ export default function EditDrawer({
 }) {
   const initial = useMemo(() => buildInitialDraft(player), [player])
   const [draft, setDraft] = useState(initial)
+  const [showLimitWarning, setShowLimitWarning] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -58,74 +59,92 @@ export default function EditDrawer({
   }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
+    <>
+      <Drawer
+        open={!!open}
+        size="md"
+        anchor="right"
+        onClose={pending ? undefined : onClose}
+        slotProps={{
+          content: {
+            sx: {
+              bgcolor: 'transparent',
+              p: { xs: 0, md: 2 },
+              boxShadow: 'none',
+            },
           },
-        },
-      }}
-    >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader player={initial} />
+        }}
+      >
+        <Sheet sx={sx.drawerSheetSx}>
+          <Box sx={sx.drawerRootSx}>
+            <EditDrawerHeader player={initial} />
 
-          <Box sx={sx.bodySx} className="dpScrollThin">
-            <Box sx={sx.sectionCardSx}>
-              <Typography sx={sx.sectionTitleSx}>עמדות</Typography>
+            <Box sx={sx.bodySx} className="dpScrollThin">
+              <Box sx={sx.sectionCardSx}>
+                <Typography sx={sx.sectionTitleSx}>עמדות</Typography>
 
-              <PlayerPositionFieldPitch
-                size="sm"
-                value={draft.positions}
-                onChange={(positions) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    positions: safeArr(positions),
-                  }))
-                }
-                disabled={pending}
-              />
+                <PlayerPositionFieldPitch
+                  size="sm"
+                  value={draft.positions}
+                  onChange={(positions) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      positions: safeArr(positions),
+                    }))
+                  }
+                  onLimitReached={() => {
+                    setShowLimitWarning(false)
+                    setTimeout(() => setShowLimitWarning(true), 10)
+                  }}
+                  disabled={pending}
+                />
+              </Box>
+
+              <EditDrawerStatus draft={draft} setDraft={setDraft} />
             </Box>
 
-            <EditDrawerStatus draft={draft} setDraft={setDraft} />
-          </Box>
+            <Box sx={sx.footerSx}>
+              <Box sx={sx.footerActionsSx}>
+                <Button
+                  loading={pending}
+                  disabled={!canSave}
+                  startDecorator={iconUi({ id: 'save' })}
+                  onClick={handleSave}
+                  sx={sx.conBut}
+                >
+                  שמירה
+                </Button>
 
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
+                <Button color="neutral" variant="outlined" onClick={onClose} disabled={pending}>
+                  ביטול
+                </Button>
 
-              <Button color="neutral" variant="outlined" onClick={onClose} disabled={pending}>
-                ביטול
-              </Button>
+                <Tooltip title="איפוס טופס">
+                  <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
+                    {iconUi({id: 'reset'})}
+                  </IconButton>
+                </Tooltip>
+              </Box>
 
-              <Tooltip title="איפוס טופס">
-                <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
-                  {iconUi({id: 'reset'})}
-                </IconButton>
-              </Tooltip>
+              <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'} >
+                {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+              </Typography>
             </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'} >
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
           </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+        </Sheet>
+      </Drawer>
+
+      <Snackbar
+        open={showLimitWarning}
+        autoHideDuration={2500}
+        onClose={() => setShowLimitWarning(false)}
+        color="danger"
+        size="sm"
+        variant="soft"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        ניתן לבחור עד 4 עמדות בלבד
+      </Snackbar>
+    </>
   )
 }

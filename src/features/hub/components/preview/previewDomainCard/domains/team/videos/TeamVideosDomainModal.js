@@ -38,6 +38,13 @@ export default function TeamVideosDomainModal({
     return Array.isArray(t1) ? t1 : Array.isArray(t2) ? t2 : []
   }, [context?.tags, context?.tagsArr])
 
+  const derivedSeasonYear = useMemo(() => {
+    const now = new Date()
+    return now.getMonth() + 1 >= 8
+      ? now.getFullYear()
+      : now.getFullYear() - 1
+  }, [])
+
   const resolved = useMemo(
     () =>
       resolveTeamVideosDomain(
@@ -48,9 +55,9 @@ export default function TeamVideosDomainModal({
           onlyTagged,
           onlyKey,
         },
-        { tags }
+        { tags, seasonStartYear: derivedSeasonYear }
       ),
-    [team, q, month, onlyTagged, onlyKey, tags]
+    [team, q, month, onlyTagged, onlyKey, tags, derivedSeasonYear]
   )
 
   const { summary, options, videos } = resolved

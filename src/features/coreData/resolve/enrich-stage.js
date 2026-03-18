@@ -24,6 +24,7 @@
  */
  import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
  import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
+ import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
  import {
    buildPlayersWithStats,
    buildTeamsWithStats,
@@ -93,10 +94,11 @@ export function enrichPlayers(merged, indexes, teams) {
     const teamGames = teamGamesByTeamId.get(teamId) || []
     const playerGames = buildPlayerGames(teamGames, player.id)
     const generalPosition = getPlayerGeneralPosition(player.positions)
-    
+
     const paymentsIds = paymentsIdsByPlayerId.get(safeId(player.id)) || []
     const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
     const age = getPlayerAge(player)
+    const playerFullName = getPlayerFullName(player)
 
     return {
       ...player,
@@ -109,6 +111,7 @@ export function enrichPlayers(merged, indexes, teams) {
       playerGames,
       payments,
       age,
+      playerFullName,
       generalPosition: {
         layerKey: generalPosition.layerKey,
         layerLabel: generalPosition.layerLabel,

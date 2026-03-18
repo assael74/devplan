@@ -86,7 +86,7 @@ export default function PreviewDomainCard({
 
 
         <Box sx={sx.cardBodySx}>
-          <PreviewDomainCardBody d={d} entity={entity} />
+          <PreviewDomainCardBody d={d} entity={entity} context={context} />
         </Box>
       </Sheet>
 

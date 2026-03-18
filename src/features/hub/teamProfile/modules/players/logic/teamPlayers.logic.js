@@ -208,6 +208,7 @@ export const normalizeTeamPlayerRow = (raw, team) => {
     projectStatus,
     projectStatusMeta,
     projectChipMeta,
+    isProject: projectChipMeta?.id === 'project',
 
     positions,
     generalPosition,

@@ -41,56 +41,57 @@ const LAYER_TITLES = {
   attack: 'התקפה',
 };
 
-export default function PlayerPositionFieldPitch({ value = [], onChange, size = 'sm' }) {
-  const [showLimitWarning, setShowLimitWarning] = useState(false);
-  const MAX_POSITIONS = 4;
+export default function PlayerPositionFieldPitch({
+  value = [],
+  onChange,
+  onLimitReached,
+  size = 'sm',
+}) {
+  const MAX_POSITIONS = 4
 
   const togglePosition = (code) => {
-    const exists = value.includes(code);
-    if (exists) {
-      onChange(value.filter((p) => p !== code));
-    } else if (value.length < MAX_POSITIONS) {
-      onChange([...value, code]);
-    } else {
-      setShowLimitWarning(false);
-      setTimeout(() => setShowLimitWarning(true), 50);
-    }
-  };
+    const exists = value.includes(code)
 
+    if (exists) {
+      onChange(value.filter((p) => p !== code))
+      return
+    }
+
+    if (value.length < MAX_POSITIONS) {
+      onChange([...value, code])
+      return
+    }
+
+    onLimitReached(MAX_POSITIONS)
+  }
+  //console.log(onLimitReached)
   return (
     <FormControl>
-      <FormLabel sx={{ fontSize: '12px', mb: 1 }}>בחר עמדות על המגרש (עד {MAX_POSITIONS})</FormLabel>
+      <FormLabel sx={{ fontSize: '12px', mb: 1 }}>
+        בחר עמדות על המגרש (עד {MAX_POSITIONS})
+      </FormLabel>
 
       <Box {...boxPositionProps}>
         {POSITION_ORDER.map((layer) => {
-          const isFullWidthLayer = ['defense', 'atMidfield', 'dmMid'].includes(layer);
-          const title = LAYER_TITLES[layer];
+          const isFullWidthLayer = ['defense', 'atMidfield', 'dmMid'].includes(layer)
 
           return (
             <Box key={layer}>
               <Box {...layerBoxProps(isFullWidthLayer)}>
-                {POSITION_LAYERS[layer].map(({ code, label }) => (
-                  <Chip key={code} onClick={() => togglePosition(code)} {...chipProps(value, code)}>
+                {POSITION_LAYERS[layer].map(({ code }) => (
+                  <Chip
+                    key={code}
+                    onClick={() => togglePosition(code)}
+                    {...chipProps(value, code)}
+                  >
                     {code}
                   </Chip>
                 ))}
               </Box>
             </Box>
-          );
+          )
         })}
       </Box>
-
-      <Snackbar
-        open={showLimitWarning}
-        autoHideDuration={2500}
-        onClose={() => setShowLimitWarning(false)}
-        color="danger"
-        size={size}
-        variant="soft"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        ניתן לבחור עד {MAX_POSITIONS} עמדות בלבד
-      </Snackbar>
     </FormControl>
-  );
+  )
 }

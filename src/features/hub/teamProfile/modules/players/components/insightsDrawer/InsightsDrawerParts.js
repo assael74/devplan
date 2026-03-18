@@ -20,11 +20,11 @@ export function StatCard({ title, value, sub, icon }) {
       <Box sx={sx.statCardHead}>
         <Box sx={sx.iconWrap}>{iconUi({ id: icon, size: 'sm' })}</Box>
 
-        <Typography level="body-xs" sx={{ opacity: 0.8, fontWeight: 600 }}>
+        <Typography level="title-xs" sx={{ opacity: 0.8, fontWeight: 600 }}>
           {title}
         </Typography>
 
-        <Typography level="title-sm" sx={{ fontWeight: 700, ml: 'auto' }}>
+        <Typography variant="outlined" level="title-sm" sx={sx.statsVlaue}>
           {value}
         </Typography>
       </Box>

@@ -1,161 +1,154 @@
-// C:\projects\devplan\src\features\hub\teamProfile\modules\videos\TeamVideosModule.js
-import React, { useMemo, useCallback } from 'react'
-import { Box, Typography, Sheet, Chip } from '@mui/joy'
+// teamProfile/modules/videos/TeamVideosModule.js
+
+import React, { useMemo, useState } from 'react'
+import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../sharedProfile/SectionPanel.js'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 
-import { iconUi } from '../../../../../ui/core/icons/iconUi'
-import VideoAnalysisCard from '../../../../../ui/domains/video/videoAnalysis/VideoAnalysisCard.js'
-import ListVideosToolbarRow from '../../../../../ui/patterns/listVideosToolbar/ListVideosToolbarRow.js'
-import StickySectionsByMonth from '../../../../../ui/patterns/stickySections/StickySectionsByMonth.js'
-import { enrichVideoAnalysisForTeam } from '../../../../../shared/videoAnalysis/videoAnalysis.enrich.js'
+import TeamVideosToolbar from './components/TeamVideosToolbar.js'
+import TeamVideosList from './components/TeamVideosList.js'
 
-import { vidModuleSx } from './videos.sx'
-import { resolveTeamVideosDomain, getMonthKey, getMonthLabel } from './teamVideos.domain.logic.js'
+import TeamVideosInsightsDrawer from './components/insightsDrawer/TeamVideosInsightsDrawer.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
+
+import DriveVideoPlayer from '../../../../../ui/domains/video/DriveVideoPlayer.js'
+import {
+  createInitialTeamVideosFilters,
+  resolveTeamVideosFiltersDomain,
+} from './logic/teamVideos.filters.logic.js'
+
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('videoAnalysis')
 
 const asArr = (v) => (Array.isArray(v) ? v : [])
 
-export default function TeamVideosModule({ entity, context, videoActions }) {
-  const team = entity || null
+export default function TeamVideosModule({ entity, context }) {
+  const liveTeam = useMemo(() => {
+    const teams = Array.isArray(context?.teams) ? context.teams : []
+    return teams.find((t) => t?.id === entity?.id) || entity || null
+  }, [context?.teams, entity])
 
-  const [query, setQuery] = React.useState('')
-  const [sortId, setSortId] = React.useState('date_desc')
+  const initialFilters = useMemo(() => createInitialTeamVideosFilters(), [])
 
-  const sortOptions = [
-    { id: 'date_desc', label: 'תאריך · מהחדש לישן' },
-    { id: 'date_asc', label: 'תאריך · מהישן לחדש' },
-    { id: 'title_asc', label: 'שם · א-ת' },
-  ]
+  const [filters, setFilters] = useState(initialFilters)
+  const [insightsOpen, setInsightsOpen] = useState(false)
+  const [editingVideo, setEditingVideo] = useState(null)
+  const [watchVideo, setWatchVideo] = useState(null)
 
   const tags = useMemo(() => {
     const a = asArr(context?.tags)
     if (a.length) return a
+
     const b = asArr(context?.tagsArr)
     if (b.length) return b
+
     return []
   }, [context?.tags, context?.tagsArr])
 
-  const { summary, videos, state } = useMemo(
-    () => resolveTeamVideosDomain(team, {}, { tags }),
-    [team, tags]
-  )
+  const domain = useMemo(() => {
+    return resolveTeamVideosFiltersDomain(liveTeam, filters, {
+      tags,
+      seasonStartYear: 2025,
+    })
+  }, [liveTeam, filters, tags])
 
-  const items = (videos || []).map((row) => row?.video || row)
+  const {
+    summary,
+    videos,
+    allVideos,
+    options,
+    indicators,
+  } = domain
 
-  const filtered = items.filter((v) => {
-    if (!query) return true
-    const t = `${v?.title || v?.name || ''}`.toLowerCase()
-    return t.includes(query.toLowerCase())
-  })
-
-  const actions = useMemo(() => {
-    const v = videoActions || context?.videoActions || {}
-    return {
-      onWatch: typeof v.watch === 'function' ? v.watch : null,
-      onEdit: typeof v.edit === 'function' ? v.edit : null,
-      onLink: typeof v.link === 'function' ? v.link : null,
-      onShare: typeof v.share === 'function' ? v.share : null,
-    }
-  }, [videoActions, context?.videoActions])
-
-  const handleWatch = useCallback((video) => actions.onWatch && actions.onWatch(video), [actions.onWatch])
-  const handleShare = useCallback((video) => actions.onShare && actions.onShare(video), [actions.onShare])
-
-  const handleEdit = useCallback(
-    (video) => actions.onEdit && actions.onEdit({ video, entity: team, context }),
-    [actions.onEdit, team, context]
-  )
-
-  const handleLink = useCallback(
-    (video) => actions.onLink && actions.onLink({ video, entity: team, context }),
-    [actions.onLink, team, context]
-  )
-
-  const hasVideos = (summary?.totalVideos || 0) > 0
-
-  if (!hasVideos && state !== 'PARTIAL') {
-    return (
-      <SectionPanel>
-        <EmptyState title="אין וידאו" desc="לא נמצאו נתוני וידאו לקבוצה" />
-      </SectionPanel>
-    )
+  const handleChangeFilters = (patch) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...(patch || {}),
+    }))
   }
 
-  const topTags = Array.isArray(summary?.topTagsAll) ? summary.topTagsAll : []
+  const handleResetFilters = () => {
+    setFilters(createInitialTeamVideosFilters())
+  }
+
+  const handleWatch = (video) => {
+    if (!video) return
+    setWatchVideo(video)
+  }
 
   return (
-    <SectionPanel>
-      <Box sx={vidModuleSx.root}>
-        <Sheet {...vidModuleSx.statsPanel}>
-          <Box sx={vidModuleSx.statsHeaderRow}>
-            <Box sx={vidModuleSx.titleRow}>
-              <Typography level="h3" noWrap startDecorator={iconUi({ id: 'video' })}>
-                וידאו
-              </Typography>
-            </Box>
-
-            <Box sx={vidModuleSx.kpisRow}>
-              <Chip size="sm" variant="soft">
-                {summary?.totalVideos || 0}
-              </Chip>
-              {!!summary?.month && (
-                <Chip size="sm" variant="outlined">
-                  {summary.month}
-                </Chip>
-              )}
-            </Box>
-          </Box>
-
-          {!!topTags.length && (
-            <Box sx={vidModuleSx.topTagsRow}>
-              {topTags.slice(0, 6).map((x) => {
-                const label = x?.tag?.tagName || x?.tag?.label || x?.tag?.name || x?.id || 'תג'
-                return (
-                  <Chip key={String(x?.id || label)} size="sm" variant="outlined">
-                    {label} · {x?.count || 0}
-                  </Chip>
-                )
-              })}
-            </Box>
-          )}
-        </Sheet>
-
-        {/* scroll only the cards area */}
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', pr: 0.5 }}>
-          <ListVideosToolbarRow
-            title="כרטיסי וידאו"
-            query={query}
-            onQuery={setQuery}
-            sortId={sortId}
-            sortOptions={sortOptions}
-            onSort={setSortId}
-          />
-
-          <StickySectionsByMonth
-            items={filtered}
-            getMonthKey={getMonthKey}
-            getMonthLabel={getMonthLabel}
-            headerTop={44} // תואם לגובה toolbar (אפשר לכייל)
-            renderItem={(v) => {
-              const videoEnriched = enrichVideoAnalysisForTeam(v, team, context)
-              return (
-                <VideoAnalysisCard
-                  key={String(v?.id)}
-                  video={videoEnriched}
-                  preset="teamPreview"
-                  from="teamPreview"
-                  onWatch={handleWatch}
-                  onShare={handleShare}
-                  onEdit={handleEdit}
-                  onLink={handleLink}
-                  context={context}
-                />
-              )
-            }}
+    <>
+      <SectionPanel>
+        <Box
+          sx={{
+            position: 'sticky',
+            top: -6,
+            zIndex: 5,
+            display: 'grid',
+            gap: 1,
+            borderRadius: 12,
+            bgcolor: 'background.body',
+            mb: 0.5,
+            boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+          }}
+        >
+          <TeamVideosToolbar
+            summary={summary}
+            filters={filters}
+            indicators={indicators}
+            options={options}
+            onOpenInsights={() => setInsightsOpen(true)}
+            onChangeFilters={handleChangeFilters}
+            onResetFilters={handleResetFilters}
           />
         </Box>
-      </Box>
-    </SectionPanel>
+
+        {videos.length === 0 ? (
+          <EmptyState
+            title="אין וידאו"
+            subtitle={
+              allVideos.length === 0
+                ? 'עדיין לא נוספו קטעי וידאו'
+                : 'לא נמצאו תוצאות לפי הפילטרים שנבחרו'
+            }
+          />
+        ) : (
+          <TeamVideosList
+            rows={videos}
+            onEditVideo={(video) => setEditingVideo(video || null)}
+            onWatchVideo={(video) => handleWatch(video || null)}
+            onOpenNotes={(video) => console.log('open notes', video)}
+          />
+        )}
+      </SectionPanel>
+
+      <TeamVideosInsightsDrawer
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
+        videos={videos}
+        summary={summary}
+        entity={liveTeam}
+        tags={tags}
+        seasonStartYear={2025}
+      />
+
+      <EditDrawer
+        open={!!editingVideo}
+        video={editingVideo}
+        onClose={() => setEditingVideo(null)}
+        onSaved={() => {}}
+        context={{ ...context, teamId: liveTeam?.id, team: liveTeam }}
+      />
+
+      <DriveVideoPlayer
+        open={!!watchVideo}
+        onClose={() => setWatchVideo(null)}
+        videoLink={watchVideo?.link || ''}
+        videoName={watchVideo?.name || 'וידאו'}
+        variant="analysis"
+      />
+    </>
   )
 }

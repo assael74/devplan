@@ -9,6 +9,7 @@ export const filterTeamPlayersRows = (rows, filters) => {
   const onlyKey = filters?.onlyKey === true
   const onlyProject = filters?.onlyProject === true
 
+
   return (Array.isArray(rows) ? rows : []).filter((r) => {
     if (q) {
       const hay = [

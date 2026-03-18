@@ -2,6 +2,10 @@
 
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
+import { buildVideoInsights } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
+import { VIDEO_INSIGHTS_DEFAULT_TAG_TYPE } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.constants.js'
+import { buildTagsByIdObject, getVideoType } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.helpers.js'
+import { resolveVideoMonthKey } from '../../../../../../../../../shared/videoAnalysis/insights/videoInsights.months.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])
@@ -314,6 +318,14 @@ export function resolvePlayerVideosDomain(entity, filters = {}, deps = {}) {
 
   const keyPlayersUsed = new Set()
 
+  const seasonStartYear = deps?.seasonStartYear
+
+  const insights = buildVideoInsights({
+    videos: videosAll,
+    tags: tagsArr,
+    seasonStartYear: seasonStartYear,
+  })
+  console.log(insights)
   const videos = videosFiltered
     .slice()
     .sort((a, b) => pickVideoDate(b).localeCompare(pickVideoDate(a)))
@@ -367,7 +379,25 @@ export function resolvePlayerVideosDomain(entity, filters = {}, deps = {}) {
     topTagsAll,
     month: f.month || '',
     last2MonthsAnalysis: buildLast2MonthsAnalysis(videos),
-    totalTags
+    totalTags,
+
+    insights,
+
+    analysisVideos: insights?.totals?.analysisVideos || 0,
+    meetingVideos: insights?.totals?.meetingVideos || 0,
+    activeMonths: insights?.totals?.activeMonths || 0,
+    totalCategories: insights?.totals?.totalCategories || 0,
+    totalTopics: insights?.totals?.totalTopics || 0,
+
+    seasonMonths: insights?.pace?.seasonMonths || 0,
+    avgVideosPerMonth: insights?.pace?.avgVideosPerMonth || 0,
+    avgAnalysisPerMonth: insights?.pace?.avgAnalysisPerMonth || 0,
+    avgMeetingsPerMonth: insights?.pace?.avgMeetingsPerMonth || 0,
+    avgVideosPerActiveMonth: insights?.pace?.avgVideosPerActiveMonth || 0,
+
+    topCategories: asArr(insights?.topCategories),
+    topTopics: asArr(insights?.topTopics),
+    monthlyActivity: asArr(insights?.monthlyActivity),
   }
 
   const options = {months: Array.from(new Set(videosAll.map(getMonthKey).filter(Boolean))).sort().reverse()}

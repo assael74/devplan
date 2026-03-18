@@ -33,6 +33,9 @@ export default function PlayerVideosKpi({ entity, summary, filteredCount }) {
   const topTagLabel = topTag   ? `${topTag?.tag?.tagName || topTag?.tag?.label || 'תג'} · ${topTag?.count || 0}` : 'אין תגים'
   const playerName =  `${entity?.playerFirstName} ${entity?.playerLastName}`.trim()
 
+  const topCategory = summary?.topCategories[0] || null
+  const topTopic = summary?.topTopics[0] || null
+
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
       <Box sx={sx.heroGlowSx} />
@@ -47,7 +50,7 @@ export default function PlayerVideosKpi({ entity, summary, filteredCount }) {
 
             <Box sx={sx.heroTextWrapSx}>
               <Typography level="title-md" sx={sx.heroTitleSx}>
-                {playerName || 'שחקן'}
+                {entity.playerFullName || 'שחקן'}
               </Typography>
 
               <Typography level="body-sm" sx={sx.heroSubTitleSx}>
@@ -63,31 +66,31 @@ export default function PlayerVideosKpi({ entity, summary, filteredCount }) {
 
         <Box sx={sx.kpiGridSx}>
           <KpiCard
-            label="סה״כ וידאו"
-            value={summary?.totalVideos ?? 0}
-            subValue={`מתוך ${summary?.totalVideosAll ?? 0}`}
+            label="חודשים פעילים"
+            value={summary?.activeMonths ?? 0}
+            subValue={`מתוך ${summary?.seasonMonths ?? 0} חודשי עונה`}
             icon={iconUi({ id: 'video', size: 'sm' })}
           />
 
           <KpiCard
-            label="וידאו מתויג"
-            value={summary?.taggedVideos ?? 0}
-            subValue={`ללא תיוג ${summary?.untaggedVideos ?? 0}`}
-            icon={iconUi({ id: 'tag', size: 'sm' })}
+            label="קצב עבודה"
+            value={summary?.avgVideosPerActiveMonth ?? 0}
+            subValue="ממוצע לחודש פעיל"
+            icon={iconUi({ id: 'speed', size: 'sm' })}
           />
 
           <KpiCard
-            label="ניתוחים בחודשיים האחרונים"
-            value={last2Label}
-            subValue={`חודשים פעילים ${summary?.monthsCount ?? 0}`}
-            icon={iconUi({ id: 'videoAnalysis', size: 'sm' })}
+            label="קטגוריה מובילה"
+            value={topCategory?.label || 'ללא תיוג'}
+            subValue={topCategory ? `${topCategory.total} וידאו · ${topCategory.pct}%` : ''}
+            icon={iconUi({ id: 'parents', size: 'sm' })}
           />
 
           <KpiCard
-            label="תג מוביל"
-            value={topTagLabel}
-            icon={iconUi({ id: 'tag', size: 'sm' })}
-            subValue={`סה״כ תגים ${summary?.totalTags ?? 0}`}
+            label="נושא מוביל"
+            value={topTopic?.label || 'ללא תיוג'}
+            subValue={topTopic? `${topTopic.total} וידאו · ${topTopic.pct}%`: ''}
+            icon={iconUi({ id: 'children', size: 'sm' })}
           />
         </Box>
       </Box>

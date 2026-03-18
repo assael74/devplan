@@ -15,10 +15,10 @@ import { teamPlayersListSx as sx } from '../sx/teamPlayers.list.sx.js'
 
 export default function TeamPlayerRow({
   row,
-  onOpenPlayer,
+  onEditPlayer,
   onAvatarClick,
   onOpenEdit,
-  onOpenPositions,
+  onEditPosition,
 }) {
   const chip = row?.projectChipMeta || {
     labelH: 'כללי',
@@ -46,18 +46,11 @@ export default function TeamPlayerRow({
         row?.active === false && sx.rowInactive,
       ]}
     >
-      <InfoSection
-        row={row}
-        onOpenPlayer={onOpenPlayer}
-        onAvatarClick={onAvatarClick}
-      />
+      <InfoSection row={row} onAvatarClick={onAvatarClick} />
 
       <Divider orientation="vertical" />
 
-      <PositionsSection
-        row={row}
-        onOpenPositions={onOpenPositions}
-      />
+      <PositionsSection row={row} onEditPosition={onEditPosition} />
 
       <Divider orientation="vertical" />
 
@@ -87,7 +80,7 @@ export default function TeamPlayerRow({
 
       <Box sx={sx.endActions}>
         <Tooltip title="עריכת נתוני שחקן">
-          <IconButton size="sm" variant="plain" onClick={() => onOpenEdit(row)}>
+          <IconButton size="sm" variant="plain" onClick={() => onEditPlayer(row)}>
             <EditRounded fontSize="sm" />
           </IconButton>
         </Tooltip>
