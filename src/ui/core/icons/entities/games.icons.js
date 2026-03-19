@@ -2,6 +2,7 @@ import {
   AccessTime,
   Adjust,
   BugReport,
+  Build,
   DragHandle,
   DashboardCustomize,
   EmojiEvents,
@@ -17,7 +18,9 @@ import {
   ThumbDown,
   ThumbUp,
   ViewTimeline,
-  Upcoming
+  Upcoming,
+  TrackChanges,
+  AppRegistration
 } from '@mui/icons-material';
 
 export const gameIcons = {
@@ -27,11 +30,14 @@ export const gameIcons = {
   duration: <AccessTime />,
   easy: <Recycling />,
   equal: <DragHandle />,
+  difficulty: <TrackChanges />,
+  duration: <AccessTime />,
   friendly: <WavingHand />,
   game: <ViewTimeline />,
   games: <ViewTimeline />,
   gameStats: <DashboardCustomize />,
   home: <Home />,
+  hard: <Build />,
   isNotSquad: <EventSeat />,
   isNotStart: <EventSeat />,
   isSquad: <Hail />,
@@ -44,4 +50,6 @@ export const gameIcons = {
   results: <Scoreboard />,
   win: <ThumbUp />,
   upcoming: <Upcoming />,
+  entry: <AppRegistration />,
+  registration: <AppRegistration />
 };

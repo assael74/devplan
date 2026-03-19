@@ -6,6 +6,12 @@ import {
   Psychology,
   Security,
   Whatshot,
+  Percent,
+  DragIndicator,
+  TrendingUp,
+  LightMode,
+  Feed,
+  HighQuality
 } from '@mui/icons-material';
 
 export const performanceIcons = {
@@ -19,4 +25,10 @@ export const performanceIcons = {
   offensive: <ElectricBolt />,
   offensive_key: <ElectricBolt />,
   pro: <Insights />,
+  rate: <Percent />,
+  points: <DragIndicator />,
+  trend: <TrendingUp />,
+  topParm: <LightMode />,
+  feed: <Feed />,
+  performance: <HighQuality />
 };

@@ -14,12 +14,10 @@ export const generalIcons = {
   addLocation: <AddLocationAlt />,
   age: <PermContactCalendar />,
   date: <Today />,
-  duration: <AccessTime />,
   help: <LiveHelp />,
   history: <History />,
   hour: <AccessTime />,
   info: <Info />,
   note: <NotesRounded />,
   notes: <NotesRounded />,
-  upComing: <Forward />,
 };

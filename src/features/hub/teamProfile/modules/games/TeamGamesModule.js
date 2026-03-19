@@ -10,6 +10,7 @@ import TeamGamesToolbar from './components/TeamGamesToolbar.js'
 import TeamGamesList from './components/TeamGamesList.js'
 import TeamGamesInsightsDrawer from './components/insightsDrawer/TeamGamesInsightsDrawer.js'
 import EditDrawer from './components/drawer/EditDrawer.js'
+import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 
 import {
   createInitialTeamGamesFilters,
@@ -31,6 +32,7 @@ export default function TeamGamesModule({ entity, context }) {
   const [filters, setFilters] = useState(initialFilters)
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingGame, setEditingGame] = useState(null)
+  const [editingEntryGame, setEditingEntryGame] = useState(null)
 
   const domain = useMemo(() => {
     return resolveTeamGamesFiltersDomain(liveTeam, filters, {
@@ -94,6 +96,7 @@ export default function TeamGamesModule({ entity, context }) {
           <TeamGamesList
             rows={games}
             onEditGame={(game) => setEditingGame(game || null)}
+            onEditEntryGame={(game) => setEditingEntryGame(game || null)}
           />
         )}
       </SectionPanel>
@@ -109,6 +112,14 @@ export default function TeamGamesModule({ entity, context }) {
         open={!!editingGame}
         game={editingGame}
         onClose={() => setEditingGame(null)}
+        onSaved={() => {}}
+        context={{ ...context, teamId: liveTeam?.id, team: liveTeam }}
+      />
+
+      <EntryEditDrawer
+        open={!!editingEntryGame}
+        game={editingEntryGame}
+        onClose={() => setEditingEntryGame(null)}
         onSaved={() => {}}
         context={{ ...context, teamId: liveTeam?.id, team: liveTeam }}
       />

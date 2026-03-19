@@ -68,7 +68,7 @@ export const teamGamesSectionsSx = {
 
   entryCellSx: {
     minWidth: 0,
-    display: 'grid',
+    display: 'flex',
     alignContent: 'start',
     justifyItems: 'start',
     gap: 0.55,

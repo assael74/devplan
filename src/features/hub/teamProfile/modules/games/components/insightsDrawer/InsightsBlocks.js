@@ -13,7 +13,7 @@ import {
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-import { buildFallbackAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { insightsBlockSx as sx } from './sx/teamGames.insightsBlock.sx.js'
 import { InsightRow } from './InsightsRows.js'
@@ -65,21 +65,34 @@ export function SectionBlock({ title, icon, children, endDecorator = null }) {
 }
 
 export function InsightsDrawerHeader({ entity }) {
-  const src = entity?.photo || buildFallbackAvatar({ entityType: 'team', id: entity?.id, name: entity?.teamName })
+  const club = entity?.club
+  const src = resolveEntityAvatar({ entityType: 'team', entity: entity, parentEntity: entity?.club, subline: entity?.club?.name, })
+  const clubName = club?.clubName || 'מועדון'
+  const teamName = entity?.teamName || ''
+  const teamYearLabel = entity?.teamYear ? `שנתון ${entity.teamYear}` : ''
+  const leagueLabel = entity?.league || ''
+  const title = [`${clubName} ${teamName}`.trim(), teamYearLabel, leagueLabel].filter(Boolean).join(' · ')
 
   return (
     <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, boxShadow: 'sm' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Avatar src={src} />
+      <Box sx={sx.headerRow}>
+        <Avatar src={src} sx={{ width: 40, height: 40, flexShrink: 0, }} />
 
-        <Box sx={{ ml: 2 }}>
-          <Typography level="title-md" sx={sx.formNameSx}>
-            {entity?.teamName}
+        <Box sx={sx.headerContent}>
+          {/* שורה 1 – מועדון + קבוצה */}
+          <Typography level="title-md" sx={sx.titleMain}>
+            {clubName} · {teamName}
           </Typography>
 
+          {/* שורה 2 – שנתון + ליגה */}
+          <Typography level="body-sm" sx={{ opacity: 0.7, fontSize: 12, lineHeight: 1.2, }}>
+            {[teamYearLabel, leagueLabel].filter(Boolean).join(' · ')}
+          </Typography>
+
+          {/* שורה 3 – סוג מגירה */}
           <Typography
             level="body-sm"
-            sx={sx.formNameSx}
+            sx={{ opacity: 0.8, fontSize: 12, lineHeight: 1.2, }}
             startDecorator={iconUi({ id: 'insights' })}
           >
             תובנות משחקי קבוצה

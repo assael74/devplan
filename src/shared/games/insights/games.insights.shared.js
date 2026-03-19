@@ -26,12 +26,22 @@ export const avg = (sum, total, digits = 1) => {
   return Number((a / b).toFixed(digits))
 }
 
-export const per90 = (value, minutes, digits = 2) => {
+export const perGame = (value, minutesPlayed, gameDuration = 90, digits = 2) => {
   const v = Number(value)
-  const m = Number(minutes)
+  const m = Number(minutesPlayed)
+  const gd = Number(gameDuration)
 
-  if (!Number.isFinite(v) || !Number.isFinite(m) || m <= 0) return 0
-  return Number(((v / m) * 90).toFixed(digits))
+  if (
+    !Number.isFinite(v) ||
+    !Number.isFinite(m) ||
+    !Number.isFinite(gd) ||
+    m <= 0 ||
+    gd <= 0
+  ) {
+    return 0
+  }
+
+  return Number(((v / m) * gd).toFixed(digits))
 }
 
 export const resultLabelH = (result) => {
@@ -50,6 +60,14 @@ export const resultColor = (result) => {
   if (r === 'draw') return 'warning'
   if (r === 'loss') return 'danger'
   return 'neutral'
+}
+
+export const isLeagueGame = (row) => {
+  return safe(row?.type).trim().toLowerCase() === 'league'
+}
+
+export const filterLeaguePlayedGames = (rows) => {
+  return (Array.isArray(rows) ? rows : []).filter((row) => isPlayedGame(row) && isLeagueGame(row))
 }
 
 export const groupRows = (rows, getKey) => {
@@ -78,12 +96,17 @@ export const buildResultBreakdown = (rows) => {
   }
 
   const totalPlayed = wins + draws + losses
+  const points = wins * 3 + draws
 
   return {
     wins,
     draws,
     losses,
     totalPlayed,
+    points,
+    maxPoints: totalPlayed * 3,
+    pointsPct: pct(points, totalPlayed * 3),
+    ppg: avg(points, totalPlayed, 2),
     winPct: pct(wins, totalPlayed),
     drawPct: pct(draws, totalPlayed),
     lossPct: pct(losses, totalPlayed),
@@ -134,25 +157,22 @@ export const buildGoalsSummary = (rows) => {
 export const buildBucketInsight = (id, label, rows) => {
   const result = buildResultBreakdown(rows)
   const goals = buildGoalsSummary(rows)
-  const points = (Array.isArray(rows) ? rows : []).reduce((sum, row) => sum + n(row?.points), 0)
 
   return {
     id,
     label,
     total: Array.isArray(rows) ? rows.length : 0,
-    points,
-    ppg: avg(points, Array.isArray(rows) ? rows.length : 0, 2),
     ...result,
     ...goals,
   }
 }
 
 export const buildGroupedInsights = (rows) => {
-  const byVenueMap = groupRows(rows, (row) => (row?.isHome ? 'home' : 'away'))
+  const byHomeOrAwayMap = groupRows(rows, (row) => (row?.isHome ? 'home' : 'away'))
   const byTypeMap = groupRows(rows, (row) => row?.type || 'other')
   const byDifficultyMap = groupRows(rows, (row) => row?.difficulty || 'none')
 
-  const byVenue = Object.entries(byVenueMap).map(([id, group]) =>
+  const byHomeOrAway = Object.entries(byHomeOrAwayMap).map(([id, group]) =>
     buildBucketInsight(id, id === 'home' ? 'בית' : 'חוץ', group)
   )
 
@@ -165,25 +185,20 @@ export const buildGroupedInsights = (rows) => {
   )
 
   return {
-    byVenue,
+    byHomeOrAway,
     byType,
     byDifficulty,
   }
 }
 
 export const buildRecentWindow = (rows, size = 5) => {
-  const played = (Array.isArray(rows) ? rows : []).filter(isPlayedGame).slice(0, size)
+  const played = (Array.isArray(rows) ? rows : []).slice(0, size)
   const result = buildResultBreakdown(played)
   const goals = buildGoalsSummary(played)
-  const points = played.reduce((sum, row) => sum + n(row?.points), 0)
 
   return {
     rows: played,
     sampleSize: played.length,
-    points,
-    maxPoints: played.length * 3,
-    pointsPct: pct(points, played.length * 3),
-    ppg: avg(points, played.length, 2),
     formText: played.map((row) => safe(row?.result).trim().toUpperCase().slice(0, 1)).join(''),
     ...result,
     ...goals,
@@ -191,7 +206,7 @@ export const buildRecentWindow = (rows, size = 5) => {
 }
 
 export const buildStreaks = (rows) => {
-  const played = (Array.isArray(rows) ? rows : []).filter(isPlayedGame)
+  const played = Array.isArray(rows) ? rows : []
 
   let bestWinStreak = 0
   let bestUnbeatenStreak = 0
@@ -202,6 +217,7 @@ export const buildStreaks = (rows) => {
   let runningUnbeaten = 0
 
   const latest = played[0] || null
+
   if (latest) {
     currentStreakType = safe(latest?.result).trim().toLowerCase()
 

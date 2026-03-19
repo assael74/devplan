@@ -10,3 +10,9 @@ export const GAME_DIFFICULTY = [
   { id: 'equal', label: '', labelH: 'אותה רמה', idIcon: 'equal', disabled: false },
   { id: 'hard', label: '', labelH: 'רמה קשה', idIcon: 'hard', disabled: false },
 ]
+
+export const GAME_RESULT = [
+  { id: 'win', label: '', labelH: 'ניצחון', idIcon: 'win', color: 'sucsses', disabled: false },
+  { id: 'loss', label: '', labelH: 'הפסד', idIcon: 'loss', color: 'danger', disabled: false },
+  { id: 'draw', label: '', labelH: 'תיקו', idIcon: 'draw', color: 'warninig', disabled: false },
+]

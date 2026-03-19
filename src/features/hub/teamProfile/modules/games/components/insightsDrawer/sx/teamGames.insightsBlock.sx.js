@@ -68,13 +68,6 @@ export const insightsBlockSx = {
     flexShrink: 0,
   },
 
-  chipsWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.6,
-    flexWrap: 'wrap',
-  },
-
   insightValue: {
     fontWeight: 700,
     ml: 'auto',
@@ -84,14 +77,26 @@ export const insightsBlockSx = {
     color: c.textAcc,
   },
 
-  monthBlock: {
+  headerRow: {
     display: 'flex',
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 1,
-    px: 1,
-    py: 1,
-    borderRadius: 'md',
+    gap: 1.2,
+    minWidth: 0,
+  },
+
+  headerContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.3,
+    minWidth: 0,
+  },
+
+  titleMain: {
+    fontWeight: 700,
+    lineHeight: 1.2,
+    minWidth: 0,
     overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 }

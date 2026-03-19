@@ -1,6 +1,7 @@
 // ui/core/avatars/AvatarWithClubBadge.js
 import React from 'react'
 import { Box, Avatar } from '@mui/joy'
+import { buildFallbackAvatar } from './fallbackAvatar.js'
 
 function normalizeBadgeColor(color) {
   if (!color) return null

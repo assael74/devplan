@@ -1,7 +1,5 @@
 // previewDomainCard/domains/team/games/components/drawer/editDrawer.utils.js
 
-// previewDomainCard/domains/team/games/components/drawer/editDrawer.utils.js
-
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 
 export const safe = (v) => (v == null ? '' : String(v))

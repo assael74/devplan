@@ -190,6 +190,7 @@ export const createGameRowNormalizer = (cfg) => {
     const goals = pickGoals(row, game, stats)
     const assists = pickAssists(row, game, stats)
     const isStarting = pickIsStarting(row, game, stats)
+    const isHome = pickIsHome(game)
 
     return {
       id,
@@ -207,7 +208,8 @@ export const createGameRowNormalizer = (cfg) => {
       dateH: formatDateH(dateRaw),
 
       rival: pickRival(game),
-      isHome: pickIsHome(game),
+      home: isHome,
+      isHome,
 
       score: pickScore(game, stats),
       result,

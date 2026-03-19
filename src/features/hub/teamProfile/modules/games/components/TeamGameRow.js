@@ -15,11 +15,12 @@ import {
 export default function TeamGameRow({
   game,
   onEdit,
+  onEditEntry
 }) {
   const handleEdit = () => {
     if (onEdit) onEdit(game)
   }
-
+  
   return (
     <Box sx={sx.rowCardSx}>
       <InfoTeamsSection game={game} />
@@ -34,9 +35,9 @@ export default function TeamGameRow({
 
       <Divider orientation="vertical" sx={sx.dividerSx} />
 
-      <PlayerEntrySection game={game} />
+      <PlayerEntrySection game={game} onEditEntry={onEditEntry} />
 
-      <Box sx={{ flex: 1 }} />
+      <Divider orientation="vertical" sx={sx.dividerSx} />
 
       <Box sx={sx.actionsCellSx}>
         <Tooltip title="עריכת נתוני משחק">

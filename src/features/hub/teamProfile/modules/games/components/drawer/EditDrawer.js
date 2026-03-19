@@ -1,6 +1,6 @@
 // teamProfile/modules/videos/components/drawer/EditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import {
   Avatar,
   Box,
@@ -15,53 +15,61 @@ import {
   IconButton,
 } from '@mui/joy'
 
-import VideoAttachDrawerBody from '../../../../../../../ui/domains/video/videoAnalysis/attachDrawer/VideoAttachDrawerBody.js'
-import VideoEditDrawerBody from '../../../../../../../ui/domains/video/videoAnalysis/editDrawer/VideoEditDrawerBody.js'
-
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
-import { useVideoUpdate } from '../../../../../hooks/videoAnalysis/useVideoUpdate.js'
-import { buildFallbackAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import { getFullDateIl } from '../../../../../../../shared/format/dateUtiles.js'
+import { resolveEntityAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
+
+import { useGameHubUpdate } from '../../../../../hooks/games/useGameHubUpdate.js'
+import { useLifecycle } from '../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
+
+import GameCreateForm from '../../../../../../../ui/forms/GameCreateForm.js'
+import GameVideoLinkField from '../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
 
 import { editDrawerSx as sx } from './sx/editDrawer.sx.js'
 import {
-  safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './logic/teamVideoEdit.logic.js'
+} from './logic/teamGameEdit.logic.js'
 
-const c = getEntityColors('videoAnalysis')
+const c = getEntityColors('teams')
+
+const clean = (v) => (v && String(v).trim() ? v : '')
 
 export default function EditDrawer({
   open,
-  video,
+  game,
   context,
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(video), [video])
+  const initial = useMemo(() => buildInitialDraft(game), [game])
   const [draft, setDraft] = useState(initial)
-  const team = context?.team
-  const src = team?.photo || buildFallbackAvatar({ entityType: 'team', id: team?.id, name: team?.teamName, })
+  const [isValid, setIsValid] = useState(false)
+  const lifecycle = useLifecycle()
+
+  const team = context?.team || game?.team || {}
+  const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
+    setIsValid(false)
   }, [open, initial])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
-  const { run, pending } = useVideoUpdate(video)
+  const { run, pending } = useGameHubUpdate(game)
   const canSave = !!initial.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('teamVideoEdit', patch, {
-      section: 'teamVideoEdit',
-      videoId: initial.id,
+    await run('teamGameEdit', patch, {
+      section: 'teamGameEdit',
+      gameId: initial.id,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })
@@ -69,10 +77,25 @@ export default function EditDrawer({
   }
 
   const handleReset = () => {
-    setDraft({
-      ...initial,
-    })
+    setDraft({ ...initial })
   }
+
+  const handleDelete = useCallback(() => {
+    if (!game?.id) return
+
+    lifecycle.openLifecycle(
+      { entityType: 'game', id: game.id, name: `${game?.rivel || 'משחק'} ${game?.gameDate || ''}`, },
+      {
+        onAfterSuccess: ({ action, entityType, id }) => {
+          if (action !== 'delete') return
+          if (entityType !== 'game') return
+          if (id !== game.id) return
+
+          onClose()
+        },
+      }
+    )
+  }, [lifecycle, game?.id, game?.rivel, game?.gameDate, onClose])
 
   return (
     <Drawer
@@ -90,11 +113,15 @@ export default function EditDrawer({
 
             <Box sx={{ ml: 2 }}>
               <Typography level="title-md" sx={sx.formNameSx}>
-                {team?.teamName || 'קבוצה'}
+                {team?.teamName || team?.name || 'קבוצה'}
               </Typography>
 
-              <Typography level="body-sm" sx={sx.formNameSx} startDecorator={iconUi({ id: 'videoAnalysis' })}>
-                עריכת פרטי וידאו: "{video?.name || 'וידאו'}"
+              <Typography
+                level="body-sm"
+                sx={sx.formNameSx}
+                startDecorator={iconUi({ id: 'games' })}
+              >
+                {draft?.rivel || game?.rival || 'משחק'} - {getFullDateIl(draft?.gameDate || game?.dateRaw || '')}
               </Typography>
             </Box>
           </Box>
@@ -104,12 +131,20 @@ export default function EditDrawer({
 
         <DialogContent sx={{ gap: 2 }}>
           <Box sx={sx.content} className="dpScrollThin">
-            <VideoEditDrawerBody
+            <GameCreateForm
               draft={draft}
-              setDraft={setDraft}
-              disabled={pending}
-              context={context}
-              sx={sx}
+              onDraft={setDraft}
+              onValidChange={setIsValid}
+              context={{
+                clubs: context?.clubs || [],
+                teams: context?.teams || [],
+              }}
+              variant="drawer"
+            />
+
+            <GameVideoLinkField
+              value={draft?.vLink || ''}
+              onChange={(value) => { setDraft((prev) => ({ ...prev, vLink: value || '', })) }}
             />
           </Box>
         </DialogContent>
@@ -148,10 +183,23 @@ export default function EditDrawer({
                 </IconButton>
               </span>
             </Tooltip>
+
+            <Tooltip title="מחיקת משחק">
+              <span>
+                <IconButton
+                  size="sm"
+                  color='danger'
+                  variant="solid"
+                  onClick={handleDelete}
+                >
+                  {iconUi({ id: 'delete' })}
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
 
-          <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-            {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+          <Typography level="body-xs" color={!isValid ? 'warning' : isDirty ? 'danger' : 'neutral'}>
+            {!isValid ? 'יש שדות חובה חסרים' : isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
           </Typography>
         </Box>
       </Sheet>

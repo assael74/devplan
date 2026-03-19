@@ -172,3 +172,23 @@ export function buildFallbackAvatar({ entityType, id, name, subline }) {
   `
   return svgToDataUri(svg)
 }
+
+export function resolveEntityAvatar({ entityType, entity, parentEntity, subline }) {
+  const clean = (v) => {
+    const s = String(v ?? '').trim()
+    return s || ''
+  }
+
+  const directPhoto = clean(entity?.photo)
+  if (directPhoto) return directPhoto
+
+  const parentPhoto = clean(parentEntity?.photo)
+  if (parentPhoto) return parentPhoto
+
+  return buildFallbackAvatar({
+    entityType,
+    id: entity?.id,
+    name: entity?.teamName || entity?.name,
+    subline,
+  })
+}

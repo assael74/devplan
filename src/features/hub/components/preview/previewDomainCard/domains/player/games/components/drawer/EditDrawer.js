@@ -153,8 +153,11 @@ export default function EditDrawer({ open, game, onClose, onSaved, context }) {
               </Tooltip>
             </Box>
 
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+            <Typography
+              level="body-xs"
+              color={isDirty ? 'danger' : 'neutral'}
+            >
+              {isDirty? 'יש שינויים שלא נשמרו': 'אין שינויים'}
             </Typography>
           </Box>
         </Box>

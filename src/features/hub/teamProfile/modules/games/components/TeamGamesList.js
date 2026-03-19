@@ -10,6 +10,7 @@ export default function TeamGamesList({
   rows,
   onEditGame,
   onOpenEdit,
+  onEditEntryGame
 }) {
   if (!rows?.length) {
     return (
@@ -29,6 +30,7 @@ export default function TeamGamesList({
           key={row.id}
           game={row}
           onEdit={onEditGame}
+          onEditEntry={onEditEntryGame}
         />
       ))}
     </Box>

@@ -1,8 +1,8 @@
-// teamProfile/modules/videos/components/drawer/sx/EditDrawer.sx.js
+// teamProfile/modules/games/components/drawer/sx/EditDrawer.sx.js
 
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('videoAnalysis')
+const c = getEntityColors('teams')
 
 export const editDrawerSx = {
   drawerSx: {
