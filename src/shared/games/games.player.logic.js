@@ -20,14 +20,22 @@ export const getGameDurationSafe = (gameOrRow) => {
   return Number.isFinite(duration) && duration > 0 ? duration : 90
 }
 
-export const calcPlayerParticipationSummary = ({ player, rows }) => {
-  const teamGames = Array.isArray(player?.teamGames) ? player.teamGames : []
+export const calcPlayerParticipationSummary = ({
+  player,
+  rows,
+  teamRows,
+}) => {
   const playerRows = Array.isArray(rows) ? rows : []
+  const teamBaseRows = Array.isArray(teamRows)
+    ? teamRows
+    : Array.isArray(player?.teamGames)
+      ? player.teamGames
+      : []
 
-  const playedTeamGames = teamGames.filter(isPlayedGame)
   const playedPlayerRows = playerRows.filter(isPlayedGame)
+  const playedTeamRows = teamBaseRows.filter(isPlayedGame)
 
-  const teamGamesTotal = playedTeamGames.length
+  const teamGamesTotal = playedTeamRows.length
   const gamesIncluded = playedPlayerRows.length
   const gamesPct = teamGamesTotal > 0 ? Math.round((gamesIncluded / teamGamesTotal) * 100) : 0
 
@@ -35,7 +43,7 @@ export const calcPlayerParticipationSummary = ({ player, rows }) => {
     return sum + n(row?.timePlayed)
   }, 0)
 
-  const minutesPossible = playedTeamGames.reduce((sum, game) => {
+  const minutesPossible = playedTeamRows.reduce((sum, game) => {
     return sum + getGameDurationSafe(game)
   }, 0)
 
@@ -56,11 +64,24 @@ export const calcPlayerParticipationSummary = ({ player, rows }) => {
     return sum + n(row?.points)
   }, 0)
 
-  const contributedPointsPossible = playedPlayerRows.length * 3
+  const contributedPointsPossible = gamesIncluded * 3
   const contributedPointsPct =
     contributedPointsPossible > 0
       ? Math.round((contributedPoints / contributedPointsPossible) * 100)
       : 0
+
+  const teamPoints = playedTeamRows.reduce((sum, row) => {
+    return sum + n(row?.points)
+  }, 0)
+
+  const teamPointsPossible = teamGamesTotal * 3
+  const teamPointsPct =
+    teamPointsPossible > 0
+      ? Math.round((teamPoints / teamPointsPossible) * 100)
+      : 0
+
+  const pointsShareOfTeam =
+    teamPoints > 0 ? Math.round((contributedPoints / teamPoints) * 100) : 0
 
   return {
     teamGamesTotal,
@@ -73,8 +94,14 @@ export const calcPlayerParticipationSummary = ({ player, rows }) => {
     startsPctFromPlayed,
     goals,
     assists,
+
     contributedPoints,
     contributedPointsPossible,
     contributedPointsPct,
+
+    teamPoints,
+    teamPointsPossible,
+    teamPointsPct,
+    pointsShareOfTeam,
   }
 }

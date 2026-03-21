@@ -3,6 +3,7 @@ import { getTabFromUrl as getTabGeneric } from '../../hub/sharedProfile/profile.
 
 export const TEAM_TABS = [
   { key: 'management', label: 'ניהול', iconKey: 'info', color: 'team' },
+  { key: 'trainings', label: 'אימונים', iconKey: 'training', color: 'training' },
   { key: 'players', label: 'שחקנים', iconKey: 'players', color: 'player' },
   { key: 'games', label: 'משחקים', iconKey: 'games', color: 'team' },
   { key: 'performance', label: 'ביצועים', iconKey: 'performance', color: 'player' },

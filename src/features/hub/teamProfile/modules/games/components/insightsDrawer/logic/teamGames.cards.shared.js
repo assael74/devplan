@@ -1,7 +1,7 @@
 import {
-  GAME_DIFFICULTY,
-  GAME_RESULT,
-} from '../../../../../../../../shared/games/games.constants.js'
+  resolveResultMeta,
+  resolveHomeMeta,
+} from '../../../../../../../../shared/games/games.meta.logic.js'
 
 export const EMPTY = '—'
 
@@ -15,12 +15,6 @@ export const toText = (v, fallback = EMPTY) => {
   return String(v)
 }
 
-export const normalizeColor = (color) => {
-  if (color === 'sucsses') return 'success'
-  if (color === 'warninig') return 'warning'
-  return color || 'neutral'
-}
-
 export const pointsColor = (pct) => {
   if (pct >= 60) return 'success'
   if (pct >= 40) return 'warning'
@@ -29,41 +23,17 @@ export const pointsColor = (pct) => {
 
 export const getDifficultyColor = (id) => {
   if (id === 'easy') return 'success'
-  if (id === 'medium') return 'warning'
+  if (id === 'equal') return 'warning'
   if (id === 'hard') return 'danger'
   return 'neutral'
 }
 
 export const resolveVenueIcon = (id) => {
-  if (id === 'home') return 'home'
-  if (id === 'away') return 'away'
-  return 'game'
+  return resolveHomeMeta(id)?.idIcon || 'game'
 }
 
 export const getResultMeta = (id) => {
-  const found = Array.isArray(GAME_RESULT)
-    ? GAME_RESULT.find((item) => item?.id === id)
-    : null
-
-  if (!found) {
-    return {
-      id,
-      labelH: id,
-      idIcon: 'game',
-      color: 'neutral',
-    }
-  }
-
-  return {
-    ...found,
-    color: normalizeColor(found?.color),
-  }
-}
-
-export const calcPointsPct = (points, total) => {
-  const maxPoints = toNum(total) * 3
-  if (!maxPoints) return 0
-  return Math.round((toNum(points) / maxPoints) * 100)
+  return resolveResultMeta(id)
 }
 
 export const calcPctFromTotal = (value, total) => {
@@ -74,16 +44,25 @@ export const calcPctFromTotal = (value, total) => {
   return Math.round((v / t) * 100)
 }
 
+export const calcPointsPct = (points, totalGames) => {
+  const maxPoints = toNum(totalGames) * 3
+  if (!maxPoints) return 0
+  return Math.round((toNum(points) / maxPoints) * 100)
+}
+
 export const resolveDifficultyBuckets = (grouped) => {
   const byDifficultyRaw = Array.isArray(grouped?.byDifficulty) ? grouped.byDifficulty : []
+  const ordered = ['easy', 'equal', 'hard']
 
-  return GAME_DIFFICULTY.map((base) => {
-    const found = byDifficultyRaw.find((item) => item?.id === base.id)
+  return ordered.map((id) => {
+    const found = byDifficultyRaw.find((item) => item?.id === id)
 
     return {
-      id: base.id,
-      label: found?.label || base?.labelH || base?.label || '',
-      idIcon: found?.idIcon || base?.idIcon || 'difficulty',
+      id,
+      label:
+        found?.label ||
+        (id === 'easy' ? 'רמה קלה' : id === 'equal' ? 'אותה רמה' : 'רמה קשה'),
+      idIcon: found?.idIcon || 'difficulty',
       total: toNum(found?.total),
       points: toNum(found?.points),
       pointsPct: toNum(found?.pointsPct),

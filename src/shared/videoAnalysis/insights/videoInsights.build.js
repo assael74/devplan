@@ -127,7 +127,7 @@ export const buildVideoInsights = ({
   tagType = VIDEO_INSIGHTS_DEFAULT_TAG_TYPE,
 }) => {
   const tagsById = buildTagsByIdObject(tags)
-  
+
   const derivedMonthKeys = safeArr(videos)
     .map((video) => resolveVideoMonthKey(video))
     .filter(Boolean)

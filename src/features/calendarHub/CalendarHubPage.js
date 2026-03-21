@@ -1,221 +1,95 @@
 // src/features/calendar/CalendarHubPage.js
-import React, { useMemo, useState } from 'react'
-import { Box, Typography, Button, IconButton, Chip, ButtonGroup } from '@mui/joy'
-import AddRounded from '@mui/icons-material/AddRounded'
-import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded'
-import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded'
-import TodayRounded from '@mui/icons-material/TodayRounded'
 
-import { calendarHubSx } from './calendarHub.sx'
+import React, { useState, useEffect } from 'react'
+import { Box, Typography } from '@mui/joy'
+
+import { calendarHubSx as sx } from './sx/calendarHub.sx'
+import useCalendarHubPage from './logic/useCalendarHubPage.js'
+
+import CalendarHubTopBar from './components/CalendarHubTopBar'
 import CalendarSelectorPanel from './components/CalendarSelectorPanel'
 import WeekCalendarGrid from './components/WeekCalendarGrid'
-import EventDrawer from './components/EventDrawer'
-import { MOCK_CALENDARS, mockBuildEvents } from './calendar.mock'
-
-function startOfWeekSunday(d) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  // JS: 0=Sunday
-  const diff = x.getDay() // already sunday-based
-  x.setDate(x.getDate() - diff)
-  return x
-}
-
-function addDays(d, n) {
-  const x = new Date(d)
-  x.setDate(x.getDate() + n)
-  return x
-}
-
-function toISODate(d) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  const yyyy = x.getFullYear()
-  const mm = String(x.getMonth() + 1).padStart(2, '0')
-  const dd = String(x.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
+import EventDrawer from './components/drawer/EventDrawer'
 
 export default function CalendarHubPage() {
-  const sx = calendarHubSx()
+  const [initialDraft, setInitialDraft] = useState(null)
 
-  const [view, setView] = useState('week') // month | week | agenda (כרגע week בלבד)
-  const [weekStart, setWeekStart] = useState(() => startOfWeekSunday(new Date()))
+  const {
+    players,
+    teams,
+    clubs,
+    loading,
+    error,
 
-  const [activeCalendarIds, setActiveCalendarIds] = useState([
-    'team_kadima_u14',
-    'staff_assael',
-  ])
+    context,
 
-  const [filters, setFilters] = useState({
-    onlyWeekend: false,
-    onlyMatches: false,
-    onlyMeetings: false,
-  })
+    view,
+    setView,
 
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [drawerMode, setDrawerMode] = useState('create')
-  const [selectedEvent, setSelectedEvent] = useState(null)
+    days,
 
-  const [draft, setDraft] = useState({
-    type: 'meeting_player',
-    calendarId: 'staff_assael',
-    title: '',
-    date: '',
-    time: '',
-    durationMin: 45,
-    status: 'planned',
-  })
+    selection,
+    setSelectedTeamId,
+    setSelectedPlayerId,
 
-  const calendars = useMemo(() => MOCK_CALENDARS, [])
-  const calendarsById = useMemo(() => {
-    const m = {}
-    calendars.forEach((c) => (m[c.id] = c))
-    return m
-  }, [calendars])
+    filters,
+    setFilters,
+    resetFilters,
 
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart])
+    visibleEvents,
+    allEvents,
+    filteredEvents,
+    totalCount,
+    weekendCount,
+    weekStart,
 
-  const allEvents = useMemo(() => mockBuildEvents(weekStart), [weekStart])
+    drawerOpen,
+    drawerMode,
+    draft,
+    setDraft,
 
-  const visibleEvents = useMemo(() => {
-    const act = new Set(activeCalendarIds)
-    let arr = allEvents.filter((e) => act.has(e.calendarId))
-
-    if (filters.onlyWeekend) {
-      arr = arr.filter((e) => {
-        const day = new Date(e.startAt).getDay() // 0 Sun ... 6 Sat
-        return day === 5 || day === 6
-      })
-    }
-    if (filters.onlyMatches) arr = arr.filter((e) => e.type === 'match')
-    if (filters.onlyMeetings) arr = arr.filter((e) => e.type === 'meeting_player' || e.type === 'meeting_team')
-
-    return arr
-  }, [allEvents, activeCalendarIds, filters])
-
-  const totalCount = visibleEvents.length
-  const weekendCount = visibleEvents.filter((e) => {
-    const d = new Date(e.startAt).getDay()
-    return d === 5 || d === 6
-  }).length
-
-  const handleToggleCalendar = (id) => {
-    setActiveCalendarIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
-  const navWeek = (dir) => {
-    setWeekStart((prev) => addDays(prev, dir * 7))
-  }
-
-  const openCreate = () => {
-    setDrawerMode('create')
-    setSelectedEvent(null)
-    setDraft((d) => ({
-      ...d,
-      title: '',
-      date: toISODate(new Date()),
-      time: '',
-      durationMin: 45,
-      status: 'planned',
-    }))
-    setDrawerOpen(true)
-  }
-
-  const onEventClick = (e) => {
-    setDrawerMode('edit')
-    setSelectedEvent(e)
-    const start = new Date(e.startAt)
-    const hh = String(start.getHours()).padStart(2, '0')
-    const mm = String(start.getMinutes()).padStart(2, '0')
-    setDraft({
-      type: e.type,
-      calendarId: e.calendarId,
-      title: e.title || '',
-      date: toISODate(start),
-      time: `${hh}:${mm}`,
-      durationMin: Math.max(15, Math.round((new Date(e.endAt) - start) / 60000)),
-      status: e.status || 'planned',
-    })
-    setDrawerOpen(true)
-  }
-
-  const onSaveDraft = () => {
-    if (draft.type === 'match' && !draft.time) {
-      alert('במשחק שדה שעה הוא חובה')
-      return
-    }
-    setDrawerOpen(false)
-  }
-
+    navWeek,
+    resetToToday,
+    openCreate,
+    onEventClick,
+    closeDrawer,
+    onSaveDraft,
+  } = useCalendarHubPage()
+  
   return (
     <Box dir="rtl" sx={sx.page}>
-      {/* Left panel: selector */}
       <Box sx={sx.leftPanel} className="dpScrollThin">
         <CalendarSelectorPanel
-          calendars={calendars}
-          activeIds={activeCalendarIds}
-          onToggle={handleToggleCalendar}
+          teams={teams}
+          players={players}
+          context={context}
+          selection={selection}
+          onSelectTeam={setSelectedTeamId}
+          onSelectPlayer={setSelectedPlayerId}
           filters={filters}
           onFilter={setFilters}
+          resetFilters={resetFilters}
         />
       </Box>
 
-      {/* Right panel: calendar */}
       <Box sx={sx.rightPanel}>
-        <Box sx={sx.topBar}>
-          <Box sx={sx.titleBlock}>
-            <Typography level="title-lg">יומן</Typography>
-            <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-              Overlay של יומנים (קבוצות + אנליסטים) לתיאום וזמינות
-            </Typography>
-          </Box>
-
-          <ButtonGroup size="sm" variant="soft" sx={sx.buttonGroup}>
-            <Button variant={view === 'month' ? 'solid' : 'soft'} onClick={() => setView('month')}>
-              חודש
-            </Button>
-            <Button variant={view === 'week' ? 'solid' : 'soft'} onClick={() => setView('week')}>
-              שבוע
-            </Button>
-            <Button variant={view === 'agenda' ? 'solid' : 'soft'} onClick={() => setView('agenda')}>
-              אג׳נדה
-            </Button>
-          </ButtonGroup>
-
-          <Box sx={sx.actions}>
-            <Box sx={sx.chips}>
-              <Chip size="sm" variant="soft">
-                סה״כ: {totalCount}
-              </Chip>
-              <Chip size="sm" variant="soft">
-                סופ״ש: {weekendCount}
-              </Chip>
-            </Box>
-
-            <IconButton size="sm" variant="soft" onClick={() => navWeek(-1)}>
-              <ChevronRightRounded />
-            </IconButton>
-            <IconButton size="sm" variant="soft" onClick={() => setWeekStart(startOfWeekSunday(new Date()))}>
-              <TodayRounded />
-            </IconButton>
-            <IconButton size="sm" variant="soft" onClick={() => navWeek(1)}>
-              <ChevronLeftRounded />
-            </IconButton>
-
-            <Button size="sm" startDecorator={<AddRounded />} onClick={openCreate}>
-              אירוע
-            </Button>
-          </Box>
-        </Box>
+        <CalendarHubTopBar
+          view={view}
+          onChangeView={setView}
+          totalCount={totalCount}
+          weekendCount={weekendCount}
+          onPrevWeek={() => navWeek(-1)}
+          onToday={resetToToday}
+          onNextWeek={() => navWeek(1)}
+          onOpenCreate={openCreate}
+          onOpenEdit={() => {}}
+        />
 
         <Box sx={sx.calendarBody}>
           {view === 'week' ? (
             <WeekCalendarGrid
-              weekStart={weekStart}
               days={days}
               events={visibleEvents}
-              calendarsById={calendarsById}
               onEventClick={onEventClick}
             />
           ) : (
@@ -231,12 +105,19 @@ export default function CalendarHubPage() {
 
       <EventDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={closeDrawer}
         draft={draft}
         onDraft={setDraft}
-        calendars={calendars}
+        initialDraft={initialDraft}
         mode={drawerMode}
-        onSave={onSaveDraft}
+        onSave={(nextDraft) => {
+          console.log('calendar draft save', nextDraft)
+          closeDrawer()
+        }}
+        onDelete={(currentDraft) => {
+          console.log('calendar draft delete', currentDraft)
+          closeDrawer()
+        }}
       />
     </Box>
   )

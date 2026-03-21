@@ -7,7 +7,6 @@ import {
   FormLabel,
 } from '@mui/joy'
 
-import playerImage from '../../../core/images/playerImage.jpg'
 import { playersSlot } from '../select.sx.js'
 
 import { buildOptions, findSelected } from './logic/teamSelect.logic'
@@ -30,10 +29,10 @@ export default function TeamSelectField({
   clubId,
 }) {
   const normalizedOptions = useMemo(
-    () => buildOptions(options, clubId, playerImage),
+    () => buildOptions(options, clubId),
     [options, clubId]
   )
-
+  
   const selectedOpt = useMemo(
     () => findSelected(value, normalizedOptions),
     [value, normalizedOptions]

@@ -1,18 +1,13 @@
 import { TEAM_GAMES_FILTER_KEYS } from './teamGames.filters.constants.js'
+import { buildHaystack } from '../../../../../../shared/games/games.search.logic.js'
 
-const safe = (v) => (v == null ? '' : String(v))
 const safeArray = (v) => (Array.isArray(v) ? v : [])
 
 export const matchesTeamGameSearch = (game, search) => {
-  const q = safe(search).toLowerCase().trim()
+  const q = String(search || '').toLowerCase().trim()
   if (!q) return true
 
-  return (
-    safe(game?.rival).toLowerCase().includes(q) ||
-    safe(game?.typeH).toLowerCase().includes(q) ||
-    safe(game?.difficultyH).toLowerCase().includes(q) ||
-    safe(game?.score).toLowerCase().includes(q)
-  )
+  return buildHaystack(game).includes(q)
 }
 
 export const applyTeamGamesFilters = (rows, filters) => {

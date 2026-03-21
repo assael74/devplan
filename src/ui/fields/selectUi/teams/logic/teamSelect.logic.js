@@ -1,7 +1,7 @@
 // ui/fields/selectUi/teams/logic/teamSelect.logic.js
 const clean = (v) => String(v ?? '').trim()
 
-export function normalizePlayer(t, fallbackImage) {
+export function normalizeTeam(t) {
   const teamName = [t?.teamName, t?.teamYear]
     .filter(Boolean)
     .join(' ')
@@ -10,17 +10,18 @@ export function normalizePlayer(t, fallbackImage) {
   return {
     value: clean(t?.id),
     label: clean(teamName || t?.fullName || t?.name) || 'שחקן',
-    avatar: t?.photo || fallbackImage,
+    avatar: t?.photo,
     clubId: clean(t?.clubId || t?.club?.id),
     clubName: clean(t?.club?.clubName || t?.clubName),
+    club: t.club,
     raw: t,
   }
 }
 
-export function buildOptions(options = [], clubId, fallbackImage) {
+export function buildOptions(options = [], clubId) {
   const cid = clean(clubId)
 
-  const arr = options.map((t) => normalizePlayer(t, fallbackImage)).filter((x) => x.value)
+  const arr = options.map((t) => normalizeTeam(t)).filter((x) => x.value)
 
   const filtered = cid ? arr.filter((x) => x.clubId === cid) : arr
 

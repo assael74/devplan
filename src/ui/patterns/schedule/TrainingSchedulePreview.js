@@ -1,10 +1,11 @@
 // C:\projects\devplan\src\ui\patterns\schedule\TrainingSchedulePreview.js
+
 import React, { useMemo, useCallback, useState } from 'react'
 import { Box, Chip, Sheet, Typography, IconButton, Tooltip } from '@mui/joy'
 
 import ScheduleWeekBlock from './ScheduleWeekBlock.js'
-import TrainingWeekDrawer from './TrainingWeekDrawer.js'
-import { buildScheduleHeaderStats, buildScheduleModel } from './schedule.logic.js'
+import TrainingWeekDrawer from './components/drawer/TrainingWeekDrawer.js'
+import { buildScheduleHeaderStats, buildScheduleModel } from './logic/schedule.logic.js'
 import { schedulePreviewSx as sx } from './sx/schedulePreview.sx.js'
 import { getEntityColors } from '../../core/theme/Colors.js'
 import { iconUi } from '../../core/icons/iconUi.js'

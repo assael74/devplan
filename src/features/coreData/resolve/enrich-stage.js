@@ -31,8 +31,6 @@
    buildScoutGamesSummary,
    buildVideosWithEntities,
    buildTrainingWeeksSummary,
-   buildTeamEventsByWeek,
-   buildPlayerEventsByWeek,
    buildPlayerGames
  } from '../resolvers/builders'
 
@@ -166,19 +164,9 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
       tagsArr: tags,
     })
 
-    const eventsByWeek = buildPlayerEventsByWeek({
-      trainingWeeks: player?.trainingWeeks || [],
-      teamMeetings: player?.teamMeetings || [],
-      teamGames: player?.teamGames || [],
-      playerMeetings: player?.meetings || [],
-      teamId: player?.teamId || player?.team?.id || null,
-      playerId: player?.id || null,
-    })
-
     return {
       ...player,
       videos,
-      eventsByWeek,
       abilities: player?.abilities && typeof player.abilities === 'object'
         ? player.abilities
         : {},
@@ -198,17 +186,9 @@ export function attachTeamStatsAndVideos(teams, indexes) {
       tagsArr: tags,
     })
 
-    const eventsByWeek = buildTeamEventsByWeek({
-      trainingWeeks: team?.trainingWeeks || [],
-      teamMeetings: team?.teamMeetings || [],
-      teamGames: team?.teamGames || [],
-      teamId: team?.id || null,
-    })
-
     return {
       ...team,
       videos,
-      eventsByWeek,
     }
   })
 }

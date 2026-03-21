@@ -10,6 +10,11 @@ export const toNum = (v) => {
   return Number.isFinite(x) ? x : 0
 }
 
+export const toFixed13Num = (v, fallback = 0) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? Number(n.toFixed(1)) : fallback
+}
+
 export const pct = (part, total) => {
   const a = Number(part)
   const b = Number(total)

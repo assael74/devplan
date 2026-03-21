@@ -1,4 +1,4 @@
-/// shared/games/games.search.logic.js
+// shared/games/games.search.logic.js
 
 const safe = (v) => (v == null ? '' : String(v))
 
@@ -8,9 +8,16 @@ export const buildHaystack = (x) =>
     x?.hourRaw,
     x?.rival,
     x?.type,
+    x?.typeH,
+    x?.difficulty,
+    x?.difficultyH,
+    x?.result,
+    x?.resultH,
+    x?.score,
+    x?.homeKey,
+    x?.homeH,
     safe(x?.id),
     safe(x?.game?.id),
-    safe(x?.game?.difficulty),
   ]
     .join(' ')
     .toLowerCase()

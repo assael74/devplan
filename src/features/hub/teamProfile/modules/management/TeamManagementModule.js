@@ -87,14 +87,8 @@ export default function TeamManagementModule({ entity, context }) {
             teamId={team.id}
             roles={staffPool}
             disabled={pending}
-            compact
+            compact={false}
           />
-        </Box>
-
-        <Box sx={sx.bottomGrid}>
-          <Box sx={sx.futureCard}>
-            <Typography level="title-sm">אימוני קבוצה</Typography>
-          </Box>
         </Box>
       </Box>
     </SectionPanel>

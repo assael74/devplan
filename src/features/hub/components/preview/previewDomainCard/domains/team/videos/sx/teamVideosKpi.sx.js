@@ -144,9 +144,17 @@ export const heroSx = {
     color: c.accent,
   },
 
-  kpiSubValueSx: {
+  kpiSubValueSx: (subValue) => ({
     color: 'text.secondary',
     fontSize: 12,
     lineHeight: 1.1,
+    opacity: subValue ? 1 : 0,
+  }),
+
+  kpiSubBoxSx: {
+    minHeight: 16,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
 }

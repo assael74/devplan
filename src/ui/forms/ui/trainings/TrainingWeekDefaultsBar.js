@@ -31,11 +31,21 @@ export default function TrainingWeekDefaultsBar({
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
         <Typography level="title-sm">ברירת מחדל לשבוע</Typography>
         <Box sx={{ display: 'flex', gap: 1,  }} >
-          <Button size="sm" variant="outlined" onClick={onApplyToEnabled} sx={{ px: 1, py: 0.25, fontSize: 10 }}>
+          <Button
+            size="sm"
+            variant="plain"
+            onClick={onApplyToEnabled}
+            sx={sx.appToEnBtn}
+          >
             החל על המסומנים
           </Button>
 
-          <Button size="sm" variant="solid" onClick={onApplyToAll} sx={{ px: 1, py: 0.25, fontSize: 10 }}>
+          <Button
+            size="sm"
+            variant="solid"
+            onClick={onApplyToAll}
+            sx={sx.appToAlBtn}
+          >
             החל על כל הימים
           </Button>
         </Box>

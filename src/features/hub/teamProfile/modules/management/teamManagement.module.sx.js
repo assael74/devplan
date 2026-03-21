@@ -8,7 +8,7 @@ export const teamManagementModuleSx = {
   topGrid: {
     display: 'grid',
     gap: 1.25,
-    gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+    gridTemplateColumns: { xs: '1fr', lg: '1fr' },
     alignItems: 'stretch',
     minHeight: 0,
     height: '100%',

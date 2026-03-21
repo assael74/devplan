@@ -137,16 +137,24 @@ export const heroSx = {
   },
 
   kpiValueSx: {
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: 18,
     lineHeight: 1,
     color: c.accent,
   },
 
-  kpiSubValueSx: {
+  kpiSubValueSx: (subValue) => ({
     color: 'text.secondary',
     fontSize: 12,
     lineHeight: 1.1,
+    opacity: subValue ? 1 : 0,
+  }),
+
+  kpiSubBoxSx: {
+    minHeight: 16,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
 
   nextGameBoxSx: {

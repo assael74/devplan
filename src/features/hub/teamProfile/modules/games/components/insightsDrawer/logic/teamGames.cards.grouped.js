@@ -1,6 +1,5 @@
 import {
   toNum,
-  normalizeColor,
   calcPointsPct,
   getDifficultyColor,
   resolveVenueIcon,
@@ -64,6 +63,6 @@ export const buildFeedInsightItems = (insights) => {
           : 'מידע',
     subValue: item?.text || '',
     icon: 'insights',
-    color: normalizeColor(item?.color),
+    color: item?.color || 'neutral',
   }))
 }

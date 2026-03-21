@@ -1,23 +1,33 @@
-/// ui/forms/create/useCreateModal.js
+// ui/forms/create/useCreateModal.js
+
 import React, { useState } from 'react'
 
 function emptyDraft() {
   return {}
 }
 
+function cloneDraft(value) {
+  if (!value || typeof value !== 'object') return {}
+  return JSON.parse(JSON.stringify(value))
+}
+
 function defaultSurfaceState() {
   return {
-    surface: 'modal',
-    drawerAnchor: 'right',
-    drawerWidth: 760,
+    surface: 'drawer',
+    drawerAnchor: 'bottom',
+    drawerWidth: 800,
   }
+}
+
+function areDraftsEqual(a, b) {
+  return JSON.stringify(a || {}) === JSON.stringify(b || {})
 }
 
 export function useCreateModalState() {
   const [open, setOpen] = React.useState(false)
   const [type, setType] = React.useState(null)
   const [context, setContext] = useState({})
-  const [draft, setDraft] = React.useState(emptyDraft())
+  const [draft, setDraftState] = React.useState(emptyDraft())
   const [initialDraft, setInitialDraft] = React.useState(emptyDraft())
   const [isValid, setIsValid] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
@@ -25,24 +35,35 @@ export function useCreateModalState() {
   const [drawerAnchor, setDrawerAnchor] = React.useState(defaultSurfaceState().drawerAnchor)
   const [drawerWidth, setDrawerWidth] = React.useState(defaultSurfaceState().drawerWidth)
 
+  const isDirty = React.useMemo(() => {
+    return !areDraftsEqual(draft, initialDraft)
+  }, [draft, initialDraft])
+
+  const setDraft = React.useCallback((next) => {
+    setDraftState((prev) => {
+      if (typeof next === 'function') return next(prev)
+      return next || {}
+    })
+  }, [])
+
   const openCreate = React.useCallback((nextType, presetDraft, ctx, options = {}) => {
-    const base = presetDraft || emptyDraft()
+    const base = cloneDraft(presetDraft || emptyDraft())
 
     setType(nextType)
-    setDraft(base)
-    setInitialDraft(base)
+    setDraftState(base)
+    setInitialDraft(cloneDraft(base))
     setIsValid(false)
     setOpen(true)
     setContext(ctx || {})
     setBusy(false)
 
-    setSurface(options.surface || 'modal')
-    setDrawerAnchor(options.drawerAnchor || 'right')
-    setDrawerWidth(options.drawerWidth || 760)
+    setSurface(options.surface || 'drawer')
+    setDrawerAnchor(options.drawerAnchor || 'bottom')
+    setDrawerWidth(options.drawerWidth || 800)
   }, [])
 
   const reset = React.useCallback(() => {
-    setDraft(initialDraft)
+    setDraftState(cloneDraft(initialDraft))
     setIsValid(false)
     setBusy(false)
   }, [initialDraft])
@@ -52,6 +73,9 @@ export function useCreateModalState() {
     setType(null)
     setBusy(false)
     setContext({})
+    setDraftState(emptyDraft())
+    setInitialDraft(emptyDraft())
+    setIsValid(false)
     setSurface(defaultSurfaceState().surface)
     setDrawerAnchor(defaultSurfaceState().drawerAnchor)
     setDrawerWidth(defaultSurfaceState().drawerWidth)
@@ -62,6 +86,7 @@ export function useCreateModalState() {
     type,
     draft,
     isValid,
+    isDirty,
     setDraft,
     setIsValid,
     openCreate,

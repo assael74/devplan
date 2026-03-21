@@ -17,11 +17,9 @@ function KpiCard({ label, value, subValue, icon }) {
 
       <Typography level='title-xs' sx={sx.kpiValueSx}>{value}</Typography>
 
-      {!!subValue && (
-        <Typography sx={sx.kpiSubValueSx}>
-          {subValue}
-        </Typography>
-      )}
+      <Box sx={sx.kpiSubBoxSx}>
+        <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
+      </Box>
     </Sheet>
   )
 }

@@ -1,15 +1,9 @@
-import { GAME_TYPE, GAME_DIFFICULTY } from '../../../../../../shared/games/games.constants.js'
-
-export const GAME_RESULT = [
-  { id: 'win', labelH: 'ניצחון', idIcon: 'win' },
-  { id: 'draw', labelH: 'תיקו', idIcon: 'draw' },
-  { id: 'loss', labelH: 'הפסד', idIcon: 'loss' },
-]
-
-export const GAME_HOME_AWAY = [
-  { id: 'home', labelH: 'בית', idIcon: 'home' },
-  { id: 'away', labelH: 'חוץ', idIcon: 'away' },
-]
+import {
+  GAME_TYPE,
+  GAME_DIFFICULTY,
+  GAME_RESULT,
+  GAME_HOME_AWAY,
+} from '../../../../../../shared/games/games.constants.js'
 
 export const TEAM_GAMES_FILTER_KEYS = [
   'search',

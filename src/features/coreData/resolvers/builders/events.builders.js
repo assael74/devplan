@@ -194,7 +194,7 @@ export const buildTeamEventsByWeek = ({
   for (const item of safeArr(teamGames).map((g) => normalizeGameEvent(g, { teamId }))) {
     ensureBucket(buckets, item, { teamId })
   }
-
+  console.log('RAW TEAM GAMES', teamGames)
   return sortByDateDesc(
     Array.from(buckets.values()).map((bucket) => {
       const finalBucket = finalizeBucket(bucket)

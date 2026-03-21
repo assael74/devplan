@@ -33,57 +33,26 @@ export const buildRecordPctChips = (result) => {
     {
       id: 'win',
       label: `${winPct}%`,
-      icon: winMeta.idIcon || 'win',
-      color: winMeta.color || 'success',
+      icon: winMeta.idIcon,
+      color: winMeta.color,
       pct: winPct,
       fullLabel: `${winMeta.labelH} ${wins} (${winPct}%)`,
     },
     {
       id: 'draw',
       label: `${drawPct}%`,
-      icon: drawMeta.idIcon || 'draw',
-      color: drawMeta.color || 'warning',
+      icon: drawMeta.idIcon,
+      color: drawMeta.color,
       pct: drawPct,
       fullLabel: `${drawMeta.labelH} ${draws} (${drawPct}%)`,
     },
     {
       id: 'loss',
       label: `${lossPct}%`,
-      icon: lossMeta.idIcon || 'loss',
-      color: lossMeta.color || 'danger',
+      icon: lossMeta.idIcon,
+      color: lossMeta.color,
       pct: lossPct,
       fullLabel: `${lossMeta.labelH} ${losses} (${lossPct}%)`,
-    },
-  ]
-}
-
-export const buildRecordChips = (result) => {
-  const wins = toNum(result?.wins)
-  const draws = toNum(result?.draws)
-  const losses = toNum(result?.losses)
-
-  const winMeta = getResultMeta('win')
-  const drawMeta = getResultMeta('draw')
-  const lossMeta = getResultMeta('loss')
-
-  return [
-    {
-      id: 'win',
-      label: `${winMeta.labelH} ${wins}`,
-      icon: winMeta.idIcon || 'win',
-      color: winMeta.color || 'success',
-    },
-    {
-      id: 'draw',
-      label: `${drawMeta.labelH} ${draws}`,
-      icon: drawMeta.idIcon || 'draw',
-      color: drawMeta.color || 'warning',
-    },
-    {
-      id: 'loss',
-      label: `${lossMeta.labelH} ${losses}`,
-      icon: lossMeta.idIcon || 'loss',
-      color: lossMeta.color || 'danger',
     },
   ]
 }
@@ -116,7 +85,7 @@ export const buildTeamGamesTopStats = (summary) => {
       id: 'ppg',
       title: 'נקודות למשחק',
       value: toText(result?.ppg),
-      sub: `${toText(result?.gamesPlayed || result?.totalPlayed, '0')} משחקים`,
+      sub: `${toText(result?.totalPlayed, '0')} משחקים`,
       icon: 'points',
     },
     {

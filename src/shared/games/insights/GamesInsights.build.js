@@ -64,25 +64,30 @@ export const buildTeamGamesInsights = ({ rows = [], normalizeRow }) => {
 
 export const buildPlayerGamesInsights = ({ player, rows = [], normalizeRow }) => {
   const view = buildGamesView(rows, normalizeRow)
-  const leaguePlayedGames = filterLeaguePlayedGames(view.playedGames || [])
+  const playerLeagueGames = filterLeaguePlayedGames(view.playedGames || [])
+
+  const teamView = buildGamesView(player?.teamGames || [], normalizeRow)
+  const teamLeagueGames = filterLeaguePlayedGames(teamView.playedGames || [])
 
   const participation = buildPlayerParticipationInsights({
     player,
-    playedGames: leaguePlayedGames,
+    playedGames: playerLeagueGames,
+    teamLeagueGames,
   })
 
-  const scoring = buildPlayerScoringInsights(leaguePlayedGames)
-  const splits = buildPlayerStartingVsBenchInsights(leaguePlayedGames)
-  const homeOrAway = buildPlayerHomeOrAwayInsights(leaguePlayedGames)
-  const type = buildPlayerTypeInsights(leaguePlayedGames)
-  const recent = buildPlayerRecentInsights(leaguePlayedGames)
+  const scoring = buildPlayerScoringInsights(playerLeagueGames)
+  const splits = buildPlayerStartingVsBenchInsights(playerLeagueGames)
+  const homeOrAway = buildPlayerHomeOrAwayInsights(playerLeagueGames)
+  const type = buildPlayerTypeInsights(playerLeagueGames)
+  const recent = buildPlayerRecentInsights(playerLeagueGames)
 
   return {
     domain: 'playerGames',
     state: view.state,
     rows: view.rows,
     playedGames: view.playedGames,
-    leaguePlayedGames,
+    leaguePlayedGames: playerLeagueGames,
+    teamLeagueGames,
     upcomingGames: view.upcomingGames,
     nextGame: view.nextGame,
 

@@ -8,6 +8,8 @@ import {
   NotesRounded,
   PermContactCalendar,
   Today,
+  Weekend,
+  ViewWeek
 } from '@mui/icons-material';
 
 export const generalIcons = {
@@ -20,4 +22,6 @@ export const generalIcons = {
   info: <Info />,
   note: <NotesRounded />,
   notes: <NotesRounded />,
+  weekend: <Weekend />,
+  weekday: <ViewWeek />,
 };

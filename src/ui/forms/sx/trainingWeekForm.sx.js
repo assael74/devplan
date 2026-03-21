@@ -1,4 +1,8 @@
-// C:\projects\devplan\src\ui\forms\sx\trainingWeekForm.sx.js
+// ui/forms/sx/trainingWeekForm.sx.js
+
+import { getEntityColors } from '../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('trainings')
 
 export const trainingWeekSx = {
   root: {
@@ -73,5 +77,41 @@ export const trainingWeekSx = {
     fontSize: 12,
     textAlign: 'right',
     alignSelf: 'flex-start',
+  },
+
+  appToEnBtn: {
+    color: c.text,
+    border: `1px solid ${c.accent}`,
+    fontWeight: 700,
+    boxShadow: 'sm',
+    px: 1,
+    py: 0.25,
+    fontSize: 10,
+    transition: 'filter .15s ease, transform .12s ease',
+
+    '&:hover': {
+      border: `1px solid ${c.accent}50`,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
+  },
+
+  appToAlBtn: {
+    bgcolor: c.bg,
+    color: c.text,
+    fontWeight: 700,
+    boxShadow: 'sm',
+    px: 1,
+    py: 0.25,
+    fontSize: 10,
+    transition: 'filter .15s ease, transform .12s ease',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
   },
 }

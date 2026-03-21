@@ -9,7 +9,7 @@ import PlayerGamesModule from '../modules/games/PlayerGamesModule'
 import PerformanceModule from '../modules/performance/PlayerPerformanceModule'
 import MeetingsModule from '../modules/meetings/PlayerMeetingsModule'
 import PaymentsModule from '../modules/payments/PlayerPaymentsModule'
-import PlayerVideosModule from '../modules/videos/PlayerVideosModule'
+import PlayerVideosModule from '../modules/videos/PlayerVideosModule.js'
 import PlayerTrainingsModule from '../modules/trainings/PlayerTrainingsModule'
 
 const modulesProjectMap = {

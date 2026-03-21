@@ -1,7 +1,12 @@
 // shared/games/games.normalize.logic.js
 
 import { safe, normalizeDate, normalizeTime } from './games.time.logic.js'
-import { typeLabelH, diffLabelH } from './games.labels.js'
+import {
+  typeLabelH,
+  diffLabelH,
+  resultLabelH,
+  homeLabelH,
+} from './games.labels.js'
 import { scoreFromGameAndStats } from './games.score.logic.js'
 
 const toNum = (v, fallback = 0) => {
@@ -34,6 +39,18 @@ const calcPointsByResult = (result, goalsFor, goalsAgainst) => {
   return 0
 }
 
+const mapHomeToKey = (game) => {
+  if (typeof game?.home === 'boolean') return game.home ? 'home' : 'away'
+
+  const homeAway = safe(game?.homeAway).trim().toLowerCase()
+  const typePlace = safe(game?.typePlace).trim().toLowerCase()
+
+  if (homeAway === 'home' || typePlace === 'home') return 'home'
+  if (homeAway === 'away' || typePlace === 'away') return 'away'
+
+  return ''
+}
+
 export const createGameRowNormalizer = (cfg) => {
   const pick = cfg?.pick || {}
   const formatDateH = cfg?.formatDateH || ((dateRaw) => dateRaw || '')
@@ -62,15 +79,6 @@ export const createGameRowNormalizer = (cfg) => {
     pick.pickRival ||
     ((game) =>
       safe(game?.rivel || game?.rival || game?.rivalName || game?.opponent).trim() || '—')
-
-  const pickIsHome =
-    pick.pickIsHome ||
-    ((game) => {
-      if (typeof game?.home === 'boolean') return game.home
-      if (safe(game?.homeAway).trim().toLowerCase() === 'home') return true
-      if (safe(game?.typePlace).trim().toLowerCase() === 'home') return true
-      return false
-    })
 
   const pickGoalsFor =
     pick.pickGoalsFor ||
@@ -147,17 +155,11 @@ export const createGameRowNormalizer = (cfg) => {
 
   const pickGoals =
     pick.pickGoals ||
-    ((row, game, stats) => {
-      const val = row?.goals ?? stats?.goals
-      return toNum(val, 0)
-    })
+    ((row, game, stats) => toNum(row?.goals ?? stats?.goals, 0))
 
   const pickAssists =
     pick.pickAssists ||
-    ((row, game, stats) => {
-      const val = row?.assists ?? stats?.assists
-      return toNum(val, 0)
-    })
+    ((row, game, stats) => toNum(row?.assists ?? stats?.assists, 0))
 
   const pickIsStarting =
     pick.pickIsStarting ||
@@ -172,7 +174,7 @@ export const createGameRowNormalizer = (cfg) => {
   return (row) => {
     const game = pickGame(row)
     const stats = pickStats(row)
-
+    //console.log(row)
     const id = safe(pickId(row)) || safe(game?.id)
     const type = pickType(game)
     const difficulty = pickDifficulty(game)
@@ -190,7 +192,14 @@ export const createGameRowNormalizer = (cfg) => {
     const goals = pickGoals(row, game, stats)
     const assists = pickAssists(row, game, stats)
     const isStarting = pickIsStarting(row, game, stats)
-    const isHome = pickIsHome(game)
+
+    const homeKey = mapHomeToKey(game)
+    const isHome = homeKey === 'home'
+
+    const vLink = safe(row?.vLink || game?.vLink).trim()
+    const hasVideo = !!vLink
+    const videoIcon = hasVideo ? 'video' : 'noVideo'
+    const videoColor = hasVideo ? '#3cfa06' : '#fa1606'
 
     return {
       id,
@@ -208,11 +217,15 @@ export const createGameRowNormalizer = (cfg) => {
       dateH: formatDateH(dateRaw),
 
       rival: pickRival(game),
+
+      homeKey,
+      homeH: homeLabelH(homeKey),
       home: isHome,
       isHome,
 
       score: pickScore(game, stats),
       result,
+      resultH: resultLabelH(result),
       points,
 
       goalsFor,
@@ -223,6 +236,11 @@ export const createGameRowNormalizer = (cfg) => {
       goals,
       assists,
       isStarting,
+
+      vLink,
+      hasVideo,
+      videoIcon,
+      videoColor,
     }
   }
 }

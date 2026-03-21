@@ -9,19 +9,24 @@ import {
 } from '../../utils/data.utils.js'
 import { uniqBy } from '../../utils/map.utils.js'
 
-export const normalizeGame = (game={})=>{
+export const normalizeGame = (game = {}) => {
   const eventDate = toMillis(game?.gameDate || game?.date)
   const weekStart = getWeekStartFromDate(eventDate)
 
+  const teamId =
+    safeId(game?.teamId) ||
+    safeId(game?.team?.id) ||
+    safeId(game?.team?.teamId)
+
   return {
     ...game,
-    id:safeId(game?.id),
-    teamId:safeId(game?.teamId),
-    weekId:safeStr(game?.weekId)||buildWeekIdFromStart(weekStart),
+    id: safeId(game?.id),
+    teamId,
+    weekId: safeStr(game?.weekId) || buildWeekIdFromStart(weekStart),
     weekStart,
-    weekEnd:getWeekEndFromStart(weekStart),
+    weekEnd: getWeekEndFromStart(weekStart),
     eventDate,
-    eventSortTime:eventDate
+    eventSortTime: eventDate,
   }
 }
 

@@ -5,7 +5,7 @@ import { scheduleWeekBlockSx as sx } from '../sx/scheduleWeekBlock.sx.js'
 import {
   getCompactTrainingLabel,
   getCompactTrainingSubLabel,
-} from '../schedule.logic.js'
+} from '../logic/schedule.logic.js'
 
 export function EmptyScheduleRow({ row, mode = 'profile' }) {
   return (

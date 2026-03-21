@@ -14,10 +14,15 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0
 }
 
-export const buildPlayerParticipationInsights = ({ player, playedGames }) => {
+export const buildPlayerParticipationInsights = ({
+  player,
+  playedGames,
+  teamLeagueGames,
+}) => {
   return calcPlayerParticipationSummary({
     player,
     rows: playedGames,
+    teamRows: teamLeagueGames,
   })
 }
 

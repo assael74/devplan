@@ -1,9 +1,9 @@
 // hub/teamProfile/modules/games/logic/teamGames.filters.logic.js
 
 import { createGameRowNormalizer } from '../../../../../../shared/games/games.normalize.logic.js'
+import { enrichGameWithTeam } from '../../../../../../shared/games/games.team.enrich.logic.js'
 
 import { createInitialTeamGamesFilters } from './teamGames.filters.constants.js'
-import { enrichGameWithTeam } from './teamGames.filters.enrich.js'
 import {
   applyTeamGamesFilters,
   buildTeamGamesSummary,

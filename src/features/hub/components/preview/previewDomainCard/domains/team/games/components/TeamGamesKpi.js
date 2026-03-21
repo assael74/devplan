@@ -12,17 +12,15 @@ function KpiCard({ label, value, subValue, icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
-        <Typography sx={sx.kpiLabelSx}>{label}</Typography>
+        <Typography level='body-sm' sx={sx.kpiLabelSx}>{label}</Typography>
         {icon}
       </Box>
 
-      <Typography sx={sx.kpiValueSx}>{value}</Typography>
+      <Typography level='body-sm' sx={{...sx.kpiValueSx, fontSize: 14}}>{value}</Typography>
 
-      {!!subValue && (
-        <Typography sx={sx.kpiSubValueSx}>
-          {subValue}
-        </Typography>
-      )}
+      <Box sx={sx.kpiSubBoxSx}>
+        <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
+      </Box>
     </Sheet>
   )
 }

@@ -13,9 +13,9 @@ export const buildSeasonMonths = (seasonStartYear) => {
   if (!year) return []
 
   return VIDEO_INSIGHTS_SEASON_MONTHS.map((month, index) => {
-    const actualYear = month >= 8 ? year : year + 1
+    const actualYear = month >= 9 ? year : year + 1
     const monthKey = `${actualYear}-${pad2(month)}`
-
+    
     return {
       index,
       order: index + 1,

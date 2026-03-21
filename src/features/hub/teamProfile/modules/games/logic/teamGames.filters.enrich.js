@@ -55,6 +55,8 @@ export const enrichGameWithTeam = (game, team) => {
   const teamPlayersMap = buildTeamPlayersMap(srcTeam)
   const gamePlayers = enrichGamePlayers(game, teamPlayersMap)
 
+  const hasVideo = !!game?.vLink
+
   return {
     ...game,
     team: srcTeam,
@@ -74,6 +76,11 @@ export const enrichGameWithTeam = (game, team) => {
     homeKey,
     homeH: homeMeta?.labelH || '',
     homeIcon: homeMeta?.idIcon || 'home',
+
+    vLink: game?.vLink || '',
+    videoIcon: hasVideo ? 'video' : 'noVideo',
+    videoColor: hasVideo ? '#3cfa06' : '#fa1606',
+    hasVideo,
 
     gamePlayers,
   }

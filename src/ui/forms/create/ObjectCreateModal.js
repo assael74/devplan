@@ -1,21 +1,30 @@
 // ui/forms/create/ObjectCreateModal.js
+
 import React from 'react'
-import Modal from '@mui/joy/Modal'
-import ModalDialog from '@mui/joy/ModalDialog'
-import Box from '@mui/joy/Box'
-import Typography from '@mui/joy/Typography'
-import Button from '@mui/joy/Button'
-import IconButton from '@mui/joy/IconButton'
+import {
+  Box,
+  Button,
+  Drawer,
+  Typography,
+  Sheet,
+  DialogContent,
+  DialogTitle,
+  ModalClose,
+  Tooltip,
+  IconButton,
+} from '@mui/joy'
 
 import { buildCreateModalSx } from './sx/objectCreate.sx'
 import { getCreateMeta } from './createRegistry'
 import { iconUi } from '../../core/icons/iconUi.js'
+import { getEntityColors } from '../../core/theme/Colors.js'
 
 export default function ObjectCreateModal({
   open,
   type,
   draft,
   isValid,
+  isDirty = false,
   onConfirm,
   onClose,
   onReset,
@@ -25,86 +34,122 @@ export default function ObjectCreateModal({
   busy,
 }) {
   const meta = React.useMemo(() => getCreateMeta(type), [type])
+
   const sx = React.useMemo(
     () => buildCreateModalSx(meta.entityType, meta.domainColor),
     [meta.entityType, meta.domainColor]
   )
 
+  const colors = React.useMemo(
+    () => getEntityColors(meta.entityType),
+    [meta.entityType]
+  )
+
   const FormComp = meta?.form || null
 
-  const handleCancel = React.useCallback(() => {
+  const handleReset = React.useCallback(() => {
     if (busy) return
     if (typeof onReset === 'function') onReset()
   }, [onReset, busy])
 
-  const handleX = React.useCallback(() => {
+  const handleClose = React.useCallback(() => {
     if (busy) return
-    if (typeof onReset === 'function') onReset()
     if (typeof onClose === 'function') onClose()
-  }, [onReset, onClose, busy])
+  }, [onClose, busy])
+
+  const statusColor = !isValid ? 'warning' : isDirty ? 'danger' : 'neutral'
+  const statusText = !isValid
+    ? 'יש שדות חובה חסרים'
+    : isDirty
+      ? 'יש שינויים שלא נשמרו'
+      : 'אין שינויים'
 
   return (
-    <Modal open={!!open} onClose={handleCancel} sx={sx.overlay}>
-      <ModalDialog sx={sx.dialog}>
-        <Box sx={sx.header}>
+    <Drawer
+      size="md"
+      variant="plain"
+      anchor="bottom"
+      open={open}
+      onClose={handleClose}
+      slotProps={{ content: { sx: sx.drawerSx } }}
+    >
+      <Sheet sx={sx.drawerSheet}>
+        <DialogTitle sx={{ ...sx.headerSx, bgcolor: colors.bg }}>
           <Box sx={sx.headerLeft}>
-            <Box sx={sx.headerIcon}>{iconUi({ id: meta.iconKey })}</Box>
+            <Box sx={sx.headerIcon}>
+              {iconUi({ id: meta.iconKey })}
+            </Box>
 
             <Typography level="title-md" sx={sx.title}>
               {meta.title}
             </Typography>
           </Box>
 
-          <Box sx={sx.actions}>
+          <ModalClose onClick={handleClose} />
+        </DialogTitle>
+
+        <DialogContent sx={sx.dialogContentSx}>
+          <Box sx={sx.content} className="dpScrollThin">
+            {FormComp ? (
+              <FormComp
+                draft={draft}
+                onDraft={onDraft}
+                context={context}
+                onValidChange={onValidChange}
+                mode="drawer"
+              />
+            ) : (
+              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+                כאן יופיעו שדות הטופס.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+
+        <Box sx={{ ...sx.footerSx, bgcolor: colors.bg }}>
+          <Box sx={sx.footerActionsSx}>
             <Button
               size="sm"
               variant="solid"
-              disabled={!isValid || !!busy}
+              disabled={!isValid || !isDirty || !!busy}
               loading={!!busy}
               startDecorator={iconUi({ id: 'save' })}
               onClick={onConfirm}
+              sx={sx.confirmButtonSx}
             >
-              אישור
+              שמירה
             </Button>
 
             <Button
               size="sm"
               variant="soft"
               disabled={!!busy}
-              startDecorator={iconUi({ id: 'reset' })}
-              onClick={handleCancel}
+              startDecorator={iconUi({ id: 'close' })}
+              onClick={handleClose}
             >
-              איפוס
+              ביטול
             </Button>
 
-            <IconButton
-              size="sm"
-              variant="plain"
-              disabled={!!busy}
-              onClick={handleX}
-              aria-label="סגור"
-            >
-              {iconUi({ id: 'close' })}
-            </IconButton>
+            <Tooltip title="איפוס השינויים">
+              <span>
+                <IconButton
+                  size="sm"
+                  variant="soft"
+                  disabled={!!busy || !isDirty}
+                  onClick={handleReset}
+                  sx={sx.icoRes}
+                >
+                  {iconUi({ id: 'reset' })}
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
-        </Box>
 
-        <Box sx={sx.body} className="dpScrollThin">
-          {FormComp ? (
-            <FormComp
-              draft={draft}
-              onDraft={onDraft}
-              context={context}
-              onValidChange={onValidChange}
-              mode="modal"
-            />
-          ) : (
-            <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-              כאן יופיעו שדות הטופס.
-            </Typography>
-          )}
+          <Typography level="body-xs" color={statusColor}>
+            {statusText}
+          </Typography>
         </Box>
-      </ModalDialog>
-    </Modal>
+      </Sheet>
+    </Drawer>
   )
 }

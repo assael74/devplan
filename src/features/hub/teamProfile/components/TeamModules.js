@@ -1,4 +1,5 @@
 // features/hub/teamProfile/components/TeamModules.js
+
 import React from 'react'
 import ProfileModuleRenderer from '../../../hub/sharedProfile/ProfileModuleRenderer'
 import TeamManagementModule from '../modules/management/TeamManagementModule.js'
@@ -7,6 +8,7 @@ import TeamGamesModule from '../modules/games/TeamGamesModule.js'
 import TeamPerformanceModule from '../modules/performance/TeamPerformanceModule.js'
 import TeamAbilitiesModule from '../modules/abilities/TeamAbilitiesModule.js'
 import TeamVideosModule from '../modules/videos/TeamVideosModule.js'
+import TeamTrainingsModule from '../modules/trainings/TeamTrainingsModule.js'
 
 // modules
 const modulesMap = {
@@ -15,7 +17,8 @@ const modulesMap = {
   abilities: TeamAbilitiesModule,
   performance: TeamPerformanceModule,
   games: TeamGamesModule,
-  videos: TeamVideosModule
+  videos: TeamVideosModule,
+  trainings: TeamTrainingsModule
 }
 
 export default function TeamModules({ entity, context, tab }) {

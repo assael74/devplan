@@ -94,7 +94,7 @@ export const trainingWeekDrawerSx = {
     flex: '0 0 auto',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     gap: 1,
     px: 1.5,
     py: 1.1,
@@ -107,5 +107,18 @@ export const trainingWeekDrawerSx = {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
+  },
+
+  conBut: {
+    bgcolor: c.bg,
+    color: c.text,
+    transition: 'filter .15s ease, transform .12s ease',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
   },
 }

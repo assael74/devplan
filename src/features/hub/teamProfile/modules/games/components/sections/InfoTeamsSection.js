@@ -3,7 +3,7 @@ import { Box, Typography, Avatar, Tooltip, Divider } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../shared/format/dateUtiles.js'
-import { buildFallbackAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
 
 import {
@@ -16,13 +16,7 @@ export function InfoTeamsSection({ game }) {
   const team = game?.team
   const clubName = team?.club?.clubName || 'מועדון'
 
-  const src =
-    team?.photo ||
-    buildFallbackAvatar({
-      entityType: 'team',
-      id: team?.id,
-      name: team?.teamName,
-    })
+  const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
 
   return (
     <Box sx={sx.infoCellSx}>
@@ -62,10 +56,20 @@ export function InfoTeamsSection({ game }) {
 
           <Tooltip title={game?.difficultyH || 'רמת קושי'} arrow>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {iconUi({
-                id: game?.difficultyIcon || game?.difficulty || 'difficulty',
-                size: 'sm',
-              })}
+              {iconUi({ id: game?.difficultyIcon || game?.difficulty || 'difficulty', size: 'sm', })}
+            </Box>
+          </Tooltip>
+
+          <Divider orientation="vertical" />
+
+          <Tooltip title={game?.hasVideo ? 'צפייה בוידאו' : 'אין וידאו'} arrow>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', cursor: game?.hasVideo ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (game?.vLink) window.open(game.vLink, '_blank')
+              }}
+            >
+              {iconUi({id: game?.videoIcon, size: 'sm', sx: { color: game?.videoColor } })}
             </Box>
           </Tooltip>
         </Box>
