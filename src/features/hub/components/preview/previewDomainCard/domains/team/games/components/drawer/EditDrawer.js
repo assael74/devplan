@@ -74,6 +74,7 @@ export default function EditDrawer({ open, game, onClose, onSaved, context }) {
     await run('gameQuickEdit', patch, {
       section: 'teamGameQuickEdit',
       gameId: initial.id,
+      createIfMissing: true,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })
