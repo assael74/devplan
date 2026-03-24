@@ -1,135 +1,88 @@
 // ui/patterns/schedule/components/drawer/TrainingWeekDrawer.js
 
-import React from 'react'
-import Drawer from '@mui/joy/Drawer'
-import Sheet from '@mui/joy/Sheet'
-import Box from '@mui/joy/Box'
-import Typography from '@mui/joy/Typography'
-import Button from '@mui/joy/Button'
-import IconButton from '@mui/joy/IconButton'
+import React, { useMemo, useState, useEffect } from 'react'
+import {
+  Box,
+  Button,
+  Drawer,
+  Typography,
+  Sheet,
+  DialogContent,
+  DialogTitle,
+  ModalClose,
+  Tooltip,
+  IconButton,
+} from '@mui/joy'
 
-import TrainingWeekCreateForm from '../../../../forms/TrainingWeekCreateForm.js'
-import { upsertTrainingWeek } from '../../../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
-import { useSnackbar } from '../../../../core/feedback/snackbar/SnackbarProvider'
-import { SNACK_ACTION, SNACK_STATUS } from '../../../../core/feedback/snackbar/snackbar.model'
-import { mapFirestoreErrorToDetails } from '../../../../core/feedback/snackbar/snackbar.format'
+import TrainingCreateFields from '../../../../forms/ui/trainings/TrainingCreateFields.js'
+
+import { useTeamHubUpdate } from '../../../../../features/hub/hooks/teams/useTeamHubUpdate.js'
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { trainingWeekDrawerSx as sx } from '../../sx/trainingWeekDrawer.sx.js'
+import { getEntityColors } from '../../../../core/theme/Colors.js'
 
-const EMPTY_DRAFT = {}
+import {
+  buildInitialDraft,
+  buildPatch,
+  getIsDirty,
+} from './logic/trainingWeekDrawer.logic.js'
 
-function buildInitialDraft(teamId = '', seed = EMPTY_DRAFT) {
-  return {
-    teamId: String(seed?.teamId || teamId || '').trim(),
-    weekId: String(seed?.weekId || '').trim(),
-    notes: seed?.notes || '',
-    defaults: seed?.defaults || {},
-    days: Array.isArray(seed?.days) ? seed.days : [],
-    ...seed,
-  }
-}
+const c = getEntityColors('training')
 
 export default function TrainingWeekDrawer({
-  open = false,
+  open,
+  team,
+  context,
   onClose,
-  onDone,
-  teamId = '',
-  initialDraft = EMPTY_DRAFT,
-  context = {},
-  width = 620,
-  anchor = 'right',
+  onSaved,
   title = 'יצירת שבוע אימונים',
   subtitle = 'הגדרת ימים, עומס ותוכן שבועי',
 }) {
-  const { notify } = useSnackbar()
+  const initial = useMemo(() => buildInitialDraft(team), [team])
+  const [draft, setDraft] = useState(initial)
+  const [isValid, setIsValid] = useState(false)
 
-  const [draft, setDraft] = React.useState(() => buildInitialDraft(teamId, initialDraft))
-  const [isValid, setIsValid] = React.useState(false)
-  const [busy, setBusy] = React.useState(false)
-  const wasOpenRef = React.useRef(false)
-
-  React.useEffect(() => {
-    if (open && !wasOpenRef.current) {
-      setDraft(buildInitialDraft(teamId, initialDraft))
-      setIsValid(false)
-      setBusy(false)
-    }
-
-    wasOpenRef.current = open
-  }, [open, teamId, initialDraft])
-
-  const handleDraft = React.useCallback((patch) => {
-    setDraft((prev) => ({ ...prev, ...(patch || {}) }))
-  }, [])
-
-  const handleReset = React.useCallback(() => {
-    if (busy) return
-    setDraft(buildInitialDraft(teamId, initialDraft))
+  useEffect(() => {
+    if (!open) return
+    setDraft(initial)
     setIsValid(false)
-  }, [busy, teamId, initialDraft])
+  }, [open, initial])
 
-  const handleClose = React.useCallback(() => {
-    if (busy) return
-    if (onClose) onClose()
-  }, [busy, onClose])
+  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
-  const handleSave = React.useCallback(async () => {
-    const safeTeamId = String(draft?.teamId || teamId || '').trim()
-    const safeWeekId = String(
-      draft?.weekId || draft?.weekKey || draft?.weekStartDate || ''
-    ).trim()
+  const { run, pending } = useTeamHubUpdate(team)
+  const canSave = Boolean(initial?.id && isValid && isDirty && !pending)
 
-    if (!safeTeamId || !safeWeekId) return
+  const handleSave = async () => {
+    if (!canSave) return
 
-    try {
-      setBusy(true)
+    await run('training', patch, {
+      section: 'training',
+      teamId: initial.id,
+      createIfMissing: true,
+    })
 
-      const payload = {
-        ...draft,
-        teamId: safeTeamId,
-        weekId: safeWeekId,
-      }
+    onSaved(patch, draft)
+    onClose()
+  }
 
-      const res = await upsertTrainingWeek({
-        draft: payload,
-        context,
-      })
-
-      notify({
-        status: SNACK_STATUS.SUCCESS,
-        action: SNACK_ACTION.CREATE,
-        entityType: 'training',
-        entityName: safeWeekId,
-      })
-
-      if (onDone) onDone(res)
-      if (onClose) onClose()
-    } catch (e) {
-      notify({
-        status: SNACK_STATUS.ERROR,
-        action: SNACK_ACTION.CREATE,
-        entityType: 'training',
-        entityName: safeWeekId || null,
-        details: mapFirestoreErrorToDetails(e),
-      })
-
-      console.error('[TrainingWeekDrawer] save failed', e)
-    } finally {
-      setBusy(false)
-    }
-  }, [draft, teamId, context, notify, onDone, onClose])
+  const handleReset = () => {
+    setDraft(initial)
+  }
 
   return (
     <Drawer
-      open={!!open}
-      onClose={handleClose}
-      anchor={anchor}
-      size="md"
-      slotProps={{ content: { sx: sx.drawer(width) } }}
+      size="lg"
+      variant="plain"
+      anchor='right'
+      open={open}
+      onClose={onClose}
+      slotProps={{ content: { sx: sx.drawerSx } }}
     >
-      <Sheet sx={sx.shell}>
-        <Box sx={sx.header}>
-          <Box sx={sx.headerLeft}>
+      <Sheet sx={sx.drawerSheet}>
+        <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, boxShadow: 'sm' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
             <Box sx={sx.headerIcon}>{iconUi({ id: 'training' })}</Box>
 
             <Box sx={sx.titleWrap}>
@@ -143,57 +96,64 @@ export default function TrainingWeekDrawer({
             </Box>
           </Box>
 
-          <IconButton
-            size="sm"
-            variant="plain"
-            disabled={!!busy}
-            onClick={handleClose}
-            aria-label="סגור"
-          >
-            {iconUi({ id: 'close' })}
-          </IconButton>
-        </Box>
+          <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />
+        </DialogTitle>
 
-        <Box sx={sx.body} className="dpScrollThin">
-          <TrainingWeekCreateForm
-            draft={draft}
-            onDraft={handleDraft}
-            onValidChange={setIsValid}
-            context={context}
-            mode="drawer"
-          />
-        </Box>
+        <DialogContent sx={{ gap: 2 }}>
+          <Box sx={sx.content} className="dpScrollThin">
+            <TrainingCreateFields
+              team={team}
+              draft={draft}
+              onDraft={setDraft}
+              onValidChange={setIsValid}
+              context={context}
+              mode="drawer"
+            />
+          </Box>
+        </DialogContent>
 
-        <Box sx={sx.footer}>
-          <Box sx={sx.footerRight}>
+        <Box sx={sx.footerSx}>
+          <Box sx={sx.footerActionsSx}>
             <Button
-              size="sm"
-              variant="solid"
-              disabled={!isValid || !!busy}
-              loading={!!busy}
+              loading={pending}
+              disabled={!canSave}
               startDecorator={iconUi({ id: 'save' })}
-              sx={sx.conBut}
               onClick={handleSave}
+              sx={sx.conBut}
             >
               שמירה
             </Button>
 
             <Button
-              size="sm"
-              variant="soft"
-              disabled={!!busy}
-              startDecorator={iconUi({ id: 'reset' })}
-              onClick={handleReset}
+              color="neutral"
+              variant="outlined"
+              onClick={onClose}
+              disabled={pending}
             >
-              איפוס
+              ביטול
             </Button>
+
+            <Tooltip title="איפוס השינויים">
+              <span>
+                <IconButton
+                  disabled={!isDirty || pending}
+                  size="sm"
+                  variant="soft"
+                  sx={sx.icoRes}
+                  onClick={handleReset}
+                >
+                  {iconUi({ id: 'reset' })}
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
 
-          <Box sx={{ flex: 1 }} />
-
-          <Button size="sm" variant="plain" disabled={!!busy} onClick={handleClose}>
-            סגור
-          </Button>
+          <Typography
+            level="body-xs"
+            color={!isValid ? 'warning' : isDirty ? 'danger' : 'neutral'}
+          >
+            {!isValid ? 'יש שדות חובה חסרים' : isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+          </Typography>
         </Box>
       </Sheet>
     </Drawer>

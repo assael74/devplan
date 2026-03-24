@@ -1,5 +1,7 @@
 // src/features/calendar/logic/calendarEventItem.helpers.js
 
+import { resolveEntityAvatar } from '../../../ui/core/avatars/fallbackAvatar.js'
+
 function pad2(v) {
   return String(v).padStart(2, '0')
 }
@@ -82,4 +84,49 @@ export function buildCalendarEventMetaLabel(event) {
   }
 
   return ''
+}
+
+function resolveEventTeamFromContext(event, context) {
+  if (!event) return null
+
+  const teams = Array.isArray(context?.teams) ? context.teams : []
+  if (!teams.length) return null
+
+  const eventTeamId = event?.teamId || event?.team?.id || ''
+  const eventTeamName = event?.teamName || event?.team?.teamName || event?.team?.name || ''
+
+  if (eventTeamId) {
+    const byId = teams.find((team) => team?.id === eventTeamId)
+    if (byId) return byId
+  }
+
+  if (eventTeamName) {
+    const byName = teams.find((team) => {
+      const teamName = team?.teamName || team?.name || ''
+      return teamName === eventTeamName
+    })
+    if (byName) return byName
+  }
+
+  return null
+}
+
+export function buildCalendarEventMetaPhoto(event, context) {
+  if (!event) return ''
+
+  const team =
+    resolveEventTeamFromContext(event, context) ||
+    event?.team ||
+    null
+
+  if (!team) return ''
+
+  return (
+    resolveEntityAvatar({
+      entityType: 'team',
+      entity: team,
+      parentEntity: team?.club || null,
+      subline: team?.club?.clubName || team?.club?.name || '',
+    }) || ''
+  )
 }

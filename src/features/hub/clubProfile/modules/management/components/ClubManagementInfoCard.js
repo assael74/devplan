@@ -1,4 +1,5 @@
-// clubProfile/modules/management/ClubManagementInfoCard.js
+// src/features/hub/clubProfile/modules/management/ClubManagementInfoCard.js
+
 import React from 'react'
 import { Box, Sheet, Typography, Button, Chip } from '@mui/joy'
 
@@ -9,7 +10,6 @@ import ClubActiveSelector from '../../../../../../ui/fields/checkUi/clubs/ClubAc
 export default function ClubManagementInfoCard({
   sx,
   draft,
-  clubName,
   isDirty,
   onDraft,
   onConfirm,
@@ -50,32 +50,23 @@ export default function ClubManagementInfoCard({
             onChange={(v) => onDraft({ ...draft, active: v })}
           />
         </Box>
+      </Box>
 
-        <Box sx={{ minWidth: 0 }}>
-
-        </Box>
-
-        <Box sx={{ minWidth: 0, mt: 0.5 }}>
-          <ClubNameField
-            value={draft.clubName}
-            size='sm'
-            onChange={(v) => onDraft({ ...draft, clubName: v })}
-          />
-        </Box>
-
+      <Box sx={sx.secondRow}>
+        <ClubNameField
+          required
+          value={draft?.clubName}
+          onChange={(v) => onDraft({ ...draft, clubName: v })}
+        />
       </Box>
 
       {/* ✅ Row 2: Team name (primary) + Club (readOnly secondary) */}
-      <Box sx={sx.secondRow}>
+      <Box sx={sx.thirdRow}>
         <ClubIfaLinkField
           value={draft.ifaLink}
           onChange={(v) => onDraft({ ...draft, ifaLink: v })}
         />
-
       </Box>
-
-      {/* ✅ Row 3: IFA link (technical) */}
-
     </Sheet>
   )
 }

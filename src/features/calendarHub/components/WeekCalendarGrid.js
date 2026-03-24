@@ -27,7 +27,105 @@ const isWeekendDay = (day) => {
   return jsDay === 5 || jsDay === 6
 }
 
-export default function WeekCalendarGrid({ days = [], events = [], onEventClick }) {
+function toEventWindow(event) {
+  const start = new Date(event?.startAt)
+  const end = new Date(event?.endAt)
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+
+  const startMin = start.getHours() * 60 + start.getMinutes()
+  const endMinRaw = end.getHours() * 60 + end.getMinutes()
+  const endMin = Math.max(endMinRaw, startMin + 1)
+
+  return {
+    event,
+    start,
+    end,
+    startMin,
+    endMin,
+  }
+}
+
+function isOverlap(a, b) {
+  return a.startMin < b.endMin && b.startMin < a.endMin
+}
+
+function buildOverlapLayout(dayEvents = []) {
+  const windows = dayEvents
+    .map(toEventWindow)
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.startMin !== b.startMin) return a.startMin - b.startMin
+      return a.endMin - b.endMin
+    })
+
+  if (!windows.length) return []
+
+  const groups = []
+  let currentGroup = []
+  let currentGroupEnd = -1
+
+  windows.forEach((item) => {
+    if (!currentGroup.length) {
+      currentGroup = [item]
+      currentGroupEnd = item.endMin
+      return
+    }
+
+    if (item.startMin < currentGroupEnd) {
+      currentGroup.push(item)
+      currentGroupEnd = Math.max(currentGroupEnd, item.endMin)
+      return
+    }
+
+    groups.push(currentGroup)
+    currentGroup = [item]
+    currentGroupEnd = item.endMin
+  })
+
+  if (currentGroup.length) groups.push(currentGroup)
+
+  const laidOut = []
+
+  groups.forEach((group) => {
+    const columns = []
+
+    group.forEach((item) => {
+      let placedCol = -1
+
+      for (let i = 0; i < columns.length; i += 1) {
+        const lastInCol = columns[i][columns[i].length - 1]
+        if (!isOverlap(lastInCol, item)) {
+          placedCol = i
+          break
+        }
+      }
+
+      if (placedCol === -1) {
+        columns.push([item])
+        placedCol = columns.length - 1
+      } else {
+        columns[placedCol].push(item)
+      }
+
+      item._col = placedCol
+    })
+
+    const totalCols = columns.length || 1
+
+    group.forEach((item) => {
+      laidOut.push({
+        ...item.event,
+        overlapColumn: item._col,
+        overlapColumnsTotal: totalCols,
+      })
+    })
+  })
+
+  return laidOut
+}
+
+export default function WeekCalendarGrid({ days = [], events = [], onEventClick, context }) {
   const safeDays = Array.isArray(days) && days.length ? days : []
   const daysCount = safeDays.length || 7
 
@@ -38,9 +136,10 @@ export default function WeekCalendarGrid({ days = [], events = [], onEventClick 
   }, [])
 
   const dayEvents = useMemo(() => {
-    return safeDays.map((day) =>
-      events.filter((e) => isSameDay(new Date(e.startAt), day))
-    )
+    return safeDays.map((day) => {
+      const raw = events.filter((e) => isSameDay(new Date(e.startAt), day))
+      return buildOverlapLayout(raw)
+    })
   }, [safeDays, events])
 
   const gridHeight = (GRID.hourEnd - GRID.hourStart) * 60 * GRID.pxPerMin
@@ -48,7 +147,7 @@ export default function WeekCalendarGrid({ days = [], events = [], onEventClick 
 
   const hasOnlyWeekendDays =
     safeDays.length > 0 && safeDays.every((day) => isWeekendDay(day))
-  //console.log(dayEvents)
+
   return (
     <Box sx={sx.root}>
       <Box sx={sx.scroller}>
@@ -123,12 +222,21 @@ export default function WeekCalendarGrid({ days = [], events = [], onEventClick 
                       gridHeight - top
                     )
 
+                    const total = Math.max(1, Number(event?.overlapColumnsTotal || 1))
+                    const col = Math.max(0, Number(event?.overlapColumn || 0))
+                    const widthPct = 100 / total
+                    const leftPct = col * widthPct
+
                     return (
                       <CalendarEventItem
                         key={event.id}
                         event={event}
                         top={top}
                         height={height}
+                        leftPct={leftPct}
+                        widthPct={widthPct}
+                        stackIndex={col}
+                        context={context}
                         onClick={onEventClick}
                       />
                     )

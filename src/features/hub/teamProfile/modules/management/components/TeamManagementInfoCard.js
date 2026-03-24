@@ -68,19 +68,14 @@ export default function TeamManagementInfoCard({
             size="sm"
           />
         </Box>
-
-        <Box sx={{ minWidth: 0, mt: 0.5 }}>
-          <TeamNameField
-            value={draft.teamName}
-            size='sm'
-            onChange={(v) => onDraft({ ...draft, teamName: v })}
-          />
-        </Box>
-
       </Box>
 
-      {/* ✅ Row 2: Team name (primary) + Club (readOnly secondary) */}
       <Box sx={sx.secondRow}>
+        <TeamNameField
+          value={draft.teamName}
+          size='sm'
+          onChange={(v) => onDraft({ ...draft, teamName: v })}
+        />
 
         <ClubNameField
           value={clubName}
@@ -90,16 +85,15 @@ export default function TeamManagementInfoCard({
           disabled={false}
           helperText=""
         />
+      </Box>
 
+      {/* ✅ Row 2: Team name (primary) + Club (readOnly secondary) */}
+      <Box sx={sx.thirdRow}>
         <TeamIfaLinkField
           value={draft.ifaLink}
           onChange={(v) => onDraft({ ...draft, ifaLink: v })}
         />
-
       </Box>
-
-      {/* ✅ Row 3: IFA link (technical) */}
-
     </Sheet>
   )
 }

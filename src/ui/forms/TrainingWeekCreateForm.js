@@ -58,10 +58,13 @@ export default function TrainingWeekCreateForm({
   onDraft,
   onValidChange,
   context,
+  team,
   mode = 'modal',
 }) {
   const [isDirty, setIsDirty] = useState(!!draft?.isDirty)
   const d = useMemo(() => initDraft(draft || {}), [draft])
+  const teamId = team?.id
+  const clubId = team?.club?.id
 
   useEffect(() => {
     if (draft && (draft.weekStartDate || draft.days || draft.defaults)) return
@@ -83,8 +86,6 @@ export default function TrainingWeekCreateForm({
     [d, onDraft, isDirty]
   )
 
-  const teamId = safeStr(d?.teamId)
-  
   const weekStartDate = safeStr(d?.weekStartDate || todayDateStr())
   const days = d?.days || buildEmptyDays()
   const defaults = d?.defaults || DEFAULT_TRAINING_DAY
@@ -135,7 +136,8 @@ export default function TrainingWeekCreateForm({
       <Box sx={sx.topGrid}>
         <TeamSelectField
           required
-          value={teamId}
+          value={team?.id}
+          clubId={clubId}
           options={Array.isArray(context?.teams) ? context.teams : []}
           onChange={() => {}}
           size="sm"

@@ -1,6 +1,6 @@
-// ui/forms/create/useCreateModal.js
-
 import React, { useState } from 'react'
+
+const CLOSE_DELAY_MS = 300
 
 function emptyDraft() {
   return {}
@@ -24,6 +24,8 @@ function areDraftsEqual(a, b) {
 }
 
 export function useCreateModalState() {
+  const closeTimerRef = React.useRef(null)
+
   const [open, setOpen] = React.useState(false)
   const [type, setType] = React.useState(null)
   const [context, setContext] = useState({})
@@ -39,6 +41,17 @@ export function useCreateModalState() {
     return !areDraftsEqual(draft, initialDraft)
   }, [draft, initialDraft])
 
+  const clearCloseTimer = React.useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }, [])
+
+  React.useEffect(() => {
+    return () => clearCloseTimer()
+  }, [clearCloseTimer])
+
   const setDraft = React.useCallback((next) => {
     setDraftState((prev) => {
       if (typeof next === 'function') return next(prev)
@@ -46,30 +59,8 @@ export function useCreateModalState() {
     })
   }, [])
 
-  const openCreate = React.useCallback((nextType, presetDraft, ctx, options = {}) => {
-    const base = cloneDraft(presetDraft || emptyDraft())
-
-    setType(nextType)
-    setDraftState(base)
-    setInitialDraft(cloneDraft(base))
-    setIsValid(false)
-    setOpen(true)
-    setContext(ctx || {})
-    setBusy(false)
-
-    setSurface(options.surface || 'drawer')
-    setDrawerAnchor(options.drawerAnchor || 'bottom')
-    setDrawerWidth(options.drawerWidth || 800)
-  }, [])
-
-  const reset = React.useCallback(() => {
-    setDraftState(cloneDraft(initialDraft))
-    setIsValid(false)
-    setBusy(false)
-  }, [initialDraft])
-
-  const close = React.useCallback(() => {
-    setOpen(false)
+  const cleanupClose = React.useCallback(() => {
+    clearCloseTimer()
     setType(null)
     setBusy(false)
     setContext({})
@@ -79,7 +70,41 @@ export function useCreateModalState() {
     setSurface(defaultSurfaceState().surface)
     setDrawerAnchor(defaultSurfaceState().drawerAnchor)
     setDrawerWidth(defaultSurfaceState().drawerWidth)
-  }, [])
+  }, [clearCloseTimer])
+
+  const openCreate = React.useCallback((nextType, presetDraft, ctx, options = {}) => {
+    clearCloseTimer()
+
+    const base = cloneDraft(presetDraft || emptyDraft())
+
+    setType(nextType)
+    setDraftState(base)
+    setInitialDraft(cloneDraft(base))
+    setIsValid(false)
+    setContext(ctx || {})
+    setBusy(false)
+
+    setSurface(options.surface || 'drawer')
+    setDrawerAnchor(options.drawerAnchor || 'bottom')
+    setDrawerWidth(options.drawerWidth || 800)
+
+    setOpen(true)
+  }, [clearCloseTimer])
+
+  const reset = React.useCallback(() => {
+    setDraftState(cloneDraft(initialDraft))
+    setIsValid(false)
+    setBusy(false)
+  }, [initialDraft])
+
+  const requestClose = React.useCallback(() => {
+    clearCloseTimer()
+    setOpen(false)
+
+    closeTimerRef.current = setTimeout(() => {
+      cleanupClose()
+    }, CLOSE_DELAY_MS)
+  }, [clearCloseTimer, cleanupClose])
 
   return {
     open,
@@ -91,7 +116,8 @@ export function useCreateModalState() {
     setIsValid,
     openCreate,
     reset,
-    close,
+    requestClose,
+    cleanupClose,
     context,
     busy,
     setBusy,

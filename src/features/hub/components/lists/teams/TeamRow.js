@@ -1,4 +1,5 @@
 // hub/components/lists/teams/TeamRow.js
+
 import React, { useMemo } from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
@@ -10,7 +11,7 @@ import {
   isProjectTeam,
 } from './logic/TeamRow.logic'
 import { teamRowSx, colorDotSx } from './sx/TeamRow.sx'
-import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 
 function ColorDot({ active }) {
   let bg = '#9e9e9e'
@@ -22,14 +23,14 @@ function ColorDot({ active }) {
 export default function TeamRow({ team, onSelect, onOpenActions, selected }) {
   const subLine = useMemo(() => buildTeamSubLine(team), [team])
   const teamName = team?.teamName?.[0]
-  const src = team?.photo || buildFallbackAvatar({ entityType: 'team', id: team?.id, name: team?.teamName })
+  const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
 
   return (
     <Box
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation()
-        onSelect?.(team)
+        onSelect(team)
       }}
       sx={rowSx(selected)}
     >

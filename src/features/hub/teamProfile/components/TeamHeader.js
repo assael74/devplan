@@ -1,6 +1,7 @@
 // features/hub/teamProfile/components/TeamHeader.js
+
 import React, { useMemo, useState, useEffect } from 'react'
-import { buildFallbackAvatar } from '../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStrip from '../../../hub/sharedProfile/HeaderStrip'
 import EntityActionsMenu from '../../../hub/sharedProfile/EntityActionsMenu.js'
 import EntityImageModal from '../../../../ui/domains/entityImage/EntityImageModal.js'
@@ -11,16 +12,12 @@ const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
 export default function TeamHeader({ entity, context }) {
   const [openImg, setOpenImg] = useState(false)
 
-  const fallback = buildFallbackAvatar({
-    entityType: 'team',
-    id: entity?.id,
-    name: entity?.teamName,
-  })
+  const src = resolveEntityAvatar({ entityType: 'team', entity: entity, parentEntity: entity?.club, subline: entity?.club?.name, })
 
-  const [headerPhoto, setHeaderPhoto] = useState(entity?.photo || fallback)
+  const [headerPhoto, setHeaderPhoto] = useState(src)
 
   useEffect(() => {
-    setHeaderPhoto(entity?.photo || fallback)
+    setHeaderPhoto(src)
   }, [entity?.photo, entity?.id])
 
   const metaCounts = useMemo(() => {

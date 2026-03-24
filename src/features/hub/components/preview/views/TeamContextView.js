@@ -11,7 +11,7 @@ import QuickCreateMenu from '../../../../../ui/actions/QuickCreateMenu.js'
 import { LevelStars } from './parts/MetaChips.js'
 
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
-import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
 import { useLifecycle } from '../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
@@ -29,7 +29,7 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState('')
 
-  const src = t?.photo || buildFallbackAvatar({ entityType: 'team', id: t?.id, name: t?.teamName })
+  const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
 
   useEffect(() => {
     setHeaderPhoto(src)

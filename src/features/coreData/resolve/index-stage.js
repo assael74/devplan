@@ -146,7 +146,7 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
   const teamGamesByTeamId = buildGamesByTeamId(gamesBase)
   const trainingWeeksByTeamId = buildTrainingWeeksByTeamId(teamsBase)
   const teamMeetingsByTeamId = buildMeetingsByTeamId(teamsBase)
-
+  
   const videosByMeetingId = buildVideosByMeetingId(videoAnalysisBase)
   const videosByPlayerId = buildVideosByPlayerId(videoAnalysisBase, meetingsById)
   const videosByTeamId = buildVideosByTeamId(videoAnalysisBase, meetingsById)

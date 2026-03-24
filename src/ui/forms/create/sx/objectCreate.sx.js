@@ -11,7 +11,7 @@ export function buildCreateModalSx(entityType, domainColor) {
       p: { xs: 0, sm: 1.5, md: 3 },
       boxShadow: 'none',
       top: 50,
-      height: 'calc(80vh - 90px)',
+      height: 'calc(85vh - 90px)',
       overflow: 'hidden',
     },
 
@@ -24,7 +24,7 @@ export function buildCreateModalSx(entityType, domainColor) {
       minWidth: 0,
       boxSizing: 'border-box',
       overflow: 'hidden',
-      width: { xs: '100%', sm: 560, md: 540 },
+      width: { xs: '100%', sm: 560, md: 600 },
       mx: 'auto',
       bgcolor: 'background.body',
       boxShadow: 'lg',

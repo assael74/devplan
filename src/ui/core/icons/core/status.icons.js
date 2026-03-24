@@ -17,7 +17,9 @@ import {
   ReportProblem,
   ScheduleSend,
   Sms,
+  Snooze,
   TaskAlt,
+  NextPlan,
   Unpublished,
   VideocamOff,
 } from '@mui/icons-material';
@@ -47,4 +49,8 @@ export const statusIcons = {
   teamMeetting: <Diversity2 />,
   thinking: <PsychologyAlt />,
   weakness: <ReportProblem />,
+  planned: <NextPlan />,
+  completed: <CheckCircle />,
+  canceled: <Block />,
+  postponed: <Snooze />,
 };

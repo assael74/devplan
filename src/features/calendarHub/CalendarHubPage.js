@@ -55,7 +55,7 @@ export default function CalendarHubPage() {
     closeDrawer,
     onSaveDraft,
   } = useCalendarHubPage()
-  
+
   return (
     <Box dir="rtl" sx={sx.page}>
       <Box sx={sx.leftPanel} className="dpScrollThin">
@@ -89,6 +89,7 @@ export default function CalendarHubPage() {
           {view === 'week' ? (
             <WeekCalendarGrid
               days={days}
+              context={context}
               events={visibleEvents}
               onEventClick={onEventClick}
             />

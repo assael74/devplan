@@ -14,8 +14,8 @@ function presetForTab(tab, entity, context) {
   const teamId = entity?.id || null
   const clubId = context?.club?.id || entity?.clubId || null
 
-  if (tab === 'players') return { teamId, clubId } // שחקן חדש תחת קבוצה
-  if (tab === 'games') return { teamId, clubId }   // משחק חדש תחת קבוצה
+  if (tab === 'players') return { teamId, clubId }
+  if (tab === 'games') return { teamId, clubId }
   return { teamId, clubId }
 }
 
@@ -28,9 +28,11 @@ export default function TeamProfileFab({ entity, context, tab }) {
       mode: tab,
       permissions: { allowCreate: true },
       handlers: {
-        // ✅ names תואמים ל-buildFabActions
-        onCreateGame: () => {
+        onAddGame: () => {
           openCreate('game', presetForTab('games', entity, context), { team: entity, ...(context || {}) })
+        },
+        onAddGames: () => {
+          openCreate('games', presetForTab('games', entity, context), { team: entity, ...(context || {}) })
         },
         onCreatePlayer: () => {
           openCreate('player', presetForTab('players', entity, context), { team: entity, ...(context || {}) })

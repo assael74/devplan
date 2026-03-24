@@ -44,6 +44,8 @@ export const trainingWeekSx = {
   defaultsSheet: {
     p: 1.1,
     borderRadius: 12,
+    bgcolor: `${c.accent}25`,
+    boxShadow: 'sm'
   },
 
   defaultsRow1: {

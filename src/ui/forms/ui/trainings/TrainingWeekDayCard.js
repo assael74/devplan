@@ -103,6 +103,7 @@ export default function TrainingWeekDayCard({ dayLabel, dateLabel, row, defaults
 
           <TrainingLocationField
             value={view.location}
+            placeholder="לדוגמה: מגרש סינטטי"
             onChange={(location) => patch({ location })}
             disabled={!enabled}
            />

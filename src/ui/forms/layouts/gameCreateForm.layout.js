@@ -24,9 +24,10 @@ export function getGameCreateFormLayout({ variant = 'modal', isMobile = false })
 
   return {
     shellGap: 2,
-    topCols: { xs: '1fr', md: '1fr 1fr' },
-    mainCols: { xs: '1fr', md: '1fr 1fr' },
-    metaCols: { xs: '1fr', md: '0.7fr 1.15fr 1.15fr' },
-    durationCols: { xs: '1fr', md: '0.9fr 1.1fr' },
+    topCols: '1fr 1fr',
+    mainCols: '1.5fr .5fr',
+    metaCols: '1fr 1fr 1fr',
+    durationCols: '1fr 1fr',
+    resultCols: '1fr 1fr 1fr',
   }
 }

@@ -2,7 +2,7 @@
 
 export const TRAINING_DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
-export const DEFAULT_WEEK_TITLE = 'שבוע אימונים'
+export const DEFAULT_WEEK_TITLE = 'אימון'
 export const DEFAULT_WEEK_STATUS = 'planned'
 
 export const TRAINING_TYPES = [
@@ -24,10 +24,10 @@ export const TRAINING_DAY_LABELS = {
 }
 
 export const TRAINING_STATUS_META = {
-  planned: { labelH: 'מתוכנן', color: 'primary' },
-  completed: { labelH: 'בוצע', color: 'success' },
-  canceled: { labelH: 'בוטל', color: 'danger' },
-  postponed: { labelH: 'נדחה', color: 'warning' },
+  planned: { labelH: 'מתוכנן', color: 'primary', idIcon: 'planned' },
+  completed: { labelH: 'בוצע', color: 'success', idIcon: 'completed' },
+  canceled: { labelH: 'בוטל', color: 'danger', idIcon: 'canceled' },
+  postponed: { labelH: 'נדחה', color: 'warning', idIcon: 'postponed' },
 }
 
 export const DEFAULT_TRAINING_DAY = {
@@ -38,4 +38,13 @@ export const DEFAULT_TRAINING_DAY = {
   notes: '',
   enabled: false,
   status: DEFAULT_WEEK_STATUS,
+}
+
+export const EMPTY_TRAINING_DAY = {
+  hour: '',
+  duration: 0,
+  type: '',
+  location: '',
+  enabled: false,
+  status: '',
 }

@@ -18,7 +18,7 @@ export function useGameHubUpdate(active) {
 
   const run = (type, patch, meta) => {
     const gameId = meta?.gameId || active?.id
-
+    
     return gameUpdate.runUpdate(patch, {
       ...meta,
       id: gameId,

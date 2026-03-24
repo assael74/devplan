@@ -37,17 +37,20 @@ export const shortsUpdateRouterMap = {
     color: { shortKey: 'teams.teamsInfo', path: 'color', mode: 'merge' },
     goals: { shortKey: 'teams.teamsInfo', path: 'goals', mode: 'merge' },
     ifaLink: { shortKey: 'teams.teamsInfo', path: 'ifaLink', mode: 'merge' },
-    league: { shortKey: 'teams.teamsInfo', path: 'league', mode: 'merge' },
     photo: { shortKey: 'teams.teamsInfo', path: 'photo', mode: 'merge' },
     points: { shortKey: 'teams.teamsInfo', path: 'points', mode: 'merge' },
-    position: { shortKey: 'teams.teamsInfo', path: 'position', mode: 'merge' },
     project: { shortKey: 'teams.teamsInfo', path: 'project', mode: 'merge' },
     teamName: { shortKey: 'teams.teamsInfo', path: 'teamName', mode: 'merge' },
     teamYear: { shortKey: 'teams.teamsInfo', path: 'teamYear', mode: 'merge' },
+    league: { shortKey: 'teams.teamsInfo', path: 'league', mode: 'merge' },
+    leagueLevel: { shortKey: 'teams.teamsInfo', path: 'leagueLevel', mode: 'merge' },
+    leaguePosition: { shortKey: 'teams.teamsInfo', path: 'leaguePosition', mode: 'merge' },
+    leagueGoalsFor: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsFor', mode: 'merge' },
+    leagueGoalsAgainst: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsAgainst', mode: 'merge' },
 
     meetings: { shortKey: 'teams.teamsMeeting', path: 'teamsMeeting', mode: 'replace' },
 
-    training: { shortKey: 'teams.teamsTraining', path: 'teamsTraining', mode: 'replace' },
+    trainingWeeks: { shortKey: 'teams.teamsTraining', path: 'trainingWeeks', mode: 'merge' },
   },
 
   clubs: {

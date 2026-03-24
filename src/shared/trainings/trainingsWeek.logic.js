@@ -5,9 +5,9 @@ import {
   TRAINING_DAY_LABELS,
   TRAINING_TYPES,
   TRAINING_STATUS_META,
-  DEFAULT_TRAINING_DAY,
   DEFAULT_WEEK_STATUS,
   DEFAULT_WEEK_TITLE,
+  EMPTY_TRAINING_DAY
 } from './trainingsWeek.model.js'
 import { buildWeekDatesMap, dateToYmd, normalizeWeekId } from './trainingsWeek.dates.js'
 
@@ -21,7 +21,7 @@ export const safeNum = (v, fallback = 0) => {
 export const buildEmptyDays = (overrides = {}) => {
   const out = {}
   for (const k of TRAINING_DAY_KEYS) {
-    out[k] = { ...DEFAULT_TRAINING_DAY, ...(overrides[k] || {}) }
+    out[k] = { ...EMPTY_TRAINING_DAY, ...(overrides[k] || {}) }
   }
   return out
 }
@@ -34,15 +34,18 @@ export const sanitizeDays = (days) => {
     const row = input[k] || {}
 
     out[k] = {
-      ...DEFAULT_TRAINING_DAY,
+      ...EMPTY_TRAINING_DAY,
       ...row,
       enabled: !!row.enabled,
       hour: clean(row.hour || row.time || ''),
-      duration: safeNum(row.duration || row.durationMinutes, DEFAULT_TRAINING_DAY.duration) || 90,
-      type: clean(row.type || DEFAULT_TRAINING_DAY.type),
+      duration: safeNum(
+        row.duration ?? row.durationMinutes,
+        EMPTY_TRAINING_DAY.duration
+      ),
+      type: clean(row.type || EMPTY_TRAINING_DAY.type),
       location: clean(row.location || ''),
       notes: clean(row.notes || ''),
-      status: clean(row.status || DEFAULT_TRAINING_DAY.status || DEFAULT_WEEK_STATUS),
+      status: clean(row.status || EMPTY_TRAINING_DAY.status),
     }
   }
 
@@ -124,7 +127,46 @@ export const resolveTrainingStatusMeta = (statusId) => {
   return TRAINING_STATUS_META[id] || TRAINING_STATUS_META[DEFAULT_WEEK_STATUS]
 }
 
-export const flattenTrainingWeek = ({ week, includeDisabled = false } = {}) => {
+const buildTrainingRowBase = ({ weekId, weekTitle, dayKey, day, date }) => {
+  const typeMeta = resolveTrainingTypeMeta(day?.type)
+  const statusMeta = resolveTrainingStatusMeta(day?.status)
+  const ymd = dateToYmd(date)
+
+  const enabled = !!day?.enabled
+  const hasContent =
+    !!clean(day?.hour) ||
+    !!clean(day?.location) ||
+    !!clean(day?.notes) ||
+    !!clean(day?.type)
+
+  const isEmpty = !enabled && !hasContent
+
+  return {
+    id: `${weekId}-${dayKey}`,
+    weekId,
+    weekTitle,
+    dayKey,
+    dayLabel: TRAINING_DAY_LABELS[dayKey] || dayKey,
+    date,
+    ymd,
+    hour: clean(day?.hour),
+    duration: safeNum(day?.duration, 90) || 90,
+    type: clean(day?.type),
+    typeLabel: typeMeta?.labelH || clean(day?.type) || 'אימון',
+    typeColor: typeMeta?.color || 'neutral',
+    location: clean(day?.location),
+    notes: clean(day?.notes),
+    status: clean(day?.status) || DEFAULT_WEEK_STATUS,
+    statusLabel: statusMeta?.labelH || 'מתוכנן',
+    statusColor: statusMeta?.color || 'primary',
+    enabled,
+    hasContent,
+    isEmpty,
+    sortKey: `${ymd}-${dayKey}`,
+  }
+}
+
+export const buildFullWeekRows = ({ week } = {}) => {
   const w = week || {}
   const weekId = normalizeWeekId(w.weekId)
   const weekTitle = clean(w.title) || DEFAULT_WEEK_TITLE
@@ -133,49 +175,27 @@ export const flattenTrainingWeek = ({ week, includeDisabled = false } = {}) => {
 
   if (!weekId || !dates) return []
 
-  const rows = []
-
-  for (const dayKey of TRAINING_DAY_KEYS) {
-    const day = days[dayKey]
-    const enabled = !!day?.enabled
-    const hasContent =
-      !!clean(day?.hour) ||
-      !!clean(day?.location) ||
-      !!clean(day?.notes) ||
-      !!clean(day?.type)
-
-    if (!includeDisabled && !enabled) continue
-    if (!includeDisabled && !hasContent) continue
-
-    const typeMeta = resolveTrainingTypeMeta(day?.type)
-    const statusMeta = resolveTrainingStatusMeta(day?.status)
-    const date = dates[dayKey]
-    const ymd = dateToYmd(date)
-
-    rows.push({
-      id: `${weekId}-${dayKey}`,
+  return TRAINING_DAY_KEYS.map((dayKey) =>
+    buildTrainingRowBase({
       weekId,
       weekTitle,
       dayKey,
-      dayLabel: TRAINING_DAY_LABELS[dayKey] || dayKey,
-      date,
-      ymd,
-      hour: clean(day?.hour),
-      duration: safeNum(day?.duration, 90) || 90,
-      type: clean(day?.type),
-      typeLabel: typeMeta?.labelH || clean(day?.type) || 'אימון',
-      typeColor: typeMeta?.color || 'neutral',
-      location: clean(day?.location),
-      notes: clean(day?.notes),
-      status: clean(day?.status) || DEFAULT_WEEK_STATUS,
-      statusLabel: statusMeta?.labelH || 'מתוכנן',
-      statusColor: statusMeta?.color || 'primary',
-      enabled,
-      sortKey: `${ymd}-${dayKey}`,
+      day: days[dayKey],
+      date: dates[dayKey],
     })
-  }
+  )
+}
 
-  return rows
+export const flattenTrainingWeek = ({ week, includeDisabled = false } = {}) => {
+  const rows = buildFullWeekRows({ week })
+
+  if (includeDisabled) return rows
+
+  return rows.filter((row) => {
+    if (row?.enabled) return true
+    if (row?.hasContent) return true
+    return false
+  })
 }
 
 export const flattenTrainingWeeks = ({ trainingWeeks = [], includeDisabled = false } = {}) => {
@@ -188,13 +208,19 @@ export const flattenTrainingWeeks = ({ trainingWeeks = [], includeDisabled = fal
     })
 }
 
-export const groupTrainingRowsByWeek = ({ trainingWeeks = [], includeDisabled = false } = {}) => {
+export const groupTrainingRowsByWeek = ({
+  trainingWeeks = [],
+  includeDisabled = false,
+  fillMissingDays = false,
+} = {}) => {
   const weeks = Array.isArray(trainingWeeks) ? trainingWeeks : []
 
   return weeks
     .map((week) => {
       const weekId = normalizeWeekId(week?.weekId)
-      const rows = flattenTrainingWeek({ week, includeDisabled })
+      const rows = fillMissingDays
+        ? buildFullWeekRows({ week })
+        : flattenTrainingWeek({ week, includeDisabled })
 
       return {
         weekId,

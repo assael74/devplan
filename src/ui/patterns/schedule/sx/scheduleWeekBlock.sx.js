@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\ui\patterns\schedule\sx\scheduleWeekBlock.sx.js
+
 import { getEntityColors } from '../../../core/theme/Colors.js'
 
 const trainingColors = getEntityColors('training')
@@ -22,12 +23,12 @@ export const scheduleWeekBlockSx = {
     boxShadow: mode === 'modal' ? 'xs' : 'sm',
   }),
 
-  weekHeader: {
-    position: 'sticky',
-    top: -11,
-    zIndex: 2,
+  weekHeader: (hasRows) => ({
+    position: hasRows ? 'sticky' : 'relative',
+    top: hasRows ? 0 : 'auto',
+    zIndex: hasRows ? 2 : 1,
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
     bgcolor: 'background.surface',
@@ -37,13 +38,14 @@ export const scheduleWeekBlockSx = {
     px: 1,
     borderTopLeftRadius: 'var(--joy-radius-md)',
     borderTopRightRadius: 'var(--joy-radius-md)',
-  },
+  }),
 
   weekTitleWrap: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.45,
+    gap: 1,
     minWidth: 0,
+    flex: 1,
   },
 
   weekAccent: {
@@ -71,7 +73,7 @@ export const scheduleWeekBlockSx = {
     overflowX: 'hidden',
     display: 'block',
     pr: 0.25,
-    pb: mode === 'modal' ? 0 : 5,
+    pb: mode === 'modal' ? 0 : 0,
     ...(mode === 'modal'
       ? {
           overflowY: 'visible',
@@ -79,7 +81,7 @@ export const scheduleWeekBlockSx = {
         }
       : {
           overflowY: 'auto',
-          maxHeight: 520,
+          maxHeight: 350,
         }),
   }),
 
@@ -90,7 +92,8 @@ export const scheduleWeekBlockSx = {
   }),
 
   row: (mode = 'profile') => ({
-    p: mode === 'modal' ? 0.65 : 0.85,
+    p: mode === 'modal' ? 0.65 : 0.55,
+    px: 1,
     borderRadius: 'lg',
     display: 'flex',
     alignItems: 'center',
@@ -195,7 +198,7 @@ export const scheduleWeekBlockSx = {
     minWidth: 0,
     border: '1px dashed',
     borderColor: 'divider',
-    bgcolor: 'background.level1',
+    bgcolor: 'background.level2',
   }),
 
   dayChipEmpty: (mode = 'profile') => ({

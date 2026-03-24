@@ -15,7 +15,8 @@ export default function GameRivelField({
   disabled,
   helperText,
   readOnly,
-  size = 'sm'
+  size = 'sm',
+  variant = 'soft'
 }) {
   return (
     <>
@@ -30,7 +31,7 @@ export default function GameRivelField({
           error={error}
           readOnly={readOnly}
           disabled={disabled}
-          variant="soft"
+          variant={variant}
           size={size}
         />
         <FormHelperText>{helperText}</FormHelperText>

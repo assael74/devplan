@@ -1,4 +1,5 @@
-/// ui/forms/create/CreateModalProvider.js
+// ui/forms/create/CreateModalProvider.js
+
 import React, { useMemo, useCallback } from 'react'
 import ObjectCreateModal from './ObjectCreateModal'
 import { useCreateModalState } from './useCreateModal'
@@ -61,8 +62,7 @@ export default function CreateModalProvider({ children }) {
   )
 
   const closeCreate = useCallback(() => {
-    st.reset()
-    st.close()
+    st.requestClose()
   }, [st])
 
   const handleConfirm = useCallback(async () => {
@@ -87,8 +87,7 @@ export default function CreateModalProvider({ children }) {
         entityName,
       })
 
-      st.reset()
-      st.close()
+      st.requestClose()
     } catch (e) {
       notify({
         status: SNACK_STATUS.ERROR,
@@ -111,9 +110,10 @@ export default function CreateModalProvider({ children }) {
     onDraft: st.setDraft,
     onValidChange: st.setIsValid,
     isValid: st.isValid,
+    isDirty: st.isDirty,
     onConfirm: handleConfirm,
     onReset: st.reset,
-    onClose: st.close,
+    onClose: st.requestClose,
     context: { ...defaultContext, ...(st.context || {}) },
     busy: st.busy,
   }
@@ -121,7 +121,6 @@ export default function CreateModalProvider({ children }) {
   return (
     <Ctx.Provider value={{ openCreate, closeCreate }}>
       {children}
-
       <ObjectCreateModal {...sharedProps} />
     </Ctx.Provider>
   )

@@ -1,83 +1,85 @@
 // clubProfile/modules/teams/components/ClubTeamRow.js
+
 import React from 'react'
-import { Box, Chip, Avatar, Typography, IconButton, Tooltip, Divider } from '@mui/joy'
-import EditRounded from '@mui/icons-material/EditRounded'
-import ToggleOnRounded from '@mui/icons-material/ToggleOnRounded'
-import SportsSoccerRounded from '@mui/icons-material/SportsSoccerRounded'
-import PersonRounded from '@mui/icons-material/PersonRounded'
+import { Box, Chip, Divider, IconButton, Tooltip, Typography } from '@mui/joy'
+import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 
-import teamImage from '../../../../../../ui/core/images/teamImage.png'
+import JoyStarRatingStatic from '../../../../../../ui/domains/ratings/JoyStarRating.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import JoyStarRatingStatic from '../../../../../../ui/domains/ratings/JoyStarRating'
-import EntityActionsMenu from '../../../../sharedProfile/EntityActionsMenu.js'
 
-const typeLabel = (t) => (t === 'project' ? 'פרויקט' : 'כללי')
-const typeColor = (t) => (t === 'project' ? 'primary' : 'neutral')
+import InfoSection from './sections/InfoSection.js'
 
-export default function ClubTeamRow({ r, sx, crud }) {
+import { clubTeamsListSx as sx } from '../sx/clubTeams.list.sx.js'
+
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('teams')
+
+export default function ClubTeamRow({ row, onEdit }) {
+  const team = row
+  const chip = row?.projectChipMeta || {
+    labelH: 'כללי',
+    idIcon: 'noneType',
+    tone: 'neutral',
+    bgColor: '',
+    textColor: '',
+  }
+
+  const chipSx = {
+    flexShrink: 0,
+    ...(chip.tone === 'custom'
+      ? {
+          bgcolor: chip.bgColor || undefined,
+          color: chip.textColor || 'inherit',
+        }
+      : {}),
+  }
+
+  const handleEdit = () => {
+    if (onEdit) onEdit(team)
+  }
+
   return (
-    <Box sx={sx.row}>
-      <Avatar src={r.photo || teamImage}>
-        <PersonRounded />
-      </Avatar>
+    <Box
+      sx={[
+        sx.row,
+        row?.isKey && sx.rowKey,
+        row?.type === 'project' && { boxShadow: `inset 0 0 0 1px ${c.bg}18` },
+        row?.active === false && { opacity: 0.76 },
+      ]}
+    >
+      <InfoSection row={row} />
 
-      <Box sx={{ display: 'grid', gap: 0.4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-          <Typography level="title-sm">{r.fullName}</Typography>
+      <Divider orientation="vertical" />
 
-          <Chip size="sm" color={r.active ? 'success' : 'neutral'} variant="soft">
-            {r.active ? 'פעיל' : 'לא פעיל'}
-          </Chip>
+      <Box sx={sx.ratingCol}>
+        <Typography level="body-xs" sx={sx.ratingTitle}>
+          פוטנציאל ({Number(row?.level) || 0})
+        </Typography>
 
-          <Chip
-            size="sm"
-            color={typeColor(r.type)}
-            variant="soft"
-            startDecorator={iconUi({ id: r.type, sx: { '& svg': { width: 14, height: 14 } } })}
-          >
-            {typeLabel(r.type)}
-          </Chip>
-
-          {!!r.birth && (
-            <Chip size="sm" variant="soft">
-              {r.birth}
-            </Chip>
-          )}
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Typography level="body-xs" sx={{ opacity: 0.7 }}>
-            רמה
-          </Typography>
-          <Tooltip title={Number(r.level)}>
-            <span>
-              <JoyStarRatingStatic value={Number(r.level) || 0} size="xs" />
-            </span>
-          </Tooltip>
-
-          <Divider orientation="vertical" />
-
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-
-          </Box>
-        </Box>
+        <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
       </Box>
 
-      <Box sx={sx.actions}>
-        <Tooltip title='עריכה כללית'>
-          <IconButton size='sm' onClick={() => crud.openEdit(r)}>
-            <EditRounded />
+      <Divider orientation="vertical" />
+
+      <Box sx={sx.statusCol}>
+        <Chip
+          size="sm"
+          variant="soft"
+          color={chip.tone === 'custom' ? 'neutral' : chip.tone}
+          startDecorator={iconUi({ id: chip.idIcon, sx: chip.textColor ? { color: chip.textColor } : undefined, })}
+          sx={chipSx}
+        >
+          {chip.labelH}
+        </Chip>
+      </Box>
+
+      <Box sx={sx.actionsCellSx}>
+        <Tooltip title="עריכת קבוצה">
+          <IconButton size="sm" variant="plain" onClick={handleEdit}>
+            {iconUi({ id: 'more' })}
           </IconButton>
         </Tooltip>
-
-        <EntityActionsMenu
-          entityType="team"
-          entityId={r.id}
-          entityName={r.teamName}
-          metaCounts={r.metaCounts || null}
-          disabled={false}
-          isArchived={r?.active === false}
-        />
       </Box>
     </Box>
   )

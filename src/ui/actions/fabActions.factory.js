@@ -26,6 +26,7 @@ export function buildFabActions({
   const onAddPayment = pick(handlers.onAddPayment, noOp)
   const onAddAbilities = pick(handlers.onAddAbilities, noOp)
   const onAddGame = pick(handlers.onAddGame, noOp)
+  const onAddGames = pick(handlers.onAddGames, noOp)
   const onAddVideoAnalysis = pick(handlers.onAddVideoAnalysis, noOp)
 
   if (area === 'hub') {
@@ -160,6 +161,14 @@ export function buildFabActions({
           label: 'הוסף משחק',
           icon: iconUi({ id: 'addGame' }),
           onClick: onAddGame,
+          color: 'team',
+          disabled: !allowCreate
+        },
+        {
+          id: 'add-multi-game',
+          label: 'הוסף מספר משחקים',
+          icon: iconUi({ id: 'addGame' }),
+          onClick: onAddGames,
           color: 'team',
           disabled: !allowCreate
         },

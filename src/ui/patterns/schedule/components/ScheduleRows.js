@@ -1,7 +1,9 @@
-// C:\projects\devplan\src\ui\patterns\schedule\components\ScheduleRows.js
+// ui/patterns/schedule/components/ScheduleRows.js
+
 import React from 'react'
-import { Box, Chip, Sheet, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Tooltip, IconButton } from '@mui/joy'
 import { scheduleWeekBlockSx as sx } from '../sx/scheduleWeekBlock.sx.js'
+import { iconUi } from '../../../core/icons/iconUi.js'
 import {
   getCompactTrainingLabel,
   getCompactTrainingSubLabel,
@@ -29,7 +31,7 @@ export function EmptyScheduleRow({ row, mode = 'profile' }) {
   )
 }
 
-export function ActiveScheduleRow({ row, mode = 'profile' }) {
+export function ActiveScheduleRow({ row, mode = 'profile', onRowClick }) {
   return (
     <Sheet variant="plain" sx={sx.row(mode)}>
       <Box sx={sx.rowMain}>
@@ -56,11 +58,24 @@ export function ActiveScheduleRow({ row, mode = 'profile' }) {
       >
         {row?.statusLabel || 'מתוכנן'}
       </Chip>
+
+      <Tooltip title="עריכת יום האימון">
+        <IconButton
+          size="sm"
+          variant="plain"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRowClick(row)
+          }}
+        >
+          {iconUi({ id: 'more' })}
+        </IconButton>
+      </Tooltip>
     </Sheet>
   )
 }
 
-export function ScheduleRow({ row, mode = 'profile' }) {
+export function ScheduleRow({ row, mode = 'profile', onRowClick }) {
   if (row?.isEmpty) return <EmptyScheduleRow row={row} mode={mode} />
-  return <ActiveScheduleRow row={row} mode={mode} />
+  return <ActiveScheduleRow row={row} mode={mode} onRowClick={onRowClick} />
 }

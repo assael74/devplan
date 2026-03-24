@@ -4,9 +4,9 @@ import { Box, Typography } from '@mui/joy'
 import SectionPanel from '../../../sharedProfile/SectionPanel.js'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 
-import { teamManagementModuleSx as sx } from './teamManagement.module.sx.js'
-import { buildTeamManagementModel, buildTeamManagementPatch } from './teamManagement.logic.js'
-import { isTeamManagementDirty } from './teamManagement.dirty.js'
+import { teamManagementModuleSx as sx } from './sx/teamManagement.module.sx.js'
+import { buildTeamManagementModel, buildTeamManagementPatch } from './logic/teamManagement.logic.js'
+import { isTeamManagementDirty } from './logic/teamManagement.dirty.js'
 
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
 import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaffCard.js'
@@ -83,12 +83,14 @@ export default function TeamManagementModule({ entity, context }) {
             pending={pending}
           />
 
-          <ManagementStaffCard
-            teamId={team.id}
-            roles={staffPool}
-            disabled={pending}
-            compact={false}
-          />
+          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto', }}>
+            <ManagementStaffCard
+              teamId={team.id}
+              roles={staffPool}
+              disabled={pending}
+              compact={false}
+            />
+          </Box>
         </Box>
       </Box>
     </SectionPanel>

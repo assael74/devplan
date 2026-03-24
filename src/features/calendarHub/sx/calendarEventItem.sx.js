@@ -1,12 +1,14 @@
 // src/features/calendar/sx/calendarEventItem.sx.js
 
+const H_GAP = 4
+
 export const calendarEventItemSx = {
-  root: (top, height, typeMeta) => ({
+  root: (top, height, typeMeta, leftPct = 0, widthPct = 100, stackIndex = 0) => ({
     position: 'absolute',
-    insetInlineStart: 8,
-    insetInlineEnd: 8,
     top,
     height,
+    insetInlineStart: `calc(${leftPct}% + ${H_GAP}px)`,
+    width: `calc(${widthPct}% - ${H_GAP * 2}px)`,
     borderRadius: 12,
     border: '1px solid',
     borderColor: 'divider',
@@ -17,10 +19,12 @@ export const calendarEventItemSx = {
     py: 0.6,
     display: 'flex',
     minHeight: 0,
+    zIndex: 5 + stackIndex,
     transition: '120ms ease',
     '&:hover': {
       transform: 'translateY(-1px)',
       boxShadow: 'sm',
+      zIndex: 30 + stackIndex,
     },
   }),
 

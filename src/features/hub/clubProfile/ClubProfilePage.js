@@ -51,11 +51,10 @@ export default function ClubProfilePage() {
     if (!entity) return {}
     return {
       club: clubs?.find((c) => String(c.id) === String(entity.clubId)) || null,
-      teamsList: teams,
-      clubsList: clubs,
-      playersList: players,
-      rolesList: roles,
-      tagsList: tags,
+      teams: teams,
+      clubs: clubs,
+      players: players,
+      roles: roles,
     }
   }, [entity, teams, clubs, players, roles, tags])
 
@@ -86,7 +85,7 @@ export default function ClubProfilePage() {
   }
 
   if (!entity) return <Navigate to="/hub" replace />
-
+  
   return (
     <ProfileShell
       entity={entity}

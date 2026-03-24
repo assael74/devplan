@@ -17,11 +17,11 @@ export default function TeamCreateForm({
   context,
   onValidChange,
 }) {
-  const teamName = draft?.teamName ?? ''
-  const clubId = draft?.clubId ?? ''
-  const teamYear = draft?.teamYear ?? ''
+  const teamName = draft?.teamName || ''
+  const clubId = draft?.clubId || ''
+  const teamYear = draft?.teamYear || ''
   const isProject = draft?.isProject === true
-  const teamIfaLink = draft?.teamIfaLink ?? ''
+  const teamIfaLink = draft?.teamIfaLink || ''
   const clubs = context?.clubs || []
 
   const validity = useMemo(() => {

@@ -5,6 +5,8 @@ import {
   SportsSoccer,
   TouchApp,
   Visibility,
+  Leaderboard,
+  LocationSearching
 } from '@mui/icons-material';
 
 export const teamIcons = {
@@ -14,4 +16,6 @@ export const teamIcons = {
   tactical: <Visibility />,
   technical: <TouchApp />,
   training: <PlayLesson />,
+  league: <Leaderboard />,
+  leaguePos: <LocationSearching />
 };

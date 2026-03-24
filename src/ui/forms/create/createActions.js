@@ -212,6 +212,47 @@ export const createActions = {
     }
   },
 
+  games: async ({ draft }) => {
+    const rows = Array.isArray(draft?.games) ? draft.games : []
+    const created = []
+
+    for (const row of rows) {
+      const id = makeId()
+      const now = Date.now()
+
+      const gameDraft = {
+        ...draft,
+        ...row,
+        type: row?.type || draft?.defaults?.type || '',
+        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
+        home: row?.home ?? draft?.defaults?.home ?? true,
+      }
+
+      const gameInfoItem = buildGameInfoItem({ id, draft: gameDraft, now })
+      const gameTimeItem = buildGameTimeItem({ id, draft: gameDraft })
+
+      await createShort({
+        shortKey: 'games.gameInfo',
+        item: gameInfoItem,
+      })
+
+      await createShort({
+        shortKey: 'games.gameTime',
+        item: gameTimeItem,
+      })
+
+      created.push({
+        ...gameInfoItem,
+        ...gameTimeItem,
+      })
+    }
+
+    return {
+      total: created.length,
+      items: created,
+    }
+  },
+
   videoAnalysis: async ({ draft }) => {
     const id = makeId()
     const now = Date.now()

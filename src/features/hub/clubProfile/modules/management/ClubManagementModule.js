@@ -1,13 +1,12 @@
-// clubProfile/modules/management/ClubManagementModule.js
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Box, Typography } from '@mui/joy'
 
 import SectionPanel from '../../../sharedProfile/SectionPanel.js'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 
-import { clubManagementModuleSx as sx } from './clubManagement.module.sx.js'
-import { buildClubManagementModel, buildClubManagementPatch } from './clubManagement.logic.js'
-import { isClubManagementDirty } from './clubManagement.dirty.js'
+import { clubManagementModuleSx as sx } from './sx/clubManagement.module.sx.js'
+import { buildClubManagementModel, buildClubManagementPatch } from './logic/clubManagement.logic.js'
+import { isClubManagementDirty } from './logic/clubManagement.dirty.js'
 
 import ClubManagementInfoCard from './components/ClubManagementInfoCard.js'
 import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaffCard.js'
@@ -15,18 +14,17 @@ import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaff
 import { useUpdateAction } from '../../../../../ui/domains/entityActions/updateAction.js'
 
 const toStr = (v) => (v == null ? '' : String(v))
-const buildClubName = (c) => toStr(c?.clubName || c?.name).trim() || 'מועדון'
+const buildClubName = (t) => toStr(t?.clubName).trim() || 'מועדון'
 
 export default function ClubManagementModule({ entity, context }) {
   const club = entity || null
 
-  const baseModel = useMemo(() => buildClubManagementModel(club), [club])
-  const [draft, setDraft] = useState(baseModel)
-
   const staffPool = useMemo(() => {
-    return Array.isArray(context?.rolesList) ? context.rolesList : []
+    return Array.isArray(context?.roles) ? context.roles : []
   }, [context])
 
+  const baseModel = useMemo(() => buildClubManagementModel(club), [club])
+  const [draft, setDraft] = useState(baseModel)
   useEffect(() => setDraft(baseModel), [baseModel])
 
   const entityName = useMemo(() => buildClubName(club), [club])
@@ -44,20 +42,6 @@ export default function ClubManagementModule({ entity, context }) {
     async (patch, meta) => runUpdate(patch, meta),
     [runUpdate]
   )
-
-  const staffRows = useMemo(() => {
-    const roles = Array.isArray(club?.roles) ? club.roles : []
-    return roles.map((r, idx) => ({
-      id: String(r?.id || idx),
-      fullName: r.fullName || '—',
-      phone: r.phone || '',
-      email: r.email || '',
-      photo: r.photo || '',
-      type: r.type || '',
-      teamsId: r.teamsId || [],
-      clubsId: r.clubsId || [],
-    }))
-  }, [club])
 
   const isDirty = useMemo(() => isClubManagementDirty(baseModel, draft), [baseModel, draft])
 
@@ -93,12 +77,14 @@ export default function ClubManagementModule({ entity, context }) {
             pending={pending}
           />
 
-          <ManagementStaffCard
-            clubId={club.id}
-            roles={staffPool}
-            disabled={pending}
-            compact
-          />
+          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto', }}>
+            <ManagementStaffCard
+              clubId={club.id}
+              roles={staffPool}
+              disabled={pending}
+              compact={false}
+            />
+          </Box>
         </Box>
       </Box>
     </SectionPanel>

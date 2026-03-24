@@ -1,47 +1,26 @@
 // C:\projects\devplan\src\ui\patterns\schedule\sx\trainingWeekDrawer.sx.js
+
 import { getEntityColors } from '../../../core/theme/Colors.js'
 
 const c = getEntityColors('training')
 
 export const trainingWeekDrawerSx = {
-  drawer: (width = 620) => ({
-    width: { xs: '100vw', sm: width },
-    maxWidth: '100vw',
-    p: 0,
-    overflow: 'hidden',
+  drawerSx: {
     bgcolor: 'transparent',
+    p: { md: 3, sm: 0 },
     boxShadow: 'none',
-  }),
+  },
 
-  shell: {
-    height: '100%',
+  drawerSheet: {
+    borderRadius: 'md',
+    py: 1,
+    px: 0.5,
     display: 'flex',
     flexDirection: 'column',
-    minHeight: 0,
+    gap: 1,
+    height: '100%',
+    overflow: 'auto',
     bgcolor: 'background.body',
-    borderTopLeftRadius: 'var(--joy-radius-lg)',
-    overflow: 'hidden',
-  },
-
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    px: 1.5,
-    py: 1.15,
-    borderBottom: '1px solid',
-    borderColor: 'divider',
-    bgcolor: 'background.surface',
-    flex: '0 0 auto',
-  },
-
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    minWidth: 0,
-    flex: 1,
   },
 
   headerIcon: {
@@ -82,31 +61,40 @@ export const trainingWeekDrawerSx = {
     textOverflow: 'ellipsis',
   },
 
-  body: {
-    flex: '1 1 auto',
-    minHeight: 0,
-    overflowX: 'hidden',
-    overflowY: 'auto',
+  content: {
+    display: 'grid',
+    gap: 1.25,
     p: 1.25,
+    overflowY: 'auto',
+    minHeight: 0,
   },
 
-  footer: {
-    flex: '0 0 auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 1,
-    px: 1.5,
-    py: 1.1,
+  footerSx: {
+    pt: 1,
+    mt: 1,
+    px: 2,
     borderTop: '1px solid',
     borderColor: 'divider',
-    bgcolor: 'background.surface',
-  },
-
-  footerRight: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 1,
+    flexWrap: 'wrap',
+    bgcolor: 'background.body',
+  },
+
+  footerActionsSx: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
+  icoRes: {
+    height: 36,
+    width: 36,
+    flexShrink: 0,
+    border: '1px solid',
+    borderColor: c.accent,
   },
 
   conBut: {

@@ -9,35 +9,32 @@ import { trainModuleSx } from './trainings.sx'
 import { TrainingSchedulePreview } from '../../../../../ui/patterns/schedule'
 
 export default function TeamTrainingsModule({ entity, context, videoActions }) {
-  const team = entity || null
+  const liveTeam = useMemo(() => {
+    const teams = Array.isArray(context?.teams) ? context.teams : []
+    return teams.find((t) => t?.id === entity?.id) || entity || null
+  }, [context?.teams, entity])
 
   const { summary, state, trainingWeeks } = useMemo(
     () =>
-      resolveTeamTrainingsDomain(team, {}, {
+      resolveTeamTrainingsDomain(liveTeam, {}, {
         trainingWeeks: context?.trainingWeeks,
         teamTrainingWeeksById: context?.teamTrainingWeeksById,
       }),
-    [team, context]
+    [liveTeam, context]
   )
-
-  if (state === 'EMPTY') {
-    return (
-      <SectionPanel>
-        <EmptyState title="אין אימונים" desc="לא נמצאו נתוני אימונים לקבוצה" />
-      </SectionPanel>
-    )
-  }
 
   return (
     <SectionPanel>
       <TrainingSchedulePreview
-        entity={team}
         trainingWeeks={trainingWeeks}
-        mode="profile"
         title="אימוני קבוצה"
+        entity={liveTeam}
+        entityType='team'
+        context={context}
+        mode="profile"
+        showNextWeek
         showHeader
         showStats
-        showNextWeek
       />
     </SectionPanel>
   )

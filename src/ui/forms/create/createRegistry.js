@@ -6,6 +6,7 @@ import PlayerCreateForm from '../PlayerCreateForm'
 import MeetingCreateForm from '../MeetingCreateForm'
 import PaymentCreateForm from '../PaymentCreateForm'
 import GameCreateForm from '../GameCreateForm'
+import GameMultiCreateForm from '../GameMultiCreateForm'
 import TagsCreateForm from '../TagsCreateForm'
 import VideoAnalysisCreateForm from '../VideoAnalysisCreateForm'
 import VideoCreateForm from '../VideoCreateForm'
@@ -60,6 +61,16 @@ export const CREATE_TYPES = {
     iconKey: 'addGame',
     entityType: 'team',
     form: GameCreateForm,
+    required: ['gameDuration', 'rivel', 'type', 'gameDate'],
+    surface: 'modal',
+  },
+
+  games: {
+    type: 'games',
+    title: 'פתיחת מספר משחקים',
+    iconKey: 'addGame',
+    entityType: 'team',
+    form: GameMultiCreateForm,
     required: ['gameDuration', 'rivel', 'type', 'gameDate'],
     surface: 'modal',
   },

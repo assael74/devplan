@@ -121,10 +121,10 @@ export default function CalendarSelectorPanel({
 
         <Chip
           size="sm"
-          color={filters?.training ? 'success' : 'neutral'}
-          variant={filters?.training ? 'solid' : 'outlined'}
+          color={filters?.trainings ? 'success' : 'neutral'}
+          variant={filters?.trainings ? 'solid' : 'outlined'}
           startDecorator={iconUi({id: 'training'})}
-          onClick={() => onFilter({ ...filters, training: !filters?.training })}
+          onClick={() => onFilter({ ...filters, trainings: !filters?.trainings})}
         >
           אימונים
         </Chip>

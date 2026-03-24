@@ -1,8 +1,10 @@
-/// C:\projects\devplan\src\ui\fields\selectUi\trainings\TrainingsTypeSelectField.js
-import * as React from 'react';
-import { FormControl, FormLabel, Select, Option, Typography, Stack } from '@mui/joy';
-import { iconUi } from '../../../core/icons/iconUi.js';
-import { TRAINING_TYPES } from '../../../../shared/trainings/trainingsWeek.model.js';
+// ui/fields/selectUi/trainings/TrainingsTypeSelectField.js
+
+import * as React from 'react'
+import { FormControl, FormLabel, Select, Option, Stack } from '@mui/joy'
+import { iconUi } from '../../../core/icons/iconUi.js'
+import { TRAINING_TYPES } from '../../../../shared/trainings/trainingsWeek.model.js'
+import TrainingSelectValue from './ui/TrainingSelectValue.js'
 
 export default function TrainingsTypeSelectField({
   value,
@@ -15,20 +17,33 @@ export default function TrainingsTypeSelectField({
   size = 'sm',
   slotProps = {},
 }) {
+  const renderValue = (selected) => {
+    const val = selected?.value || ''
+    const opt = TRAINING_TYPES.find((item) => item.id === val) || null
+
+    return (
+      <TrainingSelectValue
+        opt={opt}
+        placeholder="בחר סוג אימון"
+      />
+    )
+  }
 
   return (
-    <FormControl>
+    <FormControl error={error}>
       <FormLabel required={required} sx={{ fontSize: '12px' }}>
-        סוג אימון
+        {label}
       </FormLabel>
 
       <Select
-        value={value}
+        value={value || null}
         size={size}
         readOnly={readOnly}
         disabled={disabled}
-        onChange={(_, val) => onChange(val)}
-        placeholder='בחר סוג אימון'
+        onChange={(_, val) => onChange(val || '')}
+        placeholder="בחר סוג אימון"
+        renderValue={renderValue}
+        slotProps={slotProps}
       >
         {TRAINING_TYPES.map((opt) => (
           <Option key={opt.id} value={opt.id} disabled={opt.disabled}>
@@ -40,5 +55,5 @@ export default function TrainingsTypeSelectField({
         ))}
       </Select>
     </FormControl>
-  );
+  )
 }

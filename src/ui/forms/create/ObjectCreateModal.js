@@ -33,7 +33,13 @@ export default function ObjectCreateModal({
   context,
   busy,
 }) {
-  const meta = React.useMemo(() => getCreateMeta(type), [type])
+  const [renderType, setRenderType] = React.useState(type || null)
+
+  React.useEffect(() => {
+    if (type) setRenderType(type)
+  }, [type])
+
+  const meta = React.useMemo(() => getCreateMeta(renderType), [renderType])
 
   const sx = React.useMemo(
     () => buildCreateModalSx(meta.entityType, meta.domainColor),
@@ -56,6 +62,16 @@ export default function ObjectCreateModal({
     if (busy) return
     if (typeof onClose === 'function') onClose()
   }, [onClose, busy])
+
+  React.useEffect(() => {
+    if (!open && !type) {
+      const t = setTimeout(() => {
+        setRenderType(null)
+      }, 280)
+
+      return () => clearTimeout(t)
+    }
+  }, [open, type])
 
   const statusColor = !isValid ? 'warning' : isDirty ? 'danger' : 'neutral'
   const statusText = !isValid
@@ -98,11 +114,7 @@ export default function ObjectCreateModal({
                 onValidChange={onValidChange}
                 mode="drawer"
               />
-            ) : (
-              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                כאן יופיעו שדות הטופס.
-              </Typography>
-            )}
+            ) : null}
           </Box>
         </DialogContent>
 
@@ -123,6 +135,7 @@ export default function ObjectCreateModal({
             <Button
               size="sm"
               variant="soft"
+              color="neutral"
               disabled={!!busy}
               startDecorator={iconUi({ id: 'close' })}
               onClick={handleClose}

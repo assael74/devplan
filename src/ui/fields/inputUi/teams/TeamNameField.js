@@ -1,4 +1,5 @@
 /// ui/fields/inputUi/teams/TeamNameField.js
+
 import * as React from 'react';
 import { iconUi } from '../../../core/icons/iconUi.js';
 import FormControl from '@mui/joy/FormControl';
@@ -6,10 +7,20 @@ import FormLabel from '@mui/joy/FormLabel';
 import FormHelperText from '@mui/joy/FormHelperText';
 import Input from '@mui/joy/Input';
 
-export default function TeamNameField({ required, error , value, onChange, disabled, helperText, readOnly, size = 'sm' }) {
+export default function TeamNameField({
+  required,
+  error ,
+  value,
+  onChange,
+  disabled,
+  helperText,
+  readOnly,
+  variant = 'soft',
+  size = 'sm'
+}) {
   return (
     <>
-      <FormControl sx={{ width: '100%' }}>
+      <FormControl>
         <FormLabel required sx={{ fontSize: '12px' }}>שם קבוצה</FormLabel>
         <Input
           value={value}
@@ -20,7 +31,7 @@ export default function TeamNameField({ required, error , value, onChange, disab
           error={error}
           readOnly={readOnly}
           disabled={disabled}
-          variant="soft"
+          variant={variant}
           size={size}
         />
         <FormHelperText>{helperText}</FormHelperText>
