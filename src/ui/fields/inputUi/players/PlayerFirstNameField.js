@@ -6,7 +6,16 @@ import FormLabel from '@mui/joy/FormLabel';
 import FormHelperText from '@mui/joy/FormHelperText';
 import Input from '@mui/joy/Input';
 
-export default function PlayerFirstNameField({ required, error , value, onChange, disabled, helperText, size = 'sm', }) {
+export default function PlayerFirstNameField({
+  required,
+  error ,
+  value,
+  onChange,
+  disabled,
+  helperText,
+  variant = 'soft',
+  size = 'sm',
+}) {
   return (
     <>
       <FormControl sx={{ width: '100%' }}>
@@ -19,7 +28,7 @@ export default function PlayerFirstNameField({ required, error , value, onChange
           error={error}
           autoComplete="off"
           disabled={disabled}
-          variant="soft"
+          variant={variant}
           size={size}
           sx={{'&:hover': { backgroundColor: '#eef4ff' }}}
         />

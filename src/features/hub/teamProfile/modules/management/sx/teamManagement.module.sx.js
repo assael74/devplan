@@ -1,3 +1,8 @@
+
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('teams')
+
 export const teamManagementModuleSx = {
   root: {
     display: 'grid',
@@ -31,7 +36,6 @@ export const teamManagementModuleSx = {
     flexDirection: 'column',
     gap: 1,
     minWidth: 0,
-    height: 285,
     minHeight: 0,
   },
 
@@ -42,6 +46,7 @@ export const teamManagementModuleSx = {
     gap: 1,
     borderBottom: '1px solid',
     borderColor: 'divider',
+    pb: 1
   },
 
   actions: {
@@ -99,5 +104,41 @@ export const teamManagementModuleSx = {
     display: 'grid',
     alignContent: 'start',
     gap: 1,
+  },
+
+  fourthRow: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: '1fr .5fr .5fr',
+    },
+    gap: 1,
+    alignItems: 'start',
+  },
+
+  fifthRow: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: '1fr 1fr 1fr',
+    },
+    gap: 1,
+    alignItems: 'start',
+  },
+
+  confBtn: {
+    bgcolor: c.bg,
+    color: c.text,
+    fontWeight: 700,
+    boxShadow: 'sm',
+    px: 1.5,
+    transition: 'filter .15s ease, transform .12s ease',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
   },
 }

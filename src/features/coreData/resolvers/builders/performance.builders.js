@@ -5,6 +5,14 @@ import { calculateFullPlayerStats, calculateFullTeamStats } from '../../../../sh
 const safeId = (v) => (v == null ? '' : String(v))
 const safeArr = (v) => (Array.isArray(v) ? v : [])
 
+const sortGamesByGameDateDesc = (rows = []) => {
+  return [...rows].sort((a, b) => {
+    const aDate = String(a?.game?.gameDate || a?.gameDate || '')
+    const bDate = String(b?.game?.gameDate || b?.gameDate || '')
+    return bDate.localeCompare(aDate)
+  })
+}
+
 /**
  * ----------------------------------------
  * buildPlayerGamesByPlayerId
@@ -75,27 +83,31 @@ export const buildPlayersWithStats = (
  * buildTeamGamesByTeamId
  * ----------------------------------------
  */
-export const buildTeamGamesByTeamId = (games = []) => {
-  const map = new Map()
+ export const buildTeamGamesByTeamId = (games = []) => {
+   const map = new Map()
 
-  for (const game of safeArr(games)) {
-    const teamId = safeId(game?.teamId)
-    if (!teamId) continue
+   for (const game of safeArr(games)) {
+     const teamId = safeId(game?.teamId)
+     if (!teamId) continue
 
-    if (!map.has(teamId)) map.set(teamId, [])
+     if (!map.has(teamId)) map.set(teamId, [])
 
-    map.get(teamId).push({
-      gameId: game.id,
-      game,
-      stats: {
-        goalsFor: Number(game?.goalsFor ?? game?.gf ?? 0),
-        goalsAgainst: Number(game?.goalsAgainst ?? game?.ga ?? 0),
-      },
-    })
-  }
+     map.get(teamId).push({
+       gameId: game.id,
+       game,
+       stats: {
+         goalsFor: Number(game?.goalsFor ?? game?.gf ?? 0),
+         goalsAgainst: Number(game?.goalsAgainst ?? game?.ga ?? 0),
+       },
+     })
+   }
 
-  return map
-}
+   for (const [teamId, arr] of map.entries()) {
+     map.set(teamId, sortGamesByGameDateDesc(arr))
+   }
+
+   return map
+ }
 
 /**
  * ----------------------------------------

@@ -1,6 +1,11 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
 import { buildGameInfoItem, buildGameTimeItem, buildGameResultItem } from '../helpers/gameForm.helpers.js'
+import {
+  buildPlayerInfoItem,
+  buildPlayerNamesItem,
+  buildPlayerTeamItem,
+} from '../helpers/playerForm.helpers.js'
 import { createShort } from '../../../services/firestore/shorts/shortsCreate'
 import { makeId } from '../../../utils/id.js'
 
@@ -45,36 +50,83 @@ export const createActions = {
 
   player: async ({ draft }) => {
     const id = makeId()
+    const now = Date.now()
     const ifaLink = pickIfaLink(draft)
 
     const infoItem = {
-      id,
-      birth: draft.birth,
-      active: true,
-      type: 'noneType',
+      ...buildPlayerInfoItem({ id, draft, now }),
       ...(ifaLink ? { ifaLink } : {}),
     }
 
-    const namesItem = {
-      id,
-      playerLastName: draft.playerLastName,
-      playerFirstName: draft.playerFirstName,
-    }
+    const namesItem = buildPlayerNamesItem({ id, draft })
+    const teamItem = buildPlayerTeamItem({ id, draft })
 
-    const teamItem = {
-      id,
-      clubId: draft.clubId,
-      teamId: draft.teamId,
-    }
+    await createShort({
+      shortKey: 'players.playersInfo',
+      item: infoItem
+    })
 
-    await createShort({ shortKey: 'players.playersInfo', item: infoItem })
-    await createShort({ shortKey: 'players.playersNames', item: namesItem })
-    await createShort({ shortKey: 'players.playersTeam', item: teamItem })
+    await createShort({
+      shortKey: 'players.playersNames',
+      item: namesItem
+    })
 
+    await createShort({
+      shortKey: 'players.playersTeam',
+      item: teamItem
+    })
+    
     return {
       ...infoItem,
       ...namesItem,
       ...teamItem,
+    }
+  },
+
+  players: async ({ draft }) => {
+    const rows = Array.isArray(draft?.players) ? draft.players : []
+    const created = []
+
+    for (const row of rows) {
+      const id = makeId()
+      const now = Date.now()
+
+      const playerDraft = {
+        ...draft,
+        ...row,
+        teamId: row?.teamId || draft?.teamId || draft?.defaults?.teamId || '',
+        clubId: row?.clubId || draft?.clubId || draft?.defaults?.clubId || '',
+      }
+
+      const infoItem = buildPlayerInfoItem({ id, draft: playerDraft, now })
+      const namesItem = buildPlayerNamesItem({ id, draft: playerDraft })
+      const teamItem = buildPlayerTeamItem({ id, draft: playerDraft })
+
+      await createShort({
+        shortKey: 'players.playersInfo',
+        item: infoItem,
+      })
+
+      await createShort({
+        shortKey: 'players.playersNames',
+        item: namesItem,
+      })
+
+      await createShort({
+        shortKey: 'players.playersTeam',
+        item: teamItem,
+      })
+
+      created.push({
+        ...infoItem,
+        ...namesItem,
+        ...teamItem,
+      })
+    }
+
+    return {
+      total: created.length,
+      items: created,
     }
   },
 

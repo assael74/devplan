@@ -16,7 +16,8 @@ export default function TeamLeaguePosField({
   helperText,
   readOnly,
   variant = 'soft',
-  size = 'sm'
+  size = 'sm',
+  max = 20
 }) {
   return (
     <>
@@ -34,6 +35,7 @@ export default function TeamLeaguePosField({
           disabled={disabled}
           variant={variant}
           size={size}
+          slotProps={{ input: { min: 0, max: max } }}
         />
         <FormHelperText>{helperText}</FormHelperText>
       </FormControl>

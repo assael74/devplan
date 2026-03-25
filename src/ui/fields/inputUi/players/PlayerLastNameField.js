@@ -4,7 +4,16 @@ import { iconUi } from '../../../core/icons/iconUi.js';
 import { FormControl, FormLabel, FormHelperText } from '@mui/joy';
 import Input from '@mui/joy/Input';
 
-export default function PlayerLastNameField({ required, value, onChange, error, disabled, helperText, size = 'sm', }) {
+export default function PlayerLastNameField({
+  required,
+  error ,
+  value,
+  onChange,
+  disabled,
+  helperText,
+  variant = 'soft',
+  size = 'sm',
+}) {
   return (
     <>
       <FormControl sx={{ width: '100%' }}>
@@ -18,7 +27,7 @@ export default function PlayerLastNameField({ required, value, onChange, error, 
           size={size}
           autoComplete="off"
           disabled={disabled}
-          variant="soft"
+          variant={variant}
           sx={{ '&:hover': { backgroundColor: '#eef4ff' }}}
         />
         <FormHelperText>{helperText}</FormHelperText>

@@ -37,6 +37,9 @@ export default function TeamProfileFab({ entity, context, tab }) {
         onCreatePlayer: () => {
           openCreate('player', presetForTab('players', entity, context), { team: entity, ...(context || {}) })
         },
+        onCreatePlayers: () => {
+          openCreate('players', presetForTab('players', entity, context), { team: entity, ...(context || {}) })
+        },
       },
     })
   }, [tab, openCreate, entity, context])

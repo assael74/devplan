@@ -65,15 +65,6 @@ export default function TeamManagementModule({ entity, context }) {
       <Box sx={sx.root}>
         <Box sx={sx.topGrid}>
           <TeamManagementInfoCard
-            sx={{
-              cardSx: sx.card,
-              cardHeader: sx.cardHeader,
-              actions: sx.actions,
-              firstRow: sx.firstRow,
-              chipsRow: sx.chipsRow,
-              yearWrap: sx.yearWrap,
-              secondRow: sx.secondRow,
-            }}
             draft={draft}
             clubName={clubName}
             isDirty={isDirty}

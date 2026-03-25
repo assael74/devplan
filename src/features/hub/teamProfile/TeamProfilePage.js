@@ -159,7 +159,7 @@ export default function TeamProfilePage() {
   }
 
   if (!entity) return <Navigate to="/hub" replace />
-
+  
   return (
     <>
       <ProfileShell

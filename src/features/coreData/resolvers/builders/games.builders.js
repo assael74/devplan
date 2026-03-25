@@ -9,6 +9,14 @@ import {
 } from '../../utils/data.utils.js'
 import { uniqBy } from '../../utils/map.utils.js'
 
+const sortGamesByGameDateAsc = (arr = []) => {
+  return [...arr].sort((a, b) => {
+    const aDate = String(a?.gameDate || a?.date || '')
+    const bDate = String(b?.gameDate || b?.date || '')
+    return aDate.localeCompare(bDate)
+  })
+}
+
 export const normalizeGame = (game = {}) => {
   const eventDate = toMillis(game?.gameDate || game?.date)
   const weekStart = getWeekStartFromDate(eventDate)
@@ -30,19 +38,22 @@ export const normalizeGame = (game = {}) => {
   }
 }
 
-export const buildGamesByTeamId = (gamesArr)=>{
+export const buildGamesByTeamId = (gamesArr) => {
   const map = new Map()
 
-  for(const raw of safeArr(gamesArr)){
+  for (const raw of safeArr(gamesArr)) {
     const g = normalizeGame(raw)
     const tid = safeId(g.teamId)
-    if(!tid) continue
-    if(!map.has(tid)) map.set(tid,[])
+    if (!tid) continue
+    if (!map.has(tid)) map.set(tid, [])
     map.get(tid).push(g)
   }
 
-  for(const [k,arr] of map.entries()){
-    map.set(k,uniqBy(arr,x=>x.id))
+  for (const [k, arr] of map.entries()) {
+    const unique = uniqBy(arr, (x) => x.id)
+    const sorted = sortGamesByGameDateAsc(unique)
+
+    map.set(k, sorted)
   }
 
   return map

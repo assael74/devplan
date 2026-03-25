@@ -19,6 +19,7 @@ export function buildFabActions({
   const onCreateTeam = pick(handlers.onCreateTeam, noOp)
   const onCreateProject = pick(handlers.onCreateProject, noOp)
   const onCreatePlayer = pick(handlers.onCreatePlayer, noOp)
+  const onCreatePlayers = pick(handlers.onCreatePlayers, noOp)
   const onCreateTag = pick(handlers.onCreateTag, noOp)
   const onCreateStaff = pick(handlers.onCreateStaff, noOp)
   const onCreateScout = pick(handlers.onCreateScout, noOp)
@@ -182,6 +183,14 @@ export function buildFabActions({
           label: 'הוסף שחקן',
           icon: iconUi({ id: 'addPlayer' }),
           onClick: onCreatePlayer,
+          color: 'player',
+          disabled: !allowCreate
+        },
+        {
+          id: 'players',
+          label: 'הוסף מספר שחקנים',
+          icon: iconUi({ id: 'addPlayer' }),
+          onClick: onCreatePlayers,
           color: 'player',
           disabled: !allowCreate
         },

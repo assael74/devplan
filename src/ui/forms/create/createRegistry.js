@@ -3,6 +3,7 @@ import React from 'react'
 import ClubCreateForm from '../ClubCreateForm'
 import TeamCreateForm from '../TeamCreateForm'
 import PlayerCreateForm from '../PlayerCreateForm'
+import PlayerMultiCreateForm from '../PlayerMultiCreateForm'
 import MeetingCreateForm from '../MeetingCreateForm'
 import PaymentCreateForm from '../PaymentCreateForm'
 import GameCreateForm from '../GameCreateForm'
@@ -41,6 +42,16 @@ export const CREATE_TYPES = {
     iconKey: 'addPlayer',
     entityType: 'player',
     form: PlayerCreateForm,
+    required: ['playerFirstName', 'playerLastName', 'clubId', 'teamId', 'birthMonthYear'],
+    surface: 'modal',
+  },
+
+  players: {
+    type: 'player',
+    title: 'פתיחת מספר שחקנים',
+    iconKey: 'addPlayer',
+    entityType: 'players',
+    form: PlayerMultiCreateForm,
     required: ['playerFirstName', 'playerLastName', 'clubId', 'teamId', 'birthMonthYear'],
     surface: 'modal',
   },

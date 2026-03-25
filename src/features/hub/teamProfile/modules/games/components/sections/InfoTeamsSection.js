@@ -17,7 +17,7 @@ export function InfoTeamsSection({ game }) {
   const clubName = team?.club?.clubName || 'מועדון'
 
   const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
-
+  
   return (
     <Box sx={sx.infoCellSx}>
       <Box>

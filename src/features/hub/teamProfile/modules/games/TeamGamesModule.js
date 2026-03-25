@@ -39,7 +39,7 @@ export default function TeamGamesModule({ entity, context }) {
       seasonStartYear: 2025,
     })
   }, [liveTeam, filters])
-
+  
   const { summary, games, options, indicators } = domain || {}
 
   const handleChangeFilters = (patch) => {

@@ -1,6 +1,7 @@
 // src/features/hub/teamProfile/modules/management/TeamManagementInfoCard.js
+
 import React from 'react'
-import { Box, Sheet, Typography, Button, Chip } from '@mui/joy'
+import { Box, Sheet, Typography, Button, Chip, Divider } from '@mui/joy'
 
 import TeamNameField from '../../../../../../ui/fields/inputUi/teams/TeamNameField.js'
 import TeamIfaLinkField from '../../../../../../ui/fields/inputUi/teams/TeamIfaLinkField.js'
@@ -9,8 +10,18 @@ import TeamProjectSelector from '../../../../../../ui/fields/checkUi/teams/TeamP
 import ClubNameField from '../../../../../../ui/fields/inputUi/clubs/ClubNameField.js'
 import YearPicker from '../../../../../../ui/fields/dateUi/YearPicker'
 
+import TeamLeagueNameField from '../../../../../../ui/fields/inputUi/teams/TeamLeagueNameField'
+import TeamLeaguePosField from '../../../../../../ui/fields/inputUi/teams/TeamLeaguePosField'
+import TeamLeaguePointsField from '../../../../../../ui/fields/inputUi/teams/TeamLeaguePointsField'
+import TeamLeagueLevelField from '../../../../../../ui/fields/inputUi/teams/TeamLeagueLevelField'
+import GoalsAgainstField from '../../../../../../ui/fields/inputUi/games/GoalsAgainstField'
+import GoalsForField from '../../../../../../ui/fields/inputUi/games/GoalsForField'
+
+import { iconUi } from '../../../../../../ui/core/icons/iconUi'
+
+import { teamManagementModuleSx as sx } from '../sx/teamManagement.module.sx.js'
+
 export default function TeamManagementInfoCard({
-  sx,
   draft,
   clubName,
   isDirty,
@@ -20,7 +31,7 @@ export default function TeamManagementInfoCard({
   pending
 }) {
   return (
-    <Sheet variant="soft" sx={sx.cardSx}>
+    <Sheet variant="soft" sx={sx.card}>
       {/* ✅ header: title + dirty + actions right */}
       <Box sx={sx.cardHeader}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
@@ -35,18 +46,31 @@ export default function TeamManagementInfoCard({
         </Box>
 
         <Box sx={sx.actions}>
-          <Button size="sm" variant="soft" color="neutral" disabled={!isDirty} onClick={onReset}>
+          <Button
+            size="sm"
+            variant="soft"
+            color="neutral"
+            disabled={!isDirty}
+            onClick={onReset}
+            startDecorator={iconUi({id: 'reset'})}
+          >
             איפוס
           </Button>
-          <Button size="sm" variant="solid" color="success" disabled={pending || !isDirty} onClick={onConfirm} loading={pending}>
+          <Button
+            size="sm"
+            variant="solid"
+            disabled={pending || !isDirty}
+            onClick={onConfirm}
+            loading={pending}
+            sx={sx.confBtn}
+            startDecorator={iconUi({id: 'save'})}
+          >
             אישור
           </Button>
         </Box>
       </Box>
 
-      {/* ✅ Row 1: chips + year (year is visually secondary) */}
       <Box sx={sx.firstRow}>
-        {/* ציפס */}
         <Box sx={sx.chipsRow}>
           <TeamActiveSelector
             value={draft.active}
@@ -87,11 +111,56 @@ export default function TeamManagementInfoCard({
         />
       </Box>
 
-      {/* ✅ Row 2: Team name (primary) + Club (readOnly secondary) */}
       <Box sx={sx.thirdRow}>
         <TeamIfaLinkField
           value={draft.ifaLink}
           onChange={(v) => onDraft({ ...draft, ifaLink: v })}
+        />
+      </Box>
+
+      <Divider sx={{ my: 2 }}>
+        <Typography level="body-sm" sx={{ fontWeight: 700 }}>
+          המצב בליגה
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.fourthRow}>
+        <TeamLeagueNameField
+          value={draft.league || ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, league: v })}
+        />
+
+        <TeamLeagueLevelField
+          value={draft.leagueLevel || ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, leagueLevel: v })}
+        />
+
+        <TeamLeaguePosField
+          value={draft.leaguePos || ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, leaguePos: v })}
+        />
+      </Box>
+
+      <Box sx={sx.fifthRow}>
+        <TeamLeaguePointsField
+          value={draft.leaguePoints || ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, leaguePoints: v })}
+        />
+
+        <GoalsForField
+          value={draft.goalsFor ?? ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, goalsFor: v })}
+        />
+
+        <GoalsAgainstField
+          value={draft.goalsAgainst ?? ''}
+          size="sm"
+          onChange={(v) => onDraft({ ...draft, goalsAgainst: v })}
         />
       </Box>
     </Sheet>
