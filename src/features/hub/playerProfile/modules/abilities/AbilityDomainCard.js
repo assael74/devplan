@@ -1,5 +1,4 @@
-// AbilityDomainCard.js
-// :contentReference[oaicite:3]{index=3}
+// playerProfile/modules/abilities/AbilityDomainCard.js
 
 import { Box, Stack, Typography, Chip, Divider, LinearProgress, Tooltip, CircularProgress } from '@mui/joy'
 import { Card, CardContent } from '@mui/joy'

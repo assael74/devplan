@@ -14,7 +14,6 @@ export const shortsRefs = {
  players: {
    playersTeam: { collection: 'playersShorts', docId: '2alnt6Ibw5mozoYdk65j' },
    playersInfo: { collection: 'playersShorts', docId: '93YWbxDb9uV7YprEukhg' },
-   playersPaymentsId: { collection: 'playersShorts', docId: 'hBXi4ncY2Cskka7mKhn5' },
    playersNames: { collection: 'playersShorts', docId: 'hZ8i5PK5TqPRMYIveg4a' },
    playersProInfo: { collection: 'playersShorts', docId: 'kq1KXaHpIy4Trp7tuCFB' },
    playersParents: { collection: 'playersShorts', docId: 'pr4alU7a1c2MxTivUXEb' },

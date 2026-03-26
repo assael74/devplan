@@ -143,13 +143,6 @@ export default function AbilitiesCreateForm({ draft, onDraft, onValidChange, con
     patch(next)
   }
 
-  function step1PatchFromDraft(nextDraft) {
-    return {
-      abilities: nextDraft?.abilities || {},
-      domainScores: nextDraft?.domainScores || {},
-    }
-  }
-
   return (
     <Box sx={vaSx.root}>
       <StickyHeaderSection

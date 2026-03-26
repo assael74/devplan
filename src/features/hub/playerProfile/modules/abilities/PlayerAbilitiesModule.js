@@ -1,15 +1,18 @@
-// PlayerAbilitiesModule.js
+// playerProfile/modules/abilities/PlayerAbilitiesModule.js
+
 import React, { useMemo, useState } from 'react'
 import { Box, Grid, Typography, Divider } from '@mui/joy'
 import { Card, CardContent } from '@mui/joy'
 import { groupAbilitiesByDomain } from '../../../../../shared/abilities/abilities.grouping.js'
 import AbilityHeader from './AbilityHeader'
 import AbilityDomainCard from './AbilityDomainCard'
+import AbilitiesInviteCreateDrawer from './components/AbilitiesInviteCreateDrawer'
 import { isFilled } from './abilities.logic'
 import useAbilitiesSummary from './useAbilitiesSummary'
 import { abilitiesModuleSx, stickyHeaderWrapSx } from './Ability.module.sx'
 
-export default function PlayerAbilitiesModule({ entity }) {
+export default function PlayerAbilitiesModule({ entity, context }) {
+  const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false)
   const player = entity
 
   const domains = useMemo(
@@ -21,6 +24,9 @@ export default function PlayerAbilitiesModule({ entity }) {
 
   const [showOnlyFilled, setShowOnlyFilled] = useState(false)
   const [query, setQuery] = useState('')
+  const [invitePending, setInvitePending] = useState(false)
+  const [inviteResult, setInviteResult] = useState(null)
+
   const q = query.trim().toLowerCase()
 
   const filteredDomains = useMemo(() => {
@@ -38,6 +44,10 @@ export default function PlayerAbilitiesModule({ entity }) {
       .filter((d) => d.items.length > 0)
   }, [domains, showOnlyFilled, q])
 
+  function handleOpenInvite() {
+    setInviteDrawerOpen(true)
+  }
+
   return (
     <Box sx={abilitiesModuleSx} className="dpScrollThin">
       <Box sx={stickyHeaderWrapSx}>
@@ -50,9 +60,23 @@ export default function PlayerAbilitiesModule({ entity }) {
           onChangeQuery={setQuery}
           showOnlyFilled={showOnlyFilled}
           onToggleShowOnlyFilled={setShowOnlyFilled}
+          onOpenInvite={handleOpenInvite}
+          invitePending={invitePending}
         />
         <Divider sx={{ mt: 1 }} />
-    </Box>
+      </Box>
+
+      {inviteResult?.invite?.link ? (
+        <Card variant="outlined" sx={{ mt: 1, mb: 1 }}>
+          <CardContent>
+            <Typography level="title-sm">קישור טופס שנוצר</Typography>
+            <Typography level="body-sm">{inviteResult.invite.link}</Typography>
+            <Typography level="body-sm" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
+              {inviteResult.whatsappText}
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Grid container spacing={2} sx={{ p: 0.25 }}>
         {filteredDomains.map((domain) => (
@@ -71,6 +95,13 @@ export default function PlayerAbilitiesModule({ entity }) {
           </CardContent>
         </Card>
       )}
+
+      <AbilitiesInviteCreateDrawer
+        open={inviteDrawerOpen}
+        onClose={() => setInviteDrawerOpen(false)}
+        player={player}
+        context={context}
+      />
     </Box>
   )
 }

@@ -15,17 +15,21 @@ import ClubProfilePage from '../../features/hub/clubProfile/ClubProfilePage'
 import CalendarHubPage from '../../features/calendarHub/CalendarHubPage'
 import VideoHubPage from '../../features/videoHub/VideoHubPage'
 
+import AbilitiesPublicRouteEntry from './AbilitiesPublicRouteEntry.js'
+
 import TagsManagementPage from '../../features/tagsHub/TagsManagementPage.js'
 
 export default function AppRoutes() {
   const { user } = useAuth()
   const AuthForm = () => null
 
-  // אם יש לך gate אחר ל-CoreData, תחזיר אותו אחר כך
   const isCoreLoaded = true
 
   return (
     <Routes>
+      {/* Public routes */}
+      <Route path="/forms/abilities/:token" element={<AbilitiesPublicRouteEntry />} />
+
       {!user ? (
         <>
           <Route path="/" element={<AuthForm />} />
@@ -49,16 +53,13 @@ export default function AppRoutes() {
             <AppLayout topbar={<TopBar title="DevPlan" />} navBadges={{ players: 108, teams: 7, clubs: 3 }} />
           }
         >
-          {/* Root → Hub */}
           <Route path="/" element={<Navigate to="/hub" replace />} />
 
-          {/* Hub */}
           <Route path="/hub" element={<HubPage />} />
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />
           <Route path="/tags" element={<TagsManagementPage />} />
 
-          {/* Deep pages */}
           <Route path="/clubs/:clubId" element={<ClubProfilePage />} />
           <Route path="/clubs/:clubId/:tabKey" element={<ClubProfilePage />} />
 

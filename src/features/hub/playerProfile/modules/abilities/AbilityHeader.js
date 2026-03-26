@@ -1,6 +1,7 @@
-// AbilityHeader.js
+// playerProfile/modules/abilities/AbilityHeader.js
+
 import React from 'react'
-import { Box, Grid, Typography, Chip, Stack, Input, Switch } from '@mui/joy'
+import { Box, Grid, Typography, Chip, Stack, Input, Switch, Button } from '@mui/joy'
 import { Card, CardContent } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../ui/domains/ratings/JoyStarRating.js'
 import { clamp0to5, toFixed1, scoreColor } from './abilities.logic'
@@ -42,6 +43,8 @@ export default function AbilityHeader({
   onChangeQuery,
   showOnlyFilled,
   onToggleShowOnlyFilled,
+  onOpenInvite,
+  invitePending,
 }) {
   return (
     <Card variant="soft" sx={abilityHeaderSx}>
@@ -88,6 +91,15 @@ export default function AbilityHeader({
                   הצג רק מלאים
                 </Typography>
               </Stack>
+
+              <Button
+                size="sm"
+                variant="solid"
+                onClick={onOpenInvite}
+                loading={invitePending}
+              >
+                שליחת טופס
+              </Button>
             </Stack>
           </Grid>
         </Grid>

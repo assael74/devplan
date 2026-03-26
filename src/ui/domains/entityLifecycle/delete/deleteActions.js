@@ -14,16 +14,13 @@ const PLAYER_SHORT_KEYS = [
   'players.playersInfo',
   'players.playersNames',
   'players.playersParents',
-  'players.playersPaymentsId',
   'players.playersTeam',
-  'players.playersMeettings',
   'players.playersProInfo',
   'players.playersAbilities',
 ]
 
 const TEAM_SHORT_KEYS = [
   'teams.teamsInfo',
-  'teams.teamsMeeting',
   'teams.teamsTraining',
 ]
 
@@ -55,6 +52,7 @@ const GAME_SHORT_KEYS = [
 const VIDEO_ANALYSIS_SHORT_KEYS = [
   'videoAnalysis.analysisInfo',
   'videoAnalysis.analysisNotes',
+  'videoAnalysis.analysisTags',
 ]
 
 const toRouterEntityType = (entityType) => {
