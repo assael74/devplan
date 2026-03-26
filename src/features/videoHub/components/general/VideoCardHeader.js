@@ -1,23 +1,24 @@
-// src/features/videoHub/components/base/VideoCardHeaderBase.js
+// src/features/videoHub/components/VideoCardHeader.js
+
 import React from 'react'
 import { Box, Typography, Chip } from '@mui/joy'
-import { videoComponentsSx as sx } from '../components.sx'
+import { videoHeaderSx as sx } from './sx/header.sx'
 
-export default function VideoCardHeaderBase({ video, showYm = false, topRowSx }) {
+export default function VideoCardHeader({ video, showYm = false }) {
   const title = video?.title || video?.name || 'וידאו'
 
   return (
-    <Box sx={{ ...sx.cardTopRow, ...(topRowSx || {}) }}>
+    <Box sx={sx.cardTopRow}>
       <Typography level="title-sm" noWrap sx={sx.cardTitle}>
         {title}
       </Typography>
 
       {showYm ? (
         <Box sx={sx.cardYm}>
-          <Chip size="sm" color="warning" variant="solid" sx={sx.ymChip}>
+          <Chip size="sm" color="warning" variant="solid">
             {video?.year}
           </Chip>
-          <Chip size="sm" color="warning" variant="solid" sx={sx.ymChip}>
+          <Chip size="sm" color="warning" variant="solid">
             {video?.month}
           </Chip>
         </Box>

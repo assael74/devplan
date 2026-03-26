@@ -25,10 +25,11 @@ export default function TeamManagementInfoCard({
   draft,
   clubName,
   isDirty,
+  canSave,
   onDraft,
   onConfirm,
   onReset,
-  pending
+  pending,
 }) {
   return (
     <Sheet variant="soft" sx={sx.card}>
@@ -138,29 +139,29 @@ export default function TeamManagementInfoCard({
         />
 
         <TeamLeaguePosField
-          value={draft.leaguePos || ''}
+          value={draft.leaguePosition || ''}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, leaguePos: v })}
+          onChange={(v) => onDraft({ ...draft, leaguePosition: v })}
         />
       </Box>
 
       <Box sx={sx.fifthRow}>
         <TeamLeaguePointsField
-          value={draft.leaguePoints || ''}
+          value={draft.points || ''}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, leaguePoints: v })}
+          onChange={(v) => onDraft({ ...draft, points: v })}
         />
 
         <GoalsForField
-          value={draft.goalsFor ?? ''}
+          value={draft.leagueGoalsFor ?? ''}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, goalsFor: v })}
+          onChange={(v) => onDraft({ ...draft, leagueGoalsFor: v })}
         />
 
         <GoalsAgainstField
-          value={draft.goalsAgainst ?? ''}
+          value={draft.leagueGoalsAgainst ?? ''}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, goalsAgainst: v })}
+          onChange={(v) => onDraft({ ...draft, leagueGoalsAgainst: v })}
         />
       </Box>
     </Sheet>

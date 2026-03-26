@@ -1,22 +1,21 @@
-// videoHub/components/general/editGeneralDrawer/VideoGeneralEditDrawerBody.js
+// videoHub/components/general/editGeneralDrawer/EditDrawerBody.js
+
 import React, { useMemo } from 'react'
 import { Box, Textarea, Typography, Divider } from '@mui/joy'
 
 import VideoNameField from '../../../../../ui/fields/inputUi/videos/VideoNameField'
 import TagsContainer from '../../../../../ui/domains/tags/TagInputContainer'
 
-export default function VideoGeneralEditDrawerBody({ draft, setDraft, disabled, context, sx }) {
+import { editDrawerSx as sx } from './sx/editDrawer.sx'
+
+export default function EditDrawerBody({ draft, setDraft, disabled, context }) {
   const tagOptions = useMemo(() => {
-    const opts =
-      context?.tags ||
-      context?.tagOptions ||
-      context?.analysisTags ||
-      []
+    const opts = context?.tags || []
     return Array.isArray(opts) ? opts : []
-  }, [context?.tags, context?.tagOptions, context?.analysisTags])
+  }, [context?.tags])
 
   return (
-    <Box sx={sx.body}>
+    <Box sx={{ display: 'grid', gap: 1, px: 4, py: 1 }}>
       {/* שם */}
       <Box sx={{ display: 'grid', gap: 0.5 }}>
         <VideoNameField
@@ -35,7 +34,7 @@ export default function VideoGeneralEditDrawerBody({ draft, setDraft, disabled, 
       <Box sx={{ display: 'grid', gap: 0.5 }}>
         <TagsContainer
           title="תגים לוידאו"
-          value={draft.tagIds || []}
+          value={draft?.tagIds || []}
           options={tagOptions || []}
           onChange={(tagIds) => setDraft({ ...draft, tagIds })}
           disabled={disabled}

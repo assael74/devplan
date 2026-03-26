@@ -51,7 +51,9 @@ export const buildInitialDraft = (game, team, context) => {
       .filter(([id]) => !!id)
   )
 
-  const rosterRows = squad.map((player) => {
+  const activeSquad = squad.filter((player) => player?.active !== false)
+
+  const rosterRows = activeSquad.map((player) => {
     const key = player?.id
     return buildRowFromPlayer(player, existingMap.get(key))
   })

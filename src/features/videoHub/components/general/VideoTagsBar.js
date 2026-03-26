@@ -1,7 +1,8 @@
-// src/features/videoHub/components/base/VideoTagsBarBase.js
+// src/features/videoHub/components/VideoTagsBar.js
 import React, { useMemo } from 'react'
 import { Box, Chip, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
+import { videoTagsSx as sx } from './sx/tags.sx'
 
 const normalizeArr = (v) => (Array.isArray(v) ? v : v ? [v] : [])
 const toStr = (v) => (v == null ? '' : String(v)).trim()
@@ -13,7 +14,7 @@ const getFromMapOrObject = (bucket, key) => {
   return null
 }
 
-export default function VideoTagsBarBase({ video, tagsById, iconId = 'tags', maxVisible = 3 }) {
+export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisible = 3 }) {
   const tagIds = useMemo(() => {
     const ids = normalizeArr(video?.tagsFull).map(toStr).filter(Boolean)
     if (ids.length) return ids
@@ -62,16 +63,7 @@ export default function VideoTagsBarBase({ video, tagsById, iconId = 'tags', max
             size="sm"
             variant="outlined"
             startDecorator={iconUi({ id: iconId, sx: { height: 10, width: 10 } })}
-            sx={{
-              height: 13,
-              fontSize: 8,
-              maxWidth: 110,
-              '& .MuiChip-label': {
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              },
-            }}
+            sx={sx.chip}
           >
             {label}
           </Chip>

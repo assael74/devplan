@@ -1,40 +1,90 @@
 // src/features/videoHub/components/general/VideoCardGeneral.js
-import React from 'react'
-import { Box } from '@mui/joy'
 
-import VideoCardBase from '../base/VideoCardBase'
-import { videoComponentsSx as sx } from '../components.sx'
+import React, { useMemo } from 'react'
+import { Box, Card } from '@mui/joy'
 
-import VideoCardMediaBase from '../base/VideoCardMediaBase.js'
-import VideoCardHeaderBase from '../base/VideoCardHeaderBase.js'
-import VideoTagsBarBase from '../base/VideoTagsBarBase.js'
+import { videoCardSx as sx } from './sx/card.sx'
+import VideoCardMedia from './VideoCardMedia.js'
+import VideoCardHeader from './VideoCardHeader.js'
+import VideoTagsBar from './VideoTagsBar.js'
 
-export default function VideoCardGeneral({ video, onShare, onWatch, onEdit, context }) {
+export default function VideoCardGeneral({
+  video,
+  onShare,
+  onWatch,
+  onEdit,
+  onDelete,
+  tagsById,
+  showYm = false,
+  entityType = 'video',
+}) {
+  const menuItems = useMemo(() => {
+    const items = []
+
+    if (typeof onWatch === 'function') {
+      items.push({
+        id: 'watch',
+        label: 'צפייה',
+        icon: 'playVideo',
+        onClick: onWatch,
+      })
+    }
+
+    if (typeof onEdit === 'function') {
+      items.push({
+        id: 'edit',
+        label: 'עריכה',
+        icon: 'edit',
+        onClick: onEdit,
+      })
+    }
+
+    if (typeof onShare === 'function') {
+      items.push({
+        id: 'share',
+        label: 'שיתוף',
+        icon: 'share',
+        onClick: onShare,
+      })
+    }
+
+    if (typeof onDelete === 'function') {
+      items.push({ divider: true })
+      items.push({
+        id: 'delete',
+        label: 'מחיקה',
+        icon: 'delete',
+        color: 'danger',
+        onClick: onDelete,
+      })
+    }
+
+    return items
+  }, [onWatch, onEdit, onShare, onDelete])
+
   return (
-    <VideoCardBase
-      variantKey="videoGeneral"
-      sx={sx}
-      video={video}
-      Media={({ video }) => (
-        <VideoCardMediaBase
-          sx={sx}
+    <Card variant="outlined" sx={sx.cardGrid}>
+      <VideoCardMedia
+        video={video}
+        entityType={entityType}
+        onWatch={onWatch}
+        menuItems={menuItems}
+      />
+
+      <Box sx={sx.cardBody}>
+        <VideoCardHeader
           video={video}
-          entityType="videoGeneral"
-          onWatch={onWatch}
-          menuItems={[
-            { id:'share', label:'שיתוף', icon:'share', onClick: () => onShare(video) },
-            { id:'edit', label:'עריכת תגים והערות', icon:'tags', onClick: () => onEdit(video) },
-            { divider:true },
-            { id:'delete', label:'מחיקה', icon:'delete', color:'danger' },
-          ]}
+          showYm={showYm}
         />
-      )}
-      Header={({ video }) => <VideoCardHeaderBase video={video} />}
-      afterHeader={<Box sx={sx.cardTitleDivider} />}
-      Tags={
-        <VideoTagsBarBase video={video} tagsById={context?.tagsById} iconId="videoGeneral" />
-      }
-      wrapTags={(node) => <Box sx={sx.tagsZone}>{node}</Box>}
-    />
+
+        <Box sx={sx.cardTitleDivider} />
+
+        <VideoTagsBar
+          video={video}
+          tagsById={tagsById}
+          iconId="videoGeneral"
+        />
+      </Box>
+    </Card>
   )
 }

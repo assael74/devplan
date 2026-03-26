@@ -1,4 +1,5 @@
 // src/features/videoHub/components/modal/VideoCreateModal.js
+
 import React, { useMemo, useState } from 'react'
 import { Modal, ModalDialog, DialogTitle, DialogContent, DialogActions, Button, Input, Select, Option, Box } from '@mui/joy'
 import { VIDEO_TAB } from '../../videoHub.model'
@@ -40,12 +41,12 @@ export default function VideoCreateModal({ open, onClose, tab, context, onSave }
       <ModalDialog>
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
-          <Box sx={sx.createGrid}>
+          <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
             <Input
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
               placeholder="שם וידאו"
-              sx={sx.createFull}
+              sx={{ gridColumn: { sm: '1 / -1' } }}
             />
 
             {isAnalysis ? (
@@ -83,7 +84,7 @@ export default function VideoCreateModal({ open, onClose, tab, context, onSave }
               value={draft.tagsStr}
               onChange={(e) => patch({ tagsStr: e.target.value })}
               placeholder="תגים (מופרדים בפסיקים)"
-              sx={sx.createFull}
+              sx={{ gridColumn: { sm: '1 / -1' } }}
             />
           </Box>
         </DialogContent>

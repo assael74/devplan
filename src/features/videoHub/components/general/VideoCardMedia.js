@@ -1,4 +1,5 @@
-// src/features/videoHub/components/base/VideoCardMediaBase.js
+// src/features/videoHub/components/VideoCardMedia.js
+
 import React, { useMemo, useState, useCallback } from 'react'
 import {
   Box,
@@ -16,7 +17,7 @@ import ImageNotSupportedRounded from '@mui/icons-material/ImageNotSupportedRound
 
 import { getDriveThumbUrl, getDrivePreviewUrl } from '../../../../shared/media/driveLinks'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-import { useLifecycle } from '../../../../ui/domains/entityLifecycle/LifecycleProvider'
+import { videoMediaSx as sx } from './sx/media.sx'
 
 const getThumb = (link) => {
   const base = getDriveThumbUrl(link)
@@ -24,8 +25,7 @@ const getThumb = (link) => {
   return base.includes('sz=') ? base : `${base}&sz=w640-h360`
 }
 
-export default function VideoCardMediaBase({
-  sx,
+export default function VideoCardMedia({
   video,
   entityType,
   onWatch,
@@ -33,26 +33,14 @@ export default function VideoCardMediaBase({
   playButtonColor = 'danger',
 }) {
   const [imgOk, setImgOk] = useState(true)
-  const lifecycle = useLifecycle()
 
   const link = video?.link || video?.videoLink || ''
   const thumb = useMemo(() => getThumb(link), [link])
-
   const preview = useMemo(() => getDrivePreviewUrl(link), [link])
   const canWatch = !!preview
 
-  const entityName = useMemo(() => {
-    return String(video?.title || video?.name || 'וידאו').trim()
-  }, [video?.title, video?.name])
-
-  const onDeleteDefault = useCallback(() => {
-    if (!video?.id) return
-    if (!entityType) return
-    lifecycle.openLifecycle({ entityType, id: video.id, name: entityName }, video?._meta)
-  }, [lifecycle, video?.id, video?._meta, entityName, entityType])
-
   return (
-    <Box sx={sx?.cardMedia}>
+    <Box sx={sx.cardMedia}>
       {thumb && imgOk ? (
         <>
           <Box
@@ -63,58 +51,41 @@ export default function VideoCardMediaBase({
             className="video-img"
             referrerPolicy="no-referrer"
             onError={() => setImgOk(false)}
-            sx={sx?.cardImg}
+            sx={sx.cardImg}
           />
-          <Box className="video-overlay" sx={sx?.boxOverLay} />
+          <Box className="video-overlay" sx={sx.boxOverLay} />
         </>
       ) : (
-        <Box sx={sx?.cardMediaFallback}>
+        <Box sx={sx.cardMediaFallback}>
           <ImageNotSupportedRounded />
         </Box>
       )}
 
-      <Box sx={sx?.menuBox}>
+      <Box sx={sx.menuBox}>
         <Dropdown>
-          <MenuButton slots={{ root: IconButton }} slotProps={sx?.menuButtonSlot}>
+          <MenuButton slots={{ root: IconButton }} slotProps={sx.menuButtonSlot}>
             <MoreVert sx={{ width: 16, height: 16 }} />
           </MenuButton>
 
-          <Menu>
+          <Menu placement="bottom-end" sx={{ p: 0.5 }}>
             {menuItems.map((it, idx) => {
               if (it?.divider) return <Divider key={`div-${idx}`} />
 
               const handle = () => {
-                if (it?.id === 'delete' && typeof it?.onClick !== 'function') {
-                  onDeleteDefault()
-                  return
-                }
-                if (typeof it?.onClick === 'function') it.onClick(video)
+                it?.onClick(video)
               }
 
               return (
                 <MenuItem key={it?.id || idx} onClick={handle} color={it?.color}>
-                  {it?.icon ? <ListItemDecorator>{iconUi({ id: it.icon })}</ListItemDecorator> : null}
+                  {it?.icon ? (
+                    <ListItemDecorator>{iconUi({ id: it.icon })}</ListItemDecorator>
+                  ) : null}
                   {it?.label || ''}
                 </MenuItem>
               )
             })}
           </Menu>
         </Dropdown>
-
-        <Tooltip title={canWatch ? 'צפייה' : 'אין תצוגה מקדימה'}>
-          <span>
-            <IconButton
-              size="sm"
-              variant="soft"
-              color={playButtonColor}
-              disabled={!canWatch}
-              onClick={() => typeof onWatch === 'function' && onWatch(video)}
-              sx={{ minWidth: 22, minHeight: 22, '--IconButton-size': '22' }}
-            >
-              {iconUi({ id: 'playVideo' })}
-            </IconButton>
-          </span>
-        </Tooltip>
       </Box>
     </Box>
   )

@@ -6,14 +6,14 @@ export function pickTeamManagementDirtySnapshot(model) {
     active: Boolean(m.active),
     project: Boolean(m.project),
     teamName: String(m.teamName || ''),
-    year: String(m.year || ''),
+    teamYear: String(m.teamYear || ''),
     ifaLink: String(m.ifaLink || ''),
     league: String(m.league || ''),
     leagueLevel: String(m.leagueLevel || ''),
-    leaguePos: String(m.leaguePos || ''),
-    leaguePoints: String(m.leaguePoints || ''),
-    goalsFor: String(m.goalsFor || ''),
-    goalsAgainst: String(m.goalsAgainst || ''),
+    leaguePosition: String(m.leaguePosition || ''),
+    points: String(m.points || ''),
+    leagueGoalsFor: String(m.leagueGoalsFor || ''),
+    leagueGoalsAgainst: String(m.leagueGoalsAgainst || ''),
   }
 }
 
@@ -25,13 +25,13 @@ export function isTeamManagementDirty(baseModel, draftModel) {
     a.active !== b.active ||
     a.project !== b.project ||
     a.teamName !== b.teamName ||
-    a.year !== b.year ||
+    a.teamYear !== b.teamYear ||
     a.ifaLink !== b.ifaLink ||
     a.league !== b.league ||
     a.leagueLevel !== b.leagueLevel ||
-    a.leaguePos !== b.leaguePos ||
-    a.leaguePoints !== b.leaguePoints ||
-    a.goalsFor !== b.goalsFor ||
-    a.goalsAgainst !== b.goalsAgainst
+    a.leaguePosition !== b.leaguePosition ||
+    a.points !== b.points ||
+    a.leagueGoalsFor !== b.leagueGoalsFor ||
+    a.leagueGoalsAgainst !== b.leagueGoalsAgainst
   )
 }

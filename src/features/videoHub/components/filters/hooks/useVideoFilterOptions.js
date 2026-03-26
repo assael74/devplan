@@ -1,7 +1,7 @@
 // src/features/videoHub/components/filters/hooks/useVideoFilterOptions.js
 import { useMemo } from 'react'
 import { safeId, normalizeToArray, safeStr } from './filters.utils'
-import { deriveSourceFromVideo } from '../../../videoHub.logic'
+import { deriveSourceFromVideo } from '../../../logic/videoHub.logic'
 
 const toTagOption = (t) => {
   const id = safeId(t?.id)

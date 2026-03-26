@@ -2,15 +2,15 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import { Box } from '@mui/joy'
 
-import { VIDEO_TAB } from './videoHub.model'
+import { VIDEO_TAB } from './logic/videoHub.model'
 import {
   enrichVideoAnalysis,
   filterVideoAnalysis,
   sortVideoAnalysis,
   filterVideosGeneral,
   sortVideosGeneral,
-} from './videoHub.logic'
-import { videoHubSx as sx } from './videoHub.sx'
+} from './logic/videoHub.logic'
+import { videoHubSx as sx } from './sx/videoHub.sx'
 
 import VideoTabsHeader from './components/VideoTabsHeader'
 import VideoFiltersBar from './components/filters/VideoFiltersBar'
@@ -18,7 +18,7 @@ import VideoFiltersBar from './components/filters/VideoFiltersBar'
 import VideoAnalysisList from './components/analysis/VideoAnalysisList'
 import VideoGeneralList from './components/general/VideoGeneralList'
 
-import VideoGeneralEditDrawer from './components/general/editGeneralDrawer/VideoGeneralEditDrawer'
+import EditDrawer from './components/general/editGeneralDrawer/EditDrawer'
 
 import VideoShareModal from './components/modal/VideoShareModal'
 import VideoHubFabMenu from './VideoHubFabMenu'
@@ -29,7 +29,7 @@ import DriveVideoPlayer from '../../ui/domains/video/DriveVideoPlayer.js'
 
 import { useCreateModal } from '../../ui/forms/create/CreateModalProvider'
 import { useCoreData } from '../coreData/CoreDataProvider.js'
-import { buildVideoHubContext } from './videoHub.context.js'
+import { buildVideoHubContext } from './logic/videoHub.context.js'
 
 import { useVideoHubModal } from './hooks/useVideoHubModal.js'
 import { useVideoHubUpdate } from './hooks/useVideoHubUpdate.js'
@@ -230,14 +230,15 @@ export default function VideoHubPage() {
         }
       />
 
-      <VideoGeneralEditDrawer
+      <EditDrawer
         open={modal.editGeneralOpen}
         onClose={closeEditGeneral}
         video={active}
         context={context}
-        onSave={({ video, patch }) =>
-          run('general', patch, { section: 'videoGeneralEditDrawer', videoId: video?.id })
-        }
+        entityType="general"
+        onSaved={(patch, nextVideo) => {
+          // optional local patch
+        }}
       />
 
       <DriveVideoPlayer

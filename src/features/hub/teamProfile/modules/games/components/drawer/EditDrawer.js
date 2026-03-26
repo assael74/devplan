@@ -48,7 +48,7 @@ export default function EditDrawer({
   const [draft, setDraft] = useState(initial)
   const [isValid, setIsValid] = useState(false)
   const lifecycle = useLifecycle()
-  
+
   const team = context?.team || game?.team || {}
   const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
 
@@ -70,6 +70,7 @@ export default function EditDrawer({
     await run('teamGameEdit', patch, {
       section: 'teamGameEdit',
       gameId: initial.id,
+      createIfMissing: true,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })

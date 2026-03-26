@@ -1,7 +1,7 @@
 // src/features/videoHub/components/modal/VideoShareModal.js
+
 import React, { useMemo, useState, useEffect } from 'react'
 import { Modal, ModalDialog, DialogTitle, DialogContent, DialogActions, Button, Select, Option, Box, Typography } from '@mui/joy'
-import { videoComponentsSx as sx } from '../components.sx'
 
 export default function VideoShareModal({ open, onClose, video, context, onSave }) {
   const teams = context?.teams || []
@@ -40,7 +40,7 @@ export default function VideoShareModal({ open, onClose, video, context, onSave 
         <DialogContent>
           <Typography level="body-sm">{video?.title || ''}</Typography>
 
-          <Box sx={sx.shareRow} mt={1}>
+          <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }} mt={1}>
             <Select value={teamId} onChange={(e, v) => setTeamId(v || '')} placeholder="שיתוף עם קבוצה">
               <Option value="">ללא</Option>
               {teams.map((t) => <Option key={t.id} value={t.id}>{t.teamName || t.name}</Option>)}

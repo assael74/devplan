@@ -59,6 +59,14 @@ export function enrichTeams(merged, indexes) {
       teamMeetings,
       teamGames,
     }
+  }).sort((a, b) => {
+    const yearDiff = Number(a?.teamYear || 0) - Number(b?.teamYear || 0)
+    if (yearDiff !== 0) return yearDiff
+
+    return String(a?.teamName || '').localeCompare(
+      String(b?.teamName || ''),
+      'he'
+    )
   })
 }
 
@@ -76,46 +84,53 @@ export function enrichPlayers(merged, indexes, teams) {
 
   const teamById = new Map(teams.map((team) => [safeId(team.id), team]))
 
-  return playersBase.map((player) => {
-    const team = teamById.get(safeId(player.teamId)) || null
-    const teamId = safeId(player.teamId)
+  return playersBase
+    .map((player) => {
+      const team = teamById.get(safeId(player.teamId)) || null
+      const teamId = safeId(player.teamId)
 
-    const club = player.clubId
-      ? clubById.get(safeId(player.clubId)) || null
-      : team?.clubId
-      ? clubById.get(safeId(team.clubId)) || null
-      : null
+      const club = player.clubId
+        ? clubById.get(safeId(player.clubId)) || null
+        : team?.clubId
+        ? clubById.get(safeId(team.clubId)) || null
+        : null
 
-    const meetings = meetingsByPlayerId.get(safeId(player.id)) || []
-    const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
-    const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
-    const teamGames = teamGamesByTeamId.get(teamId) || []
-    const playerGames = buildPlayerGames(teamGames, player.id)
-    const generalPosition = getPlayerGeneralPosition(player.positions)
+      const meetings = meetingsByPlayerId.get(safeId(player.id)) || []
+      const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
+      const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
+      const teamGames = teamGamesByTeamId.get(teamId) || []
+      const playerGames = buildPlayerGames(teamGames, player.id)
+      const generalPosition = getPlayerGeneralPosition(player.positions)
 
-    const paymentsIds = paymentsIdsByPlayerId.get(safeId(player.id)) || []
-    const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
-    const age = getPlayerAge(player)
-    const playerFullName = getPlayerFullName(player)
+      const paymentsIds = paymentsIdsByPlayerId.get(safeId(player.id)) || []
+      const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
+      const age = getPlayerAge(player)
+      const playerFullName = getPlayerFullName(player)
 
-    return {
-      ...player,
-      team,
-      club,
-      meetings,
-      teamMeetings,
-      trainingWeeks,
-      teamGames,
-      playerGames,
-      payments,
-      age,
-      playerFullName,
-      generalPosition: {
-        layerKey: generalPosition.layerKey,
-        layerLabel: generalPosition.layerLabel,
+      return {
+        ...player,
+        team,
+        club,
+        meetings,
+        teamMeetings,
+        trainingWeeks,
+        teamGames,
+        playerGames,
+        payments,
+        age,
+        playerFullName,
+        generalPosition: {
+          layerKey: generalPosition.layerKey,
+          layerLabel: generalPosition.layerLabel,
+        }
       }
-    }
-  })
+    })
+    .sort((a, b) =>
+      String(a?.playerFullName || '').localeCompare(
+        String(b?.playerFullName || ''),
+        'he'
+      )
+    )
 }
 
 export function enrichMeetings(merged, indexes, players = []) {

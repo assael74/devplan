@@ -1,5 +1,6 @@
 // teamProfile/modules/games/components/entryDrawer/entryEditDrawer.js
 
+// EntryEditDrawer.js
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Button, Drawer, IconButton, Sheet, Tooltip, Typography } from '@mui/joy'
 
@@ -20,6 +21,11 @@ import {
   setRowField,
 } from './logic/teamGamEentryEdit.logic.js'
 
+const defaultEntryFilters = {
+  squad: 'all',
+  start: 'all',
+}
+
 export default function EntryEditDrawer({
   open,
   game,
@@ -30,10 +36,12 @@ export default function EntryEditDrawer({
   const team = context?.team || game?.team || {}
   const initial = useMemo(() => buildInitialDraft(game, team, context), [game, team, context])
   const [draft, setDraft] = useState(initial)
+  const [filters, setFilters] = useState(defaultEntryFilters)
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
+    setFilters(defaultEntryFilters)
   }, [open, initial])
 
   const isValid = useMemo(() => getIsValid(draft), [draft])
@@ -88,9 +96,20 @@ export default function EntryEditDrawer({
     }))
   }
 
+  const handleSetFilter = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev?.[key] === value ? 'all' : value,
+    }))
+  }
+
+  const handleResetFilters = () => {
+    setFilters(defaultEntryFilters)
+  }
+
   const handleSave = async () => {
     if (!canSave) return
-    
+
     await run('teamEntryGameEdit', patch, {
       section: 'teamEntryGameEdit',
       gameId: draft.id,
@@ -120,6 +139,9 @@ export default function EntryEditDrawer({
 
         <EntryEditContentDrawer
           draft={draft}
+          filters={filters}
+          onSetFilter={handleSetFilter}
+          onResetFilters={handleResetFilters}
           onChangeRow={handleChangeRow}
           onBulkSetOnSquad={handleBulkSetOnSquad}
           onBulkResetStats={handleBulkResetStats}

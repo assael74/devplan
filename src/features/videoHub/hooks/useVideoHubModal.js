@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { VIDEO_TAB } from '../videoHub.model'
+import { VIDEO_TAB } from '../logic/videoHub.model'
 
 export function useVideoHubModal(tab) {
   const [modal, setModal] = useState({

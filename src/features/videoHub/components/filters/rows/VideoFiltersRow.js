@@ -1,7 +1,7 @@
 // src/features/videoHub/components/filters/rows/VideoFiltersRow.js
 import React from 'react'
 import { Box, Input, Select, Option, Chip } from '@mui/joy'
-import { videoComponentsSx as sx } from '../../components.sx'
+import { videoFilterRowSx as sx } from '../../filterRow.sx'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { MONTHS } from '../filters.constants'
 
@@ -24,7 +24,7 @@ export default function VideoFiltersRow({ tab, filters, options, setCascade }) {
         placeholder={placeholder}
         value={filters.q}
         onChange={(e) => setCascade({ q: e.target.value })}
-        sx={sx.filtersInput}
+        sx={{ width: 260, maxWidth: '100%' }}
         startDecorator={iconUi({ id: 'search' })}
       />
 
@@ -34,7 +34,7 @@ export default function VideoFiltersRow({ tab, filters, options, setCascade }) {
           size="sm"
           value={filters.source || ''}
           onChange={(e, v) => setCascade({ source: v || '' })}
-          sx={sx.filtersSelect}
+          sx={{ width: 180, maxWidth: '100%' }}
           placeholder="סורס"
           startDecorator={iconUi({ id: 'link' })}
         >
@@ -51,7 +51,7 @@ export default function VideoFiltersRow({ tab, filters, options, setCascade }) {
             size="sm"
             value={filters.year}
             onChange={(e, v) => setCascade({ year: v || '' })}
-            sx={sx.filtersSelect}
+            sx={{ width: 180, maxWidth: '100%' }}
             placeholder="שנה"
           >
             <Option value="">כל השנים</Option>
@@ -66,7 +66,7 @@ export default function VideoFiltersRow({ tab, filters, options, setCascade }) {
             size="sm"
             value={filters.month}
             onChange={(e, v) => setCascade({ month: v || '' })}
-            sx={sx.filtersSelect}
+            sx={{ width: 180, maxWidth: '100%' }}
             placeholder="חודש"
           >
             {MONTHS.map((m) => (
@@ -83,7 +83,7 @@ export default function VideoFiltersRow({ tab, filters, options, setCascade }) {
         size="sm"
         value={tagsValue}
         onChange={(e, v) => setCascade({ tags: Array.isArray(v) ? v : v ? [v] : [] })}
-        sx={sx.filtersSelect}
+        sx={{ width: 180, maxWidth: '100%' }}
         placeholder="תגים"
         startDecorator={iconUi({ id: 'tag' })}
       >

@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import GenericFabMenu from '../../ui/actions/GenericFabMenu'
 import { iconUi } from '../../ui/core/icons/iconUi.js'
-import { VIDEO_TAB } from './videoHub.model'
+import { VIDEO_TAB } from './logic/videoHub.model'
 
 export default function VideoHubFabMenu({ tab, onCreateAnalysis, onCreateGeneral }) {
   const actions = useMemo(() => {

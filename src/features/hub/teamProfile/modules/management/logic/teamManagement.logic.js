@@ -9,6 +9,12 @@ export function buildTeamManagementModel(team) {
     active: Boolean(t.active),
     project: t.project,
     teamYear: String(t.teamYear || ''),
+    league: String(t.league || ''),
+    leagueLevel: String(t.leagueLevel || ''),
+    leaguePosition: String(t.leaguePosition || ''),
+    points: String(t.points || ''),
+    leagueGoalsFor: String(t.leagueGoalsFor || ''),
+    leagueGoalsAgainst: String(t.leagueGoalsAgainst || ''),
   }
 }
 
@@ -22,6 +28,12 @@ export function buildTeamManagementPatch(prevModel, nextModel) {
   if (p.active !== n.active) patch.active = n.active
   if (p.teamYear !== n.teamYear) patch.teamYear = n.teamYear
   if (p.project !== n.project) patch.project = n.project
+  if (p.league !== n.league) patch.league = n.league
+  if (p.leagueLevel !== n.leagueLevel) patch.leagueLevel = n.leagueLevel
+  if (p.leaguePosition !== n.leaguePosition) patch.leaguePosition = n.leaguePosition
+  if (p.points !== n.points) patch.points = n.points
+  if (p.leagueGoalsFor !== n.leagueGoalsFor) patch.leagueGoalsFor = n.leagueGoalsFor
+  if (p.leagueGoalsAgainst !== n.leagueGoalsAgainst) patch.leagueGoalsAgainst = n.leagueGoalsAgainst
 
   return patch
 }

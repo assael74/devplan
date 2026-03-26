@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { Box, Typography } from '@mui/joy'
+// teamProfile/modules/management/TeamManagementModule.js
+
+import React, { useMemo, useState, useEffect } from 'react'
+import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../sharedProfile/SectionPanel.js'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
@@ -11,12 +13,9 @@ import { isTeamManagementDirty } from './logic/teamManagement.dirty.js'
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
 import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaffCard.js'
 
-import { useUpdateAction } from '../../../../../ui/domains/entityActions/updateAction.js'
+import { useTeamHubUpdate } from '../../../hooks/teams/useTeamHubUpdate.js'
 
-const toStr = (v) => (v == null ? '' : String(v))
-const buildTeamName = (t) => toStr(t?.teamName).trim() || 'קבוצה'
-
-export default function TeamManagementModule({ entity, context }) {
+export default function TeamManagementModule({ entity, context, onSaved, onClose }) {
   const team = entity || null
 
   const staffPool = useMemo(() => {
@@ -25,38 +24,52 @@ export default function TeamManagementModule({ entity, context }) {
 
   const baseModel = useMemo(() => buildTeamManagementModel(team), [team])
   const [draft, setDraft] = useState(baseModel)
-  useEffect(() => setDraft(baseModel), [baseModel])
 
-  const entityName = useMemo(() => buildTeamName(team), [team])
+  useEffect(() => {
+    setDraft(baseModel)
+  }, [baseModel])
 
-  const { runUpdate, pending } = useUpdateAction({
-    routerEntityType: 'teams',
-    snackEntityType: 'team',
-    id: team?.id,
-    entityName,
-    requireAnyUpdated: true,
-    createIfMissing: false,
-  })
-
-  const onUpdate = useCallback(
-    async (patch, meta) => runUpdate(patch, meta),
-    [runUpdate]
-  )
+  const { run, pending } = useTeamHubUpdate(team)
 
   const clubName = useMemo(() => {
     const c = context?.club || team?.club || null
     return String(c?.clubName || c?.name || team?.clubName || '')
   }, [context, team])
 
-  const isDirty = useMemo(() => isTeamManagementDirty(baseModel, draft), [baseModel, draft])
+  const isDirty = useMemo(() => {
+    return isTeamManagementDirty(baseModel, draft)
+  }, [baseModel, draft])
 
-  const confirm = async () => {
-    const patch = buildTeamManagementPatch(baseModel, draft)
-    if (!Object.keys(patch).length) return
-    await onUpdate(patch, { section: 'management', source: 'TeamManagementModule' })
+  const patch = useMemo(() => {
+    return buildTeamManagementPatch(baseModel, draft)
+  }, [baseModel, draft])
+
+  const canSave = useMemo(() => {
+    return Boolean(team?.id) && isDirty && Object.keys(patch).length > 0 && !pending
+  }, [team, isDirty, patch, pending])
+
+  const handleReset = () => {
+    setDraft(baseModel)
   }
 
-  const reset = () => setDraft(baseModel)
+  const handleSave = async () => {
+    if (!canSave) return
+
+    await run('teamEdit', patch, {
+      section: 'teamEdit',
+      source: 'TeamManagementModule',
+      teamId: team.id,
+      createIfMissing: false,
+    })
+
+    if (typeof onSaved === 'function') {
+      onSaved(patch, { ...(team || {}), ...patch })
+    }
+
+    if (typeof onClose === 'function') {
+      onClose()
+    }
+  }
 
   if (!team) return <EmptyState title="אין מידע לקבוצה" />
 
@@ -68,13 +81,14 @@ export default function TeamManagementModule({ entity, context }) {
             draft={draft}
             clubName={clubName}
             isDirty={isDirty}
+            canSave={canSave}
             onDraft={setDraft}
-            onConfirm={confirm}
-            onReset={reset}
+            onConfirm={handleSave}
+            onReset={handleReset}
             pending={pending}
           />
 
-          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto', }}>
+          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto' }}>
             <ManagementStaffCard
               teamId={team.id}
               roles={staffPool}

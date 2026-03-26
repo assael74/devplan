@@ -1,4 +1,5 @@
-// videoHub/components/general/editGeneralDrawer/videoGeneralEditDrawer.logic.js
+// videoHub/components/general/editGeneralDrawer/logic/videoEditDrawer.logic.js
+
 const normalizeIds = (arr) =>
   (Array.isArray(arr) ? arr : [])
     .map((x) => String(x ?? '').trim())
@@ -6,39 +7,42 @@ const normalizeIds = (arr) =>
 
 const normalizeIdsKey = (arr) => normalizeIds(arr).sort().join('|')
 
-export function buildOriginal(video) {
+export function buildInitialDraft(video) {
   const v = video || {}
+
   return {
-    name: v.name || '',
+    id: v.id || '',
+    name: v.name || v.title || '',
     notes: v.notes || '',
-    tagIds: normalizeIds(v.tagIds || []),
+    tagIds: normalizeIds(v.tagIds || v.tags || []),
+    raw: v,
   }
 }
 
-export function isDirty(draft, original) {
+export function getIsDirty(draft, initial) {
   const t1 = normalizeIdsKey(draft?.tagIds)
-  const t2 = normalizeIdsKey(original?.tagIds)
+  const t2 = normalizeIdsKey(initial?.tagIds)
 
   return (
-    (draft?.name || '') !== (original?.name || '') ||
-    (draft?.notes || '') !== (original?.notes || '') ||
+    (draft?.name || '') !== (initial?.name || '') ||
+    (draft?.notes || '') !== (initial?.notes || '') ||
     t1 !== t2
   )
 }
 
-export function buildPatch(draft, original) {
+export function buildPatch(draft, initial) {
   const out = {}
 
   const name1 = draft?.name || ''
-  const name2 = original?.name || ''
+  const name2 = initial?.name || ''
   if (name1 !== name2) out.name = name1
 
   const notes1 = draft?.notes || ''
-  const notes2 = original?.notes || ''
+  const notes2 = initial?.notes || ''
   if (notes1 !== notes2) out.notes = notes1
 
   const t1 = normalizeIdsKey(draft?.tagIds)
-  const t2 = normalizeIdsKey(original?.tagIds)
+  const t2 = normalizeIdsKey(initial?.tagIds)
   if (t1 !== t2) out.tagIds = normalizeIds(draft?.tagIds)
 
   return out
