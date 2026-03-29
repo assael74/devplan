@@ -1,163 +1,147 @@
-import React, { useMemo, useState } from 'react'
-import Accordion from '@mui/joy/Accordion'
-import AccordionDetails from '@mui/joy/AccordionDetails'
-import AccordionGroup from '@mui/joy/AccordionGroup'
-import AccordionSummary from '@mui/joy/AccordionSummary'
-import Box from '@mui/joy/Box'
-import Chip from '@mui/joy/Chip'
-import Divider from '@mui/joy/Divider'
-import Sheet from '@mui/joy/Sheet'
-import Stack from '@mui/joy/Stack'
-import Typography from '@mui/joy/Typography'
+// features/abilitiesPublic/components/PublicDomainsAccordion.js
 
-import { ABILITY_SCORE_OPTS, PUBLIC_ABILITY_LABELS_SHORT } from '../shared/abilitiesPublic.helpers.js'
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+  Box,
+  Chip,
+  Accordion,
+  Typography,
+  AccordionGroup,
+  LinearProgress,
+  AccordionDetails,
+  AccordionSummary,
+} from '@mui/joy'
 
-function ScoreChipsRow({ value, onChange }) {
-  return (
-    <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-      {ABILITY_SCORE_OPTS.map((score) => {
-        const selected = Number(value) === Number(score)
+import { iconUi } from '../../../ui/core/icons/iconUi.js'
+import { domainsAccordionSx as sx } from './sx/domainsAccordion.sx'
+import { getDomainTone } from './shared/abilitiesPublic.helpers.js'
+import {
+  PublicDomainScoreBar,
+  PublicAbilityItemRow,
+} from './accordionParts/publicDomainsAccordion.parts.js'
 
-        return (
-          <Chip
-            key={score}
-            size="lg"
-            variant={selected ? 'solid' : 'soft'}
-            color={selected ? 'primary' : 'neutral'}
-            onClick={() => onChange(score)}
-          >
-            {score}
-          </Chip>
-        )
-      })}
-    </Stack>
-  )
+function clean(value) {
+  return String(value ?? '').trim()
 }
 
-function DomainScoreBar({ domain, onSetDomainScore }) {
-  return (
-    <Box sx={{ mb: 1.25 }}>
-      <Typography level="body-xs" sx={{ mb: 0.75 }}>
-        ציון לכל הדומיין
-      </Typography>
+export default function PublicDomainsAccordion({ form = {} }) {
+  const {
+    bits = {},
+    domains = [],
+    onSetItemScore = () => () => {},
+    onSetDomainScore = () => () => {},
+    validation = {},
+  } = form
 
-      <ScoreChipsRow
-        value={domain?.avg}
-        onChange={onSetDomainScore(domain?.id || domain?.domain)}
-      />
-    </Box>
-  )
-}
-
-function AbilityItemRow({ domainId, item, onSetItemScore }) {
-  return (
-    <Box sx={{ py: 1 }}>
-      <Stack spacing={0.75}>
-        <Box>
-          <Typography level="title-sm">{item?.label || item?.name || item?.id}</Typography>
-
-          {item?.description ? (
-            <Typography level="body-xs">{item.description}</Typography>
-          ) : null}
-        </Box>
-
-        <ScoreChipsRow
-          value={item?.value}
-          onChange={onSetItemScore(domainId, item?.id)}
-        />
-
-        <Typography level="body-xs">
-          {item?.value ? `נבחר: ${PUBLIC_ABILITY_LABELS_SHORT[item.value] || item.value}` : 'לא נבחר ציון'}
-        </Typography>
-      </Stack>
-    </Box>
-  )
-}
-
-export default function PublicDomainsAccordion({ form }) {
-  const { domains, onSetItemScore, onSetDomainScore, validation } = form
+  const canOpenDomains = Boolean(bits?.hasGrowthStage)
 
   const firstId = useMemo(() => {
-    const first = Array.isArray(domains) ? domains[0] : null
-    return first?.id || first?.domain || null
+    const firstActive = (Array.isArray(domains) ? domains : []).find((domain) => domain?.active)
+    const first = firstActive || (Array.isArray(domains) ? domains[0] : null)
+    return clean(first?.id || first?.domain) || null
   }, [domains])
 
   const [expanded, setExpanded] = useState(firstId)
 
+  useEffect(() => {
+    setExpanded(firstId)
+  }, [firstId])
+
   return (
-    <Box sx={{ pb: 2 }}>
-      <AccordionGroup size="lg">
+    <Box sx={{ pb: 1 }}>
+      <AccordionGroup sx={(theme) => sx.group(theme)}>
         {(domains || []).map((domain) => {
-          const domainId = domain?.id || domain?.domain
-          const filled = domain?.filled || 0
-          const total = domain?.total || 0
+          const domainId = clean(domain?.id || domain?.domain)
+          const domainActive = Boolean(domain?.active)
+          const canInteractDomain = canOpenDomains && domainActive
+          const filled = Number(domain?.filled || 0)
+          const total = Number(domain?.total || 0)
           const avg = domain?.avg
+          const percent = Number(domain?.percent || 0)
+          const tone = getDomainTone(domain?.state)
+          const isExpanded = expanded === domainId && canOpenDomains
 
           return (
             <Accordion
               key={domainId}
-              expanded={expanded === domainId}
-              onChange={(event, isExpanded) => {
-                setExpanded(isExpanded ? domainId : null)
+              expanded={isExpanded}
+              disabled={!canInteractDomain}
+              onChange={(event, nextExpanded) => {
+                if (!canOpenDomains) return
+                setExpanded(nextExpanded ? domainId : null)
               }}
+              sx={sx.accordion(tone, canInteractDomain)}
             >
               <AccordionSummary>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ width: '100%' }}
-                >
-                  <Box>
-                    <Typography level="title-sm">
-                      {domain?.label || domain?.name || domainId}
+                <Box sx={{ width: '100%', gap: 1, pb: isExpanded ? 1.2 : 0 }}>
+                  <Box sx={sx.summaryTopRow}>
+                    {iconUi({ id: domainId, size: 'lg', sx: { color: domainActive ? '#3cb406' : '' } })}
+
+                    <Typography level="title-sm" noWrap sx={{ lineHeight: 1.3 }}>
+                      {domain?.domainLabel || domainId}
                     </Typography>
 
-                    <Typography level="body-xs">
+                    <Typography level="body-xs" noWrap sx={{ mt: 0.2 }}>
                       {filled}/{total} מולאו
                     </Typography>
-                  </Box>
 
-                  <Stack direction="row" spacing={0.75}>
-                    <Chip size="sm" variant="soft">
+                    <Box sx={{ flex: 1 }} />
+
+                    <Chip size="sm" variant="soft" color="neutral">
+                      {tone.stateLabel}
+                    </Chip>
+
+                    <Chip size="sm" variant="soft" color="neutral">
                       ממוצע: {avg == null ? '-' : avg}
                     </Chip>
-                  </Stack>
-                </Stack>
+                  </Box>
+
+                  {domainActive && (
+                    <LinearProgress
+                      determinate
+                      value={percent}
+                      color={tone.progressColor}
+                      size="sm"
+                      sx={{ '--LinearProgress-radius': '999px', my: 1 }}
+                    />
+                  )}
+
+                  {domainActive ? (
+                    <PublicDomainScoreBar
+                      domain={domain}
+                      onSetDomainScore={onSetDomainScore}
+                    />
+                  ) : (
+                    <Box sx={sx.textEmptyBox}>
+                      <Typography level="body-xs" color='warning' sx={{ fontWeight: 500 }}>
+                        אין צורך למלא חלק זה בדוח
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </AccordionSummary>
 
               <AccordionDetails>
-                <Sheet variant="soft" sx={{ p: 1.25, borderRadius: 'md' }}>
-                  <DomainScoreBar
-                    domain={domain}
-                    onSetDomainScore={onSetDomainScore}
-                  />
-
-                  <Divider sx={{ my: 1 }} />
-
-                  <Stack divider={<Divider />}>
+                <Box sx={sx.detailsFrame}>
+                  <Box
+                    sx={{ height: '100%', overflowY: 'auto', pr: 0.5 }}
+                    className="dpScrollThin"
+                  >
                     {(domain?.items || []).map((item) => (
-                      <AbilityItemRow
+                      <PublicAbilityItemRow
                         key={item?.id}
                         domainId={domainId}
                         item={item}
                         onSetItemScore={onSetItemScore}
                       />
                     ))}
-                  </Stack>
-                </Sheet>
+                  </Box>
+                </Box>
               </AccordionDetails>
             </Accordion>
           )
         })}
       </AccordionGroup>
-
-      {validation?.errors?.abilities ? (
-        <Typography level="body-xs" color="danger" sx={{ mt: 1 }}>
-          {validation.errors.abilities}
-        </Typography>
-      ) : null}
     </Box>
   )
 }

@@ -1,3 +1,5 @@
+// features/abilitiesPublic/invites/abilitiesInvites.service.js
+
 import { buildAbilitiesInviteModel } from './abilitiesInvites.model.js'
 import {
   buildAbilitiesInviteLink,

@@ -1,3 +1,5 @@
+// features/abilitiesPublic/invites/abilitiesInvites.helpers.js
+
 export function cleanToken(token) {
   return String(token || '').trim()
 }
@@ -23,7 +25,8 @@ export function isInviteCancelled(invite) {
 export function isInviteInvalid(invite) {
   if (!invite) return true
   if (!cleanToken(invite?.token)) return true
-  if (!invite?.playerId) return true
+  if (!invite?.player?.id) return true
+  if (!invite?.player?.fullName) return true
   return false
 }
 

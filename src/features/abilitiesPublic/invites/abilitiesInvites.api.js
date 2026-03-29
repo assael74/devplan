@@ -3,8 +3,9 @@
 import {
   getAbilitiesInviteByToken,
   markAbilitiesInviteOpened,
-  markAbilitiesInviteSubmitted,
 } from './abilitiesInvites.firestore.js'
+
+import { submitAbilitiesInviteWithHistory } from './abilitiesInvites.submit.service.js'
 
 export async function getAbilitiesInviteByTokenApi(token) {
   return await getAbilitiesInviteByToken(token)
@@ -25,14 +26,5 @@ export async function markAbilitiesInviteOpenedApi(invite) {
 }
 
 export async function submitAbilitiesInviteFormApi(payload) {
-  if (!payload?.inviteId) {
-    throw new Error('submitAbilitiesInviteFormApi: inviteId is required')
-  }
-
-  await markAbilitiesInviteSubmitted(payload.inviteId, payload)
-
-  return {
-    ok: true,
-    inviteId: payload.inviteId,
-  }
+  return await submitAbilitiesInviteWithHistory(payload)
 }

@@ -28,6 +28,11 @@ import TouchAppIcon from '@mui/icons-material/TouchApp';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
+import RocketLaunch from '@mui/icons-material/RocketLaunch';
+import OfflineBolt from '@mui/icons-material/OfflineBolt';
+import AlarmOn from '@mui/icons-material/AlarmOn';
+import HourglassTop from '@mui/icons-material/HourglassTop';
+import PriorityHigh from '@mui/icons-material/PriorityHigh';
 
 export const abilitiesIcon = {
   adaptability: <AutorenewIcon />,
@@ -62,4 +67,9 @@ export const abilitiesIcon = {
   teamPlay: <GroupIcon />,
   technical: <SportsSoccerIcon />,
   vision: <VisibilityIcon />,
+  very_early: <RocketLaunch />,
+  early: <OfflineBolt />,
+  on_time: <AlarmOn />,
+  late: <HourglassTop />,
+  very_late: <PriorityHigh />,
 };

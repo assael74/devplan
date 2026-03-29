@@ -22,22 +22,47 @@
  * - חישוב statistics לשחקנים וקבוצות
  * - חיבור סרטונים לישויות
  */
- import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
- import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
- import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
- import {
-   buildPlayersWithStats,
-   buildTeamsWithStats,
-   buildScoutGamesSummary,
-   buildVideosWithEntities,
-   buildTrainingWeeksSummary,
-   buildPlayerGames
- } from '../resolvers/builders'
+import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
+import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
+import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
+import {
+  buildPlayersWithStats,
+  buildTeamsWithStats,
+  buildScoutGamesSummary,
+  buildVideosWithEntities,
+  buildTrainingWeeksSummary,
+  buildPlayerGames,
+} from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
+const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v)
+
+function buildPlayerAbilitiesState(player) {
+  return {
+    abilities: isObject(player?.abilities) ? player.abilities : {},
+    domains: {
+      scores: isObject(player?.domainScores) ? player.domainScores : {},
+      meta: Array.isArray(player?.domainsMeta) ? player.domainsMeta : [],
+    },
+    evaluation: {
+      coverage: isObject(player?.coverage) ? player.coverage : {},
+      reliability: isObject(player?.reliability) ? player.reliability : {},
+      formsCount: Number(player?.formsCount || 0),
+      evaluatorsCount: Number(player?.evaluatorsCount || 0),
+      lastWindowKey: String(player?.lastWindowKey || ''),
+      updatedFrom: String(player?.updatedFrom || ''),
+      validDomainsCount: isObject(player?.validDomainsCount)
+        ? player.validDomainsCount
+        : {},
+    },
+    refs: {
+      docAbilitiesId: String(player?.docAbilitiesId || ''),
+    },
+  }
+}
 
 export function enrichTeams(merged, indexes) {
-  const { teamsBase = [] } = merged
+  const { teamsBase = [], playersBase = [] } = merged
   const {
     clubById,
     trainingWeeksByTeamId,
@@ -45,11 +70,24 @@ export function enrichTeams(merged, indexes) {
     teamGamesByTeamId,
   } = indexes
 
+  const playersByTeamId = new Map()
+
+  for (let i = 0; i < playersBase.length; i++) {
+    const player = playersBase[i] || {}
+    const teamId = safeId(player.teamId)
+
+    if (!teamId) continue
+    if (!playersByTeamId.has(teamId)) playersByTeamId.set(teamId, [])
+
+    playersByTeamId.get(teamId).push(player)
+  }
+
   return teamsBase.map((team) => {
     const teamId = safeId(team.id)
     const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
     const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
     const teamGames = teamGamesByTeamId.get(teamId) || []
+    const teamPlayers = playersByTeamId.get(teamId) || []
 
     return {
       ...team,
@@ -86,14 +124,33 @@ export function enrichPlayers(merged, indexes, teams) {
 
   return playersBase
     .map((player) => {
+      const {
+        abilities,
+        domainScores,
+        domainsMeta,
+        coverage,
+        reliability,
+        formsCount,
+        evaluatorsCount,
+        lastWindowKey,
+        updatedFrom,
+        validDomainsCount,
+        docAbilitiesId,
+
+        level,
+        levelPotential,
+
+        ...playerRest
+      } = player || {}
+
       const team = teamById.get(safeId(player.teamId)) || null
       const teamId = safeId(player.teamId)
 
       const club = player.clubId
         ? clubById.get(safeId(player.clubId)) || null
         : team?.clubId
-        ? clubById.get(safeId(team.clubId)) || null
-        : null
+          ? clubById.get(safeId(team.clubId)) || null
+          : null
 
       const meetings = meetingsByPlayerId.get(safeId(player.id)) || []
       const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
@@ -107,8 +164,22 @@ export function enrichPlayers(merged, indexes, teams) {
       const age = getPlayerAge(player)
       const playerFullName = getPlayerFullName(player)
 
+      const playerForAbilities = {
+        abilities,
+        domainScores,
+        domainsMeta,
+        coverage,
+        reliability,
+        formsCount,
+        evaluatorsCount,
+        lastWindowKey,
+        updatedFrom,
+        validDomainsCount,
+        docAbilitiesId,
+      }
+
       return {
-        ...player,
+        ...playerRest,
         team,
         club,
         meetings,
@@ -122,7 +193,12 @@ export function enrichPlayers(merged, indexes, teams) {
         generalPosition: {
           layerKey: generalPosition.layerKey,
           layerLabel: generalPosition.layerLabel,
-        }
+        },
+
+        level: level ?? null,
+        levelPotential: levelPotential ?? null,
+
+        abilitiesState: buildPlayerAbilitiesState(playerForAbilities),
       }
     })
     .sort((a, b) =>
@@ -182,9 +258,7 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
     return {
       ...player,
       videos,
-      abilities: player?.abilities && typeof player.abilities === 'object'
-        ? player.abilities
-        : {},
+      abilitiesState: player?.abilitiesState || buildPlayerAbilitiesState({}),
     }
   })
 }

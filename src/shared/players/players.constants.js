@@ -5,6 +5,30 @@ const white = '#ffffff'
 const black = '#000000'
 const gray = '#5b5b5b'
 
+export const SQUAD_ROLE_OPTIONS = [
+  {
+    value: 'key',
+    label: 'שחקן מפתח',
+    idIcon: 'keyPlayer',
+    color: '#2563EB',
+    weight: 1,
+  },
+  {
+    value: 'rotation',
+    label: 'רוטציה',
+    idIcon: 'rotation',
+    color: '#F59E0B',
+    weight: 0.65,
+  },
+  {
+    value: 'fringe',
+    label: 'אחרון בסגל',
+    idIcon: 'fringe',
+    color: '#6B7280',
+    weight: 0.3,
+  },
+]
+
 export const PLAYERS_TYPES = [
   { id: 'project', label: 'פרויקט', labelH: 'פרויקט', idIcon: 'project', disabled: false },
   { id: 'noneType', label: 'כללי', labelH: 'כללי', idIcon: 'noneType', disabled: false },

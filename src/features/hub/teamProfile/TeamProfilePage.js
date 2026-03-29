@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\features\hub\teamProfile\TeamProfilePage.js
+
 import React, { useMemo } from 'react'
 import { useParams, useSearchParams, Navigate } from 'react-router-dom'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
@@ -159,7 +160,7 @@ export default function TeamProfilePage() {
   }
 
   if (!entity) return <Navigate to="/hub" replace />
-  
+  console.log(entity)
   return (
     <>
       <ProfileShell

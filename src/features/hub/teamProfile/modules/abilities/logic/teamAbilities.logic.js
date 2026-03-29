@@ -3,71 +3,71 @@
 import { groupAbilitiesByDomain } from '../../../../../../shared/abilities/abilities.grouping.js'
 import { abilitiesList } from '../../../../../../shared/abilities/abilities.list.js'
 
-const safeNum = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v : null)
-const safeInt = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0)
-
-const buildAvgMapFromByAbilityId = (byAbilityId = {}, { scale = 1 } = {}) => {
-  const res = {}
-  ;(abilitiesList || []).forEach(({ id }) => {
-    const avg = safeNum(byAbilityId?.[id]?.avg)
-    res[id] = avg ? avg * scale : 0
-  })
-  return res
+const safeNum = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
 }
 
-export function buildTeamAbilityDomains(abilitiesTeam, { scale = 1 } = {}) {
-  const t = abilitiesTeam || {}
-  const byAbilityId = t.byAbilityId || {}
-  const totalPlayers = safeInt(t.totalPlayers)
+const safeInt = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
 
-  // מקור אמת לכיסוי איכות כללית
-  const teamUsedCount = safeInt(t?.level?.usedCount)
+function buildAvgMapFromSlice(slice = {}, { scale = 1 } = {}) {
+  const byAbilityId = slice?.byAbilityId || {}
+  const result = {}
 
-  const avgMap = buildAvgMapFromByAbilityId(byAbilityId, { scale })
+  ;(abilitiesList || []).forEach(({ id }) => {
+    const avg = safeNum(byAbilityId?.[id]?.avg)
+    result[id] = avg ? avg * scale : 0
+  })
+
+  return result
+}
+
+export function buildTeamAbilityDomains(slice, { scale = 1 } = {}) {
+  const avgMap = buildAvgMapFromSlice(slice, { scale })
   const domains = groupAbilitiesByDomain(avgMap) || []
 
-  return domains.map((d) => {
-    const items = (d.items || []).map((it) => {
-      const src = byAbilityId[it.id] || {}
+  return domains.map((domain) => {
+    const items = (domain?.items || []).map((item) => {
+      const src = slice?.byAbilityId?.[item.id] || {}
+
       return {
-        ...it,
-        count: safeInt(src.count),
-        missing: safeInt(src.missing),
-        min: safeNum(src.min),
-        max: safeNum(src.max),
+        ...item,
+        count: safeInt(src?.count),
+        missing: safeInt(src?.missing),
+        min: safeNum(src?.min),
+        max: safeNum(src?.max),
       }
     })
 
     return {
-      ...d,
+      ...domain,
       items,
-      totalPlayers,
-      usedPlayers: teamUsedCount,
+      totalPlayers: safeInt(slice?.playersRaw),
+      usedPlayers: safeInt(slice?.level?.usedCount),
+      usedPlayersPotential: safeInt(slice?.levelPotential?.usedCount),
+      totalWeight: safeNum(slice?.weight) ?? 0,
     }
   })
 }
 
-export function buildTeamAbilitiesKpi(abilitiesTeam, domains = []) {
-  const t = abilitiesTeam || {}
-  const totalPlayers = safeInt(t.totalPlayers)
+export function buildTeamAbilitiesKpi(slice, domains = []) {
+  const items = (domains || []).flatMap((domain) => domain?.items || [])
+  const filledItems = items.filter((item) => typeof item?.value === 'number' && item.value > 0)
 
-  const usedPlayers = safeInt(t?.level?.usedCount)
-  const usedPlayersPotential = safeInt(t?.levelPotential?.usedCount)
-
-  const items = (domains || []).flatMap((d) => d.items || [])
-  const totalAbilities = items.length
-
-  const filledItems = items.filter((x) => typeof x.value === 'number' && x.value > 0)
-  const filledAbilities = filledItems.length
-
-  const avgAll = filledItems.length ? filledItems.reduce((s, x) => s + x.value, 0) / filledItems.length : NaN
+  const avgAll = filledItems.length
+    ? filledItems.reduce((sum, item) => sum + item.value, 0) / filledItems.length
+    : NaN
 
   return {
-    totalAbilities,
-    filledAbilities,
+    totalAbilities: items.length,
+    filledAbilities: filledItems.length,
     avgAll,
-    totalPlayers,
-    usedPlayers,
-    usedPlayersPotential,
+    totalPlayers: safeInt(slice?.playersRaw),
+    usedPlayers: safeInt(slice?.level?.usedCount),
+    usedPlayersPotential: safeInt(slice?.levelPotential?.usedCount),
+    totalWeight: safeNum(slice?.weight) ?? 0,
   }
 }

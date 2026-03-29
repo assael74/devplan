@@ -19,6 +19,21 @@ function clean(value) {
   return String(value ?? '').trim()
 }
 
+function cleanBool(value, fallback = false) {
+  if (typeof value === 'boolean') return value
+  return fallback
+}
+
+function buildEntitySnapshot(entity = {}, config = {}) {
+  const out = {}
+
+  for (const key of config.stringKeys || []) {
+    out[key] = clean(entity?.[key])
+  }
+
+  return out
+}
+
 function getInvitesCollection() {
   return collection(db, ABILITIES_INVITES_COLLECTION)
 }
@@ -26,41 +41,49 @@ function getInvitesCollection() {
 function buildAbilitiesInviteFirestorePayload(invite = {}) {
   return {
     token: clean(invite.token),
-
-    playerId: clean(invite.playerId),
-    playerName: clean(invite.playerName),
-
-    teamId: clean(invite.teamId),
-    teamName: clean(invite.teamName),
-
-    clubId: clean(invite.clubId),
-    clubName: clean(invite.clubName),
-
-    evaluatorId: clean(invite.evaluatorId),
-    evaluatorName: clean(invite.evaluatorName),
-
-    createdById: clean(invite.createdById || invite.evaluatorId),
-    createdByName: clean(invite.createdByName || invite.evaluatorName),
-
-    status: clean(invite.status || 'sent'),
     formType: clean(invite.formType || 'abilities'),
     source: clean(invite.source || 'playerAbilitiesModule'),
+
+    player: buildEntitySnapshot(invite.player, {
+      stringKeys: ['id', 'fullName', 'photo'],
+    }),
+
+    evaluator: buildEntitySnapshot(invite.evaluator, {
+      stringKeys: ['id', 'fullName', 'photo', 'type'],
+    }),
+
+    team: buildEntitySnapshot(invite.team, {
+      stringKeys: ['id', 'teamName', 'photo', 'teamYear'],
+    }),
+
+    club: buildEntitySnapshot(invite.club, {
+      stringKeys: ['id', 'clubName', 'photo'],
+    }),
+
+    createdById: clean(invite.createdById || invite?.evaluator?.id),
+    createdByName: clean(invite.createdByName || invite?.evaluator?.fullName),
+
+    status: clean(invite.status || 'sent'),
 
     link: clean(invite.link),
     whatsappText: clean(invite.whatsappText),
     note: clean(invite.note),
 
-    active: invite.active !== false,
-    isOpened: Boolean(invite.isOpened),
-    isSubmitted: Boolean(invite.isSubmitted),
+    active: cleanBool(invite.active, true),
+    isOpened: cleanBool(invite.isOpened, false),
+    isSubmitted: cleanBool(invite.isSubmitted, false),
     opensCount: Number(invite.opensCount || 0),
 
+    sentAt: invite.sentAt || null,
     openedAt: invite.openedAt || null,
     lastOpenedAt: invite.lastOpenedAt || null,
     submittedAt: invite.submittedAt || null,
     expiresAt: invite.expiresAt || null,
 
-    defaults: invite.defaults || null,
+    defaults: {
+      roleId: clean(invite?.defaults?.roleId),
+    },
+
     meta: invite.meta || null,
 
     createdAt: serverTimestamp(),
@@ -97,13 +120,7 @@ export async function getAbilitiesInviteByToken(token) {
     limit(1)
   )
 
-  console.log('GET TOKEN', cleanToken)
-
   const snap = await getDocs(q)
-
-  console.log('GET TOKEN', cleanToken)
-  console.log('SNAP EMPTY', snap.empty)
-  console.log('DOCS', snap.docs.map((d) => ({ id: d.id, ...d.data() })))
 
   if (snap.empty) return null
 
@@ -123,7 +140,6 @@ export async function markAbilitiesInviteOpened(inviteId, currentInvite = null) 
   }
 
   const currentOpensCount = Number(currentInvite?.opensCount || 0)
-
   const ref = doc(db, ABILITIES_INVITES_COLLECTION, cleanId)
 
   await updateDoc(ref, {

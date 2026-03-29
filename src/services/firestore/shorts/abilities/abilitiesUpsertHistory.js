@@ -1,44 +1,145 @@
-// C:\projects\devplan\src\services\firestore\shorts\abilities\abilitiesUpsertHistory.js
+// services/firestore/shorts/abilities/abilitiesUpsertHistory.js
+
+/*
+הוא לא “מחשב”
+הוא “מפעיל את המנוע ושומר תוצאה”
+*/
+
 import { doc, runTransaction, Timestamp } from 'firebase/firestore'
 import { db } from '../../../firebase/firebase.js'
 import { abilitiesShortsCollectionRef } from '../../shortsCollections.js'
 import { shortsRefs } from '../shorts.refs.js'
 
 import { makeId } from '../../../../utils/id.js'
-import { abilitiesList } from '../../../../shared/abilities/abilities.list.js'
-import { buildAbilitiesFull, calcLevelAndPotential } from '../../../../shared/abilities/abilitiesCalculator.js'
+import { safeStr } from '../../../../shared/abilities/engine/abilitiesHistory.utils.js'
+import {
+  buildFormEntry,
+  normalizeStoredForm,
+} from '../../../../shared/abilities/engine/abilitiesHistory.forms.js'
+import {
+  buildFinalPlayerResult,
+} from '../../../../shared/abilities/engine/abilitiesHistory.scoring.js'
 
-const safeStr = (v) => String(v ?? '').trim()
+const ENGINE_SOURCE = 'abilitiesEngineV2'
 
-function roundToHalf(num) {
-  return Math.round(num * 2) / 2
+function buildSlimDomainsMeta(domainsMeta = []) {
+  return Array.isArray(domainsMeta)
+    ? domainsMeta.map((domain) => ({
+        domain: domain?.domain || null,
+        score: domain?.score ?? null,
+        filledCount: domain?.filledCount ?? 0,
+        totalCount: domain?.totalCount ?? 0,
+        coveragePct: domain?.coveragePct ?? 0,
+        validity: domain?.validity || 'invalid',
+        reliability: domain?.reliability || 'low',
+      }))
+    : []
 }
 
-function mergeAbilitiesEqualNullAware({ oldAbilities = {}, newAbilities = {}, abilitiesList = [] }) {
-  const merged = {}
+function buildLatestComputedPayload(finalResult = {}) {
+  return {
+    abilities: finalResult?.abilities || {},
+    domainScores: finalResult?.domainScores || {},
 
-  for (const it of abilitiesList) {
-    const id = it?.id
-    if (!id || id === 'growthStage') continue
+    domainsMeta: buildSlimDomainsMeta(finalResult?.domainsMeta),
 
-    const oldVal = oldAbilities?.[id]
-    const newVal = newAbilities?.[id]
+    level: finalResult?.level ?? null,
+    levelPotential: finalResult?.levelPotential ?? null,
 
-    if (newVal == null && oldVal == null) merged[id] = null
-    else if (newVal == null) merged[id] = oldVal ?? null
-    else if (oldVal == null) merged[id] = newVal
-    else merged[id] = roundToHalf((Number(oldVal) + Number(newVal)) / 2)
+    reliability: finalResult?.reliability || {
+      ability: 'low',
+      potential: 'low',
+    },
+
+    coverage: finalResult?.coverage || {
+      ability: 0,
+      potential: 0,
+      physical: 0,
+    },
+
+    validDomainsCount: finalResult?.validDomainsCount || {
+      ability: 0,
+      potential: 0,
+    },
+
+    snapshotsMeta: {
+      windowsCount: finalResult?.snapshotsMeta?.windowsCount ?? 0,
+      lastWindowKey: finalResult?.snapshotsMeta?.lastWindowKey || null,
+      formsCount: finalResult?.snapshotsMeta?.formsCount ?? 0,
+      evaluatorsCount: finalResult?.snapshotsMeta?.evaluatorsCount ?? 0,
+    },
   }
+}
 
-  const ng = newAbilities?.growthStage
-  const og = oldAbilities?.growthStage
-  const newGrowth = ng == null || ng === '' ? null : Number(ng)
-  const oldGrowth = og == null || og === '' ? null : Number(og)
+function buildAbilitiesHistoryDoc({
+  abilitiesData,
+  effectiveAbilitiesDocId,
+  playerId,
+  allForms,
+  finalResult,
+  now,
+}) {
+  return {
+    ...abilitiesData,
+    docId: abilitiesData?.docId || effectiveAbilitiesDocId,
+    playerId: abilitiesData?.playerId || playerId,
 
-  merged.growthStage =
-    Number.isFinite(newGrowth) ? newGrowth : Number.isFinite(oldGrowth) ? oldGrowth : null
+    formsAbilities: allForms,
+    windowsAbilities: Array.isArray(finalResult?.windows) ? finalResult.windows : [],
 
-  return merged
+    latestComputed: buildLatestComputedPayload(finalResult),
+
+    updatedFrom: ENGINE_SOURCE,
+    updatedAt: now,
+    createdAt: abilitiesData?.createdAt ?? now,
+  }
+}
+
+function buildPlayerAbilitiesItem({
+  current,
+  itemId,
+  effectiveAbilitiesDocId,
+  finalResult,
+  allForms,
+  now,
+}) {
+  return {
+    ...(current || {}),
+    id: itemId,
+    docAbilitiesId: effectiveAbilitiesDocId,
+
+    abilities: finalResult?.abilities || {},
+    domainScores: finalResult?.domainScores || {},
+    domainsMeta: buildSlimDomainsMeta(finalResult?.domainsMeta),
+
+    level: finalResult?.level ?? null,
+    levelPotential: finalResult?.levelPotential ?? null,
+
+    reliability: finalResult?.reliability || {
+      ability: 'low',
+      potential: 'low',
+    },
+
+    coverage: finalResult?.coverage || {
+      ability: 0,
+      potential: 0,
+      physical: 0,
+    },
+
+    validDomainsCount: finalResult?.validDomainsCount || {
+      ability: 0,
+      potential: 0,
+    },
+
+    lastWindowKey: finalResult?.snapshotsMeta?.lastWindowKey || null,
+    formsCount: finalResult?.snapshotsMeta?.formsCount ?? allForms.length,
+    evaluatorsCount: finalResult?.snapshotsMeta?.evaluatorsCount ?? 0,
+    windowsCount: finalResult?.snapshotsMeta?.windowsCount ?? 0,
+
+    updatedFrom: ENGINE_SOURCE,
+    updatedAt: now,
+    createdAt: current?.createdAt ?? now,
+  }
 }
 
 export async function upsertAbilitiesHistory({ draft, dryRun = false } = {}) {
@@ -46,118 +147,99 @@ export async function upsertAbilitiesHistory({ draft, dryRun = false } = {}) {
   if (!playerId) throw new Error('[abilitiesUpsertHistory] missing playerId')
 
   const itemId = playerId
-  const draftDocAbilitiesId = safeStr(draft?.docAbilitiesId) // יכול להיות ריק (UI)
+  const draftDocAbilitiesId = safeStr(draft?.docAbilitiesId)
   const formId = makeId('abilForm')
   const now = Timestamp.now()
 
-  const abilitiesFull = buildAbilitiesFull({
-    draftAbilities: draft?.abilities || {},
-    abilitiesList,
-  })
-
-  const normalizedAbilities = Object.fromEntries(
-    Object.entries(abilitiesFull || {}).map(([k, v]) => [k, v == null ? null : Number(v)])
-  )
-
-  // refs (playersAbilities קבוע; abilitiesDocRef ייקבע בתוך הטרנזקציה)
   const playersAbilitiesMeta = shortsRefs.players.playersAbilities
-  const playersAbilitiesRef = doc(db, playersAbilitiesMeta.collection, playersAbilitiesMeta.docId)
+  const playersAbilitiesRef = doc(
+    db,
+    playersAbilitiesMeta.collection,
+    playersAbilitiesMeta.docId
+  )
 
   if (dryRun) {
     return {
       dryRun: true,
-      note:
-        'dryRun: abilitiesDocId is resolved inside transaction from draft.docAbilitiesId || current.docAbilitiesId || newId',
       ids: { playerId, itemId, draftDocAbilitiesId, formId },
+      note: 'dryRun only',
     }
   }
 
   return runTransaction(db, async (tx) => {
-    // 1) READ playersAbilities FIRST (so we can resolve docAbilitiesId)
-    const pSnap = await tx.get(playersAbilitiesRef)
-    const pData = pSnap.exists() ? (pSnap.data() || {}) : {}
-    const list = Array.isArray(pData.list) ? pData.list : []
+    const playersSnap = await tx.get(playersAbilitiesRef)
+    const playersData = playersSnap.exists() ? (playersSnap.data() || {}) : {}
+    const list = Array.isArray(playersData?.list) ? playersData.list : []
 
     const idx = list.findIndex((x) => x?.id === itemId)
     const current = idx >= 0 ? (list[idx] || {}) : null
-    const prevFormIds = Array.isArray(current?.formIds) ? current.formIds : []
 
-    // Resolve abilitiesDocId from: draft -> current -> new
     const effectiveAbilitiesDocId =
       draftDocAbilitiesId || safeStr(current?.docAbilitiesId) || makeId('abilDoc')
 
     const abilitiesDocRef = doc(abilitiesShortsCollectionRef, effectiveAbilitiesDocId)
 
-    // 2) READ abilitiesShorts doc (resolved)
-    const aSnap = await tx.get(abilitiesDocRef)
-    const aData = aSnap.exists() ? (aSnap.data() || {}) : {}
-    const prevForms = Array.isArray(aData.formsAbilities) ? aData.formsAbilities : []
+    const abilitiesSnap = await tx.get(abilitiesDocRef)
+    const abilitiesData = abilitiesSnap.exists() ? (abilitiesSnap.data() || {}) : {}
+    const prevFormsRaw = Array.isArray(abilitiesData?.formsAbilities)
+      ? abilitiesData.formsAbilities
+      : []
 
-    // formEntry RAW
-    const formEntry = {
-      id: formId,
-      evalDate: safeStr(draft?.evalDate) || null,
-      roleId: safeStr(draft?.roleId) || null,
-      growthStage: normalizedAbilities?.growthStage ?? null,
-      abilities: normalizedAbilities,
-      createdAt: now,
-      updatedAt: now,
-    }
+    const newFormEntry = buildFormEntry({ draft, formId, now })
+    const allForms = [...prevFormsRaw, newFormEntry].map((form) => normalizeStoredForm(form))
+    const finalResult = buildFinalPlayerResult({ forms: allForms })
 
-    const nextAbilitiesDoc = {
-      ...aData,
-      docId: aData.docId || effectiveAbilitiesDocId,
-      playerId: aData.playerId || playerId,
-      formsAbilities: [...prevForms, formEntry],
-      updatedAt: now,
-      createdAt: aData.createdAt ?? now,
-    }
-
-    // MERGE on player (source of truth)
-    const oldAbilities = current?.abilities || {}
-    const mergedAbilities = mergeAbilitiesEqualNullAware({
-      oldAbilities,
-      newAbilities: normalizedAbilities,
-      abilitiesList,
+    const nextAbilitiesDoc = buildAbilitiesHistoryDoc({
+      abilitiesData,
+      effectiveAbilitiesDocId,
+      playerId,
+      allForms,
+      finalResult,
+      now,
     })
 
-    const { level, levelPotential } = calcLevelAndPotential({
-      abilities: mergedAbilities,
-      abilitiesList,
+    const nextItem = buildPlayerAbilitiesItem({
+      current,
+      itemId,
+      effectiveAbilitiesDocId,
+      finalResult,
+      allForms,
+      now,
     })
-
-    const nextItem = {
-      ...(current || {}),
-      id: itemId,
-      level,
-      levelPotential,
-      docAbilitiesId: effectiveAbilitiesDocId, // ✅ תמיד נשמר לשחקן
-      abilities: mergedAbilities,
-      formIds: [...prevFormIds, formId],
-      updatedAt: now,
-      createdAt: current?.createdAt ?? now,
-    }
 
     const nextList =
-      idx >= 0 ? list.map((x, i) => (i === idx ? nextItem : x)) : [...list, nextItem]
+      idx >= 0
+        ? list.map((item, i) => (i === idx ? nextItem : item))
+        : [...list, nextItem]
 
     const nextPlayersAbilitiesDoc = {
-      ...pData,
-      docId: pData.docId || playersAbilitiesMeta.docId,
-      docName: pData.docName || 'playersAbilities',
+      ...playersData,
+      docId: playersData?.docId || playersAbilitiesMeta.docId,
+      docName: playersData?.docName || 'playersAbilities',
       list: nextList,
       updatedAt: now,
-      createdAt: pData.createdAt ?? now,
+      createdAt: playersData?.createdAt ?? now,
     }
 
-    // WRITES
     tx.set(abilitiesDocRef, nextAbilitiesDoc, { merge: true })
     tx.set(playersAbilitiesRef, nextPlayersAbilitiesDoc, { merge: true })
 
     return {
       ok: true,
-      ids: { playerId, itemId, abilitiesDocId: effectiveAbilitiesDocId, formId },
-      formsCount: nextItem.formIds.length,
+      ids: {
+        playerId,
+        itemId,
+        abilitiesDocId: effectiveAbilitiesDocId,
+        formId,
+      },
+      summary: {
+        formsCount: nextItem.formsCount,
+        windowsCount: nextItem.windowsCount ?? 0,
+        level: nextItem.level,
+        levelPotential: nextItem.levelPotential,
+        abilityReliability: nextItem?.reliability?.ability || null,
+        potentialReliability: nextItem?.reliability?.potential || null,
+      },
     }
   })
 }

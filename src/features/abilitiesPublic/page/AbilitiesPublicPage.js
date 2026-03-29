@@ -1,45 +1,56 @@
+// features/abilitiesPublic/page/AbilitiesPublicPage.js
+
 import React from 'react'
 import Box from '@mui/joy/Box'
 
-import { useAbilitiesPublicForm } from '../shared/abilitiesPublic.logic.js'
 import PublicFormHeader from '../components/PublicFormHeader.js'
 import PublicGrowthStageSection from '../components/PublicGrowthStageSection.js'
 import PublicDomainsAccordion from '../components/PublicDomainsAccordion.js'
 import PublicSubmitBar from '../components/PublicSubmitBar.js'
-import PublicStateView from '../components/PublicStateView.js'
+import { useAbilitiesPublicForm } from '../shared/abilitiesPublic.logic.js'
 
 export default function AbilitiesPublicPage({ invite, onSubmit }) {
   const form = useAbilitiesPublicForm({ invite, onSubmit })
 
-  if (!invite) {
-    return (
-      <PublicStateView
-        color="danger"
-        title="קישור לא תקין"
-        text="לא נמצא invite תקין לטופס."
-      />
-    )
-  }
-
-  if (form.submitted) {
-    return (
-      <PublicStateView
-        color="success"
-        title="הטופס נשלח בהצלחה"
-        text={`הערכת היכולות עבור ${form.bits.playerName || 'השחקן'} התקבלה.`}
-      />
-    )
-  }
-
   return (
-    <>
-      <Box sx={{ maxWidth: 720, mx: 'auto', px: 1.5, pb: 10 }}>
+    <Box
+      sx={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
         <PublicFormHeader form={form} />
-        <PublicGrowthStageSection form={form} />
-        <PublicDomainsAccordion form={form} />
+
+        <Box sx={{ px: 1.25, pt: 0 }}>
+          <PublicGrowthStageSection form={form} />
+        </Box>
+
+        <Box
+          className="dpScrollThin"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            px: 1.25,
+            pb: '96px',
+          }}
+        >
+          <PublicDomainsAccordion form={form} />
+        </Box>
       </Box>
 
       <PublicSubmitBar form={form} />
-    </>
+    </Box>
   )
 }

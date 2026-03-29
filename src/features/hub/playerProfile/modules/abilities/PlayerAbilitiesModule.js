@@ -1,47 +1,53 @@
 // playerProfile/modules/abilities/PlayerAbilitiesModule.js
 
 import React, { useMemo, useState } from 'react'
-import { Box, Grid, Typography, Divider } from '@mui/joy'
-import { Card, CardContent } from '@mui/joy'
-import { groupAbilitiesByDomain } from '../../../../../shared/abilities/abilities.grouping.js'
+import { Box, Grid, Typography, Divider, Card, CardContent } from '@mui/joy'
+
+import { resolveAbilitiesDomain } from '../../../../../shared/abilities/abilities.domain.logic.js'
+
 import AbilityHeader from './AbilityHeader'
 import AbilityDomainCard from './AbilityDomainCard'
 import AbilitiesInviteCreateDrawer from './components/AbilitiesInviteCreateDrawer'
-import { isFilled } from './abilities.logic'
-import useAbilitiesSummary from './useAbilitiesSummary'
+import { isFilled } from './abilities.logic.js'
+import useAbilitiesSummary from './useAbilitiesSummary.js'
 import { abilitiesModuleSx, stickyHeaderWrapSx } from './Ability.module.sx'
 
 export default function PlayerAbilitiesModule({ entity, context }) {
   const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false)
-  const player = entity
-
-  const domains = useMemo(
-    () => groupAbilitiesByDomain(player?.abilities || {}),
-    [player?.abilities]
-  )
-
-  const { total, filled, avgAll } = useAbilitiesSummary(domains)
-
   const [showOnlyFilled, setShowOnlyFilled] = useState(false)
   const [query, setQuery] = useState('')
   const [invitePending, setInvitePending] = useState(false)
   const [inviteResult, setInviteResult] = useState(null)
 
+  const player = entity || null
+  const domainResult = useMemo(() => resolveAbilitiesDomain(player || {}), [player])
+  const domains = domainResult?.domains || []
+
+  const { total, filled, avgAll } = useAbilitiesSummary(domains)
+
   const q = query.trim().toLowerCase()
 
   const filteredDomains = useMemo(() => {
     return domains
-      .map((d) => {
-        const items = d.items.filter((i) => {
-          const passFilled = showOnlyFilled ? isFilled(i.value) : true
+      .map((domain) => {
+        const items = (domain?.items || []).filter((item) => {
+          const passFilled = showOnlyFilled ? isFilled(item?.value) : true
           const passQuery = q
-            ? (i.label?.toLowerCase().includes(q) || i.id?.toLowerCase().includes(q))
+            ? (
+                String(item?.label || '').toLowerCase().includes(q) ||
+                String(item?.id || '').toLowerCase().includes(q)
+              )
             : true
+
           return passFilled && passQuery
         })
-        return { ...d, items }
+
+        return {
+          ...domain,
+          items,
+        }
       })
-      .filter((d) => d.items.length > 0)
+      .filter((domain) => domain?.items?.length > 0)
   }, [domains, showOnlyFilled, q])
 
   function handleOpenInvite() {
@@ -70,9 +76,9 @@ export default function PlayerAbilitiesModule({ entity, context }) {
         <Card variant="outlined" sx={{ mt: 1, mb: 1 }}>
           <CardContent>
             <Typography level="title-sm">קישור טופס שנוצר</Typography>
-            <Typography level="body-sm">{inviteResult.invite.link}</Typography>
+            <Typography level="body-sm">{inviteResult?.invite?.link}</Typography>
             <Typography level="body-sm" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-              {inviteResult.whatsappText}
+              {inviteResult?.whatsappText}
             </Typography>
           </CardContent>
         </Card>
@@ -80,7 +86,7 @@ export default function PlayerAbilitiesModule({ entity, context }) {
 
       <Grid container spacing={2} sx={{ p: 0.25 }}>
         {filteredDomains.map((domain) => (
-          <Grid key={domain.domain} xs={12} sm={6} lg={3}>
+          <Grid key={domain?.domain} xs={12} sm={6} lg={3}>
             <AbilityDomainCard domain={domain} />
           </Grid>
         ))}
@@ -101,6 +107,10 @@ export default function PlayerAbilitiesModule({ entity, context }) {
         onClose={() => setInviteDrawerOpen(false)}
         player={player}
         context={context}
+        pending={invitePending}
+        onPendingChange={setInvitePending}
+        createdState={inviteResult}
+        onCreatedStateChange={setInviteResult}
       />
     </Box>
   )

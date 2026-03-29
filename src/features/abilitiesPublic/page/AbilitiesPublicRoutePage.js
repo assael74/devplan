@@ -1,3 +1,5 @@
+// features/abilitiesPublic/page/AbilitiesPublicRoutePage.js
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Box from '@mui/joy/Box'
@@ -50,10 +52,23 @@ export default function AbilitiesPublicRoutePage() {
           return
         }
 
-        const opened = await markAbilitiesInviteOpenedApi(found)
+        setInvite(found)
 
-        if (!active) return
-        setInvite(opened)
+        try {
+          const opened = await markAbilitiesInviteOpenedApi(found)
+
+          if (!active) return
+
+          setInvite((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              ...(opened || {}),
+            }
+          })
+        } catch (error) {
+          console.error('markAbilitiesInviteOpenedApi failed', error)
+        }
       } catch (error) {
         if (!active) return
         setLoadError(error?.message || 'טעינת הטופס נכשלה')

@@ -85,15 +85,15 @@ export function buildFinalRelations({
   const teamsWithPlayers = teamsWithVideos.map((team) => {
     const teamId = safeId(team.id)
     const players = playersByTeamId[teamId] || []
-    const abilitiesTeam = buildTeamAbilitiesSummary(players, POSITION_LAYERS)
+    const squadStrength = buildTeamAbilitiesSummary(players)
 
     return {
       ...team,
       players,
       roles: rolesByTeamId[teamId] || [],
-      abilitiesTeam,
-      level: abilitiesTeam?.level?.avg ?? null,
-      levelPotential: abilitiesTeam?.levelPotential?.avg ?? null,
+      squadStrength,
+      level: squadStrength?.level || null,
+      levelPotential: squadStrength?.levelPotential || null,
       keyPlayers: pickTeamKeyPlayers({ ...team, players }),
     }
   })

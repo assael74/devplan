@@ -63,6 +63,7 @@ export default function PlayerProfilePage() {
     players,
     teams,
     clubs,
+    roles,
     meetings,
     payments,
     videosAnalysis,
@@ -126,6 +127,7 @@ export default function PlayerProfilePage() {
       teams: teams,
       clubs: clubs,
       players: players,
+      roles: roles,
       tags: tags,
       tagsById: tagsById,
       video: videoApi,
@@ -167,7 +169,7 @@ export default function PlayerProfilePage() {
   }
 
   if (!entity) return <Navigate to="/hub" replace />
-
+  
   return (
     <>
       <ProfileShell

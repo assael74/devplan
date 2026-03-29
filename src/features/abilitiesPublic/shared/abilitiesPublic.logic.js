@@ -1,3 +1,5 @@
+// features/abilitiesPublic/shared/abilitiesPublic.logic.js
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
@@ -10,13 +12,85 @@ import {
 import {
   pickPublicDraftBits,
   calcPublicDomains,
-  calcPublicHasAtLeastOneAbility,
   calcPublicReady,
+  buildPublicCompletionModel,
 } from '../shared/abilitiesPublic.derived.js'
 
 import { validatePublicAbilitiesDraft } from '../shared/abilitiesPublic.validate.js'
 import { buildPublicAbilitiesSubmitPayload } from '../shared/abilitiesPublic.payloads.js'
 import { buildPublicDraftFromInvite } from '../shared/abilitiesPublic.prefill.js'
+
+function clean(value) {
+  return String(value ?? '').trim()
+}
+
+function normalizeActiveDomains(value) {
+  if (!Array.isArray(value)) return []
+
+  const seen = new Set()
+  const next = []
+
+  for (const item of value) {
+    const id = clean(item)
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    next.push(id)
+  }
+
+  return next
+}
+
+function resolveInviteActiveDomains(invite = {}) {
+  const rootList = Array.isArray(invite?.activeDomains) ? invite.activeDomains : []
+  const metaList = Array.isArray(invite?.meta?.activeDomains) ? invite.meta.activeDomains : []
+
+  const merged = normalizeActiveDomains([...rootList, ...metaList])
+
+  if (!merged.includes('development')) {
+    merged.push('development')
+  }
+
+  return merged
+}
+
+function buildPublicDomainsViewModel(bits = {}, activeDomains = []) {
+  const activeSet = new Set(normalizeActiveDomains(activeDomains))
+  const allDomains = calcPublicDomains(bits?.abilitiesValues)
+
+  return (Array.isArray(allDomains) ? allDomains : [])
+    .filter((domain) => {
+      const domainId = clean(domain?.id || domain?.domain)
+      return domainId && domainId !== 'development'
+    })
+    .map((domain) => {
+      const domainId = clean(domain?.id || domain?.domain)
+
+      return {
+        ...domain,
+        id: domain?.id || domainId,
+        domain: domain?.domain || domainId,
+        active: !activeSet.size || activeSet.has(domainId),
+      }
+    })
+    .sort((a, b) => {
+      if (a.active === b.active) return 0
+      return a.active ? -1 : 1
+    })
+}
+
+function filterDomainsByActive(domains = [], activeDomains = []) {
+  if (!Array.isArray(domains) || !domains.length) return []
+
+  const normalizedActive = normalizeActiveDomains(activeDomains)
+  if (!normalizedActive.length) return domains
+
+  const activeSet = new Set(normalizedActive)
+
+  return domains.filter((domain) => {
+    const domainId = clean(domain?.id || domain?.domain)
+    return activeSet.has(domainId)
+  })
+}
 
 export function useAbilitiesPublicForm({ invite, onSubmit }) {
   const [draft, setDraft] = useState(() => buildPublicDraftFromInvite(invite))
@@ -32,26 +106,35 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
 
   const bits = useMemo(() => pickPublicDraftBits(draft), [draft])
 
+  const activeDomains = useMemo(() => {
+    return resolveInviteActiveDomains(invite)
+  }, [invite])
+
   const domains = useMemo(() => {
-    return calcPublicDomains(bits.abilitiesValues)
-  }, [bits.abilitiesValues])
+    return buildPublicDomainsViewModel(bits, activeDomains)
+  }, [bits, activeDomains])
+
+  const validation = useMemo(() => {
+    return validatePublicAbilitiesDraft({
+      draft,
+      domains,
+    })
+  }, [draft, domains])
+
+  const ready = useMemo(() => {
+    return calcPublicReady({ validation })
+  }, [validation])
+
+  const completion = useMemo(() => {
+    return buildPublicCompletionModel({
+      bits,
+      domains,
+      validation,
+    })
+  }, [bits, domains, validation])
 
   const overallScore = useMemo(() => calcGroupScore(domains), [domains])
   const overallStars = useMemo(() => (overallScore == null ? 0 : Number(overallScore)), [overallScore])
-
-  const hasAtLeastOneAbility = useMemo(() => {
-    return calcPublicHasAtLeastOneAbility(draft)
-  }, [draft])
-
-  const ready = useMemo(() => {
-    return calcPublicReady({
-      roleId: bits.roleId,
-      hasGrowthStage: bits.hasGrowthStage,
-      hasAtLeastOneAbility,
-    })
-  }, [bits.roleId, bits.hasGrowthStage, hasAtLeastOneAbility])
-
-  const validation = useMemo(() => validatePublicAbilitiesDraft(draft), [draft])
 
   const patch = useCallback((next) => {
     setDraft((prev) => ({
@@ -116,10 +199,10 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
   }, [domains])
 
   const handleSubmit = useCallback(async () => {
-    const nextValidation = validatePublicAbilitiesDraft(draft)
+    const nextValidation = validatePublicAbilitiesDraft({ draft, domains })
 
     if (!nextValidation.isValid) {
-      setSubmitError('הטופס לא מוכן לשליחה')
+      setSubmitError('הטופס עדיין לא מוכן לשליחה')
       return null
     }
 
@@ -149,10 +232,12 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
     draft,
     bits,
     domains,
+    activeDomains,
     overallScore,
     overallStars,
     ready,
     validation,
+    completion,
     submitting,
     submitError,
     submitted,

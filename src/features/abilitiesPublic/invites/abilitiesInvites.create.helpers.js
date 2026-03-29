@@ -1,3 +1,5 @@
+// features/abilitiesPublic/invites/abilitiesInvites.create.helpers.js
+
 function clean(v) {
   return String(v ?? '').trim()
 }
@@ -44,22 +46,22 @@ export function addDaysIso(days = 7) {
 }
 
 export function buildEvaluatorLabel(invite = {}) {
-  return clean(invite?.evaluatorName || invite?.evaluatorType || '')
+  return clean(invite?.evaluator?.fullName || invite?.evaluator?.type || '')
 }
 
 export function buildAbilitiesWhatsappText(invite = {}) {
   const lines = [
     'טופס הערכת יכולות לשחקן',
     '',
-    `שחקן: ${clean(invite?.playerName) || '-'}`,
+    `שחקן: ${clean(invite?.player?.fullName) || '-'}`,
   ]
 
-  if (clean(invite?.teamName)) {
-    lines.push(`קבוצה: ${clean(invite.teamName)}`)
+  if (clean(invite?.team?.teamName)) {
+    lines.push(`קבוצה: ${clean(invite?.team?.teamName)}`)
   }
 
-  if (clean(invite?.evaluatorName || invite?.evaluatorType)) {
-    lines.push(`ממלא: ${clean(invite?.evaluatorName || invite?.evaluatorType)}`)
+  if (clean(invite?.evaluator?.fullName || invite?.evaluator?.type)) {
+    lines.push(`מעריך: ${clean(invite?.evaluator?.fullName || invite?.evaluator?.type)}`)
   }
 
   lines.push('מילוי קצר בנייד, ללא צורך בהתחברות.')

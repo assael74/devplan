@@ -1,158 +1,110 @@
 // shared/abilities/abilities.domain.logic.js
 
-import { abilitiesList } from './abilities.list'
-import { isRated, roundTo, toNum, scoreColor, fmtScore } from './abilities.utils'
-import { summarizePlayersByDomain, summarizePlayersByAbility } from './abilities.summaries.js'
+import { abilitiesList } from './abilities.list.js'
+import { fmtScore, roundTo, scoreColor } from './abilities.utils.js'
+import {
+  resolvePlayerAbilitiesMap,
+  resolvePlayerCoverage,
+  resolvePlayerDomainScores,
+  resolvePlayerDomainsMeta,
+  resolveTeamPlayers,
+  safeNum,
+} from './abilities.resolvers.js'
 
-function resolveWeights(entity) {
-  const w = entity?.abilityWeights
-  if (!w || typeof w !== 'object') return {}
-  if (w.items && typeof w.items === 'object') return w.items
-  return w
-}
-
-function resolveAbilitiesValues(entity) {
-  return (
-    entity?.abilities ||
-    entity?.playerAbilities ||
-    entity?.playersAbilities ||
-    entity?.playerAbilitiesValues ||
-    {}
-  )
-}
-
-function buildDomainsFromList({ values = {}, weights = {} }) {
+function buildAbilityMetaMap() {
   const map = new Map()
 
-  for (const a of abilitiesList) {
-    if (!map.has(a.domain)) {
-      map.set(a.domain, {
-        domain: a.domain,
-        domainLabel: a.domainLabel || a.domain,
+  for (const item of abilitiesList) {
+    map.set(item.id, item)
+  }
+
+  return map
+}
+
+function buildDomainMetaMap() {
+  const map = new Map()
+
+  for (const item of abilitiesList) {
+    if (!map.has(item.domain)) {
+      map.set(item.domain, {
+        domain: item.domain,
+        domainLabel: item.domainLabel || item.domain,
         items: [],
       })
     }
 
-    const rawValue = values?.[a.id]
-    const value = Number.isFinite(Number(rawValue)) ? Number(rawValue) : null
-
-    const rawWeight = weights?.[a.id]
-    const weight = Number.isFinite(Number(rawWeight))
-      ? Number(rawWeight)
-      : Number.isFinite(Number(a.weight))
-        ? Number(a.weight)
-        : 1
-
-    map.get(a.domain).items.push({
-      id: a.id,
-      label: a.label,
-      description: a.description || '',
-      value,
-      weight,
-    })
+    map.get(item.domain).items.push(item)
   }
 
-  return Array.from(map.values())
+  return map
 }
 
-function calcDomainAvg(items = []) {
-  const effective = items.filter((i) => (toNum(i.weight, 1) || 0) > 0 && isRated(i.value))
-  if (!effective.length) return null
+function toPlayerDomainItem(domainMeta = {}, domainScore = null) {
+  const score = Number.isFinite(Number(domainScore)) ? Number(domainScore) : null
+  const items = Array.isArray(domainMeta?.items) ? domainMeta.items : []
 
-  const hasWeights = effective.some((i) => Number.isFinite(i.weight) && i.weight > 0)
+  return {
+    domain: domainMeta?.domain || '',
+    domainLabel: domainMeta?.domainLabel || domainMeta?.domain || '',
+    items,
+    total: Number(domainMeta?.totalCount || items.filter((it) => Number(it?.weight ?? 1) > 0).length || 0),
+    filled: Number(domainMeta?.filledCount || 0),
+    avg: score,
+    avgLabel: fmtScore(score),
+    color: scoreColor(score),
+    hasRated: Number.isFinite(score),
+    coveragePct: safeNum(domainMeta?.coveragePct, 0) || 0,
+    validity: domainMeta?.validity || 'invalid',
+    reliability: domainMeta?.reliability || 'low',
+  }
+}
 
-  if (hasWeights) {
-    const weightSum = effective.reduce((sum, i) => sum + (toNum(i.weight, 0) || 0), 0)
-    if (!weightSum) return null
+export function resolveAbilitiesDomain(player = {}) {
+  const domainScores = resolvePlayerDomainScores(player)
+  const domainsMeta = resolvePlayerDomainsMeta(player)
+  const coverage = resolvePlayerCoverage(player)
 
-    const weightedSum = effective.reduce(
-      (sum, i) => sum + toNum(i.value, 0) * (toNum(i.weight, 0) || 0),
-      0
+  const domainsFromEngine = Array.isArray(domainsMeta) ? domainsMeta : []
+  const domainMetaMap = new Map(domainsFromEngine.map((d) => [d.domain, d]))
+
+  const baseDomains = Array.from(buildDomainMetaMap().values())
+
+  const domains = baseDomains.map((base) => {
+    const engineMeta = domainMetaMap.get(base.domain) || {}
+    return toPlayerDomainItem(
+      {
+        ...base,
+        ...engineMeta,
+      },
+      domainScores?.[base.domain]
     )
-
-    return roundTo(weightedSum / weightSum, 1)
-  }
-
-  return roundTo(
-    effective.reduce((sum, i) => sum + toNum(i.value, 0), 0) / effective.length,
-    1
-  )
-}
-
-function resolveTeamPlayers(entity = {}, context = {}) {
-  const direct =
-    entity?.teamPlayers ||
-    entity?.players ||
-    entity?.squad ||
-    entity?.playersList ||
-    []
-
-  if (Array.isArray(direct) && direct.length) {
-    return direct.filter(Boolean)
-  }
-
-  const allPlayers = Array.isArray(context?.players) ? context.players : []
-  const teamId = entity?.id || entity?.teamId || null
-
-  if (!teamId) return []
-
-  return allPlayers.filter((p) => p?.teamId === teamId)
-}
-
-export function resolveAbilitiesDomain(entity = {}) {
-  const values = resolveAbilitiesValues(entity)
-  const weights = resolveWeights(entity)
-
-  const domains = buildDomainsFromList({ values, weights }).map((domain) => {
-    const items = domain.items || []
-    const countable = items.filter((i) => (toNum(i.weight, 1) || 0) > 0)
-    const ratedItems = countable.filter((i) => isRated(i.value))
-    const avg = calcDomainAvg(items)
-
-    return {
-      domain: domain.domain,
-      domainLabel: domain.domainLabel,
-      items,
-      total: countable.length,
-      filled: ratedItems.length,
-      avg,
-      avgLabel: fmtScore(avg),
-      color: scoreColor(avg),
-      hasRated: ratedItems.length > 0,
-    }
   })
 
-  const ratedDomains = domains.filter((d) => d.hasRated && Number.isFinite(Number(d.avg)))
-
-  const allRatedValues = []
-  for (const d of domains) {
-    for (const item of d.items || []) {
-      if ((toNum(item.weight, 1) || 0) <= 0) continue
-      if (!isRated(item.value)) continue
-      allRatedValues.push(toNum(item.value, 0))
-    }
-  }
-
-  const total = domains.reduce((sum, d) => sum + (d.total || 0), 0)
-  const filled = domains.reduce((sum, d) => sum + (d.filled || 0), 0)
-
-  const avgAll = allRatedValues.length
-    ? roundTo(allRatedValues.reduce((sum, x) => sum + x, 0) / allRatedValues.length, 1)
-    : null
+  const ratedDomains = domains.filter((d) => d.hasRated)
 
   const strongest = ratedDomains.length
-    ? ratedDomains.reduce((a, b) => (a.avg >= b.avg ? a : b))
+    ? ratedDomains.reduce((a, b) => (Number(a.avg) >= Number(b.avg) ? a : b))
     : null
 
   const weakest = ratedDomains.length
-    ? ratedDomains.reduce((a, b) => (a.avg <= b.avg ? a : b))
+    ? ratedDomains.reduce((a, b) => (Number(a.avg) <= Number(b.avg) ? a : b))
     : null
+
+  const avgAll = ratedDomains.length
+    ? roundTo(
+        ratedDomains.reduce((sum, d) => sum + Number(d.avg || 0), 0) / ratedDomains.length,
+        1
+      )
+    : null
+
+  const total = domains.reduce((sum, d) => sum + Number(d.total || 0), 0)
+  const filled = domains.reduce((sum, d) => sum + Number(d.filled || 0), 0)
 
   return {
     summary: {
       total,
       filled,
-      completionPct: total > 0 ? roundTo((filled / total) * 100, 0) : 0,
+      completionPct: safeNum(coverage?.ability, total > 0 ? roundTo((filled / total) * 100, 0) : 0) || 0,
       avgAll,
       avgAllLabel: fmtScore(avgAll),
       strongest,
@@ -164,86 +116,91 @@ export function resolveAbilitiesDomain(entity = {}) {
 
 export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
   const players = resolveTeamPlayers(entity, context)
-  const weights = resolveWeights(entity)
+  const abilityMetaMap = buildAbilityMetaMap()
+  const baseDomains = Array.from(buildDomainMetaMap().values())
 
-  const domainSummaryList = summarizePlayersByDomain(players)
-  const abilitySummaryList = summarizePlayersByAbility(players)
+  const domains = baseDomains.map((domainBase) => {
+    const items = (domainBase.items || []).map((abilityMeta) => {
+      const values = players
+        .map((player) => safeNum(resolvePlayerAbilitiesMap(player)?.[abilityMeta.id], null))
+        .filter((value) => Number.isFinite(value) && value > 0)
 
-  const domainSummaryMap = new Map((domainSummaryList || []).map((d) => [d.domain, d]))
+      const avg = values.length
+        ? roundTo(values.reduce((sum, n) => sum + n, 0) / values.length, 1)
+        : null
 
-  const weightMap = {}
-  for (const a of abilitiesList) {
-    const rawWeight = weights?.[a.id]
-    weightMap[a.id] = Number.isFinite(Number(rawWeight))
-      ? Number(rawWeight)
-      : Number.isFinite(Number(a.weight))
-        ? Number(a.weight)
-        : 1
-  }
+      return {
+        id: abilityMeta.id,
+        label: abilityMeta.label,
+        description: abilityMeta.description || '',
+        avg,
+        value: avg,
+        ratedCount: values.length,
+        weight: Number(abilityMeta?.weight ?? 1) || 1,
+      }
+    })
 
-  const domains = (abilitySummaryList || []).map((domain) => {
-    const domainMeta = domainSummaryMap.get(domain.domain) || null
+    const validPlayerDomainScores = players
+      .map((player) => safeNum(resolvePlayerDomainScores(player)?.[domainBase.domain], null))
+      .filter((score) => Number.isFinite(score))
 
-    const items = (domain.items || []).map((it) => ({
-      id: it.id,
-      label: it.label,
-      description: '',
-      value: Number.isFinite(Number(it.avg)) ? Number(it.avg) : null,
-      avg: Number.isFinite(Number(it.avg)) ? Number(it.avg) : null,
-      ratedCount: Number.isFinite(Number(it.ratedCount)) ? Number(it.ratedCount) : 0,
-      weight: weightMap[it.id] ?? 1,
-    }))
+    const avg = validPlayerDomainScores.length
+      ? roundTo(
+          validPlayerDomainScores.reduce((sum, score) => sum + score, 0) /
+            validPlayerDomainScores.length,
+          1
+        )
+      : null
 
-    const countable = items.filter((i) => (toNum(i.weight, 1) || 0) > 0)
-    const ratedItems = countable.filter((i) => isRated(i.value))
-    const avg = Number.isFinite(Number(domainMeta?.avgWeighted))
-      ? Number(domainMeta.avgWeighted)
-      : calcDomainAvg(items)
+    const playersRated = validPlayerDomainScores.length
+    const total = items.filter((i) => Number(i.weight || 0) > 0).length
+    const filled = items.filter((i) => Number.isFinite(Number(i.avg))).length
 
     return {
-      domain: domain.domain,
-      domainLabel: domain.domainLabel,
-      items,
-      total: countable.length,
-      filled: ratedItems.length,
+      domain: domainBase.domain,
+      domainLabel: domainBase.domainLabel,
+      items: items.map((item) => ({
+        id: item.id,
+        label: abilityMetaMap.get(item.id)?.label || item.id,
+        description: '',
+        value: item.avg,
+        avg: item.avg,
+        ratedCount: item.ratedCount,
+        weight: item.weight,
+      })),
+      total,
+      filled,
       avg,
       avgLabel: fmtScore(avg),
       color: scoreColor(avg),
-      hasRated: ratedItems.length > 0,
-      playersRated: Number.isFinite(Number(domainMeta?.playersRated)) ? domainMeta.playersRated : 0,
-      ratingsCount: Number.isFinite(Number(domainMeta?.ratingsCount)) ? domainMeta.ratingsCount : 0,
+      hasRated: Number.isFinite(avg),
+      playersRated,
+      ratingsCount: items.reduce((sum, item) => sum + Number(item.ratedCount || 0), 0),
     }
   })
 
-  const ratedDomains = domains.filter((d) => d.hasRated && Number.isFinite(Number(d.avg)))
-
-  const allRatedValues = []
-  for (const d of domains) {
-    for (const item of d.items || []) {
-      if ((toNum(item.weight, 1) || 0) <= 0) continue
-      if (!isRated(item.value)) continue
-      allRatedValues.push(toNum(item.value, 0))
-    }
-  }
-
-  const total = domains.reduce((sum, d) => sum + (d.total || 0), 0)
-  const filled = domains.reduce((sum, d) => sum + (d.filled || 0), 0)
-
-  const avgAll = allRatedValues.length
-    ? roundTo(allRatedValues.reduce((sum, x) => sum + x, 0) / allRatedValues.length, 1)
-    : null
+  const ratedDomains = domains.filter((d) => d.hasRated)
 
   const strongest = ratedDomains.length
-    ? ratedDomains.reduce((a, b) => (a.avg >= b.avg ? a : b))
+    ? ratedDomains.reduce((a, b) => (Number(a.avg) >= Number(b.avg) ? a : b))
     : null
 
   const weakest = ratedDomains.length
-    ? ratedDomains.reduce((a, b) => (a.avg <= b.avg ? a : b))
+    ? ratedDomains.reduce((a, b) => (Number(a.avg) <= Number(b.avg) ? a : b))
     : null
 
-  const playersWithAbilities = players.filter((p) => {
-    const abilities = p?.abilities || {}
-    return Object.values(abilities).some((v) => isRated(v))
+  const avgAll = ratedDomains.length
+    ? roundTo(
+        ratedDomains.reduce((sum, d) => sum + Number(d.avg || 0), 0) / ratedDomains.length,
+        1
+      )
+    : null
+
+  const total = domains.reduce((sum, d) => sum + Number(d.total || 0), 0)
+  const filled = domains.reduce((sum, d) => sum + Number(d.filled || 0), 0)
+  const playersWithAbilities = players.filter((player) => {
+    const abilities = resolvePlayerAbilitiesMap(player)
+    return Object.values(abilities || {}).some((value) => Number(value) > 0)
   }).length
 
   return {

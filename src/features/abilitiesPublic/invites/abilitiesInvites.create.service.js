@@ -1,3 +1,5 @@
+// features/abilitiesPublic/invites/abilitiesInvites.create.service.js
+
 import { buildAbilitiesInviteModel } from './abilitiesInvites.model.js'
 import {
   buildAbilitiesInviteLink,
@@ -28,14 +30,12 @@ function resolveOrigin(explicitOrigin) {
 export function buildCreatedAbilitiesInvite({
   player,
   evaluator,
-  defaults,
   meta,
   origin,
 }) {
   const payload = buildCreateAbilitiesInvitePayload({
     player,
     evaluator,
-    defaults,
     meta,
   })
 
@@ -50,7 +50,6 @@ export function buildCreatedAbilitiesInvite({
   const link = buildAbilitiesInviteLink({
     origin: safeOrigin,
     token: payload.token,
-    playerName: payload.playerName,
   })
 
   const baseInvite = buildAbilitiesInviteModel({
@@ -78,14 +77,12 @@ export function buildCreatedAbilitiesInvite({
 export async function createAbilitiesInvite({
   player,
   evaluator,
-  defaults,
   meta,
   origin,
 }) {
   const created = buildCreatedAbilitiesInvite({
     player,
     evaluator,
-    defaults,
     meta,
     origin,
   })

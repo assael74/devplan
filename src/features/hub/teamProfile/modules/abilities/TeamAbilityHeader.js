@@ -1,9 +1,9 @@
 // teamProfile/modules/abilities/TeamAbilityHeader.js
+
 import React from 'react'
-import { Box, Grid, Typography, Chip, Stack, Input, Switch } from '@mui/joy'
-import { Card, CardContent } from '@mui/joy'
+import { Box, Grid, Typography, Chip, Stack, Input, Switch, Card, CardContent } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../ui/domains/ratings/JoyStarRating.js'
-import { clamp0to5, toFixed1, scoreColor } from './logic/abilities.logic'
+import { clamp0to5, toFixed1, getScoreColor } from './logic/abilities.logic.js'
 
 function StarRow({ label, value }) {
   const numLabel = toFixed1(value)
@@ -31,7 +31,8 @@ export default function TeamAbilityHeader({
   filledAbilities,
   avgAll,
   totalPlayers,
-  usedPlayers, // ← level.usedCount
+  usedPlayers,
+  usedPlayersPotential,
   query,
   onChangeQuery,
   showOnlyFilled,
@@ -41,33 +42,28 @@ export default function TeamAbilityHeader({
     <Card variant="soft">
       <CardContent>
         <Grid container spacing={2} alignItems="center">
-          {/* --- Summary --- */}
           <Grid xs={12} md={4}>
             <Typography level="title-sm">סיכום יכולות קבוצה</Typography>
 
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-              {/* מילוי יכולות */}
               <Chip size="sm" variant="soft">
                 {`יכולות שמולאו: ${filledAbilities}/${totalAbilities}`}
               </Chip>
 
-              {/* ממוצע כללי */}
-              <Chip size="sm" variant="soft" color={scoreColor(avgAll)}>
+              <Chip size="sm" variant="soft" color={getScoreColor(avgAll)}>
                 {`ממוצע יכולות: ${toFixed1(avgAll)}`}
               </Chip>
 
-              {/* בסיס קביעת האיכות */}
-              <Chip
-                size="sm"
-                variant="soft"
-                title="על בסיס כמה שחקנים נקבעה רמת הקבוצה"
-              >
+              <Chip size="sm" variant="soft" title="על בסיס כמה שחקנים נקבעה רמת הקבוצה">
                 {`איכות נקבעה על בסיס ${usedPlayers}/${totalPlayers} שחקנים`}
+              </Chip>
+
+              <Chip size="sm" variant="soft" title="על בסיס כמה שחקנים נקבע הפוטנציאל">
+                {`פוטנציאל נקבע על בסיס ${usedPlayersPotential}/${totalPlayers}`}
               </Chip>
             </Stack>
           </Grid>
 
-          {/* --- Level / Potential --- */}
           <Grid xs={12} md={4}>
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3, alignItems: 'center', ml: 1 }}>
               <StarRow label="רמת קבוצה" value={levelAvg} />
@@ -75,7 +71,6 @@ export default function TeamAbilityHeader({
             </Box>
           </Grid>
 
-          {/* --- Filters --- */}
           <Grid xs={12} md={4}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
@@ -87,14 +82,14 @@ export default function TeamAbilityHeader({
                 size="sm"
                 placeholder="חיפוש יכולת…"
                 value={query}
-                onChange={(e) => onChangeQuery(e.target.value)}
+                onChange={(e) => onChangeQuery?.(e.target.value)}
                 sx={{ maxWidth: 280 }}
               />
 
               <Stack direction="row" spacing={1} alignItems="center">
                 <Switch
                   checked={showOnlyFilled}
-                  onChange={(e) => onToggleShowOnlyFilled(e.target.checked)}
+                  onChange={(e) => onToggleShowOnlyFilled?.(e.target.checked)}
                   size="sm"
                 />
                 <Typography level="body-sm" sx={{ whiteSpace: 'nowrap' }}>

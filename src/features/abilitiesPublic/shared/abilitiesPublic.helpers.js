@@ -4,11 +4,11 @@ import { groupAbilitiesByDomain } from '../../../shared/abilities/abilities.grou
 export const ABILITY_SCORE_OPTS = [1, 2, 3, 4, 5]
 
 export const PUBLIC_GROWTH_STAGE_OPTIONS = [
-  { value: 1, label: 'מאוד מוקדם' },
-  { value: 2, label: 'מוקדם' },
-  { value: 3, label: 'בזמן' },
-  { value: 4, label: 'מאוחר' },
-  { value: 5, label: 'מאוד מאוחר' },
+  { value: 1, label: 'מאוד מוקדם', idIcon: 'very_early' },
+  { value: 2, label: 'מוקדם', idIcon: 'early' },
+  { value: 3, label: 'בזמן', idIcon: 'on_time' },
+  { value: 4, label: 'מאוחר', idIcon: 'late' },
+  { value: 5, label: 'מאוד מאוחר', idIcon: 'very_late' },
 ]
 
 export const PUBLIC_ABILITY_LABELS_SHORT = {

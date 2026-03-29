@@ -61,6 +61,7 @@ export default function SideNav({ onNavigate, badges, collapsed = false }) {
           { label: 'תשלומים', path: '/payments', iconId: 'payments', disabled: true },
           { label: 'ניהול יומנים', path: '/calendar', iconId: 'meetings', disabled: false },
           { label: 'ניהול תגים', path: '/tags', iconId: 'tags', disabled: false },
+          { label: 'חישוב יכולות', path: '/abilities', iconId: 'abilities', disabled: true },
         ],
       },
     ],

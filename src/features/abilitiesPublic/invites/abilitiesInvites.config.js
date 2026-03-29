@@ -1,3 +1,5 @@
+// features/abilitiesPublic/invites/abilitiesInvites.config.js
+
 export const ABILITIES_PUBLIC_INVITES_CONFIG = {
   mode: 'mock', // mock | live
 

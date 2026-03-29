@@ -1,10 +1,12 @@
 // playerProfile/modules/abilities/AbilityHeader.js
 
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
+
 import React from 'react'
 import { Box, Grid, Typography, Chip, Stack, Input, Switch, Button } from '@mui/joy'
 import { Card, CardContent } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../ui/domains/ratings/JoyStarRating.js'
-import { clamp0to5, toFixed1, scoreColor } from './abilities.logic'
+import { toFixed1, clamp0to5, getScoreColor } from './abilities.logic'
 import {
   abilityHeaderSx,
   headerChipsRowSx,
@@ -14,6 +16,8 @@ import {
   headerStarColSx,
   headerStarRowSx,
 } from './Ability.module.sx'
+
+const c = getEntityColors('players')
 
 function StarRow({ label, value }) {
   const numLabel = toFixed1(value)
@@ -50,23 +54,23 @@ export default function AbilityHeader({
     <Card variant="soft" sx={abilityHeaderSx}>
       <CardContent>
         <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <Typography level="title-sm">סיכום כולל</Typography>
 
             <Stack direction="row" spacing={1} alignItems="center" sx={headerChipsRowSx}>
               <Chip size="sm" variant="soft">{`הושלמו ${filled}/${total}`}</Chip>
-              <Chip size="sm" variant="soft" color={scoreColor(avgAll)}>{`ממוצע: ${toFixed1(avgAll)}`}</Chip>
+              <Chip size="sm" variant="soft" color={getScoreColor(avgAll)}>{`ממוצע: ${toFixed1(avgAll)}`}</Chip>
             </Stack>
           </Grid>
 
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <Box sx={headerStarsWrapSx}>
               <StarRow label="יכולת נוכחית" value={player?.level} />
               <StarRow label="פוטנציאל" value={player?.levelPotential} />
             </Box>
           </Grid>
 
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={6}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={1}
@@ -97,6 +101,18 @@ export default function AbilityHeader({
                 variant="solid"
                 onClick={onOpenInvite}
                 loading={invitePending}
+                sx={{
+                  bgcolor: c.bg,
+                  color: c.text,
+                  transition: 'filter .15s ease, transform .12s ease',
+
+                  '&:hover': {
+                    bgcolor: c.bg,
+                    color: c.text,
+                    filter: 'brightness(0.96)',
+                    transform: 'translateY(-1px)',
+                  },
+                }}
               >
                 שליחת טופס
               </Button>

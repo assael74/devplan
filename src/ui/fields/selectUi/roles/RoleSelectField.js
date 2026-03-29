@@ -30,7 +30,7 @@ export default function RoleSelectField({
 
   const handleChange = useCallback(
     (_, nextValue) => {
-      if (!readOnly) onChange?.(clean(nextValue))
+      if (!readOnly) onChange(clean(nextValue))
     },
     [onChange, readOnly]
   )
