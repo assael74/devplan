@@ -2,22 +2,22 @@
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('players')
+const c = getEntityColors('teams')
 
 export const sx = {
   cardStack: {
     display: 'flex',
-    flexDirection:"row",
-    justifyContent:"space-between",
-    alignItems:"center",
-    gap: 1
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 1,
   },
 
   domainBox: {
     position: 'relative',
     width: 40,
     height: 40,
-    flexShrink: 0
+    flexShrink: 0,
   },
 
   typoDomain: {
@@ -27,5 +27,5 @@ export const sx = {
     transform: 'translate(-50%, -50%) translateY(1px)',
     lineHeight: 1,
     fontWeight: 600,
-  }
+  },
 }

@@ -1,4 +1,4 @@
-// teamProfile/modules/abilities/logic/abilities.logic.js
+// playerProfile/modules/abilities/logic/abilities.logic.js
 
 import { fmtScore, scoreColor } from '../../../../../../shared/abilities/abilities.utils.js'
 import { resolvePlayerAbilitiesMap } from '../../../../../../shared/abilities/abilities.resolvers.js'
@@ -17,16 +17,12 @@ export function isFilled(v) {
   return typeof v === 'number' && v > 0 && !Number.isNaN(v)
 }
 
-export function toFixed1(n) {
-  return fmtScore(n)
-}
-
 export function clamp0to5(v) {
   return Number.isFinite(v) ? Math.min(5, Math.max(0, v)) : 0
 }
 
-export function getScoreColor(v) {
-  return scoreColor(v)
+export function toFixed1(n) {
+  return fmtScore(n)
 }
 
 export function calcDomainScore(items = []) {
@@ -47,10 +43,11 @@ export function calcDomainScore(items = []) {
     )
   }
 
-  return (
-    filledItems.reduce((sum, item) => sum + item.value, 0) /
-    filledItems.length
-  )
+  return filledItems.reduce((sum, item) => sum + item.value, 0) / filledItems.length
+}
+
+export function getScoreColor(value) {
+  return scoreColor(value)
 }
 
 export function comparePlayerToSlice(player, slice) {

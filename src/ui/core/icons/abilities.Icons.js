@@ -24,6 +24,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import Texture from '@mui/icons-material/Texture';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -31,6 +32,7 @@ import WhatshotIcon from '@mui/icons-material/Whatshot';
 import RocketLaunch from '@mui/icons-material/RocketLaunch';
 import OfflineBolt from '@mui/icons-material/OfflineBolt';
 import AlarmOn from '@mui/icons-material/AlarmOn';
+import Moving from '@mui/icons-material/Moving';
 import HourglassTop from '@mui/icons-material/HourglassTop';
 import PriorityHigh from '@mui/icons-material/PriorityHigh';
 
@@ -62,6 +64,7 @@ export const abilitiesIcon = {
   offBallMovement: <DirectionsWalkIcon />,
   passingSkill: <SwapHorizIcon />,
   physical: <FitnessCenterIcon />,
+  potential: <Moving />,
   spatialAwareness: <ThreeSixtyIcon />,
   speed: <DirectionsRunIcon />,
   teamPlay: <GroupIcon />,
@@ -72,4 +75,5 @@ export const abilitiesIcon = {
   on_time: <AlarmOn />,
   late: <HourglassTop />,
   very_late: <PriorityHigh />,
+  potentialCoverage: <Texture />
 };

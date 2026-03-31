@@ -1,15 +1,12 @@
 import React from 'react'
-import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
+import { Box, Sheet, Typography, Avatar } from '@mui/joy'
 
 import JoyStarRating from '../../../../../../../../../ui/domains/ratings/JoyStarRating.js'
-
-import { buildFallbackAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { heroSx as sx } from '../sx/teamAbilitiesKpi.sx.js'
 
-const toFixed1 = (v) => (Number.isFinite(v) ? (Math.round(v * 10) / 10).toFixed(1) : '—')
-
-function KpiCard({ label, value, subValue, icon }) {
+function KpiCard({ label, value, subValue = '', icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
@@ -19,9 +16,11 @@ function KpiCard({ label, value, subValue, icon }) {
 
       <Typography sx={sx.kpiValueSx}>{value}</Typography>
 
-      <Box sx={sx.kpiSubBoxSx}>
-        <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
-      </Box>
+      {subValue ? (
+        <Box sx={sx.kpiSubBoxSx}>
+          <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
+        </Box>
+      ) : null}
     </Sheet>
   )
 }
@@ -39,19 +38,38 @@ function LevelStars({ label, value }) {
   )
 }
 
-export default function TeamAbilitiesKpi({ entity, summary, globalCount }) {
-  const team = entity
-  const src = team?.photo || buildFallbackAvatar({ entityType: 'team', id: team?.id, name: team?.teamName })
+function toScoreText(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? `${Math.round(n * 10) / 10}` : '—'
+}
 
-  const abilitiesDocs = summary?.playersWithAbilities
-  const allTeamPlayers = summary?.playersCount
-  const rateDocs = allTeamPlayers ? Math.round((abilitiesDocs / allTeamPlayers) * 100) : 0
+export default function TeamAbilitiesKpi({ entity, context, summary, globalCount }) {
+  const teamName = entity?.teamName || entity?.name || 'קבוצה'
 
   const strongestLabel = summary?.strongest?.domainLabel || '—'
-  const strongestAvg = toFixed1(summary?.strongest?.avg)
+  const strongestAvg = Number.isFinite(Number(summary?.strongest?.avg))
+    ? `(${summary.strongest.avg})`
+    : ''
 
   const weakestLabel = summary?.weakest?.domainLabel || '—'
-  const weakestAvg = toFixed1(summary?.weakest?.avg)
+  const weakestAvg = Number.isFinite(Number(summary?.weakest?.avg))
+    ? `(${summary.weakest.avg})`
+    : ''
+
+  const teamLevel =
+    entity?.abilitiesState?.teamLevel ??
+    entity?.abilitiesState?.level ??
+    summary?.avgAll ??
+    null
+
+  const teamPotential =
+    entity?.abilitiesState?.teamPotential ??
+    entity?.abilitiesState?.levelPotential ??
+    null
+
+  const playersCount = Number(summary?.playersCount || 0)
+  const playersWithAbilities = Number(summary?.playersWithAbilities || 0)
+  const completionValue = `${globalCount?.filled || 0}/${globalCount?.total || 0}`
 
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
@@ -62,12 +80,12 @@ export default function TeamAbilitiesKpi({ entity, summary, globalCount }) {
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
             <Box sx={sx.heroIconBoxSx}>
-              <Avatar src={src} />
+              <Avatar src={entity?.photo || entity?.image || playerImage} />
             </Box>
 
             <Box sx={sx.heroTextWrapSx}>
               <Typography level="title-md" sx={sx.heroTitleSx}>
-                {team?.teamName || 'קבוצה'}
+                {teamName}
               </Typography>
 
               <Typography level="body-sm" sx={sx.heroSubTitleSx}>
@@ -75,36 +93,38 @@ export default function TeamAbilitiesKpi({ entity, summary, globalCount }) {
               </Typography>
             </Box>
           </Box>
+
           <Box sx={sx.heroStarsWrapSx}>
-            <LevelStars label="יכולת" value={entity?.level} />
-            <LevelStars label="פוטנציאל" value={entity?.levelPotential} />
+            <LevelStars label="יכולת" value={teamLevel} />
+            <LevelStars label="פוטנציאל" value={teamPotential} />
           </Box>
         </Box>
 
         <Box sx={sx.kpiGridSx}>
           <KpiCard
-            label="שחקנים עם דיווח"
-            value={`${abilitiesDocs}/${allTeamPlayers}`}
-            icon={iconUi({ id: 'addAbilities', size: 'md' })}
-            subValue={`${rateDocs}% אחוז מילוי טפסים`}
+            label="יכולות שהושלמו"
+            value={completionValue}
+            subValue={summary?.completionPct ? `${summary.completionPct}% כיסוי` : ''}
+            icon={iconUi({ id: 'abilities', size: 'sm' })}
           />
 
           <KpiCard
-            label="ממוצע כללי"
-            value={summary?.avgAllLabel || 0}
-            icon={iconUi({ id: 'level', size: 'md', sx: { color: '#f3fa14' } })}
+            label="שחקנים עם יכולות"
+            value={playersWithAbilities}
+            subValue={playersCount ? `מתוך ${playersCount} שחקנים` : ''}
+            icon={iconUi({ id: 'group', size: 'sm' })}
           />
 
           <KpiCard
-            label="חוזקות"
-            value={`${strongestLabel} (${strongestAvg})`}
-            icon={iconUi({ id: 'strength', size: 'lg', sx: { color: '#16A34A' } })}
+            label="יכולת חזקה"
+            value={`${strongestLabel} ${strongestAvg}`.trim()}
+            icon={iconUi({ id: 'trendUp', size: 'sm' })}
           />
 
           <KpiCard
-            label="חולשות"
-            value={`${weakestLabel} (${weakestAvg})`}
-            icon={iconUi({ id: 'weakness', size: 'md', sx: { color: '#DC2626' } })}
+            label="יכולת חלשה"
+            value={`${weakestLabel} ${weakestAvg}`.trim()}
+            icon={iconUi({ id: 'warning', size: 'sm' })}
           />
         </Box>
       </Box>

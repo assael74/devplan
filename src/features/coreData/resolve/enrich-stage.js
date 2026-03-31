@@ -40,6 +40,7 @@ const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v)
 function buildPlayerAbilitiesState(player) {
   return {
     abilities: isObject(player?.abilities) ? player.abilities : {},
+    windowsCount: Number(player?.windowsCount || 0),
     domains: {
       scores: isObject(player?.domainScores) ? player.domainScores : {},
       meta: Array.isArray(player?.domainsMeta) ? player.domainsMeta : [],
@@ -48,6 +49,7 @@ function buildPlayerAbilitiesState(player) {
       coverage: isObject(player?.coverage) ? player.coverage : {},
       reliability: isObject(player?.reliability) ? player.reliability : {},
       formsCount: Number(player?.formsCount || 0),
+      windowsCount: Number(player?.windowsCount || 0),
       evaluatorsCount: Number(player?.evaluatorsCount || 0),
       lastWindowKey: String(player?.lastWindowKey || ''),
       updatedFrom: String(player?.updatedFrom || ''),
@@ -129,6 +131,7 @@ export function enrichPlayers(merged, indexes, teams) {
         domainScores,
         domainsMeta,
         coverage,
+        windowsCount,
         reliability,
         formsCount,
         evaluatorsCount,
@@ -176,6 +179,7 @@ export function enrichPlayers(merged, indexes, teams) {
         updatedFrom,
         validDomainsCount,
         docAbilitiesId,
+        windowsCount
       }
 
       return {

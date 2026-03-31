@@ -28,16 +28,25 @@ export default function PlayerAbilitiesDomainSummary({ entity }) {
   const { summary } = useMemo(() => resolveAbilitiesDomain(entity), [entity])
 
   const completion = summary?.total ? `${summary.filled}/${summary.total}` : '—'
-  const avgAll = summary?.avgAll != null ? summary.avgAll : '—'
-  const strongest = summary?.strongest ? `${summary.strongest.domainLabel} ${summary.strongest.avg}` : '—'
-  const weakest = summary?.weakest ? `${summary.weakest.domainLabel} ${summary.weakest.avg}` : '—'
+  const strongest = summary?.strongest
+    ? `${summary.strongest.domainLabel} ${summary.strongest.avg}`
+    : '—'
+  const weakest = summary?.weakest
+    ? `${summary.weakest.domainLabel} ${summary.weakest.avg}`
+    : '—'
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 0.75, width: '100%' }}>
-      <Row label="הושלמו" value={completion} color="primary" />
-      <Row label="ממוצע" value={avgAll} color="success" />
-      <Row label="חוזקה" value={strongest} color="neutral" />
-      <Row label="חולשה" value={weakest} color="warning" />
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 0.75,
+        width: '100%',
+      }}
+    >
+      <Row label="יכולות שהושלמו" value={completion} color="primary" />
+      <Row label="יכולת חזקה" value={strongest} color="success" />
+      <Row label="יכולת חלשה" value={weakest} color="warning" />
     </Box>
   )
 }

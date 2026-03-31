@@ -1,4 +1,4 @@
-// src/ui/ratings/JoyStarRating.js
+// ui/domains/ratings/JoyStarRating.js
 import React from 'react';
 import { Box } from '@mui/joy';
 import StarIcon from '@mui/icons-material/Star';

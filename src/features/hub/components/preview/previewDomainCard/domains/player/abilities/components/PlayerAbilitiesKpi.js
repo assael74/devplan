@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
+import { Box, Sheet, Typography, Avatar } from '@mui/joy'
 
 import JoyStarRating from '../../../../../../../../../ui/domains/ratings/JoyStarRating.js'
 
@@ -7,9 +7,7 @@ import playerImage from '../../../../../../../../../ui/core/images/playerImage.j
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { heroSx as sx } from '../sx/playerAbilitiesKpi.sx.js'
 
-const toFixed1 = (v) => (Number.isFinite(v) ? (Math.round(v * 10) / 10).toFixed(1) : '—')
-
-function KpiCard({ label, value, subValue, icon }) {
+function KpiCard({ label, value, subValue = '', icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
@@ -19,9 +17,11 @@ function KpiCard({ label, value, subValue, icon }) {
 
       <Typography sx={sx.kpiValueSx}>{value}</Typography>
 
-      <Box sx={sx.kpiSubBoxSx}>
-        <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
-      </Box>
+      {subValue ? (
+        <Box sx={sx.kpiSubBoxSx}>
+          <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
+        </Box>
+      ) : null}
     </Sheet>
   )
 }
@@ -42,16 +42,18 @@ function LevelStars({ label, value }) {
 export default function PlayerAbilitiesKpi({ entity, summary, globalCount }) {
   const playerName = `${entity?.playerFirstName || ''} ${entity?.playerLastName || ''}`.trim()
 
-  const avgAll = toFixed1(summary?.avgAll)
-  const withVideo = summary?.withVideo ?? 0
-
   const strongestLabel = summary?.strongest?.domainLabel || '—'
-  const strongestAvg = toFixed1(summary?.strongest?.avg)
-  const strongestColor = summary?.strongest?.color || 'neutral'
+  const strongestAvg =
+    Number.isFinite(Number(summary?.strongest?.avg)) ? `(${summary.strongest.avg})` : ''
 
   const weakestLabel = summary?.weakest?.domainLabel || '—'
-  const weakestAvg = toFixed1(summary?.weakest?.avg)
-  const weakestColor = summary?.weakest?.color || 'neutral'
+  const weakestAvg =
+    Number.isFinite(Number(summary?.weakest?.avg)) ? `(${summary.weakest.avg})` : ''
+
+  const formsCount = Number(entity?.abilitiesState?.evaluation?.formsCount || 0)
+  const evaluatorsCount = Number(entity?.abilitiesState?.evaluation?.evaluatorsCount || 0)
+
+  const completionValue = `${globalCount?.filled || 0}/${globalCount?.total || 0}`
 
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
@@ -75,6 +77,7 @@ export default function PlayerAbilitiesKpi({ entity, summary, globalCount }) {
               </Typography>
             </Box>
           </Box>
+
           <Box sx={sx.heroStarsWrapSx}>
             <LevelStars label="יכולת" value={entity?.level} />
             <LevelStars label="פוטנציאל" value={entity?.levelPotential} />
@@ -84,26 +87,26 @@ export default function PlayerAbilitiesKpi({ entity, summary, globalCount }) {
         <Box sx={sx.kpiGridSx}>
           <KpiCard
             label="יכולות שהושלמו"
-            value={avgAll}
-            icon={iconUi({ id: 'meetingReminder', size: 'sm', sx: { color: summary?.color || 'neutral' } })}
+            value={completionValue}
+            icon={iconUi({ id: 'abilities', size: 'sm' })}
           />
 
           <KpiCard
-            label="ממוצע כללי"
-            value={withVideo}
-            icon={iconUi({ id: 'meetingReminder', size: 'sm', sx: { color: summary?.color || 'neutral' } })}
+            label="דוחות שבוצעו"
+            value={formsCount}
+            icon={iconUi({ id: 'form', size: 'sm' })}
           />
 
           <KpiCard
-            label="חוזקות"
-            value={`${strongestLabel} (${strongestAvg})`}
-            icon={iconUi({ id: 'meetingReminder', size: 'sm', sx: { color: strongestColor } })}
+            label="מעריכים"
+            value={evaluatorsCount}
+            icon={iconUi({ id: 'group', size: 'sm' })}
           />
 
           <KpiCard
-            label="חולשות"
-            value={`${weakestLabel} (${weakestAvg})`}
-            icon={iconUi({ id: 'meetingReminder', size: 'sm', sx: { color: weakestColor } })}
+            label="יכולת חלשה"
+            value={`${weakestLabel} ${weakestAvg}`.trim()}
+            icon={iconUi({ id: 'warning', size: 'sm' })}
           />
         </Box>
       </Box>

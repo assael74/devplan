@@ -1,5 +1,6 @@
 import {
   AccessTime,
+  Attribution,
   AddLocationAlt,
   Forward,
   History,
@@ -7,9 +8,12 @@ import {
   LiveHelp,
   NotesRounded,
   PermContactCalendar,
+  PlaylistAddCheckCircle,
   Today,
   Weekend,
-  ViewWeek
+  Visibility,
+  ViewWeek,
+  ScheduleSend
 } from '@mui/icons-material';
 
 export const generalIcons = {
@@ -24,4 +28,8 @@ export const generalIcons = {
   notes: <NotesRounded />,
   weekend: <Weekend />,
   weekday: <ViewWeek />,
+  check: <PlaylistAddCheckCircle />,
+  profile: <Attribution />,
+  readiness: <Visibility />,
+  calendar: <ScheduleSend />
 };

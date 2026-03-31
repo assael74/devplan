@@ -50,7 +50,7 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
 
   const isActive = !!t?.active
   const tooltipText = isActive ? 'העבר לארכיון (ניתן לשחזור)' : 'שחזר מועדון מהארכיון'
-
+  
   return (
     <>
       <Box sx={previewSx.headerWrap({ type: 'team', entity: t })}>
@@ -133,20 +133,20 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
       <Divider sx={{ mb: 2 }} />
 
       <Box sx={previewSx.chipsRow}>
-        {t?.abilitiesTeam?.level ? (
-          <Tooltip title={`הרמה מחושבת לפי ${t.abilitiesTeam.level.usedCount} שחקנים`} placement="top">
+        {t?.level ? (
+          <Tooltip title={`הרמה מחושבת לפי ${t.squadStrength.level.usedCount} שחקנים`} placement="top">
             <Box sx={{ mr: 1 }}>
               <LevelStars label="יכולת" value={t?.level} sx={previewSx} />
             </Box>
           </Tooltip>
         ) : (
-          <LevelStars label="יכולת" value={t?.level} />
+          <LevelStars label="יכולת" value={t?.level} sx={previewSx} />
         )}
 
         <Divider orientation="vertical" />
 
-        {t?.abilitiesTeam?.levelPotential ? (
-          <Tooltip title={`הפוטנציאל מחושב לפי ${t.abilitiesTeam.levelPotential.usedCount} שחקנים`} placement="top">
+        {t?.levelPotential ? (
+          <Tooltip title={`הפוטנציאל מחושב לפי ${t.squadStrength.levelPotential.usedCount} שחקנים`} placement="top">
             <Box>
               <LevelStars label="פוטנציאל" value={t?.levelPotential} sx={previewSx} />
             </Box>

@@ -4,6 +4,7 @@ import {
   CancelScheduleSend,
   CheckCircle,
   Cached,
+  Category,
   CurrencyExchange,
   Dangerous,
   Diversity2,
@@ -24,6 +25,10 @@ import {
   NextPlan,
   Unpublished,
   VideocamOff,
+  ErrorOutline,
+  TrendingFlat,
+  RocketLaunch,
+  Stars
 } from '@mui/icons-material';
 
 export const statusIcons = {
@@ -57,4 +62,12 @@ export const statusIcons = {
   completed: <CheckCircle />,
   canceled: <Block />,
   postponed: <Snooze />,
+  noData: <ErrorOutline />,
+  critical: <Dangerous />,
+  weak: <ErrorOutline />,
+  stable: <TrendingFlat />,
+  upside: <RocketLaunch />,
+  elite: <Stars />,
+  warning: <ErrorOutline />,
+  category: <Category />
 };

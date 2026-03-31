@@ -1,6 +1,12 @@
 // src/shared/abilities/insights/abilities.insights.js
 
-import { fmtScore, roundTo } from '../abilities.utils.js'
+import {
+  fmtScore,
+  roundTo,
+  getAbilityScoreHex,
+  getAbilityGapHex,
+  getAbilitySemanticHex,
+} from '../abilities.utils.js'
 import { resolveAbilitiesDomain, resolveTeamAbilitiesDomain } from '../abilities.domain.logic.js'
 import {
   resolvePlayerAbilitiesInsightsEligibility,
@@ -12,10 +18,12 @@ import {
   getScoreColor,
 } from './abilities.insights.labels.js'
 import {
+  resolvePlayerDomainPotentialScores,
+  resolvePlayerDomainScores,
   resolvePlayerFullName,
   resolvePlayerLevel,
   resolvePlayerPotential,
-  resolvePlayerSnapshotsMeta,
+  resolvePlayerEvaluation,
   resolvePlayerWindows,
 } from '../abilities.resolvers.js'
 
@@ -53,7 +61,7 @@ function buildPlayerReadinessInsight(eligibility) {
       priority: ABILITIES_INSIGHTS_LABELS.priorities.readiness,
       color: 'success',
       title: ABILITIES_INSIGHTS_LABELS.readiness.player.readyTitle,
-      text: `יש מספיק בסיס נתונים לניתוח מהימן של היכולות.`,
+      text: 'יש מספיק בסיס נתונים לניתוח מהימן של היכולות.',
       meta: eligibility,
     })
   }
@@ -64,15 +72,14 @@ function buildPlayerReadinessInsight(eligibility) {
     priority: ABILITIES_INSIGHTS_LABELS.priorities.readiness,
     color: 'warning',
     title: ABILITIES_INSIGHTS_LABELS.readiness.player.notReadyTitle,
-    text: `נדרש חיזוק בכיסוי ובמספר הדומיינים התקפים לפני תובנות מלאות.`,
+    text: 'נדרש חיזוק בכיסוי ובמספר הדומיינים התקפים לפני תובנות מלאות.',
     meta: eligibility,
   })
 }
 
 function buildPlayerStrengthWeaknessInsights(domainResult) {
-  const ratedDomains = getPerformanceDomains(domainResult?.domains || []).filter((d) =>
-    Number.isFinite(Number(d?.avg))
-  )
+  const performanceDomains = getPerformanceDomains(domainResult?.domains || [])
+  const ratedDomains = performanceDomains.filter((d) => Number.isFinite(Number(d?.avg)))
 
   if (!ratedDomains.length) return []
 
@@ -83,6 +90,7 @@ function buildPlayerStrengthWeaknessInsights(domainResult) {
     buildInsight({
       id: 'player-strongest-domain',
       kind: 'strength',
+      scope: 'general',
       priority: ABILITIES_INSIGHTS_LABELS.priorities.strongestDomain,
       color: getScoreColor(strongest?.avg),
       title: ABILITIES_INSIGHTS_LABELS.titles.player.strongestDomain,
@@ -92,6 +100,7 @@ function buildPlayerStrengthWeaknessInsights(domainResult) {
     buildInsight({
       id: 'player-weakest-domain',
       kind: 'gap',
+      scope: 'general',
       priority: ABILITIES_INSIGHTS_LABELS.priorities.weakestDomain,
       color: getScoreColor(weakest?.avg),
       title: ABILITIES_INSIGHTS_LABELS.titles.player.weakestDomain,
@@ -101,10 +110,56 @@ function buildPlayerStrengthWeaknessInsights(domainResult) {
   ]
 }
 
+function buildPlayerBiggestPotentialGapDomainInsight(player = {}, domainResult = {}) {
+  const performanceDomains = getPerformanceDomains(domainResult?.domains || [])
+  const domainScores = resolvePlayerDomainScores(player)
+  const domainPotentialScores = resolvePlayerDomainPotentialScores(player)
+
+  const rows = performanceDomains
+    .map((domain) => {
+      const score = Number(domainScores?.[domain.domain])
+      const potentialScore = Number(domainPotentialScores?.[domain.domain])
+
+      if (!Number.isFinite(score) || !Number.isFinite(potentialScore)) return null
+
+      return {
+        domain: domain.domain,
+        domainLabel: domain.domainLabel,
+        score,
+        potentialScore,
+        gap: roundTo(potentialScore - score, 1),
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(b.gap) - Number(a.gap))
+
+  const top = rows[0] || null
+  if (!top) return null
+
+  let color = 'warning'
+  if (top.gap >= 0.7) color = 'success'
+  else if (top.gap >= 0.35) color = 'primary'
+  else if (top.gap > 0) color = 'warning'
+  else color = 'neutral'
+
+  return buildInsight({
+    id: 'player-biggest-potential-gap-domain',
+    kind: 'potential',
+    scope: 'domain',
+    priority: ABILITIES_INSIGHTS_LABELS.priorities.biggestPotentialGapDomain,
+    color,
+    title: ABILITIES_INSIGHTS_LABELS.titles.player.biggestPotentialGapDomain,
+    text:
+      top.gap > 0
+        ? `${top.domainLabel} הוא הדומיין עם פער הפוטנציאל הגדול ביותר: ${fmtScore(top.score)} → ${fmtScore(top.potentialScore)} (${fmtScore(top.gap)}+).`
+        : `${top.domainLabel} הוא הדומיין עם הפער הקטן ביותר בין הרמה הנוכחית לפוטנציאל.`,
+    meta: top,
+  })
+}
+
 function buildPlayerBalanceInsight(domainResult) {
-  const ratedDomains = getPerformanceDomains(domainResult?.domains || []).filter((d) =>
-    Number.isFinite(Number(d?.avg))
-  )
+  const performanceDomains = getPerformanceDomains(domainResult?.domains || [])
+  const ratedDomains = performanceDomains.filter((d) => Number.isFinite(Number(d?.avg)))
 
   if (ratedDomains.length < 2) return null
 
@@ -116,11 +171,15 @@ function buildPlayerBalanceInsight(domainResult) {
   return buildInsight({
     id: 'player-balance',
     kind: 'profile',
+    scope: 'general',
     priority: ABILITIES_INSIGHTS_LABELS.priorities.balance,
     color: gap <= 0.6 ? 'success' : gap <= 1.2 ? 'warning' : 'danger',
     title: ABILITIES_INSIGHTS_LABELS.titles.player.balance,
     text: `הפרופיל ${balanceLabel}. הפער בין הדומיין החזק לחלש הוא ${fmtScore(gap)}.`,
-    meta: { gap, balanceLabel },
+    meta: {
+      gap,
+      balanceLabel,
+    },
   })
 }
 
@@ -131,69 +190,64 @@ function buildPlayerPotentialInsight(player = {}) {
   if (!Number.isFinite(level) || !Number.isFinite(levelPotential)) return null
 
   const gap = roundTo(levelPotential - level, 1)
+  let text = ''
+  let color = 'neutral'
 
   if (gap >= 1) {
-    return buildInsight({
-      id: 'player-potential-gap',
-      kind: 'potential',
-      priority: ABILITIES_INSIGHTS_LABELS.priorities.potentialGap,
-      color: 'success',
-      title: ABILITIES_INSIGHTS_LABELS.titles.player.potentialGap,
-      text: `יש פער פוטנציאל משמעותי של ${fmtScore(gap)} בין הרמה הנוכחית לפוטנציאל.`,
-      meta: { level, levelPotential, gap },
-    })
-  }
-
-  if (gap > 0) {
-    return buildInsight({
-      id: 'player-potential-gap',
-      kind: 'potential',
-      priority: ABILITIES_INSIGHTS_LABELS.priorities.potentialGap,
-      color: 'primary',
-      title: ABILITIES_INSIGHTS_LABELS.titles.player.potentialGap,
-      text: `יש עוד מרווח התפתחות של ${fmtScore(gap)} מעל הרמה הנוכחית.`,
-      meta: { level, levelPotential, gap },
-    })
+    text = `יש פער פוטנציאל משמעותי של ${fmtScore(gap)} בין הרמה הנוכחית לפוטנציאל.`
+    color = 'success'
+  } else if (gap > 0) {
+    text = `יש עוד מרווח התפתחות של ${fmtScore(gap)} מעל הרמה הנוכחית.`
+    color = 'primary'
+  } else {
+    text = 'הרמה הנוכחית קרובה מאוד לפוטנציאל המחושב.'
+    color = 'warning'
   }
 
   return buildInsight({
     id: 'player-potential-gap',
     kind: 'potential',
+    scope: 'general',
     priority: ABILITIES_INSIGHTS_LABELS.priorities.potentialGap,
-    color: 'warning',
+    color,
     title: ABILITIES_INSIGHTS_LABELS.titles.player.potentialGap,
-    text: 'הרמה הנוכחית קרובה מאוד לפוטנציאל המחושב.',
-    meta: { level, levelPotential, gap },
+    text,
+    meta: {
+      level,
+      levelPotential,
+      gap,
+    },
   })
 }
 
-function buildPlayerWindowsInsight(player = {}) {
-  const snapshotsMeta = resolvePlayerSnapshotsMeta(player)
-  const windows = resolvePlayerWindows(player)
-  const windowsCount = Number(snapshotsMeta?.windowsCount || windows.length || 0)
-  const formsCount = Number(snapshotsMeta?.formsCount || 0)
+function buildPlayerEvaluatorInsight(player = {}) {
+  const evaluation = resolvePlayerEvaluation(player)
+
+  const formsCount = Number(evaluation?.formsCount || 0)
+  const windowsCount = Number(evaluation?.windowsCount || 0)
+  const evaluatorsCount = Number(evaluation?.evaluatorsCount || 0)
 
   return buildInsight({
     id: 'player-windows',
     kind: 'history',
     priority: 60,
-    color: windowsCount >= 2 ? 'primary' : 'neutral',
-    title: ABILITIES_INSIGHTS_LABELS.titles.player.windows,
-    text: `קיימים ${windowsCount} חלונות הערכה ו־${formsCount} טפסים בבסיס החישוב.`,
-    meta: snapshotsMeta,
+    color: formsCount >= 2 ? 'primary' : 'neutral',
+    text: `קיימים ${windowsCount} חלונות הערכה, ${formsCount} טפסים ו־${evaluatorsCount} מעריכים בבסיס החישוב.`,
   })
 }
 
 export function resolvePlayerAbilitiesInsights(player = {}, options = {}) {
   const eligibility = resolvePlayerAbilitiesInsightsEligibility(player, options)
   const domainResult = resolveAbilitiesDomain(player)
+  const x = buildPlayerEvaluatorInsight(player)
 
   const insights = [
     buildPlayerReadinessInsight(eligibility),
     ...buildPlayerStrengthWeaknessInsights(domainResult),
+    buildPlayerBiggestPotentialGapDomainInsight(player, domainResult),
     buildPlayerBalanceInsight(domainResult),
     buildPlayerPotentialInsight(player),
-    buildPlayerWindowsInsight(player),
+    buildPlayerEvaluatorInsight(player),
   ].filter(Boolean)
 
   return {
@@ -270,7 +324,7 @@ function buildTeamDepthInsight(teamEligibility) {
   return buildInsight({
     id: 'team-depth',
     kind: 'depth',
-    priority: ABILITIES_INSIGHTS_LABELS.priorities.depth,
+    priority: ABILITIES_INSIGHTS_LABELS.priorities.teamDepth,
     color: pct >= 75 ? 'success' : pct >= 60 ? 'primary' : 'warning',
     title: ABILITIES_INSIGHTS_LABELS.titles.team.depth,
     text: `${eligible} מתוך ${total} שחקנים עומדים בתנאי הסף, שהם ${pct}% מהסגל.`,

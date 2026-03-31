@@ -149,6 +149,40 @@ function resolveGrowthStageTableKey(growthStage) {
   return clamp(Math.floor(n), 1, 5)
 }
 
+function buildDomainsMetaWithPotentialScores(domains = [], growthStage = null) {
+  const growthStageTableKey = resolveGrowthStageTableKey(growthStage)
+  const physicalAdj = PHYSICAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
+  const finalAdj = FINAL_POTENTIAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
+
+  return (domains || []).map((domain) => {
+    const score = Number.isFinite(Number(domain?.score)) ? Number(domain.score) : null
+
+    if (score == null) {
+      return {
+        ...domain,
+        potentialScore: null,
+      }
+    }
+
+    let potentialScore = score
+
+    if (domain?.domain === 'physical') {
+      potentialScore = clamp(
+        roundToHalf(score + physicalAdj + finalAdj),
+        ABILITY_SCORE_MIN,
+        ABILITY_SCORE_MAX
+      )
+    } else {
+      potentialScore = roundToHalf(score)
+    }
+
+    return {
+      ...domain,
+      potentialScore,
+    }
+  })
+}
+
 export function calcPotentialScore(domainsById = {}, growthStage = null) {
   const adjustedDomains = { ...domainsById }
 
@@ -266,10 +300,21 @@ export function buildFinalPlayerResult({ forms = [] }) {
   const mergedAbilities = normalizeAbilities(historyMerged.abilities || {})
 
   const domainsResult = calcDomainsResult(mergedAbilities)
+
+  const domainsWithPotentialScores = buildDomainsMetaWithPotentialScores(
+    domainsResult.domains,
+    mergedAbilities?.growthStage ?? null
+  )
+
+  const domainsByIdWithPotential = Object.fromEntries(
+    domainsWithPotentialScores.map((domain) => [domain.domain, domain])
+  )
+
   const overallAbility = calcWeightedOverallFromDomains(
     domainsResult.byId,
     ABILITY_DOMAIN_WEIGHTS
   )
+
   const overallPotential = calcPotentialScore(
     domainsResult.byId,
     mergedAbilities?.growthStage ?? null
@@ -295,25 +340,36 @@ export function buildFinalPlayerResult({ forms = [] }) {
 
   return {
     abilities: mergedAbilities,
+
     domainScores: Object.fromEntries(
-      domainsResult.domains.map((d) => [d.domain, d.score])
+      domainsWithPotentialScores.map((domain) => [domain.domain, domain.score])
     ),
-    domainsMeta: domainsResult.domains,
+
+    domainPotentialScores: Object.fromEntries(
+      domainsWithPotentialScores.map((domain) => [domain.domain, domain.potentialScore])
+    ),
+
+    domainsMeta: domainsWithPotentialScores,
+
     level: overallAbility.score,
     levelPotential: overallPotential.score,
+
     reliability: {
       ability: abilityReliability,
       potential: potentialReliability,
     },
+
     coverage: {
       ability: overallAbility.coveragePct,
       potential: overallPotential.coveragePct,
       physical: overallPotential.physicalCoveragePct,
     },
+
     validDomainsCount: {
       ability: overallAbility.validDomainsCount,
       potential: overallPotential.validDomainsCount,
     },
+
     snapshotsMeta: {
       windowsCount: historyMerged.windowsCount,
       lastWindowKey: historyMerged.lastWindowKey,
@@ -322,6 +378,7 @@ export function buildFinalPlayerResult({ forms = [] }) {
       evaluatorIds: allEvaluatorIds,
       mergeLog: historyMerged.mergeLog,
     },
+
     windows: windowSnapshots,
   }
 }

@@ -15,4 +15,5 @@ export const entitiesIcons = {
   staff: <Engineering />,
   team: <Groups />,
   teams: <Groups />,
+  group: <Groups />
 };

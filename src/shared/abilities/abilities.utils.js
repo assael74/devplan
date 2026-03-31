@@ -1,5 +1,52 @@
 // shared/abilities/abilities.utils.js
 
+export const ABILITIES_SCORE_HEX = {
+  elite: '#9ee008',
+  strong: '#6fcf4f',
+  good: '#b7d84b',
+  medium: '#f2c94c',
+  weak: '#f2994a',
+  low: '#eb5757',
+  neutral: '#d7dce3',
+}
+
+export function getAbilityScoreHex(score) {
+  const n = Number(score)
+
+  if (!Number.isFinite(n)) return ABILITIES_SCORE_HEX.neutral
+  if (n >= 4.5) return ABILITIES_SCORE_HEX.elite
+  if (n >= 4.0) return ABILITIES_SCORE_HEX.strong
+  if (n >= 3.5) return ABILITIES_SCORE_HEX.good
+  if (n >= 3.0) return ABILITIES_SCORE_HEX.medium
+  if (n >= 2.0) return ABILITIES_SCORE_HEX.weak
+  return ABILITIES_SCORE_HEX.low
+}
+
+export function getAbilityGapHex(gap) {
+  const n = Number(gap)
+
+  if (!Number.isFinite(n)) return ABILITIES_SCORE_HEX.neutral
+  if (n >= 1.0) return ABILITIES_SCORE_HEX.elite
+  if (n >= 0.5) return ABILITIES_SCORE_HEX.strong
+  if (n > 0) return ABILITIES_SCORE_HEX.medium
+  return '#b8c1cc'
+}
+
+export function getAbilitySemanticHex(color) {
+  switch (String(color || '')) {
+    case 'success':
+      return ABILITIES_SCORE_HEX.strong
+    case 'primary':
+      return '#4f8cff'
+    case 'warning':
+      return ABILITIES_SCORE_HEX.medium
+    case 'danger':
+      return ABILITIES_SCORE_HEX.low
+    default:
+      return ABILITIES_SCORE_HEX.neutral
+  }
+}
+
 export function toNum(v, fallback = 0) {
   const n = Number(v)
   return Number.isFinite(n) ? n : fallback

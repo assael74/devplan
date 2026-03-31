@@ -27,6 +27,7 @@ function buildSlimDomainsMeta(domainsMeta = []) {
     ? domainsMeta.map((domain) => ({
         domain: domain?.domain || null,
         score: domain?.score ?? null,
+        potentialScore: domain?.potentialScore ?? null,
         filledCount: domain?.filledCount ?? 0,
         totalCount: domain?.totalCount ?? 0,
         coveragePct: domain?.coveragePct ?? 0,
@@ -40,6 +41,7 @@ function buildLatestComputedPayload(finalResult = {}) {
   return {
     abilities: finalResult?.abilities || {},
     domainScores: finalResult?.domainScores || {},
+    domainPotentialScores: finalResult?.domainPotentialScores || {},
 
     domainsMeta: buildSlimDomainsMeta(finalResult?.domainsMeta),
 
@@ -110,6 +112,7 @@ function buildPlayerAbilitiesItem({
 
     abilities: finalResult?.abilities || {},
     domainScores: finalResult?.domainScores || {},
+    domainPotentialScores: finalResult?.domainPotentialScores || {},
     domainsMeta: buildSlimDomainsMeta(finalResult?.domainsMeta),
 
     level: finalResult?.level ?? null,

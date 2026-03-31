@@ -13,32 +13,17 @@ export const filtersSx = {
     borderColor: 'divider',
     display: 'grid',
     gap: 0.75,
-    mt: 1
+    mt: 1,
   },
 
   filtersTopRowSx: {
     display: 'grid',
     gap: 0.75,
     gridTemplateColumns: {
-      xs: '1fr',
-      md: 'minmax(220px,1fr) auto auto auto auto',
+      xs: '1fr auto',
+      md: 'minmax(260px, 520px) auto',
     },
     alignItems: 'center',
-  },
-
-  searchBoxSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSmallSx: {
-    minWidth: 0,
-    width: '100%',
   },
 
   icoRes: {

@@ -4,35 +4,24 @@ import React, { useMemo, useState } from 'react'
 import {
   Box,
   Chip,
-  Divider,
-  Input,
-  Option,
-  Select,
-  Sheet,
   Typography,
   Card,
   CardContent,
   Grid,
   LinearProgress,
   Stack,
-  CircularProgress
+  CircularProgress,
+  Sheet,
 } from '@mui/joy'
-import SearchRounded from '@mui/icons-material/SearchRounded'
+
 import TeamAbilitiesKpi from './components/TeamAbilitiesKpi.js'
 import TeamAbilitiesFilters from './components/TeamAbilitiesFilters.js'
-import { resolveTeamAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic'
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
+import { resolveTeamAbilitiesDomain } from '../../../../../../../../shared/abilities/abilities.domain.logic.js'
+import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { sx } from './sx/teamAbilities.modal.sx.js'
 
-const safe = (v) => (v == null ? '' : String(v))
 const isFilled = (v) => Number.isFinite(v) && v > 0
 const toFixed1 = (v) => (Number.isFinite(v) ? (Math.round(v * 10) / 10).toFixed(1) : '—')
-
-const filledOptions = [
-  { id: 'all', label: 'הכל' },
-  { id: 'filled', label: 'רק מולא' },
-  { id: 'missing', label: 'רק חסר' },
-]
 
 function scoreColor(v) {
   if (!Number.isFinite(v)) return 'neutral'
@@ -56,78 +45,59 @@ function calcDomainScore(items = []) {
   return filledItems.reduce((s, i) => s + i.value, 0) / filledItems.length
 }
 
-export default function AbilitiesDomainModal({ entity, onClose, context }) {
+export default function TeamAbilitiesDomainModal({ entity, context, onClose }) {
   const model = useMemo(() => resolveTeamAbilitiesDomain(entity, context), [entity, context])
   const { summary, domains } = model || { summary: {}, domains: [] }
 
-  const domainOptions = useMemo(
-    () => [{ id: 'all', label: 'כל הדומיינים' }, ...(domains || []).map((d) => ({ id: d.domain, label: d.domainLabel }))],
-    [domains]
-  )
-
-  const [q, setQ] = useState('')
-  const [domainFilter, setDomainFilter] = useState('all')
-  const [filledFilter, setFilledFilter] = useState('all')
+  const [selectedDomains, setSelectedDomains] = useState([])
 
   const filteredDomains = useMemo(() => {
-    const search = q.trim().toLowerCase()
-    const df = safe(domainFilter).toLowerCase().trim()
-    const ff = safe(filledFilter).toLowerCase().trim()
+    const selectedSet = new Set(selectedDomains || [])
 
-    const domainPass = (d) => df === 'all' || df === safe(d.domain).toLowerCase().trim()
-
-    const itemPass = (it) => {
-      const filled = isFilled(it.value)
-      if (ff === 'filled' && !filled) return false
-      if (ff === 'missing' && filled) return false
-      if (!search) return true
-      return safe(it.label).toLowerCase().includes(search) || safe(it.id).toLowerCase().includes(search)
-    }
-
-    return (domains || [])
-      .filter(domainPass)
-      .map((d) => {
-        const items2 = (d.items || []).filter(itemPass)
-        return { ...d, items: items2 }
-      })
-      .filter((d) => d.items && d.items.length)
-  }, [domains, q, domainFilter, filledFilter])
+    return (domains || []).filter((domain) => {
+      if (!selectedSet.size) return true
+      return selectedSet.has(domain?.domain)
+    })
+  }, [domains, selectedDomains])
 
   const globalCount = useMemo(() => {
     let total = 0
     let filled = 0
+
     for (const d of filteredDomains) {
       const items = d.items || []
       total += items.length
       filled += items.filter((i) => isFilled(i.value)).length
     }
+
     return { total, filled }
   }, [filteredDomains])
 
   return (
     <Box sx={{ minWidth: 0 }}>
-      {/* KPI strip */}
-      <Box sx={{ position: 'sticky', top: -10, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-        <TeamAbilitiesKpi entity={entity} summary={summary} globalCount={globalCount} />
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -10,
+          zIndex: 5,
+          borderRadius: 12,
+          bgcolor: 'background.body',
+        }}
+      >
+        <TeamAbilitiesKpi
+          entity={entity}
+          context={context}
+          summary={summary}
+          globalCount={globalCount}
+        />
 
         <TeamAbilitiesFilters
-          q={q}
-          domainFilter={domainFilter}
-          filledFilter={filledFilter}
-          domainOptions={domainOptions}
-          filledOptions={filledOptions}
-          onChangeQ={setQ}
-          onChangeDomainFilter={setDomainFilter}
-          onChangeFilledFilter={setFilledFilter}
-          onReset={() => {
-            setQ('')
-            setDomainFilter('all')
-            setFilledFilter('all')
-          }}
+          selectedDomains={selectedDomains}
+          onChangeSelectedDomains={setSelectedDomains}
+          onReset={() => setSelectedDomains([])}
         />
       </Box>
 
-      {/* Domains */}
       {!filteredDomains.length ? (
         <Sheet variant="soft" sx={{ p: 1, borderRadius: 'md' }}>
           <Typography level="body-sm" sx={{ opacity: 0.75 }}>
@@ -148,10 +118,18 @@ export default function AbilitiesDomainModal({ entity, onClose, context }) {
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack sx={sx.cardStack}>
-                      <Typography level="title-sm" sx={{ minWidth: 0 }} noWrap startDecorator={iconUi({ id: domain.domain })}>
+                      <Typography
+                        level="title-sm"
+                        sx={{ minWidth: 0 }}
+                        noWrap
+                        startDecorator={iconUi({ id: domain.domain })}
+                      >
                         {domain.domainLabel}
                       </Typography>
-                      <Chip size="sm" variant="soft">{`${filledCount}/${items.length}`}</Chip>
+
+                      <Chip size="sm" variant="soft">
+                        {`${filledCount}/${items.length}`}
+                      </Chip>
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ my: 0.5 }}>
@@ -160,20 +138,10 @@ export default function AbilitiesDomainModal({ entity, onClose, context }) {
                           determinate
                           value={pct}
                           color={dColor}
-                          sx={{ width: 42, height: 42  }}
+                          sx={{ width: 42, height: 42 }}
                         />
 
-                        <Typography
-                          level="body-xs"
-                          sx={{
-                            position: 'absolute',
-                            left: '50%',
-                            top: '50%',
-                            transform: 'translate(-50%, -50%) translateY(1px)',
-                            lineHeight: 1,
-                            fontWeight: 600,
-                          }}
-                        >
+                        <Typography level="body-xs" sx={sx.typoDomain}>
                           {toFixed1(domainAvg)}
                         </Typography>
                       </Box>
@@ -182,11 +150,15 @@ export default function AbilitiesDomainModal({ entity, onClose, context }) {
                         <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
                           ממוצע דומיין
                         </Typography>
-                        <LinearProgress determinate value={pct} color={dColor} sx={{ width: 160, maxWidth: '100%' }} />
+
+                        <LinearProgress
+                          determinate
+                          value={pct}
+                          color={dColor}
+                          sx={{ width: 160, maxWidth: '100%' }}
+                        />
                       </Stack>
                     </Stack>
-
-                    {/* אם תרצה בהמשך: אפשר להוסיף כאן “Top 3” יכולות של הדומיין בלי לרדת לפרטים */}
                   </CardContent>
                 </Card>
               </Grid>

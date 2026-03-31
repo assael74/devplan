@@ -14,16 +14,14 @@ export function isPlainObject(v) {
 }
 
 function getAbilitiesObject(entity = {}) {
-  if (isPlainObject(entity?.abilities)) return entity.abilities
-  if (isPlainObject(entity?.playerAbilities)) return entity.playerAbilities
-  if (isPlainObject(entity?.playersAbilities)) return entity.playersAbilities
-  if (isPlainObject(entity?.playerAbilitiesValues)) return entity.playerAbilitiesValues
+  if (isPlainObject(entity?.abilitiesState?.abilities)) return entity.abilitiesState.abilities
+
   return null
 }
 
 function getAbilitiesArray(entity = {}) {
-  if (Array.isArray(entity?.playersAbilities)) return entity.playersAbilities
-  if (Array.isArray(entity?.abilities)) return entity.abilities
+  if (Array.isArray(entity?.abilitiesState?.abilities)) return entity.abilitiesState.abilities
+
   return []
 }
 
@@ -42,17 +40,27 @@ function mapAbilitiesArrayToObject(arr = []) {
 }
 
 export function resolvePlayerAbilitiesMap(entity = {}) {
-  const obj = getAbilitiesObject(entity)
-  if (obj) return obj
-  return mapAbilitiesArrayToObject(getAbilitiesArray(entity))
+  if (isPlainObject(entity?.abilitiesState?.abilities)) {
+    return entity.abilitiesState.abilities
+  }
+
+  if (Array.isArray(entity?.abilitiesState?.abilities)) {
+    return mapAbilitiesArrayToObject(entity.abilitiesState.abilities)
+  }
+
+  return {}
 }
 
 export function resolvePlayerDomainScores(entity = {}) {
-  return isPlainObject(entity?.domainScores) ? entity.domainScores : {}
+  return isPlainObject(entity?.abilitiesState?.domains?.scores) ? entity.abilitiesState.domains.scores : {}
+}
+
+export function resolvePlayerDomainPotentialScores(entity = {}) {
+  return isPlainObject(entity?.abilitiesState?.domainPotentialScores) ? entity.abilitiesState.domainPotentialScores : {}
 }
 
 export function resolvePlayerDomainsMeta(entity = {}) {
-  return Array.isArray(entity?.domainsMeta) ? entity.domainsMeta : []
+  return Array.isArray(entity?.abilitiesState?.domains?.meta) ? entity.abilitiesState.domains.meta : []
 }
 
 export function resolvePlayerLevel(entity = {}) {
@@ -66,23 +74,23 @@ export function resolvePlayerPotential(entity = {}) {
 }
 
 export function resolvePlayerReliability(entity = {}) {
-  return isPlainObject(entity?.reliability) ? entity.reliability : {}
+  return isPlainObject(entity?.abilitiesState?.reliability) ? entity.abilitiesState?.reliability : {}
 }
 
 export function resolvePlayerCoverage(entity = {}) {
-  return isPlainObject(entity?.coverage) ? entity.coverage : {}
+  return isPlainObject(entity?.abilitiesState?.evaluation?.coverage) ? entity.abilitiesState.evaluation.coverage : {}
 }
 
 export function resolvePlayerValidDomainsCount(entity = {}) {
-  return isPlainObject(entity?.validDomainsCount) ? entity.validDomainsCount : {}
+  return isPlainObject(entity?.abilitiesState?.evaluation?.validDomainsCount) ? entity.abilitiesState.evaluation.validDomainsCount : {}
 }
 
-export function resolvePlayerSnapshotsMeta(entity = {}) {
-  return isPlainObject(entity?.snapshotsMeta) ? entity.snapshotsMeta : {}
+export function resolvePlayerEvaluation(entity = {}) {
+  return isPlainObject(entity?.abilitiesState?.evaluation) ? entity.abilitiesState.evaluation : {}
 }
 
 export function resolvePlayerWindows(entity = {}) {
-  return Array.isArray(entity?.windows) ? entity.windows : []
+  return Array.isArray(entity?.abilitiesState?.windows) ? entity.abilitiesState.windows : []
 }
 
 export function resolvePlayerFullName(player = {}) {

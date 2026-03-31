@@ -92,8 +92,8 @@ export function buildFinalRelations({
       players,
       roles: rolesByTeamId[teamId] || [],
       squadStrength,
-      level: squadStrength?.level || null,
-      levelPotential: squadStrength?.levelPotential || null,
+      level: squadStrength?.level?.avg ?? 0,
+      levelPotential: squadStrength?.levelPotential?.avg ?? 0,
       keyPlayers: pickTeamKeyPlayers({ ...team, players }),
     }
   })

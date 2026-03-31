@@ -1,10 +1,11 @@
-// shared/abilities/abilities.domain.logic.js
+// src/shared/abilities/abilities.domain.logic.js
 
 import { abilitiesList } from './abilities.list.js'
 import { fmtScore, roundTo, scoreColor } from './abilities.utils.js'
 import {
   resolvePlayerAbilitiesMap,
   resolvePlayerCoverage,
+  resolvePlayerDomainPotentialScores,
   resolvePlayerDomainScores,
   resolvePlayerDomainsMeta,
   resolveTeamPlayers,
@@ -39,16 +40,27 @@ function buildDomainMetaMap() {
   return map
 }
 
-function toPlayerDomainItem(domainMeta = {}, domainScore = null) {
+function toPlayerDomainItem(domainMeta = {}, domainScore = null, abilitiesMap = {}) {
   const score = Number.isFinite(Number(domainScore)) ? Number(domainScore) : null
-  const items = Array.isArray(domainMeta?.items) ? domainMeta.items : []
+  const rawItems = Array.isArray(domainMeta?.items) ? domainMeta.items : []
+
+  const items = rawItems.map((item) => ({
+    ...item,
+    value: safeNum(abilitiesMap?.[item?.id], null),
+  }))
 
   return {
     domain: domainMeta?.domain || '',
     domainLabel: domainMeta?.domainLabel || domainMeta?.domain || '',
     items,
-    total: Number(domainMeta?.totalCount || items.filter((it) => Number(it?.weight ?? 1) > 0).length || 0),
-    filled: Number(domainMeta?.filledCount || 0),
+    total: Number(
+      domainMeta?.totalCount || items.filter((it) => Number(it?.weight ?? 1) > 0).length || 0
+    ),
+    filled: Number(
+      domainMeta?.filledCount ||
+        items.filter((it) => Number.isFinite(Number(it?.value)) && Number(it?.value) > 0).length ||
+        0
+    ),
     avg: score,
     avgLabel: fmtScore(score),
     color: scoreColor(score),
@@ -56,10 +68,14 @@ function toPlayerDomainItem(domainMeta = {}, domainScore = null) {
     coveragePct: safeNum(domainMeta?.coveragePct, 0) || 0,
     validity: domainMeta?.validity || 'invalid',
     reliability: domainMeta?.reliability || 'low',
+    potentialScore: Number.isFinite(Number(domainMeta?.potentialScore))
+      ? Number(domainMeta.potentialScore)
+      : null,
   }
 }
 
 export function resolveAbilitiesDomain(player = {}) {
+  const abilitiesMap = resolvePlayerAbilitiesMap(player)
   const domainScores = resolvePlayerDomainScores(player)
   const domainsMeta = resolvePlayerDomainsMeta(player)
   const coverage = resolvePlayerCoverage(player)
@@ -71,16 +87,18 @@ export function resolveAbilitiesDomain(player = {}) {
 
   const domains = baseDomains.map((base) => {
     const engineMeta = domainMetaMap.get(base.domain) || {}
+
     return toPlayerDomainItem(
       {
         ...base,
         ...engineMeta,
       },
-      domainScores?.[base.domain]
+      domainScores?.[base.domain],
+      abilitiesMap
     )
   })
 
-  const ratedDomains = domains.filter((d) => d.hasRated)
+  const ratedDomains = domains.filter((d) => d.hasRated && d?.domain !== 'development')
 
   const strongest = ratedDomains.length
     ? ratedDomains.reduce((a, b) => (Number(a.avg) >= Number(b.avg) ? a : b))
@@ -104,7 +122,8 @@ export function resolveAbilitiesDomain(player = {}) {
     summary: {
       total,
       filled,
-      completionPct: safeNum(coverage?.ability, total > 0 ? roundTo((filled / total) * 100, 0) : 0) || 0,
+      completionPct:
+        safeNum(coverage?.ability, total > 0 ? roundTo((filled / total) * 100, 0) : 0) || 0,
       avgAll,
       avgAllLabel: fmtScore(avgAll),
       strongest,
@@ -144,6 +163,10 @@ export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
       .map((player) => safeNum(resolvePlayerDomainScores(player)?.[domainBase.domain], null))
       .filter((score) => Number.isFinite(score))
 
+    const validPlayerDomainPotentialScores = players
+      .map((player) => safeNum(resolvePlayerDomainPotentialScores(player)?.[domainBase.domain], null))
+      .filter((score) => Number.isFinite(score))
+
     const avg = validPlayerDomainScores.length
       ? roundTo(
           validPlayerDomainScores.reduce((sum, score) => sum + score, 0) /
@@ -152,9 +175,21 @@ export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
         )
       : null
 
+    const potentialAvg = validPlayerDomainPotentialScores.length
+      ? roundTo(
+          validPlayerDomainPotentialScores.reduce((sum, score) => sum + score, 0) /
+            validPlayerDomainPotentialScores.length,
+          1
+        )
+      : null
+
     const playersRated = validPlayerDomainScores.length
     const total = items.filter((i) => Number(i.weight || 0) > 0).length
     const filled = items.filter((i) => Number.isFinite(Number(i.avg))).length
+    const potentialGap =
+      Number.isFinite(avg) && Number.isFinite(potentialAvg)
+        ? roundTo(potentialAvg - avg, 1)
+        : null
 
     return {
       domain: domainBase.domain,
@@ -176,10 +211,13 @@ export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
       hasRated: Number.isFinite(avg),
       playersRated,
       ratingsCount: items.reduce((sum, item) => sum + Number(item.ratedCount || 0), 0),
+      potentialAvg,
+      potentialAvgLabel: fmtScore(potentialAvg),
+      potentialGap,
     }
   })
 
-  const ratedDomains = domains.filter((d) => d.hasRated)
+  const ratedDomains = domains.filter((d) => d.hasRated && d?.domain !== 'development')
 
   const strongest = ratedDomains.length
     ? ratedDomains.reduce((a, b) => (Number(a.avg) >= Number(b.avg) ? a : b))
@@ -196,8 +234,35 @@ export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
       )
     : null
 
+  const domainsWithPotential = ratedDomains.filter((d) => Number.isFinite(Number(d.potentialAvg)))
+
+  const potentialAvgAll = domainsWithPotential.length
+    ? roundTo(
+        domainsWithPotential.reduce((sum, d) => sum + Number(d.potentialAvg || 0), 0) /
+          domainsWithPotential.length,
+        1
+      )
+    : null
+
+  const domainsWithGap = ratedDomains.filter((d) => Number.isFinite(Number(d.potentialGap)))
+
+  const biggestGapDomain = domainsWithGap.length
+    ? domainsWithGap.reduce((a, b) =>
+        Number(a.potentialGap || 0) >= Number(b.potentialGap || 0) ? a : b
+      )
+    : null
+
+  const avgGapAll = domainsWithGap.length
+    ? roundTo(
+        domainsWithGap.reduce((sum, d) => sum + Number(d.potentialGap || 0), 0) /
+          domainsWithGap.length,
+        1
+      )
+    : null
+
   const total = domains.reduce((sum, d) => sum + Number(d.total || 0), 0)
   const filled = domains.reduce((sum, d) => sum + Number(d.filled || 0), 0)
+
   const playersWithAbilities = players.filter((player) => {
     const abilities = resolvePlayerAbilitiesMap(player)
     return Object.values(abilities || {}).some((value) => Number(value) > 0)
@@ -210,8 +275,13 @@ export function resolveTeamAbilitiesDomain(entity = {}, context = {}) {
       completionPct: total > 0 ? roundTo((filled / total) * 100, 0) : 0,
       avgAll,
       avgAllLabel: fmtScore(avgAll),
+      potentialAvgAll,
+      potentialAvgAllLabel: fmtScore(potentialAvgAll),
+      avgGapAll,
+      avgGapAllLabel: fmtScore(avgGapAll),
       strongest,
       weakest,
+      biggestGapDomain,
       playersCount: players.length,
       playersWithAbilities,
       withVideo: playersWithAbilities,

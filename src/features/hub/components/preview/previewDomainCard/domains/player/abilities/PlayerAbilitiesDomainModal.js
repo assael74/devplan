@@ -65,33 +65,16 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
     [domains]
   )
 
-  const [q, setQ] = useState('')
-  const [domainFilter, setDomainFilter] = useState('all')
-  const [filledFilter, setFilledFilter] = useState('all')
+  const [selectedDomains, setSelectedDomains] = useState([])
 
   const filteredDomains = useMemo(() => {
-    const search = q.trim().toLowerCase()
-    const df = safe(domainFilter).toLowerCase().trim()
-    const ff = safe(filledFilter).toLowerCase().trim()
+    const selectedSet = new Set(selectedDomains || [])
 
-    const domainPass = (d) => df === 'all' || df === safe(d.domain).toLowerCase().trim()
-
-    const itemPass = (it) => {
-      const filled = isFilled(it.value)
-      if (ff === 'filled' && !filled) return false
-      if (ff === 'missing' && filled) return false
-      if (!search) return true
-      return safe(it.label).toLowerCase().includes(search) || safe(it.id).toLowerCase().includes(search)
-    }
-
-    return (domains || [])
-      .filter(domainPass)
-      .map((d) => {
-        const items2 = (d.items || []).filter(itemPass)
-        return { ...d, items: items2 }
-      })
-      .filter((d) => d.items && d.items.length)
-  }, [domains, q, domainFilter, filledFilter])
+    return (domains || []).filter((domain) => {
+      if (!selectedSet.size) return true
+      return selectedSet.has(domain?.domain)
+    })
+  }, [domains, selectedDomains])
 
   const globalCount = useMemo(() => {
     let total = 0
@@ -111,18 +94,10 @@ export default function AbilitiesDomainModal({ entity, onClose }) {
         <PlayerAbilitiesKpi entity={entity} summary={summary} globalCount={globalCount} />
 
         <PlayerAbilitiesFilters
-          q={q}
-          domainFilter={domainFilter}
-          filledFilter={filledFilter}
-          domainOptions={domainOptions}
-          filledOptions={filledOptions}
-          onChangeQ={setQ}
-          onChangeDomainFilter={setDomainFilter}
-          onChangeFilledFilter={setFilledFilter}
+          selectedDomains={selectedDomains}
+          onChangeSelectedDomains={setSelectedDomains}
           onReset={() => {
-            setQ('')
-            setDomainFilter('all')
-            setFilledFilter('all')
+            setSelectedDomains([])
           }}
         />
       </Box>
