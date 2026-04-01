@@ -12,6 +12,10 @@ const num = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v : Number(v) ||
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
+const getSquadRole = (player) => safe(player?.squadRole).trim()
+
+const isKeyBySquadRole = (player) => getSquadRole(player) === 'key'
+
 const pickPlayerName = (p) => {
   const fn = p?.playerFirstName || p?.firstName || ''
   const ln = p?.playerLastName || p?.lastName || ''
@@ -23,7 +27,11 @@ const pickId = (p) => safe(p?.id || p?.playerId)
 
 const pickKeyIds = (team) => {
   const kp = asArr(team?.keyPlayers)
-  return new Set(kp.map((x) => safe(x?.id || x?.playerId)).filter(Boolean))
+  return new Set(
+    kp
+      .map((x) => safe(x?.player?.id || x?.id || x?.playerId))
+      .filter(Boolean)
+  )
 }
 
 const pickPotentialBand = (value) => {
@@ -87,7 +95,8 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
       const timeRef = buildTimeRef(player, team)
       const timeRateNum = timeRef.playTimeRate
 
-      const isKey = player?.isKey === true || keySet.has(id)
+      const squadRole = getSquadRole(player)
+      const isKey = isKeyBySquadRole(player) || keySet.has(id)
       const potentialBand = pickPotentialBand(levelPotential)
       const projectStatus = getProjectStatus(player)
       const position = getPositionLabel(player)
@@ -97,6 +106,7 @@ export function resolveTeamPlayersDomain(entity, filters = {}) {
         id,
         player,
         name: pickPlayerName(player),
+        squadRole,
         isKey,
         levelPotential,
         level,

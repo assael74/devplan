@@ -76,10 +76,27 @@ export default function PlayerBirthCard({ player, onUpdate }) {
       </Box>
 
       <Box sx={sx.actions}>
-        <Button size="sm" variant="soft" color="neutral" onClick={onReset} disabled={!dirty || saving}>
+        <Button
+          size="sm"
+          variant="soft"
+          color="neutral"
+          onClick={onReset}
+          disabled={!dirty || saving}
+          startDecorator={iconUi({ id: 'reset' })}
+        >
           איפוס
         </Button>
-        <Button size="sm" variant="solid" onClick={onSave} disabled={!dirty || saving} loading={saving} loadingPosition="center">
+
+        <Button
+          size="sm"
+          variant="solid"
+          onClick={onSave}
+          disabled={!dirty || saving}
+          loading={saving}
+          loadingPosition="center"
+          sx={sx.confBtn}
+          startDecorator={iconUi({ id: 'save' })}
+        >
           שמירה
         </Button>
       </Box>

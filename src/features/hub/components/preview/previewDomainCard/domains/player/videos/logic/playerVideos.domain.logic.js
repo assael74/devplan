@@ -325,7 +325,7 @@ export function resolvePlayerVideosDomain(entity, filters = {}, deps = {}) {
     tags: tagsArr,
     seasonStartYear: seasonStartYear,
   })
-  console.log(insights)
+  
   const videos = videosFiltered
     .slice()
     .sort((a, b) => pickVideoDate(b).localeCompare(pickVideoDate(a)))

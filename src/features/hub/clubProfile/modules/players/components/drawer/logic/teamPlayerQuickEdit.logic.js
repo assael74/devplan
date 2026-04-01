@@ -35,7 +35,7 @@ export const buildInitialDraft = (player) => {
     teamName: buildPlayerMeta(p),
     positions: safeArr(p?.positions),
     active: p?.active === true,
-    isKey: p?.isKey === true,
+    squadRole: p?.squadRole,
     type: p?.type,
     projectStatus: p?.projectStatus || '',
     raw: p,
@@ -51,8 +51,8 @@ export const buildPatch = (draft, initial) => {
   if (draft.active !== initial.active) {
     next.active = draft.active
   }
-  if (draft.isKey !== initial.isKey) {
-    next.isKey = draft.isKey
+  if (draft.squadRole !== initial.squadRole) {
+    next.squadRole = draft.squadRole
   }
   if (draft.type !== initial.type) {
     next.type = draft.type
@@ -67,6 +67,6 @@ export const buildPatch = (draft, initial) => {
 export const getIsDirty = (draft, initial) =>
   !sameArr(draft.positions, initial.positions) ||
   draft.active !== initial.active ||
-  draft.isKey !== initial.isKey ||
+  draft.squadRole !== initial.squadRole ||
   draft.type !== initial.type ||
   draft.projectStatus !== initial.projectStatus

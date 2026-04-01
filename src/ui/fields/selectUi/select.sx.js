@@ -62,16 +62,12 @@ export const playersSlot = {
     className: 'dpScrollThin',
     sx: {
       maxHeight: 320,
-      minWidth: 'var(--Select-trigger-width)',
+      //minWidth: 'var(--Select-trigger-width)',
       overflow: 'auto',
-      p: 0.5,
+      //p: 0.5,
       borderRadius: 'md',
-      boxShadow: 'lg',
-      '& .MuiOption-root': {
-        py: 0.5,
-        px: 0.75,
-        borderRadius: 'sm',
-      },
+      //boxShadow: 'lg',
+
     },
   },
 }

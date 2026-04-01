@@ -26,7 +26,7 @@ export const buildInitialForm = (player) => ({
   birthDay: toStr(player?.birthDay),
   phone: toStr(player?.phone),
   active: !!player?.active,
-  isKey: !!player?.isKey,
+  squadRole: toStr(player?.squadRole),
   projectStatus: player?.projectStatus ?? null,
 })
 
@@ -38,7 +38,7 @@ export const buildComparableForm = (form) => ({
   birthDay: String(form?.birthDay || '').trim() || null,
   phone: String(form?.phone || '').trim() || null,
   active: !!form?.active,
-  isKey: !!form?.isKey,
+  squadRole: String(form?.squadRole || '').trim() || null,
   projectStatus: form?.projectStatus ?? null,
 })
 

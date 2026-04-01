@@ -75,7 +75,14 @@ export default function PlayerNamesCard({ player, onUpdate }) {
       </Box>
 
       <Box sx={sx.actions}>
-        <Button size="sm" variant="soft" color="neutral" onClick={onReset} disabled={!dirty || saving}>
+        <Button
+          size="sm"
+          variant="soft"
+          color="neutral"
+          onClick={onReset}
+          disabled={!dirty || saving}
+          startDecorator={iconUi({ id: 'reset' })}
+        >
           איפוס
         </Button>
 
@@ -86,6 +93,8 @@ export default function PlayerNamesCard({ player, onUpdate }) {
           disabled={!dirty || saving}
           loading={saving}
           loadingPosition="center"
+          sx={sx.confBtn}
+          startDecorator={iconUi({ id: 'save' })}
         >
           שמירה
         </Button>

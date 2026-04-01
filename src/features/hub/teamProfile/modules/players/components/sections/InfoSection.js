@@ -6,8 +6,12 @@ import PersonRounded from '@mui/icons-material/PersonRounded'
 
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { getSquadRoleMeta } from '../../../../../../../shared/players/player.squadRole.utils.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 import { teamPlayersSectionsSx as sx } from '../../sx/teamPlayers.sections.sx.js'
+
+const c = getEntityColors('players')
 
 export default function InfoSection({
   row,
@@ -21,6 +25,7 @@ export default function InfoSection({
   const assists = Number(row?.playerFullStats?.assists ?? 0)
   const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
   const colorTR = row?.playerFullStats?.trColor || 'neutral'
+  const squadRoleMeta = getSquadRoleMeta(row, c)
 
   return (
     <Box sx={sx.infoSection}>
@@ -29,6 +34,7 @@ export default function InfoSection({
           role={clickableAvatar ? 'button' : undefined}
           tabIndex={clickableAvatar ? 0 : undefined}
           onClick={clickableAvatar ? () => onAvatarClick(row) : undefined}
+          sx={sx.avatarBtn}
           onKeyDown={
             clickableAvatar
               ? (e) => {
@@ -39,11 +45,8 @@ export default function InfoSection({
                 }
               : undefined
           }
-          sx={sx.avatarBtn}
         >
-          <Avatar src={row?.photo || playerImage} sx={sx.avatar}>
-            <PersonRounded />
-          </Avatar>
+          <Avatar src={row?.photo || playerImage} sx={sx.avatar} />
 
           <Box
             sx={[
@@ -66,17 +69,28 @@ export default function InfoSection({
               {row?.fullName || '—'}
             </Typography>
 
-            {row?.isKey ? (
+            <Box sx={{ flex: 1 }} />
+
+            {squadRoleMeta?.value ? (
               <Chip
                 size="sm"
-                color="warning"
                 variant="soft"
-                startDecorator={iconUi({ id: 'keyPlayer' })}
+                color='warning'
+                startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color }})}
                 sx={sx.keyChip}
               >
-                מפתח
+                {squadRoleMeta.label}
               </Chip>
-            ) : null}
+            ) : (
+              <Chip
+                size="sm"
+                color='danger'
+                variant="soft"
+                sx={sx.keyChip}
+              >
+                לא הוגדר מעמד
+              </Chip>
+            )}
           </Box>
 
           <Box sx={sx.subMetaInline}>

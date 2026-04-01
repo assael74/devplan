@@ -19,6 +19,8 @@ import AbilitiesPublicRouteEntry from './AbilitiesPublicRouteEntry.js'
 
 import TagsManagementPage from '../../features/tagsHub/TagsManagementPage.js'
 
+import AbilitiesExplainerPage from '../../features/abilities/explainer/AbilitiesExplainerPage.js'
+
 export default function AppRoutes() {
   const { user } = useAuth()
   const AuthForm = () => null
@@ -59,6 +61,7 @@ export default function AppRoutes() {
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />
           <Route path="/tags" element={<TagsManagementPage />} />
+          <Route path="/abilities/explainer" element={<AbilitiesExplainerPage />} />
 
           <Route path="/clubs/:clubId" element={<ClubProfilePage />} />
           <Route path="/clubs/:clubId/:tabKey" element={<ClubProfilePage />} />

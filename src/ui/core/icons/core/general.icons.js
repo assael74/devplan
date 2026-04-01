@@ -13,7 +13,8 @@ import {
   Weekend,
   Visibility,
   ViewWeek,
-  ScheduleSend
+  ScheduleSend,
+  Summarize
 } from '@mui/icons-material';
 
 export const generalIcons = {
@@ -31,5 +32,7 @@ export const generalIcons = {
   check: <PlaylistAddCheckCircle />,
   profile: <Attribution />,
   readiness: <Visibility />,
-  calendar: <ScheduleSend />
+  reliability: <Visibility />,
+  calendar: <ScheduleSend />,
+  summary: <Summarize />
 };

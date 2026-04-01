@@ -41,7 +41,7 @@ const pickClubKeyPlayers = (club) => {
         team: team || null,
         teamId: team?.id || player?.teamId || null,
         clubId: club?.id || player?.clubId || null,
-        isKey: player?.isKey === true,
+        isKey: player?.squadRole === 'key',
         isAutoEligible: Number(player?.timePlayed || player?.timeVideoStats || 0) > 0,
       })
     }

@@ -15,7 +15,6 @@ export const COLORS = {
     project: { bg: '#8fce00', surface: '#FFFFFF', accent: '#e5bda3', text: '#111827', textAcc: '#EEF2FF' },
 
     role: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
-
     roles: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
     staff: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
 

@@ -129,12 +129,13 @@ export const sx = {
   },
 
   statusCard: {
-    minWidth: { xs: '100%', md: 220 },
-    maxWidth: { xs: '100%', md: 260 },
+    minWidth: { xs: '100%', md: 250 },
+    maxWidth: { xs: '100%', md: 350 },
+    width: '100%',
     display: 'grid',
     gap: 0.75,
     alignContent: 'center',
-    justifyContent: 'center',
+    justifyContent: 'stretch',
     p: 1,
     mt: 1,
     borderRadius: 'md',
@@ -151,17 +152,23 @@ export const sx = {
   },
 
   statusChipsRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
+    display: 'grid',
+    gridTemplateColumns: 'max-content minmax(170px, 1fr)',
     gap: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'end',
+    width: '100%',
 
     '& .MuiFormControl-root': {
-      width: 'auto',
-      minWidth: 'unset',
-      flex: '0 0 auto',
+      minWidth: 0,
       m: 0,
+    },
+
+    '& .MuiFormControl-root:first-of-type': {
+      width: 'auto',
+    },
+
+    '& .MuiFormControl-root:last-of-type': {
+      width: '100%',
     },
   },
 

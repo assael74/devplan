@@ -7,8 +7,8 @@ import {
   PlayerFirstNameField,
   PlayerLastNameField,
   PlayerShortNameField,
+  SquadRoleSelectField,
   PlayerActiveSelector,
-  PlayerKeyPlayerSelector,
 } from '../../../../../../../../../ui/fields'
 
 import { sx } from '../sx/playerInfo.domain.sx.js'
@@ -29,19 +29,19 @@ export default function PlayerInfoTopSection({ form, pending, setField }) {
       <Box sx={sx.topGrid}>
         <Box sx={sx.namesGrid}>
           <PlayerFirstNameField
-            value={form.playerFirstName}
+            value={form?.playerFirstName}
             onChange={(v) => setField('playerFirstName', v)}
             disabled={pending}
           />
 
           <PlayerLastNameField
-            value={form.playerLastName}
+            value={form?.playerLastName}
             onChange={(v) => setField('playerLastName', v)}
             disabled={pending}
           />
 
           <PlayerShortNameField
-            value={form.playerShortName}
+            value={form?.playerShortName}
             onChange={(v) => setField('playerShortName', v)}
             disabled={pending}
           />
@@ -52,15 +52,15 @@ export default function PlayerInfoTopSection({ form, pending, setField }) {
         <Box sx={sx.statusCard}>
           <Box sx={sx.statusChipsRow}>
             <PlayerActiveSelector
-              value={!!form.active}
+              value={!!form?.active}
               onChange={(v) => setField('active', !!v)}
               size="sm"
               disabled={pending}
             />
 
-            <PlayerKeyPlayerSelector
-              value={!!form.isKey}
-              onChange={(v) => setField('isKey', !!v)}
+            <SquadRoleSelectField
+              value={form?.squadRole}
+              onChange={(v) => setField('squadRole', v)}
               size="sm"
               disabled={pending}
             />

@@ -21,7 +21,7 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
 import { usePlayerHubUpdate } from './../../../../../hooks/players/usePlayerHubUpdate.js'
 import ProjectStatusSelectField from '../../../../../../../ui/fields/checkUi/players/ProjectStatusSelectField.js'
 import PlayerActiveSelector from '../../../../../../../ui/fields/checkUi/players/PlayerActiveSelector.js'
-import PlayerKeyPlayerSelector from '../../../../../../../ui/fields/checkUi/players/PlayerKeyPlayerSelector.js'
+import SquadRoleSelectField from '../../../../../../../ui/fields/selectUi/players/SquadRoleSelectField.js'
 import PlayerTypeSelector from '../../../../../../../ui/fields/checkUi/players/PlayerTypeSelector.js'
 
 import { teamPlayersDrawerSx as sx } from './sx/teamPlayers.drawer.sx.js'
@@ -72,7 +72,7 @@ export default function TeamPlayerQuickEditDrawer({
       positions: [...initial.positions],
     })
   }
-  
+
   return (
     <Drawer
       size="md"
@@ -109,10 +109,10 @@ export default function TeamPlayerQuickEditDrawer({
               onChange={() => setDraft((prev) => ({ ...prev, active: !prev.active }))}
              />
 
-             <PlayerKeyPlayerSelector
+             <SquadRoleSelectField
                size="md"
-               value={draft.isKey}
-               onChange={() => setDraft((prev) => ({ ...prev, isKey: !prev.isKey }))}
+               value={draft?.squadRole}
+               onChange={(value) => setDraft((prev) => ({ ...prev, squadRole: value }))}
               />
 
              <PlayerTypeSelector

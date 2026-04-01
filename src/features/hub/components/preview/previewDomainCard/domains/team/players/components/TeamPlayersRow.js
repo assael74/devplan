@@ -5,6 +5,7 @@ import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 import { getProjectStatusMeta } from '../logic/teamPlayers.helpers'
+import { getSquadRoleMeta } from '../../../../../../../../../shared/players/player.squadRole.utils.js'
 import { tableSx as sx } from '../sx/teamPlayersTable.sx'
 import JoyStarRating from '../../../../../../../../../ui/domains/ratings/JoyStarRating'
 
@@ -24,10 +25,7 @@ export function LevelStars({ label, value }) {
 }
 
 export default function TeamPlayersRow({ row, onEdit }) {
-  const isKeyColor = row?.isKey ? c.accent : '#f44336'
-  const isKeyPlayer = row?.isKey ? iconUi({ id: 'keyPlayer', size: 'sm', sx: { color: isKeyColor } }) : null
-  const keyStr = row?.isKey ? 'שחקן מפתח' : 'שחקן סגל'
-
+  const squadRoleMeta = getSquadRoleMeta(row, c)
   const statusMeta = getProjectStatusMeta(row?.projectStatus)
   const positionLabel = row?.position || 'ללא עמדה'
   const timeRateStr = row?.timeRate || '0%'
@@ -46,8 +44,8 @@ export default function TeamPlayersRow({ row, onEdit }) {
           <Typography level="body-md" sx={sx.playerNameSx}>
             {row?.name || ''}
           </Typography>
-          <Typography sx={sx.playerMetaSx} startDecorator={isKeyPlayer}>
-            {keyStr}
+          <Typography sx={sx.playerMetaSx} startDecorator={iconUi({id: squadRoleMeta.iconId, sx:{ color: squadRoleMeta.color }})}>
+            {squadRoleMeta.label}
           </Typography>
         </Box>
       </Box>

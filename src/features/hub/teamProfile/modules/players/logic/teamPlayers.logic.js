@@ -136,6 +136,7 @@ const buildSearchText = ({
   activeLabel,
   projectStatusLabel,
   projectChipLabel,
+  squadRoleLabel,
 }) => {
   return [
     fullName,
@@ -148,10 +149,21 @@ const buildSearchText = ({
     activeLabel,
     projectStatusLabel,
     projectChipLabel,
+    squadRoleLabel,
   ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
+}
+
+const getSquadRole = (p, r) => norm(r?.squadRole || p?.squadRole)
+const isKeyBySquadRole = (squadRole) => squadRole === 'key'
+
+const getSquadRoleLabel = (squadRole) => {
+  if (squadRole === 'key') return 'שחקן מפתח'
+  if (squadRole === 'rotation') return 'רוטציה'
+  if (squadRole === 'fringe') return 'אחרון בסגל'
+  return 'לא הוגדר מעמד'
 }
 
 export const normalizeTeamPlayerRow = (raw, team) => {
@@ -169,7 +181,9 @@ export const normalizeTeamPlayerRow = (raw, team) => {
     '—'
 
   const active = r?.active != null ? r.active : p?.active != null ? p.active : true
-  const isKey = (r?.isKey ?? p?.isKey ?? false) === true
+  const squadRole = getSquadRole(p, r)
+  const isKey = isKeyBySquadRole(squadRole)
+
   const type = norm(r?.type || p?.type) || 'noneType'
   const projectStatus = norm(r?.projectStatus || p?.projectStatus)
 
@@ -192,6 +206,7 @@ export const normalizeTeamPlayerRow = (raw, team) => {
 
   const activeLabel = active ? 'פעיל' : 'לא פעיל'
   const generalPositionLabel = generalPosition.layerLabel || generalPosition.layerKey || ''
+  const squadRoleLabel = getSquadRoleLabel(squadRole)
 
   return {
     id,
@@ -200,6 +215,7 @@ export const normalizeTeamPlayerRow = (raw, team) => {
     photo: p?.photo || r?.photo || null,
 
     active,
+    squadRole,
     isKey,
 
     type,
@@ -234,6 +250,7 @@ export const normalizeTeamPlayerRow = (raw, team) => {
       activeLabel,
       projectStatusLabel: projectStatusMeta?.labelH || '',
       projectChipLabel: projectChipMeta?.labelH || '',
+      squadRoleLabel,
     }),
 
     raw: r,
@@ -275,7 +292,7 @@ export const resolveTeamPlayers = (team) => {
       total: rows.length,
       active: rows.filter((x) => x.active).length,
       nonActive: rows.filter((x) => !x.active).length,
-      key: rows.filter((x) => x.isKey).length,
+      key: rows.filter((x) => x.squadRole === 'key').length,
       project: rows.filter((x) => x.projectChipMeta?.id === 'project').length,
       candidate: rows.filter((x) => x.projectChipMeta?.id === 'candidateFlow').length,
       positionBuckets: getPositionBuckets(rows),

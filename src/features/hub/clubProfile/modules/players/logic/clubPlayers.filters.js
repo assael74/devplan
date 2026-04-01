@@ -1,5 +1,7 @@
 // clubProfile/modules/players/logic/clubPlayers.filters.js
 
+// clubProfile/modules/players/logic/clubPlayers.filters.js
+
 const safe = (v) => (v == null ? '' : String(v))
 const norm = (v) => safe(v).trim().toLowerCase()
 
@@ -24,7 +26,7 @@ export function applyClubPlayersFilters(rows, filters = CLUB_PLAYERS_DEFAULT_FIL
   }
 
   if (filters?.onlyKey) {
-    next = next.filter((row) => row?.isKey === true)
+    next = next.filter((row) => row?.squadRole === 'key')
   }
 
   if (filters?.onlyProject) {

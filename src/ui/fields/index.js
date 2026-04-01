@@ -24,7 +24,6 @@ export { default as PaymentTypeSelector } from './checkUi/payments/PaymentTypeSe
 export { default as PlayerActiveSelector } from './checkUi/players/PlayerActiveSelector'
 export { default as PlayerTypeSelector } from './checkUi/players/PlayerTypeSelector'
 export { default as ProjectStatusSelectField } from './checkUi/players/ProjectStatusSelectField'
-export { default as PlayerKeyPlayerSelector } from './checkUi/players/PlayerKeyPlayerSelector'
 
 // teams
 export { default as TeamActiveSelector } from './checkUi/teams/TeamActiveSelector'
@@ -95,6 +94,7 @@ export { default as MeetingTypeSelectField } from './selectUi/meetings/MeetingTy
 export { default as PlayerPositionsSelect } from './selectUi/players/PlayerPositionsSelect'
 export { default as PlayerPositionsSimpleSelect } from './selectUi/players/PlayerPositionsSimpleSelect'
 export { default as PlayerSelectField } from './selectUi/players/PlayerSelectField'
+export { default as SquadRoleSelectField } from './selectUi/players/SquadRoleSelectField'
 
 // roles
 export { default as RoleSelectField } from './selectUi/roles/RoleSelectField'

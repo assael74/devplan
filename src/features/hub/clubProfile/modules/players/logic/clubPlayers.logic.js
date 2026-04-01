@@ -6,6 +6,7 @@ import { getPlayerQuickStats } from '../../../../../../shared/players/player.qui
 import {
   PLAYERS_TYPES,
   PROJECT_STATUS_CANDIDATE,
+  SQUAD_ROLE_OPTIONS,
 } from '../../../../../../shared/players/players.constants.js'
 
 const safe = (v) => (v == null ? '' : String(v))
@@ -146,6 +147,33 @@ const buildMetaCounts = (player, raw, level) => {
   }
 }
 
+const getSquadRole = (player, raw) => norm(raw?.squadRole || player?.squadRole)
+
+const getSquadRoleMeta = (squadRole) => {
+  const value = norm(squadRole)
+  const option = SQUAD_ROLE_OPTIONS.find((item) => item.value === value)
+
+  if (!option) {
+    return {
+      value: '',
+      label: 'לא הוגדר מעמד',
+      iconId: '',
+      color: '',
+      weight: 0,
+      isKey: false,
+    }
+  }
+
+  return {
+    value: option.value,
+    label: option.label,
+    iconId: option.idIcon,
+    color: option.color,
+    weight: Number(option.weight || 0),
+    isKey: option.value === 'key',
+  }
+}
+
 const buildSearchText = ({
   fullName,
   birthLabel,
@@ -158,6 +186,7 @@ const buildSearchText = ({
   projectStatusLabel,
   projectChipLabel,
   teamName,
+  squadRoleLabel,
 }) => {
   return [
     fullName,
@@ -171,6 +200,7 @@ const buildSearchText = ({
     projectStatusLabel,
     projectChipLabel,
     teamName,
+    squadRoleLabel,
   ]
     .filter(Boolean)
     .join(' ')
@@ -202,7 +232,10 @@ export function normalizeClubPlayerRow(raw, club) {
     '—'
 
   const active = r?.active != null ? r.active : p?.active != null ? p.active : true
-  const isKey = (r?.isKey ?? p?.isKey ?? false) === true
+  const squadRole = getSquadRole(p, r)
+  const squadRoleMeta = getSquadRoleMeta(squadRole)
+  const isKey = squadRoleMeta.isKey
+
   const type = norm(r?.type || p?.type) || 'noneType'
   const projectStatus = norm(r?.projectStatus || p?.projectStatus)
 
@@ -234,6 +267,8 @@ export function normalizeClubPlayerRow(raw, club) {
     photo: p?.photo || r?.photo || null,
 
     active,
+    squadRole,
+    squadRoleMeta,
     isKey,
 
     type,
@@ -270,6 +305,7 @@ export function normalizeClubPlayerRow(raw, club) {
       projectStatusLabel: projectStatusMeta?.labelH || '',
       projectChipLabel: projectChipMeta?.labelH || '',
       teamName: teamMeta?.teamName || '',
+      squadRoleLabel: squadRoleMeta?.label || '',
     }),
 
     raw: r,
@@ -333,7 +369,7 @@ export const resolveClubPlayers = (club) => {
       total: rows.length,
       active: rows.filter((x) => x.active).length,
       nonActive: rows.filter((x) => !x.active).length,
-      key: rows.filter((x) => x.isKey).length,
+      key: rows.filter((x) => x.squadRole === 'key').length,
       project: rows.filter((x) => x.projectChipMeta?.id === 'project').length,
       candidate: rows.filter((x) => x.projectChipMeta?.id === 'candidateFlow').length,
       positionBuckets: getPositionBuckets(rows),

@@ -1,6 +1,6 @@
 // preview/previewDomainCard/domains/team/players/logic/teamPlayers.helpers.js
 
-import { PROJECT_STATUS_CANDIDATE } from '../../../../../../../../../shared/players/players.constants.js'
+import { PROJECT_STATUS_CANDIDATE, SQUAD_ROLE_OPTIONS } from '../../../../../../../../../shared/players/players.constants.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const num = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v : Number(v) || 0)

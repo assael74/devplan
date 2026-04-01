@@ -50,7 +50,7 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
 
   const isActive = !!t?.active
   const tooltipText = isActive ? 'העבר לארכיון (ניתן לשחזור)' : 'שחזר מועדון מהארכיון'
-  
+  console.log(team)
   return (
     <>
       <Box sx={previewSx.headerWrap({ type: 'team', entity: t })}>

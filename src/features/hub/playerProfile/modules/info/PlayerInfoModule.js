@@ -62,8 +62,8 @@ export default function PlayerInfoModule({ entity, context }) {
         <PlayerAffiliationCard
           player={player}
           onUpdate={onUpdate}
-          clubsOptions={context?.clubsList}
-          teamsOptions={context?.teamsList}
+          clubsOptions={context?.clubs}
+          teamsOptions={context?.teams}
         />
         <PlayerPhysicalCard player={player} onUpdate={onUpdate} />
       </Box>

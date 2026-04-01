@@ -21,7 +21,7 @@ const buildInitial = (row) => {
     id,
     fullName,
     projectStatus: str(r?.projectStatus ?? p?.projectStatus),
-    isKey: (r?.isKey ?? p?.isKey ?? false) === true,
+    squadRole: (r?.squadRole ?? p?.squadRole ?? false) === true,
     raw: r,
   }
 }

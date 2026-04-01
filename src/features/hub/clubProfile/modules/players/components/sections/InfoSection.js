@@ -6,6 +6,10 @@ import { Box, Chip, Typography, Avatar } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import { clubPlayersSectionsSx as sx } from '../../sx/clubPlayers.sections.sx.js'
+import { getSquadRoleMeta } from '../../../../../../../shared/players/player.squadRole.utils.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('players')
 
 function getAgeLabel(row) {
   if (Number.isFinite(row?.age) && row.age > 0) return `גיל ${row.age}`
@@ -17,7 +21,7 @@ export default function InfoSection({ row }) {
   const fullName = row?.fullName || '—'
   const ageLabel = getAgeLabel(row)
   const active = row?.active !== false
-  const isKey = row?.isKey === true
+  const squadRoleMeta = getSquadRoleMeta(row, c)
   const goals = Number(row?.playerFullStats?.goals ?? 0)
   const assists = Number(row?.playerFullStats?.assists ?? 0)
   const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
@@ -49,17 +53,28 @@ export default function InfoSection({ row }) {
               {row?.fullName || '—'}
             </Typography>
 
-            {row?.isKey ? (
+            <Box sx={{ flex: 1 }} />
+
+            {squadRoleMeta?.value ? (
               <Chip
                 size="sm"
-                color="warning"
                 variant="soft"
-                startDecorator={iconUi({ id: 'keyPlayer' })}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap', marginInlineStart: 0, }}
+                color='warning'
+                startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color }})}
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: 0.2 }}
               >
-                מפתח
+                {squadRoleMeta.label}
               </Chip>
-            ) : null}
+            ) : (
+              <Chip
+                size="sm"
+                color='danger'
+                variant="soft"
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: 0.2 }}
+              >
+                לא הוגדר מעמד
+              </Chip>
+            )}
           </Box>
 
           <Box sx={sx.subMetaInline}>
