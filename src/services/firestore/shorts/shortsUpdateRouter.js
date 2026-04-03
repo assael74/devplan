@@ -89,6 +89,31 @@ export const shortsUpdateRouterMap = {
     lastCheck: { shortKey: 'scouting.playersGames', path: 'lastCheck', mode: 'merge' },
   },
 
+  privates: {
+    playerFirstName: { shortKey: 'privates.privatePlayersInfo', path: 'playerFirstName', mode: 'merge' },
+    playerLastName: { shortKey: 'privates.privatePlayersInfo', path: 'playerLastName', mode: 'merge' },
+    playerShortName: { shortKey: 'privates.privatePlayersInfo', path: 'playerShortName', mode: 'merge' },
+    active: { shortKey: 'privates.privatePlayersInfo', path: 'active', mode: 'merge' },
+    birth: { shortKey: 'privates.privatePlayersInfo', path: 'birth', mode: 'merge' },
+    birthDay: { shortKey: 'privates.privatePlayersInfo', path: 'birthDay', mode: 'merge' },
+    phone: { shortKey: 'privates.privatePlayersInfo', path: 'phone', mode: 'merge' },
+    ifaLink: { shortKey: 'privates.privatePlayersInfo', path: 'ifaLink', mode: 'merge' },
+    squadRole: { shortKey: 'privates.privatePlayersInfo', path: 'squadRole', mode: 'merge' },
+    photo: { shortKey: 'privates.privatePlayersInfo', path: 'photo', mode: 'merge' },
+    positions: { shortKey: 'privates.privatePlayersInfo', path: 'positions', mode: 'replace' },
+    bodyFat: { shortKey: 'privates.privatePlayersInfo', path: 'bodyFat', mode: 'replace' },
+    favoriteClub: { shortKey: 'privates.privatePlayersInfo', path: 'favoriteClub', mode: 'merge' },
+    height: { shortKey: 'privates.privatePlayersInfo', path: 'height', mode: 'replace' },
+    weight: { shortKey: 'privates.privatePlayersInfo', path: 'weight', mode: 'replace' },
+    payments: { shortKey: 'privates.privatePlayersInfo', path: 'playerPayments', mode: 'replace' },
+    parents: { shortKey: 'privates.privatePlayersInfo', path: 'parents', mode: 'replace' },
+
+    abilities: { shortKey: 'privates.privatePlayersAbilities', path: 'abilities', mode: 'merge' },
+    formIds: { shortKey: 'privates.privatePlayersAbilities', path: 'formIds', mode: 'merge' },
+    level: { shortKey: 'privates.privatePlayersAbilities', path: 'level', mode: 'merge' },
+    levelPotential: { shortKey: 'privates.privatePlayersAbilities', path: 'levelPotential', mode: 'merge' },
+  },
+
   meetings: {
     eventId: { shortKey: 'meetings.meetingDate', path: 'eventId', mode: 'merge' },
     meetingDate: { shortKey: 'meetings.meetingDate', path: 'meetingDate', mode: 'merge' },
@@ -128,6 +153,22 @@ export const shortsUpdateRouterMap = {
     result: { shortKey: 'games.gameResult', path: 'result', mode: 'merge' },
 
     gamePlayers: { shortKey: 'games.gamePlayers', path: 'gamePlayers', mode: 'merge' },
+  },
+
+  externalGames: {
+    difficulty: { shortKey: 'externalGames.gameInfo', path: 'difficulty', mode: 'merge' },
+    home: { shortKey: 'externalGames.gameInfo', path: 'home', mode: 'merge' },
+    rivel: { shortKey: 'externalGames.gameInfo', path: 'rivel', mode: 'merge' },
+    type: { shortKey: 'externalGames.gameInfo', path: 'type', mode: 'merge' },
+    vLink: { shortKey: 'externalGames.gameInfo', path: 'vLink', mode: 'merge' },
+    gameDate: { shortKey: 'externalGames.gameInfo', path: 'gameDate', mode: 'merge' },
+    gameDuration: { shortKey: 'externalGames.gameInfo', path: 'gameDuration', mode: 'merge' },
+    gameHour: { shortKey: 'externalGames.gameInfo', path: 'gameHour', mode: 'merge' },
+    goalsAgainst: { shortKey: 'externalGames.gameInfo', path: 'goalsAgainst', mode: 'merge' },
+    goalsFor: { shortKey: 'externalGames.gameInfo', path: 'goalsFor', mode: 'merge' },
+    result: { shortKey: 'externalGames.gameInfo', path: 'result', mode: 'merge' },
+
+    gamePlayers: { shortKey: 'externalGames.gamePlayers', path: 'gamePlayers', mode: 'merge' },
   },
 
   videoAnalysis: {

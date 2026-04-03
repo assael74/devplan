@@ -17,34 +17,10 @@ export const filtersSx = {
   },
 
   filtersTopRowSx: {
-    display: 'grid',
+    display: 'flex',
+    flexWrap: 'wrap',
     gap: 0.75,
-    gridTemplateColumns: {
-      xs: '1fr',
-      md: 'minmax(170px,1fr) auto auto auto auto auto auto',
-    },
     alignItems: 'center',
-  },
-
-  searchBoxSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSmallSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  icoRes: {
-    height: 36,
-    width: 36,
-    flexShrink: 0,
   },
 
   icoAddSx: {

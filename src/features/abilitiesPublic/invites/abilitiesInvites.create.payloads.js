@@ -68,7 +68,7 @@ export function buildCreateAbilitiesInvitePayload({
 }) {
   const now = new Date().toISOString()
   const token = createAbilitiesInviteToken()
-  
+
   return {
     id: '',
     token,
@@ -81,10 +81,6 @@ export function buildCreateAbilitiesInvitePayload({
 
     createdById: clean(meta?.createdById || evaluator?.id),
     createdByName: clean(meta?.createdByName || evaluator?.name || evaluator?.fullName),
-
-    defaults: {
-      roleId: clean(defaults?.roleId),
-    },
 
     status: 'sent',
     source: 'playerAbilitiesModule',

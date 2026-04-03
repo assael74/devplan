@@ -28,7 +28,7 @@ export function buildAbilitiesInviteSlug(playerName) {
 export function buildAbilitiesInvitePath({ token }) {
   const safeToken = clean(token)
   if (!safeToken) return ''
-  return `/forms/abilities/${safeToken}`
+  return `/share/abilities/${safeToken}`
 }
 
 export function buildAbilitiesInviteLink({ origin, token }) {

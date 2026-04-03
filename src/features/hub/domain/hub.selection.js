@@ -2,18 +2,14 @@
 
 export function createHubSelectionHandlers({
   MODE,
-  // selectors / maps
   playersUi,
   clubsById,
   teamsById,
-
-  // state setters
   setMode,
   setDrawerOpen,
   setSelectedPlayer,
   setPreviewSelection,
 }) {
-
   const resetPlayerSelection = () => {
     setSelectedPlayer(null)
     setDrawerOpen(false)
@@ -110,25 +106,26 @@ export function createHubSelectionHandlers({
 
   function selectPlayerById(playerId) {
     if (!playerId) return
-    setMode(MODE.PLAYERS)
+
     const p = playersUi?.find((x) => x?.id === playerId) || null
-    if (p) handleSelectPlayer(p)
+    if (!p) return
+
+    const isPrivatePlayer =
+      p?.playerSource === 'private' || p?.isPrivatePlayer === true
+
+    setMode(isPrivatePlayer ? MODE.PRIVATES : MODE.PLAYERS)
+    handleSelectPlayer(p)
   }
 
   return {
-    // resets (אופציונלי לחשיפה)
     resetPlayerSelection,
     resetScoutSelection,
-
-    // handlers
     handleSelectPlayer,
     handleOpenActions,
     handleSelectClub,
     handleSelectTeam,
     handleSelectStaff,
     handleSelectScout,
-
-    // deep-link helpers
     selectClubById,
     selectTeamById,
     selectPlayerById,

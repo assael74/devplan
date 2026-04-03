@@ -27,29 +27,31 @@ export default function GameOptionRow({ option }) {
   return (
     <Box sx={sx.rowRoot(option.isAlreadyInGame)}>
       <Box sx={sx.rowTop}>
-        <Box sx={sx.iconBox}>{iconUi({ id: 'games', size: 'sm' })}</Box>
+        <Box sx={sx.rowMain}>
+          <Box sx={sx.iconBox}>{iconUi({ id: 'games', size: 'sm' })}</Box>
 
-        <Typography level="body-sm" noWrap sx={sx.teamText}>
-          {option.teamName}
-        </Typography>
+          <Typography level="body-sm" noWrap sx={sx.teamText}>
+            {option.teamName}
+          </Typography>
 
-        <Typography level="body-xs" sx={sx.vsText}>
-          נגד
-        </Typography>
+          <Typography level="body-xs" sx={sx.vsText}>
+            נגד
+          </Typography>
 
-        <Typography level="body-sm" noWrap sx={sx.opponentText}>
-          {option.opponentName}
-        </Typography>
+          <Typography level="body-sm" noWrap sx={sx.opponentText}>
+            {option.opponentName}
+          </Typography>
+        </Box>
 
         {option.isAlreadyInGame ? (
-          <Chip size="sm" color="neutral" variant="soft" sx={sx.existsChip}>
+          <Chip size="sm" color="neutral" variant="soft" sx={{ flexShrink: 0 }}>
             כבר קיים
           </Chip>
         ) : null}
       </Box>
 
       <Box sx={sx.rowBottom}>
-        <Typography level="body-xs" sx={sx.subText}>
+        <Typography level="body-xs" sx={{ opacity: 0.72, whiteSpace: 'nowrap' }}>
           {option.dateLabel}
         </Typography>
 

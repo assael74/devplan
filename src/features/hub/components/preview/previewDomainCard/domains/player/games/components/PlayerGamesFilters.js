@@ -54,6 +54,7 @@ export default function PlayerGamesFilters({
   homeFilter,
   resultFilter,
   diffFilter,
+  isPrivatePlayer = false,
   onChangeQ,
   onChangeTypeFilter,
   onChangeHomeFilter,
@@ -162,11 +163,11 @@ export default function PlayerGamesFilters({
           </span>
         </Tooltip>
 
-        <Tooltip title="עדכון משחק לשחקן">
+        <Tooltip title={isPrivatePlayer ? 'יצירת משחק חדש' : 'עדכון משחק לשחקן'}>
           <span>
             <IconButton
               size="sm"
-              variant='outlined'
+              variant="outlined"
               onClick={onAddPlayerToGame}
               sx={sx.icoAddSx}
             >

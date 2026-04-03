@@ -72,7 +72,7 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
       setPending(false)
     }
   }
-
+  //console.log(activeGame)
   return (
     <Drawer
       open={!!open}
@@ -86,9 +86,9 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
       }}
     >
       <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <NewFormDrawerHeader player={player} />
-          <ModalClose sx={sx.modalClose} />
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <NewFormDrawerHeader player={player} game={activeGame} />
+          <ModalClose sx={{ mt: 2, mr: 2 }} />
 
           <Box className="dpScrollThin" sx={sx.body}>
             <NewFormFieldsDrawer
@@ -100,14 +100,14 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
           </Box>
 
           <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <Button
                 loading={pending}
                 loadingPosition="start"
                 disabled={!canSave}
                 startDecorator={!pending ? iconUi({ id: 'save' }) : null}
                 onClick={handleSave}
-                sx={sx.conBut}
+                sx={sx.conBut('player')}
               >
                 {pending ? 'שומר...' : 'שמירה'}
               </Button>

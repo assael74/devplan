@@ -11,6 +11,10 @@ export const gcfSx = {
     gridTemplateColumns: cols,
     minWidth: 0,
     alignItems: 'start',
+    '& > *': {
+      minWidth: 0,
+      width: '100%',
+    },
   }),
 
   title: {

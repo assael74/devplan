@@ -20,7 +20,7 @@ export default function PlayerAbilitiesFilters({
           onChange={(value) => onChangeSelectedDomains(value || [])}
           placeholder="בחירת דומיינים לצפייה"
           clearableChips
-          fieldWidth={650}
+          fieldWidth={600}
         />
       </Box>
     </Sheet>

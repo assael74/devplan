@@ -16,5 +16,5 @@ export function isProjectPlayer(player) {
 }
 
 export function isKeyPlayer(player) {
-  return player?.isKey === true
+  return player?.squadRole === 'key'
 }

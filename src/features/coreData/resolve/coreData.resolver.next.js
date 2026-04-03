@@ -30,37 +30,53 @@
  *
  * קובץ זה הוא נקודת הכניסה למנוע הנתונים של המערכת.
  */
-import { mergeCoreShorts } from './merge-stage.js'
-import { buildCoreIndexes } from './index-stage.js'
-import {
-  enrichTeams,
-  enrichPlayers,
-  enrichMeetings,
-  enrichScouting,
-  attachPlayerStatsAndVideos,
-  attachTeamStatsAndVideos,
-} from './enrich-stage.js'
-import { buildFinalRelations } from './relations-stage.js'
+ // src/features/coreData/resolve/coreData.resolver.next.js
+ import { mergeCoreShorts } from './merge-stage.js'
+ import { buildCoreIndexes } from './index-stage.js'
+ import {
+   enrichTeams,
+   enrichPlayers,
+   enrichMeetings,
+   enrichScouting,
+   attachPlayerStatsAndVideos,
+   attachTeamStatsAndVideos,
+ } from './enrich-stage.js'
+ import { buildFinalRelations } from './relations-stage.js'
 
-export function resolveCoreDataNext(input) {
-  const merged = mergeCoreShorts(input)
+ export function resolveCoreDataNext(input = {}) {
+   const {
+     gameStatsShorts = [],
+   } = input
 
-  const indexes = buildCoreIndexes(merged)
+   const merged = mergeCoreShorts(input)
 
-  const teams = enrichTeams(merged, indexes)
-  const players = enrichPlayers(merged, indexes, teams)
-  const meetings = enrichMeetings(merged, indexes, players)
-  const scouting = enrichScouting(merged)
+   const indexes = buildCoreIndexes(merged, {
+     gameStatsShorts,
+   })
 
-  const playersWithVideos = attachPlayerStatsAndVideos(players, merged, indexes, teams)
-  const teamsWithVideos = attachTeamStatsAndVideos(teams, indexes)
+   const teams = enrichTeams(merged, indexes)
+   const players = enrichPlayers(merged, indexes, teams)
+   const meetings = enrichMeetings(merged, indexes, players)
+   const scouting = enrichScouting(merged)
 
-  return buildFinalRelations({
-    merged,
-    indexes,
-    teamsWithVideos,
-    playersWithVideos,
-    scouting,
-    meetings,
-  })
-}
+   const playersWithVideos = attachPlayerStatsAndVideos(
+     players,
+     merged,
+     indexes,
+     teams
+   )
+
+   const teamsWithVideos = attachTeamStatsAndVideos(
+     teams,
+     indexes
+   )
+
+   return buildFinalRelations({
+     merged,
+     indexes,
+     teamsWithVideos,
+     playersWithVideos,
+     scouting,
+     meetings,
+   })
+ }

@@ -30,7 +30,6 @@ export function pickPublicDraftBits(draft = {}) {
     evaluatorPhoto: clean(draft?.evaluatorPhoto),
 
     evalDate: clean(draft?.evalDate),
-    roleId: clean(draft?.roleId),
 
     abilitiesValues,
     growthStageValue,
@@ -83,14 +82,6 @@ export function calcPublicDomains(abilitiesValues = {}) {
 export function buildPublicMissingItems({ bits = {}, domains = [], validation = {} }) {
   const missing = []
 
-  if (!bits?.roleId) {
-    missing.push({
-      id: 'roleId',
-      label: 'בחירת תפקיד ממלא',
-      kind: 'required',
-    })
-  }
-
   if (!bits?.hasGrowthStage) {
     missing.push({
       id: 'growthStage',
@@ -128,11 +119,7 @@ export function buildPublicCompletionModel({ bits = {}, domains = [], validation
   let summaryText = 'הטופס מוכן לשליחה'
 
   if (!validation?.isValid) {
-    if (!bits?.roleId && !bits?.hasGrowthStage) {
-      summaryText = 'יש לבחור תפקיד ושלב התפתחות'
-    } else if (!bits?.roleId) {
-      summaryText = 'יש לבחור תפקיד ממלא'
-    } else if (!bits?.hasGrowthStage) {
+    if (!bits?.hasGrowthStage) {
       summaryText = 'יש לבחור שלב התפתחות'
     } else if (remainingDomains > 0) {
       summaryText =

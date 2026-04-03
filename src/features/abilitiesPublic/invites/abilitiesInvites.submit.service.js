@@ -9,7 +9,6 @@ function buildPublicAbilitiesDraft(payload = {}) {
   return {
     playerId: clean(payload?.playerId),
     evalDate: clean(payload?.evalDate),
-    roleId: clean(payload?.roleId),
     abilities: { ...(payload?.abilities || {}) },
 
     source: 'public_invite',
@@ -32,6 +31,8 @@ function buildPublicAbilitiesDraft(payload = {}) {
 }
 
 export async function submitAbilitiesInviteWithHistory(payload = {}) {
+  console.log('submitAbilitiesInviteWithHistory payload', payload)
+
   const inviteId = clean(payload?.inviteId)
   if (!inviteId) {
     throw new Error('submitAbilitiesInviteWithHistory: inviteId is required')
@@ -43,8 +44,10 @@ export async function submitAbilitiesInviteWithHistory(payload = {}) {
   }
 
   const draft = buildPublicAbilitiesDraft(payload)
+  console.log('submitAbilitiesInviteWithHistory draft', draft)
 
   const upsertResult = await upsertAbilitiesHistory({ draft })
+  console.log('upsertResult', upsertResult)
 
   await markAbilitiesInviteSubmitted(inviteId, {
     submissionId: upsertResult?.ids?.formId || '',
@@ -58,7 +61,6 @@ export async function submitAbilitiesInviteWithHistory(payload = {}) {
       playerId: clean(payload?.playerId),
       playerName: clean(payload?.playerName),
       evalDate: clean(payload?.evalDate),
-      roleId: clean(payload?.roleId),
       abilities: { ...(payload?.abilities || {}) },
       domainScores: { ...(payload?.domainScores || {}) },
     },

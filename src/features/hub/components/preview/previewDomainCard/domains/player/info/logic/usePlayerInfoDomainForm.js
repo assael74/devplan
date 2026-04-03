@@ -1,7 +1,7 @@
 // preview/previewDomainCard/domains/player/info/logic/usePlayerInfoDomainForm.js
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useUpdateAction } from '../../../../../../../../../ui/domains/entityActions/updateAction.js'
+import { usePlayerHubUpdate } from '../../../../../../../hooks/players/usePlayerHubUpdate.js'
 
 import {
   buildComparableForm,
@@ -23,14 +23,7 @@ export function usePlayerInfoDomainForm({ entity, onClose }) {
 
   const entityName = useMemo(() => buildPlayerName(player), [player])
 
-  const { runUpdate, pending } = useUpdateAction({
-    routerEntityType: 'players',
-    snackEntityType: 'player',
-    id: player?.id,
-    entityName,
-    requireAnyUpdated: true,
-    createIfMissing: false,
-  })
+  const { run, pending } = usePlayerHubUpdate(player)
 
   const dirty = useMemo(() => {
     const next = buildComparableForm(form)
@@ -62,9 +55,15 @@ export function usePlayerInfoDomainForm({ entity, onClose }) {
 
     if (!Object.keys(patch).length) return
 
-    await runUpdate(patch, { section: 'infoDomain' })
+    await run(patch, {
+      section: 'infoDomain',
+      playerId: player?.id,
+      entityName,
+      createIfMissing: true,
+    })
+
     onClose?.()
-  }, [dirty, pending, form, initial, runUpdate, onClose])
+  }, [dirty, pending, form, initial, run, player, entityName, onClose])
 
   return {
     player,

@@ -1,31 +1,67 @@
 // src/features/hub/hooks/players/usePlayerHubUpdate.js
 
+import { useMemo } from 'react'
 import { useUpdateAction } from '../../../../ui/domains/entityActions/updateAction.js'
 
+function isPrivatePlayer(player = {}) {
+  return player?.playerSource === 'private' || player?.isPrivatePlayer === true
+}
+
+function buildPlayerName(player = {}) {
+  return (
+    [player?.playerFirstName, player?.playerLastName].filter(Boolean).join(' ') ||
+    player?.fullName ||
+    player?.name ||
+    'שחקן'
+  )
+}
+
 export function usePlayerHubUpdate(active) {
-  const playerUpdate = useUpdateAction({
+  const activeId = active?.id || null
+  const activeName = useMemo(() => buildPlayerName(active), [active])
+  const activeIsPrivate = useMemo(() => isPrivatePlayer(active), [active])
+
+  const regularPlayerUpdate = useUpdateAction({
     routerEntityType: 'players',
     snackEntityType: 'player',
-    id: active?.id,
-    entityName:
-      [active?.playerFirstName, active?.playerLastName].filter(Boolean).join(' ') ||
-      active?.fullName ||
-      active?.name ||
-      'שחקן',
+    id: activeId,
+    entityName: activeName,
     requireAnyUpdated: true,
   })
 
-  const run = (type, patch, meta) => {
-    const update = playerUpdate
-    const playerId = meta?.playerId || active?.id
+  const privatePlayerUpdate = useUpdateAction({
+    routerEntityType: 'privates',
+    snackEntityType: 'player',
+    id: activeId,
+    entityName: activeName,
+    requireAnyUpdated: true,
+  })
 
-    return update.runUpdate(patch, {
+  const run = (patch = {}, meta = {}) => {
+    const targetPlayer = meta?.player || active || null
+    const targetId = meta?.playerId || meta?.id || targetPlayer?.id || activeId || null
+
+    const targetIsPrivate =
+      meta?.routerEntityType === 'privates' ||
+      meta?.forcePrivate === true ||
+      isPrivatePlayer(targetPlayer) ||
+      (!targetPlayer && activeIsPrivate)
+
+    const updateApi = targetIsPrivate ? privatePlayerUpdate : regularPlayerUpdate
+    const routerEntityType = targetIsPrivate ? 'privates' : 'players'
+
+    return updateApi.runUpdate(patch, {
       ...meta,
-      id: playerId,
-      playerId,
+      id: targetId,
+      playerId: targetId,
+      routerEntityType,
       createIfMissing: meta?.createIfMissing ?? false,
     })
   }
 
-  return { run, pending: playerUpdate.pending }
+  return {
+    run,
+    pending: regularPlayerUpdate.pending || privatePlayerUpdate.pending,
+    isPrivateRoute: activeIsPrivate,
+  }
 }

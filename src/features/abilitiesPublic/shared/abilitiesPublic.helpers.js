@@ -84,23 +84,60 @@ export function calcGroupScore(domains = []) {
   return Math.round((sum / sumW) * 10) / 10
 }
 
-export function buildDomainsFromDraftAbilities(abilitiesValues) {
-  const domains = groupAbilitiesByDomain(abilitiesValues || {})
+export function validatePublicAbilitiesDraft({
+  draft = {},
+  domains = [],
+} = {}) {
+  const errors = {}
 
-  return domains.map((domain) => {
-    const items = Array.isArray(domain?.items) ? domain.items : []
-    const filled = items.filter((item) => item?.value != null).length
-    const total = items.length
-    const avg = calcDomainScore(items)
+  if (!clean(draft?.inviteId)) {
+    errors.inviteId = 'חסר inviteId'
+  }
 
-    return {
-      ...domain,
-      items,
-      filled,
-      total,
-      avg,
+  if (!clean(draft?.token)) {
+    errors.token = 'חסר token'
+  }
+
+  if (!clean(draft?.playerId)) {
+    errors.playerId = 'חסר שחקן'
+  }
+
+  const growthStage = draft?.abilities?.growthStage
+  if (growthStage == null || growthStage === '') {
+    errors.growthStage = 'יש לבחור שלב התפתחות'
+  } else {
+    const num = Number(growthStage)
+    if (!Number.isFinite(num) || num < 1 || num > 5) {
+      errors.growthStage = 'שלב התפתחות לא תקין'
     }
-  })
+  }
+
+  const activeDomains = Array.isArray(domains)
+    ? domains.filter((domain) => domain?.active)
+    : []
+
+  const incompleteActiveDomains = activeDomains.filter((domain) => domain?.state !== 'full')
+
+  if (incompleteActiveDomains.length) {
+    errors.activeDomains = 'יש להשלים את כל הדומיינים הפעילים'
+  }
+
+  const abilities = draft?.abilities || {}
+  const abilityEntries = Object.entries(abilities).filter(([key]) => key !== 'growthStage')
+
+  for (const [key, value] of abilityEntries) {
+    if (value == null || value === '') continue
+
+    const num = Number(value)
+    if (!Number.isFinite(num) || num < 1 || num > 5) {
+      errors[key] = 'ציון לא תקין'
+    }
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  }
 }
 
 export function patchDomainScoreToItems(draft, domainId, score, domainItems = []) {
@@ -141,4 +178,23 @@ export function patchRecalcDomainFromItems(draft, domainId, domainItems = []) {
     ...draft,
     domainScores: nextDomainScores,
   }
+}
+
+export function buildDomainsFromDraftAbilities(abilitiesValues) {
+  const domains = groupAbilitiesByDomain(abilitiesValues || {})
+
+  return domains.map((domain) => {
+    const items = Array.isArray(domain?.items) ? domain.items : []
+    const filled = items.filter((item) => item?.value != null).length
+    const total = items.length
+    const avg = calcDomainScore(items)
+
+    return {
+      ...domain,
+      items,
+      filled,
+      total,
+      avg,
+    }
+  })
 }

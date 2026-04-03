@@ -4,6 +4,10 @@ import { buildIdMap } from '../helpers/map'
 import { enrichPlayersForUi } from './players.enrich'
 import { buildScoutingPlayers } from './hub.scouting'
 
+function isPrivatePlayer(player) {
+  return player?.playerSource === 'private' || player?.isPrivatePlayer === true
+}
+
 export function useHubSelectors({
   corePlayers,
   coreClubs,
@@ -16,6 +20,16 @@ export function useHubSelectors({
   const playersUi = useMemo(
     () => enrichPlayersForUi(corePlayers || []),
     [corePlayers]
+  )
+
+  const privatePlayersUi = useMemo(
+    () => playersUi.filter((player) => isPrivatePlayer(player)),
+    [playersUi]
+  )
+
+  const clubPlayersUi = useMemo(
+    () => playersUi.filter((player) => !isPrivatePlayer(player)),
+    [playersUi]
   )
 
   const playersById = useMemo(() => buildIdMap(playersUi), [playersUi])
@@ -48,17 +62,20 @@ export function useHubSelectors({
 
   const counts = useMemo(
     () => ({
-      players: playersUi.length,
+      players: clubPlayersUi.length,
+      privates: privatePlayersUi.length,
       teams: (coreTeams || []).length,
       clubs: (coreClubs || []).length,
       staff: (coreRoles || []).length,
       scouting: scoutBase.length,
     }),
-    [playersUi, coreTeams, coreClubs, coreRoles, scoutBase]
+    [clubPlayersUi, privatePlayersUi, coreTeams, coreClubs, coreRoles, scoutBase]
   )
 
   return {
     playersUi,
+    clubPlayersUi,
+    privatePlayersUi,
     playersById,
     clubsById,
     teamsById,

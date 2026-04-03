@@ -9,7 +9,7 @@ import Input from '@mui/joy/Input';
 export default function ClubNameField({ required, error , value, onChange, disabled, helperText, readOnly, size = 'sm' }) {
   return (
     <>
-      <FormControl>
+      <FormControl sx={{ minWidth: 0, width: '100%' }}>
         <FormLabel required={required} sx={{ fontSize: '12px' }}>שם מועדון</FormLabel>
         <Input
           value={value}
@@ -22,6 +22,7 @@ export default function ClubNameField({ required, error , value, onChange, disab
           variant="soft"
           size={size}
           readOnly={readOnly}
+          sx={{ minWidth: 0, width: '100%' }}
         />
         <FormHelperText>{helperText}</FormHelperText>
       </FormControl>

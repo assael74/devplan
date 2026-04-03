@@ -31,7 +31,7 @@ export default function GoalsForField({
           error={error}
           readOnly={readOnly}
           disabled={disabled}
-          variant="soft"
+          variant="outlined"
           size={size}
           slotProps={{ input: { min: 0, max: 20 } }}
         />

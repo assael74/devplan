@@ -30,7 +30,7 @@ export default function GameVideoLinkField({
           error={error}
           readOnly={readOnly}
           disabled={disabled}
-          variant="soft"
+          variant="outlined"
           size={size}
         />
         <FormHelperText>{helperText}</FormHelperText>

@@ -32,7 +32,6 @@ export function buildPublicDraftFromInvite(invite = {}) {
     createdByName: clean(invite?.createdByName),
 
     evalDate: todayYmd(),
-    roleId: clean(defaults?.roleId || invite?.roleId || ''),
     abilities: {},
     domainScores: {},
 

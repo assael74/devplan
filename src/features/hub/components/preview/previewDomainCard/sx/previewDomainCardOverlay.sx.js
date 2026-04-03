@@ -21,15 +21,40 @@ export const overlaySx = {
     minWidth: 0,
     boxSizing: 'border-box',
     overflow: 'hidden',
-    maxWidth: { xs: '100%', sm: 500, md: 800 },
+
+    width: {
+      xs: '100%',
+      sm: 500,
+      md: 800,
+    },
+
+    maxWidth: {
+      xs: '100%',
+      sm: 500,
+      md: 800,
+    },
+
+    minWidth: {
+      xs: '100%',
+      sm: 500,
+      md: 800,
+    },
+
     mx: 'auto',
   },
 
   bodyScrollSx: {
     flex: 1,
     minHeight: 0,
+    minWidth: 0,
+    width: '100%',
     overflowX: 'hidden',
     scrollbarGutter: 'stable both-edges',
     p: { xs: 1, md: 2 },
+
+    '& > *': {
+      minWidth: 0,
+      maxWidth: '100%',
+    },
   },
 }

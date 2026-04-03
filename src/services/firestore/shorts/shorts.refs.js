@@ -20,6 +20,11 @@ export const shortsRefs = {
    playersAbilities: { collection: 'playersShorts', docId: 'CxI3w6ztc9KfTxJLP8zS' },
  },
 
+ privates: {
+   privatePlayersInfo: { collection: 'privatePlayersShorts', docId: 'zkkQfN3g2ip89C83KQPK' },
+   privatePlayersAbilities: { collection: 'privatePlayersShorts', docId: 'bZfjSd0JONvq5rPwu88b' },
+ },
+
  payments: {
    paymentOperative: { collection: 'playerPaymentsShorts', docId: 'gmgxFJa9xI1wc28JvE1X' },
    paymentProfit: { collection: 'playerPaymentsShorts', docId: 'pQoiqVKSc94FsAqpCYlT' },
@@ -36,6 +41,11 @@ export const shortsRefs = {
    gameTime: { collection: 'gamesShorts', docId: 'ieMXdjDAkhbe0W2DlJw8' },
    gameResult: { collection: 'gamesShorts', docId: 'xrSqD98vpvQOMwB9cp4b' },
    gamePlayers: { collection: 'gamesShorts', docId: '41kNZj14UWekfr8KBBK8' },
+ },
+
+ externalGames: {
+   gameInfo: { collection: 'externalGamesShorts', docId: 'eCDYSr8MKj9zzhanbYES' },
+   gamePlayers: { collection: 'externalGamesShorts', docId: 'oaUM4Eay6G4Rr8vLJXp6' },
  },
 
  videos: {

@@ -69,10 +69,6 @@ export function buildAbilitiesInviteModel(raw = {}) {
     createdById: clean(raw?.createdById),
     createdByName: clean(raw?.createdByName),
 
-    defaults: {
-      roleId: clean(raw?.defaults?.roleId),
-    },
-
     status: clean(raw?.status || 'sent'),
     createdAt: raw?.createdAt || '',
     sentAt: raw?.sentAt || '',

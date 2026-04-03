@@ -32,7 +32,7 @@ export default function GoalField({
           error={error}
           readOnly={readOnly}
           disabled={disabled}
-          variant="soft"
+          variant="outlined"
           size={size}
           slotProps={{ input: { min: 0, max: max } }}
         />

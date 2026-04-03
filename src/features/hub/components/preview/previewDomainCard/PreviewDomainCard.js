@@ -9,7 +9,7 @@ import { getDomainDef } from './domainRegistry'
 import { resolvePlayerUi } from './utils/playerUi'
 import { getEntityKind } from './utils/getEntityKind'
 
-import { cardSx as sx } from './PreviewDomainCard.sx'
+import { cardSx as sx } from './sx/PreviewDomainCard.sx'
 
 import PreviewDomainCardBody from './PreviewDomainCardBody'
 import PreviewDomainCardOverlay from './PreviewDomainCardOverlay'

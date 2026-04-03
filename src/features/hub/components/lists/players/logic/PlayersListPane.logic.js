@@ -14,21 +14,41 @@ export function getFullName(p) {
   return toText(`${fn} ${ln}`) || toText(p?.playerName)
 }
 
+function getTeamName(p) {
+  return toText(p?.team?.teamName || p?.teamName)
+}
+
+function getClubName(p) {
+  return toText(p?.club?.clubName || p?.clubName)
+}
+
+function buildClubTeamSearchText(p) {
+  const teamName = getTeamName(p)
+  const clubName = getClubName(p)
+
+  const clubThenTeam = [clubName, teamName].filter(Boolean).join(' ')
+  const teamThenClub = [teamName, clubName].filter(Boolean).join(' ')
+
+  return [clubThenTeam, teamThenClub].filter(Boolean).join(' | ')
+}
+
 export function filterPlayers(players, { q, projectOnly, keyOnly, activeOnly }) {
   const nq = norm(q)
 
   return (players || []).filter((p) => {
     if (activeOnly && p?.active === false) return false
     if (projectOnly && p?.type !== 'project') return false
-    if (keyOnly && p?.isKey !== true) return false
+    if (keyOnly && p?.squadRole !== 'key') return false
 
     if (nq) {
       const hay = norm([
         getFullName(p),
         getBirthYear(p),
-        p?.idNumber,
-        p?.ifaLink,
+        getTeamName(p),
+        getClubName(p),
+        buildClubTeamSearchText(p),
       ].filter(Boolean).join(' | '))
+
       if (!hay.includes(nq)) return false
     }
 

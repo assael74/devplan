@@ -1,8 +1,11 @@
 // previewDomainCard/domains/player/games/sx/newFormDrawer.sx.js
 
+import { accordionDetailsClasses, } from '@mui/joy/AccordionDetails';
+import { accordionSummaryClasses, } from '@mui/joy/AccordionSummary';
+
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('players')
+const c = (entity) => getEntityColors(entity)
 
 export const drawerNewFormSx = {
   drawerSheetSx: {
@@ -16,21 +19,41 @@ export const drawerNewFormSx = {
     bgcolor: 'background.body',
   },
 
-  drawerRootSx: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-  },
-
   drawerContent: {
     bgcolor: 'transparent',
     p: { xs: 0, md: 2 },
     boxShadow: 'none',
   },
 
-  modalClose: {
-    mt: 2,
-    mr: 2,
+  accordion: (theme) => ({
+    maxWidth: 400,
+    borderRadius: 'lg',
+    mt: 1,
+    [`& .${accordionSummaryClasses.button}`]: {
+      borderRadius: 'sm',
+    },
+    [`& .${accordionSummaryClasses.button}:hover`]: {
+      bgcolor: theme.vars.palette.background.level1,
+    },
+    [`& .${accordionDetailsClasses.content}`]: {
+      boxShadow: `inset 0 1px ${theme.vars.palette.divider}`,
+      [`&.${accordionDetailsClasses.expanded}`]: {
+        paddingBlock: '0.75rem',
+      },
+    },
+    [`& .${accordionSummaryClasses.indicator}`]: {
+      transition: '0.2s',
+    },
+    [`& [aria-expanded="true"] .${accordionSummaryClasses.indicator}`]: {
+      transform: 'rotate(45deg)',
+    },
+  }),
+
+  entryText: {
+    display: 'inline',
+    fontWeight: 700,
+    ml: 1,
+    borderRadius: 'sm'
   },
 
   body: {
@@ -40,11 +63,6 @@ export const drawerNewFormSx = {
     pt: 1,
     overflowY: 'auto',
     minHeight: 0,
-  },
-
-  fieldsRoot: {
-    display: 'grid',
-    gap: 1,
   },
 
   statusText: {
@@ -69,6 +87,13 @@ export const drawerNewFormSx = {
     pt: 3
   },
 
+  booleanGrid1: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
+  },
+
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
@@ -90,12 +115,6 @@ export const drawerNewFormSx = {
     marginTop: 'auto',
   },
 
-  footerActionsSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.75,
-  },
-
   icoRes: {
     height: 36,
     width: 36,
@@ -104,16 +123,16 @@ export const drawerNewFormSx = {
     borderColor: c.accent,
   },
 
-  conBut: {
-    bgcolor: c.bg,
-    color: c.text,
+  conBut: (entity) => ({
+    bgcolor: c(entity).bg,
+    color: c(entity).text,
     transition: 'filter .15s ease, transform .12s ease',
 
     '&:hover': {
-      bgcolor: c.bg,
-      color: c.text,
+      bgcolor: c(entity).bg,
+      color: c(entity).text,
       filter: 'brightness(0.96)',
       transform: 'translateY(-1px)',
     },
-  },
+  }),
 }

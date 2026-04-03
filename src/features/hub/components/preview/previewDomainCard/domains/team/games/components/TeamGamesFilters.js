@@ -41,7 +41,7 @@ function SelectValue({ option, textKey = 'labelH' }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
       {option?.idIcon ? iconUi({ id: option.idIcon, size: 'sm' }) : null}
-      <Typography level="body-sm" noWrap>
+      <Typography level="body-sm" noWrap sx={{ fontSize: 10 }}>
         {label}
       </Typography>
     </Box>
@@ -75,14 +75,16 @@ export default function TeamGamesFilters({
   return (
     <Sheet variant="plain" sx={sx.filtersBoxSx}>
       <Box sx={sx.filtersTopRowSx}>
-        <Input
-          size="sm"
-          placeholder="חיפוש לפי יריב, תאריך, סוג, תוצאה או קושי"
-          value={q}
-          onChange={(e) => onChangeQ(e.target.value)}
-          startDecorator={iconUi({ id: 'search', size: 'sm' })}
-          sx={sx.searchBoxSx}
-        />
+        <Box sx={{ flex: '1 1 120px', minWidth: 120 }}>
+          <Input
+            size="sm"
+            placeholder="חיפוש לפי יריב, תאריך, סוג, תוצאה או קושי"
+            value={q}
+            onChange={(e) => onChangeQ(e.target.value)}
+            startDecorator={iconUi({ id: 'search', size: 'sm' })}
+            sx={{ minWidth: 0, width: '100%', fontSize: 10 }}
+          />
+        </Box>
 
         <Select
           size="sm"
@@ -91,7 +93,7 @@ export default function TeamGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(typeOptions, selected?.value)} textKey="labelH" />
           )}
-          sx={sx.selectSx}
+          sx={{ width: 118, flex: '0 0 118px' }}
         >
           {typeOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -107,7 +109,7 @@ export default function TeamGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(diffOptions, selected?.value)} textKey="labelH" />
           )}
-          sx={sx.selectSx}
+          sx={{ width: 110, flex: '0 0 110px' }}
         >
           {diffOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -123,7 +125,7 @@ export default function TeamGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(homeOptions, selected?.value)} textKey="label" />
           )}
-          sx={sx.selectSmallSx}
+          sx={{ width: 98, flex: '0 0 98px' }}
         >
           {homeOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -139,7 +141,7 @@ export default function TeamGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(resultOptions, selected?.value)} textKey="label" />
           )}
-          sx={sx.selectSmallSx}
+          sx={{ width: 95, flex: '0 0 95px' }}
         >
           {resultOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -154,7 +156,7 @@ export default function TeamGamesFilters({
               disabled={!isDirty}
               size="sm"
               variant="soft"
-              sx={sx.icoRes}
+              sx={{ height: 36, width: 36, flexShrink: 0 }}
               onClick={onReset}
             >
               {iconUi({ id: 'reset', size: 'sm' })}
@@ -166,7 +168,7 @@ export default function TeamGamesFilters({
           <span>
             <IconButton
               size="sm"
-              variant='outlined'
+              variant="outlined"
               onClick={onCreateGame}
               sx={sx.icoAddSx}
             >

@@ -34,7 +34,7 @@ export default function NewFormFieldsDrawer({
   const assistsLocked = isGameChosen && limits.assistsMax <= 0
 
   return (
-    <Box sx={sx.fieldsRoot}>
+    <Box sx={{ display: 'grid', gap: 1 }}>
       <GameSelectField
         value={draft.gameId}
         onChange={(nextGameId) => setField('gameId', nextGameId)}

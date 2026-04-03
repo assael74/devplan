@@ -1,11 +1,13 @@
 // ui/forms/ui/games/GameCreateFields.js
 
 import React, { useEffect } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import DateInputField from '../../../fields/dateUi/DateInputField'
 import HourInputField from '../../../fields/dateUi/HourInputField'
 import ClubSelectField from '../../../fields/selectUi/clubs/ClubSelectField.js'
+import ClubNameField from '../../../fields/inputUi/clubs/ClubNameField'
+import TeamNameField from '../../../fields/inputUi/teams/TeamNameField'
 import TeamSelectField from '../../../fields/selectUi/teams/TeamSelectField.js'
 import GameHomeSelector from '../../../fields/checkUi/games/GameHomeSelector.js'
 import GameDifficultySelectField from '../../../fields/selectUi/games/GameDifficultySelectField.js'
@@ -25,12 +27,15 @@ export default function GameCreateFields({
   context,
   validity,
   layout,
+  isPrivatePlayer = false,
 }) {
   const gameDate = draft?.gameDate || ''
   const gameHour = draft?.gameHour || ''
   const rivel = draft?.rivel || ''
   const teamId = draft?.teamId || ''
   const clubId = draft?.clubId || ''
+  const clubName = draft?.clubName || context?.player?.clubName || ''
+  const teamName = draft?.teamName || context?.player?.teamName || ''
   const home = draft?.home || ''
   const difficulty = draft?.difficulty || ''
   const type = draft?.type || ''
@@ -50,23 +55,41 @@ export default function GameCreateFields({
   return (
     <Box sx={gcfSx.root(layout)}>
       <Box sx={gcfSx.block(layout.topCols, 1.5)}>
-        <ClubSelectField
-          value={clubId}
-          size="sm"
-          options={context?.clubs || []}
-          disabled
-        />
+        {isPrivatePlayer ? (
+          <>
+            <ClubNameField
+              value={clubName}
+              size="sm"
+              readOnly
+            />
 
-        <TeamSelectField
-          value={teamId}
-          size="sm"
-          options={context?.teams || []}
-          disabled
-          clubId={clubId}
-        />
+            <TeamNameField
+              value={teamName}
+              size="sm"
+              readOnly
+            />
+          </>
+        ) : (
+          <>
+            <ClubSelectField
+              value={clubId}
+              size="sm"
+              options={context?.clubs || []}
+              disabled
+            />
+
+            <TeamSelectField
+              value={teamId}
+              size="sm"
+              options={context?.teams || []}
+              disabled
+              clubId={clubId}
+            />
+          </>
+        )}
       </Box>
 
-      <Divider>
+      <Divider sx={{ my: 1 }}>
         <Typography level="title-sm" sx={gcfSx.title}>
           פרטי המשחק
         </Typography>
@@ -104,7 +127,7 @@ export default function GameCreateFields({
         />
       </Box>
 
-      <Divider>
+      <Divider sx={{ my: 1 }}>
         <Typography level="title-sm" sx={gcfSx.title}>
           מידע נוסף
         </Typography>
@@ -135,7 +158,7 @@ export default function GameCreateFields({
         />
       </Box>
 
-      <Divider>
+      <Divider sx={{ my: 1 }}>
         <Typography level="title-sm" sx={gcfSx.title}>
           תוצאת משחק
         </Typography>
@@ -156,7 +179,7 @@ export default function GameCreateFields({
           onChange={(v) => onDraft({ ...draft, goalsAgainst: v })}
         />
 
-        <GameChipResult size='lg' goalsFor={goalsFor} goalsAgainst={goalsAgainst} />
+        <GameChipResult size="lg" goalsFor={goalsFor} goalsAgainst={goalsAgainst} />
       </Box>
     </Box>
   )

@@ -1,9 +1,11 @@
 // ui/forms/create/createRegistry.js
+
 import React from 'react'
 import ClubCreateForm from '../ClubCreateForm'
 import TeamCreateForm from '../TeamCreateForm'
 import PlayerCreateForm from '../PlayerCreateForm'
 import PlayerMultiCreateForm from '../PlayerMultiCreateForm'
+import PrivateCreateForm from '../PrivateCreateForm'
 import MeetingCreateForm from '../MeetingCreateForm'
 import PaymentCreateForm from '../PaymentCreateForm'
 import GameCreateForm from '../GameCreateForm'
@@ -46,8 +48,18 @@ export const CREATE_TYPES = {
     surface: 'modal',
   },
 
+  privatePlayer: {
+    type: 'privatePlayer',
+    title: 'פתיחת שחקן פרטי',
+    iconKey: 'addPlayer',
+    entityType: 'privatePlayer',
+    form: PrivateCreateForm,
+    required: ['playerFirstName', 'playerLastName', 'birthMonthYear'],
+    surface: 'modal',
+  },
+
   players: {
-    type: 'player',
+    type: 'players',
     title: 'פתיחת מספר שחקנים',
     iconKey: 'addPlayer',
     entityType: 'players',

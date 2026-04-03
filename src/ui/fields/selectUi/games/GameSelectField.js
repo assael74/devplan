@@ -25,8 +25,8 @@ export default function GameSelectField(props) {
   const { indexedOptions, selectedOption } = useGameOptions(props)
 
   return (
-    <FormControl sx={sx.control} error={error} required={required}>
-      {label ? <FormLabel sx={sx.label}>{label}</FormLabel> : null}
+    <FormControl sx={{ width: '100%', minWidth: 0 }} error={error} required={required}>
+      {label ? <FormLabel sx={{ fontSize: 12 }}>{label}</FormLabel> : null}
 
       <Select
         size={size}
@@ -39,14 +39,15 @@ export default function GameSelectField(props) {
         placeholder={placeholder}
         renderValue={() => <GameValueView option={selectedOption} placeholder={placeholder} />}
         slotProps={{
-          button: { sx: sx.selectButton },
+          button: {
+            sx: sx.selectButton,
+          },
           listbox: {
-            sx: sx.listbox,
-            maxHeight: 360,
-            overflow: 'auto',
             className: 'dpScrollThin',
+            sx: sx.listbox,
           },
         }}
+        sx={{ width: '100%', minWidth: 0 }}
       >
         {indexedOptions.map((option) => (
           <Option

@@ -1,8 +1,10 @@
 // previewDomainCard/domains/player/games/sx/editDrawer.sx.js
 
+import { accordionDetailsClasses, } from '@mui/joy/AccordionDetails';
+import { accordionSummaryClasses, } from '@mui/joy/AccordionSummary';
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('players')
+const c = (entity) => getEntityColors(entity)
 
 export const drawerSx = {
   headerRowSx: {
@@ -21,17 +23,6 @@ export const drawerSx = {
     minWidth: 0,
   },
 
-  heroTextSx: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.2,
-  },
-
-  heroNameSx: {
-    fontWeight: 700,
-    lineHeight: 1.1,
-  },
-
   drawerSheetSx: {
     borderRadius: { xs: 0, md: 'lg' },
     p: 2,
@@ -43,10 +34,57 @@ export const drawerSx = {
     bgcolor: 'background.body',
   },
 
-  drawerRootSx: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
+  accordion: (theme) => ({
+    maxWidth: 400,
+    borderRadius: 'lg',
+    mt: 1,
+    [`& .${accordionSummaryClasses.button}`]: {
+      borderRadius: 'sm',
+    },
+    [`& .${accordionSummaryClasses.button}:hover`]: {
+      bgcolor: theme.vars.palette.background.level1,
+    },
+    [`& .${accordionDetailsClasses.content}`]: {
+      boxShadow: `inset 0 1px ${theme.vars.palette.divider}`,
+      [`&.${accordionDetailsClasses.expanded}`]: {
+        paddingBlock: '0.75rem',
+      },
+    },
+    [`& .${accordionSummaryClasses.indicator}`]: {
+      transition: '0.2s',
+    },
+    [`& [aria-expanded="true"] .${accordionSummaryClasses.indicator}`]: {
+      transform: 'rotate(45deg)',
+    },
+  }),
+
+  fieldsBlock: (isGameChosen = false) => ({
+    display: 'grid',
+    gap: 1,
+    opacity: isGameChosen ? 1 : 0.56,
+    transition: 'opacity .18s ease',
+  }),
+
+  booleanGrid: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
+    pt: 3
+  },
+
+  booleanGrid1: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
+  },
+
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
+    gap: 1,
+    alignItems: 'start',
   },
 
   footerSx: {
@@ -63,12 +101,6 @@ export const drawerSx = {
     marginTop: 'auto',
   },
 
-  footerActionsSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.75,
-  },
-
   icoRes: {
     height: 36,
     width: 36,
@@ -77,16 +109,16 @@ export const drawerSx = {
     borderColor: c.accent,
   },
 
-  conBut: {
-    bgcolor: c.bg,
-    color: c.text,
+  conBut: (entity) => ({
+    bgcolor: c(entity).bg,
+    color: c(entity).text,
     transition: 'filter .15s ease, transform .12s ease',
 
     '&:hover': {
-      bgcolor: c.bg,
-      color: c.text,
+      bgcolor: c(entity).bg,
+      color: c(entity).text,
       filter: 'brightness(0.96)',
       transform: 'translateY(-1px)',
     },
-  },
+  }),
 }

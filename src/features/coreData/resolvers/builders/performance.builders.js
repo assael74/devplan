@@ -58,25 +58,29 @@ export const buildPlayerGamesByPlayerId = (games = []) => {
  * buildPlayersWithStats
  * ----------------------------------------
  */
-export const buildPlayersWithStats = (
-  players = [],
-  games = [],
-  typeFilter = 'all'
-) => {
-  const playerGamesByPlayerId = buildPlayerGamesByPlayerId(games)
+ export const buildPlayersWithStats = (
+   players = [],
+   games = [],
+   typeFilter = 'all'
+ ) => {
+   const playerGamesByPlayerId = buildPlayerGamesByPlayerId(games)
 
-  return safeArr(players).map((player) => {
-    const playerGames = playerGamesByPlayerId.get(safeId(player?.id)) || []
+   return safeArr(players).map((player) => {
+     const indexedPlayerGames = playerGamesByPlayerId.get(safeId(player?.id)) || []
+     const playerGames =
+       Array.isArray(player?.playerGames) && player.playerGames.length
+         ? player.playerGames
+         : indexedPlayerGames
 
-    const playerFullStats = calculateFullPlayerStats(playerGames, typeFilter)
+     const playerFullStats = calculateFullPlayerStats(playerGames, typeFilter)
 
-    return {
-      ...player,
-      playerGames,
-      playerFullStats,
-    }
-  })
-}
+     return {
+       ...player,
+       playerGames,
+       playerFullStats,
+     }
+   })
+ }
 
 /**
  * ----------------------------------------

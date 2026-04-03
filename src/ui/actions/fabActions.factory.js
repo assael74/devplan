@@ -19,6 +19,7 @@ export function buildFabActions({
   const onCreateTeam = pick(handlers.onCreateTeam, noOp)
   const onCreateProject = pick(handlers.onCreateProject, noOp)
   const onCreatePlayer = pick(handlers.onCreatePlayer, noOp)
+  const onCreatePrivatePlayer = pick(handlers.onCreatePrivatePlayer, noOp)
   const onCreatePlayers = pick(handlers.onCreatePlayers, noOp)
   const onCreateTag = pick(handlers.onCreateTag, noOp)
   const onCreateStaff = pick(handlers.onCreateStaff, noOp)
@@ -39,7 +40,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addClub' }),
           onClick: onCreateClub,
           color: 'club',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -52,7 +53,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addTeam' }),
           onClick: onCreateTeam,
           color: 'team',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -65,7 +66,20 @@ export function buildFabActions({
           icon: iconUi({ id: 'addPlayer' }),
           onClick: onCreatePlayer,
           color: 'player',
-          disabled: !allowCreate
+          disabled: !allowCreate,
+        },
+      ]
+    }
+
+    if (mode === 'privates') {
+      return [
+        {
+          id: 'private-player',
+          label: 'הוסף שחקן פרטי',
+          icon: iconUi({ id: 'addPlayer' }),
+          onClick: onCreatePrivatePlayer,
+          color: 'private',
+          disabled: !allowCreate,
         },
       ]
     }
@@ -78,7 +92,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addRole' }),
           onClick: onCreateStaff,
           color: 'role',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -91,11 +105,10 @@ export function buildFabActions({
           icon: iconUi({ id: 'addScouting' }),
           onClick: onCreateScout,
           color: 'project',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
-
   }
 
   if (area === 'player') {
@@ -107,7 +120,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addMeeting' }),
           onClick: onAddMeeting,
           color: 'project',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -120,7 +133,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addAbilities' }),
           onClick: onAddAbilities,
           color: 'player',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -133,7 +146,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addPayment' }),
           onClick: onAddPayment,
           color: 'club',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -146,7 +159,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addVideo' }),
           onClick: onAddVideoAnalysis,
           color: 'videoAnalysis',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -163,7 +176,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addGame' }),
           onClick: onAddGame,
           color: 'team',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
         {
           id: 'add-multi-game',
@@ -171,7 +184,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addGame' }),
           onClick: onAddGames,
           color: 'team',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -184,7 +197,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addPlayer' }),
           onClick: onCreatePlayer,
           color: 'player',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
         {
           id: 'players',
@@ -192,7 +205,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addPlayer' }),
           onClick: onCreatePlayers,
           color: 'player',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -209,7 +222,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addTeam' }),
           onClick: onCreateTeam,
           color: 'team',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }
@@ -222,7 +235,7 @@ export function buildFabActions({
           icon: iconUi({ id: 'addPlayer' }),
           onClick: onCreatePlayer,
           color: 'player',
-          disabled: !allowCreate
+          disabled: !allowCreate,
         },
       ]
     }

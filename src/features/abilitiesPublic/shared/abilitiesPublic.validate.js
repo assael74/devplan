@@ -2,6 +2,13 @@
 
 import { clean } from './abilitiesPublic.helpers.js'
 
+function shouldRequireGrowthStage(draft = {}) {
+  const allowGrowthStageEdit = draft?.publicMeta?.allowGrowthStageEdit !== false
+  const value = draft?.abilities?.growthStage
+  const hasValue = !(value == null || value === '')
+  return allowGrowthStageEdit || !hasValue
+}
+
 export function validatePublicAbilitiesDraft({
   draft = {},
   domains = [],
@@ -20,25 +27,28 @@ export function validatePublicAbilitiesDraft({
     errors.playerId = 'חסר שחקן'
   }
 
-  if (!clean(draft?.roleId)) {
-    errors.roleId = 'יש לבחור תפקיד'
-  }
-
   const growthStage = draft?.abilities?.growthStage
-  if (growthStage == null || growthStage === '') {
-    errors.growthStage = 'יש לבחור שלב התפתחות'
-  } else {
-    const num = Number(growthStage)
-    if (!Number.isFinite(num) || num < 1 || num > 5) {
-      errors.growthStage = 'שלב התפתחות לא תקין'
+  if (shouldRequireGrowthStage(draft)) {
+    if (growthStage == null || growthStage === '') {
+      errors.growthStage = 'יש לבחור שלב התפתחות'
+    } else {
+      const num = Number(growthStage)
+      if (!Number.isFinite(num) || num < 1 || num > 5) {
+        errors.growthStage = 'שלב התפתחות לא תקין'
+      }
     }
   }
 
   const activeDomains = Array.isArray(domains)
-    ? domains.filter((domain) => domain?.active)
+    ? domains.filter((domain) => domain?.active && Number(domain?.total || 0) > 0)
     : []
 
-  const incompleteActiveDomains = activeDomains.filter((domain) => domain?.state !== 'full')
+  const incompleteActiveDomains = activeDomains.filter((domain) => {
+    const filled = Number(domain?.filled || 0)
+    const total = Number(domain?.total || 0)
+    if (!total) return false
+    return filled < total
+  })
 
   if (incompleteActiveDomains.length) {
     errors.activeDomains = 'יש להשלים את כל הדומיינים הפעילים'

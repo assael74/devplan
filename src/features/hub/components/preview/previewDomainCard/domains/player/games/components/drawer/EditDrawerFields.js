@@ -31,13 +31,13 @@ export default function EditDrawerFields({
   const assistsLocked = !!draft?.gameId && limits.assistsMax <= 0
 
   return (
-    <Box sx={sx.fieldsRoot}>
+    <Box sx={{ display: 'grid', gap: 1 }}>
       {limits.hasGoalUpdates ? (
         <Typography level="body-xs" color="warning" sx={sx.statusText}>
           כבר קיים עדכון שערים או בישולים למשחק זה
         </Typography>
       ) : null}
-      
+
       <Box sx={sx.fieldsBlock(true)}>
         <Box sx={sx.booleanGrid}>
           <OnSquadSelector

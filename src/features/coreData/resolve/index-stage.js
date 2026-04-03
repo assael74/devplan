@@ -19,31 +19,75 @@
  * המטרה:
  * לאפשר גישה מהירה לנתונים בלי לבצע חיפושים חוזרים במערכים.
  */
- import {
-   buildGamesWithStats,
-   buildVideosByMeetingId,
-   buildVideosByPlayerId,
-   buildVideosByTeamId,
-   buildRolesWithEntities,
-   buildRolesByClubId,
-   buildRolesByTeamId,
-   buildMeetingsByPlayerId,
-   buildMeetingsByTeamId,
-   buildPaymentIdsByPlayerId,
-   buildTrainingWeeksByTeamId,
-   buildGamesByTeamId
- } from '../resolvers/builders'
+ // src/features/coreData/resolve/index-stage.js
+import {
+  buildVideosByMeetingId,
+  buildVideosByPlayerId,
+  buildVideosByTeamId,
+  buildRolesWithEntities,
+  buildRolesByClubId,
+  buildRolesByTeamId,
+  buildMeetingsByPlayerId,
+  buildMeetingsByTeamId,
+  buildPaymentIdsByPlayerId,
+  buildTrainingWeeksByTeamId,
+  buildGamesByTeamId,
+} from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
+const safeArr = (v) => (Array.isArray(v) ? v : [])
 const safeNum = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
 }
 
+const uniqById = (arr = []) => {
+  const map = new Map()
+
+  for (const item of safeArr(arr)) {
+    const id = safeId(item?.id)
+    if (!id) continue
+    if (!map.has(id)) map.set(id, item)
+  }
+
+  return Array.from(map.values())
+}
+
+const normalizeIds = (value) => {
+  if (Array.isArray(value)) return value.map(safeId).filter(Boolean)
+  const id = safeId(value)
+  return id ? [id] : []
+}
+
+const buildGamesByPlayerId = (games = []) => {
+  const map = new Map()
+
+  for (const game of safeArr(games)) {
+    const ids = [
+      ...normalizeIds(game?.playerId),
+      ...normalizeIds(game?.playersId),
+      ...normalizeIds(game?.playerIds),
+    ]
+
+    const uniqueIds = Array.from(new Set(ids))
+
+    for (const playerId of uniqueIds) {
+      if (!map.has(playerId)) map.set(playerId, [])
+      map.get(playerId).push(game)
+    }
+  }
+
+  for (const [playerId, list] of map.entries()) {
+    map.set(playerId, uniqById(list))
+  }
+
+  return map
+}
+
 const buildTagUseCountMap = (videosArr = []) => {
   const counts = new Map()
 
-  for (const video of videosArr) {
+  for (const video of safeArr(videosArr)) {
     const ids = Array.isArray(video?.tagIds)
       ? video.tagIds
       : Array.isArray(video?.tags)
@@ -81,9 +125,8 @@ const sortTagsByOrderAndLabel = (a, b) => {
 }
 
 const buildTagsHierarchy = (tags = []) => {
-  const base = tags.map((tag) => ({
+  const base = safeArr(tags).map((tag) => ({
     ...tag,
-
     id: String(tag?.id || ''),
     slug: String(tag?.slug || ''),
     kind: String(tag?.kind || ''),
@@ -128,9 +171,14 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
   const {
     clubs = [],
     teamsBase = [],
+    playersBase = [],
     meetingsBase = [],
     paymentsBase = [],
+
     gamesBase = [],
+    externalGamesBase = [],
+    allGamesBase = [],
+
     rolesBase = [],
     videosBase = [],
     videoAnalysisBase = [],
@@ -139,14 +187,26 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
 
   const clubById = new Map(clubs.map((club) => [safeId(club.id), club]))
   const teamBaseById = new Map(teamsBase.map((team) => [safeId(team.id), team]))
+  const playerBaseById = new Map(playersBase.map((player) => [safeId(player.id), player]))
   const meetingsById = new Map(meetingsBase.map((meeting) => [safeId(meeting.id), meeting]))
   const paymentsById = new Map(paymentsBase.map((payment) => [safeId(payment.id), payment]))
 
-  const gamesWithStats = gamesBase
-  const teamGamesByTeamId = buildGamesByTeamId(gamesBase)
+  const normalizedGamesBase = safeArr(gamesBase)
+  const normalizedExternalGamesBase = safeArr(externalGamesBase)
+  const normalizedAllGamesBase =
+    allGamesBase?.length > 0
+      ? safeArr(allGamesBase)
+      : uniqById([...normalizedGamesBase, ...normalizedExternalGamesBase])
+
+  const gamesWithStats = normalizedAllGamesBase
+
+  const teamGamesByTeamId = buildGamesByTeamId(normalizedGamesBase)
+  const externalGamesByPlayerId = buildGamesByPlayerId(normalizedExternalGamesBase)
+  const allGamesByPlayerId = buildGamesByPlayerId(normalizedAllGamesBase)
+
   const trainingWeeksByTeamId = buildTrainingWeeksByTeamId(teamsBase)
   const teamMeetingsByTeamId = buildMeetingsByTeamId(teamsBase)
-  
+
   const videosByMeetingId = buildVideosByMeetingId(videoAnalysisBase)
   const videosByPlayerId = buildVideosByPlayerId(videoAnalysisBase, meetingsById)
   const videosByTeamId = buildVideosByTeamId(videoAnalysisBase, meetingsById)
@@ -163,7 +223,7 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
     ...videosBase,
   ])
 
-  const rawTags = tagsBase
+  const rawTags = safeArr(tagsBase)
     .map((tag) => ({
       ...tag,
       id: String(tag?.id || ''),
@@ -183,20 +243,29 @@ export function buildCoreIndexes(merged, { gameStatsShorts = [] } = {}) {
   return {
     clubById,
     teamBaseById,
+    playerBaseById,
     meetingsById,
     paymentsById,
+
     gamesWithStats,
     teamGamesByTeamId,
+    externalGamesByPlayerId,
+    allGamesByPlayerId,
+
     trainingWeeksByTeamId,
     teamMeetingsByTeamId,
+
     videosByMeetingId,
     videosByPlayerId,
     videosByTeamId,
+
     roles,
     rolesByClubId,
     rolesByTeamId,
+
     meetingsByPlayerId,
     paymentsIdsByPlayerId,
+
     tags,
   }
 }

@@ -80,10 +80,6 @@ function buildAbilitiesInviteFirestorePayload(invite = {}) {
     submittedAt: invite.submittedAt || null,
     expiresAt: invite.expiresAt || null,
 
-    defaults: {
-      roleId: clean(invite?.defaults?.roleId),
-    },
-
     meta: invite.meta || null,
 
     createdAt: serverTimestamp(),

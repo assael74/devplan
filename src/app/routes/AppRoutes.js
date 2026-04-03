@@ -16,16 +16,27 @@ import CalendarHubPage from '../../features/calendarHub/CalendarHubPage'
 import VideoHubPage from '../../features/videoHub/VideoHubPage'
 
 import AbilitiesPublicRouteEntry from './AbilitiesPublicRouteEntry.js'
-
 import TagsManagementPage from '../../features/tagsHub/TagsManagementPage.js'
-
 import AbilitiesExplainerPage from '../../features/abilities/explainer/AbilitiesExplainerPage.js'
 
+import LoginPage from '../../features/auth/pages/LoginPage'
+import ForgotPasswordPage from '../../features/auth/pages/ForgotPasswordPage'
+
 export default function AppRoutes() {
-  const { user } = useAuth()
-  const AuthForm = () => null
+  const { user, loading } = useAuth()
 
   const isCoreLoaded = true
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 6, textAlign: 'center' }}>
+        <CircularProgress size="lg" />
+        <Typography level="body-md" sx={{ mt: 2 }}>
+          טוען התחברות...
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
     <Routes>
@@ -34,8 +45,10 @@ export default function AppRoutes() {
 
       {!user ? (
         <>
-          <Route path="/" element={<AuthForm />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </>
       ) : !isCoreLoaded ? (
         <Route
@@ -52,9 +65,15 @@ export default function AppRoutes() {
       ) : (
         <Route
           element={
-            <AppLayout topbar={<TopBar title="DevPlan" />} navBadges={{ players: 108, teams: 7, clubs: 3 }} />
+            <AppLayout
+              topbar={<TopBar title="DevPlan" />}
+              navBadges={{ players: 108, teams: 7, clubs: 3 }}
+            />
           }
         >
+          <Route path="/login" element={<Navigate to="/hub" replace />} />
+          <Route path="/forgot-password" element={<Navigate to="/hub" replace />} />
+
           <Route path="/" element={<Navigate to="/hub" replace />} />
 
           <Route path="/hub" element={<HubPage />} />

@@ -6,6 +6,10 @@ export const COLORS = {
     player: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#EEF2FF' },
     players: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#EEF2FF' },
 
+    privatePlayer: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
+    privates: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
+    private: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
+
     team: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#EEF2FF' },
     teams: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#EEF2FF' },
 

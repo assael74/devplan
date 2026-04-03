@@ -11,6 +11,8 @@ export default function HubFabMenu({ mode, context, handlers, permissions }) {
   const tooltip =
     mode === 'players'
       ? 'הוספת שחקן'
+      : mode === 'privates'
+      ? 'הוספת שחקן פרטי'
       : mode === 'teams'
       ? 'הוספת קבוצה'
       : mode === 'clubs'

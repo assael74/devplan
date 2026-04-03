@@ -24,7 +24,7 @@ function MetaChip({ label, color = 'neutral', icon }) {
 export default function GameValueView({ option, placeholder = 'בחר משחק' }) {
   if (!option) {
     return (
-      <Typography level="body-sm" sx={sx.placeholder}>
+      <Typography level="body-sm" sx={{ opacity: 0.6 }}>
         {placeholder}
       </Typography>
     )
@@ -47,7 +47,7 @@ export default function GameValueView({ option, placeholder = 'בחר משחק' 
       </Box>
 
       <Box sx={sx.valueBottom}>
-        <Typography level="body-xs" sx={sx.subText}>
+        <Typography level="body-xs" sx={{ opacity: 0.72, whiteSpace: 'nowrap' }}>
           {option.dateLabel}
         </Typography>
 

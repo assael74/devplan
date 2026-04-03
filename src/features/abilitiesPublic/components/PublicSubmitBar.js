@@ -36,6 +36,7 @@ export default function PublicSubmitBar({ form = {} }) {
     ready = false,
     handleSubmit = () => {},
     submitting = false,
+    submitted = false,
     submitError = '',
     completion = {},
   } = form
@@ -69,24 +70,33 @@ export default function PublicSubmitBar({ form = {} }) {
               מלאים {fullDomains}/{totalDomains}
             </Chip>
 
-            {!ready ? (
+            {!ready && !submitted ? (
               <Chip size="sm" variant="soft" color="warning">
                 נשארו {completion?.remainingDomains || 0}
               </Chip>
             ) : null}
           </Stack>
 
+          {!submitted && !ready && topMissing.length ? (
+            <MissingItemsList items={topMissing} />
+          ) : null}
+
+          {submitError ? (
+            <Typography level="body-sm" color="danger">
+              {submitError}
+            </Typography>
+          ) : null}
 
           <Button
             size="lg"
             fullWidth
             loading={submitting}
-            disabled={!ready || submitting}
+            disabled={!ready || submitting || submitted}
             onClick={handleSubmit}
-            startDecorator={iconUi({ id: 'send' })}
-            sx={{ minHeight: 48, borderRadius: '999px', fontWeight: 700, }}
+            startDecorator={iconUi({ id: submitted ? 'check' : 'send' })}
+            sx={{ minHeight: 48, borderRadius: '999px', fontWeight: 700 }}
           >
-            שליחת הטופס
+            {submitted ? 'הטופס נשלח' : 'שליחת הטופס'}
           </Button>
         </Stack>
       </Box>

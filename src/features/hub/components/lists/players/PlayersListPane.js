@@ -52,7 +52,7 @@ export default function PlayersListPane({ players, selectedId, onSelect, onOpenA
             size="sm"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="חיפוש (שם / שנתון / ת״ז / IFA)"
+            placeholder="חיפוש (שם / שנתון / קבוצה / מועדון)"
             sx={{ flex: 1, minWidth: 0 }}
           />
 

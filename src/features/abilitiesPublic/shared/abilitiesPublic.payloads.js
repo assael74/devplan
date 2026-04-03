@@ -29,7 +29,6 @@ export function buildPublicAbilitiesSubmitPayload(draft = {}) {
     evaluatorType: clean(draft?.evaluatorType),
 
     evalDate: clean(draft?.evalDate),
-    roleId: clean(draft?.roleId),
 
     abilities,
     domainScores: { ...(draft?.domainScores || {}) },

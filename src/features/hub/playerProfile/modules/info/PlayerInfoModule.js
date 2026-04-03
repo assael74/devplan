@@ -1,4 +1,5 @@
 // src/features/players/modules/info/PlayerInfoModule.js
+
 import React, { useMemo, useCallback } from 'react'
 import { Box } from '@mui/joy'
 
@@ -12,19 +13,19 @@ import PlayerAffiliationCard from './components/PlayerAffiliationCard.js'
 import PlayerPhysicalCard from './components/PlayerPhysicalCard.js'
 import PlayerBirthCard from './components/PlayerBirthCard.js'
 
-import { useUpdateAction } from '../../../../../ui/domains/entityActions/updateAction.js'
+import { usePlayerHubUpdate } from '../../../hooks/players/usePlayerHubUpdate.js'
 
 const toStr = (v) => (v == null ? '' : String(v))
 
-const buildEntityName = (p) => {
-  const first = toStr(p?.playerFirstName).trim()
-  const last = toStr(p?.playerLastName).trim()
+function buildEntityName(player) {
+  const first = toStr(player?.playerFirstName).trim()
+  const last = toStr(player?.playerLastName).trim()
   const full = [first, last].filter(Boolean).join(' ').trim()
-  return full || toStr(p?.playerShortName).trim() || 'שחקן'
+  return full || toStr(player?.playerShortName).trim() || 'שחקן'
 }
 
 export default function PlayerInfoModule({ entity, context }) {
-  const player = entity
+  const player = entity || null
 
   const headerSubtitle = useMemo(() => {
     if (!player) return ''
@@ -35,37 +36,40 @@ export default function PlayerInfoModule({ entity, context }) {
 
   const entityName = useMemo(() => buildEntityName(player), [player])
 
-  const { runUpdate } = useUpdateAction({
-    routerEntityType: 'players',
-    snackEntityType: 'player',
-    id: player?.id,
-    entityName,
-    requireAnyUpdated: true,
-    createIfMissing: false,
-  })
+  const { run, pending } = usePlayerHubUpdate(player)
 
   const onUpdate = useCallback(
-    async (patch, meta) => {
-      return runUpdate(patch, meta)
+    async (patch, meta = {}) => {
+      if (!player?.id) return
+
+      return run(patch, {
+        ...meta,
+        playerId: player.id,
+        entityName,
+        createIfMissing: true,
+      })
     },
-    [runUpdate]
+    [run, player, entityName]
   )
 
-  if (!player) return <EmptyState title="אין מידע לשחקן" subtitle={headerSubtitle} />
+  if (!player) {
+    return <EmptyState title="אין מידע לשחקן" subtitle={headerSubtitle} />
+  }
 
   return (
     <SectionPanel>
       <Box sx={sx.grid}>
-        <PlayerStatusCard player={player} onUpdate={onUpdate} />
-        <PlayerNamesCard player={player} onUpdate={onUpdate} />
-        <PlayerBirthCard player={player} onUpdate={onUpdate} />
+        <PlayerStatusCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerNamesCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerBirthCard player={player} onUpdate={onUpdate} pending={pending} />
         <PlayerAffiliationCard
           player={player}
           onUpdate={onUpdate}
+          pending={pending}
           clubsOptions={context?.clubs}
           teamsOptions={context?.teams}
         />
-        <PlayerPhysicalCard player={player} onUpdate={onUpdate} />
+        <PlayerPhysicalCard player={player} onUpdate={onUpdate} pending={pending} />
       </Box>
     </SectionPanel>
   )

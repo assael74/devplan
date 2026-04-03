@@ -14,6 +14,9 @@ const pickIfaLink = (draft) => {
   return v ? v : null
 }
 
+const omitEmpty = (obj = {}) =>
+  Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
+
 export const createActions = {
   club: async ({ draft }) => {
     const id = makeId()
@@ -63,23 +66,54 @@ export const createActions = {
 
     await createShort({
       shortKey: 'players.playersInfo',
-      item: infoItem
+      item: infoItem,
     })
 
     await createShort({
       shortKey: 'players.playersNames',
-      item: namesItem
+      item: namesItem,
     })
 
     await createShort({
       shortKey: 'players.playersTeam',
-      item: teamItem
+      item: teamItem,
     })
-    
+
     return {
       ...infoItem,
       ...namesItem,
       ...teamItem,
+    }
+  },
+
+  privatePlayer: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+    const ifaLink = pickIfaLink(draft)
+
+    const infoItem = omitEmpty({
+      id,
+      playerSource: 'private',
+      isPrivatePlayer: true,
+      active: draft?.active ?? true,
+      playerFirstName: draft?.playerFirstName || '',
+      playerLastName: draft?.playerLastName || '',
+      birth: draft?.birth ?? draft?.birthYear ?? '',
+      clubName: draft?.clubName || '',
+      teamName: draft?.teamName || '',
+      createdAt: now,
+      updatedAt: now,
+
+      ...(ifaLink ? { ifaLink } : {}),
+    })
+
+    await createShort({
+      shortKey: 'privates.privatePlayersInfo',
+      item: infoItem,
+    })
+
+    return {
+      ...infoItem,
     }
   },
 
@@ -305,6 +339,44 @@ export const createActions = {
     }
   },
 
+  externalGame: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+
+    const gameInfoItem = {
+      ...buildGameInfoItem({ id, draft, now }),
+      ...buildGameTimeItem({ id, draft }),
+      ...buildGameResultItem({ id, draft }),
+      gameSource: 'external',
+      isExternalGame: true,
+    }
+
+    const gamePlayersItem = {
+      id,
+      playerId: draft?.playerId || null,
+      isSelected: draft?.isSelected === true,
+      isStarting: draft?.isStarting === true,
+      goals: Number(draft?.goals || 0),
+      assists: Number(draft?.assists || 0),
+      timePlayed: Number(draft?.timePlayed || 0),
+    }
+
+    await createShort({
+      shortKey: 'externalGames.gameInfo',
+      item: gameInfoItem,
+    })
+
+    await createShort({
+      shortKey: 'externalGames.gamePlayers',
+      item: gamePlayersItem,
+    })
+
+    return {
+      ...gameInfoItem,
+      ...gamePlayersItem,
+    }
+  },
+
   videoAnalysis: async ({ draft }) => {
     const id = makeId()
     const now = Date.now()
@@ -383,7 +455,6 @@ export const createActions = {
 
     if (!teamId) throw new Error('missing teamId')
     if (!weekId) throw new Error('missing weekId')
-
 
     const res = await upsertTrainingWeek({
       draft: {

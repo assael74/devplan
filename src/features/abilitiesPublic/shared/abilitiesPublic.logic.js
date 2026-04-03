@@ -144,10 +144,6 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
     }))
   }, [])
 
-  const onSetRoleId = useCallback((roleId) => {
-    patch({ roleId: roleId || '' })
-  }, [patch])
-
   const onChangeGrowthStage = useCallback((e, value) => {
     setDraft((prev) => patchAbilityValue({ ...prev, isDirty: true }, 'growthStage', value))
   }, [])
@@ -201,6 +197,9 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
   const handleSubmit = useCallback(async () => {
     const nextValidation = validatePublicAbilitiesDraft({ draft, domains })
 
+    console.log('submit validation', nextValidation)
+    console.log('submit draft', draft)
+
     if (!nextValidation.isValid) {
       setSubmitError('הטופס עדיין לא מוכן לשליחה')
       return null
@@ -216,17 +215,21 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
       setSubmitError('')
 
       const payload = buildPublicAbilitiesSubmitPayload(draft)
-      await onSubmit(payload)
+      console.log('submit payload', payload)
+
+      const result = await onSubmit(payload)
+      console.log('submit result', result)
 
       setSubmitted(true)
       return payload
     } catch (error) {
+      console.error('submit failed', error)
       setSubmitError(error?.message || 'שליחת הטופס נכשלה')
       return null
     } finally {
       setSubmitting(false)
     }
-  }, [draft, onSubmit])
+  }, [draft, domains, onSubmit])
 
   return {
     draft,
@@ -242,7 +245,6 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
     submitError,
     submitted,
 
-    onSetRoleId,
     onChangeGrowthStage,
     onResetAll,
     onSetItemScore,

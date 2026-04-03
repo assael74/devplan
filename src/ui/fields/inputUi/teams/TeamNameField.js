@@ -20,7 +20,7 @@ export default function TeamNameField({
 }) {
   return (
     <>
-      <FormControl>
+      <FormControl sx={{ minWidth: 0, width: '100%' }}>
         <FormLabel required sx={{ fontSize: '12px' }}>שם קבוצה</FormLabel>
         <Input
           value={value}
@@ -33,6 +33,7 @@ export default function TeamNameField({
           disabled={disabled}
           variant={variant}
           size={size}
+          sx={{ minWidth: 0, width: '100%' }}
         />
         <FormHelperText>{helperText}</FormHelperText>
       </FormControl>

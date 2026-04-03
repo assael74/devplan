@@ -7,10 +7,21 @@ import PublicFormHeader from '../components/PublicFormHeader.js'
 import PublicGrowthStageSection from '../components/PublicGrowthStageSection.js'
 import PublicDomainsAccordion from '../components/PublicDomainsAccordion.js'
 import PublicSubmitBar from '../components/PublicSubmitBar.js'
+import PublicStateView from '../components/PublicStateView.js'
 import { useAbilitiesPublicForm } from '../shared/abilitiesPublic.logic.js'
 
 export default function AbilitiesPublicPage({ invite, onSubmit }) {
   const form = useAbilitiesPublicForm({ invite, onSubmit })
+
+  if (form?.submitted) {
+    return (
+      <PublicStateView
+        color="success"
+        title="הטופס נשלח בהצלחה"
+        text="הערכת היכולות התקבלה במערכת."
+      />
+    )
+  }
 
   return (
     <Box

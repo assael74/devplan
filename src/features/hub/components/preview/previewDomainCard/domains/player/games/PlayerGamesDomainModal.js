@@ -9,12 +9,16 @@ import PlayerGamesFilters from './components/PlayerGamesFilters.js'
 import PlayerGamesTable from './components/PlayerGamesTable.js'
 import EditDrawer from './components/drawer/EditDrawer.js'
 import NewFormDrawer from './components/newForm/NewFormDrawer.js'
+import NewExFormDrawer from './components/newExForm/NewExFormDrawer.js'
+import EditExDrawer from './components/drawerEx/EditExDrawer.js'
 
 export default function PlayerGamesDomainModal({ entity, context }) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
     return players.find((p) => p?.id === entity?.id) || entity || null
   }, [context?.players, entity])
+
+  const isPrivatePlayer = livePlayer?.isPrivatePlayer === true
 
   const { rows, summary } = useMemo(() => resolvePlayerGamesDomain(livePlayer), [livePlayer])
 
@@ -24,6 +28,7 @@ export default function PlayerGamesDomainModal({ entity, context }) {
   const [resultFilter, setResultFilter] = useState('all')
   const [diffFilter, setDiffFilter] = useState('all')
   const [addPlayerGame, setAddPlayerGame] = useState(false)
+  const [addExternalGame, setAddExternalGame] = useState(false)
   const [activeGame, setActiveGame] = useState(null)
 
   const filtered = useMemo(() => {
@@ -46,6 +51,15 @@ export default function PlayerGamesDomainModal({ entity, context }) {
 
   const handleEdit = (game) => {
     setActiveGame(game)
+  }
+
+  const handleAddPlayerToGame = () => {
+    if (isPrivatePlayer) {
+      setAddExternalGame(true)
+      return
+    }
+
+    setAddPlayerGame(true)
   }
 
   return (
@@ -72,13 +86,14 @@ export default function PlayerGamesDomainModal({ entity, context }) {
             homeFilter={homeFilter}
             resultFilter={resultFilter}
             diffFilter={diffFilter}
+            isPrivatePlayer={isPrivatePlayer}
             onChangeQ={setQ}
             onChangeTypeFilter={setTypeFilter}
             onChangeHomeFilter={setHomeFilter}
             onChangeResultFilter={setResultFilter}
             onChangeDiffFilter={setDiffFilter}
             onReset={handleReset}
-            onAddPlayerToGame={() => setAddPlayerGame(true)}
+            onAddPlayerToGame={handleAddPlayerToGame}
           />
         </Box>
 
@@ -96,11 +111,13 @@ export default function PlayerGamesDomainModal({ entity, context }) {
           teamId: livePlayer?.teamId || context?.teamId || '',
           clubId: livePlayer?.clubId || context?.clubId || '',
         }}
+        game={{ ...activeGame, playerId: livePlayer?.id || '' }}
       />
 
-      <EditDrawer
-        open={!!activeGame}
-        game={{...activeGame, playerId: livePlayer?.id || ''}}
+      <NewExFormDrawer
+        open={addExternalGame}
+        onClose={() => setAddExternalGame(false)}
+        onSaved={() => setAddExternalGame(false)}
         context={{
           ...context,
           player: livePlayer,
@@ -109,9 +126,41 @@ export default function PlayerGamesDomainModal({ entity, context }) {
           teamId: livePlayer?.teamId || context?.teamId || '',
           clubId: livePlayer?.clubId || context?.clubId || '',
         }}
-        onClose={() => setActiveGame(null)}
-        onSaved={() => setActiveGame(null)}
       />
+
+      {isPrivatePlayer ? (
+        <EditExDrawer
+          open={!!activeGame}
+          game={{ ...activeGame, playerId: livePlayer?.id || '' }}
+          context={{
+            ...context,
+            player: livePlayer,
+            playerId: livePlayer?.id || '',
+            entity: livePlayer,
+            teamId: livePlayer?.teamId || context?.teamId || '',
+            clubId: livePlayer?.clubId || context?.clubId || '',
+          }}
+          onClose={() => setActiveGame(null)}
+          onSaved={() => setActiveGame(null)}
+        />
+      ) : (
+        <EditDrawer
+          open={!!activeGame}
+          game={{ ...activeGame, playerId: livePlayer?.id || '' }}
+          context={{
+            ...context,
+            player: livePlayer,
+            playerId: livePlayer?.id || '',
+            entity: livePlayer,
+            teamId: livePlayer?.teamId || context?.teamId || '',
+            clubId: livePlayer?.clubId || context?.clubId || '',
+          }}
+          onClose={() => setActiveGame(null)}
+          onSaved={() => setActiveGame(null)}
+        />
+      )}
+
+
     </>
   )
 }

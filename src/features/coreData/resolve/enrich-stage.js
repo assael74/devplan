@@ -22,6 +22,8 @@
  * - חישוב statistics לשחקנים וקבוצות
  * - חיבור סרטונים לישויות
  */
+ // src/features/coreData/resolve/enrich-stage.js
+ // src/features/coreData/resolve/enrich-stage.js
 import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
 import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
 import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
@@ -35,6 +37,7 @@ import {
 } from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
+const safeArr = (v) => (Array.isArray(v) ? v : [])
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v)
 
 function buildPlayerAbilitiesState(player) {
@@ -63,6 +66,52 @@ function buildPlayerAbilitiesState(player) {
   }
 }
 
+function getPlayerSourceMeta(player) {
+  const source = String(
+    player?.playerSource ||
+      player?.source ||
+      player?.dataSource ||
+      player?.entitySource ||
+      ''
+  ).trim()
+
+  const isPrivatePlayer =
+    source === 'private' ||
+    source === 'privatePlayer' ||
+    source === 'privatePlayers' ||
+    player?.isPrivate === true ||
+    player?.privatePlayer === true ||
+    player?.isPrivatePlayer === true
+
+  return {
+    playerSource: source || (isPrivatePlayer ? 'private' : 'club'),
+    isPrivatePlayer,
+  }
+}
+
+function getPlayerClub(player, team, clubById) {
+  const directClubId = safeId(player?.clubId)
+  if (directClubId) return clubById.get(directClubId) || null
+
+  const teamClubId = safeId(team?.clubId)
+  if (teamClubId) return clubById.get(teamClubId) || null
+
+  return null
+}
+
+function getPlayerTeamGames(teamGamesByTeamId, teamId) {
+  if (!teamId) return []
+  return safeArr(teamGamesByTeamId.get(teamId))
+}
+
+function getPlayerExternalGames(indexes, playerId) {
+  if (!playerId) return []
+  if (indexes?.externalGamesByPlayerId instanceof Map) {
+    return safeArr(indexes.externalGamesByPlayerId.get(playerId))
+  }
+  return []
+}
+
 export function enrichTeams(merged, indexes) {
   const { teamsBase = [], playersBase = [] } = merged
   const {
@@ -84,30 +133,28 @@ export function enrichTeams(merged, indexes) {
     playersByTeamId.get(teamId).push(player)
   }
 
-  return teamsBase.map((team) => {
-    const teamId = safeId(team.id)
-    const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
-    const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
-    const teamGames = teamGamesByTeamId.get(teamId) || []
-    const teamPlayers = playersByTeamId.get(teamId) || []
+  return teamsBase
+    .map((team) => {
+      const teamId = safeId(team.id)
+      const trainingWeeks = safeArr(trainingWeeksByTeamId.get(teamId))
+      const teamMeetings = safeArr(teamMeetingsByTeamId.get(teamId))
+      const teamGames = safeArr(teamGamesByTeamId.get(teamId))
 
-    return {
-      ...team,
-      club: clubById.get(safeId(team.clubId)) || null,
-      trainingWeeks,
-      trainingSummary: buildTrainingWeeksSummary(trainingWeeks),
-      teamMeetings,
-      teamGames,
-    }
-  }).sort((a, b) => {
-    const yearDiff = Number(a?.teamYear || 0) - Number(b?.teamYear || 0)
-    if (yearDiff !== 0) return yearDiff
+      return {
+        ...team,
+        club: clubById.get(safeId(team.clubId)) || null,
+        trainingWeeks,
+        trainingSummary: buildTrainingWeeksSummary(trainingWeeks),
+        teamMeetings,
+        teamGames,
+      }
+    })
+    .sort((a, b) => {
+      const yearDiff = Number(a?.teamYear || 0) - Number(b?.teamYear || 0)
+      if (yearDiff !== 0) return yearDiff
 
-    return String(a?.teamName || '').localeCompare(
-      String(b?.teamName || ''),
-      'he'
-    )
-  })
+      return String(a?.teamName || '').localeCompare(String(b?.teamName || ''), 'he')
+    })
 }
 
 export function enrichPlayers(merged, indexes, teams) {
@@ -122,7 +169,7 @@ export function enrichPlayers(merged, indexes, teams) {
     teamGamesByTeamId,
   } = indexes
 
-  const teamById = new Map(teams.map((team) => [safeId(team.id), team]))
+  const teamById = new Map(safeArr(teams).map((team) => [safeId(team.id), team]))
 
   return playersBase
     .map((player) => {
@@ -139,31 +186,35 @@ export function enrichPlayers(merged, indexes, teams) {
         updatedFrom,
         validDomainsCount,
         docAbilitiesId,
-
         level,
         levelPotential,
-
         ...playerRest
       } = player || {}
 
-      const team = teamById.get(safeId(player.teamId)) || null
-      const teamId = safeId(player.teamId)
+      const sourceMeta = getPlayerSourceMeta(player)
+      const isPrivatePlayer = sourceMeta.isPrivatePlayer
 
-      const club = player.clubId
-        ? clubById.get(safeId(player.clubId)) || null
-        : team?.clubId
-          ? clubById.get(safeId(team.clubId)) || null
-          : null
+      const playerId = safeId(player.id)
+      const teamId = isPrivatePlayer ? '' : safeId(player.teamId)
 
-      const meetings = meetingsByPlayerId.get(safeId(player.id)) || []
-      const trainingWeeks = trainingWeeksByTeamId.get(teamId) || []
-      const teamMeetings = teamMeetingsByTeamId.get(teamId) || []
-      const teamGames = teamGamesByTeamId.get(teamId) || []
-      const playerGames = buildPlayerGames(teamGames, player.id)
-      const generalPosition = getPlayerGeneralPosition(player.positions)
+      const team = !isPrivatePlayer && teamId ? teamById.get(teamId) || null : null
+      const club = getPlayerClub(player, team, clubById)
 
-      const paymentsIds = paymentsIdsByPlayerId.get(safeId(player.id)) || []
+      const meetings = safeArr(meetingsByPlayerId.get(playerId))
+      const paymentsIds = safeArr(paymentsIdsByPlayerId.get(playerId))
       const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
+
+      const trainingWeeks = !isPrivatePlayer && teamId ? safeArr(trainingWeeksByTeamId.get(teamId)) : []
+      const teamMeetings = !isPrivatePlayer && teamId ? safeArr(teamMeetingsByTeamId.get(teamId)) : []
+
+      const teamGames = isPrivatePlayer ? [] : getPlayerTeamGames(teamGamesByTeamId, teamId)
+      const externalGames = isPrivatePlayer ? getPlayerExternalGames(indexes, playerId) : []
+
+      const playerGames = isPrivatePlayer
+        ? externalGames
+        : buildPlayerGames(teamGames, playerId)
+
+      const generalPosition = getPlayerGeneralPosition(player.positions)
       const age = getPlayerAge(player)
       const playerFullName = getPlayerFullName(player)
 
@@ -179,7 +230,7 @@ export function enrichPlayers(merged, indexes, teams) {
         updatedFrom,
         validDomainsCount,
         docAbilitiesId,
-        windowsCount
+        windowsCount,
       }
 
       return {
@@ -187,29 +238,27 @@ export function enrichPlayers(merged, indexes, teams) {
         team,
         club,
         meetings,
-        teamMeetings,
-        trainingWeeks,
-        teamGames,
-        playerGames,
         payments,
+        trainingWeeks,
+        teamMeetings,
+        teamGames,
+        externalGames,
+        playerGames,
         age,
         playerFullName,
         generalPosition: {
           layerKey: generalPosition.layerKey,
           layerLabel: generalPosition.layerLabel,
         },
-
         level: level ?? null,
         levelPotential: levelPotential ?? null,
-
+        playerSource: sourceMeta.playerSource,
+        isPrivatePlayer,
         abilitiesState: buildPlayerAbilitiesState(playerForAbilities),
       }
     })
     .sort((a, b) =>
-      String(a?.playerFullName || '').localeCompare(
-        String(b?.playerFullName || ''),
-        'he'
-      )
+      String(a?.playerFullName || '').localeCompare(String(b?.playerFullName || ''), 'he')
     )
 }
 
@@ -217,7 +266,7 @@ export function enrichMeetings(merged, indexes, players = []) {
   const { meetingsBase = [] } = merged
   const { videosByMeetingId } = indexes
 
-  const playerById = new Map(players.map((player) => [safeId(player.id), player]))
+  const playerById = new Map(safeArr(players).map((player) => [safeId(player.id), player]))
 
   return meetingsBase.map((meeting) => {
     const playerId = safeId(meeting?.playerId)
@@ -225,7 +274,7 @@ export function enrichMeetings(merged, indexes, players = []) {
     return {
       ...meeting,
       player: playerId ? playerById.get(playerId) || null : null,
-      videos: videosByMeetingId.get(String(meeting.id)) || [],
+      videos: safeArr(videosByMeetingId.get(String(meeting.id))),
     }
   })
 }
@@ -250,7 +299,7 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
   const playersWithStats = buildPlayersWithStats(players, gamesWithStats, 'all')
 
   return playersWithStats.map((player) => {
-    const rawVideos = videosByPlayerId.get(String(player.id)) || []
+    const rawVideos = safeArr(videosByPlayerId.get(String(player.id)))
 
     const videos = buildVideosWithEntities(rawVideos, {
       meetingsArr: meetingsBase,
@@ -272,7 +321,7 @@ export function attachTeamStatsAndVideos(teams, indexes) {
   const teamsWithStats = buildTeamsWithStats(teams, gamesWithStats, 'all')
 
   return teamsWithStats.map((team) => {
-    const rawVideos = videosByTeamId.get(String(team.id)) || []
+    const rawVideos = safeArr(videosByTeamId.get(String(team.id)))
 
     const videos = buildVideosWithEntities(rawVideos, {
       teamsArr: teams,

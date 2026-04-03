@@ -9,6 +9,7 @@ const MODE = {
   TEAMS: 'teams',
   PLAYERS: 'players',
   STAFF: 'staff',
+  PRIVATES: 'privates',
   SCOUTING: 'scouting',
 }
 
@@ -17,6 +18,7 @@ const getEmptySelectionForMode = (m) => {
   if (m === MODE.TEAMS) return { type: 'team', id: null }
   if (m === MODE.PLAYERS) return { type: 'player', id: null }
   if (m === MODE.STAFF) return { type: 'staff', id: null }
+  if (m === MODE.PRIVATES) return { type: 'player', id: null }
   if (m === MODE.SCOUTING) return { type: 'scout', id: null }
   return { type: 'club', id: null }
 }
@@ -32,15 +34,11 @@ export function useHubState({
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-
-  // selection = רק type + id
   const [previewSelection, setPreviewSelection] = useState(
     getEmptySelectionForMode(MODE.CLUBS)
   )
-
   const [selectionByMode, setSelectionByMode] = useState({})
 
-  // ---------------- SELECTORS ----------------
   const {
     playersUi,
     playersById,
@@ -63,7 +61,6 @@ export function useHubState({
     mode,
   })
 
-  // ---------------- ENTITY RESOLUTION ----------------
   const resolvedEntity = useMemo(() => {
     const selType = previewSelection?.type
     const selId = previewSelection?.id
@@ -87,7 +84,6 @@ export function useHubState({
     }
   }, [resolvedEntity, previewSelection.type])
 
-  // ---------------- MODE CACHE ----------------
   const cacheSelectionForMode = useCallback((m, selection) => {
     if (!m || !selection) return
     setSelectionByMode((prev) => ({ ...prev, [m]: selection }))
@@ -118,7 +114,6 @@ export function useHubState({
     [cacheSelectionForMode, previewSelection, selectionByMode]
   )
 
-  // ---------------- SELECTION HANDLERS ----------------
   const selection = useMemo(
     () =>
       createHubSelectionHandlers({

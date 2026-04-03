@@ -15,6 +15,14 @@ function resolvePlayerName(draft = {}, created = {}) {
   return full || null
 }
 
+function isPrivatePlayerDraft(draft = {}, context = {}) {
+  if (draft?.playerSource === 'private') return true
+  if (draft?.isPrivatePlayer === true) return true
+  if (context?.playerSource === 'private') return true
+  if (context?.isPrivatePlayer === true) return true
+  return false
+}
+
 export default function usePlayerHubCreate() {
   const { notify } = useSnackbar()
   const [saving, setSaving] = useState(false)
@@ -22,11 +30,13 @@ export default function usePlayerHubCreate() {
   const runCreatePlayer = useCallback(
     async ({ draft, context }) => {
       const entityName = resolvePlayerName(draft)
+      const isPrivate = isPrivatePlayerDraft(draft, context)
+      const createAction = isPrivate ? createActions.privatePlayer : createActions.player
 
       try {
         setSaving(true)
 
-        const created = await createActions.player({
+        const created = await createAction({
           draft,
           context,
         })
