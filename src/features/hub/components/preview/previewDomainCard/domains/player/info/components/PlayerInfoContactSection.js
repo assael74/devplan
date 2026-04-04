@@ -42,7 +42,7 @@ export default function PlayerInfoContactSection({ form, pending, phoneOk, setFi
         />
       </Box>
 
-      <Divider sx={sx.divider} />
+      <Divider sx={{ opacity: 0.6, mt: 1 }} />
     </>
   )
 }

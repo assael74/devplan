@@ -38,37 +38,6 @@ export const optionBoxProps = (option, isSelected) => {
   }
 }
 
-/// PlayerTypeSelector
-export const optionPlayerProps = (value, type, size) => {
-  const width = size === 'sm' ? 65 : 85
-  return {
-    variant: "outlined",
-    sx: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      px: 0.5,
-      py: 0.5,
-      pl: size === 'sm' ? 0.5 : 1,
-      minHeight: 32,
-      minWidth: width,
-      width: width,
-      mx: { xs: 'auto', sm: 0 },
-      textAlign: 'center',
-      borderRadius: 'sm',
-      cursor: 'pointer',
-      boxShadow: value === type.id ? 'lg' : 'sm',
-      borderColor: value === type.id ? 'success.solidBg' : 'neutral.outlinedBorder',
-      bgcolor: value === type.id ? 'success.softBg' : 'background.surface',
-      '&:hover': {
-        bgcolor: 'success.plainHoverBg',
-      },
-      transition: 'all 0.2s ease-in-out',
-    }
-  }
-}
-
 /// TeamProjectSelector
 export const chipProjProps = {
   sx: {

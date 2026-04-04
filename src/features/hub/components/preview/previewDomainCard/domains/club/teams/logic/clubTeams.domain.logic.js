@@ -1,5 +1,5 @@
 // preview/PreviewDomainCard/domains/club/teams/clubTeams.domain.logic.js
-import { DOMAIN_STATE, getDomainState } from '../../../../preview.state'
+import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])

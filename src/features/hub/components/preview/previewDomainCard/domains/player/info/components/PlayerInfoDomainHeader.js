@@ -14,7 +14,7 @@ export default function PlayerInfoDomainHeader({ player }) {
         <Avatar src={player?.photo || playerImage} />
       </Box>
 
-      <Box sx={{...sx.headerText, flexGrow: 1 }}>
+      <Box sx={{ minWidth: 0, display: 'grid', gap: 0.15 , flexGrow: 1 }}>
         <Typography level="title-sm" sx={sx.headerTitle}>
           מידע על שחקן
         </Typography>
@@ -23,7 +23,7 @@ export default function PlayerInfoDomainHeader({ player }) {
         </Typography>
       </Box>
 
-      <Chip size="md" variant="outlined" color="primary" sx={sx.ageChip}>
+      <Chip size="md" variant="outlined" color="primary" sx={{ flexShrink: 0, fontWeight: 700 }}>
         גיל: {player.age}
      </Chip>
     </Box>

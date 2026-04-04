@@ -15,7 +15,7 @@ export default function TeamLeaguePointsField({
   disabled,
   helperText,
   readOnly,
-  variant = 'soft',
+  variant = 'outlined',
   size = 'sm',
   max = 99
 }) {

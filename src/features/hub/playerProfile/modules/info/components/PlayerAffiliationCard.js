@@ -1,33 +1,28 @@
 // src/features/players/modules/info/components/PlayerAffiliationCard.js
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
 
 import { ClubSelectField, TeamSelectField } from '../../../../../../ui/fields'
-import { useUpdateAction } from '../../../../../../ui/domains/entityActions/updateAction.js'
+
+import {
+  buildAffiliationInitial,
+  isAffiliationDirty,
+} from './logic/info.logic.js'
 
 const toStr = (v) => (v == null ? '' : String(v))
 
-function computeInitial(player) {
-  return {
-    clubId: toStr(player?.clubId),
-    teamId: toStr(player?.teamId),
-  }
-}
-
-function isDirty(d, i) {
-  return d.clubId !== i.clubId || d.teamId !== i.teamId
-}
-
 export default function PlayerAffiliationCard({ player, onUpdate, clubsOptions = [], teamsOptions = [] }) {
-  const initial = useMemo(() => computeInitial(player), [player])
+  const initial = useMemo(() => buildAffiliationInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
 
+  const dirty = isAffiliationDirty(draft, initial)
+
   useEffect(() => setDraft(initial), [initial.clubId, initial.teamId])
 
-  const dirty = isDirty(draft, initial)
   const hasClub = Boolean(draft.clubId)
   const hasTeam = Boolean(draft.teamId)
 

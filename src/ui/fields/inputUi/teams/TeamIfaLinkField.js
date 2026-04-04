@@ -10,6 +10,7 @@ export default function TeamIfaLinkField({
   required = false,
   disabled = false,
   label = 'קישור לאתר ההתאחדות',
+  variant = 'outlined',
 }) {
 
   return (
@@ -21,6 +22,7 @@ export default function TeamIfaLinkField({
         value={value}
         autoComplete="off"
         disabled={disabled}
+        variant={variant}
         placeholder="קישור לפרופיל קבוצה באתר ההתאחדות"
         endDecorator={iconUi({ id: 'addLink', size: size })}
         onChange={(e) => onChange(e.target.value)}

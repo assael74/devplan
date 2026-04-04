@@ -1,49 +1,27 @@
 // src/features/players/modules/info/components/PlayerPhysicalCard.js
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Input, Button, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
-
-const toNum = (v) => {
-  if (v == null) return null
-  const n = Number(v)
-  return Number.isFinite(n) ? n : null
-}
-
-function computeInitial(player) {
-  const heightCm = toNum(player?.heightCm ?? player?.height ?? player?.physical?.heightCm ?? null)
-  const weightKg = toNum(player?.weightKg ?? player?.weight ?? player?.physical?.weightKg ?? null)
-
-  return {
-    heightCm: heightCm == null ? '' : String(heightCm),
-    weightKg: weightKg == null ? '' : String(weightKg),
-  }
-}
-
-function isDirty(d, i) {
-  return d.heightCm !== i.heightCm || d.weightKg !== i.weightKg
-}
-
-function calcBmi(heightCm, weightKg) {
-  const h = toNum(heightCm)
-  const w = toNum(weightKg)
-  if (!h || !w) return null
-  const hm = h / 100
-  if (!hm) return null
-  const bmi = w / (hm * hm)
-  return Number.isFinite(bmi) ? bmi : null
-}
+import {
+  buildPlayerPhysicalInitial,
+  isPlayerPhysicalDirty,
+  calcPlayerBmi,
+  getPlayerBmiText,
+  buildPlayerPhysicalPatch,
+} from './logic/info.logic.js'
 
 export default function PlayerPhysicalCard({ player, onUpdate }) {
-  const initial = useMemo(() => computeInitial(player), [player])
+  const initial = useMemo(() => buildPlayerPhysicalInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => setDraft(initial), [initial.heightCm, initial.weightKg])
 
-  const dirty = isDirty(draft, initial)
-  const bmi = calcBmi(draft.heightCm, draft.weightKg)
-  const bmiText = bmi == null ? 'BMI —' : `BMI ${bmi.toFixed(1)}`
+  const dirty = isPlayerPhysicalDirty(draft, initial)
+  const bmi = calcPlayerBmi(draft.heightCm, draft.weightKg)
+  const bmiText = getPlayerBmiText(draft.heightCm, draft.weightKg)
 
   const onReset = () => setDraft(initial)
 
@@ -51,12 +29,8 @@ export default function PlayerPhysicalCard({ player, onUpdate }) {
     if (!dirty || saving) return
     setSaving(true)
     try {
-      const heightCm = toNum(draft.heightCm)
-      const weightKg = toNum(draft.weightKg)
-      const patch = {}
-      patch.heightCm = heightCm
-      patch.weightKg = weightKg
-      await onUpdate?.(patch, { section: 'physical' })
+      const patch = buildPlayerPhysicalPatch(draft)
+      await onUpdate(patch, { section: 'physical' })
     } finally {
       setSaving(false)
     }

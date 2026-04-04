@@ -6,7 +6,17 @@ import FormLabel from '@mui/joy/FormLabel';
 import FormHelperText from '@mui/joy/FormHelperText';
 import Input from '@mui/joy/Input';
 
-export default function ClubNameField({ required, error , value, onChange, disabled, helperText, readOnly, size = 'sm' }) {
+export default function ClubNameField({
+  required,
+  error ,
+  value,
+  onChange,
+  disabled,
+  helperText,
+  readOnly,
+  variant = 'outlined',
+  size = 'sm'
+}) {
   return (
     <>
       <FormControl sx={{ minWidth: 0, width: '100%' }}>
@@ -19,7 +29,7 @@ export default function ClubNameField({ required, error , value, onChange, disab
           error={error}
           autoComplete="off"
           disabled={disabled}
-          variant="soft"
+          variant={variant}
           size={size}
           readOnly={readOnly}
           sx={{ minWidth: 0, width: '100%' }}

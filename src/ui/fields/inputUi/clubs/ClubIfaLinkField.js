@@ -9,6 +9,7 @@ export default function ClubIfaLinkField({
   size = 'sm',
   required = false,
   disabled = false,
+  variant = 'outlined',
   label = 'קישור לאתר ההתאחדות',
 }) {
 
@@ -19,6 +20,7 @@ export default function ClubIfaLinkField({
         type="url"
         size={size}
         value={value}
+        variant={variant}
         autoComplete="off"
         disabled={disabled}
         placeholder="קישור לפרופיל מועדון באתר התאחדות"

@@ -181,7 +181,7 @@ export function buildFabActions({
         {
           id: 'add-multi-game',
           label: 'הוסף מספר משחקים',
-          icon: iconUi({ id: 'addGame' }),
+          icon: iconUi({ id: 'addGames' }),
           onClick: onAddGames,
           color: 'team',
           disabled: !allowCreate,
@@ -202,7 +202,7 @@ export function buildFabActions({
         {
           id: 'players',
           label: 'הוסף מספר שחקנים',
-          icon: iconUi({ id: 'addPlayer' }),
+          icon: iconUi({ id: 'addPlayers' }),
           onClick: onCreatePlayers,
           color: 'player',
           disabled: !allowCreate,

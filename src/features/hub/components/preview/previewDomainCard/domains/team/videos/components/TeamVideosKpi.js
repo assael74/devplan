@@ -1,9 +1,10 @@
 // preview/previewDomainCard/domains/team/videos/components/TeamVideosKpi.js
 
 import React from 'react'
-import { Box, Chip, Sheet, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
+import { resolveEntityAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { heroSx as sx } from '../sx/teamVideosKpi.sx.js'
 
 function KpiCard({ label, value, subValue, icon }) {
@@ -26,6 +27,12 @@ function KpiCard({ label, value, subValue, icon }) {
 export default function TeamVideosKpi({ entity, summary, filteredCount }) {
   const topCategory = summary?.topCategories[0] || null
   const topTopic = summary?.topTopics[0] || null
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name,
+  })
 
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
@@ -36,7 +43,7 @@ export default function TeamVideosKpi({ entity, summary, filteredCount }) {
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
             <Box sx={sx.heroIconBoxSx}>
-              {iconUi({ id: 'video', size: 'md', sx: { color: '#fff' } })}
+              <Avatar src={src} />
             </Box>
 
             <Box sx={sx.heroTextWrapSx}>

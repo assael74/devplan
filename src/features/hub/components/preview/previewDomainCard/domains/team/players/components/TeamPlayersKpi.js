@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
-import { buildFallbackAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import { resolveEntityAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { heroSx as sx } from '../sx/teamPlayersKpi.sx'
 
 const c = getEntityColors('players')
@@ -22,7 +22,12 @@ function KpiCard({ label, value, icon }) {
 }
 
 export default function TeamPlayersKpi({ entity, summary }) {
-  const src = entity?.photo || buildFallbackAvatar({ entityType: 'team', id: entity?.id, name: entity?.teamName || entity?.name, })
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name,
+  })
 
   const positionsSummary = Array.isArray(summary?.positionsSummary) ? summary.positionsSummary : []
 

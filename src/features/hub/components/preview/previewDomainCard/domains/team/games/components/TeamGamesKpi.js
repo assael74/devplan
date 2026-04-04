@@ -1,9 +1,10 @@
 // preview/previewDomainCard/domains/team/games/components/TeamGamesHero.js
 
 import React from 'react'
-import { Box, Chip, Sheet, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
+import { resolveEntityAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { getLeaguePointsSummary } from '../logic/teamGames.domain.logic.js'
 import { heroSx as sx } from '../sx/teamGamesKpi.sx.js'
@@ -36,6 +37,13 @@ export default function TeamGamesKpi({ entity, summary, filteredCount }) {
 
   const { leaguePossible, leagueAchieved, leagueSuccessPct } = getLeaguePointsSummary(summary)
 
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name,
+  })
+
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
       <Box sx={sx.heroGlowSx} />
@@ -45,7 +53,7 @@ export default function TeamGamesKpi({ entity, summary, filteredCount }) {
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
             <Box sx={sx.heroIconBoxSx}>
-              {iconUi({ id: 'games', size: 'md', sx: { color: '#fff' } })}
+              <Avatar src={src} />
             </Box>
 
             <Box sx={sx.heroTextWrapSx}>

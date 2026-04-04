@@ -1,113 +1,84 @@
-// preview/previewDomainCard/domains/club/teams/ClubTeamsDomainModal.js
+// preview/previewDomainCard/domains/club/players/ClubPlayersDomainModal.js
+
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, Divider, Input, Option, Select, Sheet, Switch, Typography } from '@mui/joy'
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
-import { resolveClubPlayersDomain } from './clubPlayers.domain.logic'
-import { modalSx } from './clubPlayers.sx'
+import { Box } from '@mui/joy'
 
-export default function ClubPlayersDomainModal({ entity }) {
+import ClubPlayersKpi from './components/ClubPlayersKpi'
+import ClubPlayersFilters from './components/ClubPlayersFilters'
+import ClubPlayersTable from './components/ClubPlayersTable'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
+
+import { resolveClubPlayersDomain } from './logic/clubPlayers.domain.logic'
+import { modalRootSx } from './sx/clubPlayersModal.sx'
+
+export default function ClubPlayersDomainModal({ entity, context }) {
+  const liveClub = useMemo(() => {
+    const clubs = Array.isArray(context?.clubs) ? context.clubs : []
+    return clubs.find((c) => c?.id === entity?.id) || entity || null
+  }, [context?.clubs, entity])
+
   const [q, setQ] = useState('')
-  const [teamId, setTeamId] = useState('all')
-  const [onlyManual, setOnlyManual] = useState(false)
+  const [minutesBelow, setMinutesBelow] = React.useState(100)
+  const [onlyKey, setOnlyKey] = useState(false)
+  const [editingPlayer, setEditingPlayer] = useState(null)
+  const [openCreatePlayer, setOpenCreatePlayer] = useState(false)
 
-  const { summary, rows, options } = useMemo(
-    () => resolveClubPlayersDomain(entity, { q, teamId, onlyManual }),
-    [entity, q, teamId, onlyManual]
-  )
+  const { summary, rows } = resolveClubPlayersDomain(entity, {
+    q,
+    onlyKey,
+    minutesBelow,
+  })
 
-  if (!entity) {
-    return (
-      <Box sx={{ py: 2, px: 1, opacity: 0.8 }}>
-        <Typography level="body-sm">טוען נתונים…</Typography>
-      </Box>
-    )
+  if (!entity) return null
+
+  const handleCreateClose = () => {
+    setOpenCreatePlayer(false)
+  }
+
+  const handleCreateOpen = () => {
+    setOpenCreatePlayer(true)
+  }
+
+  const handleCreateSaved = () => {
+    setOpenCreatePlayer(false)
   }
 
   return (
-    <Box sx={{ minWidth: 0 }}>
-      <Sheet variant="soft" sx={modalSx.kpiStrip}>
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'star', size: 'sm' })}>
-          שחקני מפתח: {summary?.keyCount ?? 0}
-        </Chip>
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'pin', size: 'sm' })}>
-          ידני: {summary?.manualKeyCount ?? 0}
-        </Chip>
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'chart', size: 'sm' })}>
-          זכאות אוטומטית: {summary?.autoEligibleCount ?? 0}
-        </Chip>
-      </Sheet>
+    <Box sx={modalRootSx}>
+      <Box sx={{ position: 'sticky', top: -15, zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
+        <ClubPlayersKpi entity={entity} summary={summary} />
 
-      <Divider sx={{ my: 1.25 }} />
-
-      <Sheet variant="soft" sx={modalSx.filters}>
-        <Input
-          size="sm"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="חיפוש שחקן / קבוצה"
-          startDecorator={iconUi({ id: 'search', size: 'sm' })}
+        <ClubPlayersFilters
+          q={q}
+          onlyKey={onlyKey}
+          minutesBelow={minutesBelow}
+          summary={summary}
+          onChangeQ={setQ}
+          onChangeOnlyKey={setOnlyKey}
+          onChangeMinutesBelow={setMinutesBelow}
+          openCreatePlayer={handleCreateOpen}
         />
+      </Box>
 
-        <Select size="sm" value={teamId} onChange={(e, v) => setTeamId(v ?? 'all')}>
-          <Option value="all">כל הקבוצות</Option>
-          {(options?.teamOptions || []).map((t) => (
-            <Option key={t.id} value={t.id}>
-              {t.name}
-            </Option>
-          ))}
-        </Select>
+      <ClubPlayersTable
+        rows={rows}
+        onEditPlayer={(row) => setEditingPlayer(row?.player || null)}
+      />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <Typography level="body-sm" sx={{ opacity: 0.85 }}>
-            רק ידני
-          </Typography>
-          <Switch checked={onlyManual} onChange={(e) => setOnlyManual(e.target.checked)} />
-        </Box>
-      </Sheet>
+      <EditDrawer
+        open={!!editingPlayer}
+        player={editingPlayer}
+        onClose={() => setEditingPlayer(null)}
+        onSaved={() => {}}
+      />
 
-      <Divider sx={{ my: 1.25 }} />
-
-      <Sheet variant="soft" sx={modalSx.table}>
-        <Box sx={{ ...modalSx.row, ...modalSx.headRow }}>
-          <Typography level="title-xs">שחקן</Typography>
-          <Typography level="title-xs">קבוצה</Typography>
-          <Typography level="title-xs">סטטוס</Typography>
-        </Box>
-
-        {rows.length === 0 ? (
-          <Box sx={{ py: 2, px: 1 }}>
-            <Typography level="body-sm" sx={{ opacity: 0.8 }}>
-              אין שחקני מפתח להצגה.
-            </Typography>
-          </Box>
-        ) : (
-          rows.map((r) => (
-            <Box key={r.id} sx={modalSx.row}>
-              <Box sx={modalSx.nameCell}>
-                {iconUi({ id: 'player', size: 'sm' })}
-                <Typography level="body-sm" sx={modalSx.nameText}>
-                  {r.name}
-                </Typography>
-              </Box>
-
-              <Typography level="body-sm">{r.teamName || '—'}</Typography>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                {r.isKey ? (
-                  <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'pin', size: 'sm' })}>
-                    ידני
-                  </Chip>
-                ) : null}
-                {r.isAutoEligible ? (
-                  <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'chart', size: 'sm' })}>
-                    אוטומטי
-                  </Chip>
-                ) : null}
-              </Box>
-            </Box>
-          ))
-        )}
-      </Sheet>
+      <NewFormDrawer
+        open={openCreatePlayer}
+        onClose={handleCreateClose}
+        onSaved={handleCreateSaved}
+        context={{ ...context, clubId: entity?.id || '', club: liveClub }}
+      />
     </Box>
   )
 }

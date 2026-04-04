@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Modal, ModalDialog, Typography, Box, Button, Divider, Chip, Avatar } from '@mui/joy'
 
-import ProjectStatusSelectField from '../../../../../../ui/fields/checkUi/players/ProjectStatusSelectField'
+import ProjectStatusSelectField from '../../../../../../ui/fields/selectUi/players/ProjectStatusSelectField.js'
 import PlayerKeyPlayerSelector from '../../../../../../ui/fields/checkUi/players/PlayerKeyPlayerSelector'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'

@@ -47,7 +47,7 @@ export default function PlayerInfoTopSection({ form, pending, setField }) {
           />
         </Box>
 
-        <Divider orientation="vertical" sx={sx.topDivider} />
+        <Divider orientation="vertical" sx={{ opacity: 0.6 }} />
 
         <Box sx={sx.statusCard}>
           <Box sx={sx.statusChipsRow}>
@@ -68,7 +68,7 @@ export default function PlayerInfoTopSection({ form, pending, setField }) {
         </Box>
       </Box>
 
-      <Divider sx={sx.divider} />
+      <Divider sx={{ opacity: 0.6, my: 1 }} />
     </>
   )
 }

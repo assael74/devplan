@@ -15,7 +15,7 @@ export default function TeamLeaguePosField({
   disabled,
   helperText,
   readOnly,
-  variant = 'soft',
+  variant = 'outlined',
   size = 'sm',
   max = 20
 }) {

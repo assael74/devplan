@@ -15,7 +15,7 @@ export default function TeamNameField({
   disabled,
   helperText,
   readOnly,
-  variant = 'soft',
+  variant = 'outlined',
   size = 'sm'
 }) {
   return (

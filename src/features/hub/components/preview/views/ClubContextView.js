@@ -1,10 +1,13 @@
 // features/hub/components/preview/views/ClubContextView.js
+
 import React, { useMemo, useState, useEffect } from 'react'
 import { Box, Divider, Button, Tooltip, IconButton } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 import PreviewHeader from '../PreviewHeader'
 import PreviewDomainsGrid from '../PreviewDomainsGrid'
+
+import ClubEditDrawer from './components/clubDrawer/ClubEditDrawer.js'
 
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 
@@ -13,10 +16,15 @@ import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvat
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { useLifecycle } from '../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
-import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './helpers/contextView.sx'
-import { buildPreviewDomains } from './helpers/buildPreviewDomains.js'
+import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
+import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 
 export default function ClubContextView({ club, routes, counts, onOpenRoute, context, }) {
+  const liveClub = useMemo(() => {
+    const clubs = Array.isArray(context?.clubs) ? context.clubs : []
+    return clubs.find((t) => t?.id === club?.id) || club || null
+  }, [context?.clubs, club])
+
   const lifecycle = useLifecycle()
 
   const hasClub = !!club
@@ -25,6 +33,7 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
 
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState('')
+  const [editDrawer, setEditDrawer] = useState(false)
 
   const src = entity?.photo || buildFallbackAvatar({ entityType: 'club', id: entity?.id, name: entity?.clubName })
 
@@ -62,34 +71,6 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
           <Box sx={{ flex: 1 }} />
 
           <Box sx={previewSx.actionsRow}>
-            <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
-              <Tooltip title={tooltipText}>
-                <IconButton
-                  size="sm"
-                  variant="outlined"
-                  disabled={lifecycle.archiveDialogProps.busy || lifecycle.restoreDialogProps?.busy}
-                  onClick={() => {
-                    if (isActive) {
-                      lifecycle.openArchive({
-                        entityType: 'club',
-                        id: entity?.id,
-                        name: entity?.clubName || 'מועדון',
-                      })
-                      return
-                    }
-                    lifecycle.openRestore({
-                      entityType: 'club',
-                      id: entity?.id,
-                      name: entity?.clubName || 'מועדון',
-                    })
-                  }}
-                  sx={{ opacity: 0.8, '&:hover': { opacity: 1 } }}
-                >
-                  {iconUi({ id: isActive ? 'archive' : 'restore' })}
-                </IconButton>
-              </Tooltip>
-            </Box>
-
             <Button
               size="sm"
               variant="outlined"
@@ -123,6 +104,19 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
                 </Button>
               </span>
             </Tooltip>
+
+            <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+              <Tooltip title="פעולות נוספות">
+                <IconButton
+                  size="sm"
+                  variant="outlined"
+                  onClick={() => setEditDrawer(true)}
+                  sx={previewSx.moreBut('clubs')}
+                >
+                  {iconUi({ id: 'more' })}
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
       </Box>
@@ -147,6 +141,14 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
         onAfterSave={(url) => {
           setHeaderPhoto(`${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`)
         }}
+      />
+
+      <ClubEditDrawer
+        open={editDrawer}
+        club={liveClub}
+        onClose={() => setEditDrawer(false)}
+        onSaved={() => {}}
+        context={{ ...context, clubId: liveClub?.id, club: liveClub }}
       />
     </>
   )

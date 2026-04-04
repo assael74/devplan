@@ -43,7 +43,4 @@ export const sx = {
     display: 'grid',
     gap: 0.25,
   },
-
-  title: { fontWeight: 700 },
-  subtitle: { opacity: 0.8 },
 }

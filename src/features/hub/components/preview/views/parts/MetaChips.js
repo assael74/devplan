@@ -1,9 +1,14 @@
 // hub/components/preview/views/parts/MetaChips.js
-import React, { useMemo, useState, useEffect } from 'react'
-import { Box, Divider, Button, Chip, Tooltip, Typography } from '@mui/joy'
+
+import React from 'react'
+import { Box, Chip, Typography } from '@mui/joy'
 
 import JoyStarRating from '../../../../../../ui/domains/ratings/JoyStarRating'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+import { SQUAD_ROLE_OPTIONS } from '../../../../../../shared/players/players.constants.js'
+
+const c = getEntityColors('private')
 
 export function TypeChip({ player }) {
   const isProject = String(player?.type || '') === 'project'
@@ -11,7 +16,7 @@ export function TypeChip({ player }) {
   return (
     <Chip
       size="sm"
-      variant="soft"
+      variant="outlined"
       color={isProject ? 'success' : 'danger'}
       startDecorator={iconUi({ id: isProject ? 'project' : 'isNotProject', size: 'sm' })}
     >
@@ -20,17 +25,20 @@ export function TypeChip({ player }) {
   )
 }
 
-export function KeyPlayerChip({ player }) {
-  const isKey = player?.isKey || false
+export function SquadRoleChip({ player }) {
+  const squadRole = String(player?.squadRole || '').trim()
+
+  const roleMeta = SQUAD_ROLE_OPTIONS.find((item) => item?.value === squadRole)
 
   return (
     <Chip
       size="sm"
-      variant="soft"
-      color={isKey ? 'success' : 'danger'}
-      startDecorator={iconUi({ id: 'keyPlayer', size: 'sm' })}
+      variant='outlined'
+      color={roleMeta ? 'plain' : 'danger'}
+      startDecorator={iconUi({ id: roleMeta?.idIcon, sx: { color: roleMeta?.color } })}
+      sx={{ border: '1px solid', borderColor: `${roleMeta?.color}55`, fontWeight: 600 }}
     >
-      שחקן מפתח
+      {roleMeta?.label || 'לא הוגדר מעמד בסגל'}
     </Chip>
   )
 }
@@ -45,5 +53,18 @@ export function LevelStars({ label, value, sx }) {
       </Typography>
       <JoyStarRating value={v} size="sm" />
     </Box>
+  )
+}
+
+export function PrivateChip() {
+  return (
+    <Chip
+      size="sm"
+      variant="soft"
+      startDecorator={iconUi({id: 'private'})}
+      sx={{ bgcolor: c.bg, border: '1px solid', borderColor: 'divider', color: c.text }}
+    >
+      שחקן בעבודה אישית
+    </Chip>
   )
 }

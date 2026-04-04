@@ -7,7 +7,7 @@ export const buildTabsMeta = (MODE) => [
   { value: MODE.TEAMS, label: 'קבוצות', icon: iconUi({ id: 'teams' }) },
   { value: MODE.PLAYERS, label: 'שחקנים', icon: iconUi({ id: 'players' }) },
   { value: MODE.STAFF, label: 'צוות מקצועי', icon: iconUi({ id: 'roles' }) },
-  { value: MODE.PRIVATES, label: 'שחקנים פרטיים', icon: iconUi({ id: 'player' }) },
+  { value: MODE.PRIVATES, label: 'שחקנים פרטיים', icon: iconUi({ id: 'private' }) },
   { value: MODE.SCOUTING, label: 'שחקנים במעקב', icon: iconUi({ id: 'scouting' }) },
 ]
 

@@ -1,40 +1,25 @@
 // src/features/players/modules/info/components/PlayerStatusCard.js
 
-// src/features/players/modules/info/components/PlayerStatusCard.js
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+import {
+  buildPlayerStatusInitial,
+  isPlayerStatusDirty,
+  buildPlayerStatusPatch,
+  getPlayerActiveChipMeta,
+} from './logic/info.logic.js'
 
 import {
   PhoneField,
-  PlayerTypeSelector,
+  PlayerIfaLinkField,
   PlayerActiveSelector,
   SquadRoleSelectField,
 } from '../../../../../../ui/fields'
 
-const toStr = (v) => (v == null ? '' : String(v))
-
-function computeInitial(player) {
-  return {
-    active: Boolean(player?.active),
-    phone: toStr(player?.phone),
-    type: toStr(player?.type || 'noneType'),
-    squadRole: toStr(player?.squadRole || ''),
-  }
-}
-
-function isDirty(draft, initial) {
-  return (
-    draft.active !== initial.active ||
-    draft.phone !== initial.phone ||
-    draft.type !== initial.type ||
-    draft.squadRole !== initial.squadRole
-  )
-}
-
 export default function PlayerStatusCard({ player, onUpdate }) {
-  const initial = useMemo(() => computeInitial(player), [player])
+  const initial = useMemo(() => buildPlayerStatusInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
 
@@ -42,8 +27,9 @@ export default function PlayerStatusCard({ player, onUpdate }) {
     setDraft(initial)
   }, [initial])
 
-  const dirty = isDirty(draft, initial)
-  const isProject = draft.type === 'project'
+  const dirty = isPlayerStatusDirty(draft, initial)
+
+  const activeMeta = getPlayerActiveChipMeta(draft?.active)
 
   const onReset = () => setDraft(initial)
 
@@ -52,16 +38,9 @@ export default function PlayerStatusCard({ player, onUpdate }) {
 
     setSaving(true)
     try {
-      const patch = {
-        active: draft.active,
-        phone: draft.phone || null,
-        type: draft.type || 'noneType',
-        squadRole: draft.squadRole || '',
-      }
+      const patch = buildPlayerStatusPatch(draft)
 
-      if (patch.type !== 'project') patch.projectStatus = null
-
-      await onUpdate?.(patch, { section: 'status' })
+      await onUpdate(patch, { section: 'status' })
     } finally {
       setSaving(false)
     }
@@ -80,16 +59,16 @@ export default function PlayerStatusCard({ player, onUpdate }) {
         <Chip
           size="sm"
           variant="soft"
-          color={isProject ? 'success' : 'neutral'}
-          startDecorator={isProject ? iconUi?.({ id: 'project', size: 'sm' }) : null}
+          color={draft?.active ? 'success' : 'dnager'}
+          startDecorator={iconUi({ id: activeMeta.iconId })}
         >
-          {isProject ? 'פרויקט' : 'כללי'}
+          {activeMeta.label}
         </Chip>
       </Box>
 
       <Box sx={sx.statusCardBody}>
         <Box sx={sx.statusTopRow}>
-          <Box sx={sx.activeFieldWrap}>
+          <Box sx={{ minWidth: 0, width: '100%', pt: 2 }}>
             <PlayerActiveSelector
               value={draft.active}
               onChange={(v) => setDraft((p) => ({ ...p, active: v }))}
@@ -97,24 +76,25 @@ export default function PlayerStatusCard({ player, onUpdate }) {
           </Box>
 
           <Box sx={{ minWidth: 0, width: '100%' }}>
-            <PhoneField
+            <PlayerIfaLinkField
+              value={draft.ifaLink}
+              onChange={(v) => setDraft((p) => ({ ...p, ifaLink: v }))}
               size="sm"
-              value={draft.phone}
-              onChange={(v) => setDraft((p) => ({ ...p, phone: v }))}
+              disabled={!dirty || saving}
             />
           </Box>
         </Box>
 
         <Box sx={sx.statusBottomRow}>
           <Box sx={{ minWidth: 0, width: '100%' }}>
-            <PlayerTypeSelector
+            <PhoneField
               size="sm"
-              value={draft.type}
-              onChange={(next) => setDraft((p) => ({ ...p, type: next || 'noneType' }))}
+              value={draft.phone}
+              onChange={(v) => setDraft((p) => ({ ...p, phone: v }))}
             />
           </Box>
 
-          <Box sx={sx.squadRoleFieldWrap}>
+          <Box sx={{ minWidth: 0, width: '100%' }}>
             <SquadRoleSelectField
               size="sm"
               value={draft.squadRole}

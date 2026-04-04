@@ -3,6 +3,7 @@ import {
   Groups,
   Home,
   Person,
+  AdminPanelSettings
 } from '@mui/icons-material';
 
 export const entitiesIcons = {
@@ -15,5 +16,6 @@ export const entitiesIcons = {
   staff: <Engineering />,
   team: <Groups />,
   teams: <Groups />,
-  group: <Groups />
+  group: <Groups />,
+  private: <AdminPanelSettings />
 };

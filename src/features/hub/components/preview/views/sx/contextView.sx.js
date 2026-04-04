@@ -1,4 +1,6 @@
-import { COLORS } from '../../../../../../ui/core/theme/Colors.js'
+import { COLORS, getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+
+const c = (entity) => getEntityColors(entity)
 
 // --- ישות ---
 function getEntity(type) {
@@ -46,7 +48,7 @@ export const previewSx = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 1,
-    alignItems: 'center',
+    alignItems: 'flex-end',
     minWidth: 0,
     overflow: 'visible',
     pl: 2
@@ -77,6 +79,38 @@ export const previewSx = {
     gap: 0.75,
     mt: 0.5,
   },
+
+  chipAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: '50%',
+    objectFit: 'cover',
+    flexShrink: 0,
+  },
+
+  chipRole: {
+    mx: 0.5,
+    border: '1px solid',
+    borderColor: 'divider',
+    maxWidth: 220,
+    '& .MuiChip-label': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
+
+  moreBut: (entity) => ({
+    bgcolor: c(entity).bg,
+    color: c(entity).text,
+    transition: 'filter .15s ease, transform .12s ease',
+    '&:hover': {
+      bgcolor: c(entity).bg,
+      color: c(entity).text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
+  }),
 }
 
 export const playerPreviewViewSx = {

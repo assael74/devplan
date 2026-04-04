@@ -5,12 +5,6 @@ import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors
 const c = getEntityColors('players')
 
 export const sx = {
-  root: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 1,
-  },
-
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -21,19 +15,6 @@ export const sx = {
     bgcolor: c.bg,
     border: '1px solid',
     borderColor: c.accent,
-  },
-
-  headerMain: {
-    minWidth: 0,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    flex: 1,
-  },
-
-  ageChip: {
-    flexShrink: 0,
-    fontWeight: 700,
   },
 
   headerIconWrap: {
@@ -48,12 +29,6 @@ export const sx = {
     color: c.accent,
     border: '1px solid',
     borderColor: 'divider',
-  },
-
-  headerText: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.15,
   },
 
   headerTitle: {
@@ -83,13 +58,6 @@ export const sx = {
     alignItems: 'stretch',
   },
 
-  topDivider: {
-    display: { xs: 'none', md: 'block' },
-    height: '100%',
-    minHeight: 72,
-    mx: 0.25,
-  },
-
   sectionTitle: {
     px: 0.25,
     fontWeight: 700,
@@ -113,19 +81,18 @@ export const sx = {
 
   projectBox: {
     display: 'grid',
-    gap: 0.5,
-  },
-
-  divider: {
-    opacity: 0.6,
+    gridTemplateColumns: { xs: '1fr', md: '.8fr 1.2fr' },
+    gap: 1.5,
+    pt: 1
   },
 
   actions: {
     display: 'flex',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
     flexWrap: 'wrap',
     gap: 1,
-    pt: 0.5,
+    pt: 1,
   },
 
   statusCard: {

@@ -1,40 +1,29 @@
 // src/features/players/modules/info/components/PlayerNamesCard.js
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+import {
+  buildPlayerNamesInitial,
+  isPlayerNamesDirty,
+  getPlayerNamesChipText,
+} from './logic/info.logic.js'
 
 import { PlayerFirstNameField, PlayerLastNameField, PlayerShortNameField } from '../../../../../../ui/fields'
 
-const toStr = (v) => (v == null ? '' : String(v))
-
-function computeInitial(player) {
-  return {
-    playerFirstName: toStr(player?.playerFirstName),
-    playerLastName: toStr(player?.playerLastName),
-    playerShortName: toStr(player?.playerShortName),
-  }
-}
-
-function isDirty(d, i) {
-  return (
-    d.playerFirstName !== i.playerFirstName ||
-    d.playerLastName !== i.playerLastName ||
-    d.playerShortName !== i.playerShortName
-  )
-}
-
 export default function PlayerNamesCard({ player, onUpdate }) {
-  const initial = useMemo(() => computeInitial(player), [player])
+  const initial = useMemo(() => buildPlayerNamesInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
 
+  const dirty = isPlayerNamesDirty(draft, initial)
+
+  const chipText = getPlayerNamesChipText(draft)
+
   useEffect(() => setDraft(initial), [initial.playerFirstName, initial.playerLastName, initial.playerShortName])
 
-  const dirty = isDirty(draft, initial)
-
   const fullName = [draft.playerFirstName, draft.playerLastName].filter(Boolean).join(' ').trim()
-  const chipText = fullName || draft.playerShortName || 'ללא שם'
 
   const onReset = () => setDraft(initial)
 

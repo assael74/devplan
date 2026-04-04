@@ -1,131 +1,98 @@
 // preview/previewDomainCard/domains/club/teams/ClubTeamsDomainModal.js
-import React, { useMemo, useState } from 'react'
-import { Box, Chip, Divider, Input, Option, Select, Sheet, Typography } from '@mui/joy'
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
-import { resolveClubTeamsDomain } from './clubTeams.domain.logic'
-import { modalSx } from './clubTeams.sx'
 
-export default function ClubTeamsDomainModal({ entity, onClose, isMobile }) {
+import React, { useMemo, useState } from 'react'
+import { Box } from '@mui/joy'
+
+import ClubTeamsKpi from './components/ClubTeamsKpi'
+import ClubTeamsFilters from './components/ClubTeamsFilters'
+import ClubTeamsTable from './components/ClubTeamsTable'
+import EditDrawer from './components/drawer/EditDrawer.js'
+import NewFormDrawer from './components/newForm/NewFormDrawer.js'
+
+import { resolveClubTeamsDomain } from './logic/clubTeams.domain.logic.js'
+import { modalRootSx } from './sx/clubTeamsModal.sx'
+
+export default function ClubTeamsDomainModal({ entity, context }) {
+  const liveClub = useMemo(() => {
+    const clubs = Array.isArray(context?.clubs) ? context.clubs : []
+    return clubs.find((c) => c?.id === entity?.id) || entity || null
+  }, [context?.clubs, entity])
+
   const [q, setQ] = useState('')
   const [year, setYear] = useState('all')
   const [active, setActive] = useState('all')
   const [project, setProject] = useState('all')
+  const [editingTeam, setEditingTeam] = useState(null)
+  const [openCreateTeam, setOpenCreateTeam] = useState(false)
 
-  const { summary, rows, options } = useMemo(
-    () => resolveClubTeamsDomain(entity, { q, year, active, project }),
-    [entity, q, year, active, project]
-  )
+  const { summary, rows, options } = useMemo(() => {
+    return resolveClubTeamsDomain(entity, {
+      q,
+      year,
+      active,
+      project,
+    })
+  }, [entity, q, year, active, project])
 
-  if (!entity) {
-    return (
-      <Box sx={{ py: 2, px: 1, opacity: 0.8 }}>
-        <Typography level="body-sm">טוען נתונים…</Typography>
-      </Box>
-    )
+  if (!entity) return null
+
+  const handleCreateClose = () => {
+    setOpenCreateTeam(false)
+  }
+
+  const handleCreateOpen = () => {
+    setOpenCreateTeam(true)
+  }
+
+  const handleCreateSaved = () => {
+    setOpenCreateTeam(false)
   }
 
   return (
-    <Box sx={{ minWidth: 0 }}>
-      <Sheet variant="soft" sx={modalSx.kpiStrip}>
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'team', size: 'sm' })}>
-          סה״כ קבוצות: {summary?.totalTeams ?? 0}
-        </Chip>
+    <Box sx={modalRootSx}>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -15,
+          zIndex: 5,
+          borderRadius: 12,
+          bgcolor: 'background.body',
+        }}
+      >
+        <ClubTeamsKpi entity={entity} summary={summary} />
 
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'check', size: 'sm' })}>
-          פעילות: {summary?.activeTeams ?? 0}
-        </Chip>
-
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'player', size: 'sm' })}>
-          שחקנים: {summary?.totalPlayers ?? 0}
-        </Chip>
-
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'staff', size: 'sm' })}>
-          צוות מועדון: {summary?.clubRoles ?? 0}
-        </Chip>
-
-        <Chip size="sm" variant="soft" startDecorator={iconUi({ id: 'chart', size: 'sm' })}>
-          רמה ממוצעת: {summary?.avgLevel ?? '—'}
-        </Chip>
-      </Sheet>
-
-      <Divider sx={{ my: 1.25 }} />
-
-      <Sheet variant="soft" sx={modalSx.filters}>
-        <Input
-          size="sm"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="חיפוש קבוצה / שנתון"
-          startDecorator={iconUi({ id: 'search', size: 'sm' })}
+        <ClubTeamsFilters
+          q={q}
+          year={year}
+          active={active}
+          project={project}
+          options={options}
+          onChangeQ={setQ}
+          onChangeYear={setYear}
+          onChangeActive={setActive}
+          onChangeProject={setProject}
+          onCreateTeam={handleCreateOpen}
         />
+      </Box>
 
-        <Select size="sm" value={year} onChange={(e, v) => setYear(v ?? 'all')}>
-          <Option value="all">כל השנתונים</Option>
-          {(options?.yearOptions || []).map((y) => (
-            <Option key={String(y)} value={String(y)}>
-              שנתון {y}
-            </Option>
-          ))}
-        </Select>
+      <ClubTeamsTable
+        rows={rows}
+        onEditTeam={(row) => setEditingTeam(row || null)}
+      />
 
-        <Select size="sm" value={active} onChange={(e, v) => setActive(v ?? 'all')}>
-          <Option value="all">סטטוס</Option>
-          <Option value="true">פעילה</Option>
-          <Option value="false">לא פעילה</Option>
-        </Select>
+      <EditDrawer
+        open={!!editingTeam}
+        team={editingTeam}
+        onClose={() => setEditingTeam(null)}
+        onSaved={() => {}}
+      />
 
-        <Select size="sm" value={project} onChange={(e, v) => setProject(v ?? 'all')}>
-          <Option value="all">פרויקט</Option>
-          <Option value="true">פרויקט</Option>
-          <Option value="false">לא פרויקט</Option>
-        </Select>
-      </Sheet>
-
-      <Divider sx={{ my: 1.25 }} />
-
-      <Sheet variant="soft" sx={modalSx.table}>
-        <Box sx={{ ...modalSx.row, ...modalSx.headRow }}>
-          <Typography level="title-xs">קבוצה</Typography>
-          <Typography level="title-xs">שנתון</Typography>
-          <Typography level="title-xs">שחקנים</Typography>
-          <Typography level="title-xs">צוות</Typography>
-          <Typography level="title-xs">רמה</Typography>
-        </Box>
-
-        {rows.length === 0 ? (
-          <Box sx={{ py: 2, px: 1 }}>
-            <Typography level="body-sm" sx={{ opacity: 0.8 }}>
-              אין תוצאות למסננים הנוכחיים.
-            </Typography>
-          </Box>
-        ) : (
-          rows.map((r) => (
-            <Box key={r.id} sx={modalSx.row}>
-              <Box sx={modalSx.nameCell}>
-                {iconUi({ id: 'team', size: 'sm' })}
-                <Typography level="body-sm" sx={modalSx.nameText}>
-                  {r.name}
-                </Typography>
-                {r.isProject === true ? (
-                  <Chip size="sm" variant="soft">
-                    פרויקט
-                  </Chip>
-                ) : null}
-                {r.active === false ? (
-                  <Chip size="sm" variant="soft" color="neutral">
-                    לא פעילה
-                  </Chip>
-                ) : null}
-              </Box>
-
-              <Typography level="body-sm">{r.year ?? '—'}</Typography>
-              <Typography level="body-sm">{r.playersCount ?? 0}</Typography>
-              <Typography level="body-sm">{r.rolesCount ?? 0}</Typography>
-              <Typography level="body-sm">{r.levelAvg ?? '—'}</Typography>
-            </Box>
-          ))
-        )}
-      </Sheet>
+      <NewFormDrawer
+        open={openCreateTeam}
+        onClose={handleCreateClose}
+        onSaved={handleCreateSaved}
+        context={{ ...context, clubId: entity?.id || '', club: liveClub }}
+      />
     </Box>
   )
 }

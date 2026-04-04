@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Box, Button } from '@mui/joy'
+import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { sx } from '../sx/playerInfo.domain.sx.js'
 
 export default function PlayerInfoDomainActions({
@@ -21,6 +22,7 @@ export default function PlayerInfoDomainActions({
         loadingPosition="center"
         onClick={onSave}
         sx={sx.conBut}
+        startDecorator={iconUi({id: 'save'})}
       >
         שמור
       </Button>
@@ -31,6 +33,7 @@ export default function PlayerInfoDomainActions({
         color="neutral"
         disabled={!dirty || pending}
         onClick={onReset}
+        startDecorator={iconUi({id: 'reset'})}
       >
         איפוס
       </Button>

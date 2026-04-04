@@ -1,7 +1,7 @@
 /// ui/fields/selectUi/players/PlayerPositionFieldPitch.js
 
 import React, { useState } from 'react';
-import { layerBoxProps, chipProps, boxPositionProps } from './playerPositions.sx'
+import { layerBoxProps, chipProps, boxPositionProps } from './sx/playerPositions.sx'
 import { Box, Typography, Chip, FormControl, FormLabel, Snackbar } from '@mui/joy';
 
 const POSITION_LAYERS = {

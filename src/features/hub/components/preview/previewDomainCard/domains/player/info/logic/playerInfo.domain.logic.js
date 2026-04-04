@@ -27,6 +27,7 @@ export const buildInitialForm = (player) => ({
   phone: toStr(player?.phone),
   active: !!player?.active,
   squadRole: toStr(player?.squadRole),
+  ifaLink: toStr(player?.ifaLink),
   projectStatus: player?.projectStatus ?? null,
 })
 
@@ -39,6 +40,7 @@ export const buildComparableForm = (form) => ({
   phone: String(form?.phone || '').trim() || null,
   active: !!form?.active,
   squadRole: String(form?.squadRole || '').trim() || null,
+  ifaLink: String(form?.ifaLink || '').trim() || null,
   projectStatus: form?.projectStatus ?? null,
 })
 

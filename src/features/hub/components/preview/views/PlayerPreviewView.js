@@ -7,17 +7,18 @@ import PreviewHeader from '../PreviewHeader'
 import PreviewDomainsGrid from '../PreviewDomainsGrid'
 import PreviewQuickActions from '../PreviewQuickActions'
 import { TypeChip, KeyPlayerChip, LevelStars } from './parts/MetaChips.js'
+import PreviewMetaChips from './components/PreviewMetaChips.js'
 import JoyStarRating from '../../../../../ui/domains/ratings/JoyStarRating'
 import QuickCreateMenu from '../../../../../ui/actions/QuickCreateMenu.js'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
-import { buildPreviewDomains } from './helpers/buildPreviewDomains.js'
+import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
-import { previewSx } from './helpers/contextView.sx'
-import { playerPreviewViewSx as sx, getEntityNavBtnSx } from './helpers/contextView.sx'
+import { previewSx } from './sx/contextView.sx'
+import { playerPreviewViewSx as sx, getEntityNavBtnSx } from './sx/contextView.sx'
 
 export default function PlayerPreviewView({
   player,
@@ -41,6 +42,11 @@ export default function PlayerPreviewView({
   const ifaLink = player?.ifaLink || null
   const isProject = String(player?.type || '') === 'project'
 
+  const birthYear = player?.team?.teamYear || ''
+  const subtitle = [
+    player?.club?.clubName || '', player?.team?.teamName || player?.teamName || '', birthYear ? `שנתון ${birthYear}` : ''
+  ].filter(Boolean).join(' · ')
+
   const domains = useMemo(() => {
     return buildPreviewDomains({
       entityType: 'player',
@@ -63,8 +69,8 @@ export default function PlayerPreviewView({
         <Box sx={sx.headerRow}>
           <PreviewHeader
             photo={headerPhoto}
-            title={`${player?.playerFirstName || ''} ${player?.playerLastName || ''}`.trim() || 'שחקן'}
-            subtitle={player?.teamName || ''}
+            title={`${player?.playerFullName || ''}`.trim() || 'שחקן'}
+            subtitle={subtitle}
             onOpenImage={() => setOpenImg(true)}
           />
 
@@ -110,20 +116,11 @@ export default function PlayerPreviewView({
 
       <Divider sx={{ my: 1 }} />
 
-      {/* --- שורת צ׳יפים --- */}
-      <Box sx={sx.chipsRow}>
-        <LevelStars label="יכולת" value={player?.level} sx={sx} />
-        <LevelStars label="פוטנציאל" value={player?.levelPotential} sx={sx} />
-
-        <TypeChip player={player} />
-        <KeyPlayerChip player={player} />
-
-        {ui?.birthYear ? (
-          <Chip size="sm" variant="soft" color="neutral">
-            שנתון {ui.birthYear}
-          </Chip>
-        ) : null}
-      </Box>
+      <PreviewMetaChips
+        entityType="player"
+        entity={player}
+        sx={previewSx}
+      />
 
       {/* --- גריד קופסאות --- */}
       <PreviewDomainsGrid

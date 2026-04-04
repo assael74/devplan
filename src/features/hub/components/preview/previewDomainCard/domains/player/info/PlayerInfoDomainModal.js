@@ -26,7 +26,7 @@ export default function PlayerInfoDomainModal({ entity, onClose }) {
   } = usePlayerInfoDomainForm({ entity, onClose })
 
   return (
-    <Box sx={sx.root}>
+    <Box sx={{ minWidth: 0, display: 'grid', gap: 1 }}>
       <PlayerInfoDomainHeader player={player} />
 
       <PlayerInfoTopSection
@@ -47,6 +47,8 @@ export default function PlayerInfoDomainModal({ entity, onClose }) {
         pending={pending}
         setField={setField}
       />
+
+      <Box sx={{ flex: 1 }} />
 
       <PlayerInfoDomainActions
         dirty={dirty}

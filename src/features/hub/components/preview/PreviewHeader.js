@@ -57,10 +57,10 @@ export default function PreviewHeader({
       </Box>
 
       <Box sx={sx.textCol}>
-        <Typography level="h3" noWrap sx={sx.title}>
+        <Typography level="h3" noWrap sx={{ fontWeight: 700 }}>
           {title || '—'}
         </Typography>
-        <Typography level="body-sm" noWrap sx={sx.subtitle} startDecorator={iconUi({id: idIcon})}>
+        <Typography level="body-sm" noWrap sx={{ opacity: 0.8, fontWeight: 500 }} startDecorator={iconUi({id: idIcon})}>
           {subtitle || ''}
         </Typography>
       </Box>

@@ -7,7 +7,9 @@ import PreviewHeader from '../PreviewHeader'
 import PreviewDomainsGrid from '../PreviewDomainsGrid'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import JoyStarRating from '../../../../../ui/domains/ratings/JoyStarRating'
-import QuickCreateMenu from '../../../../../ui/actions/QuickCreateMenu.js'
+
+import TeamEditDrawer from './components/teamDrawer/TeamEditDrawer.js'
+import PreviewMetaChips from './components/PreviewMetaChips.js'
 import { LevelStars } from './parts/MetaChips.js'
 
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
@@ -15,11 +17,16 @@ import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvat
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
 import { useLifecycle } from '../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
-import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './helpers/contextView.sx'
-import { buildPreviewDomains } from './helpers/buildPreviewDomains.js'
+import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
+import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 
 export default function TeamContextView({ team, routes, counts, onOpenRoute, context }) {
+  const liveTeam = useMemo(() => {
+    const teams = Array.isArray(context?.teams) ? context.teams : []
+    return teams.find((t) => t?.id === team?.id) || team || null
+  }, [context?.teams, team])
+
   const lifecycle = useLifecycle()
 
   const hasTeam = !!team
@@ -28,8 +35,14 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
 
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState('')
+  const [editDrawer, setEditDrawer] = useState(false)
 
-  const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    team,
+    parentEntity: team?.club,
+    subline: team?.club?.name,
+  })
 
   useEffect(() => {
     setHeaderPhoto(src)
@@ -50,7 +63,7 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
 
   const isActive = !!t?.active
   const tooltipText = isActive ? 'העבר לארכיון (ניתן לשחזור)' : 'שחזר מועדון מהארכיון'
-  console.log(team)
+
   return (
     <>
       <Box sx={previewSx.headerWrap({ type: 'team', entity: t })}>
@@ -65,34 +78,6 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
           <Box sx={{ flex: 1 }} />
 
           <Box sx={previewSx.actionsRow}>
-            <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
-              <Tooltip title={tooltipText}>
-                <IconButton
-                  size="sm"
-                  variant="outlined"
-                  disabled={lifecycle.archiveDialogProps.busy || lifecycle.restoreDialogProps?.busy}
-                  onClick={() => {
-                    if (isActive) {
-                      lifecycle.openArchive({
-                        entityType: 'team',
-                        id: t?.id,
-                        name: t?.teamName || 'קבוצה',
-                      })
-                      return
-                    }
-                    lifecycle.openRestore({
-                      entityType: 'team',
-                      id: t?.id,
-                      name: t?.teamName || 'קבוצה',
-                    })
-                  }}
-                  sx={{ opacity: 0.8, '&:hover': { opacity: 1 } }}
-                >
-                  {iconUi({ id: isActive ? 'archive' : 'restore' })}
-                </IconButton>
-              </Tooltip>
-            </Box>
-
             <Button
               size="sm"
               variant="outlined"
@@ -126,42 +111,30 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
                 </Button>
               </span>
             </Tooltip>
+
+            <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+              <Tooltip title="פעולות נוספות">
+                <IconButton
+                  size="sm"
+                  variant="outlined"
+                  onClick={() => setEditDrawer(true)}
+                  sx={previewSx.moreBut('teams')}
+                >
+                  {iconUi({ id: 'more' })}
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
       </Box>
 
       <Divider sx={{ mb: 2 }} />
 
-      <Box sx={previewSx.chipsRow}>
-        {t?.level ? (
-          <Tooltip title={`הרמה מחושבת לפי ${t.squadStrength.level.usedCount} שחקנים`} placement="top">
-            <Box sx={{ mr: 1 }}>
-              <LevelStars label="יכולת" value={t?.level} sx={previewSx} />
-            </Box>
-          </Tooltip>
-        ) : (
-          <LevelStars label="יכולת" value={t?.level} sx={previewSx} />
-        )}
-
-        <Divider orientation="vertical" />
-
-        {t?.levelPotential ? (
-          <Tooltip title={`הפוטנציאל מחושב לפי ${t.squadStrength.levelPotential.usedCount} שחקנים`} placement="top">
-            <Box>
-              <LevelStars label="פוטנציאל" value={t?.levelPotential} sx={previewSx} />
-            </Box>
-          </Tooltip>
-        ) : (
-          <LevelStars label="פוטנציאל" value={t?.levelPotential} sx={previewSx} />
-        )}
-
-        {t?.project ? (
-          <Box sx={previewSx.chip('project')}>
-            {iconUi({ id: 'project', size: 'sm', sx: {color: getEntityColors('project').text } })}
-            <span>פרויקט</span>
-          </Box>
-        ) : null}
-      </Box>
+      <PreviewMetaChips
+        entityType="team"
+        entity={t}
+        sx={previewSx}
+      />
 
       <PreviewDomainsGrid
         domains={domains}
@@ -183,6 +156,14 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
         onAfterSave={(url) => {
           setHeaderPhoto(`${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`)
         }}
+      />
+
+      <TeamEditDrawer
+        open={editDrawer}
+        team={liveTeam}
+        onClose={() => setEditDrawer(false)}
+        onSaved={() => {}}
+        context={{ ...context, teamId: liveTeam?.id, team: liveTeam }}
       />
     </>
   )

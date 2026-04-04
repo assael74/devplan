@@ -5,7 +5,7 @@ import PhoneIphoneRounded from '@mui/icons-material/PhoneIphoneRounded'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 import PreviewHeader from '../PreviewHeader'
-import { previewSx } from './helpers/contextView.sx'
+import { previewSx } from './sx/contextView.sx'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 

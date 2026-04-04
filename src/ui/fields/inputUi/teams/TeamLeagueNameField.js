@@ -15,7 +15,7 @@ export default function TeamLeagueNameField({
   disabled,
   helperText,
   readOnly,
-  variant = 'soft',
+  variant = 'outlined',
   size = 'sm'
 }) {
   return (

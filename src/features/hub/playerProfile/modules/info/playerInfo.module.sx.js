@@ -56,7 +56,7 @@ export const playerInfoModuleSx = {
     display: 'grid',
     gap: 1,
     gridTemplateColumns: { xs: '1fr', md: '88px minmax(0, 1fr)' },
-    alignItems: 'start',
+    alignItems: 'center',
     minWidth: 0,
 
     '& > *': {
@@ -89,16 +89,15 @@ export const playerInfoModuleSx = {
     },
   },
 
-  squadRoleFieldWrap: {
-    minWidth: 0,
-    mt: 1,
-    width: { xs: '100%', md: 210 },
-    minMaxWidth: '210px',
-
-    '& .MuiFormControl-root': {
-      width: '100%',
-      minWidth: 0,
+  formGrid1: {
+    display: 'grid',
+    gap: 1,
+    p: 1,
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: '1fr 1.2fr',
     },
+    alignItems: 'center',
   },
 
   formGrid3: {

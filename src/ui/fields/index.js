@@ -23,7 +23,6 @@ export { default as PaymentTypeSelector } from './checkUi/payments/PaymentTypeSe
 // players
 export { default as PlayerActiveSelector } from './checkUi/players/PlayerActiveSelector'
 export { default as PlayerTypeSelector } from './checkUi/players/PlayerTypeSelector'
-export { default as ProjectStatusSelectField } from './checkUi/players/ProjectStatusSelectField'
 
 // teams
 export { default as TeamActiveSelector } from './checkUi/teams/TeamActiveSelector'
@@ -95,6 +94,7 @@ export { default as PlayerPositionsSelect } from './selectUi/players/PlayerPosit
 export { default as PlayerPositionsSimpleSelect } from './selectUi/players/PlayerPositionsSimpleSelect'
 export { default as PlayerSelectField } from './selectUi/players/PlayerSelectField'
 export { default as SquadRoleSelectField } from './selectUi/players/SquadRoleSelectField'
+export { default as ProjectStatusSelectField } from './selectUi/players/ProjectStatusSelectField'
 
 // roles
 export { default as RoleSelectField } from './selectUi/roles/RoleSelectField'

@@ -8,6 +8,7 @@ import EmptyState from '../../../sharedProfile/EmptyState.js'
 import { playerInfoModuleSx as sx } from './playerInfo.module.sx.js'
 
 import PlayerStatusCard from './components/PlayerStatusCard.js'
+import ProjectStatusCard from './components/ProjectStatusCard.js'
 import PlayerNamesCard from './components/PlayerNamesCard.js'
 import PlayerAffiliationCard from './components/PlayerAffiliationCard.js'
 import PlayerPhysicalCard from './components/PlayerPhysicalCard.js'
@@ -70,6 +71,7 @@ export default function PlayerInfoModule({ entity, context }) {
           teamsOptions={context?.teams}
         />
         <PlayerPhysicalCard player={player} onUpdate={onUpdate} pending={pending} />
+        <ProjectStatusCard player={player} onUpdate={onUpdate} pending={pending} />
       </Box>
     </SectionPanel>
   )

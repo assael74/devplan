@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Sheet, Typography, Avatar } from '@mui/joy'
 
 import JoyStarRating from '../../../../../../../../../ui/domains/ratings/JoyStarRating.js'
-import playerImage from '../../../../../../../../../ui/core/images/playerImage.jpg'
+import { resolveEntityAvatar } from '../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { heroSx as sx } from '../sx/teamAbilitiesKpi.sx.js'
 
@@ -45,6 +45,12 @@ function toScoreText(v) {
 
 export default function TeamAbilitiesKpi({ entity, context, summary, globalCount }) {
   const teamName = entity?.teamName || entity?.name || 'קבוצה'
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name,
+  })
 
   const strongestLabel = summary?.strongest?.domainLabel || '—'
   const strongestAvg = Number.isFinite(Number(summary?.strongest?.avg))
@@ -80,7 +86,7 @@ export default function TeamAbilitiesKpi({ entity, context, summary, globalCount
         <Box sx={sx.heroTitleRowSx}>
           <Box sx={sx.heroTitleWrapSx}>
             <Box sx={sx.heroIconBoxSx}>
-              <Avatar src={entity?.photo || entity?.image || playerImage} />
+              <Avatar src={src} />
             </Box>
 
             <Box sx={sx.heroTextWrapSx}>

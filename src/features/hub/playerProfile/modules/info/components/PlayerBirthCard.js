@@ -1,32 +1,25 @@
 // src/features/players/modules/info/components/PlayerBirthCard.js
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+import {
+  buildPlayerBirthInitial,
+  isPlayerBirthDirty,
+} from './logic/info.logic.js'
 
 import { MonthYearPicker, DateInputField } from '../../../../../../ui/fields'
 
-const toStr = (v) => (v == null ? '' : String(v))
-
-function computeInitial(player) {
-  return {
-    birth: toStr(player?.birth), // "MM-YYYY"
-    birthDay: toStr(player?.birthDay), // "YYYY-MM-DD"
-  }
-}
-
-function isDirty(d, i) {
-  return d.birth !== i.birth || d.birthDay !== i.birthDay
-}
-
 export default function PlayerBirthCard({ player, onUpdate }) {
-  const initial = useMemo(() => computeInitial(player), [player])
+  const initial = useMemo(() => buildPlayerBirthInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
 
+  const dirty = isPlayerBirthDirty(draft, initial)
+
   useEffect(() => setDraft(initial), [initial.birth, initial.birthDay])
 
-  const dirty = isDirty(draft, initial)
   const hasBirth = Boolean(draft.birth)
   const hasBirthDay = Boolean(draft.birthDay)
 
