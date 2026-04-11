@@ -10,8 +10,6 @@ import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 export default function EditDrawerStatus({ draft, setDraft }) {
   return (
     <Box sx={sx.sectionCardSx}>
-      <Typography sx={sx.sectionTitleSx}>סטטוס מהיר</Typography>
-
       <Box sx={sx.boolRowSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 3, gap: 1 }}>
           <PlayerActiveSelector

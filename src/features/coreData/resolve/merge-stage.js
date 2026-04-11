@@ -157,8 +157,8 @@ export function mergeCoreShorts({
 
   const meetingsBase = mergeShorts(
     meetingsShorts,
-    'meetingDate',
-    ['meetingNotes', 'meetingPlayer'],
+    'meetingInfo',
+    ['meetingNotes'],
     'id'
   )
 

@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
-import { resolveClubPlayersDomain } from './logic/clubPlayers.domain.logic'
+import { resolveClubPlayers } from './logic/clubPlayers.domain.logic'
 import { domainBoxSx } from '../../domain.sx'
 
 const Row = ({ label, value, color = 'neutral' }) => {
@@ -21,21 +21,15 @@ const Row = ({ label, value, color = 'neutral' }) => {
 }
 
 export default function ClubPlayersDomainSummary({ entity }) {
-  const { summary, state } = useMemo(() => resolveClubPlayersDomain(entity), [entity])
-
-  if (state === 'PARTIAL') {
-    return (
-      <Box sx={{ mt: 1.5, ml: 1, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 0.75 }}>
-        {iconUi({ id: 'info', size: 'sm' })}
-        <Typography level="body-sm">טוען נתוני שחקנים…</Typography>
-      </Box>
-    )
-  }
+  const { summary } = useMemo(() => {
+    return resolveClubPlayers(entity)
+  }, [entity])
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.6, px: 0.5, width: '100%' }}>
-      <Row label="שחקני מועדון" value={summary?.playersCount ?? 0} />
-      <Row label="שחקני מפתח" value={summary?.keyCount ?? 0} />
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0.6, px: 0.5, width: '100%' }}>
+      <Row label="פעילים" value={summary?.active ?? 0} color="warning" />
+      <Row label="מפתח" value={summary?.key ?? 0} color="primary" />
+      <Row label="פרויקט" value={summary?.project ?? 0} color="success" />
     </Box>
   )
 }

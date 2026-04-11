@@ -1,30 +1,30 @@
-// previewDomainCard/domains/team/players/components/drawer/TeamPlayerEditDrawer.js
+// previewDomainCard/domains/club/teams/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, Snackbar } from '@mui/joy'
 
-import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect'
-
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
-import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
+import { useTeamHubUpdate } from '../../../../../../../../hooks/teams/useTeamHubUpdate.js'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
-import EditDrawerStatus from './EditDrawerStatus.js'
+import EditFormDrawer from './EditFormDrawer.js'
+
 import {
   safeArr,
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
+  buildTeamEditInitial,
+  buildTeamEditPatch,
+  isTeamEditDirty,
 } from './editDrawer.utils.js'
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
+import { editDrawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditDrawer({
   open,
-  player,
+  team,
   onClose,
   onSaved,
+  context
 }) {
-  const initial = useMemo(() => buildInitialDraft(player), [player])
+  const initial = useMemo(() => buildTeamEditInitial(team), [team])
   const [draft, setDraft] = useState(initial)
   const [showLimitWarning, setShowLimitWarning] = useState(false)
 
@@ -33,18 +33,18 @@ export default function EditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => isTeamEditDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildTeamEditPatch(draft, initial), [draft, initial])
 
-  const { run, pending } = usePlayerHubUpdate(player)
+  const { run, pending } = useTeamHubUpdate(team)
   const canSave = !!initial.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('playerQuickEdit', patch, {
-      section: 'teamPlayerQuickEdit',
-      playerId: initial.id,
+    await run('teamQuickEdit', patch, {
+      section: 'teamQuickEdit',
+      teamId: initial.id,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })
@@ -59,92 +59,75 @@ export default function EditDrawer({
   }
 
   return (
-    <>
-      <Drawer
-        open={!!open}
-        size="md"
-        anchor="right"
-        onClose={pending ? undefined : onClose}
-        slotProps={{
-          content: {
-            sx: {
-              bgcolor: 'transparent',
-              p: { xs: 0, md: 2 },
-              boxShadow: 'none',
-            },
-          },
-        }}
-      >
-        <Sheet sx={sx.drawerSheetSx}>
-          <Box sx={sx.drawerRootSx}>
-            <EditDrawerHeader player={initial} />
+    <Drawer
+      open={!!open}
+      size="md"
+      anchor="right"
+      onClose={pending ? undefined : onClose}
+      slotProps={{
+        content: {
+          sx: sx.drawerSx,
+        },
+      }}
+    >
+      <Sheet sx={sx.drawerSheet}>
+        <Box sx={sx.drawerRootSx}>
+          <EditDrawerHeader
+            team={team}
+            pending={pending}
+            onClose={onClose}
+            context={context}
+          />
 
-            <Box sx={sx.bodySx} className="dpScrollThin">
-              <Box sx={sx.sectionCardSx}>
-                <Typography sx={sx.sectionTitleSx}>עמדות</Typography>
+          <EditFormDrawer
+            draft={draft}
+            setDraft={setDraft}
+            team={team}
+            context={context}
+          />
 
-                <PlayerPositionFieldPitch
-                  size="sm"
-                  value={draft.positions}
-                  onChange={(positions) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      positions: safeArr(positions),
-                    }))
-                  }
-                  onLimitReached={() => {
-                    setShowLimitWarning(false)
-                    setTimeout(() => setShowLimitWarning(true), 10)
-                  }}
-                  disabled={pending}
-                />
-              </Box>
+          <Box sx={sx.footerSx}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Button
+                loading={pending}
+                disabled={!canSave}
+                startDecorator={iconUi({ id: 'save' })}
+                onClick={handleSave}
+                sx={sx.conBut}
+              >
+                שמירה
+              </Button>
 
-              <EditDrawerStatus draft={draft} setDraft={setDraft} />
-            </Box>
+              <Button
+                color="neutral"
+                variant="outlined"
+                onClick={onClose}
+                disabled={pending}
+              >
+                ביטול
+              </Button>
 
-            <Box sx={sx.footerSx}>
-              <Box sx={sx.footerActionsSx}>
-                <Button
-                  loading={pending}
-                  disabled={!canSave}
-                  startDecorator={iconUi({ id: 'save' })}
-                  onClick={handleSave}
-                  sx={sx.conBut}
-                >
-                  שמירה
-                </Button>
-
-                <Button color="neutral" variant="outlined" onClick={onClose} disabled={pending}>
-                  ביטול
-                </Button>
-
-                <Tooltip title="איפוס טופס">
-                  <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
-                    {iconUi({id: 'reset'})}
+              <Tooltip title="איפוס השינויים">
+                <span>
+                  <IconButton
+                    disabled={!isDirty || pending}
+                    size="sm"
+                    variant="soft"
+                    sx={sx.icoRes}
+                    onClick={handleReset}
+                  >
+                    {iconUi({ id: 'reset' })}
                   </IconButton>
-                </Tooltip>
-              </Box>
-
-              <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'} >
-                {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-              </Typography>
+                </span>
+              </Tooltip>
             </Box>
-          </Box>
-        </Sheet>
-      </Drawer>
 
-      <Snackbar
-        open={showLimitWarning}
-        autoHideDuration={2500}
-        onClose={() => setShowLimitWarning(false)}
-        color="danger"
-        size="sm"
-        variant="soft"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        ניתן לבחור עד 4 עמדות בלבד
-      </Snackbar>
-    </>
+            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
+              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+            </Typography>
+          </Box>
+        </Box>
+      </Sheet>
+    </Drawer>
   )
 }

@@ -1,4 +1,4 @@
-// previewDomainCard/domains/team/games/sx/teamGamesFilters.sx.js
+// preview/previewDomainCard/domains/team/games/sx/teamGamesFilters.sx.js
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 

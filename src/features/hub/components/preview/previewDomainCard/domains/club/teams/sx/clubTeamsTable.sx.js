@@ -2,7 +2,7 @@
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('players')
+const c = getEntityColors('teams')
 
 export const tableSx = {
   tableWrapSx: {
@@ -17,7 +17,7 @@ export const tableSx = {
 
   headRowSx: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: '1.2fr 1.2fr .5fr .5fr .6fr .3fr' },
+    gridTemplateColumns: { xs: '1fr', md: '1.9fr .6fr 1fr 1fr .7fr 1.2fr .5fr'},
     gap: 1,
     alignItems: 'center',
     pl: 1,
@@ -31,13 +31,16 @@ export const tableSx = {
 
   headTextSx: {
     fontWeight: 700,
+    fontSize: 12,
     color: 'text.secondary',
-    textAlign: 'center'
+    textAlign: 'center',
+    cursor: 'pointer',
+    userSelect: 'none',
   },
 
   rowCardSx: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: '1.2fr 1.2fr .5fr .5fr .6fr .3fr' },
+    gridTemplateColumns: { xs: '1fr', md: '1.9fr .6fr 1fr 1fr .7fr 1.2fr .5fr'},
     gap: 1,
     alignItems: 'center',
     pl: 1,
@@ -59,15 +62,10 @@ export const tableSx = {
     },
   },
 
-  rowCardKeySx: {
-    background:
-      'linear-gradient(90deg, rgba(255,196,61,0.13) 0%, rgba(255,255,255,0.00) 45%)',
-    borderColor: 'rgba(255,184,77,0.28)',
-  },
-
-  playerCellSx: {
+  infoCellSx: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 1,
     minWidth: 0,
   },
@@ -84,23 +82,12 @@ export const tableSx = {
     boxShadow: 'xs',
   },
 
-  playerTextWrapSx: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.15,
-  },
-
   playerNameSx: {
     minWidth: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     fontWeight: 700,
-  },
-
-  playerMetaSx: {
-    color: 'text.tertiary',
-    fontSize: 12,
   },
 
   centerCellSx: {

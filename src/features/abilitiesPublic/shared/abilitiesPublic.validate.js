@@ -1,9 +1,14 @@
 // features/abilitiesPublic/shared/abilitiesPublic.validate.js
 
 import { clean } from './abilitiesPublic.helpers.js'
+import { shouldUseGrowthStage } from '../../../shared/abilities/abilitiesAgeRule.js'
 
 function shouldRequireGrowthStage(draft = {}) {
   const allowGrowthStageEdit = draft?.publicMeta?.allowGrowthStageEdit !== false
+  const useGrowthStage = shouldUseGrowthStage(draft)
+
+  if (!useGrowthStage) return false
+
   const value = draft?.abilities?.growthStage
   const hasValue = !(value == null || value === '')
   return allowGrowthStageEdit || !hasValue

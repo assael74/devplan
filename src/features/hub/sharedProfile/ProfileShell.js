@@ -4,17 +4,18 @@ import React from 'react'
 import { Sheet, Box } from '@mui/joy'
 
 export default function ProfileShell({
+  tab,
   entity,
   context,
-  tab,
-  HeaderComp,
   NavComp,
+  FabComp,
+  fabProps,
+  taskContext,
+  HeaderComp,
   RendererComp,
   headerProps,
   navProps,
   rendererProps,
-  FabComp,
-  fabProps,
 }) {
   const isMeetings = tab === 'meetings'
 
@@ -55,7 +56,17 @@ export default function ProfileShell({
 
       </Box>
 
-      {FabComp ? <FabComp entity={entity} context={context} tab={tab} entityType={entity} {...fabProps} /> : null}
+      {FabComp ?
+        <FabComp
+          entity={entity}
+          context={context}
+          tab={tab}
+          entityType={entity}
+          taskContext={taskContext}
+          {...fabProps}
+        />
+        : null
+      }
     </Sheet>
   )
 }

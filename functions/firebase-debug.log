@@ -1,0 +1,674 @@
+[debug] [2026-04-06T09:06:24.795Z] ----------------------------------------------------------------------
+[debug] [2026-04-06T09:06:24.797Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions --debug
+[debug] [2026-04-06T09:06:24.797Z] CLI Version:   15.13.0
+[debug] [2026-04-06T09:06:24.797Z] Platform:      win32
+[debug] [2026-04-06T09:06:24.797Z] Node Version:  v22.18.0
+[debug] [2026-04-06T09:06:24.798Z] Time:          Mon Apr 06 2026 12:06:24 GMT+0300 (שעון ישראל (קיץ))
+[debug] [2026-04-06T09:06:24.798Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-06T09:06:25.745Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-06T09:06:25.746Z] > authorizing via signed-in user (assael74@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-04-06T09:06:25.756Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:06:25.756Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-04-06T09:06:25.759Z] Write emulator hub locator at C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[debug] [2026-04-06T09:06:25.768Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:06:25.768Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:06:25.769Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:06:25.769Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2026-04-06T09:06:25.843Z] defaultcredentials: writing to file C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json
+[debug] [2026-04-06T09:06:25.846Z] Setting GAC to C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\Lenovo\\AppData\\Roaming\\firebase\\assael74_gmail_com_application_default_credentials.json"}}
+[debug] [2026-04-06T09:06:25.847Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:06:25.847Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:06:25.849Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig [none]
+[debug] [2026-04-06T09:06:27.201Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig 200
+[debug] [2026-04-06T09:06:27.201Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig {"projectId":"devplan-b4454","storageBucket":"devplan-b4454.appspot.com","locationId":"us-central"}
+[info] i  ui: downloading ui-v1.15.0.zip... {"metadata":{"emulator":{"name":"ui"},"message":"downloading ui-v1.15.0.zip..."}}
+[debug] [2026-04-06T09:06:27.220Z] >>> [apiv2][query] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip 
+[debug] [2026-04-06T09:06:27.390Z] <<< [apiv2][status] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip 200
+[debug] [2026-04-06T09:06:27.391Z] <<< [apiv2][body] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip [stream]
+[debug] [2026-04-06T09:06:27.965Z] Data is 3538469
+[debug] [2026-04-06T09:06:27.966Z] [unzip] Entry: client/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:27.966Z] [unzip] Processing entry: client\
+[debug] [2026-04-06T09:06:27.966Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\
+[debug] [2026-04-06T09:06:27.967Z] [unzip] Entry: client/favicon-16x16.png (compressed_size=293 bytes, uncompressed_size=293 bytes)
+[debug] [2026-04-06T09:06:27.967Z] [unzip] Processing entry: client\favicon-16x16.png
+[debug] [2026-04-06T09:06:27.967Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.967Z] [unzip] Writing file: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\favicon-16x16.png
+[debug] [2026-04-06T09:06:27.968Z] [unzip] Entry: client/safari-pinned-tab.svg (compressed_size=1433 bytes, uncompressed_size=2611 bytes)
+[debug] [2026-04-06T09:06:27.969Z] [unzip] Processing entry: client\safari-pinned-tab.svg
+[debug] [2026-04-06T09:06:27.969Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.969Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\safari-pinned-tab.svg
+[debug] [2026-04-06T09:06:27.972Z] [unzip] Entry: client/favicon.ico (compressed_size=2933 bytes, uncompressed_size=13294 bytes)
+[debug] [2026-04-06T09:06:27.973Z] [unzip] Processing entry: client\favicon.ico
+[debug] [2026-04-06T09:06:27.973Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.973Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\favicon.ico
+[debug] [2026-04-06T09:06:27.974Z] [unzip] Entry: client/index.html (compressed_size=1364 bytes, uncompressed_size=3071 bytes)
+[debug] [2026-04-06T09:06:27.975Z] [unzip] Processing entry: client\index.html
+[debug] [2026-04-06T09:06:27.975Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.975Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\index.html
+[debug] [2026-04-06T09:06:27.976Z] [unzip] Entry: client/android-chrome-192x192.png (compressed_size=2684 bytes, uncompressed_size=2684 bytes)
+[debug] [2026-04-06T09:06:27.977Z] [unzip] Processing entry: client\android-chrome-192x192.png
+[debug] [2026-04-06T09:06:27.977Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.977Z] [unzip] Writing file: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\android-chrome-192x192.png
+[debug] [2026-04-06T09:06:27.977Z] [unzip] Entry: client/apple-touch-icon.png (compressed_size=2123 bytes, uncompressed_size=2152 bytes)
+[debug] [2026-04-06T09:06:27.978Z] [unzip] Processing entry: client\apple-touch-icon.png
+[debug] [2026-04-06T09:06:27.978Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.978Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\apple-touch-icon.png
+[debug] [2026-04-06T09:06:27.979Z] [unzip] Entry: client/android-chrome-512x512.png (compressed_size=5369 bytes, uncompressed_size=5411 bytes)
+[debug] [2026-04-06T09:06:27.979Z] [unzip] Processing entry: client\android-chrome-512x512.png
+[debug] [2026-04-06T09:06:27.979Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.979Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\android-chrome-512x512.png
+[debug] [2026-04-06T09:06:27.980Z] [unzip] Entry: client/manifest.json (compressed_size=245 bytes, uncompressed_size=551 bytes)
+[debug] [2026-04-06T09:06:27.981Z] [unzip] Processing entry: client\manifest.json
+[debug] [2026-04-06T09:06:27.981Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.981Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\manifest.json
+[debug] [2026-04-06T09:06:27.982Z] [unzip] Entry: client/robots.txt (compressed_size=26 bytes, uncompressed_size=26 bytes)
+[debug] [2026-04-06T09:06:27.982Z] [unzip] Processing entry: client\robots.txt
+[debug] [2026-04-06T09:06:27.982Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.983Z] [unzip] Writing file: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\robots.txt
+[debug] [2026-04-06T09:06:27.983Z] [unzip] Entry: client/mstile-150x150.png (compressed_size=2034 bytes, uncompressed_size=2034 bytes)
+[debug] [2026-04-06T09:06:27.983Z] [unzip] Processing entry: client\mstile-150x150.png
+[debug] [2026-04-06T09:06:27.983Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:27.983Z] [unzip] Writing file: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\mstile-150x150.png
+[debug] [2026-04-06T09:06:27.984Z] [unzip] Entry: client/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:27.984Z] [unzip] Processing entry: client\assets\
+[debug] [2026-04-06T09:06:27.984Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\
+[debug] [2026-04-06T09:06:27.985Z] [unzip] Entry: client/assets/index-BX-A56oj.js (compressed_size=582089 bytes, uncompressed_size=2092775 bytes)
+[debug] [2026-04-06T09:06:27.985Z] [unzip] Processing entry: client\assets\index-BX-A56oj.js
+[debug] [2026-04-06T09:06:27.985Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets
+[debug] [2026-04-06T09:06:27.985Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\index-BX-A56oj.js
+[debug] [2026-04-06T09:06:27.994Z] [unzip] Entry: client/assets/index-CjB9C900.css (compressed_size=35979 bytes, uncompressed_size=298654 bytes)
+[debug] [2026-04-06T09:06:27.995Z] [unzip] Processing entry: client\assets\index-CjB9C900.css
+[debug] [2026-04-06T09:06:27.995Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets
+[debug] [2026-04-06T09:06:27.995Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\index-CjB9C900.css
+[debug] [2026-04-06T09:06:27.998Z] [unzip] Entry: client/assets/index-BX-A56oj.js.map (compressed_size=2362482 bytes, uncompressed_size=10036679 bytes)
+[debug] [2026-04-06T09:06:27.998Z] [unzip] Processing entry: client\assets\index-BX-A56oj.js.map
+[debug] [2026-04-06T09:06:27.998Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets
+[debug] [2026-04-06T09:06:27.998Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\index-BX-A56oj.js.map
+[debug] [2026-04-06T09:06:28.041Z] [unzip] Entry: client/assets/extensions/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:28.041Z] [unzip] Processing entry: client\assets\extensions\
+[debug] [2026-04-06T09:06:28.041Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\extensions\
+[debug] [2026-04-06T09:06:28.042Z] [unzip] Entry: client/assets/extensions/default-extension.png (compressed_size=1646 bytes, uncompressed_size=1657 bytes)
+[debug] [2026-04-06T09:06:28.042Z] [unzip] Processing entry: client\assets\extensions\default-extension.png
+[debug] [2026-04-06T09:06:28.042Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\extensions
+[debug] [2026-04-06T09:06:28.042Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\extensions\default-extension.png
+[debug] [2026-04-06T09:06:28.044Z] [unzip] Entry: client/assets/img/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:28.044Z] [unzip] Processing entry: client\assets\img\
+[debug] [2026-04-06T09:06:28.044Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\img\
+[debug] [2026-04-06T09:06:28.044Z] [unzip] Entry: client/assets/img/database.png (compressed_size=29449 bytes, uncompressed_size=29988 bytes)
+[debug] [2026-04-06T09:06:28.044Z] [unzip] Processing entry: client\assets\img\database.png
+[debug] [2026-04-06T09:06:28.044Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\img
+[debug] [2026-04-06T09:06:28.045Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\img\database.png
+[debug] [2026-04-06T09:06:28.046Z] [unzip] Entry: client/assets/provider-icons/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:28.046Z] [unzip] Processing entry: client\assets\provider-icons\
+[debug] [2026-04-06T09:06:28.046Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\
+[debug] [2026-04-06T09:06:28.047Z] [unzip] Entry: client/assets/provider-icons/auth_service_saml.svg (compressed_size=575 bytes, uncompressed_size=1226 bytes)
+[debug] [2026-04-06T09:06:28.047Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_saml.svg
+[debug] [2026-04-06T09:06:28.047Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.047Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_saml.svg
+[debug] [2026-04-06T09:06:28.048Z] [unzip] Entry: client/assets/provider-icons/auth_service_phone.svg (compressed_size=261 bytes, uncompressed_size=414 bytes)
+[debug] [2026-04-06T09:06:28.048Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_phone.svg
+[debug] [2026-04-06T09:06:28.048Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.049Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_phone.svg
+[debug] [2026-04-06T09:06:28.050Z] [unzip] Entry: client/assets/provider-icons/auth_service_facebook.svg (compressed_size=289 bytes, uncompressed_size=457 bytes)
+[debug] [2026-04-06T09:06:28.050Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_facebook.svg
+[debug] [2026-04-06T09:06:28.050Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.050Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_facebook.svg
+[debug] [2026-04-06T09:06:28.052Z] [unzip] Entry: client/assets/provider-icons/auth_service_game_center.svg (compressed_size=991 bytes, uncompressed_size=3921 bytes)
+[debug] [2026-04-06T09:06:28.053Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_game_center.svg
+[debug] [2026-04-06T09:06:28.053Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.053Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_game_center.svg
+[debug] [2026-04-06T09:06:28.054Z] [unzip] Entry: client/assets/provider-icons/auth_service_apple.svg (compressed_size=230 bytes, uncompressed_size=334 bytes)
+[debug] [2026-04-06T09:06:28.055Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_apple.svg
+[debug] [2026-04-06T09:06:28.055Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.055Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_apple.svg
+[debug] [2026-04-06T09:06:28.056Z] [unzip] Entry: client/assets/provider-icons/auth_service_github.svg (compressed_size=466 bytes, uncompressed_size=838 bytes)
+[debug] [2026-04-06T09:06:28.056Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_github.svg
+[debug] [2026-04-06T09:06:28.056Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.057Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_github.svg
+[debug] [2026-04-06T09:06:28.058Z] [unzip] Entry: client/assets/provider-icons/auth_service_mslive.svg (compressed_size=203 bytes, uncompressed_size=378 bytes)
+[debug] [2026-04-06T09:06:28.058Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_mslive.svg
+[debug] [2026-04-06T09:06:28.058Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.058Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_mslive.svg
+[debug] [2026-04-06T09:06:28.059Z] [unzip] Entry: client/assets/provider-icons/auth_service_yahoo.svg (compressed_size=577 bytes, uncompressed_size=1182 bytes)
+[debug] [2026-04-06T09:06:28.060Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_yahoo.svg
+[debug] [2026-04-06T09:06:28.060Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.060Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_yahoo.svg
+[debug] [2026-04-06T09:06:28.061Z] [unzip] Entry: client/assets/provider-icons/auth_service_twitter.svg (compressed_size=444 bytes, uncompressed_size=751 bytes)
+[debug] [2026-04-06T09:06:28.061Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_twitter.svg
+[debug] [2026-04-06T09:06:28.061Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.061Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_twitter.svg
+[debug] [2026-04-06T09:06:28.062Z] [unzip] Entry: client/assets/provider-icons/auth_service_play_games.svg (compressed_size=565 bytes, uncompressed_size=1173 bytes)
+[debug] [2026-04-06T09:06:28.062Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_play_games.svg
+[debug] [2026-04-06T09:06:28.062Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.063Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_play_games.svg
+[debug] [2026-04-06T09:06:28.064Z] [unzip] Entry: client/assets/provider-icons/auth_service_email.svg (compressed_size=228 bytes, uncompressed_size=326 bytes)
+[debug] [2026-04-06T09:06:28.064Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_email.svg
+[debug] [2026-04-06T09:06:28.064Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.064Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_email.svg
+[debug] [2026-04-06T09:06:28.065Z] [unzip] Entry: client/assets/provider-icons/auth_service_google.svg (compressed_size=409 bytes, uncompressed_size=720 bytes)
+[debug] [2026-04-06T09:06:28.065Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_google.svg
+[debug] [2026-04-06T09:06:28.065Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.066Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_google.svg
+[debug] [2026-04-06T09:06:28.066Z] [unzip] Entry: client/assets/provider-icons/auth_service_oidc.svg (compressed_size=414 bytes, uncompressed_size=858 bytes)
+[debug] [2026-04-06T09:06:28.067Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_oidc.svg
+[debug] [2026-04-06T09:06:28.067Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons
+[debug] [2026-04-06T09:06:28.067Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\assets\provider-icons\auth_service_oidc.svg
+[debug] [2026-04-06T09:06:28.068Z] [unzip] Entry: client/browserconfig.xml (compressed_size=491 bytes, uncompressed_size=822 bytes)
+[debug] [2026-04-06T09:06:28.068Z] [unzip] Processing entry: client\browserconfig.xml
+[debug] [2026-04-06T09:06:28.068Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:28.069Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\browserconfig.xml
+[debug] [2026-04-06T09:06:28.070Z] [unzip] Entry: client/favicon-32x32.png (compressed_size=475 bytes, uncompressed_size=475 bytes)
+[debug] [2026-04-06T09:06:28.070Z] [unzip] Processing entry: client\favicon-32x32.png
+[debug] [2026-04-06T09:06:28.070Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client
+[debug] [2026-04-06T09:06:28.070Z] [unzip] Writing file: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\client\favicon-32x32.png
+[debug] [2026-04-06T09:06:28.071Z] [unzip] Entry: server/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2026-04-06T09:06:28.071Z] [unzip] Processing entry: server\
+[debug] [2026-04-06T09:06:28.071Z] [unzip] mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\server\
+[debug] [2026-04-06T09:06:28.072Z] [unzip] Entry: server/server.mjs.map (compressed_size=217845 bytes, uncompressed_size=944978 bytes)
+[debug] [2026-04-06T09:06:28.072Z] [unzip] Processing entry: server\server.mjs.map
+[debug] [2026-04-06T09:06:28.072Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\server
+[debug] [2026-04-06T09:06:28.072Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\server\server.mjs.map
+[debug] [2026-04-06T09:06:28.077Z] [unzip] Entry: server/server.mjs (compressed_size=276407 bytes, uncompressed_size=933701 bytes)
+[debug] [2026-04-06T09:06:28.077Z] [unzip] Processing entry: server\server.mjs
+[debug] [2026-04-06T09:06:28.077Z] [unzip] else mkdir: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\server
+[debug] [2026-04-06T09:06:28.078Z] [unzip] deflating: C:\Users\Lenovo\.cache\firebase\emulators\ui-v1.15.0\server\server.mjs
+[info] i  ui: Removing outdated emulator files: ui-v1.13.0 {"metadata":{"emulator":{"name":"ui"},"message":"Removing outdated emulator files: ui-v1.13.0"}}
+[info] i  ui: Removing outdated emulator files: ui-v1.13.0.zip {"metadata":{"emulator":{"name":"ui"},"message":"Removing outdated emulator files: ui-v1.13.0.zip"}}
+[info] i  functions: Watching "C:\projects\devplan\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\projects\\devplan\\functions\" for Cloud Functions..."}}
+[debug] [2026-04-06T09:06:28.096Z] Validating nodejs source
+[debug] [2026-04-06T09:06:28.796Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:06:28.797Z] Building nodejs source
+[debug] [2026-04-06T09:06:28.797Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:06:28.799Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:06:28.805Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8294
+
+[debug] [2026-04-06T09:06:29.156Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite."}}
+[info] +  functions[europe-west1-submitPublicAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite)."}}
+[debug] [2026-04-06T09:06:33.192Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-04-06T09:08:58.997Z] File C:\projects\devplan\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File C:\\projects\\devplan\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-04-06T09:09:00.007Z] Validating nodejs source
+[debug] [2026-04-06T09:09:00.802Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:09:00.803Z] Building nodejs source
+[debug] [2026-04-06T09:09:00.803Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:09:00.807Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:09:00.834Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8363
+
+[debug] [2026-04-06T09:09:01.247Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite."}}
+[info] +  functions[europe-west1-shareAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite)."}}
+[debug] [2026-04-06T09:09:13.543Z] Received signal SIGINT (Ctrl-C) 1
+[info]  
+[info] i  emulators: Received SIGINT (Ctrl-C) for the first time. Starting a clean shutdown. 
+[info] i  emulators: Please wait for a clean shutdown or send the SIGINT (Ctrl-C) signal again to stop right now. 
+[debug] [2026-04-06T09:09:13.544Z] Found emulator hub locator: {"version":"15.13.0","origins":["http://127.0.0.1:4400","http://[::1]:4400"],"pid":27324}
+[debug] [2026-04-06T09:09:13.544Z] Delete emulator hub locator file: C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  ui: Stopping Emulator UI {"metadata":{"emulator":{"name":"ui"},"message":"Stopping Emulator UI"}}
+[info] i  functions: Stopping Functions Emulator {"metadata":{"emulator":{"name":"functions"},"message":"Stopping Functions Emulator"}}
+[info] i  eventarc: Stopping Eventarc Emulator {"metadata":{"emulator":{"name":"eventarc"},"message":"Stopping Eventarc Emulator"}}
+[info] i  tasks: Stopping Cloud Tasks Emulator {"metadata":{"emulator":{"name":"tasks"},"message":"Stopping Cloud Tasks Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[info] i  logging: Stopping Logging Emulator {"metadata":{"emulator":{"name":"logging"},"message":"Stopping Logging Emulator"}}
+[debug] [2026-04-06T09:09:13.551Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[debug] [2026-04-06T09:09:22.894Z] ----------------------------------------------------------------------
+[debug] [2026-04-06T09:09:22.895Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions --debug
+[debug] [2026-04-06T09:09:22.896Z] CLI Version:   15.13.0
+[debug] [2026-04-06T09:09:22.896Z] Platform:      win32
+[debug] [2026-04-06T09:09:22.896Z] Node Version:  v22.18.0
+[debug] [2026-04-06T09:09:22.896Z] Time:          Mon Apr 06 2026 12:09:22 GMT+0300 (שעון ישראל (קיץ))
+[debug] [2026-04-06T09:09:22.896Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-06T09:09:23.816Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-06T09:09:23.817Z] > authorizing via signed-in user (assael74@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-04-06T09:09:23.827Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:09:23.827Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-04-06T09:09:23.829Z] Write emulator hub locator at C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[debug] [2026-04-06T09:09:23.838Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:09:23.838Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:09:23.838Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:09:23.839Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2026-04-06T09:09:23.861Z] defaultcredentials: writing to file C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json
+[debug] [2026-04-06T09:09:23.863Z] Setting GAC to C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\Lenovo\\AppData\\Roaming\\firebase\\assael74_gmail_com_application_default_credentials.json"}}
+[debug] [2026-04-06T09:09:23.864Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:09:23.865Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:09:23.866Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig [none]
+[debug] [2026-04-06T09:09:24.981Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig 200
+[debug] [2026-04-06T09:09:24.982Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig {"projectId":"devplan-b4454","storageBucket":"devplan-b4454.appspot.com","locationId":"us-central"}
+[info] i  functions: Watching "C:\projects\devplan\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\projects\\devplan\\functions\" for Cloud Functions..."}}
+[debug] [2026-04-06T09:09:25.001Z] Validating nodejs source
+[debug] [2026-04-06T09:09:25.724Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:09:25.725Z] Building nodejs source
+[debug] [2026-04-06T09:09:25.725Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:09:25.727Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:09:25.732Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8864
+
+[debug] [2026-04-06T09:09:26.069Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite."}}
+[info] +  functions[europe-west1-submitPublicAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite)."}}
+[info] +  functions[europe-west1-shareAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite)."}}
+[debug] [2026-04-06T09:09:30.123Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-04-06T09:12:15.858Z] File C:\projects\devplan\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File C:\\projects\\devplan\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-04-06T09:12:16.867Z] Validating nodejs source
+[debug] [2026-04-06T09:12:17.634Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:12:17.635Z] Building nodejs source
+[debug] [2026-04-06T09:12:17.636Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:12:17.639Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:12:17.659Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8935
+
+[debug] [2026-04-06T09:12:18.127Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"},"notifyNow":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"notifyNow"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow."}}
+[info] +  functions[europe-west1-notifyNow]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow)."}}
+[debug] [2026-04-06T09:12:24.620Z] Received signal SIGINT (Ctrl-C) 1
+[info]  
+[info] i  emulators: Received SIGINT (Ctrl-C) for the first time. Starting a clean shutdown. 
+[info] i  emulators: Please wait for a clean shutdown or send the SIGINT (Ctrl-C) signal again to stop right now. 
+[debug] [2026-04-06T09:12:24.621Z] Found emulator hub locator: {"version":"15.13.0","origins":["http://127.0.0.1:4400","http://[::1]:4400"],"pid":23360}
+[debug] [2026-04-06T09:12:24.621Z] Delete emulator hub locator file: C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  ui: Stopping Emulator UI {"metadata":{"emulator":{"name":"ui"},"message":"Stopping Emulator UI"}}
+[info] i  functions: Stopping Functions Emulator {"metadata":{"emulator":{"name":"functions"},"message":"Stopping Functions Emulator"}}
+[info] i  eventarc: Stopping Eventarc Emulator {"metadata":{"emulator":{"name":"eventarc"},"message":"Stopping Eventarc Emulator"}}
+[info] i  tasks: Stopping Cloud Tasks Emulator {"metadata":{"emulator":{"name":"tasks"},"message":"Stopping Cloud Tasks Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[info] i  logging: Stopping Logging Emulator {"metadata":{"emulator":{"name":"logging"},"message":"Stopping Logging Emulator"}}
+[debug] [2026-04-06T09:12:24.628Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[debug] [2026-04-06T09:12:30.383Z] ----------------------------------------------------------------------
+[debug] [2026-04-06T09:12:30.385Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions --debug
+[debug] [2026-04-06T09:12:30.385Z] CLI Version:   15.13.0
+[debug] [2026-04-06T09:12:30.385Z] Platform:      win32
+[debug] [2026-04-06T09:12:30.386Z] Node Version:  v22.18.0
+[debug] [2026-04-06T09:12:30.386Z] Time:          Mon Apr 06 2026 12:12:30 GMT+0300 (שעון ישראל (קיץ))
+[debug] [2026-04-06T09:12:30.386Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-06T09:12:31.306Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-06T09:12:31.307Z] > authorizing via signed-in user (assael74@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-04-06T09:12:31.316Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:12:31.317Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-04-06T09:12:31.319Z] Write emulator hub locator at C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[debug] [2026-04-06T09:12:31.328Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:12:31.329Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:12:31.329Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:12:31.330Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2026-04-06T09:12:31.475Z] defaultcredentials: writing to file C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json
+[debug] [2026-04-06T09:12:31.479Z] Setting GAC to C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\Lenovo\\AppData\\Roaming\\firebase\\assael74_gmail_com_application_default_credentials.json"}}
+[debug] [2026-04-06T09:12:31.481Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:12:31.482Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:12:31.484Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig [none]
+[debug] [2026-04-06T09:12:32.419Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig 200
+[debug] [2026-04-06T09:12:32.420Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig {"projectId":"devplan-b4454","storageBucket":"devplan-b4454.appspot.com","locationId":"us-central"}
+[info] i  functions: Watching "C:\projects\devplan\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\projects\\devplan\\functions\" for Cloud Functions..."}}
+[debug] [2026-04-06T09:12:32.450Z] Validating nodejs source
+[debug] [2026-04-06T09:12:33.155Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:12:33.155Z] Building nodejs source
+[debug] [2026-04-06T09:12:33.156Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:12:33.157Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:12:33.162Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8975
+
+[debug] [2026-04-06T09:12:33.506Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"},"notifyNow":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"notifyNow"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow."}}
+[info] +  functions[europe-west1-submitPublicAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite)."}}
+[info] +  functions[europe-west1-shareAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite)."}}
+[info] +  functions[europe-west1-notifyNow]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow)."}}
+[debug] [2026-04-06T09:12:37.554Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-04-06T09:13:59.638Z] File C:\projects\devplan\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File C:\\projects\\devplan\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-04-06T09:14:00.657Z] Validating nodejs source
+[debug] [2026-04-06T09:14:01.544Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:14:01.544Z] Building nodejs source
+[debug] [2026-04-06T09:14:01.544Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:14:01.546Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:14:01.550Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8167
+
+[debug] [2026-04-06T09:14:02.130Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"},"notifyNow":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"notifyNow"},"onMeetingCreated":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.created","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"meetings/{meetingId}"},"retry":false},"entryPoint":"onMeetingCreated"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated."}}
+[info] i  functions[europe-west1-onMeetingCreated]: function ignored because the firestore emulator does not exist or is not running. {"metadata":{"emulator":{"name":"functions"},"message":"function ignored because the firestore emulator does not exist or is not running."}}
+[debug] [2026-04-06T09:14:10.879Z] Received signal SIGINT (Ctrl-C) 1
+[info]  
+[info] i  emulators: Received SIGINT (Ctrl-C) for the first time. Starting a clean shutdown. 
+[info] i  emulators: Please wait for a clean shutdown or send the SIGINT (Ctrl-C) signal again to stop right now. 
+[debug] [2026-04-06T09:14:10.880Z] Found emulator hub locator: {"version":"15.13.0","origins":["http://127.0.0.1:4400","http://[::1]:4400"],"pid":26956}
+[debug] [2026-04-06T09:14:10.882Z] Delete emulator hub locator file: C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  ui: Stopping Emulator UI {"metadata":{"emulator":{"name":"ui"},"message":"Stopping Emulator UI"}}
+[info] i  functions: Stopping Functions Emulator {"metadata":{"emulator":{"name":"functions"},"message":"Stopping Functions Emulator"}}
+[info] i  eventarc: Stopping Eventarc Emulator {"metadata":{"emulator":{"name":"eventarc"},"message":"Stopping Eventarc Emulator"}}
+[info] i  tasks: Stopping Cloud Tasks Emulator {"metadata":{"emulator":{"name":"tasks"},"message":"Stopping Cloud Tasks Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[info] i  logging: Stopping Logging Emulator {"metadata":{"emulator":{"name":"logging"},"message":"Stopping Logging Emulator"}}
+[debug] [2026-04-06T09:14:10.890Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[debug] [2026-04-06T09:14:16.507Z] ----------------------------------------------------------------------
+[debug] [2026-04-06T09:14:16.509Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions --debug
+[debug] [2026-04-06T09:14:16.509Z] CLI Version:   15.13.0
+[debug] [2026-04-06T09:14:16.509Z] Platform:      win32
+[debug] [2026-04-06T09:14:16.510Z] Node Version:  v22.18.0
+[debug] [2026-04-06T09:14:16.510Z] Time:          Mon Apr 06 2026 12:14:16 GMT+0300 (שעון ישראל (קיץ))
+[debug] [2026-04-06T09:14:16.510Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-06T09:14:17.446Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-06T09:14:17.447Z] > authorizing via signed-in user (assael74@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-04-06T09:14:17.458Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:14:17.459Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-04-06T09:14:17.462Z] Write emulator hub locator at C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[debug] [2026-04-06T09:14:17.472Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:14:17.472Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:14:17.472Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-04-06T09:14:17.472Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2026-04-06T09:14:17.539Z] defaultcredentials: writing to file C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json
+[debug] [2026-04-06T09:14:17.541Z] Setting GAC to C:\Users\Lenovo\AppData\Roaming\firebase\assael74_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\Lenovo\\AppData\\Roaming\\firebase\\assael74_gmail_com_application_default_credentials.json"}}
+[debug] [2026-04-06T09:14:17.543Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:14:17.543Z] Checked if tokens are valid: true, expires at: 1775468238530
+[debug] [2026-04-06T09:14:17.544Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig [none]
+[debug] [2026-04-06T09:14:18.505Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig 200
+[debug] [2026-04-06T09:14:18.505Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/devplan-b4454/adminSdkConfig {"projectId":"devplan-b4454","storageBucket":"devplan-b4454.appspot.com","locationId":"us-central"}
+[info] i  functions: Watching "C:\projects\devplan\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\projects\\devplan\\functions\" for Cloud Functions..."}}
+[debug] [2026-04-06T09:14:18.522Z] Validating nodejs source
+[debug] [2026-04-06T09:14:19.294Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:14:19.294Z] Building nodejs source
+[debug] [2026-04-06T09:14:19.294Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:14:19.296Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:14:19.301Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8048
+
+[debug] [2026-04-06T09:14:19.892Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"},"notifyNow":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"notifyNow"},"onMeetingCreated":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.created","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"meetings/{meetingId}"},"retry":false},"entryPoint":"onMeetingCreated"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated."}}
+[info] +  functions[europe-west1-submitPublicAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/submitPublicAbilitiesInvite)."}}
+[info] +  functions[europe-west1-shareAbilitiesInvite]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/shareAbilitiesInvite)."}}
+[info] +  functions[europe-west1-notifyNow]: http function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/devplan-b4454/europe-west1/notifyNow)."}}
+[info] i  functions[europe-west1-onMeetingCreated]: function ignored because the firestore emulator does not exist or is not running. {"metadata":{"emulator":{"name":"functions"},"message":"function ignored because the firestore emulator does not exist or is not running."}}
+[debug] [2026-04-06T09:14:23.938Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-04-06T09:15:38.108Z] File C:\projects\devplan\functions\package.json changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File C:\\projects\\devplan\\functions\\package.json changed, reloading triggers"}}
+[debug] [2026-04-06T09:15:39.113Z] Validating nodejs source
+[debug] [2026-04-06T09:15:40.136Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/tasks": "^6.2.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^7.2.3"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-06T09:15:40.136Z] Building nodejs source
+[debug] [2026-04-06T09:15:40.137Z] Failed to find version of module node: reached end of search path C:\projects\devplan\functions\node_modules
+[warn] !  functions: Your requested "node" version "20" doesn't match your global version "22". Using node@22 from host. 
+[debug] [2026-04-06T09:15:40.138Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-06T09:15:40.144Z] Found firebase-functions binary at 'C:\projects\devplan\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8328
+
+[debug] [2026-04-06T09:15:40.890Z] Got response from /__/functions.yaml {"endpoints":{"submitPublicAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"submitPublicAbilitiesInvite"},"shareAbilitiesInvite":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"shareAbilitiesInvite"},"notifyNow":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"httpsTrigger":{},"entryPoint":"notifyNow"},"onMeetingCreated":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["europe-west1"],"labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.created","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"meetings/{meetingId}"},"retry":false},"entryPoint":"onMeetingCreated"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: submitPublicAbilitiesInvite, shareAbilitiesInvite, notifyNow, onMeetingCreated."}}
+[debug] [2026-04-06T11:21:07.689Z] Received signal SIGINT (Ctrl-C) 1
+[info]  
+[info] i  emulators: Received SIGINT (Ctrl-C) for the first time. Starting a clean shutdown. 
+[info] i  emulators: Please wait for a clean shutdown or send the SIGINT (Ctrl-C) signal again to stop right now. 
+[debug] [2026-04-06T11:21:07.694Z] Found emulator hub locator: {"version":"15.13.0","origins":["http://127.0.0.1:4400","http://[::1]:4400"],"pid":31628}
+[debug] [2026-04-06T11:21:07.696Z] Delete emulator hub locator file: C:\Users\Lenovo\AppData\Local\Temp\hub-devplan-b4454.json
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  ui: Stopping Emulator UI {"metadata":{"emulator":{"name":"ui"},"message":"Stopping Emulator UI"}}
+[info] i  functions: Stopping Functions Emulator {"metadata":{"emulator":{"name":"functions"},"message":"Stopping Functions Emulator"}}
+[info] i  eventarc: Stopping Eventarc Emulator {"metadata":{"emulator":{"name":"eventarc"},"message":"Stopping Eventarc Emulator"}}
+[info] i  tasks: Stopping Cloud Tasks Emulator {"metadata":{"emulator":{"name":"tasks"},"message":"Stopping Cloud Tasks Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[info] i  logging: Stopping Logging Emulator {"metadata":{"emulator":{"name":"logging"},"message":"Stopping Logging Emulator"}}
+[debug] [2026-04-06T11:21:07.711Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.

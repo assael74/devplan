@@ -1,4 +1,8 @@
-/// shared/abilities/abilities.list.js
+// shared/abilities/abilities.list.js
+
+// קובץ מקביל: functions/src/domain/abilities/abilities.list.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
+
 export const abilitiesList = [
   // 🟦 פיזי (Physical)
   { id: 'speed', label: 'מהירות בסיסית', domain: 'physical', domainLabel: 'פיסי', weight: 1.2 },
@@ -36,4 +40,4 @@ export const abilitiesList = [
 
   // 🟫 ביולוגי (Development) – ללא שקלול ב־level
   { id: 'growthStage', label: 'שלב התפתחות ביולוגית', domain: 'development', domainLabel: 'התפתחות', weight: 0 },
-];
+]

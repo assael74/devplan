@@ -1,3 +1,7 @@
+// C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.scoring.js
+
+// קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.scoring.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
 
 import { abilitiesList } from '../abilities.list.js'
 import {
@@ -19,12 +23,17 @@ import {
   safeStr,
   toNum,
 } from './abilitiesHistory.utils.js'
+import { shouldUseGrowthStage } from '../abilitiesAgeRule.js'
 import { normalizeAbilities } from './abilitiesHistory.forms.js'
 import {
   groupFormsByWindow,
   buildWindowSnapshot,
   mergeWindowAbilitiesHistory,
 } from './abilitiesHistory.windows.js'
+
+function resolveEffectiveGrowthStage(playerContext = {}, growthStage = null) {
+  return shouldUseGrowthStage(playerContext) ? growthStage : null
+}
 
 export function getDomainsMeta() {
   const map = {}
@@ -149,8 +158,9 @@ function resolveGrowthStageTableKey(growthStage) {
   return clamp(Math.floor(n), 1, 5)
 }
 
-function buildDomainsMetaWithPotentialScores(domains = [], growthStage = null) {
-  const growthStageTableKey = resolveGrowthStageTableKey(growthStage)
+function buildDomainsMetaWithPotentialScores(domains = [], growthStage = null, playerContext = {}) {
+  const effectiveGrowthStage = resolveEffectiveGrowthStage(playerContext, growthStage)
+  const growthStageTableKey = resolveGrowthStageTableKey(effectiveGrowthStage)
   const physicalAdj = PHYSICAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
   const finalAdj = FINAL_POTENTIAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
 
@@ -183,7 +193,7 @@ function buildDomainsMetaWithPotentialScores(domains = [], growthStage = null) {
   })
 }
 
-export function calcPotentialScore(domainsById = {}, growthStage = null) {
+export function calcPotentialScore(domainsById = {}, growthStage = null, playerContext = {}) {
   const adjustedDomains = { ...domainsById }
 
   const physical = domainsById?.physical || null
@@ -191,7 +201,8 @@ export function calcPotentialScore(domainsById = {}, growthStage = null) {
     ? Number(physical.score)
     : null
 
-  const growthStageTableKey = resolveGrowthStageTableKey(growthStage)
+  const effectiveGrowthStage = resolveEffectiveGrowthStage(playerContext, growthStage)
+  const growthStageTableKey = resolveGrowthStageTableKey(effectiveGrowthStage)
   const growthAdj = PHYSICAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
   const finalGrowthAdj = FINAL_POTENTIAL_GROWTH_ADJUSTMENTS[String(growthStageTableKey)] ?? 0
 
@@ -293,7 +304,7 @@ export function resolvePotentialReliability({
   return OVERALL_RELIABILITY.low
 }
 
-export function buildFinalPlayerResult({ forms = [] }) {
+export function buildFinalPlayerResult({ forms = [], player = null } = {}) {
   const groupedWindows = groupFormsByWindow(forms)
   const windowSnapshots = groupedWindows.map((bucket) => buildWindowSnapshot(bucket))
   const historyMerged = mergeWindowAbilitiesHistory(windowSnapshots)
@@ -301,9 +312,12 @@ export function buildFinalPlayerResult({ forms = [] }) {
 
   const domainsResult = calcDomainsResult(mergedAbilities)
 
+  const playerContext = player || forms[forms.length - 1] || {}
+
   const domainsWithPotentialScores = buildDomainsMetaWithPotentialScores(
     domainsResult.domains,
-    mergedAbilities?.growthStage ?? null
+    mergedAbilities?.growthStage ?? null,
+    playerContext
   )
 
   const domainsByIdWithPotential = Object.fromEntries(
@@ -317,7 +331,8 @@ export function buildFinalPlayerResult({ forms = [] }) {
 
   const overallPotential = calcPotentialScore(
     domainsResult.byId,
-    mergedAbilities?.growthStage ?? null
+    mergedAbilities?.growthStage ?? null,
+    playerContext
   )
 
   const allEvaluatorIds = Array.from(

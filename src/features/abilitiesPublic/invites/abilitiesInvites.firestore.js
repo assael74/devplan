@@ -60,8 +60,8 @@ function buildAbilitiesInviteFirestorePayload(invite = {}) {
       stringKeys: ['id', 'clubName', 'photo'],
     }),
 
-    createdById: clean(invite.createdById || invite?.evaluator?.id),
-    createdByName: clean(invite.createdByName || invite?.evaluator?.fullName),
+    createdById: clean(invite.createdById),
+    createdByName: clean(invite.createdByName),
 
     status: clean(invite.status || 'sent'),
 

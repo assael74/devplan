@@ -6,20 +6,23 @@ import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 export default function EditDrawerHeader({ player }) {
   return (
     <DialogTitle sx={sx.headerRowSx}>
-      <Box sx={sx.playerHeroSx}>
-        <Avatar src={player?.photo || playerImage} sx={sx.avatarWrapSx} />
-        <Box sx={sx.playerTextSx}>
-          <Typography level="title-md" sx={sx.playerNameSx}>
-            {player?.name || 'שחקן'}
+      <Box sx={sx.headerMainSx}>
+        <Avatar src={player?.photo || playerImage} sx={{ flexShrink: 0 }} />
+
+        <Box>
+          <Typography level="title-md" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
+            {player?.playerFullName || 'עריכת שחקן'}
           </Typography>
 
-          <Typography level="body-xs" sx={sx.playerMetaSx}>
-            {player?.teamName || 'שחקן קבוצה'}
+          <Typography level="body-xs" sx={{ color: 'text.secondary' }}>
+            {player?.team?.teamName || 'עריכת שחקן'}
           </Typography>
         </Box>
-      </Box>
 
-      <ModalClose />
+        <Box sx={{ flex: 1 }} />
+
+        <ModalClose />
+      </Box>
     </DialogTitle>
   )
 }

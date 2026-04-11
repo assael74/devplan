@@ -1,3 +1,7 @@
+// C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.dates.js
+
+// קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.dates.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
 
 import {
   safeStr,

@@ -30,55 +30,55 @@ function compareBoolean(a, b, dir = 'desc') {
   return dir === 'asc' ? av - bv : bv - av
 }
 
-export function sortClubTeams(rows = [], sortKey = 'year', sortDir = 'desc') {
+export function sortClubTeams(rows = [], sortKey = 'teamYear', sortDir = 'desc') {
   const list = Array.isArray(rows) ? [...rows] : []
 
   return list.sort((a, b) => {
     switch (sortKey) {
-      case 'name': {
-        return compareText(a?.name, b?.name, sortDir)
+      case 'teamName': {
+        return compareText(a?.teamName, b?.teamName, sortDir)
       }
 
-      case 'year': {
-        const byYear = compareNumber(a?.year, b?.year, sortDir)
+      case 'teamYear': {
+        const byYear = compareNumber(a?.teamYear, b?.teamYear, sortDir)
         if (byYear !== 0) return byYear
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
       case 'playersCount': {
         const byPlayers = compareNumber(a?.playersCount, b?.playersCount, sortDir)
         if (byPlayers !== 0) return byPlayers
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
-      case 'rolesCount': {
-        const byRoles = compareNumber(a?.rolesCount, b?.rolesCount, sortDir)
-        if (byRoles !== 0) return byRoles
-        return compareText(a?.name, b?.name, 'asc')
+      case 'keyPlayersCount': {
+        const byKey = compareNumber(a?.keyPlayersCount, b?.keyPlayersCount, sortDir)
+        if (byKey !== 0) return byKey
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
-      case 'levelAvg': {
-        const byLevel = compareNumber(a?.levelAvg, b?.levelAvg, sortDir)
-        if (byLevel !== 0) return byLevel
-        return compareText(a?.name, b?.name, 'asc')
+      case 'projectPlayersCount': {
+        const byProjectPlayers = compareNumber(a?.projectPlayersCount, b?.projectPlayersCount, sortDir)
+        if (byProjectPlayers !== 0) return byProjectPlayers
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
       case 'active': {
         const byActive = compareBoolean(a?.active, b?.active, sortDir)
         if (byActive !== 0) return byActive
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
       case 'isProject': {
         const byProject = compareBoolean(a?.isProject, b?.isProject, sortDir)
         if (byProject !== 0) return byProject
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
 
       default: {
-        const byYear = compareNumber(a?.year, b?.year, 'desc')
+        const byYear = compareNumber(a?.teamYear, b?.teamYear, 'desc')
         if (byYear !== 0) return byYear
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.teamName, b?.teamName, 'asc')
       }
     }
   })

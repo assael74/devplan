@@ -18,29 +18,20 @@ export const filtterSx = {
   filtersTopRowSx: {
     display: 'grid',
     gap: 0.75,
-    gridTemplateColumns: { xs: '1fr', md: '1.25fr .8fr .75fr .85fr auto auto' },
+    gridTemplateColumns: { xs: '1fr', md: '1.25fr .8fr .75fr auto auto' },
     alignItems: 'center',
   },
 
-  searchBoxSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
   icoResSx: {
-    height: 36,
-    width: 36,
+    height: 32,
+    width: 32,
     flexShrink: 0,
+    bgcolor: 'background.level2'
   },
 
   icoAddSx: {
-    height: 36,
-    width: 36,
+    height: 32,
+    width: 32,
     bgcolor: c.bg,
     color: c.text,
     transition: 'filter .15s ease, transform .12s ease',

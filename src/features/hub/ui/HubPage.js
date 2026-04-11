@@ -1,7 +1,7 @@
 // src/features/hub/ui/HubPage.js
 import React, { useMemo, useCallback } from 'react'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import PreviewPanel from '../components/PreviewPanel'
 import PlayersLayout from '../components/layout/PlayersLayout'
@@ -25,6 +25,7 @@ import {
   buildContextFromSelection,
   buildCreateHandlers,
 } from './HubPage.helpers'
+import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 
 const supportedPreviewTypes = new Set(['club', 'team', 'player', 'staff', 'scout'])
 
@@ -34,6 +35,7 @@ function isPrivatePlayer(player) {
 
 export default function HubPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { openCreate } = useCreateModal()
 
   const {
@@ -81,11 +83,21 @@ export default function HubPage() {
     [s.previewSelection]
   )
 
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'hub',
+      mode: s.mode,
+      extra: context,
+    })
+  }, [location, s.mode, context])
+
   const handlers = useMemo(() => {
     return buildCreateHandlers({
       openCreate,
       context,
       s,
+      currentMode: s.mode,
       countsByType,
       routesByType,
       navigate,
@@ -243,8 +255,9 @@ export default function HubPage() {
 
       <HubFabMenu
         mode={s.mode}
-        context={context}
         handlers={handlers}
+        context={context}
+        taskContext={taskContext}
         permissions={s.permissions}
       />
     </Sheet>

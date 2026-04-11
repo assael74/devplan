@@ -27,7 +27,8 @@ function formatTimeRef(value) {
 export default function ClubPlayersRow({ row, onEdit }) {
   const keyLabel = row?.isKey === true
   const autoLabel = row?.isAutoEligible === true
-
+  const squadRoleLabe = row?.squadRoleMeta?.label || 'לא הוגדר'
+  
   return (
     <Box sx={{ ...sx.rowCardSx, ...(row?.isKey ? sx.rowCardKeySx : {}) }}>
       <Box sx={sx.playerCellSx}>
@@ -37,7 +38,7 @@ export default function ClubPlayersRow({ row, onEdit }) {
 
         <Box sx={sx.playerTextWrapSx}>
           <Typography level="body-md" sx={sx.playerNameSx}>
-            {row?.name || ''}
+            {row?.fullName || ''}
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
@@ -55,11 +56,7 @@ export default function ClubPlayersRow({ row, onEdit }) {
       </Box>
 
       <Box sx={sx.centerCellSx}>
-        <LevelStars value={Number(row?.levelPotential || 0)} label="פוטנציאל" />
-      </Box>
-
-      <Box sx={sx.centerCellSx}>
-        <LevelStars value={Number(row?.level || 0)} label="יכולת" />
+        <JoyStarRating value={Number(row?.level || 0)} size="sm" />
       </Box>
 
       <Box sx={sx.centerCellSx}>
@@ -71,6 +68,12 @@ export default function ClubPlayersRow({ row, onEdit }) {
       <Box sx={sx.centerCellSx}>
         <Typography level="body-sm" sx={sx.playerNameSx}>
           {formatTimeRef(row?.timeRef)}
+        </Typography>
+      </Box>
+
+      <Box sx={sx.centerCellSx}>
+        <Typography level="body-sm" sx={sx.playerNameSx}>
+          {squadRoleLabe}
         </Typography>
       </Box>
 

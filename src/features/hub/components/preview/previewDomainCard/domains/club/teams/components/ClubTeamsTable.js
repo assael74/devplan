@@ -10,7 +10,7 @@ import { tableSx as sx } from '../sx/clubTeamsTable.sx'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 
 export default function ClubTeamsTable({ rows = [], onEditTeam }) {
-  const [sortKey, setSortKey] = useState('year')
+  const [sortKey, setSortKey] = useState('teamYear')
   const [sortDir, setSortDir] = useState('desc')
 
   const handleSort = (key) => {
@@ -21,7 +21,7 @@ export default function ClubTeamsTable({ rows = [], onEditTeam }) {
 
     setSortKey(key)
 
-    if (key === 'name') {
+    if (key === 'teamName') {
       setSortDir('asc')
       return
     }
@@ -42,34 +42,19 @@ export default function ClubTeamsTable({ rows = [], onEditTeam }) {
     })
   }
 
-  const sortableHeadSx = {
-    ...sx.headTextSx,
-    cursor: 'pointer',
-    userSelect: 'none',
-  }
-
   return (
     <Sheet variant="plain" sx={sx.tableWrapSx}>
       <Box sx={sx.headRowSx}>
-        <Box sx={sortableHeadSx} onClick={() => handleSort('name')}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => handleSort('teamName')}>
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
             <Typography level="title-sm" sx={sx.headTextSx}>
               קבוצה
             </Typography>
-            {renderSortIcon('name')}
+            {renderSortIcon('teamName')}
           </Box>
         </Box>
 
-        <Box sx={sortableHeadSx} onClick={() => handleSort('year')}>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-            <Typography level="title-sm" sx={sx.headTextSx}>
-              שנתון
-            </Typography>
-            {renderSortIcon('year')}
-          </Box>
-        </Box>
-
-        <Box sx={sortableHeadSx} onClick={() => handleSort('playersCount')}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => handleSort('playersCount')}>
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
             <Typography level="title-sm" sx={sx.headTextSx}>
               שחקנים
@@ -78,21 +63,35 @@ export default function ClubTeamsTable({ rows = [], onEditTeam }) {
           </Box>
         </Box>
 
-        <Box sx={sortableHeadSx} onClick={() => handleSort('rolesCount')}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
             <Typography level="title-sm" sx={sx.headTextSx}>
-              צוות
+              ליגה
             </Typography>
-            {renderSortIcon('rolesCount')}
           </Box>
         </Box>
 
-        <Box sx={sortableHeadSx} onClick={() => handleSort('levelAvg')}>
+        <Box sx={{ display: 'flex', justifyContent: 'center'}}>
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
             <Typography level="title-sm" sx={sx.headTextSx}>
-              רמה
+              מיקום
             </Typography>
-            {renderSortIcon('levelAvg')}
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography level="title-sm" sx={sx.headTextSx}>
+              אנשי צוות
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography level="title-sm" sx={sx.headTextSx}>
+              יכולת
+            </Typography>
           </Box>
         </Box>
 

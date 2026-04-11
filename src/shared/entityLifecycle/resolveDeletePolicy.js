@@ -109,6 +109,13 @@ export function resolveDeletePolicy(entityType, meta = {}) {
         reason: null,
       }
 
+    case 'task':
+      return {
+        canDelete: true,
+        canArchive: true,
+        reason: null,
+      }
+
     default:
       return {
         canDelete: false,

@@ -23,7 +23,7 @@ export default function PreviewDomainCard({
   videoActions,
 }) {
   const [open, setOpen] = useState(false)
-  const nodeRef = useRef(null)
+  const triggerRef = useRef(null)
 
   const entityKind = getEntityKind(entity)
   const def = getDomainDef(entityKind, d.key)
@@ -45,6 +45,7 @@ export default function PreviewDomainCard({
           <Box sx={sx.cardVisualColSx}>
             <Tooltip title={isLocked ? 'נעול' : `פתח ${d.label}`} placement="top" variant="solid">
               <Box
+                ref={triggerRef}
                 {...sx.boxWraperSx(isLocked)}
                 tabIndex={isLocked ? -1 : 0}
                 onClick={() => {
@@ -57,7 +58,7 @@ export default function PreviewDomainCard({
                     setOpen(true)
                   }
                 }}
-                >
+               >
                 {def?.visualType === 'icon' ? (
                   <Box {...sx.boxVisualSx(isLocked)}>
                     {iconUi({
@@ -92,16 +93,17 @@ export default function PreviewDomainCard({
 
      <PreviewDomainCardOverlay
        d={d}
-       entity={entity}
        open={open}
+       entity={entity}
        setOpen={setOpen}
-       onClose={() => setOpen(false)}
-       playerPhoto={playerPhoto}
-       fullName={fullName}
-       birthYearText={birthYearText}
-       onSaveInfo={onSaveInfo}
        context={context}
+       fullName={fullName}
+       onSaveInfo={onSaveInfo}
+       playerPhoto={playerPhoto}
        videoActions={videoActions}
+       restoreFocusRef={triggerRef}
+       birthYearText={birthYearText}
+       onClose={() => setOpen(false)}
      />
 
     </>

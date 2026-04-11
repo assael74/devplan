@@ -1,40 +1,33 @@
 // features/videoHub/VideoHubFabMenu.js
+
 import React, { useMemo } from 'react'
+
 import GenericFabMenu from '../../ui/actions/GenericFabMenu'
-import { iconUi } from '../../ui/core/icons/iconUi.js'
+import { buildFabActions } from '../../ui/actions/fabActions.factory.js'
 import { VIDEO_TAB } from './logic/videoHub.model'
 
-export default function VideoHubFabMenu({ tab, onCreateAnalysis, onCreateGeneral }) {
+export default function VideoHubFabMenu({
+  tab,
+  onCreateAnalysis,
+  onCreateGeneral,
+  onAddTask,
+  taskContext,
+}) {
   const actions = useMemo(() => {
+    return buildFabActions({
+      area: 'video',
+      mode: tab,
+      taskContext,
+      permissions: { allowCreate: true },
+      handlers: {
+        onAddVideoAnalysis: onCreateAnalysis,
+        onCreateVideoGeneral: onCreateGeneral,
+        onAddTask,
+      },
+    })
+  }, [tab, onCreateAnalysis, onCreateGeneral, onAddTask, taskContext])
 
-    if (tab === VIDEO_TAB.ANALYSIS) {
-      return typeof onCreateAnalysis === 'function'
-        ? [
-            {
-              id: 'create-video-analysis',
-              label: 'ניתוח וידאו חדש',
-              icon: iconUi({ id: 'videoAnalysis' }),
-              onClick: onCreateAnalysis,
-              color: 'videoAnalysis',
-            },
-          ]
-        : []
-    }
-
-    return typeof onCreateGeneral === 'function'
-      ? [
-          {
-            id: 'create-video-general',
-            label: 'וידאו כללי חדש',
-            icon: iconUi({ id: 'videoGeneral' }),
-            onClick: onCreateGeneral,
-            color: 'videoGeneral',
-          },
-        ]
-      : []
-  }, [tab, onCreateAnalysis, onCreateGeneral])
-
-  if (!actions.length) return null
+  if (!actions?.length) return null
 
   const entityType = tab === VIDEO_TAB.ANALYSIS ? 'videoAnalysis' : 'videoGeneral'
 

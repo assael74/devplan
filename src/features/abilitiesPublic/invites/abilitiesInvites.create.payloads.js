@@ -63,7 +63,6 @@ function pickClubSnapshot(player = {}) {
 export function buildCreateAbilitiesInvitePayload({
   player,
   evaluator,
-  defaults = {},
   meta = {},
 }) {
   const now = new Date().toISOString()
@@ -79,8 +78,8 @@ export function buildCreateAbilitiesInvitePayload({
     team: pickTeamSnapshot(player),
     club: pickClubSnapshot(player),
 
-    createdById: clean(meta?.createdById || evaluator?.id),
-    createdByName: clean(meta?.createdByName || evaluator?.name || evaluator?.fullName),
+    createdById: clean(meta?.createdById),
+    createdByName: clean(meta?.createdByName),
 
     status: 'sent',
     source: 'playerAbilitiesModule',

@@ -1,11 +1,9 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
 import { buildGameInfoItem, buildGameTimeItem, buildGameResultItem } from '../helpers/gameForm.helpers.js'
-import {
-  buildPlayerInfoItem,
-  buildPlayerNamesItem,
-  buildPlayerTeamItem,
-} from '../helpers/playerForm.helpers.js'
+import { buildPlayerInfoItem, buildPlayerNamesItem, buildPlayerTeamItem } from '../helpers/playerForm.helpers.js'
+import { buildTaskCreateItem } from '../helpers/tasksForm.helpers.js'
+import { buildMeetingStartAtMs } from '../helpers/meetingForm.helpers.js'
 import { createShort } from '../../../services/firestore/shorts/shortsCreate'
 import { makeId } from '../../../utils/id.js'
 
@@ -13,6 +11,8 @@ const pickIfaLink = (draft) => {
   const v = String(draft?.ifaLink || '').trim()
   return v ? v : null
 }
+
+const clean = (value) => String(value ?? '').trim()
 
 const omitEmpty = (obj = {}) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
@@ -199,37 +199,33 @@ export const createActions = {
     const now = Date.now()
 
     const initialStatus = { id: 'new', time: now }
+    const startAtMs = buildMeetingStartAtMs(draft.meetingDate, draft.meetingHour)
 
-    const meetingDateItem = {
+    const meetingInfoItem = {
       id,
-      meetingDate: draft.meetingDate,
-      meetingFor: draft.meetingFor,
-      meetingHour: draft.meetingHour,
-    }
-
-    const meetingPlayerItem = {
-      id,
-      playerId: draft.playerId,
+      meetingDate: clean(draft.meetingDate),
+      meetingFor: clean(draft.meetingFor),
+      meetingHour: clean(draft.meetingHour),
+      startAtMs,
+      playerId: clean(draft.type) === 'personal' ? clean(draft.playerId) : '',
+      teamId: clean(draft.type) === 'team' ? clean(draft.teamId) : '',
+      playersId: Array.isArray(draft?.playersId) ? draft.playersId.filter(Boolean) : [],
+      createdById: clean(draft.createdById),
+      createdByName: clean(draft.createdByName),
       status: {
         current: initialStatus,
         history: [initialStatus],
       },
-      type: draft.type,
+      type: clean(draft.type),
     }
 
     await createShort({
-      shortKey: 'meetings.meetingDate',
-      item: meetingDateItem,
-    })
-
-    await createShort({
-      shortKey: 'meetings.meetingPlayer',
-      item: meetingPlayerItem,
+      shortKey: 'meetings.meetingInfo',
+      item: meetingInfoItem,
     })
 
     return {
-      ...meetingDateItem,
-      ...meetingPlayerItem,
+      ...meetingInfoItem,
     }
   },
 
@@ -474,4 +470,22 @@ export const createActions = {
       ok: true,
     }
   },
+
+  task: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+
+    const item = buildTaskCreateItem({
+      id,
+      draft,
+      now,
+    })
+
+    await createShort({
+      shortKey: 'tasks.tasksInfo',
+      item,
+    })
+
+    return item
+  }
 }

@@ -1,4 +1,4 @@
-// previewDomainCard/domains/team/players/components/newForm/NewFormDrawerHeader.js
+// previewDomainCard/domains/club/teams/components/newForm/NewFormDrawerHeader.js
 
 import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
 import React from 'react'
@@ -9,10 +9,10 @@ import { buildFallbackAvatar } from '../../../../../../../../../../ui/core/avata
 
 import { drawerNewFormSx as sx } from '../../sx/newFormDrawer.sx.js'
 
-const c = getEntityColors('players')
+const c = getEntityColors('teams')
 
-export default function NewFormDrawerHeader({ draft, team }) {
-  const src = team?.photo || buildFallbackAvatar({ entityType: 'team', id: team?.id, name: team?.teamName })
+export default function NewFormDrawerHeader({ draft, club }) {
+  const src = club?.photo || buildFallbackAvatar({ entityType: 'club', id: club?.id, name: club?.clubName })
   return (
     <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, mb: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -20,11 +20,11 @@ export default function NewFormDrawerHeader({ draft, team }) {
 
         <Box sx={{ ml: 2 }}>
           <Typography level="title-md" sx={sx.formNameSx}>
-            {team?.teamName}
+            {club?.clubName}
           </Typography>
 
-          <Typography level="body-xs" sx={sx.formNameSx} startDecorator={iconUi({id: 'addPlayer'})}>
-            יצירת שחקן חדש
+          <Typography level="body-xs" sx={sx.formNameSx} startDecorator={iconUi({id: 'addTeam'})}>
+            יצירת קבוצה חדשה
           </Typography>
         </Box>
       </Box>

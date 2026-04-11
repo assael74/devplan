@@ -2,7 +2,7 @@
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('players')
+const c = getEntityColors('teams')
 
 export const drawerNewFormSx = {
   formNameSx: {

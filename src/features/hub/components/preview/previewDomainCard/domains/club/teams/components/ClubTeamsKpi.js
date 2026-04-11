@@ -13,18 +13,12 @@ function KpiCard({ label, value, icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
-        <Typography sx={sx.kpiLabelSx}>{label}</Typography>
+        <Typography sx={{ color: 'text.secondary', fontSize: 12, lineHeight: 1.15 }}>{label}</Typography>
         {icon}
       </Box>
       <Typography sx={sx.kpiValueSx}>{value ?? 0}</Typography>
     </Sheet>
   )
-}
-
-function formatLevel(value) {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return '—'
-  return Number.isInteger(n) ? String(n) : n.toFixed(1)
 }
 
 export default function ClubTeamsKpi({ entity, summary }) {
@@ -46,8 +40,8 @@ export default function ClubTeamsKpi({ entity, summary }) {
               <Avatar src={src} />
             </Box>
 
-            <Box sx={sx.heroTextWrapSx}>
-              <Typography level="title-md" sx={sx.heroTitleSx}>
+            <Box sx={{ minWidth: 0, display: 'grid', gap: 0.1 }}>
+              <Typography level="title-md" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                 {entity?.clubName || entity?.name || 'מועדון'}
               </Typography>
             </Box>
@@ -61,26 +55,26 @@ export default function ClubTeamsKpi({ entity, summary }) {
         <Box sx={sx.kpiGridSx}>
           <KpiCard
             label="סה״כ קבוצות"
-            value={summary?.totalTeams}
+            value={summary?.activeTeamsTotal}
             icon={iconUi({ id: 'team', size: 'sm', sx: { color: c.accent } })}
           />
 
           <KpiCard
-            label="קבוצות פעילות"
-            value={summary?.activeTeams}
-            icon={iconUi({ id: 'check', size: 'sm', sx: { color: c.accent } })}
-          />
-
-          <KpiCard
             label="סה״כ שחקנים"
-            value={summary?.totalPlayers}
+            value={`${summary?.playersTotal}`}
             icon={iconUi({ id: 'players', size: 'sm', sx: { color: c.accent } })}
           />
 
           <KpiCard
-            label="רמה ממוצעת"
-            value={formatLevel(summary?.avgLevel)}
-            icon={iconUi({ id: 'stats', size: 'sm', sx: { color: c.accent } })}
+            label="שחקני מפתח"
+            value={summary?.keyPlayersTotal}
+            icon={iconUi({ id: 'keyPlayer', size: 'sm', sx: { color: c.accent } })}
+          />
+
+          <KpiCard
+            label="שחקני פרויקט"
+            value={summary?.projectPlayersTotal}
+            icon={iconUi({ id: 'project', size: 'sm', sx: { color: c.accent } })}
           />
         </Box>
 

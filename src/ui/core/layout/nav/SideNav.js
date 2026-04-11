@@ -52,7 +52,10 @@ export default function SideNav({ onNavigate, badges, collapsed = false }) {
     () => [
       {
         title: 'שליטה',
-        items: [{ label: 'מרכז שליטה', path: '/hub', iconId: 'dashboard' }],
+        items: [
+          { label: 'שולחן עבודה אישי', path: '/home', iconId: 'workspace' },
+          { label: 'מרכז שליטה', path: '/hub', iconId: 'dashboard' },
+        ],
       },
       {
         title: 'ניהול',

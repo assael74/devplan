@@ -1,3 +1,7 @@
+// C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.constants.js
+
+// קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.constants.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
 
 export const WINDOW_DAYS = 56 // 8 weeks
 export const ABILITY_SCORE_MIN = 1

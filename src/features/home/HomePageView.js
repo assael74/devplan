@@ -1,108 +1,125 @@
-import React, { useMemo } from 'react'
-import { Box, Typography } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
-import StatusSnapshot from './components/StatusSnapshot'
-import EntitySection from './components/EntitySection'
-import QuickActions from './components/QuickActions'
-import { HOME_SECTIONS } from './home.models'
-import { HOME_ROUTES } from './home.routes'
-import { buildHomeSnapshot, buildEntityItems } from './home.selectors'
-import { buildHomeTopCards, buildScoutingPreview } from './adapters'
+// src/features/home/HomePageView.js
+
+import React, { useMemo, useState } from 'react'
+import { Box } from '@mui/joy'
+
 import { iconUi } from '../../ui/core/icons/iconUi.js'
+import { homeSx as sx } from './sx/home.sx.js'
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false)
-  React.useEffect(() => {
-    const mq = window.matchMedia('(max-width: 700px)')
-    const apply = () => setIsMobile(!!mq.matches)
-    apply()
-    mq.addEventListener?.('change', apply)
-    return () => mq.removeEventListener?.('change', apply)
-  }, [])
-  return isMobile
-}
+import { useCoreData } from '../coreData/CoreDataProvider.js'
+import usePersonalTasks from './hooks/usePersonalTasks.js'
 
-export default function HomePageView({ data, onAddPlayer, onAddVideo, onAddNote }) {
-  const isMobile = useIsMobile()
-  const navigate = useNavigate()
-  //console.log(data)
-  // Snapshot מגיע עם iconId → ממירים ל-react node כדי לא לשבור StatusSnapshot
-  const snapshot = useMemo(() => {
-    const raw = buildHomeTopCards(data)
+import { buildWorkspaceBuckets } from './logic/home.workspace.js'
 
-    const iconIdByKey = {
-      clubs: 'teams',
-      teams: 'teams',
-      players: 'players',
-      projectPlayers: 'project',
-      scouting: 'scouting',
-    }
+import HomeStateCard from './components/HomeStateCard.js'
+import HomeWorkspaceHeader from './components/HomeWorkspaceHeader.js'
+import TasksSectionCard from './components/TasksSectionCard.js'
+import EditDrawer from './components/editDrawer/EditDrawer.js'
+import NewFormDrawer from './components/newFormDrawer/NewFormDrawer.js'
 
-    return raw.map((it) => {
-      const iconId = iconIdByKey[it.key]
-      const node = iconId ? iconUi({ id: iconId, size: 'md' }) : null
-      return { ...it, icon: node || it.icon }
-    })
-  }, [data])
+import { getEntityColors } from '../../ui/core/theme/Colors.js'
+import { buildTaskContextFromSectionId } from './components/newFormDrawer/logic/newFormDrawer.utils.js'
 
-  const entityItems = useMemo(() => {
-    return {
-      players: buildEntityItems('players', data, 5),
-      scouting: buildScoutingPreview({ scouting: data.scouting }, 5),
-      teams: buildEntityItems('teams', data, 5),
-      videos: buildEntityItems('videos', data, 5),
-      notes: buildEntityItems('notes', data, 5),
-    }
-  }, [data])
+const c = (entity) => getEntityColors(entity)
 
-  const todayLabel = useMemo(() => {
-    const d = new Date()
-    return d.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
-  }, [])
+export default function HomePageView() {
+  const [editTask, setEditTask] = useState(null)
+  const [createTaskContext, setCreateTaskContext] = useState(null)
 
-  const openAllRoute = (entityKey) => {
-    if (entityKey === 'players') return HOME_ROUTES.PLAYERS
-    if (entityKey === 'videos') return HOME_ROUTES.VIDEOS
-    if (entityKey === 'teams') return HOME_ROUTES.TEAMS
-    if (entityKey === 'notes') return HOME_ROUTES.NOTES
-    return '/'
+  const {
+    tasks,
+    loading: tasksLoading,
+    error: tasksError,
+  } = usePersonalTasks()
+
+  const {
+    loading: coreLoading,
+  } = useCoreData()
+
+  const buckets = useMemo(() => buildWorkspaceBuckets(tasks), [tasks])
+
+  if (tasksLoading) {
+    return (
+      <Box sx={sx.loadBox}>
+        <HomeStateCard loading title="טוען סביבת עבודה אישית..." />
+      </Box>
+    )
+  }
+
+  if (tasksError) {
+    return (
+      <Box sx={sx.loadBox}>
+        <HomeStateCard
+          color="danger"
+          title="שגיאה בטעינת משימות"
+          description="לא ניתן היה לטעון את tasksShorts"
+        />
+      </Box>
+    )
+  }
+
+  const handleOpenCreateTask = (sectionId) => {
+    setCreateTaskContext(buildTaskContextFromSectionId(sectionId))
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-        <Typography level="h2">תמונת מצב</Typography>
-        <Typography level="body-sm" sx={{ opacity: 0.75 }}>
-          {todayLabel}
-        </Typography>
+    <>
+      <Box sx={sx.loadBox}>
+        <HomeWorkspaceHeader coreLoading={coreLoading} />
+
+        <Box sx={sx.taskSections}>
+          <Box sx={sx.innerBox}>
+            <TasksSectionCard
+              id="taskAnalyst"
+              title="אזור משימות אנליסט"
+              icon={iconUi({ id: 'Analyst', size: 'lg', sx: { color: c('taskAnalyst').accent } })}
+              subtitle="משימות עבודה שוטפות מול מועדון, שחקנים, פגישות ואנליזה"
+              items={buckets.analyst}
+              onEditTask={setEditTask}
+              onCreateTask={handleOpenCreateTask}
+            />
+          </Box>
+
+          <Box sx={sx.innerBox}>
+            <TasksSectionCard
+              id="taskApp"
+              title="אזור משימות מפתח"
+              icon={iconUi({ id: 'app', size: 'lg', sx: { color: c('taskApp').accent } })}
+              subtitle="משימות פיתוח, UX, דאטה, ארכיטקטורה ושיפורי מערכת"
+              items={buckets.app}
+              onEditTask={setEditTask}
+              onCreateTask={handleOpenCreateTask}
+            />
+          </Box>
+        </Box>
+
+        {buckets.other.length ? (
+          <Box sx={{ flex: '0 0 auto' }}>
+            <TasksSectionCard
+              id="taskOther"
+              title="משימות נוספות"
+              subtitle="משימות שלא שויכו עדיין לאחד מאזורי העבודה הקבועים"
+              items={buckets.other}
+              onEditTask={setEditTask}
+              onCreateTask={handleOpenCreateTask}
+            />
+          </Box>
+        ) : null}
       </Box>
 
-      {/* Status Snapshot */}
-      <StatusSnapshot items={snapshot} isMobile={isMobile} />
+      <EditDrawer
+        open={!!editTask}
+        task={editTask}
+        onClose={() => setEditTask(null)}
+        onSaved={() => setEditTask(null)}
+      />
 
-      {/* Entity lanes */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gap: 1.2,
-        }}
-      >
-        {HOME_SECTIONS.map((s) => (
-          <EntitySection
-            key={s.key}
-            title={s.title}
-            icon={iconUi({ id: s.iconId, size: 'md' })}
-            items={entityItems[s.key] || []}
-            emptyText="אין עדיין נתונים להצגה"
-            onOpenAll={() => navigate(openAllRoute(s.key))}
-          />
-        ))}
-      </Box>
-
-      {/* Quiet actions */}
-      <QuickActions onAddPlayer={onAddPlayer} onAddVideo={onAddVideo} onAddNote={onAddNote} />
-    </Box>
+      <NewFormDrawer
+        open={!!createTaskContext}
+        taskContext={createTaskContext}
+        onClose={() => setCreateTaskContext(null)}
+        onCreated={() => setCreateTaskContext(null)}
+      />
+    </>
   )
 }

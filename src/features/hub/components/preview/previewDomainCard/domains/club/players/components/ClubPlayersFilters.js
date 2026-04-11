@@ -75,18 +75,6 @@ export default function ClubPlayersFilters({
             {iconUi({ id: 'reset' })}
           </IconButton>
         </Tooltip>
-
-        <Tooltip title="יצירת שחקן חדש">
-          <span>
-            <IconButton
-              size="sm"
-              onClick={openCreatePlayer}
-              sx={sx.icoAddSx}
-            >
-              {iconUi({ id: 'addPlayer', size: 'sm' })}
-            </IconButton>
-          </span>
-        </Tooltip>
       </Box>
     </Sheet>
   )

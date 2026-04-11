@@ -9,8 +9,7 @@ import ClubTeamsTable from './components/ClubTeamsTable'
 import EditDrawer from './components/drawer/EditDrawer.js'
 import NewFormDrawer from './components/newForm/NewFormDrawer.js'
 
-import { resolveClubTeamsDomain } from './logic/clubTeams.domain.logic.js'
-import { modalRootSx } from './sx/clubTeamsModal.sx'
+import { buildClubTeamRows } from './logic/clubTeams.domain.logic.js'
 
 export default function ClubTeamsDomainModal({ entity, context }) {
   const liveClub = useMemo(() => {
@@ -26,13 +25,13 @@ export default function ClubTeamsDomainModal({ entity, context }) {
   const [openCreateTeam, setOpenCreateTeam] = useState(false)
 
   const { summary, rows, options } = useMemo(() => {
-    return resolveClubTeamsDomain(entity, {
+    return buildClubTeamRows(liveClub, {
       q,
       year,
       active,
       project,
     })
-  }, [entity, q, year, active, project])
+  }, [liveClub, q, year, active, project])
 
   if (!entity) return null
 
@@ -49,7 +48,7 @@ export default function ClubTeamsDomainModal({ entity, context }) {
   }
 
   return (
-    <Box sx={modalRootSx}>
+    <Box sx={{ minWidth: 0, display: 'grid', gap: 1.25 }}>
       <Box
         sx={{
           position: 'sticky',

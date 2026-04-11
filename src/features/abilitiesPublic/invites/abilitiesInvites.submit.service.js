@@ -10,6 +10,7 @@ function buildPublicAbilitiesDraft(payload = {}) {
     playerId: clean(payload?.playerId),
     evalDate: clean(payload?.evalDate),
     abilities: { ...(payload?.abilities || {}) },
+    teamYear: clean(payload?.teamYear),
 
     source: 'public_invite',
 
@@ -23,6 +24,7 @@ function buildPublicAbilitiesDraft(payload = {}) {
 
       teamId: clean(payload?.teamId),
       teamName: clean(payload?.teamName),
+      teamYear: clean(payload?.teamYear),
 
       clubId: clean(payload?.clubId),
       clubName: clean(payload?.clubName),

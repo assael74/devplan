@@ -1,13 +1,13 @@
-// previewDomainCard/domains/team/players/components/newForm/NewFormDrawer.js
+// previewDomainCard/domains/club/teams/components/newForm/NewFormDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, ModalClose, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import usePlayerHubCreate from '../../../../../../../../hooks/players/usePlayerHubCreate.js'
+import useTeamHubCreate from '../../../../../../../../hooks/teams/useTeamHubCreate.js'
 
 import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import PlayerCreateForm from '../../../../../../../../../../ui/forms/PlayerCreateForm.js'
+import TeamCreateForm from '../../../../../../../../../../ui/forms/TeamCreateForm.js'
 
 import {
   buildInitialDraft,
@@ -30,18 +30,18 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
   }, [open])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const { saving, runCreatePlayer } = usePlayerHubCreate()
+  const { saving, runCreateTeam } = useTeamHubCreate()
   const canSave = isDirty && isValid && !saving
 
   const handleSave = async () => {
     if (!canSave || saving) return
 
     try {
-      const res = await runCreatePlayer({ draft, context })
+      const res = await runCreateTeam({ draft, context })
       onClose()
       onSaved(res || draft)
     } catch (error) {
-      console.error('create player failed:', error)
+      console.error('create team failed:', error)
     }
   }
 
@@ -68,16 +68,17 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
     >
       <Sheet sx={sx.drawerSheetSx}>
         <Box sx={sx.drawerRootSx}>
-          <NewFormDrawerHeader draft={draft} team={context.team} />
+          <NewFormDrawerHeader draft={draft} club={context.club} />
           <ModalClose sx={{ mt: 2, mr: 2 }} />
 
           <Box sx={{ position: 'sticky', zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-            <PlayerCreateForm
+            <TeamCreateForm
               draft={draft}
               onDraft={setDraft}
               onValidChange={setIsValid}
               context={context}
               variant="drawer"
+              clubDisabled={true}
             />
           </Box>
 

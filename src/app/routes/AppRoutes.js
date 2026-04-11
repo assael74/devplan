@@ -1,14 +1,15 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Box, Typography, CircularProgress } from '@mui/joy'
 
 import { useAuth } from '../AuthProvider'
+import { useNotificationsContext } from '../NotificationsProvider'
+
 import AppLayout from '../layout/AppLayout'
 import TopBar from '../../ui/core/layout/TopBar'
 
-// Hub
 import HubPage from '../../features/hub/ui/HubPage'
-
+import HomePageView from '../../features/home/HomePageView'
 import PlayerProfilePage from '../../features/hub/playerProfile/PlayerProfilePage'
 import TeamProfilePage from '../../features/hub/teamProfile/TeamProfilePage'
 import ClubProfilePage from '../../features/hub/clubProfile/ClubProfilePage'
@@ -21,6 +22,74 @@ import AbilitiesExplainerPage from '../../features/abilities/explainer/Abilities
 
 import LoginPage from '../../features/auth/pages/LoginPage'
 import ForgotPasswordPage from '../../features/auth/pages/ForgotPasswordPage'
+
+import NotificationsBell from '../../features/notifications/components/NotificationsBell'
+import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
+
+function TopBarNotificationsHost() {
+  const navigate = useNavigate()
+
+  const {
+    open,
+    toggleNotifications,
+    closeNotifications,
+    notifications,
+    unreadCount,
+    loading,
+    pendingIds,
+    markAsRead,
+    markAllAsRead,
+    getNotificationTarget,
+    deleteNotification,
+  } = useNotificationsContext()
+
+  const handleMarkAsRead = async (item) => {
+    if (!item?.id || item?.isRead) return
+    await markAsRead(item.id)
+  }
+
+  const handleOpenTarget = async (item) => {
+    if (!item) return
+
+    if (!item?.isRead) {
+      await markAsRead(item.id)
+    }
+
+    const target = getNotificationTarget?.(item)
+
+    if (target?.path) {
+      navigate(target.path, { replace: Boolean(target?.replace) })
+      closeNotifications()
+    }
+  }
+
+  const handleDeleteNotification = async (item) => {
+    if (!item?.id || !deleteNotification) return
+    await deleteNotification(item.id)
+  }
+
+  return (
+    <>
+      <NotificationsBell
+        unreadCount={unreadCount}
+        onClick={toggleNotifications}
+      />
+
+      <NotificationsDrawer
+        open={open}
+        onClose={closeNotifications}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        loading={loading}
+        pendingIds={pendingIds}
+        onMarkAsRead={handleMarkAsRead}
+        onOpenTarget={handleOpenTarget}
+        onDelete={handleDeleteNotification}
+        onMarkAllAsRead={markAllAsRead}
+      />
+    </>
+  )
+}
 
 export default function AppRoutes() {
   const { user, loading } = useAuth()
@@ -40,7 +109,6 @@ export default function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/forms/abilities/:token" element={<AbilitiesPublicRouteEntry />} />
 
       {!user ? (
@@ -66,16 +134,22 @@ export default function AppRoutes() {
         <Route
           element={
             <AppLayout
-              topbar={<TopBar title="DevPlan" />}
+              topbar={
+                <TopBar
+                  title="DevPlan"
+                  right={<TopBarNotificationsHost />}
+                />
+              }
               navBadges={{ players: 108, teams: 7, clubs: 3 }}
             />
           }
         >
-          <Route path="/login" element={<Navigate to="/hub" replace />} />
-          <Route path="/forgot-password" element={<Navigate to="/hub" replace />} />
+          <Route path="/login" element={<Navigate to="/home" replace />} />
+          <Route path="/forgot-password" element={<Navigate to="/home" replace />} />
 
-          <Route path="/" element={<Navigate to="/hub" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
 
+          <Route path="/home" element={<HomePageView />} />
           <Route path="/hub" element={<HubPage />} />
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />

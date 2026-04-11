@@ -1,31 +1,45 @@
 // src/features/players/components/preview/PreviewDomainCard/PreviewDomainCardOverlay.js
 
 import React, { useMemo } from 'react'
-import { Box, Drawer, DialogContent, ModalClose, Divider, Sheet } from '@mui/joy'
+import { Box, Drawer, DialogContent, ModalClose, Divider, Sheet, IconButton } from '@mui/joy'
 
 import PreviewDomainCardHeader from './PreviewDomainCardHeader'
+import { iconUi } from '../../../../../ui/core/icons/iconUi'
 import { getDomainDef } from './domainRegistry'
 import { getEntityKind } from './utils/getEntityKind'
 import { overlaySx as sx } from './sx/previewDomainCardOverlay.sx.js'
 
 export default function PreviewDomainCardOverlay({
   d,
-  entity,
   open,
+  entity,
   onClose,
   setOpen,
-  playerPhoto,
-  fullName,
   context,
+  fullName,
+  onSaveInfo,
+  playerPhoto,
   videoActions,
   birthYearText,
-  onSaveInfo,
+  restoreFocusRef
 }) {
+
   const def = useMemo(() => {
     if (!d?.key) return null
     const entityKind = getEntityKind(entity)
     return getDomainDef(entityKind, d.key)
   }, [d?.key, entity])
+
+  const handleClose = (...args) => {
+    const active = document.activeElement
+    if (active instanceof HTMLElement) {
+      active.blur()
+    }
+
+    restoreFocusRef?.current?.focus?.()
+    onClose?.(...args)
+    setOpen(false)
+  }
 
   const domainImg = def?.image || null
   const DomainModal = def?.Modal
@@ -50,7 +64,7 @@ export default function PreviewDomainCardOverlay({
       variant="plain"
       anchor="bottom"
       open={open}
-      onClose={() => setOpen(false)}
+      onClose={handleClose}
       slotProps={{
         content: {
           sx: sx.drawerSlot,
@@ -59,7 +73,6 @@ export default function PreviewDomainCardOverlay({
     >
       <Sheet sx={sx.dialogSheetSx}>
         <ModalClose />
-
         <PreviewDomainCardHeader
           label={d?.label}
           playerPhoto={playerPhoto}
@@ -68,17 +81,15 @@ export default function PreviewDomainCardOverlay({
           domainImg={domainImg}
         />
 
-        <Divider sx={{ mt: 'auto' }} />
+      <Divider sx={{ mt: 'auto' }} />
 
-        <DialogContent sx={{ gap: 2, minWidth: 0, width: '100%' }}>
-          <Box sx={sx.bodyScrollSx} className="dpScrollThin">
-            <Box sx={{ width: '100%', minWidth: 0 }}>
-              {content}
-            </Box>
+      <DialogContent sx={{ gap: 2, minWidth: 0, width: '100%' }}>
+        <Box sx={sx.bodyScrollSx} className="dpScrollThin">
+          <Box sx={{ width: '100%', minWidth: 0 }}>
+            {content}
           </Box>
-        </DialogContent>
-
-        <Box sx={{ height: 5 }} />
+        </Box>
+      </DialogContent>
       </Sheet>
     </Drawer>
   )

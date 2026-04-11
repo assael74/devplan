@@ -1,9 +1,28 @@
 // preview/previewDomainCard/domains/club/teams/components/ClubTeamsFilters.js
 
 import React from 'react'
-import { Box, Divider, IconButton, Input, Option, Select, Sheet, Tooltip } from '@mui/joy'
+import { Box, Divider, IconButton, Input, Option, Select, Sheet, Tooltip, ListItemDecorator, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import { filtterSx as sx } from '../sx/clubTeamsFilters.sx'
+import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('status')
+
+function SelectValue({ option, id = 'active' }) {
+  const label = option?.label || ''
+  const colorAct = option.value === 'active' ? c.success.solid : option.value === 'notActive' ? c.danger.solid : ''
+  const colorPro = option.value === 'project' ? c.success.solid : option.value === 'isNotProject' ? c.danger.solid : ''
+  const color = id === 'active' ? colorAct : colorPro
+
+  return (
+    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+      {iconUi({id: option.value, sx: { color: color } })}
+      <Typography level="body-sm" noWrap>
+        {label}
+      </Typography>
+    </Box>
+  )
+}
 
 export default function ClubTeamsFilters({
   q,
@@ -17,17 +36,14 @@ export default function ClubTeamsFilters({
   onChangeProject,
   onCreateTeam,
 }) {
-  const yearOptions = Array.isArray(options?.yearOptions) ? options.yearOptions : []
 
   const isDirty =
     (q || '').trim() !== '' ||
-    year !== 'all' ||
     active !== 'all' ||
     project !== 'all'
 
   const handleReset = () => {
     onChangeQ('')
-    onChangeYear('all')
     onChangeActive('all')
     onChangeProject('all')
   }
@@ -41,43 +57,53 @@ export default function ClubTeamsFilters({
           onChange={(e) => onChangeQ(e.target.value)}
           placeholder="חיפוש קבוצה או שנתון..."
           startDecorator={iconUi({ id: 'search', size: 'sm' })}
-          sx={sx.searchBoxSx}
+          sx={{ minWidth: 0, width: '100%' }}
         />
-
-        <Select
-          size="sm"
-          value={year}
-          onChange={(e, v) => onChangeYear(v ?? 'all')}
-          sx={sx.selectSx}
-        >
-          <Option value="all">כל השנתונים</Option>
-          {yearOptions.map((y) => (
-            <Option key={String(y)} value={String(y)}>
-              שנתון {y}
-            </Option>
-          ))}
-        </Select>
 
         <Select
           size="sm"
           value={active}
           onChange={(e, v) => onChangeActive(v ?? 'all')}
-          sx={sx.selectSx}
+          sx={{ minWidth: 0, width: '100%' }}
+          renderValue={(selected) => (
+            <SelectValue option={selected} id="active" />
+          )}
         >
-          <Option value="all">כל הסטטוסים</Option>
-          <Option value="true">פעילה</Option>
-          <Option value="false">לא פעילה</Option>
+          <Option value="all" id='active'>
+            <ListItemDecorator>{iconUi({id: 'active'})} </ListItemDecorator>
+            כל הסטטוסים
+          </Option>
+          <Option value="active" id='active'>
+           <ListItemDecorator>{iconUi({id: 'active', sx: { color: c.success.solid }})}</ListItemDecorator>
+            פעילה
+          </Option>
+          <Option value="notActive" id='active'>
+            <ListItemDecorator>{iconUi({id: 'notActive', sx: { color: c.danger.solid }})}</ListItemDecorator>
+            לא פעילה
+          </Option>
         </Select>
 
         <Select
           size="sm"
           value={project}
           onChange={(e, v) => onChangeProject(v ?? 'all')}
-          sx={sx.selectSx}
+          sx={{ minWidth: 0, width: '100%' }}
+          renderValue={(selected) => (
+            <SelectValue option={selected} id="project" />
+          )}
         >
-          <Option value="all">כל הקבוצות</Option>
-          <Option value="true">קבוצות פרויקט</Option>
-          <Option value="false">לא פרויקט</Option>
+          <Option value="all" id='project'>
+            <ListItemDecorator>{iconUi({id: 'project'})}</ListItemDecorator>
+            כל הקבוצות
+          </Option>
+          <Option value="project" id='project'>
+           <ListItemDecorator>{iconUi({id: 'project', sx: { color: c.success.solid }})}</ListItemDecorator>
+            קבוצות פרויקט
+          </Option>
+          <Option value="isNotProject" id='project'>
+            <ListItemDecorator>{iconUi({id: 'isNotProject', sx: { color: c.danger.solid }})}</ListItemDecorator>
+            לא פרויקט
+          </Option>
         </Select>
 
         <Tooltip title="איפוס פילטרים">
@@ -85,7 +111,7 @@ export default function ClubTeamsFilters({
             <IconButton
               disabled={!isDirty}
               size="sm"
-              variant="soft"
+              variant="outlined"
               sx={sx.icoResSx}
               onClick={handleReset}
             >
@@ -96,7 +122,7 @@ export default function ClubTeamsFilters({
 
         <Tooltip title="יצירת קבוצה חדשה">
           <span>
-            <IconButton size="sm" onClick={onCreateTeam} sx={sx.icoAddSx}>
+            <IconButton size="sm" variant="outlined" onClick={onCreateTeam} sx={sx.icoAddSx}>
               {iconUi({ id: 'addTeam', size: 'sm' })}
             </IconButton>
           </span>

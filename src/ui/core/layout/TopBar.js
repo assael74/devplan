@@ -1,4 +1,5 @@
-// src/ui/TopBar.js
+// src/ui/core/layout/TopBar.js
+
 import React from 'react'
 import { Box, IconButton, Typography } from '@mui/joy'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -43,7 +44,11 @@ export default function TopBar({ title = 'DevPlan', right, onMenuClick }) {
         {title}
       </Typography>
 
-      {right ? <Box sx={{ flexShrink: 0 }}>{right}</Box> : null}
+      {right ? (
+        <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+          {right}
+        </Box>
+      ) : null}
     </Box>
   )
 }

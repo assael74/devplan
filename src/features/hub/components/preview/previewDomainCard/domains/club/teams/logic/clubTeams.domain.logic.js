@@ -1,136 +1,197 @@
 // preview/PreviewDomainCard/domains/club/teams/clubTeams.domain.logic.js
-import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 
-const safe = (v) => (v == null ? '' : String(v))
-const asArr = (v) => (Array.isArray(v) ? v : [])
-const hasText = (v) => safe(v).trim().length > 0
-const norm = (s) => safe(s).trim().toLowerCase()
+const s = (v) => (v == null ? '' : String(v))
+const norm = (v) => s(v).trim()
+const normLow = (v) => norm(v).toLowerCase()
+const toArray = (v) => (Array.isArray(v) ? v : [])
 
-const boolOrAll = (v) =>
-  v === 'all'
-    ? 'all'
-    : v === true || v === 'true'
-    ? true
-    : v === false || v === 'false'
-    ? false
-    : 'all'
-
-const pickTeamName = (t) => t?.teamName || t?.name || t?.title || safe(t?.id)
-const pickTeamYear = (t) => t?.teamYear ?? t?.year ?? null
-const pickActive = (t) => (typeof t?.active === 'boolean' ? t.active : null)
-const pickIsProject = (t) => (typeof t?.isProject === 'boolean' ? t.isProject : null)
-
-const countPlayers = (t) => asArr(t?.players).length
-const countRoles = (t) => asArr(t?.roles).length
-
-const pickLevelAvg = (t) => {
-  const v = t?.level ?? t?.abilitiesTeam?.level?.avg ?? null
-  const n = Number(v)
-  return Number.isFinite(n) ? n : null
+function getTeamId(team) {
+  return norm(team?.id || team?.teamId)
 }
 
-const toYearOptions = (teams) => {
-  const years = Array.from(
-    new Set(
-      asArr(teams)
-        .map((t) => pickTeamYear(t))
-        .filter((y) => y != null && safe(y) !== '')
-        .map((y) => Number(y))
-        .filter((y) => Number.isFinite(y))
+function getTeamPlayers(team) {
+  return toArray(team?.players)
+}
+
+function getActivePlayers(team) {
+  return getTeamPlayers(team).filter((player) => {
+    if (player?.active == null) return true
+    return player.active === true
+  })
+}
+
+function getIsProjectPlayer(player) {
+  return (
+    player?.isProject === true ||
+    player?.type === 'project' ||
+    player?.playerType === 'project' ||
+    player?.typeId === 'project'
+  )
+}
+
+function getProjectPlayers(team) {
+  return getTeamPlayers(team).filter(getIsProjectPlayer)
+}
+
+function countPlayersForTeam(team) {
+  return getActivePlayers(team).length
+}
+
+function countKeyPlayersForTeam(team, club) {
+  const activePlayers = getActivePlayers(team)
+
+  const teamKeyPlayers = toArray(team?.keyPlayers)
+  if (teamKeyPlayers.length) return teamKeyPlayers.length
+
+  const clubKeyPlayers = toArray(club?.keyPlayers)
+  if (clubKeyPlayers.length) {
+    const teamPlayerIds = new Set(
+      activePlayers.map((player) => norm(player?.id || player?.playerId)).filter(Boolean)
     )
-  ).sort((a, b) => b - a)
 
-  return years
-}
-
-export function resolveClubTeamsDomain(entity, filters = {}) {
-  const club = entity || null
-  const teamsAll = asArr(club?.teams)
-
-  // ✅ state לפי המנוע הרשמי
-  // - אין entity => PARTIAL
-  // - יש entity אבל אין קבוצות => EMPTY
-  // - יש קבוצות => OK
-  const state =
-    club == null
-      ? DOMAIN_STATE.PARTIAL
-      : getDomainState({
-          count: teamsAll.length,
-          isLocked: false,
-          isStale: false,
-        })
-
-  const f = {
-    q: hasText(filters.q) ? safe(filters.q) : '',
-    year: filters.year ?? 'all',
-    active: boolOrAll(filters.active),
-    project: boolOrAll(filters.project),
+    return clubKeyPlayers.filter((player) => {
+      const pid = norm(player?.id || player?.playerId)
+      return pid && teamPlayerIds.has(pid)
+    }).length
   }
 
-  const qn = norm(f.q)
+  return activePlayers.filter((player) => {
+    return (
+      player?.squadRole === 'key' ||
+      player?.isKey === true
+    )
+  }).length
+}
 
-  const rowsAll = teamsAll.map((t) => {
-    const name = pickTeamName(t)
-    const year = pickTeamYear(t)
-    const active = pickActive(t)
-    const isProject = pickIsProject(t)
-    const playersCount = countPlayers(t)
-    const rolesCount = countRoles(t)
-    const levelAvg = pickLevelAvg(t)
+function countProjectPlayersForTeam(team) {
+  return getProjectPlayers(team).length
+}
 
-    return {
-      id: safe(t?.id),
-      raw: t,
-      name,
-      year,
-      active,
-      isProject,
-      playersCount,
-      rolesCount,
-      levelAvg,
-    }
-  })
+function getIsProjectTeam(team, club) {
+  if (team?.project != null) return team.project === true
+  if (team?.isProject != null) return team.isProject === true
 
-  const rows = rowsAll
-    .filter((r) => (!qn ? true : norm(r.name).includes(qn) || safe(r.year).includes(qn)))
-    .filter((r) => (f.year === 'all' ? true : safe(r.year) === safe(f.year)))
-    .filter((r) => (f.active === 'all' ? true : r.active === f.active))
-    .filter((r) => (f.project === 'all' ? true : r.isProject === f.project))
-    .sort((a, b) => {
-      const ay = Number(a.year)
-      const by = Number(b.year)
-      if (Number.isFinite(ay) && Number.isFinite(by) && ay !== by) return by - ay
-      return safe(a.name).localeCompare(safe(b.name), 'he')
+  if (toArray(team?.keyPlayers).length) return true
+
+  const clubKeyPlayers = toArray(club?.keyPlayers)
+  if (clubKeyPlayers.length) {
+    const activePlayerIds = new Set(
+      getActivePlayers(team).map((player) => norm(player?.id || player?.playerId)).filter(Boolean)
+    )
+
+    const hasClubKeyPlayer = clubKeyPlayers.some((player) => {
+      const pid = norm(player?.id || player?.playerId)
+      return pid && activePlayerIds.has(pid)
     })
 
-  const totalTeams = rowsAll.length
-  const activeTeams = rowsAll.filter((r) => r.active === true).length
-  const projectTeams = rowsAll.filter((r) => r.isProject === true).length
-  const totalPlayers = rowsAll.reduce((sum, r) => sum + (Number(r.playersCount) || 0), 0)
-  const clubRoles = asArr(club?.roles).length
+    if (hasClubKeyPlayer) return true
+  }
 
-  const avgLevel =
-    rowsAll.length === 0
-      ? null
-      : (() => {
-          const nums = rowsAll.map((r) => r.levelAvg).filter((x) => Number.isFinite(x))
-          if (nums.length === 0) return null
-          const s = nums.reduce((a, b) => a + b, 0)
-          return Math.round((s / nums.length) * 10) / 10
-        })()
+  return getActivePlayers(team).some(getIsProjectPlayer)
+}
+
+function buildSearchText(row) {
+  return normLow(
+    [
+      row?.teamName,
+      row?.teamYear,
+      row?.league,
+      row?.leagueLevel,
+      row?.leaguePosition,
+      row?.points,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  )
+}
+
+function matchFilter(value, expected) {
+  if (expected === 'all') return true
+  if (expected === 'yes') return value === true
+  if (expected === 'no') return value === false
+  return true
+}
+
+export function buildClubTeamRows(club, filters = {}) {
+  const teams = toArray(club?.teams)
+
+  const baseRows = teams
+    .map((team) => {
+      const id = getTeamId(team)
+      if (!id) return null
+
+      const playersCount = countPlayersForTeam(team)
+      const keyPlayersCount = countKeyPlayersForTeam(team, club)
+      const projectPlayersCount = countProjectPlayersForTeam(team)
+      const isProject = getIsProjectTeam(team, club)
+
+      const row = {
+        id,
+        teamId: id,
+
+        teamName: norm(team?.teamName || team?.name) || '—',
+        teamYear: norm(team?.teamYear || team?.year) || '—',
+        active: team?.active == null ? true : team.active === true,
+
+        league: norm(team?.league || team?.leagueName) || '',
+        leagueLevel: team?.leagueLevel ?? null,
+        leaguePosition: team?.leaguePosition ?? null,
+        points: team?.points ?? null,
+        leagueGoalsFor: team?.leagueGoalsFor ?? null,
+        leagueGoalsAgainst: team?.leagueGoalsAgainst ?? null,
+
+        isProject,
+        playersCount,
+        keyPlayersCount,
+        projectPlayersCount,
+
+        raw: team,
+        team,
+      }
+
+      return {
+        ...row,
+        searchText: buildSearchText(row),
+      }
+    })
+    .filter(Boolean)
+
+  const summary = {
+    teamsTotal: baseRows.length,
+    activeTeamsTotal: baseRows.filter((row) => row.active === true).length,
+    projectTeamsTotal: baseRows.filter((row) => row.isProject === true).length,
+    playersTotal: baseRows.reduce((sum, row) => sum + (row.playersCount || 0), 0),
+    keyPlayersTotal: baseRows.reduce((sum, row) => sum + (row.keyPlayersCount || 0), 0),
+    projectPlayersTotal: baseRows.reduce((sum, row) => sum + (row.projectPlayersCount || 0), 0),
+  }
+
+  const yearOptions = Array.from(
+    new Set(baseRows.map((row) => norm(row.teamYear)).filter(Boolean).filter((v) => v !== '—'))
+  ).sort((a, b) => Number(b) - Number(a))
+
+  const options = {
+    years: yearOptions.map((year) => ({
+      value: year,
+      label: year,
+    })),
+  }
+
+  const q = normLow(filters?.q)
+  const year = norm(filters?.year || 'all')
+  const active = norm(filters?.active || 'all')
+  const project = norm(filters?.project || 'all')
+
+  const rows = baseRows.filter((row) => {
+    if (q && !row.searchText.includes(q)) return false
+    if (year !== 'all' && norm(row.teamYear) !== year) return false
+    if (!matchFilter(row.active, active)) return false
+    if (!matchFilter(row.isProject, project)) return false
+    return true
+  })
 
   return {
-    state,
-    filters: f,
-    options: { yearOptions: toYearOptions(teamsAll) },
-    summary: {
-      totalTeams,
-      activeTeams,
-      projectTeams,
-      totalPlayers,
-      clubRoles,
-      avgLevel,
-    },
     rows,
+    summary,
+    options,
   }
 }

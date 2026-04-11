@@ -1,9 +1,11 @@
 // features/hub/clubProfile/ClubProfilePage.js
+
 import React, { useMemo } from 'react'
-import { useParams, useSearchParams, Navigate } from 'react-router-dom'
+import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
 
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import ProfileShell from '../../hub/sharedProfile/ProfileShell'
 
 import { getTabFromUrl } from './clubProfile.routes'
@@ -13,6 +15,8 @@ import ClubModules from './components/ClubModules'
 import ClubProfileFab from './components/ClubProfileFab'
 
 export default function ClubProfilePage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { clubId, tabKey } = useParams()
   const [sp] = useSearchParams()
 
@@ -58,6 +62,15 @@ export default function ClubProfilePage() {
     }
   }, [entity, teams, clubs, players, roles, tags])
 
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'club',
+      mode: tab,
+      extra: context,
+    })
+  }, [location, tab, context])
+
   const counts = useMemo(() => {
     if (!entity) return {}
     return {
@@ -85,13 +98,14 @@ export default function ClubProfilePage() {
   }
 
   if (!entity) return <Navigate to="/hub" replace />
-  
+
   return (
     <ProfileShell
+      tab={tab}
       entity={entity}
       context={context}
-      tab={tab}
       entityType={entity}
+      taskContext={taskContext}
       headerProps={{ counts }}
       HeaderComp={ClubHeader}
       NavComp={ClubNav}

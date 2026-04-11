@@ -135,13 +135,15 @@ export function buildCreateModalSx(entityType, domainColor) {
     },
 
     confirmButtonSx: {
-      bgcolor: c.bg,
-      color: c.text,
+      bgcolor: c.accent,
+      color: c.textAcc,
       transition: 'filter .15s ease, transform .12s ease',
+      border: '1px solid',
+      borderColor: 'divider',
 
       '&:hover': {
-        bgcolor: c.bg,
-        color: c.text,
+        bgcolor: c.accent,
+        color: c.textAcc,
         filter: 'brightness(0.96)',
         transform: 'translateY(-1px)',
       },

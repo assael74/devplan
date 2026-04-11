@@ -133,15 +133,6 @@ export default function ScoutPreviewView({ scout, locked, buildActions, context 
           disabled={pending}
           onOpenGames={() => setGamesOpen(true)}
         />
-
-        <QuickCreateMenu
-          seed={{
-            scoutId: scout?.id,
-          }}
-          iconOnly={false}
-          entityType='scout'
-          label='הוספה'
-        />
       </Box>
 
       <Sheet variant="outlined" sx={scoutPreviewSx.sheet}>

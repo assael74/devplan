@@ -1,4 +1,5 @@
 // src/services/firestore/shortsCollections.js
+
 import { collection } from 'firebase/firestore'
 import { db } from '../firebase/firebase.js'
 
@@ -19,5 +20,7 @@ export const videosShortsRef = collection(db, 'videosShorts')
 export const videoAnalysisShortsRef = collection(db, 'videoAnalysisShorts')
 
 export const tagsShortsRef = collection(db, 'tagsShorts')
+
+export const tasksShortsRef = collection(db, 'tasksShorts')
 
 export const abilitiesShortsCollectionRef = collection(db, "abilitiesShorts")

@@ -1,3 +1,8 @@
+//   C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.utils.js
+
+// קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.utils.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
+
 export function safeStr(v) {
   return String(v ?? '').trim()
 }

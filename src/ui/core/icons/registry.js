@@ -5,6 +5,7 @@ import { navigationIcons } from './core/navigation.icons';
 import { statusIcons } from './core/status.icons';
 
 import { entitiesIcons } from './entities/entities.icons.js';
+import { tasksIcons } from './entities/tasks.icons.js';
 import { gameIcons } from './entities/games.icons';
 import { meetingIcons } from './entities/meetings.icons';
 import { paymentsIcons } from './entities/payments.icons';
@@ -27,6 +28,7 @@ export const appIconMap = {
   ...statusIcons,
 
   ...entitiesIcons,
+  ...tasksIcons,
   ...gameIcons,
   ...meetingIcons,
   ...paymentsIcons,

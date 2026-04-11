@@ -1,7 +1,8 @@
 // src/features/calendar/CalendarHubPage.js
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, Typography } from '@mui/joy'
+import { useLocation } from 'react-router-dom'
 
 import { calendarHubSx as sx } from './sx/calendarHub.sx'
 import useCalendarHubPage from './logic/useCalendarHubPage.js'
@@ -10,9 +11,16 @@ import CalendarHubTopBar from './components/CalendarHubTopBar'
 import CalendarSelectorPanel from './components/CalendarSelectorPanel'
 import WeekCalendarGrid from './components/WeekCalendarGrid'
 import EventDrawer from './components/drawer/EventDrawer'
+import CalendarHubFabMenu from './CalendarHubFabMenu.js'
+
+import { useCreateModal } from '../../ui/forms/create/CreateModalProvider.js'
+import { buildTaskFabContext } from '../../ui/actions/buildTaskFabContext.js'
+import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.js'
 
 export default function CalendarHubPage() {
   const [initialDraft, setInitialDraft] = useState(null)
+  const location = useLocation()
+  const { openCreate } = useCreateModal()
 
   const {
     players,
@@ -50,11 +58,37 @@ export default function CalendarHubPage() {
 
     navWeek,
     resetToToday,
-    openCreate,
+    openCreate: openCalendarCreate,
     onEventClick,
     closeDrawer,
     onSaveDraft,
   } = useCalendarHubPage()
+
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'calendar',
+      mode: view,
+      extra: context,
+    })
+  }, [location, view, context])
+
+  const onAddTask = useCallback((nextTaskContext = {}) => {
+    openCreate(
+      'task',
+      buildTaskPresetDraft(nextTaskContext),
+      { ...context, ...nextTaskContext },
+      {
+        surface: 'drawer',
+        drawerAnchor: 'bottom',
+        drawerWidth: 900,
+      }
+    )
+  }, [openCreate, context])
+
+  const onAddMeeting = useCallback(() => {
+    openCalendarCreate?.()
+  }, [openCalendarCreate])
 
   return (
     <Box dir="rtl" sx={sx.page}>
@@ -81,7 +115,7 @@ export default function CalendarHubPage() {
           onPrevWeek={() => navWeek(-1)}
           onToday={resetToToday}
           onNextWeek={() => navWeek(1)}
-          onOpenCreate={openCreate}
+          onOpenCreate={openCalendarCreate}
           onOpenEdit={() => {}}
         />
 
@@ -119,6 +153,12 @@ export default function CalendarHubPage() {
           console.log('calendar draft delete', currentDraft)
           closeDrawer()
         }}
+      />
+
+      <CalendarHubFabMenu
+        taskContext={taskContext}
+        onAddTask={onAddTask}
+        onAddMeeting={onAddMeeting}
       />
     </Box>
   )

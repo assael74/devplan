@@ -16,6 +16,7 @@ export default function TeamCreateForm({
   onDraft,
   context,
   onValidChange,
+  clubDisabled = false
 }) {
   const teamName = draft?.teamName || ''
   const clubId = draft?.clubId || ''
@@ -55,6 +56,7 @@ export default function TeamCreateForm({
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
         <ClubSelectField
           required
+          disabled={clubDisabled}
           value={clubId}
           options={clubs}
           onChange={(v) => onDraft({ ...draft, clubId: v })}

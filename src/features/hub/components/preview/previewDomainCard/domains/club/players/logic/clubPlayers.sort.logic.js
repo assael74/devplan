@@ -31,13 +31,14 @@ function compareBoolean(a, b, dir = 'desc') {
   return dir === 'asc' ? av - bv : bv - av
 }
 
-export function sortClubPlayers(rows = [], sortKey = 'potential', sortDir = 'desc') {
+export function sortClubPlayers(rows = [], sortKey = 'level', sortDir = 'desc') {
   const list = Array.isArray(rows) ? [...rows] : []
 
   return list.sort((a, b) => {
     switch (sortKey) {
-      case 'name': {
-        const byName = compareText(a?.name, b?.name, sortDir)
+      case 'name':
+      case 'fullName': {
+        const byName = compareText(a?.fullName, b?.fullName, sortDir)
         if (byName !== 0) return byName
         return compareText(a?.teamName, b?.teamName, 'asc')
       }
@@ -46,75 +47,81 @@ export function sortClubPlayers(rows = [], sortKey = 'potential', sortDir = 'des
       case 'team': {
         const byTeam = compareText(a?.teamName, b?.teamName, sortDir)
         if (byTeam !== 0) return byTeam
-        return compareText(a?.name, b?.name, 'asc')
-      }
-
-      case 'potential':
-      case 'levelPotential': {
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, sortDir)
-        if (byPotential !== 0) return byPotential
-
-        const byLevel = compareNumber(a?.level, b?.level, 'desc')
-        if (byLevel !== 0) return byLevel
-
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
 
       case 'level': {
         const byLevel = compareNumber(a?.level, b?.level, sortDir)
         if (byLevel !== 0) return byLevel
-
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, 'desc')
-        if (byPotential !== 0) return byPotential
-
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
 
-      case 'timeRef':
+      case 'position':
+      case 'generalPositionLabel': {
+        const byPosition = compareText(
+          a?.generalPositionLabel,
+          b?.generalPositionLabel,
+          sortDir
+        )
+        if (byPosition !== 0) return byPosition
+        return compareText(a?.fullName, b?.fullName, 'asc')
+      }
+
       case 'minutesPct':
-      case 'timePlayed': {
-        const byTime = compareNumber(a?.timeRef, b?.timeRef, sortDir)
-        if (byTime !== 0) return byTime
+      case 'timePlayed':
+      case 'timeRef': {
+        const byMinutes = compareNumber(
+          a?.playerFullStats?.playTimeRate,
+          b?.playerFullStats?.playTimeRate,
+          sortDir
+        )
+        if (byMinutes !== 0) return byMinutes
+        return compareText(a?.fullName, b?.fullName, 'asc')
+      }
 
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, 'desc')
-        if (byPotential !== 0) return byPotential
+      case 'squadRole':
+      case 'role': {
+        const byRoleWeight = compareNumber(
+          a?.squadRoleMeta?.weight,
+          b?.squadRoleMeta?.weight,
+          sortDir
+        )
+        if (byRoleWeight !== 0) return byRoleWeight
 
-        return compareText(a?.name, b?.name, 'asc')
+        const byRoleLabel = compareText(
+          a?.squadRoleMeta?.label,
+          b?.squadRoleMeta?.label,
+          'asc'
+        )
+        if (byRoleLabel !== 0) return byRoleLabel
+
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
 
       case 'isKey': {
         const byKey = compareBoolean(a?.isKey, b?.isKey, sortDir)
         if (byKey !== 0) return byKey
-
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, 'desc')
-        if (byPotential !== 0) return byPotential
-
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
 
-      case 'isAutoEligible': {
-        const byAuto = compareBoolean(a?.isAutoEligible, b?.isAutoEligible, sortDir)
-        if (byAuto !== 0) return byAuto
-
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, 'desc')
-        if (byPotential !== 0) return byPotential
-
-        return compareText(a?.name, b?.name, 'asc')
+      case 'active': {
+        const byActive = compareBoolean(a?.active, b?.active, sortDir)
+        if (byActive !== 0) return byActive
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
 
       default: {
-        if (a?.isKey !== b?.isKey) return a?.isKey ? -1 : 1
-
-        const byPotential = compareNumber(a?.levelPotential, b?.levelPotential, 'desc')
-        if (byPotential !== 0) return byPotential
-
         const byLevel = compareNumber(a?.level, b?.level, 'desc')
         if (byLevel !== 0) return byLevel
 
-        const byTime = compareNumber(a?.timeRef, b?.timeRef, 'desc')
-        if (byTime !== 0) return byTime
+        const byMinutes = compareNumber(
+          a?.playerFullStats?.playTimeRate,
+          b?.playerFullStats?.playTimeRate,
+          'desc'
+        )
+        if (byMinutes !== 0) return byMinutes
 
-        return compareText(a?.name, b?.name, 'asc')
+        return compareText(a?.fullName, b?.fullName, 'asc')
       }
     }
   })

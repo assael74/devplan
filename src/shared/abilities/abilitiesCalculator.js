@@ -6,151 +6,132 @@
  * - abilitiesList shape: [{ id: 'speed', weight: 1 }, ...] כולל גם 'growthStage'
  */
 
-function roundToHalf(num) {
-  return Math.round(num * 2) / 2
-}
+ // קובץ מקביל: functions/src/domain/abilities/abilitiesCalculator.js
+ // הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
 
-function toNum(v) {
-  if (v == null || v === '') return 0
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
-}
+ function roundToHalf(num) {
+   return Math.round(num * 2) / 2
+ }
 
-function clamp(num, min, max) {
-  return Math.max(min, Math.min(max, num))
-}
+ function toNum(v) {
+   if (v == null || v === '') return 0
+   const n = Number(v)
+   return Number.isFinite(n) ? n : 0
+ }
 
-/**
- * מחשב level + levelPotential מתוך abilities (לפי weights).
- * - מתעלם מ-growthStage בממוצע
- * - מחשב ממוצע משוקלל רק על ערכים > 0
- * - פוטנציאל: +0.5 אם growthStage>3, -0.5 אם <3, clamp 1..5, עיגול לחצי
- *
- * מבוסס על הנוסחה אצלך. :contentReference[oaicite:1]{index=1}
- */
-export function calcLevelAndPotential({ abilities = {}, abilitiesList = [] }) {
-  let sum = 0
-  let totalWeight = 0
+ function clamp(num, min, max) {
+   return Math.max(min, Math.min(max, num))
+ }
 
-  for (const it of abilitiesList) {
-    const id = it?.id
-    const weight = Number(it?.weight ?? 1) || 1
-    if (!id || id === 'growthStage') continue
+ export function calcLevelAndPotential({ abilities = {}, abilitiesList = [] }) {
+   let sum = 0
+   let totalWeight = 0
 
-    const v = toNum(abilities[id])
-    if (v > 0) {
-      sum += v * weight
-      totalWeight += weight
-    }
-  }
+   for (const it of abilitiesList) {
+     const id = it?.id
+     const weight = Number(it?.weight ?? 1) || 1
+     if (!id || id === 'growthStage') continue
 
-  const level = totalWeight === 0 ? 0 : roundToHalf(sum / totalWeight)
+     const v = toNum(abilities[id])
+     if (v > 0) {
+       sum += v * weight
+       totalWeight += weight
+     }
+   }
 
-  const growthStage = toNum(abilities?.growthStage)
-  let levelPotential = level
-  if (growthStage > 3) levelPotential += 0.5
-  else if (growthStage < 3) levelPotential -= 0.5
+   const level = totalWeight === 0 ? 0 : roundToHalf(sum / totalWeight)
 
-  levelPotential = clamp(roundToHalf(levelPotential), 1, 5)
+   const growthStage = toNum(abilities?.growthStage)
+   let levelPotential = level
+   if (growthStage > 3) levelPotential += 0.5
+   else if (growthStage < 3) levelPotential -= 0.5
 
-  return { level, levelPotential }
-}
+   levelPotential = clamp(roundToHalf(levelPotential), 1, 5)
 
-/**
- * Merge abilities (old vs new) לפי:
- * - אם old==0 => new
- * - אם new==0 => old
- * - אחרת: 0.3*old + 0.7*new (עיגול לחצי)
- * ואז מחשב level + potential על התוצאה.
- *
- * מבוסס על mergeAbilitiesWeighted אצלך. :contentReference[oaicite:2]{index=2}
- */
-export function mergeAbilitiesWeighted({
-  oldAbilities = {},
-  newAbilities = {},
-  playerId = null,
-  abilitiesList = [],
-}) {
-  const result = {}
+   return { level, levelPotential }
+ }
 
-  for (const it of abilitiesList) {
-    const id = it?.id
-    if (!id || id === 'growthStage') continue
+ export function mergeAbilitiesWeighted({
+   oldAbilities = {},
+   newAbilities = {},
+   playerId = null,
+   abilitiesList = [],
+ }) {
+   const result = {}
 
-    const oldVal = toNum(oldAbilities[id])
-    const newVal = toNum(newAbilities[id])
+   for (const it of abilitiesList) {
+     const id = it?.id
+     if (!id || id === 'growthStage') continue
 
-    let finalVal = 0
-    if (oldVal === 0) finalVal = newVal
-    else if (newVal === 0) finalVal = oldVal
-    else finalVal = roundToHalf(oldVal * 0.3 + newVal * 0.7)
+     const oldVal = toNum(oldAbilities[id])
+     const newVal = toNum(newAbilities[id])
 
-    result[id] = finalVal
-  }
+     let finalVal = 0
+     if (oldVal === 0) finalVal = newVal
+     else if (newVal === 0) finalVal = oldVal
+     else finalVal = roundToHalf(oldVal * 0.3 + newVal * 0.7)
 
-  const growthStage = toNum(newAbilities?.growthStage)
-  const mergedAbilities = { ...result, growthStage }
+     result[id] = finalVal
+   }
 
-  const { level, levelPotential } = calcLevelAndPotential({
-    abilities: mergedAbilities,
-    abilitiesList,
-  })
+   const growthStage = toNum(newAbilities?.growthStage)
+   const mergedAbilities = { ...result, growthStage }
 
-  return {
-    id: playerId,
-    abilities: mergedAbilities,
-    level,
-    levelPotential,
-  }
-}
+   const { level, levelPotential } = calcLevelAndPotential({
+     abilities: mergedAbilities,
+     abilitiesList,
+   })
 
-/**
- * Utility: builds "full abilities map" (missing => null)
- * לפי abilitiesList (כולל growthStage).
- */
-export function buildAbilitiesFull({ draftAbilities = {}, abilitiesList = [] }) {
-  const full = {}
-  for (const it of abilitiesList) {
-    const id = it?.id
-    if (!id) continue
-    full[id] = null
-  }
+   return {
+     id: playerId,
+     abilities: mergedAbilities,
+     level,
+     levelPotential,
+   }
+ }
 
-  for (const [k, v] of Object.entries(draftAbilities || {})) {
-    if (!k) continue
-    // שומר null אם ריק
-    if (v == null || v === '') full[k] = null
-    else full[k] = Number.isFinite(Number(v)) ? Number(v) : null
-  }
+ export function buildAbilitiesFull({ draftAbilities = {}, abilitiesList = [] }) {
+   const full = {}
 
-  return full
-}
+   for (const it of abilitiesList) {
+     const id = it?.id
+     if (!id) continue
+     full[id] = null
+   }
 
-export function mergeAbilitiesEqual({
-  oldAbilities = {},
-  newAbilities = {},
-  abilitiesList = [],
-}) {
-  const result = {}
+   for (const [k, v] of Object.entries(draftAbilities || {})) {
+     if (!k) continue
+     if (v == null || v === '') full[k] = null
+     else full[k] = Number.isFinite(Number(v)) ? Number(v) : null
+   }
 
-  for (const it of abilitiesList) {
-    const id = it?.id
-    if (!id) continue
+   return full
+ }
 
-    const oldVal = oldAbilities?.[id]
-    const newVal = newAbilities?.[id]
+ export function mergeAbilitiesEqual({
+   oldAbilities = {},
+   newAbilities = {},
+   abilitiesList = [],
+ }) {
+   const result = {}
 
-    // null-aware logic
-    if (newVal == null && oldVal == null) {
-      result[id] = null
-    } else if (newVal == null) {
-      result[id] = oldVal ?? null
-    } else if (oldVal == null) {
-      result[id] = newVal
-    } else {
-      result[id] = Math.round((oldVal + newVal) * 10) / 20 
-    }
-  }
+   for (const it of abilitiesList) {
+     const id = it?.id
+     if (!id) continue
 
-  return result
-}
+     const oldVal = oldAbilities?.[id]
+     const newVal = newAbilities?.[id]
+
+     if (newVal == null && oldVal == null) {
+       result[id] = null
+     } else if (newVal == null) {
+       result[id] = oldVal ?? null
+     } else if (oldVal == null) {
+       result[id] = newVal
+     } else {
+       result[id] = Math.round((oldVal + newVal) * 10) / 20
+     }
+   }
+
+   return result
+ }

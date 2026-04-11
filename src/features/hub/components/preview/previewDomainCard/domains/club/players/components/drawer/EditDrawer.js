@@ -1,17 +1,15 @@
-// previewDomainCard/domains/team/players/components/drawer/TeamPlayerEditDrawer.js
+// previewDomainCard/domains/club/players/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, Snackbar } from '@mui/joy'
-
-import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect'
+import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
 import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
 
 import EditDrawerHeader from './EditDrawerHeader.js'
 import EditDrawerStatus from './EditDrawerStatus.js'
+import EditDrawerInfo from './EditDrawerInfo.js'
 import {
-  safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
@@ -26,7 +24,6 @@ export default function EditDrawer({
 }) {
   const initial = useMemo(() => buildInitialDraft(player), [player])
   const [draft, setDraft] = useState(initial)
-  const [showLimitWarning, setShowLimitWarning] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -47,104 +44,79 @@ export default function EditDrawer({
       playerId: initial.id,
     })
 
-    onSaved(patch, { ...initial.raw, ...patch })
-    onClose()
+    onSaved?.(patch, { ...initial.raw, ...patch })
+    onClose?.()
   }
 
   const handleReset = () => {
-    setDraft({
-      ...initial,
-      positions: [...initial.positions],
-    })
+    setDraft(initial)
   }
 
   return (
-    <>
-      <Drawer
-        open={!!open}
-        size="md"
-        anchor="right"
-        onClose={pending ? undefined : onClose}
-        slotProps={{
-          content: {
-            sx: {
-              bgcolor: 'transparent',
-              p: { xs: 0, md: 2 },
-              boxShadow: 'none',
-            },
+    <Drawer
+      open={!!open}
+      size="md"
+      anchor="right"
+      onClose={pending ? undefined : onClose}
+      slotProps={{
+        content: {
+          sx: {
+            bgcolor: 'transparent',
+            p: { xs: 0, md: 2 },
+            boxShadow: 'none',
           },
-        }}
-      >
-        <Sheet sx={sx.drawerSheetSx}>
-          <Box sx={sx.drawerRootSx}>
-            <EditDrawerHeader player={initial} />
+        },
+      }}
+    >
+      <Sheet sx={sx.drawerSheetSx}>
+        <Box sx={sx.drawerRootSx}>
+          <EditDrawerHeader player={player} />
 
-            <Box sx={sx.bodySx} className="dpScrollThin">
-              <Box sx={sx.sectionCardSx}>
-                <Typography sx={sx.sectionTitleSx}>עמדות</Typography>
-
-                <PlayerPositionFieldPitch
-                  size="sm"
-                  value={draft.positions}
-                  onChange={(positions) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      positions: safeArr(positions),
-                    }))
-                  }
-                  onLimitReached={() => {
-                    setShowLimitWarning(false)
-                    setTimeout(() => setShowLimitWarning(true), 10)
-                  }}
-                  disabled={pending}
-                />
-              </Box>
-
-              <EditDrawerStatus draft={draft} setDraft={setDraft} />
-            </Box>
-
-            <Box sx={sx.footerSx}>
-              <Box sx={sx.footerActionsSx}>
-                <Button
-                  loading={pending}
-                  disabled={!canSave}
-                  startDecorator={iconUi({ id: 'save' })}
-                  onClick={handleSave}
-                  sx={sx.conBut}
-                >
-                  שמירה
-                </Button>
-
-                <Button color="neutral" variant="outlined" onClick={onClose} disabled={pending}>
-                  ביטול
-                </Button>
-
-                <Tooltip title="איפוס טופס">
-                  <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
-                    {iconUi({id: 'reset'})}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-
-              <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'} >
-                {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-              </Typography>
-            </Box>
+          <Box sx={sx.bodySx} className="dpScrollThin">
+            <EditDrawerInfo draft={draft} setDraft={setDraft} />
+            <EditDrawerStatus draft={draft} setDraft={setDraft} />
           </Box>
-        </Sheet>
-      </Drawer>
 
-      <Snackbar
-        open={showLimitWarning}
-        autoHideDuration={2500}
-        onClose={() => setShowLimitWarning(false)}
-        color="danger"
-        size="sm"
-        variant="soft"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        ניתן לבחור עד 4 עמדות בלבד
-      </Snackbar>
-    </>
+          <Box sx={sx.footerSx}>
+            <Box sx={sx.footerActionsSx}>
+              <Button
+                loading={pending}
+                disabled={!canSave}
+                startDecorator={iconUi({ id: 'save' })}
+                onClick={handleSave}
+                sx={sx.conBut}
+              >
+                שמירה
+              </Button>
+
+              <Button
+                color="neutral"
+                variant="outlined"
+                onClick={onClose}
+                disabled={pending}
+              >
+                ביטול
+              </Button>
+
+              <Tooltip title="איפוס טופס">
+                <IconButton
+                  disabled={!isDirty}
+                  size="sm"
+                  variant="soft"
+                  sx={sx.icoRes}
+                  onClick={handleReset}
+                >
+                  {iconUi({ id: 'reset' })}
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
+              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
+            </Typography>
+          </Box>
+        </Box>
+      </Sheet>
+    </Drawer>
   )
 }

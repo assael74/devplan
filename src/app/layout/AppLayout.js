@@ -88,7 +88,7 @@ export default function AppLayout({ topbar, sidenav, navBadges }) {
         ) : null}
 
         {/* תוכן – חוזר ל-RTL */}
-        <Box component="main" sx={{ flex: 1, minWidth: 0, p: { xs: 1, sm: 1 }, bgcolor: 'background.level1', }} >
+        <Box component="main" sx={{ flex: 1, minWidth: 0, p: { xs: 1, sm: 1 }, bgcolor: 'background.level1' }} >
           <Box
             sx={{
               bgcolor: 'background.body',

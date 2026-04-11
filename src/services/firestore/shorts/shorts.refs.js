@@ -31,8 +31,7 @@ export const shortsRefs = {
  },
 
  meetings: {
-   meetingDate: { collection: 'meetingShorts', docId: '8V1UmfUSpQwdx9LdWzeD' },
-   meetingPlayer: { collection: 'meetingShorts', docId: 'ZTSPHFV9uAfYNxw33I0b' },
+   meetingInfo: { collection: 'meetingShorts', docId: '8V1UmfUSpQwdx9LdWzeD' },
    meetingNotes: { collection: 'meetingShorts', docId: 'osfDQ7rWAKa3dwpey6zE' },
  },
 
@@ -72,5 +71,9 @@ export const shortsRefs = {
 
  tags: {
    tagInfo: { collection: 'tagsShorts', docId: 'LkifVVOk7xhkjB8wYEBz' },
+ },
+
+ tasks: {
+   tasksInfo: { collection: 'tasksShorts', docId: 'gCGuVmyA30SL5VBQmlm4' },
  }
 }

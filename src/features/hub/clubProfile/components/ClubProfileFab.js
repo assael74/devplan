@@ -13,8 +13,8 @@ const FAB_ENTITY_BY_TAB = {
 function presetForTab(tab, club) {
   const clubId = club?.id
   if (!clubId) return {}
-  if (tab === 'teams') return { clubId } // TeamCreateForm דורש clubId :contentReference[oaicite:5]{index=5}
-  if (tab === 'players') return { clubId } // PlayerCreateForm דורש clubId + teamId (ייבחר בטופס) :contentReference[oaicite:6]{index=6}
+  if (tab === 'teams') return { clubId }
+  if (tab === 'players') return { clubId }
   return { clubId }
 }
 

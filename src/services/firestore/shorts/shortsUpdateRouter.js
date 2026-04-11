@@ -115,18 +115,19 @@ export const shortsUpdateRouterMap = {
   },
 
   meetings: {
-    eventId: { shortKey: 'meetings.meetingDate', path: 'eventId', mode: 'merge' },
-    meetingDate: { shortKey: 'meetings.meetingDate', path: 'meetingDate', mode: 'merge' },
-    meetingFor: { shortKey: 'meetings.meetingDate', path: 'meetingFor', mode: 'merge' },
-    meetingHour: { shortKey: 'meetings.meetingDate', path: 'meetingHour', mode: 'merge' },
-
-    playerId: { shortKey: 'meetings.meetingPlayer', path: 'playerId', mode: 'merge' },
-    playersId: { shortKey: 'meetings.meetingPlayer', path: 'playersId', mode: 'merge' },
-    type: { shortKey: 'meetings.meetingPlayer', path: 'type', mode: 'merge' },
-    status: { shortKey: 'meetings.meetingPlayer', path: 'status', mode: 'merge' },
+    eventId: { shortKey: 'meetings.meetingInfo', path: 'eventId', mode: 'merge' },
+    meetingDate: { shortKey: 'meetings.meetingInfo', path: 'meetingDate', mode: 'merge' },
+    meetingFor: { shortKey: 'meetings.meetingInfo', path: 'meetingFor', mode: 'merge' },
+    meetingHour: { shortKey: 'meetings.meetingInfo', path: 'meetingHour', mode: 'merge' },
+    teamId: { shortKey: 'meetings.meetingInfo', path: 'teamId', mode: 'merge' },
+    playerId: { shortKey: 'meetings.meetingInfo', path: 'playerId', mode: 'merge' },
+    playersId: { shortKey: 'meetings.meetingInfo', path: 'playersId', mode: 'merge' },
+    type: { shortKey: 'meetings.meetingInfo', path: 'type', mode: 'merge' },
+    status: { shortKey: 'meetings.meetingInfo', path: 'status', mode: 'merge' },
+    createdById: { shortKey: 'meetings.meetingInfo', path: 'createdById', mode: 'merge' },
+    createdByName: { shortKey: 'meetings.meetingInfo', path: 'createdByName', mode: 'merge' },
 
     notes: { shortKey: 'meetings.meetingNotes', path: 'notes', mode: 'merge' },
-    tags: { shortKey: 'meetings.meetingNotes', path: 'tags', mode: 'merge' },
   },
 
   payments: {
@@ -216,6 +217,21 @@ export const shortsUpdateRouterMap = {
 
   abilities: {
     formsAbilities: { shortKey: '', path: 'formsAbilities', mode: 'replace' },
+  },
+
+  tasks: {
+    workspace: { shortKey: 'tasks.tasksInfo', path: 'workspace', mode: 'merge' },
+    title: { shortKey: 'tasks.tasksInfo', path: 'title', mode: 'merge' },
+    url: { shortKey: 'tasks.tasksInfo', path: 'url', mode: 'merge' },
+    description: { shortKey: 'tasks.tasksInfo', path: 'description', mode: 'merge' },
+    status: { shortKey: 'tasks.tasksInfo', path: 'status', mode: 'merge' },
+    priority: { shortKey: 'tasks.tasksInfo', path: 'priority', mode: 'merge' },
+    complexity: { shortKey: 'tasks.tasksInfo', path: 'complexity', mode: 'merge' },
+    taskType: { shortKey: 'tasks.tasksInfo', path: 'taskType', mode: 'merge' },
+    parentTaskId: { shortKey: 'tasks.tasksInfo', path: 'parentTaskId', mode: 'merge' },
+    sortOrder: { shortKey: 'tasks.tasksInfo', path: 'sortOrder', mode: 'merge' },
+    dueDate: { shortKey: 'tasks.tasksInfo', path: 'dueDate', mode: 'merge' },
+    doneAt: { shortKey: 'tasks.tasksInfo', path: 'doneAt', mode: 'merge' },
   },
 }
 

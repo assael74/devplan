@@ -1,18 +1,16 @@
-// previewDomainCard/domains/team/players/components/newForm/newFormDrawer.utils.js
+// previewDomainCard/domains/club/teams/components/newForm/newFormDrawer.utils.js
 
 const safe = (v) => (v == null ? '' : String(v).trim())
 
 export function buildInitialDraft(context = {}) {
   const entity = context?.team || null
-  const teamId = safe(context?.teamId || entity?.id || context?.team?.id)
-  const clubId = safe(context?.team?.clubId || context?.team?.club?.id)
+  const clubId = safe(context?.club?.clubId || context?.club?.id)
 
   return {
-    playerFirstName: '',
-    playerLastName: '',
-    teamId,
+    teamName: '',
     clubId,
-    birth: ''
+    teamYear: '',
+    ifaLink: ''
   }
 }
 

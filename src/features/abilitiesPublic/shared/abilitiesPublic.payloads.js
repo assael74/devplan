@@ -20,6 +20,7 @@ export function buildPublicAbilitiesSubmitPayload(draft = {}) {
 
     teamId: clean(draft?.teamId),
     teamName: clean(draft?.teamName),
+    teamYear: clean(draft?.teamYear),
 
     clubId: clean(draft?.clubId),
     clubName: clean(draft?.clubName),

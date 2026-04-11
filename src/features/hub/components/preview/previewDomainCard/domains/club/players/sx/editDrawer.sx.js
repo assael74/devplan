@@ -1,17 +1,19 @@
 // previewDomainCard/domains/team/players/sx/teamPlayerEditDrawer.sx.js
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('team')
+const c = getEntityColors('players')
 
 export const drawerSx = {
   drawerSheetSx: {
-    borderRadius: { xs: 0, md: 'md' },
-    p: 2,
+    borderRadius: 'md',
+    py: 1,
+    px: 0.5,
     display: 'flex',
     flexDirection: 'column',
-    gap: 2,
+    gap: 1,
     height: '100%',
     overflow: 'hidden',
+    bgcolor: 'background.body',
   },
 
   drawerRootSx: {
@@ -22,12 +24,13 @@ export const drawerSx = {
   },
 
   headerRowSx: {
-    p: 0,
-    mb: 1,
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 1,
+    px: 1.25,
+    pt: 0.75,
+    pb: 1,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 'sm',
+    bgcolor: c.bg
   },
 
   playerHeroSx: {
@@ -35,6 +38,15 @@ export const drawerSx = {
     alignItems: 'center',
     gap: 1,
     minWidth: 0,
+  },
+
+  headerMainSx: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    minWidth: 0,
+    width: '100%',
+    pr: 4,
   },
 
   avatarWrapSx: {
@@ -70,11 +82,14 @@ export const drawerSx = {
   },
 
   bodySx: {
-    p: 0.25,
-    overflow: 'auto',
     display: 'grid',
-    alignContent: 'start',
-    gap: 1.1,
+    gap: 1,
+    p: 1,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    minWidth: 0,
+    minHeight: 0,
+    flex: 1,
   },
 
   sectionCardSx: {
@@ -109,7 +124,6 @@ export const drawerSx = {
     alignItems: 'center',
     gap: 0.75,
     gridTemplateColumns: '1fr 1fr',
-    mt: -1
   },
 
   footerSx: {

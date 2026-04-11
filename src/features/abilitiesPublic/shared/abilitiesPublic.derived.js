@@ -4,11 +4,13 @@ import {
   clean,
   buildDomainsFromDraftAbilities,
 } from './abilitiesPublic.helpers.js'
+import { shouldUseGrowthStage } from '../../../shared/abilities/abilitiesAgeRule.js'
 
 export function pickPublicDraftBits(draft = {}) {
   const abilitiesValues = draft?.abilities || {}
   const growthStageValue = abilitiesValues?.growthStage ?? null
   const hasGrowthStage = !(growthStageValue == null || growthStageValue === '')
+  const useGrowthStage = shouldUseGrowthStage(draft)
 
   return {
     inviteId: clean(draft?.inviteId),
@@ -20,6 +22,7 @@ export function pickPublicDraftBits(draft = {}) {
     teamId: clean(draft?.teamId),
     teamName: clean(draft?.teamName),
     teamPhoto: clean(draft?.teamPhoto),
+    teamYear: clean(draft?.teamYear),
     clubId: clean(draft?.clubId),
     clubName: clean(draft?.clubName),
     clubPhoto: clean(draft?.clubPhoto),
@@ -34,7 +37,8 @@ export function pickPublicDraftBits(draft = {}) {
     abilitiesValues,
     growthStageValue,
     hasGrowthStage,
-    missingGrowthStage: !hasGrowthStage,
+    useGrowthStage,
+    missingGrowthStage: useGrowthStage && !hasGrowthStage,
   }
 }
 
@@ -79,10 +83,10 @@ export function calcPublicDomains(abilitiesValues = {}) {
     })
 }
 
-export function buildPublicMissingItems({ bits = {}, domains = [], validation = {} }) {
+export function buildPublicMissingItems({ bits = {}, domains = [] }) {
   const missing = []
 
-  if (!bits?.hasGrowthStage) {
+  if (bits?.useGrowthStage && !bits?.hasGrowthStage) {
     missing.push({
       id: 'growthStage',
       label: 'בחירת שלב התפתחות',
@@ -119,7 +123,7 @@ export function buildPublicCompletionModel({ bits = {}, domains = [], validation
   let summaryText = 'הטופס מוכן לשליחה'
 
   if (!validation?.isValid) {
-    if (!bits?.hasGrowthStage) {
+    if (bits?.useGrowthStage && !bits?.hasGrowthStage) {
       summaryText = 'יש לבחור שלב התפתחות'
     } else if (remainingDomains > 0) {
       summaryText =

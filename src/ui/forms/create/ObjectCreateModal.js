@@ -50,7 +50,7 @@ export default function ObjectCreateModal({
     () => getEntityColors(meta.entityType),
     [meta.entityType]
   )
-
+  
   const FormComp = meta?.form || null
 
   const handleReset = React.useCallback(() => {

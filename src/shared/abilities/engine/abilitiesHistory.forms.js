@@ -1,3 +1,7 @@
+// C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.forms.js
+
+// קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.forms.js
+// הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
 
 import { makeId } from '../../../utils/id.js'
 import { abilitiesList } from '../abilities.list.js'
@@ -26,7 +30,12 @@ export function buildFormEntry({ draft, formId, now }) {
     windowKey: windowMeta.windowKey,
     windowStart: windowMeta.windowStart,
     windowEnd: windowMeta.windowEnd,
-    evaluatorId: safeStr(draft?.evaluatorId) || safeStr(draft?.createdById) || null,
+    evaluatorId: safeStr(draft?.evaluatorId) || null,
+    teamYear: safeStr(
+      draft?.team?.teamYear ||
+      draft?.teamYear ||
+      draft?.publicMeta?.teamYear
+    ) || null,
     source: safeStr(draft?.source) || 'abilitiesForm',
     growthStage: abilities?.growthStage ?? null,
     abilities,
@@ -47,6 +56,7 @@ export function normalizeStoredForm(form = {}) {
     windowStart: safeStr(form?.windowStart) || windowMeta.windowStart,
     windowEnd: safeStr(form?.windowEnd) || windowMeta.windowEnd,
     evaluatorId: safeStr(form?.evaluatorId) || null,
+    teamYear: safeStr(form?.teamYear) || null,
     source: safeStr(form?.source) || 'abilitiesForm',
     growthStage: abilities?.growthStage == null ? null : Number(abilities.growthStage),
     abilities,

@@ -13,12 +13,12 @@ export default function PlayerFirstNameField({
   onChange,
   disabled,
   helperText,
-  variant = 'soft',
+  variant = 'outlined',
   size = 'sm',
 }) {
   return (
     <>
-      <FormControl sx={{ width: '100%' }}>
+      <FormControl sx={{ minWidth: 0, width: '100%' }}>
         <FormLabel required sx={{ fontSize: '12px', textAlign: 'right', alignSelf: 'flex-start' }}>שם פרטי</FormLabel>
         <Input
           value={value}

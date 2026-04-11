@@ -1,9 +1,11 @@
-// C:\projects\devplan\src\features\hub\teamProfile\TeamProfilePage.js
+// src/features/hub/teamProfile/TeamProfilePage.js
+
 import React, { useMemo } from 'react'
-import { useParams, useSearchParams, Navigate } from 'react-router-dom'
+import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
 
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import ProfileShell from '../../hub/sharedProfile/ProfileShell'
 
 import { getTabFromUrl } from './teamProfile.routes'
@@ -13,6 +15,8 @@ import TeamModules from './components/TeamModules'
 import TeamProfileFab from './components/TeamProfileFab'
 
 export default function TeamProfilePage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { teamId, tabKey } = useParams()
   const [sp] = useSearchParams()
 
@@ -53,6 +57,15 @@ export default function TeamProfilePage() {
     }
   }, [entity, teams, clubs, players, roles, tags])
 
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'team',
+      mode: tab,
+      extra: context,
+    })
+  }, [location, tab, context])
+
   const counts = useMemo(() => {
     if (!entity) return {}
 
@@ -85,10 +98,11 @@ export default function TeamProfilePage() {
 
   return (
     <ProfileShell
+      tab={tab}
       entity={entity}
       context={context}
-      tab={tab}
       entityType={entity}
+      taskContext={taskContext}
       headerProps={{ counts }}
       HeaderComp={TeamHeader}
       NavComp={TeamNav}

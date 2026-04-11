@@ -1,6 +1,8 @@
-// C:\projects\devplan\src\ui\actions\GenericFabMenu.js
+// ui/actions/GenericFabMenu.js
+
 import * as React from 'react'
 import Box from '@mui/joy/Box'
+import Divider from '@mui/joy/Divider'
 import Dropdown from '@mui/joy/Dropdown'
 import Menu from '@mui/joy/Menu'
 import MenuButton from '@mui/joy/MenuButton'
@@ -22,9 +24,14 @@ const POS = {
 }
 
 const safeColors = (k) => {
-  try { return k ? getEntityColors(k) : null }
-  catch { return null }
+  try {
+    return k ? getEntityColors(k) : null
+  } catch {
+    return null
+  }
 }
+
+const isDividerItem = (item) => item?.type === 'divider'
 
 export default function GenericFabMenu({
   id = 'fab-menu',
@@ -37,7 +44,7 @@ export default function GenericFabMenu({
   label = '',
   primaryIcon,
   entityType,
-  fabSx
+  fabSx,
 }) {
   const [open, setOpen] = React.useState(false)
 
@@ -49,21 +56,18 @@ export default function GenericFabMenu({
 
   const Trigger = (
     <Box sx={sxFabMenu.trigger}>
-      {showLabel && label && (
+      {showLabel && label ? (
         <Typography level="body-sm" sx={sxFabMenu.label(palette)}>
           {label}
         </Typography>
-      )}
+      ) : null}
 
       <MenuButton
         id={id}
         aria-label={ariaLabel}
         disabled={disabled || !hasMenu}
         variant="plain"
-        sx={[
-          sxFabMenu.fab(open, palette),
-          fabSx,
-        ]}
+        sx={[sxFabMenu.fab(open, palette), fabSx]}
       >
         {open ? <KeyboardArrowUpRounded /> : <Icon />}
       </MenuButton>
@@ -73,12 +77,17 @@ export default function GenericFabMenu({
   return (
     <Box sx={{ position: 'fixed', zIndex: 1200, ...(POS[placement] || POS.br) }}>
       <Dropdown open={open} onOpenChange={(_, v) => setOpen(v)}>
-        {open ? Trigger : Trigger}
+        {tooltip ? <Tooltip title={tooltip}>{Trigger}</Tooltip> : Trigger}
 
-        {hasMenu && (
+        {hasMenu ? (
           <Menu placement="top-end" sx={sxFabMenu.menu}>
             {visible.map((a, i) => {
+              if (isDividerItem(a)) {
+                return <Divider key={a.id || `divider-${i}`} inset="none" />
+              }
+
               const c = safeColors(a.color)
+
               return (
                 <MenuItem
                   key={a.id || i}
@@ -89,13 +98,13 @@ export default function GenericFabMenu({
                   }}
                   sx={sxFabMenu.menuItem(c)}
                 >
-                  {a.icon && <ListItemDecorator>{a.icon}</ListItemDecorator>}
+                  {a.icon ? <ListItemDecorator>{a.icon}</ListItemDecorator> : null}
                   {a.label || a.title}
                 </MenuItem>
               )
             })}
           </Menu>
-        )}
+        ) : null}
       </Dropdown>
     </Box>
   )

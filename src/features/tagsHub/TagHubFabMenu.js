@@ -1,34 +1,38 @@
 // features/tagsHub/TagHubFabMenu.js
+
 import React, { useMemo } from 'react'
 import GenericFabMenu from '../../ui/actions/GenericFabMenu'
-import { iconUi } from '../../ui/core/icons/iconUi.js'
+import { buildFabActions } from '../../ui/actions/fabActions.factory.js'
 
-export default function TagHubFabMenu({ onCreateTag, tags, entityType }) {
+export default function TagHubFabMenu({
+  onCreateTag,
+  onAddTask,
+  taskContext,
+  entityType,
+}) {
   const actions = useMemo(() => {
-    return typeof onCreateTag === 'function'
-      ? [
-          {
-            id: 'create-tag',
-            label: 'יצירת תג חדש',
-            icon: iconUi({ id: 'addTag' }),
-            onClick: onCreateTag,
-            color: 'club',
-          },
-        ]
-      : []
-  }, [onCreateTag])
+    return buildFabActions({
+      area: 'tags',
+      mode: 'management',
+      taskContext,
+      permissions: { allowCreate: true },
+      handlers: {
+        onCreateTag,
+        onAddTask,
+      },
+    })
+  }, [onCreateTag, onAddTask, taskContext])
 
-  if (!actions.length) return null
+  if (!actions?.length) return null
 
   return (
     <GenericFabMenu
       id="tags-hub-fab"
       placement="br"
-      tooltip='יצירת תג חדש'
-      ariaLabel='יצירת תג חדש'
+      tooltip="יצירת תג או משימה"
+      ariaLabel="יצירת תג או משימה"
       actions={actions}
       entityType={entityType}
-      variant="solid"
       fabSx={{ color: '#fff' }}
     />
   )

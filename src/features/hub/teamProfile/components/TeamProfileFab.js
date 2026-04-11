@@ -4,6 +4,7 @@ import GenericFabMenu from '../../../../ui/actions/GenericFabMenu'
 import { buildFabActions } from '../../../../ui/actions/fabActions.factory'
 import { useCreateModal } from '../../../../ui/forms/create/CreateModalProvider'
 import { getEntityColors } from '../../../../ui/core/theme/Colors'
+import { buildTaskPresetDraft } from '../../../../ui/forms/helpers/tasksForm.helpers.js'
 
 const FAB_ENTITY_BY_TAB = {
   games: 'team',
@@ -19,13 +20,14 @@ function presetForTab(tab, entity, context) {
   return { teamId, clubId }
 }
 
-export default function TeamProfileFab({ entity, context, tab }) {
+export default function TeamProfileFab({ entity, context, tab, taskContext }) {
   const { openCreate } = useCreateModal()
 
   const actions = React.useMemo(() => {
     return buildFabActions({
       area: 'team',
       mode: tab,
+      taskContext,
       permissions: { allowCreate: true },
       handlers: {
         onAddGame: () => {
@@ -40,9 +42,20 @@ export default function TeamProfileFab({ entity, context, tab }) {
         onCreatePlayers: () => {
           openCreate('players', presetForTab('players', entity, context), { team: entity, ...(context || {}) })
         },
+        onAddTask: (taskCtx = {}) =>
+          openCreate(
+            'task',
+            buildTaskPresetDraft(taskCtx),
+            { ...context, ...taskCtx },
+            {
+              surface: 'drawer',
+              drawerAnchor: 'bottom',
+              drawerWidth: 900,
+            }
+          ),
       },
     })
-  }, [tab, openCreate, entity, context])
+  }, [tab, openCreate, entity, context, taskContext])
 
   if (!actions?.length) return null
 

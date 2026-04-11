@@ -101,11 +101,17 @@ export function getCreatedWhatsappText(createdState) {
   return clean(createdState?.whatsappText)
 }
 
-export async function createInviteFlow({ player, evaluator, activeDomains = [] }) {
+export async function createInviteFlow({
+  player,
+  evaluator,
+  creatorMeta = {},
+  activeDomains = []
+}) {
   return createAbilitiesInvite({
     player,
     evaluator,
     meta: {
+      ...creatorMeta,
       activeDomains: normalizeActiveDomains(activeDomains),
     },
   })

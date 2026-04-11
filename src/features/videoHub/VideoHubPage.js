@@ -1,5 +1,7 @@
 // src/features/videoHub/VideoHubPage.js
+
 import React, { useMemo, useState, useCallback } from 'react'
+import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
 import { Box } from '@mui/joy'
 
 import { VIDEO_TAB } from './logic/videoHub.model'
@@ -30,6 +32,8 @@ import DriveVideoPlayer from '../../ui/domains/video/DriveVideoPlayer.js'
 import { useCreateModal } from '../../ui/forms/create/CreateModalProvider'
 import { useCoreData } from '../coreData/CoreDataProvider.js'
 import { buildVideoHubContext } from './logic/videoHub.context.js'
+import { buildTaskFabContext } from '../../ui/actions/buildTaskFabContext.js'
+import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.js'
 
 import { useVideoHubModal } from './hooks/useVideoHubModal.js'
 import { useVideoHubUpdate } from './hooks/useVideoHubUpdate.js'
@@ -60,6 +64,8 @@ const DEFAULT_FILTERS_GENERAL = {
 }
 
 export default function VideoHubPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { openCreate } = useCreateModal()
   const core = useCoreData()
 
@@ -93,6 +99,15 @@ export default function VideoHubPage() {
     [baseContext, analysisEnriched, generalRaw]
   )
 
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'video',
+      mode: tab,
+      extra: context,
+    })
+  }, [location, tab, context])
+
   // derived
   const filteredAna = useMemo(() => {
     const out = filterVideoAnalysis(analysisEnriched, filtersAna)
@@ -125,6 +140,19 @@ export default function VideoHubPage() {
   const onCreateGeneral = useCallback(() => {
     // אם ה-provider אצלך מצפה ל-3 args, תיישר קו כאן כמו באנליזה
     openCreate('videos', {}, context)
+  }, [openCreate, context])
+
+  const onAddTask = useCallback((nextTaskContext = {}) => {
+    openCreate(
+      'task',
+      buildTaskPresetDraft(nextTaskContext),
+      { ...context, ...nextTaskContext },
+      {
+        surface: 'drawer',
+        drawerAnchor: 'bottom',
+        drawerWidth: 900,
+      }
+    )
   }, [openCreate, context])
 
   // filters ui
@@ -251,8 +279,10 @@ export default function VideoHubPage() {
 
       <VideoHubFabMenu
         tab={tab}
+        taskContext={taskContext}
         onCreateAnalysis={onCreateAnalysis}
         onCreateGeneral={onCreateGeneral}
+        onAddTask={onAddTask}
       />
     </Box>
   )

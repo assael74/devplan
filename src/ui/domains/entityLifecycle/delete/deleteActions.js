@@ -55,6 +55,10 @@ const VIDEO_ANALYSIS_SHORT_KEYS = [
   'videoAnalysis.analysisTags',
 ]
 
+const TASK_SHORT_KEYS = [
+  'tasks.tasksInfo',
+]
+
 const toRouterEntityType = (entityType) => {
   if (entityType === 'player') return 'players'
   if (entityType === 'team') return 'teams'
@@ -62,6 +66,7 @@ const toRouterEntityType = (entityType) => {
   if (entityType === 'role') return 'roles'
   if (entityType === 'scouting') return 'scouting'
   if (entityType === 'tag') return 'tags'
+  if (entityType === 'task') return 'tasks'
   return null
 }
 
@@ -199,6 +204,15 @@ export const deleteActions = {
       entityType: 'videoAnalysis',
       id,
       shortKeys: VIDEO_ANALYSIS_SHORT_KEYS,
+      requireAnyFound: true,
+      requireAllFound: false,
+    }),
+
+  task: async ({ id }) =>
+    run({
+      entityType: 'task',
+      id,
+      shortKeys: TASK_SHORT_KEYS,
       requireAnyFound: true,
       requireAllFound: false,
     }),

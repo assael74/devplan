@@ -32,7 +32,9 @@ export const tableSx = {
   headTextSx: {
     fontWeight: 700,
     color: 'text.secondary',
-    textAlign: 'center'
+    textAlign: 'center',
+    cursor: 'pointer',
+    userSelect: 'none',
   },
 
   rowCardSx: {

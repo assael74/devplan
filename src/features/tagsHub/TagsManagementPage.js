@@ -1,5 +1,7 @@
 // src/features/tagsHub/TagsManagementPage.js
+
 import React, { useMemo, useState, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Box, Typography, Sheet } from '@mui/joy'
 import { sx as pageSx } from './tags.sx'
 import TagsFiltersRow from './components/TagsFiltersRow'
@@ -12,8 +14,11 @@ import { useCoreData } from '../coreData/CoreDataProvider.js'
 import { normalizeTags, filterTags, buildTagsSections, buildEditMeta } from './tags.logic'
 
 import { iconUi } from '../../ui/core/icons/iconUi.js'
+import { buildTaskFabContext } from '../../ui/actions/buildTaskFabContext.js'
+import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.js'
 
 export default function TagsManagementPage() {
+  const location = useLocation()
   const { openCreate } = useCreateModal()
   const { tags: coreTags } = useCoreData()
 
@@ -32,15 +37,36 @@ export default function TagsManagementPage() {
   }, [])
 
   const tagsNorm = useMemo(() => normalizeTags(coreTags || []), [coreTags])
-
   const filtered = useMemo(() => filterTags(tagsNorm, uiFilters), [tagsNorm, uiFilters])
-
-  // build strict separated sections (general / analysis) + hierarchy
   const sections = useMemo(() => buildTagsSections(filtered), [filtered])
+
+  const taskContext = useMemo(() => {
+    return buildTaskFabContext({
+      location,
+      area: 'tags',
+      mode: 'management',
+      extra: {
+        tags: tagsNorm,
+      },
+    })
+  }, [location, tagsNorm])
 
   const onCreateTag = useCallback(() => {
     openCreate('tag')
   }, [openCreate])
+
+  const onAddTask = useCallback((nextTaskContext = {}) => {
+    openCreate(
+      'task',
+      buildTaskPresetDraft(nextTaskContext),
+      { tags: tagsNorm, ...nextTaskContext },
+      {
+        surface: 'drawer',
+        drawerAnchor: 'bottom',
+        drawerWidth: 900,
+      }
+    )
+  }, [openCreate, tagsNorm])
 
   const onEdit = useCallback(
     (tag) => {
@@ -60,7 +86,7 @@ export default function TagsManagementPage() {
   return (
     <Box sx={pageSx.page}>
       <Sheet variant="soft" sx={pageSx.header}>
-        <Typography level="h3" noWrap startDecorator={iconUi({id: 'tags'})}>
+        <Typography level="h3" noWrap startDecorator={iconUi({ id: 'tags' })}>
           ניהול תגים
         </Typography>
       </Sheet>
@@ -73,7 +99,12 @@ export default function TagsManagementPage() {
         </Box>
       </Box>
 
-      <TagHubFabMenu onCreateTag={onCreateTag} entityType='tags' />
+      <TagHubFabMenu
+        onCreateTag={onCreateTag}
+        onAddTask={onAddTask}
+        taskContext={taskContext}
+        entityType="tags"
+      />
 
       <TagEditorDrawer
         open={drawerOpen}

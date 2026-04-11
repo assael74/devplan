@@ -8,7 +8,8 @@ const ENTITY_LABEL = {
   tag: 'וידאו תג',
   game: 'משחק',
   videoAnalysis: 'ניתוח וידאו',
-  videoGeneral: 'וידאו כללי'
+  videoGeneral: 'וידאו כללי',
+  task: 'משימה'
 }
 
 const ACTION_LABEL = {

@@ -1,120 +1,111 @@
-// previewDomainCard/domains/team/players/sx/teamPlayerEditDrawer.sx.js
+// previewDomainCard/domains/club/teams/sx/editDrawer.sx.js
+
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('team')
+const c = getEntityColors('teams')
 
-export const drawerSx = {
-  drawerSheetSx: {
-    borderRadius: { xs: 0, md: 'md' },
-    p: 2,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2,
-    height: '100%',
-    overflow: 'hidden',
+export const editDrawerSx = {
+  drawerSx: {
+    bgcolor: 'transparent',
+    p: { xs: 0, md: 2 },
+    boxShadow: 'none',
   },
 
-  drawerRootSx: {
+  drawerSheet: {
+    borderRadius: 'md',
+    py: 1,
+    px: 0.5,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1,
     height: '100%',
-    display: 'grid',
-    gridTemplateRows: 'auto 1fr auto',
+    overflow: 'hidden',
     bgcolor: 'background.body',
   },
 
-  headerRowSx: {
-    p: 0,
-    mb: 1,
+  drawerRootSx: {
     display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 1,
+    flexDirection: 'column',
+    minHeight: 0,
+    height: '100%',
   },
 
-  playerHeroSx: {
+  headerRowSx: {
+    px: 1.25,
+    pt: 0.75,
+    pb: 1,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 'sm',
+    bgcolor: c.bg
+  },
+
+  headerMainSx: {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     minWidth: 0,
+    width: '100%',
+    pr: 4,
   },
 
-  avatarWrapSx: {
-    width: 52,
-    height: 52,
-    borderRadius: '50%',
-    flexShrink: 0,
-    boxShadow: 'sm',
-    outline: '2px solid',
-    outlineColor: 'rgba(255,255,255,0.85)',
-  },
-
-  playerTextSx: {
+  heroTextSx: {
     minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.25,
+  },
+
+  content: {
     display: 'grid',
-    gap: 0.2,
-  },
-
-  playerNameSx: {
-    fontWeight: 600,
-    lineHeight: 1.05,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-
-  playerMetaSx: {
-    color: 'text.secondary',
-    fontSize: 12,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-
-  bodySx: {
-    p: 0.25,
-    overflow: 'auto',
-    display: 'grid',
-    alignContent: 'start',
-    gap: 1.1,
+    gap: 1.25,
+    p: 1.25,
+    overflowY: 'auto',
+    minHeight: 0,
+    flex: 1,
   },
 
   sectionCardSx: {
-    p: 1,
-    borderRadius: 'xl',
-    bgcolor: 'background.level1',
     border: '1px solid',
     borderColor: 'divider',
-    display: 'grid',
-    gap: 0.75,
-  },
-
-  sectionStatusCardSx: {
+    borderRadius: 'md',
     p: 1,
-    mt: 4,
-    borderRadius: 'sm',
-    borderTop: '1px solid',
-    bgcolor: 'background.surface',
-    borderColor: 'divider',
     display: 'grid',
-    gap: 0.75,
+    gap: 1,
+    bgcolor: 'background.level1',
   },
 
-  sectionTitleSx: {
-    fontWeight: 700,
-    color: 'text.secondary',
-    fontSize: 12,
+  gridInfoSx: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+    gap: 1,
   },
 
-  boolRowSx: {
+  gridLeagueTopSx: {
     display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: '1.3fr .7fr' },
+    gap: 1,
+  },
+
+  gridLeagueSx: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: '88px 88px 88px 88px' },
+    gap: 1,
+  },
+
+  inlineChecksSx: {
+    display: 'flex',
     alignItems: 'center',
-    gap: 0.75,
-    gridTemplateColumns: '1fr 1fr',
-    mt: -1
+    gap: 1,
+    flexWrap: 'wrap',
+    mt: 1,
   },
 
   footerSx: {
     pt: 1,
     mt: 1,
+    px: 2,
+    pb: 1,
     borderTop: '1px solid',
     borderColor: 'divider',
     display: 'flex',
@@ -125,16 +116,12 @@ export const drawerSx = {
     bgcolor: 'background.body',
   },
 
-  footerActionsSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.75,
-  },
-
   icoRes: {
     height: 36,
     width: 36,
     flexShrink: 0,
+    border: '1px solid',
+    borderColor: c.accent,
   },
 
   conBut: {

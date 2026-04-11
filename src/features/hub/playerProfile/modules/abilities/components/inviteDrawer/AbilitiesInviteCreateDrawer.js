@@ -1,6 +1,7 @@
 //  hub/playerProfile/modules/abilities/components/inviteDrawer/AbilitiesInviteCreateDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../../../../../../../app/AuthProvider.js'
 import {
   Box,
   Button,
@@ -37,6 +38,7 @@ export default function AbilitiesInviteCreateDrawer({
   context,
   onCreated,
 }) {
+  const { user } = useAuth()
   const roles = useMemo(() => buildRolesPool(context), [context])
   const playerPhoto = useMemo(() => resolvePlayerPhoto(player), [player])
   const playerName = useMemo(() => buildPlayerLabel(player), [player])
@@ -97,6 +99,10 @@ export default function AbilitiesInviteCreateDrawer({
         player,
         evaluator,
         activeDomains: selectedDomains,
+        creatorMeta: {
+          createdById: clean(user?.uid),
+          createdByName: clean(user?.displayName || user?.email || 'משתמש מערכת'),
+        },
       })
 
       setCreatedState(created)

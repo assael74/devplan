@@ -2,10 +2,10 @@ import React, { useMemo } from 'react'
 import GenericFabMenu from '../../../../ui/actions/GenericFabMenu'
 import { buildFabActions } from '../../../../ui/actions/fabActions.factory'
 
-export default function HubFabMenu({ mode, context, handlers, permissions }) {
+export default function HubFabMenu({ mode, context, handlers, permissions, taskContext }) {
   const actions = useMemo(
-    () => buildFabActions({ area: 'hub', mode, context, handlers, permissions }),
-    [mode, context, handlers, permissions]
+    () => buildFabActions({ area: 'hub', mode, context, handlers, permissions, taskContext }),
+    [mode, context, handlers, permissions, taskContext]
   )
 
   const tooltip =
@@ -32,6 +32,7 @@ export default function HubFabMenu({ mode, context, handlers, permissions }) {
       actions={actions}
       variant="solid"
       context={context}
+      taskContext={taskContext}
       entityType={mode}
       fabSx={{ color: '#fff' }}
     />

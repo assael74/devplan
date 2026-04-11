@@ -31,6 +31,11 @@ export const COLORS = {
     tag: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#EEF2FF' },
     tags: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#EEF2FF' },
 
+    task: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#E6F7FB' },
+    tasks: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#E6F7FB' },
+    taskApp: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#ffffff' },
+    taskAnalyst: { bg: '#ffe599', surface: '#FFFFFF', accent: '#d5b34e', text: '#111827', textAcc: '#ffffff' },
+
     training: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#EEF2FF' },
     trainings: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#EEF2FF' },
 

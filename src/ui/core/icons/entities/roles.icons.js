@@ -1,4 +1,5 @@
 import {
+  Analytics,
   Badge,
   PersonSearch,
   Psychology,
@@ -10,4 +11,5 @@ export const roleIcons = {
   psychologist: <Psychology />,
   scout: <PersonSearch />,
   scouting: <PersonSearch />,
+  Analyst: <Analytics />,
 };

@@ -1,6 +1,7 @@
 // src/features/hub/ui/HubPage.helpers.js
 
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
+import { buildTaskPresetDraft } from '../../../ui/forms/helpers/tasksForm.helpers.js'
 
 export const buildTabsMeta = (MODE) => [
   { value: MODE.CLUBS, label: 'מועדונים', icon: iconUi({ id: 'clubs' }) },
@@ -14,8 +15,10 @@ export const buildTabsMeta = (MODE) => [
 export const buildContextFromSelection = (selection) => {
   const t = selection?.type
   const d = selection?.data || {}
-  const clubKey = d?.clubsId ?? d?.clubId ?? null
-  const teamKey = d?.teamId ?? null
+
+  const clubKey = (d?.clubsId ?? d?.clubId ?? null)
+
+  const teamKey = (d?.teamId ?? null)
 
   return {
     clubId: t === 'club' ? (d?.id ?? clubKey) : clubKey,
@@ -45,4 +48,16 @@ export const buildCreateHandlers = ({ openCreate, context, s }) => ({
 
   onCreateStaff: () =>
     openCreate('role', {}, { ...context, onDone: (res) => s.selectStaffById(res?.id || res?.roleId || null) }),
+
+  onAddTask: (taskContext = {}) =>
+    openCreate(
+      'task',
+      buildTaskPresetDraft(taskContext),
+      { ...context, ...taskContext },
+      {
+        surface: 'drawer',
+        drawerAnchor: 'bottom',
+        drawerWidth: 900,
+      }
+    ),
 })

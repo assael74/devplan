@@ -9,12 +9,14 @@ import AppShell from '../ui/core/layout/AppShell'
 import RtlCacheProvider from './RtlCacheProvider'
 import { CoreDataProvider } from '../features/coreData/CoreDataProvider'
 
+import { AuthProvider } from './AuthProvider'
+import { NotificationsProvider } from './NotificationsProvider'
+
 import { AppProviders } from './providers'
 import AppRoutes from './routes/AppRoutes'
-import SnackbarProvider  from '../ui/core/feedback/snackbar/SnackbarProvider.js'
+import SnackbarProvider from '../ui/core/feedback/snackbar/SnackbarProvider.js'
 import SnackbarCenter from '../ui/core/feedback/snackbar/SnackbarCenter'
 import LifecycleProvider from '../ui/domains/entityLifecycle/LifecycleProvider.js'
-
 import CreateModalProvider from '../ui/forms/create/CreateModalProvider'
 
 export default function App() {
@@ -38,11 +40,15 @@ export default function App() {
               <AppProviders>
                 <CoreDataProvider>
                   <BrowserRouter>
-                    <LifecycleProvider>
-                      <CreateModalProvider>
-                        <AppRoutes />
-                      </CreateModalProvider>
-                    </LifecycleProvider>
+                    <AuthProvider>
+                      <NotificationsProvider>
+                        <LifecycleProvider>
+                          <CreateModalProvider>
+                            <AppRoutes />
+                          </CreateModalProvider>
+                        </LifecycleProvider>
+                      </NotificationsProvider>
+                    </AuthProvider>
                   </BrowserRouter>
                 </CoreDataProvider>
               </AppProviders>
