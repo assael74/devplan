@@ -22,6 +22,12 @@ export const homeSx = {
     bgcolor: c(entity).bg,
     border: '1px solid',
     borderColor: 'divider',
+    transition: 'box-shadow .18s ease, transform .14s ease, border-color .18s ease',
+  }),
+
+  cardInProgress: (entity) => ({
+    boxShadow: 'sm',
+    borderColor: c(entity).accent,
   }),
 
   cardContent: {
@@ -58,7 +64,7 @@ export const homeSx = {
     display: 'inline-flex',
     fontWeight: 700,
     color: color,
-    ml: 0.5
+    ml: 0.5,
   }),
 
   scrollBox: {
@@ -142,6 +148,7 @@ export const homeSx = {
     bgcolor: c(entity).accent,
     color: c(entity).textAcc,
     transition: 'filter .15s ease, transform .12s ease',
+    mt: 0.5,
 
     '&:hover': {
       bgcolor: c(entity).accent,

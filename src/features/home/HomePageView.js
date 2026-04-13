@@ -18,7 +18,7 @@ import EditDrawer from './components/editDrawer/EditDrawer.js'
 import NewFormDrawer from './components/newFormDrawer/NewFormDrawer.js'
 
 import { getEntityColors } from '../../ui/core/theme/Colors.js'
-import { buildTaskContextFromSectionId } from './components/newFormDrawer/logic/newFormDrawer.utils.js'
+import { buildTaskContextFromSectionId } from './components/newFormDrawer/newFormDrawer.utils.js'
 
 const c = (entity) => getEntityColors(entity)
 

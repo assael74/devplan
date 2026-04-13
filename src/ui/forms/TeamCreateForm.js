@@ -1,23 +1,30 @@
 /// ui/forms/TeamCreateForm.js
-import React, { useEffect, useMemo } from 'react'
-import Box from '@mui/joy/Box'
-import Typography from '@mui/joy/Typography'
 
-import TeamNameField from '../fields/inputUi/teams/TeamNameField'
-import ClubSelectField from '../fields/selectUi/clubs/ClubSelectField'
-import YearPicker from '../fields/dateUi/YearPicker'
-import TeamProjectSelector from '../fields/checkUi/teams/TeamProjectSelector'
-import TeamIfaLinkField from '../fields/inputUi/teams/TeamIfaLinkField'
+import React, { useEffect, useMemo } from 'react'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+
+import Box from '@mui/joy/Box'
+
+import TeamCreateFields from './ui/teams/TeamCreateFields.js'
+
+import { getTeamCreateFormLayout } from './layouts/teamCreateForm.layout.js'
 
 const clean = (v) => String(v ?? '').trim()
 
 export default function TeamCreateForm({
-  draft,
+  draft = {},
   onDraft,
-  context,
   onValidChange,
+  context = {},
+  variant = 'modal',
+  forceMobile = false,
   clubDisabled = false
 }) {
+  const theme = useTheme()
+  const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = forceMobile || isMobileViewport
+
   const teamName = draft?.teamName || ''
   const clubId = draft?.clubId || ''
   const teamYear = draft?.teamYear || ''
@@ -40,57 +47,18 @@ export default function TeamCreateForm({
   const clubErr = !validity.okClub && clean(clubId).length > 0
   const yearErr = !validity.okYear && clean(teamYear).length > 0
 
+  const layout = useMemo(() => {
+    return getTeamCreateFormLayout({ variant, isMobile })
+  }, [variant, isMobile])
+
   return (
-    <Box sx={{ display: 'grid', gap: 2 }}>
-
-      <Box sx={{ display: 'grid', gap: 1, mb: 2 }}>
-        <TeamNameField
-          required
-          value={teamName}
-          onChange={(v) => onDraft({ ...draft, teamName: v })}
-          error={nameErr}
-          size="sm"
-        />
-      </Box>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-        <ClubSelectField
-          required
-          disabled={clubDisabled}
-          value={clubId}
-          options={clubs}
-          onChange={(v) => onDraft({ ...draft, clubId: v })}
-          error={clubErr}
-          size="sm"
-        />
-        <YearPicker
-          label="שנתון"
-          value={teamYear}
-          onChange={(v) => onDraft({ ...draft, teamYear: v })}
-          required
-          clearable={false}
-          range={{ past: 20, future: 0 }}
-          size="sm"
-          sx={{ width: '100%' }}
-        />
-      </Box>
-
-      <Box sx={{ display: 'grid', alignItems: 'center', gridTemplateColumns: '0.60fr 1.40fr', gap: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <TeamProjectSelector
-            value={isProject}
-            onChange={(v) => onDraft({ ...draft, isProject: v })}
-            size="sm"
-          />
-        </Box>
-        <TeamIfaLinkField
-          value={teamIfaLink}
-          onChange={(v) => onDraft({ ...draft, teamIfaLink: v })}
-          required={false}
-          size="sm"
-        />
-      </Box>
-
-    </Box>
+    <TeamCreateFields
+      draft={draft}
+      onDraft={onDraft}
+      onValidChange={onValidChange}
+      context={context}
+      validity={validity}
+      layout={layout}
+    />
   )
 }

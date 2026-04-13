@@ -2,9 +2,16 @@
 
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 
-export const safe = (v) => (v == null ? '' : String(v))
+export const safe = (value) => (value == null ? '' : String(value))
 
-const clean = (v) => safe(v).trim()
+const clean = (value) => safe(value).trim()
+
+const isValidDateFormat = (value) => {
+  const date = clean(value)
+  if (!date) return false
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
+}
 
 export const getMeetingStatusId = (status) => {
   if (!status) return ''
@@ -78,7 +85,7 @@ export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
   }
 }
 
-export const buildMeetingName = (meeting) => {
+export const buildMeetingName = (meeting = {}) => {
   const date = clean(meeting?.meetingDate)
   const hour = clean(meeting?.meetingHour)
   const type = clean(meeting?.typeLabel || meeting?.type)
@@ -87,7 +94,7 @@ export const buildMeetingName = (meeting) => {
   return [type, meetingFor, date, hour].filter(Boolean).join(' • ') || 'פגישה'
 }
 
-export const buildMeetingMeta = (meeting) => {
+export const buildMeetingMeta = (meeting = {}) => {
   const playerName = `${meeting?.player?.playerFirstName || ''} ${meeting?.player?.playerLastName || ''}`.trim()
   const rawDate = clean(meeting?.meetingDate)
   const dateLabel = clean(meeting?.dateLabel) || clean(getFullDateIl(rawDate))
@@ -96,12 +103,13 @@ export const buildMeetingMeta = (meeting) => {
   return [playerName, dateLabel, hour].filter(Boolean).join(' | ') || 'פרטי פגישה'
 }
 
-export const buildInitialDraft = (meeting) => {
+export const buildInitialDraft = (meeting = {}) => {
   const source = meeting || {}
   const linkedVideo = source?.video || null
 
   return {
     id: source?.id || '',
+    playerId: source?.playerId || source?.player?.id || '',
     name: buildMeetingName(source),
     meetingDate: source?.meetingDate || '',
     meetingHour: source?.meetingHour || '',
@@ -118,6 +126,23 @@ export const buildInitialDraft = (meeting) => {
     raw: source,
     metaLabel: buildMeetingMeta(source),
   }
+}
+
+export const getFieldErrors = (draft = {}) => {
+  const meetingDate = clean(draft?.meetingDate)
+  const type = clean(draft?.type)
+  const meetingFor = clean(draft?.meetingFor)
+
+  return {
+    okType: !!type,
+    okDate: !!meetingDate && isValidDateFormat(meetingDate),
+    okFor: !!meetingFor,
+  }
+}
+
+export const getIsValid = (draft = {}) => {
+  const validity = getFieldErrors(draft)
+  return Boolean(validity.okType && validity.okDate && validity.okFor)
 }
 
 export const buildMeetingPatch = (initial, draft) => {
@@ -162,10 +187,7 @@ export const buildVideoPlan = (initial, draft) => {
   }
 
   const meetingId = clean(initial?.id || initial?.raw?.id)
-  const playerId = clean(
-    initial?.raw?.playerId ||
-    initial?.raw?.player?.id
-  )
+  const playerId = clean(initial?.raw?.playerId || initial?.raw?.player?.id)
 
   const unlinkPrev =
     initialVideoId && initial?.rawVideoInfo
@@ -181,18 +203,17 @@ export const buildVideoPlan = (initial, draft) => {
         }
       : null
 
-  const linkNext =
-    nextVideoId
-      ? {
-          videoId: nextVideoId,
-          patch: {
-            contextType: 'meeting',
-            objectType: 'meeting',
-            meetingId,
-            playerId,
-          },
-        }
-      : null
+  const linkNext = nextVideoId
+    ? {
+        videoId: nextVideoId,
+        patch: {
+          contextType: 'meeting',
+          objectType: 'meeting',
+          meetingId,
+          playerId,
+        },
+      }
+    : null
 
   return {
     unlinkPrev,

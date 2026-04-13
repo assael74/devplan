@@ -1,37 +1,22 @@
-// playerProfile/modules/videos/components/drawer/EditDrawer.js
+// playerProfile/modules/videos/components/drawer\EditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Avatar,
-  Box,
-  Button,
-  Drawer,
-  Typography,
-  Sheet,
-  DialogContent,
-  DialogTitle,
-  ModalClose,
-  Tooltip,
-  IconButton,
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import VideoAttachDrawerBody from '../../../../../../../ui/domains/video/videoAnalysis/attachDrawer/VideoAttachDrawerBody.js'
-import VideoEditDrawerBody from '../../../../../../../ui/domains/video/videoAnalysis/editDrawer/VideoEditDrawerBody.js'
-
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
-import { useVideoUpdate } from '../../../../../hooks/videoAnalysis/useVideoUpdate.js'
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 
-import { editDrawerSx as sx } from './sx/editDrawer.sx.js'
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
+import { useVideoUpdate } from '../../../../../hooks/videoAnalysis/useVideoUpdate.js'
+
+import VideoAnalysisEditFields from '../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisEditFields.js'
+
 import {
-  safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './logic/playerVideoEdit.logic.js'
-
-const c = getEntityColors('videoAnalysis')
+  buildVideoMeta,
+} from './playerVideoEdit.logic.js'
 
 export default function EditDrawer({
   open,
@@ -42,20 +27,30 @@ export default function EditDrawer({
 }) {
   const initial = useMemo(() => buildInitialDraft(video), [video])
   const [draft, setDraft] = useState(initial)
-  const player = context?.player
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
   }, [open, initial])
 
+  const player = context?.player || null
+
+  const liveVideo = useMemo(() => {
+    return {
+      ...initial?.raw,
+      ...draft,
+      player,
+      metaLabel: buildVideoMeta({ ...initial?.raw, ...draft, player, }),
+    }
+  }, [initial?.raw, draft, player])
+
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useVideoUpdate(video)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && !pending
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('playerVideoEdit', patch, {
@@ -65,95 +60,59 @@ export default function EditDrawer({
 
     onSaved(patch, { ...initial.raw, ...patch })
     onClose()
-  }
+  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft({
       ...initial,
     })
-  }
+  }, [initial, pending])
+
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || 'שחקן'
+  const headerMeta = liveVideo?.metaLabel || `עריכת פרטי וידאו: "${video?.name || 'וידאו'}"`
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      size="md"
-      variant="plain"
-      anchor="right"
+    <DrawerShell
+      entity="player"
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+      }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="videoAnalysis"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, boxShadow: 'sm' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Avatar src={player?.photo || playerImage} />
-
-            <Box sx={{ ml: 2 }}>
-              <Typography level="title-md" sx={sx.formNameSx}>
-                {player?.playerFullName || 'שחקן'}
-              </Typography>
-
-              <Typography level="body-sm" sx={sx.formNameSx} startDecorator={iconUi({ id: 'videoAnalysis' })}>
-                עריכת פרטי וידאו: "{video?.name || 'וידאו'}"
-              </Typography>
-            </Box>
-          </Box>
-
-          <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />
-        </DialogTitle>
-
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <VideoEditDrawerBody
-              draft={draft}
-              setDraft={setDraft}
-              disabled={pending}
-              context={context}
-              sx={sx}
-            />
-          </Box>
-        </DialogContent>
-
-        <Box sx={sx.footerSx}>
-          <Box sx={sx.footerActionsSx}>
-            <Button
-              loading={pending}
-              disabled={!canSave}
-              startDecorator={iconUi({ id: 'save' })}
-              onClick={handleSave}
-              sx={sx.conBut}
-            >
-              שמירה
-            </Button>
-
-            <Button
-              color="neutral"
-              variant="outlined"
-              onClick={onClose}
-              disabled={pending}
-            >
-              ביטול
-            </Button>
-
-            <Tooltip title="איפוס השינויים">
-              <span>
-                <IconButton
-                  disabled={!isDirty}
-                  size="sm"
-                  variant="soft"
-                  sx={sx.icoRes}
-                  onClick={handleReset}
-                >
-                  {iconUi({ id: 'reset' })}
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Box>
-
-          <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-            {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-          </Typography>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <VideoAnalysisEditFields
+        draft={draft}
+        setDraft={setDraft}
+        context={context}
+      />
+    </DrawerShell>
   )
 }

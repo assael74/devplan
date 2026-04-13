@@ -1,25 +1,39 @@
 // features/home/components/newFormDrawer/NewFormDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box } from '@mui/joy'
 
-import { iconUi } from '../../../../ui/core/icons/iconUi.js'
+import DrawerShell from '../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import TasksCreateFields from '../../../../ui/forms/ui/tasks/TasksCreateFields.js'
+
 import useTaskCreate from '../../hooks/useTaskCreate.js'
-
-import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import NewFormDrawerForm from './NewFormDrawerForm.js'
 
 import {
   buildInitialDraft,
   getTaskCreateValidity,
   getIsDirty,
   getIsValid,
-  getDrawerEntityByWorkspace,
-} from './logic/newFormDrawer.utils.js'
+} from './newFormDrawer.utils.js'
 
-import { newDrawerSx as sx } from './sx/newFormDrawer.sx.js'
+import {
+  getTaskStatusMeta,
+  getTaskTypeMeta,
+  getTaskWorkspaceMeta,
+} from '../../../../shared/tasks/tasks.constants.js'
 
-export default function NewFormDrawer({ open, taskContext, onClose, onCreated }) {
+const layout = {
+  topCols: { xs: '1fr', md: '1fr' },
+  mainCols: { xs: '1fr', md: '1fr' },
+  metaCols: { xs: '1fr', md: '1.2fr .9fr .9fr' },
+}
+
+export default function NewFormDrawer({
+  open,
+  taskContext,
+  onClose,
+  onCreated,
+}) {
   const initial = useMemo(() => buildInitialDraft(taskContext), [taskContext])
   const [draft, setDraft] = useState(initial)
 
@@ -34,10 +48,13 @@ export default function NewFormDrawer({ open, taskContext, onClose, onCreated })
   const isValid = useMemo(() => getIsValid(validity), [validity])
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
 
-  const entity = getDrawerEntityByWorkspace(draft?.workspace)
+  const workspaceMeta = getTaskWorkspaceMeta(draft?.workspace)
+  const statusMeta = getTaskStatusMeta(draft?.status)
+  const taskTypeMeta = getTaskTypeMeta(draft?.workspace, draft?.taskType)
+
   const canSave = isValid && !saving
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     try {
@@ -46,93 +63,70 @@ export default function NewFormDrawer({ open, taskContext, onClose, onCreated })
         context: taskContext,
       })
 
-      onCreated?.(created)
-      onClose?.()
+      onCreated(created)
+      onClose()
     } catch (error) {
       console.error('NewFormDrawer create failed:', error)
     }
-  }
+  }, [canSave, runCreateTask, draft, taskContext, onCreated, onClose])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (saving) return
     setDraft(initial)
-  }
+  }, [saving, initial])
+
+  const status = !isValid
+    ? { text: 'יש להשלים שדות חובה', color: 'warning' }
+    : saving
+    ? { text: 'יוצר משימה...', color: 'primary' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'מוכן ליצירה', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={saving ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="task"
+      open={open}
+      onClose={onClose}
+      saving={saving}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'יצירת משימה',
+        saving: 'יוצר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="task"
+          title="משימה חדשה"
+          subline={[
+            workspaceMeta?.label || 'אזור עבודה',
+            taskTypeMeta?.label || 'כללי',
+            statusMeta?.label || '',
+          ].filter(Boolean).join(' · ')}
+          titleIconId={taskTypeMeta?.idIcon || 'addTask'}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <NewFormDrawerHeader draft={draft} />
-
-          <NewFormDrawerForm
-            draft={draft}
-            setDraft={setDraft}
-            context={taskContext}
-          />
-
-          <Box sx={sx.footerSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Button
-                loading={saving}
-                loadingPosition="start"
-                disabled={!canSave}
-                startDecorator={!saving ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut(entity)}
-              >
-                {saving ? 'יוצר...' : 'יצירת משימה'}
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={saving}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || saving}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={!isValid ? 'danger' : isDirty ? 'warning' : 'neutral'}>
-              {!isValid
-                ? 'יש להשלים שדות חובה'
-                : saving
-                ? 'יוצר משימה...'
-                : isDirty
-                ? 'יש שינויים שלא נשמרו'
-                : 'מוכן ליצירה'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
+        <TasksCreateFields
+          draft={draft}
+          onDraft={setDraft}
+          context={taskContext}
+          validity={validity}
+          layout={layout}
+          fieldDisabled={{ workspace: true, url: true, status: true }}
+        />
+      </Box>
+    </DrawerShell>
   )
 }

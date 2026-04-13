@@ -1,34 +1,45 @@
 // previewDomainCard/domains/player/games/components/drawerEx/EditExDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Drawer,
-  Sheet,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  Tooltip,
-  ModalClose,
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box, Accordion, AccordionDetails, AccordionSummary, AccordionGroup, Typography } from '@mui/joy'
+import AddIcon from '@mui/icons-material/Add'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
+
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
 import { useGameHubUpdate } from '../../../../../../../../hooks/games/useGameHubUpdate.js'
 
-import EditExDrawerHeader from './EditExDrawerHeader.js'
-import EditExDrawerFields from './EditExDrawerFields.js'
+import GameEntryFields from '../../../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
+import GameCreateFields from '../../../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
 
 import {
   buildInitialExDraft,
+  buildExFieldErrors,
   getIsExDirty,
-  getExValidity,
+  getIsExValid,
   buildUpdateExternalGamePatch,
+  buildExternalGameEntryLimits,
 } from './editExDrawer.utils.js'
 
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
+const layout = {
+  topCols: { xs: '1fr', sm: '1fr 1fr' },
+  mainCols: { xs: '1fr', sm: '1fr 1fr' },
+  metaCols: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+  resultCols: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+}
 
-export default function EditExDrawer({ open, game, onClose, onSaved, context }) {
+export default function EditExDrawer({
+  open,
+  game,
+  onClose,
+  onSaved,
+  context,
+}) {
   const player = context?.player || {}
+  const activeGame = game || null
+
   const initial = useMemo(() => buildInitialExDraft(game, context), [game, context])
   const [draft, setDraft] = useState(initial)
 
@@ -37,22 +48,26 @@ export default function EditExDrawer({ open, game, onClose, onSaved, context }) 
     setDraft(initial)
   }, [open, initial])
 
-  const activeGame = game || null
   const { run, pending } = useGameHubUpdate(activeGame)
 
-  const validity = useMemo(() => getExValidity(draft), [draft])
+  const fieldErrors = useMemo(() => buildExFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsExValid(draft), [draft])
   const isDirty = useMemo(() => getIsExDirty(draft, initial), [draft, initial])
-  const canSave = !!draft?.gameId && isDirty && validity?.ok && !pending
 
-  const setField = (key, value) => {
+  const entryLimits = useMemo(() => buildExternalGameEntryLimits(draft), [draft])
+
+  const canSave = !!draft?.gameId && isDirty && isValid && !pending
+
+  const setField = useCallback((key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
-  }
+  }, [])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(initial)
-  }
+  }, [initial, pending])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     const patch = buildUpdateExternalGamePatch({ game: activeGame, draft })
@@ -68,86 +83,94 @@ export default function EditExDrawer({ open, game, onClose, onSaved, context }) 
 
     onSaved(patch)
     onClose()
-  }
+  }, [canSave, activeGame, draft, run, onSaved, onClose])
+
+  const headerAvatar = player?.photo || playerImage
+  const gameTitle = activeGame?.rivel || activeGame?.rival || 'משחק'
+  const gameDate = activeGame?.gameDate || activeGame?.dateLabel || ''
+
+  const status = !isDirty
+    ? { text: 'אין שינויים', color: 'neutral' }
+    : !isValid
+    ? { text: 'יש להשלים נתונים תקינים', color: 'warning' }
+    : { text: 'יש שינויים שלא נשמרו', color: 'danger' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="private"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={player?.playerFullName || 'שחקן'}
+          subline={`${gameTitle} - ${gameDate}`}
+          titleIconId="games"
+          avatar={headerAvatar}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <EditExDrawerHeader game={game} player={player} />
-          <ModalClose sx={{ mt: 2, mr: 2 }} />
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        <GameCreateFields
+          draft={draft}
+          onDraft={(nextDraft) => {
+            const safeDraft =
+              typeof nextDraft === 'function' ? nextDraft(draft) : nextDraft
 
-          <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, p: 1.25, pt: 1, overflow: 'auto', minHeight: 0 }}>
-            <EditExDrawerFields
-              draft={draft}
-              setField={setField}
-              player={player}
-              context={context}
-              validity={validity}
-              pending={pending}
-            />
-          </Box>
+            Object.entries(safeDraft || {}).forEach(([key, value]) => {
+              setField(key, value)
+            })
+          }}
+          context={{
+            ...context,
+            player,
+            clubs: context?.clubs || [],
+            teams: context?.teams || [],
+          }}
+          fieldErrors={fieldErrors}
+          layout={layout}
+          isPrivatePlayer
+        />
 
-          <Box sx={sx.footerSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={!pending ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut('private')}
-              >
-                שמירה
-              </Button>
+        <AccordionGroup variant="plain" transition="0.2s">
+          <Accordion defaultExpanded>
+            <AccordionSummary indicator={<AddIcon />}>
+              <Box sx={{ width: '100%', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+                <Typography level="body-sm">עדכון השתתפות של</Typography>
 
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
+                <Typography color="success" variant="soft" sx={{ borderRadius: 'sm', ml: 1, fontSize: 14 }}>
+                  {player?.playerFullName}
+                </Typography>
+              </Box>
+            </AccordionSummary>
 
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {!isDirty
-                ? 'אין שינויים'
-                : !validity?.ok
-                  ? validity.message || 'יש להשלים נתונים תקינים'
-                  : 'יש שינויים שלא נשמרו'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+            <AccordionDetails variant="soft">
+              <GameEntryFields
+                draft={draft}
+                onFieldChange={setField}
+                limits={entryLimits}
+                pending={pending}
+              />
+            </AccordionDetails>
+          </Accordion>
+        </AccordionGroup>
+      </Box>
+    </DrawerShell>
   )
 }

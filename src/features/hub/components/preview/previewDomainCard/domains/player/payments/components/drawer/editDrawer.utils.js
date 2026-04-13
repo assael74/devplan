@@ -2,9 +2,9 @@
 
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 
-export const safe = (v) => (v == null ? '' : String(v))
+export const safe = (value) => (value == null ? '' : String(value))
 
-const clean = (v) => safe(v).trim()
+const clean = (value) => safe(value).trim()
 
 export const getPaymentStatusId = (status) => {
   if (!status) return ''
@@ -30,7 +30,7 @@ export const getPaymentTypeId = (type) => {
 
 export const buildPlayerDisplayName = (player) => {
   return [player?.playerFirstName, player?.playerLastName]
-    .map((v) => clean(v))
+    .map((value) => clean(value))
     .filter(Boolean)
     .join(' ')
 }

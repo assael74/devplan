@@ -7,6 +7,7 @@ import { homeSx as sx } from '../sx/home.sx.js'
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
 
 import {
+  TASK_STATUS,
   getTaskStatusMeta,
   getTaskPriorityMeta,
   getTaskTypeMeta,
@@ -24,10 +25,18 @@ export default function TaskRowCard({ task, id, onEditTask }) {
   const complexityMeta = getTaskComplexityMeta(task?.complexity)
 
   const hasUrl = Boolean(task?.url)
-  
+  const hasDescription = Boolean(task?.description?.trim())
+  const isInProgress = task?.status === TASK_STATUS.IN_PROGRESS
+
   return (
-    <Card variant="soft" sx={sx.card(id)}>
-      <Stack sx={sx.cardContent} spacing={0.9}>
+    <Card
+      variant="soft"
+      sx={[
+        sx.card(id),
+        isInProgress ? sx.cardInProgress(id) : null,
+      ]}
+    >
+      <Stack sx={sx.cardContent} spacing={hasDescription ? 0.9 : 0.7}>
         <Box sx={sx.titleRow}>
           <Box sx={{ flex: 1, minWidth: 0, gap: 0.5 }}>
             <Typography
@@ -51,19 +60,24 @@ export default function TaskRowCard({ task, id, onEditTask }) {
           </IconButton>
         </Box>
 
-        <Tooltip
-          variant="soft"
-          arrow
-          title={
-            <Typography level="body-sm" sx={{ whiteSpace: 'pre-wrap', maxWidth: 320, lineHeight: 1.5, }}>
-              {task?.description || ''}
+        {hasDescription ? (
+          <Tooltip
+            variant="soft"
+            arrow
+            title={
+              <Typography
+                level="body-sm"
+                sx={{ whiteSpace: 'pre-wrap', maxWidth: 320, lineHeight: 1.5 }}
+              >
+                {task.description}
+              </Typography>
+            }
+          >
+            <Typography level="body-sm" sx={sx.descriptionClamp}>
+              {task.description}
             </Typography>
-          }
-        >
-          <Typography level="body-sm" sx={sx.descriptionClamp}>
-            {task?.description || '—'}
-          </Typography>
-        </Tooltip>
+          </Tooltip>
+        ) : null}
 
         <Stack direction="row" sx={sx.chipsRow}>
           {statusMeta ? (
@@ -133,9 +147,7 @@ export default function TaskRowCard({ task, id, onEditTask }) {
             >
               עבור לאזור המסומן
             </Link>
-          ) : (
-            <span />
-          )}
+          ) : null}
         </Stack>
       </Stack>
     </Card>

@@ -15,9 +15,18 @@ const toBool = (v, fallback = false) => {
   return fallback
 }
 
+const isValidDateFormat = (value) => {
+  const date = safe(value)
+  if (!date) return false
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
+}
+
 function buildComparableDraft(draft = {}) {
   return {
     playerId: safe(draft?.playerId),
+    teamId: safe(draft?.teamId),
+    clubId: safe(draft?.clubId),
     teamName: safe(draft?.teamName),
     clubName: safe(draft?.clubName),
 
@@ -48,7 +57,11 @@ export function buildInitialExDraft(context = {}) {
   const player = context?.player || context?.entity || null
 
   return {
+    gameId: '',
     playerId: safe(context?.playerId || player?.id),
+
+    teamId: safe(context?.teamId || player?.teamId || player?.team?.id),
+    clubId: safe(context?.clubId || player?.clubId || player?.club?.id || player?.club?.clubId),
 
     teamName: safe(player?.teamName || player?.team?.teamName),
     clubName: safe(player?.clubName || player?.club?.clubName),
@@ -75,47 +88,108 @@ export function buildInitialExDraft(context = {}) {
   }
 }
 
-export function getIsExDirty(draft, initial) {
-  return JSON.stringify(buildComparableDraft(draft)) !== JSON.stringify(buildComparableDraft(initial))
+export function getIsExDirty(draft = {}, initial = {}) {
+  return (
+    JSON.stringify(buildComparableDraft(draft)) !==
+    JSON.stringify(buildComparableDraft(initial))
+  )
 }
 
-export function getExValidity(draft = {}) {
+export function getExFieldErrors(draft = {}) {
   const hasPlayerId = !!safe(draft?.playerId)
   const hasTeamName = !!safe(draft?.teamName)
   const hasClubName = !!safe(draft?.clubName)
   const hasRival = !!safe(draft?.rivel)
-  const hasGameDate = !!safe(draft?.gameDate)
+
+  const gameDate = safe(draft?.gameDate)
   const hasType = !!safe(draft?.type)
-  const hasDuration = String(draft?.gameDuration || '').trim() !== ''
+  const hasDuration = safe(draft?.gameDuration) !== ''
 
-  if (!hasPlayerId) {
-    return { ok: false, okDate: true, message: 'חסר שחקן' }
+  const goalsFor = toNumOrZero(draft?.goalsFor)
+  const goals = toNumOrZero(draft?.goals)
+  const assists = toNumOrZero(draft?.assists)
+  const timePlayed = toNumOrZero(draft?.timePlayed)
+  const isSelected = toBool(draft?.isSelected, true)
+
+  return {
+    playerId: !hasPlayerId,
+    teamName: !hasTeamName,
+    clubName: !hasClubName,
+    rivel: !hasRival,
+    gameDate: !gameDate || !isValidDateFormat(gameDate),
+    type: !hasType,
+    gameDuration: !hasDuration,
+    goals: goals > goalsFor,
+    assists: assists > goalsFor,
+    timePlayed: !isSelected && timePlayed > 0,
+  }
+}
+
+export function getExValidity(draft = {}) {
+  const fieldErrors = getExFieldErrors(draft)
+
+  const ok = !Object.values(fieldErrors).some(Boolean)
+
+  if (fieldErrors.playerId) {
+    return { ok: false, message: 'חסר שחקן' }
   }
 
-  if (!hasClubName || !hasTeamName) {
-    return { ok: false, okDate: true, message: 'חסר שם קבוצה או מועדון' }
+  if (fieldErrors.teamName || fieldErrors.clubName) {
+    return { ok: false, message: 'חסר שם קבוצה או מועדון' }
   }
 
-  if (!hasRival) {
-    return { ok: false, okDate: true, message: 'יש להזין יריבה' }
+  if (fieldErrors.rivel) {
+    return { ok: false, message: 'יש להזין יריבה' }
   }
 
-  if (!hasGameDate) {
-    return { ok: false, okDate: false, message: 'יש להזין תאריך משחק' }
+  if (fieldErrors.gameDate) {
+    return { ok: false, message: 'יש להזין תאריך משחק תקין' }
   }
 
-  if (!hasType) {
-    return { ok: false, okDate: true, message: 'יש לבחור סוג משחק' }
+  if (fieldErrors.type) {
+    return { ok: false, message: 'יש לבחור סוג משחק' }
   }
 
-  if (!hasDuration) {
-    return { ok: false, okDate: true, message: 'יש לבחור משך משחק' }
+  if (fieldErrors.gameDuration) {
+    return { ok: false, message: 'יש לבחור משך משחק' }
+  }
+
+  if (fieldErrors.goals) {
+    return { ok: false, message: 'כמות שערי השחקן גדולה מכמות שערי הקבוצה' }
+  }
+
+  if (fieldErrors.assists) {
+    return { ok: false, message: 'כמות הבישולים גדולה מכמות שערי הקבוצה' }
+  }
+
+  if (fieldErrors.timePlayed) {
+    return { ok: false, message: 'לא ניתן להזין דקות משחק כשהשחקן לא בסגל' }
   }
 
   return {
-    ok: true,
-    okDate: true,
+    ok,
     message: '',
+  }
+}
+
+export function buildExternalGameEntryLimits(draft = {}) {
+  const totalGoalsInGame = toNumOrZero(draft?.goalsFor)
+  const totalAssistsInGame = totalGoalsInGame
+  const currentGoals = toNumOrZero(draft?.goals)
+  const currentAssists = toNumOrZero(draft?.assists)
+
+  return {
+    totalGoalsInGame,
+    totalAssistsInGame,
+    otherGoalsUsed: 0,
+    otherAssistsUsed: 0,
+    currentGoals,
+    currentAssists,
+    goalsMax: totalGoalsInGame,
+    assistsMax: totalAssistsInGame,
+    goalsLeft: Math.max(0, totalGoalsInGame - currentGoals),
+    assistsLeft: Math.max(0, totalAssistsInGame - currentAssists),
+    hasGoalUpdates: false,
   }
 }
 
@@ -129,6 +203,8 @@ export function normalizeExDraftBeforeSave(draft = {}) {
   return {
     ...draft,
     playerId: safe(draft?.playerId),
+    teamId: safe(draft?.teamId),
+    clubId: safe(draft?.clubId),
 
     teamName: safe(draft?.teamName),
     clubName: safe(draft?.clubName),
@@ -138,7 +214,7 @@ export function normalizeExDraftBeforeSave(draft = {}) {
     rivel: safe(draft?.rivel),
     difficulty: safe(draft?.difficulty),
     type: safe(draft?.type),
-    gameDuration: draft?.gameDuration,
+    gameDuration: safe(draft?.gameDuration),
 
     home: toBool(draft?.home, true),
 
@@ -148,8 +224,8 @@ export function normalizeExDraftBeforeSave(draft = {}) {
 
     isSelected: toBool(draft?.isSelected, true),
     isStarting: toBool(draft?.isStarting, false),
-    goals: toNumOrZero(draft?.goals),
-    assists: toNumOrZero(draft?.assists),
+    goals: Math.min(toNumOrZero(draft?.goals), goalsFor),
+    assists: Math.min(toNumOrZero(draft?.assists), goalsFor),
     timePlayed: toNumOrZero(draft?.timePlayed),
 
     gameSource: 'external',

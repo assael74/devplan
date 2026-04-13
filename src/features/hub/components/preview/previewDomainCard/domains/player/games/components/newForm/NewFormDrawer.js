@@ -1,31 +1,29 @@
 // previewDomainCard/domains/player/games/components/newForm/NewFormDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Drawer,
-  ModalClose,
-  Sheet,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  Tooltip,
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box, Typography } from '@mui/joy'
+
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import GameSelectField from '../../../../../../../../../../ui/fields/selectUi/games/GameSelectField.js'
+import GameEntryFields from '../../../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
+
 import { useGameHubUpdate } from '../../../../../../../../hooks/games/useGameHubUpdate.js'
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import NewFormFieldsDrawer from './NewFormFieldsDrawer.js'
 
 import {
   buildInitialDraft,
   getIsDirty,
   getIsValid,
   buildPlayerListPatch,
+  getGameStatsLimits,
 } from './newFormDrawer.utils.js'
 
-import { drawerNewFormSx as sx } from '../../sx/newFormDrawer.sx.js'
-
-export default function NewFormDrawer({ open, onClose, onSaved, context }) {
+export default function NewFormDrawer({
+  open,
+  onClose,
+  onSaved,
+  context,
+}) {
   const player = context?.player || context?.entity || null
 
   const initial = useMemo(() => buildInitialDraft(context), [context])
@@ -36,6 +34,15 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
     const games = Array.isArray(player?.teamGames) ? player.teamGames : []
     return games.find((g) => String(g?.id) === String(draft?.gameId)) || null
   }, [player?.teamGames, draft?.gameId])
+
+  const limits = useMemo(() => {
+    return getGameStatsLimits({
+      player,
+      gameId: draft?.gameId,
+      playerId: draft?.playerId,
+      draft,
+    })
+  }, [player, draft])
 
   const { run } = useGameHubUpdate(activeGame)
 
@@ -49,107 +56,108 @@ export default function NewFormDrawer({ open, onClose, onSaved, context }) {
   const canSave = isDirty && isValid && !pending
   const isGameChosen = !!draft?.gameId
 
-  const setField = (key, value) => {
+  const setField = useCallback((key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
-  }
+  }, [])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(initial)
-  }
+  }, [initial, pending])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     try {
       setPending(true)
 
-      const patch = buildPlayerListPatch({ game: activeGame, draft })
+      const patch = buildPlayerListPatch({
+        game: activeGame,
+        draft,
+      })
 
-      await run('updateGamePlayers', patch, { gameId: activeGame?.id, createIfMissing: true, })
+      await run('updateGamePlayers', patch, {
+        gameId: activeGame?.id,
+        createIfMissing: true,
+      })
 
+      onSaved(patch)
       onClose()
     } finally {
       setPending(false)
     }
-  }
-  //console.log(activeGame)
+  }, [canSave, activeGame, draft, run, onSaved, onClose])
+
+  const status = !isDirty
+    ? { text: 'אין שינויים', color: 'neutral' }
+    : !draft?.gameId
+    ? { text: 'יש לבחור משחק', color: 'warning' }
+    : !isValid
+    ? { text: 'יש להשלים נתונים תקינים', color: 'warning' }
+    : pending
+    ? { text: 'שומר שיוך שחקן למשחק...', color: 'primary' }
+    : { text: 'מוכן לשמירה', color: 'success' }
+
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: sx.drawerContent,
-        },
+    <DrawerShell
+      entity="player"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={player?.playerFullName || 'שחקן'}
+          subline={
+            activeGame?.rivel || activeGame?.rival || 'שיוך שחקן למשחק'
+          }
+          titleIconId="games"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <NewFormDrawerHeader player={player} game={activeGame} />
-          <ModalClose sx={{ mt: 2, mr: 2 }} />
+      <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
+        <GameSelectField
+          value={draft?.gameId || ''}
+          onChange={(nextGameId) => setField('gameId', nextGameId)}
+          player={player}
+          disabled={pending}
+          label="בחירת משחק"
+          size="md"
+          placeholder="בחר משחק לשיוך השחקן"
+        />
 
-          <Box className="dpScrollThin" sx={sx.body}>
-            <NewFormFieldsDrawer
-              draft={draft}
-              setField={setField}
-              player={player}
-              pending={pending}
-            />
-          </Box>
+        <Typography
+          level="body-xs"
+          color={isGameChosen ? 'success' : 'warning'}
+          sx={{ px: 0.25 }}
+        >
+          {isGameChosen
+            ? 'המשחק נבחר, ניתן לעדכן נתוני שחקן למשחק'
+            : 'יש לבחור משחק לפני עדכון שאר השדות'}
+        </Typography>
 
-          <Box sx={sx.footerSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Button
-                loading={pending}
-                loadingPosition="start"
-                disabled={!canSave}
-                startDecorator={!pending ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut('player')}
-              >
-                {pending ? 'שומר...' : 'שמירה'}
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {!isDirty
-                ? 'אין שינויים'
-                : !draft?.gameId
-                  ? 'יש לבחור משחק'
-                  : !isValid
-                    ? 'יש להשלים נתונים תקינים'
-                    : pending
-                      ? 'שומר שיוך שחקן למשחק...'
-                      : 'מוכן לשמירה'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+        <GameEntryFields
+          draft={draft}
+          onFieldChange={setField}
+          limits={limits}
+          pending={pending}
+        />
+      </Box>
+    </DrawerShell>
   )
 }

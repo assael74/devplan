@@ -91,6 +91,7 @@ export default function TeamGamesDomainModal({ entity, context }) {
 
       <EditDrawer
         open={!!activeGame}
+        context={context}
         game={{...activeGame, team: liveTeam}}
         onClose={() => setActiveGame(null)}
         onSaved={() => setActiveGame(null)}

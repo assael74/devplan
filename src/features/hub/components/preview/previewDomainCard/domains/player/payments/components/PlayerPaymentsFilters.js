@@ -18,7 +18,7 @@ function SelectValue({ option, textKey = 'labelH' }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
       {option?.idIcon ? iconUi({ id: option.idIcon, size: 'sm' }) : null}
-      <Typography level="body-sm" noWrap>
+      <Typography level="body-sm" noWrap sx={{ fontSize: 12 }}>
         {label}
       </Typography>
     </Box>

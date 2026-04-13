@@ -1,45 +1,50 @@
 // previewDomainCard/domains/club/teams/components/drawer/EditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, Snackbar } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
+import { resolveEntityAvatar } from '../../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
+
+import TeamEditFields from '../../../../../../../../../../ui/forms/ui/teams/TeamEditFields.js'
+
 import { useTeamHubUpdate } from '../../../../../../../../hooks/teams/useTeamHubUpdate.js'
 
-import EditDrawerHeader from './EditDrawerHeader.js'
-import EditFormDrawer from './EditFormDrawer.js'
-
 import {
-  safeArr,
   buildTeamEditInitial,
   buildTeamEditPatch,
   isTeamEditDirty,
 } from './editDrawer.utils.js'
-import { editDrawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditDrawer({
   open,
   team,
   onClose,
   onSaved,
-  context
+  context,
 }) {
   const initial = useMemo(() => buildTeamEditInitial(team), [team])
   const [draft, setDraft] = useState(initial)
-  const [showLimitWarning, setShowLimitWarning] = useState(false)
+  const lifecycle = useLifecycle()
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
   }, [open, initial])
 
+  const isValid = useMemo(() => {
+    return !!String(draft?.teamName || '').trim() && !!String(draft?.teamYear || '').trim()
+  }, [draft])
+
   const isDirty = useMemo(() => isTeamEditDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildTeamEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useTeamHubUpdate(team)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && isValid && !pending
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('teamQuickEdit', patch, {
@@ -49,85 +54,91 @@ export default function EditDrawer({
 
     onSaved(patch, { ...initial.raw, ...patch })
     onClose()
-  }
+  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
-  const handleReset = () => {
-    setDraft({
-      ...initial,
-      positions: [...initial.positions],
-    })
-  }
+  const handleReset = useCallback(() => {
+    if (pending) return
+    setDraft({ ...initial })
+  }, [initial, pending])
+
+  const handleDelete = useCallback(() => {
+    if (!team?.id) return
+
+    lifecycle.openLifecycle(
+      {
+        entityType: 'team',
+        id: team.id,
+        name: `${team?.teamName || 'קבוצה'}`,
+      },
+      {
+        onAfterSuccess: ({ action, entityType, id }) => {
+          if (action !== 'delete') return
+          if (entityType !== 'team') return
+          if (id !== team.id) return
+
+          onClose()
+        },
+      }
+    )
+  }, [lifecycle, team?.id, team?.teamName, onClose])
+
+  const teamEntity = context?.team || team || null
+
+  const headerAvatar = resolveEntityAvatar({
+    entityType: 'team',
+    entity: teamEntity,
+    parentEntity: context?.club,
+    subline: context?.club?.clubName || context?.club?.name || '',
+  })
+
+  const headerTitle = draft?.teamName || team?.teamName || 'קבוצה'
+  const headerMeta = `${context?.club?.clubName || context?.club?.name || 'מועדון'} | ${
+    draft?.teamYear || team?.teamYear || ''
+  }`
+
+  const status = !isValid
+    ? { text: 'יש שדות חובה חסרים', color: 'warning' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: sx.drawerSx,
-        },
+    <DrawerShell
+      entity="team"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+        onDelete: handleDelete,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+        delete: 'מחיקת משחק',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="team"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="teams"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader
-            team={team}
-            pending={pending}
-            onClose={onClose}
-            context={context}
-          />
-
-          <EditFormDrawer
-            draft={draft}
-            setDraft={setDraft}
-            team={team}
-            context={context}
-          />
-
-          <Box sx={sx.footerSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <TeamEditFields
+        draft={draft}
+        setDraft={setDraft}
+      />
+    </DrawerShell>
   )
 }

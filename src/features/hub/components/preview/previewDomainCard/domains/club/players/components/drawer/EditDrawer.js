@@ -1,20 +1,21 @@
 // previewDomainCard/domains/club/players/components/drawer/EditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
+import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
+
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
 import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
 
-import EditDrawerHeader from './EditDrawerHeader.js'
-import EditDrawerStatus from './EditDrawerStatus.js'
-import EditDrawerInfo from './EditDrawerInfo.js'
+import PlayerEditFields from '../../../../../../../../../../ui/forms/ui/players/PlayerEditFields.js'
+
 import {
   buildInitialDraft,
   buildPatch,
   getIsDirty,
 } from './editDrawer.utils.js'
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditDrawer({
   open,
@@ -34,89 +35,69 @@ export default function EditDrawer({
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('playerQuickEdit', patch, {
-      section: 'teamPlayerQuickEdit',
+    await run(patch, {
+      section: 'clubPlayerQuickEdit',
       playerId: initial.id,
     })
 
-    onSaved?.(patch, { ...initial.raw, ...patch })
-    onClose?.()
+    onSaved(patch, { ...initial.raw, ...patch })
+    onClose()
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(initial)
-  }
+  }, [initial, pending])
+
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || 'שחקן'
+
+  const headerMeta = 'עריכת פרטי שחקן'
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="player"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="info"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader player={player} />
-
-          <Box sx={sx.bodySx} className="dpScrollThin">
-            <EditDrawerInfo draft={draft} setDraft={setDraft} />
-            <EditDrawerStatus draft={draft} setDraft={setDraft} />
-          </Box>
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <IconButton
-                  disabled={!isDirty}
-                  size="sm"
-                  variant="soft"
-                  sx={sx.icoRes}
-                  onClick={handleReset}
-                >
-                  {iconUi({ id: 'reset' })}
-                </IconButton>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <PlayerEditFields
+        draft={draft}
+        setDraft={setDraft}
+      />
+    </DrawerShell>
   )
 }

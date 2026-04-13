@@ -1,7 +1,8 @@
 // ui/forms/TagsCreateForm.js
+
 import React, { useEffect, useMemo } from 'react'
 import { Box, Sheet, Divider, Typography } from '@mui/joy'
-import { vaSx } from './sx/form.sx.js'
+import { vaSx } from './ui/tags/sx/form.sx.js'
 
 import TagTypeSelectField from '../fields/selectUi/tags/TagTypeSelectField.js'
 import TagParentSelectField from '../fields/selectUi/tags/TagParentSelectField.js'

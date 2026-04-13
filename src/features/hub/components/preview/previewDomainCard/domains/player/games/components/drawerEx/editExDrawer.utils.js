@@ -1,18 +1,25 @@
 // previewDomainCard/domains/player/games/components/drawerEx/editExDrawer.utils.js
 
-const safe = (v) => (v == null ? '' : String(v).trim())
+const safe = (value) => (value == null ? '' : String(value).trim())
 
-const toNumOrZero = (v) => {
-  if (v === '' || v == null) return 0
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
+const toNumOrZero = (value) => {
+  if (value === '' || value == null) return 0
+  const num = Number(value)
+  return Number.isFinite(num) ? num : 0
 }
 
-const toBool = (v, fallback = false) => {
-  if (typeof v === 'boolean') return v
-  if (v === 'true') return true
-  if (v === 'false') return false
+const toBool = (value, fallback = false) => {
+  if (typeof value === 'boolean') return value
+  if (value === 'true') return true
+  if (value === 'false') return false
   return fallback
+}
+
+const isValidDateFormat = (value) => {
+  const date = safe(value)
+  if (!date) return false
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
 function buildComparableDraft(draft = {}) {
@@ -79,17 +86,15 @@ export function buildInitialExDraft(row = {}, context = {}) {
   }
 }
 
-export function getIsExDirty(draft, initial) {
-  return JSON.stringify(buildComparableDraft(draft)) !== JSON.stringify(buildComparableDraft(initial))
-}
-
-export function getExValidity(draft = {}) {
+export function buildExFieldErrors(draft = {}) {
   const hasGameId = !!safe(draft?.gameId)
   const hasPlayerId = !!safe(draft?.playerId)
   const hasTeamName = !!safe(draft?.teamName)
   const hasClubName = !!safe(draft?.clubName)
   const hasRival = !!safe(draft?.rivel)
-  const hasGameDate = !!safe(draft?.gameDate)
+
+  const gameDate = safe(draft?.gameDate)
+  const hasGameDate = !!gameDate
   const hasType = !!safe(draft?.type)
   const hasDuration = !!safe(draft?.gameDuration)
 
@@ -99,50 +104,51 @@ export function getExValidity(draft = {}) {
   const timePlayed = toNumOrZero(draft?.timePlayed)
   const isSelected = toBool(draft?.isSelected, true)
 
-  if (!hasGameId) {
-    return { ok: false, okDate: true, message: 'חסר משחק' }
+  return {
+    gameId: !hasGameId,
+    playerId: !hasPlayerId,
+    teamName: !hasTeamName,
+    clubName: !hasClubName,
+    rivel: !hasRival,
+    gameDate: !hasGameDate || !isValidDateFormat(gameDate),
+    type: !hasType,
+    gameDuration: !hasDuration,
+    goals: goals > goalsFor,
+    assists: assists > goalsFor,
+    timePlayed: !isSelected && timePlayed > 0,
   }
+}
 
-  if (!hasPlayerId) {
-    return { ok: false, okDate: true, message: 'חסר שחקן' }
-  }
+export function getIsExValid(draft = {}) {
+  const fieldErrors = buildExFieldErrors(draft)
+  return !Object.values(fieldErrors).some(Boolean)
+}
 
-  if (!hasClubName || !hasTeamName) {
-    return { ok: false, okDate: true, message: 'חסר שם קבוצה או מועדון' }
-  }
+export function getIsExDirty(draft = {}, initial = {}) {
+  return (
+    JSON.stringify(buildComparableDraft(draft)) !==
+    JSON.stringify(buildComparableDraft(initial))
+  )
+}
 
-  if (!hasRival) {
-    return { ok: false, okDate: true, message: 'יש להזין יריבה' }
-  }
-
-  if (!hasGameDate) {
-    return { ok: false, okDate: false, message: 'יש להזין תאריך משחק' }
-  }
-
-  if (!hasType) {
-    return { ok: false, okDate: true, message: 'יש לבחור סוג משחק' }
-  }
-
-  if (!hasDuration) {
-    return { ok: false, okDate: true, message: 'יש לבחור משך משחק' }
-  }
-
-  if (goals > goalsFor) {
-    return { ok: false, okDate: true, message: 'לא ניתן לעדכן יותר שערים מכמות שערי הקבוצה במשחק' }
-  }
-
-  if (assists > goalsFor) {
-    return { ok: false, okDate: true, message: 'לא ניתן לעדכן יותר בישולים מכמות שערי הקבוצה במשחק' }
-  }
-
-  if (!isSelected && timePlayed > 0) {
-    return { ok: false, okDate: true, message: 'לא ניתן לעדכן זמן משחק לשחקן שלא נכלל בסגל' }
-  }
+export function buildExternalGameEntryLimits(draft = {}) {
+  const totalGoalsInGame = toNumOrZero(draft?.goalsFor)
+  const totalAssistsInGame = totalGoalsInGame
+  const currentGoals = toNumOrZero(draft?.goals)
+  const currentAssists = toNumOrZero(draft?.assists)
 
   return {
-    ok: true,
-    okDate: true,
-    message: '',
+    totalGoalsInGame,
+    totalAssistsInGame,
+    otherGoalsUsed: 0,
+    otherAssistsUsed: 0,
+    currentGoals,
+    currentAssists,
+    goalsMax: totalGoalsInGame,
+    assistsMax: totalAssistsInGame,
+    goalsLeft: Math.max(0, totalGoalsInGame - currentGoals),
+    assistsLeft: Math.max(0, totalAssistsInGame - currentAssists),
+    hasGoalUpdates: false,
   }
 }
 
@@ -172,6 +178,8 @@ export function buildUpdateExternalGamePatch({ draft }) {
       playerId: safe(draft?.playerId),
       isSelected: toBool(draft?.isSelected, true),
       isStarting: toBool(draft?.isStarting, false),
+      onSquad: toBool(draft?.isSelected, true),
+      onStart: toBool(draft?.isStarting, false),
       goals: playerGoals,
       assists: playerAssists,
       timePlayed: toNumOrZero(draft?.timePlayed),

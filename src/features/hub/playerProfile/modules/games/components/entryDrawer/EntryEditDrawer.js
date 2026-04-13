@@ -1,31 +1,24 @@
 // playerProfile/modules/games/components/entryDrawer/EntryEditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Drawer,
-  Sheet,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  Tooltip,
-  ModalClose,
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
+import { getFullDateIl } from '../../../../../../../shared/format/dateUtiles.js'
+
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
 import { useGameHubUpdate } from '../../../../../hooks/games/useGameHubUpdate.js'
 
-import EntryEditHeaderDrawer from './EntryEditHeaderDrawer.js'
-import EntryEditContentDrawer from './EntryEditContentDrawer.js'
+import GameEntryFields from '../../../../../../../ui/forms/ui/games/GameEntryFields.js'
 
 import {
   buildInitialDraft,
   buildUpdateGamePlayersPatch,
   buildRemovePlayerFromGamePatch,
+  getGameStatsLimits,
   getIsDirty,
-} from './logic/entryEditDrawer.utils.js'
-
-import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
+} from './entryEditDrawer.utils.js'
 
 export default function EntryEditDrawer({
   open,
@@ -35,8 +28,9 @@ export default function EntryEditDrawer({
   context,
 }) {
   const player = context?.player || {}
-  const initial = useMemo(() => buildInitialDraft(game, player), [game, player])
+  const activeGame = game || null
 
+  const initial = useMemo(() => buildInitialDraft(game, player), [game, player])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -44,21 +38,32 @@ export default function EntryEditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const activeGame = game || null
   const { run, pending } = useGameHubUpdate(activeGame)
+
+  const limits = useMemo(() => {
+    return getGameStatsLimits({
+      game: draft?.raw,
+      playerId: draft?.playerId,
+      draft,
+    })
+  }, [draft])
 
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const canSave = !!draft?.gameId && !!draft?.playerId && isDirty && !pending
 
-  const setField = (key, value) => {
-    setDraft((prev) => ({ ...prev, [key]: value }))
-  }
+  const setField = useCallback((key, value) => {
+    setDraft((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }, [])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(initial)
-  }
+  }, [initial, pending])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     const patch = buildUpdateGamePlayersPatch({
@@ -73,9 +78,9 @@ export default function EntryEditDrawer({
 
     onSaved(patch)
     onClose()
-  }
+  }, [canSave, activeGame, draft, run, onSaved, onClose])
 
-  const handleRemoveFromGame = async () => {
+  const handleRemoveFromGame = useCallback(async () => {
     if (!draft?.playerId || !activeGame?.id) return
 
     const patch = buildRemovePlayerFromGamePatch({
@@ -88,87 +93,57 @@ export default function EntryEditDrawer({
       createIfMissing: false,
     })
 
-    onSaved(patch)
-    onClose()
-  }
+    onSaved?.(patch)
+    onClose?.()
+  }, [activeGame, draft?.playerId, run, onSaved, onClose])
+
+  const headerAvatar = player?.photo || playerImage
+  const gameTitle = activeGame?.rivel || activeGame?.rival || 'משחק'
+  const gameDate = activeGame?.gameDate || activeGame?.dateRaw || ''
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{ content: { sx: sx.drawerSx, }, }}
+    <DrawerShell
+      entity="player"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+        onDelete: handleRemoveFromGame,
+      }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+        delete: 'הסרת השחקן מהמשחק',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={player?.playerFullName || 'שחקן'}
+          subline={`${gameTitle} - ${getFullDateIl(gameDate)}`}
+          titleIconId="games"
+          avatar={headerAvatar}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <Box sx={sx.drawerRootSx}>
-          <EntryEditHeaderDrawer game={game} player={player} />
-
-          <Box className="dpScrollThin" sx={sx.content}>
-            <EntryEditContentDrawer
-              draft={draft}
-              setField={setField}
-              player={player}
-              pending={pending}
-            />
-          </Box>
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={!pending ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title="הסרת השחקן מהמשחק">
-                <span>
-                  <IconButton
-                    size="sm"
-                    color="danger"
-                    variant="solid"
-                    onClick={handleRemoveFromGame}
-                    disabled={pending}
-                  >
-                    {iconUi({ id: 'delete' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <GameEntryFields
+        draft={draft}
+        onFieldChange={setField}
+        limits={limits}
+        pending={pending}
+      />
+    </DrawerShell>
   )
 }

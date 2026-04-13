@@ -1,135 +1,113 @@
 // previewDomainCard/domains/team/games/components/newForm/NewFormDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, ModalClose, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import GameCreateFields from '../../../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
+
 import useGameHubCreate from '../../../../../../../../hooks/games/useGameHubCreate.js'
-
-import NewFormDrawerHeader from './NewFormDrawerHeader.js'
-import GameCreateForm from '../../../../../../../../../../ui/forms/GameCreateForm.js'
 
 import {
   buildInitialDraft,
+  getFieldErrors,
   getIsDirty,
+  getIsValid,
 } from './newFormDrawer.utils.js'
 
-import { drawerNewFormSx as sx } from '../../sx/newFormDrawer.sx.js'
+const layout = {
+  topCols: { xs: '1fr 1fr', md: '1fr 1fr' },
+  mainCols: { xs: '1fr', md: '1fr 1fr' },
+  metaCols: { xs: '1fr', md: '1fr 1fr 1fr' },
+  resultCols: { xs: '1fr 1fr', md: '1fr 1fr auto' },
+}
 
-export default function NewFormDrawer({ open, onClose, onSaved, context }) {
+export default function NewFormDrawer({
+  open,
+  onClose,
+  onSaved,
+  context,
+}) {
   const initial = useMemo(() => buildInitialDraft(context), [context])
-
   const [draft, setDraft] = useState(initial)
-  const [isValid, setIsValid] = useState(false)
 
   useEffect(() => {
     if (!open) return
-
     setDraft(initial)
-    setIsValid(false)
-  }, [open])
+  }, [open, initial])
 
+  const fieldErrors = useMemo(() => getFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsValid(draft), [draft])
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+
   const { saving, runCreateGame } = useGameHubCreate()
   const canSave = isDirty && isValid && !saving
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave || saving) return
 
     try {
-      const res = await runCreateGame({ draft, context })
-      onClose()
-      onSaved(res || draft)
+      const created = await runCreateGame({ draft, context })
+      onSaved?.(created || draft)
+      onClose?.()
     } catch (error) {
       console.error('create game failed:', error)
     }
-  }
+  }, [canSave, saving, runCreateGame, draft, context, onSaved, onClose])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (saving) return
     setDraft(initial)
-  }
+  }, [saving, initial])
+
+  const status = saving
+    ? { text: 'שומר משחק חדש...', color: 'primary' }
+    : !isDirty
+    ? { text: 'אין שינויים', color: 'neutral' }
+    : !isValid
+    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : { text: 'מוכן לשמירה', color: 'success' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={saving ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="team"
+      open={open}
+      onClose={onClose}
+      saving={saving}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="team"
+          title={draft?.rivel || 'משחק חדש'}
+          subline={context?.team?.teamName || 'יצירת משחק'}
+          titleIconId="games"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <NewFormDrawerHeader draft={draft} team={context?.team} />
-          <ModalClose sx={{ mt: 2, mr: 2 }} />
-
-          <Box sx={{ position: 'sticky', zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-            <GameCreateForm
-              draft={draft}
-              onDraft={setDraft}
-              onValidChange={setIsValid}
-              context={context}
-              variant="drawer"
-            />
-          </Box>
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={saving}
-                loadingPosition="start"
-                disabled={!canSave}
-                startDecorator={!saving ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                {saving ? 'שומר...' : 'שמירה'}
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={saving}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || saving}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {saving
-                ? 'שומר משחק חדש...'
-                : !isDirty
-                  ? 'אין שינויים'
-                  : !isValid
-                    ? 'יש להשלים את כל שדות החובה'
-                    : 'מוכן לשמירה'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
+        <GameCreateFields
+          draft={draft}
+          onDraft={setDraft}
+          context={context}
+          fieldErrors={fieldErrors}
+          layout={layout}
+        />
+      </Box>
+    </DrawerShell>
   )
 }

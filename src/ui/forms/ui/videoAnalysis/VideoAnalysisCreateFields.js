@@ -13,7 +13,7 @@ import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectFiel
 import VideoObjectTypeSelectField from '../../../fields/selectUi/videos/videoAnalysis/VideoObjectTypeSelectField.js'
 import VideoContextTypeSelectField from '../../../fields/selectUi/videos/videoAnalysis/VideoContextTypeSelectField.js'
 
-import { vacfSx } from '../../sx/videoAnalysisCreateForm.sx.js'
+import { vacfSx } from './sx/videoAnalysisCreateForm.sx.js'
 
 export default function VideoAnalysisCreateFields({
   locks,

@@ -1,22 +1,24 @@
 // previewDomainCard/domains/team/players/components/drawer/TeamPlayerEditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, Snackbar } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box, Typography, Snackbar } from '@mui/joy'
 
-import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect'
+import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
+import PlayerPositionFieldPitch from '../../../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect.js'
+import PlayerEditFields from '../../../../../../../../../../ui/forms/ui/players/PlayerEditFields.js'
+
 import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
 
-import EditDrawerHeader from './EditDrawerHeader.js'
-import EditDrawerStatus from './EditDrawerStatus.js'
 import {
   safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
 } from './editDrawer.utils.js'
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
 
 export default function EditDrawer({
   open,
@@ -37,12 +39,12 @@ export default function EditDrawer({
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('playerQuickEdit', patch, {
+    await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
     })
@@ -51,88 +53,98 @@ export default function EditDrawer({
     onClose()
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft({
       ...initial,
       positions: [...initial.positions],
     })
-  }
+  }, [initial, pending])
+
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || initial?.name || 'שחקן'
+  const headerMeta = initial?.teamName || 'שחקן קבוצה'
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
     <>
-      <Drawer
-        open={!!open}
-        size="md"
-        anchor="right"
-        onClose={pending ? undefined : onClose}
-        slotProps={{
-          content: {
-            sx: {
-              bgcolor: 'transparent',
-              p: { xs: 0, md: 2 },
-              boxShadow: 'none',
-            },
-          },
+      <DrawerShell
+        entity="player"
+        open={open}
+        onClose={onClose}
+        saving={pending}
+        isDirty={isDirty}
+        canSave={canSave}
+        actions={{
+          onSave: handleSave,
+          onReset: handleReset,
         }}
+        texts={{
+          save: 'שמירה',
+          saving: 'שומר...',
+          cancel: 'ביטול',
+        }}
+        tooltips={{
+          reset: 'איפוס טופס',
+        }}
+        status={status}
+        header={
+          <DrawerHeaderShell
+            entity="player"
+            title={headerTitle}
+            avatar={headerAvatar}
+            meta={headerMeta}
+            metaIconId="positions"
+          />
+        }
       >
-        <Sheet sx={sx.drawerSheetSx}>
-          <Box sx={sx.drawerRootSx}>
-            <EditDrawerHeader player={initial} />
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 1,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 1,
+              p: 1,
+              borderRadius: 'md',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.surface',
+            }}
+          >
+            <Typography level="body-sm" sx={{ fontWeight: 700 }}>
+              עמדות
+            </Typography>
 
-            <Box sx={sx.bodySx} className="dpScrollThin">
-              <Box sx={sx.sectionCardSx}>
-                <Typography sx={sx.sectionTitleSx}>עמדות</Typography>
-
-                <PlayerPositionFieldPitch
-                  size="sm"
-                  value={draft.positions}
-                  onChange={(positions) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      positions: safeArr(positions),
-                    }))
-                  }
-                  onLimitReached={() => {
-                    setShowLimitWarning(false)
-                    setTimeout(() => setShowLimitWarning(true), 10)
-                  }}
-                  disabled={pending}
-                />
-              </Box>
-
-              <EditDrawerStatus draft={draft} setDraft={setDraft} />
-            </Box>
-
-            <Box sx={sx.footerSx}>
-              <Box sx={sx.footerActionsSx}>
-                <Button
-                  loading={pending}
-                  disabled={!canSave}
-                  startDecorator={iconUi({ id: 'save' })}
-                  onClick={handleSave}
-                  sx={sx.conBut}
-                >
-                  שמירה
-                </Button>
-
-                <Button color="neutral" variant="outlined" onClick={onClose} disabled={pending}>
-                  ביטול
-                </Button>
-
-                <Tooltip title="איפוס טופס">
-                  <IconButton disabled={!isDirty} size="sm" variant="soft" sx={sx.icoRes} onClick={handleReset}>
-                    {iconUi({id: 'reset'})}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-
-              <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'} >
-                {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-              </Typography>
-            </Box>
+            <PlayerPositionFieldPitch
+              size="sm"
+              value={draft?.positions}
+              onChange={(positions) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  positions: safeArr(positions),
+                }))
+              }
+              onLimitReached={() => {
+                setShowLimitWarning(false)
+                setTimeout(() => setShowLimitWarning(true), 10)
+              }}
+              disabled={pending}
+            />
           </Box>
-        </Sheet>
-      </Drawer>
+
+          <PlayerEditFields
+            draft={draft}
+            setDraft={setDraft}
+          />
+        </Box>
+      </DrawerShell>
 
       <Snackbar
         open={showLimitWarning}

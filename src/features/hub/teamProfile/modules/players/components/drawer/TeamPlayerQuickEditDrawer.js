@@ -1,38 +1,23 @@
 // teamProfile/modules/players/components/drawer/TeamPlayerQuickEditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Avatar,
-  Box,
-  Button,
-  Drawer,
-  Typography,
-  Sheet,
-  DialogContent,
-  DialogTitle,
-  ModalClose,
-  Tooltip,
-  IconButton,
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
+
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
 import { usePlayerHubUpdate } from './../../../../../hooks/players/usePlayerHubUpdate.js'
 import ProjectStatusSelectField from '../../../../../../../ui/fields/selectUi/players/ProjectStatusSelectField.js'
 import PlayerActiveSelector from '../../../../../../../ui/fields/checkUi/players/PlayerActiveSelector.js'
 import SquadRoleSelectField from '../../../../../../../ui/fields/selectUi/players/SquadRoleSelectField.js'
 import PlayerTypeSelector from '../../../../../../../ui/fields/checkUi/players/PlayerTypeSelector.js'
 
-import { teamPlayersDrawerSx as sx } from './sx/teamPlayers.drawer.sx.js'
 import {
-  safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './logic/teamPlayerQuickEdit.logic.js'
-
-const c = getEntityColors('players')
+} from './teamPlayerQuickEdit.logic.js'
 
 export default function TeamPlayerQuickEditDrawer({
   open,
@@ -52,12 +37,12 @@ export default function TeamPlayerQuickEditDrawer({
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('playerQuickEdit', patch, {
+    await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
     })
@@ -66,112 +51,98 @@ export default function TeamPlayerQuickEditDrawer({
     onClose()
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft({
       ...initial,
       positions: [...initial.positions],
     })
-  }
+  }, [initial, pending])
+
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || initial?.name || 'שחקן'
+  const headerMeta = 'עריכת פרטי שחקן'
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      size="md"
-      variant="plain"
-      anchor="right"
+    <DrawerShell
+      entity="player"
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+      }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="info"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, boxShadow: 'sm' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar src={player?.photo || playerImage} />
+      <PlayerActiveSelector
+        size="md"
+        value={draft?.active}
+        onChange={() =>
+          setDraft((prev) => ({
+            ...prev,
+            active: !prev.active,
+          }))
+        }
+      />
 
-            <Box sx={{ ml: 2 }}>
-              <Typography level="title-md" sx={sx.formNameSx}>
-                {player?.playerFullName || 'שחקן'}
-              </Typography>
+      <SquadRoleSelectField
+        size="md"
+        value={draft?.squadRole}
+        onChange={(value) =>
+          setDraft((prev) => ({
+            ...prev,
+            squadRole: value,
+          }))
+        }
+      />
 
-              <Typography level="body-sm" sx={sx.formNameSx} startDecorator={iconUi({ id: 'info' })}>
-                עריכת פרטי שחקן
-              </Typography>
-            </Box>
-          </Box>
+      <PlayerTypeSelector
+        size="md"
+        value={draft?.type}
+        onChange={(next) =>
+          setDraft((prev) => ({
+            ...prev,
+            type: next || 'noneType',
+          }))
+        }
+      />
 
-          <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />
-        </DialogTitle>
-
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <PlayerActiveSelector
-              size="md"
-              value={draft.active}
-              onChange={() => setDraft((prev) => ({ ...prev, active: !prev.active }))}
-             />
-
-             <SquadRoleSelectField
-               size="md"
-               value={draft?.squadRole}
-               onChange={(value) => setDraft((prev) => ({ ...prev, squadRole: value }))}
-              />
-
-             <PlayerTypeSelector
-               size="md"
-               value={draft.type}
-               onChange={(next) => setDraft((p) => ({ ...p, type: next || 'noneType' }))}
-              />
-
-             <ProjectStatusSelectField
-               label="סטטוס פרויקט"
-               size="sm"
-               value={draft.projectStatus}
-               onChange={(v) => setDraft((p) => ({ ...p, projectStatus: v }))}
-               disabled={pending}
-             />
-          </Box>
-        </DialogContent>
-
-        <Box sx={sx.footerSx}>
-          <Box sx={sx.footerActionsSx}>
-            <Button
-              loading={pending}
-              disabled={!canSave}
-              startDecorator={iconUi({ id: 'save' })}
-              onClick={handleSave}
-              sx={sx.conBut}
-            >
-              שמירה
-            </Button>
-
-            <Button
-              color="neutral"
-              variant="outlined"
-              onClick={onClose}
-              disabled={pending}
-            >
-              ביטול
-            </Button>
-
-            <Tooltip title="איפוס השינויים">
-              <span>
-                <IconButton
-                  disabled={!isDirty}
-                  size="sm"
-                  variant="soft"
-                  sx={sx.icoRes}
-                  onClick={handleReset}
-                >
-                  {iconUi({ id: 'reset' })}
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Box>
-
-          <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-            {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-          </Typography>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <ProjectStatusSelectField
+        label="סטטוס פרויקט"
+        size="sm"
+        value={draft?.projectStatus}
+        onChange={(value) =>
+          setDraft((prev) => ({
+            ...prev,
+            projectStatus: value,
+          }))
+        }
+        disabled={pending}
+      />
+    </DrawerShell>
   )
 }

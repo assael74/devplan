@@ -1,21 +1,41 @@
-// previewDomainCard/domains/team/videos/components/drawer/editDrawer.utils.js
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 
-export const safe = (v) => (v == null ? '' : String(v))
+export const safe = (value) => (value == null ? '' : String(value))
 
-const asArr = (v) => (Array.isArray(v) ? v : [])
+const clean = (value) => safe(value).trim()
+
+const asArr = (value) => (Array.isArray(value) ? value : [])
+
+const buildTeamDisplayName = (team) => {
+  return clean(team?.teamName || team?.name)
+}
+
+export const buildVideoMeta = (video) => {
+  const teamName = buildTeamDisplayName(video?.team)
+
+  const month = clean(video?.month)
+  const year = clean(video?.year)
+  const dateLabel =
+    month && year
+      ? `${month}/${year}`
+      : year || ''
+
+  return [teamName, dateLabel].filter(Boolean).join(' | ') || 'פרטי וידאו'
+}
 
 export function buildInitialDraft(video) {
   const source = video || {}
 
   return {
     id: source?.id || '',
-    name: safe(source?.name).trim(),
-    notes: safe(source?.notes).trim(),
-    link: safe(source?.link || '').trim(),
+    name: clean(source?.name),
+    notes: clean(source?.notes),
+    link: clean(source?.link || ''),
     month: source?.month ?? '',
     year: source?.year ?? '',
     tagIds: asArr(source?.tagIds).filter(Boolean),
     raw: source,
+    metaLabel: buildVideoMeta(source),
   }
 }
 

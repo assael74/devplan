@@ -10,10 +10,33 @@ export function buildInitialDraft(context = {}) {
     paymentFor: '',
     playerId,
     type: 'monthlyPayment',
-    price: ''
+    price: '',
   }
 }
 
-export function getIsDirty(draft, initial) {
+export function getValidity(draft = {}) {
+  const paymentFor = safe(draft?.paymentFor)
+  const playerId = safe(draft?.playerId)
+  const type = safe(draft?.type)
+  const price = safe(draft?.price)
+
+  return {
+    okPaymentFor: !!paymentFor,
+    okPlayerId: !!playerId,
+    okType: !!type,
+    okPrice: !!price,
+  }
+}
+
+export function getIsValid(validity = {}) {
+  return Boolean(
+    validity?.okPaymentFor &&
+      validity?.okPlayerId &&
+      validity?.okType &&
+      validity?.okPrice
+  )
+}
+
+export function getIsDirty(draft = {}, initial = {}) {
   return JSON.stringify(draft) !== JSON.stringify(initial)
 }

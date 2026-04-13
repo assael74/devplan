@@ -28,7 +28,7 @@ import {
   calcPreviewCount,
 } from './helpers/trainings/trainingsWeekForm.helpers'
 
-import { trainingWeekSx as sx } from './sx/trainingWeekForm.sx'
+import { trainingWeekSx as sx } from './ui/trainings/sx/trainingWeekForm.sx'
 
 const toWeekStartObj = (ymd) => {
   const s = safeStr(ymd || todayDateStr())

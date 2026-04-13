@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo } from 'react'
 import { Box } from '@mui/joy'
 
-import { vaSx } from './sx/form.sx.js'
+import { vaSx } from './ui/videoAnalysis/sx/form.sx.js'
 import VideoLinkField from '../fields/inputUi/videos/VideoLinkField'
 import VideoNameField from '../fields/inputUi/videos/VideoNameField'
 

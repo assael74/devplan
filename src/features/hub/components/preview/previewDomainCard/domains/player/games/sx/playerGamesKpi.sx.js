@@ -77,23 +77,6 @@ export const heroSx = {
     flexShrink: 0,
   },
 
-  heroTextWrapSx: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.1,
-  },
-
-  heroTitleSx: {
-    fontWeight: 700,
-    letterSpacing: '-0.02em',
-    lineHeight: 1.05,
-  },
-
-  heroSubTitleSx: {
-    color: 'text.secondary',
-    fontSize: 12,
-  },
-
   heroBadgeSx: {
     borderRadius: 999,
     px: 0.85,
@@ -128,12 +111,6 @@ export const heroSx = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0.5,
-  },
-
-  kpiLabelSx: {
-    color: 'text.secondary',
-    fontSize: 12,
-    lineHeight: 1.15,
   },
 
   kpiValueSx: {

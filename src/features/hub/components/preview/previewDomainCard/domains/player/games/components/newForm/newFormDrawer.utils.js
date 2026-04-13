@@ -54,54 +54,71 @@ export function buildInitialDraft(context = {}) {
   }
 }
 
-export function getIsDirty(draft, initial) {
+export function getIsDirty(draft = {}, initial = {}) {
   return JSON.stringify(draft) !== JSON.stringify(initial)
 }
 
-export function getIsValid(draft) {
+export function getIsValid(draft = {}) {
   return !!safe(draft?.gameId) && !!safe(draft?.playerId)
 }
 
-export function buildPlayerGameEntry(draft) {
+export function buildPlayerGameEntry(draft = {}) {
   return {
     playerId: safe(draft?.playerId),
     isSelected: draft?.isSelected === true,
     isStarting: draft?.isStarting === true,
+    onSquad: draft?.isSelected === true,
+    onStart: draft?.isStarting === true,
     goals: toNumOrZero(draft?.goals),
     assists: toNumOrZero(draft?.assists),
     timePlayed: toNumOrZero(draft?.timePlayed),
   }
 }
 
-export function getGameStatsLimits({ player, gameId, playerId }) {
-  const game = findSelectedGame(player, gameId)
+export function getGameStatsLimits({ player, gameId, playerId, draft }) {
+  const game = findSelectedGame(player, gameId || draft?.gameId)
 
   if (!game) {
     return {
+      totalGoalsInGame: 0,
+      totalAssistsInGame: 0,
+      otherGoalsUsed: 0,
+      otherAssistsUsed: 0,
+      currentGoals: toNumOrZero(draft?.goals),
+      currentAssists: toNumOrZero(draft?.assists),
       goalsMax: 0,
       assistsMax: 0,
+      goalsLeft: 0,
+      assistsLeft: 0,
       hasGoalUpdates: false,
-      goalsRemaining: 0,
-      assistsRemaining: 0,
-      game,
+      game: null,
     }
   }
 
   const goalsFor = getGoalsFor(game)
   const players = getGamePlayers(game)
 
-  const goalsUsed = sumFieldExceptPlayer(players, 'goals', playerId)
-  const assistsUsed = sumFieldExceptPlayer(players, 'assists', playerId)
+  const otherGoalsUsed = sumFieldExceptPlayer(players, 'goals', playerId)
+  const otherAssistsUsed = sumFieldExceptPlayer(players, 'assists', playerId)
 
-  const goalsRemaining = Math.max(0, goalsFor - goalsUsed)
-  const assistsRemaining = Math.max(0, goalsFor - assistsUsed)
+  const currentGoals = toNumOrZero(draft?.goals)
+  const currentAssists = toNumOrZero(draft?.assists)
+
+  const goalsMax = Math.max(0, goalsFor - otherGoalsUsed)
+  const assistsMax = Math.max(0, goalsFor - otherAssistsUsed)
 
   return {
-    goalsMax: goalsRemaining,
-    assistsMax: assistsRemaining,
-    hasGoalUpdates: goalsUsed > 0 || assistsUsed > 0,
-    goalsRemaining,
-    assistsRemaining,
+    totalGoalsInGame: goalsFor,
+    totalAssistsInGame: goalsFor,
+    otherGoalsUsed,
+    otherAssistsUsed,
+    currentGoals,
+    currentAssists,
+    goalsMax,
+    assistsMax,
+    goalsLeft: Math.max(0, goalsMax - currentGoals),
+    assistsLeft: Math.max(0, assistsMax - currentAssists),
+    hasGoalUpdates: otherGoalsUsed > 0 || otherAssistsUsed > 0,
     game,
   }
 }
@@ -113,6 +130,8 @@ export function buildPlayerListPatch({ game, draft }) {
     playerId: safeId(draft?.playerId),
     isSelected: draft?.isSelected === true,
     isStarting: draft?.isStarting === true,
+    onSquad: draft?.isSelected === true,
+    onStart: draft?.isStarting === true,
     goals: Number(draft?.goals || 0),
     assists: Number(draft?.assists || 0),
     timePlayed: Number(draft?.timePlayed || 0),
@@ -124,7 +143,9 @@ export function buildPlayerListPatch({ game, draft }) {
 
   const nextPlayerList =
     existsIndex >= 0
-      ? currentList.map((item, index) => (index === existsIndex ? { ...item, ...nextItem } : item))
+      ? currentList.map((item, index) =>
+          index === existsIndex ? { ...item, ...nextItem } : item
+        )
       : [...currentList, nextItem]
 
   return {

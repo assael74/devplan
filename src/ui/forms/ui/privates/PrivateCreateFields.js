@@ -9,7 +9,7 @@ import TeamNameField from '../../../fields/inputUi/teams/TeamNameField'
 import ClubNameField from '../../../fields/inputUi/clubs/ClubNameField'
 import MonthYearPicker from '../../../fields/dateUi/MonthYearPicker'
 
-import { pcfSx } from '../../sx/playerCreateForm.sx.js'
+import { createSx as sx } from './sx/create.sx.js'
 
 const clean = (v) => String(v ?? '').trim()
 
@@ -27,8 +27,8 @@ export default function PrivateCreateFields({
   const birth = draft?.birth || ''
 
   return (
-    <Box sx={pcfSx.root(layout)}>
-      <Box sx={pcfSx.block(layout.topCols, 1)}>
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.block(layout.topCols, 1)}>
         <PlayerFirstNameField
           required
           value={playerFirstName}
@@ -47,12 +47,12 @@ export default function PrivateCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={pcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           שיוך למועדון וקבוצה
         </Typography>
       </Divider>
 
-      <Box sx={pcfSx.block(layout.mainCols, 2)}>
+      <Box sx={sx.block(layout.mainCols, 2)}>
         <ClubNameField
           required
           value={clubName}
@@ -71,12 +71,12 @@ export default function PrivateCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={pcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           שנתון
         </Typography>
       </Divider>
 
-      <Box sx={pcfSx.block(layout.metaCols, 1)}>
+      <Box sx={sx.block(layout.metaCols, 1)}>
         <MonthYearPicker
           required
           label='שנתון'

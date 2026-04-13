@@ -9,7 +9,7 @@ import MonthYearPicker from '../../../fields/dateUi/MonthYearPicker'
 import MeetingTypeSelectField from '../../../fields/selectUi/meetings/MeetingTypeSelectField'
 import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectField'
 
-import { mcfSx } from '../../sx/meetingCreateForm.sx.js'
+import { createSx as sx } from './sx/create.sx.js'
 
 export default function MeetingCreateFields({
   draft,
@@ -25,8 +25,8 @@ export default function MeetingCreateFields({
   const meetingFor = draft?.meetingFor || ''
 
   return (
-    <Box sx={mcfSx.root(layout)}>
-      <Box sx={mcfSx.block(layout.topCols, 1.5)}>
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.block(layout.topCols, 1.5)}>
         <PlayerSelectField
           label="שחקן"
           value={draft?.playerId || ''}
@@ -46,12 +46,12 @@ export default function MeetingCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={mcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           פרטי הפגישה
         </Typography>
       </Divider>
 
-      <Box sx={mcfSx.block(layout.mainCols)}>
+      <Box sx={sx.block(layout.mainCols)}>
         <DateInputField
           label="תאריך פגישה"
           value={draft?.meetingDate || ''}
@@ -71,12 +71,12 @@ export default function MeetingCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={mcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           מידע נוסף
         </Typography>
       </Divider>
 
-      <Box sx={mcfSx.block(layout.metaCols, 1)}>
+      <Box sx={sx.block(layout.metaCols, 1)}>
         <MonthYearPicker
           label="חודש"
           value={draft?.meetingFor || ''}

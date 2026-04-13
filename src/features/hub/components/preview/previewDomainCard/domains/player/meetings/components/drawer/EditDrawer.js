@@ -1,27 +1,47 @@
 // previewDomainCard/domains/player/meetings/components/drawer/EditDrawer.js
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import { Box } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
+
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import MeetingCreateFields from '../../../../../../../../../../ui/forms/ui/meetings/MeetingCreateFields.js'
+
 import { useMeetingHubUpdate } from '../../../../../../../../hooks/meetings/useMeetingHubUpdate.js'
 import { useVideoUpdate } from '../../../../../../../../hooks/videoAnalysis/useVideoUpdate.js'
 import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
-import EditDrawerHeader from './EditDrawerHeader.js'
-import EditFormDrawer from './EditFormDrawer.js'
+import {
+  buildInitialDraft,
+  buildPatch,
+  getFieldErrors,
+  getIsDirty,
+  getIsValid,
+} from './editDrawer.utils.js'
 
-import { buildInitialDraft, buildPatch, getIsDirty } from './editDrawer.utils.js'
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
+const layout = {
+  topCols: { xs: '1fr', md: '1fr 1fr' },
+  mainCols: { xs: '1fr', md: '1fr 1fr' },
+  metaCols: { xs: '1fr', md: '1fr' },
+}
 
-export default function EditDrawer({ open, meeting, onClose, onSaved, context }) {
+export default function EditDrawer({
+  open,
+  meeting,
+  onClose,
+  onSaved,
+  context,
+}) {
   const initial = useMemo(() => buildInitialDraft(meeting), [meeting])
   const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
+    if (!open) return
     setDraft(initial)
-  }, [initial])
+  }, [open, initial])
 
   const liveMeeting = useMemo(() => {
     return {
@@ -30,17 +50,28 @@ export default function EditDrawer({ open, meeting, onClose, onSaved, context })
     }
   }, [initial?.raw, draft])
 
+  const validity = useMemo(() => getFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsValid(draft), [draft])
   const isDirty = useMemo(() => getIsDirty(initial, draft), [initial, draft])
+
   const { meetingPatch, videoPlan } = useMemo(() => buildPatch(initial, draft), [initial, draft])
-  const videoRuntimeId = videoPlan?.unlinkPrev?.videoId || videoPlan?.linkNext?.videoId || draft?.videoId || ''
+
+  const videoRuntimeId =
+    videoPlan?.unlinkPrev?.videoId ||
+    videoPlan?.linkNext?.videoId ||
+    draft?.videoId ||
+    ''
 
   const { run: runMeetingUpdate, pending: meetingPending } = useMeetingHubUpdate(initial?.raw)
-  const { run: runVideoUpdate, pending: videoPending } = useVideoUpdate(initial?.rawVideo || null, videoRuntimeId)
+  const { run: runVideoUpdate, pending: videoPending } = useVideoUpdate(
+    initial?.rawVideo || null,
+    videoRuntimeId
+  )
 
   const pending = meetingPending || videoPending
-  const canSave = !!initial?.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && isValid && !pending
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     if (Object.keys(meetingPatch).length > 0) {
@@ -65,12 +96,28 @@ export default function EditDrawer({ open, meeting, onClose, onSaved, context })
       })
     }
 
-    onSaved({ meetingPatch, videoPlan, }, { ...initial.raw, ...meetingPatch, })
+    onSaved(
+      { meetingPatch, videoPlan },
+      { ...initial.raw, ...meetingPatch }
+    )
 
     onClose()
-  }
+  }, [
+    canSave,
+    meetingPatch,
+    videoPlan,
+    runMeetingUpdate,
+    runVideoUpdate,
+    initial.id,
+    initial.raw,
+    onSaved,
+    onClose,
+  ])
 
-  const handleReset = () => setDraft(initial)
+  const handleReset = useCallback(() => {
+    if (pending) return
+    setDraft(initial)
+  }, [initial, pending])
 
   const handleDelete = useCallback(() => {
     if (!meeting?.id) return
@@ -87,96 +134,66 @@ export default function EditDrawer({ open, meeting, onClose, onSaved, context })
           if (entityType !== 'meeting') return
           if (id !== meeting.id) return
 
-          onClose()
-          onSaved(null, null, { deletedId: meeting.id })
+          onClose?.()
+          onSaved?.(null, null, { deletedId: meeting.id })
         },
       }
     )
   }, [lifecycle, meeting, onClose, onSaved])
 
+  const player = liveMeeting?.player || context?.player || {}
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || 'פגישה'
+  const headerMeta = liveMeeting?.metaLabel || draft?.metaLabel || 'פרטי פגישה'
+
+  const status = !isValid
+    ? { text: 'יש להשלים נתונים תקינים', color: 'warning' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
+
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="player"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+        onDelete: handleDelete,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+        delete: 'מחיקת פגישה',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="meetings"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader meeting={liveMeeting} />
-
-          <EditFormDrawer
-            draft={draft}
-            setDraft={setDraft}
-            context={context}
-            liveMeeting={liveMeeting}
-          />
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title="מחיקת פגישה">
-                <span>
-                  <IconButton
-                    size="sm"
-                    color="danger"
-                    variant="solid"
-                    onClick={handleDelete}
-                    disabled={pending || !meeting?.id}
-                  >
-                    {iconUi({ id: 'delete' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
+        <MeetingCreateFields
+          draft={draft}
+          onDraft={setDraft}
+          context={context}
+          validity={validity}
+          layout={layout}
+        />
+      </Box>
+    </DrawerShell>
   )
 }

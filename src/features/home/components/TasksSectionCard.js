@@ -9,15 +9,60 @@ import TasksFilters from './TasksFilters.js'
 
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
 
+import {
+  TASK_PRIORITY,
+  TASK_STATUS,
+} from '../../../shared/tasks/tasks.constants.js'
+
+import {
+  ALL_ID,
+  DEFAULT_STATUS_FILTER,
+  matchesSingleFilter,
+  matchesMultiFilter,
+  normalizeMultiFilterValue,
+} from '../logic/tasksFilters.logic.js'
+
 function resolveWorkspaceBySectionId(id) {
   if (id === 'taskAnalyst') return 'analyst'
   if (id === 'taskApp') return 'app'
   return ''
 }
 
-function matchesFilter(value, filterValue) {
-  if (!filterValue || filterValue === 'all') return true
-  return String(value || '') === String(filterValue)
+const statusRankMap = {
+  [TASK_STATUS.IN_PROGRESS]: 0,
+  [TASK_STATUS.WAITING]: 1,
+  [TASK_STATUS.NEW]: 2,
+  [TASK_STATUS.DONE]: 3,
+  [TASK_STATUS.ARCHIVED]: 4,
+}
+
+const priorityRankMap = {
+  [TASK_PRIORITY.HIGH]: 0,
+  [TASK_PRIORITY.MEDIUM]: 1,
+  [TASK_PRIORITY.LOW]: 2,
+}
+
+function sortTasks(a, b) {
+  const statusDiff =
+    (statusRankMap[a?.status] ?? 99) - (statusRankMap[b?.status] ?? 99)
+
+  if (statusDiff !== 0) return statusDiff
+
+  const priorityDiff =
+    (priorityRankMap[a?.priority] ?? 99) - (priorityRankMap[b?.priority] ?? 99)
+
+  if (priorityDiff !== 0) return priorityDiff
+
+  const sortOrderDiff = (a?.sortOrder ?? 0) - (b?.sortOrder ?? 0)
+  if (sortOrderDiff !== 0) return sortOrderDiff
+
+  const updatedDiff = (b?.updatedAt ?? 0) - (a?.updatedAt ?? 0)
+  if (updatedDiff !== 0) return updatedDiff
+
+  const createdDiff = (b?.createdAt ?? 0) - (a?.createdAt ?? 0)
+  if (createdDiff !== 0) return createdDiff
+
+  return String(a?.title || '').localeCompare(String(b?.title || ''), 'he')
 }
 
 export default function TasksSectionCard({
@@ -29,27 +74,31 @@ export default function TasksSectionCard({
   items = [],
   icon = null,
 }) {
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState(ALL_ID)
+  const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS_FILTER)
+  const [priorityFilter, setPriorityFilter] = useState(ALL_ID)
 
   const tip = id === 'taskAnalyst' ? 'הוספת משימה לאנליסט' : 'הוספת משימה למפתח'
   const workspace = useMemo(() => resolveWorkspaceBySectionId(id), [id])
 
   const filteredItems = useMemo(() => {
-    return items.filter((task) => {
-      const passType = matchesFilter(task?.taskType, typeFilter)
-      const passStatus = matchesFilter(task?.status, statusFilter)
-      const passPriority = matchesFilter(task?.priority, priorityFilter)
+    const normalizedStatuses = normalizeMultiFilterValue(statusFilter, DEFAULT_STATUS_FILTER)
 
-      return passType && passStatus && passPriority
-    })
+    return items
+      .filter((task) => {
+        const passType = matchesSingleFilter(task?.taskType, typeFilter)
+        const passStatus = matchesMultiFilter(task?.status, normalizedStatuses)
+        const passPriority = matchesSingleFilter(task?.priority, priorityFilter)
+
+        return passType && passStatus && passPriority
+      })
+      .sort(sortTasks)
   }, [items, typeFilter, statusFilter, priorityFilter])
 
   const handleReset = () => {
-    setTypeFilter('all')
-    setStatusFilter('all')
-    setPriorityFilter('all')
+    setTypeFilter(ALL_ID)
+    setStatusFilter(DEFAULT_STATUS_FILTER)
+    setPriorityFilter(ALL_ID)
   }
 
   return (
@@ -98,7 +147,7 @@ export default function TasksSectionCard({
 
       <Box className="dpScrollThin" sx={sx.scrollBox}>
         {filteredItems.length ? (
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ pr: 0.2 }}>
             {filteredItems.map((task) => (
               <TaskRowCard
                 key={task.id}

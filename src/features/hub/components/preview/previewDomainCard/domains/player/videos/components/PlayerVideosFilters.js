@@ -10,7 +10,7 @@ import { getMonthLabel } from '../logic/playerVideos.domain.logic.js'
 function SelectValue({ label }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-      <Typography level="body-sm" noWrap>
+      <Typography level="body-sm" noWrap sx={{ fontSize: 12 }}>
         {label}
       </Typography>
     </Box>

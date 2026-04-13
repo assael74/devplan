@@ -19,55 +19,69 @@ import GoalsAgainstField from '../../../fields/inputUi/games/GoalsAgainstField.j
 
 import GameChipResult from './GameChipResult.js'
 
-import { gcfSx } from '../../sx/gameCreateForm.sx.js'
+import { createSx as sx } from './sx/create.sx.js'
+
+function getGameCreateFieldsState(draft = {}, context = {}) {
+  return {
+    gameDate: draft?.gameDate || '',
+    gameHour: draft?.gameHour || '',
+    rivel: draft?.rivel || '',
+    teamId: draft?.teamId || '',
+    clubId: draft?.clubId || '',
+    clubName: draft?.clubName || context?.player?.clubName || '',
+    teamName: draft?.teamName || context?.player?.teamName || '',
+    home: draft?.home ?? '',
+    difficulty: draft?.difficulty || '',
+    type: draft?.type || '',
+    gameDuration: draft?.gameDuration || '',
+    goalsAgainst: draft?.goalsAgainst ?? 0,
+    goalsFor: draft?.goalsFor ?? 0,
+  }
+}
 
 export default function GameCreateFields({
-  draft,
+  draft = {},
   onDraft,
-  context,
-  validity,
+  context = {},
+  fieldErrors = {},
   layout,
   isPrivatePlayer = false,
 }) {
-  const gameDate = draft?.gameDate || ''
-  const gameHour = draft?.gameHour || ''
-  const rivel = draft?.rivel || ''
-  const teamId = draft?.teamId || ''
-  const clubId = draft?.clubId || ''
-  const clubName = draft?.clubName || context?.player?.clubName || ''
-  const teamName = draft?.teamName || context?.player?.teamName || ''
-  const home = draft?.home || ''
-  const difficulty = draft?.difficulty || ''
-  const type = draft?.type || ''
-  const gameDuration = draft?.gameDuration || ''
-  const goalsAgainst = draft?.goalsAgainst ?? 0
-  const goalsFor = draft?.goalsFor ?? 0
+  const {
+    gameDate,
+    gameHour,
+    rivel,
+    teamId,
+    clubId,
+    clubName,
+    teamName,
+    home,
+    difficulty,
+    type,
+    gameDuration,
+    goalsAgainst,
+    goalsFor,
+  } = getGameCreateFieldsState(draft, context)
 
   useEffect(() => {
-    const result = goalsFor > goalsAgainst ? 'win' : goalsFor < goalsAgainst ? 'loss' : 'draw'
+    const result =
+      goalsFor > goalsAgainst ? 'win' : goalsFor < goalsAgainst ? 'loss' : 'draw'
+
+    if (draft?.result === result) return
 
     onDraft({
       ...draft,
       result,
     })
-  }, [goalsFor, goalsAgainst])
+  }, [goalsFor, goalsAgainst, draft, onDraft])
 
   return (
-    <Box sx={gcfSx.root(layout)}>
-      <Box sx={gcfSx.block(layout.topCols, 1.5)}>
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.block(layout.topCols, 1.5)}>
         {isPrivatePlayer ? (
           <>
-            <ClubNameField
-              value={clubName}
-              size="sm"
-              readOnly
-            />
-
-            <TeamNameField
-              value={teamName}
-              size="sm"
-              readOnly
-            />
+            <ClubNameField value={clubName} size="sm" readOnly />
+            <TeamNameField value={teamName} size="sm" readOnly />
           </>
         ) : (
           <>
@@ -90,63 +104,66 @@ export default function GameCreateFields({
       </Box>
 
       <Divider sx={{ my: 1 }}>
-        <Typography level="title-sm" sx={gcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           פרטי המשחק
         </Typography>
       </Divider>
 
-      <Box sx={gcfSx.block(layout.mainCols)}>
+      <Box sx={sx.block(layout.mainCols)}>
         <GameRivelField
           id="rivel"
           size="sm"
           required
           value={rivel}
-          onChange={(v) => onDraft({ ...draft, rivel: v })}
+          error={!!fieldErrors?.rivel}
+          onChange={(value) => onDraft({ ...draft, rivel: value })}
         />
 
         <GameHomeSelector
           id="game_Home_Selector"
           value={home}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, home: v })}
+          error={!!fieldErrors?.home}
+          onChange={(value) => onDraft({ ...draft, home: value })}
         />
 
         <DateInputField
           label="תאריך משחק"
           required
           value={gameDate}
-          onChange={(v) => onDraft({ ...draft, gameDate: v })}
-          error={!validity.okDate && !!gameDate}
+          onChange={(value) => onDraft({ ...draft, gameDate: value })}
+          error={!!fieldErrors?.gameDate}
           size="sm"
         />
 
         <HourInputField
           value={gameHour}
-          onChange={(v) => onDraft({ ...draft, gameHour: v })}
+          onChange={(value) => onDraft({ ...draft, gameHour: value })}
           size="sm"
         />
       </Box>
 
       <Divider sx={{ my: 1 }}>
-        <Typography level="title-sm" sx={gcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           מידע נוסף
         </Typography>
       </Divider>
 
-      <Box sx={gcfSx.block(layout.metaCols, 1)}>
+      <Box sx={sx.block(layout.metaCols, 1)}>
         <GameTypeSelectField
           id="gameType"
           size="sm"
           value={type}
           required
           label="סוג משחק"
-          onChange={(v) => onDraft({ ...draft, type: v })}
+          error={!!fieldErrors?.type}
+          onChange={(value) => onDraft({ ...draft, type: value })}
         />
 
         <GameDifficultySelectField
           value={difficulty}
           size="sm"
-          onChange={(v) => onDraft({ ...draft, difficulty: v })}
+          onChange={(value) => onDraft({ ...draft, difficulty: value })}
         />
 
         <GameDurationSelectField
@@ -154,29 +171,30 @@ export default function GameCreateFields({
           size="sm"
           required
           placeholder="משך משחק"
-          onChange={(v) => onDraft({ ...draft, gameDuration: v })}
+          error={!!fieldErrors?.gameDuration}
+          onChange={(value) => onDraft({ ...draft, gameDuration: value })}
         />
       </Box>
 
       <Divider sx={{ my: 1 }}>
-        <Typography level="title-sm" sx={gcfSx.title}>
+        <Typography level="title-sm" sx={sx.title}>
           תוצאת משחק
         </Typography>
       </Divider>
 
-      <Box sx={gcfSx.block(layout.resultCols, 1)}>
+      <Box sx={sx.block(layout.resultCols, 1)}>
         <GoalsForField
           id="goalsFor"
           size="sm"
           value={goalsFor}
-          onChange={(v) => onDraft({ ...draft, goalsFor: v })}
+          onChange={(value) => onDraft({ ...draft, goalsFor: value })}
         />
 
         <GoalsAgainstField
           id="goalsAgainst"
           size="sm"
           value={goalsAgainst}
-          onChange={(v) => onDraft({ ...draft, goalsAgainst: v })}
+          onChange={(value) => onDraft({ ...draft, goalsAgainst: value })}
         />
 
         <GameChipResult size="lg" goalsFor={goalsFor} goalsAgainst={goalsAgainst} />

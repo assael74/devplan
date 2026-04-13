@@ -9,7 +9,7 @@ import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectFiel
 import PaymentTypeSelector from '../../../fields/checkUi/payments/PaymentTypeSelector'
 import PriceField from '../../../fields/inputUi/payments/PriceField.js'
 
-import { pcfSx } from '../../sx/paymentCreateForm.sx.js'
+import { pcfSx } from './sx/paymentCreateForm.sx.js'
 
 export default function PaymentCreateFields({
   draft,

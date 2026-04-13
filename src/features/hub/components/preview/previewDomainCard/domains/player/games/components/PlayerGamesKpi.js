@@ -11,7 +11,7 @@ function KpiCard({ label, value, subValue, icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
-        <Typography sx={sx.kpiLabelSx}>{label}</Typography>
+        <Typography sx={{ color: 'text.secondary', fontSize: 12, lineHeight: 1.15 }}>{label}</Typography>
         {icon}
       </Box>
 
@@ -53,12 +53,12 @@ export default function PlayerGamesKpi({ entity, summary, filteredCount }) {
               <Avatar src={entity?.photo || playerImage} />
             </Box>
 
-            <Box sx={sx.heroTextWrapSx}>
-              <Typography level="title-md" sx={sx.heroTitleSx}>
+            <Box sx={{ minWidth: 0, display: 'grid', gap: 0.1 }}>
+              <Typography level="title-md" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                 {playerName || 'שחקן'}
               </Typography>
 
-              <Typography level="body-sm" sx={sx.heroSubTitleSx}>
+              <Typography level="body-sm" sx={{ color: 'text.secondary', fontSize: 12 }}>
                 משחקי השחקן
               </Typography>
             </Box>

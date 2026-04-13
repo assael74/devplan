@@ -12,7 +12,7 @@ import DurationField from '../../../fields/inputUi/trainings/DurationField.js'
 import TrainingsTypeSelectField from '../../../fields/selectUi/trainings/TrainingsTypeSelectField.js'
 import TrainingLocationField from '../../../fields/inputUi/trainings/TrainingLocationField.js'
 
-import { trainingWeekSx as sx } from '../../sx/trainingWeekForm.sx'
+import { trainingWeekSx as sx } from './sx/trainingWeekForm.sx'
 import { safeStr } from '../../helpers/trainings/trainingsWeekForm.helpers'
 import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
 import { DEFAULT_TRAINING_DAY } from '../../../../shared/trainings/trainingsWeek.model.js'

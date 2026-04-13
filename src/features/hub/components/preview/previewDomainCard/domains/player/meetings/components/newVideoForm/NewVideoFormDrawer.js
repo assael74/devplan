@@ -1,141 +1,148 @@
 // previewDomainCard/domains/player/meetings/components/newVideoForm/NewVideoFormDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, ModalClose, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { createActions } from '../../../../../../../../../../ui/forms/create/createActions.js'
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import VideoAnalysisCreateFields from '../../../../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisCreateFields.js'
 
-import NewVideoFormDrawerHeader from './NewVideoFormDrawerHeader.js'
-import VideoAnalysisCreateForm from '../../../../../../../../../../ui/forms/VideoAnalysisCreateForm.js'
+import useVideoAnalysisHubCreate from '../../../../../../../../hooks/videoAnalysis/useVideoAnalysisHubCreate.js'
 
 import {
   buildInitialDraft,
+  buildVideoAnalysisFieldConfig,
   getIsDirty,
+  getValidity,
 } from './newVideoFormDrawer.utils.js'
 
-import { drawerSx as sx } from '../../sx/newVideoDrawer.sx.js'
+const layout = {
+  topCols: { xs: '1fr', md: '1fr 1fr' },
+  mainCols: { xs: '1fr', md: '1fr 1fr' },
+  metaCols: { xs: '1fr', md: '1fr 1fr 1fr' },
+  timeCols: { xs: '1fr 1fr', md: '1fr 1fr' },
+}
 
-export default function NewVideoFormDrawer({ open, onClose, onSaved, context, meeting }) {
-  const initial = useMemo(() => buildInitialDraft(context), [context])
-
+export default function NewVideoFormDrawer({
+  open,
+  onClose,
+  onSaved,
+  context,
+  meeting,
+}) {
+  const initial = useMemo(() => buildInitialDraft({ ...context, meeting }), [context, meeting])
   const [draft, setDraft] = useState(initial)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isValid, setIsValid] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setDraft(initial)
-    setIsSaving(false)
-    setIsValid(false)
   }, [open, initial])
 
+  const validity = useMemo(() => getValidity(draft), [draft])
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const saving = isSaving
-  const canSave = isDirty && isValid && !saving
 
-  const handleSave = async () => {
-    if (!canSave) return
+  const {
+    locks,
+    visible,
+    disabled,
+    isMeetingMode,
+    isEntityMode,
+    objectTypeOptions,
+    contextTypeOptions,
+  } = useMemo(() => {
+    return buildVideoAnalysisFieldConfig(draft, context)
+  }, [draft, context])
 
-    try {
-      setIsSaving(true)
+  const { saving, runCreateVideoAnalysis } = useVideoAnalysisHubCreate()
+  const canSave = isDirty && validity?.ok && !saving
 
-      const res = await createActions.videoAnalysis({ draft })
-
-      onSaved(res || draft)
-      onClose()
-    } catch (error) {
-      console.error('create video analysis failed:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (saving) return
     setDraft(initial)
-  }
+  }, [saving, initial])
+
+  const handleSave = useCallback(async () => {
+    if (!canSave || saving) return
+
+    try {
+      const created = await runCreateVideoAnalysis({
+        draft,
+        context: {
+          ...context,
+          meeting,
+        },
+      })
+
+      onSaved?.(created || draft)
+      onClose?.()
+    } catch (error) {
+      console.error('create videoAnalysis failed:', error)
+    }
+  }, [canSave, saving, runCreateVideoAnalysis, draft, context, meeting, onSaved, onClose])
+
+  const player =
+    context?.player ||
+    context?.entity?.player ||
+    meeting?.player ||
+    null
+
+  const status = saving
+    ? { text: 'שומר וידאו חדש...', color: 'primary' }
+    : !isDirty
+    ? { text: 'אין שינויים', color: 'neutral' }
+    : !validity?.ok
+    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : { text: 'מוכן לשמירה', color: 'success' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={saving ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="videoAnalysis"
+      open={open}
+      onClose={onClose}
+      saving={saving}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="videoAnalysis"
+          title={draft?.name || 'וידאו חדש'}
+          subline={player?.playerFullName || 'וידאו מפגישה'}
+          titleIconId="video"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <NewVideoFormDrawerHeader draft={draft} />
-          <ModalClose sx={{ mt: 2, mr: 2 }} />
-
-          <Box sx={{ position: 'sticky', zIndex: 5, borderRadius: 12, bgcolor: 'background.body' }}>
-            <VideoAnalysisCreateForm
-              draft={draft}
-              onDraft={setDraft}
-              onValidChange={setIsValid}
-              context={context}
-              variant="drawer"
-            />
-          </Box>
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={saving}
-                loadingPosition="start"
-                disabled={!canSave}
-                startDecorator={!saving ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                {saving ? 'שומר...' : 'שמירה'}
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={saving}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || saving}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {saving
-                ? 'שומר וידאו חדש...'
-                : !isDirty
-                  ? 'אין שינויים'
-                  : !isValid
-                    ? 'יש להשלים את כל שדות החובה'
-                    : 'מוכן לשמירה'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <Box className="dpScrollThin" sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
+        <VideoAnalysisCreateFields
+          draft={draft}
+          onDraft={setDraft}
+          context={{
+            ...context,
+            meeting,
+          }}
+          layout={layout}
+          validity={validity}
+          locks={locks}
+          visible={visible}
+          disabled={disabled}
+          isMeetingMode={isMeetingMode}
+          isEntityMode={isEntityMode}
+          objectTypeOptions={objectTypeOptions}
+          contextTypeOptions={contextTypeOptions}
+        />
+      </Box>
+    </DrawerShell>
   )
 }

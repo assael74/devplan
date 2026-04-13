@@ -10,7 +10,7 @@ import TeamSelectField from '../../../fields/selectUi/teams/TeamSelectField'
 import MonthPicker from '../../../fields/dateUi/MonthPicker'
 import YearPicker from '../../../fields/dateUi/YearPicker'
 
-import { pcfSx } from '../../sx/playerMultiCreateForm.sx.js'
+import { multiSx as sx } from './sx/multiCreate.sx.js'
 import { makeId } from '../../../../utils/id.js'
 import { iconUi } from '../../../core/icons/iconUi.js'
 
@@ -87,8 +87,8 @@ export default function PlayerMultiCreateFields({
   }
 
   return (
-    <Box sx={pcfSx.root(layout)}>
-      <Box sx={pcfSx.header}>
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.header}>
         <Box>
           <Typography level="title-md">הוספת מספר שחקנים</Typography>
 
@@ -108,7 +108,7 @@ export default function PlayerMultiCreateFields({
         </Typography>
       </Divider>
 
-      <Box sx={pcfSx.block(layout?.defaultsCols, 1.5)}>
+      <Box sx={sx.block(layout?.defaultsCols, 1.5)}>
         <ClubSelectField
           value={draft?.clubId || defaults?.clubId || ''}
           size="sm"
@@ -136,11 +136,11 @@ export default function PlayerMultiCreateFields({
           const rowValidity = validity?.rowValidity[index] || {}
 
           return (
-            <Box key={row.uiKey} sx={pcfSx.rowCard(rowValidity?.isValid)}>
-              <Box sx={pcfSx.rowHeader}>
+            <Box key={row.uiKey} sx={sx.rowCard(rowValidity?.isValid)}>
+              <Box sx={sx.rowHeader}>
                 <Typography level="title-sm">שחקן {index + 1}</Typography>
 
-                <Box sx={pcfSx.rowActions}>
+                <Box sx={sx.rowActions}>
                   {!rowValidity?.isValid && (
                     <Chip size="sm" color="danger" variant="soft">
                       חסרים שדות
@@ -159,7 +159,7 @@ export default function PlayerMultiCreateFields({
                 </Box>
               </Box>
 
-              <Box sx={pcfSx.block(layout?.rowCols, 1)}>
+              <Box sx={sx.block(layout?.rowCols, 1)}>
                 <PlayerFirstNameField
                   id={`playerFirstName-${row.uiKey}`}
                   size="sm"
@@ -199,7 +199,7 @@ export default function PlayerMultiCreateFields({
         })}
       </Box>
 
-      <Box sx={pcfSx.footer}>
+      <Box sx={sx.footer}>
         <Button
           size="sm"
           variant="soft"

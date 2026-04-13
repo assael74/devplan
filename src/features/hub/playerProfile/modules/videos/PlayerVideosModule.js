@@ -139,7 +139,7 @@ export default function PlayerVideosModule({ entity, context }) {
         video={editingVideo}
         onClose={() => setEditingVideo(null)}
         onSaved={() => {}}
-        context={{ ...context, teamId: livePlayer?.id, team: livePlayer }}
+        context={{ ...context, playerId: livePlayer?.id, player: livePlayer }}
       />
 
       <DriveVideoPlayer

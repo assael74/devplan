@@ -1,22 +1,24 @@
-export const safe = (v) => (v == null ? '' : String(v).trim())
+// preview/previewDomainCard/domains/club/players/components/drawer/editDrawer.utils.js
+
+export const safe = (value) => (value == null ? '' : String(value).trim())
 
 export const buildInitialDraft = (player) => {
-  const p = player || {}
+  const source = player || {}
 
   return {
-    id: p?.id || p?.playerId || '',
-    raw: p,
+    id: source?.id || source?.playerId || '',
+    raw: source,
 
-    playerFirstName: safe(p?.playerFirstName),
-    playerLastName: safe(p?.playerLastName),
-    playerShortName: safe(p?.playerShortName),
-    birthDay: safe(p?.birthDay),
-    ifaLink: safe(p?.ifaLink),
+    playerFirstName: safe(source?.playerFirstName),
+    playerLastName: safe(source?.playerLastName),
+    playerShortName: safe(source?.playerShortName),
+    birthDay: safe(source?.birthDay),
+    ifaLink: safe(source?.ifaLink),
 
-    active: p?.active === true,
-    squadRole: safe(p?.squadRole),
-    type: safe(p?.type || 'noneType'),
-    projectStatus: safe(p?.projectStatus),
+    active: source?.active === true,
+    squadRole: safe(source?.squadRole),
+    type: safe(source?.type || 'noneType'),
+    projectStatus: safe(source?.projectStatus),
   }
 }
 

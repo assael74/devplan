@@ -2,12 +2,14 @@
 
 export const ENTITY_LABEL = {
   players: 'שחקן',
+  privates: 'שחקן',
   teams: 'קבוצה',
   clubs: 'מועדון',
 }
 
 export const DEFAULT_SNACK_ENTITY = {
   players: 'player',
+  privates: 'player',
   teams: 'team',
   clubs: 'club',
 }

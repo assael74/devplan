@@ -14,7 +14,7 @@ import TaskPrioritySelectField from '../../../fields/selectUi/tasks/TaskPriority
 import TaskComplexitySelectField from '../../../fields/selectUi/tasks/TaskComplexitySelectField.js'
 import TaskTypeSelectField from '../../../fields/selectUi/tasks/TaskTypeSelectField.js'
 
-import { pcfSx } from '../../sx/tasksCreateForm.sx.js'
+import { pcfSx } from './sx/tasksCreateForm.sx.js'
 
 const clean = (v) => String(v ?? '').trim()
 

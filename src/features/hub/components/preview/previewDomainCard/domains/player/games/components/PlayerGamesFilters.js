@@ -41,7 +41,7 @@ function SelectValue({ option, textKey = 'labelH' }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
       {option?.idIcon ? iconUi({ id: option.idIcon, size: 'sm' }) : null}
-      <Typography level="body-sm" noWrap>
+      <Typography level="body-sm" noWrap sx={{ fontSize: 12 }}>
         {label}
       </Typography>
     </Box>
@@ -82,7 +82,7 @@ export default function PlayerGamesFilters({
           value={q}
           onChange={(e) => onChangeQ(e.target.value)}
           startDecorator={iconUi({ id: 'search', size: 'sm' })}
-          sx={sx.searchBoxSx}
+          sx={{ minWidth: 0, width: '100%' }}
         />
 
         <Select
@@ -92,7 +92,7 @@ export default function PlayerGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(typeOptions, selected?.value)} textKey="labelH" />
           )}
-          sx={sx.selectSx}
+          sx={{ minWidth: 0, width: '100%' }}
         >
           {typeOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -108,7 +108,7 @@ export default function PlayerGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(diffOptions, selected?.value)} textKey="labelH" />
           )}
-          sx={sx.selectSx}
+          sx={{ minWidth: 0, width: '100%' }}
         >
           {diffOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -124,7 +124,7 @@ export default function PlayerGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(homeOptions, selected?.value)} textKey="label" />
           )}
-          sx={sx.selectSmallSx}
+          sx={{ minWidth: 0, width: '100%' }}
         >
           {homeOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -140,7 +140,7 @@ export default function PlayerGamesFilters({
           renderValue={(selected) => (
             <SelectValue option={findOpt(resultOptions, selected?.value)} textKey="label" />
           )}
-          sx={sx.selectSmallSx}
+          sx={{ minWidth: 0, width: '100%' }}
         >
           {resultOptions.map((o) => (
             <Option key={o.id} value={o.id}>
@@ -155,7 +155,7 @@ export default function PlayerGamesFilters({
               disabled={!isDirty}
               size="sm"
               variant="soft"
-              sx={sx.icoRes}
+              sx={{ height: 36, width: 36, flexShrink: 0 }}
               onClick={onReset}
             >
               {iconUi({ id: 'reset', size: 'sm' })}

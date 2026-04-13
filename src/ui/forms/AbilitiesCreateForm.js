@@ -6,7 +6,7 @@ import StickyHeaderSection from './ui/abilities/StickyHeaderSection.js'
 import GrowthStageSection from './ui/abilities/GrowthStageSection.js'
 import DomainsAccordion from './ui/abilities/DomainsAccordion.js'
 
-import { vaSx } from './sx/abilitiesForm.sx.js'
+import { vaSx } from './ui/abilities/sx/abilitiesForm.sx.js'
 
 import {
   clean,

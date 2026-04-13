@@ -1,38 +1,24 @@
 // teamProfile/modules/players/components/drawer/TeamPlayerPositionsModal.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Avatar,
-  Box,
-  Button,
-  Drawer,
-  Typography,
-  Sheet,
-  DialogContent,
-  DialogTitle,
-  ModalClose,
-  Tooltip,
-  IconButton,
-  Chip,
-  Snackbar
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Box, Typography, Chip, Snackbar } from '@mui/joy'
+
+import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
+
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
 import PlayerPositionFieldPitch from '../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect.js'
 
-import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 import { usePlayerHubUpdate } from './../../../../../hooks/players/usePlayerHubUpdate.js'
 
-import { teamPlayersDrawerSx as sx } from './sx/teamPlayers.drawer.sx.js'
 import {
   safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './logic/teamPlayerQuickEdit.logic.js'
-
-const c = getEntityColors('players')
+} from './teamPlayerQuickEdit.logic.js'
 
 export default function TeamPlayerPositionsDrawer({
   open,
@@ -41,6 +27,7 @@ export default function TeamPlayerPositionsDrawer({
   onSaved,
 }) {
   const [showLimitWarning, setShowLimitWarning] = useState(false)
+
   const initial = useMemo(() => buildInitialDraft(player), [player])
   const [draft, setDraft] = useState(initial)
 
@@ -53,13 +40,13 @@ export default function TeamPlayerPositionsDrawer({
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
-  const canSave = !!initial.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && !pending
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('teamPlayerPositionsEdit', patch, {
-      section: 'teamPlayerPositionsEdit',
+    await run(patch, {
+      section: 'teamPlayerQuickEdit',
       playerId: initial.id,
     })
 
@@ -67,127 +54,90 @@ export default function TeamPlayerPositionsDrawer({
     onClose()
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft({
       ...initial,
       positions: [...initial.positions],
     })
-  }
+  }, [initial, pending])
+
+  const headerAvatar = player?.photo || playerImage
+  const headerTitle = player?.playerFullName || initial?.name || 'שחקן'
+  const headerMeta = 'עריכת עמדות שחקן'
+
+  const status = isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
     <>
-      <Drawer
-        size="md"
-        variant="plain"
-        anchor="right"
+      <DrawerShell
+        entity="player"
         open={open}
         onClose={onClose}
-        slotProps={{ content: { sx: sx.drawerSx } }}
+        saving={pending}
+        isDirty={isDirty}
+        canSave={canSave}
+        actions={{
+          onSave: handleSave,
+          onReset: handleReset,
+        }}
+        texts={{
+          save: 'שמירה',
+          saving: 'שומר...',
+          cancel: 'ביטול',
+        }}
+        tooltips={{
+          reset: 'איפוס השינויים',
+        }}
+        status={status}
+        header={
+          <DrawerHeaderShell
+            entity="player"
+            title={headerTitle}
+            avatar={headerAvatar}
+            meta={headerMeta}
+            metaIconId="positions"
+          />
+        }
       >
-        <Sheet sx={sx.drawerSheet}>
-          <DialogTitle sx={{ bgcolor: c.bg, borderRadius: 'sm', p: 1, boxShadow: 'sm' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar src={player?.photo || playerImage} />
+        <PlayerPositionFieldPitch
+          value={draft?.positions}
+          onChange={(positions) =>
+            setDraft((prev) => ({
+              ...prev,
+              positions: safeArr(positions),
+            }))
+          }
+          onLimitReached={() => {
+            setShowLimitWarning(false)
+            setTimeout(() => setShowLimitWarning(true), 10)
+          }}
+          disabled={pending}
+        />
 
-              <Box sx={{ ml: 2 }}>
-                <Typography level="title-md" sx={sx.formNameSx}>
-                  {player?.playerFullName || 'שחקן'}
-                </Typography>
-
-                <Typography
-                  level="body-sm"
-                  sx={sx.formNameSx}
-                  startDecorator={iconUi({ id: 'positions' })}
-                >
-                  עריכת עמדת שחקן
-                </Typography>
-              </Box>
-            </Box>
-
-            <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />
-          </DialogTitle>
-
-          <DialogContent sx={{ gap: 2 }}>
-            <Box sx={sx.content} className="dpScrollThin">
-            <PlayerPositionFieldPitch
-              value={draft.positions}
-              onChange={(positions) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  positions: safeArr(positions),
-                }))
-              }
-              onLimitReached={() => {
-                setShowLimitWarning(false)
-                setTimeout(() => setShowLimitWarning(true), 10)
-              }}
-              disabled={pending}
-             />
-
-              {!!draft.positions?.length ? (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {draft.positions.map((pos) => (
-                    <Chip
-                      key={pos}
-                      size="sm"
-                      variant="soft"
-                      color="primary"
-                      startDecorator={iconUi({ id: 'positions' })}
-                    >
-                      {pos}
-                    </Chip>
-                  ))}
-                </Box>
-              ) : (
-                <Typography level="body-sm" color="neutral">
-                  לא נבחרו עמדות
-                </Typography>
-              )}
-            </Box>
-          </DialogContent>
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
+        {!!draft?.positions?.length ? (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {draft.positions.map((position) => (
+              <Chip
+                key={position}
+                size="sm"
+                variant="soft"
+                color="primary"
+                startDecorator={iconUi({ id: 'positions' })}
               >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
+                {position}
+              </Chip>
+            ))}
           </Box>
-        </Sheet>
-      </Drawer>
+        ) : (
+          <Typography level="body-sm" color="neutral">
+            לא נבחרו עמדות
+          </Typography>
+        )}
+      </DrawerShell>
+
       <Snackbar
         open={showLimitWarning}
         autoHideDuration={2500}

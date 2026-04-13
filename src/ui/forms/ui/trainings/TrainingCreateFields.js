@@ -9,7 +9,7 @@ import DateInputField from '../../../fields/dateUi/DateInputField.js'
 import TrainingWeekDefaultsBar from './TrainingWeekDefaultsBar'
 import TrainingWeekDayCard from './TrainingWeekDayCard'
 
-import { trainingWeekSx as sx } from '../../sx/trainingWeekForm.sx'
+import { trainingWeekSx as sx } from './sx/trainingWeekForm.sx'
 
 import {
   clean,

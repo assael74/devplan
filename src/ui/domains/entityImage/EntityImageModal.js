@@ -23,6 +23,7 @@ import { deleteImageByUrl } from '../../../services/firestore/storage/deleteImag
 
 export const ENTITY_LABEL = {
   players: 'עריכת תמונת שחקן',
+  privates: 'עריכת תמונת שחקן',
   teams: 'עריכת תמונת קבוצה',
   clubs: 'עריכת תמונת מועדון',
   roles: 'עריכת תמונת איש צוות',
@@ -46,7 +47,7 @@ export default function EntityImageModal({
   onAfterSave,
 }) {
   const inputRef = useRef(null)
-
+  
   const routerType = routerEntityType || entityType
   const snackType = snackEntityType || DEFAULT_SNACK_ENTITY[entityType] || 'entity'
 

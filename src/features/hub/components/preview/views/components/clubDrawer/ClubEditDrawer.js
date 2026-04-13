@@ -1,23 +1,27 @@
 // hub/components/preview/views/components/clubDrawer/ClubEditDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import ClubEditFields from '../../../../../../../ui/forms/ui/clubs/ClubEditFields.js'
+
 import { useClubHubUpdate } from '../../../../../hooks/clubs/useClubHubUpdate.js'
-
-import ClubEditDrawerHeader from './ClubEditDrawerHeader.js'
-import ClubEditFormDrawer from './ClubEditFormDrawer.js'
 
 import {
   buildClubEditInitial,
   buildClubEditPatch,
+  getClubEditFieldErrors,
+  getIsClubEditValid,
   isClubEditDirty,
 } from './clubEditDrawer.utils.js'
 
-import { editDrawerSx as sx } from './sx/editDrawer.sx.js'
-
-export default function ClubEditDrawer({ open, club, onClose, onSaved }) {
+export default function ClubEditDrawer({
+  open,
+  club,
+  onClose,
+  onSaved,
+}) {
   const initial = useMemo(() => buildClubEditInitial(club), [club])
   const [draft, setDraft] = useState(initial)
 
@@ -26,13 +30,15 @@ export default function ClubEditDrawer({ open, club, onClose, onSaved }) {
     setDraft(initial)
   }, [open, initial])
 
+  const fieldErrors = useMemo(() => getClubEditFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsClubEditValid(draft), [draft])
   const isDirty = useMemo(() => isClubEditDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildClubEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useClubHubUpdate(club)
-  const canSave = !!club?.id && isDirty && !pending
+  const canSave = !!club?.id && isDirty && isValid && !pending
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('updateClub', patch, {
@@ -43,77 +49,54 @@ export default function ClubEditDrawer({ open, club, onClose, onSaved }) {
 
     onSaved?.(patch, { ...club, ...patch })
     onClose?.()
-  }
+  }, [canSave, run, patch, club, onSaved, onClose])
 
-  const handleReset = () => setDraft(initial)
+  const handleReset = useCallback(() => {
+    if (pending) return
+    setDraft(initial)
+  }, [initial, pending])
+
+  const status = !isValid
+    ? { text: 'יש להשלים שם מועדון', color: 'warning' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={pending ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: sx.drawerSx,
-        },
+    <DrawerShell
+      entity="club"
+      open={open}
+      onClose={onClose}
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="club"
+          title={draft?.clubName || club?.clubName || 'מועדון'}
+          subline={draft?.ifaLink || 'פרטי מועדון'}
+          titleIconId="clubs"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <Box sx={sx.drawerRootSx}>
-          <ClubEditDrawerHeader
-            club={club}
-            pending={pending}
-          />
-
-          <ClubEditFormDrawer
-            draft={draft}
-            setDraft={setDraft}
-            club={club}
-          />
-
-          <Box sx={sx.footerSx}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Button
-                loading={pending}
-                disabled={!canSave}
-                startDecorator={iconUi({ id: 'save' })}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                שמירה
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={pending}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס השינויים">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || pending}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <ClubEditFields
+        draft={draft}
+        onDraft={setDraft}
+        fieldErrors={fieldErrors}
+      />
+    </DrawerShell>
   )
 }

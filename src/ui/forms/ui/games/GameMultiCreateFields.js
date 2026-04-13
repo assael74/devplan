@@ -14,7 +14,7 @@ import GameRivelField from '../../../fields/inputUi/games/GameRivelField.js'
 
 import { makeId } from '../../../../utils/id.js'
 import { iconUi } from '../../../core/icons/iconUi.js';
-import { gcfSx } from '../../sx/gameMultiCreateForm.sx.js'
+import { multiSx as sx } from './sx/multiCreate.sx.js'
 
 function createRow(defaults = {}) {
   return {
@@ -85,8 +85,8 @@ export default function GameMultiCreateFields({
   }
 
   return (
-    <Box sx={gcfSx.root(layout)}>
-      <Box sx={gcfSx.header}>
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.header}>
         <Box>
           <Typography level="title-md">הוספת מספר משחקים</Typography>
           <Typography level="body-sm" sx={{ color: 'text.secondary', }}>
@@ -107,7 +107,7 @@ export default function GameMultiCreateFields({
 
       {/* שורה ראשונה */}
 
-      <Box sx={gcfSx.block(layout.defaultsCols, 1.5)}>
+      <Box sx={sx.block(layout.defaultsCols, 1.5)}>
         <ClubSelectField
           value={draft.clubId}
           size="sm"
@@ -126,7 +126,7 @@ export default function GameMultiCreateFields({
 
       {/* שורה שניה */}
 
-      <Box sx={gcfSx.block(layout.defaultsCols, 1)}>
+      <Box sx={sx.block(layout.defaultsCols, 1)}>
         <GameTypeSelectField
           id="multiGameType"
           size="sm"
@@ -159,14 +159,14 @@ export default function GameMultiCreateFields({
           const rowValidity = validity?.rowValidity[index] || {}
 
           return (
-            <Box key={row.uiKey} sx={gcfSx.rowCard(rowValidity?.isValid)}>
+            <Box key={row.uiKey} sx={sx.rowCard(rowValidity?.isValid)}>
 
               {/* שורת מספור משחק */}
 
-              <Box sx={gcfSx.rowHeader}>
+              <Box sx={sx.rowHeader}>
                 <Typography level="title-sm">משחק {index + 1}</Typography>
 
-                <Box sx={gcfSx.rowActions}>
+                <Box sx={sx.rowActions}>
                   {!rowValidity?.isValid && (
                     <Chip size="sm" color="danger" variant="soft">
                       חסרים שדות
@@ -187,7 +187,7 @@ export default function GameMultiCreateFields({
 
               {/* שורת שדות */}
 
-              <Box sx={gcfSx.block(layout.rowCols, 1)}>
+              <Box sx={sx.block(layout.rowCols, 1)}>
                 <GameRivelField
                   id={`rivel-${row.uiKey}`}
                   size="sm"
@@ -223,7 +223,7 @@ export default function GameMultiCreateFields({
         })}
       </Box>
 
-      <Box sx={gcfSx.footer}>
+      <Box sx={sx.footer}>
         <Button
           size="sm"
           variant="soft"

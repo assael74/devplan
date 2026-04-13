@@ -1,23 +1,28 @@
-// previewDomainCard/domains/team/videos/components/drawer/EditDrawer.js
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip } from '@mui/joy'
+import DrawerShell from '../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
+import { resolveEntityAvatar } from '../../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+
 import { useVideoUpdate } from '../../../../../../../../hooks/videoAnalysis/useVideoUpdate.js'
 
-import EditDrawerHeader from './EditDrawerHeader.js'
-import EditFormDrawer from './EditFormDrawer.js'
+import VideoAnalysisEditFields from '../../../../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisEditFields.js'
 
 import {
   buildInitialDraft,
   buildPatch,
   getIsDirty,
+  buildVideoMeta,
 } from './editDrawer.utils.js'
 
-import { drawerSx as sx } from '../../sx/editDrawer.sx.js'
-
-export default function EditDrawer({ open, video, onClose, onSaved, context }) {
+export default function EditDrawer({
+  open,
+  video,
+  onClose,
+  onSaved,
+  context,
+}) {
   const initial = useMemo(() => buildInitialDraft(video), [video])
   const [draft, setDraft] = useState(initial)
   const [isSaving, setIsSaving] = useState(false)
@@ -28,15 +33,40 @@ export default function EditDrawer({ open, video, onClose, onSaved, context }) {
     setIsSaving(false)
   }, [open, initial])
 
+  const liveVideo = useMemo(() => {
+    const teamId =
+      initial?.raw?.teamId ||
+      initial?.raw?.team?.id ||
+      ''
+
+    const team =
+      initial?.raw?.team ||
+      (context?.teams || []).find((item) => item?.id === teamId) ||
+      context?.team ||
+      null
+
+    return {
+      ...initial?.raw,
+      ...draft,
+      teamId,
+      team,
+      metaLabel: buildVideoMeta({
+        ...initial?.raw,
+        ...draft,
+        team,
+      }),
+    }
+  }, [initial?.raw, draft, context?.teams, context?.team])
+
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
-  const { run, pending } = useVideoUpdate(initial.raw)
+  const { run, pending } = useVideoUpdate(initial?.raw)
 
   const saving = isSaving || pending
-  const canSave = !!initial.id && isDirty && !saving
+  const canSave = !!initial?.id && isDirty && !saving
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     try {
@@ -47,90 +77,79 @@ export default function EditDrawer({ open, video, onClose, onSaved, context }) {
         videoId: initial.id,
       })
 
-      onSaved(patch, { ...initial.raw, ...patch })
-      onClose()
+      onSaved?.(patch, { ...initial.raw, ...patch })
+      onClose?.()
     } catch (error) {
       console.error('EditDrawer save failed:', error)
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (saving) return
     setDraft(initial)
-  }
+  }, [saving, initial])
+
+  const team = liveVideo?.team || context?.team || null
+
+  const headerAvatar = resolveEntityAvatar({
+    entityType: 'team',
+    entity: team,
+    parentEntity: team?.club,
+    subline: team?.club?.name || team?.clubName || '',
+  })
+
+  const headerTitle =
+    team?.teamName ||
+    team?.name ||
+    liveVideo?.name ||
+    'וידאו'
+
+  const headerMeta = liveVideo?.metaLabel || 'פרטי וידאו'
+
+  const status = saving
+    ? { text: 'שומר עדכון...', color: 'warning' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Drawer
-      open={!!open}
-      size="md"
-      anchor="right"
-      onClose={saving ? undefined : onClose}
-      slotProps={{
-        content: {
-          sx: {
-            bgcolor: 'transparent',
-            p: { xs: 0, md: 2 },
-            boxShadow: 'none',
-          },
-        },
+    <DrawerShell
+      entity="team"
+      open={open}
+      onClose={onClose}
+      saving={saving}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
       }}
+      texts={{
+        save: 'שמירה',
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס טופס',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="team"
+          title={headerTitle}
+          avatar={headerAvatar}
+          meta={headerMeta}
+          metaIconId="videos"
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheetSx}>
-        <Box sx={sx.drawerRootSx}>
-          <EditDrawerHeader video={video} />
-
-          <EditFormDrawer
-            draft={draft}
-            setDraft={setDraft}
-            video={video}
-            context={context}
-          />
-
-          <Box sx={sx.footerSx}>
-            <Box sx={sx.footerActionsSx}>
-              <Button
-                loading={saving}
-                loadingPosition="start"
-                disabled={!canSave}
-                startDecorator={!saving ? iconUi({ id: 'save' }) : null}
-                onClick={handleSave}
-                sx={sx.conBut}
-              >
-                {saving ? 'שומר...' : 'שמירה'}
-              </Button>
-
-              <Button
-                color="neutral"
-                variant="outlined"
-                onClick={onClose}
-                disabled={saving}
-              >
-                ביטול
-              </Button>
-
-              <Tooltip title="איפוס טופס">
-                <span>
-                  <IconButton
-                    disabled={!isDirty || saving}
-                    size="sm"
-                    variant="soft"
-                    sx={sx.icoRes}
-                    onClick={handleReset}
-                  >
-                    {iconUi({ id: 'reset' })}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs" color={isDirty ? 'danger' : 'neutral'}>
-              {saving ? 'שומר עדכון...' : isDirty ? 'יש שינויים שלא נשמרו' : 'אין שינויים'}
-            </Typography>
-          </Box>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <VideoAnalysisEditFields
+        draft={draft}
+        setDraft={setDraft}
+        context={context}
+      />
+    </DrawerShell>
   )
 }

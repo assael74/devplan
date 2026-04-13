@@ -1,33 +1,27 @@
-export const safe = (v) => (v == null ? '' : String(v))
+// preview/previewDomainCard/domains/club/teams/components/drawer/editDrawer.utils.js
 
-export const safeArr = (v) => (Array.isArray(v) ? v.filter(Boolean) : [])
+export const safe = (value) => (value == null ? '' : String(value))
 
-export const sameArr = (a, b) => {
-  const x = safeArr(a)
-  const y = safeArr(b)
-
-  if (x.length !== y.length) return false
-  for (let i = 0; i < x.length; i += 1) {
-    if (x[i] !== y[i]) return false
-  }
-  return true
-}
+const clean = (value) => safe(value).trim()
 
 export function buildTeamEditInitial(team) {
-  const t = team || {}
+  const source = team || {}
 
   return {
-    teamName: safe(t.teamName),
-    ifaLink: safe(t.ifaLink),
-    active: Boolean(t.active),
-    project: t.project ?? false,
-    teamYear: safe(t.teamYear),
-    league: safe(t.league),
-    leagueLevel: safe(t.leagueLevel),
-    leaguePosition: safe(t.leaguePosition),
-    points: safe(t.points),
-    leagueGoalsFor: safe(t.leagueGoalsFor),
-    leagueGoalsAgainst: safe(t.leagueGoalsAgainst),
+    id: source?.id || '',
+    raw: source,
+
+    teamName: clean(source?.teamName),
+    ifaLink: clean(source?.ifaLink),
+    active: source?.active === true,
+    project: source?.project === true,
+    teamYear: clean(source?.teamYear),
+    league: clean(source?.league),
+    leagueLevel: clean(source?.leagueLevel),
+    leaguePosition: clean(source?.leaguePosition),
+    points: clean(source?.points),
+    leagueGoalsFor: clean(source?.leagueGoalsFor),
+    leagueGoalsAgainst: clean(source?.leagueGoalsAgainst),
   }
 }
 
@@ -50,17 +44,17 @@ export function isTeamEditDirty(draft, initial) {
 export function buildTeamEditPatch(draft, initial) {
   const next = {}
 
-  if (draft.teamName !== initial.teamName) next.teamName = draft.teamName || ''
-  if (draft.ifaLink !== initial.ifaLink) next.ifaLink = draft.ifaLink || ''
-  if (draft.active !== initial.active) next.active = Boolean(draft.active)
-  if (draft.project !== initial.project) next.project = draft.project
-  if (draft.teamYear !== initial.teamYear) next.teamYear = draft.teamYear || ''
-  if (draft.league !== initial.league) next.league = draft.league || ''
-  if (draft.leagueLevel !== initial.leagueLevel) next.leagueLevel = draft.leagueLevel || ''
-  if (draft.leaguePosition !== initial.leaguePosition) next.leaguePosition = draft.leaguePosition || ''
-  if (draft.points !== initial.points) next.points = draft.points || ''
-  if (draft.leagueGoalsFor !== initial.leagueGoalsFor) next.leagueGoalsFor = draft.leagueGoalsFor || ''
-  if (draft.leagueGoalsAgainst !== initial.leagueGoalsAgainst) next.leagueGoalsAgainst = draft.leagueGoalsAgainst || ''
+  if (draft.teamName !== initial.teamName) next.teamName = clean(draft.teamName)
+  if (draft.ifaLink !== initial.ifaLink) next.ifaLink = clean(draft.ifaLink)
+  if (draft.active !== initial.active) next.active = draft.active === true
+  if (draft.project !== initial.project) next.project = draft.project === true
+  if (draft.teamYear !== initial.teamYear) next.teamYear = clean(draft.teamYear)
+  if (draft.league !== initial.league) next.league = clean(draft.league)
+  if (draft.leagueLevel !== initial.leagueLevel) next.leagueLevel = clean(draft.leagueLevel)
+  if (draft.leaguePosition !== initial.leaguePosition) next.leaguePosition = clean(draft.leaguePosition)
+  if (draft.points !== initial.points) next.points = clean(draft.points)
+  if (draft.leagueGoalsFor !== initial.leagueGoalsFor) next.leagueGoalsFor = clean(draft.leagueGoalsFor)
+  if (draft.leagueGoalsAgainst !== initial.leagueGoalsAgainst) next.leagueGoalsAgainst = clean(draft.leagueGoalsAgainst)
 
   return next
 }

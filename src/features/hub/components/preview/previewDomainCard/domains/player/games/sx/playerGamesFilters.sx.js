@@ -26,27 +26,6 @@ export const filtersSx = {
     alignItems: 'center',
   },
 
-  searchBoxSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  selectSmallSx: {
-    minWidth: 0,
-    width: '100%',
-  },
-
-  icoRes: {
-    height: 36,
-    width: 36,
-    flexShrink: 0,
-  },
-
   icoAddSx: {
     height: 36,
     width: 36,

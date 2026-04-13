@@ -42,6 +42,9 @@ export default function PlayerPreviewView({
   const ifaLink = player?.ifaLink || null
   const isProject = String(player?.type || '') === 'project'
 
+  const imageEntityType = player?.playerSource === 'private' ? 'privates' : 'players'
+  const imageSnackType = 'player'
+
   const birthYear = player?.team?.teamYear || ''
   const subtitle = [
     player?.club?.clubName || '', player?.team?.teamName || player?.teamName || '', birthYear ? `שנתון ${birthYear}` : ''
@@ -138,7 +141,9 @@ export default function PlayerPreviewView({
       <EntityImageModal
         open={openImg}
         onClose={() => setOpenImg(false)}
-        entityType="players"
+        entityType={imageEntityType}
+        routerEntityType={imageEntityType}
+        snackEntityType={imageSnackType}
         id={player?.id}
         entityName={`${player?.playerFirstName || ''} ${player?.playerLastName || ''}`.trim() || 'שחקן'}
         currentPhotoUrl={headerPhoto}

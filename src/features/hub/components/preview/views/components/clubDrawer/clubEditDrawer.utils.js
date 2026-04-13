@@ -2,17 +2,29 @@
 
 export const safe = (value) => (value == null ? '' : String(value))
 
-export function buildClubEditInitial(club) {
-  const c = club || {}
-
+export function buildClubEditInitial(club = {}) {
   return {
-    clubName: safe(c.clubName),
-    ifaLink: safe(c.ifaLink),
-    active: Boolean(c.active),
+    id: safe(club?.id),
+    clubName: safe(club?.clubName),
+    ifaLink: safe(club?.ifaLink),
+    active: Boolean(club?.active),
+    raw: club || {},
   }
 }
 
-export function isClubEditDirty(draft, initial) {
+export function getClubEditFieldErrors(draft = {}) {
+  const clubName = safe(draft?.clubName).trim()
+
+  return {
+    clubName: !clubName,
+  }
+}
+
+export function getIsClubEditValid(draft = {}) {
+  return !Object.values(getClubEditFieldErrors(draft)).some(Boolean)
+}
+
+export function isClubEditDirty(draft = {}, initial = {}) {
   return (
     draft.clubName !== initial.clubName ||
     draft.ifaLink !== initial.ifaLink ||
@@ -20,7 +32,7 @@ export function isClubEditDirty(draft, initial) {
   )
 }
 
-export function buildClubEditPatch(draft, initial) {
+export function buildClubEditPatch(draft = {}, initial = {}) {
   const patch = {}
 
   if (draft.clubName !== initial.clubName) patch.clubName = draft.clubName || ''

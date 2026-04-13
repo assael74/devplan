@@ -2,15 +2,23 @@
 
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 
-export const safe = (v) => (v == null ? '' : String(v))
+const safe = (value) => (value == null ? '' : String(value))
+const trim = (value) => safe(value).trim()
 
-export const toNumOrEmpty = (v) => {
-  if (v === '' || v == null) return ''
-  const n = Number(v)
-  return Number.isFinite(n) ? n : ''
+const isValidDateFormat = (value) => {
+  const date = trim(value)
+  if (!date) return false
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
-export const calcResultByGoals = (goalsFor, goalsAgainst) => {
+const toNumOrEmpty = (value) => {
+  if (value === '' || value == null) return ''
+  const num = Number(value)
+  return Number.isFinite(num) ? num : ''
+}
+
+const calcResultByGoals = (goalsFor, goalsAgainst) => {
   const gf = Number(goalsFor)
   const ga = Number(goalsAgainst)
 
@@ -20,88 +28,66 @@ export const calcResultByGoals = (goalsFor, goalsAgainst) => {
   return 'draw'
 }
 
-export const calcPointsByResult = (result, goalsFor, goalsAgainst) => {
-  const r = safe(result).trim().toLowerCase()
+const calcPointsByResult = (result, goalsFor, goalsAgainst) => {
+  const normalized = trim(result).toLowerCase()
 
-  if (r === 'win') return 3
-  if (r === 'draw') return 1
-  if (r === 'loss') return 0
+  if (normalized === 'win') return 3
+  if (normalized === 'draw') return 1
+  if (normalized === 'loss') return 0
 
-  return calcResultByGoals(goalsFor, goalsAgainst) === 'win'
-    ? 3
-    : calcResultByGoals(goalsFor, goalsAgainst) === 'draw'
-    ? 1
-    : calcResultByGoals(goalsFor, goalsAgainst) === 'loss'
-    ? 0
-    : 0
+  const derived = calcResultByGoals(goalsFor, goalsAgainst)
+  if (derived === 'win') return 3
+  if (derived === 'draw') return 1
+  if (derived === 'loss') return 0
+
+  return 0
 }
 
-export const buildGameName = (game) => {
-  const rival =
-    safe(game?.rivel).trim() ||
-    safe(game?.rival).trim() ||
-    safe(game?.rivalName).trim() ||
-    safe(game?.opponent).trim()
-
-  const date =
-    safe(game?.gameDate).trim() ||
-    safe(game?.dateRaw).trim()
+const buildGameName = (game = {}) => {
+  const rival = trim(game?.rivel) || trim(game?.rival)
+  const date = trim(game?.gameDate)
 
   return [rival, date].filter(Boolean).join(' • ') || 'משחק'
 }
 
-export const buildGameMeta = (game) => {
-  const teamName =
-    game?.teamName ||
-    game?.team?.teamName ||
-    game?.team?.name ||
-    ''
-
-  const rawDate =
-    safe(game?.gameDate).trim() ||
-    safe(game?.dateRaw).trim()
-
-  const dateLabel =
-    safe(game?.dateLabel).trim() ||
-    safe(getFullDateIl(rawDate)).trim()
-
-  const hour =
-    safe(game?.gameHour).trim() ||
-    safe(game?.hourRaw).trim()
+const buildGameMeta = (game = {}) => {
+  const teamName = trim(game?.team?.teamName)
+  const rawDate = trim(game?.gameDate)
+  const dateLabel = rawDate ? trim(getFullDateIl(rawDate)) : ''
+  const hour = trim(game?.gameHour)
 
   return [teamName, dateLabel, hour].filter(Boolean).join(' | ') || 'פרטי משחק'
 }
 
-export const buildInitialDraft = (game) => {
-  const g = game || {}
-  const source = g?.game || g || {}
+export const buildInitialDraft = (game = {}) => {
+  const row = game || {}
+  const base = row?.game || row || {}
 
-  const goalsFor = toNumOrEmpty(source?.goalsFor)
-  const goalsAgainst = toNumOrEmpty(source?.goalsAgainst)
+  const goalsFor = toNumOrEmpty(base?.goalsFor)
+  const goalsAgainst = toNumOrEmpty(base?.goalsAgainst)
+
   const result =
-    safe(source?.result).trim() ||
-    safe(g?.result).trim() ||
+    trim(base?.result) ||
+    trim(row?.result) ||
     calcResultByGoals(goalsFor, goalsAgainst) ||
     ''
 
   return {
-    id: source?.id || g?.id || g?.gameId || '',
-    name: buildGameName(source),
-    photo: source?.photo || source?.teamPhoto || source?.team?.photo || '',
-    teamName: source?.teamName || source?.team?.teamName || source?.team?.name || '',
-    rivel: source?.rivel || source?.rival || source?.rivalName || source?.opponent || '',
-    gameDate: source?.gameDate || source?.dateRaw || '',
-    gameHour: source?.gameHour || source?.hourRaw || '',
-    vLink: source?.vLink || '',
-    home:
-      typeof source?.home === 'boolean'
-        ? source.home
-        : typeof source?.isHome === 'boolean'
-        ? source.isHome
-        : false,
-    type: source?.type || '',
-    difficulty: source?.difficulty || '',
-    gameDuration: toNumOrEmpty(source?.gameDuration || source?.duration),
+    id: base?.id || row?.id || row?.gameId || '',
+    name: buildGameName(base),
+    photo: base?.team?.photo || '',
+    teamId: base?.teamId || '',
+    clubId: base?.clubId || '',
+    teamName: base?.team?.teamName || '',
+    clubName: base?.clubName || '',
+    rivel: base?.rivel || base?.rival || '',
+    gameDate: base?.gameDate || '',
+    gameHour: base?.gameHour || '',
+    vLink: base?.vLink || '',
+    home: base?.home ?? '',
+    type: base?.type || '',
+    difficulty: base?.difficulty || '',
+    gameDuration: toNumOrEmpty(base?.gameDuration ?? base?.duration),
     goalsFor,
     goalsAgainst,
     result,
@@ -110,38 +96,34 @@ export const buildInitialDraft = (game) => {
         ? `${goalsFor} - ${goalsAgainst}`
         : '',
     points: calcPointsByResult(result, goalsFor, goalsAgainst),
-    raw: source,
-    metaLabel: buildGameMeta(source),
+    raw: base,
+    metaLabel: buildGameMeta(base),
   }
 }
 
-export const buildPatch = (draft, initial) => {
-  const next = {}
+export const getFieldErrors = (draft = {}) => {
+  const gameDate = trim(draft?.gameDate)
+  const gameHour = trim(draft?.gameHour)
+  const rivel = trim(draft?.rivel)
+  const type = trim(draft?.type)
+  const gameDuration = trim(draft?.gameDuration)
+  const home = draft?.home
 
-  if (draft.rivel !== initial.rivel) next.rivel = draft.rivel || ''
-  if (draft.vLink !== initial.vLink) next.vLink = draft.vLink || ''
-  if (draft.gameDate !== initial.gameDate) next.gameDate = draft.gameDate || ''
-  if (draft.gameHour !== initial.gameHour) next.gameHour = draft.gameHour || ''
-  if (draft.home !== initial.home) next.home = draft.home === true
-  if (draft.type !== initial.type) next.type = draft.type || ''
-  if (draft.difficulty !== initial.difficulty) next.difficulty = draft.difficulty || ''
-  if (draft.gameDuration !== initial.gameDuration) {
-    next.gameDuration = draft.gameDuration === '' ? '' : Number(draft.gameDuration)
+  return {
+    rivel: !rivel,
+    gameDate: !gameDate || !isValidDateFormat(gameDate),
+    gameHour: !gameHour,
+    type: !type,
+    gameDuration: !gameDuration,
+    home: home !== true && home !== false,
   }
-  if (draft.goalsFor !== initial.goalsFor) {
-    next.goalsFor = draft.goalsFor === '' ? '' : Number(draft.goalsFor)
-  }
-  if (draft.goalsAgainst !== initial.goalsAgainst) {
-    next.goalsAgainst = draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
-  }
-  if (draft.result !== initial.result) {
-    next.result = draft.result || ''
-  }
-
-  return next
 }
 
-export const getIsDirty = (draft, initial) =>
+export const getIsValid = (draft = {}) => {
+  return !Object.values(getFieldErrors(draft)).some(Boolean)
+}
+
+export const getIsDirty = (draft = {}, initial = {}) =>
   draft.rivel !== initial.rivel ||
   draft.vLink !== initial.vLink ||
   draft.gameDate !== initial.gameDate ||
@@ -153,3 +135,50 @@ export const getIsDirty = (draft, initial) =>
   draft.goalsFor !== initial.goalsFor ||
   draft.goalsAgainst !== initial.goalsAgainst ||
   draft.result !== initial.result
+
+export const buildPatch = (draft = {}, initial = {}) => {
+  const next = {}
+
+  if (draft.rivel !== initial.rivel) next.rivel = draft.rivel || ''
+  if (draft.vLink !== initial.vLink) next.vLink = draft.vLink || ''
+  if (draft.gameDate !== initial.gameDate) next.gameDate = draft.gameDate || ''
+  if (draft.gameHour !== initial.gameHour) next.gameHour = draft.gameHour || ''
+  if (draft.home !== initial.home) next.home = draft.home
+  if (draft.type !== initial.type) next.type = draft.type || ''
+  if (draft.difficulty !== initial.difficulty) next.difficulty = draft.difficulty || ''
+
+  if (draft.gameDuration !== initial.gameDuration) {
+    next.gameDuration = draft.gameDuration === '' ? '' : Number(draft.gameDuration)
+  }
+
+  const goalsForChanged = draft.goalsFor !== initial.goalsFor
+  const goalsAgainstChanged = draft.goalsAgainst !== initial.goalsAgainst
+  const resultChanged = draft.result !== initial.result
+
+  if (goalsForChanged) {
+    next.goalsFor = draft.goalsFor === '' ? '' : Number(draft.goalsFor)
+  }
+
+  if (goalsAgainstChanged) {
+    next.goalsAgainst = draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
+  }
+
+  if (goalsForChanged || goalsAgainstChanged || resultChanged) {
+    const nextGoalsFor = draft.goalsFor === '' ? '' : Number(draft.goalsFor)
+    const nextGoalsAgainst = draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
+
+    const nextResult =
+      trim(draft?.result) ||
+      calcResultByGoals(nextGoalsFor, nextGoalsAgainst) ||
+      ''
+
+    next.result = nextResult
+    next.score =
+      draft.goalsFor !== '' && draft.goalsAgainst !== ''
+        ? `${draft.goalsFor} - ${draft.goalsAgainst}`
+        : ''
+    next.points = calcPointsByResult(nextResult, nextGoalsFor, nextGoalsAgainst)
+  }
+
+  return next
+}
