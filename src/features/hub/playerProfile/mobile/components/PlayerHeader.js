@@ -1,8 +1,9 @@
 // playerProfile/mobile/components/PlayerHeader.js
 
 import React, { useMemo, useState, useEffect } from 'react'
-import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
+import { useNavigate } from 'react-router-dom'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
+import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
@@ -10,6 +11,8 @@ import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
 
 export default function PlayerHeader({ entity, context, counts, onBack }) {
+  const navigate = useNavigate()
+
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState(entity?.photo || playerImage)
 
@@ -30,10 +33,9 @@ export default function PlayerHeader({ entity, context, counts, onBack }) {
     }
   }, [entity?.payments, entity?.meetings, entity?.teamGames])
 
-  const fullName = useMemo(
-    () => `${entity?.playerFirstName || ''} ${entity?.playerLastName || ''}`.trim(),
-    [entity]
-  )
+  const fullName = useMemo(() => {
+    return `${entity?.playerFirstName || ''} ${entity?.playerLastName || ''}`.trim()
+  }, [entity])
 
   const subtitle = useMemo(() => {
     const t = context?.team?.teamName || ''
@@ -41,16 +43,39 @@ export default function PlayerHeader({ entity, context, counts, onBack }) {
     return [t, c].filter(Boolean).join(' · ')
   }, [context?.team?.teamName, context?.club?.clubName])
 
+  const pathItems = useMemo(() => {
+    return [
+      {
+        label: 'מרכז שליטה',
+        onClick: () => navigate('/hub'),
+      },
+      {
+        label: 'שחקנים',
+        onClick: () => navigate('/hub?tab=players'),
+      },
+    ]
+  }, [navigate])
+
+  const rightNode = (
+    <EntityActionsMenu
+      entityType="player"
+      entityId={entity?.id}
+      entityName={fullName}
+      metaCounts={metaCounts}
+      isArchived={entity?.active === false}
+    />
+  )
+
   return (
     <>
       <HeaderStripMobile
         title={fullName || 'שחקן'}
         subtitle={subtitle}
-        isMobile={true}
         avatarSrc={headerPhoto}
         onAvatarClick={() => setOpenImg(true)}
         onBack={onBack}
-        right={onBack}
+        pathItems={pathItems}
+        right={rightNode}
       />
 
       <EntityImageModal

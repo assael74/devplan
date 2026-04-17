@@ -1,16 +1,128 @@
 // playerProfile/sharedLogic/meetings/module/useMeetingsWorkspace.js
 
 import { useEffect, useMemo, useState } from 'react'
-import { meetingsInitialFilters } from '../../../../../../shared/meetings/filters/meetingsFilters.config.js'
 import { normalizeMeetings } from './meetings.normalize.js'
-import { applyMeetingsFilters } from './meetings.filters.js'
-import { buildMeetingsBucketsLimited } from './meetings.buckets.js'
+import {
+  applyMeetingsFilters,
+  buildMeetingsFilterOptions,
+  hasActiveMeetingsFilters,
+} from './meetings.filters.js'
+
+const initialFilters = {
+  query: '',
+  type: '',
+  status: '',
+  month: '',
+  showCanceled: false,
+}
 
 function mergeFilters(prev, patch) {
   return {
     ...prev,
     ...(patch || {}),
   }
+}
+
+function buildIndicators(filters, filterOptions) {
+  const out = []
+
+  if (filters?.type) {
+    const match = (filterOptions?.types || []).find(
+      (item) => String(item.value) === String(filters.type)
+    )
+
+    out.push({
+      key: 'type',
+      value: filters.type,
+      label: match?.label || 'סוג',
+      idIcon: match?.idIcon || 'meetings',
+    })
+  }
+
+  if (filters?.status) {
+    const match = (filterOptions?.statuses || []).find(
+      (item) => String(item.value) === String(filters.status)
+    )
+
+    out.push({
+      key: 'status',
+      value: filters.status,
+      label: match?.label || 'סטטוס',
+      idIcon: match?.idIcon || 'meetings',
+    })
+  }
+
+  if (filters?.month) {
+    const match = (filterOptions?.months || []).find(
+      (item) => String(item.value) === String(filters.month)
+    )
+
+    out.push({
+      key: 'month',
+      value: filters.month,
+      label: match?.label || filters.month,
+      idIcon: 'calendar',
+    })
+  }
+
+  if (filters?.query) {
+    out.push({
+      key: 'query',
+      value: filters.query,
+      label: `חיפוש: ${filters.query}`,
+      idIcon: 'search',
+    })
+  }
+
+  if (filters?.showCanceled) {
+    out.push({
+      key: 'showCanceled',
+      value: true,
+      label: 'כולל מבוטלות',
+      idIcon: 'meetingCancel',
+    })
+  }
+
+  return out
+}
+
+function getMeetingSortGroup(meeting) {
+  const statusId = String(meeting?.statusId || '')
+  const isCanceled = statusId === 'canceled'
+  const isDone = statusId === 'done'
+  const isUpcoming = !isCanceled && !isDone
+
+  if (isUpcoming) return 1
+  if (isDone) return 2
+  return 3
+}
+
+function sortMeetingsForMobile(list) {
+  const items = Array.isArray(list) ? [...list] : []
+
+  items.sort((a, b) => {
+    const groupA = getMeetingSortGroup(a)
+    const groupB = getMeetingSortGroup(b)
+
+    if (groupA !== groupB) return groupA - groupB
+
+    const msA = Number.isFinite(a?.ms) ? a.ms : null
+    const msB = Number.isFinite(b?.ms) ? b.ms : null
+
+    if (groupA === 1) {
+      if (msA == null && msB == null) return 0
+      if (msA == null) return 1
+      if (msB == null) return -1
+      return msA - msB
+    }
+
+    if (msA == null && msB == null) return 0
+    if (msA == null) return 1
+    if (msB == null) return -1
+    return msB - msA
+  })
+
+  return items
 }
 
 export default function useMeetingsWorkspace(player) {
@@ -22,7 +134,7 @@ export default function useMeetingsWorkspace(player) {
   const [videoLink, setVideoLink] = useState('')
   const [videoName, setVideoName] = useState('וידאו')
 
-  const [filters, setFilters] = useState(meetingsInitialFilters)
+  const [filters, setFilters] = useState(initialFilters)
 
   const rawMeetings = useMemo(() => {
     return Array.isArray(player?.meetings) ? player.meetings : []
@@ -32,69 +144,63 @@ export default function useMeetingsWorkspace(player) {
     return normalizeMeetings(rawMeetings)
   }, [rawMeetings])
 
+  const filterOptions = useMemo(() => {
+    return buildMeetingsFilterOptions(meetings)
+  }, [meetings])
+
   const filtered = useMemo(() => {
     return applyMeetingsFilters(meetings, filters)
   }, [meetings, filters])
 
-  const buckets = useMemo(() => {
-    return buildMeetingsBucketsLimited(filtered, { upcomingLimit: 2 })
+  const sortedMeetings = useMemo(() => {
+    return sortMeetingsForMobile(filtered)
   }, [filtered])
 
+  const hasActiveFilters = useMemo(() => {
+    return hasActiveMeetingsFilters(filters)
+  }, [filters])
+
+  const indicators = useMemo(() => {
+    return buildIndicators(filters, filterOptions)
+  }, [filters, filterOptions])
+
   useEffect(() => {
-    setFilters(meetingsInitialFilters)
+    setFilters(initialFilters)
   }, [player?.id])
 
   useEffect(() => {
-    if (!filtered.length) {
+    if (!sortedMeetings.length) {
       setSelectedId(null)
       return
     }
 
-    if (selectedId && filtered.some((m) => String(m.id) === String(selectedId))) {
+    if (selectedId && sortedMeetings.some((m) => String(m.id) === String(selectedId))) {
       return
     }
 
-    if (buckets?.next?.id != null) {
-      setSelectedId(buckets.next.id)
-      return
-    }
-
-    setSelectedId(filtered[0]?.id || null)
-  }, [filtered, selectedId, buckets])
+    setSelectedId(sortedMeetings[0]?.id || null)
+  }, [sortedMeetings, selectedId])
 
   const selected = useMemo(() => {
     if (!selectedId) return null
-    return filtered.find((m) => String(m.id) === String(selectedId)) || null
-  }, [filtered, selectedId])
-
-  const flatRightList = useMemo(() => {
-    const out = []
-
-    if (buckets?.next) {
-      out.push({ ...buckets.next, __bucket: 'next' })
-    }
-
-    for (const m of buckets?.upcoming || []) {
-      out.push({ ...m, __bucket: 'upcoming' })
-    }
-
-    for (const m of buckets?.done || []) {
-      out.push({ ...m, __bucket: 'done' })
-    }
-
-    for (const m of buckets?.canceled || []) {
-      out.push({ ...m, __bucket: 'canceled' })
-    }
-
-    return out
-  }, [buckets])
+    return sortedMeetings.find((m) => String(m.id) === String(selectedId)) || null
+  }, [sortedMeetings, selectedId])
 
   const onChange = (patch) => {
     setFilters((prev) => mergeFilters(prev, patch))
   }
 
   const onReset = () => {
-    setFilters(meetingsInitialFilters)
+    setFilters(initialFilters)
+  }
+
+  const onClearFilter = (key) => {
+    if (!key) return
+
+    setFilters((prev) => ({
+      ...prev,
+      [key]: initialFilters?.[key],
+    }))
   }
 
   const onAdd = () => {
@@ -119,15 +225,19 @@ export default function useMeetingsWorkspace(player) {
   return {
     meetings,
     filters,
-    filtered,
+    filterOptions,
+    filtered: sortedMeetings,
+    indicators,
+    hasActiveFilters,
     onChange,
     onReset,
+    onClearFilter,
 
     selectedId,
     setSelectedId,
     selected,
 
-    flatRightList,
+    flatRightList: sortedMeetings,
 
     drawerOpen,
     setDrawerOpen,

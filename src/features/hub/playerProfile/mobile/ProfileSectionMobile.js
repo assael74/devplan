@@ -13,6 +13,18 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 
 const c = (entity) => getEntityColors(entity)
 
+function getSectionSubtitle(mode) {
+  if (mode === 'info') return 'חזרה לפרופיל השחקן'
+  if (mode === 'meetings') return 'ניהול ורשימת מפגשים'
+  if (mode === 'games') return 'רשימת משחקים ופרטים'
+  if (mode === 'abilities') return 'יכולות, ציונים ותובנות'
+  if (mode === 'performance') return 'ביצועים וסטטיסטיקות'
+  if (mode === 'videoAnalysis') return 'וידאו וניתוחים'
+  if (mode === 'payments') return 'תשלומים ומעקב'
+  if (mode === 'trainings') return 'אימונים ומעקב'
+  return 'חזרה לפרופיל השחקן'
+}
+
 export default function ProfileSectionMobile({
   mode,
   tabsMeta = [],
@@ -24,23 +36,34 @@ export default function ProfileSectionMobile({
 
   return (
     <Box sx={sx.boxWraper}>
-      <Box sx={sx.boxScreen}>
-        <IconButton variant="soft" color="neutral" onClick={onBack} aria-label="חזרה">
-          <ArrowBackRoundedIcon />
-        </IconButton>
+      <Box sx={sx.sectionHeader}>
+        <Box sx={sx.sectionHeaderMain}>
+          <Box sx={sharedSx?.navIcon(true, colors, { width: 28, height: 28 })}>
+            {iconUi({id: currentTab?.icon || 'dot', sx: { fontSize: 16, color: 'inherit' } })}
+          </Box>
 
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography level="title-md" noWrap>
-            {currentTab?.label || 'אזור'}
-          </Typography>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography level="title-sm" noWrap sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+              {currentTab?.label || 'אזור'}
+            </Typography>
 
-          <Typography level="body-xs" sx={{ mt: 0.25, color: 'text.tertiary' }}>
-            רשימת אובייקטים
-          </Typography>
+            <Typography level="body-xs" sx={{ mt: 0.25, color: 'text.tertiary' }} noWrap>
+              {getSectionSubtitle(mode)}
+            </Typography>
+          </Box>
         </Box>
 
-        <Box sx={sharedSx?.navIcon(true, colors, { width: 30, height: 30 })}>
-          {iconUi({id: currentTab?.icon || 'dot', sx: { fontSize: 18, color: 'inherit' }, })}
+        <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            size="sm"
+            variant="soft"
+            color="neutral"
+            onClick={onBack}
+            aria-label="חזרה"
+            sx={{ flexShrink: 0 }}
+          >
+            <ArrowBackRoundedIcon />
+          </IconButton>
         </Box>
       </Box>
 

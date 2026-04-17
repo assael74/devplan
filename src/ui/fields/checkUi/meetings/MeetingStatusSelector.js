@@ -17,6 +17,7 @@ export default function MeetingStatusSelectField({
   value,
   currentId = '',
   onChange,
+  disabled,
   size = 'sm',
   readOnly = false,
   placeholder = 'בחר סטטוס',
@@ -51,6 +52,7 @@ export default function MeetingStatusSelectField({
       <Select
         value={selectedId || null}
         onChange={handleChange}
+        disabled={disabled}
         placeholder={placeholder}
         variant="outlined"
         startDecorator={

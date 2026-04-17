@@ -1,4 +1,5 @@
-// features/hub/playerProfile/modules/meetings/PlayerMeetingsModule.js
+// playerProfile/desktop/modules/meetings/PlayerMeetingsModule.js
+
 import React, { useCallback, useMemo } from 'react'
 import { Box } from '@mui/joy'
 
@@ -8,7 +9,7 @@ import EmptyState from '../../../../sharedProfile/EmptyState.js'
 import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlayer.js'
 
 import { sx } from './playerMeetingsModule.sx'
-import useMeetingsWorkspace from './hooks/useMeetingsWorkspace'
+import useMeetingsWorkspace from './../../../sharedLogic'
 
 import MeetingsListPane from './components/MeetingsListPane'
 import MeetingDetailsPane from './components/MeetingDetailsPane' // <-- אחרי הפירוק

@@ -1,4 +1,5 @@
 import {
+  ArrowBack,
   Beenhere,
   Block,
   CancelScheduleSend,
@@ -36,6 +37,7 @@ export const statusIcons = {
   active: <OfflinePin />,
   approved: <CheckCircle />,
   awaitingReply: <HourglassEmpty />,
+  back: <ArrowBack />,
   callscheduled: <ScheduleSend />,
   candidate: <PersonSearch />,
   declined: <Dangerous />,

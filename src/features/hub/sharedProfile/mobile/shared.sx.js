@@ -87,6 +87,35 @@ export const sharedSx = {
     pointerEvents: 'none',
   },
 
+  topRow: {
+    minWidth: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+
+  secondRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  avatarWraper: {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75
+  },
+
+  iconBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0
+  },
+
   panel: {
     p: 1,
     borderRadius: 'md',
@@ -95,5 +124,31 @@ export const sharedSx = {
     flexDirection: 'column',
     overflowY: 'auto',
     overflowX: 'hidden',
-  }
+  },
+
+  pathRoot: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+    minWidth: 0,
+    flexWrap: 'nowrap'
+  },
+
+  link: (isLast) => ({
+    p: 0,
+    m: 0,
+    border: 'none',
+    bgcolor: 'transparent',
+    fontSize: 12,
+    color: isLast ? 'text.primary' : 'text.tertiary',
+    fontWeight: isLast ? 700 : 500,
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+  }),
+
+  typoLink: (isLast) => ({
+    color: isLast ? 'text.primary' : 'text.tertiary',
+    fontWeight: isLast ? 700 : 500,
+    whiteSpace: 'nowrap',
+  })
 }

@@ -53,6 +53,27 @@ export const profileSx = {
     bgcolor: 'background.body',
   },
 
+  sectionHeader: {
+    px: 1,
+    py: 0.75,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    flex: '0 0 auto',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.body',
+  },
+
+  sectionHeaderMain: {
+    minWidth: 0,
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
   box: {
     flex: 1,
     minHeight: 0,
