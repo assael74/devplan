@@ -1,114 +1,74 @@
+// features/hub/components/lists/staff/StaffRow.js
+
 import React from 'react'
 import { Sheet, Box, Typography, Chip, Avatar, IconButton } from '@mui/joy'
-import MoreVertRounded from '@mui/icons-material/MoreVertRounded'
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
+
+import roleImage from '../../../../../ui/core/images/roleImage.png'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { listSx as sx } from '../list.sx.js'
+
+function ColorDot({ active }) {
+  let bg = '#9e9e9e'
+  if (active === true) bg = '#2e7d32'
+  if (active === false) bg = '#d32f2f'
+  return <Box sx={sx.colorDot(bg)} />
+}
 
 export default function StaffRow({
-  row,
+  staff,
   selected,
   onSelect,
   actions,
+  onOpenActions
 }) {
-  const title = row?.fullName || 'איש צוות'
-  const roleLabel = row?.roleLabel || row?.typeLabel || row?.type || ''
-  const sub = row?.subline || ''
-  const photo = row?.photo || ''
-  const idIcon = row?.idIcon || ''
+  const fullName = staff?.fullName || 'איש צוות'
+  const roleLabel = staff?.roleLabel || staff?.typeLabel || staff?.type || ''
+  const subline = staff?.subline || ''
+  const photo = staff?.photo || ''
+  const idIcon = staff?.idIcon || ''
 
   return (
-    <Sheet
-      className="staffRow"
-      variant="plain"
-      onClick={() => onSelect(row)}
-      sx={{
-        width: '100%',
-        p: 1,
-        borderRadius: 'sm',
-        border: '1px solid',
-        borderColor: 'transparent',
-        bgcolor: 'neutral.softBg',
-        boxShadow: 'none',
-        ...(selected && {
-          borderColor: 'primary.300',
-          boxShadow: 'sm',
-          bgcolor: 'primary.softBg',
-        }),
-
-        '&:hover': {
-          borderColor: 'divider',
-          boxShadow: 'xs',
-          bgcolor: 'neutral.softHoverBg',
-        },
-
-        // stripe עדין ב-selected
-        '&::before': selected
-          ? {
-              content: '""',
-              position: 'absolute',
-              insetInlineStart: 0,
-              top: 10,
-              bottom: 10,
-              width: 4,
-              borderRadius: 99,
-              bgcolor: 'primary.500',
-            }
-          : {},
+    <Box
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect(staff)
       }}
+      sx={sx.row(selected)}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {/* Avatar */}
-        <Avatar src={photo} sx={{ '--Avatar-size': '38px', flexShrink: 0 }} />
+      <Avatar size="sm" src={staff?.photo || roleImage}>
+        {fullName?.[0] || '?'}
+      </Avatar>
 
-        {/* Main */}
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-            {/* Status dot */}
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: 99,
-                bgcolor: row?.active === false ? 'neutral.400' : 'success.500',
-                flexShrink: 0,
-              }}
-            />
-            <Typography level="title-sm" noWrap sx={{ minWidth: 0 }}>
-              {title}
-            </Typography>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ColorDot active={staff?.active} />
 
-            {!!roleLabel && (
-              <Chip size="sm" variant="plain" sx={{ opacity: 0.85, borderRadius: 999 }} startDecorator={iconUi({id: idIcon})}>
-                {roleLabel}
-              </Chip>
-            )}
-          </Box>
+          <Typography level="title-sm" noWrap sx={{ minWidth: 0 }}>
+            {fullName}
+          </Typography>
 
-          {!!sub && (
-            <Typography level="body-xs" sx={{ opacity: 0.55 }}>
-              {sub}
-            </Typography>
-          )}
         </Box>
 
-        {/* Actions: מופיע רק בהובר/selected */}
-        <Box
-          onClick={(e) => e.stopPropagation()}
+        <Typography level="body-xs" sx={sx.subLine} noWrap>
+          {subline}
+        </Typography>
+      </Box>
+
+      {!!onOpenActions && (
+        <IconButton
+          size="sm"
+          variant="plain"
           onMouseDown={(e) => e.stopPropagation()}
-          sx={{
-            display: 'grid',
-            placeItems: 'center',
-            opacity: selected ? 1 : 0,
-            transition: '0.15s ease',
-            '.staffRow:hover &': { opacity: 1 },
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenActions(staff)
           }}
         >
-          {actions || (
-            <IconButton size="sm" variant="soft">
-              <MoreVertRounded />
-            </IconButton>
-          )}
-        </Box>
-      </Box>
-    </Sheet>
+          <MoreVertRoundedIcon />
+        </IconButton>
+      )}
+    </Box>
   )
 }

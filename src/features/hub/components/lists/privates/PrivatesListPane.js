@@ -1,13 +1,22 @@
 // src/features/hub/components/lists/privates/PrivatesListPane.js
+
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { Box, Input, Chip, Typography, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
 
 import PrivatesList from './PrivatesList.js'
-import { playersListPaneSx as sx } from './sx/privatesListPane.sx.js'
-import { filterPlayers, buildActiveFilterChips, existsInList } from './logic/privatesListPane.logic.js'
 
-export default function PrivatesListPane({ players, selectedId, onSelect, onOpenActions }) {
+import { filterPlayers, buildActiveFilterChips, existsInList } from './logic/privatesListPane.logic.js'
+import { listSx as sx } from '../list.sx.js'
+
+export default function PrivatesListPane({
+  players,
+  isMobile,
+  selectedId,
+  onSelect,
+  onOpenRoute,
+  onOpenActions
+ }) {
   const [q, setQ] = useState('')
   const [activeOnly, setActiveOnly] = useState(true)
 
@@ -41,7 +50,7 @@ export default function PrivatesListPane({ players, selectedId, onSelect, onOpen
   return (
     <Box sx={sx.root}>
       <Box sx={sx.bar}>
-        <Box sx={sx.barRow}>
+        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
           <Input
             size="sm"
             value={q}
@@ -98,9 +107,11 @@ export default function PrivatesListPane({ players, selectedId, onSelect, onOpen
 
       <Box sx={sx.scroll} className="dpScrollThin">
         <PrivatesList
+          isMobile={isMobile}
           players={filteredPlayers}
           onSelect={onSelect}
           selectedId={selectedId}
+          onOpenRoute={onOpenRoute}
           onOpenActions={onOpenActions}
         />
       </Box>

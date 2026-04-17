@@ -63,7 +63,7 @@ export default function VideoObjectTypeSelectField({
       >
         {opts.map((opt) => {
           return (
-            <Option key={opt.id} value={opt.id} disabled={opt.disabled}>
+            <Option key={opt.value} value={opt.id} disabled={opt.disabled}>
               <Stack direction="row" gap={1.5} alignItems="center">
                 {iconUi({id: opt.idIcon})}
                 <Typography level="body-sm">{opt.labelH}</Typography>

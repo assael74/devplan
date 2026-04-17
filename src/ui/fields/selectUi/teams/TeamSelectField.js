@@ -27,12 +27,13 @@ export default function TeamSelectField({
   label = 'שייך קבוצה',
   placeholder = 'בחר…',
   clubId,
+  chip = true
 }) {
   const normalizedOptions = useMemo(
     () => buildOptions(options, clubId),
     [options, clubId]
   )
-  
+
   const selectedOpt = useMemo(
     () => findSelected(value, normalizedOptions),
     [value, normalizedOptions]
@@ -60,7 +61,7 @@ export default function TeamSelectField({
         placeholder={placeholder}
         slotProps={playersSlot}
         renderValue={() => (
-          <TeamSelectValue opt={selectedOpt} />
+          <TeamSelectValue opt={selectedOpt} chip={chip} />
         )}
       >
         {normalizedOptions.map((opt) => (

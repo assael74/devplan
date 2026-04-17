@@ -27,6 +27,7 @@ export default function MonthPicker({
   error,
   helperText,
   size = 'sm',
+  icon = false
 }) {
   const selected = useMemo(
     () => MONTHS.find((m) => m.id === Number(value)) || null,

@@ -1,123 +1,26 @@
-// src/features/players/playerProfile/PlayerProfilePage.js
+// src/features/hub/playerProfile/PlayerProfilePage.js
 
-import React, { useMemo } from 'react'
-import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
-import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
+import React from 'react'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
-import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
-import ProfileShell from '../../hub/sharedProfile/ProfileShell'
-
-import { getTabFromUrl } from './playerProfile.routes'
-import PlayerHeader from './components/PlayerHeader'
-import PlayerNav from './components/PlayerNav'
-import PlayerModules from './components/PlayerModules'
-import PlayerProfileFab from './components/PlayerProfileFab'
+import usePlayerProfilePageModel from './playerProfile.logic'
+import PlayerProfileDesktop from './desktop/PlayerProfileDesktop'
+import PlayerProfileMobile from './mobile/PlayerProfileMobile'
 
 export default function PlayerProfilePage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { playerId, tabKey } = useParams()
-  const [sp] = useSearchParams()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const {
-    players,
-    teams,
-    clubs,
-    roles,
-    tags,
-    loading,
-    error,
-  } = useCoreData()
+  const model = usePlayerProfilePageModel()
 
-  const entity = useMemo(() => {
-    const p = (players || []).find((x) => String(x.id) === String(playerId)) || null
-    if (!p) return null
+  if (model.state === 'loading') return model.loadingNode
+  if (model.state === 'error') return model.errorNode
+  if (model.state === 'missing') return model.missingNode
 
-    return {
-      ...p,
-    }
-  }, [players, playerId])
-
-  const isProject = entity?.type === 'project'
-
-  const tagsById = useMemo(() => {
-    if (!Array.isArray(tags)) return null
-    return Object.fromEntries(tags.map((t) => [String(t.id), t]))
-  }, [tags])
-
-  const tab = useMemo(
-    () => getTabFromUrl({ tabKeyParam: tabKey, searchParams: sp, isProject }),
-    [tabKey, sp, isProject]
-  )
-
-  const context = useMemo(() => {
-    if (!entity) return {}
-
-    return {
-      team: teams?.find((t) => String(t.id) === String(entity.teamId)) || null,
-      club: clubs?.find((c) => String(c.id) === String(entity.clubId)) || null,
-      teams,
-      clubs,
-      players,
-      roles,
-      tags,
-      tagsById,
-    }
-  }, [entity, teams, clubs, players, roles, tags, tagsById])
-
-  const taskContext = useMemo(() => {
-    return buildTaskFabContext({
-      location,
-      area: 'player',
-      mode: tab,
-      extra: context,
-    })
-  }, [location, tab, context])
-
-  const counts = useMemo(() => {
-    if (!entity) return {}
-
-    return {
-      games: entity.performances?.length || 0,
-      meetings: entity.meetings?.length || 0,
-      payments: entity.payments?.length || 0,
-    }
-  }, [entity])
-
-  if (loading) {
-    return (
-      <Sheet sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size="sm" />
-          <Typography level="body-sm">טוען שחקן…</Typography>
-        </Box>
-      </Sheet>
-    )
-  }
-
-  if (error) {
-    return (
-      <Sheet sx={{ p: 2 }}>
-        <Typography level="body-sm">שגיאה בטעינת נתונים</Typography>
-      </Sheet>
-    )
-  }
-
-  if (!entity) return <Navigate to="/hub" replace />
-
-  return (
-    <ProfileShell
-      tab={tab}
-      entity={entity}
-      context={context}
-      entityType={entity}
-      taskContext={taskContext}
-      headerProps={{ counts }}
-      HeaderComp={PlayerHeader}
-      NavComp={PlayerNav}
-      RendererComp={PlayerModules}
-      FabComp={PlayerProfileFab}
-    />
+  return isMobile ? (
+    <PlayerProfileMobile {...model} />
+  ) : (
+    <PlayerProfileDesktop {...model} />
   )
 }

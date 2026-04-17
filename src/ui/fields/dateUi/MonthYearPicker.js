@@ -1,4 +1,5 @@
 /// ui/fields/dateUi/MonthYearPicker.js
+
 import * as React from 'react'
 import { Stack, Box, FormLabel, Input, Select, Option } from '@mui/joy'
 import { monthYearPickerSx as sx } from './date.sx.js'
@@ -63,28 +64,19 @@ export default function MonthYearPicker({
     return Array.from({ length: len }, (_, i) => currentYear - i)
   }, [context, currentYear])
 
-  const [{ year, month }, setYM] = React.useState(() => parseMonthYear(value))
-  const prevPropRef = React.useRef(value)
-  const prevOutRef = React.useRef('')
+  const parsedValue = React.useMemo(() => parseMonthYear(value), [value])
+
+  const [ym, setYM] = React.useState(parsedValue)
 
   const monthBtnRef = React.useRef(null)
   const yearBtnRef = React.useRef(null)
 
   React.useEffect(() => {
-    if (value === prevPropRef.current) return
-    prevPropRef.current = value
-    setYM(parseMonthYear(value))
-  }, [value])
-
-  React.useEffect(() => {
-    if (!year || !month) return
-
-    const out = formatMonthYear(year, month)
-    if (out === prevOutRef.current) return
-
-    prevOutRef.current = out
-    onChange(out)
-  }, [year, month, onChange])
+    const sameYear = ym.year === parsedValue.year
+    const sameMonth = ym.month === parsedValue.month
+    if (sameYear && sameMonth) return
+    setYM(parsedValue)
+  }, [parsedValue.year, parsedValue.month]) // בכוונה לא תלוי ב-ym כ-object
 
   React.useEffect(() => {
     if (disabled) {
@@ -93,15 +85,41 @@ export default function MonthYearPicker({
     }
   }, [disabled])
 
-  const handleMonth = React.useCallback((_, newMonth) => {
-    setYM((prev) => ({ ...prev, month: newMonth || '' }))
-    requestAnimationFrame(() => monthBtnRef.current?.focus())
-  }, [])
+  const emitIfReady = React.useCallback(
+    (nextYear, nextMonth) => {
+      const out = formatMonthYear(nextYear, nextMonth)
+      if (!out) return
+      if (out === cleanValue(value)) return
+      onChange?.(out)
+    },
+    [onChange, value]
+  )
 
-  const handleYear = React.useCallback((_, newYear) => {
-    setYM((prev) => ({ ...prev, year: newYear || '' }))
-    requestAnimationFrame(() => yearBtnRef.current?.focus())
-  }, [])
+  const handleMonth = React.useCallback(
+    (_, newMonth) => {
+      const nextMonth = newMonth || ''
+      const nextYear = ym.year || ''
+
+      setYM((prev) => ({ ...prev, month: nextMonth }))
+      emitIfReady(nextYear, nextMonth)
+
+      requestAnimationFrame(() => monthBtnRef.current?.focus())
+    },
+    [ym.year, emitIfReady]
+  )
+
+  const handleYear = React.useCallback(
+    (_, newYear) => {
+      const nextYear = newYear || ''
+      const nextMonth = ym.month || ''
+
+      setYM((prev) => ({ ...prev, year: nextYear }))
+      emitIfReady(nextYear, nextMonth)
+
+      requestAnimationFrame(() => yearBtnRef.current?.focus())
+    },
+    [ym.month, emitIfReady]
+  )
 
   const resolvedLabel =
     label ||
@@ -133,10 +151,9 @@ export default function MonthYearPicker({
         <Input
           id={inputId}
           readOnly
-          value={formatMonthYear(year, month)}
+          value={formatMonthYear(ym.year, ym.month)}
           placeholder="הצג תאריך"
           size={size}
-          readOnly={readOnly}
           color={error ? 'danger' : 'neutral'}
           disabled={disabled}
           aria-describedby={resolvedHelperText ? helpId : undefined}
@@ -144,7 +161,7 @@ export default function MonthYearPicker({
         />
 
         <Select
-          value={month || ''}
+          value={ym.month || ''}
           onChange={handleMonth}
           disabled={disabled}
           size={size}
@@ -164,7 +181,7 @@ export default function MonthYearPicker({
         </Select>
 
         <Select
-          value={year || ''}
+          value={ym.year || ''}
           onChange={handleYear}
           disabled={disabled}
           size={size}

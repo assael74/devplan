@@ -3,43 +3,63 @@
 import React, { useMemo } from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
-import { rowSx } from '../../layout/hubComponents.sx.js'
+
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { listSx as sx } from '../list.sx.js'
 
 import {
   buildTeamSubLine,
   isProjectTeam,
 } from './logic/TeamRow.logic'
-import { teamRowSx, colorDotSx } from './sx/TeamRow.sx'
+
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 
 function ColorDot({ active }) {
   let bg = '#9e9e9e'
   if (active === true) bg = '#2e7d32'
   if (active === false) bg = '#d32f2f'
-  return <Box sx={colorDotSx(bg)} />
+  return <Box sx={sx.colorDot(bg)} />
 }
 
-export default function TeamRow({ team, onSelect, onOpenActions, selected }) {
+export default function TeamRow({
+  team,
+  isMobile = false,
+  onSelect,
+  selected,
+  onOpenRoute,
+  onOpenActions,
+}) {
   const subLine = useMemo(() => buildTeamSubLine(team), [team])
-  const teamName = team?.teamName?.[0]
+  const teamName = team?.teamName || ''
   const src = resolveEntityAvatar({ entityType: 'team', entity: team, parentEntity: team?.club, subline: team?.club?.name, })
+
+  const handleRowClick = (e) => {
+    e.stopPropagation()
+
+    if (isMobile) {
+      if (onOpenRoute) {
+        onOpenRoute(team)
+        return
+      }
+      onSelect(team)
+      return
+    }
+
+    onSelect(team)
+  }
 
   return (
     <Box
       onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation()
-        onSelect(team)
-      }}
-      sx={rowSx(selected)}
+      onClick={handleRowClick}
+      sx={sx.row(selected)}
     >
       <Avatar size="sm" src={src}>
         {teamName || '?'}
       </Avatar>
 
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Box sx={teamRowSx.topLine}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ColorDot active={team?.active} />
 
           <Typography level="title-sm" noWrap sx={{ minWidth: 0 }}>
@@ -47,14 +67,14 @@ export default function TeamRow({ team, onSelect, onOpenActions, selected }) {
           </Typography>
 
           {isProjectTeam(team) && (
-            <Box sx={teamRowSx.iconWrap}>
+            <Box sx={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
               {iconUi({ id: 'project', sx: { fontSize: 11, color: '#4fbc54' } })}
             </Box>
           )}
 
         </Box>
 
-        <Typography level="body-xs" sx={teamRowSx.subLine} noWrap>
+        <Typography level="body-xs" sx={sx.subLine} noWrap>
           {subLine}
         </Typography>
       </Box>

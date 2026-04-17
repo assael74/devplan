@@ -32,12 +32,18 @@ function getGameEntryFieldsState(draft = {}, limits = {}) {
   }
 }
 
+const defaultLayout = {
+  booleanGrid: { xs: '1fr', md: '1fr 1fr' },
+  statsGrid: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+}
+
 export default function GameEntryFields({
   draft = {},
   onFieldChange,
   limits = {},
   pending = false,
   labels = {},
+  layout = defaultLayout,
 }) {
   const {
     isSelected,
@@ -64,9 +70,9 @@ export default function GameEntryFields({
 
   const goalsText = `נכבשו ${totalGoalsInGame} שערים · עודכנו כבר ${otherGoalsUsed} · נותר ${goalsLeft} לעדכון`
   const assistsText = `נכבשו ${totalAssistsInGame} · ${otherAssistsUsed} נרשמו לאחרים · נותר ${assistsLeft} לעדכון`
-
+  
   return (
-    <Box sx={{ display: 'grid', gap: 1, height: '100%' }}>
+    <Box sx={sx.root}>
       {hasGoalUpdates ? (
         <Typography level="body-xs" color="warning" sx={{ px: 0.25 }}>
           {labels.goalUpdatesNotice || 'כבר קיים עדכון שערים או בישולים למשחק זה'}
@@ -74,7 +80,7 @@ export default function GameEntryFields({
       ) : null}
 
       <Box sx={sx.fieldsBlock}>
-        <Box sx={sx.booleanGrid}>
+        <Box sx={sx.booleanGrid(layout)}>
           <OnSquadSelector
             value={isSelected}
             onChange={(value) => {
@@ -101,40 +107,46 @@ export default function GameEntryFields({
           />
         </Box>
 
-        <Box sx={sx.statsGrid}>
-          <GoalField
-            value={goals}
-            size="md"
-            max={goalsMax}
-            onChange={(value) => onFieldChange('goals', value)}
-            disabled={isFieldsDisabled || !isSelected || goalsLocked}
-            helperText={
-              goalsLocked
-                ? labels.goalsLockedText || 'לא ניתן להוסיף שערים, כבר קיים עדכון מלא למשחק'
-                : goalsText
-            }
-          />
+        <Box sx={sx.statsGrid(layout)}>
+          <Box sx={{ minWidth: 0 }}>
+            <GoalField
+              value={goals}
+              size="md"
+              max={goalsMax}
+              onChange={(value) => onFieldChange('goals', value)}
+              disabled={isFieldsDisabled || !isSelected || goalsLocked}
+              helperText={
+                goalsLocked
+                  ? labels.goalsLockedText || 'לא ניתן להוסיף שערים, כבר קיים עדכון מלא למשחק'
+                  : goalsText
+              }
+            />
+          </Box>
 
-          <AssistField
-            value={assists}
-            size="md"
-            max={assistsMax}
-            onChange={(value) => onFieldChange('assists', value)}
-            disabled={isFieldsDisabled || !isSelected || assistsLocked}
-            helperText={
-              assistsLocked
-                ? labels.assistsLockedText || 'לא ניתן להוסיף בישולים, כבר קיים עדכון מלא למשחק'
-                : assistsText
-            }
-          />
+          <Box sx={{ minWidth: 0 }}>
+            <AssistField
+              value={assists}
+              size="md"
+              max={assistsMax}
+              onChange={(value) => onFieldChange('assists', value)}
+              disabled={isFieldsDisabled || !isSelected || assistsLocked}
+              helperText={
+                assistsLocked
+                  ? labels.assistsLockedText || 'לא ניתן להוסיף בישולים, כבר קיים עדכון מלא למשחק'
+                  : assistsText
+              }
+            />
+          </Box>
 
-          <TimePlayedField
-            value={timePlayed}
-            size="md"
-            max={gameDuration}
-            onChange={(value) => onFieldChange('timePlayed', value)}
-            disabled={isFieldsDisabled || !isSelected}
-          />
+          <Box sx={{ minWidth: 0 }}>
+            <TimePlayedField
+              value={timePlayed}
+              size="md"
+              max={gameDuration}
+              onChange={(value) => onFieldChange('timePlayed', value)}
+              disabled={isFieldsDisabled || !isSelected}
+            />
+          </Box>
         </Box>
       </Box>
     </Box>

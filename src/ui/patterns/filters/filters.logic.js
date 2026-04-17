@@ -1,4 +1,5 @@
 /// C:\projects\devplan\src\ui\filters\filters.logic.js
+
 export function hasActiveFilters(filters = {}) {
   return Object.values(filters).some((v) => {
     if (Array.isArray(v)) return v.length > 0

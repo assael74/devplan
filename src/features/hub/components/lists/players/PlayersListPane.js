@@ -1,13 +1,22 @@
 // hub/components/lists/players/PlayersListPane.js
+
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { Box, Input, Chip, Typography, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
 
 import PlayersList from './PlayersList'
-import { playersListPaneSx as sx } from './sx/PlayersListPane.sx'
-import { filterPlayers, buildActiveFilterChips, existsInList } from './logic/PlayersListPane.logic'
 
-export default function PlayersListPane({ players, selectedId, onSelect, onOpenActions }) {
+import { filterPlayers, buildActiveFilterChips, existsInList } from './logic/PlayersListPane.logic'
+import { listSx as sx } from '../list.sx.js'
+
+export default function PlayersListPane({
+  players,
+  isMobile,
+  selectedId,
+  onSelect,
+  onOpenActions,
+  onOpenRoute,
+}) {
   const [q, setQ] = useState('')
   const [keyOnly, setKeyOnly] = useState(false)
   const [projectOnly, setProjectOnly] = useState(false)
@@ -47,7 +56,7 @@ export default function PlayersListPane({ players, selectedId, onSelect, onOpenA
   return (
     <Box sx={sx.root}>
       <Box sx={sx.bar}>
-        <Box sx={sx.barRow}>
+        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
           <Input
             size="sm"
             value={q}
@@ -124,11 +133,13 @@ export default function PlayersListPane({ players, selectedId, onSelect, onOpenA
         </Box>
       </Box>
 
-      <Box sx={sx.scroll} className='dpScrollThin'>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }} className='dpScrollThin'>
         <PlayersList
+          isMobile={isMobile}
           players={filteredPlayers}
           onSelect={onSelect}
           selectedId={selectedId}
+          onOpenRoute={onOpenRoute}
           onOpenActions={onOpenActions}
         />
       </Box>

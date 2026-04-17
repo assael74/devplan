@@ -7,6 +7,7 @@ export const videoHeaderSx = {
     justifyContent: 'space-between',
     gap: 0.5,
     minWidth: 0,
+    pt: 1
   },
 
   cardTitle: {

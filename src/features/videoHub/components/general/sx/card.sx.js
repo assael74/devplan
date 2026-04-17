@@ -1,5 +1,6 @@
 // videoHub/components/general/sx/card.sx.js
 
+import { alpha, lighten } from '@mui/system'
 import { getEntityColors } from '../../../../../ui/core/theme/Colors'
 
 const c = getEntityColors('videoGeneral')
@@ -16,7 +17,7 @@ export const videoCardSx = {
     bgcolor: c.bg,
     p: 0,
     '--Card-padding': '0px',
-    '&:hover': { bgcolor: c.accent },
+    '&:hover': { bgcolor: lighten(c.accent, 0.8), },
   },
 
   cardBody: {
@@ -27,16 +28,6 @@ export const videoCardSx = {
     flexDirection: 'column',
     justifyContent: 'space-between',
     p: 0.6,
-  },
-
-  cardTitleDivider: {
-    height: 1.2,
-    width: '100%',
-    borderRadius: 2,
-    bgcolor: 'neutral.400',
-    opacity: 0.75,
-    my: 0.35,
-    flexShrink: 0,
   },
 
   cardYm: {

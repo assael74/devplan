@@ -17,6 +17,7 @@ export default function YearPicker({
   minYear,
   maxYear,
   sx,
+  icon = true,
 }) {
   const currentYear = new Date().getFullYear()
 
@@ -44,14 +45,14 @@ export default function YearPicker({
 
   return (
     <FormControl required={required} disabled={disabled} sx={sx}>
-      {label ? <FormLabel sx={{ fontSize: 12 }}>{label}</FormLabel> : null}
+      <FormLabel sx={{ fontSize: 12 }}>{label}</FormLabel>
 
       <Select
         size={size}
         placeholder={placeholder}
         value={selected}
         onChange={(e, next) => onChange(next == null ? '' : String(next))}
-        startDecorator={iconUi({ id: 'age' })}
+        startDecorator={icon ? iconUi({ id: 'age' }) : null}
       >
         {list.map((y) => (
           <Option key={String(y)} value={String(y)}>

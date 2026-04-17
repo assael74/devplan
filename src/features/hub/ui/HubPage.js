@@ -1,23 +1,19 @@
 // src/features/hub/ui/HubPage.js
+
+// src/features/hub/ui/HubPage.js
+
 import React, { useMemo, useCallback } from 'react'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import PreviewPanel from '../components/PreviewPanel'
-import PlayersLayout from '../components/layout/PlayersLayout'
-import HubFabMenu from '../components/navigation/HubFabMenu'
-import HubToolbar from '../components/navigation/HubToolbar'
-
-import PlayersListPane from '../components/lists/players/PlayersListPane.js'
-import PrivatesListPane from '../components/lists/privates/PrivatesListPane.js'
-import TeamsListPane from '../components/lists/teams/TeamsListPane.js'
-import ClubsList from '../components/lists/clubs/ClubsList.js'
-import HubStaffList from '../components/lists/staff/HubStaffList.js'
-import HubScoutingList from '../components/lists/scout/HubScoutingList.js'
+import PreviewPanel from '../components/desktop/PreviewPanel'
+import HubRootDesktop from '../components/desktop/HubRootDesktop'
+import HubRootMobile from '../components/mobile/HubRootMobile'
 
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import { useHubState } from '../domain/hub.state'
-import { hubPageSx } from './hubPage.sx'
 import { buildRoutesByType, buildCountsByType } from './hub.routes'
 import { useCreateModal } from '../../../ui/forms/create/CreateModalProvider'
 import {
@@ -26,6 +22,8 @@ import {
   buildCreateHandlers,
 } from './HubPage.helpers'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
+import { buildDesktopHubList } from './buildDesktopHubList.js'
+import { buildMobileHubListsProps } from './buildMobileHubListsProps.js'
 
 const supportedPreviewTypes = new Set(['club', 'team', 'player', 'staff', 'scout'])
 
@@ -34,6 +32,9 @@ function isPrivatePlayer(player) {
 }
 
 export default function HubPage() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
   const navigate = useNavigate()
   const location = useLocation()
   const { openCreate } = useCreateModal()
@@ -113,6 +114,31 @@ export default function HubPage() {
     [s]
   )
 
+  const handleOpenRoute = useCallback(
+    (route) => {
+      if (!route) return
+      navigate(route)
+    },
+    [navigate]
+  )
+
+  const handleSelectClub = useCallback(
+    (club) => {
+      s.handleSelectClub({ clubId: club.id, clubName: club.clubName })
+    },
+    [s]
+  )
+
+  const handleSelectTeam = useCallback(
+    (team) => {
+      s.handleSelectTeam(
+        { teamId: team.id, teamName: team.teamName },
+        { clubId: team.clubId }
+      )
+    },
+    [s]
+  )
+
   const previewContext = useMemo(() => {
     const selectionContext = buildContextFromSelection(s.previewSelection) || {}
 
@@ -133,75 +159,76 @@ export default function HubPage() {
     return supportedPreviewTypes.has(type) ? buildRoutesByType(s.previewSelection) : {}
   }, [s.previewSelection])
 
-  const list = useMemo(() => {
-    if (s.mode === s.MODE.CLUBS) {
-      return (
-        <ClubsList
-          clubs={clubs || []}
-          onSelect={(club) =>
-            s.handleSelectClub({ clubId: club.id, clubName: club.clubName })
-          }
-          selectedId={s.previewSelection?.type === 'club' ? s.previewSelection.data?.id : null}
-        />
-      )
-    }
-
-    if (s.mode === s.MODE.TEAMS) {
-      return (
-        <TeamsListPane
-          teams={teams || []}
-          onSelect={(team) =>
-            s.handleSelectTeam(
-              { teamId: team.id, teamName: team.teamName },
-              { clubId: team.clubId }
-            )
-          }
-          selectedId={s.previewSelection?.type === 'team' ? s.previewSelection.data?.id : null}
-        />
-      )
-    }
-
-    if (s.mode === s.MODE.PLAYERS) {
-      return (
-        <PlayersListPane
-          players={clubPlayers}
-          onSelect={s.handleSelectPlayer}
-          selectedId={s.previewSelection?.type === 'player' ? s.previewSelection.data?.id : null}
-          onOpenActions={s.handleOpenActions}
-        />
-      )
-    }
-
-    if (s.mode === s.MODE.STAFF) {
-      return <HubStaffList rows={s.staffRows} onSelect={s.handleSelectStaff} />
-    }
-
-    if (s.mode === s.MODE.PRIVATES) {
-      return (
-        <PrivatesListPane
-          players={privatePlayers}
-          onSelect={s.handleSelectPlayer}
-          selectedId={s.previewSelection?.type === 'player' ? s.previewSelection.data?.id : null}
-          onOpenActions={s.handleOpenActions}
-        />
-      )
-    }
-
-    if (s.mode === s.MODE.SCOUTING) {
-      return <HubScoutingList rows={s.scoutRows} onSelect={s.handleSelectScout} />
-    }
-
-    return null
+  const desktopList = useMemo(() => {
+    return buildDesktopHubList({
+      mode: s.mode,
+      MODE: s.MODE,
+      clubs: clubs || [],
+      teams: teams || [],
+      clubPlayers,
+      privatePlayers,
+      previewSelection: s.previewSelection,
+      staffRows: s.staffRows,
+      scoutRows: s.scoutRows,
+      onSelectClub: handleSelectClub,
+      onSelectTeam: handleSelectTeam,
+      onSelectPlayer: s.handleSelectPlayer,
+      onSelectStaff: s.handleSelectStaff,
+      onSelectScout: s.handleSelectScout,
+      onOpenActions: s.handleOpenActions,
+    })
   }, [
-    s,
+    s.mode,
+    s.MODE,
+    s.previewSelection,
+    s.staffRows,
+    s.scoutRows,
+    s.handleSelectPlayer,
+    s.handleSelectStaff,
+    s.handleSelectScout,
+    s.handleOpenActions,
     clubs,
     teams,
     clubPlayers,
     privatePlayers,
-    s.mode,
+    handleSelectClub,
+    handleSelectTeam,
+  ])
+
+  const mobileListsProps = useMemo(() => {
+    return buildMobileHubListsProps({
+      MODE: s.MODE,
+      clubs: clubs || [],
+      teams: teams || [],
+      clubPlayers,
+      privatePlayers,
+      staffRows: s.staffRows,
+      scoutRows: s.scoutRows,
+      previewSelection: s.previewSelection,
+      onSelectClub: handleSelectClub,
+      onSelectTeam: handleSelectTeam,
+      onSelectPlayer: s.handleSelectPlayer,
+      onSelectStaff: s.handleSelectStaff,
+      onSelectScout: s.handleSelectScout,
+      onOpenActions: s.handleOpenActions,
+      onOpenRoute: handleOpenRoute,
+    })
+  }, [
+    s.MODE,
     s.previewSelection,
     s.staffRows,
     s.scoutRows,
+    s.handleSelectPlayer,
+    s.handleSelectStaff,
+    s.handleSelectScout,
+    s.handleOpenActions,
+    clubs,
+    teams,
+    clubPlayers,
+    privatePlayers,
+    handleSelectClub,
+    handleSelectTeam,
+    handleOpenRoute,
   ])
 
   const preview = supportedPreviewTypes.has(s.previewSelection?.type) ? (
@@ -209,7 +236,7 @@ export default function HubPage() {
       selection={s.previewSelection}
       routesByType={{ [s.previewSelection?.type]: routes }}
       countsByType={countsByType}
-      onOpenRoute={(route) => route && navigate(route)}
+      onOpenRoute={handleOpenRoute}
       context={previewContext}
     />
   ) : (
@@ -240,26 +267,32 @@ export default function HubPage() {
     )
   }
 
-  return (
-    <Sheet sx={hubPageSx.page}>
-      <HubToolbar
+  if (isMobile) {
+    return (
+      <HubRootMobile
         mode={s.mode}
-        onModeChange={handleModeChange}
-        query={s.query}
-        onQueryChange={s.setQuery}
         counts={s.counts}
         tabsMeta={tabsMeta}
+        onModeChange={handleModeChange}
+        mobileListsProps={mobileListsProps}
       />
+    )
+  }
 
-      <PlayersLayout list={list} preview={preview} />
-
-      <HubFabMenu
-        mode={s.mode}
-        handlers={handlers}
-        context={context}
-        taskContext={taskContext}
-        permissions={s.permissions}
-      />
-    </Sheet>
+  return (
+    <HubRootDesktop
+      mode={s.mode}
+      onModeChange={handleModeChange}
+      query={s.query}
+      onQueryChange={s.setQuery}
+      counts={s.counts}
+      tabsMeta={tabsMeta}
+      list={desktopList}
+      preview={preview}
+      handlers={handlers}
+      context={context}
+      taskContext={taskContext}
+      permissions={s.permissions}
+    />
   )
 }

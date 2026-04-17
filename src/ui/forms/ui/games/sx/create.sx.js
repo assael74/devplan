@@ -3,7 +3,7 @@
 export const createSx = {
   root: (layout) => ({
     display: 'grid',
-    gap: layout.shellGap,
+    gap: layout?.shellGap || 1,
     minWidth: 0,
   }),
 
@@ -26,6 +26,13 @@ export const createSx = {
 }
 
 export const entrySx = {
+  root: {
+    display: 'grid',
+    gap: 1,
+    height: '100%',
+    minWidth: 0,
+  },
+
   fieldsBlock: {
     display: 'grid',
     gap: 1.25,
@@ -34,18 +41,22 @@ export const entrySx = {
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.level1',
+    minWidth: 0,
   },
 
-  booleanGrid: {
+  booleanGrid: (layout) => ({
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+    gridTemplateColumns: layout?.booleanGrid || { xs: '1fr', md: '1fr 1fr' },
     gap: 1,
-  },
+    minWidth: 0,
+  }),
 
-  statsGrid: {
+  statsGrid: (layout) => ({
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+    gridTemplateColumns:
+      layout?.statsGrid || { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
     gap: 1,
     pt: 2,
-  },
+    minWidth: 0,
+  }),
 }

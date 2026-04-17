@@ -1,13 +1,23 @@
-// hub/components/lists/team/TeamsListPane.js
+// hub/components/lists/teams/TeamsListPane.js
+
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { Box, Input, Chip, Typography, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi'
 
 import TeamsList from './TeamsList'
-import { teamsListPaneSx as sx } from './sx/TeamsListPane.sx'
+
+import { listSx as sx } from '../list.sx.js'
+
 import { filterTeams, buildActiveFilterChips, existsInList } from './logic/TeamsListPane.logic'
 
-export default function TeamsListPane({ teams, selectedId, onSelect, onOpenActions }) {
+export default function TeamsListPane({
+  teams,
+  isMobile,
+  selectedId,
+  onSelect,
+  onOpenRoute,
+  onOpenActions
+}) {
   const [q, setQ] = useState('')
   const [projectOnly, setProjectOnly] = useState(false)
   const [activeOnly, setActiveOnly] = useState(true)
@@ -42,9 +52,9 @@ export default function TeamsListPane({ teams, selectedId, onSelect, onOpenActio
   }, [])
 
   return (
-    <Box sx={sx.root}>
+    <Box sx={sx.root(isMobile)}>
       <Box sx={sx.bar}>
-        <Box sx={sx.barRow}>
+        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
           <Input
             size="sm"
             value={q}
@@ -112,9 +122,11 @@ export default function TeamsListPane({ teams, selectedId, onSelect, onOpenActio
 
       <Box sx={sx.scroll} className='dpScrollThin'>
         <TeamsList
+          isMobile={isMobile}
           teams={filteredTeams}
           onSelect={onSelect}
           selectedId={selectedId}
+          onOpenRoute={onOpenRoute}
           onOpenActions={onOpenActions}
         />
       </Box>

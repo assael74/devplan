@@ -8,7 +8,7 @@ export default function ProjectStatusSelectValue({ opt }) {
   if (!opt) return null
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+    <Box sx={{ display: 'flex', ml: 0.2, my: 0.3, minWidth: 0 }}>
       <Chip
         size="sm"
         variant="soft"

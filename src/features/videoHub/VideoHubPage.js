@@ -1,8 +1,14 @@
 // src/features/videoHub/VideoHubPage.js
 
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { Box } from '@mui/joy'
+
+import { hasActiveFilters } from '../../ui/patterns/filters/filters.logic.js'
+import FiltersTrigger from '../../ui/patterns/filters/FiltersTrigger.js'
+import { filterItemsByMobileVideoFilters } from './components/filters/mobile/videoMobileFilters.utils'
+import VideoMobileFiltersDrawer from './components/filters/mobile/VideoMobileFiltersDrawer'
 
 import { VIDEO_TAB } from './logic/videoHub.model'
 import {
@@ -53,6 +59,8 @@ const DEFAULT_FILTERS_ANALYSIS = {
   sortDir: 'desc',
   onlyUnlinked: false,
   tags: [],
+  parentTagId: '',
+  childTagId: '',
 }
 
 const DEFAULT_FILTERS_GENERAL = {
@@ -61,39 +69,37 @@ const DEFAULT_FILTERS_GENERAL = {
   sortBy: 'updatedAt',
   sortDir: 'desc',
   tags: [],
+  parentTagId: '',
+  childTagId: '',
 }
 
 export default function VideoHubPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const isMobile = useMediaQuery('(max-width:900px)')
   const { openCreate } = useCreateModal()
   const core = useCoreData()
 
   const baseContext = useMemo(() => buildVideoHubContext(core), [core])
 
   const [tab, setTab] = useState(VIDEO_TAB.GENERAL)
-
   const [filtersAna, setFiltersAna] = useState(DEFAULT_FILTERS_ANALYSIS)
   const [filtersGen, setFiltersGen] = useState(DEFAULT_FILTERS_GENERAL)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
-  // ✅ single source of truth for modal state
   const { modal, open, openEdit, closeAll, setModal } = useVideoHubModal(tab)
   const active = modal?.active || null
 
-  // ✅ update runner (explicit type)
   const { run } = useVideoHubUpdate(active)
 
-  // raw
   const analysisRaw = core?.videoAnalysis || []
   const generalRaw = core?.videos || []
 
-  // enrich analysis only
   const analysisEnriched = useMemo(
     () => enrichVideoAnalysis(analysisRaw, baseContext),
     [analysisRaw, baseContext]
   )
 
-  // context
   const context = useMemo(
     () => ({ ...baseContext, videoAnalysis: analysisEnriched, videos: generalRaw }),
     [baseContext, analysisEnriched, generalRaw]
@@ -108,37 +114,51 @@ export default function VideoHubPage() {
     })
   }, [location, tab, context])
 
-  // derived
+  const filters = tab === VIDEO_TAB.ANALYSIS ? filtersAna : filtersGen
+  const setFilters = tab === VIDEO_TAB.ANALYSIS ? setFiltersAna : setFiltersGen
+
   const filteredAna = useMemo(() => {
-    const out = filterVideoAnalysis(analysisEnriched, filtersAna)
-    return sortVideoAnalysis(out, filtersAna.sortBy, filtersAna.sortDir)
-  }, [analysisEnriched, filtersAna])
+    const baseFilters = isMobile ? { ...filtersAna, q: '' } : filtersAna
+    const out = filterVideoAnalysis(analysisEnriched, baseFilters)
+    const sorted = sortVideoAnalysis(out, filtersAna.sortBy, filtersAna.sortDir)
+
+    if (!isMobile) return sorted
+    return filterItemsByMobileVideoFilters(sorted, filtersAna, context)
+  }, [analysisEnriched, filtersAna, isMobile, context])
 
   const filteredGen = useMemo(() => {
-    const out = filterVideosGeneral(generalRaw, filtersGen)
-    return sortVideosGeneral(out, filtersGen.sortBy, filtersGen.sortDir)
-  }, [generalRaw, filtersGen])
+    const baseFilters = isMobile ? { ...filtersGen, q: '' } : filtersGen
+    const out = filterVideosGeneral(generalRaw, baseFilters)
+    const sorted = sortVideosGeneral(out, filtersGen.sortBy, filtersGen.sortDir)
 
-  // open handlers
+    if (!isMobile) return sorted
+    return filterItemsByMobileVideoFilters(sorted, filtersGen, context)
+  }, [generalRaw, filtersGen, isMobile, context])
+
+  const mobileHasActiveFilters = useMemo(() => {
+    return hasActiveFilters({
+      q: filters?.q || '',
+      parentTagId: filters?.parentTagId || '',
+      childTagId: filters?.childTagId || '',
+    })
+  }, [filters])
+
   const handleWatch = useCallback((v) => open('watchOpen', v), [open])
   const handleAttach = useCallback((v) => open('attachOpen', v), [open])
   const handleOpenShare = useCallback((v) => open('shareOpen', v), [open])
   const handleEdit = useCallback((v) => openEdit(v), [openEdit])
 
-  // close handlers (fix eslint no-undef)
   const closeShare = useCallback(() => closeAll(), [closeAll])
   const closeAttach = useCallback(() => closeAll(), [closeAll])
   const closeEditAnalysis = useCallback(() => closeAll(), [closeAll])
   const closeEditGeneral = useCallback(() => closeAll(), [closeAll])
   const closeWatch = useCallback(() => closeAll(), [closeAll])
 
-  // create
   const onCreateAnalysis = useCallback(() => {
     openCreate('videoAnalysis', {}, context)
   }, [openCreate, context])
 
   const onCreateGeneral = useCallback(() => {
-    // אם ה-provider אצלך מצפה ל-3 args, תיישר קו כאן כמו באנליזה
     openCreate('videos', {}, context)
   }, [openCreate, context])
 
@@ -154,10 +174,6 @@ export default function VideoHubPage() {
       }
     )
   }, [openCreate, context])
-
-  // filters ui
-  const filters = tab === VIDEO_TAB.ANALYSIS ? filtersAna : filtersGen
-  const setFilters = tab === VIDEO_TAB.ANALYSIS ? setFiltersAna : setFiltersGen
 
   const total = tab === VIDEO_TAB.ANALYSIS ? analysisEnriched.length : generalRaw.length
   const shown = tab === VIDEO_TAB.ANALYSIS ? filteredAna.length : filteredGen.length
@@ -192,21 +208,38 @@ export default function VideoHubPage() {
     },
   }
 
+  useEffect(() => {
+    if (!isMobile && filtersDrawerOpen) {
+      setFiltersDrawerOpen(false)
+    }
+  }, [isMobile, filtersDrawerOpen])
+
   return (
     <Box sx={sx.page}>
       <Box>
         <VideoTabsHeader tab={tab} onTab={setTab} />
-        <Box sx={{ p: 1 }}>
-          <VideoFiltersBar
-            tab={tab}
-            items={tab === VIDEO_TAB.ANALYSIS ? analysisEnriched : generalRaw}
-            filters={filters}
-            onFilters={setFilters}
-            context={context}
-            total={total}
-            shown={shown}
-          />
-        </Box>
+
+        {isMobile ? (
+          <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-start' }}>
+            <FiltersTrigger
+              hasActive={mobileHasActiveFilters}
+              onClick={() => setFiltersDrawerOpen(true)}
+              label="פילטרים"
+            />
+          </Box>
+        ) : (
+          <Box sx={{ p: 1 }}>
+            <VideoFiltersBar
+              tab={tab}
+              items={tab === VIDEO_TAB.ANALYSIS ? analysisEnriched : generalRaw}
+              filters={filters}
+              onFilters={setFilters}
+              context={context}
+              total={total}
+              shown={shown}
+            />
+          </Box>
+        )}
       </Box>
 
       <Box sx={sx.content} className="dpScrollThin">
@@ -229,6 +262,18 @@ export default function VideoHubPage() {
           />
         )}
       </Box>
+
+      {isMobile ? (
+        <VideoMobileFiltersDrawer
+          open={filtersDrawerOpen}
+          onClose={() => setFiltersDrawerOpen(false)}
+          filters={filters}
+          onFilters={setFilters}
+          context={context}
+          total={total}
+          shown={shown}
+        />
+      ) : null}
 
       <VideoShareModal
         open={modal.shareOpen}

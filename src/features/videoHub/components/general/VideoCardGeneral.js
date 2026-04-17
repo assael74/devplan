@@ -1,7 +1,7 @@
 // src/features/videoHub/components/general/VideoCardGeneral.js
 
 import React, { useMemo } from 'react'
-import { Box, Card } from '@mui/joy'
+import { Box, Card, Divider } from '@mui/joy'
 
 import { videoCardSx as sx } from './sx/card.sx'
 import VideoCardMedia from './VideoCardMedia.js'
@@ -63,7 +63,7 @@ export default function VideoCardGeneral({
   }, [onWatch, onEdit, onShare, onDelete])
 
   return (
-    <Card variant="outlined" sx={sx.cardGrid}>
+    <Card size='sm' variant="outlined" sx={sx.cardGrid}>
       <VideoCardMedia
         video={video}
         entityType={entityType}
@@ -76,8 +76,6 @@ export default function VideoCardGeneral({
           video={video}
           showYm={showYm}
         />
-
-        <Box sx={sx.cardTitleDivider} />
 
         <VideoTagsBar
           video={video}

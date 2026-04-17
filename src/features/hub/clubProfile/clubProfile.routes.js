@@ -1,4 +1,4 @@
-// clubProfile\clubProfile.routes.js
+// clubProfile/clubProfile.routes.js
 import { getTabFromUrl as getTabGeneric } from '../../hub/sharedProfile/profile.routes'
 
 export const CLUB_TABS = [

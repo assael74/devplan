@@ -1,33 +1,30 @@
-import React from 'react';
-import { typeSx as sx } from './sx/type.sx'
-import { PLAYERS_TYPES } from '../../../../shared/players/players.constants.js'
-import { iconUi } from '../../../core/icons/iconUi.js';
-import { Sheet, Typography, Stack, Box, FormControl } from '@mui/joy';
+import * as React from 'react'
+import { activeSx as sx } from './sx/check.sx'
+import { iconUi } from '../../../core/icons/iconUi.js'
+import { Box, Chip } from '@mui/joy'
 
-export default function PlayerTypeSelector({ value, onChange, size = 'sm' }) {
-  const fontSize = size === 'sm' ? '10px' : '14px'
-  const levelTypo = size === 'sm' ? "body-xs" : "body-md"
+export default function PlayerTypeSelector({
+  value,
+  onChange,
+  size = 'sm',
+  disabled = false,
+}) {
+  const isProject = Boolean(value)
+  const idIcon = isProject ? 'project' : 'noneType'
+  const title = size === 'xs' ? 'פרויקט' : 'שחקן פרויקט'
+
   return (
-    <FormControl>
-      <Typography level="body-md" sx={{ fontSize: '12px', mb: 0.5, ml: 0.5, fontWeight: 500 }}>
-        סוג שחקן
-      </Typography>
-      <Stack direction='row' spacing={1} sx={sx.stack}>
-        {PLAYERS_TYPES.map((type) => (
-          <Sheet variant="outlined" key={type.id} onClick={() => onChange(type.id)} sx={sx.sheet(value, type, size)}>
-            <Typography
-              level={levelTypo}
-              fontWeight="md"
-              textAlign='right'
-              startDecorator={iconUi({ id: type.idIcon, size: size })}
-              sx={{ fontSize: fontSize, whiteSpace: 'nowrap', pt: 0.2, pl: 0.2 }}
-            >
-              {type.labelH}
-            </Typography>
-          </Sheet>
-        ))}
-      </Stack>
-    </FormControl>
-
-  );
+    <Box sx={{ minWidth: 0 }}>
+      <Chip
+        size={size === 'xs' ? 'sm' : size}
+        variant={isProject ? 'solid' : 'outlined'}
+        color={isProject ? 'success' : 'neutral'}
+        startDecorator={iconUi({ id: idIcon })}
+        onClick={disabled ? undefined : () => onChange(!isProject)}
+        sx={sx.chip(size)}
+      >
+        {title}
+      </Chip>
+    </Box>
+  )
 }

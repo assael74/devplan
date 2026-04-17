@@ -3,7 +3,7 @@ import { Box, Typography, Chip, Avatar } from '@mui/joy'
 import { formatAff } from '../logic/teamSelect.logic'
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 
-export default function TeamSelectValue({ opt }) {
+export default function TeamSelectValue({ opt, chip }) {
   if (!opt) return null
 
   const team = opt
@@ -19,7 +19,7 @@ export default function TeamSelectValue({ opt }) {
         {opt.label}
       </Typography>
 
-      {aff && (
+      {chip && aff && (
         <Chip
           size="sm"
           variant="outlined"

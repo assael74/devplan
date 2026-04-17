@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { chipActiveProps } from '../X_Style'
+import { activeSx as sx } from './sx/check.sx'
 import { iconUi } from '../../../core/icons/iconUi.js';
 import { Box, Typography, Chip } from '@mui/joy';
 
@@ -14,7 +14,7 @@ export default function PlayerActiveSelector({ value = false, onChange, size = '
         color={isActive ? 'success' : 'neutral'}
         startDecorator={iconUi({ id: 'active' })}
         onClick={() => onChange(!isActive)}
-        {...chipActiveProps}
+        sx={sx.chip(size)}
       >
         פעיל
       </Chip>

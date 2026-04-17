@@ -3,41 +3,41 @@
 // --- עקרון: צבעים מבדילים בין ישויות, דומיינים נשארים ניטרליים ---
 export const COLORS = {
   entity: {
-    player: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#EEF2FF' },
-    players: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#EEF2FF' },
+    player: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#ffffff' },
+    players: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#ffffff' },
 
-    privatePlayer: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
-    privates: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
-    private: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ECFEFF' },
+    privatePlayer: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ffffff' },
+    privates: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ffffff' },
+    private: { bg: '#D9FBFF', surface: '#FFFFFF', accent: '#0891B2', text: '#111827', textAcc: '#ffffff' },
 
-    team: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#EEF2FF' },
-    teams: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#EEF2FF' },
+    team: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#ffffff' },
+    teams: { bg: '#ECFDF5', surface: '#FFFFFF', accent: '#10B981', text: '#111827', textAcc: '#ffffff' },
 
-    club: { bg: '#FFFBEB', surface: '#FFFFFF', accent: '#D97706', text: '#111827', textAcc: '#EEF2FF' },
-    clubs: { bg: '#FFFBEB', surface: '#FFFFFF', accent: '#D97706', text: '#111827', textAcc: '#EEF2FF' },
+    club: { bg: '#FFFBEB', surface: '#FFFFFF', accent: '#D97706', text: '#111827', textAcc: '#ffffff' },
+    clubs: { bg: '#FFFBEB', surface: '#FFFFFF', accent: '#D97706', text: '#111827', textAcc: '#ffffff' },
 
-    project: { bg: '#8fce00', surface: '#FFFFFF', accent: '#e5bda3', text: '#111827', textAcc: '#EEF2FF' },
+    project: { bg: '#8fce00', surface: '#FFFFFF', accent: '#e5bda3', text: '#111827', textAcc: '#ffffff' },
 
-    role: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
-    roles: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
-    staff: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#EEF2FF' },
+    role: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#ffffff' },
+    roles: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#ffffff' },
+    staff: { bg: '#f7dec3', surface: '#FFFFFF', accent: '#b54708', text: '#111827', textAcc: '#ffffff' },
 
-    scouting: { bg: '#F3E8FF', surface: '#FFFFFF', accent: '#7C3AED', text: '#111827', textAcc: '#EEF2FF' },
+    scouting: { bg: '#F3E8FF', surface: '#FFFFFF', accent: '#7C3AED', text: '#111827', textAcc: '#ffffff' },
 
-    videoAnalysis: { bg: '#96ede6', surface: '#FFFFFF', accent: '#0F766E', text: '#111827', textAcc: '#EEF2FF' },
+    videoAnalysis: { bg: '#96ede6', surface: '#FFFFFF', accent: '#0F766E', text: '#111827', textAcc: '#ffffff' },
 
-    videoGeneral: { bg: '#abf09c', surface: '#FFFFFF', accent: '#65A30D', text: '#111827', textAcc: '' },
+    videoGeneral: { bg: '#abf09c', surface: '#FFFFFF', accent: '#65A30D', text: '#111827', textAcc: '#ffffff' },
 
-    tag: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#EEF2FF' },
-    tags: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#EEF2FF' },
+    tag: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#ffffff' },
+    tags: { bg: '#f1c232', surface: '#FFFFFF', accent: '#B8860B', text: '#111827', textAcc: '#ffffff' },
 
-    task: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#E6F7FB' },
-    tasks: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#E6F7FB' },
+    task: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#ffffff' },
+    tasks: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#ffffff' },
     taskApp: { bg: '#ECFEFF', surface: '#FFFFFF', accent: '#0088A5', text: '#111827', textAcc: '#ffffff' },
     taskAnalyst: { bg: '#ffe599', surface: '#FFFFFF', accent: '#d5b34e', text: '#111827', textAcc: '#ffffff' },
 
-    training: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#EEF2FF' },
-    trainings: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#EEF2FF' },
+    training: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#ffffff' },
+    trainings: { bg: '#FFE4E6', surface: '#FFFFFF', accent: '#E11D48', text: '#111827', textAcc: '#ffffff' },
 
     calendar: {
       game: { bg: '#bbcbff', accent: '#4C6EF5', text: '#1E293B', },

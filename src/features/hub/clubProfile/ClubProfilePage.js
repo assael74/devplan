@@ -1,116 +1,26 @@
 // features/hub/clubProfile/ClubProfilePage.js
 
-import React, { useMemo } from 'react'
-import { useNavigate, useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
-import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
+import React from 'react'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
-import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
-import ProfileShell from '../../hub/sharedProfile/ProfileShell'
-
-import { getTabFromUrl } from './clubProfile.routes'
-import ClubHeader from './components/ClubHeader'
-import ClubNav from './components/ClubNav'
-import ClubModules from './components/ClubModules'
-import ClubProfileFab from './components/ClubProfileFab'
+import useClubProfilePageModel from './clubProfile.logic'
+import ClubProfileDesktop from './desktop/ClubProfileDesktop'
+import ClubProfileMobile from './mobile/ClubProfileMobile'
 
 export default function ClubProfilePage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { clubId, tabKey } = useParams()
-  const [sp] = useSearchParams()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const {
-    players,
-    teams,
-    clubs,
-    videos,
-    roles,
-    performances,
-    abilities,
-    tags,
-    loading,
-    error,
-  } = useCoreData()
+  const model = useClubProfilePageModel()
 
-  const tab = useMemo(
-    () => getTabFromUrl({ tabKeyParam: tabKey, searchParams: sp }),
-    [tabKey, sp]
-  )
+  if (model.state === 'loading') return model.loadingNode
+  if (model.state === 'error') return model.errorNode
+  if (model.state === 'missing') return model.missingNode
 
-  const baseClub = useMemo(() => {
-    return (clubs || []).find((t) => String(t.id) === String(clubId)) || null
-  }, [clubs, clubId])
-
-  const entity = useMemo(() => {
-    if (!baseClub) return null
-    const cid = String(baseClub.id)
-
-    return {
-      ...baseClub,
-    }
-  }, [baseClub])
-
-  const context = useMemo(() => {
-    if (!entity) return {}
-    return {
-      club: clubs?.find((c) => String(c.id) === String(entity.clubId)) || null,
-      teams: teams,
-      clubs: clubs,
-      players: players,
-      roles: roles,
-    }
-  }, [entity, teams, clubs, players, roles, tags])
-
-  const taskContext = useMemo(() => {
-    return buildTaskFabContext({
-      location,
-      area: 'club',
-      mode: tab,
-      extra: context,
-    })
-  }, [location, tab, context])
-
-  const counts = useMemo(() => {
-    if (!entity) return {}
-    return {
-      teams: entity.teams?.length || 0,
-    }
-  }, [entity])
-
-  if (loading) {
-    return (
-      <Sheet sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size="sm" />
-          <Typography level="body-sm">טוען מועדון ...</Typography>
-        </Box>
-      </Sheet>
-    )
-  }
-
-  if (error) {
-    return (
-      <Sheet sx={{ p: 2 }}>
-        <Typography level="body-sm">שגיאה בטעינת נתונים</Typography>
-      </Sheet>
-    )
-  }
-
-  if (!entity) return <Navigate to="/hub" replace />
-
-  return (
-    <ProfileShell
-      tab={tab}
-      entity={entity}
-      context={context}
-      entityType={entity}
-      taskContext={taskContext}
-      headerProps={{ counts }}
-      HeaderComp={ClubHeader}
-      NavComp={ClubNav}
-      RendererComp={ClubModules}
-      FabComp={ClubProfileFab}
-    />
+  return isMobile ? (
+    <ClubProfileMobile {...model} />
+  ) : (
+    <ClubProfileDesktop {...model} />
   )
 }

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Article from '@mui/icons-material/Article';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import BoltIcon from '@mui/icons-material/Bolt';
@@ -56,6 +57,7 @@ export const abilitiesIcon = {
   effort: <BatteryChargingFullIcon />,
   explosiveness: <FlashOnIcon />,
   firstTouch: <TouchAppIcon />,
+  form: <Article />,
   gameUnderstanding: <VisibilityIcon />,
   growthStage: <ChildCareIcon />,
   learningCurve: <TrendingUpIcon />,

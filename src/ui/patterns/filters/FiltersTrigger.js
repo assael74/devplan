@@ -1,4 +1,4 @@
-/// C:\projects\devplan\src\ui\filters\FiltersTrigger.js
+// ui/filters/FiltersTrigger.js
 
 import React from 'react'
 import { IconButton, Badge, Chip, Box } from '@mui/joy'

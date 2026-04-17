@@ -1,42 +1,34 @@
-// hub/components/HubStaffList.js
-import React, { useMemo, useState } from 'react'
-import { Sheet, List, ListItem, Box, Typography } from '@mui/joy'
-import { hubPageSx } from '../../../ui/hubPage.sx'
+// src/features/hub/components/lists/scout/HubScoutingList.js
 
-import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+import React, { useState } from 'react'
+import { Sheet, List, ListItem, Box, Typography } from '@mui/joy'
 
 import EntityActionsMenu from '../../../sharedProfile/EntityActionsMenu.js'
-
 import ScoutRow from './ScoutRow.js'
+import {
+  buildScoutingRowVm,
+  buildScoutingTitle,
+} from './HubScoutList.logic.js'
 
 export default function HubScoutingList({ rows = [], onSelect }) {
   const [selectedId, setSelectedId] = useState(null)
 
   return (
-    <Sheet sx={hubPageSx.listWrap}>
+    <Sheet sx={{ p: 0.75 }}>
       <List sx={{ p: 0, display: 'grid', gap: 0.75 }}>
-        {rows.map((r) => {
-          const id = r?.id
-          const title = r?.playerName || 'שחקן למעקב'
-          const subline = `${r?.clubName} * ${r?.teamName}` || 'שם מועדון וקבוצה'
-          const photo = r?.photo || playerImage
-
-          const rowVm = {
-            ...r,
-            title,
-            photo,
-            idIcon: 'scouting',
-            subline,
-          }
+        {rows.map((row) => {
+          const id = row?.id
+          const title = buildScoutingTitle(row)
+          const rowVm = buildScoutingRowVm(row)
 
           return (
             <ListItem key={id || title} sx={{ px: 0, py: 0 }}>
               <ScoutRow
-                row={rowVm}
+                scout={rowVm}
                 selected={selectedId === id}
                 onSelect={(picked) => {
                   setSelectedId(picked?.id || null)
-                  onSelect(picked)
+                  onSelect?.(picked)
                 }}
                 actions={
                   <Box
@@ -47,9 +39,9 @@ export default function HubScoutingList({ rows = [], onSelect }) {
                       entityType="scouting"
                       entityId={id}
                       entityName={title}
-                      metaCounts={r?.metaCounts || null}
+                      metaCounts={row?.metaCounts || null}
                       disabled={!id}
-                      isArchived={r?.active === false}
+                      isArchived={row?.active === false}
                     />
                   </Box>
                 }
