@@ -12,11 +12,11 @@ import { useVideoUpdate } from '../../../../../../hooks/videoAnalysis/useVideoUp
 import VideoAnalysisEditFields from '../../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisEditFields.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
+  buildVideoInitialDraft,
+  buildVideoPatch,
+  getIsVideoDirty,
   buildVideoMeta,
-} from './playerVideoEdit.logic.js'
+} from './../../../../../sharedLogic'
 
 export default function EditDrawer({
   open,
@@ -25,7 +25,7 @@ export default function EditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(video), [video])
+  const initial = useMemo(() => buildVideoInitialDraft(video), [video])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export default function EditDrawer({
     }
   }, [initial?.raw, draft, player])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => getIsVideoDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildVideoPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useVideoUpdate(video)
   const canSave = !!initial?.id && isDirty && !pending

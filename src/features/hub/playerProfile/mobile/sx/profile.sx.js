@@ -1,5 +1,9 @@
 // features/hub/playerProfile/mobile/sx/profile.sx.js
 
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('players')
+
 export const profileSx = {
   sheetNotActive: {
     height: '100dvh',
@@ -84,4 +88,16 @@ export const profileSx = {
     pt: 1,
     pb: 0,
   },
+
+  moduleRoot: {
+    position: 'sticky',
+    top: -6,
+    zIndex: 5,
+    display: 'grid',
+    gap: 1,
+    borderRadius: 12,
+    bgcolor: 'background.body',
+    mb: 0.5,
+    boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+  }
 }

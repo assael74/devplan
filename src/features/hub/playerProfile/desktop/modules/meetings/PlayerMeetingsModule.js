@@ -1,81 +1,49 @@
 // playerProfile/desktop/modules/meetings/PlayerMeetingsModule.js
 
-import React, { useCallback, useMemo } from 'react'
+import React from 'react'
 import { Box } from '@mui/joy'
 
-import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
-import EmptyState from '../../../../sharedProfile/EmptyState.js'
-
 import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlayer.js'
-
-import { sx } from './playerMeetingsModule.sx'
+import { moduleSx as sx } from './playerMeetingsModule.sx'
 import useMeetingsWorkspace from './../../../sharedLogic'
 
-import MeetingsListPane from './components/MeetingsListPane'
-import MeetingDetailsPane from './components/MeetingDetailsPane' // <-- אחרי הפירוק
-
-import { useUpdateAction } from '../../../../../../ui/domains/entityActions/updateAction.js'
+import MeetingsListPane from './components/list/MeetingsListPane'
+import MeetingPane from './components/form/MeetingPane'
 
 const link = 'https://drive.google.com/uc?id=1ZVjdelIdccdtifMfN4ZtwYlLIVnaFsGR'
 
-export default function PlayerMeetingsModule({ entity, context }) {
+export default function PlayerMeetingsModule({ entity }) {
   const player = entity
   const ws = useMeetingsWorkspace(player)
 
-  const meetingDocId = ws.selected?.id || null
-
-  const entityName = useMemo(
-    () => ws.selected?.title || ws.selected?.typeLabel || 'מפגש',
-    [ws.selected?.title, ws.selected?.typeLabel]
-  )
-
-  const { runUpdate, pending } = useUpdateAction({
-    routerEntityType: 'meetings',
-    snackEntityType: 'meeting',
-    id: meetingDocId,
-    entityName,
-    requireAnyUpdated: true,
-    createIfMissing: false,
-  })
-
-  const onSaveMeeting = useCallback(
-    async (_meetingId, patch) => {
-      const fieldsPatch = {}
-      if (patch?.meetingDate !== undefined) fieldsPatch.meetingDate = patch.meetingDate
-      if (patch?.meetingHour !== undefined) fieldsPatch.meetingHour = patch.meetingHour
-      if (patch?.type !== undefined) fieldsPatch.type = patch.type
-      if (patch?.status !== undefined) fieldsPatch.status = patch.status
-      if (patch?.notes !== undefined) fieldsPatch.notes = patch.notes
-      if (patch?.tags !== undefined) fieldsPatch.tags = patch.tags
-
-      return runUpdate(fieldsPatch, { section: 'playerProfile.meetings', meetingId: meetingDocId })
-    },
-    [runUpdate, meetingDocId]
-  )
-
   return (
     <>
-      <Box sx={sx.stage}>
+      <Box sx={{ height: 'calc(100vh - 180px)', minHeight: 520, overflowY: 'hidden' }}>
         <Box sx={sx.root}>
           <Box sx={sx.paneWrapRight}>
             <MeetingsListPane
-              sx={sx}
               filters={ws.filters}
+              filterOptions={ws.filterOptions}
               filteredCount={ws.filtered.length}
-              flatRightList={ws.flatRightList}
+              items={ws.flatRightList}
               selectedId={ws.selectedId}
               onSelectId={ws.setSelectedId}
-              onChangeQuery={(q) => ws.onChange({ query: q })}
-              onAdd={ws.onAdd}
-            />
+              onChange={ws.onChange}
+              onResetFilters={() =>
+                ws.onChange({
+                  query: '',
+                  type: '',
+                  status: '',
+                  month: '',
+                  showCanceled: false,
+                })
+              }
+             />
           </Box>
 
           <Box sx={sx.paneWrapLeft}>
-            <MeetingDetailsPane
-              sx={sx}
+            <MeetingPane
               selected={ws.selected}
-              onSave={onSaveMeeting}
-              pending={pending}
               onOpenVideo={ws.onOpenVideo}
             />
           </Box>

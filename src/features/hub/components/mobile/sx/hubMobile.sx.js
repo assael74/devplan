@@ -11,7 +11,7 @@ export const hubMobileSx = {
     bgcolor: 'background.body',
   },
 
-  cardSheet: {
+  cardSheet: (color) => ({
     p: 1.25,
     borderRadius: 'lg',
     cursor: 'pointer',
@@ -20,11 +20,12 @@ export const hubMobileSx = {
     minHeight: 108,
     border: '1px solid',
     borderColor: 'divider',
+    bgcolor: color,
     transition: 'transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease',
     '&:active': {
       transform: 'scale(0.985)',
     },
-  },
+  }),
 
   boxWraper: {
     flex: 1,
@@ -67,5 +68,26 @@ export const hubMobileSx = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+  },
+
+  homeBox: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'auto',
+    p: 1.25,
+  },
+
+  homeGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 1,
+    pt: 1
+  },
+
+  card: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1
   }
 }

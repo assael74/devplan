@@ -16,7 +16,7 @@ import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlaye
 import {
   createInitialPlayerVideosFilters,
   resolvePlayerVideosFiltersDomain,
-} from './logic/playerVideos.filters.logic.js'
+} from './../../../sharedLogic'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 

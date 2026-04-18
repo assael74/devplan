@@ -7,7 +7,7 @@ import { InsightRowsList, MonthlyActivityList, } from './InsightsRows.js'
 import { StatCard, SectionBlock, InsightsDrawerHeader, MonthlyInsightsList } from './InsightsBlocks.js'
 
 import { insightsDrawersSx as sx } from './sx/playerVideos.insightsDrawer.sx.js'
-import { buildPlayerVideosInsightsViewModel } from './logic/videosInsightsDrawer.logic.js'
+import { buildPlayerVideosInsightsViewModel } from './../../../../../sharedLogic'
 
 const safe = (v) => (v == null ? '' : String(v))
 const toNum = (v) => {

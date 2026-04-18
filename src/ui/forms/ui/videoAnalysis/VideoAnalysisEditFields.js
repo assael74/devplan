@@ -8,101 +8,120 @@ import TagsContainer from '../../../domains/tags/TagInputContainer.js'
 import VideoCommentsField from '../../../fields/inputUi/videos/VideoCommentsField.js'
 
 const sx = {
-  sectionCard: {
+  root: (layout) => ({
     display: 'grid',
-    gap: 1,
-    p: 1.25,
-    borderRadius: 'md',
-    border: '1px solid',
-    borderColor: 'divider',
-    bgcolor: 'background.surface',
-  },
+    gap: 1.25,
+    minWidth: 0,
+  }),
 
-  grid: {
+  block: (cols = '1fr', gap = 0.85) => ({
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-    gap: 0.85,
-    pt: 0.85,
-  }
+    gridTemplateColumns: cols,
+    gap,
+    minWidth: 0,
+  }),
+
+  title: {
+    fontWeight: 600,
+  },
 }
 
 export default function VideoAnalysisEditFields({
   draft,
-  setDraft,
+  onDraft,
   context,
+  layout = {
+    topCols: { xs: '1fr', md: '1fr' },
+    mainCols: { xs: '1fr', md: '1fr 1fr' },
+    notesCols: { xs: '1fr', md: '1fr' },
+    tagsCols: { xs: '1fr', md: '1fr' },
+  },
 }) {
-  const setField = (key) => (value) => {
-    setDraft((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
   return (
-    <Box sx={{ display: 'grid', gap: 1.25 }}>
-      <Box sx={sx.sectionCard} >
-        <Divider>
-          <Typography sx={{ fontWeight: 600 }}>פרטי הוידאו</Typography>
-        </Divider>
+    <Box sx={sx.root(layout)}>
+      <Divider>
+        <Typography level="title-sm" sx={sx.title}>
+          פרטי הוידאו
+        </Typography>
+      </Divider>
 
-        <Box sx={sx.grid}>
-          <Box sx={{ gridColumn: '1 / -1', mb: 2 }}>
-            <VideoNameField
-              size="sm"
-              value={draft?.name || ''}
-              onChange={(value) => setField('name')(value || '')}
-            />
-          </Box>
-
-          <MonthPicker
-            size="sm"
-            value={draft?.month ?? ''}
-            onChange={(value) => setField('month')(value || '')}
-          />
-
-          <YearPicker
-            size="sm"
-            value={draft?.year ?? ''}
-            onChange={(value) => setField('year')(value || '')}
-          />
-        </Box>
+      <Box sx={sx.block(layout.topCols, 1)}>
+        <VideoNameField
+          size="sm"
+          value={draft?.name || ''}
+          onChange={(value) =>
+            onDraft({
+              ...draft,
+              name: value || '',
+            })
+          }
+        />
       </Box>
 
-      <Box sx={sx.sectionCard}>
-        <Divider>
-          <Typography sx={{ fontWeight: 600 }}>הערות</Typography>
-        </Divider>
+      <Box sx={sx.block(layout.mainCols)}>
+        <MonthPicker
+          size="sm"
+          value={draft?.month ?? ''}
+          onChange={(value) =>
+            onDraft({
+              ...draft,
+              month: value || '',
+            })
+          }
+        />
 
-        <Box sx={{ gridColumn: '1 / -1', mt: 2 }}>
-          <VideoCommentsField
-            minRows={2}
-            placeholder="הערות"
-            value={draft?.notes || ''}
-            onChange={(value) => setField('notes')(value || '')}
-          />
-        </Box>
+        <YearPicker
+          size="sm"
+          value={draft?.year ?? ''}
+          onChange={(value) =>
+            onDraft({
+              ...draft,
+              year: value || '',
+            })
+          }
+        />
       </Box>
 
-      <Box sx={sx.sectionCard}>
-        <Divider>
-          <Typography sx={{ fontWeight: 600 }}>תגים</Typography>
-        </Divider>
+      <Divider>
+        <Typography level="title-sm" sx={sx.title}>
+          הערות
+        </Typography>
+      </Divider>
 
-        <Box sx={{ gridColumn: '1 / -1', minWidth: 0, pb: 3, mt: 2 }}>
-          <TagsContainer
-            value={draft?.tagIds || []}
-            options={context?.tags || []}
-            onChange={(tagIds) =>
-              setDraft((prev) => ({
-                ...prev,
-                tagIds,
-              }))
-            }
-            type="analysis"
-            chipVariant="solid"
-            typeColor="#0F766E"
-          />
-        </Box>
+      <Box sx={sx.block(layout.notesCols, 1)}>
+        <VideoCommentsField
+          minRows={2}
+          placeholder="הערות"
+          value={draft?.notes || ''}
+          onChange={(value) =>
+            onDraft({
+              ...draft,
+              notes: value || '',
+            })
+          }
+        />
+      </Box>
+
+      <Divider>
+        <Typography level="title-sm" sx={sx.title}>
+          תגים
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.block(layout.tagsCols, 1)}>
+        <TagsContainer
+          value={draft?.tagIds || []}
+          options={context?.tags || []}
+          onChange={(tagIds) =>
+            onDraft({
+              ...draft,
+              tagIds,
+            })
+          }
+          type="analysis"
+          chipVariant="solid"
+          typeColor="#0F766E"
+        />
       </Box>
     </Box>
   )

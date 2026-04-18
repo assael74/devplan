@@ -92,7 +92,7 @@ export function buildMeetingsFilterOptions(list) {
   const typeMap = buildCountMap(items, (m) => m?.typeId || m?.type)
   const statusMap = buildCountMap(items, (m) => m?.statusId)
   const monthMap = buildCountMap(items, (m) => m?.monthKey)
-
+  
   return {
     types: buildFixedOptions(
       MEETING_TYPES,

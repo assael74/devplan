@@ -5,6 +5,8 @@ import {
   PlayCircle,
   VideoLibrary,
   VideocamRounded,
+  EventAvailable,
+  DatasetLinked
 } from '@mui/icons-material';
 
 export const videoIcons = {
@@ -14,4 +16,7 @@ export const videoIcons = {
   video: <VideoLibrary />,
   videoAnalysis: <Analytics />,
   videoGeneral: <VideocamRounded />,
+  videoEvent: <EventAvailable />,
+  playerAnalysis: <DatasetLinked />,
+  playerAnalysis: <DatasetLinked />
 };

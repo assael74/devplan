@@ -77,13 +77,25 @@ export {
 // ----- GAMES / ENTRY DRAWER -----
 export * from './games/entryDrawer/entryEditDrawer.utils.js'
 
-// ----- MEETINGS / DRAWER -----
-export * from './meetings/drawer/form.logic.js'
-export * from './meetings/drawer/meetingDraft.mapper.js'
-
 // ----- MEETINGS / MODULE -----
 export * from './meetings/module/meetings.buckets.js'
 export * from './meetings/module/meetings.filters.js'
 export * from './meetings/module/meetings.normalize.js'
 export { default as useMeetingsWorkspace } from './meetings/module/useMeetingsWorkspace.js'
 export { default } from './meetings/module/useMeetingsWorkspace.js'
+
+// ----- VIDEOS / MODULE -----
+export * from './videos/module/playerVideos.domain.logic.js'
+export * from './videos/module/playerVideos.filters.logic.js'
+
+// ----- VIDEOS / INSIGHTS DRAWER -----
+export * from './videos/insightsDrawer/videosInsightsDrawer.logic.js'
+
+// ----- VIDEOS / EDIT DRAWER -----
+export {
+  buildInitialDraft as buildVideoInitialDraft,
+  buildPatch as buildVideoPatch,
+  getIsDirty as getIsVideoDirty,
+  buildVideoMeta,
+  safe as safeVideoValue,
+} from './videos/editDrawer/playerVideoEdit.logic.js'

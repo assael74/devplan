@@ -1,22 +1,23 @@
-// features/hub/components/mobile/HubSectionCardMobile.js
+// features/hub/components/mobile/HubSectionCardMobile.j
 
 import React from 'react'
-import { Sheet, Box, Typography } from '@mui/joy'
+import { Sheet, Box, Typography, Avatar } from '@mui/joy'
 
 import { hubMobileSx as sx } from './sx/hubMobile.sx'
 
 export default function HubSectionCardMobile({
+  tab,
   label,
   icon = null,
   count,
+  color,
   onClick,
+  avatarSrc,
 }) {
   return (
-    <Sheet variant="soft" onClick={onClick} sx={sx.cardSheet}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        <Box sx={{ display: 'grid', placeItems: 'center', minWidth: 24, minHeight: 24 }}>
-          {icon}
-        </Box>
+    <Sheet variant="soft" onClick={onClick} sx={sx.cardSheet(color)}>
+      <Box sx={sx.card}>
+        <Avatar src={avatarSrc} sx={{ border: '1px solid', borderColor: 'divider' }} />
 
         {typeof count === 'number' ? (
           <Typography level="body-xs" sx={{ color: 'text.tertiary', flexShrink: 0 }}>

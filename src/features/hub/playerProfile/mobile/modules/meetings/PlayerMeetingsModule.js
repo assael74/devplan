@@ -10,15 +10,19 @@ import MobileFiltersDrawerShell from '../../../../../../ui/patterns/filters/Mobi
 import useMeetingsWorkspace from '../../../sharedLogic/meetings/module/useMeetingsWorkspace.js'
 import { useMeetingHubUpdate } from '../../../../hooks/meetings/useMeetingHubUpdate.js'
 
+import MeetingsToolbar from './components/toolbar/MeetingsToolbar.js'
 import MeetingsListPane from './components/MeetingsListPane.js'
-import MeetingsFilters from './components/MeetingsFilters.js'
+import MeetingsFilters from './components/toolbar/MeetingsFilters.js'
 import MeetingScreen from './components/meetingForm/MeetingScreen.js'
+
+import { profileSx as sx } from './../../sx/profile.sx'
 
 const FALLBACK_VIDEO_LINK = 'https://drive.google.com/uc?id=1ZVjdelIdccdtifMfN4ZtwYlLIVnaFsGR'
 
 export default function PlayerMeetingsModule({ entity }) {
   const ws = useMeetingsWorkspace(entity)
   const [screen, setScreen] = useState('list')
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const { run, pending } = useMeetingHubUpdate(ws.selected)
 
@@ -47,28 +51,33 @@ export default function PlayerMeetingsModule({ entity }) {
   )
 
   return (
-    <SectionPanelMobile bodySx={{ p: 0, pb: 0, minHeight: 0 }}>
-      <Box
-        sx={{
-          minHeight: 'calc(100dvh - 96px)',
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-        }}
-      >
+    <SectionPanelMobile>
+      <Box sx={sx.moduleRoot}>
+        <MeetingsToolbar
+          filters={ws.filters}
+          filterOptions={ws.filterOptions}
+          filteredCount={ws.filtered.length}
+          meetingsCount={ws.meetings.length}
+          indicators={ws.indicators}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onChangeFilters={ws.onChange}
+          onClearFilter={ws.onClearFilter}
+          onResetFilters={ws.onReset}
+          onAdd={ws.onAdd}
+        />
+
+       </Box>
+
         {screen === 'list' ? (
           <MeetingsListPane
             filters={ws.filters}
+            filterOptions={ws.filterOptions}
             filteredCount={ws.filtered.length}
             meetingsCount={ws.meetings.length}
             meetings={ws.filtered}
             selectedId={ws.selectedId}
             indicators={ws.indicators}
             onSelectId={handleSelectMeeting}
-            onOpenFilters={() => ws.setDrawerOpen(true)}
-            onClearFilter={ws.onClearFilter}
-            onResetFilters={ws.onReset}
-            onAdd={ws.onAdd}
           />
         ) : (
           <MeetingScreen
@@ -79,14 +88,15 @@ export default function PlayerMeetingsModule({ entity }) {
             onBack={handleBackToList}
           />
         )}
-      </Box>
 
       <MobileFiltersDrawerShell
-        open={ws.drawerOpen}
-        onClose={() => ws.setDrawerOpen(false)}
-        title="סינון פגישות"
+        open={filtersOpen}
+        entity="player"
+        onClose={() => setFiltersOpen(false)}
+        title="פילטרים לסינון פגישות"
+        resultsText={`${ws.filtered.length} מתוך ${ws.meetings.length} פגישות`}
         onReset={ws.onReset}
-        hasActiveFilters={ws.hasActiveFilters}
+        resetDisabled={!ws.hasActiveFilters}
       >
         <MeetingsFilters
           filters={ws.filters}

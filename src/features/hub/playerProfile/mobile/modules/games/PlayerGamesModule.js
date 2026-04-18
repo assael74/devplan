@@ -16,7 +16,7 @@ import {
   resolvePlayerGamesFiltersDomain,
 } from './../../../sharedLogic'
 
-import { moduleSx as sx } from './sx/module.sx.js'
+import { profileSx as sx } from './../../sx/profile.sx'
 
 export default function PlayerGamesModule({ entity, context }) {
   const livePlayer = useMemo(() => {
@@ -54,7 +54,7 @@ export default function PlayerGamesModule({ entity, context }) {
 
   return (
     <SectionPanelMobile>
-      <Box sx={sx.root}>
+      <Box sx={sx.moduleRoot}>
         <PlayerGamesToolbar
           summary={summary}
           filters={filters}

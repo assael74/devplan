@@ -8,6 +8,7 @@ import PlayerInfoModule from '../modules/info/PlayerInfoModule'
 import PlayerAbilitiesModule from '../modules/abilities/PlayerAbilitiesModule'
 import PlayerGamesModule from '../modules/games/PlayerGamesModule'
 import PlayerMeetingsModule from '../modules/meetings/PlayerMeetingsModule'
+import PlayerVideosModule from '../modules/videos/PlayerVideosModule'
 
 const modulesProjectMap = {
   info: PlayerInfoModule,
@@ -16,7 +17,7 @@ const modulesProjectMap = {
   performance: null,
   meetings: PlayerMeetingsModule,
   payments: null,
-  videoAnalysis: null,
+  videoAnalysis: PlayerVideosModule,
   trainings: null
 }
 
@@ -25,7 +26,7 @@ const modulesMap = {
   abilities: PlayerAbilitiesModule,
   games: PlayerGamesModule,
   performance: null,
-  videoAnalysis: null
+  videoAnalysis: PlayerVideosModule
 }
 
 export default function PlayerModules({ entity, context, tab }) {

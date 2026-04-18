@@ -8,64 +8,34 @@ import NotesRoundedIcon from '@mui/icons-material/NotesRounded'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { cardSx as sx } from '../sx/card.sx.js'
 
-function getStatusTone(meeting) {
-  const statusId = String(meeting?.statusId || '')
-  const ms = Number.isFinite(meeting?.ms) ? meeting.ms : null
-  const isPastByDate = Number.isFinite(ms) ? ms < Date.now() : false
-
-  if (statusId === 'canceled' || isPastByDate) {
-    return {
-      tone: 'danger',
-      statusBg: 'danger.softBg',
-      statusColor: 'danger.softColor',
-      glow: '0 10px 28px rgba(211, 47, 47, 0.16)',
-      icon: 'meetingCancel',
-    }
-  }
-
-  if (statusId === 'done') {
-    return {
-      tone: 'success',
-      statusBg: 'success.softBg',
-      statusColor: 'success.softColor',
-      glow: '0 10px 28px rgba(46, 125, 50, 0.16)',
-      icon: 'meetingDone',
-    }
-  }
-
-  return {
-    tone: 'primary',
-    statusBg: 'primary.softBg',
-    statusColor: 'primary.softColor',
-    glow: '0 10px 28px rgba(25, 118, 210, 0.16)',
-    icon: 'meetings',
-  }
-}
-
 export default function MeetingCard({ meeting, active, onSelect, onQuickEdit }) {
   const date = meeting?.meetingDate || 'ללא תאריך'
   const time = meeting?.meetingHour || ''
   const hasVideo = Boolean(meeting?.videoId || meeting?.videoLink)
   const hasNotes = Boolean(String(meeting?.notes || '').trim())
-  const tone = getStatusTone(meeting)
+  const tone = {
+    tone: meeting?.tone || 'primary',
+    statusBg: meeting?.statusBg || 'primary.softBg',
+    statusColor: meeting?.statusColor || 'primary.softColor',
+    glow: meeting?.glow || '0 10px 28px rgba(25, 118, 210, 0.16)',
+    icon: meeting?.toneIcon || meeting?.statusIcon || 'meetings',
+  }
 
   return (
     <Card sx={sx.root(active, tone)} variant="plain" onClick={() => onSelect(meeting)}>
       <Box sx={sx.topRow}>
         <Box sx={sx.titleWrap}>
           <Box sx={sx.titleRow}>
-            <Box sx={sx.leadingIcon(tone)}>
-              {iconUi({ id: tone.icon, size: 'sm' })}
-            </Box>
+            <Box sx={sx.leadingIcon(tone)}> {iconUi({ id: meeting?.typeIcon })} </Box>
 
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
+              <Box sx={sx.boxType}>
                 <Typography level="title-sm" sx={{ fontWeight: 700, minWidth: 0 }} noWrap>
                   {meeting?.typeLabel || 'מפגש'}
                 </Typography>
 
                 {meeting?.statusLabel ? (
-                  <Chip size="sm" variant="soft" sx={sx.statusChip(tone)}>
+                  <Chip size="sm" variant="soft" sx={sx.statusChip(tone)} startDecorator={iconUi({ id: meeting?.statusIcon })}>
                     {meeting.statusLabel}
                   </Chip>
                 ) : null}

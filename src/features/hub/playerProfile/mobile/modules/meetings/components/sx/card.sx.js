@@ -52,9 +52,18 @@ export const cardSx = {
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
+    border: '1px solid',
+    borderColor: 'divider',
     bgcolor: tone?.statusBg || 'primary.softBg',
     color: tone?.statusColor || 'primary.softColor',
   }),
+
+  boxType: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: 1,
+    alignItems: 'flex-start'
+  },
 
   dateRow: {
     mt: 0.35,
