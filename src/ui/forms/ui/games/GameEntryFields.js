@@ -41,8 +41,9 @@ export default function GameEntryFields({
   draft = {},
   onFieldChange,
   limits = {},
-  pending = false,
   labels = {},
+  pending = false,
+  fieldDisabled = {},
   layout = defaultLayout,
 }) {
   const {
@@ -70,7 +71,7 @@ export default function GameEntryFields({
 
   const goalsText = `נכבשו ${totalGoalsInGame} שערים · עודכנו כבר ${otherGoalsUsed} · נותר ${goalsLeft} לעדכון`
   const assistsText = `נכבשו ${totalAssistsInGame} · ${otherAssistsUsed} נרשמו לאחרים · נותר ${assistsLeft} לעדכון`
-  
+
   return (
     <Box sx={sx.root}>
       {hasGoalUpdates ? (

@@ -47,6 +47,7 @@ export const actionIcons = {
   addMeeting: <LibraryAdd />,
   addPayment: <AddShoppingCart />,
   addPlayer: <PersonAdd />,
+  addParent: <GroupAdd />,
   addPlayers: <GroupAdd />,
   addRole: <Engineering />,
   addStats: <Addchart />,

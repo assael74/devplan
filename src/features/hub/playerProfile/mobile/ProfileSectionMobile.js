@@ -39,7 +39,7 @@ export default function ProfileSectionMobile({
       <Box sx={sx.sectionHeader}>
         <Box sx={sx.sectionHeaderMain}>
           <Box sx={sharedSx?.navIcon(true, colors, { width: 28, height: 28 })}>
-            {iconUi({id: currentTab?.icon || 'dot', sx: { fontSize: 16, color: 'inherit' } })}
+            {iconUi({ id: currentTab?.icon || 'dot', sx: { fontSize: 16, color: 'inherit' } })}
           </Box>
 
           <Box sx={{ minWidth: 0, flex: 1 }}>

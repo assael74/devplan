@@ -15,10 +15,11 @@ const clean = (v) => String(v ?? '').trim()
 
 export default function PrivateCreateFields({
   draft,
+  layout,
   onDraft,
   context,
   validity,
-  layout,
+  fieldDisabled = {},
 }) {
   const playerFirstName = draft?.playerFirstName || ''
   const playerLastName = draft?.playerLastName || ''

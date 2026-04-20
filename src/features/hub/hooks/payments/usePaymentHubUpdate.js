@@ -7,18 +7,19 @@ export function usePaymentHubUpdate(active) {
     routerEntityType: 'payments',
     snackEntityType: 'payment',
     id: active?.id,
-    entityName: '',
+    entityName: active?.paymentFor || 'תשלום',
     requireAnyUpdated: true,
   })
 
-  const run = (patch, meta = {}) => {
+  const run = (type, patch, meta) => {
+    const update = paymentUpdate
     const paymentId = meta?.paymentId || active?.id
 
-    return paymentUpdate.runUpdate(patch, {
+    return update.runUpdate(patch, {
       ...meta,
       id: paymentId,
       paymentId,
-      createIfMissing: false,
+      createIfMissing: meta?.createIfMissing ?? false,
     })
   }
 

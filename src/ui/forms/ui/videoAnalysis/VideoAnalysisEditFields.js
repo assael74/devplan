@@ -36,6 +36,7 @@ export default function VideoAnalysisEditFields({
     notesCols: { xs: '1fr', md: '1fr' },
     tagsCols: { xs: '1fr', md: '1fr' },
   },
+  fieldDisabled = {},
 }) {
   return (
     <Box sx={sx.root(layout)}>

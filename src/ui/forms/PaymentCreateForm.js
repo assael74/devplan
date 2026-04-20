@@ -52,6 +52,7 @@ export default function PaymentCreateForm({
     <PaymentCreateFields
       draft={draft}
       onDraft={onDraft}
+      fieldDisabled={{ status: true }}
       onValidChange={onValidChange}
       context={context}
       validity={validity}

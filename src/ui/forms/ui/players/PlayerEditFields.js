@@ -21,6 +21,7 @@ import { editSx as sx } from './sx/edit.sx.js'
 export default function PlayerEditFields({
   draft,
   setDraft,
+  fieldDisabled = {},
 }) {
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>

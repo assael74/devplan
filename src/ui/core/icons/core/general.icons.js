@@ -14,7 +14,8 @@ import {
   Visibility,
   ViewWeek,
   ScheduleSend,
-  Summarize
+  Summarize,
+  FamilyRestroom
 } from '@mui/icons-material';
 
 export const generalIcons = {
@@ -34,5 +35,6 @@ export const generalIcons = {
   readiness: <Visibility />,
   reliability: <Visibility />,
   calendar: <ScheduleSend />,
-  summary: <Summarize />
+  summary: <Summarize />,
+  parents: <FamilyRestroom />
 };

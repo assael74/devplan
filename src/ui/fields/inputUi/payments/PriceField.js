@@ -15,14 +15,14 @@ export default function PriceField({
     <FormControl error={error}>
       <FormLabel required={required} sx={{ fontSize: '12px' }}> {label} </FormLabel>
       <Input
-        value={value}
+        value={value ?? 0}
         type="number"
         size={size}
         autoComplete="off"
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => onChange(e.target.value)}
         placeholder="0 הכנס סכום"
         startDecorator="₪"
-        min={0}
+        slotProps={{ input: { min: 0, max: 20 } }}
         step={1}
         disabled={disabled}
       />

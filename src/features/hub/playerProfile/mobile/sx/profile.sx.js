@@ -18,7 +18,6 @@ export const profileSx = {
     minHeight: 0,
     overflowY: 'auto',
     overflowX: 'hidden',
-    pb: 10,
   },
 
   sheet: {
@@ -26,11 +25,10 @@ export const profileSx = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    bgcolor: 'background.body',
   },
 
   scroll: {
-    height: '100%',
+    flex: 1,
     minHeight: 0,
     overflowY: 'auto',
     overflowX: 'hidden',
@@ -41,7 +39,6 @@ export const profileSx = {
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
   },
 
   boxScreen: {
@@ -81,23 +78,25 @@ export const profileSx = {
   box: {
     flex: 1,
     minHeight: 0,
-    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    px: 1,
-    pt: 1,
+    overflow: 'visible',
+    p:0.5,
     pb: 0,
   },
 
   moduleRoot: {
     position: 'sticky',
-    top: -6,
-    zIndex: 5,
+    top: 0,
+    zIndex: 20,
     display: 'grid',
     gap: 1,
     borderRadius: 12,
     bgcolor: 'background.body',
     mb: 0.5,
-    boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+    p: 0,
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: `0 6px 18px -12px ${c.accent}40`,
   }
 }

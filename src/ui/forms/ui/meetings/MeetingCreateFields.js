@@ -13,10 +13,11 @@ import { createSx as sx } from './sx/create.sx.js'
 
 export default function MeetingCreateFields({
   draft,
+  layout,
   onDraft,
   context,
   validity,
-  layout,
+  fieldDisabled = {},
 }) {
   const playerId = draft?.playerId || ''
   const type = draft?.type || ''

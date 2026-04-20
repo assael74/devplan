@@ -5,7 +5,7 @@ import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
-import { infoModuleSx as sx } from './info.module.sx.js'
+import { profileSx as sx } from './../../sx/profile.sx'
 
 import PlayerStatusCard from './components/PlayerStatusCard.js'
 import ProjectStatusCard from './components/ProjectStatusCard.js'
@@ -58,22 +58,20 @@ export default function PlayerInfoModule({ entity, context }) {
   }
 
   return (
-    <SectionPanelMobile disableInnerScroll={true} bodySx={{ px: 0, pb: 27 }}>
-      <Box sx={sx.root}>
-        <Box sx={sx.stack}>
-          <PlayerStatusCard player={player} onUpdate={onUpdate} pending={pending} />
-          <PlayerNamesCard player={player} onUpdate={onUpdate} pending={pending} />
-          <PlayerBirthCard player={player} onUpdate={onUpdate} pending={pending} />
-          <PlayerAffiliationCard
-            player={player}
-            onUpdate={onUpdate}
-            pending={pending}
-            clubsOptions={context?.clubs}
-            teamsOptions={context?.teams}
-          />
-          <ProjectStatusCard player={player} onUpdate={onUpdate} pending={pending} />
-          <PlayerPhysicalCard player={player} onUpdate={onUpdate} pending={pending} />
-        </Box>
+    <SectionPanelMobile>
+      <Box sx={sx.moduleRoot}>
+        <PlayerStatusCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerNamesCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerBirthCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerAffiliationCard
+          player={player}
+          onUpdate={onUpdate}
+          pending={pending}
+          clubsOptions={context?.clubs}
+          teamsOptions={context?.teams}
+        />
+        <ProjectStatusCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerPhysicalCard player={player} onUpdate={onUpdate} pending={pending} />
       </Box>
     </SectionPanelMobile>
   )

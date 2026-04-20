@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Input, Option, Select, Typography, Chip, Button, ChipDelete } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { playerVideosToolbarSx as sx } from '../sx/playerVideos.toolbar.sx.js'
+import { toolbarSx as sx } from '../sx/toolbar.sx.js'
 
 function SelectValue({ label, icon, count, fixedWidth }) {
   return (

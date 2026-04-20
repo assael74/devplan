@@ -84,6 +84,12 @@ export * from './meetings/module/meetings.normalize.js'
 export { default as useMeetingsWorkspace } from './meetings/module/useMeetingsWorkspace.js'
 export { default } from './meetings/module/useMeetingsWorkspace.js'
 
+// ----- PAYMENTS / MODULE -----
+export * from './payments/index.js'
+
+// ----- TRAININGS / MODULE -----
+export * from './trainings/index.js'
+
 // ----- VIDEOS / MODULE -----
 export * from './videos/module/playerVideos.domain.logic.js'
 export * from './videos/module/playerVideos.filters.logic.js'

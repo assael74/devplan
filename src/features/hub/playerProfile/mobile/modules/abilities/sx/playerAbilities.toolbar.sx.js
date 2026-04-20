@@ -7,11 +7,10 @@ const c = getEntityColors('players')
 export const toolbarSx = {
   toolbar: {
     display: 'grid',
-    gap: 0.85,
+    gap: 0.75,
     p: 1,
     borderRadius: '16px',
-    bgcolor: 'background.surface',
-    boxShadow: 'sm',
+    bgcolor: 'background.level',
   },
 
   topRow: {

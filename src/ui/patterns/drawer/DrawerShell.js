@@ -1,6 +1,8 @@
 // ui/patterns/drawer/DrawerShell.js
 
 import React from 'react'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, DialogContent } from '@mui/joy'
 
 import { iconUi } from '../../core/icons/iconUi.js'
@@ -33,6 +35,9 @@ export default function DrawerShell({
   resetButtonProps = {},
   deleteButtonProps = {},
 }) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
   const {
     onSave,
     onReset,
@@ -68,7 +73,7 @@ export default function DrawerShell({
       anchor={anchor}
       onClose={closeHandler}
       slotProps={{
-        content: { sx: sx.root, },
+        content: { sx: sx.root(isMobile), },
       }}
     >
       <Sheet sx={sx.sheet}>

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
-import PlayerVideoCard from './PlayerVideoCard.js'
+import { VideoAnalysisMobileCard } from '../../../../../../../ui/domains/video/videoAnalysis/mobile/index.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
@@ -24,14 +24,13 @@ export default function PlayerVideosList({
   }
 
   return (
-    <Box sx={sx.listWrap}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, pt: 1 }}>
       {rows.map((row) => (
-        <PlayerVideoCard
+        <VideoAnalysisMobileCard
           key={row.id}
           video={row}
-          onWatchVideo={onWatchVideo}
+          onWatch={onWatchVideo}
           onEdit={onEditVideo}
-          onOpenNotes={onOpenNotes}
         />
       ))}
     </Box>

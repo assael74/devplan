@@ -5,6 +5,7 @@ import {
   Payments,
   PublishedWithChanges,
   VolunteerActivism,
+  SupervisorAccount
 } from '@mui/icons-material';
 
 export const paymentsIcons = {
@@ -16,4 +17,5 @@ export const paymentsIcons = {
   paymentRequest: <VolunteerActivism />,
   paymentRequst: <VolunteerActivism />,
   payments: <Payments />,
+  playerParents: <SupervisorAccount />
 };

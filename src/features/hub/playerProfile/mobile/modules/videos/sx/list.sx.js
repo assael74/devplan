@@ -1,12 +1,6 @@
 // hub/playerProfile/mobile/modules/videos/sx/list.sx.js
 
 export const listSx = {
-  listWrap: {
-    display: 'flex',
-    gap: 0.75,
-    //pb: 0.5,
-  },
-
   emptyState: {
     display: 'grid',
     gap: 0.5,

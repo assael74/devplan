@@ -68,7 +68,7 @@ export default function MeetingScreen({
   }
 
   return (
-    <Sheet sx={formSx.detailsScreen} variant="outlined">
+    <Sheet>
       <MeetingHeader
         selected={selected}
         isEditing={isEditing}
@@ -82,9 +82,7 @@ export default function MeetingScreen({
         onSave={handleSave}
       />
 
-      <Divider />
-
-      <Box sx={formSx.detailsScroll} className="dpScrollThin">
+      <Box>
         <MeetingForm isEditing={isEditing} draft={draft} onDraft={setDraft} />
         <MeetingNotes isEditing={isEditing} selected={selected} draft={draft} onDraft={setDraft} />
         <MeetingVideo selected={draft || selected} onOpenVideo={onOpenVideo} />

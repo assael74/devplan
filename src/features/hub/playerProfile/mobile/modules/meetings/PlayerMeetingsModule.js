@@ -52,42 +52,43 @@ export default function PlayerMeetingsModule({ entity }) {
 
   return (
     <SectionPanelMobile>
-      <Box sx={sx.moduleRoot}>
-        <MeetingsToolbar
-          filters={ws.filters}
-          filterOptions={ws.filterOptions}
-          filteredCount={ws.filtered.length}
-          meetingsCount={ws.meetings.length}
-          indicators={ws.indicators}
-          onOpenFilters={() => setFiltersOpen(true)}
-          onChangeFilters={ws.onChange}
-          onClearFilter={ws.onClearFilter}
-          onResetFilters={ws.onReset}
-          onAdd={ws.onAdd}
-        />
-
-       </Box>
-
-        {screen === 'list' ? (
-          <MeetingsListPane
+      {screen === 'list' ? (
+        <Box sx={sx.moduleRoot}>
+          <MeetingsToolbar
             filters={ws.filters}
             filterOptions={ws.filterOptions}
             filteredCount={ws.filtered.length}
             meetingsCount={ws.meetings.length}
-            meetings={ws.filtered}
-            selectedId={ws.selectedId}
             indicators={ws.indicators}
-            onSelectId={handleSelectMeeting}
+            onOpenFilters={() => setFiltersOpen(true)}
+            onChangeFilters={ws.onChange}
+            onClearFilter={ws.onClearFilter}
+            onResetFilters={ws.onReset}
+            onAdd={ws.onAdd}
           />
-        ) : (
-          <MeetingScreen
-            selected={ws.selected}
-            pending={pending}
-            onSave={handleSaveMeeting}
-            onOpenVideo={ws.onOpenVideo}
-            onBack={handleBackToList}
-          />
-        )}
+        </Box>
+      ) : null}
+
+      {screen === 'list' ? (
+        <MeetingsListPane
+          filters={ws.filters}
+          filterOptions={ws.filterOptions}
+          filteredCount={ws.filtered.length}
+          meetingsCount={ws.meetings.length}
+          meetings={ws.filtered}
+          selectedId={ws.selectedId}
+          indicators={ws.indicators}
+          onSelectId={handleSelectMeeting}
+        />
+      ) : (
+        <MeetingScreen
+          selected={ws.selected}
+          pending={pending}
+          onSave={handleSaveMeeting}
+          onOpenVideo={ws.onOpenVideo}
+          onBack={handleBackToList}
+        />
+      )}
 
       <MobileFiltersDrawerShell
         open={filtersOpen}

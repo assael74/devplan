@@ -5,11 +5,11 @@ import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
 const c = (entity) => getEntityColors(entity)
 
 export const drawerSx = {
-  root: {
-    bgcolor: 'transparent',
+  root: (isMobile) => ({
+    bgcolor: !isMobile ? 'transparent' : '',
     p: { xs: 0, md: 3 },
     boxShadow: 'none',
-  },
+  }),
 
   sheet: {
     borderRadius: 'md',

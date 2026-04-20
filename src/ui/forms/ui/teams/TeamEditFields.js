@@ -27,6 +27,7 @@ function setField(setDraft, key, value) {
 export default function TeamEditFields({
   draft,
   setDraft,
+  fieldDisabled = {},
 }) {
   return (
     <Box sx={sx.root}>

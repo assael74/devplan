@@ -9,6 +9,8 @@ import PlayerAbilitiesModule from '../modules/abilities/PlayerAbilitiesModule'
 import PlayerGamesModule from '../modules/games/PlayerGamesModule'
 import PlayerMeetingsModule from '../modules/meetings/PlayerMeetingsModule'
 import PlayerVideosModule from '../modules/videos/PlayerVideosModule'
+import PlayerTrainingsModule from '../modules/trainings/PlayerTrainingsModule'
+import PlayerPaymentsModule from '../modules/payments/PlayerPaymentsModule'
 
 const modulesProjectMap = {
   info: PlayerInfoModule,
@@ -16,16 +18,16 @@ const modulesProjectMap = {
   games: PlayerGamesModule,
   performance: null,
   meetings: PlayerMeetingsModule,
-  payments: null,
+  payments: PlayerPaymentsModule,
   videoAnalysis: PlayerVideosModule,
-  trainings: null
+  trainings: PlayerTrainingsModule
 }
 
 const modulesMap = {
   info: PlayerInfoModule,
   abilities: PlayerAbilitiesModule,
   games: PlayerGamesModule,
-  performance: null,
+  performance: PlayerPaymentsModule,
   videoAnalysis: PlayerVideosModule
 }
 

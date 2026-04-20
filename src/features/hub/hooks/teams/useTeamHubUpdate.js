@@ -14,7 +14,7 @@ export function useTeamHubUpdate(active) {
   const run = (type, patch, meta) => {
     const update = teamUpdate
     const teamId = meta?.teamId || active?.id
-    console.log(patch)
+
     return update.runUpdate(patch, {
       ...meta,
       id: teamId,

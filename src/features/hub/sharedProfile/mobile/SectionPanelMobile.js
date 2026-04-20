@@ -10,14 +10,14 @@ export default function SectionPanelMobile({
   right,
   subtitle,
   children,
-  isMobile
 }) {
   return (
-    <Sheet variant="soft" sx={sx.panel} className="dpScrollThin">
+    <Sheet variant="plain" sx={sx.panel}>
       {(title || subtitle || right) ? (
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flex: '0 0 auto' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             {title ? <Typography level="title-sm">{title}</Typography> : null}
+
             {subtitle ? (
               <Typography level="body-xs" sx={{ opacity: 0.75, mt: 0.25 }} noWrap>
                 {subtitle}
@@ -29,7 +29,7 @@ export default function SectionPanelMobile({
         </Box>
       ) : null}
 
-      <Box sx={{ minWidth: 0, pt: title || subtitle || right ? 0.75 : 0, pb: 6, overflow: 'visible' }}>
+      <Box sx={{ minWidth: 0, minHeight: 0, pt: title || subtitle || right ? 0.75 : 0, overflow: 'visible' }}>
         {children}
       </Box>
     </Sheet>

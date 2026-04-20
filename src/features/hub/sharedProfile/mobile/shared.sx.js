@@ -119,11 +119,11 @@ export const sharedSx = {
   panel: {
     p: 1,
     borderRadius: 'md',
-    height: '100dvh',
+    flex: 1,
+    minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto',
-    overflowX: 'hidden',
+    overflow: 'visible'
   },
 
   pathRoot: {

@@ -110,7 +110,7 @@ export default function EditDrawer({
     >
       <VideoAnalysisEditFields
         draft={draft}
-        setDraft={setDraft}
+        onDraft={setDraft}
         context={context}
       />
     </DrawerShell>

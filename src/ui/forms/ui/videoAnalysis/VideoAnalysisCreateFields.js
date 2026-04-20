@@ -29,6 +29,7 @@ export default function VideoAnalysisCreateFields({
   isMeetingMode,
   objectTypeOptions,
   contextTypeOptions,
+  fieldDisabled = {},
 }) {
   const contextType = draft?.contextType || ''
   const objectType = draft?.objectType || ''

@@ -8,15 +8,17 @@ import DateInputField from '../../../fields/dateUi/DateInputField'
 import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectField'
 import PaymentTypeSelector from '../../../fields/checkUi/payments/PaymentTypeSelector'
 import PriceField from '../../../fields/inputUi/payments/PriceField.js'
+import PaymentStatusSelectField from '../../../fields/selectUi/payments/PaymentStatusSelectField.js'
 
 import { pcfSx } from './sx/paymentCreateForm.sx.js'
 
 export default function PaymentCreateFields({
   draft,
+  layout,
   onDraft,
   context,
   validity,
-  layout,
+  fieldDisabled = {},
 }) {
   const players = context?.players || []
 
@@ -25,13 +27,35 @@ export default function PaymentCreateFields({
       <Box sx={{ height: 10 }} />
 
       <Box sx={pcfSx.block(layout.topCols, 1.5)}>
-        <PlayerSelectField
-          value={draft.playerId}
-          options={players}
-          size="sm"
-          disabled={draft.playerId}
-          context={context}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <PlayerSelectField
+            size="sm"
+            options={players}
+            value={draft.playerId}
+            context={context}
+            onChange={(v) => onDraft({ ...draft, playerId: v || '' })}
+            disabled={Boolean(draft.playerId)}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <PaymentStatusSelectField
+            value={draft?.status?.id || 'new'}
+            onChange={(v) =>
+              onDraft({
+                ...draft,
+                status: {
+                  ...draft?.status,
+                  id: v || 'new',
+                },
+              })
+            }
+            disabled={fieldDisabled?.status}
+            size="sm"
+            chip={false}
+            label="סטטוס תשלום"
+          />
+        </Box>
       </Box>
 
       <Box sx={{ height: 30 }} />
@@ -43,19 +67,23 @@ export default function PaymentCreateFields({
       </Divider>
 
       <Box sx={pcfSx.block(layout.mainCols)}>
-        <PriceField
-          required
-          value={draft.price}
-          onChange={(v) => onDraft({ ...draft, price: v })}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <PriceField
+            required
+            value={draft.price}
+            onChange={(v) => onDraft({ ...draft, price: v })}
+            size="sm"
+          />
+        </Box>
 
-        <PaymentTypeSelector
-          required
-          value={draft.type}
-          onChange={(v) => onDraft({ ...draft, type: v })}
-          size="lg"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <PaymentTypeSelector
+            required
+            value={draft.typeId}
+            onChange={(v) => onDraft({ ...draft, typeId: v })}
+            size="lg"
+          />
+        </Box>
       </Box>
 
       <Box sx={{ height: 30 }} />
@@ -67,13 +95,15 @@ export default function PaymentCreateFields({
       </Divider>
 
       <Box sx={pcfSx.block(layout.topCols)}>
-        <MonthYearPicker
-          context="payment"
-          required
-          value={draft.paymentFor}
-          onChange={(v) => onDraft({ ...draft, paymentFor: v })}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <MonthYearPicker
+            context="payment"
+            required
+            value={draft.paymentFor}
+            onChange={(v) => onDraft({ ...draft, paymentFor: v, dueMonth: v })}
+            size="sm"
+          />
+        </Box>
       </Box>
     </Box>
   )

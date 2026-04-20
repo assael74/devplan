@@ -2,9 +2,9 @@
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
-import PlayerVideoRow from './PlayerVideoRow.js'
+import { VideoAnalysisRow } from '../../../../../../../ui/domains/video/videoAnalysis/desktop/index.js'
 
-import { playerVideosListSx as sx } from '../sx/playerVideos.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 export default function PlayerVideosList({
   rows,
@@ -25,14 +25,13 @@ export default function PlayerVideosList({
   }
 
   return (
-    <Box sx={{ display: 'grid', gap: 0.35 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, pt: 1 }}>
       {rows.map((row) => (
-        <PlayerVideoRow
+        <VideoAnalysisRow
           key={row.id}
           video={row}
-          onWatchVideo={onWatchVideo}
+          onWatch={onWatchVideo}
           onEdit={onEditVideo}
-          onOpenNotes={onOpenNotes}
         />
       ))}
     </Box>
