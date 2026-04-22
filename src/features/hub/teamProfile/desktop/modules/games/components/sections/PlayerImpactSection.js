@@ -1,12 +1,12 @@
 import React from 'react'
 import { Box } from '@mui/joy'
 
-import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import {
   getGamePlayers,
   getScorers,
   getAssisters,
-} from './teamGames.section.utils.js'
+} from './../../../../../sharedLogic/games'
 import TeamPlayersStatRow from './TeamPlayersStatRow.js'
 
 export function PlayerImpactSection({ game }) {

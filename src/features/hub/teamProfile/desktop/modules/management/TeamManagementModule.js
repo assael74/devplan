@@ -6,9 +6,13 @@ import { Box } from '@mui/joy'
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import { teamManagementModuleSx as sx } from './sx/teamManagement.module.sx.js'
-import { buildTeamManagementModel, buildTeamManagementPatch } from './logic/teamManagement.logic.js'
-import { isTeamManagementDirty } from './logic/teamManagement.dirty.js'
+import { moduleSx as sx } from './module.sx.js'
+
+import {
+  buildTeamManagementModel,
+  buildTeamManagementPatch,
+  isTeamManagementDirty,
+} from '../../../sharedLogic/management'
 
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'

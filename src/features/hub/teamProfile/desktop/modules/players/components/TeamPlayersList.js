@@ -1,10 +1,10 @@
-// teamProfile/modules/players/components/TeamPlayersList.js
+// teamProfile/desktop/modules/players/components/TeamPlayersList.js
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
 import TeamPlayerRow from './TeamPlayerRow.js'
 
-import { teamPlayersListSx as sx } from '../sx/teamPlayers.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 export default function TeamPlayersList({
   rows,

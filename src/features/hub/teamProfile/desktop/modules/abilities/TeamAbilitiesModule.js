@@ -1,4 +1,4 @@
-// teamProfile/modules/abilities/TeamAbilitiesModule.js
+// teamProfile/desktop/modules/abilities/TeamAbilitiesModule.js
 
 import React, { useMemo, useState } from 'react'
 import { Box, Grid, Typography, Divider, Card, CardContent } from '@mui/joy'
@@ -8,9 +8,11 @@ import { resolveTeamAbilitiesDomain } from '../../../../../../shared/abilities/a
 import TeamAbilitiesToolbar from './components/TeamAbilitiesToolbar.js'
 import AbilitiesDomainCard from './components/AbilitiesDomainCard.js'
 import TeamAbilitiesInsightsDrawer from './components/insightsDrawer/TeamAbilitiesInsightsDrawer.js'
-import { isFilled } from './logic/abilities.logic.js'
-import useAbilitiesSummary from './logic/useAbilitiesSummary.js'
-import { abilitiesModuleSx, stickyHeaderWrapSx } from './sx/Ability.module.sx.js'
+import {
+  isFilled,
+  useAbilitiesSummary,
+} from './../../../sharedLogic/abilities'
+import { moduleSx as sx } from './sx/module.sx.js'
 
 const DEFAULT_SELECTED_DOMAINS = [
   'technical',
@@ -100,8 +102,8 @@ export default function TeamAbilitiesModule({ entity, context }) {
   }
 
   return (
-    <Box sx={abilitiesModuleSx} className="dpScrollThin">
-      <Box sx={stickyHeaderWrapSx}>
+    <Box sx={sx.toolbarWrap} className="dpScrollThin">
+      <Box sx={sx.sticky}>
         <TeamAbilitiesToolbar
           team={team}
           total={total}

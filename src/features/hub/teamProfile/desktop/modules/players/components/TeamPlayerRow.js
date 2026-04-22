@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/TeamPlayerRow.js
+// teamProfile/desktop/modules/players/components/TeamPlayerRow.js
 
 import React from 'react'
 import { Box, Chip, Divider, IconButton, Tooltip, Typography } from '@mui/joy'
@@ -11,7 +11,7 @@ import EntityActionsMenu from '../../../../../sharedProfile/EntityActionsMenu.js
 import InfoSection from './sections/InfoSection.js'
 import PositionsSection from './sections/PositionsSection.js'
 
-import { teamPlayersListSx as sx } from '../sx/teamPlayers.list.sx.js'
+import { listSx as sx } from '../sx/list.sx'
 
 export default function TeamPlayerRow({
   row,

@@ -1,12 +1,10 @@
-// teamProfile/modules/players/TeamPlayersModule.js
+// teamProfile/desktop/modules/players/TeamPlayersModule.js
 
 import React, { useMemo, useState } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
-
-import { resolveTeamPlayers } from './logic/teamPlayers.logic.js'
 
 import TeamPlayersToolbar from './components/TeamPlayersToolbar.js'
 import TeamPlayersList from './components/TeamPlayersList.js'
@@ -18,6 +16,8 @@ import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersIn
 
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
+
+import { resolveTeamPlayers } from '../../../sharedLogic/players'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 

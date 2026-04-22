@@ -20,8 +20,8 @@ import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { buildFallbackAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { teamPlayersInsightsSx as sx } from './sx/teamPlayers.insights.sx.js'
-import { buildTeamPlayersInsights } from './logic/teamPlayers.insights.logic.js'
+import { insightsSx as sx } from './sx/insights.sx.js'
+import { buildTeamPlayersInsights } from '../../../../../sharedLogic/players'
 
 const c = getEntityColors('teams')
 

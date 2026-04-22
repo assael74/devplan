@@ -6,15 +6,11 @@ import { Box } from '@mui/joy'
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel'
 import EmptyState from '../../../../sharedProfile/EmptyState'
 
-import TeamImpactPanel from './components/TeamImpactPanel'
-import PerformanceKpiControls from './components/PerformanceKpiControls'
-import PerformanceStatsSummary from '../../../../../../ui/domains/performance/PerformanceStatsSummary'
-
-import { PRESETS } from './components/performance.table.meta'
 import {
+  PRESETS,
   buildTeamPackFromEntity,
   buildPlayersPackFromEntity,
-} from './components/logic/teamPerformance.packs.logic'
+} from '../../../sharedLogic/performance'
 
 import { statsParm } from '../../../../../../shared/stats/statsParmList'
 
@@ -61,52 +57,7 @@ export default function TeamPerformanceModule({ entity }) {
 
   return (
     <SectionPanel>
-      <Box sx={{ display: 'grid', gap: 1 }}>
-        <PerformanceKpiControls
-          sx={{
-            kpiSheet: { p: 1.25, borderRadius: 'md', width: '100%' },
-            kpiGrid: {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1,
-              flexWrap: 'wrap',
-            },
-            kpiLeft: { display: 'flex', gap: 0.75, flexWrap: 'wrap' },
-            kpiRight: { display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center' },
-          }}
-          domain={playersDomain}
-          preset={preset}
-          onPresetChange={setPreset}
-          presets={PRESETS}
-          playersCount={playersDomain?.meta?.playersTotalCount || 0}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          canNormalizeAny={playersDomain?.meta?.canNormalizeAny === true}
-          gameType={gameType}
-          setGameType={setGameType}
-        />
-
-        {!hasPlayers ? (
-          <EmptyState title="אין שחקנים בקבוצה" />
-        ) : (
-          <>
-            <PerformanceStatsSummary
-              fullStats={teamFullStatsForSummary}
-              statsParm={teamPack?.filteredStatsParm || statsParm}
-            />
-
-            <TeamImpactPanel
-              team={team}
-              statsParm={statsParm}
-              perPlayer={perPlayer}
-              preset={preset}
-              onPresetChange={setPreset}
-              viewMode={viewMode}
-            />
-          </>
-        )}
-      </Box>
+        
     </SectionPanel>
   )
 }

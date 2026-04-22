@@ -97,6 +97,9 @@ export * from './videos/module/playerVideos.filters.logic.js'
 // ----- VIDEOS / INSIGHTS DRAWER -----
 export * from './videos/insightsDrawer/videosInsightsDrawer.logic.js'
 
+// ----- PERFORMANCE / MODULE -----
+export * from './performance/performance.domain.logic.js'
+
 // ----- VIDEOS / EDIT DRAWER -----
 export {
   buildInitialDraft as buildVideoInitialDraft,

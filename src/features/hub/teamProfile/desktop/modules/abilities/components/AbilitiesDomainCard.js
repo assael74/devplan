@@ -20,20 +20,9 @@ import {
   getScoreColor,
   calcDomainScore,
   DOMAIN_ACCENT,
-} from '../logic/abilities.logic.js'
+} from './../../../../sharedLogic/abilities'
 
-import {
-  boxDomainSx,
-  domainCardSx,
-  domainTitleSx,
-  domainAvgWrapSx,
-  domainAvgCircleWrapSx,
-  domainAvgCircleCenterSx,
-  domainAvgBarSx,
-  domainEmptyBoxSx,
-  domainItemChipSx,
-  domainItemBarSx,
-} from '../sx/Ability.module.sx'
+import { moduleSx as sx } from '../sx/module.sx.js'
 
 export default function AbilitiesDomainCard({ domain }) {
   const domainAvg = Number(domain?.avg)
@@ -44,13 +33,13 @@ export default function AbilitiesDomainCard({ domain }) {
   const avgLabel = domain?.hasRated ? domain?.avgLabel : '—'
 
   return (
-    <Card variant="outlined" sx={domainCardSx(accent)}>
+    <Card variant="outlined" sx={sx.domainCard(accent)}>
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography
             level="title-sm"
             startDecorator={iconUi({ id: domain?.domain })}
-            sx={domainTitleSx(accent)}
+            sx={{color: `${accent}.700`, fontWeight: 600}}
           >
             {domain?.domainLabel}
           </Typography>
@@ -60,8 +49,8 @@ export default function AbilitiesDomainCard({ domain }) {
           </Chip>
         </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={domainAvgWrapSx}>
-          <Box sx={domainAvgCircleWrapSx}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ position: 'relative', width: 48, height: 48 }}>
+          <Box sx={{ my: 1 }}>
             <CircularProgress
               determinate
               value={pct}
@@ -69,7 +58,7 @@ export default function AbilitiesDomainCard({ domain }) {
               size="sm"
               sx={{ width: 48, height: 48 }}
             />
-            <Box sx={domainAvgCircleCenterSx}>
+            <Box sx={sx.domainAvgCircle}>
               <Typography level="body-xs">{toFixed1(domainAvg)}</Typography>
             </Box>
           </Box>
@@ -78,7 +67,7 @@ export default function AbilitiesDomainCard({ domain }) {
             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
               ממוצע דומיין
             </Typography>
-            <LinearProgress determinate value={pct} color={domainColor} sx={domainAvgBarSx} />
+            <LinearProgress determinate value={pct} color={domainColor} sx={{ width: 160 }} />
           </Stack>
         </Stack>
 
@@ -92,7 +81,7 @@ export default function AbilitiesDomainCard({ domain }) {
             const tip = item?.description || item?.label
 
             return (
-              <Box key={item?.id} sx={boxDomainSx}>
+              <Box key={item?.id} sx={sx.boxDomain}>
                 {tip ? (
                   <Tooltip title={tip} placement="top" enterDelay={250}>
                     <Typography level="body-sm" startDecorator={iconUi({ id: item?.id })}>
@@ -109,7 +98,7 @@ export default function AbilitiesDomainCard({ domain }) {
                   size="sm"
                   variant={filled ? 'soft' : 'outlined'}
                   color={itemColor}
-                  sx={domainItemChipSx(filled)}
+                  sx={{ minWidth: 32, fontWeight: filled ? 600 : 400 }}
                 >
                   {filled ? item?.value : '—'}
                 </Chip>
@@ -120,7 +109,7 @@ export default function AbilitiesDomainCard({ domain }) {
                   color={itemColor}
                   size="sm"
                   variant="plain"
-                  sx={domainItemBarSx}
+                  sx={{ gridColumn: '1 / -1' }}
                 />
               </Box>
             )
@@ -128,7 +117,7 @@ export default function AbilitiesDomainCard({ domain }) {
         </Stack>
 
         {filledCount === 0 && (
-          <Box sx={domainEmptyBoxSx}>
+          <Box sx={sx.domainEmpty}>
             <Typography level="body-xs" color="neutral">
               אין נתונים בדומיין זה
             </Typography>

@@ -1,3 +1,5 @@
+// teamProfile/desktop/modules/videos/components/sections/TeamVideoSection.js
+
 import React, { useMemo } from 'react'
 import {
   Box,
@@ -11,7 +13,7 @@ import { VideoPreviewMedia } from '../../../../../../../../ui/domains/video/vide
 import { compactMediaSx } from '../../../../../../../../ui/domains/video/videoAnalysis/sx/videoPreviewMedia.sx.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
-import { teamVideosSectionsSx as sx } from '../../sx/teamVideos.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('videoAnalysis')

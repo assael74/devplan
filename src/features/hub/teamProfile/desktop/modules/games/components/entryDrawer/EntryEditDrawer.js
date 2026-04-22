@@ -12,14 +12,14 @@ import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate
 
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
 import {
-  buildInitialDraft,
-  buildPatch,
+  buildTeamGameEntryInitialDraft,
+  buildTeamGameEntryPatch,
   clampStatToRowLimit,
-  getIsDirty,
-  getIsValid,
+  getTeamGameEntryIsDirty,
+  getTeamGameEntryIsValid,
   getValidationMessage,
   setRowField,
-} from './logic/teamGamEentryEdit.logic.js'
+} from './../../../../../sharedLogic/games'
 
 const defaultEntryFilters = {
   squad: 'all',
@@ -34,7 +34,7 @@ export default function EntryEditDrawer({
   onSaved,
 }) {
   const team = context?.team || game?.team || {}
-  const initial = useMemo(() => buildInitialDraft(game, team, context), [game, team, context])
+  const initial = useMemo(() => buildTeamGameEntryInitialDraft(game, team, context), [game, team, context])
   const [draft, setDraft] = useState(initial)
   const [filters, setFilters] = useState(defaultEntryFilters)
 
@@ -44,9 +44,9 @@ export default function EntryEditDrawer({
     setFilters(defaultEntryFilters)
   }, [open, initial])
 
-  const isValid = useMemo(() => getIsValid(draft), [draft])
-  const isDirty = useMemo(() => getIsDirty(draft), [draft])
-  const patch = useMemo(() => buildPatch(draft), [draft])
+  const isValid = useMemo(() => getTeamGameEntryIsValid(draft), [draft])
+  const isDirty = useMemo(() => getTeamGameEntryIsDirty(draft), [draft])
+  const patch = useMemo(() => buildTeamGameEntryPatch(draft), [draft])
   const validationMessage = useMemo(() => getValidationMessage(draft), [draft])
 
   const { run, pending } = useGameHubUpdate(game)

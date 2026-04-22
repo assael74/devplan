@@ -1,3 +1,5 @@
+// playerProfile/desktop/modules/games/PlayerGamesModule.js
+
 import React, { useMemo, useState } from 'react'
 import { Box } from '@mui/joy'
 
@@ -37,7 +39,7 @@ export default function PlayerGamesModule({ entity, context }) {
   }, [livePlayer, filters])
 
   const { summary, games, options, indicators } = domain || {}
-  
+
   const handleChangeFilters = (patch) => {
     setFilters((prev) => ({
       ...prev,

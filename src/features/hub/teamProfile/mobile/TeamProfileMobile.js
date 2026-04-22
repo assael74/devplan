@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { Box, Sheet } from '@mui/joy'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { TEAM_TABS } from '../teamProfile.routes'
 
@@ -15,11 +15,11 @@ import ProfileSectionMobile from './ProfileSectionMobile'
 
 import { profileSx as sx } from './sx/profile.sx'
 
-function TeamSectionsPicker({ activeTab }) {
+function TeamSectionsPicker({ tabs, activeTab }) {
   return (
     <Box sx={{ px: 1.25, pt: 1, pb: 1.25 }}>
       <NavCardsMobile
-        tabs={TEAM_TABS}
+        tabs={tabs}
         activeTab={activeTab}
         defaultTab={null}
       />
@@ -35,31 +35,42 @@ export default function TeamProfileMobile({
   taskContext,
   counts,
 }) {
-  const [sp, setSp] = useSearchParams()
+  const navigate = useNavigate()
+
+  const tabs = TEAM_TABS
 
   const tabsMeta = useMemo(() => {
-    return TEAM_TABS.map((item) => ({
+    return tabs.map((item) => ({
       value: item.key,
       label: item.label,
-      icon: null,
+      icon: item.iconKey,
+      color: item.color,
     }))
-  }, [])
+  }, [tabs])
 
   const hasActiveSection = Boolean(selectedTab)
 
-  const handleBack = () => {
-    const next = new URLSearchParams(sp)
-    next.delete('tab')
-    setSp(next)
+  const handleBackToProfile = () => {
+    navigate(`/teams/${entity?.id}`)
+  }
+
+  const handleBackToHub = () => {
+    navigate('/hub')
   }
 
   if (!hasActiveSection) {
     return (
       <Sheet sx={sx.sheetNotActive}>
-        <TeamHeader entity={entity} context={context} tab={tab} counts={counts} />
+        <TeamHeader
+          entity={entity}
+          context={context}
+          tab={tab}
+          counts={counts}
+          onBack={handleBackToHub}
+        />
 
         <Box className="dpScrollThin" sx={sx.scrollNotActive}>
-          <TeamSectionsPicker activeTab={selectedTab} />
+          <TeamSectionsPicker tabs={tabs} activeTab={selectedTab} />
         </Box>
 
         <TeamProfileFab
@@ -74,13 +85,19 @@ export default function TeamProfileMobile({
 
   return (
     <Sheet sx={sx.sheet}>
-      <TeamHeader entity={entity} context={context} tab={tab} counts={counts} />
+      <TeamHeader
+        entity={entity}
+        context={context}
+        tab={tab}
+        counts={counts}
+        onBack={handleBackToHub}
+      />
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ProfileSectionMobile
           mode={tab}
           tabsMeta={tabsMeta}
-          onBack={handleBack}
+          onBack={handleBackToProfile}
         >
           <Box className="dpScrollThin" sx={sx.scroll}>
             <TeamModules entity={entity} context={context} tab={tab} />

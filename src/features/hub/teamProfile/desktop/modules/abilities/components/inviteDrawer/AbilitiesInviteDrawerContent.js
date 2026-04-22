@@ -18,7 +18,7 @@ import { editDrawerSx as sx } from './sx/drawer.sx.js'
 import {
   clean,
   resolveRolePhoto,
-} from './logic/abilitiesInvite.logic.js'
+} from '../../../../sharedLogic/abilities'
 
 export default function AbilitiesInviteDrawerContent({
   createdState,

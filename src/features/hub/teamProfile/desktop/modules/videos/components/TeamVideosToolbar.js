@@ -1,10 +1,10 @@
-// teamProfile/modules/videos/components/TeamVideosToolbar.js
+// teamProfile/desktop/modules/videos/components/TeamVideosToolbar.js
 
 import React from 'react'
 import { Box, Input, Option, Select, Typography, Chip, Button, ChipDelete } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { teamVideosToolbarSx as sx } from '../sx/teamVideos.toolbar.sx.js'
+import { toolbarSx as sx } from '../sx/toolbar.sx.js'
 
 function SelectValue({ label, icon, count, fixedWidth }) {
   return (

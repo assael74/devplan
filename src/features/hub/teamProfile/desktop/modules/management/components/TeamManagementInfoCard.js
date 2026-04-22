@@ -19,7 +19,7 @@ import GoalsForField from '../../../../../../../ui/fields/inputUi/games/GoalsFor
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
 
-import { teamManagementModuleSx as sx } from '../sx/teamManagement.module.sx.js'
+import { moduleSx as sx } from '../module.sx.js'
 
 export default function TeamManagementInfoCard({
   draft,

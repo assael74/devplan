@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { teamGamesToolbarSx as sx } from '../../sx/teamGames.toolbar.sx.js'
+import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 export default function TeamGamesToolbarSelectValue({
   label,

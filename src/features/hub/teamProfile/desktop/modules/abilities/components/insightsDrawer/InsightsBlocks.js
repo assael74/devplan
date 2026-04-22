@@ -18,7 +18,7 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
-import { insightsBlockSx as sx } from './sx/teamAbilities.insightsBlock.sx.js'
+import { insightsBlockSx as sx } from './sx/insightsBlock.sx.js'
 
 const c = getEntityColors('teams')
 

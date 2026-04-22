@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/TeamPlayersToolbar.js
+// teamProfile/desktop/modules/players/components/TeamPlayersToolbar.js
 
 import React from 'react'
 import { Box, Button, Chip, Input, Option, Select, ListItemDecorator } from '@mui/joy'
@@ -6,7 +6,7 @@ import { Box, Button, Chip, Input, Option, Select, ListItemDecorator } from '@mu
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
-import { teamPlayersToolbarSx as sx } from '../sx/teamPlayers.toolbar.sx.js'
+import { toolbarSx as sx } from '../sx/toolbar.sx.js'
 
 const c = getEntityColors('players')
 

@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/TeamVideosModule.js
+// teamProfile/desktop/modules/videos/TeamVideosModule.js
 
 import React, { useMemo, useState } from 'react'
 import { Box } from '@mui/joy'
@@ -16,7 +16,7 @@ import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlaye
 import {
   createInitialTeamVideosFilters,
   resolveTeamVideosFiltersDomain,
-} from './logic/teamVideos.filters.logic.js'
+} from '../../../sharedLogic/videos'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 

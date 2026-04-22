@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Input, Option, Select, Chip, Button } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { teamGamesToolbarSx as sx } from '../../sx/teamGames.toolbar.sx.js'
+import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 import TeamGamesToolbarSelectValue from './TeamGamesToolbarSelectValue.js'
 import TeamGamesToolbarFilterChip from './TeamGamesToolbarFilterChip.js'
@@ -11,7 +11,7 @@ import {
   getHomeOptionColor,
   clearToolbarIndicator,
   safeArray,
-} from './teamGames.toolbar.utils.js'
+} from './../../../../../sharedLogic/games'
 
 export default function TeamGamesToolbarContent({
   summary,

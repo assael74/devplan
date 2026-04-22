@@ -4,13 +4,13 @@ import { Box, Typography, Avatar, Tooltip, Divider } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 import {
   getHomeAwayLabel,
   getHomeAwayIcon,
   getHomeAwayColor,
-} from './teamGames.section.utils.js'
+} from './../../../../../sharedLogic/games'
 
 export function InfoTeamsSection({ game }) {
   const team = game?.team

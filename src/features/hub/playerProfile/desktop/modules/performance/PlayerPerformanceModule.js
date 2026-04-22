@@ -1,151 +1,97 @@
-import React, { useMemo, useState, useCallback } from 'react'
-import { Box, Typography, Sheet, Tooltip, Switch, Chip } from '@mui/joy'
+// playerProfile/desktop/modules/performance/PlayerPerformanceModule.js
+
+import React, { useMemo, useState } from 'react'
+import { Box, Sheet, Typography } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
+import PerformanceToolbar from './components/toolbar/PerformanceToolbar.js'
+
+import {
+  INITIAL_PERFORMANCE_FILTERS,
+  resolvePlayerPerformanceDomain,
+} from './../../../sharedLogic/index.js'
+
 import PerformanceStatsSummary from '../../../../../../ui/domains/performance/PerformanceStatsSummary.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
-import { statsFilterGroups } from '../../../../../../shared/performance/filters/statsFilterGroups'
-//import { getActiveFiltersSummary } from '../../../../../ui/patterns/filters/filters.logic'
+const c = getEntityColors('players')
 
-import { buildNewFilteredStats } from '../../../../../../shared/performance/logic/perf.aggregate.logic.js'
-import { statsParm } from '../../../../../../shared/stats/statsParmList'
-import { iconUi } from '../../../../../../ui/core/icons/iconUi'
+export default function PlayerPerformanceModule({ entity, context }) {
+  const livePlayer = useMemo(() => {
+    const players = Array.isArray(context?.players) ? context.players : []
+    return players.find((p) => p?.id === entity?.id) || entity || null
+  }, [context?.players, entity])
 
-import { perfModuleSx } from './Performance.sx'
+  const [filters, setFilters] = useState(INITIAL_PERFORMANCE_FILTERS)
 
-export default function PlayerPerformanceModule({ entity }) {
-  const player = entity
+  const domain = useMemo(() => {
+    return resolvePlayerPerformanceDomain(livePlayer, filters)
+  }, [livePlayer, filters])
 
-  // --- normalize toggle ---
-  const [showNormalized, setShowNormalized] = useState(false)
-
-  // --- filters: stats ---
-  const [statsFilters, setStatsFilters] = useState({ statsParmType: 'all', type: 'all' })
-  const [openStatsFilters, setOpenStatsFilters] = useState(false)
-
-  const gamesRowsForStats = useMemo(() => {
-    const rows = Array.isArray(player?.playerGames) ? player.playerGames : []
-    const pid = player?.id
-
-    return rows
-      .map((g) => {
-        const game = g?.game || {}
-        const arr = Array.isArray(game.playerStats) ? game.playerStats : []
-        const perf = arr.find((x) => x?.playerId === pid)
-        if (!perf) return null
-
-        return {
-          gameId: g?.gameId || game?.id,
-          game: game,
-          stats: {
-            ...perf,
-            timePlayed: g?.stats?.timePlayed ?? perf?.timePlayed ?? null,
-            timeVideoStats: perf?.timeVideoStats ?? 0,
-            gameDuration: game?.gameDuration ?? null,
-          },
-        }
-      })
-      .filter(Boolean)
-  }, [player])
-
-  const res = useMemo(
-    () =>
-      buildNewFilteredStats(gamesRowsForStats, statsParm, statsFilters, {
-        statsKey: 'stats',
-        recordedMinutesKey: 'timeVideoStats',
-        gameDurationKeyInStats: 'gameDuration',
-      }),
-    [gamesRowsForStats, statsFilters]
-  )
-
-  const filteredStatsParm = (res && res.filteredStatsParm) || []
-  const filteredStats = (res && res.filteredStats) || []
-
-  const newFullStatsRaw = (res && (res.newFullStatsRaw || res.newFullStats)) || {}
-  const newFullStatsNorm = (res && res.newFullStatsNorm) || null
-
-  const statsMeta = (res && res.statsMeta) || {}
-  const canNormalize = !!(statsMeta && statsMeta.canNormalize && newFullStatsNorm)
-
-  const shownFullStats = useMemo(() => {
-    if (showNormalized && canNormalize) return newFullStatsNorm || newFullStatsRaw
-    return newFullStatsRaw
-  }, [showNormalized, canNormalize, newFullStatsRaw, newFullStatsNorm])
-
-  const hasSummaryBase = newFullStatsRaw && Object.keys(newFullStatsRaw).length > 0
-
-  const hasActiveStatsFilters = statsFilters.type !== 'all' || statsFilters.statsParmType !== 'all'
-  const statsSummary = useMemo(() => ({}), [])
-
-  const onStatsFilterChange = useCallback((key, value) => {
-    setStatsFilters((p) => ({ ...p, [key]: value }))
-  }, [])
-
-  const onStatsFilterReset = useCallback(() => {
-    setStatsFilters({ statsParmType: 'all', type: 'all' })
-  }, [])
-
-  if (!hasSummaryBase) {
-    return (
-      <SectionPanel>
-        <EmptyState title="אין סטטיסטיקה" desc="לא נמצאו נתוני סטטיסטיקה לשחקן." />
-      </SectionPanel>
-    )
+  const handleChangeFilters = (patch) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...(patch || {}),
+    }))
   }
+
+  const handleResetFilters = () => {
+    setFilters(INITIAL_PERFORMANCE_FILTERS)
+  }
+
+  const handleClearFilter = (key) => {
+    if (key === 'statsParmType') {
+      handleChangeFilters({ statsParmType: 'all' })
+      return
+    }
+
+    if (key === 'type') {
+      handleChangeFilters({ type: 'all' })
+    }
+  }
+
+  const hasGames = (domain?.summary?.gamesCount || 0) > 0
 
   return (
     <SectionPanel>
-      <Box sx={perfModuleSx.root}>
-        <Sheet {...perfModuleSx.statsPanel}>
-          <Box sx={perfModuleSx.statsHeaderRow}>
-            <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Typography level="title-sm" startDecorator={iconUi({ id: 'stats' })}>
-                סטטיסטיקה
-              </Typography>
-
-              <Tooltip
-                title={statsSummary && statsSummary.count ? `מסונן לפי: ${statsSummary.text}` : 'פילטרים לסטטיסטיקה'}
-                placement="bottom"
-                variant="solid"
-              >
-                <Box sx={{ display: 'inline-flex' }}>
-
-                </Box>
-              </Tooltip>
-
-              <Tooltip
-                title={
-                  canNormalize
-                    ? 'מציג סטטיסטיקה מנורמלת לפי זמן מצולם וזמן משחק מלא'
-                    : 'אין זמן מצולם/אין נתונים מתקדמים — לא ניתן לנרמל'
-                }
-                placement="bottom"
-                variant="solid"
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <Typography level="body-xs">נרמול</Typography>
-                  <Switch
-                    checked={showNormalized && canNormalize}
-                    disabled={!canNormalize}
-                    onChange={(e) => setShowNormalized(e.target.checked)}
-                  />
-                  <Chip size="sm" variant="soft" color={showNormalized && canNormalize ? 'primary' : 'neutral'}>
-                    {showNormalized && canNormalize ? 'מנורמל' : 'רגיל'}
-                  </Chip>
-                </Box>
-              </Tooltip>
-            </Box>
-
-            <Typography level="body-xs">
-              {filteredStats.length} משחקים · {filteredStatsParm.length} פרמטרים
-            </Typography>
-          </Box>
-
-          <PerformanceStatsSummary fullStats={shownFullStats} statsParm={filteredStatsParm} />
-        </Sheet>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -6,
+          zIndex: 5,
+          display: 'grid',
+          gap: 1,
+          borderRadius: 12,
+          bgcolor: 'background.body',
+          mb: 0.5,
+          boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+        }}
+      >
+        <PerformanceToolbar
+          domain={domain}
+          summary={domain.summary}
+          filters={filters}
+          indicators={domain.indicators}
+          options={domain.options}
+          onChangeFilters={handleChangeFilters}
+          onResetFilters={handleResetFilters}
+          onClearFilter={handleClearFilter}
+        />
       </Box>
+
+        {!hasGames ? (
+          <Sheet variant="outlined" sx={{ mt: 1, p: 1.25, borderRadius: 16, display: 'grid', gap: 1 }}>
+            <EmptyState title="אין נתוני ביצוע" subtitle="לא נמצאו משחקים עם סטטיסטיקה לשחקן." />
+          </Sheet>
+        ) : (
+          <PerformanceStatsSummary
+            fullStats={domain.fullStatsRaw}
+            statsParm={domain.filteredStatsParm}
+          />
+        )}
     </SectionPanel>
   )
 }

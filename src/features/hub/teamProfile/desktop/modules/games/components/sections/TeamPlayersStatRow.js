@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Chip, Typography, Avatar, Tooltip } from '@mui/joy'
-import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 export default function TeamPlayersStatRow({ title, players, statKey }) {
   const list = Array.isArray(players) ? players : []

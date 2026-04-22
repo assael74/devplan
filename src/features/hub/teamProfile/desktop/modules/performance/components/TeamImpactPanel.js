@@ -4,17 +4,12 @@ import { Avatar, Box, Chip, Sheet, Table, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
 import { getParmKey as getStatsParmKey } from '../../../../../../../shared/performance/logic/perf.statsParm'
-import { buildPlayersParmCoverage } from '../teamPerformance.logic'
-import { resolveTeamPerformanceDomain } from './logic/teamPerformance.domain.logic'
-import { teamPerformanceModalSx as sx, buildTableSx } from './performance.sx'
-
 import {
+  buildPlayersParmCoverage,
+  resolveTeamPerformanceDomain,
   LAYER_ORDER,
   LAYER_LABELS,
   buildLayerIndex,
-} from './logic/performanceModal.logic'
-
-import {
   PRESETS,
   BASE_KEYS,
   COL_W_AVATAR,
@@ -23,14 +18,16 @@ import {
   presetMatch,
   getBaseStatKeysByPreset,
   buildTableCols,
-} from './performance.table.meta'
+  buildRowsForView,
+  filterAndSortRows,
+  buildDynamicCols
+} from '../../../../sharedLogic/performance'
 
+import { teamPerformanceModalSx as sx, buildTableSx } from './performance.sx'
 import { initialsFromName, tdInlineStyle, fmtPct } from './performance.table.ui'
 
 import PerformanceFiltersBar from './PerformanceFiltersBar'
 import TeamImpactTableHeader from './TeamImpactTableHeader'
-import { buildDynamicCols } from './logic/teamImpact.columns.logic'
-import { buildRowsForView, filterAndSortRows } from './logic/teamImpact.rows.logic'
 
 export default function TeamImpactPanel(props) {
   const statsParm = props?.statsParm || []

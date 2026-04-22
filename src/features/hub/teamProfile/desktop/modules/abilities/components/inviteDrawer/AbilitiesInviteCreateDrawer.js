@@ -28,7 +28,7 @@ import {
   getCreatedWhatsappText,
   createInviteFlow,
   clean,
-} from './logic/abilitiesInvite.logic.js'
+} from '../../../../sharedLogic/abilities'
 
 export default function AbilitiesInviteCreateDrawer({
   open,

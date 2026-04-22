@@ -2,12 +2,12 @@ import React from 'react'
 import { Box, Chip, Typography, Tooltip, IconButton } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import {
   getGamePlayers,
   getSquadPlayers,
   getPlayedPlayers,
-} from './teamGames.section.utils.js'
+} from './../../../../../sharedLogic/games'
 
 export function PlayerEntrySection({ game, onEditEntry }) {
   const players = getGamePlayers(game)

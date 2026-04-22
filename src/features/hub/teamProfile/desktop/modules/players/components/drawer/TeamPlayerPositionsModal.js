@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/drawer/TeamPlayerPositionsModal.js
+// teamProfile/desktop/modules/players/components/drawer/TeamPlayerPositionsModal.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Box, Typography, Chip, Snackbar } from '@mui/joy'
@@ -14,11 +14,11 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { usePlayerHubUpdate } from './../../../../../../hooks/players/usePlayerHubUpdate.js'
 
 import {
-  safeArr,
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './teamPlayerQuickEdit.logic.js'
+  safeArr
+} from '../../../../../sharedLogic/players'
 
 export default function TeamPlayerPositionsDrawer({
   open,

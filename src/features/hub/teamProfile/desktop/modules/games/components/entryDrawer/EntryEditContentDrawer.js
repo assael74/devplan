@@ -21,10 +21,7 @@ import {
   getRemainingAssistsForRow,
   getRemainingGoalsForRow,
   getTeamGoalsLimit,
-  getGoalsTotal,
-  getAssistsTotal
-} from './logic/teamGamEentryEdit.logic.js'
-
+} from './../../../../../sharedLogic/games'
 
 function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
   const statsDisabled = !row?.onSquad || !isPlayed

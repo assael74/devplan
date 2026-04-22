@@ -4,8 +4,8 @@ import { Box } from '@mui/joy'
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import { resolveTeamTrainingsDomain } from './teamTrainings.domain.logic.js'
-import { trainModuleSx } from './trainings.sx'
+import { resolveTeamTrainingsDomain } from '../../../sharedLogic/trainings'
+
 import { TrainingSchedulePreview } from '../../../../../../ui/patterns/schedule'
 
 export default function TeamTrainingsModule({ entity, context, videoActions }) {

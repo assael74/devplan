@@ -1,10 +1,10 @@
-// teamProfile/modules/videos/components/TeamVideoList.js
+// teamProfile/desktop/modules/videos/components/TeamVideoList.js
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
 import TeamVideoRow from './TeamVideoRow.js'
 
-import { teamVideosListSx as sx } from '../sx/teamVideos.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 export default function TeamVideosList({
   rows,

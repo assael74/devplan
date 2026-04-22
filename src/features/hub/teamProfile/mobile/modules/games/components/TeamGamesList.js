@@ -1,0 +1,38 @@
+// teamProfile/mobile/modules/games/components/TeamGamesList.js
+
+import React from 'react'
+import { Box, Typography } from '@mui/joy'
+import TeamGameCardMobile from './gameCard/TeamGameCardMobile.js'
+
+import { moduleSx as sx } from '../sx/module.sx.js'
+
+export default function TeamGamesList({
+  rows,
+  onEditGame,
+  onEditEntryGame,
+}) {
+  if (!rows?.length) {
+    return (
+      <Box sx={sx.emptyState}>
+        <Typography level="title-sm">לא נמצאו משחקים</Typography>
+        <Typography level="body-sm" sx={{ opacity: 0.72 }}>
+          נסה לשנות פילטרים או לאפס את החיפוש.
+        </Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <Box sx={{ display: 'grid', gap: 0.35 }}>
+      {rows.map((game, index) => (
+        <TeamGameCardMobile
+          key={game?.id || game?.gameId || index}
+          game={game}
+          onEdit={onEditGame}
+          onEditEntry={onEditEntryGame}
+          defaultExpanded={false}
+        />
+      ))}
+    </Box>
+  )
+}

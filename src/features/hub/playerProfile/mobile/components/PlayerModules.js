@@ -11,12 +11,13 @@ import PlayerMeetingsModule from '../modules/meetings/PlayerMeetingsModule'
 import PlayerVideosModule from '../modules/videos/PlayerVideosModule'
 import PlayerTrainingsModule from '../modules/trainings/PlayerTrainingsModule'
 import PlayerPaymentsModule from '../modules/payments/PlayerPaymentsModule'
+import PlayerPerformanceModule from '../modules/performance/PlayerPerformanceModule'
 
 const modulesProjectMap = {
   info: PlayerInfoModule,
   abilities: PlayerAbilitiesModule,
   games: PlayerGamesModule,
-  performance: null,
+  performance: PlayerPerformanceModule,
   meetings: PlayerMeetingsModule,
   payments: PlayerPaymentsModule,
   videoAnalysis: PlayerVideosModule,

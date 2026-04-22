@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/drawer/TeamPlayerQuickEditDrawer.js
+// teamProfile/desktop/modules/players/components/drawer/TeamPlayerQuickEditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
@@ -17,7 +17,7 @@ import {
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './teamPlayerQuickEdit.logic.js'
+} from '../../../../../sharedLogic/players'
 
 export default function TeamPlayerQuickEditDrawer({
   open,

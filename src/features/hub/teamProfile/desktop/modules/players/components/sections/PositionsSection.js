@@ -1,10 +1,10 @@
-// teamProfile/modules/players/components/sections/PositionsSection.js
+// teamProfile/desktop/modules/players/components/sections/PositionsSection.js
 
 import React from 'react'
 import { Box, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { teamPlayersSectionsSx as sx } from '../../sx/teamPlayers.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 export default function PositionsSection({
   row,

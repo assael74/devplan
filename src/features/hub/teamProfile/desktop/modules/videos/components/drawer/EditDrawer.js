@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/drawer/EditDrawer.js
+// teamProfile/desktop/modules/videos/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
@@ -16,7 +16,7 @@ import {
   buildPatch,
   getIsDirty,
   buildVideoMeta,
-} from './teamVideoEdit.logic.js'
+} from '../../../../../sharedLogic/videos'
 
 export default function EditDrawer({
   open,

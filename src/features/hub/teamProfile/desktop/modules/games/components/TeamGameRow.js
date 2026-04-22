@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Divider, Tooltip, IconButton } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
-import { rowSx as sx } from '../sx/teamGames.row.sx.js'
+import { rowSx as sx } from '../sx/row.sx.js'
 import {
   InfoTeamsSection,
   ResultGameSection,

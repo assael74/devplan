@@ -2,15 +2,18 @@
 
 import React from 'react'
 import ProfileModuleRenderer from '../../../../hub/sharedProfile/ProfileModuleRenderer'
+import TeamAbilitiesModule from '../modules/abilities/TeamAbilitiesModule.js'
+import TeamGamesModule from '../modules/games/TeamGamesModule.js'
+import TeamManagementModule from '../modules/management/TeamManagementModule.js'
 
 
 // modules
 const modulesMap = {
-  management: null,
+  management: TeamManagementModule,
   players: null,
-  abilities: null,
+  abilities: TeamAbilitiesModule,
   performance: null,
-  games: null,
+  games: TeamGamesModule,
   videos: null,
   trainings: null
 }

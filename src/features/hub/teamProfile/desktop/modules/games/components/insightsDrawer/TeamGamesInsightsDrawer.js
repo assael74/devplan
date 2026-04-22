@@ -10,7 +10,7 @@ import { insightsDrawersSx as sx } from './sx/teamGames.insightsDrawer.sx.js'
 import { buildTeamGamesInsights } from '../../../../../../../../shared/games/insights/GamesInsights.build.js'
 import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
 
-import { buildTeamGamesDrawerViewModel } from './logic/teamGames.cards.logic.js'
+import { buildTeamGamesDrawerViewModel } from './../../../../../sharedLogic/games'
 
 export default function TeamGamesInsightsDrawer({
   open,

@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/sections/InfoSection.js
+// teamProfile/desktop/modules/players/components/sections/InfoSection.js
 
 import React from 'react'
 import { Avatar, Box, Chip, Typography } from '@mui/joy'
@@ -9,7 +9,7 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
-import { teamPlayersSectionsSx as sx } from '../../sx/teamPlayers.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 const c = getEntityColors('players')
 

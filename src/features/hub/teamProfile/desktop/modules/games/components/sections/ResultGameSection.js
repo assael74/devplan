@@ -2,8 +2,8 @@ import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { teamGamesSectionsSx as sx } from '../../sx/teamGames.sections.sx.js'
-import { getResultLabel, getResultColor } from './teamGames.section.utils.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
+import { getResultLabel, getResultColor } from './../../../../../sharedLogic/games'
 
 export function ResultGameSection({ game }) {
   return (

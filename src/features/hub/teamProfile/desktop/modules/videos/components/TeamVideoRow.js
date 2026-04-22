@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/TeamVideoRow.js
+// teamProfile/desktop/modules/videos/components/TeamVideoRow.js
 
 import React from 'react'
 import { Box, Divider, Tooltip, IconButton } from '@mui/joy'
@@ -13,7 +13,7 @@ import {
   ActionsSection,
 } from './sections/TeamVideoSection.js'
 
-import { rowSx as sx } from '../sx/teamVideos.row.sx.js'
+import { rowSx as sx } from '../sx/row.sx.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 

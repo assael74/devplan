@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, Sheet, Typography, Divider, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { insightsRowsSx as sx } from './sx/teamAbilities.insightsRows.sx.js'
+import { insightsRowsSx as sx } from './sx/insightsRows.sx.js'
 
 export function InsightRow({
   title,

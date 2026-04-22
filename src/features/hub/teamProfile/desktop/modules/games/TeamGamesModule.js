@@ -15,7 +15,7 @@ import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 import {
   createInitialTeamGamesFilters,
   resolveTeamGamesFiltersDomain,
-} from './logic/teamGames.filters.logic.js'
+} from '../../../sharedLogic/games'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 

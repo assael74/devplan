@@ -5,8 +5,8 @@ import { Drawer, Box, Sheet, DialogContent } from '@mui/joy'
 
 import { InsightRowsList } from './InsightsRows.js'
 import { StatCard, SectionBlock, InsightsDrawerHeader, InsightCardsGrid } from './InsightsBlocks.js'
-import { insightsDrawersSx as sx } from './sx/teamAbilities.insightsDrawer.sx.js'
-import { buildTeamAbilitiesInsightsDrawerModel } from './logic/insightsDrawer.logic.js'
+import { insightsDrawersSx as sx } from './sx/insightsDrawer.sx.js'
+import { buildTeamAbilitiesInsightsDrawerModel } from './../../../../../sharedLogic/abilities'
 
 export default function TeamAbilitiesInsightsDrawer({
   open,

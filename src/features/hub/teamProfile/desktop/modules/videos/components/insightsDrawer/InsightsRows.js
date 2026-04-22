@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/insightsDrawer/InsightsRows.js
+// teamProfile/desktop/modules/videos/components/insightsDrawer/InsightsRows.js
 
 import React from 'react'
 import { Box, Sheet, Typography, Divider, Chip } from '@mui/joy'

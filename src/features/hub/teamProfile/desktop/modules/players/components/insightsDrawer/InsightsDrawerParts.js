@@ -1,4 +1,4 @@
-// teamProfile/modules/players/components/insightsDrawer/InsightsDrawerParts.js
+// teamProfile/desktop/modules/players/components/insightsDrawer/InsightsDrawerParts.js
 
 import React from 'react'
 import { Box, Chip, Divider, Sheet, Typography, Avatar, DialogTitle, ModalClose } from '@mui/joy'
@@ -7,7 +7,7 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { buildFallbackAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { teamPlayersInsightsSx as sx } from './sx/teamPlayers.insights.sx.js'
+import { insightsSx as sx } from './sx/insights.sx.js'
 
 const c = getEntityColors('teams')
 const p = getEntityColors('players')

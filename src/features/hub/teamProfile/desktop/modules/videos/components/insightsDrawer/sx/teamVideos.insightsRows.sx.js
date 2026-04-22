@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/insightsDrawer/sx/teamVideos.insightsRows.sx.js
+// teamProfile/desktop/modules/videos/components/insightsDrawer/sx/teamVideos.insightsRows.sx.js
 
 import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 

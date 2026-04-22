@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/joy'
 import TeamGameRow from './TeamGameRow.js'
 
-import { teamGamesListSx as sx } from '../sx/teamGames.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 export default function TeamGamesList({
   rows,

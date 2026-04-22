@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/insightsDrawer/InsightsBlocks.js
+// teamProfile/desktop/modules/videos/components/insightsDrawer/InsightsBlocks.js
 
 import React from 'react'
 import {

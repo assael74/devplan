@@ -5,8 +5,8 @@ import { Box, Typography, Chip, Button } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import AbilitiesMultiSelectField from '../../../../../../../ui/fields/selectUi/abilities/AbilitiesMultiSelectField.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { teamAbilitiesToolbarSx as sx } from '../sx/teamAbilities.toolbar.sx.js'
-import { toFixed1, clamp0to5 } from '../logic/abilities.logic.js'
+import { toolbarSx as sx } from '../sx/toolbar.sx.js'
+import { toFixed1, clamp0to5 } from './../../../../sharedLogic/abilities'
 
 function StarRow({ label, value }) {
   const numLabel = toFixed1(value)

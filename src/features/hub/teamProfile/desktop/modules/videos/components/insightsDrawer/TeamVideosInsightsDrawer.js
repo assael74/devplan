@@ -1,4 +1,4 @@
-// teamProfile/modules/videos/components/insightsDrawer/TeamVideosInsightsDrawer.js
+// teamProfile/desktop/modules/videos/components/insightsDrawer/TeamVideosInsightsDrawer.js
 
 import React, { useMemo } from 'react'
 import { Drawer, Box, Sheet, DialogContent, Typography } from '@mui/joy'
@@ -7,7 +7,7 @@ import { InsightRowsList, MonthlyActivityList, } from './InsightsRows.js'
 import { StatCard, SectionBlock, InsightsDrawerHeader, MonthlyInsightsList } from './InsightsBlocks.js'
 
 import { insightsDrawersSx as sx } from './sx/teamVideos.insightsDrawer.sx.js'
-import { buildTeamVideosInsightsViewModel } from './logic/videosInsightsDrawer.logic.js'
+import { buildTeamVideosInsightsViewModel } from '../../../../../sharedLogic/videos'
 
 const safe = (v) => (v == null ? '' : String(v))
 const toNum = (v) => {

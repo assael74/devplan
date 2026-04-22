@@ -14,8 +14,8 @@ import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
 
 import {
   getGoalsTotal,
-  getAssistsTotal
-} from './logic/teamGamEentryEdit.logic.js'
+  getAssistsTotal,
+} from './../../../../../sharedLogic/games'
 
 function FilterChip({ active, label, onClick, color = 'primary' }) {
   return (

@@ -1,6 +1,8 @@
 // features/hub/teamProfile/mobile/components/TeamHeader.js
 
 import React, { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
@@ -9,16 +11,23 @@ import { uploadImageOnly } from '../../../../../services/firestore/storage/uploa
 
 const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
 
-export default function TeamHeader({ entity, context }) {
+export default function TeamHeader({ entity, context, onBack }) {
+  const navigate = useNavigate()
+
   const [openImg, setOpenImg] = useState(false)
 
-  const src = resolveEntityAvatar({ entityType: 'team', entity: entity, parentEntity: entity?.club, subline: entity?.club?.name, })
+  const src = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: context?.club || entity?.club,
+    subline: context?.club?.clubName || entity?.clubName || '',
+  })
 
   const [headerPhoto, setHeaderPhoto] = useState(src)
 
   useEffect(() => {
     setHeaderPhoto(src)
-  }, [entity?.photo, entity?.id])
+  }, [src, entity?.id])
 
   const metaCounts = useMemo(() => {
     const playersCount = len(entity?.players)
@@ -36,22 +45,45 @@ export default function TeamHeader({ entity, context }) {
     }
   }, [entity?.players, entity?.meetings, entity?.teamGames])
 
+  const subtitle = useMemo(() => {
+    const clubName = context?.club?.clubName || entity?.clubName || ''
+    const teamYear = entity?.teamYear || ''
+    return [clubName, teamYear].filter(Boolean).join(' · ')
+  }, [context?.club?.clubName, entity?.clubName, entity?.teamYear])
+
+  const pathItems = useMemo(() => {
+    return [
+      {
+        label: 'מרכז שליטה',
+        onClick: () => navigate('/hub'),
+      },
+      {
+        label: 'קבוצות',
+        onClick: () => navigate('/hub?tab=teams'),
+      },
+    ]
+  }, [navigate])
+
+  const rightNode = (
+    <EntityActionsMenu
+      entityType="team"
+      entityId={entity?.id}
+      entityName={entity?.teamName}
+      metaCounts={metaCounts}
+      isArchived={entity?.active === false}
+    />
+  )
+
   return (
     <>
       <HeaderStripMobile
-        title={entity?.teamName || ''}
-        subtitle={`${context?.club?.clubName || ''} · ${entity?.teamYear || ''}`}
+        title={entity?.teamName || 'קבוצה'}
+        subtitle={subtitle}
         avatarSrc={headerPhoto}
         onAvatarClick={() => setOpenImg(true)}
-        right={
-          <EntityActionsMenu
-            entityType="team"
-            entityId={entity?.id}
-            entityName={entity?.teamName}
-            metaCounts={metaCounts}
-            isArchived={entity?.active === false}
-          />
-        }
+        onBack={onBack}
+        pathItems={pathItems}
+        right={rightNode}
       />
 
       <EntityImageModal

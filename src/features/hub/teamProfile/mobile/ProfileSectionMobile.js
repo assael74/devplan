@@ -5,7 +5,24 @@ import { Box, Typography, IconButton } from '@mui/joy'
 
 import { profileSx as sx } from './sx/profile.sx'
 
+import { iconUi } from '../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
+import { sharedSx } from './../../sharedProfile/mobile/shared.sx.js'
+
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+
+const c = (entity) => getEntityColors(entity)
+
+function getSectionSubtitle(mode) {
+  if (mode === 'management') return 'חזרה לפרופיל הקבוצה'
+  if (mode === 'trainings') return 'אימונים, תכנון ומעקב'
+  if (mode === 'players') return 'סגל, שיוך ורשימת שחקנים'
+  if (mode === 'games') return 'רשימת משחקים ופרטי משחק'
+  if (mode === 'performance') return 'ביצועים, סטטיסטיקות ותובנות'
+  if (mode === 'abilities') return 'יכולות, ציונים ומגמות'
+  if (mode === 'videos') return 'וידאו, ניתוחים וקבצים'
+  return 'חזרה לפרופיל הקבוצה'
+}
 
 export default function ProfileSectionMobile({
   mode,
@@ -14,26 +31,49 @@ export default function ProfileSectionMobile({
   onBack,
 }) {
   const currentTab = tabsMeta.find((tab) => tab.value === mode) || null
+  const colors = c(currentTab?.color)
 
   return (
     <Box sx={sx.boxWraper}>
-      <Box sx={sx.boxScreen}>
-        <IconButton variant="soft" color="neutral" onClick={onBack} aria-label="חזרה">
-          <ArrowBackRoundedIcon />
-        </IconButton>
+      <Box sx={sx.sectionHeader}>
+        <Box sx={sx.sectionHeaderMain}>
+          <Box sx={sharedSx?.navIcon(true, colors, { width: 28, height: 28 })}>
+            {iconUi({
+              id: currentTab?.icon || 'dot',
+              sx: { fontSize: 16, color: 'inherit' },
+            })}
+          </Box>
 
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography level="title-md" noWrap>
-            {currentTab?.label || 'אזור'}
-          </Typography>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              level="title-sm"
+              noWrap
+              sx={{ fontWeight: 700, lineHeight: 1.1 }}
+            >
+              {currentTab?.label || 'אזור'}
+            </Typography>
 
-          <Typography level="body-xs" sx={{ mt: 0.25, color: 'text.tertiary' }}>
-            רשימת אובייקטים
-          </Typography>
+            <Typography
+              level="body-xs"
+              sx={{ mt: 0.25, color: 'text.tertiary' }}
+              noWrap
+            >
+              {getSectionSubtitle(mode)}
+            </Typography>
+          </Box>
         </Box>
 
-        <Box sx={{ display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          {currentTab?.icon || null}
+        <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            size="sm"
+            variant="soft"
+            color="neutral"
+            onClick={onBack}
+            aria-label="חזרה"
+            sx={{ flexShrink: 0 }}
+          >
+            <ArrowBackRoundedIcon />
+          </IconButton>
         </Box>
       </Box>
 

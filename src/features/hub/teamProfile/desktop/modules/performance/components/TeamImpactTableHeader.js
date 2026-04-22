@@ -2,10 +2,10 @@
 import React from 'react'
 import { Typography } from '@mui/joy'
 
-import { TRIPLET_GROUP_LABELS } from './performance.table.meta'
+import { TRIPLET_GROUP_LABELS } from '../../../../sharedLogic/performance'
 import { Th } from './performance.table.ui'
 
-export default function TeamImpactTableHeader({ cols, sortKey, sortDir, onSort, sx }) {
+export default function TeamImpactTableHeader({ cols, sortKey, sortDir, onSort }) {
   return (
     <>
       <tr>
