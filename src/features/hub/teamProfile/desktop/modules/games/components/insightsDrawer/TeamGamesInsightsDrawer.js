@@ -1,16 +1,25 @@
 // teamProfile/modules/games/components/insightsDrawer/TeamGamesInsightsDrawer.js
 
 import React, { useMemo } from 'react'
-import { Drawer, Box, Sheet, DialogContent } from '@mui/joy'
+import { Box } from '@mui/joy'
 
-import { InsightRowsList } from './InsightsRows.js'
-import { StatCard, SectionBlock, InsightsDrawerHeader } from './InsightsBlocks.js'
-import { insightsDrawersSx as sx } from './sx/teamGames.insightsDrawer.sx.js'
+import {
+  InsightsDrawerShell,
+  InsightsDrawerHeader,
+  InsightsSection,
+  InsightsStatCard,
+  InsightsChipsList,
+} from '../../../../../../../../ui/patterns/insights/index.js'
+
+import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { buildTeamGamesInsights } from '../../../../../../../../shared/games/insights/GamesInsights.build.js'
 import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
 
 import { buildTeamGamesDrawerViewModel } from './../../../../../sharedLogic/games'
+
+const c = getEntityColors('teams')
 
 export default function TeamGamesInsightsDrawer({
   open,
@@ -31,64 +40,79 @@ export default function TeamGamesInsightsDrawer({
     return buildTeamGamesDrawerViewModel(insights)
   }, [insights])
 
+  const avatarSrc = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name,
+  })
+
   return (
-    <Drawer
-      size="md"
-      variant="plain"
-      anchor="right"
+    <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      size="lg"
+      header={
+        <InsightsDrawerHeader
+          title={entity?.teamName || entity?.name || ''}
+          subtitle="תובנות ממשחקי הקבוצה"
+          avatarSrc={avatarSrc}
+          colorSx={{ bgcolor: c.bg }}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <InsightsDrawerHeader entity={entity} />
-
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <SectionBlock title="מדדי על" icon="topParm">
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
-                {viewModel.topStats.map((item) => (
-                  <StatCard
-                    key={item.id}
-                    title={item.title}
-                    value={item.value}
-                    sub={item.sub}
-                    icon={item.icon}
-                  />
-                ))}
-              </Box>
-            </SectionBlock>
-
-            <SectionBlock title="איכות הביצוע" icon="performance">
-              <InsightRowsList
-                items={viewModel.cards}
-                emptyText="אין כרטיסי תובנות להצגה"
+      <InsightsSection title="מדדי על" icon="topParm">
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 1,
+          }}
+        >
+          {Array.isArray(viewModel?.topStats) &&
+            viewModel.topStats.map((item) => (
+              <InsightsStatCard
+                key={item.id}
+                title={item.title}
+                value={item.value}
+                sub={item.sub}
+                icon={item.icon}
               />
-            </SectionBlock>
+            ))}
+        </Box>
+      </InsightsSection>
 
-            <SectionBlock title="משחקי בית / חוץ" icon="home">
-              <InsightRowsList
-                items={viewModel.homeAwayItems}
-                emptyText="אין נתוני בית / חוץ להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="איכות הביצוע" icon="performance">
+        <InsightsChipsList
+          items={Array.isArray(viewModel?.cards) ? viewModel.cards : []}
+          iconFallback="insights"
+          emptyText="אין כרטיסי תובנות להצגה"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="רמת קושי" icon="difficulty">
-              <InsightRowsList
-                items={viewModel.difficultyItems}
-                emptyText="אין נתוני רמת קושי להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="משחקי בית / חוץ" icon="home">
+        <InsightsChipsList
+          items={Array.isArray(viewModel?.homeAwayItems) ? viewModel.homeAwayItems : []}
+          iconFallback="home"
+          emptyText="אין נתוני בית / חוץ להצגה"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="פיד תובנות" icon="feed">
-              <InsightRowsList
-                items={viewModel.feedItems}
-                emptyText="אין תובנות טקסטואליות להצגה"
-              />
-            </SectionBlock>
-          </Box>
-        </DialogContent>
-      </Sheet>
-    </Drawer>
+      <InsightsSection title="רמת קושי" icon="difficulty">
+        <InsightsChipsList
+          items={Array.isArray(viewModel?.difficultyItems) ? viewModel.difficultyItems : []}
+          iconFallback="difficulty"
+          emptyText="אין נתוני רמת קושי להצגה"
+        />
+      </InsightsSection>
+
+      <InsightsSection title="פיד תובנות" icon="feed">
+        <InsightsChipsList
+          items={Array.isArray(viewModel?.feedItems) ? viewModel.feedItems : []}
+          iconFallback="feed"
+          emptyText="אין תובנות טקסטואליות להצגה"
+        />
+      </InsightsSection>
+    </InsightsDrawerShell>
   )
 }

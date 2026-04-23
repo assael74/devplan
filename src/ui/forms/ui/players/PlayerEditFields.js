@@ -116,11 +116,11 @@ export default function PlayerEditFields({
 
             <PlayerTypeSelector
               size="sm"
-              value={draft?.type || 'noneType'}
+              value={draft?.type === 'project'}
               onChange={(next) =>
                 setDraft((prev) => ({
                   ...prev,
-                  type: next || 'noneType',
+                  type: next ? 'project' : 'noneType',
                 }))
               }
             />

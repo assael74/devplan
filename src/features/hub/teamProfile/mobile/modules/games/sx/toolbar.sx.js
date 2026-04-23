@@ -13,11 +13,13 @@ export const toolbarSx = {
     bgcolor: 'background.level',
   },
 
-  actionsRow: {
+  toolbarRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.75,
+    justifyContent: 'flex-start',
+    gap: 1,
     minWidth: 0,
+    flexWrap: 'wrap'
   },
 
   summaryRow: {
@@ -26,6 +28,20 @@ export const toolbarSx = {
     gap: 0.6,
     flexWrap: 'wrap',
     minWidth: 0,
+  },
+
+  sortBut: {
+    maxHeight: 20,
+    minHeight: 20,
+    Height: 20,
+    px: 0.5,
+    pl: 1,
+    borderRadius: 999,
+    border: '1px solid',
+    borderColor: 'divider',
+    fontSize: 11,
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
   },
 
   indicatorsRow: {

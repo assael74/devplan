@@ -5,91 +5,94 @@ import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 const c = getEntityColors('players')
 
 export const toolbarSx = {
-  headerStatsRow: {
-    display: 'flex',
-    gap: 0.6,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    p: 1
-  },
-
   toolbar: {
     display: 'grid',
     gap: 0.75,
     p: 1,
     borderRadius: '16px',
-    //border: '1px solid',
-    //borderColor: c.bg,
     bgcolor: 'background.level',
-    //boxShadow: `inset 0 0 0 1px ${c.bg}22`,
   },
 
-  toolbarTop: {
-    display: 'flex',
-    gap: 0.75,
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-
-  toolbarBottom: {
+  toolbarRow: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    borderTop: '1px solid',
-    borderColor: 'divider',
-    pt: 0.65,
-  },
-
-  filtersInline: {
-    display: 'flex',
     gap: 1,
-    flexWrap: 'wrap',
-    alignItems: 'center',
+    minWidth: 0,
+    flexWrap: 'wrap'
   },
 
-  toolbarActions: {
-    display: 'flex',
-    gap: 0.5,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    flexShrink: 0,
-    marginInlineStart: 'auto',
-  },
-
-  toolbarFilters: {
-    display: 'flex',
-    gap: 0.45,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-
-  searchInput: {
-    width: 220,
-    maxWidth: '100%',
-    flexShrink: 0,
-  },
-
-  createBtnWrap: {
-    marginInlineStart: 'auto',
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-
-  createBtn: {
-    bgcolor: c.bg,
-    color: c.text,
+  sortMenuItemActive: {
+    bgcolor: 'background.level1',
     fontWeight: 700,
-    boxShadow: 'sm',
-    px: 1.5,
-    transition: 'filter .15s ease, transform .12s ease',
+    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
+    pr: 2,
 
     '&:hover': {
-      bgcolor: c.bg,
-      color: c.text,
-      filter: 'brightness(0.96)',
-      transform: 'translateY(-1px)',
+      bgcolor: 'background.level2',
+    },
+  },
+
+  sortMenu: {
+    p: 0.5,
+    borderRadius: 12,
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'lg',
+    bgcolor: 'background.surface',
+    '--ListItem-radius': '10px',
+    '--ListItemDecorator-size': '28px',
+  },
+
+  sortButton: {
+    minWidth: 160,
+    justifyContent: 'flex-start',
+    textAlign: 'right',
+    borderRadius: 999,
+    px: 1,
+    fontWeight: 600,
+    bgcolor: 'background.surface',
+    border: '1px solid',
+    borderColor: 'divider',
+
+    '& .MuiButton-startDecorator': {
+      marginInlineEnd: 0.5,
+    },
+
+    '& .MuiButton-endDecorator': {
+      marginInlineStart: 'auto',
+    },
+  },
+
+  sortMenu: {
+    minWidth: 120,
+    p: 0.5,
+    borderRadius: 14,
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'lg',
+    '--ListItem-radius': '10px',
+    '--ListItemDecorator-size': '22px',
+  },
+
+  sortMenuItem: {
+    minHeight: 40,
+    px: 1,
+    borderRadius: 10,
+
+    '&:hover': {
+      bgcolor: 'rgba(255,255,255,0.08)',
+    },
+  },
+
+  sortMenuItemActive: {
+    minHeight: 40,
+    px: 1,
+    borderRadius: 10,
+    bgcolor: 'rgba(255,255,255,0.08)',
+
+    '&:hover': {
+      bgcolor: 'rgba(255,255,255,0.12)',
     },
   },
 
@@ -107,14 +110,5 @@ export const toolbarSx = {
     minWidth: 170,
     flexShrink: 0,
     bgcolor: 'background.surface',
-  },
-
-  countChip: {
-    fontWeight: 700,
-  },
-
-  resetChip: {
-    cursor: 'pointer',
-    fontWeight: 700,
   },
 }

@@ -12,7 +12,7 @@ import Tooltip from '@mui/joy/Tooltip'
 import Typography from '@mui/joy/Typography'
 
 import { getEntityColors } from '../core/theme/Colors'
-import AddRounded from '@mui/icons-material/AddRounded'
+import { iconUi } from '../core/icons/iconUi.js'
 import KeyboardArrowUpRounded from '@mui/icons-material/KeyboardArrowUpRounded'
 import { sxFabMenu } from './GenericFabMenu.sx'
 
@@ -32,11 +32,12 @@ const safeColors = (k) => {
 }
 
 const isDividerItem = (item) => item?.type === 'divider'
+const isSectionItem = (item) => item?.type === 'section'
 
 export default function GenericFabMenu({
   id = 'fab-menu',
   placement = 'br',
-  tooltip = 'פתיחת פעולות',
+  tooltip = 'פעולות מהירות',
   ariaLabel = 'פתיחת פעולות',
   actions = [],
   disabled = false,
@@ -51,8 +52,6 @@ export default function GenericFabMenu({
   const palette = React.useMemo(() => safeColors(entityType), [entityType])
   const visible = React.useMemo(() => actions.filter((a) => !a?.hidden), [actions])
   const hasMenu = visible.length > 0
-
-  const Icon = primaryIcon || AddRounded
 
   const Trigger = (
     <Box sx={sxFabMenu.trigger}>
@@ -69,7 +68,7 @@ export default function GenericFabMenu({
         variant="plain"
         sx={[sxFabMenu.fab(open, palette), fabSx]}
       >
-        {open ? <KeyboardArrowUpRounded /> : <Icon />}
+        {open ? <KeyboardArrowUpRounded /> : iconUi({id: 'quickActions', size: 'md'})}
       </MenuButton>
     </Box>
   )
@@ -77,13 +76,35 @@ export default function GenericFabMenu({
   return (
     <Box sx={{ position: 'fixed', zIndex: 1200, ...(POS[placement] || POS.br) }}>
       <Dropdown open={open} onOpenChange={(_, v) => setOpen(v)}>
-        {tooltip ? <Tooltip title={tooltip}>{Trigger}</Tooltip> : Trigger}
+        <Tooltip title={tooltip} placement="left">{Trigger}</Tooltip>
 
         {hasMenu ? (
           <Menu placement="top-end" sx={sxFabMenu.menu}>
             {visible.map((a, i) => {
+              if (isSectionItem(a)) {
+                return (
+                  <Box
+                    key={a.id || `section-${i}`}
+                    sx={sxFabMenu.section}
+                  >
+                    <Typography
+                      level="body-xs"
+                      sx={sxFabMenu.sectionLabel(safeColors(a.colorKey))}
+                    >
+                      {a.label}
+                    </Typography>
+                  </Box>
+                )
+              }
+
               if (isDividerItem(a)) {
-                return <Divider key={a.id || `divider-${i}`} inset="none" />
+                return (
+                  <Divider
+                    key={a.id || `divider-${i}`}
+                    inset="none"
+                    sx={sxFabMenu.divider}
+                  />
+                )
               }
 
               const c = safeColors(a.color)

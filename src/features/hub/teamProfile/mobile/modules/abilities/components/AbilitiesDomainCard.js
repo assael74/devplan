@@ -48,7 +48,7 @@ export default function AbilitiesDomainCard({ domain, defaultExpanded = false })
               </Typography>
 
               <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
-                {filledCount}/{domain?.items?.length || 0} abilities מלאים
+                {filledCount}/{domain?.items?.length || 0} יכולות מלאים
               </Typography>
             </Box>
 

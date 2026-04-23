@@ -14,7 +14,6 @@ import { useUpdateAction } from '../../../../../../ui/domains/entityActions/upda
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 
-import QuickCreateMenu from '../../../../../../ui/actions/QuickCreateMenu.js'
 import EntityPositionsModal from '../../../../../../ui/patterns/modals/EntityPositionsModal.js'
 
 import ScoutPreviewForm from '../previewDomainCard/domains/scouting/ScoutPreviewForm.js'

@@ -1,6 +1,6 @@
 // teamProfile/mobile/modules/abilities/TeamAbilitiesModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -32,8 +32,14 @@ const DEFAULT_SELECTED_DOMAINS = [
   'cognitive',
 ]
 
-export default function TeamAbilitiesModule({ entity, context }) {
-  const [insightsDrawerOpen, setInsightsDrawerOpen] = useState(false)
+export default function TeamAbilitiesModule({
+  entity,
+  context,
+  abilitiesInsightsOpen,
+  setAbilitiesInsightsOpen,
+  abilitiesInsightsRequest = 0,
+}) {
+  const [insightsOpen, setInsightsOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [selectedDomains, setSelectedDomains] = useState(DEFAULT_SELECTED_DOMAINS)
@@ -72,6 +78,12 @@ export default function TeamAbilitiesModule({ entity, context }) {
       .filter((domain) => (domain?.items || []).length > 0)
   }, [domains, selectedDomains, showOnlyFilled])
 
+  useEffect(() => {
+    if (abilitiesInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [abilitiesInsightsRequest])
+
   const indicators = useMemo(() => {
     const next = []
 
@@ -97,10 +109,6 @@ export default function TeamAbilitiesModule({ entity, context }) {
   }, [selectedDomains, showOnlyFilled])
 
   const hasActiveFilters = indicators.length > 0
-
-  function handleOpenInsights() {
-    setInsightsDrawerOpen(true)
-  }
 
   function handleClearIndicator(item) {
     if (!item?.id) return
@@ -128,14 +136,12 @@ export default function TeamAbilitiesModule({ entity, context }) {
           total={total}
           filled={filled}
           avgAll={avgAll}
-          insightsPending={false}
           indicators={indicators}
           totalDomains={domains.length}
           shownCount={filteredDomains.length}
           playersCount={summary?.playersCount || 0}
           playersWithAbilities={summary?.playersWithAbilities || 0}
           hasActiveFilters={hasActiveFilters}
-          onOpenInsights={handleOpenInsights}
           onOpenFilters={() => setFiltersOpen(true)}
           onClearIndicator={handleClearIndicator}
         />
@@ -180,9 +186,10 @@ export default function TeamAbilitiesModule({ entity, context }) {
       </MobileFiltersDrawerShell>
 
       <TeamAbilitiesInsightsDrawer
-        open={insightsDrawerOpen}
-        onClose={() => setInsightsDrawerOpen(false)}
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
         entity={team}
+        summary={summary}
         context={context}
       />
     </SectionPanelMobile>

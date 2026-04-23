@@ -1,4 +1,15 @@
-// C:\projects\devplan\src\ui\actions\GenericFabMenu.sx.js
+// ui/actions/GenericFabMenu.sx.js
+
+import { getEntityColors } from '../core/theme/Colors'
+
+const getSectionColor = (key) => {
+  try {
+    return key ? getEntityColors(key) : null
+  } catch {
+    return null
+  }
+}
+
 export const sxFabMenu = {
   trigger: {
     display: 'flex',
@@ -19,7 +30,8 @@ export const sxFabMenu = {
     '& svg': {
       color: '#fff',
       transition: 'transform 160ms ease',
-      fill: 'currentColor'
+      fill: 'currentColor',
+      fontSize: 30
     },
     '&:hover': {
       bgcolor: palette?.accent || palette?.hover || palette?.bg || 'primary.solidHoverBg',
@@ -61,4 +73,25 @@ export const sxFabMenu = {
     },
     '&.Mui-disabled': { opacity: 0.55 },
   }),
+
+  divider: {
+    my: 0.4,
+  },
+
+  section: {
+    px: 1,
+    pt: 0.4,
+    pb: 0.15,
+  },
+
+  sectionLabel: (colorKey) => {
+    const c = getSectionColor(colorKey)
+
+    return {
+      fontWeight: 700,
+      letterSpacing: '0.02em',
+      color: c?.accent || 'text.tertiary',
+      opacity: 0.9,
+    }
+  },
 }

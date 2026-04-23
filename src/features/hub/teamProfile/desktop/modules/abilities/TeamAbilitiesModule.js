@@ -1,6 +1,6 @@
 // teamProfile/desktop/modules/abilities/TeamAbilitiesModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box, Grid, Typography, Divider, Card, CardContent } from '@mui/joy'
 
 import { resolveTeamAbilitiesDomain } from '../../../../../../shared/abilities/abilities.domain.logic.js'
@@ -22,8 +22,12 @@ const DEFAULT_SELECTED_DOMAINS = [
   'cognitive',
 ]
 
-export default function TeamAbilitiesModule({ entity, context }) {
-  const [insightsDrawerOpen, setInsightsDrawerOpen] = useState(false)
+export default function TeamAbilitiesModule({
+  entity,
+  context,
+  abilitiesInsightsRequest = 0,
+}) {
+  const [insightsOpen, setInsightsOpen] = useState(false)
   const [selectedDomains, setSelectedDomains] = useState(DEFAULT_SELECTED_DOMAINS)
   const [showOnlyFilled, setShowOnlyFilled] = useState(false)
 
@@ -60,6 +64,12 @@ export default function TeamAbilitiesModule({ entity, context }) {
       .filter((domain) => (domain?.items || []).length > 0)
   }, [domains, selectedDomains, showOnlyFilled])
 
+  useEffect(() => {
+    if (abilitiesInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [abilitiesInsightsRequest])
+
   const indicators = useMemo(() => {
     const next = []
 
@@ -84,10 +94,6 @@ export default function TeamAbilitiesModule({ entity, context }) {
     return next
   }, [selectedDomains, showOnlyFilled])
 
-  function handleOpenInsights() {
-    setInsightsDrawerOpen(true)
-  }
-
   function handleClearIndicator(item) {
     if (!item?.id) return
 
@@ -110,11 +116,9 @@ export default function TeamAbilitiesModule({ entity, context }) {
           filled={filled}
           avgAll={avgAll}
           indicators={indicators}
-          insightsPending={false}
           totalDomains={domains.length}
           shownCount={filteredDomains.length}
           selectedDomains={selectedDomains}
-          onOpenInsights={handleOpenInsights}
           onClearIndicator={handleClearIndicator}
           onChangeSelectedDomains={setSelectedDomains}
           playersCount={summary?.playersCount || 0}
@@ -142,9 +146,10 @@ export default function TeamAbilitiesModule({ entity, context }) {
       )}
 
       <TeamAbilitiesInsightsDrawer
-        open={insightsDrawerOpen}
-        onClose={() => setInsightsDrawerOpen(false)}
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
         entity={team}
+        summary={summary}
         context={context}
       />
     </Box>

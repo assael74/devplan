@@ -10,7 +10,6 @@ import PreviewQuickActions from '../PreviewQuickActions'
 import { TypeChip, KeyPlayerChip, LevelStars } from './parts/MetaChips.js'
 import PreviewMetaChips from './components/PreviewMetaChips.js'
 import JoyStarRating from '../../../../../../ui/domains/ratings/JoyStarRating'
-import QuickCreateMenu from '../../../../../../ui/actions/QuickCreateMenu.js'
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'

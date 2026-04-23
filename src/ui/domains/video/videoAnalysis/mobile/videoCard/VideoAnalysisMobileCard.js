@@ -12,6 +12,8 @@ import {
   VideoMobileTags,
 } from '../sharedUi/VideoMobileSharedUi.js'
 
+import { sharedSx as sx } from '../sharedUi/shared.ui.sx'
+
 const c = getEntityColors('videoAnalysis')
 
 export default function VideoAnalysisMobileCard({
@@ -25,7 +27,7 @@ export default function VideoAnalysisMobileCard({
         <VideoMobileMedia video={video} onWatch={onWatch} />
       </CardOverflow>
 
-        <CardContent>
+        <CardContent sx={sx.content}>
           <VideoMobileInfo video={video} />
 
           <Divider />
@@ -33,20 +35,7 @@ export default function VideoAnalysisMobileCard({
           <VideoMobileTags video={video} />
         </CardContent>
 
-      <CardOverflow
-        variant="soft"
-        color="primary"
-        sx={{
-          justifyContent: 'center',
-          borderLeft: '1px solid',
-          borderColor: 'divider',
-          borderTopRightRadius: 12,
-          borderBottomRightRadius: 12,
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
-          bgcolor: c.bg
-        }}
-      >
+      <CardOverflow variant="soft" color="primary" sx={sx.overflow}>
         <IconButton size="sm" variant="plain" onClick={() => onEdit(video)}>
           {iconUi({ id: 'more' })}
         </IconButton>

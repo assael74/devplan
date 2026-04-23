@@ -1,14 +1,17 @@
 // features/hub/teamProfile/mobile/TeamProfileMobile.js
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Box, Sheet } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import { TEAM_TABS } from '../teamProfile.routes'
 
 import TeamHeader from './components/TeamHeader'
-import TeamModules from './components/TeamModules'
-import TeamProfileFab from './components/TeamProfileFab'
+
+import TeamModules from '../sharedUi/TeamModules'
+import { mobileTeamModulesMap } from './teamModulesMobile.map'
+
+import TeamProfileFab from '../sharedUi/TeamProfileFab'
 
 import NavCardsMobile from '../../sharedProfile/mobile/NavCardsMobile'
 import ProfileSectionMobile from './ProfileSectionMobile'
@@ -37,6 +40,12 @@ export default function TeamProfileMobile({
 }) {
   const navigate = useNavigate()
 
+  const [playersInsightsRequest, setPlayersInsightsRequest] = useState(0)
+  const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
+  const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
+  const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
+  const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
+
   const tabs = TEAM_TABS
 
   const tabsMeta = useMemo(() => {
@@ -58,6 +67,18 @@ export default function TeamProfileMobile({
     navigate('/hub')
   }
 
+  const fabProps = {
+    entity,
+    context,
+    tab,
+    taskContext,
+    onOpenPlayersInsights: () => setPlayersInsightsRequest((v) => v + 1),
+    onOpenGamesInsights: () => setGamesInsightsRequest((v) => v + 1),
+    onOpenPerformanceInsights: () => setPerformanceInsightsRequest((v) => v + 1),
+    onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),
+    onOpenVideoInsights: () => setVideoInsightsRequest((v) => v + 1),
+  }
+
   if (!hasActiveSection) {
     return (
       <Sheet sx={sx.sheetNotActive}>
@@ -73,12 +94,7 @@ export default function TeamProfileMobile({
           <TeamSectionsPicker tabs={tabs} activeTab={selectedTab} />
         </Box>
 
-        <TeamProfileFab
-          entity={entity}
-          context={context}
-          tab={tab}
-          taskContext={taskContext}
-        />
+        <TeamProfileFab {...fabProps} />
       </Sheet>
     )
   }
@@ -100,17 +116,22 @@ export default function TeamProfileMobile({
           onBack={handleBackToProfile}
         >
           <Box className="dpScrollThin" sx={sx.scroll}>
-            <TeamModules entity={entity} context={context} tab={tab} />
+            <TeamModules
+              entity={entity}
+              context={context}
+              tab={tab}
+              modulesMap={mobileTeamModulesMap}
+              playersInsightsRequest={playersInsightsRequest}
+              gamesInsightsRequest={gamesInsightsRequest}
+              performanceInsightsRequest={performanceInsightsRequest}
+              abilitiesInsightsRequest={abilitiesInsightsRequest}
+              videoInsightsRequest={videoInsightsRequest}
+            />
           </Box>
         </ProfileSectionMobile>
       </Box>
 
-      <TeamProfileFab
-        entity={entity}
-        context={context}
-        tab={tab}
-        taskContext={taskContext}
-      />
+      <TeamProfileFab {...fabProps} />
     </Sheet>
   )
 }

@@ -79,8 +79,8 @@ export function VideoMobileInfo({ video }) {
 
   return (
     <Box sx={{ pt: 1 }}>
-      <Typography level="title-sm" sx={sx.assignmentTypo} startDecorator={iconUi({id: assignmentIcon, size: 'sm'})}>
-        {title}
+      <Typography level="title-sm" sx={sx.title} startDecorator={iconUi({id: assignmentIcon, size: 'sm'})}>
+        "{title}"
       </Typography>
 
       <Typography level="body-xs" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>

@@ -29,6 +29,13 @@ export {
 } from './moduleLogic/teamGames.section.utils.js'
 
 export {
+  TEAM_GAMES_SORT_OPTIONS,
+  getTeamGamesSortLabel,
+  getTeamGamesSortDirectionIcon,
+  sortTeamGamesRows,
+} from './moduleLogic/teamGames.sort.logic.js'
+
+export {
   buildTeamGamesDrawerViewModel,
   buildTeamGamesTopStats,
   buildTeamGamesCards,

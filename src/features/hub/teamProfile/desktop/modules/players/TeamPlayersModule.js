@@ -1,32 +1,33 @@
 // teamProfile/desktop/modules/players/TeamPlayersModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import TeamPlayersToolbar from './components/TeamPlayersToolbar.js'
+import TeamPlayersToolbar from './components/toolbar/TeamPlayersToolbar.js'
 import TeamPlayersList from './components/TeamPlayersList.js'
 
 import TeamPlayerQuickEditDrawer from './components/drawer/TeamPlayerQuickEditDrawer.js'
 import TeamPlayerPositionsDrawer from './components/drawer/TeamPlayerPositionsModal.js'
-
 import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersInsightsDrawer.js'
 
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 
-import { resolveTeamPlayers } from '../../../sharedLogic/players'
-
+import { resolveTeamPlayers, filterTeamPlayersRows, sortTeamPlayersRows } from '../../../sharedLogic/players'
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 
-const safe = (v) => (v == null ? '' : String(v))
-const norm = (v) => safe(v).trim().toLowerCase()
-
-export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer, context }) {
+export default function TeamPlayersModule({
+  entity,
+  onEntityChange,
+  onOpenPlayer,
+  context,
+  playersInsightsRequest = 0,
+}) {
   const liveTeam = useMemo(() => {
     const teams = Array.isArray(context?.teams) ? context.teams : []
     return teams.find((t) => t?.id === entity?.id) || entity || null
@@ -42,54 +43,43 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
   const [filters, setFilters] = useState({
     search: '',
     onlyActive: false,
-    onlyKey: false,
-    onlyProject: false,
-    positionLayer: '',
+    squadRole: '',
+    projectStatus: '',
+    positionCode: '',
+    generalPositionKey: '',
+  })
+  const [sort, setSort] = useState({
+    by: 'level',
+    direction: 'desc',
   })
 
-  const { rows, summary } = useMemo(() => resolveTeamPlayers(entity), [entity])
+  const { rows, summary } = useMemo(() => {
+    return resolveTeamPlayers(liveTeam)
+  }, [liveTeam])
 
   const filteredRows = useMemo(() => {
-    let next = Array.isArray(rows) ? [...rows] : []
+    const filtered = filterTeamPlayersRows(rows, filters)
+    return sortTeamPlayersRows(filtered, sort)
+  }, [rows, filters, sort])
 
-    const q = norm(filters.search)
-    if (q) {
-      next = next.filter((row) => {
-        const text = norm(row?.searchText)
-        return text.includes(q)
-      })
+  useEffect(() => {
+    if (playersInsightsRequest > 0) {
+      setInsightsOpen(true)
     }
+  }, [playersInsightsRequest])
 
-    if (filters.onlyActive) {
-      next = next.filter((row) => row?.active === true)
-    }
-
-    if (filters.onlyKey) {
-      next = next.filter((row) => row?.isKey === true)
-    }
-
-    if (filters.onlyProject) {
-      next = next.filter((row) => row?.isProject)
-    }
-
-    if (filters.positionLayer) {
-      next = next.filter((row) => row?.generalPositionKey === filters.positionLayer)
-    }
-
-    return next
-  }, [rows, filters])
-
-  const onChangePositionLayer = (value) => {
-    setFilters((prev) => ({ ...prev, positionLayer: value || '' }))
+  const handleChangeFilters = (patch) => {
+    setFilters((prev) => ({ ...prev, ...patch }))
   }
 
   const handleResetFilters = () => {
     setFilters({
       search: '',
       onlyActive: false,
-      onlyKey: false,
-      onlyProject: false,
-      positionLayer: '',
+      squadRole: '',
+      projectStatus: '',
+      positionCode: '',
+      generalPositionKey: '',
     })
   }
 
@@ -113,21 +103,30 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
             summary={summary}
             filters={filters}
             filteredCount={filteredRows.length}
-            onOpenInsights={() => setInsightsOpen(true)}
+            totalCount={rows.length}
             onChangeSearch={(value) =>
-              setFilters((prev) => ({ ...prev, search: value }))
+              handleChangeFilters({ search: value })
             }
             onToggleOnlyActive={() =>
-              setFilters((prev) => ({ ...prev, onlyActive: !prev.onlyActive }))
+              handleChangeFilters({ onlyActive: !filters.onlyActive })
             }
-            onToggleOnlyKey={() =>
-              setFilters((prev) => ({ ...prev, onlyKey: !prev.onlyKey }))
+            onChangeSquadRole={(value) =>
+              handleChangeFilters({ squadRole: value || '' })
             }
-            onToggleOnlyProject={() =>
-              setFilters((prev) => ({ ...prev, onlyProject: !prev.onlyProject }))
+            onChangeProjectStatus={(value) =>
+              handleChangeFilters({ projectStatus: value || '' })
             }
-            onChangePositionLayer={onChangePositionLayer}
+            onChangePositionCode={(value) =>
+              handleChangeFilters({ positionCode: value || '' })
+            }
+            onChangeGeneralPositionKey={(value) =>
+              handleChangeFilters({ generalPositionKey: value || '' })
+            }
             onResetFilters={handleResetFilters}
+            sortBy={sort.by}
+            sortDirection={sort.direction}
+            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
           />
         </Box>
 
@@ -142,7 +141,7 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
             onOpenPlayer={onOpenPlayer}
             onAvatarClick={(row) => {
               setImgRow(row)
-              setRowPhoto(row.photo || '')
+              setRowPhoto(row?.photo || '')
               setOpenImg(true)
             }}
             onEditPlayer={(row) => setEditingPlayer(row?.player || null)}
@@ -170,7 +169,7 @@ export default function TeamPlayersModule({ entity, onEntityChange, onOpenPlayer
         onClose={() => setInsightsOpen(false)}
         rows={rows}
         summary={summary}
-        entity={entity}
+        entity={liveTeam}
       />
 
       <EntityImageModal

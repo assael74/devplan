@@ -70,8 +70,6 @@ export default function TeamAbilitiesToolbar({
   evaluatorsCount = 0,
   onOpenInvite,
   invitePending = false,
-  onOpenInsights,
-  insightsPending = false,
   indicators = [],
   onClearIndicator,
   shownCount = 0,
@@ -97,16 +95,6 @@ export default function TeamAbilitiesToolbar({
           sx={sx.addBtn}
         >
           {iconUi({ id: 'addAbilities' })}
-        </IconButton>
-
-        <IconButton
-          size="sm"
-          variant="solid"
-          onClick={onOpenInsights}
-          loading={insightsPending}
-          sx={sx.insightsBtn}
-        >
-          {iconUi({ id: 'insights' })}
         </IconButton>
 
         <Box sx={sx.actionsInline}>

@@ -1,18 +1,75 @@
-// teamProfile/desktop/modules/videos/components/insightsDrawer/TeamVideosInsightsDrawer.js
+// teamProfile/mobile/modules/videos/components/insightsDrawer/TeamVideosInsightsDrawer.js
 
 import React, { useMemo } from 'react'
-import { Drawer, Box, Sheet, DialogContent, Typography } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
-import { InsightRowsList, MonthlyActivityList, } from './InsightsRows.js'
-import { StatCard, SectionBlock, InsightsDrawerHeader, MonthlyInsightsList } from './InsightsBlocks.js'
+import {
+  InsightsDrawerShell,
+  InsightsDrawerHeader,
+  InsightsSection,
+  InsightsStatCard,
+  InsightsChipsList,
+} from '../../../../../../../../ui/patterns/insights'
 
-import { insightsDrawersSx as sx } from './sx/teamVideos.insightsDrawer.sx.js'
+import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+
 import { buildTeamVideosInsightsViewModel } from '../../../../../sharedLogic/videos'
 
-const safe = (v) => (v == null ? '' : String(v))
-const toNum = (v) => {
-  const n = Number(v)
+const c = getEntityColors('teams')
+
+const safeArray = (value) => (Array.isArray(value) ? value : [])
+
+const toNum = (value) => {
+  const n = Number(value)
   return Number.isFinite(n) ? n : 0
+}
+
+const buildStableId = (item, fallbackPrefix = 'item', index = 0) => {
+  return item?.id || item?.key || item?.label || item?.title || `${fallbackPrefix}-${index}`
+}
+
+const mapRowToChip = (item, fallbackIcon = 'insights', index = 0) => ({
+  id: buildStableId(item, 'row', index),
+  label: item?.title || item?.label || item?.name || '',
+  value: item?.value ?? item?.count ?? '',
+  sub: item?.sub || item?.subValue || item?.subtitle || '',
+  icon: item?.icon || fallbackIcon,
+  color: item?.color || 'neutral',
+})
+
+const flattenMonthlyRowsToChips = (months = [], fallbackIcon = 'calendar') => {
+  return safeArray(months).flatMap((month, monthIndex) => {
+    const monthLabel =
+      month?.label || month?.title || month?.monthLabel || month?.month || `חודש ${monthIndex + 1}`
+
+    const items =
+      month?.items ||
+      month?.rows ||
+      month?.children ||
+      month?.values ||
+      []
+
+    return safeArray(items).map((item, itemIndex) => ({
+      id: `${buildStableId(month, 'month', monthIndex)}-${buildStableId(item, 'item', itemIndex)}`,
+      label: item?.title || item?.label || item?.name || monthLabel,
+      value: item?.value ?? item?.count ?? '',
+      sub: [monthLabel, item?.sub || item?.subValue || item?.subtitle].filter(Boolean).join(' · '),
+      icon: item?.icon || fallbackIcon,
+      color: item?.color || 'neutral',
+    }))
+  })
+}
+
+const mapMonthlyActivityToChips = (items = []) => {
+  return safeArray(items).map((item, index) => ({
+    id: buildStableId(item, 'activity', index),
+    label: item?.title || item?.label || item?.monthLabel || item?.month || 'חודש',
+    value: item?.value ?? item?.count ?? item?.total ?? '',
+    sub: item?.sub || item?.subValue || item?.subtitle || '',
+    icon: item?.icon || 'calendar',
+    color: item?.color || 'primary',
+  }))
 }
 
 export default function TeamVideosInsightsDrawer({
@@ -43,96 +100,89 @@ export default function TeamVideosInsightsDrawer({
     title,
     totalVideosSubText,
     paceVideosSubText,
-    isEmpty,
-  } = vm
+  } = vm || {}
+
+  const avatarSrc = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name || entity?.club?.clubName,
+  })
 
   return (
-    <Drawer
-      size="md"
-      variant="plain"
-      anchor="right"
+    <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      size="lg"
+      header={
+        <InsightsDrawerHeader
+          title={entity?.teamName || entity?.name || ''}
+          subtitle="תובנות וידאו קבוצה"
+          avatarSrc={avatarSrc}
+          colorSx={{ bgcolor: c.bg }}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <InsightsDrawerHeader entity={entity} />
+      <InsightsSection title={title || 'תובנות וידאו'} icon="insights">
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+          <InsightsStatCard
+            title="סה״כ וידאו"
+            value={toNum(totals?.totalVideos)}
+            sub={totalVideosSubText}
+            icon="videoAnalysis"
+          />
 
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <SectionBlock title={title} icon="insights">
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1, }}>
-                <StatCard
-                  title="סה״כ וידאו"
-                  value={toNum(totals.totalVideos)}
-                  sub={totalVideosSubText}
-                  icon="videoAnalysis"
-                />
+          <InsightsStatCard
+            title="קצב וידאו נכון להיום"
+            value={toNum(pace?.avgVideosPerActiveMonth)}
+            sub={paceVideosSubText}
+            icon="speed"
+          />
+        </Box>
+      </InsightsSection>
 
-                <StatCard
-                  title="קצב וידאו נכון להיום"
-                  value={toNum(pace.avgVideosPerActiveMonth)}
-                  sub={paceVideosSubText}
-                  icon="speed"
-                />
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="קטגוריות מובילות" icon="parents">
+        <InsightsChipsList
+          items={safeArray(topCategoryRows).map((item, index) => mapRowToChip(item, 'parents', index))}
+          iconFallback="parents"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="קטגוריות ונושאים מובילים" icon="parents">
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-                <Box>
-                  <Typography level="body-sm" sx={{ fontWeight: 700, mb: 0.7 }}>
-                    קטגוריות מובילות
-                  </Typography>
+      <InsightsSection title="נושאים מובילים" icon="children">
+        <InsightsChipsList
+          items={safeArray(topTopicRows).map((item, index) => mapRowToChip(item, 'children', index))}
+          iconFallback="children"
+        />
+      </InsightsSection>
 
-                  <InsightRowsList
-                    items={topCategoryRows}
-                    emptyText="אין קטגוריות ניתוח להצגה"
-                  />
-                </Box>
+      <InsightsSection title="פעילות לפי חודשים" icon="meetingDone">
+        <InsightsChipsList
+          items={mapMonthlyActivityToChips(monthlyActivity)}
+          iconFallback="meetingDone"
+        />
+      </InsightsSection>
 
-                <Box>
-                  <Typography level="body-sm" sx={{ fontWeight: 700, mb: 0.7 }}>
-                    נושאים מובילים
-                  </Typography>
+      <InsightsSection title="קטגוריות מובילות לפי חודש" icon="parents">
+        <InsightsChipsList
+          items={flattenMonthlyRowsToChips(monthlyCategoryRows, 'parents')}
+          iconFallback="parents"
+        />
+      </InsightsSection>
 
-                  <InsightRowsList
-                    items={topTopicRows}
-                    emptyText="אין נושאי ניתוח להצגה"
-                  />
-                </Box>
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="נושאים מובילים לפי חודש" icon="children">
+        <InsightsChipsList
+          items={flattenMonthlyRowsToChips(monthlyTopicRows, 'children')}
+          iconFallback="children"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="פעילות לפי חודשים" icon="meetingDone">
-              <MonthlyActivityList
-                items={monthlyActivity}
-                emptyText="אין נתוני חודשי פעילות להצגה"
-              />
-            </SectionBlock>
-
-            <SectionBlock title="קטגוריות מובילות לפי חודש" icon="parents">
-              <MonthlyInsightsList
-                months={monthlyCategoryRows}
-                emptyText="אין נתוני קטגוריות לפי חודשים"
-              />
-            </SectionBlock>
-
-            <SectionBlock title="נושאים מובילים לפי חודש" icon="children">
-              <MonthlyInsightsList
-                months={monthlyTopicRows}
-                emptyText="אין נתוני נושאים לפי חודשים"
-              />
-            </SectionBlock>
-
-            {!toNum(totals.totalVideos) ? (
-              <Typography level="body-sm" sx={{ opacity: 0.7 }}>
-                אין נתוני וידאו להצגה
-              </Typography>
-            ) : null}
-          </Box>
-        </DialogContent>
-      </Sheet>
-    </Drawer>
+      {!toNum(totals?.totalVideos) ? (
+        <Box sx={{ mt: 0.5 }}>
+          <Typography level="body-sm" sx={{ opacity: 0.7 }}>
+            אין נתוני וידאו להצגה
+          </Typography>
+        </Box>
+      ) : null}
+    </InsightsDrawerShell>
   )
 }

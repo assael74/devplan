@@ -1,12 +1,33 @@
 // teamProfile/modules/abilities/components/insightsDrawer/TeamAbilitiesInsightsDrawer.js
 
 import React, { useMemo } from 'react'
-import { Drawer, Box, Sheet, DialogContent } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
-import { InsightRowsList } from './InsightsRows.js'
-import { StatCard, SectionBlock, InsightsDrawerHeader, InsightCardsGrid } from './InsightsBlocks.js'
-import { insightsDrawersSx as sx } from './sx/insightsDrawer.sx.js'
+import {
+  InsightsDrawerShell,
+  InsightsDrawerHeader,
+  InsightsSection,
+  InsightsStatCard,
+  InsightsChipsList,
+} from '../../../../../../../../ui/patterns/insights'
+
+import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
+
 import { buildTeamAbilitiesInsightsDrawerModel } from './../../../../../sharedLogic/abilities'
+
+const c = getEntityColors('teams')
+
+const safeArray = (value) => (Array.isArray(value) ? value : [])
+
+const mapRowToChip = (item, fallbackIcon = 'insights') => ({
+  id: item?.id || item?.key || item?.title || item?.label || '',
+  label: item?.title || item?.label || item?.name || '',
+  value: item?.value ?? '',
+  sub: item?.sub || item?.subValue || '',
+  icon: item?.icon || fallbackIcon,
+  color: item?.color || 'neutral',
+})
 
 export default function TeamAbilitiesInsightsDrawer({
   open,
@@ -18,91 +39,103 @@ export default function TeamAbilitiesInsightsDrawer({
     return buildTeamAbilitiesInsightsDrawerModel(entity || {}, context || {})
   }, [entity, context])
 
+  const avatarSrc = resolveEntityAvatar({
+    entityType: 'team',
+    entity,
+    parentEntity: entity?.club,
+    subline: entity?.club?.name || entity?.club?.clubName,
+  })
+
   return (
-    <Drawer
-      size="lg"
-      variant="plain"
-      anchor="right"
+    <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      size="lg"
+      header={
+        <InsightsDrawerHeader
+          title={entity?.teamName || entity?.name || ''}
+          subtitle="תובנות יכולות קבוצה"
+          avatarSrc={avatarSrc}
+          colorSx={{ bgcolor: c.bg }}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <InsightsDrawerHeader entity={entity} isEligible={model?.isEligible} />
+      <InsightsSection title="תקציר על" icon="insights">
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+            gap: 1,
+          }}
+        >
+          {safeArray(model?.topStats).map((item) => (
+            <InsightsStatCard
+              key={item.id}
+              title={item.title}
+              value={item.value}
+              sub={item.sub}
+              icon={item.icon}
+            />
+          ))}
+        </Box>
+      </InsightsSection>
 
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <SectionBlock title="תקציר על" icon="insights">
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                  gap: 1,
-                }}
-              >
-                {(model?.topStats || []).map((item) => (
-                  <StatCard
-                    key={item.id}
-                    title={item.title}
-                    value={item.value}
-                    sub={item.sub}
-                    icon={item.icon}
-                  />
-                ))}
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="מוכנות נתונים" icon="check">
+        <InsightsChipsList
+          items={safeArray(model?.readinessRows).map((item) => mapRowToChip(item, 'check'))}
+          iconFallback="check"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="מוכנות נתונים" icon="check">
-              <InsightRowsList
-                items={model?.readinessRows || []}
-                emptyText="אין כרגע תובנות מוכנות באזור זה"
-              />
-            </SectionBlock>
+      <InsightsSection title="תמונת קבוצה" icon="profile">
+        <InsightsChipsList
+          items={safeArray(model?.profileRows).map((item) => mapRowToChip(item, 'profile'))}
+          iconFallback="profile"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="תמונת קבוצה" icon="profile">
-              <InsightRowsList
-                items={model?.profileRows || []}
-                emptyText="אין כרגע תובנות קבוצה להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="פוטנציאל" icon="potential">
+        <InsightsChipsList
+          items={safeArray(model?.potentialRows).map((item) => mapRowToChip(item, 'potential'))}
+          iconFallback="potential"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="פוטנציאל" icon="potential">
-              <InsightRowsList
-                items={model?.potentialRows || []}
-                emptyText="אין כרגע תובנות פוטנציאל להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="פירוט דומיינים" icon="abilities">
+        <InsightsChipsList
+          items={safeArray(model?.domainRows).map((item) => mapRowToChip(item, 'abilities'))}
+          iconFallback="abilities"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="פירוט דומיינים" icon="abilities">
-              <InsightCardsGrid
-                items={model?.domainRows || []}
-                emptyText="אין כרגע דומיינים תקפים להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="לפי עמדות" icon="position">
+        <InsightsChipsList
+          items={safeArray(model?.positionRows).map((item) => mapRowToChip(item, 'position'))}
+          iconFallback="position"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="לפי עמדות" icon="position">
-              <InsightCardsGrid
-                items={model?.positionRows || []}
-                emptyText="אין כרגע נתוני עמדות להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="לפי שכבות" icon="layers">
+        <InsightsChipsList
+          items={safeArray(model?.layerRows).map((item) => mapRowToChip(item, 'layers'))}
+          iconFallback="layers"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="לפי שכבות" icon="layers">
-              <InsightCardsGrid
-                items={model?.layerRows || []}
-                emptyText="אין כרגע נתוני שכבות להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="לפי תפקיד בסגל" icon="keyPlayer">
+        <InsightsChipsList
+          items={safeArray(model?.roleRows).map((item) => mapRowToChip(item, 'keyPlayer'))}
+          iconFallback="keyPlayer"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="לפי תפקיד בסגל" icon="keyPlayer">
-              <InsightCardsGrid
-                items={model?.roleRows || []}
-                emptyText="אין כרגע נתוני תפקידי סגל להצגה"
-              />
-            </SectionBlock>
-          </Box>
-        </DialogContent>
-      </Sheet>
-    </Drawer>
+      {!model?.isEligible && (
+        <Box sx={{ mt: 0.5 }}>
+          <Typography level="body-sm" sx={{ opacity: 0.75 }}>
+            חלק מהתובנות יוצגו באופן חלקי עד להשלמת נתוני היכולות של הקבוצה.
+          </Typography>
+        </Box>
+      )}
+    </InsightsDrawerShell>
   )
 }

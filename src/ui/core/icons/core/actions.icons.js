@@ -16,6 +16,7 @@ import {
   DomainAdd,
   EditNote,
   Engineering,
+  ElectricBolt,
   GroupAdd,
   KeyboardArrowDown,
   LibraryAdd,
@@ -31,6 +32,7 @@ import {
   Save,
   SearchRounded,
   Share,
+  Sort,
   SwapVerticalCircle,
   Tune,
   Update,
@@ -72,6 +74,8 @@ export const actionIcons = {
   share: <Share />,
   sortDown: <ArrowDownward />,
   sortUp: <ArrowUpward />,
+  sort: <Sort />,
   swapVert: <SwapVerticalCircle />,
   update: <Update />,
+  quickActions: <ElectricBolt />
 };

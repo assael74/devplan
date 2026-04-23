@@ -1,12 +1,12 @@
 // teamProfile/desktop/modules/videos/TeamVideosModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import TeamVideosToolbar from './components/TeamVideosToolbar.js'
+import TeamVideosToolbar from './components/toolbar/TeamVideosToolbar.js'
 import TeamVideosList from './components/TeamVideosList.js'
 
 import TeamVideosInsightsDrawer from './components/insightsDrawer/TeamVideosInsightsDrawer.js'
@@ -16,6 +16,7 @@ import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlaye
 import {
   createInitialTeamVideosFilters,
   resolveTeamVideosFiltersDomain,
+  sortTeamVideosRows,
 } from '../../../sharedLogic/videos'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
@@ -24,7 +25,11 @@ const c = getEntityColors('videoAnalysis')
 
 const asArr = (v) => (Array.isArray(v) ? v : [])
 
-export default function TeamVideosModule({ entity, context }) {
+export default function TeamVideosModule({
+  entity,
+  context,
+  videoInsightsRequest = 0,
+}) {
   const liveTeam = useMemo(() => {
     const teams = Array.isArray(context?.teams) ? context.teams : []
     return teams.find((t) => t?.id === entity?.id) || entity || null
@@ -36,6 +41,10 @@ export default function TeamVideosModule({ entity, context }) {
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingVideo, setEditingVideo] = useState(null)
   const [watchVideo, setWatchVideo] = useState(null)
+  const [sort, setSort] = useState({
+    by: 'date',
+    direction: 'desc',
+  })
 
   const tags = useMemo(() => {
     const a = asArr(context?.tags)
@@ -54,6 +63,12 @@ export default function TeamVideosModule({ entity, context }) {
     })
   }, [liveTeam, filters, tags])
 
+  useEffect(() => {
+    if (videoInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [videoInsightsRequest])
+
   const {
     summary,
     videos,
@@ -61,6 +76,10 @@ export default function TeamVideosModule({ entity, context }) {
     options,
     indicators,
   } = domain
+
+  const sortedVideos = useMemo(() => {
+    return sortTeamVideosRows(videos, sort)
+  }, [videos, sort])
 
   const handleChangeFilters = (patch) => {
     setFilters((prev) => ({
@@ -99,13 +118,16 @@ export default function TeamVideosModule({ entity, context }) {
             filters={filters}
             indicators={indicators}
             options={options}
-            onOpenInsights={() => setInsightsOpen(true)}
             onChangeFilters={handleChangeFilters}
             onResetFilters={handleResetFilters}
+            sortBy={sort.by}
+            sortDirection={sort.direction}
+            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
           />
         </Box>
 
-        {videos.length === 0 ? (
+        {sortedVideos.length === 0 ? (
           <EmptyState
             title="אין וידאו"
             subtitle={
@@ -116,7 +138,7 @@ export default function TeamVideosModule({ entity, context }) {
           />
         ) : (
           <TeamVideosList
-            rows={videos}
+            rows={sortedVideos}
             onEditVideo={(video) => setEditingVideo(video || null)}
             onWatchVideo={(video) => handleWatch(video || null)}
             onOpenNotes={(video) => console.log('open notes', video)}
@@ -127,7 +149,7 @@ export default function TeamVideosModule({ entity, context }) {
       <TeamVideosInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        videos={videos}
+        videos={sortedVideos}
         summary={summary}
         entity={liveTeam}
         tags={tags}

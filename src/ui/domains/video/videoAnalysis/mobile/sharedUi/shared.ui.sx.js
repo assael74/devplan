@@ -74,6 +74,25 @@ export const sharedSx = {
     whiteSpace: 'nowrap',
   },
 
+  content: {
+    minWidth: 0,
+    flex: 1,
+    display: 'grid',
+    gridTemplateRows: 'auto auto 1fr',
+    alignItems: 'start',
+  },
+
+  overflow: {
+    justifyContent: 'center',
+    borderLeft: '1px solid',
+    borderColor: 'divider',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    bgcolor: c.bg
+  },
+
   assignmentChip: {
     maxWidth: '100%',
     fontWeight: 600,
