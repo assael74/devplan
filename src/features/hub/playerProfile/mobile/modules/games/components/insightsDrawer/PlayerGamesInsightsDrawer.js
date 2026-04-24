@@ -1,15 +1,20 @@
 // playerProfile/desktop/modules/games/components/insightsDrawer/playerGamesInsightsDrawer.js
 
 import React, { useMemo } from 'react'
-import { Drawer, Box, Sheet, DialogContent } from '@mui/joy'
+import { Box } from '@mui/joy'
+
+import {
+  InsightsDrawerShell,
+  InsightsDrawerHeader,
+  InsightsSection,
+  InsightsStatCard,
+} from '../../../../../../../../ui/patterns/insights/index.js'
+import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 import { InsightRowsList } from './InsightsRows.js'
-import { StatCard, SectionBlock, InsightsDrawerHeader } from './InsightsBlocks.js'
-import { insightsDrawersSx as sx } from './sx/playerGames.insightsDrawer.sx.js'
 
 import { buildPlayerGamesInsights } from '../../../../../../../../shared/games/insights/GamesInsights.build.js'
 import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
-
 import { buildPlayerGamesDrawerViewModel } from '../../../../../sharedLogic'
 
 export default function PlayerGamesInsightsDrawer({
@@ -31,65 +36,69 @@ export default function PlayerGamesInsightsDrawer({
   const viewModel = useMemo(() => {
     return buildPlayerGamesDrawerViewModel(insights)
   }, [insights])
-  //console.log(insights)
+
+  const header = (
+    <InsightsDrawerHeader
+      title={player?.playerFullName || 'שחקן'}
+      subtitle="תובנות משחקים"
+      avatarSrc={player?.photo || playerImage}
+    />
+  )
+
   return (
-    <Drawer
-      size="md"
-      variant="plain"
-      anchor="right"
+    <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      size="lg"
+      header={header}
     >
-      <Sheet sx={sx.drawerSheet}>
-        <InsightsDrawerHeader entity={player} />
+      <InsightsSection title="מדדי על" icon="topParm">
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+            gap: 1,
+          }}
+        >
+          {(viewModel?.topStats || []).map((item) => (
+            <InsightsStatCard
+              key={item.id}
+              title={item.title}
+              value={item.value}
+              sub={item.sub}
+              icon={item.icon}
+            />
+          ))}
+        </Box>
+      </InsightsSection>
 
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className="dpScrollThin">
-            <SectionBlock title="מדדי על" icon="topParm">
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
-                {viewModel.topStats.map((item) => (
-                  <StatCard
-                    key={item.id}
-                    title={item.title}
-                    value={item.value}
-                    sub={item.sub}
-                    icon={item.icon}
-                  />
-                ))}
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="איכות הביצוע" icon="performance">
+        <InsightRowsList
+          items={viewModel?.cards || []}
+          emptyText="אין כרטיסי תובנות להצגה"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="איכות הביצוע" icon="performance">
-              <InsightRowsList
-                items={viewModel.cards}
-                emptyText="אין כרטיסי תובנות להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="משחקי בית / חוץ" icon="home">
+        <InsightRowsList
+          items={viewModel?.homeAwayItems || []}
+          emptyText="אין נתוני בית / חוץ להצגה"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="משחקי בית / חוץ" icon="home">
-              <InsightRowsList
-                items={viewModel.homeAwayItems}
-                emptyText="אין נתוני בית / חוץ להצגה"
-              />
-            </SectionBlock>
+      <InsightsSection title="רמת קושי" icon="difficulty">
+        <InsightRowsList
+          items={viewModel?.difficultyItems || []}
+          emptyText="אין נתוני רמת קושי להצגה"
+        />
+      </InsightsSection>
 
-            <SectionBlock title="רמת קושי" icon="difficulty">
-              <InsightRowsList
-                items={viewModel.difficultyItems}
-                emptyText="אין נתוני רמת קושי להצגה"
-              />
-            </SectionBlock>
-
-            <SectionBlock title="פיד תובנות" icon="feed">
-              <InsightRowsList
-                items={viewModel.feedItems}
-                emptyText="אין תובנות טקסטואליות להצגה"
-              />
-            </SectionBlock>
-          </Box>
-        </DialogContent>
-      </Sheet>
-    </Drawer>
+      <InsightsSection title="פיד תובנות" icon="feed">
+        <InsightRowsList
+          items={viewModel?.feedItems || []}
+          emptyText="אין תובנות טקסטואליות להצגה"
+        />
+      </InsightsSection>
+    </InsightsDrawerShell>
   )
 }

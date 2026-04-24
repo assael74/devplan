@@ -56,6 +56,18 @@ export default function useClubProfilePageModel() {
     return (clubs || []).find((club) => String(club.id) === String(clubId)) || null
   }, [clubs, clubId])
 
+  const rawTab = useMemo(() => {
+    const fromParam = String(tabKey || '').trim()
+    if (fromParam) return fromParam
+
+    const fromQuery = String(sp.get('tab') || '').trim()
+    return fromQuery
+  }, [tabKey, sp])
+
+  const selectedTab = useMemo(() => {
+    return rawTab ? tab : ''
+  }, [rawTab, tab])
+
   const context = useMemo(() => {
     if (!entity) return {}
 
@@ -108,7 +120,9 @@ export default function useClubProfilePageModel() {
 
   return {
     state: 'ready',
+    rawTab,
     tab,
+    selectedTab,
     entity,
     context,
     taskContext,

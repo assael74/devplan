@@ -70,13 +70,7 @@ export default function TeamVideosModule({
     }
   }, [videoInsightsRequest])
 
-  const {
-    summary,
-    videos,
-    allVideos,
-    options,
-    indicators,
-  } = domain
+  const { summary, videos, allVideos, options, indicators, } = domain
 
   const sortedVideos = useMemo(() => {
     return sortTeamVideosRows(videos, sort)

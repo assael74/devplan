@@ -16,7 +16,7 @@ import {
   buildInitialDraft,
   buildPatch,
   getIsDirty,
-} from './clubTeamEdit.logic.js'
+} from '../../../../../sharedLogic/teams/drawerLogic/index.js'
 
 export default function EditDrawer({
   open,

@@ -1,6 +1,6 @@
 // features/hub/playerProfile/mobile/PlayerProfileMobile.js
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Box, Sheet } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,8 +10,11 @@ import {
 } from '../playerProfile.routes'
 
 import PlayerHeader from './components/PlayerHeader'
-import PlayerModules from './components/PlayerModules'
-import PlayerProfileFab from './components/PlayerProfileFab'
+
+import PlayerModules from '../sharedUi/PlayerModules.js'
+import PlayerProfileFab from '../sharedUi/PlayerProfileFab'
+
+import { mobilePlayerModulesMap, mobileProjectPlayerModulesMap } from './playerModulesMobile.map'
 
 import NavCardsMobile from '../../sharedProfile/mobile/NavCardsMobile'
 import ProfileSectionMobile from './ProfileSectionMobile'
@@ -33,13 +36,20 @@ function PlayerSectionsPicker({ tabs, activeTab }) {
 export default function PlayerProfileMobile({
   tab,
   selectedTab,
-  isProject,
   entity,
   context,
   taskContext,
   counts,
 }) {
   const navigate = useNavigate()
+  
+  const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
+  const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
+  const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
+  const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
+
+  const isProject = entity?.project === 'project'
+  const modulesMap = isProject ? mobilePlayerModulesMap : mobileProjectPlayerModulesMap
 
   const tabs = useMemo(() => {
     return isProject ? PLAYER_PROJECT_TABS : PLAYER_TABS
@@ -62,6 +72,17 @@ export default function PlayerProfileMobile({
 
   const handleBackToHub = () => {
     navigate('/hub')
+  }
+
+  const fabProps = {
+    entity,
+    context,
+    tab,
+    taskContext,
+    onOpenGamesInsights: () => setGamesInsightsRequest((v) => v + 1),
+    onOpenPerformanceInsights: () => setPerformanceInsightsRequest((v) => v + 1),
+    onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),
+    onOpenVideoInsights: () => setVideoInsightsRequest((v) => v + 1),
   }
 
   if (!hasActiveSection) {
@@ -106,17 +127,21 @@ export default function PlayerProfileMobile({
           onBack={handleBackToProfile}
         >
           <Box className="dpScrollThin" sx={sx.scroll}>
-            <PlayerModules entity={entity} context={context} tab={tab} />
+            <PlayerModules
+              entity={entity}
+              context={context}
+              tab={tab}
+              modulesMap={modulesMap}
+              gamesInsightsRequest={gamesInsightsRequest}
+              performanceInsightsRequest={performanceInsightsRequest}
+              abilitiesInsightsRequest={abilitiesInsightsRequest}
+              videoInsightsRequest={videoInsightsRequest}
+            />
           </Box>
         </ProfileSectionMobile>
       </Box>
 
-      <PlayerProfileFab
-        entity={entity}
-        context={context}
-        tab={tab}
-        taskContext={taskContext}
-      />
+      <PlayerProfileFab {...fabProps} />
     </Sheet>
   )
 }

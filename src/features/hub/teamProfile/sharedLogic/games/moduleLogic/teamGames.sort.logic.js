@@ -77,7 +77,7 @@ const compareNumbers = (a, b) => toNumber(a) - toNumber(b)
 const compareDates = (a, b) => toDateMs(a) - toDateMs(b)
 
 const compareGamesBy = (left, right, sortBy) => {
-  if (sortBy === 'date') return compareDates(left, right)
+  if (sortBy === 'date') return compareNumbers(toDateMs(left?.game), toDateMs(right?.game))
   if (sortBy === 'rival') return compareText(left?.rival, right?.rival)
   if (sortBy === 'home') {
     return compareNumbers(

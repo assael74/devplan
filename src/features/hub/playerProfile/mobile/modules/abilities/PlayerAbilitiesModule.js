@@ -1,6 +1,6 @@
 // playerProfile/mobile/modules/abilities/PlayerAbilitiesModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -31,12 +31,18 @@ import { isFilled, useAbilitiesSummary } from './../../../sharedLogic'
 //import { moduleSx as sx } from './sx/Ability.module.sx'
 import { profileSx as sx } from './../../sx/profile.sx'
 
-export default function PlayerAbilitiesModule({ entity, context }) {
+export default function PlayerAbilitiesModule({
+  entity,
+  context,
+  abilitiesInsightsOpen,
+  setAbilitiesInsightsOpen,
+  abilitiesInsightsRequest = 0,
+}) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false)
-  const [insightsDrawerOpen, setInsightsDrawerOpen] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [selectedDomains, setSelectedDomains] = useState([
@@ -77,6 +83,12 @@ export default function PlayerAbilitiesModule({ entity, context }) {
       .filter((domain) => domain?.items?.length > 0)
   }, [domains, selectedDomains, showOnlyFilled])
 
+  useEffect(() => {
+    if (abilitiesInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [abilitiesInsightsRequest])
+
   const indicators = useMemo(() => {
     const next = []
 
@@ -107,10 +119,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
     setInviteDrawerOpen(true)
   }
 
-  function handleOpenInsights() {
-    setInsightsDrawerOpen(true)
-  }
-
   function handleClearIndicator(item) {
     if (!item?.id) return
 
@@ -137,7 +145,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
           total={total}
           filled={filled}
           avgAll={avgAll}
-          insightsPending={false}
           indicators={indicators}
           invitePending={invitePending}
           totalDomains={domains.length}
@@ -148,7 +155,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
           filtersCount={indicators.length}
           isMobile={isMobile}
           onOpenInvite={handleOpenInvite}
-          onOpenInsights={handleOpenInsights}
           onOpenFilters={() => setFiltersOpen(true)}
           onClearIndicator={handleClearIndicator}
         />
@@ -216,9 +222,10 @@ export default function PlayerAbilitiesModule({ entity, context }) {
       />
 
       <PlayerAbilitiesInsightsDrawer
-        open={insightsDrawerOpen}
-        onClose={() => setInsightsDrawerOpen(false)}
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
         entity={player}
+        context={context}
       />
     </SectionPanelMobile>
   )

@@ -7,8 +7,9 @@ import ClubNameField from '../../../../../../../ui/fields/inputUi/clubs/ClubName
 import ClubIfaLinkField from '../../../../../../../ui/fields/inputUi/clubs/ClubIfaLinkField.js'
 import ClubActiveSelector from '../../../../../../../ui/fields/checkUi/clubs/ClubActiveSelector.js'
 
+import { moduleSx as sx } from '../sx/module.sx'
+
 export default function ClubManagementInfoCard({
-  sx,
   draft,
   isDirty,
   onDraft,

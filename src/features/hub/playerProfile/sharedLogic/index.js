@@ -38,6 +38,13 @@ export {
 } from './games/module/playerGames.filters.options.js'
 
 export {
+  PLAYER_GAMES_SORT_OPTIONS,
+  getPlayerGamesSortLabel,
+  getPlayerGamesSortDirectionIcon,
+  sortPlayerGamesRows
+} from './games/module/playerGames.sort.logic.js'
+
+export {
   getResultKey,
   getResultIcon,
   getResultLabel,
@@ -93,6 +100,7 @@ export * from './trainings/index.js'
 // ----- VIDEOS / MODULE -----
 export * from './videos/module/playerVideos.domain.logic.js'
 export * from './videos/module/playerVideos.filters.logic.js'
+export * from './videos/module/playerVideos.sort.logic.js'
 
 // ----- VIDEOS / INSIGHTS DRAWER -----
 export * from './videos/insightsDrawer/videosInsightsDrawer.logic.js'

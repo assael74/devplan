@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { clubPlayersSectionsSx as sx } from '../../sx/clubPlayers.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 function getPositions(row) {
   return Array.isArray(row?.positions) ? row.positions.filter(Boolean) : []

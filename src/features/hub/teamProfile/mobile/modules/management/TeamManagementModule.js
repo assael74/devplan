@@ -68,8 +68,8 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
       createIfMissing: false,
     })
 
-    onSaved?.(patch, { ...(team || {}), ...patch })
-    onClose?.()
+    onSaved(patch, { ...(team || {}), ...patch })
+    onClose()
   }, [canSave, run, patch, team, onSaved, onClose])
 
   if (!team) {
@@ -85,28 +85,26 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
   return (
     <SectionPanelMobile>
       <Box sx={sx.moduleRoot}>
+        <TeamManagementToolbar
+          isDirty={isDirty}
+          canSave={canSave}
+          pending={pending}
+          onSave={handleSave}
+          onReset={handleReset}
+        />
+      </Box>
         <Box sx={localSx.root}>
           <Box sx={localSx.topGrid}>
-            <Box sx={localSx.leftCol}>
-              <TeamManagementToolbar
-                isDirty={isDirty}
-                canSave={canSave}
-                pending={pending}
-                onSave={handleSave}
-                onReset={handleReset}
-              />
-
-              <TeamManagementInfoCard
-                draft={draft}
-                clubName={clubName}
-                isDirty={isDirty}
-                canSave={canSave}
-                onDraft={setDraft}
-                onConfirm={handleSave}
-                onReset={handleReset}
-                pending={pending}
-              />
-            </Box>
+            <TeamManagementInfoCard
+              draft={draft}
+              clubName={clubName}
+              isDirty={isDirty}
+              canSave={canSave}
+              onDraft={setDraft}
+              onConfirm={handleSave}
+              onReset={handleReset}
+              pending={pending}
+            />
 
             <Box sx={localSx.staffWrap}>
               <ManagementStaffCard
@@ -116,7 +114,6 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
                 compact
               />
             </Box>
-          </Box>
         </Box>
       </Box>
     </SectionPanelMobile>

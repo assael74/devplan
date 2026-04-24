@@ -2,26 +2,25 @@
 
 import React, { useMemo } from 'react'
 import {
-  Drawer,
   Box,
-  Sheet,
-  DialogContent,
-  Divider,
   Stack,
   Typography,
-  Avatar,
-  Button,
   Chip,
 } from '@mui/joy'
 
-import { StatCard, ChipsList, SectionBlock, InsightsDrawerHeader } from './InsightsDrawerParts.js'
+import {
+  InsightsDrawerShell,
+  InsightsDrawerHeader,
+  InsightsSection,
+  InsightsStatCard,
+  InsightsChipsList,
+} from '../../../../../../../../ui/patterns/insights'
 
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { buildFallbackAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { clubTeamsInsightsSx as sx } from './sx/clubTeams.insights.sx.js'
-import { buildClubTeamsInsights } from './logic/clubTeams.insights.logic.js'
+import { buildClubTeamsInsights } from '../../../../../sharedLogic/teams/insightsLogic/index.js'
 
 const c = getEntityColors('clubs')
 
@@ -37,138 +36,141 @@ export default function ClubTeamsInsightsDrawer({
     [rows, summary]
   )
 
+  const avatarSrc = buildFallbackAvatar({
+    entityType: 'club',
+    id: entity?.id,
+    name: entity?.clubName,
+  })
+
   return (
-    <Drawer
-      size="lg"
-      variant="plain"
-      anchor="right"
+    <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
+      size="lg"
+      header={
+        <InsightsDrawerHeader
+          title={entity?.clubName || ''}
+          subtitle='תובנות עבור קבוצות המועדון'
+          avatarSrc={avatarSrc}
+          colorSx={{ bgcolor: c.bg }}
+        />
+      }
     >
-      <Sheet sx={sx.drawerSheet}>
-        <InsightsDrawerHeader entity={entity} />
+      <InsightsSection title="תובנות סגל" icon="players">
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+          <InsightsStatCard
+            title=''
+            value={insights.squad.total}
+            icon="players"
+          />
 
-        <DialogContent sx={{ gap: 2 }}>
-          <Box sx={sx.content} className='dpScrollThin'>
-            <SectionBlock title="תובנות סגל" icon="players">
-              <Box sx={sx.statsGrid}>
-                <StatCard
-                  title=''
-                  value={insights.squad.total}
-                  icon="players"
-                />
+          <InsightsStatCard
+            title=""
+            value={insights.squad.keyCount}
+            sub={insights.squad.keyRate}
+            icon="keyPlayer"
+          />
 
-                <StatCard
-                  title=""
-                  value={insights.squad.keyCount}
-                  sub={insights.squad.keyRate}
-                  icon="keyPlayer"
-                />
+          <InsightsStatCard
+            title=""
+            value={insights.squad.active}
+            icon="active"
+          />
 
-                <StatCard
-                  title=""
-                  value={insights.squad.active}
-                  icon="active"
-                />
+          <InsightsStatCard
+            title=""
+            value={insights.squad.nonActive}
+            icon="close"
+          />
+        </Box>
+      </InsightsSection>
 
-                <StatCard
-                  title=""
-                  value={insights.squad.nonActive}
-                  icon="close"
-                />
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="פריסת עמדות" icon="position">
+        <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
+          לפי שכבה
+        </Typography>
 
-            <SectionBlock title="פריסת עמדות" icon="position">
-              <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
-                לפי שכבה
-              </Typography>
+        <InsightsChipsList
+          items={insights.positions.layers.map((item) => ({
+            ...item,
+            icon: item.id === 'none' ? 'close' : item.id,
+          }))}
+          iconFallback="layers"
+        />
 
-              <ChipsList
-                items={insights.positions.layers.map((item) => ({
-                  ...item,
-                  icon: item.id === 'none' ? 'close' : item.id,
-                }))}
-                iconFallback="layers"
-              />
+        <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
+          לפי עמדה
+        </Typography>
 
-              <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
-                לפי עמדה
-              </Typography>
+        <InsightsChipsList
+          items={insights.positions.exactPositions.map((item) => ({
+            ...item,
+            icon: item.id,
+          }))}
+          iconFallback="layers"
+        />
+      </InsightsSection>
 
-              <ChipsList
-                items={insights.positions.exactPositions.map((item) => ({
-                  ...item,
-                  icon: item.id,
-                }))}
-                iconFallback="layers"
-              />
-            </SectionBlock>
+      <InsightsSection title="תובנות סטטיסטיקה מהירה" icon="stats">
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+          <InsightsStatCard
+            title="מעל 70% דקות"
+            value={insights.quickStats.over70}
+            icon="playTimeRate"
+          />
 
-            <SectionBlock title="תובנות סטטיסטיקה מהירה" icon="stats">
-              <Box sx={sx.statsGrid}>
-                <StatCard
-                  title="מעל 70% דקות"
-                  value={insights.quickStats.over70}
-                  icon="playTimeRate"
-                />
+          <InsightsStatCard
+            title="מתחת ל־30% דקות"
+            value={insights.quickStats.under30}
+            icon="playTimeRate"
+          />
 
-                <StatCard
-                  title="מתחת ל־30% דקות"
-                  value={insights.quickStats.under30}
-                  icon="playTimeRate"
-                />
+          <InsightsStatCard
+            title="עם שערים"
+            value={insights.quickStats.withGoals}
+            sub={`מתוך ${insights.squad.total}`}
+            icon="goal"
+          />
 
-                <StatCard
-                  title="עם שערים"
-                  value={insights.quickStats.withGoals}
-                  sub={`מתוך ${insights.squad.total}`}
-                  icon="goal"
-                />
+          <InsightsStatCard
+            title="עם ניקוד פוטנציאל"
+            value={insights.quickStats.withPotential}
+            sub={`מתוך ${insights.squad.total}`}
+            icon="insights"
+          />
+        </Box>
+      </InsightsSection>
 
-                <StatCard
-                  title="עם ניקוד פוטנציאל"
-                  value={insights.quickStats.withPotential}
-                  sub={`מתוך ${insights.squad.total}`}
-                  icon="insights"
-                />
-              </Box>
-            </SectionBlock>
+      <InsightsSection title="תובנות פרויקט" icon="project">
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+          <Chip
+            size="md"
+            color="success"
+            variant="soft"
+            startDecorator={iconUi({ id: 'project' })}
+          >
+            פרויקט ({insights.project.totalProject})
+          </Chip>
 
-            <SectionBlock title="תובנות פרויקט" icon="project">
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                <Chip
-                  size="md"
-                  color="success"
-                  variant="soft"
-                  startDecorator={iconUi({ id: 'project' })}
-                >
-                  פרויקט ({insights.project.totalProject})
-                </Chip>
+          <Chip
+            size="md"
+            color="warning"
+            variant="soft"
+            startDecorator={iconUi({ id: 'candidate' })}
+          >
+            מועמדות ({insights.project.totalCandidate})
+          </Chip>
+        </Stack>
 
-                <Chip
-                  size="md"
-                  color="warning"
-                  variant="soft"
-                  startDecorator={iconUi({ id: 'candidate' })}
-                >
-                  מועמדות ({insights.project.totalCandidate})
-                </Chip>
-              </Stack>
+        <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
+          לפי שלב
+        </Typography>
 
-              <Typography level="title-sm" sx={{ fontWeight: 700, mt: 0.25, mb: 0.1 }}>
-                לפי שלב
-              </Typography>
-
-              <ChipsList
-                items={insights.project.byStage}
-                iconFallback="project"
-              />
-            </SectionBlock>
-          </Box>
-        </DialogContent>
-      </Sheet>
-    </Drawer>
+        <InsightsChipsList
+          items={insights.project.byStage}
+          iconFallback="project"
+        />
+      </InsightsSection>
+    </InsightsDrawerShell>
   )
 }

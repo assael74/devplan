@@ -97,3 +97,23 @@ export const sortTeamPlayersRows = (
     return compareStrings(lower(rowA?.fullName), lower(rowB?.fullName), 'asc')
   })
 }
+
+export function getTeamPlayersSortLabel(sortBy) {
+  if (sortBy === 'name') return 'שם'
+  if (sortBy === 'age') return 'גיל'
+  if (sortBy === 'level') return 'פוטנציאל'
+  if (sortBy === 'timeRate') return 'דקות משחק'
+  if (sortBy === 'goals') return 'שערים'
+  if (sortBy === 'assists') return 'בישולים'
+  if (sortBy === 'squadRole') return 'מעמד'
+  if (sortBy === 'projectStatus') return 'סטטוס פרויקט'
+  return 'פוטנציאל'
+}
+
+export function getTeamPlayersSortDirectionIcon(sortDirection) {
+  return sortDirection === 'asc' ? 'sortUp' : 'sortDown'
+}
+
+export function getTeamPlayersSortDirectionLabel(sortDirection) {
+  return sortDirection === 'asc' ? 'מהנמוך לגבוה' : 'מהגבוה לנמוך'
+}

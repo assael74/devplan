@@ -9,26 +9,6 @@ import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 import TeamPlayersFiltersBar from './TeamPlayersFiltersBar.js'
 import TeamPlayersSortMenu from './TeamPlayersSortMenu.js'
 
-const getSortLabel = (sortBy) => {
-  if (sortBy === 'name') return 'שם'
-  if (sortBy === 'age') return 'גיל'
-  if (sortBy === 'level') return 'פוטנציאל'
-  if (sortBy === 'timeRate') return 'דקות משחק'
-  if (sortBy === 'goals') return 'שערים'
-  if (sortBy === 'assists') return 'בישולים'
-  if (sortBy === 'squadRole') return 'מעמד'
-  if (sortBy === 'projectStatus') return 'סטטוס פרויקט'
-  return 'פוטנציאל'
-}
-
-const getSortDirectionIcon = (sortDirection) => {
-  return sortDirection === 'asc' ? 'sortUp' : 'sortDown'
-}
-
-const getSortDirectionLabel = (sortDirection) => {
-  return sortDirection === 'asc' ? 'מהנמוך לגבוה' : 'מהגבוה לנמוך'
-}
-
 export default function TeamPlayersToolbar({
   summary,
   filters,

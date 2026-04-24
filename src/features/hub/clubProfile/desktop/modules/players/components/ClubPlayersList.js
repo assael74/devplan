@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/joy'
 import ClubPlayerRow from './ClubPlayerRow.js'
 
-import { clubPlayersListSx as sx } from '../sx/clubPlayers.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 export default function ClubPlayersList({ rows }) {
   if (!rows?.length) {

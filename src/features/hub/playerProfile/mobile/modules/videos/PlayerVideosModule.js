@@ -1,6 +1,6 @@
 // playerProfile/mobile/modules/videos/PlayerVideosModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
@@ -16,13 +16,20 @@ import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlaye
 import {
   createInitialPlayerVideosFilters,
   resolvePlayerVideosFiltersDomain,
+  sortPlayerVideosRows,
 } from './../../../sharedLogic'
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
 const asArr = (v) => (Array.isArray(v) ? v : [])
 
-export default function PlayerVideosModule({ entity, context }) {
+export default function PlayerVideosModule({
+  entity,
+  context,
+  videoInsightsOpen,
+  setVideoInsightsOpen,
+  videoInsightsRequest = 0,
+}) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
     return players.find((p) => p?.id === entity?.id) || entity || null
@@ -30,10 +37,14 @@ export default function PlayerVideosModule({ entity, context }) {
 
   const initialFilters = useMemo(() => createInitialPlayerVideosFilters(), [])
 
-  const [filters, setFilters] = useState(initialFilters)
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingVideo, setEditingVideo] = useState(null)
   const [watchVideo, setWatchVideo] = useState(null)
+  const [filters, setFilters] = useState(initialFilters)
+  const [sort, setSort] = useState({
+    by: 'date',
+    direction: 'desc',
+  })
 
   const tags = useMemo(() => {
     const a = asArr(context?.tags)
@@ -52,13 +63,17 @@ export default function PlayerVideosModule({ entity, context }) {
     })
   }, [livePlayer, filters, tags])
 
-  const {
-    summary,
-    videos,
-    allVideos,
-    options,
-    indicators,
-  } = domain
+  useEffect(() => {
+    if (videoInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [videoInsightsRequest])
+
+  const { summary, videos, allVideos, options, indicators } = domain
+
+  const sortedVideos = useMemo(() => {
+    return sortPlayerVideosRows(videos, sort)
+  }, [videos, sort])
 
   const handleChangeFilters = (patch) => {
     setFilters((prev) => ({
@@ -84,9 +99,12 @@ export default function PlayerVideosModule({ entity, context }) {
           filters={filters}
           indicators={indicators}
           options={options}
-          onOpenInsights={() => setInsightsOpen(true)}
           onChangeFilters={handleChangeFilters}
           onResetFilters={handleResetFilters}
+          sortBy={sort.by}
+          sortDirection={sort.direction}
+          onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+          onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
         />
       </Box>
 
@@ -101,7 +119,7 @@ export default function PlayerVideosModule({ entity, context }) {
         />
       ) : (
         <PlayerVideosList
-          rows={videos}
+          rows={sortedVideos}
           onEditVideo={(video) => setEditingVideo(video || null)}
           onWatchVideo={(video) => handleWatch(video || null)}
           onOpenNotes={(video) => console.log('open notes', video)}
@@ -111,7 +129,7 @@ export default function PlayerVideosModule({ entity, context }) {
       <PlayerVideosInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        videos={videos}
+        videos={sortedVideos}
         summary={summary}
         entity={livePlayer}
         tags={tags}

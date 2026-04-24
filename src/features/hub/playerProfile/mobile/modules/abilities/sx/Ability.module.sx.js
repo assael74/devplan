@@ -34,8 +34,6 @@ export const moduleSx = {
     },
     '& .MuiAccordionDetails-root': {
       px: 1.1,
-      pb: 1.1,
-      pt: 0.25,
     },
     '&:hover': {
       borderColor: `${accent}.400`,

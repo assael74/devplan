@@ -1,12 +1,12 @@
 // playerProfile/modules/videos/PlayerVideosModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import PlayerVideosToolbar from './components/PlayerVideosToolbar.js'
+import PlayerVideosToolbar from './components/toolbar/PlayerVideosToolbar.js'
 import PlayerVideosList from './components/PlayerVideosList.js'
 
 import PlayerVideosInsightsDrawer from './components/insightsDrawer/PlayerVideosInsightsDrawer.js'
@@ -16,6 +16,7 @@ import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlaye
 import {
   createInitialPlayerVideosFilters,
   resolvePlayerVideosFiltersDomain,
+  sortPlayerVideosRows
 } from './../../../sharedLogic'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
@@ -24,7 +25,11 @@ const c = getEntityColors('videoAnalysis')
 
 const asArr = (v) => (Array.isArray(v) ? v : [])
 
-export default function PlayerVideosModule({ entity, context }) {
+export default function PlayerVideosModule({
+  entity,
+  context,
+  videoInsightsRequest = 0,
+}) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
     return players.find((p) => p?.id === entity?.id) || entity || null
@@ -36,6 +41,10 @@ export default function PlayerVideosModule({ entity, context }) {
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingVideo, setEditingVideo] = useState(null)
   const [watchVideo, setWatchVideo] = useState(null)
+  const [sort, setSort] = useState({
+    by: 'date',
+    direction: 'desc',
+  })
 
   const tags = useMemo(() => {
     const a = asArr(context?.tags)
@@ -54,6 +63,12 @@ export default function PlayerVideosModule({ entity, context }) {
     })
   }, [livePlayer, filters, tags])
 
+  useEffect(() => {
+    if (videoInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [videoInsightsRequest])
+
   const {
     summary,
     videos,
@@ -61,6 +76,10 @@ export default function PlayerVideosModule({ entity, context }) {
     options,
     indicators,
   } = domain
+
+  const sortedVideos = useMemo(() => {
+    return sortPlayerVideosRows(videos, sort)
+  }, [videos, sort])
 
   const handleChangeFilters = (patch) => {
     setFilters((prev) => ({
@@ -99,9 +118,12 @@ export default function PlayerVideosModule({ entity, context }) {
             filters={filters}
             indicators={indicators}
             options={options}
-            onOpenInsights={() => setInsightsOpen(true)}
             onChangeFilters={handleChangeFilters}
             onResetFilters={handleResetFilters}
+            sortBy={sort.by}
+            sortDirection={sort.direction}
+            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
           />
         </Box>
 
@@ -116,7 +138,7 @@ export default function PlayerVideosModule({ entity, context }) {
           />
         ) : (
           <PlayerVideosList
-            rows={videos}
+            rows={sortedVideos}
             onEditVideo={(video) => setEditingVideo(video || null)}
             onWatchVideo={(video) => handleWatch(video || null)}
             onOpenNotes={(video) => console.log('open notes', video)}
@@ -127,7 +149,7 @@ export default function PlayerVideosModule({ entity, context }) {
       <PlayerVideosInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        videos={videos}
+        videos={sortedVideos}
         summary={summary}
         entity={livePlayer}
         tags={tags}

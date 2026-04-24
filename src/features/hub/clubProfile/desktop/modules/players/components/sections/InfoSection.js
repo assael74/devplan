@@ -5,7 +5,7 @@ import { Box, Chip, Typography, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
-import { clubPlayersSectionsSx as sx } from '../../sx/clubPlayers.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
@@ -26,6 +26,7 @@ export default function InfoSection({ row }) {
   const assists = Number(row?.playerFullStats?.assists ?? 0)
   const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
   const colorTR = row?.playerFullStats?.trColor || 'neutral'
+  const teamName = row?.teamName || '—'
 
   return (
     <Box sx={sx.infoSection}>

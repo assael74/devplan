@@ -14,7 +14,7 @@ import {
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
-import { playerGamesToolbarSx as sx } from '../../sx/playerGames.toolbar.sx.js'
+import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 import PlayerGamesToolbarSelectValue from './PlayerGamesToolbarSelectValue.js'
 
 import {

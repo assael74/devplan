@@ -1,6 +1,6 @@
 // playerProfile/desktop/modules/abilities/PlayerAbilitiesModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box, Grid, Typography, Divider, Card, CardContent } from '@mui/joy'
 
 import { resolveAbilitiesDomain } from '../../../../../../shared/abilities/abilities.domain.logic.js'
@@ -12,9 +12,13 @@ import PlayerAbilitiesInsightsDrawer from './components/insightsDrawer/PlayerAbi
 import { isFilled, useAbilitiesSummary } from './../../../sharedLogic'
 import { abilitiesModuleSx, stickyHeaderWrapSx } from './sx/Ability.module.sx'
 
-export default function PlayerAbilitiesModule({ entity, context }) {
+export default function PlayerAbilitiesModule({
+  entity,
+  context,
+  abilitiesInsightsRequest = 0,
+}) {
   const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false)
-  const [insightsDrawerOpen, setInsightsDrawerOpen] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
   const [selectedDomains, setSelectedDomains] = useState(['technical', 'physical', 'gameUnderstanding', 'mental', 'cognitive'])
   const [showOnlyFilled, setShowOnlyFilled] = useState(false)
   const [invitePending, setInvitePending] = useState(false)
@@ -47,6 +51,12 @@ export default function PlayerAbilitiesModule({ entity, context }) {
       .filter((domain) => domain?.items?.length > 0)
   }, [domains, selectedDomains, showOnlyFilled])
 
+  useEffect(() => {
+    if (abilitiesInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [abilitiesInsightsRequest])
+
   const indicators = useMemo(() => {
     const next = []
 
@@ -75,10 +85,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
     setInviteDrawerOpen(true)
   }
 
-  function handleOpenInsights() {
-    setInsightsDrawerOpen(true)
-  }
-
   function handleClearIndicator(item) {
     if (!item?.id) return
 
@@ -101,7 +107,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
           total={total}
           filled={filled}
           avgAll={avgAll}
-          insightsPending={false}
           indicators={indicators}
           invitePending={invitePending}
           totalDomains={domains.length}
@@ -109,7 +114,6 @@ export default function PlayerAbilitiesModule({ entity, context }) {
           onOpenInvite={handleOpenInvite}
           selectedDomains={selectedDomains}
           shownCount={filteredDomains.length}
-          onOpenInsights={handleOpenInsights}
           onClearIndicator={handleClearIndicator}
           onToggleShowOnlyFilled={setShowOnlyFilled}
           onChangeSelectedDomains={setSelectedDomains}
@@ -162,9 +166,10 @@ export default function PlayerAbilitiesModule({ entity, context }) {
 
       {/* כאן תחבר בהמשך את מגירת התובנות */}
       <PlayerAbilitiesInsightsDrawer
-        open={insightsDrawerOpen}
-        onClose={() => setInsightsDrawerOpen(false)}
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
         entity={player}
+        context={context}
       />
     </Box>
   )

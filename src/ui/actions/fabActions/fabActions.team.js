@@ -141,14 +141,14 @@ export function buildTeamFabActions({
           label: 'תובנות יכולות',
           icon: iconUi({ id: 'insights' }),
           onClick: onOpenAbilitiesInsights,
-          color: 'player',
+          color: 'team',
           disabled: false,
         },
       ],
       insightsSection: {
         id: 'section-insights',
         label: 'תובנות',
-        colorKey: 'player',
+        colorKey: 'team',
       },
     })
   }

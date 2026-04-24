@@ -10,7 +10,7 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import InfoSection from './sections/InfoSection.js'
 import PositionsSection from './sections/PositionsSection.js'
 
-import { clubPlayersListSx as sx } from '../sx/clubPlayers.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
@@ -54,7 +54,7 @@ export default function ClubPlayerRow({ row }) {
 
       <Box sx={sx.ratingCol}>
         <Typography level="body-xs" sx={sx.ratingTitle}>
-          פוטנציאל ({Number(row?.level) || 0})
+          יכולת ({Number(row?.level) || 0})
         </Typography>
 
         <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />

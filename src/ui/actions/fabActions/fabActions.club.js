@@ -9,7 +9,11 @@ export function buildClubFabActions({
   taskAction = null,
   handlers = {},
 }) {
-  const { onCreateTeam, onCreatePlayer } = handlers
+  const {
+    onCreateTeam,
+    onOpenPlayersInsights,
+    onOpenTeamsInsights
+  } = handlers
 
   if (mode === 'teams') {
     return composeFabActions({
@@ -25,23 +29,43 @@ export function buildClubFabActions({
       ],
       taskAction,
       primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'team' },
+      insightActions: [
+        {
+          id: 'teams-insights',
+          label: 'תובנות קבוצות',
+          icon: iconUi({ id: 'insights' }),
+          onClick: onOpenTeamsInsights,
+          color: 'teams',
+          disabled: false,
+        },
+      ],
+      insightsSection: {
+        id: 'section-insights',
+        label: 'תובנות',
+        colorKey: 'teams',
+      },
     })
   }
 
   if (mode === 'players') {
     return composeFabActions({
-      primaryActions: [
-        {
-          id: 'player',
-          label: 'הוסף שחקן',
-          icon: iconUi({ id: 'addPlayer' }),
-          onClick: onCreatePlayer,
-          color: 'player',
-          disabled: !allowCreate,
-        },
-      ],
       taskAction,
       primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'player' },
+      insightActions: [
+        {
+          id: 'players-insights',
+          label: 'תובנות משחקנים',
+          icon: iconUi({ id: 'insights' }),
+          onClick: onOpenPlayersInsights,
+          color: 'players',
+          disabled: false,
+        },
+      ],
+      insightsSection: {
+        id: 'section-insights',
+        label: 'תובנות',
+        colorKey: 'players',
+      },
     })
   }
 

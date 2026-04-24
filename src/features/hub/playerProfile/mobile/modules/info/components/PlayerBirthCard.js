@@ -19,7 +19,7 @@ export default function PlayerBirthCard({ player, onUpdate }) {
   const initial = useMemo(() => buildPlayerBirthInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [saving, setSaving] = useState(false)
-  console.log(draft)
+  
   const dirty = isPlayerBirthDirty(draft, initial)
 
   useEffect(() => {

@@ -32,13 +32,7 @@ const toNumber = (v, fallback = 0) => {
 }
 
 const toDateMs = (video) => {
-  const raw =
-    video?.videoDate ||
-    video?.date ||
-    video?.createdAt ||
-    video?.meetingDate ||
-    video?.ts ||
-    ''
+  const raw = video?.monthKey || ''
 
   if (!raw) return 0
 
@@ -80,7 +74,7 @@ const compareByMonth = (left, right) => {
 }
 
 const compareVideosBy = (left, right, sortBy) => {
-  if (sortBy === 'date') return compareDates(left, right)
+  if (sortBy === 'date') return compareNumbers(toDateMs(left), toDateMs(right))
   if (sortBy === 'name') return compareText(left?.name, right?.name)
   if (sortBy === 'playerName') return compareText(left?.playerName, right?.playerName)
   if (sortBy === 'tagsCount') return compareNumbers(left?.tagsCount, right?.tagsCount)

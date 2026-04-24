@@ -5,7 +5,7 @@ import { Box, Chip, Typography, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { clubTeamsSectionsSx as sx } from '../../sx/clubTeams.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 function getLeagueLabel(team) {
   const leagueName = team?.leagueName || ''

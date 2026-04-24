@@ -1,7 +1,7 @@
 // playerProfile/mobile/modules/games/components/toolbar/PlayerGamesToolbarContent.js
 
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, IconButton } from '@mui/joy'
+import { Box, Chip, IconButton, Button } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import {
@@ -9,7 +9,9 @@ import {
   MobileFiltersDrawerShell,
 } from '../../../../../../../../ui/patterns/filters/index.js'
 
-import { playerGamesToolbarSx as sx } from '../../sx/playerGames.toolbar.sx.js'
+import { SortDrawerMobile } from '../../../../../../../../ui/patterns/sort/index.js'
+
+import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 import PlayerGamesToolbarFilterChip from './PlayerGamesToolbarFilterChip.js'
 import GamesFiltersContent from './GamesFiltersContent.js'
@@ -20,6 +22,12 @@ import {
   safeArray,
 } from '../../../../../sharedLogic'
 
+import {
+  PLAYER_GAMES_SORT_OPTIONS,
+  getPlayerGamesSortLabel,
+  getPlayerGamesSortDirectionIcon,
+} from '../../../../../sharedLogic'
+
 export default function PlayerGamesToolbarContent({
   summary,
   filters,
@@ -28,8 +36,13 @@ export default function PlayerGamesToolbarContent({
   onOpenInsights,
   onChangeFilters,
   onResetFilters,
+  sortBy = 'date',
+  sortDirection = 'desc',
+  onChangeSortBy,
+  onChangeSortDirection,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
 
   const {
     totalGames,
@@ -76,14 +89,19 @@ export default function PlayerGamesToolbarContent({
 
             <Box sx={{ flex: 1 }} />
 
-            <IconButton
+            <Button
               size="sm"
-              variant="solid"
-              onClick={onOpenInsights}
-              sx={sx.createBtn}
+              variant="soft"
+              color="neutral"
+              onClick={() => setSortOpen(true)}
+              endDecorator={iconUi({
+                id: getPlayerGamesSortDirectionIcon(sortDirection),
+                sx: { fontSize: 15, color: '#1ED760' },
+              })}
+              sx={sx.sortBut}
             >
-              {iconUi({ id: 'insights' })}
-            </IconButton>
+              {getPlayerGamesSortLabel(sortBy)}
+            </Button>
           </Box>
         </Box>
 
@@ -117,6 +135,17 @@ export default function PlayerGamesToolbarContent({
           onChangeFilters={onChangeFilters}
         />
       </MobileFiltersDrawerShell>
+
+      <SortDrawerMobile
+        open={sortOpen}
+        onClose={() => setSortOpen(false)}
+        title="מיון משחקים"
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        sortOptions={PLAYER_GAMES_SORT_OPTIONS}
+        onChangeSortBy={onChangeSortBy}
+        onChangeSortDirection={onChangeSortDirection}
+      />
     </>
   )
 }

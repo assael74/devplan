@@ -1,6 +1,6 @@
 // playerProfile/mobile/modules/games/playerGamesModule.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
@@ -14,11 +14,18 @@ import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 import {
   createInitialPlayerGamesFilters,
   resolvePlayerGamesFiltersDomain,
+  sortPlayerGamesRows
 } from './../../../sharedLogic'
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
-export default function PlayerGamesModule({ entity, context }) {
+export default function PlayerGamesModule({
+  entity,
+  context,
+  gamesInsightsOpen,
+  setGamesInsightsOpen,
+  gamesInsightsRequest = 0,
+}) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
     return players.find((p) => p?.id === entity?.id) || entity || null
@@ -26,9 +33,13 @@ export default function PlayerGamesModule({ entity, context }) {
 
   const initialFilters = useMemo(() => createInitialPlayerGamesFilters(), [])
 
-  const [filters, setFilters] = useState(initialFilters)
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingEntryGame, setEditingEntryGame] = useState(null)
+  const [filters, setFilters] = useState(initialFilters)
+  const [sort, setSort] = useState({
+    by: 'date',
+    direction: 'desc',
+  })
 
   const domain = useMemo(() => {
     return resolvePlayerGamesFiltersDomain(livePlayer, filters, {
@@ -37,6 +48,16 @@ export default function PlayerGamesModule({ entity, context }) {
   }, [livePlayer, filters])
 
   const { summary, games, options, indicators } = domain || {}
+
+  const sortedGames = useMemo(() => {
+    return sortPlayerGamesRows(games, sort)
+  }, [games, sort])
+
+  useEffect(() => {
+    if (gamesInsightsRequest > 0) {
+      setInsightsOpen(true)
+    }
+  }, [gamesInsightsRequest])
 
   const handleChangeFilters = (patch) => {
     setFilters((prev) => ({
@@ -49,7 +70,7 @@ export default function PlayerGamesModule({ entity, context }) {
     setFilters(createInitialPlayerGamesFilters())
   }
 
-  const hasRows = Array.isArray(games) && games.length > 0
+  const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
   const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
 
   return (
@@ -60,9 +81,12 @@ export default function PlayerGamesModule({ entity, context }) {
           filters={filters}
           indicators={indicators}
           options={options}
-          onOpenInsights={() => setInsightsOpen(true)}
           onChangeFilters={handleChangeFilters}
           onResetFilters={handleResetFilters}
+          sortBy={sort.by}
+          sortDirection={sort.direction}
+          onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+          onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
         />
       </Box>
 
@@ -77,7 +101,7 @@ export default function PlayerGamesModule({ entity, context }) {
         />
       ) : (
         <PlayerGamesList
-          rows={games}
+          rows={sortedGames}
           onEditEntryGame={(game) => setEditingEntryGame(game || null)}
         />
       )}
@@ -85,7 +109,8 @@ export default function PlayerGamesModule({ entity, context }) {
       <PlayerGamesInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        games={games}
+        games={sortedGames}
+        summary={summary}
         player={livePlayer}
       />
 

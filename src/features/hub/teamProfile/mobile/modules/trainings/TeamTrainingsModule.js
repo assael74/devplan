@@ -6,7 +6,11 @@ import { Box } from '@mui/joy'
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import { resolveTeamTrainingsDomain } from '../../../sharedLogic/trainings'
+import {
+  resolveTeamTrainingsDomain,
+  buildTrainingsModel,
+  buildTrainingsHeaderStats,
+} from '../../../sharedLogic/trainings'
 
 import TrainingWeekDrawer from '../../../../../../ui/patterns/schedule/components/drawer/TrainingWeekDrawer.js'
 import EditDayTrainingDrawer from '../../../../../../ui/patterns/schedule/components/editDrawer/EditDayTrainingDrawer.js'

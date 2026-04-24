@@ -9,7 +9,7 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import InfoSection from './sections/InfoSection.js'
 
-import { clubTeamsListSx as sx } from '../sx/clubTeams.list.sx.js'
+import { listSx as sx } from '../sx/list.sx.js'
 
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 

@@ -9,11 +9,12 @@ export default function InsightsChipsList({
   items = [],
   iconFallback = 'layers',
   chipColor = 'neutral',
+  emptyText = 'אין נתונים להצגה',
 }) {
   if (!items.length) {
     return (
       <Typography level="body-sm" sx={{ opacity: 0.7 }}>
-        אין נתונים להצגה
+        {emptyText}
       </Typography>
     )
   }

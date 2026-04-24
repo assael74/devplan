@@ -39,6 +39,7 @@ export function buildFabActions({
     onCreateVideoGeneral: pick(handlers.onCreateVideoGeneral, noOp),
 
     onOpenPlayersInsights: pick(handlers.onOpenPlayersInsights, noOp),
+    onOpenTeamsInsights: pick(handlers.onOpenTeamsInsights, noOp),
     onOpenGamesInsights: pick(handlers.onOpenGamesInsights, noOp),
     onOpenPerformanceInsights: pick(handlers.onOpenPerformanceInsights, noOp),
     onOpenAbilitiesInsights: pick(handlers.onOpenAbilitiesInsights, noOp),

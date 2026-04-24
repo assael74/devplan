@@ -70,8 +70,6 @@ export default function PlayerAbilitiesToolbar({
   evaluatorsCount = 0,
   onOpenInvite,
   invitePending = false,
-  onOpenInsights,
-  insightsPending = false,
   indicators = [],
   onClearIndicator,
   shownCount = 0,
@@ -88,16 +86,6 @@ export default function PlayerAbilitiesToolbar({
         </Box>
 
         <Box sx={{ flex: 1 }} />
-
-        <IconButton
-          size="sm"
-          variant="solid"
-          onClick={onOpenInsights}
-          loading={insightsPending}
-          sx={sx.insightsBtn}
-        >
-          {iconUi({ id: 'insights' })}
-        </IconButton>
 
         <IconButton
           size="sm"

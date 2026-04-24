@@ -7,7 +7,7 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import {
   getCompactTrainingLabel,
   getCompactTrainingSubLabel,
-} from './../../../../sharedLogic'
+} from './../../../../sharedLogic/trainings/trainings.format.js'
 
 import { rowsSx as sx } from '../sx/rows.sx.js'
 

@@ -1,15 +1,18 @@
 /// features/hub/clubProfile/mobile/components/ClubHeader.js
 
 import React, { useMemo, useState, useEffect } from 'react'
-import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
-import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
+import { useNavigate } from 'react-router-dom'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
+import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
+import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 
 const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
 
-export default function ClubHeader({ entity, context }) {
+export default function ClubHeader({ entity, context, counts, onBack }) {
+  const navigate = useNavigate()
+
   const [openImg, setOpenImg] = useState(false)
 
   const fallback = buildFallbackAvatar({
@@ -32,22 +35,52 @@ export default function ClubHeader({ entity, context }) {
     }
   }, [entity?.teams])
 
+  const clubName = useMemo(() => {
+    return entity?.clubName
+  }, [entity])
+
+  const subtitle = useMemo(() => {
+    const name = entity?.clubName || ''
+    return name
+  }, [entity])
+
+  const pathItems = useMemo(() => {
+    return [
+      {
+        label: 'מרכז שליטה',
+        onClick: () => navigate('/hub'),
+      },
+      {
+        label: 'שחקנים',
+        onClick: () => navigate('/hub?tab=players'),
+      },
+      {
+        label: 'קבוצות',
+        onClick: () => navigate('/hub?tab=teams'),
+      },
+    ]
+  }, [navigate])
+
+  const rightNode = (
+    <EntityActionsMenu
+      entityType="club"
+      entityId={entity?.id}
+      entityName={clubName}
+      metaCounts={metaCounts}
+      isArchived={entity?.active === false}
+    />
+  )
+
   return (
     <>
       <HeaderStripMobile
-        title={entity?.clubName || ''}
-        subtitle={context?.project?.label || ''}
+        title={clubName || 'מועדון'}
+        subtitle={subtitle}
         avatarSrc={headerPhoto}
         onAvatarClick={() => setOpenImg(true)}
-        right={
-          <EntityActionsMenu
-            entityType="club"
-            entityId={entity?.id}
-            entityName={entity?.clubName}
-            metaCounts={metaCounts}
-            isArchived={entity?.active === false}
-          />
-        }
+        onBack={onBack}
+        pathItems={pathItems}
+        right={rightNode}
       />
 
       <EntityImageModal
@@ -55,13 +88,11 @@ export default function ClubHeader({ entity, context }) {
         onClose={() => setOpenImg(false)}
         entityType="clubs"
         id={entity?.id}
-        entityName={entity?.clubName}
+        entityName={clubName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
         onAfterSave={(url) => {
-          setHeaderPhoto(
-            `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-          )
+          setHeaderPhoto(`${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`)
         }}
       />
     </>

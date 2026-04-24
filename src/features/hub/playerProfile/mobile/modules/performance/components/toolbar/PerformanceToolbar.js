@@ -36,16 +36,6 @@ export default function PerformanceToolbar({
             onClick={() => setFiltersOpen(true)}
             label="פילטרים"
           />
-
-          <Box sx={{ flex: 1 }} />
-
-          <IconButton
-            size="sm"
-            variant="solid"
-            sx={sx.createBtn}
-          >
-            {iconUi({ id: 'insights' })}
-          </IconButton>
         </Box>
 
         <Box sx={sx.toolbarBottom}>

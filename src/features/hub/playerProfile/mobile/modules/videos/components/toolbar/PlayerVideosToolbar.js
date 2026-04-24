@@ -1,13 +1,15 @@
 // playerProfile/mobile/modules/videos/components/toolbar/PlayerVideosToolbar.js
 
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, IconButton } from '@mui/joy'
+import { Box, Chip, Button } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import {
   FiltersTrigger,
   MobileFiltersDrawerShell,
 } from '../../../../../../../../ui/patterns/filters/index.js'
+
+import { SortDrawerMobile } from '../../../../../../../../ui/patterns/sort/index.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
@@ -20,16 +22,26 @@ import {
   safeArray,
 } from '../../../../../sharedLogic'
 
+import {
+  PLAYER_VIDEOS_SORT_OPTIONS,
+  getPlayerVideosSortLabel,
+  getPlayerVideosSortDirectionIcon,
+} from '../../../../../sharedLogic'
+
 export default function PlayerVideosToolbar({
   summary,
   filters,
   indicators = [],
   options = {},
-  onOpenInsights,
   onChangeFilters,
   onResetFilters,
+  sortBy = 'date',
+  sortDirection = 'desc',
+  onChangeSortBy,
+  onChangeSortDirection,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
 
   const {
     totalVideos,
@@ -65,14 +77,19 @@ export default function PlayerVideosToolbar({
 
             <Box sx={{ flex: 1 }} />
 
-            <IconButton
+            <Button
               size="sm"
-              variant="solid"
-              onClick={onOpenInsights}
-              sx={sx.createBtn}
+              variant="soft"
+              color="neutral"
+              onClick={() => setSortOpen(true)}
+              endDecorator={iconUi({
+                id: getPlayerVideosSortDirectionIcon(sortDirection),
+                sx: { fontSize: 15, color: '#1ED760' },
+              })}
+              sx={sx.sortBut}
             >
-              {iconUi({ id: 'insights' })}
-            </IconButton>
+              {getPlayerVideosSortLabel(sortBy)}
+            </Button>
           </Box>
         </Box>
 
@@ -109,6 +126,17 @@ export default function PlayerVideosToolbar({
           onResetFilters={onResetFilters}
         />
       </MobileFiltersDrawerShell>
+
+      <SortDrawerMobile
+        open={sortOpen}
+        onClose={() => setSortOpen(false)}
+        title="מיון וידאו"
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        sortOptions={PLAYER_VIDEOS_SORT_OPTIONS}
+        onChangeSortBy={onChangeSortBy}
+        onChangeSortDirection={onChangeSortDirection}
+      />
     </>
   )
 }

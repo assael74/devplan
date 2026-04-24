@@ -4,9 +4,13 @@ import { Box, Typography } from '@mui/joy'
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import { clubManagementModuleSx as sx } from './sx/clubManagement.module.sx.js'
-import { buildClubManagementModel, buildClubManagementPatch } from './logic/clubManagement.logic.js'
-import { isClubManagementDirty } from './logic/clubManagement.dirty.js'
+import {
+  buildClubManagementModel,
+  buildClubManagementPatch,
+  isClubManagementDirty,
+} from '../../../sharedLogic/management/index.js'
+
+import { moduleSx as sx } from './sx/module.sx'
 
 import ClubManagementInfoCard from './components/ClubManagementInfoCard.js'
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'
@@ -60,15 +64,6 @@ export default function ClubManagementModule({ entity, context }) {
       <Box sx={sx.root}>
         <Box sx={sx.topGrid}>
           <ClubManagementInfoCard
-            sx={{
-              cardSx: sx.card,
-              cardHeader: sx.cardHeader,
-              actions: sx.actions,
-              firstRow: sx.firstRow,
-              chipsRow: sx.chipsRow,
-              yearWrap: sx.yearWrap,
-              secondRow: sx.secondRow,
-            }}
             draft={draft}
             isDirty={isDirty}
             onDraft={setDraft}

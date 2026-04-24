@@ -96,17 +96,6 @@ export default function PlayerAbilitiesToolbar({
           >
             שליחת טופס
           </Button>
-
-          <Button
-            size="sm"
-            variant="soft"
-            startDecorator={iconUi({ id: 'insights' })}
-            onClick={onOpenInsights}
-            loading={insightsPending}
-            sx={sx.insightsBtn}
-          >
-            תובנות
-          </Button>
         </Box>
       </Box>
 
