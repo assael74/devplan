@@ -1,1 +1,1 @@
-export { default as VideoPreviewMedia } from './VideoPreviewMedia.js'
+export { default as VideoPreviewMedia } from './desktop/videoCard/VideoPreviewMedia.js'

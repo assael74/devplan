@@ -5,7 +5,9 @@ import { Box, Divider, Dropdown, IconButton, Menu, MenuButton, MenuItem, Tooltip
 import MoreVert from '@mui/icons-material/MoreVert'
 
 import { VideoPreviewMedia } from '../../../../../../../../../../ui/domains/video/videoAnalysis'
-import { compactMediaSx } from '../../../../../../../../../../ui/domains/video/videoAnalysis/sx/videoPreviewMedia.sx.js'
+import {
+  compactMediaSx
+} from '../../../../../../../../../../ui/domains/video/videoAnalysis/desktop/videoCard/sx/videoPreviewMedia.sx.js'
 import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { rowSx as sx } from '../sx/teamVideosRow.sx.js'

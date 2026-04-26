@@ -12,4 +12,5 @@ export const roleIcons = {
   scout: <PersonSearch />,
   scouting: <PersonSearch />,
   Analyst: <Analytics />,
+  analyst: <Analytics />,
 };

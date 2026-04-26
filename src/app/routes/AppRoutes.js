@@ -9,7 +9,7 @@ import AppLayout from '../layout/AppLayout'
 import TopBar from '../../ui/core/layout/TopBar'
 
 import HubPage from '../../features/hub/ui/HubPage'
-import HomePageView from '../../features/home/HomePageView'
+import HomePage from '../../features/home/HomePage'
 import PlayerProfilePage from '../../features/hub/playerProfile/PlayerProfilePage'
 import TeamProfilePage from '../../features/hub/teamProfile/TeamProfilePage'
 import ClubProfilePage from '../../features/hub/clubProfile/ClubProfilePage'
@@ -149,7 +149,7 @@ export default function AppRoutes() {
 
           <Route path="/" element={<Navigate to="/home" replace />} />
 
-          <Route path="/home" element={<HomePageView />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/hub" element={<HubPage />} />
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />

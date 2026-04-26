@@ -22,7 +22,7 @@ export default function VideoAnalysisMobileCard({
   onEdit,
 }) {
   return (
-    <Card variant="outlined" orientation="horizontal" sx={{ width: '100%', p: 0 }}>
+    <Card variant="outlined" orientation="horizontal" sx={{ width: '100%', p: 0, gap: 0.5 }}>
       <CardOverflow>
         <VideoMobileMedia video={video} onWatch={onWatch} />
       </CardOverflow>

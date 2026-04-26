@@ -10,7 +10,9 @@ import {
 } from '@mui/joy'
 
 import { VideoPreviewMedia } from '../../../../../../../../ui/domains/video/videoAnalysis'
-import { compactMediaSx } from '../../../../../../../../ui/domains/video/videoAnalysis/sx/videoPreviewMedia.sx.js'
+import {
+  compactMediaSx
+} from '../../../../../../../../ui/domains/video/videoAnalysis/desktop/videoCard/sx/videoPreviewMedia.sx.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
 import { sectionsSx as sx } from '../../sx/sections.sx.js'

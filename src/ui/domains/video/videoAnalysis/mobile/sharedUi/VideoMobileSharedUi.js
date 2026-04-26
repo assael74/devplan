@@ -93,7 +93,7 @@ export function VideoMobileInfo({ video }) {
 export function VideoMobileTags({ video }) {
   const visibleTags = useMemo(() => getVisibleVideoTags(video, 2), [video])
   const extraTagsCount = getExtraVideoTagsCount(video, 2)
-
+  
   if (!visibleTags.length) {
     return (
       <Box sx={sx.tagsCell}>

@@ -115,5 +115,9 @@ export function buildFabActions({
     })
   }
 
+  if (area === 'home') {
+    return taskAction ? [taskAction] : []
+  }
+
   return taskAction ? [taskAction] : []
 }

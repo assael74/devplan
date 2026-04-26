@@ -83,6 +83,8 @@ export const sharedSx = {
   },
 
   overflow: {
+    width: 36,
+    minWidth: 36,
     justifyContent: 'center',
     borderLeft: '1px solid',
     borderColor: 'divider',
@@ -90,7 +92,7 @@ export const sharedSx = {
     borderBottomRightRadius: 12,
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
-    bgcolor: c.bg
+    bgcolor: 'background.level1',
   },
 
   assignmentChip: {
@@ -132,15 +134,27 @@ export const sharedSx = {
   },
 
   tagChip: {
+    '--Chip-minHeight': '18px',
+    '--Chip-paddingInline': '6px',
     maxWidth: '100%',
+    fontSize: 10,
+    fontWeight: 600,
     bgcolor: c.bg,
     border: '1px solid',
     borderColor: 'divider',
+
     '& .MuiChip-label': {
+      px: 0,
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       display: 'block',
     },
-  },
+
+    '& .MuiChip-startDecorator svg': {
+      width: 11,
+      height: 11,
+      fontSize: 11,
+    },
+  }
 }
