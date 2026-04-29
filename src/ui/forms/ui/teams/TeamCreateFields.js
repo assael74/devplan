@@ -67,6 +67,14 @@ export default function TeamCreateFields({
             size="sm"
           />
         </Box>
+
+        <Box sx={sx.status}>
+          <TeamProjectSelector
+            value={draft?.project === true}
+            onChange={(value) => onDraft({ ...draft, project: value === true })}
+            size="sm"
+          />
+        </Box>
       </Box>
 
       <Divider>
@@ -82,15 +90,7 @@ export default function TeamCreateFields({
             onChange={(value) => onDraft({ ...draft, ifaLink: value || '' })}
             size="sm"
           />
-        </Box>
-
-        <Box sx={sx.status}>
-          <TeamProjectSelector
-            value={draft?.project === true}
-            onChange={(value) => onDraft({ ...draft, project: value === true })}
-            size="sm"
-          />
-        </Box>
+        </Box>        
       </Box>
     </Box>
   )

@@ -1,6 +1,7 @@
 //  features/abilities/explainer/AbilitiesExplainerPage.js
 
 import { useMemo } from 'react'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { Sheet, Box, Stack, Typography }from '@mui/joy'
 
 import { buildAbilitiesExplainerSections } from '../../../shared/abilities/explainer/abilitiesExplainer.logic.js'
@@ -9,12 +10,22 @@ import JoyStarRatingStatic from '../../../ui/domains/ratings/JoyStarRating.js'
 import { abilitiesExplainerSx as sx } from './abilitiesExplainer.sx.js'
 
 export default function AbilitiesExplainerPage() {
+  const isMobile = useMediaQuery('(max-width:900px)')
   const sections = useMemo(() => buildAbilitiesExplainerSections(), [])
 
   return (
     <Sheet sx={sx.page}>
       <Sheet sx={sx.hero}>
         <Box>
+        {isMobile ? (
+          <Box sx={{ display: 'grid', gap: 1 }}>
+            <Typography level="h3" sx={{ fontWeight: 700, textAlign: 'left' }}>
+              הסבר על תהליך הדירוג
+            </Typography>
+
+            <JoyStarRatingStatic value={5} />
+          </Box>
+        ) : (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
             <Typography level="h2" sx={{ fontWeight: 700, textAlign: 'left' }}>
               הסבר על תהליך הדירוג
@@ -22,7 +33,7 @@ export default function AbilitiesExplainerPage() {
 
             <JoyStarRatingStatic value={5} />
           </Box>
-
+        )}
 
           <Typography level="body-md" sx={{ color: 'text.secondary', lineHeight: 1.8, textAlign: 'left' }}>
             כאן אפשר לראות בצורה ברורה איך מחושבים ציון היכולת, ציון הפוטנציאל,

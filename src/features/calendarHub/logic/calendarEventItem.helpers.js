@@ -12,6 +12,30 @@ function toDate(value) {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
+export function normalizeLocalDay(value) {
+  const d = value instanceof Date ? new Date(value) : new Date(value)
+
+  if (Number.isNaN(d.getTime())) {
+    const fallback = new Date()
+    fallback.setHours(0, 0, 0, 0)
+    return fallback
+  }
+
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+export function isSameLocalDay(a, b) {
+  const x = normalizeLocalDay(a)
+  const y = normalizeLocalDay(b)
+
+  return (
+    x.getFullYear() === y.getFullYear() &&
+    x.getMonth() === y.getMonth() &&
+    x.getDate() === y.getDate()
+  )
+}
+
 export function buildGameTooltipLabel(event) {
   if (!event) return ''
 
@@ -129,4 +153,95 @@ export function buildCalendarEventMetaPhoto(event, context) {
       subline: team?.club?.clubName || team?.club?.name || '',
     }) || ''
   )
+}
+
+export function buildCalendarEventStatusMeta(event) {
+  const status =
+    event?.status ||
+    event?.statusId ||
+    event?.meta?.status ||
+    ''
+
+  const normalizedStatus = String(status || '').trim()
+
+  if (!normalizedStatus) {
+    return {
+      id: 'planned',
+      label: 'מתוכנן',
+      idIcon: 'calendar',
+      color: 'primary',
+    }
+  }
+
+  const map = {
+    planned: {
+      id: 'planned',
+      label: 'מתוכנן',
+      idIcon: 'calendar',
+      color: 'primary',
+    },
+
+    scheduled: {
+      id: 'scheduled',
+      label: 'מתוכנן',
+      idIcon: 'calendar',
+      color: 'primary',
+    },
+
+    new: {
+      id: 'new',
+      label: 'חדש',
+      idIcon: 'calendar',
+      color: 'primary',
+    },
+
+    done: {
+      id: 'done',
+      label: 'בוצע',
+      idIcon: 'check',
+      color: 'success',
+    },
+
+    completed: {
+      id: 'completed',
+      label: 'בוצע',
+      idIcon: 'check',
+      color: 'success',
+    },
+
+    canceled: {
+      id: 'canceled',
+      label: 'בוטל',
+      idIcon: 'close',
+      color: 'danger',
+    },
+
+    cancelled: {
+      id: 'cancelled',
+      label: 'בוטל',
+      idIcon: 'close',
+      color: 'danger',
+    },
+
+    postponed: {
+      id: 'postponed',
+      label: 'נדחה',
+      idIcon: 'time',
+      color: 'warning',
+    },
+
+    pending: {
+      id: 'pending',
+      label: 'ממתין',
+      idIcon: 'time',
+      color: 'warning',
+    },
+  }
+
+  return map[normalizedStatus] || {
+    id: normalizedStatus,
+    label: normalizedStatus,
+    idIcon: 'calendar',
+    color: 'neutral',
+  }
 }

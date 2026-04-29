@@ -1,9 +1,12 @@
 // ui/fields/checkUi/tags/TagKindSelectField.js
+
 import React, { useMemo } from 'react'
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
 import ToggleButtonGroup from '@mui/joy/ToggleButtonGroup'
 import Button from '@mui/joy/Button'
+
+import { iconUi } from '../../../core/icons/iconUi.js';
 
 export default function TagKindSelectField({
   value = 'tag',
@@ -16,8 +19,8 @@ export default function TagKindSelectField({
 }) {
   const opts = useMemo(
     () => [
-      { id: 'tag', label: 'תג חדש' },
-      { id: 'group', label: 'קטגוריה חדשה' },
+      { id: 'tag', label: 'תג חדש', idIcon: 'children' },
+      { id: 'group', label: 'קטגוריה חדשה', idIcon: 'parents' },
     ],
     []
   )
@@ -61,7 +64,7 @@ export default function TagKindSelectField({
         }}
       >
         {opts.map((o) => (
-          <Button key={o.id} value={o.id}>
+          <Button key={o.id} value={o.id} startDecorator={iconUi({id: o.idIcon})}>
             {o.label}
           </Button>
         ))}

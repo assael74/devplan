@@ -64,7 +64,13 @@ export default function SideNav({ onNavigate, badges, collapsed = false }) {
           { label: 'תשלומים', path: '/payments', iconId: 'payments', disabled: true },
           { label: 'ניהול יומנים', path: '/calendar', iconId: 'meetings', disabled: false },
           { label: 'ניהול תגים', path: '/tags', iconId: 'tags', disabled: false },
-          { label: 'חישוב יכולות', path: '/abilities/explainer', iconId: 'abilities', disabled: false },
+        ],
+      },
+      {
+        title: 'מתודולוגיה',
+        items: [
+          { label: 'מודל חישוב יכולות', path: '/abilities/explainer', iconId: 'abilities', disabled: false },
+          { label: 'מודל תובנות', path: '/insights/explainer', iconId: 'insights', disabled: false },
         ],
       },
     ],

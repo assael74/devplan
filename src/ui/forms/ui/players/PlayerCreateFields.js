@@ -31,21 +31,25 @@ export default function PlayerCreateFields({
   return (
     <Box sx={sx.root(layout)}>
       <Box sx={sx.block(layout.topCols, 1)}>
-        <PlayerFirstNameField
-          required
-          value={playerFirstName}
-          onChange={(v) => onDraft({ ...draft, playerFirstName: v })}
-          error={!validity.okFirst && clean(playerFirstName).length > 0}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <PlayerFirstNameField
+            required
+            value={playerFirstName}
+            onChange={(v) => onDraft({ ...draft, playerFirstName: v })}
+            error={!validity.okFirst && clean(playerFirstName).length > 0}
+            size="sm"
+          />
+        </Box>
 
-        <PlayerLastNameField
-          required
-          value={playerLastName}
-          onChange={(v) => onDraft({ ...draft, playerLastName: v })}
-          error={!validity.okLast && clean(playerLastName).length > 0}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <PlayerLastNameField
+            required
+            value={playerLastName}
+            onChange={(v) => onDraft({ ...draft, playerLastName: v })}
+            error={!validity.okLast && clean(playerLastName).length > 0}
+            size="sm"
+          />
+        </Box>
       </Box>
 
       <Divider>
@@ -55,27 +59,31 @@ export default function PlayerCreateFields({
       </Divider>
 
       <Box sx={sx.block(layout.mainCols, 2)}>
-        <ClubSelectField
-          required
-          value={clubId}
-          options={clubs}
-          onChange={(v) => {
-            const nextClubId = v || ''
-            onDraft({ ...draft, clubId: nextClubId, teamId: '' })
-          }}
-          error={!validity.okClub && clean(clubId).length > 0}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <ClubSelectField
+            required
+            value={clubId}
+            options={clubs}
+            onChange={(v) => {
+              const nextClubId = v || ''
+              onDraft({ ...draft, clubId: nextClubId, teamId: '' })
+            }}
+            error={!validity.okClub && clean(clubId).length > 0}
+            size="sm"
+          />
+        </Box>
 
-        <TeamSelectField
-          required
-          value={teamId}
-          clubId={clubId}
-          options={teams}
-          onChange={(v) => onDraft({ ...draft, teamId: v })}
-          error={!validity.okTeam && clean(teamId).length > 0}
-          size="sm"
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TeamSelectField
+            required
+            value={teamId}
+            clubId={clubId}
+            options={teams}
+            onChange={(v) => onDraft({ ...draft, teamId: v })}
+            error={!validity.okTeam && clean(teamId).length > 0}
+            size="sm"
+          />
+        </Box>
       </Box>
 
       <Divider>
@@ -85,14 +93,16 @@ export default function PlayerCreateFields({
       </Divider>
 
       <Box sx={sx.block(layout.metaCols, 1)}>
-        <MonthYearPicker
-          required
-          label='שנתון'
-          value={birth}
-          onChange={(v) => onDraft({ ...draft, birth: v })}
-          size="sm"
-          error={!validity.okBirth && clean(birth).length > 0}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <MonthYearPicker
+            required
+            label='שנתון'
+            value={birth}
+            onChange={(v) => onDraft({ ...draft, birth: v })}
+            size="sm"
+            error={!validity.okBirth && clean(birth).length > 0}
+          />
+        </Box>
       </Box>
     </Box>
   )

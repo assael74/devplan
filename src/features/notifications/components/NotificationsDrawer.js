@@ -2,6 +2,7 @@
 
 import { Box, Button, Divider, Drawer, Stack, Typography, Sheet } from '@mui/joy'
 import NotificationsList from './NotificationsList'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { notificationsSx as sx } from '../sx/notifications.sx'
 
 export default function NotificationsDrawer({
@@ -16,15 +17,17 @@ export default function NotificationsDrawer({
   onDelete,
   onMarkAllAsRead,
 }) {
+  const isMobile = useMediaQuery('(max-width:900px)')
+
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      anchor="right"
+      anchor={isMobile ? 'bottom' : 'right'}
       size="md"
       slotProps={{
         content: {
-          sx: sx.drawer,
+          sx: sx.drawer(isMobile),
         },
       }}
     >

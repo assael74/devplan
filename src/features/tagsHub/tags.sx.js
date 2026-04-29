@@ -1,5 +1,6 @@
 // src/features/tagsHub/tags.sx.js
-export const sx = {
+
+export const tagSx = {
   page: {
     display: 'flex',
     flexDirection: 'column',
@@ -21,9 +22,14 @@ export const sx = {
     gap: 1,
   },
 
-  title: { minWidth: 0, flex: 1 },
-
-  content: { minHeight: 0, flex: 1, display: 'flex', flexDirection: 'column', px: 2, py: 1.5 },
+  content: {
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    px: 2,
+    py: 1.5
+  },
 
   filtersRow: {
     display: 'flex',
@@ -33,9 +39,6 @@ export const sx = {
     mb: 1.5,
   },
 
-  listWrap: { minHeight: 0, flex: 1 },
-
-  // NEW: separated sections (general vs analysis)
   section:{
     borderRadius: 16,
     p: 1.5,
@@ -53,7 +56,12 @@ export const sx = {
     mb: 1,
   },
 
-  sectionTitleRow: { display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 },
+  sectionTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0
+  },
 
   groupRow: (inactive) => ({
     borderRadius: 12,
@@ -78,7 +86,7 @@ export const sx = {
     alignContent: 'start',
   },
 
-  tagChip: (color) => ({
+  tagChip: (color, inactiveChild) => ({
     height: 28,
     px: 0.6,
     borderRadius: 10,
@@ -91,6 +99,7 @@ export const sx = {
     bgcolor: color,
     boxShadow: 'sm',
     cursor: 'pointer',
+    opacity: inactiveChild ? 0.7 : 1,
     '&:hover': { filter: 'brightness(0.92)' },
     '&:hover .tagActions': { opacity: 1 },
   }),
@@ -112,7 +121,7 @@ export const sx = {
     '&:hover': { filter: 'brightness(0.92)' },
   }),
 
-  childChip: (color) => ({
+  childChip: (color, inactiveChild) => ({
     height: 28,
     px: 0.7,
     borderRadius: 10,
@@ -121,6 +130,7 @@ export const sx = {
     border: '1px solid',
     borderColor: color,
     boxShadow: 'xs',
+    opacity: inactiveChild ? 0.7 : 1,
     '&:hover': { filter: 'brightness(0.97)' },
   }),
 
@@ -131,38 +141,6 @@ export const sx = {
     borderColor: 'neutral.300',
     textAlign: 'center',
     color: 'neutral.600',
-  },
-
-  // kept for drawer (unchanged)
-  drawerSheet: (typeColor) => ({
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 'md',
-    p: 2,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 1.25,
-    height: '100%',
-    overflow: 'auto',
-    '&:before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 50,
-      bgcolor: typeColor,
-      zIndex: 0,
-    },
-  }),
-
-  drawerTitle: {
-    position: 'relative',
-    zIndex: 1,
-    color: '#fff',
-    fontWeight: 700,
-    letterSpacing: 1,
-    textShadow: '0 1px 2px rgba(0,0,0,0.25)',
   },
 
   renderBox: (typeColor) => ({

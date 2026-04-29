@@ -53,22 +53,26 @@ export default function TasksCreateFields({
   return (
     <Box sx={pcfSx.root(layout)}>
       <Box sx={pcfSx.block(layout.topCols, 1)}>
-        <TaskTitleField
-          value={draft?.title || ''}
-          onChange={(value) => setField('title', value)}
-          required
-          error={!validity?.title}
-          helperText={!validity?.title ? 'יש להזין כותרת למשימה' : ''}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskTitleField
+            value={draft?.title || ''}
+            onChange={(value) => setField('title', value)}
+            required
+            error={!validity?.title}
+            helperText={!validity?.title ? 'יש להזין כותרת למשימה' : ''}
+          />
+        </Box>
 
-        <TaskWorkspaceSelectField
-          value={draft?.workspace || ''}
-          required
-          error={!validity?.workspace}
-          disabled={fieldDisabled?.workspace}
-          onChange={(value) => setField('workspace', value)}
-          helperText={!validity?.workspace ? 'יש לבחור אזור עבודה' : ''}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskWorkspaceSelectField
+            value={draft?.workspace || ''}
+            required
+            error={!validity?.workspace}
+            disabled={fieldDisabled?.workspace}
+            onChange={(value) => setField('workspace', value)}
+            helperText={!validity?.workspace ? 'יש לבחור אזור עבודה' : ''}
+          />
+        </Box>
       </Box>
 
       <Divider sx={{ my: 1 }}>
@@ -78,10 +82,12 @@ export default function TasksCreateFields({
       </Divider>
 
       <Box sx={pcfSx.block(layout.mainCols, 2)}>
-        <TaskDescriptionField
-          value={draft?.description || ''}
-          onChange={(value) => setField('description', value)}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskDescriptionField
+            value={draft?.description || ''}
+            onChange={(value) => setField('description', value)}
+          />
+        </Box>
       </Box>
 
       <Divider sx={{ my: 1 }}>
@@ -91,35 +97,46 @@ export default function TasksCreateFields({
       </Divider>
 
       <Box sx={pcfSx.block(layout.metaCols, 1)}>
-        <TaskTypeSelectField
-          workspace={draft?.workspace || ''}
-          value={draft?.taskType || ''}
-          required
-          error={!validity?.taskType}
-          onChange={(value) => setField('taskType', value)}
-          helperText={!validity?.taskType ? 'יש לבחור סוג משימה' : ''}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskTypeSelectField
+            workspace={draft?.workspace || ''}
+            value={draft?.taskType || ''}
+            required
+            error={!validity?.taskType}
+            onChange={(value) => setField('taskType', value)}
+            helperText={!validity?.taskType ? 'יש לבחור סוג משימה' : ''}
+          />
+        </Box>
 
-        <TaskStatusSelectField
-          value={draft?.status || ''}
-          disabled={fieldDisabled?.status}
-          onChange={(value) => setField('status', value)}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskStatusSelectField
+            value={draft?.status || ''}
+            disabled={fieldDisabled?.status}
+            onChange={(value) => setField('status', value)}
+          />
+        </Box>
 
-        <TaskPrioritySelectField
-          value={draft?.priority || ''}
-          onChange={(value) => setField('priority', value)}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskPrioritySelectField
+            value={draft?.priority || ''}
+            onChange={(value) => setField('priority', value)}
+          />
 
-        <TaskDueDateField
-          value={draft?.dueDate || ''}
-          onChange={(value) => setField('dueDate', value)}
-        />
+        </Box>
 
-        <TaskComplexitySelectField
-          value={draft?.complexity || ''}
-          onChange={(value) => setField('complexity', value)}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskDueDateField
+            value={draft?.dueDate || ''}
+            onChange={(value) => setField('dueDate', value)}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskComplexitySelectField
+            value={draft?.complexity || ''}
+            onChange={(value) => setField('complexity', value)}
+          />
+        </Box>
       </Box>
 
       <Divider sx={{ my: 1 }}>
@@ -129,11 +146,13 @@ export default function TasksCreateFields({
       </Divider>
 
       <Box sx={pcfSx.block(layout.topCols, 1)}>
-        <TaskUrlField
-          value={draft?.url || ''}
-          disabled={fieldDisabled?.url}
-          onChange={(value) => setField('url', value)}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TaskUrlField
+            value={draft?.url || ''}
+            disabled={fieldDisabled?.url}
+            onChange={(value) => setField('url', value)}
+          />
+        </Box>
       </Box>
     </Box>
   )

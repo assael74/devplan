@@ -1,11 +1,11 @@
 // src/features/notifications/sx/notifications.sx.js
 
 export const notificationsSx = {
-  drawer: {
-    bgcolor: 'transparent',
+  drawer: (isMobile) => ({
+    bgcolor: isMobile ? '' : 'transparent',
     p: { md: 2, xs: 0 },
     boxShadow: 'none',
-  },
+  }),
 
   drawerSheet: {
     borderRadius: 'md',

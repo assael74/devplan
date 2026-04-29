@@ -23,7 +23,7 @@ export const createSx = {
   status: {
     display: 'flex',
     gap: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
     alignItems: 'flex-end',
     pt: 3,
   }

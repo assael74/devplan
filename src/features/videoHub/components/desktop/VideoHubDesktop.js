@@ -167,11 +167,6 @@ export default function VideoHubDesktop() {
       'task',
       buildTaskPresetDraft(nextTaskContext),
       { ...context, ...nextTaskContext },
-      {
-        surface: 'drawer',
-        drawerAnchor: 'bottom',
-        drawerWidth: 900,
-      }
     )
   }, [openCreate, context])
 

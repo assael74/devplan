@@ -1,3 +1,5 @@
+// src/ui/forms/create/useCreateModal.js
+
 import React, { useState } from 'react'
 
 const CLOSE_DELAY_MS = 300
@@ -9,14 +11,6 @@ function emptyDraft() {
 function cloneDraft(value) {
   if (!value || typeof value !== 'object') return {}
   return JSON.parse(JSON.stringify(value))
-}
-
-function defaultSurfaceState() {
-  return {
-    surface: 'drawer',
-    drawerAnchor: 'bottom',
-    drawerWidth: 800,
-  }
 }
 
 function areDraftsEqual(a, b) {
@@ -33,9 +27,7 @@ export function useCreateModalState() {
   const [initialDraft, setInitialDraft] = React.useState(emptyDraft())
   const [isValid, setIsValid] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
-  const [surface, setSurface] = React.useState(defaultSurfaceState().surface)
-  const [drawerAnchor, setDrawerAnchor] = React.useState(defaultSurfaceState().drawerAnchor)
-  const [drawerWidth, setDrawerWidth] = React.useState(defaultSurfaceState().drawerWidth)
+  const [size, setSize] = React.useState('sm')
 
   const isDirty = React.useMemo(() => {
     return !areDraftsEqual(draft, initialDraft)
@@ -67,9 +59,7 @@ export function useCreateModalState() {
     setDraftState(emptyDraft())
     setInitialDraft(emptyDraft())
     setIsValid(false)
-    setSurface(defaultSurfaceState().surface)
-    setDrawerAnchor(defaultSurfaceState().drawerAnchor)
-    setDrawerWidth(defaultSurfaceState().drawerWidth)
+    setSize('sm')
   }, [clearCloseTimer])
 
   const openCreate = React.useCallback((nextType, presetDraft, ctx, options = {}) => {
@@ -83,11 +73,7 @@ export function useCreateModalState() {
     setIsValid(false)
     setContext(ctx || {})
     setBusy(false)
-
-    setSurface(options.surface || 'drawer')
-    setDrawerAnchor(options.drawerAnchor || 'bottom')
-    setDrawerWidth(options.drawerWidth || 800)
-
+    setSize(options.size || 'sm')
     setOpen(true)
   }, [clearCloseTimer])
 
@@ -121,8 +107,6 @@ export function useCreateModalState() {
     context,
     busy,
     setBusy,
-    surface,
-    drawerAnchor,
-    drawerWidth,
+    size,
   }
 }

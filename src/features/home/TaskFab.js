@@ -55,11 +55,6 @@ export default function TaskFab() {
             'task',
             draft,
             taskCtx,
-            {
-              surface: 'drawer',
-              drawerAnchor: isMobile ? 'bottom' : 'right',
-              drawerWidth: 900,
-            }
           )
         },
       },

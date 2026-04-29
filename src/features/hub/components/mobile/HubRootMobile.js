@@ -7,6 +7,8 @@ import HubHomeMobile from './HubHomeMobile'
 import HubSectionScreenMobile from './HubSectionScreenMobile'
 import HubContentMobile from './HubContentMobile'
 
+import HubFabMenu from '../../sharedProfile/HubFabMenu.js'
+
 import { hubMobileSx as sx } from './sx/hubMobile.sx'
 
 export default function HubRootMobile({
@@ -15,6 +17,11 @@ export default function HubRootMobile({
   tabsMeta = [],
   onModeChange,
   mobileListsProps = {},
+
+  handlers,
+  context,
+  taskContext,
+  permissions,
 }) {
   const [mobileView, setMobileView] = useState('home')
 
@@ -36,16 +43,26 @@ export default function HubRootMobile({
           onSelectMode={handleSelectMode}
         />
       ) : (
-        <HubSectionScreenMobile
-          mode={mode}
-          tabsMeta={tabsMeta}
-          onBack={handleBack}
-        >
-          <HubContentMobile
+        <>
+          <HubSectionScreenMobile
             mode={mode}
-            listProps={mobileListsProps[mode] || {}}
+            tabsMeta={tabsMeta}
+            onBack={handleBack}
+          >
+            <HubContentMobile
+              mode={mode}
+              listProps={mobileListsProps[mode] || {}}
+            />
+          </HubSectionScreenMobile>
+
+          <HubFabMenu
+            mode={mode}
+            handlers={handlers}
+            context={context}
+            taskContext={taskContext}
+            permissions={permissions}
           />
-        </HubSectionScreenMobile>
+        </>
       )}
     </Sheet>
   )

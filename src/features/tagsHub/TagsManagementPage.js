@@ -2,16 +2,29 @@
 
 import React, { useMemo, useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { Box, Typography, Sheet } from '@mui/joy'
-import { sx as pageSx } from './tags.sx'
-import TagsFiltersRow from './components/TagsFiltersRow'
-import TagsList from './components/TagsList'
-import TagHubFabMenu from './TagHubFabMenu'
-import TagEditorDrawer from './components/TagEditorDrawer'
+
+import { tagSx as sx } from './tags.sx'
+
+import TagsFiltersRow from './components/desktop/TagsFiltersRow'
+import TagsList from './components/desktop/TagsList'
+import TagEditorDrawer from './sharedUi/TagEditorDrawer.js'
+
+import TagsManagementMobile from './components/mobile/TagsManagementMobile'
+
+import TagHubFabMenu from './sharedUi/TagHubFabMenu'
 
 import { useCreateModal } from '../../ui/forms/create/CreateModalProvider'
 import { useCoreData } from '../coreData/CoreDataProvider.js'
-import { normalizeTags, filterTags, buildTagsSections, buildEditMeta } from './tags.logic'
+import {
+  normalizeTags,
+  filterTags,
+  buildTagsSections,
+  buildEditMeta,
+  TAGS_DEFAULT_SORT,
+  TAGS_SORT_OPTIONS,
+} from './logic/tags.logic'
 
 import { iconUi } from '../../ui/core/icons/iconUi.js'
 import { buildTaskFabContext } from '../../ui/actions/buildTaskFabContext.js'
@@ -19,6 +32,8 @@ import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.j
 
 export default function TagsManagementPage() {
   const location = useLocation()
+  const isMobile = useMediaQuery('(max-width:899px)')
+
   const { openCreate } = useCreateModal()
   const { tags: coreTags } = useCoreData()
 
@@ -32,13 +47,29 @@ export default function TagsManagementPage() {
   const [editTag, setEditTag] = useState(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  const [sort, setSort] = useState(TAGS_DEFAULT_SORT)
+
+  const onChangeSortBy = useCallback((by) => {
+    setSort((prev) => ({ ...prev, by }))
+  }, [])
+
+  const onChangeSortDirection = useCallback((direction) => {
+    setSort((prev) => ({ ...prev, direction }))
+  }, [])
+
   const onChangeFilters = useCallback((patch) => {
     setUiFilters((prev) => ({ ...prev, ...(patch || {}) }))
   }, [])
 
   const tagsNorm = useMemo(() => normalizeTags(coreTags || []), [coreTags])
-  const filtered = useMemo(() => filterTags(tagsNorm, uiFilters), [tagsNorm, uiFilters])
-  const sections = useMemo(() => buildTagsSections(filtered), [filtered])
+
+  const filtered = useMemo(() => {
+    return filterTags(tagsNorm, uiFilters)
+  }, [tagsNorm, uiFilters])
+
+  const sections = useMemo(() => {
+    return buildTagsSections(filtered, { sort })
+  }, [filtered, sort])
 
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
@@ -52,25 +83,31 @@ export default function TagsManagementPage() {
   }, [location, tagsNorm])
 
   const onCreateTag = useCallback(() => {
-    openCreate('tag')
-  }, [openCreate])
-
-  const onAddTask = useCallback((nextTaskContext = {}) => {
     openCreate(
-      'task',
-      buildTaskPresetDraft(nextTaskContext),
-      { tags: tagsNorm, ...nextTaskContext },
+      'tag',
+      {},
       {
-        surface: 'drawer',
-        drawerAnchor: 'bottom',
-        drawerWidth: 900,
-      }
+        tags: tagsNorm,
+        isMobile,
+      },
     )
-  }, [openCreate, tagsNorm])
+  }, [openCreate, tagsNorm, isMobile])
+
+  const onAddTask = useCallback(
+    (nextTaskContext = {}) => {
+      openCreate(
+        'task',
+        buildTaskPresetDraft(nextTaskContext),
+        { tags: tagsNorm, ...nextTaskContext },
+      )
+    },
+    [openCreate, tagsNorm]
+  )
 
   const onEdit = useCallback(
     (tag) => {
       if (!tag?.id) return
+
       const meta = buildEditMeta(tag, tagsNorm)
       setEditTag({ ...tag, _meta: meta })
       setDrawerOpen(true)
@@ -83,18 +120,47 @@ export default function TagsManagementPage() {
     setEditTag(null)
   }, [])
 
+  if (isMobile) {
+    return (
+      <TagsManagementMobile
+        uiFilters={uiFilters}
+        onChangeFilters={onChangeFilters}
+        sections={sections}
+        tagsNorm={tagsNorm}
+        editTag={editTag}
+        drawerOpen={drawerOpen}
+        onEdit={onEdit}
+        onCloseDrawer={onCloseDrawer}
+        onCreateTag={onCreateTag}
+        onAddTask={onAddTask}
+        taskContext={taskContext}
+        sort={sort}
+        sortOptions={TAGS_SORT_OPTIONS}
+        onChangeSortBy={onChangeSortBy}
+        onChangeSortDirection={onChangeSortDirection}
+      />
+    )
+  }
+
   return (
-    <Box sx={pageSx.page}>
-      <Sheet variant="soft" sx={pageSx.header}>
+    <Box sx={sx.page}>
+      <Sheet variant="soft" sx={sx.header}>
         <Typography level="h3" noWrap startDecorator={iconUi({ id: 'tags' })}>
           ניהול תגים
         </Typography>
       </Sheet>
 
-      <Box sx={pageSx.content}>
-        <TagsFiltersRow value={uiFilters} onChange={onChangeFilters} />
+      <Box sx={sx.content}>
+      <TagsFiltersRow
+        value={uiFilters}
+        onChange={onChangeFilters}
+        sort={sort}
+        sortOptions={TAGS_SORT_OPTIONS}
+        onChangeSortBy={onChangeSortBy}
+        onChangeSortDirection={onChangeSortDirection}
+       />
 
-        <Box sx={pageSx.listWrap}>
+        <Box sx={{ minHeight: 0, flex: 1 }}>
           <TagsList sections={sections} onEdit={onEdit} />
         </Box>
       </Box>
@@ -109,6 +175,7 @@ export default function TagsManagementPage() {
       <TagEditorDrawer
         open={drawerOpen}
         tag={editTag}
+        isMobile={false}
         parentOptions={tagsNorm}
         onClose={onCloseDrawer}
       />

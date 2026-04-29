@@ -1,6 +1,7 @@
 // ui/forms/create/ObjectCreateModal.js
 
 import React from 'react'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import {
   Box,
   Button,
@@ -32,8 +33,10 @@ export default function ObjectCreateModal({
   onValidChange,
   context,
   busy,
+  size,
 }) {
   const [renderType, setRenderType] = React.useState(type || null)
+  const isMobile = useMediaQuery('(max-width:900px)')
 
   React.useEffect(() => {
     if (type) setRenderType(type)
@@ -41,16 +44,18 @@ export default function ObjectCreateModal({
 
   const meta = React.useMemo(() => getCreateMeta(renderType), [renderType])
 
+  const drawerSize = size || meta?.size || 'sm'
+
   const sx = React.useMemo(
-    () => buildCreateModalSx(meta.entityType, meta.domainColor),
-    [meta.entityType, meta.domainColor]
+    () => buildCreateModalSx(meta.entityType, meta.domainColor, drawerSize),
+    [meta.entityType, meta.domainColor, drawerSize]
   )
 
   const colors = React.useMemo(
     () => getEntityColors(meta.entityType),
     [meta.entityType]
   )
-  
+
   const FormComp = meta?.form || null
 
   const handleReset = React.useCallback(() => {
@@ -82,7 +87,7 @@ export default function ObjectCreateModal({
 
   return (
     <Drawer
-      size="md"
+      size={drawerSize}
       variant="plain"
       anchor="bottom"
       open={open}
@@ -112,7 +117,8 @@ export default function ObjectCreateModal({
                 onDraft={onDraft}
                 context={context}
                 onValidChange={onValidChange}
-                mode="drawer"
+                variant="drawer"
+                forceMobile={isMobile}
               />
             ) : null}
           </Box>

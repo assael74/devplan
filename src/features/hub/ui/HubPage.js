@@ -272,7 +272,11 @@ export default function HubPage() {
       <HubRootMobile
         mode={s.mode}
         counts={s.counts}
+        context={context}
         tabsMeta={tabsMeta}
+        handlers={handlers}
+        taskContext={taskContext}
+        permissions={s.permissions}
         onModeChange={handleModeChange}
         mobileListsProps={mobileListsProps}
       />

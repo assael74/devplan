@@ -1,145 +1,112 @@
-// ui/forms/TagsCreateForm.js
+// src/ui/forms/TagsCreateForm.js
 
 import React, { useEffect, useMemo } from 'react'
-import { Box, Sheet, Divider, Typography } from '@mui/joy'
-import { vaSx } from './ui/tags/sx/form.sx.js'
+import { useTheme } from '@mui/joy/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
-import TagTypeSelectField from '../fields/selectUi/tags/TagTypeSelectField.js'
-import TagParentSelectField from '../fields/selectUi/tags/TagParentSelectField.js'
-import TagNameField from '../fields/inputUi/tags/TagNameField.js'
-import TagNoteField from '../fields/inputUi/tags/TagNoteField.js'
-import TagKindSelectField from '../fields/checkUi/tags/TagKindSelectField.js'
-
+import TagsCreateFields from './ui/tags/TagsCreateFields.js'
+import { getTagsCreateFormLayout } from './layouts/tagsCreateForm.layout.js'
 import { buildParentOptions } from '../../shared/tags'
 
-const clean = (v) => String(v ?? '').trim()
-const NOTE_MAX = 20
+const fallback = (value, fallbackValue) => {
+  return value == null ? fallbackValue : value
+}
+
+const clean = (v) => String(v == null ? '' : v).trim()
 
 export default function TagsCreateForm({
-  draft,
+  draft = {},
   onDraft,
   onValidChange,
-  context,
+  context = {},
+  variant = 'modal',
+  forceMobile = false,
   disabled = false,
 }) {
-  const d = draft || {}
-  const tags = context.tags
+  const theme = useTheme()
+  const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = forceMobile || context?.forceMobile || isMobileViewport
 
-  const kind = d.kind ?? 'tag'
+  const tags = Array.isArray(context?.tags) ? context.tags : []
+
+  const kind = fallback(draft.kind, 'tag')
   const isGroup = kind === 'group'
+
+  const tagName = fallback(draft.tagName, '')
+  const tagType = fallback(draft.tagType, '')
+  const parentId = fallback(draft.parentId, '')
+  const notes = String(fallback(draft.notes, ''))
 
   const parentOptions = useMemo(() => {
     return buildParentOptions({
       tags,
       currentTagId: '',
-      tagType: draft?.tagType,
+      tagType,
       includeArchived: false,
       lockParentIfHasChildren: true,
     })
-  }, [tags, draft?.tagType])
-
-  const tagName = d.tagName ?? ''
-  const tagType = d.tagType ?? ''
-  const parentId = d.parentId ?? ''
-  const notes = String(d.notes ?? '')
-
-  const errors = useMemo(() => {
-    const e = {}
-    if (!clean(tagType)) e.tagType = true
-    if (!clean(tagName)) e.tagName = true
-    if (!isGroup && !clean(parentId)) e.parentId = true
-    return e
-  }, [tagType, tagName, parentId, isGroup])
-
-  const isValid = useMemo(() => Object.keys(errors).length === 0, [errors])
-
-  useEffect(() => {
-    if (typeof onValidChange === 'function') onValidChange(isValid)
-  }, [isValid, onValidChange])
-
-  const patch = (p) => onDraft({ ...d, ...p })
+  }, [tags, tagType])
 
   const parentOptsFiltered = useMemo(() => {
     const arr = Array.isArray(parentOptions) ? parentOptions : []
+
     return arr
-      .filter((o) => o && (o.isActive !== false))
-      .filter((o) => !tagType || clean(o.tagType) === tagType)
-      .filter((o) => clean(o.id) !== clean(d.id))
-  }, [parentOptions, tagType, d.id])
+      .filter((o) => o && o.isActive !== false)
+      .filter((o) => !clean(tagType) || clean(o.tagType) === clean(tagType))
+      .filter((o) => clean(o.id) !== clean(draft.id))
+  }, [parentOptions, tagType, draft.id])
+
+  const errors = useMemo(() => {
+    const e = {}
+
+    if (!clean(tagType)) e.tagType = true
+    if (!clean(tagName)) e.tagName = true
+    if (!isGroup && !clean(parentId)) e.parentId = true
+
+    return e
+  }, [tagType, tagName, parentId, isGroup])
+
+  const validity = useMemo(() => {
+    return {
+      kind,
+      isGroup,
+      tagName,
+      tagType,
+      parentId,
+      notes,
+      parentOptions: parentOptsFiltered,
+      errors,
+      isValid: Object.keys(errors).length === 0,
+    }
+  }, [
+    kind,
+    isGroup,
+    tagName,
+    tagType,
+    parentId,
+    notes,
+    parentOptsFiltered,
+    errors,
+  ])
+
+  useEffect(() => {
+    if (typeof onValidChange === 'function') {
+      onValidChange(validity.isValid)
+    }
+  }, [validity.isValid, onValidChange])
+
+  const layout = useMemo(() => {
+    return getTagsCreateFormLayout({ variant, isMobile })
+  }, [variant, isMobile])
 
   return (
-    <Box sx={vaSx.root}>
-      <Sheet variant="outlined" sx={{ p: 1.25, borderRadius: 12 }}>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-          <TagKindSelectField
-            value={draft?.kind ?? 'tag'}
-            onChange={(val) => onDraft({ ...draft, kind: val, parentId: '' })}
-            disabled={disabled}
-            size="sm"
-          />
-        </Box>
-
-        <Divider sx={vaSx.divider}>
-          <Typography level="body-sm">{isGroup ? 'סוג קטגוריה' : 'סוג התג'}</Typography>
-        </Divider>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-          <TagTypeSelectField
-            value={tagType}
-            onChange={(val) => patch({ tagType: val || '', parentId: '' })}
-            required
-            label={isGroup ? 'בחירת סוג הקטגוריה' : 'בחירת סוג התג'}
-            error={Boolean(errors.tagType)}
-            disabled={disabled}
-            size="sm"
-          />
-
-          {!isGroup && (
-            <TagParentSelectField
-              value={parentId}
-              onChange={(val) => patch({ parentId: val || '' })}
-              options={parentOptsFiltered}
-              size="sm"
-              error={Boolean(errors.parentId)}
-            />
-          )}
-        </Box>
-
-        <Divider sx={vaSx.divider}>
-          <Typography level="body-sm">{isGroup ? 'פרטי קטגוריה' : 'פרטי התג'}</Typography>
-        </Divider>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-          <TagNameField
-            value={tagName}
-            onChange={(val) => patch({ tagName: val })}
-            required
-            placeholder={isGroup ? 'שם קטגוריה' : 'שם תג'}
-            label={isGroup ? 'שם קטגוריה' : 'שם תג'}
-            error={Boolean(errors.tagName)}
-            disabled={disabled}
-            size="sm"
-          />
-
-          <TagNoteField
-            value={notes}
-            onChange={(val) => patch({ notes: val })}
-            disabled={disabled}
-            size="sm"
-            label={isGroup ? 'הסבר קטגוריה' : 'הסבר תג'}
-            maxLength={NOTE_MAX}
-          />
-        </Box>
-
-        {!isValid && (
-          <Typography level="body-xs" sx={{ mt: 1, color: 'danger.600' }}>
-            {isGroup
-              ? `יש למלא: סוג תג + שם קטגוריה. (הסבר: עד ${NOTE_MAX} תווים)`
-              : `יש למלא: סוג תג + קטגוריה (אב) + שם תג. (הסבר: עד ${NOTE_MAX} תווים)`}
-          </Typography>
-        )}
-      </Sheet>
-    </Box>
+    <TagsCreateFields
+      draft={draft}
+      onDraft={onDraft}
+      context={context}
+      validity={validity}
+      layout={layout}
+      disabled={disabled}
+    />
   )
 }

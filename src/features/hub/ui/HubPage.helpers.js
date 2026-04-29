@@ -54,10 +54,5 @@ export const buildCreateHandlers = ({ openCreate, context, s }) => ({
       'task',
       buildTaskPresetDraft(taskContext),
       { ...context, ...taskContext },
-      {
-        surface: 'drawer',
-        drawerAnchor: 'bottom',
-        drawerWidth: 900,
-      }
     ),
 })

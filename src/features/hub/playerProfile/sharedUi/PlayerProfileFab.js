@@ -85,11 +85,6 @@ export default function PlayerProfileFab({
             'task',
             buildTaskPresetDraft(taskCtx),
             { ...context, ...taskCtx },
-            {
-              surface: 'drawer',
-              drawerAnchor: 'bottom',
-              drawerWidth: 900,
-            }
           ),
 
         onOpenMeetingsInsights: () => onOpenMeetingsInsights?.(),

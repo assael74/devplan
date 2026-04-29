@@ -5,7 +5,7 @@ import { Sheet } from '@mui/joy'
 
 import HubToolbar from './navigation/HubToolbar'
 import PlayersLayout from './layout/PlayersLayout'
-import HubFabMenu from './navigation/HubFabMenu'
+import HubFabMenu from '../../sharedProfile/HubFabMenu.js'
 
 export default function HubRootDesktop({
   mode,

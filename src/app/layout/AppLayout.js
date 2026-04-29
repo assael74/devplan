@@ -44,7 +44,7 @@ export default function AppLayout({ topbar, sidenav, navBadges }) {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           badges={navBadges}
-          anchor="left"
+          anchor="right"
         />
 
         <Box sx={sx.mobOutWrap}>

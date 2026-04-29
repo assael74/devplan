@@ -1,18 +1,61 @@
-// ui/forms/create/objectCreate.sx.js
+// src/ui/forms/create/sx/objectCreate.sx.js
 
 import { getEntityColors } from '../../../core/theme/Colors'
 
-export function buildCreateModalSx(entityType, domainColor) {
+function resolveDrawerSize(size) {
+  if (size === 'lg') return 'lg'
+  if (size === 'md') return 'md'
+  return 'sm'
+}
+
+function getDrawerHeight(size) {
+  const normalized = resolveDrawerSize(size)
+
+  if (normalized === 'lg') return '88dvh'
+  if (normalized === 'md') return '74dvh'
+
+  return '58dvh'
+}
+
+function getDrawerWidth(size) {
+  const normalized = resolveDrawerSize(size)
+
+  if (normalized === 'lg') {
+    return {
+      xs: '100%',
+      sm: 680,
+      md: 760,
+    }
+  }
+
+  if (normalized === 'md') {
+    return {
+      xs: '100%',
+      sm: 600,
+      md: 660,
+    }
+  }
+
+  return {
+    xs: '100%',
+    sm: 520,
+    md: 560,
+  }
+}
+
+export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
   const c = getEntityColors(entityType)
+  const drawerHeight = getDrawerHeight(size)
+  const drawerWidth = getDrawerWidth(size)
 
   return {
     drawerSx: {
       bgcolor: 'transparent',
       p: { xs: 0, sm: 1.5, md: 3 },
       boxShadow: 'none',
-      top: 50,
-      height: 'calc(85vh - 90px)',
       overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
     },
 
     drawerSheet: {
@@ -20,11 +63,13 @@ export function buildCreateModalSx(entityType, domainColor) {
       display: 'flex',
       flexDirection: 'column',
       gap: 0,
-      height: '100%',
+      height: drawerHeight,
+      maxHeight: drawerHeight,
+      minHeight: 0,
       minWidth: 0,
       boxSizing: 'border-box',
       overflow: 'hidden',
-      width: { xs: '100%', sm: 560, md: 600 },
+      width: drawerWidth,
       mx: 'auto',
       bgcolor: 'background.body',
       boxShadow: 'lg',
@@ -38,8 +83,6 @@ export function buildCreateModalSx(entityType, domainColor) {
       p: 1.5,
       borderBottom: '1px solid',
       borderColor: 'divider',
-      boxShadow: 'sm',
-      borderRadius: { xs: '16px 16px 0 0', sm: 'sm' },
       flexShrink: 0,
     },
 
@@ -131,7 +174,7 @@ export function buildCreateModalSx(entityType, domainColor) {
       width: 36,
       flexShrink: 0,
       border: '1px solid',
-      borderColor: c.accent,
+      borderColor: 'divider',
     },
 
     confirmButtonSx: {

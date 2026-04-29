@@ -14,7 +14,7 @@ export default function PlayerIfaLinkField({
 }) {
 
   return (
-    <FormControl sx={{ minWidth: 0, width: '100%' }}>
+    <FormControl sx={{ width: '100%' }}>
       <FormLabel sx={{ fontSize: '12px' }}>{label}</FormLabel>
       <Input
         type="url"

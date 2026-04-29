@@ -3,10 +3,10 @@
 export function getTasksCreateFormLayout({ variant = 'modal', isMobile = false }) {
   if (isMobile) {
     return {
-      shellGap: 2,
-      topCols: '1fr',
+      shellGap: 1,
+      topCols: '1.1fr .9fr',
       mainCols: '1fr',
-      metaCols: '1fr',
+      metaCols: '1fr 1fr',
     }
   }
 
@@ -14,8 +14,8 @@ export function getTasksCreateFormLayout({ variant = 'modal', isMobile = false }
     return {
       shellGap: 3,
       topCols: '1fr 1fr',
-      mainCols: '1fr 1fr',
-      metaCols: '1fr 1fr',
+      mainCols: '1fr',
+      metaCols: '1fr 1fr 1fr 1fr 1fr',
     }
   }
 

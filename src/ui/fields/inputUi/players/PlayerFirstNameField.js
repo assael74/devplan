@@ -18,8 +18,8 @@ export default function PlayerFirstNameField({
 }) {
   return (
     <>
-      <FormControl sx={{ minWidth: 0, width: '100%' }}>
-        <FormLabel required sx={{ fontSize: '12px', textAlign: 'right', alignSelf: 'flex-start' }}>שם פרטי</FormLabel>
+      <FormControl sx={{ width: '100%' }}>
+        <FormLabel required sx={{ fontSize: '12px' }}>שם פרטי</FormLabel>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}

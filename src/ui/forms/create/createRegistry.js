@@ -25,8 +25,7 @@ export const CREATE_TYPES = {
     iconKey: 'addClub',
     entityType: 'club',
     form: ClubCreateForm,
-    required: ['clubName'],
-    surface: 'modal',
+    size: 'md'
   },
 
   team: {
@@ -35,8 +34,7 @@ export const CREATE_TYPES = {
     iconKey: 'addTeam',
     entityType: 'team',
     form: TeamCreateForm,
-    required: ['teamName', 'clubId', 'teamYear'],
-    surface: 'modal',
+    size: 'md'
   },
 
   player: {
@@ -45,8 +43,7 @@ export const CREATE_TYPES = {
     iconKey: 'addPlayer',
     entityType: 'player',
     form: PlayerCreateForm,
-    required: ['playerFirstName', 'playerLastName', 'clubId', 'teamId', 'birthMonthYear'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   privatePlayer: {
@@ -55,8 +52,7 @@ export const CREATE_TYPES = {
     iconKey: 'addPlayer',
     entityType: 'privatePlayer',
     form: PrivateCreateForm,
-    required: ['playerFirstName', 'playerLastName', 'birthMonthYear'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   players: {
@@ -65,8 +61,7 @@ export const CREATE_TYPES = {
     iconKey: 'addPlayer',
     entityType: 'players',
     form: PlayerMultiCreateForm,
-    required: ['playerFirstName', 'playerLastName', 'clubId', 'teamId', 'birthMonthYear'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   role: {
@@ -75,8 +70,7 @@ export const CREATE_TYPES = {
     iconKey: 'addRole',
     entityType: 'role',
     form: null,
-    required: ['fullName', 'type'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   game: {
@@ -85,8 +79,7 @@ export const CREATE_TYPES = {
     iconKey: 'addGame',
     entityType: 'team',
     form: GameCreateForm,
-    required: ['gameDuration', 'rivel', 'type', 'gameDate'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   games: {
@@ -95,8 +88,7 @@ export const CREATE_TYPES = {
     iconKey: 'addGame',
     entityType: 'team',
     form: GameMultiCreateForm,
-    required: ['gameDuration', 'rivel', 'type', 'gameDate'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   meeting: {
@@ -106,8 +98,7 @@ export const CREATE_TYPES = {
     entityType: 'player',
     domainColor: '#f7b13b',
     form: MeetingCreateForm,
-    required: ['type', 'meetingDate', 'meetingFor', 'meetingHour'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   payment: {
@@ -117,8 +108,7 @@ export const CREATE_TYPES = {
     entityType: 'player',
     domainColor: '#0f766e',
     form: PaymentCreateForm,
-    required: ['paymentFor', 'price', 'type'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   scout: {
@@ -128,8 +118,7 @@ export const CREATE_TYPES = {
     entityType: 'scout',
     domainColor: '#96ede6',
     form: null,
-    required: ['playerName', 'clubName', 'teamName', 'birth'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   tag: {
@@ -139,8 +128,7 @@ export const CREATE_TYPES = {
     entityType: 'tag',
     domainColor: '#96ede6',
     form: TagsCreateForm,
-    required: ['tagName', 'tagType'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   videoAnalysis: {
@@ -149,8 +137,7 @@ export const CREATE_TYPES = {
     iconKey: 'video',
     entityType: 'videoAnalysis',
     form: VideoAnalysisCreateForm,
-    required: ['name', 'link', 'contextType', 'objectType'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   videos: {
@@ -159,8 +146,7 @@ export const CREATE_TYPES = {
     iconKey: 'video',
     entityType: 'videoGeneral',
     form: VideoCreateForm,
-    required: ['name', 'link'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   abilities: {
@@ -169,8 +155,7 @@ export const CREATE_TYPES = {
     iconKey: 'abilities',
     entityType: 'abilities',
     form: AbilitiesCreateForm,
-    required: [],
-    surface: 'modal',
+    size: 'lg'
   },
 
   training: {
@@ -179,8 +164,7 @@ export const CREATE_TYPES = {
     iconKey: 'training',
     entityType: 'team',
     form: TrainingWeekCreateForm,
-    required: ['teamId', 'weekId'],
-    surface: 'modal',
+    size: 'lg'
   },
 
   task: {
@@ -189,8 +173,7 @@ export const CREATE_TYPES = {
     iconKey: 'task',
     entityType: 'task',
     form: TasksCreateForm,
-    required: [],
-    surface: 'modal',
+    size: 'lg'
   },
 }
 
@@ -200,7 +183,7 @@ export function getCreateMeta(type) {
     title: 'פתיחת אובייקט',
     iconKey: 'add',
     entityType: 'player',
-    surface: 'modal',
+    size: 'lg'
   }
 }
 

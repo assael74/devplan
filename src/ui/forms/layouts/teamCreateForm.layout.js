@@ -4,8 +4,8 @@ export function getTeamCreateFormLayout({ variant = 'modal', isMobile = false })
   if (isMobile) {
     return {
       shellGap: 2,
-      topCols: '1fr',
-      mainCols: '1fr',
+      topCols: '1fr 1fr',
+      mainCols: '1fr 1fr',
       metaCols: '1fr',
     }
   }

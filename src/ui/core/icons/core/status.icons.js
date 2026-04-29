@@ -31,7 +31,8 @@ import {
   ErrorOutline,
   TrendingFlat,
   RocketLaunch,
-  Stars
+  Stars,
+  ManageHistory
 } from '@mui/icons-material';
 
 export const statusIcons = {
@@ -52,6 +53,8 @@ export const statusIcons = {
   rotation: <Cached />,
   lock: <Lock />,
   messageSent: <Sms />,
+  current: <ManageHistory />,
+  projection: <NextPlan />,
   noVideo: <VideocamOff />,
   noneType: <Unpublished />,
   notifications: <Notifications />,

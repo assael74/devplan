@@ -1,52 +1,30 @@
 // C:\projects\devplan\src\ui\forms\sx\form.sx.js
 
 export const vaSx = {
-  // generic form root
-  root: {
+  root: (layout) => ({
     display: 'grid',
-    gap: 1,
+    gap: layout.shellGap,
     minWidth: 0,
-  },
+  }),
 
-  // common grids used by VideoCreateForm + VideoAnalysisCreateForm
-  grid2: {
-    display: 'grid',
-    gap: 1,
-    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-    alignItems: 'start',
-    minWidth: 0,
-  },
-
-  grid3: {
-    display: 'grid',
-    gap: 1,
-    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-    alignItems: 'start',
-    minWidth: 0,
-  },
-
-  cell: {
-    minWidth: 0,
-  },
-
-  divider: {
-    my: 1,
-  },
-
-  // lock note in VideoAnalysisCreateForm (Sheet warning)
-  showLo: {
+  topBar: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.75,
-    p: 1,
-    borderRadius: 12,
+    gap: 1,
+    flexWrap: 'wrap',
     minWidth: 0,
   },
 
-  // optional: can be used later for consistent outlined blocks (Tags uses inline today)
-  sheetCard: {
-    p: 1.25,
-    borderRadius: 12,
+  block: (cols, gap = 2) => ({
+    display: 'grid',
+    gap,
+    gridTemplateColumns: cols,
     minWidth: 0,
+    alignItems: 'start',
+  }),
+
+  title: {
+    mt: 0.5,
+    mb: 0.25,
   },
 }

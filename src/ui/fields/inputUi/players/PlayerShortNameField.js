@@ -15,8 +15,8 @@ export default function PlayerShortNameField({
 }) {
   return (
     <>
-      <FormControl sx={{ minWidth: 0, width: '100%' }}>
-        <FormLabel required sx={{ fontSize: '12px', textAlign: 'right', alignSelf: 'flex-start' }}>כינוי</FormLabel>
+      <FormControl sx={{ width: '100%' }}>
+        <FormLabel required sx={{ fontSize: '12px' }}>כינוי</FormLabel>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}

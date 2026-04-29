@@ -8,16 +8,20 @@ import { useNotificationsContext } from '../NotificationsProvider'
 import AppLayout from '../layout/AppLayout'
 import TopBar from '../../ui/core/layout/TopBar'
 
-import HubPage from '../../features/hub/ui/HubPage'
 import HomePage from '../../features/home/HomePage'
+import CalendarHubPage from '../../features/calendarHub/CalendarHubPage'
+import VideoHubPage from '../../features/videoHub/VideoHubPage'
+import TagsManagementPage from '../../features/tagsHub/TagsManagementPage.js'
+
+import HubPage from '../../features/hub/ui/HubPage'
 import PlayerProfilePage from '../../features/hub/playerProfile/PlayerProfilePage'
 import TeamProfilePage from '../../features/hub/teamProfile/TeamProfilePage'
 import ClubProfilePage from '../../features/hub/clubProfile/ClubProfilePage'
-import CalendarHubPage from '../../features/calendarHub/CalendarHubPage'
-import VideoHubPage from '../../features/videoHub/VideoHubPage'
 
 import AbilitiesPublicRouteEntry from './AbilitiesPublicRouteEntry.js'
-import TagsManagementPage from '../../features/tagsHub/TagsManagementPage.js'
+
+import InsightsPage from '../../features/insightsHub/InsightsPage.js'
+
 import AbilitiesExplainerPage from '../../features/abilities/explainer/AbilitiesExplainerPage.js'
 
 import LoginPage from '../../features/auth/pages/LoginPage'
@@ -55,7 +59,7 @@ function TopBarNotificationsHost() {
       await markAsRead(item.id)
     }
 
-    const target = getNotificationTarget?.(item)
+    const target = getNotificationTarget(item)
 
     if (target?.path) {
       navigate(target.path, { replace: Boolean(target?.replace) })
@@ -154,7 +158,9 @@ export default function AppRoutes() {
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />
           <Route path="/tags" element={<TagsManagementPage />} />
+
           <Route path="/abilities/explainer" element={<AbilitiesExplainerPage />} />
+          <Route path="/insights/explainer" element={<InsightsPage />} />
 
           <Route path="/clubs/:clubId" element={<ClubProfilePage />} />
           <Route path="/clubs/:clubId/:tabKey" element={<ClubProfilePage />} />

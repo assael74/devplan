@@ -50,11 +50,6 @@ export default function ClubProfileFab({
             'task',
             buildTaskPresetDraft(taskCtx),
             { ...context, ...taskCtx },
-            {
-              surface: 'drawer',
-              drawerAnchor: 'bottom',
-              drawerWidth: 900,
-            }
           ),
 
         onOpenPlayersInsights: () => onOpenPlayersInsights(),

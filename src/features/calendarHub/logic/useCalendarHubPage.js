@@ -14,16 +14,15 @@ import {
   filterEventsByWeek,
   getBestEventWeekStart,
   applyCalendarHubFilters,
+  applyCalendarHubSort,
   getDefaultCalendarFilters,
+  getDefaultCalendarSort,
+  normalizeLocalDay,
+  isSameLocalDay,
+  getActiveCalendarFiltersCount,
+  hasActiveCalendarFilters,
+  buildCalendarFilterResultsText,
 } from './calendarHub.helpers.js'
-
-function isSameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
 
 function getVisibleWeekDays(weekDays, filters) {
   const showWeekend = filters?.weekend !== false
@@ -53,7 +52,9 @@ function getVisibleWeekDays(weekDays, filters) {
 export default function useCalendarHubPage() {
   const { players, teams, clubs, loading, error } = useCoreData()
 
-  const context = { players, teams, clubs }
+  const context = useMemo(() => {
+    return { players, teams, clubs }
+  }, [players, teams, clubs])
 
   const [selection, setSelection] = useState({
     teamId: '',
@@ -62,7 +63,9 @@ export default function useCalendarHubPage() {
 
   const [view, setView] = useState('week')
   const [weekStart, setWeekStart] = useState(() => startOfWeekSunday(new Date()))
+  const [selectedDay, setSelectedDayState] = useState(() => normalizeLocalDay(new Date()))
   const [filters, setFilters] = useState(() => getDefaultCalendarFilters())
+  const [sort, setSort] = useState(() => getDefaultCalendarSort())
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState('create')
@@ -106,14 +109,34 @@ export default function useCalendarHubPage() {
   const visibleEvents = useMemo(() => {
     const weekEvents = filterEventsByWeek(filteredEvents, weekStart)
 
-    return weekEvents.filter((event) => {
+    const dayVisibleEvents = weekEvents.filter((event) => {
       const eventDate = new Date(event?.startAt)
-      return visibleDays.some((day) => isSameDay(day, eventDate))
+      return visibleDays.some((day) => isSameLocalDay(day, eventDate))
     })
-  }, [filteredEvents, weekStart, visibleDays])
+
+    return applyCalendarHubSort({
+      events: dayVisibleEvents,
+      sort,
+    })
+  }, [filteredEvents, weekStart, visibleDays, sort])
 
   const totalCount = visibleEvents.length
   const weekendCount = countWeekendEvents(visibleEvents)
+
+  const activeFiltersCount = useMemo(() => {
+    return getActiveCalendarFiltersCount(filters)
+  }, [filters])
+
+  const hasActiveFilters = useMemo(() => {
+    return hasActiveCalendarFilters(filters)
+  }, [filters])
+
+  const filterResultsText = useMemo(() => {
+    return buildCalendarFilterResultsText({
+      totalCount,
+      activeFiltersCount,
+    })
+  }, [totalCount, activeFiltersCount])
 
   function setSelectedTeamId(teamId) {
     const nextSelection = {
@@ -131,8 +154,11 @@ export default function useCalendarHubPage() {
     })
 
     const nextWeekStart = getBestEventWeekStart(nextFilteredEvents)
+
     if (nextWeekStart) {
-      setWeekStart(nextWeekStart)
+      const normalizedWeekStart = startOfWeekSunday(nextWeekStart)
+      setWeekStart(normalizedWeekStart)
+      setSelectedDayState(normalizedWeekStart)
     }
   }
 
@@ -154,13 +180,31 @@ export default function useCalendarHubPage() {
     })
 
     const nextWeekStart = getBestEventWeekStart(nextFilteredEvents)
+
     if (nextWeekStart) {
+      const normalizedWeekStart = startOfWeekSunday(nextWeekStart)
+      setWeekStart(normalizedWeekStart)
+      setSelectedDayState(normalizedWeekStart)
+    }
+  }
+
+  function setSelectedDay(day) {
+    const nextDay = normalizeLocalDay(day)
+    const nextWeekStart = startOfWeekSunday(nextDay)
+
+    setSelectedDayState(nextDay)
+
+    if (!isSameLocalDay(nextWeekStart, weekStart)) {
       setWeekStart(nextWeekStart)
     }
   }
 
   function navWeek(dir) {
-    setWeekStart((prev) => addDays(prev, dir * 7))
+    const nextWeekStart = addDays(weekStart, dir * 7)
+    const normalizedWeekStart = startOfWeekSunday(nextWeekStart)
+
+    setWeekStart(normalizedWeekStart)
+    setSelectedDayState(normalizedWeekStart)
   }
 
   function resetFilters() {
@@ -169,7 +213,24 @@ export default function useCalendarHubPage() {
   }
 
   function resetToToday() {
-    setWeekStart(startOfWeekSunday(new Date()))
+    const today = normalizeLocalDay(new Date())
+
+    setWeekStart(startOfWeekSunday(today))
+    setSelectedDayState(today)
+  }
+
+  function setSortBy(nextSortBy) {
+    setSort((prev) => ({
+      ...prev,
+      by: nextSortBy,
+    }))
+  }
+
+  function setSortDirection(nextDirection) {
+    setSort((prev) => ({
+      ...prev,
+      direction: nextDirection,
+    }))
   }
 
   function openCreate() {
@@ -179,7 +240,7 @@ export default function useCalendarHubPage() {
     setDraft({
       type: 'meeting',
       title: '',
-      date: toISODate(new Date()),
+      date: toISODate(selectedDay || new Date()),
       time: '',
       durationMin: 45,
       status: 'planned',
@@ -244,6 +305,9 @@ export default function useCalendarHubPage() {
     weekDays,
     days: visibleDays,
 
+    selectedDay,
+    setSelectedDay,
+
     selection,
     setSelectedTeamId,
     setSelectedPlayerId,
@@ -251,6 +315,13 @@ export default function useCalendarHubPage() {
     filters,
     setFilters,
     resetFilters,
+    activeFiltersCount,
+    hasActiveFilters,
+    filterResultsText,
+
+    sort,
+    setSortBy,
+    setSortDirection,
 
     visibleEvents,
     filteredEvents,

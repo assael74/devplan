@@ -53,9 +53,7 @@ export default function CreateModalProvider({ children }) {
       const meta = getCreateMeta(type)
 
       st.openCreate(type, draftSeed, ctx, {
-        surface: options.surface || meta.surface || 'modal',
-        drawerAnchor: options.drawerAnchor || meta.drawerAnchor || 'right',
-        drawerWidth: options.drawerWidth || meta.drawerWidth || 760,
+        size: options.size || meta.size || 'sm',
       })
     },
     [st, defaultContext]
@@ -116,6 +114,7 @@ export default function CreateModalProvider({ children }) {
     onClose: st.requestClose,
     context: { ...defaultContext, ...(st.context || {}) },
     busy: st.busy,
+    size: st.size,
   }
 
   return (

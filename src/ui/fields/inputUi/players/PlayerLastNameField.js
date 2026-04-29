@@ -16,8 +16,8 @@ export default function PlayerLastNameField({
 }) {
   return (
     <>
-      <FormControl sx={{ minWidth: 0, width: '100%' }}>
-        <FormLabel required sx={{ fontSize: '12px', textAlign: 'right', alignSelf: 'flex-start' }}>שם משפחה</FormLabel>
+      <FormControl sx={{ width: '100%' }}>
+        <FormLabel required sx={{ fontSize: '12px' }}>שם משפחה</FormLabel>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
