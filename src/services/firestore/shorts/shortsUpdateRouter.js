@@ -46,9 +46,19 @@ export const shortsUpdateRouterMap = {
     leagueLevel: { shortKey: 'teams.teamsInfo', path: 'leagueLevel', mode: 'merge' },
     leaguePosition: { shortKey: 'teams.teamsInfo', path: 'leaguePosition', mode: 'merge' },
     leagueGoalsFor: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsFor', mode: 'merge' },
+    leagueRound: { shortKey: 'teams.teamsInfo', path: 'leagueRound', mode: 'merge' },
     leagueGoalsAgainst: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsAgainst', mode: 'merge' },
 
-    meetings: { shortKey: 'teams.teamsMeeting', path: 'teamsMeeting', mode: 'replace' },
+    targetsStatus: { shortKey: 'teams.teamsTargets', path: 'status', mode: 'merge' },
+    targetsAssignedAt: { shortKey: 'teams.teamsTargets', path: 'assignedAt', mode: 'merge' },
+    targetsAssignedBy: { shortKey: 'teams.teamsTargets', path: 'assignedBy', mode: 'merge' },
+    targetsBenchmarkLevelId: { shortKey: 'teams.teamsTargets', path: 'benchmarkLevelId', mode: 'merge' },
+
+    targetPosition: { shortKey: 'teams.teamsTargets', path: 'targetPosition', mode: 'merge' },
+    targetGoalsFor: { shortKey: 'teams.teamsTargets', path: 'targetGoalsFor', mode: 'merge' },
+    targetGoalsAgainst: { shortKey: 'teams.teamsTargets', path: 'targetGoalsAgainst', mode: 'merge' },
+    targetPoints: { shortKey: 'teams.teamsTargets', path: 'targetPoints', mode: 'merge' },
+    targetSuccessRate: { shortKey: 'teams.teamsTargets', path: 'targetSuccessRate', mode: 'merge' },
 
     trainingWeeks: { shortKey: 'teams.teamsTraining', path: 'trainingWeeks', mode: 'merge' },
   },

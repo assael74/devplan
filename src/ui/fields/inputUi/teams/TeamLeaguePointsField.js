@@ -15,6 +15,9 @@ export default function TeamLeaguePointsField({
   disabled,
   helperText,
   readOnly,
+  color = 'neutral',
+  label = 'נקודות ליגה',
+  placeholder = 'נקודות ליגה',
   variant = 'outlined',
   size = 'sm',
   max = 99
@@ -22,19 +25,21 @@ export default function TeamLeaguePointsField({
   return (
     <>
       <FormControl>
-        <FormLabel required sx={{ fontSize: '12px' }}>נק ליגה</FormLabel>
+        <FormLabel required sx={{ fontSize: '12px' }}>{label}</FormLabel>
         <Input
           value={value ?? 0}
-          placeholder="נקודות ליגה"
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           type='number'
           autoComplete="off"
+          color={color}
           startDecorator={iconUi({id: 'points'})}
           error={error}
           readOnly={readOnly}
           disabled={disabled}
           variant={variant}
           size={size}
+          sx={{ border: '1px solid', borderColor: 'divider' }}
           slotProps={{ input: { min: 0, max: max } }}
         />
         <FormHelperText>{helperText}</FormHelperText>

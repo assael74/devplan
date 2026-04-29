@@ -23,7 +23,7 @@ export default function TeamProfileDesktop({
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
-
+  
   return (
     <ProfileShell
       tab={tab}

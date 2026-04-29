@@ -1,4 +1,4 @@
-/// ui/fields/inputUi/teams/TeamLeagueLevelField.js
+/// ui/fields/inputUi/teams/TeamLeagueRoundField.js
 
 import * as React from 'react';
 import { iconUi } from '../../../core/icons/iconUi.js';
@@ -7,7 +7,7 @@ import FormLabel from '@mui/joy/FormLabel';
 import FormHelperText from '@mui/joy/FormHelperText';
 import Input from '@mui/joy/Input';
 
-export default function TeamLeagueLevelField({
+export default function TeamLeagueRoundField({
   required,
   error ,
   value,
@@ -15,12 +15,12 @@ export default function TeamLeagueLevelField({
   disabled,
   helperText,
   readOnly,
-  label = 'רמת הליגה',
-  placeholder = 'רמת הליגה',
   color = 'neutral',
+  label = 'מחזור ליגה',
+  placeholder = 'מחזור ליגה',
   variant = 'outlined',
   size = 'sm',
-  max = 5
+  max = 20
 }) {
   return (
     <>
@@ -33,7 +33,7 @@ export default function TeamLeagueLevelField({
           type='number'
           autoComplete="off"
           color={color}
-          startDecorator={iconUi({id: 'points'})}
+          startDecorator={iconUi({id: 'leaguePos'})}
           error={error}
           readOnly={readOnly}
           disabled={disabled}

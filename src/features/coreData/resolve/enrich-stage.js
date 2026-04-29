@@ -28,12 +28,14 @@ import { getPlayerGeneralPosition } from '../../../shared/players/player.positio
 import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
 import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
 import {
-  buildPlayersWithStats,
-  buildTeamsWithStats,
   buildScoutGamesSummary,
   buildVideosWithEntities,
   buildTrainingWeeksSummary,
+  buildPlayersWithStats,
   buildPlayerGames,
+  buildTeamsWithStats,
+  buildTeamTargetsState,
+  buildTeamPerformanceState,
 } from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
@@ -119,6 +121,7 @@ export function enrichTeams(merged, indexes) {
     trainingWeeksByTeamId,
     teamMeetingsByTeamId,
     teamGamesByTeamId,
+    teamTargetsByTeamId,
   } = indexes
 
   const playersByTeamId = new Map()
@@ -139,6 +142,9 @@ export function enrichTeams(merged, indexes) {
       const trainingWeeks = safeArr(trainingWeeksByTeamId.get(teamId))
       const teamMeetings = safeArr(teamMeetingsByTeamId.get(teamId))
       const teamGames = safeArr(teamGamesByTeamId.get(teamId))
+      const targetsRaw = teamTargetsByTeamId?.get(teamId) || null
+
+      const targets = buildTeamTargetsState(targetsRaw)
 
       return {
         ...team,
@@ -147,6 +153,7 @@ export function enrichTeams(merged, indexes) {
         trainingSummary: buildTrainingWeeksSummary(trainingWeeks),
         teamMeetings,
         teamGames,
+        targets,
       }
     })
     .sort((a, b) => {
@@ -328,9 +335,17 @@ export function attachTeamStatsAndVideos(teams, indexes) {
       tagsArr: tags,
     })
 
+    const teamPerformance = buildTeamPerformanceState({
+      team,
+      teamGames: team.teamGames,
+      teamFullStats: team.teamFullStats,
+      targets: team.targets,
+    })
+
     return {
       ...team,
       videos,
+      teamPerformance,
     }
   })
 }

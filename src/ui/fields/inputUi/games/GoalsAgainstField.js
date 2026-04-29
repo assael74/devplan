@@ -13,26 +13,31 @@ export default function GoalsAgainstField({
   value,
   onChange,
   disabled,
+  label = 'שערי חובה',
+  placeholder = 'שערי חובה',
   helperText,
+  color = 'neutral',
   readOnly,
   size = 'sm'
 }) {
   return (
     <>
       <FormControl sx={{ width: '100%' }}>
-        <FormLabel required={required} sx={{ fontSize: '12px' }}>שערי חובה</FormLabel>
+        <FormLabel required={required} sx={{ fontSize: '12px' }}>{label}</FormLabel>
         <Input
           value={value ?? 0}
           type='number'
           onChange={(e) => onChange(e.target.value)}
-          placeholder="שערי חובה"
+          placeholder={placeholder}
           autoComplete="off"
+          color={color}
           startDecorator={iconUi({id: 'goals', sx: { color: '#f44336' }})}
           error={error}
           readOnly={readOnly}
           disabled={disabled}
           variant="outlined"
           size={size}
+          sx={{ border: '1px solid', borderColor: 'divider' }}
           slotProps={{ input: { min: 0, max: 20 } }}
         />
         <FormHelperText>{helperText}</FormHelperText>

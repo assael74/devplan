@@ -13,7 +13,10 @@ export default function TeamLeagueNameField({
   value,
   onChange,
   disabled,
+  color = 'neutral',
   helperText,
+  label = 'ליגה',
+  placeholder = 'ליגה',
   readOnly,
   variant = 'outlined',
   size = 'sm'
@@ -21,18 +24,20 @@ export default function TeamLeagueNameField({
   return (
     <>
       <FormControl>
-        <FormLabel required sx={{ fontSize: '12px' }}>ליגה</FormLabel>
+        <FormLabel required sx={{ fontSize: '12px' }}>{label}</FormLabel>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="ליגת הקבוצה"
+          placeholder={placeholder}
           autoComplete="off"
+          color={color}
           startDecorator={iconUi({id: 'league'})}
           error={error}
           readOnly={readOnly}
           disabled={disabled}
           variant={variant}
           size={size}
+          sx={{ border: '1px solid', borderColor: 'divider' }}
         />
         <FormHelperText>{helperText}</FormHelperText>
       </FormControl>

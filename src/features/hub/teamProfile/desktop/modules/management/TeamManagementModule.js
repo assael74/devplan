@@ -14,7 +14,9 @@ import {
   isTeamManagementDirty,
 } from '../../../sharedLogic/management'
 
+import TeamManagementToolbar from './components/TeamManagementToolbar.js'
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
+import TeamManagementTargetsCard from './components/TeamManagementTargetsCard.js'
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'
 
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
@@ -50,7 +52,7 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
 
   const canSave = useMemo(() => {
     return Boolean(team?.id) && isDirty && Object.keys(patch).length > 0 && !pending
-  }, [team, isDirty, patch, pending])
+  }, [team?.id, isDirty, patch, pending])
 
   const handleReset = () => {
     setDraft(baseModel)
@@ -79,28 +81,43 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
 
   return (
     <SectionPanel>
-      <Box sx={sx.root}>
-        <Box sx={sx.topGrid}>
+      <Box sx={sx.stickyToolbar}>
+        <TeamManagementToolbar
+          isDirty={isDirty}
+          canSave={canSave}
+          pending={pending}
+          onReset={handleReset}
+          onSave={handleSave}
+        />
+      </Box>
+
+      <Box sx={{...sx.topGrid, my: 1 }}>
+        <Box sx={sx.targetsArea}>
+          <TeamManagementTargetsCard
+            team={team}
+            draft={draft}
+            onDraft={setDraft}
+            pending={pending}
+          />
+        </Box>
+
+        <Box sx={sx.infoArea}>
           <TeamManagementInfoCard
             draft={draft}
             clubName={clubName}
-            isDirty={isDirty}
-            canSave={canSave}
             onDraft={setDraft}
-            onConfirm={handleSave}
-            onReset={handleReset}
             pending={pending}
           />
-
-          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto' }}>
-            <ManagementStaffCard
-              teamId={team.id}
-              roles={staffPool}
-              disabled={pending}
-              compact={false}
-            />
-          </Box>
         </Box>
+      </Box>
+
+      <Box sx={sx.staffArea}>
+        <ManagementStaffCard
+          teamId={team.id}
+          roles={staffPool}
+          disabled={pending}
+          compact={false}
+        />
       </Box>
     </SectionPanel>
   )
