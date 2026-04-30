@@ -1,134 +1,164 @@
 // playerProfile/desktop/modules/payments/components/ParentsTab.js
 
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import { Box, Card, Typography, Button, Divider, Stack } from '@mui/joy'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
+
 import ParentFormModal from './ParentFormModal'
 import { cardSx as sx } from '../sx/ParentsTab.sx.js'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { formatPhoneNumber } from '../../../../../../../shared/format/contactUtiles.js'
 
-// חיבור להוקים ולוגיקה משותפת
 import { usePlayerHubUpdate } from '../../../../../hooks/players/usePlayerHubUpdate.js'
+
 import {
-  buildParentInitialDraft,
-  buildParentsUpdatePatch
-} from '../../../../sharedLogic'
+  buildParentEditInitial,
+  buildParentsPlayerPatch,
+  buildRemoveParentPlayerPatch,
+  getCanCreateParent,
+} from '../../../../../editLogic/payments/index.js'
 
 export default function ParentsTab({ player }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(null)
 
-  // ההוק המרכזי לעדכון השחקן בפיירסטור
   const { run, pending } = usePlayerHubUpdate(player)
+
   const parents = Array.isArray(player?.parents) ? player.parents : []
+  const canCreateParent = getCanCreateParent(parents)
 
-  // פתיחת מודל ליצירה חדשה
+  const handleClose = () => {
+    if (pending) return
+
+    setOpen(false)
+    setDraft(null)
+  }
+
   const handleAdd = () => {
-    setDraft(buildParentInitialDraft(null))
+    if (pending || !canCreateParent) return
+
+    setDraft(buildParentEditInitial(null))
     setOpen(true)
   }
 
-  // פתיחת מודל לעריכה
   const handleEdit = (parent) => {
-    setDraft(buildParentInitialDraft(parent))
+    if (pending) return
+
+    setDraft(buildParentEditInitial(parent))
     setOpen(true)
   }
 
-  // מחיקת הורה - בניית פאץ' עם מערך מסונן ושליחה לפיירסטור
   const handleDelete = async (parentToDelete) => {
-    if (!parentToDelete?.id) return
+    if (pending || !parentToDelete?.id) return
 
-    const nextParents = parents.filter(p => p.id !== parentToDelete.id)
+    const patch = buildRemoveParentPlayerPatch({
+      parents,
+      parentId: parentToDelete.id,
+    })
 
-    await run({ parents: nextParents }, {
+    await run('playerParentsEdit', patch, {
       section: 'playerParents',
-      player,
+      playerId: player?.id,
       createIfMissing: false,
     })
   }
 
-  // שמירה (עריכה או יצירה)
   const handleSubmit = async (formData) => {
-    const nextParentsPatch = buildParentsUpdatePatch({
+    if (pending) return
+
+    const patch = buildParentsPlayerPatch({
       player,
       parents,
       draft: formData,
-      editingId: formData.id
+      editingId: formData?.id || draft?.id || '',
     })
 
-    await run(nextParentsPatch, {
+    await run('playerParentsEdit', patch, {
       section: 'playerParents',
-      player,
-      createIfMissing: false,
+      playerId: player?.id,
+      createIfMissing: true,
     })
 
     setOpen(false)
+    setDraft(null)
   }
 
   return (
     <Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {/* כרטיס הוספה - מוצג רק אם יש פחות מ-2 הורים */}
-        {parents.length < 2 && (
+        {canCreateParent ? (
           <Card
             variant="soft"
             sx={sx.addCard}
-            onClick={!pending ? handleAdd : undefined}
+            onClick={handleAdd}
           >
             <AddRoundedIcon sx={{ fontSize: '3rem', opacity: 0.3 }} />
-            <Typography level="title-md">הוסף הורה</Typography>
-          </Card>
-        )}
 
-        {/* רינדור כרטיסי ההורים */}
-        {parents.map((p) => {
-          const parentPhone = formatPhoneNumber(p.parentPhone) || 'לא עודכן נייד'
+            <Typography level="title-md">
+              הוסף הורה
+            </Typography>
+          </Card>
+        ) : null}
+
+        {parents.map((parent) => {
+          const parentPhone = formatPhoneNumber(parent?.parentPhone) || 'לא עודכן נייד'
 
           return (
-            <Card key={p.id} variant="outlined" sx={{ width: 300, p: 1, boxShadow: 'sm' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                  <Box>
-                    <Typography level="title-lg" sx={{ fontWeight: 'md' }}>
-                      {p.parentName || 'הורה'}
-                    </Typography>
-                    <Typography level="body-xs" sx={{ opacity: 0.7 }}>
-                      {p.parentRole || 'תפקיד לא הוגדר'}
-                    </Typography>
-                  </Box>
+            <Card
+              key={parent.id}
+              variant="outlined"
+              sx={{ width: 300, p: 1, boxShadow: 'sm' }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography level="title-lg" sx={{ fontWeight: 700 }} noWrap>
+                    {parent?.parentName || 'הורה'}
+                  </Typography>
+
+                  <Typography level="body-xs" sx={{ opacity: 0.7 }} noWrap>
+                    {parent?.parentRole || 'תפקיד לא הוגדר'}
+                  </Typography>
                 </Box>
 
-                <Stack spacing={1} sx={{ my: 1.5 }}>
-                  <Typography level="body-sm" startDecorator={iconUi({ id: 'email' })}>
-                    {p.parentEmail || 'אין אימייל'}
+                <Stack spacing={1} sx={{ minWidth: 0 }}>
+                  <Typography level="body-sm" startDecorator={iconUi({ id: 'email' })} noWrap>
+                    {parent?.parentEmail || 'אין אימייל'}
                   </Typography>
-                  <Typography level="body-sm" startDecorator={iconUi({ id: 'phone' })}>
+
+                  <Typography level="body-sm" startDecorator={iconUi({ id: 'phone' })} noWrap>
                     {parentPhone}
                   </Typography>
                 </Stack>
               </Box>
 
-              <Divider inset="none" />
+              <Divider inset="none" sx={{ my: 1 }} />
 
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-start', mt: 'auto' }}>
                 <Button
                   size="sm"
                   variant="outlined"
                   color="danger"
-                  onClick={() => handleDelete(p)}
+                  onClick={() => handleDelete(parent)}
                   loading={pending}
                   disabled={pending}
                 >
                   מחק
                 </Button>
+
                 <Button
                   size="sm"
                   variant="solid"
-                  onClick={() => handleEdit(p)}
+                  onClick={() => handleEdit(parent)}
                   disabled={pending}
-                  startDecorator={iconUi({id: 'edit'})}
+                  startDecorator={iconUi({ id: 'edit' })}
                   sx={sx.conBut}
                 >
                   ערוך
@@ -141,7 +171,7 @@ export default function ParentsTab({ player }) {
 
       <ParentFormModal
         open={open}
-        onClose={() => !pending && setOpen(false)}
+        onClose={handleClose}
         initialData={draft}
         saving={pending}
         onSubmit={handleSubmit}

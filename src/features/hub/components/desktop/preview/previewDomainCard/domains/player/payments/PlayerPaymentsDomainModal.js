@@ -81,7 +81,7 @@ export default function PlayerPaymentsDomainModal({ entity, context }) {
       <EditDrawer
         open={!!activePayment}
         payment={activePayment}
-        context={context}
+        context={{ ...context, playerId: entity?.id || '', player: livePlayer }}
         onClose={() => setActivePayment(null)}
         onSaved={() => setActivePayment(null)}
       />

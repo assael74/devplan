@@ -3,16 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useMeetingHubUpdate } from '../../../../../../hooks/meetings/useMeetingHubUpdate.js'
+
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-} from '../../../../../sharedLogic/meetings/module/meetingEdit.logic.js'
+  buildMeetingEditInitial,
+  buildMeetingEditBundle,
+  isMeetingEditDirty,
+  getIsMeetingEditValid,
+} from '../../../../../../editLogic/mettings/index.js'
 
 export default function useMeetingForm(selected) {
   const [isEditing, setIsEditing] = useState(false)
 
-  const initial = useMemo(() => buildInitialDraft(selected), [selected])
+  const initial = useMemo(() => {
+    return buildMeetingEditInitial(selected)
+  }, [selected])
+
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -20,13 +25,24 @@ export default function useMeetingForm(selected) {
     setDraft(initial)
   }, [initial])
 
-  const patch = useMemo(() => buildPatch(selected, draft), [selected, draft])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const bundle = useMemo(() => {
+    return buildMeetingEditBundle(draft, initial)
+  }, [draft, initial])
+
+  const patch = bundle?.meetingPatch || {}
+
+  const isDirty = useMemo(() => {
+    return isMeetingEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const isValid = useMemo(() => {
+    return getIsMeetingEditValid(draft)
+  }, [draft])
 
   const meetingUpdate = useMeetingHubUpdate(selected)
   const pending = meetingUpdate.pending
 
-  const canSave = Boolean(draft?.id) && isDirty && !pending
+  const canSave = Boolean(draft?.id) && isDirty && isValid && !pending
 
   const startEdit = useCallback(() => {
     setIsEditing(true)
@@ -42,24 +58,26 @@ export default function useMeetingForm(selected) {
   }, [initial])
 
   const save = useCallback(async () => {
-    if (!draft?.id) return
-    if (!patch || !Object.keys(patch).length) return
+    if (!canSave) return
+    if (!Object.keys(patch).length) return
 
-    await meetingUpdate.run('update', patch, {
+    await meetingUpdate.run('updateMeeting', patch, {
       section: 'playerProfile.meetings',
       meetingId: draft.id,
-      createIfMissing: false,
+      createIfMissing: true,
     })
 
     setIsEditing(false)
-  }, [draft?.id, patch, meetingUpdate])
+  }, [canSave, meetingUpdate, patch, draft?.id])
 
   return {
     initial,
     draft,
     setDraft,
     patch,
+    bundle,
     isDirty,
+    isValid,
     canSave,
     isEditing,
     pending,

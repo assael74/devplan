@@ -10,11 +10,13 @@ import VideoAnalysisCreateFields from '../../../../../../../../../../../ui/forms
 import useVideoAnalysisHubCreate from '../../../../../../../../../hooks/videoAnalysis/useVideoAnalysisHubCreate.js'
 
 import {
-  buildInitialDraft,
+  buildMeetingVideoCreateDraft,
   buildVideoAnalysisFieldConfig,
-  getIsDirty,
-  getValidity,
-} from './newVideoFormDrawer.utils.js'
+  getVideoCreateValidity,
+  validateVideoCreateDraft,
+  isVideoCreateDirty,
+  buildVideoCreateMeta,
+} from '../../../../../../../../../createLogic/index.js'
 
 const layout = {
   topCols: { xs: '1fr', md: '1fr 1fr' },
@@ -30,7 +32,14 @@ export default function NewVideoFormDrawer({
   context,
   meeting,
 }) {
-  const initial = useMemo(() => buildInitialDraft({ ...context, meeting }), [context, meeting])
+  const fullContext = useMemo(() => {
+    return {
+      ...context,
+      meeting,
+    }
+  }, [context, meeting])
+
+  const initial = useMemo(() => buildMeetingVideoCreateDraft(fullContext), [fullContext])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -38,8 +47,10 @@ export default function NewVideoFormDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const validity = useMemo(() => getValidity(draft), [draft])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const validity = useMemo(() => getVideoCreateValidity(draft), [draft])
+  const validation = useMemo(() => validateVideoCreateDraft(draft), [draft])
+  const meta = useMemo(() => buildVideoCreateMeta(draft, fullContext), [draft, fullContext])
+  const isDirty = useMemo(() => isVideoCreateDirty(draft, initial), [draft, initial])
 
   const {
     locks,
@@ -50,11 +61,12 @@ export default function NewVideoFormDrawer({
     objectTypeOptions,
     contextTypeOptions,
   } = useMemo(() => {
-    return buildVideoAnalysisFieldConfig(draft, context)
-  }, [draft, context])
+    return buildVideoAnalysisFieldConfig(draft, fullContext)
+  }, [draft, fullContext])
 
   const { saving, runCreateVideoAnalysis } = useVideoAnalysisHubCreate()
-  const canSave = isDirty && validity?.ok && !saving
+
+  const canSave = isDirty && validation?.ok && !saving
 
   const handleReset = useCallback(() => {
     if (saving) return
@@ -67,18 +79,15 @@ export default function NewVideoFormDrawer({
     try {
       const created = await runCreateVideoAnalysis({
         draft,
-        context: {
-          ...context,
-          meeting,
-        },
+        context: fullContext,
       })
 
-      onSaved(created || draft)
-      onClose()
+      onSaved?.(created || draft)
+      onClose?.()
     } catch (error) {
       console.error('create videoAnalysis failed:', error)
     }
-  }, [canSave, saving, runCreateVideoAnalysis, draft, context, meeting, onSaved, onClose])
+  }, [canSave, saving, runCreateVideoAnalysis, draft, fullContext, onSaved, onClose])
 
   const player =
     context?.player ||
@@ -87,11 +96,11 @@ export default function NewVideoFormDrawer({
     null
 
   const status = saving
-    ? { text: 'שומר וידאו חדש...', color: 'primary' }
+    ? { text: meta?.savingText || 'שומר וידאו חדש...', color: 'primary' }
     : !isDirty
     ? { text: 'אין שינויים', color: 'neutral' }
-    : !validity?.ok
-    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : !validation?.ok
+    ? { text: validation?.message || 'יש להשלים את כל שדות החובה', color: 'warning' }
     : { text: 'מוכן לשמירה', color: 'success' }
 
   return (
@@ -107,8 +116,8 @@ export default function NewVideoFormDrawer({
         onReset: handleReset,
       }}
       texts={{
-        save: 'שמירה',
-        saving: 'שומר...',
+        save: meta?.saveText || 'שמירה',
+        saving: meta?.savingText || 'שומר...',
         cancel: 'ביטול',
       }}
       tooltips={{
@@ -128,10 +137,7 @@ export default function NewVideoFormDrawer({
         <VideoAnalysisCreateFields
           draft={draft}
           onDraft={setDraft}
-          context={{
-            ...context,
-            meeting,
-          }}
+          context={fullContext}
           layout={layout}
           validity={validity}
           locks={locks}

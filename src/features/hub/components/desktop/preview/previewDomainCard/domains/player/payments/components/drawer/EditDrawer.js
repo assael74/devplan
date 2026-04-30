@@ -9,15 +9,21 @@ import DrawerHeaderShell from '../../../../../../../../../../../ui/patterns/draw
 
 import { usePaymentHubUpdate } from '../../../../../../../../../hooks/payments/usePaymentHubUpdate.js'
 
-import EditFormDrawer from './EditFormDrawer.js'
+import PaymentCreateFields from '../../../../../../../../../../../ui/forms/ui/payments/PaymentCreateFields.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
+  buildPaymentEditInitial,
+  buildPaymentEditPatch,
   buildPaymentMeta,
-  buildPlayerDisplayName,
-} from './editDrawer.utils.js'
+  getIsPaymentEditValid,
+  isPaymentEditDirty,
+} from '../../../../../../../../../editLogic/payments/index.js'
+
+const layout = {
+  topCols: { xs: '1fr', md: '1fr 1fr' },
+  mainCols: { xs: '1fr', md: '1fr 1fr' },
+  metaCols: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+}
 
 export default function EditDrawer({
   open,
@@ -26,7 +32,7 @@ export default function EditDrawer({
   onSaved,
   context,
 }) {
-  const initial = useMemo(() => buildInitialDraft(payment), [payment])
+  const initial = useMemo(() => buildPaymentEditInitial(payment), [payment])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -56,47 +62,55 @@ export default function EditDrawer({
     }
   }, [initial?.raw, draft, context?.players])
 
-  const isDirty = useMemo(() => getIsDirty(initial, draft), [initial, draft])
+  const isValid = useMemo(() => getIsPaymentEditValid(draft), [draft])
+
+  const isDirty = useMemo(() => {
+    return isPaymentEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const patch = useMemo(() => {
+    return buildPaymentEditPatch(draft, initial)
+  }, [draft, initial])
 
   const { run: runPaymentUpdate, pending } = usePaymentHubUpdate(initial?.raw)
 
-  const canSave = !!initial?.id && isDirty && !pending
+  const canSave = !!initial?.id && isDirty && isValid && !pending
 
   const handleSave = useCallback(async () => {
-    const patch = buildPatch(initial, draft)
+    if (!canSave) return
 
-    if (!initial?.id || !Object.keys(patch).length) {
-      onClose()
-      return
-    }
-
-    await runPaymentUpdate(patch, {
-      id: initial.id,
+    await runPaymentUpdate('playerPaymentEdit', patch, {
       paymentId: initial.id,
       section: 'paymentEdit',
+      createIfMissing: true,
     })
 
-    onSaved({
-      id: initial.id,
+    const updatedPayment = {
+      ...initial.raw,
       ...patch,
-    })
+      id: initial.id,
+      status: patch.status || initial.raw?.status,
+    }
 
+    onSaved(patch, updatedPayment)
     onClose()
-  }, [initial, draft, runPaymentUpdate, onSaved, onClose])
+  }, [canSave, patch, initial.id, initial.raw, runPaymentUpdate, onSaved, onClose])
 
   const handleReset = useCallback(() => {
     if (pending) return
     setDraft(initial)
   }, [initial, pending])
 
-  const player = livePayment?.player || null
+  const player = context?.player || {}
   const headerAvatar = player?.photo || playerImage
 
-  const headerTitle = buildPlayerDisplayName(player) || 'תשלום'
+  const headerTitle = player?.playerFullName || 'שחקן'
 
   const headerMeta = livePayment?.metaLabel ||   draft?.metaLabel || 'פרטי תשלום'
 
-  const status = isDirty
+  const status = !isValid
+    ? { text: 'יש להשלים פרטי תשלום', color: 'warning' }
+    : isDirty
     ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
     : { text: 'אין שינויים', color: 'neutral' }
 
@@ -131,10 +145,11 @@ export default function EditDrawer({
         />
       }
     >
-      <EditFormDrawer
+      <PaymentCreateFields
         draft={draft}
-        setDraft={setDraft}
+        onDraft={setDraft}
         context={context}
+        layout={layout}
         livePayment={livePayment}
       />
     </DrawerShell>

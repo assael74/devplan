@@ -10,11 +10,12 @@ import PlayerCreateFields from '../../../../../../../../../../../ui/forms/ui/pla
 import usePlayerHubCreate from '../../../../../../../../../hooks/players/usePlayerHubCreate.js'
 
 import {
-  buildInitialDraft,
-  getValidity,
-  getIsValid,
-  getIsDirty,
-} from './newFormDrawer.utils.js'
+  buildPlayerCreateDraft,
+  getPlayerCreateValidity,
+  validatePlayerCreateDraft,
+  isPlayerCreateDirty,
+  buildPlayerCreateMeta,
+} from '../../../../../../../../../createLogic/index.js'
 
 const layout = {
   topCols: { xs: '1fr', md: '1fr 1fr' },
@@ -28,7 +29,7 @@ export default function NewFormDrawer({
   onSaved,
   context,
 }) {
-  const initial = useMemo(() => buildInitialDraft(context), [context])
+  const initial = useMemo(() => buildPlayerCreateDraft(context), [context])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -36,20 +37,22 @@ export default function NewFormDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const validity = useMemo(() => getValidity(draft), [draft])
-  const isValid = useMemo(() => getIsValid(validity), [validity])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const validity = useMemo(() => getPlayerCreateValidity(draft), [draft])
+  const validation = useMemo(() => validatePlayerCreateDraft(draft), [draft])
+  const meta = useMemo(() => buildPlayerCreateMeta(draft, context), [draft, context])
+  const isDirty = useMemo(() => isPlayerCreateDirty(draft, initial), [draft, initial])
 
   const { saving, runCreatePlayer } = usePlayerHubCreate()
-  const canSave = isDirty && isValid && !saving
+
+  const canSave = isDirty && validation?.ok && !saving
 
   const handleSave = useCallback(async () => {
     if (!canSave || saving) return
 
     try {
       const created = await runCreatePlayer({ draft, context })
-      onSaved(created || draft)
-      onClose()
+      onSaved?.(created || draft)
+      onClose?.()
     } catch (error) {
       console.error('create player failed:', error)
     }
@@ -61,12 +64,17 @@ export default function NewFormDrawer({
   }, [saving, initial])
 
   const status = saving
-    ? { text: 'שומר שחקן חדש...', color: 'primary' }
+    ? { text: meta?.savingText || 'שומר שחקן חדש...', color: 'primary' }
     : !isDirty
     ? { text: 'אין שינויים', color: 'neutral' }
-    : !isValid
-    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : !validation?.ok
+    ? { text: validation?.message || 'יש להשלים את כל שדות החובה', color: 'warning' }
     : { text: 'מוכן לשמירה', color: 'success' }
+
+  const title =
+    [draft?.playerFirstName || '', draft?.playerLastName || '']
+      .filter(Boolean)
+      .join(' ') || 'שחקן חדש'
 
   return (
     <DrawerShell
@@ -81,8 +89,8 @@ export default function NewFormDrawer({
         onReset: handleReset,
       }}
       texts={{
-        save: 'שמירה',
-        saving: 'שומר...',
+        save: meta?.saveText || 'שמירה',
+        saving: meta?.savingText || 'שומר...',
         cancel: 'ביטול',
       }}
       tooltips={{
@@ -92,11 +100,7 @@ export default function NewFormDrawer({
       header={
         <DrawerHeaderShell
           entity="player"
-          title={
-            [draft?.playerFirstName || '', draft?.playerLastName || '']
-              .filter(Boolean)
-              .join(' ') || 'שחקן חדש'
-          }
+          title={title}
           subline={context?.team?.teamName || 'יצירת שחקן'}
           titleIconId="players"
         />

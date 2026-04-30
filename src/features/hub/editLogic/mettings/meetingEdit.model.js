@@ -1,10 +1,9 @@
-// previewDomainCard/domains/player/meetings/components/drawer/editDrawer.utils.js
+// features/hub/editLogic/meetings/meetingEdit.model.js
 
-import { getFullDateIl } from '../../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
 
 export const safe = (value) => (value == null ? '' : String(value))
-
-const clean = (value) => safe(value).trim()
+export const clean = (value) => safe(value).trim()
 
 const isValidDateFormat = (value) => {
   const date = clean(value)
@@ -15,7 +14,7 @@ const isValidDateFormat = (value) => {
 
 export const getMeetingStatusId = (status) => {
   if (!status) return ''
-  if (typeof status === 'string') return status.trim()
+  if (typeof status === 'string') return clean(status)
 
   if (typeof status === 'object') {
     return clean(status?.current?.id || status?.id)
@@ -25,8 +24,8 @@ export const getMeetingStatusId = (status) => {
 }
 
 export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
-  const cleanNext = clean(nextStatusId)
-  if (!cleanNext) return null
+  const nextId = clean(nextStatusId)
+  if (!nextId) return null
 
   const now = Date.now()
 
@@ -34,12 +33,12 @@ export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
     const prevHistory = Array.isArray(prevStatus?.history) ? prevStatus.history : []
     const prevCurrentId = clean(prevStatus?.current?.id || prevStatus?.id)
 
-    if (prevCurrentId === cleanNext) {
+    if (prevCurrentId === nextId) {
       return {
         ...prevStatus,
         current: {
           ...(prevStatus?.current || {}),
-          id: cleanNext,
+          id: nextId,
           time: prevStatus?.current?.time || now,
         },
         history: prevHistory,
@@ -48,20 +47,20 @@ export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
 
     return {
       current: {
-        id: cleanNext,
+        id: nextId,
         time: now,
       },
       history: [
         ...prevHistory,
         {
-          id: cleanNext,
+          id: nextId,
           time: now,
         },
       ],
     }
   }
 
-  const prevFlat = typeof prevStatus === 'string' ? prevStatus.trim() : ''
+  const prevFlat = typeof prevStatus === 'string' ? clean(prevStatus) : ''
   const history = []
 
   if (prevFlat) {
@@ -72,13 +71,13 @@ export const buildMeetingStatusObject = (prevStatus, nextStatusId) => {
   }
 
   history.push({
-    id: cleanNext,
+    id: nextId,
     time: now,
   })
 
   return {
     current: {
-      id: cleanNext,
+      id: nextId,
       time: now,
     },
     history,
@@ -95,7 +94,11 @@ export const buildMeetingName = (meeting = {}) => {
 }
 
 export const buildMeetingMeta = (meeting = {}) => {
-  const playerName = `${meeting?.player?.playerFirstName || ''} ${meeting?.player?.playerLastName || ''}`.trim()
+  const playerName = [meeting?.player?.playerFirstName, meeting?.player?.playerLastName]
+    .map(clean)
+    .filter(Boolean)
+    .join(' ')
+
   const rawDate = clean(meeting?.meetingDate)
   const dateLabel = clean(meeting?.dateLabel) || clean(getFullDateIl(rawDate))
   const hour = clean(meeting?.meetingHour)
@@ -103,23 +106,25 @@ export const buildMeetingMeta = (meeting = {}) => {
   return [playerName, dateLabel, hour].filter(Boolean).join(' | ') || 'פרטי פגישה'
 }
 
-export const buildInitialDraft = (meeting = {}) => {
-  const source = meeting || {}
+export const buildMeetingEditInitial = (meeting = {}) => {
+  const source = meeting?.raw || meeting?.meeting || meeting || {}
   const linkedVideo = source?.video || null
 
   return {
-    id: source?.id || '',
-    playerId: source?.playerId || source?.player?.id || '',
-    name: buildMeetingName(source),
-    meetingDate: source?.meetingDate || '',
-    meetingHour: source?.meetingHour || '',
-    meetingFor: source?.meetingFor || '',
-    type: source?.type || '',
-    statusId: getMeetingStatusId(source?.status),
-    notes: source?.notes || '',
+    id: clean(source?.id || source?.meetingId),
+    playerId: clean(source?.playerId || source?.player?.id),
 
-    videoId: linkedVideo?.id || '',
-    rawVideoId: linkedVideo?.id || '',
+    name: buildMeetingName(source),
+
+    meetingDate: clean(source?.meetingDate || source?.date),
+    meetingHour: clean(source?.meetingHour || source?.time),
+    meetingFor: clean(source?.meetingFor),
+    type: clean(source?.type),
+    statusId: getMeetingStatusId(source?.status),
+    notes: clean(source?.notes),
+
+    videoId: clean(source?.videoId || linkedVideo?.id),
+    rawVideoId: clean(linkedVideo?.id || source?.videoId),
     rawVideoInfo: linkedVideo?.videoInfo || null,
     rawVideo: linkedVideo || null,
 
@@ -128,54 +133,53 @@ export const buildInitialDraft = (meeting = {}) => {
   }
 }
 
-export const getFieldErrors = (draft = {}) => {
+export const getMeetingEditFieldErrors = (draft = {}) => {
   const meetingDate = clean(draft?.meetingDate)
   const type = clean(draft?.type)
   const meetingFor = clean(draft?.meetingFor)
 
   return {
-    okType: !!type,
-    okDate: !!meetingDate && isValidDateFormat(meetingDate),
-    okFor: !!meetingFor,
+    meetingDate: !meetingDate || !isValidDateFormat(meetingDate),
+    type: !type,
+    meetingFor: !meetingFor,
   }
 }
 
-export const getIsValid = (draft = {}) => {
-  const validity = getFieldErrors(draft)
-  return Boolean(validity.okType && validity.okDate && validity.okFor)
+export const getIsMeetingEditValid = (draft = {}) => {
+  return !Object.values(getMeetingEditFieldErrors(draft)).some(Boolean)
 }
 
-export const buildMeetingPatch = (initial, draft) => {
+export const buildMeetingEditPatch = (draft = {}, initial = {}) => {
   const next = {}
 
-  if ((draft?.meetingDate || '') !== (initial?.meetingDate || '')) {
-    next.meetingDate = draft?.meetingDate || ''
+  if (clean(draft?.meetingDate) !== clean(initial?.meetingDate)) {
+    next.meetingDate = clean(draft?.meetingDate)
   }
 
-  if ((draft?.meetingHour || '') !== (initial?.meetingHour || '')) {
-    next.meetingHour = draft?.meetingHour || ''
+  if (clean(draft?.meetingHour) !== clean(initial?.meetingHour)) {
+    next.meetingHour = clean(draft?.meetingHour)
   }
 
-  if ((draft?.meetingFor || '') !== (initial?.meetingFor || '')) {
-    next.meetingFor = draft?.meetingFor || ''
+  if (clean(draft?.meetingFor) !== clean(initial?.meetingFor)) {
+    next.meetingFor = clean(draft?.meetingFor)
   }
 
-  if ((draft?.type || '') !== (initial?.type || '')) {
-    next.type = draft?.type || ''
+  if (clean(draft?.type) !== clean(initial?.type)) {
+    next.type = clean(draft?.type)
   }
 
-  if ((draft?.statusId || '') !== (initial?.statusId || '')) {
+  if (clean(draft?.statusId) !== clean(initial?.statusId)) {
     next.status = buildMeetingStatusObject(initial?.raw?.status, draft?.statusId)
   }
 
-  if ((draft?.notes || '') !== (initial?.notes || '')) {
-    next.notes = draft?.notes || ''
+  if (clean(draft?.notes) !== clean(initial?.notes)) {
+    next.notes = clean(draft?.notes)
   }
 
   return next
 }
 
-export const buildVideoPlan = (initial, draft) => {
+export const buildMeetingVideoPlan = (draft = {}, initial = {}) => {
   const initialVideoId = clean(initial?.rawVideoId)
   const nextVideoId = clean(draft?.videoId)
 
@@ -221,19 +225,19 @@ export const buildVideoPlan = (initial, draft) => {
   }
 }
 
-export const buildPatch = (initial, draft) => {
+export const buildMeetingEditBundle = (draft = {}, initial = {}) => {
   return {
-    meetingPatch: buildMeetingPatch(initial, draft),
-    videoPlan: buildVideoPlan(initial, draft),
+    meetingPatch: buildMeetingEditPatch(draft, initial),
+    videoPlan: buildMeetingVideoPlan(draft, initial),
   }
 }
 
-export const getIsDirty = (initial, draft) => {
-  const { meetingPatch, videoPlan } = buildPatch(initial, draft)
+export const isMeetingEditDirty = (draft = {}, initial = {}) => {
+  const { meetingPatch, videoPlan } = buildMeetingEditBundle(draft, initial)
 
   return (
     Object.keys(meetingPatch).length > 0 ||
-    !!videoPlan?.unlinkPrev ||
-    !!videoPlan?.linkNext
+    Boolean(videoPlan?.unlinkPrev) ||
+    Boolean(videoPlan?.linkNext)
   )
 }

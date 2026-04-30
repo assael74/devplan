@@ -1,5 +1,3 @@
-// previewDomainCard/domains/team/games/components/neExwForm/newExFormDrawer.utils.js
-
 const safe = (v) => (v == null ? '' : String(v).trim())
 
 const toNumOrZero = (v) => {
@@ -22,7 +20,7 @@ const isValidDateFormat = (value) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
-function buildComparableDraft(draft = {}) {
+function buildComparableExternalGameCreateDraft(draft = {}) {
   return {
     playerId: safe(draft?.playerId),
     teamId: safe(draft?.teamId),
@@ -53,7 +51,7 @@ function buildComparableDraft(draft = {}) {
   }
 }
 
-export function buildInitialExDraft(context = {}) {
+export function buildExternalGameCreateDraft(context = {}) {
   const player = context?.player || context?.entity || null
 
   return {
@@ -88,14 +86,14 @@ export function buildInitialExDraft(context = {}) {
   }
 }
 
-export function getIsExDirty(draft = {}, initial = {}) {
+export function isExternalGameCreateDirty(draft = {}, initial = {}) {
   return (
-    JSON.stringify(buildComparableDraft(draft)) !==
-    JSON.stringify(buildComparableDraft(initial))
+    JSON.stringify(buildComparableExternalGameCreateDraft(draft)) !==
+    JSON.stringify(buildComparableExternalGameCreateDraft(initial))
   )
 }
 
-export function getExFieldErrors(draft = {}) {
+export function getExternalGameCreateFieldErrors(draft = {}) {
   const hasPlayerId = !!safe(draft?.playerId)
   const hasTeamName = !!safe(draft?.teamName)
   const hasClubName = !!safe(draft?.clubName)
@@ -125,50 +123,66 @@ export function getExFieldErrors(draft = {}) {
   }
 }
 
-export function getExValidity(draft = {}) {
-  const fieldErrors = getExFieldErrors(draft)
+export function validateExternalGameCreateDraft(draft = {}) {
+  const errors = getExternalGameCreateFieldErrors(draft)
+  const valid = !Object.values(errors).some(Boolean)
 
-  const ok = !Object.values(fieldErrors).some(Boolean)
-
-  if (fieldErrors.playerId) {
-    return { ok: false, message: 'חסר שחקן' }
+  if (errors.playerId) {
+    return { valid: false, ok: false, message: 'חסר שחקן', errors }
   }
 
-  if (fieldErrors.teamName || fieldErrors.clubName) {
-    return { ok: false, message: 'חסר שם קבוצה או מועדון' }
+  if (errors.teamName || errors.clubName) {
+    return { valid: false, ok: false, message: 'חסר שם קבוצה או מועדון', errors }
   }
 
-  if (fieldErrors.rivel) {
-    return { ok: false, message: 'יש להזין יריבה' }
+  if (errors.rivel) {
+    return { valid: false, ok: false, message: 'יש להזין יריבה', errors }
   }
 
-  if (fieldErrors.gameDate) {
-    return { ok: false, message: 'יש להזין תאריך משחק תקין' }
+  if (errors.gameDate) {
+    return { valid: false, ok: false, message: 'יש להזין תאריך משחק תקין', errors }
   }
 
-  if (fieldErrors.type) {
-    return { ok: false, message: 'יש לבחור סוג משחק' }
+  if (errors.type) {
+    return { valid: false, ok: false, message: 'יש לבחור סוג משחק', errors }
   }
 
-  if (fieldErrors.gameDuration) {
-    return { ok: false, message: 'יש לבחור משך משחק' }
+  if (errors.gameDuration) {
+    return { valid: false, ok: false, message: 'יש לבחור משך משחק', errors }
   }
 
-  if (fieldErrors.goals) {
-    return { ok: false, message: 'כמות שערי השחקן גדולה מכמות שערי הקבוצה' }
+  if (errors.goals) {
+    return {
+      valid: false,
+      ok: false,
+      message: 'כמות שערי השחקן גדולה מכמות שערי הקבוצה',
+      errors,
+    }
   }
 
-  if (fieldErrors.assists) {
-    return { ok: false, message: 'כמות הבישולים גדולה מכמות שערי הקבוצה' }
+  if (errors.assists) {
+    return {
+      valid: false,
+      ok: false,
+      message: 'כמות הבישולים גדולה מכמות שערי הקבוצה',
+      errors,
+    }
   }
 
-  if (fieldErrors.timePlayed) {
-    return { ok: false, message: 'לא ניתן להזין דקות משחק כשהשחקן לא בסגל' }
+  if (errors.timePlayed) {
+    return {
+      valid: false,
+      ok: false,
+      message: 'לא ניתן להזין דקות משחק כשהשחקן לא בסגל',
+      errors,
+    }
   }
 
   return {
-    ok,
+    valid,
+    ok: valid,
     message: '',
+    errors,
   }
 }
 
@@ -193,7 +207,7 @@ export function buildExternalGameEntryLimits(draft = {}) {
   }
 }
 
-export function normalizeExDraftBeforeSave(draft = {}) {
+export function normalizeExternalGameCreateDraft(draft = {}) {
   const goalsFor = toNumOrZero(draft?.goalsFor)
   const goalsAgainst = toNumOrZero(draft?.goalsAgainst)
 
@@ -230,5 +244,34 @@ export function normalizeExDraftBeforeSave(draft = {}) {
 
     gameSource: 'external',
     isExternalGame: true,
+  }
+}
+
+export function buildExternalGameCreatePayload(draft = {}, context = {}) {
+  const normalized = normalizeExternalGameCreateDraft({
+    ...draft,
+    playerId: draft?.playerId || context?.playerId || context?.player?.id,
+    teamId: draft?.teamId || context?.teamId || context?.player?.teamId,
+    clubId: draft?.clubId || context?.clubId || context?.player?.clubId,
+  })
+
+  return {
+    ...normalized,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+}
+
+export function buildExternalGameCreateMeta(draft = {}, context = {}) {
+  const validation = validateExternalGameCreateDraft(draft, context)
+
+  return {
+    title: 'משחק חיצוני חדש',
+    saveText: 'יצירת משחק',
+    savingText: 'יוצר משחק...',
+    valid: validation.valid,
+    ok: validation.ok,
+    message: validation.message,
+    errors: validation.errors,
   }
 }

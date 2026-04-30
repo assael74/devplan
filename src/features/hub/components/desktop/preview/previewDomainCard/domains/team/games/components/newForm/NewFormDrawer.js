@@ -10,11 +10,12 @@ import GameCreateFields from '../../../../../../../../../../../ui/forms/ui/games
 import useGameHubCreate from '../../../../../../../../../hooks/games/useGameHubCreate.js'
 
 import {
-  buildInitialDraft,
-  getFieldErrors,
-  getIsDirty,
-  getIsValid,
-} from './newFormDrawer.utils.js'
+  buildTeamGameCreateDraft,
+  getTeamGameCreateFieldErrors,
+  validateTeamGameCreateDraft,
+  isTeamGameCreateDirty,
+  buildTeamGameCreateMeta,
+} from '../../../../../../../../../createLogic/index.js'
 
 const layout = {
   topCols: { xs: '1fr 1fr', md: '1fr 1fr' },
@@ -29,7 +30,7 @@ export default function NewFormDrawer({
   onSaved,
   context,
 }) {
-  const initial = useMemo(() => buildInitialDraft(context), [context])
+  const initial = useMemo(() => buildTeamGameCreateDraft(context), [context])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -37,12 +38,14 @@ export default function NewFormDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const fieldErrors = useMemo(() => getFieldErrors(draft), [draft])
-  const isValid = useMemo(() => getIsValid(draft), [draft])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => getTeamGameCreateFieldErrors(draft), [draft])
+  const validation = useMemo(() => validateTeamGameCreateDraft(draft), [draft])
+  const meta = useMemo(() => buildTeamGameCreateMeta(draft, context), [draft, context])
+  const isDirty = useMemo(() => isTeamGameCreateDirty(draft, initial), [draft, initial])
 
   const { saving, runCreateGame } = useGameHubCreate()
-  const canSave = isDirty && isValid && !saving
+
+  const canSave = isDirty && validation?.ok && !saving
 
   const handleSave = useCallback(async () => {
     if (!canSave || saving) return
@@ -62,11 +65,11 @@ export default function NewFormDrawer({
   }, [saving, initial])
 
   const status = saving
-    ? { text: 'שומר משחק חדש...', color: 'primary' }
+    ? { text: meta?.savingText || 'שומר משחק חדש...', color: 'primary' }
     : !isDirty
     ? { text: 'אין שינויים', color: 'neutral' }
-    : !isValid
-    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : !validation?.ok
+    ? { text: validation?.message || 'יש להשלים את כל שדות החובה', color: 'warning' }
     : { text: 'מוכן לשמירה', color: 'success' }
 
   return (
@@ -82,8 +85,8 @@ export default function NewFormDrawer({
         onReset: handleReset,
       }}
       texts={{
-        save: 'שמירה',
-        saving: 'שומר...',
+        save: meta?.saveText || 'שמירה',
+        saving: meta?.savingText || 'שומר...',
         cancel: 'ביטול',
       }}
       tooltips={{

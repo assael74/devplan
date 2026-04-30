@@ -1,15 +1,14 @@
 // playerProfile/mobile/modules/meetings/components/meetingForm/MeetingScreen.js
 
 import React from 'react'
-import { Box, Divider, Sheet, Typography } from '@mui/joy'
+import { Box, Sheet, Typography } from '@mui/joy'
 
-import { normalizeMeetingStatus } from '../../../../../../../../shared/meetings/meetings.status.js'
-import { useMeetingHubUpdate } from '../../../../../../hooks/meetings/useMeetingHubUpdate.js'
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-} from '../../../../../sharedLogic/meetings/module/meetingEdit.logic.js'
+  buildMeetingEditInitial,
+  buildMeetingEditBundle,
+  getIsMeetingEditValid,
+  isMeetingEditDirty,
+} from '../../../../../../editLogic/mettings/index.js'
 
 import { formSx } from '../sx/form.sx.js'
 
@@ -26,7 +25,11 @@ export default function MeetingScreen({
   onOpenVideo,
 }) {
   const [isEditing, setIsEditing] = React.useState(false)
-  const initial = React.useMemo(() => buildInitialDraft(selected), [selected])
+
+  const initial = React.useMemo(() => {
+    return buildMeetingEditInitial(selected)
+  }, [selected])
+
   const [draft, setDraft] = React.useState(initial)
 
   React.useEffect(() => {
@@ -34,9 +37,22 @@ export default function MeetingScreen({
     setDraft(initial)
   }, [initial])
 
-  const patch = React.useMemo(() => buildPatch(selected, draft), [selected, draft])
-  const isDirty = React.useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const canSave = Boolean(draft?.id) && isDirty && !pending
+  const bundle = React.useMemo(() => {
+    return buildMeetingEditBundle(draft, initial)
+  }, [draft, initial])
+
+  const patch = bundle?.meetingPatch || {}
+
+  const isDirty = React.useMemo(() => {
+    return isMeetingEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const isValid = React.useMemo(() => {
+    return getIsMeetingEditValid(draft)
+  }, [draft])
+
+  const hasPatch = Object.keys(patch).length > 0
+  const canSave = Boolean(draft?.id) && isDirty && isValid && hasPatch && !pending
 
   if (!selected) {
     return (
@@ -56,12 +72,12 @@ export default function MeetingScreen({
   }
 
   const handleReset = () => {
+    if (pending) return
     setDraft(initial)
   }
 
   const handleSave = async () => {
-    if (!draft?.id) return
-    if (!patch || !Object.keys(patch).length) return
+    if (!canSave) return
 
     await onSave(draft.id, patch)
     setIsEditing(false)
@@ -83,9 +99,23 @@ export default function MeetingScreen({
       />
 
       <Box>
-        <MeetingForm isEditing={isEditing} draft={draft} onDraft={setDraft} />
-        <MeetingNotes isEditing={isEditing} selected={selected} draft={draft} onDraft={setDraft} />
-        <MeetingVideo selected={draft || selected} onOpenVideo={onOpenVideo} />
+        <MeetingForm
+          isEditing={isEditing}
+          draft={draft}
+          onDraft={setDraft}
+        />
+
+        <MeetingNotes
+          isEditing={isEditing}
+          selected={selected}
+          draft={draft}
+          onDraft={setDraft}
+        />
+
+        <MeetingVideo
+          selected={draft || selected}
+          onOpenVideo={onOpenVideo}
+        />
       </Box>
     </Sheet>
   )

@@ -78,7 +78,7 @@ export default function EditExDrawer({
       gameSource: 'external',
       isExternalGame: true,
       game: activeGame,
-      createIfMissing: false,
+      createIfMissing: true,
     })
 
     onSaved(patch)

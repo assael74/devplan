@@ -10,11 +10,12 @@ import PaymentCreateFields from '../../../../../../../../../../../ui/forms/ui/pa
 import usePaymentHubCreate from '../../../../../../../../../hooks/payments/usePaymentHubCreate.js'
 
 import {
-  buildInitialDraft,
-  getValidity,
-  getIsValid,
-  getIsDirty,
-} from './newFormDrawer.utils.js'
+  buildPaymentCreateDraft,
+  getPaymentCreateValidity,
+  validatePaymentCreateDraft,
+  isPaymentCreateDirty,
+  buildPaymentCreateMeta,
+} from '../../../../../../../../../createLogic/index.js'
 
 const layout = {
   topCols: { xs: '1fr', md: '1fr 1fr' },
@@ -29,8 +30,8 @@ export default function NewFormDrawer({
   context,
 }) {
   const player = context?.player || context?.entity || null
-  const initial = useMemo(() => buildInitialDraft(context), [context])
 
+  const initial = useMemo(() => buildPaymentCreateDraft(context), [context])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -38,20 +39,22 @@ export default function NewFormDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const validity = useMemo(() => getValidity(draft), [draft])
-  const isValid = useMemo(() => getIsValid(validity), [validity])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const validity = useMemo(() => getPaymentCreateValidity(draft), [draft])
+  const validation = useMemo(() => validatePaymentCreateDraft(draft), [draft])
+  const meta = useMemo(() => buildPaymentCreateMeta(draft, context), [draft, context])
+  const isDirty = useMemo(() => isPaymentCreateDirty(draft, initial), [draft, initial])
 
   const { saving, runCreatePayment } = usePaymentHubCreate()
-  const canSave = isDirty && isValid && !saving
+
+  const canSave = isDirty && validation?.ok && !saving
 
   const handleSave = useCallback(async () => {
     if (!canSave || saving) return
 
     try {
       const created = await runCreatePayment({ draft, context })
-      onSaved(created || draft)
-      onClose()
+      onSaved?.(created || draft)
+      onClose?.()
     } catch (error) {
       console.error('create payment failed:', error)
     }
@@ -63,11 +66,11 @@ export default function NewFormDrawer({
   }, [saving, initial])
 
   const status = saving
-    ? { text: 'שומר תשלום חדש...', color: 'primary' }
+    ? { text: meta?.savingText || 'שומר תשלום חדש...', color: 'primary' }
     : !isDirty
     ? { text: 'אין שינויים', color: 'neutral' }
-    : !isValid
-    ? { text: 'יש להשלים את כל שדות החובה', color: 'warning' }
+    : !validation?.ok
+    ? { text: validation?.message || 'יש להשלים את כל שדות החובה', color: 'warning' }
     : { text: 'מוכן לשמירה', color: 'success' }
 
   return (
@@ -83,8 +86,8 @@ export default function NewFormDrawer({
         onReset: handleReset,
       }}
       texts={{
-        save: 'שמירה',
-        saving: 'שומר...',
+        save: meta?.saveText || 'שמירה',
+        saving: meta?.savingText || 'שומר...',
         cancel: 'ביטול',
       }}
       tooltips={{

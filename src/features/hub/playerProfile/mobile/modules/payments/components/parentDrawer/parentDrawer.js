@@ -1,8 +1,19 @@
 // playerProfile/mobile/modules/payments/components/parentDrawer/parentDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Drawer, Avatar, Button, DialogTitle, DialogContent, ModalClose, Divider, Stack } from '@mui/joy'
-import { Sheet, Box, Typography } from '@mui/joy'
+import {
+  Drawer,
+  Avatar,
+  Button,
+  DialogTitle,
+  DialogContent,
+  ModalClose,
+  Divider,
+  Stack,
+  Sheet,
+  Box,
+  Typography,
+} from '@mui/joy'
 
 import ParentNameField from '../../../../../../../../ui/fields/inputUi/parent/ParentNameField.js'
 import EmailField from '../../../../../../../../ui/fields/inputUi/parent/EmailField.js'
@@ -13,12 +24,15 @@ import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import { usePlayerHubUpdate } from '../../../../../../hooks/players/usePlayerHubUpdate.js'
+
 import {
-  buildParentInitialDraft,
-  getIsParentDirty,
+  buildParentEditInitial,
   buildParentMeta,
-  buildParentsUpdatePatch,
-} from './../../../../../sharedLogic'
+  buildParentsPlayerPatch,
+  getIsParentEditValid,
+  getParentEditFieldErrors,
+  isParentEditDirty,
+} from '../../../../../../editLogic/payments/index.js'
 
 import { drawerSx as sx } from './../../sx/drawer.sx.js'
 
@@ -29,7 +43,10 @@ export default function ParentDrawer({
   parent = null,
   onSaved,
 }) {
-  const initial = useMemo(() => buildParentInitialDraft(parent), [parent])
+  const initial = useMemo(() => {
+    return buildParentEditInitial(parent)
+  }, [parent])
+
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -41,9 +58,20 @@ export default function ParentDrawer({
 
   const parents = Array.isArray(player?.parents) ? player.parents : []
   const isEdit = Boolean(parent?.id)
-  const isDirty = useMemo(() => getIsParentDirty(draft, initial), [draft, initial])
 
-  const canSave = Boolean(draft?.parentRole && draft?.parentName) && isDirty && !pending
+  const fieldErrors = useMemo(() => {
+    return getParentEditFieldErrors(draft)
+  }, [draft])
+
+  const isValid = useMemo(() => {
+    return getIsParentEditValid(draft)
+  }, [draft])
+
+  const isDirty = useMemo(() => {
+    return isParentEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const canSave = isValid && isDirty && !pending
 
   const title = isEdit ? 'עריכת כרטיס הורה' : 'יצירת כרטיס הורה חדש'
   const buttonText = isEdit ? 'שמירת שינויים' : 'יצירת כרטיס הורה'
@@ -57,16 +85,16 @@ export default function ParentDrawer({
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
-    const patch = buildParentsUpdatePatch({
+    const patch = buildParentsPlayerPatch({
       player,
       parents,
       draft,
       editingId: parent?.id || '',
     })
 
-    await run(patch, {
+    await run('playerParentsEdit', patch, {
       section: 'playerParents',
-      player,
+      playerId: player?.id,
       createIfMissing: false,
     })
 
@@ -94,59 +122,68 @@ export default function ParentDrawer({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar src={player?.photo || playerImage} />
 
-              <Typography level="title-xs" sx={{ color: 'text.tertiary' }}>
-                {player?.playerFullName || 'שם שחקן'}
-              </Typography>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography level="title-xs" sx={{ color: 'text.tertiary' }}>
+                  {player?.playerFullName || 'שם שחקן'}
+                </Typography>
+
+                <Typography level="body-xs" sx={{ color: 'text.tertiary' }} noWrap>
+                  {metaText}
+                </Typography>
+              </Box>
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 1 }}>
               <Box sx={{ minWidth: 0 }}>
                 <ParentRoleSelectField
                   value={draft?.parentRole || ''}
-                  onChange={(value) =>
+                  error={fieldErrors?.parentRole}
+                  onChange={(value) => {
                     setDraft((prev) => ({
                       ...prev,
                       parentRole: value || '',
                     }))
-                  }
+                  }}
                 />
               </Box>
 
               <Box sx={{ minWidth: 0 }}>
                 <ParentNameField
                   value={draft?.parentName || ''}
-                  onChange={(value) =>
+                  error={fieldErrors?.parentName}
+                  onChange={(value) => {
                     setDraft((prev) => ({
                       ...prev,
                       parentName: value || '',
                     }))
-                  }
+                  }}
                 />
               </Box>
             </Box>
 
-            <Box sx={{display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
               <Box sx={{ minWidth: 0 }}>
                 <EmailField
                   value={draft?.parentEmail || ''}
-                  onChange={(value) =>
+                  onChange={(value) => {
                     setDraft((prev) => ({
                       ...prev,
                       parentEmail: value || '',
                     }))
-                  }
+                  }}
                 />
               </Box>
 
               <Box sx={{ minWidth: 0 }}>
                 <PhoneField
                   value={draft?.parentPhone || ''}
-                  onChange={(value) =>
+                  error={fieldErrors?.parentPhone}
+                  onChange={(value) => {
                     setDraft((prev) => ({
                       ...prev,
                       parentPhone: value || '',
                     }))
-                  }
+                  }}
                 />
               </Box>
             </Box>
@@ -165,7 +202,7 @@ export default function ParentDrawer({
             onClick={handleSave}
             loading={pending}
             disabled={!canSave || pending}
-            startDecorator={iconUi({id: 'save'})}
+            startDecorator={iconUi({ id: 'save' })}
             sx={sx.conBut}
           >
             {buttonText}
@@ -176,7 +213,7 @@ export default function ParentDrawer({
             color="neutral"
             onClick={handleReset}
             disabled={pending || !isDirty}
-            startDecorator={iconUi({id: 'reset'})}
+            startDecorator={iconUi({ id: 'reset' })}
           >
             איפוס
           </Button>

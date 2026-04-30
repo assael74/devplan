@@ -19,13 +19,14 @@ import GameEntryFields from '../../../../../../../../../../../ui/forms/ui/games/
 import useGameHubCreate from '../../../../../../../../../hooks/games/useGameHubCreate.js'
 
 import {
-  buildInitialExDraft,
+  buildExternalGameCreateDraft,
   buildExternalGameEntryLimits,
-  getExFieldErrors,
-  getExValidity,
-  getIsExDirty,
-  normalizeExDraftBeforeSave,
-} from './newExFormDrawer.utils.js'
+  getExternalGameCreateFieldErrors,
+  validateExternalGameCreateDraft,
+  isExternalGameCreateDirty,
+  buildExternalGameCreatePayload,
+  buildExternalGameCreateMeta,
+} from '../../../../../../../../../createLogic/index.js'
 
 const layout = {
   topCols: { xs: '1fr', sm: '1fr 1fr' },
@@ -60,22 +61,23 @@ export default function NewExFormDrawer({
 }) {
   const player = context?.player || context?.entity || null
 
-  const initial = useMemo(() => buildInitialExDraft(context), [context])
+  const initial = useMemo(() => buildExternalGameCreateDraft(context), [context])
   const [draft, setDraft] = useState(initial)
 
   const { saving, runCreateGame } = useGameHubCreate()
 
   useEffect(() => {
     if (!open) return
-    setDraft(buildInitialExDraft(context))
-  }, [open, context])
+    setDraft(initial)
+  }, [open, initial])
 
-  const validity = useMemo(() => getExValidity(draft), [draft])
-  const fieldErrors = useMemo(() => getExFieldErrors(draft), [draft])
+  const validation = useMemo(() => validateExternalGameCreateDraft(draft), [draft])
+  const fieldErrors = useMemo(() => getExternalGameCreateFieldErrors(draft), [draft])
   const entryLimits = useMemo(() => buildExternalGameEntryLimits(draft), [draft])
-  const isDirty = useMemo(() => getIsExDirty(draft, initial), [draft, initial])
+  const meta = useMemo(() => buildExternalGameCreateMeta(draft, context), [draft, context])
+  const isDirty = useMemo(() => isExternalGameCreateDirty(draft, initial), [draft, initial])
 
-  const canSave = isDirty && validity?.ok && !saving
+  const canSave = isDirty && validation?.ok && !saving
 
   const isPrivatePlayer = player?.isPrivatePlayer === true
 
@@ -92,46 +94,44 @@ export default function NewExFormDrawer({
   }, [saving, initial])
 
   const handleSave = useCallback(async () => {
-    if (!canSave) return
+    if (!canSave || saving) return
 
-    const normalizedDraft = normalizeExDraftBeforeSave(draft)
-
-    const payload = {
-      ...normalizedDraft,
-      playerId: normalizedDraft?.playerId || player?.id || null,
-      teamId: normalizedDraft?.teamId || context?.teamId || player?.teamId || '',
-      clubId: normalizedDraft?.clubId || context?.clubId || player?.clubId || '',
-      gameSource: 'external',
-      isExternalGame: true,
-      playerSource: 'private',
-    }
-
-    const created = await runCreateGame({
-      draft: payload,
-      context: {
+    try {
+      const payload = buildExternalGameCreatePayload(draft, {
         ...context,
         player,
-        playerId: payload.playerId,
-        teamId: payload.teamId,
-        clubId: payload.clubId,
-        gameSource: 'external',
-        isExternalGame: true,
         playerSource: 'private',
-      },
-    })
+      })
 
-    onSaved(created)
-    onClose()
-  }, [canSave, draft, runCreateGame, context, player, onSaved, onClose])
+      const created = await runCreateGame({
+        draft: payload,
+        context: {
+          ...context,
+          player,
+          playerId: payload?.playerId,
+          teamId: payload?.teamId,
+          clubId: payload?.clubId,
+          gameSource: 'external',
+          isExternalGame: true,
+          playerSource: 'private',
+        },
+      })
+
+      onSaved?.(created || payload)
+      onClose?.()
+    } catch (error) {
+      console.error('create external game failed:', error)
+    }
+  }, [canSave, saving, draft, context, player, runCreateGame, onSaved, onClose])
 
   const gameTitle = draft?.rivel || 'משחק חיצוני חדש'
 
-  const status = !isDirty
+  const status = saving
+    ? { text: meta?.savingText || 'יוצר משחק חיצוני חדש...', color: 'primary' }
+    : !isDirty
     ? { text: 'אין שינויים', color: 'neutral' }
-    : !validity?.ok
-    ? { text: validity?.message || 'יש להשלים נתונים תקינים', color: 'warning' }
-    : saving
-    ? { text: 'יוצר משחק חיצוני חדש...', color: 'primary' }
+    : !validation?.ok
+    ? { text: validation?.message || 'יש להשלים נתונים תקינים', color: 'warning' }
     : { text: 'מוכן ליצירה', color: 'success' }
 
   return (
@@ -147,8 +147,8 @@ export default function NewExFormDrawer({
         onReset: handleReset,
       }}
       texts={{
-        save: 'יצירת משחק',
-        saving: 'שומר...',
+        save: meta?.saveText || 'יצירת משחק',
+        saving: meta?.savingText || 'שומר...',
         cancel: 'ביטול',
       }}
       tooltips={{

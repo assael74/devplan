@@ -1,116 +1,211 @@
-// playerProfile/desktop/modules/payments/components/ParentFormModal.js
+// playerProfile/mobile/modules/payments/components/parentDrawer/parentDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Modal,
-  ModalDialog,
-  ModalClose,
-  Typography,
-  Stack,
-  Divider,
-  Button,
-  DialogTitle,
-  DialogContent,
-  Box
-} from '@mui/joy'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { Avatar, Box, Typography } from '@mui/joy'
 
-// שדות גנריים מהמערכת
+import DrawerShell from '../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+
 import ParentNameField from '../../../../../../../ui/fields/inputUi/parent/ParentNameField.js'
 import EmailField from '../../../../../../../ui/fields/inputUi/parent/EmailField.js'
 import PhoneField from '../../../../../../../ui/fields/inputUi/parent/PhoneField.js'
 import ParentRoleSelectField from '../../../../../../../ui/fields/selectUi/parent/ParentRoleSelectField.js'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { buildParentInitialDraft, getIsParentDirty } from '../../../../sharedLogic'
+import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 
-import { cardSx as sx } from '../sx/ParentsTab.sx.js'
+import { usePlayerHubUpdate } from '../../../../../hooks/players/usePlayerHubUpdate.js'
 
-export default function ParentFormModal({
+import {
+  buildParentEditInitial,
+  buildParentMeta,
+  buildParentsPlayerPatch,
+  getIsParentEditValid,
+  getParentEditFieldErrors,
+  isParentEditDirty,
+} from '../../../../../editLogic/payments/index.js'
+
+const noop = () => {}
+
+export default function ParentDrawer({
   open,
-  onClose,
-  onSubmit,
-  initialData = null,
-  saving = false,
+  onClose = noop,
+  player,
+  parent = null,
+  onSaved = noop,
 }) {
-  // בניית נתונים ראשוניים (נרמול)
-  const initial = useMemo(() => buildParentInitialDraft(initialData), [initialData])
+  const initial = useMemo(() => {
+    return buildParentEditInitial(parent)
+  }, [parent])
+
   const [draft, setDraft] = useState(initial)
 
-  // סנכרון הטיוטה בעת פתיחה או שינוי נתונים חיצוני
   useEffect(() => {
-    if (open) setDraft(initial)
+    if (!open) return
+    setDraft(initial)
   }, [open, initial])
 
-  const isEdit = Boolean(initialData?.id)
-  const isDirty = useMemo(() => getIsParentDirty(draft, initial), [draft, initial])
-  const canSave = Boolean(draft.parentName && draft.parentRole) && isDirty
+  const { run, pending } = usePlayerHubUpdate(player)
 
-  const setField = (key) => (value) => {
-    setDraft(prev => ({ ...prev, [key]: value }))
-  }
+  const parents = Array.isArray(player?.parents) ? player.parents : []
+  const isEdit = Boolean(parent?.id)
+
+  const fieldErrors = useMemo(() => {
+    return getParentEditFieldErrors(draft)
+  }, [draft])
+
+  const isValid = useMemo(() => {
+    return getIsParentEditValid(draft)
+  }, [draft])
+
+  const isDirty = useMemo(() => {
+    return isParentEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const canSave = isValid && isDirty && !pending
+
+  const title = isEdit ? 'עריכת כרטיס הורה' : 'יצירת כרטיס הורה חדש'
+  const saveText = isEdit ? 'שמירת שינויים' : 'יצירת כרטיס הורה'
+  const metaText = buildParentMeta(draft, player)
+
+  const handleReset = useCallback(() => {
+    if (pending) return
+    setDraft(initial)
+  }, [initial, pending])
+
+  const handleSave = useCallback(async () => {
+    if (!canSave) return
+
+    const patch = buildParentsPlayerPatch({
+      player,
+      parents,
+      draft,
+      editingId: parent?.id || '',
+    })
+
+    await run('playerParentsEdit', patch, {
+      section: 'playerParents',
+      playerId: player?.id,
+      createIfMissing: true,
+    })
+
+    onSaved(patch)
+    onClose()
+  }, [canSave, player, parents, draft, parent?.id, run, onSaved, onClose])
+
+  const headerAvatar = (
+    <Avatar
+      src={player?.photo || playerImage}
+      sx={{ width: 38, height: 38 }}
+    />
+  )
+
+  const headerTitle = player?.playerFullName || player?.name || 'שחקן'
+
+  const status = pending
+    ? { text: 'שומר עדכון...', color: 'warning' }
+    : !isValid
+    ? { text: 'יש להשלים פרטי הורה', color: 'warning' }
+    : isDirty
+    ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
+    : { text: 'אין שינויים', color: 'neutral' }
 
   return (
-    <Modal open={open} onClose={() => !saving && onClose()}>
-      <ModalDialog sx={{ minWidth: 500, borderRadius: 'md' }}>
-        <ModalClose />
-        <DialogTitle sx={{ gap: 1 }}>
-          {iconUi({ id: isEdit ? 'edit' : 'add' })}
-          {isEdit ? 'עריכת הורה' : 'הוספת הורה חדש'}
-        </DialogTitle>
+    <DrawerShell
+      entity="player"
+      open={!!open}
+      onClose={onClose}
+      size="sm"
+      saving={pending}
+      isDirty={isDirty}
+      canSave={canSave}
+      actions={{
+        onSave: handleSave,
+        onReset: handleReset,
+      }}
+      texts={{
+        save: saveText,
+        saving: 'שומר...',
+        cancel: 'ביטול',
+      }}
+      tooltips={{
+        reset: 'איפוס השינויים',
+      }}
+      status={status}
+      header={
+        <DrawerHeaderShell
+          entity="player"
+          title={title}
+          avatar={headerAvatar}
+          meta={headerTitle}
+          subline={metaText}
+          metaIconId="payments"
+        />
+      }
+    >
+      <Box sx={{ display: 'grid', gap: 1.25, minWidth: 0 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 1 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <ParentRoleSelectField
+              value={draft?.parentRole || ''}
+              error={fieldErrors?.parentRole}
+              disabled={pending}
+              onChange={(value) => {
+                setDraft((prev) => ({
+                  ...prev,
+                  parentRole: value || '',
+                }))
+              }}
+            />
+          </Box>
 
-        <Divider sx={{ my: 1.5 }} />
+          <Box sx={{ minWidth: 0 }}>
+            <ParentNameField
+              value={draft?.parentName || ''}
+              error={fieldErrors?.parentName}
+              disabled={pending}
+              onChange={(value) => {
+                setDraft((prev) => ({
+                  ...prev,
+                  parentName: value || '',
+                }))
+              }}
+            />
+          </Box>
+        </Box>
 
-        <DialogContent>
-          <Stack spacing={2.5}>
-            {/* שורת שם ותפקיד - פריסה דסקטופית */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <ParentNameField
-                value={draft.parentName}
-                onChange={setField('parentName')}
-                disabled={saving}
-                required
-              />
-              <ParentRoleSelectField
-                value={draft.parentRole}
-                onChange={setField('parentRole')}
-                disabled={saving}
-                required
-              />
-            </Box>
-
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+          <Box sx={{ minWidth: 0 }}>
             <EmailField
-              value={draft.parentEmail}
-              onChange={setField('parentEmail')}
-              disabled={saving}
+              value={draft?.parentEmail || ''}
+              disabled={pending}
+              onChange={(value) => {
+                setDraft((prev) => ({
+                  ...prev,
+                  parentEmail: value || '',
+                }))
+              }}
             />
+          </Box>
 
+          <Box sx={{ minWidth: 0 }}>
             <PhoneField
-              value={draft.parentPhone}
-              onChange={setField('parentPhone')}
-              disabled={saving}
+              value={draft?.parentPhone || ''}
+              error={fieldErrors?.parentPhone}
+              disabled={pending}
+              onChange={(value) => {
+                setDraft((prev) => ({
+                  ...prev,
+                  parentPhone: value || '',
+                }))
+              }}
             />
-          </Stack>
-        </DialogContent>
+          </Box>
+        </Box>
 
-        <Divider sx={{ my: 2 }} />
-
-        <Stack direction="row" spacing={1.5} justifyContent="flex-start">
-          <Button
-            variant="solid"
-            onClick={() => onSubmit(draft)}
-            loading={saving}
-            disabled={!canSave || saving}
-            startDecorator={iconUi({ id: 'save' })}
-            sx={sx.conBut}
-          >
-            {isEdit ? 'עדכן הורה' : 'שמור הורה'}
-          </Button>
-
-          <Button variant="plain" color="neutral" onClick={onClose} disabled={saving}>
-            ביטול
-          </Button>
-        </Stack>
-      </ModalDialog>
-    </Modal>
+        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
+          פרטי ההורה נשמרים בתוך כרטיס השחקן ומשמשים באזור התשלומים.
+        </Typography>
+      </Box>
+    </DrawerShell>
   )
 }

@@ -14,12 +14,12 @@ import { useVideoUpdate } from '../../../../../../../../../hooks/videoAnalysis/u
 import { useLifecycle } from '../../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getFieldErrors,
-  getIsDirty,
-  getIsValid,
-} from './editDrawer.utils.js'
+  buildMeetingEditInitial,
+  buildMeetingEditBundle,
+  getMeetingEditFieldErrors,
+  getIsMeetingEditValid,
+  isMeetingEditDirty,
+} from '../../../../../../../../../editLogic/mettings/index.js'
 
 const layout = {
   topCols: { xs: '1fr', md: '1fr 1fr' },
@@ -34,7 +34,7 @@ export default function EditDrawer({
   onSaved,
   context,
 }) {
-  const initial = useMemo(() => buildInitialDraft(meeting), [meeting])
+  const initial = useMemo(() => buildMeetingEditInitial(meeting), [meeting])
   const lifecycle = useLifecycle()
   const [draft, setDraft] = useState(initial)
 
@@ -50,11 +50,13 @@ export default function EditDrawer({
     }
   }, [initial?.raw, draft])
 
-  const validity = useMemo(() => getFieldErrors(draft), [draft])
-  const isValid = useMemo(() => getIsValid(draft), [draft])
-  const isDirty = useMemo(() => getIsDirty(initial, draft), [initial, draft])
+  const validity = useMemo(() => getMeetingEditFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsMeetingEditValid(draft), [draft])
+  const isDirty = useMemo(() => isMeetingEditDirty(draft, initial), [draft, initial])
 
-  const { meetingPatch, videoPlan } = useMemo(() => buildPatch(initial, draft), [initial, draft])
+  const { meetingPatch, videoPlan } = useMemo(() => {
+    return buildMeetingEditBundle(draft, initial)
+  }, [draft, initial])
 
   const videoRuntimeId =
     videoPlan?.unlinkPrev?.videoId ||
