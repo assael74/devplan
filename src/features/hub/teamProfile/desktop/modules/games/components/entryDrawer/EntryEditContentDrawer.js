@@ -21,7 +21,7 @@ import {
   getRemainingAssistsForRow,
   getRemainingGoalsForRow,
   getTeamGoalsLimit,
-} from './../../../../../sharedLogic/games'
+} from '../../../../../../editLogic/games/entryGames/index.js'
 
 function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
   const statsDisabled = !row?.onSquad || !isPlayed

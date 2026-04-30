@@ -15,13 +15,13 @@ import GameEntryFields from '../../../../../../../../../../../ui/forms/ui/games/
 import GameCreateFields from '../../../../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
 
 import {
-  buildInitialExDraft,
-  buildExFieldErrors,
-  getIsExDirty,
-  getIsExValid,
-  buildUpdateExternalGamePatch,
+  buildExternalGameEditInitial,
+  buildExternalGameEditFieldErrors,
+  getIsExternalGameEditValid,
+  isExternalGameEditDirty,
+  buildExternalGameEditPatch,
   buildExternalGameEntryLimits,
-} from './editExDrawer.utils.js'
+} from '../../../../../../../../../editLogic/games/externalGames/index.js'
 
 const layout = {
   topCols: { xs: '1fr', sm: '1fr 1fr' },
@@ -40,7 +40,7 @@ export default function EditExDrawer({
   const player = context?.player || {}
   const activeGame = game || null
 
-  const initial = useMemo(() => buildInitialExDraft(game, context), [game, context])
+  const initial = useMemo(() => buildExternalGameEditInitial(game, context), [game, context])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -50,9 +50,9 @@ export default function EditExDrawer({
 
   const { run, pending } = useGameHubUpdate(activeGame)
 
-  const fieldErrors = useMemo(() => buildExFieldErrors(draft), [draft])
-  const isValid = useMemo(() => getIsExValid(draft), [draft])
-  const isDirty = useMemo(() => getIsExDirty(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => buildExternalGameEditFieldErrors(draft), [draft])
+  const isValid = useMemo(() => getIsExternalGameEditValid(draft), [draft])
+  const isDirty = useMemo(() => isExternalGameEditDirty(draft, initial), [draft, initial])
 
   const entryLimits = useMemo(() => buildExternalGameEntryLimits(draft), [draft])
 
@@ -70,7 +70,7 @@ export default function EditExDrawer({
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
-    const patch = buildUpdateExternalGamePatch({ game: activeGame, draft })
+    const patch = buildExternalGameEditPatch({ draft })
 
     await run('updateExternalGame', patch, {
       gameId: activeGame?.id,

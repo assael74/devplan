@@ -15,12 +15,12 @@ import GameCreateFields from '../../../../../../../../ui/forms/ui/games/GameCrea
 import GameVideoLinkField from '../../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
 
 import {
-  buildTeamGameInitialDraft,
-  buildTeamGamePatch,
-  getFieldErrors,
-  getTeamGameIsDirty,
-  getTeamGameIsValid,
-} from './../../../../../sharedLogic/games'
+  buildGameEditInitial,
+  buildGameEditPatch,
+  getGameEditFieldErrors,
+  getIsGameEditValid,
+  isGameEditDirty,
+} from '../../../../../../editLogic/games/index.js'
 
 export default function EditDrawer({
   open,
@@ -29,7 +29,7 @@ export default function EditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildTeamGameInitialDraft(game), [game])
+  const initial = useMemo(() => buildGameEditInitial(game), [game])
   const [draft, setDraft] = useState(initial)
   const lifecycle = useLifecycle()
 
@@ -56,10 +56,10 @@ export default function EditDrawer({
     []
   )
 
-  const fieldErrors = useMemo(() => getFieldErrors(draft), [draft])
-  const isDirty = useMemo(() => getTeamGameIsDirty(draft, initial), [draft, initial])
-  const isValid = useMemo(() => getTeamGameIsValid(draft), [draft])
-  const patch = useMemo(() => buildTeamGamePatch(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => getGameEditFieldErrors(draft), [draft])
+  const isDirty = useMemo(() => isGameEditDirty(draft, initial), [draft, initial])
+  const isValid = useMemo(() => getIsGameEditValid(draft), [draft])
+  const patch = useMemo(() => buildGameEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useGameHubUpdate(game)
   const canSave = !!initial?.id && isDirty && isValid && !pending

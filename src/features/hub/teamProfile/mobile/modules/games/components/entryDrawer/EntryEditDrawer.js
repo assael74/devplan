@@ -10,15 +10,16 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
 
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
+
 import {
-  buildTeamGameEntryInitialDraft,
+  buildTeamGameEntryInitial,
   buildTeamGameEntryPatch,
-  clampStatToRowLimit,
-  getTeamGameEntryIsDirty,
-  getTeamGameEntryIsValid,
-  getValidationMessage,
-  setRowField,
-} from '../../../../../sharedLogic'
+  clampTeamGameEntryStatToRowLimit,
+  getIsTeamGameEntryValid,
+  getTeamGameEntryValidationMessage,
+  isTeamGameEntryDirty,
+  setTeamGameEntryRowField,
+} from '../../../../../../editLogic/games/entryGames/index.js'
 
 const defaultEntryFilters = {
   squad: 'all',
@@ -35,7 +36,7 @@ export default function EntryEditDrawer({
   const team = context?.team || game?.team || {}
 
   const initial = useMemo(() => {
-    return buildTeamGameEntryInitialDraft(game, team, context)
+    return buildTeamGameEntryInitial(game, team, context)
   }, [game, team, context])
 
   const [draft, setDraft] = useState(initial)
@@ -47,10 +48,12 @@ export default function EntryEditDrawer({
     setFilters(defaultEntryFilters)
   }, [open, initial])
 
-  const isValid = useMemo(() => getTeamGameEntryIsValid(draft), [draft])
-  const isDirty = useMemo(() => getTeamGameEntryIsDirty(draft), [draft])
+  const isValid = useMemo(() => getIsTeamGameEntryValid(draft), [draft])
+  const isDirty = useMemo(() => isTeamGameEntryDirty(draft), [draft])
   const patch = useMemo(() => buildTeamGameEntryPatch(draft), [draft])
-  const validationMessage = useMemo(() => getValidationMessage(draft), [draft])
+  const validationMessage = useMemo(() => {
+    return getTeamGameEntryValidationMessage(draft)
+  }, [draft])
 
   const { run, pending } = useGameHubUpdate(game)
   const canSave = !!draft?.id && isDirty && isValid && !pending
@@ -59,17 +62,18 @@ export default function EntryEditDrawer({
     setDraft((prev) => {
       const safeValue =
         field === 'goals' || field === 'assists' || field === 'timePlayed'
-          ? clampStatToRowLimit(prev?.rows || [], playerId, field, value, prev)
+          ? clampTeamGameEntryStatToRowLimit(prev?.rows || [], playerId, field, value, prev)
           : value
 
       return {
         ...prev,
-        rows: setRowField(prev?.rows || [], playerId, field, safeValue),
+        rows: setTeamGameEntryRowField(prev?.rows || [], playerId, field, safeValue),
       }
     })
   }
 
   const handleReset = () => {
+    if (pending) return
     setDraft(initial)
   }
 
@@ -174,7 +178,7 @@ export default function EntryEditDrawer({
             <Tooltip title="איפוס השינויים">
               <span>
                 <IconButton
-                  disabled={!isDirty}
+                  disabled={!isDirty || pending}
                   size="sm"
                   variant="soft"
                   sx={sx.icoRes}

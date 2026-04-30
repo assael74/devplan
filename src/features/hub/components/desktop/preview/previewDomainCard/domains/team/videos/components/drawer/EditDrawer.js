@@ -10,11 +10,13 @@ import { useVideoUpdate } from '../../../../../../../../../hooks/videoAnalysis/u
 import VideoAnalysisEditFields from '../../../../../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisEditFields.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-  buildVideoMeta,
-} from './editDrawer.utils.js'
+  buildVideoAnalysisEditInitial,
+  buildVideoAnalysisEditPatch,
+  buildVideoAnalysisMeta,
+  getVideoAnalysisEditFieldErrors,
+  getIsVideoAnalysisEditValid,
+  isVideoAnalysisEditDirty,
+} from '../../../../../../../../../editLogic/videoAnalysis/index.js'
 
 export default function EditDrawer({
   open,
@@ -23,7 +25,15 @@ export default function EditDrawer({
   onSaved,
   context,
 }) {
-  const initial = useMemo(() => buildInitialDraft(video), [video])
+  const team = context?.team || null
+
+  const initial = useMemo(() => {
+    return buildVideoAnalysisEditInitial(video, {
+      ...context,
+      entityType: 'videoAnalysis',
+      objectType: 'team',
+    })
+  }, [video, context])
   const [draft, setDraft] = useState(initial)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -34,32 +44,29 @@ export default function EditDrawer({
   }, [open, initial])
 
   const liveVideo = useMemo(() => {
-    const teamId =
-      initial?.raw?.teamId ||
-      initial?.raw?.team?.id ||
-      ''
-
-    const team =
-      initial?.raw?.team ||
-      (context?.teams || []).find((item) => item?.id === teamId) ||
-      context?.team ||
-      null
-
     return {
       ...initial?.raw,
       ...draft,
-      teamId,
       team,
-      metaLabel: buildVideoMeta({
-        ...initial?.raw,
-        ...draft,
-        team,
-      }),
+      metaLabel: buildVideoAnalysisMeta({ ...initial?.raw, ...draft, team, }),
     }
-  }, [initial?.raw, draft, context?.teams, context?.team])
+  }, [initial?.raw, draft, context?.team])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => {
+    return getVideoAnalysisEditFieldErrors(draft)
+  }, [draft])
+
+  const isValid = useMemo(() => {
+    return getIsVideoAnalysisEditValid(draft)
+  }, [draft])
+
+  const isDirty = useMemo(() => {
+    return isVideoAnalysisEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const patch = useMemo(() => {
+    return buildVideoAnalysisEditPatch(draft, initial)
+  }, [draft, initial])
 
   const { run, pending } = useVideoUpdate(initial?.raw)
 
@@ -77,8 +84,8 @@ export default function EditDrawer({
         videoId: initial.id,
       })
 
-      onSaved?.(patch, { ...initial.raw, ...patch })
-      onClose?.()
+      onSaved(patch, { ...initial.raw, ...patch })
+      onClose()
     } catch (error) {
       console.error('EditDrawer save failed:', error)
     } finally {
@@ -90,8 +97,6 @@ export default function EditDrawer({
     if (saving) return
     setDraft(initial)
   }, [saving, initial])
-
-  const team = liveVideo?.team || context?.team || null
 
   const headerAvatar = resolveEntityAvatar({
     entityType: 'team',
@@ -147,8 +152,9 @@ export default function EditDrawer({
     >
       <VideoAnalysisEditFields
         draft={draft}
-        setDraft={setDraft}
+        onDraft={setDraft}
         context={context}
+        fieldErrors={fieldErrors}
       />
     </DrawerShell>
   )

@@ -43,31 +43,3 @@ export {
   buildDifficultyInsightItems,
   buildFeedInsightItems,
 } from './insightsLogic/teamGames.cards.logic.js'
-
-export {
-  buildInitialDraft as buildTeamGameEntryInitialDraft,
-  buildPatch as buildTeamGameEntryPatch,
-  clampStatToRowLimit,
-  getIsDirty as getTeamGameEntryIsDirty,
-  getIsValid as getTeamGameEntryIsValid,
-  getValidationMessage,
-  setRowField,
-  getGoalsTotal,
-  getAssistsTotal,
-  getGameDurationLimit,
-  getRemainingAssistsForRow,
-  getRemainingGoalsForRow,
-  getTeamGoalsLimit,
-} from './entryLogic/teamGameEntryEdit.logic.js'
-
-export {
-  buildInitialDraft as buildTeamGameInitialDraft,
-  buildPatch as buildTeamGamePatch,
-  getFieldErrors,
-  getIsDirty as getTeamGameIsDirty,
-  getIsValid as getTeamGameIsValid,
-  calcResultByGoals,
-  calcPointsByResult,
-  buildGameName,
-  buildGameMeta,
-} from './drawerLogic/teamGameEdit.logic.js'

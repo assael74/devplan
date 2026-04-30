@@ -1,31 +1,36 @@
-// previewDomainCard/domains/player/games/components/drawerEx/editExDrawer.utils.js
+// features/hub/editLogic/games/externalGames/externalGameEdit.model.js
 
-const safe = (value) => (value == null ? '' : String(value).trim())
+export const safe = (value) => (value == null ? '' : String(value).trim())
 
-const toNumOrZero = (value) => {
+export const toNumOrZero = (value) => {
   if (value === '' || value == null) return 0
+
   const num = Number(value)
+
   return Number.isFinite(num) ? num : 0
 }
 
-const toBool = (value, fallback = false) => {
+export const toBool = (value, fallback = false) => {
   if (typeof value === 'boolean') return value
   if (value === 'true') return true
   if (value === 'false') return false
+
   return fallback
 }
 
 const isValidDateFormat = (value) => {
   const date = safe(value)
+
   if (!date) return false
 
   return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
-function buildComparableDraft(draft = {}) {
+const buildComparableExternalGameDraft = (draft = {}) => {
   return {
     gameId: safe(draft?.gameId),
     playerId: safe(draft?.playerId),
+
     teamName: safe(draft?.teamName),
     clubName: safe(draft?.clubName),
 
@@ -52,7 +57,7 @@ function buildComparableDraft(draft = {}) {
   }
 }
 
-export function buildInitialExDraft(row = {}, context = {}) {
+export function buildExternalGameEditInitial(row = {}, context = {}) {
   const source = row?.game || row || {}
   const player = context?.player || context?.entity || null
 
@@ -86,48 +91,38 @@ export function buildInitialExDraft(row = {}, context = {}) {
   }
 }
 
-export function buildExFieldErrors(draft = {}) {
-  const hasGameId = !!safe(draft?.gameId)
-  const hasPlayerId = !!safe(draft?.playerId)
-  const hasTeamName = !!safe(draft?.teamName)
-  const hasClubName = !!safe(draft?.clubName)
-  const hasRival = !!safe(draft?.rivel)
-
-  const gameDate = safe(draft?.gameDate)
-  const hasGameDate = !!gameDate
-  const hasType = !!safe(draft?.type)
-  const hasDuration = !!safe(draft?.gameDuration)
-
+export function buildExternalGameEditFieldErrors(draft = {}) {
   const goalsFor = toNumOrZero(draft?.goalsFor)
   const goals = toNumOrZero(draft?.goals)
   const assists = toNumOrZero(draft?.assists)
   const timePlayed = toNumOrZero(draft?.timePlayed)
   const isSelected = toBool(draft?.isSelected, true)
 
+  const gameDate = safe(draft?.gameDate)
+
   return {
-    gameId: !hasGameId,
-    playerId: !hasPlayerId,
-    teamName: !hasTeamName,
-    clubName: !hasClubName,
-    rivel: !hasRival,
-    gameDate: !hasGameDate || !isValidDateFormat(gameDate),
-    type: !hasType,
-    gameDuration: !hasDuration,
+    gameId: !safe(draft?.gameId),
+    playerId: !safe(draft?.playerId),
+    teamName: !safe(draft?.teamName),
+    clubName: !safe(draft?.clubName),
+    rivel: !safe(draft?.rivel),
+    gameDate: !gameDate || !isValidDateFormat(gameDate),
+    type: !safe(draft?.type),
+    gameDuration: !safe(draft?.gameDuration),
     goals: goals > goalsFor,
     assists: assists > goalsFor,
     timePlayed: !isSelected && timePlayed > 0,
   }
 }
 
-export function getIsExValid(draft = {}) {
-  const fieldErrors = buildExFieldErrors(draft)
-  return !Object.values(fieldErrors).some(Boolean)
+export function getIsExternalGameEditValid(draft = {}) {
+  return !Object.values(buildExternalGameEditFieldErrors(draft)).some(Boolean)
 }
 
-export function getIsExDirty(draft = {}, initial = {}) {
+export function isExternalGameEditDirty(draft = {}, initial = {}) {
   return (
-    JSON.stringify(buildComparableDraft(draft)) !==
-    JSON.stringify(buildComparableDraft(initial))
+    JSON.stringify(buildComparableExternalGameDraft(draft)) !==
+    JSON.stringify(buildComparableExternalGameDraft(initial))
   )
 }
 
@@ -152,12 +147,16 @@ export function buildExternalGameEntryLimits(draft = {}) {
   }
 }
 
-export function buildUpdateExternalGamePatch({ draft }) {
+export function buildExternalGameEditPatch({ draft }) {
   const goalsFor = toNumOrZero(draft?.goalsFor)
   const goalsAgainst = toNumOrZero(draft?.goalsAgainst)
 
   const result =
-    goalsFor > goalsAgainst ? 'win' : goalsFor < goalsAgainst ? 'loss' : 'draw'
+    goalsFor > goalsAgainst
+      ? 'win'
+      : goalsFor < goalsAgainst
+      ? 'loss'
+      : 'draw'
 
   const playerGoals = Math.min(toNumOrZero(draft?.goals), goalsFor)
   const playerAssists = Math.min(toNumOrZero(draft?.assists), goalsFor)

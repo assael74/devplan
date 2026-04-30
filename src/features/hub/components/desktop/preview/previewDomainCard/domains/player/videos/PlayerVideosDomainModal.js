@@ -127,7 +127,7 @@ export default function PlayerVideosDomainModal({
         video={editingVideo}
         onClose={() => setEditingVideo(null)}
         onSaved={handleEditSaved}
-        context={context}
+        context={{ ...context, playerId: player?.id || '', player, }}
       />
 
       <NewFormDrawer

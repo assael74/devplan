@@ -1,56 +1,54 @@
-// playerProfile/sharedLogic/games/entryDrawer/entryEditDrawer.utils.js
+// features/hub/editLogic/games/gamePlayerEdit.model.js
 
 const safeId = (value) => (value == null ? '' : String(value))
 
 const toNum = (value) => {
   const num = Number(value)
+
   return Number.isFinite(num) ? num : 0
 }
 
-const toArr = (value) => (Array.isArray(value) ? value : [])
+const toArr = (value) => {
+  return Array.isArray(value) ? value : []
+}
 
 const resolveGameGoalsFor = (game) => {
   return toNum(game?.goalsFor || 0)
 }
 
-const findPlayerGameRow = (game, player) => {
-  const gamePlayers = toArr(game?.gamePlayers)
-  const playerId = safeId(player?.id || player?.playerId)
-
-  return (
-    gamePlayers.find((item) => safeId(item?.playerId || item?.id) === playerId) ||
-    null
-  )
-}
-
-export const buildInitialDraft = (game, player) => {
-  const entry = findPlayerGameRow(game, player)
+export const buildGamePlayerEditInitial = (row = {}) => {
+  const game = row?.game || row || {}
+  const stats = row?.stats || row || {}
 
   return {
-    gameId: safeId(game?.id || game?.gameId),
-    playerId: safeId(player?.id || player?.playerId || entry?.playerId),
-    goals: toNum(entry?.goals ?? game?.goals),
-    assists: toNum(entry?.assists ?? game?.assists),
-    timePlayed: toNum(entry?.timePlayed ?? game?.timePlayed),
+    gameId: safeId(game?.id || row?.id || row?.gameId),
+    playerId: safeId(stats?.playerId || row?.playerId),
+
+    goals: toNum(stats?.goals ?? row?.goals),
+    assists: toNum(stats?.assists ?? row?.assists),
+    timePlayed: toNum(stats?.timePlayed ?? row?.timePlayed),
+
     isSelected:
-      entry?.isSelected === true ||
-      entry?.onSquad === true ||
-      game?.isSelected === true,
+      stats?.isSelected === true ||
+      stats?.onSquad === true ||
+      row?.isSelected === true,
+
     isStarting:
-      entry?.isStarting === true ||
-      entry?.onStart === true ||
-      game?.isStarting === true,
-    raw: game || {},
+      stats?.isStarting === true ||
+      stats?.onStart === true ||
+      row?.isStarting === true,
+
+    raw: game,
   }
 }
 
-export const getIsDirty = (draft, initial) => {
+export const isGamePlayerEditDirty = (draft = {}, initial = {}) => {
   return (
     toNum(draft?.goals) !== toNum(initial?.goals) ||
     toNum(draft?.assists) !== toNum(initial?.assists) ||
     toNum(draft?.timePlayed) !== toNum(initial?.timePlayed) ||
-    !!draft?.isSelected !== !!initial?.isSelected ||
-    !!draft?.isStarting !== !!initial?.isStarting
+    Boolean(draft?.isSelected) !== Boolean(initial?.isSelected) ||
+    Boolean(draft?.isStarting) !== Boolean(initial?.isStarting)
   )
 }
 
@@ -68,15 +66,13 @@ export const buildUpdateGamePlayersPatch = ({ game, draft }) => {
     timePlayed: toNum(draft?.timePlayed),
   }
 
-  const existsIndex = currentList.findIndex(
-    (item) => safeId(item?.playerId) === safeId(draft?.playerId)
-  )
+  const existsIndex = currentList.findIndex((item) => {
+    return safeId(item?.playerId) === safeId(draft?.playerId)
+  })
 
   const nextGamePlayers =
     existsIndex >= 0
-      ? currentList.map((item, index) =>
-          index === existsIndex ? { ...item, ...nextItem } : item
-        )
+      ? currentList.map((item, index) => (index === existsIndex ? { ...item, ...nextItem } : item))
       : [...currentList, nextItem]
 
   return { gamePlayers: nextGamePlayers }
@@ -86,9 +82,9 @@ export const buildRemovePlayerFromGamePatch = ({ game, playerId }) => {
   const currentList = toArr(game?.gamePlayers)
 
   return {
-    gamePlayers: currentList.filter(
-      (item) => safeId(item?.playerId) !== safeId(playerId)
-    ),
+    gamePlayers: currentList.filter((item) => {
+      return safeId(item?.playerId) !== safeId(playerId)
+    }),
   }
 }
 
@@ -99,19 +95,17 @@ export const getGameStatsLimits = ({ game, playerId, draft }) => {
   const totalGoalsInGame = resolveGameGoalsFor(game)
   const totalAssistsInGame = totalGoalsInGame
 
-  const otherPlayers = rows.filter(
-    (item) => safeId(item?.playerId || item?.id) !== pid
-  )
+  const otherPlayers = rows.filter((item) => {
+    return safeId(item?.playerId || item?.id) !== pid
+  })
 
-  const otherGoalsUsed = otherPlayers.reduce(
-    (sum, item) => sum + toNum(item?.goals),
-    0
-  )
+  const otherGoalsUsed = otherPlayers.reduce((sum, item) => {
+    return sum + toNum(item?.goals)
+  }, 0)
 
-  const otherAssistsUsed = otherPlayers.reduce(
-    (sum, item) => sum + toNum(item?.assists),
-    0
-  )
+  const otherAssistsUsed = otherPlayers.reduce((sum, item) => {
+    return sum + toNum(item?.assists)
+  }, 0)
 
   const currentGoals = toNum(draft?.goals)
   const currentAssists = toNum(draft?.assists)

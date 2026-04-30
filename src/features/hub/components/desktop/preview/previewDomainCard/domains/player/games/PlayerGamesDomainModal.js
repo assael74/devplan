@@ -11,7 +11,7 @@ import {
 import PlayerGamesKpi from './components/PlayerGamesKpi.js'
 import PlayerGamesFilters from './components/PlayerGamesFilters.js'
 import PlayerGamesTable from './components/PlayerGamesTable.js'
-import EditDrawer from './components/drawer/EditDrawer.js'
+import EditDrawer from './components/enrtyDrawer/EditDrawer.js'
 import NewFormDrawer from './components/newForm/NewFormDrawer.js'
 import NewExFormDrawer from './components/newExForm/NewExFormDrawer.js'
 import EditExDrawer from './components/drawerEx/EditExDrawer.js'

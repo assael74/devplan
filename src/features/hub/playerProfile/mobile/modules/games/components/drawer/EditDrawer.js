@@ -1,39 +1,37 @@
-// playerProfile/desktop/modules/games/components/entryDrawer/EntryEditDrawer.js
+// previewDomainCard/domains/player/games/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
-import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
-import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../../shared/format/dateUtiles.js'
+import playerImage from '../../../../../../../../../../../ui/core/images/playerImage.jpg'
 
-import DrawerShell from '../../../../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
+import DrawerShell from '../../../../../../../../../../../ui/patterns/drawer/DrawerShell.js'
+import DrawerHeaderShell from '../../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
-import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
+import { useGameHubUpdate } from '../../../../../../../../../hooks/games/useGameHubUpdate.js'
 
-import GameEntryFields from '../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
+import GameEntryFields from '../../../../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
 
 import {
-  buildPlayerGameEntryInitial,
-  buildUpdatePlayerGameEntryPatch,
-  buildRemovePlayerGameEntryPatch,
-  getPlayerGameEntryLimits,
-  isPlayerGameEntryDirty,
-} from '../../../../../../editLogic/games/entryGames/index.js'
+  buildInitialDraft,
+  buildUpdateGamePlayersPatch,
+  buildRemovePlayerFromGamePatch,
+  getGameStatsLimits,
+  getIsDirty,
+} from './editDrawer.utils.js'
 
-export default function EntryEditDrawer({
+export default function EditDrawer({
   open,
   game,
   onClose,
   onSaved,
   context,
 }) {
+  const initial = useMemo(() => buildInitialDraft(game), [game])
+  const [draft, setDraft] = useState(initial)
+
   const player = context?.player || {}
   const activeGame = game || null
-
-  const initial = useMemo(() => {
-    return buildPlayerGameEntryInitial(game, player)
-  }, [game, player])
-  const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
     if (!open) return
@@ -43,21 +41,14 @@ export default function EntryEditDrawer({
   const { run, pending } = useGameHubUpdate(activeGame)
 
   const limits = useMemo(() => {
-    return getPlayerGameEntryLimits({
+    return getGameStatsLimits({
       game: draft?.raw,
       playerId: draft?.playerId,
       draft,
     })
   }, [draft])
 
-  const layout = {
-    topCols: { xs: '1fr', md: '1fr 1fr' },
-    metaCols: { xs: '1fr', md: '1fr' },
-  }
-
-  const isDirty = useMemo(() => {
-    return isPlayerGameEntryDirty(draft, initial)
-  }, [draft, initial])
+  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const canSave = !!draft?.gameId && !!draft?.playerId && isDirty && !pending
 
   const setField = useCallback((key, value) => {
@@ -75,12 +66,12 @@ export default function EntryEditDrawer({
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
-    const patch = buildUpdatePlayerGameEntryPatch({
+    const patch = buildUpdateGamePlayersPatch({
       game: activeGame,
       draft,
     })
 
-    await run('updateGamePlayer', patch, {
+    await run('updateGamePlayers', patch, {
       gameId: activeGame?.id,
       createIfMissing: true,
     })
@@ -92,7 +83,7 @@ export default function EntryEditDrawer({
   const handleRemoveFromGame = useCallback(async () => {
     if (!draft?.playerId || !activeGame?.id) return
 
-    const patch = buildRemovePlayerGameEntryPatch({
+    const patch = buildRemovePlayerFromGamePatch({
       game: activeGame,
       playerId: draft.playerId,
     })
@@ -108,7 +99,8 @@ export default function EntryEditDrawer({
 
   const headerAvatar = player?.photo || playerImage
   const gameTitle = activeGame?.rivel || activeGame?.rival || 'משחק'
-  const gameDate = activeGame?.gameDate || activeGame?.dateRaw || ''
+  const gameDate =
+    activeGame?.gameDate || activeGame?.dateRaw || activeGame?.dateLabel || ''
 
   const status = isDirty
     ? { text: 'יש שינויים שלא נשמרו', color: 'danger' }
@@ -151,10 +143,6 @@ export default function EntryEditDrawer({
         draft={draft}
         onFieldChange={setField}
         limits={limits}
-        layout={{
-          booleanGrid: { xs: '1fr 1fr'},
-          statsGrid: { xs: '1fr'},
-        }}
         pending={pending}
       />
     </DrawerShell>

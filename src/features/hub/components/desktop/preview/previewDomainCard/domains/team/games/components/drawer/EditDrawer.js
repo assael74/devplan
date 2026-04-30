@@ -15,12 +15,12 @@ import GameCreateFields from '../../../../../../../../../../../ui/forms/ui/games
 import GameVideoLinkField from '../../../../../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getFieldErrors,
-  getIsDirty,
-  getIsValid,
-} from './editDrawer.utils.js'
+  buildGameEditInitial,
+  buildGameEditPatch,
+  getGameEditFieldErrors,
+  getIsGameEditValid,
+  isGameEditDirty,
+} from '../../../../../../../../../editLogic/games/index.js'
 
 export default function EditDrawer({
   open,
@@ -29,7 +29,7 @@ export default function EditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(game), [game])
+  const initial = useMemo(() => buildGameEditInitial(game), [game])
   const [draft, setDraft] = useState(initial)
   const lifecycle = useLifecycle()
 
@@ -43,8 +43,8 @@ export default function EditDrawer({
 
   useEffect(() => {
     if (!open) return
-    setDraft(buildInitialDraft(game))
-  }, [open, game?.id])
+    setDraft(initial)
+  }, [open, initial])
 
   const layout = useMemo(
     () => ({
@@ -56,10 +56,10 @@ export default function EditDrawer({
     []
   )
 
-  const fieldErrors = useMemo(() => getFieldErrors(draft), [draft])
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const isValid = useMemo(() => getIsValid(draft), [draft])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => getGameEditFieldErrors(draft), [draft])
+  const isDirty = useMemo(() => isGameEditDirty(draft, initial), [draft, initial])
+  const isValid = useMemo(() => getIsGameEditValid(draft), [draft])
+  const patch = useMemo(() => buildGameEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useGameHubUpdate(game)
   const canSave = !!initial.id && isDirty && isValid && !pending
@@ -97,7 +97,7 @@ export default function EditDrawer({
           if (entityType !== 'game') return
           if (id !== game.id) return
 
-          onClose?.()
+          onClose()
         },
       }
     )

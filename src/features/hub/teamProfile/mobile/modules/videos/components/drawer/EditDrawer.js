@@ -12,11 +12,13 @@ import { useVideoUpdate } from '../../../../../../hooks/videoAnalysis/useVideoUp
 import VideoAnalysisEditFields from '../../../../../../../../ui/forms/ui/videoAnalysis/VideoAnalysisEditFields.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-  buildVideoMeta,
-} from '../../../../../sharedLogic/videos'
+  buildVideoAnalysisEditInitial,
+  buildVideoAnalysisEditPatch,
+  buildVideoAnalysisMeta,
+  getVideoAnalysisEditFieldErrors,
+  getIsVideoAnalysisEditValid,
+  isVideoAnalysisEditDirty,
+} from '../../../../../../editLogic/videoAnalysis/index.js'
 
 export default function EditDrawer({
   open,
@@ -25,7 +27,16 @@ export default function EditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(video), [video])
+  const team = context?.team || null
+
+  const initial = useMemo(() => {
+    return buildVideoAnalysisEditInitial(video, {
+      ...context,
+      entityType: 'videoAnalysis',
+      objectType: 'team',
+      team,
+    })
+  }, [video, context, team])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -33,23 +44,30 @@ export default function EditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const team = context?.team || null
-
   const liveVideo = useMemo(() => {
     return {
       ...initial?.raw,
       ...draft,
       team,
-      metaLabel: buildVideoMeta({
-        ...initial?.raw,
-        ...draft,
-        team,
-      }),
+      metaLabel: buildVideoAnalysisMeta({ ...initial?.raw, ...draft, team, }),
     }
-  }, [initial?.raw, draft, team])
+  }, [initial?.raw, draft, context?.team])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const fieldErrors = useMemo(() => {
+    return getVideoAnalysisEditFieldErrors(draft)
+  }, [draft])
+
+  const isValid = useMemo(() => {
+    return getIsVideoAnalysisEditValid(draft)
+  }, [draft])
+
+  const isDirty = useMemo(() => {
+    return isVideoAnalysisEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const patch = useMemo(() => {
+    return buildVideoAnalysisEditPatch(draft, initial)
+  }, [draft, initial])
 
   const { run, pending } = useVideoUpdate(video)
   const canSave = !!initial?.id && isDirty && !pending
@@ -60,10 +78,11 @@ export default function EditDrawer({
     await run('teamVideoEdit', patch, {
       section: 'teamVideoEdit',
       videoId: initial.id,
+      createIfMissing: true,
     })
 
-    onSaved?.(patch, { ...initial.raw, ...patch })
-    onClose?.()
+    onSaved(patch, { ...initial.raw, ...patch })
+    onClose()
   }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
   const handleReset = useCallback(() => {
@@ -120,8 +139,9 @@ export default function EditDrawer({
     >
       <VideoAnalysisEditFields
         draft={draft}
-        setDraft={setDraft}
+        onDraft={setDraft}
         context={context}
+        fieldErrors={fieldErrors}
       />
     </DrawerShell>
   )

@@ -13,12 +13,12 @@ import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate
 import GameEntryFields from '../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
 
 import {
-  buildInitialDraft,
-  buildUpdateGamePlayersPatch,
-  buildRemovePlayerFromGamePatch,
-  getGameStatsLimits,
-  getIsDirty,
-} from '../../../../../sharedLogic'
+  buildPlayerGameEntryInitial,
+  buildUpdatePlayerGameEntryPatch,
+  buildRemovePlayerGameEntryPatch,
+  getPlayerGameEntryLimits,
+  isPlayerGameEntryDirty,
+} from '../../../../../../editLogic/games/entryGames/index.js'
 
 export default function EntryEditDrawer({
   open,
@@ -30,7 +30,9 @@ export default function EntryEditDrawer({
   const player = context?.player || {}
   const activeGame = game || null
 
-  const initial = useMemo(() => buildInitialDraft(game, player), [game, player])
+  const initial = useMemo(() => {
+    return buildPlayerGameEntryInitial(game, player)
+  }, [game, player])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -41,14 +43,16 @@ export default function EntryEditDrawer({
   const { run, pending } = useGameHubUpdate(activeGame)
 
   const limits = useMemo(() => {
-    return getGameStatsLimits({
+    return getPlayerGameEntryLimits({
       game: draft?.raw,
       playerId: draft?.playerId,
       draft,
     })
   }, [draft])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => {
+    return isPlayerGameEntryDirty(draft, initial)
+  }, [draft, initial])
   const canSave = !!draft?.gameId && !!draft?.playerId && isDirty && !pending
 
   const setField = useCallback((key, value) => {
@@ -66,7 +70,7 @@ export default function EntryEditDrawer({
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
-    const patch = buildUpdateGamePlayersPatch({
+    const patch = buildUpdatePlayerGameEntryPatch({
       game: activeGame,
       draft,
     })
@@ -83,7 +87,7 @@ export default function EntryEditDrawer({
   const handleRemoveFromGame = useCallback(async () => {
     if (!draft?.playerId || !activeGame?.id) return
 
-    const patch = buildRemovePlayerFromGamePatch({
+    const patch = buildRemovePlayerGameEntryPatch({
       game: activeGame,
       playerId: draft.playerId,
     })

@@ -78,9 +78,6 @@ export {
   buildPlayerGamesDrawerViewModel,
 } from './games/insightsDrawer/playerGames.cards.logic.js'
 
-// ----- GAMES / ENTRY DRAWER -----
-export * from './games/entryDrawer/entryEditDrawer.utils.js'
-
 // ----- MEETINGS / MODULE -----
 export * from './meetings/module/meetings.buckets.js'
 export * from './meetings/module/meetings.filters.js'
@@ -104,12 +101,3 @@ export * from './videos/insightsDrawer/videosInsightsDrawer.logic.js'
 
 // ----- PERFORMANCE / MODULE -----
 export * from './performance/performance.domain.logic.js'
-
-// ----- VIDEOS / EDIT DRAWER -----
-export {
-  buildInitialDraft as buildVideoInitialDraft,
-  buildPatch as buildVideoPatch,
-  getIsDirty as getIsVideoDirty,
-  buildVideoMeta,
-  safe as safeVideoValue,
-} from './videos/editDrawer/playerVideoEdit.logic.js'
