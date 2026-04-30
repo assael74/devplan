@@ -14,7 +14,7 @@ import {
   getClubEditFieldErrors,
   getIsClubEditValid,
   isClubEditDirty,
-} from './clubEditDrawer.utils.js'
+} from '../../../../../../editLogic/clubs/index.js'
 
 export default function ClubEditDrawer({
   open,
@@ -36,20 +36,20 @@ export default function ClubEditDrawer({
   const patch = useMemo(() => buildClubEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useClubHubUpdate(club)
-  const canSave = !!club?.id && isDirty && isValid && !pending
+  const canSave = !!initial?.id && isDirty && isValid && !pending
 
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('updateClub', patch, {
       section: 'clubQuickEdit',
-      clubId: club?.id,
+      clubId: initial.id,
       createIfMissing: true,
     })
 
-    onSaved(patch, { ...club, ...patch })
+    onSaved(patch, { ...initial.raw, ...patch })
     onClose()
-  }, [canSave, run, patch, club, onSaved, onClose])
+  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
   const handleReset = useCallback(() => {
     if (pending) return

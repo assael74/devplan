@@ -23,10 +23,10 @@ import SquadRoleSelectField from '../../../../../../../../ui/fields/selectUi/pla
 import PlayerTypeSelector from '../../../../../../../../ui/fields/checkUi/players/PlayerTypeSelector.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-} from '../../../../../sharedLogic/players'
+  buildPlayerEditInitial,
+  buildPlayerEditPatch,
+  isPlayerEditDirty,
+} from '../../../../../../editLogic/players/index.js'
 
 export default function TeamPlayerQuickEditDrawer({
   open,
@@ -34,7 +34,7 @@ export default function TeamPlayerQuickEditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(player), [player])
+  const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const lifecycle = useLifecycle()
 
@@ -43,8 +43,8 @@ export default function TeamPlayerQuickEditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => isPlayerEditDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildPlayerEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
   const canSave = !!initial?.id && isDirty && !pending
@@ -55,6 +55,7 @@ export default function TeamPlayerQuickEditDrawer({
     await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
+      createIfMissing: true
     })
 
     onSaved(patch, { ...initial.raw, ...patch })

@@ -1,15 +1,9 @@
 // playerProfile/desktop/modules/info/components/PlayerStatusCard.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Sheet, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
-import {
-  buildPlayerStatusInitial,
-  isPlayerStatusDirty,
-  buildPlayerStatusPatch,
-  getPlayerActiveChipMeta,
-} from '../../../../sharedLogic/info/info.logic.js'
 
 import {
   PhoneField,
@@ -18,33 +12,14 @@ import {
   SquadRoleSelectField,
 } from '../../../../../../../ui/fields'
 
-export default function PlayerStatusCard({ player, onUpdate }) {
-  const initial = useMemo(() => buildPlayerStatusInitial(player), [player])
-  const [draft, setDraft] = useState(initial)
-  const [saving, setSaving] = useState(false)
+const getPlayerActiveChipMeta = (active) => {
+  return active
+    ? { color: 'success', iconId: 'active', label: 'פעיל' }
+    : { color: 'danger', iconId: 'notActive', label: 'לא פעיל' }
+}
 
-  useEffect(() => {
-    setDraft(initial)
-  }, [initial])
-
-  const dirty = isPlayerStatusDirty(draft, initial)
-
+export default function PlayerStatusCard({ draft, setDraft, pending }) {
   const activeMeta = getPlayerActiveChipMeta(draft?.active)
-
-  const onReset = () => setDraft(initial)
-
-  const onSave = async () => {
-    if (!dirty || saving) return
-
-    setSaving(true)
-    try {
-      const patch = buildPlayerStatusPatch(draft)
-
-      await onUpdate(patch, { section: 'status' })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
@@ -59,7 +34,7 @@ export default function PlayerStatusCard({ player, onUpdate }) {
         <Chip
           size="sm"
           variant="soft"
-          color={draft?.active ? 'success' : 'dnager'}
+          color={activeMeta.color}
           startDecorator={iconUi({ id: activeMeta.iconId })}
         >
           {activeMeta.label}
@@ -71,16 +46,17 @@ export default function PlayerStatusCard({ player, onUpdate }) {
           <Box sx={{ minWidth: 0, width: '100%', pt: 2 }}>
             <PlayerActiveSelector
               value={draft.active}
-              onChange={(v) => setDraft((p) => ({ ...p, active: v }))}
+              disabled={pending}
+              onChange={(value) => setDraft((prev) => ({ ...prev, active: value }))}
             />
           </Box>
 
           <Box sx={{ minWidth: 0, width: '100%' }}>
             <PlayerIfaLinkField
               value={draft.ifaLink}
-              onChange={(v) => setDraft((p) => ({ ...p, ifaLink: v }))}
+              disabled={pending}
+              onChange={(value) => setDraft((prev) => ({ ...prev, ifaLink: value }))}
               size="sm"
-              disabled={!dirty || saving}
             />
           </Box>
         </Box>
@@ -90,7 +66,8 @@ export default function PlayerStatusCard({ player, onUpdate }) {
             <PhoneField
               size="sm"
               value={draft.phone}
-              onChange={(v) => setDraft((p) => ({ ...p, phone: v }))}
+              disabled={pending}
+              onChange={(value) => setDraft((prev) => ({ ...prev, phone: value }))}
             />
           </Box>
 
@@ -98,36 +75,11 @@ export default function PlayerStatusCard({ player, onUpdate }) {
             <SquadRoleSelectField
               size="sm"
               value={draft.squadRole}
-              onChange={(next) => setDraft((p) => ({ ...p, squadRole: next || '' }))}
+              disabled={pending}
+              onChange={(value) => setDraft((prev) => ({ ...prev, squadRole: value || '' }))}
             />
           </Box>
         </Box>
-      </Box>
-
-      <Box sx={sx.actions}>
-        <Button
-          size="sm"
-          variant="soft"
-          color="neutral"
-          onClick={onReset}
-          disabled={!dirty || saving}
-          startDecorator={iconUi({ id: 'reset' })}
-        >
-          איפוס
-        </Button>
-
-        <Button
-          size="sm"
-          variant="solid"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          loading={saving}
-          loadingPosition="center"
-          sx={sx.confBtn}
-          startDecorator={iconUi({ id: 'save' })}
-        >
-          שמירה
-        </Button>
       </Box>
     </Sheet>
   )

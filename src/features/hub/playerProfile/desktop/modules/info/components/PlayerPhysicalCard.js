@@ -1,40 +1,24 @@
 // playerProfile/desktop/modules/info/components/PlayerPhysicalCard.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, Input, Button, Chip } from '@mui/joy'
+import React, { useMemo } from 'react'
+import { Box, Typography, Sheet, Input, Chip } from '@mui/joy'
+
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+
 import {
-  buildPlayerPhysicalInitial,
-  isPlayerPhysicalDirty,
   calcPlayerBmi,
   getPlayerBmiText,
-  buildPlayerPhysicalPatch,
-} from '../../../../sharedLogic/info/info.logic.js'
+} from '../../../../../../../shared/players/players.logic.js'
 
-export default function PlayerPhysicalCard({ player, onUpdate }) {
-  const initial = useMemo(() => buildPlayerPhysicalInitial(player), [player])
-  const [draft, setDraft] = useState(initial)
-  const [saving, setSaving] = useState(false)
+export default function PlayerPhysicalCard({ draft, setDraft, pending }) {
+  const bmi = useMemo(() => {
+    return calcPlayerBmi(draft?.heightCm, draft?.weightKg)
+  }, [draft?.heightCm, draft?.weightKg])
 
-  useEffect(() => setDraft(initial), [initial.heightCm, initial.weightKg])
-
-  const dirty = isPlayerPhysicalDirty(draft, initial)
-  const bmi = calcPlayerBmi(draft.heightCm, draft.weightKg)
-  const bmiText = getPlayerBmiText(draft.heightCm, draft.weightKg)
-
-  const onReset = () => setDraft(initial)
-
-  const onSave = async () => {
-    if (!dirty || saving) return
-    setSaving(true)
-    try {
-      const patch = buildPlayerPhysicalPatch(draft)
-      await onUpdate(patch, { section: 'physical' })
-    } finally {
-      setSaving(false)
-    }
-  }
+  const bmiText = useMemo(() => {
+    return getPlayerBmiText(draft?.heightCm, draft?.weightKg)
+  }, [draft?.heightCm, draft?.weightKg])
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
@@ -56,9 +40,16 @@ export default function PlayerPhysicalCard({ player, onUpdate }) {
           <Typography level="body-xs" sx={{ opacity: 0.7 }}>
             גובה (ס״מ)
           </Typography>
+
           <Input
-            value={draft.heightCm}
-            onChange={(e) => setDraft((p) => ({ ...p, heightCm: e.target.value }))}
+            value={draft?.heightCm || ''}
+            disabled={pending}
+            onChange={(event) => {
+              setDraft((prev) => ({
+                ...prev,
+                heightCm: event.target.value,
+              }))
+            }}
             placeholder="לדוגמה: 145"
           />
         </Box>
@@ -67,38 +58,19 @@ export default function PlayerPhysicalCard({ player, onUpdate }) {
           <Typography level="body-xs" sx={{ opacity: 0.7 }}>
             משקל (ק״ג)
           </Typography>
+
           <Input
-            value={draft.weightKg}
-            onChange={(e) => setDraft((p) => ({ ...p, weightKg: e.target.value }))}
+            value={draft?.weightKg || ''}
+            disabled={pending}
+            onChange={(event) => {
+              setDraft((prev) => ({
+                ...prev,
+                weightKg: event.target.value,
+              }))
+            }}
             placeholder="לדוגמה: 38"
           />
         </Box>
-      </Box>
-
-      <Box sx={sx.actions}>
-        <Button
-          size="sm"
-          variant="soft"
-          color="neutral"
-          onClick={onReset}
-          disabled={!dirty || saving}
-          startDecorator={iconUi({ id: 'reset' })}
-        >
-          איפוס
-        </Button>
-
-        <Button
-          size="sm"
-          variant="solid"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          loading={saving}
-          loadingPosition="center"
-          sx={sx.confBtn}
-          startDecorator={iconUi({ id: 'save' })}
-        >
-          שמירה
-        </Button>
       </Box>
     </Sheet>
   )

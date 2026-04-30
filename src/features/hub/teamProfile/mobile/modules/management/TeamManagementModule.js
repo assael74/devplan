@@ -10,10 +10,10 @@ import { moduleSx as localSx } from './module.sx.js'
 import { profileSx as sx } from './../../sx/profile.sx'
 
 import {
-  buildTeamManagementModel,
-  buildTeamManagementPatch,
-  isTeamManagementDirty,
-} from '../../../sharedLogic/management'
+  buildTeamEditInitial,
+  buildTeamEditPatch,
+  isTeamEditDirty,
+} from '../../../../editLogic/teams/index.js'
 
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
 import TeamManagementToolbar from './components/TeamManagementToolbar.js'
@@ -21,14 +21,21 @@ import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementSt
 
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
 
-export default function TeamManagementModule({ entity, context, onSaved, onClose }) {
+const noop = () => {}
+
+export default function TeamManagementModule({
+  entity,
+  context,
+  onSaved = noop,
+  onClose = noop,
+}) {
   const team = entity || null
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
   }, [context?.roles])
 
-  const baseModel = useMemo(() => buildTeamManagementModel(team), [team])
+  const baseModel = useMemo(() => buildTeamEditInitial(team), [team])
   const [draft, setDraft] = useState(baseModel)
 
   useEffect(() => {
@@ -46,17 +53,20 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
   )
 
   const patch = useMemo(() => {
-    return buildTeamManagementPatch(baseModel, draft)
-  }, [baseModel, draft])
+    return buildTeamEditPatch(draft, baseModel)
+  }, [draft, baseModel])
 
-  const isDirty = isTeamManagementDirty(baseModel, draft)
+  const isDirty = useMemo(() => {
+    return isTeamEditDirty(draft, baseModel)
+  }, [draft, baseModel])
+
   const hasPatch = Object.keys(patch).length > 0
-
-  const canSave = Boolean(team?.id) && isDirty && hasPatch && !pending
+  const canSave = Boolean(baseModel?.id) && isDirty && hasPatch && !pending
 
   const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(baseModel)
-  }, [baseModel])
+  }, [baseModel, pending])
 
   const handleSave = useCallback(async () => {
     if (!canSave) return
@@ -64,13 +74,13 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
     await run('teamEdit', patch, {
       section: 'teamEdit',
       source: 'TeamManagementModule',
-      teamId: team.id,
-      createIfMissing: false,
+      teamId: baseModel.id,
+      createIfMissing: true,
     })
 
     onSaved(patch, { ...(team || {}), ...patch })
     onClose()
-  }, [canSave, run, patch, team, onSaved, onClose])
+  }, [canSave, run, patch, baseModel.id, team, onSaved, onClose])
 
   if (!team) {
     return (
@@ -93,27 +103,28 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
           onReset={handleReset}
         />
       </Box>
-        <Box sx={localSx.root}>
-          <Box sx={localSx.topGrid}>
-            <TeamManagementInfoCard
-              draft={draft}
-              clubName={clubName}
-              isDirty={isDirty}
-              canSave={canSave}
-              onDraft={setDraft}
-              onConfirm={handleSave}
-              onReset={handleReset}
-              pending={pending}
-            />
 
-            <Box sx={localSx.staffWrap}>
-              <ManagementStaffCard
-                teamId={team.id}
-                roles={staffPool}
-                disabled={pending}
-                compact
-              />
-            </Box>
+      <Box sx={localSx.root}>
+        <Box sx={localSx.topGrid}>
+          <TeamManagementInfoCard
+            draft={draft}
+            clubName={clubName}
+            isDirty={isDirty}
+            canSave={canSave}
+            onDraft={setDraft}
+            onConfirm={handleSave}
+            onReset={handleReset}
+            pending={pending}
+          />
+
+          <Box sx={localSx.staffWrap}>
+            <ManagementStaffCard
+              teamId={baseModel.id}
+              roles={staffPool}
+              disabled={pending}
+              compact
+            />
+          </Box>
         </Box>
       </Box>
     </SectionPanelMobile>

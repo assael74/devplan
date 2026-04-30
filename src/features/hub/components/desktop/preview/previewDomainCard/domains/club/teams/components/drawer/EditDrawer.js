@@ -15,8 +15,9 @@ import { useTeamHubUpdate } from '../../../../../../../../../hooks/teams/useTeam
 import {
   buildTeamEditInitial,
   buildTeamEditPatch,
+  getIsTeamEditValid,
   isTeamEditDirty,
-} from './editDrawer.utils.js'
+} from '../../../../../../../../../editLogic/teams/index.js'
 
 export default function EditDrawer({
   open,
@@ -34,9 +35,7 @@ export default function EditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const isValid = useMemo(() => {
-    return !!String(draft?.teamName || '').trim() && !!String(draft?.teamYear || '').trim()
-  }, [draft])
+  const isValid = useMemo(() => getIsTeamEditValid(draft), [draft])
 
   const isDirty = useMemo(() => isTeamEditDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildTeamEditPatch(draft, initial), [draft, initial])
@@ -50,6 +49,7 @@ export default function EditDrawer({
     await run('teamQuickEdit', patch, {
       section: 'teamQuickEdit',
       teamId: initial.id,
+      createIfMissing: true,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })

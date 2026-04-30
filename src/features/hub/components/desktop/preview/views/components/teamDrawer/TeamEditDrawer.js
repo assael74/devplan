@@ -12,10 +12,9 @@ import TeamEditFields from '../../../../../../../../ui/forms/ui/teams/TeamEditFi
 import {
   buildTeamEditInitial,
   buildTeamEditPatch,
-  getTeamEditFieldErrors,
   getIsTeamEditValid,
   isTeamEditDirty,
-} from './teamEditDrawer.utils.js'
+} from '../../../../../../editLogic/teams/index.js'
 
 export default function TeamEditDrawer({
   open,
@@ -32,24 +31,23 @@ export default function TeamEditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const fieldErrors = useMemo(() => getTeamEditFieldErrors(draft), [draft])
   const isValid = useMemo(() => getIsTeamEditValid(draft), [draft])
   const isDirty = useMemo(() => isTeamEditDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildTeamEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = useTeamHubUpdate(team)
-  const canSave = !!team?.id && isDirty && isValid && !pending
+  const canSave = !!initial?.id && isDirty && isValid && !pending
 
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('updateTeam', patch, {
       section: 'teamQuickEdit',
-      teamId: team?.id,
+      teamId: initial.id,
       createIfMissing: true,
     })
 
-    onSaved(patch, { ...team, ...patch })
+    onSaved(patch, { ...initial.raw, ...patch })
     onClose()
   }, [canSave, run, patch, team, onSaved, onClose])
 

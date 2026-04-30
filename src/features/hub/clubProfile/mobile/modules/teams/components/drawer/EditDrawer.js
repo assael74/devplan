@@ -49,6 +49,7 @@ export default function EditDrawer({
     await run('clubTeamEdit', patch, {
       section: 'clubTeamEdit',
       teamId: initial.id,
+      createIfMissing: true
     })
 
     onSaved(patch, { ...team, ...patch })
@@ -103,6 +104,8 @@ export default function EditDrawer({
     <DrawerShell
       entity="team"
       open={open}
+      size='lg'
+      anchor='bottom'
       onClose={onClose}
       saving={pending}
       isDirty={isDirty}

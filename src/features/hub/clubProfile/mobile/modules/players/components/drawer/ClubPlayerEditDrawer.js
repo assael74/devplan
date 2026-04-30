@@ -55,6 +55,7 @@ export default function ClubPlayerQuickEditDrawer({
     await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
+      createIfMissing: true
     })
 
     onSaved(patch, { ...initial.raw, ...patch })

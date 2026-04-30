@@ -1,12 +1,12 @@
-// src/features/hub/teamProfile/desktop/modules/management/components/TeamManagementToolbar.js
+// features/hub/playerProfile/mobile/modules/info/PlayerInfoToolbar.js
 
 import React from 'react'
-import { Box, Button, Chip, Typography } from '@mui/joy'
+import { Box, Chip, IconButton, Typography } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
-import { moduleSx as sx } from '../module.sx.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { toolbarSx as sx } from './toolbar.sx.js'
 
-export default function TeamManagementToolbar({
+export default function PlayerInfoToolbar({
   isDirty,
   canSave,
   pending,
@@ -19,7 +19,7 @@ export default function TeamManagementToolbar({
         <Box sx={sx.headerDot} />
 
         <Typography level="title-sm" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-          ניהול קבוצה
+          מידע שחקן
         </Typography>
 
         <Box sx={{ pl: 2 }}>
@@ -36,29 +36,27 @@ export default function TeamManagementToolbar({
       </Box>
 
       <Box sx={sx.toolbarActions}>
-        <Button
+        <IconButton
           size="sm"
           variant="soft"
           color="neutral"
           disabled={!isDirty || pending}
           onClick={onReset}
-          startDecorator={iconUi({ id: 'reset' })}
           sx={{ border: '1px solid', borderColor: 'divider' }}
         >
-          איפוס
-        </Button>
+          {iconUi({ id: 'reset' })}
+        </IconButton>
 
-        <Button
+        <IconButton
           size="sm"
           variant="solid"
           disabled={!canSave}
           loading={pending}
           onClick={onSave}
           sx={sx.confBtn}
-          startDecorator={iconUi({ id: 'save' })}
         >
-          שמירה
-        </Button>
+          {iconUi({ id: 'save' })}
+        </IconButton>
       </Box>
     </Box>
   )

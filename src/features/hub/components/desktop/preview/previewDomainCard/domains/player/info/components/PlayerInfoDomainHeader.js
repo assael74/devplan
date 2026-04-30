@@ -4,7 +4,6 @@ import React from 'react'
 import { Box, Typography, Avatar, Chip } from '@mui/joy'
 import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
-import { buildPlayerName } from '../logic/playerInfo.domain.logic.js'
 import { sx } from '../sx/playerInfo.domain.sx.js'
 
 export default function PlayerInfoDomainHeader({ player }) {
@@ -19,7 +18,7 @@ export default function PlayerInfoDomainHeader({ player }) {
           מידע על שחקן
         </Typography>
         <Typography level="body-xs" sx={sx.headerSub}>
-          {buildPlayerName(player)}
+          {player?.playerFullName || 'שחקן'}
         </Typography>
       </Box>
 

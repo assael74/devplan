@@ -1,6 +1,6 @@
-// teamProfile/modules/management/TeamManagementModule.js
+// teamProfile/desktop/modules/management/TeamManagementModule.js
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
@@ -9,10 +9,10 @@ import EmptyState from '../../../../sharedProfile/EmptyState.js'
 import { moduleSx as sx } from './module.sx.js'
 
 import {
-  buildTeamManagementModel,
-  buildTeamManagementPatch,
-  isTeamManagementDirty,
-} from '../../../sharedLogic/management'
+  buildTeamEditInitial,
+  buildTeamEditPatch,
+  isTeamEditDirty,
+} from '../../../../editLogic/teams/index.js'
 
 import TeamManagementToolbar from './components/TeamManagementToolbar.js'
 import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
@@ -21,14 +21,21 @@ import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementSt
 
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
 
-export default function TeamManagementModule({ entity, context, onSaved, onClose }) {
+const noop = () => {}
+
+export default function TeamManagementModule({
+  entity,
+  context,
+  onSaved = noop,
+  onClose = noop,
+}) {
   const team = entity || null
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
-  }, [context])
+  }, [context?.roles])
 
-  const baseModel = useMemo(() => buildTeamManagementModel(team), [team])
+  const baseModel = useMemo(() => buildTeamEditInitial(team), [team])
   const [draft, setDraft] = useState(baseModel)
 
   useEffect(() => {
@@ -40,42 +47,38 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
   const clubName = useMemo(() => {
     const c = context?.club || team?.club || null
     return String(c?.clubName || c?.name || team?.clubName || '')
-  }, [context, team])
-
-  const isDirty = useMemo(() => {
-    return isTeamManagementDirty(baseModel, draft)
-  }, [baseModel, draft])
+  }, [context?.club, team])
 
   const patch = useMemo(() => {
-    return buildTeamManagementPatch(baseModel, draft)
-  }, [baseModel, draft])
+    return buildTeamEditPatch(draft, baseModel)
+  }, [draft, baseModel])
+
+  const isDirty = useMemo(() => {
+    return isTeamEditDirty(draft, baseModel)
+  }, [draft, baseModel])
 
   const canSave = useMemo(() => {
-    return Boolean(team?.id) && isDirty && Object.keys(patch).length > 0 && !pending
-  }, [team?.id, isDirty, patch, pending])
+    return Boolean(baseModel?.id) && isDirty && Object.keys(patch).length > 0 && !pending
+  }, [baseModel?.id, isDirty, patch, pending])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    if (pending) return
     setDraft(baseModel)
-  }
+  }, [baseModel, pending])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave) return
 
     await run('teamEdit', patch, {
       section: 'teamEdit',
       source: 'TeamManagementModule',
-      teamId: team.id,
-      createIfMissing: false,
+      teamId: baseModel.id,
+      createIfMissing: true,
     })
 
-    if (typeof onSaved === 'function') {
-      onSaved(patch, { ...(team || {}), ...patch })
-    }
-
-    if (typeof onClose === 'function') {
-      onClose()
-    }
-  }
+    onSaved(patch, { ...(team || {}), ...patch })
+    onClose()
+  }, [canSave, run, patch, baseModel.id, team, onSaved, onClose])
 
   if (!team) return <EmptyState title="אין מידע לקבוצה" />
 
@@ -91,7 +94,7 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
         />
       </Box>
 
-      <Box sx={{...sx.topGrid, my: 1 }}>
+      <Box sx={{ ...sx.topGrid, my: 1 }}>
         <Box sx={sx.targetsArea}>
           <TeamManagementTargetsCard
             team={team}
@@ -113,7 +116,7 @@ export default function TeamManagementModule({ entity, context, onSaved, onClose
 
       <Box sx={sx.staffArea}>
         <ManagementStaffCard
-          teamId={team.id}
+          teamId={baseModel.id}
           roles={staffPool}
           disabled={pending}
           compact={false}

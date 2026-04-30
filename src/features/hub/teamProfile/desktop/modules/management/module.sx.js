@@ -177,6 +177,8 @@ export const moduleSx = {
     boxShadow: 'sm',
     px: 1.5,
     transition: 'filter .15s ease, transform .12s ease',
+    border: '1px solid',
+    borderColor: 'divider',
 
     '&:hover': {
       bgcolor: c.bg,

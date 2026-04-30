@@ -1,6 +1,6 @@
 // playerProfile/mobile/modules/info/PlayerInfoModule.js
 
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
@@ -13,65 +13,90 @@ import PlayerNamesCard from './components/PlayerNamesCard.js'
 import PlayerAffiliationCard from './components/PlayerAffiliationCard.js'
 import PlayerPhysicalCard from './components/PlayerPhysicalCard.js'
 import PlayerBirthCard from './components/PlayerBirthCard.js'
+import PlayerInfoToolbar from './PlayerInfoToolbar.js'
 
 import { usePlayerHubUpdate } from '../../../../hooks/players/usePlayerHubUpdate.js'
 
-const toStr = (v) => (v == null ? '' : String(v))
-
-function buildEntityName(player) {
-  const first = toStr(player?.playerFirstName).trim()
-  const last = toStr(player?.playerLastName).trim()
-  const full = [first, last].filter(Boolean).join(' ').trim()
-  return full || toStr(player?.playerShortName).trim() || 'שחקן'
-}
+import {
+  buildPlayerEditInitial,
+  buildPlayerEditPatch,
+  buildPlayerName,
+  isPlayerEditDirty,
+} from '../../../../editLogic/players/index.js'
 
 export default function PlayerInfoModule({ entity, context }) {
   const player = entity || null
 
-  const headerSubtitle = useMemo(() => {
-    if (!player) return ''
-    const teamName = player?.teamName || ''
-    const clubName = player?.clubName || ''
-    return `${clubName}${clubName && teamName ? ' · ' : ''}${teamName}`
-  }, [player])
+  const initial = useMemo(() => buildPlayerEditInitial(player), [player])
+  const [draft, setDraft] = useState(initial)
 
-  const entityName = useMemo(() => buildEntityName(player), [player])
+  useEffect(() => {
+    setDraft(initial)
+  }, [initial])
 
+  const entityName = useMemo(() => buildPlayerName(player || {}), [player])
   const { run, pending } = usePlayerHubUpdate(player)
 
-  const onUpdate = useCallback(
-    async (patch, meta = {}) => {
-      if (!player?.id) return
+  const patch = useMemo(() => {
+    return buildPlayerEditPatch(draft, initial)
+  }, [draft, initial])
 
-      return run(patch, {
-        ...meta,
-        playerId: player.id,
-        entityName,
-        createIfMissing: true,
-      })
-    },
-    [run, player, entityName]
-  )
+  const isDirty = useMemo(() => {
+    return isPlayerEditDirty(draft, initial)
+  }, [draft, initial])
+
+  const hasPatch = Object.keys(patch).length > 0
+  const canSave = Boolean(initial?.id) && isDirty && hasPatch && !pending
+
+  const handleReset = useCallback(() => {
+    if (pending) return
+    setDraft(initial)
+  }, [initial, pending])
+
+  const handleSave = useCallback(async () => {
+    if (!canSave) return
+
+    await run(patch, {
+      section: 'info',
+      source: 'PlayerInfoModule',
+      playerId: initial.id,
+      entityName,
+      createIfMissing: true,
+    })
+  }, [canSave, run, patch, initial.id, entityName])
 
   if (!player) {
-    return <EmptyState title="אין מידע לשחקן" subtitle={headerSubtitle} />
+    return <EmptyState title="אין מידע לשחקן" />
   }
 
   return (
     <SectionPanelMobile>
       <Box sx={sx.moduleRoot}>
-        <PlayerStatusCard player={player} onUpdate={onUpdate} pending={pending} />
-        <PlayerNamesCard player={player} onUpdate={onUpdate} pending={pending} />
-        <PlayerBirthCard player={player} onUpdate={onUpdate} pending={pending} />
+        <PlayerInfoToolbar
+          isDirty={isDirty}
+          canSave={canSave}
+          pending={pending}
+          onReset={handleReset}
+          onSave={handleSave}
+        />
+
+        <PlayerStatusCard draft={draft} setDraft={setDraft} pending={pending} />
+
+        <PlayerNamesCard draft={draft} setDraft={setDraft} pending={pending} />
+
+        <PlayerBirthCard draft={draft} setDraft={setDraft} pending={pending} />
+
         <PlayerAffiliationCard
-          player={player}
-          onUpdate={onUpdate}
+          draft={draft}
+          setDraft={setDraft}
           pending={pending}
           clubsOptions={context?.clubs}
           teamsOptions={context?.teams}
         />
-        <ProjectStatusCard player={player} onUpdate={onUpdate} pending={pending} />
-        <PlayerPhysicalCard player={player} onUpdate={onUpdate} pending={pending} />
+
+        <ProjectStatusCard draft={draft} setDraft={setDraft} pending={pending} />
+
+        <PlayerPhysicalCard draft={draft} setDraft={setDraft} pending={pending} />
       </Box>
     </SectionPanelMobile>
   )

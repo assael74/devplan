@@ -1,46 +1,27 @@
 // playerProfile/desktop/modules/info/components/PlayerNamesCard.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Sheet, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+
 import {
-  buildPlayerNamesInitial,
-  isPlayerNamesDirty,
-  getPlayerNamesChipText,
-} from '../../../../sharedLogic/info/info.logic.js'
+  PlayerFirstNameField,
+  PlayerLastNameField,
+  PlayerShortNameField,
+} from '../../../../../../../ui/fields'
 
-import { PlayerFirstNameField, PlayerLastNameField, PlayerShortNameField } from '../../../../../../../ui/fields'
+const getChipText = (draft = {}) => {
+  const fullName = [draft.playerFirstName, draft.playerLastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
 
-export default function PlayerNamesCard({ player, onUpdate }) {
-  const initial = useMemo(() => buildPlayerNamesInitial(player), [player])
-  const [draft, setDraft] = useState(initial)
-  const [saving, setSaving] = useState(false)
+  return fullName || draft.playerShortName || 'ללא שם'
+}
 
-  const dirty = isPlayerNamesDirty(draft, initial)
-
-  const chipText = getPlayerNamesChipText(draft)
-
-  useEffect(() => setDraft(initial), [initial.playerFirstName, initial.playerLastName, initial.playerShortName])
-
-  const fullName = [draft.playerFirstName, draft.playerLastName].filter(Boolean).join(' ').trim()
-
-  const onReset = () => setDraft(initial)
-
-  const onSave = async () => {
-    if (!dirty || saving) return
-    setSaving(true)
-    try {
-      const patch = {
-        playerFirstName: draft.playerFirstName || null,
-        playerLastName: draft.playerLastName || null,
-        playerShortName: draft.playerShortName || null,
-      }
-      await onUpdate(patch, { section: 'names' })
-    } finally {
-      setSaving(false)
-    }
-  }
+export default function PlayerNamesCard({ draft, setDraft, pending }) {
+  const chipText = getChipText(draft)
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
@@ -58,35 +39,23 @@ export default function PlayerNamesCard({ player, onUpdate }) {
       </Box>
 
       <Box sx={sx.formGrid2}>
-        <PlayerFirstNameField value={draft.playerFirstName} onChange={(v) => setDraft((p) => ({ ...p, playerFirstName: v }))} />
-        <PlayerLastNameField value={draft.playerLastName} onChange={(v) => setDraft((p) => ({ ...p, playerLastName: v }))} />
-        <PlayerShortNameField value={draft.playerShortName} onChange={(v) => setDraft((p) => ({ ...p, playerShortName: v }))} />
-      </Box>
+        <PlayerFirstNameField
+          value={draft.playerFirstName}
+          disabled={pending}
+          onChange={(value) => setDraft((prev) => ({ ...prev, playerFirstName: value }))}
+        />
 
-      <Box sx={sx.actions}>
-        <Button
-          size="sm"
-          variant="soft"
-          color="neutral"
-          onClick={onReset}
-          disabled={!dirty || saving}
-          startDecorator={iconUi({ id: 'reset' })}
-        >
-          איפוס
-        </Button>
+        <PlayerLastNameField
+          value={draft.playerLastName}
+          disabled={pending}
+          onChange={(value) => setDraft((prev) => ({ ...prev, playerLastName: value }))}
+        />
 
-        <Button
-          size="sm"
-          variant="solid"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          loading={saving}
-          loadingPosition="center"
-          sx={sx.confBtn}
-          startDecorator={iconUi({ id: 'save' })}
-        >
-          שמירה
-        </Button>
+        <PlayerShortNameField
+          value={draft.playerShortName}
+          disabled={pending}
+          onChange={(value) => setDraft((prev) => ({ ...prev, playerShortName: value }))}
+        />
       </Box>
     </Sheet>
   )

@@ -1,12 +1,12 @@
-// src/features/hub/teamProfile/desktop/modules/management/components/TeamManagementToolbar.js
+// features/hub/playerProfile/desktop/modules/info/PlayerInfoToolbar.js
 
 import React from 'react'
 import { Box, Button, Chip, Typography } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi'
-import { moduleSx as sx } from '../module.sx.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi'
+import { playerInfoModuleSx as sx } from './playerInfo.module.sx.js'
 
-export default function TeamManagementToolbar({
+export default function PlayerInfoToolbar({
   isDirty,
   canSave,
   pending,
@@ -19,7 +19,7 @@ export default function TeamManagementToolbar({
         <Box sx={sx.headerDot} />
 
         <Typography level="title-sm" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-          ניהול קבוצה
+          מידע שחקן
         </Typography>
 
         <Box sx={{ pl: 2 }}>

@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { Box, Typography } from '@mui/joy'
+import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
 import {
-  buildClubManagementModel,
-  buildClubManagementPatch,
-  isClubManagementDirty,
-} from '../../../sharedLogic/management/index.js'
+  buildClubEditInitial,
+  buildClubEditPatch,
+  isClubEditDirty,
+} from '../../../../editLogic/clubs/index.js'
 
 import { moduleSx as sx } from './sx/module.sx'
 
@@ -18,44 +18,58 @@ import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementSt
 import { useUpdateAction } from '../../../../../../ui/domains/entityActions/updateAction.js'
 
 const toStr = (v) => (v == null ? '' : String(v))
-const buildClubName = (t) => toStr(t?.clubName).trim() || 'מועדון'
+const buildClubName = (club) => toStr(club?.clubName || club?.name).trim() || 'מועדון'
 
 export default function ClubManagementModule({ entity, context }) {
   const club = entity || null
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
-  }, [context])
+  }, [context?.roles])
 
-  const baseModel = useMemo(() => buildClubManagementModel(club), [club])
+  const baseModel = useMemo(() => buildClubEditInitial(club), [club])
   const [draft, setDraft] = useState(baseModel)
-  useEffect(() => setDraft(baseModel), [baseModel])
+
+  useEffect(() => {
+    setDraft(baseModel)
+  }, [baseModel])
 
   const entityName = useMemo(() => buildClubName(club), [club])
 
   const { runUpdate, pending } = useUpdateAction({
     routerEntityType: 'clubs',
     snackEntityType: 'club',
-    id: club?.id,
+    id: baseModel?.id,
     entityName,
     requireAnyUpdated: true,
     createIfMissing: false,
   })
 
-  const onUpdate = useCallback(
-    async (patch, meta) => runUpdate(patch, meta),
-    [runUpdate]
-  )
+  const patch = useMemo(() => {
+    return buildClubEditPatch(draft, baseModel)
+  }, [draft, baseModel])
 
-  const isDirty = useMemo(() => isClubManagementDirty(baseModel, draft), [baseModel, draft])
+  const isDirty = useMemo(() => {
+    return isClubEditDirty(draft, baseModel)
+  }, [draft, baseModel])
 
-  const confirm = async () => {
-    const patch = buildClubManagementPatch(baseModel, draft)
-    if (!Object.keys(patch).length) return
-    await onUpdate(patch, { section: 'management', source: 'ClubManagementModule' })
-  }
+  const hasPatch = Object.keys(patch).length > 0
+  const canSave = Boolean(baseModel?.id) && isDirty && hasPatch && !pending
 
-  const reset = () => setDraft(baseModel)
+  const confirm = useCallback(async () => {
+    if (!canSave) return
+
+    await runUpdate(patch, {
+      section: 'management',
+      source: 'ClubManagementModule',
+      clubId: baseModel.id,
+    })
+  }, [canSave, runUpdate, patch, baseModel.id])
+
+  const reset = useCallback(() => {
+    if (pending) return
+    setDraft(baseModel)
+  }, [baseModel, pending])
 
   if (!club) return <EmptyState title="אין מידע למועדון" />
 
@@ -66,15 +80,16 @@ export default function ClubManagementModule({ entity, context }) {
           <ClubManagementInfoCard
             draft={draft}
             isDirty={isDirty}
+            canSave={canSave}
             onDraft={setDraft}
             onConfirm={confirm}
             onReset={reset}
             pending={pending}
           />
 
-          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto', }}>
+          <Box sx={{ minWidth: 0, alignSelf: 'start', height: 'auto' }}>
             <ManagementStaffCard
-              clubId={club.id}
+              clubId={baseModel.id}
               roles={staffPool}
               disabled={pending}
               compact={false}

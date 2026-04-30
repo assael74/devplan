@@ -9,10 +9,10 @@ import EmptyState from '../../../../sharedProfile/EmptyState.js'
 import { profileSx as sx } from './../../sx/profile.sx'
 
 import {
-  buildClubManagementModel,
-  buildClubManagementPatch,
-  isClubManagementDirty,
-} from '../../../sharedLogic/management/index.js'
+  buildClubEditInitial,
+  buildClubEditPatch,
+  isClubEditDirty,
+} from '../../../../editLogic/clubs/index.js'
 
 import ClubManagementInfoCard from './components/ClubManagementInfoCard.js'
 import ClubManagementToolbar from './components/ClubManagementToolbar.js'
@@ -20,17 +20,24 @@ import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementSt
 
 import { useUpdateAction } from '../../../../../../ui/domains/entityActions/updateAction.js'
 
+const noop = () => {}
+
 const toStr = (v) => (v == null ? '' : String(v))
 const buildClubName = (club) => toStr(club?.clubName || club?.name).trim() || 'מועדון'
 
-export default function ClubManagementModule({ entity, context, onSaved, onClose }) {
+export default function ClubManagementModule({
+  entity,
+  context,
+  onSaved = noop,
+  onClose = noop,
+}) {
   const club = entity || null
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
   }, [context?.roles])
 
-  const baseModel = useMemo(() => buildClubManagementModel(club), [club])
+  const baseModel = useMemo(() => buildClubEditInitial(club), [club])
   const [draft, setDraft] = useState(baseModel)
 
   useEffect(() => {
@@ -42,19 +49,22 @@ export default function ClubManagementModule({ entity, context, onSaved, onClose
   const { runUpdate, pending } = useUpdateAction({
     routerEntityType: 'clubs',
     snackEntityType: 'club',
-    id: club?.id,
+    clubId: baseModel.id,
     entityName,
     requireAnyUpdated: true,
-    createIfMissing: false,
+    createIfMissing: true,
   })
 
   const patch = useMemo(() => {
-    return buildClubManagementPatch(baseModel, draft)
-  }, [baseModel, draft])
+    return buildClubEditPatch(draft, baseModel)
+  }, [draft, baseModel])
 
-  const isDirty = isClubManagementDirty(baseModel, draft)
+  const isDirty = useMemo(() => {
+    return isClubEditDirty(draft, baseModel)
+  }, [draft, baseModel])
+
   const hasPatch = Object.keys(patch).length > 0
-  const canSave = Boolean(club?.id) && isDirty && hasPatch && !pending
+  const canSave = Boolean(baseModel?.id) && isDirty && hasPatch && !pending
 
   const handleReset = useCallback(() => {
     setDraft(baseModel)
@@ -66,12 +76,12 @@ export default function ClubManagementModule({ entity, context, onSaved, onClose
     await runUpdate(patch, {
       section: 'management',
       source: 'ClubManagementModule',
-      clubId: club.id,
+      clubId: baseModel.id,
     })
 
     onSaved(patch, { ...(club || {}), ...patch })
     onClose()
-  }, [canSave, runUpdate, patch, club, onSaved, onClose])
+  }, [canSave, runUpdate, patch, baseModel.id, club, onSaved, onClose])
 
   if (!club) {
     return (

@@ -6,9 +6,6 @@ export * from './abilities/inviteDrawerLogic/abilitiesInvite.logic.js'
 export * from './abilities/moduleLogic/abilities.logic.js'
 export { default as useAbilitiesSummary } from './abilities/moduleLogic/useAbilitiesSummary.js'
 
-// ----- INFO -----
-export * from './info/info.logic.js'
-
 // ----- GAMES / FILTERS -----
 export {
   applyPlayerGamesFilters,

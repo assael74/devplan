@@ -136,9 +136,16 @@ export function buildClubTeamRows(club, filters = {}) {
         league: norm(team?.league || team?.leagueName) || '',
         leagueLevel: team?.leagueLevel ?? null,
         leaguePosition: team?.leaguePosition ?? null,
+
         points: team?.points ?? null,
         leagueGoalsFor: team?.leagueGoalsFor ?? null,
         leagueGoalsAgainst: team?.leagueGoalsAgainst ?? null,
+
+        targetPosition: team?.targetPosition ?? null,
+        targetPoints: team?.targetPoints ?? null,
+        targetSuccessRate: team?.targetSuccessRate ?? null,
+        targetGoalsFor: team?.targetGoalsFor ?? null,
+        targetGoalsAgainst: team?.targetGoalsAgainst ?? null,
 
         isProject,
         playersCount,

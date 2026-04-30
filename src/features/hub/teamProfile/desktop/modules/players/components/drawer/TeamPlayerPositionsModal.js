@@ -14,11 +14,11 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { usePlayerHubUpdate } from './../../../../../../hooks/players/usePlayerHubUpdate.js'
 
 import {
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-  safeArr
-} from '../../../../../sharedLogic/players'
+  buildPlayerEditInitial,
+  buildPlayerEditPatch,
+  isPlayerEditDirty,
+  safeArr,
+} from '../../../../../../editLogic/players/index.js'
 
 export default function TeamPlayerPositionsDrawer({
   open,
@@ -28,7 +28,7 @@ export default function TeamPlayerPositionsDrawer({
 }) {
   const [showLimitWarning, setShowLimitWarning] = useState(false)
 
-  const initial = useMemo(() => buildInitialDraft(player), [player])
+  const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export default function TeamPlayerPositionsDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => isPlayerEditDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildPlayerEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
   const canSave = !!initial?.id && isDirty && !pending
@@ -48,6 +48,7 @@ export default function TeamPlayerPositionsDrawer({
     await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
+      createIfMissing: true
     })
 
     onSaved(patch, { ...initial.raw, ...patch })

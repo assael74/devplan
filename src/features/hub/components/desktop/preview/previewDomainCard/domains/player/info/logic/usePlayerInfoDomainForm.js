@@ -4,17 +4,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePlayerHubUpdate } from '../../../../../../../../hooks/players/usePlayerHubUpdate.js'
 
 import {
-  buildComparableForm,
-  buildInitialForm,
+  buildPlayerEditInitial,
+  buildPlayerEditPatch,
   buildPlayerName,
-  isPlaceholderPhone,
-  pickPatch,
-} from './playerInfo.domain.logic.js'
+  isPlayerEditDirty,
+} from '../../../../../../../../editLogic/players/index.js'
 
-export function usePlayerInfoDomainForm({ entity, onClose }) {
+import { isPlaceholderPhone } from './playerInfo.domain.logic.js'
+
+const noop = () => {}
+
+export function usePlayerInfoDomainForm({ entity, onClose = noop }) {
   const player = entity || {}
 
-  const initial = useMemo(() => buildInitialForm(player), [player])
+  const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [form, setForm] = useState(initial)
 
   useEffect(() => {
@@ -22,13 +25,10 @@ export function usePlayerInfoDomainForm({ entity, onClose }) {
   }, [initial])
 
   const entityName = useMemo(() => buildPlayerName(player), [player])
-
   const { run, pending } = usePlayerHubUpdate(player)
 
   const dirty = useMemo(() => {
-    const next = buildComparableForm(form)
-    const init = buildComparableForm(initial)
-    return Object.keys(pickPatch(next, init)).length > 0
+    return isPlayerEditDirty(form, initial)
   }, [form, initial])
 
   const phoneOk = !isPlaceholderPhone(form.phone)
@@ -43,27 +43,24 @@ export function usePlayerInfoDomainForm({ entity, onClose }) {
 
   const onCloseAndReset = useCallback(() => {
     onReset()
-    onClose?.()
+    onClose()
   }, [onClose, onReset])
 
   const onSave = useCallback(async () => {
     if (!dirty || pending) return
 
-    const next = buildComparableForm(form)
-    const init = buildComparableForm(initial)
-    const patch = pickPatch(next, init)
-
+    const patch = buildPlayerEditPatch(form, initial)
     if (!Object.keys(patch).length) return
 
     await run(patch, {
       section: 'infoDomain',
-      playerId: player?.id,
+      playerId: initial.id,
       entityName,
       createIfMissing: true,
     })
 
-    onClose?.()
-  }, [dirty, pending, form, initial, run, player, entityName, onClose])
+    onClose()
+  }, [dirty, pending, form, initial, run, entityName, onClose])
 
   return {
     player,

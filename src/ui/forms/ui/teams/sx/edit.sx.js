@@ -6,8 +6,8 @@ export const editSx = {
     gap: 1.25,
     width: '100%',
     minWidth: 0,
+    height: '100%',
     maxWidth: '100%',
-    overflow: 'hidden'
   },
 
   status: {

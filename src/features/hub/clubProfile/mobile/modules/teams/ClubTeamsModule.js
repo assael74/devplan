@@ -9,6 +9,7 @@ import EmptyState from '../../../../sharedProfile/EmptyState.js'
 import ClubTeamsToolbar from './components/toolbar/ClubTeamsToolbar.js'
 import ClubTeamsList from './components/ClubTeamsList.js'
 import ClubTeamsInsightsDrawer from './components/insightsDrawer/ClubTeamsInsightsDrawer.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
 
 import {
   CLUB_TEAMS_DEFAULT_FILTERS,
@@ -101,6 +102,14 @@ export default function ClubTeamsModule({
         rows={filteredRows}
         summary={summary}
         entity={liveClub}
+      />
+
+      <EditDrawer
+        open={!!editingTeam}
+        team={editingTeam}
+        onClose={() => setEditingTeam(null)}
+        onSaved={() => {}}
+        context={{ ...context, clubId: liveClub?.id, club: liveClub }}
       />
     </SectionPanelMobile>
   )

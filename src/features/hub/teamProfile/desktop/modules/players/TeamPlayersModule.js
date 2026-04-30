@@ -84,71 +84,69 @@ export default function TeamPlayersModule({
   }
 
   return (
-    <>
-      <SectionPanel>
-        <Box
-          sx={{
-            position: 'sticky',
-            top: -6,
-            zIndex: 5,
-            display: 'grid',
-            gap: 1,
-            borderRadius: 12,
-            bgcolor: 'background.body',
-            mb: 0.5,
-            boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
-          }}
-        >
-          <TeamPlayersToolbar
-            summary={summary}
-            filters={filters}
-            filteredCount={filteredRows.length}
-            totalCount={rows.length}
-            onChangeSearch={(value) =>
-              handleChangeFilters({ search: value })
-            }
-            onToggleOnlyActive={() =>
-              handleChangeFilters({ onlyActive: !filters.onlyActive })
-            }
-            onChangeSquadRole={(value) =>
-              handleChangeFilters({ squadRole: value || '' })
-            }
-            onChangeProjectStatus={(value) =>
-              handleChangeFilters({ projectStatus: value || '' })
-            }
-            onChangePositionCode={(value) =>
-              handleChangeFilters({ positionCode: value || '' })
-            }
-            onChangeGeneralPositionKey={(value) =>
-              handleChangeFilters({ generalPositionKey: value || '' })
-            }
-            onResetFilters={handleResetFilters}
-            sortBy={sort.by}
-            sortDirection={sort.direction}
-            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
-          />
-        </Box>
+    <SectionPanel>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -6,
+          zIndex: 5,
+          display: 'grid',
+          gap: 1,
+          borderRadius: 12,
+          bgcolor: 'background.body',
+          mb: 0.5,
+          boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+        }}
+      >
+        <TeamPlayersToolbar
+          summary={summary}
+          filters={filters}
+          filteredCount={filteredRows.length}
+          totalCount={rows.length}
+          onChangeSearch={(value) =>
+            handleChangeFilters({ search: value })
+          }
+          onToggleOnlyActive={() =>
+            handleChangeFilters({ onlyActive: !filters.onlyActive })
+          }
+          onChangeSquadRole={(value) =>
+            handleChangeFilters({ squadRole: value || '' })
+          }
+          onChangeProjectStatus={(value) =>
+            handleChangeFilters({ projectStatus: value || '' })
+          }
+          onChangePositionCode={(value) =>
+            handleChangeFilters({ positionCode: value || '' })
+          }
+          onChangeGeneralPositionKey={(value) =>
+            handleChangeFilters({ generalPositionKey: value || '' })
+          }
+          onResetFilters={handleResetFilters}
+          sortBy={sort.by}
+          sortDirection={sort.direction}
+          onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
+          onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
+        />
+      </Box>
 
-        {filteredRows.length === 0 ? (
-          <EmptyState
-            title="אין שחקנים להצגה"
-            subtitle="בדוק פילטרים או הוסף שחקן חדש"
-          />
-        ) : (
-          <TeamPlayersList
-            rows={filteredRows}
-            onOpenPlayer={onOpenPlayer}
-            onAvatarClick={(row) => {
-              setImgRow(row)
-              setRowPhoto(row?.photo || '')
-              setOpenImg(true)
-            }}
-            onEditPlayer={(row) => setEditingPlayer(row?.player || null)}
-            onEditPosition={(row) => setEditingPosition(row?.player || null)}
-          />
-        )}
-      </SectionPanel>
+      {filteredRows.length === 0 ? (
+        <EmptyState
+          title="אין שחקנים להצגה"
+          subtitle="בדוק פילטרים או הוסף שחקן חדש"
+        />
+      ) : (
+        <TeamPlayersList
+          rows={filteredRows}
+          onOpenPlayer={onOpenPlayer}
+          onAvatarClick={(row) => {
+            setImgRow(row)
+            setRowPhoto(row?.photo || '')
+            setOpenImg(true)
+          }}
+          onEditPlayer={(row) => setEditingPlayer(row?.player || null)}
+          onEditPosition={(row) => setEditingPosition(row?.player || null)}
+        />
+      )}
 
       <TeamPlayerQuickEditDrawer
         open={!!editingPlayer}
@@ -185,6 +183,6 @@ export default function TeamPlayersModule({
           setRowPhoto(next)
         }}
       />
-    </>
+    </SectionPanel>
   )
 }

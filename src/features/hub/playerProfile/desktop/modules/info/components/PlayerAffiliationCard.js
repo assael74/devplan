@@ -1,7 +1,7 @@
 // playerProfile/desktop/modules/info/components/PlayerAffiliationCard.js
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
+import { Box, Typography, Sheet, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
 
@@ -10,37 +10,13 @@ import { ClubSelectField, TeamSelectField } from '../../../../../../../ui/fields
 import {
   buildAffiliationInitial,
   isAffiliationDirty,
-} from '../../../../sharedLogic/info/info.logic.js'
+} from '../../../../../../../shared/players/players.logic.js'
 
 const toStr = (v) => (v == null ? '' : String(v))
 
-export default function PlayerAffiliationCard({ player, onUpdate, clubsOptions = [], teamsOptions = [] }) {
-  const initial = useMemo(() => buildAffiliationInitial(player), [player])
-  const [draft, setDraft] = useState(initial)
-  const [saving, setSaving] = useState(false)
-
-  const dirty = isAffiliationDirty(draft, initial)
-
-  useEffect(() => setDraft(initial), [initial.clubId, initial.teamId])
-
+export default function PlayerAffiliationCard({ draft, setDraft, pending, clubsOptions = [], teamsOptions = [] }) {
   const hasClub = Boolean(draft.clubId)
   const hasTeam = Boolean(draft.teamId)
-
-  const onReset = () => setDraft(initial)
-
-  const onSave = async () => {
-    if (!dirty || saving) return
-    setSaving(true)
-    try {
-      const patch = {
-        clubId: draft.clubId || null,
-        teamId: draft.teamId || null,
-      }
-      await onUpdate(patch, { section: 'affiliation' })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
@@ -75,32 +51,6 @@ export default function PlayerAffiliationCard({ player, onUpdate, clubsOptions =
             clubId={draft.clubId}
             disabled={true}
           />
-      </Box>
-
-      <Box sx={sx.actions}>
-        <Button
-          size="sm"
-          variant="soft"
-          color="neutral"
-          onClick={onReset}
-          disabled={!dirty || saving}
-          startDecorator={iconUi({ id: 'reset' })}
-        >
-          איפוס
-        </Button>
-
-        <Button
-          size="sm"
-          variant="solid"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          loading={saving}
-          loadingPosition="center"
-          sx={sx.confBtn}
-          startDecorator={iconUi({ id: 'save' })}
-        >
-          שמירה
-        </Button>
       </Box>
     </Sheet>
   )

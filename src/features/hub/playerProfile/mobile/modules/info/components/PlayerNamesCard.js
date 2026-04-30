@@ -1,45 +1,20 @@
 // playerProfile/mobile/modules/info/components/PlayerNamesCard.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, IconButton } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Sheet } from '@mui/joy'
+
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { infoModuleSx as sx } from '../info.module.sx.js'
-import {
-  buildPlayerNamesInitial,
-  isPlayerNamesDirty,
-  buildPlayerNamesPatch,
-} from '../../../../sharedLogic/info/info.logic.js'
+
 import {
   PlayerFirstNameField,
   PlayerLastNameField,
   PlayerShortNameField,
 } from '../../../../../../../ui/fields'
 
-export default function PlayerNamesCard({ player, onUpdate }) {
-  const initial = useMemo(() => buildPlayerNamesInitial(player), [player])
-  const [draft, setDraft] = useState(initial)
-  const [saving, setSaving] = useState(false)
-
-  const dirty = isPlayerNamesDirty(draft, initial)
-
-  useEffect(() => {
-    setDraft(initial)
-  }, [initial])
-
+export default function PlayerNamesCard({ draft, setDraft, pending }) {
   const setField = (key) => (value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const onReset = () => setDraft(initial)
-
-  const onSave = async () => {
-    if (!dirty || saving) return
-    setSaving(true)
-    try {
-      await onUpdate(buildPlayerNamesPatch(draft), { section: 'names' })
-    } finally {
-      setSaving(false)
-    }
   }
 
   return (
@@ -48,29 +23,6 @@ export default function PlayerNamesCard({ player, onUpdate }) {
         <Typography level="title-md" noWrap startDecorator={iconUi({ id: 'info' })}>
           שם השחקן
         </Typography>
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="sm"
-            variant="soft"
-            color="warning"
-            onClick={onReset}
-            disabled={!dirty || saving}
-          >
-            {iconUi({ id: 'reset' })}
-          </IconButton>
-
-          <IconButton
-            size="sm"
-            variant="solid"
-            onClick={onSave}
-            disabled={!dirty || saving}
-            loading={saving}
-            sx={sx.confBtn}
-          >
-            {iconUi({ id: 'save' })}
-          </IconButton>
-        </Box>
       </Box>
 
       <Box sx={{ display: 'grid', gap: 0.875, minWidth: 0 }}>
@@ -78,8 +30,9 @@ export default function PlayerNamesCard({ player, onUpdate }) {
           <Box sx={{ minWidth: 0 }}>
             <PlayerFirstNameField
               size="sm"
-              value={draft.playerFirstName}
+              value={draft?.playerFirstName || ''}
               onChange={setField('playerFirstName')}
+              disabled={pending}
               sx={{ minWidth: 0, width: '100%' }}
             />
           </Box>
@@ -87,8 +40,9 @@ export default function PlayerNamesCard({ player, onUpdate }) {
           <Box sx={{ minWidth: 0 }}>
             <PlayerLastNameField
               size="sm"
-              value={draft.playerLastName}
+              value={draft?.playerLastName || ''}
               onChange={setField('playerLastName')}
+              disabled={pending}
               sx={{ minWidth: 0, width: '100%' }}
             />
           </Box>
@@ -96,8 +50,9 @@ export default function PlayerNamesCard({ player, onUpdate }) {
           <Box sx={{ minWidth: 0 }}>
             <PlayerShortNameField
               size="sm"
-              value={draft.playerShortName}
+              value={draft?.playerShortName || ''}
               onChange={setField('playerShortName')}
+              disabled={pending}
               sx={{ minWidth: 0, width: '100%' }}
             />
           </Box>

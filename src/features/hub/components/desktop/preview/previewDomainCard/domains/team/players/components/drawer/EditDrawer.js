@@ -15,10 +15,10 @@ import { usePlayerHubUpdate } from '../../../../../../../../../hooks/players/use
 
 import {
   safeArr,
-  buildInitialDraft,
-  buildPatch,
-  getIsDirty,
-} from './editDrawer.utils.js'
+  buildPlayerEditInitial,
+  buildPlayerEditPatch,
+  isPlayerEditDirty,
+} from '../../../../../../../../../editLogic/players/index.js'
 
 export default function EditDrawer({
   open,
@@ -26,7 +26,7 @@ export default function EditDrawer({
   onClose,
   onSaved,
 }) {
-  const initial = useMemo(() => buildInitialDraft(player), [player])
+  const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [draft, setDraft] = useState(initial)
   const [showLimitWarning, setShowLimitWarning] = useState(false)
 
@@ -35,8 +35,8 @@ export default function EditDrawer({
     setDraft(initial)
   }, [open, initial])
 
-  const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
-  const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
+  const isDirty = useMemo(() => isPlayerEditDirty(draft, initial), [draft, initial])
+  const patch = useMemo(() => buildPlayerEditPatch(draft, initial), [draft, initial])
 
   const { run, pending } = usePlayerHubUpdate(player)
   const canSave = !!initial?.id && isDirty && !pending
@@ -47,6 +47,7 @@ export default function EditDrawer({
     await run(patch, {
       section: 'teamPlayerQuickEdit',
       playerId: initial.id,
+      createIfMissing: true
     })
 
     onSaved(patch, { ...initial.raw, ...patch })
