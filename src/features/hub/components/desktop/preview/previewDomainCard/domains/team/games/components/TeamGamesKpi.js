@@ -1,23 +1,69 @@
 // preview/previewDomainCard/domains/team/games/components/TeamGamesHero.js
 
 import React from 'react'
-import { Box, Chip, Sheet, Typography, Avatar } from '@mui/joy'
+import { Box, Chip, Sheet, Typography, Avatar, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { resolveEntityAvatar } from '../../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { getLeaguePointsSummary } from '../logic/teamGames.domain.logic.js'
+import {
+  buildTeamGamesStatusTooltip,
+  resolveTeamGamesStatusChip,
+  resolveTeamGamesKpiValues,
+} from '../logic/teamGames.kpi.logic.js'
+
 import { heroSx as sx } from '../sx/teamGamesKpi.sx.js'
+
+function TeamGamesDataStatusInline({ summary }) {
+  const readiness = summary?.readiness || {}
+  const chip = resolveTeamGamesStatusChip(summary)
+  const tooltipText = buildTeamGamesStatusTooltip(readiness)
+
+  return (
+    <Tooltip
+      variant="outlined"
+      placement="bottom-start"
+      sx={{ p: 1 }}
+      title={
+        <Typography
+          level="body-xs"
+          sx={{
+            whiteSpace: 'pre-line',
+            lineHeight: 1.55,
+            maxWidth: 320,
+          }}
+        >
+          {tooltipText}
+        </Typography>
+      }
+    >
+      <Chip
+        size="sm"
+        variant="soft"
+        color={chip.color}
+        startDecorator={iconUi({ id: chip.icon, size: 'sm' })}
+        sx={sx.statusChipSx}
+      >
+        {chip.label}
+      </Chip>
+    </Tooltip>
+  )
+}
 
 function KpiCard({ label, value, subValue, icon }) {
   return (
     <Sheet variant="plain" sx={sx.kpiCardSx}>
       <Box sx={sx.kpiTopSx}>
-        <Typography level='body-sm' sx={sx.kpiLabelSx}>{label}</Typography>
+        <Typography level="body-sm" sx={sx.kpiLabelSx}>
+          {label}
+        </Typography>
         {icon}
       </Box>
 
-      <Typography level='body-sm' sx={{...sx.kpiValueSx, fontSize: 14}}>{value}</Typography>
+      <Typography level="body-sm" sx={{ ...sx.kpiValueSx, fontSize: 14 }}>
+        {value}
+      </Typography>
 
       <Box sx={sx.kpiSubBoxSx}>
         <Typography sx={sx.kpiSubValueSx(subValue)}>{subValue}</Typography>
@@ -26,14 +72,20 @@ function KpiCard({ label, value, subValue, icon }) {
   )
 }
 
-export default function TeamGamesKpi({ entity, summary, filteredCount }) {
-  const nextLabel = summary?.nextGame
-    ? `${summary.nextGame.dateLabel}${summary.nextGame.hourRaw ? ` | ${summary.nextGame.hourRaw}` : ''}`
-    : '—'
+export default function TeamGamesKpi({ entity, summary }) {
+  const {
+    gameStats,
+    playedGames,
+    totalGames,
+    remainingGames,
+    goalsFor,
+    goalsAgainst,
+    goalDifference,
+    nextLabel,
+    nextSub,
+  } = resolveTeamGamesKpiValues(summary)
 
-  const nextSub = summary?.nextGame
-    ? `${summary.nextGame.rival} | ${summary.nextGame.homeLabel}`
-    : 'אין משחק עתידי'
+  const leagueStats = summary?.leagueStats || {}
 
   const { leaguePossible, leagueAchieved, leagueSuccessPct } = getLeaguePointsSummary(summary)
 
@@ -51,31 +103,30 @@ export default function TeamGamesKpi({ entity, summary, filteredCount }) {
 
       <Box sx={sx.heroContentSx}>
         <Box sx={sx.heroTitleRowSx}>
-          <Box sx={sx.heroTitleWrapSx}>
-            <Box sx={sx.heroIconBoxSx}>
-              <Avatar src={src} />
-            </Box>
-
-            <Box sx={sx.heroTextWrapSx}>
-              <Typography level="title-md" sx={sx.heroTitleSx}>
-                {entity?.name || entity?.teamName || 'קבוצה'}
-              </Typography>
-
-              <Typography level="body-sm" sx={sx.heroSubTitleSx}>
-                משחקי הקבוצה
-              </Typography>
-            </Box>
+          <Box sx={sx.heroIconBoxSx}>
+            <Avatar src={src} />
           </Box>
 
-          <Chip size="sm" variant="soft" color="primary" sx={sx.heroBadgeSx}>
-            מוצגים {filteredCount ?? 0}
-          </Chip>
+          <Box sx={sx.heroTextWrapSx}>
+            <Typography level="title-md" sx={sx.heroTitleSx}>
+              {entity?.name || entity?.teamName || 'קבוצה'}
+            </Typography>
+
+            <Typography level="body-sm" sx={sx.heroSubTitleSx}>
+              משחקי הקבוצה
+            </Typography>
+          </Box>
+
+          <Box sx={{ flex: 1 }} />
+
+          <TeamGamesDataStatusInline summary={summary} />
         </Box>
 
         <Box sx={sx.kpiGridSx}>
           <KpiCard
-            label="סה״כ משחקים"
-            value={summary?.total ?? 0}
+            label="משחקי ליגה"
+            value={`${playedGames} / ${totalGames}`}
+            subValue={`${remainingGames} נותרו`}
             icon={iconUi({ id: 'games', size: 'sm' })}
           />
 
@@ -88,14 +139,15 @@ export default function TeamGamesKpi({ entity, summary, filteredCount }) {
 
           <KpiCard
             label="יחס שערים"
-            value={`${summary?.gf ?? 0} - ${summary?.ga ?? 0}`}
+            value={`${goalsFor} - ${goalsAgainst}`}
+            subValue={`הפרש ${goalDifference}`}
             icon={iconUi({ id: 'goals', size: 'sm' })}
           />
 
           <KpiCard
             label="המשחק הבא"
             value={nextLabel}
-            subValue={nextSub}
+            subValue={nextSub || `${gameStats?.upcomingGamesCount ?? 0} משחקים עתידיים`}
             icon={iconUi({ id: 'calendar', size: 'sm' })}
           />
         </Box>

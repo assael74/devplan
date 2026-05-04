@@ -144,7 +144,12 @@ export function enrichTeams(merged, indexes) {
       const teamGames = safeArr(teamGamesByTeamId.get(teamId))
       const targetsRaw = teamTargetsByTeamId?.get(teamId) || null
 
-      const targets = buildTeamTargetsState(targetsRaw)
+      const targetsSource = {
+        ...team,
+        ...(targetsRaw || {}),
+      }
+
+      const targets = buildTeamTargetsState(targetsSource)
 
       return {
         ...team,
@@ -155,12 +160,6 @@ export function enrichTeams(merged, indexes) {
         teamGames,
         targets,
       }
-    })
-    .sort((a, b) => {
-      const yearDiff = Number(a?.teamYear || 0) - Number(b?.teamYear || 0)
-      if (yearDiff !== 0) return yearDiff
-
-      return String(a?.teamName || '').localeCompare(String(b?.teamName || ''), 'he')
     })
 }
 

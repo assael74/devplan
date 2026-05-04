@@ -4,7 +4,12 @@ export const safeArray = (v) => (Array.isArray(v) ? v : [])
 
 export const pickToolbarOption = (arr, value, fallbackKey = 'id') => {
   const base = safeArray(arr)
-  return base.find((x) => x?.value === value || x?.id === value || x?.[fallbackKey] === value) || null
+
+  return (
+    base.find((x) => {
+      return x?.value === value || x?.id === value || x[fallbackKey] === value
+    }) || null
+  )
 }
 
 export const getHomeOptionColor = (item) => {
@@ -27,7 +32,10 @@ export const buildToolbarState = ({ summary, filters, options }) => {
   const selectedType = pickToolbarOption(typeOptions, filters?.typeKey || '')
   const selectedResult = pickToolbarOption(resultOptions, filters?.resultKey || '')
   const selectedHome = pickToolbarOption(homeOptions, filters?.homeKey || '')
-  const selectedDifficulty = pickToolbarOption(difficultyOptions, filters?.difficultyKey || '')
+  const selectedDifficulty = pickToolbarOption(
+    difficultyOptions,
+    filters?.difficultyKey || ''
+  )
 
   return {
     typeOptions,
@@ -46,11 +54,15 @@ export const buildToolbarState = ({ summary, filters, options }) => {
 }
 
 export const clearToolbarIndicator = (item, onChangeFilters) => {
-  if (!item?.type || !onChangeFilters) return
+  if (!item?.type && !item?.key) return
+  if (!onChangeFilters) return
 
-  if (item.type === 'search') return onChangeFilters({ search: '' })
-  if (item.type === 'typeKey') return onChangeFilters({ typeKey: '' })
-  if (item.type === 'homeKey') return onChangeFilters({ homeKey: '' })
-  if (item.type === 'resultKey') return onChangeFilters({ resultKey: '' })
-  if (item.type === 'difficultyKey') return onChangeFilters({ difficultyKey: '' })
+  const key = item.type || item.key
+
+  if (key === 'search') return onChangeFilters({ search: '' })
+  if (key === 'typeKey') return onChangeFilters({ typeKey: '' })
+  if (key === 'homeKey') return onChangeFilters({ homeKey: '' })
+  if (key === 'resultKey') return onChangeFilters({ resultKey: '' })
+  if (key === 'difficultyKey') return onChangeFilters({ difficultyKey: '' })
+  if (key === 'onlyPlayed') return onChangeFilters({ onlyPlayed: false })
 }

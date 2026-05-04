@@ -199,6 +199,17 @@ export default function TeamGamesToolbar({
           ))}
         </Select>
 
+        <Chip
+          size="sm"
+          variant={filters?.onlyPlayed ? 'solid' : 'outlined'}
+          color={filters?.onlyPlayed ? 'success' : 'neutral'}
+          onClick={() => onChangeFilters({ onlyPlayed: !filters?.onlyPlayed })}
+          startDecorator={iconUi({ id: 'upcoming' })}
+          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
+        >
+          רק שוחקו
+        </Chip>
+
         <Box sx={{ flex: 1 }} />
 
         <Chip

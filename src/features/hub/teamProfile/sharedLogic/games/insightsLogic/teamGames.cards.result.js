@@ -59,8 +59,8 @@ export const buildRecordPctChips = (result) => {
   ]
 }
 
-export const resolveSuccessPct = (result) => {
-  return toNum(result?.pointsPct)
+export const resolveSuccessPct = (league) => {
+  return toNum(league?.pointsRate)
 }
 
 export const resolveStreakValue = (streaks) => {
@@ -70,59 +70,89 @@ export const resolveStreakValue = (streaks) => {
   return `${count} ${typeH}`
 }
 
-export const buildTeamGamesTopStats = (summary) => {
-  const result = summary?.core?.result || {}
-  const goals = summary?.core?.goals || {}
-  const streaks = summary?.trends?.streaks || {}
+export const buildTeamGamesTopStats = ({ league, games }) => {
+  const streaks = games?.trends?.streaks || {}
 
   return [
     {
       id: 'success',
       title: 'אחוז הצלחה',
-      value: `${resolveSuccessPct(result)}%`,
-      sub: `${toText(result?.points, '0')}/${toText(result?.maxPoints, '0')} נק׳`,
+      value: `${resolveSuccessPct(league)}%`,
+      sub: `${toText(league?.points, '0')}/${toText(league?.maxPoints, '0')} נק׳`,
       icon: 'rate',
+      level: 'light',
+      color: pointsColor(resolveSuccessPct(league)),
     },
     {
       id: 'ppg',
       title: 'נקודות למשחק',
-      value: toText(result?.ppg),
-      sub: `${toText(result?.totalPlayed, '0')} משחקים`,
+      value: toText(league?.pointsPerGame),
+      sub: `${toText(league?.playedGames, '0')} משחקים מתוך ${toText(league?.totalGames, '0')}`,
       icon: 'points',
+      level: 'light',
+      color: pointsColor(resolveSuccessPct(league)),
     },
     {
       id: 'goals',
       title: 'שערים',
-      value: `${toText(goals?.gf, '0')} - ${toText(goals?.ga, '0')}`,
-      sub: `הפרש ${toText(goals?.gd, '0')}`,
+      value: `${toText(league?.goalsFor, '0')} - ${toText(league?.goalsAgainst, '0')}`,
+      sub: `הפרש ${toText(league?.goalDifference, '0')}`,
       icon: 'result',
+      level: 'light',
+      color: league?.goalDifference >= 0 ? 'success' : 'danger',
+    },
+    {
+      id: 'projection',
+      title: 'צפי נקודות',
+      value: toText(league?.projectedTotalPoints),
+      sub: `עד סוף ${toText(league?.totalGames, '0')} משחקים`,
+      icon: 'projection',
+      level: 'light',
+      color: pointsColor(resolveSuccessPct(league)),
     },
     {
       id: 'streak',
       title: 'רצף נוכחי',
       value: resolveStreakValue(streaks),
-      sub: 'מגמה פעילה',
+      sub: games ? 'מגמה פעילה' : 'דורש סנכרון משחקים',
       icon: 'trend',
+      level: 'medium',
+      color: games ? 'primary' : 'neutral',
     },
   ]
 }
 
-export const buildTeamGamesCards = (summary) => {
-  const result = summary?.core?.result || {}
-  const recent = summary?.trends?.recent || {}
+export const buildTeamGamesCards = ({ league, games }) => {
+  const result = games?.result || {}
+  const recent = games?.trends?.recent || {}
 
   const recentPointsPct = toNum(recent?.pointsPct)
 
-  return [
+  const cards = [
+    {
+      id: 'leagueProjection',
+      title: 'תחזית עונה',
+      value: `${toText(league?.projectedTotalPoints, '0')} נק׳`,
+      subValue: `שערים צפויים: ${toText(league?.projectedGoalsFor, '0')} - ${toText(league?.projectedGoalsAgainst, '0')}`,
+      icon: 'projection',
+      color: pointsColor(toNum(league?.pointsRate)),
+      level: 'light',
+    },
+  ]
+
+  if (!games) return cards
+
+  cards.push(
     {
       id: 'record',
-      title: 'מאזן',
+      title: 'מאזן משחקים',
       value: '',
       subValue: buildRecordText(result),
       icon: 'game',
       color: 'neutral',
       chips: buildRecordPctChips(result),
       valueMode: 'chips',
+      level: 'medium',
     },
     {
       id: 'recent',
@@ -131,6 +161,9 @@ export const buildTeamGamesCards = (summary) => {
       subValue: recent?.formText || `${toNum(recent?.sampleSize)} אחרונים`,
       icon: 'trend',
       color: pointsColor(recentPointsPct),
-    },
-  ]
+      level: 'medium',
+    }
+  )
+
+  return cards
 }

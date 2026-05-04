@@ -1,4 +1,4 @@
-//  ui/fields/selectUi/games/ui/GameOptionRow.js
+// ui/fields/selectUi/games/ui/GameOptionRow.js
 
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
@@ -54,6 +54,12 @@ export default function GameOptionRow({ option }) {
         <Typography level="body-xs" sx={{ opacity: 0.72, whiteSpace: 'nowrap' }}>
           {option.dateLabel}
         </Typography>
+
+        <MetaChip
+          label={option.statusMeta?.label}
+          color={option.statusMeta?.color || 'neutral'}
+          icon={option.statusMeta?.icon}
+        />
 
         <MetaChip
           label={option.typeMeta?.label}

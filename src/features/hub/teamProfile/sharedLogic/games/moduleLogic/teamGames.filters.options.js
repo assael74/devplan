@@ -23,10 +23,23 @@ export const buildTeamGamesOptions = (rows) => {
 }
 
 export const buildTeamGamesIndicators = (filters) => {
-  return buildIndicatorsFromConfig({
+  const indicators = buildIndicatorsFromConfig({
     filters,
     searchKey: 'search',
     searchIcon: 'search',
     config: TEAM_GAMES_INDICATOR_CONFIG,
   })
+
+  if (filters?.onlyPlayed) {
+    indicators.push({
+      id: 'onlyPlayed',
+      key: 'onlyPlayed',
+      label: 'רק משחקים ששוחקו',
+      idIcon: 'upcoming',
+      icon: 'upcoming',
+      color: 'success',
+    })
+  }
+
+  return indicators
 }

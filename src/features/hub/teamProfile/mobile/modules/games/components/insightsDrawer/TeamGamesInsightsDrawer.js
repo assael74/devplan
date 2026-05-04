@@ -14,7 +14,7 @@ import {
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { buildTeamGamesInsights } from '../../../../../../../../shared/games/insights/GamesInsights.build.js'
+import { buildTeamGamesInsights } from '../../../../../../../../shared/games/insights/team/index.js'
 import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
 
 import { buildTeamGamesDrawerViewModel } from './../../../../../sharedLogic/games'
@@ -29,14 +29,16 @@ export default function TeamGamesInsightsDrawer({
   entity,
 }) {
   const liveTeam = team || entity || {}
+
   const normalizeRow = useMemo(() => createGameRowNormalizer({}), [])
 
   const insights = useMemo(() => {
     return buildTeamGamesInsights({
+      team: liveTeam,
       rows: Array.isArray(games) ? games : [],
       normalizeRow,
     })
-  }, [games, normalizeRow])
+  }, [games, liveTeam, normalizeRow])
 
   const viewModel = useMemo(() => {
     return buildTeamGamesDrawerViewModel(insights)
@@ -64,7 +66,13 @@ export default function TeamGamesInsightsDrawer({
       }
     >
       <InsightsSection title="מדדי על" icon="topParm">
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 1,
+          }}
+        >
           {Array.isArray(viewModel?.topStats) &&
             viewModel.topStats.map((item) => (
               <InsightsStatCard
@@ -82,6 +90,7 @@ export default function TeamGamesInsightsDrawer({
         <InsightsChipsList
           items={Array.isArray(viewModel?.cards) ? viewModel.cards : []}
           iconFallback="insights"
+          emptyText="אין כרטיסי תובנות להצגה"
         />
       </InsightsSection>
 
@@ -89,6 +98,11 @@ export default function TeamGamesInsightsDrawer({
         <InsightsChipsList
           items={Array.isArray(viewModel?.homeAwayItems) ? viewModel.homeAwayItems : []}
           iconFallback="home"
+          emptyText={
+            viewModel?.blocked?.medium
+              ? 'נתוני המשחקים לא מסונכרנים לנתוני הקבוצה'
+              : 'אין נתוני בית / חוץ להצגה'
+          }
         />
       </InsightsSection>
 
@@ -96,6 +110,11 @@ export default function TeamGamesInsightsDrawer({
         <InsightsChipsList
           items={Array.isArray(viewModel?.difficultyItems) ? viewModel.difficultyItems : []}
           iconFallback="difficulty"
+          emptyText={
+            viewModel?.blocked?.medium
+              ? 'נתוני המשחקים לא מסונכרנים לנתוני הקבוצה'
+              : 'אין נתוני רמת קושי להצגה'
+          }
         />
       </InsightsSection>
 
@@ -103,6 +122,7 @@ export default function TeamGamesInsightsDrawer({
         <InsightsChipsList
           items={Array.isArray(viewModel?.feedItems) ? viewModel.feedItems : []}
           iconFallback="feed"
+          emptyText="אין תובנות טקסטואליות להצגה"
         />
       </InsightsSection>
     </InsightsDrawerShell>

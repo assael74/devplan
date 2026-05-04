@@ -107,7 +107,21 @@ export default function TeamManagementInfoCard({
             size="sm"
             variant="outlined"
             disabled={pending}
+            max={40}
             onChange={(v) => onDraft({ ...draft, leagueRound: v })}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TeamLeagueRoundField
+            value={draft.leagueNumGames || ''}
+            size="sm"
+            placeholder='סה"כ מחזורים"'
+            label='מחזורי ליגה'
+            variant="outlined"
+            disabled={pending}
+            max={40}
+            onChange={(v) => onDraft({ ...draft, leagueNumGames: v })}
           />
         </Box>
       </Box>

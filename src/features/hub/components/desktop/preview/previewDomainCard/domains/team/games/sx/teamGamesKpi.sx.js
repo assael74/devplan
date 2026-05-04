@@ -4,6 +4,43 @@ import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Col
 const c = getEntityColors('teams')
 
 export const heroSx = {
+  heroTitleRowSx: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    minWidth: 0,
+  },
+
+  statusChipSx: {
+    borderRadius: 999,
+    px: 0.85,
+    py: 0.28,
+    bgcolor: 'background.surface',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'xs',
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+
+  dataStatusRowSx: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 0.5,
+    minWidth: 0,
+  },
+
+  dataStatusTextSx: {
+    color: 'text.secondary',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    minWidth: 0,
+  },
+
   rootSx: {
     position: 'relative',
     overflow: 'hidden',
@@ -47,22 +84,6 @@ export const heroSx = {
     zIndex: 1,
     display: 'grid',
     gap: 0.75,
-  },
-
-  heroTitleRowSx: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    flexWrap: 'wrap',
-    minWidth: 0,
-  },
-
-  heroTitleWrapSx: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.85,
-    minWidth: 0,
   },
 
   heroIconBoxSx: {

@@ -1,21 +1,48 @@
-// teamProfile/mobile/modules/games/components/gameCard/PlayerGameCardHeader.js
+// teamProfile/mobile/modules/games/components/gameCard/TeamGameCardHeader.js
 
 import React from 'react'
-import { Box, Typography, Avatar } from '@mui/joy'
+import { Box, Typography, Avatar, Tooltip } from '@mui/joy'
 
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
+import { resolveGameStatusMeta } from '../../../../../../../../shared/games/games.constants.js'
+
+function AvatarWithStatus({ src, statusMeta }) {
+  return (
+    <Tooltip title={statusMeta?.label || 'סטטוס משחק'} arrow>
+      <Box sx={{ position: 'relative', width: 35, height: 35, flexShrink: 0 }}>
+        <Avatar src={src} sx={{ width: 35, height: 35 }} />
+
+        <Box
+          sx={{
+            position: 'absolute',
+            left: -1,
+            bottom: -1,
+            width: 15,
+            height: 15,
+            borderRadius: '50%',
+            bgcolor: `${statusMeta?.color || 'neutral'}.solidBg`,
+            border: '2px solid',
+            borderColor: 'background.surface',
+            boxShadow: 'sm',
+          }}
+        />
+      </Box>
+    </Tooltip>
+  )
+}
 
 export default function TeamGameCardHeader({ game }) {
   const team = game?.team || null
 
   const clubName = team?.club?.clubName || 'הקבוצה שלי'
-
   const teamName = team?.teamName || 'ללא קבוצה'
-
   const rival = game?.rival || game?.rivel || 'ללא יריבה'
-
   const isAway = game?.homeKey === 'away'
+  const statusMeta = resolveGameStatusMeta(game)
+
+  const isPlayed = statusMeta.id === 'played'
+  const scoreLabel = isPlayed ? game?.score || '—' : '—'
 
   const avatarSrc = resolveEntityAvatar({
     entityType: 'team',
@@ -47,14 +74,17 @@ export default function TeamGameCardHeader({ game }) {
   return (
     <Box sx={{ display: 'grid', gap: 0.9, minWidth: 0 }}>
       <Box sx={sx.headerMain}>
-        <Avatar src={avatarSrc} sx={{ width: 35, height: 35 }} />
+        <AvatarWithStatus src={avatarSrc} statusMeta={statusMeta} />
 
         <Box sx={sx.boxSpace}>
           {isAway ? (
             <>
               {rivalBlock}
 
-              <Typography level="body-sm" sx={{ flex: '0 0 auto', color: 'text.tertiary', lineHeight: '24px' }}>
+              <Typography
+                level="body-sm"
+                sx={{ flex: '0 0 auto', color: 'text.tertiary', lineHeight: '24px' }}
+              >
                 -
               </Typography>
 
@@ -64,7 +94,10 @@ export default function TeamGameCardHeader({ game }) {
             <>
               {myTeamBlock}
 
-              <Typography level="body-sm" sx={{ flex: '0 0 auto', color: 'text.tertiary', lineHeight: '20px' }}>
+              <Typography
+                level="body-sm"
+                sx={{ flex: '0 0 auto', color: 'text.tertiary', lineHeight: '20px' }}
+              >
                 -
               </Typography>
 
@@ -75,7 +108,7 @@ export default function TeamGameCardHeader({ game }) {
 
         <Box sx={sx.scoreWrap}>
           <Typography level="title-md" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-            {game?.score || '—'}
+            {scoreLabel}
           </Typography>
         </Box>
       </Box>

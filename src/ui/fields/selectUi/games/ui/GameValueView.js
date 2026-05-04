@@ -1,4 +1,4 @@
-//  ui/fields/selectUi/games/ui/GameValueView.js
+// ui/fields/selectUi/games/ui/GameValueView.js
 
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
@@ -41,7 +41,15 @@ export default function GameValueView({ option, placeholder = 'בחר משחק' 
           נגד
         </Typography>
 
-        <Typography level="body-sm" noWrap sx={{ minWidth: 0, color: 'primary.500', fontWeight: 700 }}>
+        <Typography
+          level="body-sm"
+          noWrap
+          sx={{
+            minWidth: 0,
+            color: 'primary.500',
+            fontWeight: 700,
+          }}
+        >
           {option.opponentName}
         </Typography>
       </Box>
@@ -50,6 +58,12 @@ export default function GameValueView({ option, placeholder = 'בחר משחק' 
         <Typography level="body-xs" sx={{ opacity: 0.72, whiteSpace: 'nowrap' }}>
           {option.dateLabel}
         </Typography>
+
+        <MetaChip
+          label={option.statusMeta?.label}
+          color={option.statusMeta?.color || 'neutral'}
+          icon={option.statusMeta?.icon}
+        />
 
         <MetaChip
           label={option.typeMeta?.label}

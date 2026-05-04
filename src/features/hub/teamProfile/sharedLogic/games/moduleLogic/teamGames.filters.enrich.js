@@ -5,17 +5,38 @@ import {
   GAME_DIFFICULTY,
   GAME_RESULT,
   GAME_HOME_AWAY,
+  resolveGameStatusMeta,
+  isGamePlayed,
 } from '../../../../../../shared/games/games.constants.js'
 
 const safeArray = (v) => (Array.isArray(v) ? v : [])
+const safe = (v) => (v == null ? '' : String(v).trim())
 
 export const findConstItem = (arr, id) => {
   return safeArray(arr).find((item) => item?.id === id) || null
 }
 
 export const mapHomeToKey = (home) => {
-  if (home === true || home === 'true' || home === 1 || home === '1' || home === 'home') return 'home'
-  if (home === false || home === 'false' || home === 0 || home === '0' || home === 'away') return 'away'
+  if (
+    home === true ||
+    home === 'true' ||
+    home === 1 ||
+    home === '1' ||
+    home === 'home'
+  ) {
+    return 'home'
+  }
+
+  if (
+    home === false ||
+    home === 'false' ||
+    home === 0 ||
+    home === '0' ||
+    home === 'away'
+  ) {
+    return 'away'
+  }
+
   return ''
 }
 
@@ -31,7 +52,12 @@ export const buildTeamPlayersMap = (team) => {
 }
 
 export const enrichGamePlayers = (game, teamPlayersMap) => {
-  const rawGamePlayers = safeArray(game?.game?.gamePlayers)
+  const rawGamePlayers = safeArray(
+    game?.gamePlayers ||
+      game?.game?.gamePlayers ||
+      game?.players ||
+      game?.game?.players
+  )
 
   return rawGamePlayers.map((item) => {
     const playerId = item?.playerId || item?.id || ''
@@ -51,33 +77,48 @@ export const enrichGamePlayers = (game, teamPlayersMap) => {
 export const enrichGameWithTeam = (game, team) => {
   const srcTeam = team || {}
 
+  const gameStatus = safe(game?.gameStatus) || 'scheduled'
+  const statusMeta = resolveGameStatusMeta(gameStatus)
+  const played = isGamePlayed({ gameStatus })
+
   const typeMeta = findConstItem(GAME_TYPE, game?.type)
   const difficultyMeta = findConstItem(GAME_DIFFICULTY, game?.difficulty)
-  const resultMeta = findConstItem(GAME_RESULT, game?.result)
+  const resultMeta = played ? findConstItem(GAME_RESULT, game?.result) : null
 
-  const homeKey = mapHomeToKey(game?.home)
+  const homeKey = mapHomeToKey(game?.home ?? game?.homeKey)
   const homeMeta = findConstItem(GAME_HOME_AWAY, homeKey)
 
   const teamPlayersMap = buildTeamPlayersMap(srcTeam)
   const gamePlayers = enrichGamePlayers(game, teamPlayersMap)
+  //console.log(game)
 
   const hasVideo = !!game?.vLink
 
   return {
     ...game,
+
     team: srcTeam,
-    teamId: srcTeam?.id || '',
-    teamName: srcTeam?.teamName || srcTeam?.name || '',
-    teamPhoto: srcTeam?.photo || '',
+    teamId: srcTeam?.id || game?.teamId || '',
+    teamName: srcTeam?.teamName || srcTeam?.name || game?.teamName || '',
+    teamPhoto: srcTeam?.photo || game?.teamPhoto || '',
+
+    gameStatus,
+    statusH: statusMeta?.labelH || 'מתוכנן',
+    statusIcon: statusMeta?.idIcon || 'calendar',
+    statusColor: statusMeta?.color || 'neutral',
 
     typeH: typeMeta?.labelH || game?.typeH || game?.type || '',
     typeIcon: typeMeta?.idIcon || 'game',
 
-    difficultyH: difficultyMeta?.labelH || game?.difficultyH || game?.difficulty || '',
+    difficultyH:
+      difficultyMeta?.labelH || game?.difficultyH || game?.difficulty || '',
     difficultyIcon: difficultyMeta?.idIcon || 'difficulty',
 
-    resultH: resultMeta?.labelH || game?.resultH || game?.result || '',
-    resultIcon: resultMeta?.idIcon || 'result',
+    result: played ? game?.result || '' : '',
+    resultH: played ? resultMeta?.labelH || game?.resultH || game?.result || '' : '',
+    resultIcon: played ? resultMeta?.idIcon || 'result' : 'result',
+
+    score: played ? game?.score || '' : '',
 
     homeKey,
     homeH: homeMeta?.labelH || '',

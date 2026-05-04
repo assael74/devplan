@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react'
 import {
   Box,
+  Chip,
   Input,
   Option,
   Select,
@@ -57,6 +58,31 @@ export default function GamesFiltersContent({
           />
 
           <FormHelperText>חיפוש חופשי ברשימת משחקי הקבוצה</FormHelperText>
+        </FormControl>
+      </Box>
+
+      <Box sx={{ px: 2 }}>
+        <FormControl>
+          <FormLabel>סטטוס משחקים</FormLabel>
+
+          <Chip
+            size="sm"
+            variant={filters?.onlyPlayed ? 'solid' : 'outlined'}
+            color={filters?.onlyPlayed ? 'success' : 'neutral'}
+            onClick={() => onChangeFilters({ onlyPlayed: !filters?.onlyPlayed })}
+            startDecorator={iconUi({ id: 'upcoming' })}
+            sx={{
+              width: 'fit-content',
+              cursor: 'pointer',
+              fontWeight: 700,
+            }}
+          >
+            רק משחקים ששוחקו
+          </Chip>
+
+          <FormHelperText>
+            מציג רק משחקים שכבר הוזנה להם תוצאה
+          </FormHelperText>
         </FormControl>
       </Box>
 

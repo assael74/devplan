@@ -13,6 +13,7 @@ export const TEAM_GAMES_FILTER_KEYS = [
   'homeKey',
   'resultKey',
   'difficultyKey',
+  'onlyPlayed',
 ]
 
 export const TEAM_GAMES_OPTION_CONFIG = [
@@ -55,4 +56,5 @@ export const createInitialTeamGamesFilters = () => ({
   homeKey: '',
   resultKey: '',
   difficultyKey: '',
+  onlyPlayed: false,
 })

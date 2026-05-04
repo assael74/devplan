@@ -47,6 +47,7 @@ export const shortsUpdateRouterMap = {
     leaguePosition: { shortKey: 'teams.teamsInfo', path: 'leaguePosition', mode: 'merge' },
     leagueGoalsFor: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsFor', mode: 'merge' },
     leagueRound: { shortKey: 'teams.teamsInfo', path: 'leagueRound', mode: 'merge' },
+    leagueNumGames: { shortKey: 'teams.teamsInfo', path: 'leagueNumGames', mode: 'merge' },
     leagueGoalsAgainst: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsAgainst', mode: 'merge' },
 
     targetsStatus: { shortKey: 'teams.teamsTargets', path: 'status', mode: 'merge' },
@@ -154,6 +155,7 @@ export const shortsUpdateRouterMap = {
     rivel: { shortKey: 'games.gameInfo', path: 'rivel', mode: 'merge' },
     type: { shortKey: 'games.gameInfo', path: 'type', mode: 'merge' },
     vLink: { shortKey: 'games.gameInfo', path: 'vLink', mode: 'merge' },
+    gameStatus: { shortKey: 'games.gameInfo', path: 'gameStatus', mode: 'merge' },
 
     gameDate: { shortKey: 'games.gameTime', path: 'gameDate', mode: 'merge' },
     gameDuration: { shortKey: 'games.gameTime', path: 'gameDuration', mode: 'merge' },

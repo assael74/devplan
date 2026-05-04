@@ -110,6 +110,7 @@ export default function EditDrawer({
     <DrawerShell
       entity="team"
       open={open}
+      anchor='bottom'
       onClose={onClose}
       saving={pending}
       isDirty={isDirty}

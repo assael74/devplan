@@ -20,15 +20,6 @@ const isValidDateFormat = (value) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
-const getGameResult = ({ goalsFor, goalsAgainst }) => {
-  const gf = toNumOrZero(goalsFor)
-  const ga = toNumOrZero(goalsAgainst)
-
-  if (gf > ga) return 'win'
-  if (gf < ga) return 'loss'
-  return 'draw'
-}
-
 function buildComparableTeamGameCreateDraft(draft = {}) {
   return {
     gameDate: safe(draft?.gameDate),
@@ -43,6 +34,7 @@ function buildComparableTeamGameCreateDraft(draft = {}) {
     goalsFor: toNumOrZero(draft?.goalsFor),
     goalsAgainst: toNumOrZero(draft?.goalsAgainst),
     result: safe(draft?.result),
+    gameStatus: safe(draft?.gameStatus || 'scheduled'),
   }
 }
 
@@ -66,6 +58,7 @@ export function buildTeamGameCreateDraft(context = {}) {
     goalsFor: 0,
     goalsAgainst: 0,
     result: '',
+    gameStatus: 'scheduled',
   }
 }
 
@@ -173,7 +166,8 @@ export function buildTeamGameCreatePayload(draft = {}, context = {}) {
 
     goalsFor,
     goalsAgainst,
-    result: getGameResult({ goalsFor, goalsAgainst }),
+    result: '',
+    gameStatus: 'scheduled',
 
     gamePlayers: Array.isArray(draft?.gamePlayers) ? draft.gamePlayers : [],
     createdAt: Date.now(),

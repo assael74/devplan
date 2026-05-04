@@ -14,6 +14,19 @@ export const sectionsSx = {
     borderRadius: 'lg',
   },
 
+  avatarDot: (statusMeta) => ({
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: 13,
+    height: 13,
+    borderRadius: '50%',
+    bgcolor: `${statusMeta?.color || 'neutral'}.solidBg`,
+    border: '2px solid',
+    borderColor: 'background.surface',
+    boxShadow: 'sm',
+  }),
+
   infoCellSx: {
     minWidth: 0,
     display: 'flex',

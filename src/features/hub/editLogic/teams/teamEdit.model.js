@@ -56,6 +56,7 @@ export function buildTeamEditInitial(team = {}) {
     leagueLevel: clean(source?.leagueLevel),
     leaguePosition: clean(source?.leaguePosition),
     leagueRound: clean(source?.leagueRound),
+    leagueNumGames: clean(source?.leagueNumGames),
 
     points: clean(source?.points),
     leagueGoalsFor: clean(source?.leagueGoalsFor),
@@ -80,6 +81,7 @@ export function isTeamEditDirty(draft = {}, initial = {}) {
     draft.leagueLevel !== initial.leagueLevel ||
     draft.leaguePosition !== initial.leaguePosition ||
     draft.leagueRound !== initial.leagueRound ||
+    draft.leagueNumGames !== initial.leagueNumGames ||
     draft.points !== initial.points ||
     draft.leagueGoalsFor !== initial.leagueGoalsFor ||
     draft.leagueGoalsAgainst !== initial.leagueGoalsAgainst ||
@@ -106,6 +108,7 @@ export function buildTeamEditPatch(draft = {}, initial = {}) {
   addIfChanged(next, draft, initial, 'leagueLevel')
   addIfChanged(next, draft, initial, 'leaguePosition')
   addIfChanged(next, draft, initial, 'leagueRound')
+  addIfChanged(next, draft, initial, 'leagueNumGames')
 
   addIfChanged(next, draft, initial, 'points')
   addIfChanged(next, draft, initial, 'leagueGoalsFor')

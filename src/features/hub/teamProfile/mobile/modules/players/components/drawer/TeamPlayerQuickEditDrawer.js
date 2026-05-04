@@ -104,6 +104,7 @@ export default function TeamPlayerQuickEditDrawer({
       entity="player"
       size='lg'
       open={open}
+      anchor='bottom'
       onClose={onClose}
       saving={pending}
       isDirty={isDirty}

@@ -129,7 +129,7 @@ export default function TeamGamesModule({
         onClose={() => setInsightsOpen(false)}
         summary={summary}
         games={sortedGames}
-        entity={liveTeam}
+        team={liveTeam}
       />
 
       <EditDrawer

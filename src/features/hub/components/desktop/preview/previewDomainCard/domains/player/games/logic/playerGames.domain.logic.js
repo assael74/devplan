@@ -2,7 +2,11 @@
 
 import { DOMAIN_STATE } from '../../../../../preview.state'
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
-import { GAME_TYPE, GAME_DIFFICULTY } from '../../../../../../../../../../shared/games/games.constants.js'
+import {
+  GAME_TYPE,
+  GAME_DIFFICULTY,
+  isGamePlayed,
+} from '../../../../../../../../../../shared/games/games.constants.js'
 import { createGameRowNormalizer } from '../../../../../../../../../../shared/games/games.normalize.logic.js'
 import { buildGamesView } from '../../../../../../../../../../shared/games/games.view.logic.js'
 import { aggSummary, n } from '../../../../../../../../../../shared/games/games.summary.logic.js'
@@ -29,12 +33,14 @@ const normalizeRow = createGameRowNormalizer({
   },
 })
 
-const getResolvedResult = ({ row, game }) => {
-  const rawResult = safe(row?.result).trim()
+const getResolvedResult = ({ row, game, played }) => {
+  if (!played) return ''
+
+  const rawResult = safe(row?.result || game?.result).trim()
   if (rawResult) return rawResult
 
-  const goalsForRaw = game?.goalsFor
-  const goalsAgainstRaw = game?.goalsAgainst
+  const goalsForRaw = game?.goalsFor ?? row?.goalsFor
+  const goalsAgainstRaw = game?.goalsAgainst ?? row?.goalsAgainst
 
   const hasGoalsFor =
     goalsForRaw !== '' &&
@@ -56,8 +62,10 @@ const getResolvedResult = ({ row, game }) => {
   return 'draw'
 }
 
-const getResolvedPoints = ({ row, result }) => {
-  const rawPoints = Number(row?.points)
+const getResolvedPoints = ({ row, game, result, played }) => {
+  if (!played) return 0
+
+  const rawPoints = Number(row?.points ?? game?.points)
   if (Number.isFinite(rawPoints)) return rawPoints
 
   if (result === 'win') return 3
@@ -79,6 +87,8 @@ const enrichRow = (row) => {
   const typeMeta = typeMetaById[row?.type] || null
   const diffMeta = diffMetaById[row?.difficulty] || null
   const isHome = !!row?.isHome
+  const gameStatus = safe(game?.gameStatus || row?.gameStatus || 'scheduled')
+  const played = isGamePlayed({ gameStatus })
 
   const goalsForRaw = game?.goalsFor
   const goalsAgainstRaw = game?.goalsAgainst
@@ -95,8 +105,8 @@ const enrichRow = (row) => {
 
   const goalsFor = hasGoalsFor ? Number(goalsForRaw) : ''
   const goalsAgainst = hasGoalsAgainst ? Number(goalsAgainstRaw) : ''
-  const result = getResolvedResult({ row, game })
-  const points = getResolvedPoints({ row, result })
+  const result = getResolvedResult({ row, game, played })
+  const points = getResolvedPoints({ row, game, result, played })
 
   return {
     ...row,
@@ -105,16 +115,23 @@ const enrichRow = (row) => {
     timePlayed,
     goals,
     assists,
+    gameStatus,
     isSelected,
     isStarting,
-    score: hasGoalsFor && hasGoalsAgainst ? `${goalsFor} - ${goalsAgainst}` : safe(row?.score).trim(),
+    score:
+      played && hasGoalsFor && hasGoalsAgainst
+        ? `${goalsFor} - ${goalsAgainst}`
+        : '',
     result,
     points,
     dateLabel: row?.dateH || '—',
     homeLabel: isHome ? 'בית' : 'חוץ',
     typeIcon: typeMeta?.idIcon || '',
     difficultyIcon: diffMeta?.idIcon || '',
-    raw: game,
+    raw: {
+      ...game,
+      gameStatus,
+    },
   }
 }
 
@@ -131,8 +148,7 @@ const calcLeaguePointsSummary = (rows) => {
   const leagueRows = (rows || []).filter((row) => row?.type === 'league')
 
   const playedLeagueRows = leagueRows.filter((row) => {
-    const result = safe(row?.result).trim().toLowerCase()
-    return result === 'win' || result === 'draw' || result === 'loss'
+    return isGamePlayed(row)
   })
 
   const achieved = playedLeagueRows.reduce((sum, row) => sum + n(row?.points), 0)

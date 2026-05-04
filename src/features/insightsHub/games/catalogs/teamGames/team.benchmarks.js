@@ -67,6 +67,9 @@ export const TEAM_GAMES_BENCHMARKS_CATALOG = [
     description: 'נקודת ייחוס לאחוז צבירת נקודות לפי רמת מיקום בטבלה.',
     benchmarkType: 'tableLevel',
     comparedMetric: 'team_games_points_rate',
+    comparedMetrics: [
+      'team_games_points_rate',
+    ],
     rows: buildRows('targetPointsRate', 'percent'),
     source: 'leagueTableAverage',
   },
@@ -77,6 +80,9 @@ export const TEAM_GAMES_BENCHMARKS_CATALOG = [
     description: 'נקודת ייחוס לכמות נקודות סופית צפויה לפי רמת מיקום בטבלה.',
     benchmarkType: 'tableLevel',
     comparedMetric: 'team_games_projected_total_points',
+    comparedMetrics: [
+      'team_games_projected_total_points',
+    ],
     rows: buildRows('targetPoints', 'points'),
     source: 'leagueTableAverage',
   },
@@ -87,6 +93,9 @@ export const TEAM_GAMES_BENCHMARKS_CATALOG = [
     description: 'נקודת ייחוס להפרש שערים לפי רמת מיקום בטבלה.',
     benchmarkType: 'tableLevel',
     comparedMetric: 'team_games_goal_difference',
+    comparedMetrics: [
+      'team_games_goal_difference',
+    ],
     rows: buildRows('targetGoalDifference', 'goals'),
     source: 'leagueTableAverage',
   },
@@ -94,9 +103,15 @@ export const TEAM_GAMES_BENCHMARKS_CATALOG = [
     id: 'team_games_benchmark_goals_for_by_table_level',
     group: TEAM_GAMES_BENCHMARK_GROUPS.GOALS,
     label: 'שערי זכות נדרשים לפי רמת טבלה',
-    description: 'נקודת ייחוס לכמות שערי זכות לפי רמת מיקום בטבלה.',
+    description: 'נקודת ייחוס לכמות שערי זכות לפי רמת מיקום בטבלה. ניתן לנרמל לקצב למשחק לפי leagueNumGames.',
     benchmarkType: 'tableLevel',
-    comparedMetric: 'team_games_goals_for_per_game',
+    comparedMetric: 'team_games_projected_goals_for',
+    comparedMetrics: [
+      'team_games_goals_for_per_game',
+      'team_games_projected_goals_for',
+    ],
+    supportsPerGameNormalization: true,
+    normalizedByField: 'leagueNumGames',
     rows: buildRows('targetGoalsFor', 'goals'),
     source: 'leagueTableAverage',
   },
@@ -104,9 +119,15 @@ export const TEAM_GAMES_BENCHMARKS_CATALOG = [
     id: 'team_games_benchmark_goals_against_by_table_level',
     group: TEAM_GAMES_BENCHMARK_GROUPS.GOALS,
     label: 'שערי חובה נדרשים לפי רמת טבלה',
-    description: 'נקודת ייחוס לכמות שערי חובה לפי רמת מיקום בטבלה.',
+    description: 'נקודת ייחוס לכמות שערי חובה לפי רמת מיקום בטבלה. ניתן לנרמל לקצב למשחק לפי leagueNumGames.',
     benchmarkType: 'tableLevel',
-    comparedMetric: 'team_games_goals_against_per_game',
+    comparedMetric: 'team_games_projected_goals_against',
+    comparedMetrics: [
+      'team_games_goals_against_per_game',
+      'team_games_projected_goals_against',
+    ],
+    supportsPerGameNormalization: true,
+    normalizedByField: 'leagueNumGames',
     rows: buildRows('targetGoalsAgainst', 'goals'),
     source: 'leagueTableAverage',
   },
@@ -118,4 +139,14 @@ export const getTeamGamesBenchmarkById = (id) => {
 
 export const getTeamGamesBenchmarksByGroup = (group) => {
   return TEAM_GAMES_BENCHMARKS_CATALOG.filter((benchmark) => benchmark.group === group)
+}
+
+export const getTeamGamesBenchmarksByComparedMetric = (metricId) => {
+  return TEAM_GAMES_BENCHMARKS_CATALOG.filter((benchmark) => {
+    if (benchmark.comparedMetric === metricId) return true
+    if (Array.isArray(benchmark.comparedMetrics)) {
+      return benchmark.comparedMetrics.includes(metricId)
+    }
+    return false
+  })
 }

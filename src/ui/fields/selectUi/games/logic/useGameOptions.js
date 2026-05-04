@@ -1,17 +1,19 @@
-// ui/fields/selectUi/games/logic/useGameOptions.js
-
-// ui/fields/selectUi/games/logic/useGameOptions.js
-
 import { useMemo } from 'react'
+
 import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
-import { GAME_TYPE } from '../../../../../shared/games/games.constants.js'
+import {
+  GAME_TYPE,
+  GAME_STATUS,
+} from '../../../../../shared/games/games.constants.js'
 
 const safeId = (v) => (v == null ? '' : String(v))
 const safeStr = (v) => (v == null ? '' : String(v))
+
 const safeNum = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }
+
 const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : [])
 
 const GAME_TYPE_MAP = GAME_TYPE.reduce((acc, item) => {
@@ -19,7 +21,24 @@ const GAME_TYPE_MAP = GAME_TYPE.reduce((acc, item) => {
   return acc
 }, {})
 
-const getHomeAwayMeta = (game) => {
+const GAME_STATUS_MAP = GAME_STATUS.reduce((acc, item) => {
+  acc[item.id] = item
+  return acc
+}, {})
+
+const getStatusMeta = (game = {}) => {
+  const statusId = safeStr(game?.gameStatus || 'scheduled')
+  const match = GAME_STATUS_MAP[statusId] || GAME_STATUS_MAP.scheduled
+
+  return {
+    id: match?.id || 'scheduled',
+    label: match?.labelH || match?.label || 'מתוכנן',
+    icon: match?.idIcon || 'calendar',
+    color: match?.color || 'neutral',
+  }
+}
+
+const getHomeAwayMeta = (game = {}) => {
   if (game?.home === true) {
     return {
       id: 'home',
@@ -46,7 +65,16 @@ const getHomeAwayMeta = (game) => {
   }
 }
 
-const getResultMeta = (game) => {
+const getResultMeta = (game = {}) => {
+  if (safeStr(game?.gameStatus) !== 'played') {
+    return {
+      label: '',
+      icon: 'games',
+      color: 'neutral',
+      resultKey: '',
+    }
+  }
+
   const gf = safeNum(game?.goalsFor)
   const ga = safeNum(game?.goalsAgainst)
 
@@ -85,12 +113,14 @@ const getResultMeta = (game) => {
   }
 }
 
-const getOpponentName = (game) => {
+const getOpponentName = (game = {}) => {
   if (safeStr(game?.rivel)) return safeStr(game.rivel)
+  if (safeStr(game?.rival)) return safeStr(game.rival)
+
   return 'ללא יריבה'
 }
 
-const getTypeMeta = (game) => {
+const getTypeMeta = (game = {}) => {
   const typeId = safeStr(game?.type)
   const match = GAME_TYPE_MAP[typeId]
 
@@ -109,16 +139,19 @@ const getTypeMeta = (game) => {
   }
 }
 
-const findPlayerInList = (list, playerId) =>
-  toArr(list).find((item) => {
-    if (!item) return false
+const findPlayerInList = (list, playerId) => {
+  return (
+    toArr(list).find((item) => {
+      if (!item) return false
 
-    if (typeof item === 'string' || typeof item === 'number') {
-      return safeId(item) === safeId(playerId)
-    }
+      if (typeof item === 'string' || typeof item === 'number') {
+        return safeId(item) === safeId(playerId)
+      }
 
-    return safeId(item?.playerId || item?.id) === safeId(playerId)
-  }) || null
+      return safeId(item?.playerId || item?.id) === safeId(playerId)
+    }) || null
+  )
+}
 
 const getPlayerGameStatus = (game, playerId) => {
   if (!playerId || !game) {
@@ -168,8 +201,22 @@ const getPlayerGameStatus = (game, playerId) => {
   }
 }
 
-const buildSearchKey = (parts) =>
-  parts.filter(Boolean).join(' · ').toLowerCase()
+const buildSearchKey = (parts) => {
+  return parts.filter(Boolean).join(' · ').toLowerCase()
+}
+
+const getDateLabel = (dateRaw) => {
+  return dateRaw ? getFullDateIl(dateRaw) : 'ללא תאריך'
+}
+
+const getTeamName = ({ game, fallback }) => {
+  return (
+    safeStr(game?.team?.teamName) ||
+    safeStr(game?.teamName) ||
+    fallback ||
+    'ללא קבוצה'
+  )
+}
 
 export default function useGameOptions({
   value = '',
@@ -199,9 +246,14 @@ export default function useGameOptions({
           safeStr(game?.date) ||
           safeStr(game?.matchDate)
 
-        const dateLabel = dateRaw ? getFullDateIl(dateRaw) : 'ללא תאריך'
-        const teamName = safeStr(game?.team?.teamName) || resolvedTeamName || 'ללא קבוצה'
+        const dateLabel = getDateLabel(dateRaw)
+        const teamName = getTeamName({
+          game,
+          fallback: resolvedTeamName,
+        })
+
         const opponentName = getOpponentName(game)
+        const statusMeta = getStatusMeta(game)
         const homeAwayMeta = getHomeAwayMeta(game)
         const resultMeta = getResultMeta(game)
         const typeMeta = getTypeMeta(game)
@@ -210,11 +262,16 @@ export default function useGameOptions({
         return {
           value: gameId,
           game,
+
           dateRaw,
           dateLabel,
+
           teamId: resolvedTeamId,
           teamName,
           opponentName,
+
+          gameStatus: statusMeta.id,
+          statusMeta,
 
           type: safeStr(game?.type),
           typeMeta,
@@ -232,16 +289,26 @@ export default function useGameOptions({
           isStarting: playerStatus.isStarting,
 
           primaryLine: `${teamName} · ${opponentName}`,
-          secondaryLine: [dateLabel, resultMeta.label, homeAwayMeta.label, typeMeta.label]
+
+          secondaryLine: [
+            dateLabel,
+            statusMeta.label,
+            resultMeta.label,
+            homeAwayMeta.label,
+            typeMeta.label,
+          ]
             .filter(Boolean)
             .join(' · '),
 
-          shortLabel: [teamName, opponentName, dateLabel].filter(Boolean).join(' · '),
+          shortLabel: [teamName, opponentName, dateLabel]
+            .filter(Boolean)
+            .join(' · '),
 
           searchKey: buildSearchKey([
             teamName,
             opponentName,
             dateLabel,
+            statusMeta.label,
             resultMeta.label,
             homeAwayMeta.label,
             typeMeta.label,
@@ -256,10 +323,12 @@ export default function useGameOptions({
       })
   }, [player, options, teamId])
 
-  const selectedOption = useMemo(
-    () => indexedOptions.find((item) => safeId(item.value) === safeId(value)) || null,
-    [indexedOptions, value]
-  )
+  const selectedOption = useMemo(() => {
+    return (
+      indexedOptions.find((item) => safeId(item.value) === safeId(value)) ||
+      null
+    )
+  }, [indexedOptions, value])
 
   return {
     indexedOptions,

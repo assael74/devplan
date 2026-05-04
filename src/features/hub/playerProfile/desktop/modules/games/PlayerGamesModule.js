@@ -72,7 +72,7 @@ export default function PlayerGamesModule({
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
   const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
-
+  
   return (
     <>
       <SectionPanel>
@@ -133,7 +133,7 @@ export default function PlayerGamesModule({
         onClose={() => setInsightsOpen(false)}
         summary={summary}
         games={sortedGames}
-        entity={livePlayer}
+        player={livePlayer}
       />
     </>
   )

@@ -1,3 +1,10 @@
+const toTargetNumber = (value) => {
+  if (value === undefined || value === null || value === '') return null
+
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
 export function buildTeamTargetsState(raw = null) {
   if (!raw) {
     return {
@@ -12,11 +19,11 @@ export function buildTeamTargetsState(raw = null) {
   }
 
   const values = {
-    position: raw.targetPosition ?? null,
-    points: raw.targetPoints ?? null,
-    successRate: raw.targetSuccessRate ?? null,
-    goalsFor: raw.targetGoalsFor ?? null,
-    goalsAgainst: raw.targetGoalsAgainst ?? null,
+    position: toTargetNumber(raw.targetPosition),
+    points: toTargetNumber(raw.targetPoints),
+    successRate: toTargetNumber(raw.targetSuccessRate),
+    goalsFor: toTargetNumber(raw.targetGoalsFor),
+    goalsAgainst: toTargetNumber(raw.targetGoalsAgainst),
   }
 
   const items = [
@@ -57,7 +64,7 @@ export function buildTeamTargetsState(raw = null) {
     status: raw.status || '',
     assignedAt: raw.assignedAt || '',
     assignedBy: raw.assignedBy || '',
-    benchmarkLevelId: raw.benchmarkLevelId || '',
+    benchmarkLevelId: raw.benchmarkLevelId || raw.targetsBenchmarkLevelId || '',
     source: raw.source || '',
     sourceVersion: raw.sourceVersion || '',
     values,

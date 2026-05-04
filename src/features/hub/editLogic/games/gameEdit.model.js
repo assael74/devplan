@@ -5,6 +5,9 @@ import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
 export const safe = (value) => (value == null ? '' : String(value))
 export const clean = (value) => safe(value).trim()
 
+const GAME_STATUS_SCHEDULED = 'scheduled'
+const GAME_STATUS_PLAYED = 'played'
+
 export const toNumOrEmpty = (value) => {
   if (value === '' || value == null) return ''
 
@@ -66,16 +69,43 @@ const unwrapGame = (game = {}) => {
   }
 }
 
+const isPlayedStatus = (gameStatus) => {
+  return clean(gameStatus) === GAME_STATUS_PLAYED
+}
+
+const resolvePlayedResult = ({ gameStatus, source, goalsFor, goalsAgainst }) => {
+  if (!isPlayedStatus(gameStatus)) return ''
+
+  return clean(source?.result) || calcResultByGoals(goalsFor, goalsAgainst) || ''
+}
+
+const resolvePlayedScore = ({ gameStatus, goalsFor, goalsAgainst }) => {
+  if (!isPlayedStatus(gameStatus)) return ''
+
+  return goalsFor !== '' && goalsAgainst !== ''
+    ? `${goalsFor} - ${goalsAgainst}`
+    : ''
+}
+
+const resolvePlayedPoints = ({ gameStatus, result, goalsFor, goalsAgainst }) => {
+  if (!isPlayedStatus(gameStatus)) return 0
+
+  return calcPointsByResult(result, goalsFor, goalsAgainst)
+}
+
 export const buildGameEditInitial = (game = {}) => {
   const source = unwrapGame(game)
 
   const goalsFor = toNumOrEmpty(source?.goalsFor)
   const goalsAgainst = toNumOrEmpty(source?.goalsAgainst)
+  const gameStatus = clean(source?.gameStatus) || GAME_STATUS_SCHEDULED
 
-  const result =
-    clean(source?.result) ||
-    calcResultByGoals(goalsFor, goalsAgainst) ||
-    ''
+  const result = resolvePlayedResult({
+    gameStatus,
+    source,
+    goalsFor,
+    goalsAgainst,
+  })
 
   return {
     id: clean(source?.id || source?.gameId),
@@ -100,13 +130,21 @@ export const buildGameEditInitial = (game = {}) => {
     goalsFor,
     goalsAgainst,
     result,
+    gameStatus,
 
-    score:
-      goalsFor !== '' && goalsAgainst !== ''
-        ? `${goalsFor} - ${goalsAgainst}`
-        : '',
+    // שדות תצוגה בלבד — לא נשלחים ב־patch
+    score: resolvePlayedScore({
+      gameStatus,
+      goalsFor,
+      goalsAgainst,
+    }),
 
-    points: calcPointsByResult(result, goalsFor, goalsAgainst),
+    points: resolvePlayedPoints({
+      gameStatus,
+      result,
+      goalsFor,
+      goalsAgainst,
+    }),
 
     raw: source,
     metaLabel: buildGameMeta(source),
@@ -128,9 +166,30 @@ export const buildGameEditPatch = (draft = {}, initial = {}) => {
     next.gameDuration = draft.gameDuration === '' ? '' : Number(draft.gameDuration)
   }
 
+  const draftGameStatus = clean(draft.gameStatus) || GAME_STATUS_SCHEDULED
+  const initialGameStatus = clean(initial.gameStatus) || GAME_STATUS_SCHEDULED
+  const gameStatusChanged = draftGameStatus !== initialGameStatus
+
   const goalsForChanged = draft.goalsFor !== initial.goalsFor
   const goalsAgainstChanged = draft.goalsAgainst !== initial.goalsAgainst
   const resultChanged = draft.result !== initial.result
+
+  const resultDataChanged =
+    goalsForChanged || goalsAgainstChanged || resultChanged
+
+  const shouldAutoMarkPlayed =
+    !gameStatusChanged &&
+    initialGameStatus === GAME_STATUS_SCHEDULED &&
+    draftGameStatus === GAME_STATUS_SCHEDULED &&
+    resultDataChanged
+
+  const nextGameStatus = shouldAutoMarkPlayed
+    ? GAME_STATUS_PLAYED
+    : draftGameStatus
+
+  if (gameStatusChanged || shouldAutoMarkPlayed) {
+    next.gameStatus = nextGameStatus
+  }
 
   if (goalsForChanged) {
     next.goalsFor = draft.goalsFor === '' ? '' : Number(draft.goalsFor)
@@ -140,23 +199,23 @@ export const buildGameEditPatch = (draft = {}, initial = {}) => {
     next.goalsAgainst = draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
   }
 
-  if (goalsForChanged || goalsAgainstChanged || resultChanged) {
+  if (resultDataChanged || gameStatusChanged || shouldAutoMarkPlayed) {
     const nextGoalsFor = draft.goalsFor === '' ? '' : Number(draft.goalsFor)
-    const nextGoalsAgainst = draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
+    const nextGoalsAgainst =
+      draft.goalsAgainst === '' ? '' : Number(draft.goalsAgainst)
 
-    const nextResult =
-      clean(draft.result) ||
-      calcResultByGoals(nextGoalsFor, nextGoalsAgainst) ||
-      ''
+    if (nextGameStatus === GAME_STATUS_PLAYED) {
+      const nextResult =
+        clean(draft.result) ||
+        calcResultByGoals(nextGoalsFor, nextGoalsAgainst) ||
+        ''
 
-    next.result = nextResult
-
-    next.score =
-      draft.goalsFor !== '' && draft.goalsAgainst !== ''
-        ? `${draft.goalsFor} - ${draft.goalsAgainst}`
-        : ''
-
-    next.points = calcPointsByResult(nextResult, nextGoalsFor, nextGoalsAgainst)
+      next.result = nextResult
+      next.gameStatus = GAME_STATUS_PLAYED
+    } else {
+      next.result = ''
+      next.gameStatus = nextGameStatus
+    }
   }
 
   return next
@@ -174,6 +233,7 @@ export const isGameEditDirty = (draft = {}, initial = {}) => {
     draft.gameDuration !== initial.gameDuration ||
     draft.goalsFor !== initial.goalsFor ||
     draft.goalsAgainst !== initial.goalsAgainst ||
+    draft.gameStatus !== initial.gameStatus ||
     draft.result !== initial.result
   )
 }

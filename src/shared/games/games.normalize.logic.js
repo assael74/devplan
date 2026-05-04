@@ -8,6 +8,7 @@ import {
   homeLabelH,
 } from './games.labels.js'
 import { scoreFromGameAndStats } from './games.score.logic.js'
+import { isGamePlayed } from './games.constants.js'
 
 const toNum = (v, fallback = 0) => {
   const n = Number(v)
@@ -51,6 +52,18 @@ const mapHomeToKey = (game) => {
   return ''
 }
 
+const pickGameStatusDefault = (row = {}, game = {}, stats = {}) => {
+  return safe(
+    row?.gameStatus ??
+      game?.gameStatus ??
+      game?.game?.gameStatus ??
+      stats?.gameStatus ??
+      row?.raw?.gameStatus
+  )
+    .trim()
+    .toLowerCase()
+}
+
 export const createGameRowNormalizer = (cfg) => {
   const pick = cfg?.pick || {}
   const formatDateH = cfg?.formatDateH || ((dateRaw) => dateRaw || '')
@@ -58,6 +71,10 @@ export const createGameRowNormalizer = (cfg) => {
   const pickId = pick.pickId || ((row) => safe(row?.id))
   const pickGame = pick.pickGame || ((row) => row?.game || row || {})
   const pickStats = pick.pickStats || ((row) => row?.stats || row || {})
+
+  const pickGameStatus =
+    pick.pickGameStatus ||
+    ((row, game, stats) => pickGameStatusDefault(row, game, stats))
 
   const pickType =
     pick.pickType ||
@@ -96,7 +113,9 @@ export const createGameRowNormalizer = (cfg) => {
 
   const pickResult =
     pick.pickResult ||
-    ((game, stats) => {
+    ((game, stats, played) => {
+      if (!played) return ''
+
       const direct = safe(stats?.result ?? game?.result).trim().toLowerCase()
       if (direct === 'win' || direct === 'draw' || direct === 'loss') return direct
 
@@ -107,7 +126,9 @@ export const createGameRowNormalizer = (cfg) => {
 
   const pickPoints =
     pick.pickPoints ||
-    ((stats, game) => {
+    ((stats, game, played) => {
+      if (!played) return 0
+
       const direct = Number(stats?.points ?? game?.points)
       if (Number.isFinite(direct)) return direct
 
@@ -118,7 +139,9 @@ export const createGameRowNormalizer = (cfg) => {
 
   const pickScore =
     pick.pickScore ||
-    ((game, stats) => {
+    ((game, stats, played) => {
+      if (!played) return ''
+
       const gf = pickGoalsFor(game, stats)
       const ga = pickGoalsAgainst(game, stats)
 
@@ -174,18 +197,22 @@ export const createGameRowNormalizer = (cfg) => {
   return (row) => {
     const game = pickGame(row)
     const stats = pickStats(row)
-    //console.log(row)
+
     const id = safe(pickId(row)) || safe(game?.id)
     const type = pickType(game)
     const difficulty = pickDifficulty(game)
+
+    const rawGameStatus = pickGameStatus(row, game, stats)
+    const gameStatus = rawGameStatus || 'scheduled'
+    const played = isGamePlayed({ gameStatus })
 
     const dateRaw = pickDateRaw(game)
     const hourRaw = pickHourRaw(game)
 
     const goalsFor = pickGoalsFor(game, stats)
     const goalsAgainst = pickGoalsAgainst(game, stats)
-    const result = pickResult(game, stats)
-    const points = pickPoints(stats, game)
+    const result = pickResult(game, stats, played)
+    const points = pickPoints(stats, game, played)
 
     const gameDuration = pickGameDuration(game)
     const timePlayed = pickTimePlayed(row, game, stats)
@@ -203,8 +230,15 @@ export const createGameRowNormalizer = (cfg) => {
 
     return {
       id,
-      game,
+      game: {
+        ...game,
+        gameStatus,
+        rawGameStatus,
+      },
       stats,
+
+      rawGameStatus,
+      gameStatus,
 
       type,
       typeH: typeLabelH(type),
@@ -223,9 +257,9 @@ export const createGameRowNormalizer = (cfg) => {
       home: isHome,
       isHome,
 
-      score: pickScore(game, stats),
+      score: pickScore(game, stats, played),
       result,
-      resultH: resultLabelH(result),
+      resultH: played ? resultLabelH(result) : '',
       points,
 
       goalsFor,

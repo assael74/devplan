@@ -1,5 +1,7 @@
 // teamProfile/sharedLogic/games/moduleLogic/teamGames.section.utils.js
 
+import { isGamePlayed } from '../../../../../../shared/games/games.constants.js'
+
 const safe = (v) => (v == null ? '' : String(v))
 
 const resultColorMap = {
@@ -14,13 +16,18 @@ const resultLabelMap = {
   loss: 'הפסד',
 }
 
-export const getResultKey = (game) => safe(game?.result).trim().toLowerCase()
+export const getResultKey = (game) => {
+  if (!isGamePlayed(game)) return ''
+  return safe(game?.result).trim().toLowerCase()
+}
 
 export const getResultLabel = (game) => {
+  if (!isGamePlayed(game)) return 'לא שוחק'
   return game?.resultH || resultLabelMap[getResultKey(game)] || 'לא שוחק'
 }
 
 export const getResultColor = (game) => {
+  if (!isGamePlayed(game)) return 'neutral'
   return resultColorMap[getResultKey(game)] || 'neutral'
 }
 

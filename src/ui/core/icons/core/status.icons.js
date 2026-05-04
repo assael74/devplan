@@ -1,4 +1,5 @@
 import {
+  AdsClick,
   ArrowBack,
   ArrowForward,
   Beenhere,
@@ -66,6 +67,7 @@ export const statusIcons = {
   teamMeeting: <Diversity2 />,
   teamMeetting: <Diversity2 />,
   thinking: <PsychologyAlt />,
+  targets: <AdsClick />,
   weakness: <ReportProblem />,
   planned: <NextPlan />,
   completed: <CheckCircle />,

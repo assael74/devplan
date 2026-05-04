@@ -38,7 +38,6 @@ export default function GoalsAgainstField({
           variant="outlined"
           size={size}
           sx={{ border: '1px solid', borderColor: 'divider' }}
-          slotProps={{ input: { min: 0, max: 20 } }}
         />
         <FormHelperText>{helperText}</FormHelperText>
       </FormControl>

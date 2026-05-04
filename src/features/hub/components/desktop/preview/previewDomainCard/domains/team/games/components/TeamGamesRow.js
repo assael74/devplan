@@ -6,6 +6,7 @@ import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { tableSx as sx } from '../sx/teamGamesTable.sx.js'
 import { getGameDifficultyLabelH } from '../logic/teamGames.domain.logic.js'
+import { resolveGameStatusMeta } from '../../../../../../../../../../shared/games/games.constants.js'
 
 const resultColorById = {
   win: 'success',
@@ -22,6 +23,7 @@ const hoverColorByResult = (result) => {
 
 export default function TeamGamesRow({ row, onEdit }) {
   const vLink = (row?.vLink ?? row?.game?.vLink ?? '').trim()
+  const statusMeta = resolveGameStatusMeta(row?.gameStatus)
 
   const hasVlink = vLink.length > 0
 
@@ -41,11 +43,20 @@ export default function TeamGamesRow({ row, onEdit }) {
   return (
     <Box sx={rowHoverSx}>
       <Box sx={sx.mainCellSx}>
-        <Typography level="body-sm" sx={sx.mainValueSx}>{row?.dateLabel || '—'}</Typography>
+        <Box sx={sx.toolWrap}>
+          <Tooltip title={statusMeta?.labelH || 'סטטוס משחק'} arrow>
+            <Box sx={sx.boxDot(statusMeta)} />
+          </Tooltip>
+
+          <Typography level="body-sm" sx={sx.mainValueSx}>
+            {row?.dateLabel || '—'}
+          </Typography>
+        </Box>
+
         {!!row?.hourRaw && (
           <Typography sx={sx.subValueSx}>{row.hourRaw}</Typography>
         )}
-      </Box>
+        </Box>
 
       <Box sx={sx.mainCellSx}>
         <Typography level="body-sm" sx={sx.mainValueSx}>{row?.rival || '—'}</Typography>

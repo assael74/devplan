@@ -2,24 +2,22 @@
 
 import { TEAM_GAMES_FILTER_KEYS } from './teamGames.filters.constants.js'
 import { buildHaystack } from '../../../../../../shared/games/games.search.logic.js'
+import { isGamePlayed } from '../../../../../../shared/games/games.constants.js'
 
 const safeArray = (v) => (Array.isArray(v) ? v : [])
 
 function toDateMs(value) {
   if (!value) return Number.POSITIVE_INFINITY
 
-  // Firestore Timestamp
   if (value?.seconds) {
     return value.seconds * 1000
   }
 
-  // Date instance
   if (value instanceof Date) {
     const time = value.getTime()
     return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY
   }
 
-  // numeric timestamp
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY
   }
@@ -27,7 +25,6 @@ function toDateMs(value) {
   const raw = String(value).trim()
   if (!raw) return Number.POSITIVE_INFINITY
 
-  // dd-mm-yyyy / dd/mm/yyyy
   const match = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/)
   if (match) {
     const day = Number(match[1])
@@ -38,7 +35,6 @@ function toDateMs(value) {
     return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY
   }
 
-  // iso / regular parse fallback
   const time = new Date(raw).getTime()
   return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY
 }
@@ -46,10 +42,10 @@ function toDateMs(value) {
 function getGameSortTime(game) {
   return toDateMs(
     game?.gameDate ||
-    game?.date ||
-    game?.gameDateObj ||
-    game?.dateObj ||
-    game?.dateMs
+      game?.date ||
+      game?.gameDateObj ||
+      game?.dateObj ||
+      game?.dateMs
   )
 }
 
@@ -73,6 +69,8 @@ export const applyTeamGamesFilters = (rows, filters) => {
     if (filters?.homeKey && game?.homeKey !== filters.homeKey) return false
     if (filters?.resultKey && game?.result !== filters.resultKey) return false
     if (filters?.difficultyKey && game?.difficulty !== filters.difficultyKey) return false
+    if (filters?.onlyPlayed && !isGamePlayed(game)) return false
+
     return true
   })
 
@@ -83,9 +81,12 @@ export const buildTeamGamesSummary = (all, filtered, filters) => {
   const baseAll = safeArray(all)
   const baseFiltered = safeArray(filtered)
 
-  const playedGames = baseFiltered.filter((game) => !!game?.result).length
-  const upcomingGames = baseFiltered.filter((game) => !game?.result).length
-  const activeFiltersCount = TEAM_GAMES_FILTER_KEYS.filter((key) => !!filters?.[key]).length
+  const playedGames = baseFiltered.filter(isGamePlayed).length
+  const upcomingGames = baseFiltered.filter((game) => !isGamePlayed(game)).length
+
+  const activeFiltersCount = TEAM_GAMES_FILTER_KEYS.filter((key) => {
+    return Boolean(filters?.[key])
+  }).length
 
   return {
     totalGames: baseAll.length,

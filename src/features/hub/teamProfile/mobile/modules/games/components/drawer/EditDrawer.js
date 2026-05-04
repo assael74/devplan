@@ -11,8 +11,7 @@ import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/Drawer
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
-import GameCreateFields from '../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
-import GameVideoLinkField from '../../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
+import GameEditFields from '../../../../../../../../ui/forms/ui/games/GameEditFields.js'
 
 import {
   buildGameEditInitial,
@@ -114,6 +113,7 @@ export default function EditDrawer({
       entity="team"
       open={open}
       size='lg'
+      anchor='bottom'
       onClose={onClose}
       saving={pending}
       isDirty={isDirty}
@@ -145,7 +145,7 @@ export default function EditDrawer({
         />
       }
     >
-      <GameCreateFields
+      <GameEditFields
         draft={draft}
         onDraft={setDraft}
         context={{
@@ -155,17 +155,7 @@ export default function EditDrawer({
         }}
         fieldErrors={fieldErrors}
         layout={layout}
-      />
-
-      <GameVideoLinkField
-        value={draft?.vLink || ''}
-        onChange={(value) => {
-          setDraft((prev) => ({
-            ...prev,
-            vLink: value || '',
-          }))
-        }}
-      />
+       />
     </DrawerShell>
   )
 }

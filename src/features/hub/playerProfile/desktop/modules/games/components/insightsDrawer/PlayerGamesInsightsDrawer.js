@@ -1,42 +1,21 @@
 // playerProfile/desktop/modules/games/components/insightsDrawer/playerGamesInsightsDrawer.js
 
-import React, { useMemo } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
+import { Box, Typography } from '@mui/joy'
 
 import {
   InsightsDrawerShell,
   InsightsDrawerHeader,
   InsightsSection,
-  InsightsStatCard,
 } from '../../../../../../../../ui/patterns/insights/index.js'
+
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
-
-import { InsightRowsList } from './InsightsRows.js'
-
-import { buildPlayerGamesInsights } from '../../../../../../../../shared/games/insights/GamesInsights.build.js'
-import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
-import { buildPlayerGamesDrawerViewModel } from '../../../../../sharedLogic'
 
 export default function PlayerGamesInsightsDrawer({
   open,
   onClose,
-  games,
   player,
 }) {
-  const normalizeRow = useMemo(() => createGameRowNormalizer({}), [])
-
-  const insights = useMemo(() => {
-    return buildPlayerGamesInsights({
-      rows: Array.isArray(games) ? games : [],
-      normalizeRow,
-      player,
-    })
-  }, [games, player, normalizeRow])
-
-  const viewModel = useMemo(() => {
-    return buildPlayerGamesDrawerViewModel(insights)
-  }, [insights])
-
   const header = (
     <InsightsDrawerHeader
       title={player?.playerFullName || 'שחקן'}
@@ -52,52 +31,31 @@ export default function PlayerGamesInsightsDrawer({
       size="lg"
       header={header}
     >
-      <InsightsSection title="מדדי על" icon="topParm">
+      <InsightsSection title="תובנות שחקן" icon="insights">
         <Box
           sx={{
+            p: 2,
+            borderRadius: 'lg',
+            bgcolor: 'background.level1',
+            border: '1px solid',
+            borderColor: 'divider',
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-            gap: 1,
+            gap: 0.75,
           }}
         >
-          {(viewModel?.topStats || []).map((item) => (
-            <InsightsStatCard
-              key={item.id}
-              title={item.title}
-              value={item.value}
-              sub={item.sub}
-              icon={item.icon}
-            />
-          ))}
+          <Typography level="title-sm" sx={{ fontWeight: 700 }}>
+            תובנות משחקי שחקן עדיין לא מוכנות
+          </Typography>
+
+          <Typography level="body-sm" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            בהמשך האזור יציג תובנות על השתתפות, דקות משחק, פתיחה בהרכב,
+            תרומה התקפית והשפעת נוכחות השחקן על תוצאות הקבוצה.
+          </Typography>
+
+          <Typography level="body-xs" sx={{ color: 'text.tertiary', lineHeight: 1.5 }}>
+            כרגע הנתונים מוצגים במדדי ה־KPI ובטבלת המשחקים בלבד.
+          </Typography>
         </Box>
-      </InsightsSection>
-
-      <InsightsSection title="איכות הביצוע" icon="performance">
-        <InsightRowsList
-          items={viewModel?.cards || []}
-          emptyText="אין כרטיסי תובנות להצגה"
-        />
-      </InsightsSection>
-
-      <InsightsSection title="משחקי בית / חוץ" icon="home">
-        <InsightRowsList
-          items={viewModel?.homeAwayItems || []}
-          emptyText="אין נתוני בית / חוץ להצגה"
-        />
-      </InsightsSection>
-
-      <InsightsSection title="רמת קושי" icon="difficulty">
-        <InsightRowsList
-          items={viewModel?.difficultyItems || []}
-          emptyText="אין נתוני רמת קושי להצגה"
-        />
-      </InsightsSection>
-
-      <InsightsSection title="פיד תובנות" icon="feed">
-        <InsightRowsList
-          items={viewModel?.feedItems || []}
-          emptyText="אין תובנות טקסטואליות להצגה"
-        />
       </InsightsSection>
     </InsightsDrawerShell>
   )

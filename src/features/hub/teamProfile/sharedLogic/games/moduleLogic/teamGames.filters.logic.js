@@ -1,7 +1,6 @@
 // teamProfile/sharedLogic/games/moduleLogic/teamGames.filters.logic.js
 
 import { createGameRowNormalizer } from '../../../../../../shared/games/games.normalize.logic.js'
-import { enrichGameWithTeam } from '../../../../../../shared/games/games.team.enrich.logic.js'
 
 import { createInitialTeamGamesFilters } from './teamGames.filters.constants.js'
 import {
@@ -12,6 +11,7 @@ import {
   buildTeamGamesOptions,
   buildTeamGamesIndicators,
 } from './teamGames.filters.options.js'
+import { enrichGameWithTeam } from './teamGames.filters.enrich.js'
 
 const normalize = createGameRowNormalizer({})
 

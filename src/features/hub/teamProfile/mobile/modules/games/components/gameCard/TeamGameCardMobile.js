@@ -26,7 +26,7 @@ export default function TeamGameCardMobile({
   if (!game) return null
 
   const handleOpenEdit = () => {
-    onEdit?.(game)
+    onEdit(game)
   }
 
   return (

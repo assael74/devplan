@@ -89,6 +89,22 @@ export const tableSx = {
     flexWrap: 'wrap',
   },
 
+  toolWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0
+  },
+
+  boxDot: (statusMeta) => ({
+    width: 9,
+    height: 9,
+    borderRadius: '50%',
+    flexShrink: 0,
+    bgcolor: `${statusMeta?.color || 'neutral'}.solidBg`,
+    boxShadow: 'sm',
+  }),
+
   emptyBoxSx: {
     p: 2,
     borderRadius: 'lg',

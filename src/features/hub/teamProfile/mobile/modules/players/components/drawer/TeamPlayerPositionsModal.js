@@ -76,6 +76,7 @@ export default function TeamPlayerPositionsDrawer({
       <DrawerShell
         entity="player"
         open={open}
+        anchor='bottom'
         onClose={onClose}
         saving={pending}
         isDirty={isDirty}

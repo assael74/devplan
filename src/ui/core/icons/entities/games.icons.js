@@ -3,6 +3,7 @@ import {
   Adjust,
   BugReport,
   Build,
+  Done,
   DragHandle,
   DashboardCustomize,
   EmojiEvents,
@@ -49,6 +50,7 @@ export const gameIcons = {
   result: <Scoreboard />,
   results: <Scoreboard />,
   win: <ThumbUp />,
+  played: <Done />,
   upcoming: <Upcoming />,
   entry: <AppRegistration />,
   registration: <AppRegistration />

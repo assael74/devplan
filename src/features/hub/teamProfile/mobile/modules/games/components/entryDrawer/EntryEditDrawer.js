@@ -131,7 +131,7 @@ export default function EntryEditDrawer({
     <Drawer
       size="lg"
       variant="plain"
-      anchor="right"
+      anchor='bottom'
       open={open}
       onClose={onClose}
       slotProps={{ content: { sx: sx.drawerSx } }}

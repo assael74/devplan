@@ -11,8 +11,7 @@ import DrawerHeaderShell from '../../../../../../../../../../../ui/patterns/draw
 import { useGameHubUpdate } from '../../../../../../../../../hooks/games/useGameHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 
-import GameCreateFields from '../../../../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
-import GameVideoLinkField from '../../../../../../../../../../../ui/fields/inputUi/games/GameVideoLinkField.js'
+import GameEditFields from '../../../../../../../../../../../ui/forms/ui/games/GameEditFields.js'
 
 import {
   buildGameEditInitial,
@@ -50,7 +49,7 @@ export default function EditDrawer({
     () => ({
       topCols: { xs: '1fr 1fr', md: '1fr 1fr' },
       mainCols: { xs: '1fr', md: '1fr 1fr' },
-      metaCols: { xs: '1fr', md: '1fr 1fr 1fr' },
+      metaCols: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
       resultCols: { xs: '1fr 1fr', md: '1fr 1fr auto' },
     }),
     []
@@ -144,23 +143,17 @@ export default function EditDrawer({
         />
       }
     >
-      <GameCreateFields
+      <GameEditFields
         draft={draft}
         onDraft={setDraft}
-        context={context}
+        context={{
+          clubs: context?.clubs || [],
+          teams: context?.teams || [],
+          team,
+        }}
         fieldErrors={fieldErrors}
         layout={layout}
-      />
-
-      <GameVideoLinkField
-        value={draft?.vLink || ''}
-        onChange={(value) => {
-          setDraft((prev) => ({
-            ...prev,
-            vLink: value || '',
-          }))
-        }}
-      />
+       />
     </DrawerShell>
   )
 }
