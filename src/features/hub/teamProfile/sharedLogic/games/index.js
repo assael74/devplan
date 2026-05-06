@@ -42,4 +42,4 @@ export {
   buildHomeAwayInsightItems,
   buildDifficultyInsightItems,
   buildFeedInsightItems,
-} from './insightsLogic/teamGames.cards.logic.js'
+} from './insightsLogic/index.js'

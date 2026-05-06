@@ -155,6 +155,7 @@ export default function PlayerGamesDomainModal({ entity, context }) {
       ) : (
         <EditDrawer
           open={!!activeGame}
+          setActiveGame={setActiveGame}
           game={{ ...activeGame, playerId: livePlayer?.id || '' }}
           context={{
             ...context,

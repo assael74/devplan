@@ -72,7 +72,8 @@ export default function PlayerGamesModule({
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
   const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
-  
+  //console.log('livePlayer', livePlayer.playerGames.filter(p=>p.id === 'נערים-ב-20250802-120436הפועל-רעננה-2-20250918')[0])
+  //console.log('games', games.filter(p=>p.id === 'נערים-ב-20250802-120436הפועל-רעננה-2-20250918')[0])
   return (
     <>
       <SectionPanel>

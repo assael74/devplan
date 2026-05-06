@@ -19,8 +19,6 @@ export const insightsPatternSx = {
 
   drawerSheet: {
     borderRadius: 'md',
-    py: 1,
-    px: 0.5,
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
@@ -54,10 +52,10 @@ export const insightsPatternSx = {
   },
 
   headerWrap: {
-    borderRadius: 'sm',
     p: 1,
-    boxShadow: 'sm',
     bgcolor: 'background.surface',
+    borderBottom: '1px solid',
+    borderColor: 'divider'
   },
 
   headerRow: {

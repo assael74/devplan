@@ -93,8 +93,8 @@ export default function EditDrawer({
       createIfMissing: false,
     })
 
-    onSaved?.(patch)
-    onClose?.()
+    onSaved(patch)
+    onClose()
   }, [activeGame, draft?.playerId, run, onSaved, onClose])
 
   const headerAvatar = player?.photo || playerImage

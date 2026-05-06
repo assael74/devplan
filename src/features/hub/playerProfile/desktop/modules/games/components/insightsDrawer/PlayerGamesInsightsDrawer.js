@@ -1,62 +1,69 @@
-// playerProfile/desktop/modules/games/components/insightsDrawer/playerGamesInsightsDrawer.js
+// playerProfile/desktop/modules/games/components/insightsDrawer/PlayerGamesInsightsDrawer.js
 
 import React from 'react'
-import { Box, Typography } from '@mui/joy'
 
 import {
   InsightsDrawerShell,
   InsightsDrawerHeader,
-  InsightsSection,
 } from '../../../../../../../../ui/patterns/insights/index.js'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
+import {
+  PlayerGamesInsightsContent,
+} from '../../../../../sharedUi/insights/playerGames/index.js'
+
+const resolvePlayerGamesRows = ({
+  games,
+  player,
+}) => {
+  if (Array.isArray(games)) return games
+  if (Array.isArray(player?.playerGames)) return player.playerGames
+  if (Array.isArray(player?.games)) return player.games
+
+  return []
+}
+
 export default function PlayerGamesInsightsDrawer({
   open,
   onClose,
+  games,
   player,
+  entity,
+  team,
 }) {
-  const header = (
-    <InsightsDrawerHeader
-      title={player?.playerFullName || 'שחקן'}
-      subtitle="תובנות משחקים"
-      avatarSrc={player?.photo || playerImage}
-    />
-  )
+  const livePlayer = player || entity || {}
+  const liveTeam = team || livePlayer?.team || {}
+
+  const rows = resolvePlayerGamesRows({
+    games,
+    player: livePlayer,
+  })
+
+  const title =
+    livePlayer?.playerFullName ||
+    livePlayer?.fullName ||
+    livePlayer?.name ||
+    'שחקן'
 
   return (
     <InsightsDrawerShell
       open={open}
       onClose={onClose}
       size="lg"
-      header={header}
+      header={
+        <InsightsDrawerHeader
+          title={title}
+          subtitle="תובנות משחקי שחקן"
+          avatarSrc={livePlayer?.photo || playerImage}
+        />
+      }
     >
-      <InsightsSection title="תובנות שחקן" icon="insights">
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: 'lg',
-            bgcolor: 'background.level1',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'grid',
-            gap: 0.75,
-          }}
-        >
-          <Typography level="title-sm" sx={{ fontWeight: 700 }}>
-            תובנות משחקי שחקן עדיין לא מוכנות
-          </Typography>
-
-          <Typography level="body-sm" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-            בהמשך האזור יציג תובנות על השתתפות, דקות משחק, פתיחה בהרכב,
-            תרומה התקפית והשפעת נוכחות השחקן על תוצאות הקבוצה.
-          </Typography>
-
-          <Typography level="body-xs" sx={{ color: 'text.tertiary', lineHeight: 1.5 }}>
-            כרגע הנתונים מוצגים במדדי ה־KPI ובטבלת המשחקים בלבד.
-          </Typography>
-        </Box>
-      </InsightsSection>
+      <PlayerGamesInsightsContent
+        games={rows}
+        player={livePlayer}
+        team={liveTeam}
+      />
     </InsightsDrawerShell>
   )
 }

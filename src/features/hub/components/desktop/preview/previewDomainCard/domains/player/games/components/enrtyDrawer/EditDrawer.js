@@ -26,11 +26,13 @@ export default function EditDrawer({
   onClose,
   onSaved,
   context,
+  setActiveGame
 }) {
   const initial = useMemo(() => {
     return buildPlayerGameEntryInitial(game, context)
   }, [game, context])
   const [draft, setDraft] = useState(initial)
+  console.log(game)
 
   const player = context?.player || {}
   const activeGame = game || null

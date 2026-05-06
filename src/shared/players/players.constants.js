@@ -14,6 +14,13 @@ export const SQUAD_ROLE_OPTIONS = [
     weight: 1,
   },
   {
+    value: 'core',
+    label: 'שחקן מרכזי',
+    idIcon: 'corePlayer',
+    color: '#16A34A',
+    weight: 0.8,
+  },
+  {
     value: 'rotation',
     label: 'רוטציה',
     idIcon: 'rotation',

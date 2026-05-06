@@ -73,6 +73,8 @@ const buildDisplayMeta = (row, player) => {
 const normalizePlayerGameRow = (rawGame, player) => {
   const normalizedGame = normalize(rawGame || {})
   const personal = rawGame?.playerGame || {}
+  const isSelected = personal?.isSelected || personal?.onSquad
+  const isStarting = personal?.isStarting || personal?.onStart
 
   const baseRow = {
     ...normalizedGame,
@@ -86,8 +88,8 @@ const normalizePlayerGameRow = (rawGame, player) => {
     assists: safeNumber(personal?.assists),
     timePlayed: safeNumber(personal?.timePlayed),
 
-    isSelected: personal?.isSelected === true,
-    isStarting: personal?.isStarting === true,
+    isSelected: isSelected,
+    isStarting: isStarting,
 
     hasEntry: personal?.isSelected === true || safeNumber(personal?.timePlayed) > 0,
   }

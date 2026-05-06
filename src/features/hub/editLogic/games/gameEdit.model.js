@@ -120,6 +120,7 @@ export const buildGameEditInitial = (game = {}) => {
     rivel: clean(source?.rivel || source?.rival),
     gameDate: clean(source?.gameDate),
     gameHour: clean(source?.gameHour),
+    gameLeagueNum: toNumOrEmpty(source?.gameLeagueNum),
     vLink: clean(source?.vLink),
 
     home: source?.home ?? '',
@@ -156,11 +157,13 @@ export const buildGameEditPatch = (draft = {}, initial = {}) => {
 
   if (draft.rivel !== initial.rivel) next.rivel = clean(draft.rivel)
   if (draft.vLink !== initial.vLink) next.vLink = clean(draft.vLink)
+
   if (draft.gameDate !== initial.gameDate) next.gameDate = clean(draft.gameDate)
   if (draft.gameHour !== initial.gameHour) next.gameHour = clean(draft.gameHour)
   if (draft.home !== initial.home) next.home = draft.home
   if (draft.type !== initial.type) next.type = clean(draft.type)
   if (draft.difficulty !== initial.difficulty) next.difficulty = clean(draft.difficulty)
+  if (draft.gameLeagueNum !== initial.gameLeagueNum) next.gameLeagueNum = clean(draft.gameLeagueNum)
 
   if (draft.gameDuration !== initial.gameDuration) {
     next.gameDuration = draft.gameDuration === '' ? '' : Number(draft.gameDuration)
@@ -231,6 +234,7 @@ export const isGameEditDirty = (draft = {}, initial = {}) => {
     draft.type !== initial.type ||
     draft.difficulty !== initial.difficulty ||
     draft.gameDuration !== initial.gameDuration ||
+    draft.gameLeagueNum !== initial.gameLeagueNum ||
     draft.goalsFor !== initial.goalsFor ||
     draft.goalsAgainst !== initial.goalsAgainst ||
     draft.gameStatus !== initial.gameStatus ||

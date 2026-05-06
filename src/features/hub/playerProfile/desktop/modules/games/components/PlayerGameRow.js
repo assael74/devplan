@@ -17,7 +17,6 @@ export default function PlayerGameRow({
   onEdit,
   onEditEntry,
 }) {
-  //console.log(game)
   return (
     <Box sx={sx.rowCardSx}>
       <InfoPlayerSection game={game} />
