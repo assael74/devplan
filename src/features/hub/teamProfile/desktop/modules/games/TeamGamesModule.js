@@ -15,12 +15,31 @@ import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 import {
   createInitialTeamGamesFilters,
   resolveTeamGamesFiltersDomain,
-  sortTeamGamesRows
+  sortTeamGamesRows,
 } from '../../../sharedLogic/games'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('teams')
+
+const LEAGUE_GAME_TYPE = 'league'
+
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
+const isLeagueGame = (row = {}) => {
+  const game = getGameObject(row)
+  const type = String(row?.type || game?.type || '').toLowerCase()
+
+  return type === LEAGUE_GAME_TYPE
+}
+
+const getTeamGamesRows = (team) => {
+  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
+
+  return rows.filter(isLeagueGame)
+}
 
 export default function TeamGamesModule({
   entity,
@@ -31,6 +50,10 @@ export default function TeamGamesModule({
     const teams = Array.isArray(context?.teams) ? context.teams : []
     return teams.find((t) => t?.id === entity?.id) || entity || null
   }, [context?.teams, entity])
+
+  const calculationGames = useMemo(() => {
+    return getTeamGamesRows(liveTeam)
+  }, [liveTeam])
 
   const initialFilters = useMemo(() => createInitialTeamGamesFilters(), [])
 
@@ -49,11 +72,16 @@ export default function TeamGamesModule({
     })
   }, [liveTeam, filters])
 
-  const { summary, games, options, indicators } = domain || {}
+  const {
+    summary,
+    games: viewGames,
+    options,
+    indicators,
+  } = domain || {}
 
   const sortedGames = useMemo(() => {
-    return sortTeamGamesRows(games, sort)
-  }, [games, sort])
+    return sortTeamGamesRows(viewGames, sort)
+  }, [viewGames, sort])
 
   useEffect(() => {
     if (gamesInsightsRequest > 0) {
@@ -73,7 +101,7 @@ export default function TeamGamesModule({
   }
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
-  const hasAnyGames = Array.isArray(liveTeam?.teamGames) && liveTeam.teamGames.length > 0
+  const hasAnyGames = calculationGames.length > 0
 
   return (
     <>
@@ -128,7 +156,7 @@ export default function TeamGamesModule({
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
         summary={summary}
-        games={sortedGames}
+        games={calculationGames}
         team={liveTeam}
       />
 

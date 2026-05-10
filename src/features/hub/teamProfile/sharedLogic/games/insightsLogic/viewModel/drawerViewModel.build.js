@@ -35,41 +35,53 @@ export const buildTeamGamesDrawerViewModel = (insights) => {
 
   const safeGames = gamesReady ? games : null
 
+  const targetProgress = buildTeamGamesTargetProgress({
+    source: active,
+    calculation,
+    coverage,
+    sync,
+    targets,
+    benchmarkLevel,
+    forecastLevel,
+  })
+
+  const homeAwayProjection =
+    isGamesMode && safeGames
+      ? buildTeamGamesHomeAwayProjection({
+          league: active,
+          games: safeGames,
+          benchmarkLevel,
+          targetProfile: benchmarkLevel,
+        })
+      : null
+
+  const difficultyProjection =
+    isGamesMode && safeGames
+      ? buildTeamGamesDifficultyProjection({
+          games: safeGames,
+          benchmarkLevel,
+          targetProfile: benchmarkLevel,
+        })
+      : null
+
+  const squadMetrics =
+    isGamesMode && safeGames
+      ? buildTeamGamesSquadMetrics({
+          team,
+          games: safeGames,
+        })
+      : null
+
   return {
     calculation,
     readiness,
     sync,
     coverage,
 
-    targetProgress: buildTeamGamesTargetProgress({
-      source: active,
-      calculation,
-      coverage,
-      sync,
-      targets,
-      benchmarkLevel,
-      forecastLevel,
-    }),
-
-    homeAwayProjection: isGamesMode
-      ? buildTeamGamesHomeAwayProjection({
-          league: active,
-          games: safeGames || {},
-        })
-      : null,
-
-    difficultyProjection: isGamesMode
-      ? buildTeamGamesDifficultyProjection({
-          games: safeGames || {},
-        })
-      : null,
-
-    squadMetrics: isGamesMode
-      ? buildTeamGamesSquadMetrics({
-          team,
-          games: safeGames || {},
-        })
-      : null,
+    targetProgress,
+    homeAwayProjection,
+    difficultyProjection,
+    squadMetrics,
 
     blocked: {
       games: !gamesReady,

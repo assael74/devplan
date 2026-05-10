@@ -1,10 +1,11 @@
+// playerProfile/desktop/modules/info/PlayerInfoModule.js
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
-import { playerInfoModuleSx as sx } from './playerInfo.module.sx.js'
+import { moduleSx as sx } from './module.sx.js'
 
 import PlayerStatusCard from './components/PlayerStatusCard.js'
 import ProjectStatusCard from './components/ProjectStatusCard.js'
@@ -12,7 +13,10 @@ import PlayerNamesCard from './components/PlayerNamesCard.js'
 import PlayerAffiliationCard from './components/PlayerAffiliationCard.js'
 import PlayerPhysicalCard from './components/PlayerPhysicalCard.js'
 import PlayerBirthCard from './components/PlayerBirthCard.js'
-import PlayerInfoToolbar from './PlayerInfoToolbar.js'
+import PlayerPositionCard from './components/PlayerPositionCard.js'
+import PlayerTargetsCard from './components/PlayerTargetsCard.js'
+import PlayerInfoToolbar from './components/PlayerInfoToolbar.js'
+import PlayerInfoTabs, { PLAYER_INFO_TABS } from './components/PlayerInfoTabs.js'
 
 import { usePlayerHubUpdate } from '../../../../hooks/players/usePlayerHubUpdate.js'
 
@@ -25,6 +29,8 @@ import {
 
 export default function PlayerInfoModule({ entity, context }) {
   const player = entity || null
+
+  const [activeTab, setActiveTab] = useState(PLAYER_INFO_TABS[0])
 
   const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [draft, setDraft] = useState(initial)
@@ -71,8 +77,14 @@ export default function PlayerInfoModule({ entity, context }) {
 
   return (
     <SectionPanel>
+      <PlayerInfoTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
       <Box sx={sx.stickyToolbar}>
         <PlayerInfoToolbar
+          activeTab={activeTab}
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
@@ -81,45 +93,68 @@ export default function PlayerInfoModule({ entity, context }) {
         />
       </Box>
 
-      <Box sx={sx.grid}>
-        <PlayerStatusCard
-          draft={draft}
-          setDraft={setDraft}
-          pending={pending}
-        />
+      {activeTab.id === 'details' && (
+        <Box sx={sx.grid}>
+          <PlayerStatusCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
 
-        <PlayerNamesCard
-          draft={draft}
-          setDraft={setDraft}
-          pending={pending}
-        />
+          <PlayerNamesCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
 
-        <PlayerBirthCard
-          draft={draft}
-          setDraft={setDraft}
-          pending={pending}
-        />
+          <PlayerBirthCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
 
-        <PlayerAffiliationCard
-          draft={draft}
-          setDraft={setDraft}
-          pending={pending}
-          clubsOptions={context?.clubs}
-          teamsOptions={context?.teams}
-        />
+          <PlayerAffiliationCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+            clubsOptions={context?.clubs}
+            teamsOptions={context?.teams}
+          />
 
-        <PlayerPhysicalCard
-          draft={draft}
-          setDraft={setDraft}
-          pending={pending}
-        />
+          <PlayerPhysicalCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
 
-        <ProjectStatusCard
+          <ProjectStatusCard
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
+        </Box>
+      )}
+
+      {activeTab.id === 'position' && (
+        <Box sx={{ pb: 2 }}>
+          <PlayerPositionCard
+            player={player}
+            team={context?.team}
+            draft={draft}
+            setDraft={setDraft}
+            pending={pending}
+          />
+        </Box>
+
+      )}
+
+      {activeTab.id === 'targets' && (
+        <PlayerTargetsCard
+          player={player}
+          team={context?.team}
           draft={draft}
-          setDraft={setDraft}
-          pending={pending}
         />
-      </Box>
+      )}
     </SectionPanel>
   )
 }

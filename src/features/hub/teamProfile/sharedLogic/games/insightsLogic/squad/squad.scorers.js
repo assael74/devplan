@@ -1,6 +1,6 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.scorers.js
 
-import { toNum } from '../common/index.js'
+import { toNum } from '../common/view.shared.js'
 
 const roundPct = (count, total) => {
   const c = toNum(count)

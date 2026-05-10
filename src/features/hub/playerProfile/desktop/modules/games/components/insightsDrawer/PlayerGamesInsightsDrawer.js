@@ -13,10 +13,7 @@ import {
   PlayerGamesInsightsContent,
 } from '../../../../../sharedUi/insights/playerGames/index.js'
 
-const resolvePlayerGamesRows = ({
-  games,
-  player,
-}) => {
+const resolvePlayerGamesRows = ({ games, player }) => {
   if (Array.isArray(games)) return games
   if (Array.isArray(player?.playerGames)) return player.playerGames
   if (Array.isArray(player?.games)) return player.games

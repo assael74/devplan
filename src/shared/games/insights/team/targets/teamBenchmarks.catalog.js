@@ -3,7 +3,7 @@
 import {
   TEAM_GAMES_TARGET_GROUPS,
   TEAM_GAMES_TARGET_PROFILES,
-} from './teamTargetProfiles.js'
+} from '../../../../teams/targets/index.js'
 
 export const TEAM_GAMES_BENCHMARK_GROUPS = {
   RESULTS: 'results',

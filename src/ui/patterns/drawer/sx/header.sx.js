@@ -1,6 +1,17 @@
 // ui/patterns/drawer/sx/header.sx.js
 
+import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
+
+const c = (entity) => getEntityColors(entity)
+
 export const headerSx = {
+  header: (entity) => ({
+    bgcolor: c(entity).bg,
+    p: 1,
+    borderBottom: '1px solid',
+    borderColor: 'divider'
+  }),
+
   title: {
     fontWeight: 700,
     lineHeight: 1.05,

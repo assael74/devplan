@@ -27,15 +27,17 @@
 import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
 import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
 import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
+import { buildTeamTargetsState } from '../../../shared/teams/targets/index.js'
+import { buildPlayerTargetsState } from '../../../shared/players/targets/index.js'
+
 import {
-  buildScoutGamesSummary,
-  buildVideosWithEntities,
-  buildTrainingWeeksSummary,
-  buildPlayersWithStats,
-  buildPlayerGames,
-  buildTeamsWithStats,
-  buildTeamTargetsState,
-  buildTeamPerformanceState,
+ buildScoutGamesSummary,
+ buildVideosWithEntities,
+ buildTrainingWeeksSummary,
+ buildPlayersWithStats,
+ buildPlayerGames,
+ buildTeamsWithStats,
+ buildTeamPerformanceState,
 } from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
@@ -121,7 +123,6 @@ export function enrichTeams(merged, indexes) {
     trainingWeeksByTeamId,
     teamMeetingsByTeamId,
     teamGamesByTeamId,
-    teamTargetsByTeamId,
   } = indexes
 
   const playersByTeamId = new Map()
@@ -142,14 +143,7 @@ export function enrichTeams(merged, indexes) {
       const trainingWeeks = safeArr(trainingWeeksByTeamId.get(teamId))
       const teamMeetings = safeArr(teamMeetingsByTeamId.get(teamId))
       const teamGames = safeArr(teamGamesByTeamId.get(teamId))
-      const targetsRaw = teamTargetsByTeamId?.get(teamId) || null
-
-      const targetsSource = {
-        ...team,
-        ...(targetsRaw || {}),
-      }
-
-      const targets = buildTeamTargetsState(targetsSource)
+      const targets = buildTeamTargetsState(team)
 
       return {
         ...team,
@@ -206,6 +200,8 @@ export function enrichPlayers(merged, indexes, teams) {
       const team = !isPrivatePlayer && teamId ? teamById.get(teamId) || null : null
       const club = getPlayerClub(player, team, clubById)
 
+      const targets = buildPlayerTargetsState({ player, team })
+
       const meetings = safeArr(meetingsByPlayerId.get(playerId))
       const paymentsIds = safeArr(paymentsIdsByPlayerId.get(playerId))
       const payments = paymentsIds.map((id) => paymentsById.get(id)).filter(Boolean)
@@ -243,6 +239,7 @@ export function enrichPlayers(merged, indexes, teams) {
         ...playerRest,
         team,
         club,
+        targets,
         meetings,
         payments,
         trainingWeeks,

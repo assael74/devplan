@@ -12,10 +12,13 @@ import {
 } from '../snapshots/teamGames.calculation.js'
 
 import {
-  resolveTeamForecastProfileFromActive,
   resolveTeamTargetGap,
-  resolveTeamTargetProfileFromTeam,
 } from '../targets/index.js'
+
+import {
+  buildTeamTargetsState,
+  resolveTeamForecastProfileFromActive,
+} from '../../../../teams/targets/index.js'
 
 export const buildTeamGamesInsights = ({
   team,
@@ -50,13 +53,19 @@ export const buildTeamGamesInsights = ({
     gamesSnapshot: gamesSource,
   })
 
-  const targets = team?.targets || {}
+  const targets = team?.targets?.hasTargets
+    ? team.targets
+    : buildTeamTargetsState(team)
 
-  const {
-    targetPosition,
-    targetProfile,
-    targetProfileId,
-  } = resolveTeamTargetProfileFromTeam(team)
+  const targetPositionMode = targets?.targetPositionMode || ''
+  const targetPosition = targets?.targetPosition || ''
+  const targetProfile = targets?.targetProfile || null
+
+  const targetProfileId =
+    targets?.resolvedProfileId ||
+    targets?.targetProfileId ||
+    targetProfile?.id ||
+  ''
 
   const forecastProfile = resolveTeamForecastProfileFromActive(active)
 

@@ -17,24 +17,6 @@ import {
 } from './squad.texts.js'
 
 import { formatPercent } from '../../common/index.js'
-import { buildTargetGapContextText, getTargetGapContextTone } from '../../common/index.js'
-
-function buildItemTargetContext({ targetGap, context, tone }) {
-  if (tone !== 'warning') return null
-  if (!targetGap?.isBelowTarget) return null
-
-  const text = buildTargetGapContextText(targetGap, context)
-
-  if (!text) return null
-
-  return {
-    id: 'target_context',
-    type: 'context',
-    label: 'הקשר יעד',
-    tone: getTargetGapContextTone(targetGap),
-    text,
-  }
-}
 
 export function buildSquadItems(metrics, performance, targetGap) {
   const attackTone = getAttackTone(metrics, performance)
@@ -54,11 +36,6 @@ export function buildSquadItems(metrics, performance, targetGap) {
       text: buildAttackText(metrics, performance),
       details: [
         ...buildAttackDetails(metrics, performance),
-        buildItemTargetContext({
-          targetGap,
-          context: 'squadAttack',
-          tone: attackTone,
-        }),
       ].filter(Boolean),
       metrics: {
         scorers: metrics.scorers,
@@ -79,11 +56,6 @@ export function buildSquadItems(metrics, performance, targetGap) {
       text: buildLineupText(metrics, performance),
       details: [
         ...buildLineupDetails(metrics, performance),
-        buildItemTargetContext({
-          targetGap,
-          context: 'squadLineup',
-          tone: lineupTone,
-        }),
       ].filter(Boolean),
       metrics: {
         starters: metrics.starters,
@@ -101,11 +73,6 @@ export function buildSquadItems(metrics, performance, targetGap) {
       text: buildIntegrationText(metrics, performance),
       details: [
         ...buildIntegrationDetails(metrics, performance),
-        buildItemTargetContext({
-          targetGap,
-          context: 'squadIntegration',
-          tone: integrationTone,
-        }),
       ].filter(Boolean),
       metrics: {
         squadSize: metrics.squadSize,

@@ -15,6 +15,7 @@ export const findPlayerGameEntry = (game, player) => {
 
 export const enrichGameWithPlayerLocalMeta = (game, player) => {
   const entry = game?.playerGame || null
+  const gameLeagueNum = game?.gameLeagueNum || game?.game?.gameLeagueNum || 0
 
   return {
     ...game,
@@ -26,6 +27,7 @@ export const enrichGameWithPlayerLocalMeta = (game, player) => {
     playerEntry: entry,
     hasEntry: !!entry,
     hasVideo: !!safe(game?.vLink).trim(),
+    gameLeagueNum,
 
     goals: Number(entry?.goals) || 0,
     assists: Number(entry?.assists) || 0,

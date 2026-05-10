@@ -23,6 +23,23 @@ const getBool = (value, fallback = false) => {
   return value === true
 }
 
+const normalizeTargetPositionMode = (value) => {
+  const mode = clean(value)
+
+  if (mode === 'exact') return 'exact'
+  if (mode === 'range') return 'range'
+
+  return ''
+}
+
+const normalizeTargetPosition = (value) => {
+  return clean(value)
+}
+
+const normalizeTargetProfileId = (value) => {
+  return clean(value)
+}
+
 function addIfChanged(next, draft, initial, key) {
   if (draft[key] !== initial[key]) {
     next[key] = clean(draft[key])
@@ -32,6 +49,20 @@ function addIfChanged(next, draft, initial, key) {
 function addBoolIfChanged(next, draft, initial, key) {
   if (draft[key] !== initial[key]) {
     next[key] = draft[key] === true
+  }
+}
+
+function addTargetIfChanged(next, draft, initial) {
+  if (draft.targetPositionMode !== initial.targetPositionMode) {
+    next.targetPositionMode = normalizeTargetPositionMode(draft.targetPositionMode)
+  }
+
+  if (draft.targetPosition !== initial.targetPosition) {
+    next.targetPosition = normalizeTargetPosition(draft.targetPosition)
+  }
+
+  if (draft.targetProfileId !== initial.targetProfileId) {
+    next.targetProfileId = normalizeTargetProfileId(draft.targetProfileId)
   }
 }
 
@@ -58,15 +89,13 @@ export function buildTeamEditInitial(team = {}) {
     leagueRound: clean(source?.leagueRound),
     leagueNumGames: clean(source?.leagueNumGames),
 
+    targetPositionMode: normalizeTargetPositionMode(source?.targetPositionMode),
+    targetPosition: normalizeTargetPosition(source?.targetPosition),
+    targetProfileId: normalizeTargetProfileId(source?.targetProfileId),
+
     points: clean(source?.points),
     leagueGoalsFor: clean(source?.leagueGoalsFor),
     leagueGoalsAgainst: clean(source?.leagueGoalsAgainst),
-
-    targetPosition: clean(source?.targetPosition),
-    targetPoints: clean(source?.targetPoints),
-    targetSuccessRate: clean(source?.targetSuccessRate),
-    targetGoalsFor: clean(source?.targetGoalsFor),
-    targetGoalsAgainst: clean(source?.targetGoalsAgainst),
   }
 }
 
@@ -82,14 +111,12 @@ export function isTeamEditDirty(draft = {}, initial = {}) {
     draft.leaguePosition !== initial.leaguePosition ||
     draft.leagueRound !== initial.leagueRound ||
     draft.leagueNumGames !== initial.leagueNumGames ||
+    draft.targetPositionMode !== initial.targetPositionMode ||
+    draft.targetPosition !== initial.targetPosition ||
+    draft.targetProfileId !== initial.targetProfileId ||
     draft.points !== initial.points ||
     draft.leagueGoalsFor !== initial.leagueGoalsFor ||
-    draft.leagueGoalsAgainst !== initial.leagueGoalsAgainst ||
-    draft.targetPosition !== initial.targetPosition ||
-    draft.targetPoints !== initial.targetPoints ||
-    draft.targetSuccessRate !== initial.targetSuccessRate ||
-    draft.targetGoalsFor !== initial.targetGoalsFor ||
-    draft.targetGoalsAgainst !== initial.targetGoalsAgainst
+    draft.leagueGoalsAgainst !== initial.leagueGoalsAgainst
   )
 }
 
@@ -110,15 +137,11 @@ export function buildTeamEditPatch(draft = {}, initial = {}) {
   addIfChanged(next, draft, initial, 'leagueRound')
   addIfChanged(next, draft, initial, 'leagueNumGames')
 
+  addTargetIfChanged(next, draft, initial)
+
   addIfChanged(next, draft, initial, 'points')
   addIfChanged(next, draft, initial, 'leagueGoalsFor')
   addIfChanged(next, draft, initial, 'leagueGoalsAgainst')
-
-  addIfChanged(next, draft, initial, 'targetPosition')
-  addIfChanged(next, draft, initial, 'targetPoints')
-  addIfChanged(next, draft, initial, 'targetSuccessRate')
-  addIfChanged(next, draft, initial, 'targetGoalsFor')
-  addIfChanged(next, draft, initial, 'targetGoalsAgainst')
 
   return next
 }

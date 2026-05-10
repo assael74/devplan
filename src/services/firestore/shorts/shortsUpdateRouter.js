@@ -50,17 +50,9 @@ export const shortsUpdateRouterMap = {
     leagueGameTime: { shortKey: 'teams.teamsInfo', path: 'leagueGameTime', mode: 'merge' },
     leagueNumGames: { shortKey: 'teams.teamsInfo', path: 'leagueNumGames', mode: 'merge' },
     leagueGoalsAgainst: { shortKey: 'teams.teamsInfo', path: 'leagueGoalsAgainst', mode: 'merge' },
-
-    targetsStatus: { shortKey: 'teams.teamsTargets', path: 'status', mode: 'merge' },
-    targetsAssignedAt: { shortKey: 'teams.teamsTargets', path: 'assignedAt', mode: 'merge' },
-    targetsAssignedBy: { shortKey: 'teams.teamsTargets', path: 'assignedBy', mode: 'merge' },
-    targetsBenchmarkLevelId: { shortKey: 'teams.teamsTargets', path: 'benchmarkLevelId', mode: 'merge' },
-
-    targetPosition: { shortKey: 'teams.teamsTargets', path: 'targetPosition', mode: 'merge' },
-    targetGoalsFor: { shortKey: 'teams.teamsTargets', path: 'targetGoalsFor', mode: 'merge' },
-    targetGoalsAgainst: { shortKey: 'teams.teamsTargets', path: 'targetGoalsAgainst', mode: 'merge' },
-    targetPoints: { shortKey: 'teams.teamsTargets', path: 'targetPoints', mode: 'merge' },
-    targetSuccessRate: { shortKey: 'teams.teamsTargets', path: 'targetSuccessRate', mode: 'merge' },
+    targetPosition: { shortKey: 'teams.teamsInfo', path: 'targetPosition', mode: 'merge' },
+    targetPositionMode: { shortKey: 'teams.teamsInfo', path: 'targetPositionMode', mode: 'merge' },
+    targetProfileId: { shortKey: 'teams.teamsInfo', path: 'targetProfileId', mode: 'merge' },
 
     trainingWeeks: { shortKey: 'teams.teamsTraining', path: 'trainingWeeks', mode: 'merge' },
   },
@@ -157,7 +149,7 @@ export const shortsUpdateRouterMap = {
     type: { shortKey: 'games.gameInfo', path: 'type', mode: 'merge' },
     vLink: { shortKey: 'games.gameInfo', path: 'vLink', mode: 'merge' },
     gameStatus: { shortKey: 'games.gameInfo', path: 'gameStatus', mode: 'merge' },
-    gameLeagueNum: { shortKey: 'games.gameInfo', path: 'gameStatus', mode: 'merge' },
+    gameLeagueNum: { shortKey: 'games.gameInfo', path: 'gameLeagueNum', mode: 'merge' },
 
     gameDate: { shortKey: 'games.gameTime', path: 'gameDate', mode: 'merge' },
     gameDuration: { shortKey: 'games.gameTime', path: 'gameDuration', mode: 'merge' },

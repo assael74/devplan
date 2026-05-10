@@ -21,7 +21,7 @@ export const SNACK_ENTITY = {
 }
 
 export const DEFAULT_DURATIONS = {
-  success: 3200,
+  success: 2200,
   error: 8000, // אפשר להפוך ל-null כדי שלא ייסגר אוטומטית
 }
 

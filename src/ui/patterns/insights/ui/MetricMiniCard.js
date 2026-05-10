@@ -13,6 +13,7 @@ export default function MetricMiniCard({
   icon = 'info',
   color = 'neutral',
   tooltip = null,
+  isMobile = false
 }) {
   const card = (
     <Box sx={sx.root(color)}>
@@ -21,10 +22,7 @@ export default function MetricMiniCard({
           {label}
         </Typography>
 
-        {iconUi({
-          id: icon,
-          size: 'xs',
-        })}
+        {iconUi({ id: icon, size: 'sm' })}
       </Box>
 
       <Typography level="h3" sx={sx.value}>

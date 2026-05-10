@@ -75,6 +75,7 @@ const normalizePlayerGameRow = (rawGame, player) => {
   const personal = rawGame?.playerGame || {}
   const isSelected = personal?.isSelected || personal?.onSquad
   const isStarting = personal?.isStarting || personal?.onStart
+  const gameLeagueNum = rawGame?.gameLeagueNum || 0
 
   const baseRow = {
     ...normalizedGame,
@@ -87,6 +88,7 @@ const normalizePlayerGameRow = (rawGame, player) => {
     goals: safeNumber(personal?.goals),
     assists: safeNumber(personal?.assists),
     timePlayed: safeNumber(personal?.timePlayed),
+    gameLeagueNum,
 
     isSelected: isSelected,
     isStarting: isStarting,

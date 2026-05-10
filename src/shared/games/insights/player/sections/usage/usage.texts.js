@@ -36,7 +36,7 @@ export function buildUsageStateText(metrics, evaluationState) {
 
   return `השחקן שיחק ${formatNumber(metrics.minutesPlayed)} דקות, שהן ${formatPercent(
     metrics.minutesPct
-  )} מהדקות האפשריות. יעד הדקות למעמד "${metrics.role.label}" הוא ${minutesTarget}. פתיחות: ${formatPercent(
+  )} מהדקות האפשריות. יעד הדקות למעמד "${metrics.role.label}" הוא ${minutesTarget}. הרכב: ${formatPercent(
     metrics.startsPctFromTeamGames
   )} ממשחקי הקבוצה, מול יעד ${startsTarget}.`
 }

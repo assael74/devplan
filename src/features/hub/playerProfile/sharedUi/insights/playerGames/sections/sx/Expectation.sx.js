@@ -1,5 +1,29 @@
 // playerProfile/sharedUi/insights/playerGames/sections/sx/Expectation.sx.js
 
+const resolveMetricsCols = (cols = 3) => {
+  const count = Number(cols)
+
+  if (count === 2) {
+    return {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+    }
+  }
+
+  if (count === 4) {
+    return {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      md: 'repeat(4, minmax(0, 1fr))',
+    }
+  }
+
+  return {
+    xs: '1fr',
+    sm: 'repeat(3, minmax(0, 1fr))',
+  }
+}
+
 export const expectationSx = {
   mainGrid: (layout = 'attacking') => ({
     display: 'grid',
@@ -48,15 +72,12 @@ export const expectationSx = {
     fontSize: 11,
   },
 
-  metricsGrid: {
+  metricsGrid: (cols = 3) => ({
     display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      sm: 'repeat(3, minmax(0, 1fr))',
-    },
+    gridTemplateColumns: resolveMetricsCols(cols),
     gap: 0.75,
     minWidth: 0,
-  },
+  }),
 
   takeawayWrap: {
     minWidth: 0,

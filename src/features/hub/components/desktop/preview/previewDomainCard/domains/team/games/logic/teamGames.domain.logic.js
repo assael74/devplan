@@ -27,7 +27,7 @@ export const resolveTeamGamesDomain = (team) => {
   const rows = built?.rows || []
   const summary = built?.summary || aggSummary([])
   const nextGame = built?.nextGame || null
-
+  
   const leaguePoints = calcLeaguePointsSummaryFromGames(rows)
   const leagueStats = buildLeagueStatsFromTeam(team)
   const gameStats = buildGameStatsFromSummary({

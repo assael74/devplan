@@ -12,8 +12,6 @@ import {
   getHomeAwayTone,
 } from './homeAway.rules.js'
 
-import { buildTargetGapContextItem } from '../../common/index.js'
-
 export function buildHomeAwayItems(metrics, evaluationState, targetGap) {
   const recommendationText = buildHomeAwayRecommendationText(
     metrics,
@@ -24,7 +22,6 @@ export function buildHomeAwayItems(metrics, evaluationState, targetGap) {
 
   const advantageText = buildHomeAwayAdvantageText(metrics, evaluationState)
   const riskText = buildHomeAwayRiskText(metrics, evaluationState)
-  const targetContextItem = buildTargetGapContextItem(targetGap, 'homeAway')
 
   const actionTone = getHomeAwayTone(metrics, evaluationState)
 
@@ -45,7 +42,6 @@ export function buildHomeAwayItems(metrics, evaluationState, targetGap) {
       tone: 'primary',
       text: stateText,
     },
-    targetContextItem,
     advantageText
       ? {
           id: 'advantage',

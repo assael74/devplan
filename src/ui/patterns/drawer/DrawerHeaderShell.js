@@ -5,9 +5,6 @@ import { Box, Typography, DialogTitle, ModalClose, Chip, Avatar } from '@mui/joy
 
 import { iconUi } from '../../core/icons/iconUi.js'
 import { headerSx as sx } from './sx/header.sx.js'
-import { getEntityColors } from '../../../ui/core/theme/Colors.js'
-
-const c = (entity) => getEntityColors(entity)
 
 export default function DrawerHeaderShell({
   title,
@@ -26,7 +23,7 @@ export default function DrawerHeaderShell({
   closeDisabled = false,
 }) {
   return (
-    <DialogTitle sx={{ bgcolor: c(entity).bg, borderRadius: 'sm', p: 1 }}>
+    <DialogTitle sx={sx.header(entity)}>
       <Box sx={{ display: 'flex', gap: 1 }}>
         {avatar ? (
           <Avatar src={avatar} />

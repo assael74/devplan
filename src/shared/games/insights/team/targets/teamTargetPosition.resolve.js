@@ -5,7 +5,7 @@ import {
   getTeamGamesTargetProfileLabel,
   resolveTeamGamesTargetProfileByPosition,
   resolveTeamGamesTargetProfileByRange,
-} from './teamTargets.selectors.js'
+} from '../../../../teams/targets/index.js'
 
 export const TEAM_TARGET_POSITION_INPUT_TYPES = {
   EXACT: 'exact',

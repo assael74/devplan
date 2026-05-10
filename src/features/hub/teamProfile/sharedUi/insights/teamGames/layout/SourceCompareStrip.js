@@ -29,6 +29,7 @@ const buildCompareItems = ({ teamSource = {}, gamesSource = {} }) => {
     {
       id: 'position',
       label: 'מקום',
+      icon: 'position',
       teamValue: formatValue(teamSource?.leaguePosition),
       gamesValue: formatValue(teamSource?.leaguePosition),
       isMismatch: false,
@@ -36,6 +37,7 @@ const buildCompareItems = ({ teamSource = {}, gamesSource = {} }) => {
     {
       id: 'games',
       label: 'משחקים',
+      icon: 'games',
       teamValue: `${formatValue(teamSource?.playedGames, '0')}/${formatValue(teamSource?.totalGames, '0')}`,
       gamesValue: `${formatValue(gamesSource?.playedGames, '0')}/${formatValue(gamesSource?.totalGames, '0')}`,
       isMismatch:
@@ -45,6 +47,7 @@ const buildCompareItems = ({ teamSource = {}, gamesSource = {} }) => {
     {
       id: 'points',
       label: 'נק׳',
+      icon: 'points',
       teamValue: formatValue(teamSource?.points, '0'),
       gamesValue: formatValue(gamesSource?.points, '0'),
       isMismatch: isDifferent(teamSource?.points, gamesSource?.points),
@@ -52,6 +55,7 @@ const buildCompareItems = ({ teamSource = {}, gamesSource = {} }) => {
     {
       id: 'goals',
       label: 'שערים',
+      icon: 'goals',
       teamValue: `${formatValue(teamSource?.goalsFor, '0')}-${formatValue(teamSource?.goalsAgainst, '0')}`,
       gamesValue: `${formatValue(gamesSource?.goalsFor, '0')}-${formatValue(gamesSource?.goalsAgainst, '0')}`,
       isMismatch:
@@ -61,12 +65,16 @@ const buildCompareItems = ({ teamSource = {}, gamesSource = {} }) => {
   ]
 }
 
-function CompareItem({ item, value }) {
+function CompareItem({ item, value, isMobile }) {
   return (
     <Box sx={sx.item}>
-      <Typography level="body-xs" component="span" sx={sx.label}>
-        {item.label}
-      </Typography>
+      {!isMobile ? (
+        <Typography level="body-xs" component="span" sx={sx.label}>
+          {item.label}
+        </Typography>
+      ) : (
+        iconUi({id: item.icon})
+      )}
 
       <Typography
         level="body-xs"
@@ -85,6 +93,7 @@ function SourceRow({
   icon,
   color,
   items,
+  isMobile
 }) {
   return (
     <Box sx={sx.row}>
@@ -109,7 +118,7 @@ function SourceRow({
               </Typography>
             ) : null}
 
-            <CompareItem item={item} value={value} />
+            <CompareItem item={item} value={value} isMobile={isMobile} />
           </React.Fragment>
         )
       })}
@@ -117,10 +126,7 @@ function SourceRow({
   )
 }
 
-export default function SourceCompareStrip({
-  teamSource = {},
-  gamesSource = {},
-}) {
+export default function SourceCompareStrip({ teamSource = {}, gamesSource = {}, isMobile }) {
   const items = buildCompareItems({
     teamSource,
     gamesSource,
@@ -134,6 +140,7 @@ export default function SourceCompareStrip({
         icon="teams"
         color="primary"
         items={items}
+        isMobile={isMobile}
       />
 
       <SourceRow
@@ -142,6 +149,7 @@ export default function SourceCompareStrip({
         icon="game"
         color="neutral"
         items={items}
+        isMobile={isMobile}
       />
     </Box>
   )

@@ -13,8 +13,6 @@ import {
   getDifficultyTone,
 } from './difficulty.rules.js'
 
-import { buildTargetGapContextItem } from '../../common/index.js'
-
 export function buildDifficultyItems(metrics, evaluationState, targetGap) {
   const recommendationText = buildDifficultyRecommendationText(
     metrics,
@@ -26,7 +24,6 @@ export function buildDifficultyItems(metrics, evaluationState, targetGap) {
   const riskText = buildDifficultyRiskText(metrics, evaluationState)
   const reliabilityText = buildDifficultyReliabilityText(evaluationState)
   const actionTone = getDifficultyTone(metrics, evaluationState)
-  const targetContextItem = buildTargetGapContextItem(targetGap, 'difficulty')
 
   return [
     recommendationText
@@ -45,7 +42,6 @@ export function buildDifficultyItems(metrics, evaluationState, targetGap) {
       tone: 'primary',
       text: stateText,
     },
-    targetContextItem,
     advantageText
       ? {
           id: 'advantage',

@@ -5,9 +5,15 @@ import { coloredCard } from './shared.sx.js'
 export const targetSx = {
   metricCard: (color = 'neutral') =>
     coloredCard({
-      minHeight: 82,
+      minHeight: {
+        xs: 82,
+        sm: 82
+      },
       borderRadius: 14,
-      padding: 1.2,
+      padding: {
+        xs: 0.5,
+        sm:  1.2
+      },
       gap: 0.75,
       color,
     }),
@@ -15,7 +21,7 @@ export const targetSx = {
   gridThree: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: '1fr',
+      xs: '1fr 1fr 1fr',
       sm: 'repeat(3, minmax(0, 1fr))',
     },
     gap: 1,

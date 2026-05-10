@@ -8,7 +8,7 @@ import {
   hasValue,
   resolveProgressColor,
   buildLevelView,
-} from '../common/index.js'
+} from '../common/view.shared.js'
 
 const calcHigherProgress = (projected, target) => {
   const p = toNum(projected)
@@ -43,22 +43,94 @@ const resolveTargetStatus = ({ projected, target, direction }) => {
   return 'behind'
 }
 
-const resolveForecastColor = ({ forecastLevel, targetPosition }) => {
-  const target = Number(targetPosition)
-
-  if (!forecastLevel || !Number.isFinite(target)) return 'neutral'
-
-  const [bestRank, worstRank] = Array.isArray(forecastLevel?.rankRange)
-    ? forecastLevel.rankRange.map(Number)
-    : []
-
-  if (!Number.isFinite(bestRank) || !Number.isFinite(worstRank)) {
-    return 'neutral'
+const getRankRange = (level = {}) => {
+  if (!Array.isArray(level?.rankRange)) {
+    return {
+      bestRank: null,
+      worstRank: null,
+    }
   }
 
-  if (target >= bestRank && target <= worstRank) return 'success'
-  if (target > worstRank) return 'success'
-  if (target < bestRank) return 'danger'
+  const bestRank = Number(level.rankRange[0])
+  const worstRank = Number(level.rankRange[1])
+
+  return {
+    bestRank: Number.isFinite(bestRank) ? bestRank : null,
+    worstRank: Number.isFinite(worstRank) ? worstRank : null,
+  }
+}
+
+const resolveForecastColorByExactTarget = ({
+  forecastLevel,
+  targetPosition,
+}) => {
+  const targetRank = toNullableNum(targetPosition)
+
+  if (!Number.isFinite(targetRank)) return ''
+
+  const { bestRank, worstRank } = getRankRange(forecastLevel)
+
+  if (!Number.isFinite(bestRank) || !Number.isFinite(worstRank)) {
+    return ''
+  }
+
+  if (targetRank >= bestRank && targetRank <= worstRank) return 'success'
+  if (worstRank < targetRank) return 'success'
+  if (bestRank > targetRank) return 'danger'
+
+  return ''
+}
+
+const resolveForecastColorByTargetLevel = ({
+  forecastLevel,
+  targetLevel,
+}) => {
+  const forecastRange = getRankRange(forecastLevel)
+  const targetRange = getRankRange(targetLevel)
+
+  if (
+    !Number.isFinite(forecastRange.bestRank) ||
+    !Number.isFinite(forecastRange.worstRank) ||
+    !Number.isFinite(targetRange.bestRank) ||
+    !Number.isFinite(targetRange.worstRank)
+  ) {
+    return ''
+  }
+
+  if (forecastRange.worstRank <= targetRange.worstRank) {
+    return 'success'
+  }
+
+  if (forecastRange.bestRank <= targetRange.worstRank) {
+    return 'warning'
+  }
+
+  return 'danger'
+}
+
+const resolveForecastColor = ({
+  forecastLevel,
+  targetLevel,
+  targetPositionMode,
+  targetPosition,
+}) => {
+  if (!forecastLevel) return 'neutral'
+
+  if (targetPositionMode === 'exact') {
+    const exactColor = resolveForecastColorByExactTarget({
+      forecastLevel,
+      targetPosition,
+    })
+
+    if (exactColor) return exactColor
+  }
+
+  const levelColor = resolveForecastColorByTargetLevel({
+    forecastLevel,
+    targetLevel,
+  })
+
+  if (levelColor) return levelColor
 
   return 'neutral'
 }
@@ -152,6 +224,17 @@ const buildTargetRow = ({
   }
 }
 
+const getTargetPositionFromTargets = (targets = {}) => {
+  if (hasValue(targets?.targetPosition)) return targets.targetPosition
+  if (hasValue(targets?.values?.position)) return targets.values.position
+
+  return null
+}
+
+const getTargetPositionModeFromTargets = (targets = {}) => {
+  return targets?.targetPositionMode || ''
+}
+
 const buildForecast = ({
   source = {},
   calculation = {},
@@ -161,8 +244,8 @@ const buildForecast = ({
   forecastLevel = null,
   benchmarkLevel = null,
 }) => {
-  const values = targets?.values || {}
-  const targetPosition = toNullableNum(values?.position)
+  const targetPositionMode = getTargetPositionModeFromTargets(targets)
+  const targetPosition = getTargetPositionFromTargets(targets)
 
   const level = buildLevelView(forecastLevel)
   const targetLevel = buildLevelView(benchmarkLevel)
@@ -174,10 +257,14 @@ const buildForecast = ({
     projectedPoints: round1(source?.projectedTotalPoints),
     level,
     targetLevel,
+
+    targetPositionMode,
     targetPosition,
 
     color: resolveForecastColor({
       forecastLevel,
+      targetLevel: benchmarkLevel,
+      targetPositionMode,
       targetPosition,
     }),
 

@@ -13,8 +13,6 @@ export const entryEditDrawerSx = {
 
   drawerSheet: {
     borderRadius: 'md',
-    py: 1,
-    px: 0.5,
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
@@ -25,9 +23,9 @@ export const entryEditDrawerSx = {
 
   dialogTitle: {
     bgcolor: c.bg,
-    borderRadius: 'sm',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
     p: 1,
-    boxShadow: 'sm',
   },
 
   titleWrap: {
@@ -86,6 +84,7 @@ export const entryEditDrawerSx = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    px: 1
   },
 
   bulkBar: {
@@ -183,9 +182,8 @@ export const entryEditDrawerSx = {
   },
 
   footerSx: {
-    pt: 1,
-    mt: 0.5,
     px: 2,
+    py: 1,
     borderTop: '1px solid',
     borderColor: 'divider',
     display: 'flex',
@@ -214,6 +212,8 @@ export const entryEditDrawerSx = {
     bgcolor: c.bg,
     color: c.text,
     transition: 'filter .15s ease, transform .12s ease',
+    border: '1px solid',
+    borderColor: 'divider',
 
     '&:hover': {
       bgcolor: c.bg,

@@ -1,26 +1,39 @@
 // teamProfile/sharedLogic/games/insightsLogic/projections/homeAway.projection.js
 
-import { resolveTeamGamesTableLevelByProjectedPoints } from '../../../../../../../shared/games/insights/team/index.js'
+import {
+  resolveTeamGamesTableLevelByProjectedPoints,
+} from '../../../../../../../shared/teams/targets/index.js'
 
 import {
   getGamesRows,
   getPlayedRows,
   getUpcomingRows,
-} from '../rows/index.js'
+} from '../rows/gameRows.selectors.js'
 
 import {
   toNum,
   round1,
   resolveProgressColor,
   buildLevelView,
-} from '../common/index.js'
+} from '../common/view.shared.js'
 
 const VENUE_ICONS = {
   home: 'home',
   away: 'away',
 }
 
+const VENUE_LABELS = {
+  home: 'בית',
+  away: 'חוץ',
+}
+
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
 const resolveVenueId = (row = {}) => {
+  const game = getGameObject(row)
+
   const direct =
     row?.homeOrAway ||
     row?.venue ||
@@ -28,6 +41,12 @@ const resolveVenueId = (row = {}) => {
     row?.homeAway ||
     row?.locationType ||
     row?.homeType ||
+    game?.homeOrAway ||
+    game?.venue ||
+    game?.venueId ||
+    game?.homeAway ||
+    game?.locationType ||
+    game?.homeType ||
     ''
 
   const normalized = String(direct || '').trim().toLowerCase()
@@ -36,9 +55,54 @@ const resolveVenueId = (row = {}) => {
   if (normalized === 'away' || normalized === 'חוץ') return 'away'
 
   if (row?.home === true || row?.isHome === true) return 'home'
+  if (game?.home === true || game?.isHome === true) return 'home'
+
   if (row?.home === false || row?.isAway === true) return 'away'
+  if (game?.home === false || game?.isAway === true) return 'away'
 
   return ''
+}
+
+const resolveGoalsFor = (row = {}) => {
+  const game = getGameObject(row)
+
+  return toNum(
+    row?.goalsFor ??
+      row?.gf ??
+      row?.scoreFor ??
+      game?.goalsFor ??
+      game?.gf ??
+      game?.scoreFor
+  )
+}
+
+const resolveGoalsAgainst = (row = {}) => {
+  const game = getGameObject(row)
+
+  return toNum(
+    row?.goalsAgainst ??
+      row?.ga ??
+      row?.scoreAgainst ??
+      game?.goalsAgainst ??
+      game?.ga ??
+      game?.scoreAgainst
+  )
+}
+
+const resolvePoints = (row = {}) => {
+  const game = getGameObject(row)
+  const explicit = row?.points ?? row?.gamePoints ?? game?.points
+
+  if (explicit !== undefined && explicit !== null && explicit !== '') {
+    return toNum(explicit)
+  }
+
+  const goalsFor = resolveGoalsFor(row)
+  const goalsAgainst = resolveGoalsAgainst(row)
+
+  if (goalsFor > goalsAgainst) return 3
+  if (goalsFor === goalsAgainst) return 1
+  return 0
 }
 
 const getGroupedHomeAway = (games = {}) => {
@@ -47,51 +111,65 @@ const getGroupedHomeAway = (games = {}) => {
     ? grouped.byHomeOrAway
     : []
 
-  const home = byHomeOrAway.find((item) => item?.id === 'home') || null
-  const away = byHomeOrAway.find((item) => item?.id === 'away') || null
-
-  return { home, away }
+  return {
+    home: byHomeOrAway.find((item) => item?.id === 'home') || null,
+    away: byHomeOrAway.find((item) => item?.id === 'away') || null,
+  }
 }
 
 const buildFallbackBucketFromRows = (rows = [], venueId) => {
   const filtered = rows.filter((row) => resolveVenueId(row) === venueId)
-  const total = filtered.length
-  const points = filtered.reduce((sum, row) => sum + toNum(row?.points), 0)
-  const maxPoints = total * 3
+  const games = filtered.length
+  const points = filtered.reduce((sum, row) => sum + resolvePoints(row), 0)
+  const maxPoints = games * 3
   const pointsPct = maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0
 
   return {
     id: venueId,
-    label: venueId === 'home' ? 'בית' : 'חוץ',
-    total,
+    label: VENUE_LABELS[venueId],
+    games,
     points,
     maxPoints,
     pointsPct,
+    rows: filtered,
   }
 }
 
-const buildCurrentBucket = (bucket, fallbackBucket, venueId) => {
-  const source = bucket || fallbackBucket || {}
-
-  const total = toNum(source?.total)
+const buildCurrentBucket = ({
+  groupedBucket,
+  fallbackBucket,
+  venueId,
+}) => {
+  const source = groupedBucket || fallbackBucket || {}
+  const games = toNum(source?.games ?? source?.total)
   const points = toNum(source?.points)
-  const maxPoints = total * 3
+  const maxPoints = toNum(source?.maxPoints || games * 3)
 
   const pointsPct = toNum(
-    source?.pointsPct ||
-      source?.pct ||
+    source?.pointsPct ??
+      source?.pct ??
       (maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0)
   )
 
+  const rows = Array.isArray(source?.rows)
+    ? source.rows
+    : Array.isArray(fallbackBucket?.rows)
+      ? fallbackBucket.rows
+      : []
+
   return {
     id: venueId,
-    label: source?.label || (venueId === 'home' ? 'בית' : 'חוץ'),
+    label: source?.label || VENUE_LABELS[venueId],
     icon: VENUE_ICONS[venueId] || source?.idIcon || 'game',
-    games: total,
+
+    games,
+    total: games,
     points,
     maxPoints,
     pointsPct,
-    ppg: total > 0 ? round1(points / total) : 0,
+    ppg: games > 0 ? round1(points / games) : 0,
+
+    rows,
     color: resolveProgressColor(pointsPct),
   }
 }
@@ -203,6 +281,8 @@ const buildInsightPlaceholder = () => {
 export const buildTeamGamesHomeAwayProjection = ({
   league = {},
   games = {},
+  benchmarkLevel = null,
+  targetProfile = null,
 } = {}) => {
   const allRows = getGamesRows(games)
   const playedRows = getPlayedRows(games)
@@ -213,8 +293,17 @@ export const buildTeamGamesHomeAwayProjection = ({
   const homeFallback = buildFallbackBucketFromRows(playedRows, 'home')
   const awayFallback = buildFallbackBucketFromRows(playedRows, 'away')
 
-  const home = buildCurrentBucket(grouped.home, homeFallback, 'home')
-  const away = buildCurrentBucket(grouped.away, awayFallback, 'away')
+  const home = buildCurrentBucket({
+    groupedBucket: grouped.home,
+    fallbackBucket: homeFallback,
+    venueId: 'home',
+  })
+
+  const away = buildCurrentBucket({
+    groupedBucket: grouped.away,
+    fallbackBucket: awayFallback,
+    venueId: 'away',
+  })
 
   const readiness = buildReadiness({
     allRows,
@@ -224,13 +313,22 @@ export const buildTeamGamesHomeAwayProjection = ({
     away,
   })
 
+  const resolvedTargetProfile = targetProfile || benchmarkLevel || null
+
   return {
     readiness,
+    targetProfile: resolvedTargetProfile,
+    benchmarkLevel: resolvedTargetProfile,
+
     current: {
       home,
       away,
     },
+
+    buckets: [home, away],
+
     insight: buildInsightPlaceholder(),
+
     projection: buildProjection({
       league,
       readiness,

@@ -3,7 +3,7 @@
 export {
   TEAM_GAMES_TARGET_GROUPS,
   TEAM_GAMES_TARGET_PROFILES,
-} from './targets/teamTargetProfiles.js'
+} from '../../../teams/targets/index.js'
 
 export {
   TEAM_GAMES_BENCHMARK_GROUPS,
@@ -24,7 +24,7 @@ export {
   getTeamGamesSquadUsageTargetsByLevelId,
   getTeamGamesTableLevels,
   resolveTeamGamesTargetProfileByProjectedPoints as resolveTeamGamesTableLevelByProjectedPoints,
-} from './targets/teamTargets.selectors.js'
+} from '../../../teams/targets/index.js'
 
 export {
   TEAM_TARGET_POSITION_INPUT_TYPES,
@@ -35,11 +35,11 @@ export {
 export {
   resolveTeamTargetProfileFromTeam,
   resolveTeamForecastProfileFromActive,
-} from './targets/teamTargetProfile.resolve.js'
+} from '../../../teams/targets/index.js'
 
 export {
   resolveTeamTargetGap,
 } from './targets/teamTargetGap.resolve.js'
 
 // legacy alias
-export { TEAM_GAMES_TARGET_PROFILES as TEAM_GAMES_TABLE_LEVELS } from './targets/teamTargetProfiles.js'
+export { TEAM_GAMES_TARGET_PROFILES as TEAM_GAMES_TABLE_LEVELS } from '../../../teams/targets/index.js'

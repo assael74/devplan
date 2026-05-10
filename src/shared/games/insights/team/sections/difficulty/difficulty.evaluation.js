@@ -5,7 +5,7 @@ import {
   roundNumber,
 } from '../../common/index.js'
 
-import { getTeamGamesDifficultyTargetsByLevelId } from '../../targets/teamTargets.selectors.js'
+import { getTeamGamesDifficultyTargetsByLevelId } from '../../../../../teams/targets/index.js'
 
 const MIN_GAMES_FOR_STRONG_INSIGHT = 2
 

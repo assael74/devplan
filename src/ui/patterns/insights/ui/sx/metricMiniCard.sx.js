@@ -5,9 +5,11 @@ export const metricMiniCardSx = {
     minHeight: 78,
     borderRadius: 12,
     px: 0.85,
-    py: 0.75,
+    py: {
+      xs: 0.2,
+      sm: 0.75
+    },
     display: 'grid',
-    alignContent: 'start',
     gap: 0.25,
     overflow: 'hidden',
     border: '1px solid',
@@ -47,6 +49,10 @@ export const metricMiniCardSx = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    textAlign: {
+      xs: 'right',
+      sm: 'left'
+    }
   },
 
   tooltip: {

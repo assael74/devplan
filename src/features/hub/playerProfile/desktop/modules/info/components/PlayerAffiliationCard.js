@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Sheet, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+import { sharedSx as sx } from './sx/shared.sx.js'
 
 import { ClubSelectField, TeamSelectField } from '../../../../../../../ui/fields'
 

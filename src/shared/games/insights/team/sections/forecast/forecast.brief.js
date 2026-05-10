@@ -60,7 +60,7 @@ export function buildTeamGamesForecastBrief(insights = {}) {
   return buildReadyBriefResult({
     id: BRIEF_ID,
     sectionId: SECTION_ID,
-    tone: getForecastOverallTone(comparisons),
+    tone: getForecastOverallTone(comparisons, insights.targetGap),
     title: 'תובנות ראשוניות',
     subtitle: 'תחזית כללית',
     sourceLabel,

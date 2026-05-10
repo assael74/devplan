@@ -65,6 +65,7 @@ export const enrichTeamGameRow = (row) => {
 
   const goalsForRaw = game?.goalsFor ?? row?.goalsFor
   const goalsAgainstRaw = game?.goalsAgainst ?? row?.goalsAgainst
+  const gameLeagueNum = game?.gameLeagueNum || 0
 
   const hasGoalsFor =
     goalsForRaw !== '' &&
@@ -109,6 +110,7 @@ export const enrichTeamGameRow = (row) => {
 
     result,
     points,
+    gameLeagueNum,
 
     dateLabel: row?.dateH || '—',
     homeLabel: isHome ? 'בית' : 'חוץ',

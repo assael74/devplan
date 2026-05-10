@@ -1,8 +1,15 @@
-// teamProfile/modules/games/components/entryDrawer/entryEditDrawer.js
+// teamProfile/modules/games/components/entryDrawer/EntryEditDrawer.js
 
-// EntryEditDrawer.js
 import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Drawer, IconButton, Sheet, Tooltip, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Drawer,
+  IconButton,
+  Sheet,
+  Tooltip,
+  Typography,
+} from '@mui/joy'
 
 import EntryEditHeaderDrawer from './EntryEditHeaderDrawer.js'
 import EntryEditContentDrawer from './EntryEditContentDrawer.js'
@@ -11,6 +18,7 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
 
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
+
 import {
   buildTeamGameEntryInitial,
   buildTeamGameEntryPatch,
@@ -24,6 +32,7 @@ import {
 const defaultEntryFilters = {
   squad: 'all',
   start: 'all',
+  activeOnly: false,
 }
 
 export default function EntryEditDrawer({
@@ -38,31 +47,47 @@ export default function EntryEditDrawer({
   const initial = useMemo(() => {
     return buildTeamGameEntryInitial(game, team, context)
   }, [game, team, context])
+
   const [draft, setDraft] = useState(initial)
   const [filters, setFilters] = useState(defaultEntryFilters)
 
   useEffect(() => {
     if (!open) return
+
     setDraft(initial)
     setFilters(defaultEntryFilters)
   }, [open, initial])
 
-  const isValid = useMemo(() => getIsTeamGameEntryValid(draft), [draft])
-  const isDirty = useMemo(() => isTeamGameEntryDirty(draft), [draft])
-  const patch = useMemo(() => buildTeamGameEntryPatch(draft), [draft])
+  const isValid = useMemo(() => {
+    return getIsTeamGameEntryValid(draft)
+  }, [draft])
+
+  const isDirty = useMemo(() => {
+    return isTeamGameEntryDirty(draft)
+  }, [draft])
+
+  const patch = useMemo(() => {
+    return buildTeamGameEntryPatch(draft)
+  }, [draft])
+
   const validationMessage = useMemo(() => {
     return getTeamGameEntryValidationMessage(draft)
   }, [draft])
 
   const { run, pending } = useGameHubUpdate(game)
+
   const canSave = !!draft?.id && isDirty && isValid && !pending
 
   const handleChangeRow = (playerId, field, value) => {
     setDraft((prev) => {
-      const safeValue =
-        field === 'goals' || field === 'assists' || field === 'timePlayed'
-          ? clampTeamGameEntryStatToRowLimit(prev?.rows || [], playerId, field, value, prev)
-          : value
+      const isStatField =
+        field === 'goals' ||
+        field === 'assists' ||
+        field === 'timePlayed'
+
+      const safeValue = isStatField
+        ? clampTeamGameEntryStatToRowLimit(prev?.rows || [], playerId, field, value, prev)
+        : value
 
       return {
         ...prev,
@@ -102,10 +127,19 @@ export default function EntryEditDrawer({
   }
 
   const handleSetFilter = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev?.[key] === value ? 'all' : value,
-    }))
+    setFilters((prev) => {
+      if (key === 'activeOnly') {
+        return {
+          ...prev,
+          activeOnly: !prev?.activeOnly,
+        }
+      }
+
+      return {
+        ...prev,
+        [key]: prev?.[key] === value ? 'all' : value,
+      }
+    })
   }
 
   const handleResetFilters = () => {
@@ -118,7 +152,7 @@ export default function EntryEditDrawer({
     await run('teamEntryGameEdit', patch, {
       section: 'teamEntryGameEdit',
       gameId: draft.id,
-      createIfMissing: true
+      createIfMissing: true,
     })
 
     onSaved(patch, { ...initial.raw, ...patch })
@@ -193,10 +227,10 @@ export default function EntryEditDrawer({
             color={!isValid ? 'warning' : isDirty ? 'danger' : 'neutral'}
           >
             {!isValid
-              ? 'יש שדות חובה חסרים'
+              ? validationMessage || 'יש שדות חובה חסרים'
               : isDirty
-              ? 'יש שינויים שלא נשמרו'
-              : 'אין שינויים'}
+                ? 'יש שינויים שלא נשמרו'
+                : 'אין שינויים'}
           </Typography>
         </Box>
       </Sheet>

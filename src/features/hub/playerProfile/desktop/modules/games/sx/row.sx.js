@@ -9,7 +9,7 @@ export const rowSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: '280px 1px .2fr 1px minmax(100px,1fr) 1px .5fr 1px 40px',
+      md: '310px 1px .2fr 1px minmax(100px,1fr) 1px .5fr 1px 40px',
     },
     gap: 1,
     alignItems: 'stretch',

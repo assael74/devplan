@@ -1,19 +1,21 @@
 // teamProfile/sharedLogic/games/insightsLogic/projections/difficulty.projection.js
 
-import { resolveTeamGamesTableLevelByProjectedPoints } from '../../../../../../../shared/games/insights/team/index.js'
+import {
+  resolveTeamGamesTableLevelByProjectedPoints,
+} from '../../../../../../../shared/teams/targets/index.js'
 
 import {
   getGamesRows,
   getPlayedRows,
   getUpcomingRows,
-} from '../rows/index.js'
+} from '../rows/gameRows.selectors.js'
 
 import {
   toNum,
   round1,
   resolveProgressColor,
   buildLevelView,
-} from '../common/index.js'
+} from '../common/view.shared.js'
 
 const DIFFICULTY_ORDER = ['easy', 'equal', 'hard']
 
@@ -29,7 +31,13 @@ const DIFFICULTY_ICONS = {
   hard: 'hard',
 }
 
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
 const resolveDifficultyId = (row = {}) => {
+  const game = getGameObject(row)
+
   const direct =
     row?.difficulty ||
     row?.difficultyId ||
@@ -37,12 +45,20 @@ const resolveDifficultyId = (row = {}) => {
     row?.level ||
     row?.matchLevel ||
     row?.opponentLevel ||
+    game?.difficulty ||
+    game?.difficultyId ||
+    game?.gameDifficulty ||
+    game?.level ||
+    game?.matchLevel ||
+    game?.opponentLevel ||
     ''
 
   const normalized = String(direct || '').trim().toLowerCase()
 
   if (
     normalized === 'easy' ||
+    normalized === 'low' ||
+    normalized === 'weak' ||
     normalized === 'קל' ||
     normalized === 'רמה קלה'
   ) {
@@ -53,14 +69,19 @@ const resolveDifficultyId = (row = {}) => {
     normalized === 'equal' ||
     normalized === 'same' ||
     normalized === 'samelevel' ||
+    normalized === 'medium' ||
+    normalized === 'balanced' ||
     normalized === 'אותה רמה' ||
-    normalized === 'שווה'
+    normalized === 'שווה' ||
+    normalized === 'רמה שווה'
   ) {
     return 'equal'
   }
 
   if (
     normalized === 'hard' ||
+    normalized === 'high' ||
+    normalized === 'strong' ||
     normalized === 'קשה' ||
     normalized === 'רמה קשה'
   ) {
@@ -68,6 +89,48 @@ const resolveDifficultyId = (row = {}) => {
   }
 
   return 'equal'
+}
+
+const resolveGoalsFor = (row = {}) => {
+  const game = getGameObject(row)
+
+  return toNum(
+    row?.goalsFor ??
+      row?.gf ??
+      row?.scoreFor ??
+      game?.goalsFor ??
+      game?.gf ??
+      game?.scoreFor
+  )
+}
+
+const resolveGoalsAgainst = (row = {}) => {
+  const game = getGameObject(row)
+
+  return toNum(
+    row?.goalsAgainst ??
+      row?.ga ??
+      row?.scoreAgainst ??
+      game?.goalsAgainst ??
+      game?.ga ??
+      game?.scoreAgainst
+  )
+}
+
+const resolvePoints = (row = {}) => {
+  const game = getGameObject(row)
+  const explicit = row?.points ?? row?.gamePoints ?? game?.points
+
+  if (explicit !== undefined && explicit !== null && explicit !== '') {
+    return toNum(explicit)
+  }
+
+  const goalsFor = resolveGoalsFor(row)
+  const goalsAgainst = resolveGoalsAgainst(row)
+
+  if (goalsFor > goalsAgainst) return 3
+  if (goalsFor === goalsAgainst) return 1
+  return 0
 }
 
 const getGroupedDifficulty = (games = {}) => {
@@ -83,46 +146,66 @@ const getGroupedDifficulty = (games = {}) => {
 }
 
 const buildFallbackBucketFromRows = (rows = [], difficultyId) => {
-  const filtered = rows.filter((row) => resolveDifficultyId(row) === difficultyId)
-  const total = filtered.length
-  const points = filtered.reduce((sum, row) => sum + toNum(row?.points), 0)
-  const maxPoints = total * 3
+  const filtered = rows.filter((row) => {
+    return resolveDifficultyId(row) === difficultyId
+  })
+
+  const games = filtered.length
+  const points = filtered.reduce((sum, row) => sum + resolvePoints(row), 0)
+  const maxPoints = games * 3
   const pointsPct = maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0
 
   return {
     id: difficultyId,
     label: DIFFICULTY_LABELS[difficultyId],
-    total,
+    games,
+    total: games,
     points,
     maxPoints,
     pointsPct,
+    rows: filtered,
   }
 }
 
-const buildCurrentBucket = (bucket, fallbackBucket, difficultyId) => {
-  const source = bucket || fallbackBucket || {}
-  const total = toNum(source?.total)
+const buildCurrentBucket = ({
+  groupedBucket,
+  fallbackBucket,
+  difficultyId,
+}) => {
+  const source = groupedBucket || fallbackBucket || {}
+
+  const games = toNum(source?.games ?? source?.total)
   const points = toNum(source?.points)
-  const maxPoints = total * 3
+  const maxPoints = toNum(source?.maxPoints || games * 3)
 
   const pointsPct = toNum(
-    source?.pointsPct ||
-      source?.pct ||
+    source?.pointsPct ??
+      source?.pct ??
       (maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0)
   )
 
-  const rawPpg = total > 0 ? points / total : 0
+  const rawPpg = games > 0 ? points / games : 0
+
+  const rows = Array.isArray(source?.rows)
+    ? source.rows
+    : Array.isArray(fallbackBucket?.rows)
+      ? fallbackBucket.rows
+      : []
 
   return {
     id: difficultyId,
     label: source?.label || DIFFICULTY_LABELS[difficultyId],
     icon: DIFFICULTY_ICONS[difficultyId] || source?.idIcon || 'difficulty',
-    games: total,
+
+    games,
+    total: games,
     points,
     maxPoints,
     pointsPct,
     ppg: rawPpg,
     ppgLabel: round1(rawPpg),
+
+    rows,
     color: resolveProgressColor(pointsPct),
   }
 }
@@ -143,7 +226,10 @@ const buildReadiness = ({
   const hasUpcomingGames = upcomingRows.length > 0
 
   const remaining = DIFFICULTY_ORDER.reduce((acc, id) => {
-    acc[id] = upcomingRows.filter((row) => resolveDifficultyId(row) === id).length
+    acc[id] = upcomingRows.filter((row) => {
+      return resolveDifficultyId(row) === id
+    }).length
+
     return acc
   }, {})
 
@@ -237,6 +323,8 @@ const buildInsightPlaceholder = () => {
 
 export const buildTeamGamesDifficultyProjection = ({
   games = {},
+  benchmarkLevel = null,
+  targetProfile = null,
 } = {}) => {
   const allRows = getGamesRows(games)
   const playedRows = getPlayedRows(games)
@@ -246,7 +334,13 @@ export const buildTeamGamesDifficultyProjection = ({
 
   const buckets = DIFFICULTY_ORDER.reduce((acc, id) => {
     const fallback = buildFallbackBucketFromRows(playedRows, id)
-    acc[id] = buildCurrentBucket(grouped[id], fallback, id)
+
+    acc[id] = buildCurrentBucket({
+      groupedBucket: grouped[id],
+      fallbackBucket: fallback,
+      difficultyId: id,
+    })
+
     return acc
   }, {})
 
@@ -257,10 +351,18 @@ export const buildTeamGamesDifficultyProjection = ({
     buckets,
   })
 
+  const resolvedTargetProfile = targetProfile || benchmarkLevel || null
+
   return {
     readiness,
+    targetProfile: resolvedTargetProfile,
+    benchmarkLevel: resolvedTargetProfile,
+
     current: buckets,
+    buckets: DIFFICULTY_ORDER.map((id) => buckets[id]),
+
     insight: buildInsightPlaceholder(),
+
     projection: buildProjection({
       readiness,
       buckets,

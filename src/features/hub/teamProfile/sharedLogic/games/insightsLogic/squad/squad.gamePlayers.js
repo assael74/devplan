@@ -1,7 +1,7 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.gamePlayers.js
 
-import { getGameObject } from '../rows/index.js'
-import { toNum } from '../common/index.js'
+import { getGameObject } from '../rows/gameRows.selectors.js'
+import { toNum } from '../common/view.shared.js'
 
 export const getGamePlayers = (row = {}) => {
   const game = getGameObject(row)
@@ -22,6 +22,8 @@ export const getGamePlayerId = (item = {}) => {
 
 export const isStarter = (item = {}) => {
   return (
+    item?.isStart === true ||
+    item?.onStart === true ||
     item?.isStarting === true ||
     item?.isStarter === true ||
     item?.started === true ||
@@ -30,7 +32,11 @@ export const isStarter = (item = {}) => {
 }
 
 export const isUsedPlayer = (item = {}) => {
-  const timePlayed = toNum(item?.timePlayed ?? item?.minutes ?? item?.playedMinutes)
+  const timePlayed = toNum(
+    item?.timePlayed ??
+      item?.minutes ??
+      item?.playedMinutes
+  )
 
   return (
     timePlayed > 0 ||

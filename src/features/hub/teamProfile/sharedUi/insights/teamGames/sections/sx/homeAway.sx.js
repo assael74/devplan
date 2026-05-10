@@ -8,11 +8,18 @@ export const homeAwaySx = {
   grid: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: '1fr',
-      sm: '1.5fr 1fr .7fr'
+      xs: '1fr 1fr',
+      sm: '1.5fr 1fr .7fr',
     },
     alignItems: 'stretch',
     gap: 1,
+
+    '& > :first-of-type': {
+      gridColumn: {
+        xs: '1 / -1',
+        sm: 'auto',
+      },
+    },
   },
 
   detailsButton: {

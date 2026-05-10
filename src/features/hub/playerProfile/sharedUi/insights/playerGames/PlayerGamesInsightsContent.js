@@ -18,11 +18,7 @@ import {
 
 import { usePlayerGamesInsightsModel } from './usePlayerGamesInsightsModel.js'
 
-export default function PlayerGamesInsightsContent({
-  games,
-  player,
-  team,
-}) {
+export default function PlayerGamesInsightsContent({ games, player, team }) {
   const model = usePlayerGamesInsightsModel({
     games,
     player,
@@ -42,14 +38,15 @@ export default function PlayerGamesInsightsContent({
       <LocalInsightsSection title="תובנות משחקי שחקן" icon="insights">
         <ModeBlockedPlaceholder
           title="אין מספיק נתוני משחקים"
-          text="כדי להציג תובנות שחקן נדרשים משחקי ליגה משוחקים עם דקות שחקן, פתיחות ונתוני תרומה."
+          text="כדי להציג תובנות שחקן נדרשים משחקי ליגה משוחקים עם דקות שחקן, הרכב ונתוני תרומה."
         />
       </LocalInsightsSection>
     )
   }
 
-  // שליפת התובנות הספציפיות מתוך מודל הנתונים
   const briefs = insights?.briefs || {}
+  const gamesSnapshot = insights?.games || games
+  const targets = insights?.targets || {}
 
   return (
     <Box sx={{ display: 'grid', gap: 3 }}>
@@ -65,6 +62,7 @@ export default function PlayerGamesInsightsContent({
         <OpportunitySection
           data={mainDiagnosis}
           brief={briefs.usage}
+          gamesData={gamesSnapshot}
         />
       </LocalInsightsSection>
 
@@ -72,7 +70,11 @@ export default function PlayerGamesInsightsContent({
         title="האם נתן תפוקה לפי הציפייה?"
         icon="insights"
       >
-        <ExpectationSection briefs={briefs} />
+        <ExpectationSection
+          briefs={briefs}
+          targets={insights?.targets || {}}
+          gamesData={gamesSnapshot}
+        />
       </LocalInsightsSection>
 
       <LocalInsightsSection title="הקשר ביצוע" icon="details">
@@ -88,8 +90,8 @@ export default function PlayerGamesInsightsContent({
             alignItems: 'start',
           }}
         >
-          <TeamImpactSection brief={briefs.teamContext} />
-          <DifficultyImpactSection brief={briefs.difficulty} />
+          <TeamImpactSection brief={briefs.teamContext} gamesData={gamesSnapshot} />
+          <DifficultyImpactSection brief={briefs.difficulty} gamesData={gamesSnapshot} />
         </Box>
       </LocalInsightsSection>
     </Box>

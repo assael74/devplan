@@ -40,8 +40,8 @@ export default function SnackbarCenter({ anchorOrigin }) {
   const actionColor = active?.action ? getActionColor(active.action) : null
   const entityColor = active?.action ? getEntityColor(active.entityType) : null
 
-  const durationMs = Number.isFinite(active?.durationMs) ? active.durationMs : 3200
-  // no auto-hide: user closes explicitly
+  ///const durationMs = Number.isFinite(active?.durationMs) ? active.durationMs : 2200
+  const durationMs = 1200
 
   return (
     <Snackbar
@@ -49,7 +49,7 @@ export default function SnackbarCenter({ anchorOrigin }) {
       onClose={() => closeActive('close')}
       anchorOrigin={anchorOrigin || { vertical: 'bottom', horizontal: 'left' }}
       variant="soft"
-      autoHideDuration={null}
+      autoHideDuration={durationMs}
       color={status === SNACK_STATUS.SUCCESS ? 'success' : 'danger'}
       sx={{
         maxWidth: 700,

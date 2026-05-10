@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { Box, Typography, Sheet, Input, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { playerInfoModuleSx as sx } from '../playerInfo.module.sx.js'
+import { sharedSx as sx } from './sx/shared.sx.js'
 
 import {
   calcPlayerBmi,

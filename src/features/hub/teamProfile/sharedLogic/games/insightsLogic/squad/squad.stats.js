@@ -1,6 +1,6 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.stats.js
 
-import { toNum } from '../common/index.js'
+import { toNum } from '../common/view.shared.js'
 
 import {
   getGamePlayerId,

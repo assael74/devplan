@@ -1,0 +1,65 @@
+// teamProfile/desktop/modules/management/components/ManagementTabs.js
+
+import React from 'react'
+import { Box, Button, Typography } from '@mui/joy'
+
+import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { tabsSx as sx } from './sx/tabs.sx.js'
+
+export const TABS = [
+  {
+    id: 'info',
+    label: 'מידע',
+    labelH: 'ניהול קבוצה כללי',
+    icon: 'details',
+  },
+  {
+    id: 'targets',
+    label: 'יעדי עונה',
+    labelH: 'ניהול יעדי הקבוצה',
+    icon: 'targets',
+  },
+  {
+    id: 'staff',
+    label: 'צוות מקצועי',
+    labelH: 'ניהול הצוות המקצועי של הקבוצה',
+    icon: 'staff',
+  },
+]
+
+export default function ManagementTabs({
+  activeTab,
+  onTabChange,
+}) {
+  return (
+    <Box sx={sx.tabsShell}>
+      {TABS.map((tab) => {
+        const selected = activeTab?.id === tab.id
+
+        return (
+          <Button
+            key={tab.id}
+            variant="plain"
+            color="neutral"
+            onClick={() => onTabChange(tab)}
+            sx={sx.tabBtn(selected)}
+          >
+            <Box sx={sx.tabIcon(selected)}>
+              {iconUi({ id: tab.icon })}
+            </Box>
+
+            <Box sx={sx.tabText}>
+              <Typography level="title-sm" sx={sx.tabLabel(selected)}>
+                {tab.label}
+              </Typography>
+
+              <Typography level="body-xs" sx={sx.tabSub(selected)}>
+                {tab.labelH}
+              </Typography>
+            </Box>
+          </Button>
+        )
+      })}
+    </Box>
+  )
+}

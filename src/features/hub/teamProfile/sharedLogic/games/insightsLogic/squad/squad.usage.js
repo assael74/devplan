@@ -1,6 +1,6 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.usage.js
 
-import { toNum } from '../common/index.js'
+import { toNum } from '../common/view.shared.js'
 import { sortByStat } from './squad.stats.js'
 
 export const FIXED_SQUAD_SIZE = 22

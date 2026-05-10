@@ -1,7 +1,7 @@
 // playerProfile/desktop/modules/games/components/sections/InfoPlayerSection.js
 
 import React from 'react'
-import { Box, Typography, Tooltip, Avatar, Divider } from '@mui/joy'
+import { Box, Typography, Tooltip, Avatar, Divider, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
@@ -30,9 +30,15 @@ export function InfoPlayerSection({ game }) {
       </Box>
 
       <Box>
-        <Typography level="body-sm" sx={sx.titleSx}>
-          {game?.displayTitle || 'ללא משחק'}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+          <Typography level="body-sm" sx={sx.titleSx}>
+            {game?.displayTitle || 'ללא משחק'}
+          </Typography>
+
+          <Chip size="sm" variant="soft" color="neutral" sx={sx.leagueNum}>
+            מחזור: {game?.gameLeagueNum || '—'}
+          </Chip>
+        </Box>
 
         <Box sx={sx.metaItemSx}>
           <Typography

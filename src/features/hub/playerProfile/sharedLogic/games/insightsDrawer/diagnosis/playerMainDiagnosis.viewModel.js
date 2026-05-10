@@ -4,7 +4,7 @@ import {
   formatNumber,
   formatPercent,
   normalizeJoyColor,
-} from '../cards/playerCards.shared.js'
+} from '../cards/cards.shared.js'
 
 const EMPTY = '—'
 
@@ -230,7 +230,7 @@ const buildMetrics = ({
   return [
     buildMetric({
       id: 'minutesPct',
-      label: 'דקות',
+      label: 'דקות משחק',
       value: formatPercent(minutesPct),
       sub: `יעד ${getRangeLabel(minutesRange)}`,
       icon: 'time',
@@ -241,9 +241,9 @@ const buildMetrics = ({
     }),
     buildMetric({
       id: 'startsPct',
-      label: 'פתיחות',
+      label: 'פתח בהרכב',
       value: formatPercent(startsPct),
-      sub: `${formatNumber(usage?.starts)} פתיחות מתוך ${formatNumber(
+      sub: `${formatNumber(usage?.starts)} הרכב מתוך ${formatNumber(
         usage?.teamGamesTotal
       )}`,
       icon: 'lineup',
@@ -251,7 +251,7 @@ const buildMetrics = ({
     }),
     buildMetric({
       id: 'gamesIncluded',
-      label: 'שותף',
+      label: 'חלק מהמשחק',
       value: `${formatNumber(usage?.gamesIncluded)}/${formatNumber(
         usage?.teamGamesTotal
       )}`,
@@ -279,13 +279,13 @@ const buildSummaryFacts = ({
   return [
     {
       id: 'minutesPct',
-      label: 'דקות',
+      label: 'דקות משחק',
       value: formatPercent(minutesPct),
       icon: 'time',
     },
     {
       id: 'startsPct',
-      label: 'פתיחות',
+      label: 'הרכב',
       value: formatPercent(startsPct),
       icon: 'lineup',
     },

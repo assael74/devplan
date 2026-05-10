@@ -37,11 +37,25 @@ export const sectionsSx = {
 
   titleSx: {
     minWidth: 0,
+    flex: 1,
     fontWeight: 700,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     lineHeight: 1.25,
+  },
+
+  leagueNum: {
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    fontWeight: 700,
+    lineHeight: 1.25,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 'sm',
+    fontSize: 10,
+    px: 0.75,
+    py: 0.25,
   },
 
   infoMetaRowSx: {

@@ -14,12 +14,14 @@ import {
   isTeamEditDirty,
 } from '../../../../editLogic/teams/index.js'
 
-import TeamManagementToolbar from './components/TeamManagementToolbar.js'
-import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
-import TeamManagementTargetsCard from './components/TeamManagementTargetsCard.js'
+import ManagementToolbar from './components/ManagementToolbar.js'
+import ManagementTabs from './components/ManagementTabs.js'
+import ManagementInfo from './components/ManagementInfo.js'
+import ManagementTargets from './components/ManagementTargets.js'
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'
 
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
+import { TABS } from './components/ManagementTabs.js'
 
 const noop = () => {}
 
@@ -30,6 +32,8 @@ export default function TeamManagementModule({
   onClose = noop,
 }) {
   const team = entity || null
+
+  const [activeTab, setActiveTab] = useState(TABS[0])
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
@@ -84,8 +88,14 @@ export default function TeamManagementModule({
 
   return (
     <SectionPanel>
+      <ManagementTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
       <Box sx={sx.stickyToolbar}>
-        <TeamManagementToolbar
+        <ManagementToolbar
+          activeTab={activeTab}
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
@@ -94,34 +104,34 @@ export default function TeamManagementModule({
         />
       </Box>
 
-      <Box sx={{ ...sx.topGrid, my: 1 }}>
-        <Box sx={sx.targetsArea}>
-          <TeamManagementTargetsCard
-            team={team}
-            draft={draft}
-            onDraft={setDraft}
-            pending={pending}
-          />
-        </Box>
-
-        <Box sx={sx.infoArea}>
-          <TeamManagementInfoCard
-            draft={draft}
-            clubName={clubName}
-            onDraft={setDraft}
-            pending={pending}
-          />
-        </Box>
-      </Box>
-
-      <Box sx={sx.staffArea}>
-        <ManagementStaffCard
-          teamId={baseModel.id}
-          roles={staffPool}
-          disabled={pending}
-          compact={false}
+      {activeTab.id === 'info' && (
+        <ManagementInfo
+          draft={draft}
+          clubName={clubName}
+          onDraft={setDraft}
+          pending={pending}
         />
-      </Box>
+      )}
+
+      {activeTab.id === 'targets' && (
+        <ManagementTargets
+          team={team}
+          draft={draft}
+          onDraft={setDraft}
+          pending={pending}
+        />
+      )}
+
+      {activeTab.id === 'staff' && (
+        <Box sx={{ mt: 2 }}>
+          <ManagementStaffCard
+            teamId={baseModel.id}
+            roles={staffPool}
+            disabled={pending}
+            compact={false}
+          />
+        </Box>
+      )}
     </SectionPanel>
   )
 }

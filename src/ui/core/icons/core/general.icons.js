@@ -1,4 +1,5 @@
 import {
+  AssistantPhoto,
   AccessTime,
   Attribution,
   AddLocationAlt,
@@ -29,6 +30,7 @@ export const generalIcons = {
   history: <History />,
   hour: <AccessTime />,
   info: <Info />,
+  flag: <AssistantPhoto />,
   note: <NotesRounded />,
   notes: <NotesRounded />,
   weekend: <Weekend />,

@@ -17,7 +17,9 @@ import GameDurationSelectField from '../../../fields/selectUi/games/GameDuration
 import GameTypeSelectField from '../../../fields/selectUi/games/GameTypeSelectField.js'
 import GameStatusSelectField from '../../../fields/selectUi/games/GameStatusSelectField.js'
 
+
 import GameRivelField from '../../../fields/inputUi/games/GameRivelField.js'
+import GameLeagueNumField from '../../../fields/inputUi/games/GameLeagueNumField.js'
 import GoalsForField from '../../../fields/inputUi/games/GoalsForField.js'
 import GoalsAgainstField from '../../../fields/inputUi/games/GoalsAgainstField.js'
 import GameVideoLinkField from '../../../fields/inputUi/games/GameVideoLinkField.js'
@@ -51,6 +53,7 @@ function getGameEditFieldsState(draft = {}, context = {}) {
     clubName: draft?.clubName || context?.player?.clubName || '',
     teamName: draft?.teamName || context?.player?.teamName || '',
 
+    gameLeagueNum: draft?.gameLeagueNum ?? '',
     home: draft?.home ?? '',
     difficulty: draft?.difficulty || '',
     type: draft?.type || '',
@@ -73,21 +76,22 @@ export default function GameEditFields({
   isPrivatePlayer = false,
 }) {
   const {
-    gameDate,
-    gameHour,
-    rivel,
-    teamId,
-    clubId,
+    gameLeagueNum,
+    gameDuration,
+    goalsAgainst,
+    difficulty,
+    gameStatus,
+    goalsFor,
     clubName,
     teamName,
-    home,
-    difficulty,
-    type,
-    gameDuration,
-    gameStatus,
-    goalsAgainst,
-    goalsFor,
+    gameDate,
+    gameHour,
+    teamId,
+    clubId,
+    rivel,
     vLink,
+    type,
+    home,
   } = getGameEditFieldsState(draft, context)
 
   useEffect(() => {
@@ -158,7 +162,7 @@ export default function GameEditFields({
         </Typography>
       </Divider>
 
-      <Box sx={sx.block(layout.mainCols)}>
+      <Box sx={sx.block(layout.resultCols)}>
         <Box sx={{ minWidth: 0 }}>
           <GameRivelField
             id="rivel"
@@ -171,6 +175,15 @@ export default function GameEditFields({
         </Box>
 
         <Box sx={{ minWidth: 0 }}>
+          <GameLeagueNumField
+            id="game_Num"
+            value={gameLeagueNum}
+            size="sm"
+            onChange={(value) => onDraft({ ...draft, gameLeagueNum: value })}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
           <GameHomeSelector
             id="game_Home_Selector"
             value={home}
@@ -179,7 +192,15 @@ export default function GameEditFields({
             onChange={(value) => onDraft({ ...draft, home: value })}
           />
         </Box>
+      </Box>
 
+      <Divider sx={{ my: 1 }}>
+        <Typography level="title-sm" sx={sx.title}>
+          זמן משחק
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.block(layout.mainCols)}>
         <Box sx={{ minWidth: 0 }}>
           <DateInputField
             label="תאריך משחק"

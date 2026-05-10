@@ -3,7 +3,7 @@
 import {
   getTeamGamesTargetProfileById,
   resolveTeamGamesTargetProfileByProjectedPoints,
-} from './teamTargets.selectors.js'
+} from '../../../../teams/targets/index.js'
 
 import { resolveTeamTargetPositionFromTeam } from './teamTargetPosition.resolve.js'
 

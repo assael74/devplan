@@ -90,7 +90,7 @@ export const enrichGameWithTeam = (game, team) => {
 
   const teamPlayersMap = buildTeamPlayersMap(srcTeam)
   const gamePlayers = enrichGamePlayers(game, teamPlayersMap)
-  //console.log(game)
+  const gameLeagueNum = game?.gameLeagueNum || game?.game?.gameLeagueNum || 0
 
   const hasVideo = !!game?.vLink
 
@@ -103,6 +103,7 @@ export const enrichGameWithTeam = (game, team) => {
     teamPhoto: srcTeam?.photo || game?.teamPhoto || '',
 
     gameStatus,
+    gameLeagueNum,
     statusH: statusMeta?.labelH || 'מתוכנן',
     statusIcon: statusMeta?.idIcon || 'calendar',
     statusColor: statusMeta?.color || 'neutral',

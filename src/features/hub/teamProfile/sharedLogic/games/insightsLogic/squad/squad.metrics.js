@@ -1,12 +1,12 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.metrics.js
 
-import { getPlayedRows } from '../rows/index.js'
+import { getPlayedRows } from '../rows/gameRows.selectors.js'
 
 import {
   EMPTY,
   toNum,
   resolveProgressColor,
-} from '../common/index.js'
+} from '../common/view.shared.js'
 
 import { getGamePlayers } from './squad.gamePlayers.js'
 

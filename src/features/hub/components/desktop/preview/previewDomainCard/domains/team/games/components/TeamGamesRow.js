@@ -31,6 +31,9 @@ export default function TeamGamesRow({ row, onEdit }) {
   const colorIcon = hasVlink ? 'success' : 'danger'
   const tipVlink = hasVlink ? 'יש קישור למשחק' : 'אין קישור למשחק'
   const difficultyText = getGameDifficultyLabelH(row?.difficulty)
+  const hasLeagueNum = row.gameLeagueNum !== 0
+  const varLeagueNum = hasLeagueNum ? 'solid' : 'outlined'
+  //console.log(row.gameLeagueNum)
 
   const rowHoverSx = {
     ...sx.rowCardSx,
@@ -53,10 +56,12 @@ export default function TeamGamesRow({ row, onEdit }) {
           </Typography>
         </Box>
 
-        {!!row?.hourRaw && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant={varLeagueNum} sx={sx.leagueNumSx}>מחזור: {row.gameLeagueNum}</Typography>
+
           <Typography sx={sx.subValueSx}>{row.hourRaw}</Typography>
-        )}
         </Box>
+      </Box>
 
       <Box sx={sx.mainCellSx}>
         <Typography level="body-sm" sx={sx.mainValueSx}>{row?.rival || '—'}</Typography>

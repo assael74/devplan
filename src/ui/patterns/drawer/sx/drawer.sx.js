@@ -13,8 +13,6 @@ export const drawerSx = {
 
   sheet: {
     borderRadius: 'md',
-    py: 1,
-    px: 0.5,
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
@@ -32,9 +30,9 @@ export const drawerSx = {
   },
 
   footer: {
-    pt: 1,
+    py: 1,
     mt: 1,
-    px: 1,
+    px: 1.5,
     borderTop: '1px solid',
     borderColor: 'divider',
     display: 'flex',

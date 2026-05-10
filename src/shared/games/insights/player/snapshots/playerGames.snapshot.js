@@ -15,7 +15,7 @@ import {
 
 import {
   buildPlayerDerivedTargets,
-} from '../targets/index.js'
+} from '../../../../players/targets/index.js'
 
 import {
   calcPerLeagueGameTime,
@@ -56,12 +56,7 @@ const resolveTeamRows = ({ team, player }) => {
   return []
 }
 
-const buildScoringSummary = ({
-  rows,
-  teamGoalsFor,
-  minutesPlayed,
-  leagueGameTime,
-}) => {
+const buildScoringSummary = ({ rows, teamGoalsFor, minutesPlayed, leagueGameTime }) => {
   const goals = sumBy(rows, 'goals')
   const assists = sumBy(rows, 'assists')
   const goalContributions = goals + assists
@@ -101,11 +96,7 @@ const buildScoringSummary = ({
   }
 }
 
-const buildDefensiveSummary = ({
-  rows,
-  minutesPlayed,
-  leagueGameTime,
-}) => {
+const buildDefensiveSummary = ({ rows, minutesPlayed, leagueGameTime }) => {
   const goalsAgainst = sumBy(rows, 'goalsAgainst')
 
   const cleanSheets = countBy(rows, (row) => {
@@ -126,10 +117,7 @@ const buildDefensiveSummary = ({
   }
 }
 
-const buildStartingSplit = ({
-  rows,
-  leagueGameTime,
-}) => {
+const buildStartingSplit = ({ rows, leagueGameTime }) => {
   const starters = safeArray(rows).filter((row) => row?.isStarting === true)
   const bench = safeArray(rows).filter((row) => row?.isStarting !== true)
 
@@ -195,11 +183,7 @@ const buildStartingSplit = ({
   }
 }
 
-const buildRecentSummary = ({
-  rows,
-  leagueGameTime,
-  size = 5,
-}) => {
+const buildRecentSummary = ({ rows, leagueGameTime, size = 5 }) => {
   const recentRows = safeArray(rows).slice(0, size)
 
   const minutes = sumBy(recentRows, 'timePlayed')
@@ -235,20 +219,19 @@ const buildRecentSummary = ({
   }
 }
 
-export function buildPlayerGamesSnapshot({
-  player,
-  team,
-  rows = [],
-  normalizeRow,
-}) {
-  const normalize = typeof normalizeRow === 'function' ? normalizeRow : (row) => row
-  const view = buildGamesView(rows, normalizeRow)
+export function buildPlayerGamesSnapshot({ player, team, rows = [], normalizeRow }) {
+  const normalize = typeof normalizeRow === 'function'
+    ? normalizeRow
+    : (row) => row
+
+  const view = buildGamesView(rows, normalize)
   const playerLeagueGames = filterLeaguePlayedGames(view.playedGames || [])
 
   const teamRows = resolveTeamRows({
     team,
     player,
   })
+
   const teamView = buildGamesView(teamRows, normalize)
   const teamLeagueGames = filterLeaguePlayedGames(teamView.playedGames || [])
 
@@ -288,6 +271,7 @@ export function buildPlayerGamesSnapshot({
   })
 
   const grouped = buildGroupedInsights(playerLeagueGames)
+
   const splits = buildStartingSplit({
     rows: playerLeagueGames,
     leagueGameTime,
@@ -335,11 +319,13 @@ export function buildPlayerGamesSnapshot({
     usage,
     scoring,
     defense,
+
     grouped: {
       byHomeOrAway: grouped.byHomeOrAway,
       byType: grouped.byType,
       byDifficulty: grouped.byDifficulty,
     },
+
     splits,
     recent,
     targets,

@@ -9,32 +9,56 @@ function getDifficultySource(insights = {}) {
   return insights?.teamContext?.difficulty || []
 }
 
+function getBucketLabel(id = '') {
+  if (id === 'easy') return 'רמה קלה'
+  if (id === 'equal') return 'אותה רמה'
+  if (id === 'hard') return 'רמה קשה'
+
+  return id || ''
+}
+
 function normalizeBucket(bucket = {}) {
-  const player = bucket.player || {}
+  const withPlayer = bucket.withPlayer || bucket.player || {}
+  const withoutPlayer = bucket.withoutPlayer || {}
   const team = bucket.team || {}
+  const games = bucket.games || {}
 
   return {
     id: bucket.id || '',
-    label:
-      bucket.id === 'easy'
-        ? 'רמה קלה'
-        : bucket.id === 'equal'
-          ? 'אותה רמה'
-          : bucket.id === 'hard'
-            ? 'רמה קשה'
-            : bucket.id || '',
+    label: getBucketLabel(bucket.id),
 
     minutes: pickNumber(bucket, ['minutes'], 0),
 
-    playerGames: pickNumber(player, ['games'], 0),
-    playerPointsRate: pickNumber(player, ['pointsRate'], 0),
-    playerPointsPerGame: pickNumber(player, ['pointsPerGame'], 0),
+    withPlayer,
+    withoutPlayer,
+    team,
+    games,
+
+    // compat
+    player: withPlayer,
+
+    playerGames: pickNumber(withPlayer, ['games'], 0),
+    playerPoints: pickNumber(withPlayer, ['points'], 0),
+    playerMaxPoints: pickNumber(withPlayer, ['maxPoints'], 0),
+    playerPointsRate: pickNumber(withPlayer, ['pointsRate'], 0),
+    playerPointsPerGame: pickNumber(withPlayer, ['pointsPerGame'], 0),
+
+    withoutPlayerGames: pickNumber(withoutPlayer, ['games'], 0),
+    withoutPlayerPoints: pickNumber(withoutPlayer, ['points'], 0),
+    withoutPlayerMaxPoints: pickNumber(withoutPlayer, ['maxPoints'], 0),
+    withoutPlayerPointsRate: pickNumber(withoutPlayer, ['pointsRate'], 0),
+    withoutPlayerPointsPerGame: pickNumber(withoutPlayer, ['pointsPerGame'], 0),
 
     teamGames: pickNumber(team, ['games'], 0),
+    teamPoints: pickNumber(team, ['points'], 0),
+    teamMaxPoints: pickNumber(team, ['maxPoints'], 0),
     teamPointsRate: pickNumber(team, ['pointsRate'], 0),
     teamPointsPerGame: pickNumber(team, ['pointsPerGame'], 0),
 
     pointsRateGap: pickNumber(bucket, ['pointsRateGap'], 0),
+    pointsPerGameGap: pickNumber(bucket, ['pointsPerGameGap'], 0),
+
+    raw: bucket,
   }
 }
 
@@ -43,6 +67,7 @@ export function buildPlayerDifficultyMetrics(insights = {}) {
 
   const buckets = ['easy', 'equal', 'hard'].map((id) => {
     const found = source.find((item) => item.id === id) || { id }
+
     return normalizeBucket(found)
   })
 
@@ -52,12 +77,18 @@ export function buildPlayerDifficultyMetrics(insights = {}) {
 
   const best = available.reduce((bestBucket, bucket) => {
     if (!bestBucket) return bucket
-    return bucket.pointsRateGap > bestBucket.pointsRateGap ? bucket : bestBucket
+
+    return bucket.pointsRateGap > bestBucket.pointsRateGap
+      ? bucket
+      : bestBucket
   }, null)
 
   const worst = available.reduce((worstBucket, bucket) => {
     if (!worstBucket) return bucket
-    return bucket.pointsRateGap < worstBucket.pointsRateGap ? bucket : worstBucket
+
+    return bucket.pointsRateGap < worstBucket.pointsRateGap
+      ? bucket
+      : worstBucket
   }, null)
 
   const rates = available.map((bucket) => bucket.playerPointsRate)

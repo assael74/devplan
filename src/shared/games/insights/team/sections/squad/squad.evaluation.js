@@ -9,7 +9,7 @@ import {
 import {
   getTeamGamesScorersTargetsByLevelId,
   getTeamGamesSquadUsageTargetsByLevelId,
-} from '../../targets/teamTargets.selectors.js'
+} from '../../../../../teams/targets/index.js'
 
 export function buildSquadUsageEvaluation(usage, performance) {
   const targets = getTeamGamesSquadUsageTargetsByLevelId(

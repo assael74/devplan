@@ -1,6 +1,6 @@
 // teamProfile/sharedLogic/games/insightsLogic/squad/squad.players.js
 
-import { EMPTY } from '../common/index.js'
+import { EMPTY } from '../common/view.shared.js'
 
 export const getPlayerId = (player = {}) => {
   return player?.id || player?.playerId || player?.uid || ''

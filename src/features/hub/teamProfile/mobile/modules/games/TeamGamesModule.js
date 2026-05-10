@@ -20,6 +20,25 @@ import {
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
+const LEAGUE_GAME_TYPE = 'league'
+
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
+const isLeagueGame = (row = {}) => {
+  const game = getGameObject(row)
+  const type = String(row?.type || game?.type || '').toLowerCase()
+
+  return type === LEAGUE_GAME_TYPE
+}
+
+const getTeamGamesRows = (team) => {
+  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
+
+  return rows.filter(isLeagueGame)
+}
+
 export default function TeamGamesModule({
   entity,
   context,
@@ -50,6 +69,10 @@ export default function TeamGamesModule({
   }, [liveTeam, filters])
 
   const { summary, games, options, indicators } = domain || {}
+
+  const calculationGames = useMemo(() => {
+    return getTeamGamesRows(liveTeam)
+  }, [liveTeam])
 
   const sortedGames = useMemo(() => {
     return sortTeamGamesRows(games, sort)
@@ -113,7 +136,7 @@ export default function TeamGamesModule({
       <TeamGamesInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        games={sortedGames}
+        games={calculationGames}
         entity={liveTeam}
         summary={summary}
       />

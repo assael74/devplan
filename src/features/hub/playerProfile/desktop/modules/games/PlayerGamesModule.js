@@ -21,6 +21,19 @@ import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 
+const LEAGUE_GAME_TYPE = 'league'
+
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
+const isLeagueGame = (row = {}) => {
+  const game = getGameObject(row)
+  const type = String(row?.type || game?.type || '').toLowerCase()
+
+  return type === LEAGUE_GAME_TYPE
+}
+
 export default function PlayerGamesModule({
   entity,
   context,
@@ -49,6 +62,12 @@ export default function PlayerGamesModule({
 
   const { summary, games, options, indicators } = domain || {}
 
+  const calculationGames = useMemo(() => {
+    const rows = Array.isArray(games) ? games : []
+
+    return rows.filter(isLeagueGame)
+  }, [games])
+
   const sortedGames = useMemo(() => {
     return sortPlayerGamesRows(games, sort)
   }, [games, sort])
@@ -72,8 +91,8 @@ export default function PlayerGamesModule({
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
   const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
-  //console.log('livePlayer', livePlayer.playerGames.filter(p=>p.id === 'נערים-ב-20250802-120436הפועל-רעננה-2-20250918')[0])
-  //console.log('games', games.filter(p=>p.id === 'נערים-ב-20250802-120436הפועל-רעננה-2-20250918')[0])
+  //console.log('games', games.map(i=>i.goals))
+  //console.log('calculationGames', calculationGames.map(i=>i.goals))
   return (
     <>
       <SectionPanel>
@@ -133,7 +152,7 @@ export default function PlayerGamesModule({
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
         summary={summary}
-        games={sortedGames}
+        games={calculationGames}
         player={livePlayer}
       />
     </>

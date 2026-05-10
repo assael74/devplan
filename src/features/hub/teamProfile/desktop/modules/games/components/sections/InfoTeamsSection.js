@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Typography, Avatar, Tooltip, Divider } from '@mui/joy'
+import { Box, Typography, Avatar, Tooltip, Divider, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
@@ -42,9 +42,15 @@ export function InfoTeamsSection({ game }) {
       <AvatarWithStatus src={src} statusMeta={statusMeta} />
 
       <Box>
-        <Typography level="body-sm" sx={sx.titleSx}>
-          {game?.rival || game?.rivel || 'ללא יריבה'} - {clubName}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+          <Typography level="body-sm" sx={sx.titleSx}>
+            {game?.rival || game?.rivel || 'ללא יריבה'} - {clubName}
+          </Typography>
+
+          <Chip size="sm" variant="soft" color="neutral" sx={sx.leagueNum}>
+            מחזור: {game?.gameLeagueNum || '—'}
+          </Chip>
+        </Box>
 
         <Box sx={sx.metaItemSx}>
           <Typography

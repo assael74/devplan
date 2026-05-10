@@ -37,9 +37,8 @@ export {
 
 export {
   buildTeamGamesDrawerViewModel,
-  buildTeamGamesTopStats,
-  buildTeamGamesCards,
-  buildHomeAwayInsightItems,
-  buildDifficultyInsightItems,
-  buildFeedInsightItems,
+  buildHomeAwayCardsModel,
+  buildDifficultyCardsModel,
+  buildSquadCardsModel,
+  buildSquadOffenseCardsModel,
 } from './insightsLogic/index.js'

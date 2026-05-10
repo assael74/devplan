@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Sheet, Box, Typography, Avatar } from '@mui/joy'
+import ifaImage from '../../../../ui/core/images/ifaImage.png'
 
 export default function HeaderStrip({
   title,

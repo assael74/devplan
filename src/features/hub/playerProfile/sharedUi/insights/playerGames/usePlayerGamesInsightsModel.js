@@ -12,11 +12,7 @@ import {
   buildPlayerGamesDrawerViewModel,
 } from '../../../sharedLogic/games/insightsDrawer/index.js'
 
-export function usePlayerGamesInsightsModel({
-  games,
-  player,
-  team,
-} = {}) {
+export function usePlayerGamesInsightsModel({ games, player, team } = {}) {
   const normalizeRow = useMemo(() => {
     return createGameRowNormalizer({})
   }, [])

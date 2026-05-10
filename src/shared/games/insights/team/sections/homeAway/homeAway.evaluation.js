@@ -5,7 +5,7 @@ import {
   hasNumber,
 } from '../../common/index.js'
 
-import { getTeamGamesHomeAwayTargetsByLevelId } from '../../targets/teamTargets.selectors.js'
+import { getTeamGamesHomeAwayTargetsByLevelId } from '../../../../../teams/targets/index.js'
 
 const FALLBACK_HOME_AWAY_TARGETS = {
   overall: { greenMin: 50, redBelow: 40 },

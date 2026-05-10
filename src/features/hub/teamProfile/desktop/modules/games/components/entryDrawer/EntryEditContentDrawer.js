@@ -1,8 +1,15 @@
 // teamProfile/modules/games/components/entryDrawer/EntryEditContentDrawer.js
 
-// EntryEditContentDrawer.js
 import React from 'react'
-import { Avatar, Box, Button, Chip, DialogContent, Sheet, Typography, Divider, IconButton } from '@mui/joy'
+import {
+  Avatar,
+  Box,
+  Chip,
+  DialogContent,
+  Sheet,
+  Typography,
+  Divider,
+} from '@mui/joy'
 
 import OnSquadSelector from '../../../../../../../../ui/fields/checkUi/games/OnSquadSelector.js'
 import OnSquadStart from '../../../../../../../../ui/fields/checkUi/games/OnSquadStart.js'
@@ -10,9 +17,9 @@ import GoalField from '../../../../../../../../ui/fields/inputUi/games/GoalField
 import AssistField from '../../../../../../../../ui/fields/inputUi/games/AssistField.js'
 import TimePlayedField from '../../../../../../../../ui/fields/inputUi/games/TimePlayedField.js'
 
-import EntryBulkBar from './EntryBulkBar'
+import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
+import EntryBulkBar from './EntryBulkBar'
 
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
 
@@ -23,8 +30,14 @@ import {
   getTeamGoalsLimit,
 } from '../../../../../../editLogic/games/entryGames/index.js'
 
+function getRowIsActive(row) {
+  return row?.active !== false
+}
+
 function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
+  const isActive = getRowIsActive(row)
   const statsDisabled = !row?.onSquad || !isPlayed
+
   const onStartTotal = (draft?.rows || []).filter((r) => r?.onStart === true).length
   const disableStartSelection = row?.onStart !== true && onStartTotal >= 11
 
@@ -37,9 +50,7 @@ function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
     <Sheet variant="soft" sx={sx.rowCard}>
       <Box sx={sx.rowGrid}>
         <Box sx={sx.playerCell}>
-          <Avatar src={row?.avatar || ''} sx={sx.playerAvatar}>
-            {row?.playerName?.[0] || 'ש'}
-          </Avatar>
+          <Avatar src={row?.avatar || playerImage} sx={sx.playerAvatar} />
 
           <Box sx={sx.playerMeta}>
             <Typography level="title-sm" noWrap>
@@ -56,6 +67,12 @@ function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
               {!!row?.position && (
                 <Chip size="sm" variant="soft" color="primary">
                   {row.position}
+                </Chip>
+              )}
+
+              {!isActive && (
+                <Chip size="sm" variant="soft" color="warning">
+                  לא פעיל
                 </Chip>
               )}
             </Box>
@@ -108,6 +125,8 @@ function PlayerEntryRow({ row, isPlayed, onChangeRow, draft }) {
 
 function applyEntryFilters(rows = [], filters = {}) {
   return rows.filter((row) => {
+    const isActive = getRowIsActive(row)
+
     const squadOk =
       filters?.squad === 'all' ||
       (filters?.squad === 'in' && row?.onSquad === true) ||
@@ -118,7 +137,11 @@ function applyEntryFilters(rows = [], filters = {}) {
       (filters?.start === 'in' && row?.onStart === true) ||
       (filters?.start === 'out' && row?.onStart !== true)
 
-    return squadOk && startOk
+    const activeOk =
+      filters?.activeOnly !== true ||
+      isActive
+
+    return squadOk && startOk && activeOk
   })
 }
 

@@ -75,6 +75,14 @@ export const tableSx = {
     textAlign: 'center',
   },
 
+  leagueNumSx: {
+    fontSize: 12,
+    textAlign: 'center',
+    borderRadius: 12,
+    px: 0.7,
+    py: 0
+  },
+
   subValueSx: {
     color: 'text.tertiary',
     fontSize: 12,

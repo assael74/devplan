@@ -80,6 +80,7 @@ export const buildTeamGameEntryRow = (player, existing) => {
     playerNumber: player?.number || player?.shirtNumber || player?.playerNumber || '',
     position: player?.position || player?.mainPosition || '',
     avatar: player?.img || player?.avatar || player?.photo || '',
+    active: player?.active !== false,
     rawPlayer: player,
 
     onSquad: current?.onSquad === true,
@@ -110,9 +111,7 @@ export const buildTeamGameEntryInitial = (game, team, context) => {
       .filter(([id]) => Boolean(id))
   )
 
-  const activeSquad = squad.filter((player) => player?.active !== false)
-
-  const rosterRows = activeSquad.map((player) => {
+  const rosterRows = squad.map((player) => {
     const key = player?.id
     return buildTeamGameEntryRow(player, existingMap.get(key))
   })
@@ -129,6 +128,7 @@ export const buildTeamGameEntryInitial = (game, team, context) => {
           number: item?.playerNumber || '',
           position: item?.position || '',
           avatar: item?.avatar || '',
+          active: false,
         },
         item
       )

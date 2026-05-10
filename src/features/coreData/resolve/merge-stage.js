@@ -146,7 +146,7 @@ export function mergeCoreShorts({
   const clubs = clubsBaseDoc ? mergeShorts(clubsShorts, clubsBaseDoc, [], 'id') : []
 
   const teamsBase = teamsBaseDoc
-    ? mergeShorts(teamsShorts, teamsBaseDoc, ['teamsMeeting', 'teamsTargets', 'teamsTraining'], 'id')
+    ? mergeShorts(teamsShorts, teamsBaseDoc, ['teamsMeeting', 'teamsTraining'], 'id')
     : []
 
   const standardPlayersBase = mergeStandardPlayers(playersShorts)

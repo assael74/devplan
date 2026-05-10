@@ -7,7 +7,6 @@ export const shortsRefs = {
 
  teams: {
    teamsInfo: { collection: 'teamsShorts', docId: 'Fx1rytOdDJee4DtesHSj' },
-   teamsTargets: { collection: 'teamsShorts', docId: 'YvXgbBZnexr7jFSf2ItP' },
    teamsTraining: { collection: 'teamsShorts', docId: 'dCCoNIsyQBiVCrHpTRbH' },
  },
 

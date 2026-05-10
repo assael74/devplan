@@ -64,19 +64,6 @@ export {
   clearToolbarIndicator,
 } from './games/module/playerGames.toolbar.utils.js'
 
-// ----- GAMES / INSIGHTS DRAWER -----
-export {
-  buildHomeAwayInsightItems,
-  buildDifficultyInsightItems,
-  buildFeedInsightItems,
-  buildTypeInsightItems,
-} from './games/insightsDrawer/playerGames.cards.grouped.js'
-
-export {
-  buildPlayerGamesTopStats,
-  buildPlayerGamesCards,
-  buildPlayerGamesDrawerViewModel,
-} from './games/insightsDrawer/playerGames.cards.logic.js'
 
 // ----- MEETINGS / MODULE -----
 export * from './meetings/module/meetings.buckets.js'
