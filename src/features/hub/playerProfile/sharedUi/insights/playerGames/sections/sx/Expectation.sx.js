@@ -5,7 +5,7 @@ const resolveMetricsCols = (cols = 3) => {
 
   if (count === 2) {
     return {
-      xs: '1fr',
+      xs: '1fr 1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
     }
   }
@@ -19,7 +19,7 @@ const resolveMetricsCols = (cols = 3) => {
   }
 
   return {
-    xs: '1fr',
+    xs: '1fr 1fr 1fr',
     sm: 'repeat(3, minmax(0, 1fr))',
   }
 }

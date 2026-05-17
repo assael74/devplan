@@ -45,6 +45,19 @@ const padMonth = (value) => {
   return str.padStart(2, '0')
 }
 
+const resolvePrimaryPosition = ({ positions = [], primaryPosition = '' }) => {
+  const safePositions = safeArr(positions)
+  const primary = clean(primaryPosition)
+
+  if (!safePositions.length) return ''
+
+  if (primary && safePositions.includes(primary)) {
+    return primary
+  }
+
+  return ''
+}
+
 const parseBirthValue = (birth) => {
   const raw = clean(birth)
   if (!raw) return { month: '', year: '' }
@@ -120,6 +133,11 @@ export function buildPlayerEditInitial(player = {}) {
   const source = getSource(player)
   const id = getId(source)
   const birthParts = parseBirthValue(source?.birth)
+  const positions = safeArr(source?.positions)
+  const primaryPosition = resolvePrimaryPosition({
+    positions,
+    primaryPosition: source?.primaryPosition,
+  })
 
   return {
     id,
@@ -147,7 +165,8 @@ export function buildPlayerEditInitial(player = {}) {
     phone: clean(source?.phone),
     ifaLink: clean(source?.ifaLink),
 
-    positions: safeArr(source?.positions),
+    positions,
+    primaryPosition,
 
     active: getBool(source?.active, false),
     squadRole: clean(source?.squadRole),
@@ -157,6 +176,19 @@ export function buildPlayerEditInitial(player = {}) {
 }
 
 export function isPlayerEditDirty(draft = {}, initial = {}) {
+  const draftPositions = safeArr(draft?.positions)
+  const initialPositions = safeArr(initial?.positions)
+
+  const draftPrimaryPosition = resolvePrimaryPosition({
+    positions: draftPositions,
+    primaryPosition: draft?.primaryPosition,
+  })
+
+  const initialPrimaryPosition = resolvePrimaryPosition({
+    positions: initialPositions,
+    primaryPosition: initial?.primaryPosition,
+  })
+
   return (
     draft.month !== initial.month ||
     draft.year !== initial.year ||
@@ -171,7 +203,8 @@ export function isPlayerEditDirty(draft = {}, initial = {}) {
     draft.birthDay !== initial.birthDay ||
     draft.phone !== initial.phone ||
     draft.ifaLink !== initial.ifaLink ||
-    !sameArr(draft.positions, initial.positions) ||
+    draftPrimaryPosition !== initialPrimaryPosition ||
+    !sameArr(draftPositions, initialPositions) ||
     draft.active !== initial.active ||
     draft.squadRole !== initial.squadRole ||
     draft.type !== initial.type ||
@@ -183,6 +216,26 @@ export function buildPlayerEditPatch(draft = {}, initial = {}) {
   const next = {}
   const draftBirth = buildBirthValue(draft?.month, draft?.year)
   const initialBirth = buildBirthValue(initial?.month, initial?.year)
+  const draftPositions = safeArr(draft?.positions)
+  const initialPositions = safeArr(initial?.positions)
+
+  const draftPrimaryPosition = resolvePrimaryPosition({
+    positions: draftPositions,
+    primaryPosition: draft?.primaryPosition,
+  })
+
+  const initialPrimaryPosition = resolvePrimaryPosition({
+    positions: initialPositions,
+    primaryPosition: initial?.primaryPosition,
+  })
+
+  if (!sameArr(draftPositions, initialPositions)) {
+    next.positions = draftPositions
+  }
+
+  if (draftPrimaryPosition !== initialPrimaryPosition) {
+    next.primaryPosition = draftPrimaryPosition || null
+  }
 
   if (draftBirth !== initialBirth) {
     next.birth = draftBirth || null
@@ -202,8 +255,6 @@ export function buildPlayerEditPatch(draft = {}, initial = {}) {
   addNullableIfChanged(next, draft, initial, 'phone')
 
   addIfChanged(next, draft, initial, 'ifaLink')
-
-  addArrayIfChanged(next, draft, initial, 'positions')
 
   addBoolIfChanged(next, draft, initial, 'active')
 

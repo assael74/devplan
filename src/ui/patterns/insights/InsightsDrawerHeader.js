@@ -1,4 +1,4 @@
-//  ui/patterns/insights/InsightsDrawerHeader.js
+// ui/patterns/insights/InsightsDrawerHeader.js
 
 import React from 'react'
 import { Avatar, Box, DialogTitle, ModalClose, Typography } from '@mui/joy'
@@ -10,12 +10,14 @@ export default function InsightsDrawerHeader({
   subtitle = 'תובנות',
   avatarSrc = '',
   colorSx = {},
+  actions = null,
 }) {
   return (
     <DialogTitle sx={{ ...sx.headerWrap, ...colorSx }}>
       <Box sx={sx.headerRow}>
         <Avatar src={avatarSrc} />
-        <Box sx={{ ml: 2 }}>
+
+        <Box sx={{ ml: 2, minWidth: 0 }}>
           <Typography level="title-md" sx={sx.formNameSx}>
             {title}
           </Typography>
@@ -28,6 +30,18 @@ export default function InsightsDrawerHeader({
             {subtitle}
           </Typography>
         </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mr: 4.5,
+          ml: 1,
+        }}
+      >
+        {actions}
       </Box>
 
       <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />

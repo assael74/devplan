@@ -1,7 +1,7 @@
 // playerProfile/sharedUi/insights/playerGames/PlayerGamesInsightsContent.js
 
 import React from 'react'
-import { Box } from '@mui/joy'
+import { Box, Skeleton } from '@mui/joy'
 
 import {
   LocalInsightsSection,
@@ -16,31 +16,65 @@ import {
   DifficultyImpactSection,
 } from './sections/index.js'
 
+import {
+  LocalHeader,
+} from './layout/index.js'
+
 import { usePlayerGamesInsightsModel } from './usePlayerGamesInsightsModel.js'
 
-export default function PlayerGamesInsightsContent({ games, player, team }) {
+const PlayerGamesInsightsLoading = () => {
+  return (
+    <Box sx={{ display: 'grid', gap: 2 }}>
+      <Skeleton variant="rectangular" height={86} />
+      <Skeleton variant="rectangular" height={160} />
+      <Skeleton variant="rectangular" height={190} />
+    </Box>
+  )
+}
+
+export default function PlayerGamesInsightsContent({
+  games,
+  player,
+  team,
+  enabled = true,
+}) {
   const model = usePlayerGamesInsightsModel({
     games,
     player,
     team,
+    enabled,
+    defer: true,
   })
 
   const {
     gamesReady,
-    topStats,
-    briefCards,
     insights,
     mainDiagnosis,
+    isBuilding,
   } = model
+
+  if (isBuilding) {
+    return (
+      <Box sx={{ display: 'grid', gap: 3 }}>
+        <LocalHeader showPrint={false} />
+
+        <PlayerGamesInsightsLoading />
+      </Box>
+    )
+  }
 
   if (!gamesReady) {
     return (
-      <LocalInsightsSection title="תובנות משחקי שחקן" icon="insights">
-        <ModeBlockedPlaceholder
-          title="אין מספיק נתוני משחקים"
-          text="כדי להציג תובנות שחקן נדרשים משחקי ליגה משוחקים עם דקות שחקן, הרכב ונתוני תרומה."
-        />
-      </LocalInsightsSection>
+      <Box sx={{ display: 'grid', gap: 3 }}>
+        <LocalHeader showPrint={false} />
+
+        <LocalInsightsSection title="תובנות משחקי שחקן" icon="insights">
+          <ModeBlockedPlaceholder
+            title="אין מספיק נתוני משחקים"
+            text="כדי להציג תובנות שחקן נדרשים משחקי ליגה משוחקים עם דקות שחקן, הרכב ונתוני תרומה."
+          />
+        </LocalInsightsSection>
+      </Box>
     )
   }
 
@@ -50,7 +84,11 @@ export default function PlayerGamesInsightsContent({ games, player, team }) {
 
   return (
     <Box sx={{ display: 'grid', gap: 3 }}>
-      {/* אזור 1: אבחנה ראשית (השורה התחתונה בראש) */}
+      <LocalHeader
+        model={model}
+        printDisabled={!gamesReady}
+      />
+
       <LocalInsightsSection title="שורה תחתונה" icon="keyPlayer">
         <MainDiagnosis data={mainDiagnosis} />
       </LocalInsightsSection>
@@ -72,7 +110,7 @@ export default function PlayerGamesInsightsContent({ games, player, team }) {
       >
         <ExpectationSection
           briefs={briefs}
-          targets={insights?.targets || {}}
+          targets={targets}
           gamesData={gamesSnapshot}
         />
       </LocalInsightsSection>
@@ -90,8 +128,15 @@ export default function PlayerGamesInsightsContent({ games, player, team }) {
             alignItems: 'start',
           }}
         >
-          <TeamImpactSection brief={briefs.teamContext} gamesData={gamesSnapshot} />
-          <DifficultyImpactSection brief={briefs.difficulty} gamesData={gamesSnapshot} />
+          <TeamImpactSection
+            brief={briefs.teamContext}
+            gamesData={gamesSnapshot}
+          />
+
+          <DifficultyImpactSection
+            brief={briefs.difficulty}
+            gamesData={gamesSnapshot}
+          />
         </Box>
       </LocalInsightsSection>
     </Box>

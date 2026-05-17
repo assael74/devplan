@@ -1,6 +1,9 @@
 import React from 'react'
 import {
+  Anchor,
   Badge,
+  Bloodtype,
+  Engineering,
   ElectricBolt,
   Hub,
   SportsSoccer,
@@ -9,7 +12,9 @@ import {
   SportsHandball,
   RocketLaunch,
   Radar,
+  VolunteerActivism,
   Layers,
+  Waves,
   Box,
 } from '@mui/icons-material'
 
@@ -53,6 +58,12 @@ export const playerIcons = {
   positions: <SportsSoccer />,
   layers: <Layers />,
   shortName: <Badge />,
+  anchor: <Anchor />,
+  joker: <ElectricBolt />,
+  worker: <Engineering />,
+  contributor: <VolunteerActivism />,
+  unstable: <Waves />,
+  weakSpot: <Bloodtype />,
 
   defense: <Security />,
   midfield: <Radar />,

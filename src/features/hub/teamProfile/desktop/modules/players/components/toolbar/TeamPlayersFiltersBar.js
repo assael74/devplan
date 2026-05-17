@@ -19,7 +19,7 @@ const renderSelectValue = (selected, items, fallbackLabel, fallbackIcon) => {
   if (!item) {
     return (
       <>
-        <ListItemDecorator>
+        <ListItemDecorator sx={{ mr: 0.5 }}>
           {iconUi({ id: fallbackIcon })}
         </ListItemDecorator>
         {fallbackLabel}
@@ -29,7 +29,7 @@ const renderSelectValue = (selected, items, fallbackLabel, fallbackIcon) => {
 
   return (
     <>
-      <ListItemDecorator>
+      <ListItemDecorator sx={{ mr: 0.5 }}>
         {iconUi({ id: item.idIcon || fallbackIcon })}
       </ListItemDecorator>
       {item.label} ({item.count || 0})

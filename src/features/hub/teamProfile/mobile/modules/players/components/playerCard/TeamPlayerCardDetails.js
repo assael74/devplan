@@ -2,37 +2,28 @@
 
 import React from 'react'
 import {
-  Avatar,
   Box,
   Button,
   Chip,
   Divider,
-  IconButton,
-  Tooltip,
   Typography,
 } from '@mui/joy'
 
-import EntityActionsMenu from '../../../../../../sharedProfile/EntityActionsMenu.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
-function MetaItem({ icon, value, color = 'neutral' }) {
-  return (
-    <Box sx={sx.metaItem}>
-      <Typography
-        level="body-sm"
-        color={color}
-        startDecorator={iconUi({ id: icon, size: 'sm' })}
-      >
-        {value || '—'}
-      </Typography>
-    </Box>
-  )
+const getPrimaryPosition = (row = {}) => {
+  const positions = Array.isArray(row?.positions) ? row.positions : []
+  const primary = row?.primaryPosition || row?.generalPosition?.primaryPosition || ''
+
+  return positions.includes(primary) ? primary : ''
 }
 
 function PositionsBlock({ row, onEditPosition }) {
   const positions = Array.isArray(row?.positions) ? row.positions : []
+  const primaryPosition = getPrimaryPosition(row)
+
   const generalPositionLabel = row?.generalPosition?.layerLabel || 'ללא עמדה כללית'
   const generalPositionIcon = row?.generalPosition?.layerKey || 'layers'
 
@@ -47,7 +38,7 @@ function PositionsBlock({ row, onEditPosition }) {
           size="sm"
           variant="plain"
           color="warning"
-          startDecorator={iconUi({ id: 'position' })}
+          startDecorator={iconUi({ id: 'position', size: 'sm' })}
           onClick={() => onEditPosition(row)}
           sx={{ px: 0, minHeight: 'auto', fontWeight: 700 }}
         >
@@ -57,23 +48,38 @@ function PositionsBlock({ row, onEditPosition }) {
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
         {positions.length ? (
-          positions.map((pos, idx) => (
-            <Chip
-              key={`${row?.id}-${pos}-${idx}`}
-              size="md"
-              variant='soft'
-              color={idx === 0 ? 'primary' : 'neutral'}
-              onClick={onEditPosition ? () => onEditPosition(row) : undefined}
-              sx={{ cursor: 'pointer', border: '1px solid', borderColor: 'divider' }}
-            >
-              {pos}
-            </Chip>
-          ))
+          positions.map((pos, idx) => {
+            const isPrimary = !!primaryPosition && pos === primaryPosition
+
+            return (
+              <Chip
+                key={`${row?.id}-${pos}-${idx}`}
+                size="md"
+                variant={isPrimary ? 'solid' : 'soft'}
+                color={isPrimary ? 'primary' : 'neutral'}
+                startDecorator={
+                  isPrimary
+                    ? iconUi({ id: pos, size: 'sm' })
+                    : null
+                }
+                onClick={onEditPosition ? () => onEditPosition(row) : undefined}
+                sx={{
+                  cursor: 'pointer',
+                  border: '1px solid',
+                  borderColor: isPrimary ? 'primary.300' : 'divider',
+                  fontWeight: isPrimary ? 700 : 500,
+                }}
+              >
+                {isPrimary ? `ראשית ${pos}` : pos}
+              </Chip>
+            )
+          })
         ) : (
           <Chip
             size="md"
             variant="soft"
             color="danger"
+            startDecorator={iconUi({ id: 'position', size: 'sm' })}
             onClick={onEditPosition ? () => onEditPosition(row) : undefined}
             sx={{ cursor: 'pointer', border: '1px solid', borderColor: 'divider' }}
           >
@@ -86,22 +92,53 @@ function PositionsBlock({ row, onEditPosition }) {
         <Chip
           size="sm"
           variant="plain"
-          color="warning"
-          startDecorator={iconUi({ id: generalPositionIcon })}
+          color={primaryPosition ? 'primary' : 'warning'}
+          startDecorator={iconUi({
+            id: primaryPosition || generalPositionIcon || 'position',
+            size: 'sm',
+          })}
           onClick={onEditPosition ? () => onEditPosition(row) : undefined}
-          sx={{ cursor: 'pointer', border: '1px solid', borderColor: 'divider' }}
+          sx={{
+            cursor: 'pointer',
+            border: '1px solid',
+            borderColor: 'divider',
+            fontWeight: 700,
+          }}
         >
-          {generalPositionLabel}
+          {primaryPosition
+            ? `ראשית ${primaryPosition} · ${generalPositionLabel}`
+            : `לא הוגדרה ראשית · ${generalPositionLabel}`}
         </Chip>
       </Box>
     </Box>
   )
 }
 
-function PerformBlock({ row, onEditPosition }) {
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
-  const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
+function PerformChip({
+  icon,
+  color = 'neutral',
+  children,
+}) {
+  return (
+    <Chip
+      size="sm"
+      variant="soft"
+      color={color}
+      startDecorator={iconUi({ id: icon, size: 'sm' })}
+      sx={{ border: '1px solid', borderColor: 'divider' }}
+    >
+      {children}
+    </Chip>
+  )
+}
+
+function PerformBlock({ row }) {
+  const gamesStats = row?.playerGamesStats || {}
+
+  const goals = Number(gamesStats?.goals ?? 0)
+  const assists = Number(gamesStats?.assists ?? 0)
+  const squadLabel = gamesStats?.squadLabel || '0/0'
+  const playedLabel = gamesStats?.playedLabel || '0/0'
 
   return (
     <Box sx={{ display: 'grid', gap: 0.6 }}>
@@ -112,35 +149,21 @@ function PerformBlock({ row, onEditPosition }) {
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-      <Chip
-        size="sm"
-        variant="soft"
-        color="success"
-        startDecorator={iconUi({ id: 'goal' })}
-        sx={{ border: '1px solid', borderColor: 'divider' }}
-      >
-        שערים {goals}
-      </Chip>
+        <PerformChip icon="players">
+          סגל {squadLabel}
+        </PerformChip>
 
-      <Chip
-        size="sm"
-        variant="soft"
-        color="primary"
-        startDecorator={iconUi({ id: 'assists' })}
-        sx={{ border: '1px solid', borderColor: 'divider' }}
-      >
-        בישולים {assists}
-      </Chip>
+        <PerformChip icon="games">
+          שותף {playedLabel}
+        </PerformChip>
 
-      <Chip
-        size="sm"
-        variant="soft"
-        color="neutral"
-        startDecorator={iconUi({ id: 'playTimeRate' })}
-        sx={{ border: '1px solid', borderColor: 'divider' }}
-      >
-        דקות {timeRateLabel}
-      </Chip>
+        <PerformChip icon="goal" color="success">
+          שערים {goals}
+        </PerformChip>
+
+        <PerformChip icon="assists" color="primary">
+          בישולים {assists}
+        </PerformChip>
       </Box>
     </Box>
   )
@@ -151,10 +174,6 @@ export default function TeamPlayerCardDetails({
   onEditPlayer,
   onEditPosition,
 }) {
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
-  const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
-  const timeRateColor = row?.playerFullStats?.trColor || 'neutral'
   const chip = row?.projectChipMeta || {
     labelH: 'כללי',
     idIcon: 'noneType',
@@ -178,7 +197,10 @@ export default function TeamPlayerCardDetails({
           size="sm"
           variant="soft"
           color={chip.tone === 'custom' ? 'neutral' : chip.tone}
-          startDecorator={iconUi({id: chip.idIcon, sx: chip.textColor ? { color: chip.textColor } : undefined })}
+          startDecorator={iconUi({
+            id: chip.idIcon,
+            sx: chip.textColor ? { color: chip.textColor } : undefined,
+          })}
           sx={
             chip.tone === 'custom'
               ? {
@@ -196,7 +218,7 @@ export default function TeamPlayerCardDetails({
         <Button
           size="sm"
           variant="plain"
-          startDecorator={iconUi({id: 'edit'})}
+          startDecorator={iconUi({ id: 'edit', size: 'sm' })}
           onClick={() => onEditPlayer(row)}
         >
           עריכת שחקן

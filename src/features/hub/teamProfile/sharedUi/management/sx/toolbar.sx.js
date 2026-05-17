@@ -1,0 +1,92 @@
+// teamProfile/sharedUi/management/sx/toolbar.sx.js
+
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('teams')
+
+export const toolbarSx = {
+  toolbar: (nonShow, isMobile) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: isMobile ? 0.75 : 1,
+    px: isMobile ? 1 : 1.25,
+    py: !nonShow
+      ? isMobile
+        ? 0.75
+        : 0.85
+      : isMobile
+        ? 1
+        : 1.6,
+    borderRadius: 'md',
+    bgcolor: 'background.surface',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'sm',
+    minWidth: 0,
+    flexWrap: 'nowrap',
+  }),
+
+  titleArea: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    minWidth: 0,
+  },
+
+  headerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    bgcolor: c.accent,
+    boxShadow: '0 0 0 4px rgba(76,110,245,0.12)',
+    flexShrink: 0,
+  },
+
+  title: (isMobile) => ({
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: isMobile ? 170 : 'none',
+  }),
+
+  toolbarActions: (isMobile) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: isMobile ? 0.5 : 0.75,
+    flexShrink: 0,
+    flexWrap: 'nowrap',
+  }),
+
+  mobileSaveBtn: {
+    bgcolor: c.bg,
+    color: c.text,
+    border: '1px solid',
+    borderColor: 'divider',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+    },
+  },
+
+  confBtn: {
+    bgcolor: c.bg,
+    color: c.text,
+    fontWeight: 700,
+    boxShadow: 'sm',
+    px: 1.5,
+    transition: 'filter .15s ease, transform .12s ease',
+    border: '1px solid',
+    borderColor: 'divider',
+
+    '&:hover': {
+      bgcolor: c.bg,
+      color: c.text,
+      filter: 'brightness(0.96)',
+      transform: 'translateY(-1px)',
+    },
+  },
+}

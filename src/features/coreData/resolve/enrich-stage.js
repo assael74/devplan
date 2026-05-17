@@ -252,6 +252,7 @@ export function enrichPlayers(merged, indexes, teams) {
         generalPosition: {
           layerKey: generalPosition.layerKey,
           layerLabel: generalPosition.layerLabel,
+          primaryPosition: player?.primaryPosition || ''
         },
         level: level ?? null,
         levelPotential: levelPotential ?? null,

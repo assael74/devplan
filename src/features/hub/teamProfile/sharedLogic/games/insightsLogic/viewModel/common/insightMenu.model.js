@@ -2,7 +2,7 @@
 
 export function getPrimaryTakeaway(brief) {
   const items = Array.isArray(brief?.items) ? brief.items : []
-
+  
   const action = items.find((item) => item?.id === 'action_focus')
   if (action) return action
 

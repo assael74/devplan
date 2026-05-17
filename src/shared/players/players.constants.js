@@ -88,3 +88,9 @@ export const LAYER_TITLES = {
   atMidfield: 'קישור',
   attack: 'התקפה',
 };
+
+export const FULL_WIDTH_LAYERS = [
+  'defense',
+  'atMidfield',
+  'dmMid',
+]

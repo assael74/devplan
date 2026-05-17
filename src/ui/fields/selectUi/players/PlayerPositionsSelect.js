@@ -1,97 +1,123 @@
-/// ui/fields/selectUi/players/PlayerPositionFieldPitch.js
+// ui/fields/selectUi/players/PlayerPositionsSelect.js
 
-import React, { useState } from 'react';
-import { layerBoxProps, chipProps, boxPositionProps } from './sx/playerPositions.sx'
-import { Box, Typography, Chip, FormControl, FormLabel, Snackbar } from '@mui/joy';
+import React from 'react'
+import {
+  FormControl,
+  FormLabel,
+} from '@mui/joy'
 
-const POSITION_LAYERS = {
-  attack: [{ code: 'S', label: 'חלוץ' }],
-  atMidfield: [
-    { code: 'AR', label: 'כנף ימין' },
-    { code: 'AC', label: 'קשר התקפי' },
-    { code: 'AL', label: 'כנף שמאל' },
-  ],
-  midfield: [
-    { code: 'MCR', label: 'קשר אמצע ימין' },
-    { code: 'MCL', label: 'קשר אמצע שמאל' },
-  ],
-  dmMid: [
-    { code: 'DMR', label: 'מגן / כנף ימין' },
-    { code: 'DM', label: 'קשר אחורי' },
-    { code: 'DML', label: 'מגן / כנף שמאל' },
-  ],
+import {
+  MAX_POSITIONS,
+  buildAddPositionChange,
+  buildPrimaryPositionChange,
+  buildRemovePositionChange,
+  resolveActivePrimary,
+  safeArr,
+} from './logic/index.js'
 
-  defense: [
-    { code: 'DR', label: 'מגן ימין' },
-    { code: 'DCR', label: 'בלם ימני' },
-    { code: 'DCL', label: 'בלם שמאלי' },
-    { code: 'DL', label: 'מגן שמאל' },
-  ],
-  goalkeeper: [{ code: 'GK', label: 'שוער' }],
-};
+import {
+  PositionHelpText,
+  PositionPitch,
+} from './ui/index.js'
 
-const POSITION_ORDER = [ 'attack', 'atMidfield', 'midfield', 'dmMid', 'defense', 'goalkeeper',];
-
-const LAYER_TITLES = {
-  goalkeeper: 'שוער',
-  defense: 'הגנה',
-  dmMid: 'קשר אחורי',
-  midfield: 'קישור אמצע',
-  atMidfield: 'קישור קדמי',
-  attack: 'התקפה',
-};
-
-export default function PlayerPositionFieldPitch({
+export default function PlayerPositionsSelect({
   value = [],
+  primaryPosition = '',
   onChange,
+  onPrimaryPositionChange,
   onLimitReached,
+  disabled = false,
   size = 'sm',
 }) {
-  const MAX_POSITIONS = 4
+  const positions = safeArr(value)
 
-  const togglePosition = (code) => {
-    const exists = value.includes(code)
+  const activePrimary = resolveActivePrimary({
+    positions,
+    primaryPosition,
+  })
 
-    if (exists) {
-      onChange(value.filter((p) => p !== code))
-      return
-    }
-
-    if (value.length < MAX_POSITIONS) {
-      onChange([...value, code])
-      return
-    }
-
-    onLimitReached(MAX_POSITIONS)
+  const emitChange = ({
+    nextPositions,
+    nextPrimary,
+  }) => {
+    onChange?.(safeArr(nextPositions))
+    onPrimaryPositionChange(nextPrimary || '')
   }
-  //console.log(onLimitReached)
+
+  const handleAddPosition = (code) => {
+    const result = buildAddPositionChange({
+      positions,
+      code,
+      primaryPosition,
+      max: MAX_POSITIONS,
+    })
+
+    if (!result.ok) {
+      onLimitReached(MAX_POSITIONS)
+      return
+    }
+
+    emitChange({
+      nextPositions: result.positions,
+      nextPrimary: result.primaryPosition,
+    })
+  }
+
+  const handleRemovePosition = (code) => {
+    const result = buildRemovePositionChange({
+      positions,
+      code,
+      primaryPosition,
+    })
+
+    emitChange({
+      nextPositions: result.positions,
+      nextPrimary: result.primaryPosition,
+    })
+  }
+
+  const handleSetPrimaryPosition = (code) => {
+    const nextPrimary = buildPrimaryPositionChange({
+      positions,
+      code,
+    })
+
+    onPrimaryPositionChange?.(nextPrimary)
+  }
+
+  const handlePositionClick = (code) => {
+    if (disabled) return
+
+    const exists = positions.includes(code)
+
+    if (!exists) {
+      handleAddPosition(code)
+      return
+    }
+
+    handleSetPrimaryPosition(code)
+  }
+
+  const hasPositions = positions.length > 0
+
   return (
-    <FormControl>
+    <FormControl disabled={disabled}>
       <FormLabel sx={{ fontSize: '12px', mb: 1 }}>
         בחר עמדות על המגרש (עד {MAX_POSITIONS})
       </FormLabel>
 
-      <Box {...boxPositionProps}>
-        {POSITION_ORDER.map((layer) => {
-          const isFullWidthLayer = ['defense', 'atMidfield', 'dmMid'].includes(layer)
+      <PositionHelpText
+        hasPositions={hasPositions}
+        hasPrimary={!!activePrimary}
+      />
 
-          return (
-            <Box key={layer}>
-              <Box {...layerBoxProps(isFullWidthLayer)}>
-                {POSITION_LAYERS[layer].map(({ code }) => (
-                  <Chip
-                    key={code}
-                    onClick={() => togglePosition(code)}
-                    {...chipProps(value, code)}
-                  >
-                    {code}
-                  </Chip>
-                ))}
-              </Box>
-            </Box>
-          )
-        })}
-      </Box>
+      <PositionPitch
+        positions={positions}
+        activePrimary={activePrimary}
+        disabled={disabled}
+        onPositionClick={handlePositionClick}
+        onPositionRemove={handleRemovePosition}
+      />
     </FormControl>
   )
 }

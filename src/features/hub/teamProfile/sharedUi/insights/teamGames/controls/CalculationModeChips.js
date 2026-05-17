@@ -18,14 +18,35 @@ export default function CalculationModeChips({
   const isGames = value === CALCULATION_MODES.GAMES
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minWidth: 0,
+        flexShrink: 1,
+        overflow: 'hidden',
+      }}
+    >
       <Chip
         size="sm"
         variant={isTeam ? 'solid' : 'soft'}
         color={isTeam ? 'primary' : 'neutral'}
         onClick={() => onChange(CALCULATION_MODES.TEAM)}
         startDecorator={iconUi({ id: 'teams', size: 'sm' })}
-        sx={{ fontWeight: 700, '--Chip-minHeight': '26px' }}
+        sx={{
+          fontWeight: 700,
+          '--Chip-minHeight': '26px',
+          minWidth: 0,
+          flexShrink: 1,
+          maxWidth: { xs: 92, sm: 'none' },
+
+          '& .MuiChip-label': {
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          },
+        }}
       >
         נתוני קבוצה
       </Chip>
@@ -35,8 +56,20 @@ export default function CalculationModeChips({
         variant={isGames ? 'solid' : 'soft'}
         color={isGames ? 'primary' : 'neutral'}
         onClick={() => onChange(CALCULATION_MODES.GAMES)}
-        startDecorator={iconUi({ id: 'game', size: 'sm' })}
-        sx={{ fontWeight: 700, '--Chip-minHeight': '26px' }}
+        startDecorator={iconUi({ id: 'games', size: 'sm' })}
+        sx={{
+          fontWeight: 700,
+          '--Chip-minHeight': '26px',
+          minWidth: 0,
+          flexShrink: 1,
+          maxWidth: { xs: 92, sm: 'none' },
+
+          '& .MuiChip-label': {
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          },
+        }}
       >
         נתוני משחקים
       </Chip>

@@ -6,7 +6,6 @@ import { accordionSummaryClasses } from '@mui/joy/AccordionSummary'
 export const takeawaySx = {
   group: (theme) => ({
     border: 0,
-    bgcolor: 'transparent',
     borderRadius: 'lg',
     overflow: 'hidden',
 
@@ -14,7 +13,7 @@ export const takeawaySx = {
       bgcolor: 'background.surface',
       borderRadius: 'lg',
       border: '1px solid',
-      borderColor: 'divider',
+      borderColor: 'primary.outlinedBorder',
       px: 1,
       py: 0.85,
       transition:
@@ -22,19 +21,18 @@ export const takeawaySx = {
     },
 
     [`& .${accordionSummaryClasses.button}:hover`]: {
-      bgcolor: 'neutral.softBg',
+      bgcolor: 'background.level2',
+      borderColor: 'primary.outlinedBorder',
     },
 
     [`& .${accordionSummaryClasses.button}.${accordionSummaryClasses.expanded}`]: {
-      bgcolor: 'neutral.softBg',
+      bgcolor: 'background.level2',
+      border: '1px solid',
+      borderColor: 'divider',
       borderTopRightRadius: 'lg',
       borderTopLeftRadius: 'lg',
       borderBottomRightRadius: 0,
       borderBottomLeftRadius: 0,
-    },
-
-    [`& .${accordionSummaryClasses.button}.${accordionSummaryClasses.expanded}:hover`]: {
-      bgcolor: 'neutral.softBg',
     },
 
     [`& .${accordionDetailsClasses.content}`]: {
@@ -44,11 +42,12 @@ export const takeawaySx = {
       borderRadius: 0,
       overflow: 'hidden',
       paddingBlock: 0,
+      bgcolor: 'background.surface',
 
       [`&.${accordionDetailsClasses.expanded}`]: {
         paddingBlock: '0.75rem',
         borderRadius: 'lg',
-        border: '1px solid',
+        border: '2px solid',
         borderTop: 0,
         borderColor: 'divider',
         borderTopRightRadius: 0,

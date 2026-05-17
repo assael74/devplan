@@ -7,9 +7,9 @@ import {
   Takeaway,
 } from '../../../../../../../../ui/patterns/insights/index.js'
 
-export default function SectionTakeaway({ sx, takeaway, }) {
+export default function SectionTakeaway({ sx, takeaway }) {
   if (!takeaway?.item) return null
-
+  //console.log(takeaway)
   return (
     <Box sx={sx?.takeawayWrap}>
       <Takeaway

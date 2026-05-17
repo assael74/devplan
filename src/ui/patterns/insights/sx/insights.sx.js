@@ -25,6 +25,8 @@ export const insightsPatternSx = {
     height: '100%',
     overflow: 'auto',
     bgcolor: 'background.body',
+    pb: 1,
+    pr: 0.2,
   },
 
   drawerSheetMobile: {
@@ -67,7 +69,8 @@ export const insightsPatternSx = {
   content: {
     display: 'grid',
     gap: 1.25,
-    p: 1.25,
+    py: 0.25,
+    px: 1,
     overflowY: 'auto',
     minHeight: 0,
     flex: 1,

@@ -19,7 +19,7 @@ export const sectionsSx = {
     alignItems: 'center',
     gap: 0.8,
     minWidth: 0,
-    width: 280,
+    width: 250,
     overflow: 'hidden',
     flexShrink: 0,
   },
@@ -118,6 +118,8 @@ export const sectionsSx = {
     flexShrink: 0,
     whiteSpace: 'nowrap',
     marginInlineStart: 0,
+    border: '1px solid',
+    borderColor: 'divider'
   },
 
   subMetaInline: {
@@ -141,20 +143,24 @@ export const sectionsSx = {
     alignItems: 'center',
     gap: 1,
     minWidth: 0,
-    width: 230,
+    width: 480,
     overflow: 'hidden',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     flexShrink: 0,
   },
 
   metricChip: {
     flexShrink: 0,
     whiteSpace: 'nowrap',
+    border: '1px solid',
+    borderColor: 'divider'
   },
 
   timeRateChip: {
     flexShrink: 0,
     whiteSpace: 'nowrap',
+    border: '1px solid',
+    borderColor: 'divider',
 
     '& .MuiChip-label': {
       display: 'inline-flex',
@@ -197,16 +203,22 @@ export const sectionsSx = {
 
   positionChip: {
     flexShrink: 0,
+    border: '1px solid',
+    borderColor: 'divider'
   },
 
   positionChipClickable: {
     cursor: 'pointer',
     flexShrink: 0,
+    border: '1px solid',
+    borderColor: 'divider'
   },
 
   generalPositionChip: {
     minWidth: 0,
     maxWidth: '100%',
+    border: '1px solid',
+    borderColor: 'divider',
 
     '& .MuiChip-label': {
       overflow: 'hidden',
@@ -219,6 +231,8 @@ export const sectionsSx = {
     cursor: 'pointer',
     minWidth: 0,
     maxWidth: '100%',
+    border: '1px solid',
+    borderColor: 'divider',
 
     '& .MuiChip-label': {
       overflow: 'hidden',

@@ -16,8 +16,32 @@ import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersIn
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 
-import { resolveTeamPlayers, filterTeamPlayersRows, sortTeamPlayersRows } from '../../../sharedLogic/players'
+import {
+  resolveTeamPlayers,
+  filterTeamPlayersRows,
+  sortTeamPlayersRows,
+} from '../../../sharedLogic/players'
+
 import { profileSx as sx } from './../../sx/profile.sx'
+
+const LEAGUE_GAME_TYPE = 'league'
+
+const getGameObject = (row = {}) => {
+  return row?.game || row
+}
+
+const isLeagueGame = (row = {}) => {
+  const game = getGameObject(row)
+  const type = String(row?.type || game?.type || '').toLowerCase()
+
+  return type === LEAGUE_GAME_TYPE
+}
+
+const getTeamGamesRows = (team) => {
+  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
+
+  return rows.filter(isLeagueGame)
+}
 
 export default function TeamPlayersModule({
   entity,
@@ -32,6 +56,10 @@ export default function TeamPlayersModule({
     const teams = Array.isArray(context?.teams) ? context.teams : []
     return teams.find((t) => t?.id === entity?.id) || entity || null
   }, [context?.teams, entity])
+
+  const calculationGames = useMemo(() => {
+    return getTeamGamesRows(liveTeam)
+  }, [liveTeam])
 
   const [imgRow, setImgRow] = useState(null)
   const [openImg, setOpenImg] = useState(false)
@@ -55,8 +83,11 @@ export default function TeamPlayersModule({
   })
 
   const { rows, summary } = useMemo(() => {
-    return resolveTeamPlayers(liveTeam)
-  }, [liveTeam])
+    return resolveTeamPlayers({
+      team: liveTeam,
+      games: calculationGames,
+    })
+  }, [liveTeam, calculationGames])
 
   const filteredRows = useMemo(() => {
     const filtered = filterTeamPlayersRows(rows, filters)
@@ -112,7 +143,9 @@ export default function TeamPlayersModule({
           sortBy={sort.by}
           sortDirection={sort.direction}
           onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-          onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
+          onChangeSortDirection={(value) =>
+            setSort((prev) => ({ ...prev, direction: value }))
+          }
         />
       </Box>
 

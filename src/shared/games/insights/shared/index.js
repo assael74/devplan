@@ -2,3 +2,4 @@
 
 export * from './insightLevels.js'
 export * from './insightNumbers.js'
+export * from './printReport.model.js'

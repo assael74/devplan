@@ -14,14 +14,18 @@ import {
   isTeamEditDirty,
 } from '../../../../editLogic/teams/index.js'
 
-import ManagementToolbar from './components/ManagementToolbar.js'
-import ManagementTabs from './components/ManagementTabs.js'
-import ManagementInfo from './components/ManagementInfo.js'
-import ManagementTargets from './components/ManagementTargets.js'
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'
 
+import {
+  ManagementInfo,
+  ManagementTabs,
+  ManagementTargets,
+  ManagementTargetsPrintButton,
+  ManagementToolbar,
+  TABS,
+} from '../../../sharedUi/management/index.js'
+
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
-import { TABS } from './components/ManagementTabs.js'
 
 const noop = () => {}
 
@@ -30,6 +34,7 @@ export default function TeamManagementModule({
   context,
   onSaved = noop,
   onClose = noop,
+  isMobile = false,
 }) {
   const team = entity || null
 
@@ -62,7 +67,12 @@ export default function TeamManagementModule({
   }, [draft, baseModel])
 
   const canSave = useMemo(() => {
-    return Boolean(baseModel?.id) && isDirty && Object.keys(patch).length > 0 && !pending
+    return (
+      Boolean(baseModel?.id) &&
+      isDirty &&
+      Object.keys(patch).length > 0 &&
+      !pending
+    )
   }, [baseModel?.id, isDirty, patch, pending])
 
   const handleReset = useCallback(() => {
@@ -89,24 +99,37 @@ export default function TeamManagementModule({
   return (
     <SectionPanel>
       <ManagementTabs
+        isMobile={isMobile}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
       <Box sx={sx.stickyToolbar}>
         <ManagementToolbar
+          isMobile={isMobile}
           activeTab={activeTab}
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
           onReset={handleReset}
           onSave={handleSave}
+          extraActions={
+            activeTab.id === 'targets' ? (
+              <ManagementTargetsPrintButton
+                team={team}
+                draft={draft}
+                disabled={pending}
+                iconOnly={isMobile}
+              />
+            ) : null
+          }
         />
       </Box>
 
       {activeTab.id === 'info' && (
         <ManagementInfo
           draft={draft}
+          isMobile={isMobile}
           clubName={clubName}
           onDraft={setDraft}
           pending={pending}
@@ -117,18 +140,22 @@ export default function TeamManagementModule({
         <ManagementTargets
           team={team}
           draft={draft}
+          isMobile={isMobile}
           onDraft={setDraft}
           pending={pending}
+          isMobile={isMobile}
+          showPrint={false}
         />
       )}
 
       {activeTab.id === 'staff' && (
         <Box sx={{ mt: 2 }}>
           <ManagementStaffCard
+            isMobile={isMobile}
             teamId={baseModel.id}
             roles={staffPool}
             disabled={pending}
-            compact={false}
+            compact={isMobile}
           />
         </Box>
       )}

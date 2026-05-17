@@ -104,20 +104,44 @@ export default function TeamPlayerPositionsDrawer({
           />
         }
       >
-        <PlayerPositionFieldPitch
-          value={draft?.positions}
-          onChange={(positions) =>
-            setDraft((prev) => ({
+      <PlayerPositionFieldPitch
+        value={draft?.positions}
+        primaryPosition={draft?.primaryPosition || ''}
+        onChange={(positions) => {
+          const nextPositions = safeArr(positions)
+
+          setDraft((prev) => {
+            const currentPrimary = prev?.primaryPosition || ''
+
+            const nextPrimaryPosition = nextPositions.includes(currentPrimary) ? currentPrimary : ''
+
+            return {
               ...prev,
-              positions: safeArr(positions),
-            }))
-          }
-          onLimitReached={() => {
-            setShowLimitWarning(false)
-            setTimeout(() => setShowLimitWarning(true), 10)
-          }}
-          disabled={pending}
-        />
+              positions: nextPositions,
+              primaryPosition: nextPrimaryPosition,
+            }
+          })
+        }}
+        onPrimaryPositionChange={(primaryPosition) => {
+          setDraft((prev) => {
+            const positions = safeArr(prev?.positions)
+
+            const nextPrimaryPosition = positions.includes(primaryPosition)
+              ? primaryPosition
+              : positions[0] || ''
+
+            return {
+              ...prev,
+              primaryPosition: nextPrimaryPosition,
+            }
+          })
+        }}
+        onLimitReached={() => {
+          setShowLimitWarning(false)
+          setTimeout(() => setShowLimitWarning(true), 10)
+        }}
+        disabled={pending}
+       />
 
         {!!draft?.positions?.length ? (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>

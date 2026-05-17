@@ -27,7 +27,8 @@ export const layoutSx = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    p: { xs: 1, sm: 1 },
+    py: { xs: 0, sm: 1 },
+    px: { xs: 0, sm: 1 },
     bgcolor: 'background.level1',
   },
 
@@ -42,7 +43,8 @@ export const layoutSx = {
     borderRadius: 'lg',
     border: '1px solid',
     borderColor: 'divider',
-    p: { xs: 1, sm: 1 },
+    py: { xs: 0, sm: 1 },
+    px: { xs: 0, sm: 1 },
   },
 
   desWrap: {

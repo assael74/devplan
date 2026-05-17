@@ -88,7 +88,7 @@ export default function TeamPlayerRow({
         <EntityActionsMenu
           entityType="player"
           entityId={row?.id}
-          entityName={row?.fullName}
+          entityName={row?.playerFullName}
           metaCounts={row?.metaCounts || null}
           disabled={false}
         />

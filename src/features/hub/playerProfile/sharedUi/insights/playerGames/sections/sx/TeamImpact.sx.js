@@ -22,7 +22,7 @@ export const teamImpactSx = {
   metricsGrid: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: '1fr',
+      xs: 'repeat(3, minmax(0, 1fr))',
       sm: 'repeat(3, minmax(0, 1fr))',
     },
     gap: 0.75,

@@ -17,6 +17,7 @@ export const shortsUpdateRouterMap = {
     projectStatus: { shortKey: 'players.playersInfo', path: 'projectStatus', mode: 'merge' },
 
     positions: { shortKey: 'players.playersInfo', path: 'positions', mode: 'replace' },
+    primaryPosition: { shortKey: 'players.playersInfo', path: 'primaryPosition', mode: 'merge' },
 
     bodyFat: { shortKey: 'players.playersProInfo', path: 'bodyFat', mode: 'replace' },
     favoriteClub: { shortKey: 'players.playersProInfo', path: 'favoriteClub', mode: 'merge' },

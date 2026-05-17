@@ -12,6 +12,10 @@ import {
 
 const emptyText = '—'
 
+const safeArr = (value) => {
+  return Array.isArray(value) ? value.filter(Boolean) : []
+}
+
 const getPositionsText = (positions = []) => {
   if (!Array.isArray(positions) || !positions.length) return 'לא נבחרו עמדות'
   return positions.join(' · ')
@@ -51,12 +55,34 @@ export default function PlayerPositionCard({
     targets?.role?.label ||
     emptyText
 
-  const handlePositions = (nextPositions) => {
-    setDraft((prev) => ({
-      ...prev,
-      positions: Array.isArray(nextPositions) ? nextPositions : [],
-    }))
-  }
+    const handlePositions = (positions) => {
+      const nextPositions = safeArr(positions)
+
+      setDraft((prev) => {
+        const currentPrimary = prev?.primaryPosition || ''
+
+        const nextPrimaryPosition = nextPositions.includes(currentPrimary) ? currentPrimary : ''
+
+        return {
+          ...prev,
+          positions: nextPositions,
+          primaryPosition: nextPrimaryPosition,
+        }
+      })
+    }
+
+    const handlePrimaryPosition = (primaryPosition) => {
+      setDraft((prev) => {
+        const positions = safeArr(prev?.positions)
+
+        const nextPrimaryPosition = positions.includes(primaryPosition) ? primaryPosition : positions[0] || ''
+
+        return {
+          ...prev,
+          primaryPosition: nextPrimaryPosition,
+        }
+      })
+    }
 
   return (
     <>
@@ -118,12 +144,14 @@ export default function PlayerPositionCard({
         </Box>
 
         <Box sx={sx.positionGrid}>
-          <PlayerPositionFieldPitch
-            value={Array.isArray(draft?.positions) ? draft.positions : []}
-            disabled={pending}
-            onChange={handlePositions}
-            onLimitReached={() => setSnack(true)}
-          />
+        <PlayerPositionFieldPitch
+          value={Array.isArray(draft?.positions) ? draft.positions : []}
+          primaryPosition={draft?.primaryPosition || ''}
+          disabled={pending}
+          onChange={handlePositions}
+          onPrimaryPositionChange={handlePrimaryPosition}
+          onLimitReached={() => setSnack(true)}
+         />
         </Box>
       </Sheet>
 

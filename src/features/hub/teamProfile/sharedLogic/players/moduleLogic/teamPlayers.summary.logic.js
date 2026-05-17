@@ -7,10 +7,58 @@ import {
   SQUAD_ROLE_OPTIONS,
 } from '../../../../../../shared/players/players.constants.js'
 
-import { normalizeTeamPlayerRow } from './teamPlayers.row.logic.js'
+import {
+  normalizeTeamPlayerRow,
+} from './row/index.js'
 
-const safe = (v) => (v == null ? '' : String(v))
-const norm = (v) => safe(v).trim()
+const buildPrimaryPositionBuckets = (rows) => {
+  const list = []
+
+  Object.entries(POSITION_LAYERS || {}).forEach(([groupKey, items]) => {
+    ;(Array.isArray(items) ? items : []).forEach((item) => {
+      list.push({
+        id: item.code,
+        value: item.code,
+        label: item.label || item.code,
+        idIcon: item.code,
+        layerCode: item.layerCode || '',
+        groupKey,
+      })
+    })
+  })
+
+  return list.map((item) => ({
+    ...item,
+    count: rows.filter((row) => {
+      return row?.primaryPosition === item.id
+    }).length,
+  }))
+}
+
+const buildPositionCoverageBuckets = (rows) => {
+  const list = []
+
+  Object.entries(POSITION_LAYERS || {}).forEach(([groupKey, items]) => {
+    ;(Array.isArray(items) ? items : []).forEach((item) => {
+      list.push({
+        id: item.code,
+        value: item.code,
+        label: item.label || item.code,
+        idIcon: item.code,
+        layerCode: item.layerCode || '',
+        groupKey,
+      })
+    })
+  })
+
+  return list.map((item) => ({
+    ...item,
+    count: rows.filter((row) => {
+      const positions = Array.isArray(row?.positions) ? row.positions : []
+      return positions.includes(item.id)
+    }).length,
+  }))
+}
 
 const buildPositionCodeBuckets = (rows) => {
   const list = []
@@ -73,12 +121,42 @@ const buildProjectStatusBuckets = (rows) => {
   }))
 }
 
-export const resolveTeamPlayers = (team) => {
-  const base = Array.isArray(team?.players) ? team.players : []
-  const rows = base
-    .map((item) => normalizeTeamPlayerRow(item, team))
-    .filter((x) => !!x.id)
+const normalizeArgs = (teamOrArgs, options = {}) => {
+  if (
+    teamOrArgs &&
+    typeof teamOrArgs === 'object' &&
+    Object.prototype.hasOwnProperty.call(teamOrArgs, 'team')
+  ) {
+    return {
+      team: teamOrArgs.team || null,
+      games: Array.isArray(teamOrArgs.games) ? teamOrArgs.games : [],
+    }
+  }
 
+  return {
+    team: teamOrArgs || null,
+    games: Array.isArray(options?.games) ? options.games : [],
+  }
+}
+
+export const resolveTeamPlayers = (teamOrArgs, options = {}) => {
+  const {
+    team,
+    games,
+  } = normalizeArgs(teamOrArgs, options)
+
+  const base = Array.isArray(team?.players) ? team.players : []
+
+  const rows = base
+    .map((item) =>
+      normalizeTeamPlayerRow({
+        raw: item,
+        team,
+        games,
+      })
+    )
+    .filter((x) => !!x.id)
+  
   return {
     teamFullStats: team?.teamFullStats || {},
     rows,
@@ -91,8 +169,13 @@ export const resolveTeamPlayers = (team) => {
       candidate: rows.filter((x) => x.projectChipMeta?.id === 'candidateFlow').length,
       squadRoleBuckets: buildSquadRoleBuckets(rows),
       projectStatusBuckets: buildProjectStatusBuckets(rows),
-      positionCodeBuckets: buildPositionCodeBuckets(rows),
+
+      primaryPositionBuckets: buildPrimaryPositionBuckets(rows),
+      positionCoverageBuckets: buildPositionCoverageBuckets(rows),
+
+      positionCodeBuckets: buildPositionCoverageBuckets(rows),
+
       generalPositionBuckets: buildGeneralPositionBuckets(rows),
-    },
+    }
   }
 }

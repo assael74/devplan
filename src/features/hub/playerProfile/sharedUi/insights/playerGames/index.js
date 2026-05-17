@@ -5,3 +5,4 @@ export { usePlayerGamesInsightsModel } from './usePlayerGamesInsightsModel.js'
 
 export * from './layout/index.js'
 export * from './sections/index.js'
+export * from './print/index.js'

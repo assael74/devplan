@@ -126,12 +126,32 @@ export default function EditDrawer({
             <PlayerPositionFieldPitch
               size="sm"
               value={draft?.positions}
-              onChange={(positions) =>
+              primaryPosition={draft?.primaryPosition}
+              onChange={(positions) => {
+                const nextPositions = safeArr(positions)
+                const currentPrimary = draft?.primaryPosition || ''
+
+                const nextPrimaryPosition = nextPositions.includes(currentPrimary) ? currentPrimary : ''
+
                 setDraft((prev) => ({
                   ...prev,
-                  positions: safeArr(positions),
+                  positions: nextPositions,
+                  primaryPosition: nextPrimaryPosition,
                 }))
-              }
+              }}
+              onPrimaryPositionChange={(primaryPosition) => {
+                setDraft((prev) => {
+                  const positions = safeArr(prev?.positions)
+                  const nextPrimaryPosition = positions.includes(primaryPosition)
+                    ? primaryPosition
+                    : positions[0] || ''
+
+                  return {
+                    ...prev,
+                    primaryPosition: nextPrimaryPosition,
+                  }
+                })
+              }}
               onLimitReached={() => {
                 setShowLimitWarning(false)
                 setTimeout(() => setShowLimitWarning(true), 10)

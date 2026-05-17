@@ -22,6 +22,7 @@ export default function Takeaway({
   item,
   items = [],
   details = null,
+  renderDetails = null,
   icon = 'insights',
   value,
   withMenu = false,
@@ -41,6 +42,7 @@ export default function Takeaway({
 
   const hasDetails = detailItems.length > 0
   const hasMenu = withMenu && menuItems.length > 0
+  const hasCustomDetails = typeof renderDetails === 'function'
 
   return (
     <AccordionGroup variant="plain" sx={sx.group}>
@@ -63,7 +65,7 @@ export default function Takeaway({
                 startDecorator={iconUi({ id: icon, size: 'sm' })}
                 sx={sx.chip}
               >
-                {value || item?.value || item?.label || '—'}
+                {value || 'מוקד פעולה'}
               </Chip>
             </Box>
 
@@ -73,9 +75,11 @@ export default function Takeaway({
           </Box>
         </AccordionSummary>
 
-        {hasDetails || hasMenu ? (
+        {hasCustomDetails || hasDetails || hasMenu ? (
           <AccordionDetails>
             <Box sx={sx.details}>
+              {hasCustomDetails ? renderDetails({ item }) : null}
+
               {detailItems.map((detail) => (
                 <Box key={detail.id || detail.label} sx={sx.detail}>
                   <Typography level="body-sm" sx={sx.detailLabel}>

@@ -13,6 +13,51 @@ import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
 const c = getEntityColors('players')
 
+const getPrimaryPosition = (row = {}) => {
+  const positions = Array.isArray(row?.positions) ? row.positions : []
+  const primary = row?.primaryPosition || row?.generalPosition?.primaryPosition || ''
+
+  return positions.includes(primary) ? primary : ''
+}
+
+function PrimaryPositionChip({ row }) {
+  const primaryPosition = getPrimaryPosition(row)
+
+  if (!primaryPosition) {
+    return (
+      <Chip
+        size="sm"
+        variant="soft"
+        color="warning"
+        startDecorator={iconUi({ id: 'position', size: 'sm' })}
+        sx={{
+          flexShrink: 0,
+          fontWeight: 700,
+          maxWidth: 116,
+        }}
+      >
+        ללא ראשית
+      </Chip>
+    )
+  }
+
+  return (
+    <Chip
+      size="sm"
+      variant="soft"
+      color="primary"
+      startDecorator={iconUi({ id: primaryPosition, size: 'sm' })}
+      sx={{
+        flexShrink: 0,
+        fontWeight: 700,
+        maxWidth: 116,
+      }}
+    >
+      {primaryPosition}
+    </Chip>
+  )
+}
+
 export default function TeamPlayerCardHeader({
   row,
   onAvatarClick,
@@ -31,17 +76,17 @@ export default function TeamPlayerCardHeader({
           role={clickableAvatar ? 'button' : undefined}
           tabIndex={clickableAvatar ? 0 : undefined}
           sx={sx.avatarBtn}
-          onClick={(e) => {
+          onClick={(event) => {
             if (!clickableAvatar) return
-            e.stopPropagation()
+            event.stopPropagation()
             onAvatarClick(row)
           }}
           onKeyDown={
             clickableAvatar
-              ? (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    e.stopPropagation()
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     onAvatarClick(row)
                   }
                 }
@@ -49,20 +94,40 @@ export default function TeamPlayerCardHeader({
           }
         >
           <Avatar src={row?.photo || playerImage} sx={sx.avatar} />
-          <Box sx={[ sx.avatarStatusDot, row?.active ? { bgcolor: 'success.500' } : { bgcolor: 'danger.500' } ]} />
+          <Box
+            sx={[
+              sx.avatarStatusDot,
+              row?.active
+                ? { bgcolor: 'success.500' }
+                : { bgcolor: 'danger.500' },
+            ]}
+          />
           <Box className="_playerCardAvatarOverlay" sx={sx.avatarOverlay} />
         </Box>
 
         <Box sx={{ minWidth: 0, display: 'grid', gap: 0.25 }}>
-          <Box sx={sx.titleRow}>
+          <Box
+            sx={{
+              ...sx.titleRow,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              minWidth: 0,
+            }}
+          >
             <Typography
               level="title-sm"
-              sx={sx.title}
+              sx={{
+                ...sx.title,
+                minWidth: 0,
+                flex: 1,
+              }}
               title={row?.fullName}
               onClick={
                 clickableProfile
-                  ? (e) => {
-                      e.stopPropagation()
+                  ? (event) => {
+                      event.stopPropagation()
                       onOpenPlayer(row?.player || row)
                     }
                   : undefined
@@ -70,6 +135,8 @@ export default function TeamPlayerCardHeader({
             >
               {row?.fullName || '—'}
             </Typography>
+
+            <PrimaryPositionChip row={row} />
           </Box>
 
           <Box sx={sx.metaInline}>
@@ -87,8 +154,8 @@ export default function TeamPlayerCardHeader({
 
             <Box sx={{ flex: 1 }} />
 
-            <Box sx={{ gap: 1 }}>
-              <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
+            <Box sx={{ gap: 1, mt: -0.3 }}>
+              <JoyStarRatingStatic value={Number(row?.level) || 0} size="sm" />
             </Box>
           </Box>
         </Box>

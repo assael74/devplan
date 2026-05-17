@@ -6,7 +6,6 @@ import { Box } from '@mui/joy'
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import { moduleSx as localSx } from './module.sx.js'
 import { profileSx as sx } from './../../sx/profile.sx'
 
 import {
@@ -15,8 +14,15 @@ import {
   isTeamEditDirty,
 } from '../../../../editLogic/teams/index.js'
 
-import TeamManagementInfoCard from './components/TeamManagementInfoCard.js'
-import TeamManagementToolbar from './components/TeamManagementToolbar.js'
+import {
+  ManagementInfo,
+  ManagementTabs,
+  ManagementTargets,
+  ManagementTargetsPrintButton,
+  ManagementToolbar,
+  TABS,
+} from '../../../sharedUi/management/index.js'
+
 import ManagementStaffCard from '../../../../../../ui/domains/staff/ManagementStaffCard.js'
 
 import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
@@ -28,14 +34,20 @@ export default function TeamManagementModule({
   context,
   onSaved = noop,
   onClose = noop,
+  isMobile = true,
 }) {
   const team = entity || null
+
+  const [activeTab, setActiveTab] = useState(TABS[0])
 
   const staffPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
   }, [context?.roles])
 
-  const baseModel = useMemo(() => buildTeamEditInitial(team), [team])
+  const baseModel = useMemo(() => {
+    return buildTeamEditInitial(team)
+  }, [team])
+
   const [draft, setDraft] = useState(baseModel)
 
   useEffect(() => {
@@ -44,13 +56,15 @@ export default function TeamManagementModule({
 
   const { run, pending } = useTeamHubUpdate(team)
 
-  const clubName = String(
-    context?.club?.clubName ||
-      context?.club?.name ||
-      team?.club?.clubName ||
-      team?.clubName ||
-      ''
-  )
+  const clubName = useMemo(() => {
+    return String(
+      context?.club?.clubName ||
+        context?.club?.name ||
+        team?.club?.clubName ||
+        team?.clubName ||
+        ''
+    )
+  }, [context?.club, team])
 
   const patch = useMemo(() => {
     return buildTeamEditPatch(draft, baseModel)
@@ -60,8 +74,14 @@ export default function TeamManagementModule({
     return isTeamEditDirty(draft, baseModel)
   }, [draft, baseModel])
 
-  const hasPatch = Object.keys(patch).length > 0
-  const canSave = Boolean(baseModel?.id) && isDirty && hasPatch && !pending
+  const canSave = useMemo(() => {
+    return (
+      Boolean(baseModel?.id) &&
+      isDirty &&
+      Object.keys(patch).length > 0 &&
+      !pending
+    )
+  }, [baseModel?.id, isDirty, patch, pending])
 
   const handleReset = useCallback(() => {
     if (pending) return
@@ -73,12 +93,16 @@ export default function TeamManagementModule({
 
     await run('teamEdit', patch, {
       section: 'teamEdit',
-      source: 'TeamManagementModule',
+      source: 'TeamManagementModuleMobile',
       teamId: baseModel.id,
       createIfMissing: true,
     })
 
-    onSaved(patch, { ...(team || {}), ...patch })
+    onSaved(patch, {
+      ...(team || {}),
+      ...patch,
+    })
+
     onClose()
   }, [canSave, run, patch, baseModel.id, team, onSaved, onClose])
 
@@ -94,39 +118,64 @@ export default function TeamManagementModule({
 
   return (
     <SectionPanelMobile>
+      <ManagementTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isMobile={isMobile}
+      />
+
       <Box sx={sx.moduleRoot}>
-        <TeamManagementToolbar
+        <ManagementToolbar
+          activeTab={activeTab}
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
-          onSave={handleSave}
           onReset={handleReset}
+          onSave={handleSave}
+          isMobile={isMobile}
+          extraActions={
+            activeTab.id === 'targets' ? (
+              <ManagementTargetsPrintButton
+                team={team}
+                draft={draft}
+                disabled={pending}
+                iconOnly
+              />
+            ) : null
+          }
         />
       </Box>
 
-      <Box sx={localSx.root}>
-        <Box sx={localSx.topGrid}>
-          <TeamManagementInfoCard
-            draft={draft}
-            clubName={clubName}
-            isDirty={isDirty}
-            canSave={canSave}
-            onDraft={setDraft}
-            onConfirm={handleSave}
-            onReset={handleReset}
-            pending={pending}
-          />
+      {activeTab.id === 'info' && (
+        <ManagementInfo
+          draft={draft}
+          clubName={clubName}
+          onDraft={setDraft}
+          pending={pending}
+          isMobile={isMobile}
+        />
+      )}
 
-          <Box sx={localSx.staffWrap}>
-            <ManagementStaffCard
-              teamId={baseModel.id}
-              roles={staffPool}
-              disabled={pending}
-              compact
-            />
-          </Box>
-        </Box>
-      </Box>
+      {activeTab.id === 'targets' && (
+        <ManagementTargets
+          team={team}
+          draft={draft}
+          onDraft={setDraft}
+          pending={pending}
+          isMobile={isMobile}
+          showPrint={false}
+        />
+      )}
+
+      {activeTab.id === 'staff' && (
+        <ManagementStaffCard
+          teamId={baseModel.id}
+          roles={staffPool}
+          disabled={pending}
+          isMobile={isMobile}
+          compact
+        />
+      )}
     </SectionPanelMobile>
   )
 }

@@ -1,21 +1,35 @@
 // teamProfile/mobile/modules/players/components/playerCard/TeamPlayerCardSummary.js
 
 import React from 'react'
-import { Box, Chip } from '@mui/joy'
+import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
-
 import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
 
 const c = getEntityColors('players')
 
+const getMinutesColor = (minutesPct) => {
+  const value = Number(minutesPct)
+
+  if (!Number.isFinite(value)) return 'neutral'
+  if (value >= 70) return 'success'
+  if (value >= 40) return 'warning'
+  if (value > 0) return 'danger'
+
+  return 'neutral'
+}
+
 export default function TeamPlayerCardSummary({ row }) {
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
-  const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
+  const gamesStats = row?.playerGamesStats || {}
+
+  const minutesPct = Number(gamesStats?.minutesPct ?? 0)
+  const minutesPctLabel = gamesStats?.minutesPctLabel || '0%'
+  const startedLabel = gamesStats?.startedLabel || '0/0'
+  const minutesColor = getMinutesColor(minutesPct)
+
   const squadRoleMeta = getSquadRoleMeta(row, c)
 
   return (
@@ -24,7 +38,10 @@ export default function TeamPlayerCardSummary({ row }) {
         <Chip
           size="sm"
           variant="soft"
-          startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color } })}
+          startDecorator={iconUi({
+            id: squadRoleMeta.iconId,
+            sx: { color: squadRoleMeta.color },
+          })}
           sx={sx.chip}
         >
           {squadRoleMeta.label}
@@ -45,9 +62,28 @@ export default function TeamPlayerCardSummary({ row }) {
         variant="soft"
         color="neutral"
         startDecorator={iconUi({ id: 'playTimeRate' })}
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          '& .MuiChip-label': {
+            whiteSpace: 'nowrap',
+            overflow: 'visible',
+          },
+        }}
+      >
+        {`דקות ${minutesPctLabel}`}
+      </Chip>
+
+      <Chip
+        size="sm"
+        variant="soft"
+        color="neutral"
+        startDecorator={iconUi({ id: 'isStart' })}
         sx={{ border: '1px solid', borderColor: 'divider' }}
       >
-        דקות {timeRateLabel}
+        הרכב {startedLabel}
       </Chip>
     </Box>
   )

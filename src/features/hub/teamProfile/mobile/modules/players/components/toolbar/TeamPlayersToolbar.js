@@ -1,15 +1,21 @@
-// teamProfile/mobile/modules/players/components/TeamPlayersToolbar.js
+// teamProfile/mobile/modules/players/components/toolbar/TeamPlayersToolbar.js
 
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, IconButton, Button } from '@mui/joy'
+import { Box, Chip, Button } from '@mui/joy'
 
 import {
   FiltersTrigger,
   MobileFiltersDrawerShell,
 } from '../../../../../../../../ui/patterns/filters/index.js'
-import { SortDrawerMobile } from '../../../../../../../../ui/patterns/sort/index.js'
 
+import { SortDrawerMobile } from '../../../../../../../../ui/patterns/sort/index.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+
+import {
+  TEAM_PLAYERS_SORT_OPTIONS,
+  getTeamPlayersSortLabel,
+  getTeamPlayersSortDirectionIcon,
+} from '../../../../../sharedLogic/players/index.js'
 
 import PlayersFiltersContent from './PlayersFiltersContent.js'
 import ToolbarFilterChip from './ToolbarFilterChip.js'
@@ -17,33 +23,6 @@ import ToolbarFilterChip from './ToolbarFilterChip.js'
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 const safeArray = (value) => (Array.isArray(value) ? value : [])
-
-const TEAM_PLAYERS_SORT_OPTIONS = [
-  { id: 'level', label: 'פוטנציאל', idIcon: 'insights', defaultDirection: 'desc' },
-  { id: 'age', label: 'גיל', idIcon: 'calendar', defaultDirection: 'asc' },
-  { id: 'name', label: 'שם', idIcon: 'players', defaultDirection: 'asc' },
-  { id: 'timeRate', label: 'דקות משחק', idIcon: 'playTimeRate', defaultDirection: 'desc' },
-  { id: 'goals', label: 'שערים', idIcon: 'goal', defaultDirection: 'desc' },
-  { id: 'assists', label: 'בישולים', idIcon: 'assists', defaultDirection: 'desc' },
-  { id: 'squadRole', label: 'מעמד', idIcon: 'star', defaultDirection: 'desc' },
-  { id: 'projectStatus', label: 'סטטוס פרויקט', idIcon: 'project', defaultDirection: 'asc' },
-]
-
-const getSortLabel = (sortBy) => {
-  if (sortBy === 'name') return 'שם'
-  if (sortBy === 'age') return 'גיל'
-  if (sortBy === 'level') return 'פוטנציאל'
-  if (sortBy === 'timeRate') return 'דקות'
-  if (sortBy === 'goals') return 'שערים'
-  if (sortBy === 'assists') return 'בישולים'
-  if (sortBy === 'squadRole') return 'מעמד'
-  if (sortBy === 'projectStatus') return 'פרויקט'
-  return 'פוטנציאל'
-}
-
-const getSortDirectionIcon = (sortDirection) => {
-  return sortDirection === 'asc' ? 'sortUp' : 'sortDown'
-}
 
 export default function TeamPlayersToolbar({
   summary,
@@ -72,9 +51,15 @@ export default function TeamPlayersToolbar({
     !!filters?.positionLayer
 
   const indicators = useMemo(() => {
-    const positionBuckets = Array.isArray(summary?.positionBuckets) ? summary.positionBuckets : []
-    const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
-    const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
+    const positionBuckets = Array.isArray(summary?.positionBuckets)
+      ? summary.positionBuckets
+      : []
+    const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets)
+      ? summary.squadRoleBuckets
+      : []
+    const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets)
+      ? summary.projectStatusBuckets
+      : []
 
     const positionItem = positionBuckets.find((item) => item?.id === filters?.positionLayer)
     const squadRoleItem = squadRoleBuckets.find((item) => item?.id === filters?.squadRole)
@@ -192,10 +177,13 @@ export default function TeamPlayersToolbar({
             variant="soft"
             color="neutral"
             onClick={() => setSortOpen(true)}
-            endDecorator={iconUi({id: getSortDirectionIcon(sortDirection), sx: { fontSize: 15, color: '#1ED760' }, })}
+            endDecorator={iconUi({
+              id: getTeamPlayersSortDirectionIcon(sortDirection),
+              sx: { fontSize: 15, color: '#1ED760' },
+            })}
             sx={sx.sortBut}
           >
-            {getSortLabel(sortBy)}
+            {getTeamPlayersSortLabel(sortBy)}
           </Button>
         </Box>
 
