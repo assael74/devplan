@@ -8,49 +8,25 @@ import {
   PlayersList,
 } from '../shared/index.js'
 
+import {
+  getDetailsSummary,
+  getOkPlayers,
+  getProblemPlayers,
+  getVisibleDetails,
+} from './ui/index.js'
+
 import { detailsSx as sx } from './sx/index.js'
 
 const emptyArray = []
 
-const getOkPlayers = group => {
-  const players = Array.isArray(group?.players) ? group.players : emptyArray
-
-  return players.filter(player => !player.isWeak)
-}
-
-const getProblemPlayers = group => {
-  return Array.isArray(group?.weakPlayers) ? group.weakPlayers : emptyArray
-}
-
-const getSummaryText = group => {
-  const weak = group?.health?.weakCount || 0
-  const checked = group?.sample?.checked || 0
-  const damage = group?.health?.damageScore || 0
-  const tva = group?.health?.weakWeightedTva || 0
-
-  if (!checked) {
-    return 'אין מספיק מדגם כדי לקבוע תקינות שחקנים במקבץ.'
-  }
-
-  if (!weak) {
-    return `${checked}/${checked} שחקנים בטווח תקין · ללא נזק משמעותי`
-  }
-
-  return `${weak}/${checked} שחקנים לא תקינים · נזק ${damage} · TVA שלילי ${tva}`
-}
-
-const isVisibleDetail = row => {
-  return row?.id !== 'basis'
-}
-
 const DetailRows = ({ rows = emptyArray }) => {
-  const safeRows = rows.filter(isVisibleDetail)
+  const visibleRows = getVisibleDetails(rows)
 
-  if (!safeRows.length) return null
+  if (!visibleRows.length) return null
 
   return (
     <Box sx={sx.detailGrid}>
-      {safeRows.map(row => (
+      {visibleRows.map(row => (
         <Box key={row.id || row.label} sx={sx.detailRow}>
           <Typography level="body-xs" sx={sx.detailLabel}>
             {row.label}
@@ -75,8 +51,8 @@ export default function OutcomeDetails({ group, sourceType = 'role' }) {
     <CollapsePanel
       icon={group.icon || 'insights'}
       title={group.label}
-      sub={getSummaryText(group)}
       defaultOpen={false}
+      sub={getDetailsSummary(group)}
       tone={group.diagnosis?.color || 'primary'}
     >
       <Box sx={sx.details}>

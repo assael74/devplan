@@ -5,34 +5,16 @@ import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
+import {
+  getGroupJoyTone,
+  getQualityJoyTone,
+  getWeakSampleValue,
+  getGroupDamageValue,
+} from './ui/index.js'
+
 import { cardsSx as sx } from './sx/index.js'
 
 const emptyArray = []
-
-const getColor = group => {
-  return group?.diagnosis?.riskTone ||
-    group?.diagnosis?.groupTone ||
-    group?.scoreTone ||
-    'neutral'
-}
-
-const signed = value => {
-  const n = Number(value)
-
-  if (!Number.isFinite(n)) return '0'
-  if (n > 0) return `+${n}`
-
-  return `${n}`
-}
-
-const getSub = group => {
-  const checked = group?.sample?.checked || 0
-  const players = group?.sample?.players || 0
-  const weak = group?.health?.weakCount || 0
-  const damage = group?.health?.damageScore || 0
-
-  return `${checked}/${players} במדגם · ${weak} מתחת לציפייה · נזק ${damage}`
-}
 
 const Metric = ({ label, value }) => {
   return (
@@ -49,7 +31,8 @@ const Metric = ({ label, value }) => {
 }
 
 const Card = ({ group, selected, onSelect }) => {
-  const color = getColor(group)
+  const color = getGroupJoyTone(group)
+  const qualityColor = getQualityJoyTone(group)
 
   return (
     <Box
@@ -66,17 +49,13 @@ const Card = ({ group, selected, onSelect }) => {
     >
       <Box sx={sx.cardHead}>
         <Box sx={sx.cardTitleWrap}>
-          <Box sx={sx.cardIcon(color, selected)}>
+          <Box sx={sx.cardIcon(qualityColor, selected)}>
             {iconUi({ id: group.icon || 'insights', size: 'sm' })}
           </Box>
 
           <Box sx={sx.cardText}>
-            <Typography level="title-sm" sx={sx.cardTitle}>
+            <Typography level="title-sm" sx={{ ...sx.cardTitle, fontSize: 14 }}>
               {group.label}
-            </Typography>
-
-            <Typography level="body-xs" sx={sx.cardSub}>
-              {getSub(group)}
             </Typography>
           </Box>
         </Box>
@@ -84,7 +63,7 @@ const Card = ({ group, selected, onSelect }) => {
         <Chip
           size="sm"
           variant="soft"
-          color={group.diagnosis?.qualityTone || color}
+          color={qualityColor}
           sx={sx.scoreChip(selected)}
         >
           {group.scoreLabel || '-'}
@@ -104,13 +83,8 @@ const Card = ({ group, selected, onSelect }) => {
 
       <Box sx={sx.metrics}>
         <Metric
-          label="נבדקו"
-          value={`${group.sample?.checked || 0}/${group.sample?.players || 0}`}
-         />
-
-        <Metric
           label="מתחת"
-          value={group.health?.weakCount || 0}
+          value={`${group.health?.weakCount || 0}/${group.sample?.players || 0}`}
          />
 
         <Metric

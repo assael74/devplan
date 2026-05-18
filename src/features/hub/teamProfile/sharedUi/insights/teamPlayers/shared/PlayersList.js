@@ -7,6 +7,9 @@ import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import { playersSx as sx } from './sx/players.sx.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
+
+const c = getEntityColors('status')
 
 const emptyArray = []
 
@@ -160,12 +163,13 @@ const getFooterItems = ({ player, sourceType }) => {
 }
 
 const MiniMetric = ({ item }) => {
+  const color = c?.[item?.color]?.solid || c?.info?.solid
   return (
     <Chip
       size="sm"
       variant="soft"
-      color={item.color || 'neutral'}
-      sx={sx.metricChip}
+      color='neutral'
+      sx={sx.metricChip(color)}
     >
       {item.label}
     </Chip>
@@ -222,12 +226,7 @@ const CardTop = ({ player, sourceType }) => {
   )
 }
 
-const PlayerCard = ({
-  player,
-  index,
-  variant,
-  sourceType,
-}) => {
+const PlayerCard = ({ player, index, variant, sourceType, }) => {
   const name = getName(player)
   const footerItems = getFooterItems({
     player,
@@ -237,11 +236,7 @@ const PlayerCard = ({
   return (
     <Box
       key={player.id || player.playerId || `${name}-${index}`}
-      sx={sx.card({
-        variant,
-        damage: player.damageScore,
-        sourceType,
-      })}
+      sx={sx.card({ variant, damage: player.damageScore, sourceType, })}
     >
       <Avatar size="sm" src={player.photo || playerImage} />
 

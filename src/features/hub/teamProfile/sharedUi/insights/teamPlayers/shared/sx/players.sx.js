@@ -98,14 +98,14 @@ export const playersSx = {
     flex: '0 0 auto',
   },
 
-  metricChip: {
+  metricChip: (color) => ({
     minHeight: 18,
     px: 0.45,
     fontSize: 10.5,
     fontWeight: 700,
     border: '1px solid',
-    borderColor: 'divider',
-  },
+    borderColor: color,
+  }),
 
   meta: {
     display: 'flex',

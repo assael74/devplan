@@ -1,23 +1,20 @@
-// teamPlayers/buildSection/PositionCards.js
+// TEAMPROFILE/sharedUi/insights/teamPlayers/buildSection/PositionCards.js
 
 import React from 'react'
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionGroup,
-  AccordionSummary,
-  Box,
-  Chip,
-  Typography,
-} from '@mui/joy'
-
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { Box, Typography } from '@mui/joy'
 
 import RangeCardsGrid from '../shared/RangeCardsGrid.js'
 import PositionInsight from './PositionInsight.js'
-import PositionModeSwitch from './PositionModeSwitch.js'
 
-import { layersSx as sx } from './sx/layers.sx.js'
+import {
+  LayerAccordionGroup,
+  LayerSummary,
+  ModeSwitch,
+  SelectableChips,
+  StatusStrip,
+} from '../shared/index.js'
+
+import { layersSx as sx } from '../shared/sx/layers.sx.js'
 
 import {
   buildPositionLayersModel,
@@ -27,43 +24,32 @@ import {
 
 const emptyArray = []
 
-const LayerSummary = ({ layer }) => {
-  const alertTone = layer.alertCount ? 'warning' : 'success'
-  const alertLabel = layer.alertCount
-    ? `${layer.alertCount} לבדיקה`
-    : 'מאוזן'
+const getLayerChip = layer => {
+  if (layer.alertCount) {
+    return {
+      label: `${layer.alertCount} לבדיקה`,
+      color: 'warning',
+    }
+  }
 
-  return (
-    <Box sx={sx.layerSummary}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box sx={sx.layerIcon}>
-          {iconUi({ id: layer.icon, size: 'sm' })}
-        </Box>
-
-        <Box sx={{ minWidth: 0, display: 'grid', gap: 0.1 }}>
-          <Typography level="title-sm" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
-            {layer.title}
-          </Typography>
-
-          <Typography level="body-xs" sx={{ color: 'text.tertiary', lineHeight: 1.2 }}>
-            {layer.total} עמדות · {layer.normalCount} תקינות
-          </Typography>
-        </Box>
-      </Box>
-
-      <Chip
-        size="sm"
-        variant="soft"
-        color={alertTone}
-        sx={{ flex: '0 0 auto', fontWeight: 700 }}
-      >
-        {alertLabel}
-      </Chip>
-    </Box>
-  )
+  return {
+    label: 'מאוזן',
+    color: 'success',
+  }
 }
 
-const StatusStrip = ({ cards = emptyArray }) => {
+const positionModeOptions = [
+  {
+    id: 'primary',
+    label: 'ראשית בלבד',
+  },
+  {
+    id: 'coverage',
+    label: 'כל העמדות',
+  },
+]
+
+const buildStatusItems = cards => {
   const counts = cards.reduce((acc, card) => {
     const status = getPositionStatus(card)
 
@@ -72,48 +58,68 @@ const StatusStrip = ({ cards = emptyArray }) => {
     return acc
   }, {})
 
+  return Object.entries(positionStatusMeta)
+    .map(([status, meta]) => {
+      const count = counts[status] || 0
+
+      if (!count) return null
+
+      return {
+        id: status,
+        label: `${meta.label} · ${count}`,
+        color: meta.color,
+      }
+    })
+    .filter(Boolean)
+}
+
+const renderLayerSummary = layer => {
+  const chip = getLayerChip(layer)
+
   return (
-    <Box sx={sx.statusStrip}>
-      {Object.entries(positionStatusMeta).map(([status, meta]) => {
-        const count = counts[status] || 0
+    <LayerSummary
+      icon={layer.icon}
+      title={layer.title}
+      sub={`${layer.total} עמדות · ${layer.normalCount} תקינות`}
+      chipLabel={chip.label}
+      chipColor={chip.color}
+    />
+  )
+}
 
-        if (!count) return null
+const NormalPositions = ({ cards = emptyArray }) => {
+  if (!cards.length) return null
 
-        return (
-          <Chip
-            key={status}
-            size="sm"
-            variant="soft"
-            color={meta.color}
-            sx={{ fontWeight: 700 }}
-          >
-            {meta.label} · {count}
-          </Chip>
-        )
-      })}
+  return (
+    <Box sx={{ display: 'grid', gap: 0.65 }}>
+      <Typography level="body-xs" sx={sx.groupTitle}>
+        עמדות תקינות
+      </Typography>
+
+      <SelectableChips
+        items={cards}
+        color="success"
+        getLabel={card => `${card.label} · ${card.value}`}
+        onSelect={card => {
+          if (typeof card.onClick === 'function') {
+            card.onClick()
+          }
+        }}
+      />
     </Box>
   )
 }
 
-const OkChips = ({ cards = emptyArray }) => {
-  const safeCards = Array.isArray(cards) ? cards : emptyArray
-
-  if (!safeCards.length) return null
+const AlertPositions = ({ cards = emptyArray }) => {
+  if (!cards.length) return null
 
   return (
-    <Box sx={sx.okChips}>
-      {safeCards.map((card) => (
-        <Chip
-          key={card.id}
-          size="sm"
-          variant="soft"
-          color="success"
-          onClick={card.onClick}
-          sx={sx.okChip}
-        >
-          {card.label} · {card.value}
-        </Chip>
-      ))}
+    <Box sx={{ display: 'grid', gap: 0.65 }}>
+      <Typography level="body-xs" sx={sx.groupTitle}>
+        דורש בדיקה
+      </Typography>
+
+      <RangeCardsGrid cards={cards} compact />
     </Box>
   )
 }
@@ -128,34 +134,19 @@ const LayerContent = ({
 }) => {
   return (
     <Box sx={{ display: 'grid', gap: 1, pt: 0.35 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between'}}>
-        <StatusStrip cards={layer.cards} />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+        <StatusStrip items={buildStatusItems(layer.cards)} />
 
-        <PositionModeSwitch
+        <ModeSwitch
           value={mode}
+          options={positionModeOptions}
           onChange={onModeChange}
         />
       </Box>
 
-      {layer.alerts.length ? (
-        <Box sx={{ display: 'grid', gap: 0.65 }}>
-          <Typography level="body-xs" sx={sx.groupTitle}>
-            דורש בדיקה
-          </Typography>
+      <AlertPositions cards={layer.alerts} />
 
-          <RangeCardsGrid cards={layer.alerts} compact />
-        </Box>
-      ) : null}
-
-      {layer.normal.length ? (
-        <Box sx={{ display: 'grid', gap: 0.65 }}>
-          <Typography level="body-xs" sx={sx.groupTitle}>
-            עמדות תקינות
-          </Typography>
-
-          <OkChips cards={layer.normal} />
-        </Box>
-      ) : null}
+      <NormalPositions cards={layer.normal} />
 
       <PositionInsight
         layer={layer}
@@ -179,30 +170,20 @@ export default function PositionCards({
     return buildPositionLayersModel(cards)
   }, [cards])
 
-  if (!layers.length) return null
-
   return (
-    <AccordionGroup variant="plain" disableDivider sx={sx.group}>
-      {layers.map((layer) => {
-        return (
-          <Accordion key={layer.id}>
-            <AccordionSummary>
-              <LayerSummary layer={layer} />
-            </AccordionSummary>
-
-            <AccordionDetails>
-              <LayerContent
-                layer={layer}
-                selectedCard={selectedCard}
-                selectedTakeaway={selectedTakeaway}
-                renderDetails={renderDetails}
-                mode={mode}
-                onModeChange={onModeChange}
-              />
-            </AccordionDetails>
-          </Accordion>
-        )
-      })}
-    </AccordionGroup>
+    <LayerAccordionGroup
+      layers={layers}
+      renderSummary={renderLayerSummary}
+      renderContent={layer => (
+        <LayerContent
+          layer={layer}
+          selectedCard={selectedCard}
+          selectedTakeaway={selectedTakeaway}
+          renderDetails={renderDetails}
+          mode={mode}
+          onModeChange={onModeChange}
+        />
+      )}
+    />
   )
 }

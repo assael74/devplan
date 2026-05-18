@@ -6,6 +6,7 @@ import {
   TEAM_QUALITY_TONES,
   TEAM_RISK_TONES,
   TEAM_ROLE_RISK_RULES,
+  TEAM_TONE_RANK
 } from './insights.config.js'
 
 const toNum = value => {
@@ -17,10 +18,7 @@ const getRiskRules = roleId => {
   return TEAM_ROLE_RISK_RULES[roleId] || DEFAULT_RISK_RULES
 }
 
-const getCountRiskLevel = ({
-  roleId,
-  weakCount,
-}) => {
+const getCountRiskLevel = ({ roleId, weakCount, }) => {
   const rules = getRiskRules(roleId)
   const count = toNum(weakCount)
 
@@ -41,6 +39,16 @@ const getDamageRiskLevel = damageScore => {
   return 'none'
 }
 
+const getMaxTeamTone = (...tones) => {
+  return tones.reduce((best, tone) => {
+    const current = tone || 'neutral'
+
+    return TEAM_TONE_RANK[current] > TEAM_TONE_RANK[best]
+      ? current
+      : best
+  }, 'neutral')
+}
+
 const riskRank = {
   none: 0,
   info: 1,
@@ -54,11 +62,7 @@ const maxRisk = (...levels) => {
   }, 'none')
 }
 
-const getRiskLevel = ({
-  roleId,
-  weakCount,
-  damageScore,
-}) => {
+const getRiskLevel = ({ roleId, weakCount, damageScore, }) => {
   return maxRisk(
     getCountRiskLevel({
       roleId,
@@ -68,11 +72,7 @@ const getRiskLevel = ({
   )
 }
 
-const getQualityLevel = ({
-  score,
-  totalTva,
-  checked,
-}) => {
+const getQualityLevel = ({ score, totalTva, checked, }) => {
   if (!checked || score === null) return 'noSample'
 
   if (
@@ -103,10 +103,7 @@ const getQualityLevel = ({
   return 'limited'
 }
 
-const getDiagnosisId = ({
-  qualityLevel,
-  riskLevel,
-}) => {
+const getDiagnosisId = ({ qualityLevel, riskLevel, }) => {
   if (qualityLevel === 'noSample') return 'noSample'
 
   if (qualityLevel === 'strong' && riskLevel !== 'none') {
@@ -152,7 +149,7 @@ const getText = ({
   }
 
   if (id === 'strongRisk') {
-    return `המקבץ חזק במדד הכולל, אך ${weakCount}/${checked} שחקנים נמצאים מתחת לציפייה.`
+    return `המקבץ חזק במדד הכולל, אך ${weakCount} מתוך ${checked} שחקנים נמצאים מתחת לציפייה מהם.`
   }
 
   if (id === 'okRisk') {
@@ -160,7 +157,7 @@ const getText = ({
   }
 
   if (id === 'limitedRisk') {
-    return `ההשפעה הכוללת מוגבלת ויש ${weakCount}/${checked} שחקנים מתחת לציפייה.`
+    return `ההשפעה הכוללת מוגבלת ויש ${weakCount} מתוך ${checked} שחקנים מתחת לציפייה.`
   }
 
   if (id === 'groupCollapse') {
@@ -205,6 +202,9 @@ export const buildTeamGroupDiagnosis = ({
 
   const qualityTone = TEAM_QUALITY_TONES[qualityLevel] || 'neutral'
   const riskTone = TEAM_RISK_TONES[riskLevel] || 'neutral'
+  const displayTone = getMaxTeamTone(qualityTone, riskTone)
+
+  const hasRisk = riskLevel !== 'none' || qualityLevel === 'weak' || qualityLevel === 'bad'
 
   return {
     id,
@@ -225,8 +225,7 @@ export const buildTeamGroupDiagnosis = ({
 
     qualityLevel,
     riskLevel,
-
-    hasRisk: riskLevel !== 'none',
+    hasRisk,
 
     reason: {
       score,

@@ -7,28 +7,22 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import OutcomeCards from './OutcomeCards.js'
 import OutcomeDetails from './OutcomeDetails.js'
+import OutcomePositionLayers from './OutcomePositionLayers.js'
+
+import {
+  byGroupIds,
+  getFirstGroupId,
+  getInfoGroups,
+  getOutcomeGroups,
+  getSelectedGroup,
+  getVisibleGroups,
+} from './ui/index.js'
 
 import { blockSx as sx } from './sx/index.js'
 
 const emptyArray = []
 
-const getGroups = model => {
-  return Array.isArray(model?.groups) ? model.groups : emptyArray
-}
-
-const getFirstId = groups => {
-  return groups?.[0]?.id || null
-}
-
-const getSelected = ({ groups, selectedId }) => {
-  return groups.find(item => item.id === selectedId) || groups[0] || null
-}
-
-const byIds = ids => group => {
-  return ids.includes(group.id)
-}
-
-const InfoGroups = ({ groups = emptyArray }) => {
+const InfoGroups = ({ groups = emptyArray, }) => {
   if (!groups.length) return null
 
   return (
@@ -49,17 +43,49 @@ const InfoGroups = ({ groups = emptyArray }) => {
   )
 }
 
-export default function OutcomeBlock({
-  model,
-  separated = false,
-  hideGroupIds = emptyArray,
-  infoGroupIds = emptyArray,
-}) {
-  const allGroups = getGroups(model)
-  const infoGroups = allGroups.filter(byIds(infoGroupIds))
-  const groups = allGroups.filter(group => !hideGroupIds.includes(group.id))
+const SummaryLine = ({ summary, }) => {
+  if (!summary) return null
 
-  const [selectedId, setSelectedId] = React.useState(getFirstId(groups))
+  return (
+    <Typography level="body-xs" sx={sx.blockSub}>
+      {summary.checkedGroups}/{summary.groups} מקבצים עם מדגם · {summary.alertGroups} לבדיקה
+    </Typography>
+  )
+}
+
+const BlockHead = ({ model, }) => {
+  const status = model.status || {}
+
+  return (
+    <Box sx={sx.blockHead}>
+      <Box sx={sx.blockTitleWrap}>
+        <Box sx={sx.blockIcon}>
+          {iconUi({ id: model.icon || 'insights' })}
+        </Box>
+
+        <Box sx={sx.blockText}>
+          <Typography level="title-sm" sx={sx.blockTitle}>
+            {model.title}
+          </Typography>
+
+          <SummaryLine summary={model.summary} />
+        </Box>
+      </Box>
+
+      <Chip
+        size="sm"
+        variant="soft"
+        color={status.color || 'neutral'}
+        sx={sx.statusChip}
+      >
+        {status.label || 'בבדיקה'}
+      </Chip>
+    </Box>
+  )
+}
+
+const RoleOutcome = ({ model, groups }) => {
+  const [selectedId, setSelectedId] = React.useState(getFirstGroupId(groups))
 
   React.useEffect(() => {
     setSelectedId(current => {
@@ -67,60 +93,69 @@ export default function OutcomeBlock({
 
       if (exists) return current
 
-      return getFirstId(groups)
+      return getFirstGroupId(groups)
     })
   }, [groups])
 
   const selected = React.useMemo(() => {
-    return getSelected({
+    return getSelectedGroup({
       groups,
       selectedId,
     })
   }, [groups, selectedId])
 
+  return (
+    <>
+      <OutcomeCards
+        groups={groups}
+        selectedId={selected?.id}
+        onSelect={setSelectedId}
+      />
+
+      <OutcomeDetails
+        key={selected?.id}
+        group={selected}
+        sourceType={model.id}
+      />
+    </>
+  )
+}
+
+export default function OutcomeBlock({
+  model,
+  separated = false,
+  hideGroupIds = emptyArray,
+  infoGroupIds = emptyArray,
+}) {
   if (!model) return null
 
-  const status = model.status || {}
+  const allGroups = getOutcomeGroups(model)
+
+  const infoGroups = getInfoGroups({
+    groups: allGroups,
+    infoGroupIds,
+  })
+
+  const groups = getVisibleGroups({
+    groups: allGroups,
+    hideGroupIds,
+  })
 
   return (
     <Box sx={sx.block(separated)}>
-      <Box sx={sx.blockHead}>
-        <Box sx={sx.blockTitleWrap}>
-          <Box sx={sx.blockIcon}>
-            {iconUi({ id: model.icon || 'insights' })}
-          </Box>
-
-          <Box sx={sx.blockText}>
-            <Typography level="title-sm" sx={sx.blockTitle}>
-              {model.title}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Chip
-          size="sm"
-          variant="soft"
-          color={status.color || 'neutral'}
-          sx={sx.statusChip}
-        >
-          {status.label || 'בבדיקה'}
-        </Chip>
-      </Box>
+      <BlockHead model={model} />
 
       <InfoGroups groups={infoGroups} />
 
       <Box sx={sx.blockBody}>
-        <OutcomeCards
-          groups={groups}
-          selectedId={selected?.id}
-          onSelect={setSelectedId}
-        />
-
-        <OutcomeDetails
-          key={selected?.id}
-          group={selected}
-          sourceType={model.id}
-        />
+        {model.id === 'position' ? (
+          <OutcomePositionLayers model={model} />
+        ) : (
+          <RoleOutcome
+            model={model}
+            groups={groups}
+          />
+        )}
       </Box>
     </Box>
   )

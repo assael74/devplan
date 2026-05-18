@@ -61,15 +61,21 @@ const fmtRating = value => {
   return value === null ? '-' : value.toFixed(2)
 }
 
+const ltr = '\u200E'
+
 const fmtTva = value => {
-  if (!value) return '0'
-  return value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1)
+  const n = Number(value)
+
+  if (!Number.isFinite(n) || n === 0) return `${ltr}0`
+
+  const abs = Math.abs(n).toFixed(1)
+
+  return n > 0
+    ? `${ltr}+${abs}`
+    : `${ltr}-${abs}`
 }
 
-const isWeakPlayer = ({
-  ratingRaw,
-  tva,
-}) => {
+const isWeakPlayer = ({ ratingRaw, tva, }) => {
   if (ratingRaw !== null && ratingRaw < TEAM_INSIGHTS_THRESHOLDS.weakRatingBelow) {
     return true
   }
@@ -77,10 +83,7 @@ const isWeakPlayer = ({
   return tva < TEAM_INSIGHTS_THRESHOLDS.weakTvaBelow
 }
 
-const isTopPlayer = ({
-  ratingRaw,
-  tva,
-}) => {
+const isTopPlayer = ({ ratingRaw, tva, }) => {
   if (ratingRaw === null) return false
 
   return (
@@ -89,11 +92,7 @@ const isTopPlayer = ({
   )
 }
 
-const getDamageScore = ({
-  weak,
-  tva,
-  minutesPct,
-}) => {
+const getDamageScore = ({ weak, tva, minutesPct, }) => {
   if (!weak) return 0
 
   const depth = Math.abs(Math.min(tva, 0))
@@ -102,11 +101,7 @@ const getDamageScore = ({
   return Number((depth * weight).toFixed(2))
 }
 
-const addMapEntry = ({
-  acc,
-  key,
-  row,
-}) => {
+const addMapEntry = ({ acc, key, row }) => {
   if (key) {
     acc[key] = row
   }
@@ -128,10 +123,7 @@ export const buildTeamInsightPlayersMap = rows => {
   }, {})
 }
 
-export const buildTeamInsightPlayer = ({
-  player = {},
-  scoresMap = {},
-} = {}) => {
+export const buildTeamInsightPlayer = ({ player = {}, scoresMap = {} } = {}) => {
   const playerId = getPid(player)
   const name = getName(player)
   const scoreRow = scoresMap[playerId] || scoresMap[name] || {}

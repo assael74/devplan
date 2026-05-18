@@ -43,8 +43,8 @@ export const formatCount = (value, total) => {
 }
 
 const squadRoleLabels = {
-  key: 'שחקן מפתח',
-  core: 'שחקן מרכזי',
+  key: 'מפתח',
+  core: 'מרכזי',
   rotation: 'רוטציה',
   fringe: 'אחרון בסגל',
 }

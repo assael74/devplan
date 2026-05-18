@@ -1,4 +1,4 @@
-// teamProfile/sharedLogic/players/insightsLogic/performance/performanceScope.logic.js
+// TEAMPROFILE/sharedLogic/players/insightsLogic/performance/performanceScope.logic.js
 
 import {
   buildPlayersInsightsFromGames,
@@ -7,7 +7,7 @@ import {
 const emptyArray = []
 const MIN_SCOPE_GAMES = 5
 
-export const getGameKey = (game) => {
+export const getGameKey = game => {
   const g = game?.game || game || {}
 
   return g?.id ||
@@ -15,14 +15,14 @@ export const getGameKey = (game) => {
     `${g?.gameDate || ''}_${g?.gameLeagueNum || ''}_${g?.rivel || g?.rival || ''}`
 }
 
-export const getGameTime = (game) => {
+export const getGameTime = game => {
   const g = game?.game || game || {}
   const time = new Date(g?.gameDate).getTime()
 
   return Number.isFinite(time) ? time : 0
 }
 
-export const isPlayedLeagueGame = (game) => {
+export const isPlayedLeagueGame = game => {
   const g = game?.game || game || {}
 
   const type = g?.type
@@ -39,7 +39,7 @@ export const isPlayedLeagueGame = (game) => {
   return isLeague && isPlayed
 }
 
-export const getOrderedSeasonGames = (games) => {
+export const getOrderedSeasonGames = games => {
   const safeGames = Array.isArray(games) ? games : emptyArray
 
   const orderedGames = safeGames
@@ -59,44 +59,76 @@ export const getOrderedSeasonGames = (games) => {
     })
 }
 
+const getLimitedGames = ({
+  orderedGames,
+  limit,
+}) => {
+  const count = Number(limit)
+
+  if (!Number.isFinite(count) || count < MIN_SCOPE_GAMES) {
+    return orderedGames
+  }
+
+  return orderedGames.slice(-count)
+}
+
+const getRangeGames = ({
+  orderedGames,
+  fromGameKey,
+  toGameKey,
+}) => {
+  if (!fromGameKey || !toGameKey) {
+    return orderedGames
+  }
+
+  const fromIndex = orderedGames.findIndex(game => {
+    return getGameKey(game) === fromGameKey
+  })
+
+  const toIndex = orderedGames.findIndex(game => {
+    return getGameKey(game) === toGameKey
+  })
+
+  if (fromIndex < 0 || toIndex < 0) {
+    return orderedGames
+  }
+
+  const start = Math.min(fromIndex, toIndex)
+  const end = Math.max(fromIndex, toIndex)
+  const rangeGames = orderedGames.slice(start, end + 1)
+
+  if (rangeGames.length < MIN_SCOPE_GAMES) {
+    return orderedGames
+  }
+
+  return rangeGames
+}
+
 export const getScopedGames = ({
   games,
   performanceScope,
 }) => {
   const orderedGames = getOrderedSeasonGames(games)
 
-  if (
-    performanceScope?.mode === 'range' &&
-    performanceScope?.fromGameKey &&
-    performanceScope?.toGameKey
-  ) {
-    const fromIndex = orderedGames.findIndex((game) => {
-      return getGameKey(game) === performanceScope.fromGameKey
+  if (performanceScope?.mode === 'limit') {
+    return getLimitedGames({
+      orderedGames,
+      limit: performanceScope.limit,
     })
+  }
 
-    const toIndex = orderedGames.findIndex((game) => {
-      return getGameKey(game) === performanceScope.toGameKey
+  if (performanceScope?.mode === 'range') {
+    return getRangeGames({
+      orderedGames,
+      fromGameKey: performanceScope.fromGameKey,
+      toGameKey: performanceScope.toGameKey,
     })
-
-    if (fromIndex < 0 || toIndex < 0) {
-      return orderedGames
-    }
-
-    const start = Math.min(fromIndex, toIndex)
-    const end = Math.max(fromIndex, toIndex)
-    const rangeGames = orderedGames.slice(start, end + 1)
-
-    if (rangeGames.length < MIN_SCOPE_GAMES) {
-      return orderedGames
-    }
-
-    return rangeGames
   }
 
   return orderedGames
 }
 
-const getPlayerKey = (row) => {
+const getPlayerKey = row => {
   return row?.playerId ||
     row?.id ||
     row?.player?.id ||
@@ -105,7 +137,7 @@ const getPlayerKey = (row) => {
     row?.name
 }
 
-const buildRowsMap = (rows) => {
+const buildRowsMap = rows => {
   const safeRows = Array.isArray(rows) ? rows : emptyArray
 
   return safeRows.reduce((acc, row) => {
@@ -119,7 +151,7 @@ const buildRowsMap = (rows) => {
   }, {})
 }
 
-const isSeasonScope = (performanceScope) => {
+const isSeasonScope = performanceScope => {
   return !performanceScope ||
     !performanceScope.mode ||
     performanceScope.mode === 'season'
@@ -157,6 +189,10 @@ const mergeScopedMetrics = ({
 }) => {
   return {
     ...seasonRow,
+
+    insightId: scopedRow.insightId,
+    insightLabel: scopedRow.insightLabel,
+    profile: scopedRow.profile,
 
     ratingRaw: scopedRow.ratingRaw,
     rating: scopedRow.rating,
@@ -198,6 +234,55 @@ const mergeScopedMetrics = ({
   }
 }
 
+const toSeasonScopedRow = row => {
+  return {
+    ...row,
+
+    seasonInsightId: row.insightId,
+    seasonInsightLabel: row.insightLabel,
+    seasonProfile: row.profile,
+    seasonSubStatus: row.subStatus,
+
+    scopedInsightId: row.insightId,
+    scopedInsightLabel: row.insightLabel,
+    scopedProfile: row.profile,
+    scopedSubStatus: row.subStatus,
+  }
+}
+
+const toMissingScopedRow = seasonRow => {
+  return {
+    ...seasonRow,
+
+    scopedMissing: true,
+
+    seasonInsightId: seasonRow.insightId,
+    seasonInsightLabel: seasonRow.insightLabel,
+    seasonProfile: seasonRow.profile,
+    seasonSubStatus: seasonRow.subStatus,
+
+    scopedInsightId: null,
+    scopedInsightLabel: null,
+    scopedProfile: null,
+    scopedSubStatus: 'לא נמצא במדגם המשחקים שנבחר',
+
+    insightId: 'out_of_sample',
+    insightLabel: 'מחוץ למדגם',
+    profile: null,
+
+    ratingRaw: null,
+    rating: null,
+    tva: 0,
+    games: 0,
+    minutes: 0,
+    goals: 0,
+    assists: 0,
+    involvement: 0,
+
+    subStatus: 'לא נמצא במדגם המשחקים שנבחר',
+  }
+}
+
 export const mergeSeasonProfileWithScopedMetrics = ({
   seasonRows,
   scopedRows,
@@ -206,56 +291,17 @@ export const mergeSeasonProfileWithScopedMetrics = ({
   const safeSeasonRows = Array.isArray(seasonRows) ? seasonRows : emptyArray
 
   if (isSeasonScope(performanceScope)) {
-    return safeSeasonRows.map((row) => {
-      return {
-        ...row,
-
-        seasonInsightId: row.insightId,
-        seasonInsightLabel: row.insightLabel,
-        seasonProfile: row.profile,
-        seasonSubStatus: row.subStatus,
-
-        scopedInsightId: row.insightId,
-        scopedInsightLabel: row.insightLabel,
-        scopedProfile: row.profile,
-        scopedSubStatus: row.subStatus,
-      }
-    })
+    return safeSeasonRows.map(toSeasonScopedRow)
   }
 
   const scopedRowsMap = buildRowsMap(scopedRows)
 
-  return safeSeasonRows.map((seasonRow) => {
+  return safeSeasonRows.map(seasonRow => {
     const key = getPlayerKey(seasonRow)
     const scopedRow = scopedRowsMap[key]
 
     if (!scopedRow) {
-      return {
-        ...seasonRow,
-
-        scopedMissing: true,
-
-        seasonInsightId: seasonRow.insightId,
-        seasonInsightLabel: seasonRow.insightLabel,
-        seasonProfile: seasonRow.profile,
-        seasonSubStatus: seasonRow.subStatus,
-
-        scopedInsightId: null,
-        scopedInsightLabel: null,
-        scopedProfile: null,
-        scopedSubStatus: 'לא נמצא במדגם המשחקים שנבחר',
-
-        ratingRaw: null,
-        rating: null,
-        tva: 0,
-        games: 0,
-        minutes: 0,
-        goals: 0,
-        assists: 0,
-        involvement: 0,
-
-        subStatus: 'לא נמצא במדגם המשחקים שנבחר',
-      }
+      return toMissingScopedRow(seasonRow)
     }
 
     return mergeScopedMetrics({
@@ -265,9 +311,13 @@ export const mergeSeasonProfileWithScopedMetrics = ({
   })
 }
 
-const getScopeLabel = (performanceScope) => {
+const getScopeLabel = performanceScope => {
   if (!performanceScope || performanceScope.mode === 'season') {
     return 'כל השנה'
+  }
+
+  if (performanceScope.mode === 'limit') {
+    return `${performanceScope.limit || ''} משחקים אחרונים`
   }
 
   if (performanceScope.mode === 'range') {
@@ -352,7 +402,7 @@ export const printPlayerPerformanceScopeDebug = ({
 
   console.log('PLAYER PERFORMANCE / MERGED VIEW')
   console.table(
-    safeMergedRows.map((mergedRow) => {
+    safeMergedRows.map(mergedRow => {
       const key = getPlayerKey(mergedRow)
 
       return toDebugRow({
@@ -365,7 +415,7 @@ export const printPlayerPerformanceScopeDebug = ({
 
   console.log('PLAYER PERFORMANCE / SCOPED ONLY')
   console.table(
-    scopedRows.map((row) => {
+    scopedRows.map(row => {
       return {
         name: row.playerFullName,
         scopedProfile: row.insightLabel,

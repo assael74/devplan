@@ -75,3 +75,21 @@ export const TEAM_RISK_TONES = {
   warning: 'warning',
   danger: 'danger',
 }
+
+export const TEAM_TONE_RANK = {
+  neutral: 0,
+  success: 0,
+  primary: 1,
+  warning: 2,
+  danger: 3,
+}
+
+export const getMaxTeamTone = (...tones) => {
+  return tones.reduce((best, tone) => {
+    const current = tone || 'neutral'
+
+    return TEAM_TONE_RANK[current] > TEAM_TONE_RANK[best]
+      ? current
+      : best
+  }, 'neutral')
+}

@@ -1,7 +1,7 @@
 // src/shared/teams/insights/insights.groups.js
 
 import {
-  buildTeamGroupDiagnosis,
+   buildTeamGroupDiagnosis,
 } from './insights.diagnosis.js'
 
 import {
@@ -27,10 +27,7 @@ const sum = (items, key) => {
   }, 0)
 }
 
-const avg = ({
-  values,
-  weights,
-}) => {
+const avg = ({ values, weights, }) => {
   const totalWeight = weights.reduce((sumValue, item) => {
     return sumValue + item
   }, 0)
@@ -42,6 +39,20 @@ const avg = ({
   }, 0)
 
   return Number((total / totalWeight).toFixed(2))
+}
+
+const formatSigned = (value, digits = 2) => {
+  const n = Number(value)
+
+  if (!Number.isFinite(n) || n === 0) {
+    return '0'
+  }
+
+  const abs = Math.abs(n).toFixed(digits)
+
+  return n > 0
+    ? `+${abs}`
+    : `-${abs}`
 }
 
 const getScoreLabel = score => {
@@ -92,6 +103,7 @@ const buildHealth = players => {
     weakRate: pct(weakPlayers.length, checked.length),
 
     weakWeightedTva,
+    weakWeightedTvaLabel: formatSigned(weakWeightedTva),
     weakDamage: weakWeightedTva,
     weakMinutes,
     weakMinutesPct: pct(weakMinutes, totalMinutes),
@@ -99,7 +111,6 @@ const buildHealth = players => {
     damageScore: Number(damageScore.toFixed(2)),
   }
 }
-
 
 const buildMetrics = players => {
   const checked = players.filter(player => player.ratingRaw !== null)
@@ -125,14 +136,6 @@ const buildMetrics = players => {
 const buildCards = ({ health, metrics, sample, diagnosis }) => {
   return [
     {
-      id: 'checked',
-      label: 'נבדקו',
-      value: `${sample.checked}/${sample.players}`,
-      sub: 'שחקנים במדגם',
-      icon: 'players',
-      color: 'neutral',
-    },
-    {
       id: 'weak',
       label: 'מתחת למצופה',
       value: health.weakCount,
@@ -148,7 +151,7 @@ const buildCards = ({ health, metrics, sample, diagnosis }) => {
       value: health.weakWeightedTva
         ? `${health.weakWeightedTva}`
         : '0',
-      sub: 'TVA שלילי במקבץ',
+      sub: 'מדד השפעה שלילי במקבץ',
       icon: 'trendDown',
       color: health.weakWeightedTva < 0
         ? diagnosis.riskTone
@@ -205,14 +208,9 @@ const buildDetails = ({ sample, health, diagnosis }) => {
 
   return [
     {
-      id: 'risk',
-      label: 'שחקנים לבדיקה',
-      text: `${health.weakCount}/${sample.checked} שחקנים נמצאים מתחת לציפייה.`,
-    },
-    {
       id: 'damage',
       label: 'נזק מצטבר',
-      text: `TVA שלילי במקבץ: ${health.weakWeightedTva}. נזק משוקלל: ${health.damageScore}.`,
+      text: `מדד השפעה שלילי במקבץ: ${health.weakWeightedTvaLabel}. נזק משוקלל: ${health.damageScore}.`,
     },
     {
       id: 'diagnosis',
@@ -233,11 +231,7 @@ const buildGroupPlayers = ({ players, scoresMap }) => {
   })
 }
 
-export const buildTeamInsightGroup = ({
-  item = {},
-  players = emptyArray,
-  scoresMap = {},
-} = {}) => {
+export const buildTeamInsightGroup = ({ item = {}, players = emptyArray, scoresMap = {}, } = {}) => {
   const groupPlayers = buildGroupPlayers({
     players,
     scoresMap,
@@ -340,11 +334,7 @@ const getStatus = groups => {
       }
 }
 
-export const buildTeamInsightAspect = ({
-  aspect,
-  items = emptyArray,
-  scoresMap,
-}) => {
+export const buildTeamInsightAspect = ({ aspect, items = emptyArray, scoresMap, }) => {
   const groups = items.map(item => {
     return buildTeamInsightGroup({
       item: {

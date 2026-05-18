@@ -12,6 +12,10 @@ import {
   buildTeamInsightAspect,
 } from './insights.groups.js'
 
+import {
+  buildTeamInsightRecommendations,
+} from './insights.recommendations.js'
+
 const emptyArray = []
 const emptyObject = {}
 
@@ -27,14 +31,14 @@ const getGamesCount = playerInsights => {
 
   return safeRows.reduce((max, row) => {
     const games = Number(row?.games)
-    return Number.isFinite(games) ? Math.max(max, games) : max
+
+    return Number.isFinite(games)
+      ? Math.max(max, games)
+      : max
   }, 0)
 }
 
-const buildMeta = ({
-  scope,
-  playerInsights,
-}) => {
+const buildMeta = ({ scope, playerInsights }) => {
   const safeRows = Array.isArray(playerInsights) ? playerInsights : emptyArray
 
   return {
@@ -48,20 +52,15 @@ const buildMeta = ({
       scoring: safeRows.length > 0,
       playerInsights: safeRows.length > 0,
       teamInsights: true,
+      recommendations: true,
     },
 
     thresholds: TEAM_INSIGHTS_THRESHOLDS,
   }
 }
 
-export const buildTeamInsights = ({
-  playerInsights = emptyArray,
-  aspects = emptyArray,
-  scope = emptyObject,
-} = {}) => {
-  const scoresMap = buildTeamInsightPlayersMap(playerInsights)
-
-  const builtAspects = aspects.reduce((acc, aspect) => {
+const buildAspects = ({ aspects, scoresMap }) => {
+  return aspects.reduce((acc, aspect) => {
     if (!aspect?.id) return acc
 
     acc[aspect.id] = buildTeamInsightAspect({
@@ -72,12 +71,31 @@ export const buildTeamInsights = ({
 
     return acc
   }, {})
+}
 
-  return {
-    aspects: builtAspects,
+export const buildTeamInsights = ({
+  playerInsights = emptyArray,
+  aspects = emptyArray,
+  scope = emptyObject,
+} = {}) => {
+  const scoresMap = buildTeamInsightPlayersMap(playerInsights)
+
+  const builtModel = {
+    aspects: buildAspects({
+      aspects,
+      scoresMap,
+    }),
+
     meta: buildMeta({
       scope,
       playerInsights,
+    }),
+  }
+
+  return {
+    ...builtModel,
+    recommendations: buildTeamInsightRecommendations({
+      model: builtModel,
     }),
   }
 }

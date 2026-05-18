@@ -5,7 +5,6 @@ import { Box } from '@mui/joy'
 
 import {
   LocalInsightsGroup,
-  ActionItemsLayout,
 } from './layout/index.js'
 
 import {
@@ -13,8 +12,20 @@ import {
 } from './buildSection/index.js'
 
 import {
+  PerformanceScopeBar,
+} from './outcomeSection/scope/index.js'
+
+import {
   OutcomeSection,
 } from './outcomeSection/index.js'
+
+import {
+  RecommendSection,
+} from './recommendSection/index.js'
+
+import {
+  PrintButton,
+} from './print/index.js'
 
 import {
   useTeamPlayersInsightsModel,
@@ -25,6 +36,21 @@ const scopeInitial = {
   limit: null,
   fromGameKey: null,
   toGameKey: null,
+}
+
+const emptyArray = []
+
+const getTeamGames = team => {
+  return Array.isArray(team?.teamGames) ? team.teamGames : emptyArray
+}
+
+const getScopeResetKey = ({ resetKey, scope, }) => {
+  return [
+    resetKey || 'default',
+    scope?.mode || 'season',
+    scope?.fromGameKey || '',
+    scope?.toGameKey || '',
+  ].join('__')
 }
 
 const LoadingContent = () => {
@@ -44,8 +70,24 @@ export default function TeamPlayersInsightsContent({
   summary,
   team,
   enabled = true,
+  resetKey,
 }) {
-  const [scope] = React.useState(scopeInitial)
+  const [scope, setScope] = React.useState(scopeInitial)
+
+  const games = React.useMemo(() => {
+    return getTeamGames(team)
+  }, [team])
+
+  const recommendationsResetKey = React.useMemo(() => {
+    return getScopeResetKey({
+      resetKey,
+      scope,
+    })
+  }, [resetKey, scope])
+
+  React.useEffect(() => {
+    setScope(scopeInitial)
+  }, [resetKey])
 
   const model = useTeamPlayersInsightsModel({
     rows,
@@ -63,7 +105,7 @@ export default function TeamPlayersInsightsContent({
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
       <LocalInsightsGroup
-        color='teams'
+        color="teams"
         title="תהליך בניית הסגל"
         icon="targets"
         chip="מצב בנייה"
@@ -79,13 +121,35 @@ export default function TeamPlayersInsightsContent({
           borderColor: 'divider',
         }}
       >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            p: 1,
+          }}
+        >
+          <PrintButton
+            team={team}
+            model={model}
+            games={games}
+            performanceScope={scope}
+            disabled={!model?.playerPerformanceRows?.length}
+          />
+        </Box>
         <LocalInsightsGroup
-          color='players'
+          color="players"
           title="תפקוד הסגל בפועל"
           icon="projection"
           chip="מצב בפועל"
           chipColor="success"
         >
+          <PerformanceScopeBar
+            games={games}
+            value={scope}
+            onChange={setScope}
+          />
+
           <OutcomeSection model={model.outcomeView} />
         </LocalInsightsGroup>
       </Box>
@@ -96,7 +160,10 @@ export default function TeamPlayersInsightsContent({
         chip="המלצות"
         chipColor="primary"
       >
-        <ActionItemsLayout model={model.actions} />
+        <RecommendSection
+          model={model?.outcomeView?.recommendations}
+          resetKey={recommendationsResetKey}
+        />
       </LocalInsightsGroup>
     </Box>
   )

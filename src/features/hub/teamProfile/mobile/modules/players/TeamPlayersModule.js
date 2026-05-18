@@ -188,6 +188,7 @@ export default function TeamPlayersModule({
         rows={rows}
         summary={summary}
         entity={liveTeam}
+        resetKey={playersInsightsRequest}
       />
 
       <EntityImageModal

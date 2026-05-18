@@ -15,9 +15,10 @@ import { TeamPlayersInsightsContent } from '../../../../../sharedUi/insights/tea
 const c = getEntityColors('teams')
 
 export default function TeamPlayersInsightsDrawer({
-  open,
-  onClose,
   rows,
+  open,
+  resetKey,
+  onClose,
   summary,
   entity,
   team,
@@ -49,6 +50,7 @@ export default function TeamPlayersInsightsDrawer({
         rows={rows}
         summary={summary}
         team={liveTeam}
+        resetKey={resetKey}
       />
     </InsightsDrawerShell>
   )

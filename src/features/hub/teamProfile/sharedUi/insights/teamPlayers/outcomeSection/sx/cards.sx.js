@@ -5,7 +5,7 @@ export const cardsSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      sm: 'repeat(2, minmax(0, 1fr))',
+      sm: 'repeat(5, minmax(0, 1fr))',
     },
     gap: 0.85,
   },
@@ -18,7 +18,7 @@ export const cardsSx = {
     gap: 0.8,
     p: 0.9,
     borderRadius: 'lg',
-    border: '1px solid',
+    border: '3px solid',
     borderColor: selected ? 'primary.outlinedBorder' : 'divider',
     bgcolor: selected ? 'background.surface' : 'background.body',
     boxShadow: selected ? 'md' : 'xs',
@@ -46,22 +46,30 @@ export const cardsSx = {
   cardTitleWrap: {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: 0.85,
+    gap: 1,
     minWidth: 0,
   },
 
   cardIcon: (color, selected) => ({
-    width: 30,
-    height: 30,
+    width: 22,
+    height: 22,
     borderRadius: 'md',
     display: 'grid',
     placeItems: 'center',
     bgcolor: `${color}.softBg`,
     color: `${color}.softColor`,
-    border: selected ? '1px solid' : '0 solid',
+    border: '1px solid',
     borderColor: `${color}.outlinedBorder`,
     flex: '0 0 auto',
   }),
+
+  cardPIcon:{
+    width: 26,
+    height: 26,
+    display: 'grid',
+    placeItems: 'center',
+    mt: -0.4
+  },
 
   cardText: {
     minWidth: 0,
@@ -71,7 +79,10 @@ export const cardsSx = {
 
   cardTitle: {
     fontWeight: 700,
-    lineHeight: 1.2,
+    lineHeight: 1.4,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 
   cardSub: {
@@ -83,18 +94,33 @@ export const cardsSx = {
     fontWeight: 700,
     flex: '0 0 auto',
     boxShadow: selected ? 'xs' : 'none',
+    textAlign: 'left',
+    direction: 'rtl',
+    border: '1px solid',
+    borderColor: 'divider',
+    fontSize: 10
   }),
+
+  scoreWrap: {
+    display: 'flex',
+    gap: 0.25
+  },
 
   diagnosisRow: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
+    flexWrap: 'wrap',
     minWidth: 0,
+    gap: 0.25
   },
 
   diagnosisChip: {
     maxWidth: '100%',
     fontWeight: 700,
+    border: '1px solid',
+    borderColor: 'divider',
+    fontSize: 11,
 
     '& .MuiChip-label': {
       overflow: 'hidden',
@@ -105,8 +131,16 @@ export const cardsSx = {
 
   metrics: {
     display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.5,
+  },
+
+  metricsP: {
+    display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: 0.5,
+    overflow: 'hidden',
+    minWidth: 0,
   },
 
   metric: {
@@ -116,6 +150,7 @@ export const cardsSx = {
     bgcolor: 'background.level1',
     border: '1px solid',
     borderColor: 'divider',
+    overflow: 'hidden',
   },
 
   metricLabel: {
@@ -123,8 +158,28 @@ export const cardsSx = {
     lineHeight: 1.15,
   },
 
+  metricLabelP: {
+    color: 'text.tertiary',
+    lineHeight: 1.15,
+    fontSize: 11,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
   metricValue: {
     fontWeight: 700,
     lineHeight: 1.2,
+    textAlign: 'left',
+    direction: 'rtl',
+  },
+
+  metricValueP: {
+    fontWeight: 700,
+    lineHeight: 1.2,
+    textAlign: 'left',
+    direction: 'rtl',
+    fontSize: 12
   },
 }

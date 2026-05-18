@@ -56,6 +56,7 @@ export const COLORS = {
       warning: { softBg: '#FFFBEB', solid: '#F59E0B', text: '#7C2D12' },
       danger: { softBg: '#FEF2F2', solid: '#DC2626', text: '#7F1D1D' },
       info: { softBg: '#EFF6FF', solid: '#2563EB', text: '#1E3A8A' },
+      neutral: { softBg: '#F8FAFC', solid: '#CBD5E1', text: '#334155' },
     },
 
     domain: {

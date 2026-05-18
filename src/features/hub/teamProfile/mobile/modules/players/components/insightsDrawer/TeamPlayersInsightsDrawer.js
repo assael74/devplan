@@ -25,6 +25,7 @@ export default function TeamPlayersInsightsDrawer({
   rows,
   summary,
   entity,
+  resetKey
 }) {
   const insights = useMemo(
     () => buildTeamPlayersInsights({ rows, summary }),

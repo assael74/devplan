@@ -14,7 +14,7 @@ const roleIcons = {
   none: 'players',
 }
 
-const OUTCOME_ASPECTS = {
+const aspectMeta = {
   role: {
     id: 'role',
     title: 'תפקוד לפי מעמד',
@@ -28,54 +28,101 @@ const OUTCOME_ASPECTS = {
   },
 }
 
-const getRoles = structure => {
-  return Array.isArray(structure?.roles)
-    ? structure.roles
-    : emptyArray
-}
-
-const getPrimaryPositions = structure => {
-  return Array.isArray(structure?.positions?.primary)
-    ? structure.positions.primary
-    : emptyArray
-}
-
-const getRoleItems = structure => {
-  return getRoles(structure).map(item => ({
-    id: item.id,
-    roleId: item.id,
-    label: item.label,
-    icon: roleIcons[item.id] || 'players',
-    players: item.players || emptyArray,
-  }))
+const arr = value => {
+  return Array.isArray(value) ? value : emptyArray
 }
 
 const getPositionIcon = item => {
   return item.layerKey || item.id || 'positions'
 }
 
-const getPositionItems = structure => {
-  return getPrimaryPositions(structure).map(item => ({
-    id: item.id,
-    label: item.label,
-    icon: getPositionIcon(item),
-    layerKey: item.layerKey,
-    layerLabel: item.layerLabel,
-    players: item.players || emptyArray,
-  }))
-}
+const toRoleItem = item => ({
+  id: item.id,
+  roleId: item.id,
+  label: item.label,
+  icon: roleIcons[item.id] || 'players',
+  players: item.players || emptyArray,
+})
 
-const buildAspects = structure => {
+const toPositionItem = item => ({
+  id: item.id,
+  label: item.label,
+  icon: getPositionIcon(item),
+  layerKey: item.layerKey,
+  layerLabel: item.layerLabel,
+  players: item.players || emptyArray,
+})
+
+const buildRawAspects = structure => {
   return [
     {
-      ...OUTCOME_ASPECTS.role,
-      items: getRoleItems(structure),
+      ...aspectMeta.role,
+      items: arr(structure?.roles).map(toRoleItem),
     },
+
     {
-      ...OUTCOME_ASPECTS.position,
-      items: getPositionItems(structure),
+      ...aspectMeta.position,
+      id: 'positionPrimary',
+      items: arr(structure?.positions?.primary).map(toPositionItem),
+    },
+
+    {
+      ...aspectMeta.position,
+      id: 'positionCoverage',
+      items: arr(structure?.positions?.coverage).map(toPositionItem),
     },
   ]
+}
+
+const withMode = ({
+  aspect,
+  mode,
+  label,
+}) => {
+  return {
+    ...(aspect || {}),
+    id: 'position',
+    title: aspectMeta.position.title,
+    icon: aspectMeta.position.icon,
+    mode,
+    modeLabel: label,
+    groups: arr(aspect?.groups),
+    summary: aspect?.summary || {},
+    status: aspect?.status || {},
+  }
+}
+
+const normalizeAspects = aspects => {
+  const role = aspects.role || null
+  const primary = aspects.positionPrimary || null
+  const coverage = aspects.positionCoverage || null
+
+  return {
+    ...aspects,
+
+    role,
+
+    position: {
+      id: 'position',
+      title: aspectMeta.position.title,
+      icon: aspectMeta.position.icon,
+      defaultMode: 'primary',
+
+      modes: {
+        primary: withMode({
+          aspect: primary,
+          mode: 'primary',
+          label: 'ראשית בלבד',
+        }),
+
+        coverage: withMode({
+          aspect: coverage,
+          mode: 'coverage',
+          label: 'כל העמדות',
+        }),
+      },
+    },
+  }
 }
 
 export const buildOutcomeViewModel = ({
@@ -83,13 +130,14 @@ export const buildOutcomeViewModel = ({
   playerPerformanceRows,
   performanceScope,
 } = {}) => {
-  return buildTeamInsights({
-    playerInsights: Array.isArray(playerPerformanceRows)
-      ? playerPerformanceRows
-      : emptyArray,
-
-    aspects: buildAspects(structure),
-
+  const model = buildTeamInsights({
+    playerInsights: arr(playerPerformanceRows),
+    aspects: buildRawAspects(structure),
     scope: performanceScope,
   })
+
+  return {
+    ...model,
+    aspects: normalizeAspects(model.aspects),
+  }
 }

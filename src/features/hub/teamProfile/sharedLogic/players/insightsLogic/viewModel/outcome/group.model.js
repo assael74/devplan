@@ -211,7 +211,7 @@ const buildDetails = ({
     {
       id: 'depth',
       label: 'עומק הבעיה',
-      text: `נזק משוקלל: ${health.damageScore}. TVA שלילי מצטבר: ${health.weakWeightedTva}.`,
+      text: `נזק משוקלל: ${health.damageScore}. מדד השפעה שלילי מצטבר: ${health.weakWeightedTva}.`,
     },
     {
       id: 'diagnosis',
