@@ -123,7 +123,7 @@ export default function TeamPlayerCardHeader({
                 minWidth: 0,
                 flex: 1,
               }}
-              title={row?.fullName}
+              title={row?.playerFullName}
               onClick={
                 clickableProfile
                   ? (event) => {
@@ -133,7 +133,7 @@ export default function TeamPlayerCardHeader({
                   : undefined
               }
             >
-              {row?.fullName || '—'}
+              {row?.playerFullName || '—'}
             </Typography>
 
             <PrimaryPositionChip row={row} />

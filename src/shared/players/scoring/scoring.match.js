@@ -1,6 +1,12 @@
 // src/shared/players/scoring/scoring.match.js
 
 /*
+| Team impact uses Team Game Expectations.
+| Do not apply opponent modifier here, because expectations already represent
+| the contextual benchmark for the game.
+*/
+
+/*
 |--------------------------------------------------------------------------
 | Player Scoring Engine / 5. Match Score Entry
 |--------------------------------------------------------------------------
@@ -140,7 +146,7 @@ const buildTeamImpactDelta = (context = {}) => {
   const {
     teamGoalsFor,
     teamGoalsAgainst,
-    seasonTargets,
+    teamGameExpectations,
     gameMinutes,
     timePlayed,
     positionLayer,
@@ -148,30 +154,34 @@ const buildTeamImpactDelta = (context = {}) => {
 
   const positionWeights = getPositionWeights(positionLayer)
 
-  const targetGoalsForPerGame = safeDivide({
-    value: seasonTargets?.goalsFor,
-    total: seasonTargets?.leagueNumGames || 0,
-  })
+  const expectedGoalsFor =
+    teamGameExpectations?.expectedGoalsFor
 
-  const targetGoalsAgainstPerGame = safeDivide({
-    value: seasonTargets?.goalsAgainst,
-    total: seasonTargets?.leagueNumGames || 0,
-  })
+  const expectedGoalsAgainst =
+    teamGameExpectations?.expectedGoalsAgainst
+
+  const hasExpectedGoalsFor =
+    Number.isFinite(Number(expectedGoalsFor))
+
+  const hasExpectedGoalsAgainst =
+    Number.isFinite(Number(expectedGoalsAgainst))
+
+  if (!hasExpectedGoalsFor && !hasExpectedGoalsAgainst) {
+    return 0
+  }
 
   const minutesShare = safeDivide({
     value: timePlayed,
     total: gameMinutes,
   })
 
-  const attackImpact =
-    targetGoalsForPerGame > 0
-      ? (teamGoalsFor - targetGoalsForPerGame) * minutesShare
-      : 0
+  const attackImpact = hasExpectedGoalsFor
+    ? (teamGoalsFor - Number(expectedGoalsFor)) * minutesShare
+    : 0
 
-  const defenseImpact =
-    targetGoalsAgainstPerGame > 0
-      ? (targetGoalsAgainstPerGame - teamGoalsAgainst) * minutesShare
-      : 0
+  const defenseImpact = hasExpectedGoalsAgainst
+    ? (Number(expectedGoalsAgainst) - teamGoalsAgainst) * minutesShare
+    : 0
 
   const weightedImpact =
     (attackImpact * positionWeights.attack) +
@@ -201,7 +211,7 @@ const buildDeltas = ({
 
   const personal = buildPersonalDelta(context) * opponentModifier
   const targetPace = buildTargetPaceDelta(context) * opponentModifier
-  const teamImpact = buildTeamImpactDelta(context) * opponentModifier
+  const teamImpact = buildTeamImpactDelta(context)
   const coach = buildCoachDelta(coachAssessment)
 
   return {
@@ -220,6 +230,35 @@ const buildWeightedDelta = (deltas = {}) => {
     (deltas.coach * PLAYER_SCORING_WEIGHTS.coach)
 
   return roundNumber(value)
+}
+
+const buildFlags = (context = {}) => {
+  const expectations = context?.teamGameExpectations || {}
+  const missing = Array.isArray(expectations?.missing)
+    ? expectations.missing
+    : []
+
+  const fallback = Array.isArray(expectations?.fallback)
+    ? expectations.fallback
+    : []
+
+  return {
+    missingTeamGameExpectations:
+      !Number.isFinite(Number(expectations?.expectedGoalsFor)) &&
+      !Number.isFinite(Number(expectations?.expectedGoalsAgainst)),
+
+    missingExpectedGoalsFor:
+      !Number.isFinite(Number(expectations?.expectedGoalsFor)),
+
+    missingExpectedGoalsAgainst:
+      !Number.isFinite(Number(expectations?.expectedGoalsAgainst)),
+
+    hasExpectationFallbacks: fallback.length > 0,
+    hasExpectationMissing: missing.length > 0,
+
+    missing,
+    fallback,
+  }
 }
 
 export const buildPlayerMatchScore = ({
@@ -276,8 +315,10 @@ export const buildPlayerMatchScore = ({
 
     weightedDelta,
     deltas,
+    flags: buildFlags(context),
 
     context,
+    teamGameExpectations: context.teamGameExpectations,
 
     targets: readiness.targets,
 

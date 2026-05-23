@@ -10,14 +10,50 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
+
+import {
+  ScoringProfileInfo,
+  ScoringMetricInfo,
+} from '../../../../../../../../ui/patterns/scoring/index.js'
+
+import {
+  getPlayerInsightProfile,
+} from '../../../../../../../../shared/players/insights/insights.profiles.js'
 
 const getPrimaryPosition = (row = {}) => {
   const positions = Array.isArray(row?.positions) ? row.positions : []
   const primary = row?.primaryPosition || row?.generalPosition?.primaryPosition || ''
 
   return positions.includes(primary) ? primary : ''
+}
+
+const toNumber = value => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+const getPerformance = row => row?.performance || {}
+
+const getProfile = row => {
+  const performance = getPerformance(row)
+
+  if (performance?.profile?.id) return performance.profile
+
+  return getPlayerInsightProfile(
+    performance?.profileId ||
+      performance?.insightId ||
+      'secondary_contributor'
+  )
+}
+
+const getImpactColor = value => {
+  const n = Number(String(value).replace('+', ''))
+
+  if (n > 0) return 'success'
+  if (n < 0) return 'warning'
+
+  return 'neutral'
 }
 
 function PositionsBlock({ row, onEditPosition }) {
@@ -57,11 +93,7 @@ function PositionsBlock({ row, onEditPosition }) {
                 size="md"
                 variant={isPrimary ? 'solid' : 'soft'}
                 color={isPrimary ? 'primary' : 'neutral'}
-                startDecorator={
-                  isPrimary
-                    ? iconUi({ id: pos, size: 'sm' })
-                    : null
-                }
+                startDecorator={isPrimary ? iconUi({ id: pos, size: 'sm' }) : null}
                 onClick={onEditPosition ? () => onEditPosition(row) : undefined}
                 sx={{
                   cursor: 'pointer',
@@ -86,8 +118,6 @@ function PositionsBlock({ row, onEditPosition }) {
             ללא עמדה
           </Chip>
         )}
-
-        <Box sx={{ width: 130, flexShrink: 0 }} />
 
         <Chip
           size="sm"
@@ -133,37 +163,37 @@ function PerformChip({
 }
 
 function PerformBlock({ row }) {
+  const performance = getPerformance(row)
   const gamesStats = row?.playerGamesStats || {}
 
-  const goals = Number(gamesStats?.goals ?? 0)
-  const assists = Number(gamesStats?.assists ?? 0)
-  const squadLabel = gamesStats?.squadLabel || '0/0'
-  const playedLabel = gamesStats?.playedLabel || '0/0'
+  const profile = getProfile(row)
+  const ratingLabel = performance?.ratingLabel || '-'
+  const tvaLabel = performance?.tvaLabel || '0.00'
+
+  const goals = toNumber(performance?.goals ?? gamesStats?.goals)
+  const assists = toNumber(performance?.assists ?? gamesStats?.assists)
+
+  const squadLabel = performance?.squadLabel || gamesStats?.squadLabel || '0/0'
+  const playedLabel = performance?.playedLabel || gamesStats?.playedLabel || '0/0'
+  const startedLabel = performance?.startedLabel || gamesStats?.startedLabel || '0/0'
+  const minutesPctLabel =
+    performance?.minutesPctLabel ||
+    gamesStats?.minutesPctLabel ||
+    '0%'
 
   return (
     <Box sx={{ display: 'grid', gap: 0.6 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography level="body-sm" sx={{ fontWeight: 700 }}>
-          ביצוע
-        </Typography>
-      </Box>
+      <Typography level="body-sm" sx={{ fontWeight: 700 }}>
+        תפקוד וביצוע
+      </Typography>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        <PerformChip icon="players">
-          סגל {squadLabel}
-        </PerformChip>
-
-        <PerformChip icon="games">
-          שותף {playedLabel}
-        </PerformChip>
-
-        <PerformChip icon="goal" color="success">
-          שערים {goals}
-        </PerformChip>
-
-        <PerformChip icon="assists" color="primary">
-          בישולים {assists}
-        </PerformChip>
+        <PerformChip icon="players">סגל {squadLabel}</PerformChip>
+        <PerformChip icon="games">שותף {playedLabel}</PerformChip>
+        <PerformChip icon="isStart">הרכב {startedLabel}</PerformChip>
+        <PerformChip icon="playTimeRate">דקות {minutesPctLabel}</PerformChip>
+        <PerformChip icon="goal" color="success">שערים {goals}</PerformChip>
+        <PerformChip icon="assists" color="primary">בישולים {assists}</PerformChip>
       </Box>
     </Box>
   )

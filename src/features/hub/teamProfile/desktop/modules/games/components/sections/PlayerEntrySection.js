@@ -1,8 +1,10 @@
+// teamProfile/desktop/modules/games/components/sections/PlayerEntrySection.js
+
 import React from 'react'
 import { Box, Chip, Typography, Tooltip, IconButton } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { sectionsSx as sx } from '../../sx/sections.sx.js'
+import { sectionsSx as sx } from './sx/sections.sx.js'
 import {
   getGamePlayers,
   getSquadPlayers,
@@ -17,34 +19,30 @@ export function PlayerEntrySection({ game, onEditEntry }) {
   const played = getPlayedPlayers(players)
   const totalTeam = teamPlayers.length
 
-  const handleEntryEdit = () => {
-    if (onEditEntry) onEditEntry(game)
+  const handleEntryEdit = event => {
+    event.stopPropagation()
+
+    if (onEditEntry) {
+      onEditEntry(game)
+    }
   }
 
   return (
     <Box sx={sx.entryCellSx}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', px: 0.5, gap: 0.5, py: 0 }}>
         <Tooltip title="עדכון רישום שחקנים">
           <IconButton size="sm" variant="plain" onClick={handleEntryEdit}>
             {iconUi({ id: 'entry' })}
           </IconButton>
         </Tooltip>
-
-        <Typography level="title-sm" sx={sx.titleSx}>
-          סגל:
-        </Typography>
-
-        <Chip size="sm" variant="soft" color="primary">
-          {squad.length} / {totalTeam}
-        </Chip>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography level="title-sm" sx={sx.titleSx}>
-          שותפו:
-        </Typography>
+      <Box sx={{ p: 0 }}>
+        <Chip size="sm" variant="soft" color="primary" startDecorator={iconUi({id: 'isSquad', size: 'sm'})}>
+          {squad.length} / {totalTeam}
+        </Chip>
 
-        <Chip size="sm" variant="soft" color="success">
+        <Chip size="sm" variant="soft" color="success" startDecorator={iconUi({id: 'isSquad', size: 'sm'})}>
           {played.length}
         </Chip>
       </Box>

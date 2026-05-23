@@ -15,6 +15,13 @@ const FAB_ENTITY_BY_TAB = {
   videos: 'videoAnalysis',
 }
 
+const PLAYER_INSIGHTS_IDS = [
+  'playersInsights',
+  'playerInsights',
+  'teamPlayersInsights',
+  'openPlayersInsights',
+]
+
 function presetForTab(tab, entity, context) {
   const teamId = entity?.id || null
   const clubId = context?.club?.id || entity?.clubId || null
@@ -24,11 +31,63 @@ function presetForTab(tab, entity, context) {
   return { teamId, clubId }
 }
 
+const isPlayersInsightsAction = action => {
+  const id = String(action?.id || '')
+  const label = String(action?.label || action?.title || '')
+
+  return (
+    PLAYER_INSIGHTS_IDS.includes(id) ||
+    id.toLowerCase().includes('playersinsights') ||
+    label.includes('תובנות שחקנים')
+  )
+}
+
+const getPlayersInsightsMeta = status => {
+  if (status === 'ready') {
+    return {
+      disabled: false,
+      metaLabel: '',
+      metaColor: 'success',
+    }
+  }
+
+  if (status === 'loading') {
+    return {
+      disabled: true,
+      metaLabel: 'בטעינה',
+      metaColor: 'warning',
+    }
+  }
+
+  return {
+    disabled: true,
+    metaLabel: 'אין נתונים',
+    metaColor: 'neutral',
+  }
+}
+
+const decoratePlayersInsightsAction = ({
+  action,
+  status,
+}) => {
+  if (!isPlayersInsightsAction(action)) return action
+
+  const meta = getPlayersInsightsMeta(status)
+
+  return {
+    ...action,
+    disabled: meta.disabled,
+    metaLabel: meta.metaLabel,
+    metaColor: meta.metaColor,
+  }
+}
+
 export default function TeamProfileFab({
   entity,
   context,
   tab,
   taskContext,
+  playersInsightsStatus = 'empty',
   onOpenPlayersInsights,
   onOpenGamesInsights,
   onOpenPerformanceInsights,
@@ -38,7 +97,7 @@ export default function TeamProfileFab({
   const { openCreate } = useCreateModal()
 
   const actions = React.useMemo(() => {
-    return buildFabActions({
+    const baseActions = buildFabActions({
       area: 'team',
       mode: tab,
       taskContext,
@@ -75,19 +134,31 @@ export default function TeamProfileFab({
             { ...context, ...taskCtx },
           ),
 
-        onOpenPlayersInsights: () => onOpenPlayersInsights?.(),
+        onOpenPlayersInsights: () => {
+          if (playersInsightsStatus !== 'ready') return
+
+          onOpenPlayersInsights?.()
+        },
         onOpenGamesInsights: () => onOpenGamesInsights?.(),
         onOpenPerformanceInsights: () => onOpenPerformanceInsights?.(),
         onOpenAbilitiesInsights: () => onOpenAbilitiesInsights?.(),
         onOpenVideoInsights: () => onOpenVideoInsights?.(),
       },
     })
+
+    return baseActions.map(action => (
+      decoratePlayersInsightsAction({
+        action,
+        status: playersInsightsStatus,
+      })
+    ))
   }, [
     tab,
     openCreate,
     entity,
     context,
     taskContext,
+    playersInsightsStatus,
     onOpenPlayersInsights,
     onOpenGamesInsights,
     onOpenPerformanceInsights,
@@ -103,6 +174,7 @@ export default function TeamProfileFab({
   return (
     <GenericFabMenu
       placement="br"
+      disableTooltip
       actions={actions}
       color={fabColors ? 'neutral' : 'primary'}
       fabSx={

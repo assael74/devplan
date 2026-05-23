@@ -1,5 +1,7 @@
 // teamProfile/sharedLogic/games/insightsLogic/viewModel/drawerContext.resolve.js
 
+const emptyArray = []
+
 export const resolveGamesReady = ({ readiness = {}, games = null }) => {
   return (
     readiness?.gamesReady === true ||
@@ -8,9 +10,24 @@ export const resolveGamesReady = ({ readiness = {}, games = null }) => {
   )
 }
 
+const resolveInsightGames = insights => {
+  return (
+    insights?.games ||
+    insights?.sources?.games ||
+    null
+  )
+}
+
+const resolveRawGames = insights => {
+  return Array.isArray(insights?.rawGames)
+    ? insights.rawGames
+    : emptyArray
+}
+
 export const resolveTeamGamesDrawerContext = (insights = {}) => {
   const league = insights?.league || insights?.sources?.team || {}
-  const games = insights?.games || insights?.sources?.games || null
+  const games = resolveInsightGames(insights)
+  const rawGames = resolveRawGames(insights)
   const calculation = insights?.calculation || {}
   const active = calculation?.active || insights?.active || league
 
@@ -18,6 +35,7 @@ export const resolveTeamGamesDrawerContext = (insights = {}) => {
     team: insights?.team || insights?.entity || {},
     league,
     games,
+    rawGames,
     calculation,
     active,
     isGamesMode: calculation?.mode === 'games',

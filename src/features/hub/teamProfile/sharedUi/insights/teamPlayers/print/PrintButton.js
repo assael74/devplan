@@ -25,7 +25,7 @@ export default function PrintButton({
       documentTitle={`דוח ביצוע שחקנים - ${teamName}`}
       disabled={disabled}
       size="sm"
-      variant="soft"
+      variant="solid"
       color="neutral"
       startIcon="download"
       iconOnly={iconOnly}

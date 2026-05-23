@@ -1,6 +1,6 @@
-// teamProfile/desktop/modules/games/sx/sections.sx.js
+// teamProfile/desktop/modules/games/sections/sx/sections.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('teams')
 
@@ -39,10 +39,18 @@ export const sectionsSx = {
     minWidth: 0,
     flex: 1,
     fontWeight: 700,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     lineHeight: 1.25,
+  },
+
+  emptyList: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+    minWidth: 0,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    flexWrap: 'nowrap',
   },
 
   leagueNum: {
@@ -93,12 +101,35 @@ export const sectionsSx = {
     px: 1,
   },
 
+  chip: count => ({
+    minWidth: 0,
+    maxWidth: count <= 1 ? 150 : count === 2 ? 116 : count === 3 ? 94 : 78,
+    flex: '1 1 0',
+    overflow: 'hidden',
+    border: '1px solid',
+    borderColor: 'divider',
+
+    '& .MuiChip-label': {
+      minWidth: 0,
+      overflow: 'hidden',
+    },
+  }),
+
+  chipText: {
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: 11
+  },
+
+  moreChip: {
+    flex: '0 0 auto',
+  },
+
   entryCellSx: {
     minWidth: 0,
     display: 'flex',
-    alignContent: 'start',
-    justifyItems: 'start',
     gap: 0.55,
-    px: 1,
   },
 }

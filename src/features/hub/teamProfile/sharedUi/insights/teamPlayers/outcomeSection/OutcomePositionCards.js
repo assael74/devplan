@@ -3,6 +3,7 @@
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 
+import { ScoringInfoTooltip } from '../../../../../../../ui/patterns/scoring/index.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import {
@@ -15,6 +16,7 @@ import {
 import { cardsSx as sx } from './sx/index.js'
 
 const emptyArray = []
+const loadingLabel = 'בטעינה'
 
 const getScoreValue = group => {
   return group?.scoreLabel ||
@@ -22,7 +24,12 @@ const getScoreValue = group => {
     '-'
 }
 
-const Metric = ({ label, value, signedValue = false, }) => {
+const getValue = ({ loading, value, fallback = '-' }) => {
+  if (loading) return loadingLabel
+  return value ?? fallback
+}
+
+const Metric = ({ label, value, loading = false }) => {
   return (
     <Box sx={sx.metric}>
       <Typography level="body-xs" sx={sx.metricLabelP}>
@@ -30,15 +37,15 @@ const Metric = ({ label, value, signedValue = false, }) => {
       </Typography>
 
       <Typography level="body-sm" sx={sx.metricValueP}>
-        {value}
+        {getValue({ loading, value })}
       </Typography>
     </Box>
   )
 }
 
-const Card = ({ group, selected, onSelect, }) => {
-  const color = getGroupJoyTone(group)
-  const qualityColor = getQualityJoyTone(group)
+const Card = ({ group, selected, onSelect, loading = false }) => {
+  const color = loading ? 'neutral' : getGroupJoyTone(group)
+  const qualityColor = loading ? 'neutral' : getQualityJoyTone(group)
 
   const select = () => {
     if (typeof onSelect === 'function') {
@@ -77,14 +84,24 @@ const Card = ({ group, selected, onSelect, }) => {
           </Box>
         </Box>
 
-        <Chip
-          size="sm"
-          variant="soft"
-          color={qualityColor}
-          sx={sx.scoreChip(selected)}
+        <ScoringInfoTooltip
+          metric="efficiency"
+          placement="top"
+          mode="short"
+          triggerSx={{ display: 'inline-flex' }}
         >
-          {getScoreValue(group)}
-        </Chip>
+          <Chip
+            size="sm"
+            variant="soft"
+            color={qualityColor}
+            sx={sx.scoreChip(selected)}
+          >
+            {getValue({
+              loading,
+              value: getScoreValue(group),
+            })}
+          </Chip>
+        </ScoringInfoTooltip>
       </Box>
 
       <Box sx={sx.diagnosisRow}>
@@ -94,26 +111,43 @@ const Card = ({ group, selected, onSelect, }) => {
           color={color}
           sx={sx.diagnosisChip}
         >
-          {group.diagnosis?.label || 'אין אבחנה'}
+          {loading ? loadingLabel : group.diagnosis?.label || 'אין אבחנה'}
         </Chip>
       </Box>
 
       <Box sx={sx.metricsP}>
         <Metric
           label="מתחת"
+          loading={loading}
           value={getWeakSampleValue(group)}
         />
 
-        <Metric
-          label="ציון"
-          value={getScoreValue(group)}
-        />
+        <ScoringInfoTooltip
+          metric="efficiency"
+          placement="top"
+          mode="short"
+          triggerSx={{ display: 'inline-flex' }}
+        >
+          <Metric
+            label="ציון"
+            loading={loading}
+            value={getScoreValue(group)}
+          />
+        </ScoringInfoTooltip>
 
-        <Metric
-          label="נזק"
-          value={getGroupDamageValue(group)}
-          signedValue
-        />
+        <ScoringInfoTooltip
+          metric="impact"
+          mode="short"
+          placement="top"
+          showDiff
+          triggerSx={{ display: 'block', minWidth: 0 }}
+        >
+          <Metric
+            label="נזק"
+            loading={loading}
+            value={getGroupDamageValue(group)}
+          />
+        </ScoringInfoTooltip>
       </Box>
     </Box>
   )
@@ -123,6 +157,7 @@ export default function OutcomePositionCards({
   groups = emptyArray,
   selectedId,
   onSelect,
+  loading = false,
 }) {
   const safeGroups = Array.isArray(groups) ? groups : emptyArray
 
@@ -136,6 +171,7 @@ export default function OutcomePositionCards({
           group={group}
           selected={group.id === selectedId}
           onSelect={onSelect}
+          loading={loading}
         />
       ))}
     </Box>

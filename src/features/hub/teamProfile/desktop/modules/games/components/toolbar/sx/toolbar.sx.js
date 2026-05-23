@@ -1,6 +1,6 @@
-// teamProfile/desktop/modules/games/sx/toolbar.sx.js
+// teamProfile/desktop/modules/games/toolbar/sx/toolbar.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('teams')
 
@@ -52,6 +52,32 @@ export const toolbarSx = {
       height: 0,
       display: 'none',
     },
+  },
+
+  viewWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    p: 0.25,
+    borderRadius: 'lg',
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.surface',
+    flexShrink: 0,
+  },
+
+  viewWrapText: {
+    color: 'text.tertiary',
+    fontWeight: 700,
+    px: 0.35,
+    whiteSpace: 'nowrap',
+  },
+
+  chipView: {
+    cursor: 'pointer',
+    fontWeight: 700,
+    minHeight: 24,
+    '--Chip-paddingInline': '7px',
   },
 
   sortButton: {

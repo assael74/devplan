@@ -2,3 +2,4 @@
 
 export { default as LocalHeader } from './LocalHeader.js'
 export { default as SourceCompareStrip } from './SourceCompareStrip.js'
+export { default as InsightsLoading } from './InsightsLoading.js'

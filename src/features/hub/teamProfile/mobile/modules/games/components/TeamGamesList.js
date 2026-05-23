@@ -10,6 +10,7 @@ export default function TeamGamesList({
   rows,
   onEditGame,
   onEditEntryGame,
+  performanceView,
 }) {
   if (!rows?.length) {
     return (
@@ -31,6 +32,7 @@ export default function TeamGamesList({
           onEdit={onEditGame}
           onEditEntry={onEditEntryGame}
           defaultExpanded={false}
+          performanceView={performanceView}
         />
       ))}
     </Box>

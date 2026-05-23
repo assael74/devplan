@@ -22,7 +22,7 @@ import ToolbarFilterChip from './ToolbarFilterChip.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
-const safeArray = (value) => (Array.isArray(value) ? value : [])
+const safeArray = value => (Array.isArray(value) ? value : [])
 
 export default function TeamPlayersToolbar({
   summary,
@@ -35,7 +35,9 @@ export default function TeamPlayersToolbar({
   onToggleOnlyActive,
   onChangeSquadRole,
   onChangeProjectStatus,
-  onChangePositionLayer,
+  onChangePositionCode,
+  onChangeGeneralPositionKey,
+  onChangePerformanceProfile,
   onChangeSortBy,
   onChangeSortDirection,
   onResetFilters,
@@ -48,22 +50,26 @@ export default function TeamPlayersToolbar({
     !!filters?.onlyActive ||
     !!filters?.squadRole ||
     !!filters?.projectStatus ||
-    !!filters?.positionLayer
+    !!filters?.positionCode ||
+    !!filters?.generalPositionKey ||
+    !!filters?.performanceProfile
 
   const indicators = useMemo(() => {
-    const positionBuckets = Array.isArray(summary?.positionBuckets)
-      ? summary.positionBuckets
-      : []
-    const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets)
-      ? summary.squadRoleBuckets
-      : []
-    const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets)
-      ? summary.projectStatusBuckets
-      : []
+    const positionBuckets = safeArray(summary?.positionCodeBuckets)
+    const generalPositionBuckets = safeArray(summary?.generalPositionBuckets)
+    const squadRoleBuckets = safeArray(summary?.squadRoleBuckets)
+    const projectStatusBuckets = safeArray(summary?.projectStatusBuckets)
+    const performanceProfileBuckets = safeArray(summary?.performanceProfileBuckets)
 
-    const positionItem = positionBuckets.find((item) => item?.id === filters?.positionLayer)
-    const squadRoleItem = squadRoleBuckets.find((item) => item?.id === filters?.squadRole)
-    const projectStatusItem = projectStatusBuckets.find((item) => item?.id === filters?.projectStatus)
+    const positionItem = positionBuckets.find(item => item?.id === filters?.positionCode)
+    const generalPositionItem = generalPositionBuckets.find(
+      item => item?.id === filters?.generalPositionKey
+    )
+    const squadRoleItem = squadRoleBuckets.find(item => item?.id === filters?.squadRole)
+    const projectStatusItem = projectStatusBuckets.find(item => item?.id === filters?.projectStatus)
+    const performanceProfileItem = performanceProfileBuckets.find(
+      item => item?.id === filters?.performanceProfile
+    )
 
     const next = []
 
@@ -97,6 +103,16 @@ export default function TeamPlayersToolbar({
       })
     }
 
+    if (performanceProfileItem) {
+      next.push({
+        id: 'performanceProfile',
+        label: performanceProfileItem.label,
+        idIcon: performanceProfileItem.idIcon || 'insights',
+        color: performanceProfileItem.color || 'primary',
+        clearAction: 'performanceProfile',
+      })
+    }
+
     if (projectStatusItem) {
       next.push({
         id: 'projectStatus',
@@ -109,43 +125,37 @@ export default function TeamPlayersToolbar({
 
     if (positionItem) {
       next.push({
-        id: 'positionLayer',
+        id: 'positionCode',
         label: positionItem.label,
-        idIcon: positionItem.id !== 'none' ? positionItem.id : 'layers',
+        idIcon: positionItem.idIcon || 'position',
         color: 'primary',
-        clearAction: 'positionLayer',
+        clearAction: 'positionCode',
+      })
+    }
+
+    if (generalPositionItem) {
+      next.push({
+        id: 'generalPositionKey',
+        label: generalPositionItem.label,
+        idIcon: generalPositionItem.idIcon || 'layers',
+        color: 'primary',
+        clearAction: 'generalPositionKey',
       })
     }
 
     return next
   }, [summary, filters])
 
-  const handleClearIndicator = (item) => {
+  const handleClearIndicator = item => {
     if (!item?.clearAction) return
 
-    if (item.clearAction === 'search') {
-      onChangeSearch('')
-      return
-    }
-
-    if (item.clearAction === 'onlyActive') {
-      onToggleOnlyActive()
-      return
-    }
-
-    if (item.clearAction === 'squadRole') {
-      onChangeSquadRole('')
-      return
-    }
-
-    if (item.clearAction === 'projectStatus') {
-      onChangeProjectStatus('')
-      return
-    }
-
-    if (item.clearAction === 'positionLayer') {
-      onChangePositionLayer('')
-    }
+    if (item.clearAction === 'search') return onChangeSearch('')
+    if (item.clearAction === 'onlyActive') return onToggleOnlyActive()
+    if (item.clearAction === 'squadRole') return onChangeSquadRole('')
+    if (item.clearAction === 'projectStatus') return onChangeProjectStatus('')
+    if (item.clearAction === 'positionCode') return onChangePositionCode('')
+    if (item.clearAction === 'generalPositionKey') return onChangeGeneralPositionKey('')
+    if (item.clearAction === 'performanceProfile') return onChangePerformanceProfile('')
   }
 
   return (
@@ -199,7 +209,7 @@ export default function TeamPlayersToolbar({
           </Chip>
 
           {!!safeArray(indicators).length &&
-            indicators.map((item) => (
+            indicators.map(item => (
               <ToolbarFilterChip
                 key={item.id}
                 item={item}
@@ -226,7 +236,9 @@ export default function TeamPlayersToolbar({
           onToggleOnlyActive={onToggleOnlyActive}
           onChangeSquadRole={onChangeSquadRole}
           onChangeProjectStatus={onChangeProjectStatus}
-          onChangePositionLayer={onChangePositionLayer}
+          onChangePositionCode={onChangePositionCode}
+          onChangeGeneralPositionKey={onChangeGeneralPositionKey}
+          onChangePerformanceProfile={onChangePerformanceProfile}
         />
       </MobileFiltersDrawerShell>
 

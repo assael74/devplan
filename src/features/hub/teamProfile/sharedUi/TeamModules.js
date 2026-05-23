@@ -6,6 +6,7 @@ import ProfileModuleRenderer from '../../sharedProfile/ProfileModuleRenderer'
 export default function TeamModules({
   entity,
   context,
+  profileData,
   tab,
   modulesMap = {},
   playersInsightsRequest = 0,
@@ -13,11 +14,13 @@ export default function TeamModules({
   performanceInsightsRequest = 0,
   abilitiesInsightsRequest = 0,
   videoInsightsRequest = 0,
+  onPlayersInsightsStatusChange,
 }) {
   return (
     <ProfileModuleRenderer
       entity={entity}
       context={context}
+      profileData={profileData}
       tab={tab}
       modulesMap={modulesMap}
       playersInsightsRequest={playersInsightsRequest}
@@ -25,6 +28,7 @@ export default function TeamModules({
       performanceInsightsRequest={performanceInsightsRequest}
       abilitiesInsightsRequest={abilitiesInsightsRequest}
       videoInsightsRequest={videoInsightsRequest}
+      onPlayersInsightsStatusChange={onPlayersInsightsStatusChange}
     />
   )
 }

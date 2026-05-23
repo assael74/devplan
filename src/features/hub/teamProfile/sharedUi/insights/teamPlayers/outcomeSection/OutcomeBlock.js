@@ -124,6 +124,7 @@ const RoleOutcome = ({ model, groups }) => {
 export default function OutcomeBlock({
   model,
   separated = false,
+  loading,
   hideGroupIds = emptyArray,
   infoGroupIds = emptyArray,
 }) {
@@ -149,7 +150,7 @@ export default function OutcomeBlock({
 
       <Box sx={sx.blockBody}>
         {model.id === 'position' ? (
-          <OutcomePositionLayers model={model} />
+          <OutcomePositionLayers model={model} loading={loading} />
         ) : (
           <RoleOutcome
             model={model}

@@ -5,9 +5,10 @@ import { Box, Chip } from '@mui/joy'
 
 import TeamGamesSortMenu from './TeamGamesSortMenu.js'
 import TeamGamesToolbarFilterChip from './TeamGamesToolbarFilterChip.js'
+import PerformanceViewSwitch from './PerformanceViewSwitch.js'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
+import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
 import { safeArray } from '../../../../../sharedLogic/games'
 
@@ -18,6 +19,8 @@ export default function TeamGamesBottomBar({
   filteredGames = 0,
   sortBy = 'date',
   sortDirection = 'desc',
+  performanceView = 'team',
+  onChangePerformanceView,
   onChangeSortBy,
   onChangeSortDirection,
   onClearIndicator,
@@ -68,6 +71,11 @@ export default function TeamGamesBottomBar({
       )}
 
       <Box sx={{ flex: 1 }} />
+
+      <PerformanceViewSwitch
+        value={performanceView}
+        onChange={onChangePerformanceView}
+      />
 
       <TeamGamesSortMenu
         sortBy={sortBy}

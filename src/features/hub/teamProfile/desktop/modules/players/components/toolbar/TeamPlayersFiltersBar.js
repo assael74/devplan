@@ -44,12 +44,14 @@ export default function TeamPlayersFiltersBar({
   onChangeSquadRole,
   onChangeProjectStatus,
   onChangePositionCode,
+  onChangePerformanceProfile,
   onChangeGeneralPositionKey,
 }) {
   const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
   const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
   const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets) ? summary.positionCodeBuckets : []
   const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets) ? summary.generalPositionBuckets : []
+  const performanceProfileBuckets = Array.isArray(summary?.performanceProfileBuckets) ? summary.performanceProfileBuckets : []
 
   return (
     <Box sx={sx.toolbarRow}>
@@ -127,6 +129,33 @@ export default function TeamPlayersFiltersBar({
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'layers' })}
+            </ListItemDecorator>
+            {item.label} ({item.count || 0})
+          </Option>
+        ))}
+      </Select>
+
+      <Select
+        size="sm"
+        value={filters?.performanceProfile || ''}
+        onChange={(_, value) => onChangePerformanceProfile(value || '')}
+        placeholder="כל פרופילי התפקוד"
+        sx={sx.positionSelect}
+        renderValue={(selected) =>
+          renderSelectValue(
+            selected,
+            performanceProfileBuckets,
+            'כל פרופילי התפקוד',
+            'insights'
+          )
+        }
+      >
+        <Option value="">כל פרופילי התפקוד</Option>
+
+        {performanceProfileBuckets.map((item) => (
+          <Option key={item.id} value={item.id}>
+            <ListItemDecorator>
+              {iconUi({ id: item.idIcon || 'insights' })}
             </ListItemDecorator>
             {item.label} ({item.count || 0})
           </Option>

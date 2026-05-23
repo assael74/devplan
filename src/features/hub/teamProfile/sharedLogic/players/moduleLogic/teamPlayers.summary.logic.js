@@ -8,8 +8,32 @@ import {
 } from '../../../../../../shared/players/players.constants.js'
 
 import {
+  PLAYER_INSIGHT_PROFILES,
+} from '../../../../../../shared/players/insights/insights.profiles.js'
+
+import {
   normalizeTeamPlayerRow,
 } from './row/index.js'
+
+const getPerformanceProfileId = row => {
+  return (
+    row?.performance?.profileId ||
+    row?.performance?.insightId ||
+    row?.performance?.profile?.id ||
+    ''
+  )
+}
+
+const buildPerformanceProfileBuckets = rows => {
+  return Object.values(PLAYER_INSIGHT_PROFILES).map(item => ({
+    id: item.id,
+    value: item.id,
+    label: item.shortLabel || item.label,
+    idIcon: item.icon || 'insights',
+    color: item.tone || 'neutral',
+    count: rows.filter(row => getPerformanceProfileId(row) === item.id).length,
+  }))
+}
 
 const buildPrimaryPositionBuckets = (rows) => {
   const list = []
@@ -156,7 +180,7 @@ export const resolveTeamPlayers = (teamOrArgs, options = {}) => {
       })
     )
     .filter((x) => !!x.id)
-  
+
   return {
     teamFullStats: team?.teamFullStats || {},
     rows,
@@ -172,6 +196,8 @@ export const resolveTeamPlayers = (teamOrArgs, options = {}) => {
 
       primaryPositionBuckets: buildPrimaryPositionBuckets(rows),
       positionCoverageBuckets: buildPositionCoverageBuckets(rows),
+
+      performanceProfileBuckets: buildPerformanceProfileBuckets(rows),
 
       positionCodeBuckets: buildPositionCoverageBuckets(rows),
 

@@ -17,12 +17,19 @@ const normalize = createGameRowNormalizer({})
 
 export { createInitialTeamGamesFilters }
 
-export const resolveTeamGamesFiltersDomain = (team, filters) => {
+export const resolveTeamGamesFiltersDomain = ( team, filters, extra = {} ) => {
   const raw = Array.isArray(team?.teamGames) ? team.teamGames : []
 
   const normalized = raw.map(normalize)
   const enriched = normalized.map((game) => enrichGameWithTeam(game, team))
-  const filtered = applyTeamGamesFilters(enriched, filters)
+
+  const filtered = applyTeamGamesFilters(
+    enriched,
+    filters,
+    {
+      teamScoringByGameId: extra?.teamScoringByGameId || {},
+    }
+  )
 
   return {
     games: filtered,

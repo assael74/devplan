@@ -8,6 +8,7 @@ import { listSx as sx } from '../sx/list.sx.js'
 
 export default function TeamPlayersList({
   rows,
+  loaded,
   onEditPlayer,
   onAvatarClick,
   onOpenEdit,
@@ -31,6 +32,7 @@ export default function TeamPlayersList({
         <TeamPlayerRow
           key={row.id}
           row={row}
+          loaded={loaded}
           onAvatarClick={onAvatarClick}
           onEditPlayer={onEditPlayer}
           onEditPosition={onEditPosition}

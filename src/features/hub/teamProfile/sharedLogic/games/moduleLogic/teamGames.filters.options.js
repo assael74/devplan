@@ -8,6 +8,7 @@ import {
 import {
   TEAM_GAMES_OPTION_CONFIG,
   TEAM_GAMES_INDICATOR_CONFIG,
+  TEAM_GAME_IMPACT_FILTER,
 } from './teamGames.filters.constants.js'
 
 export const buildTeamGamesOptions = (rows) => {
@@ -29,6 +30,19 @@ export const buildTeamGamesIndicators = (filters) => {
     searchIcon: 'search',
     config: TEAM_GAMES_INDICATOR_CONFIG,
   })
+
+  const impact = TEAM_GAME_IMPACT_FILTER[filters?.impactKey]
+
+  if (impact) {
+    indicators.push({
+      id: 'impact',
+      key: 'impactKey',
+      label: impact.label,
+      idIcon: impact.idIcon,
+      icon: impact.idIcon,
+      color: impact.color,
+    })
+  }
 
   if (filters?.onlyPlayed) {
     indicators.push({

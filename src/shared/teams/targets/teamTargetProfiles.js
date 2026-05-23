@@ -1,5 +1,30 @@
 // shared/teams/targets/teamTargetProfiles.js
 
+// shared/teams/targets/teamTargetProfiles.js
+
+/*
+|--------------------------------------------------------------------------
+| Team Target Profiles / Benchmark Source of Truth
+|--------------------------------------------------------------------------
+|
+| אחריות:
+| מקור האמת המקצועי לבנצ׳מרקים של יעדי קבוצה.
+|
+| כאן בלבד נקבעים:
+| - אזורי טבלה
+| - יעד נקודות עונתי
+| - יעד אחוז הצלחה
+| - יעד שערי זכות / חובה
+| - יעדי בית / חוץ
+| - יעדי difficulty
+| - יעדי כובשים
+| - יעדי שימוש בסגל
+|
+| חשוב:
+| teams/expectations לא מגדיר בנצ׳מרקים חדשים.
+| הוא רק מתרגם את הערכים מהקובץ הזה לציפייה מותאמת למשחק.
+*/
+
 export const TEAM_TARGET_GROUPS = {
   FORECAST: 'forecast',
   HOME_AWAY: 'homeAway',

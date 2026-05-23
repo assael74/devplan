@@ -8,9 +8,26 @@ import {
 
 const emptyArray = []
 const emptyObject = {}
+const DEFAULT_BUILD_DELAY = 120
 
 const getTeamGames = team => {
   return Array.isArray(team?.teamGames) ? team.teamGames : emptyArray
+}
+
+const deferBuild = ({ delay, onReady }) => {
+  let timeoutId = null
+
+  const frameId = requestAnimationFrame(() => {
+    timeoutId = window.setTimeout(onReady, delay)
+  })
+
+  return () => {
+    cancelAnimationFrame(frameId)
+
+    if (timeoutId) {
+      window.clearTimeout(timeoutId)
+    }
+  }
 }
 
 export function useTeamPlayersInsightsModel({
@@ -19,6 +36,8 @@ export function useTeamPlayersInsightsModel({
   team,
   enabled = true,
   defer = true,
+  deferDelay = DEFAULT_BUILD_DELAY,
+  buildKey = 'default',
   calculationMode = 'games',
   performanceScope,
 } = {}) {
@@ -37,14 +56,11 @@ export function useTeamPlayersInsightsModel({
 
     setCanBuild(false)
 
-    const frameId = requestAnimationFrame(() => {
-      setCanBuild(true)
+    return deferBuild({
+      delay: deferDelay,
+      onReady: () => setCanBuild(true),
     })
-
-    return () => {
-      cancelAnimationFrame(frameId)
-    }
-  }, [enabled, defer])
+  }, [enabled, defer, deferDelay, buildKey])
 
   const safeRows = useMemo(() => {
     return Array.isArray(rows) ? rows : emptyArray
@@ -60,7 +76,6 @@ export function useTeamPlayersInsightsModel({
   const shouldBuild = enabled && canBuild
 
   return useMemo(() => {
-    
     return buildModel({
       rows: safeRows,
       summary: safeSummary,

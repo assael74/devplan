@@ -8,6 +8,10 @@ import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './teamProfile.routes'
 
+import {
+  buildTeamProfileData,
+} from './sharedLogic/profileData/index.js'
+
 function buildLoadingNode() {
   return (
     <Sheet sx={{ p: 2 }}>
@@ -82,6 +86,15 @@ export default function useTeamProfilePageModel() {
     }
   }, [entity, teams, clubs, players, roles, tags])
 
+  const profileData = useMemo(() => {
+    if (!entity) return null
+
+    return buildTeamProfileData({
+      team: entity,
+      calculationMode: 'games',
+    })
+  }, [entity])
+
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
       location,
@@ -130,5 +143,6 @@ export default function useTeamProfilePageModel() {
     context,
     taskContext,
     counts,
+    profileData
   }
 }

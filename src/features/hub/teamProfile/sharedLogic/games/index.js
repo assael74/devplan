@@ -42,3 +42,34 @@ export {
   buildSquadCardsModel,
   buildSquadOffenseCardsModel,
 } from './insightsLogic/index.js'
+
+export {
+  toGamePerfNumber,
+  asGamePerfText,
+  formatGamePerfLtr,
+  formatGamePerfRating,
+  formatGamePerfSigned,
+  hasGamePerfRating,
+  getGamePerfPlayerLabel,
+  getGamePerfRows,
+  getRatedGamePerfRows,
+  sortGamePerfRows,
+  getGamePerfTone,
+  getBestGamePerfRow,
+  isBelowGameExpectation,
+  getLowGamePerfRow,
+  buildGameTeamPerformanceModel,
+  buildGamePlayersPerformanceModel,
+  buildGamePerformanceDetailsModel,
+} from './moduleLogic/teamGames.performance.logic.js'
+
+export {
+  buildPlayerGameTrendModel,
+  buildGamePlayersTrendOptions,
+} from './moduleLogic/teamGames.trend.logic.js'
+
+export {
+  buildPlayerTrendPanelModel,
+  buildTeamTrendPanelModel,
+  TREND_CHART_CONFIG,
+} from './moduleLogic/teamGames.trendPanel.logic.js'

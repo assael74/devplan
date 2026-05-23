@@ -1,6 +1,6 @@
 // teamProfile/mobile/modules/players/TeamPlayersModule.js
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
@@ -16,31 +16,44 @@ import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersIn
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 
+import { profileSx as sx } from './../../sx/profile.sx'
+
 import {
   resolveTeamPlayers,
   filterTeamPlayersRows,
   sortTeamPlayersRows,
+  mergeRowsWithPerformance,
+  mergeSummaryWithPerformanceBuckets,
+  scheduleIdle,
+  cancelIdle,
 } from '../../../sharedLogic/players'
 
-import { profileSx as sx } from './../../sx/profile.sx'
+import {
+  useTeamPlayersInsightsModel,
+} from '../../../sharedUi/insights/teamPlayers/useTeamPlayersInsightsModel.js'
 
-const LEAGUE_GAME_TYPE = 'league'
-
-const getGameObject = (row = {}) => {
-  return row?.game || row
+const performanceScopeInitial = {
+  mode: 'season',
+  limit: null,
+  fromGameKey: null,
+  toGameKey: null,
 }
 
-const isLeagueGame = (row = {}) => {
-  const game = getGameObject(row)
-  const type = String(row?.type || game?.type || '').toLowerCase()
-
-  return type === LEAGUE_GAME_TYPE
+const emptyFilters = {
+  search: '',
+  onlyActive: false,
+  squadRole: '',
+  projectStatus: '',
+  positionCode: '',
+  generalPositionKey: '',
+  performanceProfile: '',
 }
 
-const getTeamGamesRows = (team) => {
-  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
+const getInsightsStatus = ({ rows, enabled, model }) => {
+  if (!rows.length) return 'empty'
+  if (!enabled || model?.isBuilding !== false) return 'loading'
 
-  return rows.filter(isLeagueGame)
+  return 'ready'
 }
 
 export default function TeamPlayersModule({
@@ -48,18 +61,22 @@ export default function TeamPlayersModule({
   onEntityChange,
   onOpenPlayer,
   context,
-  playersInsightsOpen,
-  setPlayersInsightsOpen,
   playersInsightsRequest = 0,
+  onPlayersInsightsStatusChange,
+  profileData,
 }) {
+  const initialInsightsRequestRef = useRef(playersInsightsRequest)
+  const didMountRef = useRef(false)
+  const lastInsightsStatusRef = useRef('')
+
   const liveTeam = useMemo(() => {
     const teams = Array.isArray(context?.teams) ? context.teams : []
-    return teams.find((t) => t?.id === entity?.id) || entity || null
+    return teams.find(t => t?.id === entity?.id) || entity || null
   }, [context?.teams, entity])
 
   const calculationGames = useMemo(() => {
-    return getTeamGamesRows(liveTeam)
-  }, [liveTeam])
+    return profileData?.games?.playedLeagueGames || []
+  }, [profileData?.games?.playedLeagueGames])
 
   const [imgRow, setImgRow] = useState(null)
   const [openImg, setOpenImg] = useState(false)
@@ -67,84 +84,133 @@ export default function TeamPlayersModule({
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [editingPosition, setEditingPosition] = useState(null)
-
-  const [filters, setFilters] = useState({
-    search: '',
-    onlyActive: false,
-    squadRole: '',
-    projectStatus: '',
-    positionCode: '',
-    generalPositionKey: '',
-  })
+  const [filters, setFilters] = useState(emptyFilters)
+  const [insightsEnabled, setInsightsEnabled] = useState(false)
 
   const [sort, setSort] = useState({
     by: 'level',
     direction: 'desc',
   })
 
-  const { rows, summary } = useMemo(() => {
-    return resolveTeamPlayers({
-      team: liveTeam,
-      games: calculationGames,
-    })
-  }, [liveTeam, calculationGames])
-
-  const filteredRows = useMemo(() => {
-    const filtered = filterTeamPlayersRows(rows, filters)
-    return sortTeamPlayersRows(filtered, sort)
-  }, [rows, filters, sort])
+  const rows = profileData?.players?.rows || []
+  const summary = profileData?.players?.summary || {}
 
   useEffect(() => {
-    if (playersInsightsRequest > 0) {
+    setInsightsEnabled(false)
+
+    if (!liveTeam || !rows.length) return undefined
+
+    const handle = scheduleIdle(() => {
+      setInsightsEnabled(true)
+    })
+
+    return () => {
+      cancelIdle(handle)
+    }
+  }, [liveTeam?.id, rows.length])
+
+  const insightsModel = useTeamPlayersInsightsModel({
+    rows,
+    summary,
+    team: liveTeam,
+    enabled: insightsEnabled,
+    defer: false,
+    performanceScope: performanceScopeInitial,
+  })
+
+  const playersInsightsStatus = getInsightsStatus({
+    rows,
+    enabled: insightsEnabled,
+    model: insightsModel,
+  })
+
+  const insightsReady = playersInsightsStatus === 'ready'
+
+  useEffect(() => {
+    if (typeof onPlayersInsightsStatusChange !== 'function') return
+    if (lastInsightsStatusRef.current === playersInsightsStatus) return
+
+    lastInsightsStatusRef.current = playersInsightsStatus
+    onPlayersInsightsStatusChange(playersInsightsStatus)
+  }, [playersInsightsStatus, onPlayersInsightsStatusChange])
+
+  const rowsWithPerformance = useMemo(() => {
+    return mergeRowsWithPerformance({
+      rows,
+      performanceRows: insightsModel?.playerPerformanceRows,
+    })
+  }, [rows, insightsModel?.playerPerformanceRows])
+
+  const summaryWithPerformance = useMemo(() => {
+    return mergeSummaryWithPerformanceBuckets({
+      summary,
+      rows: rowsWithPerformance,
+    })
+  }, [summary, rowsWithPerformance])
+
+  const filteredRows = useMemo(() => {
+    const filtered = filterTeamPlayersRows(rowsWithPerformance, filters)
+    return sortTeamPlayersRows(filtered, sort)
+  }, [rowsWithPerformance, filters, sort])
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
+
+    if (
+      playersInsightsRequest > 0 &&
+      playersInsightsRequest !== initialInsightsRequestRef.current &&
+      insightsReady
+    ) {
       setInsightsOpen(true)
     }
-  }, [playersInsightsRequest])
+  }, [playersInsightsRequest, insightsReady])
 
-  const handleChangeFilters = (patch) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
+  const handleChangeFilters = patch => {
+    setFilters(prev => ({ ...prev, ...patch }))
   }
 
   const handleResetFilters = () => {
-    setFilters({
-      search: '',
-      onlyActive: false,
-      squadRole: '',
-      projectStatus: '',
-      positionCode: '',
-      generalPositionKey: '',
-    })
+    setFilters(emptyFilters)
   }
 
   return (
     <SectionPanelMobile>
       <Box sx={sx.moduleRoot}>
         <TeamPlayersToolbar
-          summary={summary}
+          summary={summaryWithPerformance}
           filters={filters}
-          totalCount={rows.length}
           filteredCount={filteredRows.length}
-          onChangeSearch={(value) => handleChangeFilters({ search: value })}
+          totalCount={rowsWithPerformance.length}
+          onChangeSearch={value =>
+            handleChangeFilters({ search: value })
+          }
           onToggleOnlyActive={() =>
             handleChangeFilters({ onlyActive: !filters.onlyActive })
           }
-          onChangeSquadRole={(value) =>
+          onChangeSquadRole={value =>
             handleChangeFilters({ squadRole: value || '' })
           }
-          onChangeProjectStatus={(value) =>
+          onChangeProjectStatus={value =>
             handleChangeFilters({ projectStatus: value || '' })
           }
-          onChangePositionCode={(value) =>
+          onChangePositionCode={value =>
             handleChangeFilters({ positionCode: value || '' })
           }
-          onChangeGeneralPositionKey={(value) =>
+          onChangeGeneralPositionKey={value =>
             handleChangeFilters({ generalPositionKey: value || '' })
+          }
+          onChangePerformanceProfile={value =>
+            handleChangeFilters({ performanceProfile: value || '' })
           }
           onResetFilters={handleResetFilters}
           sortBy={sort.by}
           sortDirection={sort.direction}
-          onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-          onChangeSortDirection={(value) =>
-            setSort((prev) => ({ ...prev, direction: value }))
+          onChangeSortBy={value => setSort(prev => ({ ...prev, by: value }))}
+          onChangeSortDirection={value =>
+            setSort(prev => ({ ...prev, direction: value }))
           }
         />
       </Box>
@@ -152,19 +218,19 @@ export default function TeamPlayersModule({
       {filteredRows.length === 0 ? (
         <EmptyState
           title="אין שחקנים להצגה"
-          subtitle="בדוק את הפילטרים או אפס את הסינון"
+          subtitle="בדוק פילטרים או הוסף שחקן חדש"
         />
       ) : (
         <TeamPlayersList
           rows={filteredRows}
           onOpenPlayer={onOpenPlayer}
-          onAvatarClick={(row) => {
+          onAvatarClick={row => {
             setImgRow(row)
             setRowPhoto(row?.photo || '')
             setOpenImg(true)
           }}
-          onEditPlayer={(row) => setEditingPlayer(row?.player || row || null)}
-          onEditPosition={(row) => setEditingPosition(row?.player || row || null)}
+          onEditPlayer={row => setEditingPlayer(row?.player || null)}
+          onEditPosition={row => setEditingPosition(row?.player || null)}
         />
       )}
 
@@ -185,9 +251,10 @@ export default function TeamPlayersModule({
       <TeamPlayersInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        rows={rows}
-        summary={summary}
+        rows={rowsWithPerformance}
+        summary={summaryWithPerformance}
         entity={liveTeam}
+        model={insightsModel}
         resetKey={playersInsightsRequest}
       />
 
@@ -196,10 +263,10 @@ export default function TeamPlayersModule({
         onClose={() => setOpenImg(false)}
         entityType="players"
         id={imgRow?.id}
-        entityName={imgRow?.fullName}
+        entityName={imgRow?.playerFullName}
         currentPhotoUrl={rowPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={(url) => {
+        onAfterSave={url => {
           const next = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
           setRowPhoto(next)
         }}

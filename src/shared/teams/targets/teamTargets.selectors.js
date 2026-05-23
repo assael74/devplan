@@ -73,21 +73,21 @@ export const resolveTeamTargetProfileByRank = (rank) => {
 }
 
 export const resolveTeamTargetProfileByRange = (range = []) => {
-  const min = toNumber(range?.[0])
-  const max = toNumber(range?.[1])
+  const min = toNumber(range[0])
+  const max = toNumber(range[1])
 
   if (!min || !max) return null
 
   const exact = TEAM_TARGET_PROFILES.find((profile) => {
-    return profile?.rankRange?.[0] === min && profile?.rankRange?.[1] === max
+    return profile?.rankRange[0] === min && profile?.rankRange[1] === max
   })
 
   if (exact) return exact
 
   return (
     TEAM_TARGET_PROFILES.find((profile) => {
-      const profileMin = toNumber(profile?.rankRange?.[0])
-      const profileMax = toNumber(profile?.rankRange?.[1])
+      const profileMin = toNumber(profile?.rankRange[0])
+      const profileMax = toNumber(profile?.rankRange[1])
 
       if (!profileMin || !profileMax) return false
 

@@ -4,3 +4,5 @@ export * from './drawerContext.resolve.js'
 export * from './drawerViewModel.build.js'
 
 export * from './cards/index.js'
+
+export * from './teamScoring.model.js'

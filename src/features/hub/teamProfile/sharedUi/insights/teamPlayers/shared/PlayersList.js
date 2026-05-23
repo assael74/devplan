@@ -3,176 +3,48 @@
 import React from 'react'
 import { Avatar, Box, Chip, Typography } from '@mui/joy'
 
+import { ScoringInfoTooltip } from '../../../../../../../ui/patterns/scoring/index.js'
+
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import { playersSx as sx } from './sx/players.sx.js'
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('status')
-
-const emptyArray = []
-
-const roleIcons = {
-  key: 'keyPlayer',
-  core: 'corePlayer',
-  rotation: 'rotation',
-  fringe: 'fringe',
-}
-
-const toText = value => {
-  return value == null ? '' : String(value).trim()
-}
-
-const getName = player => {
-  return player.playerFullName || player.fullName || player.name || 'שחקן'
-}
-
-const getPositionLabel = player => {
-  return (
-    toText(player.positionLabel) ||
-    toText(player.primaryPosition) ||
-    '-'
-  )
-}
-
-const getLayerLabel = player => {
-  return (
-    toText(player.layerLabel) ||
-    toText(player.layerKey) ||
-    'שכבה'
-  )
-}
-
-const getRoleLabel = player => {
-  return toText(player.squadRoleLabel) || 'מעמד'
-}
-
-const getRoleIcon = player => {
-  return roleIcons[player.squadRole] || 'keyPlayer'
-}
-
-const getTvaColor = value => {
-  const n = Number(value)
-
-  if (n > 0) return 'success'
-  if (n < 0) return 'warning'
-
-  return 'neutral'
-}
-
-const normalizeSource = sourceType => {
-  if (sourceType === 'role' || sourceType === 'outcomeRole') {
-    return 'outcomeRole'
-  }
-
-  if (sourceType === 'position' || sourceType === 'outcomePosition') {
-    return 'outcomePosition'
-  }
-
-  if (sourceType === 'buildRole') return 'buildRole'
-  if (sourceType === 'buildPosition') return 'buildPosition'
-
-  return 'build'
-}
-
-const getTopMetrics = ({ player, sourceType }) => {
-  const source = normalizeSource(sourceType)
-
-  if (!['outcomeRole', 'outcomePosition'].includes(source)) {
-    return emptyArray
-  }
-
-  return [
-    {
-      id: 'rating',
-      label: player.ratingLabel || '-',
-      color: 'neutral',
-    },
-    {
-      id: 'tva',
-      label: player.tvaLabel || player.tva || '0',
-      color: getTvaColor(player.tva),
-    },
-  ]
-}
-
-const getBuildChips = player => {
-  return [
-    {
-      id: 'pos-icon',
-      icon: player.primaryPosition || 'positions',
-      label: '',
-      iconOnly: true,
-    },
-    {
-      id: 'position',
-      icon: player.primaryPosition || 'positions',
-      label: getPositionLabel(player),
-    },
-    {
-      id: 'role',
-      icon: getRoleIcon(player),
-      label: getRoleLabel(player),
-    },
-  ]
-}
-
-const getOutcomeRoleChips = player => {
-  return [
-    {
-      id: 'position',
-      icon: player.primaryPosition || 'positions',
-      label: getPositionLabel(player),
-    },
-    {
-      id: 'role',
-      icon: getRoleIcon(player),
-      label: getRoleLabel(player),
-    },
-  ]
-}
-
-const getOutcomePositionChips = player => {
-  return [
-    {
-      id: 'position',
-      icon: player.primaryPosition || 'positions',
-      label: getPositionLabel(player),
-    },
-    {
-      id: 'layer',
-      icon: player.layerKey || 'layers',
-      label: getLayerLabel(player),
-    },
-  ]
-}
-
-const getFooterItems = ({ player, sourceType }) => {
-  const source = normalizeSource(sourceType)
-
-  if (source === 'outcomeRole') {
-    return getOutcomeRoleChips(player)
-  }
-
-  if (source === 'outcomePosition') {
-    return getOutcomePositionChips(player)
-  }
-
-  return getBuildChips(player)
-}
+import {
+  emptyArray,
+  getMetricSolidColor,
+  getPlayerFooterItems,
+  getPlayerName,
+  getPlayerTopMetrics,
+  getScoringMetricByItemId,
+} from './ui/index.js'
 
 const MiniMetric = ({ item }) => {
-  const color = c?.[item?.color]?.solid || c?.info?.solid
-  return (
+  const color = getMetricSolidColor(item)
+  const metric = getScoringMetricByItemId(item?.id)
+
+  const chip = (
     <Chip
       size="sm"
       variant="soft"
-      color='neutral'
+      color="neutral"
       sx={sx.metricChip(color)}
     >
       {item.label}
     </Chip>
+  )
+
+  if (!metric) return chip
+
+  return (
+    <ScoringInfoTooltip
+      metric={metric}
+      mode="short"
+      placement="top"
+      triggerSx={{ display: 'inline-flex', minWidth: 0 }}
+    >
+      {chip}
+    </ScoringInfoTooltip>
   )
 }
 
@@ -204,7 +76,7 @@ const FooterChip = ({ item }) => {
 }
 
 const CardTop = ({ player, sourceType }) => {
-  const metrics = getTopMetrics({
+  const metrics = getPlayerTopMetrics({
     player,
     sourceType,
   })
@@ -212,7 +84,7 @@ const CardTop = ({ player, sourceType }) => {
   return (
     <Box sx={sx.top}>
       <Typography level="body-sm" sx={sx.name} noWrap>
-        {getName(player)}
+        {getPlayerName(player)}
       </Typography>
 
       {metrics.length ? (
@@ -226,9 +98,10 @@ const CardTop = ({ player, sourceType }) => {
   )
 }
 
-const PlayerCard = ({ player, index, variant, sourceType, }) => {
-  const name = getName(player)
-  const footerItems = getFooterItems({
+const PlayerCard = ({ player, index, variant, sourceType }) => {
+  const name = getPlayerName(player)
+
+  const footerItems = getPlayerFooterItems({
     player,
     sourceType,
   })
@@ -236,7 +109,7 @@ const PlayerCard = ({ player, index, variant, sourceType, }) => {
   return (
     <Box
       key={player.id || player.playerId || `${name}-${index}`}
-      sx={sx.card({ variant, damage: player.damageScore, sourceType, })}
+      sx={sx.card({ variant, damage: player.damageScore, sourceType })}
     >
       <Avatar size="sm" src={player.photo || playerImage} />
 

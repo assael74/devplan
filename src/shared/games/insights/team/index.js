@@ -10,5 +10,6 @@ export * from './sections/forecast/index.js'
 export * from './sections/squad/index.js'
 export * from './sections/homeAway/index.js'
 export * from './sections/difficulty/index.js'
+export * from './sections/performance/index.js'
 
 export * from './team.benchmarks.js'

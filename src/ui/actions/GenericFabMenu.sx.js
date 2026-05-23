@@ -94,4 +94,55 @@ export const sxFabMenu = {
       opacity: 0.9,
     }
   },
+
+  actionLabelWrap: {
+    minWidth: 0,
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1.25,
+  },
+
+  actionSpan: {
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  chip: {
+    flex: '0 0 auto',
+    minHeight: 20,
+    fontSize: 11,
+    px: 0.75,
+  },
+
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    bottom: 62,
+    width: 260,
+    display: 'grid',
+    gap: 0.5,
+    p: 0.75,
+    borderRadius: 'lg',
+    bgcolor: 'background.surface',
+    boxShadow: 'lg',
+  },
+
+  boxButton: (action) => ({
+    minHeight: 42,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    px: 1,
+    borderRadius: 'md',
+    cursor: action.disabled ? 'not-allowed' : 'pointer',
+    opacity: action.disabled ? 0.55 : 1,
+    bgcolor: 'transparent',
+    '&:active': {
+      bgcolor: action.disabled ? 'transparent' : 'background.level1',
+    },
+  })
 }

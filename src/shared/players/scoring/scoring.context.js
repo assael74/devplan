@@ -8,24 +8,15 @@
 | אחריות:
 | בניית אובייקט context אחיד לחישוב ציון משחק.
 |
-| סדר במנוע:
-| 4 מתוך 5.
-|
-| תפקיד:
-| אוסף את כל הנתונים הדרושים לחישוב:
-| שחקן, קבוצה, משחק, נתוני שחקן במשחק, יעדים, עמדה, מעמד,
-| דקות, שערים, בישולים, רמת יריבה ויעדי עונה.
-|
-| משמש את:
-| - scoring.match.js
-|
-| מקורות מידע:
-| - player
-| - team
-| - game
-| - playerGame
-| - readiness.targets
+| חשוב:
+| ציפיות קבוצתיות למשחק לא מחושבות כאן.
+| מקור האמת לציפיות משחק:
+| src/shared/teams/expectations
 */
+
+import {
+  buildTeamGameExpectations,
+} from '../../teams/expectations/index.js'
 
 import {
   PLAYER_SCORING_CONFIG,
@@ -57,7 +48,6 @@ const getOpponentLevel = (game = {}) => {
 
   return (
     source?.difficulty ||
-    source?.opponentLevel ||
     PLAYER_SCORING_CONFIG.defaultOpponentLevel
   )
 }
@@ -72,6 +62,18 @@ const getTeamGoalsAgainst = (game = {}) => {
   const source = getGameObject(game)
 
   return toNumber(source?.goalsAgainst, 0)
+}
+
+const buildTeamExpectations = ({
+  team,
+  game,
+  readiness,
+}) => {
+  return buildTeamGameExpectations({
+    team,
+    game,
+    targets: readiness?.targets?.teamTargets,
+  })
 }
 
 export const buildScoringContext = ({
@@ -90,6 +92,12 @@ export const buildScoringContext = ({
   })
 
   const timePlayed = toNumber(playerGame?.timePlayed, 0)
+
+  const teamGameExpectations = buildTeamExpectations({
+    team,
+    game,
+    readiness,
+  })
 
   return {
     calculationMode,
@@ -129,7 +137,9 @@ export const buildScoringContext = ({
       ...(explicitTargets?.teamSeasonTargets || {}),
       leagueNumGames: explicitTargets?.leagueNumGames || 0,
     },
-    
+
+    teamGameExpectations,
+
     attackTargets: explicitTargets?.attack || {},
     defenseTargets: explicitTargets?.defense || {},
 

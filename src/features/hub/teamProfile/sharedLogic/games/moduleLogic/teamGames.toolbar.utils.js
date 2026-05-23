@@ -64,5 +64,6 @@ export const clearToolbarIndicator = (item, onChangeFilters) => {
   if (key === 'homeKey') return onChangeFilters({ homeKey: '' })
   if (key === 'resultKey') return onChangeFilters({ resultKey: '' })
   if (key === 'difficultyKey') return onChangeFilters({ difficultyKey: '' })
+  if (key === 'impactKey') return onChangeFilters({ impactKey: '' })
   if (key === 'onlyPlayed') return onChangeFilters({ onlyPlayed: false })
 }

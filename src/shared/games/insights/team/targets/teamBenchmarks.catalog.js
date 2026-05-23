@@ -1,5 +1,22 @@
 // shared/games/insights/team/targets/teamBenchmarks.catalog.js
 
+/*
+|--------------------------------------------------------------------------
+| Team Games Benchmarks Catalog
+|--------------------------------------------------------------------------
+|
+| אחריות:
+| קטלוג תצוגתי של benchmarks למשחקי קבוצה.
+|
+| חשוב:
+| הקובץ הזה לא קובע benchmarks מקצועיים.
+| מקור האמת לבנצ׳מרקים הוא:
+| src/shared/teams/targets/teamTargetProfiles.js
+|
+| הקובץ רק ממפה את פרופילי היעד למדדים שאפשר להציג בתובנות,
+| דוחות, טבלאות ו־UI.
+*/
+
 import {
   TEAM_GAMES_TARGET_GROUPS,
   TEAM_GAMES_TARGET_PROFILES,

@@ -16,8 +16,7 @@ export const baseSx = {
     mb: '5mm',
     pb: '3mm',
     borderBottom: '1px solid #d1d5db',
-    direction: 'rtl',
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   title: {
@@ -39,8 +38,7 @@ export const baseSx = {
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     bgcolor: '#f9fafb',
-    textAlign: 'right',
-    direction: 'rtl',
+    textAlign: 'left',
   },
 
   scopeTitle: {

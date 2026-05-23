@@ -19,6 +19,7 @@ import {
   OfflinePin,
   PersonSearch,
   PersonRemove,
+  Pending,
   PsychologyAlt,
   ReportProblem,
   ScheduleSend,
@@ -34,7 +35,9 @@ import {
   TrendingFlat,
   RocketLaunch,
   Stars,
-  ManageHistory
+  ManageHistory,
+  Waves,
+  Speed
 } from '@mui/icons-material';
 
 export const statusIcons = {
@@ -81,6 +84,9 @@ export const statusIcons = {
   stable: <TrendingFlat />,
   upside: <RocketLaunch />,
   elite: <Stars />,
+  loading: <Pending />,
   warning: <ErrorOutline />,
-  category: <Category />
+  category: <Category />,
+  scoringRating: <Speed />,
+  scoringImpact: <Waves />,
 };

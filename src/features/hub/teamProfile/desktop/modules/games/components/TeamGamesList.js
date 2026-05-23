@@ -6,11 +6,36 @@ import TeamGameRow from './TeamGameRow.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
+const asText = value => {
+  return value == null ? '' : String(value).trim()
+}
+
+const getGameObject = row => {
+  return row?.game || row || {}
+}
+
+const getGameId = row => {
+  const game = getGameObject(row)
+
+  return asText(
+    row?.gameId ||
+      row?.id ||
+      game?.id ||
+      game?.gameId ||
+      ''
+  )
+}
+
 export default function TeamGamesList({
   rows,
+  teamScoring,
+  playerScoring,
+  teamScoringByGameId = {},
+  playerScoringByGameId = {},
   onEditGame,
   onOpenEdit,
-  onEditEntryGame
+  onEditEntryGame,
+  performanceView,
 }) {
   if (!rows?.length) {
     return (
@@ -25,14 +50,25 @@ export default function TeamGamesList({
 
   return (
     <Box sx={{ display: 'grid', gap: 0.35 }}>
-      {rows.map((row) => (
-        <TeamGameRow
-          key={row.id}
-          game={row}
-          onEdit={onEditGame}
-          onEditEntry={onEditEntryGame}
-        />
-      ))}
+      {rows.map(row => {
+        const gameId = getGameId(row)
+        const teamGameScore = teamScoringByGameId[gameId] || null
+        const playerGamePerformance = playerScoringByGameId[gameId] || null
+
+        return (
+          <TeamGameRow
+            key={gameId || row.id}
+            game={row}
+            teamScoring={teamScoring}
+            playerScoring={playerScoring}
+            teamGameScore={teamGameScore}
+            performanceView={performanceView}
+            playerGamePerformance={playerGamePerformance}
+            onEdit={onEditGame || onOpenEdit}
+            onEditEntry={onEditEntryGame}
+          />
+        )
+      })}
     </Box>
   )
 }

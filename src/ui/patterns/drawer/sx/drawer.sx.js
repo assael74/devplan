@@ -25,8 +25,9 @@ export const drawerSx = {
     display: 'grid',
     gap: 1.25,
     p: 1,
+    pl: 2,
     overflowY: 'auto',
-    minHeight: 0
+    minHeight: 0,
   },
 
   footer: {

@@ -1,9 +1,15 @@
+// teamProfile/desktop/modules/games/components/sections/TeamPlayersStatRow.js
+
 import React from 'react'
 import { Box, Chip, Typography, Avatar, Tooltip } from '@mui/joy'
-import { sectionsSx as sx } from '../../sx/sections.sx.js'
+import { sectionsSx as sx } from './sx/sections.sx.js'
+
+import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 export default function TeamPlayersStatRow({ title, players, statKey }) {
   const list = Array.isArray(players) ? players : []
+  const visibleList = list.slice(0, 4)
+  const visibleCount = visibleList.length
 
   const renderEmpty = () => (
     <Typography level="body-xs" sx={sx.titleSx}>
@@ -11,34 +17,27 @@ export default function TeamPlayersStatRow({ title, players, statKey }) {
     </Typography>
   )
 
-  const renderPlayerChip = (player) => {
+  const renderPlayerChip = (player, visibleCount) => {
     const value = statKey === 'goals' ? player?.goals : player?.assists
     const verb = statKey === 'goals' ? 'כבש' : 'בישל'
     const tooltip = `${player?.playerFullName || 'שחקן'} ${verb} ${value || 0}`
+    const photo = player?.photo || playerImage
 
     return (
       <Tooltip key={player?.playerId || player?.id} arrow title={tooltip}>
         <Chip
           size="sm"
           variant="soft"
-          sx={{ maxWidth: 80, overflow: 'hidden' }}
-          startDecorator={<Avatar src={player?.photo} sx={{ width: 18, height: 18 }} />}
+          sx={sx.chip(visibleCount)}
+          startDecorator={<Avatar src={photo} sx={{ width: 16, height: 16, flex: '0 0 auto' }} />}
           endDecorator={
-            <Typography level="body-sm" sx={{ fontSize: 11, pl: 0.5 }}>
+            <Typography level="body-sm" sx={{ fontSize: 12, pl: 0.5, flex: '0 0 auto' }}>
               {value || 0}
             </Typography>
           }
-        >
-          <Typography
-            level="body-xs"
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              minWidth: 0,
-            }}
-          >
-            {player?.playerFullName || 'ללא שם'}
+         >
+          <Typography level="body-sm" sx={sx.chipText}>
+            {player?.playerFullName || 'שחקן'}
           </Typography>
         </Chip>
       </Tooltip>
@@ -54,18 +53,11 @@ export default function TeamPlayersStatRow({ title, players, statKey }) {
       {!list.length ? (
         renderEmpty()
       ) : (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 0.5,
-            overflow: 'hidden',
-            maxWidth: '100%',
-          }}
-        >
-          {list.slice(0, 4).map(renderPlayerChip)}
+        <Box sx={sx.emptyList}>
+          {visibleList.map(player => renderPlayerChip(player, visibleCount))}
 
           {list.length > 4 && (
-            <Chip size="sm" variant="plain">
+            <Chip size="sm" variant="plain" sx={sx.moreChip}>
               +{list.length - 4}
             </Chip>
           )}

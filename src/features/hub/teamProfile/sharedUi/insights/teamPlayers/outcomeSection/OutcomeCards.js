@@ -4,19 +4,24 @@ import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { ScoringInfoTooltip } from '../../../../../../../ui/patterns/scoring/index.js'
 
 import {
   getGroupJoyTone,
   getQualityJoyTone,
-  getWeakSampleValue,
-  getGroupDamageValue,
 } from './ui/index.js'
 
 import { cardsSx as sx } from './sx/index.js'
 
 const emptyArray = []
+const loadingLabel = 'בטעינה'
 
-const Metric = ({ label, value }) => {
+const getValue = ({ loading, value, fallback = '-' }) => {
+  if (loading) return loadingLabel
+  return value ?? fallback
+}
+
+const Metric = ({ label, value, loading = false }) => {
   return (
     <Box sx={sx.metric}>
       <Typography level="body-xs" sx={sx.metricLabel}>
@@ -24,15 +29,15 @@ const Metric = ({ label, value }) => {
       </Typography>
 
       <Typography level="body-sm" sx={sx.metricValue}>
-        {value}
+        {getValue({ loading, value })}
       </Typography>
     </Box>
   )
 }
 
-const Card = ({ group, selected, onSelect }) => {
-  const color = getGroupJoyTone(group)
-  const qualityColor = getQualityJoyTone(group)
+const Card = ({ group, selected, onSelect, loading = false }) => {
+  const color = loading ? 'neutral' : getGroupJoyTone(group)
+  const qualityColor = loading ? 'neutral' : getQualityJoyTone(group)
 
   return (
     <Box
@@ -60,14 +65,24 @@ const Card = ({ group, selected, onSelect }) => {
           </Box>
         </Box>
 
-        <Chip
-          size="sm"
-          variant="soft"
-          color={qualityColor}
-          sx={sx.scoreChip(selected)}
+        <ScoringInfoTooltip
+          metric="efficiency"
+          placement="top"
+          mode="short"
+          triggerSx={{ display: 'inline-flex' }}
         >
-          {group.scoreLabel || '-'}
-        </Chip>
+          <Chip
+            size="sm"
+            variant="soft"
+            color={qualityColor}
+            sx={sx.scoreChip(selected)}
+          >
+            {getValue({
+              loading,
+              value: group.scoreLabel,
+            })}
+          </Chip>
+        </ScoringInfoTooltip>
       </Box>
 
       <Box sx={sx.diagnosisRow}>
@@ -77,20 +92,30 @@ const Card = ({ group, selected, onSelect }) => {
           color={color}
           sx={sx.diagnosisChip}
         >
-          {group.diagnosis?.label || 'אין אבחנה'}
+          {loading ? loadingLabel : group.diagnosis?.label || 'אין אבחנה'}
         </Chip>
       </Box>
 
       <Box sx={sx.metrics}>
         <Metric
           label="מתחת"
+          loading={loading}
           value={`${group.health?.weakCount || 0}/${group.sample?.players || 0}`}
-         />
+        />
 
-        <Metric
-          label="נזק"
-          value={group.health?.weakWeightedTva || 0}
-         />
+        <ScoringInfoTooltip
+          metric="impact"
+          mode="short"
+          placement="top"
+          showDiff
+          triggerSx={{ display: 'block', minWidth: 0 }}
+        >
+          <Metric
+            label="נזק"
+            loading={loading}
+            value={group.health?.weakWeightedTva || 0}
+          />
+        </ScoringInfoTooltip>
       </Box>
     </Box>
   )
@@ -100,6 +125,7 @@ export default function OutcomeCards({
   groups = emptyArray,
   selectedId,
   onSelect,
+  loading = false,
 }) {
   if (!groups.length) return null
 
@@ -111,6 +137,7 @@ export default function OutcomeCards({
           group={group}
           selected={group.id === selectedId}
           onSelect={onSelect}
+          loading={loading}
         />
       ))}
     </Box>

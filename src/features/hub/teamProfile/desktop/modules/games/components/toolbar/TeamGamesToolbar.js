@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Input, Option, Select, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
+import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
 import TeamGamesBottomBar from './TeamGamesBottomBar.js'
 import TeamGamesToolbarSelectValue from './TeamGamesToolbarSelectValue.js'
@@ -26,7 +26,9 @@ export default function TeamGamesToolbar({
   onChangeFilters,
   onResetFilters,
   onChangeSortBy,
+  performanceView,
   onChangeSortDirection,
+  onChangePerformanceView
 }) {
   const {
     typeOptions,
@@ -201,6 +203,36 @@ export default function TeamGamesToolbar({
 
         <Chip
           size="sm"
+          variant={filters?.impactKey === 'positive' ? 'solid' : 'outlined'}
+          color={filters?.impactKey === 'positive' ? 'success' : 'neutral'}
+          onClick={() => {
+            onChangeFilters({
+              impactKey: filters?.impactKey === 'positive' ? '' : 'positive',
+            })
+          }}
+          startDecorator={iconUi({ id: 'scoringImpact' })}
+          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
+        >
+          מדד +
+        </Chip>
+
+        <Chip
+          size="sm"
+          variant={filters?.impactKey === 'negative' ? 'solid' : 'outlined'}
+          color={filters?.impactKey === 'negative' ? 'danger' : 'neutral'}
+          onClick={() => {
+            onChangeFilters({
+              impactKey: filters?.impactKey === 'negative' ? '' : 'negative',
+            })
+          }}
+          startDecorator={iconUi({ id: 'scoringImpact' })}
+          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
+        >
+          מדד -
+        </Chip>
+
+        <Chip
+          size="sm"
           variant={filters?.onlyPlayed ? 'solid' : 'outlined'}
           color={filters?.onlyPlayed ? 'success' : 'neutral'}
           onClick={() => onChangeFilters({ onlyPlayed: !filters?.onlyPlayed })}
@@ -226,15 +258,17 @@ export default function TeamGamesToolbar({
       </Box>
 
       <TeamGamesBottomBar
+        sortBy={sortBy}
         summary={summary}
         indicators={indicators}
         totalGames={totalGames}
         filteredGames={filteredGames}
-        sortBy={sortBy}
         sortDirection={sortDirection}
         onChangeSortBy={onChangeSortBy}
-        onChangeSortDirection={onChangeSortDirection}
+        performanceView={performanceView}
         onClearIndicator={handleClearIndicator}
+        onChangeSortDirection={onChangeSortDirection}
+        onChangePerformanceView={onChangePerformanceView}
       />
     </Box>
   )

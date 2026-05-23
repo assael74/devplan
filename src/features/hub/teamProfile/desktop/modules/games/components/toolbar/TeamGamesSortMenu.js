@@ -3,7 +3,7 @@
 import React from 'react'
 
 import { SortMenuButton } from '../../../../../../../../ui/patterns/sort/index.js'
-import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
+import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
 import { TEAM_GAMES_SORT_OPTIONS } from '../../../../../sharedLogic/games'
 

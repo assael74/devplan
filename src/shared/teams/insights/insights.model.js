@@ -51,7 +51,7 @@ const buildMeta = ({ scope, playerInsights }) => {
     source: {
       scoring: safeRows.length > 0,
       playerInsights: safeRows.length > 0,
-      teamInsights: true,
+      teamPlayersInsights: true,
       recommendations: true,
     },
 
@@ -73,7 +73,7 @@ const buildAspects = ({ aspects, scoresMap }) => {
   }, {})
 }
 
-export const buildTeamInsights = ({
+export const buildTeamPlayersInsights = ({
   playerInsights = emptyArray,
   aspects = emptyArray,
   scope = emptyObject,
@@ -99,3 +99,7 @@ export const buildTeamInsights = ({
     }),
   }
 }
+
+// Legacy alias.
+// להשאיר כדי לא לשבור imports קיימים.
+export const buildTeamInsights = buildTeamPlayersInsights

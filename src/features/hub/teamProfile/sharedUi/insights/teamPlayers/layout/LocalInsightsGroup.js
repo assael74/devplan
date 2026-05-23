@@ -7,6 +7,8 @@ import { loaclSx as sx } from './sx/local.sx'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
+const loadingChip = 'בטעינה'
+
 export default function LocalInsightsGroup({
   title,
   sub = '',
@@ -14,8 +16,13 @@ export default function LocalInsightsGroup({
   chip = null,
   chipColor = 'neutral',
   children,
-  color
+  color,
+  loading = false,
+  loadingLabel = loadingChip,
 }) {
+  const resolvedChip = loading ? loadingLabel : chip
+  const resolvedChipColor = loading ? 'neutral' : chipColor
+
   return (
     <Box sx={sx.root}>
       <Box sx={sx.head}>
@@ -30,21 +37,28 @@ export default function LocalInsightsGroup({
             </Typography>
 
             {sub ? (
-              <Typography level="body-xs" sx={{ mt: 0.25, color: 'text.tertiary', lineHeight: 1.35 }}>
+              <Typography
+                level="body-xs"
+                sx={{
+                  mt: 0.25,
+                  color: 'text.tertiary',
+                  lineHeight: 1.35,
+                }}
+              >
                 {sub}
               </Typography>
             ) : null}
           </Box>
         </Box>
 
-        {chip ? (
+        {resolvedChip ? (
           <Chip
             size="md"
             variant="soft"
-            color={chipColor}
+            color={resolvedChipColor}
             sx={{ flex: '0 0 auto' }}
           >
-            {chip}
+            {resolvedChip}
           </Chip>
         ) : null}
       </Box>

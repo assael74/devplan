@@ -6,7 +6,6 @@ export const sectionsSx = {
     gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
     gap: '2.5mm',
     mb: '5mm',
-    direction: 'rtl',
   },
 
   summaryCard: {
@@ -17,7 +16,6 @@ export const sectionsSx = {
     display: 'grid',
     gap: '2px',
     textAlign: 'center',
-    direction: 'rtl',
   },
 
   summaryLabel: {
@@ -42,7 +40,6 @@ export const sectionsSx = {
     gap: '3mm',
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
-    direction: 'rtl',
   },
 
   roleHeader: {
@@ -55,16 +52,14 @@ export const sectionsSx = {
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     bgcolor: '#f3f4f6',
-    direction: 'rtl',
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   roleHeaderText: {
     display: 'grid',
     gap: '1mm',
     minWidth: 0,
-    direction: 'rtl',
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   roleTitle: {
@@ -72,14 +67,14 @@ export const sectionsSx = {
     fontWeight: 700,
     color: '#111827',
     lineHeight: 1.25,
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   roleSub: {
     fontSize: 10.5,
     color: '#4b5563',
     lineHeight: 1.35,
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   roleBadge: {
@@ -99,7 +94,6 @@ export const sectionsSx = {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: '2mm',
-    direction: 'rtl',
   },
 
   roleSummaryCard: {
@@ -131,8 +125,7 @@ export const sectionsSx = {
     borderTop: '1px solid #e5e7eb',
     display: 'grid',
     gap: '3mm',
-    textAlign: 'right',
-    direction: 'rtl',
+    textAlign: 'left',
   },
 
   sectionTitle: {
@@ -156,8 +149,7 @@ export const sectionsSx = {
     gap: '1.5mm',
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
-    textAlign: 'right',
-    direction: 'rtl',
+    textAlign: 'left',
   },
 
   recommendationTitle: {

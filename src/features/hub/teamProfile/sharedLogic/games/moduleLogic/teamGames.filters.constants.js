@@ -7,12 +7,32 @@ import {
   GAME_HOME_AWAY,
 } from '../../../../../../shared/games/games.constants.js'
 
+export const TEAM_GAME_IMPACT_FILTER = {
+  positive: {
+    id: 'positive',
+    value: 'positive',
+    label: 'משחקי פלוס',
+    shortLabel: 'פלוס',
+    idIcon: 'scoringImpact',
+    color: 'success',
+  },
+  negative: {
+    id: 'negative',
+    value: 'negative',
+    label: 'משחקי מינוס',
+    shortLabel: 'מינוס',
+    idIcon: 'scoringImpact',
+    color: 'danger',
+  },
+}
+
 export const TEAM_GAMES_FILTER_KEYS = [
   'search',
   'typeKey',
   'homeKey',
   'resultKey',
   'difficultyKey',
+  'impactKey',
   'onlyPlayed',
 ]
 
@@ -56,5 +76,6 @@ export const createInitialTeamGamesFilters = () => ({
   homeKey: '',
   resultKey: '',
   difficultyKey: '',
+  impactKey: '',
   onlyPlayed: false,
 })

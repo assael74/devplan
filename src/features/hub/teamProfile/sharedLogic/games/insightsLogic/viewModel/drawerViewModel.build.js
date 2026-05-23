@@ -6,9 +6,47 @@ import { buildTeamGamesDifficultyProjection } from '../projections/index.js'
 import { buildTeamGamesSquadMetrics } from '../squad/index.js'
 
 import {
+  buildPerformanceBrief,
+} from '../../../../../../../shared/games/insights/team/sections/performance/index.js'
+
+import {
   resolveGamesReady,
   resolveTeamGamesDrawerContext,
 } from './drawerContext.resolve.js'
+
+import {
+  buildTeamGamesScoringModel,
+} from './teamScoring.model.js'
+
+const getScoringGames = ({ rawGames, fallbackGames }) => {
+  if (Array.isArray(rawGames) && rawGames.length) return rawGames
+  if (Array.isArray(fallbackGames) && fallbackGames.length) return fallbackGames
+
+  return []
+}
+
+const buildTeamScoring = ({
+  isGamesMode,
+  scoringGames,
+  team,
+  calculation,
+}) => {
+  if (!isGamesMode || !scoringGames.length) return null
+
+  return buildTeamGamesScoringModel({
+    team,
+    games: scoringGames,
+    calculation,
+  })
+}
+
+const buildPerformance = ({ teamScoring }) => {
+  if (!teamScoring) return null
+
+  return buildPerformanceBrief({
+    teamScoring,
+  })
+}
 
 export const buildTeamGamesDrawerViewModel = (insights) => {
   const context = resolveTeamGamesDrawerContext(insights)
@@ -16,6 +54,7 @@ export const buildTeamGamesDrawerViewModel = (insights) => {
   const {
     team,
     games,
+    rawGames,
     calculation,
     active,
     isGamesMode,
@@ -34,6 +73,22 @@ export const buildTeamGamesDrawerViewModel = (insights) => {
   })
 
   const safeGames = gamesReady ? games : null
+
+  const scoringGames = getScoringGames({
+    rawGames,
+    fallbackGames: safeGames,
+  })
+
+  const teamScoring = buildTeamScoring({
+    isGamesMode,
+    scoringGames,
+    team,
+    calculation,
+  })
+
+  const performanceBrief = buildPerformance({
+    teamScoring,
+  })
 
   const targetProgress = buildTeamGamesTargetProgress({
     source: active,
@@ -77,6 +132,9 @@ export const buildTeamGamesDrawerViewModel = (insights) => {
     readiness,
     sync,
     coverage,
+
+    teamScoring,
+    performanceBrief,
 
     targetProgress,
     homeAwayProjection,

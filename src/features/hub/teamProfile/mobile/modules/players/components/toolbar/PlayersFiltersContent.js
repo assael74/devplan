@@ -1,4 +1,4 @@
-// teamProfile/mobile/modules/games/components/toolbar/GamesFiltersContent.js
+// teamProfile/mobile/modules/players/components/toolbar/PlayersFiltersContent.js
 
 import React from 'react'
 import {
@@ -21,6 +21,28 @@ import SelectValue from './SelectValue.js'
 
 const c = getEntityColors('players')
 
+const safeArray = value => (Array.isArray(value) ? value : [])
+
+function SelectOption({ item, fallbackIcon, color = 'primary' }) {
+  return (
+    <Option key={item.id} value={item.id}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+        <ListItemDecorator>
+          {iconUi({ id: item.idIcon || fallbackIcon })}
+        </ListItemDecorator>
+
+        <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
+          {item.label}
+        </Typography>
+
+        <Chip size="sm" variant="soft" color={item.color || color}>
+          {item.count || 0}
+        </Chip>
+      </Box>
+    </Option>
+  )
+}
+
 export default function PlayersFiltersContent({
   summary,
   filters,
@@ -30,17 +52,22 @@ export default function PlayersFiltersContent({
   onChangeProjectStatus,
   onChangePositionCode,
   onChangeGeneralPositionKey,
+  onChangePerformanceProfile,
 }) {
-  const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
-  const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
-  const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets) ? summary.positionCodeBuckets : []
-  const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets) ? summary.generalPositionBuckets : []
+  const squadRoleBuckets = safeArray(summary?.squadRoleBuckets)
+  const projectStatusBuckets = safeArray(summary?.projectStatusBuckets)
+  const positionCodeBuckets = safeArray(summary?.positionCodeBuckets)
+  const generalPositionBuckets = safeArray(summary?.generalPositionBuckets)
+  const performanceProfileBuckets = safeArray(summary?.performanceProfileBuckets)
 
-  const selectedSquadRole = squadRoleBuckets.find((item) => item?.id === filters?.squadRole)
-  const selectedProjectStatus = projectStatusBuckets.find((item) => item?.id === filters?.projectStatus)
-  const selectedPositionCode = positionCodeBuckets.find((item) => item?.id === filters?.positionCode)
+  const selectedSquadRole = squadRoleBuckets.find(item => item?.id === filters?.squadRole)
+  const selectedProjectStatus = projectStatusBuckets.find(item => item?.id === filters?.projectStatus)
+  const selectedPositionCode = positionCodeBuckets.find(item => item?.id === filters?.positionCode)
   const selectedGeneralPosition = generalPositionBuckets.find(
-    (item) => item?.id === filters?.generalPositionKey
+    item => item?.id === filters?.generalPositionKey
+  )
+  const selectedPerformanceProfile = performanceProfileBuckets.find(
+    item => item?.id === filters?.performanceProfile
   )
 
   return (
@@ -50,7 +77,7 @@ export default function PlayersFiltersContent({
           <FormLabel>חיפוש</FormLabel>
           <Input
             value={filters?.search || ''}
-            onChange={(e) => onChangeSearch(e.target.value)}
+            onChange={event => onChangeSearch(event.target.value)}
             startDecorator={iconUi({ id: 'search' })}
             placeholder="חיפוש לפי שם / שנתון / עמדה"
             size="sm"
@@ -85,27 +112,58 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {squadRoleBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="warning">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {squadRoleBuckets.map(item => (
+                <SelectOption
+                  key={item.id}
+                  item={item}
+                  fallbackIcon="star"
+                  color="warning"
+                />
               ))}
             </Select>
           </FormControl>
         </Box>
 
+        <Box sx={{ minWidth: 0 }}>
+          <FormControl>
+            <FormLabel>פרופיל תפקוד</FormLabel>
+            <Select
+              size="sm"
+              value={filters?.performanceProfile || ''}
+              onChange={(_, value) => onChangePerformanceProfile(value || '')}
+              sx={{ minWidth: 0, width: '100%', bgcolor: 'background.surface' }}
+              slotProps={{ listbox: { sx: { '--ListItemDecorator-size': '28px' } } }}
+              renderValue={() => (
+                <SelectValue
+                  label={selectedPerformanceProfile?.label || 'כל פרופילי התפקוד'}
+                  icon={selectedPerformanceProfile?.idIcon || 'insights'}
+                  count={selectedPerformanceProfile?.count ?? summary?.total ?? 0}
+                  color={selectedPerformanceProfile?.color}
+                />
+              )}
+            >
+              <Option value="">
+                <SelectValue
+                  label="כל פרופילי התפקוד"
+                  icon="insights"
+                  count={summary?.total ?? 0}
+                />
+              </Option>
+
+              {performanceProfileBuckets.map(item => (
+                <SelectOption
+                  key={item.id}
+                  item={item}
+                  fallbackIcon="insights"
+                  color="primary"
+                />
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+
+      <Box sx={sx.grid2}>
         <Box sx={{ minWidth: 0 }}>
           <FormControl>
             <FormLabel>סטטוס פרויקט</FormLabel>
@@ -131,40 +189,18 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {projectStatusBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({
-                        id: item.idIcon,
-                        sx: { color: item.icCol || undefined },
-                      })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                      sx={{
-                        flexShrink: 0,
-                        bgcolor: item.color || undefined,
-                        color: item.icCol || undefined,
-                      }}
-                    >
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {projectStatusBuckets.map(item => (
+                <SelectOption
+                  key={item.id}
+                  item={item}
+                  fallbackIcon="project"
+                  color="danger"
+                />
               ))}
             </Select>
           </FormControl>
         </Box>
-      </Box>
 
-      <Box sx={sx.grid2}>
         <Box sx={{ minWidth: 0 }}>
           <FormControl>
             <FormLabel>עמדה</FormLabel>
@@ -190,27 +226,20 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {positionCodeBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon || 'position' })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="primary">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {positionCodeBuckets.map(item => (
+                <SelectOption
+                  key={item.id}
+                  item={item}
+                  fallbackIcon="position"
+                  color="primary"
+                />
               ))}
             </Select>
           </FormControl>
         </Box>
+      </Box>
 
+      <Box sx={sx.grid2}>
         <Box sx={{ minWidth: 0 }}>
           <FormControl>
             <FormLabel>עמדה כללית</FormLabel>
@@ -236,29 +265,18 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {generalPositionBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon || 'layers' })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="primary">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {generalPositionBuckets.map(item => (
+                <SelectOption
+                  key={item.id}
+                  item={item}
+                  fallbackIcon="layers"
+                  color="primary"
+                />
               ))}
             </Select>
           </FormControl>
         </Box>
-      </Box>
 
-      <Box sx={sx.grid2}>
         <Box sx={{ minWidth: 0 }}>
           <FormControl>
             <FormLabel>פעילות</FormLabel>

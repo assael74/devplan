@@ -63,6 +63,56 @@ export default function GamesFiltersContent({
 
       <Box sx={{ px: 2 }}>
         <FormControl>
+          <FormLabel>מדד השפעה</FormLabel>
+
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            <Chip
+              size="sm"
+              variant={filters?.impactKey === 'positive' ? 'solid' : 'outlined'}
+              color={filters?.impactKey === 'positive' ? 'success' : 'neutral'}
+              onClick={() => {
+                onChangeFilters({
+                  impactKey: filters?.impactKey === 'positive' ? '' : 'positive',
+                })
+              }}
+              startDecorator={iconUi({ id: 'scoringImpact' })}
+              sx={{
+                width: 'fit-content',
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              משחקי פלוס
+            </Chip>
+
+            <Chip
+              size="sm"
+              variant={filters?.impactKey === 'negative' ? 'solid' : 'outlined'}
+              color={filters?.impactKey === 'negative' ? 'danger' : 'neutral'}
+              onClick={() => {
+                onChangeFilters({
+                  impactKey: filters?.impactKey === 'negative' ? '' : 'negative',
+                })
+              }}
+              startDecorator={iconUi({ id: 'scoringImpact' })}
+              sx={{
+                width: 'fit-content',
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              משחקי מינוס
+            </Chip>
+          </Box>
+
+          <FormHelperText>
+            סינון לפי ההשפעה של המשחק עצמו מול הציפייה
+          </FormHelperText>
+        </FormControl>
+      </Box>
+
+      <Box sx={{ px: 2 }}>
+        <FormControl>
           <FormLabel>סטטוס משחקים</FormLabel>
 
           <Chip

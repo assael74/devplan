@@ -1,20 +1,17 @@
 // ui/actions/GenericFabMenu.js
+// TEMP TEST VERSION - no Joy Dropdown/Menu
 
 import * as React from 'react'
 import Box from '@mui/joy/Box'
-import Divider from '@mui/joy/Divider'
-import Dropdown from '@mui/joy/Dropdown'
-import Menu from '@mui/joy/Menu'
-import MenuButton from '@mui/joy/MenuButton'
-import MenuItem from '@mui/joy/MenuItem'
-import ListItemDecorator from '@mui/joy/ListItemDecorator'
-import Tooltip from '@mui/joy/Tooltip'
+import Chip from '@mui/joy/Chip'
+import IconButton from '@mui/joy/IconButton'
+import Sheet from '@mui/joy/Sheet'
 import Typography from '@mui/joy/Typography'
 
 import { getEntityColors } from '../core/theme/Colors'
 import { iconUi } from '../core/icons/iconUi.js'
 import KeyboardArrowUpRounded from '@mui/icons-material/KeyboardArrowUpRounded'
-import { sxFabMenu } from './GenericFabMenu.sx'
+import { sxFabMenu as sx } from './GenericFabMenu.sx'
 
 const POS = {
   br: { left: { xs: 14, md: 22 }, bottom: { xs: 14, md: 22 } },
@@ -23,7 +20,7 @@ const POS = {
   tl: { right: { xs: 14, md: 22 }, top: { xs: 14, md: 22 } },
 }
 
-const safeColors = (k) => {
+const safeColors = k => {
   try {
     return k ? getEntityColors(k) : null
   } catch {
@@ -31,102 +28,116 @@ const safeColors = (k) => {
   }
 }
 
-const isDividerItem = (item) => item?.type === 'divider'
-const isSectionItem = (item) => item?.type === 'section'
+const isDividerItem = item => item?.type === 'divider'
+const isSectionItem = item => item?.type === 'section'
+
+const ActionLabel = ({ action }) => {
+  return (
+    <Box sx={sx.actionLabelWrap}>
+      <Box component="span" sx={sx.actionSpan}>
+        {action.label || action.title}
+      </Box>
+
+      {action.metaLabel ? (
+        <Chip
+          size="sm"
+          variant="soft"
+          color={action.metaColor || 'neutral'}
+          sx={sx.chip}
+        >
+          {action.metaLabel}
+        </Chip>
+      ) : null}
+    </Box>
+  )
+}
 
 export default function GenericFabMenu({
-  id = 'fab-menu',
   placement = 'br',
-  tooltip = 'פעולות מהירות',
-  ariaLabel = 'פתיחת פעולות',
   actions = [],
   disabled = false,
   showLabel = false,
   label = '',
-  primaryIcon,
   entityType,
   fabSx,
 }) {
   const [open, setOpen] = React.useState(false)
 
   const palette = React.useMemo(() => safeColors(entityType), [entityType])
-  const visible = React.useMemo(() => actions.filter((a) => !a?.hidden), [actions])
+  const visible = React.useMemo(() => {
+    return actions.filter(action => !action?.hidden)
+  }, [actions])
+
   const hasMenu = visible.length > 0
-
-  const Trigger = (
-    <Box sx={sxFabMenu.trigger}>
-      {showLabel && label ? (
-        <Typography level="body-sm" sx={sxFabMenu.label(palette)}>
-          {label}
-        </Typography>
-      ) : null}
-
-      <MenuButton
-        id={id}
-        aria-label={ariaLabel}
-        disabled={disabled || !hasMenu}
-        variant="plain"
-        sx={[sxFabMenu.fab(open, palette), fabSx]}
-      >
-        {open ? <KeyboardArrowUpRounded /> : iconUi({id: 'quickActions', size: 'md'})}
-      </MenuButton>
-    </Box>
-  )
 
   return (
     <Box sx={{ position: 'fixed', zIndex: 1200, ...(POS[placement] || POS.br) }}>
-      <Dropdown open={open} onOpenChange={(_, v) => setOpen(v)}>
-        <Tooltip title={tooltip} placement="left">{Trigger}</Tooltip>
-
-        {hasMenu ? (
-          <Menu placement="top-end" sx={sxFabMenu.menu}>
-            {visible.map((a, i) => {
-              if (isSectionItem(a)) {
-                return (
-                  <Box
-                    key={a.id || `section-${i}`}
-                    sx={sxFabMenu.section}
-                  >
-                    <Typography
-                      level="body-xs"
-                      sx={sxFabMenu.sectionLabel(safeColors(a.colorKey))}
-                    >
-                      {a.label}
-                    </Typography>
-                  </Box>
-                )
-              }
-
-              if (isDividerItem(a)) {
-                return (
-                  <Divider
-                    key={a.id || `divider-${i}`}
-                    inset="none"
-                    sx={sxFabMenu.divider}
-                  />
-                )
-              }
-
-              const c = safeColors(a.color)
-
+      {open ? (
+        <Sheet variant="outlined" sx={sx.sheet}>
+          {visible.map((action, index) => {
+            if (isSectionItem(action)) {
               return (
-                <MenuItem
-                  key={a.id || i}
-                  disabled={a.disabled}
-                  onClick={() => {
-                    setOpen(false)
-                    a.onClick?.()
-                  }}
-                  sx={sxFabMenu.menuItem(c)}
+                <Typography
+                  key={action.id || `section-${index}`}
+                  level="body-xs"
+                  sx={{ px: 1, py: 0.5, color: 'text.tertiary' }}
                 >
-                  {a.icon ? <ListItemDecorator>{a.icon}</ListItemDecorator> : null}
-                  {a.label || a.title}
-                </MenuItem>
+                  {action.label}
+                </Typography>
               )
-            })}
-          </Menu>
+            }
+
+            if (isDividerItem(action)) {
+              return (
+                <Box key={action.id || `divider-${index}`} sx={{ height: 0.5, bgcolor: 'divider', my: 0.25 }}/>
+              )
+            }
+
+            return (
+              <Box
+                key={action.id || index}
+                role="button"
+                onClick={() => {
+                  if (action.disabled) return
+
+                  setOpen(false)
+                  action.onClick?.()
+                }}
+                sx={sx.boxButton(action)}
+              >
+                {action.icon ? (
+                  <Box sx={{ flex: '0 0 auto', display: 'flex' }}>
+                    {action.icon}
+                  </Box>
+                ) : null}
+
+                <ActionLabel action={action} />
+              </Box>
+            )
+          })}
+        </Sheet>
+      ) : null}
+
+      <Box sx={sx.trigger}>
+        {showLabel && label ? (
+          <Typography level="body-sm" sx={sx.label(palette)}>
+            {label}
+          </Typography>
         ) : null}
-      </Dropdown>
+
+        <IconButton
+          disabled={disabled || !hasMenu}
+          variant="plain"
+          onClick={() => setOpen(current => !current)}
+          sx={[sx.fab(open, palette), fabSx]}
+        >
+          {open ? (
+            <KeyboardArrowUpRounded />
+          ) : (
+            iconUi({ id: 'quickActions', size: 'md' })
+          )}
+        </IconButton>
+      </Box>
     </Box>
   )
 }

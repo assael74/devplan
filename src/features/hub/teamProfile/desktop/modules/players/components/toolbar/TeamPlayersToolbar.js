@@ -21,6 +21,7 @@ export default function TeamPlayersToolbar({
   onChangeSquadRole,
   onChangeProjectStatus,
   onChangePositionCode,
+  onChangePerformanceProfile,
   onChangeGeneralPositionKey,
   onChangeSortBy,
   onChangeSortDirection,
@@ -32,6 +33,7 @@ export default function TeamPlayersToolbar({
     !!filters?.squadRole ||
     !!filters?.projectStatus ||
     !!filters?.positionCode ||
+    !!filters?.performanceProfile ||
     !!filters?.generalPositionKey
 
   const hasSortChanged = sortBy !== 'level' || sortDirection !== 'desc'
@@ -47,6 +49,7 @@ export default function TeamPlayersToolbar({
         onChangeSquadRole={onChangeSquadRole}
         onChangeProjectStatus={onChangeProjectStatus}
         onChangePositionCode={onChangePositionCode}
+        onChangePerformanceProfile={onChangePerformanceProfile}
         onChangeGeneralPositionKey={onChangeGeneralPositionKey}
       />
 

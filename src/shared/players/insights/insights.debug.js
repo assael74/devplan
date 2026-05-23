@@ -83,84 +83,82 @@ const toTableRows = (rows = []) => {
   })
 }
 
-export const printPlayersInsightsDebug = ({
-  rows,
-  scopedScores,
-  counts,
-} = {}) => {
+export const printPlayersInsightsDebug = ({ rows, scopedScores, counts } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
   const safeCounts = counts || {}
 
-  console.clear()
+  if (false) {
+    console.clear()
 
-  console.log('PLAYER SCORING / SCOPE')
-  console.table([
-    {
-      scopedGames:
-        safeCounts.scopedGames ??
-        scopedScores?.scopedGamesCount ??
-        0,
+    console.log('PLAYER SCORING / SCOPE')
+    console.table([
+      {
+        scopedGames:
+          safeCounts.scopedGames ??
+          scopedScores?.scopedGamesCount ??
+          0,
 
-      playerScores:
-        safeCounts.scores ??
-        scopedScores?.scoresCount ??
-        scopedScores?.flatScores?.length ??
-        0,
+        playerScores:
+          safeCounts.scores ??
+          scopedScores?.scoresCount ??
+          scopedScores?.flatScores?.length ??
+          0,
 
-      players:
-        safeCounts.players ??
-        safeRows.length,
-    },
-  ])
+        players:
+          safeCounts.players ??
+          safeRows.length,
+      },
+    ])
 
-  console.log('PLAYER INSIGHTS / FULL CLASSIFICATION')
-  console.table(toTableRows(safeRows))
+    console.log('PLAYER INSIGHTS / FULL CLASSIFICATION')
+    console.table(toTableRows(safeRows))
 
-  console.log('PLAYER INSIGHTS / BY CATEGORY')
-  console.table(buildCategoryRows(safeRows))
+    console.log('PLAYER INSIGHTS / BY CATEGORY')
+    console.table(buildCategoryRows(safeRows))
 
-  console.log('PLAYER INSIGHTS / STAT ANCHORS')
-  console.table(
-    toTableRows(
-      safeRows.filter((row) => {
-        return row.insightId === 'stat_anchor'
-      })
+    console.log('PLAYER INSIGHTS / STAT ANCHORS')
+    console.table(
+      toTableRows(
+        safeRows.filter((row) => {
+          return row.insightId === 'stat_anchor'
+        })
+      )
     )
-  )
 
-  console.log('PLAYER INSIGHTS / WEAK SPOTS')
-  console.table(
-    toTableRows(
-      safeRows.filter((row) => {
-        return row.insightId === 'weak_spot'
-      })
+    console.log('PLAYER INSIGHTS / WEAK SPOTS')
+    console.table(
+      toTableRows(
+        safeRows.filter((row) => {
+          return row.insightId === 'weak_spot'
+        })
+      )
     )
-  )
 
-  console.log('PLAYER INSIGHTS / UNSTABLE')
-  console.table(
-    toTableRows(
-      safeRows.filter((row) => {
-        return row.insightId === 'unstable'
-      })
+    console.log('PLAYER INSIGHTS / UNSTABLE')
+    console.table(
+      toTableRows(
+        safeRows.filter((row) => {
+          return row.insightId === 'unstable'
+        })
+      )
     )
-  )
 
-  console.log('PLAYER INSIGHTS / SECONDARY CONTRIBUTORS')
-  console.table(
-    toTableRows(
-      safeRows.filter((row) => {
-        return row.insightId === 'secondary_contributor'
-      })
+    console.log('PLAYER INSIGHTS / SECONDARY CONTRIBUTORS')
+    console.table(
+      toTableRows(
+        safeRows.filter((row) => {
+          return row.insightId === 'secondary_contributor'
+        })
+      )
     )
-  )
 
-  console.log('PLAYER INSIGHTS / CORE WORKERS')
-  console.table(
-    toTableRows(
-      safeRows.filter((row) => {
-        return row.insightId === 'core_worker'
-      })
+    console.log('PLAYER INSIGHTS / CORE WORKERS')
+    console.table(
+      toTableRows(
+        safeRows.filter((row) => {
+          return row.insightId === 'core_worker'
+        })
+      )
     )
-  )
+  }  
 }

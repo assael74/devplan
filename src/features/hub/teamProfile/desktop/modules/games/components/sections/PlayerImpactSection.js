@@ -1,7 +1,9 @@
+// teamProfile/desktop/modules/games/components/sections/PlayerImpactSection.js
+
 import React from 'react'
 import { Box } from '@mui/joy'
 
-import { sectionsSx as sx } from '../../sx/sections.sx.js'
+import { sectionsSx as sx } from './sx/sections.sx.js'
 import {
   getGamePlayers,
   getScorers,

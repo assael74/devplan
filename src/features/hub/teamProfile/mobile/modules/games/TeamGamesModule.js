@@ -20,28 +20,10 @@ import {
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
-const LEAGUE_GAME_TYPE = 'league'
-
-const getGameObject = (row = {}) => {
-  return row?.game || row
-}
-
-const isLeagueGame = (row = {}) => {
-  const game = getGameObject(row)
-  const type = String(row?.type || game?.type || '').toLowerCase()
-
-  return type === LEAGUE_GAME_TYPE
-}
-
-const getTeamGamesRows = (team) => {
-  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
-
-  return rows.filter(isLeagueGame)
-}
-
 export default function TeamGamesModule({
   entity,
   context,
+  profileData,
   gamesInsightsOpen,
   setGamesInsightsOpen,
   gamesInsightsRequest = 0,
@@ -61,18 +43,36 @@ export default function TeamGamesModule({
     by: 'date',
     direction: 'desc',
   })
+  const [performanceView, setPerformanceView] = useState('team')
+
+  const teamScoring =
+    profileData?.teamScoring ||
+    profileData?.scoring?.team ||
+    null
+
+  const playerScoring =
+    profileData?.playerScoring ||
+    profileData?.scoring?.players ||
+    profileData?.scoring ||
+    null
+
+  const teamScoringByGameId = teamScoring?.byGameId || {}
+  const playerScoringByGameId = playerScoring?.byGameId || {}
 
   const domain = useMemo(() => {
     return resolveTeamGamesFiltersDomain(liveTeam, filters, {
       seasonStartYear: 2025,
+      teamScoringByGameId,
     })
-  }, [liveTeam, filters])
+  }, [liveTeam, filters, teamScoringByGameId])
 
   const { summary, games, options, indicators } = domain || {}
 
   const calculationGames = useMemo(() => {
-    return getTeamGamesRows(liveTeam)
-  }, [liveTeam])
+    return profileData?.games?.playedLeagueGames || []
+  }, [profileData?.games?.playedLeagueGames])
+
+  const scoringByGameId = profileData?.scoring?.byGameId || {}
 
   const sortedGames = useMemo(() => {
     return sortTeamGamesRows(games, sort)
@@ -110,6 +110,8 @@ export default function TeamGamesModule({
           onChangeFilters={handleChangeFilters}
           onResetFilters={handleResetFilters}
           sortBy={sort.by}
+          performanceView={performanceView}
+          onChangePerformanceView={setPerformanceView}
           sortDirection={sort.direction}
           onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
           onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
@@ -128,6 +130,8 @@ export default function TeamGamesModule({
       ) : (
         <TeamGamesList
           rows={sortedGames}
+          performanceView={performanceView}
+          onChangePerformanceView={setPerformanceView}
           onEditGame={(game) => setEditingGame(game || null)}
           onEditEntryGame={(game) => setEditingEntryGame(game || null)}
         />
@@ -136,9 +140,11 @@ export default function TeamGamesModule({
       <TeamGamesInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        games={calculationGames}
-        entity={liveTeam}
         summary={summary}
+        games={calculationGames}
+        team={liveTeam}
+        scoringByGameId={scoringByGameId}
+        profileData={profileData}
       />
 
       <EditDrawer

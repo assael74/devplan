@@ -41,6 +41,10 @@ const buildEmptyModel = ({
 
     isBuilding,
 
+    teamScoring: null,
+    teamScoringSummary: null,
+    teamScoringTrend: emptyArray,
+
     teamSource: emptyObject,
     gamesSource: emptyObject,
 
@@ -113,12 +117,7 @@ export function useTeamGamesInsightsModel({
       team: liveTeam,
       calculationMode,
     })
-  }, [
-    shouldBuild,
-    safeGames,
-    liveTeam,
-    calculationMode,
-  ])
+  }, [ shouldBuild, safeGames, liveTeam, calculationMode ])
 
   useEffect(() => {
     if (!DEBUG_PLAYER_INSIGHTS || !playerInsights) return
@@ -135,13 +134,7 @@ export function useTeamGamesInsightsModel({
       normalizeRow,
       calculationMode,
     })
-  }, [
-    shouldBuild,
-    safeGames,
-    liveTeam,
-    normalizeRow,
-    calculationMode,
-  ])
+  }, [ shouldBuild, safeGames, liveTeam, normalizeRow, calculationMode ])
 
   const teamSource = insights?.sources?.team || insights?.league || emptyObject
   const gamesSource = insights?.sources?.games || insights?.games || emptyObject
@@ -152,12 +145,9 @@ export function useTeamGamesInsightsModel({
     return buildTeamGamesDrawerViewModel({
       ...insights,
       team: liveTeam,
+      rawGames: safeGames,
     })
-  }, [
-    shouldBuild,
-    insights,
-    liveTeam,
-  ])
+  }, [shouldBuild, insights, liveTeam, safeGames])
 
   const targetProgress = viewModel?.targetProgress || emptyObject
   const forecast = targetProgress?.forecast || emptyObject
@@ -169,6 +159,13 @@ export function useTeamGamesInsightsModel({
   const homeAwayProjection = viewModel?.homeAwayProjection || emptyObject
   const difficultyProjection = viewModel?.difficultyProjection || emptyObject
   const squadMetrics = viewModel?.squadMetrics || emptyObject
+
+  const teamScoring = viewModel?.teamScoring || null
+  const teamScoringSummary = teamScoring?.summary || null
+
+  const teamScoringTrend = Array.isArray(teamScoring?.trend)
+    ? teamScoring.trend
+    : emptyArray
 
   const playerInsightRows = Array.isArray(playerInsights?.rows)
     ? playerInsights.rows
@@ -216,6 +213,10 @@ export function useTeamGamesInsightsModel({
 
     teamSource,
     gamesSource,
+
+    teamScoring,
+    teamScoringSummary,
+    teamScoringTrend,
 
     targetProgress,
     forecast,

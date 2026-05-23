@@ -46,6 +46,12 @@ export const TEAM_PLAYERS_SORT_OPTIONS = [
     defaultDirection: 'desc',
   },
   {
+    id: 'performanceProfile',
+    label: 'פרופיל תפקוד',
+    idIcon: 'insights',
+    defaultDirection: 'asc',
+  },
+  {
     id: 'projectStatus',
     label: 'סטטוס פרויקט',
     idIcon: 'project',
@@ -73,6 +79,17 @@ const PROJECT_STATUS_ORDER = {
   rejected: 3,
   noneType: 1,
   '': 1,
+}
+
+const PERFORMANCE_PROFILE_ORDER = {
+  stat_anchor: 1,
+  core_worker: 2,
+  weak_spot: 3,
+  joker: 4,
+  unstable: 5,
+  secondary_contributor: 6,
+  out_of_sample: 99,
+  '': 100,
 }
 
 const getProjectStatusKey = (row) => {
@@ -105,6 +122,20 @@ const getSquadRoleValue = (row) => {
   return SQUAD_ROLE_ORDER[key] ?? SQUAD_ROLE_ORDER['']
 }
 
+const getPerformanceProfileKey = row => {
+  return (
+    safe(row?.performance?.profileId).trim() ||
+    safe(row?.performance?.insightId).trim() ||
+    safe(row?.performance?.profile?.id).trim() ||
+    ''
+  )
+}
+
+const getPerformanceProfileValue = row => {
+  const key = getPerformanceProfileKey(row)
+  return PERFORMANCE_PROFILE_ORDER[key] ?? 100
+}
+
 const getTimeRateValue = (row) => {
   const stats = row?.playerGamesStats || {}
 
@@ -134,6 +165,7 @@ const getSortValue = (row, sortBy) => {
   if (sortBy === 'assists') return getAssistsValue(row)
   if (sortBy === 'squadRole') return getSquadRoleValue(row)
   if (sortBy === 'projectStatus') return getProjectStatusValue(row)
+  if (sortBy === 'performanceProfile') return getPerformanceProfileValue(row)
 
   return toNumber(row?.level)
 }
@@ -198,6 +230,7 @@ export function getTeamPlayersSortLabel(sortBy) {
   if (sortBy === 'assists') return 'בישולים'
   if (sortBy === 'squadRole') return 'מעמד'
   if (sortBy === 'projectStatus') return 'סטטוס פרויקט'
+  if (sortBy === 'performanceProfile') return 'פרופיל תפקוד'
 
   return 'פוטנציאל'
 }

@@ -39,12 +39,22 @@ const scopeInitial = {
 }
 
 const emptyArray = []
+const emptyObject = {}
 
 const getTeamGames = team => {
   return Array.isArray(team?.teamGames) ? team.teamGames : emptyArray
 }
 
-const getScopeResetKey = ({ resetKey, scope, }) => {
+const isInitialScope = scope => {
+  return (
+    (scope?.mode || 'season') === 'season' &&
+    !scope?.limit &&
+    !scope?.fromGameKey &&
+    !scope?.toGameKey
+  )
+}
+
+const getScopeResetKey = ({ resetKey, scope }) => {
   return [
     resetKey || 'default',
     scope?.mode || 'season',
@@ -53,22 +63,11 @@ const getScopeResetKey = ({ resetKey, scope, }) => {
   ].join('__')
 }
 
-const LoadingContent = () => {
-  return (
-    <LocalInsightsGroup
-      title="מבנה הסגל"
-      sub="טעינת תובנות שחקני הקבוצה"
-      icon="players"
-      chip="מבנה"
-      chipColor="primary"
-    />
-  )
-}
-
 export default function TeamPlayersInsightsContent({
   rows,
   summary,
   team,
+  model: externalModel,
   enabled = true,
   resetKey,
 }) {
@@ -77,6 +76,24 @@ export default function TeamPlayersInsightsContent({
   const games = React.useMemo(() => {
     return getTeamGames(team)
   }, [team])
+
+  const useExternalModel = !!externalModel && isInitialScope(scope)
+
+  const localModel = useTeamPlayersInsightsModel({
+    rows,
+    summary,
+    team,
+    enabled: enabled && !useExternalModel,
+    defer: true,
+    performanceScope: scope,
+  })
+
+  const model = useExternalModel ? externalModel : localModel
+  const isLoading = !model || model.isBuilding
+
+  const safeModel = model || emptyObject
+  const outcomeView = safeModel.outcomeView || emptyObject
+  const buildModel = safeModel.build || emptyObject
 
   const recommendationsResetKey = React.useMemo(() => {
     return getScopeResetKey({
@@ -89,29 +106,19 @@ export default function TeamPlayersInsightsContent({
     setScope(scopeInitial)
   }, [resetKey])
 
-  const model = useTeamPlayersInsightsModel({
-    rows,
-    summary,
-    team,
-    enabled,
-    defer: true,
-    performanceScope: scope,
-  })
-
-  if (model.isBuilding) {
-    return <LoadingContent />
-  }
-
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
       <LocalInsightsGroup
         color="teams"
         title="תהליך בניית הסגל"
         icon="targets"
-        chip="מצב בנייה"
-        chipColor="primary"
+        chip={isLoading ? 'בטעינה' : 'מצב בנייה'}
+        chipColor={isLoading ? 'neutral' : 'primary'}
       >
-        <BuildSection model={model.build} />
+        <BuildSection
+          model={buildModel}
+          loading={isLoading}
+        />
       </LocalInsightsGroup>
 
       <Box
@@ -123,26 +130,30 @@ export default function TeamPlayersInsightsContent({
       >
         <Box
           sx={{
+            minHeight: 44,
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
             p: 1,
           }}
         >
-          <PrintButton
-            team={team}
-            model={model}
-            games={games}
-            performanceScope={scope}
-            disabled={!model?.playerPerformanceRows?.length}
-          />
+          {!isLoading ? (
+            <PrintButton
+              team={team}
+              model={safeModel}
+              games={games}
+              performanceScope={scope}
+              disabled={!safeModel?.playerPerformanceRows?.length}
+            />
+          ) : null}
         </Box>
+
         <LocalInsightsGroup
           color="players"
           title="תפקוד הסגל בפועל"
           icon="projection"
-          chip="מצב בפועל"
-          chipColor="success"
+          chip={isLoading ? 'בטעינה' : 'מצב בפועל'}
+          chipColor={isLoading ? 'neutral' : 'success'}
         >
           <PerformanceScopeBar
             games={games}
@@ -150,19 +161,23 @@ export default function TeamPlayersInsightsContent({
             onChange={setScope}
           />
 
-          <OutcomeSection model={model.outcomeView} />
+          <OutcomeSection
+            model={outcomeView}
+            loading={isLoading}
+          />
         </LocalInsightsGroup>
       </Box>
 
       <LocalInsightsGroup
         title="המלצות"
         icon="insights"
-        chip="המלצות"
-        chipColor="primary"
+        chip={isLoading ? 'בטעינה' : 'המלצות'}
+        chipColor={isLoading ? 'neutral' : 'primary'}
       >
         <RecommendSection
-          model={model?.outcomeView?.recommendations}
+          model={outcomeView?.recommendations}
           resetKey={recommendationsResetKey}
+          loading={isLoading}
         />
       </LocalInsightsGroup>
     </Box>

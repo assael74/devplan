@@ -1,23 +1,41 @@
 // teamProfile/mobile/modules/players/components/insightsDrawer/TeamPlayersInsightsDrawer.js
 
-import React, { useMemo } from 'react'
-import { Box, Chip, Stack, Typography } from '@mui/joy'
+import React from 'react'
+import { Box, CircularProgress, Typography } from '@mui/joy'
 
 import {
   InsightsDrawerShell,
   InsightsDrawerHeader,
-  InsightsSection,
-  InsightsStatCard,
-  InsightsChipsList,
 } from '../../../../../../../../ui/patterns/insights'
 
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { buildTeamPlayersInsights } from '../../../../../sharedLogic/players'
+import { TeamPlayersInsightsContent } from '../../../../../sharedUi/insights/teamPlayers/index.js'
 
 const c = getEntityColors('teams')
+
+const CONTENT_DELAY_MS = 180
+
+function DrawerLoadingState() {
+  return (
+    <Box
+      sx={{
+        minHeight: 220,
+        display: 'grid',
+        placeItems: 'center',
+        gap: 1,
+        p: 3,
+      }}
+    >
+      <CircularProgress size="sm" />
+
+      <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+        טוען תובנות שחקנים...
+      </Typography>
+    </Box>
+  )
+}
 
 export default function TeamPlayersInsightsDrawer({
   open,
@@ -25,35 +43,61 @@ export default function TeamPlayersInsightsDrawer({
   rows,
   summary,
   entity,
-  resetKey
+  team,
+  model,
+  resetKey,
 }) {
-  const insights = useMemo(
-    () => buildTeamPlayersInsights({ rows, summary }),
-    [rows, summary]
-  )
+  const [contentReady, setContentReady] = React.useState(false)
+
+  const liveTeam = team || entity || {}
 
   const avatarSrc = resolveEntityAvatar({
     entityType: 'team',
-    entity: entity,
-    parentEntity: entity?.club,
-    subline: entity?.club?.name
+    entity: liveTeam,
+    parentEntity: liveTeam?.club,
+    subline: liveTeam?.club?.name || liveTeam?.club?.clubName,
   })
+
+  React.useEffect(() => {
+    if (!open) {
+      setContentReady(false)
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setContentReady(true)
+    }, CONTENT_DELAY_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [open, resetKey])
 
   return (
     <InsightsDrawerShell
       open={open}
       onClose={onClose}
-      size='lg'
+      size="lg"
       header={
         <InsightsDrawerHeader
-          title={entity?.teamName || ''}
-          subtitle="תובנות"
+          title={liveTeam?.teamName || liveTeam?.name || ''}
+          subtitle="תובנות שחקני הקבוצה"
           avatarSrc={avatarSrc}
           colorSx={{ bgcolor: c.bg }}
         />
       }
     >
-      בהמשך
+      {contentReady ? (
+        <TeamPlayersInsightsContent
+          rows={rows}
+          summary={summary}
+          team={liveTeam}
+          model={model}
+          resetKey={resetKey}
+        />
+      ) : (
+        <DrawerLoadingState />
+      )}
     </InsightsDrawerShell>
   )
 }

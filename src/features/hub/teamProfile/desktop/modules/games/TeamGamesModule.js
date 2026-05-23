@@ -22,38 +22,35 @@ import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('teams')
 
-const LEAGUE_GAME_TYPE = 'league'
-
-const getGameObject = (row = {}) => {
-  return row?.game || row
-}
-
-const isLeagueGame = (row = {}) => {
-  const game = getGameObject(row)
-  const type = String(row?.type || game?.type || '').toLowerCase()
-
-  return type === LEAGUE_GAME_TYPE
-}
-
-const getTeamGamesRows = (team) => {
-  const rows = Array.isArray(team?.teamGames) ? team.teamGames : []
-
-  return rows.filter(isLeagueGame)
-}
-
 export default function TeamGamesModule({
   entity,
   context,
+  profileData,
   gamesInsightsRequest = 0,
 }) {
   const liveTeam = useMemo(() => {
     const teams = Array.isArray(context?.teams) ? context.teams : []
+
     return teams.find((t) => t?.id === entity?.id) || entity || null
   }, [context?.teams, entity])
 
   const calculationGames = useMemo(() => {
-    return getTeamGamesRows(liveTeam)
-  }, [liveTeam])
+    return profileData?.games?.playedLeagueGames || []
+  }, [profileData?.games?.playedLeagueGames])
+
+  const teamScoring =
+    profileData?.teamScoring ||
+    profileData?.scoring?.team ||
+    null
+
+  const playerScoring =
+    profileData?.playerScoring ||
+    profileData?.scoring?.players ||
+    profileData?.scoring ||
+    null
+
+  const teamScoringByGameId = teamScoring?.byGameId || {}
+  const playerScoringByGameId = playerScoring?.byGameId || {}
 
   const initialFilters = useMemo(() => createInitialTeamGamesFilters(), [])
 
@@ -65,12 +62,14 @@ export default function TeamGamesModule({
     by: 'date',
     direction: 'desc',
   })
+  const [performanceView, setPerformanceView] = useState('team')
 
   const domain = useMemo(() => {
     return resolveTeamGamesFiltersDomain(liveTeam, filters, {
       seasonStartYear: 2025,
+      teamScoringByGameId,
     })
-  }, [liveTeam, filters])
+  }, [liveTeam, filters, teamScoringByGameId])
 
   const {
     summary,
@@ -128,9 +127,21 @@ export default function TeamGamesModule({
             onChangeFilters={handleChangeFilters}
             onResetFilters={handleResetFilters}
             sortBy={sort.by}
+            performanceView={performanceView}
+            onChangePerformanceView={setPerformanceView}
             sortDirection={sort.direction}
-            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
+            onChangeSortBy={(value) => {
+              setSort((prev) => ({
+                ...prev,
+                by: value,
+              }))
+            }}
+            onChangeSortDirection={(value) => {
+              setSort((prev) => ({
+                ...prev,
+                direction: value,
+              }))
+            }}
           />
         </Box>
 
@@ -146,6 +157,11 @@ export default function TeamGamesModule({
         ) : (
           <TeamGamesList
             rows={sortedGames}
+            teamScoring={teamScoring}
+            playerScoring={playerScoring}
+            performanceView={performanceView}
+            teamScoringByGameId={teamScoringByGameId}
+            playerScoringByGameId={playerScoringByGameId}
             onEditGame={(game) => setEditingGame(game || null)}
             onEditEntryGame={(game) => setEditingEntryGame(game || null)}
           />
@@ -158,6 +174,9 @@ export default function TeamGamesModule({
         summary={summary}
         games={calculationGames}
         team={liveTeam}
+        teamScoring={teamScoring}
+        playerScoring={playerScoring}
+        profileData={profileData}
       />
 
       <EditDrawer

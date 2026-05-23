@@ -123,11 +123,7 @@ const getTargetLabel = ({
   return ''
 }
 
-const buildTargetItems = ({
-  targetPositionMode,
-  targetPosition,
-  targetProfile,
-}) => {
+const buildTargetItems = ({ targetPositionMode, targetPosition, targetProfile, }) => {
   const forecast = targetProfile?.targets?.forecast || {}
 
   return [

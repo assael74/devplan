@@ -250,6 +250,7 @@ const AlertPositions = ({
   onSelect,
   layer,
   mode,
+  loading,
   onModeChange
 }) => {
   if (!groups.length) return null
@@ -270,6 +271,7 @@ const AlertPositions = ({
 
       <OutcomePositionCards
         groups={groups}
+        loading={loading}
         selectedId={selectedId}
         onSelect={onSelect}
       />
@@ -337,7 +339,7 @@ const LayerContent = ({
   )
 }
 
-export default function OutcomePositionLayers({ model, }) {
+export default function OutcomePositionLayers({ model, loading }) {
   const [mode, setMode] = React.useState(model?.defaultMode || 'primary')
   const activeModel = model?.modes?.[mode] || model?.modes?.primary || {}
   const groups = getGroups(activeModel)

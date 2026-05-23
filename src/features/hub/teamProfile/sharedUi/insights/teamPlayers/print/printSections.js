@@ -55,6 +55,10 @@ const RoleSection = ({ section }) => {
   return (
     <Box sx={sx.roleSection} className="dpPrintSection">
       <Box sx={sx.roleHeader}>
+        <Typography sx={sx.roleBadge}>
+          {section.playersCount} שחקנים
+        </Typography>
+
         <Box sx={sx.roleHeaderText}>
           <Typography sx={sx.roleTitle}>
             {section.title}
@@ -64,10 +68,6 @@ const RoleSection = ({ section }) => {
             {section.sub}
           </Typography>
         </Box>
-
-        <Typography sx={sx.roleBadge}>
-          {section.playersCount} שחקנים
-        </Typography>
       </Box>
 
       <Box sx={sx.roleSummaryGrid}>

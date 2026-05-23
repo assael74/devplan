@@ -1,3 +1,5 @@
+// teamProfile/desktop/modules/games/components/sections/TeamGamesSection.js
+
 export { InfoTeamsSection } from './InfoTeamsSection.js'
 export { ResultGameSection } from './ResultGameSection.js'
 export { PlayerImpactSection } from './PlayerImpactSection.js'

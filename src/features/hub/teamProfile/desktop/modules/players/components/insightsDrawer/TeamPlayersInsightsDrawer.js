@@ -22,6 +22,7 @@ export default function TeamPlayersInsightsDrawer({
   summary,
   entity,
   team,
+  model,
 }) {
   const liveTeam = team || entity || {}
 
@@ -50,6 +51,7 @@ export default function TeamPlayersInsightsDrawer({
         rows={rows}
         summary={summary}
         team={liveTeam}
+        model={model}
         resetKey={resetKey}
       />
     </InsightsDrawerShell>

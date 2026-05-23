@@ -18,10 +18,7 @@ export const formatChipValue = (value, suffix = '') => {
   return `${value}${suffix}`
 }
 
-export const pctToPlayers = (
-  pct,
-  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
-) => {
+export const pctToPlayers = ( pct, squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
   const n = Number(pct)
 
   if (!Number.isFinite(n)) return ''
@@ -34,10 +31,7 @@ export const formatPointsPct = (value) => {
   return `${value}% נקודות`
 }
 
-export const formatPlayersPct = (
-  value,
-  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
-) => {
+export const formatPlayersPct = ( value, squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
   const players = pctToPlayers(value, squadSize)
 
   if (!isTargetValue(players)) return ''
@@ -45,10 +39,7 @@ export const formatPlayersPct = (
   return `${players} שחקנים`
 }
 
-export const formatPlayersRange = (
-  range = [],
-  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
-) => {
+export const formatPlayersRange = ( range = [], squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
   if (!Array.isArray(range)) return ''
 
   const min = pctToPlayers(range[0], squadSize)
@@ -165,10 +156,7 @@ export const buildScorersRuleChips = (rule = {}, suffix = '') => {
   return chips
 }
 
-export const buildSquadUsageChips = (
-  rule = {},
-  options = {}
-) => {
+export const buildSquadUsageChips = ( rule = {}, options = {} ) => {
   if (!rule || typeof rule !== 'object') return []
 
   const squadSize = Number(options.squadSize) || TEAM_TARGET_DEFAULT_SQUAD_SIZE
@@ -262,10 +250,7 @@ export const buildScorersRows = (scorers = {}) => {
   ]
 }
 
-export const buildSquadUsageRows = (
-  squadUsage = {},
-  options = {}
-) => {
+export const buildSquadUsageRows = ( squadUsage = {}, options = {} ) => {
   return [
     {
       id: 'players1000Pct',

@@ -9,7 +9,7 @@ import { sectionSx as sx } from './sx/index.js'
 
 const emptyObject = {}
 
-export default function OutcomeSection({ model = emptyObject }) {
+export default function OutcomeSection({ model = emptyObject, loading }) {
   const aspects = model?.aspects || emptyObject
 
   return (
@@ -21,6 +21,7 @@ export default function OutcomeSection({ model = emptyObject }) {
       />
 
       <OutcomeBlock
+        loading={loading}
         model={aspects.position}
         separated
       />
