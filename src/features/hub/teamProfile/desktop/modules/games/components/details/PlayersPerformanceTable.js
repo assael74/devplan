@@ -183,13 +183,7 @@ function PlayerRow({
       gameTime: row.gameTime,
       performance: playerPerformance,
     })
-  }, [
-    trendMounted,
-    playerScoring,
-    row,
-    game,
-    playerPerformance,
-  ])
+  }, [ trendMounted, playerScoring, row, game, playerPerformance ])
 
   return (
     <Box sx={sx.playerPanel(open, actionsOpen)}>

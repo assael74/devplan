@@ -106,6 +106,7 @@ export const shortsUpdateRouterMap = {
     squadRole: { shortKey: 'privates.privatePlayersInfo', path: 'squadRole', mode: 'merge' },
     photo: { shortKey: 'privates.privatePlayersInfo', path: 'photo', mode: 'merge' },
     positions: { shortKey: 'privates.privatePlayersInfo', path: 'positions', mode: 'replace' },
+    primaryPosition: { shortKey: 'privates.privatePlayersInfo', path: 'primaryPosition', mode: 'merge' },
     bodyFat: { shortKey: 'privates.privatePlayersInfo', path: 'bodyFat', mode: 'replace' },
     favoriteClub: { shortKey: 'privates.privatePlayersInfo', path: 'favoriteClub', mode: 'merge' },
     height: { shortKey: 'privates.privatePlayersInfo', path: 'height', mode: 'replace' },

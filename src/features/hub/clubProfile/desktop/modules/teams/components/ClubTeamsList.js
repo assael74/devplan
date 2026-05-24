@@ -1,32 +1,40 @@
 // clubProfile/desktop/modules/teams/components/ClubTeamsList.js
 
 import React from 'react'
-import { Box, Typography } from '@mui/joy'
+import { Box } from '@mui/joy'
+
 import ClubTeamRow from './ClubTeamRow.js'
 
-import { listSx as sx } from '../sx/list.sx.js'
+const getTeamId = row => {
+  return String(row?.id || row?.teamId || '').trim()
+}
 
-export default function ClubTeamsList({ rows, onEditTeam }) {
-  if (!rows?.length) {
-    return (
-      <Box sx={sx.emptyState}>
-        <Typography level="title-sm">לא נמצאו קבוצות</Typography>
-        <Typography level="body-sm" sx={{ opacity: 0.72 }}>
-          נסה לשנות פילטרים או לאפס את החיפוש.
-        </Typography>
-      </Box>
-    )
-  }
+const getTeamPerformance = ({ row, profileData }) => {
+  const teamId = getTeamId(row)
 
   return (
-    <Box sx={{ display: 'grid', gap: 0.35 }}>
-      {rows.map((row) => (
-        <ClubTeamRow
-          key={row.id}
-          row={row}
-          onEdit={onEditTeam}
-        />
-      ))}
+    profileData?.teamsScoring?.byId[teamId] ||
+    profileData?.scoring?.teams?.byId[teamId] ||
+    row?.performance ||
+    null
+  )
+}
+
+export default function ClubTeamsList({ rows = [], profileData, onEditTeam }) {
+  return (
+    <Box sx={{ display: 'grid', gap: 0.75 }}>
+      {rows.map(row => {
+        const teamId = getTeamId(row)
+
+        return (
+          <ClubTeamRow
+            key={teamId}
+            row={row}
+            performance={getTeamPerformance({ row, profileData })}
+            onEdit={onEditTeam}
+          />
+        )
+      })}
     </Box>
   )
 }

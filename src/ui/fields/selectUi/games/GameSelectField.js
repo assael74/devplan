@@ -20,6 +20,7 @@ export default function GameSelectField(props) {
     label = 'בחר משחק',
     placeholder = 'בחר משחק לשיוך השחקן',
     size = 'sm',
+    variant = 'outlined'
   } = props
 
   const { indexedOptions, selectedOption } = useGameOptions(props)
@@ -34,8 +35,7 @@ export default function GameSelectField(props) {
         onChange={(_, newValue) => onChange(newValue || '')}
         disabled={disabled}
         color={error ? 'danger' : 'neutral'}
-        variant="soft"
-        indicator={iconUi({ id: 'games', size: 'sm' })}
+        variant={variant}
         placeholder={placeholder}
         renderValue={() => <GameValueView option={selectedOption} placeholder={placeholder} />}
         slotProps={{
@@ -47,7 +47,7 @@ export default function GameSelectField(props) {
             sx: sx.listbox,
           },
         }}
-        sx={{ width: '100%', minWidth: 0 }}
+        sx={{ width: '100%', minWidth: 0, bgcolor: 'background.level1' }}
       >
         {indexedOptions.map((option) => (
           <Option

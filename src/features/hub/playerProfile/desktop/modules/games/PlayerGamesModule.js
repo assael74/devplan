@@ -14,8 +14,8 @@ import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 import {
   createInitialPlayerGamesFilters,
   resolvePlayerGamesFiltersDomain,
-  sortPlayerGamesRows
-} from './../../../sharedLogic'
+  sortPlayerGamesRows,
+} from './../../../sharedLogic/games/module/index.js'
 
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
@@ -37,12 +37,25 @@ const isLeagueGame = (row = {}) => {
 export default function PlayerGamesModule({
   entity,
   context,
+  profileData,
   gamesInsightsRequest = 0,
 }) {
   const livePlayer = useMemo(() => {
     const players = Array.isArray(context?.players) ? context.players : []
     return players.find((p) => p?.id === entity?.id) || entity || null
   }, [context?.players, entity])
+
+  const liveTeam = useMemo(() => {
+    return context?.team || profileData?.entity?.team || livePlayer?.team || null
+  }, [context?.team, profileData?.entity?.team, livePlayer])
+
+  const playerScoring = useMemo(() => {
+    return (
+      profileData?.playerScoring ||
+      profileData?.scoring?.player ||
+      null
+    )
+  }, [profileData])
 
   const initialFilters = useMemo(() => createInitialPlayerGamesFilters(), [])
 
@@ -57,8 +70,10 @@ export default function PlayerGamesModule({
   const domain = useMemo(() => {
     return resolvePlayerGamesFiltersDomain(livePlayer, filters, {
       seasonStartYear: 2025,
+      scoring: playerScoring,
+      profileData,
     })
-  }, [livePlayer, filters])
+  }, [livePlayer, filters, playerScoring, profileData])
 
   const { summary, games, options, indicators } = domain || {}
 
@@ -91,8 +106,7 @@ export default function PlayerGamesModule({
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
   const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
-  //console.log('games', games.map(i=>i.goals))
-  //console.log('calculationGames', calculationGames.map(i=>i.goals))
+
   return (
     <>
       <SectionPanel>
@@ -135,6 +149,8 @@ export default function PlayerGamesModule({
         ) : (
           <PlayerGamesList
             rows={sortedGames}
+            player={livePlayer}
+            scoring={playerScoring}
             onEditEntryGame={(game) => setEditingEntryGame(game || null)}
           />
         )}
@@ -154,6 +170,9 @@ export default function PlayerGamesModule({
         summary={summary}
         games={calculationGames}
         player={livePlayer}
+        team={liveTeam}
+        scoring={playerScoring}
+        profileData={profileData}
       />
     </>
   )

@@ -6,17 +6,11 @@ export const safeArr = (value) => {
   return Array.isArray(value) ? value.filter(Boolean) : []
 }
 
-export const isSelectedPosition = ({
-  positions = [],
-  code,
-}) => {
+export const isSelectedPosition = ({ positions = [], code }) => {
   return safeArr(positions).includes(code)
 }
 
-export const resolveActivePrimary = ({
-  positions = [],
-  primaryPosition = '',
-}) => {
+export const resolveActivePrimary = ({ positions = [], primaryPosition = '' }) => {
   const safePositions = safeArr(positions)
 
   if (primaryPosition && safePositions.includes(primaryPosition)) {
@@ -26,11 +20,7 @@ export const resolveActivePrimary = ({
   return ''
 }
 
-export const resolveNextPrimaryAfterRemove = ({
-  nextPositions = [],
-  currentPrimary = '',
-  removedCode = '',
-}) => {
+export const resolveNextPrimaryAfterRemove = ({ nextPositions = [], currentPrimary = '', removedCode = '' }) => {
   const safePositions = safeArr(nextPositions)
 
   if (!safePositions.length) return ''
@@ -46,10 +36,7 @@ export const resolveNextPrimaryAfterRemove = ({
   return ''
 }
 
-export const canAddPosition = ({
-  positions = [],
-  max = MAX_POSITIONS,
-}) => {
+export const canAddPosition = ({ positions = [], max = MAX_POSITIONS }) => {
   return safeArr(positions).length < max
 }
 
@@ -87,11 +74,7 @@ export const buildAddPositionChange = ({
   }
 }
 
-export const buildRemovePositionChange = ({
-  positions = [],
-  code,
-  primaryPosition = '',
-}) => {
+export const buildRemovePositionChange = ({ positions = [], code, primaryPosition = '' }) => {
   const nextPositions = safeArr(positions).filter((item) => item !== code)
 
   return {
@@ -104,10 +87,7 @@ export const buildRemovePositionChange = ({
   }
 }
 
-export const buildPrimaryPositionChange = ({
-  positions = [],
-  code,
-}) => {
+export const buildPrimaryPositionChange = ({ positions = [], code }) => {
   const safePositions = safeArr(positions)
 
   if (!safePositions.includes(code)) {
@@ -117,11 +97,7 @@ export const buildPrimaryPositionChange = ({
   return code
 }
 
-export const getPositionMode = ({
-  positions = [],
-  code,
-  activePrimary = '',
-}) => {
+export const getPositionMode = ({ positions = [], code, activePrimary = '' }) => {
   const selected = safeArr(positions).includes(code)
 
   if (!selected) return 'idle'

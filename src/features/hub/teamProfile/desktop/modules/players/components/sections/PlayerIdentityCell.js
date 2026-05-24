@@ -1,14 +1,24 @@
 // teamProfile/desktop/modules/players/components/sections/PlayerIdentityCell.js
 
 import React from 'react'
-import { Avatar, Box, Typography } from '@mui/joy'
+import { Avatar, Box, Typography, Button } from '@mui/joy'
+import { useNavigate } from 'react-router-dom'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 import { identitySx as sx } from './sx/identity.sx.js'
 
 export default function PlayerIdentityCell({ row, onAvatarClick }) {
+  const navigate = useNavigate()
   const clickableAvatar = typeof onAvatarClick === 'function'
+  const playerId = row?.id || row?.playerId || ''
+
+  const goToPlayer = (event) => {
+    event.stopPropagation()
+    if (!playerId) return
+
+    navigate(`/players/${playerId}`)
+  }
 
   return (
     <Box sx={sx.root}>
@@ -41,13 +51,27 @@ export default function PlayerIdentityCell({ row, onAvatarClick }) {
       </Box>
 
       <Box sx={sx.text}>
-        <Typography
-          level="title-sm"
-          sx={sx.name}
-          title={row?.playerFullName}
-        >
-          {row?.playerFullName || 'שם שחקן'}
-        </Typography>
+        <Button
+          size="sm"
+          variant="plain"
+          color="neutral"
+          disabled={!playerId}
+          onClick={goToPlayer}
+          sx={{
+            minHeight: 20,
+            px: 0.5,
+            py: 0,
+            justifyContent: 'flex-start',
+            fontWeight: 700,
+            color: 'text.primary',
+            '&:hover': {
+              bgcolor: 'transparent',
+              color: 'primary.plainColor',
+            },
+          }}
+         >
+           {row?.playerFullName || 'שם שחקן'}
+          </Button>
 
         <Typography level="body-xs" sx={sx.meta}>
           {row?.birthLabel || '2010'} · גיל {Number.isFinite(row?.age) ? row.age : '16'}

@@ -8,8 +8,47 @@ import {
 } from './cards.shared.js'
 
 import {
+  formatLtr,
+} from '../../../../../../../shared/format/index.js'
+
+import {
   buildSummaryTooltip,
 } from '../tooltips/index.js'
+
+const hasValue = value => {
+  return value !== undefined && value !== null && value !== ''
+}
+
+const formatSigned = (value, digits = 2) => {
+  const number = Number(value)
+
+  if (!Number.isFinite(number)) return '—'
+  if (number > 0) return formatLtr(`+${formatNumber(number, digits)}`)
+  if (number < 0) return formatLtr(formatNumber(number, digits))
+
+  return formatLtr('0')
+}
+
+const resolveRatingColor = value => {
+  const rating = Number(value)
+
+  if (!Number.isFinite(rating)) return 'neutral'
+  if (rating >= 6.25) return 'success'
+  if (rating >= 6) return 'primary'
+  if (rating >= 5.85) return 'warning'
+
+  return 'danger'
+}
+
+const resolveImpactColor = value => {
+  const impact = Number(value)
+
+  if (!Number.isFinite(impact)) return 'neutral'
+  if (impact > 0) return 'success'
+  if (impact < 0) return 'danger'
+
+  return 'neutral'
+}
 
 const withTooltip = ({ item, games, targets }) => {
   return {
@@ -22,6 +61,76 @@ const withTooltip = ({ item, games, targets }) => {
   }
 }
 
+const resolveScoringSummary = games => {
+  return (
+    games?.scoring?.summary ||
+    games?.scoringSummary ||
+    {}
+  )
+}
+
+const resolveScoringValue = ({ summary, games, keys, fallback = null }) => {
+  const list = Array.isArray(keys) ? keys : [keys]
+
+  for (const key of list) {
+    if (hasValue(summary?.[key])) return summary[key]
+    if (hasValue(games?.[key])) return games[key]
+  }
+
+  return fallback
+}
+
+const buildScoringStats = ({ games, scoringSummary }) => {
+  const rating = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['avgRating', 'rating', 'ratingRaw'],
+  })
+
+  const impact = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['tva', 'cumulativeImpact', 'totalImpact'],
+  })
+
+  const minutes = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['totalMinutes'],
+    fallback: games?.usage?.minutesPlayed,
+  })
+
+  const goals = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['goals'],
+    fallback: games?.scoring?.goals,
+  })
+
+  const assists = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['assists'],
+    fallback: games?.scoring?.assists,
+  })
+
+  const involvement = resolveScoringValue({
+    summary: scoringSummary,
+    games,
+    keys: ['involvement', 'goalContributions'],
+    fallback: toNum(goals, 0) + toNum(assists, 0),
+  })
+
+  return {
+    rating,
+    impact,
+    minutes,
+    goals,
+    assists,
+    involvement,
+  }
+}
+
 export const buildPlayerGamesTopStats = ({ games = {}, targets = {} } = {}) => {
   const usage = games?.usage || {}
   const scoring = games?.scoring || {}
@@ -31,16 +140,55 @@ export const buildPlayerGamesTopStats = ({ games = {}, targets = {} } = {}) => {
   const role = targets?.role || {}
   const position = targets?.position || {}
 
+  const scoringSummary = resolveScoringSummary(games)
+
+  const {
+    rating,
+    impact,
+    minutes,
+    goals,
+    assists,
+    involvement,
+  } = buildScoringStats({
+    games,
+    scoringSummary,
+  })
+
   const items = [
     {
-      id: 'minutesPct',
-      title: 'אחוז דקות',
-      value: formatPercent(usage?.minutesPct),
-      sub: `${formatNumber(usage?.minutesPlayed)} דקות משחק מתוך ${formatNumber(
-        usage?.minutesPossible
-      )}`,
+      id: 'efficiencyRating',
+      title: 'מדד יעילות',
+      value: formatNumber(rating, 2),
+      sub: 'ממוצע משחקים מדורגים',
+      icon: 'scoringRating',
+      color: resolveRatingColor(rating),
+      level: 'high',
+    },
+    {
+      id: 'tva',
+      title: 'מדד השפעה',
+      value: formatSigned(impact, 2),
+      sub: 'השפעה מצטברת',
+      icon: 'scoringImpact',
+      color: resolveImpactColor(impact),
+      level: 'high',
+    },
+    {
+      id: 'minutes',
+      title: 'דקות',
+      value: formatNumber(minutes),
+      sub: `${formatPercent(usage?.minutesPct)} מסך דקות הקבוצה`,
       icon: 'time',
       color: resolvePctColor(usage?.minutesPct),
+      level: 'medium',
+    },
+    {
+      id: 'goalContributions',
+      title: 'מעורבות שערים',
+      value: formatNumber(involvement),
+      sub: `${formatNumber(goals)} שערים · ${formatNumber(assists)} בישולים`,
+      icon: 'goals',
+      color: toNum(involvement) > 0 ? 'success' : 'neutral',
       level: 'medium',
     },
     {
@@ -52,17 +200,6 @@ export const buildPlayerGamesTopStats = ({ games = {}, targets = {} } = {}) => {
       )} משחקים`,
       icon: 'isStart',
       color: resolvePctColor(usage?.startsPctFromTeamGames),
-      level: 'medium',
-    },
-    {
-      id: 'goalContributions',
-      title: 'מעורבות שערים',
-      value: formatNumber(scoring?.goalContributions),
-      sub: `${formatNumber(scoring?.goals)} שערים · ${formatNumber(
-        scoring?.assists
-      )} בישולים`,
-      icon: 'goals',
-      color: toNum(scoring?.goalContributions) > 0 ? 'success' : 'neutral',
       level: 'medium',
     },
     {

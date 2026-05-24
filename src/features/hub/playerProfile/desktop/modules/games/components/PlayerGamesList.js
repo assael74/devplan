@@ -8,6 +8,8 @@ import { listSx as sx } from '../sx/list.sx.js'
 
 export default function PlayerGamesList({
   rows,
+  player,
+  scoring,
   onEditGame,
   onEditEntryGame,
 }) {
@@ -28,6 +30,8 @@ export default function PlayerGamesList({
         <PlayerGameRow
           key={row.id}
           game={row}
+          player={player}
+          scoring={scoring}
           onEdit={onEditGame}
           onEditEntry={onEditEntryGame}
         />

@@ -1,22 +1,21 @@
 // clubProfile/desktop/modules/players/components/ClubPlayerRow.js
 
 import React from 'react'
-import { Box, Chip, Divider, IconButton, Tooltip, Typography } from '@mui/joy'
-import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
+import { Box, Chip, Divider, Typography } from '@mui/joy'
 
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 import InfoSection from './sections/InfoSection.js'
 import PositionsSection from './sections/PositionsSection.js'
+import PerformanceSection from './sections/PerformanceSection.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
 const c = getEntityColors('players')
 
-export default function ClubPlayerRow({ row }) {
+export default function ClubPlayerRow({ row, performance, onEditPosition }) {
   const chip = row?.projectChipMeta || {
     labelH: 'כללי',
     idIcon: 'noneType',
@@ -48,7 +47,11 @@ export default function ClubPlayerRow({ row }) {
 
       <Divider orientation="vertical" />
 
-      <PositionsSection row={row} />
+      <PositionsSection row={row} onEditPosition={onEditPosition} />
+
+      <Divider orientation="vertical" />
+
+      <PerformanceSection row={row} performance={performance} />
 
       <Divider orientation="vertical" />
 
@@ -67,7 +70,10 @@ export default function ClubPlayerRow({ row }) {
           size="sm"
           variant="soft"
           color={chip.tone === 'custom' ? 'neutral' : chip.tone}
-          startDecorator={iconUi({ id: chip.idIcon, sx: chip.textColor ? { color: chip.textColor } : undefined, })}
+          startDecorator={iconUi({
+            id: chip.idIcon,
+            sx: chip.textColor ? { color: chip.textColor } : undefined,
+          })}
           sx={chipSx}
         >
           {chip.labelH}

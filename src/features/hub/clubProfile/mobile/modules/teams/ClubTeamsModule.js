@@ -24,6 +24,7 @@ export default function ClubTeamsModule({
   entity,
   onOpenTeam,
   context,
+  profileData,
   teamsInsightsOpen,
   setTeamsInsightsOpen,
   teamsInsightsRequest = 0,
@@ -42,8 +43,12 @@ export default function ClubTeamsModule({
   })
 
   const { rows, summary } = useMemo(() => {
-    return buildClubTeamRows({ club: liveClub })
-  }, [liveClub])
+    return buildClubTeamRows({
+      club: liveClub,
+      teams: profileData?.teams || [],
+      profileData,
+    })
+  }, [liveClub, profileData])
 
   const filteredRows = useMemo(() => {
     const filtered = applyClubTeamsFilters(rows, filters)
@@ -91,6 +96,7 @@ export default function ClubTeamsModule({
       ) : (
         <ClubTeamsList
           rows={filteredRows}
+          profileData={profileData}
           onOpenTeam={onOpenTeam}
           onEditTeam={(row) => setEditingTeam(row?.team || row || null)}
         />

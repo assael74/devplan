@@ -32,7 +32,7 @@ export const gamesSelectSx = {
 
   rowRoot: (isDisabled = false) => ({
     px: 0.75,
-    py: 0.75,
+    py: 0.3,
     display: 'grid',
     gap: 0.5,
     width: '100%',
@@ -97,7 +97,7 @@ export const gamesSelectSx = {
     maxWidth: '100%',
     display: 'grid',
     gap: 0.25,
-    py: 0.25,
+    py: 0,
     overflow: 'hidden',
   },
 

@@ -15,13 +15,31 @@ import {
 const emptyArray = []
 const emptyObject = {}
 
-const buildEmptyModel = ({ player, team, isBuilding = false } = {}) => {
+const resolveScoring = ({ scoring, profileData }) => {
+  return (
+    scoring ||
+    profileData?.playerScoring ||
+    profileData?.scoring?.player ||
+    null
+  )
+}
+
+const buildEmptyModel = ({
+  player,
+  team,
+  scoring,
+  profileData,
+  isBuilding = false,
+} = {}) => {
   const livePlayer = player || emptyObject
   const liveTeam = team || livePlayer?.team || emptyObject
+  const liveScoring = resolveScoring({ scoring, profileData })
 
   return {
     livePlayer,
     liveTeam,
+    scoring: liveScoring,
+    profileData: profileData || null,
 
     insights: null,
     viewModel: null,
@@ -49,6 +67,8 @@ export function usePlayerGamesInsightsModel({
   games,
   player,
   team,
+  scoring,
+  profileData,
   enabled = true,
   defer = true,
 } = {}) {
@@ -87,6 +107,13 @@ export function usePlayerGamesInsightsModel({
   const livePlayer = player || emptyObject
   const liveTeam = team || livePlayer?.team || emptyObject
 
+  const liveScoring = useMemo(() => {
+    return resolveScoring({
+      scoring,
+      profileData,
+    })
+  }, [scoring, profileData])
+
   const shouldBuild = enabled && canBuild
 
   const insights = useMemo(() => {
@@ -97,6 +124,7 @@ export function usePlayerGamesInsightsModel({
       team: liveTeam,
       rows: safeGames,
       normalizeRow,
+      scoring: liveScoring,
     })
   }, [
     shouldBuild,
@@ -104,6 +132,7 @@ export function usePlayerGamesInsightsModel({
     livePlayer,
     liveTeam,
     normalizeRow,
+    liveScoring,
   ])
 
   const viewModel = useMemo(() => {
@@ -113,18 +142,24 @@ export function usePlayerGamesInsightsModel({
       ...insights,
       player: livePlayer,
       team: liveTeam,
+      scoring: liveScoring,
+      profileData,
     })
   }, [
     shouldBuild,
     insights,
     livePlayer,
     liveTeam,
+    liveScoring,
+    profileData,
   ])
 
   if (!shouldBuild || !viewModel) {
     return buildEmptyModel({
       player: livePlayer,
       team: liveTeam,
+      scoring: liveScoring,
+      profileData,
       isBuilding: enabled,
     })
   }
@@ -132,6 +167,9 @@ export function usePlayerGamesInsightsModel({
   return {
     livePlayer,
     liveTeam,
+    scoring: liveScoring,
+    profileData: profileData || null,
+
     insights,
     viewModel,
 

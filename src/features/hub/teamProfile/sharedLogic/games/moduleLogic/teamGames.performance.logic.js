@@ -1,13 +1,13 @@
 // teamProfile/sharedLogic/games/moduleLogic/teamGames.performance.logic.js
 
+import {
+  formatLtr,
+} from '../../../../../../shared/format/index.js'
+
 const emptyArray = []
 const BELOW_EXPECTATION_LIMIT = 5.95
 
-const LRM = '\u200E'
-
-export const formatGamePerfLtr = value => {
-  return `${LRM}${value}`
-}
+export const formatGamePerfLtr = formatLtr
 
 export const toGamePerfNumber = (value, fallback = 0) => {
   if (value === null || value === undefined || value === '') {

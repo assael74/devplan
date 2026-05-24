@@ -31,19 +31,17 @@ const formatPct = (value) => {
   return `${Math.round(n)}%`
 }
 
-const formatRange = (range = {}) => {
+const emptyRangeText = 'לא הוגדר טווח'
+
+const formatRange = (range) => {
+  if (!range || typeof range !== 'object') return emptyRangeText
+
   const min = Number(range.min)
   const max = Number(range.max)
 
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return 'לא הוגדר טווח'
-  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return emptyRangeText
 
-  if (max >= 100) {
-    return `${min}%+`
-  }
-
-  return `${min}%–${max}%`
+  return max >= 100 ? `${min}%+` : `${min}%–${max}%`
 }
 
 const getRoleValue = (role = {}) => {

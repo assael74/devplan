@@ -7,6 +7,7 @@ export default function ClubModules({
   entity,
   context,
   tab,
+  profileData,
   modulesMap = {},
   teamsInsightsRequest = 0,
   playersInsightsRequest = 0,
@@ -16,6 +17,7 @@ export default function ClubModules({
       entity={entity}
       context={context}
       tab={tab}
+      profileData={profileData}
       modulesMap={modulesMap}
       teamsInsightsRequest={teamsInsightsRequest}
       playersInsightsRequest={playersInsightsRequest}

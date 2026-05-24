@@ -15,6 +15,94 @@ import {
   buildPlayerMainDiagnosisViewModel,
 } from '../diagnosis/index.js'
 
+const emptyObject = {}
+
+const buildScoringGamesSnapshot = ({ games, scoring }) => {
+  if (!scoring) return games
+
+  const summary = scoring?.summary || emptyObject
+  const rows = Array.isArray(scoring?.rows) ? scoring.rows : []
+
+  return {
+    ...(games || {}),
+
+    scoring,
+
+    rows,
+    points: scoring?.points || rows,
+    byGameId: scoring?.byGameId || {},
+
+    rating:
+      summary?.avgRating ??
+      summary?.rating ??
+      games?.rating ??
+      null,
+
+    ratingRaw:
+      summary?.ratingRaw ??
+      summary?.avgRating ??
+      games?.ratingRaw ??
+      null,
+
+    avgRating:
+      summary?.avgRating ??
+      games?.avgRating ??
+      null,
+
+    totalImpact:
+      summary?.totalImpact ??
+      games?.totalImpact ??
+      null,
+
+    cumulativeImpact:
+      summary?.cumulativeImpact ??
+      summary?.totalImpact ??
+      games?.cumulativeImpact ??
+      null,
+
+    tva:
+      summary?.tva ??
+      summary?.totalImpact ??
+      games?.tva ??
+      null,
+
+    totalMinutes:
+      summary?.totalMinutes ??
+      games?.totalMinutes ??
+      null,
+
+    goals:
+      summary?.goals ??
+      games?.goals ??
+      0,
+
+    assists:
+      summary?.assists ??
+      games?.assists ??
+      0,
+
+    involvement:
+      summary?.involvement ??
+      games?.involvement ??
+      0,
+
+    ratedGames:
+      summary?.ratedGames ??
+      summary?.ratedScores ??
+      games?.ratedGames ??
+      null,
+
+    isReady: true,
+
+    meta: {
+      ...(games?.meta || {}),
+      scoringSource: scoring?.meta?.source || '',
+      scoringReady: scoring?.meta?.ready === true,
+      scoringRows: rows.length,
+    },
+  }
+}
+
 export const buildPlayerGamesDrawerViewModel = (insights = {}) => {
   const context = resolvePlayerGamesDrawerContext(insights)
   const mainDiagnosis = buildPlayerMainDiagnosisViewModel(insights)
@@ -25,11 +113,13 @@ export const buildPlayerGamesDrawerViewModel = (insights = {}) => {
     readiness,
     blocking,
     targets,
+    scoring,
   } = context
 
   const gamesReady = resolvePlayerGamesReady({
     readiness,
     games,
+    scoring,
   })
 
   const teamContextReady = resolvePlayerTeamContextReady({
@@ -37,14 +127,23 @@ export const buildPlayerGamesDrawerViewModel = (insights = {}) => {
     teamContext,
   })
 
-  const safeGames = gamesReady ? games : {}
+  const safeGames = gamesReady
+    ? buildScoringGamesSnapshot({
+        games,
+        scoring,
+      })
+    : {}
 
   const topStats = buildPlayerGamesTopStats({
     games: safeGames,
     targets,
   })
 
-  const briefCards = buildPlayerBriefCards(insights)
+  const briefCards = buildPlayerBriefCards({
+    ...insights,
+    games: safeGames,
+    scoring,
+  })
 
   return {
     context,
@@ -53,6 +152,8 @@ export const buildPlayerGamesDrawerViewModel = (insights = {}) => {
 
     gamesReady,
     teamContextReady,
+
+    scoring,
 
     topStats,
     briefCards,

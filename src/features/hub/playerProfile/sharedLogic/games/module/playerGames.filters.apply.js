@@ -19,6 +19,7 @@ export const applyPlayerGamesFilters = (rows, filters) => {
     if (filters?.homeKey && game?.homeKey !== filters.homeKey) return false
     if (filters?.resultKey && game?.result !== filters.resultKey) return false
     if (filters?.difficultyKey && game?.difficulty !== filters.difficultyKey) return false
+    if (filters?.ratingKey && game?.ratingKey !== filters.ratingKey) return false
     return true
   })
 }

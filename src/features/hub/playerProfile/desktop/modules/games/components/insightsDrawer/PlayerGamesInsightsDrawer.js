@@ -8,10 +8,13 @@ import {
 } from '../../../../../../../../ui/patterns/insights/index.js'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
+import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 import {
   PlayerGamesInsightsContent,
 } from '../../../../../sharedUi/insights/playerGames/index.js'
+
+const c = getEntityColors('players')
 
 const resolvePlayerGamesRows = ({ games, player }) => {
   if (Array.isArray(games)) return games
@@ -28,6 +31,8 @@ export default function PlayerGamesInsightsDrawer({
   player,
   entity,
   team,
+  scoring,
+  profileData
 }) {
   const livePlayer = player || entity || {}
   const liveTeam = team || livePlayer?.team || {}
@@ -51,6 +56,7 @@ export default function PlayerGamesInsightsDrawer({
       header={
         <InsightsDrawerHeader
           title={title}
+          colorSx={{ bgcolor: c.bg }}
           subtitle="תובנות משחקי שחקן"
           avatarSrc={livePlayer?.photo || playerImage}
         />
@@ -58,6 +64,8 @@ export default function PlayerGamesInsightsDrawer({
     >
       <PlayerGamesInsightsContent
         games={rows}
+        scoring={scoring}
+        profileData={profileData}
         player={livePlayer}
         team={liveTeam}
       />

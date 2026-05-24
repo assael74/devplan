@@ -1,4 +1,4 @@
-// features/hub/clubProfile/sharedUi/PlayerModules.js
+// features/hub/playerProfile/sharedUi/PlayerModules.js
 
 import React from 'react'
 import ProfileModuleRenderer from '../../sharedProfile/ProfileModuleRenderer'
@@ -6,6 +6,7 @@ import ProfileModuleRenderer from '../../sharedProfile/ProfileModuleRenderer'
 export default function PlayerModules({
   entity,
   context,
+  profileData,
   tab,
   modulesMap = {},
   meetingsInsightsRequest = 0,
@@ -20,6 +21,7 @@ export default function PlayerModules({
     <ProfileModuleRenderer
       entity={entity}
       context={context}
+      profileData={profileData}
       tab={tab}
       modulesMap={modulesMap}
       meetingsInsightsRequest={meetingsInsightsRequest}

@@ -36,10 +36,7 @@ export default function PlayerPositionsSelect({
     primaryPosition,
   })
 
-  const emitChange = ({
-    nextPositions,
-    nextPrimary,
-  }) => {
+  const emitChange = ({ nextPositions, nextPrimary, }) => {
     onChange?.(safeArr(nextPositions))
     onPrimaryPositionChange(nextPrimary || '')
   }

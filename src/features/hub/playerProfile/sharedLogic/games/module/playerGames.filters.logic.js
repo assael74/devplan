@@ -1,15 +1,18 @@
 // playerProfile/sharedLogic/games/module/playerGames.filters.logic.js
 
 import { createGameRowNormalizer } from '../../../../../../shared/games/games.normalize.logic.js'
-import { createInitialPlayerGamesFilters as createInitialFilters } from './playerGames.filters.constants.js'
+
 import {
   applyPlayerGamesFilters,
   buildPlayerGamesSummary,
 } from './playerGames.filters.apply.js'
+
 import {
   buildPlayerGamesOptions,
   buildPlayerGamesIndicators,
 } from './playerGames.filters.options.js'
+
+const EXPECTATION_BASELINE = 6
 
 const normalize = createGameRowNormalizer({})
 
@@ -31,6 +34,37 @@ const pickTeamScore = (row) => {
 
 const pickRivalScore = (row) => {
   return safeNumberOrNull(row?.goalsAgainst)
+}
+
+const getGameId = row => {
+  return String(
+    row?.gameId ||
+      row?.id ||
+      row?.game?.id ||
+      row?.game?.gameId ||
+      ''
+  ).trim()
+}
+
+const resolveScoreRow = ({ row, scoring }) => {
+  const gameId = getGameId(row)
+
+  return gameId
+    ? scoring?.byGameId?.[gameId] || null
+    : null
+}
+
+const resolveRatingKey = scoreRow => {
+  const value = Number(
+    scoreRow?.ratingRaw ??
+      scoreRow?.rating
+  )
+
+  if (!Number.isFinite(value)) return ''
+
+  return value >= EXPECTATION_BASELINE
+    ? 'positive'
+    : 'negative'
 }
 
 const buildDisplayMeta = (row, player) => {
@@ -70,18 +104,29 @@ const buildDisplayMeta = (row, player) => {
   }
 }
 
-const normalizePlayerGameRow = (rawGame, player) => {
+const normalizePlayerGameRow = (rawGame, player, scoring) => {
   const normalizedGame = normalize(rawGame || {})
   const personal = rawGame?.playerGame || {}
   const isSelected = personal?.isSelected || personal?.onSquad
   const isStarting = personal?.isStarting || personal?.onStart
   const gameLeagueNum = rawGame?.gameLeagueNum || 0
 
+  const scoreRow = resolveScoreRow({
+    row: rawGame,
+    scoring,
+  })
+
   const baseRow = {
     ...normalizedGame,
     rawGame: rawGame || null,
     player: player || null,
     team: normalizedGame?.team || rawGame?.team || player?.team || null,
+
+    scoreRow,
+    rating: scoreRow?.ratingRaw ?? scoreRow?.rating ?? null,
+    impactDelta: scoreRow?.impactDelta ?? null,
+    cumulativeImpact: scoreRow?.cumulativeImpact ?? scoreRow?.tva ?? null,
+    ratingKey: resolveRatingKey(scoreRow),
 
     playerGame: personal,
 
@@ -102,12 +147,19 @@ const normalizePlayerGameRow = (rawGame, player) => {
   }
 }
 
-export const createInitialPlayerGamesFilters = () => createInitialFilters()
-
-export const resolvePlayerGamesFiltersDomain = (player, filters) => {
+export const resolvePlayerGamesFiltersDomain = (player, filters, context = {}) => {
   const raw = safeArray(player?.playerGames)
 
-  const enriched = raw.map((game) => normalizePlayerGameRow(game, player))
+  const scoring =
+    context?.scoring ||
+    context?.profileData?.playerScoring ||
+    context?.profileData?.scoring?.player ||
+    null
+
+  const enriched = raw.map(game => {
+    return normalizePlayerGameRow(game, player, scoring)
+  })
+
   const filtered = applyPlayerGamesFilters(enriched, filters)
 
   return {

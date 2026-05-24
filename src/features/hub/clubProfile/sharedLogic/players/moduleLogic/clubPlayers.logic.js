@@ -210,7 +210,15 @@ export const normalizeClubPlayerRow = (raw, club) => {
   return {
     id,
     playerId: id,
+
+    player: p,
+    raw: r,
+
     fullName,
+    playerFullName: fullName,
+
+    team: p?.team || r?.team || null,
+    teamId: norm(r?.teamId || p?.teamId || p?.team?.id || p?.team?.teamId || ''),
     teamName,
     photo: p?.photo || r?.photo || null,
     active,
@@ -244,7 +252,59 @@ export const normalizeClubPlayerRow = (raw, club) => {
       projectChipLabel: projectChipMeta?.labelH || '',
       squadRoleLabel,
     }),
-    raw: r,
-    player: p,
+  }
+}
+
+const buildRowsSummary = rows => {
+  return {
+    total: rows.length,
+    active: rows.filter(row => row?.active !== false).length,
+    inactive: rows.filter(row => row?.active === false).length,
+    key: rows.filter(row => row?.isKey).length,
+    project: rows.filter(row => row?.isProject).length,
+  }
+}
+
+const sortClubPlayerRows = rows => {
+  return [...rows].sort((a, b) => {
+    const activeDiff =
+      Number(b?.active !== false) -
+      Number(a?.active !== false)
+
+    if (activeDiff !== 0) return activeDiff
+
+    const keyDiff =
+      Number(b?.isKey) -
+      Number(a?.isKey)
+
+    if (keyDiff !== 0) return keyDiff
+
+    return norm(a?.fullName).localeCompare(norm(b?.fullName), 'he')
+  })
+}
+
+const buildRowsById = rows => {
+  return rows.reduce((acc, row) => {
+    if (row?.playerId) {
+      acc[row.playerId] = row
+    }
+
+    return acc
+  }, {})
+}
+
+export const buildClubPlayerRows = ({ club, players = [] } = {}) => {
+  const safePlayers = Array.isArray(players) ? players : []
+
+  const rows = sortClubPlayerRows(
+    safePlayers.map(player => {
+      return normalizeClubPlayerRow(player, club)
+    })
+  )
+
+  return {
+    rows,
+    byId: buildRowsById(rows),
+    summary: buildRowsSummary(rows),
   }
 }

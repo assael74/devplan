@@ -55,6 +55,7 @@ export default function SideNav({ onNavigate, badges, collapsed = false }) {
         items: [
           { label: 'שולחן עבודה אישי', path: '/home', iconId: 'workspace' },
           { label: 'מרכז שליטה', path: '/hub', iconId: 'dashboard' },
+          { label: 'מערכת תיוגים', path: '/liveTagging', iconId: 'liveTagging', disabled: false },
         ],
       },
       {

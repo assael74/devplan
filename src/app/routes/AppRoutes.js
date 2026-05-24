@@ -27,6 +27,8 @@ import AbilitiesExplainerPage from '../../features/abilities/explainer/Abilities
 import LoginPage from '../../features/auth/pages/LoginPage'
 import ForgotPasswordPage from '../../features/auth/pages/ForgotPasswordPage'
 
+import { LiveTaggingPanel } from '../../features/liveTagging/index.js'
+
 import NotificationsBell from '../../features/notifications/components/NotificationsBell'
 import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
 
@@ -158,6 +160,8 @@ export default function AppRoutes() {
           <Route path="/calendar" element={<CalendarHubPage />} />
           <Route path="/video" element={<VideoHubPage />} />
           <Route path="/tags" element={<TagsManagementPage />} />
+
+          <Route path="/liveTagging" element={<LiveTaggingPanel /> } />
 
           <Route path="/abilities/explainer" element={<AbilitiesExplainerPage />} />
           <Route path="/insights/explainer" element={<InsightsPage />} />

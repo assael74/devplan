@@ -1,22 +1,23 @@
-// clubProfile/desktopmodules/teams/components/ClubTeamRow.js
+// clubProfile/desktop/modules/teams/components/ClubTeamRow.js
 
 import React from 'react'
 import { Box, Chip, Divider, IconButton, Tooltip, Typography } from '@mui/joy'
-import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 import InfoSection from './sections/InfoSection.js'
+import LeagueSection from './sections/LeagueSection.js'
+import PerformanceSection from './sections/PerformanceSection.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
 const c = getEntityColors('teams')
 
-export default function ClubTeamRow({ row, onEdit }) {
+export default function ClubTeamRow({ row, onEdit, performance }) {
   const team = row
+
   const chip = row?.projectChipMeta || {
     labelH: 'כללי',
     idIcon: 'noneType',
@@ -39,6 +40,17 @@ export default function ClubTeamRow({ row, onEdit }) {
     if (onEdit) onEdit(team)
   }
 
+  console.log('[team-row-1]', {
+  rowId: row?.id,
+  rowTeamId: row?.teamId,
+  rowName: row?.teamName,
+  hasPerformance: !!performance,
+  performanceKeys: Object.keys(performance || {}),
+  summary: performance?.summary,
+  scoringSummary: performance?.scoring?.summary,
+  meta: performance?.meta,
+})
+
   return (
     <Box
       sx={[
@@ -49,6 +61,14 @@ export default function ClubTeamRow({ row, onEdit }) {
       ]}
     >
       <InfoSection row={row} />
+
+      <Divider orientation="vertical" />
+
+      <LeagueSection row={row} />
+
+      <Divider orientation="vertical" />
+
+      <PerformanceSection row={row} performance={performance} />
 
       <Divider orientation="vertical" />
 
@@ -67,7 +87,10 @@ export default function ClubTeamRow({ row, onEdit }) {
           size="sm"
           variant="soft"
           color={chip.tone === 'custom' ? 'neutral' : chip.tone}
-          startDecorator={iconUi({ id: chip.idIcon, sx: chip.textColor ? { color: chip.textColor } : undefined, })}
+          startDecorator={iconUi({
+            id: chip.idIcon,
+            sx: chip.textColor ? { color: chip.textColor } : undefined,
+          })}
           sx={chipSx}
         >
           {chip.labelH}

@@ -10,6 +10,7 @@ import {
   CLUB_PLAYERS_DEFAULT_FILTERS,
   filterClubPlayersRows,
   resolveClubPlayers,
+  buildClubPlayerRows,
   sortClubPlayersRows
 } from '../../../sharedLogic/players/index.js'
 
@@ -25,6 +26,7 @@ export default function ClubPlayersModule({
   entity,
   onOpenPlayer,
   context,
+  profileData,
   playersInsightsRequest = 0,
 }) {
   const liveClub = useMemo(() => {
@@ -47,8 +49,11 @@ export default function ClubPlayersModule({
   })
 
   const { rows, summary } = useMemo(() => {
-    return resolveClubPlayers(liveClub)
-  }, [liveClub])
+    return buildClubPlayerRows({
+      club: liveClub,
+      players: profileData?.players || [],
+    })
+  }, [liveClub, profileData])
 
   const filteredRows = useMemo(() => {
     const filtered = filterClubPlayersRows(rows, filters)
@@ -128,7 +133,10 @@ export default function ClubPlayersModule({
             subtitle="נסה לשנות פילטרים או לאפס את החיפוש"
           />
         ) : (
-          <ClubPlayersList rows={filteredRows} />
+          <ClubPlayersList
+            rows={filteredRows}
+            profileData={profileData}
+          />
         )}
       </SectionPanel>
 

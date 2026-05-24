@@ -89,55 +89,30 @@ function buildSearchText(row) {
   ].filter(Boolean).join(' '))
 }
 
-export function buildClubTeamRows({ club }) {
-  const teams = toArray(club?.teams)
+export const buildClubTeamRows = ({
+  club,
+  teams = [],
+} = {}) => {
+  const sourceTeams = Array.isArray(teams) && teams.length
+    ? teams
+    : Array.isArray(club?.teams)
+      ? club.teams
+      : []
 
-  const rows = teams
-    .map((team) => {
-      const id = getTeamId(team)
-      if (!id) return null
+  const rows = sourceTeams.map(team => {
+    return {
+      ...team,
+      id: team?.id || team?.teamId,
+      teamId: team?.teamId || team?.id,
+    }
+  })
 
-      const playersCount = countPlayersForTeam(team)
-      const keyPlayersCount = countKeyPlayersForTeam(team, club)
-      const isProject = getIsProjectTeam(team, club)
-
-      const row = {
-        id,
-        teamId: id,
-
-        teamName: norm(team?.teamName || team?.name) || '—',
-        teamYear: norm(team?.teamYear || team?.year) || '—',
-        active: team?.active == null ? true : team.active === true,
-
-        league: norm(team?.league || team?.leagueName) || '',
-        leagueLevel: team?.leagueLevel ?? null,
-        leaguePosition: team?.leaguePosition ?? null,
-        points: team?.points ?? null,
-        leagueGoalsFor: team?.leagueGoalsFor ?? null,
-        leagueGoalsAgainst: team?.leagueGoalsAgainst ?? null,
-
-        playersCount,
-        keyPlayersCount,
-        isProject,
-
-        raw: team,
-        team,
-      }
-
-      return {
-        ...row,
-        searchText: buildSearchText(row),
-      }
-    })
-    .filter(Boolean)
-
-  const summary = {
-    teamsTotal: rows.length,
-    activeTeamsTotal: rows.filter((row) => row.active === true).length,
-    projectTeamsTotal: rows.filter((row) => row.isProject === true).length,
-    playersTotal: rows.reduce((sum, row) => sum + (row.playersCount || 0), 0),
-    keyPlayersTotal: rows.reduce((sum, row) => sum + (row.keyPlayersCount || 0), 0),
+  return {
+    rows,
+    summary: {
+      total: rows.length,
+      active: rows.filter(row => row?.active !== false).length,
+      project: rows.filter(row => row?.type === 'project').length,
+    },
   }
-
-  return { rows, summary }
 }

@@ -5,6 +5,58 @@ import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 const c = getEntityColors('teams')
 
 export const listSx = {
+  performanceCol: {
+    display: 'grid',
+    gap: 0.25,
+    minWidth: 0,
+    width: 126,
+    flexShrink: 0,
+  },
+
+  performanceHead: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+    minWidth: 0,
+  },
+
+  performanceTitle: {
+    fontWeight: 700,
+    color: 'text.secondary',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+
+  performanceChip: {
+    minHeight: 20,
+    px: 0.65,
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+
+  performanceLine: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+    minWidth: 0,
+  },
+
+  performanceLabel: {
+    color: 'text.tertiary',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+
+  performanceValue: {
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  },
+  
   row: {
     display: 'flex',
     alignItems: 'center',

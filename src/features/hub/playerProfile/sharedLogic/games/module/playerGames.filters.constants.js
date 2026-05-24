@@ -13,6 +13,24 @@ export const PLAYER_GAMES_FILTER_KEYS = [
   'homeKey',
   'resultKey',
   'difficultyKey',
+  'ratingKey',
+]
+
+export const PLAYER_GAME_RATING = [
+  {
+    id: 'positive',
+    value: 'positive',
+    label: 'יעילות חיובית',
+    idIcon: 'scoringRating',
+    color: 'success',
+  },
+  {
+    id: 'negative',
+    value: 'negative',
+    label: 'יעילות שלילית',
+    idIcon: 'scoringRating',
+    color: 'danger',
+  },
 ]
 
 export const PLAYER_GAMES_OPTION_CONFIG = [
@@ -40,6 +58,12 @@ export const PLAYER_GAMES_OPTION_CONFIG = [
     getRowValue: (game) => game?.homeKey,
     hideEmpty: true,
   },
+  {
+    id: 'ratingOptions',
+    source: PLAYER_GAME_RATING,
+    getRowValue: game => game?.ratingKey,
+    hideEmpty: true,
+  },
 ]
 
 export const PLAYER_GAMES_INDICATOR_CONFIG = [
@@ -47,6 +71,7 @@ export const PLAYER_GAMES_INDICATOR_CONFIG = [
   { id: 'home', key: 'homeKey', source: GAME_HOME_AWAY, fallbackIcon: 'home' },
   { id: 'result', key: 'resultKey', source: GAME_RESULT, fallbackIcon: 'result' },
   { id: 'difficulty', key: 'difficultyKey', source: GAME_DIFFICULTY, fallbackIcon: 'difficulty' },
+  { id: 'rating', key: 'ratingKey', source: PLAYER_GAME_RATING, fallbackIcon: 'scoringRating' },
 ]
 
 export const createInitialPlayerGamesFilters = () => ({
@@ -55,4 +80,5 @@ export const createInitialPlayerGamesFilters = () => ({
   homeKey: '',
   resultKey: '',
   difficultyKey: '',
+  ratingKey: '',
 })

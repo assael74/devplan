@@ -1,9 +1,10 @@
 // src/features/hub/teamProfile/desktop/modules/games/components/details/GameRowDetails.js
 
 import React from 'react'
-import { Box, Divider, Typography } from '@mui/joy'
+import { Box, Divider, Typography, IconButton, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { detailsSx as sx } from './sx/details.sx.js'
 
 import PlayersPerformanceTable from './PlayersPerformanceTable.js'
@@ -15,7 +16,9 @@ import {
 } from '../../../../../sharedLogic/games/index.js'
 
 function MetricCard({
+  id,
   icon,
+  item,
   label,
   value,
   sub,
@@ -23,6 +26,8 @@ function MetricCard({
   onClick,
 }) {
   const isClickable = typeof onClick === 'function'
+  const isImage = id === 'best_player' || id === 'low_player'
+  const photo = isImage ? item?.photo || playerImage : ''
 
   return (
     <Box
@@ -39,18 +44,24 @@ function MetricCard({
       }}
     >
       <Box sx={sx.metricHead}>
-        <Box sx={sx.metricIconBox}>
-          {iconUi({ id: icon, size: 'lg' })}
-        </Box>
-
-        <Typography level="body-xs" sx={sx.metricLabel}>
+        <Typography level="body-xs" sx={sx.metricLabel} startDecorator={iconUi({ id: icon, size: 'lg' })}>
           {label}
         </Typography>
+
+        {isClickable ? (
+          <IconButton>{iconUi({ id: 'add', size: 'lg' })}</IconButton>
+        ) : null}
       </Box>
 
-      <Typography level="title-sm" sx={sx.metricValue}>
-        {value ?? '-'}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {isImage ? (
+          <Avatar src={photo} sx={{ width: 25, height: 25 }}/>
+        ) : null}
+
+        <Typography level="title-sm" sx={sx.metricValue}>
+          {value ?? '-'}
+        </Typography>
+      </Box>
 
       {sub ? (
         <Typography level="body-xs" sx={sx.metricSub}>
@@ -61,11 +72,7 @@ function MetricCard({
   )
 }
 
-function DetailsMetrics({
-  model,
-  teamTrendOpen,
-  onToggleTeamTrend,
-}) {
+function DetailsMetrics({ model, teamTrendOpen, onToggleTeamTrend }) {
   const {
     bestRow,
     lowRow,
@@ -75,15 +82,17 @@ function DetailsMetrics({
   return (
     <Box sx={sx.metricsGrid}>
       <MetricCard
+        id='team_scoring_Rating'
         icon="scoringRating"
-        label="מדד יעילות"
+        label="מדד יעילות קבוצתית"
         value={team?.ratingText || '—'}
         sub="מדד היעילות של הקבוצה במשחק זה"
       />
 
       <MetricCard
+        id='team_scoring_Impact'
         icon="scoringImpact"
-        label="מדד השפעה"
+        label="מדד השפעה קבוצתית עד למשחק זה"
         value={team?.cumulativeImpactText || '—'}
         sub="לחץ לפתיחת מגמת השפעה קבוצתית"
         active={teamTrendOpen}
@@ -91,34 +100,35 @@ function DetailsMetrics({
       />
 
       <MetricCard
+        id='best_player'
         icon="scoringRating"
         label="הכי יעיל"
         value={
           bestRow
             ? `${getGamePerfPlayerLabel(bestRow)} · ${bestRow.ratingRaw}`
-            : '-'
+            : 'אין שחקן בקטגוריה'
         }
+        item={bestRow}
         sub="מדד היעילות הגבוה במשחק"
       />
 
       <MetricCard
+        id='low_player'
         icon="scoringRating"
         label="מתחת לציפייה"
         value={
           lowRow
             ? `${getGamePerfPlayerLabel(lowRow)} · ${lowRow.ratingRaw}`
-            : '-'
+            : 'אין שחקן בקטגוריה'
         }
+        item={lowRow}
         sub="רק שחקנים מתחת ל־5.95"
       />
     </Box>
   )
 }
 
-function buildTeamTrendModel({
-  teamScoring,
-  teamGameScore,
-}) {
+function buildTeamTrendModel({ teamScoring, teamGameScore }) {
   const points = Array.isArray(teamScoring?.trend?.points)
     ? teamScoring.trend.points
     : Array.isArray(teamScoring?.points)

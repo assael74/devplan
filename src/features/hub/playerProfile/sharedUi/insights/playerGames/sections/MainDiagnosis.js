@@ -126,16 +126,14 @@ function SummaryFacts({ items = [] }) {
 
   return (
     <Box sx={sx.factsRow}>
-      {safeItems.slice(0, 2).map((item) => (
+      {safeItems.map((item) => (
         <SummaryFact key={item.id || item.label} item={item} />
       ))}
     </Box>
   )
 }
 
-export default function MainDiagnosis({
-  data,
-}) {
+export default function MainDiagnosis({ data }) {
   if (!data) {
     return null
   }

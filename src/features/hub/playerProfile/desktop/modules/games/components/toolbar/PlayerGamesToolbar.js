@@ -38,6 +38,8 @@ export default function PlayerGamesToolbar({
     selectedResult,
     selectedHome,
     selectedDifficulty,
+    ratingOptions,
+    selectedRating,
   } = buildToolbarState({ summary, filters, options, })
 
   const handleClearIndicator = (item) => {
@@ -191,6 +193,40 @@ export default function PlayerGamesToolbar({
               <PlayerGamesToolbarSelectValue
                 label={item.label}
                 icon={item.idIcon || 'difficulty'}
+                count={item.count}
+              />
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={filters?.ratingKey || ''}
+          onChange={(_, v) => onChangeFilters({ ratingKey: v || '' })}
+          sx={{ minWidth: 156, flexShrink: 0 }}
+          slotProps={{ listbox: { sx: sx.listboxSx } }}
+          renderValue={() => (
+            <PlayerGamesToolbarSelectValue
+              label={selectedRating?.label || 'כל מדדי היעילות'}
+              icon={selectedRating?.idIcon || 'scoringRating'}
+              count={selectedRating?.count ?? totalGames}
+              fixedWidth={{ minWidth: 156 }}
+            />
+          )}
+        >
+          <Option value="">
+            <PlayerGamesToolbarSelectValue
+              label="כל מדדי היעילות"
+              icon="scoringRating"
+              count={totalGames}
+            />
+          </Option>
+
+          {ratingOptions.map((item) => (
+            <Option key={item.id || item.value} value={item.value || item.id}>
+              <PlayerGamesToolbarSelectValue
+                label={item.label}
+                icon={item.idIcon || 'scoringRating'}
                 count={item.count}
               />
             </Option>

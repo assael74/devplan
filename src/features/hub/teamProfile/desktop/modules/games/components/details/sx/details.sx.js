@@ -19,7 +19,9 @@ export const detailsSx = {
 
   metricCard: (active = false, clickable = false) => ({
     minWidth: 0,
-    p: 1,
+    px: clickable ? 1 : 1,
+    pt: clickable ? 0.2 : 1,
+    pb: 1,
     borderRadius: 'md',
     border: '1px solid',
     borderColor: active ? 'primary.outlinedBorder' : 'divider',
@@ -49,6 +51,7 @@ export const detailsSx = {
   metricHead: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 0.5,
     minWidth: 0,
   },

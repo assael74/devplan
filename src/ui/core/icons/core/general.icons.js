@@ -3,6 +3,7 @@ import {
   AccessTime,
   Attribution,
   AddLocationAlt,
+  Bookmarks,
   Forward,
   History,
   Info,
@@ -43,5 +44,6 @@ export const generalIcons = {
   reliability: <Visibility />,
   calendar: <ScheduleSend />,
   summary: <Summarize />,
-  parents: <FamilyRestroom />
+  parents: <FamilyRestroom />,
+  liveTagging: <Bookmarks />
 };

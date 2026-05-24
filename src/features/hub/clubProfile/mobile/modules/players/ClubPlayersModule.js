@@ -26,6 +26,7 @@ export default function ClubPlayersModule({
   entity,
   onOpenPlayer,
   context,
+  profileData,
   playersInsightsRequest = 0,
 }) {
   const liveClub = useMemo(() => {

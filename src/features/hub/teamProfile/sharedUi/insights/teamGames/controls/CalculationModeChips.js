@@ -10,10 +10,7 @@ export const CALCULATION_MODES = {
   GAMES: 'games',
 }
 
-export default function CalculationModeChips({
-  value = CALCULATION_MODES.TEAM,
-  onChange,
-}) {
+export default function CalculationModeChips({ value = CALCULATION_MODES.TEAM, onChange }) {
   const isTeam = value === CALCULATION_MODES.TEAM
   const isGames = value === CALCULATION_MODES.GAMES
 

@@ -1,4 +1,4 @@
-//  playerProfile/sharedLogic/games/insightsDrawer/cards/score.cards.js
+// playerProfile/sharedLogic/games/insightsDrawer/cards/score.cards.js
 
 import {
   formatNumber,
@@ -8,6 +8,10 @@ import {
 import {
   buildScoreTooltip,
 } from '../tooltips/index.js'
+
+const hasValue = value => {
+  return value !== undefined && value !== null && value !== ''
+}
 
 const getTargetColor = ({ actual, target, fallback = 'neutral' }) => {
   const a = Number(actual)
@@ -22,11 +26,11 @@ const getTargetColor = ({ actual, target, fallback = 'neutral' }) => {
   return 'danger'
 }
 
-const getPositionLayerKey = (brief) => {
+const getPositionLayerKey = brief => {
   return brief?.metrics?.position?.layerKey || ''
 }
 
-const isDefensiveRole = (brief) => {
+const isDefensiveRole = brief => {
   const layerKey = getPositionLayerKey(brief)
 
   return (
@@ -46,6 +50,72 @@ const getSeasonTargetSub = (value, fallback = 'לא הוגדר יעד עונתי
   return `יעד עונתי ${formatNumber(target)}`
 }
 
+const resolveScoringSummary = gamesData => {
+  return (
+    gamesData?.scoring?.summary ||
+    gamesData?.scoringSummary ||
+    {}
+  )
+}
+
+const pickMetric = ({ metrics, scoringSummary, key, fallback = 0 }) => {
+  if (hasValue(scoringSummary?.[key])) return scoringSummary[key]
+  if (hasValue(metrics?.[key])) return metrics[key]
+
+  return fallback
+}
+
+const resolveGoalContributions = ({
+  metrics,
+  scoringSummary,
+  goals,
+  assists,
+}) => {
+  if (hasValue(scoringSummary?.involvement)) {
+    return scoringSummary.involvement
+  }
+
+  if (hasValue(scoringSummary?.goalContributions)) {
+    return scoringSummary.goalContributions
+  }
+
+  if (hasValue(metrics?.goalContributions)) {
+    return metrics.goalContributions
+  }
+
+  return Number(goals || 0) + Number(assists || 0)
+}
+
+const resolveScoreMetrics = ({ brief, gamesData }) => {
+  const metrics = brief?.metrics || {}
+  const scoringSummary = resolveScoringSummary(gamesData)
+
+  const goals = pickMetric({
+    metrics,
+    scoringSummary,
+    key: 'goals',
+  })
+
+  const assists = pickMetric({
+    metrics,
+    scoringSummary,
+    key: 'assists',
+  })
+
+  const goalContributions = resolveGoalContributions({
+    metrics,
+    scoringSummary,
+    goals,
+    assists,
+  })
+
+  return {
+    goals,
+    assists,
+    goalContributions,
+  }
+}
+
 const withTooltip = ({ item, brief, targets, gamesData }) => {
   return {
     ...item,
@@ -53,13 +123,22 @@ const withTooltip = ({ item, brief, targets, gamesData }) => {
       id: item.id,
       brief,
       targets,
-      gamesData
+      gamesData,
     }),
   }
 }
 
-export const buildScoreCards = ({ brief, positionBrief, targets = {}, gamesData = null }) => {
-  const metrics = brief?.metrics || {}
+export const buildScoreCards = ({
+  brief,
+  positionBrief,
+  targets = {},
+  gamesData = null,
+}) => {
+  const metrics = resolveScoreMetrics({
+    brief,
+    gamesData,
+  })
+
   const isDefensive = isDefensiveRole(positionBrief)
   const attackTargets = targets?.explicitTargets?.attack || {}
 
@@ -110,12 +189,12 @@ export const buildScoreCards = ({ brief, positionBrief, targets = {}, gamesData 
     },
   ]
 
-  return items.map((item) => {
+  return items.map(item => {
     return withTooltip({
       item,
       brief,
       targets,
-      gamesData
+      gamesData,
     })
   })
 }

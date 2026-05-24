@@ -115,6 +115,8 @@ export const sectionsSx = {
     whiteSpace: 'nowrap',
     fontSize: 11,
     lineHeight: 1.1,
+    pt: 0.5,
+    pl: 0.2
   },
 
   performCol: {

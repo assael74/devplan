@@ -40,9 +40,10 @@ export default function PlayerProfileMobile({
   context,
   taskContext,
   counts,
+  profileData
 }) {
   const navigate = useNavigate()
-  
+
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
@@ -131,6 +132,7 @@ export default function PlayerProfileMobile({
               entity={entity}
               context={context}
               tab={tab}
+              profileData={profileData}
               modulesMap={modulesMap}
               gamesInsightsRequest={gamesInsightsRequest}
               performanceInsightsRequest={performanceInsightsRequest}

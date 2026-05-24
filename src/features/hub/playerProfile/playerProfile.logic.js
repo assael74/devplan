@@ -8,6 +8,10 @@ import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './playerProfile.routes'
 
+import {
+  buildPlayerProfileData,
+} from './sharedLogic/profileData/index.js'
+
 function buildLoadingNode() {
   return (
     <Sheet sx={{ p: 2 }}>
@@ -31,6 +35,12 @@ function buildMissingNode() {
   return <Navigate to="/hub" replace />
 }
 
+const findById = ({ rows, id }) => {
+  return (rows || []).find(item => {
+    return String(item?.id) === String(id)
+  }) || null
+}
+
 export default function usePlayerProfilePageModel() {
   const location = useLocation()
   const { playerId, tabKey } = useParams()
@@ -47,15 +57,56 @@ export default function usePlayerProfilePageModel() {
   } = useCoreData()
 
   const entity = useMemo(() => {
-    return (players || []).find((item) => String(item.id) === String(playerId)) || null
+    return findById({
+      rows: players,
+      id: playerId,
+    })
   }, [players, playerId])
 
   const isProject = entity?.type === 'project'
 
   const tagsById = useMemo(() => {
     if (!Array.isArray(tags)) return null
-    return Object.fromEntries(tags.map((item) => [String(item.id), item]))
+
+    return Object.fromEntries(
+      tags.map(item => [String(item.id), item])
+    )
   }, [tags])
+
+  const team = useMemo(() => {
+    return findById({
+      rows: teams,
+      id: entity?.teamId,
+    })
+  }, [teams, entity?.teamId])
+
+  const context = useMemo(() => {
+    if (!entity) return {}
+
+    return {
+      team,
+      club: findById({
+        rows: clubs,
+        id: entity?.clubId,
+      }),
+      teams: teams || [],
+      clubs: clubs || [],
+      players: players || [],
+      roles: roles || [],
+      tags: tags || [],
+      tagsById,
+    }
+  }, [entity, team, clubs, teams, players, roles, tags, tagsById])
+
+  const profileData = useMemo(() => {
+    if (!entity) return null
+
+    return buildPlayerProfileData({
+      player: entity,
+      team,
+      calculationMode: 'games',
+    })
+  }, [entity, team])
 
   const rawTab = useMemo(() => {
     const fromParam = String(tabKey || '').trim()
@@ -77,21 +128,6 @@ export default function usePlayerProfilePageModel() {
     return rawTab ? tab : ''
   }, [rawTab, tab])
 
-  const context = useMemo(() => {
-    if (!entity) return {}
-
-    return {
-      team: (teams || []).find((team) => String(team.id) === String(entity.teamId)) || null,
-      club: (clubs || []).find((club) => String(club.id) === String(entity.clubId)) || null,
-      teams: teams || [],
-      clubs: clubs || [],
-      players: players || [],
-      roles: roles || [],
-      tags: tags || [],
-      tagsById,
-    }
-  }, [entity, teams, clubs, players, roles, tags, tagsById])
-
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
       location,
@@ -105,11 +141,15 @@ export default function usePlayerProfilePageModel() {
     if (!entity) return {}
 
     return {
-      games: entity?.performances?.length || 0,
+      games:
+        profileData?.games?.counts?.playedPlayerGames ??
+        entity?.performances?.length ??
+        0,
+
       meetings: entity?.meetings?.length || 0,
       payments: entity?.payments?.length || 0,
     }
-  }, [entity])
+  }, [entity, profileData])
 
   if (loading) {
     return {
@@ -138,8 +178,11 @@ export default function usePlayerProfilePageModel() {
     tab,
     selectedTab,
     isProject,
+
     entity,
     context,
+    profileData,
+
     taskContext,
     counts,
   }

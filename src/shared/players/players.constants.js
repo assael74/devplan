@@ -55,25 +55,25 @@ export const PROJECT_STATUS_CANDIDATE = [
 export const POSITION_LAYERS = {
   attack: [{ code: 'S', label: 'חלוץ', layerCode: 'S' }],
   atMidfield: [
-    { code: 'AL', label: 'כנף שמאל', layerCode: 'AM' },
-    { code: 'AC', label: 'קשר התקפי', layerCode: 'AM' },
     { code: 'AR', label: 'כנף ימין', layerCode: 'AM' },
+    { code: 'AC', label: 'קשר התקפי', layerCode: 'AM' },
+    { code: 'AL', label: 'כנף שמאל', layerCode: 'AM' },
   ],
   midfield: [
-    { code: 'MCL', label: 'קשר אמצע שמאל', layerCode: 'M' },
     { code: 'MCR', label: 'קשר אמצע ימין', layerCode: 'M' },
+    { code: 'MCL', label: 'קשר אמצע שמאל', layerCode: 'M' },
   ],
   dmMid: [
-    { code: 'DML', label: 'מגן / כנף שמאל', layerCode: 'DM' },
-    { code: 'DM', label: 'קשר אחורי', layerCode: 'DM' },
     { code: 'DMR', label: 'מגן / כנף ימין', layerCode: 'DM' },
+    { code: 'DM', label: 'קשר אחורי', layerCode: 'DM' },
+    { code: 'DML', label: 'מגן / כנף שמאל', layerCode: 'DM' },
   ],
 
   defense: [
-    { code: 'DL', label: 'מגן שמאל', layerCode: 'D' },
-    { code: 'DCL', label: 'בלם שמאלי', layerCode: 'D' },
-    { code: 'DCR', label: 'בלם ימני', layerCode: 'D' },
     { code: 'DR', label: 'מגן ימין', layerCode: 'D' },
+    { code: 'DCR', label: 'בלם ימני', layerCode: 'D' },
+    { code: 'DCL', label: 'בלם שמאלי', layerCode: 'D' },    
+    { code: 'DL', label: 'מגן שמאל', layerCode: 'D' },
   ],
   goalkeeper: [{ code: 'GK', label: 'שוער', layerCode: 'GK' }],
 };

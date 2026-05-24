@@ -37,6 +37,7 @@ export default function ClubProfileMobile({
   context,
   taskContext,
   counts,
+  profileData
 }) {
   const navigate = useNavigate()
 
@@ -115,6 +116,7 @@ export default function ClubProfileMobile({
               context={context}
               mode={selectedTab}
               tab={selectedTab}
+              profileData={profileData}
               modulesMap={mobileClubModulesMap}
               playersInsightsRequest={playersInsightsRequest}
               teamsInsightsRequest={teamsInsightsRequest}

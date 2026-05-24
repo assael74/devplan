@@ -17,6 +17,7 @@ export default function ClubProfileDesktop({
   context,
   taskContext,
   counts,
+  profileData
 }) {
   const [playersInsightsRequest, setPlayersInsightsRequest] = useState(0)
   const [teamsInsightsRequest, setTeamsInsightsRequest] = useState(0)
@@ -34,6 +35,7 @@ export default function ClubProfileDesktop({
       FabComp={ClubProfileFab}
       rendererProps={{
         modulesMap: desktopClubModulesMap,
+        profileData,
         playersInsightsRequest,
         teamsInsightsRequest,
       }}

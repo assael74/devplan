@@ -16,6 +16,7 @@ export default function PlayerProfileDesktop({
   entity,
   context,
   taskContext,
+  profileData,
   counts,
 }) {
   const [meetingsInsightsRequest, setMeetingsInsightsRequest] = useState(0)
@@ -44,6 +45,7 @@ export default function PlayerProfileDesktop({
       FabComp={PlayerProfileFab}
       rendererProps={{
         modulesMap,
+        profileData,
         meetingsInsightsRequest,
         paymentsInsightsRequest,
         abilitiesInsightsRequest,

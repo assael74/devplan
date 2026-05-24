@@ -3,8 +3,18 @@
 export const safeArray = (v) => (Array.isArray(v) ? v : [])
 
 export const pickToolbarOption = (arr, value, fallbackKey = 'id') => {
+  const key = String(value || '').trim()
+  if (!key) return null
+
   const base = safeArray(arr)
-  return base.find((x) => x?.value === value || x?.id === value || x?.[fallbackKey] === value) || null
+
+  return base.find(item => {
+    return (
+      String(item?.value || '') === key ||
+      String(item?.id || '') === key ||
+      String(item?.[fallbackKey] || '') === key
+    )
+  }) || null
 }
 
 export const getHomeOptionColor = (item) => {
@@ -18,6 +28,9 @@ export const buildToolbarState = ({ summary, filters, options }) => {
   const resultOptions = safeArray(options?.resultOptions)
   const homeOptions = safeArray(options?.homeOptions)
   const difficultyOptions = safeArray(options?.difficultyOptions)
+
+  const ratingOptions = safeArray(options?.ratingOptions)
+  const selectedRating = pickToolbarOption(ratingOptions, filters?.ratingKey || '')
 
   const totalGames = summary?.totalGames || summary?.total || 0
   const filteredGames = summary?.filteredGames || summary?.shown || totalGames
@@ -42,6 +55,8 @@ export const buildToolbarState = ({ summary, filters, options }) => {
     selectedResult,
     selectedHome,
     selectedDifficulty,
+    ratingOptions,
+    selectedRating,
   }
 }
 
@@ -53,4 +68,5 @@ export const clearToolbarIndicator = (item, onChangeFilters) => {
   if (item.type === 'homeKey') return onChangeFilters({ homeKey: '' })
   if (item.type === 'resultKey') return onChangeFilters({ resultKey: '' })
   if (item.type === 'difficultyKey') return onChangeFilters({ difficultyKey: '' })
+  if (item.type === 'ratingKey') return onChangeFilters({ ratingKey: '' })
 }

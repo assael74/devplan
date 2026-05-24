@@ -1,43 +1,70 @@
 // clubProfile/desktop/modules/players/components/sections/InfoSection.js
 
 import React from 'react'
-import { Box, Chip, Typography, Avatar } from '@mui/joy'
+import { Avatar, Box, Button, Chip, Typography } from '@mui/joy'
+import { useNavigate } from 'react-router-dom'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
-import { sectionsSx as sx } from '../../sx/sections.sx.js'
-import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
+
+import { infoSx as sx } from './sx/info.sx.js'
 
 const c = getEntityColors('players')
 
-function getAgeLabel(row) {
-  if (Number.isFinite(row?.age) && row.age > 0) return `גיל ${row.age}`
-  if (row?.birthLabel) return row.birthLabel
-  return 'ללא גיל'
+const getPlayerId = player => {
+  return player?.id || player?.playerId || null
+}
+
+const getTeamId = team => {
+  return team?.id || team?.teamId || null
+}
+
+const getPlayerName = player => {
+  return player?.playerFullName || player?.fullName || player?.label || '—'
+}
+
+const getTeam = row => {
+  return row?.team || row?.player?.team || null
+}
+
+const getTeamName = team => {
+  return team?.teamName || team?.label || '—'
 }
 
 export default function InfoSection({ row }) {
-  const fullName = row?.fullName || '—'
-  const ageLabel = getAgeLabel(row)
-  const active = row?.active !== false
+  const navigate = useNavigate()
+
+  const player = row || {}
+  const team = getTeam(row)
   const squadRoleMeta = getSquadRoleMeta(row, c)
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
-  const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
-  const colorTR = row?.playerFullStats?.trColor || 'neutral'
-  const teamName = row?.teamName || '—'
+
+  const playerId = getPlayerId(player)
+  const teamId = getTeamId(team)
+
+  const goToPlayer = event => {
+    event.stopPropagation()
+    if (playerId) navigate(`/players/${playerId}`)
+  }
+
+  const goToTeam = event => {
+    event.stopPropagation()
+    if (teamId) navigate(`/teams/${teamId}`)
+  }
 
   return (
-    <Box sx={sx.infoSection}>
+    <Box sx={sx.root}>
       <Box sx={sx.identityCol}>
-        <Box sx={sx.avatarBtn} >
+        <Box sx={sx.avatarBox}>
           <Avatar src={row?.photo || playerImage} sx={sx.avatar} />
 
           <Box
             sx={[
               sx.avatarStatusDot,
-              row?.active ? { bgcolor: 'success.500' } : { bgcolor: 'danger.500' },
+              row?.active !== false
+                ? { bgcolor: 'success.500' }
+                : { bgcolor: 'danger.500' },
             ]}
           />
 
@@ -46,44 +73,48 @@ export default function InfoSection({ row }) {
 
         <Box sx={sx.nameWrap}>
           <Box sx={sx.nameRow}>
-            <Typography
-              level="title-sm"
-              sx={sx.playerName}
-              title={row?.fullName}
+            <Button
+              size="sm"
+              variant="plain"
+              color="neutral"
+              disabled={!playerId}
+              onClick={goToPlayer}
+              sx={sx.nameButton}
             >
-              {row?.fullName || '—'}
-            </Typography>
-
-            <Box sx={{ flex: 1 }} />
+              {getPlayerName(player)}
+            </Button>
 
             {squadRoleMeta?.value ? (
               <Chip
                 size="sm"
                 variant="soft"
-                color='warning'
-                startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color }})}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: 0.2 }}
+                color="warning"
+                startDecorator={iconUi({
+                  id: squadRoleMeta.iconId,
+                  sx: { color: squadRoleMeta.color },
+                })}
+                sx={sx.roleChip}
               >
                 {squadRoleMeta.label}
               </Chip>
             ) : (
-              <Chip
-                size="sm"
-                color='danger'
-                variant="soft"
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: 0.2 }}
-              >
+              <Chip size="sm" color="danger" variant="soft" sx={sx.roleChip}>
                 לא הוגדר מעמד
               </Chip>
             )}
           </Box>
 
           <Box sx={sx.subMetaInline}>
-            <Box>
-              <Typography level="body-sm" sx={{ fontWeight: 700 }}>
-                {row?.teamName || '—'}
-              </Typography>
-            </Box>
+            <Button
+              size="sm"
+              variant="plain"
+              color="neutral"
+              disabled={!teamId}
+              onClick={goToTeam}
+              sx={sx.teamButton}
+            >
+              {getTeamName(team)}
+            </Button>
 
             {!!row?.birthLabel ? (
               <Typography level="body-xs" sx={sx.metaText}>
@@ -98,29 +129,6 @@ export default function InfoSection({ row }) {
             ) : null}
           </Box>
         </Box>
-      </Box>
-
-      <Box sx={{ flex: 1, marginInlineStart: 'auto', }} />
-
-      <Box sx={sx.performCol}>
-        <Chip size="sm" startDecorator={iconUi({ id: 'goal', size: 'sm' })} sx={{ flexShrink: 0, whiteSpace: 'nowrap', }}>
-          {goals}
-        </Chip>
-
-        <Chip size="sm" startDecorator={iconUi({ id: 'assists', size: 'sm' })} sx={{ flexShrink: 0, whiteSpace: 'nowrap', }}>
-          {assists}
-        </Chip>
-
-        <Chip
-          size="sm"
-          startDecorator={iconUi({ id: 'playTimeRate', size: 'sm' })}
-          sx={sx.timeRateChip}
-        >
-          דקות משחק:
-          <Typography level="inherit" color={colorTR} sx={{ display: 'inline', whiteSpace: 'nowrap', }}>
-            {timeRateLabel}
-          </Typography>
-        </Chip>
       </Box>
     </Box>
   )

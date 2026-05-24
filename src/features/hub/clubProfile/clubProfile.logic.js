@@ -5,8 +5,13 @@ import { useLocation, useParams, useSearchParams, Navigate } from 'react-router-
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
 
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
+
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './clubProfile.routes'
+
+import {
+  buildClubProfileData,
+} from './sharedLogic/index.js'
 
 function buildLoadingNode() {
   return (
@@ -56,6 +61,17 @@ export default function useClubProfilePageModel() {
     return (clubs || []).find((club) => String(club.id) === String(clubId)) || null
   }, [clubs, clubId])
 
+  const profileData = useMemo(() => {
+    if (!entity) return null
+
+    return buildClubProfileData({
+      club: entity,
+      teams: teams || [],
+      players: players || [],
+      calculationMode: 'games',
+    })
+  }, [entity, teams, players])
+
   const rawTab = useMemo(() => {
     const fromParam = String(tabKey || '').trim()
     if (fromParam) return fromParam
@@ -73,12 +89,10 @@ export default function useClubProfilePageModel() {
 
     return {
       club: entity,
-      teams: teams || [],
       clubs: clubs || [],
-      players: players || [],
       roles: roles || [],
     }
-  }, [entity, teams, clubs, players, roles])
+  }, [entity, clubs, roles])
 
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
@@ -93,9 +107,12 @@ export default function useClubProfilePageModel() {
     if (!entity) return {}
 
     return {
-      teams: entity?.teams?.length || 0,
+      teams: profileData?.meta?.counts?.teams || 0,
+      players: profileData?.meta?.counts?.players || 0,
+      scoredTeams: profileData?.meta?.counts?.scoredTeams || 0,
+      scoredPlayers: profileData?.meta?.counts?.scoredPlayers || 0,
     }
-  }, [entity])
+  }, [entity, profileData])
 
   if (loading) {
     return {
@@ -123,7 +140,13 @@ export default function useClubProfilePageModel() {
     rawTab,
     tab,
     selectedTab,
+
     entity,
+    profileData,
+
+    teams: profileData?.teams || [],
+    players: profileData?.players || [],
+
     context,
     taskContext,
     counts,

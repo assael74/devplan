@@ -209,10 +209,11 @@ const getDateLabel = (dateRaw) => {
   return dateRaw ? getFullDateIl(dateRaw) : 'ללא תאריך'
 }
 
-const getTeamName = ({ game, fallback }) => {
+const getTeamName = ({ game, player, fallback }) => {
   return (
     safeStr(game?.team?.teamName) ||
     safeStr(game?.teamName) ||
+    safeStr(player?.team?.teamName) ||
     fallback ||
     'ללא קבוצה'
   )
@@ -249,6 +250,7 @@ export default function useGameOptions({
         const dateLabel = getDateLabel(dateRaw)
         const teamName = getTeamName({
           game,
+          player,
           fallback: resolvedTeamName,
         })
 

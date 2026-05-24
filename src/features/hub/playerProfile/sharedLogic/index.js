@@ -26,6 +26,9 @@ export {
 
 export {
   createInitialPlayerGamesFilters,
+} from './games/module/playerGames.filters.constants.js'
+
+export {
   resolvePlayerGamesFiltersDomain,
 } from './games/module/playerGames.filters.logic.js'
 

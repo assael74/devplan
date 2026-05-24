@@ -1,45 +1,43 @@
 // clubProfile/desktop/modules/teams/components/sections/InfoSection.js
 
 import React from 'react'
-import { Box, Chip, Typography, Avatar } from '@mui/joy'
+import { Avatar, Box, Button, Typography } from '@mui/joy'
+import { useNavigate } from 'react-router-dom'
 
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
-function getLeagueLabel(team) {
+import { infoSx as sx } from './sx/info.sx.js'
+
+const getTeamId = team => {
+  return team?.id || team?.teamId || null
+}
+
+const getTeamName = team => {
+  return team?.teamName || team?.label || '—'
+}
+
+const getLeagueLabel = team => {
   const leagueName = team?.leagueName || ''
-  const leagueLevel = team?.leagueLevel || 0
+  const leagueLevel = team?.leagueLevel
 
   if (leagueName && leagueLevel !== '' && leagueLevel != null) {
     return `${leagueName} (${leagueLevel})`
   }
 
-  if (leagueName) {
-    return leagueName
-  }
-
-  if (leagueLevel !== '' && leagueLevel != null) {
-    return `רמה ${leagueLevel}`
-  }
+  if (leagueName) return leagueName
+  if (leagueLevel !== '' && leagueLevel != null) return `רמה ${leagueLevel}`
 
   return ''
 }
 
-function getNumberLabel(value, fallback = 0) {
-  return value == null || value === '' ? fallback : value
-}
-
 export default function InfoSection({ row }) {
-  const team = row
-  const teamName = team?.teamName || '—'
+  const navigate = useNavigate()
+
+  const team = row || {}
+  const teamId = getTeamId(team)
+  const teamName = getTeamName(team)
   const teamYear = team?.teamYear || ''
   const leagueLabel = getLeagueLabel(team)
-
-  const position = getNumberLabel(team?.leaguePosition)
-  const points = getNumberLabel(team?.points)
-  const goalsFor = getNumberLabel(team?.leagueGoalsFor)
-  const goalsAgainst = getNumberLabel(team?.leagueGoalsAgainst)
 
   const src = resolveEntityAvatar({
     entityType: 'team',
@@ -48,16 +46,23 @@ export default function InfoSection({ row }) {
     subline: team?.club?.name,
   })
 
+  const goToTeam = event => {
+    event.stopPropagation()
+    if (teamId) navigate(`/teams/${teamId}`)
+  }
+
   return (
-    <Box sx={sx.infoSection}>
+    <Box sx={sx.root}>
       <Box sx={sx.identityCol}>
-        <Box sx={sx.avatarBtn}>
+        <Box sx={sx.avatarBox}>
           <Avatar src={src} sx={sx.avatar} />
 
           <Box
             sx={[
               sx.avatarStatusDot,
-              row?.active ? { bgcolor: 'success.500' } : { bgcolor: 'danger.500' },
+              row?.active !== false
+                ? { bgcolor: 'success.500' }
+                : { bgcolor: 'danger.500' },
             ]}
           />
 
@@ -66,14 +71,21 @@ export default function InfoSection({ row }) {
 
         <Box sx={sx.nameWrap}>
           <Box sx={sx.nameRow}>
-            <Typography level="title-sm" sx={sx.playerName}>
+            <Button
+              size="sm"
+              variant="plain"
+              color="neutral"
+              disabled={!teamId}
+              onClick={goToTeam}
+              sx={sx.nameButton}
+            >
               {teamName}
-            </Typography>
+            </Button>
           </Box>
 
           <Box sx={sx.subMetaInline}>
             {!!teamYear ? (
-              <Typography level="body-sm" sx={{ fontWeight: 700 }}>
+              <Typography level="body-sm" sx={sx.yearText}>
                 {teamYear}
               </Typography>
             ) : null}
@@ -85,44 +97,6 @@ export default function InfoSection({ row }) {
             ) : null}
           </Box>
         </Box>
-      </Box>
-
-      <Box sx={{ flex: 1, marginInlineStart: 'auto' }} />
-
-      <Box sx={sx.performCol}>
-        <Chip
-          size="md"
-          startDecorator={iconUi({ id: 'leaguePos', size: 'sm' })}
-          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-          מקום: {position}
-        </Chip>
-
-        <Chip
-          size="md"
-          startDecorator={iconUi({ id: 'points', size: 'sm' })}
-          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-           נק׳: {points}
-        </Chip>
-
-        <Chip
-          size="md"
-          color='success'
-          startDecorator={iconUi({ id: 'goal', size: 'sm' })}
-          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-         זכות: {goalsFor}
-        </Chip>
-
-        <Chip
-          size="md"
-          color='danger'
-          startDecorator={iconUi({ id: 'goal', size: 'sm' })}
-          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-          חובה: {goalsAgainst}
-        </Chip>
       </Box>
     </Box>
   )

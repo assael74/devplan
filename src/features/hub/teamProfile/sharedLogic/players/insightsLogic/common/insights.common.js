@@ -32,10 +32,16 @@ export const formatPct = (value) => {
   return `${Math.round(n)}%`
 }
 
-export const formatRange = (range = []) => {
+export const formatRange = (range) => {
   if (!Array.isArray(range) || range.length < 2) return '—'
 
-  return `${range[0]}%–${range[1]}%`
+  const [min, max] = range
+
+  if (!Number.isFinite(Number(min)) || !Number.isFinite(Number(max))) {
+    return '—'
+  }
+
+  return `${min}%–${max}%`
 }
 
 export const formatCount = (value, total) => {

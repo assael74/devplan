@@ -1,118 +1,27 @@
 // playerProfile/sharedLogic/games/insightsDrawer/diagnosis/playerMainDiagnosis.viewModel.js
 
 import {
+  getBrief,
+  getPrimaryItem,
+  resolveInsightModel,
+  resolveInsightProfile,
+  resolvePerformance,
+  resolveReliability,
+  resolveRole,
+  resolveRoleTarget,
+  resolveUsage,
+} from './playerMainDiagnosis.resolvers.js'
+
+import {
+  buildMetrics,
+  buildReliabilitySummary,
+  buildSummaryFacts,
   formatNumber,
-  formatPercent,
+  formatSigned,
   normalizeJoyColor,
-} from '../cards/cards.shared.js'
+} from './playerMainDiagnosis.metrics.js'
 
-const EMPTY = '—'
-
-const toNum = (value, fallback = 0) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? number : fallback
-}
-
-const hasValue = (value) => {
-  return value !== undefined && value !== null && value !== ''
-}
-
-const getRangeLabel = (range = []) => {
-  if (!Array.isArray(range) || range.length < 2) return EMPTY
-
-  const min = Number(range[0])
-  const max = Number(range[1])
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return EMPTY
-
-  return `${min}%–${max}%`
-}
-
-const getBrief = (insights, key) => {
-  return insights?.briefs?.[key] || insights?.sections?.[key] || null
-}
-
-const getPrimaryItem = (brief) => {
-  const items = Array.isArray(brief?.items) ? brief.items : []
-
-  return (
-    items.find((item) => item?.id === 'action_focus') ||
-    items[0] ||
-    null
-  )
-}
-
-const resolveRole = (insights = {}) => {
-  const role =
-    insights?.targets?.role ||
-    insights?.games?.targets?.role ||
-    {}
-
-  return {
-    id: role?.id || role?.value || '',
-    label: role?.label || 'לא הוגדר מעמד',
-    icon: role?.idIcon || role?.iconId || 'squad',
-    color: role?.color || 'neutral',
-    weight: toNum(role?.weight, 0),
-    isDefined: Boolean(role?.id || role?.value),
-  }
-}
-
-const resolveUsage = (insights = {}) => {
-  return (
-    insights?.games?.usage ||
-    insights?.summary?.usage ||
-    {}
-  )
-}
-
-const resolveRoleTarget = (insights = {}) => {
-  return (
-    insights?.targets?.roleTarget ||
-    insights?.games?.targets?.roleTarget ||
-    {}
-  )
-}
-
-const resolveReliability = (insights = {}) => {
-  return (
-    insights?.reliability ||
-    insights?.games?.reliability ||
-    {}
-  )
-}
-
-const resolveMinutesColor = ({
-  minutesPct,
-  targetRange,
-}) => {
-  const min = toNum(targetRange?.[0], null)
-  const max = toNum(targetRange?.[1], null)
-  const value = toNum(minutesPct, null)
-
-  if (!Number.isFinite(value)) return 'neutral'
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return 'neutral'
-
-  if (value >= min && value <= max) return 'success'
-  if (value < min * 0.7) return 'danger'
-  if (value < min) return 'warning'
-
-  return 'primary'
-}
-
-const resolveStartsColor = (startsPct) => {
-  const value = toNum(startsPct, 0)
-
-  if (value >= 60) return 'success'
-  if (value >= 30) return 'warning'
-  if (value > 0) return 'neutral'
-
-  return 'neutral'
-}
-
-const resolveMainStatus = ({
-  usageBrief,
-}) => {
+const resolveUsageStatus = ({ usageBrief }) => {
   const usageIssue = usageBrief?.meta?.coreIssue || ''
 
   const isUnder =
@@ -163,12 +72,92 @@ const resolveMainStatus = ({
   }
 }
 
-const buildDiagnosisText = ({
-  role,
-  status,
-  usageBrief,
-}) => {
+const resolveScoringStatus = ({ performance }) => {
+  const rating = Number(performance?.rating)
+  const impact = Number(performance?.impact)
+
+  if (Number.isFinite(rating) && Number.isFinite(impact)) {
+    if (rating >= 6.15 && impact > 0) {
+      return {
+        id: 'positive_value',
+        title: 'מספק ערך',
+        tone: 'success',
+        icon: 'verified',
+      }
+    }
+
+    if (rating < 5.9 && impact < 0) {
+      return {
+        id: 'negative_value',
+        title: 'פוגע בערך',
+        tone: 'danger',
+        icon: 'warning',
+      }
+    }
+
+    if (rating >= 6 && impact <= 0) {
+      return {
+        id: 'efficient_low_volume',
+        title: 'יעיל אבל השפעה מוגבלת',
+        tone: 'primary',
+        icon: 'score',
+      }
+    }
+
+    if (rating < 6 && impact >= 0) {
+      return {
+        id: 'volume_without_efficiency',
+        title: 'השפעה קיימת, יעילות גבולית',
+        tone: 'warning',
+        icon: 'trend',
+      }
+    }
+  }
+
+  return null
+}
+
+const resolveMainStatus = ({ usageBrief, performance, insightProfile }) => {
+  if (insightProfile?.id) {
+    return {
+      id: insightProfile.id,
+      title: insightProfile.label,
+      tone: insightProfile.tone,
+      icon: insightProfile.icon,
+      profile: insightProfile,
+    }
+  }
+
+  return (
+    resolveScoringStatus({ performance }) ||
+    resolveUsageStatus({ usageBrief })
+  )
+}
+
+const buildDiagnosisText = ({ role, status, usageBrief, performance,}) => {
   const usageItem = getPrimaryItem(usageBrief)
+  const rating = Number(performance?.rating)
+  const impact = Number(performance?.impact)
+
+  if (status?.profile?.description) {
+    return status.profile.description
+  }
+
+  if (status.id === 'positive_value') {
+    return `מדד היעילות עומד על ${formatNumber(rating, 2)} ומדד ההשפעה המצטבר הוא ${formatSigned(impact, 2)}. השחקן מספק ערך חיובי ביחס לציפייה.`
+  }
+
+  if (status.id === 'negative_value') {
+    return `מדד היעילות עומד על ${formatNumber(rating, 2)} ומדד ההשפעה המצטבר הוא ${formatSigned(impact, 2)}. נדרש לבדוק את ההתאמה בין הדקות, התפקיד והתרומה בפועל.`
+  }
+
+  if (status.id === 'efficient_low_volume') {
+    return 'מדד היעילות חיובי, אבל מדד ההשפעה המצטבר עדיין לא מייצר ערך משמעותי. הכיוון הוא טוב, צריך לבדוק נפח דקות.'
+  }
+
+  if (status.id === 'volume_without_efficiency') {
+    return 'השחקן צובר השפעה, אבל מדד היעילות גבולי. צריך לבדוק האם הנפח מוצדק ביחס לתפוקה.'
+  }
 
   if (status.id === 'role_fit') {
     return `נפח השימוש תואם את מעמד "${role.label}" שהוגדר לשחקן.`
@@ -188,120 +177,24 @@ const buildDiagnosisText = ({
   )
 }
 
-const buildActionText = ({
-  reliability,
-}) => {
+const buildActionText = ({ reliability, performance, insightProfile }) => {
   if (reliability?.caution) {
     return 'יש לפרש בזהירות: מדגם הדקות עדיין לא מספיק חזק.'
   }
 
-  return 'המשך בדיקה באזור הבא: האם השחקן באמת קיבל הזדמנות מספקת.'
-}
-
-const buildMetric = ({
-  id,
-  label,
-  value,
-  sub,
-  icon,
-  color,
-  tooltip = null,
-}) => {
-  return {
-    id,
-    label,
-    value: hasValue(value) ? value : EMPTY,
-    sub: sub || '',
-    icon: icon || 'info',
-    color: normalizeJoyColor(color),
-    tooltip,
+  if (insightProfile?.coachText) {
+    return insightProfile.coachText
   }
-}
 
-const buildMetrics = ({
-  usage,
-  roleTarget,
-  reliability,
-}) => {
-  const minutesPct = toNum(usage?.minutesPct, 0)
-  const minutesRange = roleTarget?.minutesRange
-  const startsPct = toNum(usage?.startsPctFromTeamGames, 0)
-
-  return [
-    buildMetric({
-      id: 'minutesPct',
-      label: 'דקות משחק',
-      value: formatPercent(minutesPct),
-      sub: `יעד ${getRangeLabel(minutesRange)}`,
-      icon: 'time',
-      color: resolveMinutesColor({
-        minutesPct,
-        targetRange: minutesRange,
-      }),
-    }),
-    buildMetric({
-      id: 'startsPct',
-      label: 'פתח בהרכב',
-      value: formatPercent(startsPct),
-      sub: `${formatNumber(usage?.starts)} הרכב מתוך ${formatNumber(
-        usage?.teamGamesTotal
-      )}`,
-      icon: 'lineup',
-      color: resolveStartsColor(startsPct),
-    }),
-    buildMetric({
-      id: 'gamesIncluded',
-      label: 'חלק מהמשחק',
-      value: `${formatNumber(usage?.gamesIncluded)}/${formatNumber(
-        usage?.teamGamesTotal
-      )}`,
-      sub: 'משחקי ליגה',
-      icon: 'game',
-      color: 'neutral',
-    }),
-    buildMetric({
-      id: 'reliability',
-      label: 'מהימנות',
-      value: reliability?.label || 'לא ידוע',
-      sub: reliability?.caution ? 'יש לפרש בזהירות' : 'מדגם תקין',
-      icon: reliability?.caution ? 'info' : 'verified',
-      color: reliability?.tone || 'neutral',
-    }),
-  ]
-}
-
-const buildSummaryFacts = ({
-  usage,
-}) => {
-  const minutesPct = toNum(usage?.minutesPct, 0)
-  const startsPct = toNum(usage?.startsPctFromTeamGames, 0)
-
-  return [
-    {
-      id: 'minutesPct',
-      label: 'דקות משחק',
-      value: formatPercent(minutesPct),
-      icon: 'time',
-    },
-    {
-      id: 'startsPct',
-      label: 'הרכב',
-      value: formatPercent(startsPct),
-      icon: 'lineup',
-    },
-  ]
-}
-
-const buildReliabilitySummary = ({
-  reliability,
-}) => {
-  return {
-    id: reliability?.id || '',
-    label: reliability?.label || 'לא ידוע',
-    tone: normalizeJoyColor(reliability?.tone),
-    icon: reliability?.caution ? 'info' : 'verified',
-    caution: Boolean(reliability?.caution),
+  if (Number(performance?.rating) < 6) {
+    return 'המשך בדיקה: לפרק את הדלתאות ולזהות מה מוריד את מדד היעילות.'
   }
+
+  if (Number(performance?.impact) < 0) {
+    return 'המשך בדיקה: לבדוק באילו משחקים נוצר הנזק המצטבר.'
+  }
+
+  return 'המשך בדיקה: האם השחקן מקבל מספיק דקות כדי להפוך יעילות להשפעה מצטברת.'
 }
 
 export function buildPlayerMainDiagnosisViewModel(insights = {}) {
@@ -309,22 +202,31 @@ export function buildPlayerMainDiagnosisViewModel(insights = {}) {
   const usage = resolveUsage(insights)
   const roleTarget = resolveRoleTarget(insights)
   const reliability = resolveReliability(insights)
+  const performance = resolvePerformance(insights)
+
+  const insightModel = resolveInsightModel(insights)
+  const insightProfile = resolveInsightProfile(insights)
 
   const usageBrief = getBrief(insights, 'usage')
   const roleFitBrief = getBrief(insights, 'roleFit')
 
   const status = resolveMainStatus({
     usageBrief: roleFitBrief || usageBrief,
+    performance,
+    insightProfile,
   })
 
   const text = buildDiagnosisText({
     role,
     status,
     usageBrief: roleFitBrief || usageBrief,
+    performance,
   })
 
   const actionText = buildActionText({
     reliability,
+    performance,
+    insightProfile,
   })
 
   return {
@@ -338,6 +240,9 @@ export function buildPlayerMainDiagnosisViewModel(insights = {}) {
       isDefined: role.isDefined,
     },
 
+    insightModel,
+    insightProfile,
+
     diagnosis: {
       id: status.id,
       title: status.title,
@@ -347,8 +252,11 @@ export function buildPlayerMainDiagnosisViewModel(insights = {}) {
       icon: status.icon,
     },
 
+    performance,
+
     summaryFacts: buildSummaryFacts({
       usage,
+      performance,
     }),
 
     reliability: buildReliabilitySummary({
@@ -359,14 +267,19 @@ export function buildPlayerMainDiagnosisViewModel(insights = {}) {
       usage,
       roleTarget,
       reliability,
+      performance,
     }),
 
     debug: {
       roleId: role.id,
       statusId: status.id,
+      insightId: insightModel?.insightId || null,
+      insightLabel: insightModel?.insightLabel || null,
       usageCoreIssue: usageBrief?.meta?.coreIssue || null,
       roleFitCoreIssue: roleFitBrief?.meta?.coreIssue || null,
       reliability: reliability?.id || null,
+      rating: performance?.rating ?? null,
+      impact: performance?.impact ?? null,
     },
   }
 }

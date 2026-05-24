@@ -36,12 +36,16 @@ export default function PlayerGamesInsightsContent({
   games,
   player,
   team,
+  scoring,
+  profileData,
   enabled = true,
 }) {
   const model = usePlayerGamesInsightsModel({
     games,
     player,
     team,
+    scoring,
+    profileData,
     enabled,
     defer: true,
   })
