@@ -8,7 +8,7 @@ import OverviewHeader from './overview/components/OverviewHeader.js'
 import OverviewBlocks from './overview/components/OverviewBlocks.js'
 import DomainCards from './overview/components/DomainCards.js'
 import IntroCard from './overview/components/IntroCard.js'
-import GamesPage from './games/GamesPage.js'
+import PerformancePage from './performance/PerformancePage.js'
 import VideosPage from './videos/VideosPage.js'
 
 export default function InsightsPage() {
@@ -17,7 +17,7 @@ export default function InsightsPage() {
   const activeDomain = searchParams.get('domain') || ''
   const isDomainOpen = Boolean(activeDomain)
 
-  const handleSelectDomain = (domainId) => {
+  const handleSelectDomain = domainId => {
     const next = new URLSearchParams(searchParams)
 
     if (!domainId) {
@@ -36,8 +36,8 @@ export default function InsightsPage() {
   }
 
   const renderDomainPage = () => {
-    if (activeDomain === 'games') {
-      return <GamesPage onBack={handleBack} />
+    if (activeDomain === 'performance') {
+      return <PerformancePage onBack={handleBack} />
     }
 
     if (activeDomain === 'videos') {

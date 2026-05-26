@@ -19,10 +19,12 @@ export default function MobileFiltersDrawerShell({
   onReset,
   resetDisabled = false,
   children,
+  size = 'md'
 }) {
   return (
     <Drawer
       open={!!open}
+      size={size}
       anchor="bottom"
       onClose={onClose}
       slotProps={{
@@ -54,7 +56,7 @@ export default function MobileFiltersDrawerShell({
           </IconButton>
         </Box>
 
-        <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }} className="dpScrollThin">
+        <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1, px: 0 }} className="dpScrollThin">
           {children}
         </Box>
 
@@ -62,7 +64,7 @@ export default function MobileFiltersDrawerShell({
           <Button size="sm" variant="solid" onClick={onClose}  sx={{ bgcolor: c(entity).accent }}>
             סגור
           </Button>
-          
+
           <Button
             size="sm"
             color='neutral'

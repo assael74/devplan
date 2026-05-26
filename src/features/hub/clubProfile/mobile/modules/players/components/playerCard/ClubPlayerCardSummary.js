@@ -8,37 +8,53 @@ import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
-import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
+import {
+  buildPerformanceSectionModel,
+} from './ui/performanceSection.ui.js'
 
 const c = getEntityColors('players')
 
-export default function ClubPlayerCardSummary({ row }) {
+export default function ClubPlayerCardSummary({ row, performance }) {
   const goals = Number(row?.playerFullStats?.goals ?? 0)
   const assists = Number(row?.playerFullStats?.assists ?? 0)
   const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
-  const squadRoleMeta = getSquadRoleMeta(row, c)
+
+  const modelPerf = buildPerformanceSectionModel({
+    row,
+    performance,
+  })
 
   return (
     <Box sx={sx.playerStatsWrap}>
-      {squadRoleMeta?.value ? (
-        <Chip
-          size="sm"
-          variant="soft"
-          startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color } })}
-          sx={sx.chip}
-        >
-          {squadRoleMeta.label}
-        </Chip>
-      ) : (
-        <Chip
-          size="sm"
-          variant="soft"
-          color="danger"
-          sx={sx.chip}
-        >
-          לא הוגדר מעמד
-        </Chip>
-      )}
+      <Chip
+        size="sm"
+        variant="soft"
+        color={modelPerf.profile?.tone || 'neutral'}
+        startDecorator={iconUi({ id: modelPerf.profile?.icon || 'insights' })}
+        sx={{ border: '1px solid', borderColor: 'divider' }}
+      >
+        {modelPerf.profile?.shortLabel || modelPerf.profile?.label || 'פרופיל'}
+      </Chip>
+
+      <Chip
+        size="sm"
+        variant="outlined"
+        color="neutral"
+        startDecorator={iconUi({id: 'scoringRating'})}
+        sx={{ border: '1px solid', borderColor: 'divider' }}
+      >
+        {modelPerf.ratingLabel}
+      </Chip>
+
+      <Chip
+        size="sm"
+        variant="soft"
+        startDecorator={iconUi({id: 'scoringImpact'})}
+        color={modelPerf.impactColor}
+        sx={{ border: '1px solid', borderColor: 'divider' }}
+      >
+        {modelPerf.impactLabel}
+      </Chip>
 
       <Chip
         size="sm"

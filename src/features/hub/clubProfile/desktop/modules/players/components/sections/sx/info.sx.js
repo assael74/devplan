@@ -31,10 +31,10 @@ export const infoSx = {
 
   avatarStatusDot: {
     position: 'absolute',
-    right: -1,
-    bottom: -1,
-    width: 10,
-    height: 10,
+    left: -2,
+    bottom: -2,
+    width: 13,
+    height: 13,
     borderRadius: '50%',
     border: '2px solid',
     borderColor: 'background.level3',

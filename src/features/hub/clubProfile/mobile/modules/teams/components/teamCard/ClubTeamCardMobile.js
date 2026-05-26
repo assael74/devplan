@@ -19,6 +19,7 @@ import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
 export default function ClubTeamCardMobile({
   row,
+  performance,
   onOpenTeam,
   onEditTeam,
   onAvatarClick,
@@ -27,7 +28,7 @@ export default function ClubTeamCardMobile({
   if (!row) return null
 
   const handleOpenTeam = () => {
-    onOpenTeam?.(row?.team || row)
+    onOpenTeam(row?.team || row)
   }
 
   return (
@@ -58,7 +59,10 @@ export default function ClubTeamCardMobile({
         >
           <Accordion defaultExpanded={defaultExpanded} sx={sx.accordion}>
             <AccordionSummary>
-              <ClubTeamCardSummary row={row} />
+              <ClubTeamCardSummary 
+                row={row}
+                performance={performance}
+              />
             </AccordionSummary>
 
             <AccordionDetails>

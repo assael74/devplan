@@ -106,11 +106,12 @@ export const toolbarSx = {
     },
   },
 
-  select: {
-    minWidth: 200,
+  select: width => ({
+    minWidth: width,
+    width,
     flexShrink: 0,
     bgcolor: 'background.surface',
-  },
+  }),
 
   resetBut: {
     cursor: 'pointer',

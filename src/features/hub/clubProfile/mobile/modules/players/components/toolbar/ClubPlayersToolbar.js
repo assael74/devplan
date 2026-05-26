@@ -1,5 +1,3 @@
-// clubProfile/mobile/modules/players/components/toolbar/ClubPlayersToolbar.js
-
 import React, { useMemo, useState } from 'react'
 import { Box, Button, Chip } from '@mui/joy'
 
@@ -22,7 +20,66 @@ import {
   getClubPlayersSortDirectionIcon,
 } from '../../../../../sharedLogic/players/index.js'
 
-const safeArray = (value) => (Array.isArray(value) ? value : [])
+const safeArray = value => {
+  return Array.isArray(value) ? value : []
+}
+
+const getBucketItem = ({ buckets, value }) => {
+  return safeArray(buckets).find(item => {
+    return (item.value ?? item.id) === value
+  })
+}
+
+const getEfficiencyIndicator = ({ filters, summary }) => {
+  const item = getBucketItem({
+    buckets: summary?.efficiencyBuckets,
+    value: filters?.efficiency,
+  })
+
+  if (!filters?.efficiency) return null
+
+  return {
+    id: 'efficiency',
+    label: item?.selectedLabel || item?.label || 'מדד יעילות',
+    idIcon: item?.idIcon || 'scoringRating',
+    color: item?.color || 'neutral',
+    clearAction: 'efficiency',
+  }
+}
+
+const getImpactIndicator = ({ filters, summary }) => {
+  const item = getBucketItem({
+    buckets: summary?.impactBuckets,
+    value: filters?.impact,
+  })
+
+  if (!filters?.impact) return null
+
+  return {
+    id: 'impact',
+    label: item?.selectedLabel || item?.label || 'מדד השפעה',
+    idIcon: item?.idIcon || 'scoringImpact',
+    color: item?.color || 'neutral',
+    clearAction: 'impact',
+  }
+}
+
+const getProfileInsightIndicator = ({ filters, summary }) => {
+  const item = getBucketItem({
+    buckets: summary?.profileInsightBuckets,
+    value: filters?.profileInsight,
+  })
+
+  if (!filters?.profileInsight) return null
+
+  return {
+    id: 'profileInsight',
+    label: item?.selectedLabel || item?.label || 'פרופיל תובנות',
+    idIcon: item?.idIcon || 'insights',
+    color: item?.color || 'neutral',
+    clearAction: 'profileInsight',
+  }
+}
 
 export default function ClubPlayersToolbar({
   summary,
@@ -37,6 +94,9 @@ export default function ClubPlayersToolbar({
   onChangeProjectStatus,
   onChangePositionCode,
   onChangeGeneralPositionKey,
+  onChangeEfficiencyFilter,
+  onChangeImpactFilter,
+  onChangeProfileInsightFilter,
   onChangeTeamId,
   onChangeSortBy,
   onChangeSortDirection,
@@ -52,20 +112,23 @@ export default function ClubPlayersToolbar({
     !!filters?.projectStatus ||
     !!filters?.positionCode ||
     !!filters?.generalPositionKey ||
+    !!filters?.efficiency ||
+    !!filters?.impact ||
+    !!filters?.profileInsight ||
     !!filters?.teamId
 
   const indicators = useMemo(() => {
-    const teamBuckets = Array.isArray(summary?.teamBuckets) ? summary.teamBuckets : []
-    const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
-    const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
-    const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets) ? summary.positionCodeBuckets : []
-    const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets) ? summary.generalPositionBuckets : []
+    const teamBuckets = safeArray(summary?.teamBuckets)
+    const squadRoleBuckets = safeArray(summary?.squadRoleBuckets)
+    const projectStatusBuckets = safeArray(summary?.projectStatusBuckets)
+    const positionCodeBuckets = safeArray(summary?.positionCodeBuckets)
+    const generalPositionBuckets = safeArray(summary?.generalPositionBuckets)
 
-    const teamItem = teamBuckets.find((item) => item?.id === filters?.teamId)
-    const squadRoleItem = squadRoleBuckets.find((item) => item?.id === filters?.squadRole)
-    const projectStatusItem = projectStatusBuckets.find((item) => item?.id === filters?.projectStatus)
-    const positionCodeItem = positionCodeBuckets.find((item) => item?.id === filters?.positionCode)
-    const generalPositionItem = generalPositionBuckets.find((item) => item?.id === filters?.generalPositionKey)
+    const teamItem = teamBuckets.find(item => item?.id === filters?.teamId)
+    const squadRoleItem = squadRoleBuckets.find(item => item?.id === filters?.squadRole)
+    const projectStatusItem = projectStatusBuckets.find(item => item?.id === filters?.projectStatus)
+    const positionCodeItem = positionCodeBuckets.find(item => item?.id === filters?.positionCode)
+    const generalPositionItem = generalPositionBuckets.find(item => item?.id === filters?.generalPositionKey)
 
     const next = []
 
@@ -87,6 +150,33 @@ export default function ClubPlayersToolbar({
         color: 'success',
         clearAction: 'onlyActive',
       })
+    }
+
+    const efficiencyIndicator = getEfficiencyIndicator({
+      filters,
+      summary,
+    })
+
+    if (efficiencyIndicator) {
+      next.push(efficiencyIndicator)
+    }
+
+    const impactIndicator = getImpactIndicator({
+      filters,
+      summary,
+    })
+
+    if (impactIndicator) {
+      next.push(impactIndicator)
+    }
+
+    const profileInsightIndicator = getProfileInsightIndicator({
+      filters,
+      summary,
+    })
+
+    if (profileInsightIndicator) {
+      next.push(profileInsightIndicator)
     }
 
     if (teamItem) {
@@ -142,7 +232,7 @@ export default function ClubPlayersToolbar({
     return next
   }, [summary, filters])
 
-  const handleClearIndicator = (item) => {
+  const handleClearIndicator = item => {
     if (item?.clearAction === 'search') onChangeSearch('')
     if (item?.clearAction === 'onlyActive') onToggleOnlyActive()
     if (item?.clearAction === 'teamId') onChangeTeamId('')
@@ -150,6 +240,9 @@ export default function ClubPlayersToolbar({
     if (item?.clearAction === 'projectStatus') onChangeProjectStatus('')
     if (item?.clearAction === 'positionCode') onChangePositionCode('')
     if (item?.clearAction === 'generalPositionKey') onChangeGeneralPositionKey('')
+    if (item?.clearAction === 'efficiency') onChangeEfficiencyFilter('')
+    if (item?.clearAction === 'impact') onChangeImpactFilter('')
+    if (item?.clearAction === 'profileInsight') onChangeProfileInsightFilter('')
   }
 
   return (
@@ -215,7 +308,7 @@ export default function ClubPlayersToolbar({
           </Chip>
 
           {!!safeArray(indicators).length &&
-            indicators.map((item) => (
+            indicators.map(item => (
               <ToolbarFilterChip
                 key={item.id}
                 item={item}
@@ -228,6 +321,7 @@ export default function ClubPlayersToolbar({
       <MobileFiltersDrawerShell
         open={filtersOpen}
         entity="club"
+        size="lg"
         onClose={() => setFiltersOpen(false)}
         title="פילטרים לשחקנים"
         subtitle="סינון שחקני המועדון"
@@ -244,6 +338,9 @@ export default function ClubPlayersToolbar({
           onChangeProjectStatus={onChangeProjectStatus}
           onChangePositionCode={onChangePositionCode}
           onChangeGeneralPositionKey={onChangeGeneralPositionKey}
+          onChangeEfficiencyFilter={onChangeEfficiencyFilter}
+          onChangeImpactFilter={onChangeImpactFilter}
+          onChangeProfileInsightFilter={onChangeProfileInsightFilter}
           onChangeTeamId={onChangeTeamId}
         />
       </MobileFiltersDrawerShell>

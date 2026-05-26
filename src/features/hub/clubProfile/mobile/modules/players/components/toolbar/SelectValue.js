@@ -16,12 +16,12 @@ export default function SelectValue({
       <Box sx={sx.selectValueMain}>
         {icon ? iconUi({ id: icon, size: 'sm' }) : null}
 
-        <Typography color={color} level="body-sm" noWrap>
+        <Typography color={color} level="body-sm" noWrap sx={{ fontSize: 11 }}>
           {label}
         </Typography>
       </Box>
 
-      <Chip size="sm" color={color} variant="soft" sx={{ flexShrink: 0 }}>
+      <Chip size="sm" color={color} variant="soft" sx={{ flexShrink: 0, fontSize: 10 }}>
         {count || 0}
       </Chip>
     </Box>

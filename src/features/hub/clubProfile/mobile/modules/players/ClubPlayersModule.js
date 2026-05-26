@@ -17,6 +17,7 @@ import {
   CLUB_PLAYERS_DEFAULT_FILTERS,
   filterClubPlayersRows,
   resolveClubPlayers,
+  buildClubPlayerRows,
   sortClubPlayersRows,
 } from '../../../sharedLogic/players/index.js'
 
@@ -48,13 +49,20 @@ export default function ClubPlayersModule({
   })
 
   const { rows, summary } = useMemo(() => {
-    return resolveClubPlayers(liveClub)
-  }, [liveClub])
+    return buildClubPlayerRows({
+      club: liveClub,
+      players: profileData?.players || [],
+      performanceById: profileData?.playersScoring?.byId || {},
+    })
+  }, [liveClub, profileData])
 
   const filteredRows = useMemo(() => {
-    const filtered = filterClubPlayersRows(rows, filters)
+    const filtered = filterClubPlayersRows(rows, filters, {
+      performanceById: profileData?.playersScoring?.byId || {},
+    })
+
     return sortClubPlayersRows(filtered, sort)
-  }, [rows, filters, sort])
+  }, [rows, filters, sort, profileData])
 
   useEffect(() => {
     if (playersInsightsRequest > 0) {
@@ -97,6 +105,15 @@ export default function ClubPlayersModule({
           onChangeTeamId={(value) =>
             handleChangeFilters({ teamId: value || '' })
           }
+          onChangeEfficiencyFilter={(value) =>
+            handleChangeFilters({ efficiency: value || '' })
+          }
+          onChangeImpactFilter={(value) =>
+            handleChangeFilters({ impact: value || '' })
+          }
+          onChangeProfileInsightFilter={(value) =>
+            handleChangeFilters({ profileInsight: value || '' })
+          }
           onResetFilters={handleResetFilters}
           sortBy={sort.by}
           sortDirection={sort.direction}
@@ -115,6 +132,7 @@ export default function ClubPlayersModule({
       ) : (
         <ClubPlayersList
           rows={filteredRows}
+          profileData={profileData}
           onOpenPlayer={onOpenPlayer}
           onAvatarClick={(row) => {
             setImgRow(row)

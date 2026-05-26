@@ -21,7 +21,95 @@ import { CALCULATION_MODES } from './controls/index.js'
 const emptyArray = []
 const emptyObject = {}
 
-const DEBUG_PLAYER_INSIGHTS = true
+const DEBUG_PLAYER_INSIGHTS = false
+const DEBUG_SINGLE_GAME_PLAYERS = true
+const DEBUG_GAME_ID = ''
+const findDebugGame = games => {
+  if (!Array.isArray(games) || !games.length) return null
+
+  if (!DEBUG_GAME_ID) return games[0]
+
+  return games.find(game => {
+    return (
+      game?.id === DEBUG_GAME_ID ||
+      game?.gameId === DEBUG_GAME_ID ||
+      game?.game?.id === DEBUG_GAME_ID
+    )
+  }) || null
+}
+
+const getGameDebugTitle = game => {
+  return (
+    game?.gameName ||
+    game?.title ||
+    game?.rival ||
+    game?.rivel ||
+    game?.opponent ||
+    game?.id ||
+    game?.gameId ||
+    'Single Game'
+  )
+}
+
+const printSingleGamePlayersDebug = ({
+  game,
+  team,
+  calculationMode,
+}) => {
+  if (!game) return
+
+  const model = buildPlayersInsightsFromGames({
+    games: [game],
+    team,
+    calculationMode,
+  })
+
+  const rows = Array.isArray(model?.rows) ? model.rows : []
+
+  console.group(`Single Game Player Scores: ${getGameDebugTitle(game)}`)
+  console.log('Game', game)
+  console.log('Model', model)
+
+  console.table(
+    rows.map(row => {
+      return {
+        playerId: row.playerId,
+        name: row.name || row.playerName || row.label || '',
+        position: row.positionLabel || row.position || '',
+        role: row.roleLabel || row.squadRoleLabel || row.role || '',
+        minutes: row.minutes ?? row.timePlayed ?? '',
+        goals: row.goals ?? 0,
+        assists: row.assists ?? 0,
+
+        rating:
+          row.rating ??
+          row.ratingRaw ??
+          row.score?.rating ??
+          '',
+
+        tva:
+          row.tva ??
+          row.score?.tva ??
+          '',
+
+        profile:
+          row.profileLabel ??
+          row.profile?.label ??
+          row.insightProfile?.label ??
+          '',
+
+        reliability:
+          row.reliabilityLabel ??
+          row.reliability?.label ??
+          '',
+      }
+    })
+  )
+
+  console.groupEnd()
+
+  return model
+}
 
 const buildEmptyModel = ({
   calculationMode,
@@ -120,10 +208,21 @@ export function useTeamGamesInsightsModel({
   }, [ shouldBuild, safeGames, liveTeam, calculationMode ])
 
   useEffect(() => {
-    if (!DEBUG_PLAYER_INSIGHTS || !playerInsights) return
+    if (!DEBUG_SINGLE_GAME_PLAYERS || !shouldBuild) return
 
-    printPlayersInsightsDebug(playerInsights)
-  }, [playerInsights])
+    const game = findDebugGame(safeGames)
+
+    printSingleGamePlayersDebug({
+      game,
+      team: liveTeam,
+      calculationMode,
+    })
+  }, [
+    shouldBuild,
+    safeGames,
+    liveTeam,
+    calculationMode,
+  ])
 
   const insights = useMemo(() => {
     if (!shouldBuild) return null

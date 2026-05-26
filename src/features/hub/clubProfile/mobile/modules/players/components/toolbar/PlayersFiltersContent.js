@@ -1,5 +1,3 @@
-// ClubProfile/mobile/modules/games/components/toolbar/PlayersFiltersContent.js
-
 import React from 'react'
 import {
   Box,
@@ -21,6 +19,107 @@ import SelectValue from './SelectValue.js'
 
 const c = getEntityColors('players')
 
+const EFFICIENCY_FILTER_OPTIONS = [
+  {
+    value: '',
+    label: 'כל מדדי היעילות',
+    selectedLabel: 'כל המדדים',
+    icon: 'scoringRating',
+    color: 'neutral',
+  },
+  {
+    value: 'above6',
+    label: 'יעילות חיובית',
+    selectedLabel: 'מדד חיובי',
+    icon: 'scoringRating',
+    color: 'success',
+  },
+  {
+    value: 'below6',
+    label: 'יעילות שלילית',
+    selectedLabel: 'מדד שלילי',
+    icon: 'scoringRating',
+    color: 'warning',
+  },
+]
+
+const IMPACT_FILTER_OPTIONS = [
+  {
+    value: '',
+    label: 'כל מדדי ההשפעה',
+    selectedLabel: 'כל המדדים',
+    icon: 'scoringImpact',
+    color: 'neutral',
+  },
+  {
+    value: 'positive',
+    label: 'השפעה חיובית',
+    selectedLabel: 'מדד חיובי',
+    icon: 'scoringImpact',
+    color: 'success',
+  },
+  {
+    value: 'negative',
+    label: 'השפעה שלילית',
+    selectedLabel: 'מדד שלילי',
+    icon: 'scoringImpact',
+    color: 'danger',
+  },
+]
+
+const PROFILE_INSIGHT_FILTER_OPTIONS = [
+  {
+    value: '',
+    label: 'כל פרופילי התובנות',
+    selectedLabel: 'כל הפרופילים',
+    icon: 'insights',
+    color: 'neutral',
+  },
+]
+
+const safeBuckets = ({ source, fallback }) => {
+  return Array.isArray(source) && source.length ? source : fallback
+}
+
+const getOptionValue = item => {
+  return item?.value ?? item?.id ?? ''
+}
+
+const getOptionIcon = item => {
+  return item?.icon || item?.idIcon || 'noneType'
+}
+
+const findSelected = ({ buckets, value }) => {
+  return buckets.find(item => {
+    return getOptionValue(item) === (value || '')
+  })
+}
+
+function FilterOption({ item, fallbackIcon = 'noneType' }) {
+  return (
+    <Option key={getOptionValue(item) || 'all'} value={getOptionValue(item)}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+        <ListItemDecorator>
+          {iconUi({
+            id: getOptionIcon(item) || fallbackIcon,
+            sx: { color: item?.color },
+          })}
+        </ListItemDecorator>
+
+        <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
+          {item.label}
+        </Typography>
+
+        {item.count != null ? (
+          <Chip size="sm" variant="soft" color={item.color || 'neutral'}>
+            {item.count || 0}
+          </Chip>
+        ) : null}
+      </Box>
+    </Option>
+  )
+}
+
 export default function PlayersFiltersContent({
   summary,
   filters,
@@ -31,24 +130,71 @@ export default function PlayersFiltersContent({
   onChangeProjectStatus,
   onChangePositionCode,
   onChangeGeneralPositionKey,
+  onChangeEfficiencyFilter,
+  onChangeImpactFilter,
+  onChangeProfileInsightFilter,
 }) {
-  const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
-  const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
-  const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets) ? summary.positionCodeBuckets : []
-  const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets) ? summary.generalPositionBuckets : []
-  const teamBuckets = Array.isArray(summary?.teamBuckets) ? summary.teamBuckets : []
+  const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets)
+    ? summary.squadRoleBuckets
+    : []
 
+  const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets)
+    ? summary.projectStatusBuckets
+    : []
 
-  const selectedTeam = teamBuckets.find((item) => item?.id === filters?.teamId)
-  const selectedSquadRole = squadRoleBuckets.find((item) => item?.id === filters?.squadRole)
-  const selectedProjectStatus = projectStatusBuckets.find((item) => item?.id === filters?.projectStatus)
-  const selectedPositionCode = positionCodeBuckets.find((item) => item?.id === filters?.positionCode)
-  const selectedGeneralPosition = generalPositionBuckets.find(
-    (item) => item?.id === filters?.generalPositionKey
-  )
+  const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets)
+    ? summary.positionCodeBuckets
+    : []
+
+  const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets)
+    ? summary.generalPositionBuckets
+    : []
+
+  const teamBuckets = Array.isArray(summary?.teamBuckets)
+    ? summary.teamBuckets
+    : []
+
+  const efficiencyBuckets = safeBuckets({
+    source: summary?.efficiencyBuckets,
+    fallback: EFFICIENCY_FILTER_OPTIONS,
+  })
+
+  const impactBuckets = safeBuckets({
+    source: summary?.impactBuckets,
+    fallback: IMPACT_FILTER_OPTIONS,
+  })
+
+  const profileInsightBuckets = safeBuckets({
+    source: summary?.profileInsightBuckets,
+    fallback: PROFILE_INSIGHT_FILTER_OPTIONS,
+  })
+
+  const selectedTeam = teamBuckets.find(item => item?.id === filters?.teamId)
+  const selectedSquadRole = squadRoleBuckets.find(item => item?.id === filters?.squadRole)
+  const selectedProjectStatus = projectStatusBuckets.find(item => item?.id === filters?.projectStatus)
+  const selectedPositionCode = positionCodeBuckets.find(item => item?.id === filters?.positionCode)
+
+  const selectedGeneralPosition = generalPositionBuckets.find(item => {
+    return item?.id === filters?.generalPositionKey
+  })
+
+  const selectedEfficiency = findSelected({
+    buckets: efficiencyBuckets,
+    value: filters?.efficiency,
+  })
+
+  const selectedImpact = findSelected({
+    buckets: impactBuckets,
+    value: filters?.impact,
+  })
+
+  const selectedProfileInsight = findSelected({
+    buckets: profileInsightBuckets,
+    value: filters?.profileInsight,
+  })
 
   return (
-    <Box sx={{ display: 'grid', gap: 1.1 }}>
+    <Box sx={{ display: 'grid', gap: 1, p: 0 }}>
       <Box sx={{ minWidth: 0, px: 2 }}>
         <FormControl>
           <FormLabel>חיפוש</FormLabel>
@@ -89,22 +235,8 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {squadRoleBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="warning">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {squadRoleBuckets.map(item => (
+                <FilterOption key={item.id} item={item} fallbackIcon="star" />
               ))}
             </Select>
           </FormControl>
@@ -135,33 +267,8 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {projectStatusBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({
-                        id: item.idIcon,
-                        sx: { color: item.icCol || undefined },
-                      })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                      sx={{
-                        flexShrink: 0,
-                        bgcolor: item.color || undefined,
-                        color: item.icCol || undefined,
-                      }}
-                    >
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {projectStatusBuckets.map(item => (
+                <FilterOption key={item.id} item={item} fallbackIcon="project" />
               ))}
             </Select>
           </FormControl>
@@ -194,22 +301,8 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {positionCodeBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon || 'position' })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="primary">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {positionCodeBuckets.map(item => (
+                <FilterOption key={item.id} item={item} fallbackIcon="position" />
               ))}
             </Select>
           </FormControl>
@@ -240,22 +333,8 @@ export default function PlayersFiltersContent({
                 />
               </Option>
 
-              {generalPositionBuckets.map((item) => (
-                <Option key={item.id} value={item.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <ListItemDecorator>
-                      {iconUi({ id: item.idIcon || 'layers' })}
-                    </ListItemDecorator>
-
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                      {item.label}
-                    </Typography>
-
-                    <Chip size="sm" variant="soft" color="primary">
-                      {item.count || 0}
-                    </Chip>
-                  </Box>
-                </Option>
+              {generalPositionBuckets.map(item => (
+                <FilterOption key={item.id} item={item} fallbackIcon="layers" />
               ))}
             </Select>
           </FormControl>
@@ -264,6 +343,102 @@ export default function PlayersFiltersContent({
 
       <Box sx={sx.grid2}>
         <Box sx={{ minWidth: 0 }}>
+          <FormControl>
+            <FormLabel>מדד יעילות</FormLabel>
+            <Select
+              size="sm"
+              value={filters?.efficiency || ''}
+              onChange={(_, value) => onChangeEfficiencyFilter(value || '')}
+              sx={{ minWidth: 0, width: '100%', bgcolor: 'background.surface' }}
+              slotProps={{ listbox: { sx: { '--ListItemDecorator-size': '28px' } } }}
+              renderValue={() => (
+                <SelectValue
+                  label={selectedEfficiency?.selectedLabel || selectedEfficiency?.label || 'כל מדדי היעילות'}
+                  icon={getOptionIcon(selectedEfficiency) || 'scoringRating'}
+                  count={selectedEfficiency?.count ?? summary?.total ?? 0}
+                  color={selectedEfficiency?.color || 'neutral'}
+                />
+              )}
+            >
+              {efficiencyBuckets.map(item => (
+                <FilterOption
+                  key={item.value || item.id || 'all'}
+                  item={item}
+                  fallbackIcon="scoringRating"
+                />
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <FormControl>
+            <FormLabel>מדד השפעה</FormLabel>
+            <Select
+              size="sm"
+              value={filters?.impact || ''}
+              onChange={(_, value) => onChangeImpactFilter(value || '')}
+              sx={{ minWidth: 0, width: '100%', bgcolor: 'background.surface' }}
+              slotProps={{ listbox: { sx: { '--ListItemDecorator-size': '28px' } } }}
+              renderValue={() => (
+                <SelectValue
+                  label={selectedImpact?.selectedLabel || selectedImpact?.label || 'כל מדדי ההשפעה'}
+                  icon={getOptionIcon(selectedImpact) || 'scoringImpact'}
+                  count={selectedImpact?.count ?? summary?.total ?? 0}
+                  color={selectedImpact?.color || 'neutral'}
+                />
+              )}
+            >
+              {impactBuckets.map(item => (
+                <FilterOption
+                  key={item.value || item.id || 'all'}
+                  item={item}
+                  fallbackIcon="scoringImpact"
+                />
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+
+      <Box sx={sx.grid1half}>
+        <Box sx={{ minWidth: 0 }}>
+          <FormControl>
+            <FormLabel>פרופיל תובנות</FormLabel>
+            <Select
+              size="sm"
+              value={filters?.profileInsight || ''}
+              onChange={(_, value) => onChangeProfileInsightFilter(value || '')}
+              sx={{ minWidth: 0, width: '100%', bgcolor: 'background.surface' }}
+              renderValue={() => (
+                <SelectValue
+                  label={selectedProfileInsight?.selectedLabel || selectedProfileInsight?.label || 'כל פרופילי התובנות'}
+                  icon={getOptionIcon(selectedProfileInsight) || 'insights'}
+                  count={selectedProfileInsight?.count ?? summary?.total ?? 0}
+                  color={selectedProfileInsight?.color || 'neutral'}
+                />
+              )}
+            >
+              <Option value="">
+                <SelectValue
+                  label="כל פרופילי התובנות"
+                  icon="insights"
+                  count={summary?.total ?? 0}
+                />
+              </Option>
+
+              {profileInsightBuckets.map(item => (
+                <FilterOption
+                  key={item.value || item.id}
+                  item={item}
+                  fallbackIcon="insights"
+                />
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ minWidth: 0, pt: 0.7 }}>
           <FormControl>
             <FormLabel>פעילות</FormLabel>
             <Chip
@@ -313,22 +488,8 @@ export default function PlayersFiltersContent({
               />
             </Option>
 
-            {teamBuckets.map((item) => (
-              <Option key={item.id} value={item.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <ListItemDecorator>
-                    {iconUi({ id: item.idIcon || 'teams' })}
-                  </ListItemDecorator>
-
-                  <Typography level="body-sm" noWrap sx={{ minWidth: 0, flex: 1 }}>
-                    {item.label}
-                  </Typography>
-
-                  <Chip size="sm" variant="soft" color="primary">
-                    {item.count || 0}
-                  </Chip>
-                </Box>
-              </Option>
+            {teamBuckets.map(item => (
+              <FilterOption key={item.id} item={item} fallbackIcon="teams" />
             ))}
           </Select>
         </FormControl>

@@ -11,7 +11,10 @@ import {
   TrendingUp,
   LightMode,
   Feed,
-  HighQuality
+  HighQuality,
+  Speed,
+  CrisisAlert,
+  AssignmentInd
 } from '@mui/icons-material';
 
 export const performanceIcons = {
@@ -30,5 +33,9 @@ export const performanceIcons = {
   trend: <TrendingUp />,
   topParm: <LightMode />,
   feed: <Feed />,
-  performance: <HighQuality />
+  performance: <HighQuality />,
+  performanceModel: <CrisisAlert />,
+  performanceProfile: <AssignmentInd />,
+  scoringRating: <Speed />,
+  scoringImpact: <TrendingUp />,
 };

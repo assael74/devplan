@@ -82,8 +82,8 @@ export const cardSx = {
     position: 'absolute',
     bottom: -1,
     left: -1,
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     borderRadius: '50%',
     border: '2px solid',
     borderColor: 'background.surface',
@@ -125,6 +125,7 @@ export const cardSx = {
 
   metaInline: {
     display: 'flex',
+    alignItems: 'center',
     gap: 1,
     flexWrap: 'wrap',
     minWidth: 0,

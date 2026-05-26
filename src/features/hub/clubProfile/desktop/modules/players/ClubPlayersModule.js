@@ -35,14 +35,7 @@ export default function ClubPlayersModule({
   }, [context?.clubs, entity])
 
   const [insightsOpen, setInsightsOpen] = useState(false)
-  const [filters, setFilters] = useState({
-    search: '',
-    onlyActive: false,
-    squadRole: '',
-    projectStatus: '',
-    positionCode: '',
-    generalPositionKey: '',
-  })
+  const [filters, setFilters] = useState(CLUB_PLAYERS_DEFAULT_FILTERS)
   const [sort, setSort] = useState({
     by: 'level',
     direction: 'desc',
@@ -52,13 +45,17 @@ export default function ClubPlayersModule({
     return buildClubPlayerRows({
       club: liveClub,
       players: profileData?.players || [],
+      performanceById: profileData?.playersScoring?.byId || {},
     })
   }, [liveClub, profileData])
 
   const filteredRows = useMemo(() => {
-    const filtered = filterClubPlayersRows(rows, filters)
+    const filtered = filterClubPlayersRows(rows, filters, {
+      performanceById: profileData?.playersScoring?.byId || {},
+    })
+
     return sortClubPlayersRows(filtered, sort)
-  }, [rows, filters, sort])
+  }, [rows, filters, sort, profileData])
 
   useEffect(() => {
     if (playersInsightsRequest > 0) {
@@ -71,14 +68,7 @@ export default function ClubPlayersModule({
   }
 
   const handleResetFilters = () => {
-    setFilters({
-      search: '',
-      onlyActive: false,
-      squadRole: '',
-      projectStatus: '',
-      positionCode: '',
-      generalPositionKey: '',
-    })
+    setFilters(CLUB_PLAYERS_DEFAULT_FILTERS)
   }
 
   return (
@@ -118,6 +108,15 @@ export default function ClubPlayersModule({
             }
             onChangeGeneralPositionKey={(value) =>
               handleChangeFilters({ generalPositionKey: value || '' })
+            }
+            onChangeEfficiencyFilter={(value) =>
+              handleChangeFilters({ efficiency: value || '' })
+            }
+            onChangeImpactFilter={(value) =>
+              handleChangeFilters({ impact: value || '' })
+            }
+            onChangeProfileInsightFilter={(value) =>
+              handleChangeFilters({ profileInsight: value || '' })
             }
             onResetFilters={handleResetFilters}
             sortBy={sort.by}

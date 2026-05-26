@@ -8,6 +8,7 @@ import JoyStarRatingStatic from '../../../../../../../../ui/domains/ratings/JoyS
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { getSquadRoleMeta } from '../../../../../../../../shared/players/player.squadRole.utils.js'
 
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
@@ -20,6 +21,7 @@ export default function ClubPlayerCardHeader({
 }) {
   const clickableAvatar = typeof onAvatarClick === 'function'
   const clickableProfile = typeof onOpenPlayer === 'function'
+  const squadRoleMeta = getSquadRoleMeta(row, c)
 
   const birthLabel = row?.birthLabel || ''
   const age = Number.isFinite(row?.age) ? row.age : null
@@ -70,6 +72,30 @@ export default function ClubPlayerCardHeader({
             >
               {row?.fullName || '—'}
             </Typography>
+
+            <Box sx={{ flex: 1 }} />
+
+            <Box>
+              {squadRoleMeta?.value ? (
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  startDecorator={iconUi({id: squadRoleMeta.iconId, sx: { color: squadRoleMeta.color } })}
+                  sx={sx.chip}
+                >
+                  {squadRoleMeta.label}
+                </Chip>
+              ) : (
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  color="danger"
+                  sx={sx.chip}
+                >
+                  לא הוגדר מעמד
+                </Chip>
+              )}
+            </Box>
           </Box>
 
           <Box sx={sx.metaInline}>

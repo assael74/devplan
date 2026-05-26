@@ -36,8 +36,6 @@ import {
   RocketLaunch,
   Stars,
   ManageHistory,
-  Waves,
-  Speed
 } from '@mui/icons-material';
 
 export const statusIcons = {
@@ -87,6 +85,4 @@ export const statusIcons = {
   loading: <Pending />,
   warning: <ErrorOutline />,
   category: <Category />,
-  scoringRating: <Speed />,
-  scoringImpact: <Waves />,
 };

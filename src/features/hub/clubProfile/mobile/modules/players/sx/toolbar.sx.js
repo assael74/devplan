@@ -29,6 +29,13 @@ export const toolbarSx = {
     px: 2,
   },
 
+  grid1half: {
+    display: 'grid',
+    gridTemplateColumns: '1.2fr .8fr',
+    gap: 1,
+    px: 2,
+  },
+
   createBtn: {
     bgcolor: c.bg,
     color: c.text,

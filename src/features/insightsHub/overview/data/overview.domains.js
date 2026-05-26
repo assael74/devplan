@@ -5,9 +5,9 @@ const c = (entity) => getEntityColors(entity)
 
 export const DOMAIN_OPTIONS = [
   {
-    id: 'games',
-    label: 'משחקים',
-    subtitle: 'תובנות ומדדים שנאספים ממשחקים',
+    id: 'performance',
+    label: 'מודל ביצוע',
+    subtitle: 'מודל שמודד מי עומד בציפייה, מי מייצר ערך, ומי צובר חוב מקצועי לאורך זמן.',
     iconId: 'games',
     color: c('teams').bg,
     disabled: false,

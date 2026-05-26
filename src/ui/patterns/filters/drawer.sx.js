@@ -36,6 +36,7 @@ export const drawerSx = {
     gap: 1,
     justifyContent: 'space-between',
     p: 1,
+    px: 2,
     borderTop: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.body',

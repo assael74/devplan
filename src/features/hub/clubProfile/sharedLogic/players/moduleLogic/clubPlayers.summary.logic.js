@@ -1,4 +1,4 @@
-//  clubProfile/sharedLogic/players/moduleLogic/clubPlayers.summary.logic.js
+// clubProfile/sharedLogic/players/moduleLogic/clubPlayers.summary.logic.js
 
 import {
   POSITION_LAYERS,
@@ -7,16 +7,30 @@ import {
   SQUAD_ROLE_OPTIONS,
 } from '../../../../../../shared/players/players.constants.js'
 
-import { normalizeClubPlayerRow } from './clubPlayers.logic.js'
+import {
+  PLAYER_INSIGHT_PROFILES,
+} from '../../../../../../shared/players/insights/insights.profiles.js'
 
-const safe = (v) => (v == null ? '' : String(v))
-const norm = (v) => safe(v).trim()
+import {
+  norm,
+  normalizeClubPlayerRow,
+} from './clubPlayers.row.logic.js'
 
-const buildPositionCodeBuckets = (rows) => {
+const toNumber = (value, fallback = null) => {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
+
+  const num = Number(value)
+
+  return Number.isFinite(num) ? num : fallback
+}
+
+const buildPositionCodeBuckets = rows => {
   const list = []
 
   Object.entries(POSITION_LAYERS || {}).forEach(([groupKey, items]) => {
-    ;(Array.isArray(items) ? items : []).forEach((item) => {
+    ;(Array.isArray(items) ? items : []).forEach(item => {
       list.push({
         id: item.code,
         value: item.code,
@@ -28,55 +42,59 @@ const buildPositionCodeBuckets = (rows) => {
     })
   })
 
-  return list.map((item) => ({
+  return list.map(item => ({
     ...item,
-    count: rows.filter((row) => {
+    count: rows.filter(row => {
       const positions = Array.isArray(row?.positions) ? row.positions : []
       return positions.includes(item.id)
     }).length,
   }))
 }
 
-const buildGeneralPositionBuckets = (rows) => {
-  return Object.keys(POSITION_LAYERS || {}).map((key) => ({
+const buildGeneralPositionBuckets = rows => {
+  return Object.keys(POSITION_LAYERS || {}).map(key => ({
     id: key,
     value: key,
     label: LAYER_TITLES?.[key] || key,
     idIcon: key,
-    count: rows.filter((row) => {
-      const rowKey = row?.generalPositionKey || row?.generalPosition?.layerKey || ''
+    count: rows.filter(row => {
+      const rowKey =
+        row?.generalPositionKey ||
+        row?.generalPosition?.layerKey ||
+        ''
+
       return rowKey === key
     }).length,
   }))
 }
 
-const buildSquadRoleBuckets = (rows) => {
-  return SQUAD_ROLE_OPTIONS.map((item) => ({
+const buildSquadRoleBuckets = rows => {
+  return SQUAD_ROLE_OPTIONS.map(item => ({
     id: item.value,
     value: item.value,
     label: item.label,
     idIcon: item.idIcon,
     color: item.color,
-    count: rows.filter((row) => row?.squadRole === item.value).length,
+    count: rows.filter(row => row?.squadRole === item.value).length,
   }))
 }
 
-const buildProjectStatusBuckets = (rows) => {
-  return PROJECT_STATUS_CANDIDATE.map((item) => ({
+const buildProjectStatusBuckets = rows => {
+  return PROJECT_STATUS_CANDIDATE.map(item => ({
     id: item.id,
     value: item.id,
     label: item.labelH,
     idIcon: item.idIcon,
     color: item.color,
     icCol: item.icCol,
-    count: rows.filter((row) => row?.projectStatus === item.id).length,
+    count: rows.filter(row => row?.projectStatus === item.id).length,
   }))
 }
 
-const buildTeamBuckets = (rows) => {
+const buildTeamBuckets = rows => {
   const map = new Map()
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const id = norm(row?.teamId || row?.teamName)
     if (!id) return
 
@@ -93,16 +111,194 @@ const buildTeamBuckets = (rows) => {
     map.get(id).count += 1
   })
 
-  return Array.from(map.values()).sort((a, b) => b.count - a.count)
+  return Array.from(map.values()).sort((a, b) => {
+    return b.count - a.count
+  })
 }
 
-const resolveClubPlayersBase = (club) => {
+const getPlayerPerformance = ({ row, performanceById }) => {
+  return (
+    performanceById[row?.playerId] ||
+    performanceById[row?.id] ||
+    row?.performance ||
+    null
+  )
+}
+
+const getPerformanceSummary = performance => {
+  return performance?.summary || performance?.scoring?.summary || {}
+}
+
+const getEfficiencyValue = ({ row, performanceById }) => {
+  const summary = getPerformanceSummary(
+    getPlayerPerformance({
+      row,
+      performanceById,
+    })
+  )
+
+  return toNumber(
+    summary?.ratingRaw ??
+      summary?.rating ??
+      summary?.avgRating,
+    null
+  )
+}
+
+const getImpactValue = ({ row, performanceById }) => {
+  const summary = getPerformanceSummary(
+    getPlayerPerformance({
+      row,
+      performanceById,
+    })
+  )
+
+  return toNumber(
+    summary?.tva ??
+      summary?.cumulativeImpact ??
+      summary?.totalImpact,
+    null
+  )
+}
+
+const getInsightId = ({ row, performanceById }) => {
+  const performance = getPlayerPerformance({
+    row,
+    performanceById,
+  })
+
+  const insight =
+    performance?.insightProfile ||
+    performance?.playerInsight ||
+    performance?.profile ||
+    null
+
+  return norm(
+    insight?.insightId ||
+      insight?.profileId ||
+      insight?.profile?.id ||
+      insight?.id ||
+      performance?.insightId ||
+      performance?.profileId ||
+      ''
+  )
+}
+
+const buildEfficiencyBuckets = ({ rows, performanceById }) => {
+  return [
+    {
+      id: 'above6',
+      value: 'above6',
+      label: 'יעילות חיובית',
+      selectedLabel: 'חיובית',
+      idIcon: 'scoringRating',
+      color: 'success',
+      count: rows.filter(row => {
+        const value = getEfficiencyValue({ row, performanceById })
+        return value != null && value >= 6
+      }).length,
+    },
+    {
+      id: 'below6',
+      value: 'below6',
+      label: 'יעילות שלילית',
+      selectedLabel: 'שלילית',
+      idIcon: 'scoringRating',
+      color: 'warning',
+      count: rows.filter(row => {
+        const value = getEfficiencyValue({ row, performanceById })
+        return value != null && value < 6
+      }).length,
+    },
+  ]
+}
+
+const buildImpactBuckets = ({ rows, performanceById }) => {
+  return [
+    {
+      id: 'positive',
+      value: 'positive',
+      label: 'השפעה חיובית',
+      selectedLabel: 'חיובית',
+      idIcon: 'scoringImpact',
+      color: 'success',
+      count: rows.filter(row => {
+        const value = getImpactValue({ row, performanceById })
+        return value != null && value > 0
+      }).length,
+    },
+    {
+      id: 'negative',
+      value: 'negative',
+      label: 'השפעה שלילית',
+      selectedLabel: 'שלילית',
+      idIcon: 'scoringImpact',
+      color: 'danger',
+      count: rows.filter(row => {
+        const value = getImpactValue({ row, performanceById })
+        return value != null && value < 0
+      }).length,
+    },
+  ]
+}
+
+const buildProfileInsightBuckets = ({ rows, performanceById }) => {
+  return Object.values(PLAYER_INSIGHT_PROFILES).map(profile => ({
+    id: profile.id,
+    value: profile.id,
+    label: profile.label,
+    selectedLabel: profile.shortLabel || profile.label,
+    idIcon: profile.icon || 'insights',
+    color: profile.tone || 'neutral',
+    count: rows.filter(row => {
+      return getInsightId({ row, performanceById }) === profile.id
+    }).length,
+  }))
+}
+
+export const buildRowsSummary = ({ rows, performanceById = {} } = {}) => {
+  const safeRows = Array.isArray(rows) ? rows : []
+
+  return {
+    total: safeRows.length,
+    active: safeRows.filter(row => row?.active !== false).length,
+    inactive: safeRows.filter(row => row?.active === false).length,
+    nonActive: safeRows.filter(row => row?.active === false).length,
+
+    key: safeRows.filter(row => row?.isKey).length,
+    project: safeRows.filter(row => row?.isProject).length,
+    candidate: safeRows.filter(row => row?.projectChipMeta?.id === 'candidateFlow').length,
+
+    teamBuckets: buildTeamBuckets(safeRows),
+    squadRoleBuckets: buildSquadRoleBuckets(safeRows),
+    projectStatusBuckets: buildProjectStatusBuckets(safeRows),
+    positionCodeBuckets: buildPositionCodeBuckets(safeRows),
+    generalPositionBuckets: buildGeneralPositionBuckets(safeRows),
+
+    efficiencyBuckets: buildEfficiencyBuckets({
+      rows: safeRows,
+      performanceById,
+    }),
+
+    impactBuckets: buildImpactBuckets({
+      rows: safeRows,
+      performanceById,
+    }),
+
+    profileInsightBuckets: buildProfileInsightBuckets({
+      rows: safeRows,
+      performanceById,
+    }),
+  }
+}
+
+const resolveClubPlayersBase = club => {
   const teams = Array.isArray(club?.teams) ? club.teams : []
 
-  return teams.flatMap((team) => {
+  return teams.flatMap(team => {
     const players = Array.isArray(team?.players) ? team.players : []
 
-    return players.map((player) => ({
+    return players.map(player => ({
       ...player,
       teamId: team?.id || team?.teamId || '',
       teamName: team?.teamName || team?.name || '',
@@ -113,29 +309,19 @@ const resolveClubPlayersBase = (club) => {
   })
 }
 
-export const resolveClubPlayers = (club) => {
+export const resolveClubPlayers = ({ club, performanceById = {} } = {}) => {
   const base = resolveClubPlayersBase(club)
 
   const rows = base
-    .map((item) => normalizeClubPlayerRow(item, club))
-    .filter((x) => !!x.id)
+    .map(item => normalizeClubPlayerRow(item, club))
+    .filter(row => !!row.id)
 
   return {
     clubFullStats: club?.clubFullStats || {},
     rows,
-    summary: {
-      total: rows.length,
-      active: rows.filter((x) => x.active).length,
-      nonActive: rows.filter((x) => !x.active).length,
-      key: rows.filter((x) => x.squadRole === 'key').length,
-      project: rows.filter((x) => x.projectChipMeta?.id === 'project').length,
-      candidate: rows.filter((x) => x.projectChipMeta?.id === 'candidateFlow').length,
-
-      teamBuckets: buildTeamBuckets(rows),
-      squadRoleBuckets: buildSquadRoleBuckets(rows),
-      projectStatusBuckets: buildProjectStatusBuckets(rows),
-      positionCodeBuckets: buildPositionCodeBuckets(rows),
-      generalPositionBuckets: buildGeneralPositionBuckets(rows),
-    },
+    summary: buildRowsSummary({
+      rows,
+      performanceById,
+    }),
   }
 }

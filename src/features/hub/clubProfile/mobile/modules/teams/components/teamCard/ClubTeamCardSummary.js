@@ -6,7 +6,15 @@ import { Box, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
-export default function ClubTeamCardSummary({ row }) {
+import {
+  buildTeamPerformanceSectionModel,
+} from './ui/performanceSection.ui.js'
+
+export default function ClubTeamCardSummary({ row, performance }) {
+  const modelPer = buildTeamPerformanceSectionModel({
+    performance,
+  })
+  
   return (
     <Box sx={sx.playerStatsWrap}>
       <Chip
@@ -46,10 +54,22 @@ export default function ClubTeamCardSummary({ row }) {
           size="sm"
           variant="soft"
           color="neutral"
-          startDecorator={iconUi({ id: 'score' })}
+          startDecorator={iconUi({ id: 'points' })}
           sx={sx.chip}
         >
           {row.points} נק׳
+        </Chip>
+      )}
+
+      {row?.points != null && (
+        <Chip
+          size="sm"
+          variant="soft"
+          color={modelPer.impactColor}
+          startDecorator={iconUi({ id: 'scoringImpact' })}
+          sx={sx.chip}
+        >
+          {modelPer.impactLabel}
         </Chip>
       )}
     </Box>

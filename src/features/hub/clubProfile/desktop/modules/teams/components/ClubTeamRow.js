@@ -40,17 +40,6 @@ export default function ClubTeamRow({ row, onEdit, performance }) {
     if (onEdit) onEdit(team)
   }
 
-  console.log('[team-row-1]', {
-  rowId: row?.id,
-  rowTeamId: row?.teamId,
-  rowName: row?.teamName,
-  hasPerformance: !!performance,
-  performanceKeys: Object.keys(performance || {}),
-  summary: performance?.summary,
-  scoringSummary: performance?.scoring?.summary,
-  meta: performance?.meta,
-})
-
   return (
     <Box
       sx={[
