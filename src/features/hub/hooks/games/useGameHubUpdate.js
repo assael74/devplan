@@ -16,11 +16,17 @@ function buildGameName(game = {}) {
   )
 }
 
+function resolveGameId(game = {}) {
+  return game?.id || game?.gameId || game?.game?.id || game?.game?.gameId || ''
+}
+
 export function useGameHubUpdate(active) {
+  const activeId = resolveGameId(active)
+
   const regularGameUpdate = useUpdateAction({
     routerEntityType: 'games',
     snackEntityType: 'game',
-    id: active?.id,
+    id: activeId,
     entityName: buildGameName(active),
     requireAnyUpdated: true,
   })
@@ -28,13 +34,14 @@ export function useGameHubUpdate(active) {
   const externalGameUpdate = useUpdateAction({
     routerEntityType: 'externalGames',
     snackEntityType: 'game',
-    id: active?.id,
+    id: activeId,
     entityName: buildGameName(active),
     requireAnyUpdated: true,
   })
 
-  const run = (type, patch, meta) => {
+  const run = (type, patch, meta = {}) => {
     const baseGame = meta?.game || active || {}
+
     const externalMode =
       meta?.routerEntityType === 'externalGames' ||
       meta?.gameSource === 'external' ||
@@ -42,7 +49,7 @@ export function useGameHubUpdate(active) {
       isExternalGame(baseGame)
 
     const update = externalMode ? externalGameUpdate : regularGameUpdate
-    const gameId = meta?.gameId || active?.id
+    const gameId = meta?.gameId || resolveGameId(active)
 
     return update.runUpdate(patch, {
       ...meta,

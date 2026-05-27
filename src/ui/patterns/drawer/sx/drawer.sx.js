@@ -12,7 +12,7 @@ export const drawerSx = {
   }),
 
   sheet: {
-    borderRadius: 'md',
+    borderRadius: { md: 'md', xs: ''},
     display: 'flex',
     flexDirection: 'column',
     gap: 1,

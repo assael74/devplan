@@ -14,7 +14,7 @@ export const cardSx = {
 
   headerMain: {
     display: 'grid',
-    gridTemplateColumns: '40px 1fr auto',
+    gridTemplateColumns: '40px 1fr auto auto',
     alignItems: 'center',
     gap: 0.9,
     minWidth: 0,

@@ -22,14 +22,16 @@ import GameChipResult from './GameChipResult.js'
 import { createSx as sx } from './sx/create.sx.js'
 
 function getGameCreateFieldsState(draft = {}, context = {}) {
+  const player = context?.player || context?.entity || {}
+
   return {
     gameDate: draft?.gameDate || '',
     gameHour: draft?.gameHour || '',
     rivel: draft?.rivel || '',
-    teamId: draft?.teamId || '',
-    clubId: draft?.clubId || '',
-    clubName: draft?.clubName || context?.player?.clubName || '',
-    teamName: draft?.teamName || context?.player?.teamName || '',
+    teamId: draft?.teamId || player?.teamId || '',
+    clubId: draft?.clubId || player?.clubId || '',
+    clubName: draft?.clubName || player?.clubName || '',
+    teamName: draft?.teamName || player?.teamName || '',
     home: draft?.home ?? '',
     difficulty: draft?.difficulty || '',
     type: draft?.type || '',
@@ -83,9 +85,10 @@ export default function GameCreateFields({
             <Box sx={{ minWidth: 0 }}>
               <ClubNameField value={clubName} size="sm" readOnly />
             </Box>
+
             <Box sx={{ minWidth: 0 }}>
               <TeamNameField value={teamName} size="sm" readOnly />
-            </Box>            
+            </Box>
           </>
         ) : (
           <>
@@ -128,6 +131,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, rivel: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <GameHomeSelector
             id="game_Home_Selector"
@@ -137,6 +141,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, home: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <DateInputField
             label="תאריך משחק"
@@ -147,6 +152,7 @@ export default function GameCreateFields({
             size="sm"
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <HourInputField
             value={gameHour}
@@ -174,6 +180,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, type: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <GameDifficultySelectField
             value={difficulty}
@@ -181,6 +188,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, difficulty: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <GameDurationSelectField
             value={gameDuration}
@@ -208,6 +216,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, goalsFor: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <GoalsAgainstField
             id="goalsAgainst"
@@ -216,6 +225,7 @@ export default function GameCreateFields({
             onChange={(value) => onDraft({ ...draft, goalsAgainst: value })}
           />
         </Box>
+
         <Box sx={{ minWidth: 0 }}>
           <GameChipResult size="lg" goalsFor={goalsFor} goalsAgainst={goalsAgainst} />
         </Box>

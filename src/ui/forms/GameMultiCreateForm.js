@@ -12,6 +12,17 @@ function clean(v) {
   return String(v ?? '').trim()
 }
 
+const getIsPrivatePlayer = (context = {}, draft = {}) => {
+  const player = context?.player || context?.entity || {}
+
+  return (
+    context?.isPrivatePlayer === true ||
+    draft?.isPrivatePlayer === true ||
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
+  )
+}
+
 function createGameRow(defaults = {}) {
   return {
     uiKey: makeId('gameRow'),
@@ -24,7 +35,22 @@ function createGameRow(defaults = {}) {
   }
 }
 
-function normalizeDraft(draft = {}, context = {}) {
+function getPrivateMeta(context = {}, draft = {}) {
+  const player = context?.player || context?.entity || {}
+
+  return {
+    playerId: draft?.playerId || context?.playerId || player?.id || '',
+    teamId: draft?.teamId || context?.teamId || player?.teamId || '',
+    clubId: draft?.clubId || context?.clubId || player?.clubId || '',
+    teamName: draft?.teamName || player?.teamName || player?.team?.teamName || '',
+    clubName: draft?.clubName || player?.clubName || player?.club?.clubName || '',
+    isPrivatePlayer: true,
+    gameSource: 'external',
+    isExternalGame: true,
+  }
+}
+
+function normalizeDraft(draft = {}, context = {}, isPrivatePlayer = false) {
   const defaults = {
     type: draft?.defaults?.type || draft?.type || '',
     gameDuration: draft?.defaults?.gameDuration || draft?.gameDuration || '',
@@ -47,6 +73,14 @@ function normalizeDraft(draft = {}, context = {}) {
     games.push(createGameRow(defaults))
   }
 
+  if (isPrivatePlayer) {
+    return {
+      ...getPrivateMeta(context, draft),
+      defaults,
+      games: games.slice(0, 10),
+    }
+  }
+
   return {
     teamId: draft?.teamId || context?.team?.id || '',
     clubId: draft?.clubId || context?.team?.club?.id || '',
@@ -56,7 +90,7 @@ function normalizeDraft(draft = {}, context = {}) {
 }
 
 export default function GameMultiCreateForm({
-  draft,
+  draft = {},
   onDraft,
   onValidChange,
   context = {},
@@ -67,22 +101,38 @@ export default function GameMultiCreateForm({
   const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
   const isMobile = forceMobile || isMobileViewport
 
+  const isPrivatePlayer = useMemo(() => {
+    return getIsPrivatePlayer(context, draft)
+  }, [context, draft])
+
   const normalizedDraft = useMemo(() => {
-    return normalizeDraft(draft, context)
-  }, [draft, context])
+    return normalizeDraft(draft, context, isPrivatePlayer)
+  }, [draft, context, isPrivatePlayer])
 
   useEffect(() => {
-    const needsSync =
+    const needsBaseSync =
       !Array.isArray(draft?.games) ||
       draft?.games.length < 2 ||
-      !draft?.defaults ||
-      !draft?.teamId ||
-      !draft?.clubId
+      !draft?.defaults
 
-    if (needsSync) {
-      onDraft?.(normalizedDraft)
+    const needsRegularSync =
+      !isPrivatePlayer &&
+      (!draft?.teamId || !draft?.clubId)
+
+    const needsPrivateSync =
+      isPrivatePlayer &&
+      (
+        !draft?.playerId ||
+        !draft?.teamName ||
+        !draft?.clubName ||
+        draft?.gameSource !== 'external' ||
+        draft?.isExternalGame !== true
+      )
+
+    if (needsBaseSync || needsRegularSync || needsPrivateSync) {
+      onDraft(normalizedDraft)
     }
-  }, [draft, normalizedDraft, onDraft])
+  }, [draft, normalizedDraft, isPrivatePlayer, onDraft])
 
   const validity = useMemo(() => {
     const rows = normalizedDraft?.games || []
@@ -106,15 +156,24 @@ export default function GameMultiCreateForm({
       }
     })
 
+    const okPrivateMeta =
+      !isPrivatePlayer ||
+      (
+        !!clean(normalizedDraft?.playerId) &&
+        !!clean(normalizedDraft?.teamName) &&
+        !!clean(normalizedDraft?.clubName)
+      )
+
     return {
       total: rows.length,
       rowValidity,
       isValid:
         rows.length >= 2 &&
         rows.length <= 10 &&
+        okPrivateMeta &&
         rowValidity.every((item) => item.isValid),
     }
-  }, [normalizedDraft])
+  }, [normalizedDraft, isPrivatePlayer])
 
   useEffect(() => {
     onValidChange(validity.isValid)
@@ -131,6 +190,7 @@ export default function GameMultiCreateForm({
       context={context}
       validity={validity}
       layout={layout}
+      isPrivatePlayer={isPrivatePlayer}
     />
   )
 }

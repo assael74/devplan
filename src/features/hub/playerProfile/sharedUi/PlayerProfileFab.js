@@ -30,11 +30,44 @@ function presetForTab(tab, entity, context) {
   return { playerId, teamId, clubId }
 }
 
+function buildGamePreset({ entity, context, isPrivatePlayer }) {
+  const base = presetForTab('games', entity, context)
+
+  if (!isPrivatePlayer) return base
+
+  return {
+    ...base,
+    playerId: entity?.id || '',
+    teamId: entity?.teamId || '',
+    clubId: entity?.clubId || '',
+    teamName: entity?.teamName || '',
+    clubName: entity?.clubName || '',
+    isSelected: true,
+    isStarting: false,
+    goals: 0,
+    assists: 0,
+    timePlayed: 0,
+    gameSource: 'external',
+    isExternalGame: true,
+    isPrivatePlayer: true,
+  }
+}
+
+function buildGameContext({ entity, context, isPrivatePlayer }) {
+  return {
+    ...(context || {}),
+    player: entity,
+    isPrivatePlayer,
+    playerSource: entity?.playerSource || '',
+  }
+}
+
 export default function PlayerProfileFab({
   entity,
   context,
   tab,
   taskContext,
+  isPrivatePlayer = false,
   onOpenMeetingsInsights,
   onOpenPaymentsInsights,
   onOpenAbilitiesInsights,
@@ -50,7 +83,10 @@ export default function PlayerProfileFab({
       area: 'player',
       mode: tab,
       taskContext,
-      permissions: { allowCreate: true },
+      permissions: {
+        allowCreate: true,
+        allowGamesCreate: isPrivatePlayer,
+      },
       handlers: {
         onAddMeeting: () => {
           openCreate('meeting', presetForTab('meetings', entity, context), {
@@ -64,6 +100,22 @@ export default function PlayerProfileFab({
             player: entity,
             ...(context || {}),
           })
+        },
+
+        onAddGame: () => {
+          openCreate(
+            'game',
+            buildGamePreset({ entity, context, isPrivatePlayer }),
+            buildGameContext({ entity, context, isPrivatePlayer })
+          )
+        },
+
+        onAddGames: () => {
+          openCreate(
+            'games',
+            buildGamePreset({ entity, context, isPrivatePlayer }),
+            buildGameContext({ entity, context, isPrivatePlayer })
+          )
         },
 
         onAddVideoAnalysis: () => {
@@ -80,12 +132,13 @@ export default function PlayerProfileFab({
           })
         },
 
-        onAddTask: (taskCtx = {}) =>
+        onAddTask: (taskCtx = {}) => {
           openCreate(
             'task',
             buildTaskPresetDraft(taskCtx),
-            { ...context, ...taskCtx },
-          ),
+            { ...context, ...taskCtx }
+          )
+        },
 
         onOpenMeetingsInsights: () => onOpenMeetingsInsights?.(),
         onOpenPaymentsInsights: () => onOpenPaymentsInsights?.(),
@@ -102,6 +155,7 @@ export default function PlayerProfileFab({
     entity,
     context,
     taskContext,
+    isPrivatePlayer,
     onOpenMeetingsInsights,
     onOpenPaymentsInsights,
     onOpenAbilitiesInsights,

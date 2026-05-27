@@ -26,9 +26,42 @@ const isValidDateFormat = (value) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) || /^\d{2}\/\d{2}\/\d{4}$/.test(date)
 }
 
+const GAME_STATUS_SCHEDULED = 'scheduled'
+const GAME_STATUS_PLAYED = 'played'
+
+const toNumOrEmpty = value => {
+  if (value === '' || value == null) return ''
+
+  const num = Number(value)
+
+  return Number.isFinite(num) ? num : ''
+}
+
+const calcResultByGoals = (goalsFor, goalsAgainst) => {
+  const goalsForNum = Number(goalsFor)
+  const goalsAgainstNum = Number(goalsAgainst)
+
+  if (!Number.isFinite(goalsForNum) || !Number.isFinite(goalsAgainstNum)) return ''
+  if (goalsForNum > goalsAgainstNum) return 'win'
+  if (goalsForNum < goalsAgainstNum) return 'loss'
+
+  return 'draw'
+}
+
+const isPlayedStatus = gameStatus => {
+  return safe(gameStatus) === GAME_STATUS_PLAYED
+}
+
+const resolvePlayedResult = ({ gameStatus, source, goalsFor, goalsAgainst }) => {
+  if (!isPlayedStatus(gameStatus)) return ''
+
+  return safe(source?.result) || calcResultByGoals(goalsFor, goalsAgainst) || ''
+}
+
 const buildComparableExternalGameDraft = (draft = {}) => {
   return {
-    gameId: safe(draft?.gameId),
+    id: safe(draft?.id || draft?.gameId),
+    gameId: safe(draft?.gameId || draft?.id),
     playerId: safe(draft?.playerId),
 
     teamName: safe(draft?.teamName),
@@ -41,19 +74,17 @@ const buildComparableExternalGameDraft = (draft = {}) => {
     difficulty: safe(draft?.difficulty),
     type: safe(draft?.type),
     gameDuration: safe(draft?.gameDuration),
+    gameStatus: safe(draft?.gameStatus || GAME_STATUS_SCHEDULED),
 
-    goalsFor: toNumOrZero(draft?.goalsFor),
-    goalsAgainst: toNumOrZero(draft?.goalsAgainst),
-    result: safe(draft?.result || 'draw'),
+    goalsFor: toNumOrEmpty(draft?.goalsFor),
+    goalsAgainst: toNumOrEmpty(draft?.goalsAgainst),
+    result: safe(draft?.result),
 
     isSelected: toBool(draft?.isSelected, true),
     isStarting: toBool(draft?.isStarting, false),
     goals: toNumOrZero(draft?.goals),
     assists: toNumOrZero(draft?.assists),
     timePlayed: toNumOrZero(draft?.timePlayed),
-
-    gameSource: safe(draft?.gameSource || 'external'),
-    isExternalGame: draft?.isExternalGame === true,
   }
 }
 
@@ -61,24 +92,44 @@ export function buildExternalGameEditInitial(row = {}, context = {}) {
   const source = row?.game || row || {}
   const player = context?.player || context?.entity || null
 
+  const goalsFor = toNumOrEmpty(source?.goalsFor)
+  const goalsAgainst = toNumOrEmpty(source?.goalsAgainst)
+  const gameStatus = safe(source?.gameStatus) || GAME_STATUS_SCHEDULED
+
+  const result = resolvePlayedResult({
+    gameStatus,
+    source,
+    goalsFor,
+    goalsAgainst,
+  })
+
   return {
+    id: safe(source?.id || row?.id || row?.gameId),
     gameId: safe(source?.id || row?.id || row?.gameId),
+
     playerId: safe(source?.playerId || row?.playerId || context?.playerId || player?.id),
+
+    teamId: safe(source?.teamId || player?.teamId),
+    clubId: safe(source?.clubId || player?.clubId),
 
     teamName: safe(source?.teamName || player?.teamName || player?.team?.teamName),
     clubName: safe(source?.clubName || player?.clubName || player?.club?.clubName),
 
+    rivel: safe(source?.rivel || source?.rival),
     gameDate: safe(source?.gameDate),
     gameHour: safe(source?.gameHour),
-    rivel: safe(source?.rivel || source?.rival),
-    home: toBool(source?.home, true),
+    gameLeagueNum: toNumOrEmpty(source?.gameLeagueNum),
+    vLink: safe(source?.vLink),
+
+    home: source?.home ?? '',
     difficulty: safe(source?.difficulty),
     type: safe(source?.type),
-    gameDuration: safe(source?.gameDuration),
+    gameDuration: toNumOrEmpty(source?.gameDuration ?? source?.duration),
 
-    goalsFor: toNumOrZero(source?.goalsFor),
-    goalsAgainst: toNumOrZero(source?.goalsAgainst),
-    result: safe(source?.result || 'draw'),
+    goalsFor,
+    goalsAgainst,
+    result,
+    gameStatus,
 
     isSelected: toBool(source?.isSelected, true),
     isStarting: toBool(source?.isStarting, false),
@@ -88,6 +139,8 @@ export function buildExternalGameEditInitial(row = {}, context = {}) {
 
     gameSource: 'external',
     isExternalGame: true,
+
+    raw: source,
   }
 }
 
@@ -150,13 +203,11 @@ export function buildExternalGameEntryLimits(draft = {}) {
 export function buildExternalGameEditPatch({ draft }) {
   const goalsFor = toNumOrZero(draft?.goalsFor)
   const goalsAgainst = toNumOrZero(draft?.goalsAgainst)
+  const gameStatus = safe(draft?.gameStatus) || GAME_STATUS_SCHEDULED
 
-  const result =
-    goalsFor > goalsAgainst
-      ? 'win'
-      : goalsFor < goalsAgainst
-      ? 'loss'
-      : 'draw'
+  const result = isPlayedStatus(gameStatus)
+    ? calcResultByGoals(goalsFor, goalsAgainst)
+    : ''
 
   const playerGoals = Math.min(toNumOrZero(draft?.goals), goalsFor)
   const playerAssists = Math.min(toNumOrZero(draft?.assists), goalsFor)
@@ -169,6 +220,7 @@ export function buildExternalGameEditPatch({ draft }) {
     gameDate: safe(draft?.gameDate),
     gameHour: safe(draft?.gameHour),
     gameDuration: safe(draft?.gameDuration),
+    gameStatus,
     goalsFor,
     goalsAgainst,
     result,

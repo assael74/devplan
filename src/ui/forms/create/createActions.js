@@ -1,4 +1,7 @@
+// ui/forms/create/createActions.js
+
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
+import { createGameStatsDoc } from '../../../services/firestore/shorts/gameStats/index.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
 import { buildGameInfoItem, buildGameTimeItem, buildGameResultItem } from '../helpers/gameForm.helpers.js'
 import { buildPlayerInfoItem, buildPlayerNamesItem, buildPlayerTeamItem } from '../helpers/playerForm.helpers.js'
@@ -14,8 +17,99 @@ const pickIfaLink = (draft) => {
 
 const clean = (value) => String(value ?? '').trim()
 
+const toNum = (value) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+const toBool = (value, fallback = false) => {
+  if (typeof value === 'boolean') return value
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return fallback
+}
+
 const omitEmpty = (obj = {}) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
+
+const resolveResult = ({ goalsFor, goalsAgainst }) => {
+  const gf = toNum(goalsFor)
+  const ga = toNum(goalsAgainst)
+
+  if (gf > ga) return 'win'
+  if (gf < ga) return 'loss'
+
+  return 'draw'
+}
+
+const buildExternalGameInfoItem = ({ id, draft, now }) => {
+  return {
+    ...buildGameInfoItem({ id, draft, now }),
+    ...buildGameTimeItem({ id, draft }),
+    ...buildGameResultItem({ id, draft }),
+
+    playerId: clean(draft?.playerId),
+    teamName: clean(draft?.teamName),
+    clubName: clean(draft?.clubName),
+
+    result: clean(draft?.result) || resolveResult({
+      goalsFor: draft?.goalsFor,
+      goalsAgainst: draft?.goalsAgainst,
+    }),
+
+    gameSource: 'external',
+    isExternalGame: true,
+  }
+}
+
+const buildExternalGamePlayersItem = ({ id, draft }) => {
+  const goalsFor = toNum(draft?.goalsFor)
+
+  return {
+    id,
+    playerId: clean(draft?.playerId),
+    isSelected: toBool(draft?.isSelected, true),
+    isStarting: toBool(draft?.isStarting, false),
+    onSquad: toBool(draft?.isSelected, true),
+    onStart: toBool(draft?.isStarting, false),
+    goals: Math.min(toNum(draft?.goals), goalsFor),
+    assists: Math.min(toNum(draft?.assists), goalsFor),
+    timePlayed: toNum(draft?.timePlayed),
+  }
+}
+
+const buildExternalGameDraft = ({ draft, context, row = {} }) => {
+  const player = context?.player || context?.entity || {}
+
+  const merged = {
+    ...draft,
+    ...row,
+  }
+
+  return {
+    ...merged,
+    playerId: clean(merged?.playerId || context?.playerId || player?.id),
+
+    teamId: clean(merged?.teamId || context?.teamId || player?.teamId),
+    clubId: clean(merged?.clubId || context?.clubId || player?.clubId),
+
+    teamName: clean(merged?.teamName || player?.teamName || player?.team?.teamName),
+    clubName: clean(merged?.clubName || player?.clubName || player?.club?.clubName),
+
+    home: toBool(merged?.home, true),
+    goalsFor: toNum(merged?.goalsFor),
+    goalsAgainst: toNum(merged?.goalsAgainst),
+
+    isSelected: toBool(merged?.isSelected, true),
+    isStarting: toBool(merged?.isStarting, false),
+    goals: toNum(merged?.goals),
+    assists: toNum(merged?.assists),
+    timePlayed: toNum(merged?.timePlayed),
+
+    gameSource: 'external',
+    isExternalGame: true,
+  }
+}
 
 export const createActions = {
   club: async ({ draft }) => {
@@ -64,20 +158,9 @@ export const createActions = {
     const namesItem = buildPlayerNamesItem({ id, draft })
     const teamItem = buildPlayerTeamItem({ id, draft })
 
-    await createShort({
-      shortKey: 'players.playersInfo',
-      item: infoItem,
-    })
-
-    await createShort({
-      shortKey: 'players.playersNames',
-      item: namesItem,
-    })
-
-    await createShort({
-      shortKey: 'players.playersTeam',
-      item: teamItem,
-    })
+    await createShort({ shortKey: 'players.playersInfo', item: infoItem })
+    await createShort({ shortKey: 'players.playersNames', item: namesItem })
+    await createShort({ shortKey: 'players.playersTeam', item: teamItem })
 
     return {
       ...infoItem,
@@ -103,7 +186,6 @@ export const createActions = {
       teamName: draft?.teamName || '',
       createdAt: now,
       updatedAt: now,
-
       ...(ifaLink ? { ifaLink } : {}),
     })
 
@@ -112,9 +194,7 @@ export const createActions = {
       item: infoItem,
     })
 
-    return {
-      ...infoItem,
-    }
+    return { ...infoItem }
   },
 
   players: async ({ draft }) => {
@@ -136,20 +216,9 @@ export const createActions = {
       const namesItem = buildPlayerNamesItem({ id, draft: playerDraft })
       const teamItem = buildPlayerTeamItem({ id, draft: playerDraft })
 
-      await createShort({
-        shortKey: 'players.playersInfo',
-        item: infoItem,
-      })
-
-      await createShort({
-        shortKey: 'players.playersNames',
-        item: namesItem,
-      })
-
-      await createShort({
-        shortKey: 'players.playersTeam',
-        item: teamItem,
-      })
+      await createShort({ shortKey: 'players.playersInfo', item: infoItem })
+      await createShort({ shortKey: 'players.playersNames', item: namesItem })
+      await createShort({ shortKey: 'players.playersTeam', item: teamItem })
 
       created.push({
         ...infoItem,
@@ -224,9 +293,7 @@ export const createActions = {
       item: meetingInfoItem,
     })
 
-    return {
-      ...meetingInfoItem,
-    }
+    return { ...meetingInfoItem }
   },
 
   payment: async ({ draft }) => {
@@ -248,15 +315,8 @@ export const createActions = {
       status: initialStatus,
     }
 
-    await createShort({
-      shortKey: 'payments.paymentProfit',
-      item: paymentProfitItem,
-    })
-
-    await createShort({
-      shortKey: 'payments.paymentOperative',
-      item: paymentOperativeItem,
-    })
+    await createShort({ shortKey: 'payments.paymentProfit', item: paymentProfitItem })
+    await createShort({ shortKey: 'payments.paymentOperative', item: paymentOperativeItem })
 
     return {
       ...paymentProfitItem,
@@ -272,20 +332,9 @@ export const createActions = {
     const gameTimeItem = buildGameTimeItem({ id, draft })
     const gameResultItem = buildGameResultItem({ id, draft })
 
-    await createShort({
-      shortKey: 'games.gameInfo',
-      item: gameInfoItem,
-    })
-
-    await createShort({
-      shortKey: 'games.gameTime',
-      item: gameTimeItem,
-    })
-
-    await createShort({
-      shortKey: 'games.gameResult',
-      item: gameResultItem,
-    })
+    await createShort({ shortKey: 'games.gameInfo', item: gameInfoItem })
+    await createShort({ shortKey: 'games.gameTime', item: gameTimeItem })
+    await createShort({ shortKey: 'games.gameResult', item: gameResultItem })
 
     return {
       ...gameInfoItem,
@@ -313,15 +362,8 @@ export const createActions = {
       const gameInfoItem = buildGameInfoItem({ id, draft: gameDraft, now })
       const gameTimeItem = buildGameTimeItem({ id, draft: gameDraft })
 
-      await createShort({
-        shortKey: 'games.gameInfo',
-        item: gameInfoItem,
-      })
-
-      await createShort({
-        shortKey: 'games.gameTime',
-        item: gameTimeItem,
-      })
+      await createShort({ shortKey: 'games.gameInfo', item: gameInfoItem })
+      await createShort({ shortKey: 'games.gameTime', item: gameTimeItem })
 
       created.push({
         ...gameInfoItem,
@@ -335,27 +377,21 @@ export const createActions = {
     }
   },
 
-  externalGame: async ({ draft }) => {
+  externalGame: async ({ draft, context }) => {
     const id = makeId()
     const now = Date.now()
+    const externalDraft = buildExternalGameDraft({ draft, context })
 
-    const gameInfoItem = {
-      ...buildGameInfoItem({ id, draft, now }),
-      ...buildGameTimeItem({ id, draft }),
-      ...buildGameResultItem({ id, draft }),
-      gameSource: 'external',
-      isExternalGame: true,
-    }
-
-    const gamePlayersItem = {
+    const gameInfoItem = buildExternalGameInfoItem({
       id,
-      playerId: draft?.playerId || null,
-      isSelected: draft?.isSelected === true,
-      isStarting: draft?.isStarting === true,
-      goals: Number(draft?.goals || 0),
-      assists: Number(draft?.assists || 0),
-      timePlayed: Number(draft?.timePlayed || 0),
-    }
+      draft: externalDraft,
+      now,
+    })
+
+    const gamePlayersItem = buildExternalGamePlayersItem({
+      id,
+      draft: externalDraft,
+    })
 
     await createShort({
       shortKey: 'externalGames.gameInfo',
@@ -371,6 +407,64 @@ export const createActions = {
       ...gameInfoItem,
       ...gamePlayersItem,
     }
+  },
+
+  externalGames: async ({ draft, context }) => {
+    const rows = Array.isArray(draft?.games) ? draft.games : []
+    const created = []
+
+    for (const row of rows) {
+      const id = makeId()
+      const now = Date.now()
+
+      const rowDraft = {
+        ...draft,
+        ...row,
+        type: row?.type || draft?.defaults?.type || '',
+        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
+        home: row?.home ?? draft?.defaults?.home ?? true,
+      }
+
+      const externalDraft = buildExternalGameDraft({
+        draft: rowDraft,
+        context,
+      })
+
+      const gameInfoItem = buildExternalGameInfoItem({
+        id,
+        draft: externalDraft,
+        now,
+      })
+
+      const gamePlayersItem = buildExternalGamePlayersItem({
+        id,
+        draft: externalDraft,
+      })
+
+      await createShort({
+        shortKey: 'externalGames.gameInfo',
+        item: gameInfoItem,
+      })
+
+      await createShort({
+        shortKey: 'externalGames.gamePlayers',
+        item: gamePlayersItem,
+      })
+
+      created.push({
+        ...gameInfoItem,
+        ...gamePlayersItem,
+      })
+    }
+
+    return {
+      total: created.length,
+      items: created,
+    }
+  },
+
+  gameStats: async ({ draft }) => {
+    return createGameStatsDoc({ draft })
   },
 
   videoAnalysis: async ({ draft }) => {
@@ -446,8 +540,8 @@ export const createActions = {
   },
 
   training: async ({ draft }) => {
-    const teamId = String(draft?.teamId || '').trim()
-    const weekId = String(draft?.weekId || draft?.weekKey || draft?.weekStartDate || '').trim()
+    const teamId = clean(draft?.teamId)
+    const weekId = clean(draft?.weekId || draft?.weekKey || draft?.weekStartDate)
 
     if (!teamId) throw new Error('missing teamId')
     if (!weekId) throw new Error('missing weekId')
@@ -487,5 +581,5 @@ export const createActions = {
     })
 
     return item
-  }
+  },
 }

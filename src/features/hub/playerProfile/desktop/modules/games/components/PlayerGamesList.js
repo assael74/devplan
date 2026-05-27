@@ -10,8 +10,9 @@ export default function PlayerGamesList({
   rows,
   player,
   scoring,
-  onEditGame,
-  onEditEntryGame,
+  onEdit,
+  onEditEntry,
+  onEditStatsGame
 }) {
   if (!rows?.length) {
     return (
@@ -32,8 +33,8 @@ export default function PlayerGamesList({
           game={row}
           player={player}
           scoring={scoring}
-          onEdit={onEditGame}
-          onEditEntry={onEditEntryGame}
+          onEdit={onEdit}
+          onEditEntry={onEditEntry}
         />
       ))}
     </Box>

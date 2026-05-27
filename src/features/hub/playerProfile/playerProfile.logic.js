@@ -64,6 +64,7 @@ export default function usePlayerProfilePageModel() {
   }, [players, playerId])
 
   const isProject = entity?.type === 'project'
+  const isPrivatePlayer = entity?.isPrivatePlayer === true
 
   const tagsById = useMemo(() => {
     if (!Array.isArray(tags)) return null
@@ -178,6 +179,7 @@ export default function usePlayerProfilePageModel() {
     tab,
     selectedTab,
     isProject,
+    isPrivatePlayer,
 
     entity,
     context,

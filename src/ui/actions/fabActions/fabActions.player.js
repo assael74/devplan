@@ -5,9 +5,10 @@ import { composeFabActions } from './fabActions.shared.js'
 
 export function buildPlayerFabActions({
   mode = '',
-  allowCreate = true,
-  taskAction = null,
   handlers = {},
+  taskAction = null,
+  allowCreate = true,
+  allowGamesCreate = false,
 }) {
   const {
     onAddMeeting,
@@ -39,25 +40,29 @@ export function buildPlayerFabActions({
   }
 
   if (mode === 'games') {
+    const primaryActions = allowGamesCreate
+      ? [
+          {
+            id: 'add-game',
+            label: 'הוסף משחק',
+            icon: iconUi({ id: 'addGame' }),
+            onClick: onAddGame,
+            color: 'player',
+            disabled: !allowCreate,
+          },
+          {
+            id: 'add-multi-game',
+            label: 'הוסף מספר משחקים',
+            icon: iconUi({ id: 'addGames' }),
+            onClick: onAddGames,
+            color: 'player',
+            disabled: !allowCreate,
+          },
+        ]
+      : []
+
     return composeFabActions({
-      primaryActions: [
-        {
-          id: 'add-game',
-          label: 'הוסף משחק',
-          icon: iconUi({ id: 'addGame' }),
-          onClick: onAddGame,
-          color: 'player',
-          disabled: !allowCreate,
-        },
-        {
-          id: 'add-multi-game',
-          label: 'הוסף מספר משחקים',
-          icon: iconUi({ id: 'addGames' }),
-          onClick: onAddGames,
-          color: 'player',
-          disabled: !allowCreate,
-        },
-      ],
+      primaryActions,
       taskAction,
       insightActions: [
         {

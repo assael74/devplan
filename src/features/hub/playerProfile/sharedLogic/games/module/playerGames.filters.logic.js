@@ -16,34 +16,60 @@ const EXPECTATION_BASELINE = 6
 
 const normalize = createGameRowNormalizer({})
 
-const safeArray = (v) => (Array.isArray(v) ? v : [])
+const safeArray = v => (Array.isArray(v) ? v : [])
 
-const safeNumberOrNull = (v) => {
+const asText = value => {
+  return value == null ? '' : String(value).trim()
+}
+
+const safeNumberOrNull = v => {
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }
 
-const safeNumber = (v) => {
+const safeNumber = v => {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
 }
 
-const pickTeamScore = (row) => {
-  return safeNumberOrNull(row?.goalsFor)
-}
-
-const pickRivalScore = (row) => {
-  return safeNumberOrNull(row?.goalsAgainst)
+const toBoolOrFallback = (value, fallback = false) => {
+  if (typeof value === 'boolean') return value
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return fallback
 }
 
 const getGameId = row => {
-  return String(
+  const game = row?.game || row || {}
+
+  return asText(
     row?.gameId ||
       row?.id ||
-      row?.game?.id ||
-      row?.game?.gameId ||
+      game?.id ||
+      game?.gameId ||
       ''
-  ).trim()
+  )
+}
+
+const isPrivatePlayer = player => {
+  return (
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
+  )
+}
+
+const resolveSourceGames = ({ player, profileData }) => {
+  const profileGames = profileData?.games?.playerGames
+
+  if (Array.isArray(profileGames) && profileGames.length) {
+    return profileGames
+  }
+
+  if (isPrivatePlayer(player)) {
+    return safeArray(player?.externalGames)
+  }
+
+  return safeArray(player?.playerGames)
 }
 
 const resolveScoreRow = ({ row, scoring }) => {
@@ -52,6 +78,41 @@ const resolveScoreRow = ({ row, scoring }) => {
   return gameId
     ? scoring?.byGameId?.[gameId] || null
     : null
+}
+
+const resolveEntryByGameId = ({ row, profileData }) => {
+  const gameId = getGameId(row)
+
+  return gameId
+    ? profileData?.games?.playerGameById?.[gameId] || null
+    : null
+}
+
+const resolvePlayerEntry = ({ rawGame, player, profileData }) => {
+  const byIdEntry = resolveEntryByGameId({
+    row: rawGame,
+    profileData,
+  })
+
+  if (byIdEntry) return byIdEntry
+
+  if (rawGame?.playerGame) return rawGame.playerGame
+  if (rawGame?.stats) return rawGame.stats
+
+  if (isPrivatePlayer(player)) {
+    return {
+      playerId: rawGame?.playerId || player?.id || player?.playerId || '',
+      isSelected: rawGame?.isSelected ?? rawGame?.onSquad ?? true,
+      isStarting: rawGame?.isStarting ?? rawGame?.onStart ?? false,
+      onSquad: rawGame?.onSquad ?? rawGame?.isSelected ?? true,
+      onStart: rawGame?.onStart ?? rawGame?.isStarting ?? false,
+      goals: rawGame?.goals ?? 0,
+      assists: rawGame?.assists ?? 0,
+      timePlayed: rawGame?.timePlayed ?? 0,
+    }
+  }
+
+  return {}
 }
 
 const resolveRatingKey = scoreRow => {
@@ -69,15 +130,21 @@ const resolveRatingKey = scoreRow => {
 
 const buildDisplayMeta = (row, player) => {
   const isAway = row?.homeKey === 'away'
-
   const team = row?.team || player?.team || null
 
-  const myClubName = team?.club?.clubName || 'מועדון'
+  const myClubName =
+    row?.clubName ||
+    player?.clubName ||
+    team?.club?.clubName ||
+    'מועדון'
 
-  const myTeamName = team?.teamName || 'ללא קבוצה'
+  const myTeamName =
+    row?.teamName ||
+    player?.teamName ||
+    team?.teamName ||
+    'ללא קבוצה'
 
   const rivalName = row?.rival || row?.rivel || 'ללא יריבה'
-
   const myTeamOnLeft = !isAway
 
   const leftName = myTeamOnLeft ? myClubName : rivalName
@@ -104,11 +171,30 @@ const buildDisplayMeta = (row, player) => {
   }
 }
 
-const normalizePlayerGameRow = (rawGame, player, scoring) => {
+const normalizePlayerGameRow = ({ rawGame, player, scoring, profileData }) => {
   const normalizedGame = normalize(rawGame || {})
-  const personal = rawGame?.playerGame || {}
-  const isSelected = personal?.isSelected || personal?.onSquad
-  const isStarting = personal?.isStarting || personal?.onStart
+  const personal = resolvePlayerEntry({ rawGame, player, profileData })
+
+  const isSelected = toBoolOrFallback(
+    personal?.isSelected ?? personal?.onSquad,
+    false
+  )
+
+  const isStarting = toBoolOrFallback(
+    personal?.isStarting ?? personal?.onStart,
+    false
+  )
+
+  const onSquad = toBoolOrFallback(
+    personal?.onSquad ?? personal?.isSelected,
+    isSelected
+  )
+
+  const onStart = toBoolOrFallback(
+    personal?.onStart ?? personal?.isStarting,
+    isStarting
+  )
+
   const gameLeagueNum = rawGame?.gameLeagueNum || 0
 
   const scoreRow = resolveScoreRow({
@@ -129,16 +215,19 @@ const normalizePlayerGameRow = (rawGame, player, scoring) => {
     ratingKey: resolveRatingKey(scoreRow),
 
     playerGame: personal,
+    stats: personal,
 
     goals: safeNumber(personal?.goals),
     assists: safeNumber(personal?.assists),
     timePlayed: safeNumber(personal?.timePlayed),
     gameLeagueNum,
 
-    isSelected: isSelected,
-    isStarting: isStarting,
+    isSelected,
+    isStarting,
+    onSquad,
+    onStart,
 
-    hasEntry: personal?.isSelected === true || safeNumber(personal?.timePlayed) > 0,
+    hasEntry: isSelected || onSquad || safeNumber(personal?.timePlayed) > 0,
   }
 
   return {
@@ -148,16 +237,26 @@ const normalizePlayerGameRow = (rawGame, player, scoring) => {
 }
 
 export const resolvePlayerGamesFiltersDomain = (player, filters, context = {}) => {
-  const raw = safeArray(player?.playerGames)
+  const profileData = context?.profileData || null
+
+  const raw = resolveSourceGames({
+    player,
+    profileData,
+  })
 
   const scoring =
     context?.scoring ||
-    context?.profileData?.playerScoring ||
-    context?.profileData?.scoring?.player ||
+    profileData?.playerScoring ||
+    profileData?.scoring?.player ||
     null
 
   const enriched = raw.map(game => {
-    return normalizePlayerGameRow(game, player, scoring)
+    return normalizePlayerGameRow({
+      rawGame: game,
+      player,
+      scoring,
+      profileData,
+    })
   })
 
   const filtered = applyPlayerGamesFilters(enriched, filters)

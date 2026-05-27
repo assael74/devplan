@@ -13,11 +13,13 @@ import PlayerProfileFab from '../sharedUi/PlayerProfileFab'
 
 export default function PlayerProfileDesktop({
   tab,
+  counts,
   entity,
   context,
+  isProject,
   taskContext,
   profileData,
-  counts,
+  isPrivatePlayer,
 }) {
   const [meetingsInsightsRequest, setMeetingsInsightsRequest] = useState(0)
   const [paymentsInsightsRequest, setPaymentsInsightsRequest] = useState(0)
@@ -27,10 +29,7 @@ export default function PlayerProfileDesktop({
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [trainingsInsightsRequest, setTrainingsInsightsRequest] = useState(0)
 
-  const modulesMap =
-    entity?.type === 'project'
-      ? desktopProjectPlayerModulesMap
-      : desktopPlayerModulesMap
+  const modulesMap = isProject ? desktopProjectPlayerModulesMap : desktopPlayerModulesMap
 
   return (
     <ProfileShell
@@ -55,6 +54,7 @@ export default function PlayerProfileDesktop({
         trainingsInsightsRequest,
       }}
       fabProps={{
+        isPrivatePlayer,
         onOpenMeetingsInsights: () => setMeetingsInsightsRequest((v) => v + 1),
         onOpenPaymentsInsights: () => setPaymentsInsightsRequest((v) => v + 1),
         onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),

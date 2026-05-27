@@ -1,17 +1,20 @@
 // playerProfile/mobile/modules/games/components/gameCard/PlayerGameCardHeader.js
 
 import React from 'react'
-import { Box, Typography, Avatar } from '@mui/joy'
+import { Box, Typography, Avatar, Tooltip, IconButton } from '@mui/joy'
+
+import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
-export default function PlayerGameCardHeader({ game }) {
+export default function PlayerGameCardHeader({ game, player, onEdit }) {
   const team = game?.team || null
+  const isPrivatePlayer = player?.isPrivatePlayer
 
-  const clubName = team?.club?.clubName || 'הקבוצה שלי'
+  const clubName = team?.club?.clubName || game?.myClubName || 'הקבוצה שלי'
 
-  const teamName = team?.teamName || 'ללא קבוצה'
+  const teamName = team?.teamName || game?.myTeamName || 'ללא קבוצה'
 
   const rival = game?.rival || game?.rivel || 'ללא יריבה'
 
@@ -78,6 +81,18 @@ export default function PlayerGameCardHeader({ game }) {
             {game?.score || '—'}
           </Typography>
         </Box>
+
+        {isPrivatePlayer ? (
+          <Tooltip title="עריכת פרטי משחק">
+            <IconButton
+              size="sm"
+              variant="plain"
+              onClick={() => onEdit(game)}
+            >
+              {iconUi({ id: 'more' })}
+            </IconButton>
+          </Tooltip>
+          ) : null}
       </Box>
     </Box>
   )

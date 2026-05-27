@@ -13,7 +13,7 @@ export default function PlayerProfilePage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   const model = usePlayerProfilePageModel()
-
+  
   if (model.state === 'loading') return model.loadingNode
   if (model.state === 'error') return model.errorNode
   if (model.state === 'missing') return model.missingNode

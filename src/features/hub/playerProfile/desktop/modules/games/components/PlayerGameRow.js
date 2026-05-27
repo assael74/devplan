@@ -64,6 +64,8 @@ export default function PlayerGameRow({
   const [open, setOpen] = React.useState(false)
   const [trendMounted, setTrendMounted] = React.useState(false)
 
+  const isPrivatePlayer = player?.isPrivatePlayer === true || player?.playerSource === 'private'
+
   const performanceModel = React.useMemo(() => {
     return buildPlayerGamePerformanceModel({
       game,
@@ -100,14 +102,16 @@ export default function PlayerGameRow({
     toggleOpen()
   }
 
-  const handleEditEntry = event => {
+  const handleEditGame = event => {
     event.stopPropagation()
 
-    if (onEditEntry) {
-      onEditEntry(game)
+    if (!isPrivatePlayer) return
+
+    if (onEdit) {
+      onEdit(game)
     }
   }
-
+  
   return (
     <Box sx={sx.panelSx(open)}>
       <Box
@@ -138,15 +142,17 @@ export default function PlayerGameRow({
         <Divider orientation="vertical" sx={sx.dividerSx} />
 
         <Box sx={sx.actionsCellSx}>
-          <Tooltip title="עריכת נתוני משחק">
-            <IconButton
-              size="sm"
-              variant="plain"
-              onClick={handleEditEntry}
-            >
-              {iconUi({ id: 'more' })}
-            </IconButton>
-          </Tooltip>
+          {isPrivatePlayer ? (
+            <Tooltip title="עריכת פרטי משחק">
+              <IconButton
+                size="sm"
+                variant="plain"
+                onClick={handleEditGame}
+              >
+                {iconUi({ id: 'more' })}
+              </IconButton>
+            </Tooltip>
+            ) : null}
 
           <Box sx={sx.toggleIconSx(open)}>
             {iconUi({ id: 'arrowDown', size: 'sm' })}

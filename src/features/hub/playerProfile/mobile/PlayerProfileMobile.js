@@ -35,12 +35,14 @@ function PlayerSectionsPicker({ tabs, activeTab }) {
 
 export default function PlayerProfileMobile({
   tab,
-  selectedTab,
+  counts,
   entity,
   context,
+  isProject,
+  profileData,
+  selectedTab,
   taskContext,
-  counts,
-  profileData
+  isPrivatePlayer,
 }) {
   const navigate = useNavigate()
 
@@ -49,7 +51,6 @@ export default function PlayerProfileMobile({
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
 
-  const isProject = entity?.project === 'project'
   const modulesMap = isProject ? mobilePlayerModulesMap : mobileProjectPlayerModulesMap
 
   const tabs = useMemo(() => {
@@ -80,6 +81,7 @@ export default function PlayerProfileMobile({
     context,
     tab,
     taskContext,
+    isPrivatePlayer,
     onOpenGamesInsights: () => setGamesInsightsRequest((v) => v + 1),
     onOpenPerformanceInsights: () => setPerformanceInsightsRequest((v) => v + 1),
     onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),
@@ -101,12 +103,7 @@ export default function PlayerProfileMobile({
           <PlayerSectionsPicker tabs={tabs} activeTab={selectedTab} />
         </Box>
 
-        <PlayerProfileFab
-          entity={entity}
-          context={context}
-          tab={tab}
-          taskContext={taskContext}
-        />
+        <PlayerProfileFab {...fabProps} />
       </Sheet>
     )
   }

@@ -95,6 +95,14 @@ export function resolveDeletePolicy(entityType, meta = {}) {
       }
     }
 
+    case 'externalGame': {
+      return {
+        canDelete: true,
+        canArchive: false,
+        reason: null,
+      }
+    }
+
     case 'role':
       return {
         canDelete: true,

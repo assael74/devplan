@@ -65,7 +65,7 @@ export default function DrawerHeaderShell({
         </Box>
       </Box>
 
-      <ModalClose sx={{ mr: 0.5, mt: 0.5 }} />
+      <ModalClose />
     </DialogTitle>
   )
 }

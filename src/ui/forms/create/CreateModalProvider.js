@@ -2,6 +2,7 @@
 
 import React, { useMemo, useCallback } from 'react'
 import ObjectCreateModal from './ObjectCreateModal'
+import ObjectCreateModalV2 from './ObjectCreateModalV2'
 import { useCreateModalState } from './useCreateModal'
 import { useCoreData } from '../../../features/coreData/CoreDataProvider'
 import { createActions } from './createActions'
@@ -21,13 +22,37 @@ export function useCreateModal() {
 
 const resolveEntityName = (type, draft) => {
   const d = draft || {}
+
   if (type === 'player') {
     const full = `${d.playerFirstName || ''} ${d.playerLastName || ''}`.trim()
     return full || null
   }
+
   if (type === 'team') return d.teamName || null
   if (type === 'club') return d.clubName || null
+  if (type === 'game' || type === 'externalGame') return d.rivel || null
+
   return d.name || d.title || null
+}
+
+const isPrivatePlayerContext = (context = {}, draft = {}) => {
+  const player = context?.player || context?.entity || {}
+
+  return (
+    context?.isPrivatePlayer === true ||
+    draft?.isPrivatePlayer === true ||
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
+  )
+}
+
+const resolveCreateActionKey = ({ type, draft, context }) => {
+  const isPrivate = isPrivatePlayerContext(context, draft)
+
+  if (type === 'game' && isPrivate) return 'externalGame'
+  if (type === 'games' && isPrivate) return 'externalGames'
+
+  return type
 }
 
 export default function CreateModalProvider({ children }) {
@@ -65,11 +90,17 @@ export default function CreateModalProvider({ children }) {
 
   const handleConfirm = useCallback(async () => {
     const type = st.type
-    const action = createActions[type]
+    const actionKey = resolveCreateActionKey({
+      type,
+      draft: st.draft,
+      context: st.context,
+    })
+
+    const action = createActions[actionKey]
     const entityName = resolveEntityName(type, st.draft)
 
     try {
-      if (!action) throw new Error(`No create action for type "${type}"`)
+      if (!action) throw new Error(`No create action for type "${actionKey}"`)
 
       st.setBusy(true)
 
@@ -120,7 +151,7 @@ export default function CreateModalProvider({ children }) {
   return (
     <Ctx.Provider value={{ openCreate, closeCreate }}>
       {children}
-      <ObjectCreateModal {...sharedProps} />
+      <ObjectCreateModalV2 {...sharedProps} />
     </Ctx.Provider>
   )
 }

@@ -10,12 +10,13 @@ import PlayerGamesToolbar from './components/PlayerGamesToolbar.js'
 import PlayerGamesList from './components/PlayerGamesList.js'
 import PlayerGamesInsightsDrawer from './components/insightsDrawer/PlayerGamesInsightsDrawer.js'
 import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
+import EditDrawer from './components/drawer/EditDrawer.js'
 
 import {
   createInitialPlayerGamesFilters,
   resolvePlayerGamesFiltersDomain,
-  sortPlayerGamesRows
-} from './../../../sharedLogic'
+  sortPlayerGamesRows,
+} from './../../../sharedLogic/games/module/index.js'
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
@@ -35,6 +36,7 @@ const isLeagueGame = (row = {}) => {
 export default function PlayerGamesModule({
   entity,
   context,
+  profileData,
   gamesInsightsOpen,
   setGamesInsightsOpen,
   gamesInsightsRequest = 0,
@@ -44,10 +46,26 @@ export default function PlayerGamesModule({
     return players.find((p) => p?.id === entity?.id) || entity || null
   }, [context?.players, entity])
 
+  const isPrivatePlayer = livePlayer?.isPrivatePlayer === true || livePlayer?.playerSource === 'private'
+
+  const liveTeam = useMemo(() => {
+    return context?.team || profileData?.entity?.team || livePlayer?.team || null
+  }, [context?.team, profileData?.entity?.team, livePlayer])
+
+  const playerScoring = useMemo(() => {
+    return (
+      profileData?.playerScoring ||
+      profileData?.scoring?.player ||
+      null
+    )
+  }, [profileData])
+
   const initialFilters = useMemo(() => createInitialPlayerGamesFilters(), [])
 
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingEntryGame, setEditingEntryGame] = useState(null)
+  const [editingGame, setEditingGame] = useState(null)
+  const [editingStatsGame, setEditingStatsGame] = useState(null)
   const [filters, setFilters] = useState(initialFilters)
   const [sort, setSort] = useState({
     by: 'date',
@@ -57,8 +75,10 @@ export default function PlayerGamesModule({
   const domain = useMemo(() => {
     return resolvePlayerGamesFiltersDomain(livePlayer, filters, {
       seasonStartYear: 2025,
+      scoring: playerScoring,
+      profileData,
     })
-  }, [livePlayer, filters])
+  }, [livePlayer, filters, playerScoring, profileData])
 
   const { summary, games, options, indicators } = domain || {}
 
@@ -121,23 +141,41 @@ export default function PlayerGamesModule({
       ) : (
         <PlayerGamesList
           rows={sortedGames}
-          onEditEntryGame={(game) => setEditingEntryGame(game || null)}
+          player={livePlayer}
+          scoring={playerScoring}
+          onEdit={(game) => {
+            if (!isPrivatePlayer) return
+            setEditingGame(game || null)
+          }}
+          onEditEntry={(game) => setEditingEntryGame(game || null)}
+          onEditStatsGame={(game) => setEditingStatsGame(game || null)}
         />
       )}
 
       <PlayerGamesInsightsDrawer
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
-        games={calculationGames}
         summary={summary}
+        games={calculationGames}
         player={livePlayer}
+        team={liveTeam}
+        scoring={playerScoring}
+        profileData={profileData}
       />
 
       <EntryEditDrawer
         open={!!editingEntryGame}
         game={editingEntryGame}
         onClose={() => setEditingEntryGame(null)}
-        onSaved={() => {}}
+        onSaved={() => setEditingEntryGame(null)}
+        context={{ ...context, playerId: livePlayer?.id, player: livePlayer }}
+      />
+
+      <EditDrawer
+        open={!!editingGame}
+        game={editingGame}
+        onClose={() => setEditingGame(null)}
+        onSaved={() => setEditingGame(null)}
         context={{ ...context, playerId: livePlayer?.id, player: livePlayer }}
       />
     </SectionPanelMobile>

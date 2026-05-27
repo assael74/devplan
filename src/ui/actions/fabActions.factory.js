@@ -18,6 +18,7 @@ export function buildFabActions({
   permissions = {},
 } = {}) {
   const allowCreate = permissions?.allowCreate !== false
+  const allowGamesCreate = permissions?.allowGamesCreate === true
 
   const resolvedHandlers = {
     onAddTask: pick(handlers.onAddTask, noOp),
@@ -67,6 +68,7 @@ export function buildFabActions({
     return buildPlayerFabActions({
       mode,
       allowCreate,
+      allowGamesCreate,
       taskAction,
       handlers: resolvedHandlers,
     })

@@ -1,4 +1,5 @@
 // shared/entityLifecycle/lifecycle.messages.js
+
 const ENTITY_LABEL = {
   player: 'שחקן',
   team: 'קבוצה',
@@ -7,6 +8,7 @@ const ENTITY_LABEL = {
   scouting: 'שחקן במעקב',
   tag: 'וידאו תג',
   game: 'משחק',
+  externalGame: 'משחק חיצוני',
   videoAnalysis: 'ניתוח וידאו',
   videoGeneral: 'וידאו כללי',
   task: 'משימה'

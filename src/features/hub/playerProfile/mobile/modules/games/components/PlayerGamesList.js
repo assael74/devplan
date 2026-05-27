@@ -8,8 +8,10 @@ import { moduleSx as sx } from '../sx/module.sx.js'
 
 export default function PlayerGamesList({
   rows,
-  onEditGame,
-  onEditEntryGame,
+  onEdit,
+  player,
+  onEditEntry,
+  onEditStatsGame
 }) {
   if (!rows?.length) {
     return (
@@ -21,14 +23,16 @@ export default function PlayerGamesList({
       </Box>
     )
   }
-
+  
   return (
     <Box sx={{ display: 'grid', gap: 0.35 }}>
       {rows.map((game, index) => (
         <PlayerGameCardMobile
           key={game?.id || game?.gameId || index}
           game={game}
-          onEditEntry={onEditEntryGame}
+          player={player}
+          onEdit={onEdit}
+          onEditEntry={onEditEntry}
           defaultExpanded={false}
         />
       ))}

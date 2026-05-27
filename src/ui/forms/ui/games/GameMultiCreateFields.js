@@ -6,6 +6,8 @@ import { Box, Typography, Divider, Button, Chip } from '@mui/joy'
 import DateInputField from '../../../fields/dateUi/DateInputField'
 import HourInputField from '../../../fields/dateUi/HourInputField'
 import ClubSelectField from '../../../fields/selectUi/clubs/ClubSelectField.js'
+import ClubNameField from '../../../fields/inputUi/clubs/ClubNameField.js'
+import TeamNameField from '../../../fields/inputUi/teams/TeamNameField.js'
 import TeamSelectField from '../../../fields/selectUi/teams/TeamSelectField.js'
 import GameHomeSelector from '../../../fields/checkUi/games/GameHomeSelector.js'
 import GameDurationSelectField from '../../../fields/selectUi/games/GameDurationSelectField.js'
@@ -13,7 +15,7 @@ import GameTypeSelectField from '../../../fields/selectUi/games/GameTypeSelectFi
 import GameRivelField from '../../../fields/inputUi/games/GameRivelField.js'
 
 import { makeId } from '../../../../utils/id.js'
-import { iconUi } from '../../../core/icons/iconUi.js';
+import { iconUi } from '../../../core/icons/iconUi.js'
 import { multiSx as sx } from './sx/multiCreate.sx.js'
 
 function createRow(defaults = {}) {
@@ -33,7 +35,8 @@ export default function GameMultiCreateFields({
   onDraft,
   validity,
   layout,
-  context
+  context,
+  isPrivatePlayer = false,
 }) {
   const defaults = draft?.defaults || {}
   const games = Array.isArray(draft?.games) ? draft.games : []
@@ -89,7 +92,7 @@ export default function GameMultiCreateFields({
       <Box sx={sx.header}>
         <Box>
           <Typography level="title-md">הוספת מספר משחקים</Typography>
-          <Typography level="body-sm" sx={{ color: 'text.secondary', }}>
+          <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
             מינימום 2 משחקים · עד 10 משחקים
           </Typography>
         </Box>
@@ -100,31 +103,45 @@ export default function GameMultiCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25, }}>
+        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25 }}>
           ברירות מחדל
         </Typography>
       </Divider>
 
-      {/* שורה ראשונה */}
-
       <Box sx={sx.block(layout.defaultsCols, 1.5)}>
-        <ClubSelectField
-          value={draft.clubId}
-          size="sm"
-          options={context?.clubs || []}
-          disabled
-        />
+        {isPrivatePlayer ? (
+          <>
+            <ClubNameField
+              value={draft?.clubName || context?.player?.clubName || ''}
+              size="sm"
+              readOnly
+            />
 
-        <TeamSelectField
-          value={draft.teamId}
-          size="sm"
-          options={context?.teams || []}
-          disabled
-          clubId={draft.clubId}
-        />
+            <TeamNameField
+              value={draft?.teamName || context?.player?.teamName || ''}
+              size="sm"
+              readOnly
+            />
+          </>
+        ) : (
+          <>
+            <ClubSelectField
+              value={draft.clubId}
+              size="sm"
+              options={context?.clubs || []}
+              disabled
+            />
+
+            <TeamSelectField
+              value={draft.teamId}
+              size="sm"
+              options={context?.teams || []}
+              disabled
+              clubId={draft.clubId}
+            />
+          </>
+        )}
       </Box>
-
-      {/* שורה שניה */}
 
       <Box sx={sx.block(layout.defaultsCols, 1)}>
         <GameTypeSelectField
@@ -146,23 +163,17 @@ export default function GameMultiCreateFields({
       </Box>
 
       <Divider>
-        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25, }}>
+        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25 }}>
           רשימת משחקים
         </Typography>
       </Divider>
 
-
-      {/* שורות משחק */}
-
-      <Box sx={{ display: 'grid', gap: 1, }}>
+      <Box sx={{ display: 'grid', gap: 1 }}>
         {games.map((row, index) => {
           const rowValidity = validity?.rowValidity[index] || {}
 
           return (
             <Box key={row.uiKey} sx={sx.rowCard(rowValidity?.isValid)}>
-
-              {/* שורת מספור משחק */}
-
               <Box sx={sx.rowHeader}>
                 <Typography level="title-sm">משחק {index + 1}</Typography>
 
@@ -184,8 +195,6 @@ export default function GameMultiCreateFields({
                   </Button>
                 </Box>
               </Box>
-
-              {/* שורת שדות */}
 
               <Box sx={sx.block(layout.rowCols, 1)}>
                 <GameRivelField
@@ -228,13 +237,13 @@ export default function GameMultiCreateFields({
           size="sm"
           variant="soft"
           onClick={addRow}
-          startDecorator={iconUi({id: 'add'})}
+          startDecorator={iconUi({ id: 'add' })}
           disabled={games.length >= 10}
         >
           הוסף משחק
         </Button>
 
-        <Typography level="body-xs" sx={{ color: 'text.secondary', }}>
+        <Typography level="body-xs" sx={{ color: 'text.secondary' }}>
           סוג משחק ומשך משחק נקבעים כברירת מחדל לכל השורות
         </Typography>
       </Box>

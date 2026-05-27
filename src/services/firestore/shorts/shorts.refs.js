@@ -1,78 +1,81 @@
 // src/services/firestore/shorts/shorts.refs.js
 
 export const shortsRefs = {
- clubs: {
-   clubsInfo: { collection: 'clubsShorts', docId: '7gQMJVni7QDVabieoGsm' },
- },
 
- teams: {
-   teamsInfo: { collection: 'teamsShorts', docId: 'Fx1rytOdDJee4DtesHSj' },
-   teamsTraining: { collection: 'teamsShorts', docId: 'dCCoNIsyQBiVCrHpTRbH' },
- },
+  clubs: {
+    clubsInfo: { collection: 'clubsShorts', docId: '7gQMJVni7QDVabieoGsm' },
+  },
 
- players: {
-   playersTeam: { collection: 'playersShorts', docId: '2alnt6Ibw5mozoYdk65j' },
-   playersInfo: { collection: 'playersShorts', docId: '93YWbxDb9uV7YprEukhg' },
-   playersNames: { collection: 'playersShorts', docId: 'hZ8i5PK5TqPRMYIveg4a' },
-   playersProInfo: { collection: 'playersShorts', docId: 'kq1KXaHpIy4Trp7tuCFB' },
-   playersParents: { collection: 'playersShorts', docId: 'pr4alU7a1c2MxTivUXEb' },
-   playersAbilities: { collection: 'playersShorts', docId: 'CxI3w6ztc9KfTxJLP8zS' },
- },
+  teams: {
+    teamsInfo: { collection: 'teamsShorts', docId: 'Fx1rytOdDJee4DtesHSj' },
+    teamsTraining: { collection: 'teamsShorts', docId: 'dCCoNIsyQBiVCrHpTRbH' },
+    teamsStats: { collection: 'teamsShorts', docId: 'HZsuc0QVs2K0WuSknzcf' },
+  },
 
- privates: {
-   privatePlayersInfo: { collection: 'privatePlayersShorts', docId: 'zkkQfN3g2ip89C83KQPK' },
-   privatePlayersAbilities: { collection: 'privatePlayersShorts', docId: 'bZfjSd0JONvq5rPwu88b' },
- },
+  players: {
+    playersTeam: { collection: 'playersShorts', docId: '2alnt6Ibw5mozoYdk65j' },
+    playersInfo: { collection: 'playersShorts', docId: '93YWbxDb9uV7YprEukhg' },
+    playersNames: { collection: 'playersShorts', docId: 'hZ8i5PK5TqPRMYIveg4a' },
+    playersProInfo: { collection: 'playersShorts', docId: 'kq1KXaHpIy4Trp7tuCFB' },
+    playersParents: { collection: 'playersShorts', docId: 'pr4alU7a1c2MxTivUXEb' },
+    playersAbilities: { collection: 'playersShorts', docId: 'CxI3w6ztc9KfTxJLP8zS' },
+    playersStats: { collection: 'playersShorts', docId: 'q954y8HZ4nXRMuWCYxEp' },
+  },
 
- payments: {
-   paymentOperative: { collection: 'playerPaymentsShorts', docId: 'gmgxFJa9xI1wc28JvE1X' },
-   paymentProfit: { collection: 'playerPaymentsShorts', docId: 'pQoiqVKSc94FsAqpCYlT' },
- },
+  privates: {
+    privatePlayersInfo: { collection: 'privatePlayersShorts', docId: 'zkkQfN3g2ip89C83KQPK' },
+    privatePlayersAbilities: { collection: 'privatePlayersShorts', docId: 'bZfjSd0JONvq5rPwu88b' },
+  },
 
- meetings: {
-   meetingInfo: { collection: 'meetingShorts', docId: '8V1UmfUSpQwdx9LdWzeD' },
-   meetingNotes: { collection: 'meetingShorts', docId: 'osfDQ7rWAKa3dwpey6zE' },
- },
+  payments: {
+    paymentOperative: { collection: 'playerPaymentsShorts', docId: 'gmgxFJa9xI1wc28JvE1X' },
+    paymentProfit: { collection: 'playerPaymentsShorts', docId: 'pQoiqVKSc94FsAqpCYlT' },
+  },
 
- games: {
-   gameInfo: { collection: 'gamesShorts', docId: 'N7XGvQajspQjInGeic5H' },
-   gameTime: { collection: 'gamesShorts', docId: 'ieMXdjDAkhbe0W2DlJw8' },
-   gameResult: { collection: 'gamesShorts', docId: 'xrSqD98vpvQOMwB9cp4b' },
-   gamePlayers: { collection: 'gamesShorts', docId: '41kNZj14UWekfr8KBBK8' },
- },
+  meetings: {
+    meetingInfo: { collection: 'meetingShorts', docId: '8V1UmfUSpQwdx9LdWzeD' },
+    meetingNotes: { collection: 'meetingShorts', docId: 'osfDQ7rWAKa3dwpey6zE' },
+  },
 
- externalGames: {
-   gameInfo: { collection: 'externalGamesShorts', docId: 'eCDYSr8MKj9zzhanbYES' },
-   gamePlayers: { collection: 'externalGamesShorts', docId: 'oaUM4Eay6G4Rr8vLJXp6' },
- },
+  games: {
+    gameInfo: { collection: 'gamesShorts', docId: 'N7XGvQajspQjInGeic5H' },
+    gameTime: { collection: 'gamesShorts', docId: 'ieMXdjDAkhbe0W2DlJw8' },
+    gameResult: { collection: 'gamesShorts', docId: 'xrSqD98vpvQOMwB9cp4b' },
+    gamePlayers: { collection: 'gamesShorts', docId: '41kNZj14UWekfr8KBBK8' },
+  },
 
- videos: {
-   videoInfo: { collection: 'videosShorts', docId: 'TaNSHspuCBvjlKTHd6Zf' },
-   videoNotes: { collection: 'videosShorts', docId: 'pmxOHtxpLArFok7ddtYR' },
-   videoTags: { collection: 'videosShorts', docId: 'tiKWGR2Wsv1miNaVbfGi' },
- },
+  externalGames: {
+    gameInfo: { collection: 'externalGamesShorts', docId: 'eCDYSr8MKj9zzhanbYES' },
+    gamePlayers: { collection: 'externalGamesShorts', docId: 'oaUM4Eay6G4Rr8vLJXp6' },
+  },
 
- roles: {
-   rolesInfo: { collection: 'rolesShorts', docId: 'pDOcZnt5THXwyYtp7ddh' },
-   rolesContact: { collection: 'rolesShorts', docId: 'ZasRKFOBG1VOhSAKfwa5' },
- },
+  videos: {
+    videoInfo: { collection: 'videosShorts', docId: 'TaNSHspuCBvjlKTHd6Zf' },
+    videoNotes: { collection: 'videosShorts', docId: 'pmxOHtxpLArFok7ddtYR' },
+    videoTags: { collection: 'videosShorts', docId: 'tiKWGR2Wsv1miNaVbfGi' },
+  },
 
- videoAnalysis: {
-   analysisNotes: { collection: 'videoAnalysisShorts', docId: '06MoPvl9f9ZFSAlDP4Yu' },
-   analysisInfo: { collection: 'videoAnalysisShorts', docId: 'BVL0OvaOA0OmZFoZmLEN' },
-   analysisTags: { collection: 'videoAnalysisShorts', docId: 'T9e0yEehpXk5SUcpj6Fj' },
- },
+  roles: {
+    rolesInfo: { collection: 'rolesShorts', docId: 'pDOcZnt5THXwyYtp7ddh' },
+    rolesContact: { collection: 'rolesShorts', docId: 'ZasRKFOBG1VOhSAKfwa5' },
+  },
 
- scouting: {
-   playersInfo: { collection: 'scoutingShorts', docId: 'P2qROYuW7zveaJKah3xA' },
-   playersGames: { collection: 'scoutingShorts', docId: 'SfAIsZkn1XtMYNrsY5HN' },
- },
+  videoAnalysis: {
+    analysisNotes: { collection: 'videoAnalysisShorts', docId: '06MoPvl9f9ZFSAlDP4Yu' },
+    analysisInfo: { collection: 'videoAnalysisShorts', docId: 'BVL0OvaOA0OmZFoZmLEN' },
+    analysisTags: { collection: 'videoAnalysisShorts', docId: 'T9e0yEehpXk5SUcpj6Fj' },
+  },
 
- tags: {
-   tagInfo: { collection: 'tagsShorts', docId: 'LkifVVOk7xhkjB8wYEBz' },
- },
+  scouting: {
+    playersInfo: { collection: 'scoutingShorts', docId: 'P2qROYuW7zveaJKah3xA' },
+    playersGames: { collection: 'scoutingShorts', docId: 'SfAIsZkn1XtMYNrsY5HN' },
+  },
 
- tasks: {
-   tasksInfo: { collection: 'tasksShorts', docId: 'gCGuVmyA30SL5VBQmlm4' },
- }
+  tags: {
+    tagInfo: { collection: 'tagsShorts', docId: 'LkifVVOk7xhkjB8wYEBz' },
+  },
+
+  tasks: {
+    tasksInfo: { collection: 'tasksShorts', docId: 'gCGuVmyA30SL5VBQmlm4' },
+  },
 }

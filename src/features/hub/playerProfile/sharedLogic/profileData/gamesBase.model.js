@@ -9,6 +9,25 @@ const asText = value => {
   return value == null ? '' : String(value).trim()
 }
 
+const isPrivatePlayer = player => {
+  return (
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
+  )
+}
+
+const getPlayerSourceGames = ({ player, team }) => {
+  if (isPrivatePlayer(player)) {
+    return Array.isArray(player?.externalGames)
+      ? player.externalGames
+      : emptyArray
+  }
+
+  return Array.isArray(team?.teamGames)
+    ? team.teamGames
+    : emptyArray
+}
+
 const getPlayerId = player => {
   return asText(player?.playerId || player?.id)
 }
@@ -147,16 +166,19 @@ const isPlayedGame = row => {
   return !status || status === PLAYED_STATUS
 }
 
-const hasPlayerInGame = ({ row, playerId }) => {
+const hasPlayerInGame = ({ row, playerId, privatePlayer }) => {
+  if (privatePlayer) return true
+
   return Boolean(getPlayerGame({ row, playerId }))
 }
 
 export const buildPlayerGamesBase = ({ player, team } = {}) => {
   const playerId = getPlayerId(player)
+  const privatePlayer = isPrivatePlayer(player)
 
-  const allGames = Array.isArray(team?.teamGames)
-    ? sortGamesAsc(team.teamGames)
-    : emptyArray
+  const allGames = sortGamesAsc(
+    getPlayerSourceGames({ player, team })
+  )
 
   const leagueGames = allGames.filter(isLeagueGame)
   const playedLeagueGames = leagueGames.filter(isPlayedGame)
@@ -166,11 +188,11 @@ export const buildPlayerGamesBase = ({ player, team } = {}) => {
   })
 
   const playerGames = leagueGames.filter(row => {
-    return hasPlayerInGame({ row, playerId })
+    return hasPlayerInGame({ row, playerId, privatePlayer })
   })
 
   const playedPlayerGames = playedLeagueGames.filter(row => {
-    return hasPlayerInGame({ row, playerId })
+    return hasPlayerInGame({ row, playerId, privatePlayer })
   })
 
   return {

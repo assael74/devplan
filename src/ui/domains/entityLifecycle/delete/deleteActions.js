@@ -49,6 +49,11 @@ const GAME_SHORT_KEYS = [
   'games.gamePlayers',
 ]
 
+const EXTERNAL_GAME_SHORT_KEYS = [
+  'externalGames.gameInfo',
+  'externalGames.gamePlayers',
+]
+
 const VIDEO_ANALYSIS_SHORT_KEYS = [
   'videoAnalysis.analysisInfo',
   'videoAnalysis.analysisNotes',
@@ -196,6 +201,15 @@ export const deleteActions = {
       id,
       shortKeys: GAME_SHORT_KEYS,
       requireAnyFound: false,
+      requireAllFound: false,
+    }),
+
+  externalGame: async ({ id }) =>
+    run({
+      entityType: 'externalGame',
+      id,
+      shortKeys: EXTERNAL_GAME_SHORT_KEYS,
+      requireAnyFound: true,
       requireAllFound: false,
     }),
 

@@ -10,6 +10,7 @@ import DrawerShell from '../../../../../../../../../../../ui/patterns/drawer/Dra
 import DrawerHeaderShell from '../../../../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
 import { useGameHubUpdate } from '../../../../../../../../../hooks/games/useGameHubUpdate.js'
+import { useLifecycle } from '../../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
 
 import GameEntryFields from '../../../../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
 import GameCreateFields from '../../../../../../../../../../../ui/forms/ui/games/GameCreateFields.js'
@@ -37,6 +38,7 @@ export default function EditExDrawer({
   onSaved,
   context,
 }) {
+  const lifecycle = useLifecycle()
   const player = context?.player || {}
   const activeGame = game || null
 
@@ -85,6 +87,31 @@ export default function EditExDrawer({
     onClose()
   }, [canSave, activeGame, draft, run, onSaved, onClose])
 
+  const handleDelete = useCallback(() => {
+    const gameId = activeGame?.id || activeGame?.gameId || draft?.gameId
+    if (!gameId) return
+
+    lifecycle.openLifecycle(
+      {
+        entityType: 'externalGame',
+        id: gameId,
+        name: `${activeGame?.rivel || activeGame?.rival || draft?.rivel || 'משחק'} ${
+          activeGame?.gameDate || draft?.gameDate || ''
+        }`,
+      },
+      {
+        onAfterSuccess: ({ action, entityType, id }) => {
+          if (action !== 'delete') return
+          if (entityType !== 'externalGame') return
+          if (id !== gameId) return
+
+          onSaved({ deleted: true, id })
+          onClose()
+        },
+      }
+    )
+  }, [lifecycle, activeGame, draft, onSaved, onClose])
+
   const headerAvatar = player?.photo || playerImage
   const gameTitle = activeGame?.rivel || activeGame?.rival || 'משחק'
   const gameDate = activeGame?.gameDate || activeGame?.dateLabel || ''
@@ -106,6 +133,7 @@ export default function EditExDrawer({
       actions={{
         onSave: handleSave,
         onReset: handleReset,
+        onDelete: handleDelete,
       }}
       texts={{
         save: 'שמירה',
@@ -114,6 +142,7 @@ export default function EditExDrawer({
       }}
       tooltips={{
         reset: 'איפוס השינויים',
+        delete: 'מחיקת משחק חיצוני',
       }}
       status={status}
       header={

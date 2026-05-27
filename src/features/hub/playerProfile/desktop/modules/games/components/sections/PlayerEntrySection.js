@@ -15,10 +15,18 @@ export function PlayerEntrySection({ game, onEditEntry }) {
   const iconStart = isStarter ? 'isStart' : 'isSquad'
   const variant = isStarter ? 'solid' : 'soft'
 
+  const handleEditEntryGame = event => {
+    event.stopPropagation()
+
+    if (onEditEntry) {
+      onEditEntry(game)
+    }
+  }
+  
   return (
     <Box sx={sx.entryCellSx}>
       <Tooltip title="עדכון רישום במשחק">
-        <IconButton size="md" variant="plain" onClick={() => onEditEntry(game)}>
+        <IconButton size="md" variant="plain" onClick={handleEditEntryGame}>
           {iconUi({ id: 'entry' })}
         </IconButton>
       </Tooltip>

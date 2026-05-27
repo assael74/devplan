@@ -31,6 +31,8 @@ export const shortsUpdateRouterMap = {
     formIds: { shortKey: 'players.playersAbilities', path: 'formIds', mode: 'merge' },
     level: { shortKey: 'players.playersAbilities', path: 'level', mode: 'merge' },
     levelPotential: { shortKey: 'players.playersAbilities', path: 'levelPotential', mode: 'merge' },
+
+
   },
 
   teams: {
@@ -152,6 +154,10 @@ export const shortsUpdateRouterMap = {
     vLink: { shortKey: 'games.gameInfo', path: 'vLink', mode: 'merge' },
     gameStatus: { shortKey: 'games.gameInfo', path: 'gameStatus', mode: 'merge' },
     gameLeagueNum: { shortKey: 'games.gameInfo', path: 'gameLeagueNum', mode: 'merge' },
+    hasStats: { shortKey: 'games.gameInfo', path: 'hasStats', mode: 'merge' },
+    statsStatus: { shortKey: 'games.gameInfo', path: 'statsStatus', mode: 'merge' },
+    statsDocId: { shortKey: 'games.gameInfo', path: 'statsDocId', mode: 'merge' },
+    statsUpdatedAt: { shortKey: 'games.gameInfo', path: 'statsUpdatedAt', mode: 'merge' },
 
     gameDate: { shortKey: 'games.gameTime', path: 'gameDate', mode: 'merge' },
     gameDuration: { shortKey: 'games.gameTime', path: 'gameDuration', mode: 'merge' },
@@ -176,6 +182,7 @@ export const shortsUpdateRouterMap = {
     goalsAgainst: { shortKey: 'externalGames.gameInfo', path: 'goalsAgainst', mode: 'merge' },
     goalsFor: { shortKey: 'externalGames.gameInfo', path: 'goalsFor', mode: 'merge' },
     result: { shortKey: 'externalGames.gameInfo', path: 'result', mode: 'merge' },
+    gameStatus: { shortKey: 'externalGames.gameInfo', path: 'gameStatus', mode: 'merge' },
 
     gamePlayers: { shortKey: 'externalGames.gamePlayers', path: 'gamePlayers', mode: 'merge' },
   },

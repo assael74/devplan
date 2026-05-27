@@ -52,6 +52,14 @@ export const buildPlayerProfileEntity = player => {
     team: player.team || null,
     club: player.club || null,
 
+    playerGames: Array.isArray(player.playerGames)
+      ? player.playerGames
+      : [],
+
+    externalGames: Array.isArray(player.externalGames)
+      ? player.externalGames
+      : [],
+
     performances: Array.isArray(player.performances)
       ? player.performances
       : [],

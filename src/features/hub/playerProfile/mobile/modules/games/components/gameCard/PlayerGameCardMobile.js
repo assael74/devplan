@@ -19,6 +19,8 @@ import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
 export default function PlayerGameCardMobile({
   game,
+  player,
+  onEdit,
   onEditEntry,
   defaultExpanded = false,
 }) {
@@ -27,7 +29,7 @@ export default function PlayerGameCardMobile({
   return (
     <Card size='sm' variant="outlined" sx={sx.card}>
       <CardContent sx={sx.headerContent}>
-        <PlayerGameCardHeader game={game} />
+        <PlayerGameCardHeader game={game} player={player} onEdit={onEdit} />
       </CardContent>
 
       <CardOverflow sx={{ mx: -2.5 }}>
@@ -43,7 +45,7 @@ export default function PlayerGameCardMobile({
             </AccordionSummary>
 
             <AccordionDetails>
-              <PlayerGameCardDetails game={game} onEditEntry={onEditEntry} />
+              <PlayerGameCardDetails game={game} onEditEntry={onEditEntry} player={player} />
             </AccordionDetails>
           </Accordion>
         </AccordionGroup>
