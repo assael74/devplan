@@ -183,6 +183,10 @@ export const shortsUpdateRouterMap = {
     goalsFor: { shortKey: 'externalGames.gameInfo', path: 'goalsFor', mode: 'merge' },
     result: { shortKey: 'externalGames.gameInfo', path: 'result', mode: 'merge' },
     gameStatus: { shortKey: 'externalGames.gameInfo', path: 'gameStatus', mode: 'merge' },
+    hasStats: { shortKey: 'externalGames.gameInfo', path: 'hasStats', mode: 'merge' },
+    statsStatus: { shortKey: 'externalGames.gameInfo', path: 'statsStatus', mode: 'merge' },
+    statsDocId: { shortKey: 'externalGames.gameInfo', path: 'statsDocId', mode: 'merge' },
+    statsUpdatedAt: { shortKey: 'externalGames.gameInfo', path: 'statsUpdatedAt', mode: 'merge' },
 
     gamePlayers: { shortKey: 'externalGames.gamePlayers', path: 'gamePlayers', mode: 'merge' },
   },

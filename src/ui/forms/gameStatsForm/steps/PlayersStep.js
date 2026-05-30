@@ -21,6 +21,10 @@ import {
   togglePlayerId,
 } from '../logic/index.js'
 
+const isLockedPlayer = player => {
+  return player?.isStatsLocked || player?.statsDisabled || player?.readOnly
+}
+
 function StepHeader({ onReset }) {
   return (
     <Box sx={sx.stepHeader}>
@@ -41,18 +45,18 @@ function StepHeader({ onReset }) {
   )
 }
 
-function PlayerCard({ player, checked, disabled, onToggle }) {
+function PlayerCard({ player, checked, disabled, locked, onToggle }) {
   const photo = player?.photo || playerImage
   const icon = player.isStarting ? 'isStart' : 'isSquad'
   const roleColor = player.isStarting ? 'success' : 'danger'
 
   const handleClick = () => {
-    if (disabled) return
+    if (disabled || locked) return
     onToggle(player)
   }
 
   const handleKeyDown = event => {
-    if (disabled) return
+    if (disabled || locked) return
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -63,16 +67,16 @@ function PlayerCard({ player, checked, disabled, onToggle }) {
   return (
     <Sheet
       role="button"
-      tabIndex={disabled ? -1 : 0}
+      tabIndex={disabled || locked ? -1 : 0}
       variant="outlined"
-      sx={sx.playerCardState({ selected: checked, disabled })}
+      sx={sx.playerCardState({ selected: checked, disabled: disabled || locked })}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       <Box sx={sx.playerCardHead}>
         <Checkbox
           checked={checked}
-          disabled={disabled}
+          disabled={disabled || locked}
           onChange={event => {
             event.stopPropagation()
             handleClick()
@@ -95,8 +99,8 @@ function PlayerCard({ player, checked, disabled, onToggle }) {
           {player.isStarting ? 'הרכב' : 'ספסל'}
         </Chip>
 
-        <Chip size="sm" variant="soft" color={disabled ? 'warning' : 'neutral'}>
-          {player.timePlayed || 0} דק׳
+        <Chip size="sm" variant="soft" color={locked ? 'warning' : 'neutral'}>
+          {locked ? 'נעול לעריכה' : `${player.timePlayed || 0} דק׳`}
         </Chip>
       </Box>
     </Sheet>
@@ -106,8 +110,10 @@ function PlayerCard({ player, checked, disabled, onToggle }) {
 export function PlayersStep({ draft, onDraft }) {
   const players = draft?.players || []
   const selectedIds = draft?.selectedPlayerIds || []
+  const isPlayerScope = draft?.scope === 'player' || draft?.meta?.scope === 'player'
 
   const handleToggle = player => {
+    if (isPlayerScope && isLockedPlayer(player)) return
     if (!isStatsEligiblePlayer(player)) return
 
     onDraft({
@@ -119,6 +125,13 @@ export function PlayersStep({ draft, onDraft }) {
   }
 
   const handleReset = () => {
+    if (isPlayerScope) {
+      onDraft({
+        selectedPlayerIds: players.map(player => player.playerId).filter(Boolean),
+      })
+      return
+    }
+
     onDraft({
       selectedPlayerIds: getDefaultSelectedPlayerIds(players),
     })
@@ -131,6 +144,7 @@ export function PlayersStep({ draft, onDraft }) {
       <Box sx={sx.playersGrid}>
         {players.map(player => {
           const checked = selectedIds.includes(player.playerId)
+          const locked = isPlayerScope && isLockedPlayer(player)
           const disabled = !isStatsEligiblePlayer(player)
 
           return (
@@ -139,6 +153,7 @@ export function PlayersStep({ draft, onDraft }) {
               player={player}
               checked={checked}
               disabled={disabled}
+              locked={locked}
               onToggle={handleToggle}
             />
           )

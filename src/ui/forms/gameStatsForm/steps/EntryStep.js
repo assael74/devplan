@@ -31,6 +31,10 @@ import {
   updatePlayerStatsRow,
 } from '../logic/index.js'
 
+const isLockedRow = row => {
+  return row?.isStatsLocked || row?.statsDisabled || row?.readOnly
+}
+
 function EmptyPlayersState() {
   return (
     <Box sx={sx.stepContent}>
@@ -57,26 +61,26 @@ function FieldCard({ field, children }) {
   )
 }
 
-function PlayerTabs({
-  players,
-  selectedPlayerIds,
-  activePlayerId,
-  onActivePlayer,
-}) {
+function PlayerTabs({ players, selectedPlayerIds, activePlayerId, onActivePlayer }) {
   return (
     <Box sx={sx.activePlayersBar}>
       {selectedPlayerIds.map(playerId => {
         const player = players.find(item => item.playerId === playerId)
         const selected = playerId === activePlayerId
         const photo = player?.photo || playerImage
+        const locked = isLockedRow(player)
 
         return (
           <Button
             key={playerId}
             size="sm"
             variant={selected ? 'solid' : 'soft'}
-            color={selected ? 'primary' : 'neutral'}
-            onClick={() => onActivePlayer(playerId)}
+            color={selected ? 'primary' : locked ? 'neutral' : 'neutral'}
+            disabled={locked && !selected}
+            onClick={() => {
+              if (locked && !selected) return
+              onActivePlayer(playerId)
+            }}
             startDecorator={<Avatar src={photo} sx={{ width: 20, height: 20 }} />}
             sx={sx.playerTabButton}
           >
@@ -88,13 +92,7 @@ function PlayerTabs({
   )
 }
 
-function PlayerEntryHeader({
-  activePlayer,
-  progress,
-  onReset,
-  onRestore,
-  canRestore,
-}) {
+function PlayerEntryHeader({ activePlayer, progress, onReset, onRestore, canRestore, locked }) {
   const photo = activePlayer?.photo || playerImage
   const icon = activePlayer?.isStarting ? 'isStart' : 'isSquad'
 
@@ -115,15 +113,23 @@ function PlayerEntryHeader({
       </Box>
 
       <Box sx={sx.entryHeaderActions}>
-        {canRestore ? (
+        {locked ? (
+          <Chip size="sm" variant="soft" color="warning">
+            נעול לעריכה
+          </Chip>
+        ) : null}
+
+        {canRestore && !locked ? (
           <Button size="sm" variant="soft" color="neutral" onClick={onRestore}>
             שחזור שחקן
           </Button>
         ) : null}
 
-        <Button size="sm" variant="soft" color="neutral" onClick={onReset}>
-          איפוס שחקן
-        </Button>
+        {!locked ? (
+          <Button size="sm" variant="soft" color="neutral" onClick={onReset}>
+            איפוס שחקן
+          </Button>
+        ) : null}
 
         <Chip size="sm" variant="soft" color="neutral">
           {progress?.filled || 0}/{progress?.total || 0} שדות
@@ -133,7 +139,7 @@ function PlayerEntryHeader({
   )
 }
 
-function RegularFieldsSection({ fields, row, onUpdateRow }) {
+function RegularFieldsSection({ fields, row, locked, onUpdateRow }) {
   if (!fields.length) return null
 
   return (
@@ -148,7 +154,12 @@ function RegularFieldsSection({ fields, row, onUpdateRow }) {
             <StatsFieldRenderer
               parm={field.parm}
               value={row?.[field.id]}
-              onChange={value => onUpdateRow({ [field.id]: value })}
+              disabled={locked}
+              readOnly={locked}
+              onChange={value => {
+                if (locked) return
+                onUpdateRow({ [field.id]: value })
+              }}
             />
           </FieldCard>
         ))}
@@ -157,7 +168,7 @@ function RegularFieldsSection({ fields, row, onUpdateRow }) {
   )
 }
 
-function TripletFieldsSection({ fields, row, onUpdateRow }) {
+function TripletFieldsSection({ fields, row, locked, onUpdateRow }) {
   if (!fields.length) return null
 
   return (
@@ -177,7 +188,12 @@ function TripletFieldsSection({ fields, row, onUpdateRow }) {
               totalValue={row?.[field.totalKey]}
               successValue={row?.[field.successKey]}
               rateValue={row?.[field.rateKey]}
-              onChange={onUpdateRow}
+              disabled={locked}
+              readOnly={locked}
+              onChange={patch => {
+                if (locked) return
+                onUpdateRow(patch)
+              }}
             />
           </FieldCard>
         ))}
@@ -197,6 +213,7 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
 
   const activePlayerId =
     draft?.activePlayerId ||
+    draft?.editablePlayerId ||
     selectedPlayerIds[0] ||
     ''
 
@@ -214,6 +231,8 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
     playerId: activePlayerId,
   })
 
+  const locked = isLockedRow(row) || isLockedRow(activePlayer)
+
   const setActivePlayer = playerId => {
     onDraft({ activePlayerId: playerId })
   }
@@ -224,7 +243,7 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
   })
 
   const resetActivePlayer = () => {
-    if (!activePlayerId) return
+    if (!activePlayerId || locked) return
 
     onDraft({
       playerStats: resetPlayerStatsRow({
@@ -235,7 +254,7 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
   }
 
   const restoreActivePlayer = () => {
-    if (!activePlayerId || !savedDraft) return
+    if (!activePlayerId || !savedDraft || locked) return
 
     const playerStats = savedRow
       ? restorePlayerStatsRow({
@@ -252,6 +271,8 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
   }
 
   const updateRow = patch => {
+    if (locked) return
+
     onDraft({
       playerStats: updatePlayerStatsRow({
         draft,
@@ -291,11 +312,13 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
           onReset={resetActivePlayer}
           onRestore={restoreActivePlayer}
           canRestore={Boolean(savedDraft && activePlayerId)}
+          locked={locked}
         />
 
         <RegularFieldsSection
           fields={regularFields}
           row={row}
+          locked={locked}
           onUpdateRow={updateRow}
         />
 
@@ -304,6 +327,7 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
         <TripletFieldsSection
           fields={tripletFields}
           row={row}
+          locked={locked}
           onUpdateRow={updateRow}
         />
       </Sheet>

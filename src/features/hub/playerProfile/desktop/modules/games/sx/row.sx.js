@@ -63,10 +63,20 @@ export const rowSx = {
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 0.6,
-    overflow: 'hidden',
+    justifyItems: 'start',
+    gap: 0.55,
+    px: 1,
   },
+
+  statsActionButtonSx: status => ({
+    width: 28,
+    height: 28,
+    minHeight: 28,
+    border: '1px solid',
+    borderColor: status === 'empty' ? 'divider' : 'transparent',
+    bgcolor: 'background.surface',
+    boxShadow: 'xs',
+  }),
 
   metricChipSx: {
     maxWidth: 154,

@@ -1,7 +1,7 @@
 // playerProfile/desktop/modules/games/components/PlayerGameRow.js
 
 import React from 'react'
-import { Box, Divider, Tooltip, IconButton, Chip, Typography } from '@mui/joy'
+import { Box, Divider, Tooltip, IconButton } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import { rowSx as sx } from '../sx/row.sx.js'
@@ -13,6 +13,7 @@ import {
   PlayerEntrySection,
 } from './sections/PlayerGamesSection.js'
 
+import PerformanceCell from './sections/PerformanceCell.js'
 import PlayerGameTrendPanel from './details/PlayerGameTrendPanel.js'
 
 import {
@@ -20,51 +21,21 @@ import {
   buildPlayerGameTrendModel,
 } from '../../../../sharedLogic/games/module/index.js'
 
-function PerformanceCell({ model }) {
-  return (
-    <Box sx={sx.performanceCellSx}>
-      <Tooltip title="מדד יעילות של השחקן במשחק הזה">
-        <Chip
-          size="md"
-          variant="soft"
-          color={model.ratingTone}
-          startDecorator={iconUi({ id: 'scoringRating', size: 'md' })}
-          sx={sx.metricChipSx}
-        >
-          <Typography level="body-xs" sx={sx.metricTextSx}>
-             יעילות : {model.ratingText}
-          </Typography>
-        </Chip>
-      </Tooltip>
-
-      <Tooltip title="מדד השפעה מצטבר עד המשחק הזה">
-        <Chip
-          size="md"
-          variant="soft"
-          color={model.cumulativeImpactTone}
-          startDecorator={iconUi({ id: 'scoringImpact', size: 'md' })}
-          sx={sx.metricChipSx}
-        >
-          <Typography level="body-xs" sx={sx.metricTextSx}>
-            השפעה :{model.cumulativeImpactText}
-          </Typography>
-        </Chip>
-      </Tooltip>
-    </Box>
-  )
-}
-
 export default function PlayerGameRow({
   game,
   player,
   scoring,
+  statsDraft = null,
   onEdit,
   onEditEntry,
+  onEditStatsGame,
 }) {
   const [open, setOpen] = React.useState(false)
   const [trendMounted, setTrendMounted] = React.useState(false)
 
-  const isPrivatePlayer = player?.isPrivatePlayer === true || player?.playerSource === 'private'
+  const isPrivatePlayer =
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
 
   const performanceModel = React.useMemo(() => {
     return buildPlayerGamePerformanceModel({
@@ -111,7 +82,7 @@ export default function PlayerGameRow({
       onEdit(game)
     }
   }
-  
+
   return (
     <Box sx={sx.panelSx(open)}>
       <Box
@@ -129,7 +100,12 @@ export default function PlayerGameRow({
 
         <Divider orientation="vertical" sx={sx.dividerSx} />
 
-        <PerformanceCell model={performanceModel} />
+        <PerformanceCell
+          game={game}
+          model={performanceModel}
+          statsDraft={statsDraft}
+          onOpenStatsGame={onEditStatsGame}
+        />
 
         <Divider orientation="vertical" sx={sx.dividerSx} />
 
@@ -152,7 +128,7 @@ export default function PlayerGameRow({
                 {iconUi({ id: 'more' })}
               </IconButton>
             </Tooltip>
-            ) : null}
+          ) : null}
 
           <Box sx={sx.toggleIconSx(open)}>
             {iconUi({ id: 'arrowDown', size: 'sm' })}

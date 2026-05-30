@@ -1,12 +1,29 @@
 // playerProfile/sharedModules/games/PlayerGamesModuleBase.js
 
 import React from 'react'
-import { Box } from '@mui/joy'
+import {
+  Box,
+  CircularProgress,
+  Modal,
+  ModalDialog,
+  Typography,
+} from '@mui/joy'
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
+import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
 
 import usePlayerGamesModuleModel from './usePlayerGamesModuleModel.js'
 import { playerGamesModuleSx } from './playerGamesModule.sx.js'
+
+const statsLoadingModalSx = {
+  dialog: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    borderRadius: 'lg',
+  },
+}
 
 export default function PlayerGamesModuleBase({
   entity,
@@ -50,19 +67,32 @@ export default function PlayerGamesModuleBase({
     editingEntryGame,
     editingGame,
 
+    statsFormLoading,
+    statsFormLoadingText,
+    editingStatsGame,
+    activeStatsFormDraft,
+    statsDeleteAction,
+    statsSavePending,
+    statsSaveError,
+
     hasRows,
     hasAnyGames,
 
     setInsightsOpen,
     setEditingEntryGame,
     setEditingGame,
-    setEditingStatsGame,
 
     handleChangeFilters,
     handleResetFilters,
     handleChangeSortBy,
     handleChangeSortDirection,
     handleEditGame,
+
+    handleOpenStatsGame,
+    handleSaveStats,
+    handleDeleteStats,
+    closeStatsForm,
+    deleteStatsDraft,
   } = model
 
   const Wrap = Section
@@ -103,7 +133,7 @@ export default function PlayerGamesModuleBase({
             scoring={playerScoring}
             onEdit={handleEditGame}
             onEditEntry={game => setEditingEntryGame(game || null)}
-            onEditStatsGame={game => setEditingStatsGame(game || null)}
+            onEditStatsGame={handleOpenStatsGame}
           />
         )}
       </Wrap>
@@ -133,6 +163,45 @@ export default function PlayerGamesModuleBase({
         team={liveTeam}
         scoring={playerScoring}
         profileData={profileData}
+      />
+
+      <Modal open={statsFormLoading}>
+        <ModalDialog sx={statsLoadingModalSx.dialog}>
+          <CircularProgress size="md" />
+
+          <Box>
+            <Typography level="title-sm">
+              טוען טופס סטטיסטיקה
+            </Typography>
+
+            <Typography level="body-sm" color="neutral">
+              {statsFormLoadingText || 'בודק נתונים שמורים...'}
+            </Typography>
+          </Box>
+        </ModalDialog>
+      </Modal>
+
+      <GameStatsCreateForm
+        open={!!editingStatsGame}
+        game={editingStatsGame}
+        team={liveTeam}
+        context={{
+          ...context,
+          teamId: liveTeam?.id,
+          team: liveTeam,
+          playerId: livePlayer?.id,
+          player: livePlayer,
+          game: editingStatsGame,
+          source: 'playerProfile',
+        }}
+        savedDraft={activeStatsFormDraft}
+        onClose={closeStatsForm}
+        onSave={handleSaveStats}
+        statsDeleteAction={statsDeleteAction}
+        onDeleteDraft={deleteStatsDraft}
+        onDeleteStats={handleDeleteStats}
+        savePending={statsSavePending}
+        saveError={statsSaveError}
       />
     </>
   )

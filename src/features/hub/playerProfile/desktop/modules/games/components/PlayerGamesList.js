@@ -35,6 +35,7 @@ export default function PlayerGamesList({
           scoring={scoring}
           onEdit={onEdit}
           onEditEntry={onEditEntry}
+          onEditStatsGame={onEditStatsGame}
         />
       ))}
     </Box>

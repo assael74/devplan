@@ -112,8 +112,25 @@ const hasStatsToSave = row => {
   return Object.keys(row?.stats || {}).length > 0
 }
 
+const getScopedSelectedIds = draft => {
+  const selectedIds = draft?.selectedPlayerIds || []
+
+  if (draft?.scope !== 'player' && draft?.meta?.scope !== 'player') {
+    return selectedIds
+  }
+
+  const editablePlayerId =
+    draft?.editablePlayerId ||
+    draft?.meta?.editablePlayerId ||
+    draft?.meta?.playerId ||
+    draft?.activePlayerId ||
+    ''
+
+  return editablePlayerId ? [editablePlayerId] : selectedIds
+}
+
 const buildPlayersPayload = ({ draft, fields }) => {
-  const selectedIds = new Set(draft?.selectedPlayerIds || [])
+  const selectedIds = new Set(getScopedSelectedIds(draft))
   const rows = Array.isArray(draft?.playerStats) ? draft.playerStats : []
 
   return rows
@@ -135,6 +152,7 @@ const buildFormModel = draft => {
 
 const buildPayloadMeta = draft => {
   return {
+    ...(draft?.meta || {}),
     timePlayed: toPayloadNumber(draft?.timePlayed),
     timeVideoStats: toPayloadNumber(draft?.timeVideoStats),
   }
