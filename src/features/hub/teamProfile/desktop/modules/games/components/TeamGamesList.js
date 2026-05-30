@@ -36,6 +36,8 @@ export default function TeamGamesList({
   onOpenEdit,
   onEditEntryGame,
   performanceView,
+  onOpenStatsGame,
+  statsDraftsByGameId
 }) {
   if (!rows?.length) {
     return (
@@ -59,13 +61,16 @@ export default function TeamGamesList({
           <TeamGameRow
             key={gameId || row.id}
             game={row}
+            gameId={gameId}
             teamScoring={teamScoring}
             playerScoring={playerScoring}
             teamGameScore={teamGameScore}
-            performanceView={performanceView}
-            playerGamePerformance={playerGamePerformance}
-            onEdit={onEditGame || onOpenEdit}
             onEditEntry={onEditEntryGame}
+            onEdit={onEditGame || onOpenEdit}
+            onOpenStatsGame={onOpenStatsGame}
+            performanceView={performanceView}
+            statsDraft={statsDraftsByGameId[gameId] || null}
+            playerGamePerformance={playerGamePerformance}
           />
         )
       })}

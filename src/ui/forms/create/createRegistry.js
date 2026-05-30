@@ -16,6 +16,7 @@ import VideoCreateForm from '../VideoCreateForm'
 import AbilitiesCreateForm from '../AbilitiesCreateForm'
 import TrainingWeekCreateForm from '../TrainingWeekCreateForm.js'
 import TasksCreateForm from '../TasksCreateForm.js'
+
 import { iconUi } from '../../core/icons/iconUi.js'
 
 export const CREATE_TYPES = {

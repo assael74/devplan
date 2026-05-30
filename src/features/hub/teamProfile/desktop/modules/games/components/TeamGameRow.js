@@ -18,6 +18,7 @@ import GameRowDetails from './details/GameRowDetails.js'
 
 export default function TeamGameRow({
   game,
+  statsDraft,
   teamScoring,
   playerScoring,
   teamGameScore,
@@ -25,6 +26,7 @@ export default function TeamGameRow({
   onEdit,
   onEditEntry,
   performanceView,
+  onOpenStatsGame,
 }) {
   const [open, setOpen] = React.useState(false)
   const [detailsMounted, setDetailsMounted] = React.useState(false)
@@ -74,9 +76,13 @@ export default function TeamGameRow({
         <Divider orientation="vertical" sx={sx.dividerSx} />
 
         <PerformanceSection
+          game={game}
+          statsDraft={statsDraft}
+          statsStatus={game?.statsStatus}
           teamGameScore={teamGameScore}
           performanceView={performanceView}
           playerPerformance={playerGamePerformance}
+          onOpenStatsGame={onOpenStatsGame}
         />
 
         <Divider orientation="vertical" sx={sx.dividerSx} />

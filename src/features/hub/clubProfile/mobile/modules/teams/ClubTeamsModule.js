@@ -1,122 +1,30 @@
 // clubProfile/mobile/modules/teams/ClubTeamsModule.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
-import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
 import ClubTeamsToolbar from './components/toolbar/ClubTeamsToolbar.js'
 import ClubTeamsList from './components/ClubTeamsList.js'
 import ClubTeamsInsightsDrawer from './components/insightsDrawer/ClubTeamsInsightsDrawer.js'
 import EditDrawer from './components/drawer/EditDrawer.js'
 
-import {
-  CLUB_TEAMS_DEFAULT_FILTERS,
-  applyClubTeamsFilters,
-  buildClubTeamRows,
-  sortClubTeamsRows,
-} from '../../../sharedLogic/teams/index.js'
-
 import { profileSx as sx } from './../../sx/profile.sx'
 
-export default function ClubTeamsModule({
-  entity,
-  onOpenTeam,
-  context,
-  profileData,
-  teamsInsightsOpen,
-  setTeamsInsightsOpen,
-  teamsInsightsRequest = 0,
-}) {
-  const liveClub = useMemo(() => {
-    const clubs = Array.isArray(context?.clubs) ? context.clubs : []
-    return clubs.find((club) => club?.id === entity?.id) || entity || null
-  }, [context?.clubs, entity])
+import { ClubTeamsModuleBase } from '../../../sharedModules/teams'
 
-  const [filters, setFilters] = useState(CLUB_TEAMS_DEFAULT_FILTERS)
-  const [insightsOpen, setInsightsOpen] = useState(false)
-  const [editingTeam, setEditingTeam] = useState(null)
-  const [sort, setSort] = useState({
-    by: 'name',
-    direction: 'asc',
-  })
-
-  const { rows, summary } = useMemo(() => {
-    return buildClubTeamRows({
-      club: liveClub,
-      teams: profileData?.teams || [],
-      profileData,
-    })
-  }, [liveClub, profileData])
-
-  const filteredRows = useMemo(() => {
-    const filtered = applyClubTeamsFilters(rows, filters)
-    return sortClubTeamsRows(filtered, sort)
-  }, [rows, filters, sort])
-
-  useEffect(() => {
-    if (teamsInsightsRequest > 0) {
-      setInsightsOpen(true)
-    }
-  }, [teamsInsightsRequest])
-
+export default function ClubTeamsModule(props) {
   return (
-    <SectionPanelMobile>
-      <Box sx={sx.moduleRoot}>
-        <ClubTeamsToolbar
-          summary={summary}
-          filters={filters}
-          totalCount={rows.length}
-          filteredCount={filteredRows.length}
-          onChangeSearch={(value) =>
-            setFilters((prev) => ({ ...prev, search: value || '' }))
-          }
-          onToggleOnlyActive={() =>
-            setFilters((prev) => ({ ...prev, onlyActive: !prev.onlyActive }))
-          }
-          onToggleOnlyProject={() =>
-            setFilters((prev) => ({ ...prev, onlyProject: !prev.onlyProject }))
-          }
-          onResetFilters={() => setFilters(CLUB_TEAMS_DEFAULT_FILTERS)}
-          sortBy={sort.by}
-          sortDirection={sort.direction}
-          onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-          onChangeSortDirection={(value) =>
-            setSort((prev) => ({ ...prev, direction: value }))
-          }
-        />
-      </Box>
-
-      {!filteredRows.length ? (
-        <EmptyState
-          title="אין קבוצות"
-          subtitle="בדוק את הפילטרים או אפס את הסינון"
-        />
-      ) : (
-        <ClubTeamsList
-          rows={filteredRows}
-          profileData={profileData}
-          onOpenTeam={onOpenTeam}
-          onEditTeam={(row) => setEditingTeam(row?.team || row || null)}
-        />
-      )}
-
-      <ClubTeamsInsightsDrawer
-        open={insightsOpen}
-        onClose={() => setInsightsOpen(false)}
-        rows={filteredRows}
-        summary={summary}
-        entity={liveClub}
-      />
-
-      <EditDrawer
-        open={!!editingTeam}
-        team={editingTeam}
-        onClose={() => setEditingTeam(null)}
-        onSaved={() => {}}
-        context={{ ...context, clubId: liveClub?.id, club: liveClub }}
-      />
-    </SectionPanelMobile>
+    <ClubTeamsModuleBase
+      {...props}
+      Section={SectionPanelMobile}
+      isMobile
+      ToolbarComponent={ClubTeamsToolbar}
+      ListComponent={ClubTeamsList}
+      InsightsDrawerComponent={ClubTeamsInsightsDrawer}
+      EditDrawerComponent={EditDrawer}
+      toolbarWrapSx={sx.moduleRoot}
+      initialSortDirection="asc"
+    />
   )
 }

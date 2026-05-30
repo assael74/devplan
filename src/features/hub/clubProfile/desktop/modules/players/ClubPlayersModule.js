@@ -1,151 +1,28 @@
 // clubProfile/desktop/modules/players/ClubPlayersModule.js
 
-import React, { useMemo, useState, useEffect } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
-import EmptyState from '../../../../sharedProfile/EmptyState.js'
-
-import {
-  CLUB_PLAYERS_DEFAULT_FILTERS,
-  filterClubPlayersRows,
-  resolveClubPlayers,
-  buildClubPlayerRows,
-  sortClubPlayersRows
-} from '../../../sharedLogic/players/index.js'
 
 import ClubPlayersToolbar from './components/toolbar/ClubPlayersToolbar.js'
 import ClubPlayersList from './components/ClubPlayersList.js'
 import ClubPlayersInsightsDrawer from './components/insightsDrawer/ClubPlayersInsightsDrawer.js'
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+import {
+  ClubPlayersModuleBase,
+  clubPlayersModuleSx,
+} from '../../../sharedModules/players'
 
-const c = getEntityColors('players')
-
-export default function ClubPlayersModule({
-  entity,
-  onOpenPlayer,
-  context,
-  profileData,
-  playersInsightsRequest = 0,
-}) {
-  const liveClub = useMemo(() => {
-    const clubs = Array.isArray(context?.clubs) ? context.clubs : []
-    return clubs.find((club) => club?.id === entity?.id) || entity || null
-  }, [context?.clubs, entity])
-
-  const [insightsOpen, setInsightsOpen] = useState(false)
-  const [filters, setFilters] = useState(CLUB_PLAYERS_DEFAULT_FILTERS)
-  const [sort, setSort] = useState({
-    by: 'level',
-    direction: 'desc',
-  })
-
-  const { rows, summary } = useMemo(() => {
-    return buildClubPlayerRows({
-      club: liveClub,
-      players: profileData?.players || [],
-      performanceById: profileData?.playersScoring?.byId || {},
-    })
-  }, [liveClub, profileData])
-
-  const filteredRows = useMemo(() => {
-    const filtered = filterClubPlayersRows(rows, filters, {
-      performanceById: profileData?.playersScoring?.byId || {},
-    })
-
-    return sortClubPlayersRows(filtered, sort)
-  }, [rows, filters, sort, profileData])
-
-  useEffect(() => {
-    if (playersInsightsRequest > 0) {
-      setInsightsOpen(true)
-    }
-  }, [playersInsightsRequest])
-
-  const handleChangeFilters = (patch) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
-  }
-
-  const handleResetFilters = () => {
-    setFilters(CLUB_PLAYERS_DEFAULT_FILTERS)
-  }
-
+export default function ClubPlayersModule(props) {
   return (
-    <>
-      <SectionPanel>
-        <Box
-          sx={{
-            position: 'sticky',
-            top: -6,
-            zIndex: 5,
-            display: 'grid',
-            gap: 1,
-            borderRadius: 12,
-            bgcolor: 'background.body',
-            mb: 0.5,
-            boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
-          }}
-        >
-          <ClubPlayersToolbar
-            summary={summary}
-            filters={filters}
-            filteredCount={filteredRows.length}
-            onChangeSearch={(value) =>
-              handleChangeFilters({ search: value })
-            }
-            onToggleOnlyActive={() =>
-              handleChangeFilters({ onlyActive: !filters.onlyActive })
-            }
-            onChangeSquadRole={(value) =>
-              handleChangeFilters({ squadRole: value || '' })
-            }
-            onChangeProjectStatus={(value) =>
-              handleChangeFilters({ projectStatus: value || '' })
-            }
-            onChangePositionCode={(value) =>
-              handleChangeFilters({ positionCode: value || '' })
-            }
-            onChangeGeneralPositionKey={(value) =>
-              handleChangeFilters({ generalPositionKey: value || '' })
-            }
-            onChangeEfficiencyFilter={(value) =>
-              handleChangeFilters({ efficiency: value || '' })
-            }
-            onChangeImpactFilter={(value) =>
-              handleChangeFilters({ impact: value || '' })
-            }
-            onChangeProfileInsightFilter={(value) =>
-              handleChangeFilters({ profileInsight: value || '' })
-            }
-            onResetFilters={handleResetFilters}
-            sortBy={sort.by}
-            sortDirection={sort.direction}
-            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
-          />
-        </Box>
-
-        {!filteredRows.length ? (
-          <EmptyState
-            title="אין שחקנים להצגה"
-            subtitle="נסה לשנות פילטרים או לאפס את החיפוש"
-          />
-        ) : (
-          <ClubPlayersList
-            rows={filteredRows}
-            profileData={profileData}
-          />
-        )}
-      </SectionPanel>
-
-      <ClubPlayersInsightsDrawer
-        open={insightsOpen}
-        onClose={() => setInsightsOpen(false)}
-        rows={filteredRows}
-        summary={summary}
-        entity={liveClub}
-      />
-    </>
+    <ClubPlayersModuleBase
+      {...props}
+      Section={SectionPanel}
+      isMobile={false}
+      ToolbarComponent={ClubPlayersToolbar}
+      ListComponent={ClubPlayersList}
+      InsightsDrawerComponent={ClubPlayersInsightsDrawer}
+      toolbarWrapSx={clubPlayersModuleSx.desktopToolbarWrap}
+    />
   )
 }

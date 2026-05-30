@@ -21,20 +21,63 @@ import {
 
 const STATS_SOURCE = 'gameStatsUpdateV1'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => {
+  return String(value ?? '').trim()
+}
 
-const ensureDraft = draft => {
-  if (!draft || typeof draft !== 'object') {
-    throw new Error('[updateGameStatsDoc] draft is required')
+const isPlainObject = value => {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+const compactDoc = value => {
+  if (Array.isArray(value)) {
+    return value
+      .map(item => compactDoc(item))
+      .filter(item => item !== undefined)
   }
 
-  if (!clean(draft.gameId) && !clean(draft.gameStatsDocId)) {
+  if (!isPlainObject(value)) {
+    if (value === null || value === undefined || value === '') return undefined
+    return value
+  }
+
+  const next = Object.entries(value).reduce((acc, [key, item]) => {
+    const cleanItem = compactDoc(item)
+
+    if (cleanItem === undefined) return acc
+
+    return {
+      ...acc,
+      [key]: cleanItem,
+    }
+  }, {})
+
+  return Object.keys(next).length ? next : undefined
+}
+
+const resolvePayload = ({ payload, draft }) => {
+  return payload || draft
+}
+
+const ensurePayload = payload => {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('[updateGameStatsDoc] payload is required')
+  }
+
+  if (!clean(payload.gameId) && !clean(payload.gameStatsDocId)) {
     throw new Error('[updateGameStatsDoc] missing gameId or gameStatsDocId')
   }
 
-  if (!Array.isArray(draft.playerStats)) {
+  if (!Array.isArray(payload.playerStats)) {
     throw new Error('[updateGameStatsDoc] playerStats must be an array')
   }
+}
+
+const getPayloadNumber = ({ payload, key, fallback = 0 }) => {
+  const value = payload?.meta?.[key] ?? payload?.[key] ?? fallback
+  const num = Number(value)
+
+  return Number.isFinite(num) ? num : fallback
 }
 
 const buildShortDocRef = meta => {
@@ -74,11 +117,11 @@ const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
   }
 }
 
-const resolveGameStatsDocId = ({ draft, game }) => {
-  const fromDraft = clean(draft?.gameStatsDocId)
+const resolveGameStatsDocId = ({ payload, game }) => {
+  const fromPayload = clean(payload?.gameStatsDocId)
   const fromGame = clean(game?.statsDocId)
 
-  const gameStatsDocId = fromDraft || fromGame
+  const gameStatsDocId = fromPayload || fromGame
 
   if (!gameStatsDocId) {
     throw new Error('[updateGameStatsDoc] missing gameStatsDocId')
@@ -105,6 +148,7 @@ const buildNextGameInfoItem = ({
 const clampMinZero = value => {
   const n = Number(value)
   if (!Number.isFinite(n)) return 0
+
   return Math.max(0, n)
 }
 
@@ -188,6 +232,12 @@ const buildNextTeamAggregate = ({
   return applyStatsRates(next)
 }
 
+const buildCommittedAt = ({ current, status, now }) => {
+  if (status !== 'committed') return undefined
+
+  return current?.committedAt ?? now
+}
+
 const buildNextGameStatsDoc = ({
   current,
   gameStatsDocId,
@@ -199,7 +249,7 @@ const buildNextGameStatsDoc = ({
   status,
   now,
 }) => {
-  return {
+  return compactDoc({
     ...(current || {}),
 
     id: gameStatsDocId,
@@ -210,7 +260,7 @@ const buildNextGameStatsDoc = ({
 
     playerStats,
     teamStats,
-    rivelStats: rivelStats ?? current?.rivelStats ?? null,
+    rivelStats: rivelStats ?? current?.rivelStats,
 
     status,
     aggregateStatus: 'synced',
@@ -218,17 +268,21 @@ const buildNextGameStatsDoc = ({
     updatedFrom: STATS_SOURCE,
     updatedAt: now,
     createdAt: current?.createdAt ?? now,
-    committedAt: status === 'committed'
-      ? (current?.committedAt ?? now)
-      : (current?.committedAt ?? null),
-  }
+    committedAt: buildCommittedAt({ current, status, now }),
+  })
 }
 
-export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
-  ensureDraft(draft)
+export async function updateGameStatsDoc({
+  payload,
+  draft,
+  dryRun = false,
+} = {}) {
+  const data = resolvePayload({ payload, draft })
 
-  const draftGameId = clean(draft.gameId)
-  const status = clean(draft.status) || 'partial'
+  ensurePayload(data)
+
+  const draftGameId = clean(data.gameId)
+  const status = clean(data.status) || 'draft'
   const now = Timestamp.now()
 
   const gameInfoMeta = shortsRefs.games.gameInfo
@@ -244,7 +298,7 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
       dryRun: true,
       ids: {
         gameId: draftGameId || null,
-        gameStatsDocId: clean(draft.gameStatsDocId) || null,
+        gameStatsDocId: clean(data.gameStatsDocId) || null,
       },
       note: 'dryRun only',
     }
@@ -259,7 +313,7 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
       ? findListItem(gameInfoDoc.list, draftGameId)
       : null
 
-    const gameStatsDocId = resolveGameStatsDocId({ draft, game })
+    const gameStatsDocId = resolveGameStatsDocId({ payload: data, game })
     const gameStatsRef = doc(gameStatsShortsRef, gameStatsDocId)
     const gameStatsSnap = await tx.get(gameStatsRef)
 
@@ -269,8 +323,8 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
 
     const currentGameStats = gameStatsSnap.data() || {}
 
-    const gameId = clean(draft.gameId || currentGameStats.gameId)
-    const teamId = clean(draft.teamId || currentGameStats.teamId || game?.teamId)
+    const gameId = clean(data.gameId || currentGameStats.gameId)
+    const teamId = clean(data.teamId || currentGameStats.teamId || game?.teamId)
 
     if (!gameId) throw new Error('[updateGameStatsDoc] missing resolved gameId')
     if (!teamId) throw new Error('[updateGameStatsDoc] missing resolved teamId')
@@ -281,12 +335,22 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
       throw new Error(`[updateGameStatsDoc] game not found in games.gameInfo: ${gameId}`)
     }
 
+    const gameDuration = resolvedGame?.gameDuration || data?.gameDuration || 0
+
     const context = {
       gameId,
       teamId,
-      gameDuration: resolvedGame?.gameDuration || draft?.gameDuration,
-      timePlayed: draft?.timePlayed || resolvedGame?.gameDuration || draft?.gameDuration,
-      timeVideoStats: draft?.timeVideoStats || draft?.teamVideoTime || resolvedGame?.gameDuration || draft?.gameDuration,
+      gameDuration,
+      timePlayed: getPayloadNumber({
+        payload: data,
+        key: 'timePlayed',
+        fallback: gameDuration,
+      }),
+      timeVideoStats: getPayloadNumber({
+        payload: data,
+        key: 'timeVideoStats',
+        fallback: data?.teamVideoTime || gameDuration,
+      }),
     }
 
     const prevPlayerStats = normalizeGamePlayerStatsList(
@@ -295,7 +359,7 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
     )
 
     const nextPlayerStats = normalizeGamePlayerStatsList(
-      draft.playerStats || [],
+      data.playerStats || [],
       context
     )
 
@@ -309,7 +373,7 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
       gameId,
       gameStatsDocId,
       teamId,
-      gameDate: resolvedGame?.gameDate || draft?.gameDate || '',
+      gameDate: resolvedGame?.gameDate || data?.gameDate || '',
       status,
     })
 
@@ -380,7 +444,7 @@ export async function updateGameStatsDoc({ draft, dryRun = false } = {}) {
       teamId,
       playerStats: nextPlayerStats,
       teamStats: nextTeamStats,
-      rivelStats: draft.rivelStats,
+      rivelStats: data.rivelStats,
       status,
       now,
     })

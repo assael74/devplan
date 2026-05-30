@@ -1,10 +1,8 @@
 // playerProfile/desktop/modules/games/PlayerGamesModule.js
 
-import React, { useMemo, useState, useEffect } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
 
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
-import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
 import PlayerGamesToolbar from './components/toolbar/PlayerGamesToolbar.js'
 import PlayerGamesList from './components/PlayerGamesList.js'
@@ -13,185 +11,22 @@ import EntryEditDrawer from './components/entryDrawer/EntryEditDrawer.js'
 import EditDrawer from './components/drawer/EditDrawer.js'
 
 import {
-  createInitialPlayerGamesFilters,
-  resolvePlayerGamesFiltersDomain,
-  sortPlayerGamesRows,
-} from './../../../sharedLogic/games/module/index.js'
+  PlayerGamesModuleBase,
+  playerGamesModuleSx,
+} from '../../../sharedModules/games'
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('players')
-
-const LEAGUE_GAME_TYPE = 'league'
-
-const getGameObject = (row = {}) => {
-  return row?.game || row
-}
-
-const isLeagueGame = (row = {}) => {
-  const game = getGameObject(row)
-  const type = String(row?.type || game?.type || '').toLowerCase()
-
-  return type === LEAGUE_GAME_TYPE
-}
-
-export default function PlayerGamesModule({
-  entity,
-  context,
-  profileData,
-  gamesInsightsRequest = 0,
-}) {
-  const livePlayer = useMemo(() => {
-    const players = Array.isArray(context?.players) ? context.players : []
-    return players.find((p) => p?.id === entity?.id) || entity || null
-  }, [context?.players, entity])
-
-  const isPrivatePlayer = livePlayer?.isPrivatePlayer === true || livePlayer?.playerSource === 'private'
-
-  const liveTeam = useMemo(() => {
-    return context?.team || profileData?.entity?.team || livePlayer?.team || null
-  }, [context?.team, profileData?.entity?.team, livePlayer])
-
-  const playerScoring = useMemo(() => {
-    return (
-      profileData?.playerScoring ||
-      profileData?.scoring?.player ||
-      null
-    )
-  }, [profileData])
-
-  const initialFilters = useMemo(() => createInitialPlayerGamesFilters(), [])
-
-  const [insightsOpen, setInsightsOpen] = useState(false)
-  const [editingEntryGame, setEditingEntryGame] = useState(null)
-  const [editingGame, setEditingGame] = useState(null)
-  const [editingStatsGame, setEditingStatsGame] = useState(null)
-  const [filters, setFilters] = useState(initialFilters)
-  const [sort, setSort] = useState({
-    by: 'date',
-    direction: 'desc',
-  })
-
-  const domain = useMemo(() => {
-    return resolvePlayerGamesFiltersDomain(livePlayer, filters, {
-      seasonStartYear: 2025,
-      scoring: playerScoring,
-      profileData,
-    })
-  }, [livePlayer, filters, playerScoring, profileData])
-
-  const { summary, games, options, indicators } = domain || {}
-
-  const calculationGames = useMemo(() => {
-    const rows = Array.isArray(games) ? games : []
-
-    return rows.filter(isLeagueGame)
-  }, [games])
-
-  const sortedGames = useMemo(() => {
-    return sortPlayerGamesRows(games, sort)
-  }, [games, sort])
-
-  useEffect(() => {
-    if (gamesInsightsRequest > 0) {
-      setInsightsOpen(true)
-    }
-  }, [gamesInsightsRequest])
-
-  const handleChangeFilters = (patch) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...(patch || {}),
-    }))
-  }
-
-  const handleResetFilters = () => {
-    setFilters(createInitialPlayerGamesFilters())
-  }
-
-  const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
-  const hasAnyGames = Array.isArray(livePlayer?.playerGames) && livePlayer.playerGames.length > 0
-  console.log(profileData)
+export default function PlayerGamesModule(props) {
   return (
-    <>
-      <SectionPanel>
-        <Box
-          sx={{
-            position: 'sticky',
-            top: -6,
-            zIndex: 5,
-            display: 'grid',
-            gap: 1,
-            borderRadius: 12,
-            bgcolor: 'background.body',
-            mb: 0.5,
-            boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
-          }}
-        >
-          <PlayerGamesToolbar
-            summary={summary}
-            filters={filters}
-            indicators={indicators}
-            options={options}
-            onChangeFilters={handleChangeFilters}
-            onResetFilters={handleResetFilters}
-            sortBy={sort.by}
-            sortDirection={sort.direction}
-            onChangeSortBy={(value) => setSort((prev) => ({ ...prev, by: value }))}
-            onChangeSortDirection={(value) => setSort((prev) => ({ ...prev, direction: value }))}
-          />
-        </Box>
-
-        {!hasRows ? (
-          <EmptyState
-            title="אין משחקים"
-            subtitle={
-              hasAnyGames
-                ? 'לא נמצאו משחקים לפי הפילטרים שנבחרו'
-                : 'עדיין לא נוספו משחקים לשחקן'
-            }
-          />
-        ) : (
-          <PlayerGamesList
-            rows={sortedGames}
-            player={livePlayer}
-            scoring={playerScoring}
-            onEdit={(game) => {
-              if (!isPrivatePlayer) return
-              setEditingGame(game || null)
-            }}
-            onEditEntry={(game) => setEditingEntryGame(game || null)}
-            onEditStatsGame={(game) => setEditingStatsGame(game || null)}
-          />
-        )}
-      </SectionPanel>
-
-      <EntryEditDrawer
-        open={!!editingEntryGame}
-        game={editingEntryGame}
-        onClose={() => setEditingEntryGame(null)}
-        onSaved={() => setEditingEntryGame(null)}
-        context={{ ...context, playerId: livePlayer?.id, player: livePlayer }}
-      />
-
-      <EditDrawer
-        open={!!editingGame}
-        game={editingGame}
-        onClose={() => setEditingGame(null)}
-        onSaved={() => setEditingGame(null)}
-        context={{ ...context, playerId: livePlayer?.id, player: livePlayer }}
-      />
-
-      <PlayerGamesInsightsDrawer
-        open={insightsOpen}
-        onClose={() => setInsightsOpen(false)}
-        summary={summary}
-        games={calculationGames}
-        player={livePlayer}
-        team={liveTeam}
-        scoring={playerScoring}
-        profileData={profileData}
-      />
-    </>
+    <PlayerGamesModuleBase
+      {...props}
+      Section={SectionPanel}
+      ToolbarComponent={PlayerGamesToolbar}
+      ListComponent={PlayerGamesList}
+      InsightsDrawerComponent={PlayerGamesInsightsDrawer}
+      EntryEditDrawerComponent={EntryEditDrawer}
+      EditDrawerComponent={EditDrawer}
+      toolbarWrapSx={playerGamesModuleSx.desktopToolbarWrap}
+      seasonStartYear={2025}
+    />
   )
 }

@@ -1,4 +1,6 @@
 import {
+  Addchart,
+  StackedLineChart,
   AccessTime,
   BarChart,
   CalendarMonth,
@@ -23,6 +25,12 @@ import {
 } from '@mui/icons-material';
 
 export const statsIcons = {
+  addStats: <Addchart sx={{ color: 'success.500' }} />,
+  addStats: <Addchart sx={{ color: 'danger.500' }} />,
+  addPartialStats: <Addchart sx={{ color: 'warning.500' }} />,
+  statsPartial: <StackedLineChart />,
+  statsFull: <BarChart />,
+
   assist: <VolunteerActivism />,
   assists: <VolunteerActivism />,
 

@@ -1,54 +1,36 @@
 // playerProfile/mobile/modules/meetings/PlayerMeetingsModule.js
 
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlayer.js'
 import MobileFiltersDrawerShell from '../../../../../../ui/patterns/filters/MobileFiltersDrawerShell.js'
 
-import useMeetingsWorkspace from '../../../sharedLogic/meetings/module/useMeetingsWorkspace.js'
-import { useMeetingHubUpdate } from '../../../../hooks/meetings/useMeetingHubUpdate.js'
-
 import MeetingsToolbar from './components/toolbar/MeetingsToolbar.js'
 import MeetingsListPane from './components/MeetingsListPane.js'
 import MeetingsFilters from './components/toolbar/MeetingsFilters.js'
 import MeetingScreen from './components/meetingForm/MeetingScreen.js'
 
+import { usePlayerMeetingsModuleModel } from '../../../sharedModules/meetings'
+
 import { profileSx as sx } from './../../sx/profile.sx'
 
-const FALLBACK_VIDEO_LINK = 'https://drive.google.com/uc?id=1ZVjdelIdccdtifMfN4ZtwYlLIVnaFsGR'
-
 export default function PlayerMeetingsModule({ entity }) {
-  const ws = useMeetingsWorkspace(entity)
-  const [screen, setScreen] = useState('list')
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const {
+    ws,
+    screen,
+    filtersOpen,
+    pending,
+    fallbackVideoLink,
 
-  const { run, pending } = useMeetingHubUpdate(ws.selected)
+    setFiltersOpen,
 
-  const handleSelectMeeting = useCallback(
-    (id) => {
-      ws.setSelectedId(id)
-      setScreen('details')
-    },
-    [ws]
-  )
-
-  const handleBackToList = useCallback(() => {
-    setScreen('list')
-  }, [])
-
-  const handleSaveMeeting = useCallback(
-    async (_meetingId, patch) => {
-      if (!ws.selected?.id) return
-
-      await run('updateMeeting', patch, {
-        section: 'playerProfile.meetings',
-        meetingId: ws.selected.id,
-      })
-    },
-    [run, ws.selected]
-  )
+    handleResetFilters,
+    handleSelectMeeting,
+    handleBackToList,
+    handleSaveMeeting,
+  } = usePlayerMeetingsModuleModel({ entity })
 
   return (
     <SectionPanelMobile>
@@ -63,7 +45,7 @@ export default function PlayerMeetingsModule({ entity }) {
             onOpenFilters={() => setFiltersOpen(true)}
             onChangeFilters={ws.onChange}
             onClearFilter={ws.onClearFilter}
-            onResetFilters={ws.onReset}
+            onResetFilters={handleResetFilters}
             onAdd={ws.onAdd}
           />
         </Box>
@@ -96,7 +78,7 @@ export default function PlayerMeetingsModule({ entity }) {
         onClose={() => setFiltersOpen(false)}
         title="פילטרים לסינון פגישות"
         resultsText={`${ws.filtered.length} מתוך ${ws.meetings.length} פגישות`}
-        onReset={ws.onReset}
+        onReset={handleResetFilters}
         resetDisabled={!ws.hasActiveFilters}
       >
         <MeetingsFilters
@@ -109,7 +91,7 @@ export default function PlayerMeetingsModule({ entity }) {
       <DriveVideoPlayer
         open={ws.videoOpen}
         onClose={() => ws.setVideoOpen(false)}
-        videoLink={ws.videoLink || FALLBACK_VIDEO_LINK}
+        videoLink={ws.videoLink || fallbackVideoLink}
         videoName={ws.videoName}
         variant="analysis"
       />

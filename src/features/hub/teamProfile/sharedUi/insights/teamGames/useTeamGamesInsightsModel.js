@@ -22,7 +22,7 @@ const emptyArray = []
 const emptyObject = {}
 
 const DEBUG_PLAYER_INSIGHTS = false
-const DEBUG_SINGLE_GAME_PLAYERS = true
+const DEBUG_SINGLE_GAME_PLAYERS = false
 const DEBUG_GAME_ID = ''
 const findDebugGame = games => {
   if (!Array.isArray(games) || !games.length) return null

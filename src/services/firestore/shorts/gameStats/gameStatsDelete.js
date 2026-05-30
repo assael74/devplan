@@ -16,16 +16,25 @@ import {
   removeStatsGameRef,
 } from '../../../../shared/stats/engine/index.js'
 
-const STATS_SOURCE = 'gameStatsDeleteV1'
+const clean = value => {
+  return String(value ?? '').trim()
+}
 
-const clean = value => String(value ?? '').trim()
+const n = value => {
+  const num = Number(value)
+  return Number.isFinite(num) ? num : 0
+}
 
-const ensureDraft = draft => {
-  if (!draft || typeof draft !== 'object') {
-    throw new Error('[deleteGameStatsDoc] draft is required')
+const resolvePayload = ({ payload, draft }) => {
+  return payload || draft
+}
+
+const ensurePayload = payload => {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('[deleteGameStatsDoc] payload is required')
   }
 
-  if (!clean(draft.gameId) && !clean(draft.gameStatsDocId)) {
+  if (!clean(payload.gameId) && !clean(payload.gameStatsDocId)) {
     throw new Error('[deleteGameStatsDoc] missing gameId or gameStatsDocId')
   }
 }
@@ -67,16 +76,49 @@ const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
 }
 
 const clampMinZero = value => {
-  const num = Number(value)
-  if (!Number.isFinite(num)) return 0
-  return Math.max(0, num)
+  return Math.max(0, n(value))
 }
 
-const resolveGameStatsDocId = ({ draft, game }) => {
-  const fromDraft = clean(draft?.gameStatsDocId || draft?.statsDocId)
-  const fromGame = clean(game?.statsDocId)
+const isEmptyAggregateValue = value => {
+  if (value === null || value === undefined || value === '') return true
+  if (Array.isArray(value) && !value.length) return true
 
-  const gameStatsDocId = fromDraft || fromGame
+  const num = Number(value)
+  return Number.isFinite(num) && num === 0
+}
+
+const keepAggregateMetaKey = key => {
+  return [
+    'id',
+    'playerId',
+    'teamId',
+    'createdAt',
+    'updatedAt',
+  ].includes(key)
+}
+
+const compactAggregate = item => {
+  return Object.entries(item || {}).reduce((acc, [key, value]) => {
+    if (keepAggregateMetaKey(key)) {
+      return {
+        ...acc,
+        [key]: value,
+      }
+    }
+
+    if (isEmptyAggregateValue(value)) return acc
+
+    return {
+      ...acc,
+      [key]: value,
+    }
+  }, {})
+}
+
+const resolveGameStatsDocId = ({ payload, game }) => {
+  const fromPayload = clean(payload?.gameStatsDocId || payload?.statsDocId)
+  const fromGame = clean(game?.statsDocId || game?.gameStatsDocId)
+  const gameStatsDocId = fromPayload || fromGame
 
   if (!gameStatsDocId) {
     throw new Error('[deleteGameStatsDoc] missing gameStatsDocId')
@@ -85,26 +127,54 @@ const resolveGameStatsDocId = ({ draft, game }) => {
   return gameStatsDocId
 }
 
-const buildDeletedGameInfoItem = ({ current, now }) => {
-  return {
-    ...(current || {}),
-    hasStats: false,
-    statsStatus: 'none',
-    statsDocId: '',
-    statsUpdatedAt: now,
+const assertDocOwnership = ({
+  payload,
+  game,
+  currentGameStats,
+  gameId,
+  teamId,
+  gameStatsDocId,
+}) => {
+  const payloadGameId = clean(payload?.gameId)
+  const payloadTeamId = clean(payload?.teamId)
+  const docGameId = clean(currentGameStats?.gameId)
+  const docTeamId = clean(currentGameStats?.teamId)
+  const gameStatsDocIdFromGame = clean(game?.statsDocId || game?.gameStatsDocId)
+
+  if (payloadGameId && docGameId && payloadGameId !== docGameId) {
+    throw new Error('[deleteGameStatsDoc] payload gameId does not match stats doc')
+  }
+
+  if (payloadTeamId && docTeamId && payloadTeamId !== docTeamId) {
+    throw new Error('[deleteGameStatsDoc] payload teamId does not match stats doc')
+  }
+
+  if (docGameId && gameId !== docGameId) {
+    throw new Error('[deleteGameStatsDoc] resolved gameId does not match stats doc')
+  }
+
+  if (docTeamId && teamId !== docTeamId) {
+    throw new Error('[deleteGameStatsDoc] resolved teamId does not match stats doc')
+  }
+
+  if (gameStatsDocIdFromGame && gameStatsDocIdFromGame !== gameStatsDocId) {
+    throw new Error('[deleteGameStatsDoc] game points to a different stats doc')
   }
 }
 
-const buildDeletedGameStatsDoc = ({ current, now }) => {
+const buildDeletedGameInfoItem = ({ current, now }) => {
+  const {
+    statsStatus,
+    statsDocId,
+    gameStatsDocId,
+    statsUpdatedAt,
+    ...base
+  } = current || {}
+
   return {
-    ...(current || {}),
-
-    status: 'deleted',
-    aggregateStatus: 'synced',
-
-    deletedAt: now,
-    updatedAt: now,
-    updatedFrom: STATS_SOURCE,
+    ...base,
+    hasStats: false,
+    statsDeletedAt: now,
   }
 }
 
@@ -128,7 +198,7 @@ const buildDeletedPlayerAggregate = ({
   next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
   next.statsGameRefs = removeStatsGameRef(current?.statsGameRefs, gameId)
 
-  return applyStatsRates(next)
+  return compactAggregate(applyStatsRates(next))
 }
 
 const buildDeletedTeamAggregate = ({
@@ -155,13 +225,36 @@ const buildDeletedTeamAggregate = ({
   )
   next.statsGameRefs = removeStatsGameRef(current?.statsGameRefs, gameId)
 
-  return applyStatsRates(next)
+  return compactAggregate(applyStatsRates(next))
 }
 
-export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
-  ensureDraft(draft)
+const buildRollbackContext = ({ currentGameStats, resolvedGame, gameId, teamId, gameStatsDocId }) => {
+  const savedTeamStats = currentGameStats?.teamStats || {}
+  const gameDuration = n(savedTeamStats.timePlayed) || n(resolvedGame?.gameDuration)
 
-  const draftGameId = clean(draft.gameId)
+  return {
+    gameId,
+    teamId,
+    gameStatsDocId,
+    gameDuration,
+    timePlayed: n(savedTeamStats.timePlayed) || gameDuration,
+    timeVideoStats:
+      n(savedTeamStats.timeVideoStats) ||
+      n(savedTeamStats.timePlayed) ||
+      gameDuration,
+  }
+}
+
+export async function deleteGameStatsDoc({
+  payload,
+  draft,
+  dryRun = false,
+} = {}) {
+  const data = resolvePayload({ payload, draft })
+
+  ensurePayload(data)
+
+  const draftGameId = clean(data.gameId)
   const now = Timestamp.now()
 
   const gameInfoMeta = shortsRefs.games.gameInfo
@@ -177,7 +270,7 @@ export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
       dryRun: true,
       ids: {
         gameId: draftGameId || null,
-        gameStatsDocId: clean(draft.gameStatsDocId || draft.statsDocId) || null,
+        gameStatsDocId: clean(data.gameStatsDocId || data.statsDocId) || null,
       },
       note: 'dryRun only',
     }
@@ -192,7 +285,7 @@ export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
       ? findListItem(gameInfoDoc.list, draftGameId)
       : null
 
-    const gameStatsDocId = resolveGameStatsDocId({ draft, game })
+    const gameStatsDocId = resolveGameStatsDocId({ payload: data, game })
     const gameStatsRef = doc(gameStatsShortsRef, gameStatsDocId)
     const gameStatsSnap = await tx.get(gameStatsRef)
 
@@ -202,12 +295,8 @@ export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
 
     const currentGameStats = gameStatsSnap.data() || {}
 
-    if (clean(currentGameStats.status) === 'deleted') {
-      throw new Error(`[deleteGameStatsDoc] gameStats doc already deleted: ${gameStatsDocId}`)
-    }
-
-    const gameId = clean(draft.gameId || currentGameStats.gameId)
-    const teamId = clean(draft.teamId || currentGameStats.teamId || game?.teamId)
+    const gameId = clean(data.gameId || currentGameStats.gameId)
+    const teamId = clean(data.teamId || currentGameStats.teamId || game?.teamId)
 
     if (!gameId) throw new Error('[deleteGameStatsDoc] missing resolved gameId')
     if (!teamId) throw new Error('[deleteGameStatsDoc] missing resolved teamId')
@@ -218,20 +307,22 @@ export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
       throw new Error(`[deleteGameStatsDoc] game not found in games.gameInfo: ${gameId}`)
     }
 
-    const context = {
+    assertDocOwnership({
+      payload: data,
+      game: resolvedGame,
+      currentGameStats,
       gameId,
       teamId,
-      gameDuration: resolvedGame?.gameDuration || draft?.gameDuration,
-      timePlayed:
-        draft?.timePlayed ||
-        resolvedGame?.gameDuration ||
-        draft?.gameDuration,
-      timeVideoStats:
-        draft?.timeVideoStats ||
-        draft?.teamVideoTime ||
-        resolvedGame?.gameDuration ||
-        draft?.gameDuration,
-    }
+      gameStatsDocId,
+    })
+
+    const context = buildRollbackContext({
+      currentGameStats,
+      resolvedGame,
+      gameId,
+      teamId,
+      gameStatsDocId,
+    })
 
     const prevPlayerStats = normalizeGamePlayerStatsList(
       currentGameStats?.playerStats || [],
@@ -291,12 +382,7 @@ export async function deleteGameStatsDoc({ draft, dryRun = false } = {}) {
       })
     )
 
-    const nextGameStatsDoc = buildDeletedGameStatsDoc({
-      current: currentGameStats,
-      now,
-    })
-
-    tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
+    tx.delete(gameStatsRef)
 
     tx.set(
       gameInfoRef,

@@ -36,7 +36,6 @@ export function CoreDataProvider({ children }) {
 
   const [gamesShorts, setGamesShorts] = useState(null)
   const [externalGamesShorts, setExternalGamesShorts] = useState(null)
-  const [gameStatsShorts, setGameStatsShorts] = useState(null)
 
   const [rolesShorts, setRolesShorts] = useState(null)
   const [tagsShorts, setTagsShorts] = useState(null)
@@ -66,7 +65,6 @@ export function CoreDataProvider({ children }) {
       setExternalGamesShorts,
       setError
     )
-    const unsubGameStats = subscribeShorts(gameStatsShortsRef, setGameStatsShorts, setError)
 
     const unsubRoles = subscribeShorts(rolesShortsRef, setRolesShorts, setError)
     const unsubTags = subscribeShorts(tagsShortsRef, setTagsShorts, setError)
@@ -90,7 +88,6 @@ export function CoreDataProvider({ children }) {
 
       unsubGames()
       unsubExternalGames()
-      unsubGameStats()
 
       unsubRoles()
       unsubTags()
@@ -109,7 +106,6 @@ export function CoreDataProvider({ children }) {
     !Array.isArray(paymentsShorts) ||
     !Array.isArray(gamesShorts) ||
     !Array.isArray(externalGamesShorts) ||
-    !Array.isArray(gameStatsShorts) ||
     !Array.isArray(rolesShorts) ||
     !Array.isArray(tagsShorts) ||
     !Array.isArray(videosShorts) ||
@@ -169,11 +165,6 @@ export function CoreDataProvider({ children }) {
 
       case 'tags':
         setTagsShorts(patcher)
-        break
-
-      case 'gameStats':
-        setGameStatsShorts(patcher)
-        break
 
       case 'videoAnalysis':
         setVideoAnalysisShorts(patcher)
@@ -207,7 +198,6 @@ export function CoreDataProvider({ children }) {
 
         gamesShorts,
         externalGamesShorts,
-        gameStatsShorts,
 
         rolesShorts,
         tagsShorts,
@@ -245,7 +235,6 @@ export function CoreDataProvider({ children }) {
 
       gamesShorts,
       externalGamesShorts,
-      gameStatsShorts,
 
       rolesShorts,
       tagsShorts,
@@ -270,7 +259,6 @@ export function CoreDataProvider({ children }) {
 
       gamesShorts,
       externalGamesShorts,
-      gameStatsShorts,
 
       rolesShorts,
       tagsShorts,
@@ -296,7 +284,6 @@ export function CoreDataProvider({ children }) {
 
     gamesShorts,
     externalGamesShorts,
-    gameStatsShorts,
 
     rolesShorts,
     tagsShorts,

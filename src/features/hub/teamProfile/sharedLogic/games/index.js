@@ -26,6 +26,7 @@ export {
   getPlayedPlayers,
   getScorers,
   getAssisters,
+  resolveGameStatsActionModel
 } from './moduleLogic/teamGames.section.utils.js'
 
 export {

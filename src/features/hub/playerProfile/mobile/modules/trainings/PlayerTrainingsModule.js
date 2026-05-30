@@ -1,16 +1,9 @@
 // playerProfile/mobile/modules/trainings/PlayerTrainingsModule.js
 
-import React, { useMemo, useState, useCallback } from 'react'
+import React from 'react'
 import { Box } from '@mui/joy'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
-import EmptyState from '../../../../sharedProfile/EmptyState.js'
-
-import {
-  resolvePlayerTrainingsDomain,
-  buildTrainingsModel,
-  buildTrainingsHeaderStats,
-} from './../../../sharedLogic'
 
 import TrainingWeekDrawer from '../../../../../../ui/patterns/schedule/components/drawer/TrainingWeekDrawer.js'
 import EditDayTrainingDrawer from '../../../../../../ui/patterns/schedule/components/editDrawer/EditDayTrainingDrawer.js'
@@ -19,51 +12,30 @@ import TrainingsToolbar from './components/TrainingsToolbar.js'
 import TrainingsWeekToolbar from './components/TrainingsWeekToolbar.js'
 import TrainingsRows from './components/TrainingsRows.js'
 
+import { usePlayerTrainingsModuleModel } from '../../../sharedModules/trainings'
+
 import { profileSx as sx } from './../../sx/profile.sx'
 
 export default function PlayerTrainingsModule({ entity, context }) {
-  const player = entity || null
+  const {
+    player,
+    teamId,
 
-  const { summary, state, trainingWeeks } = useMemo(
-    () =>
-      resolvePlayerTrainingsDomain(player, {}, {
-        trainingWeeks: context?.trainingWeeks,
-        playerTrainingWeeksById: context?.playerTrainingWeeksById,
-      }),
-    [player, context]
-  )
+    model,
+    stats,
 
-  const [createOpen, setCreateOpen] = useState(false)
-  const [editingDay, setEditingDay] = useState(null)
+    createOpen,
+    editingDay,
 
-  const model = useMemo(() => {
-    return buildTrainingsModel({
-      entity: player,
-      trainingWeeks,
-    })
-  }, [player, trainingWeeks])
-
-  const stats = useMemo(() => buildTrainingsHeaderStats(model), [model])
-
-  const teamId = String(player?.teamId || player?.team?.id || '').trim()
-
-  const handleCreateWeek = useCallback(() => {
-    if (!teamId) return
-    setCreateOpen(true)
-  }, [teamId])
-
-  const handleCloseCreate = useCallback(() => {
-    setCreateOpen(false)
-  }, [])
-
-  const handleEditRow = useCallback((row) => {
-    if (!row?.weekId || !row?.dayKey) return
-    setEditingDay(row)
-  }, [])
-
-  const handleCloseEdit = useCallback(() => {
-    setEditingDay(null)
-  }, [])
+    handleCreateWeek,
+    handleCloseCreate,
+    handleEditRow,
+    handleCloseEdit,
+  } = usePlayerTrainingsModuleModel({
+    entity,
+    context,
+    buildMobileModel: true,
+  })
 
   return (
     <SectionPanelMobile>

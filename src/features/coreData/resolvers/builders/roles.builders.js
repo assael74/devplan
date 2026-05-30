@@ -1,3 +1,5 @@
+// src/features/coreData/resolvers/builders/roleBuilder.js
+
 import { safeArr, safeId } from '../../utils/data.utils.js'
 import { uniqById } from '../../utils/map.utils.js'
 

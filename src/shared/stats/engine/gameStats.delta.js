@@ -6,18 +6,29 @@ const SKIP_DELTA_KEYS = new Set([
   'id',
   'uid',
   'name',
+
   'playerId',
   'teamId',
   'gameId',
+  'gameStatsDocId',
+
   'position',
+  'isStarting',
+  'goals',
+  'assists',
+
   'playersCount',
 ])
 
-const isRateKey = key => String(key || '').endsWith('Rate')
+const isRateKey = key => {
+  return String(key || '').endsWith('Rate')
+}
 
 const isNumericValue = value => {
   if (typeof value === 'boolean') return false
+
   const num = Number(value)
+
   return Number.isFinite(num)
 }
 
@@ -53,7 +64,14 @@ export function applyStatsDelta(target = {}, delta = {}) {
   const next = { ...(target || {}) }
 
   for (const [key, value] of Object.entries(delta || {})) {
-    next[key] = n(next[key]) + n(value)
+    const nextValue = n(next[key]) + n(value)
+
+    if (nextValue === 0) {
+      delete next[key]
+      continue
+    }
+
+    next[key] = nextValue
   }
 
   return next

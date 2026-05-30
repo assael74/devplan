@@ -53,8 +53,8 @@ CSV / Import עתידי
 
 ```txt
 Input Channel
-→ Stats Draft / Full Stats Save
-→ gameStatsShorts detail doc
+→ Local Draft / Partial Save / Committed Save
+→ gameStatsShorts detail doc for partial/committed only
 → gamesShorts lightweight pointer + status
 → Aggregated Player Stats
 → Aggregated Team Stats
@@ -228,7 +228,7 @@ gameStatsShorts/{gameStatsDocId}
 ```js
 {
   id: 'gameStatsDocId',
-  gameStatsDocId: 'gameStatsDocId',
+  docId: 'gameStatsDocId',
   gameId: 'gameId',
   teamId: 'teamId',
 
@@ -238,8 +238,8 @@ gameStatsShorts/{gameStatsDocId}
 
   rivelStats: null,
 
-  status: 'draft',
-  aggregateStatus: 'dirty',
+  status: 'partial',
+  aggregateStatus: 'synced',
 
   createdAt: null,
   updatedAt: null,
@@ -251,9 +251,11 @@ gameStatsShorts/{gameStatsDocId}
 
 ### שדות חובה
 
-#### id / gameStatsDocId
+#### id / docId / gameStatsDocId
 
 מזהה מסמך הסטטיסטיקה הכבד.
+
+במסמך עצמו נשמרים `id` ו־`docId`. ב־payload, ב־UI וב־pointers משתמשים בשם `gameStatsDocId`.
 
 ביצירת סטטיסטיקה ראשונה למשחק יש ליצור `gameStatsDocId` ייעודי.
 אין להסתמך על `gameId` כמזהה המסמך.
@@ -377,7 +379,6 @@ export const GAME_STATS_STATUS = {
   PARTIAL: 'partial',
   COMMITTED: 'committed',
   LOCKED: 'locked',
-  DELETED: 'deleted',
 }
 ```
 
@@ -385,11 +386,10 @@ export const GAME_STATS_STATUS = {
 
 ```txt
 none      = אין מסמך סטטיסטיקה
-draft     = נוצרה סטטיסטיקה אבל עדיין בעריכה
-partial   = יש סטטיסטיקה חלקית
-committed = סטטיסטיקה מלאה ושמורה
+draft     = טיוטה מקומית ב־state בלבד; לא נשמרת ל־Firestore בתהליך הנוכחי
+partial   = יש סטטיסטיקה חלקית שמורה ב־Firestore ומסונכרנת ל־aggregates
+committed = סטטיסטיקה מלאה ושמורה ב־Firestore ומסונכרנת ל־aggregates
 locked    = סטטיסטיקה מלאה ונעולה לעריכה רגילה
-deleted   = סטטיסטיקה שנוטרלה ב־soft delete ואינה נספרת ב־aggregates
 ```
 
 ### aggregateStatus
@@ -508,22 +508,40 @@ teamsStats.timeVideoStats = 170
 
 ## 08 — תהליך יצירת סטטיסטיקה למשחק
 
-כאשר יוצרים סטטיסטיקה למשחק בפעם הראשונה:
+בתהליך הנוכחי יש הפרדה חדה בין טיוטה מקומית לבין שמירה רשמית.
+
+### Draft מקומי
+
+כאשר המשתמש בוחר `draft`:
+
+```txt
+1. בונים payload + draft מהטופס
+2. שומרים את הטיוטה ב־state לפי gameId
+3. לא כותבים ל־Firestore
+4. לא יוצרים gameStatsShorts
+5. לא מעדכנים gamesShorts
+6. לא מעדכנים playersStats / teamsStats
+```
+
+### Partial / Committed
+
+כאשר יוצרים סטטיסטיקה רשמית למשחק בפעם הראשונה:
 
 ```txt
 1. מקבלים gameId ו־teamId מהמשחק
 2. יוצרים gameStatsDocId ייעודי
 3. יוצרים מסמך חדש ב־gameStatsShorts/{gameStatsDocId}
-4. שומרים id, gameStatsDocId, gameId, teamId
-5. שומרים playerStats
+4. שומרים id, docId, gameId, teamId
+5. מנרמלים playerStats ושומרים רק שחקנים עם סטטיסטיקה מתקדמת
 6. מחשבים teamStats מתוך playerStats
-7. מעדכנים gamesShorts עם hasStats + statsStatus + statsDocId
+7. מעדכנים gamesShorts עם hasStats + statsStatus + statsDocId + statsUpdatedAt
 8. מעדכנים playersStats aggregate + statsGameRefs[]
 9. מעדכנים teamsStats aggregate + statsGameRefs[]
-10. מסמנים aggregateStatus = synced אם מדובר ב־commit
+10. מסמנים aggregateStatus = synced
+11. מנקים draft מקומי אחרי שמירת partial / committed
 ```
 
-ב־Draft ראשוני ניתן ליצור את מסמך הסטטיסטיקה ואת ה־pointer למשחק, אבל לעדכן aggregates רק ב־commit.
+סטטוס `partial` ו־`committed` שניהם נשמרים ל־Firestore ומעדכנים aggregates. ההבדל ביניהם הוא איכות/שלמות הנתונים מבחינת המוצר, לא מסלול כתיבה נפרד.
 
 ---
 
@@ -574,33 +592,36 @@ const delta = nextValue - oldValue // -14
 
 ### Draft Update
 
-בזמן עריכה ידנית או Live Tagging:
+בזמן עריכה ידנית, כאשר הסטטוס הוא `draft`:
 
 ```txt
-עדכון gameStatsShorts בלבד
-עדכון gamesShorts metadata אם צריך ליצור/לשמר statsDocId
-status = draft / partial
-aggregateStatus = dirty
+שומרים draft מקומי ב־state בלבד
+לא כותבים ל־Firestore
+לא יוצרים gameStatsShorts
+לא מעדכנים gamesShorts
+לא מעדכנים playersStats / teamsStats
 ```
 
-### Commit
+### Partial / Commit
 
-כאשר המשתמש לוחץ שמור / פרסם / נעילה:
+כאשר המשתמש שומר `partial` או `committed`:
 
 ```txt
 1. validate playerStats
-2. calculate teamStats
-3. calculate deltas מול גרסה קודמת
-4. update gameStatsShorts
-5. update playersStats aggregates
-6. update playersStats.statsGameRefs[]
-7. update teamsStats aggregates
-8. update teamsStats.statsGameRefs[]
-9. update gamesShorts metadata
-10. aggregateStatus = synced
+2. normalize playerStats
+3. calculate teamStats
+4. calculate deltas מול גרסה קודמת אם קיימת
+5. create/update gameStatsShorts
+6. update playersStats aggregates
+7. update playersStats.statsGameRefs[]
+8. update teamsStats aggregates
+9. update teamsStats.statsGameRefs[]
+10. update gamesShorts metadata
+11. aggregateStatus = synced
+12. clear local draft
 ```
 
-גישה זו מונעת 4 כתיבות על כל קליק קטן.
+גישה זו מונעת כתיבות על כל שינוי בטופס, אבל מבטיחה שכל שמירה רשמית כבר מסונכרנת ל־CoreData ול־aggregates.
 
 ---
 
@@ -656,7 +677,7 @@ Stats Commit
 
 ```js
 createGameStatsDoc({
-  draft: {
+  payload: {
     gameId,
     teamId,
     status,
@@ -678,7 +699,7 @@ createGameStatsDoc({
 
 ```js
 updateGameStatsDoc({
-  draft: {
+  payload: {
     gameStatsDocId,
     gameId,
     teamId,
@@ -720,7 +741,7 @@ read gameStatsShorts/{gameStatsDocId}
 
 ```js
 deleteGameStatsDoc({
-  draft: {
+  payload: {
     gameStatsDocId,
     gameId,
     teamId,
@@ -729,14 +750,16 @@ deleteGameStatsDoc({
 ```
 
 תפקיד:
-- לבצע soft delete לסטטיסטיקה מלאה של משחק.
+- לבצע מחיקה מלאה של סטטיסטיקת משחק רשמית מאזור קבוצה/משחק.
+- לשלוף קודם את `gameStatsShorts/{gameStatsDocId}` ולא להסתמך על draft פתוח.
+- לוודא שהמסמך שייך ל־`gameId` ול־`teamId` המבוקשים.
 - לאפס את תרומת המשחק מתוך `playersStats` ו־`teamsStats` באמצעות delta שלילי.
 - להסיר refs מתוך `playersStats.statsGameRefs[]`.
 - להסיר refs מתוך `teamsStats.statsGameRefs[]`.
 - לעדכן `gamesShorts.hasStats = false`.
-- לעדכן `gamesShorts.statsStatus = 'none'`.
-- לנקות `gamesShorts.statsDocId`.
-- להשאיר את `gameStatsShorts/{gameStatsDocId}` כ־audit עם המספרים המקוריים ו־`status: 'deleted'`.
+- להסיר / לנקות `gamesShorts.statsStatus`, `gamesShorts.statsDocId`, `gamesShorts.gameStatsDocId`, `gamesShorts.statsUpdatedAt`.
+- למחוק בפועל את `gameStatsShorts/{gameStatsDocId}` עם `tx.delete`.
+- לנקות שדות aggregate שיורדים ל־0, למעט שדות זהות וזמני audit בסיסיים.
 
 ---
 
@@ -750,8 +773,8 @@ deleteGameStatsDoc({
 
 ```txt
 read old gameStatsShorts/{gameStatsDocId}
-calculate delta
-write gameStatsShorts/{gameStatsDocId}
+calculate delta / rollback
+create/update/delete gameStatsShorts/{gameStatsDocId}
 write playersStats
 write teamsStats
 write gamesShorts
@@ -906,8 +929,11 @@ read teamsStats summary
 - `teamsStats` יורד לפי delta שלילי של המשחק.
 - `gamesShorts.hasStats = false`.
 - `gamesShorts.statsStatus = 'none'`.
-- `gamesShorts.statsDocId = ''`.
-- `gameStatsShorts/{gameStatsDocId}` נשאר לצורכי audit עם `status: 'deleted'`.
+- `gamesShorts.statsStatus` מוסר או מתאפס.
+- `gamesShorts.statsDocId` מוסר או מתאפס.
+- `gamesShorts.gameStatsDocId` מוסר אם קיים.
+- `gamesShorts.statsUpdatedAt` מוסר אם קיים.
+- `gameStatsShorts/{gameStatsDocId}` נמחק בפועל.
 
 ### מחיקת משחק
 
@@ -929,16 +955,80 @@ read teamsStats summary
 ```txt
 delete game requested
 → if game.statsDocId exists
-  → deleteGameStatsDoc({ gameId, gameStatsDocId })
+  → deleteGameStatsDoc({ payload: { gameId, gameStatsDocId } })
 → delete / remove game from gamesShorts
 ```
 
 המטרה:
 - למנוע שאריות ב־`playersStats`.
 - למנוע שאריות ב־`teamsStats`.
-- למנוע מסמך `gameStatsShorts` פעיל שמצביע למשחק שכבר נמחק.
+- למנוע מסמך `gameStatsShorts` שמצביע למשחק שכבר נמחק.
 
-## 19 — החלטות שלא לשנות בלי דיון
+
+## 19 — מצב יישום נוכחי — Completed Flow
+
+נכון לעדכון זה, תהליך יצירת סטטיסטיקה מתקדמת הושלם ונבדק מקצה לקצה.
+
+### מה הושלם
+
+```txt
+1. טופס GameStatsCreateForm עובד.
+2. שמירת draft נשמרת ל־state בלבד ולא ל־Firestore.
+3. שמירת partial / committed נשמרת ל־Firestore.
+4. createGameStatsDoc יוצר gameStatsShorts ומעדכן games.gameInfo.
+5. updateGameStatsDoc מעדכן סטטיסטיקה קיימת עם delta.
+6. getGameStatsDoc שולף מסמך קיים לפי statsDocId.
+7. createGameStatsDraftFromDoc בונה draft מטופס שמור.
+8. games.gameInfo מקבל hasStats / statsStatus / statsDocId / statsUpdatedAt.
+9. teamsStats מתעדכן לפי teamStats של המשחק.
+10. playersStats מתעדכן לכל שחקן עם סטטיסטיקה מתקדמת.
+11. rate מחושב מחדש ואינו source of truth מה־UI.
+12. draft מקומי מתנקה אחרי שמירת partial / committed.
+13. פתיחת טופס עם statsDocId שולפת את gameStatsShorts/{statsDocId}.
+14. נוספה אינדיקציית טעינה לפתיחת טופס שמור.
+15. advancedStats מחובר ל־CoreData:
+    - team.advancedStats
+    - team.players[].advancedStats
+16. קיימת תצוגת בדיקה זמנית ב־TeamPerformanceModule.
+17. כפתור פתיחת סטטיסטיקה מזהה מצבים:
+    - empty
+    - draft
+    - partial
+    - committed
+    - saved
+18. מחיקת draft מקומי עובדת.
+19. מחיקת סטטיסטיקה רשמית עובדת עם rollback מלא.
+20. UX המחיקה והשמירה עודכן:
+    - כפתור שמירה לפי סטטוס
+    - כפתור מחיקה לפי סוג הפעולה
+    - מודאל מחיקה שמסביר במפורש מה נמחק
+```
+
+### בדיקות שבוצעו
+
+```txt
+1. עדכון אותו שחקן באותו משחק — תקין.
+2. הוספת שחקן נוסף לאותו משחק — תקין.
+3. הוספת משחק נוסף לאותו שחקן/קבוצה — תקין.
+4. counters, זמנים, deltas ו־rates — תקין.
+5. מחיקת סטטיסטיקת משחק רשמית — תקין.
+6. rollback ל־games.gameInfo, teamsStats, playersStats — תקין.
+```
+
+### השלב הבא המומלץ
+
+```txt
+לא לגעת יותר ב־flow של יצירה / שמירה / מחיקה אלא אם מתגלה באג.
+השלב הבא הוא מוצרי:
+1. להסיר או להחליף את תצוגת הבדיקה הזמנית.
+2. להחליט איפה advancedStats מוצג בפועל.
+3. לבנות קומפוננטות תצוגה נקיות לסטטיסטיקה מתקדמת.
+4. לחבר את התצוגה למובייל בהמשך.
+```
+
+---
+
+## 20 — החלטות שלא לשנות בלי דיון
 
 1. `gameStatsShorts` הוא מקור האמת הפר־משחקי.
 2. `gameStatsDocId` הוא מזהה מסמך הסטטיסטיקה הכבד.
@@ -952,12 +1042,13 @@ delete game requested
 10. Live Tagging הוא ערוץ הזנה, לא מודל אחסון עצמאי.
 11. מחיקה מאזור שחקן היא update נקודתי ולא מחיקה כללית.
 12. מחיקה מאזור קבוצה/משחק היא מחיקה כללית של סטטיסטיקת המשחק.
-13. מחיקת משחק חייבת לטפל קודם בסטטיסטיקה הפעילה שלו.
-14. שינוי בתהליך מחייב עדכון מסמך זה.
+13. מחיקה כללית של סטטיסטיקה רשמית מוחקת בפועל את `gameStatsShorts/{gameStatsDocId}` אחרי rollback.
+14. מחיקת משחק חייבת לטפל קודם בסטטיסטיקה הפעילה שלו.
+15. שינוי בתהליך מחייב עדכון מסמך זה.
 
 ---
 
-## 20 — Checklist לצ׳אט AI חדש
+## 21 — Checklist לצ׳אט AI חדש
 
 כאשר ממשיכים עבודה על סטטיסטיקה מתקדמת, לצרף או לבדוק:
 
@@ -997,7 +1088,7 @@ shared/stats/engine
 
 ---
 
-## 21 — סיכום קצר
+## 22 — סיכום קצר
 
 המודל:
 
@@ -1024,7 +1115,7 @@ teamsStats
 מסמכים קטנים יותר
 פחות חישובים בכניסה לאפליקציה
 שליפה לפי pointer במקום סריקה
-soft delete עם rollback של aggregates
+hard delete של מסמך הסטטיסטיקה אחרי rollback של aggregates
 ```
 
 כל שינוי בתהליך, במבנה הנתונים או במיקום האחריות בין השכבות מחייב עדכון של המסמך הזה.

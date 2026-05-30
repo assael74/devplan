@@ -38,6 +38,7 @@ import {
  buildPlayerGames,
  buildTeamsWithStats,
  buildTeamPerformanceState,
+ buildAdvancedStatsState,
 } from '../resolvers/builders'
 
 const safeId = (v) => (v == null ? '' : String(v))
@@ -153,6 +154,7 @@ export function enrichTeams(merged, indexes) {
         teamMeetings,
         teamGames,
         targets,
+        advancedStats: buildAdvancedStatsState(team, 'team'),
       }
     })
 }
@@ -259,6 +261,7 @@ export function enrichPlayers(merged, indexes, teams) {
         playerSource: sourceMeta.playerSource,
         isPrivatePlayer,
         abilitiesState: buildPlayerAbilitiesState(playerForAbilities),
+        advancedStats: buildAdvancedStatsState(player, 'player'),
       }
     })
     .sort((a, b) =>

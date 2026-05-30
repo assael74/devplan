@@ -1,4 +1,5 @@
 // fields/selectUi/videos/videoAnalysis/VideoObjectTypeSelectField.js
+
 import React, { useMemo } from 'react'
 import {
   FormControl,
@@ -9,8 +10,18 @@ import {
   Stack,
   Typography,
 } from '@mui/joy'
+
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { VIDEOANALYSIS_OBJECTTYPES } from '../../../../../shared/videoAnalysis/videoAnalysis.constants.js'
+
+const getOptionId = opt => {
+  return opt?.id || opt?.value || ''
+}
+
+const getOptionKey = (opt, index) => {
+  const id = getOptionId(opt)
+  return id ? `${id}-${index}` : `object-type-${index}`
+}
 
 export default function VideoObjectTypeSelectField({
   value,
@@ -30,13 +41,16 @@ export default function VideoObjectTypeSelectField({
       ? options
       : VIDEOANALYSIS_OBJECTTYPES
 
-  const selectedOpt = useMemo(
-    () => opts.find((o) => o.id === value) || null,
-    [opts, value]
-  )
+    const selectedOpt = useMemo(() => {
+      return opts.find(opt => {
+        const optionId = opt?.id || opt?.value || ''
+        return optionId === value
+      }) || null
+    }, [opts, value])
 
   const handleChange = (_, newValue) => {
-    if (!readOnly) onChange(newValue)
+    if (readOnly) return
+    onChange(newValue)
   }
 
   return (
@@ -52,7 +66,7 @@ export default function VideoObjectTypeSelectField({
         renderValue={() =>
           selectedOpt ? (
             <Stack direction="row" gap={1} alignItems="center">
-              {iconUi({id: selectedOpt.idIcon})}
+              {iconUi({ id: selectedOpt.idIcon })}
               <Typography level="body-sm">
                 {selectedOpt.labelH}
               </Typography>
@@ -61,19 +75,29 @@ export default function VideoObjectTypeSelectField({
         }
         slotProps={{ listbox: { sx: { maxHeight: 240 } } }}
       >
-        {opts.map((opt) => {
-          return (
-            <Option key={opt.id} value={opt.id} disabled={opt.disabled}>
-              <Stack direction="row" gap={1.5} alignItems="center">
-                {iconUi({id: opt.idIcon})}
-                <Typography level="body-sm">{opt.labelH}</Typography>
-              </Stack>
-            </Option>
-          )
+      {opts.map((opt, index) => {
+        const optionId = opt?.id || opt?.value || ''
+
+        if (!optionId) return null
+
+        return (
+          <Option
+            key={`${optionId}-${index}`}
+            value={optionId}
+            disabled={opt.disabled}
+          >
+            <Stack direction="row" gap={1.5} alignItems="center">
+              {iconUi({ id: opt.idIcon })}
+              <Typography level="body-sm">{opt.labelH}</Typography>
+            </Stack>
+          </Option>
+        )
         })}
       </Select>
 
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText ? (
+        <FormHelperText>{helperText}</FormHelperText>
+      ) : null}
     </FormControl>
   )
 }

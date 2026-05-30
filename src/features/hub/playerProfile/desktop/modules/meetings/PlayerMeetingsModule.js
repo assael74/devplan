@@ -4,17 +4,20 @@ import React from 'react'
 import { Box } from '@mui/joy'
 
 import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlayer.js'
+
 import { moduleSx as sx } from './playerMeetingsModule.sx'
-import useMeetingsWorkspace from './../../../sharedLogic'
+
+import { usePlayerMeetingsModuleModel } from '../../../sharedModules/meetings'
 
 import MeetingsListPane from './components/list/MeetingsListPane'
 import MeetingPane from './components/form/MeetingPane'
 
-const link = 'https://drive.google.com/uc?id=1ZVjdelIdccdtifMfN4ZtwYlLIVnaFsGR'
-
 export default function PlayerMeetingsModule({ entity }) {
-  const player = entity
-  const ws = useMeetingsWorkspace(player)
+  const {
+    ws,
+    fallbackVideoLink,
+    handleResetFilters,
+  } = usePlayerMeetingsModuleModel({ entity })
 
   return (
     <>
@@ -29,16 +32,8 @@ export default function PlayerMeetingsModule({ entity }) {
               selectedId={ws.selectedId}
               onSelectId={ws.setSelectedId}
               onChange={ws.onChange}
-              onResetFilters={() =>
-                ws.onChange({
-                  query: '',
-                  type: '',
-                  status: '',
-                  month: '',
-                  showCanceled: false,
-                })
-              }
-             />
+              onResetFilters={handleResetFilters}
+            />
           </Box>
 
           <Box sx={sx.paneWrapLeft}>
@@ -53,7 +48,7 @@ export default function PlayerMeetingsModule({ entity }) {
       <DriveVideoPlayer
         open={ws.videoOpen}
         onClose={() => ws.setVideoOpen(false)}
-        videoLink={link}
+        videoLink={ws.videoLink || fallbackVideoLink}
         videoName={ws.videoName}
         variant="analysis"
       />

@@ -1,4 +1,5 @@
 /// fields/selectUi/videos/videoAnalysis/VideoContextTypeSelectField.js
+
 import React, { useMemo } from 'react'
 import {
   FormControl,
@@ -9,8 +10,19 @@ import {
   Stack,
   Typography,
 } from '@mui/joy'
+
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { VIDEOANALYSIS_CONTEXTTYPES } from '../../../../../shared/videoAnalysis/videoAnalysis.constants.js'
+
+const getOptionId = opt => {
+  return opt?.id || opt?.value || ''
+}
+
+const getOptionKey = (opt, index) => {
+  const id = getOptionId(opt)
+
+  return id ? `${id}-${index}` : `context-type-${index}`
+}
 
 export default function VideoContextTypeSelectField({
   value,
@@ -30,13 +42,13 @@ export default function VideoContextTypeSelectField({
       ? options
       : VIDEOANALYSIS_CONTEXTTYPES
 
-  const selectedOpt = useMemo(
-    () => opts.find((o) => o.id === value) || null,
-    [opts, value]
-  )
+  const selectedOpt = useMemo(() => {
+    return opts.find(opt => getOptionId(opt) === value) || null
+  }, [opts, value])
 
   const handleChange = (_, newValue) => {
-    if (!readOnly) onChange(newValue)
+    if (readOnly) return
+    onChange?.(newValue)
   }
 
   return (
@@ -52,7 +64,7 @@ export default function VideoContextTypeSelectField({
         renderValue={() =>
           selectedOpt ? (
             <Stack direction="row" gap={1} alignItems="center">
-              {iconUi({id: selectedOpt.idIcon})}
+              {iconUi({ id: selectedOpt.idIcon })}
               <Typography level="body-sm">
                 {selectedOpt.labelH}
               </Typography>
@@ -61,19 +73,31 @@ export default function VideoContextTypeSelectField({
         }
         slotProps={{ listbox: { sx: { maxHeight: 240 } } }}
       >
-        {opts.map((opt) => {
+        {opts.map((opt, index) => {
+          const optionId = getOptionId(opt)
+
+          if (!optionId) return null
+
           return (
-            <Option key={opt.id} value={opt.id} disabled={opt.disabled}>
+            <Option
+              key={getOptionKey(opt, index)}
+              value={optionId}
+              disabled={opt.disabled}
+            >
               <Stack direction="row" gap={1.5} alignItems="center">
-                {iconUi({id: opt.idIcon})}
-                <Typography level="body-sm">{opt.labelH}</Typography>
+                {iconUi({ id: opt.idIcon })}
+                <Typography level="body-sm">
+                  {opt.labelH}
+                </Typography>
               </Stack>
             </Option>
           )
         })}
       </Select>
 
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText ? (
+        <FormHelperText>{helperText}</FormHelperText>
+      ) : null}
     </FormControl>
   )
 }

@@ -3,3 +3,4 @@
 export * from './gameStatsCreate.js'
 export * from './gameStatsUpdate.js'
 export * from './gameStatsDelete.js'
+export * from './getGameStatsDoc.js'

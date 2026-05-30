@@ -8,26 +8,44 @@ const SKIP_AGG_KEYS = new Set([
   'id',
   'uid',
   'name',
+
   'playerId',
   'teamId',
   'gameId',
+  'gameStatsDocId',
+
   'position',
+  'isStarting',
+  'goals',
+  'assists',
+
   'playersCount',
 ])
+
+const isSkippableValue = value => {
+  if (typeof value === 'boolean') return true
+  if (value === null || value === undefined || value === '') return true
+
+  const num = Number(value)
+
+  return !Number.isFinite(num) || num === 0
+}
 
 const addStatsValues = (target, stats = {}) => {
   for (const [key, value] of Object.entries(stats)) {
     if (SKIP_AGG_KEYS.has(key)) continue
-    if (typeof value === 'boolean') continue
+    if (isSkippableValue(value)) continue
 
-    const num = n(value)
-    if (!Number.isFinite(num)) continue
-
-    target[key] = n(target[key]) + num
+    target[key] = n(target[key]) + n(value)
   }
 }
 
-export function buildNextPlayerStatsItem({ current, playerStats, gameRef, now }) {
+export function buildNextPlayerStatsItem({
+  current,
+  playerStats,
+  gameRef,
+  now,
+}) {
   const next = {
     ...(current || {}),
     id: playerStats.playerId,
@@ -44,7 +62,12 @@ export function buildNextPlayerStatsItem({ current, playerStats, gameRef, now })
   return applyStatsRates(next)
 }
 
-export function buildNextTeamStatsItem({ current, teamStats, gameRef, now }) {
+export function buildNextTeamStatsItem({
+  current,
+  teamStats,
+  gameRef,
+  now,
+}) {
   const next = {
     ...(current || {}),
     id: teamStats.teamId,

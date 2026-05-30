@@ -1,7 +1,14 @@
 // teamProfile/desktop/modules/games/components/sections/PerformanceSection.js
 
 import React from 'react'
-import { Avatar, Box, Chip, Tooltip, Typography } from '@mui/joy'
+import {
+  Avatar,
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/joy'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
@@ -11,6 +18,7 @@ import { perfSx as sx } from './sx/perf.sx.js'
 import {
   buildGamePlayersPerformanceModel,
   buildGameTeamPerformanceModel,
+  resolveGameStatsActionModel,
   formatGamePerfRating,
   getGamePerfPlayerLabel,
   getGamePerfTone,
@@ -94,7 +102,43 @@ function PlayerScoreChip({ row, type = 'best' }) {
   )
 }
 
-export default function PerformanceSection({ teamGameScore, playerPerformance, performanceView = 'team' }) {
+function StatsActionButton({ game, statsDraft, statsStatus, onOpenStatsGame }) {
+  const model = resolveGameStatsActionModel({
+    game,
+    statsDraft,
+  })
+
+  return (
+    <Tooltip title={model.tooltip}>
+      <IconButton
+        size="sm"
+        variant={model.variant}
+        color={model.color}
+        onClick={event => {
+          event.stopPropagation()
+          onOpenStatsGame(game)
+        }}
+        sx={sx.addStatsIcon(model.status)}
+      >
+        {iconUi({
+          id: model.iconId,
+          size: 'sm',
+          sx: model.iconSx,
+        })}
+      </IconButton>
+    </Tooltip>
+  )
+}
+
+export default function PerformanceSection({
+  game,
+  teamGameScore,
+  onOpenStatsGame,
+  playerPerformance,
+  performanceView = 'team',
+  statsDraft = null,
+  statsStatus = '',
+}) {
   const teamModel = React.useMemo(() => {
     return buildGameTeamPerformanceModel({
       teamGameScore,
@@ -106,18 +150,24 @@ export default function PerformanceSection({ teamGameScore, playerPerformance, p
   }, [playerPerformance])
 
   const isTeamView = performanceView === 'team'
-  const label = isTeamView ? 'קב׳' : 'אישי'
   const labelTitle = isTeamView ? 'ביצוע קבוצתי' : 'ביצוע אישי'
 
   return (
     <Box sx={sx.root}>
-      <Tooltip arrow title={labelTitle}>
+      <Box>
         <Box sx={sx.labelBox}>
           <Typography level="body-xs" sx={sx.label}>
             {labelTitle}
           </Typography>
         </Box>
-      </Tooltip>
+
+        <StatsActionButton
+          game={game}
+          statsDraft={statsDraft}
+          statsStatus={statsStatus}
+          onOpenStatsGame={onOpenStatsGame}
+        />
+      </Box>
 
       <Box sx={sx.content}>
         {isTeamView ? (

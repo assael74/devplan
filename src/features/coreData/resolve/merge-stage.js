@@ -24,6 +24,7 @@ import { mergeShorts } from '../resolvers/mergeShorts.js'
 
 const PLAYER_MERGE_DOCS = [
   'staff',
+  'playersStats',
   'playersTeam',
   'playersNames',
   'playersProInfo',
@@ -33,6 +34,7 @@ const PLAYER_MERGE_DOCS = [
 
 const PRIVATE_PLAYER_MERGE_DOCS = [
   'privatePlayersInfo',
+  'privatePlayersStats',
   'privatePlayersAbilities',
 ]
 
@@ -146,7 +148,7 @@ export function mergeCoreShorts({
   const clubs = clubsBaseDoc ? mergeShorts(clubsShorts, clubsBaseDoc, [], 'id') : []
 
   const teamsBase = teamsBaseDoc
-    ? mergeShorts(teamsShorts, teamsBaseDoc, ['teamsMeeting', 'teamsTraining'], 'id')
+    ? mergeShorts(teamsShorts, teamsBaseDoc, ['teamsMeeting', 'teamsTraining', 'teamsStats'], 'id')
     : []
 
   const standardPlayersBase = mergeStandardPlayers(playersShorts)

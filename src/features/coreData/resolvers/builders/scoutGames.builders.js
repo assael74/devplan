@@ -1,3 +1,5 @@
+// src/features/coreData/resolvers/builders/scoutGames.builders.js
+
 import { safeArr, safeBool, safeNum, safeStr } from '../../utils/data.utils.js'
 
 const normalizeScoutGame = (game = {}) => ({
