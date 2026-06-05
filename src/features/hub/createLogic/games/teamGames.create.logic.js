@@ -1,4 +1,8 @@
+// features/hub/createLogic/games/teamGames.create.logic.js
+
 const safe = (v) => (v == null ? '' : String(v).trim())
+
+const DEFAULT_GAME_HOUR = '12:00'
 
 const toNumOrZero = (v) => {
   if (v === '' || v == null) return 0
@@ -23,7 +27,7 @@ const isValidDateFormat = (value) => {
 function buildComparableTeamGameCreateDraft(draft = {}) {
   return {
     gameDate: safe(draft?.gameDate),
-    gameHour: safe(draft?.gameHour),
+    gameHour: safe(draft?.gameHour) || DEFAULT_GAME_HOUR,
     rivel: safe(draft?.rivel),
     teamId: safe(draft?.teamId),
     clubId: safe(draft?.clubId),
@@ -47,7 +51,7 @@ export function buildTeamGameCreateDraft(context = {}) {
 
   return {
     gameDate: '',
-    gameHour: '',
+    gameHour: DEFAULT_GAME_HOUR,
     rivel: '',
     teamId,
     clubId,
@@ -148,7 +152,7 @@ export function buildTeamGameCreatePayload(draft = {}, context = {}) {
 
   return {
     gameDate: safe(draft?.gameDate),
-    gameHour: safe(draft?.gameHour),
+    gameHour: safe(draft?.gameHour) || DEFAULT_GAME_HOUR,
     rivel: safe(draft?.rivel),
 
     teamId: safe(draft?.teamId || context?.teamId || context?.team?.id),

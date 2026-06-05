@@ -1,20 +1,21 @@
 // teamProfile/desktop/modules/players/components/sections/PerformanceCell.js
 
 import React from 'react'
-import { Box, Chip, Typography } from '@mui/joy'
+import { Box, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-
-import {
-  ScoringInfo,
-} from '../../../../../../../../ui/patterns/scoring/index.js'
 
 import { performanceSx as sx } from './sx/performance.sx.js'
 
 import {
   buildPerformanceCellModel,
-  getImpactColor,
 } from './ui/performanceCell.ui.js'
+
+import {
+  PLAYER_ROW_METRIC_TONES,
+} from './ui/playerMetricTones.js'
+
+import PlayerMetricChip from './ui/PlayerMetricChip.js'
 
 const loadingText = 'בטעינה...'
 const emptyText = '-'
@@ -41,22 +42,15 @@ function ProfileChip({ profile = {}, loaded = false }) {
     : 'loading'
 
   return (
-    <ScoringInfo
-      type="profile"
-      profileId={ready ? profile.id : null}
-      mode="short"
-      triggerSx={{ minWidth: 0 }}
+    <Chip
+      size="sm"
+      variant="soft"
+      color={color}
+      startDecorator={iconUi({ id: icon })}
+      sx={sx.profileChip}
     >
-      <Chip
-        size="sm"
-        variant="soft"
-        color={color}
-        startDecorator={iconUi({ id: icon, size: 'xs' })}
-        sx={sx.profileChip}
-      >
-        {text}
-      </Chip>
-    </ScoringInfo>
+      {text}
+    </Chip>
   )
 }
 
@@ -64,67 +58,90 @@ function ScoreChip({ value, loaded = false }) {
   const ready = isLoaded(loaded)
 
   return (
-    <ScoringInfo
-      type="metric"
-      metric="efficiency"
-      mode="short"
+    <Chip
+      size="sm"
+      variant="soft"
+      color="neutral"
+      startDecorator={ready ? null : iconUi({ id: 'loading' })}
+      sx={sx.scoreChip}
     >
-      <Chip
-        size="sm"
-        variant="soft"
-        color="neutral"
-        startDecorator={ ready ? null : iconUi({ id: 'loading', size: 'xs' })}
-        sx={sx.scoreChip}
-      >
-        {getText({ loaded: ready, value })}
-      </Chip>
-    </ScoringInfo>
+      {getText({ loaded: ready, value })}
+    </Chip>
   )
 }
 
-function ImpactChip({ value, loaded = false }) {
-  const ready = isLoaded(loaded)
-  const color = ready ? getImpactColor(value) : 'neutral'
-
-  return (
-    <ScoringInfo
-      type="metric"
-      metric="impact"
-      mode="short"
-    >
-      <Chip
-        size="sm"
-        variant="soft"
-        color={color}
-        startDecorator={ ready ? null : iconUi({ id: 'loading', size: 'xs' })}
-        sx={sx.impactChip}
-      >
-        {getText({ loaded: ready, value })}
-      </Chip>
-    </ScoringInfo>
-  )
-}
-
-function MetaItem({ icon, children, loaded = true }) {
+function ImpactChip({ value, color = 'neutral', loaded = false }) {
   const ready = isLoaded(loaded)
 
   return (
-    <Typography level="body-xs" sx={sx.metaItem}>
-      {iconUi({ id: ready ? icon : 'loading', size: 'xs' })}
-      {ready ? children : loadingText}
-    </Typography>
+    <Chip
+      size="sm"
+      variant="soft"
+      color={ready ? color : 'neutral'}
+      startDecorator={ready ? null : iconUi({ id: 'loading' })}
+      sx={sx.impactChip}
+    >
+      {getText({ loaded: ready, value })}
+    </Chip>
   )
 }
 
-export default function PerformanceCell({ row, loaded = true }) {
+function MetaItem({
+  icon,
+  metricKey,
+  label = '',
+  value,
+  loaded = true,
+  metricTones = PLAYER_ROW_METRIC_TONES,
+}) {
+  const ready = isLoaded(loaded)
+
+  return (
+    <PlayerMetricChip
+      metricKey={metricKey}
+      icon={ready ? icon : 'loading'}
+      label={ready ? label : ''}
+      value={ready ? value : loadingText}
+      metricTones={metricTones}
+    />
+  )
+}
+
+export default function PerformanceCell({
+  row,
+  loaded = true,
+  metricTones = PLAYER_ROW_METRIC_TONES,
+}) {
   const ready = isLoaded(loaded)
 
   const {
+    hasNumbers,
     profile,
     ratingLabel,
     tvaValue,
+    impactColor,
     stats,
   } = buildPerformanceCellModel(row)
+
+  if (!ready) {
+    return (
+      <Box sx={sx.root}>
+        <Box sx={sx.empty}>
+          {loadingText}
+        </Box>
+      </Box>
+    )
+  }
+
+  if (!hasNumbers) {
+    return (
+      <Box sx={sx.root}>
+        <Box sx={sx.empty}>
+          אין נתוני ביצוע
+        </Box>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={sx.root}>
@@ -141,29 +158,48 @@ export default function PerformanceCell({ row, loaded = true }) {
 
         <ImpactChip
           value={tvaValue}
+          color={impactColor}
           loaded={ready}
         />
       </Box>
 
       <Box sx={sx.meta}>
-        <MetaItem icon="goal" loaded={ready}>
-          {stats.goals}
-        </MetaItem>
+        <MetaItem
+          icon="goal"
+          metricKey="goals"
+          value={stats.goals}
+          loaded={ready}
+          metricTones={metricTones}
+        />
 
-        <MetaItem icon="assists" loaded={ready}>
-          {stats.assists}
-        </MetaItem>
+        <MetaItem
+          icon="assists"
+          metricKey="assists"
+          value={stats.assists}
+          loaded={ready}
+          metricTones={metricTones}
+        />
 
-        <MetaItem icon="playTimeRate" loaded={ready}>
-          דקות {stats.minutesPctLabel}
-        </MetaItem>
+        <MetaItem
+          icon="playTimeRate"
+          metricKey="minutes"
+          label="דקות"
+          value={stats.minutesPctLabel}
+          loaded={ready}
+          metricTones={metricTones}
+        />
 
         <Box sx={{ flex: 1 }} />
 
-        {ready && stats.startedLabel ? (
-          <MetaItem icon="isStart" loaded={ready}>
-            הרכב {stats.startedLabel}
-          </MetaItem>
+        {stats.startedLabel ? (
+          <MetaItem
+            icon="isStart"
+            metricKey="starts"
+            label="הרכב"
+            value={stats.startedLabel}
+            loaded={ready}
+            metricTones={metricTones}
+          />
         ) : null}
       </Box>
     </Box>

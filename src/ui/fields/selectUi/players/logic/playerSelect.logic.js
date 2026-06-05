@@ -14,6 +14,7 @@ export function normalizePlayer(p, fallbackImage) {
     teamId: clean(p?.teamId || p?.team?.id),
     teamName: clean(p?.team?.teamName || p?.teamName),
     clubName: clean(p?.club?.clubName || p?.clubName),
+    disabled: p?.disabled || false,
     raw: p,
   }
 }

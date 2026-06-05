@@ -1,3 +1,5 @@
+// src/ui/forms/gameStatsForm/logic/summary.logic.js
+
 const hasValue = value => {
   if (value === null || value === undefined) return false
   if (typeof value === 'string') return value.trim() !== ''
@@ -17,6 +19,48 @@ const isFieldFilled = ({ field, row }) => {
   return hasValue(row[field.id])
 }
 
+const isPlayerScopeDraft = draft => {
+  if (!draft) return false
+  if (draft.scope === 'player') return true
+
+  const meta = draft.meta || {}
+
+  return meta.scope === 'player'
+}
+
+const getEditablePlayerId = draft => {
+  if (!draft) return ''
+
+  const meta = draft.meta || {}
+
+  return (
+    draft.editablePlayerId ||
+    meta.editablePlayerId ||
+    meta.playerId ||
+    ''
+  )
+}
+
+const hasPositiveValue = value => {
+  const num = Number(value)
+
+  return Number.isFinite(num) && num > 0
+}
+
+const getRegularFieldValue = ({ field, row }) => {
+  return formatSummaryValue(row[field.id])
+}
+
+const getTripletFieldValue = ({ field, row }) => {
+  const total = row[field.totalKey]
+  const success = row[field.successKey]
+  const rate = row[field.rateKey]
+
+  if (!hasPositiveValue(total)) return '—'
+
+  return `${formatSummaryValue(success)}/${formatSummaryValue(total)} · ${formatSummaryValue(rate)}%`
+}
+
 export const buildPlayerStatsProgress = ({ player, row, fields }) => {
   const total = fields.length
 
@@ -29,6 +73,7 @@ export const buildPlayerStatsProgress = ({ player, row, fields }) => {
   return {
     playerId: player.playerId,
     name: player.name,
+    photo: player.photo || '',
     isStarting: player.isStarting,
     timePlayed: player.timePlayed,
     filled,
@@ -41,9 +86,14 @@ export const buildPlayerStatsProgress = ({ player, row, fields }) => {
 }
 
 export const buildStatsSummaryRows = ({ draft, fields }) => {
-  const players = draft?.players || []
-  const selectedPlayerIds = draft?.selectedPlayerIds || []
-  const rows = draft?.playerStats || []
+  const players = draft && Array.isArray(draft.players) ? draft.players : []
+  const selectedPlayerIds = draft && Array.isArray(draft.selectedPlayerIds)
+    ? draft.selectedPlayerIds
+    : []
+
+  const rows = draft && Array.isArray(draft.playerStats)
+    ? draft.playerStats
+    : []
 
   return selectedPlayerIds.map(playerId => {
     const player = players.find(item => item.playerId === playerId)
@@ -79,4 +129,58 @@ export const buildStatsSummaryTotals = summaryRows => {
     filledFields,
     completionRate,
   }
+}
+
+export const isLockedSummaryRow = ({ row, draft }) => {
+  if (!isPlayerScopeDraft(draft)) return false
+
+  const editablePlayerId = getEditablePlayerId(draft)
+
+  return Boolean(editablePlayerId) && row.playerId !== editablePlayerId
+}
+
+export const getSummaryRowStats = ({ draft, playerId }) => {
+  const rows = draft && Array.isArray(draft.playerStats)
+    ? draft.playerStats
+    : []
+
+  return rows.find(row => row.playerId === playerId) || {}
+}
+
+export const getSummaryFieldLabel = field => {
+  if (field.type === 'triplet') return field.label || field.id
+
+  return (
+    field.parm && field.parm.statsParmShortName ||
+    field.parm && field.parm.statsParmName ||
+    field.id ||
+    ''
+  )
+}
+
+export const formatSummaryValue = value => {
+  if (value === null || value === undefined || value === '') return '—'
+
+  const num = Number(value)
+
+  if (Number.isFinite(num)) {
+    return Number.isInteger(num) ? String(num) : num.toFixed(1)
+  }
+
+  return String(value)
+}
+
+export const getSummaryFieldValue = ({ field, row }) => {
+  if (field.type === 'triplet') {
+    return getTripletFieldValue({ field, row })
+  }
+
+  return getRegularFieldValue({ field, row })
+}
+
+export const getSummaryFieldType = field => {
+  if (field.statsParmType) return field.statsParmType
+  if (field.parm && field.parm.statsParmType) return field.parm.statsParmType
+
+  return 'general'
 }

@@ -15,102 +15,66 @@ import {
   removeStatsGameRef,
 } from '../../../../shared/stats/engine/index.js'
 
-const clean = value => String(value ?? '').trim()
+import {
+  buildShortDocRef,
+  buildShortsDocPayload,
+  clampMinZero,
+  clean,
+  compactAggregateByKeys,
+  findListItem,
+  readShortListDoc,
+  resolvePayload,
+  safeArr,
+  toNum,
+  updateExistingListItem,
+} from './shared/index.js'
 
-const toNum = value => {
-  const num = Number(value)
-  return Number.isFinite(num) ? num : 0
-}
+const PRIVATE_AGGREGATE_META_KEYS = [
+  'id',
+  'playerId',
+  'createdAt',
+  'updatedAt',
+]
 
-const safeArr = value => {
-  return Array.isArray(value) ? value : []
-}
-
-const buildShortDocRef = meta => {
-  return doc(db, meta.collection, meta.docId)
-}
-
-const readShortListDoc = async (tx, ref) => {
-  const snap = await tx.get(ref)
-  const data = snap.exists() ? snap.data() || {} : {}
-  const list = Array.isArray(data.list) ? data.list : []
-
-  return { data, list }
-}
-
-const findListItem = (list = [], id) => {
-  return safeArr(list).find(item => item?.id === id) || null
-}
-
-const updateExistingListItem = (list = [], id, nextItem) => {
-  const rows = safeArr(list)
-  const idx = rows.findIndex(item => item?.id === id)
-
-  if (idx < 0) return rows
-
-  return rows.map((item, index) => {
-    return index === idx ? nextItem : item
-  })
-}
-
-const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
-  return {
-    ...data,
-    docId: data?.docId || meta?.docId,
-    docName: data?.docName || docName,
-    list,
-    updatedAt: now,
-    createdAt: data?.createdAt ?? now,
+function ensurePayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('[deletePrivatePlayerGameStatsDoc] payload is required')
   }
 }
 
-const clampMinZero = value => {
-  return Math.max(0, toNum(value))
+function resolvePlayerId(data) {
+  const meta = data.meta || {}
+
+  return clean(meta.playerId || data.playerId || data.editablePlayerId)
 }
 
-const isEmptyAggregateValue = value => {
-  if (value === null || value === undefined || value === '') return true
-  if (Array.isArray(value) && !value.length) return true
+function buildRefs() {
+  const externalGameInfoMeta = shortsRefs.externalGames.gameInfo
+  const privatePlayersStatsMeta = shortsRefs.privates.privatePlayersStats
 
-  const num = Number(value)
-  return Number.isFinite(num) && num === 0
+  return {
+    externalGameInfoMeta,
+    privatePlayersStatsMeta,
+    externalGameInfoRef: buildShortDocRef(externalGameInfoMeta),
+    privatePlayersStatsRef: buildShortDocRef(privatePlayersStatsMeta),
+  }
 }
 
-const keepAggregateMetaKey = key => {
-  return [
-    'id',
-    'playerId',
-    'createdAt',
-    'updatedAt',
-  ].includes(key)
+function compactPrivateAggregate(item) {
+  return compactAggregateByKeys({
+    item,
+    keepKeys: PRIVATE_AGGREGATE_META_KEYS,
+  })
 }
 
-const compactAggregate = item => {
-  return Object.entries(item || {}).reduce((acc, [key, value]) => {
-    if (keepAggregateMetaKey(key)) {
-      return {
-        ...acc,
-        [key]: value,
-      }
-    }
-
-    if (isEmptyAggregateValue(value)) return acc
-
-    return {
-      ...acc,
-      [key]: value,
-    }
-  }, {})
-}
-
-const buildDeletedExternalGameInfoItem = ({ current, now }) => {
+function buildDeletedExternalGameInfoItem({ current, now }) {
   const {
     statsStatus,
     statsDocId,
     gameStatsDocId,
     statsUpdatedAt,
     ...base
-  } = current || {}
+  } = current
 
   return {
     ...base,
@@ -119,46 +83,53 @@ const buildDeletedExternalGameInfoItem = ({ current, now }) => {
   }
 }
 
-const buildRollbackContext = ({ currentGameStats, externalGame, gameId, gameStatsDocId }) => {
-  const firstRow = safeArr(currentGameStats?.playerStats)[0] || {}
-  const gameDuration = toNum(externalGame?.gameDuration || firstRow?.timePlayed || 80)
+function buildRollbackContext({ currentGameStats, externalGame, gameId, gameStatsDocId }) {
+  const rows = safeArr(currentGameStats.playerStats)
+  const firstRow = rows[0] || {}
+  const gameDuration = toNum(externalGame.gameDuration || firstRow.timePlayed || 80)
 
   return {
     gameId,
     teamId: '',
     gameStatsDocId,
     gameDuration,
-    timePlayed: toNum(firstRow?.timePlayed) || gameDuration,
+    timePlayed: toNum(firstRow.timePlayed) || gameDuration,
     timeVideoStats:
-      toNum(firstRow?.timeVideoStats) ||
-      toNum(firstRow?.timePlayed) ||
+      toNum(firstRow.timeVideoStats) ||
+      toNum(firstRow.timePlayed) ||
       gameDuration,
   }
 }
 
-const buildDeletedPrivatePlayerAggregate = ({ current, playerId, gameId, delta, now }) => {
+function buildDeletedPrivatePlayerAggregate({
+  current,
+  playerId,
+  gameId,
+  delta,
+  now,
+}) {
   let next = {
-    ...(current || {}),
+    ...current,
     id: playerId,
     playerId,
     updatedAt: now,
-    createdAt: current?.createdAt ?? now,
+    createdAt: current && current.createdAt ? current.createdAt : now,
   }
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
-  next.statsGameRefs = removeStatsGameRef(current?.statsGameRefs, gameId)
+  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+  next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
-  return compactAggregate(applyStatsRates(next))
+  return compactPrivateAggregate(applyStatsRates(next))
 }
 
-const resolveGameStatsDocId = ({ payload, externalGame }) => {
+function resolveGameStatsDocId({ payload, externalGame }) {
   const gameStatsDocId = clean(
-    payload?.gameStatsDocId ||
-      payload?.statsDocId ||
-      externalGame?.statsDocId ||
-      externalGame?.gameStatsDocId
+    payload.gameStatsDocId ||
+      payload.statsDocId ||
+      externalGame.statsDocId ||
+      externalGame.gameStatsDocId
   )
 
   if (!gameStatsDocId) {
@@ -168,46 +139,154 @@ const resolveGameStatsDocId = ({ payload, externalGame }) => {
   return gameStatsDocId
 }
 
+function assertPrivateDocOwnership({
+  currentGameStats,
+  gameId,
+  playerId,
+}) {
+  const meta = currentGameStats.meta || {}
+  const docGameId = clean(currentGameStats.gameId)
+  const docPlayerId = clean(currentGameStats.playerId || meta.playerId)
+
+  if (docGameId && docGameId !== gameId) {
+    throw new Error('[deletePrivatePlayerGameStatsDoc] gameId does not match stats doc')
+  }
+
+  if (docPlayerId && docPlayerId !== playerId) {
+    throw new Error('[deletePrivatePlayerGameStatsDoc] playerId does not match stats doc')
+  }
+}
+
+function buildNextPrivatePlayersStatsList({
+  privatePlayersStatsDoc,
+  playerId,
+  gameId,
+  prevRow,
+  now,
+}) {
+  const currentPrivateStats = findListItem(privatePlayersStatsDoc.list, playerId)
+
+  if (!currentPrivateStats || !prevRow) {
+    return privatePlayersStatsDoc.list
+  }
+
+  const delta = buildStatsDelta(prevRow, {})
+
+  return updateExistingListItem(
+    privatePlayersStatsDoc.list,
+    playerId,
+    buildDeletedPrivatePlayerAggregate({
+      current: currentPrivateStats,
+      playerId,
+      gameId,
+      delta,
+      now,
+    })
+  )
+}
+
+function buildDryRunSummary({ data, gameId, playerId }) {
+  return {
+    dryRun: true,
+    ids: {
+      gameId,
+      playerId,
+      gameStatsDocId: clean(data.gameStatsDocId || data.statsDocId) || null,
+    },
+    note: 'dryRun only',
+  }
+}
+
+function buildDeleteSummary({
+  gameId,
+  playerId,
+  gameStatsDocId,
+  prevPlayerStats,
+  prevRow,
+}) {
+  return {
+    ok: true,
+    ids: {
+      gameId,
+      playerId,
+      gameStatsDocId,
+    },
+    summary: {
+      status: 'deleted',
+      playersCount: prevPlayerStats.length,
+      removedPlayerStats: prevRow,
+    },
+  }
+}
+
+function writePrivateDeleteTransaction({
+  tx,
+  refs,
+  docs,
+  gameStatsRef,
+  nextExternalGameInfoList,
+  nextPrivatePlayersStatsList,
+  now,
+}) {
+  tx.delete(gameStatsRef)
+
+  tx.set(
+    refs.externalGameInfoRef,
+    buildShortsDocPayload({
+      data: docs.externalGameInfoDoc.data,
+      meta: refs.externalGameInfoMeta,
+      docName: 'gameInfo',
+      list: nextExternalGameInfoList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.privatePlayersStatsRef,
+    buildShortsDocPayload({
+      data: docs.privatePlayersStatsDoc.data,
+      meta: refs.privatePlayersStatsMeta,
+      docName: 'privatePlayersStats',
+      list: nextPrivatePlayersStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+}
+
 export async function deletePrivatePlayerGameStatsDoc({
   payload,
   draft,
   dryRun = false,
 } = {}) {
-  const data = payload || draft
+  const data = resolvePayload({ payload, draft })
 
-  if (!data || typeof data !== 'object') {
-    throw new Error('[deletePrivatePlayerGameStatsDoc] payload is required')
-  }
+  ensurePayload(data)
 
   const gameId = clean(data.gameId)
-  const playerId = clean(data?.meta?.playerId || data?.playerId || data?.editablePlayerId)
+  const playerId = resolvePlayerId(data)
 
   if (!gameId) throw new Error('[deletePrivatePlayerGameStatsDoc] missing gameId')
   if (!playerId) throw new Error('[deletePrivatePlayerGameStatsDoc] missing playerId')
 
   const now = Timestamp.now()
-
-  const externalGameInfoMeta = shortsRefs.externalGames.gameInfo
-  const privatePlayersStatsMeta = shortsRefs.privates.privatePlayersStats
-
-  const externalGameInfoRef = buildShortDocRef(externalGameInfoMeta)
-  const privatePlayersStatsRef = buildShortDocRef(privatePlayersStatsMeta)
+  const refs = buildRefs()
 
   if (dryRun) {
-    return {
-      dryRun: true,
-      ids: {
-        gameId,
-        playerId,
-        gameStatsDocId: clean(data.gameStatsDocId || data.statsDocId) || null,
-      },
-      note: 'dryRun only',
-    }
+    return buildDryRunSummary({ data, gameId, playerId })
   }
 
   return runTransaction(db, async tx => {
-    const externalGameInfoDoc = await readShortListDoc(tx, externalGameInfoRef)
-    const privatePlayersStatsDoc = await readShortListDoc(tx, privatePlayersStatsRef)
+    const externalGameInfoDoc = await readShortListDoc(
+      tx,
+      refs.externalGameInfoRef
+    )
+
+    const privatePlayersStatsDoc = await readShortListDoc(
+      tx,
+      refs.privatePlayersStatsRef
+    )
 
     const externalGame = findListItem(externalGameInfoDoc.list, gameId)
 
@@ -229,16 +308,11 @@ export async function deletePrivatePlayerGameStatsDoc({
 
     const currentGameStats = gameStatsSnap.data() || {}
 
-    const docGameId = clean(currentGameStats?.gameId)
-    const docPlayerId = clean(currentGameStats?.playerId || currentGameStats?.meta?.playerId)
-
-    if (docGameId && docGameId !== gameId) {
-      throw new Error('[deletePrivatePlayerGameStatsDoc] gameId does not match stats doc')
-    }
-
-    if (docPlayerId && docPlayerId !== playerId) {
-      throw new Error('[deletePrivatePlayerGameStatsDoc] playerId does not match stats doc')
-    }
+    assertPrivateDocOwnership({
+      currentGameStats,
+      gameId,
+      playerId,
+    })
 
     const context = buildRollbackContext({
       currentGameStats,
@@ -248,31 +322,20 @@ export async function deletePrivatePlayerGameStatsDoc({
     })
 
     const prevPlayerStats = normalizeGamePlayerStatsList(
-      currentGameStats?.playerStats || [],
+      currentGameStats.playerStats || [],
       context
     )
 
     const prevByPlayerId = indexPlayerStatsByPlayerId(prevPlayerStats)
     const prevRow = prevByPlayerId.get(playerId) || null
 
-    const currentPrivateStats = findListItem(privatePlayersStatsDoc.list, playerId)
-    let nextPrivatePlayersStatsList = privatePlayersStatsDoc.list
-
-    if (currentPrivateStats && prevRow) {
-      const delta = buildStatsDelta(prevRow, {})
-
-      nextPrivatePlayersStatsList = updateExistingListItem(
-        privatePlayersStatsDoc.list,
-        playerId,
-        buildDeletedPrivatePlayerAggregate({
-          current: currentPrivateStats,
-          playerId,
-          gameId,
-          delta,
-          now,
-        })
-      )
-    }
+    const nextPrivatePlayersStatsList = buildNextPrivatePlayersStatsList({
+      privatePlayersStatsDoc,
+      playerId,
+      gameId,
+      prevRow,
+      now,
+    })
 
     const nextExternalGameInfoList = updateExistingListItem(
       externalGameInfoDoc.list,
@@ -283,44 +346,25 @@ export async function deletePrivatePlayerGameStatsDoc({
       })
     )
 
-    tx.delete(gameStatsRef)
-
-    tx.set(
-      externalGameInfoRef,
-      buildShortsDocPayload({
-        data: externalGameInfoDoc.data,
-        meta: externalGameInfoMeta,
-        docName: 'gameInfo',
-        list: nextExternalGameInfoList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      privatePlayersStatsRef,
-      buildShortsDocPayload({
-        data: privatePlayersStatsDoc.data,
-        meta: privatePlayersStatsMeta,
-        docName: 'privatePlayersStats',
-        list: nextPrivatePlayersStatsList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    return {
-      ok: true,
-      ids: {
-        gameId,
-        playerId,
-        gameStatsDocId,
+    writePrivateDeleteTransaction({
+      tx,
+      refs,
+      docs: {
+        externalGameInfoDoc,
+        privatePlayersStatsDoc,
       },
-      summary: {
-        status: 'deleted',
-        playersCount: prevPlayerStats.length,
-        removedPlayerStats: prevRow,
-      },
-    }
+      gameStatsRef,
+      nextExternalGameInfoList,
+      nextPrivatePlayersStatsList,
+      now,
+    })
+
+    return buildDeleteSummary({
+      gameId,
+      playerId,
+      gameStatsDocId,
+      prevPlayerStats,
+      prevRow,
+    })
   })
 }

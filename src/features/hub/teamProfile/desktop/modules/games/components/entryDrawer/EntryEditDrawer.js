@@ -13,6 +13,7 @@ import {
 
 import EntryEditHeaderDrawer from './EntryEditHeaderDrawer.js'
 import EntryEditContentDrawer from './EntryEditContentDrawer.js'
+import EntryImportDrawer from './EntryImportDrawer.js'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
@@ -20,6 +21,7 @@ import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
 
 import {
+  applyEntryImportToRows,
   buildTeamGameEntryInitial,
   buildTeamGameEntryPatch,
   clampTeamGameEntryStatToRowLimit,
@@ -42,6 +44,7 @@ export default function EntryEditDrawer({
   onClose,
   onSaved,
 }) {
+  const [entryImportOpen, setEntryImportOpen] = useState(false)
   const team = context?.team || game?.team || {}
 
   const initial = useMemo(() => {
@@ -56,6 +59,7 @@ export default function EntryEditDrawer({
 
     setDraft(initial)
     setFilters(defaultEntryFilters)
+    setEntryImportOpen(false)
   }, [open, initial])
 
   const isValid = useMemo(() => {
@@ -94,6 +98,16 @@ export default function EntryEditDrawer({
         rows: setTeamGameEntryRowField(prev?.rows || [], playerId, field, safeValue),
       }
     })
+  }
+
+  const handleApplyEntryImport = (preview) => {
+    setDraft((prev) => ({
+      ...prev,
+      rows: applyEntryImportToRows({
+        draft: prev,
+        preview,
+      }),
+    }))
   }
 
   const handleReset = () => {
@@ -160,80 +174,90 @@ export default function EntryEditDrawer({
   }
 
   return (
-    <Drawer
-      size="lg"
-      variant="plain"
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      slotProps={{ content: { sx: sx.drawerSx } }}
-    >
-      <Sheet sx={sx.drawerSheet}>
-        <EntryEditHeaderDrawer
-          game={game}
-          draft={draft}
-          context={context}
-          onClose={onClose}
-        />
+    <>
+      <Drawer
+        size="lg"
+        variant="plain"
+        anchor="right"
+        open={open}
+        onClose={onClose}
+        slotProps={{ content: { sx: sx.drawerSx } }}
+      >
+        <Sheet sx={sx.drawerSheet}>
+          <EntryEditHeaderDrawer
+            game={game}
+            draft={draft}
+            context={context}
+            onClose={onClose}
+          />
 
-        <EntryEditContentDrawer
-          draft={draft}
-          filters={filters}
-          onSetFilter={handleSetFilter}
-          onResetFilters={handleResetFilters}
-          onChangeRow={handleChangeRow}
-          onBulkSetOnSquad={handleBulkSetOnSquad}
-          onBulkResetStats={handleBulkResetStats}
-        />
+          <EntryEditContentDrawer
+            draft={draft}
+            filters={filters}
+            onSetFilter={handleSetFilter}
+            onResetFilters={handleResetFilters}
+            onChangeRow={handleChangeRow}
+            onBulkSetOnSquad={handleBulkSetOnSquad}
+            onBulkResetStats={handleBulkResetStats}
+            onOpenImport={() => setEntryImportOpen(true)}
+          />
 
-        <Box sx={sx.footerSx}>
-          <Box sx={sx.footerActionsSx}>
-            <Button
-              loading={pending}
-              disabled={!canSave}
-              startDecorator={iconUi({ id: 'save' })}
-              onClick={handleSave}
-              sx={sx.conBut}
+          <Box sx={sx.footerSx}>
+            <Box sx={sx.footerActionsSx}>
+              <Button
+                loading={pending}
+                disabled={!canSave}
+                startDecorator={iconUi({ id: 'save' })}
+                onClick={handleSave}
+                sx={sx.conBut}
+              >
+                שמירה
+              </Button>
+
+              <Button
+                color="neutral"
+                variant="outlined"
+                onClick={onClose}
+                disabled={pending}
+              >
+                ביטול
+              </Button>
+
+              <Tooltip title="איפוס השינויים">
+                <span>
+                  <IconButton
+                    disabled={!isDirty}
+                    size="sm"
+                    variant="soft"
+                    sx={sx.icoRes}
+                    onClick={handleReset}
+                  >
+                    {iconUi({ id: 'reset' })}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+
+            <Typography
+              level="body-xs"
+              color={!isValid ? 'warning' : isDirty ? 'danger' : 'neutral'}
             >
-              שמירה
-            </Button>
-
-            <Button
-              color="neutral"
-              variant="outlined"
-              onClick={onClose}
-              disabled={pending}
-            >
-              ביטול
-            </Button>
-
-            <Tooltip title="איפוס השינויים">
-              <span>
-                <IconButton
-                  disabled={!isDirty}
-                  size="sm"
-                  variant="soft"
-                  sx={sx.icoRes}
-                  onClick={handleReset}
-                >
-                  {iconUi({ id: 'reset' })}
-                </IconButton>
-              </span>
-            </Tooltip>
+              {!isValid
+                ? validationMessage || 'יש שדות חובה חסרים'
+                : isDirty
+                  ? 'יש שינויים שלא נשמרו'
+                  : 'אין שינויים'}
+            </Typography>
           </Box>
+        </Sheet>
+      </Drawer>
 
-          <Typography
-            level="body-xs"
-            color={!isValid ? 'warning' : isDirty ? 'danger' : 'neutral'}
-          >
-            {!isValid
-              ? validationMessage || 'יש שדות חובה חסרים'
-              : isDirty
-                ? 'יש שינויים שלא נשמרו'
-                : 'אין שינויים'}
-          </Typography>
-        </Box>
-      </Sheet>
-    </Drawer>
+      <EntryImportDrawer
+        open={entryImportOpen}
+        onClose={() => setEntryImportOpen(false)}
+        draft={draft}
+        onApply={handleApplyEntryImport}
+      />
+    </>
   )
 }

@@ -43,6 +43,7 @@ export default function TeamProfileMobile({
 
   const [playersInsightsRequest, setPlayersInsightsRequest] = useState(0)
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
+  const [gamesImportRequest, setGamesImportRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
@@ -92,6 +93,7 @@ export default function TeamProfileMobile({
     playersInsightsStatus: isPlayersTab ? playersInsightsStatus : 'empty',
     onOpenPlayersInsights: handleOpenPlayersInsights,
     onOpenGamesInsights: () => setGamesInsightsRequest(v => v + 1),
+    onImportGames: () => setGamesImportRequest(v => v + 1),
     onOpenPerformanceInsights: () => setPerformanceInsightsRequest(v => v + 1),
     onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest(v => v + 1),
     onOpenVideoInsights: () => setVideoInsightsRequest(v => v + 1),
@@ -142,6 +144,7 @@ export default function TeamProfileMobile({
               modulesMap={mobileTeamModulesMap}
               playersInsightsRequest={playersInsightsRequest}
               gamesInsightsRequest={gamesInsightsRequest}
+              gamesImportRequest={gamesImportRequest}
               performanceInsightsRequest={performanceInsightsRequest}
               abilitiesInsightsRequest={abilitiesInsightsRequest}
               videoInsightsRequest={videoInsightsRequest}

@@ -12,9 +12,16 @@ const getPerformanceProfileId = row => {
   )
 }
 
+const hasPlayerTargets = row => {
+  return row?.targets?.hasTargets === true &&
+    Array.isArray(row?.targets?.mainItems) &&
+    row.targets.mainItems.length > 0
+}
+
 export const filterTeamPlayersRows = (rows, filters) => {
   const q = norm(filters?.search)
   const onlyActive = filters?.onlyActive === true
+  const onlyWithTargets = filters?.onlyWithTargets === true
   const squadRole = safe(filters?.squadRole).trim()
   const projectStatus = safe(filters?.projectStatus).trim()
   const positionCode = safe(filters?.positionCode).trim()
@@ -28,6 +35,8 @@ export const filterTeamPlayersRows = (rows, filters) => {
     }
 
     if (onlyActive && !row?.active) return false
+    if (onlyWithTargets && !hasPlayerTargets(row)) return false
+
     if (squadRole && row?.squadRole !== squadRole) return false
     if (projectStatus && row?.projectStatus !== projectStatus) return false
 

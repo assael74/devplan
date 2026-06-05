@@ -22,6 +22,18 @@ export const toolbarSx = {
     flexWrap: 'wrap'
   },
 
+  viewModeGroup: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    p: 0.35,
+    borderRadius: 999,
+    bgcolor: 'background.surface',
+    border: '1px solid',
+    borderColor: 'divider',
+    flexShrink: 0,
+  },
+
   sortMenuItemActive: {
     bgcolor: 'background.level1',
     fontWeight: 700,

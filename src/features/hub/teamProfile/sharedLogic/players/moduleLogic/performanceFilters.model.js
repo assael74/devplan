@@ -15,6 +15,12 @@ export const getPerformanceProfileId = row => {
   )
 }
 
+export const hasPlayerTargets = row => {
+  return row?.targets?.hasTargets === true &&
+    Array.isArray(row?.targets?.mainItems) &&
+    row.targets.mainItems.length > 0
+}
+
 export const buildPerformanceProfileBuckets = rows => {
   const safeRows = Array.isArray(rows) ? rows : emptyArray
 
@@ -28,6 +34,16 @@ export const buildPerformanceProfileBuckets = rows => {
   }))
 }
 
+export const buildTargetsSummary = rows => {
+  const safeRows = Array.isArray(rows) ? rows : emptyArray
+  const withoutTargets = safeRows.filter(row => !hasPlayerTargets(row)).length
+
+  return {
+    withoutTargets,
+    withTargets: safeRows.length - withoutTargets,
+  }
+}
+
 export const mergeSummaryWithPerformanceBuckets = ({
   summary,
   rows,
@@ -35,5 +51,6 @@ export const mergeSummaryWithPerformanceBuckets = ({
   return {
     ...(summary || {}),
     performanceProfileBuckets: buildPerformanceProfileBuckets(rows),
+    targetsSummary: buildTargetsSummary(rows),
   }
 }

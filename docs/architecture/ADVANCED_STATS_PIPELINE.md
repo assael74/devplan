@@ -1,5 +1,7 @@
 # DevPlan — Advanced Stats Pipeline
 
+תאריך אחרון לעדכון: 31/05/26
+
 מסמך זה מתאר את תהליך האחסון, העדכון והצריכה של סטטיסטיקה מתקדמת בפרויקט `devplan`.
 
 מיקום יעד בפרויקט:
@@ -47,7 +49,28 @@ Live Tagging
 CSV / Import עתידי
 ```
 
-כל ערוצי ההזנה צריכים להתנקז לאותו מסלול עדכון סטטיסטיקה.
+כל ערוצי ההזנה צריכים להתנקז לאותו מסלול עדכון סטטיסטיקה, אבל לא בהכרח לאותה פונקציית שמירה.
+
+החל מהוספת Live Tagging קיימים שלושה מסלולי יצירה רשמיים:
+
+```txt
+Manual Form / Live Player Stats
+→ createGameStatsDoc
+→ playerStats נשלח
+→ teamStats נגזר מתוך playerStats
+
+Live Private Player Stats
+→ savePrivatePlayerGameStatsDoc
+→ playerStats של שחקן פרטי בלבד
+→ externalGames.gameInfo + privatePlayersStats
+
+Live Team Only Stats
+→ createTeamOnlyGameStatsDoc
+→ teamStats ישיר
+→ ללא playerStats וללא playersStats
+```
+
+כלומר Live Tagging הוא create-only מבחינת UX, אבל הוא לא route יחיד. בחירת ה־route נקבעת לפי סוג האובייקט הנמדד.
 
 המודל המרכזי הוא:
 
@@ -103,6 +126,40 @@ gameStatsDocId = מזהה מסמך הסטטיסטיקה הכבד
 ```
 
 אין לשמור כאן `playerStats` מלא.
+
+---
+
+### externalGamesShorts
+
+אובייקט משחק חיצוני רזה, בעיקר עבור שחקן פרטי.
+
+תפקיד:
+- לשמור מידע בסיסי על משחק שאינו חלק ממסלול `gamesShorts` של קבוצה.
+- לשמור חיווי קל לגבי מצב הסטטיסטיקה.
+- לשמור pointer למסמך הסטטיסטיקה הכבד.
+- לא לשמור פירוט סטטיסטי מלא של שחקנים.
+
+דוגמה:
+
+```js
+{
+  id: 'externalGameId',
+  playerId: 'privatePlayerId',
+  teamName: 'Team Name',
+  clubName: 'Club Name',
+  gameSource: 'external',
+  isExternalGame: true,
+
+  hasStats: true,
+  statsStatus: 'partial',
+  statsDocId: 'gameStatsDocId',
+  gameStatsDocId: 'gameStatsDocId',
+  statsUpdatedAt: null
+}
+```
+
+ה־metadata של סטטיסטיקה במשחק חיצוני נשמר ב־`externalGames.gameInfo`, לא ב־`games.gameInfo`.
+
 
 ---
 
@@ -170,6 +227,46 @@ gameStatsShorts/{gameStatsDocId}
 
 `statsGameRefs` הוא pointer קל בלבד.
 אין לשמור בו סטטיסטיקה מלאה של המשחק.
+
+---
+
+### privatePlayersStats
+
+סיכום מצטבר לפי שחקן פרטי.
+
+תפקיד:
+- לשמור aggregate מצטבר של שחקן פרטי ממשחקים חיצוניים.
+- לשמור `statsGameRefs` קלים למשחקים חיצוניים שבהם יש סטטיסטיקה.
+- לא לערבב סטטיסטיקה של שחקן פרטי עם `playersStats` הרגיל אם השחקן אינו שייך למסלול קבוצה.
+- לשמש את פרופיל השחקן הפרטי בלי לקרוא את כל `gameStatsShorts`.
+
+דוגמה:
+
+```js
+{
+  id: 'privatePlayerId',
+  playerId: 'privatePlayerId',
+
+  gamesWithStats: 3,
+  timePlayed: 240,
+  timeVideoStats: 240,
+
+  statsGameRefs: [
+    {
+      gameId: 'externalGameId',
+      gameStatsDocId: 'gameStatsDocId',
+      teamId: '',
+      status: 'partial',
+      gameDate: '2026-01-01'
+    }
+  ],
+
+  passesTotal: 40,
+  passesSuccess: 28,
+  passesSuccessRate: 70
+}
+```
+
 
 ---
 
@@ -460,7 +557,13 @@ teamsStats
 = סיכום מצטבר לקבוצה + pointers קלים למשחקים עם סטטיסטיקה
 
 gamesShorts
-= משחק + חיווי קל + statsDocId
+= משחק קבוצתי רגיל + חיווי קל + statsDocId
+
+externalGamesShorts
+= משחק חיצוני / שחקן פרטי + חיווי קל + statsDocId
+
+privatePlayersStats
+= סיכום מצטבר לשחקן פרטי + refs קלים למשחקים חיצוניים
 ```
 
 אין לחשב `teamsStats` בכניסה לאפליקציה מתוך כל השחקנים אם אפשר לשמור אותו מראש בזמן כתיבה.
@@ -718,6 +821,86 @@ updateGameStatsDoc({
 - לעדכן `playersStats` ו־`teamsStats` בלי להכפיל aggregates.
 - לעדכן `gamesShorts.statsUpdatedAt` ו־`statsStatus`.
 
+### updateGamePlayerStatsDoc
+
+```js
+updateGamePlayerStatsDoc({
+  payload: {
+    gameStatsDocId,
+    gameId,
+    teamId,
+    status,
+    playerStats: [singlePlayerRow],
+    meta: {
+      scope: 'player',
+      playerId: 'playerId'
+    }
+  }
+})
+```
+
+תפקיד:
+- מסלול עדכון מתוך פרופיל שחקן רגיל.
+- לקבל payload של שחקן אחד בלבד.
+- לשלוף את `gameStatsShorts/{gameStatsDocId}` המלא.
+- להחליף / להוסיף רק את שורת השחקן בתוך `playerStats`.
+- לקרוא ל־`updateGameStatsDoc` עם `playerStats` מלא כדי לא לדרוס שחקנים אחרים.
+- לעדכן `playersStats` ו־`teamsStats` לפי delta בלבד.
+
+כלל קריטי:
+אם הטופס נפתח מפרופיל שחקן, מותר ל־UI לשלוח `playerStats` של שחקן אחד בלבד, אבל אסור להעביר זאת ישירות ל־`updateGameStatsDoc`.
+
+### savePrivatePlayerGameStatsDoc
+
+```js
+savePrivatePlayerGameStatsDoc({
+  payload: {
+    gameId,
+    gameStatsDocId,
+    status,
+    source: 'privatePlayerProfile',
+    playerStats: [singlePrivatePlayerRow],
+    meta: {
+      scope: 'privatePlayer',
+      playerId: 'privatePlayerId'
+    }
+  }
+})
+```
+
+תפקיד:
+- מסלול יצירה / עדכון של סטטיסטיקה לשחקן פרטי במשחק חיצוני.
+- ליצור או לעדכן `gameStatsShorts/{gameStatsDocId}`.
+- לעדכן `externalGames.gameInfo` עם `hasStats`, `statsStatus`, `statsDocId`, `gameStatsDocId`, `statsUpdatedAt`.
+- לעדכן `privates.privatePlayersStats` לפי delta.
+- לא לעדכן `games.gameInfo`.
+- לא לעדכן `players.playersStats`.
+- לא לעדכן `teams.teamsStats`.
+
+### deletePrivatePlayerGameStatsDoc
+
+```js
+deletePrivatePlayerGameStatsDoc({
+  payload: {
+    gameId,
+    gameStatsDocId,
+    source: 'privatePlayerProfile',
+    meta: {
+      scope: 'privatePlayer',
+      playerId: 'privatePlayerId'
+    }
+  }
+})
+```
+
+תפקיד:
+- למחוק סטטיסטיקה רשמית של משחק חיצוני לשחקן פרטי.
+- לבצע rollback ל־`privates.privatePlayersStats`.
+- לעדכן `externalGames.gameInfo` כך שהמשחק כבר לא מצביע על סטטיסטיקה פעילה.
+- למחוק בפועל את `gameStatsShorts/{gameStatsDocId}`.
+- לא לגעת במסלולי המשחקים / השחקנים / הקבוצות הרגילים.
+
+
 ### removePlayerFromGameStats / updateGameStatsDoc ללא שחקן
 
 כאשר מוחקים סטטיסטיקה מתוך אזור שחקן, אין לבצע מחיקה כללית של מסמך הסטטיסטיקה.
@@ -760,6 +943,210 @@ deleteGameStatsDoc({
 - להסיר / לנקות `gamesShorts.statsStatus`, `gamesShorts.statsDocId`, `gamesShorts.gameStatsDocId`, `gamesShorts.statsUpdatedAt`.
 - למחוק בפועל את `gameStatsShorts/{gameStatsDocId}` עם `tx.delete`.
 - לנקות שדות aggregate שיורדים ל־0, למעט שדות זהות וזמני audit בסיסיים.
+
+---
+### createTeamOnlyGameStatsDoc
+
+```js
+createTeamOnlyGameStatsDoc({
+  payload: {
+    gameId,
+    teamId,
+    status,
+    source: 'liveTaggingTeamOnly',
+    teamStats,
+    meta: {
+      scope: 'team',
+      source: 'liveTagging'
+    }
+  }
+})
+```
+
+תפקיד:
+- מסלול יצירה רשמי לסטטיסטיקה קבוצתית ישירה מתוך Live Tagging.
+- מיועד למצב שבו המשתמש מתייג פעולה ברמת קבוצה ולא ברמת שחקן.
+- ליצור `gameStatsDocId` ייעודי.
+- ליצור `gameStatsShorts/{gameStatsDocId}` עם `statsScope: 'teamOnly'`.
+- לשמור `playerStats: []`.
+- לשמור `teamStats` ישיר מתוך אירועי Live Tagging.
+- לעדכן `games.gameInfo` עם `hasStats`, `statsStatus`, `statsDocId`, `gameStatsDocId`, `statsUpdatedAt`.
+- לעדכן `teamsStats` aggregate + `statsGameRefs[]`.
+- לא לעדכן `playersStats`.
+- לא לחשב `teamStats` מתוך `playerStats`.
+
+כלל קריטי:
+`createGameStatsDoc` אינו מתאים ל־team-only כי הוא דורש `playerStats` לא ריק ומחשב `teamStats` מתוך שחקנים. לכן אין להשתמש בו לסיכום קבוצתי ישיר.
+
+---
+
+## 13.1 — Live Tagging כערוץ הזנה נוסף
+
+Live Tagging הוא ערוץ הכנסת נתונים נוסף לסטטיסטיקה מתקדמת.
+
+העיקרון:
+
+```txt
+LiveTaggingPanel
+→ events in local state
+→ buildLiveTaggingStatsSaveModel
+→ route מתאים
+→ Firestore create flow
+```
+
+ה־Live Tagging אינו עורך מסמכים קיימים ואינו מוחק מסמכים קיימים.
+
+כללי UX:
+- אם למשחק כבר יש `hasStats`, `statsDocId` או `gameStatsDocId`, בחירת המשחק במצב יצירת סטטיסטיקה חדשה צריכה להיות disabled.
+- Live Tagging הוא create-only מבחינת המשתמש.
+- אין טעינה של `gameStatsShorts` קיים לעריכה.
+- אין route של update מתוך Live Tagging.
+- אין route של delete מתוך Live Tagging.
+- שמירה מתבצעת רק בסיום session.
+
+סוגי אובייקטים ב־Live Tagging:
+
+```txt
+player
+privatePlayer
+scoutPlayer
+team
+```
+
+פירוט:
+
+```txt
+player
+→ שחקן רגיל
+→ דורש playerId + teamId + gameId
+→ route: createGameStatsDoc
+→ יוצר playerStats
+→ teamStats נגזר מתוך playerStats
+
+privatePlayer
+→ שחקן פרטי
+→ דורש playerId + gameId
+→ ללא teamId
+→ route: savePrivatePlayerGameStatsDoc
+→ מעדכן externalGames.gameInfo + privatePlayersStats
+
+scoutPlayer
+→ שחקן במעקב
+→ הכנה עתידית בלבד
+→ disabled ב־UI כרגע
+→ אין route שמירה
+
+team
+→ קבוצה
+→ דורש teamId + gameId
+→ route: createTeamOnlyGameStatsDoc
+→ יוצר teamStats ישיר
+→ playerStats נשאר []
+→ לא מעדכן playersStats
+```
+
+מבנה event ב־Live Tagging:
+
+```js
+{
+  id: 'evt_timestamp',
+  sessionId: 'sessionId',
+  gameId: 'gameId',
+  teamId: 'teamId',
+
+  subject: {
+    type: 'player' | 'privatePlayer' | 'team',
+    playerId: 'playerId' || null,
+    teamId: 'teamId' || null
+  },
+
+  clock: {
+    period: 1,
+    minute: 23,
+    second: 14,
+    ms: 1394000
+  },
+
+  action: {
+    id: 'passes_positive',
+    baseId: 'passes',
+    side: 'positive',
+    stats: {
+      group: 'passes',
+      statId: 'passesSuccess',
+      totalStatId: 'passesTotal',
+      rateStatId: 'passesSuccessRate'
+    }
+  },
+
+  field: {
+    zoneNumber: 8
+  },
+
+  meta: {
+    source: 'live',
+    createdAt: 123456789
+  }
+}
+```
+
+המרת action לסטטיסטיקה:
+- אם יש `totalStatId`, מוסיפים `+1` ל־total.
+- אם הפעולה חיובית ויש `statId` שונה מ־`totalStatId`, מוסיפים `+1` גם ל־success/stat.
+- אם אין `totalStatId`, מוסיפים `+1` ל־`statId`.
+- rates מחושבים מחדש בשכבת ה־stats engine או בשירות השמירה, לא ב־UI.
+
+דוגמאות:
+
+```txt
+passes_positive
+→ passesTotal +1
+→ passesSuccess +1
+
+passes_negative
+→ passesTotal +1
+
+shots_positive
+→ shotsTotal +1
+→ shotsOnTarget +1
+
+shots_negative
+→ shotsTotal +1
+
+interceptions_positive
+→ interceptions +1
+
+fouls_positive
+→ foulsDrawn +1
+
+fouls_negative
+→ foulsCommitted +1
+```
+
+בחירת משחק ליצירת סטטיסטיקה חדשה:
+- במצב create stats יש לבדוק `hasStats`, `statsDocId`, `gameStatsDocId`.
+- משחק עם סטטיסטיקה קיימת מוצג disabled.
+- אין להשתמש ב־`isAlreadyInGame` כדי לחסום סטטיסטיקה; שדה זה מתאר שיוך שחקן למשחק ולא מצב סטטיסטיקה.
+- מומלץ להשתמש ב־`pickerMode: 'createStats'` בשדה בחירת משחק.
+
+קבצי קוד מרכזיים:
+```txt
+src/features/liveTagging/LiveTaggingPanel.js
+src/features/liveTagging/hooks/useLiveTaggingPanelModel.js
+src/features/liveTagging/logic/liveTagging.payload.js
+src/features/liveTagging/logic/liveTagging.selection.js
+src/features/liveTagging/logic/liveTagging.actions.js
+src/shared/liveTagging/actions/liveActionStatsMap.js
+src/shared/liveTagging/events/liveEvent.builder.js
+src/services/firestore/shorts/gameStats/teamLiveGameStatsCreate.js
+src/services/firestore/shorts/gameStats/privatePlayerGameStatsSave.js
+src/services/firestore/shorts/gameStats/gameStatsCreate.js
+```
+
+מסמך מפורט:
+```txt
+docs/architecture/LIVE_TAGGING_STATS_PIPELINE.md
+```
 
 ---
 
@@ -892,7 +1279,62 @@ read teamsStats summary
 ---
 
 
-## 18 — מדיניות מחיקה לפי מקור הפעולה
+## 18 — פתיחה ושמירה דרך פרופיל שחקן
+
+פתיחה מתוך פרופיל שחקן היא אותו טופס סטטיסטיקה, אבל עם scope שונה.
+
+### שחקן רגיל מתוך קבוצה
+
+```txt
+Player Profile
+→ PerformanceCell / Stats button
+→ load gameStatsShorts if statsDocId exists
+→ show all players already in stats doc
+→ lock all players except current player
+→ save payload with one playerStats row
+→ updateGamePlayerStatsDoc
+→ merge into full gameStatsShorts.playerStats
+→ updateGameStatsDoc with full playerStats list
+```
+
+כללי UI:
+- בטופס מוצגים כל השחקנים שכבר קיימים במסמך הסטטיסטיקה.
+- רק השחקן הנוכחי ניתן לעריכה.
+- שחקנים אחרים disabled / read-only.
+- בסיכום ניתן לראות את כל השחקנים.
+- בסיכום ובשלב מילוי אין לאפשר עקיפה לעריכת שחקן נעול.
+- דרך פרופיל קבוצה אין נעילות והטופס נשאר חופשי.
+
+כללי שמירה:
+- ה־payload מפרופיל שחקן כולל `playerStats` של שחקן אחד בלבד.
+- `source: 'playerProfile'`.
+- `meta.scope: 'player'`.
+- route השמירה חייב להיות `player-update`.
+- אסור לעדכן ישירות עם `updateGameStatsDoc` אם יש רק שחקן אחד ב־payload.
+
+### שחקן פרטי עם משחק חיצוני
+
+```txt
+Private Player Profile
+→ External Game
+→ GameStatsCreateForm
+→ source: privatePlayerProfile
+→ meta.scope: privatePlayer
+→ savePrivatePlayerGameStatsDoc
+```
+
+כללי שמירה:
+- `gameStatsShorts` נשאר מקור אמת פר־משחקי.
+- `externalGames.gameInfo` מקבל metadata קל ו־pointer.
+- `privates.privatePlayersStats` מקבל aggregate מצטבר.
+- אין עדכון ל־`gamesShorts`.
+- אין עדכון ל־`playersStats`.
+- אין עדכון ל־`teamsStats`.
+
+---
+
+
+## 19 — מדיניות מחיקה לפי מקור הפעולה
 
 מחיקה של סטטיסטיקה אינה פעולה אחת. סוג הפעולה תלוי במקום שממנו המשתמש מבצע את המחיקה.
 
@@ -935,6 +1377,38 @@ read teamsStats summary
 - `gamesShorts.statsUpdatedAt` מוסר אם קיים.
 - `gameStatsShorts/{gameStatsDocId}` נמחק בפועל.
 
+### מחיקה של שחקן פרטי / משחק חיצוני
+
+אם המחיקה מתבצעת מתוך פרופיל שחקן פרטי על משחק חיצוני:
+
+```txt
+לא להשתמש ב-deleteGameStatsDoc
+כן להשתמש ב-deletePrivatePlayerGameStatsDoc
+```
+
+הפעולה הנכונה:
+
+```txt
+read gameStatsShorts/{gameStatsDocId}
+→ calculate negative delta for private player
+→ update privates.privatePlayersStats
+→ update externalGames.gameInfo:
+   hasStats: false
+   remove statsStatus / statsDocId / gameStatsDocId / statsUpdatedAt
+   add statsDeletedAt
+→ delete gameStatsShorts/{gameStatsDocId}
+```
+
+תוצאה רצויה:
+- `privates.privatePlayersStats` יורד לפי delta.
+- `statsGameRefs` של המשחק מוסר מהשחקן הפרטי.
+- `externalGames.gameInfo.hasStats = false`.
+- `gameStatsShorts/{gameStatsDocId}` נמחק.
+- אין שינוי ב־`gamesShorts`.
+- אין שינוי ב־`playersStats`.
+- אין שינוי ב־`teamsStats`.
+
+
 ### מחיקת משחק
 
 כאשר מוחקים משחק, חובה לבדוק אם יש לו סטטיסטיקה פעילה.
@@ -965,7 +1439,7 @@ delete game requested
 - למנוע מסמך `gameStatsShorts` שמצביע למשחק שכבר נמחק.
 
 
-## 19 — מצב יישום נוכחי — Completed Flow
+## 20 — מצב יישום נוכחי — Completed Flow
 
 נכון לעדכון זה, תהליך יצירת סטטיסטיקה מתקדמת הושלם ונבדק מקצה לקצה.
 
@@ -1002,6 +1476,22 @@ delete game requested
     - כפתור שמירה לפי סטטוס
     - כפתור מחיקה לפי סוג הפעולה
     - מודאל מחיקה שמסביר במפורש מה נמחק
+21. פתיחה מפרופיל שחקן רגיל עובדת:
+    - מוצגים כל השחקנים שכבר קיימים במסמך
+    - רק השחקן הנוכחי ניתן לעריכה
+    - שמירה עוברת דרך player-update ולא דורסת שחקנים אחרים
+22. שחקן פרטי / משחק חיצוני חובר למסלול נפרד:
+    - savePrivatePlayerGameStatsDoc
+    - deletePrivatePlayerGameStatsDoc
+    - externalGames.gameInfo כ־metadata pointer
+    - privates.privatePlayersStats כ־aggregate
+23. Live Tagging נוסף כערוץ הכנסת נתונים create-only:
+    - player → createGameStatsDoc
+    - privatePlayer → savePrivatePlayerGameStatsDoc
+    - team → createTeamOnlyGameStatsDoc
+    - scoutPlayer → disabled / הכנה עתידית
+24. נוספה חסימה לבחירת משחק עם סטטיסטיקה קיימת במצב יצירת סטטיסטיקה חדשה.
+25. נוספה הפרדה בין isAlreadyInGame לבין hasStats/statsDocId בבחירת משחק.
 ```
 
 ### בדיקות שבוצעו
@@ -1028,7 +1518,7 @@ delete game requested
 
 ---
 
-## 20 — החלטות שלא לשנות בלי דיון
+## 21 — החלטות שלא לשנות בלי דיון
 
 1. `gameStatsShorts` הוא מקור האמת הפר־משחקי.
 2. `gameStatsDocId` הוא מזהה מסמך הסטטיסטיקה הכבד.
@@ -1045,15 +1535,21 @@ delete game requested
 13. מחיקה כללית של סטטיסטיקה רשמית מוחקת בפועל את `gameStatsShorts/{gameStatsDocId}` אחרי rollback.
 14. מחיקת משחק חייבת לטפל קודם בסטטיסטיקה הפעילה שלו.
 15. שינוי בתהליך מחייב עדכון מסמך זה.
+16. Live Tagging הוא create-only מבחינת UX.
+17. Live Tagging לא עורך ולא מוחק מסמכי סטטיסטיקה קיימים.
+18. מצב team ב־Live Tagging הוא team-only stats ואינו משתמש ב־createGameStatsDoc.
+19. scoutPlayer הוא הכנה עתידית בלבד ומופיע disabled עד שיוגדר לו route.
+20. משחק עם סטטיסטיקה קיימת צריך להיות disabled בבחירת משחק ליצירת סטטיסטיקה חדשה.
 
 ---
 
-## 21 — Checklist לצ׳אט AI חדש
+## 22 — Checklist לצ׳אט AI חדש
 
 כאשר ממשיכים עבודה על סטטיסטיקה מתקדמת, לצרף או לבדוק:
 
 ```txt
 docs/architecture/ADVANCED_STATS_PIPELINE.md
+docs/architecture/LIVE_TAGGING_STATS_PIPELINE.md
 docs/context/CORE_DATA.md
 docs/context/FIRESTORE_ROUTER.md
 ```
@@ -1075,7 +1571,11 @@ stats.options.js
 gameStatsCreate.js
 gameStatsUpdate.js
 gameStatsDelete.js
+teamLiveGameStatsCreate.js
+privatePlayerGameStatsSave.js
 shared/stats/engine
+shared/liveTagging
+features/liveTagging
 ```
 
 לפני כתיבת קוד:
@@ -1088,7 +1588,7 @@ shared/stats/engine
 
 ---
 
-## 22 — סיכום קצר
+## 23 — סיכום קצר
 
 המודל:
 
@@ -1104,6 +1604,15 @@ playersStats
 
 teamsStats
 = סיכום מצטבר לפי קבוצה + refs קלים למשחקים עם סטטיסטיקה
+
+externalGamesShorts
+= משחקים חיצוניים רזים + hasStats + statsStatus + statsDocId
+
+privatePlayersStats
+= סיכום מצטבר לפי שחקן פרטי + refs קלים למשחקים חיצוניים
+
+Live Tagging
+= ערוץ הכנסת נתונים נוסף שמתרגם events ל־playerStats או teamStats לפי סוג האובייקט
 ```
 
 האסטרטגיה:

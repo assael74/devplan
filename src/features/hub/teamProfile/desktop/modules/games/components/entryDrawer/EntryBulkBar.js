@@ -40,6 +40,7 @@ export default function EntryBulkBar({
   onResetFilters,
   onBulkSetOnSquad,
   onBulkResetStats,
+  onOpenImport,
 }) {
   const rows = draft?.rows || []
 
@@ -95,6 +96,17 @@ export default function EntryBulkBar({
             </Typography>
           </Chip>
 
+          <Chip
+            size="sm"
+            variant="soft"
+            color="primary"
+            startDecorator={iconUi({ id: 'upload' })}
+            onClick={onOpenImport}
+            sx={{ cursor: 'pointer' }}
+          >
+            ייבוא מאקסל
+          </Chip>
+
           <IconButton
             size="sm"
             variant="outlined"
@@ -107,7 +119,6 @@ export default function EntryBulkBar({
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
-
         {!isPlayed && (
           <Typography level="body-xs" color="warning">
             המשחק עדיין לא שוחק ולכן שערים, בישולים וזמן משחק נעולים.

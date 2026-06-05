@@ -6,7 +6,7 @@ import { Box, Chip, Typography } from '@mui/joy'
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { gamesSelectSx as sx } from '../sx/gamesSelect.sx.js'
 
-function MetaChip({ label, color = 'neutral', icon }) {
+function MetaChip({ label, color = 'neutral', icon, sx: chipSx }) {
   if (!label) return null
 
   return (
@@ -15,6 +15,7 @@ function MetaChip({ label, color = 'neutral', icon }) {
       variant="soft"
       color={color}
       startDecorator={icon ? iconUi({ id: icon, size: 'sm' }) : null}
+      sx={chipSx}
     >
       {label}
     </Chip>
@@ -24,7 +25,7 @@ function MetaChip({ label, color = 'neutral', icon }) {
 export default function GameValueView({ option, placeholder = 'בחר משחק' }) {
   if (!option) {
     return (
-      <Typography level="body-sm" sx={{ opacity: 0.6 }}>
+      <Typography level="body-sm" sx={sx.placeholderText}>
         {placeholder}
       </Typography>
     )
@@ -41,21 +42,17 @@ export default function GameValueView({ option, placeholder = 'בחר משחק' 
           נגד
         </Typography>
 
-        <Typography
-          level="body-sm"
-          noWrap
-          sx={{
-            minWidth: 0,
-            color: 'primary.500',
-            fontWeight: 700,
-          }}
-        >
+        <Typography level="body-sm" noWrap sx={sx.valueOpponentText}>
           {option.opponentName}
+        </Typography>
+
+        <Typography level="body-xs" sx={sx.valueMobileDate}>
+          {option.dateLabel}
         </Typography>
       </Box>
 
       <Box sx={sx.valueBottom}>
-        <Typography level="body-xs" sx={{ opacity: 0.72, whiteSpace: 'nowrap' }}>
+        <Typography level="body-xs" sx={sx.valueDesktopDate}>
           {option.dateLabel}
         </Typography>
 
@@ -63,24 +60,28 @@ export default function GameValueView({ option, placeholder = 'בחר משחק' 
           label={option.statusMeta?.label}
           color={option.statusMeta?.color || 'neutral'}
           icon={option.statusMeta?.icon}
+          sx={sx.valueMetaChip}
         />
 
         <MetaChip
           label={option.typeMeta?.label}
           color="neutral"
           icon={option.typeMeta?.icon}
+          sx={sx.valueMetaChip}
         />
 
         <MetaChip
           label={option.resultMeta?.label}
           color={option.resultMeta?.color || 'neutral'}
           icon={option.resultMeta?.icon}
+          sx={sx.valueMetaChip}
         />
 
         <MetaChip
           label={option.homeAwayMeta?.label}
           color={option.homeAwayMeta?.color || 'neutral'}
           icon={option.homeAwayMeta?.icon}
+          sx={sx.valueMetaChip}
         />
       </Box>
     </Box>

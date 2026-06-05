@@ -16,99 +16,39 @@ import {
   upsertStatsGameRef,
 } from '../../../../shared/stats/engine/index.js'
 
+import {
+  buildShortDocRef,
+  buildShortsDocPayload,
+  clampMinZero,
+  clean,
+  compactDoc,
+  findListItem,
+  getPayloadNumber,
+  getRowPlayerId,
+  readShortListDoc,
+  safeArr,
+  toNum,
+  upsertListItem,
+} from './shared/index.js'
+
 const STATS_SOURCE = 'privatePlayerGameStatsSaveV1'
 
-const clean = value => String(value ?? '').trim()
-
-const toNum = value => {
-  const num = Number(value)
-  return Number.isFinite(num) ? num : 0
-}
-
-const safeArr = value => {
-  return Array.isArray(value) ? value : []
-}
-
-const compactDoc = value => {
-  if (Array.isArray(value)) {
-    return value
-      .map(item => compactDoc(item))
-      .filter(item => item !== undefined)
-  }
-
-  if (!value || typeof value !== 'object') {
-    if (value === null || value === undefined || value === '') return undefined
-    return value
-  }
-
-  const next = Object.entries(value).reduce((acc, [key, item]) => {
-    const cleanItem = compactDoc(item)
-
-    if (cleanItem === undefined) return acc
-
-    return {
-      ...acc,
-      [key]: cleanItem,
-    }
-  }, {})
-
-  return Object.keys(next).length ? next : undefined
-}
-
-const buildShortDocRef = meta => {
-  return doc(db, meta.collection, meta.docId)
-}
-
-const readShortListDoc = async (tx, ref) => {
-  const snap = await tx.get(ref)
-  const data = snap.exists() ? snap.data() || {} : {}
-  const list = Array.isArray(data.list) ? data.list : []
-
-  return { data, list }
-}
-
-const findListItem = (list = [], id) => {
-  return safeArr(list).find(item => item?.id === id) || null
-}
-
-const upsertListItem = (list = [], id, nextItem) => {
-  const rows = safeArr(list)
-  const idx = rows.findIndex(item => item?.id === id)
-
-  if (idx < 0) return [...rows, nextItem]
-
-  return rows.map((item, index) => {
-    return index === idx ? nextItem : item
-  })
-}
-
-const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
-  return {
-    ...data,
-    docId: data?.docId || meta?.docId,
-    docName: data?.docName || docName,
-    list,
-    updatedAt: now,
-    createdAt: data?.createdAt ?? now,
+function ensurePayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('[savePrivatePlayerGameStatsDoc] payload is required')
   }
 }
 
-const getPayloadNumber = ({ payload, key, fallback = 0 }) => {
-  const value = payload?.meta[key] ?? payload[key] ?? fallback
-  const num = Number(value)
-
-  return Number.isFinite(num) ? num : fallback
-}
-
-const getPayloadPlayerRow = payload => {
-  const rows = safeArr(payload?.playerStats)
+function getPayloadPlayerRow(payload) {
+  const rows = safeArr(payload.playerStats)
 
   if (rows.length !== 1) {
     throw new Error('[savePrivatePlayerGameStatsDoc] expected exactly one playerStats row')
   }
 
   const row = rows[0]
-  const playerId = clean(row?.playerId || row?.id || payload?.meta?.playerId)
+  const meta = payload.meta || {}
+  const playerId = clean(row.playerId || row.id || meta.playerId)
 
   if (!playerId) {
     throw new Error('[savePrivatePlayerGameStatsDoc] missing playerId')
@@ -120,23 +60,39 @@ const getPayloadPlayerRow = payload => {
   }
 }
 
-const buildNextPlayerStats = ({ currentRows, nextRow }) => {
-  const playerId = clean(nextRow?.playerId || nextRow?.id)
+function buildRefs() {
+  const externalGameInfoMeta = shortsRefs.externalGames.gameInfo
+  const privatePlayersStatsMeta = shortsRefs.privates.privatePlayersStats
+
+  return {
+    externalGameInfoMeta,
+    privatePlayersStatsMeta,
+    externalGameInfoRef: buildShortDocRef(externalGameInfoMeta),
+    privatePlayersStatsRef: buildShortDocRef(privatePlayersStatsMeta),
+  }
+}
+
+function buildNextPlayerStats({ currentRows, nextRow }) {
+  const playerId = getRowPlayerId(nextRow)
   const rows = safeArr(currentRows)
-  const idx = rows.findIndex(row => clean(row?.playerId || row?.id) === playerId)
+  const idx = rows.findIndex(row => getRowPlayerId(row) === playerId)
 
   if (idx < 0) return [...rows, nextRow]
 
   return rows.map((row, index) => {
-    return index === idx
-      ? { ...row, ...nextRow, playerId }
-      : row
+    if (index !== idx) return row
+
+    return {
+      ...row,
+      ...nextRow,
+      playerId,
+    }
   })
 }
 
-const buildNextExternalGameInfoItem = ({ current, gameStatsDocId, status, now }) => {
+function buildNextExternalGameInfoItem({ current, gameStatsDocId, status, now }) {
   return {
-    ...(current || {}),
+    ...current,
     hasStats: true,
     statsStatus: status,
     statsDocId: gameStatsDocId,
@@ -145,11 +101,7 @@ const buildNextExternalGameInfoItem = ({ current, gameStatsDocId, status, now })
   }
 }
 
-const clampMinZero = value => {
-  return Math.max(0, toNum(value))
-}
-
-const buildNextPrivatePlayerAggregate = ({
+function buildNextPrivatePlayerAggregate({
   current,
   playerId,
   gameId,
@@ -158,34 +110,34 @@ const buildNextPrivatePlayerAggregate = ({
   prevRow,
   nextRow,
   now,
-}) => {
+}) {
   const hadPrev = Boolean(prevRow)
   const hasNext = Boolean(nextRow)
 
   let next = {
-    ...(current || {}),
+    ...current,
     id: playerId,
     playerId,
     updatedAt: now,
-    createdAt: current?.createdAt ?? now,
+    createdAt: current && current.createdAt ? current.createdAt : now,
   }
 
   next = applyStatsDelta(next, delta)
 
   if (!hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) + 1)
+    next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) + 1)
   }
 
   if (hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero(current?.gamesWithStats || 0)
+    next.gamesWithStats = clampMinZero(current && current.gamesWithStats || 0)
   }
 
-  next.statsGameRefs = upsertStatsGameRef(current?.statsGameRefs, gameRef)
+  next.statsGameRefs = upsertStatsGameRef(current && current.statsGameRefs, gameRef)
 
   return applyStatsRates(next)
 }
 
-const buildNextGameStatsDoc = ({
+function buildNextGameStatsDoc({
   current,
   gameStatsDocId,
   gameId,
@@ -193,9 +145,9 @@ const buildNextGameStatsDoc = ({
   playerStats,
   status,
   now,
-}) => {
+}) {
   return compactDoc({
-    ...(current || {}),
+    ...current,
 
     id: gameStatsDocId,
     docId: gameStatsDocId,
@@ -213,49 +165,165 @@ const buildNextGameStatsDoc = ({
 
     updatedFrom: STATS_SOURCE,
     updatedAt: now,
-    createdAt: current?.createdAt ?? now,
-    committedAt: status === 'committed'
-      ? current?.committedAt ?? now
-      : current?.committedAt,
+    createdAt: current && current.createdAt ? current.createdAt : now,
+    committedAt: resolveCommittedAt({ current, status, now }),
   })
 }
 
-export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } = {}) {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('[savePrivatePlayerGameStatsDoc] payload is required')
+function resolveCommittedAt({ current, status, now }) {
+  if (status !== 'committed') {
+    return current && current.committedAt
+      ? current.committedAt
+      : undefined
   }
+
+  if (current && current.committedAt) return current.committedAt
+
+  return now
+}
+
+function buildPrivateContext({ payload, externalGame, playerRow, gameId }) {
+  const gameDuration = toNum(externalGame.gameDuration || payload.gameDuration || 80)
+
+  return {
+    gameId,
+    teamId: '',
+    gameDuration,
+    timePlayed: getPayloadNumber({
+      payload,
+      key: 'timePlayed',
+      fallback: toNum(playerRow.timePlayed) || gameDuration,
+    }),
+    timeVideoStats: getPayloadNumber({
+      payload,
+      key: 'timeVideoStats',
+      fallback: toNum(playerRow.timeVideoStats) || toNum(playerRow.timePlayed) || gameDuration,
+    }),
+  }
+}
+
+function buildGameRef({ gameId, gameStatsDocId, externalGame, payload, status }) {
+  return buildStatsGameRef({
+    gameId,
+    gameStatsDocId,
+    teamId: '',
+    gameDate: externalGame.gameDate || payload.gameDate || '',
+    status,
+  })
+}
+
+function buildDryRunSummary({ payload, gameId, playerId }) {
+  return {
+    dryRun: true,
+    ids: {
+      gameId,
+      playerId,
+      gameStatsDocId: clean(payload.gameStatsDocId || payload.statsDocId) || null,
+    },
+    note: 'dryRun only',
+  }
+}
+
+function buildSaveSummary({
+  gameId,
+  playerId,
+  gameStatsDocId,
+  status,
+  prevPlayerStats,
+  nextPlayerStats,
+  nextPrivateStatsItem,
+}) {
+  return {
+    ok: true,
+    ids: {
+      gameId,
+      playerId,
+      gameStatsDocId,
+    },
+    summary: {
+      status,
+      prevPlayersCount: prevPlayerStats.length,
+      nextPlayersCount: nextPlayerStats.length,
+      privatePlayerStats: nextPrivateStatsItem,
+    },
+  }
+}
+
+function resolveExistingGameStatsDocId({ payload, externalGame }) {
+  return clean(
+    payload.gameStatsDocId ||
+      payload.statsDocId ||
+      externalGame.statsDocId ||
+      externalGame.gameStatsDocId
+  )
+}
+
+function writePrivateSaveTransaction({
+  tx,
+  refs,
+  docs,
+  gameStatsRef,
+  nextGameStatsDoc,
+  nextExternalGameInfoList,
+  nextPrivatePlayersStatsList,
+  now,
+}) {
+  tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
+
+  tx.set(
+    refs.externalGameInfoRef,
+    buildShortsDocPayload({
+      data: docs.externalGameInfoDoc.data,
+      meta: refs.externalGameInfoMeta,
+      docName: 'gameInfo',
+      list: nextExternalGameInfoList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.privatePlayersStatsRef,
+    buildShortsDocPayload({
+      data: docs.privatePlayersStatsDoc.data,
+      meta: refs.privatePlayersStatsMeta,
+      docName: 'privatePlayersStats',
+      list: nextPrivatePlayersStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+}
+
+export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } = {}) {
+  ensurePayload(payload)
 
   const gameId = clean(payload.gameId)
   const status = clean(payload.status) || 'partial'
   const playerRow = getPayloadPlayerRow(payload)
-  const playerId = clean(playerRow.playerId || payload?.meta?.playerId)
+  const meta = payload.meta || {}
+  const playerId = clean(playerRow.playerId || meta.playerId)
 
   if (!gameId) throw new Error('[savePrivatePlayerGameStatsDoc] missing gameId')
   if (!playerId) throw new Error('[savePrivatePlayerGameStatsDoc] missing playerId')
 
   const now = Timestamp.now()
-
-  const externalGameInfoMeta = shortsRefs.externalGames.gameInfo
-  const privatePlayersStatsMeta = shortsRefs.privates.privatePlayersStats
-
-  const externalGameInfoRef = buildShortDocRef(externalGameInfoMeta)
-  const privatePlayersStatsRef = buildShortDocRef(privatePlayersStatsMeta)
+  const refs = buildRefs()
 
   if (dryRun) {
-    return {
-      dryRun: true,
-      ids: {
-        gameId,
-        playerId,
-        gameStatsDocId: clean(payload.gameStatsDocId || payload.statsDocId) || null,
-      },
-      note: 'dryRun only',
-    }
+    return buildDryRunSummary({ payload, gameId, playerId })
   }
 
   return runTransaction(db, async tx => {
-    const externalGameInfoDoc = await readShortListDoc(tx, externalGameInfoRef)
-    const privatePlayersStatsDoc = await readShortListDoc(tx, privatePlayersStatsRef)
+    const externalGameInfoDoc = await readShortListDoc(
+      tx,
+      refs.externalGameInfoRef
+    )
+
+    const privatePlayersStatsDoc = await readShortListDoc(
+      tx,
+      refs.privatePlayersStatsRef
+    )
 
     const externalGame = findListItem(externalGameInfoDoc.list, gameId)
 
@@ -263,12 +331,10 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
       throw new Error(`[savePrivatePlayerGameStatsDoc] external game not found: ${gameId}`)
     }
 
-    const existingGameStatsDocId = clean(
-      payload.gameStatsDocId ||
-        payload.statsDocId ||
-        externalGame.statsDocId ||
-        externalGame.gameStatsDocId
-    )
+    const existingGameStatsDocId = resolveExistingGameStatsDocId({
+      payload,
+      externalGame,
+    })
 
     const gameStatsRef = existingGameStatsDocId
       ? doc(gameStatsShortsRef, existingGameStatsDocId)
@@ -276,33 +342,24 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
 
     const gameStatsDocId = existingGameStatsDocId || gameStatsRef.id
     const gameStatsSnap = existingGameStatsDocId ? await tx.get(gameStatsRef) : null
-    const currentGameStats = gameStatsSnap?.exists() ? gameStatsSnap.data() || {} : {}
+    const currentGameStats = gameStatsSnap && gameStatsSnap.exists()
+      ? gameStatsSnap.data() || {}
+      : {}
 
-    const gameDuration = toNum(externalGame?.gameDuration || payload?.gameDuration || 80)
-
-    const context = {
+    const context = buildPrivateContext({
+      payload,
+      externalGame,
+      playerRow,
       gameId,
-      teamId: '',
-      gameDuration,
-      timePlayed: getPayloadNumber({
-        payload,
-        key: 'timePlayed',
-        fallback: toNum(playerRow?.timePlayed) || gameDuration,
-      }),
-      timeVideoStats: getPayloadNumber({
-        payload,
-        key: 'timeVideoStats',
-        fallback: toNum(playerRow?.timeVideoStats) || toNum(playerRow?.timePlayed) || gameDuration,
-      }),
-    }
+    })
 
     const prevPlayerStats = normalizeGamePlayerStatsList(
-      currentGameStats?.playerStats || [],
+      currentGameStats.playerStats || [],
       context
     )
 
     const nextRawPlayerStats = buildNextPlayerStats({
-      currentRows: currentGameStats?.playerStats || [],
+      currentRows: currentGameStats.playerStats || [],
       nextRow: {
         ...playerRow,
         gameId,
@@ -323,15 +380,18 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
     const nextRow = nextByPlayerId.get(playerId) || null
     const delta = buildStatsDelta(prevRow, nextRow)
 
-    const gameRef = buildStatsGameRef({
+    const gameRef = buildGameRef({
       gameId,
       gameStatsDocId,
-      teamId: '',
-      gameDate: externalGame?.gameDate || payload?.gameDate || '',
+      externalGame,
+      payload,
       status,
     })
 
-    const currentPrivateStats = findListItem(privatePlayersStatsDoc.list, playerId)
+    const currentPrivateStats = findListItem(
+      privatePlayersStatsDoc.list,
+      playerId
+    )
 
     const nextPrivateStatsItem = buildNextPrivatePlayerAggregate({
       current: currentPrivateStats,
@@ -371,45 +431,28 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
       now,
     })
 
-    tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
-
-    tx.set(
-      externalGameInfoRef,
-      buildShortsDocPayload({
-        data: externalGameInfoDoc.data,
-        meta: externalGameInfoMeta,
-        docName: 'gameInfo',
-        list: nextExternalGameInfoList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      privatePlayersStatsRef,
-      buildShortsDocPayload({
-        data: privatePlayersStatsDoc.data,
-        meta: privatePlayersStatsMeta,
-        docName: 'privatePlayersStats',
-        list: nextPrivatePlayersStatsList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    return {
-      ok: true,
-      ids: {
-        gameId,
-        playerId,
-        gameStatsDocId,
+    writePrivateSaveTransaction({
+      tx,
+      refs,
+      docs: {
+        externalGameInfoDoc,
+        privatePlayersStatsDoc,
       },
-      summary: {
-        status,
-        prevPlayersCount: prevPlayerStats.length,
-        nextPlayersCount: nextPlayerStats.length,
-        privatePlayerStats: nextPrivateStatsItem,
-      },
-    }
+      gameStatsRef,
+      nextGameStatsDoc,
+      nextExternalGameInfoList,
+      nextPrivatePlayersStatsList,
+      now,
+    })
+
+    return buildSaveSummary({
+      gameId,
+      playerId,
+      gameStatsDocId,
+      status,
+      prevPlayerStats,
+      nextPlayerStats,
+      nextPrivateStatsItem,
+    })
   })
 }

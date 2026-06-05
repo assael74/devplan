@@ -6,15 +6,20 @@ import {
   GAME_STATUS,
 } from '../../../../../shared/games/games.constants.js'
 
-const safeId = (v) => (v == null ? '' : String(v))
-const safeStr = (v) => (v == null ? '' : String(v))
+import {
+  GAME_STATS_PICKER_MODES,
+  buildGameStatsAvailability,
+} from './gameStatsAvailability.logic.js'
 
-const safeNum = (v) => {
+const safeId = v => (v == null ? '' : String(v))
+const safeStr = v => (v == null ? '' : String(v))
+
+const safeNum = v => {
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }
 
-const toArr = (v) => (Array.isArray(v) ? v : v ? [v] : [])
+const toArr = v => (Array.isArray(v) ? v : v ? [v] : [])
 
 const GAME_TYPE_MAP = GAME_TYPE.reduce((acc, item) => {
   acc[item.id] = item
@@ -141,7 +146,7 @@ const getTypeMeta = (game = {}) => {
 
 const findPlayerInList = (list, playerId) => {
   return (
-    toArr(list).find((item) => {
+    toArr(list).find(item => {
       if (!item) return false
 
       if (typeof item === 'string' || typeof item === 'number') {
@@ -201,34 +206,71 @@ const getPlayerGameStatus = (game, playerId) => {
   }
 }
 
-const buildSearchKey = (parts) => {
+const buildSearchKey = parts => {
   return parts.filter(Boolean).join(' · ').toLowerCase()
 }
 
-const getDateLabel = (dateRaw) => {
+const getDateLabel = dateRaw => {
   return dateRaw ? getFullDateIl(dateRaw) : 'ללא תאריך'
 }
 
-const getTeamName = ({ game, player, fallback }) => {
+const getTeamName = ({ game, player, team, fallback }) => {
   return (
     safeStr(game?.team?.teamName) ||
     safeStr(game?.teamName) ||
+    safeStr(team?.teamName) ||
+    safeStr(team?.name) ||
     safeStr(player?.team?.teamName) ||
     fallback ||
     'ללא קבוצה'
   )
 }
 
+const buildDisabledModel = ({
+  game,
+  playerStatus,
+  pickerMode,
+  disableAlreadyInGame,
+}) => {
+  const statsAvailability = buildGameStatsAvailability({
+    game,
+    mode: pickerMode,
+  })
+
+  const disabledByPlayer =
+    disableAlreadyInGame &&
+    playerStatus.exists
+
+  const disabled = Boolean(
+    disabledByPlayer ||
+      statsAvailability.disabledByStats
+  )
+
+  const disabledReason =
+    statsAvailability.disabledReason ||
+    (disabledByPlayer ? 'השחקן כבר משויך למשחק' : '')
+
+  return {
+    disabled,
+    disabledReason,
+    disabledByPlayer,
+    ...statsAvailability,
+  }
+}
+
 export default function useGameOptions({
   value = '',
   player = null,
+  team = null,
   options = [],
   teamId = '',
+  pickerMode = GAME_STATS_PICKER_MODES.DEFAULT,
+  disableAlreadyInGame = true,
 }) {
   const indexedOptions = useMemo(() => {
-    const playerId = safeId(player?.id)
-    const resolvedTeamId = safeId(teamId || player?.teamId)
-    const resolvedTeamName = safeStr(player?.team?.teamName)
+    const playerId = safeId(player?.id || player?.playerId)
+    const resolvedTeamId = safeId(teamId || team?.id || player?.teamId)
+    const resolvedTeamName = safeStr(team?.teamName || team?.name || player?.team?.teamName)
 
     const sourceGames =
       Array.isArray(player?.teamGames) && player.teamGames.length
@@ -238,7 +280,7 @@ export default function useGameOptions({
           : []
 
     return sourceGames
-      .map((game) => {
+      .map(game => {
         const gameId = safeId(game?.id)
         if (!gameId) return null
 
@@ -251,6 +293,7 @@ export default function useGameOptions({
         const teamName = getTeamName({
           game,
           player,
+          team,
           fallback: resolvedTeamName,
         })
 
@@ -260,6 +303,13 @@ export default function useGameOptions({
         const resultMeta = getResultMeta(game)
         const typeMeta = getTypeMeta(game)
         const playerStatus = getPlayerGameStatus(game, playerId)
+
+        const disabledModel = buildDisabledModel({
+          game,
+          playerStatus,
+          pickerMode,
+          disableAlreadyInGame,
+        })
 
         return {
           value: gameId,
@@ -290,6 +340,15 @@ export default function useGameOptions({
           isSelected: playerStatus.isSelected,
           isStarting: playerStatus.isStarting,
 
+          hasStats: disabledModel.hasStats,
+          statsStatus: disabledModel.statsStatus,
+          statsStatusLabel: disabledModel.statsStatusLabel,
+
+          disabled: disabledModel.disabled,
+          disabledReason: disabledModel.disabledReason,
+          disabledByStats: disabledModel.disabledByStats,
+          disabledByPlayer: disabledModel.disabledByPlayer,
+
           primaryLine: `${teamName} · ${opponentName}`,
 
           secondaryLine: [
@@ -314,6 +373,7 @@ export default function useGameOptions({
             resultMeta.label,
             homeAwayMeta.label,
             typeMeta.label,
+            disabledModel.statsStatusLabel,
           ]),
         }
       })
@@ -323,11 +383,11 @@ export default function useGameOptions({
         const bTime = b.dateRaw ? new Date(b.dateRaw).getTime() : 0
         return bTime - aTime
       })
-  }, [player, options, teamId])
+  }, [player, team, options, teamId, pickerMode, disableAlreadyInGame])
 
   const selectedOption = useMemo(() => {
     return (
-      indexedOptions.find((item) => safeId(item.value) === safeId(value)) ||
+      indexedOptions.find(item => safeId(item.value) === safeId(value)) ||
       null
     )
   }, [indexedOptions, value])

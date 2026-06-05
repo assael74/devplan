@@ -8,6 +8,14 @@ import { buildPlayerInfoItem, buildPlayerNamesItem, buildPlayerTeamItem } from '
 import { buildTaskCreateItem } from '../helpers/tasksForm.helpers.js'
 import { buildMeetingStartAtMs } from '../helpers/meetingForm.helpers.js'
 import { createShort } from '../../../services/firestore/shorts/shortsCreate'
+
+import {
+  createExternalGameShorts,
+  createExternalGamesShorts,
+  createGameShorts,
+  createGamesShorts,
+} from './logic/games/index.js'
+
 import { makeId } from '../../../utils/id.js'
 
 const pickIfaLink = (draft) => {
@@ -31,85 +39,6 @@ const toBool = (value, fallback = false) => {
 
 const omitEmpty = (obj = {}) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
-
-const resolveResult = ({ goalsFor, goalsAgainst }) => {
-  const gf = toNum(goalsFor)
-  const ga = toNum(goalsAgainst)
-
-  if (gf > ga) return 'win'
-  if (gf < ga) return 'loss'
-
-  return 'draw'
-}
-
-const buildExternalGameInfoItem = ({ id, draft, now }) => {
-  return {
-    ...buildGameInfoItem({ id, draft, now }),
-    ...buildGameTimeItem({ id, draft }),
-    ...buildGameResultItem({ id, draft }),
-
-    playerId: clean(draft?.playerId),
-    teamName: clean(draft?.teamName),
-    clubName: clean(draft?.clubName),
-
-    result: clean(draft?.result) || resolveResult({
-      goalsFor: draft?.goalsFor,
-      goalsAgainst: draft?.goalsAgainst,
-    }),
-
-    gameSource: 'external',
-    isExternalGame: true,
-  }
-}
-
-const buildExternalGamePlayersItem = ({ id, draft }) => {
-  const goalsFor = toNum(draft?.goalsFor)
-
-  return {
-    id,
-    playerId: clean(draft?.playerId),
-    isSelected: toBool(draft?.isSelected, true),
-    isStarting: toBool(draft?.isStarting, false),
-    onSquad: toBool(draft?.isSelected, true),
-    onStart: toBool(draft?.isStarting, false),
-    goals: Math.min(toNum(draft?.goals), goalsFor),
-    assists: Math.min(toNum(draft?.assists), goalsFor),
-    timePlayed: toNum(draft?.timePlayed),
-  }
-}
-
-const buildExternalGameDraft = ({ draft, context, row = {} }) => {
-  const player = context?.player || context?.entity || {}
-
-  const merged = {
-    ...draft,
-    ...row,
-  }
-
-  return {
-    ...merged,
-    playerId: clean(merged?.playerId || context?.playerId || player?.id),
-
-    teamId: clean(merged?.teamId || context?.teamId || player?.teamId),
-    clubId: clean(merged?.clubId || context?.clubId || player?.clubId),
-
-    teamName: clean(merged?.teamName || player?.teamName || player?.team?.teamName),
-    clubName: clean(merged?.clubName || player?.clubName || player?.club?.clubName),
-
-    home: toBool(merged?.home, true),
-    goalsFor: toNum(merged?.goalsFor),
-    goalsAgainst: toNum(merged?.goalsAgainst),
-
-    isSelected: toBool(merged?.isSelected, true),
-    isStarting: toBool(merged?.isStarting, false),
-    goals: toNum(merged?.goals),
-    assists: toNum(merged?.assists),
-    timePlayed: toNum(merged?.timePlayed),
-
-    gameSource: 'external',
-    isExternalGame: true,
-  }
-}
 
 export const createActions = {
   club: async ({ draft }) => {
@@ -325,142 +254,19 @@ export const createActions = {
   },
 
   game: async ({ draft }) => {
-    const id = makeId()
-    const now = Date.now()
-
-    const gameInfoItem = buildGameInfoItem({ id, draft, now })
-    const gameTimeItem = buildGameTimeItem({ id, draft })
-    const gameResultItem = buildGameResultItem({ id, draft })
-
-    await createShort({ shortKey: 'games.gameInfo', item: gameInfoItem })
-    await createShort({ shortKey: 'games.gameTime', item: gameTimeItem })
-    await createShort({ shortKey: 'games.gameResult', item: gameResultItem })
-
-    return {
-      ...gameInfoItem,
-      ...gameTimeItem,
-      ...gameResultItem,
-    }
+    return createGameShorts({ draft })
   },
 
   games: async ({ draft }) => {
-    const rows = Array.isArray(draft?.games) ? draft.games : []
-    const created = []
-
-    for (const row of rows) {
-      const id = makeId()
-      const now = Date.now()
-
-      const gameDraft = {
-        ...draft,
-        ...row,
-        type: row?.type || draft?.defaults?.type || '',
-        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
-        home: row?.home ?? draft?.defaults?.home ?? true,
-      }
-
-      const gameInfoItem = buildGameInfoItem({ id, draft: gameDraft, now })
-      const gameTimeItem = buildGameTimeItem({ id, draft: gameDraft })
-
-      await createShort({ shortKey: 'games.gameInfo', item: gameInfoItem })
-      await createShort({ shortKey: 'games.gameTime', item: gameTimeItem })
-
-      created.push({
-        ...gameInfoItem,
-        ...gameTimeItem,
-      })
-    }
-
-    return {
-      total: created.length,
-      items: created,
-    }
+    return createGamesShorts({ draft })
   },
 
   externalGame: async ({ draft, context }) => {
-    const id = makeId()
-    const now = Date.now()
-    const externalDraft = buildExternalGameDraft({ draft, context })
-
-    const gameInfoItem = buildExternalGameInfoItem({
-      id,
-      draft: externalDraft,
-      now,
-    })
-
-    const gamePlayersItem = buildExternalGamePlayersItem({
-      id,
-      draft: externalDraft,
-    })
-
-    await createShort({
-      shortKey: 'externalGames.gameInfo',
-      item: gameInfoItem,
-    })
-
-    await createShort({
-      shortKey: 'externalGames.gamePlayers',
-      item: gamePlayersItem,
-    })
-
-    return {
-      ...gameInfoItem,
-      ...gamePlayersItem,
-    }
+    return createExternalGameShorts({ draft, context })
   },
 
   externalGames: async ({ draft, context }) => {
-    const rows = Array.isArray(draft?.games) ? draft.games : []
-    const created = []
-
-    for (const row of rows) {
-      const id = makeId()
-      const now = Date.now()
-
-      const rowDraft = {
-        ...draft,
-        ...row,
-        type: row?.type || draft?.defaults?.type || '',
-        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
-        home: row?.home ?? draft?.defaults?.home ?? true,
-      }
-
-      const externalDraft = buildExternalGameDraft({
-        draft: rowDraft,
-        context,
-      })
-
-      const gameInfoItem = buildExternalGameInfoItem({
-        id,
-        draft: externalDraft,
-        now,
-      })
-
-      const gamePlayersItem = buildExternalGamePlayersItem({
-        id,
-        draft: externalDraft,
-      })
-
-      await createShort({
-        shortKey: 'externalGames.gameInfo',
-        item: gameInfoItem,
-      })
-
-      await createShort({
-        shortKey: 'externalGames.gamePlayers',
-        item: gamePlayersItem,
-      })
-
-      created.push({
-        ...gameInfoItem,
-        ...gamePlayersItem,
-      })
-    }
-
-    return {
-      total: created.length,
-      items: created,
-    }
+    return createExternalGamesShorts({ draft, context })
   },
 
   gameStats: async ({ draft }) => {

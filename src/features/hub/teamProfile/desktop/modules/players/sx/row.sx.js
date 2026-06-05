@@ -46,6 +46,13 @@ export const rowSx = {
     },
   },
 
+  rowTargetsView: {
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: '0.55fr 0.45fr 1.5fr 1.45fr 75px',
+    },
+  },
+
   rowProject: {
     boxShadow: `inset 0 0 0 1px ${c.bg}18`,
   },

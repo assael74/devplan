@@ -36,6 +36,7 @@ import {
   SwapVerticalCircle,
   Tune,
   Update,
+  Upload
 } from '@mui/icons-material';
 
 export const actionIcons = {
@@ -79,5 +80,6 @@ export const actionIcons = {
   sort: <Sort />,
   swapVert: <SwapVerticalCircle />,
   update: <Update />,
+  upload: <Upload />,
   quickActions: <ElectricBolt />
 };

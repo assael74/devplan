@@ -270,12 +270,7 @@ export const buildTripletTotalPatch = ({
   }
 }
 
-export const buildTripletSuccessPatch = ({
-  rawValue,
-  totalValue,
-  successKey,
-  rateKey,
-}) => {
+export const buildTripletSuccessPatch = ({ rawValue, totalValue, successKey, rateKey }) => {
   const success = clampTripletSuccess({
     success: rawValue,
     total: totalValue,
@@ -288,5 +283,64 @@ export const buildTripletSuccessPatch = ({
   return {
     [successKey]: success,
     [rateKey]: rate,
+  }
+}
+
+export const isLockedStatsRow = row => {
+  if (!row) return false
+
+  return Boolean(row.isStatsLocked || row.statsDisabled || row.readOnly)
+}
+
+export const buildEntryStepModel = ({ draft, savedDraft, fields }) => {
+  const selectedPlayerIds = Array.isArray(draft.selectedPlayerIds)
+    ? draft.selectedPlayerIds
+    : []
+
+  const players = Array.isArray(draft.players)
+    ? draft.players
+    : []
+
+  const activePlayerId =
+    draft.activePlayerId ||
+    draft.editablePlayerId ||
+    selectedPlayerIds[0] ||
+    ''
+
+  const activePlayer = players.find(player => {
+    return player.playerId === activePlayerId
+  }) || null
+
+  const row = findPlayerStatsRow({
+    draft,
+    playerId: activePlayerId,
+  }) || { playerId: activePlayerId }
+
+  const savedRow = findPlayerStatsRow({
+    draft: savedDraft,
+    playerId: activePlayerId,
+  })
+
+  const locked = isLockedStatsRow(row) || isLockedStatsRow(activePlayer)
+
+  const progress = getEntryFieldsProgress({
+    fields,
+    row,
+  })
+
+  const splitFields = splitEntryFields(fields)
+
+  return {
+    selectedPlayerIds,
+    players,
+    activePlayerId,
+    activePlayer,
+    row,
+    savedRow,
+    locked,
+    progress,
+    regularFields: splitFields.regularFields,
+    tripletFields: splitFields.tripletFields,
+    canRestore: Boolean(savedDraft && activePlayerId),
   }
 }

@@ -1,5 +1,9 @@
 // teamProfile/desktop/modules/players/performanceRows.model.js
 
+import {
+  buildPlayerRowTargets,
+} from './row/index.js'
+
 const emptyArray = []
 
 const toNum = (value, fallback = 0) => {
@@ -86,10 +90,7 @@ export const buildPerformanceByPlayerId = rows => {
   }, {})
 }
 
-export const mergeRowsWithPerformance = ({
-  rows,
-  performanceRows,
-} = {}) => {
+export const mergeRowsWithPerformance = ({ rows, performanceRows, team } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : emptyArray
   const byPlayerId = buildPerformanceByPlayerId(performanceRows)
 
@@ -98,8 +99,16 @@ export const mergeRowsWithPerformance = ({
     const performance = byPlayerId[playerId] || null
     const stats = row?.playerGamesStats || {}
 
+    const targets = buildPlayerRowTargets({
+      row,
+      team,
+    })
+
     return {
       ...row,
+
+      targets,
+
       performance: performance
         ? {
             ...performance,

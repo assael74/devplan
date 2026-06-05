@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import {
   createGameStatsDoc,
+  createTeamOnlyGameStatsDoc,
   deleteGameStatsDoc,
   deletePrivatePlayerGameStatsDoc,
   savePrivatePlayerGameStatsDoc,
@@ -21,6 +22,15 @@ const isPrivatePlayerScopeSave = payload => {
     payload?.source === 'privatePlayerProfile' ||
     payload?.meta?.scope === 'privatePlayer' ||
     payload?.meta?.source === 'privatePlayerProfile'
+  )
+}
+
+const isTeamOnlyScopeSave = payload => {
+  return (
+    payload?.scope === 'team' ||
+    payload?.statsScope === 'teamOnly' ||
+    payload?.source === 'liveTaggingTeamOnly' ||
+    payload?.meta?.scope === 'team'
   )
 }
 
@@ -63,6 +73,10 @@ export function useGameStatsHubUpdate() {
     return runRequest(() => createGameStatsDoc({ payload }))
   }
 
+  const runTeamOnlyCreate = payload => {
+    return runRequest(() => createTeamOnlyGameStatsDoc({ payload }))
+  }
+
   const runUpdate = payload => {
     return runRequest(() => updateGameStatsDoc({
       payload: withStatsDocId(payload),
@@ -98,6 +112,10 @@ export function useGameStatsHubUpdate() {
       return runPrivatePlayerSave(payload)
     }
 
+    if (isTeamOnlyScopeSave(payload) && !hasStatsDocId(payload)) {
+      return runTeamOnlyCreate(payload)
+    }
+
     if (hasStatsDocId(payload) && isPlayerScopeSave(payload)) {
       return runPlayerUpdate(payload)
     }
@@ -109,6 +127,7 @@ export function useGameStatsHubUpdate() {
 
   return {
     runCreate,
+    runTeamOnlyCreate,
     runUpdate,
     runPlayerUpdate,
     runPrivatePlayerSave,

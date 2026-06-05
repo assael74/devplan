@@ -93,6 +93,7 @@ export default function TeamProfileFab({
   onOpenPerformanceInsights,
   onOpenAbilitiesInsights,
   onOpenVideoInsights,
+  onImportGames,
 }) {
   const { openCreate } = useCreateModal()
 
@@ -114,6 +115,10 @@ export default function TeamProfileFab({
             team: entity,
             ...(context || {}),
           })
+        },
+        onImportGames: () => {
+          if (typeof onImportGames !== 'function') return
+          onImportGames()
         },
         onCreatePlayer: () => {
           openCreate('player', presetForTab('players', entity, context), {
@@ -164,6 +169,7 @@ export default function TeamProfileFab({
     onOpenPerformanceInsights,
     onOpenAbilitiesInsights,
     onOpenVideoInsights,
+    onImportGames,
   ])
 
   if (!actions?.length) return null

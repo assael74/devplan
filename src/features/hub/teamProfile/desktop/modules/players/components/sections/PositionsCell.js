@@ -10,7 +10,11 @@ import {
   buildPositionsCellModel,
 } from './ui/positionsCell.ui.js'
 
-export default function PositionsCell({ row, onEditPosition }) {
+export default function PositionsCell({
+  row,
+  compact = false,
+  onEditPosition,
+}) {
   const clickablePositions = typeof onEditPosition === 'function'
   const handleClick = clickablePositions ? () => onEditPosition(row) : undefined
 
@@ -56,7 +60,7 @@ export default function PositionsCell({ row, onEditPosition }) {
           {mainPosition}
         </Chip>
 
-        {extraCount > 0 ? (
+        {!compact && extraCount > 0 ? (
           <Chip
             size="sm"
             variant="outlined"
@@ -69,7 +73,7 @@ export default function PositionsCell({ row, onEditPosition }) {
         ) : null}
       </Box>
 
-      {generalPositionLabel ? (
+      {!compact && generalPositionLabel ? (
         <Box sx={sx.bottomRow}>
           <Chip
             size="sm"

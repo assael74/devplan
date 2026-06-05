@@ -14,6 +14,7 @@ export function buildTeamFabActions({
     onCreatePlayers,
     onAddGame,
     onAddGames,
+    onImportGames,
     onOpenPlayersInsights,
     onOpenGamesInsights,
     onOpenPerformanceInsights,
@@ -40,6 +41,14 @@ export function buildTeamFabActions({
           color: 'team',
           disabled: !allowCreate,
         },
+        {
+          id: 'import-games',
+          label: 'ייבוא משחקים מאקסל',
+          icon: iconUi({ id: 'upload' }),
+          onClick: onImportGames,
+          color: 'team',
+          disabled: !allowCreate,
+        }
       ],
       taskAction,
       insightActions: [

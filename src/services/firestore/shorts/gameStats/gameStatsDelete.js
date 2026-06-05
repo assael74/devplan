@@ -16,20 +16,28 @@ import {
   removeStatsGameRef,
 } from '../../../../shared/stats/engine/index.js'
 
-const clean = value => {
-  return String(value ?? '').trim()
-}
+import {
+  buildShortDocRef,
+  buildShortsDocPayload,
+  clampMinZero,
+  clean,
+  compactAggregateByKeys,
+  findListItem,
+  readShortListDoc,
+  resolvePayload,
+  toNum,
+  updateExistingListItem,
+} from './shared/index.js'
 
-const n = value => {
-  const num = Number(value)
-  return Number.isFinite(num) ? num : 0
-}
+const AGGREGATE_META_KEYS = [
+  'id',
+  'playerId',
+  'teamId',
+  'createdAt',
+  'updatedAt',
+]
 
-const resolvePayload = ({ payload, draft }) => {
-  return payload || draft
-}
-
-const ensurePayload = payload => {
+function ensurePayload(payload) {
   if (!payload || typeof payload !== 'object') {
     throw new Error('[deleteGameStatsDoc] payload is required')
   }
@@ -39,85 +47,24 @@ const ensurePayload = payload => {
   }
 }
 
-const buildShortDocRef = meta => {
-  return doc(db, meta.collection, meta.docId)
-}
+function buildRefs() {
+  const gameInfoMeta = shortsRefs.games.gameInfo
+  const playersStatsMeta = shortsRefs.players.playersStats
+  const teamsStatsMeta = shortsRefs.teams.teamsStats
 
-const readShortListDoc = async (tx, ref) => {
-  const snap = await tx.get(ref)
-  const data = snap.exists() ? snap.data() || {} : {}
-  const list = Array.isArray(data.list) ? data.list : []
-
-  return { data, list }
-}
-
-const findListItem = (list = [], id) => {
-  return (Array.isArray(list) ? list : []).find(item => item?.id === id) || null
-}
-
-const updateExistingListItem = (list = [], id, nextItem) => {
-  const idx = list.findIndex(item => item?.id === id)
-  if (idx < 0) return list
-
-  return list.map((item, index) => {
-    return index === idx ? nextItem : item
-  })
-}
-
-const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
   return {
-    ...data,
-    docId: data?.docId || meta?.docId,
-    docName: data?.docName || docName,
-    list,
-    updatedAt: now,
-    createdAt: data?.createdAt ?? now,
+    gameInfoMeta,
+    playersStatsMeta,
+    teamsStatsMeta,
+    gameInfoRef: buildShortDocRef(gameInfoMeta),
+    playersStatsRef: buildShortDocRef(playersStatsMeta),
+    teamsStatsRef: buildShortDocRef(teamsStatsMeta),
   }
 }
 
-const clampMinZero = value => {
-  return Math.max(0, n(value))
-}
-
-const isEmptyAggregateValue = value => {
-  if (value === null || value === undefined || value === '') return true
-  if (Array.isArray(value) && !value.length) return true
-
-  const num = Number(value)
-  return Number.isFinite(num) && num === 0
-}
-
-const keepAggregateMetaKey = key => {
-  return [
-    'id',
-    'playerId',
-    'teamId',
-    'createdAt',
-    'updatedAt',
-  ].includes(key)
-}
-
-const compactAggregate = item => {
-  return Object.entries(item || {}).reduce((acc, [key, value]) => {
-    if (keepAggregateMetaKey(key)) {
-      return {
-        ...acc,
-        [key]: value,
-      }
-    }
-
-    if (isEmptyAggregateValue(value)) return acc
-
-    return {
-      ...acc,
-      [key]: value,
-    }
-  }, {})
-}
-
-const resolveGameStatsDocId = ({ payload, game }) => {
-  const fromPayload = clean(payload?.gameStatsDocId || payload?.statsDocId)
-  const fromGame = clean(game?.statsDocId || game?.gameStatsDocId)
+function resolveGameStatsDocId({ payload, game }) {
+  const fromPayload = clean(payload.gameStatsDocId || payload.statsDocId)
+  const fromGame = clean(game && (game.statsDocId || game.gameStatsDocId))
   const gameStatsDocId = fromPayload || fromGame
 
   if (!gameStatsDocId) {
@@ -127,19 +74,19 @@ const resolveGameStatsDocId = ({ payload, game }) => {
   return gameStatsDocId
 }
 
-const assertDocOwnership = ({
+function assertDocOwnership({
   payload,
   game,
   currentGameStats,
   gameId,
   teamId,
   gameStatsDocId,
-}) => {
-  const payloadGameId = clean(payload?.gameId)
-  const payloadTeamId = clean(payload?.teamId)
-  const docGameId = clean(currentGameStats?.gameId)
-  const docTeamId = clean(currentGameStats?.teamId)
-  const gameStatsDocIdFromGame = clean(game?.statsDocId || game?.gameStatsDocId)
+}) {
+  const payloadGameId = clean(payload.gameId)
+  const payloadTeamId = clean(payload.teamId)
+  const docGameId = clean(currentGameStats.gameId)
+  const docTeamId = clean(currentGameStats.teamId)
+  const gameStatsDocIdFromGame = clean(game.statsDocId || game.gameStatsDocId)
 
   if (payloadGameId && docGameId && payloadGameId !== docGameId) {
     throw new Error('[deleteGameStatsDoc] payload gameId does not match stats doc')
@@ -162,14 +109,14 @@ const assertDocOwnership = ({
   }
 }
 
-const buildDeletedGameInfoItem = ({ current, now }) => {
+function buildDeletedGameInfoItem({ current, now }) {
   const {
     statsStatus,
     statsDocId,
     gameStatsDocId,
     statsUpdatedAt,
     ...base
-  } = current || {}
+  } = current
 
   return {
     ...base,
@@ -178,108 +125,233 @@ const buildDeletedGameInfoItem = ({ current, now }) => {
   }
 }
 
-const buildDeletedPlayerAggregate = ({
+function compactAggregate(item) {
+  return compactAggregateByKeys({
+    item,
+    keepKeys: AGGREGATE_META_KEYS,
+  })
+}
+
+function buildDeletedPlayerAggregate({
   current,
   playerId,
   gameId,
   delta,
   now,
-}) => {
+}) {
   let next = {
-    ...(current || {}),
+    ...current,
     id: playerId,
     playerId,
     updatedAt: now,
-    createdAt: current?.createdAt ?? now,
+    createdAt: current && current.createdAt ? current.createdAt : now,
   }
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
-  next.statsGameRefs = removeStatsGameRef(current?.statsGameRefs, gameId)
+  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+  next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
   return compactAggregate(applyStatsRates(next))
 }
 
-const buildDeletedTeamAggregate = ({
+function buildDeletedTeamAggregate({
   current,
   teamId,
   gameId,
   delta,
   playersCount,
   now,
-}) => {
+}) {
   let next = {
-    ...(current || {}),
+    ...current,
     id: teamId,
     teamId,
     updatedAt: now,
-    createdAt: current?.createdAt ?? now,
+    createdAt: current && current.createdAt ? current.createdAt : now,
   }
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
+  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
   next.playersWithStats = clampMinZero(
-    (current?.playersWithStats || 0) - playersCount
+    (current && current.playersWithStats || 0) - playersCount
   )
-  next.statsGameRefs = removeStatsGameRef(current?.statsGameRefs, gameId)
+  next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
   return compactAggregate(applyStatsRates(next))
 }
 
-const buildRollbackContext = ({ currentGameStats, resolvedGame, gameId, teamId, gameStatsDocId }) => {
-  const savedTeamStats = currentGameStats?.teamStats || {}
-  const gameDuration = n(savedTeamStats.timePlayed) || n(resolvedGame?.gameDuration)
+function buildRollbackContext({ currentGameStats, resolvedGame, gameId, teamId, gameStatsDocId }) {
+  const savedTeamStats = currentGameStats.teamStats || {}
+  const gameDuration = toNum(savedTeamStats.timePlayed) || toNum(resolvedGame.gameDuration)
 
   return {
     gameId,
     teamId,
     gameStatsDocId,
     gameDuration,
-    timePlayed: n(savedTeamStats.timePlayed) || gameDuration,
+    timePlayed: toNum(savedTeamStats.timePlayed) || gameDuration,
     timeVideoStats:
-      n(savedTeamStats.timeVideoStats) ||
-      n(savedTeamStats.timePlayed) ||
+      toNum(savedTeamStats.timeVideoStats) ||
+      toNum(savedTeamStats.timePlayed) ||
       gameDuration,
   }
 }
 
-export async function deleteGameStatsDoc({
-  payload,
-  draft,
-  dryRun = false,
-} = {}) {
+function buildNextPlayersStatsList({ playersStatsDoc, prevByPlayerId, gameId, now }) {
+  let nextPlayersStatsList = playersStatsDoc.list
+
+  for (const [playerId, prevRow] of prevByPlayerId.entries()) {
+    const current = findListItem(nextPlayersStatsList, playerId)
+
+    if (!current) continue
+
+    const delta = buildStatsDelta(prevRow, {})
+
+    const nextItem = buildDeletedPlayerAggregate({
+      current,
+      playerId,
+      gameId,
+      delta,
+      now,
+    })
+
+    nextPlayersStatsList = updateExistingListItem(
+      nextPlayersStatsList,
+      playerId,
+      nextItem
+    )
+  }
+
+  return nextPlayersStatsList
+}
+
+function buildNextTeamsStatsList({
+  teamsStatsDoc,
+  teamId,
+  gameId,
+  prevTeamStats,
+  now,
+}) {
+  const teamDelta = buildStatsDelta(prevTeamStats, {})
+  const currentTeamStats = findListItem(teamsStatsDoc.list, teamId)
+
+  if (!currentTeamStats) return teamsStatsDoc.list
+
+  return updateExistingListItem(
+    teamsStatsDoc.list,
+    teamId,
+    buildDeletedTeamAggregate({
+      current: currentTeamStats,
+      teamId,
+      gameId,
+      delta: teamDelta,
+      playersCount: prevTeamStats.playersCount || 0,
+      now,
+    })
+  )
+}
+
+function buildDryRunSummary({ data, gameId }) {
+  return {
+    dryRun: true,
+    ids: {
+      gameId: gameId || null,
+      gameStatsDocId: clean(data.gameStatsDocId || data.statsDocId) || null,
+    },
+    note: 'dryRun only',
+  }
+}
+
+function buildDeleteSummary({
+  gameId,
+  teamId,
+  gameStatsDocId,
+  prevPlayerStats,
+  prevTeamStats,
+}) {
+  return {
+    ok: true,
+    ids: {
+      gameId,
+      teamId,
+      gameStatsDocId,
+    },
+    summary: {
+      status: 'deleted',
+      playersCount: prevPlayerStats.length,
+      teamStatsRemoved: prevTeamStats,
+    },
+  }
+}
+
+function writeDeleteTransaction({
+  tx,
+  refs,
+  docs,
+  gameStatsRef,
+  nextGameInfoList,
+  nextPlayersStatsList,
+  nextTeamsStatsList,
+  now,
+}) {
+  tx.delete(gameStatsRef)
+
+  tx.set(
+    refs.gameInfoRef,
+    buildShortsDocPayload({
+      data: docs.gameInfoDoc.data,
+      meta: refs.gameInfoMeta,
+      docName: 'gameInfo',
+      list: nextGameInfoList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.playersStatsRef,
+    buildShortsDocPayload({
+      data: docs.playersStatsDoc.data,
+      meta: refs.playersStatsMeta,
+      docName: 'playersStats',
+      list: nextPlayersStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.teamsStatsRef,
+    buildShortsDocPayload({
+      data: docs.teamsStatsDoc.data,
+      meta: refs.teamsStatsMeta,
+      docName: 'teamsStats',
+      list: nextTeamsStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+}
+
+export async function deleteGameStatsDoc({ payload, draft, dryRun = false } = {}) {
   const data = resolvePayload({ payload, draft })
 
   ensurePayload(data)
 
   const draftGameId = clean(data.gameId)
   const now = Timestamp.now()
-
-  const gameInfoMeta = shortsRefs.games.gameInfo
-  const playersStatsMeta = shortsRefs.players.playersStats
-  const teamsStatsMeta = shortsRefs.teams.teamsStats
-
-  const gameInfoRef = buildShortDocRef(gameInfoMeta)
-  const playersStatsRef = buildShortDocRef(playersStatsMeta)
-  const teamsStatsRef = buildShortDocRef(teamsStatsMeta)
+  const refs = buildRefs()
 
   if (dryRun) {
-    return {
-      dryRun: true,
-      ids: {
-        gameId: draftGameId || null,
-        gameStatsDocId: clean(data.gameStatsDocId || data.statsDocId) || null,
-      },
-      note: 'dryRun only',
-    }
+    return buildDryRunSummary({ data, gameId: draftGameId })
   }
 
   return runTransaction(db, async tx => {
-    const gameInfoDoc = await readShortListDoc(tx, gameInfoRef)
-    const playersStatsDoc = await readShortListDoc(tx, playersStatsRef)
-    const teamsStatsDoc = await readShortListDoc(tx, teamsStatsRef)
+    const gameInfoDoc = await readShortListDoc(tx, refs.gameInfoRef)
+    const playersStatsDoc = await readShortListDoc(tx, refs.playersStatsRef)
+    const teamsStatsDoc = await readShortListDoc(tx, refs.teamsStatsRef)
 
     const game = draftGameId
       ? findListItem(gameInfoDoc.list, draftGameId)
@@ -296,7 +368,7 @@ export async function deleteGameStatsDoc({
     const currentGameStats = gameStatsSnap.data() || {}
 
     const gameId = clean(data.gameId || currentGameStats.gameId)
-    const teamId = clean(data.teamId || currentGameStats.teamId || game?.teamId)
+    const teamId = clean(data.teamId || currentGameStats.teamId || game && game.teamId)
 
     if (!gameId) throw new Error('[deleteGameStatsDoc] missing resolved gameId')
     if (!teamId) throw new Error('[deleteGameStatsDoc] missing resolved teamId')
@@ -325,53 +397,27 @@ export async function deleteGameStatsDoc({
     })
 
     const prevPlayerStats = normalizeGamePlayerStatsList(
-      currentGameStats?.playerStats || [],
+      currentGameStats.playerStats || [],
       context
     )
 
     const prevTeamStats = buildGameTeamStats(prevPlayerStats, context)
     const prevByPlayerId = indexPlayerStatsByPlayerId(prevPlayerStats)
 
-    let nextPlayersStatsList = playersStatsDoc.list
+    const nextPlayersStatsList = buildNextPlayersStatsList({
+      playersStatsDoc,
+      prevByPlayerId,
+      gameId,
+      now,
+    })
 
-    for (const [playerId, prevRow] of prevByPlayerId.entries()) {
-      const current = findListItem(nextPlayersStatsList, playerId)
-      if (!current) continue
-
-      const delta = buildStatsDelta(prevRow, {})
-
-      const nextItem = buildDeletedPlayerAggregate({
-        current,
-        playerId,
-        gameId,
-        delta,
-        now,
-      })
-
-      nextPlayersStatsList = updateExistingListItem(
-        nextPlayersStatsList,
-        playerId,
-        nextItem
-      )
-    }
-
-    const teamDelta = buildStatsDelta(prevTeamStats, {})
-    const currentTeamStats = findListItem(teamsStatsDoc.list, teamId)
-
-    const nextTeamsStatsList = currentTeamStats
-      ? updateExistingListItem(
-          teamsStatsDoc.list,
-          teamId,
-          buildDeletedTeamAggregate({
-            current: currentTeamStats,
-            teamId,
-            gameId,
-            delta: teamDelta,
-            playersCount: prevTeamStats?.playersCount || 0,
-            now,
-          })
-        )
-      : teamsStatsDoc.list
+    const nextTeamsStatsList = buildNextTeamsStatsList({
+      teamsStatsDoc,
+      teamId,
+      gameId,
+      prevTeamStats,
+      now,
+    })
 
     const nextGameInfoList = updateExistingListItem(
       gameInfoDoc.list,
@@ -382,56 +428,27 @@ export async function deleteGameStatsDoc({
       })
     )
 
-    tx.delete(gameStatsRef)
-
-    tx.set(
-      gameInfoRef,
-      buildShortsDocPayload({
-        data: gameInfoDoc.data,
-        meta: gameInfoMeta,
-        docName: 'gameInfo',
-        list: nextGameInfoList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      playersStatsRef,
-      buildShortsDocPayload({
-        data: playersStatsDoc.data,
-        meta: playersStatsMeta,
-        docName: 'playersStats',
-        list: nextPlayersStatsList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      teamsStatsRef,
-      buildShortsDocPayload({
-        data: teamsStatsDoc.data,
-        meta: teamsStatsMeta,
-        docName: 'teamsStats',
-        list: nextTeamsStatsList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    return {
-      ok: true,
-      ids: {
-        gameId,
-        teamId,
-        gameStatsDocId,
+    writeDeleteTransaction({
+      tx,
+      refs,
+      docs: {
+        gameInfoDoc,
+        playersStatsDoc,
+        teamsStatsDoc,
       },
-      summary: {
-        status: 'deleted',
-        playersCount: prevPlayerStats.length,
-        teamStatsRemoved: prevTeamStats,
-      },
-    }
+      gameStatsRef,
+      nextGameInfoList,
+      nextPlayersStatsList,
+      nextTeamsStatsList,
+      now,
+    })
+
+    return buildDeleteSummary({
+      gameId,
+      teamId,
+      gameStatsDocId,
+      prevPlayerStats,
+      prevTeamStats,
+    })
   })
 }

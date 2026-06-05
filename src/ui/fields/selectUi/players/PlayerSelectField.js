@@ -1,4 +1,5 @@
 // ui/fields/selectUi/players/PlayerSelectField.js
+
 import React, { useMemo, useCallback } from 'react'
 import {
   Select,
@@ -45,7 +46,7 @@ export default function PlayerSelectField({
     },
     [onChange, readOnly]
   )
-
+  
   return (
     <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
       <FormLabel required={required} sx={{ fontSize: '12px' }}>
@@ -65,7 +66,7 @@ export default function PlayerSelectField({
         )}
       >
         {normalizedOptions.map((opt) => (
-          <Option key={opt.value} value={opt.value}>
+          <Option key={opt.value} value={opt.value} disabled={opt.disabled}>
             <PlayerOptionRow opt={opt} />
           </Option>
         ))}

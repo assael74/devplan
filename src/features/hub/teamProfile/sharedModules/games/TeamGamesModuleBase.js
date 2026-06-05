@@ -11,6 +11,7 @@ import {
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
+import { BulkPasteDrawer } from '../../../../bulkImport/index.js'
 
 import useTeamGamesModuleModel from './useTeamGamesModuleModel.js'
 
@@ -23,6 +24,7 @@ export default function TeamGamesModuleBase({
   entity,
   context,
   profileData,
+  gamesImportRequest = 0,
   gamesInsightsRequest = 0,
 
   Section,
@@ -39,6 +41,7 @@ export default function TeamGamesModuleBase({
     entity,
     context,
     profileData,
+    gamesImportRequest,
     gamesInsightsRequest,
     enableStatsForm,
   })
@@ -66,6 +69,10 @@ export default function TeamGamesModuleBase({
     editingGame,
     editingEntryGame,
 
+    gamesImportOpen,
+    gamesImportSaving,
+    gamesImportError,
+
     statsFormLoading,
     statsFormLoadingText,
     editingStatsGame,
@@ -86,6 +93,10 @@ export default function TeamGamesModuleBase({
     handleResetFilters,
     handleChangeSortBy,
     handleChangeSortDirection,
+
+    handleCloseGamesImport,
+    handleGamesImportPreviewReady,
+
     handleOpenStatsGame,
     handleSaveStats,
     statsDeleteAction,
@@ -142,6 +153,15 @@ export default function TeamGamesModuleBase({
           />
         )}
       </Wrap>
+
+      <BulkPasteDrawer
+        open={gamesImportOpen}
+        onClose={handleCloseGamesImport}
+        title="ייבוא משחקים"
+        onPreviewReady={handleGamesImportPreviewReady}
+        saving={gamesImportSaving}
+        error={gamesImportError}
+      />
 
       <InsightsDrawerComponent
         open={insightsOpen}

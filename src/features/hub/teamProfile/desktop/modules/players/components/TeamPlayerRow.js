@@ -10,14 +10,24 @@ import EntityActionsMenu from '../../../../../sharedProfile/EntityActionsMenu.js
 import PlayerIdentityCell from './sections/PlayerIdentityCell.js'
 import PerformanceCell from './sections/PerformanceCell.js'
 import PositionsCell from './sections/PositionsCell.js'
+import TargetsCell from './sections/TargetsCell.js'
 
 import { getSquadRoleMeta } from '../../../../../../../shared/players/player.squadRole.utils.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
+import {
+  PLAYER_ROW_METRIC_TONES,
+} from './sections/ui/playerMetricTones.js'
+
 import { rowSx as sx } from '../sx/row.sx.js'
 
 const c = getEntityColors('players')
+
+const VIEW_MODES = {
+  OVERVIEW: 'overview',
+  TARGETS: 'targets',
+}
 
 const PotentialCell = ({ row }) => {
   return (
@@ -107,24 +117,9 @@ const ActionsCell = ({ row, onEditPlayer }) => {
   )
 }
 
-export default function TeamPlayerRow({
-  row,
-  loaded,
-  onEditPosition,
-  onEditPlayer,
-  onAvatarClick,
-}) {
+function OverviewCells({ row, loaded, onEditPosition }) {
   return (
-    <Box
-      sx={[
-        sx.row,
-        row?.isKey && sx.rowKey,
-        row?.type === 'project' && sx.rowProject,
-        row?.active === false && sx.rowInactive,
-      ]}
-    >
-      <PlayerIdentityCell row={row} onAvatarClick={onAvatarClick} />
-
+    <>
       <PositionsCell row={row} onEditPosition={onEditPosition} />
 
       <PotentialCell row={row} />
@@ -133,7 +128,57 @@ export default function TeamPlayerRow({
 
       <RoleCell row={row} />
 
-      <PerformanceCell row={row} loaded={loaded} />
+      <PerformanceCell row={row} loaded={loaded} metricTones={PLAYER_ROW_METRIC_TONES} />
+    </>
+  )
+}
+
+function TargetsViewCells({ row, loaded }) {
+  return (
+    <>
+      <PositionsCell row={row} compact />
+
+      <TargetsCell row={row} loaded={loaded} metricTones={PLAYER_ROW_METRIC_TONES} />
+
+      <PerformanceCell row={row} loaded={loaded} metricTones={PLAYER_ROW_METRIC_TONES} />
+    </>
+  )
+}
+
+export default function TeamPlayerRow({
+  row,
+  loaded,
+  viewMode = VIEW_MODES.OVERVIEW,
+  onEditPosition,
+  onEditPlayer,
+  onAvatarClick,
+}) {
+  const isTargetsView = viewMode === VIEW_MODES.TARGETS
+
+  return (
+    <Box
+      sx={[
+        sx.row,
+        isTargetsView && sx.rowTargetsView,
+        row?.isKey && sx.rowKey,
+        row?.type === 'project' && sx.rowProject,
+        row?.active === false && sx.rowInactive,
+      ]}
+    >
+      <PlayerIdentityCell row={row} onAvatarClick={onAvatarClick} />
+
+      {isTargetsView ? (
+        <TargetsViewCells
+          row={row}
+          loaded={loaded}
+        />
+      ) : (
+        <OverviewCells
+          row={row}
+          loaded={loaded}
+          onEditPosition={onEditPosition}
+        />
+      )}
 
       <ActionsCell row={row} onEditPlayer={onEditPlayer} />
     </Box>

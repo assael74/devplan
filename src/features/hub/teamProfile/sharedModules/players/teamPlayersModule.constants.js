@@ -1,5 +1,10 @@
 // teamProfile/sharedModules/players/teamPlayersModule.constants.js
 
+export const TEAM_PLAYERS_VIEW_MODES = {
+  OVERVIEW: 'overview',
+  TARGETS: 'targets',
+}
+
 export const performanceScopeInitial = {
   mode: 'season',
   limit: null,
@@ -10,6 +15,7 @@ export const performanceScopeInitial = {
 export const emptyTeamPlayersFilters = {
   search: '',
   onlyActive: false,
+  onlyWithTargets: false,
   squadRole: '',
   projectStatus: '',
   positionCode: '',

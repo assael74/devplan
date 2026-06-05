@@ -3,7 +3,6 @@
 import React from 'react'
 import { FormControl, FormHelperText, FormLabel, Select, Option } from '@mui/joy'
 
-import { iconUi } from '../../../core/icons/iconUi.js'
 import useGameOptions from './logic/useGameOptions.js'
 import GameOptionRow from './ui/GameOptionRow.js'
 import GameValueView from './ui/GameValueView.js'
@@ -20,7 +19,7 @@ export default function GameSelectField(props) {
     label = 'בחר משחק',
     placeholder = 'בחר משחק לשיוך השחקן',
     size = 'sm',
-    variant = 'outlined'
+    variant = 'outlined',
   } = props
 
   const { indexedOptions, selectedOption } = useGameOptions(props)
@@ -49,12 +48,12 @@ export default function GameSelectField(props) {
         }}
         sx={{ width: '100%', minWidth: 0, bgcolor: 'background.level1' }}
       >
-        {indexedOptions.map((option) => (
+        {indexedOptions.map(option => (
           <Option
             key={option.value}
             value={option.value}
             label={option.searchKey}
-            disabled={option.isAlreadyInGame}
+            disabled={option.disabled}
             sx={sx.option}
           >
             <GameOptionRow option={option} />

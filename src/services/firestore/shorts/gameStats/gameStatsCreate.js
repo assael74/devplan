@@ -16,47 +16,21 @@ import {
   normalizeGamePlayerStatsList,
 } from '../../../../shared/stats/engine/index.js'
 
+import {
+  buildShortDocRef,
+  buildShortsDocPayload,
+  clean,
+  compactDoc,
+  findListItem,
+  getPayloadNumber,
+  readShortListDoc,
+  resolvePayload,
+  upsertListItem,
+} from './shared/index.js'
+
 const STATS_SOURCE = 'gameStatsCreateV1'
 
-const clean = value => {
-  return String(value ?? '').trim()
-}
-
-const isPlainObject = value => {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-const compactDoc = value => {
-  if (Array.isArray(value)) {
-    return value
-      .map(item => compactDoc(item))
-      .filter(item => item !== undefined)
-  }
-
-  if (!isPlainObject(value)) {
-    if (value === null || value === undefined || value === '') return undefined
-    return value
-  }
-
-  const next = Object.entries(value).reduce((acc, [key, item]) => {
-    const cleanItem = compactDoc(item)
-
-    if (cleanItem === undefined) return acc
-
-    return {
-      ...acc,
-      [key]: cleanItem,
-    }
-  }, {})
-
-  return Object.keys(next).length ? next : undefined
-}
-
-const resolvePayload = ({ payload, draft }) => {
-  return payload || draft
-}
-
-const ensurePayload = payload => {
+function ensurePayload(payload) {
   if (!payload || typeof payload !== 'object') {
     throw new Error('[createGameStatsDoc] payload is required')
   }
@@ -74,53 +48,9 @@ const ensurePayload = payload => {
   }
 }
 
-const getPayloadNumber = ({ payload, key, fallback = 0 }) => {
-  const value = payload?.meta?.[key] ?? payload?.[key] ?? fallback
-  const num = Number(value)
-
-  return Number.isFinite(num) ? num : fallback
-}
-
-const buildShortDocRef = meta => {
-  return doc(db, meta.collection, meta.docId)
-}
-
-const readShortListDoc = async (tx, ref) => {
-  const snap = await tx.get(ref)
-  const data = snap.exists() ? snap.data() || {} : {}
-  const list = Array.isArray(data.list) ? data.list : []
-
-  return { data, list }
-}
-
-const findListItem = (list = [], id) => {
-  return (Array.isArray(list) ? list : []).find(item => item?.id === id) || null
-}
-
-const upsertListItem = (list = [], id, nextItem) => {
-  const idx = list.findIndex(item => item?.id === id)
-
-  if (idx < 0) return [...list, nextItem]
-
-  return list.map((item, index) => {
-    return index === idx ? nextItem : item
-  })
-}
-
-const buildShortsDocPayload = ({ data, meta, docName, list, now }) => {
-  return {
-    ...data,
-    docId: data?.docId || meta?.docId,
-    docName: data?.docName || docName,
-    list,
-    updatedAt: now,
-    createdAt: data?.createdAt ?? now,
-  }
-}
-
-const resolveGameStatsDocId = ({ payload, game }) => {
-  const payloadGameStatsDocId = clean(payload?.gameStatsDocId)
-  const existingGameStatsDocId = clean(game?.statsDocId)
+function resolveGameStatsDocId({ payload, game }) {
+  const payloadGameStatsDocId = clean(payload.gameStatsDocId)
+  const existingGameStatsDocId = clean(game.statsDocId || game.gameStatsDocId)
 
   if (existingGameStatsDocId) {
     throw new Error(
@@ -131,22 +61,18 @@ const resolveGameStatsDocId = ({ payload, game }) => {
   return payloadGameStatsDocId || makeId('gameStats')
 }
 
-const buildNextGameInfoItem = ({
-  current,
-  gameStatsDocId,
-  status,
-  now,
-}) => {
+function buildNextGameInfoItem({ current, gameStatsDocId, status, now }) {
   return {
-    ...(current || {}),
+    ...current,
     hasStats: true,
     statsStatus: status,
     statsDocId: gameStatsDocId,
+    gameStatsDocId,
     statsUpdatedAt: now,
   }
 }
 
-const buildGameStatsDetailDoc = ({
+function buildGameStatsDetailDoc({
   gameStatsDocId,
   gameId,
   teamId,
@@ -156,7 +82,7 @@ const buildGameStatsDetailDoc = ({
   status,
   source,
   now,
-}) => {
+}) {
   return compactDoc({
     id: gameStatsDocId,
     docId: gameStatsDocId,
@@ -180,14 +106,44 @@ const buildGameStatsDetailDoc = ({
   })
 }
 
-const buildCreateSummary = ({
+function buildCreateContext({ data, gameId, teamId, game, gameStatsDocId }) {
+  const gameDuration = game.gameDuration || data.gameDuration || 0
+
+  return {
+    gameId,
+    teamId,
+    gameStatsDocId,
+    gameDuration,
+    timePlayed: getPayloadNumber({
+      payload: data,
+      key: 'timePlayed',
+      fallback: gameDuration,
+    }),
+    timeVideoStats: getPayloadNumber({
+      payload: data,
+      key: 'timeVideoStats',
+      fallback: data.teamVideoTime || gameDuration,
+    }),
+  }
+}
+
+function buildCreateTeamStats({ playerStats, context }) {
+  return {
+    ...buildGameTeamStats(playerStats, context),
+    gameId: context.gameId,
+    teamId: context.teamId,
+    gameStatsDocId: context.gameStatsDocId,
+  }
+}
+
+function buildCreateSummary({
   gameId,
   teamId,
   gameStatsDocId,
   status,
   playerStats,
   teamStats,
-}) => {
+}) {
   return {
     ok: true,
     ids: {
@@ -203,47 +159,154 @@ const buildCreateSummary = ({
   }
 }
 
+function buildDryRunSummary({ data, gameId, teamId }) {
+  return {
+    dryRun: true,
+    ids: {
+      gameId,
+      itemId: gameId,
+      teamId,
+      gameStatsDocId: clean(data.gameStatsDocId) || null,
+    },
+    note: 'dryRun only',
+  }
+}
+
+function buildRefs() {
+  const gameInfoMeta = shortsRefs.games.gameInfo
+  const playersStatsMeta = shortsRefs.players.playersStats
+  const teamsStatsMeta = shortsRefs.teams.teamsStats
+
+  return {
+    gameInfoMeta,
+    playersStatsMeta,
+    teamsStatsMeta,
+    gameInfoRef: buildShortDocRef(gameInfoMeta),
+    playersStatsRef: buildShortDocRef(playersStatsMeta),
+    teamsStatsRef: buildShortDocRef(teamsStatsMeta),
+  }
+}
+
+function buildGameRef({ gameId, gameStatsDocId, teamId, game, data, status }) {
+  return buildStatsGameRef({
+    gameId,
+    gameStatsDocId,
+    teamId,
+    gameDate: game.gameDate || data.gameDate || '',
+    status,
+  })
+}
+
+function buildNextPlayersStatsList({ playersStatsDoc, playerStats, gameRef, now }) {
+  let nextPlayersStatsList = playersStatsDoc.list
+
+  for (const row of playerStats) {
+    const current = findListItem(nextPlayersStatsList, row.playerId)
+
+    const nextItem = buildNextPlayerStatsItem({
+      current,
+      playerStats: row,
+      gameRef,
+      now,
+    })
+
+    nextPlayersStatsList = upsertListItem(
+      nextPlayersStatsList,
+      row.playerId,
+      nextItem
+    )
+  }
+
+  return nextPlayersStatsList
+}
+
+function buildNextTeamsStatsList({ teamsStatsDoc, teamId, teamStats, gameRef, now }) {
+  const currentTeamStats = findListItem(teamsStatsDoc.list, teamId)
+
+  const nextTeamStatsItem = buildNextTeamStatsItem({
+    current: currentTeamStats,
+    teamStats,
+    gameRef,
+    now,
+  })
+
+  return upsertListItem(teamsStatsDoc.list, teamId, nextTeamStatsItem)
+}
+
+function writeCreateTransaction({
+  tx,
+  refs,
+  docs,
+  gameStatsRef,
+  nextGameStatsDoc,
+  nextGameInfoList,
+  nextPlayersStatsList,
+  nextTeamsStatsList,
+  now,
+}) {
+  tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
+
+  tx.set(
+    refs.gameInfoRef,
+    buildShortsDocPayload({
+      data: docs.gameInfoDoc.data,
+      meta: refs.gameInfoMeta,
+      docName: 'gameInfo',
+      list: nextGameInfoList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.playersStatsRef,
+    buildShortsDocPayload({
+      data: docs.playersStatsDoc.data,
+      meta: refs.playersStatsMeta,
+      docName: 'playersStats',
+      list: nextPlayersStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+
+  tx.set(
+    refs.teamsStatsRef,
+    buildShortsDocPayload({
+      data: docs.teamsStatsDoc.data,
+      meta: refs.teamsStatsMeta,
+      docName: 'teamsStats',
+      list: nextTeamsStatsList,
+      now,
+    }),
+    { merge: true }
+  )
+}
+
 export async function createGameStatsDoc({ payload, draft, dryRun = false } = {}) {
   const data = resolvePayload({ payload, draft })
 
   ensurePayload(data)
 
   const gameId = clean(data.gameId)
-  const itemId = gameId
   const teamId = clean(data.teamId)
   const status = clean(data.status) || 'draft'
   const now = Timestamp.now()
-
-  const gameInfoMeta = shortsRefs.games.gameInfo
-  const playersStatsMeta = shortsRefs.players.playersStats
-  const teamsStatsMeta = shortsRefs.teams.teamsStats
-
-  const gameInfoRef = buildShortDocRef(gameInfoMeta)
-  const playersStatsRef = buildShortDocRef(playersStatsMeta)
-  const teamsStatsRef = buildShortDocRef(teamsStatsMeta)
+  const refs = buildRefs()
 
   if (dryRun) {
-    return {
-      dryRun: true,
-      ids: {
-        gameId,
-        itemId,
-        teamId,
-        gameStatsDocId: clean(data.gameStatsDocId) || null,
-      },
-      note: 'dryRun only',
-    }
+    return buildDryRunSummary({ data, gameId, teamId })
   }
 
   return runTransaction(db, async tx => {
-    const gameInfoDoc = await readShortListDoc(tx, gameInfoRef)
-    const playersStatsDoc = await readShortListDoc(tx, playersStatsRef)
-    const teamsStatsDoc = await readShortListDoc(tx, teamsStatsRef)
+    const gameInfoDoc = await readShortListDoc(tx, refs.gameInfoRef)
+    const playersStatsDoc = await readShortListDoc(tx, refs.playersStatsRef)
+    const teamsStatsDoc = await readShortListDoc(tx, refs.teamsStatsRef)
 
-    const game = findListItem(gameInfoDoc.list, itemId)
+    const game = findListItem(gameInfoDoc.list, gameId)
 
     if (!game) {
-      throw new Error(`[createGameStatsDoc] game not found in games.gameInfo: ${itemId}`)
+      throw new Error(`[createGameStatsDoc] game not found in games.gameInfo: ${gameId}`)
     }
 
     const gameStatsDocId = resolveGameStatsDocId({ payload: data, game })
@@ -254,36 +317,27 @@ export async function createGameStatsDoc({ payload, draft, dryRun = false } = {}
       throw new Error(`[createGameStatsDoc] gameStats doc already exists: ${gameStatsDocId}`)
     }
 
-    const gameDuration = game?.gameDuration || data?.gameDuration || 0
-
-    const context = {
+    const context = buildCreateContext({
+      data,
       gameId,
       teamId,
-      gameDuration,
-      timePlayed: getPayloadNumber({
-        payload: data,
-        key: 'timePlayed',
-        fallback: gameDuration,
-      }),
-      timeVideoStats: getPayloadNumber({
-        payload: data,
-        key: 'timeVideoStats',
-        fallback: data?.teamVideoTime || gameDuration,
-      }),
-    }
+      game,
+      gameStatsDocId,
+    })
 
     const playerStats = normalizeGamePlayerStatsList(data.playerStats, context)
-    const teamStats = buildGameTeamStats(playerStats, context)
+    const teamStats = buildCreateTeamStats({ playerStats, context })
 
     if (!playerStats.length) {
       throw new Error('[createGameStatsDoc] no valid playerStats after normalize')
     }
 
-    const gameRef = buildStatsGameRef({
+    const gameRef = buildGameRef({
       gameId,
       gameStatsDocId,
       teamId,
-      gameDate: game?.gameDate || data?.gameDate || '',
+      game,
+      data,
       status,
     })
 
@@ -296,43 +350,24 @@ export async function createGameStatsDoc({ payload, draft, dryRun = false } = {}
 
     const nextGameInfoList = upsertListItem(
       gameInfoDoc.list,
-      itemId,
+      gameId,
       nextGameInfoItem
     )
 
-    let nextPlayersStatsList = playersStatsDoc.list
-
-    for (const row of playerStats) {
-      const current = findListItem(nextPlayersStatsList, row.playerId)
-
-      const nextItem = buildNextPlayerStatsItem({
-        current,
-        playerStats: row,
-        gameRef,
-        now,
-      })
-
-      nextPlayersStatsList = upsertListItem(
-        nextPlayersStatsList,
-        row.playerId,
-        nextItem
-      )
-    }
-
-    const currentTeamStats = findListItem(teamsStatsDoc.list, teamId)
-
-    const nextTeamStatsItem = buildNextTeamStatsItem({
-      current: currentTeamStats,
-      teamStats,
+    const nextPlayersStatsList = buildNextPlayersStatsList({
+      playersStatsDoc,
+      playerStats,
       gameRef,
       now,
     })
 
-    const nextTeamsStatsList = upsertListItem(
-      teamsStatsDoc.list,
+    const nextTeamsStatsList = buildNextTeamsStatsList({
+      teamsStatsDoc,
       teamId,
-      nextTeamStatsItem
-    )
+      teamStats,
+      gameRef,
+      now,
+    })
 
     const nextGameStatsDoc = buildGameStatsDetailDoc({
       gameStatsDocId,
@@ -346,43 +381,21 @@ export async function createGameStatsDoc({ payload, draft, dryRun = false } = {}
       now,
     })
 
-    tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
-
-    tx.set(
-      gameInfoRef,
-      buildShortsDocPayload({
-        data: gameInfoDoc.data,
-        meta: gameInfoMeta,
-        docName: 'gameInfo',
-        list: nextGameInfoList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      playersStatsRef,
-      buildShortsDocPayload({
-        data: playersStatsDoc.data,
-        meta: playersStatsMeta,
-        docName: 'playersStats',
-        list: nextPlayersStatsList,
-        now,
-      }),
-      { merge: true }
-    )
-
-    tx.set(
-      teamsStatsRef,
-      buildShortsDocPayload({
-        data: teamsStatsDoc.data,
-        meta: teamsStatsMeta,
-        docName: 'teamsStats',
-        list: nextTeamsStatsList,
-        now,
-      }),
-      { merge: true }
-    )
+    writeCreateTransaction({
+      tx,
+      refs,
+      docs: {
+        gameInfoDoc,
+        playersStatsDoc,
+        teamsStatsDoc,
+      },
+      gameStatsRef,
+      nextGameStatsDoc,
+      nextGameInfoList,
+      nextPlayersStatsList,
+      nextTeamsStatsList,
+      now,
+    })
 
     return buildCreateSummary({
       gameId,

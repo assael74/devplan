@@ -13,12 +13,14 @@ export const getPerformance = row => {
   return row?.performance || {}
 }
 
+export const hasPerformanceData = row => {
+  return row?.playerGamesStats?.playedLabel !== '0/0'
+}
+
 export const getPerformanceProfile = row => {
   const performance = getPerformance(row)
 
-  if (performance?.profile?.id) {
-    return performance.profile
-  }
+  if (performance?.profile?.id) return performance.profile
 
   return getPlayerInsightProfile(
     performance?.profileId ||
@@ -72,17 +74,8 @@ export const getPerformanceStats = row => {
   const stats = row?.playerGamesStats || {}
 
   return {
-    goals: toNumber(
-      performance?.goals ??
-        stats.goals ??
-        row?.goals
-    ),
-
-    assists: toNumber(
-      performance?.assists ??
-        stats.assists ??
-        row?.assists
-    ),
+    goals: toNumber(performance?.goals ?? stats.goals ?? row?.goals),
+    assists: toNumber(performance?.assists ?? stats.assists ?? row?.assists),
 
     minutesPctLabel:
       performance?.minutesPctLabel ||
@@ -98,10 +91,14 @@ export const getPerformanceStats = row => {
 }
 
 export const buildPerformanceCellModel = row => {
+  const tvaValue = getTvaValue(row)
+
   return {
+    hasNumbers: hasPerformanceData(row),
     profile: getPerformanceProfile(row),
     ratingLabel: getRatingLabel(row),
-    tvaValue: getTvaValue(row),
+    tvaValue,
+    impactColor: getImpactColor(tvaValue),
     stats: getPerformanceStats(row),
   }
 }

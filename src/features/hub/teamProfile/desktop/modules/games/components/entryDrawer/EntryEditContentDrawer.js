@@ -151,6 +151,7 @@ export default function EntryEditContentDrawer({
   onSetFilter,
   onResetFilters,
   onChangeRow,
+  onOpenImport,
   onBulkSetOnSquad,
   onBulkResetStats,
 }) {
@@ -166,6 +167,7 @@ export default function EntryEditContentDrawer({
         isPlayed={draft?.isPlayed === true}
         onBulkSetOnSquad={onBulkSetOnSquad}
         onBulkResetStats={onBulkResetStats}
+        onOpenImport={onOpenImport}
       />
 
       <Box sx={sx.content} className="dpScrollThin">

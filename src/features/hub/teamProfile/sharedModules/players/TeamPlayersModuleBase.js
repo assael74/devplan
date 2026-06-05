@@ -43,6 +43,7 @@ export default function TeamPlayersModuleBase({
 
     filters,
     sort,
+    viewMode,
 
     insightsModel,
     insightsReady,
@@ -65,6 +66,7 @@ export default function TeamPlayersModuleBase({
     handleResetFilters,
     handleChangeSortBy,
     handleChangeSortDirection,
+    handleChangeViewMode,
     handleAvatarClick,
     handleAfterImageSave,
   } = model
@@ -80,6 +82,8 @@ export default function TeamPlayersModuleBase({
           summary={summaryWithPerformance}
           filteredCount={filteredRows.length}
           totalCount={rowsWithPerformance.length}
+          viewMode={viewMode}
+          onChangeViewMode={handleChangeViewMode}
           onChangeSearch={value =>
             handleChangeFilters({ search: value })
           }
@@ -101,6 +105,11 @@ export default function TeamPlayersModuleBase({
           onChangePerformanceProfile={value =>
             handleChangeFilters({ performanceProfile: value || '' })
           }
+          onToggleWithTargets={() =>
+            handleChangeFilters({
+              onlyWithTargets: !filters.onlyWithTargets,
+            })
+          }
           onResetFilters={handleResetFilters}
           sortBy={sort.by}
           sortDirection={sort.direction}
@@ -118,6 +127,7 @@ export default function TeamPlayersModuleBase({
         <ListComponent
           rows={filteredRows}
           loaded={insightsReady}
+          viewMode={viewMode}
           onOpenPlayer={onOpenPlayer}
           onAvatarClick={handleAvatarClick}
           onEditPlayer={row => setEditingPlayer(row?.player || null)}

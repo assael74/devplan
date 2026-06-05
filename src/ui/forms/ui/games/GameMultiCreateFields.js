@@ -18,12 +18,14 @@ import { makeId } from '../../../../utils/id.js'
 import { iconUi } from '../../../core/icons/iconUi.js'
 import { multiSx as sx } from './sx/multiCreate.sx.js'
 
+const DEFAULT_GAME_HOUR = '12:00'
+
 function createRow(defaults = {}) {
   return {
     uiKey: makeId('gameRow'),
     rivel: '',
     gameDate: '',
-    gameHour: '',
+    gameHour: defaults?.gameHour || DEFAULT_GAME_HOUR,
     home: defaults?.home ?? true,
     type: defaults?.type || '',
     gameDuration: defaults?.gameDuration || '',

@@ -18,6 +18,7 @@ import {
 } from '../../sharedUi/insights/teamPlayers/useTeamPlayersInsightsModel.js'
 
 import {
+  TEAM_PLAYERS_VIEW_MODES,
   emptyTeamPlayersFilters,
   getInsightsStatus,
   performanceScopeInitial,
@@ -54,6 +55,7 @@ export default function useTeamPlayersModuleModel({
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [editingPosition, setEditingPosition] = useState(null)
   const [filters, setFilters] = useState(emptyTeamPlayersFilters)
+  const [viewMode, setViewMode] = useState(TEAM_PLAYERS_VIEW_MODES.OVERVIEW)
   const [insightsEnabled, setInsightsEnabled] = useState(false)
 
   const [sort, setSort] = useState({
@@ -103,9 +105,10 @@ export default function useTeamPlayersModuleModel({
   const rowsWithPerformance = useMemo(() => {
     return mergeRowsWithPerformance({
       rows,
+      team: liveTeam,
       performanceRows: insightsModel?.playerPerformanceRows,
     })
-  }, [rows, insightsModel?.playerPerformanceRows])
+  }, [rows, liveTeam, insightsModel?.playerPerformanceRows])
 
   const summaryWithPerformance = useMemo(() => {
     return mergeSummaryWithPerformanceBuckets({
@@ -160,6 +163,10 @@ export default function useTeamPlayersModuleModel({
     }))
   }
 
+  const handleChangeViewMode = value => {
+    setViewMode(value || TEAM_PLAYERS_VIEW_MODES.OVERVIEW)
+  }
+
   const handleAvatarClick = row => {
     setImgRow(row)
     setRowPhoto(row?.photo || '')
@@ -183,6 +190,7 @@ export default function useTeamPlayersModuleModel({
 
     filters,
     sort,
+    viewMode,
 
     insightsModel,
     insightsReady,
@@ -206,6 +214,7 @@ export default function useTeamPlayersModuleModel({
     handleResetFilters,
     handleChangeSortBy,
     handleChangeSortDirection,
+    handleChangeViewMode,
     handleAvatarClick,
     handleAfterImageSave,
   }

@@ -1,6 +1,7 @@
 // ui/forms/helpers/gameForm.helpers.js
 
 const toText = (v) => String(v ?? '').trim()
+
 const toNumOrNull = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : null
@@ -26,6 +27,7 @@ export const buildGameInfoItem = ({ id, draft, now }) => ({
   home: toBoolOrNull(draft?.home),
   difficulty: toText(draft?.difficulty) || null,
   type: toText(draft?.type) || null,
+  gameLeagueNum: toNumOrNull(draft?.gameLeagueNum),
   createdAt: now,
   updatedAt: now,
 })

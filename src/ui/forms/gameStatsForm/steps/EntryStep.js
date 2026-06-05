@@ -2,288 +2,92 @@
 
 import React from 'react'
 import {
-  Avatar,
   Box,
-  Button,
-  Chip,
   Divider,
   Sheet,
   Typography,
 } from '@mui/joy'
 
 import { entryStepSx as sx } from './sx/entryStep.sx.js'
-import playerImage from '../../../core/images/playerImage.jpg'
-import { iconUi } from '../../../core/icons/iconUi.js'
-
-import {
-  StatsFieldRenderer,
-  StatsTripletInput,
-} from '../inputs/index.js'
 
 import {
   buildEntryFields,
-  findPlayerStatsRow,
-  getEntryFieldsProgress,
+  buildEntryStepModel,
+  buildResetActivePlayerPatch,
+  buildRestoreActivePlayerPatch,
+  buildSetActivePlayerPatch,
+  buildUpdatePlayerStatsPatch,
   getVisibleParms,
-  resetPlayerStatsRow,
-  restorePlayerStatsRow,
-  splitEntryFields,
-  updatePlayerStatsRow,
 } from '../logic/index.js'
 
-const isLockedRow = row => {
-  return row?.isStatsLocked || row?.statsDisabled || row?.readOnly
-}
+import { EntryEmptyPlayersState } from './parts/EntryEmptyPlayersState.js'
+import { EntryPlayerHeader } from './parts/EntryPlayerHeader.js'
+import { EntryPlayerTabs } from './parts/EntryPlayerTabs.js'
 
-function EmptyPlayersState() {
-  return (
-    <Box sx={sx.stepContent}>
-      <Typography level="title-sm">
-        מילוי נתונים
-      </Typography>
+import {
+  RegularFieldsSection,
+  TripletFieldsSection,
+} from './parts/EntryFieldsSection.js'
 
-      <Sheet variant="outlined" sx={sx.placeholder}>
-        <Typography level="body-sm" color="neutral">
-          לא נבחרו שחקנים. חזור לשלב שחקנים ובחר לפחות שחקן אחד.
-        </Typography>
-      </Sheet>
-    </Box>
-  )
-}
-
-function FieldCard({ field, children }) {
-  const type = field?.statsParmType || field?.parm?.statsParmType || 'general'
-
-  return (
-    <Sheet variant="plain" sx={sx.entryFieldCard(type)}>
-      {children}
-    </Sheet>
-  )
-}
-
-function PlayerTabs({ players, selectedPlayerIds, activePlayerId, onActivePlayer }) {
-  return (
-    <Box sx={sx.activePlayersBar}>
-      {selectedPlayerIds.map(playerId => {
-        const player = players.find(item => item.playerId === playerId)
-        const selected = playerId === activePlayerId
-        const photo = player?.photo || playerImage
-        const locked = isLockedRow(player)
-
-        return (
-          <Button
-            key={playerId}
-            size="sm"
-            variant={selected ? 'solid' : 'soft'}
-            color={selected ? 'primary' : locked ? 'neutral' : 'neutral'}
-            disabled={locked && !selected}
-            onClick={() => {
-              if (locked && !selected) return
-              onActivePlayer(playerId)
-            }}
-            startDecorator={<Avatar src={photo} sx={{ width: 20, height: 20 }} />}
-            sx={sx.playerTabButton}
-          >
-            {player?.name || 'שחקן'}
-          </Button>
-        )
-      })}
-    </Box>
-  )
-}
-
-function PlayerEntryHeader({ activePlayer, progress, onReset, onRestore, canRestore, locked }) {
-  const photo = activePlayer?.photo || playerImage
-  const icon = activePlayer?.isStarting ? 'isStart' : 'isSquad'
-
-  return (
-    <Box sx={sx.entryHeader}>
-      <Box>
-        <Box sx={sx.entryPlayerTitle}>
-          <Avatar src={photo} sx={{ width: 22, height: 22 }} />
-
-          <Typography level="title-sm">
-            {activePlayer?.name || 'שחקן'}
-          </Typography>
-        </Box>
-
-        <Typography level="body-xs" color="neutral" startDecorator={iconUi({ id: icon })}>
-          {activePlayer?.isStarting ? 'הרכב' : 'ספסל'} · {activePlayer?.timePlayed || 0} דק׳
-        </Typography>
-      </Box>
-
-      <Box sx={sx.entryHeaderActions}>
-        {locked ? (
-          <Chip size="sm" variant="soft" color="warning">
-            נעול לעריכה
-          </Chip>
-        ) : null}
-
-        {canRestore && !locked ? (
-          <Button size="sm" variant="soft" color="neutral" onClick={onRestore}>
-            שחזור שחקן
-          </Button>
-        ) : null}
-
-        {!locked ? (
-          <Button size="sm" variant="soft" color="neutral" onClick={onReset}>
-            איפוס שחקן
-          </Button>
-        ) : null}
-
-        <Chip size="sm" variant="soft" color="neutral">
-          {progress?.filled || 0}/{progress?.total || 0} שדות
-        </Chip>
-      </Box>
-    </Box>
-  )
-}
-
-function RegularFieldsSection({ fields, row, locked, onUpdateRow }) {
-  if (!fields.length) return null
-
-  return (
-    <Box sx={sx.entrySection}>
-      <Typography level="body-xs" sx={sx.entrySectionTitle}>
-        שדות בודדים
-      </Typography>
-
-      <Box sx={sx.regularEntryGrid}>
-        {fields.map(field => (
-          <FieldCard key={field.id} field={field}>
-            <StatsFieldRenderer
-              parm={field.parm}
-              value={row?.[field.id]}
-              disabled={locked}
-              readOnly={locked}
-              onChange={value => {
-                if (locked) return
-                onUpdateRow({ [field.id]: value })
-              }}
-            />
-          </FieldCard>
-        ))}
-      </Box>
-    </Box>
-  )
-}
-
-function TripletFieldsSection({ fields, row, locked, onUpdateRow }) {
-  if (!fields.length) return null
-
-  return (
-    <Box sx={sx.entrySection}>
-      <Typography level="body-xs" sx={sx.entrySectionTitle}>
-        מדדים מחושבים
-      </Typography>
-
-      <Box sx={sx.tripletEntryGrid}>
-        {fields.map(field => (
-          <FieldCard key={field.id} field={field}>
-            <StatsTripletInput
-              label={field.label}
-              totalKey={field.totalKey}
-              successKey={field.successKey}
-              rateKey={field.rateKey}
-              totalValue={row?.[field.totalKey]}
-              successValue={row?.[field.successKey]}
-              rateValue={row?.[field.rateKey]}
-              disabled={locked}
-              readOnly={locked}
-              onChange={patch => {
-                if (locked) return
-                onUpdateRow(patch)
-              }}
-            />
-          </FieldCard>
-        ))}
-      </Box>
-    </Box>
-  )
-}
+// אחריות:
+// Step מילוי הנתונים בטופס יצירת סטטיסטיקה.
 
 export function EntryStep({ draft, savedDraft, onDraft }) {
-  const selectedParmIds = draft?.selectedParmIds || []
-  const selectedPlayerIds = draft?.selectedPlayerIds || []
-  const players = draft?.players || []
+  const selectedParmIds = Array.isArray(draft.selectedParmIds)
+    ? draft.selectedParmIds
+    : []
 
   const visibleParms = getVisibleParms(selectedParmIds)
   const fields = buildEntryFields(visibleParms)
-  const { regularFields, tripletFields } = splitEntryFields(fields)
 
-  const activePlayerId =
-    draft?.activePlayerId ||
-    draft?.editablePlayerId ||
-    selectedPlayerIds[0] ||
-    ''
-
-  const activePlayer = players.find(player => {
-    return player.playerId === activePlayerId
-  })
-
-  const row = findPlayerStatsRow({
+  const model = buildEntryStepModel({
     draft,
-    playerId: activePlayerId,
-  }) || { playerId: activePlayerId }
-
-  const savedRow = findPlayerStatsRow({
-    draft: savedDraft,
-    playerId: activePlayerId,
+    savedDraft,
+    fields,
   })
-
-  const locked = isLockedRow(row) || isLockedRow(activePlayer)
 
   const setActivePlayer = playerId => {
-    onDraft({ activePlayerId: playerId })
+    onDraft(buildSetActivePlayerPatch(playerId))
   }
 
-  const progress = getEntryFieldsProgress({
-    fields,
-    row,
-  })
-
   const resetActivePlayer = () => {
-    if (!activePlayerId || locked) return
+    if (!model.activePlayerId || model.locked) return
 
-    onDraft({
-      playerStats: resetPlayerStatsRow({
+    onDraft(
+      buildResetActivePlayerPatch({
         draft,
-        playerId: activePlayerId,
-      }),
-    })
+        playerId: model.activePlayerId,
+      })
+    )
   }
 
   const restoreActivePlayer = () => {
-    if (!activePlayerId || !savedDraft || locked) return
+    if (!model.activePlayerId || !savedDraft || model.locked) return
 
-    const playerStats = savedRow
-      ? restorePlayerStatsRow({
-          draft,
-          savedDraft,
-          playerId: activePlayerId,
-        })
-      : resetPlayerStatsRow({
-          draft,
-          playerId: activePlayerId,
-        })
-
-    onDraft({ playerStats })
+    onDraft(
+      buildRestoreActivePlayerPatch({
+        draft,
+        savedDraft,
+        playerId: model.activePlayerId,
+        savedRow: model.savedRow,
+      })
+    )
   }
 
   const updateRow = patch => {
-    if (locked) return
+    if (model.locked) return
 
-    onDraft({
-      playerStats: updatePlayerStatsRow({
+    onDraft(
+      buildUpdatePlayerStatsPatch({
         draft,
-        playerId: activePlayerId,
+        playerId: model.activePlayerId,
         patch,
-      }),
-    })
+      })
+    )
   }
 
-  if (!selectedPlayerIds.length) {
-    return <EmptyPlayersState />
+  if (!model.selectedPlayerIds.length) {
+    return <EntryEmptyPlayersState />
   }
 
   return (
@@ -298,36 +102,36 @@ export function EntryStep({ draft, savedDraft, onDraft }) {
         </Typography>
       </Box>
 
-      <PlayerTabs
-        players={players}
-        selectedPlayerIds={selectedPlayerIds}
-        activePlayerId={activePlayerId}
+      <EntryPlayerTabs
+        players={model.players}
+        selectedPlayerIds={model.selectedPlayerIds}
+        activePlayerId={model.activePlayerId}
         onActivePlayer={setActivePlayer}
       />
 
       <Sheet variant="outlined" sx={sx.entryCard}>
-        <PlayerEntryHeader
-          activePlayer={activePlayer}
-          progress={progress}
+        <EntryPlayerHeader
+          activePlayer={model.activePlayer}
+          progress={model.progress}
           onReset={resetActivePlayer}
           onRestore={restoreActivePlayer}
-          canRestore={Boolean(savedDraft && activePlayerId)}
-          locked={locked}
+          canRestore={model.canRestore}
+          locked={model.locked}
         />
 
         <RegularFieldsSection
-          fields={regularFields}
-          row={row}
-          locked={locked}
+          fields={model.regularFields}
+          row={model.row}
+          locked={model.locked}
           onUpdateRow={updateRow}
         />
 
         <Divider sx={{ mt: 1 }} />
 
         <TripletFieldsSection
-          fields={tripletFields}
-          row={row}
-          locked={locked}
+          fields={model.tripletFields}
+          row={model.row}
+          locked={model.locked}
           onUpdateRow={updateRow}
         />
       </Sheet>
