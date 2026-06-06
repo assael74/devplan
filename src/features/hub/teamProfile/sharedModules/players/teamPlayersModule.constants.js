@@ -2,7 +2,7 @@
 
 export const TEAM_PLAYERS_VIEW_MODES = {
   OVERVIEW: 'overview',
-  TARGETS: 'targets',
+  PERFORMANCE: 'performance',
 }
 
 export const performanceScopeInitial = {

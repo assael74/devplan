@@ -8,7 +8,7 @@ import { TEAM_PLAYERS_SORT_OPTIONS } from '../../../../../sharedLogic/players/in
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 export default function TeamPlayersSortMenu({
-  sortBy = 'level',
+  sortBy = 'squadRole',
   sortDirection = 'desc',
   onChangeSortBy,
   onChangeSortDirection,

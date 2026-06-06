@@ -26,7 +26,7 @@ const c = getEntityColors('players')
 
 const VIEW_MODES = {
   OVERVIEW: 'overview',
-  TARGETS: 'targets',
+  PERFORMANCE: 'performance',
 }
 
 const PotentialCell = ({ row }) => {
@@ -128,12 +128,12 @@ function OverviewCells({ row, loaded, onEditPosition }) {
 
       <RoleCell row={row} />
 
-      <PerformanceCell row={row} loaded={loaded} metricTones={PLAYER_ROW_METRIC_TONES} />
+      <TargetsCell row={row} loaded={loaded} metricTones={PLAYER_ROW_METRIC_TONES} />
     </>
   )
 }
 
-function TargetsViewCells({ row, loaded }) {
+function PerformanceViewCells({ row, loaded }) {
   return (
     <>
       <PositionsCell row={row} compact />
@@ -153,13 +153,13 @@ export default function TeamPlayerRow({
   onEditPlayer,
   onAvatarClick,
 }) {
-  const isTargetsView = viewMode === VIEW_MODES.TARGETS
+  const isPerformanceView = viewMode === VIEW_MODES.PERFORMANCE
 
   return (
     <Box
       sx={[
         sx.row,
-        isTargetsView && sx.rowTargetsView,
+        isPerformanceView && sx.rowPerformanceView,
         row?.isKey && sx.rowKey,
         row?.type === 'project' && sx.rowProject,
         row?.active === false && sx.rowInactive,
@@ -167,11 +167,8 @@ export default function TeamPlayerRow({
     >
       <PlayerIdentityCell row={row} onAvatarClick={onAvatarClick} />
 
-      {isTargetsView ? (
-        <TargetsViewCells
-          row={row}
-          loaded={loaded}
-        />
+      {isPerformanceView ? (
+        <PerformanceViewCells row={row} loaded={loaded} />
       ) : (
         <OverviewCells
           row={row}

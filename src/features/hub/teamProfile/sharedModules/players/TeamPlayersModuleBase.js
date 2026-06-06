@@ -112,6 +112,9 @@ export default function TeamPlayersModuleBase({
           }
           onResetFilters={handleResetFilters}
           sortBy={sort.by}
+          rows={filteredRows}
+          teamName={liveTeam?.teamName || liveTeam?.name || ''}
+          seasonLabel={profileData?.seasonLabel || context?.seasonLabel || ''}
           sortDirection={sort.direction}
           onChangeSortBy={handleChangeSortBy}
           onChangeSortDirection={handleChangeSortDirection}

@@ -59,7 +59,7 @@ export default function useTeamPlayersModuleModel({
   const [insightsEnabled, setInsightsEnabled] = useState(false)
 
   const [sort, setSort] = useState({
-    by: 'level',
+    by: 'squadRole',
     direction: 'desc',
   })
 

@@ -8,7 +8,7 @@ export const rowSx = {
   row: {
     display: 'grid',
     gridTemplateColumns:
-      '0.95fr 0.6fr 0.65fr 0.4fr 0.65fr 1.75fr 75px',
+      '0.95fr 0.6fr 0.45fr 0.65fr 0.55fr 1.45fr 75px',
     alignItems: 'center',
     columnGap: 0.45,
     minHeight: 54,
@@ -46,7 +46,7 @@ export const rowSx = {
     },
   },
 
-  rowTargetsView: {
+  rowPerformanceView: {
     gridTemplateColumns: {
       xs: '1fr',
       md: '0.55fr 0.45fr 1.5fr 1.45fr 75px',

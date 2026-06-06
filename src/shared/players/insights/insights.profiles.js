@@ -61,7 +61,7 @@ export const PLAYER_INSIGHT_PROFILES = {
     legacyId: 'rotation_player',
     label: 'תורם משני',
     shortLabel: 'תורם משני',
-    tone: 'primary',
+    tone: 'neutral',
     icon: 'contributor',
     description:
       'שחקן עם תרומה בסיסית או בינונית, ללא השפעה חיובית מובהקת וללא נזק חריג.',
@@ -100,7 +100,7 @@ export const PLAYER_INSIGHT_PROFILES = {
     legacyId: 'fringe',
     label: 'מחוץ למדגם',
     shortLabel: 'מחוץ למדגם',
-    tone: 'warning',
+    tone: 'danger',
     icon: 'fringe',
     description:
       'השחקן לא צבר מספיק דקות או מספיק ציונים תקפים כדי לגזור מסקנה סטטיסטית חזקה.',

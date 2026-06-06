@@ -1,17 +1,23 @@
-// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
-
 import React from 'react'
 import { Box, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+import ReportPrintButton from '../../../../../../../../ui/patterns/reportPrint/ReportPrintButton.js'
+
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 import TeamPlayersFiltersBar from './TeamPlayersFiltersBar.js'
 import TeamPlayersSortMenu from './TeamPlayersSortMenu.js'
+import TeamPlayersPrintReport from '../print/TeamPlayersPrintReport.js'
 
 const VIEW_MODES = {
   OVERVIEW: 'overview',
-  TARGETS: 'targets',
+  PERFORMANCE: 'performance',
+}
+
+const PRINT_MODES = {
+  SQUAD: 'squad',
+  PERFORMANCE: 'performance',
 }
 
 function ViewModeChip({
@@ -37,9 +43,12 @@ function ViewModeChip({
 export default function TeamPlayersToolbar({
   summary,
   filters,
+  rows = [],
+  teamName = '',
+  seasonLabel = '',
   totalCount = 0,
   filteredCount = 0,
-  sortBy = 'level',
+  sortBy = 'squadRole',
   sortDirection = 'desc',
   viewMode = VIEW_MODES.OVERVIEW,
   onChangeSearch,
@@ -53,20 +62,43 @@ export default function TeamPlayersToolbar({
   onChangeSortDirection,
   onChangeViewMode,
   onResetFilters,
-  onToggleWithTargets
+  onToggleWithTargets,
 }) {
+  const isPerformanceView = viewMode === VIEW_MODES.PERFORMANCE
+
   const hasActiveFilters =
     !!filters?.search ||
     !!filters?.onlyActive ||
-    !!filters?.onlyWithTargets  ||
+    !!filters?.onlyWithTargets ||
     !!filters?.squadRole ||
     !!filters?.projectStatus ||
     !!filters?.positionCode ||
     !!filters?.performanceProfile ||
     !!filters?.generalPositionKey
 
-  const hasSortChanged = sortBy !== 'level' || sortDirection !== 'desc'
+  const hasSortChanged = sortBy !== 'squadRole' || sortDirection !== 'desc'
   const canReset = hasActiveFilters || hasSortChanged
+  const canPrint = Array.isArray(rows) && rows.length > 0
+  const printMode = isPerformanceView ? PRINT_MODES.PERFORMANCE : PRINT_MODES.SQUAD
+  const printLabel = isPerformanceView ? 'הדפס ביצוע' : 'הדפס סגל'
+  const printTooltip = isPerformanceView
+    ? 'הדפס דוח יעדים וביצוע'
+    : 'הדפס דוח סגל עם מקום ליעדים'
+  const printTitle = isPerformanceView
+    ? 'דוח יעדים וביצוע שחקנים'
+    : 'דוח סגל שחקנים'
+  const printColor = isPerformanceView ? 'primary' : 'neutral'
+
+  const renderPrintReport = mode => (
+    <TeamPlayersPrintReport
+      rows={rows}
+      filters={filters}
+      summary={summary}
+      teamName={teamName}
+      seasonLabel={seasonLabel}
+      mode={mode}
+    />
+  )
 
   return (
     <Box sx={sx.toolbar}>
@@ -94,17 +126,29 @@ export default function TeamPlayersToolbar({
           <ViewModeChip
             active={viewMode === VIEW_MODES.OVERVIEW}
             icon="players"
-            label="ניהול סגל"
+            label="ניהול"
             onClick={() => onChangeViewMode?.(VIEW_MODES.OVERVIEW)}
           />
 
           <ViewModeChip
-            active={viewMode === VIEW_MODES.TARGETS}
-            icon="target"
-            label="יעדים וביצוע"
-            onClick={() => onChangeViewMode?.(VIEW_MODES.TARGETS)}
+            active={isPerformanceView}
+            icon="performanceProfile"
+            label="ביצוע"
+            onClick={() => onChangeViewMode?.(VIEW_MODES.PERFORMANCE)}
           />
         </Box>
+
+        <ReportPrintButton
+          label={printLabel}
+          tooltip={printTooltip}
+          documentTitle={printTitle}
+          disabled={!canPrint}
+          size="sm"
+          variant="soft"
+          color={printColor}
+          startIcon="download"
+          renderContent={() => renderPrintReport(printMode)}
+        />
 
         <Box sx={{ flex: 1 }} />
 

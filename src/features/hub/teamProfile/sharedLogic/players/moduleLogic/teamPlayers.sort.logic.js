@@ -192,15 +192,35 @@ const compareProjectStatus = (rowA, rowB, direction) => {
   return compareNumbers(a, b, direction)
 }
 
+const compareSquadRoleThenName = (rowA, rowB) => {
+  const roleResult = compareNumbers(
+    getSquadRoleValue(rowA),
+    getSquadRoleValue(rowB),
+    'desc'
+  )
+
+  if (roleResult !== 0) return roleResult
+
+  return compareStrings(
+    lower(rowA?.playerFullName),
+    lower(rowB?.playerFullName),
+    'asc'
+  )
+}
+
 export const sortTeamPlayersRows = (
   rows,
-  sort = { by: 'level', direction: 'desc' }
+  sort = { by: 'squadRole', direction: 'desc' }
 ) => {
   const list = Array.isArray(rows) ? [...rows] : []
-  const sortBy = safe(sort?.by).trim() || 'level'
+  const sortBy = safe(sort?.by).trim() || 'squadRole'
   const direction = safe(sort?.direction).trim() === 'asc' ? 'asc' : 'desc'
 
   return list.sort((rowA, rowB) => {
+    if (sortBy === 'squadRole' || sortBy === 'name') {
+      return compareSquadRoleThenName(rowA, rowB)
+    }
+
     let result = 0
 
     if (sortBy === 'projectStatus') {
