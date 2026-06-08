@@ -1,7 +1,11 @@
+// src/app/AuthProvider.js
+
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
+
 import { auth } from '../services/firebase/firebase'
 import { authApi } from '../services/auth/auth.api'
+import { registerExternalUser } from '../services/auth/registerExternalUser.js'
 
 const AuthContext = createContext(null)
 
@@ -23,7 +27,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     login: authApi.login,
-    register: authApi.register,
+    register: registerExternalUser,
     logout: authApi.logout,
   }
 

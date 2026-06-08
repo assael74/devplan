@@ -56,15 +56,20 @@ const buildMetrics = (values = {}) => {
   ]
 }
 
-const buildPrintSections = (groups = {}) => {
+const buildPrintSections = (groups = {}, options = {}) => {
   const squadUsageOptions = {
     squadSize: 24,
     includeRiskChips: false,
+    targetPositionMode: options.targetPositionMode,
+  }
+
+  const targetRowsOptions = {
+    targetPositionMode: options.targetPositionMode,
   }
 
   const homeAwayRows = buildHomeAwayRows(groups.homeAway)
   const difficultyRows = buildDifficultyRows(groups.difficulty)
-  const scorersRows = buildScorersRows(groups.scorers)
+  const scorersRows = buildScorersRows(groups.scorers, targetRowsOptions)
   const squadRows = buildSquadUsageRows(groups.squadUsage, squadUsageOptions)
 
   return [
@@ -130,6 +135,8 @@ export function buildManagementTargetsPrintModel({
     },
 
     metrics: buildMetrics(values),
-    printSections: buildPrintSections(groups),
+    printSections: buildPrintSections(groups, {
+      targetPositionMode: targets.targetPositionMode,
+    }),
   }
 }

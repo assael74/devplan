@@ -78,6 +78,16 @@ export const shortsUpdateRouterMap = {
     fullName: { shortKey: 'roles.rolesInfo', path: 'fullName', mode: 'merge' },
     photo: { shortKey: 'roles.rolesInfo', path: 'photo', mode: 'merge' },
     type: { shortKey: 'roles.rolesInfo', path: 'type', mode: 'merge' },
+    moduleAccess: { shortKey: 'roles.rolesInfo', path: 'moduleAccess', mode: 'merge' },
+    squadSimulatorAccess: { shortKey: 'roles.rolesInfo', path: 'moduleAccess.squadSimulator', mode: 'merge' },
+    userId: { shortKey: 'roles.rolesInfo', path: 'userId', mode: 'merge' },
+    authUid: { shortKey: 'roles.rolesInfo', path: 'authUid', mode: 'merge' },
+    status: { shortKey: 'roles.rolesInfo', path: 'status', mode: 'merge' },
+    source: { shortKey: 'roles.rolesInfo', path: 'source', mode: 'merge' },
+    moduleAccess: { shortKey: 'roles.rolesInfo', path: 'moduleAccess', mode: 'merge' },
+    squadSimulatorAccess: { shortKey: 'roles.rolesInfo', path: 'moduleAccess.squadSimulator', mode: 'merge' },
+    systemAccess: { shortKey: 'roles.rolesInfo', path: 'systemAccess', mode: 'merge' },
+    systemAccessLevel: { shortKey: 'roles.rolesInfo', path: 'systemAccess.level', mode: 'merge' },
   },
 
   scouting: {

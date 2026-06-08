@@ -11,7 +11,7 @@ import SideNavDrawer from '../../ui/core/layout/nav/SideNavDrawer'
 
 import { layoutSx as sx } from './layout.sx.js'
 
-export default function AppLayout({ topbar, sidenav, navBadges }) {
+export default function AppLayout({ topbar, sidenav, navBadges, navMode = 'full' }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -44,6 +44,7 @@ export default function AppLayout({ topbar, sidenav, navBadges }) {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           badges={navBadges}
+          navMode={navMode}
           anchor="right"
         />
 
@@ -68,9 +69,10 @@ export default function AppLayout({ topbar, sidenav, navBadges }) {
             React.cloneElement(sidenav, {
               collapsed: !isSideOpen,
               badges: navBadges,
+              navMode,
             })
           ) : (
-            <SideNav collapsed={!isSideOpen} badges={navBadges} />
+            <SideNav collapsed={!isSideOpen} badges={navBadges} navMode={navMode} />
           )}
         </Box>
 

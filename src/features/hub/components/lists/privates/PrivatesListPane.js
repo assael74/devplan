@@ -48,7 +48,7 @@ export default function PrivatesListPane({
   }, [])
 
   return (
-    <Box sx={sx.root}>
+    <Box sx={sx.root(isMobile)}>
       <Box sx={sx.bar}>
         <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
           <Input

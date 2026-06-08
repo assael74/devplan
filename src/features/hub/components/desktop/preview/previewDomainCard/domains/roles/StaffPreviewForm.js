@@ -11,6 +11,7 @@ import PhoneField from '../../../../../../../../ui/fields/inputUi/PhoneField.js'
 import RoleFullNameField from '../../../../../../../../ui/fields/inputUi/RoleFullNameField.js'
 import EmailField from '../../../../../../../../ui/fields/inputUi/EmailField.js'
 import RoleActiveSelector from '../../../../../../../../ui/fields/checkUi/roles/RoleActiveSelector.js'
+import RoleAccessPanel from '../../../../../../../../ui/forms/ui/roles/RoleAccessPanel.js'
 
 import { asIdArray } from './staffPreview.logic.js'
 import { staffPreviewSx } from './staffPreview.sx.js'
@@ -34,8 +35,8 @@ export default function StaffPreviewForm({
   }, [locked, isDirty])
 
   return (
-    <>
-      <Box sx={staffPreviewSx.row1}>
+    <Box sx={staffPreviewSx.formScroll} className="dpScrollThin">
+      <Box sx={staffPreviewSx.row3}>
         <Box sx={staffPreviewSx.activeWrap}>
           <RoleActiveSelector
             value={draft.active}
@@ -66,7 +67,7 @@ export default function StaffPreviewForm({
         />
       </Box>
 
-      <Box sx={staffPreviewSx.row3}>
+      <Box sx={staffPreviewSx.row2}>
         <ClubMultiSelectField
           value={draft.clubsId}
           onChange={(v) => setDraft((d) => ({ ...d, clubsId: asIdArray(v) }))}
@@ -78,6 +79,13 @@ export default function StaffPreviewForm({
           value={draft.teamsId}
           clubs={clubsOptions}
           onChange={(v) => setDraft((d) => ({ ...d, teamsId: asIdArray(v) }))}
+        />
+      </Box>
+
+      <Box sx={staffPreviewSx.row1}>
+        <RoleAccessPanel
+          draft={draft}
+          setDraft={setDraft}
         />
       </Box>
 
@@ -109,6 +117,6 @@ export default function StaffPreviewForm({
           </Button>
         </Box>
       </Box>
-    </>
+    </Box>
   )
 }

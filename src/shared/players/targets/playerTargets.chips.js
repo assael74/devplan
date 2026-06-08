@@ -1,5 +1,7 @@
 // src/shared/players/targets/playerTargets.chips.js
 
+const EMPTY = '—'
+
 const isValue = (value) => {
   return value !== null && value !== undefined && value !== ''
 }
@@ -10,30 +12,34 @@ const toNumber = (value, fallback = null) => {
 }
 
 export const formatPlayerTargetValue = (value, suffix = '') => {
-  if (!isValue(value)) return '—'
+  if (!isValue(value)) return EMPTY
   return `${value}${suffix}`
 }
 
 export const formatPlayerTargetRange = (range = [], suffix = '') => {
-  if (!Array.isArray(range)) return '—'
+  if (!Array.isArray(range)) return EMPTY
 
   const min = range[0]
   const max = range[1]
 
-  if (!isValue(min) || !isValue(max)) return '—'
+  if (isValue(min) && isValue(max)) return `${min}–${max}${suffix}`
+  if (isValue(min)) return `מעל ${min}${suffix}`
+  if (isValue(max)) return `עד ${max}${suffix}`
 
-  return `${min}–${max}${suffix}`
+  return EMPTY
 }
 
 export const formatPlayerTargetRangeObj = (rangeObj = {}, suffix = '') => {
-  if (!rangeObj || typeof rangeObj !== 'object') return '—'
+  if (!rangeObj || typeof rangeObj !== 'object') return EMPTY
 
   const min = rangeObj.min
   const max = rangeObj.max
 
-  if (!isValue(min) || !isValue(max)) return '—'
+  if (isValue(min) && isValue(max)) return `${min}–${max}${suffix}`
+  if (isValue(min)) return `מעל ${min}${suffix}`
+  if (isValue(max)) return `עד ${max}${suffix}`
 
-  return `${min}–${max}${suffix}`
+  return EMPTY
 }
 
 export const buildLowHighChips = ({
@@ -151,8 +157,17 @@ export const resolveActualColorByChips = ({
 
   if (!Number.isFinite(n)) return 'neutral'
 
-  const lowChip = chips.find((chip) => chip.id === 'low' || chip.id === 'redBelow')
-  const highChip = chips.find((chip) => chip.id === 'high' || chip.id === 'greenMin' || chip.id === 'target')
+  const lowChip = chips.find((chip) => {
+    return chip.id === 'low' || chip.id === 'redBelow'
+  })
+
+  const highChip = chips.find((chip) => {
+    return (
+      chip.id === 'high' ||
+      chip.id === 'greenMin' ||
+      chip.id === 'target'
+    )
+  })
 
   if (lowChip) {
     const lowValue = toNumber(String(lowChip.label).match(/-?\d+(\.\d+)?/)?.[0])
@@ -160,7 +175,9 @@ export const resolveActualColorByChips = ({
   }
 
   if (highChip) {
-    const highValue = toNumber(String(highChip.label).match(/-?\d+(\.\d+)?/)?.[0])
+    const highValue = toNumber(
+      String(highChip.label).match(/-?\d+(\.\d+)?/)?.[0]
+    )
     if (Number.isFinite(highValue) && n >= highValue) return 'success'
   }
 

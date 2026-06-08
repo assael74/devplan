@@ -16,6 +16,7 @@ import VideoCreateForm from '../VideoCreateForm'
 import AbilitiesCreateForm from '../AbilitiesCreateForm'
 import TrainingWeekCreateForm from '../TrainingWeekCreateForm.js'
 import TasksCreateForm from '../TasksCreateForm.js'
+import RoleCreateForm from '../RoleCreateForm'
 
 import { iconUi } from '../../core/icons/iconUi.js'
 
@@ -70,7 +71,7 @@ export const CREATE_TYPES = {
     title: 'פתיחת איש צוות',
     iconKey: 'addRole',
     entityType: 'role',
-    form: null,
+    form: RoleCreateForm,
     size: 'lg'
   },
 

@@ -20,7 +20,13 @@ function PathInline({ pathItems = [] }) {
         return (
           <React.Fragment key={key}>
             {typeof item?.onClick === 'function' ? (
-              <Link component="button" type="button" underline="none" onClick={item.onClick} sx={sx.link(isLast)}>
+              <Link
+                component="button"
+                type="button"
+                underline="none"
+                onClick={item.onClick}
+                sx={sx.link(isLast)}
+              >
                 {item?.label || ''}
               </Link>
             ) : (
@@ -30,7 +36,10 @@ function PathInline({ pathItems = [] }) {
             )}
 
             {!isLast ? (
-              <Typography level="body-xs" sx={{ color: 'text.tertiary', whiteSpace: 'nowrap' }}>
+              <Typography
+                level="body-xs"
+                sx={{ color: 'text.tertiary', whiteSpace: 'nowrap' }}
+              >
                 /
               </Typography>
             ) : null}
@@ -53,11 +62,11 @@ export default function HeaderStripMobile({
   pathItems,
 }) {
   const isClickable = typeof onAvatarClick === 'function'
+  const hasRight = !!right
 
   return (
     <Sheet variant="soft" sx={sx.headerSheet(sticky)}>
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-       {/* שורה ראשונה */}
         <Box sx={sx.topRow}>
           <Box sx={sx.iconBox}>
             <IconButton
@@ -75,11 +84,26 @@ export default function HeaderStripMobile({
               <PathInline pathItems={pathItems} />
             </Box>
           </Box>
+
+          <Box sx={{ flex: 1 }} />
+
+          {hasRight ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                flexShrink: 0,
+                mr: 'auto',
+              }}
+            >
+              {right}
+            </Box>
+          ) : null}
         </Box>
 
-         {/* שורה שניה */}
         <Box sx={sx.secondRow}>
-          <Box sx={{ minWidth: 0, mt: 0.5 }}>
+          <Box sx={{ minWidth: 0, mt: 0.5, flex: 1 }}>
             <Typography level="title-lg" noWrap>
               {title || ''}
             </Typography>
@@ -97,7 +121,7 @@ export default function HeaderStripMobile({
               sx={sx.clickBox(isClickable)}
               onKeyDown={
                 isClickable
-                  ? (e) => {
+                  ? e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
                         onAvatarClick()
@@ -106,7 +130,11 @@ export default function HeaderStripMobile({
                   : undefined
               }
             >
-              <Avatar src={avatarSrc || ''} alt={avatarAlt || ''} sx={{ width: 45, height: 45 }} />
+              <Avatar
+                src={avatarSrc || ''}
+                alt={avatarAlt || ''}
+                sx={{ width: 45, height: 45 }}
+              />
               <Box className="_hdrAvatarOverlay" sx={sx.avatarBox} />
             </Box>
           </Box>

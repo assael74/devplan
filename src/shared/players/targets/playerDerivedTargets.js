@@ -1,6 +1,5 @@
 // src/shared/players/targets/playerDerivedTargets.js
 
-//import { resolveTeamTargetProfileFromTeam } from '../../teams/targets/index.js'
 import { resolveTeamTargetProfileFromTeam } from '../../teams/targets/index.js'
 
 import {
@@ -14,6 +13,10 @@ import {
 import {
   buildPlayerExplicitTargets,
 } from './playerExplicitTargets.js'
+
+import {
+  buildPlayerTargetBenchmark,
+} from './playerTargets.benchmark.js'
 
 import {
   resolvePlayerPosition,
@@ -76,6 +79,194 @@ function buildPersonalAttackTargetShare({
   }
 }
 
+const rangeObj = (range = []) => {
+  if (!Array.isArray(range)) return { min: 0, max: 0 }
+
+  return {
+    min: range[0] === null || range[0] === undefined ? null : Number(range[0]),
+    max: range[1] === null || range[1] === undefined ? null : Number(range[1]),
+  }
+}
+
+const buildShareRange = ({
+  range,
+  total,
+}) => {
+  const base = Number(total || 0)
+
+  if (!base || !Array.isArray(range)) return [0, 0]
+
+  return range.map((value) => {
+    return Math.round((Number(value || 0) / base) * 1000) / 10
+  })
+}
+
+function buildBenchmarkExplicitTargets({
+  benchmarkTargets,
+  legacyExplicitTargets,
+  role,
+  position,
+  roleTarget,
+  positionTarget,
+  teamTargets,
+}) {
+  if (!benchmarkTargets?.hasBenchmark) return null
+
+  const forecastTargets = teamTargets?.forecastTargets || {}
+  const teamGoalsForTarget = Number(forecastTargets?.goalsFor || 0)
+  const teamGoalsAgainstTarget = Number(forecastTargets?.goalsAgainst || 0)
+
+  const goals = benchmarkTargets.goals || {}
+  const assists = benchmarkTargets.assists || {}
+  const goalContributions = benchmarkTargets.goalContributions || {}
+  const minutes = benchmarkTargets.minutes || {}
+  const defenseBenchmark = benchmarkTargets.defense || {}
+
+  const playerGoalsAgainstTargetRange = teamGoalsAgainstTarget
+    ? {
+        min: Math.round(
+          teamGoalsAgainstTarget *
+            (Number(
+              defenseBenchmark.goalsAgainstResponsibilityPct?.range?.[0] || 0
+            ) / 100)
+        ),
+        max: Math.round(
+          teamGoalsAgainstTarget *
+            (Number(
+              defenseBenchmark.goalsAgainstResponsibilityPct?.range?.[1] || 0
+            ) / 100)
+        ),
+      }
+    : legacyExplicitTargets?.defense?.playerGoalsAgainstTargetRange || {
+        min: 0,
+        max: 0,
+      }
+
+  const playerGoalsAgainstTarget = Math.round(
+    (Number(playerGoalsAgainstTargetRange.min || 0) +
+      Number(playerGoalsAgainstTargetRange.max || 0)) / 2
+  )
+
+  return {
+    roleId: role?.id || role?.value || '',
+    roleLabel: role?.label || '',
+    positionLayer: position?.layerKey || position?.id || '',
+    positionLabel: position?.layerLabel || position?.label || '',
+    targetPositionProfile: benchmarkTargets.targetPositionProfile || '',
+    positionGroup: benchmarkTargets.positionGroup || '',
+    positionGroupLabel: benchmarkTargets.positionGroupLabel || '',
+    targetSource: 'benchmark',
+
+    leagueNumGames: benchmarkTargets.leagueNumGames,
+    leagueGameTime: benchmarkTargets.leagueGameTime,
+
+    usage: {
+      minutesRange: minutes.minutesPct?.range || roleTarget?.minutesRange || null,
+      startsRange: minutes.startsPct?.range || roleTarget?.startsRange || null,
+      minutesTarget: minutes.minutes?.target || 0,
+      minutesTargetRange: rangeObj(minutes.minutes?.range),
+      startsTarget: minutes.starts?.target || 0,
+      startsTargetRange: rangeObj(minutes.starts?.range),
+    },
+
+    teamSeasonTargets: {
+      ...(legacyExplicitTargets?.teamSeasonTargets || {}),
+      goalsFor: teamGoalsForTarget,
+      goalsAgainst: teamGoalsAgainstTarget,
+      points: Number(forecastTargets?.points || 0),
+      pointsRate: Number(forecastTargets?.pointsRate || 0),
+      goalDifference: Number(forecastTargets?.goalDifference || 0),
+    },
+
+    attack: {
+      hasAttackTarget: benchmarkTargets.positionGroup !== 'GK',
+
+      contributionShareRange: buildShareRange({
+        range: goalContributions.range,
+        total: teamGoalsForTarget,
+      }),
+      goalsShareRange: buildShareRange({
+        range: goals.range,
+        total: teamGoalsForTarget,
+      }),
+      assistsShareRange: buildShareRange({
+        range: assists.range,
+        total: teamGoalsForTarget,
+      }),
+
+      goalTier: goals.tier || '',
+      goalTierLabel: goals.label || '',
+
+      goalContributionsTargetRange: rangeObj(goalContributions.range),
+      goalsTargetRange: rangeObj(goals.range),
+      assistsTargetRange: rangeObj(assists.range),
+
+      goalContributionsTarget: Number(goalContributions.target || 0),
+      goalsTarget: Number(goals.target || 0),
+      assistsTarget: Number(assists.target || 0),
+
+      contributionPerGameTarget:
+        Number(goalContributions.perGameTarget || 0),
+      goalsPerGameTarget: Number(goals.perGameTarget || 0),
+      assistsPerGameTarget: Number(assists.perGameTarget || 0),
+    },
+
+    defense: {
+      hasDefenseTarget: teamGoalsAgainstTarget > 0,
+      isDefensivePosition: ['DM', 'DEF', 'GK'].includes(
+        benchmarkTargets.positionGroup
+      ),
+      teamGoalsAgainstTarget,
+      goalsAgainstPerGameTarget:
+        legacyExplicitTargets?.defense?.goalsAgainstPerGameTarget || 0,
+      goalsAgainstResponsibilityPct:
+        defenseBenchmark.goalsAgainstResponsibilityPct || null,
+      cleanSheetPct: defenseBenchmark.cleanSheetPct || null,
+      playerGoalsAgainstTargetRange,
+      playerGoalsAgainstTarget,
+    },
+
+    position: {
+      contributionPerGameTarget:
+        positionTarget?.contributionPerGame?.greenMin || null,
+      goalsPerGameTarget:
+        positionTarget?.goalsPerGame?.greenMin || null,
+      assistsPerGameTarget:
+        positionTarget?.assistsPerGame?.greenMin || null,
+      teamGoalsSharePctTarget:
+        positionTarget?.teamGoalsSharePct?.greenMin || null,
+      cleanSheetPctTarget:
+        defenseBenchmark.cleanSheetPct?.target ||
+        positionTarget?.cleanSheetPct?.greenMin ||
+        null,
+    },
+
+    meta: {
+      hasExplicitTarget: true,
+      hasAttackTarget: benchmarkTargets.positionGroup !== 'GK',
+      hasDefenseTarget: teamGoalsAgainstTarget > 0,
+      hasTeamGoalsForTarget: teamGoalsForTarget > 0,
+      hasTeamGoalsAgainstTarget: teamGoalsAgainstTarget > 0,
+      targetSource: 'benchmark',
+      rollbackTargetSource: 'legacyExplicitTargets',
+    },
+  }
+}
+
+function shouldUseLegacyTargets({
+  player,
+  team,
+} = {}) {
+  return (
+    player?.targetEngine === 'legacy' ||
+    player?.targetsEngine === 'legacy' ||
+    player?.useLegacyTargets === true ||
+    team?.targetEngine === 'legacy' ||
+    team?.targetsEngine === 'legacy' ||
+    team?.useLegacyTargets === true
+  )
+}
+
 export function buildPlayerDerivedTargets({
   player,
   team,
@@ -91,7 +282,7 @@ export function buildPlayerDerivedTargets({
   const manualTargets = resolvePlayerManualTargets(player)
   const teamTargets = resolveTeamForecastTargets(activeTeam)
 
-  const explicitTargets = buildPlayerExplicitTargets({
+  const legacyExplicitTargets = buildPlayerExplicitTargets({
     player,
     team: activeTeam,
     role,
@@ -100,6 +291,43 @@ export function buildPlayerDerivedTargets({
     positionTarget,
     teamTargets,
   })
+
+  const benchmarkTargets = buildPlayerTargetBenchmark({
+    player,
+    team: activeTeam,
+    targetPositionProfile:
+      activeTeam?.targetPositionProfile ||
+      activeTeam?.targetProfileId ||
+      teamTargets?.targetProfileId,
+    squadRole: role?.id,
+    leagueNumGames:
+      activeTeam?.leagueNumGames ||
+      player?.team?.leagueNumGames ||
+      legacyExplicitTargets?.leagueNumGames,
+    leagueGameTime:
+      activeTeam?.leagueGameTime ||
+      player?.team?.leagueGameTime,
+  })
+
+  const benchmarkExplicitTargets = buildBenchmarkExplicitTargets({
+    benchmarkTargets,
+    legacyExplicitTargets,
+    role,
+    position,
+    roleTarget,
+    positionTarget,
+    teamTargets,
+  })
+
+  const useLegacyTargets = shouldUseLegacyTargets({
+    player,
+    team: activeTeam,
+  })
+
+  const explicitTargets =
+    useLegacyTargets
+      ? legacyExplicitTargets
+      : benchmarkExplicitTargets
 
   const manualAttackTargetShare = buildPersonalAttackTargetShare({
     manualTargets,
@@ -136,6 +364,8 @@ export function buildPlayerDerivedTargets({
 
     manualTargets,
     teamTargets,
+    benchmarkTargets,
+    legacyExplicitTargets,
     explicitTargets,
 
     attack: attackTargetShare,
@@ -143,7 +373,7 @@ export function buildPlayerDerivedTargets({
     defense: {
       goalsAgainstTarget,
       goalsAgainstPerGameTarget,
-      explicit: explicitTargets.defense,
+      explicit: explicitTargets?.defense || null,
     },
 
     meta: {
@@ -153,6 +383,13 @@ export function buildPlayerDerivedTargets({
       hasManualTargets: Object.keys(manualTargets || {}).length > 0,
       hasExplicitTargets:
         explicitTargets?.meta?.hasExplicitTarget === true,
+      hasBenchmarkTargets:
+        benchmarkTargets?.hasBenchmark === true,
+      targetSource:
+        explicitTargets?.meta?.targetSource ||
+        (useLegacyTargets ? 'legacy' : 'benchmarkUnavailable'),
+      rollbackTargetSource:
+        legacyExplicitTargets ? 'legacyExplicitTargets' : '',
       hasExplicitAttackTarget:
         explicitTargets?.meta?.hasAttackTarget === true,
       hasExplicitDefenseTarget:

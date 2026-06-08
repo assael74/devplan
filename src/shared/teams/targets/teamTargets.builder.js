@@ -13,6 +13,11 @@ import {
   resolveTeamTargetProfileByProjectedPoints,
 } from './teamTargets.selectors.js'
 
+import {
+  resolveTeamTargetBenchmark,
+  normalizeSeasonTotal,
+} from './teamTargets.benchmark.js'
+
 const clean = (value) => {
   return value == null ? '' : String(value).trim()
 }
@@ -31,6 +36,17 @@ const normalizeTargetPosition = (value) => {
 
 const normalizeTargetProfileId = (value) => {
   return clean(value)
+}
+
+const toRangeLabel = (range = []) => {
+  const min = toTargetNumber(range[0])
+  const max = toTargetNumber(range[1])
+
+  if (!min && !max) return ''
+  if (min && !max) return `מקומות ${min}+`
+  if (!min && max) return `עד מקום ${max}`
+
+  return `מקומות ${min} - ${max}`
 }
 
 const resolveProfileFromExactPosition = (targetPosition) => {
@@ -123,6 +139,112 @@ const getTargetLabel = ({
   return ''
 }
 
+const getBenchmarkTargetLabel = ({
+  targetPositionMode,
+  targetPosition,
+  benchmark,
+  fallbackProfile,
+}) => {
+  if (isExactTargetPositionMode(targetPositionMode)) {
+    return targetPosition ? `מקום ${targetPosition}` : ''
+  }
+
+  const profile = benchmark?.profile || fallbackProfile
+  const rangeLabel = toRangeLabel(benchmark?.rankRange || profile?.rankRange)
+  const label = profile?.label || fallbackProfile?.label || ''
+
+  if (label && rangeLabel) return `${label} · ${rangeLabel}`
+
+  return rangeLabel || label || ''
+}
+
+const buildBenchmarkGroups = (benchmark = {}) => {
+  const difficulty = benchmark?.difficultySuccessRate || {}
+  const scorers = benchmark?.scorersDistribution || {}
+  const squad = benchmark?.squadBalance || {}
+
+  return {
+    homeAway: {
+      home: { targetRate: toTargetNumber(benchmark.homeSuccessRate) },
+      away: { targetRate: toTargetNumber(benchmark.awaySuccessRate) },
+    },
+    difficulty: {
+      easy: { targetRate: toTargetNumber(difficulty.lower) },
+      equal: { targetRate: toTargetNumber(difficulty.equal) },
+      hard: { targetRate: toTargetNumber(difficulty.higher) },
+    },
+    scorers: {
+      scorer: scorers.scorer || null,
+      doubleDigitScorer: scorers.doubleDigitScorer || null,
+      supportScorer: scorers.supportScorer || null,
+      occasionalScorer: scorers.occasionalScorer || null,
+    },
+    squadUsage: {
+      top14MinutesSharePct: squad.top14MinutesSharePct || null,
+      playersOver500Minutes: squad.playersOver500Minutes || null,
+      playersOver1000Minutes: squad.playersOver1000Minutes || null,
+      playersOver1500Minutes: squad.playersOver1500Minutes || null,
+      playersOver2000Minutes: squad.playersOver2000Minutes || null,
+      playersOver20Starts: squad.playersOver20Starts || null,
+      unallocatedMinutesSharePct: squad.unallocatedMinutesSharePct || null,
+    },
+  }
+}
+
+const buildBenchmarkTargetItems = ({
+  targetPositionMode,
+  targetPosition,
+  benchmark,
+  targetProfile,
+  values,
+}) => {
+  return [
+    {
+      id: 'targetPosition',
+      label: 'יעד טבלה',
+      value: getBenchmarkTargetLabel({
+        targetPositionMode,
+        targetPosition,
+        benchmark,
+        fallbackProfile: targetProfile,
+      }),
+      unit: 'text',
+    },
+    {
+      id: 'targetPoints',
+      label: 'נקודות יעד',
+      value: values.points,
+      unit: 'points',
+    },
+    {
+      id: 'targetSuccessRate',
+      label: 'אחוז הצלחה יעד',
+      value: values.successRate,
+      unit: 'percent',
+    },
+    {
+      id: 'targetGoalDifference',
+      label: 'הפרש שערים יעד',
+      value: values.goalDifference,
+      unit: 'goals',
+    },
+    {
+      id: 'targetGoalsFor',
+      label: 'שערי זכות יעד',
+      value: values.goalsFor,
+      unit: 'goals',
+    },
+    {
+      id: 'targetGoalsAgainst',
+      label: 'שערי חובה יעד',
+      value: values.goalsAgainst,
+      unit: 'goals',
+    },
+  ].filter((item) => {
+    return item.value !== null && item.value !== undefined && item.value !== ''
+  })
+}
+
 const buildTargetItems = ({ targetPositionMode, targetPosition, targetProfile, }) => {
   const forecast = targetProfile?.targets?.forecast || {}
 
@@ -183,7 +305,14 @@ export function buildTeamTargetsState(raw = null) {
     targetProfileId,
   })
 
-  if (!targetProfile) {
+  const benchmark = resolveTeamTargetBenchmark({
+    targetPositionMode,
+    targetPosition,
+    targetPositionProfile: raw?.targetPositionProfile,
+    targetProfileId,
+  })
+
+  if (!targetProfile && !benchmark) {
     return {
       hasTargets: false,
       status: '',
@@ -200,6 +329,72 @@ export function buildTeamTargetsState(raw = null) {
       values: {},
       items: [],
       groups: {},
+      raw,
+    }
+  }
+
+  if (benchmark) {
+    const leagueNumGames = toTargetNumber(raw?.leagueNumGames)
+    const targetLabel = getBenchmarkTargetLabel({
+      targetPositionMode,
+      targetPosition,
+      benchmark,
+      fallbackProfile: targetProfile,
+    })
+    const rankRangeLabel = toRangeLabel(
+      benchmark?.rankRange || targetProfile?.rankRange
+    )
+
+    const values = {
+      targetLabel,
+      rankRangeLabel,
+      points: normalizeSeasonTotal({
+        value: benchmark.points,
+        leagueNumGames,
+      }),
+      successRate: toTargetNumber(benchmark.successRate),
+      goalDifference: normalizeSeasonTotal({
+        value: benchmark.goalDifference,
+        leagueNumGames,
+      }),
+      goalsFor: normalizeSeasonTotal({
+        value: benchmark.goalsFor,
+        leagueNumGames,
+      }),
+      goalsAgainst: normalizeSeasonTotal({
+        value: benchmark.goalsAgainst,
+        leagueNumGames,
+      }),
+    }
+
+    return {
+      hasTargets: true,
+
+      status: raw?.targetsStatus || raw?.status || '',
+      assignedAt: raw?.targetsAssignedAt || raw?.assignedAt || '',
+      assignedBy: raw?.targetsAssignedBy || raw?.assignedBy || '',
+
+      targetPositionMode,
+      targetPosition,
+      targetProfileId,
+
+      resolvedProfileId:
+        benchmark?.targetPositionProfile || targetProfile?.id || '',
+      targetProfile: benchmark?.profile || targetProfile || null,
+      targetBenchmark: benchmark,
+      targetSource: 'benchmark',
+
+      values,
+      items: buildBenchmarkTargetItems({
+        targetPositionMode,
+        targetPosition,
+        benchmark,
+        targetProfile,
+        values,
+      }),
+      groups: buildBenchmarkGroups(benchmark),
+      legacyGroups: targetProfile?.targets || {},
+
       raw,
     }
   }
@@ -240,6 +435,7 @@ export function buildTeamTargetsState(raw = null) {
 
     resolvedProfileId,
     targetProfile,
+    targetSource: 'legacy',
 
     values,
     items,

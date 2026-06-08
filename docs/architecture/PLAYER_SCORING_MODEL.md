@@ -1,5 +1,20 @@
 # Player Scoring Model
 
+## Related Targets Model
+
+Player scoring consumes player targets. The target-setting process itself is documented separately:
+
+```txt
+docs/architecture/targets/TARGET_SETTING_PROCESS.md
+docs/architecture/targets/PLAYER_TARGET_BENCHMARKS.md
+```
+
+The current benchmark source is:
+
+```txt
+src/shared/players/targets/playerTargets.benchmark.js
+```
+
 מסמך ארכיטקטורה למנוע ציון שחקנים בפרויקט DevPlan.
 
 ## מיקום

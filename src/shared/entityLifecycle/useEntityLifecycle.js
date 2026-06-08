@@ -194,7 +194,11 @@ export function useEntityLifecycle({ deps, notify, onAfterSuccess } = {}) {
       if (shouldDelete) {
         if (!deps?.remove) throw new Error('Missing deps.remove')
 
-        await deps.remove({ entityType: e.entityType, id: e.id })
+        await deps.remove({
+          entityType: e.entityType,
+          id: e.id,
+          meta: lifecycleState.meta || {},
+        })
         emit({ status: 'success', action: 'delete', entityType: e.entityType, entityName: e.name })
 
         const payload = { action: 'delete', entityType: e.entityType, id: e.id }

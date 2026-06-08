@@ -26,7 +26,7 @@ function getModalHeight(size) {
   const normalized = resolveSize(size)
 
   if (normalized === 'lg') {
-    return 'min(86dvh, 820px)'
+    return 'min(92dvh, 860px)'
   }
 
   if (normalized === 'md') {
@@ -81,7 +81,7 @@ export function buildCreateModalV2Sx(entityType, domainColor, size = 'sm') {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 1,
-      p: 1.5,
+      p: 1.15,
       borderBottom: '1px solid',
       borderColor: 'divider',
       flexShrink: 0,
@@ -153,18 +153,18 @@ export function buildCreateModalV2Sx(entityType, domainColor, size = 'sm') {
 
     content: {
       display: 'grid',
-      gap: 1.25,
-      p: 2,
-      px: { xs: 1.5, sm: 2.5 },
+      gap: 0.9,
+      p: 1.25,
+      px: { xs: 1.25, sm: 1.75 },
       overflowY: 'auto',
       overflowX: 'hidden',
       minHeight: 0,
     },
 
     footer: {
-      pt: 1,
-      px: 2,
-      pb: 1,
+      pt: 0.75,
+      px: 1.5,
+      pb: 0.75,
       borderTop: '1px solid',
       borderColor: 'divider',
       display: 'flex',

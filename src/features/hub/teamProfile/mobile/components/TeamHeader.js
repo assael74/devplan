@@ -9,18 +9,28 @@ import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.j
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
 
-const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
+const len = arr => (Array.isArray(arr) ? arr.length : 0)
+
+const resolveClubName = ({ entity, context }) => {
+  return (
+    context?.club?.clubName ||
+    context?.club?.name ||
+    entity?.club?.clubName ||
+    entity?.club?.name ||
+    entity?.clubName ||
+    ''
+  )
+}
 
 export default function TeamHeader({ entity, context, onBack }) {
   const navigate = useNavigate()
-
   const [openImg, setOpenImg] = useState(false)
 
   const src = resolveEntityAvatar({
     entityType: 'team',
     entity,
     parentEntity: context?.club || entity?.club,
-    subline: context?.club?.clubName || entity?.clubName || '',
+    subline: resolveClubName({ entity, context }),
   })
 
   const [headerPhoto, setHeaderPhoto] = useState(src)
@@ -46,10 +56,10 @@ export default function TeamHeader({ entity, context, onBack }) {
   }, [entity?.players, entity?.meetings, entity?.teamGames])
 
   const subtitle = useMemo(() => {
-    const clubName = context?.club?.clubName || entity?.clubName || ''
+    const clubName = resolveClubName({ entity, context })
     const teamYear = entity?.teamYear || ''
     return [clubName, teamYear].filter(Boolean).join(' · ')
-  }, [context?.club?.clubName, entity?.clubName, entity?.teamYear])
+  }, [context?.club, entity])
 
   const pathItems = useMemo(() => {
     return [
@@ -69,6 +79,7 @@ export default function TeamHeader({ entity, context, onBack }) {
       entityType="team"
       entityId={entity?.id}
       entityName={entity?.teamName}
+      entity={entity}
       metaCounts={metaCounts}
       isArchived={entity?.active === false}
     />
@@ -94,7 +105,7 @@ export default function TeamHeader({ entity, context, onBack }) {
         entityName={entity?.teamName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={(url) => {
+        onAfterSave={url => {
           setHeaderPhoto(
             `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
           )

@@ -1,4 +1,5 @@
 // src/ui/entityLifecycle/LifecycleProvider.js
+
 import React, { createContext, useContext, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
@@ -15,15 +16,20 @@ import { debugLog } from '../../../services/firestore/shorts/shortsDebug.utils.j
 import { SHORTS_DEBUG } from '../../../services/firestore/shorts/shortsDebug.config.js'
 import { updateByRouterFields } from '../../../services/firestore/shorts/shortsUpdateByRouter.js'
 
+import {
+  TeamCascadeDeleteDialog,
+  useTeamCascadeDeleteDialog,
+} from './delete/teamCascade/index.js'
+
 const Ctx = createContext(null)
 export const useLifecycle = () => useContext(Ctx)
 
-const mapToneToStatus = (tone) => (tone === 'danger' ? 'error' : 'success')
+const mapToneToStatus = tone => (tone === 'danger' ? 'error' : 'success')
 
 const pickShortDoc = (bucket, shortKey) => {
   if (!bucket) return null
   if (bucket[shortKey]) return bucket[shortKey]
-  if (Array.isArray(bucket)) return bucket.find((d) => d?.shortKey === shortKey || d?.key === shortKey) || null
+  if (Array.isArray(bucket)) return bucket.find(d => d?.shortKey === shortKey || d?.key === shortKey) || null
   return null
 }
 
@@ -33,7 +39,7 @@ const isEntityProfilePath = (pathname, base, id) => {
   return pathname === p || pathname.startsWith(`${p}/`)
 }
 
-const resolveRouterEntityType = (entityType) => {
+const resolveRouterEntityType = entityType => {
   if (entityType === 'player') return 'players'
   if (entityType === 'team') return 'teams'
   if (entityType === 'club') return 'clubs'
@@ -50,12 +56,53 @@ export default function LifecycleProvider({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { notify } = useSnackbar()
-  const { playersShorts, teamsShorts, clubsShorts, rolesShorts } = useCoreData()
+
+  const {
+    playersShorts,
+    teamsShorts,
+    clubsShorts,
+    rolesShorts,
+    gamesShorts,
+    meetingsShorts,
+    paymentsShorts,
+  } = useCoreData()
 
   const shortsBundle = useMemo(
-    () => ({ playersShorts, teamsShorts, clubsShorts, rolesShorts }),
-    [playersShorts, teamsShorts, clubsShorts, rolesShorts]
+    () => ({
+      playersShorts,
+      teamsShorts,
+      clubsShorts,
+      rolesShorts,
+      gamesShorts,
+      meetingsShorts,
+      paymentsShorts,
+    }),
+    [
+      playersShorts,
+      teamsShorts,
+      clubsShorts,
+      rolesShorts,
+      gamesShorts,
+      meetingsShorts,
+      paymentsShorts,
+    ]
   )
+
+  const handleAfterDeleteSuccess = ({ action, entityType, id }) => {
+    if (action !== 'delete') return
+    if (!id) return
+
+    const pathname = location?.pathname || ''
+
+    if (entityType === 'team') {
+      if (isEntityProfilePath(pathname, 'teams', id)) navigate('/hub', { replace: true })
+      return
+    }
+
+    if (entityType === 'player') {
+      if (isEntityProfilePath(pathname, 'players', id)) navigate('/hub', { replace: true })
+    }
+  }
 
   const lifecycle = useEntityLifecycle({
     deps: {
@@ -67,16 +114,20 @@ export default function LifecycleProvider({ children }) {
         if (entityType === 'team') {
           const doc = pickShortDoc(shortsBundle.playersShorts, 'players.playersTeam')
           const list = Array.isArray(doc?.list) ? doc.list : []
-          const players = list.filter((x) => x?.teamId === id).length
+          const players = list.filter(x => x?.teamId === id).length
+
           if (SHORTS_DEBUG.enabled) debugLog('GET_META:team', { teamId: id, players })
+
           return { ...base, players }
         }
 
         if (entityType === 'club') {
           const doc = pickShortDoc(shortsBundle.teamsShorts, 'teams.teamsInfo')
           const list = Array.isArray(doc?.list) ? doc.list : []
-          const teams = list.filter((x) => x?.clubId === id).length
+          const teams = list.filter(x => x?.clubId === id).length
+
           if (SHORTS_DEBUG.enabled) debugLog('GET_META:club', { clubId: id, teams })
+
           return { ...base, teams }
         }
 
@@ -85,7 +136,6 @@ export default function LifecycleProvider({ children }) {
           return { ...base }
         }
 
-        // staff/roles כרגע בלי meta מיוחד
         return { ...base }
       },
 
@@ -142,15 +192,13 @@ export default function LifecycleProvider({ children }) {
       },
 
       remove: async ({ entityType, id }) => {
-        console.log('[LIFECYCLE remove] enter', { entityType, id })
         const fn = deleteActions[entityType]
-        console.log(deleteActions)
         if (!fn) throw new Error(`No delete action for entityType "${entityType}"`)
         return fn({ id })
       },
     },
 
-    notify: (payload) => {
+    notify: payload => {
       const isArchive = payload?.action === 'archive' || payload?.action === 'restore'
 
       notify({
@@ -163,29 +211,34 @@ export default function LifecycleProvider({ children }) {
       })
     },
 
-    onAfterSuccess: ({ action, entityType, id }) => {
-      if (action !== 'delete') return
-      if (!id) return
-
-      const pathname = location?.pathname || ''
-
-      if (entityType === 'team') {
-        if (isEntityProfilePath(pathname, 'teams', id)) navigate('/hub', { replace: true })
-        return
-      }
-
-      if (entityType === 'player') {
-        if (isEntityProfilePath(pathname, 'players', id)) navigate('/hub', { replace: true })
-      }
-    },
+    onAfterSuccess: handleAfterDeleteSuccess,
   })
 
+  const teamCascadeDelete = useTeamCascadeDeleteDialog({
+    shorts: shortsBundle,
+    notify,
+    onAfterSuccess: handleAfterDeleteSuccess,
+  })
+
+  const value = useMemo(
+    () => ({
+      ...lifecycle,
+      ...teamCascadeDelete,
+    }),
+    [lifecycle, teamCascadeDelete]
+  )
+
   return (
-    <Ctx.Provider value={lifecycle}>
+    <Ctx.Provider value={value}>
       {children}
+
       <ArchiveEntityDialog {...lifecycle.archiveDialogProps} />
       <EntityLifecycleDialog {...lifecycle.lifecycleDialogProps} />
       <ArchiveRestoreEntityDialog {...lifecycle.restoreDialogProps} />
+
+      <TeamCascadeDeleteDialog
+        {...teamCascadeDelete.teamCascadeDeleteDialogProps}
+      />
     </Ctx.Provider>
   )
 }

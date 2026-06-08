@@ -11,6 +11,9 @@ export const listSx = {
   }),
 
   row: (selected) => ({
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
     px: 1,
     py: 1,
     display: 'flex',

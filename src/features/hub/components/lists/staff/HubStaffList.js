@@ -15,15 +15,43 @@ export default function HubStaffList({ rows = [], onSelect }) {
   const [selectedId, setSelectedId] = useState(null)
 
   return (
-    <Sheet sx={{ p: 0.75 }}>
-      <List sx={{ p: 0, display: 'grid', gap: 0.75 }}>
+    <Sheet
+      sx={{
+        p: 0.75,
+        width: '100%',
+        minWidth: 0,
+        height: '100%',
+        maxHeight: 'calc(100vh - 230px)',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        borderRadius: 12,
+      }}
+      className="dpScrollThin"
+    >
+      <List
+        sx={{
+          p: 0,
+          m: 0,
+          width: '100%',
+          display: 'grid',
+          gap: 0.75,
+        }}
+      >
         {rows.map((row) => {
           const id = row?.id
           const title = row?.fullName || 'איש צוות'
           const rowVm = buildStaffRowVm(row, metaById)
 
           return (
-            <ListItem key={id || title} sx={{ px: 0, py: 0 }}>
+            <ListItem
+              key={id || title}
+              sx={{
+                px: 0,
+                py: 0,
+                width: '100%',
+                display: 'block',
+              }}
+            >
               <StaffRow
                 staff={rowVm}
                 selected={selectedId === id}

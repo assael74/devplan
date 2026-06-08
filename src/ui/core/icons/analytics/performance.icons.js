@@ -1,5 +1,8 @@
 import {
+  Adjust,
   BarChart,
+  ControlPoint,
+  EmojiEvents,
   ElectricBolt,
   FitnessCenter,
   Insights,
@@ -13,8 +16,10 @@ import {
   Feed,
   HighQuality,
   Speed,
+  SportsSoccer,
   CrisisAlert,
-  AssignmentInd
+  AssignmentInd,
+  RemoveCircleOutline
 } from '@mui/icons-material';
 
 export const performanceIcons = {
@@ -38,4 +43,9 @@ export const performanceIcons = {
   performanceProfile: <AssignmentInd />,
   scoringRating: <Speed />,
   scoringImpact: <TrendingUp />,
+  scorer: <SportsSoccer />,
+  doubleDigitScorer: <EmojiEvents />,
+  complementaryScorer: <ControlPoint />,
+  occasionalScorer: <Adjust />,
+  noGoalTarget: <RemoveCircleOutline />,
 };

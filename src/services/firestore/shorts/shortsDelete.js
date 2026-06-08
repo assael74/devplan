@@ -146,3 +146,97 @@ export async function deleteShortItemById({ shortKey, id, requireFound = false }
     dryRun: res.dryRun,
   }
 }
+
+export async function deleteShortItemsByIds({
+  shortKeys,
+  ids,
+  requireAnyFound = true,
+  requireAllFound = false,
+}) {
+  ensureShortKeys(shortKeys)
+
+  const cleanIds = Array.from(new Set((ids || []).filter(Boolean)))
+  if (!cleanIds.length) {
+    return {
+      ids: [],
+      foundDocs: 0,
+      totalRemoved: 0,
+      dryRun: SHORTS_DEBUG.dryRun,
+    }
+  }
+
+  const idSet = new Set(cleanIds)
+  const metas = shortKeys.map(resolveRefMeta)
+  const refs = metas.map(buildDocRef)
+
+  logStart('DELETE_MANY_IDS:start', {
+    ids: cleanIds,
+    idsCount: cleanIds.length,
+    count: shortKeys.length,
+    docs: shortKeys.map((k, i) => ({
+      shortKey: k,
+      docPath: `${metas[i].collection}/${metas[i].docId}`,
+    })),
+  })
+
+  const res = await runTransaction(db, async (tx) => {
+    const plans = []
+    let foundDocs = 0
+    let totalRemoved = 0
+
+    for (let i = 0; i < refs.length; i++) {
+      const ref = refs[i]
+      const shortKey = shortKeys[i]
+      const meta = metas[i]
+
+      const snap = await tx.get(ref)
+      const data = snap.exists() ? snap.data() : {}
+      const list = normalizeList(data)
+
+      const before = list.length
+      const nextList = list.filter((x) => !idSet.has(x?.id))
+      const removed = before - nextList.length
+      const after = nextList.length
+
+      if (removed > 0) foundDocs += 1
+      totalRemoved += removed
+
+      plans.push({ ref, data, nextList, shortKey, removed })
+
+      debugLog('DELETE_MANY_IDS:plan', {
+        shortKey,
+        docPath: `${meta.collection}/${meta.docId}`,
+        before,
+        after,
+        removed,
+      })
+    }
+
+    if (requireAllFound && foundDocs !== shortKeys.length) {
+      throw new Error(
+        `[shortsDelete] ids not found in all lists (found in ${foundDocs}/${shortKeys.length})`
+      )
+    }
+
+    if (requireAnyFound && foundDocs === 0) {
+      throw new Error('[shortsDelete] ids not found in any list')
+    }
+
+    if (SHORTS_DEBUG.dryRun) {
+      debugLog('DELETE_MANY_IDS:dry-run', { ids: cleanIds, foundDocs, totalRemoved })
+      return { ids: cleanIds, foundDocs, totalRemoved, dryRun: true }
+    }
+
+    for (const p of plans) {
+      if (p.removed > 0) {
+        tx.set(p.ref, { ...p.data, list: p.nextList }, { merge: true })
+        debugLog('DELETE_MANY_IDS:write', { shortKey: p.shortKey, removed: p.removed })
+      }
+    }
+
+    return { ids: cleanIds, foundDocs, totalRemoved, dryRun: false }
+  })
+
+  debugLog('DELETE_MANY_IDS:commit:done', res)
+  return res
+}

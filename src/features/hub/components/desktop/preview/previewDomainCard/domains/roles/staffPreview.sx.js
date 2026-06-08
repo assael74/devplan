@@ -2,50 +2,67 @@
 
 export const staffPreviewSx = {
   sheet: {
-    p: 1.25,
+    p: 1,
     borderRadius: 12,
     bgcolor: 'background.surface',
     borderColor: 'divider',
+    minHeight: 0,
+  },
+
+  formScroll: {
+    maxHeight: 'calc(100dvh - 280px)',
+    minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    pr: 0.25,
+  },
+
+  row0: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: '0.5fr 1.25fr 1.25fr' },
+    gap: 0.75,
+    alignItems: 'start',
+    mb: 1,
   },
 
   row1: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: '0.5fr 1.25fr 1.25fr' },
-    gap: 1,
+    gridTemplateColumns: { xs: '1fr', md: '1fr' },
+    gap: 0.75,
     alignItems: 'start',
-    mb: 3,
+    mb: 1,
   },
 
   row2: {
     display: 'grid',
     gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-    gap: 1,
+    gap: 0.75,
     alignItems: 'start',
-    mb: 2,
+    mb: 1,
   },
 
   row3: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: '1fr' },
-    gap: 1,
+    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+    gap: 0.75,
     alignItems: 'start',
-    mb: 3,
+    mb: 1,
   },
 
-  activeWrap: { display: 'flex', alignItems: 'flex-end', pt: 3 },
+  activeWrap: { display: 'flex', alignItems: 'flex-end', pt: 2.25 },
 
   footer: {
     gridColumn: '1 / -1',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    mt: 1.5,
-    pt: 1.5,
+    mt: 0.75,
+    pt: 0.75,
     borderTop: '1px solid',
     borderColor: 'divider',
   },
 
-  footerActions: { display: 'flex', gap: 1 },
+  footerActions: { display: 'flex', gap: 0.75 },
 
   footerHint: { opacity: 0.7 },
 

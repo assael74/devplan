@@ -2,7 +2,7 @@ import React from 'react'
 import { Drawer, Box, Typography, ModalClose } from '@mui/joy'
 import SideNav from './SideNav'
 
-export default function SideNavDrawer({ open, onClose, badges, anchor = 'right' }) {
+export default function SideNavDrawer({ open, onClose, badges, navMode = 'full', anchor = 'right' }) {
   return (
     <Drawer open={open} onClose={onClose} anchor={anchor} size="sm" sx={{ '--Drawer-horizontalSize': '290px' }}>
       {/* --- כותרת --- */}
@@ -17,7 +17,7 @@ export default function SideNavDrawer({ open, onClose, badges, anchor = 'right' 
       </Box>
 
       {/* --- תפריט --- */}
-      <SideNav onNavigate={onClose} badges={badges} />
+      <SideNav onNavigate={onClose} badges={badges} navMode={navMode} />
     </Drawer>
   )
 }

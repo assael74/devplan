@@ -9,6 +9,7 @@ import { safeText } from '../management.safe.js'
 
 export const TARGET_POSITION_LABELS = {
   top: 'צמרת · מקומות 1 - 4',
+  midTop: 'אמצע עליון · מקומות 5 - 8',
   midHigh: 'אמצע עליון · מקומות 5 - 8',
   midLow: 'אמצע תחתון · מקומות 9 - 13',
   bottom: 'תחתון · מקום 14 ומטה',

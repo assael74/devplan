@@ -91,7 +91,7 @@ export const sharedSx = {
     minWidth: 0,
     flex: 1,
     display: 'flex',
-    flexDirection: 'column',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
 

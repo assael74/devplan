@@ -2,7 +2,7 @@
 
 export const TEAM_TARGET_DEFAULT_SQUAD_SIZE = 24
 
-export const emptyTargetText = '—'
+export const emptyTargetText = '-'
 
 export const isTargetValue = (value) => {
   return value !== null && value !== undefined && value !== ''
@@ -15,14 +15,19 @@ export const formatTargetValue = (value, suffix = '') => {
 
 export const formatChipValue = (value, suffix = '') => {
   if (!isTargetValue(value)) return ''
+  if (Number(value) === 1 && String(suffix).trim() === 'שחקנים') {
+    return '1 שחקן'
+  }
+
   return `${value}${suffix}`
 }
 
-export const pctToPlayers = ( pct, squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
+export const pctToPlayers = (
+  pct,
+  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
+) => {
   const n = Number(pct)
-
   if (!Number.isFinite(n)) return ''
-
   return Math.round((n / 100) * squadSize)
 }
 
@@ -31,171 +36,292 @@ export const formatPointsPct = (value) => {
   return `${value}% נקודות`
 }
 
-export const formatPlayersPct = ( value, squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
+export const formatPlayersPct = (
+  value,
+  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
+) => {
   const players = pctToPlayers(value, squadSize)
-
   if (!isTargetValue(players)) return ''
-
   return `${players} שחקנים`
 }
 
-export const formatPlayersRange = ( range = [], squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE ) => {
+export const formatPlayersRange = (
+  range = [],
+  squadSize = TEAM_TARGET_DEFAULT_SQUAD_SIZE
+) => {
   if (!Array.isArray(range)) return ''
 
   const min = pctToPlayers(range[0], squadSize)
   const max = pctToPlayers(range[1], squadSize)
 
   if (!isTargetValue(min) || !isTargetValue(max)) return ''
-
-  return `${min}–${max} שחקנים`
+  return `${min}-${max} שחקנים`
 }
+
+export const formatCountRange = (range = [], suffix = '') => {
+  if (!Array.isArray(range)) return ''
+
+  const min = Number(range[0])
+  const max = Number(range[1])
+
+  if (!Number.isFinite(min) && !Number.isFinite(max)) return ''
+  if (Number.isFinite(min) && Number.isFinite(max)) {
+    if (min === max) return `${min}${suffix}`
+    return `${min}-${max}${suffix}`
+  }
+  if (Number.isFinite(min)) return `${min}+${suffix}`
+
+  return `עד ${max}${suffix}`
+}
+
+const isExactMode = (mode) => String(mode || '').trim() === 'exact'
+
+const makeChip = ({ id, label, color = 'success', variant = 'soft' }) => {
+  if (!label) return null
+
+  return {
+    id,
+    label,
+    color,
+    variant,
+  }
+}
+
+const compactChips = (chips = []) => chips.filter(Boolean)
 
 export const buildPointsRuleChips = (rule = {}) => {
   if (!rule || typeof rule !== 'object') return []
 
-  const chips = []
-
-  if (isTargetValue(rule.targetRate)) {
-    chips.push({
-      id: 'targetRate',
-      label: formatPointsPct(rule.targetRate),
-      color: 'success',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.greenMin)) {
-    chips.push({
-      id: 'greenMin',
-      label: `מ־${formatPointsPct(rule.greenMin)}`,
-      color: 'success',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.greenMax)) {
-    chips.push({
-      id: 'greenMax',
-      label: `עד ${formatPointsPct(rule.greenMax)}`,
-      color: 'success',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.redBelow)) {
-    chips.push({
-      id: 'redBelow',
-      label: `מתחת ${formatPointsPct(rule.redBelow)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.redAbove)) {
-    chips.push({
-      id: 'redAbove',
-      label: `מעל ${formatPointsPct(rule.redAbove)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.redMin)) {
-    chips.push({
-      id: 'redMin',
-      label: `מ־${formatPointsPct(rule.redMin)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  return chips
+  return compactChips([
+    isTargetValue(rule.targetRate)
+      ? makeChip({
+          id: 'targetRate',
+          label: formatPointsPct(rule.targetRate),
+        })
+      : null,
+    isTargetValue(rule.greenMin)
+      ? makeChip({
+          id: 'greenMin',
+          label: `מ-${formatPointsPct(rule.greenMin)}`,
+        })
+      : null,
+    isTargetValue(rule.greenMax)
+      ? makeChip({
+          id: 'greenMax',
+          label: `עד ${formatPointsPct(rule.greenMax)}`,
+        })
+      : null,
+    isTargetValue(rule.redBelow)
+      ? makeChip({
+          id: 'redBelow',
+          label: `מתחת ${formatPointsPct(rule.redBelow)}`,
+          color: 'danger',
+        })
+      : null,
+    isTargetValue(rule.redAbove)
+      ? makeChip({
+          id: 'redAbove',
+          label: `מעל ${formatPointsPct(rule.redAbove)}`,
+          color: 'danger',
+        })
+      : null,
+    isTargetValue(rule.redMin)
+      ? makeChip({
+          id: 'redMin',
+          label: `מ-${formatPointsPct(rule.redMin)}`,
+          color: 'danger',
+        })
+      : null,
+  ])
 }
 
-export const buildScorersRuleChips = (rule = {}, suffix = '') => {
+export const buildScorersRuleChips = (rule = {}, suffix = '', options = {}) => {
   if (!rule || typeof rule !== 'object') return []
 
-  const chips = []
-
-  if (isTargetValue(rule.greenMin)) {
-    chips.push({
-      id: 'greenMin',
-      label: `מ־${formatChipValue(rule.greenMin, suffix)}`,
-      color: 'success',
-      variant: 'soft',
-    })
+  if (isExactMode(options.targetPositionMode)) {
+    return compactChips([
+      isTargetValue(rule.target)
+        ? makeChip({
+            id: 'target',
+            label: formatChipValue(rule.target, suffix),
+            color: 'primary',
+          })
+        : null,
+    ])
   }
 
-  if (isTargetValue(rule.greenMax)) {
-    chips.push({
-      id: 'greenMax',
-      label: `עד ${formatChipValue(rule.greenMax, suffix)}`,
-      color: 'success',
-      variant: 'soft',
-    })
+  if (Array.isArray(rule.range)) {
+    return compactChips([
+      makeChip({
+        id: 'range',
+        label: formatCountRange(rule.range, suffix),
+      }),
+    ])
   }
 
-  if (isTargetValue(rule.redBelow)) {
-    chips.push({
-      id: 'redBelow',
-      label: `מתחת ${formatChipValue(rule.redBelow, suffix)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  if (isTargetValue(rule.redAbove)) {
-    chips.push({
-      id: 'redAbove',
-      label: `מעל ${formatChipValue(rule.redAbove, suffix)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  return chips
+  return compactChips([
+    isTargetValue(rule.target)
+      ? makeChip({
+          id: 'target',
+          label: formatChipValue(rule.target, suffix),
+          color: 'primary',
+        })
+      : null,
+    isTargetValue(rule.greenMin)
+      ? makeChip({
+          id: 'greenMin',
+          label: `מ-${formatChipValue(rule.greenMin, suffix)}`,
+        })
+      : null,
+    isTargetValue(rule.greenMax)
+      ? makeChip({
+          id: 'greenMax',
+          label: `עד ${formatChipValue(rule.greenMax, suffix)}`,
+        })
+      : null,
+    isTargetValue(rule.redBelow)
+      ? makeChip({
+          id: 'redBelow',
+          label: `מתחת ${formatChipValue(rule.redBelow, suffix)}`,
+          color: 'danger',
+        })
+      : null,
+    isTargetValue(rule.redAbove)
+      ? makeChip({
+          id: 'redAbove',
+          label: `מעל ${formatChipValue(rule.redAbove, suffix)}`,
+          color: 'danger',
+        })
+      : null,
+  ])
 }
 
-export const buildSquadUsageChips = ( rule = {}, options = {} ) => {
+export const buildCountRuleChips = (rule = {}, suffix = '', options = {}) => {
+  if (!rule || typeof rule !== 'object') return []
+
+  if (isExactMode(options.targetPositionMode)) {
+    return compactChips([
+      isTargetValue(rule.target)
+        ? makeChip({
+            id: 'target',
+            label: formatChipValue(rule.target, suffix),
+            color: 'primary',
+          })
+        : null,
+    ])
+  }
+
+  if (Array.isArray(rule.greenRange)) {
+    return compactChips([
+      makeChip({
+        id: 'greenRange',
+        label: formatCountRange(rule.greenRange, suffix),
+      }),
+    ])
+  }
+
+  return compactChips([
+    isTargetValue(rule.target)
+      ? makeChip({
+          id: 'target',
+          label: formatChipValue(rule.target, suffix),
+          color: 'primary',
+        })
+      : null,
+    isTargetValue(rule.redLowMax)
+      ? makeChip({
+          id: 'redLowMax',
+          label: `מתחת ${formatChipValue(rule.redLowMax, suffix)}`,
+          color: 'danger',
+        })
+      : null,
+    isTargetValue(rule.redHighMin)
+      ? makeChip({
+          id: 'redHighMin',
+          label: `מעל ${formatChipValue(rule.redHighMin, suffix)}`,
+          color: 'danger',
+        })
+      : null,
+  ])
+}
+
+export const buildPercentRangeChips = (rule = {}, options = {}) => {
+  if (!rule || typeof rule !== 'object') return []
+
+  if (isExactMode(options.targetPositionMode)) {
+    return compactChips([
+      isTargetValue(rule.target)
+        ? makeChip({
+            id: 'target',
+            label: formatChipValue(rule.target, '%'),
+            color: 'primary',
+          })
+        : null,
+    ])
+  }
+
+  if (Array.isArray(rule.greenRange)) {
+    return compactChips([
+      makeChip({
+        id: 'greenRange',
+        label: formatCountRange(rule.greenRange, '%'),
+      }),
+    ])
+  }
+
+  return compactChips([
+    isTargetValue(rule.target)
+      ? makeChip({
+          id: 'target',
+          label: formatChipValue(rule.target, '%'),
+          color: 'primary',
+        })
+      : null,
+    isTargetValue(rule.redLowMax)
+      ? makeChip({
+          id: 'redLowMax',
+          label: `מתחת ${formatChipValue(rule.redLowMax, '%')}`,
+          color: 'danger',
+        })
+      : null,
+    isTargetValue(rule.redHighMin)
+      ? makeChip({
+          id: 'redHighMin',
+          label: `מעל ${formatChipValue(rule.redHighMin, '%')}`,
+          color: 'danger',
+        })
+      : null,
+  ])
+}
+
+export const buildSquadUsageChips = (rule = {}, options = {}) => {
   if (!rule || typeof rule !== 'object') return []
 
   const squadSize = Number(options.squadSize) || TEAM_TARGET_DEFAULT_SQUAD_SIZE
   const includeRiskChips = options.includeRiskChips === true
 
-  const chips = []
-
-  if (Array.isArray(rule.greenRange)) {
-    const label = formatPlayersRange(rule.greenRange, squadSize)
-
-    if (label) {
-      chips.push({
-        id: 'greenRange',
-        label,
-        color: 'success',
-        variant: 'soft',
-      })
-    }
-  }
-
-  if (includeRiskChips && isTargetValue(rule.redBelow)) {
-    chips.push({
-      id: 'redBelow',
-      label: `מתחת ${formatPlayersPct(rule.redBelow, squadSize)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  if (includeRiskChips && isTargetValue(rule.redAbove)) {
-    chips.push({
-      id: 'redAbove',
-      label: `מעל ${formatPlayersPct(rule.redAbove, squadSize)}`,
-      color: 'danger',
-      variant: 'soft',
-    })
-  }
-
-  return chips
+  return compactChips([
+    Array.isArray(rule.greenRange)
+      ? makeChip({
+          id: 'greenRange',
+          label: formatPlayersRange(rule.greenRange, squadSize),
+        })
+      : null,
+    includeRiskChips && isTargetValue(rule.redBelow)
+      ? makeChip({
+          id: 'redBelow',
+          label: `מתחת ${formatPlayersPct(rule.redBelow, squadSize)}`,
+          color: 'danger',
+        })
+      : null,
+    includeRiskChips && isTargetValue(rule.redAbove)
+      ? makeChip({
+          id: 'redAbove',
+          label: `מעל ${formatPlayersPct(rule.redAbove, squadSize)}`,
+          color: 'danger',
+        })
+      : null,
+  ])
 }
 
 export const buildHomeAwayRows = (homeAway = {}) => {
@@ -233,24 +359,155 @@ export const buildDifficultyRows = (difficulty = {}) => {
   ]
 }
 
-export const buildScorersRows = (scorers = {}) => {
+export const buildScorersRows = (scorers = {}, options = {}) => {
+  if (
+    scorers.scorer ||
+    scorers.doubleDigitScorer ||
+    scorers.supportScorer ||
+    scorers.occasionalScorer
+  ) {
+    return [
+      {
+        id: 'scorer',
+        label: 'סקורר',
+        chips: buildScorersRuleChips(
+          scorers.scorer,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים מעל 15 שערים',
+      },
+      {
+        id: 'doubleDigitScorer',
+        label: 'כובש דו ספרתי',
+        chips: buildScorersRuleChips(
+          scorers.doubleDigitScorer,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים מעל 10 ועד 15 שערים',
+      },
+      {
+        id: 'supportScorer',
+        label: 'כובש משלים',
+        chips: buildScorersRuleChips(
+          scorers.supportScorer,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים מעל 5 ועד 10 שערים',
+      },
+      {
+        id: 'occasionalScorer',
+        label: 'כובש מזדמן',
+        chips: buildScorersRuleChips(
+          scorers.occasionalScorer,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים מעל 0 ועד 5 שערים',
+      },
+    ]
+  }
+
   return [
     {
       id: 'scorers10Plus',
       label: 'כובשי 10+',
-      chips: buildScorersRuleChips(scorers.scorers10Plus),
+      chips: buildScorersRuleChips(scorers.scorers10Plus, '', options),
       helper: 'שחקני הכרעה ברמת עונה',
     },
     {
       id: 'scorers5Plus',
       label: 'כובשי 5+',
-      chips: buildScorersRuleChips(scorers.scorers5Plus),
+      chips: buildScorersRuleChips(scorers.scorers5Plus, '', options),
       helper: 'מוקדי שערים משמעותיים',
     },
   ]
 }
 
-export const buildSquadUsageRows = ( squadUsage = {}, options = {} ) => {
+export const buildSquadUsageRows = (squadUsage = {}, options = {}) => {
+  if (
+    squadUsage.top14MinutesSharePct ||
+    squadUsage.playersOver500Minutes ||
+    squadUsage.playersOver1000Minutes ||
+    squadUsage.playersOver1500Minutes ||
+    squadUsage.playersOver2000Minutes ||
+    squadUsage.playersOver20Starts ||
+    squadUsage.unallocatedMinutesSharePct
+  ) {
+    return [
+      {
+        id: 'top14MinutesSharePct',
+        label: 'נתח דקות לטופ 14',
+        chips: buildPercentRangeChips(
+          squadUsage.top14MinutesSharePct,
+          options
+        ),
+        helper: 'איזון עומס בין שחקני הליבה לשאר הסגל',
+      },
+      {
+        id: 'playersOver500Minutes',
+        label: 'שחקני 500+ דקות',
+        chips: buildCountRuleChips(
+          squadUsage.playersOver500Minutes,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים עם דקות משמעותיות',
+      },
+      {
+        id: 'playersOver1000Minutes',
+        label: 'שחקני 1000+ דקות',
+        chips: buildCountRuleChips(
+          squadUsage.playersOver1000Minutes,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקני רוטציה משמעותיים מתוך סגל 24',
+      },
+      {
+        id: 'playersOver1500Minutes',
+        label: 'שחקני 1500+ דקות',
+        chips: buildCountRuleChips(
+          squadUsage.playersOver1500Minutes,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקני ליבה בדקות גבוהות',
+      },
+      {
+        id: 'playersOver2000Minutes',
+        label: 'שחקני 2000+ דקות',
+        chips: buildCountRuleChips(
+          squadUsage.playersOver2000Minutes,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקני מפתח בהיקף דקות גבוה',
+      },
+      {
+        id: 'playersOver20Starts',
+        label: 'שחקני 20+ פתיחות',
+        chips: buildCountRuleChips(
+          squadUsage.playersOver20Starts,
+          ' שחקנים',
+          options
+        ),
+        helper: 'שחקנים עם מעמד פתיחה קבוע',
+      },
+      {
+        id: 'unallocatedMinutesSharePct',
+        label: 'דקות לא משויכות / שנתון צעיר',
+        chips: buildPercentRangeChips(
+          squadUsage.unallocatedMinutesSharePct,
+          options
+        ),
+        helper: 'טווח פתוח להסבר פערי דקות לא מנוצלים',
+      },
+    ]
+  }
+
   return [
     {
       id: 'players1000Pct',

@@ -164,16 +164,52 @@ export const createActions = {
 
   role: async ({ draft }) => {
     const id = makeId()
+    const now = Date.now()
+
+    const infoItem = omitEmpty({
+      id,
+
+      userId: draft?.userId || '',
+      authUid: draft?.authUid || '',
+
+      fullName: draft?.fullName || '',
+      active: draft?.active ?? true,
+      status: draft?.status || 'active',
+      type: draft?.type || '',
+
+      clubsId: Array.isArray(draft?.clubsId) ? draft.clubsId.filter(Boolean) : [],
+      teamsId: Array.isArray(draft?.teamsId) ? draft.teamsId.filter(Boolean) : [],
+
+      systemAccess: draft?.systemAccess || {},
+      moduleAccess: draft?.moduleAccess || {},
+
+      source: draft?.source || 'manual',
+      createdAt: now,
+      updatedAt: now,
+    })
 
     await createShort({
       shortKey: 'roles.rolesInfo',
-      item: {
-        id,
-        fullName: draft.fullName,
-        active: true,
-        type: draft.type,
-      },
+      item: infoItem,
     })
+
+    const contactItem = omitEmpty({
+      id,
+      email: draft?.email || '',
+      phone: draft?.phone || '',
+    })
+
+    if (contactItem.email || contactItem.phone) {
+      await createShort({
+        shortKey: 'roles.rolesContact',
+        item: contactItem,
+      })
+    }
+
+    return {
+      ...infoItem,
+      ...contactItem,
+    }
   },
 
   scouting: async ({ draft }) => {

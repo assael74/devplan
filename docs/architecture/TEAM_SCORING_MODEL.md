@@ -1,5 +1,20 @@
 # Team Scoring Model
 
+## Related Targets Model
+
+Team scoring measures performance against expectations. The target-setting and benchmark process is documented separately:
+
+```txt
+docs/architecture/targets/TARGET_SETTING_PROCESS.md
+docs/architecture/targets/TEAM_TARGET_BENCHMARKS.md
+```
+
+The current benchmark source is:
+
+```txt
+src/shared/teams/targets/teamTargets.benchmark.js
+```
+
 מסמך ארכיטקטורה למנוע ציון קבוצתי בפרויקט DevPlan.
 
 ## מיקום

@@ -13,11 +13,10 @@ import { uploadImageOnly } from '../../../../../services/firestore/storage/uploa
 
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 
-const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
+const len = arr => (Array.isArray(arr) ? arr.length : 0)
 
-const openExternalLink = (url) => {
+const openExternalLink = url => {
   if (!url) return
-
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
@@ -193,6 +192,7 @@ export default function TeamHeader({ entity, context }) {
               entityType="team"
               entityId={entity?.id}
               entityName={entity?.teamName}
+              entity={entity}
               metaCounts={metaCounts}
               isArchived={entity?.active === false}
             />
@@ -208,7 +208,7 @@ export default function TeamHeader({ entity, context }) {
         entityName={entity?.teamName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={(url) => {
+        onAfterSave={url => {
           setHeaderPhoto(
             `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
           )

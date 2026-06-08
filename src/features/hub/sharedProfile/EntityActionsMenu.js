@@ -1,4 +1,5 @@
 // features/hub/sharedProfile/EntityActionsMenu.js
+
 import React, { useMemo } from 'react'
 import { Dropdown, Menu, MenuButton, MenuItem, ListDivider, IconButton } from '@mui/joy'
 import MoreVertRounded from '@mui/icons-material/MoreVertRounded'
@@ -10,6 +11,7 @@ export default function EntityActionsMenu({
   entityType,
   entityId,
   entityName,
+  entity,
   metaCounts,
   disabled,
   isArchived,
@@ -17,33 +19,43 @@ export default function EntityActionsMenu({
   const lifecycle = useLifecycle()
 
   const canArchive = entityType !== 'scouting'
+  const canOpenCascadeDelete =
+    entityType === 'team' &&
+    !!entityId &&
+    typeof lifecycle?.openTeamCascadeDelete === 'function'
 
-  const entity = useMemo(
+  const lifecycleEntity = useMemo(
     () => ({
+      ...(entity || {}),
       entityType,
       id: entityId,
       name: entityName,
     }),
-    [entityType, entityId, entityName]
+    [entityType, entityId, entityName, entity]
   )
 
   const canOpen = !!entityType && !!entityId && !disabled
 
-  const stop = (e) => {
+  const stop = e => {
     e?.stopPropagation()
     e?.preventDefault()
   }
 
   const handleOpenLifecycle = () => {
-    lifecycle.openLifecycle(entity, metaCounts || null)
+    lifecycle.openLifecycle(lifecycleEntity, metaCounts || null)
+  }
+
+  const handleOpenCascadeDelete = () => {
+    lifecycle.openTeamCascadeDelete(lifecycleEntity)
   }
 
   const handleArchiveOrRestore = () => {
     if (isArchived) {
-      lifecycle.openRestore(entity)
+      lifecycle.openRestore(lifecycleEntity)
       return
     }
-    lifecycle.openArchive(entity)
+
+    lifecycle.openArchive(lifecycleEntity)
   }
 
   return (
@@ -62,31 +74,50 @@ export default function EntityActionsMenu({
         <MoreVertRounded />
       </MenuButton>
 
-      <Menu placement="bottom-end" sx={{ minWidth: 200 }}>
-      {canArchive ? (
-            <>
-              <MenuItem
-                onClick={(e) => {
-                  stop(e)
-                  handleArchiveOrRestore()
-                }}
-              >
-                {iconUi({ id: isArchived ? 'restore' : 'archive' })} {isArchived ? 'שחזור' : 'ארכוב'}
-              </MenuItem>
+      <Menu placement="bottom-end" sx={{ minWidth: 220 }}>
+        {canArchive ? (
+          <>
+            <MenuItem
+              onClick={e => {
+                stop(e)
+                handleArchiveOrRestore()
+              }}
+            >
+              {iconUi({ id: isArchived ? 'restore' : 'archive' })}
+              {isArchived ? 'שחזור' : 'ארכוב'}
+            </MenuItem>
 
-              <ListDivider />
-            </>
-          ) : null}
+            <ListDivider />
+          </>
+        ) : null}
 
         <MenuItem
           color="danger"
-          onClick={(e) => {
+          onClick={e => {
             stop(e)
             handleOpenLifecycle()
           }}
         >
-          {iconUi({ id: 'delete' })} מחיקה
+          {iconUi({ id: 'delete' })}
+          מחיקה רגילה
         </MenuItem>
+
+        {canOpenCascadeDelete ? (
+          <>
+            <ListDivider />
+
+            <MenuItem
+              color="danger"
+              onClick={e => {
+                stop(e)
+                handleOpenCascadeDelete()
+              }}
+            >
+              {iconUi({ id: 'delete' })}
+              מחיקה מלאה של קבוצה
+            </MenuItem>
+          </>
+        ) : null}
       </Menu>
     </Dropdown>
   )

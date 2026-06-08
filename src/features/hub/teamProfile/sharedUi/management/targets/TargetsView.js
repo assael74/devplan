@@ -129,10 +129,14 @@ export default function TargetsView({ targets, isMobile = false, print = false }
   const hasTargets = targets?.hasTargets === true
   const values = targets?.values || {}
   const groups = targets?.groups || {}
+  const targetRowsOptions = {
+    targetPositionMode: targets?.targetPositionMode,
+  }
 
   const squadUsageOptions = {
     squadSize: 24,
     includeRiskChips: false,
+    targetPositionMode: targets?.targetPositionMode,
   }
 
   if (!hasTargets) {
@@ -207,7 +211,7 @@ export default function TargetsView({ targets, isMobile = false, print = false }
         <TargetSection
           title="פיזור כובשים"
           subtitle="כמה ההתקפה צריכה להיות מגוונת ולא תלויה בשחקן אחד"
-          rows={buildScorersRows(groups.scorers)}
+          rows={buildScorersRows(groups.scorers, targetRowsOptions)}
           print={print}
         />
 

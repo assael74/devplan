@@ -80,6 +80,15 @@ export default function LoginForm() {
         >
           שכחתי סיסמה
         </Link>
+        
+        <Link
+          component="button"
+          type="button"
+          onClick={() => navigate('/register')}
+          underline="hover"
+        >
+          הרשמה למערכת
+        </Link>
       </div>
 
       <Button loading={pending} disabled={disabled} type="submit" sx={authSx.submitBtn}>

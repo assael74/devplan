@@ -31,12 +31,28 @@ export const makeInitDraft = (staff) => ({
   phone: staff?.phone || '',
   email: staff?.email || '',
   photo: staff?.photo || '',
+  authUid: staff?.authUid || '',
+  status: staff?.status || 'active',
+  systemAccess: {
+    level: staff?.systemAccess?.level || '',
+  },
+  moduleAccess: {
+    squadSimulator: {
+      enabled: Boolean(staff?.moduleAccess?.squadSimulator?.enabled),
+      role: staff?.moduleAccess?.squadSimulator?.role || 'owner',
+    },
+  },
 })
 
 const cloneDraft = (d) => ({
   ...d,
   clubsId: Array.isArray(d?.clubsId) ? [...d.clubsId] : [],
   teamsId: Array.isArray(d?.teamsId) ? [...d.teamsId] : [],
+  systemAccess: { ...(d?.systemAccess || {}) },
+  moduleAccess: {
+    ...(d?.moduleAccess || {}),
+    squadSimulator: { ...(d?.moduleAccess?.squadSimulator || {}) },
+  },
 })
 
 export function useStaffPreviewDraft(staff) {
@@ -61,6 +77,16 @@ export function useStaffPreviewDraft(staff) {
     if (draft.active !== baseline.active) return true
     if (draft.phone !== baseline.phone) return true
     if (draft.email !== baseline.email) return true
+    if (draft.authUid !== baseline.authUid) return true
+    if (draft.status !== baseline.status) return true
+    if ((draft?.systemAccess?.level || '') !== (baseline?.systemAccess?.level || '')) return true
+
+    const draftSim = draft?.moduleAccess?.squadSimulator || {}
+    const baseSim = baseline?.moduleAccess?.squadSimulator || {}
+
+    if (Boolean(draftSim.enabled) !== Boolean(baseSim.enabled)) return true
+    if (String(draftSim.role || '') !== String(baseSim.role || '')) return true
+
     return false
   }, [draft, baseline, staff])
 
@@ -73,6 +99,28 @@ export function useStaffPreviewDraft(staff) {
     if (draft.active !== baseline.active) patch.active = draft.active
     if (draft.phone !== baseline.phone) patch.phone = draft.phone
     if (draft.email !== baseline.email) patch.email = draft.email
+    if (draft.authUid !== baseline.authUid) patch.authUid = draft.authUid
+    if (draft.status !== baseline.status) patch.status = draft.status
+
+    const draftSystemLevel = draft?.systemAccess?.level || ''
+    const baseSystemLevel = baseline?.systemAccess?.level || ''
+
+    if (draftSystemLevel !== baseSystemLevel) {
+      patch.systemAccess = { level: draftSystemLevel }
+    }
+
+    const draftSim = draft?.moduleAccess?.squadSimulator || {}
+    const baseSim = baseline?.moduleAccess?.squadSimulator || {}
+
+    if (
+      Boolean(draftSim.enabled) !== Boolean(baseSim.enabled) ||
+      String(draftSim.role || '') !== String(baseSim.role || '')
+    ) {
+      patch.squadSimulatorAccess = {
+        enabled: Boolean(draftSim.enabled),
+        role: draftSim.role || 'owner',
+      }
+    }
     return patch
   }, [draft, baseline])
 
