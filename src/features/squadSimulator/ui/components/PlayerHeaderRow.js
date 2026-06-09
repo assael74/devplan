@@ -11,7 +11,6 @@ export default function PlayerHeaderRow() {
       <Box>מעמד</Box>
       <Box>ודאות</Box>
       <Box>עמדה</Box>
-      <Box>חוליה</Box>
       <Box>מדרגה</Box>
       <Box>שערים</Box>
       <Box>דקות</Box>

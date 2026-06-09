@@ -4,6 +4,7 @@ import {
   BENCH_SLOT_COUNT,
   DEFAULT_SIMULATOR_STATE,
   FORMATION_OPTIONS,
+  ROLE_OPTIONS,
 } from './simulatorUi.constants.js'
 
 export const createDraftPlayer = (overrides = {}) => ({
@@ -35,6 +36,22 @@ const pickPlayerPosition = player => {
   return ''
 }
 
+const pickPlayerSquadRole = player => {
+  const roleId = String(
+    player?.squadRole ||
+    player?.role ||
+    player?.playerRole ||
+    player?.squadStatus ||
+    ''
+  ).trim()
+
+  if (!roleId) return ''
+
+  return ROLE_OPTIONS.some(option => option.value === roleId || option.id === roleId)
+    ? roleId
+    : ''
+}
+
 export const createPlayerBankFromTeamPlayers = players => {
   return (Array.isArray(players) ? players : [])
     .map(player => createDraftPlayer({
@@ -42,7 +59,7 @@ export const createPlayerBankFromTeamPlayers = players => {
       sourcePlayerId: player?.id || player?.playerId || '',
       fullName: pickPlayerName(player),
       photo: player?.photo || '',
-      squadRole: '',
+      squadRole: pickPlayerSquadRole(player),
       confidenceLevel: '',
       primaryPosition: pickPlayerPosition(player) || 'S',
     }))

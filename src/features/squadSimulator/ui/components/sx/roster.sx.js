@@ -66,7 +66,7 @@ export const rosterSx = {
   playerHeaderRow: {
     display: { xs: 'none', md: 'grid' },
     gridTemplateColumns:
-      'minmax(100px, .9fr) minmax(122px, .78fr) minmax(124px, .82fr) minmax(136px, .88fr) minmax(52px, .32fr) repeat(3, minmax(66px, .38fr)) 38px',
+      'minmax(100px, .9fr) minmax(122px, .78fr) minmax(124px, .82fr) minmax(136px, .88fr) repeat(3, minmax(66px, .38fr)) 38px',
     gap: 1,
     px: 1.25,
     pt: 0.5,
@@ -80,7 +80,7 @@ export const rosterSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'minmax(100px, .9fr) minmax(122px, .78fr) minmax(124px, .82fr) minmax(136px, .88fr) minmax(52px, .32fr) repeat(3, minmax(66px, .38fr)) 38px',
+      md: 'minmax(100px, .9fr) minmax(122px, .78fr) minmax(124px, .82fr) minmax(136px, .88fr) repeat(3, minmax(66px, .38fr)) 38px',
     },
     gap: 1,
     alignItems: 'center',

@@ -12,7 +12,7 @@ import {
   ROLE_OPTIONS,
   SIMULATOR_POSITION_OPTIONS,
 } from '../simulatorUi.constants.js'
-import { getMinutesBucketLabel } from '../simulatorUi.utils.js'
+import { formatNumber, getMinutesBucketLabel } from '../simulatorUi.utils.js'
 import { squadSimulatorSx } from './sx/squadSimulator.sx.js'
 import { rosterSx } from './sx/roster.sx.js'
 
@@ -35,6 +35,14 @@ export default function PlayerRow({
   const canRemove = row.rowType === 'bench'
   const namedPlayerOptions = playerBank.filter(player => String(player.fullName || '').trim())
   const selectedPlayer = namedPlayerOptions.find(player => player.id === row.selectedPlayerId) || null
+  const handlePlayerSelect = useCallback((event, value) => {
+    const player = namedPlayerOptions.find(item => item.id === value) || null
+
+    onChange(row.id, {
+      selectedPlayerId: value || '',
+      squadRole: player?.squadRole || '',
+    })
+  }, [namedPlayerOptions, onChange, row.id])
 
   return (
     <Sheet sx={rosterSx.playerRow}>
@@ -43,7 +51,7 @@ export default function PlayerRow({
         value={row.selectedPlayerId || ''}
         placeholder="בחר שחקן"
         sx={squadSimulatorSx.rtlField}
-        onChange={(event, value) => update('selectedPlayerId', value || '')}
+        onChange={handlePlayerSelect}
         renderValue={() => selectedPlayer ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
             <Avatar
@@ -153,16 +161,6 @@ export default function PlayerRow({
       <Chip
         size="sm"
         variant="soft"
-        color={row.rowType === 'lineup' ? 'primary' : 'neutral'}
-        startDecorator={iconUi({ id: 'position', size: 'sm' })}
-        sx={rosterSx.iconChip}
-      >
-        {row.slotId || '-'}
-      </Chip>
-
-      <Chip
-        size="sm"
-        variant="soft"
         color="success"
         startDecorator={iconUi({ id: goalTierIconId, size: 'sm' })}
         sx={rosterSx.iconChip}
@@ -177,7 +175,7 @@ export default function PlayerRow({
         startDecorator={iconUi({ id: 'goals', size: 'sm' })}
         sx={rosterSx.iconChip}
       >
-        {row.model.goalsTarget || 0} / {row.model.guaranteedGoalsTarget ?? 0}
+        {formatNumber(row.model.guaranteedGoalsTarget)}
       </Chip>
 
       <Chip
