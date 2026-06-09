@@ -33,24 +33,28 @@ export default function RosterPanel({
           value={`${formatNumber(goalsKpi?.target)} / ${formatNumber(goalsKpi?.allocated)}`}
           color={getStatusColor(goalsKpi?.status)}
           sub={`מובטח ${formatNumber(goalsKpi?.guaranteed)} | ${goalsKpi?.guaranteedCoveragePct || 0}%`}
+          compact
         />
         <Metric
           label="ביטחון סגל"
           value={`${formatNumber(confidenceKpi?.scorePct)}%`}
           color={confidenceKpi?.status || 'neutral'}
           sub={`דורגו ${formatNumber(confidenceKpi?.targetRows)} / ${formatNumber(confidenceKpi?.ratedRows)} | סיכון ${formatNumber(confidenceKpi?.riskGoalsGap)}`}
+          compact
         />
         <Metric
           label="חלוקת דקות"
           value={`${formatNumber(minutesKpi?.target)} / ${formatNumber(minutesKpi?.allocated)}`}
           color={getStatusColor(minutesKpi?.status)}
           sub={`${minutesKpi?.coveragePct || 0}% כיסוי`}
+          compact
         />
         <Metric
           label="רישום שחקנים"
           value={`${formatNumber(bankKpi?.namedPlayers)} / ${formatNumber(bankKpi?.selectedRows)}`}
           color="primary"
           sub={`ייחודיים בסגל ${formatNumber(bankKpi?.uniqueSelectedPlayers)}`}
+          compact
         />
         <Metric label="פריסת עמדות" value="" color="neutral">
           <Box sx={rosterSx.positionKpiChips}>

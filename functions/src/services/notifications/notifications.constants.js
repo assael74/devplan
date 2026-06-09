@@ -23,6 +23,7 @@ const NOTIFICATION_TYPE = {
   ABILITIES_FORM_SUBMITTED: 'abilities_form_submitted',
   MEETING_UPCOMING_24H: 'meeting_upcoming_24h',
   MEETING_UPCOMING_60M: 'meeting_upcoming_60m',
+  REGISTRATION_PENDING_APPROVAL: 'registration_pending_approval',
   VIDEO_VIEWED: 'video_viewed',
 }
 

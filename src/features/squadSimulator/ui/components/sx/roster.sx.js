@@ -35,6 +35,43 @@ export const rosterSx = {
     boxShadow: 'inset -4px 0 0 var(--metric-accent, #94a3b8)',
   },
 
+  metricCompact: {
+    p: 0.85,
+    minHeight: 52,
+    gap: 0.15,
+    minWidth: 0,
+  },
+
+  metricLabel: {
+    color: 'text.secondary',
+  },
+
+  metricLabelCompact: {
+    color: 'text.secondary',
+    fontSize: 12,
+    lineHeight: 1.15,
+    whiteSpace: 'nowrap',
+  },
+
+  metricValue: {},
+
+  metricValueCompact: {
+    fontSize: { md: 24, xl: 28 },
+    lineHeight: 1.05,
+    whiteSpace: 'nowrap',
+  },
+
+  metricSub: {
+    color: 'text.tertiary',
+  },
+
+  metricSubCompact: {
+    color: 'text.tertiary',
+    fontSize: 11,
+    lineHeight: 1.15,
+    whiteSpace: 'nowrap',
+  },
+
   positionKpiChips: {
     display: 'flex',
     flexWrap: 'wrap',
