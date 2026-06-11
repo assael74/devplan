@@ -9,20 +9,26 @@ import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 import { ReportPrintButton } from '../../../../ui/patterns/reportPrint/index.js'
 import { squadSimulatorSx as sx } from './sx/squadSimulator.sx.js'
 
+function decorator() {
+  return (
+    <Chip
+      size='md'
+      variant='soft'
+      startDecorator={iconUi({id: 'squadSimulator'})}
+      sx={{ border: '1px solid', borderColor: 'divider'}}
+    />
+  )
+}
+
 export default function SimulatorHeader({ onAddPlayer, onReset, renderPrintContent }) {
   return (
     <Box sx={sx.header}>
-      <Stack direction="row" spacing={1.25} alignItems="center">
-        <Chip size="lg" variant="soft" color="primary">
-          <GroupsRoundedIcon />
-        </Chip>
-        <Box>
-          <Typography level="h2">סימולטור בניית סגל</Typography>
-          <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
-            מנוע יעדי שחקנים לפי יעד קבוצה, מעמד ועמדה ראשית
-          </Typography>
-        </Box>
-      </Stack>
+      <Box sx={{ display: 'grid' }}>
+        <Typography level="h2" startDecorator={decorator()}>סימולטור בניית סגל</Typography>
+        <Typography level="body-sm" sx={{ color: 'text.secondary', pl: 2 }}>
+          מנוע יעדי שחקנים לפי יעד קבוצה, מעמד ועמדה ראשית
+        </Typography>
+      </Box>
 
       <Stack sx={sx.actions}>
         <ReportPrintButton

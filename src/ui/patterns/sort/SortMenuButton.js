@@ -30,14 +30,14 @@ export default function SortMenuButton({
   sortOptions = [],
   onChangeSortBy,
   onChangeSortDirection,
-  buttonSx,
-  menuSx,
-  minButtonWidth = 160,
-  minMenuWidth = 220,
+  size = 'sm',
+  width = 160,
+  fullWidth = false,
+  compact = false,
 }) {
   const normalized = normalizeSortState(sortBy, sortDirection)
 
-  const handlePick = (nextSortBy) => {
+  const handlePick = nextSortBy => {
     const nextState = buildNextSortState({
       currentBy: normalized.by,
       currentDirection: normalized.direction,
@@ -49,71 +49,70 @@ export default function SortMenuButton({
     onChangeSortDirection?.(nextState.direction)
   }
 
+  const rootWidth = fullWidth ? '100%' : width
+  const selectedLabel = getSortOptionLabel(sortOptions, normalized.by, labelPrefix)
+
   return (
-    <Dropdown>
-      <MenuButton
-        size="sm"
-        variant="soft"
-        startDecorator={iconUi({
-          id: 'arrowDown',
-          sx: { color: 'text.secondary', fontSize: 18 },
-        })}
-        sx={{
-          ...sx.sortButton,
-          minWidth: minButtonWidth,
-          ...buttonSx,
-        }}
-      >
-        {getSortOptionLabel(sortOptions, normalized.by, labelPrefix)}
-        <Box sx={{ flex: 1 }} />
-        {iconUi({
-          id: getSortDirectionIcon(normalized.direction),
-          sx: { color: '#1ED760', fontSize: 18 },
-        })}
-      </MenuButton>
+    <Box sx={sx.root({ width: rootWidth })}>
+      <Dropdown>
+        <MenuButton
+          size={size}
+          variant="soft"
+          startDecorator={iconUi({
+            id: getSortDirectionIcon(normalized.direction),
+            sx: sx.directionIcon,
+          })}
+          sx={sx.sortButton({ compact })}
+        >
+          <Typography level="body-sm" noWrap sx={sx.buttonLabel}>
+            {compact ? selectedLabel : `${labelPrefix} ${selectedLabel}`}
+          </Typography>
 
-      <Menu
-        placement="bottom-start"
-        size="sm"
-        sx={{
-          ...sx.sortMenu,
-          minWidth: minMenuWidth,
-          ...menuSx,
-        }}
-      >
-        {sortOptions.map((item) => {
-          const isActive = normalized.by === item.id
+          <Box sx={{ flex: 1 }} />
 
-          return (
-            <MenuItem
-              key={item.id}
-              onClick={() => handlePick(item.id)}
-              sx={isActive ? sx.sortMenuItemActive : { minHeight: 40, px: 1, borderRadius: 10 }}
-            >
-              <ListItemContent>
-                <Typography
-                  level="body-sm"
-                  noWrap
-                  sx={isActive ? { color: '#1ED760', fontWeight: 700 } : { fontWeight: 500 }}
-                >
-                  {item.label}
-                </Typography>
-              </ListItemContent>
+          {iconUi({
+            id: 'arrowDown',
+            sx: sx.buttonIcon,
+          })}
+        </MenuButton>
 
-              <Box sx={{ flex: 1 }} />
+        <Menu
+          placement="bottom-start"
+          size={size}
+          sx={sx.sortMenu({ width: rootWidth })}
+        >
+          {sortOptions.map(item => {
+            const isActive = normalized.by === item.id
 
-              <ListItemDecorator sx={{ minInlineSize: 24 }}>
-                {isActive
-                  ? iconUi({
-                      id: getSortDirectionIcon(normalized.direction),
-                      sx: { color: '#1ED760', fontSize: 18 },
-                    })
-                  : null}
-              </ListItemDecorator>
-            </MenuItem>
-          )
-        })}
-      </Menu>
-    </Dropdown>
+            return (
+              <MenuItem
+                key={item.id}
+                onClick={() => handlePick(item.id)}
+                sx={isActive ? sx.sortMenuItemActive : sx.sortMenuItem}
+              >
+                <ListItemContent sx={sx.menuItemContent}>
+                  <Typography
+                    level="body-sm"
+                    noWrap
+                    sx={isActive ? sx.menuItemTextActive : sx.menuItemText}
+                  >
+                    {item.label}
+                  </Typography>
+                </ListItemContent>
+
+                <ListItemDecorator sx={sx.menuItemDecorator}>
+                  {isActive
+                    ? iconUi({
+                        id: getSortDirectionIcon(normalized.direction),
+                        sx: sx.menuDirectionIcon,
+                      })
+                    : null}
+                </ListItemDecorator>
+              </MenuItem>
+            )
+          })}
+        </Menu>
+      </Dropdown>
+    </Box>
   )
 }

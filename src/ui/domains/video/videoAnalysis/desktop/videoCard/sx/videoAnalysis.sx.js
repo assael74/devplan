@@ -123,7 +123,7 @@ export const buildVideoAnalysisSx = (from = 'videoHub') => {
 
     cardMedia: {
       position: 'relative',
-      bgcolor: 'neutral.900',
+      bgcolor: 'neutral.700',
       aspectRatio: '16 / 9',
       height: '100%',
       width: '100%',

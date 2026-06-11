@@ -58,12 +58,12 @@ export default function AppLayout({ topbar, sidenav, navBadges, navMode = 'full'
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.body' }}>
+    <Box sx={sx.desRoot}>
       <Box sx={sx.desWrap}>
         {topbarWithHandler}
       </Box>
 
-      <Box sx={{ display: 'flex', width: '100%', flexDirection: 'row-reverse' }}>
+      <Box sx={sx.desContent}>
         <Box sx={sx.desSeconWrap(sideWidth)}>
           {sidenav ? (
             React.cloneElement(sidenav, {
@@ -76,10 +76,7 @@ export default function AppLayout({ topbar, sidenav, navBadges, navMode = 'full'
           )}
         </Box>
 
-        <Box
-          component="main"
-          sx={{ flex: 1, minWidth: 0, p: { xs: 1, sm: 1 }, bgcolor: 'background.level1', }}
-        >
+        <Box component="main" sx={sx.desMain}>
           <Box sx={sx.boxMain}>
             <Outlet />
           </Box>

@@ -3,6 +3,7 @@
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { filterSx as sx } from '../filterRow.sx'
 
 export default function ActiveFiltersChipsRow({
   total,
@@ -12,9 +13,8 @@ export default function ActiveFiltersChipsRow({
   activeChips,
   onRemoveChip,
 }) {
-
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+    <Box sx={sx.chipRow}>
       <Typography level="body-xs" sx={{ opacity: 0.75 }}>
         מציג {shown} מתוך {total} · מיון: {sortLabel} {sortDir === 'desc' ? '↓' : '↑'}
       </Typography>

@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from 'react'
 import { safeId, safeStr } from './filters.utils'
 import { getSortLabel } from '../../logic/filters.constants'
+import { getSortOptionLabel } from '../../../../ui/patterns/sort/sort.utils.js'
 
 const DEFAULTS_ANALYSIS = {
   q: '',
@@ -24,37 +25,50 @@ const DEFAULTS_ANALYSIS = {
 const DEFAULTS_GENERAL = {
   q: '',
   source: '',
-  sortBy: 'updatedAt',
+  primaryCategoryId: '',
+  categoryIds: [],
+  tagIds: [],
+  tagType: '',
+  taggingStatus: '',
+  onlyWithoutCategory: false,
+  onlyWithoutTags: false,
+  sortBy: 'needs_tagging_first',
   sortDir: 'desc',
   tags: [],
 }
 
-export default function useVideoFiltersController({ tab, filters, onFilters, options }) {
+export default function useVideoFiltersController({
+  tab,
+  filters,
+  onFilters,
+  options,
+}) {
   const setCascade = useCallback(
-    (patch) => {
-      onFilters((prev) => {
+    patch => {
+      onFilters(prev => {
         const next = { ...prev, ...patch }
 
-        // analysis-only cascades
         if (tab !== 'general') {
           if ('clubId' in patch) {
             next.teamId = ''
             next.playerId = ''
             next.meetingId = ''
           }
+
           if ('teamId' in patch) {
             next.playerId = ''
             next.meetingId = ''
           }
+
           if ('playerId' in patch) {
             next.meetingId = ''
           }
 
-          // time logic for analysis only
           if ('ym' in patch && patch.ym) {
             next.year = ''
             next.month = ''
           }
+
           if (('year' in patch || 'month' in patch) && (patch.year || patch.month)) {
             next.ym = ''
           }
@@ -67,25 +81,46 @@ export default function useVideoFiltersController({ tab, filters, onFilters, opt
   )
 
   const clearAll = useCallback(() => {
-    onFilters(() => (tab === 'general' ? { ...DEFAULTS_GENERAL } : { ...DEFAULTS_ANALYSIS }))
+    onFilters(() => (tab === 'general'
+      ? { ...DEFAULTS_GENERAL }
+      : { ...DEFAULTS_ANALYSIS }
+    ))
   }, [onFilters, tab])
 
   const activeChips = useMemo(() => {
-    const { clubs, teamsAll, playersAll, meetingsAll } = options
-    const tagLabelById = new Map((options?.tagOptions || []).map((t) => [safeId(t.id), safeStr(t.label)]))
-    const sourceLabelById = new Map((options?.sourceOptions || []).map((s) => [safeId(s.id), safeStr(s.label)]))
+    const { clubs, teamsAll, playersAll, meetingsAll } = options || {}
+
+    const tagLabelById = new Map(
+      (options?.tagOptions || []).map(tag => [
+        safeId(tag.id),
+        safeStr(tag.label),
+      ])
+    )
+
+    const sourceLabelById = new Map(
+      (options?.sourceOptions || []).map(source => [
+        safeId(source.id),
+        safeStr(source.label),
+      ])
+    )
 
     const chips = []
+
     const push = (key, label, value) => {
       if (!value) return
       chips.push({ key, label, value })
     }
 
-    const tagsArr = Array.isArray(filters.tags) ? filters.tags : filters.tags ? [filters.tags] : []
+    const tagsArr = Array.isArray(filters.tags)
+      ? filters.tags
+      : filters.tags
+      ? [filters.tags]
+      : []
+
     tagsArr
-      .map((x) => safeStr(x).trim())
+      .map(value => safeStr(value).trim())
       .filter(Boolean)
-      .forEach((tagId) => {
+      .forEach(tagId => {
         const label = tagLabelById.get(safeId(tagId)) || tagId
         chips.push({ key: `tags:${tagId}`, label: 'תג', value: label })
       })
@@ -93,14 +128,78 @@ export default function useVideoFiltersController({ tab, filters, onFilters, opt
     push('q', 'חיפוש', safeStr(filters.q).trim())
 
     if (tab === 'general') {
+      const categoryLabelById = new Map(
+        (options?.primaryCategoryOptions || []).map(category => [
+          safeId(category.id),
+          safeStr(category.label),
+        ])
+      )
+
+      const tagTypeLabelById = new Map(
+        (options?.tagTypeOptions || []).map(tagType => [
+          safeId(tagType.id),
+          safeStr(tagType.label),
+        ])
+      )
+
+      const statusLabelById = new Map(
+        (options?.statusOptions || []).map(status => [
+          safeId(status.id),
+          safeStr(status.label),
+        ])
+      )
+
       const src = safeStr(filters.source).trim()
       if (src) {
-        push('source', 'סורס', sourceLabelById.get(safeId(src)) || src)
+        push('source', 'מקור', sourceLabelById.get(safeId(src)) || src)
       }
+
+      const primaryCategoryId = safeStr(filters.primaryCategoryId).trim()
+      if (primaryCategoryId) {
+        push(
+          'primaryCategoryId',
+          'קטגוריה',
+          categoryLabelById.get(safeId(primaryCategoryId)) || primaryCategoryId
+        )
+      }
+
+      const tagType = safeStr(filters.tagType).trim()
+      if (tagType) {
+        push(
+          'tagType',
+          'סוג תגית',
+          tagTypeLabelById.get(safeId(tagType)) || tagType
+        )
+      }
+
+      const taggingStatus = safeStr(filters.taggingStatus).trim()
+      if (taggingStatus) {
+        push(
+          'taggingStatus',
+          'סטטוס אפיון',
+          statusLabelById.get(safeId(taggingStatus)) || taggingStatus
+        )
+      }
+
+      if (filters.onlyWithoutCategory) {
+        chips.push({
+          key: 'onlyWithoutCategory',
+          label: 'חסר',
+          value: 'ללא קטגוריה',
+        })
+      }
+
+      if (filters.onlyWithoutTags) {
+        chips.push({
+          key: 'onlyWithoutTags',
+          label: 'חסר',
+          value: 'ללא תגיות',
+        })
+      }
+
       return chips
     }
 
-    // analysis chips
     push('year', 'שנה', safeStr(filters.year))
     push('month', 'חודש', safeStr(filters.month))
     push('ym', 'חודש', safeStr(filters.ym))
@@ -108,41 +207,65 @@ export default function useVideoFiltersController({ tab, filters, onFilters, opt
     push(
       'clubId',
       'מועדון',
-      clubs.find((c) => safeId(c.id) === safeId(filters.clubId))?.clubName || ''
+      (clubs || []).find(club => safeId(club.id) === safeId(filters.clubId))?.clubName || ''
     )
+
     push(
       'teamId',
       'קבוצה',
-      teamsAll.find((t) => safeId(t.id) === safeId(filters.teamId))?.teamName || ''
+      (teamsAll || []).find(team => safeId(team.id) === safeId(filters.teamId))?.teamName || ''
     )
+
     push(
       'playerId',
       'שחקן',
       (() => {
-        const p = playersAll.find((x) => safeId(x.id) === safeId(filters.playerId))
-        return p ? [p.playerFirstName, p.playerLastName].filter(Boolean).join(' ') : ''
+        const player = (playersAll || []).find(item =>
+          safeId(item.id) === safeId(filters.playerId)
+        )
+
+        return player
+          ? [player.playerFirstName, player.playerLastName].filter(Boolean).join(' ')
+          : ''
       })()
     )
+
     push(
       'meetingId',
       'פגישה',
       (() => {
-        const m = meetingsAll.find((x) => safeId(x.id) === safeId(filters.meetingId))
-        return m?.meetingDate || ''
+        const meeting = (meetingsAll || []).find(item =>
+          safeId(item.id) === safeId(filters.meetingId)
+        )
+
+        return meeting?.meetingDate || ''
       })()
     )
 
-    if (filters.onlyUnlinked) chips.push({ key: 'onlyUnlinked', label: 'לא משויך', value: 'כן' })
+    if (filters.onlyUnlinked) {
+      chips.push({ key: 'onlyUnlinked', label: 'לא משויך', value: 'כן' })
+    }
 
     return chips
   }, [filters, options, tab])
 
   const removeChip = useCallback(
-    (chipKey) => {
+    chipKey => {
       if (chipKey === 'q') return setCascade({ q: '' })
 
       if (tab === 'general') {
         if (chipKey === 'source') return setCascade({ source: '' })
+        if (chipKey === 'primaryCategoryId') return setCascade({ primaryCategoryId: '' })
+        if (chipKey === 'tagType') return setCascade({ tagType: '' })
+        if (chipKey === 'taggingStatus') return setCascade({ taggingStatus: '' })
+
+        if (chipKey === 'onlyWithoutCategory') {
+          return setCascade({ onlyWithoutCategory: false })
+        }
+
+        if (chipKey === 'onlyWithoutTags') {
+          return setCascade({ onlyWithoutTags: false })
+        }
       } else {
         if (chipKey === 'ym') return setCascade({ ym: '' })
         if (chipKey === 'year') return setCascade({ year: '' })
@@ -156,17 +279,37 @@ export default function useVideoFiltersController({ tab, filters, onFilters, opt
 
       if (String(chipKey).startsWith('tags:')) {
         const val = String(chipKey).slice('tags:'.length)
+
+        const nextTags = (Array.isArray(filters.tags) ? filters.tags : filters.tags ? [filters.tags] : [])
+          .map(item => safeStr(item))
+          .filter(item => item && item !== val)
+
         return setCascade({
-          tags: (Array.isArray(filters.tags) ? filters.tags : filters.tags ? [filters.tags] : [])
-            .map((x) => safeStr(x))
-            .filter((x) => x && x !== val),
+          tags: nextTags,
+          tagIds: nextTags,
         })
       }
+
+      return null
     },
     [setCascade, filters.tags, tab]
   )
 
-  const sortLabel = useMemo(() => getSortLabel(filters.sortBy), [filters.sortBy])
+  const sortLabel = useMemo(() => {
+    const optionLabel = getSortOptionLabel(
+      options?.sortOptions || [],
+      filters.sortBy,
+      ''
+    )
 
-  return { setCascade, clearAll, activeChips, removeChip, sortLabel }
+    return optionLabel || getSortLabel(filters.sortBy)
+  }, [filters.sortBy, options?.sortOptions])
+
+  return {
+    setCascade,
+    clearAll,
+    activeChips,
+    removeChip,
+    sortLabel,
+  }
 }

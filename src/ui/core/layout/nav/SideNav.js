@@ -95,7 +95,7 @@ const FULL_NAV_SECTIONS = [
     items: [
       { label: 'מודל חישוב יכולות', path: '/abilities/explainer', iconId: 'abilities', disabled: false },
       { label: 'מודל תובנות', path: '/insights/explainer', iconId: 'insights', disabled: false },
-      { label: 'סימולטור בניית סגל', path: '/squad-simulator', iconId: 'teams', disabled: false },
+      { label: 'סימולטור בניית סגל', path: '/squad-simulator', iconId: 'squadSimulator', disabled: false },
     ],
   },
 ]

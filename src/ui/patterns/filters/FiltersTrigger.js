@@ -1,33 +1,41 @@
 // ui/filters/FiltersTrigger.js
 
 import React from 'react'
-import { IconButton, Badge, Chip, Box } from '@mui/joy'
+import { IconButton, Badge, Button, Box } from '@mui/joy'
 import { iconUi } from '../../core/icons/iconUi.js'
 
-export default function FiltersTrigger({ hasActive, onClick, label = 'פילטרים' }) {
+export default function FiltersTrigger({
+  hasActive,
+  onClick,
+  label = 'פילטרים',
+  size = 'sm',
+  minWidth = 150,
+  buttonSx,
+}) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      {/* Desktop: Chip קטן עם טקסט ברור */}
-      <Chip
+      <Button
         onClick={onClick}
-        size="sm"
+        size={size}
         variant={hasActive ? 'soft' : 'outlined'}
         color={hasActive ? 'success' : 'neutral'}
         startDecorator={iconUi({ id: 'filter' })}
         sx={{
           display: { xs: 'none', sm: 'inline-flex' },
-          cursor: 'pointer',
+          minWidth,
+          justifyContent: 'flex-start',
           borderRadius: 'sm',
+          fontWeight: 700,
+          ...buttonSx,
         }}
       >
         {hasActive ? `${label} (מסונן)` : label}
-      </Chip>
+      </Button>
 
-      {/* Mobile: IconButton עם Badge + שינוי וריאנט */}
       <Badge invisible={!hasActive} variant="solid" color="success" size="sm">
         <IconButton
           onClick={onClick}
-          size="sm"
+          size={size}
           variant={hasActive ? 'soft' : 'outlined'}
           color={hasActive ? 'success' : 'neutral'}
           sx={{ display: { xs: 'inline-flex', sm: 'none' } }}

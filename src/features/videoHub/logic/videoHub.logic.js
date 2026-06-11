@@ -1,5 +1,13 @@
 // src/features/videoHub/videoHub.logic.js
 
+import {
+  filterVideoGeneralByProfessionalModel,
+} from '../sharedLogic/videoHubGeneralFilters.logic.js'
+
+import {
+  sortVideosByOption,
+} from '../../../shared/video/index.js'
+
 export const normalizeStr = (v) => String(v ?? '').trim()
 const safeId = (v) => (v == null ? '' : String(v))
 const safeStr = (v) => (v == null ? '' : String(v))
@@ -191,37 +199,30 @@ export const sortVideoAnalysis = (items, sortBy = 'updatedAt', sortDir = 'desc')
 /* -------------------- GENERAL -------------------- */
 
 const buildSearchKeyGeneral = (v) =>
-  [v?.name, v?.title, v?.notes, v?.comment, v?.link, v?.source].filter(Boolean).join(' ')
+  [v?.name, v?.title, v?.notes, v?.comment, v?.link, v?.source]
+    .filter(Boolean)
+    .join(' ')
 
 export const filterVideosGeneral = (items, filters) => {
-  const arr = Array.isArray(items) ? items : []
-  const f = filters || {}
-
-  const src = normalizeStr(f.source)
-
-  return arr.filter((v) => {
-    if (!includesQuery(buildSearchKeyGeneral(v), f.q)) return false
-    if (!matchTags(v, f)) return false
-
-    if (src) {
-      const vsrc = deriveSourceFromVideo(v)
-      if (vsrc !== src) return false
-    }
-
-    return true
-  })
+  return filterVideoGeneralByProfessionalModel(items, filters)
 }
 
-export const sortVideosGeneral = (items, sortBy = 'updatedAt', sortDir = 'desc') => {
-  const arr = Array.isArray(items) ? items.slice() : []
-  const dir = sortDir === 'asc' ? 1 : -1
+export const sortVideosGeneral = (items, sortBy = 'needs_tagging_first', sortDir = 'desc') => {
+  if (sortBy === 'needs_tagging_first') {
+    return sortVideosByOption(items, 'needs_tagging_first')
+  }
 
-  arr.sort((a, b) => {
-    if (sortBy === 'name') {
-      return dir * String(a?.name || a?.title || '').localeCompare(String(b?.name || b?.title || ''), 'he')
-    }
-    return dir * (getEffectiveTs(a, sortBy) - getEffectiveTs(b, sortBy))
-  })
+  if (sortBy === 'updated_desc' || sortBy === 'updatedAt') {
+    return sortVideosByOption(items, 'updated_desc')
+  }
 
-  return arr
+  if (sortBy === 'created_desc' || sortBy === 'createdAt') {
+    return sortVideosByOption(items, 'created_desc')
+  }
+
+  if (sortBy === 'title_asc' || sortBy === 'name') {
+    return sortVideosByOption(items, 'title_asc')
+  }
+
+  return sortVideosByOption(items, 'needs_tagging_first')
 }

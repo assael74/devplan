@@ -40,9 +40,9 @@ export default function SortDrawerMobile({
       sortOptions,
     })
 
-    onChangeSortBy?.(nextState.by)
-    onChangeSortDirection?.(nextState.direction)
-    onClose?.()
+    onChangeSortBy(nextState.by)
+    onChangeSortDirection(nextState.direction)
+    onClose()
   }
 
   return (

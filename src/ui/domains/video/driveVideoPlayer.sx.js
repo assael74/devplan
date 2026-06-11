@@ -17,7 +17,7 @@ export const driveVideoPlayerSx = {
 
   dialogAnalysis: {
     maxWidth: 1100,
-    bgcolor: 'neutral.900',
+    bgcolor: 'neutral.700',
   },
 
   dialogGeneral: {

@@ -3,7 +3,6 @@
 import React from 'react'
 
 import { SortMenuButton } from '../../../../../../../../ui/patterns/sort/index.js'
-import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
 import { TEAM_GAMES_SORT_OPTIONS } from '../../../../../sharedLogic/games'
 
@@ -21,10 +20,8 @@ export default function TeamGamesSortMenu({
       sortOptions={TEAM_GAMES_SORT_OPTIONS}
       onChangeSortBy={onChangeSortBy}
       onChangeSortDirection={onChangeSortDirection}
-      buttonSx={sx.sortButton}
-      menuSx={sx.sortMenu}
-      minButtonWidth={150}
-      minMenuWidth={220}
+      width={142}
+      compact
     />
   )
 }

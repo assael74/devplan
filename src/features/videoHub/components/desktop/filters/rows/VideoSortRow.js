@@ -19,7 +19,6 @@ export default function VideoSortRow({ filters, setCascade, clearAll, clearDisab
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-
       <IconButton
         size="sm"
         variant="soft"
@@ -29,8 +28,6 @@ export default function VideoSortRow({ filters, setCascade, clearAll, clearDisab
       >
         {iconUi({ id: 'close' })}
       </IconButton>
-
-
     </Box>
   )
 }

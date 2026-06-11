@@ -1,47 +1,107 @@
 // ui/patterns/sort/sort.sx.js
 
 export const sortSx = {
-  sortButton: {
-    minWidth: 160,
+  root: ({ width }) => ({
+    width,
+    minWidth: 0,
+
+    '& > .MuiDropdown-root': {
+      width: '100%',
+    },
+  }),
+
+  sortButton: ({ compact }) => ({
+    width: '100%',
+    minHeight: 30,
+    height: 30,
     justifyContent: 'flex-start',
     textAlign: 'right',
-    borderRadius: 999,
-    px: 1,
-    fontWeight: 600,
+    borderRadius: 'md',
+    px: compact ? 0.85 : 1,
+    fontWeight: 700,
     bgcolor: 'background.surface',
     border: '1px solid',
     borderColor: 'divider',
 
     '& .MuiButton-startDecorator': {
-      marginInlineEnd: 0.5,
+      marginInlineEnd: 0.45,
     },
+  }),
 
-    '& .MuiButton-endDecorator': {
-      marginInlineStart: 'auto',
-    },
+  buttonIcon: {
+    color: 'text.secondary',
+    fontSize: 15,
+    flexShrink: 0,
   },
 
-  sortMenu: {
-    minWidth: 220,
+  directionIcon: {
+    color: '#1ED760',
+    fontSize: 15,
+    flexShrink: 0,
+  },
+
+  buttonLabel: {
+    minWidth: 0,
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
+  sortMenu: ({ width }) => ({
+    width,
+    minWidth: width,
+    maxWidth: width,
     p: 0.5,
-    borderRadius: 14,
+    borderRadius: 12,
     border: '1px solid',
     borderColor: 'divider',
     boxShadow: 'lg',
     bgcolor: 'background.surface',
-    '--ListItem-radius': '10px',
+    '--ListItem-radius': '9px',
     '--ListItemDecorator-size': '22px',
+  }),
+
+  sortMenuItem: {
+    width: '100%',
+    minHeight: 36,
+    px: 1,
+    borderRadius: 9,
   },
 
   sortMenuItemActive: {
-    minHeight: 40,
+    width: '100%',
+    minHeight: 36,
     px: 1,
-    borderRadius: 10,
-    bgcolor: 'rgba(255,255,255,0.08)',
+    borderRadius: 9,
+    bgcolor: 'background.level1',
 
     '&:hover': {
-      bgcolor: 'rgba(255,255,255,0.12)',
+      bgcolor: 'background.level2',
     },
+  },
+
+  menuItemContent: {
+    minWidth: 0,
+  },
+
+  menuItemText: {
+    fontWeight: 500,
+    fontSize: 12,
+  },
+
+  menuItemTextActive: {
+    color: '#1ED760',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
+  menuItemDecorator: {
+    minInlineSize: 22,
+    justifyContent: 'center',
+  },
+
+  menuDirectionIcon: {
+    color: '#1ED760',
+    fontSize: 16,
   },
 
   drawerSheet: {
@@ -88,6 +148,6 @@ export const sortSx = {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
-    bgcolor: 'rgba(255,255,255,0.08)',
+    bgcolor: 'background.level1',
   },
 }

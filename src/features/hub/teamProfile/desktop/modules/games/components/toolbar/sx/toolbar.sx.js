@@ -80,38 +80,6 @@ export const toolbarSx = {
     '--Chip-paddingInline': '7px',
   },
 
-  sortButton: {
-    minWidth: 150,
-    justifyContent: 'flex-start',
-    textAlign: 'right',
-    borderRadius: 999,
-    px: 1,
-    fontWeight: 600,
-    bgcolor: 'background.surface',
-    border: '1px solid',
-    borderColor: 'divider',
-
-    '& .MuiButton-startDecorator': {
-      marginInlineEnd: 0.5,
-    },
-
-    '& .MuiButton-endDecorator': {
-      marginInlineStart: 'auto',
-    },
-  },
-
-  sortMenu: {
-    minWidth: 220,
-    p: 0.5,
-    borderRadius: 14,
-    border: '1px solid',
-    borderColor: 'divider',
-    boxShadow: 'lg',
-    bgcolor: 'background.surface',
-    '--ListItem-radius': '10px',
-    '--ListItemDecorator-size': '22px',
-  },
-
   createBtn: {
     bgcolor: c.bg,
     color: c.text,

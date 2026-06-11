@@ -17,9 +17,10 @@ export const squadSimulatorSx = {
 
   header: {
     display: 'flex',
-    alignItems: { xs: 'stretch', md: 'center' },
+    alignItems: { xs: 'center', md: 'center' },
     justifyContent: 'space-between',
-    flexDirection: { xs: 'column-reverse', md: 'row' },
+    flexWrap: 'wrap',
+    flexDirection: { xs: 'row', md: 'row' },
     gap: 1,
     mb: 0,
     pt: 0,

@@ -38,7 +38,9 @@ export const layoutSx = {
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch',
     bgcolor: 'background.body',
     borderRadius: 'lg',
     border: '1px solid',
@@ -47,7 +49,17 @@ export const layoutSx = {
     px: { xs: 0, sm: 1 },
   },
 
+  desRoot: {
+    height: '100%',
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    bgcolor: 'background.body',
+  },
+
   desWrap: {
+    flexShrink: 0,
     position: 'sticky',
     top: 0,
     zIndex: 1200,
@@ -55,6 +67,15 @@ export const layoutSx = {
     bgcolor: 'background.body',
     borderBottom: '1px solid',
     borderColor: 'divider',
+  },
+
+  desContent: {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    width: '100%',
+    flexDirection: 'row-reverse',
+    overflow: 'hidden',
   },
 
   desSeconWrap: (sideWidth) => ({
@@ -68,12 +89,21 @@ export const layoutSx = {
     boxShadow: 'sm',
   }),
 
+  desMain: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+    p: { xs: 1, sm: 1 },
+    bgcolor: 'background.level1',
+    overflow: 'hidden',
+  },
+
   boxMain: {
     bgcolor: 'background.body',
     borderRadius: 'lg',
     border: '1px solid',
     borderColor: 'divider',
-    minHeight: 'calc(100vh - 88px)',
+    minHeight: '100%',
     p: { xs: 1, sm: 1 },
   }
 }

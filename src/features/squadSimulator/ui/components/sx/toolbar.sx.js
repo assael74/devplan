@@ -8,7 +8,7 @@ export const toolbarSx = {
   toolbar: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: '1fr',
+      xs: '1fr 1fr',
       md: 'minmax(210px, 1fr) minmax(210px, 1fr) minmax(180px, .8fr) minmax(82px, .35fr) minmax(86px, .35fr) minmax(130px, .55fr) minmax(150px, .65fr)',
     },
     gap: 1,
@@ -26,17 +26,12 @@ export const toolbarSx = {
   compactNumberField: {
     minWidth: 0,
     '& input': {
-      textAlign: 'center',
       px: 0.5,
     },
   },
 
   compactSelectField: {
     minWidth: 0,
-    '& .MuiSelect-button': {
-      justifyContent: 'center',
-      textAlign: 'center',
-    },
   },
 
   profileStatus: {

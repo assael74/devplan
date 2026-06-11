@@ -11,7 +11,8 @@ import {
   VideoLibrary,
   ViewCompactAlt,
   ViewTimeline,
-  Insights
+  Insights,
+  AccountTree
 } from '@mui/icons-material';
 
 export const navigationIcons = {
@@ -27,5 +28,6 @@ export const navigationIcons = {
   tableList: <TableView />,
   teams: <Groups />,
   videos: <VideoLibrary />,
-  insights: <Insights />
+  insights: <Insights />,
+  squadSimulator: <AccountTree />
 };

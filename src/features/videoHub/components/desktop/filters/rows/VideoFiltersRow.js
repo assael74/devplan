@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Box, Input, Select, Option, Chip } from '@mui/joy'
-import { videoFilterRowSx as sx } from '../filterRow.sx'
+import { filterSx as sx } from '../filterRow.sx'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { MONTHS } from '../../../../logic/filters.constants.js'
 
