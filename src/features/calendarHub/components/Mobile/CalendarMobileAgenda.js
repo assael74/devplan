@@ -94,7 +94,7 @@ export default function CalendarMobileAgenda({
           </Typography>
 
           {activeGroup.isToday ? (
-            <Typography level="body-xs" sx={{ color: 'primary.500', fontWeight: 800, mt: 0.15 }}>
+            <Typography level="body-xs" sx={{ color: 'primary.500', fontWeight: 700, mt: 0.15 }}>
               היום
             </Typography>
           ) : null}

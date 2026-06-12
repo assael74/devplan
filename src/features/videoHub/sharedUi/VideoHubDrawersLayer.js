@@ -1,6 +1,6 @@
 // src/features/videoHub/sharedUi/VideoHubDrawersLayer.js
 
-import React from 'react'
+import React, { useRef } from 'react'
 
 import EditDrawer from './editDrawer/EditDrawer.js'
 import { VIDEO_EDIT_DRAWER_MODE } from '../logic/drawer/editDrawer.logic.js'
@@ -25,6 +25,18 @@ export default function VideoHubDrawersLayer({
   contextTypeOptions,
 }) {
   const anchor = isMobile ? 'bottom' : 'right'
+  const lastDrawerVideoRef = useRef(null)
+  const drawerOpen = Boolean(
+    modal?.attachOpen ||
+    modal?.editAnalysisOpen ||
+    modal?.editGeneralOpen
+  )
+
+  if (drawerOpen && active) {
+    lastDrawerVideoRef.current = active
+  }
+
+  const drawerVideo = drawerOpen && active ? active : lastDrawerVideoRef.current
 
   return (
     <>
@@ -33,7 +45,7 @@ export default function VideoHubDrawersLayer({
         entityType="analysis"
         open={modal.attachOpen}
         onClose={onCloseAttach}
-        video={active}
+        video={drawerVideo}
         context={context}
         anchor={anchor}
         locks={attachLocks}
@@ -47,7 +59,7 @@ export default function VideoHubDrawersLayer({
         entityType="analysis"
         open={modal.editAnalysisOpen}
         onClose={onCloseEditAnalysis}
-        video={active}
+        video={drawerVideo}
         context={context}
         anchor={anchor}
         onSave={onSaveEditAnalysis}
@@ -58,7 +70,7 @@ export default function VideoHubDrawersLayer({
         entityType="general"
         open={modal.editGeneralOpen}
         onClose={onCloseEditGeneral}
-        video={active}
+        video={drawerVideo}
         context={context}
         anchor={anchor}
         onSaved={onSavedEditGeneral}

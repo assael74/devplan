@@ -5,7 +5,9 @@ export const tagSx = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
-    height: '100%',
+    height: 'calc(100dvh - 92px)',
+    maxHeight: 'calc(100dvh - 92px)',
+    overflow: 'hidden',
   },
 
   header: {
@@ -28,7 +30,8 @@ export const tagSx = {
     display: 'flex',
     flexDirection: 'column',
     px: 2,
-    py: 1.5
+    py: 1.5,
+    overflow: 'hidden',
   },
 
   filtersRow: {
@@ -37,6 +40,17 @@ export const tagSx = {
     flexWrap: 'wrap',
     gap: 1,
     mb: 1.5,
+    flexShrink: 0,
+  },
+
+  listScroll: {
+    minHeight: 0,
+    flex: '1 1 auto',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    pr: 0.5,
+    scrollbarGutter: 'stable',
+    overscrollBehavior: 'contain',
   },
 
   section:{
@@ -87,7 +101,7 @@ export const tagSx = {
   },
 
   tagChip: (color, inactiveChild) => ({
-    height: 28,
+    height: 38,
     px: 0.6,
     borderRadius: 10,
     display: 'flex',
@@ -105,7 +119,7 @@ export const tagSx = {
   }),
 
   groupChip: (color) => ({
-    height: 30,
+    height: 40,
     px: 0.8,
     borderRadius: 12,
     display: 'inline-flex',
@@ -153,4 +167,96 @@ export const tagSx = {
     justifyContent: 'center',
     flex: '0 0 auto',
   }),
+
+  videoTagsPage: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1.5,
+    minHeight: 0,
+    pb: 2,
+  },
+
+  statsRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 0.75,
+    alignItems: 'center',
+  },
+
+  statChip: {
+    fontWeight: 700,
+  },
+
+  videoTagsWrap: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 0.75,
+    alignItems: 'center',
+  },
+
+  videoCategoryChip: color => ({
+    '--Chip-minHeight': '28px',
+    fontWeight: 700,
+    color,
+    bgcolor: `${color}14`,
+    border: '1px solid',
+    borderColor: `${color}33`,
+  }),
+
+  videoTypeSection: color => ({
+    borderRadius: 14,
+    p: 1.25,
+    border: '1px solid',
+    borderColor: `${color}33`,
+    bgcolor: 'background.surface',
+    boxShadow: 'xs',
+  }),
+
+  videoTypeHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    mb: 1,
+  },
+
+  videoTypeTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0,
+  },
+
+  seedTagChip: (color, issue) => ({
+    fontWeight: 700,
+    color: issue ? 'warning.700' : color,
+    bgcolor: issue ? 'warning.50' : `${color}12`,
+    border: '1px solid',
+    borderColor: issue ? 'warning.300' : `${color}2f`,
+  }),
+
+  issueSection: {
+    borderRadius: 14,
+    p: 1.25,
+    border: '1px solid',
+    borderColor: 'danger.300',
+    bgcolor: 'danger.50',
+    display: 'grid',
+    gap: 1,
+  },
+
+  emptyInline: {
+    borderRadius: 10,
+    border: '1px dashed',
+    borderColor: 'neutral.300',
+    color: 'text.tertiary',
+    px: 1,
+    py: 0.75,
+  },
+
+  tooltipInfo: {
+    display: 'grid',
+    gap: 0.25,
+    maxWidth: 260,
+  },
 }

@@ -5,24 +5,28 @@ import {
   Card,
   CardContent,
   CardOverflow,
+  Divider,
   Dropdown,
   IconButton,
+  ListItemDecorator,
   Menu,
   MenuButton,
   MenuItem,
-  ListItemDecorator,
-  Divider,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../core/icons/iconUi.js'
+import {
+  buildVideoCardActions,
+  buildVideoCardModel,
+} from '../../sharedLogic/index.js'
 
 import {
   VideoMobileMedia,
   VideoMobileInfo,
   VideoMobileTags,
-} from '../sharedUi/VideoMobileSharedUi.js'
+} from './VideoMobileSharedUi.js'
 
-import { sharedSx as sx } from '../sharedUi/shared.ui.sx.js'
+import { sharedSx as sx } from './shared.ui.sx.js'
 
 export default function VideoGeneralMobileCard({
   video,
@@ -30,50 +34,37 @@ export default function VideoGeneralMobileCard({
   onEdit,
   onShare,
   onDelete,
+  tagsById,
+  canEdit = true,
+  canDelete = true,
+  canShare = true,
 }) {
-  const menuItems = useMemo(() => {
-    const items = []
+  const model = useMemo(
+    () =>
+      buildVideoCardModel({
+        video,
+        tagsById,
+        tagLimit: 2,
+        tagTypeLimit: 2,
+      }),
+    [video, tagsById]
+  )
 
-    if (typeof onWatch === 'function') {
-      items.push({
-        id: 'watch',
-        label: 'צפייה',
-        icon: 'playVideo',
-        onClick: onWatch,
-      })
-    }
-
-    if (typeof onEdit === 'function') {
-      items.push({
-        id: 'edit',
-        label: 'עריכה',
-        icon: 'edit',
-        onClick: onEdit,
-      })
-    }
-
-    if (typeof onShare === 'function') {
-      items.push({
-        id: 'share',
-        label: 'שיתוף',
-        icon: 'share',
-        onClick: onShare,
-      })
-    }
-
-    if (typeof onDelete === 'function') {
-      items.push({ divider: true })
-      items.push({
-        id: 'delete',
-        label: 'מחיקה',
-        icon: 'delete',
-        color: 'danger',
-        onClick: onDelete,
-      })
-    }
-
-    return items
-  }, [onWatch, onEdit, onShare, onDelete])
+  const actions = useMemo(
+    () =>
+      buildVideoCardActions({
+        video,
+        model,
+        onWatch,
+        onEdit,
+        onShare,
+        onDelete,
+        canEdit,
+        canDelete,
+        canShare,
+      }),
+    [video, model, onWatch, onEdit, onShare, onDelete, canEdit, canDelete, canShare]
+  )
 
   return (
     <Card
@@ -88,21 +79,55 @@ export default function VideoGeneralMobileCard({
       }}
     >
       <CardOverflow>
-        <VideoMobileMedia video={video} onWatch={onWatch} />
+        <VideoMobileMedia
+          video={video}
+          model={model}
+          actions={actions}
+        />
       </CardOverflow>
 
       <CardContent sx={sx.content}>
-        <VideoMobileInfo video={video} />
+        <VideoMobileInfo model={model} />
 
         <Divider />
 
-        <VideoMobileTags video={video} />
+        <VideoMobileTags model={model} />
       </CardContent>
 
       <CardOverflow variant="soft" color="neutral" sx={sx.overflow}>
-      <IconButton size="sm" variant="plain" onClick={() => onEdit(video)}>
-        {iconUi({ id: 'more' })}
-      </IconButton>
+        <Dropdown>
+          <MenuButton
+            slots={{ root: IconButton }}
+            slotProps={{
+              root: {
+                size: 'sm',
+                variant: 'plain',
+                sx: sx.moreButton,
+              },
+            }}
+          >
+            {iconUi({ id: 'more' })}
+          </MenuButton>
+
+          <Menu size="sm" placement="bottom-end">
+            {actions.menuItems.map(item =>
+              item.divider ? (
+                <Divider key="divider" />
+              ) : (
+                <MenuItem
+                  key={item.id}
+                  color={item.color}
+                  onClick={item.onClick}
+                >
+                  <ListItemDecorator>
+                    {iconUi({ id: item.icon, size: 'sm' })}
+                  </ListItemDecorator>
+                  {item.label}
+                </MenuItem>
+              )
+            )}
+          </Menu>
+        </Dropdown>
       </CardOverflow>
     </Card>
   )

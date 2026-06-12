@@ -1,20 +1,11 @@
-// src/features/tagsHub/components/shared/TagsFiltersContent.js
+// src/features/tagsHub/components/mobile/TagsFiltersContent.js
 
 import React from 'react'
-import { Box, Input, Select, Option, Chip } from '@mui/joy'
+import { Box, Input, Option, Select } from '@mui/joy'
 
+import { VIDEO_TAG_TYPES } from '../../../../shared/video/index.js'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-import { getEntityColors } from '../../../../ui/core/theme/Colors'
-import {
-  TAG_TYPE_OPTIONS,
-  TAG_PARENTS_OPTIONS,
-} from '../../../../shared/tags/tags.constants.js'
-
 import { hubSx as sx } from './sx/hub.sx'
-
-function findOpt(options, id) {
-  return options.find((o) => o.id === id) || null
-}
 
 export default function TagsFiltersContent({
   value,
@@ -28,9 +19,9 @@ export default function TagsFiltersContent({
     <Box sx={sx.contRoot(isColumn)}>
       <Input
         size="sm"
-        placeholder="חיפוש תג / slug…"
+        placeholder="חיפוש לפי שם / slug / id..."
         value={v.q || ''}
-        onChange={(e) => onChange({ q: e.target.value })}
+        onChange={event => onChange({ q: event.target.value })}
         startDecorator={iconUi({ id: 'search' })}
         sx={{ minWidth: isColumn ? 0 : 240, width: isColumn ? '100%' : 'auto' }}
       />
@@ -38,80 +29,29 @@ export default function TagsFiltersContent({
       <Select
         size="sm"
         value={v.tagType || 'all'}
-        onChange={(e, val) => onChange({ tagType: val || 'all' })}
+        onChange={(event, val) => onChange({ tagType: val || 'all' })}
         sx={{ minWidth: isColumn ? 0 : 180, width: isColumn ? '100%' : 'auto' }}
-        renderValue={(selected) => {
-          const id = selected?.value || ''
-          const opt = findOpt(TAG_TYPE_OPTIONS, id)
-
-          if (!opt) return selected?.label || 'כל הסוגים'
+        renderValue={selected => {
+          const id = selected?.value || 'all'
+          const opt = VIDEO_TAG_TYPES.find(type => type.id === id)
+          if (!opt) return 'כל סוגי התגיות'
 
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {iconUi({ id: opt.idIcon, sx: { color: opt.color } })}
-              {opt.labelH}
+              {iconUi({ id: opt.iconId || 'tags' })}
+              {opt.label}
             </Box>
           )
         }}
       >
-        <Option value="all">כל הסוגים</Option>
-
-        <Option value="analysis">
-          {iconUi({id: 'videoAnalysis', sx: { color: getEntityColors('videoAnalysis').bg } })}
-          תגי ניתוח וידאו
-        </Option>
-
-        <Option value="general">
-          {iconUi({id: 'videoGeneral', sx: { color: getEntityColors('videoGeneral').bg}})}
-          תגי וידאו כללי
-        </Option>
+        <Option value="all">כל סוגי התגיות</Option>
+        {VIDEO_TAG_TYPES.map(type => (
+          <Option key={type.id} value={type.id}>
+            {iconUi({ id: type.iconId || 'tags' })}
+            {type.label}
+          </Option>
+        ))}
       </Select>
-
-      <Select
-        size="sm"
-        value={v.hierarchy || 'all'}
-        onChange={(e, val) => onChange({ hierarchy: val || 'all' })}
-        sx={{ minWidth: isColumn ? 0 : 160, width: isColumn ? '100%' : 'auto' }}
-        renderValue={(selected) => {
-          const id = selected?.value || ''
-          const opt = findOpt(TAG_PARENTS_OPTIONS, id)
-
-          if (!opt) return selected?.label || 'כולם'
-
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {iconUi({ id: opt.idIcon })}
-              {opt.labelH}
-            </Box>
-          )
-        }}
-      >
-        <Option value="all">כולם</Option>
-
-        <Option value="parents">
-          {iconUi({ id: 'parents' })}
-          רק תגים ראשיים
-        </Option>
-
-        <Option value="children">
-          {iconUi({ id: 'children' })}
-          רק תתי תג
-        </Option>
-      </Select>
-
-      <Chip
-        size="sm"
-        variant={v.showArchived ? 'solid' : 'soft'}
-        color={v.showArchived ? 'primary' : 'neutral'}
-        onClick={() => onChange({ showArchived: !v.showArchived })}
-        sx={{
-          cursor: 'pointer',
-          alignSelf: isColumn ? 'flex-start' : 'center',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        הצג ארכיון
-      </Chip>
     </Box>
   )
 }

@@ -1,179 +1,75 @@
 // src/features/tagsHub/components/mobile/TagsListMobile.js
 
 import React from 'react'
-import { Box, Typography, Chip, Sheet } from '@mui/joy'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi'
-import { getEntityColors } from '../../../../ui/core/theme/Colors'
 
-import { hubSx as sx } from './sx/hub.sx'
-
-const TYPE_UI = {
-  general: { title: 'וידאו כללי', icon: 'videoGeneral' },
-  analysis: { title: 'ניתוח וידאו', icon: 'videoAnalysis' },
-  other: { title: 'אחר', icon: 'tags' },
+const TYPE_COLORS = {
+  formation: '#7C3AED',
+  pitch_area: '#0891B2',
+  game_principle: '#2563EB',
+  action_technique: '#16A34A',
+  situation: '#F97316',
+  position_role: '#0F766E',
+  mental: '#D97706',
 }
 
-function SectionMobile({ typeKey, data, onEdit }) {
-  const ui = TYPE_UI[typeKey] || TYPE_UI.other
-  const typeColor = getEntityColors(ui.icon).bg
-
-  const groups = Array.isArray(data?.groups) ? data.groups : []
-  const orphans = Array.isArray(data?.orphans) ? data.orphans : []
-  const childrenByGroupId =
-    data?.childrenByGroupId instanceof Map ? data.childrenByGroupId : new Map()
-  const usageByGroupId =
-    data?.usageByGroupId instanceof Map ? data.usageByGroupId : new Map()
-  const childrenCountByGroupId =
-    data?.childrenCountByGroupId instanceof Map
-      ? data.childrenCountByGroupId
-      : new Map()
-
-  const hasAnything =
-    groups.length > 0 ||
-    orphans.length > 0 ||
-    [...childrenByGroupId.keys()].length > 0
-
-  if (!hasAnything) return null
-
-  return (
-    <Sheet variant="outlined" sx={sx.sheetRoot}>
-      <Box sx={sx.boxTitle}>
-        <Typography
-          level="title-sm"
-          noWrap
-          startDecorator={iconUi({ id: ui.icon, sx: { color: typeColor } })}
-        >
-          {ui.title}
-        </Typography>
-
-        <Chip size="sm" variant="soft">
-          {groups.length + orphans.length}
-        </Chip>
-      </Box>
-
-      {groups.map((g) => {
-        const gid = g.id
-        const children = childrenByGroupId.get(gid) || []
-        const cnt = childrenCountByGroupId.get(gid) || 0
-        const usage = usageByGroupId.get(gid) || 0
-        const inactive = g?.isActive === false
-
-        return (
-          <Sheet
-            key={gid}
-            variant="soft"
-            onClick={() => onEdit(g)}
-            sx={sx.sheetClick(inactive)}
-          >
-            <Box sx={sx.boxTitle}>
-              <Typography
-                level="body-sm"
-                noWrap
-                startDecorator={iconUi({ id: 'parents', sx: { color: typeColor } })}
-                sx={{ fontWeight: 700 }}
-              >
-                {g.tagName || 'קטגוריה'}
-              </Typography>
-
-              <Typography level="body-xs" sx={{ color: 'neutral.500', flexShrink: 0 }}>
-                {cnt} תגים • {usage}
-              </Typography>
-            </Box>
-
-            {children.length > 0 ? (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                {children.map((t) => {
-                  const inactiveChild = t?.isActive === false
-
-                  return (
-                    <Chip
-                      key={t.id}
-                      size="sm"
-                      variant="soft"
-                      startDecorator={iconUi({id: 'children', sx: { fontSize: 12, color: '#000' } })}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEdit(t)
-                      }}
-                      sx={sx.chip(inactiveChild, typeColor)}
-                    >
-                      <Typography level="body-xs" noWrap>
-                        {t.tagName || 'תג'} • {t.useCount || 0}
-                      </Typography>
-                    </Chip>
-                  )
-                })}
-              </Box>
-            ) : null}
-          </Sheet>
-        )
-      })}
-
-      {orphans.length > 0 ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-            ללא קטגוריה
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-            {orphans.map((t) => {
-              const inactiveChild = t?.isActive === false
-
-              return (
-                <Chip
-                  key={t.id}
-                  size="sm"
-                  variant="soft"
-                  startDecorator={iconUi({id: ui.icon, sx: { fontSize: 12, color: '#000' } })}
-                  onClick={() => onEdit(t)}
-                  sx={{ maxWidth: '100%', opacity: inactiveChild ? 0.65 : 1, cursor: 'pointer' }}
-                >
-                  <Typography level="body-xs" noWrap>
-                    {t.tagName || 'תג'} • {t.useCount || 0}
-                  </Typography>
-                </Chip>
-              )
-            })}
-          </Box>
-        </Box>
-      ) : null}
-    </Sheet>
-  )
-}
-
-export default function TagsListMobile({ sections, onEdit }) {
+export default function TagsListMobile({ sections }) {
   const s = sections || {}
+  const types = Array.isArray(s.types) ? s.types : []
 
-  const hasData = Boolean(s.general || s.analysis || s.other)
-
-  if (!hasData) {
+  if (!types.length && !Array.isArray(s.categories)) {
     return (
       <Sheet variant="soft" sx={{ borderRadius: 16, p: 2, textAlign: 'center' }}>
-        <Typography level="body-sm">אין תגים להצגה</Typography>
+        <Typography level="body-sm">אין תגיות להצגה</Typography>
       </Sheet>
     )
   }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-      <SectionMobile
-        typeKey="general"
-        data={s.general}
-        onEdit={onEdit}
-      />
-      
-      <SectionMobile
-        typeKey="analysis"
-        data={s.analysis}
-        onEdit={onEdit}
-      />
+      <Sheet variant="outlined" sx={{ borderRadius: 16, p: 1.25 }}>
+        <Typography level="title-sm" sx={{ mb: 1 }}>
+          קטגוריות וידאו
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+          {(s.categories || []).map(category => (
+            <Chip
+              key={category.id}
+              size="sm"
+              variant="soft"
+              startDecorator={iconUi({ id: category.iconId || 'tags' })}
+            >
+              {category.label}
+            </Chip>
+          ))}
+        </Box>
+      </Sheet>
 
-      <SectionMobile
-        typeKey="other"
-        data={s.other}
-        onEdit={onEdit}
-       />
+      {types.map(type => {
+        const color = TYPE_COLORS[type.id] || '#64748B'
+
+        return (
+          <Sheet key={type.id} variant="outlined" sx={{ borderRadius: 16, p: 1.25 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              {iconUi({ id: type.iconId || 'tags', sx: { color } })}
+              <Typography level="title-sm">{type.label}</Typography>
+              <Chip size="sm" variant="soft">
+                {type.tags?.length || 0}
+              </Chip>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+              {(type.tags || []).map(tag => (
+                <Chip key={tag.id} size="sm" variant="soft" sx={{ color }}>
+                  {tag.tagName}
+                </Chip>
+              ))}
+            </Box>
+          </Sheet>
+        )
+      })}
     </Box>
   )
 }

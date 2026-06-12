@@ -85,8 +85,21 @@ export default function EditDrawer({
   const canSave = Boolean(initial?.id) && isDirty && isValid && !saving
 
   const attachModes = useMemo(() => {
+    if (!isAttachMode) {
+      return {
+        disabled: {
+          disableObjectType: false,
+          disableMeeting: false,
+          disablePlayer: false,
+          disableTeam: false,
+        },
+        isMeetingMode: false,
+        isEntityMode: false,
+      }
+    }
+
     return getAttachModes(draft)
-  }, [draft])
+  }, [isAttachMode, draft])
 
   const handleSave = useCallback(async () => {
     if (!canSave) return
@@ -174,7 +187,7 @@ export default function EditDrawer({
     <DrawerShell
       entity={entity}
       open={open}
-      size="lg"
+      size="md"
       anchor={anchor}
       onClose={onClose}
       saving={saving}
@@ -204,27 +217,27 @@ export default function EditDrawer({
         />
       }
     >
-      {isAttachMode ? (
-        <VideoAttachDrawerBody
-          draft={draft}
-          setDraft={setDraft}
-          context={context}
-          locks={locks}
-          disabled={attachModes.disabled}
-          isMeetingMode={attachModes.isMeetingMode}
-          isEntityMode={attachModes.isEntityMode}
-          objectTypeOptions={objectTypeOptions}
-          contextTypeOptions={contextTypeOptions}
-        />
+    {isAttachMode ? (
+      <VideoAttachDrawerBody
+        draft={draft}
+        setDraft={setDraft}
+        context={context}
+        locks={locks}
+        disabled={attachModes.disabled}
+        isMeetingMode={attachModes.isMeetingMode}
+        isEntityMode={attachModes.isEntityMode}
+        objectTypeOptions={objectTypeOptions}
+        contextTypeOptions={contextTypeOptions}
+      />
       ) : (
-        <VideoEditDrawerBody
-          draft={draft}
-          setDraft={setDraft}
-          disabled={saving}
-          context={context}
-          type={entityType === 'analysis' ? 'analysis' : 'general'}
-        />
-      )}
+      <VideoEditDrawerBody
+        draft={draft}
+        setDraft={setDraft}
+        disabled={saving}
+        context={context}
+        type={entityType === 'analysis' ? 'analysis' : 'general'}
+      />
+     )}
     </DrawerShell>
   )
 }

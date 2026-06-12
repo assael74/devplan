@@ -1,144 +1,172 @@
-// src/features/tagsHub/components/TagsList.js
+// src/features/tagsHub/components/desktop/TagsList.js
+
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/joy'
+import { Box, Chip, Typography } from '@mui/joy'
+
 import { iconUi } from '../../../../ui/core/icons/iconUi'
 import { tagSx as sx } from '../../tags.sx'
-import { getEntityColors } from '../../../../ui/core/theme/Colors'
 
-const TYPE_UI = {
-  general: { title: 'וידאו', icon: 'videoGeneral' },
-  analysis: { title: 'ניתוח וידאו', icon: 'videoAnalysis' },
-  other: { title: 'אחר', icon: 'tags' },
+const TYPE_COLORS = {
+  formation: '#7C3AED',
+  pitch_area: '#0891B2',
+  game_principle: '#2563EB',
+  action_technique: '#16A34A',
+  situation: '#F97316',
+  position_role: '#0F766E',
+  mental: '#D97706',
 }
 
-function Section({ typeKey, data, onEdit }) {
+const toneColors = {
+  green: '#16A34A',
+  orange: '#F97316',
+  blue: '#2563EB',
+  purple: '#7C3AED',
+  yellow: '#D97706',
+  cyan: '#0891B2',
+  teal: '#0F766E',
+  neutral: '#64748B',
+}
 
-  const ui = TYPE_UI[typeKey] || TYPE_UI.other
-  const typeColor = getEntityColors(ui.icon).bg
+function StatChip({ label, value, color = 'neutral' }) {
+  return (
+    <Chip size="md" variant="soft" color={color} sx={sx.statChip}>
+      {label}: {value}
+    </Chip>
+  )
+}
 
-  const groups = Array.isArray(data?.groups) ? data.groups : []
-  const orphans = Array.isArray(data?.orphans) ? data.orphans : []
-  const childrenByGroupId = data?.childrenByGroupId instanceof Map ? data.childrenByGroupId : new Map()
-  const usageByGroupId = data?.usageByGroupId instanceof Map ? data.usageByGroupId : new Map()
-  const childrenCountByGroupId = data?.childrenCountByGroupId instanceof Map ? data.childrenCountByGroupId : new Map()
-
-  const hasAnything =
-    groups.length > 0 ||
-    orphans.length > 0 ||
-    (childrenByGroupId && [...childrenByGroupId.keys()].length > 0)
-
-  if (!hasAnything) return null
+function CategoryChip({ category }) {
+  const color = toneColors[category?.tone] || toneColors.neutral
 
   return (
-    <Box sx={sx.section}>
-      <Box sx={sx.sectionHeader}>
-        <Box sx={sx.sectionTitleRow}>
-          {iconUi({ id: ui.icon, sx: { color: typeColor } })}
+    <Chip
+      size="md"
+      variant="soft"
+      startDecorator={iconUi({ id: category.iconId || 'tags', sx: { color } })}
+      sx={sx.videoCategoryChip(color)}
+    >
+      {category.label}
+    </Chip>
+  )
+}
+
+function SeedTagChip({ tag, type }) {
+  const color = TYPE_COLORS[type?.id] || '#64748B'
+  const hasSlug = Boolean(tag?.slug)
+  const hasOrder = Number.isFinite(Number(tag?.order))
+  const issue = !hasSlug || !hasOrder
+
+  return (
+    <Chip
+      size="md"
+      variant={issue ? 'outlined' : 'soft'}
+      color={issue ? 'warning' : 'neutral'}
+      startDecorator={iconUi({ id: type?.iconId || 'tags', sx: { color } })}
+      sx={sx.seedTagChip(color, issue)}
+    >
+      {tag.tagName}
+    </Chip>
+  )
+}
+
+function TypeSection({ type }) {
+  const color = TYPE_COLORS[type?.id] || '#64748B'
+  const tags = Array.isArray(type?.tags) ? type.tags : []
+  const issueCount = tags.filter(tag => !tag.slug || !Number.isFinite(Number(tag.order))).length
+
+  return (
+    <Box sx={sx.videoTypeSection(color)}>
+      <Box sx={sx.videoTypeHeader}>
+        <Box sx={sx.videoTypeTitle}>
+          {iconUi({ id: type.iconId || 'tags', sx: { color } })}
           <Typography level="title-sm" noWrap>
-            {ui.title}
+            {type.label}
           </Typography>
+          <Typography level="body-xs" sx={{ color: 'text.tertiary' }} noWrap>
+            {type.id}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <StatChip label="תגים" value={tags.length} />
+          {issueCount ? <StatChip label="בעיות" value={issueCount} color="warning" /> : null}
         </Box>
       </Box>
 
-      {/* groups + children */}
-      {groups.map((g) => {
-        const gid = g.id
-        const children = childrenByGroupId.get(gid) || []
-        const cnt = childrenCountByGroupId.get(gid) || 0
-        const usage = usageByGroupId.get(gid) || 0
-        const inactive = g?.isActive === false
-
-        return (
-          <Box key={gid} sx={{ mb: 1 }}>
-            <Box sx={sx.groupRow(inactive)}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-                <Box onClick={() => onEdit(g)}>
-                  <Chip
-                    variant="soft"
-                    startDecorator={iconUi({ id: 'parents' })}
-                    sx={sx.groupChip(typeColor)}
-                  >
-                    <Typography level="body-sm" noWrap sx={{ minWidth: 0 }}>
-                      {g.tagName || 'קטגוריה'}
-                    </Typography>
-                  </Chip>
-                </Box>
-
-
-                <Typography level="body-xs" sx={{ color: 'neutral.600' }} noWrap>
-                  {cnt} תגים • {usage}
-                </Typography>
-              </Box>
-            </Box>
-
-            {children.length > 0 && (
-              <Box sx={sx.childrenWrap}>
-                {children.map((t) => {
-                  const inactiveChild = t?.isActive === false
-                  return (
-                    <Box key={t.id} sx={{ display: 'inline-flex' }} onClick={() => onEdit(t)}>
-                      <Chip
-                        variant="soft"
-                        startDecorator={iconUi({ id: 'children', sx: { fontSize: 12, color: '#000000' } })}
-                        sx={sx.childChip(typeColor, inactiveChild)}
-                      >
-                        <Typography level="body-xs" noWrap sx={{ minWidth: 0, fontSize: 11, lineHeight: '16px' }}>
-                          {t.tagName || 'תג'} • {t.useCount || 0}
-                        </Typography>
-                      </Chip>
-                    </Box>
-                  )
-                })}
-              </Box>
-            )}
-          </Box>
-        )
-      })}
-
-      {/* orphans */}
-      {orphans.length > 0 && (
-        <Box>
-          <Typography level="body-xs" sx={{ color: 'neutral.600', mb: 0.75 }}>
-            ללא קטגוריה
-          </Typography>
-          <Box sx={sx.childrenWrap}>
-            {orphans.map((t) => {
-              const inactiveChild = t?.isActive === false
-              return (
-                <Box key={t.id} sx={{ display: 'inline-flex' }} onClick={() => onEdit(t)}>
-                  <Chip
-                    variant="soft"
-                    startDecorator={iconUi({ id: ui.icon, sx: { fontSize: 12, color: '#000000' } })}
-                    sx={sx.tagChip(typeColor, inactiveChild)}
-                  >
-                    <Typography level="body-xs" noWrap sx={{ minWidth: 0, fontSize: 11, lineHeight: '16px' }}>
-                      {t.tagName || 'תג'} • {t.useCount || 0}
-                    </Typography>
-                  </Chip>
-                </Box>
-              )
-            })}
-          </Box>
+      {tags.length ? (
+        <Box sx={sx.videoTagsWrap}>
+          {tags.map(tag => (
+            <SeedTagChip key={tag.id} tag={tag} type={type} />
+          ))}
+        </Box>
+      ) : (
+        <Box sx={sx.emptyInline}>
+          <Typography level="body-xs">אין תגיות תחת סוג זה</Typography>
         </Box>
       )}
     </Box>
   )
 }
 
-export default function TagsList({ sections, onEdit }) {
+export default function TagsList({ sections }) {
   const s = sections || {}
+  const stats = s.stats || {}
+  const categories = Array.isArray(s.categories) ? s.categories : []
+  const types = Array.isArray(s.types) ? s.types : []
+  const invalidTags = Array.isArray(s.invalidTags) ? s.invalidTags : []
+
+  const hasAnything = categories.length || types.length || invalidTags.length
+
+  if (!hasAnything) {
+    return (
+      <Box sx={sx.empty}>
+        <Typography level="body-sm">אין תגיות להצגה</Typography>
+      </Box>
+    )
+  }
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Section typeKey="general" data={s.general} onEdit={onEdit} />
+    <Box sx={sx.videoTagsPage}>
+      <Box sx={sx.statsRow}>
+        <StatChip label="קטגוריות" value={stats.categories ?? categories.length} />
+        <StatChip label="סוגים" value={stats.types ?? types.length} />
+        <StatChip label="תגיות" value={stats.tags ?? types.reduce((acc, type) => acc + type.tags.length, 0)} />
+        {stats.invalidTags ? <StatChip label="לא תקין" value={stats.invalidTags} color="danger" /> : null}
+      </Box>
 
-      <Section typeKey="analysis" data={s.analysis} onEdit={onEdit} />
-
-      <Section typeKey="other" data={s.other} onEdit={onEdit} />
-      {!s.general && !s.analysis && !s.other && (
-        <Box sx={sx.empty}>
-          <Typography level="body-sm">אין תגים להצגה</Typography>
+      <Box sx={sx.section}>
+        <Box sx={sx.sectionHeader}>
+          <Box sx={sx.sectionTitleRow}>
+            {iconUi({ id: 'videoGeneral' })}
+            <Typography level="title-sm">קטגוריות וידאו ראשיות</Typography>
+          </Box>
         </Box>
-      )}
+
+        <Box sx={sx.videoTagsWrap}>
+          {categories.map(category => (
+            <CategoryChip key={category.id} category={category} />
+          ))}
+        </Box>
+      </Box>
+
+      {types.map(type => (
+        <TypeSection key={type.id} type={type} />
+      ))}
+
+      {invalidTags.length ? (
+        <Box sx={sx.issueSection}>
+          <Typography level="title-sm" color="danger">
+            תגיות עם tagType לא תקין
+          </Typography>
+          <Box sx={sx.videoTagsWrap}>
+            {invalidTags.map(tag => (
+              <Chip key={tag.id} size="sm" variant="soft" color="danger">
+                {tag.tagName} · {tag.tagType || 'חסר סוג'}
+              </Chip>
+            ))}
+          </Box>
+        </Box>
+      ) : null}
     </Box>
   )
 }

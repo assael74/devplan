@@ -25,7 +25,7 @@ export const sx = {
   },
 
   headerTitle: {
-    fontWeight: 900,
+    fontWeight: 700,
     lineHeight: 1.15,
     whiteSpace: 'nowrap',
     overflow: 'hidden',

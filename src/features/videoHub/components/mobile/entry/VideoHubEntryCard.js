@@ -41,7 +41,7 @@ export default function VideoHubEntryCard({
         </Box>
 
         <Box>
-          <Typography level="title-lg" sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.1 }}>
+          <Typography level="title-lg" sx={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.1 }}>
             {title}
           </Typography>
 

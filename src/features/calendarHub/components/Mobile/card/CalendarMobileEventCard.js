@@ -55,7 +55,7 @@ export default function CalendarMobileEventCard({
             <Typography
               level="title-sm"
               noWrap
-              sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}
+              sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}
             >
               {event?.title || typeMeta?.label || 'אירוע'}
             </Typography>
@@ -94,7 +94,7 @@ export default function CalendarMobileEventCard({
           {timeLabel ? (
             <Typography
               level="body-xs"
-              sx={{ color: 'text.primary', fontWeight: 800, mt: 0.75 }}
+              sx={{ color: 'text.primary', fontWeight: 700, mt: 0.75 }}
             >
               {timeLabel}
             </Typography>

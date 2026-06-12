@@ -220,16 +220,21 @@ export const shortsUpdateRouterMap = {
 
   videos: {
     notes: { shortKey: 'videos.videoNotes', path: 'notes', mode: 'merge' },
+    description: { shortKey: 'videos.videoNotes', path: 'description', mode: 'merge' },
 
     tagIds: { shortKey: 'videos.videoTags', path: 'tagIds', mode: 'merge' },
 
     name: { shortKey: 'videos.videoInfo', path: 'name', mode: 'merge' },
     link: { shortKey: 'videos.videoInfo', path: 'link', mode: 'merge' },
+    primaryCategoryId: { shortKey: 'videos.videoInfo', path: 'primaryCategoryId', mode: 'merge' },
+    categoryIds: { shortKey: 'videos.videoInfo', path: 'categoryIds', mode: 'replace', },
     source: { shortKey: 'videos.videoInfo', path: 'source', mode: 'merge' },
+    sourceType: { shortKey: 'videos.videoInfo', path: 'sourceType', mode: 'merge' },
     publishedAt: { shortKey: 'videos.videoInfo', path: 'publishedAt', mode: 'merge' },
     duration: { shortKey: 'videos.videoInfo', path: 'duration', mode: 'merge' },
     shares: { shortKey: 'videos.videoInfo', path: 'shares', mode: 'merge' },
     thumbnail: { shortKey: 'videos.videoInfo', path: 'thumbnail', mode: 'merge' },
+    thumbnailUrl: { shortKey: 'videos.videoInfo', path: 'thumbnailUrl', mode: 'merge' },
   },
 
   tags: {

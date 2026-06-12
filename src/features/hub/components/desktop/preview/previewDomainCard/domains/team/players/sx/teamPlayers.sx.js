@@ -79,7 +79,7 @@ export const modalSx = {
   },
 
   heroTitle: {
-    fontWeight: 800,
+    fontWeight: 700,
     letterSpacing: '-0.02em',
   },
 
@@ -129,7 +129,7 @@ export const modalSx = {
   },
 
   kpiValue: {
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: 20,
     lineHeight: 1,
   },
@@ -276,7 +276,7 @@ export const modalSx = {
   },
 
   potentialValue: {
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: 16,
     lineHeight: 1,
   },

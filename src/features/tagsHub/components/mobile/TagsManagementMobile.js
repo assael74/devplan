@@ -9,10 +9,8 @@ import FiltersTrigger from '../../../../ui/patterns/filters/FiltersTrigger'
 import MobileFiltersDrawerShell from '../../../../ui/patterns/filters/MobileFiltersDrawerShell'
 import SortDrawerMobile from '../../../../ui/patterns/sort/SortDrawerMobile'
 
-import TagHubFabMenu from '../../sharedUi/TagHubFabMenu'
 import TagsFiltersContent from './TagsFiltersContent'
 import TagsListMobile from './TagsListMobile'
-import TagEditorDrawer from '../../sharedUi/TagEditorDrawer.js'
 
 import { hubSx as sx } from './sx/hub.sx'
 
@@ -22,28 +20,14 @@ function getActiveFiltersCount(filters) {
 
   if (f.q) count += 1
   if (f.tagType && f.tagType !== 'all') count += 1
-  if (f.hierarchy && f.hierarchy !== 'all') count += 1
-  if (f.showArchived) count += 1
 
   return count
-}
-
-function hasActiveFilters(filters) {
-  return getActiveFiltersCount(filters) > 0
 }
 
 export default function TagsManagementMobile({
   uiFilters,
   onChangeFilters,
   sections,
-  tagsNorm,
-  editTag,
-  drawerOpen,
-  onEdit,
-  onCloseDrawer,
-  onCreateTag,
-  onAddTask,
-  taskContext,
   sort,
   sortOptions,
   onChangeSortBy,
@@ -62,8 +46,6 @@ export default function TagsManagementMobile({
     onChangeFilters({
       q: '',
       tagType: 'all',
-      showArchived: false,
-      hierarchy: 'all',
     })
   }
 
@@ -106,7 +88,7 @@ export default function TagsManagementMobile({
       </Box>
 
       <Box className="dpScrollThin" sx={sx.scroll}>
-        <TagsListMobile sections={sections} onEdit={onEdit} />
+        <TagsListMobile sections={sections} />
       </Box>
 
       <MobileFiltersDrawerShell
@@ -134,21 +116,6 @@ export default function TagsManagementMobile({
         sortOptions={sortOptions}
         onChangeSortBy={onChangeSortBy}
         onChangeSortDirection={onChangeSortDirection}
-      />
-
-      <TagHubFabMenu
-        onCreateTag={onCreateTag}
-        onAddTask={onAddTask}
-        taskContext={taskContext}
-        entityType="tags"
-      />
-
-      <TagEditorDrawer
-        open={drawerOpen}
-        tag={editTag}
-        isMobile={true}
-        parentOptions={tagsNorm}
-        onClose={onCloseDrawer}
       />
     </Box>
   )

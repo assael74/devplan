@@ -3,6 +3,7 @@ import { contactIcons } from './core/contact.icons';
 import { generalIcons } from './core/general.icons';
 import { navigationIcons } from './core/navigation.icons';
 import { statusIcons } from './core/status.icons';
+import { tagsIcons } from './core/tags.icons';
 
 import { entitiesIcons } from './entities/entities.icons.js';
 import { tasksIcons } from './entities/tasks.icons.js';
@@ -26,6 +27,7 @@ export const appIconMap = {
   ...generalIcons,
   ...navigationIcons,
   ...statusIcons,
+  ...tagsIcons,
 
   ...entitiesIcons,
   ...tasksIcons,

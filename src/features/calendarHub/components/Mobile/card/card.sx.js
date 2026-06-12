@@ -52,7 +52,7 @@ export const cardSx = {
 
   typoTime: {
     color: 'text.secondary',
-    fontWeight: 800,
+    fontWeight: 700,
     lineHeight: 1.1,
     textAlign: 'center',
     direction: 'ltr',

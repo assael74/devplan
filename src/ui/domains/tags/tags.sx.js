@@ -127,7 +127,7 @@ export const tagsSx = {
   groupHeader: {
     px: 1,
     py: 0.55,
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: 12,
     opacity: 0.8,
     bgcolor: 'background.popup',

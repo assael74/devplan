@@ -13,9 +13,20 @@ import { iconUi } from '../../core/icons/iconUi.js'
 const safeId = (v) => String(v ?? '').trim()
 const safeLabel = (v) => String(v ?? '').trim()
 
-const normalizeType = (v) => {
-  const t = safeLabel(v).toLowerCase()
-  return t === 'analysis' || t === 'general' ? t : 'general'
+const normalizeType = value => {
+  const type = safeLabel(value).toLowerCase()
+
+  if (type === 'analysis' || type === 'general') return type
+
+  if (
+    type === 'videogeneralprofessional' ||
+    type === 'professionalvideo' ||
+    type === 'video_professional'
+  ) {
+    return 'videoGeneralProfessional'
+  }
+
+  return 'general'
 }
 
 export default function TagsContainer({
@@ -120,12 +131,18 @@ export default function TagsContainer({
               size="sm"
               options={availableOptions}
               value={null}
+              inputValue={input}
+              onInputChange={(_, nextInput, reason) => {
+                if (reason === 'reset') return
+                setInput(nextInput)
+              }}
               groupBy={(opt) => safeLabel(opt?.groupName || 'ללא קטגוריה')}
               getOptionLabel={(opt) => safeLabel(opt?.tagName || opt?.slug || '')}
               isOptionEqualToValue={(opt, val) => safeId(opt?.id) === safeId(val?.id)}
               onChange={(_, newValue) => {
                 if (!newValue) return
                 addId(newValue.id)
+                setInput('')
               }}
               placeholder={placeholder}
               clearOnBlur

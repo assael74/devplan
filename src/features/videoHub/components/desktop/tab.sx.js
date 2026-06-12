@@ -55,6 +55,6 @@ export const videoTabSx = {
     px: 2,
     pb: 2,
     alignContent: 'start',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(204px, 204px))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(214px, 214px))',
   },
 }

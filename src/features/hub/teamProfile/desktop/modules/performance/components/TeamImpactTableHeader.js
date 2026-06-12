@@ -44,7 +44,7 @@ export default function TeamImpactTableHeader({ cols, sortKey, sortDir, onSort }
                 colSpan={span}
                 style={{ textAlign: 'center', verticalAlign: 'middle' }}
               >
-                <Typography level="body-xs" sx={{ fontWeight: 900 }}>
+                <Typography level="body-xs" sx={{ fontWeight: 700 }}>
                   {label}
                 </Typography>
               </th>

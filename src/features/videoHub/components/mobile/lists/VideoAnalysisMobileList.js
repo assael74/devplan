@@ -28,7 +28,7 @@ export default function VideoAnalysisMobileList({
         }}
       >
         <Box sx={{ maxWidth: 280 }}>
-          <Typography level="title-md" sx={{ fontWeight: 900 }}>
+          <Typography level="title-md" sx={{ fontWeight: 700 }}>
             אין סרטונים להצגה
           </Typography>
 

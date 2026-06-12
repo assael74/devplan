@@ -61,14 +61,14 @@ export const squadSimulatorPrintSx = {
 
   eyebrow: {
     fontSize: 10,
-    fontWeight: 800,
+    fontWeight: 700,
     color: '#fbbf24',
     letterSpacing: 0,
   },
 
   title: {
     fontSize: 25,
-    fontWeight: 900,
+    fontWeight: 700,
     lineHeight: 1.12,
     color: '#ffffff',
   },
@@ -104,13 +104,13 @@ export const squadSimulatorPrintSx = {
 
   highlightLabel: {
     fontSize: 9,
-    fontWeight: 800,
+    fontWeight: 700,
     color: palette.slate,
   },
 
   highlightValue: {
     fontSize: 14,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
     lineHeight: 1.15,
   },
@@ -143,13 +143,13 @@ export const squadSimulatorPrintSx = {
     bgcolor: palette.navy,
     color: '#ffffff',
     fontSize: 12,
-    fontWeight: 900,
+    fontWeight: 700,
     flexShrink: 0,
   },
 
   sectionTitle: {
     fontSize: 14,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
   },
 
@@ -181,12 +181,12 @@ export const squadSimulatorPrintSx = {
   kpiLabel: {
     fontSize: 10,
     color: palette.slate,
-    fontWeight: 800,
+    fontWeight: 700,
   },
 
   kpiValue: {
     fontSize: 21,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
     lineHeight: 1,
   },
@@ -214,7 +214,7 @@ export const squadSimulatorPrintSx = {
 
   confidenceTitle: {
     fontSize: 10,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
     lineHeight: 1.15,
   },
@@ -226,7 +226,7 @@ export const squadSimulatorPrintSx = {
 
   confidenceValue: {
     fontSize: 16,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
     lineHeight: 1,
   },
@@ -258,12 +258,12 @@ export const squadSimulatorPrintSx = {
 
   positionCode: {
     fontSize: 11,
-    fontWeight: 900,
+    fontWeight: 700,
   },
 
   positionCount: {
     fontSize: 10,
-    fontWeight: 800,
+    fontWeight: 700,
   },
 
   splitGrid: {
@@ -296,7 +296,7 @@ export const squadSimulatorPrintSx = {
 
   rowTitle: {
     fontSize: 11,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
   },
 
@@ -314,7 +314,7 @@ export const squadSimulatorPrintSx = {
     px: 0.75,
     py: 0.25,
     fontSize: 10,
-    fontWeight: 900,
+    fontWeight: 700,
     bgcolor: tone(status).bg,
     color: tone(status).text,
   }),
@@ -328,7 +328,7 @@ export const squadSimulatorPrintSx = {
     px: 0.75,
     py: 0.25,
     fontSize: 9.5,
-    fontWeight: 800,
+    fontWeight: 700,
     bgcolor: palette.slateSoft,
     color: palette.navy2,
   },
@@ -360,7 +360,7 @@ export const squadSimulatorPrintSx = {
 
   playerName: {
     fontSize: 10,
-    fontWeight: 900,
+    fontWeight: 700,
     color: palette.navy,
     lineHeight: 1.2,
   },
@@ -373,7 +373,7 @@ export const squadSimulatorPrintSx = {
       bgcolor: palette.navy,
       color: '#ffffff',
       textAlign: 'right',
-      fontWeight: 900,
+      fontWeight: 700,
       border: `1px solid ${palette.navy2}`,
       p: 0.7,
       whiteSpace: 'nowrap',

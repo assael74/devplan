@@ -31,7 +31,7 @@ export const toolbarSx = {
   countChip: {
     border: '1px solid',
     borderColor: 'divider',
-    fontWeight: 800,
+    fontWeight: 700,
   },
 
   sortButton: {

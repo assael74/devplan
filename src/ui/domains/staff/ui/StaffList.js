@@ -20,7 +20,7 @@ export default function StaffList({
     return (
       <Box sx={staffSx.empty(compact)}>
         <Box>
-          <Typography level="title-sm" sx={{ fontWeight: 800 }}>
+          <Typography level="title-sm" sx={{ fontWeight: 700 }}>
             {emptyText}
           </Typography>
         </Box>

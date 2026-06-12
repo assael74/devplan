@@ -1,4 +1,4 @@
-// ui/domains/video/videoAnalysis/mobile/sharedUi/shared.ui.sx.js
+// ui/domains/video/videoAnalysis/mobile/shared.ui.sx.js
 
 import { getEntityColors } from '../../../../../core/theme/Colors.js'
 
@@ -62,6 +62,13 @@ export const sharedSx = {
     display: 'grid',
     gap: 0.65,
     alignContent: 'start',
+  },
+
+  moreButton: {
+    minWidth: 28,
+    width: 28,
+    height: 28,
+    borderRadius: 999,
   },
 
   title: {
@@ -156,5 +163,31 @@ export const sharedSx = {
       height: 11,
       fontSize: 11,
     },
-  }
+  },
+
+  tagTypeChip: {
+    '--Chip-minHeight': '18px',
+    '--Chip-paddingInline': '6px',
+    maxWidth: '100%',
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#0891B2',
+    bgcolor: 'rgba(8,145,178,0.08)',
+    border: '1px solid',
+    borderColor: 'rgba(8,145,178,0.18)',
+
+    '& .MuiChip-label': {
+      px: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      display: 'block',
+    },
+
+    '& .MuiChip-startDecorator svg': {
+      width: 11,
+      height: 11,
+      fontSize: 11,
+    },
+  },
 }

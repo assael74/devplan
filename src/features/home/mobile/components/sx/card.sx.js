@@ -183,7 +183,7 @@ export const cardSx = {
     height: 26,
     borderRadius: 999,
     fontSize: '0.75rem',
-    fontWeight: 800,
+    fontWeight: 700,
     px: 1,
   },
 
@@ -376,7 +376,7 @@ export const cardSx = {
   },
 
   entryTitle: {
-    fontWeight: 900,
+    fontWeight: 700,
     fontSize: '1.05rem',
     lineHeight: 1.1,
   },
@@ -409,7 +409,7 @@ export const cardSx = {
       px: 1.1,
       bgcolor: alpha(accent, 0.12),
       color: accent,
-      fontWeight: 900,
+      fontWeight: 700,
       fontSize: '0.78rem',
       border: '1px solid',
       borderColor: alpha(accent, 0.18),

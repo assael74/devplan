@@ -129,7 +129,7 @@ export const entrySx = {
       px: 1.1,
       bgcolor: alpha(c.accent || '#3B82F6', 0.12),
       color: c.accent || '#3B82F6',
-      fontWeight: 800,
+      fontWeight: 700,
       fontSize: '0.78rem',
       border: '1px solid',
       borderColor: alpha(c.accent || '#3B82F6', 0.18),

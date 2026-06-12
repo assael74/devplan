@@ -188,6 +188,13 @@ export const VIDEO_SEED_TAGS = [
     slug: 'first_second_ball_positioning',
     order: 110,
   },
+  {
+    id: 'width_field',
+    tagName: 'ריווח',
+    tagType: 'game_principle',
+    slug: 'width_field',
+    order: 120,
+  },
 
   // פעולה / טכניקה
   {

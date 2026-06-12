@@ -40,7 +40,7 @@ function PositionLetterIcon({ text, fontSize = 'md', sx = {} }) {
         backgroundColor: '#fff',
         color: '#111827',
         fontSize: len >= 3 ? base * 0.42 : base * 0.5,
-        fontWeight: 800,
+        fontWeight: 700,
         letterSpacing: len >= 3 ? -0.4 : -0.2,
         lineHeight: 1,
         transform: 'translateY(1px)',

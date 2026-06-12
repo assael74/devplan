@@ -52,7 +52,9 @@ export const hubSx = {
     minHeight: 0,
     overflowY: 'auto',
     px: 1.25,
-    py: 1.25,
+    pt: 1.25,
+    pb: 8,
+    scrollPaddingBottom: '64px',
   },
 
   // SectionMobile
