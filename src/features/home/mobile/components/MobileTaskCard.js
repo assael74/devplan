@@ -1,7 +1,7 @@
 // features/home/components/MobileTaskCard.js
 
 import React from 'react'
-import { Card, Chip, IconButton, Link, Stack, Typography, Box, Tooltip } from '@mui/joy'
+import { Card, Chip, IconButton, Link, Stack, Typography, Box } from '@mui/joy'
 
 import { cardSx as sx } from './sx/card.sx'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'

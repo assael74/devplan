@@ -1,10 +1,9 @@
 // components/desktop/preview/PreviewDomainCard/PreviewDomainCardOverlay.js
 
 import React, { useMemo } from 'react'
-import { Box, Drawer, DialogContent, ModalClose, Divider, Sheet, IconButton } from '@mui/joy'
+import { Box, Drawer, DialogContent, ModalClose, Divider, Sheet } from '@mui/joy'
 
 import PreviewDomainCardHeader from './PreviewDomainCardHeader'
-import { iconUi } from '../../../../../../ui/core/icons/iconUi'
 import { getDomainDef } from './domainRegistry'
 import { getEntityKind } from './utils/getEntityKind'
 import { overlaySx as sx } from './sx/previewDomainCardOverlay.sx.js'

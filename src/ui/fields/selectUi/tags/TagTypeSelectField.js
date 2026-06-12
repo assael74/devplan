@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { FormControl, FormLabel, Select, Option, Stack, Divider, Box } from '@mui/joy';
 import { iconUi } from '../../../core/icons/iconUi.js';
-import { getEntityColors } from '../../../core/theme/Colors'
 import { TAG_TYPE_OPTIONS } from '../../../../shared/tags/tags.constants.js'
 
 export default function TagTypeSelectField({

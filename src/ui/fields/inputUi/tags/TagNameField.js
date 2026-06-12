@@ -1,6 +1,6 @@
 // ui/fields/inputUi/tags/TagNameField.js
 import * as React from 'react';
-import { Input, FormControl, FormLabel, Typography } from '@mui/joy';
+import { Input, FormControl, FormLabel } from '@mui/joy';
 
 export default function TagNameField({
   value,

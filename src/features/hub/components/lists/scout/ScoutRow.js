@@ -1,11 +1,10 @@
 // features/hub/components/lists/scout/ScoutRow.js
 
 import React from 'react'
-import { Sheet, Box, Typography, Chip, Avatar, IconButton } from '@mui/joy'
+import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { listSx as sx } from '../list.sx.js'
 
 function ColorDot({ active }) {
@@ -24,8 +23,6 @@ export default function ScoutRow({
 }) {
   const fullName = scout?.title || ''
   const subLine = scout?.subline || ''
-  const photo = scout?.photo || ''
-  const idIcon = scout?.idIcon || ''
 
   return (
     <Box

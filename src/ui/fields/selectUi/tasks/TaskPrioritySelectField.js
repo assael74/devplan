@@ -10,7 +10,6 @@ import {
   TASK_PRIORITY,
   taskPriorityOptions,
 } from '../../../../shared/tasks/tasks.constants.js'
-import { iconUi } from '../../../core/icons/iconUi.js'
 
 const clean = (t) => String(t ?? '').trim()
 

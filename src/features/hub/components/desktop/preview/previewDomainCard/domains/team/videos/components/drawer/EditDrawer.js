@@ -14,7 +14,6 @@ import {
   buildVideoAnalysisEditPatch,
   buildVideoAnalysisMeta,
   getVideoAnalysisEditFieldErrors,
-  getIsVideoAnalysisEditValid,
   isVideoAnalysisEditDirty,
 } from '../../../../../../../../../editLogic/videoAnalysis/index.js'
 
@@ -50,14 +49,10 @@ export default function EditDrawer({
       team,
       metaLabel: buildVideoAnalysisMeta({ ...initial?.raw, ...draft, team, }),
     }
-  }, [initial?.raw, draft, context?.team])
+  }, [initial?.raw, draft, team])
 
   const fieldErrors = useMemo(() => {
     return getVideoAnalysisEditFieldErrors(draft)
-  }, [draft])
-
-  const isValid = useMemo(() => {
-    return getIsVideoAnalysisEditValid(draft)
   }, [draft])
 
   const isDirty = useMemo(() => {

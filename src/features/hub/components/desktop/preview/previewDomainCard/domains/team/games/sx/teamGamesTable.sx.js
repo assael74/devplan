@@ -1,9 +1,5 @@
 // previewDomainCard/domains/team/games/sx/teamGamesTable.sx.js
 
-import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-
 export const tableSx = {
   tableWrapSx: {
     p: 0.75,

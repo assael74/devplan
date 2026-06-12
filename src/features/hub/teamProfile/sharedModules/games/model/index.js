@@ -11,3 +11,6 @@ export * from './useTeamGamesStatsActions.js'
 
 // אחראי על ייבוא משחקים בכמות מתוך טבלה מודבקת
 export * from './useTeamGamesImportActions.js'
+
+// אחראי על פעולות מחיקת משחקים בכמות
+export * from './useTeamGamesDeleteActions.js'

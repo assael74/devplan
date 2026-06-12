@@ -1,26 +1,22 @@
 // features/hub/components/desktop/preview/views/TeamContextView.js
 
 import React, { useMemo, useState, useEffect } from 'react'
-import { Box, Divider, Button, Tooltip, Typography, IconButton } from '@mui/joy'
+import { Box, Divider, Button, Tooltip, IconButton } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 import PreviewHeader from '../PreviewHeader'
 import PreviewDomainsGrid from '../PreviewDomainsGrid'
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
-import JoyStarRating from '../../../../../../ui/domains/ratings/JoyStarRating'
 
 import TeamEditDrawer from './components/teamDrawer/TeamEditDrawer.js'
 import PreviewMetaChips from './components/PreviewMetaChips.js'
-import { LevelStars } from './parts/MetaChips.js'
 
 import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
 import { resolveEntityAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi'
-import { useLifecycle } from '../../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
 import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export default function TeamContextView({ team, routes, counts, onOpenRoute, context }) {
   const liveTeam = useMemo(() => {
@@ -28,11 +24,9 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
     return teams.find((t) => t?.id === team?.id) || team || null
   }, [context?.teams, team])
 
-  const lifecycle = useLifecycle()
-
   const hasTeam = !!team
-  const t = team || {}
-  const c = counts || {}
+  const t = useMemo(() => team || {}, [team])
+  const c = useMemo(() => counts || {}, [counts])
 
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState('')
@@ -64,6 +58,8 @@ export default function TeamContextView({ team, routes, counts, onOpenRoute, con
 
   const isActive = !!t?.active
   const tooltipText = isActive ? 'העבר לארכיון (ניתן לשחזור)' : 'שחזר מועדון מהארכיון'
+
+  void tooltipText
 
   return (
     <>

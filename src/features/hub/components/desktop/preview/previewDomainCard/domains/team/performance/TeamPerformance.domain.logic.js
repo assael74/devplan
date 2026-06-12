@@ -10,7 +10,6 @@ const n = (v) => {
 const safe = (v) => (v == null ? '' : String(v))
 
 const round0 = (v) => (v == null ? null : Math.round(n(v)))
-const round1 = (v) => (v == null ? null : Math.round(n(v) * 10) / 10)
 
 const pickPlayerName = (p) => {
   const first = safe(p?.playerFirstName).trim()
@@ -41,15 +40,6 @@ const calcCoverage = (usedCount, totalCount) => {
   const t = n(totalCount)
   if (!t) return 0
   return usedCount / t
-}
-
-const pickInitials = (p) => {
-  const first = safe(p?.playerFirstName).trim()
-  const last = safe(p?.playerLastName).trim()
-  const a = first ? first[0] : ''
-  const b = last ? last[0] : ''
-  const res = (a + b).toUpperCase().trim()
-  return res || 'P'
 }
 
 export const resolveTeamPerformanceDomain = (team, items) => {

@@ -3,8 +3,6 @@
 import React from 'react'
 import { Box, Card } from '@mui/joy'
 
-import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-
 import PerformanceInfoModal from './PerformanceInfoModal.js'
 import PerformanceModalActions from './PerformanceModalActions.js'
 import PerformanceRichText from './PerformanceRichText.js'

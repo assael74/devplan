@@ -4,15 +4,49 @@ import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('videoAnalysis')
 
+const baseColumns = [
+  '300px',
+  '1px',
+  '82px',
+  '1px',
+  'minmax(150px, 0.5fr)',
+  '1px',
+  'minmax(150px, 1fr)',
+  '1px',
+  '122px',
+  '1px',
+  '70px',
+].join(' ')
+
+const deleteModeColumns = [
+  '34px',
+  '1px',
+  '300px',
+  '1px',
+  '82px',
+  '1px',
+  'minmax(150px, 0.5fr)',
+  '1px',
+  'minmax(150px, 1fr)',
+  '1px',
+  '122px',
+  '1px',
+  '70px',
+].join(' ')
+
 export const rowSx = {
-  panelSx: open => ({
+  panelSx: (open, selected, deleteSelectionMode) => ({
     position: 'relative',
     display: 'grid',
     minWidth: 0,
     mb: 0.75,
     borderRadius: 'lg',
     border: '1px solid',
-    borderColor: open ? 'primary.outlinedBorder' : 'divider',
+    borderColor: selected && deleteSelectionMode
+      ? 'danger.outlinedBorder'
+      : open
+        ? 'primary.outlinedBorder'
+        : 'divider',
     bgcolor: 'background.level2',
     overflow: 'hidden',
     transition: 'border-color .16s ease, box-shadow .16s ease',
@@ -28,28 +62,20 @@ export const rowSx = {
       right: 0,
       width: 3,
       height: '100%',
-      opacity: open ? 1 : 0.8,
-      bgcolor: open ? 'primary.400' : 'divider',
+      opacity: open || selected ? 1 : 0.8,
+      bgcolor: selected && deleteSelectionMode
+        ? 'danger.400'
+        : open
+          ? 'primary.400'
+          : 'divider',
     },
   }),
 
-  rowCardSx: open => ({
+  rowCardSx: (open, selected, deleteSelectionMode) => ({
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: [
-        '300px',
-        '1px',
-        '82px',
-        '1px',
-        'minmax(150px, 0.5fr)',
-        '1px',
-        'minmax(150px, 1fr)',
-        '1px',
-        '122px',
-        '1px',
-        '70px',
-      ].join(' '),
+      md: deleteSelectionMode ? deleteModeColumns : baseColumns,
     },
     gap: 1,
     alignItems: 'stretch',
@@ -57,13 +83,27 @@ export const rowSx = {
     py: 0.35,
     minWidth: 0,
     cursor: 'pointer',
-    bgcolor: open ? 'background.level1' : 'background.level2',
+    bgcolor: selected && deleteSelectionMode
+      ? 'danger.softBg'
+      : open
+        ? 'background.level1'
+        : 'background.level2',
     transition: 'background-color .16s ease',
 
     '&:hover': {
-      bgcolor: 'background.level1',
+      bgcolor: selected && deleteSelectionMode
+        ? 'danger.softBg'
+        : 'background.level1',
     },
   }),
+
+  selectionCellSx: {
+    minWidth: 0,
+    display: { xs: 'none', md: 'flex' },
+    alignItems: 'center',
+    justifyContent: 'center',
+    px: 0.25,
+  },
 
   collapseSx: open => ({
     display: 'grid',

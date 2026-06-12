@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { Sheet, Box, Stack, Typography }from '@mui/joy'
+import { Sheet, Box, Typography }from '@mui/joy'
 
 import { buildAbilitiesExplainerSections } from '../../../shared/abilities/explainer/abilitiesExplainer.logic.js'
 import AbilitiesExplainerSections from './AbilitiesExplainerSections.js'

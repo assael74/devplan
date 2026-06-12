@@ -49,7 +49,7 @@ export default function TeamEditDrawer({
 
     onSaved(patch, { ...initial.raw, ...patch })
     onClose()
-  }, [canSave, run, patch, team, onSaved, onClose])
+  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
 
   const handleReset = useCallback(() => {
     if (pending) return

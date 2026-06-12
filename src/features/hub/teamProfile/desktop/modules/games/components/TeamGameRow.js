@@ -1,7 +1,7 @@
 // teamProfile/modules/games/components/TeamGameRow.js
 
 import React from 'react'
-import { Box, Divider, Tooltip, IconButton } from '@mui/joy'
+import { Box, Checkbox, Divider, Tooltip, IconButton } from '@mui/joy'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import { rowSx as sx } from '../sx/row.sx.js'
@@ -18,6 +18,9 @@ import GameRowDetails from './details/GameRowDetails.js'
 
 export default function TeamGameRow({
   game,
+  gameId,
+  selected = false,
+  deleteSelectionMode = false,
   statsDraft,
   teamScoring,
   playerScoring,
@@ -27,6 +30,7 @@ export default function TeamGameRow({
   onEditEntry,
   performanceView,
   onOpenStatsGame,
+  onToggleSelection,
 }) {
   const [open, setOpen] = React.useState(false)
   const [detailsMounted, setDetailsMounted] = React.useState(false)
@@ -58,15 +62,43 @@ export default function TeamGameRow({
     }
   }
 
+  const handleToggleSelection = event => {
+    event.stopPropagation()
+
+    if (onToggleSelection) {
+      onToggleSelection(gameId)
+    }
+  }
+
   return (
-    <Box sx={sx.panelSx(open)}>
+    <Box sx={sx.panelSx(open, selected, deleteSelectionMode)}>
       <Box
         role="button"
         tabIndex={0}
-        sx={sx.rowCardSx(open)}
+        sx={sx.rowCardSx(open, selected, deleteSelectionMode)}
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
       >
+        {deleteSelectionMode ? (
+          <>
+            <Box sx={sx.selectionCellSx}>
+              <Checkbox
+                size="sm"
+                checked={selected}
+                onClick={handleToggleSelection}
+                onChange={() => {}}
+                slotProps={{
+                  input: {
+                    'aria-label': 'בחירת משחק למחיקה',
+                  },
+                }}
+              />
+            </Box>
+
+            <Divider orientation="vertical" sx={sx.dividerSx} />
+          </>
+        ) : null}
+
         <InfoTeamsSection game={game} />
 
         <Divider orientation="vertical" sx={sx.dividerSx} />

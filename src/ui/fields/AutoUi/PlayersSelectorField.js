@@ -15,7 +15,6 @@ export default function PlayersSelectorField({
 }) {
   const getTeamName = (teamId) => (teams || []).find(t => t.id === teamId)?.teamName || '';
   const getClubName = (clubId) => (clubs || []).find(c => c.id === clubId)?.clubName || '';
-  const getClubPhoto = (clubId) => (clubs || []).find(c => c.id === clubId)?.photo || '';
   const src = (clubId) => buildFallbackAvatar({ entityType: 'club', id: clubId, name: getClubName(clubId) })
   const options = players.map(player => ({
     label: player.playerFullName,

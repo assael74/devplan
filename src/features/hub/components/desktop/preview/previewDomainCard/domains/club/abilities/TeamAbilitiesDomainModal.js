@@ -21,7 +21,7 @@ import SearchRounded from '@mui/icons-material/SearchRounded'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import { resolveTeamAbilitiesDomain } from './abilities.team.domain.logic'
 import { teamAbilitiesDomainModalSx as sx } from './TeamAbilitiesDomainModal.sx'
-import { buildDomainOptions, filterDomains, sumCoverageForItems } from './TeamAbilitiesDomainModal.logic'
+import { buildDomainOptions, filterDomains } from './TeamAbilitiesDomainModal.logic'
 import { fmtScore, isRated, scoreColor } from '../../../../../../../../../shared/abilities/abilities.utils'
 
 // --- קבועים ---
@@ -31,12 +31,13 @@ const filledOptions = [
   { id: 'missing', label: 'רק חסר' },
 ]
 
+const EMPTY_DOMAINS = []
+
 export default function TeamAbilitiesDomainModal({ entity, scope = 'global', scopeKey = null }) {
   const model = useMemo(() => resolveTeamAbilitiesDomain({ entity, scope, key: scopeKey }), [entity, scope, scopeKey])
 
   const summary = model?.summary || {}
-  const domains = model?.domains || []
-  const coverageMap = model?.coverageMap || {}
+  const domains = model?.domains || EMPTY_DOMAINS
   const cov = model?.coverageSummary || { count: 0, total: 0, pct: 0 }
 
   const domainOptions = useMemo(() => buildDomainOptions(domains), [domains])
@@ -130,12 +131,9 @@ export default function TeamAbilitiesDomainModal({ entity, scope = 'global', sco
       ) : (
         <Grid container spacing={2}>
           {filteredDomains.map((domain) => {
-            const items = domain.items || []
             const domainAvg = domain?.avg
             const pct = Number.isFinite(domainAvg) ? (domainAvg / 5) * 100 : 0
             const dColor = domain?.color || scoreColor(domainAvg)
-            const cov2 = sumCoverageForItems(coverageMap, items)
-
             return (
               <Grid key={domain.domain} xs={12} sm={6} lg={4}>
                 <Card variant="outlined" sx={sx.card}>

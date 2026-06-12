@@ -1,7 +1,7 @@
 // features/home/mobile/toolbar/ToolbarFilterChip.js
 
 import React from 'react'
-import { Chip, Typography, ChipDelete } from '@mui/joy'
+import { Chip, ChipDelete } from '@mui/joy'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 

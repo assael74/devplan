@@ -6,7 +6,6 @@ import { Avatar, Box, Chip, IconButton, Tooltip, Typography, Badge } from '@mui/
 import JoyStarRating from '../../../../../../../../../../ui/domains/ratings/JoyStarRating.js'
 
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
-import roleImage from '../../../../../../../../../../ui/core/images/roleImage.png'
 import { buildFallbackAvatar } from '../../../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
 import { tableSx as sx } from '../sx/clubTeamsTable.sx'

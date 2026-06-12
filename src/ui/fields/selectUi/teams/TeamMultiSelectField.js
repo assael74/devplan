@@ -114,7 +114,6 @@ export default function TeamMultiSelectField({
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
             {selectedOptions.map((opt) => {
               const team = teamMap.get(normId(opt.value))
-              const photo = pickTeamPhoto(team)
               const src = team ? resolveTeamAvatarSrc(team) : ''
               const labelTxt = team ? buildOptionLabel(team) : opt?.label
 
@@ -144,7 +143,6 @@ export default function TeamMultiSelectField({
           const teamName = pickTeamName(t)
           const clubName = clubNameByTeam(t)
 
-          const photo = pickTeamPhoto(t)
           const src = resolveTeamAvatarSrc(t)
 
           const labelTxt = buildOptionLabel(t)

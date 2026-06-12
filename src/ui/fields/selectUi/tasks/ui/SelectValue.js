@@ -22,7 +22,6 @@ export default function SelectValue({
   }
 
   const label = safe(opt?.label || opt?.name) || fallbackLabel
-  const sub = safe(opt?.subLabel || opt?.description || '')
   const iconId = safe(opt?.idIcon) || fallbackIcon
 
   return (

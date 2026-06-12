@@ -2,9 +2,8 @@
 import * as React from 'react';
 import { chipActiveProps } from '../X_Style'
 import { iconUi } from '../../../core/icons/iconUi.js';
-import { Box, Typography, Chip } from '@mui/joy';
+import { Typography, Chip } from '@mui/joy';
 import FormControl from '@mui/joy/FormControl';
-import FormLabel from '@mui/joy/FormLabel';
 
 export default function GameHomeSelector({ value = true, onChange, label, id, size = 'sm' }) {
   const isHomeGame = value === true;

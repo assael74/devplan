@@ -5,7 +5,7 @@ import { Typography } from '@mui/joy'
 import { TRIPLET_GROUP_LABELS } from '../../../../sharedLogic/performance'
 import { Th } from './performance.table.ui'
 
-export default function TeamImpactTableHeader({ cols, sortKey, sortDir, onSort }) {
+export default function TeamImpactTableHeader({ cols, sortKey, sortDir, onSort, sx }) {
   return (
     <>
       <tr>

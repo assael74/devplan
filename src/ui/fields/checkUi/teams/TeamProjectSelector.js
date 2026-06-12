@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Typography, Chip } from '@mui/joy';
+import { Box, Chip } from '@mui/joy';
 import { chipProjProps } from '../X_Style'
 import { iconUi } from '../../../core/icons/iconUi.js';
 

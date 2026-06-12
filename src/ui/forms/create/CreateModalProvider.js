@@ -1,7 +1,6 @@
 // ui/forms/create/CreateModalProvider.js
 
 import React, { useMemo, useCallback } from 'react'
-import ObjectCreateModal from './ObjectCreateModal'
 import ObjectCreateModalV2 from './ObjectCreateModalV2'
 import { useCreateModalState } from './useCreateModal'
 import { useCoreData } from '../../../features/coreData/CoreDataProvider'

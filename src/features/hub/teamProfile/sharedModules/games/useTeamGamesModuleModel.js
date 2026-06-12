@@ -1,11 +1,18 @@
 // src/features/hub/teamProfile/sharedModules/games/useTeamGamesModuleModel.js
 
+import { useCallback, useMemo, useState } from 'react'
+
 import {
   useTeamGamesCoreModel,
+  useTeamGamesDeleteActions,
   useTeamGamesImportActions,
   useTeamGamesStatsActions,
   useTeamGamesUiState,
 } from './model/index.js'
+
+const getGameId = game => {
+  return String(game?.gameId || game?.id || '').trim()
+}
 
 export default function useTeamGamesModuleModel({
   entity,
@@ -25,6 +32,49 @@ export default function useTeamGamesModuleModel({
     sort: ui.sort,
   })
 
+  const [deleteSelectionMode, setDeleteSelectionMode] = useState(false)
+  const [selectedGameIds, setSelectedGameIds] = useState([])
+
+  const selectedGameIdsSet = useMemo(() => {
+    return new Set(selectedGameIds)
+  }, [selectedGameIds])
+
+  const handleEnterDeleteSelectionMode = useCallback(() => {
+    setDeleteSelectionMode(true)
+    setSelectedGameIds([])
+  }, [])
+
+  const handleExitDeleteSelectionMode = useCallback(() => {
+    setDeleteSelectionMode(false)
+    setSelectedGameIds([])
+  }, [])
+
+  const handleToggleGameSelection = useCallback(gameId => {
+    if (!gameId) return
+
+    setSelectedGameIds(prev => {
+      const exists = prev.includes(gameId)
+
+      if (exists) {
+        return prev.filter(id => id !== gameId)
+      }
+
+      return [...prev, gameId]
+    })
+  }, [])
+
+  const handleClearGameSelection = useCallback(() => {
+    setSelectedGameIds([])
+  }, [])
+
+  const handleSelectAllVisibleGames = useCallback(() => {
+    const visibleIds = core.sortedGames
+      .map(getGameId)
+      .filter(Boolean)
+
+    setSelectedGameIds(visibleIds)
+  }, [core.sortedGames])
+
   const stats = useTeamGamesStatsActions({
     liveTeam: core.liveTeam,
     enableStatsForm,
@@ -39,6 +89,25 @@ export default function useTeamGamesModuleModel({
     context,
     gamesImportRequest,
   })
+
+  const deleteActions = useTeamGamesDeleteActions({
+    liveTeam: core.liveTeam,
+    games: core.calculationGames,
+    selectedGameIds,
+    onDeleteGamesBulk: context?.onDeleteGamesBulk,
+  })
+
+  const handleOpenSelectedDelete = useCallback(() => {
+    deleteActions.handleOpenSelectedDelete()
+  }, [deleteActions])
+
+  const handleConfirmGamesDelete = useCallback(
+    async plan => {
+      await deleteActions.handleConfirmGamesDelete(plan)
+      handleExitDeleteSelectionMode()
+    },
+    [deleteActions, handleExitDeleteSelectionMode]
+  )
 
   return {
     liveTeam: core.liveTeam,
@@ -76,6 +145,16 @@ export default function useTeamGamesModuleModel({
     gamesImportSaving: importActions.gamesImportSaving,
     gamesImportError: importActions.gamesImportError,
 
+    gamesDeleteOpen: deleteActions.gamesDeleteOpen,
+    gamesDeleteScope: deleteActions.gamesDeleteScope,
+    gamesDeleteSaving: deleteActions.gamesDeleteSaving,
+    gamesDeleteError: deleteActions.gamesDeleteError,
+
+    deleteSelectionMode,
+    selectedGameIds,
+    selectedGameIdsSet,
+    selectedGamesCount: selectedGameIds.length,
+
     hasRows: core.hasRows,
     hasAnyGames: core.hasAnyGames,
 
@@ -98,5 +177,16 @@ export default function useTeamGamesModuleModel({
     handleOpenGamesImport: importActions.handleOpenGamesImport,
     handleCloseGamesImport: importActions.handleCloseGamesImport,
     handleGamesImportPreviewReady: importActions.handleGamesImportPreviewReady,
+
+    handleEnterDeleteSelectionMode,
+    handleExitDeleteSelectionMode,
+    handleToggleGameSelection,
+    handleClearGameSelection,
+    handleSelectAllVisibleGames,
+
+    handleOpenSelectedDelete,
+    handleOpenAllTeamGamesDelete: deleteActions.handleOpenAllTeamGamesDelete,
+    handleCloseGamesDelete: deleteActions.handleCloseGamesDelete,
+    handleConfirmGamesDelete,
   }
 }

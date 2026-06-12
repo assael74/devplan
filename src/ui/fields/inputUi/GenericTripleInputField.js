@@ -1,4 +1,4 @@
-import { Box, Stack, Input, Typography, FormControl, FormLabel } from '@mui/joy';
+import { Box, Stack, Input, Typography, FormControl } from '@mui/joy';
 import React from 'react';
 
 export default function GenericTripleInputField({

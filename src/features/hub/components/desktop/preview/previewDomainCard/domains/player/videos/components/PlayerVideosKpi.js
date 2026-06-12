@@ -31,6 +31,10 @@ export default function PlayerVideosKpi({ entity, summary, filteredCount }) {
   const topTagLabel = topTag   ? `${topTag?.tag?.tagName || topTag?.tag?.label || 'תג'} · ${topTag?.count || 0}` : 'אין תגים'
   const playerName =  `${entity?.playerFirstName} ${entity?.playerLastName}`.trim()
 
+  void last2Label
+  void topTagLabel
+  void playerName
+
   const topCategory = summary?.topCategories[0] || null
   const topTopic = summary?.topTopics[0] || null
 

@@ -15,7 +15,6 @@ export default function GameViewMultiGroupSelectField({
   view,
   size = 'sm',
 }) {
-  const maxParm = view === 'profilePlayer' ? 4 : 2
   const handleChange = (_, newValue) => {
     if (!newValue) return;
 

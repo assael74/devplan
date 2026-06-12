@@ -1,5 +1,7 @@
 // teamProfile/modules/performance/components/performance.sx.js
 
+import { teamPerformanceModalSx } from './performance1.sx.js'
+
 export const buildTableSx = ({ wAvatar = 56, wName = 160, wPos = 96, minWidth = 1100 } = {}) => {
   const r0 = 0
   const r1 = wAvatar

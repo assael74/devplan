@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
-import { useMediaQuery } from '@mui/material'
 
 import GenericFabMenu from '../../ui/actions/GenericFabMenu.js'
 import { buildFabActions } from '../../ui/actions/fabActions.factory.js'
@@ -11,17 +10,9 @@ import { useCreateModal } from '../../ui/forms/create/CreateModalProvider.js'
 import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.js'
 import { getEntityColors } from '../../ui/core/theme/Colors.js'
 
-function resolveHomeTaskWorkspace(homeView, workspace) {
-  if (homeView === 'workspace' && workspace === 'analyst') return 'analyst'
-  if (homeView === 'workspace' && workspace === 'app') return 'app'
-  if (homeView === 'inProgress') return ''
-  return 'app'
-}
-
 export default function TaskFab() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  const isMobile = useMediaQuery('(max-width: 899px)')
 
   const { openCreate } = useCreateModal()
 
@@ -34,7 +25,6 @@ export default function TaskFab() {
       area: 'home',
       mode: homeView || 'entry',
       extra: {
-        workspace: resolveHomeTaskWorkspace(homeView, workspace),
         homeView,
         workspace,
       },
@@ -59,7 +49,7 @@ export default function TaskFab() {
         },
       },
     })
-  }, [homeView, taskContext, openCreate, isMobile])
+  }, [homeView, taskContext, openCreate])
 
   if (!actions?.length) return null
 

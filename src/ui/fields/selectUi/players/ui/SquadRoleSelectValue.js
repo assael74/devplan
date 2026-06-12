@@ -1,8 +1,7 @@
 // ui/fields/selectUi/players/ui/SquadRoleSelectValue.js
 
-import { Box, Typography, Chip } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 import { iconUi } from '../../../../core/icons/iconUi.js'
-import { formatSquadRoleWeight } from '../logic/squadRoleSelect.logic.js'
 
 export default function SquadRoleSelectValue({ opt }) {
   if (!opt) return null

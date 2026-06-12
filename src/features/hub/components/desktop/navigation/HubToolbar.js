@@ -1,7 +1,7 @@
 // features/hub/components/desktop/navigation/HubToolbar.js
 
 import React from 'react'
-import { Tabs, TabList, Tab, Sheet, Typography, Box, Input } from '@mui/joy'
+import { Tabs, TabList, Tab, Sheet, Typography, Box } from '@mui/joy'
 import { navSx as sx} from './nav.sx.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 

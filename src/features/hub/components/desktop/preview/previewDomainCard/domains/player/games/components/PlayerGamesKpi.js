@@ -38,9 +38,6 @@ export default function PlayerGamesKpi({ entity, summary, filteredCount }) {
   const starts = summary?.starts ?? 0
   const startsPctFromPlayed = summary?.startsPctFromPlayed ?? 0
 
-  const goals = summary?.goals ?? summary?.gf ?? 0
-  const assists = summary?.assists ?? 0
-
   return (
     <Sheet variant="plain" sx={sx.rootSx}>
       <Box sx={sx.heroGlowSx} />

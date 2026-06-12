@@ -1,6 +1,6 @@
 // ui/fields/selectUi/clubs/ui/ClubSelectValue.js
 
-import { Box, Typography, Chip } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
 export default function ClubSelectValue({ opt }) {
   if (!opt) return null

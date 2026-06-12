@@ -8,7 +8,6 @@ import {
   FormLabel,
 } from '@mui/joy'
 
-import { playersSlot } from '../select.sx.js'
 import { SQUAD_ROLE_OPTIONS } from '../../../../shared/players/players.constants.js'
 
 import {

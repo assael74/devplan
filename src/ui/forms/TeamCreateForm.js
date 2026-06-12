@@ -4,8 +4,6 @@ import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
-import Box from '@mui/joy/Box'
-
 import TeamCreateFields from './ui/teams/TeamCreateFields.js'
 
 import { getTeamCreateFormLayout } from './layouts/teamCreateForm.layout.js'
@@ -28,10 +26,6 @@ export default function TeamCreateForm({
   const teamName = draft?.teamName || ''
   const clubId = draft?.clubId || ''
   const teamYear = draft?.teamYear || ''
-  const isProject = draft?.isProject === true
-  const teamIfaLink = draft?.teamIfaLink || ''
-  const clubs = context?.clubs || []
-
   const validity = useMemo(() => {
     const okName = clean(teamName).length >= 2
     const okClub = !!clean(clubId)
@@ -42,10 +36,6 @@ export default function TeamCreateForm({
   useEffect(() => {
     if (typeof onValidChange === 'function') onValidChange(validity.isValid)
   }, [validity.isValid, onValidChange])
-
-  const nameErr = !validity.okName && clean(teamName).length > 0
-  const clubErr = !validity.okClub && clean(clubId).length > 0
-  const yearErr = !validity.okYear && clean(teamYear).length > 0
 
   const layout = useMemo(() => {
     return getTeamCreateFormLayout({ variant, isMobile })

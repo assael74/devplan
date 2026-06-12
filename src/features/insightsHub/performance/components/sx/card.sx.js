@@ -77,7 +77,7 @@ const highlightColors = {
   },
 
   successStrong: {
-    fontStyle: 'italic',bgcolor: 'rgba(180, 35, 24, 0.18)',
+    fontStyle: 'italic',
     bgcolor: 'rgba(15, 118, 110, 0.24)',
     borderRadius: 8,
     px: 0.6,

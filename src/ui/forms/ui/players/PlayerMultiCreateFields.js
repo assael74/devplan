@@ -14,10 +14,6 @@ import { multiSx as sx } from './sx/multiCreate.sx.js'
 import { makeId } from '../../../../utils/id.js'
 import { iconUi } from '../../../core/icons/iconUi.js'
 
-function toText(value) {
-  return String(value ?? '').trim()
-}
-
 function createRow(defaults = {}) {
   return {
     uiKey: makeId('playerRow'),
@@ -39,23 +35,6 @@ export default function PlayerMultiCreateFields({
 }) {
   const defaults = draft?.defaults || {}
   const players = Array.isArray(draft?.players) ? draft.players : []
-
-  function updateDefaults(patch) {
-    const nextDefaults = { ...defaults, ...patch }
-
-    const nextPlayers = players.map((row) => ({
-      ...row,
-      teamId: patch.teamId !== undefined ? patch.teamId : row.teamId,
-      clubId: patch.clubId !== undefined ? patch.clubId : row.clubId,
-      year: patch.year !== undefined ? patch.year : row.year,
-    }))
-
-    onDraft({
-      ...draft,
-      defaults: nextDefaults,
-      players: nextPlayers,
-    })
-  }
 
   function updateRow(rowUiKey, patch) {
     const nextPlayers = players.map((row) =>

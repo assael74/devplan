@@ -45,9 +45,6 @@ const getStatusMeta = (row) => {
 }
 
 export default function PlayerGamesRow({ row, onEdit }) {
-  const vLink = (row?.vLink ?? row?.game?.vLink ?? '').trim()
-  const hasVlink = vLink.length > 0
-
   const rowHoverSx = {
     ...sx.rowCardSx,
     '&:hover': {

@@ -85,8 +85,6 @@ export default function TeamGamesKpi({ entity, summary }) {
     nextSub,
   } = resolveTeamGamesKpiValues(summary)
 
-  const leagueStats = summary?.leagueStats || {}
-
   const { leaguePossible, leagueAchieved, leagueSuccessPct } = getLeaguePointsSummary(summary)
 
   const src = resolveEntityAvatar({

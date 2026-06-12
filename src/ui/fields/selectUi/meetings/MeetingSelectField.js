@@ -8,7 +8,6 @@ import MeetingOptionRow from './ui/MeetingOptionRow'
 
 export default function MeetingSelectField(props) {
   const {
-    value,
     onChange,
     disabled,
     helperText,

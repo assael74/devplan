@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from 'react'
 import { Box, Sheet, Tooltip, Typography, Divider } from '@mui/joy'
-import { Transition } from 'react-transition-group'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi'
 
 import { DOMAIN_STATE } from '../preview.state'

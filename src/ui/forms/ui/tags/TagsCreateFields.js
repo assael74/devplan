@@ -49,8 +49,6 @@ export default function TagsCreateFields({
     : []
 
   const errors = validity.errors || {}
-  const isValid = Boolean(validity.isValid)
-
   const patch = (nextPatch) => {
     if (typeof onDraft !== 'function') return
     onDraft({ ...draft, ...(nextPatch || {}) })

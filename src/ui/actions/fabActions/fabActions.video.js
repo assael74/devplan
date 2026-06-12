@@ -9,7 +9,11 @@ export function buildVideoFabActions({
   taskAction = null,
   handlers = {},
 }) {
-  const { onAddVideoAnalysis, onCreateVideoGeneral } = handlers
+  const {
+    onAddVideoAnalysis,
+    onCreateVideoGeneral,
+    onImportVideos,
+  } = handlers
 
   if (mode === 'analysis') {
     return composeFabActions({
@@ -24,7 +28,11 @@ export function buildVideoFabActions({
         },
       ],
       taskAction,
-      primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'videoAnalysis' },
+      primarySection: {
+        id: 'section-actions',
+        label: 'פעולות',
+        colorKey: 'videoAnalysis',
+      },
     })
   }
 
@@ -39,9 +47,21 @@ export function buildVideoFabActions({
           color: 'videoGeneral',
           disabled: !allowCreate,
         },
+        {
+          id: 'import-video-general',
+          label: 'ייבוא מספר קטעי וידאו',
+          icon: iconUi({ id: 'upload' }),
+          onClick: onImportVideos,
+          color: 'videoGeneral',
+          disabled: !allowCreate,
+        },
       ],
       taskAction,
-      primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'videoGeneral' },
+      primarySection: {
+        id: 'section-actions',
+        label: 'פעולות',
+        colorKey: 'videoGeneral',
+      },
     })
   }
 

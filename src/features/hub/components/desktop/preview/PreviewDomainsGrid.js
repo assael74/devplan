@@ -33,7 +33,7 @@ export default function PreviewDomainsGrid({
       link: () => console.log('[PreviewDomainsGrid] missing context.video.openAttach'),
       share: () => console.log('[PreviewDomainsGrid] missing context.video.share'),
     }
-  }, [context])
+  }, [context, entity])
 
   const list = (domains || []).filter(Boolean)
   if (!list.length) return null

@@ -3,7 +3,6 @@ import FormControl from '@mui/joy/FormControl'
 import FormLabel from '@mui/joy/FormLabel'
 import Input from '@mui/joy/Input'
 
-import { iconUi } from '../../core/icons/iconUi.js'
 import { normalizeTimeHm } from '../../../shared/format/dateUtiles.js'
 
 export default function HourInputField({

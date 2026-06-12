@@ -1,6 +1,6 @@
 /// ui/fields/selectUi/games/GameTypeSelectField.js
 import * as React from 'react';
-import { FormControl, FormLabel, Select, Option, Typography, Stack } from '@mui/joy';
+import { FormControl, FormLabel, Select, Option, Stack } from '@mui/joy';
 import { iconUi } from '../../../core/icons/iconUi.js';
 import { GAME_TYPE } from '../../../../shared/games/games.constants.js';
 import { gameSlot } from '../select.sx.js'
@@ -14,7 +14,6 @@ export default function GameTypeSelectField({
   label = 'סוג משחק',
   size = 'sm',
 }) {
-  const fontSize = size === 'sm' ? '0.775rem' : '0.975rem'
   return (
     <FormControl error={error} required={required} sx={{ width: '100%' }}>
       <FormLabel sx={{ fontSize: '12px' }}>{label}</FormLabel>

@@ -1,7 +1,7 @@
 /// ui/fields/selectUi/games/GameDifficultySelectField.js
 
 import * as React from 'react';
-import { FormControl, FormLabel, Select, Option, Typography, Stack } from '@mui/joy';
+import { FormControl, FormLabel, Select, Option, Stack } from '@mui/joy';
 import { iconUi } from '../../../core/icons/iconUi.js';
 import { GAME_DIFFICULTY } from '../../../../shared/games/games.constants.js';
 import { gameSlot } from '../select.sx.js'

@@ -1,7 +1,7 @@
 // preview/previewDomainCard/domains/club/players/components/ClubPlayersFilters.js
 
 import React from 'react'
-import { Box, Chip, Input, Sheet, Switch, Typography, Divider, IconButton, Tooltip } from '@mui/joy'
+import { Box, Input, Sheet, Switch, Typography, Divider, IconButton, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi'
 import { filtterSx as sx } from '../sx/clubPlayersFilters.sx'
 

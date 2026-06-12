@@ -1,6 +1,6 @@
 //  features/abilitiesPublic/components/sx/domainsAccordion.sx.js
 
-import { accordionClasses, accordionSummaryClasses } from '@mui/joy';
+import { accordionClasses } from '@mui/joy';
 
 export const domainsAccordionSx = {
   group: (theme) => ({

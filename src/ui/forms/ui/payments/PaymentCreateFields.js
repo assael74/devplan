@@ -1,10 +1,9 @@
 // ui/forms/ui/payments/PaymentCreateFields.js
 
-import React, { useEffect } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import MonthYearPicker from '../../../fields/dateUi/MonthYearPicker'
-import DateInputField from '../../../fields/dateUi/DateInputField'
 import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectField'
 import PaymentTypeSelector from '../../../fields/checkUi/payments/PaymentTypeSelector'
 import PriceField from '../../../fields/inputUi/payments/PriceField.js'

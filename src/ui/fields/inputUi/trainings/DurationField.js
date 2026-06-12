@@ -1,6 +1,6 @@
 // C:\projects\devplan\src\ui\fields\inputUi\trainings\DurationField.js
 import * as React from 'react';
-import { Box, Typography, Input, FormLabel, FormControl } from '@mui/joy';
+import { Input, FormLabel, FormControl } from '@mui/joy';
 import { iconUi } from '../../../core/icons/iconUi.js';
 
 export default function DurationField({

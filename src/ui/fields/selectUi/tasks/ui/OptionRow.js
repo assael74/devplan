@@ -13,7 +13,6 @@ export default function OptionRow({
   fallbackIcon = 'task',
 }) {
   const label = safe(item?.label || item?.name) || fallbackLabel
-  const sub = safe(item?.subLabel || item?.description || '')
   const iconId = safe(item?.idIcon) || fallbackIcon
 
   return (

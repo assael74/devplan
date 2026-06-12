@@ -27,7 +27,7 @@ export default function EditDrawer({
   onSaved,
   context,
 }) {
-  const player = context?.player || {}
+  const player = useMemo(() => context?.player || {}, [context?.player])
   const initial = useMemo(() => {
     return buildVideoAnalysisEditInitial(video, {
       ...context,

@@ -4,7 +4,6 @@ import { clean, todayYmd } from './abilitiesPublic.helpers.js'
 
 export function buildPublicDraftFromInvite(invite = {}) {
   const meta = invite?.meta || {}
-  const defaults = invite?.defaults || {}
 
   return {
     inviteId: clean(invite?.id),

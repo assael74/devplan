@@ -9,7 +9,6 @@ export const trainingWeekSx = {
     display: 'grid',
     gap: 1.25,
     minWidth: 0,
-    minWidth: 0,
   },
 
   topGrid: {

@@ -32,12 +32,15 @@ export default function TeamGamesList({
   playerScoring,
   teamScoringByGameId = {},
   playerScoringByGameId = {},
+  deleteSelectionMode = false,
+  selectedGameIdsSet,
+  onToggleGameSelection,
   onEditGame,
   onOpenEdit,
   onEditEntryGame,
   performanceView,
   onOpenStatsGame,
-  statsDraftsByGameId
+  statsDraftsByGameId = {},
 }) {
   if (!rows?.length) {
     return (
@@ -51,17 +54,20 @@ export default function TeamGamesList({
   }
 
   return (
-    <Box sx={{ display: 'grid', gap: 0.35 }}>
+    <Box sx={sx.listWrap}>
       {rows.map(row => {
         const gameId = getGameId(row)
         const teamGameScore = teamScoringByGameId[gameId] || null
         const playerGamePerformance = playerScoringByGameId[gameId] || null
+        const selected = Boolean(selectedGameIdsSet?.has(gameId))
 
         return (
           <TeamGameRow
             key={gameId || row.id}
             game={row}
             gameId={gameId}
+            selected={selected}
+            deleteSelectionMode={deleteSelectionMode}
             teamScoring={teamScoring}
             playerScoring={playerScoring}
             teamGameScore={teamGameScore}
@@ -71,6 +77,7 @@ export default function TeamGamesList({
             performanceView={performanceView}
             statsDraft={statsDraftsByGameId[gameId] || null}
             playerGamePerformance={playerGamePerformance}
+            onToggleSelection={onToggleGameSelection}
           />
         )
       })}

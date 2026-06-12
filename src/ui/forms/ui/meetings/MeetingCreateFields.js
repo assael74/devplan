@@ -1,7 +1,7 @@
 // ui/forms/ui/meetings/MeetingCreateFields.js
 
-import React, { useEffect } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import DateInputField from '../../../fields/dateUi/DateInputField'
 import HourInputField from '../../../fields/dateUi/HourInputField'
@@ -19,12 +19,6 @@ export default function MeetingCreateFields({
   validity,
   fieldDisabled = {},
 }) {
-  const playerId = draft?.playerId || ''
-  const type = draft?.type || ''
-  const meetingDate = draft?.meetingDate || ''
-  const meetingHour = draft?.meetingHour || ''
-  const meetingFor = draft?.meetingFor || ''
-
   return (
     <Box sx={sx.root(layout)}>
       <Box sx={sx.block(layout.topCols, 1.5)}>

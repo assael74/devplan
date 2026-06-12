@@ -37,6 +37,7 @@ export function buildFabActions({
     onAddGame: pick(handlers.onAddGame, noOp),
     onAddGames: pick(handlers.onAddGames, noOp),
     onImportGames: pick(handlers.onImportGames, noOp),
+    onImportVideos: pick(handlers.onImportVideos, noOp),
     onAddVideoAnalysis: pick(handlers.onAddVideoAnalysis, noOp),
     onCreateVideoGeneral: pick(handlers.onCreateVideoGeneral, noOp),
 

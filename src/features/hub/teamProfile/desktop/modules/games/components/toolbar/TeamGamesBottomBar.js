@@ -6,6 +6,7 @@ import { Box, Chip } from '@mui/joy'
 import TeamGamesSortMenu from './TeamGamesSortMenu.js'
 import TeamGamesToolbarFilterChip from './TeamGamesToolbarFilterChip.js'
 import PerformanceViewSwitch from './PerformanceViewSwitch.js'
+import TeamGamesDeleteOptionsButton from './TeamGamesDeleteOptionsButton.js'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from './sx/toolbar.sx.js'
@@ -17,6 +18,7 @@ export default function TeamGamesBottomBar({
   indicators = [],
   totalGames = 0,
   filteredGames = 0,
+  selectedGameIds = [],
   sortBy = 'date',
   sortDirection = 'desc',
   performanceView = 'team',
@@ -24,7 +26,10 @@ export default function TeamGamesBottomBar({
   onChangeSortBy,
   onChangeSortDirection,
   onClearIndicator,
+  onEnterDeleteSelectionMode,
 }) {
+  const selectedCount = safeArray(selectedGameIds).length
+
   return (
     <Box sx={sx.toolbarBottom}>
       <Chip
@@ -35,6 +40,17 @@ export default function TeamGamesBottomBar({
       >
         {filteredGames} / {totalGames} משחקים
       </Chip>
+
+      {!!selectedCount && (
+        <Chip
+          size="sm"
+          variant="soft"
+          color="danger"
+          startDecorator={iconUi({ id: 'done' })}
+        >
+          {selectedCount} נבחרו
+        </Chip>
+      )}
 
       {!!summary?.playedGames && (
         <Chip
@@ -60,7 +76,7 @@ export default function TeamGamesBottomBar({
 
       {!!safeArray(indicators).length && (
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {safeArray(indicators).map((item) => (
+          {safeArray(indicators).map(item => (
             <TeamGamesToolbarFilterChip
               key={item.id || item.type}
               item={item}
@@ -82,6 +98,11 @@ export default function TeamGamesBottomBar({
         sortDirection={sortDirection}
         onChangeSortBy={onChangeSortBy}
         onChangeSortDirection={onChangeSortDirection}
+      />
+
+      <TeamGamesDeleteOptionsButton
+        totalGames={totalGames}
+        onEnterDeleteSelectionMode={onEnterDeleteSelectionMode}
       />
     </Box>
   )

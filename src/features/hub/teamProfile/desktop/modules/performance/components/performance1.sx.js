@@ -1,6 +1,6 @@
 // teamProfile/modules/performance/components/performance.sx.js
 
-export const modalSx = {
+export const teamPerformanceModalSx = {
   wrap: {
     minWidth: 0,
     width: '100%',

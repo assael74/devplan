@@ -3,7 +3,6 @@
 import React from 'react'
 import { Box, Typography, Avatar, Chip } from '@mui/joy'
 import playerImage from '../../../../../../../../../../ui/core/images/playerImage.jpg'
-import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { sx } from '../sx/playerInfo.domain.sx.js'
 
 export default function PlayerInfoDomainHeader({ player }) {

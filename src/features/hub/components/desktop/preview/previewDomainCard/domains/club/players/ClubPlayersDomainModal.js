@@ -103,16 +103,8 @@ export default function ClubPlayersDomainModal({ entity, context }) {
 
   if (!entity) return null
 
-  const handleCreateClose = () => {
-    setOpenCreatePlayer(false)
-  }
-
   const handleCreateOpen = () => {
     setOpenCreatePlayer(true)
-  }
-
-  const handleCreateSaved = () => {
-    setOpenCreatePlayer(false)
   }
 
   return (

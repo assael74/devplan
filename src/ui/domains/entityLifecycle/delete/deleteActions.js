@@ -1,6 +1,9 @@
 // src/ui/entityLifecycle/delete/deleteActions.js
 
-import { deleteShortItemsById } from '../../../../services/firestore/shorts/shortsDelete.js'
+import {
+  deleteShortItemsById,
+  deleteShortItemsByIds,
+} from '../../../../services/firestore/shorts/shortsDelete.js'
 import { debugLog } from '../../../../services/firestore/shorts/shortsDebug.utils.js'
 import { SHORTS_DEBUG } from '../../../../services/firestore/shorts/shortsDebug.config.js'
 import { doc, getDoc } from 'firebase/firestore'
@@ -203,6 +206,34 @@ export const deleteActions = {
       requireAnyFound: false,
       requireAllFound: false,
     }),
+
+  gamesBulk: async ({ ids }) => {
+    const cleanIds = Array.from(new Set((ids || []).filter(Boolean)))
+
+    if (!cleanIds.length) {
+      return {
+        ids: [],
+        foundDocs: 0,
+        totalRemoved: 0,
+        skipped: true,
+      }
+    }
+
+    if (SHORTS_DEBUG.enabled) {
+      debugLog('UI_DELETE:gamesBulk:start', {
+        ids: cleanIds,
+        count: cleanIds.length,
+        shortKeys: GAME_SHORT_KEYS,
+      })
+    }
+
+    return deleteShortItemsByIds({
+      shortKeys: GAME_SHORT_KEYS,
+      ids: cleanIds,
+      requireAnyFound: true,
+      requireAllFound: false,
+    })
+  },
 
   externalGame: async ({ id }) =>
     run({

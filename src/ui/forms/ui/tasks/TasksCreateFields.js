@@ -1,7 +1,7 @@
 // ui/forms/ui/tasks/TasksCreateFields.js
 
-import React, { useMemo } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import TaskTitleField from '../../../fields/inputUi/tasks/TaskTitleField.js'
 import TaskUrlField from '../../../fields/inputUi/tasks/TaskUrlField.js'
@@ -45,10 +45,6 @@ export default function TasksCreateFields({
       return next
     })
   }
-
-  const requiredCount = useMemo(() => {
-    return [validity?.title, validity?.workspace, validity?.taskType].filter(Boolean).length
-  }, [validity?.title, validity?.workspace, validity?.taskType])
 
   return (
     <Box sx={pcfSx.root(layout)}>

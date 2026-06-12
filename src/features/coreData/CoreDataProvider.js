@@ -11,7 +11,6 @@ import {
   paymentsShortsRef,
   gamesShortsRef,
   externalGamesShortsRef,
-  gameStatsShortsRef,
   rolesShortsRef,
   tagsShortsRef,
   videosShortsRef,
@@ -165,6 +164,7 @@ export function CoreDataProvider({ children }) {
 
       case 'tags':
         setTagsShorts(patcher)
+        break
 
       case 'videoAnalysis':
         setVideoAnalysisShorts(patcher)

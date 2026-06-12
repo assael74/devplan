@@ -151,8 +151,8 @@ export const getSummaryFieldLabel = field => {
   if (field.type === 'triplet') return field.label || field.id
 
   return (
-    field.parm && field.parm.statsParmShortName ||
-    field.parm && field.parm.statsParmName ||
+    (field.parm && field.parm.statsParmShortName) ||
+    (field.parm && field.parm.statsParmName) ||
     field.id ||
     ''
   )

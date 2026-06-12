@@ -19,7 +19,7 @@ import {
 
 function FieldCard({ field, children }) {
   const type = field.statsParmType ||
-    field.parm && field.parm.statsParmType ||
+    (field.parm && field.parm.statsParmType) ||
     'general'
 
   return (

@@ -1,7 +1,6 @@
 // ui/fields/selectUi/games/GameDurationSelectField.js
 import * as React from 'react';
-import { FormControl, FormLabel, Select, Option, Typography, Stack } from '@mui/joy';
-import { iconUi } from '../../../core/icons/iconUi.js';
+import { FormControl, FormLabel, Select, Option } from '@mui/joy';
 import { gameSlot } from '../select.sx.js'
 
 export default function GameDurationSelectField({

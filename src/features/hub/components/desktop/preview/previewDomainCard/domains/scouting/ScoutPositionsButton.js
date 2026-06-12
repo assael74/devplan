@@ -1,8 +1,7 @@
 // preview/previewDomainCard/domains/scouting/ScoutPositionsButton.js
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, Divider, Button, Tooltip, Sheet, Typography } from '@mui/joy'
+import React from 'react'
+import { Box, Button, Typography } from '@mui/joy'
 
-import { scoutPreviewSx } from './scoutPreview.sx.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 export default function ScoutPositionsButton({ label, value = [], onOpen, disabled }) {

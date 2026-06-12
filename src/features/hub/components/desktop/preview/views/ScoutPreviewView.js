@@ -1,7 +1,7 @@
 // features/hub/components/desktop/preview/views/ScoutPreviewView.js
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, Divider, Button, Tooltip, Sheet, Typography } from '@mui/joy'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Box, Divider, Button, Tooltip, Sheet } from '@mui/joy'
 import PhoneIphoneRounded from '@mui/icons-material/PhoneIphoneRounded'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
@@ -21,10 +21,7 @@ import ScoutPositionsButton from '../previewDomainCard/domains/scouting/ScoutPos
 import ScoutGamesSummaryBar from '../previewDomainCard/domains/scouting/ScoutGamesSummaryBar.js'
 import ScoutGamesDialog from '../previewDomainCard/domains/scouting/ScoutGamesDialog.js'
 import { scoutPreviewSx } from '../previewDomainCard/domains/scouting/scoutPreview.sx.js'
-import { useScoutPreviewDraft, useScoutRoleMeta } from '../previewDomainCard/domains/scouting/scoutPreview.logic.js'
-
-const pickOptions = (context, keyAll, keyFallback) =>
-  Array.isArray(context[keyAll]) ? context[keyAll] : (context[keyFallback] || [])
+import { useScoutPreviewDraft } from '../previewDomainCard/domains/scouting/scoutPreview.logic.js'
 
 export default function ScoutPreviewView({ scout, locked, buildActions, context }) {
   const [posOpen, setPosOpen] = useState(false)

@@ -3,7 +3,6 @@
 import React from 'react'
 import { FormControl, FormHelperText, FormLabel, Input } from '@mui/joy'
 
-import { iconUi } from '../../../core/icons/iconUi.js'
 
 export default function TaskDueDateField(props) {
   const {

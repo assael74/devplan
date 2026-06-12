@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
-import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import { resolveClubPlayers } from './logic/clubPlayers.domain.logic'
 import { domainBoxSx } from '../../domain.sx'
 

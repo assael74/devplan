@@ -1,14 +1,12 @@
 // preview/previewDomainCard/domains/player/videos/components/PlayerVideosRow.js
 
-import React, { useMemo, useCallback } from 'react'
-import { Box, Divider, Dropdown, IconButton, Menu, MenuButton, MenuItem, Tooltip, Typography, ListItemDecorator } from '@mui/joy'
-import MoreVert from '@mui/icons-material/MoreVert'
+import React from 'react'
+import { Box, IconButton, Tooltip, Typography } from '@mui/joy'
 
 import { VideoPreviewMedia } from '../../../../../../../../../../ui/domains/video/videoAnalysis'
 import {
   compactMediaSx
 } from '../../../../../../../../../../ui/domains/video/videoAnalysis/desktop/videoCard/sx/videoPreviewMedia.sx.js'
-import { useLifecycle } from '../../../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
 import { iconUi } from '../../../../../../../../../../ui/core/icons/iconUi.js'
 import { rowSx as sx } from '../sx/playerVideosRow.sx.js'
 
@@ -16,11 +14,12 @@ export default function PlayerVideosRow({
   row,
   onWatch,
   onEdit,
-  context
 }) {
   const video = row
-  const tagsFull = Array.isArray(row?.tagsFull) ? row.tagsFull : []
+  const tagsFull = []
   const tagsPreview = tagsFull.slice(0, 2).map((t) => t?.tagName || t?.label || 'תג').filter(Boolean).join(' · ')
+
+  void tagsPreview
 
   return (
     <Box sx={sx.rowCardSx}>

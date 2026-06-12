@@ -78,20 +78,6 @@ function buildPublicDomainsViewModel(bits = {}, activeDomains = []) {
     })
 }
 
-function filterDomainsByActive(domains = [], activeDomains = []) {
-  if (!Array.isArray(domains) || !domains.length) return []
-
-  const normalizedActive = normalizeActiveDomains(activeDomains)
-  if (!normalizedActive.length) return domains
-
-  const activeSet = new Set(normalizedActive)
-
-  return domains.filter((domain) => {
-    const domainId = clean(domain?.id || domain?.domain)
-    return activeSet.has(domainId)
-  })
-}
-
 export function useAbilitiesPublicForm({ invite, onSubmit }) {
   const [draft, setDraft] = useState(() => buildPublicDraftFromInvite(invite))
   const [submitting, setSubmitting] = useState(false)
@@ -135,14 +121,6 @@ export function useAbilitiesPublicForm({ invite, onSubmit }) {
 
   const overallScore = useMemo(() => calcGroupScore(domains), [domains])
   const overallStars = useMemo(() => (overallScore == null ? 0 : Number(overallScore)), [overallScore])
-
-  const patch = useCallback((next) => {
-    setDraft((prev) => ({
-      ...prev,
-      ...(next || {}),
-      isDirty: true,
-    }))
-  }, [])
 
   const onChangeGrowthStage = useCallback((e, value) => {
     setDraft((prev) => patchAbilityValue({ ...prev, isDirty: true }, 'growthStage', value))

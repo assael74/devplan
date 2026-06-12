@@ -1,6 +1,6 @@
 // /// ui/fields/selectUi/players/PlayerPositionsSimpleSelect.js
 import { useRef, useState, useEffect } from 'react';
-import { FormControl, FormLabel, Select, Option, Stack, Typography } from '@mui/joy';
+import { FormControl, Select, Option, Stack, Typography } from '@mui/joy';
 
 const POSITION_LIST = [
   { id: 'GK', label: 'שוער' },

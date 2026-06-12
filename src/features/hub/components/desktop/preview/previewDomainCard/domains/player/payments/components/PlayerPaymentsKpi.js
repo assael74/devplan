@@ -23,7 +23,6 @@ function KpiCard({ label, value, subValue, icon }) {
 }
 
 export default function PlayerPaymentsKpi({ entity, summary, filteredCount }) {
-  const nextPayment = summary?.nextPayment || null
   const playerName =  `${entity?.playerFirstName} ${entity?.playerLastName}`.trim()
   return (
     <Sheet variant="plain" sx={sx.rootSx}>

@@ -1,7 +1,7 @@
 /// desktop/preview/previewDomainCard/domains/club/staff/ClubStaffDomainModal.js
 
 import React from 'react'
-import { Box, Divider } from '@mui/joy'
+import { Box } from '@mui/joy'
 
 import ManagementStaffCard from '../../../../../../../../../ui/domains/staff'
 import { modalSx } from './clubStaff.sx'

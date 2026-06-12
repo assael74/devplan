@@ -15,7 +15,6 @@ import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
 import { buildFallbackAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { useLifecycle } from '../../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
 import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 
@@ -25,11 +24,9 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
     return clubs.find((t) => t?.id === club?.id) || club || null
   }, [context?.clubs, club])
 
-  const lifecycle = useLifecycle()
-
   const hasClub = !!club
-  const entity = club || {}
-  const c = counts || {}
+  const entity = useMemo(() => club || {}, [club])
+  const c = useMemo(() => counts || {}, [counts])
 
   const [openImg, setOpenImg] = useState(false)
   const [headerPhoto, setHeaderPhoto] = useState('')
@@ -56,6 +53,8 @@ export default function ClubContextView({ club, routes, counts, onOpenRoute, con
 
   const isActive = !!entity?.active
   const tooltipText = isActive ? 'העבר לארכיון (ניתן לשחזור)' : 'שחזר מועדון מהארכיון'
+
+  void tooltipText
 
   return (
     <>

@@ -1,8 +1,6 @@
 // domains/team/performance/TeamPerformanceDomainSummary.js
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
-import { resolveTeamPerformanceDomain } from './TeamPerformance.domain.logic'
-import { teamPerformanceModalSx as sx } from './performance.sx'
 import { domainBoxSx } from '../../domain.sx'
 
 export function fractionToPercent(value, decimals = 0) {
@@ -29,11 +27,7 @@ const Row = ({ label, value, color }) => {
   )
 }
 
-export default function TeamPerformanceDomainSummary({ entity, items }) {
-  const { stats } = useMemo(
-    () => resolveTeamPerformanceDomain(entity, items),
-    [entity, items]
-  )
+export default function TeamPerformanceDomainSummary({ entity }) {
   const leaguePosition = entity?.Position ?? null
   const poitns = entity?.points ?? null
   const per = fractionToPercent('3/4', 0)

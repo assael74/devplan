@@ -1,6 +1,6 @@
 // src/ui/fields/dateUi/YearPicker.js
 import * as React from 'react'
-import { FormControl, FormLabel, Select, Option, IconButton, Box } from '@mui/joy'
+import { FormControl, FormLabel, Select, Option, Box } from '@mui/joy'
 import { iconUi } from '../../core/icons/iconUi.js'
 
 export default function YearPicker({

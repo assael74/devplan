@@ -3,9 +3,6 @@
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 import { buildVideoInsights } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
-import { VIDEO_INSIGHTS_DEFAULT_TAG_TYPE } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.constants.js'
-import { buildTagsByIdObject, getVideoType } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.helpers.js'
-import { resolveVideoMonthKey } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.months.js'
 
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])

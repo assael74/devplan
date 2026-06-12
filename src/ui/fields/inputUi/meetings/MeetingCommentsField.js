@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Input, FormControl, FormLabel, Typography } from '@mui/joy';
+import { Input, FormControl, FormLabel } from '@mui/joy';
 
 export default function MeetingsCommentsField({
   value,

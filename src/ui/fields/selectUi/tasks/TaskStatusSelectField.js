@@ -7,7 +7,6 @@ import SelectValue from './ui/SelectValue.js'
 import OptionRow from './ui/OptionRow.js'
 import { buildOptions, findSelected } from './logic/tasksSelect.logic.js'
 import { taskStatusOptions } from '../../../../shared/tasks/tasks.constants.js'
-import { iconUi } from '../../../core/icons/iconUi.js'
 
 const clean = (t) => String(t ?? '').trim()
 

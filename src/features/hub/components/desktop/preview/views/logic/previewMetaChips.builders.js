@@ -1,9 +1,8 @@
 import React from 'react'
-import { Box, Chip, Divider, Tooltip, Typography, Avatar } from '@mui/joy'
+import { Box, Chip, Divider, Tooltip, Avatar } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import roleImage from '../../../../../../../ui/core/images/roleImage.png'
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 import { previewSx as sx } from '../sx/contextView.sx.js'
 import { TypeChip, SquadRoleChip, LevelStars, PrivateChip } from '../parts/MetaChips.js'
 
@@ -128,7 +127,6 @@ function buildCityItem(city) {
 
 function buildPlayerItems({ entity, sx }) {
   const player = entity || {}
-  const ui = player?.ui || {}
   const isPrivate = player?.isPrivatePlayer
 
   if (!isPrivate) {

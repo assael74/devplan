@@ -4,7 +4,6 @@ import React from 'react'
 import { Box, Divider, Typography } from '@mui/joy'
 
 import {
-  MonthYearPicker,
   DateInputField,
   PhoneField,
 } from '../../../../../../../../../../ui/fields'

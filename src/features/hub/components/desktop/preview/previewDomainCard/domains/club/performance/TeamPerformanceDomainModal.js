@@ -5,7 +5,6 @@ import {
   Avatar,
   Box,
   Chip,
-  Divider,
   Input,
   Sheet,
   Table,
@@ -66,7 +65,7 @@ export default function TeamPerformanceDomainModal({ items, entity }) {
   const [layerMode, setLayerMode] = useState('all')
   const [posMode, setPosMode] = useState('all')
   const [sortKey, setSortKey] = useState('minutes')
-  const [sortDir, setSortDir] = useState('desc')
+  const [sortDir] = useState('desc')
 
   const filtered = useMemo(() => {
     const search = q.trim().toLowerCase()

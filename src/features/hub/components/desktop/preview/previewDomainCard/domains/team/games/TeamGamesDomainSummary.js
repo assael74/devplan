@@ -5,7 +5,6 @@ import { Box, Chip, Typography } from '@mui/joy'
 
 import { resolveTeamGamesDomain } from './logic/teamGames.domain.logic'
 import { domainBoxSx } from '../../domain.sx'
-import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
 
 const Row = ({ label, value, color }) => {
   const has = value != null && String(value) !== ''
@@ -26,7 +25,6 @@ const Row = ({ label, value, color }) => {
 export default function TeamGamesDomainSummary({ entity }) {
   const { summary } = useMemo(() => resolveTeamGamesDomain(entity), [entity])
 
-  const next = summary?.nextGame
   const leagueStats = summary?.leagueStats || {}
 
   const leagueText = summary?.league || '—'

@@ -10,6 +10,7 @@ export default function VideoHubFabMenu({
   tab,
   onCreateAnalysis,
   onCreateGeneral,
+  onImportVideos,
   onAddTask,
   taskContext,
 }) {
@@ -22,10 +23,18 @@ export default function VideoHubFabMenu({
       handlers: {
         onAddVideoAnalysis: onCreateAnalysis,
         onCreateVideoGeneral: onCreateGeneral,
+        onImportVideos,
         onAddTask,
       },
     })
-  }, [tab, onCreateAnalysis, onCreateGeneral, onAddTask, taskContext])
+  }, [
+    tab,
+    onCreateAnalysis,
+    onCreateGeneral,
+    onImportVideos,
+    onAddTask,
+    taskContext,
+  ])
 
   if (!actions?.length) return null
 
@@ -35,8 +44,8 @@ export default function VideoHubFabMenu({
     <GenericFabMenu
       id="video-hub-fab"
       placement="br"
-      tooltip={tab === VIDEO_TAB.ANALYSIS ? 'יצירת ניתוח וידאו' : 'יצירת וידאו כללי'}
-      ariaLabel="יצירת וידאו"
+      tooltip={tab === VIDEO_TAB.ANALYSIS ? 'יצירת ניתוח וידאו' : 'פעולות וידאו כללי'}
+      ariaLabel="פעולות וידאו"
       actions={actions}
       variant="solid"
       entityType={entityType}

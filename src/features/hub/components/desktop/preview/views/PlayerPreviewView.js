@@ -1,22 +1,19 @@
 // features/hub/components/desktop/preview/views/PlayerPreviewView.js
 
 import React, { useMemo, useState, useEffect } from 'react'
-import { Box, Divider, Button, Chip, Tooltip, Typography } from '@mui/joy'
+import { Box, Divider, Button, Tooltip } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 import PreviewHeader from '../PreviewHeader'
 import PreviewDomainsGrid from '../PreviewDomainsGrid'
 import PreviewQuickActions from '../PreviewQuickActions'
-import { TypeChip, KeyPlayerChip, LevelStars } from './parts/MetaChips.js'
 import PreviewMetaChips from './components/PreviewMetaChips.js'
-import JoyStarRating from '../../../../../../ui/domains/ratings/JoyStarRating'
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 
 import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
-import { iconUi } from '../../../../../../ui/core/icons/iconUi'
 import { previewSx } from './sx/contextView.sx'
 import { playerPreviewViewSx as sx, getEntityNavBtnSx } from './sx/contextView.sx'
 
@@ -38,7 +35,6 @@ export default function PlayerPreviewView({
   }, [player?.photo])
 
   // --- נתוני תצוגה ---
-  const ui = player?.ui || {}
   const ifaLink = player?.ifaLink || null
   const isProject = String(player?.type || '') === 'project'
 

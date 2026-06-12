@@ -4,7 +4,6 @@ import React, { useMemo } from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 import { resolvePlayerGamesDomain } from './logic/playerGames.domain.logic'
 import { domainBoxSx } from '../../domain.sx'
-import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
 
 const Row = ({ label, value, color }) => {
   const has = value != null && String(value) !== ''

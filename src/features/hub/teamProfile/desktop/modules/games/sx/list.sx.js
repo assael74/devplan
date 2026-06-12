@@ -1,10 +1,11 @@
 // teamProfile/desktop/modules/games/sx/list.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-
 export const listSx = {
+  listWrap: {
+    display: 'grid',
+    gap: 0.35,
+  },
+
   emptyState: {
     display: 'grid',
     gap: 0.5,

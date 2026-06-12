@@ -22,7 +22,6 @@ export default function HomePageMobile() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [editTask, setEditTask] = useState(null)
-  const [createTaskContext, setCreateTaskContext] = useState(null)
 
   const homeView = searchParams.get('homeView')
   const workspaceId = searchParams.get('workspace')

@@ -1,9 +1,5 @@
 // previewDomainCard/domains/team/videos/sx/teamVideosRow.sx.js
 
-import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('videoAnalysis')
-
 export const rowSx = {
   rowCardSx: {
     display: 'grid',

@@ -27,8 +27,6 @@ export default function TeamGamesRow({ row, onEdit }) {
 
   const hasVlink = vLink.length > 0
 
-  const iconVlink = hasVlink ? 'addLink' : 'noLink'
-  const colorIcon = hasVlink ? 'success' : 'danger'
   const tipVlink = hasVlink ? 'יש קישור למשחק' : 'אין קישור למשחק'
   const difficultyText = getGameDifficultyLabelH(row?.difficulty)
   const hasLeagueNum = row.gameLeagueNum !== 0

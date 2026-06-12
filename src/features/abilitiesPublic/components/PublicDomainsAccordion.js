@@ -30,7 +30,7 @@ export default function PublicDomainsAccordion({ form = {} }) {
     domains = [],
     onSetItemScore = () => () => {},
     onSetDomainScore = () => () => {},
-    validation = {},
+    //validation = {},
   } = form
 
   const canOpenDomains = Boolean(bits?.hasGrowthStage)

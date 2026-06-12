@@ -11,7 +11,11 @@ import {
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
-import { BulkPasteDrawer } from '../../../../bulkImport/index.js'
+import { BulkPasteDrawer } from '../../../../bulkActions/games/import/index.js'
+import {
+  GamesBulkDeleteModal,
+  GAMES_DELETE_SCOPE,
+} from '../../../../bulkActions/games/delete/index.js'
 
 import useTeamGamesModuleModel from './useTeamGamesModuleModel.js'
 
@@ -73,6 +77,15 @@ export default function TeamGamesModuleBase({
     gamesImportSaving,
     gamesImportError,
 
+    gamesDeleteOpen,
+    gamesDeleteScope,
+    gamesDeleteSaving,
+    gamesDeleteError,
+
+    deleteSelectionMode,
+    selectedGameIds,
+    selectedGameIdsSet,
+
     statsFormLoading,
     statsFormLoadingText,
     editingStatsGame,
@@ -96,6 +109,16 @@ export default function TeamGamesModuleBase({
 
     handleCloseGamesImport,
     handleGamesImportPreviewReady,
+
+    handleEnterDeleteSelectionMode,
+    handleExitDeleteSelectionMode,
+    handleToggleGameSelection,
+    handleClearGameSelection,
+    handleSelectAllVisibleGames,
+    handleOpenSelectedDelete,
+    handleOpenAllTeamGamesDelete,
+    handleCloseGamesDelete,
+    handleConfirmGamesDelete,
 
     handleOpenStatsGame,
     handleSaveStats,
@@ -125,6 +148,14 @@ export default function TeamGamesModuleBase({
             sortDirection={sort.direction}
             onChangeSortBy={handleChangeSortBy}
             onChangeSortDirection={handleChangeSortDirection}
+            deleteSelectionMode={deleteSelectionMode}
+            selectedGameIds={selectedGameIds}
+            onEnterDeleteSelectionMode={handleEnterDeleteSelectionMode}
+            onExitDeleteSelectionMode={handleExitDeleteSelectionMode}
+            onSelectAllVisibleGames={handleSelectAllVisibleGames}
+            onClearGameSelection={handleClearGameSelection}
+            onOpenSelectedDelete={handleOpenSelectedDelete}
+            onOpenAllTeamGamesDelete={handleOpenAllTeamGamesDelete}
           />
         </Box>
 
@@ -150,6 +181,10 @@ export default function TeamGamesModuleBase({
             onEditEntryGame={game => setEditingEntryGame(game || null)}
             onOpenStatsGame={enableStatsForm ? handleOpenStatsGame : undefined}
             statsDraftsByGameId={statsPayloadsByGameId}
+            deleteSelectionMode={deleteSelectionMode}
+            selectedGameIds={selectedGameIds}
+            selectedGameIdsSet={selectedGameIdsSet}
+            onToggleGameSelection={handleToggleGameSelection}
           />
         )}
       </Wrap>
@@ -161,6 +196,18 @@ export default function TeamGamesModuleBase({
         onPreviewReady={handleGamesImportPreviewReady}
         saving={gamesImportSaving}
         error={gamesImportError}
+      />
+
+      <GamesBulkDeleteModal
+        open={gamesDeleteOpen}
+        onClose={handleCloseGamesDelete}
+        team={liveTeam}
+        games={calculationGames}
+        selectedGameIds={selectedGameIds}
+        initialScope={gamesDeleteScope || GAMES_DELETE_SCOPE.SELECTED}
+        loading={gamesDeleteSaving}
+        error={gamesDeleteError}
+        onConfirmDelete={handleConfirmGamesDelete}
       />
 
       <InsightsDrawerComponent

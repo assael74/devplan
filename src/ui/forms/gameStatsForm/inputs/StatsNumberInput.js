@@ -8,20 +8,6 @@ import { inputsSx as sx } from './sx/inputs.sx.js'
 export default function StatsNumberInput({ label, value, onChange, readOnly = false }) {
   const inputRef = React.useRef(null);
 
-  const blockNegativeInput = event => {
-    if (event.key === '-' || event.key === 'Minus') {
-      event.preventDefault()
-    }
-  }
-
-  const blockNegativePaste = event => {
-    const text = event.clipboardData.getData('text')
-
-    if (text.includes('-')) {
-      event.preventDefault()
-    }
-  }
-
   const isValidNonNegativeValue = value => {
     if (value === '') return true
 

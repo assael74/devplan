@@ -25,9 +25,7 @@ function formatTimeRef(value) {
 }
 
 export default function ClubPlayersRow({ row, onEdit }) {
-  const keyLabel = row?.isKey === true
-  const autoLabel = row?.isAutoEligible === true
-  const squadRoleLabe = row?.squadRoleMeta?.label || 'לא הוגדר'
+  const keyLabel = row?.isKey === true  const squadRoleLabe = row?.squadRoleMeta?.label || 'לא הוגדר'
 
   return (
     <Box sx={{ ...sx.rowCardSx, ...(row?.isKey ? sx.rowCardKeySx : {}) }}>

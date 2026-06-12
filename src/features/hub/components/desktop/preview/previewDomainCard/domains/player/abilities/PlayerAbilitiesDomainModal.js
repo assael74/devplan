@@ -4,10 +4,6 @@ import React, { useMemo, useState } from 'react'
 import {
   Box,
   Chip,
-  Divider,
-  Input,
-  Option,
-  Select,
   Sheet,
   Typography,
   Card,
@@ -17,14 +13,12 @@ import {
   Stack,
   CircularProgress
 } from '@mui/joy'
-import SearchRounded from '@mui/icons-material/SearchRounded'
 import PlayerAbilitiesKpi from './components/PlayerAbilitiesKpi.js'
 import PlayerAbilitiesFilters from './components/PlayerAbilitiesFilters.js'
 import { resolveAbilitiesDomain } from '../../../../../../../../../shared/abilities/abilities.domain.logic'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi'
 import { sx } from './sx/playerAbilities.modal.sx.js'
 
-const safe = (v) => (v == null ? '' : String(v))
 const isFilled = (v) => Number.isFinite(v) && v > 0
 const toFixed1 = (v) => (Number.isFinite(v) ? (Math.round(v * 10) / 10).toFixed(1) : '—')
 
@@ -56,14 +50,16 @@ function calcDomainScore(items = []) {
   return filledItems.reduce((s, i) => s + i.value, 0) / filledItems.length
 }
 
-export default function AbilitiesDomainModal({ entity, onClose }) {
+export default function AbilitiesDomainModal({ entity }) {
   const model = useMemo(() => resolveAbilitiesDomain(entity), [entity])
   const { summary, domains } = model || { summary: {}, domains: [] }
+  void filledOptions
 
   const domainOptions = useMemo(
     () => [{ id: 'all', label: 'כל הדומיינים' }, ...(domains || []).map((d) => ({ id: d.domain, label: d.domainLabel }))],
     [domains]
   )
+  void domainOptions
 
   const [selectedDomains, setSelectedDomains] = useState([])
 

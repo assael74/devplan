@@ -15,7 +15,7 @@ import { isPlaceholderPhone } from './playerInfo.domain.logic.js'
 const noop = () => {}
 
 export function usePlayerInfoDomainForm({ entity, onClose = noop }) {
-  const player = entity || {}
+  const player = useMemo(() => entity || {}, [entity])
 
   const initial = useMemo(() => buildPlayerEditInitial(player), [player])
   const [form, setForm] = useState(initial)

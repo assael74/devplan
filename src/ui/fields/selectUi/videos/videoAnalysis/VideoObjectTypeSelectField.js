@@ -14,15 +14,6 @@ import {
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { VIDEOANALYSIS_OBJECTTYPES } from '../../../../../shared/videoAnalysis/videoAnalysis.constants.js'
 
-const getOptionId = opt => {
-  return opt?.id || opt?.value || ''
-}
-
-const getOptionKey = (opt, index) => {
-  const id = getOptionId(opt)
-  return id ? `${id}-${index}` : `object-type-${index}`
-}
-
 export default function VideoObjectTypeSelectField({
   value,
   onChange,

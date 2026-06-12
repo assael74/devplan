@@ -1,12 +1,13 @@
 // videoHub/sharedUi/VideoHubGlobalLayer.js
 
-import React from 'react'
+import React, { useState } from 'react'
 
 import { VIDEO_TAB } from '../logic/videoHub.model.js'
 
 import VideoShareModal from '../components/modal/VideoShareModal.js'
 import VideoHubFabMenu from './VideoHubFabMenu.js'
 import DriveVideoPlayer from '../../../ui/domains/video/DriveVideoPlayer.js'
+import { BulkVideosImportDrawer } from '../../bulkActions/videos/import/index.js'
 
 export default function VideoHubGlobalLayer({
   tab,
@@ -18,7 +19,10 @@ export default function VideoHubGlobalLayer({
   onCreateAnalysis,
   onCreateGeneral,
   onAddTask,
+  onImportedVideos,
 }) {
+  const [importOpen, setImportOpen] = useState(false)
+
   return (
     <>
       <VideoShareModal
@@ -36,11 +40,18 @@ export default function VideoHubGlobalLayer({
         variant={tab === VIDEO_TAB.ANALYSIS ? 'analysis' : 'general'}
       />
 
+      <BulkVideosImportDrawer
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={onImportedVideos}
+      />
+
       <VideoHubFabMenu
         tab={tab}
         taskContext={taskContext}
         onCreateAnalysis={onCreateAnalysis}
         onCreateGeneral={onCreateGeneral}
+        onImportVideos={() => setImportOpen(true)}
         onAddTask={onAddTask}
       />
     </>

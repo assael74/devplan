@@ -1,7 +1,7 @@
 // ui/forms/ui/videoAnalysis/VideoAnalysisCreateFields.js
 
-import React, { useEffect } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import VideoLinkField from '../../../fields/inputUi/videos/VideoLinkField'
 import VideoNameField from '../../../fields/inputUi/videos/VideoNameField'

@@ -9,7 +9,6 @@ import GenericInputField from '../../../../../../../../ui/fields/inputUi/Generic
 import ScoutFullNameField from '../../../../../../../../ui/fields/inputUi/scouting/ScoutFullNameField.js'
 import ScoutIfaLinkField from '../../../../../../../../ui/fields/inputUi/scouting/ScoutIfaLinkField.js'
 
-import { asIdArray } from './scoutPreview.logic.js'
 import { scoutPreviewSx } from './scoutPreview.sx.js'
 
 export default function ScoutPreviewForm({

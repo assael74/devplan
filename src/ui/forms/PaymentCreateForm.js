@@ -21,10 +21,6 @@ export default function PaymentCreateForm({
   const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
   const isMobile = forceMobile || isMobileViewport
 
-  const paymentFor = draft.paymentFor ? draft.paymentFor : ''
-  const type = draft.type ? draft.type: 'monthlyPayment'
-  const price = draft.price ? draft.price : ''
-
   const validity = useMemo(() => {
     const okFor = !!clean(draft.paymentFor)
     const okType = !!clean(draft.type)

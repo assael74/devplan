@@ -16,7 +16,6 @@ export const typeSx = {
       minWidth: width,
       width: width,
       mx: { xs: 'auto', sm: 0 },
-      textAlign: 'center',
       borderRadius: 'sm',
       cursor: 'pointer',
       boxShadow: value === type.id ? 'lg' : 'sm',

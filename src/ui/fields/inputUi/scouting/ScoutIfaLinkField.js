@@ -1,7 +1,7 @@
 // ui/fields/inputUi/players/PlayerIfaLinkField.js
 import React from 'react';
 import { iconUi } from '../../../core/icons/iconUi.js';
-import { FormControl, FormLabel, FormHelperText, Input } from '@mui/joy';
+import { FormControl, FormLabel, Input } from '@mui/joy';
 
 export default function ScoutIfaLinkField({
   onChange,

@@ -47,7 +47,6 @@ export default function PublicSubmitBar({ form = {} }) {
     fullDomains = 0,
     missingRequired = [],
     missingDomains = [],
-    summaryText = '',
   } = completion
 
   const topMissing = [...missingRequired, ...missingDomains].slice(0, 4)

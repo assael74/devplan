@@ -43,6 +43,8 @@ function toScoreText(v) {
   return Number.isFinite(n) ? `${Math.round(n * 10) / 10}` : '—'
 }
 
+void toScoreText
+
 export default function TeamAbilitiesKpi({ entity, context, summary, globalCount }) {
   const teamName = entity?.teamName || entity?.name || 'קבוצה'
   const src = resolveEntityAvatar({

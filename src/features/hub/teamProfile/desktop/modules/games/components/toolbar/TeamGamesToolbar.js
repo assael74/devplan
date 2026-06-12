@@ -1,7 +1,7 @@
 // teamProfile/desktop/modules/games/components/toolbar/TeamGamesToolbar.js
 
 import React from 'react'
-import { Box, Input, Option, Select, Chip } from '@mui/joy'
+import { Box, Button, Chip, Input, Option, Select, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from './sx/toolbar.sx.js'
@@ -15,6 +15,89 @@ import {
   clearToolbarIndicator,
 } from './../../../../../sharedLogic/games'
 
+function TeamGamesDeleteSelectionToolbar({
+  selectedCount = 0,
+  filteredGames = 0,
+  onSelectAllVisibleGames,
+  onClearGameSelection,
+  onExitDeleteSelectionMode,
+  onOpenSelectedDelete,
+}) {
+  const hasSelectedGames = selectedCount > 0
+  const deleteLabel = hasSelectedGames
+    ? `מחק ${selectedCount} משחקים`
+    : 'בחר משחקים למחיקה'
+
+  return (
+    <Box sx={sx.deleteSelectionToolbar}>
+      <Box sx={sx.deleteSelectionTitle}>
+        {iconUi({ id: 'delete' })}
+
+        <Box>
+          <Typography level="title-sm" color="danger">
+            מצב מחיקת משחקים
+          </Typography>
+
+          <Typography level="body-xs" color="neutral">
+            {selectedCount
+              ? `${selectedCount} משחקים סומנו למחיקה`
+              : 'סמן משחקים מהרשימה כדי להמשיך'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ flex: 1 }} />
+
+      <Chip
+        size="sm"
+        variant="soft"
+        color={hasSelectedGames ? 'danger' : 'neutral'}
+      >
+        {selectedCount} נבחרו
+      </Chip>
+
+      <Button
+        size="sm"
+        variant="soft"
+        color="neutral"
+        disabled={!filteredGames}
+        onClick={onSelectAllVisibleGames}
+      >
+        בחר הכל בתצוגה
+      </Button>
+
+      <Button
+        size="sm"
+        variant="plain"
+        color="neutral"
+        disabled={!hasSelectedGames}
+        onClick={onClearGameSelection}
+      >
+        נקה בחירה
+      </Button>
+
+      <Button
+        size="sm"
+        variant="plain"
+        color="neutral"
+        onClick={onExitDeleteSelectionMode}
+      >
+        ביטול
+      </Button>
+
+      <Button
+        size="sm"
+        color="danger"
+        disabled={!hasSelectedGames}
+        startDecorator={iconUi({ id: 'delete' })}
+        onClick={onOpenSelectedDelete}
+      >
+        {deleteLabel}
+      </Button>
+    </Box>
+  )
+}
+
 export default function TeamGamesToolbar({
   summary,
   filters,
@@ -22,13 +105,20 @@ export default function TeamGamesToolbar({
   sortDirection = 'desc',
   indicators = [],
   options = {},
+  deleteSelectionMode = false,
+  selectedGameIds = [],
   onOpenInsights,
   onChangeFilters,
   onResetFilters,
   onChangeSortBy,
   performanceView,
   onChangeSortDirection,
-  onChangePerformanceView
+  onChangePerformanceView,
+  onEnterDeleteSelectionMode,
+  onExitDeleteSelectionMode,
+  onSelectAllVisibleGames,
+  onClearGameSelection,
+  onOpenSelectedDelete,
 }) {
   const {
     typeOptions,
@@ -44,8 +134,25 @@ export default function TeamGamesToolbar({
     selectedDifficulty,
   } = buildToolbarState({ summary, filters, options })
 
-  const handleClearIndicator = (item) => {
+  const selectedCount = selectedGameIds.length
+
+  const handleClearIndicator = item => {
     clearToolbarIndicator(item, onChangeFilters)
+  }
+
+  if (deleteSelectionMode) {
+    return (
+      <Box sx={sx.toolbar}>
+        <TeamGamesDeleteSelectionToolbar
+          selectedCount={selectedCount}
+          filteredGames={filteredGames}
+          onSelectAllVisibleGames={onSelectAllVisibleGames}
+          onClearGameSelection={onClearGameSelection}
+          onExitDeleteSelectionMode={onExitDeleteSelectionMode}
+          onOpenSelectedDelete={onOpenSelectedDelete}
+        />
+      </Box>
+    )
   }
 
   return (
@@ -53,7 +160,7 @@ export default function TeamGamesToolbar({
       <Box sx={sx.toolbarTop}>
         <Input
           value={filters?.search || ''}
-          onChange={(e) => onChangeFilters({ search: e.target.value })}
+          onChange={e => onChangeFilters({ search: e.target.value })}
           startDecorator={iconUi({ id: 'search' })}
           placeholder="חיפוש לפי יריבה, תוצאה, סוג משחק"
           size="sm"
@@ -83,7 +190,7 @@ export default function TeamGamesToolbar({
             />
           </Option>
 
-          {typeOptions.map((item) => (
+          {typeOptions.map(item => (
             <Option key={item.id || item.value} value={item.value || item.id}>
               <TeamGamesToolbarSelectValue
                 label={item.label}
@@ -118,7 +225,7 @@ export default function TeamGamesToolbar({
             />
           </Option>
 
-          {homeOptions.map((item) => (
+          {homeOptions.map(item => (
             <Option
               key={item.id || item.value}
               value={item.value || item.id}
@@ -156,7 +263,7 @@ export default function TeamGamesToolbar({
             />
           </Option>
 
-          {resultOptions.map((item) => (
+          {resultOptions.map(item => (
             <Option key={item.id || item.value} value={item.value || item.id}>
               <TeamGamesToolbarSelectValue
                 label={item.label}
@@ -190,7 +297,7 @@ export default function TeamGamesToolbar({
             />
           </Option>
 
-          {difficultyOptions.map((item) => (
+          {difficultyOptions.map(item => (
             <Option key={item.id || item.value} value={item.value || item.id}>
               <TeamGamesToolbarSelectValue
                 label={item.label}
@@ -264,11 +371,13 @@ export default function TeamGamesToolbar({
         totalGames={totalGames}
         filteredGames={filteredGames}
         sortDirection={sortDirection}
+        selectedGameIds={selectedGameIds}
         onChangeSortBy={onChangeSortBy}
         performanceView={performanceView}
         onClearIndicator={handleClearIndicator}
         onChangeSortDirection={onChangeSortDirection}
         onChangePerformanceView={onChangePerformanceView}
+        onEnterDeleteSelectionMode={onEnterDeleteSelectionMode}
       />
     </Box>
   )

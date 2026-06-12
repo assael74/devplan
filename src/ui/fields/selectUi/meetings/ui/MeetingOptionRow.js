@@ -2,7 +2,6 @@ import React from 'react'
 import { Box, Typography } from '@mui/joy'
 import { meetingsStyle } from '../../select.sx'
 import playerImage from '../../../../core/images/playerImage.jpg'
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
 
 export default function MeetingOptionRow({ props, option }) {
   const { ownerState, ...rest } = props

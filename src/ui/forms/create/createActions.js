@@ -3,7 +3,6 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { createGameStatsDoc } from '../../../services/firestore/shorts/gameStats/index.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
-import { buildGameInfoItem, buildGameTimeItem, buildGameResultItem } from '../helpers/gameForm.helpers.js'
 import { buildPlayerInfoItem, buildPlayerNamesItem, buildPlayerTeamItem } from '../helpers/playerForm.helpers.js'
 import { buildTaskCreateItem } from '../helpers/tasksForm.helpers.js'
 import { buildMeetingStartAtMs } from '../helpers/meetingForm.helpers.js'
@@ -24,18 +23,6 @@ const pickIfaLink = (draft) => {
 }
 
 const clean = (value) => String(value ?? '').trim()
-
-const toNum = (value) => {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : 0
-}
-
-const toBool = (value, fallback = false) => {
-  if (typeof value === 'boolean') return value
-  if (value === 'true') return true
-  if (value === 'false') return false
-  return fallback
-}
 
 const omitEmpty = (obj = {}) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
@@ -348,16 +335,52 @@ export const createActions = {
     const id = makeId()
     const now = Date.now()
 
+    const item = {
+      id,
+      name: clean(draft.name),
+      link: clean(draft.link),
+      primaryCategory: clean(draft.primaryCategory) || null,
+      createdAt: now,
+      updatedAt: now,
+    }
+
     await createShort({
       shortKey: 'videos.videoInfo',
-      item: {
+      item,
+    })
+
+    return item
+  },
+
+  videosBulk: async ({ draft }) => {
+    const rows = Array.isArray(draft?.videos) ? draft.videos : []
+    const created = []
+
+    for (const row of rows) {
+      const id = makeId()
+      const now = Date.now()
+
+      const item = {
         id,
-        name: draft.name,
-        link: draft.link,
+        name: clean(row.name),
+        link: clean(row.link),
+        primaryCategory: clean(row.primaryCategory) || null,
         createdAt: now,
         updatedAt: now,
-      },
-    })
+      }
+
+      await createShort({
+        shortKey: 'videos.videoInfo',
+        item,
+      })
+
+      created.push(item)
+    }
+
+    return {
+      total: created.length,
+      items: created,
+    }
   },
 
   tag: async ({ draft }) => {

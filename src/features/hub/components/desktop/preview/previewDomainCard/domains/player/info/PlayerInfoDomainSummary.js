@@ -28,6 +28,7 @@ export default function PlayerInfoDomainSummary({ entity }) {
   const player = entity || {}
 
   const birthDay = String(player?.birthDay || '').trim() || '—'
+  void birthDay
   const phone = formatPlayerPhone(player?.phone)
   const phoneOk = !isPlaceholderPhone(player?.phone)
 

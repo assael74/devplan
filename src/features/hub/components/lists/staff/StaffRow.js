@@ -25,7 +25,6 @@ export default function StaffRow({
   const fullName = staff?.fullName || 'איש צוות'
   const roleLabel = staff?.roleLabel || staff?.typeLabel || staff?.type || ''
   const subline = staff?.subline || ''
-  const idIcon = staff?.idIcon || ''
 
   return (
     <Box

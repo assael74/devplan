@@ -5,6 +5,26 @@ import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors
 const c = getEntityColors('teams')
 
 export const toolbarSx = {
+  deleteSelectionToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    flexWrap: 'wrap',
+    p: 1,
+    borderRadius: '14px',
+    border: '1px solid',
+    borderColor: 'danger.outlinedBorder',
+    bgcolor: 'danger.softBg',
+  },
+
+  deleteSelectionTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    color: 'danger.700',
+    minWidth: 220,
+  },
+
   toolbar: {
     display: 'grid',
     gap: 0.75,

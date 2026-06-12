@@ -45,6 +45,8 @@ export default function PlayerAbilitiesKpi({ entity, summary, globalCount }) {
   const strongestLabel = summary?.strongest?.domainLabel || '—'
   const strongestAvg =
     Number.isFinite(Number(summary?.strongest?.avg)) ? `(${summary.strongest.avg})` : ''
+  void strongestLabel
+  void strongestAvg
 
   const weakestLabel = summary?.weakest?.domainLabel || '—'
   const weakestAvg =

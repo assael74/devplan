@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { chipActiveProps } from './X_Style';
 import { iconUi } from '../../core/icons/iconUi.js';
-import { Box, FormControl, FormLabel, Chip, Typography } from '@mui/joy';
+import { Box, FormControl, Chip, Typography } from '@mui/joy';
 
 export default function GenericCheckSelector({
   label = '',

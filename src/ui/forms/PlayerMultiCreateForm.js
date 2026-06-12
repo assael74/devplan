@@ -41,7 +41,6 @@ function normalizeDraft(draft = {}, context = {}) {
     uiKey: player?.uiKey || makeId('playerRow'),
     playerFirstName: player?.playerFirstName || '',
     playerLastName: player?.playerLastName || '',
-    year: player?.year || '',
     month: player?.month || '',
     year: player?.year || defaults.year,
     teamId: player?.teamId || defaults.teamId,

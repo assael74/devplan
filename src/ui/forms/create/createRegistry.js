@@ -1,6 +1,5 @@
 // ui/forms/create/createRegistry.js
 
-import React from 'react'
 import ClubCreateForm from '../ClubCreateForm'
 import TeamCreateForm from '../TeamCreateForm'
 import PlayerCreateForm from '../PlayerCreateForm'

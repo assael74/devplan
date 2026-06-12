@@ -1,7 +1,7 @@
 // ui/forms/ui/privates/PrivateCreateFields.js
 
-import React, { useEffect } from 'react'
-import { Box, Typography, Divider, Chip } from '@mui/joy'
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
 
 import PlayerFirstNameField from '../../../fields/inputUi/players/PlayerFirstNameField'
 import PlayerLastNameField from '../../../fields/inputUi/players/PlayerLastNameField'

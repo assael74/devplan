@@ -5,14 +5,11 @@ import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { listSx as sx } from '../list.sx.js'
 
 import {
   buildPlayerFullName,
   buildPlayerSubLine,
-  isProjectPlayer,
-  isKeyPlayer,
 } from './logic/privateRow.logic'
 
 function ColorDot({ active }) {

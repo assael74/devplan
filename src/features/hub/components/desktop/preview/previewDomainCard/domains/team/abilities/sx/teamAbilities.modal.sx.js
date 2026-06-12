@@ -1,9 +1,5 @@
 //    preview/PreviewDomainCard/domains/abilities/team/sx/teamAbilities.domain.sx.js
 
-import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-
 export const sx = {
   cardStack: {
     display: 'flex',

@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, Divider, Button, Tooltip, Sheet } from '@mui/joy'
-import MailOutlineRounded from '@mui/icons-material/MailOutlineRounded'
 import PhoneIphoneRounded from '@mui/icons-material/PhoneIphoneRounded'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
@@ -58,7 +57,6 @@ export default function StaffPreviewView({ staff, locked, buildActions, context 
   }, [isDirty, pending, buildPatch, runUpdate, commitBaseline])
 
   const phone = draft.phone
-  const email = draft.email
   const ifaLink = draft?.ifaLink || null
 
   return (

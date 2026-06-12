@@ -4,7 +4,6 @@ import {
   FormLabel,
   Select,
   Option,
-  Typography,
   Stack,
   Chip,
   Box,
@@ -24,24 +23,6 @@ export default function StatsMultiParmTypeSelectField({
 }) {
   const allOptions = statsParmOptions.filter(opt => opt.id !== 'all');
   const allIds = allOptions.map(opt => opt.id);
-  const showAll = value.length === allIds.length;
-
-  const handleChange = (_, newValue) => {
-    if (!newValue) return;
-
-    const isAllSelected = newValue.includes('all');
-    const alreadyAllSelected = value.length === allIds.length;
-
-    if (isAllSelected) {
-      if (alreadyAllSelected) {
-        onChange([]); // ניקוי
-      } else {
-        onChange(allIds); // בחירת הכול
-      }
-    } else {
-      onChange(newValue);
-    }
-  };
 
   const handleRemoveChip = (idToRemove, e) => {
     e.stopPropagation();

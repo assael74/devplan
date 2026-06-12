@@ -1,12 +1,10 @@
 // ui/forms/VideoAnalysisCreateForm.js
 
 import React, { useEffect, useMemo } from 'react'
-import{ Box, Sheet, Divider, Typography } from '@mui/joy'
 import { useTheme } from '@mui/joy/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
 import { getVideoModes, getVideoDisabled, getVideoVisible } from './helpers/videoForm.helpers.js'
-import { iconUi } from '../core/icons/iconUi.js'
 
 import VideoAnalysisCreateFields from './ui/videoAnalysis/VideoAnalysisCreateFields.js'
 import { getVideoAnalysisCreateFormLayout } from './layouts/videoAnalysisCreateForm.layout.js'
@@ -59,14 +57,6 @@ export default function VideoAnalysisCreateForm({
   const visible = useMemo(
     () => getVideoVisible(contextType, objectType, locks, draft),
     [contextType, objectType, locks, draft]
-  )
-
-  const showLockNote = !!(
-    locks?.lockContextType ||
-    locks?.lockObjectType ||
-    locks?.lockMeetingId ||
-    locks?.lockPlayerId ||
-    locks?.lockTeamId
   )
 
   useEffect(() => {

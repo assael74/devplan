@@ -4,8 +4,6 @@ import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
-import Box from '@mui/joy/Box'
-
 import PrivateCreateFields from './ui/privates/PrivateCreateFields.js'
 
 import { getPrivateCreateFormLayout } from './layouts/privateCreateForm.layout.js'

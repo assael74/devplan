@@ -3,7 +3,6 @@
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
 import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
 import { buildVideoInsights } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
-import { VIDEO_INSIGHTS_DEFAULT_TAG_TYPE } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.constants.js'
 import { buildTagsByIdObject, getVideoType } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.helpers.js'
 import { resolveVideoMonthKey } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.months.js'
 
@@ -109,44 +108,6 @@ const resolveTagsFullForVideo = (video, tagsById = {}) => {
     .filter((t) => t?.isActive !== false)
 }
 
-const getSeasonStartYear = (team, videos = []) => {
-  const direct =
-    Number(team?.seasonStartYear) ||
-    Number(team?.season?.startYear) ||
-    Number(team?.seasonStart)
-
-  if (direct) return direct
-
-  const monthKeys = asArr(videos)
-    .map((video) => getMonthKey(video))
-    .filter(Boolean)
-    .sort()
-
-  if (!monthKeys.length) return null
-
-  const firstKey = monthKeys[0]
-  const [yearStr, monthStr] = firstKey.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr)
-
-  if (!year || !month) return null
-  return month >= 8 ? year : year - 1
-}
-
-const buildRecentActivity = (monthlyActivity = [], limit = 2) => {
-  return asArr(monthlyActivity)
-    .filter((item) => item?.hasActivity)
-    .slice(-limit)
-    .reverse()
-    .map((item) => ({
-      key: item.monthKey,
-      label: item.monthLabel,
-      count: Number(item.totalVideos || 0),
-      analysis: Number(item.analysisVideos || 0),
-      meeting: Number(item.meetingVideos || 0),
-    }))
-}
-
 function pickAssignmentType(video) {
   const contextType = norm(video?.contextType)
   const videoType = getVideoType(video)
@@ -178,8 +139,6 @@ export function resolveTeamVideosDomain(entity, filters = {}, deps = {}) {
   const state = team == null ? DOMAIN_STATE.PARTIAL : getDomainState({ count: videosAll.length, isLocked: false, isStale: false })
 
   const passedTags = asArr(deps?.tags)
-  const passedSeasonStartYear = Number(deps?.seasonStartYear) || null
-  const tagType = deps?.tagType || VIDEO_INSIGHTS_DEFAULT_TAG_TYPE
 
   const f = {
     q: hasText(filters.q) ? safe(filters.q) : '',

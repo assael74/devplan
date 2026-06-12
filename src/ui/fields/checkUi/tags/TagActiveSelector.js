@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { chipActiveProps } from '../X_Style'
 import { iconUi } from '../../../core/icons/iconUi.js';
-import { Box, Typography, Chip } from '@mui/joy';
+import { Box, Chip } from '@mui/joy';
 
 export default function TagActiveSelector({ value = false, onChange, size = 'sm' }) {
   const isActive = value === true;

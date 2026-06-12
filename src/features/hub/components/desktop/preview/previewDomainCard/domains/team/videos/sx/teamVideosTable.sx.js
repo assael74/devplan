@@ -1,9 +1,5 @@
 // previewDomainCard/domains/team/videos/sx/teamVideosTable.sx.js
 
-import { getEntityColors } from '../../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('videoAnalysis')
-
 export const tableSx = {
   tableWrapSx: {
     p: 0.75,

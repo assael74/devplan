@@ -10,7 +10,6 @@ import PlayerInfoContactSection from './components/PlayerInfoContactSection.js'
 import PlayerInfoProjectSection from './components/PlayerInfoProjectSection.js'
 
 import { usePlayerInfoDomainForm } from './logic/usePlayerInfoDomainForm.js'
-import { sx } from './sx/playerInfo.domain.sx.js'
 
 export default function PlayerInfoDomainModal({ entity, onClose }) {
   const {

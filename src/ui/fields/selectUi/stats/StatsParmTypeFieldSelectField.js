@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FormControl, FormLabel, Select, Option, Typography, Stack } from '@mui/joy';
+import { FormControl, FormLabel, Select, Option, Stack } from '@mui/joy';
 import { iconUi } from '../../../core/icons/iconUi.js';
 import { statsParmTypeFieldOptions } from '../../../../shared/stats/stats.options.js';
 

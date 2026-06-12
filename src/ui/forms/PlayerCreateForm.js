@@ -4,8 +4,6 @@ import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
-import Box from '@mui/joy/Box'
-
 import PlayerCreateFields from './ui/players/PlayerCreateFields.js'
 
 import { getPlayerCreateFormLayout } from './layouts/playerCreateForm.layout.js'
@@ -29,9 +27,6 @@ export default function PlayerCreateForm({
   const clubId = draft?.clubId || ''
   const teamId = draft?.teamId || ''
   const birth = draft?.birth || ''
-  const clubs = context?.clubs || []
-  const teams = context?.teams || []
-
   const validity = useMemo(() => {
     const okFirst = clean(playerFirstName).length >= 2
     const okLast = clean(playerLastName).length >= 2

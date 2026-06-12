@@ -1,7 +1,7 @@
 // C:\projects\devplan\src\ui\forms\ui\abilities\abilitiesCreateForm.renderers.js
 
 import React from 'react'
-import { Box, Chip, Tooltip } from '@mui/joy'
+import { Box, Chip } from '@mui/joy'
 import { iconUi } from '../../../core/icons/iconUi'
 import { abilitiesLabelsShort } from '../../helpers/abilities/abilitiesCreateForm.helpers.js'
 
@@ -32,7 +32,6 @@ export function renderScoreChips({
       {SCORE_ORDER.map((n) => {
         const selected = vNum === n
         const label = withLabel ? `${n} • ${abilitiesLabelsShort[n]}` : `${n}`
-        const tip = `${n} - ${abilitiesLabelsShort[n]}`
         return (
           <Chip
             size={size}

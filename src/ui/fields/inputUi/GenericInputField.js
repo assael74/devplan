@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { iconUi } from '../../core/icons/iconUi.js';
-import { FormControl, FormLabel, Input, Typography } from '@mui/joy';
+import { FormControl, Input, Typography } from '@mui/joy';
 
 export default function GenericInputField({
   id,
