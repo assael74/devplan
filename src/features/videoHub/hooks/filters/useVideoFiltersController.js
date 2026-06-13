@@ -37,6 +37,58 @@ const DEFAULTS_GENERAL = {
   tags: [],
 }
 
+const TAG_TYPE_COLORS = {
+  formation: '#7C3AED',
+  pitch_area: '#0891B2',
+  game_principle: '#2563EB',
+  action_technique: '#16A34A',
+  situation: '#F97316',
+  position_role: '#0F766E',
+  mental: '#D97706',
+}
+
+const STATUS_META = {
+  needs_tagging: {
+    iconId: 'warning',
+    color: '#F59E0B',
+  },
+  partial: {
+    iconId: 'loading',
+    color: '#D97706',
+  },
+  tagged: {
+    iconId: 'check',
+    color: '#16A34A',
+  },
+}
+
+const SOURCE_META = {
+  youtube: {
+    iconId: 'videos',
+    color: '#DC2626',
+  },
+  instagram: {
+    iconId: 'videos',
+    color: '#C13584',
+  },
+  tiktok: {
+    iconId: 'videos',
+    color: '#111827',
+  },
+  vimeo: {
+    iconId: 'videos',
+    color: '#2563EB',
+  },
+  drive: {
+    iconId: 'videos',
+    color: '#16A34A',
+  },
+  other: {
+    iconId: 'tag',
+    color: '#64748B',
+  },
+}
+
 export default function useVideoFiltersController({
   tab,
   filters,
@@ -90,135 +142,174 @@ export default function useVideoFiltersController({
   const activeChips = useMemo(() => {
     const { clubs, teamsAll, playersAll, meetingsAll } = options || {}
 
-    const tagLabelById = new Map(
+    const tagById = new Map(
       (options?.tagOptions || []).map(tag => [
         safeId(tag.id),
-        safeStr(tag.label),
+        tag,
       ])
     )
 
-    const sourceLabelById = new Map(
+    const sourceById = new Map(
       (options?.sourceOptions || []).map(source => [
         safeId(source.id),
-        safeStr(source.label),
+        source,
       ])
     )
 
     const chips = []
 
-    const push = (key, label, value) => {
+    const push = (key, label, value, meta = {}) => {
       if (!value) return
-      chips.push({ key, label, value })
+      chips.push({ key, label, value, ...meta })
     }
 
+    const selectedTagType = safeStr(filters.tagType).trim()
     const tagsArr = Array.isArray(filters.tags)
       ? filters.tags
       : filters.tags
       ? [filters.tags]
       : []
 
-    tagsArr
-      .map(value => safeStr(value).trim())
-      .filter(Boolean)
-      .forEach(tagId => {
-        const label = tagLabelById.get(safeId(tagId)) || tagId
-        chips.push({ key: `tags:${tagId}`, label: 'תג', value: label })
-      })
+    if (!(tab === 'general' && selectedTagType)) {
+      tagsArr
+        .map(value => safeStr(value).trim())
+        .filter(Boolean)
+        .forEach(tagId => {
+          const tag = tagById.get(safeId(tagId))
+          const label = safeStr(tag?.label) || safeStr(tag?.tagName) || tagId
 
-    push('q', 'חיפוש', safeStr(filters.q).trim())
+          chips.push({
+            key: `tags:${tagId}`,
+            label: '\u05ea\u05d2',
+            value: label,
+            iconId: tag?.iconId,
+            color: tag?.color,
+          })
+        })
+    }
+
+    push('q', '\u05d7\u05d9\u05e4\u05d5\u05e9', safeStr(filters.q).trim())
 
     if (tab === 'general') {
-      const categoryLabelById = new Map(
+      const categoryById = new Map(
         (options?.primaryCategoryOptions || []).map(category => [
           safeId(category.id),
-          safeStr(category.label),
+          category,
         ])
       )
 
-      const tagTypeLabelById = new Map(
+      const tagTypeById = new Map(
         (options?.tagTypeOptions || []).map(tagType => [
           safeId(tagType.id),
-          safeStr(tagType.label),
+          tagType,
         ])
       )
 
-      const statusLabelById = new Map(
+      const statusById = new Map(
         (options?.statusOptions || []).map(status => [
           safeId(status.id),
-          safeStr(status.label),
+          status,
         ])
       )
 
       const src = safeStr(filters.source).trim()
       if (src) {
-        push('source', 'מקור', sourceLabelById.get(safeId(src)) || src)
+        const source = sourceById.get(safeId(src))
+        push('source', '\u05de\u05e7\u05d5\u05e8', safeStr(source?.label) || src, {
+          iconId: source?.iconId || SOURCE_META[src]?.iconId || SOURCE_META.other.iconId,
+          color: source?.color || SOURCE_META[src]?.color || SOURCE_META.other.color,
+        })
       }
 
       const primaryCategoryId = safeStr(filters.primaryCategoryId).trim()
       if (primaryCategoryId) {
+        const category = categoryById.get(safeId(primaryCategoryId))
+
         push(
           'primaryCategoryId',
-          'קטגוריה',
-          categoryLabelById.get(safeId(primaryCategoryId)) || primaryCategoryId
+          '\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4',
+          safeStr(category?.label) || primaryCategoryId,
+          {
+            iconId: category?.iconId,
+            tone: category?.tone,
+            color: category?.color,
+          }
         )
       }
 
-      const tagType = safeStr(filters.tagType).trim()
+      const tagType = selectedTagType
       if (tagType) {
+        const tagTypeOption = tagTypeById.get(safeId(tagType))
+
         push(
           'tagType',
-          'סוג תגית',
-          tagTypeLabelById.get(safeId(tagType)) || tagType
+          '\u05e1\u05d5\u05d2 \u05ea\u05d2\u05d9\u05ea',
+          safeStr(tagTypeOption?.label) || tagType,
+          {
+            iconId: tagTypeOption?.iconId,
+            color: tagTypeOption?.color || TAG_TYPE_COLORS[tagType],
+            compact: true,
+          }
         )
       }
 
       const taggingStatus = safeStr(filters.taggingStatus).trim()
       if (taggingStatus) {
+        const status = statusById.get(safeId(taggingStatus))
+
         push(
           'taggingStatus',
-          'סטטוס אפיון',
-          statusLabelById.get(safeId(taggingStatus)) || taggingStatus
+          '\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d0\u05e4\u05d9\u05d5\u05df',
+          safeStr(status?.label) || taggingStatus,
+          {
+            iconId: status?.iconId || STATUS_META[taggingStatus]?.iconId,
+            color: status?.color || STATUS_META[taggingStatus]?.color,
+          }
         )
       }
 
       if (filters.onlyWithoutCategory) {
         chips.push({
           key: 'onlyWithoutCategory',
-          label: 'חסר',
-          value: 'ללא קטגוריה',
+          label: '\u05d7\u05e1\u05e8',
+          value: '\u05dc\u05dc\u05d0 \u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4',
+          iconId: 'warning',
+          color: '#F97316',
         })
       }
 
       if (filters.onlyWithoutTags) {
         chips.push({
           key: 'onlyWithoutTags',
-          label: 'חסר',
-          value: 'ללא תגיות',
+          label: '\u05d7\u05e1\u05e8',
+          value: '\u05dc\u05dc\u05d0 \u05ea\u05d2\u05d9\u05d5\u05ea',
+          iconId: 'tag',
+          color: '#D97706',
         })
       }
 
       return chips
     }
 
-    push('year', 'שנה', safeStr(filters.year))
-    push('month', 'חודש', safeStr(filters.month))
-    push('ym', 'חודש', safeStr(filters.ym))
+    push('year', '\u05e9\u05e0\u05d4', safeStr(filters.year))
+    push('month', '\u05d7\u05d5\u05d3\u05e9', safeStr(filters.month))
+    push('ym', '\u05d7\u05d5\u05d3\u05e9', safeStr(filters.ym))
 
     push(
       'clubId',
-      'מועדון',
+      '\u05de\u05d5\u05e2\u05d3\u05d5\u05df',
       (clubs || []).find(club => safeId(club.id) === safeId(filters.clubId))?.clubName || ''
     )
 
     push(
       'teamId',
-      'קבוצה',
+      '\u05e7\u05d1\u05d5\u05e6\u05d4',
       (teamsAll || []).find(team => safeId(team.id) === safeId(filters.teamId))?.teamName || ''
     )
 
     push(
       'playerId',
-      'שחקן',
+      '\u05e9\u05d7\u05e7\u05df',
       (() => {
         const player = (playersAll || []).find(item =>
           safeId(item.id) === safeId(filters.playerId)
@@ -232,7 +323,7 @@ export default function useVideoFiltersController({
 
     push(
       'meetingId',
-      'פגישה',
+      '\u05e4\u05d2\u05d9\u05e9\u05d4',
       (() => {
         const meeting = (meetingsAll || []).find(item =>
           safeId(item.id) === safeId(filters.meetingId)
@@ -243,7 +334,7 @@ export default function useVideoFiltersController({
     )
 
     if (filters.onlyUnlinked) {
-      chips.push({ key: 'onlyUnlinked', label: 'לא משויך', value: 'כן' })
+      chips.push({ key: 'onlyUnlinked', label: '\u05dc\u05d0 \u05de\u05e9\u05d5\u05d9\u05da', value: '\u05db\u05df' })
     }
 
     return chips
@@ -256,7 +347,7 @@ export default function useVideoFiltersController({
       if (tab === 'general') {
         if (chipKey === 'source') return setCascade({ source: '' })
         if (chipKey === 'primaryCategoryId') return setCascade({ primaryCategoryId: '' })
-        if (chipKey === 'tagType') return setCascade({ tagType: '' })
+        if (chipKey === 'tagType') return setCascade({ tagType: '', tags: [], tagIds: [] })
         if (chipKey === 'taggingStatus') return setCascade({ taggingStatus: '' })
 
         if (chipKey === 'onlyWithoutCategory') {

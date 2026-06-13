@@ -19,7 +19,6 @@ export default function VideoHubGlobalLayer({
   onCreateAnalysis,
   onCreateGeneral,
   onAddTask,
-  onImportedVideos,
 }) {
   const [importOpen, setImportOpen] = useState(false)
 
@@ -43,7 +42,6 @@ export default function VideoHubGlobalLayer({
       <BulkVideosImportDrawer
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onImported={onImportedVideos}
       />
 
       <VideoHubFabMenu

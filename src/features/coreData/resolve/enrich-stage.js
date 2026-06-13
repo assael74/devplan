@@ -32,6 +32,7 @@ import { buildPlayerTargetsState } from '../../../shared/players/targets/index.j
 
 import {
  buildScoutGamesSummary,
+ buildVideoEntityMaps,
  buildVideosWithEntities,
  buildTrainingWeeksSummary,
  buildPlayersWithStats,
@@ -305,14 +306,18 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
 
   const playersWithStats = buildPlayersWithStats(players, gamesWithStats, 'all')
 
+  const videoEntityMaps = buildVideoEntityMaps({
+    meetingsArr: meetingsBase,
+    playersArr: players,
+    teamsArr: teams,
+    tagsArr: tags,
+  })
+
   return playersWithStats.map((player) => {
     const rawVideos = safeArr(videosByPlayerId.get(String(player.id)))
 
     const videos = buildVideosWithEntities(rawVideos, {
-      meetingsArr: meetingsBase,
-      playersArr: players,
-      teamsArr: teams,
-      tagsArr: tags,
+      ...videoEntityMaps,
     })
 
     return {
@@ -325,14 +330,19 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
 
 export function attachTeamStatsAndVideos(teams, indexes) {
   const { gamesWithStats, videosByTeamId, tags } = indexes
+
   const teamsWithStats = buildTeamsWithStats(teams, gamesWithStats, 'all')
+
+  const videoEntityMaps = buildVideoEntityMaps({
+    teamsArr: teams,
+    tagsArr: tags,
+  })
 
   return teamsWithStats.map((team) => {
     const rawVideos = safeArr(videosByTeamId.get(String(team.id)))
 
     const videos = buildVideosWithEntities(rawVideos, {
-      teamsArr: teams,
-      tagsArr: tags,
+      ...videoEntityMaps,
     })
 
     const teamPerformance = buildTeamPerformanceState({

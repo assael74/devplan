@@ -20,7 +20,7 @@
 1. לצרף את הקובץ הזה.
 2. להסביר בקצרה מה המשימה.
 3. ChatGPT צריך לזהות את שכבת העבודה.
-4. אם צריך, ChatGPT יבקש קובץ המשך מתוך `docs/context`.
+4. אם צריך, ChatGPT יבקש קובץ המשך מתוך `docs/architecture`.
 5. רק אחרי קובץ ההמשך, לבקש קבצי קוד ספציפיים.
 
 כלל חשוב:
@@ -43,7 +43,7 @@
 
 אם המשימה קשורה לעדכון שדות, shorts, router maps או create/update/delete flows, לצרף:
 
-`docs/context/FIRESTORE_ROUTER.md`
+`docs/architecture/FIRESTORE_ROUTER.md`
 
 
 ## `src/shared`
@@ -63,7 +63,7 @@
 
 אם המשימה קשורה ל־Efficiency Rating, TVA, TVA Delta, match score, season score או trend logic, לצרף:
 
-`docs/context/PLAYER_SCORING_MODEL.md`
+`docs/architecture/PLAYER_SCORING_MODEL.md`
 
 ---
 
@@ -87,7 +87,7 @@
 
 אם המשימה קשורה ל־UI משותף או כללי עיצוב/סטיילינג, לצרף:
 
-`docs/context/UI_PATTERNS.md`
+`docs/architecture/UI_PATTERNS.md`
 
 ---
 
@@ -128,11 +128,11 @@
 
 אם המשימה קשורה לדאטה הגדול של האפליקציה, enriched players, teams, games, meetings, videos, payments, indexes או relations בין ישויות ראשיות, לצרף:
 
-`docs/context/CORE_DATA.md`
+`docs/architecture/CORE_DATA.md`
 
 אם המשימה קשורה למיקום קובץ, מבנה תיקיות, exports או import paths, לצרף:
 
-`docs/context/PROJECT_STRUCTURE.md`
+`docs/architecture/PROJECT_STRUCTURE.md`
 
 ---
 
@@ -150,7 +150,7 @@
 
 אם המשימה קשורה ל־Cloud Functions או `functions/src`, לצרף:
 
-`docs/context/FUNCTIONS.md`
+`docs/architecture/FUNCTIONS.md`
 
 ---
 
@@ -225,7 +225,7 @@
 
 לצרף:
 
-`docs/context/CORE_DATA.md`
+`docs/architecture/CORE_DATA.md`
 
 כאשר המשימה קשורה ל:
 - האובייקטים הראשיים של האפליקציה
@@ -244,7 +244,7 @@
 
 לצרף:
 
-`docs/context/PLAYER_SCORING_MODEL.md`
+`docs/architecture/PLAYER_SCORING_MODEL.md`
 
 כאשר המשימה קשורה ל:
 - Efficiency Rating
@@ -262,7 +262,7 @@
 
 לצרף:
 
-`docs/context/PROJECT_STRUCTURE.md`
+`docs/architecture/PROJECT_STRUCTURE.md`
 
 כאשר המשימה קשורה ל:
 - איפה למקם קובץ חדש
@@ -278,7 +278,7 @@
 
 לצרף:
 
-`docs/context/UI_PATTERNS.md`
+`docs/architecture/UI_PATTERNS.md`
 
 כאשר המשימה קשורה ל:
 - UI משותף
@@ -297,7 +297,7 @@
 
 לצרף:
 
-`docs/context/FIRESTORE_ROUTER.md`
+`docs/architecture/FIRESTORE_ROUTER.md`
 
 כאשר המשימה קשורה ל:
 - create/update/delete flows
@@ -314,7 +314,7 @@
 
 לצרף:
 
-`docs/context/FUNCTIONS.md`
+`docs/architecture/FUNCTIONS.md`
 
 כאשר המשימה קשורה ל:
 - `functions/src`

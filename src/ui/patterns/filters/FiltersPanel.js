@@ -2,7 +2,20 @@
 
 import React from 'react'
 import { Box, Sheet, Typography, Chip, Input } from '@mui/joy'
+import { alpha } from '@mui/system'
 import MonthYearPicker from '../../fields/dateUi/MonthYearPicker.js'
+import { iconUi } from '../../core/icons/iconUi.js'
+
+const TONE_COLORS = {
+  green: '#16A34A',
+  orange: '#F97316',
+  blue: '#2563EB',
+  purple: '#7C3AED',
+  yellow: '#D97706',
+  cyan: '#0891B2',
+  teal: '#0F766E',
+  neutral: '#64748B',
+}
 
 function normalizeToArray(val) {
   if (Array.isArray(val)) return val
@@ -16,6 +29,60 @@ function toggleInArray(arr, value) {
   return list.includes(nextValue)
     ? list.filter((x) => x !== nextValue)
     : [...list, nextValue]
+}
+
+function getOptionColor(opt = {}) {
+  return opt.color || TONE_COLORS[opt.tone] || ''
+}
+
+function renderOptionIcon(opt = {}, selected = false) {
+  if (opt.startDecorator) return opt.startDecorator
+  if (!opt.iconId) return null
+
+  const color = getOptionColor(opt) || '#64748B'
+
+  return (
+    <Box
+      sx={{
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        display: 'grid',
+        placeItems: 'center',
+        bgcolor: selected ? alpha(color, 0.16) : alpha(color, 0.1),
+        color,
+
+        '& svg': {
+          fontSize: 14,
+        },
+      }}
+    >
+      {iconUi({ id: opt.iconId, size: 'sm' })}
+    </Box>
+  )
+}
+
+function getOptionChipSx(opt = {}, selected = false) {
+  const color = getOptionColor(opt)
+
+  if (!color) {
+    return {
+      borderRadius: 12,
+    }
+  }
+
+  return {
+    borderRadius: 12,
+    fontWeight: 700,
+    color: selected ? color : 'text.primary',
+    borderColor: alpha(color, selected ? 0.42 : 0.24),
+    bgcolor: selected ? alpha(color, 0.12) : alpha(color, 0.035),
+
+    '&:hover': {
+      borderColor: alpha(color, 0.5),
+      bgcolor: alpha(color, selected ? 0.16 : 0.08),
+    },
+  }
 }
 
 export default function FiltersPanel({
@@ -84,7 +151,7 @@ export default function FiltersPanel({
                       variant={selected ? 'soft' : 'outlined'}
                       color={selected ? 'success' : 'neutral'}
                       disabled={Boolean(opt.disabled)}
-                      startDecorator={opt.startDecorator}
+                      startDecorator={renderOptionIcon(opt, selected)}
                       onClick={() => {
                         if (opt.disabled) return
 
@@ -95,7 +162,7 @@ export default function FiltersPanel({
 
                         onChange(group.key, selected ? 'all' : opt.value)
                       }}
-                      sx={{ borderRadius: 12 }}
+                      sx={getOptionChipSx(opt, selected)}
                     >
                       {opt.label}
                     </Chip>

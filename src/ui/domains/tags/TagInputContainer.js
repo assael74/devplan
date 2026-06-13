@@ -1,17 +1,67 @@
 // ui/domains/tags/TagsContainer.js
 
 import React, { useState, useMemo, useCallback } from 'react'
-import { Box, Chip, Input, IconButton, Typography, Autocomplete } from '@mui/joy'
+import { Box, Chip, Typography, Autocomplete } from '@mui/joy'
+import { alpha } from '@mui/system'
 import CloseRounded from '@mui/icons-material/CloseRounded'
-import AddRounded from '@mui/icons-material/AddRounded'
 
 import { tagsSx as sx } from './tags.sx'
 import { getEntityColors } from '../../core/theme/Colors'
 import { useTagPickerOptions } from './hooks/useTagPickerOptions'
 import { iconUi } from '../../core/icons/iconUi.js'
+import { VIDEO_TAG_TYPE_BY_ID } from '../../../shared/video/index.js'
 
 const safeId = (v) => String(v ?? '').trim()
 const safeLabel = (v) => String(v ?? '').trim()
+
+const TAG_TYPE_COLORS = {
+  formation: '#7C3AED',
+  pitch_area: '#0891B2',
+  game_principle: '#2563EB',
+  action_technique: '#16A34A',
+  situation: '#F97316',
+  position_role: '#0F766E',
+  mental: '#D97706',
+}
+
+function getTagTypeMeta(tag) {
+  const tagType = safeId(tag?.tagType)
+  const typeMeta = VIDEO_TAG_TYPE_BY_ID[tagType] || null
+  const color = TAG_TYPE_COLORS[tagType] || ''
+
+  return {
+    color,
+    iconId: typeMeta?.iconId || '',
+    label: typeMeta?.label || tagType,
+  }
+}
+
+function renderTagTypeIcon(tag, fallbackColor) {
+  const meta = getTagTypeMeta(tag)
+  const color = meta.color || fallbackColor
+
+  if (!meta.iconId) return null
+
+  return (
+    <Box
+      sx={{
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        display: 'grid',
+        placeItems: 'center',
+        bgcolor: alpha(color, 0.12),
+        color,
+
+        '& svg': {
+          fontSize: 14,
+        },
+      }}
+    >
+      {iconUi({ id: meta.iconId, size: 'sm' })}
+    </Box>
+  )
+}
 
 const normalizeType = value => {
   const type = safeLabel(value).toLowerCase()
@@ -107,6 +157,8 @@ export default function TagsContainer({
           selectedTags.map((t) => {
             const id = safeId(t?.id)
             const label = safeLabel(t?.tagName || t?.slug || id)
+            const tagMeta = getTagTypeMeta(t)
+            const tagColor = tagMeta.color || resolvedTypeColor
 
             return (
               <Box key={id} onClick={!readonly ? () => removeId(id) : undefined}>
@@ -114,7 +166,7 @@ export default function TagsContainer({
                   size="sm"
                   variant={chipVariant}
                   endDecorator={!readonly ? <CloseRounded /> : null}
-                  sx={[ sx.chip(resolvedTypeColor, readonly, chipVariant), chipSx ]}
+                  sx={[ sx.chip(tagColor, readonly, chipVariant), chipSx ]}
                 >
                   {label}
                 </Chip>
@@ -159,17 +211,30 @@ export default function TagsContainer({
               renderOption={(props, option) => {
                 const label = safeLabel(option?.tagName || option?.slug || '')
                 const useCount = Number.isFinite(option?.useCount) ? option.useCount : null
+                const tagMeta = getTagTypeMeta(option)
+                const tagColor = tagMeta.color || resolvedTypeColor
 
                 return (
                   <Box component="li" {...props} sx={sx.optionRow}>
+                    {renderTagTypeIcon(option, resolvedTypeColor)}
+
                     <Typography
                       level="body-sm"
                       noWrap
-                      sx={{ minWidth: 0 }}
-                      startDecorator={iconUi({ id: iconId, sx: { color: resolvedTypeColor } })}
+                      sx={{ minWidth: 0, flex: 1, color: 'text.primary', fontWeight: 700 }}
                     >
                       {label}
                     </Typography>
+
+                    {tagMeta.label && tagMeta.color ? (
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                        sx={sx.optionTypeChip(tagColor)}
+                      >
+                        {tagMeta.label}
+                      </Chip>
+                    ) : null}
 
                     {useCount != null ? (
                       <Typography level="body-xs" sx={sx.optionMeta}>

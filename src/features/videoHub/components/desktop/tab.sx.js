@@ -47,14 +47,20 @@ export const videoTabSx = {
     },
   },
 
-  gridWrap: {
-    display: 'grid',
-    gap: 1.25,
-    width: '100%',
-    mx: 0,
-    px: 2,
-    pb: 2,
-    alignContent: 'start',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(214px, 214px))',
+  gridWrap: ({ cardView } = {}) => {
+    const isMini = cardView === 'mini'
+
+    return {
+      display: 'grid',
+      gap: isMini ? 0.9 : 1.25,
+      width: '100%',
+      mx: 0,
+      px: 2,
+      pb: 2,
+      alignContent: 'start',
+      gridTemplateColumns: isMini
+        ? 'repeat(auto-fill, minmax(164px, 164px))'
+        : 'repeat(auto-fill, minmax(214px, 214px))',
+    }
   },
 }

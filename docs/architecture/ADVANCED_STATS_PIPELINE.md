@@ -1550,8 +1550,8 @@ delete game requested
 ```txt
 docs/architecture/ADVANCED_STATS_PIPELINE.md
 docs/architecture/LIVE_TAGGING_STATS_PIPELINE.md
-docs/context/CORE_DATA.md
-docs/context/FIRESTORE_ROUTER.md
+docs/architecture/CORE_DATA.md
+docs/architecture/FIRESTORE_ROUTER.md
 ```
 
 קבצי קוד רלוונטיים לפי צורך:

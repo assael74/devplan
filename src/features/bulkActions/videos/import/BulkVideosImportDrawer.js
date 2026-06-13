@@ -35,9 +35,12 @@ export default function BulkVideosImportDrawer({
   const handleImport = async () => {
     const res = await model.runImport()
 
-    if (!res && !model.draft?.videos?.length) return
+    if (!res) return
 
-    onImported(res)
+    if (typeof onImported === 'function') {
+      onImported(res)
+    }
+
     handleClose()
   }
 

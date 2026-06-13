@@ -1,8 +1,20 @@
 // src/features/videoHub/components/desktop/VideoHubDesktop.js
 
-import React, { useMemo, useState, useCallback } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useLocation } from 'react-router-dom'
 import { Box } from '@mui/joy'
+
+import { useSnackbar } from '../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
+import { deleteActions } from '../../../../ui/domains/entityLifecycle/delete/deleteActions.js'
+
+import {
+  VideosBulkDeleteModal,
+} from '../../../bulkActions/videos/delete/index.js'
 
 import { VIDEO_TAB } from '../../logic/videoHub.model.js'
 import {
@@ -74,6 +86,7 @@ export default function VideoHubDesktop() {
   const location = useLocation()
   const { openCreate } = useCreateModal()
   const core = useCoreData()
+  const { notify } = useSnackbar()
 
   const baseContext = useMemo(() => {
     return buildVideoHubContext(core)
@@ -82,6 +95,12 @@ export default function VideoHubDesktop() {
   const [tab, setTab] = useState(VIDEO_TAB.GENERAL)
   const [filtersAna, setFiltersAna] = useState(DEFAULT_FILTERS_ANALYSIS)
   const [filtersGen, setFiltersGen] = useState(DEFAULT_FILTERS_GENERAL)
+  const [generalCardView, setGeneralCardView] = useState('full')
+  const [videoSelectionMode, setVideoSelectionMode] = useState(false)
+  const [selectedVideoIds, setSelectedVideoIds] = useState([])
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const { modal, open, openEdit, closeAll } = useVideoHubModal(tab)
   const active = modal?.active || null
@@ -124,6 +143,17 @@ export default function VideoHubDesktop() {
     const out = filterVideosGeneral(generalRaw, filtersGen)
     return sortVideosGeneral(out, filtersGen.sortBy, filtersGen.sortDir)
   }, [generalRaw, filtersGen])
+
+  const selectedVideoIdsSet = useMemo(() => {
+    return new Set(selectedVideoIds)
+  }, [selectedVideoIds])
+
+  const selectedVideos = useMemo(() => {
+    return generalRaw.filter(video => {
+      const videoId = video?.id || video?.videoId || video?.docId
+      return selectedVideoIdsSet.has(videoId)
+    })
+  }, [generalRaw, selectedVideoIdsSet])
 
   const handleWatch = useCallback((video) => {
     open('watchOpen', video)
@@ -177,6 +207,106 @@ export default function VideoHubDesktop() {
     )
   }, [openCreate, context])
 
+  const startVideoSelection = useCallback(() => {
+    if (tab !== VIDEO_TAB.GENERAL) return
+
+    setVideoSelectionMode(true)
+    setSelectedVideoIds([])
+    setDeleteError('')
+  }, [tab])
+
+  const cancelVideoSelection = useCallback(() => {
+    if (deleteLoading) return
+
+    setVideoSelectionMode(false)
+    setSelectedVideoIds([])
+    setDeleteModalOpen(false)
+    setDeleteError('')
+  }, [deleteLoading])
+
+  const toggleVideoSelection = useCallback(videoId => {
+    if (!videoId) return
+
+    setSelectedVideoIds(current => {
+      if (current.includes(videoId)) {
+        return current.filter(id => id !== videoId)
+      }
+
+      return [...current, videoId]
+    })
+  }, [])
+
+  const openVideosDeleteModal = useCallback(() => {
+    if (!selectedVideoIds.length) return
+
+    setDeleteError('')
+    setDeleteModalOpen(true)
+  }, [selectedVideoIds.length])
+
+  const closeVideosDeleteModal = useCallback(() => {
+    if (deleteLoading) return
+
+    setDeleteModalOpen(false)
+    setDeleteError('')
+  }, [deleteLoading])
+
+  const confirmVideosBulkDelete = useCallback(async plan => {
+    const ids = Array.isArray(plan?.videoIds)
+      ? plan.videoIds.filter(Boolean)
+      : []
+
+    if (!ids.length || deleteLoading) return
+
+    setDeleteLoading(true)
+    setDeleteError('')
+
+    try {
+      const result = await deleteActions.videosBulk({ ids })
+
+      notify({
+        status: 'success',
+        action: 'delete',
+        entityType: 'videoGeneral',
+        entityName: `${ids.length} קטעי וידאו`,
+        message: `${ids.length} קטעי וידאו נמחקו בהצלחה`,
+        details: `נמחקו ${result?.totalRemoved ?? ids.length} רשומות`,
+      })
+
+      setDeleteModalOpen(false)
+      setVideoSelectionMode(false)
+      setSelectedVideoIds([])
+    } catch (error) {
+      const message =
+        error?.message ||
+        'מחיקת קטעי הווידאו נכשלה'
+
+      setDeleteError(message)
+
+      notify({
+        status: 'error',
+        action: 'delete',
+        entityType: 'videoGeneral',
+        entityName: `${ids.length} קטעי וידאו`,
+        message: 'שגיאה במחיקת קטעי הווידאו',
+        details: message,
+      })
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [
+    deleteLoading,
+    notify,
+  ])
+
+  useEffect(() => {
+    if (tab === VIDEO_TAB.GENERAL) return
+
+    setVideoSelectionMode(false)
+    setSelectedVideoIds([])
+    setDeleteModalOpen(false)
+    setDeleteError('')
+  }, [tab])
+
   const total = tab === VIDEO_TAB.ANALYSIS
     ? analysisEnriched.length
     : generalRaw.length
@@ -199,6 +329,14 @@ export default function VideoHubDesktop() {
             context={context}
             total={total}
             shown={shown}
+
+            selectionMode={videoSelectionMode}
+            selectedCount={selectedVideoIds.length}
+            onStartSelection={startVideoSelection}
+            onCancelSelection={cancelVideoSelection}
+            onOpenDelete={openVideosDeleteModal}
+            cardView={generalCardView}
+            onCardView={setGeneralCardView}
           />
         </Box>
       </Box>
@@ -220,9 +358,24 @@ export default function VideoHubDesktop() {
             onEdit={handleEdit}
             onShare={handleOpenShare}
             onWatch={handleWatch}
+            cardView={generalCardView}
+
+            selectionMode={videoSelectionMode}
+            selectedVideoIds={selectedVideoIds}
+            onToggleSelect={toggleVideoSelection}
           />
         )}
       </Box>
+
+      <VideosBulkDeleteModal
+        open={deleteModalOpen}
+        onClose={closeVideosDeleteModal}
+        videos={generalRaw}
+        selectedVideoIds={selectedVideoIds}
+        loading={deleteLoading}
+        error={deleteError}
+        onConfirmDelete={confirmVideosBulkDelete}
+      />
 
       <VideoHubDrawersLayer
         modal={modal}

@@ -38,9 +38,9 @@ export default function App() {
             <SnackbarCenter />
             <AppShell>
               <AppProviders>
-                <CoreDataProvider>
-                  <BrowserRouter>
-                    <AuthProvider>
+                <AuthProvider>
+                  <CoreDataProvider>
+                    <BrowserRouter>
                       <NotificationsProvider>
                         <LifecycleProvider>
                           <CreateModalProvider>
@@ -48,9 +48,9 @@ export default function App() {
                           </CreateModalProvider>
                         </LifecycleProvider>
                       </NotificationsProvider>
-                    </AuthProvider>
-                  </BrowserRouter>
-                </CoreDataProvider>
+                    </BrowserRouter>
+                  </CoreDataProvider>
+                </AuthProvider>
               </AppProviders>
             </AppShell>
           </SnackbarProvider>

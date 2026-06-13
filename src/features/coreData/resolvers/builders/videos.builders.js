@@ -61,14 +61,46 @@ export const buildVideosByTeamId = (videosArr, meetingsById) => {
   })
 }
 
+export const buildVideoEntityMaps = ({
+  meetingsArr,
+  playersArr,
+  teamsArr,
+  tagsArr,
+} = {}) => ({
+  meetingsMap: ensureEntityMap(meetingsArr, { idKey: 'id', extraKeys: ['ui.id'] }),
+  playersMap: ensureEntityMap(playersArr, { idKey: 'id', extraKeys: ['ui.id'] }),
+  teamsMap: ensureEntityMap(teamsArr, { idKey: 'id', extraKeys: ['ui.id'] }),
+  tagsMap: ensureEntityMap(tagsArr, { idKey: 'id', extraKeys: ['slug'] }),
+})
+
 export const buildVideosWithEntities = (
   videosArr,
-  { meetingsArr, playersArr, teamsArr, tagsArr } = {}
+  {
+    meetingsArr,
+    playersArr,
+    teamsArr,
+    tagsArr,
+    meetingsMap: providedMeetingsMap,
+    playersMap: providedPlayersMap,
+    teamsMap: providedTeamsMap,
+    tagsMap: providedTagsMap,
+  } = {}
 ) => {
-  const meetingsMap = ensureEntityMap(meetingsArr, { idKey: 'id', extraKeys: ['ui.id'] })
-  const playersMap = ensureEntityMap(playersArr, { idKey: 'id', extraKeys: ['ui.id'] })
-  const teamsMap = ensureEntityMap(teamsArr, { idKey: 'id', extraKeys: ['ui.id'] })
-  const tagsMap = ensureEntityMap(tagsArr, { idKey: 'id', extraKeys: ['slug'] })
+  const maps = providedMeetingsMap && providedPlayersMap && providedTeamsMap && providedTagsMap
+    ? {
+        meetingsMap: providedMeetingsMap,
+        playersMap: providedPlayersMap,
+        teamsMap: providedTeamsMap,
+        tagsMap: providedTagsMap,
+      }
+    : buildVideoEntityMaps({
+        meetingsArr,
+        playersArr,
+        teamsArr,
+        tagsArr,
+      })
+
+  const { meetingsMap, playersMap, teamsMap, tagsMap } = maps
 
   const resolveMeeting = (video) => {
     const meetingId = pickFirstId(video?.meetingId, video?.meetingIds)

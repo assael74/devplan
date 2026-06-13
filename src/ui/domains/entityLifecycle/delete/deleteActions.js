@@ -41,10 +41,6 @@ const SCOUTING_SHORT_KEYS = [
   'scouting.playersGames',
 ]
 
-const TAGS_SHORT_KEYS = [
-  'tags.tagInfo',
-]
-
 const GAME_SHORT_KEYS = [
   'games.gameInfo',
   'games.gameResult',
@@ -63,6 +59,12 @@ const VIDEO_ANALYSIS_SHORT_KEYS = [
   'videoAnalysis.analysisTags',
 ]
 
+const VIDEO_GENERAL_SHORT_KEYS = [
+  'videos.videoInfo',
+  'videos.videoNotes',
+  'videos.videoTags',
+]
+
 const TASK_SHORT_KEYS = [
   'tasks.tasksInfo',
 ]
@@ -73,7 +75,6 @@ const toRouterEntityType = (entityType) => {
   if (entityType === 'club') return 'clubs'
   if (entityType === 'role') return 'roles'
   if (entityType === 'scouting') return 'scouting'
-  if (entityType === 'tag') return 'tags'
   if (entityType === 'task') return 'tasks'
   return null
 }
@@ -189,15 +190,6 @@ export const deleteActions = {
       requireAllFound: false,
     }),
 
-  tag: async ({ id }) =>
-    run({
-      entityType: 'tag',
-      id,
-      shortKeys: TAGS_SHORT_KEYS,
-      requireAnyFound: true,
-      requireAllFound: false,
-    }),
-
   game: async ({ id }) =>
     run({
       entityType: 'game',
@@ -252,6 +244,34 @@ export const deleteActions = {
       requireAnyFound: true,
       requireAllFound: false,
     }),
+
+  videosBulk: async ({ ids }) => {
+    const cleanIds = Array.from(new Set((ids || []).filter(Boolean)))
+
+    if (!cleanIds.length) {
+      return {
+        ids: [],
+        foundDocs: 0,
+        totalRemoved: 0,
+        skipped: true,
+      }
+    }
+
+    if (SHORTS_DEBUG.enabled) {
+      debugLog('UI_DELETE:videosBulk:start', {
+        ids: cleanIds,
+        count: cleanIds.length,
+        shortKeys: VIDEO_GENERAL_SHORT_KEYS,
+      })
+    }
+
+    return deleteShortItemsByIds({
+      shortKeys: VIDEO_GENERAL_SHORT_KEYS,
+      ids: cleanIds,
+      requireAnyFound: true,
+      requireAllFound: false,
+    })
+  },
 
   task: async ({ id }) =>
     run({

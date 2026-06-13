@@ -177,6 +177,24 @@ export const tagsSx = {
     fontWeight: 600,
   },
 
+  optionTypeChip: color => ({
+    '--Chip-minHeight': '20px',
+    '--Chip-paddingInline': '6px',
+    maxWidth: 96,
+    fontSize: 10,
+    fontWeight: 700,
+    color,
+    bgcolor: `${color}18`,
+    border: '1px solid',
+    borderColor: `${color}30`,
+
+    '& .MuiChip-label': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  }),
+
   inputRow: {
     display: 'flex',
     alignItems: 'center',

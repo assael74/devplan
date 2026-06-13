@@ -2,9 +2,11 @@
 
 import React, { useMemo } from 'react'
 import { Box, Textarea, Typography, Divider, Select, Option, Chip } from '@mui/joy'
+import { alpha } from '@mui/system'
 
 import VideoNameField from '../../../../ui/fields/inputUi/videos/VideoNameField.js'
 import TagsContainer from '../../../../ui/domains/tags/TagInputContainer.js'
+import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 import {
   VIDEO_PRIMARY_CATEGORIES,
   VIDEO_SEED_TAGS,
@@ -13,6 +15,45 @@ import {
 
 const safeArr = value => (Array.isArray(value) ? value : [])
 const safeStr = value => String(value ?? '').trim()
+
+const TONE_COLORS = {
+  green: '#16A34A',
+  orange: '#F97316',
+  blue: '#2563EB',
+  purple: '#7C3AED',
+  yellow: '#D97706',
+  cyan: '#0891B2',
+  teal: '#0F766E',
+  neutral: '#64748B',
+}
+
+const getToneColor = tone => TONE_COLORS[safeStr(tone)] || TONE_COLORS.neutral
+
+function renderCategoryIcon(category) {
+  if (!category?.iconId) return null
+
+  const color = getToneColor(category.tone)
+
+  return (
+    <Box
+      sx={{
+        width: 20,
+        height: 20,
+        borderRadius: '50%',
+        display: 'grid',
+        placeItems: 'center',
+        bgcolor: alpha(color, 0.12),
+        color,
+
+        '& svg': {
+          fontSize: 15,
+        },
+      }}
+    >
+      {iconUi({ id: category.iconId, size: 'sm' })}
+    </Box>
+  )
+}
 
 function normalizeCategoryIds(primaryCategoryId, categoryIds) {
   const primary = safeStr(primaryCategoryId)
@@ -44,10 +85,6 @@ export default function VideoEditDrawerBody({
     return Array.isArray(opts) ? opts : []
   }, [isGeneral, context?.tags, context?.tagOptions, context?.analysisTags])
 
-  const selectedCategoryIds = useMemo(() => {
-    return normalizeCategoryIds(draft?.primaryCategoryId, draft?.categoryIds)
-  }, [draft?.primaryCategoryId, draft?.categoryIds])
-
   const selectedTagTypeIds = useMemo(() => {
     const selected = new Set(safeArr(draft?.tagIds).map(safeStr))
 
@@ -68,20 +105,10 @@ export default function VideoEditDrawerBody({
     })
   }
 
-  const handleToggleCategory = categoryId => {
-    const id = safeStr(categoryId)
-    const current = normalizeCategoryIds(draft?.primaryCategoryId, draft?.categoryIds)
-    const exists = current.includes(id)
-
-    const next = exists
-      ? current.filter(item => item !== id)
-      : [...current, id]
-
-    setDraft({
-      ...draft,
-      categoryIds: normalizeCategoryIds(draft?.primaryCategoryId, next),
-    })
-  }
+  const selectedPrimaryCategory = useMemo(() => {
+    const id = safeStr(draft?.primaryCategoryId)
+    return VIDEO_PRIMARY_CATEGORIES.find(category => category.id === id) || null
+  }, [draft?.primaryCategoryId])
 
   return (
     <Box sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
@@ -108,12 +135,39 @@ export default function VideoEditDrawerBody({
             onChange={(event, value) => handlePrimaryCategory(value || '')}
             placeholder="בחר קטגוריה ראשית"
             disabled={!!disabled}
+            renderValue={() => {
+              if (!selectedPrimaryCategory) return '??? ???????'
+
+              return (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                  {renderCategoryIcon(selectedPrimaryCategory)}
+
+                  <Typography level="body-sm" noWrap sx={{ fontWeight: 700 }}>
+                    {selectedPrimaryCategory.label}
+                  </Typography>
+                </Box>
+              )
+            }}
           >
             <Option value="">ללא קטגוריה</Option>
 
             {VIDEO_PRIMARY_CATEGORIES.map(category => (
-              <Option key={category.id} value={category.id}>
-                {category.label}
+              <Option
+                key={category.id}
+                value={category.id}
+                label={category.label}
+                sx={{
+                  '--ListItemDecorator-size': '24px',
+                  color: getToneColor(category.tone),
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                  {renderCategoryIcon(category)}
+
+                  <Typography level="body-sm" noWrap sx={{ color: 'text.primary', fontWeight: 700 }}>
+                    {category.label}
+                  </Typography>
+                </Box>
               </Option>
             ))}
           </Select>

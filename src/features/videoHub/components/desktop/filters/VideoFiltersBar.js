@@ -1,7 +1,14 @@
 // src/features/videoHub/components/filters/VideoFiltersBar.js
 
 import React, { useMemo, useState, useCallback } from 'react'
-import { Box, IconButton, Input } from '@mui/joy'
+import {
+  Box,
+  Button,
+  IconButton,
+  Input,
+  Switch,
+  Typography,
+} from '@mui/joy'
 
 import { filterSx as sx } from './filterRow.sx'
 
@@ -42,6 +49,14 @@ export default function VideoFiltersBar({
   context,
   total = 0,
   shown = 0,
+
+  selectionMode = false,
+  selectedCount = 0,
+  onStartSelection,
+  onCancelSelection,
+  onOpenDelete,
+  cardView = 'full',
+  onCardView,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -79,8 +94,8 @@ export default function VideoFiltersBar({
   }, [isGeneral, options?.sortOptions])
 
   const handleDrawerChange = useCallback((key, value) => {
-    setCascade(normalizeVideoGeneralDrawerFilterChange(key, value))
-  }, [setCascade])
+    setCascade(normalizeVideoGeneralDrawerFilterChange(key, value, options))
+  }, [setCascade, options])
 
   const handleChangeSortBy = useCallback((nextSortBy) => {
     setCascade({ sortBy: nextSortBy || 'needs_tagging_first' })
@@ -122,7 +137,51 @@ export default function VideoFiltersBar({
   const controlSx = {
     minHeight: 32,
     height: 32,
-    //minWidth: 170,
+  }
+
+  const isMiniView = cardView === 'mini'
+
+  const handleCardViewChange = event => {
+    onCardView?.(event.target.checked ? 'mini' : 'full')
+  }
+
+  if (selectionMode) {
+    return (
+      <Box sx={{ display: 'grid', gap: 0.75 }}>
+        <Box sx={sx.selectionToolbar}>
+          <Box sx={sx.selectionInfo}>
+            {iconUi({ id: 'delete' })}
+
+            <Typography level="title-sm">
+              נבחרו {selectedCount} קטעי וידאו
+            </Typography>
+          </Box>
+
+          <Box sx={{ flex: 1 }} />
+
+          <Button
+            size="sm"
+            color="danger"
+            variant="solid"
+            disabled={!selectedCount}
+            startDecorator={iconUi({ id: 'delete' })}
+            onClick={onOpenDelete}
+          >
+            מחיקת {selectedCount || ''} מספר קטעי וידאו
+          </Button>
+
+          <Button
+            size="sm"
+            color="neutral"
+            variant="soft"
+            startDecorator={iconUi({ id: 'close' })}
+            onClick={onCancelSelection}
+          >
+            ביטול
+          </Button>
+        </Box>
+      </Box>
+    )
   }
 
   return (
@@ -160,7 +219,37 @@ export default function VideoFiltersBar({
           {iconUi({ id: 'close' })}
         </IconButton>
 
+        <Button
+          size="sm"
+          variant="soft"
+          color="danger"
+          startDecorator={iconUi({ id: 'delete' })}
+          onClick={onStartSelection}
+          sx={controlSx}
+        >
+          מחיקה
+        </Button>
+
         <Box sx={{ flex: 1, minWidth: 24 }} />
+
+        <Box sx={sx.viewToggle}>
+          {iconUi({ id: isMiniView ? 'cardList' : 'tableList', size: 'sm' })}
+
+          <Typography level="body-xs" sx={sx.viewToggleLabel}>
+            תצוגה מוקטנת
+          </Typography>
+
+          <Switch
+            size="sm"
+            checked={isMiniView}
+            onChange={handleCardViewChange}
+            slotProps={{
+              input: {
+                'aria-label': 'תצוגה מוקטנת לכרטיסי וידאו',
+              },
+            }}
+          />
+        </Box>
 
         <SortMenuButton
           labelPrefix="מיון:"
@@ -169,7 +258,7 @@ export default function VideoFiltersBar({
           sortOptions={sortOptions}
           onChangeSortBy={handleChangeSortBy}
           onChangeSortDirection={handleChangeSortDirection}
-          width={170}
+          width={200}
         />
       </Box>
 

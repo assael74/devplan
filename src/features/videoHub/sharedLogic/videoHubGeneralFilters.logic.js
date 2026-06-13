@@ -157,13 +157,13 @@ export function matchVideoGeneralFilters(video = {}, filters = {}) {
     if (!selectedCategoryIds.every(id => categorySet.has(id))) return false
   }
 
+  const selectedTagType = safeStr(f.tagType)
   const selectedTagIds = safeArr(f.tagIds || f.tags).map(safeStr).filter(Boolean)
-  if (selectedTagIds.length) {
+  if (selectedTagIds.length && !selectedTagType) {
     const tagSet = new Set(resolveVideoTagIds(vm))
     if (!selectedTagIds.every(id => tagSet.has(id))) return false
   }
 
-  const selectedTagType = safeStr(f.tagType)
   if (selectedTagType) {
     const tags = resolveVideoTagObjects(vm, tagsById)
     if (!tags.some(tag => safeStr(tag.tagType) === selectedTagType)) return false

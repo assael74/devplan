@@ -3,11 +3,93 @@
 const safeArr = value => (Array.isArray(value) ? value : [])
 const safeStr = value => String(value ?? '').trim()
 
-const toOption = item => ({
-  value: safeStr(item?.id || item?.value),
-  label: safeStr(item?.label || item?.labelH || item?.tagName || item?.name || item?.id),
-  disabled: item?.disabled === true,
-})
+const TAG_TYPE_COLORS = {
+  formation: '#7C3AED',
+  pitch_area: '#0891B2',
+  game_principle: '#2563EB',
+  action_technique: '#16A34A',
+  situation: '#F97316',
+  position_role: '#0F766E',
+  mental: '#D97706',
+}
+
+const TAG_TYPE_ICONS = {
+  formation: 'formation',
+  pitch_area: 'pitchArea',
+  game_principle: 'gamePrinciple',
+  action_technique: 'technique',
+  situation: 'situation',
+  position_role: 'positionRole',
+  mental: 'mental',
+}
+
+const STATUS_META = {
+  needs_tagging: {
+    iconId: 'warning',
+    color: '#F59E0B',
+  },
+  partial: {
+    iconId: 'loading',
+    color: '#D97706',
+  },
+  tagged: {
+    iconId: 'check',
+    color: '#16A34A',
+  },
+}
+
+const SOURCE_META = {
+  youtube: {
+    iconId: 'videos',
+    color: '#DC2626',
+  },
+  instagram: {
+    iconId: 'videos',
+    color: '#C13584',
+  },
+  tiktok: {
+    iconId: 'videos',
+    color: '#111827',
+  },
+  vimeo: {
+    iconId: 'videos',
+    color: '#2563EB',
+  },
+  drive: {
+    iconId: 'videos',
+    color: '#16A34A',
+  },
+  other: {
+    iconId: 'tag',
+    color: '#64748B',
+  },
+}
+
+const MISSING_META = {
+  without_category: {
+    iconId: 'warning',
+    color: '#F97316',
+  },
+  without_tags: {
+    iconId: 'tag',
+    color: '#D97706',
+  },
+}
+
+const toOption = item => {
+  const value = safeStr(item?.id || item?.value)
+  const tagType = safeStr(item?.tagType)
+
+  return {
+    value,
+    label: safeStr(item?.label || item?.labelH || item?.tagName || item?.name || item?.id),
+    disabled: item?.disabled === true,
+    iconId: safeStr(item?.iconId) || TAG_TYPE_ICONS[tagType] || '',
+    tone: safeStr(item?.tone),
+    color: safeStr(item?.color) || TAG_TYPE_COLORS[tagType] || '',
+    tagType,
+  }
+}
 
 const cleanOptions = options =>
   safeArr(options)
@@ -46,7 +128,7 @@ export function hasVideoGeneralDrawerFilters(filters = {}) {
   )
 }
 
-export function normalizeVideoGeneralDrawerFilterChange(key, value) {
+export function normalizeVideoGeneralDrawerFilterChange(key, value, options = {}) {
   if (key === 'missingTagging') {
     const values = safeArr(value).map(safeStr)
 
@@ -63,6 +145,22 @@ export function normalizeVideoGeneralDrawerFilterChange(key, value) {
     }
   }
 
+  if (key === 'tagType') {
+    const tagType = value === 'all' ? '' : safeStr(value)
+    const tagIds = tagType
+      ? safeArr(options.tagOptions)
+          .filter(option => safeStr(option?.tagType) === tagType)
+          .map(option => safeStr(option?.id || option?.value))
+          .filter(Boolean)
+      : []
+
+    return {
+      tagType,
+      tags: tagIds,
+      tagIds,
+    }
+  }
+
   return {
     [key]: value === 'all' ? '' : value || '',
   }
@@ -74,7 +172,10 @@ export function buildVideoGeneralFilterGroups(options = {}) {
       key: 'source',
       title: 'מקור',
       multi: false,
-      options: cleanOptions(options.sourceOptions),
+      options: cleanOptions(options.sourceOptions).map(option => ({
+        ...option,
+        ...(SOURCE_META[option.value] || SOURCE_META.other),
+      })),
     },
     {
       key: 'primaryCategoryId',
@@ -86,27 +187,41 @@ export function buildVideoGeneralFilterGroups(options = {}) {
       key: 'taggingStatus',
       title: 'סטטוס אפיון',
       multi: false,
-      options: cleanOptions(options.statusOptions),
+      options: cleanOptions(options.statusOptions).map(option => ({
+        ...option,
+        ...(STATUS_META[option.value] || {}),
+      })),
     },
     {
       key: 'tagType',
       title: 'סוג תגית',
       multi: false,
-      options: cleanOptions(options.tagTypeOptions),
+      options: cleanOptions(options.tagTypeOptions).map(option => ({
+        ...option,
+        color: option.color || TAG_TYPE_COLORS[option.value] || '',
+      })),
     },
     {
       key: 'tags',
       title: 'תגיות',
       multi: true,
-      options: cleanOptions(options.tagOptions),
+      options: cleanOptions(options.tagOptions).map(option => {
+        const tagType = safeStr(option.tagType)
+
+        return {
+          ...option,
+          color: option.color || TAG_TYPE_COLORS[tagType] || '',
+          iconId: option.iconId || TAG_TYPE_ICONS[tagType] || '',
+        }
+      }),
     },
     {
       key: 'missingTagging',
       title: 'חוסרים באפיון',
       multi: true,
       options: [
-        { value: 'without_category', label: 'ללא קטגוריה' },
-        { value: 'without_tags', label: 'ללא תגיות' },
+        { value: 'without_category', label: 'ללא קטגוריה', ...MISSING_META.without_category },
+        { value: 'without_tags', label: 'ללא תגיות', ...MISSING_META.without_tags },
       ],
     },
   ].filter(group => group.options.length > 0)

@@ -12,17 +12,51 @@ import {
   gamesShortsRef,
   externalGamesShortsRef,
   rolesShortsRef,
-  tagsShortsRef,
   videosShortsRef,
   videoAnalysisShortsRef,
 } from '../../services/firestore/shortsCollections'
 import { subscribeShorts } from '../../services/firestore/shorts/shorts.subscribe'
 import { resolveCoreData } from './resolvers/coreData.resolver'
 import { patchShortsDocsByRouter } from './utils/patchShortsEntity.js'
+import { useAuth } from '../../app/AuthProvider.js'
 
 const CoreDataContext = createContext(null)
 
+const EMPTY_TAGS_SHORTS = []
+
+const EMPTY_MAP = new Map()
+
+const resetShortsState = ({
+  setClubsShorts,
+  setTeamsShorts,
+  setPlayersShorts,
+  setPrivatePlayersShorts,
+  setScoutingShorts,
+  setMeetingsShorts,
+  setPaymentsShorts,
+  setGamesShorts,
+  setExternalGamesShorts,
+  setRolesShorts,
+  setVideosShorts,
+  setVideoAnalysisShorts,
+}) => {
+  setClubsShorts(null)
+  setTeamsShorts(null)
+  setPlayersShorts(null)
+  setPrivatePlayersShorts(null)
+  setScoutingShorts(null)
+  setMeetingsShorts(null)
+  setPaymentsShorts(null)
+  setGamesShorts(null)
+  setExternalGamesShorts(null)
+  setRolesShorts(null)
+  setVideosShorts(null)
+  setVideoAnalysisShorts(null)
+}
+
 export function CoreDataProvider({ children }) {
+  const { user } = useAuth()
+
   const [clubsShorts, setClubsShorts] = useState(null)
   const [teamsShorts, setTeamsShorts] = useState(null)
 
@@ -37,13 +71,32 @@ export function CoreDataProvider({ children }) {
   const [externalGamesShorts, setExternalGamesShorts] = useState(null)
 
   const [rolesShorts, setRolesShorts] = useState(null)
-  const [tagsShorts, setTagsShorts] = useState(null)
+  const tagsShorts = EMPTY_TAGS_SHORTS
   const [videosShorts, setVideosShorts] = useState(null)
   const [videoAnalysisShorts, setVideoAnalysisShorts] = useState(null)
 
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!user) {
+      resetShortsState({
+        setClubsShorts,
+        setTeamsShorts,
+        setPlayersShorts,
+        setPrivatePlayersShorts,
+        setScoutingShorts,
+        setMeetingsShorts,
+        setPaymentsShorts,
+        setGamesShorts,
+        setExternalGamesShorts,
+        setRolesShorts,
+        setVideosShorts,
+        setVideoAnalysisShorts,
+      })
+      setError(null)
+      return undefined
+    }
+
     const unsubClubs = subscribeShorts(clubsShortsRef, setClubsShorts, setError)
     const unsubTeams = subscribeShorts(teamsShortsRef, setTeamsShorts, setError)
 
@@ -66,7 +119,6 @@ export function CoreDataProvider({ children }) {
     )
 
     const unsubRoles = subscribeShorts(rolesShortsRef, setRolesShorts, setError)
-    const unsubTags = subscribeShorts(tagsShortsRef, setTagsShorts, setError)
     const unsubVideos = subscribeShorts(videosShortsRef, setVideosShorts, setError)
     const unsubVideoAnalysis = subscribeShorts(
       videoAnalysisShortsRef,
@@ -89,14 +141,14 @@ export function CoreDataProvider({ children }) {
       unsubExternalGames()
 
       unsubRoles()
-      unsubTags()
       unsubVideos()
       unsubVideoAnalysis()
     }
-  }, [])
+  }, [user])
 
   const loading =
-    !Array.isArray(clubsShorts) ||
+    Boolean(user) &&
+    (!Array.isArray(clubsShorts) ||
     !Array.isArray(teamsShorts) ||
     !Array.isArray(playersShorts) ||
     !Array.isArray(privatePlayersShorts) ||
@@ -106,9 +158,8 @@ export function CoreDataProvider({ children }) {
     !Array.isArray(gamesShorts) ||
     !Array.isArray(externalGamesShorts) ||
     !Array.isArray(rolesShorts) ||
-    !Array.isArray(tagsShorts) ||
     !Array.isArray(videosShorts) ||
-    !Array.isArray(videoAnalysisShorts)
+    !Array.isArray(videoAnalysisShorts))
 
   const patchEntity = useCallback((entityType, id, patch) => {
     if (!entityType || !id || !patch) return
@@ -162,10 +213,6 @@ export function CoreDataProvider({ children }) {
         setExternalGamesShorts(patcher)
         break
 
-      case 'tags':
-        setTagsShorts(patcher)
-        break
-
       case 'videoAnalysis':
         setVideoAnalysisShorts(patcher)
         break
@@ -180,6 +227,53 @@ export function CoreDataProvider({ children }) {
   }, [])
 
   const value = useMemo(() => {
+    if (!user) {
+      return {
+        loading: false,
+        error: null,
+        patchEntity,
+
+        clubsShorts: [],
+        teamsShorts: [],
+
+        playersShorts: [],
+        privatePlayersShorts: [],
+
+        scoutingShorts: [],
+        meetingsShorts: [],
+        paymentsShorts: [],
+
+        gamesShorts: [],
+        externalGamesShorts: [],
+
+        rolesShorts: [],
+        tagsShorts,
+        videosShorts: [],
+        videoAnalysisShorts: [],
+
+        clubs: [],
+        teams: [],
+        players: [],
+        privatePlayers: [],
+        playersWithoutTeam: [],
+        scouting: [],
+        meetings: [],
+        payments: [],
+        roles: [],
+        tags: [],
+        videos: [],
+        videoAnalysis: [],
+        games: [],
+
+        clubById: EMPTY_MAP,
+        teamById: EMPTY_MAP,
+        playerById: EMPTY_MAP,
+        meetingsById: EMPTY_MAP,
+        paymentsById: EMPTY_MAP,
+        meetingsByPlayerId: EMPTY_MAP,
+      }
+    }
+
     if (loading) {
       return {
         loading: true,
@@ -268,6 +362,7 @@ export function CoreDataProvider({ children }) {
       ...resolved,
     }
   }, [
+    user,
     loading,
     error,
     patchEntity,
