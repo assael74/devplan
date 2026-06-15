@@ -136,10 +136,9 @@ export function useTagPickerOptions({ options, selectedIds }) {
 
   const buckets = useMemo(() => {
     return {
-      analysis: buildLegacyBucket({
+      analysis: buildProfessionalVideoBucket({
         allOptions,
         selectedIds,
-        scopeType: 'analysis',
       }),
 
       general: buildLegacyBucket({

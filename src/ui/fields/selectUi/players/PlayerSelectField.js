@@ -1,6 +1,6 @@
 // ui/fields/selectUi/players/PlayerSelectField.js
 
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useCallback, useRef, useState } from 'react'
 import {
   Select,
   Option,
@@ -30,6 +30,9 @@ export default function PlayerSelectField({
   placeholder = 'בחר…',
   teamId,
 }) {
+  const [listboxOpen, setListboxOpen] = useState(false)
+  const suppressNextOpenRef = useRef(false)
+
   const normalizedOptions = useMemo(
     () => buildOptions(options, teamId, playerImage),
     [options, teamId]
@@ -42,10 +45,26 @@ export default function PlayerSelectField({
 
   const handleChange = useCallback(
     (_, nextValue) => {
+      suppressNextOpenRef.current = true
+      setListboxOpen(false)
+
+      window.setTimeout(() => {
+        suppressNextOpenRef.current = false
+      }, 0)
+
       if (!readOnly) onChange(clean(nextValue))
     },
     [onChange, readOnly]
   )
+
+  const handleListboxOpenChange = useCallback((_, open) => {
+    if (suppressNextOpenRef.current && open) {
+      setListboxOpen(false)
+      return
+    }
+
+    setListboxOpen(open)
+  }, [])
   
   return (
     <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
@@ -59,6 +78,8 @@ export default function PlayerSelectField({
         readOnly={readOnly}
         value={clean(value) || null}
         onChange={handleChange}
+        listboxOpen={listboxOpen}
+        onListboxOpenChange={handleListboxOpenChange}
         placeholder={placeholder}
         slotProps={playersSlot}
         renderValue={() => (

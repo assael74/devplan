@@ -1,15 +1,5 @@
 // src/features/videoHub/components/mobile/toolbar/mobileMode.sx.js
 
-import { alpha } from '@mui/system'
-import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
-
-const general = getEntityColors('videoGeneral')
-const analysis = getEntityColors('videoAnalysis')
-
-const getTone = (mode) => {
-  return mode === 'analysis' ? analysis : general
-}
-
 export const toolbarSx = {
   toolbarShell: {
     display: 'grid',

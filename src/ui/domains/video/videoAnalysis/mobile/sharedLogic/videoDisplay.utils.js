@@ -76,6 +76,10 @@ export function getVideoNotes(video) {
   return safe(video?.notes || '')
 }
 
+export function getVideoSummary(video, fallback = 'אין הסבר וידאו') {
+  return safe(video?.summary || video?.description || video?.notes || fallback)
+}
+
 export function getVideoHasNotes(video) {
   return getVideoNotes(video).trim().length > 0
 }

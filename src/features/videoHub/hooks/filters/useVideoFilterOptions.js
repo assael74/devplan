@@ -31,14 +31,16 @@ const SOURCE_LABEL = {
   other: 'אחר',
 }
 
-export default function useVideoFilterOptions({ tab, context, filters, items }) {
-  const clubs = context?.clubs || []
-  const teamsAll = context?.teams || []
-  const playersAll = context?.players || []
-  const meetingsAll = context?.meetings || []
-  const tagsAll = context?.tags || context?.analysisTags || context?.videoTags || []
+const EMPTY_ARRAY = []
 
-  const arr = Array.isArray(items) ? items : []
+export default function useVideoFilterOptions({ tab, context, filters, items }) {
+  const clubs = context?.clubs || EMPTY_ARRAY
+  const teamsAll = context?.teams || EMPTY_ARRAY
+  const playersAll = context?.players || EMPTY_ARRAY
+  const meetingsAll = context?.meetings || EMPTY_ARRAY
+  const tagsAll = context?.tags || context?.analysisTags || context?.videoTags || EMPTY_ARRAY
+
+  const arr = Array.isArray(items) ? items : EMPTY_ARRAY
 
   const professionalGeneralOptions = useMemo(() => {
     if (tab !== 'general') return null

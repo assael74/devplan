@@ -9,6 +9,7 @@ export default function VideoAnalysisMobileList({
   items = [],
   onWatch,
   onEdit,
+  onLink,
   onShare,
   onDelete,
 }) {
@@ -55,6 +56,7 @@ export default function VideoAnalysisMobileList({
           video={video}
           onWatch={onWatch}
           onEdit={onEdit}
+          onLink={onLink}
           onShare={onShare}
           onDelete={onDelete}
         />

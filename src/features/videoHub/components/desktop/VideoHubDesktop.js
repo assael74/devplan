@@ -95,7 +95,7 @@ export default function VideoHubDesktop() {
   const [tab, setTab] = useState(VIDEO_TAB.GENERAL)
   const [filtersAna, setFiltersAna] = useState(DEFAULT_FILTERS_ANALYSIS)
   const [filtersGen, setFiltersGen] = useState(DEFAULT_FILTERS_GENERAL)
-  const [generalCardView, setGeneralCardView] = useState('full')
+  const [cardView, setCardView] = useState('full')
   const [videoSelectionMode, setVideoSelectionMode] = useState(false)
   const [selectedVideoIds, setSelectedVideoIds] = useState([])
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -107,8 +107,8 @@ export default function VideoHubDesktop() {
 
   const { run } = useVideoHubUpdate(active)
 
-  const analysisRaw = core?.videoAnalysis || []
-  const generalRaw = core?.videos || []
+  const analysisRaw = useMemo(() => core?.videoAnalysis || [], [core?.videoAnalysis])
+  const generalRaw = useMemo(() => core?.videos || [], [core?.videos])
 
   const analysisEnriched = useMemo(() => {
     return enrichVideoAnalysis(analysisRaw, baseContext)
@@ -143,17 +143,6 @@ export default function VideoHubDesktop() {
     const out = filterVideosGeneral(generalRaw, filtersGen)
     return sortVideosGeneral(out, filtersGen.sortBy, filtersGen.sortDir)
   }, [generalRaw, filtersGen])
-
-  const selectedVideoIdsSet = useMemo(() => {
-    return new Set(selectedVideoIds)
-  }, [selectedVideoIds])
-
-  const selectedVideos = useMemo(() => {
-    return generalRaw.filter(video => {
-      const videoId = video?.id || video?.videoId || video?.docId
-      return selectedVideoIdsSet.has(videoId)
-    })
-  }, [generalRaw, selectedVideoIdsSet])
 
   const handleWatch = useCallback((video) => {
     open('watchOpen', video)
@@ -293,10 +282,7 @@ export default function VideoHubDesktop() {
     } finally {
       setDeleteLoading(false)
     }
-  }, [
-    deleteLoading,
-    notify,
-  ])
+  }, [ deleteLoading, notify ])
 
   useEffect(() => {
     if (tab === VIDEO_TAB.GENERAL) return
@@ -335,8 +321,8 @@ export default function VideoHubDesktop() {
             onStartSelection={startVideoSelection}
             onCancelSelection={cancelVideoSelection}
             onOpenDelete={openVideosDeleteModal}
-            cardView={generalCardView}
-            onCardView={setGeneralCardView}
+            cardView={cardView}
+            onCardView={setCardView}
           />
         </Box>
       </Box>
@@ -350,6 +336,7 @@ export default function VideoHubDesktop() {
             onEdit={handleEdit}
             onShare={handleOpenShare}
             onWatch={handleWatch}
+            cardView={cardView}
           />
         ) : (
           <VideoGeneralList
@@ -358,7 +345,8 @@ export default function VideoHubDesktop() {
             onEdit={handleEdit}
             onShare={handleOpenShare}
             onWatch={handleWatch}
-            cardView={generalCardView}
+            tagsById={context.tagsById}
+            cardView={cardView}
 
             selectionMode={videoSelectionMode}
             selectedVideoIds={selectedVideoIds}
@@ -389,12 +377,14 @@ export default function VideoHubDesktop() {
           run('analysis', patch, {
             section: 'videoAttachDrawer',
             videoId: video?.id,
+            createIfMissing: true,
           })
         }
         onSaveEditAnalysis={({ video, patch }) =>
           run('analysis', patch, {
             section: 'videoEditDrawer',
             videoId: video?.id,
+            createIfMissing: true,
           })
         }
         onSavedEditGeneral={() => {}}

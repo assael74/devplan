@@ -38,7 +38,9 @@ export function useUpdateAction({
 
   const runUpdate = useCallback(
     async (fieldsPatch, meta) => {
-      if (!id) throw new Error('[useUpdateAction] missing id')
+      const effectiveId = meta?.id || meta?.videoId || id
+
+      if (!effectiveId) throw new Error('[useUpdateAction] missing id')
       if (!routerEntityType) throw new Error('[useUpdateAction] missing routerEntityType')
       if (!fieldsPatch || typeof fieldsPatch !== 'object') throw new Error('[useUpdateAction] fieldsPatch must be object')
 
@@ -48,7 +50,7 @@ export function useUpdateAction({
 
       const ctx = {
         routerEntityType,
-        id,
+        id: effectiveId,
         section: meta?.section || null,
         meta: meta || null,
         fieldsKeys: Object.keys(fieldsPatch),
@@ -66,7 +68,7 @@ export function useUpdateAction({
       try {
         const res = await updateByRouterFields({
           entityType: routerEntityType,
-          id,
+          id: effectiveId,
           fieldsPatch,
           createIfMissing: effectiveCreateIfMissing,
           requireAnyUpdated: effectiveRequireAnyUpdated,

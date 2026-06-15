@@ -50,7 +50,7 @@ export function VideoMobileMedia({ video, model, actions }) {
 
       {model.preview ? (
         <Box sx={sx.mediaPlay}>
-          {iconUi({ id: 'playVideo', sx: { fontSize: 12, color: '#f01313' } })}
+          {iconUi({ id: 'playVideo', sx: { fontSize: 13, color: '#fff' } })}
         </Box>
       ) : null}
     </Box>

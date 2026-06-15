@@ -159,6 +159,7 @@ docs/architecture/CORE_DATA.md
 - cards
 - shared sx
 - icons/theme helpers
+- page loading skeletons in `src/ui/loading/pages`
 
 כלל חשוב:
 

@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from 'react'
 import { Modal, ModalDialog, DialogTitle, DialogContent, DialogActions, Button, Input, Select, Option, Box } from '@mui/joy'
 import { VIDEO_TAB } from '../../videoHub.model'
-import { videoComponentsSx as sx } from '../components.sx'
 
 export default function VideoCreateModal({ open, onClose, tab, context, onSave }) {
   const teams = context?.teams || []

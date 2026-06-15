@@ -1,7 +1,7 @@
 // src/features/squadSimulator/ui/SquadSimulatorPage.js
 
 import { useCallback, useEffect, useMemo } from 'react'
-import { Box, Sheet, Typography } from '@mui/joy'
+import { Box, CircularProgress, Sheet, Typography } from '@mui/joy'
 
 import { useAuth } from '../../../app/AuthProvider.js'
 import {
@@ -24,6 +24,7 @@ export default function SquadSimulatorPage() {
     teams = [],
     players = [],
     roles = [],
+    primaryLoading,
   } = useCoreData()
 
   const isAdmin = isAdminAuthUser(user, roles)
@@ -88,6 +89,28 @@ export default function SquadSimulatorPage() {
     visiblePlayers,
     visibleTeams,
   ])
+
+  if (primaryLoading) {
+    return (
+      <Sheet sx={sx.page}>
+        <Box
+          sx={{
+            ...sx.shell,
+            minHeight: 320,
+            alignContent: 'center',
+            justifyItems: 'center',
+            textAlign: 'center',
+            gap: 1,
+          }}
+        >
+          <CircularProgress size="lg" />
+          <Typography level="body-md" sx={{ color: 'text.secondary' }}>
+            Loading squad data...
+          </Typography>
+        </Box>
+      </Sheet>
+    )
+  }
 
   if (!isAdmin && (!canUseSimulator || visibleTeams.length === 0)) {
     return (

@@ -46,15 +46,16 @@ export const sharedSx = {
   mediaPlay: {
     position: 'absolute',
     left: 6,
-    top: 6,
-    width: 18,
-    height: 18,
+    bottom: 6,
+    width: 24,
+    height: 24,
     display: 'grid',
     placeItems: 'center',
     borderRadius: '50%',
-    bgcolor: 'rgba(255,255,255,.82)',
+    bgcolor: 'rgba(0,0,0,.56)',
     backdropFilter: 'blur(6px)',
     zIndex: 2,
+    border: '1px solid rgba(255,255,255,0.36)',
   },
 
   bodyWrap: {

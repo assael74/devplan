@@ -47,6 +47,7 @@ export default function VideoMobileScreen({
   onBack,
   onWatch,
   onEdit,
+  onLink,
   onShare,
   onDelete,
   onChangeSource,
@@ -121,6 +122,7 @@ export default function VideoMobileScreen({
             items={items}
             onWatch={onWatch}
             onEdit={onEdit}
+            onLink={onLink}
             onShare={onShare}
             onDelete={onDelete}
           />

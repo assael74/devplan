@@ -7,7 +7,6 @@ import { videoTabSx as sx } from './tab.sx'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 
 export default function VideoTabsHeader({ tab, onTab }) {
-  const idColor = tab === VIDEO_TAB.GENERAL ? 'videoGeneral' : 'videoAnalysis'
   return (
     <Sheet variant="soft" sx={sx.headerSheet}>
       <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, }}>

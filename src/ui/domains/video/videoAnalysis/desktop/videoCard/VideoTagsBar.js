@@ -1,11 +1,11 @@
 // ui/domains/video/videoAnalysis/VideoTagsBar.js
 
 import React, { useMemo } from 'react'
-import { Box, Chip, Tooltip } from '@mui/joy'
+import { Box, Chip, IconButton, Tooltip } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 
-const normalizeArr = (v) => (Array.isArray(v) ? v : v ? [v] : [])
-const toStr = (v) => (v == null ? '' : String(v)).trim()
+const normalizeArr = value => (Array.isArray(value) ? value : value ? [value] : [])
+const toStr = value => (value == null ? '' : String(value)).trim()
 
 const getFromMapOrObject = (bucket, key) => {
   if (!bucket || !key) return null
@@ -14,19 +14,25 @@ const getFromMapOrObject = (bucket, key) => {
   return null
 }
 
-export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisible = 3 }) {
+export default function VideoTagsBar({
+  video,
+  tagsById,
+  iconId = 'tags',
+  maxVisible = 3,
+  onAddTag,
+}) {
   const tagIds = useMemo(() => {
     const arr = normalizeArr(video?.tagsFull)
 
     const primitiveIds = arr
-      .filter((x) => typeof x === 'string' || typeof x === 'number')
-      .map((x) => toStr(x))
+      .filter(item => typeof item === 'string' || typeof item === 'number')
+      .map(toStr)
       .filter(Boolean)
 
     if (primitiveIds.length) return primitiveIds
 
     const objectIds = arr
-      .map((t) => toStr(t?.id || t?.tagId))
+      .map(tag => toStr(tag?.id || tag?.tagId))
       .filter(Boolean)
 
     if (objectIds.length) return objectIds
@@ -37,27 +43,47 @@ export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisi
   const tagLabels = useMemo(() => {
     if (!tagsById) {
       return normalizeArr(video?.tagsFull)
-        .map((t) => toStr(t?.tagName || t?.name || t?.label))
+        .map(tag => toStr(tag?.tagName || tag?.name || tag?.label))
         .filter(Boolean)
     }
 
     return tagIds
-      .map((id) => getFromMapOrObject(tagsById, id))
-      .map((t) => (typeof t === 'string' ? t : toStr(t?.tagName || t?.name || t?.label)))
+      .map(id => getFromMapOrObject(tagsById, id))
+      .map(tag => (typeof tag === 'string' ? tag : toStr(tag?.tagName || tag?.name || tag?.label)))
       .filter(Boolean)
   }, [tagIds, tagsById, video?.tagsFull])
 
+  const handleAddTag = event => {
+    event?.stopPropagation?.()
+    onAddTag?.(video)
+  }
+
+  const addButton = onAddTag ? (
+    <Tooltip title="הוספת תג" arrow>
+      <IconButton
+        size="sm"
+        variant="soft"
+        color="primary"
+        onClick={handleAddTag}
+        sx={{ minWidth: 22, minHeight: 22, '--IconButton-size': '22px', borderRadius: 999 }}
+      >
+        {iconUi({ id: 'add', sx: { width: 14, height: 14 } })}
+      </IconButton>
+    </Tooltip>
+  ) : null
+
   if (!tagLabels.length) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minHeight: 22 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minHeight: 24 }}>
         <Chip
           size="sm"
           variant="outlined"
           startDecorator={iconUi({ id: 'tags', sx: { height: 10, width: 10 } })}
-          sx={{ height: 13, fontSize: 8, opacity: 0.6 }}
+          sx={{ height: 20, fontSize: 10, opacity: 0.65 }}
         >
           ללא תגים
         </Chip>
+        {addButton}
       </Box>
     )
   }
@@ -68,7 +94,7 @@ export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisi
 
   return (
     <Tooltip title={tooltipText} arrow>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minHeight: 22 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minHeight: 24 }}>
         {visible.map((label, idx) => (
           <Chip
             key={`${label}-${idx}`}
@@ -76,8 +102,8 @@ export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisi
             variant="outlined"
             startDecorator={iconUi({ id: iconId, sx: { height: 10, width: 10 } })}
             sx={{
-              height: 13,
-              fontSize: 8,
+              height: 20,
+              fontSize: 10,
               maxWidth: 110,
               '& .MuiChip-label': {
                 overflow: 'hidden',
@@ -95,6 +121,8 @@ export default function VideoTagsBar({ video, tagsById, iconId = 'tags', maxVisi
             +{hiddenCount}
           </Chip>
         )}
+
+        {addButton}
       </Box>
     </Tooltip>
   )

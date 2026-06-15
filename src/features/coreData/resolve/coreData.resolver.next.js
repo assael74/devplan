@@ -25,7 +25,6 @@
  * payments
  * roles
  * videos
- * tags
  * games
  *
  * קובץ זה הוא נקודת הכניסה למנוע הנתונים של המערכת.
@@ -44,15 +43,9 @@
  import { buildFinalRelations } from './relations-stage.js'
 
  export function resolveCoreDataNext(input = {}) {
-   const {
-     gameStatsShorts = [],
-   } = input
-
    const merged = mergeCoreShorts(input)
 
-   const indexes = buildCoreIndexes(merged, {
-     gameStatsShorts,
-   })
+   const indexes = buildCoreIndexes(merged)
 
    const teams = enrichTeams(merged, indexes)
    const players = enrichPlayers(merged, indexes, teams)

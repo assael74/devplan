@@ -14,16 +14,6 @@ const getMeetingIdsFromVideo = (video) =>
 const getDirectPlayerIdsFromVideo = (video) =>
   normalizeIds(Array.isArray(video?.playerIds) ? video.playerIds : video?.playerId)
 
-const getTagIdsFromVideo = (video) =>
-  normalizeIds(
-    video?.tags ??
-    video?.tagIds ??
-    video?.tagsIds ??
-    video?.videoTags ??
-    video?.videoTagIds ??
-    video?.tagId
-  )
-
 export const buildVideosByMeetingId = (videosArr) =>
   buildArrayIndex(videosArr, (video) => getMeetingIdsFromVideo(video))
 
@@ -65,12 +55,10 @@ export const buildVideoEntityMaps = ({
   meetingsArr,
   playersArr,
   teamsArr,
-  tagsArr,
 } = {}) => ({
   meetingsMap: ensureEntityMap(meetingsArr, { idKey: 'id', extraKeys: ['ui.id'] }),
   playersMap: ensureEntityMap(playersArr, { idKey: 'id', extraKeys: ['ui.id'] }),
   teamsMap: ensureEntityMap(teamsArr, { idKey: 'id', extraKeys: ['ui.id'] }),
-  tagsMap: ensureEntityMap(tagsArr, { idKey: 'id', extraKeys: ['slug'] }),
 })
 
 export const buildVideosWithEntities = (
@@ -79,28 +67,24 @@ export const buildVideosWithEntities = (
     meetingsArr,
     playersArr,
     teamsArr,
-    tagsArr,
     meetingsMap: providedMeetingsMap,
     playersMap: providedPlayersMap,
     teamsMap: providedTeamsMap,
-    tagsMap: providedTagsMap,
   } = {}
 ) => {
-  const maps = providedMeetingsMap && providedPlayersMap && providedTeamsMap && providedTagsMap
+  const maps = providedMeetingsMap && providedPlayersMap && providedTeamsMap
     ? {
         meetingsMap: providedMeetingsMap,
         playersMap: providedPlayersMap,
         teamsMap: providedTeamsMap,
-        tagsMap: providedTagsMap,
       }
     : buildVideoEntityMaps({
         meetingsArr,
         playersArr,
         teamsArr,
-        tagsArr,
       })
 
-  const { meetingsMap, playersMap, teamsMap, tagsMap } = maps
+  const { meetingsMap, playersMap, teamsMap } = maps
 
   const resolveMeeting = (video) => {
     const meetingId = pickFirstId(video?.meetingId, video?.meetingIds)
@@ -123,12 +107,6 @@ export const buildVideosWithEntities = (
     return teamId ? teamsMap.get(teamId) || null : null
   }
 
-  const resolveTagsFull = (video) =>
-    getTagIdsFromVideo(video)
-      .map((id) => tagsMap.get(safeId(id)) || null)
-      .filter(Boolean)
-      .filter((tag) => tag?.isActive !== false)
-
   return safeArr(videosArr).map((video) => {
     if (video?.contextType === 'floating') {
       return {
@@ -136,7 +114,6 @@ export const buildVideosWithEntities = (
         meeting: null,
         player: null,
         team: null,
-        tagsFull: resolveTagsFull(video),
       }
     }
 
@@ -149,7 +126,6 @@ export const buildVideosWithEntities = (
       meeting,
       player,
       team,
-      tagsFull: resolveTagsFull(video),
     }
   })
 }

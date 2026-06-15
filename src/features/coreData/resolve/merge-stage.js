@@ -15,7 +15,6 @@
  * games
  * roles
  * videos
- * tags
  *
  * חשוב:  בשלב זה אין עדיין קשרים בין הישויות. זהו רק שלב יצירת הנתונים הראשוני.
  */
@@ -140,7 +139,6 @@ export function mergeCoreShorts({
   rolesShorts = [],
   videosShorts = [],
   videoAnalysisShorts = [],
-  tagsShorts = [],
 } = {}) {
   const clubsBaseDoc = pickBaseDocName(clubsShorts, ['clubsInfo', 'clubInfo', 'clubs'])
   const teamsBaseDoc = pickBaseDocName(teamsShorts, ['teamsInfo', 'teamInfo', 'teams'])
@@ -195,8 +193,6 @@ export function mergeCoreShorts({
     'id'
   )
 
-  const tagsBase = mergeShorts(tagsShorts, 'tagInfo', [], 'id')
-
   return {
     clubs,
     teamsBase,
@@ -215,6 +211,5 @@ export function mergeCoreShorts({
     rolesBase,
     videoAnalysisBase,
     videosBase,
-    tagsBase,
   }
 }

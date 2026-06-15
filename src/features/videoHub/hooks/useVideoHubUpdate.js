@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
 
 export function useVideoHubUpdate(active) {

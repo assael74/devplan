@@ -1,22 +1,20 @@
 // ui/domains/video/videoAnalysis/desktop/videoCard/VideoAnalysisCard.js
 
 import React, { useMemo } from 'react'
-import { Card, Box, Divider } from '@mui/joy'
+import { Avatar, Box, Card, Tooltip, Typography } from '@mui/joy'
 
 import VideoCardMedia from './VideoCardMedia'
-import VideoCardHeader from './VideoCardHeader'
 import VideoTagsBar from './VideoTagsBar'
-import { VideoCardLinkage } from './VideoCardLinkage'
 
 import { buildVideoAnalysisSx } from './sx/videoAnalysis.sx'
 import { VIDEO_ANALYSIS_CARD_PRESETS } from './videoAnalysisCard.presets'
+import { buildVideoAnalysisCardModel } from './videoAnalysisCard.model.js'
 
 export default function VideoAnalysisCard({
   video,
   preset = 'videoHub',
   from,
   onWatch,
-  onShare,
   onEdit,
   onLink,
   context,
@@ -27,35 +25,35 @@ export default function VideoAnalysisCard({
     () => buildVideoAnalysisSx(from || preset),
     [from, preset]
   )
-  //console.log(video)
-
-  const menuItems = typeof cfg.menu === 'function' ? cfg.menu({ video, onShare, onEdit, onLink }) : []
+  const model = useMemo(() => buildVideoAnalysisCardModel(video), [video])
 
   return (
     <Card variant="outlined" sx={sx.cardGrid()}>
       <VideoCardMedia
         sx={sx}
         video={video}
-        entityType="videoAnalysis"
         onWatch={onWatch}
-        playButtonColor={cfg.playButtonColor}
-        menuItems={menuItems}
+        onLink={onLink}
+        onEdit={onEdit}
       />
 
       <Box sx={sx.cardBody}>
-        <VideoCardHeader
-          video={video}
-          showYm={cfg.showYm}
-          sx={sx}
-        />
+        <Box sx={sx.analysisSummaryRow}>
+          <Tooltip title={model.summary} arrow>
+            <Typography level="body-xs" noWrap sx={sx.analysisSummary}>
+              {'\u05d4\u05e1\u05d1\u05e8'}: {model.summary}
+            </Typography>
+          </Tooltip>
 
-        <Divider />
-
-        <Box sx={sx.linkageZone}>
-          <VideoCardLinkage
-            video={video}
-            context={context}
-          />
+          <Tooltip title={model.entity.label} arrow>
+            <Avatar
+              size="sm"
+              src={model.entity.avatarSrc || undefined}
+              sx={sx.analysisAvatar(model.entity.tone)}
+            >
+              {model.entity.initials}
+            </Avatar>
+          </Tooltip>
         </Box>
 
         <Box sx={sx.tagsZone}>
@@ -64,6 +62,7 @@ export default function VideoAnalysisCard({
             tagsById={context?.tagsById}
             iconId="videoAnalysis"
             maxVisible={cfg.maxVisibleTags}
+            onAddTag={onEdit}
           />
         </Box>
       </Box>

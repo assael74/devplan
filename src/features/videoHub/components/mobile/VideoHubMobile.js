@@ -32,6 +32,8 @@ import VideoHubDrawersLayer from '../../sharedUi/VideoHubDrawersLayer.js'
 
 import { pageSx as sx } from './page.sx.js'
 
+const EMPTY_ARRAY = []
+
 const ALL_ID = 'all'
 
 const DEFAULT_FILTERS_GENERAL = {
@@ -98,8 +100,8 @@ export default function VideoHubMobile() {
     return buildVideoHubContext(core)
   }, [core])
 
-  const analysisRaw = core?.videoAnalysis || []
-  const generalRaw = core?.videos || []
+  const analysisRaw = core?.videoAnalysis || EMPTY_ARRAY
+  const generalRaw = core?.videos || EMPTY_ARRAY
 
   const analysisEnriched = useMemo(() => {
     return enrichVideoAnalysis(analysisRaw, baseContext)
@@ -146,6 +148,10 @@ export default function VideoHubMobile() {
   const handleEdit = useCallback((video) => {
     openEdit(video)
   }, [openEdit])
+
+  const handleAttach = useCallback((video) => {
+    open('attachOpen', video)
+  }, [open])
 
   const handleShare = useCallback((video) => {
     open('shareOpen', video)
@@ -251,6 +257,7 @@ export default function VideoHubMobile() {
           onBack={() => setSelectedMode('')}
           onWatch={handleWatch}
           onEdit={handleEdit}
+          onLink={handleAttach}
           onShare={handleShare}
           onChangeSource={handleChangeSource}
           onChangeTag={handleChangeTag}
@@ -272,12 +279,14 @@ export default function VideoHubMobile() {
             run('analysis', patch, {
               section: 'videoAttachDrawer',
               videoId: video?.id,
+              createIfMissing: true,
             })
           }
           onSaveEditAnalysis={({ video, patch }) =>
             run('analysis', patch, {
               section: 'videoEditDrawer',
               videoId: video?.id,
+              createIfMissing: true,
             })
           }
           onSavedEditGeneral={() => {}}

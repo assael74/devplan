@@ -8,6 +8,10 @@ import {
   sortVideosByOption,
 } from '../../../shared/video/index.js'
 
+import {
+  VIDEO_SEED_TAG_BY_ID,
+} from '../../../shared/video/index.js'
+
 export const normalizeStr = (v) => String(v ?? '').trim()
 const safeId = (v) => (v == null ? '' : String(v))
 const safeStr = (v) => (v == null ? '' : String(v))
@@ -21,6 +25,13 @@ const includesQuery = (text, q) => {
 
 const normalizeToArray = (val) => (Array.isArray(val) ? val : val ? [val] : [])
 
+const getFromMapOrObject = (bucket, key) => {
+  if (!bucket || !key) return null
+  if (typeof bucket.get === 'function') return bucket.get(key) || null
+  if (typeof bucket === 'object') return bucket[key] || null
+  return null
+}
+
 const extractTagIds = (v) =>
   normalizeToArray(v?.tagIds)
     .flat()
@@ -29,6 +40,12 @@ const extractTagIds = (v) =>
 
 const toPlayerName = (p) =>
   [p?.playerFirstName, p?.playerLastName].filter(Boolean).join(' ').trim()
+
+const resolveVideoTagsFull = (video, tagsById) =>
+  extractTagIds(video)
+    .map(id => getFromMapOrObject(tagsById, id) || VIDEO_SEED_TAG_BY_ID[id] || null)
+    .filter(Boolean)
+    .filter(tag => tag?.isActive !== false)
 
 const toMs = (t) => {
   if (!t) return 0
@@ -80,6 +97,8 @@ export const enrichVideoAnalysis = (items, context) => {
       ? context.playerById
       : new Map((context?.players || []).map((p) => [safeId(p.id), p]))
 
+  const tagsById = context?.tagsById || VIDEO_SEED_TAG_BY_ID
+
   return arr.map((v) => {
     const team = teamById.get(safeId(v?.teamId)) || null
     const club =
@@ -99,6 +118,7 @@ export const enrichVideoAnalysis = (items, context) => {
       teamName: safeStr(v?.teamName) || safeStr(team?.teamName),
       clubName: safeStr(v?.clubName) || safeStr(club?.clubName || club?.name),
       playerName: safeStr(v?.playerName) || playerName,
+      tagsFull: resolveVideoTagsFull(v, tagsById),
     }
   })
 }
@@ -197,11 +217,6 @@ export const sortVideoAnalysis = (items, sortBy = 'updatedAt', sortDir = 'desc')
 }
 
 /* -------------------- GENERAL -------------------- */
-
-const buildSearchKeyGeneral = (v) =>
-  [v?.name, v?.title, v?.notes, v?.comment, v?.link, v?.source]
-    .filter(Boolean)
-    .join(' ')
 
 export const filterVideosGeneral = (items, filters) => {
   return filterVideoGeneralByProfessionalModel(items, filters)

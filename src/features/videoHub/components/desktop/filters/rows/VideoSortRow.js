@@ -1,6 +1,6 @@
 // videoHub/components/filters/rows/VideoSortRow.js
 
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import { Box, IconButton } from '@mui/joy'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 
@@ -11,12 +11,9 @@ const SORT_OPTIONS = [
   { value: 'name', label: 'שם' },
 ]
 
+void SORT_OPTIONS
+
 export default function VideoSortRow({ filters, setCascade, clearAll, clearDisabled }) {
-  const [open, setOpen] = useState(false)
-
-  const sortBy = filters.sortBy || 'updatedAt'
-  const sortDir = filters.sortDir || 'desc'
-
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
       <IconButton

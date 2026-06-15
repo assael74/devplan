@@ -91,7 +91,25 @@ videoAnalysisShorts
 
 `tagsShorts` לא נטען דרך `CoreDataProvider` ולא חוסם טעינה. עבור תאימות, `tagsShorts` נשאר כ־array ריק.
 
-כרגע ה־loading הראשי של CoreData מסתיים רק אחרי שכל ה־collections ברשימה למעלה החזירו snapshot ראשון.
+CoreData עדיין פותח את כל ה־subscriptions ברשימה למעלה, אבל סטטוסי הטעינה מפוצלים כדי לא לחסום את המסך הראשון על נתונים שאינם קריטיים לכניסה.
+
+סטטוסי הטעינה הנוכחיים:
+
+```js
+accessLoading   // roles
+primaryLoading  // clubs + teams + players + roles
+secondaryLoading // privatePlayers + scouting
+summaryLoading  // meetings + payments + games + externalGames + videos + videoAnalysis
+loading         // true כל עוד אחד מהסטטוסים למעלה עדיין טוען
+
+accessReady
+primaryReady
+secondaryReady
+summaryReady
+coreReady       // כרגע זהה ל-primaryReady
+```
+
+`AppRoutes` לא מחכה יותר ל־`loading` המלא של CoreData לפני פתיחת האפליקציה. עבור משתמש רגיל הוא מחכה ל־`accessLoading` כדי לדעת הרשאות; עבור super admin ניתן להיכנס מוקדם יותר. לכן Home/tasks יכולים להופיע בזמן ש־summary/secondary ממשיכים להשלים ברקע.
 
 הנתונים החשובים ביותר לטעינה ראשונית של האפליקציה הם:
 
@@ -308,6 +326,15 @@ externalGamesShorts
 `useCoreData()` מחזיר:
 
 - `loading`
+- `accessLoading`
+- `primaryLoading`
+- `secondaryLoading`
+- `summaryLoading`
+- `accessReady`
+- `primaryReady`
+- `secondaryReady`
+- `summaryReady`
+- `coreReady`
 - `error`
 - `patchEntity`
 - raw shorts arrays
@@ -319,6 +346,9 @@ externalGamesShorts
 ```js
 const {
   loading,
+  accessLoading,
+  primaryLoading,
+  summaryLoading,
   clubs,
   teams,
   players,
@@ -365,7 +395,7 @@ const {
 
 1. לא להחזיר חישובים כבדים לתוך render של מסכים.
 2. לבנות maps פעם אחת ב־resolver pass ולא בתוך loop לכל שחקן/קבוצה.
-3. לא להוסיף collection ל־`loading` הראשי אם הוא לא הכרחי לפתיחת האפליקציה.
+3. לא להוסיף collection ל־`primaryLoading` אם הוא לא הכרחי לפתיחת האפליקציה.
 4. לא להחזיר את `tagsShorts` ל־Firestore loading בלי סיבה ברורה.
 5. אם מוסיפים domain חדש, צריך להחליט אם הוא:
    - קריטי לטעינה ראשונית
@@ -375,9 +405,9 @@ const {
 
 ---
 
-## כיוון עתידי מומלץ
+## מצב נוכחי והמשך מומלץ
 
-המצב הנוכחי עדיין משתמש ב־`loading` אחד לכל CoreData. אם חוזרים לטפל בטעינה ראשונית, הכיוון המומלץ הוא לפצל סטטוסים:
+הפיצול לסטטוסי טעינה כבר מיושם ב־`CoreDataProvider`:
 
 ```js
 coreReady        // clubs + teams + players
@@ -388,4 +418,4 @@ secondaryReady   // scouting, external domains, etc.
 
 כך Home/tasks יוכלו להיפתח מוקדם, בזמן ש־CoreData ממשיך להשלים נתונים ברקע.
 
-נכון לעכשיו הפיצול הזה לא מיושם במלואו. המסמך מתאר את המצב הקיים ואת הכיוון המומלץ.
+המשך מומלץ: להמשיך להעביר מסכים כבדים ל־lazy loading, ולוודא שכל מסך שאינו Home בודק את הסטטוס המתאים לו (`primaryLoading`, `summaryLoading` או `secondaryLoading`) במקום להישען על `loading` כללי.

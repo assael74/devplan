@@ -6,6 +6,7 @@ import { Box, Divider, Typography } from '@mui/joy'
 import VideoContextTypeSelectField from '../../../../ui/fields/selectUi/videos/videoAnalysis/VideoContextTypeSelectField.js'
 import VideoObjectTypeSelectField from '../../../../ui/fields/selectUi/videos/videoAnalysis/VideoObjectTypeSelectField.js'
 import TeamSelectField from '../../../../ui/fields/selectUi/teams/TeamSelectField.js'
+import VideoNameField from '../../../../ui/fields/inputUi/videos/VideoNameField.js'
 import PlayerSelectField from '../../../../ui/fields/selectUi/players/PlayerSelectField.js'
 import MeetingSelectField from '../../../../ui/fields/selectUi/meetings/MeetingSelectField.js'
 import YearPicker from '../../../../ui/fields/dateUi/YearPicker.js'
@@ -25,39 +26,80 @@ export default function VideoAttachDrawerBody({
   return (
     <Box sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
       <Box sx={{ display: 'grid', gap: 0.5 }}>
-        <VideoContextTypeSelectField
+        <VideoNameField
+          value={draft?.name || ''}
+          onChange={(value) => setDraft({ ...draft, name: value })}
           required
-          value={draft?.contextType || ''}
-          disabled={!!locks.lockContextType}
+          disabled={!!disabled}
+        />
+      </Box>
+      
+      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+        <YearPicker
+          value={draft?.year || ''}
           onChange={(value) =>
             setDraft((prev) => ({
               ...prev,
-              contextType: value,
-              objectType: '',
-              meetingId: '',
-              teamId: '',
-              playerId: '',
+              year: value,
             }))
           }
-          options={contextTypeOptions}
         />
 
-        <VideoObjectTypeSelectField
-          required
-          value={draft?.objectType || ''}
+        <MonthPicker
+          value={draft?.month || ''}
           onChange={(value) =>
             setDraft((prev) => ({
               ...prev,
-              objectType: value,
-              meetingId: '',
-              teamId: '',
-              playerId: '',
+              month: value,
             }))
           }
-          options={objectTypeOptions}
-          disabled={!!disabled.disableObjectType}
-          readOnly={isMeetingMode || !!locks.lockObjectType}
         />
+      </Box>
+
+      <Divider sx={{ my: 1.25 }}>
+        <Typography level="body-xs" sx={{ opacity: 0.75 }}>
+          סוג השיוך
+        </Typography>
+      </Divider>
+
+      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+        <Box sx={{ minWidth: 0 }}>
+          <VideoContextTypeSelectField
+            required
+            value={draft?.contextType || ''}
+            disabled={!!locks.lockContextType}
+            onChange={(value) =>
+              setDraft((prev) => ({
+                ...prev,
+                contextType: value,
+                objectType: '',
+                meetingId: '',
+                teamId: '',
+                playerId: '',
+              }))
+            }
+            options={contextTypeOptions}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <VideoObjectTypeSelectField
+            required
+            value={draft?.objectType || ''}
+            onChange={(value) =>
+              setDraft((prev) => ({
+                ...prev,
+                objectType: value,
+                meetingId: '',
+                teamId: '',
+                playerId: '',
+              }))
+            }
+            options={objectTypeOptions}
+            disabled={!!disabled.disableObjectType}
+            readOnly={isMeetingMode || !!locks.lockObjectType}
+          />
+        </Box>
       </Box>
 
       <Divider sx={{ my: 1.25 }}>
@@ -108,40 +150,6 @@ export default function VideoAttachDrawerBody({
           clubId={draft?.clubId || ''}
           disabled={!!disabled.disableTeam}
           required={isEntityMode && draft?.objectType === 'team'}
-        />
-      </Box>
-
-      <Divider sx={{ my: 1.25 }}>
-        <Typography level="body-xs" sx={{ opacity: 0.75 }}>
-          שיוך זמנים
-        </Typography>
-      </Divider>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 1,
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-        }}
-      >
-        <YearPicker
-          value={draft?.year || ''}
-          onChange={(value) =>
-            setDraft((prev) => ({
-              ...prev,
-              year: value,
-            }))
-          }
-        />
-
-        <MonthPicker
-          value={draft?.month || ''}
-          onChange={(value) =>
-            setDraft((prev) => ({
-              ...prev,
-              month: value,
-            }))
-          }
         />
       </Box>
     </Box>

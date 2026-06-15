@@ -17,14 +17,40 @@ import {
 } from '../../services/firestore/shortsCollections'
 import { subscribeShorts } from '../../services/firestore/shorts/shorts.subscribe'
 import { resolveCoreData } from './resolvers/coreData.resolver'
+import { mergeShorts } from './resolvers/mergeShorts.js'
 import { patchShortsDocsByRouter } from './utils/patchShortsEntity.js'
 import { useAuth } from '../../app/AuthProvider.js'
 
 const CoreDataContext = createContext(null)
 
-const EMPTY_TAGS_SHORTS = []
-
 const EMPTY_MAP = new Map()
+
+const EMPTY_CORE_DATA = {
+  clubs: [],
+  teams: [],
+  players: [],
+  privatePlayers: [],
+  playersWithoutTeam: [],
+  scouting: [],
+  meetings: [],
+  payments: [],
+  roles: [],
+  videos: [],
+  videoAnalysis: [],
+  games: [],
+
+  clubById: EMPTY_MAP,
+  teamById: EMPTY_MAP,
+  playerById: EMPTY_MAP,
+  meetingsById: EMPTY_MAP,
+  paymentsById: EMPTY_MAP,
+  meetingsByPlayerId: EMPTY_MAP,
+}
+
+const resolveAccessRoles = (rolesShorts) => {
+  if (!Array.isArray(rolesShorts)) return []
+  return mergeShorts(rolesShorts, 'rolesInfo', ['rolesContact'], 'id')
+}
 
 const resetShortsState = ({
   setClubsShorts,
@@ -71,7 +97,6 @@ export function CoreDataProvider({ children }) {
   const [externalGamesShorts, setExternalGamesShorts] = useState(null)
 
   const [rolesShorts, setRolesShorts] = useState(null)
-  const tagsShorts = EMPTY_TAGS_SHORTS
   const [videosShorts, setVideosShorts] = useState(null)
   const [videoAnalysisShorts, setVideoAnalysisShorts] = useState(null)
 
@@ -146,20 +171,37 @@ export function CoreDataProvider({ children }) {
     }
   }, [user])
 
+  const hasClubsShorts = Array.isArray(clubsShorts)
+  const hasTeamsShorts = Array.isArray(teamsShorts)
+  const hasPlayersShorts = Array.isArray(playersShorts)
+  const hasPrivatePlayersShorts = Array.isArray(privatePlayersShorts)
+  const hasScoutingShorts = Array.isArray(scoutingShorts)
+  const hasMeetingsShorts = Array.isArray(meetingsShorts)
+  const hasPaymentsShorts = Array.isArray(paymentsShorts)
+  const hasGamesShorts = Array.isArray(gamesShorts)
+  const hasExternalGamesShorts = Array.isArray(externalGamesShorts)
+  const hasRolesShorts = Array.isArray(rolesShorts)
+  const hasVideosShorts = Array.isArray(videosShorts)
+  const hasVideoAnalysisShorts = Array.isArray(videoAnalysisShorts)
+
+  const accessLoading = Boolean(user) && !hasRolesShorts
+  const primaryLoading =
+    Boolean(user) &&
+    (!hasClubsShorts || !hasTeamsShorts || !hasPlayersShorts || !hasRolesShorts)
+  const secondaryLoading =
+    Boolean(user) &&
+    (!hasPrivatePlayersShorts || !hasScoutingShorts)
+  const summaryLoading =
+    Boolean(user) &&
+    (!hasMeetingsShorts ||
+      !hasPaymentsShorts ||
+      !hasGamesShorts ||
+      !hasExternalGamesShorts ||
+      !hasVideosShorts ||
+      !hasVideoAnalysisShorts)
   const loading =
     Boolean(user) &&
-    (!Array.isArray(clubsShorts) ||
-    !Array.isArray(teamsShorts) ||
-    !Array.isArray(playersShorts) ||
-    !Array.isArray(privatePlayersShorts) ||
-    !Array.isArray(scoutingShorts) ||
-    !Array.isArray(meetingsShorts) ||
-    !Array.isArray(paymentsShorts) ||
-    !Array.isArray(gamesShorts) ||
-    !Array.isArray(externalGamesShorts) ||
-    !Array.isArray(rolesShorts) ||
-    !Array.isArray(videosShorts) ||
-    !Array.isArray(videoAnalysisShorts))
+    (primaryLoading || secondaryLoading || summaryLoading)
 
   const patchEntity = useCallback((entityType, id, patch) => {
     if (!entityType || !id || !patch) return
@@ -226,10 +268,70 @@ export function CoreDataProvider({ children }) {
     }
   }, [])
 
+  const accessRoles = useMemo(() => resolveAccessRoles(rolesShorts), [rolesShorts])
+
+  const resolvedCoreData = useMemo(() => {
+    if (!user || primaryLoading) return null
+
+    return resolveCoreData({
+      clubsShorts: clubsShorts || [],
+      teamsShorts: teamsShorts || [],
+
+      playersShorts: playersShorts || [],
+      privatePlayersShorts: privatePlayersShorts || [],
+
+      scoutingShorts: scoutingShorts || [],
+      meetingsShorts: meetingsShorts || [],
+      paymentsShorts: paymentsShorts || [],
+
+      gamesShorts: gamesShorts || [],
+      externalGamesShorts: externalGamesShorts || [],
+
+      rolesShorts: rolesShorts || [],
+      videosShorts: videosShorts || [],
+      videoAnalysisShorts: videoAnalysisShorts || [],
+    })
+  }, [
+    user,
+    primaryLoading,
+
+    clubsShorts,
+    teamsShorts,
+
+    playersShorts,
+    privatePlayersShorts,
+
+    scoutingShorts,
+    meetingsShorts,
+    paymentsShorts,
+
+    gamesShorts,
+    externalGamesShorts,
+
+    rolesShorts,
+    videosShorts,
+    videoAnalysisShorts,
+  ])
+
+  const accessReady = !accessLoading
+  const primaryReady = !primaryLoading
+  const secondaryReady = !secondaryLoading
+  const summaryReady = !summaryLoading
+  const coreReady = primaryReady
+
   const value = useMemo(() => {
     if (!user) {
       return {
         loading: false,
+        accessLoading: false,
+        primaryLoading: false,
+        secondaryLoading: false,
+        summaryLoading: false,
+        accessReady: true,
+        primaryReady: true,
+        secondaryReady: true,
+        summaryReady: true,
+        coreReady: true,
         error: null,
         patchEntity,
 
@@ -247,7 +349,6 @@ export function CoreDataProvider({ children }) {
         externalGamesShorts: [],
 
         rolesShorts: [],
-        tagsShorts,
         videosShorts: [],
         videoAnalysisShorts: [],
 
@@ -260,7 +361,6 @@ export function CoreDataProvider({ children }) {
         meetings: [],
         payments: [],
         roles: [],
-        tags: [],
         videos: [],
         videoAnalysis: [],
         games: [],
@@ -275,8 +375,22 @@ export function CoreDataProvider({ children }) {
     }
 
     if (loading) {
+      const resolved = resolvedCoreData || {
+        ...EMPTY_CORE_DATA,
+        roles: accessRoles,
+      }
+
       return {
         loading: true,
+        accessLoading,
+        primaryLoading,
+        secondaryLoading,
+        summaryLoading,
+        accessReady,
+        primaryReady,
+        secondaryReady,
+        summaryReady,
+        coreReady,
         error,
         patchEntity,
 
@@ -294,50 +408,24 @@ export function CoreDataProvider({ children }) {
         externalGamesShorts,
 
         rolesShorts,
-        tagsShorts,
         videosShorts,
         videoAnalysisShorts,
 
-        clubs: [],
-        teams: [],
-        players: [],
-        scouting: [],
-        meetings: [],
-        payments: [],
-        roles: [],
-        tags: [],
-        videos: [],
-        videoAnalysis: [],
-        games: [],
-
-        clubById: new Map(),
-        teamById: new Map(),
-        playerById: new Map(),
+        ...resolved,
       }
     }
 
-    const resolved = resolveCoreData({
-      clubsShorts,
-      teamsShorts,
-
-      playersShorts,
-      privatePlayersShorts,
-
-      scoutingShorts,
-      meetingsShorts,
-      paymentsShorts,
-
-      gamesShorts,
-      externalGamesShorts,
-
-      rolesShorts,
-      tagsShorts,
-      videosShorts,
-      videoAnalysisShorts,
-    })
-
     return {
       loading: false,
+      accessLoading,
+      primaryLoading,
+      secondaryLoading,
+      summaryLoading,
+      accessReady,
+      primaryReady,
+      secondaryReady,
+      summaryReady,
+      coreReady,
       error,
       patchEntity,
 
@@ -355,17 +443,27 @@ export function CoreDataProvider({ children }) {
       externalGamesShorts,
 
       rolesShorts,
-      tagsShorts,
-      videosShorts,
+        videosShorts,
       videoAnalysisShorts,
 
-      ...resolved,
+      ...(resolvedCoreData || EMPTY_CORE_DATA),
     }
   }, [
     user,
     loading,
+    accessLoading,
+    primaryLoading,
+    secondaryLoading,
+    summaryLoading,
+    accessReady,
+    primaryReady,
+    secondaryReady,
+    summaryReady,
+    coreReady,
     error,
     patchEntity,
+    accessRoles,
+    resolvedCoreData,
 
     clubsShorts,
     teamsShorts,
@@ -381,7 +479,6 @@ export function CoreDataProvider({ children }) {
     externalGamesShorts,
 
     rolesShorts,
-    tagsShorts,
     videosShorts,
     videoAnalysisShorts,
   ])

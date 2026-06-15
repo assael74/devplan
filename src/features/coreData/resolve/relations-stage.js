@@ -112,7 +112,6 @@
      roles,
      rolesByClubId,
      rolesByTeamId,
-     tags,
      clubById,
      meetingsById,
      paymentsById,
@@ -175,11 +174,9 @@
      meetingsArr: meetingsBase,
      playersArr: playersWithVideos,
      teamsArr: teamsWithPlayers,
-     tagsArr: tags,
    })
 
    const videos = buildVideosWithEntities(videosBase, {
-     tagsArr: tags,
    })
 
    return {
@@ -196,7 +193,6 @@
 
      videos,
      videoAnalysis,
-     tags,
      games: gamesWithStats,
 
      clubById,

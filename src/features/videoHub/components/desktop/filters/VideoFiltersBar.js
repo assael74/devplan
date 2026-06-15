@@ -71,6 +71,16 @@ export default function VideoFiltersBar({
   } = useVideoFiltersController({ tab, filters, onFilters, options })
 
   const isGeneral = tab === 'general'
+  const controlSx = {
+    minHeight: 32,
+    height: 32,
+  }
+
+  const isMiniView = cardView === 'mini'
+
+  const handleCardViewChange = event => {
+    onCardView?.(event.target.checked ? 'mini' : 'full')
+  }
 
   const drawerFilters = useMemo(() => {
     if (!isGeneral) return {}
@@ -108,12 +118,35 @@ export default function VideoFiltersBar({
   if (!isGeneral) {
     return (
       <Box sx={{ display: 'grid', gap: 0.75 }}>
-        <VideoFiltersRow
-          tab={tab}
-          filters={filters}
-          options={options}
-          setCascade={setCascade}
-        />
+        <Box sx={sx.toolbar}>
+          <VideoFiltersRow
+            tab={tab}
+            filters={filters}
+            options={options}
+            setCascade={setCascade}
+          />
+
+          <Box sx={{ flex: 1, minWidth: 24 }} />
+
+          <Box sx={sx.viewToggle}>
+            {iconUi({ id: isMiniView ? 'cardList' : 'tableList', size: 'sm' })}
+
+            <Typography level="body-xs" sx={sx.viewToggleLabel}>
+              תצוגה מוקטנת
+            </Typography>
+
+            <Switch
+              size="sm"
+              checked={isMiniView}
+              onChange={handleCardViewChange}
+              slotProps={{
+                input: {
+                  'aria-label': 'תצוגה מוקטנת לכרטיסי וידאו',
+                },
+              }}
+            />
+          </Box>
+        </Box>
 
         <VideoSortRow
           filters={filters}
@@ -132,17 +165,6 @@ export default function VideoFiltersBar({
         />
       </Box>
     )
-  }
-
-  const controlSx = {
-    minHeight: 32,
-    height: 32,
-  }
-
-  const isMiniView = cardView === 'mini'
-
-  const handleCardViewChange = event => {
-    onCardView?.(event.target.checked ? 'mini' : 'full')
   }
 
   if (selectionMode) {

@@ -302,7 +302,7 @@ export function enrichScouting(merged) {
 
 export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
   const { meetingsBase = [] } = merged
-  const { gamesWithStats, videosByPlayerId, tags } = indexes
+  const { gamesWithStats, videosByPlayerId } = indexes
 
   const playersWithStats = buildPlayersWithStats(players, gamesWithStats, 'all')
 
@@ -310,7 +310,6 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
     meetingsArr: meetingsBase,
     playersArr: players,
     teamsArr: teams,
-    tagsArr: tags,
   })
 
   return playersWithStats.map((player) => {
@@ -329,13 +328,12 @@ export function attachPlayerStatsAndVideos(players, merged, indexes, teams) {
 }
 
 export function attachTeamStatsAndVideos(teams, indexes) {
-  const { gamesWithStats, videosByTeamId, tags } = indexes
+  const { gamesWithStats, videosByTeamId } = indexes
 
   const teamsWithStats = buildTeamsWithStats(teams, gamesWithStats, 'all')
 
   const videoEntityMaps = buildVideoEntityMaps({
     teamsArr: teams,
-    tagsArr: tags,
   })
 
   return teamsWithStats.map((team) => {

@@ -112,14 +112,16 @@ export default function VideoEditDrawerBody({
 
   return (
     <Box sx={{ display: 'grid', gap: 1, minHeight: 0 }}>
-      <Box sx={{ display: 'grid', gap: 0.5 }}>
-        <VideoNameField
-          value={draft?.name || ''}
-          onChange={(value) => setDraft({ ...draft, name: value })}
-          required
-          disabled={!!disabled}
-        />
-      </Box>
+      {isGeneral ? (
+        <Box sx={{ display: 'grid', gap: 0.5 }}>
+          <VideoNameField
+            value={draft?.name || ''}
+            onChange={(value) => setDraft({ ...draft, name: value })}
+            required
+            disabled={!!disabled}
+          />
+        </Box>
+      ) : null}
 
       <Divider sx={{ my: 1.25 }}>
         <Typography level="body-xs" sx={{ opacity: 0.75 }}>
@@ -127,52 +129,50 @@ export default function VideoEditDrawerBody({
         </Typography>
       </Divider>
 
-      {isGeneral ? (
-        <Box sx={{ display: 'grid', gap: 0.75 }}>
-          <Select
-            size="sm"
-            value={draft?.primaryCategoryId || ''}
-            onChange={(event, value) => handlePrimaryCategory(value || '')}
-            placeholder="בחר קטגוריה ראשית"
-            disabled={!!disabled}
-            renderValue={() => {
-              if (!selectedPrimaryCategory) return '??? ???????'
+      <Box sx={{ display: 'grid', gap: 0.75 }}>
+        <Select
+          size="sm"
+          value={draft?.primaryCategoryId || ''}
+          onChange={(event, value) => handlePrimaryCategory(value || '')}
+          placeholder="בחר קטגוריה ראשית"
+          disabled={!!disabled}
+          renderValue={() => {
+            if (!selectedPrimaryCategory) return '??? ???????'
 
-              return (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-                  {renderCategoryIcon(selectedPrimaryCategory)}
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                {renderCategoryIcon(selectedPrimaryCategory)}
 
-                  <Typography level="body-sm" noWrap sx={{ fontWeight: 700 }}>
-                    {selectedPrimaryCategory.label}
-                  </Typography>
-                </Box>
-              )
-            }}
-          >
-            <Option value="">ללא קטגוריה</Option>
+                <Typography level="body-sm" noWrap sx={{ fontWeight: 700 }}>
+                  {selectedPrimaryCategory.label}
+                </Typography>
+              </Box>
+            )
+          }}
+        >
+          <Option value="">ללא קטגוריה</Option>
 
-            {VIDEO_PRIMARY_CATEGORIES.map(category => (
-              <Option
-                key={category.id}
-                value={category.id}
-                label={category.label}
-                sx={{
-                  '--ListItemDecorator-size': '24px',
-                  color: getToneColor(category.tone),
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-                  {renderCategoryIcon(category)}
+          {VIDEO_PRIMARY_CATEGORIES.map(category => (
+            <Option
+              key={category.id}
+              value={category.id}
+              label={category.label}
+              sx={{
+                '--ListItemDecorator-size': '24px',
+                color: getToneColor(category.tone),
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                {renderCategoryIcon(category)}
 
-                  <Typography level="body-sm" noWrap sx={{ color: 'text.primary', fontWeight: 700 }}>
-                    {category.label}
-                  </Typography>
-                </Box>
-              </Option>
-            ))}
-          </Select>
-        </Box>
-      ) : null}
+                <Typography level="body-sm" noWrap sx={{ color: 'text.primary', fontWeight: 700 }}>
+                  {category.label}
+                </Typography>
+              </Box>
+            </Option>
+          ))}
+        </Select>
+      </Box>
 
       <Divider sx={{ my: 1.25 }}>
         <Typography level="body-xs" sx={{ opacity: 0.75 }}>
@@ -191,7 +191,7 @@ export default function VideoEditDrawerBody({
         />
       </Box>
 
-      {isGeneral && selectedTagTypeIds.length ? (
+      {selectedTagTypeIds.length ? (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {VIDEO_TAG_TYPES.map(tagType => {
             const selected = selectedTagTypeIds.includes(tagType.id)
