@@ -17,6 +17,7 @@ import TopBar from '../../ui/core/layout/TopBar'
 
 import NotificationsBell from '../../features/notifications/components/NotificationsBell'
 import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
+
 import DefaultSkeleton from '../../ui/loading/pages/DefaultSkeleton.js'
 import HomeSkeleton from '../../ui/loading/pages/HomeSkeleton.js'
 import HubSkeleton from '../../ui/loading/pages/HubSkeleton.js'
@@ -26,38 +27,78 @@ import TagsSkeleton from '../../ui/loading/pages/TagsSkeleton.js'
 import ProfileSkeleton from '../../ui/loading/pages/ProfileSkeleton.js'
 import SimulatorSkeleton from '../../ui/loading/pages/SimulatorSkeleton.js'
 
-const loadHomePage = () => import('../../features/home/HomePage')
-const loadCalendarHubPage = () => import('../../features/calendarHub/CalendarHubPage')
-const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
-const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
+const loadHomePage = () =>
+  import('../../features/home/HomePage')
 
-const loadHubPage = () => import('../../features/hub/ui/HubPage')
-const loadPlayerProfilePage = () => import('../../features/hub/playerProfile/PlayerProfilePage')
-const loadTeamProfilePage = () => import('../../features/hub/teamProfile/TeamProfilePage')
-const loadClubProfilePage = () => import('../../features/hub/clubProfile/ClubProfilePage')
+const loadCalendarHubPage = () =>
+  import('../../features/calendarHub/CalendarHubPage')
 
-const loadAbilitiesPublicRouteEntry = () => import('./AbilitiesPublicRouteEntry.js')
-const loadInsightsPage = () => import('../../features/insightsHub/InsightsPage.js')
-const loadAbilitiesExplainerPage = () => import('../../features/abilities/explainer/AbilitiesExplainerPage.js')
-const loadLoginPage = () => import('../../features/auth/pages/LoginPage')
-const loadRegisterPage = () => import('../../features/auth/pages/RegisterPage')
-const loadForgotPasswordPage = () => import('../../features/auth/pages/ForgotPasswordPage')
-const loadPendingApprovalPage = () => import('../../features/auth/pages/PendingApprovalPage')
+const loadVideoHubPage = () =>
+  import('../../features/videoHub/VideoHubPage')
+
+const loadTagsManagementPage = () =>
+  import('../../features/tagsHub/TagsManagementPage.js')
+
+const loadPlayersDatabasePage = () =>
+  import('../../features/playersDatabase/index.js')
+
+const loadPlayersDatabaseLeaguePage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.LeaguePage,
+  }))
+
+const loadHubPage = () =>
+  import('../../features/hub/ui/HubPage')
+
+const loadPlayerProfilePage = () =>
+  import('../../features/hub/playerProfile/PlayerProfilePage')
+
+const loadTeamProfilePage = () =>
+  import('../../features/hub/teamProfile/TeamProfilePage')
+
+const loadClubProfilePage = () =>
+  import('../../features/hub/clubProfile/ClubProfilePage')
+
+const loadAbilitiesPublicRouteEntry = () =>
+  import('./AbilitiesPublicRouteEntry.js')
+
+const loadInsightsPage = () =>
+  import('../../features/insightsHub/InsightsPage.js')
+
+const loadAbilitiesExplainerPage = () =>
+  import('../../features/abilities/explainer/AbilitiesExplainerPage.js')
+
+const loadLoginPage = () =>
+  import('../../features/auth/pages/LoginPage')
+
+const loadRegisterPage = () =>
+  import('../../features/auth/pages/RegisterPage')
+
+const loadForgotPasswordPage = () =>
+  import('../../features/auth/pages/ForgotPasswordPage')
+
+const loadPendingApprovalPage = () =>
+  import('../../features/auth/pages/PendingApprovalPage')
 
 const loadSquadSimulatorPage = () =>
-  import('../../features/squadSimulator/index.js').then((module) => ({
+  import('../../features/squadSimulator/index.js').then(module => ({
     default: module.SquadSimulatorPage,
   }))
 
 const loadLiveTaggingPanel = () =>
-  import('../../features/liveTagging/index.js').then((module) => ({
+  import('../../features/liveTagging/index.js').then(module => ({
     default: module.LiveTaggingPanel,
   }))
+
+const loadFirestoreUsagePage = () =>
+  import('../../features/firestoreUsage/FirestoreUsagePage.js')
 
 const HomePage = React.lazy(loadHomePage)
 const CalendarHubPage = React.lazy(loadCalendarHubPage)
 const VideoHubPage = React.lazy(loadVideoHubPage)
 const TagsManagementPage = React.lazy(loadTagsManagementPage)
+const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
+const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
 
 const HubPage = React.lazy(loadHubPage)
 const PlayerProfilePage = React.lazy(loadPlayerProfilePage)
@@ -65,14 +106,19 @@ const TeamProfilePage = React.lazy(loadTeamProfilePage)
 const ClubProfilePage = React.lazy(loadClubProfilePage)
 
 const AbilitiesPublicRouteEntry = React.lazy(loadAbilitiesPublicRouteEntry)
+
 const InsightsPage = React.lazy(loadInsightsPage)
+
 const AbilitiesExplainerPage = React.lazy(loadAbilitiesExplainerPage)
+
 const LoginPage = React.lazy(loadLoginPage)
 const RegisterPage = React.lazy(loadRegisterPage)
 const ForgotPasswordPage = React.lazy(loadForgotPasswordPage)
 const PendingApprovalPage = React.lazy(loadPendingApprovalPage)
+
 const SquadSimulatorPage = React.lazy(loadSquadSimulatorPage)
 const LiveTaggingPanel = React.lazy(loadLiveTaggingPanel)
+const FirestoreUsagePage = React.lazy(loadFirestoreUsagePage)
 
 const ADMIN_ROUTE_LOADERS = [
   loadHubPage,
@@ -80,12 +126,13 @@ const ADMIN_ROUTE_LOADERS = [
   loadVideoHubPage,
   loadTagsManagementPage,
   loadLiveTaggingPanel,
+  loadFirestoreUsagePage,
 ]
 
-const SQUAD_ROUTE_LOADERS = [loadSquadSimulatorPage]
+const SQUAD_ROUTE_LOADERS = [ loadSquadSimulatorPage ]
 
 function preloadRoutes(loaders) {
-  loaders.forEach((loader) => {
+  loaders.forEach(loader => {
     loader().catch(() => {})
   })
 }
@@ -94,6 +141,7 @@ function LoadingScreen({ label = 'טוען...' }) {
   return (
     <Box sx={{ p: 6, textAlign: 'center' }}>
       <CircularProgress size="lg" />
+
       <Typography level="body-md" sx={{ mt: 2 }}>
         {label}
       </Typography>
@@ -132,12 +180,13 @@ function TopBarNotificationsHost() {
     navigate('/login', { replace: true })
   }
 
-  const handleMarkAsRead = async (item) => {
+  const handleMarkAsRead = async item => {
     if (!item?.id || item?.isRead) return
+
     await markAsRead(item.id)
   }
 
-  const handleOpenTarget = async (item) => {
+  const handleOpenTarget = async item => {
     if (!item) return
 
     if (!item?.isRead) {
@@ -147,13 +196,17 @@ function TopBarNotificationsHost() {
     const target = getNotificationTarget(item)
 
     if (target?.path) {
-      navigate(target.path, { replace: Boolean(target?.replace) })
+      navigate(target.path, {
+        replace: Boolean(target?.replace),
+      })
+
       closeNotifications()
     }
   }
 
-  const handleDeleteNotification = async (item) => {
+  const handleDeleteNotification = async item => {
     if (!item?.id || !deleteNotification) return
+
     await deleteNotification(item.id)
   }
 
@@ -196,13 +249,16 @@ export default function AppRoutes() {
   const { roles = [], accessLoading } = useCoreData()
 
   const isAdmin = user ? isAdminAuthUser(user, roles) : false
+
   const canUseSquadSimulator = user ? canAccessSquadSimulator(user, roles) : false
+
   const canEnterAnyArea = isAdmin || canUseSquadSimulator
 
   React.useEffect(() => {
     if (!user || accessLoading) return undefined
 
     const loaders = isAdmin ? ADMIN_ROUTE_LOADERS : SQUAD_ROUTE_LOADERS
+
     const runPreload = () => preloadRoutes(loaders)
 
     if (typeof window === 'undefined') {
@@ -210,43 +266,91 @@ export default function AppRoutes() {
       return undefined
     }
 
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(runPreload, { timeout: 4000 })
-      return () => window.cancelIdleCallback?.(id)
+    if (
+      typeof window.requestIdleCallback === 'function'
+    ) {
+      const id = window.requestIdleCallback(
+        runPreload,
+        { timeout: 4000 }
+      )
+
+      return () => {
+        window.cancelIdleCallback?.(id)
+      }
     }
 
-    const id = window.setTimeout(runPreload, 1200)
-    return () => window.clearTimeout(id)
-  }, [accessLoading, isAdmin, user])
+    const id = window.setTimeout(
+      runPreload,
+      1200
+    )
+
+    return () => {
+      window.clearTimeout(id)
+    }
+  }, [ accessLoading, isAdmin, user ])
 
   if (loading) {
-    return <LoadingScreen label="טוען התחברות..." />
+    return (
+      <LoadingScreen label="טוען התחברות..." />
+    )
   }
 
   return (
     <Routes>
-      <Route path="/forms/abilities/:token" element={lazyRoute(<AbilitiesPublicRouteEntry />)} />
+      <Route
+        path="/forms/abilities/:token"
+        element={lazyRoute(<AbilitiesPublicRouteEntry />)}
+      />
 
       {!user ? (
         <>
-          <Route path="/login" element={lazyRoute(<LoginPage />)} />
-          <Route path="/register" element={lazyRoute(<RegisterPage />)} />
-          <Route path="/forgot-password" element={lazyRoute(<ForgotPasswordPage />)} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/login"
+            element={lazyRoute(<LoginPage />)}
+          />
+
+          <Route
+            path="/register"
+            element={lazyRoute(<RegisterPage />)}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={lazyRoute(<ForgotPasswordPage />)}
+          />
+
+          <Route
+            path="/"
+            element={<Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="*"
+            element={<Navigate to="/login" replace />}
+          />
         </>
       ) : accessLoading && !isAdmin ? (
-        <Route path="*" element={<LoadingScreen label="טוען נתונים..." />} />
+        <Route
+          path="*"
+          element={<LoadingScreen label="טוען נתונים..." />}
+        />
       ) : !canEnterAnyArea ? (
         <>
-          <Route path="/pending-approval" element={lazyRoute(<PendingApprovalPage />)} />
-          <Route path="*" element={<Navigate to="/pending-approval" replace />} />
+          <Route
+            path="/pending-approval"
+            element={lazyRoute(<PendingApprovalPage />)}
+          />
+
+          <Route
+            path="*"
+            element={<Navigate to="/pending-approval" replace />}
+          />
         </>
       ) : (
         <Route
           element={
             <AppLayout
-              navMode={isAdmin ? 'full' : 'squadSimulator'}
+              navMode={ isAdmin ? 'full' : 'squadSimulator'}
               topbar={
                 <TopBar
                   title="DevPlan"
@@ -259,45 +363,201 @@ export default function AppRoutes() {
         >
           {isAdmin ? (
             <>
-              <Route path="/login" element={<Navigate to="/home" replace />} />
-              <Route path="/register" element={<Navigate to="/home" replace />} />
-              <Route path="/forgot-password" element={<Navigate to="/home" replace />} />
-              <Route path="/pending-approval" element={<Navigate to="/home" replace />} />
+              <Route
+                path="/login"
+                element={<Navigate to="/home" replace />}
+              />
 
-              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route
+                path="/register"
+                element={<Navigate to="/home" replace />}
+              />
 
-              <Route path="/home" element={lazyRoute(<HomePage />, <HomeSkeleton />)} />
-              <Route path="/hub" element={lazyRoute(<HubPage />, <HubSkeleton />)} />
-              <Route path="/calendar" element={lazyRoute(<CalendarHubPage />, <CalendarSkeleton />)} />
-              <Route path="/video" element={lazyRoute(<VideoHubPage />, <VideoSkeleton />)} />
-              <Route path="/tags" element={lazyRoute(<TagsManagementPage />, <TagsSkeleton />)} />
+              <Route
+                path="/forgot-password"
+                element={<Navigate to="/home" replace />}
+              />
 
-              <Route path="/liveTagging" element={lazyRoute(<LiveTaggingPanel />)} />
+              <Route
+                path="/pending-approval"
+                element={<Navigate to="/home" replace />}
+              />
 
-              <Route path="/abilities/explainer" element={lazyRoute(<AbilitiesExplainerPage />)} />
-              <Route path="/insights/explainer" element={lazyRoute(<InsightsPage />)} />
-              <Route path="/squad-simulator" element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)} />
+              <Route
+                path="/"
+                element={<Navigate to="/home" replace />}
+              />
 
-              <Route path="/clubs/:clubId" element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)} />
-              <Route path="/clubs/:clubId/:tabKey" element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)} />
+              <Route
+                path="/home"
+                element={lazyRoute(
+                  <HomePage />,
+                  <HomeSkeleton />
+                )}
+              />
 
-              <Route path="/teams/:teamId" element={lazyRoute(<TeamProfilePage />, <ProfileSkeleton />)} />
-              <Route path="/teams/:teamId/:tabKey" element={lazyRoute(<TeamProfilePage />, <ProfileSkeleton />)} />
+              <Route
+                path="/hub"
+                element={lazyRoute(
+                  <HubPage />,
+                  <HubSkeleton />
+                )}
+              />
 
-              <Route path="/players/:playerId" element={lazyRoute(<PlayerProfilePage />, <ProfileSkeleton />)} />
-              <Route path="/players/:playerId/:tabKey" element={lazyRoute(<PlayerProfilePage />, <ProfileSkeleton />)} />
+              <Route
+                path="/calendar"
+                element={lazyRoute(
+                  <CalendarHubPage />,
+                  <CalendarSkeleton />
+                )}
+              />
 
-              <Route path="*" element={<Navigate to="/hub" replace />} />
+              <Route
+                path="/video"
+                element={lazyRoute(
+                  <VideoHubPage />,
+                  <VideoSkeleton />
+                )}
+              />
+
+              <Route
+                path="/tags"
+                element={lazyRoute(
+                  <TagsManagementPage />,
+                  <TagsSkeleton />
+                )}
+              />
+
+              <Route
+                path="/players-database"
+                element={lazyRoute(<PlayersDatabasePage />)}
+              />
+
+              <Route
+                path="/players-database/leagues/:leagueId"
+                element={lazyRoute(<PlayersDatabaseLeaguePage />)}
+              />
+
+              <Route
+                path="/liveTagging"
+                element={lazyRoute(<LiveTaggingPanel />)}
+              />
+
+              <Route
+                path="/abilities/explainer"
+                element={lazyRoute(<AbilitiesExplainerPage />)}
+              />
+
+              <Route
+                path="/insights/explainer"
+                element={lazyRoute(<InsightsPage />)}
+              />
+
+              <Route
+                path="/squad-simulator"
+                element={lazyRoute(
+                  <SquadSimulatorPage />,
+                  <SimulatorSkeleton />
+                )}
+              />
+
+              <Route
+                path="/admin/firestore-usage"
+                element={lazyRoute(<FirestoreUsagePage />)}
+              />
+
+              <Route
+                path="/clubs/:clubId"
+                element={lazyRoute(
+                  <ClubProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="/clubs/:clubId/:tabKey"
+                element={lazyRoute(
+                  <ClubProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="/teams/:teamId"
+                element={lazyRoute(
+                  <TeamProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="/teams/:teamId/:tabKey"
+                element={lazyRoute(
+                  <TeamProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="/players/:playerId"
+                element={lazyRoute(
+                  <PlayerProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="/players/:playerId/:tabKey"
+                element={lazyRoute(
+                  <PlayerProfilePage />,
+                  <ProfileSkeleton />
+                )}
+              />
+
+              <Route
+                path="*"
+                element={<Navigate to="/hub" replace />}
+              />
             </>
           ) : (
             <>
-              <Route path="/login" element={<Navigate to="/squad-simulator" replace />} />
-              <Route path="/register" element={<Navigate to="/squad-simulator" replace />} />
-              <Route path="/forgot-password" element={<Navigate to="/squad-simulator" replace />} />
-              <Route path="/pending-approval" element={<Navigate to="/squad-simulator" replace />} />
-              <Route path="/" element={<Navigate to="/squad-simulator" replace />} />
-              <Route path="/squad-simulator" element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)} />
-              <Route path="*" element={<Navigate to="/squad-simulator" replace />} />
+              <Route
+                path="/login"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
+
+              <Route
+                path="/register"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
+
+              <Route
+                path="/forgot-password"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
+
+              <Route
+                path="/pending-approval"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
+
+              <Route
+                path="/"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
+
+              <Route
+                path="/squad-simulator"
+                element={lazyRoute(
+                  <SquadSimulatorPage />,
+                  <SimulatorSkeleton />
+                )}
+              />
+
+              <Route
+                path="*"
+                element={<Navigate to="/squad-simulator" replace />}
+              />
             </>
           )}
         </Route>

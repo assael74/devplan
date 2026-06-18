@@ -1,25 +1,35 @@
 // src/services/firestore/shorts/shortsCreate.js
+
 import { doc, runTransaction, Timestamp } from 'firebase/firestore'
 import { db } from '../../firebase/firebase.js'
 
 import { shortsRefs } from './shorts.refs.js'
 import { validateRequired, debugLog, logObjects } from './shortsDebug.utils.js'
 import { SHORTS_DEBUG } from './shortsDebug.config.js'
+import { trackShortsTransaction } from '../usage/trackShortsTransaction.js'
 
 const ensureCreateArgs = (shortKey, item) => {
   if (!shortKey) throw new Error('[shortsCreate] shortKey is required')
-  if (!item || typeof item !== 'object') throw new Error('[shortsCreate] item must be an object')
-  if (!item.id) throw new Error(`[shortsCreate] item.id is required for ${shortKey}`)
+  if (!item || typeof item !== 'object') {
+    throw new Error('[shortsCreate] item must be an object')
+  }
+  if (!item.id) {
+    throw new Error(`[shortsCreate] item.id is required for ${shortKey}`)
+  }
 }
 
-const resolveRefMeta = (shortKey) => {
+const resolveRefMeta = shortKey => {
   const [group, docName] = String(shortKey || '').split('.')
   const meta = shortsRefs[group][docName]
-  if (!meta?.collection || !meta?.docId) throw new Error(`[shortsCreate] Unknown shortKey "${shortKey}"`)
+
+  if (!meta?.collection || !meta?.docId) {
+    throw new Error(`[shortsCreate] Unknown shortKey "${shortKey}"`)
+  }
+
   return meta
 }
 
-const buildDocRef = (meta) => doc(db, meta.collection, meta.docId)
+const buildDocRef = meta => doc(db, meta.collection, meta.docId)
 
 const logCreateStart = (shortKey, meta, item) => {
   debugLog('CREATE:start', {
@@ -34,17 +44,28 @@ const readDocList = async (tx, ref) => {
   const snap = await tx.get(ref)
   const data = snap.exists() ? snap.data() : {}
   const list = Array.isArray(data.list) ? data.list : []
+
   return { data, list }
 }
 
 const assertNotExistsById = (list, id, shortKey) => {
-  const exists = list.some((x) => x?.id === id)
-  if (exists) throw new Error(`[shortsCreate] Item already exists (id=${id}) in ${shortKey}`)
+  const exists = list.some(item => item?.id === id)
+
+  if (exists) {
+    throw new Error(
+      `[shortsCreate] Item already exists (id=${id}) in ${shortKey}`
+    )
+  }
 }
 
-const stampItem = (item) => {
+const stampItem = item => {
   const now = Timestamp.now()
-  return { ...item, createdAt: item.createdAt ?? now, updatedAt: now }
+
+  return {
+    ...item,
+    createdAt: item.createdAt ?? now,
+    updatedAt: now,
+  }
 }
 
 const writeNextList = (tx, ref, data, nextList) => {
@@ -60,34 +81,78 @@ export async function createShort({ shortKey, item }) {
 
   logCreateStart(shortKey, meta, item)
 
-  const res = await runTransaction(db, async (tx) => {
+  let usagePayload = null
+
+  const res = await runTransaction(db, async tx => {
     const { data, list } = await readDocList(tx, ref)
 
-    // keep existing logger behavior
-    if (SHORTS_DEBUG.enabled && SHORTS_DEBUG.logListSize) debugLog('CREATE:before', { listSize: list.length })
+    if (SHORTS_DEBUG.enabled && SHORTS_DEBUG.logListSize) {
+      debugLog('CREATE:before', { listSize: list.length })
+    }
+
     logObjects('CREATE:list:before', list)
 
     assertNotExistsById(list, item.id, shortKey)
 
     const stamped = stampItem(item)
     const nextList = [...list, stamped]
+    const nextData = { ...data, list: nextList }
 
-    if (SHORTS_DEBUG.enabled && SHORTS_DEBUG.logListSize) debugLog('CREATE:after', { listSize: nextList.length })
+    if (SHORTS_DEBUG.enabled && SHORTS_DEBUG.logListSize) {
+      debugLog('CREATE:after', { listSize: nextList.length })
+    }
+
     logObjects('CREATE:list:after', nextList)
+
+    usagePayload = {
+      readPayload: data,
+      writePayload: SHORTS_DEBUG.dryRun ? null : nextData,
+      writesCount: SHORTS_DEBUG.dryRun ? 0 : 1,
+    }
 
     if (SHORTS_DEBUG.dryRun) {
       debugLog('CREATE:dry-run', {
         message: 'Firestore write skipped (SHORTS_DEBUG.dryRun=true)',
         docPath: `${meta.collection}/${meta.docId}`,
       })
-      return { shortKey, id: item.id, dryRun: true }
+
+      return {
+        shortKey,
+        id: item.id,
+        dryRun: true,
+      }
     }
 
     writeNextList(tx, ref, data, nextList)
-    debugLog('CREATE:write:queued', { shortKey, id: item.id })
-    return { shortKey, id: item.id, dryRun: false }
+
+    debugLog('CREATE:write:queued', {
+      shortKey,
+      id: item.id,
+    })
+
+    return {
+      shortKey,
+      id: item.id,
+      dryRun: false,
+    }
   })
 
+  if (usagePayload) {
+    trackShortsTransaction({
+      shortKey,
+      action: 'createShort',
+      readsCount: 1,
+      writesCount: usagePayload.writesCount,
+      readPayload: usagePayload.readPayload,
+      writePayload: usagePayload.writePayload,
+      meta: {
+        itemId: item.id,
+        dryRun: res.dryRun,
+      },
+    })
+  }
+
   debugLog('CREATE:commit:done', res)
+
   return res
 }

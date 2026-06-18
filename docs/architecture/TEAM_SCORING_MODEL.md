@@ -201,3 +201,109 @@ rawGames
 להוסיף tooltip / פירוט לקוביות הסקורינג
 לשלב בדוחות ו־print
 ```
+
+## Benchmark Normalization Layer
+
+Team scoring does not calculate benchmark normalization.
+
+Normalization belongs to:
+
+```txt
+src/shared/teams/targets/teamTargets.normalization.js
+```
+
+Clean league reference-point calculation belongs to:
+
+```txt
+src/shared/teams/targets/teamTargets.referencePoint.js
+```
+
+The scoring pipeline is:
+
+```txt
+teams/targets
+  raw benchmark
+  clean league goals reference point
+  normalization decision
+  normalized target values
+  ↓
+teams/expectations
+  expectedPoints
+  expectedGoalsFor
+  expectedGoalsAgainst
+  ↓
+teams/scoring
+  actual performance vs expectation
+```
+
+`teams/scoring` receives expectations from:
+
+```txt
+src/shared/teams/expectations
+```
+
+Those expectations are based on the active target values:
+
+```txt
+targets.values
+targets.groups
+```
+
+If normalization was applied, scoring measures the team against the normalized
+expectation. It does not compare actual performance directly against the raw
+benchmark.
+
+For audit, explanation, and UI toggles, scoring can expose the normalization
+metadata through the score context:
+
+```txt
+score.context.targets.normalization
+score.context.targets.normalization.referencePoint
+score.context.targets.rawValues
+score.context.targets.rawGroups
+score.expectations.context.targets.normalization
+```
+
+Normalization rules:
+
+```txt
+mode auto:
+  deviation above 5% -> apply normalization
+  deviation up to 5% -> skip normalization
+
+mode off:
+  appliedFactor = 1
+
+mode manual:
+  appliedFactor = user factor
+```
+
+The goals factor affects scoring only indirectly, through the expected values
+created by `teams/expectations`:
+
+```txt
+expectedGoalsFor
+expectedGoalsAgainst
+goalsForDelta
+goalsAgainstDelta
+rating attack / defense deltas
+```
+
+The goals factor does not change:
+
+```txt
+actualPoints
+actualGoalsFor
+actualGoalsAgainst
+sportingDirectorAssessment
+baseRating
+scoring weights
+```
+
+Final rule:
+
+```txt
+teams/scoring measures against active expectations.
+teams/targets decides whether those expectations are raw or normalized.
+teams/targets also decides whether the league goals reference point is ready.
+```

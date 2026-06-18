@@ -3,6 +3,7 @@ import {
   BarChart,
   Business,
   Dashboard,
+  DataObject,
   Groups,
   Home,
   Payment,
@@ -12,7 +13,8 @@ import {
   ViewCompactAlt,
   ViewTimeline,
   Insights,
-  AccountTree
+  AccountTree,
+  ManageSearch
 } from '@mui/icons-material';
 
 export const navigationIcons = {
@@ -29,5 +31,7 @@ export const navigationIcons = {
   teams: <Groups />,
   videos: <VideoLibrary />,
   insights: <Insights />,
-  squadSimulator: <AccountTree />
+  squadSimulator: <AccountTree />,
+  playersDatabase: <ManageSearch />,
+  firestoreUsage: <DataObject />
 };

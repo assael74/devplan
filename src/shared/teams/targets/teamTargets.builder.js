@@ -18,6 +18,13 @@ import {
   normalizeSeasonTotal,
 } from './teamTargets.benchmark.js'
 
+import {
+  buildTeamTargetsNormalization,
+  normalizeTeamTargetGroups,
+  normalizeTeamTargetValues,
+  resolveTeamTargetsNormalizationInput,
+} from './teamTargets.normalization.js'
+
 const clean = (value) => {
   return value == null ? '' : String(value).trim()
 }
@@ -191,6 +198,29 @@ const buildBenchmarkGroups = (benchmark = {}) => {
   }
 }
 
+const buildNormalizedTargets = ({
+  raw,
+  values,
+  groups,
+} = {}) => {
+  const normalizationInput = resolveTeamTargetsNormalizationInput(raw)
+  const normalization = buildTeamTargetsNormalization(normalizationInput)
+
+  return {
+    values: normalizeTeamTargetValues({
+      values,
+      normalization,
+    }),
+    groups: normalizeTeamTargetGroups({
+      groups,
+      normalization,
+    }),
+    rawValues: values,
+    rawGroups: groups,
+    normalization,
+  }
+}
+
 const buildBenchmarkTargetItems = ({
   targetPositionMode,
   targetPosition,
@@ -245,8 +275,20 @@ const buildBenchmarkTargetItems = ({
   })
 }
 
-const buildTargetItems = ({ targetPositionMode, targetPosition, targetProfile, }) => {
+const buildTargetItems = ({
+  targetPositionMode,
+  targetPosition,
+  targetProfile,
+  values,
+}) => {
   const forecast = targetProfile?.targets?.forecast || {}
+  const activeValues = values || {
+    points: toTargetNumber(forecast.points),
+    successRate: toTargetNumber(forecast.pointsRate),
+    goalDifference: toTargetNumber(forecast.goalDifference),
+    goalsFor: toTargetNumber(forecast.goalsFor),
+    goalsAgainst: toTargetNumber(forecast.goalsAgainst),
+  }
 
   return [
     {
@@ -262,31 +304,31 @@ const buildTargetItems = ({ targetPositionMode, targetPosition, targetProfile, }
     {
       id: 'targetPoints',
       label: 'נקודות יעד',
-      value: toTargetNumber(forecast.points),
+      value: activeValues.points,
       unit: 'points',
     },
     {
       id: 'targetSuccessRate',
       label: 'אחוז הצלחה יעד',
-      value: toTargetNumber(forecast.pointsRate),
+      value: activeValues.successRate,
       unit: 'percent',
     },
     {
       id: 'targetGoalDifference',
       label: 'הפרש שערים יעד',
-      value: toTargetNumber(forecast.goalDifference),
+      value: activeValues.goalDifference,
       unit: 'goals',
     },
     {
       id: 'targetGoalsFor',
       label: 'שערי זכות יעד',
-      value: toTargetNumber(forecast.goalsFor),
+      value: activeValues.goalsFor,
       unit: 'goals',
     },
     {
       id: 'targetGoalsAgainst',
       label: 'שערי חובה יעד',
-      value: toTargetNumber(forecast.goalsAgainst),
+      value: activeValues.goalsAgainst,
       unit: 'goals',
     },
   ].filter((item) => {
@@ -367,6 +409,13 @@ export function buildTeamTargetsState(raw = null) {
       }),
     }
 
+    const groups = buildBenchmarkGroups(benchmark)
+    const normalized = buildNormalizedTargets({
+      raw,
+      values,
+      groups,
+    })
+
     return {
       hasTargets: true,
 
@@ -384,15 +433,18 @@ export function buildTeamTargetsState(raw = null) {
       targetBenchmark: benchmark,
       targetSource: 'benchmark',
 
-      values,
+      values: normalized.values,
+      rawValues: normalized.rawValues,
       items: buildBenchmarkTargetItems({
         targetPositionMode,
         targetPosition,
         benchmark,
         targetProfile,
-        values,
+        values: normalized.values,
       }),
-      groups: buildBenchmarkGroups(benchmark),
+      groups: normalized.groups,
+      rawGroups: normalized.rawGroups,
+      normalization: normalized.normalization,
       legacyGroups: targetProfile?.targets || {},
 
       raw,
@@ -416,10 +468,17 @@ export function buildTeamTargetsState(raw = null) {
     goalsAgainst: toTargetNumber(forecast.goalsAgainst),
   }
 
+  const normalized = buildNormalizedTargets({
+    raw,
+    values,
+    groups: targetProfile?.targets || {},
+  })
+
   const items = buildTargetItems({
     targetPositionMode,
     targetPosition,
     targetProfile,
+    values: normalized.values,
   })
 
   return {
@@ -437,9 +496,12 @@ export function buildTeamTargetsState(raw = null) {
     targetProfile,
     targetSource: 'legacy',
 
-    values,
+    values: normalized.values,
+    rawValues: normalized.rawValues,
     items,
-    groups: targetProfile?.targets || {},
+    groups: normalized.groups,
+    rawGroups: normalized.rawGroups,
+    normalization: normalized.normalization,
 
     raw,
   }

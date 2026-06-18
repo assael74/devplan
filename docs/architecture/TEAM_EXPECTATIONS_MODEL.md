@@ -213,3 +213,104 @@ src/shared/teams/expectations/
 expectedPoints / expectedGoalsFor / expectedGoalsAgainst
 מחושבים רק ב־src/shared/teams/expectations.
 ```
+
+## Benchmark Normalization Layer
+
+Team benchmark normalization is a `teams/targets` responsibility, not an
+`teams/expectations` responsibility.
+
+The normalization source is:
+
+```txt
+src/shared/teams/targets/teamTargets.normalization.js
+```
+
+The clean league reference-point source is:
+
+```txt
+src/shared/teams/targets/teamTargets.referencePoint.js
+```
+
+The active pipeline is:
+
+```txt
+teams/targets
+  raw benchmark
+  clean league goals reference point
+  normalization decision
+  normalized target values
+  ↓
+teams/expectations
+  game / scope expectations
+  ↓
+teams/scoring
+```
+
+`teams/expectations` consumes the active target values it receives:
+
+```txt
+targets.values
+targets.groups
+```
+
+When normalization is applied, those values are already normalized. The original
+benchmark values remain available for audit and UI:
+
+```txt
+targets.rawValues
+targets.rawGroups
+targets.normalization
+```
+
+Normalization rules:
+
+```txt
+mode auto:
+  deviation above 5% -> apply normalization
+  deviation up to 5% -> skip normalization
+
+mode off:
+  appliedFactor = 1
+
+mode manual:
+  appliedFactor = user factor
+```
+
+The goals factor is applied only to goal-related benchmark values:
+
+```txt
+goalsFor
+goalsAgainst
+goalDifference
+goal-related group values
+```
+
+The goals factor is not applied to:
+
+```txt
+points
+successRate
+homeAway success rates
+difficulty success rates
+rank / position
+leagueNumGames
+minutes / squad usage
+```
+
+Missing normalization input does not block expectations. If
+`leagueGoalsPerMatch` is missing, `teams/targets` returns raw target values and
+marks:
+
+```txt
+targets.normalization.available = false
+targets.normalization.applied = false
+```
+
+If `leagueTableRows` are available, `teams/targets` can calculate:
+
+```txt
+targets.normalization.referencePoint.cleanLeagueGoalsPerMatch
+```
+
+`teams/expectations` still does not clean outliers or calculate the factor. It
+only consumes the active targets produced by `teams/targets`.

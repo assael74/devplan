@@ -85,9 +85,11 @@ const FULL_NAV_SECTIONS = [
     title: 'ניהול',
     items: [
       { label: 'וידאו', path: '/video', iconId: 'video', disabled: false },
+      { label: 'מאגר שחקנים', path: '/players-database', iconId: 'playersDatabase', disabled: false },
       { label: 'תשלומים', path: '/payments', iconId: 'payments', disabled: true },
       { label: 'ניהול יומנים', path: '/calendar', iconId: 'meetings', disabled: false },
       { label: 'ניהול תגים', path: '/tags', iconId: 'tags', disabled: false },
+      { label: 'ניטור שימוש', path: '/admin/firestore-usage', iconId: 'firestoreUsage', disabled: false },
     ],
   },
   {
