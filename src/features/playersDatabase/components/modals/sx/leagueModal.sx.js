@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\features\playersDatabase\components\modals\leagueModal.sx.js
+// features/playersDatabase/components/modals/sx/leagueModal.sx.js
+
 const palette = {
   muted: '#64717f',
   line: '#d8e0e7',

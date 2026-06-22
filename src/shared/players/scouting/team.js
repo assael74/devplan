@@ -54,6 +54,22 @@ const defenseEdge = (teamAgainst, leagueAgainst) => {
   return Number.isFinite(team) && league > 0 ? round((league - team) / league) : null
 }
 
+const getSearchDistance = ({ sourceLevel, targetLevel }) => {
+  const source = Number(sourceLevel)
+  const target = Number(targetLevel)
+
+  if (!Number.isFinite(source) || !Number.isFinite(target)) return 0
+
+  return source - target
+}
+
+const getScoutLevelByDistance = distance => {
+  if (distance < 0) return SCOUT_LEVEL.ABOVE
+  if (distance === 0) return SCOUT_LEVEL.SAME
+
+  return SCOUT_LEVEL.BELOW
+}
+
 const getGames = (row = {}) => {
   return pickNum(row.gamesPlayed, row.playedGames, row.matchesPlayed, row.games, row.played, row.p)
 }
@@ -112,12 +128,32 @@ export const buildLeagueScoutContext = (rows = []) => {
 
 export const normalizeScoutSettings = (settings = {}) => {
   const hasValue = (value) => value !== null && value !== undefined && value !== ''
+  const searchDistance = Number.isFinite(Number(settings.searchDistance))
+    ? Number(settings.searchDistance)
+    : getSearchDistance({
+      sourceLevel: settings.sourceLeagueLevel,
+      targetLevel: settings.targetLeagueLevel,
+    })
   const performanceThreshold = Number.isFinite(Number(settings.performanceThreshold))
     ? Number(settings.performanceThreshold)
     : null
+  const deepAttackPerformanceThreshold = Number.isFinite(Number(settings.deepAttackPerformanceThreshold))
+    ? Number(settings.deepAttackPerformanceThreshold)
+    : 0.2
+  const deepDefensePerformanceThreshold = Number.isFinite(Number(settings.deepDefensePerformanceThreshold))
+    ? Number(settings.deepDefensePerformanceThreshold)
+    : 0.2
 
   return {
     perspective: settings.perspective || 'default',
+    sourceLeagueLevel: Number.isFinite(Number(settings.sourceLeagueLevel))
+      ? Number(settings.sourceLeagueLevel)
+      : null,
+    targetLeagueLevel: Number.isFinite(Number(settings.targetLeagueLevel))
+      ? Number(settings.targetLeagueLevel)
+      : null,
+    searchDistance,
+    activeScoutLevel: getScoutLevelByDistance(searchDistance),
     performanceThreshold,
     attackPerformanceThreshold: hasValue(settings.attackPerformanceThreshold) &&
       Number.isFinite(Number(settings.attackPerformanceThreshold))
@@ -130,6 +166,11 @@ export const normalizeScoutSettings = (settings = {}) => {
     clearPerformanceThreshold: Number.isFinite(Number(settings.clearPerformanceThreshold))
       ? Number(settings.clearPerformanceThreshold)
       : 0.1,
+    deepAttackPerformanceThreshold,
+    deepDefensePerformanceThreshold,
+    deepClearPerformanceThreshold: Number.isFinite(Number(settings.deepClearPerformanceThreshold))
+      ? Number(settings.deepClearPerformanceThreshold)
+      : 0.2,
     includeUniversal: settings.includeUniversal !== false,
     enabledLevels: Array.isArray(settings.enabledLevels) && settings.enabledLevels.length
       ? settings.enabledLevels
@@ -147,22 +188,56 @@ const levelEnabled = ({ profile, settings }) => {
 const teamFilterPasses = ({ filter, metrics, settings }) => {
   if (filter === TEAM_FILTER.ANY) return true
 
-  const attackThreshold = settings.attackPerformanceThreshold
-  const defenseThreshold = settings.defensePerformanceThreshold
-  const attackActive = attackThreshold !== null && attackThreshold !== undefined
-  const defenseActive = defenseThreshold !== null && defenseThreshold !== undefined
+  const deepSearch = settings.searchDistance >= 2
+  const baseAttackActive =
+    settings.attackPerformanceThreshold !== null &&
+    settings.attackPerformanceThreshold !== undefined
+  const baseDefenseActive =
+    settings.defensePerformanceThreshold !== null &&
+    settings.defensePerformanceThreshold !== undefined
+  const attackThreshold = deepSearch
+    ? settings.deepAttackPerformanceThreshold
+    : settings.attackPerformanceThreshold
+  const defenseThreshold = deepSearch
+    ? settings.deepDefensePerformanceThreshold
+    : settings.defensePerformanceThreshold
+  const attackActive = baseAttackActive
+  const defenseActive = baseDefenseActive
   const attack = Number(metrics.attackEdge)
   const defense = Number(metrics.defenseEdge)
   const attackOk = attackActive && Number.isFinite(attack) && attack >= attackThreshold
   const defenseOk = defenseActive && Number.isFinite(defense) && defense >= defenseThreshold
+
+  if (deepSearch) {
+    const clearThreshold = settings.deepClearPerformanceThreshold
+
+    if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
+    if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
+    if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
+      return (
+        (Number.isFinite(attack) && attack >= clearThreshold) ||
+        (Number.isFinite(defense) && defense >= clearThreshold)
+      )
+    }
+
+    return false
+  }
 
   if (!attackActive && !defenseActive) return false
   if (attackActive && !attackOk) return false
   if (defenseActive && !defenseOk) return false
 
   if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-  if (filter === TEAM_FILTER.ANY_POSITIVE) return true
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return true
+  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
+  if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
+    const clearThreshold = deepSearch
+      ? settings.deepClearPerformanceThreshold
+      : settings.clearPerformanceThreshold
+
+    return attackOk || defenseOk ||
+      (Number.isFinite(attack) && attack >= clearThreshold) ||
+      (Number.isFinite(defense) && defense >= clearThreshold)
+  }
 
   return false
 }

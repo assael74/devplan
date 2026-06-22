@@ -1,11 +1,11 @@
-// src/features/playersDatabase/components/leagues/scoutUi.js
+// src/features/playersDatabase/components/leagues/page/scoutUi.js
 
 import {
   DRILLDOWN_STATUS,
   SCOUT_INTEREST,
   SCOUT_LEVEL,
   TEAM_FILTER,
-} from '../../../../shared/players/scouting/index.js'
+} from '../../../../../shared/players/scouting/index.js'
 
 const STATUS_UI = {
   [DRILLDOWN_STATUS.STRONG]: {

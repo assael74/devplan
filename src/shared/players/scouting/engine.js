@@ -53,6 +53,7 @@ export const buildPlayerScoutSignals = ({
   player,
   team,
   perspective,
+  searchDistance = 0,
   profiles = SCOUT_PROFILES,
 } = {}) => {
   const metrics = buildScoutMetrics({ player, team })
@@ -61,7 +62,7 @@ export const buildPlayerScoutSignals = ({
 
   return profiles
     .map((profile) => {
-      const ruleResult = evaluateScoutRules({ profile, metrics })
+      const ruleResult = evaluateScoutRules({ profile, metrics, searchDistance })
 
       if (!ruleResult.matched) return null
 
@@ -81,6 +82,7 @@ export const buildPlayersScoutSignals = ({
   players,
   team,
   perspective,
+  searchDistance = 0,
   profiles,
 } = {}) => {
   const safePlayers = Array.isArray(players) ? players : []
@@ -91,6 +93,7 @@ export const buildPlayersScoutSignals = ({
         player,
         team: player?.team || team,
         perspective,
+        searchDistance,
         profiles,
       })
 

@@ -1,5 +1,9 @@
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
+import {
+  buildTeamIdentity,
+  inferTeamSlotByLeagueLevel,
+} from '../../catalog/teamIdentity.js'
 
 const clean = (value) => String(value ?? '').trim()
 
@@ -216,8 +220,12 @@ const mapRows = ({ rows = [], columnsMap = {} }) =>
     }
   })
 
-const normalizeRow = (row = {}, clubOverrides = {}) => {
+const normalizeRow = (row = {}, options = {}) => {
   const data = row.data || {}
+  const clubOverrides = options.clubOverrides || {}
+  const teamSlotOverrides = options.teamSlotOverrides || {}
+  const teamSlot = toNumber(teamSlotOverrides[row.displayIndex]) ||
+    inferTeamSlotByLeagueLevel(options.leagueLevel)
   const goals = data.goalsCombined
     ? splitGoals(data.goalsCombined)
     : {
@@ -242,6 +250,17 @@ const normalizeRow = (row = {}, clubOverrides = {}) => {
       clubName: clean(data.clubName),
       clubId: clean(clubMatch?.id),
       clubCatalogName: clean(clubMatch?.name),
+      teamSlot,
+      ...buildTeamIdentity({
+        clubId: clean(clubMatch?.id),
+        clubName: clean(clubMatch?.name || data.clubName),
+        seasonId: options.seasonId,
+        ageGroupId: options.ageGroupId,
+        ageGroupLabel: options.ageGroupLabel,
+        teamSlot,
+        leagueId: options.leagueId,
+        leagueName: options.leagueName,
+      }),
       games: toNumber(data.games),
       wins: toNumber(data.wins),
       draws: toNumber(data.draws),
@@ -299,6 +318,7 @@ const summaryFrom = (rows = [], expectedRows = 0) => {
 export function buildLeagueTablePastePreview(text = '', options = {}) {
   const expectedRows = Number(options.expectedRows || 0)
   const clubOverrides = options.clubOverrides || {}
+  const teamSlotOverrides = options.teamSlotOverrides || {}
   const parsed = parseText(text)
 
   if (!parsed.ok) {
@@ -331,7 +351,11 @@ export function buildLeagueTablePastePreview(text = '', options = {}) {
   }
 
   const rows = sourceRows
-    .map((row) => normalizeRow(row, clubOverrides))
+    .map((row) => normalizeRow(row, {
+      ...options,
+      clubOverrides,
+      teamSlotOverrides,
+    }))
     .map(validateRow)
 
   const summary = summaryFrom(rows, expectedRows)
@@ -408,6 +432,9 @@ export function buildLeagueSnapshotWritePlanFromPreview(preview = {}, context = 
         clubId: row.data.clubId,
         clubName: row.data.clubCatalogName || row.data.clubName,
         sourceClubName: row.data.clubName,
+        teamSlot: row.data.teamSlot,
+        teamSlotId: row.data.teamSlotId,
+        teamSeasonKey: row.data.teamSeasonKey,
         games: row.data.games,
         wins: row.data.wins,
         draws: row.data.draws,

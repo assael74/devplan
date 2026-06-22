@@ -45,6 +45,7 @@ export const buildPlayersDatabaseScoutCandidates = ({
     const candidates = buildPlayersScoutSignals({
       players: [player],
       perspective: drilldown.perspective,
+      searchDistance: drilldown.settings?.searchDistance || 0,
       profiles: drilldown.profiles,
     })
 

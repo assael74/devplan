@@ -1,4 +1,5 @@
 import { PLAYERS_DATABASE_RESOLUTION_MODE } from '../../models/playersDatabaseEntityPolicy.js'
+import { buildTeamIdentity } from '../../catalog/teamIdentity.js'
 
 const clean = (value) => String(value ?? '').trim()
 
@@ -28,6 +29,20 @@ const buildPlayerUpsert = (rowPlan) => {
 
 const buildSnapshotCreate = (rowPlan) => {
   const { identity, policy, sourceRow } = rowPlan
+  const teamSlot = Number(sourceRow.teamSlot) ||
+    Number(policy.team?.catalogMatch?.slot?.slot) ||
+    1
+  const teamIdentity = buildTeamIdentity({
+    clubId: policy.club?.catalogMatch?.id,
+    clubName: policy.club?.catalogMatch?.name || identity.clubName,
+    seasonId: identity.seasonId,
+    ageGroupId: sourceRow.ageGroupId || policy.team?.catalogMatch?.slot?.ageGroupId,
+    ageGroupLabel: sourceRow.ageGroupLabel || policy.team?.catalogMatch?.slot?.ageGroupLabel,
+    teamSlot,
+    leagueId: policy.league?.catalogMatch?.id,
+    leagueName: policy.league?.catalogMatch?.name || identity.leagueName,
+    externalTeamId: sourceRow.externalTeamId,
+  })
 
   return {
     playerExternalId: clean(identity.externalPlayerId),
@@ -37,17 +52,23 @@ const buildSnapshotCreate = (rowPlan) => {
     clubCatalogId: clean(policy.club?.catalogMatch?.id),
     clubName: clean(identity.clubName),
     teamCatalogId: clean(policy.team?.catalogMatch?.id),
-    teamSlot: policy.team?.catalogMatch?.slot?.slot || null,
-    ageGroupId: clean(policy.team?.catalogMatch?.slot?.ageGroupId),
-    ageGroupLabel: clean(policy.team?.catalogMatch?.slot?.ageGroupLabel),
+    teamSlot: teamIdentity.teamSlot,
+    teamSlotId: teamIdentity.teamSlotId,
+    teamSeasonKey: teamIdentity.teamSeasonKey,
+    externalTeamId: clean(sourceRow.externalTeamId),
+    ageGroupId: teamIdentity.ageGroupId,
+    ageGroupLabel: teamIdentity.ageGroupLabel,
     teamName: clean(identity.teamName),
     leagueCatalogId: clean(policy.league?.catalogMatch?.id),
     leagueName: clean(identity.leagueName),
     context: {
       teamCatalogId: clean(policy.team?.catalogMatch?.id),
-      teamSlot: policy.team?.catalogMatch?.slot?.slot || null,
-      ageGroupId: clean(policy.team?.catalogMatch?.slot?.ageGroupId),
-      ageGroupLabel: clean(policy.team?.catalogMatch?.slot?.ageGroupLabel),
+      teamSlot: teamIdentity.teamSlot,
+      teamSlotId: teamIdentity.teamSlotId,
+      teamSeasonKey: teamIdentity.teamSeasonKey,
+      externalTeamId: clean(sourceRow.externalTeamId),
+      ageGroupId: teamIdentity.ageGroupId,
+      ageGroupLabel: teamIdentity.ageGroupLabel,
       teamName: clean(identity.teamName),
       leagueCatalogId: clean(policy.league?.catalogMatch?.id),
       leagueName: clean(identity.leagueName),

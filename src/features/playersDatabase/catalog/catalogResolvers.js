@@ -63,7 +63,11 @@ export function resolveTeamCatalogMatch(teamName, context = {}) {
   const ageGroup = clean(context.ageGroup)
   const club = context.club || (clubId || clubName ? { id: clubId, name: clubName } : null)
 
-  const slotMatch = resolveTeamSlotMatch(teamName, { club, ageGroup })
+  const slotMatch = resolveTeamSlotMatch(teamName, {
+    club,
+    ageGroup,
+    teamSlot: context.teamSlot,
+  })
   if (slotMatch?.matched) return slotMatch
 
   const match = matchByNameOrAlias(PLAYERS_DATABASE_TEAMS_CATALOG, teamName, (item = {}) => {
@@ -79,11 +83,30 @@ export function resolveTeamCatalogMatch(teamName, context = {}) {
 export function resolveTeamSlotMatch(teamName, context = {}) {
   const club = context.club || {}
   const rawTeamName = clean(teamName)
+  const rawSlot = Number(context.teamSlot) || 0
   if (!rawTeamName) return null
 
   const teamWithoutClub = stripClubPrefix(rawTeamName, club.name)
   const candidateNames = [rawTeamName, teamWithoutClub].filter(Boolean)
   const slots = buildClubTeamSlots(club)
+
+  if (context.ageGroup && rawSlot) {
+    const slot = slots.find(item => (
+      item.slot === rawSlot &&
+      (item.ageGroupId === context.ageGroup || item.ageGroupLabel === context.ageGroup)
+    ))
+
+    if (slot) {
+      return {
+        matched: true,
+        id: slot.id,
+        name: slot.displayName,
+        confidence: 'slot',
+        item: slot,
+        slot,
+      }
+    }
+  }
 
   for (const slot of slots) {
     const slotNames = [
@@ -139,6 +162,7 @@ export function resolvePlayersDatabaseCatalogMatches(row = {}) {
     club: club?.item,
     seasonId: row.seasonId,
     ageGroup: row.ageGroupId || row.ageGroup,
+    teamSlot: row.teamSlot,
   })
   const league = resolveLeagueCatalogMatch(row.leagueName || row.currentLeagueName, {
     seasonId: row.seasonId,

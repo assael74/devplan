@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\features\playersDatabase\components\modals\pasteModalUtils.js
+
 export const clean = value =>
   String(value ?? '').trim()
 

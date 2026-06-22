@@ -1,11 +1,9 @@
-// src/features/playersDatabase/components/modals/modal.sx.js
+// src/features/playersDatabase/components/modals/players/sx/playersImportModal.sx.js
 
 const palette = {
   ink: '#17202a',
   muted: '#64717f',
   line: '#d8e0e7',
-  slate: '#24313f',
-  slateSoft: '#eef2f5',
   blue: '#2563eb',
   green: '#15803d',
   greenSoft: '#e7f7ec',
@@ -13,61 +11,19 @@ const palette = {
   redSoft: '#ffe9e7',
 }
 
-export const modalSx = {
-  createDialog: {
-    width: 'min(860px, calc(100vw - 40px))',
-    p: { xs: 1.5, md: 2 },
-    borderRadius: '10px',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 1.25,
-  },
-
-  formGrid: {
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      md: 'repeat(2, minmax(0, 1fr))',
-    },
-    gap: 1,
-    mt: 0.5,
-  },
-
-  clubsField: {
-    gridColumn: {
-      xs: '1',
-      md: '2',
-    },
-  },
-
-  derivedBox: {
-    gridColumn: '1 / -1',
-    minHeight: 38,
-    px: 1.25,
-    py: 0.75,
-    borderRadius: '8px',
-    bgcolor: palette.slateSoft,
-    color: palette.slate,
-    display: 'flex',
-    alignItems: 'center',
-  },
-
-  pasteDialog: {
-    width: 'min(1080px, calc(100vw - 40px))',
-    height: 'min(760px, calc(100dvh - 56px))',
+export const playersImportModalSx = {
+  dialog: {
+    width: 'min(1180px, calc(100vw - 40px))',
+    height: 'min(780px, calc(100dvh - 56px))',
     maxHeight: 'calc(100dvh - 56px)',
     minHeight: 0,
-    p: {
-      xs: 1.5,
-      md: 2,
-    },
+    p: { xs: 1.5, md: 2 },
     borderRadius: '10px',
     overflow: 'hidden',
     display: 'grid',
     gridTemplateRows: {
-      xs: 'auto auto 190px minmax(0, 1fr) auto auto',
-      xl: 'auto auto 220px minmax(0, 1fr) auto auto',
+      xs: 'auto auto 220px minmax(0, 1fr) auto auto',
+      xl: 'auto auto 240px minmax(0, 1fr) auto auto',
     },
     gap: 1,
   },
@@ -81,45 +37,12 @@ export const modalSx = {
     mt: 0.25,
   },
 
-  fieldLabel: {
-    color: palette.muted,
-    fontSize: 12,
-    fontWeight: 700,
-    mb: 0.5,
-  },
-
-  fieldControl: {
-    minHeight: 38,
-    borderRadius: '8px',
-    fontSize: 13,
-  },
-
-  actions: {
-    flex: '0 0 auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 1,
-    mt: 0.5,
-  },
-
   importZone: {
     p: 1,
     borderRadius: '8px',
     display: 'grid',
-    gridTemplateRows: 'auto minmax(0, 1fr)',
-    gap: 1,
     minHeight: 0,
     overflow: 'hidden',
-  },
-
-  importFormGrid: {
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      md: 'repeat(2, minmax(0, 1fr))',
-    },
-    gap: 1,
   },
 
   pasteBox: {
@@ -143,11 +66,6 @@ export const modalSx = {
     '&:focus': {
       borderColor: palette.blue,
       boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.14)',
-    },
-
-    '&:disabled': {
-      bgcolor: '#f4f6f8',
-      color: palette.muted,
     },
   },
 
@@ -180,8 +98,8 @@ export const modalSx = {
     overflowX: 'auto',
   },
 
-  previewTable: {
-    minWidth: 920,
+  table: {
+    minWidth: 1880,
     width: '100%',
     tableLayout: 'fixed',
 
@@ -200,22 +118,85 @@ export const modalSx = {
       textOverflow: 'ellipsis',
     },
 
+    '& td.isLtr': {
+      direction: 'ltr',
+      textAlign: 'left',
+      fontFamily: 'monospace',
+      fontSize: 12,
+    },
+
     '& th:nth-of-type(1), & td:nth-of-type(1)': {
       width: 76,
     },
 
     '& th:nth-of-type(2), & td:nth-of-type(2)': {
-      width: 58,
+      width: 56,
     },
 
     '& th:nth-of-type(3), & td:nth-of-type(3)': {
+      width: 180,
+    },
+
+    '& th:nth-of-type(4), & td:nth-of-type(4)': {
+      width: 92,
+    },
+
+    '& th:nth-of-type(5), & td:nth-of-type(5)': {
+      width: 130,
+    },
+
+    '& th:nth-of-type(6), & td:nth-of-type(6)': {
+      width: 76,
+    },
+
+    '& th:nth-of-type(7), & td:nth-of-type(7)': {
+      width: 96,
+    },
+
+    '& th:nth-of-type(8), & td:nth-of-type(8)': {
+      width: 190,
+    },
+
+    '& th:nth-of-type(9), & td:nth-of-type(9)': {
+      width: 180,
+    },
+
+    '& th:nth-of-type(10), & td:nth-of-type(10)': {
+      width: 120,
+    },
+
+    '& th:nth-of-type(11), & td:nth-of-type(11)': {
+      width: 190,
+    },
+
+    '& th:nth-of-type(12), & td:nth-of-type(12)': {
+      width: 92,
+    },
+
+    '& th:nth-of-type(13), & td:nth-of-type(13)': {
+      width: 170,
+    },
+
+    '& th:nth-of-type(14), & td:nth-of-type(14)': {
+      width: 210,
+    },
+
+    '& th:nth-of-type(15), & td:nth-of-type(15)': {
+      width: 230,
+    },
+
+    '& th:nth-of-type(16), & td:nth-of-type(16)': {
       width: 260,
     },
   },
 
-  clubAutocomplete: {
-    minWidth: 0,
-    bgcolor: '#fff',
+  actions: {
+    flex: '0 0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 1,
+    mt: 0.5,
   },
 
   success: {

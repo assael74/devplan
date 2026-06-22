@@ -5,7 +5,7 @@ import { Box } from '@mui/joy'
 
 import { usePlayersDatabasePage } from '../hooks/usePlayersDatabasePage.js'
 
-import Board from './leagues/Board.js'
+import Board from './leagues/board/Board.js'
 import Hero from './hero/Hero.js'
 import { pageSx as sx } from './page.sx.js'
 

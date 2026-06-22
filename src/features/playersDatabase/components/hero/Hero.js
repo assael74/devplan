@@ -1,4 +1,4 @@
-// src/features/playersDatabase/components/hero/hero.js
+// src/features/playersDatabase/components/hero/Hero.js
 
 import React from 'react'
 import { Box, Button, Sheet, Typography } from '@mui/joy'
@@ -10,7 +10,7 @@ function HeroKpis({ items }) {
 
   return (
     <Box sx={sx.kpiGrid}>
-      {items.map((item) => (
+      {items.map(item => (
         <Box key={item.id} sx={sx.kpi}>
           <Typography sx={sx.kpiLabel}>
             {item.label}
@@ -20,18 +20,18 @@ function HeroKpis({ items }) {
             {item.value}
           </Typography>
 
-          {item.note && (
+          {item.note ? (
             <Typography sx={sx.kpiNote}>
               {item.note}
             </Typography>
-          )}
+          ) : null}
         </Box>
       ))}
     </Box>
   )
 }
 
-export default function Hero({ kpis = [], actions = {}, }) {
+export default function Hero({ kpis = [], actions = {} }) {
   return (
     <Sheet sx={sx.root}>
       <Box sx={sx.top}>
@@ -51,13 +51,6 @@ export default function Hero({ kpis = [], actions = {}, }) {
         </Box>
 
         <Box sx={sx.actions}>
-          <Button
-            color="primary"
-            onClick={actions.openImport}
-          >
-            ייבוא נתונים
-          </Button>
-
           <Button
             variant="soft"
             color="neutral"

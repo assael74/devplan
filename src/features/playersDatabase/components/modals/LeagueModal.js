@@ -1,4 +1,5 @@
-// C:\projects\devplan\src\features\playersDatabase\components\modals\LeagueModal.js
+// src/features/playersDatabase/components/modals/LeagueModal.js
+
 import React, { useMemo, useState } from 'react'
 import {
   Box,
@@ -13,18 +14,20 @@ import {
 } from '@mui/joy'
 
 import { useAuth } from '../../../../app/AuthProvider.js'
+import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../../catalog/ageGroups.catalog.js'
 import { ensureLeagueFromPlan } from '../../services/pdbLeague.firestore.js'
 import {
-  AGE_GROUPS,
   EMPTY_LEAGUE_FORM,
   buildLeagueDocument,
   createLeagueId,
   deriveLeagueMeta,
   validateLeagueForm,
 } from './leagueModalUtils.js'
-import { leagueModalSx as sx } from './leagueModal.sx.js'
+import { leagueModalSx as sx } from './sx/leagueModal.sx.js'
 
-const createInitialForm = () => ({ ...EMPTY_LEAGUE_FORM })
+const createInitialForm = () => ({
+  ...EMPTY_LEAGUE_FORM,
+})
 
 export default function LeagueModal({ open, onClose, onSaved }) {
   const { user } = useAuth()
@@ -33,8 +36,16 @@ export default function LeagueModal({ open, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  const meta = useMemo(() => deriveLeagueMeta(form), [form])
-  const leagueId = useMemo(() => createLeagueId(form), [form])
+  const meta = useMemo(
+    () => deriveLeagueMeta(form),
+    [form]
+  )
+
+  const leagueId = useMemo(
+    () => createLeagueId(form),
+    [form]
+  )
+
   const canSave = useMemo(
     () => validateLeagueForm(form) && !saving,
     [form, saving]
@@ -45,6 +56,7 @@ export default function LeagueModal({ open, onClose, onSaved }) {
       ...current,
       [field]: value,
     }))
+
     setSaveError('')
   }
 
@@ -67,7 +79,10 @@ export default function LeagueModal({ open, onClose, onSaved }) {
     setSaveError('')
 
     try {
-      const league = buildLeagueDocument(form, user?.uid || '')
+      const league = buildLeagueDocument(
+        form,
+        user?.uid || ''
+      )
 
       await ensureLeagueFromPlan(league)
       await onSaved?.(league)
@@ -75,7 +90,9 @@ export default function LeagueModal({ open, onClose, onSaved }) {
       reset()
       onClose?.()
     } catch (err) {
-      setSaveError(err?.message || 'שמירת ליגה נכשלה')
+      setSaveError(
+        err?.message || 'שמירת ליגה נכשלה'
+      )
     } finally {
       setSaving(false)
     }
@@ -91,45 +108,61 @@ export default function LeagueModal({ open, onClose, onSaved }) {
         </Typography>
 
         <Typography level="body-sm" sx={sx.meta}>
-          הרמה מחושבת אוטומטית לפי שם הליגה: על, לאומית, ארצית או מחוזית.
+          הרמה מחושבת אוטומטית לפי שם הליגה:
+          על, לאומית, ארצית או מחוזית.
         </Typography>
 
         <Box sx={sx.grid}>
           <Box>
-            <Typography sx={sx.fieldLabel}>שם ליגה</Typography>
+            <Typography sx={sx.fieldLabel}>
+              שם ליגה
+            </Typography>
+
             <Input
               size="sm"
               value={form.leagueName}
               disabled={saving}
-              onChange={event => update('leagueName', event.target.value)}
+              onChange={event =>
+                update('leagueName', event.target.value)
+              }
               sx={sx.fieldControl}
             />
           </Box>
 
           <Box>
-            <Typography sx={sx.fieldLabel}>עונה</Typography>
+            <Typography sx={sx.fieldLabel}>
+              עונה
+            </Typography>
+
             <Input
               size="sm"
               value={form.seasonId}
               disabled={saving}
               placeholder="2025-2026"
-              onChange={event => update('seasonId', event.target.value)}
+              onChange={event =>
+                update('seasonId', event.target.value)
+              }
               sx={sx.fieldControl}
             />
           </Box>
 
           <Box>
-            <Typography sx={sx.fieldLabel}>קבוצת גיל</Typography>
+            <Typography sx={sx.fieldLabel}>
+              קבוצת גיל
+            </Typography>
+
             <Select
               size="sm"
               value={form.ageGroupId}
               disabled={saving}
               onChange={(_, value) => {
-                if (value) update('ageGroupId', value)
+                if (value) {
+                  update('ageGroupId', value)
+                }
               }}
               sx={sx.fieldControl}
             >
-              {AGE_GROUPS.map(item => (
+              {PLAYERS_DATABASE_AGE_GROUPS_CATALOG.map(item => (
                 <Option key={item.id} value={item.id}>
                   {item.label}
                 </Option>
@@ -138,7 +171,10 @@ export default function LeagueModal({ open, onClose, onSaved }) {
           </Box>
 
           <Box>
-            <Typography sx={sx.fieldLabel}>שנתון</Typography>
+            <Typography sx={sx.fieldLabel}>
+              שנתון
+            </Typography>
+
             <Input
               type="number"
               size="sm"
@@ -151,42 +187,34 @@ export default function LeagueModal({ open, onClose, onSaved }) {
                   step: 1,
                 },
               }}
-              onChange={event => update('birthYear', event.target.value)}
+              onChange={event =>
+                update('birthYear', event.target.value)
+              }
               sx={sx.fieldControl}
             />
           </Box>
 
           <Box>
-            <Typography sx={sx.fieldLabel}>אזור / מחוז</Typography>
+            <Typography sx={sx.fieldLabel}>
+              אזור / מחוז
+            </Typography>
+
             <Input
               size="sm"
               value={form.region}
               disabled={saving}
-              onChange={event => update('region', event.target.value)}
-              sx={sx.fieldControl}
-            />
-          </Box>
-
-          <Box>
-            <Typography sx={sx.fieldLabel}>מספר ליגה</Typography>
-            <Input
-              type="number"
-              size="sm"
-              value={form.leagueNum}
-              disabled={saving}
-              slotProps={{
-                input: {
-                  min: 1,
-                  step: 1,
-                },
-              }}
-              onChange={event => update('leagueNum', event.target.value)}
+              onChange={event =>
+                update('region', event.target.value)
+              }
               sx={sx.fieldControl}
             />
           </Box>
 
           <Box sx={sx.clubsField}>
-            <Typography sx={sx.fieldLabel}>כמות מועדונים</Typography>
+            <Typography sx={sx.fieldLabel}>
+              כמות מועדונים
+            </Typography>
+
             <Input
               type="number"
               size="sm"
@@ -198,7 +226,9 @@ export default function LeagueModal({ open, onClose, onSaved }) {
                   step: 1,
                 },
               }}
-              onChange={event => update('clubsCount', event.target.value)}
+              onChange={event =>
+                update('clubsCount', event.target.value)
+              }
               sx={sx.fieldControl}
             />
           </Box>

@@ -1,4 +1,5 @@
 // C:\projects\devplan\src\features\playersDatabase\components\modals\PasteModal.js
+
 import React, { useMemo, useState } from 'react'
 import {
   Autocomplete,
@@ -25,7 +26,7 @@ import {
   clean,
   getPasteRowStatus,
 } from './pasteModalUtils.js'
-import { pasteModalSx as sx } from './pasteModal.sx.js'
+import { pasteModalSx as sx } from './sx/pasteModal.sx.js'
 
 const createCaptureDate = () =>
   new Date().toISOString().slice(0, 10)
@@ -51,17 +52,32 @@ export default function PasteModal({
   )
   const [pasteText, setPasteText] = useState('')
   const [clubFixes, setClubFixes] = useState({})
+  const [teamSlotFixes, setTeamSlotFixes] = useState({})
 
   const preview = useMemo(
     () =>
       buildLeagueTablePastePreview(pasteText, {
         expectedRows: season?.clubsCount || 0,
         clubOverrides: clubFixes,
+        teamSlotOverrides: teamSlotFixes,
+        leagueId: league?.id,
+        leagueName: league?.leagueName,
+        leagueLevel: league?.level,
+        seasonId: season?.seasonId,
+        ageGroupId: league?.ageGroupId,
+        ageGroupLabel: league?.ageGroupLabel,
       }),
     [
       clubFixes,
+      league?.ageGroupId,
+      league?.ageGroupLabel,
+      league?.id,
+      league?.leagueName,
+      league?.level,
       pasteText,
       season?.clubsCount,
+      season?.seasonId,
+      teamSlotFixes,
     ]
   )
 
@@ -83,6 +99,7 @@ export default function PasteModal({
   const clearContent = () => {
     setPasteText('')
     setClubFixes({})
+    setTeamSlotFixes({})
     setUploadError('')
     setUploadInfo('')
   }
@@ -114,6 +131,16 @@ export default function PasteModal({
 
       return next
     })
+
+    setUploadError('')
+    setUploadInfo('')
+  }
+
+  const setTeamSlotFix = (rowIndex, value) => {
+    setTeamSlotFixes(current => ({
+      ...current,
+      [rowIndex]: value,
+    }))
 
     setUploadError('')
     setUploadInfo('')
@@ -359,6 +386,7 @@ export default function PasteModal({
                   <th>סטטוס</th>
                   <th>מקום</th>
                   <th>קבוצה</th>
+                  <th>קבוצה במועדון</th>
                   <th>משחקים</th>
                   <th>נצ'</th>
                   <th>תיקו</th>
@@ -373,7 +401,7 @@ export default function PasteModal({
               <tbody>
                 {!previewRows.length ? (
                   <tr>
-                    <td colSpan={11}>
+                    <td colSpan={12}>
                       אין עדיין שורות להצגה
                     </td>
                   </tr>
@@ -437,6 +465,30 @@ export default function PasteModal({
                               sx={sx.clubAutocomplete}
                             />
                           )}
+                        </td>
+
+                        <td>
+                          <Input
+                            type="number"
+                            size="sm"
+                            value={data.teamSlot || 1}
+                            disabled={uploading}
+                            slotProps={{
+                              input: {
+                                min: 1,
+                                max: 9,
+                                step: 1,
+                                title: data.teamSeasonKey || data.teamSlotId || '',
+                              },
+                            }}
+                            onChange={event =>
+                              setTeamSlotFix(
+                                row.displayIndex,
+                                event.target.value
+                              )
+                            }
+                            sx={sx.slotInput}
+                          />
                         </td>
 
                         <td>{data.games ?? '-'}</td>

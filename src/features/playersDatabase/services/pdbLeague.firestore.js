@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -15,6 +16,7 @@ import {
   trackFirestoreRead,
   trackFirestoreTransaction,
 } from '../../../services/firestore/usage/index.js'
+import { buildTeamIdentity } from '../catalog/teamIdentity.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../constants/playersDatabase.constants.js'
 
 const clean = (value) => String(value ?? '').trim()
@@ -240,7 +242,9 @@ export async function listLeagues() {
   return rows
     .sort((a, b) => {
       if ((a.level || 0) !== (b.level || 0)) return (a.level || 0) - (b.level || 0)
-      if ((a.leagueNum || 0) !== (b.leagueNum || 0)) return (a.leagueNum || 0) - (b.leagueNum || 0)
+      if (clean(a.ageGroupLabel) !== clean(b.ageGroupLabel)) {
+        return clean(a.ageGroupLabel).localeCompare(clean(b.ageGroupLabel), 'he')
+      }
       return clean(a.leagueName).localeCompare(clean(b.leagueName), 'he')
     })
 }
@@ -291,6 +295,110 @@ export async function getLeagueSnapshot(snapshotId) {
   return snapshot
 }
 
+export async function mergeLeagueTeamIndexFromDoc({
+  targetLeagueId,
+  sourceLeagueId,
+} = {}) {
+  const targetId = clean(targetLeagueId)
+  const sourceId = clean(sourceLeagueId)
+
+  if (!targetId || !sourceId || targetId === sourceId) {
+    return { merged: false, added: 0 }
+  }
+
+  let usagePayload = null
+
+  const result = await runTransaction(db, async (tx) => {
+    const targetRef = leagueRef(targetId)
+    const sourceRef = leagueRef(sourceId)
+    const [targetSnap, sourceSnap] = await Promise.all([
+      tx.get(targetRef),
+      tx.get(sourceRef),
+    ])
+
+    if (!targetSnap.exists() || !sourceSnap.exists()) {
+      return { merged: false, added: 0 }
+    }
+
+    const target = targetSnap.data() || {}
+    const source = sourceSnap.data() || {}
+    const targetIndex = target.teamsIndex || {}
+    const sourceIndex = source.teamsIndex || {}
+    const patch = Object.entries(sourceIndex).reduce((acc, [key, value]) => {
+      if (!key) return acc
+
+      const identity = buildTeamIdentity({
+        clubId: value?.clubId,
+        clubName: value?.clubName || value?.teamName,
+        seasonId: value?.seasonId,
+        ageGroupId: value?.ageGroupId,
+        ageGroupLabel: value?.ageGroupLabel,
+        teamSlot: value?.teamSlot,
+        leagueId: targetId,
+        leagueName: value?.leagueName,
+        externalTeamId: value?.externalTeamId,
+      })
+      const targetKey =
+        clean(identity.teamSeasonKey) ||
+        clean(value?.teamSeasonKey).replace(sourceId, targetId) ||
+        key.replace(sourceId, targetId)
+
+      if (!targetKey || targetIndex[targetKey]) return acc
+
+      acc[`teamsIndex.${targetKey}`] = {
+        ...(value || {}),
+        ...identity,
+        leagueId: targetId,
+        teamSeasonKey: targetKey,
+        migratedFromLeagueId: sourceId,
+        migratedFromTeamSeasonKey: clean(value?.teamSeasonKey || key),
+        migratedAt: new Date().toISOString(),
+      }
+
+      return acc
+    }, {})
+    const added = Object.keys(patch).length
+
+    if (!added) {
+      return { merged: false, added: 0 }
+    }
+
+    tx.update(targetRef, {
+      ...patch,
+      updatedAt: serverTimestamp(),
+    })
+
+    usagePayload = {
+      readPayload: {
+        target,
+        source,
+      },
+      writePayload: patch,
+    }
+
+    return { merged: true, added }
+  })
+
+  if (usagePayload) {
+    trackFirestoreTransaction({
+      collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      feature: FEATURE,
+      action: 'mergeLeagueTeamIndexFromDoc',
+      readsCount: 2,
+      writesCount: 1,
+      readPayload: usagePayload.readPayload,
+      writePayload: usagePayload.writePayload,
+      meta: {
+        targetLeagueId: targetId,
+        sourceLeagueId: sourceId,
+        added: result.added,
+      },
+    })
+  }
+
+  return result
+}
+
 export async function getLatestLeagueSnapshot(leagueId, seasonId = '') {
   const id = clean(leagueId)
   if (!id) return null
@@ -321,4 +429,132 @@ export async function getLatestLeagueSnapshot(leagueId, seasonId = '') {
   })
 
   return rows[0] || null
+}
+
+export async function updateLeagueSnapshotTeamSlot({
+  snapshotId,
+  rowId,
+  teamSlot,
+  context = {},
+} = {}) {
+  const id = clean(snapshotId)
+  const safeRowId = clean(rowId)
+
+  if (!id || !safeRowId) {
+    throw new Error('missing snapshot row identity')
+  }
+
+  let usagePayload = null
+
+  const result = await runTransaction(db, async (tx) => {
+    const ref = snapRef(id)
+    const snap = await tx.get(ref)
+
+    if (!snap.exists()) {
+      throw new Error('snapshot not found')
+    }
+
+    const current = {
+      id: snap.id,
+      ...snap.data(),
+    }
+    const leagueId = clean(context.leagueId || current.leagueId)
+    const leagueSnap = leagueId ? await tx.get(leagueRef(leagueId)) : null
+    const league = leagueSnap?.exists?.() ? leagueSnap.data() : {}
+    const teamIndex = league.teamsIndex || {}
+    let movedTeamIndex = null
+    const rows = Array.isArray(current.rows) ? current.rows : []
+    const nextRows = rows.map((row) => {
+      if (clean(row.rowId) !== safeRowId) return row
+
+      const oldTeamSeasonKey = clean(row.teamSeasonKey)
+
+      const identity = buildTeamIdentity({
+        clubId: row.clubId,
+        clubName: row.clubName,
+        seasonId: current.seasonId || context.seasonId,
+        ageGroupId: current.ageGroupId || context.ageGroupId,
+        ageGroupLabel: current.ageGroupLabel || context.ageGroupLabel,
+        teamSlot,
+        leagueId: context.leagueId || current.leagueId,
+        leagueName: current.leagueName || context.leagueName,
+      })
+      const oldSummary = oldTeamSeasonKey
+        ? teamIndex[oldTeamSeasonKey]
+        : null
+
+      if (
+        oldSummary &&
+        identity.teamSeasonKey &&
+        oldTeamSeasonKey !== identity.teamSeasonKey
+      ) {
+        movedTeamIndex = {
+          from: oldTeamSeasonKey,
+          to: identity.teamSeasonKey,
+          summary: {
+            ...oldSummary,
+            clubId: identity.clubId,
+            clubName: identity.clubName,
+            seasonId: identity.seasonId,
+            ageGroupId: identity.ageGroupId,
+            teamSlot: identity.teamSlot,
+            teamSlotId: identity.teamSlotId,
+            teamSeasonKey: identity.teamSeasonKey,
+            leagueId: identity.leagueId,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      }
+
+      return {
+        ...row,
+        teamSlot: identity.teamSlot,
+        teamSlotId: identity.teamSlotId,
+        teamSeasonKey: identity.teamSeasonKey,
+      }
+    })
+
+    tx.set(ref, {
+      rows: nextRows,
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+
+    if (leagueId && movedTeamIndex) {
+      tx.update(leagueRef(leagueId), {
+        [`teamsIndex.${movedTeamIndex.from}`]: deleteField(),
+        [`teamsIndex.${movedTeamIndex.to}`]: movedTeamIndex.summary,
+        updatedAt: serverTimestamp(),
+      })
+    }
+
+    usagePayload = {
+      readPayload: current,
+      writePayload: {
+        snapshotId: id,
+        rowId: safeRowId,
+        teamSlot,
+        movedTeamIndex,
+      },
+    }
+
+    return {
+      snapshotId: id,
+      rowId: safeRowId,
+    }
+  })
+
+  if (usagePayload) {
+    trackFirestoreTransaction({
+      collection: PLAYERS_DATABASE_COLLECTIONS.leagueSnapshots,
+      feature: FEATURE,
+      action: 'updateLeagueSnapshotTeamSlot',
+      readsCount: 1,
+      writesCount: 1,
+      readPayload: usagePayload.readPayload,
+      writePayload: usagePayload.writePayload,
+      meta: result,
+    })
+  }
+
+  return result
 }

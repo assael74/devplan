@@ -1,8 +1,11 @@
-// C:\projects\devplan\src\features\playersDatabase\components\modals\pasteModal.sx.js
+// src/features/playersDatabase/components/modals/sx/modal.sx.js
+
 const palette = {
   ink: '#17202a',
   muted: '#64717f',
   line: '#d8e0e7',
+  slate: '#24313f',
+  slateSoft: '#eef2f5',
   blue: '#2563eb',
   green: '#15803d',
   greenSoft: '#e7f7ec',
@@ -10,13 +13,55 @@ const palette = {
   redSoft: '#ffe9e7',
 }
 
-export const pasteModalSx = {
-  dialog: {
+export const modalSx = {
+  createDialog: {
+    width: 'min(860px, calc(100vw - 40px))',
+    p: { xs: 1.5, md: 2 },
+    borderRadius: '10px',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1.25,
+  },
+
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 1,
+    mt: 0.5,
+  },
+
+  clubsField: {
+    gridColumn: {
+      xs: '1',
+      md: '2',
+    },
+  },
+
+  derivedBox: {
+    gridColumn: '1 / -1',
+    minHeight: 38,
+    px: 1.25,
+    py: 0.75,
+    borderRadius: '8px',
+    bgcolor: palette.slateSoft,
+    color: palette.slate,
+    display: 'flex',
+    alignItems: 'center',
+  },
+
+  pasteDialog: {
     width: 'min(1080px, calc(100vw - 40px))',
     height: 'min(760px, calc(100dvh - 56px))',
     maxHeight: 'calc(100dvh - 56px)',
     minHeight: 0,
-    p: { xs: 1.5, md: 2 },
+    p: {
+      xs: 1.5,
+      md: 2,
+    },
     borderRadius: '10px',
     overflow: 'hidden',
     display: 'grid',
@@ -49,6 +94,15 @@ export const pasteModalSx = {
     fontSize: 13,
   },
 
+  actions: {
+    flex: '0 0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 1,
+    mt: 0.5,
+  },
+
   importZone: {
     p: 1,
     borderRadius: '8px',
@@ -59,7 +113,7 @@ export const pasteModalSx = {
     overflow: 'hidden',
   },
 
-  formGrid: {
+  importFormGrid: {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
@@ -126,7 +180,7 @@ export const pasteModalSx = {
     overflowX: 'auto',
   },
 
-  table: {
+  previewTable: {
     minWidth: 920,
     width: '100%',
     tableLayout: 'fixed',
@@ -162,15 +216,6 @@ export const pasteModalSx = {
   clubAutocomplete: {
     minWidth: 0,
     bgcolor: '#fff',
-  },
-
-  actions: {
-    flex: '0 0 auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 1,
-    mt: 0.5,
   },
 
   success: {

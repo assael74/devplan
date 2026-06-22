@@ -30,7 +30,6 @@ export function usePlayersDatabasePage() {
     kpis,
     error,
     actions: {
-      openImport: () => {},
       openSegments: () => {},
       openTrackedPlayers: () => {},
       openLeaguesTeams: () => {},

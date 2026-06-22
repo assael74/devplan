@@ -1,11 +1,14 @@
 export const PLAYERS_DATABASE_ROUTE = '/players-database'
 
 export const PLAYERS_DATABASE_COLLECTIONS = {
-  players: 'playersDatabasePlayers',
+  players: 'dbPlayers',
   clubs: 'playersDatabaseClubs',
   leagues: 'dbLeagues',
   teams: 'playersDatabaseTeams',
   leagueSeasons: 'playersDatabaseLeagueSeasons',
+  playerSeasons: 'dbPlayerSeasons',
+  playerStats: 'dbPlayerStats',
+  playerSearch: 'dbPlayerSearch',
   playerSnapshots: 'playersDatabasePlayerSnapshots',
   leagueSnapshots: 'dbLeagueSnapshots',
   imports: 'playersDatabaseImports',

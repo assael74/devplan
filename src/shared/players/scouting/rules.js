@@ -20,8 +20,16 @@ const isMatch = ({ value, rule }) => {
   return false
 }
 
-export const evaluateScoutRules = ({ profile, metrics }) => {
-  const rules = Array.isArray(profile?.rules) ? profile.rules : []
+const getProfileRules = ({ profile, searchDistance = 0 }) => {
+  const deepRules = Array.isArray(profile?.deepRules) ? profile.deepRules : []
+
+  if (searchDistance >= 2 && deepRules.length) return deepRules
+
+  return Array.isArray(profile?.rules) ? profile.rules : []
+}
+
+export const evaluateScoutRules = ({ profile, metrics, searchDistance = 0 }) => {
+  const rules = getProfileRules({ profile, searchDistance })
   const matched = []
   const missed = []
 
@@ -54,4 +62,3 @@ export const evaluateScoutRules = ({ profile, metrics }) => {
     missedRules: missed,
   }
 }
-
