@@ -2,6 +2,17 @@
 
 const clean = value => String(value ?? '').trim()
 
+const numberFrom = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue
+
+    const numeric = Number(value)
+    if (Number.isFinite(numeric)) return numeric
+  }
+
+  return 0
+}
+
 const sameClean = (a, b) =>
   clean(a) && clean(a) === clean(b)
 
@@ -213,9 +224,24 @@ export const buildLeagueTableRows = ({
         teamSlotId,
         teamSeasonKey,
         teamIndex,
-        playersCount: Number(teamIndex.playersCount) || 0,
-        statsCount: Number(teamIndex.statsCount) || 0,
-        scoutProfilesCount: Number(teamIndex.scoutProfilesCount) || 0,
+        playersCount: numberFrom(
+          teamIndex.playersCount,
+          row.playersCount,
+          row.rawPlayersCount,
+          row.players_count
+        ),
+        statsCount: numberFrom(
+          teamIndex.statsCount,
+          row.statsCount,
+          row.playersWithStatsCount,
+          row.stats_count
+        ),
+        scoutProfilesCount: numberFrom(
+          teamIndex.scoutProfilesCount,
+          row.scoutProfilesCount,
+          row.profilesCount,
+          row.scout_profiles_count
+        ),
         profileCounts: teamIndex.profileCounts || {},
         rawProfileCounts: teamIndex.rawProfileCounts || {},
         reliabilityCounts: teamIndex.reliabilityCounts || {},

@@ -12,35 +12,73 @@ export const listSx = {
     border: `1px solid ${palette.line}`,
     borderRadius: '8px',
     bgcolor: palette.panel,
-    p: 1,
+    p: 0,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-    gap: 0.5,
+    minHeight: 0,
+    height: '100%',
     maxHeight: {
       xs: 160,
-      xl: 'calc(100vh - 292px)',
+      xl: 'none',
     },
-    overflow: 'auto',
+    overflow: 'hidden',
   },
 
   toolbar: {
     flex: '0 0 auto',
+    display: 'grid',
+    gridTemplateColumns: 'auto minmax(0, 1fr)',
+    alignItems: 'center',
+    gap: 0.75,
+    p: 0.75,
+    borderBottom: `1px solid ${palette.line}`,
+  },
+
+  toolbarTitle: {
+    fontWeight: 700,
+  },
+
+  filters: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+    gap: 0.5,
+  },
+
+  filterSelect: {
+    minWidth: 0,
   },
 
   list: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-    gap: 0.5,
+    gap: 0.35,
     minHeight: 0,
     overflow: 'auto',
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#b8c3cf transparent',
+    p: 0.65,
+
+    '&::-webkit-scrollbar': {
+      width: 5,
+      height: 5,
+    },
+
+    '&::-webkit-scrollbar-thumb': {
+      borderRadius: 999,
+      backgroundColor: '#b8c3cf',
+    },
+
+    '&::-webkit-scrollbar-track': {
+      backgroundColor: 'transparent',
+    },
   },
 
   item: {
     justifyContent: 'flex-start',
-    minHeight: 56,
-    borderRadius: '8px',
+    minHeight: 42,
+    borderRadius: '7px',
     textAlign: 'left',
     whiteSpace: 'normal',
     border: '1px solid transparent',
@@ -84,6 +122,47 @@ export const listSx = {
 
   meta: {
     color: palette.muted,
-    mt: 0.25,
+    mt: 0.15,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 0.5,
+    alignItems: 'center',
+    lineHeight: 1.25,
+  },
+
+  metaChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: 18,
+    borderRadius: '999px',
+    px: 0.75,
+    bgcolor: '#eef4fb',
+    color: '#344253',
+    fontSize: 10.5,
+    fontWeight: 700,
+  },
+
+  metaChipWarning: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: 18,
+    borderRadius: '999px',
+    px: 0.75,
+    bgcolor: '#fff3d6',
+    color: '#8a4b00',
+    fontSize: 10.5,
+    fontWeight: 700,
+  },
+
+  metaChipDanger: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: 18,
+    borderRadius: '999px',
+    px: 0.75,
+    bgcolor: '#ffe5df',
+    color: '#a32913',
+    fontSize: 10.5,
+    fontWeight: 700,
   },
 }

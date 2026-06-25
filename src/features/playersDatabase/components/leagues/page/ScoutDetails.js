@@ -1,6 +1,6 @@
 // src/features/playersDatabase/components/leagues/page/ScoutDetails.js
 
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   Box,
   Chip,
@@ -8,6 +8,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/joy'
+import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft'
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight'
 
@@ -43,6 +44,26 @@ const getActiveProfileIds = drilldown => {
     (drilldown?.profiles || []).map(profile => profile.id)
   )
 }
+
+const getProfileCount = (team = {}, profileId = '') => {
+  const id = String(profileId || '').trim()
+  if (!id) return 0
+
+  return (
+    Number(team.profileCounts?.[id]) ||
+    Number(team.rawProfileCounts?.[id]) ||
+    0
+  )
+}
+
+const getAllProfileCount = (team = {}) => (
+  Object.values(team.profileCounts || {})
+    .reduce((acc, value) => acc + (Number(value) || 0), 0) ||
+  Object.values(team.rawProfileCounts || {})
+    .reduce((acc, value) => acc + (Number(value) || 0), 0) ||
+  Number(team.scoutProfilesCount) ||
+  0
+)
 
 const pct = value => `${Math.round(Number(value) * 100)}%`
 
@@ -116,7 +137,9 @@ export default function ScoutDetails({
   onLeagueIndexRefresh,
 }) {
   const activeProfileIds = getActiveProfileIds(drilldown)
+  const [selectedProfileId, setSelectedProfileId] = useState('')
   const chipsRef = useRef(null)
+  const allProfilesCount = getAllProfileCount(team)
 
   const scrollProfiles = (event, direction) => {
     event.stopPropagation()
@@ -151,8 +174,24 @@ export default function ScoutDetails({
           </IconButton>
 
           <Box ref={chipsRef} sx={sx.chips}>
+            <Chip
+              size="sm"
+              variant={!selectedProfileId ? 'solid' : 'soft'}
+              color={!selectedProfileId ? 'primary' : 'neutral'}
+              startDecorator={<ManageSearchIcon fontSize="small" />}
+              onClick={event => {
+                event.stopPropagation()
+                setSelectedProfileId('')
+              }}
+              sx={sx.profileChip(!selectedProfileId)}
+            >
+              כל הפרופילים {allProfilesCount}
+            </Chip>
+
             {SCOUT_PROFILES.map(profile => {
               const activeProfile = activeProfileIds.has(profile.id)
+              const selectedProfile = selectedProfileId === profile.id
+              const profileCount = getProfileCount(team, profile.id)
 
               return (
                 <Tooltip
@@ -169,15 +208,21 @@ export default function ScoutDetails({
                 >
                   <Chip
                     size="sm"
-                    variant={activeProfile ? 'solid' : 'soft'}
-                    color={activeProfile ? 'success' : 'neutral'}
+                    variant={selectedProfile ? 'solid' : 'soft'}
+                    color={selectedProfile ? 'primary' : activeProfile ? 'success' : 'neutral'}
                     startDecorator={iconUi({
                       id: profile.idIcon,
                       size: 'small',
                     })}
-                    sx={sx.profileChip(activeProfile)}
+                    onClick={event => {
+                      event.stopPropagation()
+                      setSelectedProfileId(current => (
+                        current === profile.id ? '' : profile.id
+                      ))
+                    }}
+                    sx={sx.profileChip(selectedProfile || activeProfile)}
                   >
-                    {profile.label}
+                    {profile.label} {profileCount}
                   </Chip>
                 </Tooltip>
               )
@@ -201,6 +246,7 @@ export default function ScoutDetails({
         teamOptions={teamOptions}
         active={active}
         playerSearch={playerSearch}
+        activeProfileFilterId={selectedProfileId}
         onLeagueIndexRefresh={onLeagueIndexRefresh}
       />
     </Box>

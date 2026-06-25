@@ -186,7 +186,7 @@ export const playerStatsModalSx = {
 
   scoutChip: {
     maxWidth: '100%',
-    fontWeight: 800,
+    fontWeight: 700,
 
     '& .MuiChip-label': {
       overflow: 'hidden',
@@ -198,7 +198,7 @@ export const playerStatsModalSx = {
   reliabilityChip: {
     minWidth: 82,
     justifyContent: 'center',
-    fontWeight: 800,
+    fontWeight: 700,
     direction: 'ltr',
   },
 

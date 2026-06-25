@@ -40,6 +40,12 @@ export const pageSx = {
     fontSize: 22
   },
 
+  titleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  },
+
   meta: {
     color: palette.muted,
     mt: 0.25,

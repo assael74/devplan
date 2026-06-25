@@ -38,11 +38,13 @@ const normalizeLeagueName = row => {
   const ageGroupLabel = clean(row.ageGroupId || row.ageGroupLabel)
   const bare = leagueName
     .replace(/[׳״'"]/g, '')
-    .replace(ageGroupLabel, '')
+    .replace(ageGroupLabel, ' ')
+    .replace(/^\s*ליג[הת]\s+/, '')
+    .replace(/\s+/g, ' ')
     .trim()
 
   if (bare === 'על') return 'ליגת העל'
-  return leagueName
+  return bare || leagueName
 }
 
 const buildCatalogReadyRows = (rows, context = {}) => rows.map(row => {
@@ -67,6 +69,7 @@ const buildCatalogReadyRows = (rows, context = {}) => rows.map(row => {
     ageGroupId,
     clubName: clean(row.clubName || context.clubName),
     externalTeamId: clean(row.externalTeamId || context.externalTeamId),
+    leagueId: clean(row.leagueId || context.leagueId),
     teamSlot,
     leagueName: normalizeLeagueName({
       ...row,
@@ -162,8 +165,8 @@ const buildPreviewRow = (row, index, rowPlan, duplicateNames, existingIdentity) 
     ageGroupId: row.ageGroupId,
     ageGroupLabel: row.ageGroupLabel,
     teamSlot,
-    leagueId: leagueMatch?.id,
-    leagueName: leagueMatch?.name || row.leagueName,
+    leagueId: row.leagueId || leagueMatch?.id,
+    leagueName: row.leagueName || leagueMatch?.name,
     externalTeamId: row.externalTeamId,
   })
   const issues = getRowIssues(row, rowPlan, duplicateNames, existingIdentity)

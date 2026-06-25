@@ -32,9 +32,9 @@ export async function getPlayersDatabaseKpis() {
     },
     {
       id: 'stats',
-      label: 'שחקנים עם סטטיסטיקה',
+      label: 'שחקנים עם סטטס',
       value: fmt(sum(teams, 'statsCount')),
-      note: 'מסמכי סטטיסטיקה מקושרים',
+      note: 'מסמכי סטטיסטיקה',
     },
     {
       id: 'profiles',

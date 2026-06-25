@@ -2,6 +2,7 @@ import {
   collection,
   deleteField,
   doc,
+  documentId,
   getDoc,
   getDocs,
   increment,
@@ -18,9 +19,21 @@ import {
 } from '../../../services/firestore/usage/index.js'
 import { buildTeamIdentity } from '../catalog/teamIdentity.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../constants/playersDatabase.constants.js'
+import { findPlayersDatabaseYearGroupOpportunities } from '../sharedLogic/yearGroupOpportunities.js'
 
 const clean = (value) => String(value ?? '').trim()
 const FEATURE = 'playersDatabase'
+
+const unique = values =>
+  Array.from(new Set(values.map(clean).filter(Boolean)))
+
+const chunks = (items, size) => {
+  const result = []
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size))
+  }
+  return result
+}
 
 const leagueRef = (leagueId) =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, clean(leagueId))
@@ -429,6 +442,54 @@ export async function getLatestLeagueSnapshot(leagueId, seasonId = '') {
   })
 
   return rows[0] || null
+}
+
+export async function listLeagueSnapshotsByIds(snapshotIds = []) {
+  const ids = unique(snapshotIds)
+  if (!ids.length) return []
+
+  const docs = []
+
+  for (const batchIds of chunks(ids, 30)) {
+    const snap = await getDocs(query(
+      snapsRef(),
+      where(documentId(), 'in', batchIds)
+    ))
+
+    docs.push(...snap.docs)
+  }
+
+  const rows = docs.map((item) => ({
+    id: item.id,
+    ...item.data(),
+  }))
+
+  trackFirestoreRead({
+    collection: PLAYERS_DATABASE_COLLECTIONS.leagueSnapshots,
+    feature: FEATURE,
+    action: 'listLeagueSnapshotsByIds',
+    docs: rows,
+    docsCount: rows.length,
+    meta: {
+      requestedCount: ids.length,
+    },
+  })
+
+  return rows
+}
+
+export async function listYearGroupLeagueOpportunities(options = {}) {
+  const leagues = await listLeagues()
+  const snapshotIds = unique(leagues.flatMap(league => (
+    Object.values(league?.seasons || {})
+      .map(season => season?.latestSnapshotId)
+  )))
+  const snapshots = await listLeagueSnapshotsByIds(snapshotIds)
+
+  return findPlayersDatabaseYearGroupOpportunities({
+    leagues,
+    snapshots,
+  }, options)
 }
 
 export async function updateLeagueSnapshotTeamSlot({

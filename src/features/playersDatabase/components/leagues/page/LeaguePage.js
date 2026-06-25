@@ -16,6 +16,7 @@ import {
 } from '../leagueUtils.js'
 import LeagueTable from './LeagueTable.js'
 import ScoutFilters from './ScoutFilters.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { useLeaguePage } from './hook/useLeaguePage.js'
 import { pageSx as sx } from './sx/page.sx.js'
 
@@ -28,7 +29,7 @@ export default function LeaguePage() {
       <Sheet sx={sx.root}>
         <Box sx={sx.top}>
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={sx.titleRow}>
               <Typography level="title-lg" sx={sx.title}>
                 {league?.leagueName || 'ליגה'}
               </Typography>
@@ -68,6 +69,7 @@ export default function LeaguePage() {
               size="sm"
               variant="soft"
               color="neutral"
+              startDecorator={iconUi({ id: 'back', size: 'small' })}
               onClick={model.goBack}
             >
               חזרה לרשימה
@@ -76,6 +78,7 @@ export default function LeaguePage() {
             <Button
               size="sm"
               color="primary"
+              startDecorator={iconUi({ id: 'upload', size: 'small' })}
               disabled={
                 !league ||
                 !activeSeason

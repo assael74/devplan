@@ -3,7 +3,6 @@
 import React from 'react'
 import {
   Box,
-  Button,
   Chip,
   Sheet,
   Typography,
@@ -13,6 +12,7 @@ import LeagueModal from '../../modals/LeagueModal.js'
 import BoardHeader from './BoardHeader.js'
 import BoardList from './BoardList.js'
 import DetailsPanel from './DetailsPanel.js'
+import LeagueIndicatorsPanel from './LeagueIndicatorsPanel.js'
 import SeasonsPanel from './SeasonsPanel.js'
 import {
   getLeagueLevelLabel,
@@ -29,6 +29,7 @@ export default function Board() {
     <Sheet sx={sx.root}>
       <BoardHeader
         loading={model.loading}
+        statusItems={model.boardStatus}
         onReload={model.load}
         onCreate={model.openCreate}
       />
@@ -59,11 +60,13 @@ export default function Board() {
           <BoardList
             leagues={model.leagues}
             selectedId={league?.id}
-            sortBy={model.sortBy}
-            sortDirection={model.sortDirection}
-            sortOptions={model.sortOptions}
-            onSortByChange={model.setSortBy}
-            onSortDirectionChange={model.setSortDirection}
+            birthYearFilter={model.birthYearFilter}
+            levelFilter={model.levelFilter}
+            birthYearOptions={model.birthYearOptions}
+            levelOptions={model.levelOptions}
+            leagueInsightsById={model.leagueInsightsById}
+            onBirthYearChange={model.setBirthYearFilter}
+            onLevelChange={model.setLevelFilter}
             onSelect={model.selectLeague}
           />
 
@@ -91,33 +94,34 @@ export default function Board() {
                   {getLeagueRegionLabel(league?.region)}
                 </Chip>
               </Box>
-
-              <Button
-                size="sm"
-                color="primary"
-                disabled={!league}
-                onClick={model.openLeague}
-              >
-                פתח טבלת ליגה
-              </Button>
             </Box>
 
-            <Box
-              className="dpScrollThin"
-              sx={sx.content}
-            >
+            <Box sx={sx.content}>
               <Box sx={sx.grid}>
-                <DetailsPanel
-                  league={league}
-                  form={model.detailsForm}
-                  editing={model.editingDetails}
-                  saving={model.savingDetails}
-                  error={model.detailsError}
-                  onEdit={model.startDetailsEdit}
-                  onCancel={model.cancelDetailsEdit}
-                  onChange={model.updateDetails}
-                  onSave={model.saveDetails}
-                />
+                <Box sx={sx.mainColumn}>
+                  <DetailsPanel
+                    league={league}
+                    form={model.detailsForm}
+                    editing={model.editingDetails}
+                    saving={model.savingDetails}
+                    error={model.detailsError}
+                    onEdit={model.startDetailsEdit}
+                    onCancel={model.cancelDetailsEdit}
+                    onChange={model.updateDetails}
+                    onSave={model.saveDetails}
+                    onOpenLeague={model.openLeague}
+                  >
+                    <LeagueIndicatorsPanel
+                      embedded
+                      league={league}
+                      opportunities={model.selectedLeagueOpportunities}
+                      profileRows={model.selectedLeagueProfileRows}
+                      scoutProfilesCount={
+                        model.selectedLeagueInsight?.scoutProfilesCount
+                      }
+                    />
+                  </DetailsPanel>
+                </Box>
 
                 <SeasonsPanel
                   rows={model.seasonRows}

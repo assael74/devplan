@@ -34,6 +34,23 @@ const LEAGUE_DEFINITIONS = [
     region: 'south',
     aliases: ['ארצית דרום'],
   },
+  ...[
+    { key: 'district-center', name: 'מרכז', region: 'center' },
+    { key: 'district-north', name: 'צפון', region: 'north' },
+    { key: 'district-south', name: 'דרום', region: 'south' },
+    { key: 'district-sharon', name: 'שרון', region: 'sharon' },
+    { key: 'district-shfela', name: 'שפלה', region: 'shfela' },
+    { key: 'district-dan', name: 'דן', region: 'dan' },
+  ].map(definition => ({
+    ...definition,
+    level: 4,
+    aliases: [
+      definition.name,
+      `ליגה ${definition.name}`,
+      `ליגת ${definition.name}`,
+      `מחוזית ${definition.name}`,
+    ],
+  })),
   ...Array.from({ length: 10 }, (_, index) => {
     const number = index + 1
 
@@ -73,6 +90,14 @@ const AGE_GROUP_LABEL_BY_ID = {
 }
 
 const DISTRICT_KEYS = Array.from({ length: 10 }, (_, index) => `district-${index + 1}`)
+const REGIONAL_DISTRICT_KEYS = [
+  'district-center',
+  'district-north',
+  'district-south',
+  'district-sharon',
+  'district-shfela',
+  'district-dan',
+]
 
 const makeLeague = ({ seasonId, ageGroupId, definition }) => {
   const birthYear = SEASON_AGE_GROUP_BIRTH_YEARS[seasonId]?.[ageGroupId] || null
@@ -93,6 +118,8 @@ const makeLeague = ({ seasonId, ageGroupId, definition }) => {
       ...definition.aliases,
       `${definition.name} ${ageGroupLabel}`,
       `${ageGroupLabel} ${definition.name}`,
+      `ליגה ${ageGroupLabel} ${definition.name}`,
+      `ליגת ${ageGroupLabel} ${definition.name}`,
     ],
   }
 }
@@ -109,17 +136,17 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   ...buildLeaguesForAgeGroups({
     seasonId: '2025-2026',
     ageGroupIds: ['u17', 'u16', 'u15'],
-    leagueKeys: ['premier', 'regional-north', 'regional-south', ...DISTRICT_KEYS],
+    leagueKeys: ['premier', 'regional-north', 'regional-south', ...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
   ...buildLeaguesForAgeGroups({
     seasonId: '2025-2026',
     ageGroupIds: ['u14', 'u13'],
-    leagueKeys: DISTRICT_KEYS,
+    leagueKeys: [...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
   ...buildLeaguesForAgeGroups({
     seasonId: '2026-2027',
     ageGroupIds: ['u17', 'u16'],
-    leagueKeys: ['premier', 'regional-north', 'regional-south', ...DISTRICT_KEYS],
+    leagueKeys: ['premier', 'regional-north', 'regional-south', ...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
   ...buildLeaguesForAgeGroups({
     seasonId: '2026-2027',
@@ -130,13 +157,14 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
       'national-south',
       'regional-north',
       'regional-south',
+      ...REGIONAL_DISTRICT_KEYS,
       ...DISTRICT_KEYS,
     ],
   }),
   ...buildLeaguesForAgeGroups({
     seasonId: '2026-2027',
     ageGroupIds: ['u14', 'u13'],
-    leagueKeys: DISTRICT_KEYS,
+    leagueKeys: [...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
 ]
 

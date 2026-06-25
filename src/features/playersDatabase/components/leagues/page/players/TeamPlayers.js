@@ -15,9 +15,11 @@ import { playerIcons } from '../../../../../../ui/core/icons/entities/players.ic
 import {
   deletePlayerSeasons,
   deletePlayerSeasonsByTeam,
+  listPlayerSearchByTeam,
   listPlayerSearchByTeamProfile,
   listPlayerStatsBySeasons,
   listPlayerSeasonsByTeam,
+  refreshLeagueTeamIndex,
   updatePlayerSeasonPosition,
 } from '../../../../services/pdbPlayers.firestore.js'
 import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
@@ -87,6 +89,36 @@ const writeCachedRows = (key, rows) => {
 
   teamRowsCache.set(key, payload)
   cacheStorage.set(key, payload)
+}
+
+const shouldRefreshTeamIndex = (team, rows) => {
+  const currentPlayersCount = Number(team?.playersCount)
+  const nextPlayersCount = Array.isArray(rows) ? rows.length : 0
+
+  return (
+    Number.isFinite(nextPlayersCount) &&
+    nextPlayersCount > 0 &&
+    currentPlayersCount !== nextPlayersCount
+  )
+}
+
+const clearCachedRowsByPrefix = prefix => {
+  const keyPrefix = clean(prefix)
+  if (!keyPrefix) return
+
+  Array.from(teamRowsCache.keys()).forEach(key => {
+    if (key.startsWith(keyPrefix)) teamRowsCache.delete(key)
+  })
+
+  try {
+    Object.keys(window.sessionStorage || {}).forEach(key => {
+      if (key.startsWith(`${CACHE_PREFIX}${keyPrefix}`)) {
+        window.sessionStorage.removeItem(key)
+      }
+    })
+  } catch {
+    // Session storage is an optimization only.
+  }
 }
 
 const withTeamIdentity = team => {
@@ -190,9 +222,39 @@ const getPositionValue = row =>
   clean(row.primaryPosition || row.positionCode || row.position)
 
 const formatLineupText = row => [
-  valueOrDash(row.subIn),
   valueOrDash(row.starts),
+  valueOrDash(row.games),
 ].join('/')
+
+const rowProfileIds = row => {
+  const doc = row.statsDoc || row
+
+  return Array.from(new Set([
+    ...(Array.isArray(row.scoutProfileIds) ? row.scoutProfileIds : []),
+    ...(Array.isArray(row.rawScoutProfileIds) ? row.rawScoutProfileIds : []),
+    ...(Array.isArray(doc.scoutProfileIds) ? doc.scoutProfileIds : []),
+    ...(Array.isArray(doc.rawScoutProfileIds) ? doc.rawScoutProfileIds : []),
+    ...(Array.isArray(doc.eligibleScoutProfileIds) ? doc.eligibleScoutProfileIds : []),
+  ].map(clean).filter(Boolean)))
+}
+
+const hasProfileId = (row, profileId) => {
+  const id = clean(profileId)
+  if (!id) return true
+  if (
+    id === 'promoted_talent' &&
+    (
+      row.isPlayingUp ||
+      row.statsDoc?.isPlayingUp ||
+      row.statsDoc?.current?.isYoungerAgeGroup ||
+      Number(row.statsDoc?.current?.playingUpMinutes) > 0
+    )
+  ) {
+    return true
+  }
+
+  return rowProfileIds(row).includes(id)
+}
 
 const profileLabels = Object.fromEntries(
   SCOUT_PROFILES.map(profile => [profile.id, profile.label])
@@ -363,26 +425,16 @@ export default function TeamPlayers({
   teamOptions = [],
   active = false,
   playerSearch,
+  activeProfileFilterId = '',
   onLeagueIndexRefresh,
 }) {
   const teamCtx = withTeamIdentity(team)
   const activeSearch = Boolean(playerSearch?.active && playerSearch?.profileId)
-  const cacheKey = useMemo(
-    () => {
-      const baseKey = getTeamCacheKey(teamCtx)
-      if (!activeSearch) return baseKey
-
-      return [
-        baseKey,
-        'search',
-        clean(playerSearch.mode || 'eligible'),
-        clean(playerSearch.profileId),
-      ].join('|')
-    },
+  const [viewMode, setViewMode] = useState('profiles')
+  const effectiveViewMode = activeSearch ? 'search' : viewMode
+  const baseCacheKey = useMemo(
+    () => getTeamCacheKey(teamCtx),
     [
-      activeSearch,
-      playerSearch?.mode,
-      playerSearch?.profileId,
       teamCtx.teamSeasonKey,
       teamCtx.teamSlotId,
       teamCtx.teamId,
@@ -393,6 +445,36 @@ export default function TeamPlayers({
       teamCtx.ageGroupId,
       teamCtx.teamSlot,
       teamCtx.clubId,
+    ]
+  )
+  const cacheKey = useMemo(
+    () => {
+      if (activeSearch) {
+        return [
+          baseCacheKey,
+          'search',
+          clean(playerSearch?.mode || 'eligible'),
+          clean(playerSearch?.profileId),
+        ].join('|')
+      }
+
+      if (effectiveViewMode === 'full') return `${baseCacheKey}|full`
+      if (effectiveViewMode === 'profiles') {
+        return [
+          baseCacheKey,
+          'profiles',
+          clean(playerSearch?.mode || 'eligible'),
+        ].join('|')
+      }
+
+      return baseCacheKey
+    },
+    [
+      activeSearch,
+      baseCacheKey,
+      effectiveViewMode,
+      playerSearch?.mode,
+      playerSearch?.profileId,
     ]
   )
   const teamList = useMemo(
@@ -415,6 +497,7 @@ export default function TeamPlayers({
 
   const requestReload = () => {
     forceRefreshRef.current = true
+    clearCachedRowsByPrefix(baseCacheKey)
     setReloadKey(value => value + 1)
     onLeagueIndexRefresh?.()
   }
@@ -443,12 +526,16 @@ export default function TeamPlayers({
       try {
         const nextRows = activeSearch
           ? await listPlayerSearchByTeamProfile(teamCtx, playerSearch)
-          : await listPlayerSeasonsByTeam(teamCtx)
-        const statsBySeason = activeSearch
+          : effectiveViewMode === 'profiles'
+            ? await listPlayerSearchByTeam(teamCtx, {
+                mode: playerSearch?.mode || 'eligible',
+              })
+            : await listPlayerSeasonsByTeam(teamCtx)
+        const statsBySeason = activeSearch || effectiveViewMode === 'profiles'
           ? new Map()
           : await listPlayerStatsBySeasons(nextRows, teamCtx)
         if (!alive) return
-        const mergedRows = activeSearch
+        const mergedRows = activeSearch || effectiveViewMode === 'profiles'
           ? nextRows
           : withStats(nextRows, statsBySeason)
         writeCachedRows(cacheKey, mergedRows)
@@ -456,6 +543,15 @@ export default function TeamPlayers({
         setRows(mergedRows)
         setSelected({})
         setPosDrafts({})
+
+        if (
+          !activeSearch &&
+          effectiveViewMode === 'full' &&
+          shouldRefreshTeamIndex(teamCtx, mergedRows)
+        ) {
+          await refreshLeagueTeamIndex(teamCtx)
+          onLeagueIndexRefresh?.()
+        }
       } catch (err) {
         if (!alive) return
         setRows([])
@@ -481,18 +577,46 @@ export default function TeamPlayers({
     teamCtx.leagueId,
     teamCtx.teamSlot,
     activeSearch,
+    effectiveViewMode,
     playerSearch,
     cacheKey,
     reloadKey,
   ])
 
-  const selectedRows = rows.filter(row => selected[row.id])
-  const allChecked = Boolean(rows.length) && selectedRows.length === rows.length
+  const visibleRows = useMemo(
+    () => rows.filter(row => hasProfileId(row, activeProfileFilterId)),
+    [activeProfileFilterId, rows]
+  )
+  const selectedRows = visibleRows.filter(row => selected[row.id])
+  const allChecked = Boolean(visibleRows.length) && selectedRows.length === visibleRows.length
   const colSpan = delMode ? 14 : 13
+  const fullRosterCount = Number(
+    teamCtx.playersCount ||
+      team.playersCount ||
+      teamCtx.rawPlayersCount ||
+      team.rawPlayersCount
+  ) || 0
+  const profileRosterCount = Number(
+    teamCtx.scoutProfilesCount ||
+      team.scoutProfilesCount ||
+      teamCtx.profilesCount ||
+      team.profilesCount
+  ) || 0
+  const statsRosterCount = Number(
+    teamCtx.statsCount ||
+      team.statsCount ||
+      teamCtx.playersWithStatsCount ||
+      team.playersWithStatsCount
+  ) || 0
+  const viewLabel = activeSearch
+    ? playerSearch?.profileLabel || 'חיפוש פרופיל'
+    : effectiveViewMode === 'full'
+      ? 'סגל מלא'
+      : 'פרופילים בלבד'
 
   const toggleAll = checked => {
     setSelected(checked
-      ? Object.fromEntries(rows.map(row => [row.id, true]))
+      ? Object.fromEntries(visibleRows.map(row => [row.id, true]))
       : {}
     )
   }
@@ -507,7 +631,7 @@ export default function TeamPlayers({
   const openDeletePlayers = event => {
     event.stopPropagation()
 
-    if (!rows.length || deleting) return
+    if (!visibleRows.length || deleting) return
     setDelMode(true)
     setSelected({})
   }
@@ -533,7 +657,7 @@ export default function TeamPlayers({
     setError('')
 
     try {
-      if (!activeSearch && targetRows.length === rows.length) {
+      if (!activeSearch && effectiveViewMode === 'full' && targetRows.length === rows.length) {
         await deletePlayerSeasonsByTeam(teamCtx)
       } else {
         await deletePlayerSeasons(targetRows, teamCtx)
@@ -662,6 +786,48 @@ export default function TeamPlayers({
   return (
     <Box sx={sx.root}>
       <Box sx={sx.actionBar}>
+        <Chip size="sm" color="primary" variant="soft" sx={sx.viewChip}>
+          {viewLabel}
+        </Chip>
+
+        <Chip size="sm" color="neutral" variant="soft" sx={sx.viewChip}>
+          {formatLtrNumber(fullRosterCount)} שחקנים
+        </Chip>
+
+        <Chip size="sm" color="success" variant="soft" sx={sx.viewChip}>
+          {formatLtrNumber(profileRosterCount)} פרופילים
+        </Chip>
+
+        <Chip size="sm" color="neutral" variant="soft" sx={sx.viewChip}>
+          {formatLtrNumber(statsRosterCount)} סטטס
+        </Chip>
+
+        {visibleRows.length ? (
+          <Chip size="sm" color="primary" variant="outlined" sx={sx.viewChip}>
+            נטענו {formatLtrNumber(visibleRows.length)}
+            {effectiveViewMode === 'profiles' && fullRosterCount
+              ? ` מתוך ${formatLtrNumber(fullRosterCount)}`
+              : ''}
+          </Chip>
+        ) : null}
+
+        {!activeSearch && effectiveViewMode === 'full' ? (
+          <Button
+            size="sm"
+            color="neutral"
+            variant="soft"
+            disabled={loading}
+            onClick={event => {
+              event.stopPropagation()
+              setViewMode('profiles')
+            }}
+          >
+            פרופילים בלבד
+          </Button>
+        ) : null}
+
+        <Box sx={sx.spacer} />
+
         <Button
           size="sm"
           color="primary"
@@ -693,7 +859,7 @@ export default function TeamPlayers({
           size="sm"
           color="danger"
           variant="soft"
-          disabled={!rows.length || loading || deleting || delMode}
+          disabled={!visibleRows.length || loading || deleting || delMode}
           loading={deleting}
           startDecorator={<DeleteOutlineIcon fontSize="small" />}
           onClick={openDeletePlayers}
@@ -792,10 +958,10 @@ export default function TeamPlayers({
               <th>קבוצה</th>
               <th>פרופילי סקאוט</th>
               <th>ודאות</th>
-              <th>משחקים</th>
+              <th>משחקים/הרכב</th>
               <th>שערים</th>
               <th>צהובים</th>
-              <th>הרכב</th>
+              <th>הוחלף</th>
               <th>דקות</th>
             </tr>
           </thead>
@@ -805,22 +971,34 @@ export default function TeamPlayers({
               <tr>
                 <td colSpan={colSpan}>{error}</td>
               </tr>
-            ) : !rows.length ? (
+            ) : !visibleRows.length ? (
               <tr>
                 <td colSpan={colSpan}>
                   <Box sx={sx.emptyState}>
                     <Box sx={sx.emptyTitle}>
-                      {loading ? 'טוען שחקנים' : 'אין שחקנים במאגר לקבוצה הזאת'}
+                      {loading
+                        ? effectiveViewMode === 'profiles'
+                          ? 'טוען שחקנים עם פרופיל'
+                          : 'טוען שחקנים'
+                        : activeProfileFilterId
+                          ? 'אין שחקנים לפרופיל שנבחר'
+                          : effectiveViewMode === 'profiles'
+                          ? 'אין שחקנים עם פרופיל בקבוצה הזאת'
+                          : 'אין שחקנים במאגר לקבוצה הזאת'}
                     </Box>
                     {!loading ? (
                       <Box sx={sx.emptySub}>
-                        לאחר טעינת סגל, השחקנים יוצגו כאן ויקושרו לקבוצה, לליגה ולעונה.
+                        {activeProfileFilterId
+                          ? 'בחר פרופיל אחר או חזור לכל הפרופילים.'
+                          : effectiveViewMode === 'profiles'
+                          ? 'אפשר לטעון סגל מלא כדי לראות את יתר שחקני הקבוצה.'
+                          : 'לאחר טעינת סגל, השחקנים יוצגו כאן ויקושרו לקבוצה, לליגה ולעונה.'}
                       </Box>
                     ) : null}
                   </Box>
                 </td>
               </tr>
-            ) : rows.map((row, index) => {
+            ) : visibleRows.map((row, index) => {
               const scoutView = getScoutProfilesView(row)
               const teamName = clean(
                 row.sourceTeamName ||
@@ -944,14 +1122,39 @@ export default function TeamPlayers({
                       </Chip>
                     </Tooltip>
                   </td>
-                  <td>{formatLtrNumber(row.games)}</td>
+                  <td>{formatLtr(formatLineupText(row))}</td>
                   <td>{formatLtrNumber(row.goals)}</td>
                   <td>{formatLtrNumber(row.yellowCards)}</td>
-                  <td>{formatLtr(formatLineupText(row))}</td>
+                  <td>{formatLtrNumber(row.subOut)}</td>
                   <td>{formatLtrNumber(row.minutes)}</td>
                 </tr>
               )
             })}
+
+            {!activeSearch && effectiveViewMode !== 'full' ? (
+              <tr>
+                <td colSpan={colSpan}>
+                  <Box sx={sx.loadFullRow}>
+                    <Box sx={sx.loadFullText}>
+                      מוצגים כרגע שחקנים עם פרופיל בלבד.
+                    </Box>
+
+                    <Button
+                      size="sm"
+                      color="primary"
+                      variant="soft"
+                      disabled={loading}
+                      onClick={event => {
+                        event.stopPropagation()
+                        setViewMode('full')
+                      }}
+                    >
+                      טען סגל מלא
+                    </Button>
+                  </Box>
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </Table>
       </Sheet>

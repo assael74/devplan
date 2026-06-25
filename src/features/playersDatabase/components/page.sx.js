@@ -9,10 +9,14 @@ export const pageSx = {
     },
     bgcolor: '#eef2f5',
     color: '#17202a',
+    display: 'grid',
+    gridTemplateRows: 'auto minmax(0, 1fr)',
+    gap: 0,
     p: {
       xs: 1,
-      md: 1.5,
+      md: 1,
     },
+    borderRadius: 'sm',
     overflow: {
       xs: 'visible',
       xl: 'hidden',

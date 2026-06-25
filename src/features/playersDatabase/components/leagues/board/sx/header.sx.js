@@ -7,28 +7,30 @@ const palette = {
 
 export const headerSx = {
   top: {
-    p: 1.5,
+    minHeight: 44,
+    px: 1,
+    py: 0.55,
     borderBottom: `1px solid ${palette.line}`,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'minmax(0, 1fr) auto',
+    },
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
+  status: {
     display: 'flex',
-    flexDirection: {
-      xs: 'column',
-      lg: 'row',
-    },
-    justifyContent: 'space-between',
-    alignItems: {
-      xs: 'stretch',
-      lg: 'center',
-    },
-    gap: 1.5,
-  },
+    flexWrap: 'wrap',
+    gap: 0.5,
+    alignItems: 'center',
+    minWidth: 0,
 
-  title: {
-    fontWeight: 700,
-  },
-
-  meta: {
-    color: palette.muted,
-    mt: 0.25,
+    '& .MuiChip-root': {
+      minHeight: 28,
+      fontWeight: 700,
+    },
   },
 
   controls: {
@@ -39,5 +41,23 @@ export const headerSx = {
       xs: 'space-between',
       lg: 'flex-start',
     },
+
+    '& button': {
+      minHeight: 34,
+      borderRadius: '8px',
+    },
+  },
+
+  createButton: {
+    minWidth: 116,
+    px: 1.1,
+    fontWeight: 700,
+    boxShadow: '0 6px 14px rgba(9, 105, 218, 0.16)',
+  },
+
+  reloadButton: {
+    minWidth: 72,
+    px: 1,
+    fontWeight: 700,
   },
 }

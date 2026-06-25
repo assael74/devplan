@@ -5,16 +5,41 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Input,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { seasonSx as sx } from './sx/season.sx.js'
 
+const getSeasonStatus = season => {
+  const snapshotsCount = Number(season.snapshotsCount) || 0
+  const loadedClubsCount = Number(season.loadedClubsCount) || 0
+  const clubsCount = Number(season.clubsCount) || 0
+
+  if (snapshotsCount > 0) {
+    return { label: 'פעילה', color: 'success' }
+  }
+
+  if (loadedClubsCount > 0 || clubsCount > 0) {
+    return { label: 'טיוטה', color: 'warning' }
+  }
+
+  return { label: 'אין צילום', color: 'neutral' }
+}
+
 function SeasonRow({ season }) {
+  const status = getSeasonStatus(season)
+  const birthYear =
+    season.primaryBirthYear ||
+    season.birthYears?.join(', ') ||
+    '-'
+
   return (
     <Box sx={sx.item}>
-      <Box>
+      <Box sx={sx.text}>
         <Typography
           level="body-sm"
           sx={sx.title}
@@ -22,28 +47,24 @@ function SeasonRow({ season }) {
           {season.seasonId}
         </Typography>
 
-        <Typography
-          level="body-xs"
-          sx={sx.meta}
-        >
-          שנתון:{' '}
-          {season.primaryBirthYear ||
-            season.birthYears?.join(', ') ||
-            '-'}
-          {' | '}
-          מספר מועדונים: {season.clubsCount ?? '-'}
-          {' | '}
-          צילום אחרון: {season.latestSnapshotAt || '-'}
-        </Typography>
+        <Box sx={sx.meta}>
+          <span>שנתון {birthYear}</span>
+          <span>{season.clubsCount ?? '-'} מועדונים</span>
+          <span>{season.latestSnapshotAt || 'אין צילום אחרון'}</span>
+        </Box>
       </Box>
 
       <Box sx={sx.stats}>
-        <Chip size="sm" variant="soft" color="neutral">
-          נטענו: {season.loadedClubsCount ?? 0}
+        <Chip size="sm" variant="soft" color={status.color}>
+          {status.label}
         </Chip>
 
         <Chip size="sm" variant="soft" color="neutral">
-          צילומים: {season.snapshotsCount ?? 0}
+          {season.loadedClubsCount ?? 0} נטענו
+        </Chip>
+
+        <Chip size="sm" variant="soft" color="neutral">
+          {season.snapshotsCount ?? 0} צילומים
         </Chip>
       </Box>
     </Box>
@@ -60,6 +81,8 @@ export default function SeasonsPanel({
   onChange,
   onSave,
 }) {
+  const addSeasonLabel = adding ? 'בטל הוספת עונה' : 'הוסף עונה'
+
   return (
     <Box sx={sx.panel}>
       <Box sx={sx.header}>
@@ -70,15 +93,20 @@ export default function SeasonsPanel({
           עונות
         </Typography>
 
-        <Button
-          size="sm"
-          variant={adding ? 'soft' : 'solid'}
-          color={adding ? 'neutral' : 'primary'}
-          disabled={saving}
-          onClick={onToggle}
-        >
-          {adding ? 'ביטול' : 'הוסף עונה'}
-        </Button>
+        <Tooltip title={addSeasonLabel}>
+          <IconButton
+            size="sm"
+            variant={adding ? 'soft' : 'solid'}
+            color={adding ? 'neutral' : 'success'}
+            disabled={saving}
+            aria-label={addSeasonLabel}
+            title={addSeasonLabel}
+            sx={sx.addButton}
+            onClick={onToggle}
+          >
+            {adding ? '×' : iconUi({ id: 'addSeason', size: 'small' })}
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Box sx={sx.list}>
@@ -146,6 +174,7 @@ export default function SeasonsPanel({
             size="sm"
             color="primary"
             loading={saving}
+            sx={sx.saveButton}
             onClick={onSave}
           >
             שמור

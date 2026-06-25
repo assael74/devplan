@@ -15,6 +15,7 @@ import { db } from '../../../services/firebase/firebase.js'
 import {
   buildScoutMetrics,
   buildPlayerScoutSignals,
+  SCOUT_PROFILES,
   TEAM_FILTER,
 } from '../../../shared/players/scouting/index.js'
 import {
@@ -1040,6 +1041,78 @@ export async function listPlayerSearchByTeamProfile(teamOrKey, search = {}) {
   return rows
 }
 
+export async function listPlayerSearchByTeam(teamOrKey, options = {}) {
+  const lookup = normalizeTeamLookup(teamOrKey)
+  const teamSeasonKey = clean(lookup.teamSeasonKey)
+  const mode = clean(options.mode || 'eligible')
+
+  if (!teamSeasonKey) return []
+
+  const profileIds = unique(SCOUT_PROFILES.map(profile => profile.id))
+  const fields = mode === 'raw'
+    ? ['rawScoutProfileIds']
+    : ['scoutProfileIds', 'rawScoutProfileIds']
+  const docs = []
+
+  for (const field of fields) {
+    for (const batchIds of chunks(profileIds, 30)) {
+      const snap = await getDocs(query(
+        playerSearchRef(),
+        where('teamSeasonKey', '==', teamSeasonKey),
+        where(field, 'array-contains-any', batchIds)
+      ))
+
+      docs.push(...snap.docs)
+    }
+  }
+
+  const rows = uniqueRowsById(docs
+    .map(item => {
+      const docData = {
+        id: item.id,
+        ...item.data(),
+      }
+      const current = docData.current || {}
+
+      return {
+        ...docData,
+        id: clean(docData.playerSeasonId) || docData.id,
+        searchDocId: docData.id,
+        statsDoc: docData,
+        games: current.games ?? docData.games,
+        goals: current.goals ?? docData.goals,
+        yellowCards: current.yellowCards ?? docData.yellowCards,
+        starts: current.starts ?? docData.starts,
+        subIn: current.subIn ?? docData.subIn,
+        subOut: current.subOut ?? docData.subOut,
+        minutes: current.minutes ?? docData.minutes,
+        isPlayingUp: docData.isPlayingUp || current.isYoungerAgeGroup,
+      }
+    })
+  )
+    .sort((a, b) => {
+      const minutesDiff = (Number(b.minutes) || -1) - (Number(a.minutes) || -1)
+      if (minutesDiff) return minutesDiff
+
+      return clean(a.fullName || a.playerName)
+        .localeCompare(clean(b.fullName || b.playerName), 'he')
+    })
+
+  trackFirestoreRead({
+    collection: PLAYERS_DATABASE_COLLECTIONS.playerSearch,
+    feature: FEATURE,
+    action: 'listPlayerSearchByTeam',
+    docs: rows,
+    docsCount: rows.length,
+    meta: {
+      teamSeasonKey,
+      mode,
+    },
+  })
+
+  return rows
+}
+
 export async function listPlayerStatsBySeasons(playerSeasons = [], team = {}) {
   const seasonIds = unique(playerSeasons.map(row => row.id || row.playerSeasonId))
   const leagueId = clean(team.leagueId || 'league')
@@ -1167,7 +1240,7 @@ const countValues = values =>
 const teamSummaryKey = team =>
   clean(team.teamSeasonKey || team.teamId || team.teamSlotId || team.teamCatalogId)
 
-async function refreshLeagueTeamIndex(team = {}) {
+export async function refreshLeagueTeamIndex(team = {}) {
   const leagueId = clean(team.leagueId)
   const teamKey = teamSummaryKey(team)
 

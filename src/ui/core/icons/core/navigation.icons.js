@@ -1,4 +1,5 @@
 import {
+  AddCircleOutline,
   AutoAwesomeMosaic,
   BarChart,
   Business,
@@ -9,12 +10,14 @@ import {
   Payment,
   PeopleAlt,
   TableView,
+  Visibility,
   VideoLibrary,
   ViewCompactAlt,
   ViewTimeline,
   Insights,
   AccountTree,
-  ManageSearch
+  ManageSearch,
+  PlaylistAdd
 } from '@mui/icons-material';
 
 export const navigationIcons = {
@@ -33,5 +36,9 @@ export const navigationIcons = {
   insights: <Insights />,
   squadSimulator: <AccountTree />,
   playersDatabase: <ManageSearch />,
-  firestoreUsage: <DataObject />
+  firestoreUsage: <DataObject />,
+  viewLeague: <Visibility />,
+  viewLaeague: <Visibility />,
+  addLeague: <AddCircleOutline />,
+  addSeason: <PlaylistAdd />
 };

@@ -7,6 +7,7 @@ export * from './player.age.utils.js'
 export * from './player.name.utils.js'
 export * from './player.positions.utils.js'
 export * from './player.quickStats.utils.js'
+export * from './yearGroupPath.js'
 
 export * from './targets/index.js'
 export * from './scouting/index.js'

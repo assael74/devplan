@@ -1,4 +1,4 @@
-// src/features/playersDatabase/components/leagues/board/hook/useBoard.js
+﻿// src/features/playersDatabase/components/leagues/board/hook/useBoard.js
 
 import {
   useCallback,
@@ -6,7 +6,10 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import {
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 
 import { useAuth } from '../../../../../../app/AuthProvider.js'
 import {
@@ -16,9 +19,15 @@ import {
 } from '../../../../models/league.model.js'
 import {
   ensureLeagueFromPlan,
+  listLeagueSnapshotsByIds,
   listLeagues,
 } from '../../../../services/pdbLeague.firestore.js'
+import { findPlayersDatabaseYearGroupOpportunities } from '../../../../sharedLogic/yearGroupOpportunities.js'
 import { getLeagueSeasonRows } from '../../leagueUtils.js'
+import {
+  getLeagueBoardCache,
+  setLeagueBoardCache,
+} from './leagueBoardCache.js'
 
 const createDetailsForm = (league = {}) => ({
   leagueName: league.leagueName || '',
@@ -43,6 +52,14 @@ export const LEAGUE_SORT_OPTIONS = [
     label: 'קבוצת גיל ואז רמה',
     defaultDirection: 'asc',
   },
+]
+
+export const LEAGUE_LEVEL_FILTERS = [
+  { value: 'all', label: 'כל הליגות' },
+  { value: '1', label: 'על' },
+  { value: '2', label: 'לאומית' },
+  { value: '3', label: 'ארצית' },
+  { value: '4', label: 'מחוזית' },
 ]
 
 const cleanText = value => String(value ?? '').trim()
@@ -93,23 +110,129 @@ const sortLeagues = ({ leagues, sortBy, sortDirection }) => {
   ))
 }
 
+const getLeagueBirthYearValue = league => {
+  const birthYear = getPrimaryBirthYear(league)
+
+  return birthYear === 9999 ? '' : String(birthYear)
+}
+
+const filterLeagues = ({
+  leagues,
+  birthYearFilter,
+  levelFilter,
+}) => leagues.filter(league => {
+  const birthYearOk =
+    birthYearFilter === 'all' ||
+    getLeagueBirthYearValue(league) === birthYearFilter
+  const levelOk =
+    levelFilter === 'all' ||
+    String(league?.level ?? '') === levelFilter
+
+  return birthYearOk && levelOk
+})
+
 const createSeasonForm = () => ({
   seasonId: '',
   birthYear: '',
   clubsCount: '',
 })
 
+const latestSnapshotIds = leagues => (
+  Array.from(new Set(
+    leagues.flatMap(league => (
+      Object.values(league?.seasons || {})
+        .map(season => cleanText(season?.latestSnapshotId))
+        .filter(Boolean)
+    ))
+  ))
+)
+
+const getScoutProfilesCount = league => (
+  Object.values(league?.teamsIndex || {})
+    .reduce((acc, team) => (
+      acc + (Number(team?.scoutProfilesCount) || 0)
+    ), 0)
+)
+
+const getTeamScoutProfilesCount = (league, team) => {
+  const index = league?.teamsIndex || {}
+  const direct =
+    index[cleanText(team?.teamSeasonKey)] ||
+    index[cleanText(team?.teamSlotId)]
+
+  if (direct) {
+    return Number(direct.scoutProfilesCount) || 0
+  }
+
+  const teamSlot = Number(team?.teamSlot) || 1
+
+  const match = Object.values(index).find(item => (
+    cleanText(item?.clubId) === cleanText(team?.clubId) &&
+    cleanText(item?.seasonId) === cleanText(team?.seasonId) &&
+    cleanText(item?.ageGroupId).toLowerCase() ===
+      cleanText(team?.ageGroupId).toLowerCase() &&
+    (Number(item?.teamSlot) || 1) === teamSlot
+  ))
+
+  return Number(match?.scoutProfilesCount) || 0
+}
+
+const buildLeagueProfileRows = league => (
+  Object.entries(league?.teamsIndex || {})
+    .map(([key, team]) => {
+      const scoutProfilesCount = Number(team?.scoutProfilesCount) || 0
+
+      return {
+        id: `profiles__${key}`,
+        indicatorType: 'profiles',
+        clubId: cleanText(team?.clubId),
+        clubName: cleanText(
+          team?.clubName ||
+            team?.teamName ||
+            team?.sourceTeamName ||
+            key
+        ),
+        currentTeam: {
+          ...team,
+          teamSeasonKey: cleanText(team?.teamSeasonKey || key),
+          teamSlotId: cleanText(team?.teamSlotId),
+          clubId: cleanText(team?.clubId),
+          clubName: cleanText(team?.clubName || team?.teamName),
+          ageGroupLabel: cleanText(team?.ageGroupLabel || league?.ageGroupLabel),
+          leagueLevel: team?.leagueLevel ?? team?.level ?? league?.level,
+          leagueName: cleanText(team?.leagueName || league?.leagueName),
+        },
+        upperTeam: null,
+        levelGap: 0,
+        scoutProfilesCount,
+      }
+    })
+    .filter(row => row.scoutProfilesCount > 0)
+    .sort((a, b) => (
+      b.scoutProfilesCount - a.scoutProfilesCount ||
+      compareText(a.clubName, b.clubName)
+    ))
+)
+
 export function useBoard() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedLeagueId = searchParams.get('leagueId') || ''
   const { user } = useAuth()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
+  const [preloadLoading, setPreloadLoading] = useState(false)
+  const [preloadError, setPreloadError] = useState('')
   const [leagues, setLeagues] = useState([])
+  const [latestSnapshots, setLatestSnapshots] = useState([])
+  const [yearGroupOpportunities, setYearGroupOpportunities] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [sortBy, setSortBy] = useState('levelBirthYear')
   const [sortDirection, setSortDirection] = useState('asc')
+  const [birthYearFilter, setBirthYearFilter] = useState('all')
+  const [levelFilter, setLevelFilter] = useState('all')
 
   const [editingDetails, setEditingDetails] = useState(false)
   const [detailsForm, setDetailsForm] = useState(createDetailsForm)
@@ -129,47 +252,267 @@ export function useBoard() {
     [leagues, selectedId]
   )
 
+  const filteredLeagues = useMemo(
+    () => filterLeagues({
+      leagues,
+      birthYearFilter,
+      levelFilter,
+    }),
+    [birthYearFilter, leagues, levelFilter]
+  )
+
   const sortedLeagues = useMemo(
     () => sortLeagues({
-      leagues,
+      leagues: filteredLeagues,
       sortBy,
       sortDirection,
     }),
-    [leagues, sortBy, sortDirection]
+    [filteredLeagues, sortBy, sortDirection]
   )
+
+  const birthYearOptions = useMemo(
+    () => [
+      { value: 'all', label: 'כל השנתונים' },
+      ...Array.from(new Set(
+        leagues.map(getLeagueBirthYearValue).filter(Boolean)
+      ))
+        .sort((a, b) => Number(a) - Number(b))
+        .map(value => ({ value, label: value })),
+    ],
+    [leagues]
+  )
+
+  const leagueInsightsById = useMemo(() => {
+    const byId = {}
+
+    leagues.forEach(league => {
+      byId[league.id] = {
+        scoutProfilesCount: getScoutProfilesCount(league),
+        opportunityCount: 0,
+        maxLevelGap: 0,
+      }
+    })
+
+    yearGroupOpportunities.forEach(opportunity => {
+      const leagueId = cleanText(
+        opportunity?.currentTeam?.leagueId ||
+          opportunity?.currentTeam?.league?.id
+      )
+
+      if (!leagueId) return
+
+      const insight = byId[leagueId] || {
+        scoutProfilesCount: 0,
+        opportunityCount: 0,
+        maxLevelGap: 0,
+      }
+
+      insight.opportunityCount += 1
+      insight.maxLevelGap = Math.max(
+        insight.maxLevelGap,
+        Number(opportunity?.levelGap) || 0
+      )
+      byId[leagueId] = insight
+    })
+
+    return byId
+  }, [leagues, yearGroupOpportunities])
+
+  const totalScoutProfilesCount = useMemo(
+    () => leagues.reduce((acc, league) => (
+      acc + getScoutProfilesCount(league)
+    ), 0),
+    [leagues]
+  )
+
+  const boardStatus = useMemo(() => [
+    {
+      id: 'preload',
+      label: preloadLoading
+        ? 'טוען רקע'
+        : preloadError
+          ? 'טעינת רקע נכשלה'
+          : 'טעינה מוקדמת פעילה',
+      color: preloadError ? 'danger' : 'success',
+    },
+    {
+      id: 'opportunities',
+      label: `${yearGroupOpportunities.length} שנתונים בסיכון`,
+      color: yearGroupOpportunities.length ? 'warning' : 'neutral',
+    },
+    {
+      id: 'profiles',
+      label: `${totalScoutProfilesCount} התאמות סקאוט`,
+      color: 'neutral',
+    },
+    {
+      id: 'snapshots',
+      label: `${latestSnapshots.length} צילומים`,
+      color: 'neutral',
+    },
+  ], [
+    latestSnapshots.length,
+    preloadError,
+    preloadLoading,
+    totalScoutProfilesCount,
+    yearGroupOpportunities.length,
+  ])
+
+  useEffect(() => {
+    if (!sortedLeagues.length) return
+
+    setSelectedId(current => (
+      sortedLeagues.some(league => league.id === current)
+        ? current
+        : sortedLeagues[0]?.id || ''
+    ))
+  }, [sortedLeagues])
 
   const seasonRows = useMemo(
     () => getLeagueSeasonRows(selectedLeague),
     [selectedLeague]
   )
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setLoadError('')
+  const selectedLeagueInsight = useMemo(
+    () => leagueInsightsById[selectedLeague?.id] || {
+      scoutProfilesCount: 0,
+      opportunityCount: 0,
+      maxLevelGap: 0,
+    },
+    [leagueInsightsById, selectedLeague?.id]
+  )
+
+  const selectedLeagueOpportunities = useMemo(
+    () => yearGroupOpportunities
+      .filter(opportunity => (
+        cleanText(
+          opportunity?.currentTeam?.leagueId ||
+            opportunity?.currentTeam?.league?.id
+        ) === selectedLeague?.id
+      ))
+      .map(opportunity => ({
+        ...opportunity,
+        scoutProfilesCount: getTeamScoutProfilesCount(
+          selectedLeague,
+          opportunity.currentTeam
+        ),
+      })),
+    [selectedLeague, selectedLeague?.id, yearGroupOpportunities]
+  )
+
+  const selectedLeagueProfileRows = useMemo(
+    () => buildLeagueProfileRows(selectedLeague),
+    [selectedLeague]
+  )
+
+  const preloadLeagueContext = useCallback(async nextLeagues => {
+    const snapshotIds = latestSnapshotIds(nextLeagues)
+
+    setPreloadLoading(true)
+    setPreloadError('')
 
     try {
+      const snapshots = await listLeagueSnapshotsByIds(snapshotIds)
+      const opportunities = findPlayersDatabaseYearGroupOpportunities({
+        leagues: nextLeagues,
+        snapshots,
+      })
+
+      setLatestSnapshots(snapshots)
+      setYearGroupOpportunities(opportunities)
+
+      return {
+        snapshots,
+        opportunities,
+        ok: true,
+      }
+    } catch (err) {
+      setLatestSnapshots([])
+      setYearGroupOpportunities([])
+      setPreloadError(
+        err?.message || 'טעינת נתוני רקע לליגות נכשלה'
+      )
+      return {
+        snapshots: [],
+        opportunities: [],
+        ok: false,
+      }
+    } finally {
+      setPreloadLoading(false)
+    }
+  }, [])
+
+  const load = useCallback(async (options = {}) => {
+    const force = options?.force === true
+
+    setLoading(true)
+    setLoadError('')
+    setPreloadError('')
+
+    try {
+      const cached = force ? null : getLeagueBoardCache()
+
+      if (cached) {
+        setLeagues(cached.leagues)
+        setLatestSnapshots(cached.latestSnapshots)
+        setYearGroupOpportunities(cached.yearGroupOpportunities)
+
+        setSelectedId(current => {
+          const requestedExists = cached.leagues.some(
+            league => league.id === requestedLeagueId
+          )
+          const currentExists = cached.leagues.some(
+            league => league.id === current
+          )
+
+          if (requestedExists) return requestedLeagueId
+
+          return currentExists
+            ? current
+            : cached.leagues[0]?.id || ''
+        })
+
+        return
+      }
+
       const rows = await listLeagues()
       const nextLeagues = Array.isArray(rows) ? rows : []
 
       setLeagues(nextLeagues)
+      const preloadResult = await preloadLeagueContext(nextLeagues)
+
+      if (preloadResult.ok) {
+        setLeagueBoardCache({
+          leagues: nextLeagues,
+          latestSnapshots: preloadResult.snapshots,
+          yearGroupOpportunities: preloadResult.opportunities,
+        })
+      }
 
       setSelectedId(current => {
+        const requestedExists = nextLeagues.some(
+          league => league.id === requestedLeagueId
+        )
         const currentExists = nextLeagues.some(
           league => league.id === current
         )
+
+        if (requestedExists) return requestedLeagueId
 
         return currentExists
           ? current
           : nextLeagues[0]?.id || ''
       })
     } catch (err) {
+      setLatestSnapshots([])
+      setYearGroupOpportunities([])
       setLoadError(
         err?.message || 'טעינת ליגות נכשלה'
       )
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [preloadLeagueContext, requestedLeagueId])
 
   useEffect(() => {
     load()
@@ -188,6 +531,10 @@ export function useBoard() {
 
   const selectLeague = leagueId => {
     setSelectedId(leagueId)
+
+    if (requestedLeagueId) {
+      setSearchParams({}, { replace: true })
+    }
   }
 
   const openLeague = () => {
@@ -196,7 +543,12 @@ export function useBoard() {
     navigate(
       `/players-database/leagues/${encodeURIComponent(
         selectedLeague.id
-      )}`
+      )}`,
+      {
+        state: {
+          league: selectedLeague,
+        },
+      }
     )
   }
 
@@ -253,7 +605,7 @@ export function useBoard() {
           '',
       })
 
-      await load()
+      await load({ force: true })
       setEditingDetails(false)
     } catch (err) {
       setDetailsError(
@@ -317,7 +669,7 @@ export function useBoard() {
           '',
       })
 
-      await load()
+      await load({ force: true })
       setAddingSeason(false)
       setSeasonForm(createSeasonForm())
     } catch (err) {
@@ -330,7 +682,7 @@ export function useBoard() {
   }
 
   const handleLeagueSaved = async league => {
-    await load()
+    await load({ force: true })
 
     if (league?.id) {
       setSelectedId(league.id)
@@ -341,8 +693,17 @@ export function useBoard() {
     createOpen,
     loading,
     loadError,
+    preloadLoading,
+    preloadError,
     leagues: sortedLeagues,
+    latestSnapshots,
+    yearGroupOpportunities,
+    leagueInsightsById,
+    boardStatus,
     selectedLeague,
+    selectedLeagueInsight,
+    selectedLeagueOpportunities,
+    selectedLeagueProfileRows,
     seasonRows,
     editingDetails,
     detailsForm,
@@ -353,7 +714,7 @@ export function useBoard() {
     savingSeason,
     seasonError,
 
-    load,
+    load: () => load({ force: true }),
     selectLeague,
     openLeague,
     openCreate: () => setCreateOpen(true),
@@ -367,6 +728,12 @@ export function useBoard() {
     sortOptions: LEAGUE_SORT_OPTIONS,
     setSortBy,
     setSortDirection,
+    birthYearFilter,
+    levelFilter,
+    birthYearOptions,
+    levelOptions: LEAGUE_LEVEL_FILTERS,
+    setBirthYearFilter,
+    setLevelFilter,
     toggleSeasonForm,
     updateSeason,
     saveSeason,

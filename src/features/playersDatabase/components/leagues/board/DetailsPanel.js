@@ -13,8 +13,24 @@ import {
 import {
   getLeagueLevelLabel,
   getLeagueRegionLabel,
+  getLeagueSeasonRows,
 } from '../leagueUtils.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { detailSx as sx } from './sx/detail.sx.js'
+
+const getLeagueTeamsCount = league => {
+  const primarySeason = getLeagueSeasonRows(league)[0] || {}
+  const clubsCount = Number(primarySeason.clubsCount)
+  const loadedClubsCount = Number(primarySeason.loadedClubsCount)
+  const indexedTeamsCount = Object.keys(league?.teamsIndex || {}).length
+
+  if (Number.isInteger(clubsCount) && clubsCount > 0) return clubsCount
+  if (Number.isInteger(loadedClubsCount) && loadedClubsCount > 0) {
+    return loadedClubsCount
+  }
+
+  return indexedTeamsCount || ''
+}
 
 function InfoValue({ label, value }) {
   return (
@@ -36,11 +52,15 @@ export default function DetailsPanel({
   editing,
   saving,
   error,
+  children,
   onEdit,
   onCancel,
   onChange,
   onSave,
+  onOpenLeague,
 }) {
+  const teamsCount = getLeagueTeamsCount(league)
+
   return (
     <Box sx={sx.panel}>
       <Box sx={sx.header}>
@@ -73,15 +93,30 @@ export default function DetailsPanel({
             </Button>
           </Box>
         ) : (
-          <Button
-            size="sm"
-            variant="soft"
-            color="neutral"
-            disabled={!league}
-            onClick={onEdit}
-          >
-            ערוך
-          </Button>
+          <Box sx={sx.actions}>
+            <Button
+              size="sm"
+              variant="outlined"
+              color="primary"
+              disabled={!league}
+              startDecorator={iconUi({ id: 'viewLaeague', size: 'small' })}
+              sx={sx.openLeagueButton}
+              onClick={onOpenLeague}
+            >
+              פתח טבלת ליגה
+            </Button>
+
+            <Button
+              size="sm"
+              variant="soft"
+              color="neutral"
+              disabled={!league}
+              sx={sx.editButton}
+              onClick={onEdit}
+            >
+              ערוך
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -172,7 +207,6 @@ export default function DetailsPanel({
               }
             />
           </Box>
-
         </Box>
       ) : (
         <Box sx={sx.infoGrid}>
@@ -184,6 +218,11 @@ export default function DetailsPanel({
           <InfoValue
             label="קבוצת גיל"
             value={league?.ageGroupLabel}
+          />
+
+          <InfoValue
+            label="קבוצות"
+            value={teamsCount}
           />
 
           <InfoValue
@@ -208,6 +247,12 @@ export default function DetailsPanel({
           {error}
         </Typography>
       )}
+
+      {children ? (
+        <Box sx={sx.embeddedSection}>
+          {children}
+        </Box>
+      ) : null}
     </Box>
   )
 }

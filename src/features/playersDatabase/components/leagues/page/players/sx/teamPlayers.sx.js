@@ -81,6 +81,13 @@ export const teamPlayersSx = {
     },
   },
 
+  viewChip: {
+    minHeight: 24,
+    fontSize: 12,
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+
   delBar: {
     minHeight: 42,
     display: 'flex',
@@ -296,6 +303,23 @@ export const teamPlayersSx = {
     color: palette.muted,
     whiteSpace: 'normal',
     lineHeight: 1.5,
+  },
+
+  loadFullRow: {
+    minHeight: 42,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 1,
+    px: 1,
+    borderTop: `1px solid ${palette.line}`,
+    bgcolor: '#f8fafc',
+  },
+
+  loadFullText: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: palette.muted,
   },
 
   layerSelect: {

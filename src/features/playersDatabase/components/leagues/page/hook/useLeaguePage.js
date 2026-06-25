@@ -1,4 +1,4 @@
-// src/features/playersDatabase/components/leagues/page/hook/useLeaguePage.js
+﻿// src/features/playersDatabase/components/leagues/page/hook/useLeaguePage.js
 
 import {
   useCallback,
@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import {
   buildTeamsDrilldown,
@@ -26,6 +26,7 @@ import {
   getPrimaryLeagueSeason,
 } from '../../leagueUtils.js'
 import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
+import { markLeagueBoardCacheDirty } from '../../board/hook/leagueBoardCache.js'
 
 export const PERSPECTIVES = [
   {
@@ -161,12 +162,22 @@ const getFilterState = ({
   }
 }
 
+const hasTeamsIndex = league =>
+  Object.keys(league?.teamsIndex || {}).length > 0
+
 export function useLeaguePage() {
   const { leagueId = '' } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const mountedRef = useRef(true)
+  const initialLeagueRef = useRef(location.state?.league || null)
 
-  const [league, setLeague] = useState(null)
+  const [league, setLeague] = useState(() => {
+    const initialLeague = location.state?.league
+    return initialLeague?.id === decodeURIComponent(leagueId)
+      ? initialLeague
+      : null
+  })
   const [snapshot, setSnapshot] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -315,8 +326,16 @@ export function useLeaguePage() {
     setError('')
 
     try {
-      const nextLeague =
-        await getLeague(decodedLeagueId)
+      const initialLeague = initialLeagueRef.current
+      let nextLeague =
+        initialLeague?.id === decodedLeagueId
+          ? initialLeague
+          : await getLeague(decodedLeagueId)
+      initialLeagueRef.current = null
+
+      if (nextLeague?.id && !hasTeamsIndex(nextLeague)) {
+        nextLeague = await getLeague(decodedLeagueId)
+      }
 
       if (!mountedRef.current) return
 
@@ -330,6 +349,7 @@ export function useLeaguePage() {
         getPrimaryLeagueSeason(nextLeague)
 
       if (!season) {
+        setLeague(nextLeague)
         setSnapshot(null)
         return
       }
@@ -477,6 +497,7 @@ export function useLeaguePage() {
       },
     })
 
+    markLeagueBoardCacheDirty()
     await load()
   }
 
@@ -485,6 +506,7 @@ export function useLeaguePage() {
       setSnapshot(savedSnapshot)
     }
 
+    markLeagueBoardCacheDirty()
     await load()
   }
 
@@ -517,7 +539,14 @@ export function useLeaguePage() {
     changeTeamSlot,
     openPaste: () => setPasteOpen(true),
     closePaste: () => setPasteOpen(false),
-    goBack: () => navigate('/players-database'),
+    goBack: () => {
+      const targetLeagueId = league?.id || decodedLeagueId
+      const query = targetLeagueId
+        ? `?leagueId=${encodeURIComponent(targetLeagueId)}`
+        : ''
+
+      navigate(`/players-database${query}`)
+    },
     handleSnapshotSaved,
   }
 }

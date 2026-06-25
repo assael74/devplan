@@ -85,22 +85,26 @@ export const detailsSx = {
 
   profileChip: active => ({
     flex: '0 0 auto',
-    width: 260,
-    maxWidth: 260,
+    width: 'auto',
+    maxWidth: 240,
     minHeight: 28,
+    px: 1,
     fontWeight: 700,
-    opacity: active ? 1 : 0.46,
+    cursor: 'pointer',
+    opacity: 1,
     direction: 'rtl',
+    flexDirection: 'row-reverse',
     border: active ? '1px solid rgba(21, 128, 61, 0.28)' : `1px solid ${palette.line}`,
 
     '& .MuiChip-startDecorator': {
       display: 'inline-flex',
       alignItems: 'center',
       color: active ? 'inherit' : palette.muted,
-      opacity: active ? 1 : 0.8,
+      opacity: 1,
     },
 
     '& .MuiChip-label': {
+      direction: 'rtl',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
