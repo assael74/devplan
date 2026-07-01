@@ -55,7 +55,7 @@ export const PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "הפועל-רמת-גן-אסי",
-    name: "הפועל רמת גן אסי",
+    name: "הפועל רמת גן",
     clubLevel: 1,
     aliases: ['הפועל ר"ג דרום'],
   },
@@ -301,7 +301,7 @@ export const PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "מכבי-עמישב-פתח-תקוה-אלי",
-    name: "מכבי עמישב פתח תקוה אלי",
+    name: "מכבי עמישב פתח תקוה",
     clubLevel: 3,
     aliases: ['מ. עמישב פ"ת ברק הלפרן צו פיוס', 'מכבי עמישב פ"ת'],
   },
@@ -469,7 +469,7 @@ export const PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "אגודת-ספורט-רמת-אליהו",
-    name: "אגודת ספורט רמת אליהו",
+    name: "א.ס רמת אליהו",
     clubLevel: 4,
     aliases: [],
   },
@@ -645,7 +645,7 @@ export const PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "הפועל-חולון-צפרירים",
     name: "הפועל חולון צפרירים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['הפועל חולון צפרירים'],
   },
   {
     id: "מועדון-ספורט-צעירי-חיפה",
@@ -1072,7 +1072,7 @@ export const PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "מכבי-השרון-נתניה-ויקטור-עטיה",
-    name: "מכבי השרון נתניה ויקטור עטיה",
+    name: "מכבי נתניה 2",
     clubLevel: 4,
     aliases: [],
   },

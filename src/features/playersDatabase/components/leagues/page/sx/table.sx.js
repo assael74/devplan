@@ -29,7 +29,7 @@ export const tableSx = {
   },
 
   table: {
-    minWidth: 1020,
+    minWidth: 1070,
     width: '100%',
     height: 'auto',
     borderCollapse: 'collapse',
@@ -87,7 +87,7 @@ export const tableSx = {
       width: 170,
     },
 
-    '& th:nth-of-type(10), & td:nth-of-type(10)': {
+    '& th:nth-of-type(10), & td:nth-of-type(10), & th:nth-of-type(11), & td:nth-of-type(11)': {
       width: 48,
       px: 0.45,
     },
@@ -163,6 +163,15 @@ export const tableSx = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+
+  teamNameLink: {
+    color: palette.ink,
+    textDecorationColor: palette.blue,
+
+    '&:hover': {
+      color: palette.blue,
+    },
   },
 
   playersCountChip: {
@@ -267,6 +276,20 @@ export const tableSx = {
     },
   },
 
+  rowActionsBtn: {
+    minWidth: 28,
+    minHeight: 28,
+    px: 0,
+    flex: '0 0 auto',
+    borderRadius: '8px',
+    bgcolor: '#f7fafc',
+    border: `1px solid ${palette.line}`,
+
+    '&:hover': {
+      bgcolor: '#edf3f8',
+    },
+  },
+
   edgeCell: {
     display: 'flex',
     alignItems: 'center',
@@ -300,5 +323,61 @@ export const tableSx = {
     px: 0.55,
     pb: 0.55,
     borderTop: `1px solid ${palette.line}`,
+  },
+
+  teamLinkDialog: {
+    width: 'min(480px, calc(100vw - 40px))',
+    p: 2,
+    borderRadius: '10px',
+    display: 'grid',
+    gap: 1.25,
+  },
+
+  teamLinkHead: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  },
+
+  teamLinkMeta: {
+    color: palette.muted,
+    fontWeight: 700,
+  },
+
+  teamLinkIdentity: {
+    minWidth: 0,
+    border: `1px solid ${palette.line}`,
+    borderRadius: '8px',
+    bgcolor: '#f7fafc',
+    px: 1,
+    py: 0.75,
+  },
+
+  teamLinkLabel: {
+    mb: 0.35,
+    color: palette.muted,
+    fontWeight: 700,
+  },
+
+  teamLinkValue: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontWeight: 700,
+  },
+
+  teamLinkError: {
+    p: 0.75,
+    borderRadius: '8px',
+    bgcolor: '#ffe9e7',
+    color: '#b42318',
+    fontWeight: 700,
+  },
+
+  teamLinkActions: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: 1,
   },
 }

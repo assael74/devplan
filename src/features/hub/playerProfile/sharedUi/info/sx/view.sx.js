@@ -141,6 +141,39 @@ export const viewSx = {
     whiteSpace: 'nowrap',
   },
 
+  originalTarget: {
+    color: 'text.secondary',
+    fontWeight: 700,
+    lineHeight: 1.25,
+  },
+
+  confidenceRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1.5,
+    minWidth: 0,
+
+    '@media (max-width: 700px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+    },
+  },
+
+  confidenceCopy: {
+    minWidth: 0,
+    flex: 1,
+  },
+
+  confidenceSelect: {
+    width: 220,
+    flex: '0 0 auto',
+
+    '@media (max-width: 700px)': {
+      width: '100%',
+    },
+  },
+
   title: {
     fontWeight: 700,
     color: 'text.primary',
@@ -154,7 +187,8 @@ export const viewSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'repeat(3, minmax(0, 1fr))',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      lg: 'repeat(4, minmax(0, 1fr))',
     },
     gap: 0.75,
     mt: 1,
@@ -170,16 +204,16 @@ export const viewSx = {
     minWidth: 0,
   },
 
-  cardsGrid: {
+  cardsGrid: columns => ({
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'repeat(4, minmax(0, 1fr))',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      xl: `repeat(${columns}, minmax(0, 1fr))`,
     },
-    gap: 0.85,
-    p: 0.5,
-    minWidth: 0,
-  },
+    gap: 1,
+    mt: 1,
+  }),
 
   metric: (tone = 'neutral') => {
     const c = getTone(tone)
@@ -189,7 +223,8 @@ export const viewSx = {
       overflow: 'hidden',
       px: 1,
       py: 0.85,
-      minHeight: 92,
+      minHeight: 120,
+      height: '100%',
       borderRadius: 'md',
       border: '1px solid',
       borderColor: c.border,
@@ -216,7 +251,7 @@ export const viewSx = {
   },
 
   metricIcon: (tone = 'neutral') => {
-    const c = getTone(tone)
+    const toneColors = getTone(tone)
 
     return {
       width: 28,
@@ -225,10 +260,10 @@ export const viewSx = {
       display: 'grid',
       placeItems: 'center',
       flex: '0 0 auto',
-      bgcolor: c.iconBg,
-      color: c.iconColor,
+      bgcolor: toneColors.iconBg,
+      color: toneColors.iconColor,
       border: '1px solid',
-      borderColor: c.border,
+      borderColor: toneColors.border,
 
       '& svg': {
         fill: 'currentColor',
@@ -245,9 +280,9 @@ export const viewSx = {
   metricHelper: {
     color: 'text.tertiary',
     mt: 0.1,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    lineHeight: 1.3,
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
   },
 
   empty: {

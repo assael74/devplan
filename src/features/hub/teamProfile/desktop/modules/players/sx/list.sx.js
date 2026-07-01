@@ -1,6 +1,11 @@
 // teamProfile/desktop/modules/players/sx/list.sx.js
 
 export const listSx = {
+  list: {
+    display: 'grid',
+    gap: 0.35,
+  },
+
   emptyState: {
     display: 'grid',
     gap: 0.5,

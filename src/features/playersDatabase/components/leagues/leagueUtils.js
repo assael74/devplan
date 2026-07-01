@@ -1,6 +1,27 @@
 // src/features/playersDatabase/components/leagues/leagueUtils.js
 
+import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
+import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
+
 const clean = value => String(value ?? '').trim()
+
+const getCatalogClubName = row => {
+  const clubId = clean(row?.clubId || row?.clubCatalogId)
+  const byId = clubId
+    ? PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clubId)
+    : null
+
+  if (byId?.name) return byId.name
+
+  const match = resolveClubCatalogMatch(
+    row?.sourceClubName ||
+    row?.sourceTeamName ||
+    row?.clubName ||
+    row?.teamName
+  )
+
+  return clean(match?.name)
+}
 
 const numberFrom = (...values) => {
   for (const value of values) {
@@ -199,6 +220,7 @@ export const buildLeagueTableRows = ({
         teamSlotId,
         teamSeasonKey,
       })
+      const catalogClubName = getCatalogClubName(row)
 
       return {
         id: row.clubId || row.rowId || `snapshot-${index + 1}`,
@@ -208,6 +230,7 @@ export const buildLeagueTableRows = ({
           row.position ??
           index + 1,
         clubName:
+          catalogClubName ||
           row.clubName ||
           `מועדון ${index + 1}`,
         clubId: row.clubId || '',
@@ -223,6 +246,7 @@ export const buildLeagueTableRows = ({
         teamSlot,
         teamSlotId,
         teamSeasonKey,
+        teamUrl: teamIndex.teamUrl || row.teamUrl || row.source?.teamUrl || '',
         teamIndex,
         playersCount: numberFrom(
           teamIndex.playersCount,
@@ -266,11 +290,12 @@ export const buildLeagueTableRows = ({
   return Array.from({ length: clubsCount }, (_, index) => {
     const leaguePosition = index + 1
     const clubId = clean(clubIds[index])
+    const catalogClubName = getCatalogClubName({ clubId })
 
     return {
       id: clubId || `placeholder-${leaguePosition}`,
       leaguePosition,
-      clubName: clubId || `מועדון ${leaguePosition}`,
+      clubName: catalogClubName || clubId || `מועדון ${leaguePosition}`,
       games: 0,
       wins: 0,
       draws: 0,

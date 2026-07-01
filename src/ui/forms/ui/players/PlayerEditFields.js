@@ -14,15 +14,12 @@ import {
 import PlayerTypeSelector from '../../../fields/checkUi/players/PlayerTypeSelector.js'
 import PlayerActiveSelector from '../../../fields/checkUi/players/PlayerActiveSelector.js'
 import SquadRoleSelectField from '../../../fields/selectUi/players/SquadRoleSelectField.js'
+import SeasonPlanStatusSelect from '../../../fields/selectUi/players/SeasonPlanStatusSelect.js'
 import ProjectStatusSelectField from '../../../fields/selectUi/players/ProjectStatusSelectField.js'
 
 import { editSx as sx } from './sx/edit.sx.js'
 
-export default function PlayerEditFields({
-  draft,
-  setDraft,
-  fieldDisabled = {},
-}) {
+export default function PlayerEditFields({ draft, setDraft, fieldDisabled = {}, }) {
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
       <Box sx={sx.sectionCard}>
@@ -109,6 +106,17 @@ export default function PlayerEditFields({
                   setDraft((prev) => ({
                     ...prev,
                     squadRole: value,
+                  }))
+                }
+              />
+
+              <SeasonPlanStatusSelect
+                size="sm"
+                value={draft?.seasonPlanStatus || ''}
+                onChange={(value) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    seasonPlanStatus: value,
                   }))
                 }
               />

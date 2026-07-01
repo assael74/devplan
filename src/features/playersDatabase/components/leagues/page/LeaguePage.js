@@ -16,6 +16,7 @@ import {
 } from '../leagueUtils.js'
 import LeagueTable from './LeagueTable.js'
 import ScoutFilters from './ScoutFilters.js'
+import TeamLinkModal from './TeamLinkModal.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { useLeaguePage } from './hook/useLeaguePage.js'
 import { pageSx as sx } from './sx/page.sx.js'
@@ -143,6 +144,7 @@ export default function LeaguePage() {
               onToggle={model.toggleTeam}
               onTeamSlotChange={model.changeTeamSlot}
               onLeagueIndexRefresh={model.load}
+              onEditTeamLink={model.openTeamLink}
             />
           </Box>
         )}
@@ -154,6 +156,15 @@ export default function LeaguePage() {
         league={league}
         season={activeSeason}
         onSaved={model.handleSnapshotSaved}
+      />
+
+      <TeamLinkModal
+        open={model.teamLinkOpen}
+        row={model.teamLinkRow}
+        saving={model.teamLinkSaving}
+        error={model.teamLinkError}
+        onClose={model.closeTeamLink}
+        onSave={model.saveTeamLink}
       />
     </Box>
   )

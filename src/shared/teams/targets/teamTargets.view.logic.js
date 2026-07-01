@@ -328,11 +328,13 @@ export const buildHomeAwayRows = (homeAway = {}) => {
   return [
     {
       id: 'home',
+      idIcon: 'home',
       label: 'בית',
       chips: buildPointsRuleChips(homeAway.home),
     },
     {
       id: 'away',
+      idIcon: 'away',
       label: 'חוץ',
       chips: buildPointsRuleChips(homeAway.away),
     },
@@ -343,16 +345,19 @@ export const buildDifficultyRows = (difficulty = {}) => {
   return [
     {
       id: 'easy',
+      idIcon: 'easy',
       label: 'יריבה נוחה',
       chips: buildPointsRuleChips(difficulty.easy),
     },
     {
       id: 'equal',
+      idIcon: 'equal',
       label: 'יריבה שווה',
       chips: buildPointsRuleChips(difficulty.equal),
     },
     {
       id: 'hard',
+      idIcon: 'hard',
       label: 'יריבה חזקה',
       chips: buildPointsRuleChips(difficulty.hard),
     },
@@ -370,6 +375,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
       {
         id: 'scorer',
         label: 'סקורר',
+        idIcon: 'clearScorer',
         chips: buildScorersRuleChips(
           scorers.scorer,
           ' שחקנים',
@@ -380,6 +386,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
       {
         id: 'doubleDigitScorer',
         label: 'כובש דו ספרתי',
+        idIcon: 'killerEfficiency',
         chips: buildScorersRuleChips(
           scorers.doubleDigitScorer,
           ' שחקנים',
@@ -390,6 +397,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
       {
         id: 'supportScorer',
         label: 'כובש משלים',
+        idIcon: 'secondaryThreat',
         chips: buildScorersRuleChips(
           scorers.supportScorer,
           ' שחקנים',
@@ -400,6 +408,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
       {
         id: 'occasionalScorer',
         label: 'כובש מזדמן',
+        idIcon: 'targetWorker',
         chips: buildScorersRuleChips(
           scorers.occasionalScorer,
           ' שחקנים',
@@ -414,12 +423,14 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
     {
       id: 'scorers10Plus',
       label: 'כובשי 10+',
+      idIcon: 'clearScorer',
       chips: buildScorersRuleChips(scorers.scorers10Plus, '', options),
       helper: 'שחקני הכרעה ברמת עונה',
     },
     {
       id: 'scorers5Plus',
       label: 'כובשי 5+',
+      idIcon: 'secondaryThreat',
       chips: buildScorersRuleChips(scorers.scorers5Plus, '', options),
       helper: 'מוקדי שערים משמעותיים',
     },
@@ -440,70 +451,77 @@ export const buildSquadUsageRows = (squadUsage = {}, options = {}) => {
       {
         id: 'top14MinutesSharePct',
         label: 'נתח דקות לטופ 14',
+        idIcon: 'rate',
         chips: buildPercentRangeChips(
           squadUsage.top14MinutesSharePct,
           options
         ),
-        helper: 'איזון עומס בין שחקני הליבה לשאר הסגל',
+        helper: 'איזון עומס בין שחקני הסגל',
       },
       {
         id: 'playersOver500Minutes',
         label: 'שחקני 500+ דקות',
+        idIcon: 'fringe',
         chips: buildCountRuleChips(
           squadUsage.playersOver500Minutes,
           ' שחקנים',
           options
         ),
-        helper: 'שחקנים עם דקות משמעותיות',
+        helper: 'שחקני סגל',
       },
       {
         id: 'playersOver1000Minutes',
         label: 'שחקני 1000+ דקות',
+        idIcon: 'rotation',
         chips: buildCountRuleChips(
           squadUsage.playersOver1000Minutes,
           ' שחקנים',
           options
         ),
-        helper: 'שחקני רוטציה משמעותיים מתוך סגל 24',
+        helper: 'שחקני רוטציה',
       },
       {
         id: 'playersOver1500Minutes',
         label: 'שחקני 1500+ דקות',
+        idIcon: 'corePlayer',
         chips: buildCountRuleChips(
           squadUsage.playersOver1500Minutes,
           ' שחקנים',
           options
         ),
-        helper: 'שחקני ליבה בדקות גבוהות',
+        helper: 'שחקנים מרכזיים',
       },
       {
         id: 'playersOver2000Minutes',
         label: 'שחקני 2000+ דקות',
+        idIcon: 'keyPlayer',
         chips: buildCountRuleChips(
           squadUsage.playersOver2000Minutes,
           ' שחקנים',
           options
         ),
-        helper: 'שחקני מפתח בהיקף דקות גבוה',
+        helper: 'שחקני מפתח',
       },
       {
         id: 'playersOver20Starts',
-        label: 'שחקני 20+ פתיחות',
+        label: 'שחקני 20+ בהרכב',
+        idIcon: 'isStart',
         chips: buildCountRuleChips(
           squadUsage.playersOver20Starts,
           ' שחקנים',
           options
         ),
-        helper: 'שחקנים עם מעמד פתיחה קבוע',
+        helper: 'שחקני הרכב קבועים',
       },
       {
         id: 'unallocatedMinutesSharePct',
-        label: 'דקות לא משויכות / שנתון צעיר',
+        label: 'שנתון צעיר',
+        idIcon: 'fringe',
         chips: buildPercentRangeChips(
           squadUsage.unallocatedMinutesSharePct,
           options
         ),
-        helper: 'טווח פתוח להסבר פערי דקות לא מנוצלים',
+        helper: 'דקות לשנות צעיר',
       },
     ]
   }
@@ -512,14 +530,16 @@ export const buildSquadUsageRows = (squadUsage = {}, options = {}) => {
     {
       id: 'players1000Pct',
       label: 'שחקני 1000+ דקות',
+      idIcon: 'corePlayer',
       chips: buildSquadUsageChips(squadUsage.players1000Pct, options),
-      helper: 'שחקני רוטציה משמעותיים מתוך סגל 24',
+      helper: 'שחקני רוטציה משמעותיים',
     },
     {
       id: 'players2000Pct',
+      idIcon: 'keyPlayer',
       label: 'שחקני 2000+ דקות',
       chips: buildSquadUsageChips(squadUsage.players2000Pct, options),
-      helper: 'שחקני מפתח בהיקף דקות גבוה מתוך סגל 24',
+      helper: 'שחקני מפתח',
     },
   ]
 }

@@ -11,6 +11,7 @@ import { usePlayerHubUpdate } from './../../../../../../hooks/players/usePlayerH
 import ProjectStatusSelectField from '../../../../../../../../ui/fields/selectUi/players/ProjectStatusSelectField.js'
 import PlayerActiveSelector from '../../../../../../../../ui/fields/checkUi/players/PlayerActiveSelector.js'
 import SquadRoleSelectField from '../../../../../../../../ui/fields/selectUi/players/SquadRoleSelectField.js'
+import SeasonPlanStatusSelect from '../../../../../../../../ui/fields/selectUi/players/SeasonPlanStatusSelect.js'
 import PlayerTypeSelector from '../../../../../../../../ui/fields/checkUi/players/PlayerTypeSelector.js'
 
 import {
@@ -117,6 +118,17 @@ export default function TeamPlayerQuickEditDrawer({
           setDraft((prev) => ({
             ...prev,
             squadRole: value,
+          }))
+        }
+      />
+
+      <SeasonPlanStatusSelect
+        size="md"
+        value={draft?.seasonPlanStatus}
+        onChange={(value) =>
+          setDraft((prev) => ({
+            ...prev,
+            seasonPlanStatus: value,
           }))
         }
       />

@@ -15,8 +15,8 @@ import { db } from '../../../services/firebase/firebase.js'
 import {
   buildScoutMetrics,
   buildPlayerScoutSignals,
+  passesScoutTeamPerformance,
   SCOUT_PROFILES,
-  TEAM_FILTER,
 } from '../../../shared/players/scouting/index.js'
 import {
   trackFirestoreRead,
@@ -132,29 +132,12 @@ const ratio = (value, total) => {
   return Number.isFinite(n) && Number.isFinite(t) && t > 0 ? n / t : 0
 }
 
-const teamFilterPass = ({ filter, team }) => {
-  const attack = Number(team.attackEdge)
-  const defense = Number(team.defenseEdge)
-  const attackOk = Number.isFinite(attack) && attack > 0
-  const defenseOk = Number.isFinite(defense) && defense > 0
-  const clearOk =
-    (Number.isFinite(attack) && attack >= 0.1) ||
-    (Number.isFinite(defense) && defense >= 0.1)
-
-  if (!filter || filter === TEAM_FILTER.ANY) return true
-  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
-  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return clearOk
-
-  return false
-}
-
 const splitSignalsByTeam = ({ signals = [], team = {} }) => {
   const eligible = []
   const blocked = {}
 
   signals.forEach(signal => {
-    if (teamFilterPass({ filter: signal.teamFilter, team })) {
+    if (passesScoutTeamPerformance({ filter: signal.teamFilter, team, signal })) {
       eligible.push(signal)
       return
     }

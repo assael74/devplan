@@ -55,6 +55,12 @@ export const headerSx = {
     boxShadow: '0 6px 14px rgba(9, 105, 218, 0.16)',
   },
 
+  scanButton: {
+    minWidth: 112,
+    px: 1.1,
+    fontWeight: 700,
+  },
+
   reloadButton: {
     minWidth: 72,
     px: 1,

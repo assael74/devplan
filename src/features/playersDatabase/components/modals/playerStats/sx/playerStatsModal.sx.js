@@ -19,7 +19,7 @@ export const playerStatsModalSx = {
     borderRadius: '10px',
     overflow: 'hidden',
     display: 'grid',
-    gridTemplateRows: 'auto auto auto 190px minmax(0, 1fr) auto',
+    gridTemplateRows: 'auto auto auto auto 190px minmax(0, 1fr) auto',
     gap: 1,
   },
 
@@ -29,6 +29,25 @@ export const playerStatsModalSx = {
 
   meta: {
     color: palette.muted,
+  },
+
+  contextInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.65,
+    minHeight: 26,
+
+    '& .MuiChip-root': {
+      minHeight: 22,
+      fontSize: 12,
+      fontWeight: 700,
+    },
+  },
+
+  contextLabel: {
+    color: palette.muted,
+    fontWeight: 700,
   },
 
   snapRow: {

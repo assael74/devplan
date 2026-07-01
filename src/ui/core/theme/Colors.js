@@ -84,6 +84,12 @@ export const COLORS = {
   }
 }
 
+const devPlanColors = {
+  primary: '#173B57',
+  primaryDark: '#102B40',
+  primaryLight: '#E8F0F5',
+}
+
 export function getEntityColors(type) {
   return COLORS.entity[type] || COLORS.entity.player
 }

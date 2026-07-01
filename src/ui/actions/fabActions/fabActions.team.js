@@ -12,6 +12,7 @@ export function buildTeamFabActions({
   const {
     onCreatePlayer,
     onCreatePlayers,
+    onImportPlayers,
     onAddGame,
     onAddGames,
     onImportGames,
@@ -48,7 +49,7 @@ export function buildTeamFabActions({
           onClick: onImportGames,
           color: 'team',
           disabled: !allowCreate,
-        }
+        },
       ],
       taskAction,
       insightActions: [
@@ -61,16 +62,8 @@ export function buildTeamFabActions({
           disabled: false,
         },
       ],
-      primarySection: {
-        id: 'section-actions',
-        label: 'פעולות',
-        colorKey: 'team',
-      },
-      insightsSection: {
-        id: 'section-insights',
-        label: 'תובנות',
-        colorKey: 'team',
-      },
+      primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'team' },
+      insightsSection: { id: 'section-insights', label: 'תובנות', colorKey: 'team' },
     })
   }
 
@@ -93,6 +86,14 @@ export function buildTeamFabActions({
           color: 'player',
           disabled: !allowCreate,
         },
+        {
+          id: 'import-players',
+          label: 'ייבוא שחקנים מאקסל',
+          icon: iconUi({ id: 'upload' }),
+          onClick: onImportPlayers,
+          color: 'player',
+          disabled: !allowCreate,
+        },
       ],
       taskAction,
       insightActions: [
@@ -105,16 +106,8 @@ export function buildTeamFabActions({
           disabled: false,
         },
       ],
-      primarySection: {
-        id: 'section-actions',
-        label: 'פעולות',
-        colorKey: 'player',
-      },
-      insightsSection: {
-        id: 'section-insights',
-        label: 'תובנות',
-        colorKey: 'player',
-      },
+      primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'player' },
+      insightsSection: { id: 'section-insights', label: 'תובנות', colorKey: 'player' },
     })
   }
 
@@ -132,11 +125,7 @@ export function buildTeamFabActions({
           disabled: false,
         },
       ],
-      insightsSection: {
-        id: 'section-insights',
-        label: 'תובנות',
-        colorKey: 'player',
-      },
+      insightsSection: { id: 'section-insights', label: 'תובנות', colorKey: 'player' },
     })
   }
 
@@ -154,11 +143,7 @@ export function buildTeamFabActions({
           disabled: false,
         },
       ],
-      insightsSection: {
-        id: 'section-insights',
-        label: 'תובנות',
-        colorKey: 'team',
-      },
+      insightsSection: { id: 'section-insights', label: 'תובנות', colorKey: 'team' },
     })
   }
 
@@ -176,17 +161,9 @@ export function buildTeamFabActions({
           disabled: false,
         },
       ],
-      insightsSection: {
-        id: 'section-insights',
-        label: 'תובנות',
-        colorKey: 'videoAnalysis',
-      },
+      insightsSection: { id: 'section-insights', label: 'תובנות', colorKey: 'videoAnalysis' },
     })
   }
 
-  return composeFabActions({
-    primaryActions: [],
-    taskAction,
-    insightActions: [],
-  })
+  return composeFabActions({ primaryActions: [], taskAction, insightActions: [] })
 }

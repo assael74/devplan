@@ -6,11 +6,13 @@ import {
   Groups,
   KeyboardArrowDown,
   ManageSearch,
+  MoreHoriz,
 } from '@mui/icons-material'
 import {
   Box,
   Button,
   Chip,
+  Link,
   Typography,
 } from '@mui/joy'
 
@@ -69,6 +71,7 @@ function TeamCell({ row, playerSearch, onTeamSlotChange }) {
   const searchPlayerCount = Number(playerSearch?.count) || 0
   const statsCount = Number(row.statsCount) || 0
   const scoutProfilesCount = Number(row.scoutProfilesCount) || 0
+  const teamUrl = String(row.teamUrl || '').trim()
   const playersLabel = `${formatLtrNumber(safePlayerCount)} שחקנים`
   const searchLabel = `${formatLtrNumber(searchPlayerCount)} ${playerSearch?.profileLabel || 'פרופיל'}`
 
@@ -96,9 +99,24 @@ function TeamCell({ row, playerSearch, onTeamSlotChange }) {
         ) : null}
       </Box>
 
-      <Typography level="body-sm" sx={sx.teamName}>
-        {row.clubName}
-      </Typography>
+      {teamUrl ? (
+        <Link
+          href={teamUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          referrerPolicy="no-referrer"
+          underline="hover"
+          title="פתח באתר ההתאחדות"
+          sx={[sx.teamName, sx.teamNameLink]}
+          onClick={event => event.stopPropagation()}
+        >
+          {row.clubName}
+        </Link>
+      ) : (
+        <Typography level="body-sm" sx={sx.teamName}>
+          {row.clubName}
+        </Typography>
+      )}
 
       <Chip
         size="sm"
@@ -228,11 +246,38 @@ function ExpandCell({ expanded, onToggle }) {
   )
 }
 
+function RowActionsCell({ row, onEditTeamLink }) {
+  const canEdit = Boolean(row.teamSeasonKey || row.teamSlotId)
+
+  return (
+    <Box sx={sx.edgeCell}>
+      <Button
+        size="sm"
+        variant="plain"
+        color={row.teamUrl ? 'primary' : 'neutral'}
+        disabled={!canEdit}
+        sx={sx.rowActionsBtn}
+        title="ערוך קישור קבוצה"
+        aria-label="ערוך קישור קבוצה"
+        onClick={event => {
+          event.stopPropagation()
+          if (!canEdit) return
+
+          onEditTeamLink?.(row)
+        }}
+      >
+        <MoreHoriz fontSize="small" />
+      </Button>
+    </Box>
+  )
+}
+
 export default function LeagueTable({
   rows,
   onToggle,
   onTeamSlotChange,
   onLeagueIndexRefresh,
+  onEditTeamLink,
 }) {
   const teamOptions = rows.map(item => item.row).filter(Boolean)
 
@@ -250,6 +295,7 @@ export default function LeagueTable({
             <th>שערי חובה</th>
             <th>נקודות</th>
             <th>פרופילים</th>
+            <th aria-label="פעולות" />
             <th aria-label="פתיחה" />
           </tr>
         </thead>
@@ -304,6 +350,13 @@ export default function LeagueTable({
                   </td>
 
                   <td>
+                    <RowActionsCell
+                      row={row}
+                      onEditTeamLink={onEditTeamLink}
+                    />
+                  </td>
+
+                  <td>
                     <ExpandCell
                       expanded={expanded}
                       onToggle={() => onToggle(row.id)}
@@ -312,7 +365,7 @@ export default function LeagueTable({
                 </tr>
 
                 <tr className="isScoutDetails">
-                  <td colSpan={10}>
+                  <td colSpan={11}>
                     <Box sx={sx.collapse(expanded)}>
                       <Box sx={sx.collapseInner}>
                         <ScoutDetails

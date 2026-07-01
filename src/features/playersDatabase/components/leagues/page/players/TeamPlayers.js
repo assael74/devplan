@@ -937,6 +937,22 @@ export default function TeamPlayers({
           className={delMode ? 'isDeleteMode' : ''}
           sx={sx.table}
         >
+          <colgroup>
+            {delMode ? <col style={{ width: 34 }} /> : null}
+            <col style={{ width: 46 }} />
+            <col style={{ width: 132 }} />
+            <col style={{ width: 84 }} />
+            <col style={{ width: 92 }} />
+            <col style={{ width: 34 }} />
+            <col style={{ width: 144 }} />
+            <col style={{ width: 146 }} />
+            <col style={{ width: 72 }} />
+            <col style={{ width: 78 }} />
+            <col style={{ width: 50 }} />
+            <col style={{ width: 54 }} />
+            <col style={{ width: 54 }} />
+            <col style={{ width: 58 }} />
+          </colgroup>
           <thead>
             <tr>
               {delMode ? (

@@ -4,6 +4,7 @@ import {
   POSITION_LAYERS,
   LAYER_TITLES,
   PROJECT_STATUS_CANDIDATE,
+  SEASON_PLAN_STATUS_OPTIONS,
   SQUAD_ROLE_OPTIONS,
 } from '../../../../../../shared/players/players.constants.js'
 
@@ -32,6 +33,43 @@ const buildPerformanceProfileBuckets = rows => {
     idIcon: item.icon || 'insights',
     color: item.tone || 'neutral',
     count: rows.filter(row => getPerformanceProfileId(row) === item.id).length,
+  }))
+}
+
+const SEASON_PLAN_STATUS_SORT_ORDER = {
+  inSquad: 0,
+  wantsToLeave: 1,
+  undecided: 2,
+  underReview: 3,
+  notReviewed: 4,
+  notSuitable: 5,
+}
+
+const getSeasonPlanStatusValue = row => {
+  return String(
+    row?.seasonPlanStatus?.value ||
+    row?.seasonPlanStatus ||
+    row?.raw?.seasonPlanStatus?.value ||
+    row?.raw?.seasonPlanStatus ||
+    row?.raw?.player?.seasonPlanStatus ||
+    row?.player?.seasonPlanStatus ||
+    ''
+  ).trim()
+}
+
+const buildSeasonPlanStatusBuckets = (rows) => {
+  const orderedOptions = [...SEASON_PLAN_STATUS_OPTIONS].sort((a, b) => {
+    return (SEASON_PLAN_STATUS_SORT_ORDER[a.value] ?? 99) - (SEASON_PLAN_STATUS_SORT_ORDER[b.value] ?? 99)
+  })
+
+  return orderedOptions.map((item) => ({
+    id: item.value,
+    value: item.value,
+    label: item.shortLabel || item.label,
+    idIcon: item.idIcon,
+    color: item.color,
+    tone: item.tone,
+    count: rows.filter((row) => getSeasonPlanStatusValue(row) === item.value).length,
   }))
 }
 
@@ -192,6 +230,7 @@ export const resolveTeamPlayers = (teamOrArgs, options = {}) => {
       project: rows.filter((x) => x.projectChipMeta?.id === 'project').length,
       candidate: rows.filter((x) => x.projectChipMeta?.id === 'candidateFlow').length,
       squadRoleBuckets: buildSquadRoleBuckets(rows),
+      seasonPlanStatusBuckets: buildSeasonPlanStatusBuckets(rows),
       projectStatusBuckets: buildProjectStatusBuckets(rows),
 
       primaryPositionBuckets: buildPrimaryPositionBuckets(rows),

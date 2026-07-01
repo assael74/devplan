@@ -4,10 +4,6 @@ import {
   buildPlayerDerivedTargets,
 } from './playerDerivedTargets.js'
 
-const clean = (value) => {
-  return value == null ? '' : String(value).trim()
-}
-
 const toTargetNumber = (value) => {
   if (value === undefined || value === null || value === '') return null
 
@@ -16,10 +12,9 @@ const toTargetNumber = (value) => {
   return Number.isFinite(n) ? n : null
 }
 
-const buildEmptyPlayerTargetsState = ({
-  raw,
-  derivedTargets,
-}) => {
+const buildEmptyPlayerTargetsState = ({ raw, derivedTargets, }) => {
+  const teamTargets = derivedTargets?.teamTargets || null
+
   return {
     hasTargets: false,
 
@@ -28,7 +23,7 @@ const buildEmptyPlayerTargetsState = ({
 
     roleTarget: derivedTargets?.roleTarget || null,
     positionTarget: derivedTargets?.positionTarget || null,
-    teamTargets: derivedTargets?.teamTargets || null,
+    teamTargets,
 
     labels: {
       role: derivedTargets?.role?.label || '',
@@ -37,6 +32,7 @@ const buildEmptyPlayerTargetsState = ({
         derivedTargets?.position?.label ||
         '',
       teamProfile:
+        teamTargets?.targetLabel ||
         derivedTargets?.teamTargets?.targetProfile?.rankLabel ||
         derivedTargets?.teamTargets?.targetProfile?.shortLabel ||
         derivedTargets?.teamTargets?.targetProfile?.label ||
@@ -52,52 +48,43 @@ const buildEmptyPlayerTargetsState = ({
   }
 }
 
-const buildUsageValues = (explicitTargets = {}) => {
+const buildUsageValues = explicitTargets => {
   const usage = explicitTargets?.usage || {}
 
   return {
-    minutesRange: Array.isArray(usage.minutesRange)
-      ? usage.minutesRange
-      : null,
+    minutesRange: Array.isArray(usage.minutesRange) ? usage.minutesRange : null,
+    startsRange: Array.isArray(usage.startsRange) ? usage.startsRange : null,
 
-    startsRange: Array.isArray(usage.startsRange)
-      ? usage.startsRange
-      : null,
+    minutesTarget: toTargetNumber(usage.minutesTarget),
+    minutesTargetRange: usage.minutesTargetRange || null,
+
+    startsTarget: toTargetNumber(usage.startsTarget),
+    startsTargetRange: usage.startsTargetRange || null,
   }
 }
 
-const buildAttackValues = (explicitTargets = {}) => {
+const buildAttackValues = explicitTargets => {
   const attack = explicitTargets?.attack || {}
 
   return {
+    goalTier: attack.goalTier || '',
+    goalTierLabel: attack.goalTierLabel || '',
+
     goalsTarget: toTargetNumber(attack.goalsTarget),
     assistsTarget: toTargetNumber(attack.assistsTarget),
-    goalContributionsTarget: toTargetNumber(
-      attack.goalContributionsTarget
-    ),
+    goalContributionsTarget: toTargetNumber(attack.goalContributionsTarget),
 
     goalsTargetRange: attack.goalsTargetRange || null,
     assistsTargetRange: attack.assistsTargetRange || null,
-    goalContributionsTargetRange:
-      attack.goalContributionsTargetRange || null,
+    goalContributionsTargetRange: attack.goalContributionsTargetRange || null,
 
     goalsPerGameTarget: toTargetNumber(attack.goalsPerGameTarget),
     assistsPerGameTarget: toTargetNumber(attack.assistsPerGameTarget),
-    contributionPerGameTarget: toTargetNumber(
-      attack.contributionPerGameTarget
-    ),
+    contributionPerGameTarget: toTargetNumber(attack.contributionPerGameTarget),
 
-    goalsShareRange: Array.isArray(attack.goalsShareRange)
-      ? attack.goalsShareRange
-      : null,
-
-    assistsShareRange: Array.isArray(attack.assistsShareRange)
-      ? attack.assistsShareRange
-      : null,
-
-    contributionShareRange: Array.isArray(
-      attack.contributionShareRange
-    )
+    goalsShareRange: Array.isArray(attack.goalsShareRange) ? attack.goalsShareRange : null,
+    assistsShareRange: Array.isArray(attack.assistsShareRange) ? attack.assistsShareRange : null,
+    contributionShareRange: Array.isArray(attack.contributionShareRange)
       ? attack.contributionShareRange
       : null,
   }
@@ -164,9 +151,7 @@ const buildTeamSeasonValues = (explicitTargets = {}) => {
   }
 }
 
-const buildPlayerTargetItems = ({
-  values,
-}) => {
+const buildPlayerTargetItems = ({ values, }) => {
   return [
     {
       id: 'goalsTarget',
@@ -209,10 +194,7 @@ const buildPlayerTargetItems = ({
   })
 }
 
-export function buildPlayerTargetsState({
-  player,
-  team,
-} = {}) {
+export function buildPlayerTargetsState({ player, team, } = {}) {
   const raw = player || {}
 
   const derivedTargets = buildPlayerDerivedTargets({
@@ -265,6 +247,7 @@ export function buildPlayerTargetsState({
         '',
 
       teamProfile:
+        teamTargets?.targetLabel ||
         teamProfile?.rankLabel ||
         teamProfile?.shortLabel ||
         teamProfile?.label ||

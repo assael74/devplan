@@ -89,41 +89,43 @@ export default function DelPlayersModal({
           </Table>
         </Sheet>
 
-        <Box sx={sx.confirm}>
-          <Typography level="body-sm">
-            להמשך הקלד את מספר השחקנים למחיקה: {count}
-          </Typography>
+        <Box sx={sx.footer}>
+          <Box sx={sx.confirm}>
+            <Typography level="body-sm">
+              להמשך הקלד את מספר השחקנים למחיקה: {count}
+            </Typography>
 
-          <Input
-            size="sm"
-            value={confirm}
-            placeholder={String(count)}
-            disabled={loading}
-            onChange={event => setConfirm(event.target.value)}
-          />
-        </Box>
+            <Input
+              size="sm"
+              value={confirm}
+              placeholder={String(count)}
+              disabled={loading}
+              onChange={event => setConfirm(event.target.value)}
+            />
+          </Box>
 
-        <Box sx={sx.actions}>
-          <Button
-            size="sm"
-            color="danger"
-            loading={loading}
-            disabled={!ok || !count || loading}
-            startDecorator={<DeleteOutlineIcon fontSize="small" />}
-            onClick={() => onConfirm?.(rows)}
-          >
-            מחק שחקנים
-          </Button>
+          <Box sx={sx.actions}>
+            <Button
+              size="sm"
+              color="danger"
+              loading={loading}
+              disabled={!ok || !count || loading}
+              startDecorator={<DeleteOutlineIcon fontSize="small" />}
+              onClick={() => onConfirm?.(rows)}
+            >
+              מחק שחקנים
+            </Button>
 
-          <Button
-            size="sm"
-            color="neutral"
-            variant="soft"
-            disabled={loading}
-            onClick={onClose}
-          >
-            ביטול
-          </Button>
+            <Button
+              size="sm"
+              color="neutral"
+              variant="soft"
+              disabled={loading}
+              onClick={onClose}
+            >
+              ביטול
+            </Button>
+          </Box>
         </Box>
       </ModalDialog>
     </Modal>

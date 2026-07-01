@@ -11,6 +11,7 @@ export default function BoardHeader({
   statusItems = [],
   onReload,
   onCreate,
+  onScan,
 }) {
   return (
     <Box sx={sx.top}>
@@ -28,6 +29,17 @@ export default function BoardHeader({
       </Box>
 
       <Box sx={sx.controls}>
+        <Button
+          size="sm"
+          variant="soft"
+          color="primary"
+          startDecorator={iconUi({ id: 'search', size: 'small' })}
+          sx={sx.scanButton}
+          onClick={onScan}
+        >
+          מרכז סריקה
+        </Button>
+
         <Button
           size="sm"
           color="primary"

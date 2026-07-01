@@ -21,7 +21,7 @@ import { formatLtrNumber } from '../../../../../shared/format/direction.js'
 import {
   buildPlayerScoutSignals,
   buildScoutMetrics,
-  TEAM_FILTER,
+  passesScoutTeamPerformance,
 } from '../../../../../shared/players/scouting/index.js'
 import {
   addPlayerToTeam,
@@ -43,6 +43,28 @@ const ph = [
   'הוחלף',
   'דקות משחק',
 ].join(' | ')
+
+const clean = value => String(value ?? '').trim()
+
+const getTeamBirthYearLabel = team => {
+  const explicit = clean(team.birthYear || team.ageGroupYear)
+  if (explicit) return explicit
+
+  const seasonStart = clean(team.seasonId).match(/^(\d{4})/)?.[1]
+  const age = clean(team.ageGroupId).match(/u(\d+)/i)?.[1]
+  const startYear = Number(seasonStart)
+  const ageNumber = Number(age)
+
+  return Number.isFinite(startYear) && Number.isFinite(ageNumber)
+    ? String(startYear - ageNumber + 1)
+    : ''
+}
+
+const getImportContextItems = team => [
+  ['מועדון', clean(team.clubName || team.teamName || team.sourceTeamName)],
+  ['שנתון', getTeamBirthYearLabel(team)],
+  ['ליגה', clean(team.leagueName)],
+].filter(([, value]) => value)
 
 const actOpt = {
   ADD: 'add',
@@ -117,29 +139,12 @@ const reliabilityColor = level => {
   return 'neutral'
 }
 
-const teamFilterPass = ({ filter, team }) => {
-  const attack = Number(team.attackEdge)
-  const defense = Number(team.defenseEdge)
-  const attackOk = Number.isFinite(attack) && attack > 0
-  const defenseOk = Number.isFinite(defense) && defense > 0
-  const clearOk =
-    (Number.isFinite(attack) && attack >= 0.1) ||
-    (Number.isFinite(defense) && defense >= 0.1)
-
-  if (!filter || filter === TEAM_FILTER.ANY) return true
-  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
-  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return clearOk
-
-  return false
-}
-
 const splitSignalsByTeam = ({ signals = [], team = {} }) => {
   const eligible = []
   const blocked = []
 
   signals.forEach(signal => {
-    if (teamFilterPass({ filter: signal.teamFilter, team })) {
+    if (passesScoutTeamPerformance({ filter: signal.teamFilter, team, signal })) {
       eligible.push(signal)
       return
     }
@@ -710,6 +715,18 @@ export default function PlayerStatsModal({
         <Typography level="body-sm" sx={sx.meta}>
           הדבק כאן טבלת סטטיסטיקה לקבוצה {teamContext.clubName || teamContext.teamName || ''}
         </Typography>
+
+        <Box sx={sx.contextInfo}>
+          <Typography level="body-xs" sx={sx.contextLabel}>
+            העלאה אל
+          </Typography>
+
+          {getImportContextItems(teamContext).map(([label, value]) => (
+            <Chip key={label} size="sm" variant="soft" color="primary">
+              {label}: {value}
+            </Chip>
+          ))}
+        </Box>
 
         <Box sx={sx.snapRow}>
           <Select

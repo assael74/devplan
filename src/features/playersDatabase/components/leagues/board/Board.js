@@ -1,6 +1,7 @@
 // src/features/playersDatabase/components/leagues/board/Board.js
 
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Chip,
@@ -22,6 +23,7 @@ import { useBoard } from './hook/useBoard.js'
 import { boardSx as sx } from './sx/board.sx.js'
 
 export default function Board() {
+  const navigate = useNavigate()
   const model = useBoard()
   const league = model.selectedLeague
 
@@ -32,6 +34,7 @@ export default function Board() {
         statusItems={model.boardStatus}
         onReload={model.load}
         onCreate={model.openCreate}
+        onScan={() => navigate('/players-database/scan')}
       />
 
       {model.loadError && (
@@ -119,6 +122,7 @@ export default function Board() {
                       scoutProfilesCount={
                         model.selectedLeagueInsight?.scoutProfilesCount
                       }
+                      onOpenLeague={model.openLeagueById}
                     />
                   </DetailsPanel>
                 </Box>

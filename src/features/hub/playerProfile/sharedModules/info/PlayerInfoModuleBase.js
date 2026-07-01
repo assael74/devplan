@@ -118,12 +118,16 @@ export default function PlayerInfoModuleBase({
   const body = isMobile ? (
     <Box sx={rootSx}>
       <PlayerInfoToolbar
+        activeTab={null}
+        player={player}
+        team={context?.team}
+        draft={draft}
         isDirty={isDirty}
         canSave={canSave}
         pending={pending}
         onReset={handleReset}
         onSave={handleSave}
-      />
+       />
 
       {detailsCards}
     </Box>
@@ -137,6 +141,9 @@ export default function PlayerInfoModuleBase({
       <Box sx={toolbarWrapSx}>
         <PlayerInfoToolbar
           activeTab={activeTab}
+          player={player}
+          team={context?.team}
+          draft={draft}
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
@@ -168,6 +175,8 @@ export default function PlayerInfoModuleBase({
           player={player}
           team={context?.team}
           draft={draft}
+          setDraft={setDraft}
+          pending={pending}
         />
       ) : null}
     </>

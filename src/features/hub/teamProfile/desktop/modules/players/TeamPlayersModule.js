@@ -11,15 +11,13 @@ import TeamPlayerQuickEditDrawer from './components/drawer/TeamPlayerQuickEditDr
 import TeamPlayerPositionsDrawer from './components/drawer/TeamPlayerPositionsModal.js'
 import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersInsightsDrawer.js'
 
-import {
-  TeamPlayersModuleBase,
-  teamPlayersModuleSx,
-} from '../../../sharedModules/players'
+import { TeamPlayersModuleBase, teamPlayersModuleSx } from '../../../sharedModules/players'
 
 export default function TeamPlayersModule(props) {
   return (
     <TeamPlayersModuleBase
       {...props}
+      bulkEnabled
       Section={SectionPanel}
       ToolbarComponent={TeamPlayersToolbar}
       ListComponent={TeamPlayersList}

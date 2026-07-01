@@ -82,8 +82,14 @@ export default function BoardList({
           const selected = league.id === selectedId
           const birthYear = getBirthYear(league)
           const insight = leagueInsightsById[league.id] || {}
-          const scoutProfilesCount =
-            insight.scoutProfilesCount ?? getScoutProfilesCount(league)
+          const scoutProfilesCount = (() => {
+            if (insight.scoutProfilesCount !== null &&
+                insight.scoutProfilesCount !== undefined) {
+              return insight.scoutProfilesCount
+            }
+
+            return getScoutProfilesCount(league)
+          })()
           const opportunityCount = Number(insight.opportunityCount) || 0
           const maxLevelGap = Number(insight.maxLevelGap) || 0
 

@@ -10,6 +10,7 @@ export default function TeamModules({
   tab,
   modulesMap = {},
   playersInsightsRequest = 0,
+  playersImportRequest = 0,
   gamesInsightsRequest = 0,
   gamesImportRequest = 0,
   performanceInsightsRequest = 0,
@@ -25,6 +26,7 @@ export default function TeamModules({
       tab={tab}
       modulesMap={modulesMap}
       playersInsightsRequest={playersInsightsRequest}
+      playersImportRequest={playersImportRequest}
       gamesInsightsRequest={gamesInsightsRequest}
       gamesImportRequest={gamesImportRequest}
       performanceInsightsRequest={performanceInsightsRequest}

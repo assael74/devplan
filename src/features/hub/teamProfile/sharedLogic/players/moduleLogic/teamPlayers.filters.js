@@ -18,11 +18,22 @@ const hasPlayerTargets = row => {
     row.targets.mainItems.length > 0
 }
 
+const getSeasonPlanStatusValue = row => {
+  return String(
+    row?.seasonPlanStatus ||
+    row?.player?.seasonPlanStatus ||
+    row?.raw?.seasonPlanStatus ||
+    row?.raw?.player?.seasonPlanStatus ||
+    ''
+  ).trim()
+}
+
 export const filterTeamPlayersRows = (rows, filters) => {
   const q = norm(filters?.search)
   const onlyActive = filters?.onlyActive === true
   const onlyWithTargets = filters?.onlyWithTargets === true
   const squadRole = safe(filters?.squadRole).trim()
+  const seasonPlanStatus = safe(filters?.seasonPlanStatus).trim()
   const projectStatus = safe(filters?.projectStatus).trim()
   const positionCode = safe(filters?.positionCode).trim()
   const generalPositionKey = safe(filters?.generalPositionKey).trim()
@@ -38,6 +49,7 @@ export const filterTeamPlayersRows = (rows, filters) => {
     if (onlyWithTargets && !hasPlayerTargets(row)) return false
 
     if (squadRole && row?.squadRole !== squadRole) return false
+    if (seasonPlanStatus && getSeasonPlanStatusValue(row) !== seasonPlanStatus) return false
     if (projectStatus && row?.projectStatus !== projectStatus) return false
 
     if (performanceProfile && getPerformanceProfileId(row) !== performanceProfile) {

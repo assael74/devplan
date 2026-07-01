@@ -191,6 +191,7 @@ export async function ensureLeagueFromPlan(league = {}) {
       id: clean(league.id),
       catalogLeagueId: clean(league.catalogLeagueId),
       leagueName: clean(league.leagueName),
+      leagueUrl: clean(league.leagueUrl || league.source?.leagueUrl),
       level: league.level ?? null,
       region: clean(league.region),
       leagueNum: league.leagueNum ?? null,
@@ -609,6 +610,77 @@ export async function updateLeagueSnapshotTeamSlot({
       collection: PLAYERS_DATABASE_COLLECTIONS.leagueSnapshots,
       feature: FEATURE,
       action: 'updateLeagueSnapshotTeamSlot',
+      readsCount: 1,
+      writesCount: 1,
+      readPayload: usagePayload.readPayload,
+      writePayload: usagePayload.writePayload,
+      meta: result,
+    })
+  }
+
+  return result
+}
+
+export async function updateLeagueTeamLink({
+  leagueId,
+  team,
+  teamUrl,
+} = {}) {
+  const safeLeagueId = clean(leagueId || team?.leagueId)
+  const teamKey = clean(team?.teamSeasonKey || team?.teamSlotId)
+  const url = clean(teamUrl)
+
+  if (!safeLeagueId || !teamKey) {
+    throw new Error('missing league team identity')
+  }
+
+  let usagePayload = null
+
+  const result = await runTransaction(db, async (tx) => {
+    const ref = leagueRef(safeLeagueId)
+    const snap = await tx.get(ref)
+
+    if (!snap.exists()) {
+      throw new Error('league not found')
+    }
+
+    const current = snap.data() || {}
+    const currentTeam = current.teamsIndex?.[teamKey] || {}
+    const summary = {
+      ...currentTeam,
+      teamSeasonKey: clean(team?.teamSeasonKey || currentTeam.teamSeasonKey || teamKey),
+      teamSlotId: clean(team?.teamSlotId || currentTeam.teamSlotId),
+      externalTeamId: clean(team?.externalTeamId || currentTeam.externalTeamId),
+      clubId: clean(team?.clubId || currentTeam.clubId),
+      clubName: clean(team?.clubName || team?.teamName || currentTeam.clubName),
+      sourceTeamName: clean(team?.sourceTeamName || currentTeam.sourceTeamName),
+      teamUrl: url,
+      updatedAt: new Date().toISOString(),
+    }
+
+    tx.set(ref, {
+      teamsIndex: {
+        [teamKey]: summary,
+      },
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+
+    usagePayload = {
+      readPayload: currentTeam,
+      writePayload: summary,
+    }
+
+    return {
+      leagueId: safeLeagueId,
+      teamSeasonKey: teamKey,
+    }
+  })
+
+  if (usagePayload) {
+    trackFirestoreTransaction({
+      collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      feature: FEATURE,
+      action: 'updateLeagueTeamLink',
       readsCount: 1,
       writesCount: 1,
       readPayload: usagePayload.readPayload,

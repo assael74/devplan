@@ -26,50 +26,24 @@ function presetForTab(tab, entity, context) {
   const teamId = entity?.id || null
   const clubId = context?.club?.id || entity?.clubId || null
 
-  if (tab === 'players') return { teamId, clubId }
-  if (tab === 'games') return { teamId, clubId }
   return { teamId, clubId }
 }
 
-const isPlayersInsightsAction = action => {
+function isPlayersInsightsAction(action) {
   const id = String(action?.id || '')
   const label = String(action?.label || action?.title || '')
 
-  return (
-    PLAYER_INSIGHTS_IDS.includes(id) ||
-    id.toLowerCase().includes('playersinsights') ||
-    label.includes('תובנות שחקנים')
-  )
+  return PLAYER_INSIGHTS_IDS.includes(id) || id.toLowerCase().includes('playersinsights') || label.includes('תובנות שחקנים')
 }
 
-const getPlayersInsightsMeta = status => {
-  if (status === 'ready') {
-    return {
-      disabled: false,
-      metaLabel: '',
-      metaColor: 'success',
-    }
-  }
+function getPlayersInsightsMeta(status) {
+  if (status === 'ready') return { disabled: false, metaLabel: '', metaColor: 'success' }
+  if (status === 'loading') return { disabled: true, metaLabel: 'בטעינה', metaColor: 'warning' }
 
-  if (status === 'loading') {
-    return {
-      disabled: true,
-      metaLabel: 'בטעינה',
-      metaColor: 'warning',
-    }
-  }
-
-  return {
-    disabled: true,
-    metaLabel: 'אין נתונים',
-    metaColor: 'neutral',
-  }
+  return { disabled: true, metaLabel: 'אין נתונים', metaColor: 'neutral' }
 }
 
-const decoratePlayersInsightsAction = ({
-  action,
-  status,
-}) => {
+function decoratePlayersInsightsAction({ action, status }) {
   if (!isPlayersInsightsAction(action)) return action
 
   const meta = getPlayersInsightsMeta(status)
@@ -94,6 +68,7 @@ export default function TeamProfileFab({
   onOpenAbilitiesInsights,
   onOpenVideoInsights,
   onImportGames,
+  onImportPlayers,
 }) {
   const { openCreate } = useCreateModal()
 
@@ -105,58 +80,42 @@ export default function TeamProfileFab({
       permissions: { allowCreate: true },
       handlers: {
         onAddGame: () => {
-          openCreate('game', presetForTab('games', entity, context), {
-            team: entity,
-            ...(context || {}),
-          })
+          openCreate('game', presetForTab('games', entity, context), { team: entity, ...(context || {}) })
         },
+
         onAddGames: () => {
-          openCreate('games', presetForTab('games', entity, context), {
-            team: entity,
-            ...(context || {}),
-          })
+          openCreate('games', presetForTab('games', entity, context), { team: entity, ...(context || {}) })
         },
-        onImportGames: () => {
-          if (typeof onImportGames !== 'function') return
-          onImportGames()
-        },
+
+        onImportGames: () => onImportGames(),
+
         onCreatePlayer: () => {
-          openCreate('player', presetForTab('players', entity, context), {
-            team: entity,
-            ...(context || {}),
-          })
+          openCreate('player', presetForTab('players', entity, context), { team: entity, ...(context || {}) })
         },
+
         onCreatePlayers: () => {
-          openCreate('players', presetForTab('players', entity, context), {
-            team: entity,
-            ...(context || {}),
-          })
+          openCreate('players', presetForTab('players', entity, context), { team: entity, ...(context || {}) })
         },
-        onAddTask: (taskCtx = {}) =>
-          openCreate(
-            'task',
-            buildTaskPresetDraft(taskCtx),
-            { ...context, ...taskCtx },
-          ),
+
+        onImportPlayers: () => onImportPlayers(),
+
+        onAddTask: (taskCtx = {}) => {
+          openCreate('task', buildTaskPresetDraft(taskCtx), { ...context, ...taskCtx })
+        },
 
         onOpenPlayersInsights: () => {
           if (playersInsightsStatus !== 'ready') return
-
-          onOpenPlayersInsights?.()
+          onOpenPlayersInsights()
         },
-        onOpenGamesInsights: () => onOpenGamesInsights?.(),
-        onOpenPerformanceInsights: () => onOpenPerformanceInsights?.(),
-        onOpenAbilitiesInsights: () => onOpenAbilitiesInsights?.(),
-        onOpenVideoInsights: () => onOpenVideoInsights?.(),
+
+        onOpenGamesInsights: () => onOpenGamesInsights(),
+        onOpenPerformanceInsights: () => onOpenPerformanceInsights(),
+        onOpenAbilitiesInsights: () => onOpenAbilitiesInsights(),
+        onOpenVideoInsights: () => onOpenVideoInsights(),
       },
     })
 
-    return baseActions.map(action => (
-      decoratePlayersInsightsAction({
-        action,
-        status: playersInsightsStatus,
-      })
-    ))
+    return baseActions.map(action => decoratePlayersInsightsAction({ action, status: playersInsightsStatus }))
   }, [
     tab,
     openCreate,
@@ -170,6 +129,7 @@ export default function TeamProfileFab({
     onOpenAbilitiesInsights,
     onOpenVideoInsights,
     onImportGames,
+    onImportPlayers,
   ])
 
   if (!actions?.length) return null
@@ -188,10 +148,7 @@ export default function TeamProfileFab({
           ? {
               bgcolor: fabColors.accent,
               color: '#fff',
-              '&:hover': {
-                bgcolor: fabColors.accent,
-                filter: 'brightness(0.95)',
-              },
+              '&:hover': { bgcolor: fabColors.accent, filter: 'brightness(0.95)' },
               '&:active': { filter: 'brightness(0.9)' },
             }
           : undefined

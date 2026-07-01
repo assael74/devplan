@@ -11,10 +11,7 @@ import {
   calcActualSuccessRate,
 } from './management.kpis.js'
 
-export function buildManagementTargetsState({
-  team,
-  draft,
-}) {
+export function buildManagementTargetsState({ team, draft, }) {
   const source = {
     ...(team || {}),
     ...(draft || {}),

@@ -17,6 +17,7 @@ export const emptyTeamPlayersFilters = {
   onlyActive: false,
   onlyWithTargets: false,
   squadRole: '',
+  seasonPlanStatus: '',
   projectStatus: '',
   positionCode: '',
   generalPositionKey: '',

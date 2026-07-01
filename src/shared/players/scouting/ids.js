@@ -37,6 +37,8 @@ export const SCOUT_LEVEL = {
 
 export const TEAM_FILTER = {
   ANY: 'any_team',
+  ATTACK_POSITIVE: 'attack_positive',
+  ATTACK_POSITIVE_OR_GOALS_GTE_10: 'attack_positive_or_goals_gte_10',
   ANY_POSITIVE: 'any_positive',
   CLEAR_POSITIVE: 'clear_positive',
   DEFENSE_POSITIVE: 'defense_positive',

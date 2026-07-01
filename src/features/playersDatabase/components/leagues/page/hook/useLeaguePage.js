@@ -19,6 +19,7 @@ import {
   getLeague,
   getLeagueSnapshot,
   mergeLeagueTeamIndexFromDoc,
+  updateLeagueTeamLink,
   updateLeagueSnapshotTeamSlot,
 } from '../../../../services/pdbLeague.firestore.js'
 import {
@@ -191,6 +192,10 @@ export function useLeaguePage() {
   const [includeUniversal, setIncludeUniversal] = useState(false)
   const [playerSearchProfileId, setPlayerSearchProfileId] = useState('')
   const [playerSearchMode, setPlayerSearchMode] = useState('eligible')
+  const [teamLinkOpen, setTeamLinkOpen] = useState(false)
+  const [teamLinkRow, setTeamLinkRow] = useState(null)
+  const [teamLinkSaving, setTeamLinkSaving] = useState(false)
+  const [teamLinkError, setTeamLinkError] = useState('')
 
   const decodedLeagueId = useMemo(
     () => decodeURIComponent(leagueId),
@@ -501,6 +506,44 @@ export function useLeaguePage() {
     await load()
   }
 
+  const openTeamLink = row => {
+    setTeamLinkRow(row || null)
+    setTeamLinkError('')
+    setTeamLinkOpen(true)
+  }
+
+  const closeTeamLink = () => {
+    if (teamLinkSaving) return
+
+    setTeamLinkOpen(false)
+    setTeamLinkRow(null)
+    setTeamLinkError('')
+  }
+
+  const saveTeamLink = async value => {
+    if (!league?.id || !teamLinkRow) return
+
+    setTeamLinkSaving(true)
+    setTeamLinkError('')
+
+    try {
+      await updateLeagueTeamLink({
+        leagueId: league.id,
+        team: teamLinkRow,
+        teamUrl: value,
+      })
+
+      markLeagueBoardCacheDirty()
+      await load()
+      setTeamLinkOpen(false)
+      setTeamLinkRow(null)
+    } catch (err) {
+      setTeamLinkError(err?.message || 'שמירת קישור הקבוצה נכשלה')
+    } finally {
+      setTeamLinkSaving(false)
+    }
+  }
+
   const handleSnapshotSaved = async savedSnapshot => {
     if (savedSnapshot) {
       setSnapshot(savedSnapshot)
@@ -525,6 +568,10 @@ export function useLeaguePage() {
     includeUniversal,
     playerSearchProfileId,
     playerSearchMode,
+    teamLinkOpen,
+    teamLinkRow,
+    teamLinkSaving,
+    teamLinkError,
     tableRowsCount: tableRows.length,
 
     load,
@@ -537,15 +584,37 @@ export function useLeaguePage() {
     changePlayerSearchProfile,
     changePlayerSearchMode,
     changeTeamSlot,
+    openTeamLink,
+    closeTeamLink,
+    saveTeamLink,
     openPaste: () => setPasteOpen(true),
     closePaste: () => setPasteOpen(false),
     goBack: () => {
       const targetLeagueId = league?.id || decodedLeagueId
-      const query = targetLeagueId
-        ? `?leagueId=${encodeURIComponent(targetLeagueId)}`
-        : ''
+      const params = new URLSearchParams()
+      const boardFilters = location.state?.boardFilters || {}
 
-      navigate(`/players-database${query}`)
+      if (targetLeagueId) {
+        params.set('leagueId', targetLeagueId)
+      }
+
+      if (
+        boardFilters.birthYearFilter &&
+        boardFilters.birthYearFilter !== 'all'
+      ) {
+        params.set('birthYear', boardFilters.birthYearFilter)
+      }
+
+      if (
+        boardFilters.levelFilter &&
+        boardFilters.levelFilter !== 'all'
+      ) {
+        params.set('level', boardFilters.levelFilter)
+      }
+
+      const query = params.toString()
+
+      navigate(`/players-database${query ? `?${query}` : ''}`)
     },
     handleSnapshotSaved,
   }

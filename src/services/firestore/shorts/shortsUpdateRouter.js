@@ -13,6 +13,8 @@ export const shortsUpdateRouterMap = {
     ifaLink: { shortKey: 'players.playersInfo', path: 'ifaLink', mode: 'merge' },
     type: { shortKey: 'players.playersInfo', path: 'type', mode: 'merge' },
     squadRole: { shortKey: 'players.playersInfo', path: 'squadRole', mode: 'merge' },
+    seasonPlanStatus: { shortKey: 'players.playersInfo', path: 'seasonPlanStatus', mode: 'merge' },
+    confidenceLevel: { shortKey: 'players.playersInfo', path: 'confidenceLevel', mode: 'merge' },
     photo: { shortKey: 'players.playersInfo', path: 'photo', mode: 'merge' },
     projectStatus: { shortKey: 'players.playersInfo', path: 'projectStatus', mode: 'merge' },
 

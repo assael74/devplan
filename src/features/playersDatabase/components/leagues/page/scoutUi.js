@@ -36,6 +36,8 @@ const LEVEL_LABELS = {
 
 const FILTER_LABELS = {
   [TEAM_FILTER.ANY]: 'בכל קבוצה',
+  [TEAM_FILTER.ATTACK_POSITIVE]: 'התקפה מעל הסף',
+  [TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10]: 'התקפה מעל הסף או 10+ שערים',
   [TEAM_FILTER.ANY_POSITIVE]: 'התקפה או הגנה מעל הסף',
   [TEAM_FILTER.CLEAR_POSITIVE]: 'ביצוע חיובי מובהק',
   [TEAM_FILTER.DEFENSE_POSITIVE]: 'הגנה מעל הסף',

@@ -90,6 +90,8 @@ const ruleText = rule => {
 
 const teamFilterText = teamFilter => {
   if (teamFilter === TEAM_FILTER.ANY) return 'לא תלוי בביצוע קבוצתי. נדלק דרך חיפוש כללי.'
+  if (teamFilter === TEAM_FILTER.ATTACK_POSITIVE) return 'דורש התאמה בסף הביצוע ההתקפי.'
+  if (teamFilter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) return 'דורש התאמה בסף הביצוע ההתקפי, או 10 שערים ומעלה.'
   if (teamFilter === TEAM_FILTER.ANY_POSITIVE) return 'דורש התאמה באחד מספי הביצוע: התקפה או הגנה.'
   if (teamFilter === TEAM_FILTER.DEFENSE_POSITIVE) return 'דורש התאמה בסף הביצוע ההגנתי.'
   if (teamFilter === TEAM_FILTER.CLEAR_POSITIVE) return 'דורש ביצוע קבוצתי חיובי מובהק.'

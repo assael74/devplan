@@ -1,11 +1,8 @@
 // src/features/playersDatabase/components/leagues/board/sx/detail.sx.js
 
 const palette = {
-  panel: '#ffffff',
   detailPanel: '#fbfdff',
   detailSoft: '#f1f6fb',
-  tableSoft: '#f8fbff',
-  line: '#d8e0e7',
   blueLine: '#c7d9ec',
   ink: '#17202a',
   muted: '#64717f',
@@ -27,14 +24,6 @@ export const detailSx = {
     overflow: 'hidden',
   },
 
-  embeddedPanel: {
-    minWidth: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -49,8 +38,8 @@ export const detailSx = {
 
   actions: {
     display: 'flex',
-    gap: 0.65,
     alignItems: 'center',
+    gap: 0.65,
     flexShrink: 0,
   },
 
@@ -85,20 +74,20 @@ export const detailSx = {
   },
 
   infoItem: {
+    minWidth: 0,
     minHeight: 46,
-    borderRadius: '7px',
-    border: `1px solid ${palette.blueLine}`,
-    bgcolor: palette.detailSoft,
     px: 0.75,
     py: 0.65,
-    minWidth: 0,
+    border: `1px solid ${palette.blueLine}`,
+    borderRadius: '7px',
+    bgcolor: palette.detailSoft,
   },
 
   label: {
-    color: palette.muted,
-    fontWeight: 700,
     mb: 0.25,
+    color: palette.muted,
     fontSize: 11,
+    fontWeight: 700,
   },
 
   value: {
@@ -107,6 +96,21 @@ export const detailSx = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+
+  valueLink: {
+    display: 'inline-block',
+    maxWidth: '100%',
+    color: '#075fc5',
+    fontWeight: 700,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    textDecoration: 'none',
+
+    '&:hover': {
+      textDecoration: 'underline',
+    },
   },
 
   error: {
@@ -119,170 +123,14 @@ export const detailSx = {
   },
 
   embeddedSection: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
     mt: 0.75,
     pt: 0.75,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
     borderTop: `1px solid ${palette.blueLine}`,
-    minWidth: 0,
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-
-  summary: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: 0.4,
-    mb: 0.65,
-    alignItems: 'center',
-    minWidth: 0,
-  },
-
-  summaryChips: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 0.4,
-    alignItems: 'center',
-    minWidth: 0,
-
-    '& .MuiChip-root': {
-      minHeight: 22,
-      fontSize: 10.5,
-      fontWeight: 700,
-    },
-  },
-
-  printButton: {
-    width: 28,
-    minWidth: 28,
-    minHeight: 26,
-    flexShrink: 0,
-
-    '& svg': {
-      fontSize: 17,
-    },
-  },
-
-  tableWrap: {
-    flex: 1,
-    minHeight: 190,
-    maxHeight: 'none',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    border: `1px solid ${palette.blueLine}`,
-    borderRadius: '7px',
-    bgcolor: palette.tableSoft,
-  },
-
-  tableBodyScroll: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'auto',
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#b8c3cf transparent',
-
-    '&::-webkit-scrollbar': {
-      width: 5,
-      height: 5,
-    },
-
-    '&::-webkit-scrollbar-thumb': {
-      borderRadius: 999,
-      backgroundColor: '#b8c3cf',
-    },
-
-    '&::-webkit-scrollbar-track': {
-      backgroundColor: 'transparent',
-    },
-  },
-
-  table: {
-    '--TableCell-paddingX': '8px',
-    '--TableCell-paddingY': '7px',
-    fontSize: 12,
-    tableLayout: 'fixed',
-
-    '& th': {
-      bgcolor: '#eaf2fb',
-      color: palette.muted,
-      fontWeight: 700,
-      whiteSpace: 'nowrap',
-    },
-
-    '& td': {
-      color: palette.ink,
-      fontWeight: 600,
-      verticalAlign: 'middle',
-    },
-
-    '& th:first-of-type, & td:first-of-type': {
-      width: 30,
-      minWidth: 30,
-      maxWidth: 30,
-      px: 0.4,
-      textAlign: 'center',
-    },
-
-    '& th:nth-of-type(2), & td:nth-of-type(2)': {
-      minWidth: 190,
-      width: '30%',
-    },
-
-    '& th:nth-of-type(5), & td:nth-of-type(5)': {
-      width: 64,
-      minWidth: 64,
-      maxWidth: 72,
-      px: 0.5,
-      textAlign: 'center',
-    },
-
-    '& th:nth-of-type(6), & td:nth-of-type(6)': {
-      width: 92,
-      minWidth: 92,
-      maxWidth: 104,
-      px: 0.5,
-      textAlign: 'center',
-    },
-
-    '& td:nth-of-type(3), & td:nth-of-type(4)': {
-      maxWidth: 150,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    },
-
-    '& tbody tr.isSevere': {
-      bgcolor: '#fff6f3',
-    },
-
-    '& td .MuiChip-root': {
-      minHeight: 20,
-      fontSize: 10.5,
-      fontWeight: 700,
-    },
-  },
-
-  countNote: {
-    mt: 0.45,
-    color: palette.muted,
-    fontWeight: 700,
-    textAlign: 'left',
-  },
-
-  emptyState: {
-    minHeight: 170,
-    flex: 1,
-    display: 'grid',
-    placeItems: 'center',
-    border: `1px dashed ${palette.blueLine}`,
-    borderRadius: '7px',
-    bgcolor: palette.tableSoft,
-  },
-
-  emptyText: {
-    color: palette.muted,
-    fontWeight: 700,
   },
 }

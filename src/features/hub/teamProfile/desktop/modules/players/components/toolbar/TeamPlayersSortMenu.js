@@ -19,7 +19,7 @@ export default function TeamPlayersSortMenu({
       sortOptions={TEAM_PLAYERS_SORT_OPTIONS}
       onChangeSortBy={onChangeSortBy}
       onChangeSortDirection={onChangeSortDirection}
-      width={152}
+      width={180}
       compact
     />
   )

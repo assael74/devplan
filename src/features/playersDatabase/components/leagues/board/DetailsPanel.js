@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Input,
+  Link,
   Option,
   Select,
   Typography,
@@ -42,6 +43,35 @@ function InfoValue({ label, value }) {
       <Typography level="body-sm" sx={sx.value}>
         {value || '-'}
       </Typography>
+    </Box>
+  )
+}
+
+function InfoLink({ label, value }) {
+  const url = String(value ?? '').trim()
+
+  return (
+    <Box sx={sx.infoItem}>
+      <Typography level="body-xs" sx={sx.label}>
+        {label}
+      </Typography>
+
+      {url ? (
+        <Link
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          referrerPolicy="no-referrer"
+          level="body-sm"
+          sx={sx.valueLink}
+        >
+          פתח קישור ליגה
+        </Link>
+      ) : (
+        <Typography level="body-sm" sx={sx.value}>
+          -
+        </Typography>
+      )}
     </Box>
   )
 }
@@ -207,6 +237,28 @@ export default function DetailsPanel({
               }
             />
           </Box>
+
+          <Box>
+            <Typography
+              level="body-xs"
+              sx={sx.label}
+            >
+              קישור ליגה
+            </Typography>
+
+            <Input
+              size="sm"
+              value={form.leagueUrl || ''}
+              placeholder="https://www.football.org.il/..."
+              disabled={saving}
+              onChange={event =>
+                onChange(
+                  'leagueUrl',
+                  event.target.value
+                )
+              }
+            />
+          </Box>
         </Box>
       ) : (
         <Box sx={sx.infoGrid}>
@@ -235,9 +287,9 @@ export default function DetailsPanel({
             value={getLeagueRegionLabel(league?.region)}
           />
 
-          <InfoValue
-            label="מזהה ליגה"
-            value={league?.id}
+          <InfoLink
+            label="קישור ליגה"
+            value={league?.leagueUrl || league?.source?.leagueUrl}
           />
         </Box>
       )}

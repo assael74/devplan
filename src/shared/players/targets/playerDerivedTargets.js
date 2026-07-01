@@ -1,6 +1,9 @@
 // src/shared/players/targets/playerDerivedTargets.js
 
-import { resolveTeamTargetProfileFromTeam } from '../../teams/targets/index.js'
+import {
+  buildTeamTargetsState,
+  resolveTeamTargetProfileFromTeam,
+} from '../../teams/targets/index.js'
 
 import {
   getPlayerRoleTarget,
@@ -34,16 +37,50 @@ function resolvePlayerManualTargets(player = {}) {
 
 function resolveTeamForecastTargets(team = {}) {
   const resolved = resolveTeamTargetProfileFromTeam(team)
+  const targetState = buildTeamTargetsState(team)
   const targetProfile = resolved?.targetProfile || null
+  const values = targetState?.values || {}
 
   return {
+    targetPositionMode:
+      targetState?.targetPositionMode ||
+      resolved?.targetPositionMode ||
+      null,
     targetPosition: resolved?.targetPosition || null,
-    targetProfile,
-    targetProfileId: targetProfile?.id || null,
-    forecastTargets: targetProfile?.targets?.forecast || null,
-    scorersTargets: targetProfile?.targets?.scorers || null,
-    squadUsageTargets: targetProfile?.targets?.squadUsage || null,
-    difficultyTargets: targetProfile?.targets?.difficulty || null,
+    targetProfile: targetState?.targetProfile || targetProfile,
+    targetProfileId:
+      targetState?.resolvedProfileId ||
+      targetProfile?.id ||
+      null,
+    targetLabel:
+      values?.targetLabel ||
+      targetState?.targetProfile?.rankLabel ||
+      targetState?.targetProfile?.shortLabel ||
+      targetState?.targetProfile?.label ||
+      '',
+    forecastTargets: targetState?.hasTargets
+      ? {
+          points: values.points,
+          pointsRate: values.pointsRate ?? values.successRate,
+          successRate: values.successRate,
+          goalsFor: values.goalsFor,
+          goalsAgainst: values.goalsAgainst,
+          goalDifference: values.goalDifference,
+        }
+      : targetProfile?.targets?.forecast || null,
+    scorersTargets:
+      targetState?.groups?.scorers ||
+      targetProfile?.targets?.scorers ||
+      null,
+    squadUsageTargets:
+      targetState?.groups?.squadUsage ||
+      targetProfile?.targets?.squadUsage ||
+      null,
+    difficultyTargets:
+      targetState?.groups?.difficulty ||
+      targetProfile?.targets?.difficulty ||
+      null,
+    state: targetState,
   }
 }
 
@@ -296,9 +333,9 @@ export function buildPlayerDerivedTargets({
     player,
     team: activeTeam,
     targetPositionProfile:
+      teamTargets?.targetProfileId ||
       activeTeam?.targetPositionProfile ||
-      activeTeam?.targetProfileId ||
-      teamTargets?.targetProfileId,
+      activeTeam?.targetProfileId,
     squadRole: role?.id,
     leagueNumGames:
       activeTeam?.leagueNumGames ||

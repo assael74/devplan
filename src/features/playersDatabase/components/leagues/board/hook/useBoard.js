@@ -34,6 +34,7 @@ const createDetailsForm = (league = {}) => ({
   ageGroupLabel: league.ageGroupLabel || '',
   level: league.level ?? '',
   region: league.region || '',
+  leagueUrl: league.leagueUrl || league.source?.leagueUrl || '',
 })
 
 export const LEAGUE_SORT_OPTIONS = [
@@ -137,6 +138,34 @@ const createSeasonForm = () => ({
   clubsCount: '',
 })
 
+const createBoardSearchParams = ({
+  leagueId,
+  birthYearFilter,
+  levelFilter,
+} = {}) => {
+  const params = new URLSearchParams()
+
+  if (cleanText(leagueId)) {
+    params.set('leagueId', cleanText(leagueId))
+  }
+
+  if (cleanText(birthYearFilter) && birthYearFilter !== 'all') {
+    params.set('birthYear', cleanText(birthYearFilter))
+  }
+
+  if (cleanText(levelFilter) && levelFilter !== 'all') {
+    params.set('level', cleanText(levelFilter))
+  }
+
+  return params
+}
+
+const createBoardSearch = filters => {
+  const query = createBoardSearchParams(filters).toString()
+
+  return query ? `?${query}` : ''
+}
+
 const latestSnapshotIds = leagues => (
   Array.from(new Set(
     leagues.flatMap(league => (
@@ -231,8 +260,12 @@ export function useBoard() {
   const [selectedId, setSelectedId] = useState('')
   const [sortBy, setSortBy] = useState('levelBirthYear')
   const [sortDirection, setSortDirection] = useState('asc')
-  const [birthYearFilter, setBirthYearFilter] = useState('all')
-  const [levelFilter, setLevelFilter] = useState('all')
+  const [birthYearFilter, setBirthYearFilterState] = useState(
+    () => searchParams.get('birthYear') || 'all'
+  )
+  const [levelFilter, setLevelFilterState] = useState(
+    () => searchParams.get('level') || 'all'
+  )
 
   const [editingDetails, setEditingDetails] = useState(false)
   const [detailsForm, setDetailsForm] = useState(createDetailsForm)
@@ -243,6 +276,18 @@ export function useBoard() {
   const [seasonForm, setSeasonForm] = useState(createSeasonForm)
   const [savingSeason, setSavingSeason] = useState(false)
   const [seasonError, setSeasonError] = useState('')
+
+  useEffect(() => {
+    const nextBirthYearFilter = searchParams.get('birthYear') || 'all'
+    const nextLevelFilter = searchParams.get('level') || 'all'
+
+    setBirthYearFilterState(current => (
+      current === nextBirthYearFilter ? current : nextBirthYearFilter
+    ))
+    setLevelFilterState(current => (
+      current === nextLevelFilter ? current : nextLevelFilter
+    ))
+  }, [searchParams])
 
   const selectedLeague = useMemo(
     () =>
@@ -531,10 +576,40 @@ export function useBoard() {
 
   const selectLeague = leagueId => {
     setSelectedId(leagueId)
+    setSearchParams(
+      createBoardSearchParams({
+        leagueId,
+        birthYearFilter,
+        levelFilter,
+      }),
+      { replace: true }
+    )
+  }
 
-    if (requestedLeagueId) {
-      setSearchParams({}, { replace: true })
-    }
+  const changeBirthYearFilter = value => {
+    const nextValue = value || 'all'
+
+    setBirthYearFilterState(nextValue)
+    setSearchParams(
+      createBoardSearchParams({
+        birthYearFilter: nextValue,
+        levelFilter,
+      }),
+      { replace: true }
+    )
+  }
+
+  const changeLevelFilter = value => {
+    const nextValue = value || 'all'
+
+    setLevelFilterState(nextValue)
+    setSearchParams(
+      createBoardSearchParams({
+        birthYearFilter,
+        levelFilter: nextValue,
+      }),
+      { replace: true }
+    )
   }
 
   const openLeague = () => {
@@ -547,6 +622,30 @@ export function useBoard() {
       {
         state: {
           league: selectedLeague,
+          boardFilters: {
+            birthYearFilter,
+            levelFilter,
+          },
+        },
+      }
+    )
+  }
+
+  const openLeagueById = leagueId => {
+    const targetLeague = leagues.find(league => league.id === leagueId)
+    if (!targetLeague?.id) return
+
+    navigate(
+      `/players-database/leagues/${encodeURIComponent(
+        targetLeague.id
+      )}`,
+      {
+        state: {
+          league: targetLeague,
+          boardFilters: {
+            birthYearFilter,
+            levelFilter,
+          },
         },
       }
     )
@@ -599,6 +698,7 @@ export function useBoard() {
         ageGroupLabel: clean(detailsForm.ageGroupLabel),
         level,
         region: clean(detailsForm.region),
+        leagueUrl: clean(detailsForm.leagueUrl),
         updatedBy:
           user?.uid ||
           selectedLeague.updatedBy ||
@@ -717,6 +817,7 @@ export function useBoard() {
     load: () => load({ force: true }),
     selectLeague,
     openLeague,
+    openLeagueById,
     openCreate: () => setCreateOpen(true),
     closeCreate: () => setCreateOpen(false),
     startDetailsEdit,
@@ -732,8 +833,8 @@ export function useBoard() {
     levelFilter,
     birthYearOptions,
     levelOptions: LEAGUE_LEVEL_FILTERS,
-    setBirthYearFilter,
-    setLevelFilter,
+    setBirthYearFilter: changeBirthYearFilter,
+    setLevelFilter: changeLevelFilter,
     toggleSeasonForm,
     updateSeason,
     saveSeason,

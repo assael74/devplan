@@ -3,10 +3,13 @@
 import React from 'react'
 import {
   Box,
+  Chip,
+  IconButton,
   Input,
   ListItemDecorator,
   Option,
   Select,
+  Tooltip,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
@@ -32,22 +35,74 @@ const renderSelectValue = (selected, items, fallbackLabel, fallbackIcon) => {
       <ListItemDecorator sx={{ mr: 0.5 }}>
         {iconUi({ id: item.idIcon || fallbackIcon })}
       </ListItemDecorator>
-      {item.label} ({item.count || 0})
+      {item.shortLabel || item.label} ({item.count || 0})
     </>
+  )
+}
+
+function IconFilterChip({
+  title,
+  icon,
+  active,
+  color = 'neutral',
+  inactiveColor = 'neutral',
+  onClick,
+  disabled = false,
+}) {
+  const chip1 = (
+    <Chip
+      size='lg'
+      variant={active ? 'solid' : 'outlined'}
+      color={active ? color : inactiveColor}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      //sx={[sx.filterChip, sx.iconFilterChip]}
+      //startDecorator={iconUi({ id: icon })}
+      aria-label={title}
+    >
+    {iconUi({ id: icon, size: 'lg', sx: {border: 1, alignItems: 'center'} })}
+    </Chip>
+  )
+
+  const chip = (
+    <IconButton
+      size='sm'
+      variant={active ? 'solid' : 'outlined'}
+      color={active ? color : inactiveColor}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+    >
+    {iconUi({ id: icon })}
+    </IconButton>
+  )
+
+  return (
+    <Tooltip title={title} placement='top'>
+      {disabled ? <span>{chip}</span> : chip}
+    </Tooltip>
   )
 }
 
 export default function TeamPlayersFiltersBar({
   summary,
   filters,
+  seasonPlanStatusDisabled = false,
   onChangeSearch,
   onChangeSquadRole,
+  onChangeSeasonPlanStatus,
   onChangeProjectStatus,
   onChangePositionCode,
   onChangePerformanceProfile,
   onChangeGeneralPositionKey,
+  onToggleWithTargets,
+  onToggleOnlyActive,
+  onResetFilters,
+  canReset,
+  filteredCount,
+  totalCount,
 }) {
   const squadRoleBuckets = Array.isArray(summary?.squadRoleBuckets) ? summary.squadRoleBuckets : []
+  const seasonPlanStatusBuckets = Array.isArray(summary?.seasonPlanStatusBuckets) ? summary.seasonPlanStatusBuckets : []
   const projectStatusBuckets = Array.isArray(summary?.projectStatusBuckets) ? summary.projectStatusBuckets : []
   const positionCodeBuckets = Array.isArray(summary?.positionCodeBuckets) ? summary.positionCodeBuckets : []
   const generalPositionBuckets = Array.isArray(summary?.generalPositionBuckets) ? summary.generalPositionBuckets : []
@@ -188,6 +243,46 @@ export default function TeamPlayersFiltersBar({
           </Option>
         ))}
       </Select>
+
+      <Select
+        size="sm"
+        value={filters?.seasonPlanStatus || ''}
+        onChange={(_, value) => onChangeSeasonPlanStatus(value || '')}
+        placeholder="תכנון לעונה"
+        sx={sx.positionSelect}
+        disabled={seasonPlanStatusDisabled}
+        renderValue={(selected) =>
+          renderSelectValue(
+            selected,
+            seasonPlanStatusBuckets,
+            'תכנון לעונה',
+            'notReviewed'
+          )
+        }
+      >
+        <Option value="">כל תכנון העונה</Option>
+
+        {seasonPlanStatusBuckets.map((item) => (
+          <Option key={item.id} value={item.id}>
+            <ListItemDecorator>
+              {iconUi({ id: item.idIcon || 'notReviewed' })}
+            </ListItemDecorator>
+            {item.label} ({item.count || 0})
+          </Option>
+        ))}
+      </Select>
+
+      <Box sx={sx.statusChipGroup}>
+        <IconFilterChip
+          title='איפוס מסננים'
+          icon='reset'
+          active={false}
+          inactiveColor='danger'
+          onClick={onResetFilters}
+          disabled={!canReset}
+        />
+      </Box>
+
     </Box>
   )
 }

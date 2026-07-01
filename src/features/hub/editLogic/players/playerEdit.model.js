@@ -170,6 +170,8 @@ export function buildPlayerEditInitial(player = {}) {
 
     active: getBool(source?.active, false),
     squadRole: clean(source?.squadRole),
+    seasonPlanStatus: clean(source?.seasonPlanStatus),
+    confidenceLevel: clean(source?.confidenceLevel),
     type: clean(source?.type || 'noneType'),
     projectStatus: clean(source?.projectStatus),
   }
@@ -207,6 +209,8 @@ export function isPlayerEditDirty(draft = {}, initial = {}) {
     !sameArr(draftPositions, initialPositions) ||
     draft.active !== initial.active ||
     draft.squadRole !== initial.squadRole ||
+    draft.seasonPlanStatus !== initial.seasonPlanStatus ||
+    draft.confidenceLevel !== initial.confidenceLevel ||
     draft.type !== initial.type ||
     draft.projectStatus !== initial.projectStatus
   )
@@ -259,6 +263,8 @@ export function buildPlayerEditPatch(draft = {}, initial = {}) {
   addBoolIfChanged(next, draft, initial, 'active')
 
   addIfChanged(next, draft, initial, 'squadRole')
+  addIfChanged(next, draft, initial, 'seasonPlanStatus')
+  addIfChanged(next, draft, initial, 'confidenceLevel')
 
   if (draft?.type !== initial?.type) {
     next.type = clean(draft?.type || 'noneType')

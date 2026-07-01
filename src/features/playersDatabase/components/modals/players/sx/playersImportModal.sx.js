@@ -22,8 +22,8 @@ export const playersImportModalSx = {
     overflow: 'hidden',
     display: 'grid',
     gridTemplateRows: {
-      xs: 'auto auto 220px minmax(0, 1fr) auto auto',
-      xl: 'auto auto 240px minmax(0, 1fr) auto auto',
+      xs: 'auto auto auto 220px minmax(0, 1fr) auto auto',
+      xl: 'auto auto auto 240px minmax(0, 1fr) auto auto',
     },
     gap: 1,
   },
@@ -35,6 +35,25 @@ export const playersImportModalSx = {
   meta: {
     color: palette.muted,
     mt: 0.25,
+  },
+
+  contextInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.65,
+    minHeight: 26,
+
+    '& .MuiChip-root': {
+      minHeight: 22,
+      fontSize: 12,
+      fontWeight: 700,
+    },
+  },
+
+  contextLabel: {
+    color: palette.muted,
+    fontWeight: 700,
   },
 
   importZone: {

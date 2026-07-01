@@ -33,6 +33,23 @@ const seasonExists = seasonId => (
   PLAYERS_DATABASE_SEASONS_CATALOG.some(season => season.id === seasonId)
 )
 
+const hasPathTeamContext = row => Boolean(
+  clean(row.teamSeasonKey) ||
+  (
+    clean(row.leagueId) &&
+    clean(row.seasonId) &&
+    clean(row.ageGroupId) &&
+    (clean(row.clubId) || clean(row.clubName)) &&
+    (
+      clean(row.teamSlotId) ||
+      clean(row.teamId) ||
+      clean(row.teamCatalogId) ||
+      clean(row.externalTeamId) ||
+      clean(row.teamSlot)
+    )
+  )
+)
+
 const normalizeLeagueName = row => {
   const leagueName = clean(row.leagueName)
   const ageGroupLabel = clean(row.ageGroupId || row.ageGroupLabel)
@@ -53,7 +70,8 @@ const buildCatalogReadyRows = (rows, context = {}) => rows.map(row => {
     row.ageGroupLabel ||
     context.ageGroupId ||
     context.ageGroupLabel
-  const ageGroupId = ageGroupIdFromLabel(ageGroupValue)
+  const ageGroupId = ageGroupIdFromLabel(ageGroupValue) ||
+    clean(row.ageGroupId || context.ageGroupId)
   const teamSlot = clean(row.teamSlot || context.teamSlot)
   const slotTeamName = ageGroupId && teamSlot
     ? `${ageGroupValue} ${teamSlot}`
@@ -65,11 +83,17 @@ const buildCatalogReadyRows = (rows, context = {}) => rows.map(row => {
   return {
     ...row,
     seasonId,
+    birthYear: clean(row.birthYear || context.birthYear || context.playerBirthYear || context.ageGroupYear),
     ageGroupLabel: clean(row.ageGroupLabel || row.ageGroupId || context.ageGroupLabel || context.ageGroupId),
     ageGroupId,
+    clubId: clean(row.clubId || context.clubId),
     clubName: clean(row.clubName || context.clubName),
     externalTeamId: clean(row.externalTeamId || context.externalTeamId),
     leagueId: clean(row.leagueId || context.leagueId),
+    teamId: clean(row.teamId || context.teamId),
+    teamCatalogId: clean(row.teamCatalogId || context.teamCatalogId),
+    teamSlotId: clean(row.teamSlotId || context.teamSlotId || context.teamId || context.teamCatalogId),
+    teamSeasonKey: clean(row.teamSeasonKey || context.teamSeasonKey),
     teamSlot,
     leagueName: normalizeLeagueName({
       ...row,
@@ -126,16 +150,18 @@ const getRowIssues = (
   else if (!seasonExists(clean(row.seasonId))) {
     issues.push('העונה לא קיימת בקטלוג')
   }
-  if (!clean(row.externalTeamId) && !clean(row.teamName)) {
+  const hasContext = hasPathTeamContext(row)
+
+  if (!hasContext && !clean(row.externalTeamId) && !clean(row.teamName)) {
     issues.push('חסר Team ID או שם קבוצה')
   }
-  if (!policy.club?.catalogMatch?.id) {
+  if (!hasContext && !policy.club?.catalogMatch?.id) {
     issues.push('המועדון לא זוהה בקטלוג')
   }
-  if (!policy.team?.catalogMatch?.id) {
+  if (!hasContext && !policy.team?.catalogMatch?.id) {
     issues.push('הקבוצה/שנתון לא זוהו ב-team slots')
   }
-  if (!policy.league?.catalogMatch?.id) {
+  if (!hasContext && !policy.league?.catalogMatch?.id) {
     issues.push('הליגה לא זוהתה בקטלוג')
   }
   if (duplicateNames.has(normalizeDuplicateName(row.fullName))) {
@@ -158,9 +184,9 @@ const buildPreviewRow = (row, index, rowPlan, duplicateNames, existingIdentity) 
   const teamSlot = Number(row.teamSlot) ||
     Number(teamMatch?.slot?.slot) ||
     1
-  const teamIdentity = buildTeamIdentity({
-    clubId: clubMatch?.id,
-    clubName: clubMatch?.name || row.clubName,
+  const builtTeamIdentity = buildTeamIdentity({
+    clubId: row.clubId || clubMatch?.id,
+    clubName: row.clubName || clubMatch?.name,
     seasonId: row.seasonId,
     ageGroupId: row.ageGroupId,
     ageGroupLabel: row.ageGroupLabel,
@@ -169,7 +195,19 @@ const buildPreviewRow = (row, index, rowPlan, duplicateNames, existingIdentity) 
     leagueName: row.leagueName || leagueMatch?.name,
     externalTeamId: row.externalTeamId,
   })
+  const teamIdentity = {
+    ...builtTeamIdentity,
+    teamSeasonKey: clean(row.teamSeasonKey) || builtTeamIdentity.teamSeasonKey,
+    teamSlotId: clean(row.teamSlotId) || builtTeamIdentity.teamSlotId,
+    teamId: clean(row.teamId) || clean(row.teamSlotId) || builtTeamIdentity.teamSlotId,
+    teamCatalogId: clean(row.teamCatalogId) || clean(row.teamSlotId) || builtTeamIdentity.teamSlotId,
+  }
   const issues = getRowIssues(row, rowPlan, duplicateNames, existingIdentity)
+  const seasonDocId = playerSeasonDocId(row, teamIdentity)
+
+  if (!seasonDocId) {
+    issues.push('חסר הקשר קבוצה מהנתיב')
+  }
 
   return {
     rowId: row.rowId || `player-row-${index + 1}`,
@@ -183,7 +221,7 @@ const buildPreviewRow = (row, index, rowPlan, duplicateNames, existingIdentity) 
     valid: issues.length === 0,
     issues,
     playerDocId: playerDocId(row),
-    playerSeasonDocId: playerSeasonDocId(row, teamIdentity),
+    playerSeasonDocId: seasonDocId,
   }
 }
 
@@ -191,8 +229,12 @@ const buildSummary = rows => {
   const validRows = rows.filter(row => row.valid)
   const playerIds = new Set(validRows.map(row => row.playerDocId).filter(Boolean))
   const playerSeasonIds = new Set(validRows.map(row => row.playerSeasonDocId).filter(Boolean))
-  const matchedClubIds = new Set(rows.map(row => row.clubMatch?.id).filter(Boolean))
-  const matchedLeagueIds = new Set(rows.map(row => row.leagueMatch?.id).filter(Boolean))
+  const matchedClubIds = new Set(rows.map(row => (
+    row.clubMatch?.id || row.teamIdentity?.clubId || row.source?.clubId
+  )).filter(Boolean))
+  const matchedLeagueIds = new Set(rows.map(row => (
+    row.leagueMatch?.id || row.teamIdentity?.leagueId || row.source?.leagueId
+  )).filter(Boolean))
 
   return {
     total: rows.length,

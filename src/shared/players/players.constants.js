@@ -1,5 +1,5 @@
 const warningColor = '#f7d397'
-const succssesColor = '#11eb61'
+const successColor = '#11eb61'
 const dangerColor = '#f80303'
 const white = '#ffffff'
 const black = '#000000'
@@ -36,49 +36,246 @@ export const SQUAD_ROLE_OPTIONS = [
   },
 ]
 
+export const SEASON_PLAN_STATUS = {
+  NOT_REVIEWED: 'notReviewed',
+  UNDER_REVIEW: 'underReview',
+  IN_SQUAD: 'inSquad',
+  UNDECIDED: 'undecided',
+  NOT_SUITABLE: 'notSuitable',
+  WANTS_TO_LEAVE: 'wantsToLeave',
+}
+
+export const SEASON_PLAN_STATUS_OPTIONS = [
+  {
+    value: SEASON_PLAN_STATUS.NOT_REVIEWED,
+    label: 'טרם נבחן',
+    shortLabel: 'לא נבחן',
+    idIcon: 'notReviewed',
+    tone: 'neutral',
+    color: '#64748B',
+    reviewed: false,
+  },
+  {
+    value: SEASON_PLAN_STATUS.UNDER_REVIEW,
+    label: 'בתהליך בחינה',
+    shortLabel: 'בבחינה',
+    idIcon: 'underReviewed',
+    tone: 'primary',
+    color: '#2563EB',
+    reviewed: true,
+  },
+  {
+    value: SEASON_PLAN_STATUS.IN_SQUAD,
+    label: 'בתוכניות לעונה',
+    shortLabel: 'בתוכניות',
+    idIcon: 'inSquad',
+    tone: 'success',
+    color: '#16A34A',
+    reviewed: true,
+  },
+  {
+    value: SEASON_PLAN_STATUS.UNDECIDED,
+    label: 'טרם התקבלה החלטה',
+    shortLabel: 'בהתלבטות',
+    idIcon: 'undecided',
+    tone: 'warning',
+    color: '#D97706',
+    reviewed: true,
+  },
+  {
+    value: SEASON_PLAN_STATUS.NOT_SUITABLE,
+    label: 'לא מתאים מקצועית',
+    shortLabel: 'לא מתאים',
+    idIcon: 'notSuitable',
+    tone: 'danger',
+    color: '#DC2626',
+    reviewed: true,
+  },
+  {
+    value: SEASON_PLAN_STATUS.WANTS_TO_LEAVE,
+    label: 'מעוניין לעזוב',
+    shortLabel: 'רוצה לעזוב',
+    idIcon: 'wantsToLeave',
+    tone: 'warning',
+    color: '#EA580C',
+    reviewed: true,
+  },
+]
+
 export const PLAYERS_TYPES = [
-  { id: 'project', label: 'פרויקט', labelH: 'פרויקט', idIcon: 'project', disabled: false },
-  { id: 'noneType', label: 'כללי', labelH: 'כללי', idIcon: 'noneType', disabled: false },
+  {
+    id: 'project',
+    label: 'פרויקט',
+    labelH: 'פרויקט',
+    idIcon: 'project',
+    disabled: false,
+  },
+  {
+    id: 'noneType',
+    label: 'כללי',
+    labelH: 'כללי',
+    idIcon: 'noneType',
+    disabled: false,
+  },
 ]
 
 export const PROJECT_STATUS_CANDIDATE = [
-  { id: 'candidate', labelH: 'מועמד', idIcon: 'candidate', color: succssesColor, icCol: black },
-  { id: 'messageSent', labelH: 'נשלחה הודעה', idIcon: 'messageSent', color: '#a5c9ea', icCol: black },
-  { id: 'awaitingReply', labelH: 'בהמתנה לתגובה', idIcon: 'awaitingReply',  color: warningColor, icCol: gray },
-  { id: 'callscheduled', labelH: 'שיחה מתואמת', idIcon: 'callscheduled',  color: warningColor, icCol: gray },
-  { id: 'reschedule', labelH: 'דחיית שיחה', idIcon: 'reschedule', color: dangerColor, icCol: white },
-  { id: 'thinking', labelH: 'זמן מחשבה', idIcon: 'thinking', color: warningColor, icCol: gray },
-  { id: 'approved', labelH: 'אושרה הצטרפות', idIcon: 'approved', color: succssesColor, icCol: black },
-  { id: 'declined', labelH: 'סירוב', idIcon: 'declined', color: dangerColor, icCol: white },
-];
+  {
+    id: 'candidate',
+    labelH: 'מועמד',
+    idIcon: 'candidate',
+    color: successColor,
+    icCol: black,
+  },
+  {
+    id: 'messageSent',
+    labelH: 'נשלחה הודעה',
+    idIcon: 'messageSent',
+    color: '#a5c9ea',
+    icCol: black,
+  },
+  {
+    id: 'awaitingReply',
+    labelH: 'בהמתנה לתגובה',
+    idIcon: 'awaitingReply',
+    color: warningColor,
+    icCol: gray,
+  },
+  {
+    id: 'callscheduled',
+    labelH: 'שיחה מתואמת',
+    idIcon: 'callscheduled',
+    color: warningColor,
+    icCol: gray,
+  },
+  {
+    id: 'reschedule',
+    labelH: 'דחיית שיחה',
+    idIcon: 'reschedule',
+    color: dangerColor,
+    icCol: white,
+  },
+  {
+    id: 'thinking',
+    labelH: 'זמן מחשבה',
+    idIcon: 'thinking',
+    color: warningColor,
+    icCol: gray,
+  },
+  {
+    id: 'approved',
+    labelH: 'אושרה הצטרפות',
+    idIcon: 'approved',
+    color: successColor,
+    icCol: black,
+  },
+  {
+    id: 'declined',
+    labelH: 'סירוב',
+    idIcon: 'declined',
+    color: dangerColor,
+    icCol: white,
+  },
+]
 
 export const POSITION_LAYERS = {
-  attack: [{ code: 'S', label: 'חלוץ', layerCode: 'S' }],
+  attack: [
+    {
+      code: 'S',
+      label: 'חלוץ',
+      layerCode: 'S',
+    },
+  ],
+
   atMidfield: [
-    { code: 'AR', label: 'כנף ימין', layerCode: 'AM' },
-    { code: 'AC', label: 'קשר התקפי', layerCode: 'AM' },
-    { code: 'AL', label: 'כנף שמאל', layerCode: 'AM' },
+    {
+      code: 'AR',
+      label: 'כנף ימין',
+      layerCode: 'AM',
+    },
+    {
+      code: 'AC',
+      label: 'קשר התקפי',
+      layerCode: 'AM',
+    },
+    {
+      code: 'AL',
+      label: 'כנף שמאל',
+      layerCode: 'AM',
+    },
   ],
+
   midfield: [
-    { code: 'MCR', label: 'קשר אמצע ימין', layerCode: 'M' },
-    { code: 'MCL', label: 'קשר אמצע שמאל', layerCode: 'M' },
+    {
+      code: 'MCR',
+      label: 'קשר אמצע ימין',
+      layerCode: 'M',
+    },
+    {
+      code: 'MCL',
+      label: 'קשר אמצע שמאל',
+      layerCode: 'M',
+    },
   ],
+
   dmMid: [
-    { code: 'DMR', label: 'מגן / כנף ימין', layerCode: 'DM' },
-    { code: 'DM', label: 'קשר אחורי', layerCode: 'DM' },
-    { code: 'DML', label: 'מגן / כנף שמאל', layerCode: 'DM' },
+    {
+      code: 'DMR',
+      label: 'מגן / כנף ימין',
+      layerCode: 'DM',
+    },
+    {
+      code: 'DM',
+      label: 'קשר אחורי',
+      layerCode: 'DM',
+    },
+    {
+      code: 'DML',
+      label: 'מגן / כנף שמאל',
+      layerCode: 'DM',
+    },
   ],
 
   defense: [
-    { code: 'DR', label: 'מגן ימין', layerCode: 'D' },
-    { code: 'DCR', label: 'בלם ימני', layerCode: 'D' },
-    { code: 'DCL', label: 'בלם שמאלי', layerCode: 'D' },    
-    { code: 'DL', label: 'מגן שמאל', layerCode: 'D' },
+    {
+      code: 'DR',
+      label: 'מגן ימין',
+      layerCode: 'D',
+    },
+    {
+      code: 'DCR',
+      label: 'בלם ימני',
+      layerCode: 'D',
+    },
+    {
+      code: 'DCL',
+      label: 'בלם שמאלי',
+      layerCode: 'D',
+    },
+    {
+      code: 'DL',
+      label: 'מגן שמאל',
+      layerCode: 'D',
+    },
   ],
-  goalkeeper: [{ code: 'GK', label: 'שוער', layerCode: 'GK' }],
-};
 
-export const POSITION_ORDER = [ 'attack', 'atMidfield', 'midfield', 'dmMid', 'defense', 'goalkeeper',];
+  goalkeeper: [
+    {
+      code: 'GK',
+      label: 'שוער',
+      layerCode: 'GK',
+    },
+  ],
+}
+
+export const POSITION_ORDER = [
+  'attack',
+  'atMidfield',
+  'midfield',
+  'dmMid',
+  'defense',
+  'goalkeeper',
+]
 
 export const LAYER_TITLES = {
   goalkeeper: 'שוער',
@@ -87,7 +284,7 @@ export const LAYER_TITLES = {
   midfield: 'קישור',
   atMidfield: 'קישור',
   attack: 'התקפה',
-};
+}
 
 export const FULL_WIDTH_LAYERS = [
   'defense',

@@ -205,13 +205,19 @@ const teamFilterPasses = ({ filter, metrics, settings }) => {
   const defenseActive = baseDefenseActive
   const attack = Number(metrics.attackEdge)
   const defense = Number(metrics.defenseEdge)
+  const goals = Number(metrics.goals)
   const attackOk = attackActive && Number.isFinite(attack) && attack >= attackThreshold
   const defenseOk = defenseActive && Number.isFinite(defense) && defense >= defenseThreshold
+  const goalsBypassOk = Number.isFinite(goals) && goals >= 10
 
   if (deepSearch) {
     const clearThreshold = settings.deepClearPerformanceThreshold
 
     if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
+    if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
+    if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
+      return attackOk || goalsBypassOk
+    }
     if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
     if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
       return (
@@ -228,6 +234,10 @@ const teamFilterPasses = ({ filter, metrics, settings }) => {
   if (defenseActive && !defenseOk) return false
 
   if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
+    return attackOk || goalsBypassOk
+  }
   if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
   if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
     const clearThreshold = deepSearch
@@ -238,6 +248,29 @@ const teamFilterPasses = ({ filter, metrics, settings }) => {
       (Number.isFinite(attack) && attack >= clearThreshold) ||
       (Number.isFinite(defense) && defense >= clearThreshold)
   }
+
+  return false
+}
+
+export const passesScoutTeamPerformance = ({ filter, team = {}, signal = {} } = {}) => {
+  const attack = Number(team.attackEdge)
+  const defense = Number(team.defenseEdge)
+  const goals = Number(signal?.metrics?.goals)
+  const attackOk = Number.isFinite(attack) && attack >= 0.1
+  const defenseOk = Number.isFinite(defense) && defense >= 0.1
+  const goalsBypassOk = Number.isFinite(goals) && goals >= 10
+  const clearOk =
+    (Number.isFinite(attack) && attack >= 0.1) ||
+    (Number.isFinite(defense) && defense >= 0.1)
+
+  if (!filter || filter === TEAM_FILTER.ANY) return true
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
+    return attackOk || goalsBypassOk
+  }
+  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
+  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
+  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return clearOk
 
   return false
 }

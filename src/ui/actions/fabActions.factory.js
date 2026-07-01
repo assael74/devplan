@@ -28,6 +28,7 @@ export function buildFabActions({
     onCreatePlayer: pick(handlers.onCreatePlayer, noOp),
     onCreatePrivatePlayer: pick(handlers.onCreatePrivatePlayer, noOp),
     onCreatePlayers: pick(handlers.onCreatePlayers, noOp),
+    onImportPlayers: pick(handlers.onImportPlayers, noOp),
     onCreateTag: pick(handlers.onCreateTag, noOp),
     onCreateStaff: pick(handlers.onCreateStaff, noOp),
     onCreateScout: pick(handlers.onCreateScout, noOp),
@@ -119,9 +120,7 @@ export function buildFabActions({
     })
   }
 
-  if (area === 'home') {
-    return taskAction ? [taskAction] : []
-  }
+  if (area === 'home') return taskAction ? [taskAction] : []
 
   return taskAction ? [taskAction] : []
 }

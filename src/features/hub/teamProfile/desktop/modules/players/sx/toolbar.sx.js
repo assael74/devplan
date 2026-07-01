@@ -19,7 +19,29 @@ export const toolbarSx = {
     justifyContent: 'flex-start',
     gap: 1,
     minWidth: 0,
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+  },
+
+  selectionToolbar: {
+    minHeight: 56,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    p: 1,
+    borderRadius: '16px',
+    bgcolor: 'danger.softBg',
+    border: '1px solid',
+    borderColor: 'danger.outlinedBorder',
+  },
+
+  selectionCount: {
+    minWidth: 130,
+    fontWeight: 700,
+    color: 'danger.500',
+  },
+
+  selectionSpacer: {
+    flex: 1,
   },
 
   viewModeGroup: {
@@ -34,14 +56,30 @@ export const toolbarSx = {
     flexShrink: 0,
   },
 
+  inlineIconGroup: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    flexShrink: 0,
+  },
+
   filterChip: {
     cursor: 'pointer',
     transition: 'transform .12s ease, filter .12s ease',
     whiteSpace: 'nowrap',
+
     '&:hover': {
       transform: 'translateY(-1px)',
       filter: 'brightness(1.03)',
     },
+  },
+
+  statusChipGroup: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    flexShrink: 0,
+    marginInlineStart: 'auto',
   },
 
   positionSelect: {

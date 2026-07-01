@@ -23,20 +23,20 @@ import { playersImportModalSx as sx } from './sx/playersImportModal.sx.js'
 
 const ph = [
   'מס׳',
-  'מועדון',
-  'עונה',
-  'שנתון',
-  'חודש/שנת לידה',
-  'קבוצה',
-  'שם הקבוצה',
-  'קבוצת גיל',
-  'ליגה',
   'שם שחקן',
   'Player ID',
   'קישור שחקן',
-  'Team ID',
-  'קישור קבוצה',
+  'חודש/שנת לידה',
+  'עמדה',
 ].join('\t')
+
+const clean = value => String(value ?? '').trim()
+
+const getImportContextItems = team => [
+  ['מועדון', clean(team.clubName || team.teamName || team.sourceTeamName)],
+  ['שנתון', clean(team.birthYear || team.playerBirthYear || team.ageGroupYear)],
+  ['ליגה', clean(team.leagueName)],
+].filter(([, value]) => value)
 
 export default function PlayersImportModal({
   open,
@@ -101,8 +101,20 @@ export default function PlayersImportModal({
         </Typography>
 
         <Typography level="body-sm" sx={sx.meta}>
-          הדבק טבלת שחקנים מאתר ההתאחדות. כל שורה תהפוך לזהות שחקן ולשיוך עונתי לקבוצה.
+          הדבק טבלת שחקנים מאתר ההתאחדות. השיוך לליגה, קבוצה, מועדון, עונה ושנתון נלקח מהעמוד הנוכחי.
         </Typography>
+
+        <Box sx={sx.contextInfo}>
+          <Typography level="body-xs" sx={sx.contextLabel}>
+            העלאה אל
+          </Typography>
+
+          {getImportContextItems(teamContext).map(([label, value]) => (
+            <Chip key={label} size="sm" variant="soft" color="primary">
+              {label}: {value}
+            </Chip>
+          ))}
+        </Box>
 
         <Sheet variant="outlined" sx={sx.importZone}>
           <Box
@@ -218,13 +230,13 @@ export default function PlayersImportModal({
                         <td>{data.birthYear || '-'}</td>
                         <td>{data.seasonId || '-'}</td>
                         <td>{data.clubName || '-'}</td>
-                        <td>{row.clubMatch?.id || '-'}</td>
+                        <td>{row.teamIdentity?.clubId || row.clubMatch?.id || '-'}</td>
                         <td>{data.birthDate || '-'}</td>
-                        <td>{row.clubMatch?.name || data.clubName || data.teamName || '-'}</td>
+                        <td>{data.teamName || row.teamIdentity?.clubName || row.clubMatch?.name || data.clubName || '-'}</td>
                         <td className="isLtr">{data.externalTeamId || '-'}</td>
-                        <td className="isLtr">{row.teamMatch?.id || '-'}</td>
+                        <td className="isLtr">{row.teamIdentity?.teamSlotId || row.teamMatch?.id || '-'}</td>
                         <td>{data.leagueName || '-'}</td>
-                        <td className="isLtr">{row.leagueMatch?.id || '-'}</td>
+                        <td className="isLtr">{row.teamIdentity?.leagueId || row.leagueMatch?.id || '-'}</td>
                         <td className="isLtr">{row.playerSeasonDocId || '-'}</td>
                       </tr>
                     )

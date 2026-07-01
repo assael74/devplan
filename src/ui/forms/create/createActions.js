@@ -3,7 +3,6 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { createGameStatsDoc } from '../../../services/firestore/shorts/gameStats/index.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
-import { buildPlayerInfoItem, buildPlayerNamesItem, buildPlayerTeamItem } from '../helpers/playerForm.helpers.js'
 import { buildTaskCreateItem } from '../helpers/tasksForm.helpers.js'
 import { buildMeetingStartAtMs } from '../helpers/meetingForm.helpers.js'
 import { createShort } from '../../../services/firestore/shorts/shortsCreate'
@@ -14,6 +13,11 @@ import {
   createGameShorts,
   createGamesShorts,
 } from './logic/games/index.js'
+
+import {
+  createPlayerShorts,
+  createPlayersShorts,
+} from './logic/players/playerCreate.logic.js'
 
 import { makeId } from '../../../utils/id.js'
 
@@ -62,27 +66,11 @@ export const createActions = {
   },
 
   player: async ({ draft }) => {
-    const id = makeId()
-    const now = Date.now()
-    const ifaLink = pickIfaLink(draft)
+    return createPlayerShorts({ draft })
+  },
 
-    const infoItem = {
-      ...buildPlayerInfoItem({ id, draft, now }),
-      ...(ifaLink ? { ifaLink } : {}),
-    }
-
-    const namesItem = buildPlayerNamesItem({ id, draft })
-    const teamItem = buildPlayerTeamItem({ id, draft })
-
-    await createShort({ shortKey: 'players.playersInfo', item: infoItem })
-    await createShort({ shortKey: 'players.playersNames', item: namesItem })
-    await createShort({ shortKey: 'players.playersTeam', item: teamItem })
-
-    return {
-      ...infoItem,
-      ...namesItem,
-      ...teamItem,
-    }
+  players: async ({ draft }) => {
+    return createPlayersShorts({ draft })
   },
 
   privatePlayer: async ({ draft }) => {
@@ -111,42 +99,6 @@ export const createActions = {
     })
 
     return { ...infoItem }
-  },
-
-  players: async ({ draft }) => {
-    const rows = Array.isArray(draft?.players) ? draft.players : []
-    const created = []
-
-    for (const row of rows) {
-      const id = makeId()
-      const now = Date.now()
-
-      const playerDraft = {
-        ...draft,
-        ...row,
-        teamId: row?.teamId || draft?.teamId || draft?.defaults?.teamId || '',
-        clubId: row?.clubId || draft?.clubId || draft?.defaults?.clubId || '',
-      }
-
-      const infoItem = buildPlayerInfoItem({ id, draft: playerDraft, now })
-      const namesItem = buildPlayerNamesItem({ id, draft: playerDraft })
-      const teamItem = buildPlayerTeamItem({ id, draft: playerDraft })
-
-      await createShort({ shortKey: 'players.playersInfo', item: infoItem })
-      await createShort({ shortKey: 'players.playersNames', item: namesItem })
-      await createShort({ shortKey: 'players.playersTeam', item: teamItem })
-
-      created.push({
-        ...infoItem,
-        ...namesItem,
-        ...teamItem,
-      })
-    }
-
-    return {
-      total: created.length,
-      items: created,
-    }
   },
 
   role: async ({ draft }) => {

@@ -36,6 +36,12 @@ const getClubById = clubId =>
     club => club.id === clean(clubId)
   ) || null
 
+const getImportContextItems = ({ league, season }) => [
+  ['מועדונים', season?.clubsCount],
+  ['שנתון', season?.primaryBirthYear || season?.birthYear],
+  ['ליגה', league?.leagueName],
+].filter(([, value]) => value !== null && value !== undefined && clean(value))
+
 export default function PasteModal({
   open,
   onClose,
@@ -240,6 +246,18 @@ export default function PasteModal({
             ? `${league?.leagueName} | ${season.seasonId} | שנתון ${season.primaryBirthYear}`
             : 'צריך ליצור עונה לליגה לפני טעינת צילום'}
         </Typography>
+
+        <Box sx={sx.contextInfo}>
+          <Typography level="body-xs" sx={sx.contextLabel}>
+            העלאה אל
+          </Typography>
+
+          {getImportContextItems({ league, season }).map(([label, value]) => (
+            <Chip key={label} size="sm" variant="soft" color="primary">
+              {label}: {value}
+            </Chip>
+          ))}
+        </Box>
 
         <Sheet
           variant="outlined"

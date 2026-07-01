@@ -11,15 +11,9 @@ import { desktopTeamModulesMap } from './teamModules.map'
 
 import TeamProfileFab from '../sharedUi/TeamProfileFab'
 
-export default function TeamProfileDesktop({
-  tab,
-  entity,
-  context,
-  taskContext,
-  counts,
-  profileData,
-}) {
+export default function TeamProfileDesktop({ tab, entity, context, taskContext, counts, profileData }) {
   const [playersInsightsRequest, setPlayersInsightsRequest] = useState(0)
+  const [playersImportRequest, setPlayersImportRequest] = useState(0)
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
   const [gamesImportRequest, setGamesImportRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
@@ -43,6 +37,7 @@ export default function TeamProfileDesktop({
         modulesMap: desktopTeamModulesMap,
         profileData,
         playersInsightsRequest,
+        playersImportRequest,
         gamesInsightsRequest,
         gamesImportRequest,
         performanceInsightsRequest,
@@ -52,16 +47,18 @@ export default function TeamProfileDesktop({
       }}
       fabProps={{
         playersInsightsStatus,
+
         onOpenPlayersInsights: () => {
           if (playersInsightsStatus !== 'ready') return
-
-          setPlayersInsightsRequest(v => v + 1)
+          setPlayersInsightsRequest(value => value + 1)
         },
-        onOpenGamesInsights: () => setGamesInsightsRequest(v => v + 1),
-        onImportGames: () => setGamesImportRequest(v => v + 1),
-        onOpenPerformanceInsights: () => setPerformanceInsightsRequest(v => v + 1),
-        onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest(v => v + 1),
-        onOpenVideoInsights: () => setVideoInsightsRequest(v => v + 1),
+
+        onImportPlayers: () => setPlayersImportRequest(value => value + 1),
+        onOpenGamesInsights: () => setGamesInsightsRequest(value => value + 1),
+        onImportGames: () => setGamesImportRequest(value => value + 1),
+        onOpenPerformanceInsights: () => setPerformanceInsightsRequest(value => value + 1),
+        onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest(value => value + 1),
+        onOpenVideoInsights: () => setVideoInsightsRequest(value => value + 1),
       }}
     />
   )

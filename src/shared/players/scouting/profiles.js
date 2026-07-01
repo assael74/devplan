@@ -14,21 +14,8 @@ const DEP_HIGH = 'high'
 
 const below = [SCOUT_LEVEL.BELOW]
 const sameBelow = [SCOUT_LEVEL.SAME, SCOUT_LEVEL.BELOW]
-const allLevels = [SCOUT_LEVEL.SAME, SCOUT_LEVEL.BELOW, SCOUT_LEVEL.ABOVE]
 
 export const SCOUT_PROFILES = [
-  {
-    id: 'game_changer',
-    idIcon: 'gameChanger',
-    label: 'משנה משחק',
-    group: 'all',
-    interest: SCOUT_INTEREST.SUPER,
-    searchLevels: allLevels,
-    teamFilter: TEAM_FILTER.ANY,
-    rules: [{ metric: 'subInPct', op: 'gte', value: 0.35, reason: 'high_sub_in_share' }],
-    deepRules: [{ metric: 'subInPct', op: 'gte', value: 0.45, reason: 'elite_sub_in_share' }],
-    deps: { position: DEP_LOW, team: DEP_LOW, penalties: DEP_LOW },
-  },
   {
     id: 'promoted_talent',
     idIcon: 'promotedTalent',
@@ -99,7 +86,7 @@ export const SCOUT_PROFILES = [
     group: 'defense_midfield',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: below,
-    teamFilter: TEAM_FILTER.CLEAR_POSITIVE,
+    teamFilter: TEAM_FILTER.ANY_POSITIVE,
     rules: [{ metric: 'minutesPct', op: 'gte', value: 0.9, reason: 'max_minutes_load' }],
     deepRules: [{ metric: 'minutesPct', op: 'gte', value: 0.95, reason: 'elite_minutes_load' }],
     deps: { position: DEP_MED, team: DEP_MED, penalties: DEP_LOW },
@@ -144,7 +131,7 @@ export const SCOUT_PROFILES = [
     group: 'attack',
     interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY,
+    teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
     rules: [
       { metric: 'goals', op: 'gte', value: 5, reason: 'enough_goal_sample' },
       { metric: 'goalsPer90', op: 'gte', value: 0.65, reason: 'elite_goals_per_90' },
@@ -163,7 +150,7 @@ export const SCOUT_PROFILES = [
     group: 'attack',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: below,
-    teamFilter: TEAM_FILTER.ANY,
+    teamFilter: TEAM_FILTER.ATTACK_POSITIVE,
     rules: [
       { metric: 'goals', op: 'between', min: 5, max: 9, reason: 'medium_goal_output' },
       { metric: 'minutesPct', op: 'gte', value: 0.85, reason: 'max_minutes_load' },
@@ -182,7 +169,7 @@ export const SCOUT_PROFILES = [
     group: 'attack',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY,
+    teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
     rules: [{ metric: 'goals', op: 'between', min: 7, max: 9, reason: 'near_double_digit_goals' }],
     deepRules: [{ metric: 'goals', op: 'between', min: 10, max: 14, reason: 'strong_secondary_goal_total' }],
     deps: { position: DEP_MED, team: DEP_LOW, penalties: DEP_MED },

@@ -15,7 +15,7 @@ export const delPlayersSx = {
     borderRadius: '10px',
     overflow: 'hidden',
     display: 'grid',
-    gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto auto',
+    gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto',
     gap: 1.25,
   },
 
@@ -44,14 +44,43 @@ export const delPlayersSx = {
   },
 
   confirm: {
+    minWidth: 0,
     display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'minmax(0, 1fr) 120px',
+    },
+    alignItems: 'center',
     gap: 0.75,
+
+    '& .MuiInput-root': {
+      minWidth: 0,
+    },
+  },
+
+  footer: {
+    borderTop: `1px solid ${palette.line}`,
+    pt: 1,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'minmax(0, 1fr) auto',
+    },
+    alignItems: 'center',
+    gap: 1,
   },
 
   actions: {
     display: 'flex',
     justifyContent: 'flex-start',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 1,
+
+    '& .MuiButton-root': {
+      minHeight: 32,
+      flexShrink: 0,
+    },
   },
 }
 
@@ -153,8 +182,9 @@ export const teamPlayersSx = {
   },
 
   table: {
-    minWidth: 1020,
+    minWidth: 1144,
     width: '100%',
+    tableLayout: 'fixed',
 
     '& th, & td': {
       whiteSpace: 'nowrap',
@@ -169,113 +199,86 @@ export const teamPlayersSx = {
     },
 
     '& th:nth-of-type(1), & td:nth-of-type(1)': {
-      width: 54,
-      textAlign: 'left',
+      textAlign: 'center',
     },
 
     '& td.serialCell': {
       boxSizing: 'border-box',
       paddingRight: '6px !important',
       paddingLeft: '6px !important',
+      fontWeight: 700,
+      color: '#0f172a',
     },
 
     '& th:nth-of-type(2), & td:nth-of-type(2)': {
-      width: 145,
-      textAlign: 'left',
+      textAlign: 'right',
     },
 
     '& th:nth-of-type(3), & td:nth-of-type(3)': {
-      width: 82,
       textAlign: 'center',
     },
 
     '& th:nth-of-type(4), & td:nth-of-type(4)': {
-      width: 94,
       textAlign: 'center',
     },
 
     '& th:nth-of-type(5), & td:nth-of-type(5)': {
-      width: 36,
       textAlign: 'center',
     },
 
     '& th:nth-of-type(6), & td:nth-of-type(6)': {
-      width: 122,
-      textAlign: 'left',
+      textAlign: 'right',
     },
 
     '& th:nth-of-type(7), & td:nth-of-type(7)': {
-      width: 154,
       textAlign: 'center',
     },
 
     '& th:nth-of-type(8), & td:nth-of-type(8)': {
-      width: 86,
       textAlign: 'center',
     },
 
     '& th:nth-of-type(n+9), & td:nth-of-type(n+9)': {
-      width: 58,
-      textAlign: 'center',
-    },
-
-    '& th:nth-of-type(12), & td:nth-of-type(12)': {
-      width: 82,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(1), &.isDeleteMode td:nth-of-type(1)': {
-      width: 34,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(2), &.isDeleteMode td:nth-of-type(2)': {
-      width: 54,
-      textAlign: 'left',
+      textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(3), &.isDeleteMode td:nth-of-type(3)': {
-      width: 145,
-      textAlign: 'left',
+      textAlign: 'right',
     },
 
     '&.isDeleteMode th:nth-of-type(4), &.isDeleteMode td:nth-of-type(4)': {
-      width: 82,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(5), &.isDeleteMode td:nth-of-type(5)': {
-      width: 94,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(6), &.isDeleteMode td:nth-of-type(6)': {
-      width: 36,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(7), &.isDeleteMode td:nth-of-type(7)': {
-      width: 122,
-      textAlign: 'left',
+      textAlign: 'right',
     },
 
     '&.isDeleteMode th:nth-of-type(8), &.isDeleteMode td:nth-of-type(8)': {
-      width: 154,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(9), &.isDeleteMode td:nth-of-type(9)': {
-      width: 86,
       textAlign: 'center',
     },
 
     '&.isDeleteMode th:nth-of-type(n+10), &.isDeleteMode td:nth-of-type(n+10)': {
-      width: 58,
-      textAlign: 'center',
-    },
-
-    '&.isDeleteMode th:nth-of-type(13), &.isDeleteMode td:nth-of-type(13)': {
-      width: 82,
       textAlign: 'center',
     },
   },
@@ -356,7 +359,7 @@ export const teamPlayersSx = {
   },
 
   scoutChip: {
-    maxWidth: 146,
+    maxWidth: '100%',
     minHeight: 20,
     mx: 'auto',
     fontSize: 11,
@@ -370,7 +373,7 @@ export const teamPlayersSx = {
   },
 
   reliabilityChip: {
-    maxWidth: 80,
+    maxWidth: '100%',
     minHeight: 20,
     mx: 'auto',
     fontSize: 11,
