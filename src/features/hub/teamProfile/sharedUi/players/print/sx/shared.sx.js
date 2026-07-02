@@ -1,4 +1,4 @@
-// features/hub/teamProfile/sharedUi/players/print/sx/shared.sx.js
+// src/features/hub/teamProfile/sharedUi/players/print/sx/shared.sx.js
 
 import { alpha } from '@mui/system'
 

@@ -4,6 +4,7 @@ import React from 'react'
 import { Box, Sheet, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { SEASON_PLAN_LAYER_TARGETS } from '../../../../../../shared/players/players.constants.js'
 
 import {
   SquadTable,
@@ -51,15 +52,6 @@ function StatusLine({ item, label, tone }) {
     </Box>
   )
 }
-
-
-const SEASON_PLAN_LAYER_TARGETS = [
-  { value: 'goalkeeper', label: 'שוער', requirement: '2 שחקנים', mode: 'fixed', target: 2 },
-  { value: 'defense', label: 'הגנה', requirement: 'לפחות 8 שחקנים', mode: 'min', target: 8 },
-  { value: 'dmMid', label: 'קישור אחורי', requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
-  { value: 'atMidfield', label: 'קישור התקפי', requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
-  { value: 'attack', label: 'התקפה', requirement: 'לפחות 6 שחקנים', mode: 'min', target: 6 },
-]
 
 function resolveLayerTone(item, value) {
   if (item.mode === 'fixed') {

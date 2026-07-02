@@ -1,7 +1,8 @@
-// src/features/hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.constants.js
-
 import {
   SEASON_PLAN_STATUS,
+} from '../../../../../../shared/players/players.constants.js'
+export {
+  SEASON_PLAN_POSITION_TARGETS,
 } from '../../../../../../shared/players/players.constants.js'
 
 export const TEAM_PLAYERS_PRINT_MODES = {
@@ -19,13 +20,18 @@ export const SEASON_PLAN_PRINT_COLUMNS = [
   { key: 'project', label: 'פרויקט', width: '9%' },
 ]
 
+export const MINUTES_PLAN_ROLE_TARGETS = {
+  key: 2000,
+  core: 1500,
+  rotation: 1000,
+  fringe: 500,
+}
+
 export const MINUTES_PLAN_PRINT_COLUMNS = [
-  { key: 'index', label: '#', width: '4%' },
-  { key: 'player', label: 'שחקן', width: '28%' },
-  { key: 'positions', label: 'עמדות', width: '15%' },
-  { key: 'role', label: 'מעמד בסגל', width: '18%' },
-  { key: 'level', label: 'פוטנציאל יכולות', width: '27%' },
-  { key: 'project', label: 'פרויקט', width: '8%' },
+  { key: 'index', label: '#', width: '5%' },
+  { key: 'player', label: 'שחקן', width: '36%' },
+  { key: 'positions', label: 'עמדות', width: '24%' },
+  { key: 'minutesTarget', label: 'כמות דקות', width: '35%' },
 ]
 
 export const PERFORMANCE_PRINT_COLUMNS = [

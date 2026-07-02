@@ -80,7 +80,7 @@ export const seasonPlanSx = {
 
   seasonPlanKpiCardTitle: {
     color: teamColors.text,
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: 700,
     lineHeight: 1.2,
   },
@@ -93,7 +93,7 @@ export const seasonPlanSx = {
     bgcolor: teamColors.surface,
     border: `1px solid ${alpha(teamColors.accent, 0.16)}`,
     borderRadius: 999,
-    fontSize: 9.5,
+    fontSize: 11.5,
     fontWeight: 700,
   },
 
@@ -130,7 +130,7 @@ export const seasonPlanSx = {
 
   seasonPlanKpiLineLabel: {
     color: teamColors.text,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 700,
     lineHeight: 1.15,
   },
@@ -140,6 +140,7 @@ export const seasonPlanSx = {
     alignItems: 'center',
     gap: 0.45,
     minWidth: 0,
+    mt: 2
   },
 
   seasonPlanKpiLineIcon: {
@@ -188,10 +189,8 @@ export const seasonPlanSx = {
     }
   },
 
-
   layerSection: {
-    mb: 1,
-    mt: 0.9,
+    mt: 6,
     overflow: 'hidden',
     borderRadius: 12,
     borderColor: alpha(teamColors.accent, 0.2),
@@ -249,7 +248,7 @@ export const seasonPlanSx = {
 
   layerKpiCardTitle: {
     color: teamColors.text,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 700,
     lineHeight: 1.15,
     textAlign: 'center',
@@ -261,15 +260,15 @@ export const seasonPlanSx = {
       tone === 'warn' ? '#D97706' :
       tone === 'bad' ? '#DC2626' :
       teamColors.accent,
-    fontSize: 22,
-    fontWeight: 800,
+    fontSize: 25,
+    fontWeight: 700,
     lineHeight: 1,
   }),
 
   layerKpiCardRequirement: {
     color: teamColors.text,
     opacity: 0.68,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 700,
     lineHeight: 1.15,
     textAlign: 'center',

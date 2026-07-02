@@ -115,7 +115,7 @@ const isSameTeamSeason = (row, lookup) => (
 const normalizeName = value =>
   clean(value)
     .toLowerCase()
-    .replace(/[׳'״"]/g, '')
+    .replace(/[׳³'׳´"]/g, '')
     .replace(/\s+/g, ' ')
 
 const nameVariants = value => {
@@ -162,6 +162,39 @@ const compactObject = obj =>
   Object.fromEntries(
     Object.entries(obj || {}).filter(([, value]) => value !== undefined)
   )
+
+const scoutProfileFieldKeys = [
+  'rawScoutProfileIds',
+  'rawScoutProfiles',
+  'eligibleScoutProfileIds',
+  'eligibleScoutProfiles',
+  'scoutProfileIds',
+  'scoutProfiles',
+  'bestRawScoutProfileId',
+  'bestRawScoutProfileLabel',
+  'bestRawScoutPositionContext',
+  'bestRawScoutScore',
+  'bestEligibleScoutProfileId',
+  'bestEligibleScoutProfileLabel',
+  'bestEligibleScoutPositionContext',
+  'bestEligibleScoutScore',
+  'bestScoutProfileId',
+  'bestScoutProfileLabel',
+  'bestScoutPositionContext',
+  'bestScoutScore',
+  'bestScoutReliabilityLevel',
+  'bestScoutReliabilityScore',
+]
+
+const stripScoutProfileFields = doc => {
+  const next = { ...(doc || {}) }
+
+  scoutProfileFieldKeys.forEach(key => {
+    delete next[key]
+  })
+
+  return next
+}
 
 const buildPlayerDoc = row => {
   const source = row.source || {}
@@ -520,13 +553,17 @@ export async function updatePlayerSeasonPosition(row = {}, patch = {}) {
 
     batch.set(
       doc(playerStatsRef(), statsDoc.id),
-      scoutStatsPatch(searchDoc),
-      { merge: true }
+      {
+        ...statsDoc,
+        ...scoutStatsPatch(searchDoc),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: false }
     )
     batch.set(
       doc(playerSearchRef(), statsDoc.id),
       searchDoc,
-      { merge: true }
+      { merge: false }
     )
   })
 
@@ -556,6 +593,235 @@ export async function updatePlayerSeasonPosition(row = {}, patch = {}) {
   return {
     id,
     ...payload,
+  }
+}
+
+export async function updatePlayerRowLinks(row = {}, patch = {}) {
+  const seasonId = clean(row.id || row.playerSeasonId)
+  const searchDocId = clean(row.searchDocId || row.statsDoc?.id)
+  const playerId = clean(row.playerId || row.id || row.playerSeasonId)
+
+  if (!seasonId) throw new Error('missing player season id')
+
+  const hasPlayerUrl = Object.prototype.hasOwnProperty.call(patch || {}, 'playerUrl')
+  const hasTeamUrl = Object.prototype.hasOwnProperty.call(patch || {}, 'teamUrl')
+  const playerUrl = hasPlayerUrl ? clean(patch.playerUrl) : ''
+  const teamUrl = hasTeamUrl ? clean(patch.teamUrl) : ''
+  const source = {
+    ...(row.source || {}),
+  }
+
+  if (hasPlayerUrl) source.playerUrl = playerUrl
+  if (hasTeamUrl) source.teamUrl = teamUrl
+
+  const batch = writeBatch(db)
+  const seasonPayload = {
+    updatedAt: serverTimestamp(),
+    ...(hasPlayerUrl ? { playerUrl } : {}),
+    ...(hasTeamUrl ? { teamUrl } : {}),
+    ...(Object.keys(source).length ? { source } : {}),
+  }
+
+  batch.set(
+    doc(playerSeasonsRef(), seasonId),
+    seasonPayload,
+    { merge: true }
+  )
+
+  if (playerId) {
+    batch.set(
+      doc(playersRef(), playerId),
+      {
+        updatedAt: serverTimestamp(),
+        ...(hasPlayerUrl ? {
+          playerUrl,
+          source: {
+            provider: clean(row.source?.provider || PROVIDER),
+            playerUrl,
+          },
+        } : {}),
+      },
+      { merge: true }
+    )
+  }
+
+  if (searchDocId) {
+    batch.set(
+      doc(playerSearchRef(), searchDocId),
+      {
+        updatedAt: serverTimestamp(),
+        ...(hasPlayerUrl ? { playerUrl } : {}),
+        ...(hasTeamUrl ? { teamUrl } : {}),
+        ...(Object.keys(source).length ? { source } : {}),
+      },
+      { merge: true }
+    )
+  }
+
+  await batch.commit()
+
+  trackFirestoreTransaction({
+    collection: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
+    feature: FEATURE,
+    action: 'updatePlayerRowLinks',
+    readsCount: 0,
+    writesCount: 1 + (playerId ? 1 : 0) + (searchDocId ? 1 : 0),
+    readPayload: null,
+    writePayload: {
+      seasonId,
+      playerId,
+      searchDocId,
+      playerUrl: hasPlayerUrl ? playerUrl : undefined,
+      teamUrl: hasTeamUrl ? teamUrl : undefined,
+    },
+    meta: {
+      seasonId,
+      playerId,
+      searchDocId,
+    },
+  })
+
+  return {
+    seasonId,
+    playerId,
+    searchDocId,
+    ...(hasPlayerUrl ? { playerUrl } : {}),
+    ...(hasTeamUrl ? { teamUrl } : {}),
+  }
+}
+
+const pruneProfileIds = (values = [], removedId) => {
+  const target = clean(removedId)
+  return unique((Array.isArray(values) ? values : []).filter(id => clean(id) && clean(id) !== target))
+}
+
+const pruneProfileMap = (map = {}, removedId) => {
+  const target = clean(removedId)
+  return Object.entries(map || {}).reduce((acc, [profileId, value]) => {
+    if (clean(profileId) === target) return acc
+    acc[clean(profileId)] = value
+    return acc
+  }, {})
+}
+
+const firstProfileSummary = (ids = [], maps = []) => {
+  const profileId = unique(ids)[0] || ''
+  if (!profileId) return null
+
+  for (const map of maps) {
+    const item = map?.[profileId]
+    if (item) {
+      return {
+        profileId,
+        profileLabel: clean(item.profileLabel || item.label),
+        score: item.score ?? null,
+        positionContext: clean(item.positionContext || ''),
+        reliabilityLevel: clean(item.reliability?.level || item.reliabilityLevel),
+        reliabilityScore: item.reliability?.score ?? item.reliabilityScore ?? null,
+      }
+    }
+  }
+
+  return {
+    profileId,
+    profileLabel: profileId,
+    score: null,
+    positionContext: '',
+    reliabilityLevel: '',
+    reliabilityScore: null,
+  }
+}
+
+export async function removePlayerScoutProfile(row = {}, profileId = '') {
+  const seasonId = clean(row.id || row.playerSeasonId)
+  const statsDocId = clean(row.searchDocId || row.statsDoc?.id || row.id)
+  const playerId = clean(row.playerId || row.id || row.playerSeasonId)
+  const removedId = clean(profileId)
+  const team = row.teamContext || row.team || row
+
+  if (!seasonId) throw new Error('missing player season id')
+  if (!statsDocId) throw new Error('missing player stats id')
+  if (!removedId) throw new Error('missing profile id')
+
+  const sourceDoc = row.statsDoc || row.searchDoc || row || {}
+  const nextRawProfileIds = pruneProfileIds(sourceDoc.rawScoutProfileIds, removedId)
+  const nextEligibleProfileIds = pruneProfileIds(sourceDoc.scoutProfileIds, removedId)
+  const nextRawProfiles = pruneProfileMap(sourceDoc.rawScoutProfiles, removedId)
+  const nextEligibleProfiles = pruneProfileMap(sourceDoc.scoutProfiles, removedId)
+  const nextBestRaw = firstProfileSummary(nextRawProfileIds, [nextRawProfiles, nextEligibleProfiles])
+  const nextBestEligible = firstProfileSummary(nextEligibleProfileIds, [nextEligibleProfiles, nextRawProfiles])
+  const nextScoutProfileIds = nextEligibleProfileIds
+  const nextScoutProfiles = nextEligibleProfiles
+
+  const patch = {
+    updatedAt: serverTimestamp(),
+    rawScoutProfileIds: nextRawProfileIds,
+    rawScoutProfiles: nextRawProfiles,
+    eligibleScoutProfileIds: nextEligibleProfileIds,
+    eligibleScoutProfiles: nextEligibleProfiles,
+    scoutProfileIds: nextScoutProfileIds,
+    scoutProfiles: nextScoutProfiles,
+    bestRawScoutProfileId: nextBestRaw?.profileId || '',
+    bestRawScoutProfileLabel: nextBestRaw?.profileLabel || '',
+    bestRawScoutScore: nextBestRaw?.score ?? null,
+    bestEligibleScoutProfileId: nextBestEligible?.profileId || '',
+    bestEligibleScoutProfileLabel: nextBestEligible?.profileLabel || '',
+    bestEligibleScoutScore: nextBestEligible?.score ?? null,
+    bestScoutProfileId: nextBestEligible?.profileId || nextBestRaw?.profileId || '',
+    bestScoutProfileLabel: nextBestEligible?.profileLabel || nextBestRaw?.profileLabel || '',
+    bestScoutScore: nextBestEligible?.score ?? nextBestRaw?.score ?? null,
+    bestScoutReliabilityLevel: nextBestEligible?.reliabilityLevel || nextBestRaw?.reliabilityLevel || '',
+    bestScoutReliabilityScore: nextBestEligible?.reliabilityScore ?? nextBestRaw?.reliabilityScore ?? null,
+  }
+
+  const nextDoc = compactObject({
+    ...stripScoutProfileFields(sourceDoc),
+    ...patch,
+  })
+
+  const batch = writeBatch(db)
+  batch.set(
+    doc(playerStatsRef(), statsDocId),
+    nextDoc,
+    { merge: false }
+  )
+  batch.set(
+    doc(playerSearchRef(), statsDocId),
+    nextDoc,
+    { merge: false }
+  )
+
+  await batch.commit()
+  await refreshLeagueTeamIndex(team)
+
+  trackFirestoreTransaction({
+    collection: PLAYERS_DATABASE_COLLECTIONS.playerStats,
+    feature: FEATURE,
+    action: 'removePlayerScoutProfile',
+    readsCount: 0,
+    writesCount: 3,
+    readPayload: null,
+    writePayload: {
+      statsDocId,
+      removedId,
+      nextRawProfileIds,
+      nextEligibleProfileIds,
+    },
+    meta: {
+      seasonId,
+      playerId,
+      statsDocId,
+      removedId,
+    },
+  })
+
+  return {
+    seasonId,
+    playerId,
+    statsDocId,
+    removedId,
+    nextRawProfileIds,
+    nextEligibleProfileIds,
   }
 }
 
@@ -739,6 +1005,16 @@ const buildPlayerSearchDoc = ({
   const bestRawSignal = signals[0] || null
   const bestEligibleSignal = eligible[0] || null
 
+  const playerUrl = clean(season?.source?.playerUrl || row?.source?.playerUrl || player?.playerUrl)
+  const teamUrl = clean(team?.source?.teamUrl || season?.source?.teamUrl || row?.source?.teamUrl || team?.teamUrl)
+  const source = compactObject({
+    provider: clean(season?.source?.provider || row?.source?.provider || PROVIDER),
+    playerUrl,
+    teamUrl,
+    addedBy: clean(season?.source?.addedBy || row?.source?.addedBy),
+    addedReason: clean(season?.source?.addedReason || row?.source?.addedReason),
+  })
+
   return compactObject({
     id,
     playerId: player.playerId,
@@ -772,6 +1048,9 @@ const buildPlayerSearchDoc = ({
     roundNumber: toNumberOrNull(meta.roundNumber),
     isSeasonFinal: clean(meta.snapshotType) === 'season_final',
     capturedAt,
+    playerUrl,
+    teamUrl,
+    source,
     current: {
       ...current,
       ...metrics,
@@ -791,14 +1070,17 @@ const buildPlayerSearchDoc = ({
     blockedScoutProfiles: blocked,
     bestRawScoutProfileId: bestRawSignal?.profileId || '',
     bestRawScoutProfileLabel: bestRawSignal?.profileLabel || '',
+    bestRawScoutPositionContext: bestRawSignal?.positionContext || '',
     bestRawScoutScore: bestRawSignal?.score ?? null,
     bestEligibleScoutProfileId: bestEligibleSignal?.profileId || '',
     bestEligibleScoutProfileLabel: bestEligibleSignal?.profileLabel || '',
+    bestEligibleScoutPositionContext: bestEligibleSignal?.positionContext || '',
     bestEligibleScoutScore: bestEligibleSignal?.score ?? null,
     scoutProfileIds: eligible.map(signal => signal.profileId),
     scoutProfiles: scoutProfilesMap(eligible),
     bestScoutProfileId: bestEligibleSignal?.profileId || '',
     bestScoutProfileLabel: bestEligibleSignal?.profileLabel || '',
+    bestScoutPositionContext: bestEligibleSignal?.positionContext || '',
     bestScoutScore: bestEligibleSignal?.score ?? null,
     bestScoutReliabilityLevel: bestEligibleSignal?.reliability?.level || bestRawSignal?.reliability?.level || '',
     bestScoutReliabilityScore: bestEligibleSignal?.reliability?.score ?? bestRawSignal?.reliability?.score ?? null,
@@ -893,13 +1175,13 @@ export async function savePlayerStatsRows(rows = [], team = {}, meta = {}) {
         history,
         ...scoutStatsPatch(searchDoc),
       },
-      { merge: true }
+      { merge: false }
     )
 
     batch.set(
       doc(playerSearchRef(), id),
       searchDoc,
-      { merge: true }
+      { merge: false }
     )
   })
 
@@ -999,6 +1281,24 @@ export async function listPlayerSearchByTeamProfile(teamOrKey, search = {}) {
       minutes: current.minutes ?? docData.minutes,
       isPlayingUp: docData.isPlayingUp || current.isYoungerAgeGroup,
     }
+  })
+
+  const seasonDocs = await listPlayerSeasonRowsByIds(rows.map(row => row.playerSeasonId))
+  const mergedRows = rows.map(row => {
+    const season = seasonDocs.get(clean(row.playerSeasonId)) || {}
+    const source = {
+      ...(row.source || {}),
+      provider: clean(row.source?.provider || season.source?.provider || PROVIDER),
+      playerUrl: clean(row.playerUrl || row.source?.playerUrl || season.source?.playerUrl),
+      teamUrl: clean(row.teamUrl || row.source?.teamUrl || season.source?.teamUrl),
+    }
+
+    return compactObject({
+      ...row,
+      playerUrl: clean(row.playerUrl || row.source?.playerUrl || season.source?.playerUrl),
+      teamUrl: clean(row.teamUrl || row.source?.teamUrl || season.source?.teamUrl),
+      source,
+    })
   }).sort((a, b) => {
     const minutesDiff = (Number(b.minutes) || -1) - (Number(a.minutes) || -1)
     if (minutesDiff) return minutesDiff
@@ -1011,8 +1311,8 @@ export async function listPlayerSearchByTeamProfile(teamOrKey, search = {}) {
     collection: PLAYERS_DATABASE_COLLECTIONS.playerSearch,
     feature: FEATURE,
     action: 'listPlayerSearchByTeamProfile',
-    docs: rows,
-    docsCount: rows.length,
+    docs: mergedRows,
+    docsCount: mergedRows.length,
     meta: {
       teamSeasonKey,
       profileId,
@@ -1021,7 +1321,7 @@ export async function listPlayerSearchByTeamProfile(teamOrKey, search = {}) {
     },
   })
 
-  return rows
+  return mergedRows
 }
 
 export async function listPlayerSearchByTeam(teamOrKey, options = {}) {

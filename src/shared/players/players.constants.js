@@ -291,3 +291,23 @@ export const FULL_WIDTH_LAYERS = [
   'atMidfield',
   'dmMid',
 ]
+
+export const SEASON_PLAN_LAYER_TARGETS = [
+  { value: 'goalkeeper', label: 'שוער', requirement: '2 שחקנים', mode: 'fixed', target: 2 },
+  { value: 'defense', label: 'הגנה', requirement: 'לפחות 8 שחקנים', mode: 'min', target: 8 },
+  { value: 'dmMid', label: 'קישור אחורי', requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
+  { value: 'atMidfield', label: 'קישור התקפי', requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
+  { value: 'attack', label: 'התקפה', requirement: 'לפחות 6 שחקנים', mode: 'min', target: 6 },
+]
+
+export const SEASON_PLAN_POSITION_TARGETS = [
+  { value: 'GK', label: 'שוער', layerKey: 'goalkeeper', codes: ['GK'], requirement: '2 שחקנים', mode: 'fixed', target: 2 },
+  { value: 'DCR', label: 'בלמים', layerKey: 'defense', codes: ['DCR', 'DCL', 'DC'], requirement: '4-5 שחקנים', mode: 'range', min: 4, max: 5 },
+  { value: 'DR', label: 'מגן ימני', layerKey: 'defense', codes: ['DR'], requirement: '2 שחקנים', mode: 'fixed', target: 2 },
+  { value: 'DL', label: 'מגן שמאלי', layerKey: 'defense', codes: ['DL'], requirement: '2 שחקנים', mode: 'fixed', target: 2 },
+  { value: 'DM', label: 'קשרים אחוריים', layerKey: 'dmMid', codes: ['DMR', 'DM', 'DML', 'DMC'], requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
+  { value: 'AC', label: 'קשרים התקפיים', layerKey: 'atMidfield', codes: ['AC'], requirement: '2-4 שחקנים', mode: 'range', min: 2, max: 4 },
+  { value: 'AR', label: 'כנף ימין', layerKey: 'atMidfield', codes: ['AR'], requirement: '2-3 שחקנים', mode: 'range', min: 2, max: 3 },
+  { value: 'AL', label: 'כנף שמאל', layerKey: 'atMidfield', codes: ['AL'], requirement: '2-3 שחקנים', mode: 'range', min: 2, max: 3 },
+  { value: 'S', label: 'חלוץ', layerKey: 'attack', codes: ['S'], requirement: '2-3 שחקנים', mode: 'range', min: 2, max: 3 },
+]

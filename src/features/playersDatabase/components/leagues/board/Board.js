@@ -30,9 +30,6 @@ export default function Board() {
   return (
     <Sheet sx={sx.root}>
       <BoardHeader
-        loading={model.loading}
-        statusItems={model.boardStatus}
-        onReload={model.load}
         onCreate={model.openCreate}
         onScan={() => navigate('/players-database/scan')}
       />

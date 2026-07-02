@@ -1,9 +1,12 @@
 // src/dev/reports/reportsDev.catalog.js
 
+import { REPORTS_DEV_REPORTS } from './reportsDev.constants.js'
+
 export const REPORT_DEV_CATEGORIES = {
   TARGETS: 'targets',
   INSIGHTS: 'insights',
   DETAILS: 'details',
+  EXTERNAL_DETAILS: 'externalDetails',
 }
 
 export const REPORT_DEV_SCOPES = {
@@ -16,24 +19,33 @@ export const REPORT_DEV_SCOPES = {
 export const REPORT_DEV_CATEGORY_OPTIONS = [
   {
     id: REPORT_DEV_CATEGORIES.TARGETS,
-    label: 'דוחות יעדים אישיים',
+    label: 'דוחות יעדים',
+    description: 'יעדים אישיים וקבוצתיים',
     icon: 'targets',
   },
   {
     id: REPORT_DEV_CATEGORIES.INSIGHTS,
     label: 'דוחות תובנות',
+    description: 'ניתוח, מסקנות והמלצות',
     icon: 'insights',
   },
   {
     id: REPORT_DEV_CATEGORIES.DETAILS,
     label: 'דוחות מפרט',
+    description: 'תמונת מצב מפורטת ללא שכבת תובנות',
     icon: 'details',
+  },
+  {
+    id: REPORT_DEV_CATEGORIES.EXTERNAL_DETAILS,
+    label: 'מפרט חיצוני',
+    description: 'דוחות מידע על שחקנים, קבוצות, ליגות ופרופילי סקאוט חיצוניים',
+    icon: 'externalDetails',
   },
 ]
 
 export const REPORT_DEV_CATALOG = [
   {
-    id: 'playerTargets',
+    id: REPORTS_DEV_REPORTS.PLAYER_TARGETS,
     categoryId: REPORT_DEV_CATEGORIES.TARGETS,
     label: 'יעדי שחקן',
     scope: REPORT_DEV_SCOPES.PLAYER,
@@ -43,7 +55,7 @@ export const REPORT_DEV_CATALOG = [
     needsUpgrade: false,
   },
   {
-    id: 'teamTargets',
+    id: REPORTS_DEV_REPORTS.TEAM_TARGETS,
     categoryId: REPORT_DEV_CATEGORIES.TARGETS,
     label: 'יעדי קבוצה',
     scope: REPORT_DEV_SCOPES.TEAM,
@@ -91,6 +103,26 @@ export const REPORT_DEV_CATALOG = [
     exists: true,
     connected: false,
     needsUpgrade: true,
+  },
+  {
+    id: REPORTS_DEV_REPORTS.SEASON_PLAN,
+    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    label: 'תכנון סגל',
+    scope: REPORT_DEV_SCOPES.TEAM,
+    scopeLabel: 'מפרט קבוצתי',
+    exists: true,
+    connected: true,
+    needsUpgrade: false,
+  },
+  {
+    id: REPORTS_DEV_REPORTS.MINUTES_PLAN,
+    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    label: 'תכנון חלוקת דקות',
+    scope: REPORT_DEV_SCOPES.TEAM,
+    scopeLabel: 'מפרט קבוצתי',
+    exists: true,
+    connected: true,
+    needsUpgrade: false,
   },
   {
     id: 'playersPerformanceDetails',

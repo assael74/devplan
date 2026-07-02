@@ -38,6 +38,7 @@ const buildSignal = ({ profile, metrics, availability, ruleResult, context }) =>
     perspective: context.perspective || '',
     searchLevels: profile.searchLevels || [],
     teamFilter: profile.teamFilter || '',
+    positionContext: profile.positionContext || '',
     interestLevel: profile.interest,
     reliability,
     score,

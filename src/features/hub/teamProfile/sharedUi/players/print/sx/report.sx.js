@@ -1,4 +1,4 @@
-// features/hub/teamProfile/sharedUi/players/print/sx/report.sx.js
+// src/features/hub/teamProfile/sharedUi/players/print/sx/report.sx.js
 
 import { alpha } from '@mui/system'
 
@@ -9,7 +9,8 @@ const teamColors = getEntityColors('team')
 export const reportSx = {
   subtitle: {
     mb: 1.1,
-    color: 'text.tertiary',
+    color: teamColors.text,
+    opacity: 0.72,
     fontSize: 11,
     fontWeight: 700,
   },

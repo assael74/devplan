@@ -12,40 +12,30 @@ export const headerSx = {
     py: 0.55,
     borderBottom: `1px solid ${palette.line}`,
     display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      md: 'minmax(0, 1fr) auto',
-    },
+    gridTemplateColumns: '1fr',
     alignItems: 'center',
     gap: 0.75,
-  },
-
-  status: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 0.5,
-    alignItems: 'center',
-    minWidth: 0,
-
-    '& .MuiChip-root': {
-      minHeight: 28,
-      fontWeight: 700,
-    },
   },
 
   controls: {
     display: 'flex',
     gap: 0.75,
     alignItems: 'center',
-    justifyContent: {
-      xs: 'space-between',
-      lg: 'flex-start',
-    },
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
 
     '& button': {
       minHeight: 34,
       borderRadius: '8px',
     },
+  },
+
+  primaryActions: {
+    display: 'flex',
+    gap: 0.75,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    minWidth: 0,
   },
 
   createButton: {
@@ -56,14 +46,8 @@ export const headerSx = {
   },
 
   scanButton: {
-    minWidth: 112,
+    minWidth: 146,
     px: 1.1,
-    fontWeight: 700,
-  },
-
-  reloadButton: {
-    minWidth: 72,
-    px: 1,
     fontWeight: 700,
   },
 }

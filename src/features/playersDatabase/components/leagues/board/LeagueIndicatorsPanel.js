@@ -17,6 +17,8 @@ import {
   getLeagueIndicatorsPrintContext,
 } from './logic/leagueIndicators.logic.js'
 import { indicatorSx as sx } from './sx/indicators.sx.js'
+import LeagueIndicatorsPrintReportView from './print/LeagueIndicatorsPrintReport.js'
+import { boardPrintSx as printSx } from './print/sx/print.sx.js'
 
 function IndicatorColumns() {
   return (
@@ -193,9 +195,9 @@ function IndicatorsSummary({
         tooltip="הדפס אינדיקציות ליגה"
         documentTitle={defaultPrintFileName}
         disabled={!indicatorRows.length}
-        sx={sx.printButton}
+        sx={printSx.button}
         renderContent={() => (
-          <LeagueIndicatorsPrintReport
+          <LeagueIndicatorsPrintReportView
             league={league}
             rows={indicatorRows}
             riskClubCount={riskClubCount}

@@ -1,4 +1,4 @@
-// src/features/hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.model.js
+﻿// src/features/hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.model.js
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
@@ -40,7 +40,7 @@ export function getTeamPlayersReportName(mode) {
 
 function getReportSubtitle(mode) {
   if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
-    return 'תכנון מעמד, שימוש וחלוקת דקות לאורך העונה'
+    return 'תכנון מעמד, חלוקה לפי עמדות ויעדי דקות לשחקן'
   }
 
   if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {
@@ -101,6 +101,7 @@ export function buildTeamPlayersReportModel({
   const resolvedSeasonLabel = resolveSeasonLabel({ team, seasonLabel })
   const modeModel = buildModeModel(mode, safeRows)
   const activeFilters = buildActiveFilters(filters)
+  const printPages = modeModel.printPages || Math.max(1, Math.ceil(modeModel.rows.length / 18))
 
   return {
     ...modeModel,
@@ -111,7 +112,7 @@ export function buildTeamPlayersReportModel({
     isMinutesPlan: mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN,
     isPerformance: mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE,
     reportDate: formatTeamPlayersReportDate(reportDate),
-    printPages: Math.max(1, Math.ceil(modeModel.rows.length / 18)),
+    printPages,
     rowsCount: modeModel.rows.length,
     totalCount: asNumber(summary?.total, safeRows.length),
     activeCount: asNumber(summary?.active),

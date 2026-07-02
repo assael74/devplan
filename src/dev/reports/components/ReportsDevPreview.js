@@ -6,7 +6,7 @@ import Typography from '@mui/joy/Typography'
 
 import { getReportCatalogItem } from '../reportsDev.catalog.js'
 import { getReportsDevReportDefinition } from '../reportsDev.registry.js'
-import { sx } from '../sx/reportsDev.sx.js'
+import { previewSx as sx } from '../sx/index.js'
 
 function getEmptyState(report) {
   if (!report?.exists) {
@@ -29,27 +29,36 @@ function getEmptyState(report) {
   }
 }
 
-export default function ReportsDevPreview({ reportId, fixture }) {
+export default function ReportsDevPreview({
+  reportId,
+  fixture,
+}) {
   const catalogItem = getReportCatalogItem(reportId)
   const definition = getReportsDevReportDefinition(reportId)
   const emptyState = getEmptyState(catalogItem)
 
   return (
-    <Box component="main" className="dpScrollThin" sx={sx.previewArea}>
+    <Box
+      component='main'
+      className='dpScrollThin'
+      sx={sx.previewArea}
+    >
       <Box sx={sx.previewFrame}>
-        {definition ? (
+        {definition && fixture ? (
           <Box sx={sx.reportContainer}>
             {definition.render(fixture)}
           </Box>
         ) : (
-          <Sheet variant="outlined" sx={sx.emptyPreview}>
-            <Typography level="h4">{emptyState.title}</Typography>
+          <Sheet variant='outlined' sx={sx.emptyPreview}>
+            <Typography level='h4'>
+              {emptyState.title}
+            </Typography>
 
-            <Typography level="body-sm" textColor="text.secondary">
+            <Typography level='body-sm' textColor='text.secondary'>
               {emptyState.description}
             </Typography>
 
-            <Typography level="body-xs" textColor="text.tertiary">
+            <Typography level='body-xs' textColor='text.tertiary'>
               דוח: {catalogItem?.label || reportId}
             </Typography>
           </Sheet>

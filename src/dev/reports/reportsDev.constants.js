@@ -3,6 +3,8 @@
 export const REPORTS_DEV_REPORTS = {
   TEAM_TARGETS: 'teamTargets',
   PLAYER_TARGETS: 'playerTargets',
+  SEASON_PLAN: 'seasonPlan',
+  MINUTES_PLAN: 'minutesPlan',
 }
 
 export const REPORTS_DEV_SCENARIOS = {
@@ -15,9 +17,16 @@ export const REPORTS_DEV_SCENARIOS = {
   MISSING_VALUES: 'missingValues',
   MULTI_PAGE: 'multiPage',
   EMPTY_SECTIONS: 'emptySections',
+  SMALL_SQUAD: 'smallSquad',
+  LARGE_SQUAD: 'largeSquad',
+  UNBALANCED_LAYERS: 'unbalancedLayers',
+  MISSING_STATUSES: 'missingStatuses',
+  MISSING_MINUTES_TARGETS: 'missingMinutesTargets',
+  UNDEFINED_SQUAD_ROLES: 'undefinedSquadRoles',
+  EMPTY_SQUAD: 'emptySquad',
 }
 
-const TEAM_SCENARIO_OPTIONS = [
+const TEAM_TARGETS_SCENARIOS = [
   {
     id: REPORTS_DEV_SCENARIOS.FULL,
     label: 'דוח מלא',
@@ -50,7 +59,7 @@ const TEAM_SCENARIO_OPTIONS = [
   },
 ]
 
-const PLAYER_SCENARIO_OPTIONS = [
+const PLAYER_TARGETS_SCENARIOS = [
   {
     id: REPORTS_DEV_SCENARIOS.ATTACK,
     label: 'שחקן התקפה',
@@ -83,18 +92,95 @@ const PLAYER_SCENARIO_OPTIONS = [
   },
 ]
 
+const SEASON_PLAN_SCENARIOS = [
+  {
+    id: REPORTS_DEV_SCENARIOS.FULL,
+    label: 'סגל מלא',
+    description: 'חלוקה מלאה של שחקנים, סטטוסים וחוליות',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.SMALL_SQUAD,
+    label: 'סגל קטן',
+    description: 'בדיקת דוח עם מספר מצומצם של שחקנים',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.LARGE_SQUAD,
+    label: 'סגל גדול',
+    description: 'בדיקת טבלה ארוכה ושבירת עמודים',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.UNBALANCED_LAYERS,
+    label: 'חוסר איזון בחוליות',
+    description: 'בדיקת חוסרים ועודפים בין קווי המשחק',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.MISSING_STATUSES,
+    label: 'סטטוסים חסרים',
+    description: 'בדיקת שחקנים ללא החלטת תכנון מפורשת',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.MISSING_VALUES,
+    label: 'ערכים חסרים',
+    description: 'בדיקת נתוני שחקנים וקבוצה חלקיים',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.EMPTY_SQUAD,
+    label: 'סגל ריק',
+    description: 'בדיקת מצב ללא שחקנים להצגה',
+  },
+]
+
+const MINUTES_PLAN_SCENARIOS = [
+  {
+    id: REPORTS_DEV_SCENARIOS.FULL,
+    label: 'תכנון מלא',
+    description: 'חלוקת מעמד, עמדות ויעדי דקות לכל הסגל',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.SMALL_SQUAD,
+    label: 'סגל קטן',
+    description: 'בדיקת דוח חלוקת דקות עם סגל מצומצם',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.LARGE_SQUAD,
+    label: 'סגל גדול',
+    description: 'בדיקת קבוצות דקות ארוכות ושבירת עמודים',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.MISSING_MINUTES_TARGETS,
+    label: 'יעדי דקות חסרים',
+    description: 'בדיקת שחקנים ללא מעמד שממנו נגזר יעד דקות',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.UNDEFINED_SQUAD_ROLES,
+    label: 'מעמדי סגל לא מוגדרים',
+    description: 'בדיקת ערכי מעמד שאינם קיימים באפשרויות המערכת',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.MISSING_VALUES,
+    label: 'ערכים חסרים',
+    description: 'בדיקת נתוני שחקנים וקבוצה חלקיים',
+  },
+  {
+    id: REPORTS_DEV_SCENARIOS.EMPTY_SQUAD,
+    label: 'סגל ריק',
+    description: 'בדיקת מצב ללא שחקנים להצגה',
+  },
+]
+
+const REPORT_SCENARIOS = {
+  [REPORTS_DEV_REPORTS.TEAM_TARGETS]: TEAM_TARGETS_SCENARIOS,
+  [REPORTS_DEV_REPORTS.PLAYER_TARGETS]: PLAYER_TARGETS_SCENARIOS,
+  [REPORTS_DEV_REPORTS.SEASON_PLAN]: SEASON_PLAN_SCENARIOS,
+  [REPORTS_DEV_REPORTS.MINUTES_PLAN]: MINUTES_PLAN_SCENARIOS,
+}
+
 export const DEFAULT_REPORTS_DEV_REPORT = REPORTS_DEV_REPORTS.TEAM_TARGETS
 
 export const getReportsDevScenarioOptions = reportId => {
-  if (reportId === REPORTS_DEV_REPORTS.PLAYER_TARGETS) return PLAYER_SCENARIO_OPTIONS
-
-  return TEAM_SCENARIO_OPTIONS
+  return REPORT_SCENARIOS[reportId] || TEAM_TARGETS_SCENARIOS
 }
 
 export const getDefaultReportsDevScenario = reportId => {
-  if (reportId === REPORTS_DEV_REPORTS.PLAYER_TARGETS) {
-    return REPORTS_DEV_SCENARIOS.ATTACK
-  }
-
-  return REPORTS_DEV_SCENARIOS.FULL
+  return getReportsDevScenarioOptions(reportId)[0]?.id || REPORTS_DEV_SCENARIOS.FULL
 }

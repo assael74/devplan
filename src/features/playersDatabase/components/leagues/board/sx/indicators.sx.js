@@ -6,14 +6,6 @@ const palette = {
   blueLine: '#c7d9ec',
   ink: '#17202a',
   muted: '#64717f',
-
-  printInk: '#111827',
-  printMuted: '#4b5563',
-  printBlue: '#1d4ed8',
-  printBlueDark: '#1e40af',
-  printBlueSoft: '#eff6ff',
-  printLine: '#d1d5db',
-  printHeader: '#eef2f7',
 }
 
 export const indicatorSx = {
@@ -70,17 +62,6 @@ export const indicatorSx = {
       minHeight: 22,
       fontSize: 10.5,
       fontWeight: 700,
-    },
-  },
-
-  printButton: {
-    width: 28,
-    minWidth: 28,
-    minHeight: 26,
-    flexShrink: 0,
-
-    '& svg': {
-      fontSize: 17,
     },
   },
 
@@ -209,64 +190,5 @@ export const indicatorSx = {
   emptyText: {
     color: palette.muted,
     fontWeight: 700,
-  },
-
-  printSection: {
-    p: 2,
-    display: 'grid',
-    gap: 1.5,
-    color: palette.printInk,
-  },
-
-  printTitle: {
-    mb: 0.5,
-    fontWeight: 700,
-  },
-
-  printSummary: {
-    color: palette.printMuted,
-  },
-
-  printContextCard: {
-    display: 'grid',
-    gridTemplateColumns:
-      'repeat(4, minmax(0, 1fr))',
-    gap: 1,
-    p: 1.25,
-    border: `2px solid ${palette.printBlue}`,
-    borderRadius: '8px',
-    bgcolor: palette.printBlueSoft,
-  },
-
-  printContextLabel: {
-    mb: 0.35,
-    color: palette.printBlueDark,
-    fontWeight: 700,
-  },
-
-  printContextValue: {
-    color: palette.printInk,
-    fontWeight: 700,
-  },
-
-  printTable: {
-    '--TableCell-paddingX': '8px',
-    '--TableCell-paddingY': '7px',
-
-    tableLayout: 'fixed',
-    fontSize: 12,
-    border: `1px solid ${palette.printLine}`,
-
-    '& th': {
-      bgcolor: palette.printHeader,
-      color: '#374151',
-      fontWeight: 700,
-    },
-
-    '& td': {
-      color: palette.printInk,
-      fontWeight: 600,
-      verticalAlign: 'middle',
-    },
   },
 }

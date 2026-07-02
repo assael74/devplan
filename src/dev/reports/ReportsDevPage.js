@@ -20,7 +20,7 @@ import {
 } from './reportsDev.catalog.js'
 import { getReportsDevFixture } from './fixtures/reportsDev.fixtures.js'
 import { getReportsDevReportDefinition } from './reportsDev.registry.js'
-import { sx } from './sx/reportsDev.sx.js'
+import { pageSx as sx } from './sx/index.js'
 
 export default function ReportsDevPage() {
   const [reportId, setReportId] = useState(DEFAULT_REPORTS_DEV_REPORT)

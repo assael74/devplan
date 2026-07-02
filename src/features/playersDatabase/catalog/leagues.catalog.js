@@ -72,13 +72,6 @@ const SEASON_AGE_GROUP_BIRTH_YEARS = {
     u14: 2012,
     u13: 2013,
   },
-  '2026-2027': {
-    u17: 2010,
-    u16: 2011,
-    u15: 2012,
-    u14: 2013,
-    u13: 2014,
-  },
 }
 
 const AGE_GROUP_LABEL_BY_ID = {
@@ -144,25 +137,7 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
     leagueKeys: [...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
   ...buildLeaguesForAgeGroups({
-    seasonId: '2026-2027',
-    ageGroupIds: ['u17', 'u16'],
-    leagueKeys: ['premier', 'regional-north', 'regional-south', ...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
-  }),
-  ...buildLeaguesForAgeGroups({
-    seasonId: '2026-2027',
-    ageGroupIds: ['u15'],
-    leagueKeys: [
-      'premier',
-      'national-north',
-      'national-south',
-      'regional-north',
-      'regional-south',
-      ...REGIONAL_DISTRICT_KEYS,
-      ...DISTRICT_KEYS,
-    ],
-  }),
-  ...buildLeaguesForAgeGroups({
-    seasonId: '2026-2027',
+    seasonId: '2025-2026',
     ageGroupIds: ['u14', 'u13'],
     leagueKeys: [...REGIONAL_DISTRICT_KEYS, ...DISTRICT_KEYS],
   }),
