@@ -1,6 +1,8 @@
 import {
   AddCircleOutline,
   AutoAwesomeMosaic,
+  ArrowBack,
+  ArrowForward,
   BarChart,
   Business,
   Dashboard,
@@ -23,6 +25,8 @@ import {
 export const navigationIcons = {
   cardList: <ViewCompactAlt />,
   clubs: <Business />,
+  back: <ArrowBack />,
+  forward: <ArrowForward />,
   dashboard: <Dashboard />,
   games: <ViewTimeline />,
   home: <Home />,

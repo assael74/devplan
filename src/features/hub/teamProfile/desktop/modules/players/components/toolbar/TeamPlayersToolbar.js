@@ -1,10 +1,23 @@
-﻿// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
+// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
 
 import React from 'react'
-import { Box, Button, Chip, IconButton, Tooltip, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import ReportPrintButton from '../../../../../../../../ui/patterns/reportPrint/ReportPrintButton.js'
+
+import {
+  buildTeamPlayersPublicReportInput,
+  publishPublicReport,
+} from '../../../../../../../reports/index.js'
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
@@ -126,6 +139,41 @@ function getPrintMeta({ isPerformanceView, managementPrintMode }) {
   }
 }
 
+async function copyText(value) {
+  if (!value) {
+    throw new Error('[copyText] value is required')
+  }
+
+  if (
+    navigator.clipboard?.writeText &&
+    window.isSecureContext
+  ) {
+    await navigator.clipboard.writeText(value)
+    return
+  }
+
+  const input = document.createElement('textarea')
+
+  input.value = value
+  input.setAttribute('readonly', '')
+  input.style.position = 'fixed'
+  input.style.top = '-1000px'
+  input.style.opacity = '0'
+
+  document.body.appendChild(input)
+
+  input.focus()
+  input.select()
+
+  const copied = document.execCommand('copy')
+
+  document.body.removeChild(input)
+
+  if (!copied) {
+    throw new Error('[copyText] Browser rejected copy command')
+  }
+}
+
 export default function TeamPlayersToolbar({
   team,
   summary,
@@ -163,6 +211,12 @@ export default function TeamPlayersToolbar({
   onResetFilters,
   onToggleWithTargets,
 }) {
+  const [publishState, setPublishState] = React.useState({
+    loading: false,
+    copied: false,
+    error: false,
+  })
+
   if (bulkEnabled && selectionMode) {
     return (
       <SelectionToolbar
@@ -199,7 +253,8 @@ export default function TeamPlayersToolbar({
     managementPrintMode: currentManagementPrintMode,
   })
 
-  const isSeasonPlanPrint = currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
+  const isSeasonPlanPrint =
+    currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
 
   const printTitle = buildTeamPlayersPrintDocumentTitle({
     mode: printMeta.mode,
@@ -217,6 +272,73 @@ export default function TeamPlayersToolbar({
       mode={printMeta.mode}
     />
   )
+
+  const handlePublishReport = async () => {
+    if (!canPrint || publishState.loading) return
+
+    setPublishState({
+      loading: true,
+      copied: false,
+      error: false,
+    })
+
+    try {
+      const input = buildTeamPlayersPublicReportInput({
+        team,
+        rows,
+        filters,
+        summary,
+        seasonLabel,
+        mode: printMeta.mode,
+        reportDate: new Date(),
+      })
+
+      const result = await publishPublicReport(input)
+
+      setPublishState({
+        loading: false,
+        copied: false,
+        error: false,
+      })
+
+      try {
+        await copyText(result.versionUrl)
+
+        setPublishState({
+          loading: false,
+          copied: true,
+          error: false,
+        })
+      } catch (copyError) {
+        console.error(
+          '[TeamPlayersToolbar] Failed to copy report URL',
+          copyError
+        )
+
+        window.prompt(
+          'הקישור נוצר. העתק אותו ידנית:',
+          result.versionUrl
+        )
+      }
+    } catch (error) {
+      console.error(
+        '[TeamPlayersToolbar] Failed to publish report',
+        error
+      )
+
+      setPublishState({
+        loading: false,
+        copied: false,
+        error: true,
+      })
+    }
+  }
+
+  const publishTooltip = publishState.error
+    ? 'יצירת הקישור נכשלה'
+    : publishState.copied
+      ? 'קישור לגרסה החדשה הועתק'
+      : 'פרסם גרסה חדשה והעתק קישור'
 
   return (
     <Box sx={sx.toolbar}>
@@ -285,14 +407,18 @@ export default function TeamPlayersToolbar({
             disabled={isPerformanceView}
             icon='players'
             label='תכנון סגל'
-            onClick={() => onToggleManagementPrintMode?.(TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN)}
+            onClick={() => {
+              onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN)
+            }}
           />
 
           <PrintModeChip
             active={!isSeasonPlanPrint}
             icon='playTimeRate'
             label='חלוקת דקות'
-            onClick={() => onToggleManagementPrintMode?.(TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN)}
+            onClick={() => {
+              onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN)
+            }}
           />
         </Box>
 
@@ -309,6 +435,27 @@ export default function TeamPlayersToolbar({
               {iconUi({ id: 'delete' })}
             </IconButton>
           ) : null}
+
+          <Tooltip title={publishTooltip} placement='top'>
+            <span>
+              <IconButton
+                size='sm'
+                variant='soft'
+                color={publishState.error ? 'danger' : 'primary'}
+                disabled={!canPrint || publishState.loading}
+                onClick={handlePublishReport}
+                aria-label='פרסום דוח ציבורי'
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                {publishState.loading
+                  ? <CircularProgress size='sm' />
+                  : iconUi({ id: 'share' })}
+              </IconButton>
+            </span>
+          </Tooltip>
 
           <ReportPrintButton
             label={printMeta.label}
@@ -327,7 +474,10 @@ export default function TeamPlayersToolbar({
             size='md'
             variant='soft'
             color='primary'
-            sx={{ "--Chip-radius": "7px", "--Chip-minHeight": "30px" }}
+            sx={{
+              '--Chip-radius': '7px',
+              '--Chip-minHeight': '30px',
+            }}
             startDecorator={iconUi({ id: 'players' })}
           >
             {filteredCount} / {totalCount} שחקנים

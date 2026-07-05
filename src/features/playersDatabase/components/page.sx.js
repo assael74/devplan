@@ -14,7 +14,7 @@ export const pageSx = {
     gap: 0,
     p: {
       xs: 1,
-      md: 1,
+      md: 0,
     },
     borderRadius: 'sm',
     overflow: {

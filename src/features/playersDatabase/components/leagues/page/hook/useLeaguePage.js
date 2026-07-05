@@ -27,7 +27,7 @@ import {
   getPrimaryLeagueSeason,
 } from '../../leagueUtils.js'
 import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
-import { markLeagueBoardCacheDirty } from '../../board/hook/leagueBoardCache.js'
+import { markLeagueBoardCacheDirty } from '../../../summary/hooks/leagueBoardCache.js'
 
 export const PERSPECTIVES = [
   {

@@ -6,6 +6,7 @@ import {
   documentId,
   getDocs,
   query,
+  runTransaction,
   serverTimestamp,
   where,
   writeBatch,
@@ -737,62 +738,216 @@ export async function removePlayerScoutProfile(row = {}, profileId = '') {
   const statsDocId = clean(row.searchDocId || row.statsDoc?.id || row.id)
   const playerId = clean(row.playerId || row.id || row.playerSeasonId)
   const removedId = clean(profileId)
-  const team = row.teamContext || row.team || row
+  const teamContext = row.teamContext || row.team || row
+  const team = {
+    ...teamContext,
+    teamSeasonKey: clean(
+      teamContext.teamSeasonKey ||
+        row.teamSeasonKey ||
+        row.searchDoc?.teamSeasonKey ||
+        row.statsDoc?.teamSeasonKey
+    ),
+    leagueId: clean(
+      teamContext.leagueId ||
+        row.leagueId ||
+        row.searchDoc?.leagueId ||
+        row.statsDoc?.leagueId
+    ),
+    teamSlotId: clean(
+      teamContext.teamSlotId ||
+        row.teamSlotId ||
+        row.searchDoc?.teamSlotId ||
+        row.statsDoc?.teamSlotId
+    ),
+    clubId: clean(
+      teamContext.clubId ||
+        row.clubId ||
+        row.searchDoc?.clubId ||
+        row.statsDoc?.clubId
+    ),
+    clubName: clean(
+      teamContext.clubName ||
+        row.clubName ||
+        row.teamName ||
+        row.searchDoc?.clubName ||
+        row.statsDoc?.clubName
+    ),
+    sourceTeamName: clean(
+      teamContext.sourceTeamName ||
+        row.sourceTeamName ||
+        row.searchDoc?.sourceTeamName ||
+        row.statsDoc?.sourceTeamName
+    ),
+    seasonId: clean(
+      teamContext.seasonId ||
+        row.seasonId ||
+        row.searchDoc?.seasonId ||
+        row.statsDoc?.seasonId
+    ),
+    ageGroupId: clean(
+      teamContext.ageGroupId ||
+        row.ageGroupId ||
+        row.searchDoc?.ageGroupId ||
+        row.statsDoc?.ageGroupId
+    ),
+    teamSlot: teamContext.teamSlot ?? row.teamSlot ?? row.searchDoc?.teamSlot ?? row.statsDoc?.teamSlot,
+  }
 
   if (!seasonId) throw new Error('missing player season id')
   if (!statsDocId) throw new Error('missing player stats id')
   if (!removedId) throw new Error('missing profile id')
 
-  const sourceDoc = row.statsDoc || row.searchDoc || row || {}
-  const nextRawProfileIds = pruneProfileIds(sourceDoc.rawScoutProfileIds, removedId)
-  const nextEligibleProfileIds = pruneProfileIds(sourceDoc.scoutProfileIds, removedId)
-  const nextRawProfiles = pruneProfileMap(sourceDoc.rawScoutProfiles, removedId)
-  const nextEligibleProfiles = pruneProfileMap(sourceDoc.scoutProfiles, removedId)
-  const nextBestRaw = firstProfileSummary(nextRawProfileIds, [nextRawProfiles, nextEligibleProfiles])
-  const nextBestEligible = firstProfileSummary(nextEligibleProfileIds, [nextEligibleProfiles, nextRawProfiles])
-  const nextScoutProfileIds = nextEligibleProfileIds
-  const nextScoutProfiles = nextEligibleProfiles
+  const statsRef = doc(playerStatsRef(), statsDocId)
+  const searchRef = doc(playerSearchRef(), statsDocId)
+  const leagueRef = leagueDocRef(team.leagueId)
+  const teamKey = clean(team.teamSeasonKey)
 
-  const patch = {
-    updatedAt: serverTimestamp(),
-    rawScoutProfileIds: nextRawProfileIds,
-    rawScoutProfiles: nextRawProfiles,
-    eligibleScoutProfileIds: nextEligibleProfileIds,
-    eligibleScoutProfiles: nextEligibleProfiles,
-    scoutProfileIds: nextScoutProfileIds,
-    scoutProfiles: nextScoutProfiles,
-    bestRawScoutProfileId: nextBestRaw?.profileId || '',
-    bestRawScoutProfileLabel: nextBestRaw?.profileLabel || '',
-    bestRawScoutScore: nextBestRaw?.score ?? null,
-    bestEligibleScoutProfileId: nextBestEligible?.profileId || '',
-    bestEligibleScoutProfileLabel: nextBestEligible?.profileLabel || '',
-    bestEligibleScoutScore: nextBestEligible?.score ?? null,
-    bestScoutProfileId: nextBestEligible?.profileId || nextBestRaw?.profileId || '',
-    bestScoutProfileLabel: nextBestEligible?.profileLabel || nextBestRaw?.profileLabel || '',
-    bestScoutScore: nextBestEligible?.score ?? nextBestRaw?.score ?? null,
-    bestScoutReliabilityLevel: nextBestEligible?.reliabilityLevel || nextBestRaw?.reliabilityLevel || '',
-    bestScoutReliabilityScore: nextBestEligible?.reliabilityScore ?? nextBestRaw?.reliabilityScore ?? null,
-  }
+  const { team: nextTeam, nextRawProfileIds, nextEligibleProfileIds } = await runTransaction(db, async tx => {
+    const statsSnap = await tx.get(statsRef)
+    const searchSnap = await tx.get(searchRef)
+    const leagueSnap = await tx.get(leagueRef)
+    const statsDoc = statsSnap.exists() ? statsSnap.data() : null
+    const searchDoc = searchSnap.exists() ? searchSnap.data() : null
+    const leagueDoc = leagueSnap.exists() ? leagueSnap.data() : null
+    const sourceDoc = searchDoc || statsDoc || row || {}
+    const activeTeam = row.teamContext || row.team || sourceDoc.teamContext || sourceDoc.team || row
 
-  const nextDoc = compactObject({
-    ...stripScoutProfileFields(sourceDoc),
-    ...patch,
+    const nextRawProfileIds = pruneProfileIds(sourceDoc.rawScoutProfileIds, removedId)
+    const nextEligibleProfileIds = pruneProfileIds(sourceDoc.scoutProfileIds, removedId)
+    const nextRawProfiles = pruneProfileMap(sourceDoc.rawScoutProfiles, removedId)
+    const nextEligibleProfiles = pruneProfileMap(sourceDoc.scoutProfiles, removedId)
+    const nextBestRaw = firstProfileSummary(nextRawProfileIds, [nextRawProfiles, nextEligibleProfiles])
+    const nextBestEligible = firstProfileSummary(nextEligibleProfileIds, [nextEligibleProfiles, nextRawProfiles])
+    const nextScoutProfileIds = nextEligibleProfileIds
+    const nextScoutProfiles = nextEligibleProfiles
+
+    const patch = {
+      updatedAt: serverTimestamp(),
+      rawScoutProfileIds: nextRawProfileIds,
+      rawScoutProfiles: nextRawProfiles,
+      eligibleScoutProfileIds: nextEligibleProfileIds,
+      eligibleScoutProfiles: nextEligibleProfiles,
+      scoutProfileIds: nextScoutProfileIds,
+      scoutProfiles: nextScoutProfiles,
+      bestRawScoutProfileId: nextBestRaw?.profileId || '',
+      bestRawScoutProfileLabel: nextBestRaw?.profileLabel || '',
+      bestRawScoutScore: nextBestRaw?.score ?? null,
+      bestEligibleScoutProfileId: nextBestEligible?.profileId || '',
+      bestEligibleScoutProfileLabel: nextBestEligible?.profileLabel || '',
+      bestEligibleScoutScore: nextBestEligible?.score ?? null,
+      bestScoutProfileId: nextBestEligible?.profileId || nextBestRaw?.profileId || '',
+      bestScoutProfileLabel: nextBestEligible?.profileLabel || nextBestRaw?.profileLabel || '',
+      bestScoutScore: nextBestEligible?.score ?? nextBestRaw?.score ?? null,
+      bestScoutReliabilityLevel: nextBestEligible?.reliabilityLevel || nextBestRaw?.reliabilityLevel || '',
+      bestScoutReliabilityScore: nextBestEligible?.reliabilityScore ?? nextBestRaw?.reliabilityScore ?? null,
+    }
+
+    const nextDoc = compactObject({
+      ...stripScoutProfileFields(sourceDoc),
+      ...patch,
+    })
+
+    const currentTeamSummary = leagueDoc?.teamsIndex?.[teamKey] || team || {}
+    const nextProfileCounts = { ...(currentTeamSummary.profileCounts || {}) }
+    if (nextProfileCounts[removedId] !== undefined) {
+      nextProfileCounts[removedId] = Math.max((Number(nextProfileCounts[removedId]) || 0) - 1, 0)
+    }
+    const nextRawProfileCounts = { ...(currentTeamSummary.rawProfileCounts || {}) }
+    if (nextRawProfileCounts[removedId] !== undefined) {
+      nextRawProfileCounts[removedId] = Math.max((Number(nextRawProfileCounts[removedId]) || 0) - 1, 0)
+    }
+    const nextScoutProfilesCount = Array.isArray(nextEligibleProfileIds) && nextEligibleProfileIds.length === 0
+      ? Math.max((Number(currentTeamSummary.scoutProfilesCount) || 0) - 1, 0)
+      : Number(currentTeamSummary.scoutProfilesCount) || 0
+    const nextLeagueTeamSummary = compactObject({
+      ...currentTeamSummary,
+      teamSeasonKey: teamKey,
+      leagueId: clean(team.leagueId),
+      profileCounts: nextProfileCounts,
+      rawProfileCounts: nextRawProfileCounts,
+      scoutProfilesCount: nextScoutProfilesCount,
+      updatedAt: new Date().toISOString(),
+    })
+
+    tx.set(statsRef, nextDoc, { merge: false })
+    tx.set(searchRef, nextDoc, { merge: false })
+    tx.set(
+      leagueRef,
+      {
+        teamsIndex: {
+          [teamKey]: nextLeagueTeamSummary,
+        },
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    )
+
+    return {
+      team: {
+        ...activeTeam,
+        teamSeasonKey: clean(
+          activeTeam.teamSeasonKey ||
+            sourceDoc.teamSeasonKey ||
+            row.teamSeasonKey ||
+            row.searchDoc?.teamSeasonKey ||
+            row.statsDoc?.teamSeasonKey
+        ),
+        leagueId: clean(
+          activeTeam.leagueId ||
+            sourceDoc.leagueId ||
+            row.leagueId ||
+            row.searchDoc?.leagueId ||
+            row.statsDoc?.leagueId
+        ),
+        teamSlotId: clean(
+          activeTeam.teamSlotId ||
+            sourceDoc.teamSlotId ||
+            row.teamSlotId ||
+            row.searchDoc?.teamSlotId ||
+            row.statsDoc?.teamSlotId
+        ),
+        clubId: clean(
+          activeTeam.clubId ||
+            sourceDoc.clubId ||
+            row.clubId ||
+            row.searchDoc?.clubId ||
+            row.statsDoc?.clubId
+        ),
+        clubName: clean(
+          activeTeam.clubName ||
+            sourceDoc.clubName ||
+            row.clubName ||
+            row.teamName ||
+            row.searchDoc?.clubName ||
+            row.statsDoc?.clubName
+        ),
+        sourceTeamName: clean(
+          activeTeam.sourceTeamName ||
+            sourceDoc.sourceTeamName ||
+            row.sourceTeamName ||
+            row.searchDoc?.sourceTeamName ||
+            row.statsDoc?.sourceTeamName
+        ),
+        seasonId: clean(
+          activeTeam.seasonId ||
+            sourceDoc.seasonId ||
+            row.seasonId ||
+            row.searchDoc?.seasonId ||
+            row.statsDoc?.seasonId
+        ),
+        ageGroupId: clean(
+          activeTeam.ageGroupId ||
+            sourceDoc.ageGroupId ||
+            row.ageGroupId ||
+            row.searchDoc?.ageGroupId ||
+            row.statsDoc?.ageGroupId
+        ),
+        teamSlot: activeTeam.teamSlot ?? sourceDoc.teamSlot ?? row.teamSlot ?? row.searchDoc?.teamSlot ?? row.statsDoc?.teamSlot,
+      },
+      nextRawProfileIds,
+      nextEligibleProfileIds,
+    }
   })
-
-  const batch = writeBatch(db)
-  batch.set(
-    doc(playerStatsRef(), statsDocId),
-    nextDoc,
-    { merge: false }
-  )
-  batch.set(
-    doc(playerSearchRef(), statsDocId),
-    nextDoc,
-    { merge: false }
-  )
-
-  await batch.commit()
-  await refreshLeagueTeamIndex(team)
 
   trackFirestoreTransaction({
     collection: PLAYERS_DATABASE_COLLECTIONS.playerStats,
@@ -804,8 +959,6 @@ export async function removePlayerScoutProfile(row = {}, profileId = '') {
     writePayload: {
       statsDocId,
       removedId,
-      nextRawProfileIds,
-      nextEligibleProfileIds,
     },
     meta: {
       seasonId,
@@ -820,6 +973,7 @@ export async function removePlayerScoutProfile(row = {}, profileId = '') {
     playerId,
     statsDocId,
     removedId,
+    team: nextTeam,
     nextRawProfileIds,
     nextEligibleProfileIds,
   }

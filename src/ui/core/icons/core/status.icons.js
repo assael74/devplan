@@ -1,7 +1,5 @@
 import {
   AdsClick,
-  ArrowBack,
-  ArrowForward,
   Beenhere,
   Block,
   CancelScheduleSend,
@@ -48,8 +46,6 @@ export const statusIcons = {
   active: <OfflinePin />,
   approved: <CheckCircle />,
   awaitingReply: <HourglassEmpty />,
-  back: <ArrowBack />,
-  forward: <ArrowForward />,
   callscheduled: <ScheduleSend />,
   candidate: <PersonSearch />,
   declined: <Dangerous />,

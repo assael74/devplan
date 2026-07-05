@@ -3,21 +3,21 @@
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = (value) => String(value ?? '').trim()
 
-const getCatalogClubName = row => {
+const getCatalogClubName = (row) => {
   const clubId = clean(row?.clubId || row?.clubCatalogId)
   const byId = clubId
-    ? PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clubId)
+    ? PLAYERS_DATABASE_CLUBS_CATALOG.find((item) => item.id === clubId)
     : null
 
   if (byId?.name) return byId.name
 
   const match = resolveClubCatalogMatch(
     row?.sourceClubName ||
-    row?.sourceTeamName ||
-    row?.clubName ||
-    row?.teamName
+      row?.sourceTeamName ||
+      row?.clubName ||
+      row?.teamName,
   )
 
   return clean(match?.name)
@@ -34,25 +34,22 @@ const numberFrom = (...values) => {
   return 0
 }
 
-const sameClean = (a, b) =>
-  clean(a) && clean(a) === clean(b)
+const sameClean = (a, b) => clean(a) && clean(a) === clean(b)
 
-const sameIfBoth = (a, b) =>
-  !clean(a) || !clean(b) || clean(a) === clean(b)
+const sameIfBoth = (a, b) => !clean(a) || !clean(b) || clean(a) === clean(b)
 
-const normalizeName = value =>
+const normalizeName = (value) =>
   clean(value)
     .toLowerCase()
-    .replace(/['"׳״]/g, '')
+    .replace(/['"׳³׳´]/g, '')
     .replace(/\s+/g, ' ')
 
-const normalizeLooseName = value =>
+const normalizeLooseName = (value) =>
   normalizeName(value)
-    .replace(/\bפטל\b/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 
-const namesOf = value => [
+const namesOf = (value) => [
   value.clubName,
   value.teamName,
   value.sourceTeamName,
@@ -60,31 +57,27 @@ const namesOf = value => [
 
 const hasSameName = (a, b) => {
   const aNames = new Set(namesOf(a))
-  if (namesOf(b).some(name => aNames.has(name))) return true
+  if (namesOf(b).some((name) => aNames.has(name))) return true
 
   const looseA = namesOf(a).map(normalizeLooseName)
   const looseB = namesOf(b).map(normalizeLooseName)
 
-  return looseA.some(aName =>
-    looseB.some(bName =>
+  return looseA.some((aName) =>
+    looseB.some((bName) =>
       aName &&
       bName &&
-      (
-        aName === bName ||
-        aName.includes(bName) ||
-        bName.includes(aName)
-      )
-    )
+      (aName === bName || aName.includes(bName) || bName.includes(aName)),
+    ),
   )
 }
 
-const buildTeamSlotId = row => [
+const buildTeamSlotId = (row) => [
   clean(row.clubId),
   clean(row.ageGroupId),
   Number(row.teamSlot) || 1,
 ].filter(Boolean).join('_')
 
-const buildTeamSeasonKey = row => [
+const buildTeamSeasonKey = (row) => [
   clean(row.clubId),
   clean(row.seasonId),
   clean(row.ageGroupId),
@@ -108,52 +101,56 @@ const getTeamIndex = (teamsIndex, row) => {
     }
   }
 
-  return indexRows.find(item => {
-    if (!item) return false
+  return (
+    indexRows.find((item) => {
+      if (!item) return false
 
-    if (sameClean(item.key, teamSeasonKey)) return true
-    if (sameClean(item.key, teamSlotId)) return true
-    if (sameClean(item.teamSeasonKey, teamSeasonKey)) return true
-    if (sameClean(item.teamSlotId, teamSlotId)) return true
-    if (sameClean(item.externalTeamId, row.externalTeamId)) return true
+      if (sameClean(item.key, teamSeasonKey)) return true
+      if (sameClean(item.key, teamSlotId)) return true
+      if (sameClean(item.teamSeasonKey, teamSeasonKey)) return true
+      if (sameClean(item.teamSlotId, teamSlotId)) return true
+      if (sameClean(item.externalTeamId, row.externalTeamId)) return true
 
-    if (
-      sameClean(item.teamSlotId, teamSlotId) ||
-      sameClean(item.teamSeasonKey, teamSeasonKey)
-    ) {
+      if (
+        sameClean(item.teamSlotId, teamSlotId) ||
+        sameClean(item.teamSeasonKey, teamSeasonKey)
+      ) {
+        return (
+          sameIfBoth(item.seasonId, row.seasonId) &&
+          sameIfBoth(item.ageGroupId, row.ageGroupId)
+        )
+      }
+
+      if (
+        sameClean(item.clubId, row.clubId) &&
+        Number(item.teamSlot || 1) === Number(row.teamSlot || 1) &&
+        sameIfBoth(item.seasonId, row.seasonId) &&
+        sameIfBoth(item.ageGroupId, row.ageGroupId)
+      ) {
+        return true
+      }
+
       return (
+        sameClean(item.clubId, row.clubId) &&
         sameIfBoth(item.seasonId, row.seasonId) &&
         sameIfBoth(item.ageGroupId, row.ageGroupId)
       )
-    }
+    }) ||
+    indexRows.find((item) => {
+      if (!item) return false
 
-    if (
-      sameClean(item.clubId, row.clubId) &&
-      Number(item.teamSlot || 1) === Number(row.teamSlot || 1) &&
-      sameIfBoth(item.seasonId, row.seasonId) &&
-      sameIfBoth(item.ageGroupId, row.ageGroupId)
-    ) {
-      return true
-    }
-
-    return (
-      sameClean(item.clubId, row.clubId) &&
-      sameIfBoth(item.seasonId, row.seasonId) &&
-      sameIfBoth(item.ageGroupId, row.ageGroupId)
-    )
-  }) || indexRows.find(item => {
-    if (!item) return false
-
-    return (
-      hasSameName(item, row) &&
-      Number(item.teamSlot || 1) === Number(row.teamSlot || 1) &&
-      sameIfBoth(item.seasonId, row.seasonId) &&
-      sameIfBoth(item.ageGroupId, row.ageGroupId)
-    )
-  }) || {}
+      return (
+        hasSameName(item, row) &&
+        Number(item.teamSlot || 1) === Number(row.teamSlot || 1) &&
+        sameIfBoth(item.seasonId, row.seasonId) &&
+        sameIfBoth(item.ageGroupId, row.ageGroupId)
+      )
+    }) ||
+    {}
+  )
 }
 
-export const getLeagueRegionLabel = value => {
+export const getLeagueRegionLabel = (value) => {
   const region = clean(value).toLowerCase()
 
   if (region === 'north') return 'צפון'
@@ -162,7 +159,7 @@ export const getLeagueRegionLabel = value => {
   return clean(value) || 'כללי'
 }
 
-export const getLeagueLevelLabel = level => {
+export const getLeagueLevelLabel = (level) => {
   const numericLevel = Number(level)
 
   if (numericLevel === 1) return 'על'
@@ -173,16 +170,14 @@ export const getLeagueLevelLabel = level => {
   return 'לא זוהתה'
 }
 
-export const getLeagueSeasonRows = league => (
+export const getLeagueSeasonRows = (league) =>
   Object.entries(league?.seasons || {}).map(([key, season]) => ({
     key,
     ...season,
   }))
-)
 
-export const getPrimaryLeagueSeason = league => (
+export const getPrimaryLeagueSeason = (league) =>
   getLeagueSeasonRows(league)[0] || null
-)
 
 export const buildLeagueTableRows = ({
   league,
@@ -252,19 +247,19 @@ export const buildLeagueTableRows = ({
           teamIndex.playersCount,
           row.playersCount,
           row.rawPlayersCount,
-          row.players_count
+          row.players_count,
         ),
         statsCount: numberFrom(
           teamIndex.statsCount,
           row.statsCount,
           row.playersWithStatsCount,
-          row.stats_count
+          row.stats_count,
         ),
         scoutProfilesCount: numberFrom(
           teamIndex.scoutProfilesCount,
           row.scoutProfilesCount,
           row.profilesCount,
-          row.scout_profiles_count
+          row.scout_profiles_count,
         ),
         profileCounts: teamIndex.profileCounts || {},
         rawProfileCounts: teamIndex.rawProfileCounts || {},
@@ -283,9 +278,7 @@ export const buildLeagueTableRows = ({
   }
 
   const clubsCount = Number(season?.clubsCount) || 0
-  const clubIds = Array.isArray(season?.clubIds)
-    ? season.clubIds
-    : []
+  const clubIds = Array.isArray(season?.clubIds) ? season.clubIds : []
 
   return Array.from({ length: clubsCount }, (_, index) => {
     const leaguePosition = index + 1
