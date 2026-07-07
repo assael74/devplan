@@ -7,14 +7,14 @@ import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMob
 import DriveVideoPlayer from '../../../../../../ui/domains/video/DriveVideoPlayer.js'
 import MobileFiltersDrawerShell from '../../../../../../ui/patterns/filters/MobileFiltersDrawerShell.js'
 
-import MeetingsToolbar from './components/toolbar/MeetingsToolbar.js'
-import MeetingsListPane from './components/MeetingsListPane.js'
-import MeetingsFilters from './components/toolbar/MeetingsFilters.js'
-import MeetingScreen from './components/meetingForm/MeetingScreen.js'
-
 import { usePlayerMeetingsModuleModel } from '../../../sharedModules/meetings'
 
 import { profileSx as sx } from './../../sx/profile.sx'
+
+const MeetingsToolbar = React.lazy(() => import('./components/toolbar/MeetingsToolbar.js'))
+const MeetingsListPane = React.lazy(() => import('./components/MeetingsListPane.js'))
+const MeetingsFilters = React.lazy(() => import('./components/toolbar/MeetingsFilters.js'))
+const MeetingScreen = React.lazy(() => import('./components/meetingForm/MeetingScreen.js'))
 
 export default function PlayerMeetingsModule({ entity }) {
   const {

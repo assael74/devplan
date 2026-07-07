@@ -5,6 +5,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import {
   Box,
   Button,
+  CircularProgress,
   Modal,
   ModalDialog,
   Typography,
@@ -69,6 +70,23 @@ function getStatus({ isValid, isDirty }) {
   }
 }
 
+function FormLoadFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: 240,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1.5,
+      }}
+    >
+      <CircularProgress size="sm" />
+      <Typography level="body-sm">טוען טופס...</Typography>
+    </Box>
+  )
+}
+
 export default function ObjectCreateModalV2({
   open,
   type,
@@ -101,7 +119,10 @@ export default function ObjectCreateModalV2({
     return getEntityColors(meta.entityType)
   }, [meta.entityType])
 
-  const FormComp = meta?.form || null
+  const FormComp = React.useMemo(
+    () => (meta?.formLoader ? React.lazy(meta.formLoader) : null),
+    [meta?.formLoader]
+  )
 
   const handleReset = React.useCallback(() => {
     if (busy) return
@@ -146,14 +167,16 @@ export default function ObjectCreateModalV2({
               <DialogContent sx={sx.dialogContent}>
                 <Box sx={sx.content} className="dpScrollThin">
                   {FormComp ? (
-                    <FormComp
-                      draft={draft}
-                      onDraft={onDraft}
-                      context={context}
-                      onValidChange={onValidChange}
-                      variant="modal"
-                      forceMobile={isMobile}
-                    />
+                    <React.Suspense fallback={<FormLoadFallback />}>
+                      <FormComp
+                        draft={draft}
+                        onDraft={onDraft}
+                        context={context}
+                        onValidChange={onValidChange}
+                        variant="modal"
+                        forceMobile={isMobile}
+                      />
+                    </React.Suspense>
                   ) : null}
                 </Box>
               </DialogContent>

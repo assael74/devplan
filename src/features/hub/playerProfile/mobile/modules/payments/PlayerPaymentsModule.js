@@ -6,18 +6,18 @@ import { Box } from '@mui/joy'
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import PaymentsToolbar from './components/toolbar/PaymentsToolbar.js'
-import PaymentsFiltersContent from './components/toolbar/PaymentsFiltersContent.js'
-import EditDrawer from './components/drawer/EditDrawer.js'
-import ParentDrawer from './components/parentDrawer/parentDrawer.js'
-import PaymentsTabsBar from './components/PaymentsTabsBar.js'
-import PaymentsList from './components/PaymentsList.js'
-import ParentsSection from './components/ParentsSection.js'
-
 import { MobileFiltersDrawerShell } from '../../../../../../ui/patterns/filters/index.js'
 import { profileSx as sx } from './../../sx/profile.sx'
 
 import { usePlayerPaymentsModuleModel } from '../../../sharedModules/payments'
+
+const PaymentsToolbar = React.lazy(() => import('./components/toolbar/PaymentsToolbar.js'))
+const PaymentsFiltersContent = React.lazy(() => import('./components/toolbar/PaymentsFiltersContent.js'))
+const EditDrawer = React.lazy(() => import('./components/drawer/EditDrawer.js'))
+const ParentDrawer = React.lazy(() => import('./components/parentDrawer/parentDrawer.js'))
+const PaymentsTabsBar = React.lazy(() => import('./components/PaymentsTabsBar.js'))
+const PaymentsList = React.lazy(() => import('./components/PaymentsList.js'))
+const ParentsSection = React.lazy(() => import('./components/ParentsSection.js'))
 
 export default function PlayerPaymentsModule({ entity, context }) {
   const model = usePlayerPaymentsModuleModel({ entity })

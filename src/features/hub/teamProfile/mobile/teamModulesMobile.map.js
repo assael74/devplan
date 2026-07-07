@@ -1,18 +1,13 @@
-// features/hub/teamProfile/mobile/teamModulesMobile.map.js
+import React from 'react'
 
-import TeamAbilitiesModule from './modules/abilities/TeamAbilitiesModule.js'
-import TeamGamesModule from './modules/games/TeamGamesModule.js'
-import TeamManagementModule from './modules/management/TeamManagementModule.js'
-import TeamPlayersModule from './modules/players/TeamPlayersModule.js'
-import TeamVideosModule from './modules/videos/TeamVideosModule.js'
-import TeamTrainingsModule from './modules/trainings/TeamTrainingsModule.js'
+const lazyModule = loader => React.lazy(loader)
 
 export const mobileTeamModulesMap = {
-  management: TeamManagementModule,
-  players: TeamPlayersModule,
-  abilities: TeamAbilitiesModule,
-  performance: null,
-  games: TeamGamesModule,
-  videos: TeamVideosModule,
-  trainings: TeamTrainingsModule,
+  management: lazyModule(() => import('./modules/management/TeamManagementModule.js')),
+  trainings: lazyModule(() => import('./modules/trainings/TeamTrainingsModule.js')),
+  players: lazyModule(() => import('./modules/players/TeamPlayersModule.js')),
+  games: lazyModule(() => import('./modules/games/TeamGamesModule.js')),
+  performance: lazyModule(() => import('../desktop/modules/performance/TeamPerformanceModule.js')),
+  abilities: lazyModule(() => import('./modules/abilities/TeamAbilitiesModule.js')),
+  videos: lazyModule(() => import('./modules/videos/TeamVideosModule.js')),
 }

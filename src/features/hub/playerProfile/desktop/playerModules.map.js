@@ -1,29 +1,24 @@
 // features/hub/teamProfile/desktop/teamModules.map.js
 
-import InfoModule from './modules/info/PlayerInfoModule'
-import AbilitiesModule from './modules/abilities/PlayerAbilitiesModule'
-import PlayerGamesModule from './modules/games/PlayerGamesModule'
-import PerformanceModule from './modules/performance/PlayerPerformanceModule'
-import MeetingsModule from './modules/meetings/PlayerMeetingsModule'
-import PaymentsModule from './modules/payments/PlayerPaymentsModule'
-import PlayerVideosModule from './modules/videos/PlayerVideosModule.js'
-import PlayerTrainingsModule from './modules/trainings/PlayerTrainingsModule'
+import React from 'react'
+
+const lazyModule = loader => React.lazy(loader)
 
 export const desktopProjectPlayerModulesMap = {
-  info: InfoModule,
-  abilities: AbilitiesModule,
-  games: PlayerGamesModule,
-  performance: PerformanceModule,
-  meetings: MeetingsModule,
-  payments: PaymentsModule,
-  videoAnalysis: PlayerVideosModule,
-  trainings: PlayerTrainingsModule,
+  info: lazyModule(() => import('./modules/info/PlayerInfoModule')),
+  abilities: lazyModule(() => import('./modules/abilities/PlayerAbilitiesModule')),
+  games: lazyModule(() => import('./modules/games/PlayerGamesModule')),
+  performance: lazyModule(() => import('./modules/performance/PlayerPerformanceModule')),
+  meetings: lazyModule(() => import('./modules/meetings/PlayerMeetingsModule')),
+  payments: lazyModule(() => import('./modules/payments/PlayerPaymentsModule')),
+  videoAnalysis: lazyModule(() => import('./modules/videos/PlayerVideosModule.js')),
+  trainings: lazyModule(() => import('./modules/trainings/PlayerTrainingsModule')),
 }
 
 export const desktopPlayerModulesMap = {
-  info: InfoModule,
-  abilities: AbilitiesModule,
-  games: PlayerGamesModule,
-  performance: PerformanceModule,
-  videoAnalysis: PlayerVideosModule,
+  info: lazyModule(() => import('./modules/info/PlayerInfoModule')),
+  abilities: lazyModule(() => import('./modules/abilities/PlayerAbilitiesModule')),
+  games: lazyModule(() => import('./modules/games/PlayerGamesModule')),
+  performance: lazyModule(() => import('./modules/performance/PlayerPerformanceModule')),
+  videoAnalysis: lazyModule(() => import('./modules/videos/PlayerVideosModule.js')),
 }

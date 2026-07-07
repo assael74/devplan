@@ -6,14 +6,14 @@ import { Box, Tabs, TabList, Tab, TabPanel, Typography } from '@mui/joy'
 import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import EmptyState from '../../../../sharedProfile/EmptyState.js'
 
-import PaymentsToolbar from './components/toolbar/PaymentsToolbar.js'
-import PaymentsTable from './components/table/PaymentsTable'
-import ParentsTab from './components/ParentsTab'
-import EditDrawer from './components/drawer/EditDrawer.js'
-
 import { moduleSx as sx } from './sx/module.sx'
 
 import { usePlayerPaymentsModuleModel } from '../../../sharedModules/payments'
+
+const PaymentsToolbar = React.lazy(() => import('./components/toolbar/PaymentsToolbar.js'))
+const PaymentsTable = React.lazy(() => import('./components/table/PaymentsTable'))
+const ParentsTab = React.lazy(() => import('./components/ParentsTab'))
+const EditDrawer = React.lazy(() => import('./components/drawer/EditDrawer.js'))
 
 export default function PlayerPaymentsModule({ entity, context }) {
   const model = usePlayerPaymentsModuleModel({ entity })

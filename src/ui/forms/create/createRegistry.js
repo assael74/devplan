@@ -1,125 +1,119 @@
 // ui/forms/create/createRegistry.js
 
-import ClubCreateForm from '../ClubCreateForm'
-import TeamCreateForm from '../TeamCreateForm'
-import PlayerCreateForm from '../PlayerCreateForm'
-import PlayerMultiCreateForm from '../PlayerMultiCreateForm'
-import PrivateCreateForm from '../PrivateCreateForm'
-import MeetingCreateForm from '../MeetingCreateForm'
-import PaymentCreateForm from '../PaymentCreateForm'
-import GameCreateForm from '../GameCreateForm'
-import GameMultiCreateForm from '../GameMultiCreateForm'
-import TagsCreateForm from '../TagsCreateForm'
-import VideoAnalysisCreateForm from '../VideoAnalysisCreateForm'
-import VideoCreateForm from '../VideoCreateForm'
-import AbilitiesCreateForm from '../AbilitiesCreateForm'
-import TrainingWeekCreateForm from '../TrainingWeekCreateForm.js'
-import TasksCreateForm from '../TasksCreateForm.js'
-import RoleCreateForm from '../RoleCreateForm'
-
 import { iconUi } from '../../core/icons/iconUi.js'
 
 export const CREATE_TYPES = {
   club: {
     type: 'club',
-    title: 'פתיחת מועדון',
+    title: 'יצירת מועדון',
     iconKey: 'addClub',
     entityType: 'club',
-    form: ClubCreateForm,
-    size: 'md'
+    form: null,
+    formLoader: () => import('../ClubCreateForm.js'),
+    size: 'md',
   },
 
   team: {
     type: 'team',
-    title: 'פתיחת קבוצה',
+    title: 'יצירת קבוצה',
     iconKey: 'addTeam',
     entityType: 'team',
-    form: TeamCreateForm,
-    size: 'md'
+    form: null,
+    formLoader: () => import('../TeamCreateForm.js'),
+    size: 'md',
   },
 
   player: {
     type: 'player',
-    title: 'פתיחת שחקן',
+    title: 'יצירת שחקן',
     iconKey: 'addPlayer',
     entityType: 'player',
-    form: PlayerCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../PlayerCreateForm.js'),
+    size: 'lg',
   },
 
   privatePlayer: {
     type: 'privatePlayer',
-    title: 'פתיחת שחקן פרטי',
+    title: 'יצירת שחקן פרטי',
     iconKey: 'addPlayer',
     entityType: 'privatePlayer',
-    form: PrivateCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../PrivateCreateForm.js'),
+    size: 'lg',
   },
 
   players: {
     type: 'players',
-    title: 'פתיחת מספר שחקנים',
+    title: 'יצירת מספר שחקנים',
     iconKey: 'addPlayer',
     entityType: 'players',
-    form: PlayerMultiCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../PlayerMultiCreateForm.js'),
+    size: 'lg',
   },
 
   role: {
     type: 'role',
-    title: 'פתיחת איש צוות',
+    title: 'יצירת איש צוות',
     iconKey: 'addRole',
     entityType: 'role',
-    form: RoleCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../RoleCreateForm.js'),
+    size: 'lg',
   },
 
   game: {
     type: 'game',
-    title: 'פתיחת משחק',
+    title: 'יצירת משחק',
     iconKey: 'addGame',
     entityType: 'team',
-    form: GameCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../GameCreateForm.js'),
+    size: 'lg',
   },
 
   games: {
     type: 'games',
-    title: 'פתיחת מספר משחקים',
+    title: 'יצירת מספר משחקים',
     iconKey: 'addGame',
     entityType: 'team',
-    form: GameMultiCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../GameMultiCreateForm.js'),
+    size: 'lg',
   },
 
   meeting: {
     type: 'meeting',
-    title: 'פתיחת מפגש',
+    title: 'יצירת פגישה',
     iconKey: 'addMeeting',
     entityType: 'player',
     domainColor: '#f7b13b',
-    form: MeetingCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../MeetingCreateForm.js'),
+    size: 'lg',
   },
 
   payment: {
     type: 'payment',
-    title: 'פתיחת תשלום',
+    title: 'יצירת תשלום',
     iconKey: 'addPayment',
     entityType: 'player',
     domainColor: '#0f766e',
-    form: PaymentCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../PaymentCreateForm.js'),
+    size: 'lg',
   },
 
   scout: {
     type: 'scout',
-    title: 'פתיחת שחקן למעקב',
+    title: 'יצירת סקאוט',
     iconKey: 'scouting',
     entityType: 'scout',
     domainColor: '#96ede6',
     form: null,
-    size: 'lg'
+    formLoader: null,
+    size: 'lg',
   },
 
   tag: {
@@ -128,35 +122,40 @@ export const CREATE_TYPES = {
     iconKey: 'addTag',
     entityType: 'tag',
     domainColor: '#96ede6',
-    form: TagsCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../TagsCreateForm.js'),
+    size: 'lg',
   },
 
   videoAnalysis: {
     type: 'video',
-    title: 'פתיחת ניתוח וידאו חדש',
+    title: 'יצירת ניתוח וידאו חדש',
     iconKey: 'video',
     entityType: 'videoAnalysis',
-    form: VideoAnalysisCreateForm,
-    size: 'lg'
+    domainColor: '#96ede6',
+    form: null,
+    formLoader: () => import('../VideoAnalysisCreateForm.js'),
+    size: 'lg',
   },
 
   videos: {
     type: 'video',
-    title: 'פתיחת וידאו חדש',
+    title: 'יצירת וידאו חדש',
     iconKey: 'video',
     entityType: 'videoGeneral',
-    form: VideoCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../VideoCreateForm.js'),
+    size: 'lg',
   },
 
   abilities: {
     type: 'abilities',
-    title: 'פתיחת טופס יכולות חדש',
+    title: 'יצירת טופס יכולות חדש',
     iconKey: 'abilities',
     entityType: 'abilities',
-    form: AbilitiesCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../AbilitiesCreateForm.js'),
+    size: 'lg',
   },
 
   training: {
@@ -164,8 +163,9 @@ export const CREATE_TYPES = {
     title: 'תכנון שבוע אימונים',
     iconKey: 'training',
     entityType: 'team',
-    form: TrainingWeekCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../TrainingWeekCreateForm.js'),
+    size: 'lg',
   },
 
   task: {
@@ -173,19 +173,24 @@ export const CREATE_TYPES = {
     title: 'משימה חדשה',
     iconKey: 'task',
     entityType: 'task',
-    form: TasksCreateForm,
-    size: 'lg'
+    form: null,
+    formLoader: () => import('../TasksCreateForm.js'),
+    size: 'lg',
   },
 }
 
 export function getCreateMeta(type) {
-  return CREATE_TYPES[type] || {
-    type,
-    title: 'פתיחת אובייקט',
-    iconKey: 'add',
-    entityType: 'player',
-    size: 'lg'
-  }
+  return (
+    CREATE_TYPES[type] || {
+      type,
+      title: 'יצירת אובייקט',
+      iconKey: 'add',
+      entityType: 'player',
+      form: null,
+      formLoader: null,
+      size: 'lg',
+    }
+  )
 }
 
 export function resolveCreateIcon(iconKey) {

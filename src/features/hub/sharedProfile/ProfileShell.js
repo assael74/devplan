@@ -1,7 +1,25 @@
 // src/features/hub/sharedProfile/ProfileShell.js
 
 import React from 'react'
-import { Sheet, Box } from '@mui/joy'
+import { Box, CircularProgress, Sheet, Typography } from '@mui/joy'
+
+function ModuleLoadingFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: 240,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1.5,
+        px: 2,
+      }}
+    >
+      <CircularProgress size="sm" />
+      <Typography level="body-sm">טוען מודול...</Typography>
+    </Box>
+  )
+}
 
 export default function ProfileShell({
   tab,
@@ -51,7 +69,9 @@ export default function ProfileShell({
         }}
       >
         {RendererComp ? (
-          <RendererComp entity={entity} context={context} tab={tab} {...rendererProps} />
+          <React.Suspense fallback={<ModuleLoadingFallback />}>
+            <RendererComp entity={entity} context={context} tab={tab} {...rendererProps} />
+          </React.Suspense>
         ) : null}
 
       </Box>

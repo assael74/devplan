@@ -51,7 +51,7 @@ export default function PlayerProfileMobile({
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
 
-  const modulesMap = isProject ? mobilePlayerModulesMap : mobileProjectPlayerModulesMap
+  const modulesMap = isProject ? mobileProjectPlayerModulesMap : mobilePlayerModulesMap
 
   const tabs = useMemo(() => {
     return isProject ? PLAYER_PROJECT_TABS : PLAYER_TABS

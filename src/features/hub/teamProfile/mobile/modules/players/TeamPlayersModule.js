@@ -4,16 +4,15 @@ import React from 'react'
 
 import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMobile.js'
 
-import TeamPlayersToolbar from './components/toolbar/TeamPlayersToolbar.js'
-import TeamPlayersList from './components/TeamPlayersList.js'
-
-import TeamPlayerQuickEditDrawer from './components/drawer/TeamPlayerQuickEditDrawer.js'
-import TeamPlayerPositionsDrawer from './components/drawer/TeamPlayerPositionsModal.js'
-import TeamPlayersInsightsDrawer from './components/insightsDrawer/TeamPlayersInsightsDrawer.js'
-
 import { TeamPlayersModuleBase } from '../../../sharedModules/players'
 
 import { profileSx as sx } from './../../sx/profile.sx'
+
+const TeamPlayersToolbar = React.lazy(() => import('./components/toolbar/TeamPlayersToolbar.js'))
+const TeamPlayersList = React.lazy(() => import('./components/TeamPlayersList.js'))
+const TeamPlayerQuickEditDrawer = React.lazy(() => import('./components/drawer/TeamPlayerQuickEditDrawer.js'))
+const TeamPlayerPositionsDrawer = React.lazy(() => import('./components/drawer/TeamPlayerPositionsModal.js'))
+const TeamPlayersInsightsDrawer = React.lazy(() => import('./components/insightsDrawer/TeamPlayersInsightsDrawer.js'))
 
 export default function TeamPlayersModule(props) {
   return (

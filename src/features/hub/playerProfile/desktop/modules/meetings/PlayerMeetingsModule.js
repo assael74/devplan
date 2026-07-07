@@ -9,8 +9,8 @@ import { moduleSx as sx } from './playerMeetingsModule.sx'
 
 import { usePlayerMeetingsModuleModel } from '../../../sharedModules/meetings'
 
-import MeetingsListPane from './components/list/MeetingsListPane'
-import MeetingPane from './components/form/MeetingPane'
+const MeetingsListPane = React.lazy(() => import('./components/list/MeetingsListPane'))
+const MeetingPane = React.lazy(() => import('./components/form/MeetingPane'))
 
 export default function PlayerMeetingsModule({ entity }) {
   const {
