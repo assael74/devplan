@@ -501,10 +501,17 @@ export async function updatePlayerSeasonPosition(row = {}, patch = {}) {
   }
   const positionLayer = clean(patch.positionLayer)
   const primaryPosition = clean(patch.primaryPosition)
+  const numShirt = clean(patch.numShirt ?? patch.shirtNumber)
+  const comments = clean(patch.comments)
 
   if ('positionLayer' in patch) payload.positionLayer = positionLayer
   if ('primaryPosition' in patch) payload.primaryPosition = primaryPosition
   if ('positions' in patch) payload.positions = splitList(patch.positions)
+  if ('numShirt' in patch || 'shirtNumber' in patch) {
+    payload.numShirt = numShirt
+    payload.shirtNumber = numShirt
+  }
+  if ('comments' in patch) payload.comments = comments
 
   const batch = writeBatch(db)
   batch.set(
@@ -1127,6 +1134,17 @@ const buildPlayerSearchDoc = ({
     isPlayingUp,
     playingUpMinutes,
   }
+  const comments = clean(
+    season.comments ||
+    season.comment ||
+    season.notes ||
+    row.comments ||
+    row.comment ||
+    row.notes ||
+    current.comments ||
+    current.comment ||
+    current.notes
+  )
   const teamData = {
     ...team,
     games: toNumberOrNull(team.games),
@@ -1196,6 +1214,9 @@ const buildPlayerSearchDoc = ({
     positionLayer: player.positionLayer,
     primaryPosition: player.primaryPosition,
     positions: player.positions,
+    numShirt: clean(season.numShirt || row.numShirt || current.numShirt),
+    shirtNumber: clean(season.shirtNumber || row.shirtNumber || current.shirtNumber || season.numShirt || row.numShirt || current.numShirt),
+    comments,
     hasPosition: metrics.hasPosition,
     statsType: 'league',
     snapshotType: clean(meta.snapshotType || 'season_current'),

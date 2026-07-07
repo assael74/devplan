@@ -5,41 +5,18 @@ import { Box, Button, Sheet, Typography } from '@mui/joy'
 
 import { ReportPrintButton } from '../../../../../../ui/patterns/reportPrint/index.js'
 import { SortMenuButton } from '../../../../../../ui/patterns/sort/index.js'
-import HorizontalScrollRail from '../../../sharedUi/HorizontalScrollRail.js'
-import { ChipButton } from '../../../sharedUi/index.js'
 import ProfilesPlayersReport from '../print/ProfilesPlayersReport.js'
 
-import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-
-import { pdbScoutProfileChipRows } from '../../../../sharedLogic/pdbCounts.logic.js'
+import { buildProfileDocumentsSelectionKey } from '../logic/documents.logic.js'
 import { listToolbarSx as sx } from './listToolbar.sx.js'
-
-const chipPalette = {
-  selectedStart: '#0b5c2f',
-  selectedMid: '#179343',
-  selectedEnd: '#55d06e',
-  selectedLine: '#1d7f3f',
-}
-
-function ScoutProfileChip({ item, selected, disabled, quiet, count, onClick }) {
-  return (
-    <ChipButton
-      label={item.label}
-      count={count}
-      icon={iconUi({ id: item.idIcon })}
-      selected={selected}
-      quiet={quiet}
-      disabled={disabled}
-      onClick={onClick}
-      palette={chipPalette}
-    />
-  )
-}
 
 export default function ListToolbar({
   profile,
   selectedProfileResult,
+  printRows = [],
   selectedProfileIds = [],
+  previewState = {},
+  loadedSelectionKey = '',
   loading = false,
   sortBy,
   sortDirection,
@@ -47,40 +24,37 @@ export default function ListToolbar({
   onChangeSortBy,
   onChangeSortDirection,
   onLoadDocuments,
-  onToggleProfile,
   selectionReady = false,
+  printSelectionMode = false,
+  printSelectedRows = [],
+  onStartPrintSelection,
+  onSelectAllPrintRows,
+  onClearPrintSelection,
+  onCancelPrintSelection,
 }) {
-  const breakdownRows = pdbScoutProfileChipRows(profile?.profileCounts)
+  const selectedRows = Array.isArray(previewState?.selectionMetrics?.selectedRows)
+    ? previewState.selectionMetrics.selectedRows
+    : []
+
+  const currentSelectionKey = buildProfileDocumentsSelectionKey({
+    profileIds: selectedProfileIds,
+    selectionRows: selectedRows,
+  })
+
   const selectedCount = selectedProfileIds.length
-  const canLoad = Boolean(profile) && selectedCount > 0 && selectionReady && !loading
-  const canPrint = Boolean(selectedProfileResult?.rows?.length) && !loading
-  const resultRows = selectedProfileResult?.rows || []
-  const chipsReady = Boolean(selectionReady) && !loading
+  const canLoad =
+    Boolean(profile) &&
+    selectedCount > 0 &&
+    selectionReady &&
+    !loading &&
+    currentSelectionKey !== loadedSelectionKey
+  const canPrint = Boolean(printSelectedRows.length) && !loading
+  const sourceRows = Array.isArray(printRows) && printRows.length
+    ? printRows
+    : selectedProfileResult?.rawRows || selectedProfileResult?.rows || []
 
   return (
     <Sheet sx={sx.root}>
-      <HorizontalScrollRail sx={sx.railShell}>
-        <Box sx={sx.chipRow}>
-          {breakdownRows.length ? (
-            breakdownRows.map(item => (
-              <ScoutProfileChip
-                key={item.profileId}
-                item={item}
-                selected={chipsReady && selectedProfileIds.includes(item.profileId)}
-                quiet={!chipsReady || item.count === 0}
-                disabled={!chipsReady || item.count === 0}
-                count={chipsReady ? item.count : 0}
-                onClick={() => onToggleProfile(profile.id, item.profileId)}
-              />
-            ))
-          ) : (
-            <Typography level="body-sm" sx={sx.empty}>
-              אין פרופילים סקאוט זמינים
-            </Typography>
-          )}
-        </Box>
-      </HorizontalScrollRail>
-
       <Box sx={sx.actionsRow}>
         <Box sx={sx.primaryActions}>
           <Button
@@ -89,26 +63,60 @@ export default function ListToolbar({
             color="neutral"
             loading={loading}
             disabled={!canLoad}
-            onClick={() => onLoadDocuments(profile)}
+            onClick={() =>
+              onLoadDocuments(profile, {
+                selectionRows: selectedRows,
+              })
+            }
             sx={sx.actionButton}
           >
             טען מסמכי שחקן
           </Button>
 
-          <ReportPrintButton
-            size="sm"
-            variant="solid"
-            color="neutral"
-            startIcon="print"
-            label="PDF"
-            tooltip="הדפסה של המסמכים הטעונים"
-            documentTitle="פרופילי-סקאוט"
-            disabled={!canPrint}
-            sx={sx.actionPrintButton}
-            renderContent={() => (
-              <ProfilesPlayersReport row={profile} resultRows={resultRows} />
-            )}
-          />
+          {printSelectionMode ? (
+            <>
+              <ReportPrintButton
+                size="sm"
+                variant="solid"
+                color="neutral"
+                startIcon="print"
+                label="PDF"
+                tooltip="הדפסה של השורות המסומנות"
+                documentTitle="פרופילי-סקאוט"
+                disabled={!canPrint}
+                sx={sx.actionPrintButton}
+                renderContent={() => (
+                  <ProfilesPlayersReport row={profile} resultRows={printSelectedRows} />
+                )}
+              />
+
+              <Button size="sm" variant="soft" color="neutral" onClick={onCancelPrintSelection}>
+                ביטול
+              </Button>
+
+              <Button size="sm" variant="soft" color="neutral" onClick={onClearPrintSelection}>
+                נקה בחירה
+              </Button>
+
+              <Button size="sm" variant="soft" color="neutral" onClick={onSelectAllPrintRows}>
+                בחר הכל
+              </Button>
+
+              <Typography level="body-sm" sx={sx.printCount}>
+                נבחרו {printSelectedRows.length} מתוך {sourceRows.length}
+              </Typography>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="solid"
+              color="neutral"
+              onClick={onStartPrintSelection}
+              sx={sx.actionPrintButton}
+            >
+              PDF
+            </Button>
+          )}
         </Box>
 
         <Box sx={sx.sortAction}>

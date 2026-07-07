@@ -30,7 +30,9 @@ export const chipSx = (palette = {}) => {
       cursor: 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 0.55,
+      lineHeight: 1,
       appearance: 'none',
       outline: 'none',
       fontFamily: 'inherit',
@@ -171,6 +173,14 @@ export const chipSx = (palette = {}) => {
       alignItems: 'center',
       justifyContent: 'center',
       flex: '0 0 auto',
+    },
+
+    startDecorator: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: '0 0 auto',
+      lineHeight: 0,
     },
   }
 }

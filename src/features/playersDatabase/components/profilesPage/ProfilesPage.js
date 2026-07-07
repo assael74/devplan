@@ -6,8 +6,7 @@ import { Box, Sheet } from '@mui/joy'
 
 import { useProfileRowLinks, useProfilesPage } from './hooks/index.js'
 import { ProfilesList } from './list/index.js'
-import { ProfileRowLinksModal } from './modals/index.js'
-import ProfilePreview from './preview/ProfilePreview.js'
+import PreviewArea from './preview/PreviewArea.js'
 import ProfilesPageHeader from './ProfilesPageHeader.js'
 import { pageSx as sx } from './sx/page.sx.js'
 import ProfilesToolbar from './toolbar/ProfilesToolbar.js'
@@ -30,21 +29,31 @@ export default function ProfilesPage() {
         <Box sx={sx.body}>
           <ProfilesList model={model} onEditLink={rowLinks.open} />
 
-          <ProfilePreview
+          <PreviewArea
             profile={model.selectedProfile}
+            selectedProfileResult={
+              model.profileResultsById[model.selectedProfile?.id]
+            }
             previewState={model.previewState}
+            previewContentCleared={model.previewContentCleared}
+            previewPlayerRow={model.previewPlayerRow}
+            rowLinks={rowLinks}
+            onRefreshDocuments={() =>
+              model.loadProfileDocuments(model.selectedProfile, { force: true })
+            }
+            onRemoveProfile={(
+              playerRow,
+              profileId
+            ) =>
+              model.removeProfileFromLoadedDocuments(
+                model.selectedProfile,
+                playerRow,
+                profileId
+              )
+            }
             onOpen={model.openProfile}
           />
         </Box>
-
-        <ProfileRowLinksModal
-          open={Boolean(rowLinks.row)}
-          row={rowLinks.row?.playerRow || null}
-          saving={rowLinks.saving}
-          error={rowLinks.error}
-          onClose={rowLinks.close}
-          onSave={rowLinks.save}
-        />
       </Sheet>
     </Box>
   )

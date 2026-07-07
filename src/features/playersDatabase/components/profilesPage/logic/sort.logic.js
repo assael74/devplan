@@ -47,6 +47,34 @@ export const PROFILE_LIST_SORT_OPTIONS = [
   },
 ]
 
+export const PLAYER_LIST_SORT_OPTIONS = [
+  {
+    id: 'playerName',
+    label: 'שם שחקן',
+    defaultDirection: 'asc',
+  },
+  {
+    id: 'positionUpdated',
+    label: 'עמדה מעודכנת',
+    defaultDirection: 'desc',
+  },
+  {
+    id: 'goals',
+    label: 'כמות שערים',
+    defaultDirection: 'desc',
+  },
+  {
+    id: 'minutes',
+    label: 'כמות דקות',
+    defaultDirection: 'desc',
+  },
+  {
+    id: 'team',
+    label: 'קבוצה',
+    defaultDirection: 'asc',
+  },
+]
+
 const compareValues = (left, right, direction = 'asc') => {
   if (left === right) return 0
   const factor = direction === 'asc' ? 1 : -1
@@ -55,6 +83,67 @@ const compareValues = (left, right, direction = 'asc') => {
 
 const compareStrings = (left, right, direction = 'asc') =>
   cleanText(left).localeCompare(cleanText(right), 'he') * (direction === 'asc' ? 1 : -1)
+
+const compareBooleans = (left, right, direction = 'asc') => {
+  const l = left ? 1 : 0
+  const r = right ? 1 : 0
+  return compareValues(l, r, direction)
+}
+
+const getPlayerRowName = row =>
+  row?.fullName ||
+  row?.playerName ||
+  row?.name ||
+  row?.title ||
+  ''
+
+const getPlayerRowTeam = row =>
+  row?.clubName ||
+  row?.teamName ||
+  row?.team?.clubName ||
+  row?.team?.teamName ||
+  ''
+
+const getPlayerRowGoals = row =>
+  Number(row?.current?.goals ?? row?.goals ?? row?.stats?.goals ?? 0)
+
+const getPlayerRowMinutes = row =>
+  Number(row?.current?.minutes ?? row?.minutes ?? row?.stats?.minutes ?? 0)
+
+const getPlayerRowPositionUpdated = row =>
+  Boolean(
+    cleanText(row?.positionLayer) &&
+    !row?.missingDocumentLayer &&
+    cleanText(row?.positionLayer) !== ''
+  )
+
+export function sortPlayerRowsByState(rows = [], sortBy = 'playerName', sortDirection = 'asc') {
+  const direction = sortDirection === 'desc' ? 'desc' : 'asc'
+
+  return [...rows].sort((a, b) => {
+    if (sortBy === 'playerName') {
+      const diff = compareStrings(getPlayerRowName(a), getPlayerRowName(b), direction)
+      if (diff) return diff
+    } else if (sortBy === 'positionUpdated') {
+      const diff = compareBooleans(getPlayerRowPositionUpdated(a), getPlayerRowPositionUpdated(b), direction)
+      if (diff) return diff
+    } else if (sortBy === 'goals') {
+      const diff = compareValues(getPlayerRowGoals(a), getPlayerRowGoals(b), direction)
+      if (diff) return diff
+    } else if (sortBy === 'minutes') {
+      const diff = compareValues(getPlayerRowMinutes(a), getPlayerRowMinutes(b), direction)
+      if (diff) return diff
+    } else if (sortBy === 'team') {
+      const diff = compareStrings(getPlayerRowTeam(a), getPlayerRowTeam(b), direction)
+      if (diff) return diff
+    } else {
+      const diff = compareStrings(getPlayerRowName(a), getPlayerRowName(b), direction)
+      if (diff) return diff
+    }
+
+    return compareStrings(getPlayerRowName(a), getPlayerRowName(b), 'asc')
+  })
+}
 
 export function sortProfilesByState(rows = [], sortBy = 'status', sortDirection = 'desc') {
   const direction = sortDirection === 'asc' ? 'asc' : 'desc'

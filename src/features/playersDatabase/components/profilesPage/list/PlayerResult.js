@@ -1,38 +1,39 @@
 // features/playersDatabase/components/profilesPage/list/PlayerResult.js
 
 import React from 'react'
-import {
-  Box,
-  Button,
-  Chip,
-  ChipDelete,
-  CircularProgress,
-  IconButton,
-  Option,
-  Select,
-  Tooltip,
-  Typography,
-} from '@mui/joy'
+import { Avatar, Box, Typography } from '@mui/joy'
 
+import PositionCube from './PositionCube.js'
+import TeamTooltip from './TeamTooltip.js'
+import PlayerNoteTooltip from './PlayerNoteTooltip.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { clean, listText, valueOrDash } from '../logic/utils.js'
-import { usePlayerPosition } from './hooks/usePlayerPosition.js'
-import {
-  getPlayerProfileChips,
-  getPlayerProfileInfo,
-} from './logic/scout.logic.js'
-import {
-  getPlayerUrls,
-  PLAYER_LAYER_OPTIONS,
-} from './logic/player.logic.js'
-import ProfileTooltip from './ProfileTooltip.js'
+import { getPlayerPositionInfo, getPlayerUrls } from './logic/player.logic.js'
+import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import { playerSx as sx } from './sx/player.sx.js'
 
-const resolveValue = (value, fallback) =>
-  value !== undefined && value !== null ? value : fallback
+function resolveValue(...values) {
+  const value = values.find(item => item !== undefined && item !== null && item !== '')
+  return value === undefined ? '-' : value
+}
+
+function getPositionLabel(positionInfo) {
+  const layerLabel = positionInfo.layerLabel && positionInfo.layerLabel !== '-' ? positionInfo.layerLabel : ''
+  const primaryPosition = positionInfo.primaryPosition || ''
+
+  if (layerLabel && primaryPosition) return `${layerLabel} - ${primaryPosition}`
+  return layerLabel || primaryPosition || '-'
+}
 
 function InlineEntityLink({ href, children, level = 'body-xs' }) {
-  if (!href) return <span>{children}</span>
+  const textSx = level === 'title-sm' ? sx.rowTitle : sx.entityText
+
+  if (!href) {
+    return (
+      <Typography level={level} sx={textSx}>
+        {children}
+      </Typography>
+    )
+  }
 
   return (
     <Box
@@ -43,252 +44,118 @@ function InlineEntityLink({ href, children, level = 'body-xs' }) {
       sx={sx.entityLink}
       onClick={event => event.stopPropagation()}
     >
-      <Typography level={level} sx={level === 'title-sm' ? sx.rowTitle : null}>
+      <Typography level={level} sx={textSx}>
         {children}
       </Typography>
     </Box>
   )
 }
 
-function StatCell({ label, value }) {
+function StatCell({ label, value, sx: sxOverride }) {
   return (
-    <Box sx={sx.statCell}>
-      <Typography level="body-xs" sx={sx.statLabel}>
+    <Box sx={[sx.statCellCompact, sxOverride]}>
+      <Typography level="body-xs" sx={sx.statLabelCompact}>
         {label}
       </Typography>
-      <Typography level="body-sm" sx={sx.statValue}>
-        {valueOrDash(value)}
+
+      <Typography level="body-sm" sx={sx.statValueCompact}>
+        {value}
       </Typography>
     </Box>
   )
 }
 
-export default function PlayerResult({
-  player,
-  result,
-  removingProfileId,
-  onEditLink,
-  onRemoveProfile,
-}) {
+export default function PlayerResult({ player, selected = false, loading = false, onClick }) {
+  const urls = getPlayerUrls(player)
   const current = player.current || {}
+  const positionInfo = getPlayerPositionInfo(player)
+  const playerName = player.fullName || player.playerName || player.name || '-'
+  const leagueName = player.leagueName || '-'
+  const teamName = player.clubName || player.teamName || '-'
+  const year = player.birthYear || player.teamBirthYear || '-'
   const games = resolveValue(current.games, player.games)
   const starts = resolveValue(current.starts, player.starts)
   const minutes = resolveValue(current.minutes, player.minutes)
   const goals = resolveValue(current.goals, player.goals)
   const yellowCards = resolveValue(current.yellowCards, player.yellowCards)
-  const profile = getPlayerProfileInfo(player)
-  const profileChips = getPlayerProfileChips(player)
-  const score = resolveValue(profile.score, player.bestScoutScore)
-  const reliability =
-    profile.reliabilityLevel ||
-    player.bestScoutReliabilityLevel ||
-    profile.reliabilityScore ||
-    player.bestScoutReliabilityScore
-  const urls = getPlayerUrls(player)
-  const positionModel = usePlayerPosition(player)
-  const rowKey = clean(player.searchDocId || player.id)
+  const shirtNumber = resolveValue(
+    player.numShirt,
+    player.shirtNumber,
+    player.statsDoc?.numShirt,
+    player.statsDoc?.shirtNumber,
+    player.playerSeason?.numShirt,
+    player.playerSeason?.shirtNumber,
+  )
+  const positionLabel = getPositionLabel(positionInfo)
 
   return (
-    <Box sx={sx.row}>
-      <Box sx={sx.main}>
-        <Box sx={sx.identityCell}>
-          <InlineEntityLink href={urls.playerUrl} level="title-sm">
-            {player.fullName || player.playerName || player.name || '-'}
-          </InlineEntityLink>
+    <Box
+      sx={[
+        sx.row,
+        selected ? sx.rowSelected : null,
+        loading ? sx.rowLoading : null,
+        onClick ? sx.rowClickable : sx.rowStatic,
+      ]}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
+      <Box sx={sx.mainCompact}>
+        <Box sx={sx.identityCellCompact}>
+          <Avatar src={player.photo || playerImage} alt={playerName} sx={sx.avatarCompact} />
 
-          <Typography level="body-xs" sx={sx.subtext}>
-            <InlineEntityLink href={urls.leagueUrl}>
-              {valueOrDash(player.leagueName)}
-            </InlineEntityLink>
+          <Box sx={sx.identityTextCompact}>
+            <Box sx={sx.identityHeadlineRow}>
+              <InlineEntityLink href={urls.playerUrl} level="title-sm">
+                {playerName}
+              </InlineEntityLink>
 
-            <Box component="span" sx={sx.subtextDivider}>
-              |
+              <PlayerNoteTooltip player={player} />
+
+              {loading ? (
+                <Box sx={sx.rowLoadingBadge}>
+                  <Typography level="body-xs" sx={sx.rowLoadingText}>
+                    טוען
+                  </Typography>
+                </Box>
+              ) : null}
             </Box>
 
-            <InlineEntityLink href={urls.teamUrl}>
-              {valueOrDash(player.clubName || player.teamName)}
-            </InlineEntityLink>
+            <Box sx={sx.subtextCompact}>
+              <InlineEntityLink href={urls.leagueUrl}>{leagueName}</InlineEntityLink>
 
-            <Box component="span" sx={sx.subtextDivider}>
-              |
-            </Box>
+              <Box component="span" sx={sx.subtextDividerCompact}>
+                |
+              </Box>
 
-            <Box component="span">
-              {valueOrDash(player.birthYear || player.teamBirthYear)}
+              <Box component="span" sx={sx.teamInlineInfo}>
+                <InlineEntityLink href={urls.teamUrl}>{teamName}</InlineEntityLink>
+                <TeamTooltip player={player} teamName={teamName} />
+              </Box>
+
+              <Box component="span" sx={sx.subtextDividerCompact}>
+                |
+              </Box>
+
+              <Typography level="body-xs" sx={sx.entityText}>
+                {year}
+              </Typography>
             </Box>
-          </Typography>
+          </Box>
         </Box>
 
-        <Box sx={sx.positionCell}>
-          <Select
-            size="sm"
-            variant="plain"
-            value={positionModel.selectedLayer || null}
-            placeholder="חוליה"
-            sx={sx.select}
-            onClick={event => event.stopPropagation()}
-            onChange={(event, value) => {
-              event?.stopPropagation()
-              positionModel.changeLayer(value)
-            }}
-          >
-            {PLAYER_LAYER_OPTIONS.map(option => (
-              <Option key={option.id} value={option.id}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-
-          <Select
-            size="sm"
-            variant="plain"
-            value={positionModel.selectedPosition || null}
-            placeholder="עמדה"
-            disabled={!positionModel.selectedLayer}
-            sx={sx.select}
-            onClick={event => event.stopPropagation()}
-            onChange={(event, value) => {
-              event?.stopPropagation()
-              positionModel.setSelectedPosition(clean(value))
-            }}
-          >
-            {positionModel.positionOptions.map(option => (
-              <Option key={option.code} value={option.code}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-        </Box>
-
-        <Box sx={sx.statsTable}>
-          <StatCell label="מש'" value={games} />
+        <Box sx={sx.statsTableCompact}>
           <StatCell label="דק'" value={minutes} />
-          <StatCell label="שערים" value={goals} />
+          <StatCell label="שערים" value={goals} sx={sx.statCellGoals} />
           <StatCell label="צהובים" value={yellowCards} />
-          <StatCell
-            label="פתח"
-            value={`${valueOrDash(starts)}/${valueOrDash(games)}`}
-          />
-        </Box>
-      </Box>
-
-      <Box sx={sx.statusRow}>
-        <Box sx={sx.statusLeft}>
-          {positionModel.showStatus ? (
-            <Chip
-              size="sm"
-              variant="soft"
-              color={positionModel.position.sourceColor}
-            >
-              {positionModel.hasDraft
-                ? 'ממתין לאישור עמדה'
-                : positionModel.position.sourceLabel}
-            </Chip>
-          ) : null}
-
-          {profileChips.map(item => {
-            const isRemovingThisChip =
-              result?.removingProfileIds?.[rowKey] === item.id
-            const isDeleteLocked =
-              Boolean(removingProfileId) && !isRemovingThisChip
-
-            return (
-              <Tooltip
-                key={item.id || item.label}
-                title={<ProfileTooltip profileId={item.id} />}
-                variant="soft"
-              >
-                <Chip
-                  size="sm"
-                  variant="soft"
-                  color="primary"
-                  startDecorator={
-                    item.idIcon
-                      ? iconUi({ id: item.idIcon, size: 'small' })
-                      : null
-                  }
-                  endDecorator={
-                    onRemoveProfile ? (
-                      isRemovingThisChip ? (
-                        <CircularProgress
-                          size="sm"
-                          thickness={3}
-                          sx={{ '--CircularProgress-size': '16px' }}
-                        />
-                      ) : (
-                        <ChipDelete
-                          color="danger"
-                          variant="plain"
-                          aria-label="הסר פרופיל"
-                          disabled={isDeleteLocked}
-                          onClick={event => {
-                            event.preventDefault()
-                            event.stopPropagation()
-                            onRemoveProfile(player, item.id)
-                          }}
-                        >
-                          {iconUi({ id: 'close', size: 'sm' })}
-                        </ChipDelete>
-                      )
-                    ) : null
-                  }
-                >
-                  {item.label}
-                </Chip>
-              </Tooltip>
-            )
-          })}
-
-          {positionModel.position.positions.length ? (
-            <Typography level="body-xs" sx={sx.rowMeta}>
-              עמדות מקור: {listText(positionModel.position.positions)}
-            </Typography>
-          ) : null}
+          <StatCell label="פתח" value={`${starts}/${games}`} />
         </Box>
 
-        <Box sx={sx.statusActions}>
-          {positionModel.error ? (
-            <Typography level="body-xs" sx={sx.errorInline}>
-              {positionModel.error}
-            </Typography>
-          ) : null}
-
-          {positionModel.hasDraft ? (
-            <Button
-              size="sm"
-              color="success"
-              variant="soft"
-              loading={positionModel.saving}
-              disabled={!clean(positionModel.selectedLayer)}
-              onClick={positionModel.savePosition}
-            >
-              אשר בחירה
-            </Button>
-          ) : null}
-
-          {reliability ? (
-            <Chip size="sm" variant="soft" color="neutral" sx={sx.fixedChip}>
-              ודאות {reliability}
-            </Chip>
-          ) : null}
-
-          {score !== undefined && score !== null ? (
-            <Chip size="sm" variant="soft" color="neutral" sx={sx.fixedChip}>
-              ציון {score}
-            </Chip>
-          ) : null}
-
-          <IconButton
-            size="sm"
-            variant="soft"
-            color="neutral"
-            sx={sx.editButton}
-            title="עריכה"
-            onClick={() => onEditLink(player)}
-          >
-            {iconUi({ id: 'edit', size: 'small' })}
-          </IconButton>
-        </Box>
+        <PositionCube
+          shirtNumber={shirtNumber}
+          position={positionLabel}
+          missingDocumentLayer={positionInfo.missingDocumentLayer}
+        />
       </Box>
     </Box>
   )

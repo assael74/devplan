@@ -8,33 +8,68 @@ const palette = {
   line: alpha(devPlanColors.primaryDark, 0.12),
   ink: devPlanColors.primaryDark,
   muted: alpha(devPlanColors.primaryDark, 0.68),
-  red: '#b42318',
 }
 
 export const playerSx = {
   row: {
     width: '100%',
     minWidth: 0,
-    border: `1px solid ${palette.line}`,
+    border: `1px solid ${alpha(devPlanColors.primaryDark, 0.16)}`,
     borderRadius: '8px',
-    bgcolor: alpha(devPlanColors.primaryLight, 0.2),
+    bgcolor: alpha(devPlanColors.primaryLight, 0.18),
     p: 0.7,
     display: 'grid',
     gap: 0.55,
+    boxShadow: `0 1px 2px ${alpha(devPlanColors.primaryDark, 0.05)}`,
+    transition: 'background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
+    '&:hover': {
+      borderColor: alpha(devPlanColors.secondary, 0.5),
+      bgcolor: alpha(devPlanColors.primaryLight, 0.28),
+      boxShadow: `0 8px 18px ${alpha(devPlanColors.primaryDark, 0.08)}`,
+      transform: 'translateY(-1px)',
+    },
   },
 
-  selectable: {
+  rowClickable: {
+    cursor: 'pointer',
+  },
+
+  rowStatic: {
+    cursor: 'default',
+  },
+
+  rowLoading: {
+    borderColor: alpha(devPlanColors.primary, 0.42),
+    bgcolor: alpha(devPlanColors.primaryLight, 0.3),
+    boxShadow: `0 0 0 1px ${alpha(devPlanColors.primary, 0.12)}, 0 6px 14px ${alpha(devPlanColors.primaryDark, 0.08)}`,
+  },
+
+  rowSelected: {
+    borderColor: alpha(devPlanColors.secondary, 0.82),
+    bgcolor: alpha(devPlanColors.secondary, 0.14),
+    boxShadow: `0 0 0 1px ${alpha(devPlanColors.secondary, 0.18)}, 0 8px 20px ${alpha(devPlanColors.primaryDark, 0.1)}`,
+    '&:hover': {
+      borderColor: alpha(devPlanColors.secondary, 0.92),
+      bgcolor: alpha(devPlanColors.secondary, 0.18),
+      boxShadow: `0 0 0 1px ${alpha(devPlanColors.secondary, 0.24)}, 0 10px 22px ${alpha(devPlanColors.primaryDark, 0.12)}`,
+      transform: 'translateY(-1px)',
+    },
+  },
+
+  selectableStack: {
     width: '100%',
     minWidth: 0,
     display: 'grid',
-    gridTemplateColumns: 'auto minmax(0, 1fr)',
-    alignItems: 'start',
-    gap: 0.75,
+    gap: 0.45,
   },
 
-  selectableContent: {
+  selectableActions: {
     width: '100%',
     minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 0.45,
   },
 
   checkbox: {
@@ -42,43 +77,61 @@ export const playerSx = {
     flex: '0 0 auto',
   },
 
-  main: {
+  mainCompact: {
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: {
       xs: 'minmax(0, 1fr)',
-      lg: 'minmax(210px, 1.1fr) 220px minmax(420px, 2fr)',
+      lg: 'minmax(240px, 1.1fr) minmax(280px, 1.35fr) minmax(104px, 0.46fr)',
     },
     alignItems: 'center',
-    gap: 0.7,
+    gap: 1,
   },
 
-  identityCell: {
+  identityCellCompact: {
     minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
+  identityTextCompact: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.12,
+  },
+
+  identityHeadlineRow: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.45,
+    flexWrap: 'wrap',
+  },
+
+  avatarCompact: {
+    width: 34,
+    height: 34,
+    border: `1px solid ${palette.line}`,
+    boxShadow: `0 4px 12px ${alpha(devPlanColors.primaryDark, 0.08)}`,
+    flex: '0 0 auto',
   },
 
   rowTitle: {
+    color: palette.ink,
     fontWeight: 700,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
 
-  rowMeta: {
-    color: palette.muted,
-    mt: 0.25,
-  },
-
-  subtext: {
+  entityText: {
     minWidth: 0,
-    mt: 0.25,
-    color: palette.muted,
+    color: 'inherit',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.35,
   },
 
   entityLink: {
@@ -93,30 +146,36 @@ export const playerSx = {
     },
   },
 
-  subtextDivider: {
+  subtextCompact: {
+    minWidth: 0,
+    color: palette.muted,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.35,
+    mt: 0.05,
+  },
+
+  subtextDividerCompact: {
     color: palette.muted,
     flex: '0 0 auto',
   },
 
-  positionCell: {
+  teamInlineInfo: {
     minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 0.5,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.3,
+    flex: '0 1 auto',
   },
 
-  select: {
-    minHeight: 34,
-    border: `1px solid ${palette.line}`,
-    borderRadius: '8px',
-    bgcolor: '#ffffff',
-  },
-
-  statsTable: {
+  statsTableCompact: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: 'repeat(3, minmax(0, 1fr))',
-      md: 'repeat(5, minmax(0, 1fr))',
+      xs: 'repeat(2, minmax(0, 1fr))',
+      md: 'repeat(4, minmax(0, 1fr))',
     },
     border: `1px solid ${palette.line}`,
     borderRadius: '8px',
@@ -124,7 +183,7 @@ export const playerSx = {
     bgcolor: alpha(devPlanColors.primaryLight, 0.14),
   },
 
-  statCell: {
+  statCellCompact: {
     minWidth: 0,
     minHeight: 46,
     px: 0.35,
@@ -136,7 +195,15 @@ export const playerSx = {
     gap: 0.15,
   },
 
-  statLabel: {
+  statCellGoals: {
+    bgcolor: alpha('#dff4e5', 0.9),
+    color: '#1f5132',
+    '& .MuiTypography-root': {
+      color: 'inherit',
+    },
+  },
+
+  statLabelCompact: {
     maxWidth: '100%',
     color: palette.muted,
     fontSize: 11,
@@ -147,51 +214,35 @@ export const playerSx = {
     whiteSpace: 'nowrap',
   },
 
-  statValue: {
+  statValueCompact: {
     minWidth: 0,
+    color: palette.ink,
     fontWeight: 700,
     textAlign: 'center',
     lineHeight: 1.1,
   },
 
-  statusRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
+  rowLoadingBadge: {
+    display: 'inline-flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 0.75,
-  },
-
-  statusLeft: {
-    minWidth: 0,
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 0.45,
-  },
-
-  statusActions: {
-    marginInlineStart: 'auto',
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 0.45,
-  },
-
-  errorInline: {
-    color: palette.red,
+    gap: 0.3,
+    px: 0.45,
+    py: 0.15,
+    borderRadius: '999px',
+    bgcolor: alpha(devPlanColors.primary, 0.1),
+    color: palette.ink,
     fontWeight: 700,
-  },
-
-  editButton: {
-    minWidth: 28,
-    minHeight: 28,
-    borderRadius: '8px',
-  },
-
-  fixedChip: {
     flex: '0 0 auto',
-    whiteSpace: 'nowrap',
+  },
+
+  rowLoadingSpinner: {
+    width: 14,
+    height: 14,
+    flex: '0 0 auto',
+  },
+
+  rowLoadingText: {
+    fontWeight: 700,
+    lineHeight: 1,
   },
 }

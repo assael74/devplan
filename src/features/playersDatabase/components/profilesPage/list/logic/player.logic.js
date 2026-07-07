@@ -16,25 +16,31 @@ const MIDFIELD_LAYERS = [
 export const PLAYER_LAYER_OPTIONS = [
   {
     id: 'attack',
+    code: 'attack',
     layers: ['attack'],
     label: LAYER_TITLES.attack,
   },
   {
     id: 'midfield',
+    code: 'midfield',
     layers: MIDFIELD_LAYERS,
     label: LAYER_TITLES.midfield,
   },
   {
     id: 'defense',
+    code: 'defense',
     layers: ['defense'],
     label: LAYER_TITLES.defense,
   },
   {
     id: 'goalkeeper',
+    code: 'goalkeeper',
     layers: ['goalkeeper'],
     label: LAYER_TITLES.goalkeeper,
   },
 ]
+
+export const getPositionLayerOptions = () => PLAYER_LAYER_OPTIONS
 
 export const normalizeLayer = layer => {
   const value = clean(layer)
@@ -75,8 +81,7 @@ export const getPlayerPositionInfo = player => {
       primaryPosition,
       positions,
       layerKey: normalizeLayer(documentLayer),
-      layerLabel:
-        LAYER_TITLES[documentLayer] || documentLayer,
+      layerLabel: LAYER_TITLES[documentLayer] || documentLayer,
       missingDocumentLayer: false,
       sourceLabel: 'חוליה מהמסמך',
       sourceColor: 'neutral',
@@ -94,12 +99,8 @@ export const getPlayerPositionInfo = player => {
     layerKey: normalizeLayer(inferred.layerKey),
     layerLabel: inferred.layerLabel || '-',
     missingDocumentLayer: true,
-    sourceLabel: inferred.layerKey
-      ? 'חוליה משוערת'
-      : 'חסרה חוליה',
-    sourceColor: inferred.layerKey
-      ? 'warning'
-      : 'danger',
+    sourceLabel: inferred.layerKey ? 'חוליה משוערת' : 'חסרה חוליה',
+    sourceColor: inferred.layerKey ? 'warning' : 'danger',
   }
 }
 

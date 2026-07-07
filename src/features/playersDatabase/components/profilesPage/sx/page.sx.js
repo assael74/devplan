@@ -126,7 +126,9 @@ export const pageSx = {
       xl: 'minmax(0, 1fr) 360px',
     },
     gap: 0.75,
-    p: 0.75,
+    pt: 0.5,
+    px: 0,
+    pb: 0,
     bgcolor: palette.bg,
   },
 }

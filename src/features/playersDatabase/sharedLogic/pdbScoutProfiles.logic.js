@@ -13,6 +13,34 @@ const unique = values =>
     )
   )
 
+const toScoutCountMap = source => {
+  if (Array.isArray(source)) {
+    return source.reduce((result, item) => {
+      const profileId = clean(item?.profileId || item?.id || item?.label)
+      const count = Number(item?.count)
+
+      if (profileId) {
+        result[profileId] = Number.isFinite(count) ? count : 0
+      }
+
+      return result
+    }, {})
+  }
+
+  if (source && typeof source === 'object') {
+    return Object.entries(source).reduce((result, [profileId, value]) => {
+      const cleanProfileId = clean(profileId)
+
+      if (!cleanProfileId) return result
+
+      result[cleanProfileId] = Number(value) || 0
+      return result
+    }, {})
+  }
+
+  return {}
+}
+
 export const SCOUT_METRIC_LABELS = {
   isYoungerAgeGroup: 'שחקן משנתון צעיר',
   startsPct: 'אחוז פתיחות',
@@ -128,13 +156,102 @@ export const getScoutProfileTooltipData = profileId => {
   }
 }
 
-export const getScoutProfileRows = (profileCounts = {}) =>
-  SCOUT_PROFILES.map(profile => ({
+export const getScoutProfileRows = (profileCounts = {}) => {
+  const counts = toScoutCountMap(profileCounts)
+
+  return SCOUT_PROFILES.map(profile => ({
     profileId: clean(profile.id),
     label: clean(profile.label) || clean(profile.id),
     idIcon: clean(profile.idIcon),
-    count: Number(profileCounts?.[profile.id]) || 0,
+    count: Number(counts?.[profile.id]) || 0,
   }))
+}
+
+const getRowScoutProfileIds = row =>
+  unique([
+    ...(row?.matchedProfileIds || []),
+    ...(row?.scoutProfileIds || []),
+    ...(row?.rawScoutProfileIds || []),
+    ...(row?.eligibleScoutProfileIds || []),
+    row?.profileId,
+    ...(Object.keys(row?.scoutProfiles || {})),
+    ...(Object.keys(row?.eligibleScoutProfiles || {})),
+    ...(Object.keys(row?.rawScoutProfiles || {})),
+  ])
+
+const getRowPlayerKey = row =>
+  clean(
+    row?.playerId ||
+      row?.playerDocId ||
+      row?.searchDocId ||
+      row?.id ||
+      row?.playerSeasonId
+  )
+
+export const pdbScoutProfileCounts = (
+  rows = [],
+  profileIds = []
+) => {
+  const targetIds = unique(
+    Array.isArray(profileIds) && profileIds.length
+      ? profileIds
+      : SCOUT_PROFILES.map(profile => profile.id)
+  )
+
+  const counts = {}
+  const seenByProfile = {}
+
+  for (const profileId of targetIds) {
+    counts[profileId] = 0
+    seenByProfile[profileId] = new Set()
+  }
+
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const rowProfileIds = getRowScoutProfileIds(row)
+    const rowPlayerKey = getRowPlayerKey(row)
+
+    rowProfileIds.forEach(profileId => {
+      if (counts[profileId] === undefined) return
+      if (!rowPlayerKey) return
+      if (seenByProfile[profileId].has(rowPlayerKey)) return
+
+      seenByProfile[profileId].add(rowPlayerKey)
+      counts[profileId] += 1
+    })
+  })
+
+  return counts
+}
+
+export const pdbScoutProfileCountRows = (
+  rows = [],
+  profileIds = []
+) =>
+  getScoutProfileRows(
+    pdbScoutProfileCounts(Array.isArray(rows) ? rows : [], profileIds)
+  )
+
+export const pdbFilterScoutProfileRowsBySelection = (
+  rows = [],
+  previewState = {}
+) => {
+  const sourceRows = Array.isArray(rows) ? rows : []
+  const searchMode = clean(previewState.searchMode)
+  const selectedLeagueIds = unique(previewState.selectedLeagueIds || [])
+  const selectedBirthYears = unique(previewState.selectedBirthYears || [])
+
+  if (searchMode === 'year' && selectedLeagueIds.length) {
+    const selected = new Set(selectedLeagueIds)
+    return sourceRows.filter(row => selected.has(clean(row?.leagueId)))
+  }
+
+  if (searchMode === 'league' && selectedBirthYears.length) {
+    const selected = new Set(selectedBirthYears)
+    return sourceRows.filter(row => selected.has(clean(row?.birthYear)))
+  }
+
+  return sourceRows
+}
 
 export const getScoutProfileBreakdownRows = (profileCounts = {}) =>
   getScoutProfileRows(profileCounts)

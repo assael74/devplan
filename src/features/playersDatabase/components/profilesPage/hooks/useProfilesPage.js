@@ -18,6 +18,7 @@ import {
   getLeagueSnapshotId,
   leagueMatchesSeason,
   PROFILE_LIST_SORT_OPTIONS,
+  PLAYER_LIST_SORT_OPTIONS,
   sortProfilesByState,
 } from '../logic/index.js'
 import { clean, unique } from '../logic/utils.js'
@@ -47,6 +48,10 @@ export function useProfilesPage() {
   const [expandedIds, setExpandedIds] = useState({})
   const [sortBy, setSortBy] = useState('status')
   const [sortDirection, setSortDirection] = useState('desc')
+  const [playerSortBy, setPlayerSortBy] = useState('playerName')
+  const [playerSortDirection, setPlayerSortDirection] = useState('asc')
+  const [previewContentCleared, setPreviewContentCleared] = useState(false)
+  const [previewPlayerRow, setPreviewPlayerRow] = useState(null)
 
   const loadSummaries = useCallback(async ({ force = false } = {}) => {
     setLoading(true)
@@ -275,6 +280,8 @@ export function useProfilesPage() {
         chipsReady: false,
         searchMode,
         primaryFilter,
+        selectedLeagueIds,
+        selectedBirthYears,
         leagueLevelsCount: leagueLevelOptions.length,
         yearsCount: Math.max(yearOptions.length - 1, 0),
         selectionMetrics,
@@ -287,6 +294,8 @@ export function useProfilesPage() {
         chipsReady: false,
         searchMode,
         primaryFilter,
+        selectedLeagueIds,
+        selectedBirthYears,
         leagueLevelsCount: leagueLevelOptions.length,
         yearsCount: Math.max(yearOptions.length - 1, 0),
         title:
@@ -308,6 +317,8 @@ export function useProfilesPage() {
         (!regionOptions.length || selectedRegionId !== 'all'),
       searchMode,
       primaryFilter,
+      selectedLeagueIds,
+      selectedBirthYears,
       leagueLevelsCount: leagueLevelOptions.length,
       yearsCount: Math.max(yearOptions.length - 1, 0),
       title:
@@ -450,11 +461,18 @@ export function useProfilesPage() {
     if (!profile) return
 
     setSelectedId(profile.id)
+    setPreviewContentCleared(false)
+    setPreviewPlayerRow(null)
     setExpandedIds(current => ({
       ...current,
       [profile.id]: !current[profile.id],
     }))
   }
+
+  const openPreviewPlayerRow = useCallback(player => {
+    setPreviewContentCleared(false)
+    setPreviewPlayerRow(player || null)
+  }, [])
 
   return {
     loading,
@@ -500,6 +518,16 @@ export function useProfilesPage() {
     sortOptions: PROFILE_LIST_SORT_OPTIONS,
     setSortBy,
     setSortDirection,
+    playerSortBy,
+    playerSortDirection,
+    playerSortOptions: PLAYER_LIST_SORT_OPTIONS,
+    setPlayerSortBy,
+    setPlayerSortDirection,
+    previewContentCleared,
+    previewPlayerRow,
+    clearPreviewContent: () => setPreviewContentCleared(true),
+    restorePreviewContent: () => setPreviewContentCleared(false),
+    setPreviewPlayerRow: openPreviewPlayerRow,
     openProfile,
     ...documents,
   }

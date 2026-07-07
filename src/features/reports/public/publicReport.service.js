@@ -41,14 +41,41 @@ function ensurePublishInput(input) {
   }
 }
 
-function createReportId(sourceKey) {
-  return String(sourceKey)
+function hashSourceKey(sourceKey) {
+  let hash = 0x811c9dc5
+
+  for (let index = 0; index < sourceKey.length; index += 1) {
+    hash ^= sourceKey.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+function slugifyReportIdPart(value) {
+  return String(value || '')
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9:_-]/g, '-')
-    .replace(/:+/g, '-')
+    .replace(/[^a-z0-9_-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
+}
+
+function createReportId(sourceKey) {
+  const rawSourceKey = String(sourceKey || '').trim()
+
+  if (!rawSourceKey) return ''
+
+  const readablePart = rawSourceKey
+    .split(':')
+    .map(slugifyReportIdPart)
+    .filter(Boolean)
+    .join('-')
+    .slice(0, 80)
+
+  const hashPart = hashSourceKey(rawSourceKey)
+
+  return [readablePart || 'report', hashPart].join('-')
 }
 
 export async function publishPublicReport(input) {
@@ -91,6 +118,7 @@ export async function publishPublicReport(input) {
       versionId,
       versionNumber: nextVersionNumber,
       payload: input.payload,
+      allowPrint: input.allowPrint !== false,
       createdBy: input.createdBy || '',
       createdAt: serverTimestamp(),
     })
@@ -110,6 +138,7 @@ export async function publishPublicReport(input) {
         currentVersionNumber: nextVersionNumber,
         currentPayload: input.payload,
         allowPrint: input.allowPrint !== false,
+        debugStep: 'published',
         createdBy: currentData.createdBy || input.createdBy || '',
         createdAt: currentData.createdAt || serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -207,7 +236,7 @@ export async function getPublicReportVersion({
     versionNumber: data.versionNumber,
     reportType: data.reportType,
     status: data.status,
-    allowPrint: true,
+    allowPrint: data.allowPrint !== false,
     payload: data.payload,
   }
 }

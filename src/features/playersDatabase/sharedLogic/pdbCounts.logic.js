@@ -2,6 +2,7 @@
 
 import {
   getScoutProfileRows,
+  pdbScoutProfileCounts,
 } from './pdbScoutProfiles.logic.js'
 
 const clean = value => String(value ?? '').trim()
@@ -44,7 +45,11 @@ export const pdbProfileBreakdownRows = (profileCounts = {}) =>
     .filter(row => row.count > 0 && row.profileId)
 
 export const pdbScoutProfileChipRows = (profileCounts = {}) =>
-  getScoutProfileRows(profileCounts)
+  getScoutProfileRows(
+    Array.isArray(profileCounts)
+      ? pdbScoutProfileCounts(profileCounts)
+      : profileCounts
+  )
 
 export const pdbLeagueTeamsCount = league => {
   const primarySeason = getPrimarySeason(league)

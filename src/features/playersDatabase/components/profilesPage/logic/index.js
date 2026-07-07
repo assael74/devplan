@@ -41,7 +41,9 @@ export {
 
 export {
   PROFILE_LIST_SORT_OPTIONS,
+  PLAYER_LIST_SORT_OPTIONS,
   sortProfilesByState,
+  sortPlayerRowsByState,
 } from './sort.logic.js'
 
 export {

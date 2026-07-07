@@ -1,6 +1,7 @@
 // features/playersDatabase/components/profilesPage/list/logic/documents.logic.js
 
 import { clean, unique } from '../../logic/utils.js'
+import { getProfileTeams } from '../../logic/profiles.logic.js'
 import { resolveProfileLabel } from './scout.logic.js'
 
 const resolveNullableValue = value =>
@@ -21,6 +22,7 @@ export const buildProfileDocumentsCacheKey = ({
   profileId,
   profileIds = [],
   teams = [],
+  selectionKey = '',
 }) => {
   const teamKey = teams
     .map(team =>
@@ -39,7 +41,50 @@ export const buildProfileDocumentsCacheKey = ({
     .sort()
     .join('|')
 
-  return [clean(profileId), profilesKey, teamKey].join('::')
+  return [clean(profileId), profilesKey, teamKey, clean(selectionKey)].join('::')
+}
+
+export const buildProfileDocumentsSelectionKey = ({
+  profileIds = [],
+  selectionRows = [],
+} = {}) => {
+  const profilesKey = Array.from(
+    new Set((Array.isArray(profileIds) ? profileIds : []).map(clean).filter(Boolean))
+  )
+    .sort()
+    .join('|')
+
+  const rowsKey = Array.from(
+    new Set(
+      (Array.isArray(selectionRows) ? selectionRows : [])
+        .map(row => clean(row?.id || row?.leagueId || row?.birthYear))
+        .filter(Boolean)
+    )
+  )
+    .sort()
+    .join('|')
+
+  return [profilesKey, rowsKey].join('::')
+}
+
+export const getProfileDocumentTeams = (profile, selectionRows = []) => {
+  const sourceRows = Array.isArray(selectionRows) && selectionRows.length
+    ? selectionRows
+    : [profile]
+
+  const teams = sourceRows.flatMap(row => getProfileTeams(row))
+
+  return Array.from(
+    teams.reduce((map, team) => {
+      const key = clean(team?.teamSeasonKey || team?.teamSlotId || team?.id)
+      if (!key || map.has(key)) return map
+      map.set(key, {
+        ...team,
+        teamSeasonKey: key,
+      })
+      return map
+    }, new Map()).values()
+  )
 }
 
 export const invalidateProfileDocumentsCache = (

@@ -12,18 +12,19 @@ import {
 import { SEARCH_MODE_OPTIONS } from '../logic/constants.js'
 import { getProfileChipCounts } from '../logic/filters.logic.js'
 import {
-  getHintText,
   getPrimaryFallback,
   getPrimaryLabel,
   getPrimaryOptions,
-  getRegionFallback,
   getRegionOptions,
+  getRegionFallback,
+  getHintText,
   getSecondaryRows,
   getSecondaryRowSelected,
   resetProfilesToolbar,
   toggleSecondaryRow,
 } from './toolbar.logic.js'
 import { toolbarSx as sx } from './toolbar.sx.js'
+import ScoutProfilesFilterRow from './ScoutProfilesFilterRow.js'
 
 const renderSelectValue = (label, fallback) => (
   <Typography level="body-sm" sx={sx.selectValue(label)}>
@@ -112,7 +113,6 @@ export default function ProfilesToolbar({ model }) {
   const primaryFallback = getPrimaryFallback(model.searchMode)
   const regionOptions = getRegionOptions(model)
   const hasRegionSelect = regionOptions.length > 0
-  const shouldShowChips = !hasRegionSelect || model.selectedRegionId !== 'all'
   const regionFallback = getRegionFallback()
   const secondaryRows = getSecondaryRows(model)
   const secondaryReady =
@@ -125,6 +125,11 @@ export default function ProfilesToolbar({ model }) {
   const showHintUnderSelectors =
     (hasRegionSelect && model.selectedRegionId === 'all') ||
     (!secondaryReady && hintText)
+
+  const selectedProfile = model.selectedProfile || null
+  const selectedProfileIds =
+    model.selectedProfilesById?.[selectedProfile?.id] || []
+  const selectedProfileResult = model.profileResultsById?.[selectedProfile?.id]
 
   return (
     <Sheet sx={sx.root}>
@@ -258,7 +263,7 @@ export default function ProfilesToolbar({ model }) {
           </Typography>
         ) : null}
 
-        {secondaryReady && shouldShowChips && secondaryRows.length ? (
+        {secondaryReady && secondaryRows.length ? (
           <Box sx={sx.chipRow}>
             {secondaryRows.map(row => (
               <FilterChipCard
@@ -271,6 +276,17 @@ export default function ProfilesToolbar({ model }) {
               />
             ))}
           </Box>
+        ) : null}
+
+        {secondaryReady ? (
+          <ScoutProfilesFilterRow
+            previewState={model.previewState}
+            selectedProfile={selectedProfile}
+            selectedProfileIds={selectedProfileIds}
+            onToggleProfile={model.toggleProfileForLoad}
+            selectionReady={Boolean(model.previewState?.chipsReady)}
+            loading={Boolean(selectedProfileResult?.loading) || Boolean(model.loading)}
+          />
         ) : null}
       </Box>
     </Sheet>

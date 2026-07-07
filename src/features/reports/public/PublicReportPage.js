@@ -16,6 +16,10 @@ import {
   getPublicReport,
 } from './publicReport.service.js'
 
+import {
+  PUBLIC_REPORT_ERROR_CODES,
+} from './publicReport.constants.js'
+
 import PublicReportRenderer from './PublicReportRenderer.js'
 import { publicReportSx as sx } from './sx/publicReport.sx.js'
 
@@ -66,14 +70,17 @@ export default function PublicReportPage() {
       })
 
       try {
-        const report = await getPublicReport({ reportId, versionId, })
+        const report = await getPublicReport({
+          reportId,
+          versionId,
+        })
 
         if (!active) return
 
         setState({
           loading: false,
           report,
-          error: report ? null : 'not-found',
+          error: report ? null : PUBLIC_REPORT_ERROR_CODES.NOT_FOUND,
         })
       } catch (error) {
         if (!active) return
@@ -126,10 +133,15 @@ export default function PublicReportPage() {
   }
 
   if (!state.report) {
+    const errorText =
+      state.error === PUBLIC_REPORT_ERROR_CODES.NOT_FOUND
+        ? 'הקישור לא תקין, הדוח בוטל או שהגרסה המבוקשת אינה קיימת.'
+        : 'אירעה שגיאה בטעינת הדוח. נסה שוב מאוחר יותר.'
+
     return (
       <PublicReportState
         title='הדוח אינו זמין'
-        text='הקישור אינו תקין, הדוח בוטל או שהגרסה המבוקשת אינה קיימת.'
+        text={errorText}
       />
     )
   }

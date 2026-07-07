@@ -7,6 +7,8 @@ export default function ChipButton({
   label,
   count,
   icon,
+  startDecorator,
+  startDecoratorSx,
   selected = false,
   quiet = false,
   disabled = false,
@@ -18,6 +20,8 @@ export default function ChipButton({
   contentSx,
   children,
   ariaLabel,
+  endDecorator,
+  endDecoratorSx,
 }) {
   const sx = chipSx(palette)
 
@@ -29,9 +33,18 @@ export default function ChipButton({
       aria-label={ariaLabel || label}
       disabled={disabled}
       onClick={onClick}
-      sx={[sx.chip, quiet && sx.chipQuiet, selected && sx.chipSelected, sxOverride]}
+      sx={[
+        sx.chip,
+        quiet && sx.chipQuiet,
+        selected && sx.chipSelected,
+        sxOverride,
+      ]}
     >
-      {icon ? <Box sx={sx.icon}>{icon}</Box> : null}
+      {startDecorator || icon ? (
+        <Box sx={[sx.startDecorator, startDecoratorSx]}>
+          {startDecorator || icon}
+        </Box>
+      ) : null}
 
       {children ? (
         children
@@ -61,6 +74,24 @@ export default function ChipButton({
           ) : null}
         </Box>
       )}
+
+      {endDecorator ? (
+        <Box
+          component="span"
+          sx={[
+            {
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: '0 0 auto',
+              lineHeight: 0,
+            },
+            endDecoratorSx,
+          ]}
+        >
+          {endDecorator}
+        </Box>
+      ) : null}
     </Box>
   )
 }

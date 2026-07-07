@@ -12,6 +12,10 @@ import PlayerResultSelectable from './PlayerResultSelectable.js'
 import ProfilesPlayersReport from './print/ProfilesPlayersReport.js'
 import { profileSx as sx } from './sx/profile.sx.js'
 
+function getPlayerRowKey(player) {
+  return `${player.searchDocId || player.id}-${player.profileId}-${player.teamSeasonKey}`
+}
+
 function ProfileStats({ row }) {
   return (
     <Box sx={sx.stats}>
@@ -35,27 +39,14 @@ function ProfileStats({ row }) {
         {row.scoutProfilesCount || 0} פרופילים
       </Chip>
 
-      <Chip
-        size="sm"
-        variant="soft"
-        color={row.riskCount ? 'warning' : 'neutral'}
-      >
+      <Chip size="sm" variant="soft" color={row.riskCount ? 'warning' : 'neutral'}>
         {row.riskCount || 0} בסיכון
       </Chip>
     </Box>
   )
 }
 
-export default function ProfileRow({
-  row,
-  selected,
-  result,
-  removingProfileId,
-  onSelect,
-  onEditLink,
-  onRemoveProfile,
-  onClearDocumentsSelection,
-}) {
+export default function ProfileRow({ row, selected, result, onSelect, onClearDocumentsSelection }) {
   const resultRows = result?.rows || []
   const print = usePrintSelection(row.id, resultRows)
 
@@ -65,11 +56,7 @@ export default function ProfileRow({
 
   return (
     <Box sx={sx.card}>
-      <Box
-        className={selected ? 'isSelected' : ''}
-        sx={sx.row}
-        onClick={handleRowClick}
-      >
+      <Box className={selected ? 'isSelected' : ''} sx={sx.row} onClick={handleRowClick}>
         <Box sx={sx.identity}>
           <Typography level="body-xs" sx={sx.meta}>
             {PROFILE_SCOPE_LABELS[row.scope] || row.scope}
@@ -109,12 +96,7 @@ export default function ProfileRow({
                     נבחרו {print.selectedRows.length} מתוך {resultRows.length}
                   </Typography>
 
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    color="neutral"
-                    onClick={print.selectAll}
-                  >
+                  <Button size="sm" variant="soft" color="neutral" onClick={print.selectAll}>
                     בחר הכל
                   </Button>
 
@@ -124,18 +106,13 @@ export default function ProfileRow({
                     color="neutral"
                     onClick={() => {
                       print.clearSelection()
-                      onClearDocumentsSelection?.(row.id)
+                      onClearDocumentsSelection(row.id)
                     }}
                   >
                     נקה בחירה
                   </Button>
 
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    color="neutral"
-                    onClick={print.cancelSelection}
-                  >
+                  <Button size="sm" variant="soft" color="neutral" onClick={print.cancelSelection}>
                     ביטול
                   </Button>
 
@@ -148,12 +125,7 @@ export default function ProfileRow({
                     tooltip="צור PDF מהשחקנים המסומנים"
                     documentTitle="שחקנים-מסומנים"
                     disabled={!print.selectedRows.length}
-                    renderContent={() => (
-                      <ProfilesPlayersReport
-                        row={row}
-                        resultRows={print.selectedRows}
-                      />
-                    )}
+                    renderContent={() => <ProfilesPlayersReport row={row} resultRows={print.selectedRows} />}
                   />
                 </>
               ) : (
@@ -172,17 +144,11 @@ export default function ProfileRow({
 
           {resultRows.map(player => (
             <PlayerResultSelectable
-              key={`${player.searchDocId || player.id}-${player.profileId}-${player.teamSeasonKey}`}
+              key={getPlayerRowKey(player)}
               player={player}
-              result={result}
-              removingProfileId={removingProfileId}
               selected={Boolean(print.selectedIds[print.getRowKey(player)])}
               selectionMode={print.selectionMode}
               onToggleSelect={print.toggleSelection}
-              onEditLink={playerRow => onEditLink(row, playerRow)}
-              onRemoveProfile={(playerRow, profileId) =>
-                onRemoveProfile(row, playerRow, profileId)
-              }
             />
           ))}
         </Box>

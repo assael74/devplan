@@ -6,19 +6,22 @@ import { listPlayerSearchByTeamProfile, removePlayerScoutProfile } from '../../.
 import { markLeagueBoardCacheDirty } from '../../summary/hooks/leagueBoardCache.js'
 import {
   buildProfileDocumentsCacheKey,
+  buildProfileDocumentsSelectionKey,
+  getProfileDocumentTeams,
   invalidateProfileDocumentsCache,
   mergeLoadedPlayerRows,
 } from '../list/logic/documents.logic.js'
 import { getProfileLabel } from '../list/logic/scout.logic.js'
-import { getProfileTeams } from '../logic/profiles.logic.js'
 import { clean } from '../logic/utils.js'
 
 export function useProfileDocuments(options = {}) {
   const [selectedProfilesById, setSelectedProfilesById] = useState({})
   const [profileResultsById, setProfileResultsById] = useState({})
+  const [loadedSelectionKeyByProfileId, setLoadedSelectionKeyByProfileId] = useState({})
   const [removingProfileId, setRemovingProfileId] = useState('')
   const cacheRef = useRef(new Map())
   const removingProfileRef = useRef('')
+  const lastSelectionRowsRef = useRef({})
   const onProfileChanged = options.onProfileChanged
 
   const toggleProfileForLoad = useCallback((profileRowId, profileId) => {
@@ -51,6 +54,13 @@ export function useProfileDocuments(options = {}) {
       if (!profile) return null
 
       const profileIds = selectedProfilesById[profile.id] || []
+      const selectionRows = Array.isArray(options.selectionRows) && options.selectionRows.length
+        ? options.selectionRows
+        : lastSelectionRowsRef.current[profile.id] || []
+      const selectionKey = buildProfileDocumentsSelectionKey({
+        profileIds,
+        selectionRows,
+      })
 
       if (!profileIds.length) {
         setProfileResultsById(current => ({
@@ -58,6 +68,7 @@ export function useProfileDocuments(options = {}) {
           [profile.id]: {
             loading: false,
             error: 'צריך לבחור לפחות פרופיל אחד לטעינה',
+            rawRows: [],
             rows: [],
           },
         }))
@@ -65,11 +76,24 @@ export function useProfileDocuments(options = {}) {
         return null
       }
 
-      const teams = getProfileTeams(profile)
-      const cacheKey = buildProfileDocumentsCacheKey({ profileId: profile.id, profileIds, teams })
+      const teams = getProfileDocumentTeams(profile, selectionRows)
+      const cacheKey = buildProfileDocumentsCacheKey({
+        profileId: profile.id,
+        profileIds,
+        teams,
+        selectionKey,
+      })
       const cachedResult = options.force === true ? null : cacheRef.current.get(cacheKey)
 
       if (cachedResult) {
+        lastSelectionRowsRef.current = {
+          ...lastSelectionRowsRef.current,
+          [profile.id]: selectionRows,
+        }
+        setLoadedSelectionKeyByProfileId(current => ({
+          ...current,
+          [profile.id]: selectionKey,
+        }))
         setProfileResultsById(current => ({ ...current, [profile.id]: cachedResult }))
         return cachedResult
       }
@@ -110,6 +134,7 @@ export function useProfileDocuments(options = {}) {
         const nextResult = {
           loading: false,
           error: '',
+          rawRows: rows,
           rows: mergeLoadedPlayerRows(rows),
           loadedAt: new Date().toISOString(),
           teamsCount: teams.length,
@@ -118,6 +143,14 @@ export function useProfileDocuments(options = {}) {
         }
 
         cacheRef.current.set(cacheKey, nextResult)
+        lastSelectionRowsRef.current = {
+          ...lastSelectionRowsRef.current,
+          [profile.id]: selectionRows,
+        }
+        setLoadedSelectionKeyByProfileId(current => ({
+          ...current,
+          [profile.id]: selectionKey,
+        }))
         setProfileResultsById(current => ({ ...current, [profile.id]: nextResult }))
         return nextResult
       } catch (err) {
@@ -126,6 +159,7 @@ export function useProfileDocuments(options = {}) {
         const failedResult = {
           loading: false,
           error: err?.message || 'טעינת מסמכי שחקנים נכשלה',
+          rawRows: [],
           rows: [],
           cacheKey,
         }
@@ -211,6 +245,7 @@ export function useProfileDocuments(options = {}) {
   return {
     selectedProfilesById,
     profileResultsById,
+    loadedSelectionKeyByProfileId,
     removingProfileId,
     toggleProfileForLoad,
     clearProfileDocumentsSelection,

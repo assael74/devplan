@@ -1,4 +1,4 @@
-// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
+﻿// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
 
 import React from 'react'
 import {
@@ -15,17 +15,13 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import ReportPrintButton from '../../../../../../../../ui/patterns/reportPrint/ReportPrintButton.js'
 
 import {
-  buildTeamPlayersPublicReportInput,
-  publishPublicReport,
-} from '../../../../../../../reports/index.js'
-
-import {
   TEAM_PLAYERS_PRINT_MODES,
   buildTeamPlayersPrintDocumentTitle,
 } from '../../../../../sharedLogic/players/print/index.js'
 import { TeamPlayersPrintReport } from '../../../../../sharedUi/players/print/index.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
+import { publishTeamPlayersReport } from './TeamPlayersPublishReportFlow.js'
 import TeamPlayersFiltersBar from './TeamPlayersFiltersBar.js'
 import TeamPlayersSortMenu from './TeamPlayersSortMenu.js'
 
@@ -139,41 +135,6 @@ function getPrintMeta({ isPerformanceView, managementPrintMode }) {
   }
 }
 
-async function copyText(value) {
-  if (!value) {
-    throw new Error('[copyText] value is required')
-  }
-
-  if (
-    navigator.clipboard?.writeText &&
-    window.isSecureContext
-  ) {
-    await navigator.clipboard.writeText(value)
-    return
-  }
-
-  const input = document.createElement('textarea')
-
-  input.value = value
-  input.setAttribute('readonly', '')
-  input.style.position = 'fixed'
-  input.style.top = '-1000px'
-  input.style.opacity = '0'
-
-  document.body.appendChild(input)
-
-  input.focus()
-  input.select()
-
-  const copied = document.execCommand('copy')
-
-  document.body.removeChild(input)
-
-  if (!copied) {
-    throw new Error('[copyText] Browser rejected copy command')
-  }
-}
-
 export default function TeamPlayersToolbar({
   team,
   summary,
@@ -283,43 +244,19 @@ export default function TeamPlayersToolbar({
     })
 
     try {
-      const input = buildTeamPlayersPublicReportInput({
+      const result = await publishTeamPlayersReport({
         team,
         rows,
         filters,
         summary,
         seasonLabel,
         mode: printMeta.mode,
-        reportDate: new Date(),
       })
-
-      const result = await publishPublicReport(input)
 
       setPublishState({
-        loading: false,
-        copied: false,
+        copied: !!result.copied,
         error: false,
       })
-
-      try {
-        await copyText(result.versionUrl)
-
-        setPublishState({
-          loading: false,
-          copied: true,
-          error: false,
-        })
-      } catch (copyError) {
-        console.error(
-          '[TeamPlayersToolbar] Failed to copy report URL',
-          copyError
-        )
-
-        window.prompt(
-          'הקישור נוצר. העתק אותו ידנית:',
-          result.versionUrl
-        )
-      }
     } catch (error) {
       console.error(
         '[TeamPlayersToolbar] Failed to publish report',
@@ -327,10 +264,14 @@ export default function TeamPlayersToolbar({
       )
 
       setPublishState({
-        loading: false,
         copied: false,
         error: true,
       })
+    } finally {
+      setPublishState(currentState => ({
+        ...currentState,
+        loading: false,
+      }))
     }
   }
 

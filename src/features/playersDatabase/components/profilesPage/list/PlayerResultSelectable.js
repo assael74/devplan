@@ -1,51 +1,34 @@
 // features/playersDatabase/components/profilesPage/list/PlayerResultSelectable.js
 
 import React from 'react'
-import { Box, Checkbox } from '@mui/joy'
 
-import PlayerResult from './PlayerResult.js'
-import { playerSx as sx } from './sx/player.sx.js'
+import PlayerResult from './PlayerResult'
 
 export default function PlayerResultSelectable({
   player,
-  result,
-  removingProfileId,
-  selected,
+  loading = false,
+  selected = false,
   selectionMode,
   onToggleSelect,
-  onEditLink,
-  onRemoveProfile,
+  onPreviewSelect
 }) {
-  if (!selectionMode) {
-    return (
-      <PlayerResult
-        player={player}
-        result={result}
-        removingProfileId={removingProfileId}
-        onEditLink={onEditLink}
-        onRemoveProfile={onRemoveProfile}
-      />
-    )
+  const handleClick = event => {
+    event?.stopPropagation()
+
+    if (selectionMode) {
+      onToggleSelect?.(player)
+      return
+    }
+
+    onPreviewSelect?.(player)
   }
 
   return (
-    <Box sx={sx.selectable}>
-      <Checkbox
-        size="sm"
-        checked={selected}
-        sx={sx.checkbox}
-        onChange={() => onToggleSelect(player)}
-      />
-
-      <Box sx={sx.selectableContent}>
-        <PlayerResult
-          player={player}
-          result={result}
-          removingProfileId={removingProfileId}
-          onEditLink={onEditLink}
-          onRemoveProfile={onRemoveProfile}
-        />
-      </Box>
-    </Box>
+    <PlayerResult
+      player={player}
+      loading={loading}
+      selected={selected}
+      onClick={handleClick}
+    />
   )
 }
