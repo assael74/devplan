@@ -1,4 +1,4 @@
-// src/features/reports/public/PublicReportRenderer.js
+// features/reports/public/PublicReportRenderer.js
 
 import React from 'react'
 import { Alert, Typography } from '@mui/joy'
@@ -7,7 +7,11 @@ import {
   getReportDefinition,
 } from '../reports.registry.js'
 
-export default function PublicReportRenderer({ reportType, payload, }) {
+export default function PublicReportRenderer({
+  reportType,
+  payload,
+  presentation = 'url',
+}) {
   const definition = getReportDefinition(reportType)
 
   if (!definition) {
@@ -20,5 +24,5 @@ export default function PublicReportRenderer({ reportType, payload, }) {
     )
   }
 
-  return definition.render(payload)
+  return definition.render(payload, { presentation })
 }

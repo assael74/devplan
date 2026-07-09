@@ -3,7 +3,6 @@
 import React from 'react'
 import {
   Box,
-  Chip,
   IconButton,
   Input,
   ListItemDecorator,
@@ -22,9 +21,10 @@ const renderSelectValue = (selected, items, fallbackLabel, fallbackIcon) => {
   if (!item) {
     return (
       <>
-        <ListItemDecorator sx={{ mr: 0.5 }}>
+        <ListItemDecorator sx={sx.selectValueDecorator}>
           {iconUi({ id: fallbackIcon })}
         </ListItemDecorator>
+
         {fallbackLabel}
       </>
     )
@@ -32,9 +32,10 @@ const renderSelectValue = (selected, items, fallbackLabel, fallbackIcon) => {
 
   return (
     <>
-      <ListItemDecorator sx={{ mr: 0.5 }}>
+      <ListItemDecorator sx={sx.selectValueDecorator}>
         {iconUi({ id: item.idIcon || fallbackIcon })}
       </ListItemDecorator>
+
       {item.shortLabel || item.label} ({item.count || 0})
     </>
   )
@@ -49,21 +50,6 @@ function IconFilterChip({
   onClick,
   disabled = false,
 }) {
-  const chip1 = (
-    <Chip
-      size='lg'
-      variant={active ? 'solid' : 'outlined'}
-      color={active ? color : inactiveColor}
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      //sx={[sx.filterChip, sx.iconFilterChip]}
-      //startDecorator={iconUi({ id: icon })}
-      aria-label={title}
-    >
-    {iconUi({ id: icon, size: 'lg', sx: {border: 1, alignItems: 'center'} })}
-    </Chip>
-  )
-
   const chip = (
     <IconButton
       size='sm'
@@ -71,8 +57,9 @@ function IconFilterChip({
       color={active ? color : inactiveColor}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
+      aria-label={title}
     >
-    {iconUi({ id: icon })}
+      {iconUi({ id: icon })}
     </IconButton>
   )
 
@@ -114,60 +101,62 @@ export default function TeamPlayersFiltersBar({
         value={filters?.search || ''}
         onChange={(e) => onChangeSearch(e.target.value)}
         startDecorator={iconUi({ id: 'search' })}
-        placeholder="חיפוש שחקן לפי שם / שנתון / עמדה"
-        size="sm"
-        sx={{ width: 220, maxWidth: '100%', flexShrink: 0 }}
+        placeholder='חיפוש שחקן לפי שם / שנתון / עמדה'
+        size='sm'
+        sx={{ width: 200, maxWidth: '100%', flexShrink: 0 }}
       />
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.squadRole || ''}
         onChange={(_, value) => onChangeSquadRole(value || '')}
-        placeholder="כל המעמדות"
+        placeholder='כל המעמדות'
         sx={sx.positionSelect}
         renderValue={(selected) =>
           renderSelectValue(selected, squadRoleBuckets, 'כל המעמדות', 'star')
         }
       >
-        <Option value="">כל המעמדות</Option>
+        <Option value=''>כל המעמדות</Option>
 
         {squadRoleBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'star' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
       </Select>
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.positionCode || ''}
         onChange={(_, value) => onChangePositionCode(value || '')}
-        placeholder="כל העמדות"
+        placeholder='כל העמדות'
         sx={sx.positionSelect}
         renderValue={(selected) =>
           renderSelectValue(selected, positionCodeBuckets, 'כל העמדות', 'position')
         }
       >
-        <Option value="">כל העמדות</Option>
+        <Option value=''>כל העמדות</Option>
 
         {positionCodeBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'position' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
       </Select>
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.generalPositionKey || ''}
         onChange={(_, value) => onChangeGeneralPositionKey(value || '')}
-        placeholder="כל העמדות הכלליות"
+        placeholder='כל העמדות הכלליות'
         sx={sx.positionSelect}
         renderValue={(selected) =>
           renderSelectValue(
@@ -178,23 +167,24 @@ export default function TeamPlayersFiltersBar({
           )
         }
       >
-        <Option value="">כל העמדות הכלליות</Option>
+        <Option value=''>כל העמדות הכלליות</Option>
 
         {generalPositionBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'layers' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
       </Select>
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.performanceProfile || ''}
         onChange={(_, value) => onChangePerformanceProfile(value || '')}
-        placeholder="כל פרופילי התפקוד"
+        placeholder='כל פרופילי התפקוד'
         sx={sx.positionSelect}
         renderValue={(selected) =>
           renderSelectValue(
@@ -205,23 +195,24 @@ export default function TeamPlayersFiltersBar({
           )
         }
       >
-        <Option value="">כל פרופילי התפקוד</Option>
+        <Option value=''>כל פרופילי התפקוד</Option>
 
         {performanceProfileBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'insights' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
       </Select>
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.projectStatus || ''}
         onChange={(_, value) => onChangeProjectStatus(value || '')}
-        placeholder="כל סטטוסי הפרויקט"
+        placeholder='כל סטטוסי הפרויקט'
         sx={sx.positionSelect}
         renderValue={(selected) =>
           renderSelectValue(
@@ -232,23 +223,24 @@ export default function TeamPlayersFiltersBar({
           )
         }
       >
-        <Option value="">כל סטטוסי הפרויקט</Option>
+        <Option value=''>כל סטטוסי הפרויקט</Option>
 
         {projectStatusBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'project' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
       </Select>
 
       <Select
-        size="sm"
+        size='sm'
         value={filters?.seasonPlanStatus || ''}
         onChange={(_, value) => onChangeSeasonPlanStatus(value || '')}
-        placeholder="תכנון לעונה"
+        placeholder='תכנון לעונה'
         sx={sx.positionSelect}
         disabled={seasonPlanStatusDisabled}
         renderValue={(selected) =>
@@ -260,13 +252,14 @@ export default function TeamPlayersFiltersBar({
           )
         }
       >
-        <Option value="">כל תכנון העונה</Option>
+        <Option value=''>כל תכנון העונה</Option>
 
         {seasonPlanStatusBuckets.map((item) => (
           <Option key={item.id} value={item.id}>
             <ListItemDecorator>
               {iconUi({ id: item.idIcon || 'notReviewed' })}
             </ListItemDecorator>
+
             {item.label} ({item.count || 0})
           </Option>
         ))}
@@ -282,7 +275,6 @@ export default function TeamPlayersFiltersBar({
           disabled={!canReset}
         />
       </Box>
-
     </Box>
   )
 }

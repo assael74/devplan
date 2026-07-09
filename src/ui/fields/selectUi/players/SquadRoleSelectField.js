@@ -18,7 +18,7 @@ import {
 import SquadRoleSelectValue from './ui/SquadRoleSelectValue.js'
 import SquadRoleOptionRow from './ui/SquadRoleOptionRow.js'
 
-const clean = (v) => String(v ?? '').trim()
+const clean = (value) => String(value || '').trim()
 
 export default function SquadRoleSelectField({
   value,
@@ -31,6 +31,8 @@ export default function SquadRoleSelectField({
   readOnly = false,
   label = 'תפקיד בסגל',
   placeholder = 'בחר תפקיד...',
+  allowEmpty = true,
+  emptyLabel = 'ללא מעמד',
 }) {
   const normalizedOptions = useMemo(
     () => buildSquadRoleOptions(options),
@@ -44,7 +46,8 @@ export default function SquadRoleSelectField({
 
   const handleChange = useCallback(
     (_, nextValue) => {
-      if (readOnly) return
+      if (readOnly || typeof onChange !== 'function') return
+
       onChange(clean(nextValue))
     },
     [onChange, readOnly]
@@ -65,6 +68,12 @@ export default function SquadRoleSelectField({
         placeholder={placeholder}
         renderValue={() => <SquadRoleSelectValue opt={selectedOpt} />}
       >
+        {allowEmpty && (
+          <Option value="">
+            {emptyLabel}
+          </Option>
+        )}
+
         {normalizedOptions.map((opt) => (
           <Option key={opt.value} value={opt.value}>
             <SquadRoleOptionRow opt={opt} />

@@ -2,13 +2,14 @@
 
 import * as React from 'react'
 import { FormControl, FormLabel, Select, Option } from '@mui/joy'
+
 import { PROJECT_STATUS_CANDIDATE } from '../../../../shared/players/players.constants.js'
 
 import { buildOptions, findSelected } from './logic/projectStatusSelect.logic'
 import ProjectStatusSelectValue from './ui/ProjectStatusSelectValue'
 import ProjectStatusOptionRow from './ui/ProjectStatusOptionRow'
 
-const clean = (v) => String(v ?? '').trim()
+const clean = (value) => String(value || '').trim()
 
 export default function ProjectStatusSelectField({
   value,
@@ -19,6 +20,8 @@ export default function ProjectStatusSelectField({
   label = 'סטטוס תהליך פרויקט',
   placeholder = 'בחר סטטוס',
   size = 'sm',
+  allowEmpty = true,
+  emptyLabel = 'ללא סטטוס',
 }) {
   const normalizedOptions = React.useMemo(
     () => buildOptions(PROJECT_STATUS_CANDIDATE),
@@ -51,6 +54,12 @@ export default function ProjectStatusSelectField({
         placeholder={placeholder}
         renderValue={() => <ProjectStatusSelectValue opt={selectedOpt} />}
       >
+        {allowEmpty && (
+          <Option value="">
+            {emptyLabel}
+          </Option>
+        )}
+
         {normalizedOptions.map((opt) => (
           <Option key={opt.value} value={opt.value}>
             <ProjectStatusOptionRow opt={opt} />

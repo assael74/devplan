@@ -13,7 +13,7 @@ import {
 import SquadRoleOptionRow from './ui/SquadRoleOptionRow.js'
 import SquadRoleSelectValue from './ui/SquadRoleSelectValue.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = (value) => String(value || '').trim()
 
 export default function SeasonPlanStatusSelect({
   value,
@@ -26,6 +26,8 @@ export default function SeasonPlanStatusSelect({
   readOnly = false,
   label = 'תכנון לעונה',
   placeholder = 'בחר סטטוס לעונה...',
+  allowEmpty = true,
+  emptyLabel = 'ללא סטטוס',
 }) {
   const normalizedOptions = useMemo(() => {
     return buildSeasonPlanStatusOptions(options)
@@ -37,6 +39,7 @@ export default function SeasonPlanStatusSelect({
 
   const handleChange = useCallback((_, nextValue) => {
     if (readOnly || typeof onChange !== 'function') return
+
     onChange(clean(nextValue))
   }, [onChange, readOnly])
 
@@ -55,7 +58,13 @@ export default function SeasonPlanStatusSelect({
         placeholder={placeholder}
         renderValue={() => <SquadRoleSelectValue opt={selectedOption} />}
       >
-        {normalizedOptions.map(option => (
+        {allowEmpty && (
+          <Option value="">
+            {emptyLabel}
+          </Option>
+        )}
+
+        {normalizedOptions.map((option) => (
           <Option key={option.value} value={option.value}>
             <SquadRoleOptionRow opt={option} />
           </Option>

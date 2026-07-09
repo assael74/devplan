@@ -3,8 +3,10 @@
 export const publicReportSx = {
   page: {
     minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
     bgcolor: '#F3F6F8',
-    direction: 'rtl',
+    overflow: 'hidden',
   },
 
   actions: {
@@ -40,6 +42,15 @@ export const publicReportSx = {
     minHeight: '100vh',
     px: 2,
     bgcolor: '#F3F6F8',
+    overflow: 'hidden',
+  },
+
+  viewer: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    pb: 2,
   },
 
   stateCard: {

@@ -1,9 +1,7 @@
 import { Box, Typography } from '@mui/joy'
-import { shellSx } from './report.sx'
 
-export default function ReportMetaGrid({ items = [], columns = 3, systemColors }) {
+export default function ReportMetaGrid({ items = [], columns = 3, sx }) {
   if (!items.length) return null
-  const sx = shellSx({ systemColors })
 
   return (
     <Box sx={sx.metaWrap}>

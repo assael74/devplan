@@ -1,4 +1,4 @@
-// src/features/hub/teamProfile/sharedLogic/players/print/index.js
+// features/hub/teamProfile/sharedLogic/players/print/index.js
 
 export {
   TEAM_PLAYERS_PRINT_MODES,

@@ -79,6 +79,32 @@ export function buildTeamPlayersPrintDocumentTitle({
 }
 
 export function formatTeamPlayersReportDate(value) {
+  if (value && typeof value.toDate === 'function') {
+    const date = value.toDate()
+
+    if (!Number.isNaN(date.getTime())) {
+      return new Intl.DateTimeFormat('he-IL', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(date)
+    }
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = new Date(value)
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return new Intl.DateTimeFormat('he-IL', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(parsed)
+    }
+
+    return value
+  }
+
   const date = value instanceof Date ? value : new Date(value || Date.now())
 
   return new Intl.DateTimeFormat('he-IL', {
@@ -102,7 +128,7 @@ export function buildTeamPlayersReportModel({
   const modeModel = buildModeModel(mode, safeRows)
   const activeFilters = buildActiveFilters(filters)
   const printPages = modeModel.printPages || Math.max(1, Math.ceil(modeModel.rows.length / 18))
-
+  
   return {
     ...modeModel,
     mode,

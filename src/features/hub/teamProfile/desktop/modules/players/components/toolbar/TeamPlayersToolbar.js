@@ -1,4 +1,4 @@
-﻿// teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
+// features/hub/teamProfile/desktop/modules/players/components/toolbar/TeamPlayersToolbar.js
 
 import React from 'react'
 import {
@@ -12,16 +12,16 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import ReportPrintButton from '../../../../../../../../ui/patterns/reportPrint/ReportPrintButton.js'
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
-  buildTeamPlayersPrintDocumentTitle,
 } from '../../../../../sharedLogic/players/print/index.js'
-import { TeamPlayersPrintReport } from '../../../../../sharedUi/players/print/index.js'
+
+import {
+  publishReport,
+} from '../../../../../../../reports/index.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
-import { publishTeamPlayersReport } from './TeamPlayersPublishReportFlow.js'
 import TeamPlayersFiltersBar from './TeamPlayersFiltersBar.js'
 import TeamPlayersSortMenu from './TeamPlayersSortMenu.js'
 
@@ -58,6 +58,22 @@ function PrintModeChip({ active, disabled = false, icon, label, onClick }) {
     >
       {label}
     </Chip>
+  )
+}
+
+function StatusToggleIcon({ active, icon, title, onClick }) {
+  return (
+    <Tooltip title={title} placement='top'>
+      <IconButton
+        size='sm'
+        variant={active ? 'solid' : 'outlined'}
+        color={active ? 'success' : 'neutral'}
+        onClick={onClick}
+        aria-label={title}
+      >
+        {iconUi({ id: icon })}
+      </IconButton>
+    </Tooltip>
   )
 }
 
@@ -108,31 +124,30 @@ function SelectionToolbar({
   )
 }
 
-function getPrintMeta({ isPerformanceView, managementPrintMode }) {
-  if (isPerformanceView) {
-    return {
-      mode: TEAM_PLAYERS_PRINT_MODES.PERFORMANCE,
-      label: 'הדפסת ביצוע',
-      tooltip: 'הדפסת ביצוע',
-      color: 'primary',
-    }
+function getPublishTooltip(publishState) {
+  if (publishState.error) {
+    return 'יצירת הקישור נכשלה'
   }
 
-  if (managementPrintMode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
-    return {
-      mode: TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN,
-      label: 'הדפסת חלוקת דקות',
-      tooltip: 'הדפסת חלוקת דקות',
-      color: 'neutral',
-    }
+  if (publishState.copied) {
+    return 'קישור לגרסה החדשה הועתק'
   }
 
-  return {
-    mode: TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
-    label: 'הדפסת תכנון סגל',
-    tooltip: 'הדפסת תכנון סגל',
-    color: 'neutral',
-  }
+  return 'פרסם גרסה חדשה והעתק קישור'
+}
+
+function hasActivePlayerFilters(filters = {}) {
+  return (
+    !!filters.search ||
+    !!filters.onlyActive ||
+    !!filters.onlyWithTargets ||
+    !!filters.squadRole ||
+    !!filters.seasonPlanStatus ||
+    !!filters.projectStatus ||
+    !!filters.positionCode ||
+    !!filters.performanceProfile ||
+    !!filters.generalPositionKey
+  )
 }
 
 export default function TeamPlayersToolbar({
@@ -140,7 +155,6 @@ export default function TeamPlayersToolbar({
   summary,
   filters,
   rows = [],
-  teamName = '',
   seasonLabel = '',
   totalCount = 0,
   filteredCount = 0,
@@ -194,45 +208,10 @@ export default function TeamPlayersToolbar({
   const currentManagementPrintMode =
     managementPrintMode || TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
 
-  const hasActiveFilters =
-    !!filters?.search ||
-    !!filters?.onlyActive ||
-    !!filters?.onlyWithTargets ||
-    !!filters?.squadRole ||
-    !!filters?.seasonPlanStatus ||
-    !!filters?.projectStatus ||
-    !!filters?.positionCode ||
-    !!filters?.performanceProfile ||
-    !!filters?.generalPositionKey
-
+  const hasActiveFilters = hasActivePlayerFilters(filters)
   const hasSortChanged = sortBy !== 'squadRole' || sortDirection !== 'desc'
   const canReset = hasActiveFilters || hasSortChanged
   const canPrint = rows.length > 0
-
-  const printMeta = getPrintMeta({
-    isPerformanceView,
-    managementPrintMode: currentManagementPrintMode,
-  })
-
-  const isSeasonPlanPrint =
-    currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
-
-  const printTitle = buildTeamPlayersPrintDocumentTitle({
-    mode: printMeta.mode,
-    team,
-    teamName,
-  })
-
-  const renderPrintReport = () => (
-    <TeamPlayersPrintReport
-      team={team}
-      rows={rows}
-      filters={filters}
-      summary={summary}
-      seasonLabel={seasonLabel}
-      mode={printMeta.mode}
-    />
-  )
 
   const handlePublishReport = async () => {
     if (!canPrint || publishState.loading) return
@@ -244,42 +223,32 @@ export default function TeamPlayersToolbar({
     })
 
     try {
-      const result = await publishTeamPlayersReport({
+      const result = await publishReport({
         team,
         rows,
         filters,
         summary,
         seasonLabel,
-        mode: printMeta.mode,
+        mode: currentManagementPrintMode,
       })
 
       setPublishState({
+        loading: false,
         copied: !!result.copied,
-        error: false,
+        error: !result.copied,
       })
     } catch (error) {
-      console.error(
-        '[TeamPlayersToolbar] Failed to publish report',
-        error
-      )
+      console.error('[TeamPlayersToolbar] Failed to publish report', error)
 
       setPublishState({
+        loading: false,
         copied: false,
         error: true,
       })
-    } finally {
-      setPublishState(currentState => ({
-        ...currentState,
-        loading: false,
-      }))
     }
   }
 
-  const publishTooltip = publishState.error
-    ? 'יצירת הקישור נכשלה'
-    : publishState.copied
-      ? 'קישור לגרסה החדשה הועתק'
-      : 'פרסם גרסה חדשה והעתק קישור'
+  const publishTooltip = getPublishTooltip(publishState)
 
   return (
     <Box sx={sx.toolbar}>
@@ -344,7 +313,7 @@ export default function TeamPlayersToolbar({
 
         <Box sx={sx.viewModeGroup}>
           <PrintModeChip
-            active={isSeasonPlanPrint}
+            active={currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN}
             disabled={isPerformanceView}
             icon='players'
             label='תכנון סגל'
@@ -354,7 +323,7 @@ export default function TeamPlayersToolbar({
           />
 
           <PrintModeChip
-            active={!isSeasonPlanPrint}
+            active={currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN}
             icon='playTimeRate'
             label='חלוקת דקות'
             onClick={() => {
@@ -398,19 +367,6 @@ export default function TeamPlayersToolbar({
             </span>
           </Tooltip>
 
-          <ReportPrintButton
-            label={printMeta.label}
-            tooltip={printMeta.tooltip}
-            documentTitle={printTitle}
-            disabled={!canPrint}
-            size='sm'
-            variant='soft'
-            color={printMeta.color}
-            startIcon='download'
-            iconOnly
-            renderContent={renderPrintReport}
-          />
-
           <Chip
             size='md'
             variant='soft'
@@ -426,21 +382,5 @@ export default function TeamPlayersToolbar({
         </Box>
       </Box>
     </Box>
-  )
-}
-
-function StatusToggleIcon({ active, icon, title, onClick }) {
-  return (
-    <Tooltip title={title} placement='top'>
-      <IconButton
-        size='sm'
-        variant={active ? 'solid' : 'outlined'}
-        color={active ? 'success' : 'neutral'}
-        onClick={onClick}
-        aria-label={title}
-      >
-        {iconUi({ id: icon })}
-      </IconButton>
-    </Tooltip>
   )
 }

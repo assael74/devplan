@@ -4,64 +4,41 @@ import React from 'react'
 
 import ManagementTargetsPrintView from '../hub/teamProfile/sharedUi/management/print/ManagementTargetsPrintView.js'
 import PlayerTargetsPrintView from '../hub/playerProfile/sharedUi/info/print/PlayerTargetsPrintView.js'
-import TeamPlayersPrintReport from '../hub/teamProfile/sharedUi/players/print/TeamPlayersPrintReport.js'
-
 import {
-  TEAM_PLAYERS_PRINT_MODES,
-} from '../hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.constants.js'
+  TeamPlayersPrintReport,
+} from '../hub/teamProfile/sharedUi/players/print/index.js'
 
 import { REPORT_TYPES } from './reports.constants.js'
+
+function renderTeamPlayersReport(payload, options = {}) {
+  return (
+    <TeamPlayersPrintReport
+      inputModel={payload}
+      presentation={options.presentation || 'pdf'}
+    />
+  )
+}
 
 const REPORT_DEFINITIONS = {
   [REPORT_TYPES.SEASON_PLAN]: {
     id: REPORT_TYPES.SEASON_PLAN,
     label: 'תכנון סגל',
 
-    render: payload => (
-      <TeamPlayersPrintReport
-        team={payload.team}
-        rows={payload.rows}
-        filters={payload.filters}
-        summary={payload.summary}
-        seasonLabel={payload.seasonLabel}
-        mode={TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN}
-        reportDate={payload.reportDate}
-      />
-    ),
+    render: (payload, options) => renderTeamPlayersReport(payload, options),
   },
 
   [REPORT_TYPES.MINUTES_PLAN]: {
     id: REPORT_TYPES.MINUTES_PLAN,
     label: 'תכנון חלוקת דקות',
 
-    render: payload => (
-      <TeamPlayersPrintReport
-        team={payload.team}
-        rows={payload.rows}
-        filters={payload.filters}
-        summary={payload.summary}
-        seasonLabel={payload.seasonLabel}
-        mode={TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN}
-        reportDate={payload.reportDate}
-      />
-    ),
+    render: (payload, options) => renderTeamPlayersReport(payload, options),
   },
 
   [REPORT_TYPES.PERFORMANCE]: {
     id: REPORT_TYPES.PERFORMANCE,
     label: 'יעדים וביצועי שחקנים',
 
-    render: payload => (
-      <TeamPlayersPrintReport
-        team={payload.team}
-        rows={payload.rows}
-        filters={payload.filters}
-        summary={payload.summary}
-        seasonLabel={payload.seasonLabel}
-        mode={TEAM_PLAYERS_PRINT_MODES.PERFORMANCE}
-        reportDate={payload.reportDate}
-      />
-    ),
+    render: (payload, options) => renderTeamPlayersReport(payload, options),
   },
 
   [REPORT_TYPES.TEAM_TARGETS]: {
@@ -101,10 +78,10 @@ export function isReportTypeSupported(reportType) {
   return Boolean(getReportDefinition(reportType))
 }
 
-export function renderReport(reportType, payload) {
+export function renderReport(reportType, payload, options = {}) {
   const definition = getReportDefinition(reportType)
 
   if (!definition) return null
 
-  return definition.render(payload)
+  return definition.render(payload, options)
 }

@@ -1,39 +1,33 @@
-// src/features/reports/public/PublicReportPage.js
+// features/reports/public/PublicReportPage.js
 
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Box,
-  Button,
   CircularProgress,
   Sheet,
   Typography,
 } from '@mui/joy'
 
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
+import ReportPrintButton from '../../../ui/patterns/reportPrint/ReportPrintButton.js'
 
 import {
   getPublicReport,
-} from './publicReport.service.js'
-
-import {
   PUBLIC_REPORT_ERROR_CODES,
-} from './publicReport.constants.js'
+} from '../service/index.js'
 
 import PublicReportRenderer from './PublicReportRenderer.js'
 import { publicReportSx as sx } from './sx/publicReport.sx.js'
 
-function PublicReportState({ loading = false, title, text, }) {
+function PublicReportState({ loading = false, title, text }) {
   return (
     <Box sx={sx.statePage}>
       <Sheet variant='outlined' sx={sx.stateCard}>
         {loading ? (
           <CircularProgress size='lg' />
         ) : (
-          iconUi({
-            id: 'report',
-            size: 'lg',
-          })
+          iconUi({ id: 'report', size: 'lg' })
         )}
 
         <Typography level='title-lg' sx={sx.stateTitle}>
@@ -48,6 +42,15 @@ function PublicReportState({ loading = false, title, text, }) {
       </Sheet>
     </Box>
   )
+}
+
+function getReportPageTitle(report = {}) {
+  const content = report.reportContent || {}
+  const reportTitle = content.title || 'דוח'
+  const entity = content.entity || {}
+  const entityName = entity.teamName || entity.name || ''
+
+  return [reportTitle, entityName, 'DevPlan'].filter(Boolean).join(' · ')
 }
 
 export default function PublicReportPage() {
@@ -106,16 +109,8 @@ export default function PublicReportPage() {
     if (!state.report) return undefined
 
     const previousTitle = document.title
-    const entityName =
-      state.report.entityName ||
-      state.report.payload?.team?.teamName ||
-      ''
 
-    document.title = [
-      state.report.title || 'דוח',
-      entityName,
-      'DevPlan',
-    ].filter(Boolean).join(' · ')
+    document.title = getReportPageTitle(state.report)
 
     return () => {
       document.title = previousTitle
@@ -148,24 +143,28 @@ export default function PublicReportPage() {
 
   return (
     <Box sx={sx.page}>
-      {state.report.allowPrint !== false ? (
-        <Box sx={sx.actions}>
-          <Button
-            size='sm'
-            variant='soft'
-            color='neutral'
-            startDecorator={iconUi({ id: 'download' })}
-            onClick={() => window.print()}
-          >
-            הדפס / PDF
-          </Button>
-        </Box>
-      ) : null}
+      <Box sx={sx.actions}>
+        <ReportPrintButton
+          label='הדפס / PDF'
+          tooltip='הדפס / שמור PDF'
+          documentTitle={getReportPageTitle(state.report)}
+          renderContent={() => (
+            <PublicReportRenderer
+              reportType={state.report.reportType}
+              payload={state.report.reportContent}
+              presentation='pdf'
+            />
+          )}
+        />
+      </Box>
 
-      <PublicReportRenderer
-        reportType={state.report.reportType}
-        payload={state.report.payload}
-      />
+      <Box sx={sx.viewer}>
+        <PublicReportRenderer
+          reportType={state.report.reportType}
+          payload={state.report.reportContent}
+          presentation='url'
+        />
+      </Box>
     </Box>
   )
 }

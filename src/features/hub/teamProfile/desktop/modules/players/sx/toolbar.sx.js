@@ -7,8 +7,8 @@ const c = getEntityColors('players')
 export const toolbarSx = {
   toolbar: {
     display: 'grid',
-    gap: 0.75,
-    p: 1,
+    gap: 0.6,
+    p: 0.8,
     borderRadius: '16px',
     bgcolor: 'background.level',
   },
@@ -17,9 +17,45 @@ export const toolbarSx = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 1,
+    gap: 0.5,
     minWidth: 0,
     flexWrap: 'wrap',
+  },
+
+  toolbarInput: {
+    width: 220,
+    maxWidth: '100%',
+    flexShrink: 0,
+    bgcolor: 'background.surface',
+    fontSize: 12,
+    px: 0.75,
+
+    '--Input-minHeight': '28px',
+    '--Input-radius': '8px',
+    '--Input-decoratorChildHeight': '20px',
+
+    '& svg': {
+      fontSize: 16,
+    },
+  },
+
+  toolbarIconButton: {
+    minHeight: 28,
+    minWidth: 28,
+    p: 0,
+
+    '& svg': {
+      fontSize: 16,
+    },
+  },
+
+  selectValueDecorator: {
+    minInlineSize: 18,
+    mr: 0.25,
+
+    '& svg': {
+      fontSize: 16,
+    },
   },
 
   selectionToolbar: {
@@ -47,8 +83,8 @@ export const toolbarSx = {
   viewModeGroup: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.5,
-    p: 0.35,
+    gap: 0.35,
+    p: 0.25,
     borderRadius: 999,
     bgcolor: 'background.surface',
     border: '1px solid',
@@ -59,7 +95,7 @@ export const toolbarSx = {
   inlineIconGroup: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.5,
+    gap: 0.35,
     flexShrink: 0,
   },
 
@@ -67,6 +103,13 @@ export const toolbarSx = {
     cursor: 'pointer',
     transition: 'transform .12s ease, filter .12s ease',
     whiteSpace: 'nowrap',
+    minHeight: 28,
+    fontSize: 12,
+
+    '--Chip-minHeight': '28px',
+    '--Chip-radius': '8px',
+    '--Chip-paddingInline': '8px',
+    '--Icon-fontSize': '16px',
 
     '&:hover': {
       transform: 'translateY(-1px)',
@@ -77,14 +120,53 @@ export const toolbarSx = {
   statusChipGroup: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.5,
+    gap: 0.35,
     flexShrink: 0,
     marginInlineStart: 'auto',
   },
 
+  selectDecorator: {
+    minInlineSize: 18,
+    mr: 0.25,
+
+    '& svg': {
+      fontSize: 16,
+    },
+  },
+
   positionSelect: {
-    minWidth: 170,
+    width: 155,
+    minWidth: 155,
+    maxWidth: 155,
     flexShrink: 0,
     bgcolor: 'background.surface',
+    fontSize: 12,
+    px: 0.65,
+
+    '--Select-minHeight': '28px',
+    '--Select-radius': '8px',
+    '--Select-decoratorChildHeight': '20px',
+    '--Icon-fontSize': '16px',
+
+    '& .MuiSelect-button': {
+      minHeight: 28,
+      minWidth: 0,
+      py: 0,
+      gap: 0.4,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+
+    '& .MuiListItemDecorator-root': {
+      minInlineSize: 18,
+      flexShrink: 0,
+      mr: 0.25,
+    },
+
+    '& svg': {
+      fontSize: 16,
+      flexShrink: 0,
+    },
   },
 }

@@ -13,6 +13,7 @@ import { canAccessSquadSimulator, isAdminAuthUser } from '../../shared/access/in
 
 import NotificationsBell from '../../features/notifications/components/NotificationsBell'
 import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
+import buildReportsPublicRoutes from './ReportsPublicRoutes.js'
 
 import CalendarSkeleton from '../../ui/loading/pages/CalendarSkeleton.js'
 import DefaultSkeleton from '../../ui/loading/pages/DefaultSkeleton.js'
@@ -33,7 +34,10 @@ const loadPlayerProfilePage = () => import('../../features/hub/playerProfile/Pla
 const loadTeamProfilePage = () => import('../../features/hub/teamProfile/TeamProfilePage')
 const loadClubProfilePage = () => import('../../features/hub/clubProfile/ClubProfilePage')
 const loadAbilitiesPublicRouteEntry = () => import('./AbilitiesPublicRouteEntry.js')
-const loadPublicReportPage = () => import('../../features/reports/public/PublicReportPage.js')
+const loadPublicReportPage = () =>
+  import('../../features/reports/index.js').then(module => ({
+    default: module.PublicReportPage,
+  }))
 const loadInsightsPage = () => import('../../features/insightsHub/InsightsPage.js')
 const loadLoginPage = () => import('../../features/auth/pages/LoginPage')
 const loadRegisterPage = () => import('../../features/auth/pages/RegisterPage')
@@ -64,9 +68,9 @@ const loadLiveTaggingPanel = () =>
     default: module.LiveTaggingPanel,
   }))
 
-const loadReportsDevPage = () =>
-  import('../../dev/reports/index.js').then(module => ({
-    default: module.ReportsDevPage,
+const loadReportsManagementPage = () =>
+  import('../../features/reports/management/index.js').then(module => ({
+    default: module.ReportsManagementPage,
   }))
 
 const HomePage = React.lazy(loadHomePage)
@@ -95,7 +99,7 @@ const PendingApprovalPage = React.lazy(loadPendingApprovalPage)
 const SquadSimulatorPage = React.lazy(loadSquadSimulatorPage)
 const LiveTaggingPanel = React.lazy(loadLiveTaggingPanel)
 const FirestoreUsagePage = React.lazy(loadFirestoreUsagePage)
-const ReportsDevPage = React.lazy(loadReportsDevPage)
+const ReportsManagementPage = React.lazy(loadReportsManagementPage)
 
 const ADMIN_ROUTE_LOADERS = [
   loadHubPage,
@@ -104,7 +108,7 @@ const ADMIN_ROUTE_LOADERS = [
   loadTagsManagementPage,
   loadLiveTaggingPanel,
   loadFirestoreUsagePage,
-  loadReportsDevPage,
+  loadReportsManagementPage,
 ]
 
 const SQUAD_ROUTE_LOADERS = [loadSquadSimulatorPage]
@@ -260,15 +264,10 @@ export default function AppRoutes() {
         element={lazyRoute(<AbilitiesPublicRouteEntry />)}
       />
 
-      <Route
-        path='/r/:reportId'
-        element={lazyRoute(<PublicReportPage />)}
-      />
-
-      <Route
-        path='/r/:reportId/:versionId'
-        element={lazyRoute(<PublicReportPage />)}
-      />
+      {buildReportsPublicRoutes({
+        lazyRoute,
+        PublicReportPage,
+      })}
 
       {!user ? (
         <>
@@ -384,7 +383,7 @@ export default function AppRoutes() {
 
               <Route
                 path='/dev/reports'
-                element={lazyRoute(<ReportsDevPage />)}
+                element={lazyRoute(<ReportsManagementPage />)}
               />
 
               <Route

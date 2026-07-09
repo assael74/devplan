@@ -1,7 +1,20 @@
+// ui/fields/checkUi/players/PlayerTypeSelector.js
+
 import * as React from 'react'
+import { Box, Chip } from '@mui/joy'
+
 import { activeSx as sx } from './sx/check.sx'
 import { iconUi } from '../../../core/icons/iconUi.js'
-import { Box, Chip } from '@mui/joy'
+
+const PROJECT_TYPE = 'project'
+const NONE_TYPE = 'noneType'
+
+const clean = (value) => String(value || '').trim()
+
+const resolveIsProject = (value) => {
+  if (value === true) return true
+  return clean(value) === PROJECT_TYPE
+}
 
 export default function PlayerTypeSelector({
   value,
@@ -9,9 +22,15 @@ export default function PlayerTypeSelector({
   size = 'sm',
   disabled = false,
 }) {
-  const isProject = Boolean(value)
-  const idIcon = isProject ? 'project' : 'noneType'
+  const isProject = resolveIsProject(value)
+  const idIcon = isProject ? PROJECT_TYPE : NONE_TYPE
   const title = size === 'xs' ? 'פרויקט' : 'שחקן פרויקט'
+
+  const handleClick = () => {
+    if (disabled) return
+
+    onChange(isProject ? NONE_TYPE : PROJECT_TYPE)
+  }
 
   return (
     <Box sx={{ minWidth: 0 }}>
@@ -20,7 +39,7 @@ export default function PlayerTypeSelector({
         variant={isProject ? 'solid' : 'outlined'}
         color={isProject ? 'success' : 'neutral'}
         startDecorator={iconUi({ id: idIcon })}
-        onClick={disabled ? undefined : () => onChange(!isProject)}
+        onClick={handleClick}
         sx={sx.chip(size)}
       >
         {title}

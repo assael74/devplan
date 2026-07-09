@@ -1,15 +1,12 @@
 import { Avatar, Box, Typography } from '@mui/joy'
 import { getReportEntityColors } from './reportColors'
-import { shellSx } from './report.sx'
 
 const getInitials = name => {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean)
   return parts.slice(0, 2).map(part => part[0]).join('')
 }
 
-export default function ReportHeader({ title, reportDate, entity }) {
-  const systemColors = entity.systemColors
-  const sx = shellSx({ systemColors })
+export default function ReportHeader({ title, reportDate, entity, sx }) {
   const entityColors = getReportEntityColors(entity.type)
 
   return (
@@ -23,7 +20,9 @@ export default function ReportHeader({ title, reportDate, entity }) {
       </Box>
 
       <Box sx={sx.entity}>
-        <Avatar src={entity.avatarUrl || undefined} alt={entity.name} />
+        <Avatar src={entity.avatarUrl || undefined} alt={entity.name}>
+          {getInitials(entity.name)}
+        </Avatar>
 
         <Typography component='p' sx={sx.entityName({ entityColors })}>{entity.name}</Typography>
       </Box>
