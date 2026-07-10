@@ -392,7 +392,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
           ' שחקנים',
           options
         ),
-        helper: 'שחקנים מעל 10 ועד 15 שערים',
+        helper: 'שחקנים בין 10 ל 15 שערים',
       },
       {
         id: 'supportScorer',
@@ -403,7 +403,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
           ' שחקנים',
           options
         ),
-        helper: 'שחקנים מעל 5 ועד 10 שערים',
+        helper: 'שחקנים בין 5 ל 10 שערים',
       },
       {
         id: 'occasionalScorer',
@@ -414,7 +414,7 @@ export const buildScorersRows = (scorers = {}, options = {}) => {
           ' שחקנים',
           options
         ),
-        helper: 'שחקנים מעל 0 ועד 5 שערים',
+        helper: 'שחקנים בין 0 ל 5 שערים',
       },
     ]
   }

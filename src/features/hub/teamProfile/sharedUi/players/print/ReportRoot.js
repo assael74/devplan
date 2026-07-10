@@ -3,6 +3,9 @@
 import React from 'react'
 import { Sheet, Typography } from '@mui/joy'
 
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
+
 import {
   ReportShell,
   REPORT_STATUS,
@@ -22,7 +25,7 @@ import UrlReport from './url/UrlReport.js'
 
 import { reportSx as sx } from './sx/report.sx.js'
 
-function getMode(model) {
+function getMode(model = {}) {
   return model.mode || TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
 }
 
@@ -34,21 +37,99 @@ function getType(mode) {
   return REPORT_TYPES.INSIGHTS
 }
 
-function buildModel(model, mode) {
+function getMeta(model = {}) {
+  return model.meta || {}
+}
+
+function getReportTitle(model = {}) {
+  const meta = getMeta(model)
+
+  return model.title || meta.title || ''
+}
+
+function getReportSubtitle(model = {}) {
+  const meta = getMeta(model)
+
+  return model.subtitle || meta.subtitle || ''
+}
+
+function getReportDate(model = {}) {
+  const meta = getMeta(model)
+
+  return model.reportDate || meta.reportDate || ''
+}
+
+function getMetaItems(model = {}) {
+  const meta = getMeta(model)
+
+  return Array.isArray(model.metaItems) ? model.metaItems : meta.items || []
+}
+
+function getEntity(model = {}) {
+  return model.entity || {}
+}
+
+function getPrintPages(model = {}) {
+  return model.printPages || 1
+}
+
+function getColumns(model = {}, mode, presentation, isMobile) {
   const modeContent = model.modeContent || {}
+  const baseColumns = Array.isArray(modeContent.columns)
+    ? modeContent.columns
+    : Array.isArray(model.columns)
+      ? model.columns
+      : []
+
+  if (presentation === 'url' && isMobile) {
+    return baseColumns.filter(column => column.key !== 'level')
+  }
+
+  return baseColumns
+}
+
+function buildModel(model, mode, presentation, isMobile) {
+  const modeContent = model.modeContent || {}
+  const columns = getColumns(model, mode, presentation, isMobile)
 
   return {
     ...model,
     ...modeContent,
     mode,
+    title: getReportTitle(model),
+    subtitle: getReportSubtitle(model),
+    reportDate: getReportDate(model),
+    metaItems: getMetaItems(model),
+    entity: getEntity(model),
     isSeasonPlan: mode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
     isMinutesPlan: mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN,
     isPerformance: mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE,
+    presentation,
+    isMobile,
+    columns,
   }
 }
 
-function hasRows(model) {
-  return Array.isArray(model.rows) && model.rows.length > 0
+function hasRowsInSections(sections = []) {
+  return sections.some(section => {
+    return Array.isArray(section.rows) && section.rows.length > 0
+  })
+}
+
+function hasRows(model = {}) {
+  if (Array.isArray(model.rows) && model.rows.length > 0) {
+    return true
+  }
+
+  if (Array.isArray(model.sections) && hasRowsInSections(model.sections)) {
+    return true
+  }
+
+  if (Array.isArray(model.squadGroups) && hasRowsInSections(model.squadGroups)) {
+    return true
+  }
+
+  return false
 }
 
 function EmptyRows() {
@@ -88,45 +169,58 @@ export default function ReportRoot({
   presentation = 'pdf',
   device = '',
   loading = false,
+  actions = null,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
   ...legacyProps
 }) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const model = getModel(inputModel, legacyProps)
   const mode = getMode(model)
-  const contentModel = buildModel(model, mode)
+  const contentModel = buildModel(model, mode, presentation, isMobile)
   const reportType = getType(mode)
 
   return (
     <ReportShell
-      title={model.title}
-      reportDate={model.reportDate}
+      title={contentModel.title}
+      reportDate={contentModel.reportDate}
       reportType={reportType}
       presentation={presentation}
+      isMobile={isMobile}
       status={REPORT_STATUS.ACTIVE}
-      printPages={model.printPages || 1}
-      entity={model.entity}
-      metaItems={model.metaItems}
+      printPages={getPrintPages(contentModel)}
+      entity={contentModel.entity}
+      metaItems={contentModel.metaItems}
       metaColumns={4}
+      actions={actions}
+      reportOptions={reportOptions}
+      selectedReportValue={selectedReportValue}
+      onReportChange={onReportChange}
     >
       <Typography sx={sx.subtitle}>
-        {model.subtitle}
+        {contentModel.subtitle}
       </Typography>
-
-      <ActiveFilters items={model.activeFilters} />
 
       {loading ? (
         <UrlReport
           model={contentModel}
           device={device}
+          isMobile={isMobile}
+          presentation={presentation}
           loading
         />
       ) : !hasRows(contentModel) ? (
         <EmptyRows />
       ) : presentation === 'pdf' ? (
-        <PdfReport model={contentModel} />
+        <PdfReport model={contentModel} presentation='pdf' />
       ) : presentation === 'url' ? (
         <UrlReport
           model={contentModel}
           device={device}
+          presentation='url'
+          isMobile={isMobile}
         />
       ) : (
         <EmptyView />

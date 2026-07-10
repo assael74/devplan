@@ -13,7 +13,7 @@ import PerformanceContent from '../PerformanceContent.js'
 
 import { urlSx as sx } from './url.sx.js'
 
-function getContent(mode) {
+function getContent(mode, presentation) {
   if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
     return MinutesPlanContent
   }
@@ -25,12 +25,12 @@ function getContent(mode) {
   return SeasonPlanContent
 }
 
-export default function UrlDesktop({ model }) {
-  const Content = getContent(model.mode)
+export default function UrlDesktop({ model, presentation }) {
+  const Content = getContent(model.mode, presentation)
 
   return (
     <Box sx={sx.desktop}>
-      <Content model={model} />
+      <Content model={model} presentation={presentation} />
     </Box>
   )
 }

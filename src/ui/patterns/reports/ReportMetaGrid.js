@@ -1,3 +1,5 @@
+// ui/patterns/reports/ReportMetaGrid.js
+
 import { Box, Typography } from '@mui/joy'
 
 export default function ReportMetaGrid({ items = [], columns = 3, sx }) {

@@ -27,6 +27,7 @@ export function buildManagementTargetsState({ team, draft, }) {
 
   return {
     team: source,
+    teamYear: safeText(source.teamYear, ''),
     targets,
     actual: {
       leaguePosition: safeText(source.leaguePosition, '—'),

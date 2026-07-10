@@ -1,4 +1,4 @@
-// src/features/hub/teamProfile/sharedLogic/players/print/seasonPlanPrint.model.js
+// features/hub/teamProfile/sharedLogic/players/print/seasonPlanPrint.model.js
 
 import {
   POSITION_LAYERS,
@@ -12,6 +12,7 @@ import {
   SEASON_PLAN_PRINT_COLUMNS,
   SEASON_PLAN_REPORT_GROUPS,
 } from './teamPlayersPrint.constants.js'
+
 import {
   mapPlayerPrintRows,
   nameCollator,
@@ -19,25 +20,12 @@ import {
   squadRoleOrder,
 } from './teamPlayersPrint.shared.js'
 
-function buildSeasonPlanSummary(rows = []) {
-  return SEASON_PLAN_STATUS_OPTIONS.map(option => ({
-    id: option.value,
-    value: option.value,
-    label: option.label,
-    shortLabel: option.shortLabel,
-    iconId: option.idIcon,
-    iconColor: option.color || '#64748B',
-    tone: option.tone,
-    count: rows.filter(row => {
-      return normalizeSeasonPlanStatus(row) === option.value
-    }).length,
-  }))
-}
-
 function getLayerKey(row = {}) {
+  const generalPosition = row.generalPosition || {}
+
   return String(
     row.generalPositionKey ||
-    row.generalPosition?.layerKey ||
+    generalPosition.layerKey ||
     row.positionLayer ||
     row.layerKey ||
     ''
@@ -58,40 +46,43 @@ function getLayerFallbackKey(row = {}) {
   return ''
 }
 
-function buildSeasonPlanLayerSummary(rows = []) {
-  return SEASON_PLAN_LAYER_ITEMS.map(item => {
-    const count = rows.filter(row => {
-      const layerKey = getLayerKey(row) || getLayerFallbackKey(row)
-
-      if (item.id === 'atMidfield') {
-        return layerKey === 'atMidfield' || layerKey === 'midfield'
-      }
-
-      return layerKey === item.id
-    }).length
-
-    return {
-      ...item,
-      iconId: 'players',
-      iconColor: '#64748B',
-      count,
-    }
-  })
+function resolveLayerKey(row = {}) {
+  return getLayerKey(row) || getLayerFallbackKey(row)
 }
 
-function sortGroupRows(group, rows = []) {
+function isMatchingLayer(row, item) {
+  const layerKey = resolveLayerKey(row)
+
+  if (item.id === 'atMidfield') {
+    return layerKey === 'atMidfield' || layerKey === 'midfield'
+  }
+
+  return layerKey === item.id
+}
+
+function getPlannedStatusOrder(row = {}) {
+  const seasonPlanStatus = row.seasonPlanStatus || {}
+  const order = PLANNED_STATUS_ORDER[seasonPlanStatus.value]
+
+  return Number.isFinite(order) ? order : 99
+}
+
+function getSquadRoleOrder(row = {}) {
+  const role = row.role || {}
+  const order = squadRoleOrder[role.value]
+
+  return Number.isFinite(order) ? order : SQUAD_ROLE_OPTIONS.length
+}
+
+function sortSeasonPlanGroupRows(group, rows = []) {
   return [...rows].sort((a, b) => {
     if (group.id === 'planned') {
-      const statusCompare =
-        (PLANNED_STATUS_ORDER[a.seasonPlanStatus?.value] ?? 99) -
-        (PLANNED_STATUS_ORDER[b.seasonPlanStatus?.value] ?? 99)
+      const statusCompare = getPlannedStatusOrder(a) - getPlannedStatusOrder(b)
 
       if (statusCompare !== 0) return statusCompare
     }
 
-    const roleCompare =
-      (squadRoleOrder[a.role?.value] ?? SQUAD_ROLE_OPTIONS.length) -
-      (squadRoleOrder[b.role?.value] ?? SQUAD_ROLE_OPTIONS.length)
+    const roleCompare = getSquadRoleOrder(a) - getSquadRoleOrder(b)
 
     if (roleCompare !== 0) return roleCompare
 
@@ -99,15 +90,41 @@ function sortGroupRows(group, rows = []) {
   })
 }
 
-function buildSeasonPlanGroups(rows = []) {
+export function buildSeasonPlanSummary(rows = []) {
+  return SEASON_PLAN_STATUS_OPTIONS.map(option => ({
+    id: option.value,
+    value: option.value,
+    label: option.label,
+    shortLabel: option.shortLabel,
+    iconId: option.idIcon,
+    iconColor: option.color || '#64748B',
+    tone: option.tone,
+    count: rows.filter(row => {
+      return normalizeSeasonPlanStatus(row) === option.value
+    }).length,
+  }))
+}
+
+export function buildSeasonPlanLayerSummary(rows = []) {
+  return SEASON_PLAN_LAYER_ITEMS.map(item => ({
+    ...item,
+    iconId: 'players',
+    iconColor: '#64748B',
+    count: rows.filter(row => isMatchingLayer(row, item)).length,
+  }))
+}
+
+export function buildSeasonPlanGroups(rows = []) {
   return SEASON_PLAN_REPORT_GROUPS.map(group => {
     const groupRows = rows.filter(row => {
-      return group.statusValues.includes(row.seasonPlanStatus?.value)
+      const seasonPlanStatus = row.seasonPlanStatus || {}
+
+      return group.statusValues.includes(seasonPlanStatus.value)
     })
 
     return {
       ...group,
-      rows: sortGroupRows(group, groupRows).map((row, index) => ({
+      rows: sortSeasonPlanGroupRows(group, groupRows).map((row, index) => ({
         ...row,
         index: index + 1,
       })),

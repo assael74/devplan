@@ -1,4 +1,4 @@
-// features/reports/model/teamPlayersReport.shared.js
+// features/reports/model/reportValue.shared.js
 
 function isPlainObject(value) {
   if (!value || typeof value !== 'object') return false
@@ -30,7 +30,7 @@ export function sanitizeReportValue(value) {
     return value.toISOString()
   }
 
-  if (typeof value.toDate === 'function') {
+  if (value && typeof value.toDate === 'function') {
     return value.toDate().toISOString()
   }
 

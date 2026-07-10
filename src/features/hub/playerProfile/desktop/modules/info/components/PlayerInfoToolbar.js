@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { Box, Button, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { PlayerTargetsPrintButton } from '../../../../sharedUi/info/print/index.js'
+import { PlayerTargetsUrlButton } from '../../../../sharedUi/info/print/index.js'
 
 import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
@@ -52,7 +52,7 @@ export default function PlayerInfoToolbar({
 
       <Box sx={sx.toolbarActions}>
         {isTargetsTab ? (
-          <PlayerTargetsPrintButton
+          <PlayerTargetsUrlButton
             player={livePlayer}
             team={team}
             disabled={pending}

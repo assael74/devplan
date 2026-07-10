@@ -1,3 +1,5 @@
+// ui/patterns/reports/ReportShell.js
+
 import { Box, Typography, Divider } from '@mui/joy'
 
 import ReportHeader from './ReportHeader'
@@ -6,10 +8,10 @@ import {
   REPORT_SYSTEM_COLORS,
   getReportStatusColors,
   getReportTypeColors,
-} from './reportColors'
-import { buildReportPdfSx } from './report.pdf.sx'
-import { buildReportUrlDesktopSx } from './report.urlDesktop.sx'
-import { buildReportUrlMobileSx } from './report.urlMobile.sx'
+} from './sx/reportColors'
+import { buildReportPdfSx } from './sx/report.pdf.sx'
+import { buildReportUrlDesktopSx } from './sx/report.urlDesktop.sx'
+import { buildReportUrlMobileSx } from './sx/report.urlMobile.sx'
 
 const STATUS_LABELS = {
   active: 'פעיל',
@@ -17,7 +19,11 @@ const STATUS_LABELS = {
   archived: 'בארכיון',
 }
 
-function getReportDevice() {
+function getReportDevice(isMobileOverride = null) {
+  if (typeof isMobileOverride === 'boolean') {
+    return isMobileOverride ? 'mobile' : 'desktop'
+  }
+
   if (typeof window === 'undefined') {
     return 'desktop'
   }
@@ -54,8 +60,12 @@ function buildStatusSx({ colors }) {
 export default function ReportShell({
   title,
   reportDate,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
   reportType,
   presentation = 'pdf',
+  isMobile = null,
   status = 'draft',
   entity,
   metaItems = [],
@@ -63,26 +73,20 @@ export default function ReportShell({
   reportNumber,
   printPages = 1,
   brandName = 'DevPlan',
-  brandSubtitle = 'מערכת ניהול ופיתוח מקצועי',
+  brandSubtitle = 'מערכת ניהול וניתוח מקצועי',
+  actions = null,
   children,
 }) {
   const isPdf = presentation === 'pdf'
-  const device = isPdf ? 'desktop' : getReportDevice()
+  const device = isPdf ? 'desktop' : getReportDevice(isMobile)
   const systemColors = REPORT_SYSTEM_COLORS
   const typeColors = getReportTypeColors(reportType)
   const statusColors = getReportStatusColors(status)
   const sx = isPdf
-    ? buildReportPdfSx({
-        systemColors,
-        printPages,
-      })
+    ? buildReportPdfSx({ systemColors, printPages })
     : device === 'mobile'
-      ? buildReportUrlMobileSx({
-          systemColors,
-        })
-      : buildReportUrlDesktopSx({
-          systemColors,
-        })
+      ? buildReportUrlMobileSx({ systemColors })
+      : buildReportUrlDesktopSx({ systemColors })
   const shellEntity = { ...entity, systemColors }
 
   return (
@@ -100,14 +104,26 @@ export default function ReportShell({
           </Box>
         </Box>
 
-        <Box sx={buildStatusSx({ colors: statusColors })}>
-          {STATUS_LABELS[status] || status}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          {!isPdf && actions ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {actions}
+            </Box>
+          ) : null}
+
+          <Box sx={buildStatusSx({ colors: statusColors })}>
+            {STATUS_LABELS[status] || status}
+          </Box>
         </Box>
       </Box>
 
       <ReportHeader
         title={title}
         reportDate={reportDate}
+        reportOptions={reportOptions}
+        selectedReportValue={selectedReportValue}
+        onReportChange={onReportChange}
+        presentation={presentation}
         entity={shellEntity}
         sx={sx}
       />
@@ -128,7 +144,7 @@ export default function ReportShell({
 
         <Box component='footer' sx={sx.footer}>
           <Typography component='span'>
-            DevPlan · מערכת ניהול ופיתוח מקצועי
+            DevPlan · מערכת ניהול וניתוח מקצועי
           </Typography>
 
           {reportNumber ? (

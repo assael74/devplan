@@ -67,7 +67,7 @@ function FilterChipCard({ label, subtitle, selected, counts, onClick }) {
             level="body-sm"
             component="span"
             sx={sx.chipMetricValue}
-            startDecorator={iconUi({ id: 'teams' })}
+            startDecorator={iconUi({ id: 'teams', size: 'sm' })}
           >
             {counts.teamsCount}
           </Typography>
@@ -78,7 +78,7 @@ function FilterChipCard({ label, subtitle, selected, counts, onClick }) {
             level="body-sm"
             component="span"
             sx={sx.chipMetricValue}
-            startDecorator={iconUi({ id: 'player' })}
+            startDecorator={iconUi({ id: 'player', size: 'sm' })}
           >
             {counts.playersCount}
           </Typography>
@@ -90,7 +90,7 @@ function FilterChipCard({ label, subtitle, selected, counts, onClick }) {
 
 const getChipLabel = (searchMode, row) => {
   if (searchMode === 'year') {
-    return row.league?.ageGroupLabel || row.title?.split('|')?.[0]?.trim() || row.title
+    return row.league?.ageGroupLabel || row.title?.split('|')[0].trim() || row.title
   }
 
   return row.title
@@ -115,21 +115,17 @@ export default function ProfilesToolbar({ model }) {
   const hasRegionSelect = regionOptions.length > 0
   const regionFallback = getRegionFallback()
   const secondaryRows = getSecondaryRows(model)
-  const secondaryReady =
-    model.searchMode !== 'all' && model.primaryFilter !== 'all'
+  const secondaryReady = model.searchMode !== 'all' && model.primaryFilter !== 'all'
   const hintText = getHintText(
     model.searchMode,
     model.primaryFilter,
     model.selectedRegionId
   )
-  const showHintUnderSelectors =
-    (hasRegionSelect && model.selectedRegionId === 'all') ||
-    (!secondaryReady && hintText)
+  const showHintUnderSelectors = (hasRegionSelect && model.selectedRegionId === 'all') || (!secondaryReady && hintText)
 
   const selectedProfile = model.selectedProfile || null
-  const selectedProfileIds =
-    model.selectedProfilesById?.[selectedProfile?.id] || []
-  const selectedProfileResult = model.profileResultsById?.[selectedProfile?.id]
+  const selectedProfileIds = model.selectedProfilesById[selectedProfile?.id] || []
+  const selectedProfileResult = model.profileResultsById[selectedProfile?.id]
 
   return (
     <Sheet sx={sx.root}>

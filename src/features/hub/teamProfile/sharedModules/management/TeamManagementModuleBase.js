@@ -10,7 +10,7 @@ import {
   ManagementInfo,
   ManagementTabs,
   ManagementTargets,
-  ManagementTargetsPrintButton,
+  ManagementTargetsUrlButton,
   ManagementToolbar,
 } from '../../sharedUi/management/index.js'
 
@@ -105,7 +105,7 @@ export default function TeamManagementModuleBase({
           onSave={handleSave}
           extraActions={
             activeTab.id === 'targets' ? (
-              <ManagementTargetsPrintButton
+              <ManagementTargetsUrlButton
                 team={team}
                 draft={draft}
                 disabled={pending}

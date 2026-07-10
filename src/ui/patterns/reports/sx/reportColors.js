@@ -1,4 +1,6 @@
-import { COLORS, getEntityColors } from '../../core/theme/Colors.js'
+// ui/patterns/reports/sx/reportColors.js
+
+import { COLORS, getEntityColors } from '../../../core/theme/Colors.js'
 
 export const REPORT_TYPES = {
   GOALS: 'goals',

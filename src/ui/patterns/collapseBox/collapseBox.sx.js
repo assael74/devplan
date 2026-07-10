@@ -5,7 +5,6 @@ export const collapseBoxSx = {
   },
 
   header: open => ({
-    mx: 0.75,
     mt: 0.75,
     px: 1.25,
     py: 0.75,
@@ -15,7 +14,10 @@ export const collapseBoxSx = {
     gap: 1,
     color: open ? 'text.primary' : 'text.secondary',
     bgcolor: open ? 'background.level1' : 'transparent',
-    borderRadius: 'md',
+    borderTopLeftRadius: 'var(--joy-radius-sm)',
+    borderTopRightRadius: 'var(--joy-radius-sm)',
+    borderBottomLeftRadius: open ? 0 : 'var(--joy-radius-sm)',
+    borderBottomRightRadius: open ? 0 : 'var(--joy-radius-sm)',
     cursor: 'pointer',
     userSelect: 'none',
     transition: 'background-color .16s ease, color .16s ease',
@@ -81,5 +83,6 @@ export const collapseBoxSx = {
   inner: {
     minHeight: 0,
     overflow: 'hidden',
+    px: 0.1,
   },
 }

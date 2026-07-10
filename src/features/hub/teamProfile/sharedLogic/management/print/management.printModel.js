@@ -11,11 +11,13 @@ import {
 
 import { safeText } from '../management.safe.js'
 import { buildTargetPositionText } from '../targets/index.js'
+
 import {
   mapDifficultyRowsForPrint,
   mapGenericRowsForPrint,
   mapHomeAwayRowsForPrint,
 } from './management.printRows.js'
+
 import { buildManagementTargetsState } from '../management.state.js'
 
 const toNumber = value => {
@@ -56,6 +58,41 @@ const resolveClubName = team => {
 
 const resolveTeamYear = team => {
   return safeText(team?.teamYear || team?.year || team?.birthYear || '', '')
+}
+
+const isCompactPrintView = options => (
+  options.isMobile === true ||
+  options.presentation === 'pdf'
+)
+
+const compactScorersPrintRows = rows => {
+  return rows.map(row => {
+    if (row.id === 'doubleDigitScorer') {
+      return {
+        ...row,
+        label: 'דו ספרתי',
+        helper: '10 עד 15 שערים',
+      }
+    }
+
+    if (row.id === 'supportScorer') {
+      return {
+        ...row,
+        label: 'משלים',
+        helper: '5 עד 10 שערים',
+      }
+    }
+
+    if (row.id === 'scorer') {
+      return {
+        ...row,
+        label: 'סקורר',
+        helper: 'מעל 15 שערים',
+      }
+    }
+
+    return row
+  })
 }
 
 const resolveTeamDisplayName = team => {
@@ -131,7 +168,7 @@ const buildSquadUsageLayerRowsForPrint = (squadUsage = {}, options = {}) => {
     }
   }
 
-  return [
+  const rows = [
     buildBaseRow({
       id: 'top14MinutesSharePct',
       value: `${getRuleTarget(squadUsage.top14MinutesSharePct)}%`,
@@ -181,6 +218,20 @@ const buildSquadUsageLayerRowsForPrint = (squadUsage = {}, options = {}) => {
       helper: 'חיבור כל שכבות הדקות',
     },
   ]
+
+  if (options.presentation === 'pdf') {
+    return rows.filter(
+      row =>
+        row.id !== 'playersUnder500Minutes' &&
+        row.id !== 'squadTotal'
+    )
+  }
+
+  if (isCompactPrintView(options)) {
+    return rows.filter(row => row.id !== 'playersUnder500Minutes')
+  }
+
+  return rows
 }
 
 const buildPrintSections = (groups = {}, options = {}) => {
@@ -193,7 +244,8 @@ const buildPrintSections = (groups = {}, options = {}) => {
 
   const homeAwayRows = buildHomeAwayRows(groups.homeAway)
   const difficultyRows = buildDifficultyRows(groups.difficulty)
-  const scorersRows = buildScorersRows(groups.scorers, targetRowsOptions)
+  const scorersRowsBase = buildScorersRows(groups.scorers, targetRowsOptions)
+  const scorersRows = isCompactPrintView(options) ? compactScorersPrintRows(scorersRowsBase) : scorersRowsBase
 
   return [
     {
@@ -223,7 +275,12 @@ const buildPrintSections = (groups = {}, options = {}) => {
   ]
 }
 
-export function buildManagementTargetsPrintModel({ team, draft }) {
+export function buildManagementTargetsPrintModel({
+  team,
+  draft,
+  isMobile = false,
+  presentation = 'pdf',
+}) {
   const model = buildManagementTargetsState({ team, draft })
   const targets = model.targets || {}
   const values = targets.values || {}
@@ -237,17 +294,22 @@ export function buildManagementTargetsPrintModel({ team, draft }) {
     teamDisplayName: resolveTeamDisplayName(model.team),
     clubName: resolveClubName(model.team),
     league: safeText(model.team.league, ''),
-    season: safeText(model.team.teamYear, ''),
+    teamYear: safeText(model.teamYear, ''),
+    season: '26/27',
     coachName: 'שם מאמן',
     coachNameResolved: coachName,
     hasTargets: targets.hasTargets === true,
     targetPositionBox: {
       label: 'יעד המיקום שנקבע לקבוצה',
-      value: buildTargetPositionText({ team: model.team, values }),
+      value: buildTargetPositionText({ team: model.team, values, }),
     },
     metrics: buildMetrics(values, model.team),
     printSections: buildPrintSections(groups, {
       targetPositionMode: targets.targetPositionMode,
+      isMobile,
+      presentation,
     }),
+    isMobile,
+    presentation,
   }
 }

@@ -55,7 +55,7 @@ export const toolbarSx = {
   },
 
   selectValue: selected => ({
-    fontWeight: 700,
+    fontWeight: 600,
     color: selected ? 'text.primary' : 'text.tertiary',
   }),
 
@@ -125,7 +125,7 @@ export const toolbarSx = {
     minWidth: 0,
     maxWidth: '100%',
     border: `1px solid ${palette.line}`,
-    borderRadius: '999px',
+    borderRadius: 'md',
     bgcolor: '#ffffff',
     p: '0.2rem 0.55rem',
     cursor: 'pointer',
@@ -197,7 +197,7 @@ export const toolbarSx = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     textAlign: 'left',
-    fontSize: '0.8rem',
+    fontSize: '0.7rem',
   },
 
   chipCardSubtitle: {
@@ -210,7 +210,7 @@ export const toolbarSx = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     textAlign: 'left',
-    fontSize: 9,
+    fontSize: 8,
   },
 
   chipCardMetrics: selected => ({
@@ -221,7 +221,7 @@ export const toolbarSx = {
     minWidth: 0,
     color: selected ? alpha(devPlanColors.primaryLight, 0.92) : alpha(devPlanColors.primary, 0.82),
     fontWeight: 700,
-    fontSize: 11,
+    fontSize: 10,
     ml: 0.35,
   }),
 
@@ -235,9 +235,10 @@ export const toolbarSx = {
   chipMetricValue: {
     color: palette.ink,
     fontWeight: 700,
+    fontSize: 10,
   },
 
   chipIcon: {
-    fontSize: 14,
+    fontSize: 13,
   },
 }

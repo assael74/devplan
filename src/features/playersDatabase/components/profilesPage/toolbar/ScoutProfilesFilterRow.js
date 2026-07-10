@@ -18,15 +18,25 @@ const chipPalette = {
 function ScoutProfileChip({ item, selected, disabled, quiet, count, onClick }) {
   return (
     <ChipButton
-      label={item.label}
-      count={count}
-      icon={iconUi({ id: item.idIcon })}
+      ariaLabel={item.label}
       selected={selected}
-      quiet={quiet}
       disabled={disabled}
       onClick={onClick}
+      quiet={quiet}
+      count={item.count}
+      icon={iconUi({ id: item.idIcon, size: 'sm' })}
       palette={chipPalette}
-    />
+    >
+    <Box sx={sx.chipCardBody}>
+      <Typography level="title-sm" sx={sx.chipCardTitle}>
+        {item.label}
+      </Typography>
+
+      <Typography level="body-sm" component="span" sx={sx.chipMetricValue}>
+        {item.count}
+      </Typography>
+    </Box>
+    </ChipButton>
   )
 }
 

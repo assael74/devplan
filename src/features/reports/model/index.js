@@ -1,6 +1,20 @@
 // features/reports/model/index.js
 
 export {
+  buildTeamPlayersPublicReportInput,
+} from './teams/players/index.js'
+
+export {
+  buildManagementTargetsPublicReportInput,
+  buildManagementTargetsReportContent,
+} from './teams/management/index.js'
+
+export {
+  buildPlayerTargetsPublicReportInput,
+  buildPlayerTargetsReportContent,
+} from './players/info/index.js'
+
+export {
   sanitizeReportValue,
   asReportArray,
   asReportObject,
@@ -12,8 +26,4 @@ export {
   pickReportRows,
   pickReportFilters,
   pickReportCounts,
-} from './teamPlayersReport.shared.js'
-
-export {
-  buildTeamPlayersPublicReportInput,
-} from './teamPlayersReport.model.js'
+} from './reportValue.shared.js'

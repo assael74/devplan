@@ -77,7 +77,6 @@ export function SeasonPlanStatusChip({ status }) {
 
   return (
     <Chip
-      dir='rtl'
       size='sm'
       variant='soft'
       color='neutral'
@@ -97,10 +96,7 @@ export function RoleChip({ role }) {
       size='sm'
       variant='soft'
       color='neutral'
-      startDecorator={iconUi({
-        id: role.iconId,
-        sx: { color: role.iconColor },
-      })}
+      startDecorator={iconUi({ id: role.iconId, sx: { color: role.iconColor }, })}
       sx={sx.roleChip}
     >
       {role.label}
@@ -117,10 +113,7 @@ export function ProjectChip({ project }) {
       size='sm'
       variant='soft'
       color='neutral'
-      startDecorator={iconUi({
-        id: iconId,
-        sx: { color: iconColor },
-      })}
+      startDecorator={iconUi({ id: iconId, sx: { color: iconColor }, })}
       sx={sx.projectChip}
     />
   )
@@ -130,10 +123,7 @@ export function SummaryItem({ item }) {
   return (
     <Sheet variant='outlined' sx={sx.summaryItem}>
       <Box sx={sx.summaryIcon}>
-        {iconUi({
-          id: item.iconId || 'players',
-          sx: { color: item.iconColor || '#64748B' },
-        })}
+        {iconUi({ id: item.iconId || 'players', sx: { color: item.iconColor || '#64748B' }, })}
       </Box>
 
       <Box sx={sx.summaryCopy}>
@@ -181,62 +171,86 @@ export function SummarySection({ title, subtitle, items = [], columns = 1 }) {
   )
 }
 
-export function ActiveFilters({ items = [] }) {
-  if (!items.length) return null
+function renderCellByKey(key, row, flags) {
+  if (key === 'index') {
+    return row.index
+  }
 
-  return (
-    <Box sx={sx.filters} className='dpPrintSection'>
-      <Typography sx={sx.filtersLabel}>
-        פילטרים פעילים
-      </Typography>
+  if (key === 'player') {
+    return <PlayerCell row={row} />
+  }
 
-      <Box sx={sx.filterChips}>
-        {items.map(item => (
-          <Chip key={item} size='sm' variant='soft' color='neutral'>
-            {item}
-          </Chip>
-        ))}
+  if (key === 'positions') {
+    const positions = flags.isMobile
+      ? [row.mainPosition || row.positions?.[0]].filter(Boolean)
+      : row.positions
+
+    return <PositionChips positions={positions} />
+  }
+
+  if (key === 'seasonPlanStatus' && flags.showSeasonPlanStatus) {
+    return <SeasonPlanStatusChip status={row.seasonPlanStatus} />
+  }
+
+  if (key === 'squadRole' && flags.showSquadRole) {
+    return <RoleChip role={row.role} />
+  }
+
+  if (key === 'level') {
+    return (
+      <Box sx={sx.potentialCell}>
+        <JoyStarRatingStatic value={row.level} size='sm' />
       </Box>
-    </Box>
-  )
+    )
+  }
+
+  if (key === 'project') {
+    return <ProjectChip project={row.project} />
+  }
+
+  return null
 }
 
-function SquadRow({ row, showSeasonPlanStatus, showSquadRole }) {
+function SquadRow({ row, columns, showSeasonPlanStatus, showSquadRole, isMobile }) {
+  const visibleColumns = Array.isArray(columns) ? columns : []
+
   return (
     <Box component='tr' className='dpPrintRow'>
-      <Box component='td' sx={[sx.td, sx.indexTd]}>
-        {row.index}
-      </Box>
+      {visibleColumns.map(column => {
+        const key = column.key
+        const isMiddle = key === 'player' || key === 'positions'
+        const isCenter =
+          key === 'index' ||
+          key === 'seasonPlanStatus' ||
+          key === 'squadRole' ||
+          key === 'level' ||
+          key === 'project'
 
-      <Box component='td' sx={[sx.td, sx.middleTd]}>
-        <PlayerCell row={row} />
-      </Box>
+        const cellContent = renderCellByKey(key, row, {
+          showSeasonPlanStatus,
+          showSquadRole,
+          isMobile,
+        })
 
-      <Box component='td' sx={[sx.td, sx.middleTd]}>
-        <PositionChips positions={row.positions} />
-      </Box>
+        if (cellContent == null) {
+          return null
+        }
 
-      {showSeasonPlanStatus ? (
-        <Box component='td' sx={[sx.td, sx.centerTd]}>
-          <SeasonPlanStatusChip status={row.seasonPlanStatus} />
-        </Box>
-      ) : null}
-
-      {showSquadRole ? (
-        <Box component='td' sx={[sx.td, sx.centerTd]}>
-          <RoleChip role={row.role} />
-        </Box>
-      ) : null}
-
-      <Box component='td' sx={[sx.td, sx.centerTd]}>
-        <Box sx={sx.potentialCell}>
-          <JoyStarRatingStatic value={row.level} size='sm' />
-        </Box>
-      </Box>
-
-      <Box component='td' sx={[sx.td, sx.centerTd]}>
-        <ProjectChip project={row.project} />
-      </Box>
+        return (
+          <Box
+            key={key}
+            component='td'
+            sx={[
+              sx.td,
+              isMiddle ? sx.middleTd : null,
+              isCenter ? sx.centerTd : null,
+              key === 'index' ? sx.indexTd : null,
+            ]}
+          >
+            {cellContent}
+          </Box>
+        )
+      })}
     </Box>
   )
 }
@@ -246,6 +260,7 @@ export function SquadTable({
   columns = [],
   showSeasonPlanStatus = false,
   showSquadRole = false,
+  isMobile = false,
 }) {
   return (
     <Box component='table' sx={sx.table}>
@@ -256,11 +271,13 @@ export function SquadTable({
         {rows.map(row => (
           <SquadRow
             key={row.id}
-            row={row}
-            showSeasonPlanStatus={showSeasonPlanStatus}
-            showSquadRole={showSquadRole}
-          />
-        ))}
+          row={row}
+          columns={columns}
+          showSeasonPlanStatus={showSeasonPlanStatus}
+          showSquadRole={showSquadRole}
+          isMobile={isMobile}
+        />
+      ))}
       </Box>
     </Box>
   )

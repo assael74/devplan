@@ -11,7 +11,9 @@ import {
   REPORT_TYPES,
 } from '../../../../../../ui/patterns/reports/index.js'
 
-import { buildPlayerTargetsPrintModel } from '../../../sharedLogic/info/print/playerTargetsPrintModel.js'
+import {
+  buildPlayerTargetsPrintViewModel,
+} from '../../../sharedLogic/info/print/playerTargetsPrintModel.js'
 
 import { printSx as sx } from './print.sx.js'
 
@@ -110,10 +112,19 @@ const EmptyReport = () => {
   )
 }
 
-export default function PlayerTargetsPrintView({ player, team, reportDate }) {
+export default function PlayerTargetsPrintView({
+  inputModel = null,
+  player,
+  team,
+  reportDate,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
+  actions = null,
+}) {
   const model = useMemo(() => {
-    return buildPlayerTargetsPrintModel({ player, team, reportDate })
-  }, [player, team, reportDate])
+    return buildPlayerTargetsPrintViewModel({ inputModel, player, team, reportDate })
+  }, [inputModel, player, team, reportDate])
 
   const avatarSrc = resolvePlayerAvatarSrc(model.player)
   const formattedDate = formatReportDate(model.reportDate)
@@ -131,6 +142,10 @@ export default function PlayerTargetsPrintView({ player, team, reportDate }) {
       reportType={REPORT_TYPES.GOALS}
       status={REPORT_STATUS.ACTIVE}
       printPages={1}
+      reportOptions={reportOptions}
+      selectedReportValue={selectedReportValue}
+      onReportChange={onReportChange}
+      actions={actions}
       entity={{
         type: 'player',
         name: model.playerName,

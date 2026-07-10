@@ -34,8 +34,9 @@ export const scoutProfilesFilterRowSx = {
 
   chipCardBody: {
     minWidth: 0,
-    display: 'grid',
-    gap: 0.1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
   },
 
   chipCard: {
@@ -115,7 +116,7 @@ export const scoutProfilesFilterRowSx = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     textAlign: 'left',
-    fontSize: '0.8rem',
+    fontSize: '0.7rem',
   },
 
   chipCardSubtitle: {
@@ -153,6 +154,7 @@ export const scoutProfilesFilterRowSx = {
   chipMetricValue: {
     color: palette.ink,
     fontWeight: 700,
+    fontSize: 10
   },
 
   chipIcon: {

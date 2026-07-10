@@ -42,6 +42,10 @@ export {
 } from './service/publishReport.flow.js'
 
 export {
+  publishPlayerTargetsReport,
+} from './flows/index.js'
+
+export {
   sanitizeReportValue,
   asReportArray,
   asReportObject,
@@ -54,6 +58,7 @@ export {
   pickReportFilters,
   pickReportCounts,
   buildTeamPlayersPublicReportInput,
+  buildPlayerTargetsPublicReportInput,
 } from './model/index.js'
 
 export { default as PublicReportPage } from './public/PublicReportPage.js'

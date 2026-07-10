@@ -27,11 +27,7 @@ export const TABS = [
   },
 ]
 
-export default function ManagementTabs({
-  activeTab,
-  onTabChange,
-  isMobile = false,
-}) {
+export default function ManagementTabs({ activeTab, onTabChange, isMobile = false }) {
   return (
     <Box sx={sx.tabsShell(isMobile)}>
       {TABS.map((tab) => {

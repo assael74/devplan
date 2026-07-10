@@ -1,3 +1,5 @@
+// ui/patterns/reports/ReportShellExample.js
+
 import { Box, Typography } from '@mui/joy'
 import { ReportShell, REPORT_STATUS, REPORT_TYPES } from './index'
 

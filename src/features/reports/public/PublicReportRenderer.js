@@ -11,6 +11,8 @@ export default function PublicReportRenderer({
   reportType,
   payload,
   presentation = 'url',
+  actions = null,
+  ...options
 }) {
   const definition = getReportDefinition(reportType)
 
@@ -24,5 +26,5 @@ export default function PublicReportRenderer({
     )
   }
 
-  return definition.render(payload, { presentation })
+  return definition.render(payload, { presentation, actions, ...options })
 }

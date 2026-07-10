@@ -3,6 +3,7 @@
 import {
   TEAM_PLAYERS_PRINT_MODES,
 } from './teamPlayersPrint.constants.js'
+
 import {
   asNumber,
   buildActiveFilters,
@@ -16,12 +17,15 @@ import {
   formatShortSeason,
   EMPTY,
 } from './teamPlayersPrint.shared.js'
+
 import {
   buildSeasonPlanPrintModel,
 } from './seasonPlanPrint.model.js'
+
 import {
   buildMinutesPlanPrintModel,
 } from './minutesPlanPrint.model.js'
+
 import {
   buildPerformancePrintModel,
 } from './performancePrint.model.js'
@@ -128,7 +132,6 @@ export function buildTeamPlayersReportModel({
   const modeModel = buildModeModel(mode, safeRows)
   const activeFilters = buildActiveFilters(filters)
   const printPages = modeModel.printPages || Math.max(1, Math.ceil(modeModel.rows.length / 18))
-  
   return {
     ...modeModel,
     mode,

@@ -1,19 +1,19 @@
-// src/features/hub/teamProfile/sharedUi/management/print/print.sx.js
+// src/features/hub/teamProfile/sharedUi/management/print/shared/sx/print.desktop.sx.js
 
 import { alpha } from '@mui/system'
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 const teamColors = getEntityColors('team')
 
-const isFullWidthSection = id => (
-  id === 'homeAway' ||
-  id === 'difficulty' ||
-  id === 'scorers' ||
-  id === 'squadUsage'
-)
+const getSectionGridColumn = id => {
+  if (id === 'homeAway') return 'span 2'
+  if (id === 'difficulty') return 'span 3'
+  if (id === 'scorers') return '1 / -1'
+  if (id === 'squadUsage') return '1 / -1'
 
-const startsSecondPage = id => id === 'squadUsage'
+  return 'auto'
+}
 
 const getGridTemplate = (sectionId, rowCount) => {
   if (sectionId === 'homeAway') return 'repeat(2, minmax(0, 1fr))'
@@ -24,24 +24,24 @@ const getGridTemplate = (sectionId, rowCount) => {
   return `repeat(${Math.min(rowCount, 4)}, minmax(0, 1fr))`
 }
 
-const getSquadRowSpan = index => {
-  if (index < 2) return 'span 3'
-  if (index < 5) return 'span 2'
+export const printDesktopSx = {
+  contentWrap: {
+    minWidth: 0,
+  },
 
-  return 'span 3'
-}
-
-export const printSx = {
   targetSummary: {
     px: 2,
-    mt: 3,
+    pt: 1.25,
+    pb: 1.25,
+    mt: 0.75,
+    mb: 0.85,
     borderRadius: 14,
-    border: '5px solid var(--report-type-border)',
-    borderTop: '5px solid var(--report-type-accent)',
+    border: '1px solid var(--report-type-border)',
+    borderTop: '4px solid var(--report-type-accent)',
     boxShadow: `0 6px 16px ${alpha(teamColors.accent, 0.10)}`,
     background: `linear-gradient(135deg, var(--report-type-soft), ${teamColors.surface} 68%)`,
     breakInside: 'avoid',
-    '@media (max-width: 820px)': { px: 1.4, pb: 0.1, pt: 1 },
+    pageBreakInside: 'avoid',
   },
 
   targetEyebrow: {
@@ -50,45 +50,39 @@ export const printSx = {
   },
 
   targetValue: {
-    mt: 1.45,
+    mt: 0.85,
     color: 'var(--report-type-dark)',
     fontWeight: 700,
-    lineHeight: 1.1,
-    '@media (max-width: 820px)': { fontSize: 25 },
+    lineHeight: 1.0,
   },
 
   metricsStack: {
     display: 'grid',
-    gap: 1.15,
-    my: 3,
+    gap: 0.45,
+    mt: 0.1,
+    mb: 0.6,
   },
 
   metricsGrid: {
     display: 'grid',
     gridTemplateColumns: '1.35fr 1fr 1.2fr 1.2fr 0.85fr',
     gap: 1,
-    '@media (max-width: 820px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-    '@media print': {
-      gridTemplateColumns: '1.35fr 1fr 1.2fr 1.2fr 0.85fr',
-    },
   },
 
   metricCard: {
     minWidth: 0,
-    minHeight: 98,
-    maxHeight: 98,
-    height: 98,
-    px: 1.25,
-    pt: 1,
-    pb: 0.5,
+    minHeight: 64,
+    height: 'auto',
+    px: 1.1,
+    pt: 0.75,
+    pb: 0,
     borderRadius: 12,
     border: '1px solid var(--report-type-border)',
     borderTop: '3px solid var(--report-type-accent)',
     boxShadow: `0 4px 12px ${alpha(teamColors.accent, 0.08)}`,
     bgcolor: teamColors.surface,
     breakInside: 'avoid',
+    pageBreakInside: 'avoid',
   },
 
   metricLabel: {
@@ -98,33 +92,32 @@ export const printSx = {
   },
 
   metricValue: {
-    mt: 0.9,
+    mt: 0.25,
     color: 'var(--report-type-dark)',
     fontWeight: 700,
     lineHeight: 1.05,
-    fontSize: 20,
+    fontSize: 18,
   },
 
   metricHelper: {
-    mt: 0.25,
+    mt: 0.1,
     color: 'text.tertiary',
-    fontSize: 11,
-    lineHeight: 1.2,
+    fontSize: 10,
+    lineHeight: 1.0,
   },
 
   sections: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
     alignItems: 'start',
-    '@media (max-width: 820px)': { gridTemplateColumns: '1fr', gap: 0.5 },
-    '@media print': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    gap: 2,
   },
 
   section: id => ({
     minWidth: 0,
-    my: 0.6,
+    my: 0,
     border: 1,
-    gridColumn: isFullWidthSection(id) ? '1 / -1' : 'auto',
+    gridColumn: getSectionGridColumn(id),
     borderRadius: 12,
     borderColor: 'var(--report-border)',
     boxShadow: `0 6px 16px ${alpha(teamColors.accent, 0.10)}`,
@@ -132,13 +125,6 @@ export const printSx = {
     bgcolor: teamColors.surface,
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
-    '@media print': startsSecondPage(id)
-      ? {
-          breakBefore: 'page',
-          pageBreakBefore: 'always',
-          pt: 2,
-        }
-      : {},
   }),
 
   sectionHeader: id => ({
@@ -170,79 +156,44 @@ export const printSx = {
 
   rowsGrid: (sectionId, rowCount) => ({
     display: 'grid',
-    gridTemplateColumns:
-      sectionId === 'squadUsage'
-        ? 'repeat(12, minmax(0, 1fr))'
-        : getGridTemplate(sectionId, rowCount),
+    gridTemplateColumns: sectionId === 'squadUsage' ? 'repeat(12, minmax(0, 1fr))' : getGridTemplate(sectionId, rowCount),
     bgcolor: teamColors.surface,
-    gap: sectionId === 'squadUsage' ? 1.8 : 0,
+    gap: sectionId === 'squadUsage' ? 1 : 0,
     p: sectionId === 'squadUsage' ? 1 : 0,
-
-    '@media (max-width: 820px)': {
-      gridTemplateColumns:
-        sectionId === 'difficulty'
-          ? 'repeat(3, minmax(0, 1fr))'
-          : 'repeat(2, minmax(0, 1fr))',
-    },
-
-    '@media print': {
-      gridTemplateColumns:
-        sectionId === 'squadUsage'
-          ? 'repeat(12, minmax(0, 1fr))'
-          : getGridTemplate(sectionId, rowCount),
-    },
   }),
 
   row: sectionId => ({
     position: 'relative',
     minWidth: 0,
-    px: 1,
-    pl: sectionId === 'squadUsage' ? 4.4 : 3.6,
-    pt: 0.85,
-    pb: 0.5,
+    px: 0.7,
+    pt: 0.7,
+    pb: 0.55,
     textAlign: 'start',
     border: '1px solid var(--report-border)',
-    borderBottomLeftRadius: 'md',
-    borderBottomRightRadius: 'md',
 
     ...(sectionId === 'squadUsage' && {
-      '&:nth-of-type(1), &:nth-of-type(2)': {
-        gridColumn: 'span 6',
+      '&:nth-of-type(1), &:nth-of-type(2), &:nth-of-type(3)': {
+        gridColumn: 'span 4',
         bgcolor: alpha(teamColors.accent, 0.06),
       },
 
-      '&:nth-of-type(3), &:nth-of-type(4)': {
-        gridColumn: 'span 6',
-        mt: 1.15,
-        bgcolor: alpha(teamColors.accent, 0.09),
-      },
-
-      '&:nth-of-type(5), &:nth-of-type(6), &:nth-of-type(7)': {
-        gridColumn: 'span 4',
+      '&:nth-of-type(4), &:nth-of-type(5), &:nth-of-type(6), &:nth-of-type(7)': {
+        gridColumn: 'span 3',
         bgcolor: teamColors.surface,
       },
 
       '&:nth-of-type(8)': {
         gridColumn: '1 / -1',
-        mt: 1.2,
+        bgcolor: alpha(teamColors.accent, 0.04),
       },
     }),
   }),
 
   rowLabel: (sectionId, rowId) => ({
     color: teamColors.text,
-    minHeight:
-      sectionId === 'scorers' || sectionId === 'squadUsage'
-        ? 26
-        : 'auto',
-    display:
-      sectionId === 'scorers' || sectionId === 'squadUsage'
-        ? 'flex'
-        : 'block',
-    alignItems:
-      sectionId === 'scorers' || sectionId === 'squadUsage'
-        ? 'center'
-        : 'normal',
+    minHeight: sectionId === 'scorers' || sectionId === 'squadUsage' ? 26 : 'auto',
+    display: sectionId === 'scorers' || sectionId === 'squadUsage' ? 'flex' : 'block',
+    alignItems: sectionId === 'scorers' || sectionId === 'squadUsage' ? 'center' : 'normal',
     fontSize:
       sectionId === 'squadUsage' &&
       [
@@ -251,25 +202,25 @@ export const printSx = {
         'playersOver2000Minutes',
         'playersOver1500Minutes',
       ].includes(rowId)
-        ? 16
-        : 14,
+        ? 15
+        : 13,
     fontWeight: 700,
     lineHeight: 1.2,
   }),
 
   rowValue: ({ allowValueWrap, sectionId, rowId }) => ({
     display: 'block',
-    mt: 1,
+    mt: 0.8,
     color: 'var(--report-type-dark)',
     fontWeight: 700,
     fontSize:
       sectionId === 'squadUsage' &&
       ['top14MinutesSharePct', 'playersOver20Starts'].includes(rowId)
-        ? 22
+        ? 21
         : sectionId === 'squadUsage' &&
           ['playersOver2000Minutes', 'playersOver1500Minutes'].includes(rowId)
-          ? 21
-          : 18,
+          ? 20
+          : 17,
     textAlign: 'start',
     whiteSpace: allowValueWrap ? 'normal' : 'nowrap',
     overflowWrap: allowValueWrap ? 'anywhere' : 'normal',
@@ -284,18 +235,15 @@ export const printSx = {
 
   rowIcon: sectionId => ({
     position: 'absolute',
-    insetInlineEnd: 10,
-    top: sectionId === 'scorers' ? 8 : 10,
-    width: sectionId === 'squadUsage' ? 30 : 26,
-    height: sectionId === 'squadUsage' ? 30 : 26,
+    insetInlineEnd: 8,
+    top: sectionId === 'scorers' ? 8 : 9,
+    width: sectionId === 'squadUsage' ? 26 : 24,
     borderRadius: 999,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     color: 'var(--report-type-dark)',
-    bgcolor: sectionId === 'squadUsage'
-      ? alpha(teamColors.accent, 0.10)
-      : alpha(teamColors.accent, 0.07),
+    bgcolor: sectionId === 'squadUsage' ? alpha(teamColors.accent, 0.10) : alpha(teamColors.accent, 0.07),
   }),
 
   rowIconSvg: {

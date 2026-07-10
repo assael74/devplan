@@ -52,8 +52,7 @@ function PrintModeChip({ active, disabled = false, icon, label, onClick }) {
       variant={active ? 'solid' : 'outlined'}
       color={active ? 'primary' : 'neutral'}
       onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      sx={sx.filterChip}
+      disabled={disabled} sx={sx.filterChip}
       startDecorator={iconUi({ id: icon })}
     >
       {label}
@@ -90,12 +89,7 @@ function SelectionToolbar({
         {selectedCount} שחקנים נבחרו
       </Typography>
 
-      <Button
-        size='sm'
-        variant='soft'
-        color='neutral'
-        onClick={onToggleSelectAll}
-      >
+      <Button size='sm' variant='soft' color='neutral' onClick={onToggleSelectAll}>
         {allFilteredSelected ? 'בטל בחירת מוצגים' : 'בחר את כל המוצגים'}
       </Button>
 
@@ -129,11 +123,31 @@ function getPublishTooltip(publishState) {
     return 'יצירת הקישור נכשלה'
   }
 
-  if (publishState.copied) {
-    return 'קישור לגרסה החדשה הועתק'
+  if (publishState.loading) {
+    return 'מייצרים דוח חדש וממתינים לפתיחת כרטיסיה'
   }
 
-  return 'פרסם גרסה חדשה והעתק קישור'
+  if (publishState.success && publishState.debug) {
+    return 'מצב דיבאג: הדוח נבנה ללא כתיבה לפיירסטור'
+  }
+
+  if (publishState.success) {
+    return 'הדוח נוצר ונפתח בכרטיסיה חדשה'
+  }
+
+  return 'פרסם גרסה חדשה ופתח כרטיסיה חדשה'
+}
+
+function getPublishButtonLabel(mode) {
+  if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
+    return 'צור דוח חלוקת דקות'
+  }
+
+  if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {
+    return 'צור דוח ביצוע'
+  }
+
+  return 'צור דוח תכנון סגל'
 }
 
 function hasActivePlayerFilters(filters = {}) {
@@ -148,6 +162,23 @@ function hasActivePlayerFilters(filters = {}) {
     !!filters.performanceProfile ||
     !!filters.generalPositionKey
   )
+}
+
+function closePublishWindow(nextWindow) {
+  try {
+    if (nextWindow && !nextWindow.closed) {
+      nextWindow.close()
+    }
+  } catch (error) {
+    console.warn('[TeamPlayersToolbar] Failed to close placeholder tab', error)
+  }
+}
+
+function logPublishDebugResult({ input, result }) {
+  console.group('[TeamPlayersToolbar] Publish debug result')
+  console.log('input:', input)
+  console.log('result:', result)
+  console.groupEnd()
 }
 
 export default function TeamPlayersToolbar({
@@ -188,8 +219,9 @@ export default function TeamPlayersToolbar({
 }) {
   const [publishState, setPublishState] = React.useState({
     loading: false,
-    copied: false,
+    success: false,
     error: false,
+    debug: false,
   })
 
   if (bulkEnabled && selectionMode) {
@@ -205,9 +237,7 @@ export default function TeamPlayersToolbar({
   }
 
   const isPerformanceView = viewMode === VIEW_MODES.PERFORMANCE
-  const currentManagementPrintMode =
-    managementPrintMode || TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
-
+  const currentManagementPrintMode = managementPrintMode || TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
   const hasActiveFilters = hasActivePlayerFilters(filters)
   const hasSortChanged = sortBy !== 'squadRole' || sortDirection !== 'desc'
   const canReset = hasActiveFilters || hasSortChanged
@@ -216,14 +246,28 @@ export default function TeamPlayersToolbar({
   const handlePublishReport = async () => {
     if (!canPrint || publishState.loading) return
 
+    const nextWindow = window.open('', '_blank')
+
+    if (!nextWindow) {
+      setPublishState({
+        loading: false,
+        success: false,
+        error: true,
+        debug: false,
+      })
+
+      return
+    }
+
     setPublishState({
       loading: true,
-      copied: false,
+      success: false,
       error: false,
+      debug: false,
     })
 
     try {
-      const result = await publishReport({
+      const response = await publishReport({
         team,
         rows,
         filters,
@@ -232,18 +276,50 @@ export default function TeamPlayersToolbar({
         mode: currentManagementPrintMode,
       })
 
+      const publishResult = response && response.result ? response.result : {}
+
+      if (publishResult.writeSkipped) {
+        logPublishDebugResult({
+          input: response.input,
+          result: publishResult,
+        })
+
+        closePublishWindow(nextWindow)
+
+        setPublishState({
+          loading: false,
+          success: true,
+          error: false,
+          debug: true,
+        })
+
+        return
+      }
+
+      const targetUrl = publishResult.currentUrl || response.currentUrl || ''
+
+      if (!targetUrl) {
+        throw new Error('[TeamPlayersToolbar] Missing currentUrl from publish result')
+      }
+
+      nextWindow.location.href = targetUrl
+
       setPublishState({
         loading: false,
-        copied: !!result.copied,
-        error: !result.copied,
+        success: true,
+        error: false,
+        debug: false,
       })
     } catch (error) {
       console.error('[TeamPlayersToolbar] Failed to publish report', error)
 
+      closePublishWindow(nextWindow)
+
       setPublishState({
         loading: false,
-        copied: false,
+        success: false,
         error: true,
+        debug: false,
       })
     }
   }
@@ -252,6 +328,40 @@ export default function TeamPlayersToolbar({
 
   return (
     <Box sx={sx.toolbar}>
+      {publishState.loading ? (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 2000,
+            display: 'grid',
+            placeItems: 'center',
+            bgcolor: 'rgba(15, 23, 42, 0.24)',
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1.25,
+              px: 3,
+              py: 2.5,
+              borderRadius: '16px',
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
+            }}
+          >
+            <CircularProgress size='lg' />
+
+            <Typography level='title-sm'>
+              מייצר דוח חדש וממתין לפתיחת כרטיסיה
+            </Typography>
+          </Box>
+        </Box>
+      ) : null}
+
       <TeamPlayersFiltersBar
         summary={summary}
         filters={filters}
@@ -317,53 +427,45 @@ export default function TeamPlayersToolbar({
             disabled={isPerformanceView}
             icon='players'
             label='תכנון סגל'
-            onClick={() => {
-              onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN)
-            }}
+            onClick={() => onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN)}
           />
 
           <PrintModeChip
             active={currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN}
             icon='playTimeRate'
             label='חלוקת דקות'
-            onClick={() => {
-              onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN)
-            }}
+            onClick={() => onToggleManagementPrintMode(TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN)}
           />
         </Box>
 
         <Box sx={sx.statusChipGroup}>
           {bulkEnabled ? (
-            <IconButton
-              size='sm'
-              variant='soft'
-              color='danger'
-              disabled={!totalCount}
-              onClick={onStartSelection}
-              aria-label='מחיקת שחקנים'
-            >
+            <IconButton size='sm' variant='soft' color='danger' disabled={!totalCount} onClick={onStartSelection} aria-label='מחיקת שחקנים'>
               {iconUi({ id: 'delete' })}
             </IconButton>
           ) : null}
 
           <Tooltip title={publishTooltip} placement='top'>
             <span>
-              <IconButton
+              <Button
                 size='sm'
                 variant='soft'
                 color={publishState.error ? 'danger' : 'primary'}
                 disabled={!canPrint || publishState.loading}
                 onClick={handlePublishReport}
-                aria-label='פרסום דוח ציבורי'
+                aria-label={getPublishButtonLabel(currentManagementPrintMode)}
                 sx={{
                   border: '1px solid',
                   borderColor: 'divider',
+                  width: '164px',
+                  minWidth: '164px',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
                 }}
+                startDecorator={publishState.loading ? <CircularProgress size='sm' /> : iconUi({ id: 'share' })}
               >
-                {publishState.loading
-                  ? <CircularProgress size='sm' />
-                  : iconUi({ id: 'share' })}
-              </IconButton>
+                {getPublishButtonLabel(currentManagementPrintMode)}
+              </Button>
             </span>
           </Tooltip>
 

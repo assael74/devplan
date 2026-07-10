@@ -16,7 +16,7 @@ function getDevice() {
     : 'desktop'
 }
 
-export default function UrlReport({ model, device = '', loading = false }) {
+export default function UrlReport({ model, device = '', loading = false, presentation, }) {
   const resolvedDevice = device || getDevice()
 
   if (loading) {
@@ -29,8 +29,8 @@ export default function UrlReport({ model, device = '', loading = false }) {
   }
 
   if (resolvedDevice === 'mobile') {
-    return <UrlMobile model={model} />
+    return <UrlMobile model={model} presentation={presentation} />
   }
 
-  return <UrlDesktop model={model} />
+  return <UrlDesktop model={model} presentation={presentation} />
 }

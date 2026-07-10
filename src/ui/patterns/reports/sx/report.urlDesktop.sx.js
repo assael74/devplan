@@ -1,3 +1,5 @@
+// ui/patterns/reports/sx/report.urlDesktop.sx.js
+
 export const buildReportUrlDesktopSx = ({
   systemColors,
 }) => ({
@@ -80,8 +82,8 @@ export const buildReportUrlDesktopSx = ({
 
   header: {
     px: 3,
-    pt: 2.75,
     pb: 1.5,
+    pt: 0.5
   },
 
   scrollArea: {
@@ -93,7 +95,7 @@ export const buildReportUrlDesktopSx = ({
 
   mainRow: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 2.5,
     mb: 1.5,
@@ -112,11 +114,18 @@ export const buildReportUrlDesktopSx = ({
     flexDirection: 'column',
     minWidth: 195,
     px: 1.875,
-    py: 1.625,
-    bgcolor: '#F4F8FA',
-    border: '1px solid var(--report-border)',
+    py: 1,
+    background: 'linear-gradient(180deg, #F8FBFD 0%, #EEF4F8 100%)',
+    border: '1px solid rgba(42, 96, 136, 0.14)',
     borderRadius: '14px',
     textAlign: 'left',
+    boxShadow: '0 8px 18px rgba(23, 59, 87, 0.08)',
+    transition: 'box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease',
+    '&:hover': {
+      boxShadow: '0 12px 24px rgba(23, 59, 87, 0.12)',
+      transform: 'translateY(-1px)',
+      borderColor: 'rgba(42, 96, 136, 0.22)',
+    },
   },
 
   dateLabel: {
@@ -131,6 +140,129 @@ export const buildReportUrlDesktopSx = ({
     fontSize: 15,
     fontWeight: 700,
     whiteSpace: 'nowrap',
+  },
+
+  dateSelect: {
+    mt: 0.375,
+    width: '100%',
+    minWidth: 0,
+    alignSelf: 'stretch',
+    '--Select-minHeight': 'unset',
+    '--Select-radius': '0',
+    '--Select-indicator-size': '0px',
+    '--Select-gap': '0',
+    '--Select-paddingInline': '0',
+    '--Select-focusedThickness': '0px',
+    '--Select-decoratorColor': 'var(--report-system-dark)',
+    '--Select-decoratorChildHeight': 'unset',
+    bgcolor: 'transparent',
+    border: 0,
+    boxShadow: 'none',
+    '& .MuiSelect-button': {
+      p: 0,
+      minHeight: 'unset',
+      minWidth: 0,
+      border: 0,
+      bgcolor: 'transparent',
+      color: 'var(--report-system-dark)',
+      boxShadow: 'none',
+      justifyContent: 'flex-start',
+      '&:hover': {
+        bgcolor: 'transparent',
+      },
+      '&:focus-visible': {
+        outline: 'none',
+      },
+    },
+    '& .MuiSelect-indicator': {
+      display: 'none',
+    },
+  },
+
+  dateValueWrap: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0,
+  },
+
+  dateValueText: {
+    color: 'var(--report-system-dark)',
+    fontSize: 15,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  dateVersionTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 20,
+    height: 20,
+    px: 0.5,
+    borderRadius: 999,
+    bgcolor: 'rgba(23, 59, 87, 0.08)',
+    color: 'var(--report-system-dark)',
+    fontSize: 11,
+    fontWeight: 700,
+    lineHeight: 1,
+  },
+
+  dateSelectButton: {
+    p: 0,
+    minHeight: 'unset',
+    minWidth: 0,
+    color: 'var(--report-system-dark)',
+    fontSize: 15,
+    fontWeight: 700,
+    border: 0,
+    bgcolor: 'transparent',
+    boxShadow: 'none',
+    '&:hover': {
+      bgcolor: 'transparent',
+    },
+  },
+
+  dateSelectListbox: {
+    minWidth: '0',
+    width: '100%',
+    p: 0.5,
+    borderRadius: '12px',
+    boxShadow: '0 12px 30px rgba(23, 32, 51, 0.12)',
+    boxSizing: 'border-box',
+  },
+
+  dateSelectPopper: {
+    width: 'calc(var(--Select-trigger-width) - 12px)',
+    maxWidth: 'calc(var(--Select-trigger-width) - 12px)',
+  },
+
+  dateOption: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    width: '100%',
+  },
+
+  dateOptionDate: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--report-text)',
+  },
+
+  dateOptionVersion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 20,
+    height: 20,
+    px: 0.5,
+    borderRadius: 999,
+    bgcolor: 'rgba(23, 59, 87, 0.08)',
+    color: 'var(--report-system-dark)',
+    fontSize: 11,
+    fontWeight: 700,
   },
 
   entity: {

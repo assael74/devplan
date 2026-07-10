@@ -4,8 +4,11 @@ import React from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Box,
+  Button,
   CircularProgress,
+  IconButton,
   Sheet,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
@@ -14,6 +17,7 @@ import ReportPrintButton from '../../../ui/patterns/reportPrint/ReportPrintButto
 
 import {
   getPublicReport,
+  buildPublicReportUrl,
   PUBLIC_REPORT_ERROR_CODES,
 } from '../service/index.js'
 
@@ -53,6 +57,123 @@ function getReportPageTitle(report = {}) {
   return [reportTitle, entityName, 'DevPlan'].filter(Boolean).join(' · ')
 }
 
+async function copyText(text) {
+  if (!text) return false
+
+  if (!navigator?.clipboard?.writeText) {
+    return false
+  }
+
+  await navigator.clipboard.writeText(text)
+
+  return true
+}
+
+function ShareButton({ copied = false, onShare }) {
+  return (
+    <>
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <Tooltip
+          title={copied ? 'הקישור הועתק' : 'העתקת קישור הדוח'}
+          variant='soft'
+        >
+          <Button
+            size='sm'
+            variant='soft'
+            color='neutral'
+            startDecorator={iconUi({ id: 'share' })}
+            sx={{ border: '1px solid', borderColor: 'divider' }}
+            onClick={onShare}
+          >
+            שיתוף
+          </Button>
+        </Tooltip>
+      </Box>
+
+      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+        <Tooltip
+          title={copied ? 'הקישור הועתק' : 'העתקת קישור הדוח'}
+          variant='soft'
+        >
+          <IconButton
+            size='sm'
+            variant='soft'
+            color='neutral'
+            sx={{ border: '1px solid', borderColor: 'divider' }}
+            onClick={onShare}
+          >
+            {iconUi({ id: 'share' })}
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </>
+  )
+}
+
+function buildReportRenderOptions(report = {}, { presentation, actions, onReportChange = null } = {}) {
+  const reportOptions = Array.isArray(report.versions) ? report.versions : []
+  const selectedReportValue = report.currentVersionId || report.versionId || reportOptions[0]?.value || ''
+
+  return {
+    presentation,
+    actions,
+    reportOptions,
+    selectedReportValue,
+    onReportChange,
+  }
+}
+
+function PdfButton({ documentTitle, renderContent }) {
+  return (
+    <>
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <ReportPrintButton
+          label='PDF'
+          size='sm'
+          tooltip='PDF'
+          documentTitle={documentTitle}
+          renderContent={renderContent}
+        />
+      </Box>
+
+      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+        <ReportPrintButton
+          iconOnly
+          startIcon='download'
+          size='sm'
+          tooltip='PDF'
+          documentTitle={documentTitle}
+          renderContent={renderContent}
+        />
+      </Box>
+    </>
+  )
+}
+
+function ReportActions({ report, shareCopied = false, onShare }) {
+  const documentTitle = getReportPageTitle(report)
+
+  return (
+    <>
+      <ShareButton copied={shareCopied} onShare={onShare} />
+
+      <PdfButton
+        documentTitle={documentTitle}
+        renderContent={() => (
+          <PublicReportRenderer
+            reportType={report.reportType}
+            payload={report.reportContent}
+            presentation='pdf'
+            actions={null}
+            reportOptions={Array.isArray(report.versions) ? report.versions : []}
+            selectedReportValue={report.currentVersionId || report.versionId || report.versions?.[0]?.value || ''}
+          />
+        )}
+      />
+    </>
+  )
+}
+
 export default function PublicReportPage() {
   const { reportId, versionId } = useParams()
 
@@ -61,6 +182,7 @@ export default function PublicReportPage() {
     report: null,
     error: null,
   })
+  const [shareCopied, setShareCopied] = React.useState(false)
 
   React.useEffect(() => {
     let active = true
@@ -117,12 +239,47 @@ export default function PublicReportPage() {
     }
   }, [state.report])
 
+  const handleReportChange = React.useCallback((versionId) => {
+    if (!reportId || !versionId) return
+
+    window.location.assign(
+      buildPublicReportUrl({
+        reportId,
+        versionId,
+      })
+    )
+  }, [reportId])
+
+  React.useEffect(() => {
+    if (!shareCopied) return undefined
+
+    const timerId = window.setTimeout(() => {
+      setShareCopied(false)
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
+  }, [shareCopied])
+
+  const handleShare = React.useCallback(async () => {
+    const currentUrl = window.location.href
+    const copied = await copyText(currentUrl)
+
+    if (copied) {
+      setShareCopied(true)
+      return
+    }
+
+    window.alert('לא ניתן לשתף את קישור הדוח. ניתן להעתיק את הכתובת ידנית.')
+  }, [])
+
   if (state.loading) {
     return (
       <PublicReportState
         loading
         title='טוען דוח'
-        text='הדוח הציבורי נטען כעת'
+        text='הדוח הציבורי נטען כרגע'
       />
     )
   }
@@ -143,26 +300,23 @@ export default function PublicReportPage() {
 
   return (
     <Box sx={sx.page}>
-      <Box sx={sx.actions}>
-        <ReportPrintButton
-          label='הדפס / PDF'
-          tooltip='הדפס / שמור PDF'
-          documentTitle={getReportPageTitle(state.report)}
-          renderContent={() => (
-            <PublicReportRenderer
-              reportType={state.report.reportType}
-              payload={state.report.reportContent}
-              presentation='pdf'
-            />
-          )}
-        />
-      </Box>
-
       <Box sx={sx.viewer}>
         <PublicReportRenderer
           reportType={state.report.reportType}
           payload={state.report.reportContent}
           presentation='url'
+          {...buildReportRenderOptions(state.report, {
+            presentation: 'url',
+            actions: null,
+            onReportChange: handleReportChange,
+          })}
+          actions={(
+            <ReportActions
+              report={state.report}
+              shareCopied={shareCopied}
+              onShare={handleShare}
+            />
+          )}
         />
       </Box>
     </Box>

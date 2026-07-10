@@ -162,3 +162,26 @@ export function buildPlayerTargetsPrintModel({ player = {}, team = {}, reportDat
     targets,
   }
 }
+
+export function buildPlayerTargetsPrintViewModel({
+  inputModel = null,
+  player = {},
+  team = {},
+  reportDate,
+} = {}) {
+  if (inputModel && typeof inputModel === 'object') {
+    return {
+      ...inputModel,
+      player: inputModel.player || player || {},
+      team: inputModel.team || team || {},
+      reportDate: inputModel.reportDate || reportDate || new Date(),
+      hasTargets: inputModel.hasTargets !== false,
+    }
+  }
+
+  return buildPlayerTargetsPrintModel({
+    player,
+    team,
+    reportDate,
+  })
+}

@@ -1,4 +1,4 @@
-﻿// features/hub/teamProfile/sharedUi/players/print/sx/seasonPlan.sx.js
+// src/features/hub/teamProfile/sharedUi/players/print/sx/seasonPlan.sx.js
 
 import { alpha } from '@mui/system'
 
@@ -6,9 +6,26 @@ import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const teamColors = getEntityColors('team')
 
+function tableHeaderSx({ tone = 'team' } = {}) {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    px: 1.1,
+    py: 0.7,
+    bgcolor: tone === 'danger'
+      ? alpha('#DC2626', 0.08)
+      : alpha(teamColors.bg, 0.48),
+    breakInside: 'avoid',
+    pageBreakInside: 'avoid',
+  }
+}
+
 export const seasonPlanSx = {
-  seasonPlanKpiSection: {
-    mb: 1.45,
+  collapseSection: ({ mt = 0, mb = 1.45 } = {}) => ({
+    mt,
+    mb,
     overflow: 'hidden',
     borderRadius: 12,
     borderColor: alpha(teamColors.accent, 0.2),
@@ -16,19 +33,26 @@ export const seasonPlanSx = {
     boxShadow: `0 8px 22px ${alpha(teamColors.accent, 0.12)}`,
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
-  },
+  }),
 
-  seasonPlanKpiHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    minHeight: 38,
-    px: 1.05,
-    py: 0.6,
-    bgcolor: alpha(teamColors.bg, 0.58),
-    borderBottom: `1px solid ${alpha(teamColors.accent, 0.16)}`,
-  },
+  collapseHeader: ({ tone = 'team', presentation = 'url' } = {}) => ({
+    ...tableHeaderSx({ tone }),
+    ...(presentation === 'pdf' && {
+      cursor: 'default',
+
+      '& svg': {
+        display: 'none',
+      },
+
+      '& [data-collapse-indicator]': {
+        display: 'none',
+      },
+
+      '& .MuiSvgIcon-root': {
+        display: 'none',
+      },
+    }),
+  }),
 
   seasonPlanKpiGrid: {
     display: 'grid',
@@ -140,7 +164,7 @@ export const seasonPlanSx = {
     alignItems: 'center',
     gap: 0.45,
     minWidth: 0,
-    mt: 2
+    mt: 2,
   },
 
   seasonPlanKpiLineIcon: {
@@ -189,29 +213,6 @@ export const seasonPlanSx = {
     }
   },
 
-  layerSection: {
-    mt: 6,
-    overflow: 'hidden',
-    borderRadius: 12,
-    borderColor: alpha(teamColors.accent, 0.2),
-    bgcolor: teamColors.surface,
-    boxShadow: `0 8px 22px ${alpha(teamColors.accent, 0.12)}`,
-    breakInside: 'avoid',
-    pageBreakInside: 'avoid',
-  },
-
-  layerSectionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    minHeight: 38,
-    px: 1.05,
-    py: 0.6,
-    bgcolor: alpha(teamColors.bg, 0.58),
-    borderBottom: `1px solid ${alpha(teamColors.accent, 0.16)}`,
-  },
-
   layerGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
@@ -220,6 +221,10 @@ export const seasonPlanSx = {
 
     '@media (max-width: 820px)': {
       gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+
+    '@media print': {
+      gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
     },
   },
 
@@ -277,9 +282,9 @@ export const seasonPlanSx = {
   tables: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 2,
     breakBefore: 'page',
     pageBreakBefore: 'always',
+    pt: 1,
   },
 
   tableSection: ({ topMargin = 0 } = {}) => ({
@@ -287,7 +292,6 @@ export const seasonPlanSx = {
     overflow: 'hidden',
     mt: topMargin,
     borderRadius: 11,
-    borderColor: alpha(teamColors.accent, 0.2),
     bgcolor: teamColors.surface,
     breakBefore: 'auto',
     pageBreakBefore: 'auto',
@@ -295,37 +299,7 @@ export const seasonPlanSx = {
     pageBreakInside: 'auto',
   }),
 
-  tableSectionHeader: ({ tone = 'team' } = {}) => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    px: 1.1,
-    py: 0.7,
-    bgcolor: tone === 'danger'
-      ? alpha('#DC2626', 0.08)
-      : alpha(teamColors.bg, 0.48),
-    borderBottom: `1px solid ${
-      tone === 'danger'
-        ? alpha('#DC2626', 0.24)
-        : alpha(teamColors.accent, 0.2)
-    }`,
-    breakInside: 'avoid',
-    pageBreakInside: 'avoid',
-  }),
-
-  tableSectionTitle: ({ tone = 'team' } = {}) => ({
-    color: tone === 'danger' ? '#991B1B' : teamColors.text,
-    fontWeight: 700,
-  }),
-
-  tableSectionSubtitle: ({ tone = 'team' } = {}) => ({
-    mt: 0.1,
-    color: tone === 'danger' ? '#B91C1C' : teamColors.text,
-    opacity: tone === 'danger' ? 0.76 : 0.62,
-    fontSize: 9,
-    fontWeight: 600,
-  }),
+  tableSectionHeader: tableHeaderSx,
 
   tableSectionCount: ({ tone = 'team' } = {}) => ({
     flex: '0 0 auto',

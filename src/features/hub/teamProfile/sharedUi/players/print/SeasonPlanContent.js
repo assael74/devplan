@@ -5,13 +5,48 @@ import { Box, Sheet, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { SEASON_PLAN_LAYER_TARGETS } from '../../../../../../shared/players/players.constants.js'
+import { CollapseBox } from '../../../../../../ui/patterns/collapseBox/index.js'
+
+import {
+  SEASON_PLAN_PRINT_COLUMNS,
+} from '../../../sharedLogic/players/print/index.js'
 
 import {
   SquadTable,
 } from './ReportParts.js'
 
-import { sharedSx } from './sx/shared.sx.js'
 import { seasonPlanSx as sx } from './sx/seasonPlan.sx.js'
+
+function cleanMobileText(value, isMobile = false) {
+  if (!isMobile || !value) return value
+
+  return String(value)
+    .replace(/\s*שחקנים\s*/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function getColumns(model = {}) {
+  const columns = Array.isArray(model.columns) ? model.columns : []
+  const resolvedColumns = columns.length ? columns : SEASON_PLAN_PRINT_COLUMNS
+
+  if (!model.isMobile) {
+    return resolvedColumns
+  }
+
+  return resolvedColumns
+    .filter(column => column.key !== 'level')
+    .map(column => {
+      if (column.key !== 'positions') {
+        return column
+      }
+
+      return {
+        ...column,
+        label: 'עמדה ראשית',
+      }
+    })
+}
 
 function findItem(items, value) {
   return items.find(item => item.value === value) || {
@@ -50,17 +85,19 @@ function getLayerTone(item, value) {
   return 'neutral'
 }
 
-function StatusLine({ item, label, tone }) {
+function StatusLine({ item, label, tone, isMobile = false }) {
+  const resolvedLabel = cleanMobileText(label, isMobile)
+
   return (
     <Box sx={sx.seasonPlanKpiLine}>
       <Box sx={sx.seasonPlanKpiLineCopy}>
         <Typography sx={sx.seasonPlanKpiLineLabel}>
-          {label}
+          {resolvedLabel}
         </Typography>
 
         <Box sx={sx.seasonPlanKpiLineIndicator}>
           <Box sx={sx.seasonPlanKpiLineIcon}>
-            {iconUi({ id: item.iconId || 'players', sx: { color: item.iconColor || '#64748B' }, })}
+            {iconUi({ id: item.iconId || 'players', sx: { color: item.iconColor || '#64748B' } })}
           </Box>
 
           <Typography sx={sx.seasonPlanKpiLineValue}>
@@ -68,12 +105,7 @@ function StatusLine({ item, label, tone }) {
           </Typography>
 
           <Box sx={sx.seasonPlanKpiLineBar}>
-            <Box
-              sx={sx.seasonPlanKpiLineFill({
-                tone,
-                value: item.count,
-              })}
-            />
+            <Box sx={sx.seasonPlanKpiLineFill({ tone, value: item.count })} />
           </Box>
         </Box>
       </Box>
@@ -114,29 +146,15 @@ function Layers({ items = [] }) {
   })
 
   return (
-    <Sheet variant='outlined' className='dpPrintSection' sx={sx.layerSection}>
-      <Box sx={sx.layerSectionHeader}>
-        <Box>
-          <Typography level='title-sm' sx={sharedSx.summarySectionTitle}>
-            תכנון לעונה לפי חוליות
-          </Typography>
-
-          <Typography level='body-xs' sx={sharedSx.summarySectionSubtitle}>
-            חלוקה ראשונית לפי קווי משחק
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box sx={sx.layerGrid}>
-        {list.map(item => (
-          <LayerCard key={item.value} item={item} />
-        ))}
-      </Box>
-    </Sheet>
+    <Box sx={sx.layerGrid}>
+      {list.map(item => (
+        <LayerCard key={item.value} item={item} />
+      ))}
+    </Box>
   )
 }
 
-function Kpi({ items = [] }) {
+function Kpi({ items = [], isMobile = false }) {
   const planned = [
     findItem(items, 'inSquad'),
     findItem(items, 'wantsToLeave'),
@@ -159,144 +177,135 @@ function Kpi({ items = [] }) {
   }, 0)
 
   return (
-    <Sheet variant='outlined' className='dpPrintSection' sx={sx.seasonPlanKpiSection}>
-      <Box sx={sx.seasonPlanKpiHeader}>
-        <Box>
-          <Typography level='title-sm' sx={sharedSx.summarySectionTitle}>
-            תכנון לעונה
+    <Box sx={sx.seasonPlanKpiGrid}>
+      <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiMain]}>
+        <Box sx={sx.seasonPlanKpiCardHeader}>
+          <Typography sx={sx.seasonPlanKpiCardTitle}>
+            בתכנון לעונה
           </Typography>
 
-          <Typography level='body-xs' sx={sharedSx.summarySectionSubtitle}>
-            חלוקה קצרה ומדורגת לפני הטבלה
+          <Typography sx={sx.seasonPlanKpiCardChip}>
+            {plannedTotal}
           </Typography>
         </Box>
 
-        <Typography sx={sharedSx.summarySectionTotal}>
-          {plannedTotal} שחקנים
-        </Typography>
-      </Box>
+        <Box sx={sx.seasonPlanKpiLinesInlineThree}>
+          <StatusLine item={planned[0]} label='שחקנים בתוכנית' tone='good' isMobile={isMobile} />
+          <StatusLine item={planned[1]} label='שחקנים שרוצים לעזוב' tone='warn' isMobile={isMobile} />
+          <StatusLine item={planned[2]} label='שחקנים בהתלבטות' tone='neutral' isMobile={isMobile} />
+        </Box>
+      </Sheet>
 
-      <Box sx={sx.seasonPlanKpiGrid}>
-        <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiMain]}>
-          <Box sx={sx.seasonPlanKpiCardHeader}>
-            <Typography sx={sx.seasonPlanKpiCardTitle}>
-              בתכנון לעונה
-            </Typography>
+      <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiMid]}>
+        <Box sx={sx.seasonPlanKpiCardHeader}>
+          <Typography sx={sx.seasonPlanKpiCardTitle}>
+            בתהליך בחינה
+          </Typography>
 
-            <Typography sx={sx.seasonPlanKpiCardChip}>
-              {plannedTotal}
-            </Typography>
-          </Box>
+          <Typography sx={sx.seasonPlanKpiCardChip}>
+            {reviewTotal}
+          </Typography>
+        </Box>
 
-          <Box sx={sx.seasonPlanKpiLinesInlineThree}>
-            <StatusLine item={planned[0]} label='שחקנים בתוכנית' tone='good' />
-            <StatusLine item={planned[1]} label='שחקנים שרוצים לעזוב' tone='warn' />
-            <StatusLine item={planned[2]} label='שחקנים בהתלבטות' tone='neutral' />
-          </Box>
-        </Sheet>
+        <Box sx={sx.seasonPlanKpiLinesInlineTwo}>
+          <StatusLine item={review[0]} label='בבחינה' tone='good' isMobile={isMobile} />
+          <StatusLine item={review[1]} label='לא נבחן' tone='neutral' isMobile={isMobile} />
+        </Box>
+      </Sheet>
 
-        <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiMid]}>
-          <Box sx={sx.seasonPlanKpiCardHeader}>
-            <Typography sx={sx.seasonPlanKpiCardTitle}>
-              עדיין בתהליך בחינה
-            </Typography>
+      <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiSide]}>
+        <Box sx={sx.seasonPlanKpiCardHeader}>
+          <Typography sx={sx.seasonPlanKpiCardTitle}>
+            לא בתכנון
+          </Typography>
 
-            <Typography sx={sx.seasonPlanKpiCardChip}>
-              {reviewTotal}
-            </Typography>
-          </Box>
+          <Typography sx={sx.seasonPlanKpiCardChip}>
+            {notSuitable.count}
+          </Typography>
+        </Box>
 
-          <Box sx={sx.seasonPlanKpiLinesInlineTwo}>
-            <StatusLine item={review[0]} label='בבחינה' tone='good' />
-            <StatusLine item={review[1]} label='לא נבחן' tone='neutral' />
-          </Box>
-        </Sheet>
-
-        <Sheet variant='outlined' sx={[sx.seasonPlanKpiCard, sx.seasonPlanKpiSide]}>
-          <Box sx={sx.seasonPlanKpiCardHeader}>
-            <Typography sx={sx.seasonPlanKpiCardTitle}>
-              לא בתכנון
-            </Typography>
-
-            <Typography sx={sx.seasonPlanKpiCardChip}>
-              {notSuitable.count}
-            </Typography>
-          </Box>
-
-          <Box sx={sx.seasonPlanKpiLines}>
-            <StatusLine
-              item={notSuitable}
-              label='לא מתאים מקצועית'
-              tone='bad'
-            />
-          </Box>
-        </Sheet>
-      </Box>
-    </Sheet>
+        <Box sx={sx.seasonPlanKpiLines}>
+          <StatusLine item={notSuitable} label='לא מתאים מקצועית' tone='bad' isMobile={isMobile} />
+        </Box>
+      </Sheet>
+    </Box>
   )
 }
 
-function Section({ group, columns }) {
+function Section({ group, columns, isMobile = false, presentation = 'pdf', defaultOpen = false }) {
+  const [open, setOpen] = React.useState(defaultOpen)
+  const isPdf = presentation === 'pdf'
+  const title = cleanMobileText(group.title, isMobile)
+  const subtitle = cleanMobileText(group.subtitle, isMobile)
+  const countLabel = isMobile ? group.rows.length : `${group.rows.length} שחקנים`
+
   if (!group.rows.length) return null
 
   return (
-    <Sheet
-      variant='outlined'
-      className='dpPrintSection'
-      sx={sx.tableSection({ topMargin: group.id === 'notSuitable' ? 1.5 : 0, })}
-    >
-      <Box sx={sx.tableSectionHeader({ tone: group.tone })}>
-        <Box>
-          <Typography
-            level='title-sm'
-            sx={sx.tableSectionTitle({ tone: group.tone })}
-          >
-            {group.title}
-          </Typography>
+    <CollapseBox
+      open={isPdf || open}
+      onToggle={() => {
+        if (isPdf) return
 
-          <Typography
-            level='body-xs'
-            sx={sx.tableSectionSubtitle({ tone: group.tone })}
-          >
-            {group.subtitle}
-          </Typography>
-        </Box>
-
+        setOpen(prev => !prev)
+      }}
+      rootSx={sx.tableSection({ topMargin: group.id === 'notSuitable' ? 0.5 : 0.5 })}
+      headerSx={sx.collapseHeader({ tone: group.tone, presentation })}
+      title={title}
+      subtitle={subtitle}
+      endSlot={(
         <Typography sx={sx.tableSectionCount({ tone: group.tone })}>
-          {group.rows.length} שחקנים
+          {countLabel}
         </Typography>
-      </Box>
-
+      )}
+    >
       <SquadTable
         rows={group.rows}
         columns={columns}
         showSeasonPlanStatus
+        isMobile={isMobile}
       />
-    </Sheet>
+    </CollapseBox>
   )
 }
 
 export default function SeasonPlanContent({ model }) {
-  const layerItems = Array.isArray(model.seasonPlanLayerSummary) ? model.seasonPlanLayerSummary : []
+  const isPdf = model.presentation === 'pdf'
+  const layerItems = Array.isArray(model.summary?.layers) ? model.summary.layers : []
+  const summaryItems = Array.isArray(model.summary?.status) ? model.summary.status : []
+  const groups = Array.isArray(model.sections) ? model.sections : []
+  const columns = getColumns(model)
 
-  const summaryItems = Array.isArray(model.seasonPlanSummary) ? model.seasonPlanSummary : []
-
-  const groups = Array.isArray(model.squadGroups) ? model.squadGroups : []
-
-  const columns = Array.isArray(model.columns) ? model.columns : []
+  const [layersOpen, setLayersOpen] = React.useState(isPdf)
 
   return (
     <>
-      <Kpi items={summaryItems} />
+      <Kpi items={summaryItems} isMobile={model.isMobile} />
 
-      <Layers items={layerItems} />
+      <CollapseBox
+        open={layersOpen}
+        onToggle={() => {
+          if (isPdf) return
+
+          setLayersOpen(prev => !prev)
+        }}
+        rootSx={sx.collapseSection({ mt: 1 })}
+        headerSx={sx.collapseHeader({ tone: 'team', presentation: model.presentation })}
+        title='תכנון לעונה לפי חוליות'
+        subtitle='חלוקה ראשונית לפי קווי משחק'
+      >
+        <Layers items={layerItems} />
+      </CollapseBox>
 
       <Box sx={sx.tables}>
-        {groups.map(group => (
+        {groups.map((group, index) => (
           <Section
             key={group.id}
             group={group}
             columns={columns}
+            isMobile={model.isMobile}
+            presentation={model.presentation}
+            defaultOpen={index === 0}
           />
         ))}
       </Box>

@@ -2,11 +2,9 @@
 
 import React from 'react'
 
-import ManagementTargetsPrintView from '../hub/teamProfile/sharedUi/management/print/ManagementTargetsPrintView.js'
 import PlayerTargetsPrintView from '../hub/playerProfile/sharedUi/info/print/PlayerTargetsPrintView.js'
-import {
-  TeamPlayersPrintReport,
-} from '../hub/teamProfile/sharedUi/players/print/index.js'
+import { ManagementTargetsPrintView } from '../hub/teamProfile/sharedUi/management/print/index.js'
+import { TeamPlayersPrintReport } from '../hub/teamProfile/sharedUi/players/print/index.js'
 
 import { REPORT_TYPES } from './reports.constants.js'
 
@@ -15,6 +13,23 @@ function renderTeamPlayersReport(payload, options = {}) {
     <TeamPlayersPrintReport
       inputModel={payload}
       presentation={options.presentation || 'pdf'}
+      actions={options.actions || null}
+      reportOptions={options.reportOptions || []}
+      selectedReportValue={options.selectedReportValue || null}
+      onReportChange={options.onReportChange || null}
+    />
+  )
+}
+
+function renderManagementTargetsReport(payload, options = {}) {
+  return (
+    <ManagementTargetsPrintView
+      inputModel={payload}
+      presentation={options.presentation || 'url'}
+      actions={options.actions || null}
+      reportOptions={options.reportOptions || []}
+      selectedReportValue={options.selectedReportValue || null}
+      onReportChange={options.onReportChange || null}
     />
   )
 }
@@ -45,26 +60,20 @@ const REPORT_DEFINITIONS = {
     id: REPORT_TYPES.TEAM_TARGETS,
     label: 'יעדי קבוצה',
 
-    render: payload => (
-      <ManagementTargetsPrintView
-        team={payload.team}
-        targets={payload.targets}
-        reportDate={payload.reportDate}
-        reportNumber={payload.reportNumber}
-        printPages={payload.printPages}
-      />
-    ),
+    render: (payload, options) => renderManagementTargetsReport(payload, options),
   },
 
   [REPORT_TYPES.PLAYER_TARGETS]: {
     id: REPORT_TYPES.PLAYER_TARGETS,
     label: 'יעדי שחקן',
 
-    render: payload => (
+    render: (payload, options) => (
       <PlayerTargetsPrintView
-        player={payload.player}
-        team={payload.team}
-        reportDate={payload.reportDate}
+        inputModel={payload}
+        reportOptions={options.reportOptions || []}
+        selectedReportValue={options.selectedReportValue || null}
+        onReportChange={options.onReportChange || null}
+        actions={options.actions || null}
       />
     ),
   },
