@@ -4,7 +4,7 @@ import React from 'react'
 
 import PlayerTargetsPrintView from '../hub/playerProfile/sharedUi/info/print/PlayerTargetsPrintView.js'
 import { ManagementTargetsPrintView } from '../hub/teamProfile/sharedUi/management/print/index.js'
-import { TeamPlayersPrintReport } from '../hub/teamProfile/sharedUi/players/print/index.js'
+import TeamPlayersPrintReport from '../hub/teamProfile/sharedUi/players/print/ReportRoot.js'
 
 import { REPORT_TYPES } from './reports.constants.js'
 

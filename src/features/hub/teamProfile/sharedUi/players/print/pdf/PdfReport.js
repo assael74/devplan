@@ -2,30 +2,14 @@
 
 import React from 'react'
 
-import {
-  TEAM_PLAYERS_PRINT_MODES,
-} from '../../../../sharedLogic/players/print/index.js'
+import ReportContentRouter from '../ReportContentRouter.js'
 
-import SeasonPlanContent from '../SeasonPlanContent.js'
-import MinutesPlanContent from '../MinutesPlanContent.js'
-import PerformanceContent from '../PerformanceContent.js'
-
-function getContent(mode) {
-  if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
-    return MinutesPlanContent
-  }
-
-  if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {
-    return PerformanceContent
-  }
-
-  return SeasonPlanContent
-}
-
-export default function PdfReport({ model }) {
-  const Content = getContent(model.mode)
-
+export default function PdfReport({ model, device = 'desktop' }) {
   return (
-    <Content model={model} />
+    <ReportContentRouter
+      model={model}
+      presentation='pdf'
+      device={device}
+    />
   )
 }

@@ -16,20 +16,16 @@ import {
   TEAM_PLAYERS_PRINT_MODES,
 } from '../../../sharedLogic/players/print/index.js'
 
-import {
-  ActiveFilters,
-} from './ReportParts.js'
-
 import PdfReport from './pdf/PdfReport.js'
 import UrlReport from './url/UrlReport.js'
 
-import { reportSx as sx } from './sx/report.sx.js'
+import { reportSx as sx } from './report.sx.js'
 
 function getMode(model = {}) {
   return model.mode || TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN
 }
 
-function getType(mode) {
+function getReportType(mode) {
   if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {
     return REPORT_TYPES.PERFORMANCE
   }
@@ -41,95 +37,51 @@ function getMeta(model = {}) {
   return model.meta || {}
 }
 
-function getReportTitle(model = {}) {
+function getModelValue(model, key, fallback = '') {
   const meta = getMeta(model)
 
-  return model.title || meta.title || ''
-}
-
-function getReportSubtitle(model = {}) {
-  const meta = getMeta(model)
-
-  return model.subtitle || meta.subtitle || ''
-}
-
-function getReportDate(model = {}) {
-  const meta = getMeta(model)
-
-  return model.reportDate || meta.reportDate || ''
+  return model[key] || meta[key] || fallback
 }
 
 function getMetaItems(model = {}) {
-  const meta = getMeta(model)
-
-  return Array.isArray(model.metaItems) ? model.metaItems : meta.items || []
-}
-
-function getEntity(model = {}) {
-  return model.entity || {}
-}
-
-function getPrintPages(model = {}) {
-  return model.printPages || 1
-}
-
-function getColumns(model = {}, mode, presentation, isMobile) {
-  const modeContent = model.modeContent || {}
-  const baseColumns = Array.isArray(modeContent.columns)
-    ? modeContent.columns
-    : Array.isArray(model.columns)
-      ? model.columns
-      : []
-
-  if (presentation === 'url' && isMobile) {
-    return baseColumns.filter(column => column.key !== 'level')
+  if (Array.isArray(model.metaItems)) {
+    return model.metaItems
   }
 
-  return baseColumns
+  const meta = getMeta(model)
+
+  return Array.isArray(meta.items) ? meta.items : []
 }
 
-function buildModel(model, mode, presentation, isMobile) {
+function normalizeModel(model = {}) {
   const modeContent = model.modeContent || {}
-  const columns = getColumns(model, mode, presentation, isMobile)
 
   return {
     ...model,
     ...modeContent,
-    mode,
-    title: getReportTitle(model),
-    subtitle: getReportSubtitle(model),
-    reportDate: getReportDate(model),
+    mode: getMode(model),
+    title: getModelValue(model, 'title'),
+    subtitle: getModelValue(model, 'subtitle'),
+    reportDate: getModelValue(model, 'reportDate'),
     metaItems: getMetaItems(model),
-    entity: getEntity(model),
-    isSeasonPlan: mode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
-    isMinutesPlan: mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN,
-    isPerformance: mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE,
-    presentation,
-    isMobile,
-    columns,
+    entity: model.entity || {},
   }
 }
 
-function hasRowsInSections(sections = []) {
+function hasSectionRows(sections = []) {
   return sections.some(section => {
     return Array.isArray(section.rows) && section.rows.length > 0
   })
 }
 
 function hasRows(model = {}) {
-  if (Array.isArray(model.rows) && model.rows.length > 0) {
+  if (Array.isArray(model.rows) && model.rows.length) {
     return true
   }
 
-  if (Array.isArray(model.sections) && hasRowsInSections(model.sections)) {
-    return true
-  }
-
-  if (Array.isArray(model.squadGroups) && hasRowsInSections(model.squadGroups)) {
-    return true
-  }
-
-  return false
+  return Array.isArray(model.sections)
+    ? hasSectionRows(model.sections)
+    : false
 }
 
 function EmptyRows() {
@@ -140,7 +92,7 @@ function EmptyRows() {
       </Typography>
 
       <Typography level='body-sm'>
-        יש לבדוק את הפילטרים הפעילים או את נתוני הסגל.
+        יש לבדוק את נתוני הסגל או את תוכן הדוח.
       </Typography>
     </Sheet>
   )
@@ -156,14 +108,6 @@ function EmptyView() {
   )
 }
 
-function getModel(inputModel, legacyProps) {
-  if (inputModel) {
-    return inputModel
-  }
-
-  return legacyProps || {}
-}
-
 export default function ReportRoot({
   inputModel = null,
   presentation = 'pdf',
@@ -176,23 +120,23 @@ export default function ReportRoot({
   ...legacyProps
 }) {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const model = getModel(inputModel, legacyProps)
-  const mode = getMode(model)
-  const contentModel = buildModel(model, mode, presentation, isMobile)
-  const reportType = getType(mode)
+  const mediaMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const sourceModel = inputModel || legacyProps
+  const model = normalizeModel(sourceModel)
+  const resolvedDevice = device || (mediaMobile ? 'mobile' : 'desktop')
+  const isMobile = resolvedDevice === 'mobile'
 
   return (
     <ReportShell
-      title={contentModel.title}
-      reportDate={contentModel.reportDate}
-      reportType={reportType}
+      title={model.title}
+      reportDate={model.reportDate}
+      reportType={getReportType(model.mode)}
       presentation={presentation}
       isMobile={isMobile}
       status={REPORT_STATUS.ACTIVE}
-      printPages={getPrintPages(contentModel)}
-      entity={contentModel.entity}
-      metaItems={contentModel.metaItems}
+      entity={model.entity}
+      metaItems={model.metaItems}
       metaColumns={4}
       actions={actions}
       reportOptions={reportOptions}
@@ -200,27 +144,26 @@ export default function ReportRoot({
       onReportChange={onReportChange}
     >
       <Typography sx={sx.subtitle}>
-        {contentModel.subtitle}
+        {model.subtitle}
       </Typography>
 
       {loading ? (
         <UrlReport
-          model={contentModel}
-          device={device}
-          isMobile={isMobile}
-          presentation={presentation}
+          model={model}
+          device={resolvedDevice}
           loading
         />
-      ) : !hasRows(contentModel) ? (
+      ) : !hasRows(model) ? (
         <EmptyRows />
       ) : presentation === 'pdf' ? (
-        <PdfReport model={contentModel} presentation='pdf' />
+        <PdfReport
+          model={model}
+          device={resolvedDevice}
+        />
       ) : presentation === 'url' ? (
         <UrlReport
-          model={contentModel}
-          device={device}
-          presentation='url'
-          isMobile={isMobile}
+          model={model}
+          device={resolvedDevice}
         />
       ) : (
         <EmptyView />

@@ -1,8 +1,8 @@
-// src/features/hub/teamProfile/sharedUi/players/print/sx/report.sx.js
+// src/features/hub/teamProfile/sharedUi/players/print/report.sx.js
 
 import { alpha } from '@mui/system'
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const teamColors = getEntityColors('team')
 

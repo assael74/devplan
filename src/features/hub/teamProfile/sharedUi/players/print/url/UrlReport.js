@@ -1,36 +1,30 @@
 // src/features/hub/teamProfile/sharedUi/players/print/url/UrlReport.js
 
 import React from 'react'
+import { Box } from '@mui/joy'
 
-import UrlDesktop from './UrlDesktop.js'
-import UrlMobile from './UrlMobile.js'
+import ReportContentRouter from '../ReportContentRouter.js'
 import UrlSkeleton from './UrlSkeleton.js'
 
-function getDevice() {
-  if (typeof window === 'undefined') {
-    return 'desktop'
-  }
+import { urlSx as sx } from './url.sx.js'
 
-  return window.matchMedia('(max-width: 820px)').matches
-    ? 'mobile'
-    : 'desktop'
-}
-
-export default function UrlReport({ model, device = '', loading = false, presentation, }) {
-  const resolvedDevice = device || getDevice()
-
+export default function UrlReport({ model, device = 'desktop', loading = false }) {
   if (loading) {
     return (
       <UrlSkeleton
         mode={model.mode}
-        device={resolvedDevice}
+        device={device}
       />
     )
   }
 
-  if (resolvedDevice === 'mobile') {
-    return <UrlMobile model={model} presentation={presentation} />
-  }
-
-  return <UrlDesktop model={model} presentation={presentation} />
+  return (
+    <Box sx={sx.root({ device })}>
+      <ReportContentRouter
+        model={model}
+        presentation='url'
+        device={device}
+      />
+    </Box>
+  )
 }

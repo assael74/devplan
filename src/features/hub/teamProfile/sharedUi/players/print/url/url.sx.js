@@ -1,18 +1,17 @@
 // src/features/hub/teamProfile/sharedUi/players/print/url/url.sx.js
 
 export const urlSx = {
-  desktop: {
+  root: ({ device = 'desktop' } = {}) => ({
     width: '100%',
-  },
+    minWidth: 0,
 
-  mobile: {
-    width: '100%',
-
-    '& .dpPrintSection': {
-      breakInside: 'auto',
-      pageBreakInside: 'auto',
-    },
-  },
+    ...(device === 'mobile' && {
+      '& .dpPrintSection': {
+        breakInside: 'auto',
+        pageBreakInside: 'auto',
+      },
+    }),
+  }),
 
   skeletonWrap: {
     display: 'grid',

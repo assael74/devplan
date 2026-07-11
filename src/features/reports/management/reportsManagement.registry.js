@@ -3,9 +3,7 @@
 import ManagementTargetsPrintView from '../../hub/teamProfile/sharedUi/management/print/ManagementTargetsPrintView.js'
 import PlayerTargetsPrintView from '../../hub/playerProfile/sharedUi/info/print/PlayerTargetsPrintView.js'
 
-import {
-  TeamPlayersPrintReport,
-} from '../../hub/teamProfile/sharedUi/players/print/index.js'
+import TeamPlayersPrintReport from '../../hub/teamProfile/sharedUi/players/print/ReportRoot.js'
 
 import {
   buildTeamPlayersPrintDocumentTitle,
