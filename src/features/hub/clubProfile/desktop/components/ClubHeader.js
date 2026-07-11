@@ -1,6 +1,6 @@
-/// features/hub/clubProfile/desktop/components/ClubHeader.js
+// features/hub/clubProfile/desktop/components/ClubHeader.js
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Button, Tooltip } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
@@ -9,19 +9,24 @@ import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
+
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 
-const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
+const getItemsCount = items => (Array.isArray(items) ? items.length : 0)
 
-const openExternalLink = (url) => {
+const openExternalLink = url => {
   if (!url) return
 
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 function IFAButton({ ifaLink }) {
+  const tooltipTitle = ifaLink
+    ? 'פתח באתר ההתאחדות'
+    : 'אין קישור להתאחדות'
+
   return (
-    <Tooltip title={ifaLink ? 'פתח באתר ההתאחדות' : 'אין קישור להתאחדות'}>
+    <Tooltip title={tooltipTitle}>
       <span>
         <Button
           size="sm"
@@ -42,15 +47,21 @@ function IFAButton({ ifaLink }) {
               }}
             />
           }
-          endDecorator={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+          endDecorator={
+            <OpenInNewIcon
+              sx={{
+                fontSize: 16,
+              }}
+            />
+          }
           sx={{
             minHeight: 34,
             px: 1,
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: 10,
             fontWeight: 700,
             whiteSpace: 'nowrap',
-            border: '1px solid',
-            borderColor: 'divider',
           }}
         >
           התאחדות
@@ -63,27 +74,39 @@ function IFAButton({ ifaLink }) {
 export default function ClubHeader({ entity, context }) {
   const [openImg, setOpenImg] = useState(false)
 
-  const ifaLink = entity?.ifaLink || entity?.clubIfaLink || null
+  const ifaLink =
+    entity?.ifaLink ||
+    entity?.clubIfaLink ||
+    null
 
-  const fallback = buildFallbackAvatar({
+  const fallbackAvatar = buildFallbackAvatar({
     entityType: 'club',
     id: entity?.id,
     name: entity?.clubName,
   })
 
-  const [headerPhoto, setHeaderPhoto] = useState(entity?.photo || fallback)
+  const photoSrc = entity?.photo || fallbackAvatar
+  const [headerPhoto, setHeaderPhoto] = useState(photoSrc)
 
   useEffect(() => {
-    setHeaderPhoto(entity?.photo || fallback)
-  }, [entity?.photo, entity?.id, fallback])
+    setHeaderPhoto(photoSrc)
+  }, [photoSrc])
 
   const metaCounts = useMemo(() => {
-    const teamsCount = len(entity?.teams)
+    const teamsCount = getItemsCount(entity?.teams)
+
     return {
       teams: teamsCount,
       isDeletable: teamsCount === 0,
     }
   }, [entity?.teams])
+
+  const handleImageSave = url => {
+    if (!url) return
+
+    const separator = url.includes('?') ? '&' : '?'
+    setHeaderPhoto(`${url}${separator}v=${Date.now()}`)
+  }
 
   return (
     <>
@@ -115,11 +138,7 @@ export default function ClubHeader({ entity, context }) {
         entityName={entity?.clubName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={(url) => {
-          setHeaderPhoto(
-            `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-          )
-        }}
+        onAfterSave={handleImageSave}
       />
     </>
   )

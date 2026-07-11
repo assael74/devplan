@@ -40,7 +40,7 @@ export function PlayerCell({ row }) {
 
       <Box sx={sx.playerText}>
         <Typography component='span' sx={sx.playerName}>
-          {row.name}
+          {row.playerFullName}
         </Typography>
 
         <Typography component='span' sx={sx.playerSubline}>
@@ -193,7 +193,7 @@ function renderCellByKey(key, row, flags) {
   }
 
   if (key === 'squadRole' && flags.showSquadRole) {
-    return <RoleChip role={row.role} />
+    return <RoleChip role={row.squadRole} />
   }
 
   if (key === 'level') {

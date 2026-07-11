@@ -1,14 +1,16 @@
 // ui/patterns/reports/ReportShell.js
 
-import { Box, Typography, Divider } from '@mui/joy'
+import { Box, Divider, Typography } from '@mui/joy'
 
 import ReportHeader from './ReportHeader'
 import ReportMetaGrid from './ReportMetaGrid'
+
 import {
   REPORT_SYSTEM_COLORS,
   getReportStatusColors,
   getReportTypeColors,
 } from './sx/reportColors'
+
 import { buildReportPdfSx } from './sx/report.pdf.sx'
 import { buildReportUrlDesktopSx } from './sx/report.urlDesktop.sx'
 import { buildReportUrlMobileSx } from './sx/report.urlMobile.sx'
@@ -47,6 +49,7 @@ function buildStatusSx({ colors }) {
     fontSize: 11,
     fontWeight: 700,
     whiteSpace: 'nowrap',
+
     '&::before': {
       content: '""',
       width: 7,
@@ -72,6 +75,7 @@ export default function ReportShell({
   metaColumns = 3,
   reportNumber,
   printPages = 1,
+  fillPrintPage = false,
   brandName = 'DevPlan',
   brandSubtitle = 'מערכת ניהול וניתוח מקצועי',
   actions = null,
@@ -79,14 +83,17 @@ export default function ReportShell({
 }) {
   const isPdf = presentation === 'pdf'
   const device = isPdf ? 'desktop' : getReportDevice(isMobile)
+
   const systemColors = REPORT_SYSTEM_COLORS
   const typeColors = getReportTypeColors(reportType)
   const statusColors = getReportStatusColors(status)
+
   const sx = isPdf
-    ? buildReportPdfSx({ systemColors, printPages })
+    ? buildReportPdfSx({ systemColors, printPages, fillPrintPage })
     : device === 'mobile'
       ? buildReportUrlMobileSx({ systemColors })
       : buildReportUrlDesktopSx({ systemColors })
+
   const shellEntity = { ...entity, systemColors }
 
   return (
@@ -94,17 +101,26 @@ export default function ReportShell({
       <Box sx={sx.topBar}>
         <Box sx={sx.brand}>
           <Box sx={sx.brandMark}>DP</Box>
+
           <Box sx={sx.brandCopy}>
             <Typography component='span' sx={sx.brandName}>
               {brandName}
             </Typography>
+
             <Typography component='span' sx={sx.brandSubtitle}>
               {brandSubtitle}
             </Typography>
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           {!isPdf && actions ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {actions}
@@ -128,7 +144,10 @@ export default function ReportShell({
         sx={sx}
       />
 
-      <Box sx={sx.scrollArea} className={isPdf ? undefined : 'dpScrollThin'}>
+      <Box
+        sx={sx.scrollArea}
+        className={isPdf ? undefined : 'dpScrollThin'}
+      >
         <ReportMetaGrid
           items={metaItems}
           columns={metaColumns}
@@ -138,7 +157,10 @@ export default function ReportShell({
 
         <Divider sx={{ my: 1 }} />
 
-        <Box component='main' sx={sx.content({ typeColors })}>
+        <Box
+          component='main'
+          sx={sx.content({ typeColors })}
+        >
           {children}
         </Box>
 

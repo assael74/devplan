@@ -1,21 +1,19 @@
-﻿// src/features/hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.model.js
+// src/features/hub/teamProfile/sharedLogic/players/print/teamPlayersPrint.model.js
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
 } from './teamPlayersPrint.constants.js'
 
 import {
-  asNumber,
-  buildActiveFilters,
   cleanFilePart,
+  EMPTY,
+  formatShortSeason,
   resolveClubName,
   resolveCoachName,
   resolveSeasonLabel,
   resolveTeamAvatar,
   resolveTeamName,
   resolveTeamYear,
-  formatShortSeason,
-  EMPTY,
 } from './teamPlayersPrint.shared.js'
 
 import {
@@ -109,7 +107,9 @@ export function formatTeamPlayersReportDate(value) {
     return value
   }
 
-  const date = value instanceof Date ? value : new Date(value || Date.now())
+  const date = value instanceof Date
+    ? value
+    : new Date(value || Date.now())
 
   return new Intl.DateTimeFormat('he-IL', {
     day: 'numeric',
@@ -121,44 +121,37 @@ export function formatTeamPlayersReportDate(value) {
 export function buildTeamPlayersReportModel({
   team,
   rows,
-  filters,
-  summary,
   seasonLabel,
   mode = TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
   reportDate,
 } = {}) {
+  const safeTeam = team || {}
   const safeRows = Array.isArray(rows) ? rows : []
-  const resolvedSeasonLabel = resolveSeasonLabel({ team, seasonLabel })
+
+  const resolvedSeasonLabel = resolveSeasonLabel({
+    team: safeTeam,
+    seasonLabel,
+  })
+
   const modeModel = buildModeModel(mode, safeRows)
-  const activeFilters = buildActiveFilters(filters)
-  const printPages = modeModel.printPages || Math.max(1, Math.ceil(modeModel.rows.length / 18))
+
   return {
     ...modeModel,
     mode,
     title: getTeamPlayersReportName(mode),
     subtitle: getReportSubtitle(mode),
-    isSeasonPlan: mode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
-    isMinutesPlan: mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN,
-    isPerformance: mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE,
     reportDate: formatTeamPlayersReportDate(reportDate),
-    printPages,
-    rowsCount: modeModel.rows.length,
-    totalCount: asNumber(summary?.total, safeRows.length),
-    activeCount: asNumber(summary?.active),
-    withTargetsCount: asNumber(summary?.targetsSummary?.withTargets),
     seasonLabel: resolvedSeasonLabel,
     seasonShortLabel: formatShortSeason(resolvedSeasonLabel),
-    activeFilters,
-    hasActiveFilters: activeFilters.length > 0,
     entity: {
       type: 'team',
-      name: resolveTeamName(team),
-      avatarUrl: resolveTeamAvatar(team),
+      name: resolveTeamName(safeTeam),
+      avatarUrl: resolveTeamAvatar(safeTeam),
     },
     metaItems: [
-      { id: 'club', label: 'מועדון', value: resolveClubName(team) },
-      { id: 'coach', label: 'מאמן', value: resolveCoachName(team) },
-      { id: 'year', label: 'שנתון', value: resolveTeamYear(team) || EMPTY },
+      { id: 'club', label: 'מועדון', value: resolveClubName(safeTeam) },
+      { id: 'coach', label: 'מאמן', value: resolveCoachName(safeTeam) },
+      { id: 'year', label: 'שנתון', value: resolveTeamYear(safeTeam) || EMPTY },
       { id: 'season', label: 'עונה', value: resolvedSeasonLabel },
     ],
   }

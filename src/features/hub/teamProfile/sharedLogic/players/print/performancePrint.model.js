@@ -3,22 +3,24 @@
 import {
   PERFORMANCE_PRINT_COLUMNS,
 } from './teamPlayersPrint.constants.js'
+
 import {
   getPerformanceSortValue,
-  mapPlayerPrintRows,
+  mapPerformancePrintRows,
   nameCollator,
 } from './teamPlayersPrint.shared.js'
 
 function sortPerformanceRows(rows = []) {
-  return [...rows].sort((a, b) => {
+  return [...rows].sort((first, second) => {
     const profileCompare =
-      getPerformanceSortValue(a) - getPerformanceSortValue(b)
+      getPerformanceSortValue(first) -
+      getPerformanceSortValue(second)
 
     if (profileCompare !== 0) return profileCompare
 
     return nameCollator.compare(
-      a.playerFullName || a.fullName || '',
-      b.playerFullName || b.fullName || ''
+      first.playerFullName || first.fullName || first.name || '',
+      second.playerFullName || second.fullName || second.name || ''
     )
   })
 }
@@ -28,6 +30,6 @@ export function buildPerformancePrintModel(rows = []) {
 
   return {
     columns: PERFORMANCE_PRINT_COLUMNS,
-    rows: mapPlayerPrintRows(sortedRows),
+    rows: mapPerformancePrintRows(sortedRows),
   }
 }

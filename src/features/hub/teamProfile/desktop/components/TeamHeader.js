@@ -1,6 +1,6 @@
 // features/hub/teamProfile/desktop/components/TeamHeader.js
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Button, Tooltip, Typography } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { useNavigate } from 'react-router-dom'
@@ -13,10 +13,11 @@ import { uploadImageOnly } from '../../../../../services/firestore/storage/uploa
 
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 
-const len = arr => (Array.isArray(arr) ? arr.length : 0)
+const getItemsCount = items => (Array.isArray(items) ? items.length : 0)
 
 const openExternalLink = url => {
   if (!url) return
+
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
@@ -27,9 +28,19 @@ const getClubId = ({ entity, context }) =>
   entity?.clubId ||
   null
 
+const getClubName = ({ entity, context }) =>
+  context?.club?.clubName ||
+  entity?.club?.clubName ||
+  entity?.club?.name ||
+  ''
+
 function IFAButton({ ifaLink }) {
+  const tooltipTitle = ifaLink
+    ? 'פתח באתר ההתאחדות'
+    : 'אין קישור להתאחדות'
+
   return (
-    <Tooltip title={ifaLink ? 'פתח באתר ההתאחדות' : 'אין קישור להתאחדות'}>
+    <Tooltip title={tooltipTitle}>
       <span>
         <Button
           size="sm"
@@ -50,15 +61,21 @@ function IFAButton({ ifaLink }) {
               }}
             />
           }
-          endDecorator={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+          endDecorator={
+            <OpenInNewIcon
+              sx={{
+                fontSize: 16,
+              }}
+            />
+          }
           sx={{
             minHeight: 34,
             px: 1,
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: 10,
             fontWeight: 700,
             whiteSpace: 'nowrap',
-            border: '1px solid',
-            borderColor: 'divider',
           }}
         >
           התאחדות
@@ -69,19 +86,15 @@ function IFAButton({ ifaLink }) {
 }
 
 function TeamSubtitle({ entity, context, onClubClick }) {
-  const clubName =
-    context?.club?.clubName ||
-    entity?.club?.clubName ||
-    entity?.club?.name ||
-    ''
-
-  const teamYear = entity?.teamYear || ''
+  const clubName = getClubName({ entity, context })
   const clubId = getClubId({ entity, context })
+  const teamYear = entity?.teamYear || ''
 
   if (!clubName && !teamYear) return null
 
   return (
     <Box
+      component="span"
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -92,11 +105,21 @@ function TeamSubtitle({ entity, context, onClubClick }) {
     >
       {clubName && (
         <Button
+          component="span"
+          role={clubId ? 'button' : undefined}
+          tabIndex={clubId ? 0 : -1}
           size="sm"
           variant="plain"
           color="neutral"
           disabled={!clubId}
           onClick={onClubClick}
+          onKeyDown={event => {
+            if (!clubId) return
+            if (event.key !== 'Enter' && event.key !== ' ') return
+
+            event.preventDefault()
+            onClubClick()
+          }}
           sx={{
             minHeight: 22,
             px: 0.5,
@@ -104,6 +127,7 @@ function TeamSubtitle({ entity, context, onClubClick }) {
             fontWeight: 700,
             color: 'text.secondary',
             borderRadius: 'sm',
+            cursor: clubId ? 'pointer' : 'default',
             '&:hover': {
               bgcolor: 'background.level1',
               color: 'primary.plainColor',
@@ -115,13 +139,25 @@ function TeamSubtitle({ entity, context, onClubClick }) {
       )}
 
       {clubName && teamYear && (
-        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
+        <Typography
+          component="span"
+          level="body-xs"
+          sx={{
+            color: 'text.tertiary',
+          }}
+        >
           ·
         </Typography>
       )}
 
       {teamYear && (
-        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
+        <Typography
+          component="span"
+          level="body-xs"
+          sx={{
+            color: 'text.tertiary',
+          }}
+        >
           {teamYear}
         </Typography>
       )}
@@ -135,23 +171,23 @@ export default function TeamHeader({ entity, context }) {
 
   const ifaLink = entity?.ifaLink || null
 
-  const src = resolveEntityAvatar({
+  const avatarSrc = resolveEntityAvatar({
     entityType: 'team',
     entity,
     parentEntity: entity?.club,
     subline: entity?.club?.name,
   })
 
-  const [headerPhoto, setHeaderPhoto] = useState(src)
+  const [headerPhoto, setHeaderPhoto] = useState(avatarSrc)
 
   useEffect(() => {
-    setHeaderPhoto(src)
-  }, [src])
+    setHeaderPhoto(avatarSrc)
+  }, [avatarSrc])
 
   const metaCounts = useMemo(() => {
-    const playersCount = len(entity?.players)
-    const meetingsCount = len(entity?.meetings)
-    const gamesCount = len(entity?.teamGames)
+    const playersCount = getItemsCount(entity?.players)
+    const gamesCount = getItemsCount(entity?.teamGames)
+    const meetingsCount = getItemsCount(entity?.meetings)
 
     return {
       players: playersCount,
@@ -159,16 +195,27 @@ export default function TeamHeader({ entity, context }) {
       meetings: meetingsCount,
       isDeletable:
         playersCount === 0 &&
-        meetingsCount === 0 &&
-        gamesCount === 0,
+        gamesCount === 0 &&
+        meetingsCount === 0,
     }
-  }, [entity?.players, entity?.meetings, entity?.teamGames])
+  }, [
+    entity?.players,
+    entity?.teamGames,
+    entity?.meetings,
+  ])
 
-  const goToClub = () => {
+  const handleClubClick = () => {
     const clubId = getClubId({ entity, context })
     if (!clubId) return
 
     navigate(`/clubs/${clubId}`)
+  }
+
+  const handleImageSave = url => {
+    if (!url) return
+
+    const separator = url.includes('?') ? '&' : '?'
+    setHeaderPhoto(`${url}${separator}v=${Date.now()}`)
   }
 
   return (
@@ -179,7 +226,7 @@ export default function TeamHeader({ entity, context }) {
           <TeamSubtitle
             entity={entity}
             context={context}
-            onClubClick={goToClub}
+            onClubClick={handleClubClick}
           />
         }
         avatarSrc={headerPhoto}
@@ -208,11 +255,7 @@ export default function TeamHeader({ entity, context }) {
         entityName={entity?.teamName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={url => {
-          setHeaderPhoto(
-            `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-          )
-        }}
+        onAfterSave={handleImageSave}
       />
     </>
   )

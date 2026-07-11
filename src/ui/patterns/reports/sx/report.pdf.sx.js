@@ -1,9 +1,6 @@
 // ui/patterns/reports/sx/report.pdf.sx.js
 
-export const buildReportPdfSx = ({
-  systemColors,
-  printPages = 1,
-}) => ({
+export const buildReportPdfSx = ({ systemColors, printPages = 1, fillPrintPage = false }) => ({
   root: {
     '--report-system': systemColors.primary,
     '--report-system-dark': systemColors.primaryDark,
@@ -90,6 +87,7 @@ export const buildReportPdfSx = ({
   scrollArea: {
     flex: 1,
     minHeight: 0,
+    flexDirection: 'column',
     overflowY: 'visible',
     overflowX: 'hidden',
   },

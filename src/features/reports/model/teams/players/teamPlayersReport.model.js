@@ -26,18 +26,17 @@ import {
 } from './minutesPlanReportContent.model.js'
 
 import {
+  buildPerformanceReportContent,
+} from './performanceReportContent.model.js'
+
+import {
   buildSeasonPlanReportContent,
 } from './seasonPlanReportContent.model.js'
 
 function resolveTeamId(team = {}, model = {}) {
   const entity = asReportObject(model.entity)
 
-  return (
-    team.id ||
-    team.teamId ||
-    entity.id ||
-    ''
-  )
+  return team.id || team.teamId || entity.id || ''
 }
 
 function buildReportMeta(model = {}) {
@@ -49,15 +48,6 @@ function buildReportMeta(model = {}) {
   }
 }
 
-function buildReportCounts(model = {}) {
-  return {
-    rowsCount: model.rowsCount,
-    totalCount: model.totalCount,
-    activeCount: model.activeCount,
-    withTargetsCount: model.withTargetsCount,
-  }
-}
-
 function buildUnsupportedReportContent({ mode, model }) {
   return {
     id: mode,
@@ -65,27 +55,31 @@ function buildUnsupportedReportContent({ mode, model }) {
     mode,
     meta: buildReportMeta(model),
     entity: model.entity,
-    counts: buildReportCounts(model),
   }
 }
 
-function buildReportContentByMode({ mode, model, rows }) {
-  if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
-    return buildMinutesPlanReportContent({ model, rows })
-  }
-
+function buildReportContentByMode({ mode, model }) {
   if (mode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN) {
-    return buildSeasonPlanReportContent({ model, rows })
+    return buildSeasonPlanReportContent({ model })
   }
 
-  return buildUnsupportedReportContent({ mode, model })
+  if (mode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
+    return buildMinutesPlanReportContent({ model })
+  }
+
+  if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {
+    return buildPerformanceReportContent({ model })
+  }
+
+  return buildUnsupportedReportContent({
+    mode,
+    model,
+  })
 }
 
 export function buildTeamPlayersPublicReportInput({
   team,
   rows,
-  filters,
-  summary,
   seasonLabel,
   mode = TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN,
   reportDate = new Date(),
@@ -95,8 +89,6 @@ export function buildTeamPlayersPublicReportInput({
   const model = buildTeamPlayersReportModel({
     team,
     rows,
-    filters,
-    summary,
     seasonLabel,
     mode,
     reportDate,
@@ -121,7 +113,6 @@ export function buildTeamPlayersPublicReportInput({
   const reportContent = buildReportContentByMode({
     mode,
     model,
-    rows,
   })
 
   return {

@@ -1,6 +1,6 @@
 // src/features/players/playerProfile/desktop/components/PlayerHeader.js
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Button, Tooltip, Typography } from '@mui/joy'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { useNavigate } from 'react-router-dom'
@@ -9,25 +9,31 @@ import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
+
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import ifaImage from '../../../../../ui/core/images/ifaImage.png'
 
-const len = (arr) => (Array.isArray(arr) ? arr.length : 0)
+const getItemsCount = items => (Array.isArray(items) ? items.length : 0)
 
-const openExternalLink = (url) => {
+const openExternalLink = url => {
   if (!url) return
+
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-const getTeamId = (context) =>
+const getTeamId = context =>
   context?.team?.id ||
   context?.team?.teamId ||
   context?.teamId ||
   null
 
 function IFAButton({ ifaLink }) {
+  const tooltipTitle = ifaLink
+    ? 'פתח באתר ההתאחדות'
+    : 'אין קישור להתאחדות'
+
   return (
-    <Tooltip title={ifaLink ? 'פתח באתר ההתאחדות' : 'אין קישור להתאחדות'}>
+    <Tooltip title={tooltipTitle}>
       <span>
         <Button
           size="sm"
@@ -48,15 +54,21 @@ function IFAButton({ ifaLink }) {
               }}
             />
           }
-          endDecorator={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+          endDecorator={
+            <OpenInNewIcon
+              sx={{
+                fontSize: 16,
+              }}
+            />
+          }
           sx={{
             minHeight: 34,
             px: 1,
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: 10,
             fontWeight: 700,
             whiteSpace: 'nowrap',
-            border: '1px solid',
-            borderColor: 'divider',
           }}
         >
           התאחדות
@@ -75,6 +87,7 @@ function PlayerSubtitle({ context, onTeamClick }) {
 
   return (
     <Box
+      component="span"
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -85,18 +98,29 @@ function PlayerSubtitle({ context, onTeamClick }) {
     >
       {teamName && (
         <Button
+          component="span"
+          role={teamId ? 'button' : undefined}
+          tabIndex={teamId ? 0 : -1}
           size="sm"
           variant="plain"
           color="neutral"
           disabled={!teamId}
           onClick={onTeamClick}
+          onKeyDown={event => {
+            if (!teamId) return
+            if (event.key !== 'Enter' && event.key !== ' ') return
+
+            event.preventDefault()
+            onTeamClick()
+          }}
           sx={{
             minHeight: 22,
             px: 0.5,
             py: 0,
+            borderRadius: 'sm',
             fontWeight: 700,
             color: 'text.secondary',
-            borderRadius: 'sm',
+            cursor: teamId ? 'pointer' : 'default',
             '&:hover': {
               bgcolor: 'background.level1',
               color: 'primary.plainColor',
@@ -108,13 +132,25 @@ function PlayerSubtitle({ context, onTeamClick }) {
       )}
 
       {teamName && clubName && (
-        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
+        <Typography
+          component="span"
+          level="body-xs"
+          sx={{
+            color: 'text.tertiary',
+          }}
+        >
           ·
         </Typography>
       )}
 
       {clubName && (
-        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
+        <Typography
+          component="span"
+          level="body-xs"
+          sx={{
+            color: 'text.tertiary',
+          }}
+        >
           {clubName}
         </Typography>
       )}
@@ -122,40 +158,64 @@ function PlayerSubtitle({ context, onTeamClick }) {
   )
 }
 
-export default function PlayerHeader({ entity, context, counts }) {
+export default function PlayerHeader({ entity, context }) {
   const navigate = useNavigate()
   const [openImg, setOpenImg] = useState(false)
-  const [headerPhoto, setHeaderPhoto] = useState(entity?.photo || playerImage)
 
-  const ifaLink = entity?.ifaLink || entity?.playerIfaLink || null
+  const photoSrc = entity?.photo || playerImage
+  const [headerPhoto, setHeaderPhoto] = useState(photoSrc)
+
+  const ifaLink =
+    entity?.ifaLink ||
+    entity?.playerIfaLink ||
+    null
 
   useEffect(() => {
-    setHeaderPhoto(entity?.photo || playerImage)
-  }, [entity?.photo, entity?.id])
+    setHeaderPhoto(photoSrc)
+  }, [photoSrc])
 
   const metaCounts = useMemo(() => {
-    const meetingsCount = len(entity?.meetings)
-    const gamesCount = len(entity?.playerGames)
-    const paymentsCount = len(entity?.payments)
+    const paymentsCount = getItemsCount(entity?.payments)
+    const meetingsCount = getItemsCount(entity?.meetings)
+    const gamesCount = getItemsCount(entity?.playerGames)
 
     return {
       payments: paymentsCount,
       games: gamesCount,
       meetings: meetingsCount,
-      isDeletable: paymentsCount === 0 && meetingsCount === 0 && gamesCount === 0,
+      isDeletable:
+        paymentsCount === 0 &&
+        meetingsCount === 0 &&
+        gamesCount === 0,
     }
-  }, [entity?.payments, entity?.meetings, entity?.playerGames])
+  }, [
+    entity?.payments,
+    entity?.meetings,
+    entity?.playerGames,
+  ])
 
-  const fullName = useMemo(
-    () => `${entity?.playerFirstName || ''} ${entity?.playerLastName || ''}`.trim(),
-    [entity]
-  )
+  const fullName = useMemo(() => {
+    const firstName = entity?.playerFirstName || ''
+    const lastName = entity?.playerLastName || ''
 
-  const goToTeam = () => {
+    return `${firstName} ${lastName}`.trim()
+  }, [
+    entity?.playerFirstName,
+    entity?.playerLastName,
+  ])
+
+  const handleTeamClick = () => {
     const teamId = getTeamId(context)
     if (!teamId) return
 
     navigate(`/teams/${teamId}`)
+  }
+
+  const handleImageSave = url => {
+    if (!url) return
+
+    const separator = url.includes('?') ? '&' : '?'
+    setHeaderPhoto(`${url}${separator}v=${Date.now()}`)
   }
 
   return (
@@ -165,7 +225,7 @@ export default function PlayerHeader({ entity, context, counts }) {
         subtitle={
           <PlayerSubtitle
             context={context}
-            onTeamClick={goToTeam}
+            onTeamClick={handleTeamClick}
           />
         }
         avatarSrc={headerPhoto}
@@ -193,9 +253,7 @@ export default function PlayerHeader({ entity, context, counts }) {
         entityName={fullName}
         currentPhotoUrl={headerPhoto}
         uploadImageOnly={uploadImageOnly}
-        onAfterSave={(url) => {
-          setHeaderPhoto(`${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`)
-        }}
+        onAfterSave={handleImageSave}
       />
     </>
   )

@@ -98,10 +98,7 @@ function buildVersionOption({
   }
 }
 
-function buildCurrentVersionOption({
-  currentData = {},
-  currentVersionNumber = 0,
-} = {}) {
+function buildCurrentVersionOption({ currentData = {}, currentVersionNumber = 0 } = {}) {
   const versionNumber = Number(currentVersionNumber) || 0
   if (!versionNumber) return null
 
@@ -121,12 +118,7 @@ async function loadReportVersionOptions({ reportId, currentData = {} } = {}) {
     return currentData.versions
   }
 
-  const snapshots = await getDocs(
-    query(
-      publicReportVersionsCollectionRef(reportId),
-      orderBy('versionNumber', 'asc')
-    )
-  )
+  const snapshots = await getDocs(query(publicReportVersionsCollectionRef(reportId), orderBy('versionNumber', 'asc')))
 
   const options = snapshots.docs
     .map(snapshot => {
@@ -159,12 +151,7 @@ async function loadReportVersionOptions({ reportId, currentData = {} } = {}) {
   return options
 }
 
-function buildArchivedVersionDocument({
-  currentData,
-  reportId,
-  versionId,
-  versionNumber,
-}) {
+function buildArchivedVersionDocument({ currentData, reportId, versionId, versionNumber }) {
   return {
     id: versionId,
     reportId,

@@ -1,12 +1,20 @@
-// src/features/hub/playerProfile/sharedUi/info/print/print.sx.js
+// src/features/hub/playerProfile/sharedUi/info/print/sx/print.desktop.sx.js
 
 import { alpha } from '@mui/system'
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const playerColors = getEntityColors('player')
 
-export const printSx = {
+export const printDesktopSx = {
+  contentWrap: {
+    minWidth: 0,
+    width: '100%',
+    height: 'auto',
+    minHeight: 0,
+    overflow: 'visible',
+  },
+
   section: {
     mt: 1.35,
     minWidth: 0,
@@ -20,7 +28,7 @@ export const printSx = {
   },
 
   sectionHeader: {
-    minHeight: 42,
+    minHeight: 38,
     px: 1.3,
     py: 0.75,
     bgcolor: alpha(playerColors.bg, 0.72),
@@ -44,7 +52,7 @@ export const printSx = {
   sectionBody: {
     px: 0.9,
     pt: 0.45,
-    pb: 0.8,
+    pb: 0.7,
     bgcolor: playerColors.surface,
   },
 
@@ -82,19 +90,10 @@ export const printSx = {
     pt: 0.7,
     pb: 0.8,
     background: `linear-gradient(135deg, ${alpha(playerColors.bg, 0.52)}, ${playerColors.surface} 72%)`,
-
-    '@media (max-width: 820px)': {
-      alignItems: 'stretch',
-      flexDirection: 'column',
-    },
-
-    '@media print': {
-      alignItems: 'center',
-      flexDirection: 'row',
-    },
   },
 
   summaryValue: {
+    minWidth: 0,
     color: playerColors.text,
     fontWeight: 700,
     lineHeight: 1.05,
@@ -124,23 +123,16 @@ export const printSx = {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: 0.8,
-
-    '@media (max-width: 820px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-
-    '@media print': {
-      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    },
   },
 
   basisItem: {
     position: 'relative',
     minWidth: 0,
-    minHeight: 68,
+    minHeight: 58,
     px: 0.9,
-    py: 0.75,
-    pl: 3.6,
+    pt: 0.6,
+    pb: 0,
+    pl: 1.6,
     borderRadius: 10,
     borderColor: alpha(playerColors.accent, 0.2),
     bgcolor: playerColors.surface,
@@ -149,7 +141,7 @@ export const printSx = {
   basisIcon: {
     position: 'absolute',
     insetInlineEnd: 10,
-    top: 10,
+    top: 6,
     width: 24,
     height: 24,
     display: 'grid',
@@ -170,7 +162,7 @@ export const printSx = {
   },
 
   basisValue: {
-    mt: 0.45,
+    mt: 1,
     color: playerColors.text,
     fontWeight: 700,
     lineHeight: 1.15,
@@ -180,14 +172,6 @@ export const printSx = {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: 0.8,
-
-    '@media (max-width: 820px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-
-    '@media print': {
-      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    },
   },
 
   usageGrid: {
@@ -204,21 +188,14 @@ export const printSx = {
     '& .dpPrintCard .MuiTypography-h3': {
       fontSize: 24,
     },
-
-    '@media (max-width: 820px)': {
-      gridTemplateColumns: '1fr',
-    },
-
-    '@media print': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
   },
 
   targetCard: {
     minWidth: 0,
-    minHeight: 126,
+    minHeight: 116,
     px: 1.05,
-    py: 0.8,
+    py: 0.7,
+    pb: 0,
     borderRadius: 12,
     borderColor: alpha(playerColors.accent, 0.2),
     bgcolor: playerColors.surface,

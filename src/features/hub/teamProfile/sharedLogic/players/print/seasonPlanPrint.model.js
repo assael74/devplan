@@ -1,4 +1,4 @@
-// features/hub/teamProfile/sharedLogic/players/print/seasonPlanPrint.model.js
+// src/features/hub/teamProfile/sharedLogic/players/print/seasonPlanPrint.model.js
 
 import {
   POSITION_LAYERS,
@@ -14,18 +14,17 @@ import {
 } from './teamPlayersPrint.constants.js'
 
 import {
-  mapPlayerPrintRows,
+  getSquadRoleMeta,
+  mapSeasonPlanPrintRow,
   nameCollator,
   normalizeSeasonPlanStatus,
   squadRoleOrder,
 } from './teamPlayersPrint.shared.js'
 
 function getLayerKey(row = {}) {
-  const generalPosition = row.generalPosition || {}
-
   return String(
     row.generalPositionKey ||
-    generalPosition.layerKey ||
+    row.generalPosition?.layerKey ||
     row.positionLayer ||
     row.layerKey ||
     ''
@@ -61,32 +60,39 @@ function isMatchingLayer(row, item) {
 }
 
 function getPlannedStatusOrder(row = {}) {
-  const seasonPlanStatus = row.seasonPlanStatus || {}
-  const order = PLANNED_STATUS_ORDER[seasonPlanStatus.value]
+  const value = normalizeSeasonPlanStatus(row)
+  const order = PLANNED_STATUS_ORDER[value]
 
   return Number.isFinite(order) ? order : 99
 }
 
 function getSquadRoleOrder(row = {}) {
-  const role = row.role || {}
-  const order = squadRoleOrder[role.value]
+  const squadRole = getSquadRoleMeta(row)
+  const order = squadRoleOrder[squadRole.value]
 
   return Number.isFinite(order) ? order : SQUAD_ROLE_OPTIONS.length
 }
 
 function sortSeasonPlanGroupRows(group, rows = []) {
-  return [...rows].sort((a, b) => {
+  return [...rows].sort((first, second) => {
     if (group.id === 'planned') {
-      const statusCompare = getPlannedStatusOrder(a) - getPlannedStatusOrder(b)
+      const statusCompare =
+        getPlannedStatusOrder(first) -
+        getPlannedStatusOrder(second)
 
       if (statusCompare !== 0) return statusCompare
     }
 
-    const roleCompare = getSquadRoleOrder(a) - getSquadRoleOrder(b)
+    const squadRoleCompare =
+      getSquadRoleOrder(first) -
+      getSquadRoleOrder(second)
 
-    if (roleCompare !== 0) return roleCompare
+    if (squadRoleCompare !== 0) return squadRoleCompare
 
-    return nameCollator.compare(a.name || '', b.name || '')
+    return nameCollator.compare(
+      first.playerFullName || first.fullName || first.name || '',
+      second.playerFullName || second.fullName || second.name || ''
+    )
   })
 }
 
@@ -117,29 +123,28 @@ export function buildSeasonPlanLayerSummary(rows = []) {
 export function buildSeasonPlanGroups(rows = []) {
   return SEASON_PLAN_REPORT_GROUPS.map(group => {
     const groupRows = rows.filter(row => {
-      const seasonPlanStatus = row.seasonPlanStatus || {}
-
-      return group.statusValues.includes(seasonPlanStatus.value)
+      return group.statusValues.includes(normalizeSeasonPlanStatus(row))
     })
+
+    const sortedRows = sortSeasonPlanGroupRows(group, groupRows)
 
     return {
       ...group,
-      rows: sortSeasonPlanGroupRows(group, groupRows).map((row, index) => ({
-        ...row,
-        index: index + 1,
-      })),
+      rows: sortedRows.map((row, index) => {
+        return mapSeasonPlanPrintRow(row, index)
+      }),
     }
   })
 }
 
 export function buildSeasonPlanPrintModel(rows = []) {
-  const mappedRows = mapPlayerPrintRows(rows)
-
   return {
     columns: SEASON_PLAN_PRINT_COLUMNS,
-    rows: mappedRows,
+    rows: rows.map((row, index) => {
+      return mapSeasonPlanPrintRow(row, index)
+    }),
     seasonPlanSummary: buildSeasonPlanSummary(rows),
     seasonPlanLayerSummary: buildSeasonPlanLayerSummary(rows),
-    squadGroups: buildSeasonPlanGroups(mappedRows),
+    squadGroups: buildSeasonPlanGroups(rows),
   }
 }

@@ -2,10 +2,11 @@
 
 import {
   POSITION_LAYERS,
-  SQUAD_ROLE_OPTIONS,
-  SEASON_PLAN_POSITION_TARGETS,
   SEASON_PLAN_LAYER_TARGETS,
+  SEASON_PLAN_POSITION_TARGETS,
+  SQUAD_ROLE_OPTIONS,
 } from '../../../../../../shared/players/players.constants.js'
+
 import {
   resolvePlayerPrimaryPositionCode,
 } from '../../../../../../shared/players/targets/playerTarget.resolve.js'
@@ -14,10 +15,13 @@ import {
   MINUTES_PLAN_PRINT_COLUMNS,
   MINUTES_PLAN_ROLE_TARGETS,
 } from './teamPlayersPrint.constants.js'
+
 import {
-  mapPlayerPrintRows,
+  getSquadRoleMeta,
+  mapMinutesPlanPrintRows,
   nameCollator,
   squadRoleOrder,
+  UNDEFINED_SQUAD_ROLE,
 } from './teamPlayersPrint.shared.js'
 
 const minutesFormatter = new Intl.NumberFormat('he-IL')
@@ -34,125 +38,87 @@ function resolveTargetTone(target, count) {
   if (target.mode === 'fixed') {
     if (value === target.target) return 'good'
     if (Math.abs(value - target.target) === 1) return 'warn'
+
     return 'bad'
   }
 
   if (target.mode === 'range') {
     if (value >= target.min && value <= target.max) return 'good'
     if (value === target.min - 1 || value === target.max + 1) return 'warn'
+
     return 'bad'
   }
 
   if (target.mode === 'min') {
     if (value >= target.target && value <= target.target + 2) return 'good'
     if (value >= target.target - 2 && value < target.target) return 'warn'
+
     return 'bad'
   }
 
   return 'neutral'
 }
 
-function getMinutesTarget(role) {
-  return MINUTES_PLAN_ROLE_TARGETS[role] || null
+function getMinutesTarget(squadRoleValue) {
+  return MINUTES_PLAN_ROLE_TARGETS[squadRoleValue] || null
 }
 
-function getRoleMeta(role) {
-  const option = SQUAD_ROLE_OPTIONS.find(item => item.value === role)
-  const minutesTarget = getMinutesTarget(role)
+function getSquadRoleSummaryMeta(squadRoleValue) {
+  const option = SQUAD_ROLE_OPTIONS.find(item => {
+    return item.value === squadRoleValue
+  })
+
+  const minutesTarget = getMinutesTarget(squadRoleValue)
+  const optionLabel = option?.label || ''
+
+  const shortLabel =
+    option?.shortLabel ||
+    optionLabel.replace(/^שחקן\s+/, '').trim() ||
+    'ללא מעמד'
 
   return {
-    id: role,
-    value: role,
-    label: option?.label || 'מעמד לא הוגדר',
-    shortLabel: option?.label?.replace(/^שחקן\s+/, '').trim() || option?.label || 'לא הוגדר',
+    id: squadRoleValue,
+    value: squadRoleValue,
+    label: optionLabel || 'שחקנים ללא מעמד',
+    shortLabel,
     iconId: option?.idIcon || 'players',
     iconColor: option?.color || '#64748B',
     defined: Boolean(option),
     minutesTarget,
-    requirement: minutesTarget ? `${formatMinutes(minutesTarget)} דק׳ לשחקן` : '',
+    requirement: minutesTarget
+      ? `${formatMinutes(minutesTarget)} דק׳ לשחקן`
+      : '',
     countLabel: '',
   }
 }
 
 function buildSquadRoleSummary(rows = []) {
   const items = SQUAD_ROLE_OPTIONS.map(option => {
-    const count = rows.filter(row => row.squadRole === option.value).length
+    const count = rows.filter(row => {
+      return getSquadRoleMeta(row).value === option.value
+    }).length
 
     return {
-      ...getRoleMeta(option.value),
+      ...getSquadRoleSummaryMeta(option.value),
       count,
       countLabel: `${count} שחקנים`,
     }
   })
 
   const undefinedCount = rows.filter(row => {
-    return !SQUAD_ROLE_OPTIONS.some(option => option.value === row.squadRole)
+    return getSquadRoleMeta(row).value === UNDEFINED_SQUAD_ROLE
   }).length
 
   if (undefinedCount) {
     items.push({
-      id: 'undefined',
-      value: '',
-      label: 'מעמד לא הוגדר',
-      shortLabel: 'לא הוגדר',
-      iconId: 'players',
-      iconColor: '#64748B',
+      ...getSquadRoleSummaryMeta(UNDEFINED_SQUAD_ROLE),
       count: undefinedCount,
-      defined: false,
       tone: 'warning',
-      minutesTarget: null,
-      requirement: '',
       countLabel: `${undefinedCount} שחקנים`,
     })
   }
 
   return items
-}
-
-function buildPositionSummary(rows = []) {
-  const buckets = new Map()
-
-  rows.forEach(row => {
-    const key = String(
-      row.generalPositionKey ||
-      row.generalPosition?.layerKey ||
-      row.positionLayer ||
-      row.layerKey ||
-      row.mainPosition ||
-      row.primaryPosition ||
-      ''
-    ).trim() || 'undefined'
-
-    const label = String(
-      row.generalPositionLabel ||
-      row.generalPosition?.layerLabel ||
-      row.layerLabel ||
-      row.mainPosition ||
-      row.primaryPosition ||
-      'לא הוגדר'
-    ).trim() || 'לא הוגדר'
-
-    if (!buckets.has(key)) {
-      buckets.set(key, {
-        id: key,
-        value: key,
-        label,
-        shortLabel: label,
-        iconId: key || 'players',
-        iconColor: '#64748B',
-        count: 0,
-      })
-    }
-
-    buckets.get(key).count += 1
-  })
-
-  return Array.from(buckets.values()).sort((a, b) => {
-    const countCompare = b.count - a.count
-    if (countCompare !== 0) return countCompare
-
-    return nameCollator.compare(a.label, b.label)
-  })
 }
 
 function getLayerKey(row = {}) {
@@ -179,140 +145,85 @@ function getLayerFallbackKey(row = {}) {
   return ''
 }
 
+function resolveLayerKey(row = {}) {
+  return getLayerKey(row) || getLayerFallbackKey(row)
+}
+
+function isMatchingLayer(row, target) {
+  const layerKey = resolveLayerKey(row)
+
+  if (target.value === 'atMidfield') {
+    return layerKey === 'atMidfield' || layerKey === 'midfield'
+  }
+
+  return layerKey === target.value
+}
+
 function buildMinutesLayerSummary(rows = []) {
-  const items = SEASON_PLAN_LAYER_TARGETS.map(item => {
+  const items = SEASON_PLAN_LAYER_TARGETS.map(target => {
     const count = rows.filter(row => {
-      const layerKey = getLayerKey(row) || getLayerFallbackKey(row)
-
-      if (item.value === 'atMidfield') {
-        return layerKey === 'atMidfield' || layerKey === 'midfield'
-      }
-
-      return layerKey === item.value
+      return isMatchingLayer(row, target)
     }).length
 
-    const labelOverrides = {
-      dmMid: 'קישור הגנתי',
-      atMidfield: 'קישור התקפי',
-    }
+    const label =
+      target.value === 'dmMid'
+        ? 'קישור הגנתי'
+        : target.value === 'atMidfield'
+          ? 'קישור התקפי'
+          : target.label
 
     return {
-      ...item,
-      label: labelOverrides[item.value] || item.label,
-      shortLabel: labelOverrides[item.value] || item.label,
+      ...target,
+      label,
+      shortLabel: label,
       iconId: 'players',
       iconColor: '#64748B',
       count,
-      tone: resolveTargetTone(item, count),
+      tone: resolveTargetTone(target, count),
     }
   })
 
   const undefinedCount = rows.filter(row => {
-    return !(getLayerKey(row) || getLayerFallbackKey(row))
+    return !resolveLayerKey(row)
   }).length
 
-  items.push({
-    id: 'undefined',
-    value: '',
-    label: 'לא הוגדר',
-    shortLabel: 'לא הוגדר',
-    requirement: '',
-    iconId: 'players',
-    iconColor: '#64748B',
-    count: undefinedCount,
-    tone: 'warning',
-  })
+  if (undefinedCount) {
+    items.push({
+      id: 'undefined',
+      value: 'undefined',
+      label: 'לא הוגדר',
+      shortLabel: 'לא הוגדר',
+      requirement: '',
+      iconId: 'players',
+      iconColor: '#64748B',
+      count: undefinedCount,
+      tone: 'warning',
+    })
+  }
 
   return items
 }
 
-const PRIMARY_POSITION_GROUPS = [
-  {
-    id: 'goalkeeper',
-    label: 'שוער',
-    shortLabel: 'שוער',
-    iconId: 'GK',
-    codes: ['GK'],
-  },
-  {
-    id: 'centerBack',
-    label: 'בלם',
-    shortLabel: 'בלם',
-    iconId: 'DCR',
-    codes: ['DCR', 'DCL', 'DC'],
-  },
-  {
-    id: 'rightBack',
-    label: 'מגן ימין',
-    shortLabel: 'מגן ימין',
-    iconId: 'DR',
-    codes: ['DR'],
-  },
-  {
-    id: 'leftBack',
-    label: 'מגן שמאל',
-    shortLabel: 'מגן שמאל',
-    iconId: 'DL',
-    codes: ['DL'],
-  },
-  {
-    id: 'defensiveMid',
-    label: 'קשר אחורי',
-    shortLabel: 'קשר אחורי',
-    iconId: 'DM',
-    codes: ['DM', 'DMR', 'DML', 'DMC'],
-  },
-  {
-    id: 'centerMid',
-    label: 'קשר אמצע',
-    shortLabel: 'קשר אמצע',
-    iconId: 'MCR',
-    codes: ['MCR', 'MCL', 'MC'],
-  },
-  {
-    id: 'attackingMid',
-    label: 'קשר התקפי',
-    shortLabel: 'קשר התקפי',
-    iconId: 'AC',
-    codes: ['AC'],
-  },
-  {
-    id: 'rightWing',
-    label: 'כנף ימין',
-    shortLabel: 'כנף ימין',
-    iconId: 'AR',
-    codes: ['AR'],
-  },
-  {
-    id: 'leftWing',
-    label: 'כנף שמאל',
-    shortLabel: 'כנף שמאל',
-    iconId: 'AL',
-    codes: ['AL'],
-  },
-  {
-    id: 'striker',
-    label: 'חלוץ',
-    shortLabel: 'חלוץ',
-    iconId: 'S',
-    codes: ['S'],
-  },
-]
-
 function buildPrimaryPositionSummary(rows = []) {
-  const countsByCode = rows.reduce((acc, row) => {
+  const countsByCode = rows.reduce((result, row) => {
     const code = resolvePlayerPrimaryPositionCode(row)
-    if (!code) return acc
 
-    acc[code] = (acc[code] || 0) + 1
-    return acc
+    if (!code) return result
+
+    result[code] = (result[code] || 0) + 1
+
+    return result
   }, {})
 
   const items = SEASON_PLAN_POSITION_TARGETS.map(target => {
-    const codes = Array.isArray(target.codes) && target.codes.length
-      ? target.codes
-      : [target.value]
-    const count = codes.reduce((sum, code) => sum + (countsByCode[code] || 0), 0)
+    const codes =
+      Array.isArray(target.codes) && target.codes.length
+        ? target.codes
+        : [target.value]
+
+    const count = codes.reduce((total, code) => {
+      return total + (countsByCode[code] || 0)
+    }, 0)
 
     return {
       id: target.value,
@@ -327,112 +238,134 @@ function buildPrimaryPositionSummary(rows = []) {
     }
   })
 
-  const undefinedCount = rows.filter(row => !resolvePlayerPrimaryPositionCode(row)).length
+  const undefinedCount = rows.filter(row => {
+    return !resolvePlayerPrimaryPositionCode(row)
+  }).length
 
   if (undefinedCount) {
     items.push({
       id: 'undefined',
-      value: '',
+      value: 'undefined',
       label: 'לא הוגדרה עמדה ראשית',
       shortLabel: 'לא הוגדר',
       iconId: 'players',
       iconColor: '#64748B',
       count: undefinedCount,
+      requirement: '',
+      tone: 'warning',
     })
   }
 
   return items
 }
 
-function sortMinutesPlanRows(rows = []) {
-  return [...rows].sort((a, b) => {
-    const roleCompare =
-      (squadRoleOrder[a.squadRole] ?? SQUAD_ROLE_OPTIONS.length) -
-      (squadRoleOrder[b.squadRole] ?? SQUAD_ROLE_OPTIONS.length)
+function getSquadRoleOrder(row = {}) {
+  const squadRole = getSquadRoleMeta(row)
+  const order = squadRoleOrder[squadRole.value]
 
-    if (roleCompare !== 0) return roleCompare
+  return Number.isFinite(order) ? order : SQUAD_ROLE_OPTIONS.length
+}
+
+function sortMinutesPlanRows(rows = []) {
+  return [...rows].sort((first, second) => {
+    const squadRoleCompare =
+      getSquadRoleOrder(first) -
+      getSquadRoleOrder(second)
+
+    if (squadRoleCompare !== 0) return squadRoleCompare
 
     return nameCollator.compare(
-      a.playerFullName || a.fullName || '',
-      b.playerFullName || b.fullName || ''
+      first.playerFullName || first.fullName || first.name || '',
+      second.playerFullName || second.fullName || second.name || ''
     )
   })
 }
 
-function buildMinutesGroups(rows = []) {
-  const groups = SQUAD_ROLE_OPTIONS.map(option => {
-    const role = getRoleMeta(option.value)
+function createMinutesGroup(option) {
+  const squadRole = getSquadRoleSummaryMeta(option.value)
 
-    return {
-      id: option.value,
-      value: option.value,
-      title: role.label,
-      shortLabel: role.shortLabel,
-      minutesTarget: role.minutesTarget,
-      iconId: role.iconId,
-      iconColor: role.iconColor,
-      defined: true,
-      rows: [],
-    }
-  })
+  return {
+    id: squadRole.value,
+    value: squadRole.value,
+    title: squadRole.label,
+    shortLabel: squadRole.shortLabel,
+    minutesTarget: squadRole.minutesTarget,
+    iconId: squadRole.iconId,
+    iconColor: squadRole.iconColor,
+    defined: squadRole.defined,
+    rows: [],
+  }
+}
 
-  const undefinedGroup = {
-    id: 'undefined',
-    value: '',
-    title: 'מעמד לא הוגדר',
-    shortLabel: 'לא הוגדר',
+function createUndefinedMinutesGroup() {
+  const squadRole = getSquadRoleSummaryMeta(UNDEFINED_SQUAD_ROLE)
+
+  return {
+    id: squadRole.value,
+    value: squadRole.value,
+    title: squadRole.label,
+    shortLabel: squadRole.shortLabel,
     minutesTarget: null,
-    iconId: 'players',
-    iconColor: '#64748B',
+    iconId: squadRole.iconId,
+    iconColor: squadRole.iconColor,
     defined: false,
     rows: [],
   }
+}
 
+function buildMinutesGroupResult(group) {
+  const sortedRows = [...group.rows].sort((first, second) => {
+    return nameCollator.compare(
+      first.playerFullName || '',
+      second.playerFullName || ''
+    )
+  })
+
+  return {
+    ...group,
+    rows: sortedRows.map((row, index) => ({
+      ...row,
+      index: index + 1,
+    })),
+    count: sortedRows.length,
+    totalMinutes: sortedRows.length * (group.minutesTarget || 0),
+    minutesLabel: group.minutesTarget
+      ? `${formatMinutes(group.minutesTarget)} דקות לשחקן`
+      : 'שחקנים ללא מעמד',
+  }
+}
+
+function buildMinutesGroups(rows = []) {
+  const groups = SQUAD_ROLE_OPTIONS.map(createMinutesGroup)
+  const undefinedGroup = createUndefinedMinutesGroup()
   const groupMap = new Map(groups.map(group => [group.value, group]))
 
   rows.forEach(row => {
-    const roleId = row.role?.value || ''
-    const target = getMinutesTarget(roleId)
+    const squadRoleValue =
+      row.squadRole?.value ||
+      UNDEFINED_SQUAD_ROLE
+
+    const minutesTarget = getMinutesTarget(squadRoleValue)
+
     const nextRow = {
       ...row,
-      minutesTarget: target,
-      minutesTargetLabel: target ? formatMinutes(target) : '—',
+      minutesTarget,
+      minutesTargetLabel: minutesTarget
+        ? formatMinutes(minutesTarget)
+        : '—',
     }
 
-    const group = groupMap.get(roleId) || undefinedGroup
+    const group = groupMap.get(squadRoleValue) || undefinedGroup
+
     group.rows.push(nextRow)
   })
 
   const result = groups
     .filter(group => group.rows.length)
-    .map(group => {
-      const sortedRows = [...group.rows].sort((a, b) => {
-        return nameCollator.compare(a.name || '', b.name || '')
-      })
-
-      return {
-        ...group,
-        rows: sortedRows,
-        count: sortedRows.length,
-        totalMinutes: sortedRows.length * (group.minutesTarget || 0),
-        minutesLabel: group.minutesTarget
-          ? `${formatMinutes(group.minutesTarget)} דקות לשחקן`
-          : 'ללא יעד מוגדר',
-      }
-    })
+    .map(buildMinutesGroupResult)
 
   if (undefinedGroup.rows.length) {
-    const sortedRows = [...undefinedGroup.rows].sort((a, b) => {
-      return nameCollator.compare(a.name || '', b.name || '')
-    })
-
-    result.push({
-      ...undefinedGroup,
-      rows: sortedRows,
-      count: sortedRows.length,
-      totalMinutes: 0,
-      minutesLabel: 'ללא יעד מוגדר',
-    })
+    result.push(buildMinutesGroupResult(undefinedGroup))
   }
 
   return result
@@ -440,22 +373,14 @@ function buildMinutesGroups(rows = []) {
 
 export function buildMinutesPlanPrintModel(rows = []) {
   const sortedRows = sortMinutesPlanRows(rows)
-  const mappedRows = mapPlayerPrintRows(sortedRows)
-  const layerSummary = buildMinutesLayerSummary(sortedRows)
-  const minutesGroups = buildMinutesGroups(mappedRows)
-  const estimatedPages = Math.max(
-    2,
-    Math.ceil(mappedRows.length / 18) + 1
-  )
+  const mappedRows = mapMinutesPlanPrintRows(sortedRows)
 
   return {
     columns: MINUTES_PLAN_PRINT_COLUMNS,
     rows: mappedRows,
-    layerSummary,
-    minutesGroups,
+    layerSummary: buildMinutesLayerSummary(sortedRows),
+    minutesGroups: buildMinutesGroups(mappedRows),
     squadRoleSummary: buildSquadRoleSummary(sortedRows),
-    positionSummary: buildPositionSummary(sortedRows),
     primaryPositionSummary: buildPrimaryPositionSummary(sortedRows),
-    printPages: mappedRows.length ? estimatedPages : 1,
   }
 }

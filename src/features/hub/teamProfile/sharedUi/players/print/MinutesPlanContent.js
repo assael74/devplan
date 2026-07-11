@@ -171,8 +171,8 @@ function Section({ group }) {
 
           <Box sx={sx.tableSectionChip}>
             {group.minutesTarget
-              ? `${formatMinutes(group.minutesTarget)} דק׳ לשחקן`
-              : 'ללא יעד'}
+              ? `${formatMinutes(group.minutesTarget)} דקות לשחקן`
+              : 'לא הוגדר'}
           </Box>
         </Box>
       </Box>
@@ -198,10 +198,11 @@ function Section({ group }) {
 }
 
 export default function MinutesPlanContent({ model }) {
-  const roleItems = model.squadRoleSummary || []
-  const layerItems = model.layerSummary || []
-  const positionItems = model.primaryPositionSummary || []
-  const groups = model.minutesGroups || []
+  const summary = model.summary || {}
+  const roleItems = summary.squadRoles || []
+  const layerItems = summary.layers || []
+  const positionItems = summary.positions || []
+  const groups = model.sections || []
 
   return (
     <>
@@ -214,7 +215,7 @@ export default function MinutesPlanContent({ model }) {
         />
 
         <Strip
-          title='לפי חוליות'
+          title='לפי יכולות'
           subtitle='פיזור השחקנים לפי השכבה הראשית'
           items={layerItems}
           columns={3}

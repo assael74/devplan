@@ -67,9 +67,10 @@ const REPORT_DEFINITIONS = {
     id: REPORT_TYPES.PLAYER_TARGETS,
     label: 'יעדי שחקן',
 
-    render: (payload, options) => (
+    render: (payload, options = {}) => (
       <PlayerTargetsPrintView
         inputModel={payload}
+        presentation={options.presentation || 'url'}
         reportOptions={options.reportOptions || []}
         selectedReportValue={options.selectedReportValue || null}
         onReportChange={options.onReportChange || null}
