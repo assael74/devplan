@@ -26,6 +26,8 @@ export {
 
 export {
   buildPublicReportUrl,
+  buildPublicReportShareUrl,
+  buildPublicReportShareText,
 } from './publicReport.url.js'
 
 export {

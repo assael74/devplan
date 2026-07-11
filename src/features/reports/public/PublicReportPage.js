@@ -18,6 +18,8 @@ import ReportPrintButton from '../../../ui/patterns/reportPrint/ReportPrintButto
 import {
   getPublicReport,
   buildPublicReportUrl,
+  buildPublicReportShareUrl,
+  buildPublicReportShareText,
   PUBLIC_REPORT_ERROR_CODES,
 } from '../service/index.js'
 
@@ -55,6 +57,101 @@ function getReportPageTitle(report = {}) {
   const entityName = entity.teamName || entity.name || ''
 
   return [reportTitle, entityName, 'DevPlan'].filter(Boolean).join(' · ')
+}
+
+function clean(value) {
+  return String(value ?? '').trim()
+}
+
+function resolveAbsoluteUrl(url) {
+  const safe = clean(url)
+  if (!safe) return ''
+
+  if (/^https?:\/\//i.test(safe)) {
+    return safe
+  }
+
+  if (typeof window === 'undefined') {
+    return safe
+  }
+
+  return `${window.location.origin}${safe.startsWith('/') ? '' : '/'}${safe}`
+}
+
+function updateMetaTag({ attrName, attrValue, content }) {
+  if (typeof document === 'undefined') return () => {}
+
+  const selector = `meta[${attrName}="${attrValue}"]`
+  let element = document.head.querySelector(selector)
+  const previousContent = element?.getAttribute('content')
+
+  if (!content) {
+    if (element && element.dataset.codexReportDynamic === 'true') {
+      element.remove()
+    }
+
+    return () => {}
+  }
+
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attrName, attrValue)
+    element.dataset.codexReportDynamic = 'true'
+    document.head.appendChild(element)
+  }
+
+  element.setAttribute('content', content)
+
+  return () => {
+    if (!element) return
+
+    if (previousContent === null) {
+      if (element.dataset.codexReportDynamic === 'true') {
+        element.remove()
+      }
+      return
+    }
+
+    element.setAttribute('content', previousContent)
+  }
+}
+
+function updateLinkTag({ rel, href }) {
+  if (typeof document === 'undefined') return () => {}
+
+  const selector = `link[rel="${rel}"]`
+  let element = document.head.querySelector(selector)
+  const previousHref = element?.getAttribute('href')
+
+  if (!href) {
+    if (element && element.dataset.codexReportDynamic === 'true') {
+      element.remove()
+    }
+
+    return () => {}
+  }
+
+  if (!element) {
+    element = document.createElement('link')
+    element.setAttribute('rel', rel)
+    element.dataset.codexReportDynamic = 'true'
+    document.head.appendChild(element)
+  }
+
+  element.setAttribute('href', href)
+
+  return () => {
+    if (!element) return
+
+    if (previousHref === null) {
+      if (element.dataset.codexReportDynamic === 'true') {
+        element.remove()
+      }
+      return
+    }
+
+    element.setAttribute('href', previousHref)
+  }
 }
 
 async function copyText(text) {
@@ -231,11 +328,30 @@ export default function PublicReportPage() {
     if (!state.report) return undefined
 
     const previousTitle = document.title
+    const reportContent = state.report.reportContent || {}
+    const entity = reportContent.entity || {}
+    const title = getReportPageTitle(state.report)
+    const subtitle = clean(reportContent.meta?.subtitle || reportContent.subtitle || '')
+    const imageUrl = resolveAbsoluteUrl(entity.avatarUrl || entity.imageUrl || entity.logo || '')
+    const reportUrl = window.location.href
 
-    document.title = getReportPageTitle(state.report)
+    const restoreMeta = [
+      updateMetaTag({ attrName: 'property', attrValue: 'og:title', content: title }),
+      updateMetaTag({ attrName: 'property', attrValue: 'og:description', content: subtitle }),
+      updateMetaTag({ attrName: 'property', attrValue: 'og:url', content: reportUrl }),
+      updateMetaTag({ attrName: 'property', attrValue: 'og:image', content: imageUrl }),
+      updateMetaTag({ attrName: 'name', attrValue: 'twitter:card', content: imageUrl ? 'summary_large_image' : 'summary' }),
+      updateMetaTag({ attrName: 'name', attrValue: 'twitter:title', content: title }),
+      updateMetaTag({ attrName: 'name', attrValue: 'twitter:description', content: subtitle }),
+      updateMetaTag({ attrName: 'name', attrValue: 'twitter:image', content: imageUrl }),
+      updateLinkTag({ rel: 'canonical', href: reportUrl }),
+    ]
+
+    document.title = title
 
     return () => {
       document.title = previousTitle
+      restoreMeta.reverse().forEach(restore => restore?.())
     }
   }, [state.report])
 
@@ -263,8 +379,22 @@ export default function PublicReportPage() {
   }, [shareCopied])
 
   const handleShare = React.useCallback(async () => {
-    const currentUrl = window.location.href
-    const copied = await copyText(currentUrl)
+    const reportIdValue = state.report?.reportId || state.report?.id || reportId
+    const versionIdValue =
+      state.report?.versionId ||
+      versionId ||
+      ''
+
+    const currentUrl = buildPublicReportShareUrl({
+      reportId: reportIdValue,
+      versionId: versionIdValue,
+    })
+
+    const shareText = buildPublicReportShareText({
+      report: state.report,
+      url: currentUrl,
+    })
+    const copied = await copyText(shareText || currentUrl)
 
     if (copied) {
       setShareCopied(true)
@@ -272,7 +402,7 @@ export default function PublicReportPage() {
     }
 
     window.alert('לא ניתן לשתף את קישור הדוח. ניתן להעתיק את הכתובת ידנית.')
-  }, [])
+  }, [reportId, state.report, versionId])
 
   if (state.loading) {
     return (

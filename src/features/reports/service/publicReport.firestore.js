@@ -417,6 +417,38 @@ export async function getPublicReportVersion({ reportId, versionId }) {
     getDoc(publicReportRef(reportId)),
   ])
 
+  const currentData = currentSnapshot.exists() ? currentSnapshot.data() : {}
+
+  if (
+    currentSnapshot.exists() &&
+    currentData.currentVersionId &&
+    currentData.currentVersionId === versionId
+  ) {
+    if (currentData.status !== PUBLIC_REPORT_STATUS.PUBLISHED) {
+      return null
+    }
+
+    const report = normalizeCurrentReport({
+      snapshot: currentSnapshot,
+      data: currentData,
+    })
+
+    const versions = await loadReportVersionOptions({
+      reportId,
+      currentData: report,
+    })
+
+    return {
+      ...report,
+      versionId,
+      versions,
+      reportContent: {
+        ...(report.reportContent || {}),
+        versions,
+      },
+    }
+  }
+
   if (!snapshot.exists()) return null
 
   const data = snapshot.data()
@@ -431,7 +463,6 @@ export async function getPublicReportVersion({ reportId, versionId }) {
     data,
   })
 
-  const currentData = currentSnapshot.exists() ? currentSnapshot.data() : {}
   const versions = await loadReportVersionOptions({
     reportId,
     currentData,

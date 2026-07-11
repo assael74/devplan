@@ -23,6 +23,13 @@
         }
       },
       {
+        "source": "/share/reports/**",
+        "function": {
+          "functionId": "shareReport",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

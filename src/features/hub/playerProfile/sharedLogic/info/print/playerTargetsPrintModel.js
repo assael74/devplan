@@ -7,6 +7,7 @@ import {
 } from '../../../../../../shared/players/targets/index.js'
 
 import { buildPlayerTargetSections } from '../targets.cards.js'
+import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 
 const EMPTY = '—'
 
@@ -94,6 +95,15 @@ const resolveCoachName = team => {
   )
 }
 
+const resolvePlayerAvatar = player => {
+  return (
+    player?.photo ||
+    player?.avatarUrl ||
+    player?.imageUrl ||
+    playerImage
+  )
+}
+
 const buildProfileSummary = profile => {
   const layerKey = profile?.layerKey || ''
 
@@ -132,6 +142,11 @@ export function buildPlayerTargetsPrintModel({ player = {}, team = {}, reportDat
 
     player,
     team: activeTeam,
+    entity: {
+      type: 'player',
+      name: resolvePlayerName(player),
+      avatarUrl: resolvePlayerAvatar(player),
+    },
 
     playerName: resolvePlayerName(player),
     teamName: resolveTeamName(player, activeTeam),
