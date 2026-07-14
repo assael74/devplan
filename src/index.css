@@ -1,18 +1,15 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* ===== Modal transition (react-transition-group) ===== */
+/* Modal transition */
 .dpModal-enter {
   opacity: 0;
   transform: translateY(6px) scale(0.98);
@@ -35,20 +32,19 @@ code {
   transition: opacity 120ms ease, transform 140ms ease;
 }
 
-/* Optional: smoother backdrop fade */
 .MuiModal-backdrop {
   transition: opacity 160ms ease;
 }
 
-/* Thin scrollbar (scoped) */
+/* Thin scrollbar */
 .dpScrollThin {
-  scrollbar-width: thin;                 /* Firefox */
-  scrollbar-color: rgba(0,0,0,.28) transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
   scrollbar-gutter: stable;
 }
 
 .dpScrollThin::-webkit-scrollbar {
-  width: 6px;                            /* Chrome/Edge */
+  width: 6px;
   height: 6px;
 }
 
@@ -57,14 +53,38 @@ code {
 }
 
 .dpScrollThin::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,.28);
-  border-radius: 999px;
-  border: 2px solid transparent;         /* נותן "אוויר" ומקטין ויזואלית */
+  background: rgba(0, 0, 0, 0.28);
   background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
 }
 
 .dpScrollThin::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,.38);
-  border: 2px solid transparent;
+  background: rgba(0, 0, 0, 0.38);
   background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+/* Transparent scrollbar */
+.dpScrollTransparent {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+}
+
+.dpScrollTransparent::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dpScrollTransparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dpScrollTransparent::-webkit-scrollbar-thumb {
+  background: transparent;
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  transition: background-color 160ms ease;
 }

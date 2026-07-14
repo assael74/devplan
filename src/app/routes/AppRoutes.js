@@ -68,9 +68,9 @@ const loadLiveTaggingPanel = () =>
     default: module.LiveTaggingPanel,
   }))
 
-const loadReportsManagementPage = () =>
-  import('../../features/reports/management/index.js').then(module => ({
-    default: module.ReportsManagementPage,
+const loadReportsDashboardPage = () =>
+  import('../../features/reports/index.js').then(module => ({
+    default: module.DashboardPage,
   }))
 
 const HomePage = React.lazy(loadHomePage)
@@ -99,7 +99,7 @@ const PendingApprovalPage = React.lazy(loadPendingApprovalPage)
 const SquadSimulatorPage = React.lazy(loadSquadSimulatorPage)
 const LiveTaggingPanel = React.lazy(loadLiveTaggingPanel)
 const FirestoreUsagePage = React.lazy(loadFirestoreUsagePage)
-const ReportsManagementPage = React.lazy(loadReportsManagementPage)
+const ReportsDashboardPage = React.lazy(loadReportsDashboardPage)
 
 const ADMIN_ROUTE_LOADERS = [
   loadHubPage,
@@ -108,7 +108,7 @@ const ADMIN_ROUTE_LOADERS = [
   loadTagsManagementPage,
   loadLiveTaggingPanel,
   loadFirestoreUsagePage,
-  loadReportsManagementPage,
+  loadReportsDashboardPage,
 ]
 
 const SQUAD_ROUTE_LOADERS = [loadSquadSimulatorPage]
@@ -383,7 +383,7 @@ export default function AppRoutes() {
 
               <Route
                 path='/dev/reports'
-                element={lazyRoute(<ReportsManagementPage />)}
+                element={lazyRoute(<ReportsDashboardPage />)}
               />
 
               <Route

@@ -4,6 +4,7 @@ export {
   PUBLIC_REPORTS_COLLECTION,
   PUBLIC_REPORT_VERSIONS_COLLECTION,
   PUBLIC_REPORT_VIEWS_COLLECTION,
+  PUBLIC_REPORT_INDEXES_COLLECTION,
   PUBLIC_REPORT_ROUTE,
   PUBLIC_REPORT_VERSION_PREFIX,
   PUBLIC_REPORT_VERSION_PADDING,
@@ -33,6 +34,10 @@ export {
 export {
   publishPublicReportDocument,
   publishPublicReport,
+  revokePublicReport,
+  deletePublicReport,
+  updatePublicReportIndexDocument,
+  getPublishedPublicReports,
   getCurrentPublicReport,
   getPublicReportVersion,
   getPublicReport,

@@ -13,6 +13,7 @@ function handleCollapseKeyDown(event, onToggle) {
 
 export default function CollapseBox({
   open = false,
+  disabled = false,
   onToggle,
   title,
   subtitle,
@@ -37,11 +38,12 @@ export default function CollapseBox({
     <Box sx={[sx.root, rootSx]}>
       <Box
         role="button"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         aria-expanded={open}
-        sx={[sx.header(open), headerSx]}
-        onClick={onToggle}
-        onKeyDown={event => handleCollapseKeyDown(event, onToggle)}
+        aria-disabled={disabled || undefined}
+        sx={[sx.header(open, disabled), headerSx]}
+        onClick={disabled ? undefined : onToggle}
+        onKeyDown={disabled ? undefined : event => handleCollapseKeyDown(event, onToggle)}
       >
         <Box sx={sx.headerLeft}>
           {titleNode}

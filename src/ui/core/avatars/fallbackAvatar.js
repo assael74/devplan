@@ -173,22 +173,66 @@ export function buildFallbackAvatar({ entityType, id, name, subline }) {
   return svgToDataUri(svg)
 }
 
-export function resolveEntityAvatar({ entityType, entity, parentEntity, subline }) {
-  const clean = (v) => {
-    const s = String(v ?? '').trim()
-    return s || ''
+export function resolveEntityAvatar({
+  entityType,
+  entity,
+  parentEntity,
+  subline = '',
+  playerFallback = '',
+} = {}) {
+  const clean = value => String(value ?? '').trim()
+
+  const safeEntity = entity && typeof entity === 'object'
+    ? entity
+    : {}
+
+  const safeParentEntity = parentEntity && typeof parentEntity === 'object'
+    ? parentEntity
+    : {}
+
+  const resolvedEntityType = clean(
+    entityType ||
+    safeEntity.type ||
+    'team'
+  )
+
+  const directPhoto = clean(
+    safeEntity.avatarUrl ||
+    safeEntity.photo ||
+    safeEntity.imageUrl ||
+    safeEntity.logoUrl ||
+    safeEntity.image
+  )
+
+  if (directPhoto) {
+    return directPhoto
   }
 
-  const directPhoto = clean(entity?.photo)
-  if (directPhoto) return directPhoto
+  const parentPhoto = clean(
+    safeParentEntity.avatarUrl ||
+    safeParentEntity.photo ||
+    safeParentEntity.imageUrl ||
+    safeParentEntity.logoUrl ||
+    safeParentEntity.image
+  )
 
-  const parentPhoto = clean(parentEntity?.photo)
-  if (parentPhoto) return parentPhoto
+  if (parentPhoto) {
+    return parentPhoto
+  }
+
+  if (resolvedEntityType === 'player' && playerFallback) {
+    return playerFallback
+  }
 
   return buildFallbackAvatar({
-    entityType,
-    id: entity?.id,
-    name: entity?.teamName || entity?.name,
+    entityType: resolvedEntityType,
+    id: safeEntity.id,
+    name: (
+      safeEntity.teamName ||
+      safeEntity.playerName ||
+      safeEntity.clubName ||
+      safeEntity.name
+    ),
     subline,
   })
 }

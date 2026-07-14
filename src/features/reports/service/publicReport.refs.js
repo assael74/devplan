@@ -11,6 +11,7 @@ import {
 
 import {
   PUBLIC_REPORTS_COLLECTION,
+  PUBLIC_REPORT_INDEXES_COLLECTION,
   PUBLIC_REPORT_VERSIONS_COLLECTION,
   PUBLIC_REPORT_VIEWS_COLLECTION,
 } from './publicReport.constants.js'
@@ -19,6 +20,13 @@ export function publicReportsCollectionRef() {
   return collection(
     db,
     PUBLIC_REPORTS_COLLECTION
+  )
+}
+
+export function publicReportIndexesCollectionRef() {
+  return collection(
+    db,
+    PUBLIC_REPORT_INDEXES_COLLECTION
   )
 }
 

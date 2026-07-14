@@ -4,7 +4,7 @@ export const collapseBoxSx = {
     minWidth: 0,
   },
 
-  header: open => ({
+  header: (open, disabled = false) => ({
     mt: 0.75,
     px: 1.25,
     py: 0.75,
@@ -18,12 +18,13 @@ export const collapseBoxSx = {
     borderTopRightRadius: 'var(--joy-radius-sm)',
     borderBottomLeftRadius: open ? 0 : 'var(--joy-radius-sm)',
     borderBottomRightRadius: open ? 0 : 'var(--joy-radius-sm)',
-    cursor: 'pointer',
+    cursor: disabled ? 'not-allowed' : 'pointer',
     userSelect: 'none',
+    opacity: disabled ? 0.55 : 1,
     transition: 'background-color .16s ease, color .16s ease',
     '&:hover': {
-      bgcolor: 'background.level1',
-      color: 'text.primary',
+      bgcolor: disabled ? open ? 'background.level1' : 'transparent' : 'background.level1',
+      color: disabled ? (open ? 'text.primary' : 'text.secondary') : 'text.primary',
     },
     '&:focus-visible': {
       outline: '2px solid',

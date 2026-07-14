@@ -3,6 +3,7 @@
 export const PUBLIC_REPORTS_COLLECTION = 'publicReports'
 export const PUBLIC_REPORT_VERSIONS_COLLECTION = 'versions'
 export const PUBLIC_REPORT_VIEWS_COLLECTION = 'views'
+export const PUBLIC_REPORT_INDEXES_COLLECTION = 'publicReportsIndexByType'
 
 export const PUBLIC_REPORT_ROUTE = '/r'
 

@@ -1,4 +1,5 @@
 import {
+  Assignment,
   AssistantPhoto,
   AccessTime,
   Attribution,
@@ -40,8 +41,10 @@ export const generalIcons = {
   profile: <Attribution />,
   readiness: <Visibility />,
   rate: <Percent />,
+  report: <Assignment />,
   percent: <Percent />,
   reliability: <Visibility />,
+  view: <Visibility />,
   calendar: <ScheduleSend />,
   summary: <Summarize />,
   parents: <FamilyRestroom />,

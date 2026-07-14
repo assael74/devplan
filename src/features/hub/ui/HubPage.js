@@ -1,7 +1,5 @@
 // src/features/hub/ui/HubPage.js
 
-// src/features/hub/ui/HubPage.js
-
 import React, { useMemo, useCallback } from 'react'
 import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
 import { useTheme } from '@mui/joy/styles'

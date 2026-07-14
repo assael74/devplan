@@ -1,194 +1,180 @@
-﻿// src/features/reports/management/ReportsManagement.catalog.js
+// src/shared/reports/reports.catalog.js
 
-import { REPORTS_MANAGEMENT_REPORTS } from './reportsManagement.constants.js'
+import { REPORT_CATEGORY_IDS, REPORT_IDS, REPORT_SCOPE_IDS } from './reports.ids.js'
 
-export const REPORT_DEV_CATEGORIES = {
-  TARGETS: 'targets',
-  INSIGHTS: 'insights',
-  DETAILS: 'details',
-  EXTERNAL_DETAILS: 'externalDetails',
-}
-
-export const REPORT_DEV_SCOPES = {
-  PLAYER: 'player',
-  TEAM: 'team',
-  PLAYERS: 'players',
-  TEAMS: 'teams',
-}
-
-export const REPORT_DEV_CATEGORY_OPTIONS = [
+export const REPORT_CATEGORY_OPTIONS = [
   {
-    id: REPORT_DEV_CATEGORIES.TARGETS,
+    id: REPORT_CATEGORY_IDS.TARGETS,
     label: 'דוחות יעדים',
     description: 'יעדים אישיים וקבוצתיים',
-    icon: 'targets',
+    idIcon: 'targets',
   },
   {
-    id: REPORT_DEV_CATEGORIES.INSIGHTS,
+    id: REPORT_CATEGORY_IDS.INSIGHTS,
     label: 'דוחות תובנות',
     description: 'ניתוח, מסקנות והמלצות',
-    icon: 'insights',
+    idIcon: 'insights',
   },
   {
-    id: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_CATEGORY_IDS.DETAILS,
     label: 'דוחות מפרט',
     description: 'תמונת מצב מפורטת ללא שכבת תובנות',
-    icon: 'details',
+    idIcon: 'details',
   },
   {
-    id: REPORT_DEV_CATEGORIES.EXTERNAL_DETAILS,
+    id: REPORT_CATEGORY_IDS.EXTERNAL_DETAILS,
     label: 'מפרט חיצוני',
     description: 'דוחות מידע על שחקנים, קבוצות, ליגות ופרופילי סקאוט חיצוניים',
-    icon: 'externalDetails',
+    idIcon: 'playersDatabase',
   },
 ]
 
-export const REPORT_DEV_CATALOG = [
+export const REPORT_CATALOG = [
   {
-    id: REPORTS_MANAGEMENT_REPORTS.PLAYER_TARGETS,
-    categoryId: REPORT_DEV_CATEGORIES.TARGETS,
+    id: REPORT_IDS.PLAYER_TARGETS,
+    categoryId: REPORT_CATEGORY_IDS.TARGETS,
     label: 'יעדי שחקן',
-    scope: REPORT_DEV_SCOPES.PLAYER,
+    scope: REPORT_SCOPE_IDS.PLAYER,
     scopeLabel: 'אישי',
     exists: true,
     connected: true,
     needsUpgrade: false,
   },
   {
-    id: REPORTS_MANAGEMENT_REPORTS.TEAM_TARGETS,
-    categoryId: REPORT_DEV_CATEGORIES.TARGETS,
+    id: REPORT_IDS.TEAM_TARGETS,
+    categoryId: REPORT_CATEGORY_IDS.TARGETS,
     label: 'יעדי קבוצה',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: true,
     connected: true,
     needsUpgrade: false,
   },
   {
-    id: 'teamPerformance',
-    categoryId: REPORT_DEV_CATEGORIES.TARGETS,
+    id: REPORT_IDS.TEAM_PERFORMANCE,
+    categoryId: REPORT_CATEGORY_IDS.TARGETS,
     label: 'ביצוע קבוצה',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: true,
     connected: false,
     needsUpgrade: true,
   },
   {
-    id: 'playerPerformance',
-    categoryId: REPORT_DEV_CATEGORIES.TARGETS,
+    id: REPORT_IDS.PLAYER_PERFORMANCE,
+    categoryId: REPORT_CATEGORY_IDS.TARGETS,
     label: 'ביצוע שחקן',
-    scope: REPORT_DEV_SCOPES.PLAYER,
+    scope: REPORT_SCOPE_IDS.PLAYER,
     scopeLabel: 'אישי',
     exists: false,
     connected: false,
     needsUpgrade: false,
   },
   {
-    id: 'squadBuildingInsights',
-    categoryId: REPORT_DEV_CATEGORIES.INSIGHTS,
+    id: REPORT_IDS.SQUAD_BUILDING_INSIGHTS,
+    categoryId: REPORT_CATEGORY_IDS.INSIGHTS,
     label: 'תובנות בניית סגל',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: true,
     connected: false,
     needsUpgrade: true,
   },
   {
-    id: 'teamPerformanceInsights',
-    categoryId: REPORT_DEV_CATEGORIES.INSIGHTS,
+    id: REPORT_IDS.TEAM_PERFORMANCE_INSIGHTS,
+    categoryId: REPORT_CATEGORY_IDS.INSIGHTS,
     label: 'תובנות ביצוע קבוצה',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: true,
     connected: false,
     needsUpgrade: true,
   },
   {
-    id: REPORTS_MANAGEMENT_REPORTS.SEASON_PLAN,
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.SEASON_PLAN,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'תכנון סגל',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'מפרט קבוצתי',
     exists: true,
     connected: true,
     needsUpgrade: false,
   },
   {
-    id: REPORTS_MANAGEMENT_REPORTS.MINUTES_PLAN,
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.MINUTES_PLAN,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'תכנון חלוקת דקות',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'מפרט קבוצתי',
     exists: true,
     connected: true,
     needsUpgrade: false,
   },
   {
-    id: 'playersPerformanceDetails',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.PLAYERS_PERFORMANCE_DETAILS,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'ביצועי שחקנים',
-    scope: REPORT_DEV_SCOPES.PLAYERS,
+    scope: REPORT_SCOPE_IDS.PLAYERS,
     scopeLabel: 'מפרט שחקנים',
     exists: true,
     connected: false,
     needsUpgrade: true,
   },
   {
-    id: 'teamsPerformanceDetails',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.TEAMS_PERFORMANCE_DETAILS,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'ביצועי קבוצות',
-    scope: REPORT_DEV_SCOPES.TEAMS,
+    scope: REPORT_SCOPE_IDS.TEAMS,
     scopeLabel: 'מפרט קבוצות',
     exists: false,
     connected: false,
     needsUpgrade: false,
   },
   {
-    id: 'teamSquadManagement',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.TEAM_SQUAD_MANAGEMENT,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'ניהול סגל קבוצתי',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצה',
     exists: false,
     connected: false,
     needsUpgrade: false,
   },
   {
-    id: 'teamsSquadManagement',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.TEAMS_SQUAD_MANAGEMENT,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'ניהול סגל קבוצות',
-    scope: REPORT_DEV_SCOPES.TEAMS,
+    scope: REPORT_SCOPE_IDS.TEAMS,
     scopeLabel: 'מספר קבוצות',
     exists: false,
     connected: false,
     needsUpgrade: false,
   },
   {
-    id: 'squadDetails',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.SQUAD_DETAILS,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'מפרט סגל',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: true,
     connected: false,
     needsUpgrade: true,
   },
   {
-    id: 'teamVideoDetails',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.TEAM_VIDEO_DETAILS,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'מפרט וידאו קבוצתי',
-    scope: REPORT_DEV_SCOPES.TEAM,
+    scope: REPORT_SCOPE_IDS.TEAM,
     scopeLabel: 'קבוצתי',
     exists: false,
     connected: false,
     needsUpgrade: false,
   },
   {
-    id: 'playerVideoDetails',
-    categoryId: REPORT_DEV_CATEGORIES.DETAILS,
+    id: REPORT_IDS.PLAYER_VIDEO_DETAILS,
+    categoryId: REPORT_CATEGORY_IDS.DETAILS,
     label: 'מפרט וידאו אישי',
-    scope: REPORT_DEV_SCOPES.PLAYER,
+    scope: REPORT_SCOPE_IDS.PLAYER,
     scopeLabel: 'אישי',
     exists: false,
     connected: false,
@@ -196,19 +182,30 @@ export const REPORT_DEV_CATALOG = [
   },
 ]
 
-export const getReportsByCategory = categoryId => {
-  return REPORT_DEV_CATALOG.filter(report => report.categoryId === categoryId)
+export const REPORT_CATEGORY_META = REPORT_CATEGORY_OPTIONS.reduce((accumulator, category) => {
+  accumulator[category.id] = {
+    id: category.id,
+    label: category.label,
+    description: category.description,
+    idIcon: category.idIcon,
+  }
+
+  return accumulator
+}, {})
+
+export function getReportsByCategory(categoryId) {
+  return REPORT_CATALOG.filter(report => report.categoryId === categoryId)
 }
 
-export const getConnectedReports = () => {
-  return REPORT_DEV_CATALOG.filter(report => report.connected)
+export function getConnectedReports() {
+  return REPORT_CATALOG.filter(report => report.connected)
 }
 
-export const getReportCatalogItem = reportId => {
-  return REPORT_DEV_CATALOG.find(report => report.id === reportId) || null
+export function getReportCatalogItem(reportId) {
+  return REPORT_CATALOG.find(report => report.id === reportId) || null
 }
 
-export const getReportStatus = report => {
+export function getReportStatus(report) {
   if (!report?.exists) {
     return {
       id: 'notBuilt',
