@@ -12,13 +12,12 @@ const DEP_SCORE = {
 }
 
 const WEIGHTS = {
-  sampleSize: 0.18,
-  dataCompleteness: 0.18,
-  positionDependency: 0.16,
-  teamContextDependency: 0.14,
-  penaltySensitivity: 0.12,
-  teamGamesSample: 0.12,
-  timeConsistency: 0.1,
+  sampleSize: 0.2,
+  dataCompleteness: 0.2,
+  positionDependency: 0.18,
+  teamContextDependency: 0.16,
+  teamGamesSample: 0.14,
+  timeConsistency: 0.12,
 }
 
 const levelFromScore = (score) => {
@@ -66,9 +65,6 @@ const buildWarnings = ({ profile, metrics, availability, factors }) => {
   const warnings = new Set(profile?.warnings || [])
 
   if (!metrics.hasPosition) warnings.add(SCOUT_WARNING.POSITION_MISSING)
-  if (profile?.deps?.penalties === 'high' && !availability.penalties) {
-    warnings.add(SCOUT_WARNING.PENALTIES_UNKNOWN)
-  }
   if (factors.sampleSize.level === SCOUT_RELIABILITY.LOW) {
     warnings.add(SCOUT_WARNING.LOW_SAMPLE)
   }
@@ -96,10 +92,6 @@ export const buildScoutReliability = ({ profile, metrics, availability }) => {
     dependency: profile?.deps?.team,
     isResolved: metrics.teamGames >= 8,
   })
-  const penaltyScore = dependencyScore({
-    dependency: profile?.deps?.penalties,
-    isResolved: metrics.hasPenaltySplit,
-  })
   const teamGamesScore = metrics.teamGames >= 8
     ? Math.min(100, 55 + metrics.teamGames * 3)
     : metrics.teamGames * 7
@@ -112,7 +104,6 @@ export const buildScoutReliability = ({ profile, metrics, availability }) => {
     dataCompleteness: factor({ score: completenessScore, reason: 'available_fields' }),
     positionDependency: factor({ score: positionScore, reason: 'position_dependency' }),
     teamContextDependency: factor({ score: teamScore, reason: 'team_context_dependency' }),
-    penaltySensitivity: factor({ score: penaltyScore, reason: 'penalty_split_dependency' }),
     teamGamesSample: factor({ score: teamGamesScore, reason: 'team_games_sample' }),
     timeConsistency: factor({ score: consistencyScore, reason: 'time_series_consistency' }),
   }

@@ -7,72 +7,100 @@ const toPositiveInt = (value, fallback = 1) => {
   return Number.isInteger(n) && n > 0 ? n : fallback
 }
 
+const normalizeBirthYear = value => {
+  const n = Number(value)
+  return Number.isInteger(n) && n > 0 ? n : 0
+}
+
 export const inferTeamSlotByLeagueLevel = level => (
   Number(level) === 1 ? 1 : 2
 )
 
-export const buildTeamSlotId = ({
+export const buildBirthTeamId = ({
   clubId,
-  ageGroupId,
+  birthYear,
+  birthTeamSlot,
   teamSlot,
 } = {}) => {
-  const slot = toPositiveInt(teamSlot)
+  const slot = toPositiveInt(birthTeamSlot || teamSlot)
 
   return [
     clean(clubId),
-    clean(ageGroupId),
+    normalizeBirthYear(birthYear),
     slot,
   ].filter(Boolean).join('_')
 }
 
-export const buildTeamSeasonKey = ({
+export const buildBirthTeamSeasonKey = ({
   clubId,
-  seasonId,
-  ageGroupId,
+  birthYear,
+  birthTeamSlot,
   teamSlot,
+  seasonId,
   leagueId,
 } = {}) => {
-  const slot = toPositiveInt(teamSlot)
+  const slot = toPositiveInt(birthTeamSlot || teamSlot)
 
   return [
     clean(clubId),
-    clean(seasonId),
-    clean(ageGroupId),
+    normalizeBirthYear(birthYear),
     slot,
+    clean(seasonId),
     clean(leagueId),
   ].filter(Boolean).join('__')
 }
 
-export const buildTeamIdentity = ({
+export const buildTeamSlotId = payload => buildBirthTeamId(payload)
+
+export const buildTeamSeasonKey = payload => buildBirthTeamSeasonKey(payload)
+
+export const buildBirthTeamIdentity = ({
   clubId,
   clubName,
   seasonId,
+  birthYear,
+  birthTeamSlot,
+  teamSlot,
   ageGroupId,
   ageGroupLabel,
-  teamSlot,
   leagueId,
   leagueName,
   externalTeamId = '',
 } = {}) => {
-  const slot = toPositiveInt(teamSlot)
+  const slot = toPositiveInt(birthTeamSlot || teamSlot)
+  const normalizedBirthYear = normalizeBirthYear(birthYear)
+  const birthTeamId = buildBirthTeamId({
+    clubId,
+    birthYear: normalizedBirthYear,
+    birthTeamSlot: slot,
+  })
+  const birthTeamSeasonKey = buildBirthTeamSeasonKey({
+    clubId,
+    birthYear: normalizedBirthYear,
+    birthTeamSlot: slot,
+    seasonId,
+    leagueId,
+  })
 
   return {
     clubId: clean(clubId),
     clubName: clean(clubName),
     seasonId: clean(seasonId),
+    birthYear: normalizedBirthYear,
+    birthTeamSlot: slot,
+    birthTeamId,
+    birthTeamSeasonKey,
     ageGroupId: clean(ageGroupId),
     ageGroupLabel: clean(ageGroupLabel),
-    teamSlot: slot,
-    teamSlotId: buildTeamSlotId({ clubId, ageGroupId, teamSlot: slot }),
-    teamSeasonKey: buildTeamSeasonKey({
-      clubId,
-      seasonId,
-      ageGroupId,
-      teamSlot: slot,
-      leagueId,
-    }),
     leagueId: clean(leagueId),
     leagueName: clean(leagueName),
     externalTeamId: clean(externalTeamId),
+
+    teamSlot: slot,
+    teamSlotId: birthTeamId,
+    teamId: birthTeamId,
+    teamSeasonKey: birthTeamSeasonKey,
   }
 }
+
+export const buildTeamIdentity = payload => buildBirthTeamIdentity(payload)

@@ -82,6 +82,13 @@ const getGoalGames = (player = {}) => {
   )
 }
 
+const getTeamNumber = ({ team = {}, player = {} } = {}) => {
+  const teamId = String(team?.teamId || player?.teamId || '')
+  const match = teamId.match(/[_-](\d+)$/)
+
+  return match ? Number(match[1]) : 1
+}
+
 export const buildScoutMetrics = ({ player = {}, team = {} } = {}) => {
   const minutes = pickNum(player?.minutes, player?.totalMinutes, player?.playedMinutes)
   const games = getPlayerGames(player)
@@ -92,10 +99,11 @@ export const buildScoutMetrics = ({ player = {}, team = {} } = {}) => {
   const subOut = pickNum(player?.subOut, player?.subbedOut, player?.substitutedOut)
   const goals = pickNum(player?.goals, player?.leagueGoals)
   const yellowCards = pickNum(player?.yellowCards, player?.cardsYellow, player?.yc)
-  const penaltyGoals = hasValue(player?.penaltyGoals) ? toNum(player.penaltyGoals) : null
   const teamGoals = getTeamGoals({ team, player })
   const birthYear = pickNum(player?.birthYear, player?.yearOfBirth)
   const teamBirthYear = pickNum(team?.birthYear, team?.ageGroupYear)
+  const clubLevel = pickNum(team?.clubLevel, team?.club?.clubLevel, player?.clubLevel)
+  const teamNumber = getTeamNumber({ team, player })
   const goalGames = getGoalGames(player)
 
   return {
@@ -108,26 +116,30 @@ export const buildScoutMetrics = ({ player = {}, team = {} } = {}) => {
     subOut,
     goals,
     yellowCards,
-    penaltyGoals,
     teamGoals,
     birthYear,
     teamBirthYear,
+    clubLevel,
+    teamNumber,
     goalGames,
 
     minutesPct: ratio(minutes, seasonMinutes),
     startsPct: ratio(starts, teamGames || games),
     subInPct: ratio(subIn, teamGames || games),
     subOutPct: ratio(subOut, starts || games),
+    minutesPerGame: ratio(minutes, games),
     goalsPer90: ratio(goals * 90, minutes),
     yellowCardsPer90: ratio(yellowCards * 90, minutes),
     goalsShareOfTeam: ratio(goals, teamGoals),
     scoringGamesPct: ratio(goalGames, games),
 
     hasPosition: hasPosition(player),
-    hasPenaltySplit: penaltyGoals !== null,
     isYoungerAgeGroup:
       Boolean(birthYear && teamBirthYear && birthYear > teamBirthYear) ||
       toNum(player?.playingUpMinutes, 0) > 0,
+    topClubOpportunityEligible:
+      clubLevel === 1 ||
+      (clubLevel === 2 && teamNumber === 1),
   }
 }
 
@@ -156,7 +168,6 @@ export const getScoutDataAvailability = ({ player = {}, team = {} } = {}) => {
       hasValue(team?.goalsFor) ||
       hasValue(team?.leagueGoalsFor) ||
       hasValue(player?.teamGoals),
-    penalties: hasValue(player?.penaltyGoals),
     timeSeries:
       Array.isArray(player?.snapshots) ||
       Array.isArray(player?.gameLogs) ||

@@ -17,6 +17,19 @@ import {
   evaluateScoutRules,
 } from './rules.js'
 
+import {
+  buildScoutProfileCombinations,
+} from './combinations.js'
+
+import {
+  passesPlayerScoutTeamFilter,
+} from './team.js'
+
+import {
+  PLAYER_SCOUT_NORMALIZATION_MODE,
+  buildNormalizedPlayerScoutInput,
+} from './normalization.js'
+
 const interestScore = (interest) => {
   if (interest === 'super_interesting') return 95
   if (interest === 'interesting') return 75
@@ -46,23 +59,40 @@ const buildSignal = ({ profile, metrics, availability, ruleResult, context }) =>
     warnings: reliability.warnings,
     requiredReview: profile.reviews || [],
     metrics,
+    normalization: context.normalization || null,
     matchedRules: ruleResult.matchedRules,
   }
 }
 
-export const buildPlayerScoutSignals = ({
-  player,
-  team,
+const buildPlayerScoutSignalsFromNormalizedInput = ({
+  normalizedInput,
   perspective,
   searchDistance = 0,
   profiles = SCOUT_PROFILES,
 } = {}) => {
-  const metrics = buildScoutMetrics({ player, team })
-  const availability = getScoutDataAvailability({ player, team })
-  const context = { perspective }
+  const metrics = buildScoutMetrics({
+    player: normalizedInput.player,
+    team: normalizedInput.team,
+  })
+  const availability = getScoutDataAvailability({
+    player: normalizedInput.player,
+    team: normalizedInput.team,
+  })
+  const context = {
+    perspective,
+    normalization: normalizedInput.normalization,
+  }
 
   return profiles
     .map((profile) => {
+      const teamFilterPassed = passesPlayerScoutTeamFilter({
+        profile,
+        team: normalizedInput.team,
+        metrics,
+      })
+
+      if (!teamFilterPassed) return null
+
       const ruleResult = evaluateScoutRules({ profile, metrics, searchDistance })
 
       if (!ruleResult.matched) return null
@@ -79,10 +109,68 @@ export const buildPlayerScoutSignals = ({
     .sort((a, b) => b.score - a.score)
 }
 
+export const buildPlayerScoutSignals = ({
+  player,
+  team,
+  season,
+  perspective,
+  normalizationMode = PLAYER_SCOUT_NORMALIZATION_MODE.AUTO,
+  searchDistance = 0,
+  profiles = SCOUT_PROFILES,
+} = {}) => {
+  const normalizedInput = buildNormalizedPlayerScoutInput({
+    player,
+    team,
+    season,
+    mode: normalizationMode,
+  })
+
+  return buildPlayerScoutSignalsFromNormalizedInput({
+    normalizedInput,
+    perspective,
+    searchDistance,
+    profiles,
+  })
+}
+
+export const buildPlayerScoutResult = ({
+  player,
+  team,
+  season,
+  perspective,
+  normalizationMode = PLAYER_SCOUT_NORMALIZATION_MODE.AUTO,
+  searchDistance = 0,
+  profiles = SCOUT_PROFILES,
+} = {}) => {
+  const normalizedInput = buildNormalizedPlayerScoutInput({
+    player,
+    team,
+    season,
+    mode: normalizationMode,
+  })
+  const signals = buildPlayerScoutSignalsFromNormalizedInput({
+    normalizedInput,
+    perspective,
+    searchDistance,
+    profiles,
+  })
+
+  return {
+    signals,
+    combinations: buildScoutProfileCombinations({ signals }),
+    bestSignal: signals[0] || null,
+    normalization: normalizedInput.normalization,
+    normalizedPlayer: normalizedInput.player,
+    normalizedTeam: normalizedInput.team,
+  }
+}
+
 export const buildPlayersScoutSignals = ({
   players,
   team,
+  season,
   perspective,
+  normalizationMode = PLAYER_SCOUT_NORMALIZATION_MODE.AUTO,
   searchDistance = 0,
   profiles,
 } = {}) => {
@@ -90,10 +178,12 @@ export const buildPlayersScoutSignals = ({
 
   return safePlayers
     .map((player) => {
-      const signals = buildPlayerScoutSignals({
+      const result = buildPlayerScoutResult({
         player,
         team: player?.team || team,
+        season: player?.season || season,
         perspective,
+        normalizationMode,
         searchDistance,
         profiles,
       })
@@ -101,8 +191,9 @@ export const buildPlayersScoutSignals = ({
       return {
         player,
         playerId: player?.id || '',
-        signals,
-        bestSignal: signals[0] || null,
+        signals: result.signals,
+        combinations: result.combinations,
+        bestSignal: result.bestSignal,
       }
     })
     .filter((row) => row.signals.length)

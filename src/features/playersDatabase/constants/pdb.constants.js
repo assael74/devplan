@@ -2,18 +2,9 @@ export const PLAYERS_DATABASE_ROUTE = '/players-database'
 
 export const PLAYERS_DATABASE_COLLECTIONS = {
   players: 'dbPlayers',
-  clubs: 'playersDatabaseClubs',
   leagues: 'dbLeagues',
-  teams: 'playersDatabaseTeams',
-  leagueSeasons: 'playersDatabaseLeagueSeasons',
-  playerSeasons: 'dbPlayerSeasons',
-  playerStats: 'dbPlayerStats',
-  playerSearch: 'dbPlayerSearch',
-  playerSnapshots: 'playersDatabasePlayerSnapshots',
-  leagueSnapshots: 'dbLeagueSnapshots',
-  imports: 'playersDatabaseImports',
-  recommendations: 'scoutingRecommendations',
-  trackingEvents: 'scoutingTrackingEvents',
+  teams: 'dbBirthTeams',
+  searchIndexes: 'dbSearchIndexes',
 }
 
 export const PLAYERS_DATABASE_IMPORT_FLOW = {
@@ -72,3 +63,4 @@ export const PLAYERS_DATABASE_FILTERS = [
   { id: 'trendStatus', label: 'מגמה', placeholder: 'כל המגמות' },
   { id: 'trackingStatus', label: 'מעקב', placeholder: 'הכל' },
 ]
+

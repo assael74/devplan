@@ -1,4 +1,4 @@
-// features/reports/index.js
+// src/features/reports/index.js
 
 export {
   REPORT_ENTITY_TYPES,
@@ -23,6 +23,7 @@ export {
   PUBLIC_REPORT_VERSION_PADDING,
   PUBLIC_REPORT_ERROR_CODES,
   publicReportsCollectionRef,
+  publicReportIndexesCollectionRef,
   publicReportRef,
   publicReportVersionsCollectionRef,
   publicReportVersionRef,
@@ -31,9 +32,14 @@ export {
   buildPublicReportId,
   buildPublicReportVersionId,
   buildPublicReportUrl,
+  buildPublicReportShareUrl,
+  buildPublicReportShareText,
   publishPublicReport,
   publishPublicReportDocument,
+  revokePublicReport,
+  deletePublicReport,
   updatePublicReportIndexDocument,
+  getPublishedPublicReports,
   getCurrentPublicReport,
   getPublicReportVersion,
   getPublicReport,
@@ -44,6 +50,7 @@ export {
 } from './service/publishReport.flow.js'
 
 export {
+  publishTeamPlayersReport,
   publishPlayerTargetsReport,
 } from './flows/index.js'
 
@@ -60,9 +67,18 @@ export {
   pickReportFilters,
   pickReportCounts,
   buildTeamPlayersPublicReportInput,
+  buildManagementTargetsPublicReportInput,
   buildPlayerTargetsPublicReportInput,
+  buildSeasonPlanReportContent,
+  buildMinutesPlanReportContent,
+  buildManagementTargetsReportContent,
+  buildPlayerTargetsReportContent,
 } from './model/index.js'
 
-export { default as PublicReportPage } from './public/PublicReportPage.js'
+export {
+  default as PublicReportPage,
+} from './public/PublicReportPage.js'
 
-export { default as DashboardPage } from './dashboard/DashboardPage.js'
+export {
+  default as DashboardPage,
+} from './dashboard/DashboardPage.js'

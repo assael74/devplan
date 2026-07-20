@@ -89,6 +89,67 @@ const perGame = (value, games) => {
   return Number.isFinite(n) && g > 0 ? round(n / g) : null
 }
 
+const POSITIVE_TEAM_RATE = 100
+const CLEAR_POSITIVE_TEAM_RATE = 115
+const GOALS_BYPASS_TOTAL = 10
+
+const getTeamScoutSide = ({ team = {}, side = '' } = {}) => {
+  const scout = team.teamScout || team.scout || {}
+
+  return team[side] || scout[side] || team.teamPerformance?.[side] || null
+}
+
+const getTeamScoutRate = ({ team = {}, side = '' } = {}) => {
+  const sideData = getTeamScoutSide({ team, side }) || {}
+
+  return pickNum(
+    sideData.priorityRate,
+    sideData.scoutPriorityRate,
+    sideData.qualityRate,
+    sideData.combinedRate,
+    sideData.anomalyRate
+  )
+}
+
+const isTeamScoutSidePositive = ({ team = {}, side = '', threshold = POSITIVE_TEAM_RATE } = {}) => {
+  const rate = getTeamScoutRate({ team, side })
+
+  return Number.isFinite(rate) && rate >= threshold
+}
+
+export const passesPlayerScoutTeamFilter = ({
+  profile = {},
+  team = {},
+  metrics = {},
+} = {}) => {
+  const filter = profile.teamFilter
+  const goals = Number(metrics.goals)
+  const attackPositive = isTeamScoutSidePositive({ team, side: 'offense' })
+  const defensePositive = isTeamScoutSidePositive({ team, side: 'defense' })
+  const attackClear = isTeamScoutSidePositive({
+    team,
+    side: 'offense',
+    threshold: CLEAR_POSITIVE_TEAM_RATE,
+  })
+  const defenseClear = isTeamScoutSidePositive({
+    team,
+    side: 'defense',
+    threshold: CLEAR_POSITIVE_TEAM_RATE,
+  })
+  const goalsBypassOk = Number.isFinite(goals) && goals >= GOALS_BYPASS_TOTAL
+
+  if (!filter || filter === TEAM_FILTER.ANY) return true
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackPositive
+  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defensePositive
+  if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
+    return attackPositive || goalsBypassOk
+  }
+  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackPositive || defensePositive
+  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return attackClear || defenseClear
+
+  return false
+}
+
 export const buildTeamScoutMetrics = ({ team = {}, league = {} } = {}) => {
   const games = getGames(team)
   const goalsFor = getGoalsFor(team)
@@ -287,7 +348,7 @@ export const buildTeamDrilldown = ({
   const universal = eligible.filter((profile) => profile.teamFilter === TEAM_FILTER.ANY)
   const contextual = eligible.filter((profile) => profile.teamFilter !== TEAM_FILTER.ANY)
   const matchedContextual = contextual.filter((profile) => {
-    return teamFilterPasses({ filter: profile.teamFilter, metrics, settings: cfg })
+    return passesPlayerScoutTeamFilter({ profile, team, metrics })
   })
   const universalAllowed = cfg.includeUniversal ? universal : []
   const status = matchedContextual.length

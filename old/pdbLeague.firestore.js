@@ -19,7 +19,7 @@ import {
 } from '../../../services/firestore/usage/index.js'
 import { buildTeamIdentity } from '../catalog/teamIdentity.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../constants/playersDatabase.constants.js'
-import { findPlayersDatabaseYearGroupOpportunities } from '../sharedLogic/yearGroupOpportunities.js'
+import { findPlayersDatabaseYearGroupOpportunities } from '../old/sharedLogic/yearGroupOpportunities.js'
 
 const clean = (value) => String(value ?? '').trim()
 const FEATURE = 'playersDatabase'

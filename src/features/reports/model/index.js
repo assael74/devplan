@@ -2,6 +2,8 @@
 
 export {
   buildTeamPlayersPublicReportInput,
+  buildSeasonPlanReportContent,
+  buildMinutesPlanReportContent,
 } from './teams/players/index.js'
 
 export {

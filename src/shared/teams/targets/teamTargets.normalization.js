@@ -20,6 +20,7 @@ export const TEAM_TARGET_NORMALIZATION_REASON = {
   MISSING_BASE_GOALS_PER_MATCH: 'missing_base_goals_per_match',
   INVALID_MANUAL_FACTOR: 'invalid_manual_factor',
   REFERENCE_POINT_LOW_SAMPLE: 'reference_point_low_sample',
+  APPLIED_EARLY_SAMPLE: 'early_sample_projected_pace',
 }
 
 export const TEAM_TARGET_NORMALIZATION_CONFIG = {
@@ -267,24 +268,6 @@ export const buildTeamTargetsNormalization = ({
     }
   }
 
-  if (hasLowReferenceSample) {
-    return {
-      available: true,
-      baseGoalsPerMatch: roundNumber(base, 2),
-      leagueGoalsPerMatch: roundNumber(league, 2),
-      rawFactor: roundNumber(rawFactor, 3),
-      deviationPct: roundNumber(deviationPct, 2),
-      autoShouldNormalize,
-      userMode,
-      manualFactor: manual,
-      applied: false,
-      appliedFactor: 1,
-      reason: TEAM_TARGET_NORMALIZATION_REASON.REFERENCE_POINT_LOW_SAMPLE,
-      referencePoint,
-      sampleStatus,
-    }
-  }
-
   return {
     available: true,
     baseGoalsPerMatch: roundNumber(base, 2),
@@ -297,8 +280,12 @@ export const buildTeamTargetsNormalization = ({
     applied: autoShouldNormalize,
     appliedFactor: autoShouldNormalize ? roundNumber(rawFactor, 3) : 1,
     reason: autoShouldNormalize
-      ? TEAM_TARGET_NORMALIZATION_REASON.APPLIED_AUTO
-      : TEAM_TARGET_NORMALIZATION_REASON.SKIPPED_SMALL_DEVIATION,
+      ? hasLowReferenceSample
+        ? TEAM_TARGET_NORMALIZATION_REASON.APPLIED_EARLY_SAMPLE
+        : TEAM_TARGET_NORMALIZATION_REASON.APPLIED_AUTO
+      : hasLowReferenceSample
+        ? TEAM_TARGET_NORMALIZATION_REASON.REFERENCE_POINT_LOW_SAMPLE
+        : TEAM_TARGET_NORMALIZATION_REASON.SKIPPED_SMALL_DEVIATION,
     referencePoint: referencePoint || null,
     sampleStatus,
   }

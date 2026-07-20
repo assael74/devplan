@@ -1,4 +1,4 @@
-// app/routes/AppRoutes.js
+﻿// app/routes/AppRoutes.js
 
 import React from 'react'
 import { Box, Button, CircularProgress, Typography } from '@mui/joy'
@@ -45,9 +45,29 @@ const loadForgotPasswordPage = () => import('../../features/auth/pages/ForgotPas
 const loadPendingApprovalPage = () => import('../../features/auth/pages/PendingApprovalPage')
 const loadFirestoreUsagePage = () => import('../../features/firestoreUsage/FirestoreUsagePage.js')
 
+const loadPlayersDatabaseLeaguesCenterPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.LeaguesCenterPage,
+  }))
+
 const loadPlayersDatabaseLeaguePage = () =>
   import('../../features/playersDatabase/index.js').then(module => ({
     default: module.LeaguePage,
+  }))
+
+const loadPlayersDatabaseTeamPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.TeamPage,
+  }))
+
+const loadPlayersDatabasePlayerPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.PlayerPage,
+  }))
+
+const loadPlayersDatabaseSearchPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.SearchPage,
   }))
 
 const loadPlayersDatabaseProfilesPage = () =>
@@ -78,7 +98,11 @@ const CalendarHubPage = React.lazy(loadCalendarHubPage)
 const VideoHubPage = React.lazy(loadVideoHubPage)
 const TagsManagementPage = React.lazy(loadTagsManagementPage)
 const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
+const PlayersDatabaseLeaguesCenterPage = React.lazy(loadPlayersDatabaseLeaguesCenterPage)
 const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
+const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
+const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
+const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
 const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)
 
 const HubPage = React.lazy(loadHubPage)
@@ -342,18 +366,38 @@ export default function AppRoutes() {
               />
 
               <Route
+                path='/players-database/leagues'
+                element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)}
+              />
+
+              <Route
+                path='/players-database/search'
+                element={lazyRoute(<PlayersDatabaseSearchPage />)}
+              />
+
+              <Route
                 path='/players-database/profiles'
                 element={lazyRoute(<PlayersDatabaseProfilesPage />)}
               />
 
               <Route
                 path='/players-database/scan'
-                element={<Navigate to='/players-database/profiles' replace />}
+                element={<Navigate to='/players-database/search' replace />}
               />
 
               <Route
                 path='/players-database/leagues/:leagueId'
                 element={lazyRoute(<PlayersDatabaseLeaguePage />)}
+              />
+
+              <Route
+                path='/players-database/leagues/:leagueId/teams/:teamId'
+                element={lazyRoute(<PlayersDatabaseTeamPage />)}
+              />
+
+              <Route
+                path='/players-database/players/:playerId'
+                element={lazyRoute(<PlayersDatabasePlayerPage />)}
               />
 
               <Route
@@ -461,3 +505,4 @@ export default function AppRoutes() {
     </Routes>
   )
 }
+

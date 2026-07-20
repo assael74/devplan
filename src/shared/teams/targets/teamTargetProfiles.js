@@ -1,7 +1,5 @@
 // shared/teams/targets/teamTargetProfiles.js
 
-// shared/teams/targets/teamTargetProfiles.js
-
 /*
 |--------------------------------------------------------------------------
 | Team Target Profiles / Benchmark Source of Truth

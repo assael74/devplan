@@ -314,13 +314,70 @@ The active rules:
 mode auto:
   deviation above 5% -> apply normalization
   deviation up to 5% -> skip normalization
-  low_sample reference point -> skip auto normalization
+  low_sample reference point -> apply projected pace normalization when deviation is above 5%, with low sample metadata
 
 mode off:
   appliedFactor = 1
 
 mode manual:
   appliedFactor = user factor
+```
+
+### Early Sample Pace Normalization
+
+The engine follows the user's requested calculation even when the league sample
+is early.
+
+If the table contains 3 played rounds out of a 30-game season, the environment
+is calculated from the current per-game pace:
+
+```txt
+league goals pace = sum(goalsFor + goalsAgainst) / sum(games)
+season projection = per-game pace * leagueNumGames
+normalization factor = league goals pace / benchmarkBaseGoalsPerMatch
+```
+
+Small samples are not blocked automatically. Instead, the result keeps sample
+metadata:
+
+```txt
+sampleStatus = low_sample
+reason = early_sample_projected_pace
+```
+
+This means the user can see that the data is early, but the engine still returns
+an applied normalization result when the deviation crosses the configured
+threshold.
+
+Every target state keeps both versions for comparison:
+
+```txt
+values = normalized active values
+rawValues = original unnormalized benchmark values
+groups = normalized active groups
+rawGroups = original unnormalized groups
+normalization = factor, sample status, reference point, reason
+```
+
+The normalization result should expose both the raw environment and the active
+normalized environment, so consumers can compare the calculation instead of
+losing the original benchmark context.
+
+```txt
+referencePoint = raw and clean league goals per match
+normalization = applied / raw factor and reason
+comparison.rawLeagueGoalsPerMatch
+comparison.cleanLeagueGoalsPerMatch
+comparison.rawFactor
+comparison.appliedFactor
+comparison.projectedRawSeasonGoals
+comparison.projectedCleanSeasonGoals
+```
+
+Projection fields are calculated from current pace:
+
+```txt
+projected season goals = goals per match * leagueNumGames
 ```
 
 Supported input fields:

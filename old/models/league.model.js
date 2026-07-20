@@ -1,7 +1,7 @@
 // src/features/playersDatabase/models/league.model.js
 
 import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../catalog/ageGroups.catalog.js'
-import { PLAYERS_DATABASE_LEAGUE_DEFINITIONS } from '../catalog/leagues.catalog.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 
 export const clean = value =>
   String(value ?? '').trim()
@@ -54,7 +54,7 @@ const matchesDefinition = (definition, leagueName) => {
 }
 
 const findDefinition = leagueName =>
-  PLAYERS_DATABASE_LEAGUE_DEFINITIONS.find(
+  PLAYERS_DATABASE_LEAGUES_CATALOG.find(
     definition => matchesDefinition(definition, leagueName)
   ) || null
 

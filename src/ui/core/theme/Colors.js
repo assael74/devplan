@@ -88,7 +88,11 @@ export const devPlanColors = {
   primary: '#173B57',
   primaryDark: '#102B40',
   primaryLight: '#E8F0F5',
-  secondary: '#657684'
+
+  secondary: '#657684',
+
+  tertiary: '#2F86C7',
+  tertiaryLight: '#EAF5FC',
 }
 
 export function getEntityColors(type) {

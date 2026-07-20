@@ -15,7 +15,6 @@ export const SCOUT_RELIABILITY = {
 export const SCOUT_REVIEW = {
   VIDEO_POSITION: 'video_position_check',
   VIDEO_ROLE: 'video_role_check',
-  PENALTIES: 'penalty_goals_check',
   FITNESS: 'fitness_90_check',
   TEAM_CONTEXT: 'team_context_check',
 }
@@ -23,7 +22,6 @@ export const SCOUT_REVIEW = {
 export const SCOUT_WARNING = {
   POSITION_MISSING: 'position_not_verified',
   ROLE_INFERENCE: 'role_inference_only',
-  PENALTIES_UNKNOWN: 'penalties_not_separated',
   LOW_SAMPLE: 'low_player_sample',
   LOW_TEAM_SAMPLE: 'low_team_games_sample',
   TEAM_CONTEXT_SENSITIVE: 'team_context_sensitive',

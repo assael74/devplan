@@ -39,10 +39,11 @@ export const navigationIcons = {
   videos: <VideoLibrary />,
   insights: <Insights />,
   squadSimulator: <AccountTree />,
+  playerDatabase: <ManageSearch />,
   playersDatabase: <ManageSearch />,
   firestoreUsage: <DataObject />,
   viewLeague: <Visibility />,
-  viewLaeague: <Visibility />,
+  view: <Visibility />,
   addLeague: <AddCircleOutline />,
   addSeason: <PlaylistAdd />
 };

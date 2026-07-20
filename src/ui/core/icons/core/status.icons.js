@@ -8,6 +8,7 @@ import {
   Category,
   CurrencyExchange,
   Dangerous,
+  Done,
   Diversity2,
   Diversity3,
   HourglassEmpty,
@@ -33,13 +34,16 @@ import {
   VideocamOff,
   VisibilityOff,
   ErrorOutline,
+  LooksOne,
   TrendingFlat,
   RocketLaunch,
   RateReview,
   Quiz,
   SentimentDissatisfied,
+  SentimentVeryDissatisfied,
   Stars,
   ManageHistory,
+  WorkspacePremium,
 } from '@mui/icons-material';
 
 export const statusIcons = {
@@ -93,4 +97,9 @@ export const statusIcons = {
   loading: <Pending />,
   warning: <ErrorOutline />,
   category: <Category />,
+  leadingTarget: <LooksOne />,
+  highPriority: <WorkspacePremium />,
+  positivePriority: <Done />,
+  regularPriority: <TrendingFlat />,
+  lowPriority: <SentimentVeryDissatisfied />,
 };

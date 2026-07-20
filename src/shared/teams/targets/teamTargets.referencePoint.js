@@ -102,6 +102,8 @@ const getRowId = (row = {}, index = 0) => {
 
 const getRowGames = (row = {}) => {
   return pickFirstNumber(
+    row?.teamStats?.teamGamePlayed,
+    row?.teamStats?.games,
     row?.gamesPlayed,
     row?.playedGames,
     row?.matchesPlayed,
@@ -113,6 +115,7 @@ const getRowGames = (row = {}) => {
 
 const getRowGoalsFor = (row = {}) => {
   return pickFirstNumber(
+    row?.teamStats?.goalsFor,
     row?.goalsFor,
     row?.leagueGoalsFor,
     row?.gf,
@@ -123,6 +126,7 @@ const getRowGoalsFor = (row = {}) => {
 
 const getRowGoalsAgainst = (row = {}) => {
   return pickFirstNumber(
+    row?.teamStats?.goalsAgainst,
     row?.goalsAgainst,
     row?.leagueGoalsAgainst,
     row?.ga,
@@ -132,6 +136,7 @@ const getRowGoalsAgainst = (row = {}) => {
 
 const getRowPoints = (row = {}) => {
   return pickFirstNumber(
+    row?.teamStats?.points,
     row?.points,
     row?.pts
   )

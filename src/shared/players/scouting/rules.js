@@ -9,10 +9,12 @@ const isMatch = ({ value, rule }) => {
   const n = toNum(value, null)
 
   if (rule.op === 'truthy') return Boolean(value)
+  if (rule.op === 'falsy') return !Boolean(value)
   if (rule.op === 'eq') return value === rule.value || n === rule.value
   if (!Number.isFinite(n)) return false
   if (rule.op === 'gte') return n >= rule.value
   if (rule.op === 'lte') return n <= rule.value
+  if (rule.op === 'in') return Array.isArray(rule.values) && rule.values.includes(n)
   if (rule.op === 'gt') return n > rule.value
   if (rule.op === 'lt') return n < rule.value
   if (rule.op === 'between') return n >= rule.min && n <= rule.max

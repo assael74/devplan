@@ -13,6 +13,7 @@ export {
 
 export {
   publicReportsCollectionRef,
+  publicReportIndexesCollectionRef,
   publicReportRef,
   publicReportVersionsCollectionRef,
   publicReportVersionRef,
@@ -32,8 +33,8 @@ export {
 } from './publicReport.url.js'
 
 export {
-  publishPublicReportDocument,
   publishPublicReport,
+  publishPublicReportDocument,
   revokePublicReport,
   deletePublicReport,
   updatePublicReportIndexDocument,
@@ -41,4 +42,4 @@ export {
   getCurrentPublicReport,
   getPublicReportVersion,
   getPublicReport,
-} from './publicReport.firestore.js'
+} from './firestore/index.js'
