@@ -6,6 +6,7 @@ export {
   normalizePlayerScoutProfiles,
   removePlayerSeasonScoutProfile,
   syncPlayerScoutProfileDocsMany,
+  syncPlayerRoleAndScoutProfileDoc,
   updatePlayerFavorite,
   updatePlayerSeasonNotes,
   updatePlayerSeasonRole,

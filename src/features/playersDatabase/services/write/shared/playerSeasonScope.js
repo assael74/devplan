@@ -1,53 +1,65 @@
-﻿// features/playersDatabase/services/write/shared/playerSeasonScope.js
+// features/playersDatabase/services/write/shared/playerSeasonScope.js
 
-import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
+import {
+  cleanValue,
+  pickFirstValue,
+  toNumberOrZero,
+} from '../../../model/value.model.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+} from '../../../model/season.model.js'
+import {
+  normalizeTeamIdentity,
+  resolveBirthTeamDocumentId,
+  resolveBirthTeamId,
+  resolveBirthTeamSlot,
+} from '../../../model/teamIdentity.model.js'
 
-export const resolveBirthTeamId = (team = {}) =>
-  clean(team.birthTeamId || team.teamId)
-
-export const resolveBirthTeamDocumentId = (team = {}) => {
-  const birthTeamId = resolveBirthTeamId(team)
-
-  return clean(team.birthTeamDocumentId || team.teamDocumentId || birthTeamId)
+export {
+  resolveBirthTeamDocumentId,
+  resolveBirthTeamId,
+  resolveBirthTeamSlot,
 }
-
-export const resolveBirthTeamSlot = (team = {}) =>
-  toNumberOrZero(team.birthTeamSlot || team.teamSlot) || 1
 
 export const buildPlayerSeasonScope = ({
   season = {},
   team = {},
   row = {},
 } = {}) => {
-  const rawSeasonId = clean(season.seasonId || row.seasonId)
-  const seasonKey = clean(season.seasonKey || row.seasonKey) || buildSeasonKey(rawSeasonId)
-  const birthTeamId = clean(
-    team.birthTeamId ||
-    team.teamId ||
-    row.birthTeamId ||
-    row.teamId
-  )
-  const birthTeamDocumentId = clean(
-    team.birthTeamDocumentId ||
-    team.teamDocumentId ||
-    row.birthTeamDocumentId ||
-    row.teamDocumentId ||
-    birthTeamId
-  )
-  const birthTeamSlot = toNumberOrZero(
-    team.birthTeamSlot ||
-    team.teamSlot ||
-    row.birthTeamSlot ||
-    row.teamSlot
-  ) || 1
+  const seasonIdentity = normalizeSeasonIdentity({
+    season,
+    fallback: row,
+  })
+  const teamIdentity = normalizeTeamIdentity({
+    team,
+    fallback: row,
+  })
 
   return {
-    seasonId: rawSeasonId || seasonKey,
-    seasonKey,
-    leagueId: clean(season.leagueId || team.leagueId || row.leagueId),
-    birthTeamId,
-    birthTeamDocumentId,
-    birthTeamSlot,
+    ...seasonIdentity,
+    leagueId: cleanValue(pickFirstValue(
+      season.leagueId,
+      team.leagueId,
+      row.leagueId
+    )),
+    clubId: teamIdentity.clubId,
+    ageGroupId: cleanValue(pickFirstValue(
+      team.ageGroupId,
+      row.ageGroupId
+    )),
+    ageGroupLabel: cleanValue(pickFirstValue(
+      team.ageGroupLabel,
+      row.ageGroupLabel
+    )),
+    birthYear: toNumberOrZero(pickFirstValue(
+      season.birthYear,
+      team.birthYear,
+      row.birthYear
+    )),
+    birthTeamId: teamIdentity.birthTeamId,
+    birthTeamDocumentId: teamIdentity.birthTeamDocumentId,
+    birthTeamSlot: teamIdentity.birthTeamSlot,
   }
 }
 
@@ -58,15 +70,40 @@ export const isSamePlayerSeasonScope = (row = {}, scope = {}) => {
     team: scope,
     row: scope,
   })
-  const sameSeason = Boolean(
-    (targetScope.seasonKey && rowScope.seasonKey === targetScope.seasonKey) ||
-    (targetScope.seasonId && rowScope.seasonId === targetScope.seasonId)
+
+  if (!isSameSeason(rowScope, targetScope)) return false
+  if (targetScope.leagueId && rowScope.leagueId !== targetScope.leagueId) return false
+  if (targetScope.clubId && rowScope.clubId !== targetScope.clubId) return false
+  if (targetScope.ageGroupId && rowScope.ageGroupId !== targetScope.ageGroupId) return false
+  if (
+    !targetScope.ageGroupId &&
+    targetScope.ageGroupLabel &&
+    rowScope.ageGroupLabel !== targetScope.ageGroupLabel
+  ) return false
+  if (
+    targetScope.birthYear &&
+    rowScope.birthYear &&
+    rowScope.birthYear !== targetScope.birthYear
+  ) return false
+
+  const hasClubAndAgeScope = Boolean(
+    targetScope.clubId &&
+    (
+      targetScope.ageGroupId ||
+      targetScope.ageGroupLabel ||
+      targetScope.birthYear
+    )
   )
 
-  if (!sameSeason) return false
-  if (targetScope.leagueId && rowScope.leagueId !== targetScope.leagueId) return false
-  if (targetScope.birthTeamId && rowScope.birthTeamId !== targetScope.birthTeamId) return false
-  if (targetScope.birthTeamSlot && rowScope.birthTeamSlot !== targetScope.birthTeamSlot) return false
+  if (
+    !hasClubAndAgeScope &&
+    targetScope.birthTeamId &&
+    rowScope.birthTeamId !== targetScope.birthTeamId
+  ) return false
+  if (
+    targetScope.birthTeamSlot &&
+    rowScope.birthTeamSlot !== targetScope.birthTeamSlot
+  ) return false
 
   return true
 }

@@ -18,6 +18,7 @@ export {
 } from './leagueTableRank.js'
 
 export {
+  getLeagueSeasonDeleteDependencies,
   removeLeagueSeason,
   removeLeagueSeasonTeam,
 } from './leagueDelete.js'

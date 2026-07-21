@@ -3,23 +3,18 @@
 import { runTransaction } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import { clean } from '../leagues/leagueDoc.js'
+import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+} from '../../../model/season.model.js'
+import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
 
-const isSameSeason = (row = {}, season = {}) => {
-  const rowSeasonKey = clean(row?.seasonKey)
-  const rowSeasonId = clean(row?.seasonId)
-  const seasonKey = clean(season?.seasonKey)
-  const seasonId = clean(season?.seasonId)
-
-  return Boolean(
-    (seasonKey && rowSeasonKey === seasonKey) ||
-    (seasonId && rowSeasonId === seasonId)
-  )
-}
-
-const getPlayerMergeKey = player =>
-  clean(player?.externalPlayerId || player?.normalizedName || player?.fullName || player?.playerId).toLowerCase()
+const getPlayerMergeKey = player => (
+  buildPlayerMatchValues(player)[0] || ''
+).toLowerCase()
 
 export const buildTeamPlayersScoutProfilesSummary = (players = []) => {
   const profileCounts = {}
@@ -52,9 +47,8 @@ export async function removeTeamSeason({
   team = {},
   target = 'current',
 } = {}) {
-  const teamId = clean(team.birthTeamDocumentId || team.birthTeamId || team.teamDocumentId || team.teamId)
-  const seasonId = clean(season.seasonId)
-  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const teamId = resolveTeamLookupKey(team)
+  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   if (!teamId) throw new Error('Missing birth team id')
   if (!seasonId) throw new Error('Missing season id')
 
@@ -106,9 +100,8 @@ export async function removeTeamPlayerFromSeason({
   target = 'current',
   player = {},
 } = {}) {
-  const teamId = clean(team.birthTeamDocumentId || team.birthTeamId || team.teamDocumentId || team.teamId)
-  const seasonId = clean(season.seasonId)
-  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const teamId = resolveTeamLookupKey(team)
+  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   const playerKey = getPlayerMergeKey(player)
   if (!teamId) throw new Error('Missing birth team id')
   if (!seasonId) throw new Error('Missing season id')

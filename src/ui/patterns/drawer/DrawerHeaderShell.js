@@ -1,7 +1,14 @@
-// ui/patterns/drawer/DrawerHeader.js
+// ui/patterns/drawer/DrawerHeaderShell.js
 
 import React from 'react'
-import { Box, Typography, DialogTitle, ModalClose, Chip, Avatar } from '@mui/joy'
+import {
+  Box,
+  Typography,
+  DialogTitle,
+  ModalClose,
+  Chip,
+  Avatar,
+} from '@mui/joy'
 
 import { iconUi } from '../../core/icons/iconUi.js'
 import { headerSx as sx } from './sx/header.sx.js'
@@ -21,51 +28,82 @@ export default function DrawerHeaderShell({
   chipIconId,
 
   closeDisabled = false,
+  sxOverrides = {},
 }) {
   return (
-    <DialogTitle sx={sx.header(entity)}>
-      <Box sx={{ display: 'flex', gap: 1 }}>
+    <DialogTitle
+      sx={{
+        ...sx.header(entity),
+        ...(sxOverrides.header || {}),
+      }}
+    >
+      <Box sx={{ display: 'flex', gap: 1, minWidth: 0 }}>
         {avatar ? (
           <Avatar src={avatar} />
         ) : (
-          iconUi({ id: titleIconId })
+          <Box sx={sxOverrides.icon || {}}>
+            {iconUi({ id: titleIconId })}
+          </Box>
         )}
 
-        <Box sx={{ ml: 2 }}>
-          <Typography level="title-md" sx={sx.title}>
+        <Box sx={{ ml: 2, minWidth: 0 }}>
+          {chipLabel ? (
+            <Chip
+              size="sm"
+              variant="soft"
+              startDecorator={chipIconId ? iconUi({ id: chipIconId, size: 'sm' }) : null}
+              sx={{
+                ...sx.headerChip(chipColor),
+                ...(sxOverrides.chip || {}),
+              }}
+            >
+              {chipLabel}
+            </Chip>
+          ) : null}
+
+          <Typography
+            level="title-md"
+            sx={{
+              ...sx.title,
+              ...(sxOverrides.title || {}),
+            }}
+          >
             {title || 'עריכה'}
           </Typography>
 
           {subline ? (
-            <Typography level="body-sm" sx={sx.subline}>
+            <Typography
+              level="body-sm"
+              sx={{
+                ...sx.subline,
+                ...(sxOverrides.subline || {}),
+              }}
+            >
               {subline}
             </Typography>
           ) : null}
 
-          {meta || chipLabel ? (
+          {meta ? (
             <Box sx={sx.boxMeta}>
-              {meta ? (
-                <Typography level="body-xs" sx={sx.meta} startDecorator={metaIconId ? iconUi({ id: metaIconId }) : null}>
-                  {meta}
-                </Typography>
-              ) : null}
-
-              {chipLabel ? (
-                <Chip
-                  size="sm"
-                  variant="soft"
-                  startDecorator={chipIconId ? iconUi({ id: chipIconId, size: 'sm' }) : null}
-                  sx={sx.headerChip(chipColor)}
-                >
-                  {chipLabel}
-                </Chip>
-              ) : null}
+              <Typography
+                level="body-xs"
+                sx={{
+                  ...sx.meta,
+                  ...(sxOverrides.meta || {}),
+                }}
+                startDecorator={metaIconId ? iconUi({ id: metaIconId }) : null}
+              >
+                {meta}
+              </Typography>
             </Box>
           ) : null}
         </Box>
       </Box>
 
-      <ModalClose />
+      <ModalClose
+        disabled={closeDisabled}
+        sx={sxOverrides.close || {}}
+      />
     </DialogTitle>
   )
 }

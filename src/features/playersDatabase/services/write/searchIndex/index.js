@@ -1,29 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/index.js
 
-export {
-  updateSearchIndexesLeagueSeasonUrl,
-  updateTeamSeasonSearchIndexScoutProfilesSummary,
-  updateTeamSeasonSearchIndexTeamUrl,
-  updateTeamSeasonSearchIndexRosterMeta,
-  updateTeamSeasonSearchIndexesSeasonMeta,
-  upsertTeamSeasonSearchIndexMany,
-} from './teamSeasonIndex.js'
-
-export {
-  clearPlayerSeasonSearchIndexScoutProfile,
-  updatePlayerFavoriteSearchIndexes,
-  updatePlayerSeasonSearchIndexNotes,
-  updatePlayerSeasonSearchIndexRole,
-  updatePlayerSeasonSearchIndexPlayerUrl,
-  updatePlayerSeasonSearchIndexFields,
-  updatePlayerSeasonSearchIndexTeamUrl,
-  updatePlayerSeasonSearchIndexStatsMany,
-  updatePlayerSeasonSearchIndexesSeasonMeta,
-  upsertPlayerSeasonSearchIndexMany,
-} from './playerSeasonIndex.js'
-
-export {
-  deleteSearchIndexForTeamPlayerSeason,
-  deleteSearchIndexesForLeagueSeason,
-  deleteSearchIndexesForTeamSeason,
-} from './searchIndexDelete.js'
+export * from './player/index.js'
+export * from './team/index.js'
+export * from './read/searchIndexMeta.read.js'
+export * from './delete/searchIndex.delete.js'
+export * from './shared/searchIndexResult.model.js'

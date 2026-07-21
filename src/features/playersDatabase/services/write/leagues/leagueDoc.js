@@ -4,16 +4,14 @@ import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import {
+  cleanValue,
+  toNumberOrZero,
+} from '../../../model/value.model.js'
+import { buildSeasonKey } from '../../../model/season.model.js'
 
-export const clean = value => String(value ?? '').trim()
-
-export const buildSeasonKey = seasonId =>
-  clean(seasonId).replace(/[^0-9a-zA-Z]+/g, '_')
-
-export const toNumberOrZero = value => {
-  const nextValue = Number(value)
-  return Number.isFinite(nextValue) ? nextValue : 0
-}
+export { buildSeasonKey, toNumberOrZero }
+export const clean = cleanValue
 
 export const cleanTeamStatsComputedFields = (teamStats = {}) => {
   const {

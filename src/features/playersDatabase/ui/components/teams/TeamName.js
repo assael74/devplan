@@ -37,6 +37,7 @@ export default function TeamName({
   value = '',
   slot = 1,
   fontSize = 14,
+  nameSx,
 }) {
   const slotNumber = Number(slot) || 1
   const slotColor = resolveSlotColor(slotNumber)
@@ -60,6 +61,7 @@ export default function TeamName({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          ...nameSx,
         }}
       >
         {name || '-'}

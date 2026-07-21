@@ -1,9 +1,10 @@
-﻿// features/playersDatabase/ui/components/scout/ScoutProfileChip.js
+// features/playersDatabase/ui/components/scout/ScoutProfileChip.js
 
 import * as React from 'react'
 import { Box, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { devPlanColors } from '../../../../../ui/core/theme/Colors.js'
 
 export const scoutProfileChipColors = {
   background: 'linear-gradient(90deg, #173B57 0%, #245F89 55%, #2F86C7 100%)',
@@ -13,13 +14,26 @@ export const scoutProfileChipColors = {
   icon: '#BFE4FF',
 }
 
+const SCOUT_PROFILE_CHIP_VARIANTS = {
+  default: scoutProfileChipColors,
+  combination: {
+    background: devPlanColors.tertiaryLight,
+    text: devPlanColors.primaryDark,
+    border: devPlanColors.tertiary,
+    shadow: '0 4px 14px rgba(47, 134, 199, 0.18)',
+    icon: devPlanColors.tertiary,
+  },
+}
+
 export default function ScoutProfileChip({
   label = 'פרופיל סקאוט',
   tooltip,
   iconId = 'performanceProfile',
   fontSize = 13,
+  variant = 'default',
 }) {
   const tooltipLabel = tooltip || label
+  const colors = SCOUT_PROFILE_CHIP_VARIANTS[variant] || SCOUT_PROFILE_CHIP_VARIANTS.default
 
   return (
     <Tooltip title={tooltipLabel} arrow>
@@ -31,10 +45,10 @@ export default function ScoutProfileChip({
         justifyContent: 'center',
         gap: 0.45,
         borderRadius: 999,
-        color: scoutProfileChipColors.text,
-        background: scoutProfileChipColors.background,
-        border: `1px solid ${scoutProfileChipColors.border}`,
-        boxShadow: scoutProfileChipColors.shadow,
+        color: colors.text,
+        background: colors.background,
+        border: `1px solid ${colors.border}`,
+        boxShadow: colors.shadow,
         whiteSpace: 'nowrap',
         maxWidth: '100%',
         overflow: 'hidden',
@@ -42,7 +56,9 @@ export default function ScoutProfileChip({
 
         '&:hover': {
           transform: 'translateY(-1px)',
-          boxShadow: '0 6px 18px rgba(47, 134, 199, 0.34)',
+          boxShadow: variant === 'combination'
+            ? '0 6px 18px rgba(47, 134, 199, 0.24)'
+            : '0 6px 18px rgba(47, 134, 199, 0.34)',
         },
       }}>
         {iconUi({
@@ -50,7 +66,7 @@ export default function ScoutProfileChip({
           size: 'sm',
           sx: {
             flexShrink: 0,
-            color: scoutProfileChipColors.icon,
+            color: colors.icon,
             fontSize: fontSize + 1,
           },
         })}
@@ -58,7 +74,7 @@ export default function ScoutProfileChip({
         <Typography
           component='span'
           sx={{
-            color: scoutProfileChipColors.text,
+            color: colors.text,
             fontSize,
             fontWeight: 700,
             letterSpacing: 0,
@@ -74,4 +90,3 @@ export default function ScoutProfileChip({
     </Tooltip>
   )
 }
-

@@ -12,28 +12,35 @@ import {
   toNumberOrZero,
 } from './leagueDoc.js'
 import { buildSeasonDoc, updateHistorySeason } from './leagueSeason.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+} from '../../../model/season.model.js'
+import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
+import { normalizeTeamStats } from '../../../model/teamStats.model.js'
 
 const buildTableRankRow = (row = {}) => {
-  const rank = toNumberOrZero(row.position)
-  const games = toNumberOrZero(row.games)
-  const goalsFor = toNumberOrZero(row.goalsFor)
-  const goalsAgainst = toNumberOrZero(row.goalsAgainst)
-  const points = toNumberOrZero(row.points)
-  const birthTeamId = clean(row.birthTeamId || row.teamId || row.teamSlotId)
-  const birthTeamSlot = toNumberOrZero(row.birthTeamSlot || row.teamSlot) || 1
+  const rank = toNumberOrZero(row.position ?? row.rank ?? row.leaguePosition)
+  const identity = normalizeTeamIdentity({ team: row })
+  const teamStats = normalizeTeamStats(row, {
+    gamesCandidates: [row.games],
+    goalsForCandidates: [row.goalsFor],
+    goalsAgainstCandidates: [row.goalsAgainst],
+    pointsCandidates: [row.points],
+  })
 
   return {
     rank,
-    clubId: clean(row.clubId),
-    birthTeamId,
-    birthTeamSlot,
-    teamId: birthTeamId,
+    clubId: identity.clubId,
+    birthTeamId: identity.birthTeamId,
+    birthTeamSlot: identity.birthTeamSlot,
+    teamId: identity.birthTeamId,
     teamUrl: clean(row.teamUrl),
     teamStats: {
-      points,
-      goalsFor,
-      goalsAgainst,
-      teamGamePlayed: games,
+      points: teamStats.points,
+      goalsFor: teamStats.goalsFor,
+      goalsAgainst: teamStats.goalsAgainst,
+      teamGamePlayed: teamStats.gamesPlayed,
     },
     scoutProfilesSummary: {
       total: 0,
@@ -81,7 +88,7 @@ export async function updateLeagueSeasonTableRank({
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+    const { seasonKey } = normalizeSeasonIdentity({ season: { ...season, seasonId } })
     const isHistory = clean(target) === 'history'
     const tableRank = buildTableRank(rows)
     const nextData = isHistory
@@ -122,12 +129,12 @@ const updateTableRankRowTeamUrl = ({
   tableRank = [],
   team = {},
 } = {}) => {
-  const teamId = clean(team.birthTeamId || team.teamId)
+  const teamId = normalizeTeamIdentity({ team }).birthTeamId
   const clubId = clean(team.clubId)
   const teamUrl = clean(team.teamUrl)
 
   return (Array.isArray(tableRank) ? tableRank : []).map(row => {
-    const rowTeamId = clean(row.birthTeamId || row.teamId || row.teamSlotId)
+    const rowTeamId = normalizeTeamIdentity({ team: row }).birthTeamId
     const rowClubId = clean(row.clubId)
     const sameTeam = teamId && rowTeamId === teamId
     const sameClubFallback = !teamId && clubId && rowClubId === clubId
@@ -156,10 +163,7 @@ const updateHistorySeasonTableRankTeamUrl = ({
     patch: {
       tableRank: updateTableRankRowTeamUrl({
         tableRank: (Array.isArray(history) ? history : [])
-          .find(row => {
-            const seasonKey = clean(season.seasonKey) || buildSeasonKey(season.seasonId)
-            return clean(row.seasonKey) === seasonKey || clean(row.seasonId) === clean(season.seasonId)
-          })?.tableRank || [],
+          .find(row => isSameSeason(row, season))?.tableRank || [],
         team,
       }),
       updatedAt: new Date().toISOString(),
@@ -171,11 +175,11 @@ const updateTableRankRowScoutProfilesSummary = ({
   team = {},
   scoutProfilesSummary = {},
 } = {}) => {
-  const teamId = clean(team.birthTeamId || team.teamId)
+  const teamId = normalizeTeamIdentity({ team }).birthTeamId
   const clubId = clean(team.clubId)
 
   return (Array.isArray(tableRank) ? tableRank : []).map(row => {
-    const rowTeamId = clean(row.birthTeamId || row.teamId || row.teamSlotId)
+    const rowTeamId = normalizeTeamIdentity({ team: row }).birthTeamId
     const rowClubId = clean(row.clubId)
     const sameTeam = teamId && rowTeamId === teamId
     const sameClubFallback = !teamId && clubId && rowClubId === clubId
@@ -205,10 +209,7 @@ const updateHistorySeasonTableRankScoutProfilesSummary = ({
     patch: {
       tableRank: updateTableRankRowScoutProfilesSummary({
         tableRank: (Array.isArray(history) ? history : [])
-          .find(row => {
-            const seasonKey = clean(season.seasonKey) || buildSeasonKey(season.seasonId)
-            return clean(row.seasonKey) === seasonKey || clean(row.seasonId) === clean(season.seasonId)
-          })?.tableRank || [],
+          .find(row => isSameSeason(row, season))?.tableRank || [],
         team,
         scoutProfilesSummary,
       }),
@@ -219,52 +220,128 @@ const updateHistorySeasonTableRankScoutProfilesSummary = ({
 export async function updateLeagueSeasonTableRankTeamUrl({
   league = {},
   season = {},
-  target = 'current',
   team = {},
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
+  const birthTeamId = clean(
+    team.birthTeamId ||
+    team.teamId
+  )
+  const teamUrl = clean(team.teamUrl)
+
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
+  if (!birthTeamId) throw new Error('Missing birth team id')
 
   const ref = leagueDocRef(leagueId)
 
   return runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-    const isHistory = clean(target) === 'history'
-    const nextData = isHistory
-      ? {
-          ...baseDoc,
-          history: updateHistorySeasonTableRankTeamUrl({
-            history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey },
-            team,
-          }),
-        }
-      : {
-          ...baseDoc,
-          current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
-            tableRank: updateTableRankRowTeamUrl({
-              tableRank: baseDoc.current?.tableRank || [],
-              team,
-            }),
-            updatedAt: new Date().toISOString(),
-          },
-        }
 
-    transaction.set(ref, nextData, { merge: true })
+    if (!snapshot.exists()) {
+      return {
+        leagueId,
+        seasonId,
+        birthTeamId,
+        teamUrl,
+        updated: false,
+        reason: 'leagueDocMissing',
+      }
+    }
+
+    const currentData = snapshot.data() || {}
+    const currentSeason = currentData.current || null
+    const history = Array.isArray(currentData.history) ? currentData.history : []
+    const currentMatches = clean(currentSeason?.seasonId) === seasonId
+    const historyIndex = history.findIndex(row => clean(row?.seasonId) === seasonId)
+    const sourceTarget = currentMatches
+      ? 'current'
+      : historyIndex >= 0
+        ? 'history'
+        : ''
+    const seasonRow = currentMatches
+      ? currentSeason
+      : historyIndex >= 0
+        ? history[historyIndex]
+        : null
+
+    if (!seasonRow) {
+      return {
+        leagueId,
+        seasonId,
+        birthTeamId,
+        teamUrl,
+        updated: false,
+        reason: 'leagueSeasonMissing',
+      }
+    }
+
+    const tableRank = Array.isArray(seasonRow.tableRank)
+      ? seasonRow.tableRank
+      : []
+    const teamRowIndex = tableRank.findIndex(row => (
+      clean(row?.birthTeamId || row?.teamId) === birthTeamId
+    ))
+
+    if (teamRowIndex === -1) {
+      return {
+        leagueId,
+        seasonId,
+        birthTeamId,
+        teamUrl,
+        sourceTarget,
+        updated: false,
+        reason: 'leagueTeamRowMissing',
+      }
+    }
+
+    const nextTableRank = tableRank.map((row, index) => (
+      index === teamRowIndex
+        ? {
+            ...row,
+            teamUrl,
+            updatedAt: new Date().toISOString(),
+          }
+        : row
+    ))
+    const nextSeason = {
+      ...seasonRow,
+      tableRank: nextTableRank,
+      updatedAt: new Date().toISOString(),
+    }
+
+    if (sourceTarget === 'current') {
+      transaction.set(
+        ref,
+        {
+          current: nextSeason,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      )
+    } else {
+      const nextHistory = history.map((row, index) => (
+        index === historyIndex ? nextSeason : row
+      ))
+
+      transaction.set(
+        ref,
+        {
+          history: nextHistory,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      )
+    }
 
     return {
       leagueId,
       seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
-      teamId: clean(team.teamId),
-      teamUrl: clean(team.teamUrl),
+      birthTeamId,
+      teamUrl,
+      sourceTarget,
+      updated: true,
     }
   })
 }
@@ -287,7 +364,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+    const { seasonKey } = normalizeSeasonIdentity({ season: { ...season, seasonId } })
     const isHistory = clean(target) === 'history'
     const nextData = isHistory
       ? {

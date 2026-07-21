@@ -2,31 +2,9 @@
 
 import {
   ensureLeagueDoc,
-  updateLeagueSeasonUrl,
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-  updateLeagueSeasonTableRankTeamUrl,
   updateLeagueSeasonTableRank,
   upsertLeagueSeason,
 } from './leagues/index.js'
-import {
-  removePlayerSeasonScoutProfile,
-  updatePlayerFavorite,
-  updatePlayerSeasonNotes,
-  updatePlayerSeasonUrl,
-} from './players/index.js'
-import {
-  clearPlayerSeasonSearchIndexScoutProfile,
-  updatePlayerFavoriteSearchIndexes,
-  updatePlayerSeasonSearchIndexNotes,
-  updatePlayerSeasonSearchIndexPlayerUrl,
-  updateSearchIndexesLeagueSeasonUrl,
-  updateTeamSeasonSearchIndexScoutProfilesSummary,
-  updateTeamSeasonSearchIndexTeamUrl,
-} from './searchIndex/index.js'
-import {
-  updateTeamSeasonPlayerScoutProfiles,
-  updateTeamSeasonTeamUrl,
-} from './teams/index.js'
 import {
   createTeamDisplayPlayerFlow,
   createTeamOfficialPlayerFlow,
@@ -36,8 +14,14 @@ import {
   pasteLeagueTableFlow,
   pasteTeamPlayerStatsFlow,
   pasteTeamPlayersFlow,
+  removePlayerScoutProfileFlow,
   updateLeagueSeasonMetaFlow,
+  updateLeagueSeasonUrlFlow,
+  updatePlayerFavoriteFlow,
   updatePlayerRoleFlow,
+  updatePlayerSeasonNotesFlow,
+  updatePlayerSeasonUrlFlow,
+  updateTeamUrlFlow,
 } from './flows/index.js'
 
 export const PLAYERS_DATABASE_WRITE_ACTIONS = {
@@ -87,28 +71,7 @@ export async function runPlayersDatabaseWriteAction({
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL) {
-    const team = {
-      ...(payload.team || {}),
-    }
-    const leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl({
-      ...payload,
-      team,
-    })
-    const teamSeasonResult = await updateTeamSeasonTeamUrl({
-      ...payload,
-      team,
-    })
-    const teamSeasonIndexResult = await updateTeamSeasonSearchIndexTeamUrl({
-      ...payload,
-      team,
-    })
-
-    return {
-      leagueTableRankResult,
-      teamSeasonResult,
-      teamSeasonIndexResult,
-      teamUrl: team.teamUrl,
-    }
+    return updateTeamUrlFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_DISPLAY_PLAYER) {
@@ -120,14 +83,7 @@ export async function runPlayersDatabaseWriteAction({
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_NOTES) {
-    const playerSeasonResult = await updatePlayerSeasonNotes(payload)
-    const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexNotes(payload)
-
-    return {
-      playerSeasonResult,
-      playerSeasonIndexResult,
-      rowsCount: 1,
-    }
+    return updatePlayerSeasonNotesFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_ROLE) {
@@ -135,46 +91,11 @@ export async function runPlayersDatabaseWriteAction({
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_PLAYER_SCOUT_PROFILE) {
-    const playerSeasonResult = await removePlayerSeasonScoutProfile({
-      ...payload,
-      player: {
-        ...(payload.player || {}),
-        scoutProfiles: [],
-      },
-    })
-    const teamSeasonResult = await updateTeamSeasonPlayerScoutProfiles({
-      ...payload,
-      scoutProfiles: [],
-    })
-    const playerSeasonIndexResult = await clearPlayerSeasonSearchIndexScoutProfile(payload)
-    const leagueTableRankScoutProfilesResult = await updateLeagueSeasonTableRankScoutProfilesSummary({
-      ...payload,
-      scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
-    })
-    const teamSeasonIndexScoutProfilesResult = await updateTeamSeasonSearchIndexScoutProfilesSummary({
-      ...payload,
-      scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
-    })
-
-    return {
-      playerSeasonResult,
-      teamSeasonResult,
-      playerSeasonIndexResult,
-      leagueTableRankScoutProfilesResult,
-      teamSeasonIndexScoutProfilesResult,
-      rowsCount: 1,
-    }
+    return removePlayerScoutProfileFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL) {
-    const playerSeasonResult = await updatePlayerSeasonUrl(payload)
-    const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexPlayerUrl(payload)
-
-    return {
-      playerSeasonResult,
-      playerSeasonIndexResult,
-      rowsCount: 1,
-    }
+    return updatePlayerSeasonUrlFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_META) {
@@ -182,25 +103,11 @@ export async function runPlayersDatabaseWriteAction({
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL) {
-    const leagueSeasonResult = await updateLeagueSeasonUrl(payload)
-    const searchIndexResult = await updateSearchIndexesLeagueSeasonUrl(payload)
-
-    return {
-      leagueSeasonResult,
-      searchIndexResult,
-      rowsCount: searchIndexResult.rowsCount,
-    }
+    return updateLeagueSeasonUrlFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_FAVORITE) {
-    const playerFavoriteResult = await updatePlayerFavorite(payload)
-    const playerSeasonIndexResult = await updatePlayerFavoriteSearchIndexes(payload)
-
-    return {
-      playerFavoriteResult,
-      playerSeasonIndexResult,
-      rowsCount: playerSeasonIndexResult.rowsCount,
-    }
+    return updatePlayerFavoriteFlow(payload)
   }
 
   if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS) {

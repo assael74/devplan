@@ -1,4 +1,4 @@
-﻿// features/playersDatabase/services/write/players/playerDoc.js
+// features/playersDatabase/services/write/players/playerDoc.js
 
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 
@@ -6,23 +6,17 @@ import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
 import {
+  buildPlayerDocumentId as buildCanonicalPlayerDocumentId,
+  normalizePlayerNameValue,
+} from '../../../model/playerIdentity.model.js'
+import { normalizePlayerStats } from '../../../model/playerStats.model.js'
+import {
   buildPlayerSeasonScope,
   isSamePlayerSeasonScope,
 } from '../shared/playerSeasonScope.js'
 
-const normalizeText = value =>
-  clean(value).toLowerCase()
-
-const normalizeIdPart = value =>
-  normalizeText(value).replace(/[^0-9a-zA-Z\u0590-\u05FF]+/g, '_').replace(/^_+|_+$/g, '')
-
-export const buildPlayerDocumentId = (player = {}) => {
-  const externalPlayerId = clean(player.externalPlayerId)
-  if (externalPlayerId) return `external__${normalizeIdPart(externalPlayerId)}`
-
-  const normalizedName = normalizeText(player.normalizedName || player.fullName)
-  return normalizedName ? `name__${normalizeIdPart(normalizedName)}` : ''
-}
+export const buildPlayerDocumentId = player =>
+  buildCanonicalPlayerDocumentId(player)
 
 export const normalizePlayerScoutProfiles = player =>
   (Array.isArray(player?.scoutSignals) ? player.scoutSignals : [])
@@ -45,7 +39,9 @@ const buildPlayerBaseDoc = (player = {}, currentData = {}) => ({
   id: clean(player.playerDocumentId || buildPlayerDocumentId(player)),
   externalPlayerId: clean(player.externalPlayerId || currentData.externalPlayerId),
   fullName: clean(player.fullName || currentData.fullName),
-  normalizedName: normalizeText(player.normalizedName || player.fullName || currentData.normalizedName),
+  normalizedName: normalizePlayerNameValue(
+    player.normalizedName || player.fullName || currentData.normalizedName
+  ),
   birthYear: currentData.birthYear ?? null,
   birthDate: currentData.birthDate ?? null,
   status: clean(currentData.status),
@@ -83,7 +79,7 @@ const buildPlayerSeasonDoc = ({
 } = {}) => {
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-  const playerStats = player.playerStats || {}
+  const playerStats = normalizePlayerStats(player)
 
   return {
     seasonId,
@@ -100,13 +96,13 @@ const buildPlayerSeasonDoc = ({
     positionLayer: clean(player.positionLayer),
     numShirt: clean(player.numShirt),
     playerStats: {
-      games: toNumberOrZero(playerStats.games ?? player.games),
-      goals: toNumberOrZero(playerStats.goals ?? player.goals),
-      yellowCards: toNumberOrZero(playerStats.yellowCards ?? player.yellowCards),
-      minutes: toNumberOrZero(playerStats.minutes ?? player.minutes),
-      starts: toNumberOrZero(playerStats.starts ?? player.starts),
-      substituteIn: toNumberOrZero(playerStats.substituteIn ?? player.substituteIn),
-      substitutedOut: toNumberOrZero(playerStats.substitutedOut ?? player.substitutedOut),
+      games: playerStats.games,
+      goals: playerStats.goals,
+      yellowCards: playerStats.yellowCards,
+      minutes: playerStats.minutes,
+      starts: playerStats.starts,
+      substituteIn: playerStats.substituteIn,
+      substitutedOut: playerStats.substitutedOut,
       teamMinutes: 0,
       teamGames: toNumberOrZero(team.teamStats?.teamGamePlayed ?? team.teamGamePlayed),
       teamRank: toNumberOrZero(team.tableRank),
@@ -438,6 +434,27 @@ export async function upsertProfiledPlayerDocsMany({
   }
 }
 
+export async function syncPlayerRoleAndScoutProfileDoc({
+  season = {},
+  team = {},
+  target = 'current',
+  player = {},
+} = {}) {
+  return hasPlayerScoutProfiles(player)
+    ? upsertProfiledPlayerDoc({
+        season,
+        team,
+        target,
+        player,
+      })
+    : clearExistingPlayerSeasonProfiles({
+        season,
+        team,
+        target,
+        player,
+      })
+}
+
 export async function syncPlayerScoutProfileDocsMany({
   season = {},
   team = {},
@@ -446,23 +463,24 @@ export async function syncPlayerScoutProfileDocsMany({
 } = {}) {
   const safePlayers = Array.isArray(players) ? players : []
   const results = []
+  const failures = []
 
   for (const player of safePlayers) {
-    results.push(
-      hasPlayerScoutProfiles(player)
-        ? await upsertProfiledPlayerDoc({
-            season,
-            team,
-            target,
-            player,
-          })
-        : await clearExistingPlayerSeasonProfiles({
-            season,
-            team,
-            target,
-            player,
-          })
-    )
+    try {
+      results.push(await syncPlayerRoleAndScoutProfileDoc({
+        season,
+        team,
+        target,
+        player,
+      }))
+    } catch (error) {
+      failures.push({
+        playerDocumentId: clean(player.playerDocumentId || buildPlayerDocumentId(player)),
+        playerId: clean(player.playerId || player.externalPlayerId),
+        fullName: clean(player.fullName || player.matchedPlayerName),
+        message: clean(error?.message) || 'Player document sync failed',
+      })
+    }
   }
 
   return {
@@ -470,6 +488,8 @@ export async function syncPlayerScoutProfileDocsMany({
     createdCount: results.filter(result => result.created).length,
     clearedCount: results.filter(result => result.updated && result.scoutProfilesCount === 0).length,
     skippedCount: results.filter(result => result.skipped).length,
+    failedCount: failures.length,
+    failures,
     playerDocumentIds: results.map(result => result.playerDocumentId).filter(Boolean),
   }
 }

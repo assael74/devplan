@@ -8,9 +8,11 @@ export {
   updateTeamSeasonPlayerStats,
   updateTeamSeasonPlayerScoutProfiles,
   updateTeamSeasonPlayerRole,
+  updateTeamSeasonPlayerRoleAndScoutProfiles,
   upsertTeamSeasonPlayers,
   updateTeamSeasonsMetaMany,
   updateTeamSeasonTeamUrl,
+  updateTeamSeasonPlayerUrl,
 } from './teamSeason.js'
 
 export {

@@ -3,7 +3,16 @@
 import React from 'react'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
-import { Drawer, Sheet, Box, Typography, Button, IconButton, Tooltip, DialogContent } from '@mui/joy'
+import {
+  Drawer,
+  Sheet,
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Tooltip,
+  DialogContent,
+} from '@mui/joy'
 
 import { iconUi } from '../../core/icons/iconUi.js'
 import { drawerSx as sx } from './sx/drawer.sx.js'
@@ -27,6 +36,7 @@ export default function DrawerShell({
   texts = {},
   tooltips = {},
   status = {},
+  sxOverrides = {},
 
   saveIconId = 'save',
 
@@ -73,19 +83,42 @@ export default function DrawerShell({
       anchor={anchor}
       onClose={closeHandler}
       slotProps={{
-        content: { sx: sx.root(isMobile), },
+        content: {
+          sx: {
+            ...sx.root(isMobile),
+            ...(sxOverrides.root || {}),
+          },
+        },
       }}
     >
-      <Sheet sx={sx.sheet}>
+      <Sheet
+        sx={{
+          ...sx.sheet,
+          ...(sxOverrides.sheet || {}),
+        }}
+      >
         {header ? <Box>{header}</Box> : null}
 
-        <DialogContent>
-          <Box sx={sx.content} className="dpScrollThin">
+        <DialogContent
+          sx={sxOverrides.dialogContent || {}}
+        >
+          <Box
+            sx={{
+              ...sx.content,
+              ...(sxOverrides.content || {}),
+            }}
+            className="dpScrollThin"
+          >
             {children}
           </Box>
         </DialogContent>
 
-        <Box sx={sx.footer}>
+        <Box
+          sx={{
+            ...sx.footer,
+            ...(sxOverrides.footer || {}),
+          }}
+        >
           <Box sx={sx.footerActions}>
             <Button
               loading={saving}
@@ -144,7 +177,11 @@ export default function DrawerShell({
             ) : null}
           </Box>
 
-          <Typography level="body-xs" color={statusColor}>
+          <Typography
+            level="body-xs"
+            color={statusColor}
+            sx={sxOverrides.status || {}}
+          >
             {statusText}
           </Typography>
         </Box>

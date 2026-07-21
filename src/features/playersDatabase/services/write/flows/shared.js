@@ -3,6 +3,11 @@
 import {
   buildPlayerScoutResult,
 } from '../../../../../shared/players/scouting/index.js'
+import { normalizePlayerStats } from '../../../model/playerStats.model.js'
+import {
+  buildTeamStatsAliases,
+  normalizeTeamStats,
+} from '../../../model/teamStats.model.js'
 
 export const buildScoutProfilesSummary = (players = []) => {
   const profileCounts = {}
@@ -33,7 +38,7 @@ const buildScoutPlayerForRoleUpdate = ({
   positionLayer = '',
   numShirt = '',
 } = {}) => {
-  const playerStats = player.playerStats || {}
+  const playerStats = normalizePlayerStats(player)
 
   return {
     ...player,
@@ -41,13 +46,14 @@ const buildScoutPlayerForRoleUpdate = ({
     position: primaryPosition,
     positionLayer,
     numShirt,
-    games: playerStats.games ?? player.games,
-    goals: playerStats.goals ?? player.goals,
-    yellowCards: playerStats.yellowCards ?? player.yellowCards,
-    minutes: playerStats.minutes ?? player.minutes,
-    starts: playerStats.starts ?? player.starts,
-    subIn: playerStats.substituteIn ?? player.subIn,
-    subOut: playerStats.substitutedOut ?? player.subOut,
+    games: playerStats.games,
+    goals: playerStats.goals,
+    yellowCards: playerStats.yellowCards,
+    minutes: playerStats.minutes,
+    starts: playerStats.starts,
+    subIn: playerStats.substituteIn,
+    subOut: playerStats.substitutedOut,
+    playerStats,
   }
 }
 
@@ -55,23 +61,33 @@ const buildScoutTeamForRoleUpdate = ({
   team = {},
   season = {},
 } = {}) => {
-  const teamStats = team.teamStats || {}
+  const teamStats = normalizeTeamStats(team, {
+    season,
+    gamesCandidates: [
+      team.teamStats?.teamGamePlayed,
+      team.teamGamePlayed,
+      team.games,
+      team.gamesPlayed,
+    ],
+    goalsForCandidates: [team.teamStats?.goalsFor, team.goalsFor],
+  })
 
   return {
     ...team,
     season,
-    games: teamStats.teamGamePlayed ?? team.teamGamePlayed ?? team.games,
-    gamesPlayed: teamStats.teamGamePlayed ?? team.teamGamePlayed ?? team.gamesPlayed,
-    teamGamesCount: teamStats.teamGamePlayed ?? team.teamGamePlayed ?? team.teamGamesCount,
-    teamGamePlayed: teamStats.teamGamePlayed ?? team.teamGamePlayed,
+    ...buildTeamStatsAliases(teamStats),
     leagueTotalRound: team.leagueTotalRound ?? season.leagueTotalRound,
     leagueGameTime: team.leagueGameTime ?? season.leagueGameTime,
-    goalsFor: teamStats.goalsFor ?? team.goalsFor,
-    leagueGoalsFor: teamStats.goalsFor ?? team.leagueGoalsFor ?? team.goalsFor,
-    teamGoals: teamStats.goalsFor ?? team.teamGoals ?? team.goalsFor,
     offense: team.offense,
     defense: team.defense,
     teamScout: team.teamScout,
+    teamStats: {
+      ...(team.teamStats || {}),
+      gamesPlayed: teamStats.gamesPlayed,
+      teamGamePlayed: teamStats.gamesPlayed,
+      goalsFor: teamStats.goalsFor,
+      goalsAgainst: teamStats.goalsAgainst,
+    },
   }
 }
 

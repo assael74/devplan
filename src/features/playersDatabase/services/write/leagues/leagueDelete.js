@@ -1,8 +1,16 @@
 // features/playersDatabase/services/write/leagues/leagueDelete.js
 
-import { runTransaction } from 'firebase/firestore'
+import {
+  collection,
+  getDoc,
+  getDocs,
+  query,
+  runTransaction,
+  where,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import {
   buildLeagueBaseDoc,
   buildSeasonKey,
@@ -11,6 +19,74 @@ import {
   leagueDocRef,
 } from './leagueDoc.js'
 import { buildSeasonDoc, isSameSeason } from './leagueSeason.js'
+
+
+const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' } = {}) => {
+  const isHistory = clean(target) === 'history'
+
+  if (isHistory) {
+    return (Array.isArray(leagueData.history) ? leagueData.history : [])
+      .find(row => isSameSeason(row, season)) || null
+  }
+
+  return isSameSeason(leagueData.current, season)
+    ? leagueData.current
+    : null
+}
+
+export async function getLeagueSeasonDeleteDependencies({
+  league = {},
+  season = {},
+  target = 'current',
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const leagueSnapshot = await getDoc(leagueDocRef(leagueId))
+  const leagueData = leagueSnapshot.exists() ? leagueSnapshot.data() || {} : {}
+  const seasonRow = getLeagueSeasonRow({
+    leagueData,
+    season: { seasonId, seasonKey },
+    target,
+  })
+  const tableRank = Array.isArray(seasonRow?.tableRank) ? seasonRow.tableRank : []
+  const rowsQuery = query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('leagueId', '==', leagueId),
+    where('seasonKey', '==', seasonKey)
+  )
+  const searchSnapshot = await getDocs(rowsQuery)
+  let teamIndexesCount = 0
+  let playerIndexesCount = 0
+
+  searchSnapshot.docs.forEach(indexDoc => {
+    const entityType = clean(indexDoc.data()?.entityType)
+
+    if (entityType === 'teamSeason') teamIndexesCount += 1
+    if (entityType === 'playerSeason') playerIndexesCount += 1
+  })
+
+  const dependencies = {
+    tableTeamsCount: tableRank.length,
+    teamIndexesCount,
+    playerIndexesCount,
+    searchIndexesCount: searchSnapshot.size,
+  }
+
+  return {
+    leagueId,
+    seasonId,
+    seasonKey,
+    target: clean(target) === 'history' ? 'history' : 'current',
+    leagueExists: leagueSnapshot.exists(),
+    seasonExists: Boolean(seasonRow),
+    canDelete: Object.values(dependencies).every(count => Number(count) === 0),
+    dependencies,
+  }
+}
 
 const removeHistorySeason = ({ history = [], season = {} } = {}) =>
   (Array.isArray(history) ? history : [])
