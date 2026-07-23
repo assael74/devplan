@@ -104,6 +104,22 @@ const getTableRows = season =>
     ? season.tableRank.filter(row => row && (row.teamId || row.clubId || row.rank))
     : []
 
+const getCountStatus = count => (toNumber(count) > 0 ? 'full' : 'missing')
+
+const getTableStatusFromCounts = ({ tableRows, expectedTeamsCount, tableRankCount }) => {
+  if (tableRows.length) {
+    return getTableStatus(tableRows, expectedTeamsCount)
+  }
+
+  if (tableRankCount > 0 && expectedTeamsCount > 0) {
+    return tableRankCount >= expectedTeamsCount ? 'full' : 'partial'
+  }
+
+  if (tableRankCount > 0) return 'full'
+
+  return 'missing'
+}
+
 const getStatsStatus = rows => {
   if (!rows.length) return 'missing'
 
@@ -166,16 +182,21 @@ const buildLeagueCenterRow = ({
 }) => {
   const { target, season } = getSelectedSeason(league, selectedSeasonKey)
   const tableRows = getTableRows(season)
+  const tableRankCount = toNumber(season?.tableRankCount)
   const expectedTeamsCount = toNumber(
     league?.clubsCount ||
     league?.teamsCount ||
     season?.clubsCount ||
-    season?.teamsCount
+    season?.teamsCount ||
+    season?.tableRankCount
   )
   const teamsCount = expectedTeamsCount || tableRows.length
   const ageGroupId = clean(league?.ageGroupId || catalog?.ageGroupId)
   const birthYear = toNumber(season?.birthYear)
   const seasonIdentity = normalizeSeasonIdentity({ season: season || {} })
+  const playersCount = toNumber(season?.playersCount)
+  const playersWithScoutProfileCount = toNumber(season?.playersWithScoutProfileCount)
+  const scoutProfilesCount = toNumber(season?.scoutProfilesCount)
 
   return {
     id: clean(league?.id || league?.leagueId || catalog?.id),
@@ -191,15 +212,91 @@ const buildLeagueCenterRow = ({
     seasonId: seasonIdentity.seasonId,
     selectedTarget: target,
     teamsCount,
-    tableStatus: getTableStatus(tableRows, teamsCount),
-    teamsStatus: getTeamsStatus(tableRows),
-    statsStatus: getStatsStatus(tableRows),
-    playersWithProfiles: getProfiledPlayersCount(tableRows),
+    tableStatus: getTableStatusFromCounts({
+      tableRows,
+      expectedTeamsCount: teamsCount,
+      tableRankCount,
+    }),
+    teamsStatus: tableRows.length
+      ? getTeamsStatus(tableRows)
+      : getCountStatus(playersCount || playersWithScoutProfileCount),
+    statsStatus: tableRows.length
+      ? getStatsStatus(tableRows)
+      : getCountStatus(scoutProfilesCount),
+    playersWithProfiles: tableRows.length
+      ? getProfiledPlayersCount(tableRows)
+      : playersWithScoutProfileCount,
     hasLeagueDoc,
     hasSelectedSeason: Boolean(season),
     catalog,
     sourceLeague: league,
   }
+}
+
+const buildMasterLeagueSeasonRows = league => {
+  const seasons = Array.isArray(league?.seasons) ? league.seasons : []
+  const currentSeason =
+    seasons.find(season => clean(season?.currentDocRef)) ||
+    seasons.find(season => normalizeSeasonKey(season?.seasonKey) === LEAGUE_CENTER_DEFAULT_SEASON_KEY) ||
+    seasons[0] ||
+    null
+
+  return {
+    current: currentSeason ? { ...currentSeason } : null,
+    history: seasons.filter(season => season !== currentSeason).map(season => ({ ...season })),
+  }
+}
+
+const buildMasterLeagueDoc = league => {
+  const leagueDocumentId = clean(league?.leagueDocumentId || league?.leagueId)
+  const leagueId = clean(league?.leagueId || leagueDocumentId)
+  const { current, history } = buildMasterLeagueSeasonRows(league)
+
+  return {
+    id: leagueDocumentId || leagueId,
+    leagueId: leagueDocumentId || leagueId,
+    catalogLeagueId: leagueId,
+    leagueDocumentId,
+    name: clean(league?.leagueName || league?.name),
+    leagueName: clean(league?.leagueName || league?.name),
+    ageGroupId: clean(league?.ageGroupId),
+    ageGroupLabel: clean(league?.ageGroupLabel),
+    region: clean(league?.region),
+    level: league?.level ?? null,
+    current,
+    history,
+    hasLeagueDoc: Boolean(leagueDocumentId),
+  }
+}
+
+export const buildLeagueCenterLeagueDocsFromMasterDocument = ({
+  leaguesMasterDoc = {},
+} = {}) => (
+  Array.isArray(leaguesMasterDoc?.leagues)
+    ? leaguesMasterDoc.leagues.map(buildMasterLeagueDoc)
+    : []
+)
+
+export const buildLeagueCenterRowsFromMasterDocument = ({
+  leaguesMasterDoc = {},
+  selectedSeasonKey,
+} = {}) => {
+  return buildLeagueCenterRows({
+    leagueDocs: buildLeagueCenterLeagueDocsFromMasterDocument({ leaguesMasterDoc }),
+    selectedSeasonKey,
+  })
+}
+
+export const buildLeagueCenterRowsFromIndex = ({
+  leagueIndexDoc = {},
+} = {}) => {
+  if (Array.isArray(leagueIndexDoc?.rows) && leagueIndexDoc.rows.length) {
+    return leagueIndexDoc.rows.filter(row => row && row.id)
+  }
+
+  return buildLeagueCenterRows({
+    leagueDocs: [],
+  })
 }
 
 export const buildLeagueCenterRows = ({
@@ -215,7 +312,7 @@ export const buildLeagueCenterRows = ({
     return buildLeagueCenterRow({
       league,
       catalog,
-      hasLeagueDoc: league !== catalog,
+      hasLeagueDoc: league?.hasLeagueDoc ?? league !== catalog,
       selectedSeasonKey,
     })
   })
@@ -226,7 +323,7 @@ export const buildLeagueCenterRows = ({
       buildLeagueCenterRow({
         league,
         catalog: getCatalogLeague(league),
-        hasLeagueDoc: true,
+        hasLeagueDoc: league?.hasLeagueDoc ?? true,
         selectedSeasonKey,
       })
     ))
@@ -250,6 +347,18 @@ export const buildLeagueCenterSeasonOptions = leagueDocs => {
 export const buildLeagueCenterBirthYearOptions = rows => {
   const years = rows
     .map(row => toNumber(row.birthYear))
+    .filter(Boolean)
+    .sort((a, b) => b - a)
+
+  return Array.from(new Set(years))
+}
+
+export const buildLeagueCenterBirthYearOptionsFromMasterDocument = ({
+  leaguesMasterDoc = {},
+} = {}) => {
+  const years = (Array.isArray(leaguesMasterDoc?.leagues) ? leaguesMasterDoc.leagues : [])
+    .flatMap(league => getLeagueSeasons(buildMasterLeagueDoc(league)))
+    .map(({ season }) => toNumber(season?.birthYear))
     .filter(Boolean)
     .sort((a, b) => b - a)
 
@@ -305,4 +414,3 @@ export const buildLeagueCenterSummary = rows => ({
   ),
   catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG.length,
 })
-

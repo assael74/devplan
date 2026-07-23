@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import { PLAYERS_DATABASE_IMPORT_FLOW } from '../../constants/playersDatabase.constants.js'
-import { saveLeagueSnapshot } from '../../services/pdbLeague.firestore.js'
+import { PLAYERS_DATABASE_IMPORT_FLOW } from '../../constants/pdb.constants.js'
 import { buildPlayersDatabaseLeagueTableImportPlan } from '../logic/buildPlayersDatabaseLeagueTableImportPlan.js'
 import { buildPlayersDatabaseLeagueTableWritePlan } from '../logic/buildPlayersDatabaseLeagueTableWritePlan.js'
 import { buildPlayersDatabaseImportPlan } from '../logic/buildPlayersDatabaseImportPlan.js'
@@ -10,10 +9,10 @@ import { readLeagueXlsx } from '../logic/leagueXlsx.js'
 import { normalizePlayersDatabaseImportRows } from '../logic/normalizePlayersDatabaseImportRows.js'
 import { parsePlayersDatabasePastedTable } from '../logic/parsePlayersDatabasePastedTable.js'
 
-const SAMPLE_TEXT = `עונה\tליגה\tמספר ליגה\tמספר קבוצות\tשנתון\tמועדון\tקבוצה\tמיקום\tמשחקים\tניצחונות\tתיקו\tהפסדים\tשערי זכות\tשערי חובה\tנקודות\tתאריך צילום
-2025-2026\tליגת העל\t1\t16\t2009\tמכבי תל אביב\tנערים א\t1\t12\t9\t2\t1\t31\t10\t29\t2026-01-05
-2025-2026\tליגת העל\t1\t16\t2009\tמכבי חיפה\tנערים א\t2\t12\t8\t2\t2\t28\t12\t26\t2026-01-05
-2025-2026\tליגת העל\t1\t16\t2009\tבני סכנין\tנערים א\t3\t12\t7\t3\t2\t23\t14\t24\t2026-01-05`
+const SAMPLE_TEXT = `׳¢׳•׳ ׳”\t׳׳™׳’׳”\t׳׳¡׳₪׳¨ ׳׳™׳’׳”\t׳׳¡׳₪׳¨ ׳§׳‘׳•׳¦׳•׳×\t׳©׳ ׳×׳•׳\t׳׳•׳¢׳“׳•׳\t׳§׳‘׳•׳¦׳”\t׳׳™׳§׳•׳\t׳׳©׳—׳§׳™׳\t׳ ׳™׳¦׳—׳•׳ ׳•׳×\t׳×׳™׳§׳•\t׳”׳₪׳¡׳“׳™׳\t׳©׳¢׳¨׳™ ׳–׳›׳•׳×\t׳©׳¢׳¨׳™ ׳—׳•׳‘׳”\t׳ ׳§׳•׳“׳•׳×\t׳×׳׳¨׳™׳ ׳¦׳™׳׳•׳
+2025-2026\t׳׳™׳’׳× ׳”׳¢׳\t1\t16\t2009\t׳׳›׳‘׳™ ׳×׳ ׳׳‘׳™׳‘\t׳ ׳¢׳¨׳™׳ ׳\t1\t12\t9\t2\t1\t31\t10\t29\t2026-01-05
+2025-2026\t׳׳™׳’׳× ׳”׳¢׳\t1\t16\t2009\t׳׳›׳‘׳™ ׳—׳™׳₪׳”\t׳ ׳¢׳¨׳™׳ ׳\t2\t12\t8\t2\t2\t28\t12\t26\t2026-01-05
+2025-2026\t׳׳™׳’׳× ׳”׳¢׳\t1\t16\t2009\t׳‘׳ ׳™ ׳¡׳›׳ ׳™׳\t׳ ׳¢׳¨׳™׳ ׳\t3\t12\t7\t3\t2\t23\t14\t24\t2026-01-05`
 
 const buildPlanByFlow = (flowType, rows) => {
   if (flowType === PLAYERS_DATABASE_IMPORT_FLOW.LEAGUE_TABLE) {
@@ -33,7 +32,7 @@ const buildWritePlanByFlow = (flowType, plan) => {
 
 const createInitialContext = () => ({
   seasonId: '2025-2026',
-  leagueName: 'ליגת העל',
+  leagueName: '׳׳™׳’׳× ׳”׳¢׳',
   leagueNum: 1,
   teamsCount: 19,
   birthYear: 2009,
@@ -69,7 +68,7 @@ export function usePlayersDatabaseImportPreview() {
 
     return {
       ...normalizedRows,
-      rows: normalizedRows.rows.map((row) => ({
+      rows: normalizedRows.rows.map(row => ({
         ...context,
         ...row,
         seasonId: row.seasonId || context.seasonId,
@@ -83,16 +82,11 @@ export function usePlayersDatabaseImportPreview() {
     }
   }, [context, parsed])
 
-  const plan = useMemo(() => (
-    buildPlanByFlow(flowType, normalized.rows)
-  ), [flowType, normalized.rows])
-
-  const writePlan = useMemo(() => (
-    buildWritePlanByFlow(flowType, plan)
-  ), [flowType, plan])
+  const plan = useMemo(() => buildPlanByFlow(flowType, normalized.rows), [flowType, normalized.rows])
+  const writePlan = useMemo(() => buildWritePlanByFlow(flowType, plan), [flowType, plan])
 
   const canSave = flowType === PLAYERS_DATABASE_IMPORT_FLOW.LEAGUE_TABLE
-    && (writePlan.summary?.leagueSnapshotsToCreate || 0) > 0
+    && (writePlan.summary?.leaguesToUpsert || 0) > 0
     && (writePlan.summary?.blockedRows || 0) === 0
     && !saving
 
@@ -113,7 +107,7 @@ export function usePlayersDatabaseImportPreview() {
   }
 
   const updateContext = (field, value) => {
-    setContext((prev) => ({
+    setContext(prev => ({
       ...prev,
       [field]: value,
     }))
@@ -137,32 +131,9 @@ export function usePlayersDatabaseImportPreview() {
     }
   }
 
-  const saveSnapshot = async ({ userId = '' } = {}) => {
-    if (!canSave) return null
-
-    setSaving(true)
-    setSaveError('')
-    setSaveResult(null)
-
-    try {
-      const result = await saveLeagueSnapshot(writePlan, {
-        createdBy: userId,
-        source: {
-          type: fileName ? 'xlsx' : 'manual',
-          fileName,
-        },
-      })
-      setSaveResult(result)
-      return result
-    } catch (err) {
-      const message = err?.message === 'snapshot already exists'
-        ? 'צילום כזה כבר קיים. שנה תאריך צילום או מחזור, או מחק את הצילום הקיים.'
-        : err?.message || 'שמירת צילום ליגה נכשלה'
-      setSaveError(message)
-      return null
-    } finally {
-      setSaving(false)
-    }
+  const saveSnapshot = async () => {
+    setSaveError('תהליך הסנאפשוט הוסר')
+    return null
   }
 
   return {

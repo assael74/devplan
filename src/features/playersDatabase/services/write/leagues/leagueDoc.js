@@ -9,6 +9,7 @@ import {
   toNumberOrZero,
 } from '../../../model/value.model.js'
 import { buildSeasonKey } from '../../../model/season.model.js'
+import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
 
 export { buildSeasonKey, toNumberOrZero }
 export const clean = cleanValue
@@ -70,7 +71,7 @@ export async function ensureLeagueDoc(league = {}) {
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const docData = buildLeagueBaseDoc(league, currentData)
@@ -82,4 +83,10 @@ export async function ensureLeagueDoc(league = {}) {
       created: !snapshot.exists(),
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+  })
+
+  return result
 }

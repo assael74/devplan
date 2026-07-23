@@ -10,13 +10,20 @@ import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
+import { usePlayersDatabaseEntry } from '../../hooks/usePlayersDatabaseEntry.js'
 import EntryHeader from './EntryHeader.js'
 import EntryRouteCards from './EntryRouteCards.js'
 import { entryPageSx as pageSx } from './sx/entryPage.sx.js'
 import { entryContentSx as contentSx } from './sx/entryContent.sx.js'
 
+const formatCount = value => {
+  const nextValue = Number(value)
+  return Number.isFinite(nextValue) ? nextValue.toLocaleString('en-US') : '0'
+}
+
 export default function EntryPage() {
   const navigate = useNavigate()
+  const entry = usePlayersDatabaseEntry()
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'מאגר שחקנים חיצוני' },
   ])
@@ -32,12 +39,32 @@ export default function EntryPage() {
         />
 
         <Box sx={contentSx.infoGrid}>
-          <InfoPanel title='סקירת דאטה עולמית'>
+          <InfoPanel title='סיכום מסמך האב'>
             <Box sx={contentSx.statsGrid}>
-              <StatCard title='שחקנים' value='1.2M+' caption='מאגר עולמי' iconId='players' />
-              <StatCard title='קבוצות' value='450K+' caption='סגלים וקבוצות' iconId='teams' />
-              <StatCard title='ליגות' value='190+' caption='מסגרות פעילות' iconId='playersDatabase' />
-              <StatCard title='משחקים' value='15M+' caption='נתוני סטטיסטיקה' iconId='stats' />
+              <StatCard
+                title='שחקנים'
+                value={formatCount(entry.summary.playersCount)}
+                caption='במסמך האב'
+                iconId='players'
+              />
+              <StatCard
+                title='קבוצות'
+                value={formatCount(entry.summary.teamsCount)}
+                caption='בכל העונות'
+                iconId='teams'
+              />
+              <StatCard
+                title='ליגות'
+                value={formatCount(entry.summary.leaguesCount)}
+                caption='בלשכה המרכזית'
+                iconId='playersDatabase'
+              />
+              <StatCard
+                title='עם פרופיל סקאוט'
+                value={formatCount(entry.summary.playersWithScoutProfileCount)}
+                caption='לפחות אחד'
+                iconId='stats'
+              />
             </Box>
           </InfoPanel>
 
@@ -47,10 +74,10 @@ export default function EntryPage() {
                 לזהות קבוצות חריגות לפי ביצועים מול מיקום בטבלה.
               </Typography>
               <Typography level='body-md'>
-                לטעון סגלים וסטטיסטיקות בלי לפתוח מסמכי שחקן לכל אחד.
+                לטענן סגלים וסטטיסטיקות בלי לפתוח מסמכי שחקן כל פעם.
               </Typography>
               <Typography level='body-md'>
-                לאתר מועמדים לפי פרופילי סקאוט ושכבת אינדקס שטוחה.
+                לאתר מועדונים לפי פרופילי סקאוט ושכבת עונה.
               </Typography>
             </Stack>
           </InfoPanel>

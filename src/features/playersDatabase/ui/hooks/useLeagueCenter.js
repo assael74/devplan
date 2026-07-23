@@ -6,9 +6,10 @@ import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.
 import {
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
   buildLeagueCenterAgeGroupOptions,
-  buildLeagueCenterBirthYearOptions,
+  buildLeagueCenterBirthYearOptionsFromMasterDocument,
+  buildLeagueCenterLeagueDocsFromMasterDocument,
   buildLeagueCenterLeagueOptions,
-  buildLeagueCenterRows,
+  buildLeagueCenterRowsFromMasterDocument,
   buildLeagueCenterSeasonOptions,
   buildLeagueCenterSummary,
   resolveLeagueCenterSeasonTarget,
@@ -22,7 +23,7 @@ export function useLeagueCenter() {
   const [ageGroup, setAgeGroup] = useState('all')
   const [birthYear, setBirthYear] = useState('all')
   const [seasonKey, setSeasonKey] = useState(LEAGUE_CENTER_DEFAULT_SEASON_KEY)
-  const [leagueDocs, setLeagueDocs] = useState([])
+  const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -32,24 +33,28 @@ export function useLeagueCenter() {
     setError('')
 
     readLeagueCenterData()
-      .then(({ leagueDocs: rows }) => {
+      .then(({ leaguesMasterDoc: nextMasterDoc }) => {
         if (!active) return
-        setLeagueDocs(Array.isArray(rows) ? rows : [])
+        setLeaguesMasterDoc(nextMasterDoc || null)
       })
       .catch(err => {
         if (!active) return
-        setLeagueDocs([])
-        setError(err?.message || 'טעינת הליגות נכשלה')
+        setLeaguesMasterDoc(null)
+        setError(err?.message || 'טעינת מרכז הליגות נכשלה')
       })
-      .finally(() => { if (active) setLoading(false) })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
 
-    return () => { active = false }
+    return () => {
+      active = false
+    }
   }, [])
 
-  const leagueRows = useMemo(() => buildLeagueCenterRows({
-    leagueDocs,
+  const leagueRows = useMemo(() => buildLeagueCenterRowsFromMasterDocument({
+    leaguesMasterDoc,
     selectedSeasonKey: seasonKey,
-  }), [leagueDocs, seasonKey])
+  }), [leaguesMasterDoc, seasonKey])
 
   const leagues = useMemo(() => {
     const byText = filterByText(leagueRows, query, ['name', 'birthYear', 'seasonKey'])
@@ -59,16 +64,41 @@ export function useLeagueCenter() {
   }, [ageGroup, birthYear, leagueFilter, leagueRows, query])
 
   const summary = useMemo(() => buildLeagueCenterSummary(leagueRows), [leagueRows])
+
+  const leagueDocs = useMemo(
+    () => buildLeagueCenterLeagueDocsFromMasterDocument({ leaguesMasterDoc }),
+    [leaguesMasterDoc]
+  )
+
   const seasonOptions = useMemo(() => buildLeagueCenterSeasonOptions(leagueDocs), [leagueDocs])
-  const birthYearOptions = useMemo(() => buildLeagueCenterBirthYearOptions(leagueRows), [leagueRows])
-  const ageGroupOptions = useMemo(() => buildLeagueCenterAgeGroupOptions(leagueRows), [leagueRows])
-  const leagueOptions = useMemo(() => buildLeagueCenterLeagueOptions(leagueRows), [leagueRows])
+  const birthYearOptions = useMemo(
+    () => buildLeagueCenterBirthYearOptionsFromMasterDocument({ leaguesMasterDoc }),
+    [leaguesMasterDoc]
+  )
+  const ageGroupOptions = useMemo(() => buildLeagueCenterAgeGroupOptions(leagueDocs), [leagueDocs])
+  const leagueOptions = useMemo(() => buildLeagueCenterLeagueOptions(leagueDocs), [leagueDocs])
 
   return {
-    query, setQuery, leagueFilter, setLeagueFilter, leagueOptions,
-    ageGroup, setAgeGroup, ageGroupOptions, birthYear, setBirthYear,
-    seasonKey, setSeasonKey, seasonTarget: resolveLeagueCenterSeasonTarget(seasonKey),
-    seasonOptions, birthYearOptions, leagues, summary, loading, error,
-    leagueDocs, catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
+    query,
+    setQuery,
+    leagueFilter,
+    setLeagueFilter,
+    leagueOptions,
+    ageGroup,
+    setAgeGroup,
+    ageGroupOptions,
+    birthYear,
+    setBirthYear,
+    seasonKey,
+    setSeasonKey,
+    seasonTarget: resolveLeagueCenterSeasonTarget(seasonKey),
+    seasonOptions,
+    birthYearOptions,
+    leagues,
+    summary,
+    loading,
+    error,
+    leagueDocs,
+    catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
   }
 }

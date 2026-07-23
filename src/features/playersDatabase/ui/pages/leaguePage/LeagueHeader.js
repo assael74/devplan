@@ -52,7 +52,11 @@ export default function LeagueHeader({
       </Stack>
 
       <Stack sx={sx.actionsPanel}>
-        <ActivityStatusChip active={active} />
+        <ActivityStatusChip
+          active={active}
+          activeLabel='ליגה פעילה'
+          inactiveLabel='ליגה לא פעילה'
+        />
 
         <Stack direction='row' spacing={1} sx={sx.actions}>
           <Button

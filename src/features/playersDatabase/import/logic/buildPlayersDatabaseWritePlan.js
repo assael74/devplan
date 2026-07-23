@@ -1,4 +1,4 @@
-import { PLAYERS_DATABASE_RESOLUTION_MODE } from '../../models/playersDatabaseEntityPolicy.js'
+import { PLAYERS_DATABASE_RESOLUTION_MODE } from '../../model/playersDatabaseEntityPolicy.js'
 import { buildTeamIdentity } from '../../catalog/teamIdentity.js'
 
 const clean = (value) => String(value ?? '').trim()
@@ -24,64 +24,6 @@ const buildPlayerUpsert = (rowPlan) => {
     currentLeagueName: clean(identity.leagueName),
     latestSnapshotAt: null,
     snapshotsCount: 0,
-  }
-}
-
-const buildSnapshotCreate = (rowPlan) => {
-  const { identity, policy, sourceRow } = rowPlan
-  const teamSlot = Number(sourceRow.teamSlot) ||
-    Number(policy.team?.catalogMatch?.slot?.slot) ||
-    1
-  const teamIdentity = buildTeamIdentity({
-    clubId: policy.club?.catalogMatch?.id,
-    clubName: policy.club?.catalogMatch?.name || identity.clubName,
-    seasonId: identity.seasonId,
-    ageGroupId: sourceRow.ageGroupId || policy.team?.catalogMatch?.slot?.ageGroupId,
-    ageGroupLabel: sourceRow.ageGroupLabel || policy.team?.catalogMatch?.slot?.ageGroupLabel,
-    teamSlot,
-    leagueId: policy.league?.catalogMatch?.id,
-    leagueName: policy.league?.catalogMatch?.name || identity.leagueName,
-    externalTeamId: sourceRow.externalTeamId,
-  })
-
-  return {
-    playerExternalId: clean(identity.externalPlayerId),
-    seasonId: clean(identity.seasonId),
-    checkpoint: clean(sourceRow.checkpoint),
-    capturedAt: clean(sourceRow.capturedAt),
-    clubCatalogId: clean(policy.club?.catalogMatch?.id),
-    clubName: clean(identity.clubName),
-    teamCatalogId: clean(policy.team?.catalogMatch?.id),
-    teamSlot: teamIdentity.teamSlot,
-    teamSlotId: teamIdentity.teamSlotId,
-    teamSeasonKey: teamIdentity.teamSeasonKey,
-    externalTeamId: clean(sourceRow.externalTeamId),
-    ageGroupId: teamIdentity.ageGroupId,
-    ageGroupLabel: teamIdentity.ageGroupLabel,
-    teamName: clean(identity.teamName),
-    leagueCatalogId: clean(policy.league?.catalogMatch?.id),
-    leagueName: clean(identity.leagueName),
-    context: {
-      teamCatalogId: clean(policy.team?.catalogMatch?.id),
-      teamSlot: teamIdentity.teamSlot,
-      teamSlotId: teamIdentity.teamSlotId,
-      teamSeasonKey: teamIdentity.teamSeasonKey,
-      externalTeamId: clean(sourceRow.externalTeamId),
-      ageGroupId: teamIdentity.ageGroupId,
-      ageGroupLabel: teamIdentity.ageGroupLabel,
-      teamName: clean(identity.teamName),
-      leagueCatalogId: clean(policy.league?.catalogMatch?.id),
-      leagueName: clean(identity.leagueName),
-      minutes: toNumberOrZero(sourceRow.minutes),
-      goals: toNumberOrZero(sourceRow.goals),
-      appearances: toNumberOrZero(sourceRow.appearances),
-      starts: toNumberOrZero(sourceRow.starts),
-      playingUpMinutes: toNumberOrZero(sourceRow.playingUpMinutes),
-    },
-    source: {
-      type: 'import_preview',
-      profileUrl: clean(sourceRow.profileUrl),
-    },
   }
 }
 
@@ -119,7 +61,6 @@ export function buildPlayersDatabaseWritePlan(importPlan = {}) {
 
   const writePlan = {
     playersToUpsert: [],
-    snapshotsToCreate: [],
     clubsNameOnlyRefs: [],
     teamsNameOnlyRefs: [],
     leagueRefs: [],
@@ -166,10 +107,6 @@ export function buildPlayersDatabaseWritePlan(importPlan = {}) {
         upsertedPlayers.add(playerKey)
         writePlan.playersToUpsert.push(buildPlayerUpsert(rowPlan))
       }
-    }
-
-    if (policy.snapshot.mode === PLAYERS_DATABASE_RESOLUTION_MODE.MANAGED) {
-      writePlan.snapshotsToCreate.push(buildSnapshotCreate(rowPlan))
     }
 
     if (policy.snapshot.mode === PLAYERS_DATABASE_RESOLUTION_MODE.CANDIDATE) {
@@ -227,11 +164,10 @@ export function buildPlayersDatabaseWritePlan(importPlan = {}) {
     }
   })
 
-  return {
+    return {
     ...writePlan,
     summary: {
       playersToUpsert: writePlan.playersToUpsert.length,
-      snapshotsToCreate: writePlan.snapshotsToCreate.length,
       clubsNameOnlyRefs: writePlan.clubsNameOnlyRefs.length,
       teamsNameOnlyRefs: writePlan.teamsNameOnlyRefs.length,
       leagueRefs: writePlan.leagueRefs.length,

@@ -28,26 +28,6 @@ const leagueIdFrom = (context = {}) => {
   ].filter(Boolean).join('_')
 }
 
-const snapId = ({ leagueId, seasonKey: key, capturedAt, roundNumber }) =>
-  [
-    leagueId,
-    key,
-    clean(roundNumber) ? `r${roundNumber}` : '',
-    clean(capturedAt).replace(/[^0-9a-zA-Z]+/g, '_') || 'draft',
-  ].filter(Boolean).join('__')
-
-const firstDate = (context, rows = []) => {
-  if (clean(context.capturedAt)) return clean(context.capturedAt)
-
-  const row = rows.find((item) => clean(item?.sourceRow?.capturedAt))
-  return clean(row?.sourceRow?.capturedAt)
-}
-
-const firstRound = (rows = []) => {
-  const row = rows.find((item) => clean(item?.sourceRow?.roundNumber))
-  return toNumOrNull(row?.sourceRow?.roundNumber)
-}
-
 const standingRow = (rowPlan) => {
   const { identity, sourceRow } = rowPlan
   const goalsFor = toNumOrNull(sourceRow.goalsFor)
@@ -89,7 +69,7 @@ const leagueBase = (context, rows) => {
   }
 }
 
-const seasonState = (context, rows, snapshotId, capturedAt) => {
+const seasonState = (context, rows) => {
   const loadedRows = rows.map(standingRow)
   const clubIds = uniq(loadedRows.map((row) => row.clubId))
   const clubsCount = context.teamsCount === '' ? loadedRows.length : Number(context.teamsCount)
@@ -101,77 +81,17 @@ const seasonState = (context, rows, snapshotId, capturedAt) => {
     clubsCount,
     loadedClubsCount: loadedRows.length,
     clubIds,
-    latestSnapshotId: snapshotId,
-    latestSnapshotAt: capturedAt,
-    snapshotsCount: 1,
   }
 }
 
-const snapshotSummary = (rows = []) => {
-  const standingRows = rows.map(standingRow)
-  const first = standingRows[0] || null
-  const last = standingRows[standingRows.length - 1] || null
-
-  return {
-    rowsCount: standingRows.length,
-    matchedClubsCount: standingRows.filter((row) => row.clubId).length,
-    unmatchedClubsCount: standingRows.filter((row) => !row.clubId).length,
-    topClubId: clean(first?.clubId),
-    topClubName: clean(first?.clubName),
-    bottomClubId: clean(last?.clubId),
-    bottomClubName: clean(last?.clubName),
-  }
-}
-
-const leagueUpsert = (context, rows, snapshotId, capturedAt) => {
+const leagueUpsert = (context, rows) => {
   const base = leagueBase(context, rows)
   const key = seasonKey(context.seasonId)
 
   return {
     ...base,
     seasons: {
-      [key]: seasonState(context, rows, snapshotId, capturedAt),
-    },
-  }
-}
-
-const snapshotCreate = (context, rows) => {
-  const base = leagueBase(context, rows)
-  const key = seasonKey(context.seasonId)
-  const capturedAt = firstDate(context, rows)
-  const roundNumber = firstRound(rows)
-  const id = snapId({
-    leagueId: base.id,
-    seasonKey: key,
-    capturedAt,
-    roundNumber,
-  })
-  const season = seasonState(context, rows, id, capturedAt)
-
-  return {
-    id,
-    leagueId: base.id,
-    catalogLeagueId: base.catalogLeagueId,
-    seasonKey: key,
-    seasonId: season.seasonId,
-    snapshotType: 'league_table',
-    capturedAt,
-    roundNumber,
-    leagueName: base.leagueName,
-    level: base.level,
-    region: base.region,
-    leagueNum: base.leagueNum,
-    ageGroupId: base.ageGroupId,
-    ageGroupLabel: base.ageGroupLabel,
-    birthYears: season.birthYears,
-    primaryBirthYear: season.primaryBirthYear,
-    clubsCount: season.clubsCount,
-    loadedClubsCount: season.loadedClubsCount,
-    clubIds: season.clubIds,
-    rows: rows.map(standingRow),
-    summary: snapshotSummary(rows),
-    source: {
-      type: 'import_preview',
+      [key]: seasonState(context, rows),
     },
   }
 }
@@ -182,7 +102,6 @@ export function buildPlayersDatabaseLeagueTableWritePlan(importPlan = {}) {
   const writePlan = {
     flowType: 'league_table',
     leaguesToUpsert: [],
-    leagueSnapshotsToCreate: [],
     warnings: [],
     blockedRows: [],
   }
@@ -191,9 +110,7 @@ export function buildPlayersDatabaseLeagueTableWritePlan(importPlan = {}) {
     const rows = context.rows.filter((rowPlan) => rowPlan.valid)
     if (!rows.length) return
 
-    const snapshot = snapshotCreate(context, rows)
-    writePlan.leagueSnapshotsToCreate.push(snapshot)
-    writePlan.leaguesToUpsert.push(leagueUpsert(context, rows, snapshot.id, snapshot.capturedAt))
+    writePlan.leaguesToUpsert.push(leagueUpsert(context, rows))
   })
 
   const rows = Array.isArray(importPlan?.rows) ? importPlan.rows : []
@@ -220,7 +137,6 @@ export function buildPlayersDatabaseLeagueTableWritePlan(importPlan = {}) {
     ...writePlan,
     summary: {
       leaguesToUpsert: writePlan.leaguesToUpsert.length,
-      leagueSnapshotsToCreate: writePlan.leagueSnapshotsToCreate.length,
       warnings: writePlan.warnings.length,
       blockedRows: writePlan.blockedRows.length,
     },

@@ -19,6 +19,7 @@ import {
   leagueDocRef,
 } from './leagueDoc.js'
 import { buildSeasonDoc, isSameSeason } from './leagueSeason.js'
+import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
 
 
 const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' } = {}) => {
@@ -106,7 +107,7 @@ export async function removeLeagueSeason({
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -144,6 +145,13 @@ export async function removeLeagueSeason({
       removed: true,
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: seasonKey,
+  })
+
+  return result
 }
 
 const removeTeamFromTableRank = ({
@@ -177,7 +185,7 @@ export async function removeLeagueSeasonTeam({
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -236,4 +244,11 @@ export async function removeLeagueSeasonTeam({
       removed: true,
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: seasonKey,
+  })
+
+  return result
 }

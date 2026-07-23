@@ -1,129 +1,24 @@
 // features/playersDatabase/ui/pages/playerPage/PlayerPage.js
 
-import * as React from 'react'
-import {
-  Box,
-  Button,
-  Card,
-  Stack,
-  Typography,
-} from '@mui/joy'
+import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import Breadcrumbs from '../../layout/Breadcrumbs.js'
-import StatCard from '../../components/cards/StatCard.js'
-import DataTable from '../../components/tables/DataTable.js'
-
 import { usePlayerPage } from '../../hooks/usePlayerPage.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
-
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import playerImage from '../../../../../ui/core/images/playerImage.jpg'
-import { playerSx as sx } from './player.sx.js'
-
-function ReasonsPanel({ reasons = [] }) {
-  return (
-    <Card sx={sx.reasonsPanel}>
-      <Box sx={sx.panelHeader}>
-        <Typography
-          level='title-lg'
-          sx={sx.panelTitle}
-        >
-          למה סומן?
-        </Typography>
-
-        <Box sx={sx.panelIcon}>
-          {iconUi({id: 'targets', size: 'md'})}
-        </Box>
-      </Box>
-
-      <Stack
-        spacing={1}
-        className='dpScrollThin'
-        sx={sx.reasonsList}
-      >
-        {reasons.map(reason => (
-          <Box
-            key={reason}
-            sx={sx.reasonItem}
-          >
-            <Box sx={sx.reasonDot} />
-
-            <Typography
-              level='body-sm'
-              sx={sx.reasonText}
-            >
-              {reason}
-            </Typography>
-          </Box>
-        ))}
-      </Stack>
-    </Card>
-  )
-}
-
-function TeamContextPanel({ player }) {
-  const items = [
-    {
-      label: 'קבוצה',
-      value: player.teamName,
-    },
-    {
-      label: 'ליגה',
-      value: player.leagueName,
-    },
-    {
-      label: 'תפקיד',
-      value: player.position,
-    },
-    {
-      label: 'גיל',
-      value: player.ageLabel,
-    },
-  ]
-
-  return (
-    <Card sx={sx.contextPanel}>
-      <Typography
-        level='title-lg'
-        sx={sx.panelTitle}
-      >
-        הקשר קבוצתי
-      </Typography>
-
-      <Box sx={sx.contextGrid}>
-        {items.map(item => (
-          <Box
-            key={item.label}
-            sx={sx.contextItem}
-          >
-            <Typography
-              level='body-xs'
-              sx={sx.contextLabel}
-            >
-              {item.label}
-            </Typography>
-
-            <Typography
-              level='title-sm'
-              sx={sx.contextValue}
-            >
-              {item.value}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-    </Card>
-  )
-}
+import PlayerHeader from './PlayerHeader.js'
+import PlayerStatsOverview from './PlayerStatsOverview.js'
+import PlayerHistorySection from './PlayerHistorySection.js'
+import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
+import { playerPageSx as sx } from './sx/playerPage.sx.js'
 
 export default function PlayerPage() {
   const navigate = useNavigate()
   const { player } = usePlayerPage()
+  const historyView = usePlayerHistoryView(player)
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
@@ -131,37 +26,15 @@ export default function PlayerPage() {
       to: PLAYERS_DATABASE_UI_ROUTES.search,
     },
     {
-      label: player.teamName,
-    },
-    {
       label: player.fullName,
     },
   ])
-
-  const columns = [
-    {
-      key: 'label',
-      label: 'פרופיל',
-      sx: sx.profileNameColumn,
-    },
-    {
-      key: 'score',
-      label: 'ציון',
-      sx: sx.profileScoreColumn,
-      render: row => `${row.score}/100`,
-    },
-    {
-      key: 'reliability',
-      label: 'אמינות',
-      sx: sx.profileReliabilityColumn,
-    },
-  ]
 
   const handleNavigateToSearch = () => {
     navigate(PLAYERS_DATABASE_UI_ROUTES.search)
   }
 
-  const handleNavigateToLeague = () => {
+  const handleNavigateToTeam = () => {
     if (!player.leagueId || !player.teamId) return
 
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
@@ -171,197 +44,40 @@ export default function PlayerPage() {
     }))
   }
 
+  const handleHistoryOpen = row => {
+    console.info('Player season context', row)
+  }
+
+  const handleAction = actionId => {
+    console.info('Player placeholder action', actionId)
+  }
+
   return (
     <PlayersDatabaseLayout>
       <Box sx={sx.page}>
-        <Box sx={sx.header}>
-          <Stack sx={sx.headerCopy}>
-            <Breadcrumbs items={breadcrumbs} />
+        <PlayerHeader
+          breadcrumbs={breadcrumbs}
+          player={player}
+          onSearch={handleNavigateToSearch}
+          onTeam={handleNavigateToTeam}
+        />
 
-            <Typography
-              level='h1'
-              sx={sx.pageTitle}
-            >
-              שחקן: {player.fullName}
-            </Typography>
+        <PlayerStatsOverview
+          player={player}
+          historyRows={historyView.rows}
+        />
 
-            <Stack
-              direction='row'
-              spacing={1}
-              sx={sx.reliabilityRow}
-            >
-              <Typography
-                level='body-sm'
-                sx={sx.reliabilityLabel}
-              >
-                אמינות האיתור:
-              </Typography>
-
-              <Box sx={sx.reliabilityDot} />
-
-              <Typography
-                level='title-sm'
-                sx={sx.reliabilityValue}
-              >
-                {player.reliability}
-              </Typography>
-            </Stack>
-          </Stack>
-
-          <Box sx={sx.headerPlayer}>
-            <Box
-              component='img'
-              src={player.avatarUrl || playerImage}
-              alt={player.fullName}
-              sx={sx.playerAvatar}
-            />
-
-            <Stack
-              spacing={0.25}
-              sx={sx.headerPlayerInfo}
-            >
-              <Typography
-                level='title-lg'
-                sx={sx.headerPlayerName}
-              >
-                {player.fullName}
-              </Typography>
-
-              <Typography
-                level='title-sm'
-                sx={sx.headerTeamName}
-              >
-                {player.teamName}
-              </Typography>
-
-              <Typography
-                level='body-xs'
-                sx={sx.headerPlayerMeta}
-              >
-                {player.position} · {player.ageLabel}
-              </Typography>
-            </Stack>
-          </Box>
-
-          <Stack
-            direction='row'
-            spacing={1}
-            sx={sx.headerActions}
-          >
-            <Button
-              startDecorator={iconUi({id: 'back', size: 'sm'})}
-              sx={sx.primaryButton}
-              onClick={handleNavigateToSearch}
-            >
-              חזרה לחיפוש
-            </Button>
-
-            <Button
-              variant='outlined'
-              startDecorator={iconUi({id: 'back', size: 'sm'})}
-              sx={sx.secondaryButton}
-              onClick={handleNavigateToLeague}
-            >
-              חזרה לקבוצה
-            </Button>
-          </Stack>
-        </Box>
-
-        <Box sx={sx.statsGrid}>
-          <StatCard
-            title='אמינות איתור'
-            value={player.reliability}
-            caption='לפי נתוני עמדה וסטטיסטיקה'
-            iconId='targets'
-          />
-
-          <StatCard
-            title='דקות משחק'
-            value={player.minutes}
-            caption='בעונה הנוכחית'
-            iconId='hour'
-          />
-
-          <StatCard
-            title='שערים'
-            value={player.goals}
-            caption={`${player.goalsPerGame} למשחק`}
-            iconId='stats'
-          />
-
-          <StatCard
-            title='הופעות בהרכב'
-            value={`${player.startsPct}%`}
-            caption='מהמשחקים'
-            iconId='players'
-          />
-        </Box>
-
-        <Box sx={sx.contentGrid}>
-          <Box sx={sx.mainContent}>
-            <Card sx={sx.profilesPanel}>
-              <Box sx={sx.panelHeader}>
-                <Typography
-                  level='title-lg'
-                  sx={sx.panelTitle}
-                >
-                  פרופילי סקאוט
-                </Typography>
-
-                <Typography
-                  level='body-xs'
-                  sx={sx.panelCount}
-                >
-                  {player.scoutProfiles.length} פרופילים
-                </Typography>
-              </Box>
-
-              <DataTable
-                className='dpScrollThin'
-                columns={columns}
-                rows={player.scoutProfiles}
-                getRowKey={row => row.id}
-                wrapSx={sx.profilesTableWrap}
-                tableSx={sx.profilesTable}
-              />
-            </Card>
-
-            <TeamContextPanel player={player} />
-          </Box>
-
-          <ReasonsPanel reasons={player.reasons} />
-        </Box>
-
-        <Stack
-          direction='row'
-          spacing={1}
-          sx={sx.footerActions}
-        >
-          <Button
-            variant='outlined'
-            startDecorator={iconUi({id: 'reports', size: 'sm'})}
-            sx={sx.footerButton}
-          >
-            פרופיל סקאוט
-          </Button>
-
-          <Button
-            variant='outlined'
-            startDecorator={iconUi({id: 'back', size: 'sm'})}
-            sx={sx.footerButton}
-            onClick={handleNavigateToSearch}
-          >
-            חזרה לחיפוש
-          </Button>
-
-          <Button
-            startDecorator={iconUi({id: 'teams', size: 'sm'})}
-            sx={sx.footerPrimaryButton}
-            onClick={handleNavigateToLeague}
-          >
-            מעבר לקבוצה
-          </Button>
-        </Stack>
+        <PlayerHistorySection
+          rows={historyView.visibleRows}
+          selectedSeasonKey={historyView.selectedSeasonKey}
+          seasonOptions={historyView.seasonOptions}
+          filter={historyView.filter}
+          hasRealData={historyView.hasRealData}
+          onSeasonChange={historyView.setSelectedSeasonKey}
+          onFilterChange={historyView.setFilter}
+          onRowOpen={handleHistoryOpen}
+          onAction={handleAction}
+        />
       </Box>
     </PlayersDatabaseLayout>
   )

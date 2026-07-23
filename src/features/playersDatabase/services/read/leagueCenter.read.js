@@ -1,7 +1,7 @@
 // features/playersDatabase/services/read/leagueCenter.read.js
 
-import { listLeagues } from './league.js'
+import { readLeaguesMasterDocument } from './leaguesMaster.read.js'
 
 export const readLeagueCenterData = async () => ({
-  leagueDocs: await listLeagues(),
+  leaguesMasterDoc: await readLeaguesMasterDocument(),
 })

@@ -6,7 +6,11 @@ import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { leagueCenterPageSx as sx } from './sx/leagueCenterPage.sx.js'
 
-export default function LeagueCenterHeader({ breadcrumbs, onNavigateToSearch, onNavigateToEntry }) {
+export default function LeagueCenterHeader({
+  breadcrumbs,
+  onNavigateToSearch,
+  onNavigateToEntry,
+}) {
   return (
     <Box sx={sx.header}>
       <Stack sx={sx.headerCopy}>

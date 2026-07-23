@@ -69,10 +69,34 @@ const CLUB_SHORT_NAMES = {
   'בית"ר ירושלים': 'בית"ר י"ם',
   'הפועל רמת השרון': 'הפועל רמה"ש',
   'הפועל רמת גן': 'הפועל ר"ג',
+  'מועדון כדורגל חולון ירמיהו': 'מ.כ ירמיהו חולון',
   'מ.ס אשדוד': 'מ.ס אשדוד',
   'מ.כ אשדוד': 'מ.כ אשדוד',
   'א.ס אשדוד': 'א.ס אשדוד',
 };
+
+const CLUB_PREFIX_SHORT_NAMES = [
+  { prefix: 'מועדון ספורט כדורגל', short: 'מ.ס' },
+  { prefix: 'מועדון כדורגל', short: 'מ.כ' },
+  { prefix: 'מועדון ספורט', short: 'מ.ס' },
+  { prefix: 'אגודת ספורט', short: 'א.ס' },
+]
+
+const clean = value => String(value ?? '').trim()
+
+const buildClubShortNameFromPrefix = name => {
+  const clubName = clean(name)
+  if (!clubName) return ''
+
+  for (const item of CLUB_PREFIX_SHORT_NAMES) {
+    if (!clubName.startsWith(item.prefix)) continue
+
+    const rest = clean(clubName.slice(item.prefix.length))
+    return [item.short, rest].filter(Boolean).join(' ')
+  }
+
+  return clubName
+}
 
 const decorateAgeGroups = clubLevel =>
   AGE_GROUPS.map(ageGroup =>
@@ -88,7 +112,7 @@ const decorateAgeGroups = clubLevel =>
 
 const decorateClubCatalogItem = club => ({
   ...club,
-  shortName: CLUB_SHORT_NAMES[club.name] || club.name,
+  shortName: CLUB_SHORT_NAMES[club.name] || buildClubShortNameFromPrefix(club.name),
   ageGroups: decorateAgeGroups(club.clubLevel),
 });
 

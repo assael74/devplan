@@ -5,6 +5,8 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   leagues: 'dbLeagues',
   teams: 'dbBirthTeams',
   searchIndexes: 'dbSearchIndexes',
+  leagueCenterIndex: 'dbLeagueCenterIndex',
+  leaguesMaster: 'dbLeaguesMaster',
 }
 
 export const PLAYERS_DATABASE_IMPORT_FLOW = {

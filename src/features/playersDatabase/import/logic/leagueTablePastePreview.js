@@ -372,15 +372,9 @@ export function buildLeagueTablePastePreview(text = '', options = {}) {
   }
 }
 
-export function buildLeagueSnapshotWritePlanFromPreview(preview = {}, context = {}) {
+export function buildLeagueTableWritePlanFromPreview(preview = {}, context = {}) {
   const rows = (preview.rows || []).filter((row) => row.valid)
   const seasonKey = `s${clean(context.seasonId).replace(/[^0-9a-zA-Z]+/g, '_')}`
-  const snapshotId = [
-    clean(context.leagueId),
-    seasonKey,
-    clean(context.roundNumber) ? `r${clean(context.roundNumber)}` : '',
-    clean(context.capturedAt).replace(/[^0-9a-zA-Z]+/g, '_') || 'draft',
-  ].filter(Boolean).join('__')
   const clubIds = rows.map((row) => row.data.clubId).filter(Boolean)
 
   return {
@@ -401,65 +395,11 @@ export function buildLeagueSnapshotWritePlanFromPreview(preview = {}, context = 
           clubsCount: Number(context.clubsCount || rows.length),
           loadedClubsCount: rows.length,
           clubIds,
-          latestSnapshotId: snapshotId,
-          latestSnapshotAt: clean(context.capturedAt),
-          snapshotsCount: 1,
         },
-      },
-    }],
-    leagueSnapshotsToCreate: [{
-      id: snapshotId,
-      leagueId: clean(context.leagueId),
-      seasonKey,
-      seasonId: clean(context.seasonId),
-      snapshotType: 'league_table',
-      capturedAt: clean(context.capturedAt),
-      roundNumber: Number(context.roundNumber) || null,
-      leagueName: clean(context.leagueName),
-      level: context.level ?? null,
-      region: clean(context.region),
-      leagueNum: context.leagueNum ?? null,
-      ageGroupId: clean(context.ageGroupId),
-      ageGroupLabel: clean(context.ageGroupLabel),
-      birthYears: context.primaryBirthYear ? [Number(context.primaryBirthYear)] : [],
-      primaryBirthYear: context.primaryBirthYear ? Number(context.primaryBirthYear) : null,
-      clubsCount: Number(context.clubsCount || rows.length),
-      loadedClubsCount: rows.length,
-      clubIds,
-      rows: rows.map((row) => ({
-        rowId: `row-${row.displayIndex}`,
-        leaguePosition: row.data.leaguePosition,
-        clubId: row.data.clubId,
-        clubName: row.data.clubCatalogName || row.data.clubName,
-        sourceClubName: row.data.clubName,
-        teamSlot: row.data.teamSlot,
-        teamSlotId: row.data.teamSlotId,
-        teamSeasonKey: row.data.teamSeasonKey,
-        games: row.data.games,
-        wins: row.data.wins,
-        draws: row.data.draws,
-        losses: row.data.losses,
-        goalsFor: row.data.goalsFor,
-        goalsAgainst: row.data.goalsAgainst,
-        goalDifference: row.data.goalDifference,
-        points: row.data.points,
-      })),
-      summary: {
-        rowsCount: rows.length,
-        matchedClubsCount: clubIds.length,
-        unmatchedClubsCount: 0,
-        topClubId: rows[0]?.data?.clubId || '',
-        topClubName: rows[0]?.data?.clubCatalogName || rows[0]?.data?.clubName || '',
-        bottomClubId: rows[rows.length - 1]?.data?.clubId || '',
-        bottomClubName: rows[rows.length - 1]?.data?.clubCatalogName || rows[rows.length - 1]?.data?.clubName || '',
-      },
-      source: {
-        type: 'paste',
       },
     }],
     summary: {
       leaguesToUpsert: 1,
-      leagueSnapshotsToCreate: 1,
       warnings: 0,
       blockedRows: preview.ok ? 0 : 1,
     },

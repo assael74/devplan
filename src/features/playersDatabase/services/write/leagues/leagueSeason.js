@@ -11,6 +11,7 @@ import {
   leagueDocRef,
   toNumberOrZero,
 } from './leagueDoc.js'
+import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
 
 export { buildSeasonKey } from './leagueDoc.js'
 
@@ -75,7 +76,7 @@ export async function upsertLeagueSeason({
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -117,6 +118,13 @@ export async function upsertLeagueSeason({
       createdLeague: !snapshot.exists(),
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: clean(season.seasonKey) || buildSeasonKey(seasonId),
+  })
+
+  return result
 }
 
 export async function updateLeagueSeasonUrl({
@@ -127,23 +135,23 @@ export async function updateLeagueSeasonUrl({
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
+  const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const nextData = isHistory
       ? {
           ...baseDoc,
           history: updateHistorySeason({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey },
+            season: { ...season, seasonId, seasonKey: resolvedSeasonKey },
             patch: {
               seasonUrl: clean(seasonUrl),
               updatedAt: new Date().toISOString(),
@@ -153,9 +161,9 @@ export async function updateLeagueSeasonUrl({
       : {
           ...baseDoc,
           current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey: resolvedSeasonKey })),
             seasonId,
-            seasonKey,
+            seasonKey: resolvedSeasonKey,
             seasonUrl: clean(seasonUrl),
             updatedAt: new Date().toISOString(),
           },
@@ -166,11 +174,18 @@ export async function updateLeagueSeasonUrl({
     return {
       leagueId,
       seasonId,
-      seasonKey,
+      seasonKey: resolvedSeasonKey,
       seasonUrl: clean(seasonUrl),
       target: isHistory ? 'history' : 'current',
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: resolvedSeasonKey,
+  })
+
+  return result
 }
 
 export async function updateLeagueSeasonMeta({
@@ -182,16 +197,16 @@ export async function updateLeagueSeasonMeta({
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
+  const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const patch = {
       birthYear: toNumberOrZero(birthYear ?? season.birthYear),
@@ -203,16 +218,16 @@ export async function updateLeagueSeasonMeta({
           ...baseDoc,
           history: updateHistorySeason({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey },
+            season: { ...season, seasonId, seasonKey: resolvedSeasonKey },
             patch,
           }),
         }
       : {
           ...baseDoc,
           current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey: resolvedSeasonKey })),
             seasonId,
-            seasonKey,
+            seasonKey: resolvedSeasonKey,
             ...patch,
           },
         }
@@ -222,12 +237,19 @@ export async function updateLeagueSeasonMeta({
     return {
       leagueId,
       seasonId,
-      seasonKey,
+      seasonKey: resolvedSeasonKey,
       target: isHistory ? 'history' : 'current',
       birthYear: patch.birthYear,
       leagueTotalRound: patch.leagueTotalRound,
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: resolvedSeasonKey,
+  })
+
+  return result
 }
 
 export const updateHistorySeason = ({

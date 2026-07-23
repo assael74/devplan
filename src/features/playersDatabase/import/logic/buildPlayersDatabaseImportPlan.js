@@ -1,7 +1,7 @@
 import {
   PLAYERS_DATABASE_RESOLUTION_MODE,
   resolvePlayersDatabaseEntityPolicy,
-} from '../../models/playersDatabaseEntityPolicy.js'
+} from '../../model/playersDatabaseEntityPolicy.js'
 
 const emptyBucket = () => ({
   total: 0,

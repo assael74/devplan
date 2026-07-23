@@ -24,12 +24,12 @@ export function buildClubTeamSlots(club = {}) {
       return {
         id: `${club.id || 'club'}_${template.ageGroupId}_${slot}`,
         clubId: club.id || '',
-        clubName: club.name || '',
+        clubName: club.shortName || club.name || '',
         ageGroupId: template.ageGroupId,
         ageGroupLabel: template.ageGroupLabel,
         slot,
         teamName: `${template.ageGroupLabel} ${slot}`,
-        displayName: `${club.name || ''} ${template.ageGroupLabel} ${slot}`.trim(),
+        displayName: `${club.shortName || club.name || ''} ${template.ageGroupLabel} ${slot}`.trim(),
       }
     })
   })

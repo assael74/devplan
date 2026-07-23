@@ -60,7 +60,7 @@ export const pdbTableSx = {
       color: devPlanColors.primaryDark,
       fontWeight: 700,
       whiteSpace: 'normal',
-      textAlign: 'left',
+      textAlign: 'center',
       verticalAlign: 'middle',
       lineHeight: 1.15,
       borderBottom: '1px solid #dbe5f4',
@@ -70,18 +70,14 @@ export const pdbTableSx = {
       px: 1,
       py: 0.65,
       whiteSpace: 'normal',
-      textAlign: 'left',
+      textAlign: 'center',
       verticalAlign: 'middle',
     },
 
     '& th:first-of-type, & td:first-of-type': {
-      textAlign: 'left',
+      textAlign: 'center',
       pr: 1.5,
       pl: 1.5,
-    },
-
-    '& th:not(:first-of-type), & td:not(:first-of-type)': {
-      textAlign: 'center',
     },
 
     '& tbody tr:hover': {
@@ -95,7 +91,6 @@ export const pdbTableSx = {
     p: 0,
     display: 'flex',
     alignItems: 'center',
-    //justifyContent: 'flex-start',
     color: 'inherit',
     bgcolor: 'transparent',
     border: 0,

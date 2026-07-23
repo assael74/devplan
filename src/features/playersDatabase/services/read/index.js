@@ -14,6 +14,7 @@ export {
 export { readTeamPageData } from './teamPage.read.js'
 export { readLeaguePageData } from './leaguePage.read.js'
 export { readLeagueCenterData } from './leagueCenter.read.js'
+export { readLeaguesMasterDocument } from './leaguesMaster.read.js'
 
 export { readPlayerPageData } from './playerPage.read.js'
 export { readSearchPageData } from './searchPage.read.js'

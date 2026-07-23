@@ -12,6 +12,7 @@ import {
   toNumberOrZero,
 } from './leagueDoc.js'
 import { buildSeasonDoc, updateHistorySeason } from './leagueSeason.js'
+import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
@@ -79,12 +80,13 @@ export async function updateLeagueSeasonTableRank({
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
+  const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -123,6 +125,13 @@ export async function updateLeagueSeasonTableRank({
       rowsCount: tableRank.length,
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: resolvedSeasonKey,
+  })
+
+  return result
 }
 
 const updateTableRankRowTeamUrl = ({
@@ -236,7 +245,7 @@ export async function updateLeagueSeasonTableRankTeamUrl({
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
 
     if (!snapshot.exists()) {
@@ -344,6 +353,13 @@ export async function updateLeagueSeasonTableRankTeamUrl({
       updated: true,
     }
   })
+
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: clean(season.seasonKey) || buildSeasonKey(seasonId),
+  })
+
+  return result
 }
 
 export async function updateLeagueSeasonTableRankScoutProfilesSummary({
@@ -355,12 +371,13 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
+  const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  const result = await runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -400,5 +417,11 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
       scoutProfilesSummary,
     }
   })
-}
 
+  await syncLeagueCenterIndexRows({
+    leagues: [league],
+    selectedSeasonKey: resolvedSeasonKey,
+  })
+
+  return result
+}

@@ -4,13 +4,24 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { buildSearchPageView } from '../../model/searchPage.model.js'
 import { readSearchPageData } from '../../services/read/index.js'
-import { filterByText } from '../logic/filters.logic.js'
 
-export function useSearchPage() {
-  const [query, setQuery] = useState('')
-  const [rows, setRows] = useState([])
+const EMPTY_VIEW = {
+  rows: [],
+  summary: {
+    total: 0,
+    highReliability: 0,
+    saved: 0,
+    interesting: 0,
+  },
+  activityItems: [],
+  totalCount: 0,
+}
+
+export function useSearchPage(filters = {}) {
+  const [view, setView] = useState(EMPTY_VIEW)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const filtersKey = useMemo(() => JSON.stringify(filters || {}), [filters])
 
   useEffect(() => {
     let active = true
@@ -18,46 +29,38 @@ export function useSearchPage() {
     setLoading(true)
     setError(null)
 
-    readSearchPageData()
+    readSearchPageData({ filters })
       .then(data => {
         if (!active) return
-        setRows(data)
+
+        const builtView = buildSearchPageView(data.rows || [])
+
+        setView({
+          rows: builtView.results,
+          summary: {
+            ...builtView.summary,
+            total: data.totalCount || 0,
+          },
+          activityItems: builtView.activityItems,
+          totalCount: data.totalCount || 0,
+        })
         setLoading(false)
       })
       .catch(nextError => {
         if (!active) return
-        setRows([])
+
+        setView(EMPTY_VIEW)
         setError(nextError)
         setLoading(false)
       })
 
-    return () => { active = false }
-  }, [])
-
-  const view = useMemo(
-    () => buildSearchPageView(rows),
-    [rows]
-  )
-
-  const results = useMemo(() => filterByText(
-    view.results,
-    query,
-    ['playerName', 'teamName', 'leagueName', 'primaryProfile', 'secondaryProfile']
-  ), [query, view.results])
-
-  const summary = useMemo(() => ({
-    total: results.length,
-    highReliability: results.filter(row => row.reliability === 'גבוהה').length,
-    saved: results.filter(row => row.favorite).length,
-    interesting: results.filter(row => row.score >= 80).length,
-  }), [results])
+    return () => {
+      active = false
+    }
+  }, [filters, filtersKey])
 
   return {
-    query,
-    setQuery,
-    results,
-    summary,
-    activityItems: view.activityItems,
+    ...view,
     loading,
     error,
   }

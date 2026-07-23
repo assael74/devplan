@@ -5,6 +5,7 @@ import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+import { buildPlayerSeasonIndexDoc } from './playerSeasonIndex.model.js'
 import {
   buildPlayerSeasonIndexIdFromPayload,
   findPlayerSeasonIndexDocForPayload,
@@ -74,20 +75,24 @@ export const updatePlayerSeasonSearchIndexRole = payload => {
     : []
   const primaryScoutSignal = scoutSignals[0] || null
   const secondaryScoutSignal = scoutSignals[1] || null
+  const player = {
+    ...(payload.player || {}),
+    primaryPosition: clean(payload.primaryPosition || payload.player?.primaryPosition),
+    positionLayer: clean(payload.positionLayer || payload.player?.positionLayer),
+    numShirt: clean(payload.numShirt || payload.player?.numShirt),
+    scoutSignals,
+  }
 
   return updatePlayerSeasonSearchIndexFields({
     ...payload,
-    fields: {
-      primaryPosition: clean(payload.primaryPosition),
-      positionLayer: clean(payload.positionLayer),
-      numShirt: clean(payload.numShirt),
-      primaryScoutProfileId: clean(primaryScoutSignal?.profileId),
-      primaryScoutReliabilityLevel: clean(primaryScoutSignal?.reliability?.level),
-      primaryScoutScore: Number.isFinite(Number(primaryScoutSignal?.score)) ? Number(primaryScoutSignal.score) : null,
-      secondaryScoutProfileId: clean(secondaryScoutSignal?.profileId),
-      secondaryScoutReliabilityLevel: clean(secondaryScoutSignal?.reliability?.level),
-      secondaryScoutScore: Number.isFinite(Number(secondaryScoutSignal?.score)) ? Number(secondaryScoutSignal.score) : null,
-    },
+    player,
+    fields: buildPlayerSeasonIndexDoc({
+      league: payload.league || {},
+      season: payload.season || {},
+      team: payload.team || {},
+      target: payload.target || 'current',
+      player,
+    }),
   })
 }
 

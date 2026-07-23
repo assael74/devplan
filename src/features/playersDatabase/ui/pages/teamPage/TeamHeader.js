@@ -36,7 +36,11 @@ export default function TeamHeader({
       </Stack>
 
       <Stack sx={sx.headerActionsPanel}>
-        <ActivityStatusChip active={active} />
+        <ActivityStatusChip
+          active={active}
+          activeLabel='ליגה פעילה'
+          inactiveLabel='ליגה לא פעילה'
+        />
 
         <Stack direction='row' spacing={1} sx={sx.headerActions}>
           <Button
