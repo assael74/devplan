@@ -7,6 +7,7 @@ import { clean } from '../../leagues/leagueDoc.js'
 import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
+import { buildTeamScoutLeagueModel, TEAM_SCOUT_NORMALIZATION_MODE, TEAM_SCOUT_SORT_MODE } from '../../../../../../shared/teams/scout/index.js'
 import {
   buildRankMap,
   buildTeamSeasonIndexDoc,
@@ -36,6 +37,18 @@ export async function upsertTeamSeasonSearchIndexMany({
     valueGetter: getRowGoalsAgainst,
     direction: 'asc',
   })
+  const scoutResultMap = new Map(
+    buildTeamScoutLeagueModel({
+      leagueLevel: league.level,
+      leagueNumGames: season.leagueTotalRound || 30,
+      rows: safeRows,
+      normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+      sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
+    }).rows.map(row => [
+      clean(resolveTeamLookupKey(row) || row.clubId || row.rank),
+      row,
+    ])
+  )
 
   const batch = writeBatch(db)
   const docs = safeRows
@@ -48,6 +61,7 @@ export async function upsertTeamSeasonSearchIndexMany({
         row,
         tableAttackRank: tableAttackRanks[rowKey],
         tableDefenseRank: tableDefenseRanks[rowKey],
+        scoutResult: scoutResultMap.get(rowKey) || null,
       })
     })
     .filter(row => row.id && row.leagueId && row.seasonId && (row.teamId || row.clubId))

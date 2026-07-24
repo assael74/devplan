@@ -40,7 +40,6 @@ code {
 .dpScrollThin {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
-  scrollbar-gutter: stable;
 }
 
 .dpScrollThin::-webkit-scrollbar {
@@ -69,7 +68,6 @@ code {
 .dpScrollTransparent {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
-  scrollbar-gutter: stable;
 }
 
 .dpScrollTransparent::-webkit-scrollbar {

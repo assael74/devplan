@@ -2,16 +2,28 @@
 
 import { Box, Button } from '@mui/joy'
 
+import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
-import { searchResultsSx as sx } from '../sx/searchResults.sx.js'
+import { searchResultsTableSx as sx } from '../results/sx/searchResultsTable.sx.js'
 
-export function buildSearchColumns({ onPlayerOpen }) {
+const buildProfileTooltip = profileDisplay => {
+  if (profileDisplay?.type !== 'combination') {
+    return profileDisplay?.label || ''
+  }
+
+  return [
+    profileDisplay.label,
+    ...(profileDisplay.baseProfiles || []).map(profile => profile.label),
+  ].filter(Boolean).join(' · ')
+}
+
+export function buildSearchColumns({ onEntityOpen }) {
   return [
     {
       key: 'avatar',
       label: '',
       sx: sx.avatarColumn,
-      render: row => <Box component='img' src={row.avatarUrl || playerImage} alt='' sx={sx.playerAvatar} />,
+      render: row => <Box component='img' src={row.avatarUrl || playerImage} alt='' sx={sx.avatar} />,
     },
     { key: 'playerName', label: 'שחקן', sx: sx.playerColumn },
     { key: 'birthYear', label: 'שנתון', sx: sx.yearColumn },
@@ -22,14 +34,38 @@ export function buildSearchColumns({ onPlayerOpen }) {
     { key: 'appearances', label: 'הופעות', sx: sx.numberColumn },
     { key: 'starts', label: 'הרכב', sx: sx.numberColumn },
     { key: 'goals', label: 'שערים', sx: sx.numberColumn },
-    { key: 'primaryProfile', label: 'פרופיל סקאוט', sx: sx.profileColumn },
-    { key: 'score', label: 'התאמה', sx: sx.scoreColumn },
+    {
+      key: 'primaryProfile',
+      label: 'פרופיל סקאוט',
+      sx: sx.profileColumn,
+      render: row => {
+        const profileDisplay = row.scoutProfileDisplay || {}
+        const profileLabel = profileDisplay.label || row.primaryProfile || ''
+
+        if (!profileLabel || profileLabel === '-') return '-'
+
+        return (
+          <ScoutProfileChip
+            label={profileLabel}
+            tooltip={buildProfileTooltip(profileDisplay)}
+            variant={profileDisplay.type === 'combination' ? 'combination' : 'default'}
+            fontSize={11}
+          />
+        )
+      },
+    },
+    { key: 'score', label: 'הציון', sx: sx.scoreColumn },
     {
       key: 'actions',
       label: 'פעולות',
       sx: sx.actionsColumn,
       render: row => (
-        <Button size='sm' variant='outlined' sx={sx.tableButton} onClick={() => onPlayerOpen(row)}>
+        <Button
+          size='sm'
+          variant='outlined'
+          sx={sx.actionButton}
+          onClick={() => onEntityOpen(row)}
+        >
           כניסה
         </Button>
       ),

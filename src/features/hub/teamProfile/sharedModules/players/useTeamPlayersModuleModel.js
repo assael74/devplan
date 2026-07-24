@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
-import { createActions } from '../../../../../ui/forms/create/createActions.js'
-import { deleteActions } from '../../../../../ui/domains/entityLifecycle/delete/deleteActions.js'
+import usePlayerRowImageModel from '../../../sharedProfile/hooks/usePlayerRowImageModel.js'
+import {
+  createEntity,
+  deleteEntity,
+  unwrapActionResult,
+} from '../../../application/index.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
 import {
@@ -66,9 +69,15 @@ export default function useTeamPlayersModuleModel({
   const rows = profileData?.players?.rows || []
   const summary = profileData?.players?.summary || {}
 
-  const [imgRow, setImgRow] = useState(null)
-  const [openImg, setOpenImg] = useState(false)
-  const [rowPhoto, setRowPhoto] = useState('')
+  const {
+    imgRow,
+    openImg,
+    rowPhoto,
+    uploadImageOnly,
+    setOpenImg,
+    handleAvatarClick,
+    handleAfterImageSave,
+  } = usePlayerRowImageModel()
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [editingPosition, setEditingPosition] = useState(null)
@@ -234,18 +243,6 @@ export default function useTeamPlayersModuleModel({
     setViewMode(value || TEAM_PLAYERS_VIEW_MODES.OVERVIEW)
   }
 
-  const handleAvatarClick = row => {
-    if (selectionMode) return
-
-    setImgRow(row)
-    setRowPhoto(row?.photo || '')
-    setOpenImg(true)
-  }
-
-  const handleAfterImageSave = url => {
-    const next = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-    setRowPhoto(next)
-  }
 
   const handleStartSelection = useCallback(() => {
     if (!bulkEnabled) return
@@ -308,9 +305,10 @@ export default function useTeamPlayersModuleModel({
     setDeleteError('')
 
     try {
-      const result = await deleteActions.playersBulk({
+      const result = unwrapActionResult(await deleteEntity({
+        entityType: 'playersBulk',
         ids: plan.playerIds,
-      })
+      }))
 
       const imageFailures = Number(result?.images?.failed) || 0
 
@@ -382,13 +380,14 @@ export default function useTeamPlayersModuleModel({
     setImportError('')
 
     try {
-      const result = await createActions.players({
+      const result = unwrapActionResult(await createEntity({
+        entityType: 'players',
         draft: {
           players,
           teamId,
           clubId,
         },
-      })
+      }))
 
       setImportOpen(false)
 

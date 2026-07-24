@@ -3,7 +3,7 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 
-import { useAuth } from '../../../app/AuthProvider'
+import { useAuth } from '../index.js'
 import AuthShell from '../components/AuthShell'
 import RegisterForm from '../components/RegisterForm'
 

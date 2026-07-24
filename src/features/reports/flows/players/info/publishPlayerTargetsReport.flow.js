@@ -2,7 +2,7 @@
 
 import {
   publishPublicReport,
-} from '../../../service/index.js'
+} from '../../../application/index.js'
 
 import {
   buildPlayerTargetsPublicReportInput,
@@ -23,13 +23,8 @@ export async function publishPlayerTargetsReport({
     status,
   })
 
-  console.group('[publishPlayerTargetsReport]')
-  console.log('input:', input)
-
   const result = await publishPublicReport(input)
 
-  console.log('result:', result)
-  console.groupEnd()
 
   return {
     input,

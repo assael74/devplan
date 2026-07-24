@@ -2,7 +2,7 @@
 
 import {
   buildManagementTargetsReportContent as buildSharedManagementTargetsReportContent,
-} from '../../../../hub/teamProfile/sharedLogic/management/print/index.js'
+} from './print/index.js'
 
 import { sanitizeReportValue } from '../../reportValue.shared.js'
 

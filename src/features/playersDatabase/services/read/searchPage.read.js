@@ -16,7 +16,6 @@ import { normalizePlayerNameValue } from '../../model/playerIdentity.model.js'
 import { toNumberOrZero } from '../../model/value.model.js'
 
 const DEFAULT_SEARCH_RESULTS_LIMIT = 250
-const MAX_QUERY_VALUES = 30
 
 const clean = value => String(value ?? '').trim()
 
@@ -25,114 +24,66 @@ const normalizeQueryValue = value =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const toUniqueCleanValues = values =>
+const toUniqueCleanValues = values => (
   [...new Set((Array.isArray(values) ? values : [])
     .map(clean)
     .filter(Boolean))]
+)
 
-const toUniqueNumbers = values =>
+const toUniqueNumbers = values => (
   [...new Set((Array.isArray(values) ? values : [])
     .map(value => Number(value))
     .filter(Number.isFinite))]
+)
 
-const buildRangePrefixConstraints = value => {
-  const safeValue = normalizeQueryValue(value)
+const buildTextConstraints = queryText => {
+  const safeValue = normalizeQueryValue(queryText)
   if (!safeValue) return []
 
   return [
     where('normalizedDisplayName', '>=', safeValue),
     where('normalizedDisplayName', '<=', `${safeValue}\uf8ff`),
+    orderBy('normalizedDisplayName'),
   ]
 }
 
-const buildEqualFilters = filters => {
+const buildExactFilterConstraints = filters => {
   const constraints = []
-  const seasons = toUniqueCleanValues(filters.seasons)
   const birthYears = toUniqueNumbers(filters.birthYears)
   const leagueLevels = toUniqueNumbers(filters.leagueLevels)
   const leagues = toUniqueCleanValues(filters.leagues)
-  const scoutProfiles = toUniqueCleanValues(filters.scoutProfiles).slice(0, MAX_QUERY_VALUES)
+  const scoutProfiles = toUniqueCleanValues(filters.scoutProfiles)
 
-  if (seasons.length) {
-    constraints.push(where('seasonKey', 'in', seasons.slice(0, MAX_QUERY_VALUES)))
+  if (birthYears.length === 1) {
+    constraints.push(where('birthYear', '==', birthYears[0]))
   }
 
-  if (birthYears.length) {
-    constraints.push(where('birthYear', 'in', birthYears.slice(0, MAX_QUERY_VALUES)))
+  if (leagueLevels.length === 1) {
+    constraints.push(where('leagueLevel', '==', leagueLevels[0]))
   }
 
-  if (leagueLevels.length) {
-    constraints.push(where('leagueLevel', 'in', leagueLevels.slice(0, MAX_QUERY_VALUES)))
+  if (leagues.length === 1) {
+    constraints.push(where('leagueId', '==', leagues[0]))
   }
 
-  if (leagues.length) {
-    constraints.push(where('leagueId', 'in', leagues.slice(0, MAX_QUERY_VALUES)))
-  }
-
-  if (scoutProfiles.length) {
-    constraints.push(where('primaryScoutProfileId', 'in', scoutProfiles))
+  if (scoutProfiles.length === 1) {
+    constraints.push(where('primaryScoutProfileId', '==', scoutProfiles[0]))
   }
 
   return constraints
 }
 
-const buildConditionFilters = conditions => {
-  const constraints = []
-  const rangeFields = []
+const buildSeasonQueryVariants = filters => {
+  const seasons = toUniqueCleanValues(filters.seasons)
 
-  ;(Array.isArray(conditions) ? conditions : []).forEach(condition => {
-    const field = clean(condition.field)
-    const operator = clean(condition.operator)
-    const rawValue = clean(condition.value)
-    if (!field || rawValue === '') return
-
-    const numericValue = Number(rawValue)
-    const value = Number.isFinite(numericValue) ? numericValue : rawValue
-
-    if (operator === 'eq') {
-      constraints.push(where(field, '==', value))
-      return
-    }
-
-    if (operator === 'gte') {
-      constraints.push(where(field, '>=', value))
-      rangeFields.push(field)
-      return
-    }
-
-    if (operator === 'lte') {
-      constraints.push(where(field, '<=', value))
-      rangeFields.push(field)
-      return
-    }
-
-    if (operator === 'gt') {
-      constraints.push(where(field, '>', value))
-      rangeFields.push(field)
-      return
-    }
-
-    if (operator === 'lt') {
-      constraints.push(where(field, '<', value))
-      rangeFields.push(field)
-    }
-  })
-
-  return {
-    constraints,
-    rangeFields,
+  if (!seasons.length) {
+    return [{ ...filters }]
   }
-}
 
-const resolvePrimaryOrderField = ({
-  queryText = '',
-  rangeFields = [],
-  hasProfileFilter = false,
-} = {}) => {
-  if (queryText) return 'normalizedDisplayName'
-  if (rangeFields.length) return rangeFields[0]
-  if (!hasProfileFilter) return 'primaryScoutProfileId'
-  return ''
+  return seasons.map(seasonId => ({
+    ...filters,
+    seasonId,
+  }))
 }
 
 const buildSearchQuery = ({
@@ -140,33 +91,20 @@ const buildSearchQuery = ({
   includeLimit = false,
 } = {}) => {
   const safeFilters = filters || {}
-  const queryText = clean(safeFilters.query)
-  const equalFilters = buildEqualFilters(safeFilters)
-  const { constraints: conditionFilters, rangeFields } = buildConditionFilters(safeFilters.conditions)
-  const hasProfileFilter = Array.isArray(safeFilters.scoutProfiles) && safeFilters.scoutProfiles.length > 0
+  const searchContext = clean(safeFilters.searchContext)
+  if (!searchContext) return null
+
+  const entityType = searchContext === 'team'
+    ? 'birthTeamSeason'
+    : 'playerSeason'
   const constraints = [
-    where('entityType', '==', 'playerSeason'),
-    ...equalFilters,
-    ...conditionFilters,
+    where('entityType', '==', entityType),
+    ...(clean(safeFilters.seasonId)
+      ? [where('seasonId', '==', clean(safeFilters.seasonId))]
+      : []),
+    ...buildExactFilterConstraints(safeFilters),
+    ...buildTextConstraints(safeFilters.query),
   ]
-
-  if (queryText) {
-    constraints.push(...buildRangePrefixConstraints(queryText))
-  }
-
-  if (!hasProfileFilter) {
-    constraints.push(where('primaryScoutProfileId', '>', ''))
-  }
-
-  const orderField = resolvePrimaryOrderField({
-    queryText,
-    rangeFields,
-    hasProfileFilter,
-  })
-
-  if (orderField) {
-    constraints.push(orderBy(orderField))
-  }
 
   if (includeLimit) {
     constraints.push(limit(Math.max(1, toNumberOrZero(safeFilters.maxRows) || DEFAULT_SEARCH_RESULTS_LIMIT)))
@@ -178,25 +116,92 @@ const buildSearchQuery = ({
   )
 }
 
+const mergeSnapshots = snapshots => {
+  const seen = new Set()
+  const rows = []
+
+  snapshots.forEach(snapshot => {
+    snapshot.docs.forEach(item => {
+      if (seen.has(item.id)) return
+      seen.add(item.id)
+      rows.push({
+        id: item.id,
+        ...item.data(),
+      })
+    })
+  })
+
+  return rows
+}
+
 export async function readSearchPageData({
   filters = {},
   maxRows = DEFAULT_SEARCH_RESULTS_LIMIT,
 } = {}) {
+  if (!clean(filters.searchContext)) {
+    return {
+      totalCount: 0,
+      rows: [],
+    }
+  }
+
   const queryFilters = {
     ...filters,
     maxRows,
   }
-  const baseQuery = buildSearchQuery({ filters: queryFilters })
-  const limitedQuery = buildSearchQuery({ filters: queryFilters, includeLimit: true })
-
-  const countSnapshot = await getCountFromServer(baseQuery)
-  const snapshot = await getDocs(limitedQuery)
+  const variants = buildSeasonQueryVariants(queryFilters)
+  const countSnapshots = await Promise.all(
+    variants
+      .map(variant => buildSearchQuery({ filters: variant }))
+      .filter(Boolean)
+      .map(searchQuery => getCountFromServer(searchQuery))
+  )
+  const docSnapshots = await Promise.all(
+    variants
+      .map(variant => buildSearchQuery({ filters: { ...variant, maxRows }, includeLimit: true }))
+      .filter(Boolean)
+      .map(searchQuery => getDocs(searchQuery))
+  )
 
   return {
-    totalCount: countSnapshot.data().count || 0,
-    rows: snapshot.docs.map(item => ({
-      id: item.id,
-      ...item.data(),
-    })),
+    totalCount: countSnapshots.reduce((total, snapshot) => total + (snapshot.data().count || 0), 0),
+    rows: mergeSnapshots(docSnapshots).slice(0, maxRows),
   }
+}
+
+export async function readSearchPageCount({
+  filters = {},
+} = {}) {
+  if (!clean(filters.searchContext)) return 0
+
+  const variants = buildSeasonQueryVariants(filters)
+  const countSnapshots = await Promise.all(
+    variants
+      .map(variant => buildSearchQuery({ filters: variant }))
+      .filter(Boolean)
+      .map(searchQuery => getCountFromServer(searchQuery))
+  )
+
+  return countSnapshots.reduce((total, snapshot) => total + (snapshot.data().count || 0), 0)
+}
+
+export async function readSearchPageRows({
+  filters = {},
+  maxRows = DEFAULT_SEARCH_RESULTS_LIMIT,
+} = {}) {
+  if (!clean(filters.searchContext)) return []
+
+  const queryFilters = {
+    ...filters,
+    maxRows,
+  }
+  const variants = buildSeasonQueryVariants(queryFilters)
+  const snapshots = await Promise.all(
+    variants
+      .map(variant => buildSearchQuery({ filters: { ...variant, maxRows }, includeLimit: true }))
+      .filter(Boolean)
+      .map(searchQuery => getDocs(searchQuery))
+  )
+
+  return mergeSnapshots(snapshots).slice(0, maxRows)
 }

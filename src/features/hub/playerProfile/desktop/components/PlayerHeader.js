@@ -1,82 +1,21 @@
-// src/features/players/playerProfile/desktop/components/PlayerHeader.js
+// src/features/hub/playerProfile/desktop/components/PlayerHeader.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Tooltip, Typography } from '@mui/joy'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import React, { useMemo } from 'react'
+import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
-import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
-import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
-
+import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
+import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
+import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
-import ifaImage from '../../../../../ui/core/images/ifaImage.png'
-
-const getItemsCount = items => (Array.isArray(items) ? items.length : 0)
-
-const openExternalLink = url => {
-  if (!url) return
-
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 
 const getTeamId = context =>
   context?.team?.id ||
   context?.team?.teamId ||
   context?.teamId ||
   null
-
-function IFAButton({ ifaLink }) {
-  const tooltipTitle = ifaLink
-    ? 'פתח באתר ההתאחדות'
-    : 'אין קישור להתאחדות'
-
-  return (
-    <Tooltip title={tooltipTitle}>
-      <span>
-        <Button
-          size="sm"
-          variant="soft"
-          color="neutral"
-          disabled={!ifaLink}
-          onClick={() => openExternalLink(ifaLink)}
-          startDecorator={
-            <Box
-              component="img"
-              src={ifaImage}
-              alt="התאחדות"
-              sx={{
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                objectFit: 'contain',
-              }}
-            />
-          }
-          endDecorator={
-            <OpenInNewIcon
-              sx={{
-                fontSize: 16,
-              }}
-            />
-          }
-          sx={{
-            minHeight: 34,
-            px: 1,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 10,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          התאחדות
-        </Button>
-      </span>
-    </Tooltip>
-  )
-}
 
 function PlayerSubtitle({ context, onTeamClick }) {
   const teamName = context?.team?.teamName || ''
@@ -132,25 +71,13 @@ function PlayerSubtitle({ context, onTeamClick }) {
       )}
 
       {teamName && clubName && (
-        <Typography
-          component="span"
-          level="body-xs"
-          sx={{
-            color: 'text.tertiary',
-          }}
-        >
+        <Typography component="span" level="body-xs" sx={{ color: 'text.tertiary' }}>
           ·
         </Typography>
       )}
 
       {clubName && (
-        <Typography
-          component="span"
-          level="body-xs"
-          sx={{
-            color: 'text.tertiary',
-          }}
-        >
+        <Typography component="span" level="body-xs" sx={{ color: 'text.tertiary' }}>
           {clubName}
         </Typography>
       )}
@@ -160,24 +87,18 @@ function PlayerSubtitle({ context, onTeamClick }) {
 
 export default function PlayerHeader({ entity, context }) {
   const navigate = useNavigate()
-  const [openImg, setOpenImg] = useState(false)
-
   const photoSrc = entity?.photo || playerImage
-  const [headerPhoto, setHeaderPhoto] = useState(photoSrc)
+  const image = useProfileHeaderImage({
+    entityId: entity?.id,
+    source: photoSrc,
+  })
 
-  const ifaLink =
-    entity?.ifaLink ||
-    entity?.playerIfaLink ||
-    null
-
-  useEffect(() => {
-    setHeaderPhoto(photoSrc)
-  }, [photoSrc])
+  const ifaLink = entity?.ifaLink || entity?.playerIfaLink || null
 
   const metaCounts = useMemo(() => {
-    const paymentsCount = getItemsCount(entity?.payments)
-    const meetingsCount = getItemsCount(entity?.meetings)
-    const gamesCount = getItemsCount(entity?.playerGames)
+    const paymentsCount = countHeaderItems(entity?.payments)
+    const meetingsCount = countHeaderItems(entity?.meetings)
+    const gamesCount = countHeaderItems(entity?.playerGames)
 
     return {
       payments: paymentsCount,
@@ -188,34 +109,20 @@ export default function PlayerHeader({ entity, context }) {
         meetingsCount === 0 &&
         gamesCount === 0,
     }
-  }, [
-    entity?.payments,
-    entity?.meetings,
-    entity?.playerGames,
-  ])
+  }, [entity?.payments, entity?.meetings, entity?.playerGames])
 
   const fullName = useMemo(() => {
     const firstName = entity?.playerFirstName || ''
     const lastName = entity?.playerLastName || ''
 
     return `${firstName} ${lastName}`.trim()
-  }, [
-    entity?.playerFirstName,
-    entity?.playerLastName,
-  ])
+  }, [entity?.playerFirstName, entity?.playerLastName])
 
   const handleTeamClick = () => {
     const teamId = getTeamId(context)
     if (!teamId) return
 
     navigate(`/teams/${teamId}`)
-  }
-
-  const handleImageSave = url => {
-    if (!url) return
-
-    const separator = url.includes('?') ? '&' : '?'
-    setHeaderPhoto(`${url}${separator}v=${Date.now()}`)
   }
 
   return (
@@ -228,11 +135,11 @@ export default function PlayerHeader({ entity, context }) {
             onTeamClick={handleTeamClick}
           />
         }
-        avatarSrc={headerPhoto}
-        onAvatarClick={() => setOpenImg(true)}
+        avatarSrc={image.photo}
+        onAvatarClick={image.openModal}
         right={
           <>
-            <IFAButton ifaLink={ifaLink} />
+            <ProfileIfaButton ifaLink={ifaLink} />
 
             <EntityActionsMenu
               entityType="player"
@@ -244,16 +151,11 @@ export default function PlayerHeader({ entity, context }) {
           </>
         }
       />
-
-      <EntityImageModal
-        open={openImg}
-        onClose={() => setOpenImg(false)}
+      <ProfileHeaderImageModal
+        image={image}
         entityType="players"
-        id={entity?.id}
+        entityId={entity?.id}
         entityName={fullName}
-        currentPhotoUrl={headerPhoto}
-        uploadImageOnly={uploadImageOnly}
-        onAfterSave={handleImageSave}
       />
     </>
   )

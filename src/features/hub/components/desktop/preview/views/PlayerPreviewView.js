@@ -10,7 +10,7 @@ import PreviewQuickActions from '../PreviewQuickActions'
 import PreviewMetaChips from './components/PreviewMetaChips.js'
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
 
-import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
+import { uploadEntityImageUrl as uploadImageOnly } from '../../../../application/index.js'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import ifaImage from '../../../../../../ui/core/images/ifaImage.png'

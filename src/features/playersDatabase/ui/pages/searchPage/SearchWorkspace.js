@@ -2,32 +2,40 @@
 
 import { Box } from '@mui/joy'
 
-import SearchFiltersPanel from './filters/SearchFiltersPanel.js'
-import SearchInsightsPanel from './SearchInsightsPanel.js'
-import SearchResultsSection from './SearchResultsSection.js'
+import SearchQueryPanel from './query/SearchQueryPanel.js'
+import SearchResultsSection from './results/SearchResultsSection.js'
+import SearchResultsSidebar from './resultsSidebar/SearchResultsSidebar.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
-export default function SearchWorkspace({ search, onPlayerOpen }) {
+export default function SearchWorkspace({ search, onEntityOpen }) {
+  const entityType = search.queryFilters.searchContext || 'player'
+
   return (
     <Box sx={sx.workspace}>
-      <SearchFiltersPanel
+      <SearchQueryPanel
         search={search}
-        activeItems={search.activeItems}
+        activeItems={search.queryActiveItems}
+        count={search.previewCount}
+        loading={search.previewLoading}
+        error={search.previewError}
+        onLoad={search.loadDocuments}
+        onReset={search.resetQuery}
       />
 
       <Box sx={sx.resultsWorkspace}>
         <SearchResultsSection
           rows={search.rows}
-          count={search.totalCount}
-          onPlayerOpen={onPlayerOpen}
+          loading={search.loadLoading}
+          error={search.loadError}
+          entityType={entityType}
+          onEntityOpen={onEntityOpen}
         />
 
-        <SearchInsightsPanel
-          rows={search.rows}
+        <SearchResultsSidebar
           summary={search.summary}
-          activeItems={search.activeItems}
-          onRemoveFilter={search.removeActiveItem}
-          onReset={search.reset}
+          entityType={entityType}
+          hasLoaded={search.hasLoaded}
+          loading={search.loadLoading}
         />
       </Box>
     </Box>

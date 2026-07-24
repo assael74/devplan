@@ -5,7 +5,7 @@ import { REPORT_IDS } from '../../../../shared/reports/reports.ids.js'
 import {
   TEAM_PLAYERS_PRINT_MODES,
   buildTeamPlayersReportModel,
-} from '../../../hub/teamProfile/sharedLogic/players/print/index.js'
+} from '../../model/teams/players/print/index.js'
 
 import {
   TEAM_PLAYERS_DEMO_TEAM,

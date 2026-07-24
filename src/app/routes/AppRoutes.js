@@ -1,260 +1,42 @@
-﻿// app/routes/AppRoutes.js
+// src/app/routes/AppRoutes.js
 
 import React from 'react'
-import { Box, Button, CircularProgress, Typography } from '@mui/joy'
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-import AppLayout from '../layout/AppLayout'
-import { useAuth } from '../AuthProvider'
-import { useNotificationsContext } from '../NotificationsProvider'
-import TopBar from '../../ui/core/layout/TopBar'
+import { useAuth } from '../../features/auth'
 import { useCoreData } from '../../features/coreData/CoreDataProvider'
-import { canAccessSquadSimulator, isAdminAuthUser } from '../../shared/access/index.js'
-
-import NotificationsBell from '../../features/notifications/components/NotificationsBell'
-import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
 import buildReportsPublicRoutes from './ReportsPublicRoutes.js'
-
-import CalendarSkeleton from '../../ui/loading/pages/CalendarSkeleton.js'
-import DefaultSkeleton from '../../ui/loading/pages/DefaultSkeleton.js'
-import HomeSkeleton from '../../ui/loading/pages/HomeSkeleton.js'
-import HubSkeleton from '../../ui/loading/pages/HubSkeleton.js'
-import ProfileSkeleton from '../../ui/loading/pages/ProfileSkeleton.js'
-import SimulatorSkeleton from '../../ui/loading/pages/SimulatorSkeleton.js'
-import TagsSkeleton from '../../ui/loading/pages/TagsSkeleton.js'
-import VideoSkeleton from '../../ui/loading/pages/VideoSkeleton.js'
-
-const loadHomePage = () => import('../../features/home/HomePage')
-const loadCalendarHubPage = () => import('../../features/calendarHub/CalendarHubPage')
-const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
-const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
-const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
-const loadHubPage = () => import('../../features/hub/ui/HubPage')
-const loadPlayerProfilePage = () => import('../../features/hub/playerProfile/PlayerProfilePage')
-const loadTeamProfilePage = () => import('../../features/hub/teamProfile/TeamProfilePage')
-const loadClubProfilePage = () => import('../../features/hub/clubProfile/ClubProfilePage')
-const loadAbilitiesPublicRouteEntry = () => import('./AbilitiesPublicRouteEntry.js')
-const loadPublicReportPage = () =>
-  import('../../features/reports/index.js').then(module => ({
-    default: module.PublicReportPage,
-  }))
-const loadInsightsPage = () => import('../../features/insightsHub/InsightsPage.js')
-const loadLoginPage = () => import('../../features/auth/pages/LoginPage')
-const loadRegisterPage = () => import('../../features/auth/pages/RegisterPage')
-const loadForgotPasswordPage = () => import('../../features/auth/pages/ForgotPasswordPage')
-const loadPendingApprovalPage = () => import('../../features/auth/pages/PendingApprovalPage')
-const loadFirestoreUsagePage = () => import('../../features/firestoreUsage/FirestoreUsagePage.js')
-
-const loadPlayersDatabaseLeaguesCenterPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.LeaguesCenterPage,
-  }))
-
-const loadPlayersDatabaseLeaguePage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.LeaguePage,
-  }))
-
-const loadPlayersDatabaseTeamPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.TeamPage,
-  }))
-
-const loadPlayersDatabasePlayerPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.PlayerPage,
-  }))
-
-const loadPlayersDatabaseSearchPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.SearchPage,
-  }))
-
-const loadPlayersDatabaseProfilesPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.ProfilesPage,
-  }))
-
-const loadAbilitiesExplainerPage = () =>
-  import('../../features/abilities/explainer/AbilitiesExplainerPage.js')
-
-const loadSquadSimulatorPage = () =>
-  import('../../features/squadSimulator/index.js').then(module => ({
-    default: module.SquadSimulatorPage,
-  }))
-
-const loadLiveTaggingPanel = () =>
-  import('../../features/liveTagging/index.js').then(module => ({
-    default: module.LiveTaggingPanel,
-  }))
-
-const loadReportsDashboardPage = () =>
-  import('../../features/reports/index.js').then(module => ({
-    default: module.DashboardPage,
-  }))
-
-const HomePage = React.lazy(loadHomePage)
-const CalendarHubPage = React.lazy(loadCalendarHubPage)
-const VideoHubPage = React.lazy(loadVideoHubPage)
-const TagsManagementPage = React.lazy(loadTagsManagementPage)
-const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
-const PlayersDatabaseLeaguesCenterPage = React.lazy(loadPlayersDatabaseLeaguesCenterPage)
-const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
-const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
-const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
-const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
-const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)
-
-const HubPage = React.lazy(loadHubPage)
-const PlayerProfilePage = React.lazy(loadPlayerProfilePage)
-const TeamProfilePage = React.lazy(loadTeamProfilePage)
-const ClubProfilePage = React.lazy(loadClubProfilePage)
-
-const AbilitiesPublicRouteEntry = React.lazy(loadAbilitiesPublicRouteEntry)
-const PublicReportPage = React.lazy(loadPublicReportPage)
-const InsightsPage = React.lazy(loadInsightsPage)
-const AbilitiesExplainerPage = React.lazy(loadAbilitiesExplainerPage)
-
-const LoginPage = React.lazy(loadLoginPage)
-const RegisterPage = React.lazy(loadRegisterPage)
-const ForgotPasswordPage = React.lazy(loadForgotPasswordPage)
-const PendingApprovalPage = React.lazy(loadPendingApprovalPage)
-
-const SquadSimulatorPage = React.lazy(loadSquadSimulatorPage)
-const LiveTaggingPanel = React.lazy(loadLiveTaggingPanel)
-const FirestoreUsagePage = React.lazy(loadFirestoreUsagePage)
-const ReportsDashboardPage = React.lazy(loadReportsDashboardPage)
-
-const ADMIN_ROUTE_LOADERS = [
-  loadHubPage,
-  loadCalendarHubPage,
-  loadVideoHubPage,
-  loadTagsManagementPage,
-  loadLiveTaggingPanel,
-  loadFirestoreUsagePage,
-  loadReportsDashboardPage,
-]
-
-const SQUAD_ROUTE_LOADERS = [loadSquadSimulatorPage]
-
-function preloadRoutes(loaders) {
-  loaders.forEach(loader => {
-    loader().catch(() => {})
-  })
-}
-
-function LoadingScreen({ label = 'טוען...' }) {
-  return (
-    <Box sx={{ p: 6, textAlign: 'center' }}>
-      <CircularProgress size='lg' />
-
-      <Typography level='body-md' sx={{ mt: 2 }}>
-        {label}
-      </Typography>
-    </Box>
-  )
-}
-
-function lazyRoute(element, fallback = <DefaultSkeleton />) {
-  return <React.Suspense fallback={fallback}>{element}</React.Suspense>
-}
-
-function TopBarNotificationsHost() {
-  const navigate = useNavigate()
-  const { logout } = useAuth()
-
-  const {
-    open,
-    toggleNotifications,
-    closeNotifications,
-    notifications,
-    unreadCount,
-    loading,
-    pendingIds,
-    markAsRead,
-    markAllAsRead,
-    getNotificationTarget,
-    deleteNotification,
-  } = useNotificationsContext()
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login', { replace: true })
-  }
-
-  const handleMarkAsRead = async item => {
-    if (!item?.id || item?.isRead) return
-
-    await markAsRead(item.id)
-  }
-
-  const handleOpenTarget = async item => {
-    if (!item) return
-
-    if (!item.isRead) {
-      await markAsRead(item.id)
-    }
-
-    const target = getNotificationTarget(item)
-
-    if (!target?.path) return
-
-    navigate(target.path, { replace: Boolean(target.replace) })
-    closeNotifications()
-  }
-
-  const handleDeleteNotification = async item => {
-    if (!item?.id || !deleteNotification) return
-
-    await deleteNotification(item.id)
-  }
-
-  return (
-    <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Button
-          size='sm'
-          variant='soft'
-          color='neutral'
-          onClick={handleLogout}
-        >
-          התנתקות
-        </Button>
-
-        <NotificationsBell
-          unreadCount={unreadCount}
-          onClick={toggleNotifications}
-        />
-      </Box>
-
-      <NotificationsDrawer
-        open={open}
-        onClose={closeNotifications}
-        notifications={notifications}
-        unreadCount={unreadCount}
-        loading={loading}
-        pendingIds={pendingIds}
-        onMarkAsRead={handleMarkAsRead}
-        onOpenTarget={handleOpenTarget}
-        onDelete={handleDeleteNotification}
-        onMarkAllAsRead={markAllAsRead}
-      />
-    </>
-  )
-}
+import renderAuthenticatedRoutes from './AuthenticatedRoutes'
+import { lazyRoute, LoadingScreen } from './routeUi'
+import {
+  AbilitiesPublicRouteEntry,
+  ADMIN_ROUTE_LOADERS,
+  ForgotPasswordPage,
+  LoginPage,
+  PendingApprovalPage,
+  preloadRoutes,
+  PublicReportPage,
+  RegisterPage,
+  SQUAD_ROUTE_LOADERS,
+} from './routeComponents'
+import { PUBLIC_ROUTES, ROUTE_REDIRECTS } from './routeCatalog'
+import { resolveRouteAccess, ROUTE_ACCESS_STATE } from './routeAccess'
 
 export default function AppRoutes() {
   const { user, loading } = useAuth()
   const { roles = [], accessLoading } = useCoreData()
 
-  const isAdmin = user ? isAdminAuthUser(user, roles) : false
-  const canUseSquadSimulator = user ? canAccessSquadSimulator(user, roles) : false
-  const canEnterAnyArea = isAdmin || canUseSquadSimulator
+  const routeAccess = resolveRouteAccess({
+    user,
+    authLoading: loading,
+    accessLoading,
+    roles,
+  })
 
   React.useEffect(() => {
     if (!user || accessLoading) return undefined
 
-    const loaders = isAdmin ? ADMIN_ROUTE_LOADERS : SQUAD_ROUTE_LOADERS
+    const loaders = routeAccess.isAdmin ? ADMIN_ROUTE_LOADERS : SQUAD_ROUTE_LOADERS
     const runPreload = () => preloadRoutes(loaders)
 
     if (typeof window === 'undefined') {
@@ -275,16 +57,16 @@ export default function AppRoutes() {
     return () => {
       window.clearTimeout(id)
     }
-  }, [accessLoading, isAdmin, user])
+  }, [accessLoading, routeAccess.isAdmin, user])
 
-  if (loading) {
+  if (routeAccess.state === ROUTE_ACCESS_STATE.authLoading) {
     return <LoadingScreen label='טוען התחברות...' />
   }
 
   return (
     <Routes>
       <Route
-        path='/forms/abilities/:token'
+        path={PUBLIC_ROUTES.abilitiesForm}
         element={lazyRoute(<AbilitiesPublicRouteEntry />)}
       />
 
@@ -293,216 +75,33 @@ export default function AppRoutes() {
         PublicReportPage,
       })}
 
-      {!user ? (
+      {routeAccess.state === ROUTE_ACCESS_STATE.signedOut ? (
         <>
-          <Route path='/login' element={lazyRoute(<LoginPage />)} />
-          <Route path='/register' element={lazyRoute(<RegisterPage />)} />
-          <Route path='/forgot-password' element={lazyRoute(<ForgotPasswordPage />)} />
-          <Route path='/' element={<Navigate to='/login' replace />} />
-          <Route path='*' element={<Navigate to='/login' replace />} />
+          <Route path={PUBLIC_ROUTES.login} element={lazyRoute(<LoginPage />)} />
+          <Route path={PUBLIC_ROUTES.register} element={lazyRoute(<RegisterPage />)} />
+          <Route
+            path={PUBLIC_ROUTES.forgotPassword}
+            element={lazyRoute(<ForgotPasswordPage />)}
+          />
+          <Route path='/' element={<Navigate to={ROUTE_REDIRECTS.signedOut} replace />} />
+          <Route path='*' element={<Navigate to={ROUTE_REDIRECTS.signedOut} replace />} />
         </>
-      ) : accessLoading && !isAdmin ? (
+      ) : routeAccess.state === ROUTE_ACCESS_STATE.accessLoading ? (
         <Route path='*' element={<LoadingScreen label='טוען נתונים...' />} />
-      ) : !canEnterAnyArea ? (
+      ) : routeAccess.state === ROUTE_ACCESS_STATE.pendingApproval ? (
         <>
           <Route
-            path='/pending-approval'
+            path={PUBLIC_ROUTES.pendingApproval}
             element={lazyRoute(<PendingApprovalPage />)}
           />
-
-          <Route path='*' element={<Navigate to='/pending-approval' replace />} />
+          <Route
+            path='*'
+            element={<Navigate to={ROUTE_REDIRECTS.pendingApproval} replace />}
+          />
         </>
       ) : (
-        <Route
-          element={
-            <AppLayout
-              navMode={isAdmin ? 'full' : 'squadSimulator'}
-              topbar={
-                <TopBar
-                  title='DevPlan'
-                  right={<TopBarNotificationsHost />}
-                />
-              }
-              navBadges={{ players: 108, teams: 7, clubs: 3 }}
-            />
-          }
-        >
-          {isAdmin ? (
-            <>
-              <Route path='/login' element={<Navigate to='/home' replace />} />
-              <Route path='/register' element={<Navigate to='/home' replace />} />
-              <Route path='/forgot-password' element={<Navigate to='/home' replace />} />
-              <Route path='/pending-approval' element={<Navigate to='/home' replace />} />
-              <Route path='/' element={<Navigate to='/home' replace />} />
-
-              <Route
-                path='/home'
-                element={lazyRoute(<HomePage />, <HomeSkeleton />)}
-              />
-
-              <Route
-                path='/hub'
-                element={lazyRoute(<HubPage />, <HubSkeleton />)}
-              />
-
-              <Route
-                path='/calendar'
-                element={lazyRoute(<CalendarHubPage />, <CalendarSkeleton />)}
-              />
-
-              <Route
-                path='/video'
-                element={lazyRoute(<VideoHubPage />, <VideoSkeleton />)}
-              />
-
-              <Route
-                path='/tags'
-                element={lazyRoute(<TagsManagementPage />, <TagsSkeleton />)}
-              />
-
-              <Route
-                path='/players-database'
-                element={lazyRoute(<PlayersDatabasePage />)}
-              />
-
-              <Route
-                path='/players-database/leagues'
-                element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)}
-              />
-
-              <Route
-                path='/players-database/search'
-                element={lazyRoute(<PlayersDatabaseSearchPage />)}
-              />
-
-              <Route
-                path='/players-database/profiles'
-                element={lazyRoute(<PlayersDatabaseProfilesPage />)}
-              />
-
-              <Route
-                path='/players-database/scan'
-                element={<Navigate to='/players-database/search' replace />}
-              />
-
-              <Route
-                path='/players-database/leagues/:leagueId'
-                element={lazyRoute(<PlayersDatabaseLeaguePage />)}
-              />
-
-              <Route
-                path='/players-database/leagues/:leagueId/teams/:teamId'
-                element={lazyRoute(<PlayersDatabaseTeamPage />)}
-              />
-
-              <Route
-                path='/players-database/players/:playerId'
-                element={lazyRoute(<PlayersDatabasePlayerPage />)}
-              />
-
-              <Route
-                path='/liveTagging'
-                element={lazyRoute(<LiveTaggingPanel />)}
-              />
-
-              <Route
-                path='/abilities/explainer'
-                element={lazyRoute(<AbilitiesExplainerPage />)}
-              />
-
-              <Route
-                path='/insights/explainer'
-                element={lazyRoute(<InsightsPage />)}
-              />
-
-              <Route
-                path='/squad-simulator'
-                element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)}
-              />
-
-              <Route
-                path='/admin/firestore-usage'
-                element={lazyRoute(<FirestoreUsagePage />)}
-              />
-
-              <Route
-                path='/dev/reports'
-                element={lazyRoute(<ReportsDashboardPage />)}
-              />
-
-              <Route
-                path='/clubs/:clubId'
-                element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route
-                path='/clubs/:clubId/:tabKey'
-                element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route
-                path='/teams/:teamId'
-                element={lazyRoute(<TeamProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route
-                path='/teams/:teamId/:tabKey'
-                element={lazyRoute(<TeamProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route
-                path='/players/:playerId'
-                element={lazyRoute(<PlayerProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route
-                path='/players/:playerId/:tabKey'
-                element={lazyRoute(<PlayerProfilePage />, <ProfileSkeleton />)}
-              />
-
-              <Route path='*' element={<Navigate to='/hub' replace />} />
-            </>
-          ) : (
-            <>
-              <Route
-                path='/login'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-
-              <Route
-                path='/register'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-
-              <Route
-                path='/forgot-password'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-
-              <Route
-                path='/pending-approval'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-
-              <Route
-                path='/'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-
-              <Route
-                path='/squad-simulator'
-                element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)}
-              />
-
-              <Route
-                path='*'
-                element={<Navigate to='/squad-simulator' replace />}
-              />
-            </>
-          )}
-        </Route>
+        renderAuthenticatedRoutes({ isAdmin: routeAccess.isAdmin })
       )}
     </Routes>
   )
 }
-

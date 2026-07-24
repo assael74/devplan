@@ -1,7 +1,5 @@
 // features/playersDatabase/ui/pages/searchPage/sx/searchPage.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
-
 export const searchPageSx = {
   page: {
     width: '100%',
@@ -17,65 +15,9 @@ export const searchPageSx = {
     gap: 1.25,
     overflow: 'hidden',
   },
-  header: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) auto' },
-    gap: 2,
-    alignItems: 'end',
-  },
-  headerCopy: { minWidth: 0, gap: 0.4, alignItems: 'flex-start' },
-  pageTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: { xs: 32, md: 40 },
-    lineHeight: 1.05,
-    fontWeight: 700,
-  },
-  pageDescription: { maxWidth: 820, color: devPlanColors.secondary, textAlign: 'left' },
-  headerActions: { flexWrap: 'wrap', justifyContent: 'flex-start' },
-  primaryButton: {
-    minHeight: 38,
-    px: 2,
-    bgcolor: devPlanColors.primary,
-    color: '#fff',
-    '&:hover': { bgcolor: devPlanColors.primaryDark },
-  },
-  secondaryButton: {
-    minHeight: 38,
-    px: 2,
-    bgcolor: '#fff',
-    color: devPlanColors.primary,
-    borderColor: devPlanColors.primary,
-    '&:hover': { bgcolor: devPlanColors.primaryLight, borderColor: devPlanColors.primaryDark },
-  },
-  statsGrid: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: 'repeat(2, minmax(0, 1fr))',
-      lg: 'repeat(4, minmax(0, 1fr))',
-    },
-    gap: 1,
-    '& > *': { minWidth: 0, minHeight: 82, maxHeight: 92, p: 1 },
-    '& h2': { fontSize: 24, lineHeight: 1 },
-  },
-  statsGridCompact: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 0.7,
-    '& > *': {
-      minWidth: 0,
-      minHeight: 72,
-      p: 0.9,
-      boxShadow: 'none',
-    },
-    '& h2': { fontSize: 22, lineHeight: 1 },
-  },
   workspace: {
     minWidth: 0,
     minHeight: 0,
-    height: '100%',
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr)',
     gap: 1.25,
@@ -85,32 +27,15 @@ export const searchPageSx = {
     minWidth: 0,
     minHeight: 0,
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) 300px' },
+    gridTemplateColumns: {
+      xs: '1fr',
+      xl: 'minmax(0, 1fr) 300px',
+    },
     gap: 1.25,
     overflow: 'hidden',
-    '& > *': { minWidth: 0, minHeight: 0, height: '100%' },
+    '& > *': {
+      minWidth: 0,
+      minHeight: 0,
+    },
   },
-  importModal: {
-    width: 'min(920px, calc(100vw - 32px))',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    gap: 2,
-  },
-  importTitle: { color: devPlanColors.primaryDark },
-  importDescription: { color: devPlanColors.secondary },
-  importTypeGrid: {
-    display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-    gap: 1,
-  },
-  importTypeCard: { p: 1.25, border: '1px solid #dbe5f4', borderRadius: 8, cursor: 'pointer' },
-  importTypeCardSelected: { borderColor: devPlanColors.primary, bgcolor: devPlanColors.primaryLight },
-  importPreview: {
-    minHeight: 110,
-    p: 1.5,
-    borderRadius: 8,
-    border: '1px dashed #bccbda',
-    bgcolor: '#f8fafc',
-  },
-  importActions: { justifyContent: 'flex-end', flexWrap: 'wrap' },
 }

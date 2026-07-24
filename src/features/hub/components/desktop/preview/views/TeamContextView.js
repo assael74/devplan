@@ -13,7 +13,7 @@ import PreviewMetaChips from './components/PreviewMetaChips.js'
 
 import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
 import { resolveEntityAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
+import { uploadEntityImageUrl as uploadImageOnly } from '../../../../application/index.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi'
 import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'

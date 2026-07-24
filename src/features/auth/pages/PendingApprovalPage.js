@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, Button, Sheet, Typography } from '@mui/joy'
 
-import { useAuth } from '../../../app/AuthProvider'
+import { useAuth } from '../index.js'
 
 export default function PendingApprovalPage() {
   const { logout, user } = useAuth()

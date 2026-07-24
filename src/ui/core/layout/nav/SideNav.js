@@ -164,7 +164,6 @@ const FULL_NAV_SECTIONS = [
     items: [
       { label: 'שולחן עבודה אישי', path: '/home', iconId: 'workspace' },
       { label: 'מרכז שליטה', path: '/hub', iconId: 'dashboard' },
-      { label: 'מערכת תיוגים', path: '/liveTagging', iconId: 'liveTagging', disabled: false },
     ],
   },
   {
@@ -181,7 +180,6 @@ const FULL_NAV_SECTIONS = [
     title: 'מתודולוגיה',
     items: [
       { label: 'מודל חישוב יכולות', path: '/abilities/explainer', iconId: 'abilities', disabled: false },
-      { label: 'מודל תובנות', path: '/insights/explainer', iconId: 'insights', disabled: false },
       { label: 'סימולטור בניית סגל', path: '/squad-simulator', iconId: 'squadSimulator', disabled: false },
     ],
   },

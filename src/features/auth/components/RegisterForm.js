@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { Alert, Button, FormControl, FormLabel, Input, Link, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
-import { useAuth } from '../../../app/AuthProvider'
+import { useAuth } from '../index.js'
 import { authSx } from '../auth.sx'
 import { buildRegisterModel, isRegisterDisabled, normalizeAuthError } from '../auth.logic'
 

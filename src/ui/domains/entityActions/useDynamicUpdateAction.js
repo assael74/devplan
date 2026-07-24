@@ -5,9 +5,13 @@ import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider.js'
 import { mapFirestoreErrorToDetails } from '../../core/feedback/snackbar/snackbar.format.js'
 import { SNACK_ACTION, SNACK_STATUS } from '../../core/feedback/snackbar/snackbar.model.js'
 
-import { updateByRouterFields } from '../../../services/firestore/shorts/shortsUpdateByRouter.js'
-import { debugLog } from '../../../services/firestore/shorts/shortsDebug.utils.js'
-import { SHORTS_DEBUG } from '../../../services/firestore/shorts/shortsDebug.config.js'
+import {
+  getActionDebugMode,
+  logActionDebug,
+  shouldLogActionPayload,
+  updateEntity,
+  unwrapActionResult,
+} from '../../../application/index.js'
 
 export function useDynamicUpdateAction({
   routerEntityType,
@@ -48,29 +52,32 @@ export function useDynamicUpdateAction({
         section: meta?.section || null,
         meta: meta || null,
         fieldsKeys: Object.keys(fieldsPatch),
-        mode: SHORTS_DEBUG?.dryRun ? 'DRY_RUN' : 'WRITE',
+        mode: getActionDebugMode(),
         createIfMissing: effectiveCreateIfMissing,
         requireAnyUpdated: effectiveRequireAnyUpdated,
       }
 
-      debugLog('UI_DYNAMIC_UPDATE_ACTION:start', {
+      logActionDebug('UI_DYNAMIC_UPDATE_ACTION:start', {
         ...ctx,
-        payload: SHORTS_DEBUG?.logPayload ? fieldsPatch : '[payload hidden]',
+        payload: shouldLogActionPayload() ? fieldsPatch : '[payload hidden]',
       })
 
       setPendingCount((n) => n + 1)
       try {
-        const res = await updateByRouterFields({
+        const result = await updateEntity({
           entityType: routerEntityType,
           id,
           fieldsPatch,
           createIfMissing: effectiveCreateIfMissing,
           requireAnyUpdated: effectiveRequireAnyUpdated,
+          metadata: meta || null,
         })
+
+        const res = unwrapActionResult(result)
 
         setLastUpdatedAt(Date.now())
 
-        debugLog('UI_DYNAMIC_UPDATE_ACTION:success', { ...ctx, res })
+        logActionDebug('UI_DYNAMIC_UPDATE_ACTION:success', { ...ctx, res })
 
         notify({
           status: SNACK_STATUS.SUCCESS,
@@ -94,7 +101,7 @@ export function useDynamicUpdateAction({
           details.hint = avail ? `שדות ממופים לדוגמה: ${avail}` : 'בדוק shortsUpdateRouter.js'
         }
 
-        debugLog('UI_DYNAMIC_UPDATE_ACTION:error', { ...ctx, err: String(err?.message || err) })
+        logActionDebug('UI_DYNAMIC_UPDATE_ACTION:error', { ...ctx, err: String(err?.message || err) })
 
         notify({
           status: SNACK_STATUS.ERROR,

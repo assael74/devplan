@@ -2,8 +2,10 @@
 
 import { useCallback, useMemo, useState } from 'react'
 
-import { createActions } from '../../../../ui/forms/create/createActions.js'
-import { deleteActions } from '../../../../ui/domains/entityLifecycle/delete/deleteActions.js'
+import {
+  deletePlayersBulk,
+  importPlayersBulk,
+} from '../../application/bulkActions.actions.js'
 import { PLAYERS_DELETE_SCOPE } from '../delete/configs/playersDelete.config.js'
 
 function cleanError(error) {
@@ -49,7 +51,7 @@ export default function usePlayersBulkActions({
     setImportError('')
 
     try {
-      const result = await createActions.players({ draft: payload })
+      const result = await importPlayersBulk({ payload })
 
       setImportOpen(false)
 
@@ -128,7 +130,7 @@ export default function usePlayersBulkActions({
     setDeleteError('')
 
     try {
-      const result = await deleteActions.playersBulk({ ids: plan.playerIds })
+      const result = await deletePlayersBulk({ ids: plan.playerIds })
 
       setDeleteOpen(false)
       setSelectedPlayerIds([])

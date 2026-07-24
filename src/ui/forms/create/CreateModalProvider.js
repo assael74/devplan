@@ -4,7 +4,7 @@ import React, { useMemo, useCallback } from 'react'
 import ObjectCreateModalV2 from './ObjectCreateModalV2'
 import { useCreateModalState } from './useCreateModal'
 import { useCoreData } from '../../../features/coreData/CoreDataProvider'
-import { createActions } from './createActions'
+import { createEntity, unwrapActionResult } from '../../../application/index.js'
 import { getCreateMeta } from './createRegistry'
 
 import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider'
@@ -95,18 +95,18 @@ export default function CreateModalProvider({ children }) {
       context: st.context,
     })
 
-    const action = createActions[actionKey]
     const entityName = resolveEntityName(type, st.draft)
 
     try {
-      if (!action) throw new Error(`No create action for type "${actionKey}"`)
-
       st.setBusy(true)
 
-      await action({
+      const result = await createEntity({
+        entityType: actionKey,
         draft: st.draft,
         context: st.context,
       })
+
+      unwrapActionResult(result)
 
       notify({
         status: SNACK_STATUS.SUCCESS,

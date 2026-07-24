@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { createActions } from '../../../../../../ui/forms/create/createActions.js'
+import { createEntity, unwrapActionResult } from '../../../../application/index.js'
 
 export function useTeamGamesImportActions({
   liveTeam,
@@ -61,7 +61,8 @@ export function useTeamGamesImportActions({
     try {
       setGamesImportSaving(true)
 
-      await createActions.games({
+      unwrapActionResult(await createEntity({
+        entityType: 'games',
         draft: finalPayload,
         context: {
           ...context,
@@ -69,7 +70,7 @@ export function useTeamGamesImportActions({
           clubId,
           team: liveTeam,
         },
-      })
+      }))
 
       setGamesImportOpen(false)
       setGamesImportError('')

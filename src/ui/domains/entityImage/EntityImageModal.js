@@ -19,7 +19,7 @@ import EntityImageCrop from './EntityImageCrop.js'
 import { sx } from './entityImage.sx.js'
 import { DEFAULT_SNACK_ENTITY, buildDefaultUploader, makePreviewUrl, revokeUrl } from './entityImage.logic.js'
 import { useUpdateAction } from '../entityActions/updateAction.js'
-import { deleteImageByUrl } from '../../../services/firestore/storage/deleteImageByUrl.js'
+import { deleteEntityImage, unwrapActionResult } from '../../../application/index.js'
 
 export const ENTITY_LABEL = {
   players: 'עריכת תמונת שחקן',
@@ -196,7 +196,12 @@ export default function EntityImageModal({
     setProgress(null)
 
     try {
-      await deleteImageByUrl(currentPhotoUrl)
+      const deleteResult = await deleteEntityImage({
+        imageUrl: currentPhotoUrl,
+        metadata: { entityType, id },
+      })
+
+      unwrapActionResult(deleteResult)
 
       await runUpdate({ photo: '' }, { section: 'entityImage', entityType, op: 'deletePhoto' })
 

@@ -1,63 +1,22 @@
 // src/features/hub/hooks/payments/usePaymentHubCreate.js
 
-import { useCallback, useState } from 'react'
+import {
+  resolvePaymentCreateName,
+  resolveStaticEntityType,
+  useHubCreateAction,
+} from '../shared/index.js'
 
-import { createActions } from '../../../../ui/forms/create/createActions.js'
-import { useSnackbar } from '../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
-import { SNACK_ACTION, SNACK_STATUS } from '../../../../ui/core/feedback/snackbar/snackbar.model.js'
-import { mapFirestoreErrorToDetails } from '../../../../ui/core/feedback/snackbar/snackbar.format.js'
-
-function resolvePaymentName(draft = {}, created = {}) {
-  const paymentFor = created?.paymentFor || draft?.paymentFor || ''
-  const price = created?.price || draft?.price || ''
-  const full = `${paymentFor} ${price}`.trim()
-
-  return full || null
-}
+const resolvePaymentType = resolveStaticEntityType('payment')
 
 export default function usePaymentHubCreate() {
-  const { notify } = useSnackbar()
-  const [saving, setSaving] = useState(false)
-
-  const runCreatePayment = useCallback(
-    async ({ draft, context }) => {
-      const entityName = resolvePaymentName(draft)
-
-      try {
-        setSaving(true)
-
-        const created = await createActions.payment({
-          draft,
-          context,
-        })
-
-        notify({
-          status: SNACK_STATUS.SUCCESS,
-          action: SNACK_ACTION.CREATE,
-          entityType: 'payment',
-          entityName: resolvePaymentName(draft, created),
-        })
-
-        return created
-      } catch (error) {
-        notify({
-          status: SNACK_STATUS.ERROR,
-          action: SNACK_ACTION.CREATE,
-          entityType: 'payment',
-          entityName,
-          details: mapFirestoreErrorToDetails(error),
-        })
-
-        throw error
-      } finally {
-        setSaving(false)
-      }
-    },
-    [notify]
-  )
+  const { saving, runCreate } = useHubCreateAction({
+    resolveActionEntityType: resolvePaymentType,
+    notificationEntityType: 'payment',
+    resolveEntityName: resolvePaymentCreateName,
+  })
 
   return {
     saving,
-    runCreatePayment,
+    runCreatePayment: runCreate,
   }
 }

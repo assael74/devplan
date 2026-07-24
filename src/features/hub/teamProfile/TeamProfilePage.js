@@ -5,6 +5,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 
 import useTeamProfilePageModel from './teamProfile.logic'
+import { ProfilePageState } from '../sharedProfile/ui'
 import TeamProfileDesktop from './desktop/TeamProfileDesktop'
 import TeamProfileMobile from './mobile/TeamProfileMobile'
 
@@ -14,9 +15,14 @@ export default function TeamProfilePage() {
 
   const model = useTeamProfilePageModel()
 
-  if (model.state === 'loading') return model.loadingNode
-  if (model.state === 'error') return model.errorNode
-  if (model.state === 'missing') return model.missingNode
+  if (model.state !== 'ready') {
+    return (
+      <ProfilePageState
+        state={model.state}
+        profileType="team"
+      />
+    )
+  }
 
   return isMobile ? (
     <TeamProfileMobile {...model} />

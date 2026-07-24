@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { GAMES_DELETE_SCOPE } from '../../../../../bulkActions/games/delete/index.js'
-import { deleteActions } from '../../../../../../ui/domains/entityLifecycle/delete/deleteActions.js'
+import { deleteEntity, unwrapActionResult } from '../../../../application/index.js'
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
 const safeArray = value => (Array.isArray(value) ? value : [])
@@ -78,7 +78,10 @@ export function useTeamGamesDeleteActions({
       if (typeof onDeleteGamesBulk === 'function') {
         await onDeleteGamesBulk(plan)
       } else {
-        await deleteActions.gamesBulk({ ids })
+        unwrapActionResult(await deleteEntity({
+          entityType: 'gamesBulk',
+          ids,
+        }))
       }
 
       notify({

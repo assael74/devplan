@@ -3,7 +3,7 @@
 import {
   TEAM_PLAYERS_PRINT_MODES,
   buildTeamPlayersReportModel,
-} from '../../../../hub/teamProfile/sharedLogic/players/print/index.js'
+} from './print/index.js'
 
 import {
   PUBLIC_REPORT_SCHEMA_VERSION,

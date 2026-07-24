@@ -1,11 +1,11 @@
-// src/ui/entityLifecycle/delete/teamCascade/useTeamCascadeDeleteDialog.js
+// src/ui/domains/entityLifecycle/delete/teamCascade/useTeamCascadeDeleteDialog.js
 
 import { useCallback, useMemo, useState } from 'react'
 
 import {
-  collectTeamCascadeDeletePlan,
   executeTeamCascadeDelete,
-} from '../../../../../shared/entityLifecycle/cascade/team/index.js'
+  prepareTeamCascadeDeletePlan,
+} from '../../../../../application/index.js'
 
 export function useTeamCascadeDeleteDialog({
   shorts,
@@ -24,20 +24,10 @@ export function useTeamCascadeDeleteDialog({
     entity => {
       if (!entity?.id) return
 
-      const plan = collectTeamCascadeDeletePlan({
-        teamId: entity.id,
+      const plan = prepareTeamCascadeDeletePlan({
+        entity,
         shorts,
-        seed: {
-          team: entity,
-          club: entity?.club || null,
-          players: entity?.players || [],
-          games: entity?.teamGames || entity?.games || [],
-          meetings: entity?.meetings || [],
-          payments: entity?.payments || [],
-        },
       })
-
-      console.log('[teamCascadeDelete] plan', plan)
 
       setBusy(false)
       setState({

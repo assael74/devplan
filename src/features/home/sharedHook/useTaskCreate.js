@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 
-import { createActions } from '../../../ui/forms/create/createActions.js'
+import { createEntity, unwrapActionResult } from '../../../application/index.js'
 import { useSnackbar } from '../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { SNACK_ACTION, SNACK_STATUS } from '../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { mapFirestoreErrorToDetails } from '../../../ui/core/feedback/snackbar/snackbar.format.js'
@@ -18,10 +18,13 @@ export default function useTaskCreate() {
       try {
         setSaving(true)
 
-        const created = await createActions.task({
+        const result = await createEntity({
+          entityType: 'task',
           draft,
           context,
         })
+
+        const created = unwrapActionResult(result)
 
         notify({
           status: SNACK_STATUS.SUCCESS,

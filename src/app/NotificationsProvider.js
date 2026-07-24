@@ -1,8 +1,7 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import useNotifications from '../features/notifications/hooks/useNotifications'
 
-// תתאים את ה-import הזה לשם ההוק הקיים אצלך.
-import { useAuth } from './AuthProvider'
+import { useAuth } from '../features/auth'
 
 const NotificationsContext = createContext(null)
 

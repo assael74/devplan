@@ -6,7 +6,7 @@ import {
 
 import {
   publishPublicReport,
-} from '../../../service/index.js'
+} from '../../../application/index.js'
 
 export async function publishManagementTargetsReport({
   team,

@@ -12,10 +12,9 @@ import {
   filterVideosGeneral,
   sortVideosGeneral,
 } from '../../logic/videoHub.logic.js'
-import { buildVideoHubContext } from '../../logic/videoHub.context.js'
 import { VIDEO_ANALYSIS_EDIT_ADAPTER } from '../../logic/videoHub.editAdapters.js'
 
-import { useCoreData } from '../../../coreData/CoreDataProvider.js'
+import useVideoHubData from '../../hooks/useVideoHubData.js'
 import { useCreateModal } from '../../../../ui/forms/create/CreateModalProvider.js'
 import { buildTaskFabContext } from '../../../../ui/actions/buildTaskFabContext.js'
 import { buildTaskPresetDraft } from '../../../../ui/forms/helpers/tasksForm.helpers.js'
@@ -82,7 +81,7 @@ function normalizeFiltersForCore(filters) {
 
 export default function VideoHubMobile() {
   const location = useLocation()
-  const core = useCoreData()
+  const { analysisEnriched, generalRaw, context } = useVideoHubData()
   const { openCreate } = useCreateModal()
 
   const [selectedMode, setSelectedMode] = useState('')
@@ -95,25 +94,6 @@ export default function VideoHubMobile() {
   const active = modal?.active || null
 
   const { run } = useVideoHubUpdate(active)
-
-  const baseContext = useMemo(() => {
-    return buildVideoHubContext(core)
-  }, [core])
-
-  const analysisRaw = core?.videoAnalysis || EMPTY_ARRAY
-  const generalRaw = core?.videos || EMPTY_ARRAY
-
-  const analysisEnriched = useMemo(() => {
-    return enrichVideoAnalysis(analysisRaw, baseContext)
-  }, [analysisRaw, baseContext])
-
-  const context = useMemo(() => {
-    return {
-      ...baseContext,
-      videoAnalysis: analysisEnriched,
-      videos: generalRaw,
-    }
-  }, [baseContext, analysisEnriched, generalRaw])
 
   const taskContext = useMemo(() => {
     return buildTaskFabContext({

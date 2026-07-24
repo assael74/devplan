@@ -47,6 +47,7 @@ export default function LeaguePage() {
     loading,
     error,
   } = useLeaguePage()
+
   const teamUrlEditor = useTeamUrlEditor({
     leagueId: league.id,
     leagueDoc,

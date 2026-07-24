@@ -1,7 +1,7 @@
 // src/features/calendar/logic/useCalendarHubPage.js
 
 import { useMemo, useState } from 'react'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import useCalendarCoreData from '../hooks/useCalendarCoreData.js'
 
 import { buildCalendarEventsDomain } from '../../../shared/calendar/calendar.hub.builders.js'
 
@@ -50,7 +50,7 @@ function getVisibleWeekDays(weekDays, filters) {
 }
 
 export default function useCalendarHubPage() {
-  const { players, teams, clubs, loading, error } = useCoreData()
+  const { players, teams, clubs, loading, error } = useCalendarCoreData()
 
   const context = useMemo(() => {
     return { players, teams, clubs }

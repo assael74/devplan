@@ -15,7 +15,7 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../../../../sharedLogic/players/print/index.js'
+} from '../../../../../../../reports/model/teams/players/print/index.js'
 
 import {
   publishReport,

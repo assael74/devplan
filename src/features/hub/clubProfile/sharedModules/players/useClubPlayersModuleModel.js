@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
+import usePlayerRowImageModel from '../../../sharedProfile/hooks/usePlayerRowImageModel.js'
 
 import {
   CLUB_PLAYERS_DEFAULT_FILTERS,
@@ -23,9 +23,15 @@ export default function useClubPlayersModuleModel({
     return clubs.find(club => club?.id === entity?.id) || entity || null
   }, [context?.clubs, entity])
 
-  const [imgRow, setImgRow] = useState(null)
-  const [openImg, setOpenImg] = useState(false)
-  const [rowPhoto, setRowPhoto] = useState('')
+  const {
+    imgRow,
+    openImg,
+    rowPhoto,
+    uploadImageOnly,
+    setOpenImg,
+    handleAvatarClick,
+    handleAfterImageSave,
+  } = usePlayerRowImageModel()
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [filters, setFilters] = useState(CLUB_PLAYERS_DEFAULT_FILTERS)
 
@@ -81,16 +87,6 @@ export default function useClubPlayersModuleModel({
     }))
   }
 
-  const handleAvatarClick = row => {
-    setImgRow(row)
-    setRowPhoto(row?.photo || '')
-    setOpenImg(true)
-  }
-
-  const handleAfterImageSave = url => {
-    const next = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-    setRowPhoto(next)
-  }
 
   return {
     liveClub,

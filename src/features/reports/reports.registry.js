@@ -2,16 +2,18 @@
 
 import React from 'react'
 
-import PlayerTargetsPrintView from '../hub/playerProfile/sharedUi/info/print/PlayerTargetsPrintView.js'
-import { ManagementTargetsPrintView } from '../hub/teamProfile/sharedUi/management/print/index.js'
-import TeamPlayersPrintReport from '../hub/teamProfile/sharedUi/players/print/ReportRoot.js'
+import {
+  ManagementTargetsReportRenderer,
+  PlayerTargetsReportRenderer,
+  TeamPlayersReportRenderer,
+} from './renderers/index.js'
 
 import { REPORT_TYPES } from './reports.constants.js'
 
 function renderTeamPlayersReport(payload, options = {}) {
   return (
-    <TeamPlayersPrintReport
-      inputModel={payload}
+    <TeamPlayersReportRenderer
+      payload={payload}
       presentation={options.presentation || 'pdf'}
       actions={options.actions || null}
       reportOptions={options.reportOptions || []}
@@ -23,8 +25,21 @@ function renderTeamPlayersReport(payload, options = {}) {
 
 function renderManagementTargetsReport(payload, options = {}) {
   return (
-    <ManagementTargetsPrintView
-      inputModel={payload}
+    <ManagementTargetsReportRenderer
+      payload={payload}
+      presentation={options.presentation || 'url'}
+      actions={options.actions || null}
+      reportOptions={options.reportOptions || []}
+      selectedReportValue={options.selectedReportValue || null}
+      onReportChange={options.onReportChange || null}
+    />
+  )
+}
+
+function renderPlayerTargetsReport(payload, options = {}) {
+  return (
+    <PlayerTargetsReportRenderer
+      payload={payload}
       presentation={options.presentation || 'url'}
       actions={options.actions || null}
       reportOptions={options.reportOptions || []}
@@ -38,45 +53,31 @@ const REPORT_DEFINITIONS = {
   [REPORT_TYPES.SEASON_PLAN]: {
     id: REPORT_TYPES.SEASON_PLAN,
     label: 'תכנון סגל',
-
-    render: (payload, options) => renderTeamPlayersReport(payload, options),
+    render: renderTeamPlayersReport,
   },
 
   [REPORT_TYPES.MINUTES_PLAN]: {
     id: REPORT_TYPES.MINUTES_PLAN,
     label: 'תכנון חלוקת דקות',
-
-    render: (payload, options) => renderTeamPlayersReport(payload, options),
+    render: renderTeamPlayersReport,
   },
 
   [REPORT_TYPES.PERFORMANCE]: {
     id: REPORT_TYPES.PERFORMANCE,
     label: 'יעדים וביצועי שחקנים',
-
-    render: (payload, options) => renderTeamPlayersReport(payload, options),
+    render: renderTeamPlayersReport,
   },
 
   [REPORT_TYPES.TEAM_TARGETS]: {
     id: REPORT_TYPES.TEAM_TARGETS,
     label: 'יעדי קבוצה',
-
-    render: (payload, options) => renderManagementTargetsReport(payload, options),
+    render: renderManagementTargetsReport,
   },
 
   [REPORT_TYPES.PLAYER_TARGETS]: {
     id: REPORT_TYPES.PLAYER_TARGETS,
     label: 'יעדי שחקן',
-
-    render: (payload, options = {}) => (
-      <PlayerTargetsPrintView
-        inputModel={payload}
-        presentation={options.presentation || 'url'}
-        reportOptions={options.reportOptions || []}
-        selectedReportValue={options.selectedReportValue || null}
-        onReportChange={options.onReportChange || null}
-        actions={options.actions || null}
-      />
-    ),
+    render: renderPlayerTargetsReport,
   },
 }
 

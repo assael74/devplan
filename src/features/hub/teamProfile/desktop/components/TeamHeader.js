@@ -1,25 +1,15 @@
-// features/hub/teamProfile/desktop/components/TeamHeader.js
+// src/features/hub/teamProfile/desktop/components/TeamHeader.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Tooltip, Typography } from '@mui/joy'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import React, { useMemo } from 'react'
+import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
-import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
-import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
-
-import ifaImage from '../../../../../ui/core/images/ifaImage.png'
-
-const getItemsCount = items => (Array.isArray(items) ? items.length : 0)
-
-const openExternalLink = url => {
-  if (!url) return
-
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
+import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
+import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
+import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
 
 const getClubId = ({ entity, context }) =>
   context?.club?.id ||
@@ -33,57 +23,6 @@ const getClubName = ({ entity, context }) =>
   entity?.club?.clubName ||
   entity?.club?.name ||
   ''
-
-function IFAButton({ ifaLink }) {
-  const tooltipTitle = ifaLink
-    ? 'פתח באתר ההתאחדות'
-    : 'אין קישור להתאחדות'
-
-  return (
-    <Tooltip title={tooltipTitle}>
-      <span>
-        <Button
-          size="sm"
-          variant="solid"
-          color="neutral"
-          disabled={!ifaLink}
-          onClick={() => openExternalLink(ifaLink)}
-          startDecorator={
-            <Box
-              component="img"
-              src={ifaImage}
-              alt="התאחדות"
-              sx={{
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                objectFit: 'contain',
-              }}
-            />
-          }
-          endDecorator={
-            <OpenInNewIcon
-              sx={{
-                fontSize: 16,
-              }}
-            />
-          }
-          sx={{
-            minHeight: 34,
-            px: 1,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 10,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          התאחדות
-        </Button>
-      </span>
-    </Tooltip>
-  )
-}
 
 function TeamSubtitle({ entity, context, onClubClick }) {
   const clubName = getClubName({ entity, context })
@@ -139,25 +78,13 @@ function TeamSubtitle({ entity, context, onClubClick }) {
       )}
 
       {clubName && teamYear && (
-        <Typography
-          component="span"
-          level="body-xs"
-          sx={{
-            color: 'text.tertiary',
-          }}
-        >
+        <Typography component="span" level="body-xs" sx={{ color: 'text.tertiary' }}>
           ·
         </Typography>
       )}
 
       {teamYear && (
-        <Typography
-          component="span"
-          level="body-xs"
-          sx={{
-            color: 'text.tertiary',
-          }}
-        >
+        <Typography component="span" level="body-xs" sx={{ color: 'text.tertiary' }}>
           {teamYear}
         </Typography>
       )}
@@ -167,27 +94,22 @@ function TeamSubtitle({ entity, context, onClubClick }) {
 
 export default function TeamHeader({ entity, context }) {
   const navigate = useNavigate()
-  const [openImg, setOpenImg] = useState(false)
-
   const ifaLink = entity?.ifaLink || null
-
   const avatarSrc = resolveEntityAvatar({
     entityType: 'team',
     entity,
     parentEntity: entity?.club,
     subline: entity?.club?.name,
   })
-
-  const [headerPhoto, setHeaderPhoto] = useState(avatarSrc)
-
-  useEffect(() => {
-    setHeaderPhoto(avatarSrc)
-  }, [avatarSrc])
+  const image = useProfileHeaderImage({
+    entityId: entity?.id,
+    source: avatarSrc,
+  })
 
   const metaCounts = useMemo(() => {
-    const playersCount = getItemsCount(entity?.players)
-    const gamesCount = getItemsCount(entity?.teamGames)
-    const meetingsCount = getItemsCount(entity?.meetings)
+    const playersCount = countHeaderItems(entity?.players)
+    const gamesCount = countHeaderItems(entity?.teamGames)
+    const meetingsCount = countHeaderItems(entity?.meetings)
 
     return {
       players: playersCount,
@@ -198,24 +120,13 @@ export default function TeamHeader({ entity, context }) {
         gamesCount === 0 &&
         meetingsCount === 0,
     }
-  }, [
-    entity?.players,
-    entity?.teamGames,
-    entity?.meetings,
-  ])
+  }, [entity?.players, entity?.teamGames, entity?.meetings])
 
   const handleClubClick = () => {
     const clubId = getClubId({ entity, context })
     if (!clubId) return
 
     navigate(`/clubs/${clubId}`)
-  }
-
-  const handleImageSave = url => {
-    if (!url) return
-
-    const separator = url.includes('?') ? '&' : '?'
-    setHeaderPhoto(`${url}${separator}v=${Date.now()}`)
   }
 
   return (
@@ -229,11 +140,14 @@ export default function TeamHeader({ entity, context }) {
             onClubClick={handleClubClick}
           />
         }
-        avatarSrc={headerPhoto}
-        onAvatarClick={() => setOpenImg(true)}
+        avatarSrc={image.photo}
+        onAvatarClick={image.openModal}
         right={
           <>
-            <IFAButton ifaLink={ifaLink} />
+            <ProfileIfaButton
+              ifaLink={ifaLink}
+              variant="solid"
+            />
 
             <EntityActionsMenu
               entityType="team"
@@ -246,16 +160,11 @@ export default function TeamHeader({ entity, context }) {
           </>
         }
       />
-
-      <EntityImageModal
-        open={openImg}
-        onClose={() => setOpenImg(false)}
+      <ProfileHeaderImageModal
+        image={image}
         entityType="teams"
-        id={entity?.id}
+        entityId={entity?.id}
         entityName={entity?.teamName}
-        currentPhotoUrl={headerPhoto}
-        uploadImageOnly={uploadImageOnly}
-        onAfterSave={handleImageSave}
       />
     </>
   )

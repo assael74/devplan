@@ -2,15 +2,15 @@
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../../../hub/teamProfile/sharedLogic/players/print/index.js'
+} from '../../../model/teams/players/print/index.js'
 
 import {
   buildTeamPlayersPublicReportInput,
-} from '../../../../reports/model/index.js'
+} from '../../../model/index.js'
 
 import {
   publishPublicReport,
-} from '../../../../reports/service/index.js'
+} from '../../../application/index.js'
 
 function getBlockedReportMessage(mode) {
   if (mode === TEAM_PLAYERS_PRINT_MODES.PERFORMANCE) {

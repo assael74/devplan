@@ -5,6 +5,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 
 import usePlayerProfilePageModel from './playerProfile.logic'
+import { ProfilePageState } from '../sharedProfile/ui'
 import PlayerProfileDesktop from './desktop/PlayerProfileDesktop'
 import PlayerProfileMobile from './mobile/PlayerProfileMobile'
 
@@ -14,9 +15,14 @@ export default function PlayerProfilePage() {
 
   const model = usePlayerProfilePageModel()
   
-  if (model.state === 'loading') return model.loadingNode
-  if (model.state === 'error') return model.errorNode
-  if (model.state === 'missing') return model.missingNode
+  if (model.state !== 'ready') {
+    return (
+      <ProfilePageState
+        state={model.state}
+        profileType="player"
+      />
+    )
+  }
 
   return isMobile ? (
     <PlayerProfileMobile {...model} />

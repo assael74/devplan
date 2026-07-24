@@ -1,50 +1,25 @@
-// features/hub/playerProfile/playerProfile.logic.js
+// src/features/hub/playerProfile/playerProfile.logic.js
 
 import { useMemo } from 'react'
-import { useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
-import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
-
+import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './playerProfile.routes'
-
 import {
   buildPlayerProfileData,
 } from './sharedLogic/profileData/index.js'
-
-function buildLoadingNode() {
-  return (
-    <Sheet sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CircularProgress size="sm" />
-        <Typography level="body-sm">טוען שחקן…</Typography>
-      </Box>
-    </Sheet>
-  )
-}
-
-function buildErrorNode() {
-  return (
-    <Sheet sx={{ p: 2 }}>
-      <Typography level="body-sm">שגיאה בטעינת נתונים</Typography>
-    </Sheet>
-  )
-}
-
-function buildMissingNode() {
-  return <Navigate to="/hub" replace />
-}
-
-const findById = ({ rows, id }) => {
-  return (rows || []).find(item => {
-    return String(item?.id) === String(id)
-  }) || null
-}
+import {
+  buildProfileTagsById,
+  findProfileEntityById,
+  resolveProfilePageState,
+  resolveProfileRawTab,
+  resolveProfileSelectedTab,
+} from '../sharedProfile/logic/profileModel.shared.js'
 
 export default function usePlayerProfilePageModel() {
   const location = useLocation()
   const { playerId, tabKey } = useParams()
-  const [sp] = useSearchParams()
+  const [searchParams] = useSearchParams()
 
   const {
     players,
@@ -57,7 +32,7 @@ export default function usePlayerProfilePageModel() {
   } = useCoreData()
 
   const entity = useMemo(() => {
-    return findById({
+    return findProfileEntityById({
       rows: players,
       id: playerId,
     })
@@ -67,15 +42,11 @@ export default function usePlayerProfilePageModel() {
   const isPrivatePlayer = entity?.isPrivatePlayer === true
 
   const tagsById = useMemo(() => {
-    if (!Array.isArray(tags)) return null
-
-    return Object.fromEntries(
-      tags.map(item => [String(item.id), item])
-    )
+    return buildProfileTagsById(tags)
   }, [tags])
 
   const team = useMemo(() => {
-    return findById({
+    return findProfileEntityById({
       rows: teams,
       id: entity?.teamId,
     })
@@ -86,7 +57,7 @@ export default function usePlayerProfilePageModel() {
 
     return {
       team,
-      club: findById({
+      club: findProfileEntityById({
         rows: clubs,
         id: entity?.clubId,
       }),
@@ -110,23 +81,25 @@ export default function usePlayerProfilePageModel() {
   }, [entity, team])
 
   const rawTab = useMemo(() => {
-    const fromParam = String(tabKey || '').trim()
-    if (fromParam) return fromParam
-
-    const fromQuery = String(sp.get('tab') || '').trim()
-    return fromQuery
-  }, [tabKey, sp])
+    return resolveProfileRawTab({
+      tabKey,
+      searchParams,
+    })
+  }, [tabKey, searchParams])
 
   const tab = useMemo(() => {
     return getTabFromUrl({
       tabKeyParam: tabKey,
-      searchParams: sp,
+      searchParams,
       isProject,
     })
-  }, [tabKey, sp, isProject])
+  }, [tabKey, searchParams, isProject])
 
   const selectedTab = useMemo(() => {
-    return rawTab ? tab : ''
+    return resolveProfileSelectedTab({
+      rawTab,
+      tab,
+    })
   }, [rawTab, tab])
 
   const taskContext = useMemo(() => {
@@ -143,48 +116,34 @@ export default function usePlayerProfilePageModel() {
 
     return {
       games:
-        profileData?.games?.counts?.playedPlayerGames ??
-        entity?.performances?.length ??
+        profileData?.games?.counts?.playedPlayerGames ||
+        entity?.performances?.length ||
         0,
-
       meetings: entity?.meetings?.length || 0,
       payments: entity?.payments?.length || 0,
     }
   }, [entity, profileData])
 
-  if (loading) {
-    return {
-      state: 'loading',
-      loadingNode: buildLoadingNode(),
-    }
-  }
+  const state = resolveProfilePageState({
+    loading,
+    error,
+    entity,
+  })
 
-  if (error) {
-    return {
-      state: 'error',
-      errorNode: buildErrorNode(),
-    }
-  }
-
-  if (!entity) {
-    return {
-      state: 'missing',
-      missingNode: buildMissingNode(),
-    }
+  if (state !== 'ready') {
+    return { state }
   }
 
   return {
-    state: 'ready',
+    state,
     rawTab,
     tab,
     selectedTab,
     isProject,
     isPrivatePlayer,
-
     entity,
     context,
     profileData,
-
     taskContext,
     counts,
   }

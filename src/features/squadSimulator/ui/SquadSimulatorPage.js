@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { Box, CircularProgress, Sheet, Typography } from '@mui/joy'
 
-import { useAuth } from '../../../app/AuthProvider.js'
+import { useAuth } from '../../auth/index.js'
 import {
   canAccessSquadSimulator,
   getSquadSimulatorTeamIds,

@@ -19,7 +19,7 @@ import { subscribeShorts } from '../../services/firestore/shorts/shorts.subscrib
 import { resolveCoreData } from './resolvers/coreData.resolver'
 import { mergeShorts } from './resolvers/mergeShorts.js'
 import { patchShortsDocsByRouter } from './utils/patchShortsEntity.js'
-import { useAuth } from '../../app/AuthProvider.js'
+import { useAuth } from '../auth/index.js'
 
 const CoreDataContext = createContext(null)
 

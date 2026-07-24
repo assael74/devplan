@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
-import { useAuth } from '../../app/AuthProvider.js'
+import { useAuth } from '../../features/auth/index.js'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
 import MeetingCreateFields from './ui/meetings/MeetingCreateFields.js'

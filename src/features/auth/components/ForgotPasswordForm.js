@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Alert, Button, FormControl, FormLabel, Input, Link } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
-import { useAuth } from '../../../app/AuthProvider'
+import { useAuth } from '../index.js'
 import { authSx } from '../auth.sx'
 import { buildForgotPasswordModel, isForgotPasswordDisabled, normalizeAuthError } from '../auth.logic'
 import { authApi } from '../../../services/auth/auth.api'

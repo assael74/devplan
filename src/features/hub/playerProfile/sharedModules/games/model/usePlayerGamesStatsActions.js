@@ -7,8 +7,11 @@ import {
 } from '../../../../../../ui/forms/gameStatsForm/logic/index.js'
 
 import {
-  getGameStatsDoc,
-} from '../../../../../../services/firestore/shorts/gameStats/index.js'
+  buildProfileStatsDeleteAction,
+  loadProfileGameStats,
+  resolveStatsDocumentId,
+  saveProfileGameStats,
+} from '../../../../sharedProfile/logic/games/index.js'
 
 import {
   useGameStatsHubDrafts,
@@ -31,41 +34,6 @@ import {
   isLocalDraftSave,
   mergeStatsDocId,
 } from './playerGamesStats.helpers.js'
-
-function getSaveModelPayload(saveModel) {
-  if (!saveModel) return null
-
-  return saveModel.payload || null
-}
-
-function getSaveModelDraft(saveModel) {
-  if (!saveModel) return null
-
-  return saveModel.draft || null
-}
-
-function resolveDeleteGameStatsDocId({
-  targetGame,
-  draft,
-  activeStatsFormDraft,
-}) {
-  const fromGame = getGameStatsDocId(targetGame)
-
-  if (fromGame) return fromGame
-
-  if (draft && draft.gameStatsDocId) return draft.gameStatsDocId
-  if (draft && draft.statsDocId) return draft.statsDocId
-
-  if (activeStatsFormDraft && activeStatsFormDraft.gameStatsDocId) {
-    return activeStatsFormDraft.gameStatsDocId
-  }
-
-  if (activeStatsFormDraft && activeStatsFormDraft.statsDocId) {
-    return activeStatsFormDraft.statsDocId
-  }
-
-  return ''
-}
 
 function buildEmptyStatsFormGame({
   game,
@@ -188,10 +156,13 @@ export function usePlayerGamesStatsActions({
   } = useGameStatsHubUpdate()
 
   const statsDeleteAction = useMemo(() => {
-    return buildStatsDeleteAction({
+    return buildProfileStatsDeleteAction({
       editingStatsGame,
       activeStatsFormDraft,
       statsPayloadsByGameId,
+      getGameId,
+      getGameStatsDocId,
+      isLocalDraftSave,
     })
   }, [editingStatsGame, activeStatsFormDraft, statsPayloadsByGameId])
 
@@ -226,13 +197,24 @@ export function usePlayerGamesStatsActions({
       return
     }
 
-    setStatsFormLoading(true)
-    setStatsFormLoadingText('טוען סטטיסטיקה שמורה...')
-
-    try {
-      const statsDoc = await getGameStatsDoc({ gameStatsDocId })
-
-      if (!statsDoc) {
+    await loadProfileGameStats({
+      gameStatsDocId,
+      onLoadingChange: (loading, text) => {
+        setStatsFormLoading(loading)
+        setStatsFormLoadingText(text)
+      },
+      onLoaded: statsDoc => {
+        openLoadedStatsDraft({
+          game,
+          liveTeam,
+          livePlayer,
+          contextPlayers,
+          statsDoc,
+          statsScope,
+          openStatsGame,
+        })
+      },
+      onMissing: () => {
         openInitialStatsDraft({
           game,
           liveTeam,
@@ -241,57 +223,31 @@ export function usePlayerGamesStatsActions({
           statsScope,
           openStatsGame,
         })
-
-        return
-      }
-
-      openLoadedStatsDraft({
-        game,
-        liveTeam,
-        livePlayer,
-        contextPlayers,
-        statsDoc,
-        statsScope,
-        openStatsGame,
-      })
-    } catch (err) {
-      console.error('[handleOpenStatsGame] failed to load player stats doc', err)
-
-      openInitialStatsDraft({
-        game,
-        liveTeam,
-        livePlayer,
-        contextPlayers,
-        statsScope,
-        openStatsGame,
-      })
-    } finally {
-      setStatsFormLoading(false)
-      setStatsFormLoadingText('')
-    }
+      },
+      onError: () => {
+        openInitialStatsDraft({
+          game,
+          liveTeam,
+          livePlayer,
+          contextPlayers,
+          statsScope,
+          openStatsGame,
+        })
+      },
+      errorLabel: '[handleOpenStatsGame] failed to load player stats doc',
+    })
   }
 
   const handleSaveStats = async saveModel => {
-    const payload = getSaveModelPayload(saveModel)
-    const draft = getSaveModelDraft(saveModel)
-
-    if (!payload) return
-
-    if (isLocalDraftSave(payload)) {
-      saveStatsDraft({ payload, draft })
-      return
-    }
-
-    const result = await saveStatsToFirestore(payload)
-    const gameStatsDocId = getCreatedStatsDocId({ result, payload })
-
-    completeStatsFirestoreSave(
-      mergeStatsDocId({
-        payload,
-        draft,
-        gameStatsDocId,
-      })
-    )
+    await saveProfileGameStats({
+      saveModel,
+      isLocalDraftSave,
+      saveStatsDraft,
+      saveStatsToFirestore,
+      getCreatedStatsDocId,
+      mergeStatsDocId,
+      completeStatsFirestoreSave,
+    })
   }
 
   const handleDeleteStats = async ({ draft, game, statsDeleteAction } = {}) => {
@@ -306,10 +262,11 @@ export function usePlayerGamesStatsActions({
       return
     }
 
-    const gameStatsDocId = resolveDeleteGameStatsDocId({
-      targetGame,
+    const gameStatsDocId = resolveStatsDocumentId({
+      game: targetGame,
       draft,
-      activeStatsFormDraft,
+      activeDraft: activeStatsFormDraft,
+      getGameStatsDocId,
     })
 
     if (!gameStatsDocId) return

@@ -93,6 +93,7 @@ export const buildTeamSeasonIndexDoc = ({
   row = {},
   tableAttackRank = 0,
   tableDefenseRank = 0,
+  scoutResult = null,
 } = {}) => {
   const leagueId = clean(league.id || season.leagueId || row.leagueId)
   const seasonIdentity = normalizeSeasonIdentity({ season })
@@ -109,6 +110,8 @@ export const buildTeamSeasonIndexDoc = ({
   const games = getRowGames(row)
   const goalsFor = getRowGoalsFor(row)
   const goalsAgainst = getRowGoalsAgainst(row)
+  const offense = scoutResult?.offense || null
+  const defense = scoutResult?.defense || null
   const displayName = buildTeamDisplayName({
     clubName: row.clubName || row.displayName,
     clubId,
@@ -156,6 +159,24 @@ export const buildTeamSeasonIndexDoc = ({
     goalsForPerGame: games ? roundNumber(goalsFor / games) : 0,
     goalsAgainstPerGame: games ? roundNumber(goalsAgainst / games) : 0,
     teamGamePlayed: games,
+    attackPerformance: offense?.priorityRate ?? offense?.scoutPriorityRate ?? null,
+    attackPerformanceRate: offense?.performanceRate ?? null,
+    attackRankingRate: offense?.rankingRate ?? null,
+    attackCombinedRate: offense?.combinedRate ?? null,
+    attackQualityRate: offense?.qualityRate ?? null,
+    attackScoutPriorityRate: offense?.scoutPriorityRate ?? null,
+    attackPriorityRate: offense?.priorityRate ?? null,
+    attackPriorityLevel: offense?.priorityLevel ?? '',
+    attackAnomalyLevel: offense?.anomalyLevel ?? '',
+    defensePerformance: defense?.priorityRate ?? defense?.scoutPriorityRate ?? null,
+    defensePerformanceRate: defense?.performanceRate ?? null,
+    defenseRankingRate: defense?.rankingRate ?? null,
+    defenseCombinedRate: defense?.combinedRate ?? null,
+    defenseQualityRate: defense?.qualityRate ?? null,
+    defenseScoutPriorityRate: defense?.scoutPriorityRate ?? null,
+    defensePriorityRate: defense?.priorityRate ?? null,
+    defensePriorityLevel: defense?.priorityLevel ?? '',
+    defenseAnomalyLevel: defense?.anomalyLevel ?? '',
     scoutProfiledPlayersCount: toNumberOrZero(
       row.scoutProfiledPlayersCount ?? row.scoutProfilesSummary?.total
     ),
@@ -167,4 +188,3 @@ export const buildTeamSeasonIndexDoc = ({
     updatedAt: serverTimestamp(),
   }
 }
-

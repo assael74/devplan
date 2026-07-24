@@ -1,3 +1,5 @@
+// src/features/videoHub/hooks/useVideoHubUpdate.js
+
 import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
 
 export function useVideoHubUpdate(active) {

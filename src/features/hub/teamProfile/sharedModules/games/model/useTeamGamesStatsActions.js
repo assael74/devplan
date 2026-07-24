@@ -7,8 +7,11 @@ import {
 } from '../../../../../../ui/forms/gameStatsForm/logic/index.js'
 
 import {
-  getGameStatsDoc,
-} from '../../../../../../services/firestore/shorts/gameStats/index.js'
+  buildProfileStatsDeleteAction,
+  loadProfileGameStats,
+  resolveStatsDocumentId,
+  saveProfileGameStats,
+} from '../../../../sharedProfile/logic/games/index.js'
 
 import {
   useGameStatsHubDrafts,
@@ -22,70 +25,6 @@ import {
   isLocalDraftSave,
   mergeStatsDocId,
 } from '../teamGamesStats.helpers.js'
-
-function getLocalDraft({ gameId, statsPayloadsByGameId }) {
-  if (!gameId) return null
-
-  return statsPayloadsByGameId[gameId] || null
-}
-
-function resolveFirestoreDocId({ editingStatsGame, activeStatsFormDraft }) {
-  const fromGame = getGameStatsDocId(editingStatsGame)
-
-  if (fromGame) return fromGame
-  if (!activeStatsFormDraft) return ''
-
-  return activeStatsFormDraft.gameStatsDocId ||
-    activeStatsFormDraft.statsDocId ||
-    ''
-}
-
-function buildStatsDeleteAction({
-  editingStatsGame,
-  activeStatsFormDraft,
-  statsPayloadsByGameId,
-}) {
-  const gameId = getGameId(editingStatsGame)
-
-  const localDraft = getLocalDraft({
-    gameId,
-    statsPayloadsByGameId,
-  })
-
-  if (isLocalDraftSave(localDraft)) {
-    return {
-      type: 'localDraft',
-      label: 'מחיקת טיוטה',
-      color: 'danger',
-      disabled: false,
-    }
-  }
-
-  const firestoreDocId = resolveFirestoreDocId({
-    editingStatsGame,
-    activeStatsFormDraft,
-  })
-
-  if (firestoreDocId) {
-    return {
-      type: 'firestoreStats',
-      label: 'מחיקת טופס סטטיסטיקה',
-      color: 'danger',
-      disabled: false,
-    }
-  }
-
-  return null
-}
-
-function resolveDeleteGameStatsDocId({ targetGame, draft }) {
-  const fromGame = getGameStatsDocId(targetGame)
-
-  if (fromGame) return fromGame
-  if (!draft) return ''
-
-  return draft.gameStatsDocId || draft.statsDocId || ''
-}
 
 function resolveDeleteTeamId({ liveTeam, draft, targetGame }) {
   if (liveTeam && liveTeam.id) return liveTeam.id
@@ -133,32 +72,28 @@ export function useTeamGamesStatsActions({
   } = useGameStatsHubUpdate()
 
   const statsDeleteAction = useMemo(() => {
-    return buildStatsDeleteAction({
+    return buildProfileStatsDeleteAction({
       editingStatsGame,
       activeStatsFormDraft,
       statsPayloadsByGameId,
+      getGameId,
+      getGameStatsDocId,
+      isLocalDraftSave,
     })
   }, [editingStatsGame, activeStatsFormDraft, statsPayloadsByGameId])
 
   const handleSaveStats = async saveModel => {
     if (!enableStatsForm) return
 
-    const payload = saveModel && saveModel.payload
-    const draft = saveModel && saveModel.draft
-
-    if (!payload) return
-
-    if (isLocalDraftSave(payload)) {
-      saveStatsDraft({ payload, draft })
-      return
-    }
-
-    const result = await saveStatsToFirestore(payload)
-    const gameStatsDocId = getCreatedStatsDocId({ result, payload })
-
-    completeStatsFirestoreSave(
-      mergeStatsDocId({ payload, draft, gameStatsDocId })
-    )
+    await saveProfileGameStats({
+      saveModel,
+      isLocalDraftSave,
+      saveStatsDraft,
+      saveStatsToFirestore,
+      getCreatedStatsDocId,
+      mergeStatsDocId,
+      completeStatsFirestoreSave,
+    })
   }
 
   const handleOpenStatsGame = async game => {
@@ -178,31 +113,25 @@ export function useTeamGamesStatsActions({
       return
     }
 
-    setStatsFormLoading(true)
-    setStatsFormLoadingText('טוען סטטיסטיקה שמורה...')
+    await loadProfileGameStats({
+      gameStatsDocId,
+      onLoadingChange: (loading, text) => {
+        setStatsFormLoading(loading)
+        setStatsFormLoadingText(text)
+      },
+      onLoaded: statsDoc => {
+        const loadedDraft = buildLoadedDraft({
+          game,
+          liveTeam,
+          statsDoc,
+        })
 
-    try {
-      const statsDoc = await getGameStatsDoc({ gameStatsDocId })
-
-      if (!statsDoc) {
-        openStatsGame(game)
-        return
-      }
-
-      const loadedDraft = buildLoadedDraft({
-        game,
-        liveTeam,
-        statsDoc,
-      })
-
-      openStatsGame(game, loadedDraft)
-    } catch (err) {
-      console.error('[handleOpenStatsGame] failed to load stats doc', err)
-      openStatsGame(game)
-    } finally {
-      setStatsFormLoading(false)
-      setStatsFormLoadingText('')
-    }
+        openStatsGame(game, loadedDraft)
+      },
+      onMissing: () => openStatsGame(game),
+      onError: () => openStatsGame(game),
+      errorLabel: '[handleOpenStatsGame] failed to load stats doc',
+    })
   }
 
   const handleDeleteStats = async ({ draft, game, statsDeleteAction } = {}) => {
@@ -219,9 +148,10 @@ export function useTeamGamesStatsActions({
       return
     }
 
-    const gameStatsDocId = resolveDeleteGameStatsDocId({
-      targetGame,
+    const gameStatsDocId = resolveStatsDocumentId({
+      game: targetGame,
       draft,
+      getGameStatsDocId,
     })
 
     if (!gameStatsDocId) return

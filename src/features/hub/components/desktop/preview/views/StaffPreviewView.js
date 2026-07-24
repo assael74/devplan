@@ -12,7 +12,7 @@ import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
 
 import { useUpdateAction } from '../../../../../../ui/domains/entityActions/updateAction.js'
 import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityImageModal.js'
-import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
+import { uploadEntityImageUrl as uploadImageOnly } from '../../../../application/index.js'
 
 import StaffPreviewForm from '../previewDomainCard/domains/roles/StaffPreviewForm.js'
 import { staffPreviewSx } from '../previewDomainCard/domains/roles/staffPreview.sx.js'

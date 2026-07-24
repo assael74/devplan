@@ -1,45 +1,33 @@
-// features/hub/clubProfile/clubProfile.logic.js
+// src/features/hub/clubProfile/clubProfile.logic.js
 
-import { useMemo } from 'react'
-import { useLocation, useParams, useSearchParams, Navigate } from 'react-router-dom'
-import { Sheet, Typography, Box, CircularProgress } from '@mui/joy'
-
+import { useCallback, useMemo } from 'react'
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
-
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './clubProfile.routes'
-
 import {
   buildClubProfileData,
 } from './sharedLogic/index.js'
-
-function buildLoadingNode() {
-  return (
-    <Sheet sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CircularProgress size="sm" />
-        <Typography level="body-sm">טוען מועדון ...</Typography>
-      </Box>
-    </Sheet>
-  )
-}
-
-function buildErrorNode() {
-  return (
-    <Sheet sx={{ p: 2 }}>
-      <Typography level="body-sm">שגיאה בטעינת נתונים</Typography>
-    </Sheet>
-  )
-}
-
-function buildMissingNode() {
-  return <Navigate to="/hub" replace />
-}
+import {
+  findProfileEntityById,
+  resolveProfilePageState,
+} from '../sharedProfile/logic/profileModel.shared.js'
+import useProfileRouteModel from '../sharedProfile/logic/useProfileRouteModel.js'
 
 export default function useClubProfilePageModel() {
-  const location = useLocation()
-  const { clubId, tabKey } = useParams()
-  const [sp] = useSearchParams()
+  const resolveTab = useCallback(({ tabKeyParam, searchParams }) => {
+    return getTabFromUrl({
+      tabKeyParam,
+      searchParams,
+    })
+  }, [])
+
+  const {
+    location,
+    params,
+    rawTab,
+    tab,
+    selectedTab,
+  } = useProfileRouteModel({ resolveTab })
 
   const {
     players,
@@ -50,16 +38,12 @@ export default function useClubProfilePageModel() {
     error,
   } = useCoreData()
 
-  const tab = useMemo(() => {
-    return getTabFromUrl({
-      tabKeyParam: tabKey,
-      searchParams: sp,
-    })
-  }, [tabKey, sp])
-
   const entity = useMemo(() => {
-    return (clubs || []).find((club) => String(club.id) === String(clubId)) || null
-  }, [clubs, clubId])
+    return findProfileEntityById({
+      rows: clubs,
+      id: params.clubId,
+    })
+  }, [clubs, params.clubId])
 
   const profileData = useMemo(() => {
     if (!entity) return null
@@ -71,18 +55,6 @@ export default function useClubProfilePageModel() {
       calculationMode: 'games',
     })
   }, [entity, teams, players])
-
-  const rawTab = useMemo(() => {
-    const fromParam = String(tabKey || '').trim()
-    if (fromParam) return fromParam
-
-    const fromQuery = String(sp.get('tab') || '').trim()
-    return fromQuery
-  }, [tabKey, sp])
-
-  const selectedTab = useMemo(() => {
-    return rawTab ? tab : ''
-  }, [rawTab, tab])
 
   const context = useMemo(() => {
     if (!entity) return {}
@@ -114,39 +86,25 @@ export default function useClubProfilePageModel() {
     }
   }, [entity, profileData])
 
-  if (loading) {
-    return {
-      state: 'loading',
-      loadingNode: buildLoadingNode(),
-    }
-  }
+  const state = resolveProfilePageState({
+    loading,
+    error,
+    entity,
+  })
 
-  if (error) {
-    return {
-      state: 'error',
-      errorNode: buildErrorNode(),
-    }
-  }
-
-  if (!entity) {
-    return {
-      state: 'missing',
-      missingNode: buildMissingNode(),
-    }
+  if (state !== 'ready') {
+    return { state }
   }
 
   return {
-    state: 'ready',
+    state,
     rawTab,
     tab,
     selectedTab,
-
     entity,
     profileData,
-
     teams: profileData?.teams || [],
     players: profileData?.players || [],
-
     context,
     taskContext,
     counts,

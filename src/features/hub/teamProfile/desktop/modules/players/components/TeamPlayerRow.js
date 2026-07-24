@@ -6,7 +6,7 @@ import EditRounded from '@mui/icons-material/EditRounded'
 
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import EntityActionsMenu from '../../../../../sharedProfile/EntityActionsMenu.js'
-import { TEAM_PLAYERS_PRINT_MODES } from '../../../../sharedLogic/players/print/index.js'
+import { TEAM_PLAYERS_PRINT_MODES } from '../../../../../../reports/model/teams/players/print/index.js'
 
 import PlayerIdentityCell from './sections/PlayerIdentityCell.js'
 import PerformanceCell from './sections/PerformanceCell.js'

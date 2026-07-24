@@ -9,12 +9,16 @@ import EntityLifecycleDialog from './EntityLifecycleDialog.js'
 import ArchiveRestoreEntityDialog from './ArchiveRestoreEntityDialog.js'
 
 import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider.js'
-import { deleteActions } from './delete/deleteActions.js'
 import { useCoreData } from '../../../features/coreData/CoreDataProvider.js'
 
-import { debugLog } from '../../../services/firestore/shorts/shortsDebug.utils.js'
-import { SHORTS_DEBUG } from '../../../services/firestore/shorts/shortsDebug.config.js'
-import { updateByRouterFields } from '../../../services/firestore/shorts/shortsUpdateByRouter.js'
+import {
+  deleteEntity,
+  getActionDebugMode,
+  isActionDebugEnabled,
+  logActionDebug,
+  updateEntity,
+  unwrapActionResult,
+} from '../../../application/index.js'
 
 import {
   TeamCascadeDeleteDialog,
@@ -116,7 +120,7 @@ export default function LifecycleProvider({ children }) {
           const list = Array.isArray(doc?.list) ? doc.list : []
           const players = list.filter(x => x?.teamId === id).length
 
-          if (SHORTS_DEBUG.enabled) debugLog('GET_META:team', { teamId: id, players })
+          if (isActionDebugEnabled()) logActionDebug('GET_META:team', { teamId: id, players })
 
           return { ...base, players }
         }
@@ -126,13 +130,13 @@ export default function LifecycleProvider({ children }) {
           const list = Array.isArray(doc?.list) ? doc.list : []
           const teams = list.filter(x => x?.clubId === id).length
 
-          if (SHORTS_DEBUG.enabled) debugLog('GET_META:club', { clubId: id, teams })
+          if (isActionDebugEnabled()) logActionDebug('GET_META:club', { clubId: id, teams })
 
           return { ...base, teams }
         }
 
         if (entityType === 'player') {
-          if (SHORTS_DEBUG.enabled) debugLog('GET_META:player', { playerId: id, base })
+          if (isActionDebugEnabled()) logActionDebug('GET_META:player', { playerId: id, base })
           return { ...base }
         }
 
@@ -145,23 +149,26 @@ export default function LifecycleProvider({ children }) {
 
         const fieldsPatch = { active: false }
 
-        debugLog('UI_ARCHIVE:update:start', {
+        logActionDebug('UI_ARCHIVE:update:start', {
           entityType,
           routerEntityType,
           id,
           fieldsKeys: Object.keys(fieldsPatch),
-          mode: SHORTS_DEBUG?.dryRun ? 'DRY_RUN' : 'WRITE',
+          mode: getActionDebugMode(),
         })
 
-        const res = await updateByRouterFields({
+        const result = await updateEntity({
           entityType: routerEntityType,
           id,
           fieldsPatch,
           createIfMissing: false,
           requireAnyUpdated: true,
+          metadata: { source: 'LifecycleProvider' },
         })
 
-        debugLog('UI_ARCHIVE:update:success', { entityType, routerEntityType, id, res })
+        const res = unwrapActionResult(result)
+
+        logActionDebug('UI_ARCHIVE:update:success', { entityType, routerEntityType, id, res })
         return res
       },
 
@@ -171,30 +178,32 @@ export default function LifecycleProvider({ children }) {
 
         const fieldsPatch = { active: true }
 
-        debugLog('UI_RESTORE:update:start', {
+        logActionDebug('UI_RESTORE:update:start', {
           entityType,
           routerEntityType,
           id,
           fieldsKeys: Object.keys(fieldsPatch),
-          mode: SHORTS_DEBUG?.dryRun ? 'DRY_RUN' : 'WRITE',
+          mode: getActionDebugMode(),
         })
 
-        const res = await updateByRouterFields({
+        const result = await updateEntity({
           entityType: routerEntityType,
           id,
           fieldsPatch,
           createIfMissing: false,
           requireAnyUpdated: true,
+          metadata: { source: 'LifecycleProvider' },
         })
 
-        debugLog('UI_RESTORE:update:success', { entityType, routerEntityType, id, res })
+        const res = unwrapActionResult(result)
+
+        logActionDebug('UI_RESTORE:update:success', { entityType, routerEntityType, id, res })
         return res
       },
 
       remove: async ({ entityType, id }) => {
-        const fn = deleteActions[entityType]
-        if (!fn) throw new Error(`No delete action for entityType "${entityType}"`)
-        return fn({ id })
+        const result = await deleteEntity({ entityType, id })
+        return unwrapActionResult(result)
       },
     },
 

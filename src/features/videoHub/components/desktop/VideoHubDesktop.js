@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom'
 import { Box } from '@mui/joy'
 
 import { useSnackbar } from '../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
-import { deleteActions } from '../../../../ui/domains/entityLifecycle/delete/deleteActions.js'
+import { deleteVideosBulk } from '../../application/videoHub.actions.js'
 
 import {
   VideosBulkDeleteModal,
@@ -37,9 +37,8 @@ import VideoHubGlobalLayer from '../../sharedUi/VideoHubGlobalLayer.js'
 import VideoHubDrawersLayer from '../../sharedUi/VideoHubDrawersLayer.js'
 
 import { useCreateModal } from '../../../../ui/forms/create/CreateModalProvider.js'
-import { useCoreData } from '../../../coreData/CoreDataProvider.js'
+import useVideoHubData from '../../hooks/useVideoHubData.js'
 
-import { buildVideoHubContext } from '../../logic/videoHub.context.js'
 import { buildTaskFabContext } from '../../../../ui/actions/buildTaskFabContext.js'
 import { buildTaskPresetDraft } from '../../../../ui/forms/helpers/tasksForm.helpers.js'
 
@@ -85,42 +84,8 @@ const DEFAULT_FILTERS_GENERAL = {
 export default function VideoHubDesktop() {
   const location = useLocation()
   const { openCreate } = useCreateModal()
-  const core = useCoreData()
+  const { analysisEnriched, generalRaw, context } = useVideoHubData()
   const { notify } = useSnackbar()
-
-  const baseContext = useMemo(() => {
-    return buildVideoHubContext(core)
-  }, [core])
-
-  const [tab, setTab] = useState(VIDEO_TAB.GENERAL)
-  const [filtersAna, setFiltersAna] = useState(DEFAULT_FILTERS_ANALYSIS)
-  const [filtersGen, setFiltersGen] = useState(DEFAULT_FILTERS_GENERAL)
-  const [cardView, setCardView] = useState('full')
-  const [videoSelectionMode, setVideoSelectionMode] = useState(false)
-  const [selectedVideoIds, setSelectedVideoIds] = useState([])
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
-
-  const { modal, open, openEdit, closeAll } = useVideoHubModal(tab)
-  const active = modal?.active || null
-
-  const { run } = useVideoHubUpdate(active)
-
-  const analysisRaw = useMemo(() => core?.videoAnalysis || [], [core?.videoAnalysis])
-  const generalRaw = useMemo(() => core?.videos || [], [core?.videos])
-
-  const analysisEnriched = useMemo(() => {
-    return enrichVideoAnalysis(analysisRaw, baseContext)
-  }, [analysisRaw, baseContext])
-
-  const context = useMemo(() => {
-    return {
-      ...baseContext,
-      videoAnalysis: analysisEnriched,
-      videos: generalRaw,
-    }
-  }, [baseContext, analysisEnriched, generalRaw])
 
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
@@ -250,7 +215,7 @@ export default function VideoHubDesktop() {
     setDeleteError('')
 
     try {
-      const result = await deleteActions.videosBulk({ ids })
+      const result = await deleteVideosBulk({ ids })
 
       notify({
         status: 'success',

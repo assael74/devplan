@@ -4,31 +4,23 @@ import { Box, Button, Stack, Typography } from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { searchPageSx as sx } from './sx/searchPage.sx.js'
+import { searchHeaderSx as sx } from './sx/searchHeader.sx.js'
 
-export default function SearchHeader({ breadcrumbs, onImport, onLeagues }) {
+export default function SearchHeader({ breadcrumbs, onLeagues }) {
   return (
-    <Box sx={sx.header}>
-      <Stack sx={sx.headerCopy}>
+    <Box sx={sx.root}>
+      <Stack sx={sx.copy}>
         <Breadcrumbs items={breadcrumbs} />
 
-        <Typography level='h1' sx={sx.pageTitle}>
-          חיפוש שחקנים
+        <Typography level='h1' sx={sx.title}>
+          חיפוש במאגר
         </Typography>
       </Stack>
 
-      <Stack direction='row' spacing={1} sx={sx.headerActions}>
-        <Button
-          sx={sx.primaryButton}
-          startDecorator={iconUi({ id: 'upload', size: 'sm' })}
-          onClick={onImport}
-        >
-          טעינת מסמכים
-        </Button>
-
+      <Stack direction='row' spacing={1} sx={sx.actions}>
         <Button
           variant='outlined'
-          sx={sx.secondaryButton}
+          sx={sx.leaguesButton}
           startDecorator={iconUi({ id: 'league', size: 'sm' })}
           onClick={onLeagues}
         >

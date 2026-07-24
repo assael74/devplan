@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { createActions } from '../../../../../ui/forms/create/createActions.js'
+import { importVideosBulk } from '../../../application/bulkActions.actions.js'
 import { VIDEO_PRIMARY_CATEGORIES } from '../../../../../shared/video/videoCategories.constants.js'
 
 import { parseVideosImportRows } from '../logic/parseVideosImportRows.js'
@@ -115,8 +115,9 @@ export function useBulkVideosImport({
     setResult(null)
 
     try {
-      const action = onImportVideos || createActions.videosBulk
-      const res = await action({ draft })
+      const res = onImportVideos
+        ? await onImportVideos({ draft })
+        : await importVideosBulk({ draft })
 
       setResult(res || {
         total: draft.videos.length,

@@ -1,26 +1,3 @@
-//  playerProfile/sharedLogic/trainings/trainings.logic.js
+// src/features/hub/teamProfile/sharedLogic/trainings/trainings.logic.js
 
-export {
-  buildTrainingsModel,
-  buildTrainingsHeaderStats,
-} from './trainings.model.js'
-
-export {
-  getCompactTrainingLabel,
-  getCompactTrainingSubLabel,
-  formatDurationLabel,
-  buildWeekRangeLabel,
-  formatShortDateIl,
-} from './trainings.format.js'
-
-export {
-  getStartOfWeekSunday,
-  toLocalYmd,
-  toValidDate,
-  startOfToday,
-} from './trainings.date.js'
-
-export {
-  addDaysToWeekId,
-  buildWeekMeta,
-} from './trainings.week.js'
+export * from '../../../sharedProfile/logic/trainings/trainings.logic.shared.js'

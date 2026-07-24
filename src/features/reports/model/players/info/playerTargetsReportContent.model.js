@@ -2,7 +2,7 @@
 
 import {
   buildPlayerTargetsPrintModel,
-} from '../../../../hub/playerProfile/sharedLogic/info/print/playerTargetsPrintModel.js'
+} from './print/playerTargetsPrintModel.js'
 
 import {
   sanitizeReportValue,

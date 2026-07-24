@@ -13,7 +13,7 @@ import EntityImageModal from '../../../../../../ui/domains/entityImage/EntityIma
 
 import ifaImage from '../../../../../../ui/core/images/ifaImage.png'
 import { buildFallbackAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { uploadImageOnly } from '../../../../../../services/firestore/storage/uploadImageOnly.js'
+import { uploadEntityImageUrl as uploadImageOnly } from '../../../../application/index.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { previewSx, getEntityNavBtnSx, playerPreviewViewSx } from './sx/contextView.sx'
 import { buildPreviewDomains } from './logic/buildPreviewDomains.js'

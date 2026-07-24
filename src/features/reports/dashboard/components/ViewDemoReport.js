@@ -7,12 +7,13 @@ import Chip from '@mui/joy/Chip'
 import Typography from '@mui/joy/Typography'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-import ManagementReportRoot from '../../../hub/teamProfile/sharedUi/management/print/ReportRoot.js'
-import TeamPlayersPrintReport from '../../../hub/teamProfile/sharedUi/players/print/ReportRoot.js'
-
+import {
+  ManagementReportRoot,
+  TeamPlayersPrintReport,
+} from '../../renderers/index.js'
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../../hub/teamProfile/sharedLogic/players/print/index.js'
+} from '../../model/index.js'
 
 import {
   PLAYER_REPORT_OPTIONS,

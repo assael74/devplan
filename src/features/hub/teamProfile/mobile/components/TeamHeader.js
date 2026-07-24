@@ -1,15 +1,14 @@
-// features/hub/teamProfile/mobile/components/TeamHeader.js
+// src/features/hub/teamProfile/mobile/components/TeamHeader.js
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
-import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
-import { uploadImageOnly } from '../../../../../services/firestore/storage/uploadImageOnly.js'
-
-const len = arr => (Array.isArray(arr) ? arr.length : 0)
+import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
+import { ProfileHeaderImageModal } from '../../../../hub/sharedProfile/ui/index.js'
+import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
 
 const resolveClubName = ({ entity, context }) => {
   return (
@@ -24,25 +23,21 @@ const resolveClubName = ({ entity, context }) => {
 
 export default function TeamHeader({ entity, context, onBack }) {
   const navigate = useNavigate()
-  const [openImg, setOpenImg] = useState(false)
-
-  const src = resolveEntityAvatar({
+  const source = resolveEntityAvatar({
     entityType: 'team',
     entity,
     parentEntity: context?.club || entity?.club,
     subline: resolveClubName({ entity, context }),
   })
-
-  const [headerPhoto, setHeaderPhoto] = useState(src)
-
-  useEffect(() => {
-    setHeaderPhoto(src)
-  }, [src, entity?.id])
+  const image = useProfileHeaderImage({
+    entityId: entity?.id,
+    source,
+  })
 
   const metaCounts = useMemo(() => {
-    const playersCount = len(entity?.players)
-    const meetingsCount = len(entity?.meetings)
-    const gamesCount = len(entity?.teamGames)
+    const playersCount = countHeaderItems(entity?.players)
+    const meetingsCount = countHeaderItems(entity?.meetings)
+    const gamesCount = countHeaderItems(entity?.teamGames)
 
     return {
       players: playersCount,
@@ -58,6 +53,7 @@ export default function TeamHeader({ entity, context, onBack }) {
   const subtitle = useMemo(() => {
     const clubName = resolveClubName({ entity, context })
     const teamYear = entity?.teamYear || ''
+
     return [clubName, teamYear].filter(Boolean).join(' · ')
   }, [context?.club, entity])
 
@@ -74,42 +70,31 @@ export default function TeamHeader({ entity, context, onBack }) {
     ]
   }, [navigate])
 
-  const rightNode = (
-    <EntityActionsMenu
-      entityType="team"
-      entityId={entity?.id}
-      entityName={entity?.teamName}
-      entity={entity}
-      metaCounts={metaCounts}
-      isArchived={entity?.active === false}
-    />
-  )
-
   return (
     <>
       <HeaderStripMobile
         title={entity?.teamName || 'קבוצה'}
         subtitle={subtitle}
-        avatarSrc={headerPhoto}
-        onAvatarClick={() => setOpenImg(true)}
+        avatarSrc={image.photo}
+        onAvatarClick={image.openModal}
         onBack={onBack}
         pathItems={pathItems}
-        right={rightNode}
+        right={
+          <EntityActionsMenu
+            entityType="team"
+            entityId={entity?.id}
+            entityName={entity?.teamName}
+            entity={entity}
+            metaCounts={metaCounts}
+            isArchived={entity?.active === false}
+          />
+        }
       />
-
-      <EntityImageModal
-        open={openImg}
-        onClose={() => setOpenImg(false)}
+      <ProfileHeaderImageModal
+        image={image}
         entityType="teams"
-        id={entity?.id}
+        entityId={entity?.id}
         entityName={entity?.teamName}
-        currentPhotoUrl={headerPhoto}
-        uploadImageOnly={uploadImageOnly}
-        onAfterSave={url => {
-          setHeaderPhoto(
-            `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
-          )
-        }}
       />
     </>
   )
