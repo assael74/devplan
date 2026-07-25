@@ -8,8 +8,8 @@ import {
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
 import {
+  appendTeamSeasonPlayer,
   ensureTeamDoc,
-  upsertTeamSeasonPlayers,
 } from '../../teams/index.js'
 import {
   upsertOfficialPlayerDoc,
@@ -25,10 +25,10 @@ async function createTeamPlayerFlow({
     birthTeamDocumentId: teamDocResult.birthTeamDocumentId,
     teamDocumentId: teamDocResult.teamDocumentId,
   }
-  const teamSeasonResult = await upsertTeamSeasonPlayers({
+  const teamSeasonResult = await appendTeamSeasonPlayer({
     ...payload,
     team,
-    players: [player],
+    player,
   })
   const teamWithRosterMeta = {
     ...team,
@@ -41,7 +41,7 @@ async function createTeamPlayerFlow({
   const playerSeasonIndexResult = await upsertPlayerSeasonSearchIndexMany({
     ...payload,
     team: teamWithRosterMeta,
-    players: [player],
+    players: [teamSeasonResult.player],
   })
   const teamSeasonIndexResult = await updateTeamSeasonSearchIndexRosterMeta({
     ...payload,

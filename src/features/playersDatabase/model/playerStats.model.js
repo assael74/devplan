@@ -17,14 +17,26 @@ const resolveStatValue = ({ stats = {}, source = {}, key, legacyKeys = [] }) => 
   return 0
 }
 
+const resolveOptionalStatValue = ({ stats = {}, source = {}, key }) => {
+  if (hasValue(stats[key])) return stats[key]
+  if (hasValue(source[key])) return source[key]
+
+  return null
+}
+
 export const normalizePlayerStats = (player = {}) => {
   const stats = player.playerStats || {}
+  const games = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'games' }))
+  const goals = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'goals' }))
+  const minutes = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'minutes' }))
+  const minutesPerGame = resolveOptionalStatValue({ stats, source: player, key: 'minutesPerGame' })
+  const goalsPer90 = resolveOptionalStatValue({ stats, source: player, key: 'goalsPer90' })
 
   return {
-    games: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'games' })),
-    goals: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'goals' })),
+    games,
+    goals,
     yellowCards: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'yellowCards' })),
-    minutes: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'minutes' })),
+    minutes,
     starts: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'starts' })),
     substituteIn: toNumberOrZero(resolveStatValue({
       stats,
@@ -40,5 +52,11 @@ export const normalizePlayerStats = (player = {}) => {
     })),
     teamMinutes: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'teamMinutes' })),
     teamGames: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'teamGames' })),
+    minutesPerGame: toNumberOrZero(
+      hasValue(minutesPerGame) ? minutesPerGame : (games ? minutes / games : 0)
+    ),
+    goalsPer90: toNumberOrZero(
+      hasValue(goalsPer90) ? goalsPer90 : (minutes ? (goals * 90) / minutes : 0)
+    ),
   }
 }

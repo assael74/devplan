@@ -125,3 +125,61 @@ export async function getSearchIndexMetaForTeamPlayerSeason({
   })
 }
 
+
+export async function getSearchIndexMetaForLeagueSeason({
+  league = {},
+  season = {},
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonIdentity = normalizeSeasonIdentity({ season })
+  const seasonKey = seasonIdentity.seasonKey
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonKey) throw new Error('Missing season key')
+
+  const rowsQuery = query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('leagueId', '==', leagueId),
+    where('seasonKey', '==', seasonKey)
+  )
+  const snapshot = await getDocs(rowsQuery)
+  const teamMap = new Map()
+
+  snapshot.docs.forEach(indexDoc => {
+    const data = indexDoc.data() || {}
+    const teamIdentity = normalizeTeamIdentity({ team: data })
+    const birthTeamId = clean(teamIdentity.birthTeamId || data.teamId)
+    if (!birthTeamId) return
+
+    const birthTeamSlot = toNumberOrZero(data.birthTeamSlot) || 1
+    const key = `${birthTeamId}__${birthTeamSlot}`
+    const existing = teamMap.get(key) || {
+      birthTeamId,
+      birthTeamDocumentId: clean(data.birthTeamDocumentId || data.teamDocumentId || birthTeamId),
+      teamId: birthTeamId,
+      teamDocumentId: clean(data.teamDocumentId || data.birthTeamDocumentId || birthTeamId),
+      birthTeamSlot,
+      teamSlot: birthTeamSlot,
+      clubId: clean(data.clubId),
+      leagueId,
+      playerDocumentIds: [],
+    }
+    const playerDocumentId = clean(
+      data.playerDocumentId ||
+      (clean(data.sourceCollection) === 'players' ? data.sourceDocumentId : '')
+    )
+
+    if (playerDocumentId) existing.playerDocumentIds.push(playerDocumentId)
+    teamMap.set(key, existing)
+  })
+
+  const teams = Array.from(teamMap.values()).map(team => ({
+    ...team,
+    playerDocumentIds: [...new Set(team.playerDocumentIds)],
+  }))
+
+  return buildSearchIndexMetaResult({
+    rowsCount: snapshot.size,
+    ...collectIndexMeta(snapshot),
+    teams,
+  })
+}

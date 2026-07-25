@@ -83,6 +83,20 @@ export function buildActiveFilterItems(filters, options) {
     })
   })
 
+  if (!isTeam) {
+    ;(filters.scoutCombinations || []).forEach(value => {
+      const option = profileOptions.find(item => item.value === value)
+
+      items.push({
+        key: `profile-combination-${value}`,
+        type: 'array',
+        field: 'scoutCombinations',
+        value,
+        label: option?.label || value,
+      })
+    })
+  }
+
   filters.conditions.forEach(condition => {
     const field = options.fields.find(item => item.value === condition.field)
     const operator = options.operators.find(item => item.value === condition.operator)

@@ -93,7 +93,6 @@ export const statusIcons = {
   weak: <ErrorOutline />,
   stable: <TrendingFlat />,
   upside: <RocketLaunch />,
-  elite: <Stars />,
   loading: <Pending />,
   warning: <ErrorOutline />,
   category: <Category />,

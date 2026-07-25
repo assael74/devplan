@@ -2,12 +2,11 @@
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
-import { normalizePlayerStats } from './playerStats.model.js'
-import { cleanValue, toNumberOrZero } from './value.model.js'
 import {
-  buildScoutProfileCombinations,
-  SCOUT_PROFILES,
-} from '../../../shared/players/scouting/index.js'
+  selectPlayerScoutDisplay,
+  selectPlayerScoutProfiles,
+} from '../domain/index.js'
+import { cleanValue } from './value.model.js'
 
 const RELIABILITY_LABELS = {
   high: 'גבוהה',
@@ -15,14 +14,10 @@ const RELIABILITY_LABELS = {
   low: 'נמוכה',
 }
 
-const resolveReliabilityLabel = value => {
-  const safeValue = cleanValue(value)
-
-  return RELIABILITY_LABELS[safeValue.toLowerCase()] || safeValue || '-'
+const resolveReliabilityLabel = reliability => {
+  const level = cleanValue(reliability?.level || reliability)
+  return RELIABILITY_LABELS[level.toLowerCase()] || cleanValue(reliability?.label) || level || '-'
 }
-
-const formatProfileLabel = value => cleanValue(value)
-  .replace(/[_-]+/g, ' ')
 
 const getClub = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
   club => cleanValue(club.id) === cleanValue(clubId)
@@ -32,107 +27,17 @@ const getLeague = leagueId => PLAYERS_DATABASE_LEAGUES_CATALOG.find(
   league => cleanValue(league.id) === cleanValue(leagueId)
 ) || null
 
-const SCOUT_PROFILE_BY_ID = SCOUT_PROFILES.reduce((map, profile) => {
-  map[profile.id] = profile
-  return map
-}, {})
-
-const resolveScoutProfileLabel = profile => {
-  const profileId = cleanValue(profile?.profileId || profile?.id)
-
-  if (!profileId) return ''
-
-  return cleanValue(
-    profile?.label ||
-    SCOUT_PROFILE_BY_ID[profileId]?.label ||
-    profileId
-  )
-}
-
-const buildScoutProfileDisplay = (row = {}) => {
-  const scoutProfiles = Array.isArray(row.scoutProfiles)
-    ? row.scoutProfiles
-    : []
-  const signals = scoutProfiles
-    .map(profile => ({
-      ...profile,
-      profileId: cleanValue(profile?.profileId || profile?.id),
-    }))
-    .filter(profile => profile.profileId)
-  const combinations = buildScoutProfileCombinations({ signals })
-  const combination = combinations[0] || null
-
-  if (combination) {
-    return {
-      type: 'combination',
-      id: cleanValue(combination.id),
-      label: cleanValue(combination.label),
-      reliability: cleanValue(
-        scoutProfiles[0]?.reliabilityLevel ||
-        scoutProfiles[0]?.profileReliability
-      ),
-      baseProfiles: (combination.matchedProfileIds || []).map(profileId => ({
-        id: profileId,
-        label: SCOUT_PROFILE_BY_ID[profileId]?.label || profileId,
-      })),
-    }
-  }
-
-  const primaryProfile = scoutProfiles[0] || null
-
-  if (!primaryProfile) {
-    return {
-      type: 'none',
-      id: '',
-      label: '',
-      reliability: '',
-      baseProfiles: [],
-    }
-  }
-
-  return {
-    type: 'profile',
-    id: cleanValue(primaryProfile.profileId || primaryProfile.id),
-    label: resolveScoutProfileLabel(primaryProfile),
-    reliability: cleanValue(
-      primaryProfile.reliabilityLevel ||
-      primaryProfile.profileReliability
-    ),
-    baseProfiles: [],
-  }
-}
-
 const getClubShortName = clubId => {
   const club = getClub(clubId)
   return cleanValue(club?.shortName || club?.name || '')
 }
 
-const buildScoutProfiles = row => {
-  const profiles = [
-    {
-      id: cleanValue(row.primaryScoutProfileId),
-      label: formatProfileLabel(row.primaryScoutProfileId),
-      score: toNumberOrZero(row.primaryScoutScore),
-      reliability: resolveReliabilityLabel(row.primaryScoutReliabilityLevel),
-    },
-    {
-      id: cleanValue(row.secondaryScoutProfileId),
-      label: formatProfileLabel(row.secondaryScoutProfileId),
-      score: toNumberOrZero(row.secondaryScoutScore),
-      reliability: resolveReliabilityLabel(row.secondaryScoutReliabilityLevel),
-    },
-  ]
-
-  return profiles.filter(profile => profile.id)
-}
-
-const buildReasons = ({ stats, profiles, row, scoutProfileDisplay }) => {
+const buildReasons = ({ season, display }) => {
+  const stats = season?.stats?.actual || {}
   const reasons = []
 
-  if (scoutProfileDisplay?.label) {
-    reasons.push(`זוהה בפרופיל ${scoutProfileDisplay.label}.`)
-  } else if (profiles[0]) {
-    reasons.push(`זוהה בפרופיל ${profiles[0].label} בציון ${profiles[0].score}.`)
+  if (display?.label) {
+    reasons.push(`זוהה בפרופיל ${display.label}.`)
   }
 
   if (stats.minutes > 0) {
@@ -147,13 +52,62 @@ const buildReasons = ({ stats, profiles, row, scoutProfileDisplay }) => {
     reasons.push(`כבש ${stats.goals} שערים במסגרת נתוני העונה.`)
   }
 
-  if (cleanValue(row.notes || row.seasonNotes)) {
-    reasons.push(cleanValue(row.notes || row.seasonNotes))
+  if (cleanValue(season?.metadata?.notes)) {
+    reasons.push(cleanValue(season.metadata.notes))
   }
 
   return reasons.length
     ? reasons.slice(0, 4)
     : ['השחקן מופיע במאגר, אך עדיין אין מספיק נתונים להסבר מפורט.']
+}
+
+const buildSeasonContextView = season => {
+  const stats = season?.stats?.actual || {}
+  const display = selectPlayerScoutDisplay(season)
+  const profiles = selectPlayerScoutProfiles(season)
+  const league = getLeague(season?.team?.leagueId)
+
+  return {
+    id: [
+      season?.season?.seasonKey || season?.season?.seasonId,
+      season?.team?.teamId,
+      season?.team?.clubId,
+    ].filter(Boolean).join('_'),
+    seasonKey: cleanValue(
+      season?.season?.seasonKey || season?.season?.seasonId || '-'
+    ),
+    isCurrentSeason: season?.lifecycle?.type === 'current',
+    lifecycle: season?.lifecycle,
+    clubId: cleanValue(season?.team?.clubId),
+    clubName: getClubShortName(season?.team?.clubId) || '-',
+    teamId: cleanValue(season?.team?.teamId),
+    birthTeamId: cleanValue(season?.team?.teamId),
+    birthTeamDocumentId: cleanValue(season?.team?.teamDocumentId),
+    teamName: cleanValue(
+      season?.team?.ageGroupLabel ||
+      season?.team?.displayName ||
+      season?.team?.ageGroupId ||
+      '-'
+    ),
+    ageGroupId: cleanValue(season?.team?.ageGroupId),
+    ageGroupLabel: cleanValue(
+      season?.team?.ageGroupLabel || season?.team?.ageGroupId || '-'
+    ),
+    leagueId: cleanValue(season?.team?.leagueId),
+    leagueName: cleanValue(
+      league?.name || season?.team?.leagueId || '-'
+    ),
+    games: Number(stats.games) || 0,
+    starts: Number(stats.starts) || 0,
+    minutes: Number(stats.minutes) || 0,
+    goals: Number(stats.goals) || 0,
+    yellowCards: Number(stats.yellowCards) || 0,
+    projectedStats: season?.stats?.projected || null,
+    scoutProfiles: profiles,
+    scoutProfileDisplay: display,
+    scout: season?.scout,
+    placeholder: false,
+  }
 }
 
 export const buildEmptyPlayerPageView = playerId => ({
@@ -168,6 +122,7 @@ export const buildEmptyPlayerPageView = playerId => ({
   ageLabel: '-',
   position: '-',
   reliability: '-',
+  certainty: '-',
   minutes: 0,
   goals: 0,
   goalsPerGame: '0.00',
@@ -177,45 +132,70 @@ export const buildEmptyPlayerPageView = playerId => ({
     type: 'none',
     id: '',
     label: '',
-    reliability: '',
+    reliability: {},
     baseProfiles: [],
   },
-  reasons: ['לא נמצא מסמך Search Index מתאים לשחקן המבוקש.'],
+  seasonContexts: [],
+  reasons: ['לא נמצא מסמך שחקן מתאים.'],
 })
 
-export const buildPlayerPageView = row => {
-  if (!row) return null
+export const buildPlayerPageView = playerDomain => {
+  if (!playerDomain?.activeSeason) return null
 
-  const stats = normalizePlayerStats(row)
-  const profiles = buildScoutProfiles(row)
-  const scoutProfileDisplay = buildScoutProfileDisplay(row)
-  const games = stats.games
-  const startsPct = games
-    ? Math.round((stats.starts / games) * 100)
-    : 0
+  const season = playerDomain.activeSeason
+  const stats = season.stats?.actual || {}
+  const profiles = selectPlayerScoutProfiles(season)
+  const display = selectPlayerScoutDisplay(season)
+  const games = Number(stats.games) || 0
+  const starts = Number(stats.starts) || 0
+  const goals = Number(stats.goals) || 0
+  const minutes = Number(stats.minutes) || 0
+  const league = getLeague(season.team?.leagueId)
+  const seasonContexts = (playerDomain.seasons || []).map(buildSeasonContextView)
+  const reliability = resolveReliabilityLabel(display.reliability)
 
   return {
-    ...row,
-    id: cleanValue(row.id || row.entityId),
-    fullName: cleanValue(row.displayName || row.fullName || '-'),
-    clubName: getClubShortName(row.clubId) || cleanValue(row.clubName || '-'),
-    teamName: cleanValue(row.ageGroupLabel || row.teamName || '-'),
-    leagueName: cleanValue(
-      getLeague(row.leagueId)?.name || row.leagueName || row.leagueId || '-'
+    domain: playerDomain,
+    activeSeason: season,
+    id: cleanValue(
+      playerDomain.identity?.playerDocumentId ||
+      playerDomain.identity?.playerId
     ),
-    leagueId: cleanValue(row.leagueId),
-    teamId: cleanValue(row.birthTeamId || row.teamId),
-    seasonKey: cleanValue(row.seasonKey),
-    ageLabel: row.birthYear ? `שנתון ${row.birthYear}` : '-',
-    position: cleanValue(row.primaryPosition || row.positionLayer || '-'),
-    reliability: profiles[0]?.reliability || '-',
-    minutes: stats.minutes,
-    goals: stats.goals,
-    goalsPerGame: games ? (stats.goals / games).toFixed(2) : '0.00',
-    startsPct,
+    fullName: cleanValue(playerDomain.identity?.displayName || '-'),
+    birthYear: playerDomain.identity?.birthYear ?? season.season?.birthYear ?? null,
+    birthDate: playerDomain.identity?.birthDate ?? null,
+    clubName: getClubShortName(season.team?.clubId) || '-',
+    teamName: cleanValue(
+      season.team?.ageGroupLabel ||
+      season.team?.displayName ||
+      season.team?.ageGroupId ||
+      '-'
+    ),
+    leagueName: cleanValue(league?.name || season.team?.leagueId || '-'),
+    leagueId: cleanValue(season.team?.leagueId),
+    teamId: cleanValue(season.team?.teamId),
+    seasonKey: cleanValue(
+      season.season?.seasonKey || season.season?.seasonId
+    ),
+    ageLabel: season.season?.birthYear
+      ? `שנתון ${season.season.birthYear}`
+      : '-',
+    position: cleanValue(
+      season.position?.primary || season.position?.layer || '-'
+    ),
+    reliability,
+    certainty: reliability,
+    minutes,
+    goals,
+    goalsPerGame: games ? (goals / games).toFixed(2) : '0.00',
+    startsPct: games ? Math.round((starts / games) * 100) : 0,
     scoutProfiles: profiles,
-    scoutProfileDisplay,
-    reasons: buildReasons({ stats, profiles, row, scoutProfileDisplay }),
-    avatarUrl: cleanValue(row.avatarUrl),
+    scoutProfileDisplay: display,
+    scout: season.scout,
+    seasonContexts,
+    history: seasonContexts,
+    seasons: seasonContexts,
+    reasons: buildReasons({ season, display }),
+    avatarUrl: cleanValue(playerDomain.identity?.avatarUrl),
   }
 }

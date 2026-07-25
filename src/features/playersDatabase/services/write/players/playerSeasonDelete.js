@@ -1,6 +1,6 @@
-﻿// features/playersDatabase/services/write/players/playerSeasonDelete.js
+// features/playersDatabase/services/write/players/playerSeasonDelete.js
 
-import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { deleteField, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -35,6 +35,8 @@ export async function removePlayerSeasonDocsMany({
 
   const batch = writeBatch(db)
   let rowsCount = 0
+  let updatedCount = 0
+  let deletedCount = 0
 
   for (const playerDocumentId of ids) {
     const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.players, playerDocumentId)
@@ -57,11 +59,20 @@ export async function removePlayerSeasonDocsMany({
     if (!changed) continue
 
     rowsCount += 1
+
+    if (!current.length && !history.length) {
+      deletedCount += 1
+      batch.delete(ref)
+      continue
+    }
+
+    updatedCount += 1
     batch.set(
       ref,
       {
         current,
         history,
+        scoutProfiles: deleteField(),
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -74,6 +85,8 @@ export async function removePlayerSeasonDocsMany({
 
   return {
     rowsCount,
+    updatedCount,
+    deletedCount,
     target: clean(target),
   }
 }

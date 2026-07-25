@@ -17,7 +17,6 @@ import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import {
   buildPlayerSeasonIndexScope,
   isSamePlayerSeasonIndexContext,
-  normalizeText,
 } from './playerSeasonIndex.model.js'
 
 export async function updatePlayerSeasonSearchIndexTeamUrl({
@@ -78,8 +77,7 @@ export async function updatePlayerFavoriteSearchIndexes({
   player = {},
   favorite = false,
 } = {}) {
-  const playerId = clean(player.externalPlayerId)
-    || normalizeText(player.normalizedName || player.fullName || player.playerId)
+  const playerId = clean(player.playerId)
   if (!playerId) throw new Error('Missing player id')
 
   const rowsQuery = query(

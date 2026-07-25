@@ -19,6 +19,7 @@ export default function LeagueActionsPanel({
   onAttackPriorityFilterChange,
   onDefensePriorityFilterChange,
   onLoad,
+  onDeleteTeams,
 }) {
   return (
     <InfoPanel title='פעולות אפשריות' sx={sx.insightsPanel}>
@@ -82,6 +83,7 @@ export default function LeagueActionsPanel({
           variant='outlined'
           startDecorator={iconUi({ id: 'delete', size: 'sm' })}
           sx={sx.sideDeleteButton}
+          onClick={onDeleteTeams}
         >
           מחיקת קבוצות לעונה
         </Button>

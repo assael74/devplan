@@ -18,6 +18,7 @@ import {
   normalizePlayerNameValue,
 } from '../logic/teamStatsMatch.logic.js'
 import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
+import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 
 export default function useTeamStatsImport({
   leagueId,
@@ -33,6 +34,7 @@ export default function useTeamStatsImport({
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
+  const [writeReport, setWriteReport] = React.useState(null)
 
   const rosterLookup = React.useMemo(() => buildRosterLookup(players), [players])
 
@@ -122,6 +124,10 @@ export default function useTeamStatsImport({
     }))
   }, [enrichWithScout, players])
 
+  const closeWriteReport = React.useCallback(() => {
+    setWriteReport(null)
+  }, [])
+
   const close = React.useCallback(() => {
     if (busy) return
     setOpen(false)
@@ -161,10 +167,17 @@ export default function useTeamStatsImport({
       setRows([])
       reload()
     } catch (error) {
+      console.error('[playersDatabase/write-flow]', error?.writeReport || error)
+      setOpen(false)
+      setWriteReport(buildWriteReportFromError({
+        error,
+        flow: 'pasteTeamPlayerStats',
+      }))
+
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'טעינת סטטיסטיקות נכשלה',
-        message: error?.message || 'שגיאה בעדכון נתוני השחקנים',
+        message: 'נפתח דוח כתיבה מפורט לבדיקה',
       })
     } finally {
       setBusy(false)
@@ -186,6 +199,7 @@ export default function useTeamStatsImport({
     pasteValue,
     rows,
     busy,
+    writeReport,
     rosterLookup,
     hasInvalidRows,
     setOpen,
@@ -194,6 +208,7 @@ export default function useTeamStatsImport({
     changeCell,
     getRowStatus,
     close,
+    closeWriteReport,
     confirm,
   }
 }

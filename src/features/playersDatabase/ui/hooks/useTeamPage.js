@@ -7,7 +7,7 @@ import {
   buildTeamPageSeasonOptions,
   buildTeamPageView,
   findTeamPageSeasonDoc,
-  normalizeTeamPagePlayerRow,
+  adaptTeamPagePlayerRow,
 } from '../../model/teamPage.model.js'
 import { normalizeSeasonLookupKey } from '../../model/season.model.js'
 import { readTeamPageData } from '../../services/read/index.js'
@@ -42,8 +42,8 @@ export function useTeamPage() {
   }, [leagueId, teamId, refreshKey])
 
   const seasonOptions = useMemo(
-    () => buildTeamPageSeasonOptions(leagueDoc),
-    [leagueDoc]
+    () => buildTeamPageSeasonOptions(leagueDoc, teamDoc),
+    [leagueDoc, teamDoc]
   )
 
   useEffect(() => {
@@ -65,12 +65,6 @@ export function useTeamPage() {
     selectedSeasonOption,
   }), [teamDoc, selectedSeasonOption])
 
-  const players = useMemo(() => (
-    Array.isArray(selectedTeamSeason?.teamPlayers)
-      ? selectedTeamSeason.teamPlayers.map(normalizeTeamPagePlayerRow)
-      : []
-  ), [selectedTeamSeason])
-
   const team = useMemo(() => buildTeamPageView({
     teamId,
     leagueDoc,
@@ -78,6 +72,17 @@ export function useTeamPage() {
     selectedSeasonOption,
     selectedTeamSeason,
   }), [teamId, leagueDoc, teamDoc, selectedSeasonOption, selectedTeamSeason])
+
+  const players = useMemo(() => (
+    Array.isArray(selectedTeamSeason?.teamPlayers)
+      ? selectedTeamSeason.teamPlayers.map((player, index) => adaptTeamPagePlayerRow({
+        player,
+        index,
+        selectedSeasonOption,
+        teamSeason: team?.domain || team,
+      }))
+      : []
+  ), [selectedTeamSeason, selectedSeasonOption, team])
 
   return {
     leagueId, leagueDoc, team, teamDoc, players,

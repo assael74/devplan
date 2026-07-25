@@ -61,21 +61,58 @@ export const searchResultsSectionSx = {
 
   tableWrap: {
     width: '100%',
+    height: '100%',
     minWidth: 0,
     minHeight: 0,
-    overflow: 'auto',
+    pl: 1,
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+    overflowX: 'hidden',
     border: 0,
     borderRadius: 0,
   },
-  
+
   table: {
     width: '100%',
-    minWidth: 1180,
+    minWidth: 0,
     tableLayout: 'fixed',
     '& th, & td': {
+      minWidth: 0,
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
     },
+  },
+
+  expandedDetails: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(4, minmax(0, 1fr))',
+    },
+    gap: 1,
+  },
+
+  expandedItem: {
+    minWidth: 0,
+    p: 0.8,
+    border: '1px solid #dbe5f4',
+    borderRadius: 6,
+    bgcolor: '#fff',
+  },
+
+  expandedLabel: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  expandedValue: {
+    minWidth: 0,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 }

@@ -1,4 +1,4 @@
-﻿// features/playersDatabase/ui/components/modals/PlayersDatabaseModal.js
+// features/playersDatabase/ui/components/modals/PlayersDatabaseModal.js
 
 import * as React from 'react'
 import {
@@ -49,11 +49,14 @@ export default function PlayersDatabaseModal({
   busy = false,
   disabled = false,
   hideFooter = false,
+  persistent = false,
+  contentSx,
   onConfirm,
   onClose,
 }) {
-  const handleClose = () => {
+  const handleClose = (event, reason) => {
     if (busy) return
+    if (persistent && reason) return
 
     if (typeof onClose === 'function') {
       onClose()
@@ -122,7 +125,10 @@ export default function PlayersDatabaseModal({
               <DialogContent sx={sx.dialogContent}>
                 <Box
                   className='dpScrollThin'
-                  sx={sx.content}
+                  sx={{
+                    ...sx.content,
+                    ...(contentSx || {}),
+                  }}
                 >
                   {children}
                 </Box>

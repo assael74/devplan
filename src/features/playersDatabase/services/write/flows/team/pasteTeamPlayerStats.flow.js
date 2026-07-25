@@ -69,11 +69,19 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   }
 
+  const syncedPlayers = Array.isArray(results.teamSeasonResult.players)
+    ? results.teamSeasonResult.players
+    : Array.isArray(payload.players)
+      ? payload.players
+      : []
+  const syncedPayload = {
+    ...payload,
+    team,
+    players: syncedPlayers,
+  }
+
   try {
-    results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany({
-      ...payload,
-      team,
-    })
+    results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(syncedPayload)
   } catch (error) {
     throw buildSyncError({
       stage: 'updatePlayerSeasonSearchIndexStatsMany',
@@ -83,10 +91,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   }
 
   try {
-    results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany({
-      ...payload,
-      team,
-    })
+    results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany(syncedPayload)
   } catch (error) {
     throw buildSyncError({
       stage: 'syncPlayerScoutProfileDocsMany',

@@ -1,11 +1,16 @@
 // features/playersDatabase/services/write/router.js
 
 import {
+  invalidatePlayersDatabaseWriteCache,
+} from '../cache/index.js'
+import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
-  upsertLeagueSeason,
 } from './leagues/index.js'
 import {
+  clearLeagueSeasonTeamsFlow,
+  clearTeamSeasonPlayersFlow,
+  createLeagueSeasonFlow,
   createTeamDisplayPlayerFlow,
   createTeamOfficialPlayerFlow,
   deleteLeagueSeasonFlow,
@@ -32,6 +37,8 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   PASTE_TEAM_PLAYERS: 'pasteTeamPlayers',
   PASTE_TEAM_PLAYER_STATS: 'pasteTeamPlayerStats',
   UPDATE_TEAM_URL: 'updateTeamUrl',
+  CLEAR_LEAGUE_SEASON_TEAMS: 'clearLeagueSeasonTeams',
+  CLEAR_TEAM_SEASON_PLAYERS: 'clearTeamSeasonPlayers',
   DELETE_LEAGUE_SEASON: 'deleteLeagueSeason',
   DELETE_TEAM_FROM_SEASON: 'deleteTeamFromSeason',
   DELETE_TEAM_PLAYER_FROM_SEASON: 'deleteTeamPlayerFromSeason',
@@ -46,85 +53,49 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   UPDATE_PLAYER_FAVORITE: 'updatePlayerFavorite',
 }
 
+const WRITE_ACTION_RUNNERS = {
+  [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_LEAGUE_DOC]: payload => (
+    ensureLeagueDoc(payload.league || {})
+  ),
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON]: createLeagueSeasonFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_TABLE_RANK]: updateLeagueSeasonTableRank,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE]: pasteLeagueTableFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS]: pasteTeamPlayersFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS]: pasteTeamPlayerStatsFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL]: updateTeamUrlFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_LEAGUE_SEASON_TEAMS]: clearLeagueSeasonTeamsFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_TEAM_SEASON_PLAYERS]: clearTeamSeasonPlayersFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_LEAGUE_SEASON]: deleteLeagueSeasonFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_TEAM_FROM_SEASON]: deleteTeamFromSeasonFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_TEAM_PLAYER_FROM_SEASON]: deleteTeamPlayerFromSeasonFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_DISPLAY_PLAYER]: createTeamDisplayPlayerFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_OFFICIAL_PLAYER]: createTeamOfficialPlayerFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_NOTES]: updatePlayerSeasonNotesFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_ROLE]: updatePlayerRoleFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_PLAYER_SCOUT_PROFILE]: removePlayerScoutProfileFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL]: updatePlayerSeasonUrlFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_META]: updateLeagueSeasonMetaFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL]: updateLeagueSeasonUrlFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_FAVORITE]: updatePlayerFavoriteFlow,
+}
+
 export async function runPlayersDatabaseWriteAction({
   actionType = '',
   payload = {},
 } = {}) {
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_LEAGUE_DOC) {
-    return ensureLeagueDoc(payload.league || {})
+  const runAction = WRITE_ACTION_RUNNERS[actionType]
+
+  if (!runAction) {
+    throw new Error(`Unknown players database write action: ${actionType}`)
   }
 
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON) {
-    return upsertLeagueSeason(payload)
-  }
+  const result = await runAction(payload)
 
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_TABLE_RANK) {
-    return updateLeagueSeasonTableRank(payload)
-  }
+  invalidatePlayersDatabaseWriteCache({
+    actionType,
+    payload,
+    result,
+  })
 
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE) {
-    return pasteLeagueTableFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS) {
-    return pasteTeamPlayersFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL) {
-    return updateTeamUrlFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_DISPLAY_PLAYER) {
-    return createTeamDisplayPlayerFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_OFFICIAL_PLAYER) {
-    return createTeamOfficialPlayerFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_NOTES) {
-    return updatePlayerSeasonNotesFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_ROLE) {
-    return updatePlayerRoleFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_PLAYER_SCOUT_PROFILE) {
-    return removePlayerScoutProfileFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL) {
-    return updatePlayerSeasonUrlFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_META) {
-    return updateLeagueSeasonMetaFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL) {
-    return updateLeagueSeasonUrlFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_FAVORITE) {
-    return updatePlayerFavoriteFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS) {
-    return pasteTeamPlayerStatsFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_LEAGUE_SEASON) {
-    return deleteLeagueSeasonFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_TEAM_FROM_SEASON) {
-    return deleteTeamFromSeasonFlow(payload)
-  }
-
-  if (actionType === PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_TEAM_PLAYER_FROM_SEASON) {
-    return deleteTeamPlayerFromSeasonFlow(payload)
-  }
-
-  throw new Error(`Unknown players database write action: ${actionType}`)
+  return result
 }

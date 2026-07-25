@@ -1,23 +1,20 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/hooks/useLeagueSeasonCreate.js
 
 import * as React from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/snackbar/snackbar.format.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import {
-  ensureLeagueDoc,
-  upsertLeagueSeason,
+  createLeagueSeasonFlow,
 } from '../../../../services/write/index.js'
-import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 import { buildServiceLeague } from '../logic/leagueCenter.logic.js'
 
-export default function useLeagueSeasonCreate() {
-  const navigate = useNavigate()
+export default function useLeagueSeasonCreate({ onSuccess } = {}) {
   const { notify } = useSnackbar()
   const [league, setLeague] = React.useState(null)
   const [busy, setBusy] = React.useState(false)
+  const [writeReport, setWriteReport] = React.useState(null)
 
   const open = React.useCallback(row => {
     setLeague(row)
@@ -36,9 +33,7 @@ export default function useLeagueSeasonCreate() {
     setBusy(true)
 
     try {
-      await ensureLeagueDoc(serviceLeague)
-
-      const result = await upsertLeagueSeason({
+      const result = await createLeagueSeasonFlow({
         league: serviceLeague,
         season: {
           ...season,
@@ -47,6 +42,10 @@ export default function useLeagueSeasonCreate() {
         target: season.target,
       })
 
+      if (typeof onSuccess === 'function') {
+        await onSuccess(result)
+      }
+
       notify({
         status: SNACK_STATUS.SUCCESS,
         title: 'העונה נוצרה',
@@ -54,8 +53,22 @@ export default function useLeagueSeasonCreate() {
       })
 
       setLeague(null)
-      navigate(PLAYERS_DATABASE_UI_ROUTES.league(serviceLeague.id))
     } catch (error) {
+      setLeague(null)
+      setWriteReport(error?.writeReport || {
+        flow: 'createLeagueSeason',
+        status: 'failed',
+        failedStage: error?.stage || 'unknown',
+        message: error?.message || 'יצירת העונה נכשלה',
+        completedStages: Object.keys(error?.results || {}),
+        failures: [{
+          code: error?.code || 'WRITE_FLOW_FAILED',
+          message: error?.message || 'יצירת העונה נכשלה',
+        }],
+        duplicates: [],
+        results: error?.results || {},
+      })
+
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'יצירת העונה נכשלה',
@@ -65,7 +78,7 @@ export default function useLeagueSeasonCreate() {
     } finally {
       setBusy(false)
     }
-  }, [league, navigate, notify])
+  }, [league, notify, onSuccess])
 
   return {
     league,
@@ -73,5 +86,7 @@ export default function useLeagueSeasonCreate() {
     open,
     close,
     confirm,
+    writeReport,
+    closeWriteReport: () => setWriteReport(null),
   }
 }

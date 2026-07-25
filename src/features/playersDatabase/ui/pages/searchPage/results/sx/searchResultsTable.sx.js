@@ -18,6 +18,11 @@ export const searchResultsTableSx = {
     textAlign: 'center',
   },
 
+  seasonColumn: {
+    width: 76,
+    textAlign: 'center',
+  },
+
   teamColumn: {
     width: 145,
   },
@@ -38,6 +43,14 @@ export const searchResultsTableSx = {
 
   profileColumn: {
     width: 130,
+  },
+
+  profileCell: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
 
   scoreColumn: {
@@ -61,9 +74,12 @@ export const searchResultsTableSx = {
   },
 
   actionButton: {
+    width: 24,
+    height: 24,
     minWidth: 0,
-    minHeight: 28,
-    px: 1,
+    minHeight: 24,
+    px: 0,
+    '--Icon-fontSize': '18px',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primaryLight,
     bgcolor: '#fff',

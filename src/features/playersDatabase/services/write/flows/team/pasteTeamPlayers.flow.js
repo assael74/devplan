@@ -11,17 +11,22 @@ import {
   ensureTeamDoc,
   upsertTeamSeasonPlayers,
 } from '../../teams/index.js'
+import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
+import {
+  assertWriteResultClean,
+  attachWriteFlowReport,
+} from '../writeFlowReport.js'
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `Team roster sync failed at ${stage}`)
+const clean = value => String(value || '').trim()
 
-  error.name = 'TeamRosterSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
+const buildSyncError = ({ stage, cause, results = {} }) => (
+  attachWriteFlowReport({
+    error: cause,
+    stage,
+    results,
+    flow: 'pasteTeamPlayers',
+  })
+)
 
 const assertTeamSeasonUpdated = result => {
   if (!result?.teamDocumentId || !result?.seasonId) {
@@ -29,12 +34,44 @@ const assertTeamSeasonUpdated = result => {
   }
 }
 
+const normalizeTeamPlayersPayload = payload => {
+  const seasonIdentity = normalizeSeasonIdentity({ season: payload.season || {} })
+  const leagueId = clean(
+    payload.league?.id ||
+    payload.league?.leagueId ||
+    payload.season?.leagueId ||
+    payload.team?.leagueId
+  )
+  const seasonId = clean(seasonIdentity.seasonId || seasonIdentity.seasonKey)
+  const seasonKey = clean(seasonIdentity.seasonKey || seasonIdentity.seasonId)
+
+  return {
+    ...payload,
+    league: {
+      ...(payload.league || {}),
+      id: leagueId,
+      leagueId,
+    },
+    season: {
+      ...(payload.season || {}),
+      leagueId,
+      seasonId,
+      seasonKey,
+    },
+    team: {
+      ...(payload.team || {}),
+      leagueId,
+    },
+  }
+}
+
 export async function pasteTeamPlayersFlow(payload = {}) {
+  const normalizedPayload = normalizeTeamPlayersPayload(payload)
   const results = {}
-  const players = Array.isArray(payload.players) ? payload.players : []
+  const players = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
 
   try {
-    results.teamDocResult = await ensureTeamDoc(payload.team || {})
+    results.teamDocResult = await ensureTeamDoc(normalizedPayload.team || {})
   } catch (error) {
     throw buildSyncError({
       stage: 'ensureTeamDoc',
@@ -44,14 +81,14 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   }
 
   const team = {
-    ...(payload.team || {}),
+    ...(normalizedPayload.team || {}),
     birthTeamDocumentId: results.teamDocResult.birthTeamDocumentId,
     teamDocumentId: results.teamDocResult.teamDocumentId,
   }
 
   try {
     results.teamSeasonResult = await upsertTeamSeasonPlayers({
-      ...payload,
+      ...normalizedPayload,
       team,
       players,
     })
@@ -64,6 +101,10 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     })
   }
 
+  const indexedPlayers = Array.isArray(results.teamSeasonResult.players)
+    ? results.teamSeasonResult.players
+    : players
+
   const teamWithRosterMeta = {
     ...team,
     playersCount: results.teamSeasonResult.playersCount,
@@ -71,7 +112,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
 
   try {
     results.leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl({
-      ...payload,
+      ...normalizedPayload,
       team: teamWithRosterMeta,
     })
   } catch (error) {
@@ -84,9 +125,13 @@ export async function pasteTeamPlayersFlow(payload = {}) {
 
   try {
     results.playerSeasonIndexResult = await upsertPlayerSeasonSearchIndexMany({
-      ...payload,
+      ...normalizedPayload,
       team: teamWithRosterMeta,
-      players,
+      players: indexedPlayers,
+    })
+    assertWriteResultClean({
+      result: results.playerSeasonIndexResult,
+      stage: 'playerSeasonIndexes',
     })
   } catch (error) {
     throw buildSyncError({
@@ -98,7 +143,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
 
   try {
     results.teamSeasonIndexResult = await updateTeamSeasonSearchIndexRosterMeta({
-      ...payload,
+      ...normalizedPayload,
       team: teamWithRosterMeta,
       playersCount: results.teamSeasonResult.playersCount,
       playerSeasonIndexCount: results.playerSeasonIndexResult.rowsCount,

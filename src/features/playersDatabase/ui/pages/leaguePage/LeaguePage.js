@@ -18,8 +18,10 @@ import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
 import LeagueImportModal from './LeagueImportModal.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
+import { SeasonDeleteConfirmModal, WriteFlowReportModal } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
 import useTeamUrlEditor from './hooks/useTeamUrlEditor.js'
+import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
 import {
   buildLeagueImportColumns,
   LEAGUE_IMPORT_PLACEHOLDER,
@@ -53,6 +55,12 @@ export default function LeaguePage() {
     leagueDoc,
     selectedSeasonOption,
     notify,
+    reload,
+  })
+  const teamsDelete = useLeagueSeasonTeamsDelete({
+    league,
+    leagueDoc,
+    selectedSeasonOption,
     reload,
   })
   const leagueImport = useLeagueTableImport({
@@ -128,6 +136,7 @@ export default function LeaguePage() {
             onAttackPriorityFilterChange={setAttackPriorityFilter}
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
+            onDeleteTeams={() => teamsDelete.setOpen(true)}
           />
         </Box>
       </Box>
@@ -141,11 +150,35 @@ export default function LeaguePage() {
         onClose={teamUrlEditor.close}
       />
 
+
+      <SeasonDeleteConfirmModal
+        open={teamsDelete.open}
+        title='מחיקת קבוצות העונה'
+        description='עונת הליגה תישאר קיימת, אך כל עונות הקבוצות והאינדקסים של העונה הנבחרת יימחקו.'
+        seasonKey={selectedSeasonKey}
+        busy={teamsDelete.busy}
+        confirmLabel='מחיקת קבוצות העונה'
+        onConfirm={teamsDelete.confirm}
+        onClose={teamsDelete.close}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(teamsDelete.writeReport)}
+        report={teamsDelete.writeReport}
+        onClose={teamsDelete.closeWriteReport}
+      />
+
       <LeagueImportModal
         league={league}
         columns={importColumns}
         leagueImport={leagueImport}
         placeholder={LEAGUE_IMPORT_PLACEHOLDER}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(leagueImport.writeReport)}
+        report={leagueImport.writeReport}
+        onClose={leagueImport.closeWriteReport}
       />
     </PlayersDatabaseLayout>
   )

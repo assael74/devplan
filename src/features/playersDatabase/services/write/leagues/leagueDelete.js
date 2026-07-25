@@ -19,7 +19,7 @@ import {
   leagueDocRef,
 } from './leagueDoc.js'
 import { buildSeasonDoc, isSameSeason } from './leagueSeason.js'
-import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
 
 const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' } = {}) => {
@@ -146,9 +146,8 @@ export async function removeLeagueSeason({
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: seasonKey,
   })
 
   return result
@@ -245,10 +244,98 @@ export async function removeLeagueSeasonTeam({
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: seasonKey,
   })
 
   return result
+}
+
+export async function clearLeagueSeasonTeams({
+  league = {},
+  season = {},
+  target = 'current',
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const ref = leagueDocRef(leagueId)
+
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) {
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        updated: false,
+        reason: 'leagueDocMissing',
+        teams: [],
+      }
+    }
+
+    const currentData = snapshot.data() || {}
+    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const isHistory = clean(target) === 'history'
+    const rows = isHistory
+      ? (Array.isArray(baseDoc.history) ? baseDoc.history : [])
+      : [baseDoc.current]
+    const seasonRow = rows.find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+
+    if (!seasonRow) {
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        target: isHistory ? 'history' : 'current',
+        updated: false,
+        reason: 'leagueSeasonMissing',
+        teams: [],
+      }
+    }
+
+    const teams = Array.isArray(seasonRow.tableRank) ? seasonRow.tableRank : []
+    const clearedSeason = {
+      ...cleanSeasonComputedFields(seasonRow),
+      tableRank: [],
+      tableRankCount: 0,
+      teamsCount: 0,
+      playersCount: 0,
+      playersWithScoutProfileCount: 0,
+      scoutProfilesCount: 0,
+      updatedAt: new Date().toISOString(),
+    }
+
+    if (isHistory) {
+      const nextHistory = (Array.isArray(baseDoc.history) ? baseDoc.history : [])
+        .map(row => (
+          isSameSeason(row, { seasonId, seasonKey })
+            ? clearedSeason
+            : cleanSeasonComputedFields(row)
+        ))
+
+      transaction.set(ref, {
+        history: nextHistory,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true })
+    } else {
+      transaction.set(ref, {
+        current: clearedSeason,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true })
+    }
+
+    return {
+      leagueId,
+      seasonId,
+      seasonKey,
+      target: isHistory ? 'history' : 'current',
+      updated: true,
+      removedTeamsCount: teams.length,
+      teams,
+    }
+  })
 }

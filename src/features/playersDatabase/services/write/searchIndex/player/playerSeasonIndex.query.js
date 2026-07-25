@@ -74,6 +74,8 @@ export const findPlayerSeasonIndexDocForPayload = async ({
   return findExistingPlayerSeasonIndexDoc({
     lookup: buildPlayerSeasonIndexLookup(existingDocs),
     player,
-  })
+    season: { ...season, seasonId, seasonKey },
+    team,
+  }).snapshot
 }
 

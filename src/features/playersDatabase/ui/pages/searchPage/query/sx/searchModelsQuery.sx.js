@@ -68,6 +68,18 @@ export const searchModelsQuerySx = {
     },
   },
 
+  cardDisabled: {
+    cursor: 'default',
+    opacity: 0.72,
+
+    '&:hover': {
+      borderColor: '#d8e3ef',
+      bgcolor: '#fff',
+      boxShadow: 'none',
+      transform: 'none',
+    },
+  },
+
   checkbox: {
     position: 'absolute',
     top: 7,

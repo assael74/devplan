@@ -1,5 +1,6 @@
 // features/playersDatabase/model/leagueCenter.model.js
 
+import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 import { isSameSeason, normalizeSeasonIdentity, normalizeSeasonLookupKey, resolveSeasonLookupKey } from './season.model.js'
 import { normalizeTeamStats } from './teamStats.model.js'
@@ -368,16 +369,26 @@ export const buildLeagueCenterBirthYearOptionsFromMasterDocument = ({
 export const buildLeagueCenterAgeGroupOptions = rows => {
   const map = new Map()
 
+  PLAYERS_DATABASE_AGE_GROUPS_CATALOG.forEach(ageGroup => {
+    const value = clean(ageGroup.id)
+    const label = clean(ageGroup.label)
+    if (!value || !label) return
+
+    map.set(value, {
+      value,
+      label,
+    })
+  })
+
   rows.forEach(row => {
     const label = clean(row.ageGroupLabel)
     const value = clean(row.ageGroupId || label)
-    const key = label || value
 
-    if (!key || map.has(key)) return
+    if (!value || map.has(value)) return
 
-    map.set(key, {
+    map.set(value, {
       value,
-      label,
+      label: label || value,
     })
   })
 
@@ -386,6 +397,16 @@ export const buildLeagueCenterAgeGroupOptions = rows => {
 
 export const buildLeagueCenterLeagueOptions = rows => {
   const map = new Map()
+
+  PLAYERS_DATABASE_LEAGUES_CATALOG.forEach(league => {
+    const label = clean(league.name || league.leagueName)
+    if (!label || map.has(label)) return
+
+    map.set(label, {
+      value: label,
+      label,
+    })
+  })
 
   rows.forEach(row => {
     const label = clean(row.leagueName)

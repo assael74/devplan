@@ -9,7 +9,7 @@ import {
   toNumberOrZero,
 } from '../../../model/value.model.js'
 import { buildSeasonKey } from '../../../model/season.model.js'
-import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
 export { buildSeasonKey, toNumberOrZero }
 export const clean = cleanValue
@@ -65,7 +65,7 @@ export const buildLeagueBaseDoc = (league = {}, currentData = {}) => ({
   updatedAt: serverTimestamp(),
 })
 
-export async function ensureLeagueDoc(league = {}) {
+export async function ensureLeagueDoc(league = {}, options = {}) {
   const leagueId = clean(league.id)
   if (!leagueId) throw new Error('Missing league id')
 
@@ -84,9 +84,11 @@ export async function ensureLeagueDoc(league = {}) {
     }
   })
 
-  await syncLeagueCenterIndexRows({
-    leagues: [league],
-  })
+  if (options.syncMaster !== false) {
+    await syncLeaguesMasterDocument({
+      leagues: [league],
+    })
+  }
 
   return result
 }

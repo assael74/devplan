@@ -4,6 +4,7 @@ import {
   updateLeagueSeasonTableRankTeamUrl,
 } from '../../leagues/index.js'
 import {
+  updatePlayerSeasonSearchIndexTeamUrl,
   updateTeamSeasonSearchIndexTeamUrl,
 } from '../../searchIndex/index.js'
 import {
@@ -46,10 +47,13 @@ export async function updateTeamUrlFlow(payload = {}) {
     payload.season?.leagueId ||
     payload.team?.leagueId
   )
-  const seasonId = clean(payload.season?.seasonId)
+  const seasonId = clean(payload.season?.seasonId || payload.season?.seasonKey)
   const birthTeamId = clean(
     payload.team?.birthTeamId ||
-    payload.team?.teamId
+    payload.team?.teamId ||
+    payload.team?.birthTeamDocumentId ||
+    payload.team?.teamDocumentId ||
+    payload.team?.id
   )
   const teamUrl = clean(payload.team?.teamUrl)
   const team = {
@@ -104,6 +108,16 @@ export async function updateTeamUrlFlow(payload = {}) {
   } catch (error) {
     throw buildSyncError({
       stage: 'updateTeamSeasonSearchIndexTeamUrl',
+      cause: error,
+      results,
+    })
+  }
+
+  try {
+    results.playerSeasonIndexesResult = await updatePlayerSeasonSearchIndexTeamUrl(nextPayload)
+  } catch (error) {
+    throw buildSyncError({
+      stage: 'updatePlayerSeasonSearchIndexTeamUrl',
       cause: error,
       results,
     })

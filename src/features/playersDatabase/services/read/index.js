@@ -22,3 +22,8 @@ export {
   readSearchPageData,
   readSearchPageRows,
 } from './searchPage.read.js'
+
+export {
+  clearPlayersDatabaseDocumentCache,
+  getPlayersDatabaseCacheDebugSnapshot,
+} from '../cache/index.js'

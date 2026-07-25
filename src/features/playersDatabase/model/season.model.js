@@ -25,13 +25,15 @@ export const normalizeSeasonIdentity = ({
   season = {},
   fallback = {},
 } = {}) => {
+  const safeSeason = season && typeof season === 'object' ? season : {}
+  const safeFallback = fallback && typeof fallback === 'object' ? fallback : {}
   const seasonId = cleanValue(pickFirstValue(
-    season.seasonId,
-    fallback.seasonId
+    safeSeason.seasonId,
+    safeFallback.seasonId
   ))
   const suppliedSeasonKey = cleanValue(pickFirstValue(
-    season.seasonKey,
-    fallback.seasonKey
+    safeSeason.seasonKey,
+    safeFallback.seasonKey
   ))
   const seasonKey = suppliedSeasonKey || buildSeasonKey(seasonId)
 

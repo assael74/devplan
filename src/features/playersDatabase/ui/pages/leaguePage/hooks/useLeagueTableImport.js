@@ -30,6 +30,7 @@ export function useLeagueTableImport({
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [previewMessage, setPreviewMessage] = React.useState('')
+  const [writeReport, setWriteReport] = React.useState(null)
 
   const handlePreview = React.useCallback(() => {
     const preview = buildLeagueImportPreview({
@@ -104,6 +105,21 @@ export function useLeagueTableImport({
       setPreviewMessage('')
       reload()
     } catch (error) {
+      setOpen(false)
+      setWriteReport(error?.writeReport || {
+        flow: 'pasteLeagueTable',
+        status: 'failed',
+        failedStage: error?.stage || 'unknown',
+        message: error?.message || 'טעינת טבלת הליגה נכשלה',
+        completedStages: Object.keys(error?.results || {}),
+        failures: [{
+          code: error?.code || 'WRITE_FLOW_FAILED',
+          message: error?.message || 'טעינת טבלת הליגה נכשלה',
+        }],
+        duplicates: [],
+        results: error?.results || {},
+      })
+
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'טעינת טבלת הליגה נכשלה',
@@ -128,5 +144,7 @@ export function useLeagueTableImport({
     handleConfirm,
     handleClose: () => setOpen(false),
     handleOpen: () => setOpen(true),
+    writeReport,
+    closeWriteReport: () => setWriteReport(null),
   }
 }

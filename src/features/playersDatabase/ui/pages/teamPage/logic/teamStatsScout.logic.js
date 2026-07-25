@@ -1,6 +1,7 @@
 // features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
 
 import { buildPlayerScoutResult } from '../../../../../../shared/players/scouting/index.js'
+import { adaptPlayerScoutEngineResult } from '../../../../domain/index.js'
 import { normalizeTeamStats } from '../../../../model/teamStats.model.js'
 import { clean, toNumber } from './teamPage.utils.js'
 
@@ -128,13 +129,6 @@ const buildStatsScoutTeamInput = ({ team = {}, season = {} } = {}) => {
   }
 }
 
-const buildStatsScoutProfilePreview = signal => ({
-  profileId: clean(signal?.profileId),
-  label: clean(signal?.profileLabel || signal?.label || signal?.profileId),
-  profileScore: Number.isFinite(Number(signal?.score)) ? Number(signal.score) : null,
-  profileReliability: signal?.reliability?.level || signal?.reliabilityLevel || '',
-})
-
 export const buildStatsScoutPreview = ({ row, team, season }) => {
   const status = clean(row?.rosterStatus || 'regular')
 
@@ -151,11 +145,20 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       perspective: 'players_database_stats_preview',
     })
     const scoutSignals = Array.isArray(result?.signals) ? result.signals : []
+    const scout = adaptPlayerScoutEngineResult(result)
 
     return {
+      scout,
       scoutSignals,
-      scoutProfiles: scoutSignals.map(buildStatsScoutProfilePreview),
-      scoutCombinations: Array.isArray(result?.combinations) ? result.combinations : [],
+      scoutProfiles: scout.profiles.map(profile => ({
+        profileId: profile.id,
+        label: profile.label,
+        profileScore: profile.score,
+        profileReliability: profile.reliability.level,
+        profileWarnings: profile.warnings,
+        positionContext: profile.positionContext || '',
+      })),
+      scoutCombinations: scout.combinations,
       bestScoutSignal: result?.bestSignal || scoutSignals[0] || null,
     }
   } catch (error) {

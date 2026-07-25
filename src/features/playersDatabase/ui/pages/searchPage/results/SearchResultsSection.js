@@ -7,6 +7,32 @@ import DataTable from '../../../components/tables/DataTable.js'
 import { buildSearchColumns } from '../logic/search.columns.js'
 import { searchResultsSectionSx as sx } from './sx/searchResultsSection.sx.js'
 
+const renderExpandedRow = row => (
+  <Box sx={sx.expandedDetails}>
+    <Box sx={sx.expandedItem}>
+      <Typography level='body-xs' sx={sx.expandedLabel}>עונה</Typography>
+      <Typography level='body-sm' sx={sx.expandedValue}>{row.seasonKey || '-'}</Typography>
+    </Box>
+
+    <Box sx={sx.expandedItem}>
+      <Typography level='body-xs' sx={sx.expandedLabel}>קבוצה</Typography>
+      <Typography level='body-sm' sx={sx.expandedValue}>{row.teamName || '-'}</Typography>
+    </Box>
+
+    <Box sx={sx.expandedItem}>
+      <Typography level='body-xs' sx={sx.expandedLabel}>ליגה</Typography>
+      <Typography level='body-sm' sx={sx.expandedValue}>{row.leagueName || '-'}</Typography>
+    </Box>
+
+    <Box sx={sx.expandedItem}>
+      <Typography level='body-xs' sx={sx.expandedLabel}>סטטיסטיקה</Typography>
+      <Typography level='body-sm' sx={sx.expandedValue}>
+        {`${Number(row.minutes || 0)} דקות · ${Number(row.starts || 0)}/${Number(row.appearances || 0)} הרכב · ${Number(row.goals || 0)} שערים`}
+      </Typography>
+    </Box>
+  </Box>
+)
+
 export default function SearchResultsSection({
   rows = [],
   loading = false,
@@ -48,6 +74,7 @@ export default function SearchResultsSection({
           getRowKey={row => row.id}
           wrapSx={sx.tableWrap}
           tableSx={sx.table}
+          renderExpandedRow={renderExpandedRow}
         />
       )}
     </Card>

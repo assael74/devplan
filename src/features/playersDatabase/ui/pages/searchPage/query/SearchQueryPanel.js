@@ -32,9 +32,9 @@ export default function SearchQueryPanel({
             ? `${activeItems.length} תנאים פעילים בחיפוש`
             : 'בחר הקשר, מודל חיפוש ותנאים סטטיסטיים.'
         }
-        headerRight={
-          activeItems.length > 0 ? (
-            <Stack direction='row' sx={sx.headerActions}>
+        headerRight={(
+          <Stack direction='row' sx={sx.headerActions}>
+            {activeItems.length > 0 ? (
               <Button
                 size='sm'
                 variant='plain'
@@ -43,9 +43,9 @@ export default function SearchQueryPanel({
               >
                 איפוס חיפוש
               </Button>
-            </Stack>
-          ) : null
-        }
+            ) : null}
+          </Stack>
+        )}
         contentSx={sx.collapseContent}
         innerSx={sx.collapseInner}
       >
@@ -78,6 +78,7 @@ export default function SearchQueryPanel({
             <SearchStatsQuery
               conditions={search.queryFilters.conditions}
               onSetCondition={search.setQueryPresetCondition}
+              onResetConditions={search.resetQueryConditions}
             />
           </Box>
 

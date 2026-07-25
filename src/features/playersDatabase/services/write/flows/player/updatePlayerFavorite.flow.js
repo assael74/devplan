@@ -6,6 +6,9 @@ import {
 import {
   updatePlayerFavoriteSearchIndexes,
 } from '../../searchIndex/index.js'
+import {
+  updatePlayerFavoriteInAllTeamSeasons,
+} from '../../teams/index.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player favorite sync failed at ${stage}`)
@@ -32,7 +35,7 @@ export async function updatePlayerFavoriteFlow(payload = {}) {
   }
 
   try {
-    results.playerSeasonIndexResult = await updatePlayerFavoriteSearchIndexes(payload)
+    results.playerSeasonIndexesResult = await updatePlayerFavoriteSearchIndexes(payload)
   } catch (error) {
     throw buildSyncError({
       stage: 'updatePlayerFavoriteSearchIndexes',
@@ -41,9 +44,22 @@ export async function updatePlayerFavoriteFlow(payload = {}) {
     })
   }
 
+  try {
+    results.teamSeasonsResult = await updatePlayerFavoriteInAllTeamSeasons(payload)
+  } catch (error) {
+    throw buildSyncError({
+      stage: 'updatePlayerFavoriteInAllTeamSeasons',
+      cause: error,
+      results,
+    })
+  }
+
   return {
     ...results,
-    rowsCount: results.playerSeasonIndexResult.rowsCount,
+    rowsCount: (
+      Number(results.playerSeasonIndexesResult?.rowsCount || 0) +
+      Number(results.teamSeasonsResult?.rowsCount || 0)
+    ),
     syncStatus: 'complete',
   }
 }

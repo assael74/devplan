@@ -2,12 +2,10 @@
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
+import { buildLeagueTeamSeasons } from '../domain/index.js'
 import { normalizeSeasonIdentity, normalizeSeasonLookupKey } from './season.model.js'
-import { normalizeTeamIdentity, resolveTeamLookupKey } from './teamIdentity.model.js'
-import { normalizeTeamStats } from './teamStats.model.js'
 import { cleanValue, toNumberOrZero } from './value.model.js'
 import { sortByTableRank } from '../ui/logic/tableRows.logic.js'
-import { buildTeamScoutLeagueModel, TEAM_SCOUT_NORMALIZATION_MODE, TEAM_SCOUT_SORT_MODE } from '../../../shared/teams/scout/index.js'
 
 const buildSeasonOption = ({ season, target }) => {
   const identity = normalizeSeasonIdentity({ season })
@@ -45,105 +43,73 @@ export const buildLeaguePageSeasonOptions = league => {
   return options.filter(option => option.seasonKey || option.seasonId)
 }
 
-const resolvePriorityLevel = value => {
-  const rate = Number(value)
-  if (!Number.isFinite(rate)) return 'neutral'
-  if (rate >= 140) return 'elite'
-  if (rate >= 115) return 'high'
-  if (rate >= 100) return 'positive'
-  if (rate >= 85) return 'neutral'
-
-  return 'low'
-}
-
 const getClubById = clubId =>
   PLAYERS_DATABASE_CLUBS_CATALOG.find(
     club => cleanValue(club.id) === cleanValue(clubId)
   ) || null
 
-const resolveTeamName = row => {
-  const identity = normalizeTeamIdentity({ team: row })
-  const club = getClubById(identity.clubId)
+const resolveTeamName = teamSeason => {
+  const clubId = cleanValue(teamSeason?.identity?.clubId)
+  const teamId = cleanValue(teamSeason?.identity?.teamId)
+  const club = getClubById(clubId)
 
   return buildTeamDisplayName({
-    clubName: club?.name || row?.clubName || row?.displayName || row?.teamName,
-    clubId: identity.clubId,
-    teamId: identity.birthTeamId || identity.teamId,
-    teamSlot: identity.birthTeamSlot || identity.teamSlot,
-  }) || cleanValue(identity.teamId || identity.clubId || '-')
+    clubName: club?.name || teamSeason?.identity?.displayName,
+    clubId,
+    teamId,
+    teamSlot: teamSeason?.identity?.teamSlot || 1,
+  }) || cleanValue(teamId || clubId || '-')
 }
 
-const buildTeamRow = ({ row, scoutResult } = {}) => {
-  const teamIdentity = normalizeTeamIdentity({ team: row })
-  const teamStats = normalizeTeamStats(row, {
-    gamesCandidates: [row?.teamStats?.teamGamePlayed, row?.games],
-    goalsForCandidates: [row?.teamStats?.goalsFor, row?.goalsFor],
-    goalsAgainstCandidates: [row?.teamStats?.goalsAgainst, row?.goalsAgainst],
-    pointsCandidates: [row?.teamStats?.points, row?.points],
-  })
-  const scoutSummary = row?.scoutProfilesSummary || {}
-  const playersCount = toNumberOrZero(row?.playersCount || row?.teamPlayersCount)
+const buildTeamRow = teamSeason => {
+  const stats = teamSeason?.stats?.actual || {}
+  const ranking = teamSeason?.ranking || {}
+  const performance = teamSeason?.performance || {}
+  const scoutSummary = teamSeason?.scoutProfilesSummary || {}
   const profilesCount = toNumberOrZero(scoutSummary.total)
-  const attackPerformance = row?.teamStats?.attackNormalPerformance ||
-    row?.attackNormalPerformance
-  const defensePerformance = row?.teamStats?.defenseNormalPerformance ||
-    row?.defenseNormalPerformance
 
   return {
-    id: resolveTeamLookupKey(row) || cleanValue(row?.rank),
-    teamId: teamIdentity.teamId,
-    birthTeamId: teamIdentity.birthTeamId,
-    teamDocumentId: teamIdentity.teamDocumentId,
-    clubId: teamIdentity.clubId,
-    teamUrl: cleanValue(row?.teamUrl),
-    tableRank: toNumberOrZero(row?.rank || row?.tableRank),
-    name: resolveTeamName(row),
-    teamSlot: teamIdentity.birthTeamSlot || teamIdentity.teamSlot || 1,
-    points: teamStats.points,
-    goalsFor: teamStats.goalsFor,
-    goalsAgainst: teamStats.goalsAgainst,
-    games: teamStats.gamesPlayed,
-    teamStats,
-    playersCount,
+    id: cleanValue(
+      teamSeason?.identity?.teamId ||
+      teamSeason?.identity?.teamDocumentId ||
+      ranking.tableRank
+    ),
+    teamId: cleanValue(teamSeason?.identity?.teamId),
+    birthTeamId: cleanValue(teamSeason?.identity?.teamId),
+    teamDocumentId: cleanValue(teamSeason?.identity?.teamDocumentId),
+    clubId: cleanValue(teamSeason?.identity?.clubId),
+    teamUrl: cleanValue(teamSeason?.metadata?.teamUrl),
+    tableRank: toNumberOrZero(ranking.tableRank),
+    name: resolveTeamName(teamSeason),
+    teamSlot: teamSeason?.identity?.teamSlot || 1,
+    points: toNumberOrZero(stats.points),
+    goalsFor: toNumberOrZero(stats.goalsFor),
+    goalsAgainst: toNumberOrZero(stats.goalsAgainst),
+    games: toNumberOrZero(stats.gamesPlayed),
+    teamStats: stats,
+    playersCount: toNumberOrZero(teamSeason?.playersCount),
     profilesCount,
-    attackPriority: scoutResult?.offense?.priorityLevel ||
-      resolvePriorityLevel(attackPerformance),
-    defensePriority: scoutResult?.defense?.priorityLevel ||
-      resolvePriorityLevel(defensePerformance),
+    attackPriority: performance?.offense?.priorityLevel || 'neutral',
+    defensePriority: performance?.defense?.priorityLevel || 'neutral',
+    performance,
+    scoutSummary,
     scoutStatus: profilesCount > 0 ? 'full' : 'missing',
-    source: row,
+    source: teamSeason,
   }
 }
 
-const buildScoutResultMap = ({ tableRank = [], leagueDoc = {}, season = {} } = {}) => {
-  const result = buildTeamScoutLeagueModel({
-    leagueLevel: leagueDoc?.level,
-    leagueNumGames: season?.leagueTotalRound || 30,
-    rows: tableRank,
-    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
-    sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
+export const buildLeaguePageTeams = ({ season, leagueDoc, target = 'current' }) => {
+  const teamSeasons = buildLeagueTeamSeasons({
+    leagueDocument: leagueDoc,
+    seasonDocument: season,
+    target,
   })
 
-  return new Map((result.rows || []).map(row => [
-    resolveTeamLookupKey(row) || cleanValue(row.clubId || row.rank),
-    row,
-  ]))
-}
-
-export const buildLeaguePageTeams = ({ season, leagueDoc }) => {
-  const tableRank = Array.isArray(season?.tableRank) ? season.tableRank : []
-  const scoutResultMap = buildScoutResultMap({
-    tableRank,
-    leagueDoc,
-    season,
-  })
-
-  return sortByTableRank(tableRank.map(row => buildTeamRow({
-    row,
-    scoutResult: scoutResultMap.get(
-      resolveTeamLookupKey(row) || cleanValue(row?.clubId || row?.rank)
-    ),
-  })).filter(row => row.id))
+  return sortByTableRank(
+    teamSeasons
+      .map(buildTeamRow)
+      .filter(row => row.id)
+  )
 }
 
 const getLeagueLevelLabel = level => {
@@ -187,4 +153,3 @@ export const buildLeaguePageSummary = ({ teams, league }) => ({
     ['elite', 'high'].includes(team.defensePriority)
   )).length,
 })
-

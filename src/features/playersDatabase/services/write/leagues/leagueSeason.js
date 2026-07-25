@@ -11,7 +11,7 @@ import {
   leagueDocRef,
   toNumberOrZero,
 } from './leagueDoc.js'
-import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
 export { buildSeasonKey } from './leagueDoc.js'
 
@@ -68,6 +68,7 @@ export async function upsertLeagueSeason({
   league = {},
   season = {},
   target = 'current',
+  syncMaster = true,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
@@ -119,10 +120,11 @@ export async function upsertLeagueSeason({
     }
   })
 
-  await syncLeagueCenterIndexRows({
-    leagues: [league],
-    selectedSeasonKey: clean(season.seasonKey) || buildSeasonKey(seasonId),
-  })
+  if (syncMaster) {
+    await syncLeaguesMasterDocument({
+      leagues: [league],
+    })
+  }
 
   return result
 }
@@ -180,9 +182,8 @@ export async function updateLeagueSeasonUrl({
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: resolvedSeasonKey,
   })
 
   return result
@@ -244,9 +245,8 @@ export async function updateLeagueSeasonMeta({
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: resolvedSeasonKey,
   })
 
   return result

@@ -8,6 +8,7 @@ import {
 } from '../../../../services/write/index.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { parsePlayerRosterRows } from '../logic/teamRosterImport.logic.js'
+import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 
 export default function useTeamRosterImport({
   leagueId,
@@ -21,6 +22,7 @@ export default function useTeamRosterImport({
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
+  const [writeReport, setWriteReport] = React.useState(null)
 
   const parse = React.useCallback(() => {
     setRows(parsePlayerRosterRows(pasteValue))
@@ -32,6 +34,10 @@ export default function useTeamRosterImport({
         ? { ...row, [column.key]: value }
         : row
     )))
+  }, [])
+
+  const closeWriteReport = React.useCallback(() => {
+    setWriteReport(null)
   }, [])
 
   const close = React.useCallback(() => {
@@ -73,10 +79,17 @@ export default function useTeamRosterImport({
       setRows([])
       reload()
     } catch (error) {
+      console.error('[playersDatabase/write-flow]', error?.writeReport || error)
+      setOpen(false)
+      setWriteReport(buildWriteReportFromError({
+        error,
+        flow: 'pasteTeamPlayers',
+      }))
+
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'טעינת סגל נכשלה',
-        message: error?.message || 'שגיאה בעדכון סגל השנתון',
+        message: 'נפתח דוח כתיבה מפורט לבדיקה',
       })
     } finally {
       setBusy(false)
@@ -96,11 +109,13 @@ export default function useTeamRosterImport({
     pasteValue,
     rows,
     busy,
+    writeReport,
     setOpen,
     setPasteValue,
     parse,
     changeCell,
     close,
+    closeWriteReport,
     confirm,
   }
 }

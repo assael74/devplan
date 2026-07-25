@@ -61,6 +61,7 @@ export function useLeaguePage() {
   const teams = useMemo(() => buildLeaguePageTeams({
     season: selectedSeasonOption?.season,
     leagueDoc,
+    target: selectedSeasonOption?.target || 'current',
   }), [leagueDoc, selectedSeasonOption])
   const league = useMemo(() => buildLeaguePageView({
     league: leagueDoc,

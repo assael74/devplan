@@ -2,6 +2,7 @@
 
 import { serverTimestamp } from 'firebase/firestore'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
+import { adaptTeamScoutEngineRow } from '../../../../domain/index.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { normalizeTeamIdentity, resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
@@ -110,8 +111,17 @@ export const buildTeamSeasonIndexDoc = ({
   const games = getRowGames(row)
   const goalsFor = getRowGoalsFor(row)
   const goalsAgainst = getRowGoalsAgainst(row)
-  const offense = scoutResult?.offense || null
-  const defense = scoutResult?.defense || null
+  const performance = adaptTeamScoutEngineRow({
+    row: scoutResult || {},
+    source: {
+      normalization: scoutResult?.normalization || {},
+      leagueLevel: league.level,
+      leagueGames: season.leagueTotalRound,
+      calculatedAt: season.updatedAt || null,
+    },
+  })
+  const offense = performance.offense
+  const defense = performance.defense
   const displayName = buildTeamDisplayName({
     clubName: row.clubName || row.displayName,
     clubId,

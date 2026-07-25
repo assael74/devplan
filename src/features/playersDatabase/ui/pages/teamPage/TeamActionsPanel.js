@@ -16,19 +16,19 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamContentSx as sx } from './sx/teamContent.sx.js'
 
-const buildActions = ({ hasTeamPlayers }) => [
+const buildActions = ({ hasTeamPlayers, hasSeason }) => [
   {
     id: 'players',
     label: hasTeamPlayers ? 'טעינת שחקן בודד' : 'טעינת סגל',
     iconId: 'upload',
     primary: true,
-    disabled: false,
+    disabled: !hasSeason,
   },
   {
     id: 'stats',
     label: 'טעינת סטטיסטיקות',
     iconId: 'addStats',
-    disabled: !hasTeamPlayers,
+    disabled: !hasTeamPlayers || !hasSeason,
   },
   {
     id: 'deletePlayers',
@@ -54,8 +54,10 @@ export default function TeamActionsPanel({
   onProfileOnlyChange,
   onPlayersImport,
   onStatsImport,
+  onDeletePlayers,
 }) {
-  const actions = buildActions({ hasTeamPlayers })
+  const hasSeason = Boolean(selectedSeasonKey && seasonOptions.length)
+  const actions = buildActions({ hasTeamPlayers, hasSeason })
 
   const handleAction = actionId => {
     if (actionId === 'players') {
@@ -63,7 +65,12 @@ export default function TeamActionsPanel({
       return
     }
 
-    if (actionId === 'stats') onStatsImport()
+    if (actionId === 'stats') {
+      onStatsImport()
+      return
+    }
+
+    if (actionId === 'deletePlayers') onDeletePlayers()
   }
 
   return (

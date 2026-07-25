@@ -15,6 +15,7 @@ export const searchPageSx = {
     gap: 1.25,
     overflow: 'hidden',
   },
+  
   workspace: {
     minWidth: 0,
     minHeight: 0,
@@ -23,13 +24,14 @@ export const searchPageSx = {
     gap: 1.25,
     overflow: 'hidden',
   },
+
   resultsWorkspace: {
     minWidth: 0,
     minHeight: 0,
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      xl: 'minmax(0, 1fr) 300px',
+      xl: 'minmax(0, 1fr) 240px',
     },
     gap: 1.25,
     overflow: 'hidden',

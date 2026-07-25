@@ -164,3 +164,101 @@ export async function removeTeamPlayerFromSeason({
   })
 }
 
+
+export async function clearTeamSeasonPlayers({
+  season = {},
+  team = {},
+  target = 'current',
+} = {}) {
+  const teamId = resolveTeamLookupKey(team)
+  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
+  if (!teamId) throw new Error('Missing birth team id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const ref = teamDocRef(teamId)
+
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) {
+      return {
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+        seasonId,
+        seasonKey,
+        updated: false,
+        reason: 'teamDocMissing',
+        removedPlayersCount: 0,
+      }
+    }
+
+    const currentData = snapshot.data() || {}
+    const baseDoc = buildTeamBaseDoc(
+      { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+      currentData
+    )
+    const isHistory = clean(target) === 'history'
+    const fieldKey = isHistory ? 'history' : 'current'
+    const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
+    let removedPlayersCount = 0
+    let seasonFound = false
+
+    const nextRows = rows.map(row => {
+      if (!isSameSeason(row, { seasonId, seasonKey })) return row
+
+      seasonFound = true
+      removedPlayersCount = Array.isArray(row.teamPlayers)
+        ? row.teamPlayers.length
+        : 0
+
+      return {
+        ...row,
+        teamPlayers: [],
+        playersCount: 0,
+        playerSeasonIndexCount: 0,
+        scoutProfiledPlayersCount: 0,
+        scoutProfilesSummary: {
+          total: 0,
+          profileCounts: {},
+        },
+        updatedAt: new Date().toISOString(),
+      }
+    })
+
+    if (!seasonFound) {
+      return {
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+        seasonId,
+        seasonKey,
+        target: isHistory ? 'history' : 'current',
+        updated: false,
+        reason: 'teamSeasonMissing',
+        removedPlayersCount: 0,
+      }
+    }
+
+    transaction.set(
+      ref,
+      {
+        [fieldKey]: nextRows,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    )
+
+    return {
+      birthTeamDocumentId: teamId,
+      teamDocumentId: teamId,
+      seasonId,
+      seasonKey,
+      target: isHistory ? 'history' : 'current',
+      updated: true,
+      removedPlayersCount,
+      playersCount: 0,
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
+    }
+  })
+}

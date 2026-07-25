@@ -297,9 +297,11 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         {
           profileId: '',
           positionContext: '',
-          profileScore: null,
-          profileReliability: null,
-          profileWarnings: [],
+          reliability: {
+            level: '',
+            score: null,
+          },
+          score: null,
         }
       ],
       updatedAt: null,
@@ -341,9 +343,11 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         {
           profileId: '',
           positionContext: '',
-          profileScore: null,
-          profileReliability: null,
-          profileWarnings: [],
+          reliability: {
+            level: '',
+            score: null,
+          },
+          score: null,
         }
       ],
       closedAt: null,
@@ -479,6 +483,8 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   substitutedOut: 0,
   teamMinutes: 0,
   teamGames: 0,
+  minutesPerGame: 0,
+  goalsPer90: 0,
 
   primaryScoutProfileId: '',
   primaryScoutReliabilityLevel: '',
@@ -487,6 +493,9 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   secondaryScoutProfileId: '',
   secondaryScoutReliabilityLevel: '',
   secondaryScoutScore: null,
+  scoutProfileIds: [],
+  scoutCombinationIds: [],
+  scoutProfileSearchIds: [],
 
   sourceCollection: 'players',
   sourceDocumentId: '',

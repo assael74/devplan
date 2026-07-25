@@ -15,6 +15,7 @@ import TeamHeader from './TeamHeader.js'
 import TeamStatsOverview from './TeamStatsOverview.js'
 import TeamPlayersSection from './TeamPlayersSection.js'
 import TeamRoleModal from './TeamRoleModal.js'
+import { SeasonDeleteConfirmModal, WriteFlowReportModal } from '../../components/modals/index.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
 import {
   TeamRosterImportModal,
@@ -25,6 +26,7 @@ import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
+import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
 export default function TeamPage() {
@@ -60,6 +62,7 @@ export default function TeamPage() {
     players,
     hasTeamPlayers,
   })
+  const playersDelete = useTeamSeasonPlayersDelete(sharedActionContext)
   const statsColumns = useTeamStatsColumns({
     players,
     rosterLookup: statsImport.rosterLookup,
@@ -111,6 +114,7 @@ export default function TeamPage() {
           onProfileOnlyChange={setProfileOnly}
           onPlayersImport={() => rosterImport.setOpen(true)}
           onStatsImport={() => statsImport.setOpen(true)}
+          onDeletePlayers={() => playersDelete.setOpen(true)}
           onRoleOpen={roleEditor.open}
           onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))}
           onPlayerUrlEdit={playerUrlEditor.open}
@@ -167,6 +171,36 @@ export default function TeamPage() {
         getRowStatus={statsImport.getRowStatus}
         onConfirm={statsImport.confirm}
         onClose={statsImport.close}
+      />
+
+
+      <SeasonDeleteConfirmModal
+        open={playersDelete.open}
+        title='מחיקת שחקני העונה'
+        description='כל השחקנים והסטטיסטיקה שלהם יוסרו מהקבוצה בעונה הנבחרת בלבד.'
+        seasonKey={selectedSeasonKey}
+        busy={playersDelete.busy}
+        confirmLabel='מחיקת שחקני העונה'
+        onConfirm={playersDelete.confirm}
+        onClose={playersDelete.close}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(playersDelete.writeReport)}
+        report={playersDelete.writeReport}
+        onClose={playersDelete.closeWriteReport}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(rosterImport.writeReport)}
+        report={rosterImport.writeReport}
+        onClose={rosterImport.closeWriteReport}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(statsImport.writeReport)}
+        report={statsImport.writeReport}
+        onClose={statsImport.closeWriteReport}
       />
     </PlayersDatabaseLayout>
   )

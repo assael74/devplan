@@ -16,6 +16,7 @@ import LeagueCenterFilters from './LeagueCenterFilters.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
 import LeagueCenterMissingPanel from './LeagueCenterMissingPanel.js'
 import LeagueCenterSeasonModal from './LeagueCenterSeasonModal.js'
+import { WriteFlowReportModal } from '../../components/modals/index.js'
 import useLeagueSeasonCreate from './hooks/useLeagueSeasonCreate.js'
 import { buildLeagueCenterColumns } from './logic/leagueCenter.columns.js'
 import { buildMissingItems } from './logic/leagueCenter.logic.js'
@@ -25,7 +26,7 @@ import { leagueCenterContentSx as contentSx } from './sx/leagueCenterContent.sx.
 export default function LeaguesCenterPage() {
   const navigate = useNavigate()
   const model = useLeagueCenter()
-  const seasonCreate = useLeagueSeasonCreate()
+  const seasonCreate = useLeagueSeasonCreate({ onSuccess: model.reload })
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'מרכז ליגות' },
   ])
@@ -56,6 +57,12 @@ export default function LeaguesCenterPage() {
       <LeagueCenterSeasonModal
         controller={seasonCreate}
         defaultSeasonKey={model.seasonKey}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(seasonCreate.writeReport)}
+        report={seasonCreate.writeReport}
+        onClose={seasonCreate.closeWriteReport}
       />
     </PlayersDatabaseLayout>
   )

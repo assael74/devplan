@@ -16,6 +16,7 @@ import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
   buildPlayerAliases,
+  hasCompletePlayerSeasonIndexIdentity,
   buildPlayerSeasonIndexDoc,
   buildPlayerSeasonIndexLookup,
   buildPlayerSeasonIndexScope,
@@ -71,10 +72,41 @@ export async function upsertPlayerSeasonSearchIndexMany({
   const existingLookup = buildPlayerSeasonIndexLookup(existingDocs)
   const batch = writeBatch(db)
   let rowsCount = 0
+  let createdCount = 0
+  let updatedCount = 0
+  const failures = []
+  const duplicates = []
 
   safePlayers.forEach(player => {
-    const existingDoc = findExistingPlayerSeasonIndexDoc({ lookup: existingLookup, player })
+    const match = findExistingPlayerSeasonIndexDoc({
+      lookup: existingLookup,
+      player,
+      season: { ...season, seasonId, seasonKey },
+      team,
+    })
+    const existingDoc = match.snapshot
+
+    if (!hasCompletePlayerSeasonIndexIdentity(match.identity)) {
+      failures.push({
+        code: 'PLAYER_INDEX_IDENTITY_INCOMPLETE',
+        message: 'חסרים מזהה שחקן, עונה, קבוצה או סלוט',
+        playerId: match.identity.playerId,
+        seasonId: match.identity.seasonId,
+        birthTeamId: match.identity.birthTeamId,
+        birthTeamSlot: match.identity.birthTeamSlot,
+        displayName: clean(player.matchedPlayerName || player.fullName),
+      })
+      return
+    }
+
     if (!existingDoc && shouldSkipNewPlayerSeasonIndex(player)) return
+
+    if (match.duplicateSnapshots.length) {
+      duplicates.push({
+        ...match.identity,
+        documentIds: [existingDoc?.id, ...match.duplicateSnapshots.map(item => item.id)].filter(Boolean),
+      })
+    }
 
     const existingData = existingDoc?.data?.() || {}
     const indexDoc = buildPlayerSeasonIndexDoc({
@@ -91,6 +123,9 @@ export async function upsertPlayerSeasonSearchIndexMany({
     if (!id || !indexDoc.teamId || !indexDoc.seasonId || !indexDoc.displayName) return
 
     rowsCount += 1
+    if (existingDoc) updatedCount += 1
+    else createdCount += 1
+
     batch.set(
       existingDoc?.ref || doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id),
       {
@@ -118,5 +153,11 @@ export async function upsertPlayerSeasonSearchIndexMany({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
     operation: 'upsertMany',
     rowsCount,
+    createdCount,
+    updatedCount,
+    failedCount: failures.length,
+    duplicateCount: duplicates.length,
+    failures,
+    duplicates,
   })
 }

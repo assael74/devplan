@@ -1,12 +1,12 @@
 // features/playersDatabase/ui/hooks/useLeagueCenter.js
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.js'
 import {
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
   buildLeagueCenterAgeGroupOptions,
-  buildLeagueCenterBirthYearOptionsFromMasterDocument,
+  buildLeagueCenterBirthYearOptions,
   buildLeagueCenterLeagueDocsFromMasterDocument,
   buildLeagueCenterLeagueOptions,
   buildLeagueCenterRowsFromMasterDocument,
@@ -27,29 +27,26 @@ export function useLeagueCenter() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let active = true
+  const reload = useCallback(async () => {
     setLoading(true)
     setError('')
 
-    readLeagueCenterData()
-      .then(({ leaguesMasterDoc: nextMasterDoc }) => {
-        if (!active) return
-        setLeaguesMasterDoc(nextMasterDoc || null)
-      })
-      .catch(err => {
-        if (!active) return
-        setLeaguesMasterDoc(null)
-        setError(err?.message || 'טעינת מרכז הליגות נכשלה')
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-
-    return () => {
-      active = false
+    try {
+      const { leaguesMasterDoc: nextMasterDoc } = await readLeagueCenterData()
+      setLeaguesMasterDoc(nextMasterDoc || null)
+      return nextMasterDoc || null
+    } catch (err) {
+      setLeaguesMasterDoc(null)
+      setError(err?.message || 'טעינת מרכז הליגות נכשלה')
+      throw err
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    reload().catch(() => {})
+  }, [reload])
 
   const leagueRows = useMemo(() => buildLeagueCenterRowsFromMasterDocument({
     leaguesMasterDoc,
@@ -72,11 +69,23 @@ export function useLeagueCenter() {
 
   const seasonOptions = useMemo(() => buildLeagueCenterSeasonOptions(leagueDocs), [leagueDocs])
   const birthYearOptions = useMemo(
-    () => buildLeagueCenterBirthYearOptionsFromMasterDocument({ leaguesMasterDoc }),
-    [leaguesMasterDoc]
+    () => buildLeagueCenterBirthYearOptions(leagueRows),
+    [leagueRows]
   )
-  const ageGroupOptions = useMemo(() => buildLeagueCenterAgeGroupOptions(leagueDocs), [leagueDocs])
-  const leagueOptions = useMemo(() => buildLeagueCenterLeagueOptions(leagueDocs), [leagueDocs])
+
+  useEffect(() => {
+    if (birthYear === 'all') return
+
+    const hasSelectedBirthYear = birthYearOptions.some(
+      option => String(option) === String(birthYear)
+    )
+
+    if (!hasSelectedBirthYear) {
+      setBirthYear('all')
+    }
+  }, [birthYear, birthYearOptions])
+  const ageGroupOptions = useMemo(() => buildLeagueCenterAgeGroupOptions(leagueRows), [leagueRows])
+  const leagueOptions = useMemo(() => buildLeagueCenterLeagueOptions(leagueRows), [leagueRows])
 
   return {
     query,
@@ -100,5 +109,6 @@ export function useLeagueCenter() {
     error,
     leagueDocs,
     catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
+    reload,
   }
 }

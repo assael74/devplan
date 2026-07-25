@@ -3,9 +3,6 @@
 import {
   updateLeagueSeasonUrl,
 } from '../../leagues/index.js'
-import {
-  updateSearchIndexesLeagueSeasonUrl,
-} from '../../searchIndex/index.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `League season URL sync failed at ${stage}`)
@@ -31,19 +28,9 @@ export async function updateLeagueSeasonUrlFlow(payload = {}) {
     })
   }
 
-  try {
-    results.searchIndexResult = await updateSearchIndexesLeagueSeasonUrl(payload)
-  } catch (error) {
-    throw buildSyncError({
-      stage: 'updateSearchIndexesLeagueSeasonUrl',
-      cause: error,
-      results,
-    })
-  }
-
   return {
     ...results,
-    rowsCount: results.searchIndexResult.rowsCount,
+    rowsCount: results.leagueSeasonResult?.updated ? 1 : 0,
     syncStatus: 'complete',
   }
 }

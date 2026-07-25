@@ -1,0 +1,86 @@
+// src/features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
+
+import {
+  buildTeamScoutLeagueModel,
+  TEAM_SCOUT_NORMALIZATION_MODE,
+  TEAM_SCOUT_SORT_MODE,
+} from '../../../../shared/teams/scout/index.js'
+import { adaptLeagueTableTeam } from '../adapters/leagueTableTeam.adapter.js'
+import { adaptTeamScoutEngineRow } from '../adapters/teamScoutEngine.adapter.js'
+import { cleanDomainValue } from '../contracts/domainValue.contract.js'
+
+const resolveTeamKey = value => cleanDomainValue(
+  value?.birthTeamId ||
+  value?.teamId ||
+  value?.teamDocumentId ||
+  value?.birthTeamDocumentId ||
+  value?.clubId ||
+  value?.id ||
+  value?.rank
+)
+
+export const buildLeagueTeamSeasons = ({
+  leagueDocument = {},
+  seasonDocument = {},
+  target = 'current',
+} = {}) => {
+  const leagueSource = leagueDocument && typeof leagueDocument === 'object'
+    ? leagueDocument
+    : {}
+  const seasonSource = seasonDocument && typeof seasonDocument === 'object'
+    ? seasonDocument
+    : {}
+
+  const tableRows = Array.isArray(seasonSource.tableRank)
+    ? seasonSource.tableRank
+    : []
+  const leagueLevel = leagueSource.level || leagueSource.leagueLevel || null
+  const leagueNumGames = seasonSource.leagueTotalRound || 30
+
+  const engineResult = buildTeamScoutLeagueModel({
+    leagueLevel,
+    leagueNumGames,
+    rows: tableRows,
+    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
+  })
+
+  const performanceByTeam = new Map(
+    (Array.isArray(engineResult?.rows) ? engineResult.rows : []).map(row => [
+      resolveTeamKey(row),
+      adaptTeamScoutEngineRow({
+        row,
+        source: {
+          normalization: engineResult?.normalization || {},
+          leagueLevel: engineResult?.leagueLevel || leagueLevel,
+          leagueGames: engineResult?.leagueNumGames || leagueNumGames,
+          calculatedAt: seasonSource.updatedAt || null,
+        },
+      }),
+    ])
+  )
+
+  return tableRows.map(tableRow => {
+    const teamSeason = adaptLeagueTableTeam({
+      leagueDocument: leagueSource,
+      seasonDocument: seasonSource,
+      tableRow,
+      target,
+    })
+    const performance = performanceByTeam.get(resolveTeamKey(tableRow))
+
+    return {
+      ...teamSeason,
+      performance: performance || teamSeason.performance,
+      ranking: {
+        ...teamSeason.ranking,
+        attackRank: performance?.offense?.rank ?? teamSeason.ranking.attackRank,
+        defenseRank: performance?.defense?.rank ?? teamSeason.ranking.defenseRank,
+      },
+      completeness: {
+        ...teamSeason.completeness,
+        hasPerformance: Boolean(performance),
+      },
+    }
+  })
+}

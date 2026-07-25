@@ -65,7 +65,7 @@ export const SCOUT_PROFILES = [
       { metric: 'yellowCards', op: 'between', min: 0, max: 6, reason: 'low_cards' },
     ],
     deps: { position: DEP_HIGH, team: DEP_MED },
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
+    reviews: [SCOUT_REVIEW.POSITION],
   },
   {
     id: 'back_threat',
@@ -80,7 +80,7 @@ export const SCOUT_PROFILES = [
     deepRules: [{ metric: 'goals', op: 'gte', value: 7, reason: 'elite_defensive_goal_threat' }],
     deps: { position: DEP_HIGH, team: DEP_MED },
     warnings: [SCOUT_WARNING.ROLE_INFERENCE],
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
+    reviews: [SCOUT_REVIEW.POSITION],
   },
   {
     id: 'promoted_talent',
@@ -164,7 +164,7 @@ export const SCOUT_PROFILES = [
   {
     id: 'underused_prospect',
     idIcon: 'underusedProspect',
-    label: 'שחקן איכותי שלא מקבל הזדמנות',
+    label: 'לא מקבל הזדמנות',
     group: 'opportunity',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
@@ -185,7 +185,7 @@ export const SCOUT_PROFILES = [
   {
     id: 'blocked_top_team',
     idIcon: 'blockedTopTeam',
-    label: 'שחקן איכותי שלא מצליח לפרוץ',
+    label: 'מתקשה לפרוץ',
     group: 'opportunity',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,

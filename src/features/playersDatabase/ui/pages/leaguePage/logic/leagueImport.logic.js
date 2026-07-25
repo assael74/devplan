@@ -134,8 +134,7 @@ export const shouldShowDisplayName = row => {
 
 const mapPreviewRow = row => {
   const data = row.data || {}
-  const slotMatch = String(data.clubName || '').trim().match(/(?:^|\s)([2-3])$/)
-  const teamSlot = slotMatch?.[1] || String(data.teamSlot || 1)
+  const teamSlot = '1'
 
   return {
     id: `league_table_${row.displayIndex}`,

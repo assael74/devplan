@@ -73,8 +73,6 @@ export const updatePlayerSeasonSearchIndexRole = payload => {
   const scoutSignals = Array.isArray(payload?.player?.scoutSignals)
     ? payload.player.scoutSignals
     : []
-  const primaryScoutSignal = scoutSignals[0] || null
-  const secondaryScoutSignal = scoutSignals[1] || null
   const player = {
     ...(payload.player || {}),
     primaryPosition: clean(payload.primaryPosition || payload.player?.primaryPosition),
@@ -106,5 +104,8 @@ export const clearPlayerSeasonSearchIndexScoutProfile = payload =>
       secondaryScoutProfileId: '',
       secondaryScoutReliabilityLevel: '',
       secondaryScoutScore: null,
+      scoutProfileIds: [],
+      scoutCombinationIds: [],
+      scoutProfileSearchIds: [],
     },
   })

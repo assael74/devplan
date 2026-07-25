@@ -4,6 +4,7 @@ import { Box, Checkbox, Typography } from '@mui/joy'
 
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
+import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
 import {
   SEARCH_SCOUT_PROFILES,
   SEARCH_TEAM_SCOUT_PRIORITIES,
@@ -11,15 +12,22 @@ import {
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchModelsQuerySx as sx } from './sx/searchModelsQuery.sx.js'
 
-function SelectableModelCard({ selected, onClick, children, description }) {
+function SelectableModelCard({ selected, disabled = false, onClick, children, description }) {
+  const handleClick = () => {
+    if (disabled) return
+    onClick()
+  }
+
   return (
     <Box
       role='checkbox'
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       aria-checked={selected}
-      sx={[sx.card, selected && sx.cardSelected]}
-      onClick={onClick}
+      aria-disabled={disabled}
+      sx={[sx.card, selected && sx.cardSelected, disabled && sx.cardDisabled]}
+      onClick={handleClick}
       onKeyDown={event => {
+        if (disabled) return
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onClick()
@@ -46,18 +54,44 @@ function SelectableModelCard({ selected, onClick, children, description }) {
   )
 }
 
-function PlayerModelCard({ option, selected, onToggle }) {
+function PlayerModelCard({ option, selected, locked, onToggle }) {
+  const handleToggle = () => {
+    if (locked) return
+
+    onToggle(
+      option.isCombination ? 'scoutCombinations' : 'scoutProfiles',
+      option.value
+    )
+  }
+
   return (
     <SelectableModelCard
       selected={selected}
+      disabled={locked}
       description={option.description}
-      onClick={() => onToggle('scoutProfiles', option.value)}
+      onClick={handleToggle}
     >
       <ScoutProfileChip
         label={option.label}
-        tooltip={option.description}
+        tooltip={option.isCombination
+          ? option.tooltip
+          : (
+            <ScoutProfileTooltip
+              profile={option.profile}
+              fields={[
+                'parameters',
+                'group',
+                'interest',
+                'teamFilter',
+                'positionContext',
+                'positionDependency',
+                'reviews',
+              ]}
+            />
+          )}
         iconId={option.iconId}
         fontSize={11}
+        variant={option.variant || 'default'}
       />
     </SelectableModelCard>
   )
@@ -73,7 +107,7 @@ function TeamModelCard({ option, selected, onToggle }) {
       <ScoutBadge
         value={option.value}
         label={option.label}
-        tooltip={option.description}
+        tooltip={option.tooltip || option.description}
         short={false}
         fontSize={11}
       />
@@ -88,6 +122,12 @@ export default function SearchModelsQuery({ filters, onToggle }) {
   const selectedValues = isTeam
     ? filters.teamScoutPriorities || []
     : filters.scoutProfiles || []
+  const selectedCombinations = filters.scoutCombinations || []
+  const lockedProfileIds = new Set(
+    SEARCH_SCOUT_PROFILES
+      .filter(option => option.isCombination && selectedCombinations.includes(option.value))
+      .flatMap(option => option.profileIds || [])
+  )
   const title = isTeam ? 'ביצוע קבוצתי' : 'פרופילי סקאוט'
 
   return (
@@ -99,7 +139,12 @@ export default function SearchModelsQuery({ filters, onToggle }) {
       ) : (
         <Box sx={sx.grid}>
           {options.map(option => {
-            const selected = selectedValues.includes(option.value)
+            const selected = isTeam
+              ? selectedValues.includes(option.value)
+              : option.isCombination
+                ? selectedCombinations.includes(option.value)
+                : selectedValues.includes(option.value) || lockedProfileIds.has(option.value)
+            const locked = !isTeam && !option.isCombination && lockedProfileIds.has(option.value)
 
             return isTeam ? (
               <TeamModelCard
@@ -113,6 +158,7 @@ export default function SearchModelsQuery({ filters, onToggle }) {
                 key={option.value}
                 option={option}
                 selected={selected}
+                locked={locked}
                 onToggle={onToggle}
               />
             )

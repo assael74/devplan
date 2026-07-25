@@ -13,9 +13,7 @@ export const SCOUT_RELIABILITY = {
 }
 
 export const SCOUT_REVIEW = {
-  VIDEO_POSITION: 'video_position_check',
-  VIDEO_ROLE: 'video_role_check',
-  FITNESS: 'fitness_90_check',
+  POSITION: 'position_check',
   TEAM_CONTEXT: 'team_context_check',
 }
 

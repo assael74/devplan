@@ -54,6 +54,7 @@ export const createSearchFilters = () => ({
   leagueLevels: [],
   leagues: [],
   scoutProfiles: [],
+  scoutCombinations: [],
   teamScoutPriorities: [],
   profileMatchMode: 'any',
   conditions: [],

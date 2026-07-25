@@ -20,7 +20,9 @@ export const searchStatsQuerySx = {
   list: {
     mt: 0.7,
     display: 'grid',
+    gridTemplateRows: 'repeat(4, auto) 1fr auto',
     gap: 0.55,
+    minHeight: '100%',
   },
 
   fieldCard: {
@@ -42,11 +44,13 @@ export const searchStatsQuerySx = {
 
   fieldLabel: {
     color: devPlanColors.primaryDark,
+    fontSize: 12,
     fontWeight: 700,
   },
 
   operatorLabel: {
     color: devPlanColors.secondary,
+    fontSize: 10,
   },
 
   input: {
@@ -54,5 +58,23 @@ export const searchStatsQuerySx = {
     '--Input-minHeight': '28px',
     '--Input-paddingInline': '8px',
     fontSize: 12,
+  },
+
+  resetInputsButton: {
+    width: 30,
+    height: 30,
+    minWidth: 30,
+    minHeight: 30,
+    alignSelf: 'end',
+    justifySelf: 'flex-start',
+    color: devPlanColors.primary,
+    borderColor: '#cfddec',
+    bgcolor: '#fff',
+    mt: 0.5,
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primary,
+    },
   },
 }

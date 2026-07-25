@@ -1,7 +1,7 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchStatsQuery.js
 
 import * as React from 'react'
-import { Box, Button, Input, Typography } from '@mui/joy'
+import { Box, Button, IconButton, Input, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import SearchQuerySection from './SearchQuerySection.js'
@@ -39,7 +39,11 @@ function getConditionValue(conditions, field) {
   return condition?.value || ''
 }
 
-export default function SearchStatsQuery({ conditions, onSetCondition }) {
+export default function SearchStatsQuery({
+  conditions,
+  onSetCondition,
+  onResetConditions,
+}) {
   const [expanded, setExpanded] = React.useState(conditions.length > 0)
 
   React.useEffect(() => {
@@ -94,6 +98,18 @@ export default function SearchStatsQuery({ conditions, onSetCondition }) {
               />
             </Box>
           ))}
+
+          {conditions.length > 0 && (
+            <IconButton
+              size='sm'
+              variant='outlined'
+              aria-label='איפוס אינפוטים'
+              sx={sx.resetInputsButton}
+              onClick={onResetConditions}
+            >
+              {iconUi({ id: 'reset', size: 'sm' })}
+            </IconButton>
+          )}
         </Box>
       )}
     </SearchQuerySection>

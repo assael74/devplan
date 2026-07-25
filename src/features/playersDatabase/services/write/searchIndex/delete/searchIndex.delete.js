@@ -153,3 +153,42 @@ export async function deleteSearchIndexForTeamPlayerSeason({
 
 
 
+
+export async function deletePlayerSearchIndexesForTeamSeason({
+  league = {},
+  season = {},
+  team = {},
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId || team.leagueId)
+  const seasonIdentity = normalizeSeasonIdentity({ season })
+  const seasonKey = seasonIdentity.seasonKey
+  const teamIdentity = normalizeTeamIdentity({ team })
+  const teamId = clean(teamIdentity.birthTeamId || teamIdentity.teamId)
+  const birthTeamSlot = teamIdentity.birthTeamSlot || 1
+  if (!seasonKey) throw new Error('Missing season key')
+  if (!teamId) throw new Error('Missing birth team id')
+
+  const rowsQuery = query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('entityType', '==', 'playerSeason'),
+    where('seasonKey', '==', seasonKey),
+    where('teamId', '==', teamId)
+  )
+  const snapshot = await getDocs(rowsQuery)
+  const matchingDocs = {
+    docs: snapshot.docs.filter(indexDoc => {
+      const data = indexDoc.data() || {}
+      if (toNumberOrZero(data.birthTeamSlot) !== birthTeamSlot) return false
+      if (leagueId && clean(data.leagueId) && clean(data.leagueId) !== leagueId) return false
+      return true
+    }),
+  }
+  const meta = collectIndexMeta(matchingDocs)
+  const rowsCount = await deleteSnapshotDocs(matchingDocs)
+
+  return buildSearchIndexWriteResult({
+    operation: 'deleteTeamSeasonPlayerIndexes',
+    rowsCount,
+    ...meta,
+  })
+}

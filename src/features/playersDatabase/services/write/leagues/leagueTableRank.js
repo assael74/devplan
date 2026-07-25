@@ -12,7 +12,7 @@ import {
   toNumberOrZero,
 } from './leagueDoc.js'
 import { buildSeasonDoc, updateHistorySeason } from './leagueSeason.js'
-import { syncLeagueCenterIndexRows } from './leagueCenterIndex.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
@@ -77,12 +77,13 @@ export async function updateLeagueSeasonTableRank({
   season = {},
   target = 'current',
   rows = [],
+  syncMaster = true,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
   const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   if (!leagueId) throw new Error('Missing league id')
-  if (!seasonId) throw new Error('Missing season id')
+  if (!seasonId && !resolvedSeasonKey) throw new Error('Missing season id')
 
   const ref = leagueDocRef(leagueId)
 
@@ -126,10 +127,11 @@ export async function updateLeagueSeasonTableRank({
     }
   })
 
-  await syncLeagueCenterIndexRows({
-    leagues: [league],
-    selectedSeasonKey: resolvedSeasonKey,
-  })
+  if (syncMaster) {
+    await syncLeaguesMasterDocument({
+      leagues: [league],
+    })
+  }
 
   return result
 }
@@ -160,6 +162,19 @@ const updateTableRankRowTeamUrl = ({
     }
   })
 }
+
+const hasFiniteNumberValue = value => clean(value) !== '' && Number.isFinite(Number(value))
+
+const sumTableRankPlayersCount = tableRank =>
+  (Array.isArray(tableRank) ? tableRank : []).reduce(
+    (total, row) => total + toNumberOrZero(row?.playersCount),
+    0
+  )
+
+const hasTableRankPlayersCount = tableRank =>
+  (Array.isArray(tableRank) ? tableRank : []).some(row =>
+    hasFiniteNumberValue(row?.playersCount)
+  )
 
 const updateHistorySeasonTableRankTeamUrl = ({
   history = [],
@@ -233,14 +248,22 @@ export async function updateLeagueSeasonTableRankTeamUrl({
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const teamIdentity = normalizeTeamIdentity({ team })
   const birthTeamId = clean(
+    teamIdentity.birthTeamId ||
+    teamIdentity.teamId ||
     team.birthTeamId ||
-    team.teamId
+    team.teamId ||
+    team.birthTeamDocumentId ||
+    team.teamDocumentId ||
+    team.id
   )
+  const clubId = clean(teamIdentity.clubId || team.clubId)
   const teamUrl = clean(team.teamUrl)
 
   if (!leagueId) throw new Error('Missing league id')
-  if (!seasonId) throw new Error('Missing season id')
+  if (!seasonId && !seasonKey) throw new Error('Missing season id')
   if (!birthTeamId) throw new Error('Missing birth team id')
 
   const ref = leagueDocRef(leagueId)
@@ -262,8 +285,9 @@ export async function updateLeagueSeasonTableRankTeamUrl({
     const currentData = snapshot.data() || {}
     const currentSeason = currentData.current || null
     const history = Array.isArray(currentData.history) ? currentData.history : []
-    const currentMatches = clean(currentSeason?.seasonId) === seasonId
-    const historyIndex = history.findIndex(row => clean(row?.seasonId) === seasonId)
+    const requestedSeason = { seasonId, seasonKey }
+    const currentMatches = isSameSeason(currentSeason, requestedSeason)
+    const historyIndex = history.findIndex(row => isSameSeason(row, requestedSeason))
     const sourceTarget = currentMatches
       ? 'current'
       : historyIndex >= 0
@@ -289,9 +313,24 @@ export async function updateLeagueSeasonTableRankTeamUrl({
     const tableRank = Array.isArray(seasonRow.tableRank)
       ? seasonRow.tableRank
       : []
-    const teamRowIndex = tableRank.findIndex(row => (
-      clean(row?.birthTeamId || row?.teamId) === birthTeamId
-    ))
+    const teamRowIndex = tableRank.findIndex(row => {
+      const rowIdentity = normalizeTeamIdentity({ team: row })
+      const rowTeamId = clean(
+        rowIdentity.birthTeamId ||
+        rowIdentity.teamId ||
+        row?.birthTeamId ||
+        row?.teamId ||
+        row?.birthTeamDocumentId ||
+        row?.teamDocumentId ||
+        row?.id
+      )
+      const rowClubId = clean(rowIdentity.clubId || row?.clubId)
+
+      return (
+        rowTeamId === birthTeamId ||
+        (!rowTeamId && clubId && rowClubId === clubId)
+      )
+    })
 
     if (teamRowIndex === -1) {
       return {
@@ -310,13 +349,19 @@ export async function updateLeagueSeasonTableRankTeamUrl({
         ? {
             ...row,
             teamUrl,
+            ...(hasFiniteNumberValue(team.playersCount)
+              ? { playersCount: Number(team.playersCount) }
+              : {}),
             updatedAt: new Date().toISOString(),
           }
         : row
     ))
+    const playersCount = sumTableRankPlayersCount(nextTableRank)
+    const hasPlayersCount = hasTableRankPlayersCount(nextTableRank)
     const nextSeason = {
       ...seasonRow,
       tableRank: nextTableRank,
+      ...(hasPlayersCount ? { playersCount } : {}),
       updatedAt: new Date().toISOString(),
     }
 
@@ -347,16 +392,20 @@ export async function updateLeagueSeasonTableRankTeamUrl({
     return {
       leagueId,
       seasonId,
+      seasonKey,
       birthTeamId,
       teamUrl,
+      playersCount: hasFiniteNumberValue(team.playersCount)
+        ? Number(team.playersCount)
+        : undefined,
+      seasonPlayersCount: hasPlayersCount ? playersCount : undefined,
       sourceTarget,
       updated: true,
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: clean(season.seasonKey) || buildSeasonKey(seasonId),
   })
 
   return result
@@ -418,9 +467,8 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
     }
   })
 
-  await syncLeagueCenterIndexRows({
+  await syncLeaguesMasterDocument({
     leagues: [league],
-    selectedSeasonKey: resolvedSeasonKey,
   })
 
   return result

@@ -3,6 +3,7 @@
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+import { isSameSeason, normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonIndexId, resolveClubLevel } from './teamSeasonIndex.model.js'
@@ -75,7 +76,9 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
   team = {},
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
-  const seasonId = clean(season.seasonId)
+  const seasonIdentity = normalizeSeasonIdentity({ season })
+  const seasonId = seasonIdentity.seasonId
+  const seasonKey = seasonIdentity.seasonKey
   const birthTeamId = clean(team.birthTeamId || team.teamId)
   const teamUrl = clean(team.teamUrl)
   const requestedEntityId = clean(
@@ -84,12 +87,12 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
     team.indexId
   )
 
-  if (!seasonId) throw new Error('Missing season id')
+  if (!seasonId && !seasonKey) throw new Error('Missing season id')
   if (!birthTeamId) throw new Error('Missing birth team id')
 
   const expectedEntityId = requestedEntityId || buildTeamSeasonIndexId({
     leagueId,
-    seasonKey: seasonId,
+    seasonKey,
     teamId: birthTeamId,
     clubId: clean(team.clubId),
   })
@@ -132,12 +135,12 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
   const indexQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'birthTeamSeason'),
-    where('seasonId', '==', seasonId),
     where('birthTeamId', '==', birthTeamId)
   )
   const querySnapshot = await getDocs(indexQuery)
   const matchingDoc = querySnapshot.docs.find(snapshot => {
     const data = snapshot.data() || {}
+    if (!isSameSeason(data, { seasonId, seasonKey })) return false
     if (!requestedEntityId) return true
 
     return clean(data.entityId || snapshot.id) === requestedEntityId
