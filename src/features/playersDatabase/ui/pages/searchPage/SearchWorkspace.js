@@ -8,7 +8,8 @@ import SearchResultsSidebar from './resultsSidebar/SearchResultsSidebar.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 export default function SearchWorkspace({ search, onEntityOpen }) {
-  const entityType = search.queryFilters.searchContext || 'player'
+  const queryEntityType = search.queryFilters.searchContext || 'player'
+  const resultsEntityType = search.loadedEntityType || queryEntityType
 
   return (
     <Box sx={sx.workspace}>
@@ -27,15 +28,20 @@ export default function SearchWorkspace({ search, onEntityOpen }) {
           rows={search.rows}
           loading={search.loadLoading}
           error={search.loadError}
-          entityType={entityType}
+          entityType={resultsEntityType}
           onEntityOpen={onEntityOpen}
         />
 
         <SearchResultsSidebar
           summary={search.summary}
-          entityType={entityType}
+          entityType={resultsEntityType}
           hasLoaded={search.hasLoaded}
           loading={search.loadLoading}
+          filters={search.resultFilters}
+          options={search.resultFilterOptions}
+          hasFilters={search.hasResultFilters}
+          onFilterChange={search.updateResultFilter}
+          onResetFilters={search.resetResultFilters}
         />
       </Box>
     </Box>

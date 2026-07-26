@@ -4,6 +4,8 @@ import * as React from 'react'
 import { Box, Card, CircularProgress, Typography } from '@mui/joy'
 
 import DataTable from '../../../components/tables/DataTable.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 import { buildSearchColumns } from '../logic/search.columns.js'
 import { searchResultsSectionSx as sx } from './sx/searchResultsSection.sx.js'
 
@@ -41,23 +43,30 @@ export default function SearchResultsSection({
   onEntityOpen,
 }) {
   const columns = React.useMemo(() => buildSearchColumns({
-    onEntityOpen,
-  }), [onEntityOpen])
+    entityType,
+  }), [entityType])
   const entityLabel = entityType === 'team' ? 'קבוצות' : 'שחקנים'
+  const entityColors = getEntityColors(entityType)
 
   return (
     <Card sx={sx.panel}>
       <Box sx={sx.header}>
-        <Box sx={sx.headerCopy}>
-          <Typography level='title-lg' sx={sx.title}>
-            תוצאות חיפוש
-          </Typography>
-          <Typography level='body-xs' sx={sx.subtitle}>
-            המסמכים שנטענו לפי השאילתה האחרונה.
-          </Typography>
+        <Box sx={sx.headerIdentity}>
+          <Box sx={sx.headerIcon(entityColors)}>
+            {iconUi({ id: 'view', size: 'sm' })}
+          </Box>
+
+          <Box sx={sx.headerCopy}>
+            <Typography level='title-lg' sx={sx.title}>
+              תוצאות חיפוש
+            </Typography>
+            <Typography level='body-xs' sx={sx.subtitle}>
+              המסמכים שנטענו לפי השאילתה האחרונה.
+            </Typography>
+          </Box>
         </Box>
 
-        <Box sx={sx.count}>
+        <Box sx={sx.count(entityColors)}>
           {loading ? <CircularProgress size='sm' /> : `${rows.length} ${entityLabel}`}
         </Box>
       </Box>
@@ -71,7 +80,7 @@ export default function SearchResultsSection({
           className='dpScrollThin'
           columns={columns}
           rows={rows}
-          getRowKey={row => row.id}
+          getRowKey={row => `${row.entityType}-${row.id}-${row.seasonKey}-${row.teamName}`}
           wrapSx={sx.tableWrap}
           tableSx={sx.table}
           renderExpandedRow={renderExpandedRow}

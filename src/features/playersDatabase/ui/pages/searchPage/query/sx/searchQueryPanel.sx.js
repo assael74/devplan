@@ -57,6 +57,30 @@ export const searchQueryPanelSx = {
     },
   },
 
+
+  headerIdentity: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.85,
+  },
+
+  headerIcon: entityColors => ({
+    width: 36,
+    height: 36,
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 auto',
+    borderRadius: 9,
+    bgcolor: entityColors.bg,
+    color: entityColors.accent,
+  }),
+
+  headerTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
   headerActions: {
     flexWrap: 'wrap',
     justifyContent: 'flex-end',

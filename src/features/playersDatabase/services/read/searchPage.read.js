@@ -29,10 +29,33 @@ const SEARCH_INDEX_FIELDS_BY_ENTITY = {
   playerSeason: new Set(Object.keys(SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT)),
 }
 
-const SEARCH_STAT_FIELD_MAP = {
-  appearances: 'games',
-  subIns: 'substituteIn',
-  subOuts: 'substitutedOut',
+const SEARCH_STAT_FIELD_MAP_BY_ENTITY = {
+  playerSeason: {
+    appearances: 'searchGames',
+    games: 'searchGames',
+    goals: 'searchGoals',
+    minutes: 'searchMinutes',
+    starts: 'searchStarts',
+    subIns: 'substituteIn',
+    subOuts: 'substitutedOut',
+  },
+  birthTeamSeason: {
+    appearances: 'teamGamePlayed',
+    games: 'teamGamePlayed',
+    teamGamePlayed: 'teamGamePlayed',
+    points: 'points',
+    goalsFor: 'goalsFor',
+    goalsAgainst: 'goalsAgainst',
+    attackPerformance: 'attackPerformance',
+    attackPerformanceRate: 'attackPerformanceRate',
+    attackPriorityRate: 'attackPriorityRate',
+    defensePerformance: 'defensePerformance',
+    defensePerformanceRate: 'defensePerformanceRate',
+    defensePriorityRate: 'defensePriorityRate',
+    tableRank: 'tableRank',
+    tableAttackRank: 'tableAttackRank',
+    tableDefenseRank: 'tableDefenseRank',
+  },
 }
 
 const SCOUT_COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((map, combination) => {
@@ -91,12 +114,12 @@ const buildAnyFieldConstraint = ({ entityType, fields = [], values = [] } = {}) 
   return or(...constraints)
 }
 
-const normalizeSearchConditionField = field => (
-  SEARCH_STAT_FIELD_MAP[field] || clean(field)
+const normalizeSearchConditionField = ({ entityType, field } = {}) => (
+  SEARCH_STAT_FIELD_MAP_BY_ENTITY[entityType]?.[field] || clean(field)
 )
 
 const buildConditionConstraint = ({ entityType, condition = {} } = {}) => {
-  const field = normalizeSearchConditionField(condition.field)
+  const field = normalizeSearchConditionField({ entityType, field: condition.field })
   const operator = clean(condition.operator)
   const value = Number(condition.value)
 
@@ -122,7 +145,7 @@ const buildConditionConstraints = ({ entityType, filters = {} } = {}) => (
 )
 
 const matchesSearchCondition = ({ entityType, data = {}, condition = {} } = {}) => {
-  const field = normalizeSearchConditionField(condition.field)
+  const field = normalizeSearchConditionField({ entityType, field: condition.field })
   const operator = clean(condition.operator)
   const expectedValue = Number(condition.value)
   const actualValue = Number(data[field])
@@ -155,8 +178,8 @@ const getSearchEntityType = filters => (
     : 'playerSeason'
 )
 
-const shouldFilterConditionsClientSide = ({ entityType, filters = {} } = {}) => (
-  entityType === 'playerSeason' && hasSearchConditions(filters)
+const shouldFilterConditionsClientSide = ({ filters = {} } = {}) => (
+  hasSearchConditions(filters)
 )
 
 const getSingleScoutCombinationProfileIds = filters => {
@@ -215,6 +238,12 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
     ['birthYear', Number(filters.birthYear)],
     ['leagueLevel', Number(filters.leagueLevel)],
     ['leagueId', clean(filters.leagueId)],
+    ['attackPerformanceLevel', clean(filters.attackPerformanceLevel)],
+    ['defensePerformanceLevel', clean(filters.defensePerformanceLevel)],
+    ['attackRankingLevel', clean(filters.attackRankingLevel)],
+    ['defenseRankingLevel', clean(filters.defenseRankingLevel)],
+    ['attackCombinedLevel', clean(filters.attackCombinedLevel)],
+    ['defenseCombinedLevel', clean(filters.defenseCombinedLevel)],
   ]
 
   exactFields.forEach(([field, value]) => {
@@ -249,16 +278,6 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
     if (scoutConstraint) constraints.push(scoutConstraint)
   }
 
-  if (entityType === 'birthTeamSeason') {
-    const priorityConstraint = buildAnyFieldConstraint({
-      entityType,
-      fields: ['attackPriorityLevel', 'defensePriorityLevel'],
-      values: toUniqueCleanValues(filters.teamScoutPriorities),
-    })
-
-    if (priorityConstraint) constraints.push(priorityConstraint)
-  }
-
   return constraints
 }
 
@@ -285,6 +304,25 @@ const buildSearchQueryVariants = filters => {
     field: 'leagueId',
     values: toUniqueCleanValues(filters.leagues),
   })
+
+  if (clean(filters.searchContext) === 'team') {
+    const teamLevelFilters = [
+      ['attackPerformanceLevel', filters.teamAttackPerformanceLevels],
+      ['defensePerformanceLevel', filters.teamDefensePerformanceLevels],
+      ['attackRankingLevel', filters.teamAttackRankingLevels],
+      ['defenseRankingLevel', filters.teamDefenseRankingLevels],
+      ['attackCombinedLevel', filters.teamAttackCombinedLevels],
+      ['defenseCombinedLevel', filters.teamDefenseCombinedLevels],
+    ]
+
+    teamLevelFilters.forEach(([field, values]) => {
+      variants = expandVariantsByValues({
+        variants,
+        field,
+        values: toUniqueCleanValues(values),
+      })
+    })
+  }
 
   return variants
 }

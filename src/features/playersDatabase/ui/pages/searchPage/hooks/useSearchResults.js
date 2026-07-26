@@ -9,6 +9,12 @@ import {
 } from '../../../../domain/index.js'
 import { normalizeSearchRows } from '../logic/search.model.js'
 import { buildSearchSummary } from '../logic/search.selectors.js'
+import {
+  buildSearchResultFilterOptions,
+  createSearchResultFilters,
+  filterSearchResultRows,
+  hasSearchResultFilters,
+} from '../logic/searchResultFilters.js'
 import { cloneSearchFilters } from './useSearchQueryFilters.js'
 
 const adaptSearchRow = row => (
@@ -23,6 +29,10 @@ export default function useSearchResults({ queryFilters }) {
   const [loadLoading, setLoadLoading] = React.useState(false)
   const [loadError, setLoadError] = React.useState(null)
   const [loadRevision, setLoadRevision] = React.useState(0)
+  const [loadCompletedRevision, setLoadCompletedRevision] = React.useState(0)
+  const [resultFilters, setResultFilters] = React.useState(
+    createSearchResultFilters
+  )
 
   const loadedFiltersKey = React.useMemo(
     () => JSON.stringify(loadedFilters || null),
@@ -46,7 +56,9 @@ export default function useSearchResults({ queryFilters }) {
 
         const domainRows = rows.map(adaptSearchRow)
         setLoadedRows(normalizeSearchRows(domainRows))
+        setResultFilters(createSearchResultFilters())
         setLoadLoading(false)
+        setLoadCompletedRevision(current => current + 1)
       })
       .catch(error => {
         if (!active) return
@@ -60,10 +72,40 @@ export default function useSearchResults({ queryFilters }) {
     }
   }, [loadedFiltersKey, loadRevision, loadedFilters])
 
-  const summary = React.useMemo(
-    () => buildSearchSummary(loadedRows),
-    [loadedRows]
+  const loadedEntityType = loadedFilters?.searchContext || ''
+
+  const resultFilterOptions = React.useMemo(
+    () => buildSearchResultFilterOptions({
+      rows: loadedRows,
+      entityType: loadedEntityType,
+    }),
+    [loadedRows, loadedEntityType]
   )
+
+  const rows = React.useMemo(
+    () => filterSearchResultRows({
+      rows: loadedRows,
+      filters: resultFilters,
+      entityType: loadedEntityType,
+    }),
+    [loadedRows, resultFilters, loadedEntityType]
+  )
+
+  const summary = React.useMemo(
+    () => buildSearchSummary(rows),
+    [rows]
+  )
+
+  const updateResultFilter = React.useCallback((field, values) => {
+    setResultFilters(current => ({
+      ...current,
+      [field]: Array.isArray(values) ? values : [],
+    }))
+  }, [])
+
+  const resetResultFilters = React.useCallback(() => {
+    setResultFilters(createSearchResultFilters())
+  }, [])
 
   const loadDocuments = React.useCallback(() => {
     setLoadedFilters(cloneSearchFilters(queryFilters))
@@ -71,11 +113,19 @@ export default function useSearchResults({ queryFilters }) {
   }, [queryFilters])
 
   return {
-    rows: loadedRows,
+    rows,
+    loadedRowsCount: loadedRows.length,
+    resultFilters,
+    resultFilterOptions,
+    hasResultFilters: hasSearchResultFilters(resultFilters),
     summary,
     hasLoaded: Boolean(loadedFilters),
+    loadedEntityType,
     loadLoading,
     loadError,
+    loadCompletedRevision,
+    updateResultFilter,
+    resetResultFilters,
     loadDocuments,
   }
 }

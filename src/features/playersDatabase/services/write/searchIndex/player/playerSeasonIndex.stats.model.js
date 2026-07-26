@@ -15,6 +15,7 @@ import {
   resolveClubLevel,
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
+import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
 const toNullableNumber = value => (
   Number.isFinite(Number(value))
@@ -117,6 +118,27 @@ export const buildPlayerSeasonStatsMutation = ({
     scoutCombinationIds,
   })
   const playerStats = normalizePlayerStats(player)
+  const resolvedAgeGroupId = clean(
+    team.ageGroupId ||
+    league.ageGroupId ||
+    existingData.ageGroupId
+  )
+  const resolvedLeagueTotalRound = toNumberOrZero(
+    season.leagueTotalRound || existingData.leagueTotalRound
+  )
+  const resolvedTeamGamePlayed = toNumberOrZero(
+    team.teamStats?.teamGamePlayed ||
+    team.teamGamePlayed ||
+    existingData.teamGamePlayed ||
+    playerStats.teamGames
+  )
+  const normalization = buildPlayerSeasonSearchMetrics({
+    target,
+    ageGroupId: resolvedAgeGroupId,
+    leagueTotalRound: resolvedLeagueTotalRound,
+    teamGamePlayed: resolvedTeamGamePlayed,
+    stats: playerStats,
+  })
   const id = existingDoc?.id || buildPlayerSeasonIndexId({
     seasonKey,
     clubId: teamScope.clubId || team.clubId || existingData.clubId,
@@ -180,11 +202,7 @@ export const buildPlayerSeasonStatsMutation = ({
       teamUrl: clean(team.teamUrl || existingData.teamUrl),
       seasonUrl: clean(season.seasonUrl || existingData.seasonUrl),
       seasonNotes: clean(player.notes || existingData.seasonNotes),
-      ageGroupId: clean(
-        team.ageGroupId ||
-        league.ageGroupId ||
-        existingData.ageGroupId
-      ),
+      ageGroupId: resolvedAgeGroupId,
       ageGroupLabel: clean(
         team.ageGroupLabel ||
         league.ageGroupLabel ||
@@ -193,9 +211,7 @@ export const buildPlayerSeasonStatsMutation = ({
       birthYear: toNumberOrZero(
         season.birthYear || existingData.birthYear
       ),
-      leagueTotalRound: toNumberOrZero(
-        season.leagueTotalRound || existingData.leagueTotalRound
-      ),
+      leagueTotalRound: resolvedLeagueTotalRound,
       leagueLevel: toNumberOrZero(
         league.level || existingData.leagueLevel
       ),
@@ -229,11 +245,7 @@ export const buildPlayerSeasonStatsMutation = ({
       teamGoalsForPerGame: toNumberOrZero(
         team.goalsForPerGame ?? existingData.teamGoalsForPerGame
       ),
-      teamGamePlayed: toNumberOrZero(
-        team.teamStats?.teamGamePlayed ??
-        team.teamGamePlayed ??
-        existingData.teamGamePlayed
-      ),
+      teamGamePlayed: resolvedTeamGamePlayed,
       games: playerStats.games,
       goals: playerStats.goals,
       yellowCards: playerStats.yellowCards,
@@ -244,7 +256,7 @@ export const buildPlayerSeasonStatsMutation = ({
       teamMinutes: playerStats.teamMinutes,
       teamGames: playerStats.teamGames,
       minutesPerGame: playerStats.minutesPerGame,
-      goalsPer90: playerStats.goalsPer90,
+      ...normalization,
       primaryScoutProfileId: clean(primaryScoutSignal?.id),
       primaryScoutReliabilityLevel: clean(
         primaryScoutSignal?.reliability?.level

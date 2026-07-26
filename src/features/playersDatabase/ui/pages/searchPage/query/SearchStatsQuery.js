@@ -1,59 +1,50 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchStatsQuery.js
 
 import * as React from 'react'
-import { Box, Button, IconButton, Input, Typography } from '@mui/joy'
+import { Box, Button, Input, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchStatsQuerySx as sx } from './sx/searchStatsQuery.sx.js'
 
-const PRESET_CONDITIONS = [
-  {
-    field: 'goals',
-    operator: 'gte',
-    label: 'שערים מעל',
-    placeholder: 'מספר שערים',
-  },
-  {
-    field: 'minutes',
-    operator: 'gte',
-    label: 'דקות מעל',
-    placeholder: 'מספר דקות',
-  },
-  {
-    field: 'starts',
-    operator: 'gte',
-    label: 'הרכב מעל',
-    placeholder: 'מספר הופעות בהרכב',
-  },
-  {
-    field: 'yellowCards',
-    operator: 'lte',
-    label: 'צהובים עד',
-    placeholder: 'מספר כרטיסים',
-  },
+const PLAYER_PRESET_CONDITIONS = [
+  { field: 'goals', operator: 'gte', label: 'שערים לפחות', placeholder: 'מספר שערים' },
+  { field: 'appearances', operator: 'gte', label: 'משחקים לפחות', placeholder: 'מספר משחקים' },
+  { field: 'minutes', operator: 'gte', label: 'דקות לפחות', placeholder: 'מספר דקות' },
+]
+
+const TEAM_PRESET_CONDITIONS = [
+  { field: 'goalsFor', operator: 'gte', label: 'שערי זכות לפחות', placeholder: 'מספר שערים' },
+  { field: 'goalsAgainst', operator: 'lte', label: 'שערי חובה עד', placeholder: 'מספר שערים' },
+  { field: 'teamGamePlayed', operator: 'gte', label: 'משחקים לפחות', placeholder: 'מספר משחקים' },
+  { field: 'tableRank', operator: 'lte', label: 'מיקום בטבלה עד', placeholder: 'מיקום' },
 ]
 
 function getConditionValue(conditions, field) {
-  const condition = conditions.find(item => item.field === field)
-  return condition?.value || ''
+  return conditions.find(item => item.field === field)?.value || ''
 }
 
 export default function SearchStatsQuery({
+  entityType = 'player',
   conditions,
   onSetCondition,
   onResetConditions,
 }) {
   const [expanded, setExpanded] = React.useState(conditions.length > 0)
+  const presets = entityType === 'team'
+    ? TEAM_PRESET_CONDITIONS
+    : PLAYER_PRESET_CONDITIONS
 
   React.useEffect(() => {
-    if (conditions.length > 0) {
-      setExpanded(true)
-    }
+    if (conditions.length > 0) setExpanded(true)
   }, [conditions.length])
 
+  React.useEffect(() => {
+    onResetConditions()
+  }, [entityType, onResetConditions])
+
   return (
-    <SearchQuerySection title='תנאים סטטיסטיים' step='03'>
+    <SearchQuerySection title='סטטיסטיקה' step='03'>
       <Button
         size='sm'
         variant={expanded ? 'soft' : 'outlined'}
@@ -61,18 +52,17 @@ export default function SearchStatsQuery({
         sx={sx.addButton}
         onClick={() => setExpanded(current => !current)}
       >
-        {expanded ? 'הסתרת תנאים' : 'הוספת תנאי'}
+        {expanded ? 'הסתרת נתונים' : 'הוספת נתון'}
       </Button>
 
-      {expanded && (
+      {expanded ? (
         <Box sx={sx.list}>
-          {PRESET_CONDITIONS.map(preset => (
+          {presets.map(preset => (
             <Box key={preset.field} sx={sx.fieldCard}>
               <Box sx={sx.fieldHeader}>
                 <Typography level='body-sm' sx={sx.fieldLabel}>
                   {preset.label}
                 </Typography>
-
                 <Typography level='body-xs' sx={sx.operatorLabel}>
                   {preset.operator === 'lte' ? 'מקסימום' : 'מינימום'}
                 </Typography>
@@ -82,12 +72,7 @@ export default function SearchStatsQuery({
                 size='sm'
                 type='number'
                 sx={sx.input}
-                slotProps={{
-                  input: {
-                    min: 0,
-                    inputMode: 'numeric',
-                  },
-                }}
+                slotProps={{ input: { min: 0, inputMode: 'numeric' } }}
                 value={getConditionValue(conditions, preset.field)}
                 placeholder={preset.placeholder}
                 onChange={event => onSetCondition({
@@ -99,19 +84,20 @@ export default function SearchStatsQuery({
             </Box>
           ))}
 
-          {conditions.length > 0 && (
-            <IconButton
-              size='sm'
-              variant='outlined'
-              aria-label='איפוס אינפוטים'
-              sx={sx.resetInputsButton}
-              onClick={onResetConditions}
-            >
-              {iconUi({ id: 'reset', size: 'sm' })}
-            </IconButton>
-          )}
         </Box>
-      )}
+      ) : null}
+
+      <Button
+        size='sm'
+        variant='plain'
+        color='neutral'
+        startDecorator={iconUi({ id: 'reset', size: 'sm' })}
+        sx={sx.resetButton}
+        disabled={conditions.length === 0}
+        onClick={onResetConditions}
+      >
+        איפוס סטטיסטיקה
+      </Button>
     </SearchQuerySection>
   )
 }

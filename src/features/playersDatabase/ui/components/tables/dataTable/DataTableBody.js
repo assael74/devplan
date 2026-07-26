@@ -51,21 +51,25 @@ export default function DataTableBody({
                 ))}
               </tr>
 
-              {renderExpandedRow && isExpanded && (
-                <Box component='tr' sx={sx.expandedRow}>
+              {renderExpandedRow ? (
+                <Box
+                  component='tr'
+                  aria-hidden={!isExpanded}
+                  sx={sx.expandedRow(isExpanded)}
+                >
                   <Box
                     component='td'
                     colSpan={columns.length || 1}
-                    sx={sx.expandedCell}
+                    sx={sx.expandedCell(isExpanded)}
                   >
                     <Box sx={sx.expandedCollapse(isExpanded)}>
-                      <Box sx={sx.expandedContent}>
+                      <Box sx={sx.expandedContent(isExpanded)}>
                         {renderExpandedRow(row, index, rowContext)}
                       </Box>
                     </Box>
                   </Box>
                 </Box>
-              )}
+              ) : null}
             </React.Fragment>
           )
         })

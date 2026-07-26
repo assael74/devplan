@@ -38,6 +38,7 @@ export default function SearchPage() {
           onEntityOpen={handleEntityOpen}
         />
       </Box>
+
     </PlayersDatabaseLayout>
   )
 }

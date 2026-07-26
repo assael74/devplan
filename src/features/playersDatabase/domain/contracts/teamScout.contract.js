@@ -13,8 +13,11 @@ export const createEmptyTeamScoutSide = side => ({
   side,
   performance: null,
   performanceRate: null,
+  performanceLevel: 'unavailable',
   rankingRate: null,
+  rankingLevel: 'unavailable',
   combinedRate: null,
+  combinedLevel: 'unavailable',
   qualityRate: null,
   scoutPriorityRate: null,
   priorityRate: null,
@@ -48,7 +51,12 @@ export const createEmptyTeamScout = () => ({
   },
 })
 
-const resolvePriorityRate = source => toDomainNumber(
+const toRoundedDomainNumber = (value, fallback = null) => {
+  const number = toDomainNumber(value, fallback)
+  return Number.isFinite(number) ? Math.round(number) : fallback
+}
+
+const resolvePriorityRate = source => toRoundedDomainNumber(
   source.priorityRate !== undefined
     ? source.priorityRate
     : source.scoutPriorityRate
@@ -57,39 +65,47 @@ const resolvePriorityRate = source => toDomainNumber(
 export const normalizeTeamScoutSide = (side, value = {}) => {
   const source = value && typeof value === 'object' ? value : {}
   const priorityRate = resolvePriorityRate(source)
-  const performanceRate = toDomainNumber(source.performanceRate)
+  const performanceRate = toRoundedDomainNumber(source.performanceRate)
+  const rankingRate = toRoundedDomainNumber(source.rankingRate)
+  const combinedRate = toRoundedDomainNumber(source.combinedRate)
 
   return {
     ...createEmptyTeamScoutSide(side),
-    performance: toDomainNumber(source.performance),
+    performance: toRoundedDomainNumber(source.performance),
     performanceRate,
-    rankingRate: toDomainNumber(source.rankingRate),
-    combinedRate: toDomainNumber(source.combinedRate),
-    qualityRate: toDomainNumber(source.qualityRate),
-    scoutPriorityRate: toDomainNumber(source.scoutPriorityRate),
+    performanceLevel: cleanDomainValue(source.performanceLevel) ||
+      resolveTeamScoutPriorityLevel(performanceRate),
+    rankingRate,
+    rankingLevel: cleanDomainValue(source.rankingLevel) ||
+      resolveTeamScoutPriorityLevel(rankingRate),
+    combinedRate,
+    combinedLevel: cleanDomainValue(source.combinedLevel) ||
+      resolveTeamScoutPriorityLevel(combinedRate),
+    qualityRate: toRoundedDomainNumber(source.qualityRate),
+    scoutPriorityRate: toRoundedDomainNumber(source.scoutPriorityRate),
     priorityRate,
     priorityLevel: cleanDomainValue(source.priorityLevel) ||
       resolveTeamScoutPriorityLevel(priorityRate),
     anomalyLevel: cleanDomainValue(source.anomalyLevel) ||
-      resolveTeamScoutAnomalyLevel(performanceRate),
-    rank: toDomainNumber(source.rank),
+      resolveTeamScoutAnomalyLevel(combinedRate),
+    rank: toRoundedDomainNumber(source.rank),
     benchmark: {
-      expectedValue: toDomainNumber(
+      expectedValue: toRoundedDomainNumber(
         source.expectedValue !== undefined
           ? source.expectedValue
           : source.benchmark?.expectedValue
       ),
-      actualValue: toDomainNumber(
+      actualValue: toRoundedDomainNumber(
         source.actualValue !== undefined
           ? source.actualValue
           : source.benchmark?.actualValue
       ),
-      projectedValue: toDomainNumber(
+      projectedValue: toRoundedDomainNumber(
         source.projectedValue !== undefined
           ? source.projectedValue
           : source.benchmark?.projectedValue
       ),
-      gap: toDomainNumber(
+      gap: toRoundedDomainNumber(
         source.gap !== undefined ? source.gap : source.benchmark?.gap
       ),
     },

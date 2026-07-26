@@ -26,6 +26,24 @@ export const searchResultsSectionSx = {
     borderBottom: '1px solid #dbe5f4',
   },
 
+  headerIdentity: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.85,
+  },
+
+  headerIcon: entityColors => ({
+    width: 36,
+    height: 36,
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 auto',
+    borderRadius: 9,
+    bgcolor: entityColors.bg,
+    color: entityColors.accent,
+  }),
+
   headerCopy: {
     minWidth: 0,
   },
@@ -39,19 +57,19 @@ export const searchResultsSectionSx = {
     color: devPlanColors.secondary,
   },
 
-  count: {
+  count: entityColors => ({
     minWidth: 72,
     px: 1.1,
     py: 0.35,
     display: 'grid',
     placeItems: 'center',
     borderRadius: 999,
-    bgcolor: devPlanColors.primaryLight,
-    color: devPlanColors.primary,
+    bgcolor: entityColors.bg,
+    color: entityColors.accent,
     fontSize: 12,
     fontWeight: 700,
     whiteSpace: 'nowrap',
-  },
+  }),
 
   state: {
     minHeight: 160,
@@ -81,6 +99,22 @@ export const searchResultsSectionSx = {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
+    },
+
+    '& th:last-of-type, & td:last-of-type': {
+      width: 48,
+      minWidth: 48,
+      maxWidth: 48,
+      px: 0.25,
+      overflow: 'visible',
+      textOverflow: 'clip',
+      whiteSpace: 'normal',
+    },
+
+    '& th:last-of-type > *, & td:last-of-type > *': {
+      overflow: 'visible',
+      textOverflow: 'clip',
+      whiteSpace: 'normal',
     },
   },
 

@@ -1,16 +1,29 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchModelsQuery.js
 
-import { Box, Checkbox, Typography } from '@mui/joy'
+import * as React from 'react'
+import {
+  Box,
+  Checkbox,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Button,
+  Tooltip,
+  Typography,
+} from '@mui/joy'
 
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
 import {
   SEARCH_SCOUT_PROFILES,
-  SEARCH_TEAM_SCOUT_PRIORITIES,
+  SEARCH_TEAM_INTERPRETATION_LEVELS,
+  SEARCH_TEAM_PERFORMANCE_TABS,
 } from '../logic/search.constants.js'
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchModelsQuerySx as sx } from './sx/searchModelsQuery.sx.js'
+
 
 function SelectableModelCard({ selected, disabled = false, onClick, children, description }) {
   const handleClick = () => {
@@ -45,7 +58,6 @@ function SelectableModelCard({ selected, disabled = false, onClick, children, de
 
       <Box sx={sx.cardContent}>
         {children}
-
         <Typography level='body-xs' sx={sx.description}>
           {description}
         </Typography>
@@ -57,11 +69,7 @@ function SelectableModelCard({ selected, disabled = false, onClick, children, de
 function PlayerModelCard({ option, selected, locked, onToggle }) {
   const handleToggle = () => {
     if (locked) return
-
-    onToggle(
-      option.isCombination ? 'scoutCombinations' : 'scoutProfiles',
-      option.value
-    )
+    onToggle(option.isCombination ? 'scoutCombinations' : 'scoutProfiles', option.value)
   }
 
   return (
@@ -73,22 +81,20 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
     >
       <ScoutProfileChip
         label={option.label}
-        tooltip={option.isCombination
-          ? option.tooltip
-          : (
-            <ScoutProfileTooltip
-              profile={option.profile}
-              fields={[
-                'parameters',
-                'group',
-                'interest',
-                'teamFilter',
-                'positionContext',
-                'positionDependency',
-                'reviews',
-              ]}
-            />
-          )}
+        tooltip={option.isCombination ? option.tooltip : (
+          <ScoutProfileTooltip
+            profile={option.profile}
+            fields={[
+              'parameters',
+              'group',
+              'interest',
+              'teamFilter',
+              'positionContext',
+              'positionDependency',
+              'reviews',
+            ]}
+          />
+        )}
         iconId={option.iconId}
         fontSize={11}
         variant={option.variant || 'default'}
@@ -97,31 +103,95 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
   )
 }
 
-function TeamModelCard({ option, selected, onToggle }) {
+function TeamInterpretationSide({ title, field, values, help, onToggle }) {
   return (
-    <SelectableModelCard
-      selected={selected}
-      description={option.description}
-      onClick={() => onToggle('teamScoutPriorities', option.value)}
-    >
-      <ScoutBadge
-        value={option.value}
-        label={option.label}
-        tooltip={option.tooltip || option.description}
-        short={false}
-        fontSize={11}
-      />
-    </SelectableModelCard>
+    <Box sx={sx.teamSideSection}>
+      <Typography level='title-sm' sx={sx.teamSideTitle}>
+        {title}
+      </Typography>
+
+      <Box sx={sx.levelsGrid}>
+        {SEARCH_TEAM_INTERPRETATION_LEVELS.map(option => (
+          <SelectableModelCard
+            key={`${field}-${option.value}`}
+            selected={values.includes(option.value)}
+            description={option.summary}
+            onClick={() => onToggle(field, option.value)}
+          >
+            <ScoutBadge
+              value={option.tone}
+              label={option.label}
+              tooltip={option.description}
+              fontSize={11}
+            />
+          </SelectableModelCard>
+        ))}
+      </Box>
+    </Box>
   )
 }
 
-export default function SearchModelsQuery({ filters, onToggle }) {
+function TeamPerformanceTabs({ filters, onToggle, onReset }) {
+  const hasSelections = SEARCH_TEAM_PERFORMANCE_TABS.some(option => (
+    (filters[option.attackField] || []).length > 0 ||
+    (filters[option.defenseField] || []).length > 0
+  ))
+  const [tab, setTab] = React.useState('performance')
+
+  return (
+    <Tabs value={tab} onChange={(event, value) => setTab(value)} sx={sx.tabs}>
+      <TabList sx={sx.tabList}>
+        {SEARCH_TEAM_PERFORMANCE_TABS.map(option => (
+          <Tooltip
+            key={option.value}
+            title={option.help}
+            arrow
+
+          >
+            <Tab value={option.value} sx={sx.tab}>
+              {option.label}
+            </Tab>
+          </Tooltip>
+        ))}
+      </TabList>
+
+      {SEARCH_TEAM_PERFORMANCE_TABS.map(option => (
+        <TabPanel key={option.value} value={option.value} sx={sx.tabPanel}>
+          <Box sx={sx.teamSidesGrid}>
+            <TeamInterpretationSide
+              title='התקפה'
+              field={option.attackField}
+              values={filters[option.attackField] || []}
+              onToggle={onToggle}
+            />
+
+            <TeamInterpretationSide
+              title='הגנה'
+              field={option.defenseField}
+              values={filters[option.defenseField] || []}
+              onToggle={onToggle}
+            />
+          </Box>
+        </TabPanel>
+      ))}
+
+      <Button
+        size='sm'
+        variant='plain'
+        color='neutral'
+        sx={sx.resetButton}
+        disabled={!hasSelections}
+        onClick={onReset}
+      >
+        איפוס ביצוע קבוצתי
+      </Button>
+    </Tabs>
+  )
+}
+
+export default function SearchModelsQuery({ filters, onToggle, onResetTeamPerformance }) {
   const isTeam = filters.searchContext === 'team'
   const isPlayer = filters.searchContext === 'player'
-  const options = isTeam ? SEARCH_TEAM_SCOUT_PRIORITIES : SEARCH_SCOUT_PROFILES
-  const selectedValues = isTeam
-    ? filters.teamScoutPriorities || []
-    : filters.scoutProfiles || []
   const selectedCombinations = filters.scoutCombinations || []
   const lockedProfileIds = new Set(
     SEARCH_SCOUT_PROFILES
@@ -131,29 +201,30 @@ export default function SearchModelsQuery({ filters, onToggle }) {
   const title = isTeam ? 'ביצוע קבוצתי' : 'פרופילי סקאוט'
 
   return (
-    <SearchQuerySection title={title} step='02'>
+    <SearchQuerySection
+      title={title}
+      step='02'
+      contentSx={isTeam ? sx.teamContent : sx.playerContent}
+    >
       {!isPlayer && !isTeam ? (
         <Box sx={sx.placeholder}>
           <Typography level='body-sm'>יש לבחור הקשר חיפוש</Typography>
         </Box>
+      ) : isTeam ? (
+        <TeamPerformanceTabs
+          filters={filters}
+          onToggle={onToggle}
+          onReset={onResetTeamPerformance}
+        />
       ) : (
         <Box sx={sx.grid}>
-          {options.map(option => {
-            const selected = isTeam
-              ? selectedValues.includes(option.value)
-              : option.isCombination
-                ? selectedCombinations.includes(option.value)
-                : selectedValues.includes(option.value) || lockedProfileIds.has(option.value)
-            const locked = !isTeam && !option.isCombination && lockedProfileIds.has(option.value)
+          {SEARCH_SCOUT_PROFILES.map(option => {
+            const selected = option.isCombination
+              ? selectedCombinations.includes(option.value)
+              : filters.scoutProfiles.includes(option.value) || lockedProfileIds.has(option.value)
+            const locked = !option.isCombination && lockedProfileIds.has(option.value)
 
-            return isTeam ? (
-              <TeamModelCard
-                key={option.value}
-                option={option}
-                selected={selected}
-                onToggle={onToggle}
-              />
-            ) : (
+            return (
               <PlayerModelCard
                 key={option.value}
                 option={option}

@@ -3,6 +3,17 @@
 import { scoutPriorityColors } from './scoutColors.sx.js'
 
 export const scoutPrioritySx = {
+  tooltipContent: {
+    width: 190,
+    maxWidth: 190,
+    color: 'inherit',
+    lineHeight: 1.35,
+    textAlign: 'left',
+    whiteSpace: 'normal',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
+  },
+
   root: ({
     colors,
     fontSize,

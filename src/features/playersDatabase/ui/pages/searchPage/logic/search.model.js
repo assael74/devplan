@@ -65,6 +65,7 @@ const normalizeTeamSearchRow = teamSeason => {
   const actual = teamSeason.stats?.actual || {}
   const offense = teamSeason.performance?.offense || {}
   const defense = teamSeason.performance?.defense || {}
+  const ranking = teamSeason.ranking || {}
   const primarySide = Number(offense.priorityRate || 0) >= Number(defense.priorityRate || 0)
     ? offense
     : defense
@@ -81,6 +82,12 @@ const normalizeTeamSearchRow = teamSeason => {
     seasonKey: clean(season.seasonKey || season.seasonId) || '-',
     minutes: 0,
     appearances: Number(actual.gamesPlayed || 0),
+    tableRank: Number(ranking.tableRank || 0),
+    tableAttackRank: Number(ranking.attackRank || 0),
+    tableDefenseRank: Number(ranking.defenseRank || 0),
+    goalsFor: Number(actual.goalsFor || 0),
+    goalsAgainst: Number(actual.goalsAgainst || 0),
+    playersCount: Number(teamSeason.playersCount || 0),
     starts: 0,
     goals: Number(actual.goalsFor || 0),
     primaryProfile: clean(primarySide.priorityLevel) || '-',

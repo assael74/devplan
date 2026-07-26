@@ -73,9 +73,16 @@ export default function ScoutPriority({
     : fullLabel
 
   const tooltipLabel = tooltip || fullLabel
+  const tooltipTitle = React.isValidElement(tooltipLabel)
+    ? tooltipLabel
+    : (
+      <Box sx={sx.tooltipContent}>
+        {tooltipLabel}
+      </Box>
+    )
 
   return (
-    <Tooltip title={tooltipLabel} arrow>
+    <Tooltip title={tooltipTitle} arrow>
       <Box sx={sx.root({ colors, fontSize })}>
         {iconUi({id: display.iconId, size: 'sm', sx: sx.icon({colors, fontSize})})}
 

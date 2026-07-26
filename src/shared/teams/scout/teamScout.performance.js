@@ -19,7 +19,14 @@ const toNumber = (value, fallback = null) => {
   return Number.isFinite(n) ? n : fallback
 }
 
-const roundNumber = (value, digits = 2) => {
+const roundWholeNumber = value => {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+
+  return Math.round(n)
+}
+
+const roundPrecision = (value, digits = 3) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
 
@@ -30,7 +37,7 @@ const clampRate = value => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
 
-  return roundNumber(Math.max(0, Math.min(200, n)), 2)
+  return roundWholeNumber(Math.max(0, Math.min(200, n)))
 }
 
 const safeRate = ({ numerator, denominator }) => {
@@ -52,7 +59,7 @@ const geometricMean = (first, second) => {
     return null
   }
 
-  return roundNumber(Math.sqrt(a * b), 2)
+  return roundWholeNumber(Math.sqrt(a * b))
 }
 
 const buildQualityRate = ({ rank, teamsCount } = {}) => {
@@ -131,12 +138,12 @@ export const buildTeamScoutEnvironment = ({
 
   return {
     mode: activeMode,
-    benchmarkGoalsPerTeamGame: roundNumber(benchmarkGoalsPerGame, 3),
-    leagueGoalsPerTeamGame: roundNumber(leagueGoalsPerTeamGame, 3),
-    rawFactor: roundNumber(rawFactor, 3),
-    deviationPct: roundNumber(deviationPct, 2),
+    benchmarkGoalsPerTeamGame: roundPrecision(benchmarkGoalsPerGame),
+    leagueGoalsPerTeamGame: roundPrecision(leagueGoalsPerTeamGame),
+    rawFactor: roundPrecision(rawFactor),
+    deviationPct: roundWholeNumber(deviationPct),
     applied: appliedFactor !== 1,
-    appliedFactor: roundNumber(appliedFactor, 3),
+    appliedFactor: roundPrecision(appliedFactor),
   }
 }
 
@@ -209,8 +216,11 @@ export const buildTeamScoutPerformance = ({
     benchmark,
     offense: {
       performanceRate: offensePerformanceRate,
+      performanceLevel: resolveTeamScoutPriorityLevel(offensePerformanceRate),
       rankingRate: offenseRankingRate,
+      rankingLevel: resolveTeamScoutPriorityLevel(offenseRankingRate),
       combinedRate: offenseCombinedRate,
+      combinedLevel: resolveTeamScoutPriorityLevel(offenseCombinedRate),
       anomalyRate: offenseCombinedRate,
       qualityRate: offenseQualityRate,
       scoutPriorityRate: offenseScoutPriorityRate,
@@ -220,8 +230,11 @@ export const buildTeamScoutPerformance = ({
     },
     defense: {
       performanceRate: defensePerformanceRate,
+      performanceLevel: resolveTeamScoutPriorityLevel(defensePerformanceRate),
       rankingRate: defenseRankingRate,
+      rankingLevel: resolveTeamScoutPriorityLevel(defenseRankingRate),
       combinedRate: defenseCombinedRate,
+      combinedLevel: resolveTeamScoutPriorityLevel(defenseCombinedRate),
       anomalyRate: defenseCombinedRate,
       qualityRate: defenseQualityRate,
       scoutPriorityRate: defenseScoutPriorityRate,

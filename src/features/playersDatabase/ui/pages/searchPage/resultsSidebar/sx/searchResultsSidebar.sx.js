@@ -14,26 +14,53 @@ export const searchResultsSidebarSx = {
     border: '1px solid #dbe5f4',
     boxShadow: '0 8px 22px rgba(11, 31, 77, 0.05)',
   },
-  header: {
-    px: 1.25,
-    py: 1,
-    borderBottom: '1px solid #dbe5f4',
-  },
-  title: {
-    color: devPlanColors.primaryDark,
-    fontWeight: 700,
-  },
-  subtitle: {
-    mt: 0.2,
-    color: devPlanColors.secondary,
-  },
   content: {
     minHeight: 0,
     maxHeight: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
-    p: 1.15,
+    p: 1,
   },
+
+  filtersSection: {
+    mt: 0.8,
+    mb: 0,
+    pt: 0.8,
+    borderTop: '1px solid #e6edf5',
+  },
+  filtersHeader: {
+    mb: 0.65,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.75,
+  },
+  filtersTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+  filtersReset: {
+    minHeight: 26,
+    px: 0.6,
+    fontSize: 11,
+  },
+  filtersGrid: {
+    display: 'grid',
+    gap: 0.65,
+  },
+  filterField: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.25,
+  },
+  filterLabel: {
+    color: devPlanColors.secondary,
+  },
+  filterSelect: {
+    minHeight: 30,
+    fontSize: 12,
+  },
+
   state: {
     minHeight: 130,
     display: 'grid',

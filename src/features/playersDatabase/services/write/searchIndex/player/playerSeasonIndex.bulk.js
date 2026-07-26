@@ -14,6 +14,7 @@ import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.j
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
+import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 import {
   buildPlayerSeasonIndexScope,
   isSamePlayerSeasonIndexContext,
@@ -134,12 +135,42 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
   const snapshot = await getDocs(rowsQuery)
   const batch = writeBatch(db)
 
+  const nextBirthYear = toNumberOrZero(
+    birthYear !== null && birthYear !== undefined
+      ? birthYear
+      : season.birthYear
+  )
+  const nextLeagueTotalRound = toNumberOrZero(
+    leagueTotalRound !== null && leagueTotalRound !== undefined
+      ? leagueTotalRound
+      : season.leagueTotalRound
+  )
+
   snapshot.docs.forEach(indexDoc => {
+    const data = indexDoc.data() || {}
+    const target = clean(data.sourceTarget) === 'history' ? 'history' : 'current'
+    const searchMetrics = buildPlayerSeasonSearchMetrics({
+      target,
+      ageGroupId: data.ageGroupId || season.ageGroupId || league.ageGroupId,
+      leagueTotalRound: nextLeagueTotalRound,
+      teamGamePlayed: toNumberOrZero(
+        data.teamGamePlayed || data.teamGames
+      ),
+      stats: {
+        games: toNumberOrZero(data.games),
+        goals: toNumberOrZero(data.goals),
+        minutes: toNumberOrZero(data.minutes),
+        starts: toNumberOrZero(data.starts),
+        teamGames: toNumberOrZero(data.teamGames),
+      },
+    })
+
     batch.set(
       indexDoc.ref,
       {
-        birthYear: toNumberOrZero(birthYear ?? season.birthYear),
-        leagueTotalRound: toNumberOrZero(leagueTotalRound ?? season.leagueTotalRound),
+        birthYear: nextBirthYear,
+        leagueTotalRound: nextLeagueTotalRound,
+        ...searchMetrics,
         updatedAt: serverTimestamp(),
       },
       { merge: true }

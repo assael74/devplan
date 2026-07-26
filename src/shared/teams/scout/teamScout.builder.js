@@ -35,7 +35,14 @@ const pickFirstText = (...values) => {
   return ''
 }
 
-const roundNumber = (value, digits = 2) => {
+const roundWholeNumber = value => {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+
+  return Math.round(n)
+}
+
+const roundPrecision = (value, digits = 3) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
 
@@ -99,9 +106,9 @@ const normalizeTeamScoutRow = (row = {}, index = 0) => {
     goalsAgainst,
     pointsPerGame: points === null
       ? null
-      : roundNumber(points / gamesPlayed, 3),
-    goalsForPerGame: roundNumber(goalsFor / gamesPlayed, 3),
-    goalsAgainstPerGame: roundNumber(goalsAgainst / gamesPlayed, 3),
+      : roundPrecision(points / gamesPlayed),
+    goalsForPerGame: roundPrecision(goalsFor / gamesPlayed),
+    goalsAgainstPerGame: roundPrecision(goalsAgainst / gamesPlayed),
     source: row,
   }
 }
@@ -116,12 +123,9 @@ const addTeamScoutProjection = (row, leagueNumGames) => {
     gamesRemaining,
     projectedPoints: row.pointsPerGame === null
       ? null
-      : roundNumber(row.pointsPerGame * seasonGames, 1),
-    projectedGoalsFor: roundNumber(row.goalsForPerGame * seasonGames, 1),
-    projectedGoalsAgainst: roundNumber(
-      row.goalsAgainstPerGame * seasonGames,
-      1
-    ),
+      : roundWholeNumber(row.pointsPerGame * seasonGames),
+    projectedGoalsFor: roundWholeNumber(row.goalsForPerGame * seasonGames),
+    projectedGoalsAgainst: roundWholeNumber(row.goalsAgainstPerGame * seasonGames),
   }
 }
 

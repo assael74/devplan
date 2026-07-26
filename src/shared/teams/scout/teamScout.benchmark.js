@@ -44,7 +44,14 @@ const toNumber = (value, fallback = null) => {
   return Number.isFinite(n) ? n : fallback
 }
 
-const roundNumber = (value, digits = 2) => {
+const roundWholeNumber = value => {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 0
+
+  return Math.round(n)
+}
+
+const roundPrecision = (value, digits = 3) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return 0
 
@@ -96,18 +103,17 @@ export const getTeamScoutPositionBenchmark = ({
     sourcePosition: benchmarkPosition,
     requestedPosition: toNumber(position),
     leagueNumGames: seasonGames,
-    environmentFactor: roundNumber(factor, 3),
+    environmentFactor: roundPrecision(factor),
 
     pointsPerGame: row.pointsPerGame,
-    goalsForPerGame: roundNumber(goalsForPerGame, 3),
-    goalsAgainstPerGame: roundNumber(goalsAgainstPerGame, 3),
+    goalsForPerGame: roundPrecision(goalsForPerGame),
+    goalsAgainstPerGame: roundPrecision(goalsAgainstPerGame),
 
-    points: roundNumber(row.pointsPerGame * seasonGames, 1),
-    goalsFor: roundNumber(goalsForPerGame * seasonGames, 1),
-    goalsAgainst: roundNumber(goalsAgainstPerGame * seasonGames, 1),
-    goalDifference: roundNumber(
-      (goalsForPerGame - goalsAgainstPerGame) * seasonGames,
-      1
+    points: roundWholeNumber(row.pointsPerGame * seasonGames),
+    goalsFor: roundWholeNumber(goalsForPerGame * seasonGames),
+    goalsAgainst: roundWholeNumber(goalsAgainstPerGame * seasonGames),
+    goalDifference: roundWholeNumber(
+      (goalsForPerGame - goalsAgainstPerGame) * seasonGames
     ),
   }
 }
@@ -122,5 +128,5 @@ export const getTeamScoutBenchmarkLeagueGoalsPerTeamGame = (leagueLevel) => {
     return sum + row.goalsForPerGame + row.goalsAgainstPerGame
   }, 0)
 
-  return roundNumber(total / (rows.length * 2), 3)
+  return roundPrecision(total / (rows.length * 2))
 }

@@ -9,6 +9,20 @@ export function buildSearchSummary(rows = []) {
   }
 }
 
+const addPriorityItems = ({ items, values, field, prefix, labelPrefix, options }) => {
+  values.forEach(value => {
+    const option = options.find(item => item.value === value)
+
+    items.push({
+      key: `${prefix}-${value}`,
+      type: 'array',
+      field,
+      value,
+      label: `${labelPrefix}: ${option?.label || value}`,
+    })
+  })
+}
+
 export function buildActiveFilterItems(filters, options) {
   const items = []
 
@@ -63,29 +77,42 @@ export function buildActiveFilterItems(filters, options) {
   }))
 
   const isTeam = filters.searchContext === 'team'
-  const profileField = isTeam ? 'teamScoutPriorities' : 'scoutProfiles'
-  const profileValues = isTeam
-    ? filters.teamScoutPriorities || []
-    : filters.scoutProfiles || []
-  const profileOptions = isTeam
-    ? options.teamPriorities || []
-    : options.profiles || []
 
-  profileValues.forEach(value => {
-    const option = profileOptions.find(item => item.value === value)
+  if (isTeam) {
+    const teamLevelGroups = [
+      ['teamAttackPerformanceLevels', 'חריגה התקפית', 'attack-performance'],
+      ['teamDefensePerformanceLevels', 'חריגה הגנתית', 'defense-performance'],
+      ['teamAttackRankingLevels', 'מיקום התקפי', 'attack-ranking'],
+      ['teamDefenseRankingLevels', 'מיקום הגנתי', 'defense-ranking'],
+      ['teamAttackCombinedLevels', 'משולב התקפי', 'attack-combined'],
+      ['teamDefenseCombinedLevels', 'משולב הגנתי', 'defense-combined'],
+    ]
 
-    items.push({
-      key: `${isTeam ? 'team-priority' : 'profile'}-${value}`,
-      type: 'array',
-      field: profileField,
-      value,
-      label: option?.label || value,
+    teamLevelGroups.forEach(([field, labelPrefix, prefix]) => {
+      addPriorityItems({
+        items,
+        values: filters[field] || [],
+        field,
+        prefix,
+        labelPrefix,
+        options: options.teamInterpretationLevels || [],
+      })
     })
-  })
+  } else {
+    ;(filters.scoutProfiles || []).forEach(value => {
+      const option = (options.profiles || []).find(item => item.value === value)
 
-  if (!isTeam) {
+      items.push({
+        key: `profile-${value}`,
+        type: 'array',
+        field: 'scoutProfiles',
+        value,
+        label: option?.label || value,
+      })
+    })
+
     ;(filters.scoutCombinations || []).forEach(value => {
-      const option = profileOptions.find(item => item.value === value)
+      const option = (options.profiles || []).find(item => item.value === value)
 
       items.push({
         key: `profile-combination-${value}`,

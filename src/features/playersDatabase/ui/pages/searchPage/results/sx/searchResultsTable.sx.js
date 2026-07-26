@@ -3,6 +3,11 @@
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const searchResultsTableSx = {
+  indexColumn: {
+    width: 42,
+    textAlign: 'center',
+  },
+
   avatarColumn: {
     width: 44,
     px: 0.5,
@@ -45,6 +50,11 @@ export const searchResultsTableSx = {
     width: 130,
   },
 
+  priorityColumn: {
+    width: 118,
+    textAlign: 'center',
+  },
+
   profileCell: {
     minWidth: 0,
     display: 'flex',
@@ -59,8 +69,14 @@ export const searchResultsTableSx = {
   },
 
   actionsColumn: {
-    width: 78,
+    width: 48,
+    minWidth: 48,
+    maxWidth: 48,
+    px: 0.25,
     textAlign: 'center',
+    overflow: 'visible',
+    textOverflow: 'clip',
+    whiteSpace: 'normal',
   },
 
   avatar: {

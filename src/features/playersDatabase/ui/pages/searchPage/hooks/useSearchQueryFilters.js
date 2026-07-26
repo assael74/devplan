@@ -7,7 +7,7 @@ import {
   SEARCH_OPERATORS,
   SEARCH_SCOUT_PROFILES,
   SEARCH_STAT_FIELDS,
-  SEARCH_TEAM_SCOUT_PRIORITIES,
+  SEARCH_TEAM_INTERPRETATION_LEVELS,
 } from '../logic/search.constants.js'
 import { buildActiveFilterItems } from '../logic/search.selectors.js'
 
@@ -25,7 +25,12 @@ export const cloneSearchFilters = filters => ({
   leagues: [...filters.leagues],
   scoutProfiles: [...filters.scoutProfiles],
   scoutCombinations: [...(filters.scoutCombinations || [])],
-  teamScoutPriorities: [...(filters.teamScoutPriorities || [])],
+  teamAttackPerformanceLevels: [...(filters.teamAttackPerformanceLevels || [])],
+  teamDefensePerformanceLevels: [...(filters.teamDefensePerformanceLevels || [])],
+  teamAttackRankingLevels: [...(filters.teamAttackRankingLevels || [])],
+  teamDefenseRankingLevels: [...(filters.teamDefenseRankingLevels || [])],
+  teamAttackCombinedLevels: [...(filters.teamAttackCombinedLevels || [])],
+  teamDefenseCombinedLevels: [...(filters.teamDefenseCombinedLevels || [])],
   conditions: filters.conditions.map(condition => ({ ...condition })),
 })
 
@@ -40,7 +45,7 @@ export default function useSearchQueryFilters() {
 
   const queryActiveItems = React.useMemo(() => buildActiveFilterItems(queryFilters, {
     profiles: SEARCH_SCOUT_PROFILES,
-    teamPriorities: SEARCH_TEAM_SCOUT_PRIORITIES,
+    teamInterpretationLevels: SEARCH_TEAM_INTERPRETATION_LEVELS,
     fields: SEARCH_STAT_FIELDS,
     operators: SEARCH_OPERATORS,
   }), [queryFilters])
@@ -133,6 +138,18 @@ export default function useSearchQueryFilters() {
     }))
   }, [])
 
+  const resetTeamPerformanceFilters = React.useCallback(() => {
+    setQueryFilters(current => ({
+      ...current,
+      teamAttackPerformanceLevels: [],
+      teamDefensePerformanceLevels: [],
+      teamAttackRankingLevels: [],
+      teamDefenseRankingLevels: [],
+      teamAttackCombinedLevels: [],
+      teamDefenseCombinedLevels: [],
+    }))
+  }, [])
+
   const removeQueryActiveItem = React.useCallback(item => {
     if (!item) return
 
@@ -178,6 +195,7 @@ export default function useSearchQueryFilters() {
     toggleQueryArrayValue,
     setQueryPresetCondition,
     resetQueryConditions,
+    resetTeamPerformanceFilters,
     removeQueryActiveItem,
     resetQuery,
   }

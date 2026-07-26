@@ -22,6 +22,7 @@ import {
   buildScoutProfileSearchIds,
   normalizeScoutSignalsForIndex,
 } from './playerSeasonIndex.scout.js'
+import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
 export * from './playerSeasonIndex.identity.js'
 export * from './playerSeasonIndex.scout.js'
@@ -63,6 +64,13 @@ export const buildPlayerSeasonIndexDoc = ({
   const scoutProfileSearchIds = buildScoutProfileSearchIds({
     scoutProfileIds,
     scoutCombinationIds,
+  })
+  const normalization = buildPlayerSeasonSearchMetrics({
+    target,
+    ageGroupId: team.ageGroupId || league.ageGroupId,
+    leagueTotalRound: season.leagueTotalRound,
+    teamGamePlayed: team.teamStats?.teamGamePlayed || team.teamGamePlayed || playerStats.teamGames,
+    stats: playerStats,
   })
   const id = buildPlayerSeasonIndexId({
     seasonKey,
@@ -137,7 +145,7 @@ export const buildPlayerSeasonIndexDoc = ({
     teamMinutes: playerStats.teamMinutes,
     teamGames: playerStats.teamGames,
     minutesPerGame: playerStats.minutesPerGame,
-    goalsPer90: playerStats.goalsPer90,
+    ...normalization,
 
     primaryScoutProfileId: clean(primaryScoutSignal?.id),
     primaryScoutReliabilityLevel: clean(primaryScoutSignal?.reliability?.level),

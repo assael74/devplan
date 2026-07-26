@@ -6,6 +6,7 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constant
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
+import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
 export async function updateSearchIndexesLeagueSeasonUrl({
   league = {},
@@ -67,12 +68,35 @@ export async function updateTeamSeasonSearchIndexesSeasonMeta({
   const snapshot = await getDocs(rowsQuery)
   const batch = writeBatch(db)
 
+  const nextBirthYear = toNumberOrZero(
+    birthYear !== null && birthYear !== undefined
+      ? birthYear
+      : season.birthYear
+  )
+  const nextLeagueTotalRound = toNumberOrZero(
+    leagueTotalRound !== null && leagueTotalRound !== undefined
+      ? leagueTotalRound
+      : season.leagueTotalRound
+  )
+
   snapshot.docs.forEach(indexDoc => {
+    const data = indexDoc.data() || {}
+    const target = clean(data.sourceTarget) === 'history' ? 'history' : 'current'
+    const searchMetrics = buildTeamSeasonSearchMetrics({
+      target,
+      leagueTotalRound: nextLeagueTotalRound,
+      teamGamePlayed: toNumberOrZero(data.teamGamePlayed),
+      points: toNumberOrZero(data.points),
+      goalsFor: toNumberOrZero(data.goalsFor),
+      goalsAgainst: toNumberOrZero(data.goalsAgainst),
+    })
+
     batch.set(
       indexDoc.ref,
       {
-        birthYear: toNumberOrZero(birthYear ?? season.birthYear),
-        leagueTotalRound: toNumberOrZero(leagueTotalRound ?? season.leagueTotalRound),
+        birthYear: nextBirthYear,
+        leagueTotalRound: nextLeagueTotalRound,
+        ...searchMetrics,
         updatedAt: serverTimestamp(),
       },
       { merge: true }

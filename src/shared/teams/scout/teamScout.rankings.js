@@ -7,11 +7,11 @@ const toNumber = (value, fallback = null) => {
   return Number.isFinite(n) ? n : fallback
 }
 
-const roundNumber = (value, digits = 2) => {
+const roundWholeNumber = value => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
 
-  return Number(n.toFixed(digits))
+  return Math.round(n)
 }
 
 const buildAverageRanks = ({ rows, valueKey, direction }) => {
@@ -43,7 +43,7 @@ const buildAverageRanks = ({ rows, valueKey, direction }) => {
 
     const firstRank = cursor + 1
     const lastRank = tieEnd + 1
-    const averageRank = roundNumber((firstRank + lastRank) / 2, 2)
+    const averageRank = roundWholeNumber((firstRank + lastRank) / 2)
 
     for (let index = cursor; index <= tieEnd; index += 1) {
       ranksByIndex.set(usableRows[index].index, averageRank)

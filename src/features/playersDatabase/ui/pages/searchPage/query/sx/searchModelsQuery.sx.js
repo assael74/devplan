@@ -3,100 +3,161 @@
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const searchModelsQuerySx = {
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      sm: 'repeat(2, minmax(0, 1fr))',
-    },
-    gap: 0.65,
-  },
-
   placeholder: {
+    minHeight: 96,
     display: 'grid',
     placeItems: 'center',
-    minHeight: 96,
-    px: 1,
-    border: '1px dashed #cddbea',
-    borderRadius: 8,
-    color: devPlanColors.secondary,
-    bgcolor: '#f9fbfd',
-    textAlign: 'center',
+    color: 'neutral.500',
+  },
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.75,
   },
 
   card: {
-    position: 'relative',
     minWidth: 0,
-    minHeight: 58,
-    p: 0.8,
-    pr: 3.8,
+    minHeight: 62,
     display: 'flex',
-    alignItems: 'center',
-    border: '1px solid #d8e3ef',
-    borderRadius: 8,
+    alignItems: 'flex-start',
+    gap: 0.75,
+    p: 0.75,
+    borderRadius: 'sm',
+    border: '1px solid',
+    borderColor: 'neutral.200',
     bgcolor: '#fff',
     cursor: 'pointer',
-    outline: 'none',
-    transition: [
-      'border-color 140ms ease',
-      'background-color 140ms ease',
-      'box-shadow 140ms ease',
-      'transform 140ms ease',
-    ].join(', '),
+    transition: '120ms ease',
 
     '&:hover': {
       borderColor: devPlanColors.tertiary,
-      bgcolor: '#f7fbfe',
-      boxShadow: '0 4px 12px rgba(47, 134, 199, 0.10)',
-      transform: 'translateY(-1px)',
-    },
-
-    '&:focus-visible': {
-      borderColor: devPlanColors.tertiary,
-      boxShadow: `0 0 0 2px ${devPlanColors.tertiaryLight}`,
+      bgcolor: devPlanColors.tertiaryLight,
     },
   },
 
   cardSelected: {
-    borderColor: devPlanColors.primary,
-    bgcolor: devPlanColors.primaryLight,
-    boxShadow: 'inset -3px 0 0 #173B57',
-
-    '&:hover': {
-      borderColor: devPlanColors.primary,
-      bgcolor: devPlanColors.primaryLight,
-    },
+    borderColor: devPlanColors.tertiary,
+    bgcolor: devPlanColors.tertiaryLight,
   },
 
   cardDisabled: {
+    opacity: 0.58,
     cursor: 'default',
-    opacity: 0.72,
-
-    '&:hover': {
-      borderColor: '#d8e3ef',
-      bgcolor: '#fff',
-      boxShadow: 'none',
-      transform: 'none',
-    },
   },
 
   checkbox: {
-    position: 'absolute',
-    top: 7,
-    right: 7,
-    left: 'auto',
-    pointerEvents: 'none',
-    '--Checkbox-size': '18px',
+    mt: 0.15,
+    flex: '0 0 auto',
   },
 
   cardContent: {
     minWidth: 0,
-    display: 'grid',
-    gap: 0.25,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 0.45,
   },
 
   description: {
-    color: devPlanColors.secondary,
+    color: 'neutral.500',
     lineHeight: 1.3,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+  },
+
+  teamContent: {
+    minHeight: 0,
+    height: '100%',
+    overflow: 'hidden',
+  },
+
+  playerContent: {
+    minHeight: 0,
+  },
+
+  tabs: {
+    minHeight: 0,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    bgcolor: 'transparent',
+  },
+
+  tabList: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
+    flex: '0 0 auto',
+    gap: 0.5,
+    p: 0.5,
+    borderRadius: 'md',
+    bgcolor: 'neutral.100',
+  },
+
+  tab: {
+    minHeight: 34,
+    px: 1,
+    fontSize: 12,
+    fontWeight: 600,
+  },
+
+  tabPanel: {
+    minHeight: 0,
+    flex: 1,
+    px: 0,
+    pt: 1,
+    pb: 0.75,
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    scrollbarGutter: 'stable',
+  },
+
+  teamSidesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.75,
+
+    '@media (max-width: 900px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+
+  teamSideSection: {
+    minWidth: 0,
+    p: 0.75,
+    border: '1px solid',
+    borderColor: 'neutral.200',
+    borderRadius: 'md',
+    bgcolor: 'rgba(255,255,255,0.72)',
+  },
+
+  teamSideTitle: {
+    display: 'inline-flex',
+    mb: 0.75,
+    color: devPlanColors.primaryDark,
+  },
+
+  resetButton: {
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 2,
+    flex: '0 0 auto',
+    mt: 0.75,
+    width: '100%',
+    minHeight: 30,
+    borderTop: '1px solid',
+    borderColor: 'neutral.200',
+    borderRadius: 0,
+    bgcolor: '#fff',
+  },
+
+  levelsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: 0.6,
   },
 }

@@ -1,9 +1,11 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchQueryPanel.js
 
 import * as React from 'react'
-import { Box, Button, Stack } from '@mui/joy'
+import { Box, Button, Stack, Typography } from '@mui/joy'
 
 import { CollapseBox } from '../../../../../../ui/patterns/collapseBox/index.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 import SearchContextQuery from './SearchContextQuery.js'
 import SearchDocumentsSummary from './SearchDocumentsSummary.js'
 import SearchModelsQuery from './SearchModelsQuery.js'
@@ -20,13 +22,31 @@ export default function SearchQueryPanel({
   onReset,
 }) {
   const [expanded, setExpanded] = React.useState(true)
+  const entityType = search.queryFilters.searchContext || 'player'
+  const entityColors = getEntityColors(entityType)
+
+  React.useEffect(() => {
+    if (search.loadCompletedRevision > 0) {
+      setExpanded(false)
+    }
+  }, [search.loadCompletedRevision])
 
   return (
     <Box sx={sx.panel}>
       <CollapseBox
         open={expanded}
         onToggle={() => setExpanded(current => !current)}
-        title='בניית שאילתה'
+        title={(
+          <Box sx={sx.headerIdentity}>
+            <Box sx={sx.headerIcon(entityColors)}>
+              {iconUi({ id: 'search', size: 'sm' })}
+            </Box>
+
+            <Typography level='title-md' sx={sx.headerTitle}>
+              בניית שאילתה
+            </Typography>
+          </Box>
+        )}
         subtitle={
           activeItems.length
             ? `${activeItems.length} תנאים פעילים בחיפוש`
@@ -68,6 +88,7 @@ export default function SearchQueryPanel({
             <SearchModelsQuery
               filters={search.queryFilters}
               onToggle={search.toggleQueryArrayValue}
+              onResetTeamPerformance={search.resetTeamPerformanceFilters}
             />
           </Box>
 
@@ -76,6 +97,7 @@ export default function SearchQueryPanel({
             sx={[sx.column, sx.statsColumn]}
           >
             <SearchStatsQuery
+              entityType={search.queryFilters.searchContext || 'player'}
               conditions={search.queryFilters.conditions}
               onSetCondition={search.setQueryPresetCondition}
               onResetConditions={search.resetQueryConditions}
