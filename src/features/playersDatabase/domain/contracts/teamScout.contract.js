@@ -11,19 +11,16 @@ import {
 
 export const createEmptyTeamScoutSide = side => ({
   side,
-  performance: null,
-  performanceRate: null,
-  performanceLevel: 'unavailable',
+  targetRate: null,
+  targetLevel: 'unavailable',
   rankingRate: null,
   rankingLevel: 'unavailable',
-  combinedRate: null,
-  combinedLevel: 'unavailable',
-  qualityRate: null,
   anomalyRate: null,
-  scoutPriorityRate: null,
-  priorityRate: null,
-  priorityLevel: 'unavailable',
   anomalyLevel: 'unavailable',
+  qualityRate: null,
+  scoutPriorityRate: null,
+  priorityLevel: 'unavailable',
+  opportunityType: 'unavailable',
   rank: null,
   benchmark: {
     expectedValue: null,
@@ -57,64 +54,52 @@ const toRoundedDomainNumber = (value, fallback = null) => {
   return Number.isFinite(number) ? Math.round(number) : fallback
 }
 
-const resolvePriorityRate = source => toRoundedDomainNumber(
-  source.priorityRate !== undefined
-    ? source.priorityRate
-    : source.scoutPriorityRate
-)
+const firstDefined = (...values) => values.find(value => (
+  value !== undefined && value !== null && value !== ''
+))
 
 export const normalizeTeamScoutSide = (side, value = {}) => {
   const source = value && typeof value === 'object' ? value : {}
-  const priorityRate = resolvePriorityRate(source)
-  const performanceRate = toRoundedDomainNumber(source.performanceRate)
+  const targetRate = toRoundedDomainNumber(source.targetRate)
   const rankingRate = toRoundedDomainNumber(source.rankingRate)
-  const combinedRate = toRoundedDomainNumber(source.combinedRate)
-  const anomalyRate = toRoundedDomainNumber(
-    source.anomalyRate !== undefined
-      ? source.anomalyRate
-      : source.performanceRate
-  )
+  const anomalyRate = toRoundedDomainNumber(source.anomalyRate)
+  const qualityRate = toRoundedDomainNumber(source.qualityRate)
+  const scoutPriorityRate = toRoundedDomainNumber(source.scoutPriorityRate)
 
   return {
     ...createEmptyTeamScoutSide(side),
-    performance: toRoundedDomainNumber(source.performance),
-    performanceRate,
-    performanceLevel: cleanDomainValue(source.performanceLevel) ||
-      resolveTeamScoutPriorityLevel(performanceRate),
+    targetRate,
+    targetLevel: cleanDomainValue(source.targetLevel) ||
+      resolveTeamScoutPriorityLevel(targetRate),
     rankingRate,
     rankingLevel: cleanDomainValue(source.rankingLevel) ||
       resolveTeamScoutPriorityLevel(rankingRate),
-    combinedRate,
-    combinedLevel: cleanDomainValue(source.combinedLevel) ||
-      resolveTeamScoutPriorityLevel(combinedRate),
-    qualityRate: toRoundedDomainNumber(source.qualityRate),
     anomalyRate,
-    scoutPriorityRate: toRoundedDomainNumber(source.scoutPriorityRate),
-    priorityRate,
-    priorityLevel: cleanDomainValue(source.priorityLevel) ||
-      resolveTeamScoutPriorityLevel(priorityRate),
     anomalyLevel: cleanDomainValue(source.anomalyLevel) ||
-      resolveTeamScoutAnomalyLevel(combinedRate),
+      resolveTeamScoutAnomalyLevel(anomalyRate),
+    qualityRate,
+    scoutPriorityRate,
+    priorityLevel: cleanDomainValue(source.priorityLevel) ||
+      resolveTeamScoutPriorityLevel(scoutPriorityRate),
+    opportunityType: cleanDomainValue(source.opportunityType) || 'unavailable',
     rank: toRoundedDomainNumber(source.rank),
     benchmark: {
-      expectedValue: toRoundedDomainNumber(
-        source.expectedValue !== undefined
-          ? source.expectedValue
-          : source.benchmark?.expectedValue
-      ),
-      actualValue: toRoundedDomainNumber(
-        source.actualValue !== undefined
-          ? source.actualValue
-          : source.benchmark?.actualValue
-      ),
-      projectedValue: toRoundedDomainNumber(
-        source.projectedValue !== undefined
-          ? source.projectedValue
-          : source.benchmark?.projectedValue
-      ),
-      gap: toRoundedDomainNumber(
-        source.gap !== undefined ? source.gap : source.benchmark?.gap
-      ),
+      expectedValue: toRoundedDomainNumber(firstDefined(
+        source.expectedValue,
+        source.benchmark?.expectedValue
+      )),
+      actualValue: toRoundedDomainNumber(firstDefined(
+        source.actualValue,
+        source.benchmark?.actualValue
+      )),
+      projectedValue: toRoundedDomainNumber(firstDefined(
+        source.projectedValue,
+        source.benchmark?.projectedValue
+      )),
+      gap: toRoundedDomainNumber(firstDefined(
+        source.gap,
+        source.benchmark?.gap
+      )),
     },
   }
 }

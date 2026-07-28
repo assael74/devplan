@@ -31,6 +31,7 @@ import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { useLeagueReport } from './report/index.js'
 import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
 
+
 export default function LeaguePage() {
   const navigate = useNavigate()
   const { notify } = useSnackbar()
@@ -77,11 +78,21 @@ export default function LeaguePage() {
   ), [leagueImport.rows])
 
   const filteredTeams = React.useMemo(() => (
-    teams.filter(team => (
-      (!attackPriorityFilter || team.attackPriority === attackPriorityFilter)
-      && (!defensePriorityFilter || team.defensePriority === defensePriorityFilter)
-    ))
-  ), [teams, attackPriorityFilter, defensePriorityFilter])
+    teams.filter(team => {
+      const attackLevel = team.performanceView?.offense?.priority?.level || ''
+      const defenseLevel = team.performanceView?.defense?.priority?.level || ''
+
+      return (
+        (!attackPriorityFilter || attackLevel === attackPriorityFilter)
+        && (!defensePriorityFilter || defenseLevel === defensePriorityFilter)
+      )
+    })
+  ), [
+    teams,
+    attackPriorityFilter,
+    defensePriorityFilter,
+  ])
+
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'מרכז ליגות', to: PLAYERS_DATABASE_UI_ROUTES.leagues },

@@ -9,7 +9,6 @@ import { normalizeTeamIdentity, resolveTeamLookupKey } from '../../../../model/t
 import { normalizeTeamStats } from '../../../../model/teamStats.model.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
-import { buildTeamScoutPrioritySearchIds } from '../shared/teamScoutPrioritySearch.model.js'
 
 export const normalizeText = value =>
   clean(value).toLowerCase()
@@ -186,34 +185,33 @@ export const buildTeamSeasonIndexDoc = ({
     goalsAgainstPerGame: games ? roundNumber(goalsAgainst / games) : 0,
     teamGamePlayed: games,
     ...normalization,
-    attackPerformance: roundOptionalWholeNumber(offense?.performance),
-    attackPerformanceRate: roundOptionalWholeNumber(offense?.performanceRate),
-    attackPerformanceLevel: offense?.performanceLevel ?? '',
+    teamPerformanceSchemaVersion: 3,
+
+    attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
+    attackTargetRate: roundOptionalWholeNumber(offense?.targetRate),
+    attackTargetLevel: offense?.targetLevel ?? '',
     attackRankingRate: roundOptionalWholeNumber(offense?.rankingRate),
     attackRankingLevel: offense?.rankingLevel ?? '',
-    attackCombinedRate: roundOptionalWholeNumber(offense?.combinedRate),
-    attackCombinedLevel: offense?.combinedLevel ?? '',
-    attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
-    attackScoutPriorityRate: roundOptionalWholeNumber(offense?.scoutPriorityRate),
-    attackPriorityRate: roundOptionalWholeNumber(offense?.priorityRate),
-    attackPriorityLevel: offense?.priorityLevel ?? '',
+    attackAnomalyRate: roundOptionalWholeNumber(offense?.anomalyRate),
     attackAnomalyLevel: offense?.anomalyLevel ?? '',
-    defensePerformance: roundOptionalWholeNumber(defense?.performance),
-    defensePerformanceRate: roundOptionalWholeNumber(defense?.performanceRate),
-    defensePerformanceLevel: defense?.performanceLevel ?? '',
+    attackScoutPriorityRate: roundOptionalWholeNumber(
+      offense?.scoutPriorityRate
+    ),
+    attackPriorityLevel: offense?.priorityLevel ?? '',
+    attackOpportunityType: offense?.opportunityType ?? '',
+
+    defenseQualityRate: roundOptionalWholeNumber(defense?.qualityRate),
+    defenseTargetRate: roundOptionalWholeNumber(defense?.targetRate),
+    defenseTargetLevel: defense?.targetLevel ?? '',
     defenseRankingRate: roundOptionalWholeNumber(defense?.rankingRate),
     defenseRankingLevel: defense?.rankingLevel ?? '',
-    defenseCombinedRate: roundOptionalWholeNumber(defense?.combinedRate),
-    defenseCombinedLevel: defense?.combinedLevel ?? '',
-    defenseQualityRate: roundOptionalWholeNumber(defense?.qualityRate),
-    defenseScoutPriorityRate: roundOptionalWholeNumber(defense?.scoutPriorityRate),
-    defensePriorityRate: roundOptionalWholeNumber(defense?.priorityRate),
-    defensePriorityLevel: defense?.priorityLevel ?? '',
+    defenseAnomalyRate: roundOptionalWholeNumber(defense?.anomalyRate),
     defenseAnomalyLevel: defense?.anomalyLevel ?? '',
-    teamScoutPriorityLevels: buildTeamScoutPrioritySearchIds([
-      offense?.priorityLevel,
-      defense?.priorityLevel,
-    ]),
+    defenseScoutPriorityRate: roundOptionalWholeNumber(
+      defense?.scoutPriorityRate
+    ),
+    defensePriorityLevel: defense?.priorityLevel ?? '',
+    defenseOpportunityType: defense?.opportunityType ?? '',
     playersCount: toNumberOrZero(row.playersCount),
     playerSeasonIndexCount: toNumberOrZero(row.playerSeasonIndexCount),
     scoutProfiledPlayersCount: toNumberOrZero(

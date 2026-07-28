@@ -4,16 +4,18 @@ import {
   sanitizeReportValue,
 } from '../../service/reportValue.js'
 
+import {
+  buildPlayerTargetsPrintModel,
+} from '../presentation/playerTargetsPrintModel.js'
+
+export const PLAYER_TARGETS_DOCUMENT_VERSION = 2
+
 function resolveGeneratedAt(value) {
-  const date = value instanceof Date
-    ? value
-    : new Date(value || Date.now())
+  const date = value instanceof Date ? value : new Date(value || Date.now())
 
-  if (Number.isNaN(date.getTime())) {
-    return new Date().toISOString()
-  }
-
-  return date.toISOString()
+  return Number.isNaN(date.getTime())
+    ? new Date().toISOString()
+    : date.toISOString()
 }
 
 export function buildPlayerTargetsDocument({
@@ -21,10 +23,22 @@ export function buildPlayerTargetsDocument({
   team = {},
   generatedAt = new Date(),
 } = {}) {
+  const reportDate = resolveGeneratedAt(generatedAt)
+  const model = buildPlayerTargetsPrintModel({
+    player,
+    team,
+    reportDate,
+  })
+
+  const documentContent = { ...model }
+
+  delete documentContent.player
+  delete documentContent.team
+
   return sanitizeReportValue({
-    documentVersion: 2,
-    generatedAt: resolveGeneratedAt(generatedAt),
-    playerSnapshot: player,
-    teamSnapshot: team || player?.team || {},
+    ...documentContent,
+    documentVersion: PLAYER_TARGETS_DOCUMENT_VERSION,
+    generatedAt: reportDate,
+    reportDate,
   })
 }

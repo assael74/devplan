@@ -78,13 +78,11 @@ export const normalizeTeamStats = (
     attackPerformance: pickFirstValue(
       team.attackPerformance,
       stats.attackPerformance,
-      team.offense?.priorityRate,
       team.offense?.scoutPriorityRate
     ),
     defensePerformance: pickFirstValue(
       team.defensePerformance,
       stats.defensePerformance,
-      team.defense?.priorityRate,
       team.defense?.scoutPriorityRate
     ),
   }

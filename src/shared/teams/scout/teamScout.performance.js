@@ -33,6 +33,21 @@ const roundPrecision = (value, digits = 3) => {
   return Number(n.toFixed(digits))
 }
 
+const SCOUT_PRIORITY_CALIBRATION = Object.freeze({
+  qualityWeight: 0.6,
+  targetWeight: 0.25,
+  rankingWeight: 0.15,
+  targetFullScoreRate: 150,
+  rankingFullScoreRate: 200,
+})
+
+const clampRange = ({ value, min = 0, max = 100 } = {}) => {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+
+  return Math.max(min, Math.min(max, n))
+}
+
 const clampRate = value => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
@@ -70,18 +85,103 @@ const buildQualityRate = ({ rank, teamsCount } = {}) => {
     return null
   }
 
-  if (count === 1) return 100
+  const qualityRate = ((count + 1 - place) / count) * 100
+  const normalizedQuality = clampRange({ value: qualityRate })
 
-  return clampRate(((count - place) / (count - 1)) * 200)
+  return roundWholeNumber(normalizedQuality)
 }
 
-const buildScoutPriorityRate = ({ qualityRate, combinedRate } = {}) => {
+const normalizeTargetRate = value => {
+  const rate = toNumber(value)
+  if (!Number.isFinite(rate)) return null
+
+  const normalized = (rate / SCOUT_PRIORITY_CALIBRATION.targetFullScoreRate) * 100
+
+  return roundWholeNumber(clampRange({ value: normalized }))
+}
+
+const normalizeDeviationRate = value => {
+  const rate = toNumber(value)
+  if (!Number.isFinite(rate)) return null
+
+  const normalized = (rate / SCOUT_PRIORITY_CALIBRATION.rankingFullScoreRate) * 100
+
+  return roundWholeNumber(clampRange({ value: normalized }))
+}
+
+const applyScoutPriorityCaps = ({ rate, qualityRate } = {}) => {
+  const priority = toNumber(rate)
   const quality = toNumber(qualityRate)
-  const anomaly = toNumber(combinedRate)
 
-  if (!Number.isFinite(quality) || !Number.isFinite(anomaly)) return null
+  if (!Number.isFinite(priority) || !Number.isFinite(quality)) return null
 
-  return clampRate((quality * 0.7) + (anomaly * 0.3))
+  if (quality < 33.33) return Math.min(priority, 114)
+  if (quality < 65) return Math.min(priority, 139)
+
+  return priority
+}
+
+const buildScoutPriorityRate = ({
+  qualityRate,
+  targetRate,
+  rankingRate,
+} = {}) => {
+  const quality = toNumber(qualityRate)
+  const target = normalizeTargetRate(targetRate)
+  const deviation = normalizeDeviationRate(rankingRate)
+
+  if (
+    !Number.isFinite(quality) ||
+    !Number.isFinite(target) ||
+    !Number.isFinite(deviation)
+  ) {
+    return null
+  }
+
+  const qualityNormalized = clampRange({ value: quality })
+
+  if (!Number.isFinite(qualityNormalized)) return null
+
+  const normalizedRate = (
+    (qualityNormalized * SCOUT_PRIORITY_CALIBRATION.qualityWeight) +
+    (target * SCOUT_PRIORITY_CALIBRATION.targetWeight) +
+    (deviation * SCOUT_PRIORITY_CALIBRATION.rankingWeight)
+  )
+
+  const displayRate = clampRate(normalizedRate * 2)
+
+  return applyScoutPriorityCaps({
+    rate: displayRate,
+    qualityRate: quality,
+  })
+}
+
+const resolveOpportunityType = ({
+  qualityRate,
+  targetRate,
+  anomalyRate,
+} = {}) => {
+  const quality = toNumber(qualityRate)
+  const target = toNumber(targetRate)
+  const anomaly = toNumber(anomalyRate)
+
+  if (
+    !Number.isFinite(quality) ||
+    !Number.isFinite(target) ||
+    !Number.isFinite(anomaly)
+  ) {
+    return 'unavailable'
+  }
+
+  const hasQuality = quality >= 65
+  const hasAnomaly = anomaly >= 125
+
+  if (hasQuality && hasAnomaly) return 'quality_anomaly'
+  if (hasQuality) return 'proven_quality'
+  if (hasAnomaly) return 'interesting_anomaly'
+  if (target >= 115) return 'above_target'
+
+  return 'neutral'
 }
 
 export const buildTeamScoutEnvironment = ({
@@ -204,43 +304,51 @@ export const buildTeamScoutPerformance = ({
   })
   const offenseScoutPriorityRate = buildScoutPriorityRate({
     qualityRate: offenseQualityRate,
-    combinedRate: offenseCombinedRate,
+    targetRate: offensePerformanceRate,
+    rankingRate: offenseRankingRate,
   })
   const defenseScoutPriorityRate = buildScoutPriorityRate({
     qualityRate: defenseQualityRate,
-    combinedRate: defenseCombinedRate,
+    targetRate: defensePerformanceRate,
+    rankingRate: defenseRankingRate,
+  })
+  const offenseOpportunityType = resolveOpportunityType({
+    qualityRate: offenseQualityRate,
+    targetRate: offensePerformanceRate,
+    anomalyRate: offenseCombinedRate,
+  })
+  const defenseOpportunityType = resolveOpportunityType({
+    qualityRate: defenseQualityRate,
+    targetRate: defensePerformanceRate,
+    anomalyRate: defenseCombinedRate,
   })
 
   return {
     ...row,
     benchmark,
     offense: {
-      performanceRate: offensePerformanceRate,
-      performanceLevel: resolveTeamScoutPriorityLevel(offensePerformanceRate),
+      targetRate: offensePerformanceRate,
+      targetLevel: resolveTeamScoutPriorityLevel(offensePerformanceRate),
       rankingRate: offenseRankingRate,
       rankingLevel: resolveTeamScoutPriorityLevel(offenseRankingRate),
-      combinedRate: offenseCombinedRate,
-      combinedLevel: resolveTeamScoutPriorityLevel(offenseCombinedRate),
       anomalyRate: offenseCombinedRate,
+      anomalyLevel: resolveTeamScoutAnomalyLevel(offenseCombinedRate),
       qualityRate: offenseQualityRate,
       scoutPriorityRate: offenseScoutPriorityRate,
-      priorityRate: offenseScoutPriorityRate,
       priorityLevel: resolveTeamScoutPriorityLevel(offenseScoutPriorityRate),
-      anomalyLevel: resolveTeamScoutAnomalyLevel(offenseCombinedRate),
+      opportunityType: offenseOpportunityType,
     },
     defense: {
-      performanceRate: defensePerformanceRate,
-      performanceLevel: resolveTeamScoutPriorityLevel(defensePerformanceRate),
+      targetRate: defensePerformanceRate,
+      targetLevel: resolveTeamScoutPriorityLevel(defensePerformanceRate),
       rankingRate: defenseRankingRate,
       rankingLevel: resolveTeamScoutPriorityLevel(defenseRankingRate),
-      combinedRate: defenseCombinedRate,
-      combinedLevel: resolveTeamScoutPriorityLevel(defenseCombinedRate),
       anomalyRate: defenseCombinedRate,
+      anomalyLevel: resolveTeamScoutAnomalyLevel(defenseCombinedRate),
       qualityRate: defenseQualityRate,
       scoutPriorityRate: defenseScoutPriorityRate,
-      priorityRate: defenseScoutPriorityRate,
       priorityLevel: resolveTeamScoutPriorityLevel(defenseScoutPriorityRate),
-      anomalyLevel: resolveTeamScoutAnomalyLevel(defenseCombinedRate),
+      opportunityType: defenseOpportunityType,
     },
   }
 }

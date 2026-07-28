@@ -71,6 +71,7 @@ export const searchModelsQuerySx = {
   teamContent: {
     minHeight: 0,
     height: '100%',
+    pb: 0.25,
     overflow: 'hidden',
   },
 

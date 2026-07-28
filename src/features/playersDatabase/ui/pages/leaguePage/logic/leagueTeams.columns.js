@@ -72,6 +72,37 @@ const resolvePrioritySortValue = value => {
   )
 }
 
+
+const OPPORTUNITY_LABELS = {
+  proven_quality: 'איכות מוכחת',
+  interesting_anomaly: 'אנומליה מעניינת',
+  quality_anomaly: 'איכות ואנומליה',
+  above_target: 'ביצוע מעל היעד',
+  neutral: 'ללא יתרון מובהק',
+  unavailable: 'לא זמין',
+}
+
+const formatRate = value => {
+  const number = toNumericValue(value)
+  return number === null ? 'לא זמין' : `${Math.round(number)}%`
+}
+
+const buildPriorityTooltip = ({ sideLabel, view }) => {
+  const opportunity = OPPORTUNITY_LABELS[view?.opportunityType] || 'לא זמין'
+
+  return (
+    <Box>
+      <Box>{`עדיפות ${sideLabel}: ${formatRate(view?.priority?.rate)}`}</Box>
+      <Box>{`סוג הזדמנות: ${opportunity}`}</Box>
+      <Box>{`איכות מוחלטת: ${formatRate(view?.quality?.rate)}`}</Box>
+      <Box>{`ביצוע מול יעד: ${formatRate(view?.target?.rate)}`}</Box>
+      <Box>{`חריגה מהמיקום: ${formatRate(view?.ranking?.rate)}`}</Box>
+      <Box>{`ציון אנומליה: ${formatRate(view?.anomaly?.rate)}`}</Box>
+    </Box>
+  )
+}
+
+
 const columnWidth = key => buildTableColumnWidth(
   LEAGUE_TEAMS_TABLE_WIDTHS[key]
 )
@@ -102,7 +133,8 @@ const resolveTeamNameSx = row => ({
 export const buildLeagueTeamsColumns = ({
   onTeamOpen,
   onTeamUrlEdit,
-}) => [
+}) => {
+  return [
   {
     key: 'tableRank',
     label: 'מיקום',
@@ -207,39 +239,59 @@ export const buildLeagueTeamsColumns = ({
   },
   {
     key: 'attackPriority',
-    label: 'ביצוע התקפי',
+    label: 'עדיפות התקפית',
     sx: {
       ...sx.priorityColumn,
       ...columnWidth('attackPriority'),
     },
     getSortValue: row => (
-      resolvePrioritySortValue(row.attackPriority)
+      resolvePrioritySortValue(
+        row?.performanceView?.offense?.priority?.rate
+      )
     ),
-    render: row => (
-      <ScoutBadge
-        value={row.attackPriority}
-        short
-        fontSize={11}
-      />
-    ),
+    render: row => {
+      const view = row?.performanceView?.offense || {}
+
+      return (
+        <ScoutBadge
+          value={view.priority?.level || 'unavailable'}
+          tooltip={buildPriorityTooltip({
+            sideLabel: 'התקפית',
+            view,
+          })}
+          short
+          fontSize={11}
+        />
+      )
+    },
   },
   {
     key: 'defensePriority',
-    label: 'ביצוע הגנתי',
+    label: 'עדיפות הגנתית',
     sx: {
       ...sx.priorityColumn,
       ...columnWidth('defensePriority'),
     },
     getSortValue: row => (
-      resolvePrioritySortValue(row.defensePriority)
+      resolvePrioritySortValue(
+        row?.performanceView?.defense?.priority?.rate
+      )
     ),
-    render: row => (
-      <ScoutBadge
-        value={row.defensePriority}
-        short
-        fontSize={11}
-      />
-    ),
+    render: row => {
+      const view = row?.performanceView?.defense || {}
+
+      return (
+        <ScoutBadge
+          value={view.priority?.level || 'unavailable'}
+          tooltip={buildPriorityTooltip({
+            sideLabel: 'הגנתית',
+            view,
+          })}
+          short
+          fontSize={11}
+        />
+      )
+    },
   },
   {
     key: 'rosterProfiles',
@@ -303,4 +355,5 @@ export const buildLeagueTeamsColumns = ({
       </Box>
     ),
   },
-]
+  ]
+}

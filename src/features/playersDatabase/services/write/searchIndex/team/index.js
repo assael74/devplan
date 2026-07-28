@@ -43,3 +43,8 @@ export {
   updateSearchIndexesLeagueSeasonUrl,
   updateTeamSeasonSearchIndexesSeasonMeta,
 } from './teamSeasonIndex.bulk.js'
+
+
+export {
+  rebuildTeamSeasonSearchIndexesFromLeagues,
+} from './teamSeasonIndex.rebuild.js'

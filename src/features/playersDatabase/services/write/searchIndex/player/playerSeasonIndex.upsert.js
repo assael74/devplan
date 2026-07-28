@@ -142,8 +142,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
         rosterStatus: getRosterStatus(player) || clean(existingData.rosterStatus || 'regular'),
         favorite: Boolean(player.favorite || existingData.favorite),
         notes: clean(player.notes || existingData.notes),
-      },
-      { merge: true }
+      }
     )
   })
 

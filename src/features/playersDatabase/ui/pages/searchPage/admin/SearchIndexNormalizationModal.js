@@ -14,7 +14,10 @@ import {
 } from '@mui/joy'
 
 import PlayersDatabaseModal from '../../../components/modals/PlayersDatabaseModal.js'
-import { rebuildSearchIndexNormalization } from '../../../../services/write/searchIndex/index.js'
+import {
+  auditTeamPerformanceSearchIndexSchema,
+  rebuildSearchIndexNormalization,
+} from '../../../../services/write/searchIndex/index.js'
 import { searchNormalizationAdminSx as sx } from '../sx/searchNormalizationAdmin.sx.js'
 
 const ENTITY_OPTIONS = [
@@ -28,6 +31,7 @@ const initialState = {
   mode: '',
   result: null,
   error: '',
+  auditResult: null,
 }
 
 export default function SearchIndexNormalizationModal({ open, onClose }) {
@@ -40,6 +44,40 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
     setEntityType('')
     setState(initialState)
   }, [open])
+
+  const runSchemaAudit = async () => {
+    if (state.loading) return
+
+    setState(previous => ({
+      ...previous,
+      loading: true,
+      mode: 'audit',
+      auditResult: null,
+      error: '',
+    }))
+
+    try {
+      const auditResult = await auditTeamPerformanceSearchIndexSchema()
+
+      setState(previous => ({
+        ...previous,
+        loading: false,
+        mode: 'audit',
+        auditResult,
+        error: '',
+      }))
+    } catch (error) {
+      console.error('[playersDatabase/team-performance-schema-audit]', error)
+
+      setState(previous => ({
+        ...previous,
+        loading: false,
+        mode: 'audit',
+        auditResult: null,
+        error: error?.message || 'מיפוי מסמכי הביצוע הקבוצתי נכשל',
+      }))
+    }
+  }
 
   const runBackfill = async dryRun => {
     if (state.loading) return
@@ -76,13 +114,14 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
   }
 
   const result = state.result
+  const auditResult = state.auditResult
   const hasDryRunResult = state.mode === 'dryRun' && !!result
 
   return (
     <PlayersDatabaseModal
       open={open}
-      title='רענון שדות נרמול'
-      description='פעולה חד־פעמית למסמכי אינדקס החיפוש הקיימים'
+      title='רענון אינדקס החיפוש'
+      description='רענון שחקנים קיימים ובנייה מחדש של קבוצות מתוך טבלאות הליגה'
       iconId='refresh'
       size='md'
       hideFooter
@@ -90,7 +129,7 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
       onClose={onClose}
     >
       <Alert color='warning' variant='soft'>
-        מומלץ לבצע תחילה בדיקה ללא כתיבה. הרצה בפועל תעדכן את כל המסמכים שנבחרו.
+        מומלץ לבצע תחילה בדיקה ללא כתיבה. בקבוצות, הרצה בפועל תחשב מחדש את הביצועים מטבלאות הליגה ותעדכן את אינדקס החיפוש.
       </Alert>
 
       <FormControl sx={sx.field}>
@@ -124,6 +163,12 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
             <ResultItem label='קבוצות' value={result.teamRowsCount} />
             <ResultItem label='דולגו' value={result.skippedRowsCount} />
             <ResultItem label='עודכנו' value={result.updatedRowsCount} />
+            {Number(result.scannedLeaguesCount) > 0 ? (
+              <ResultItem label='ליגות מקור' value={result.scannedLeaguesCount} />
+            ) : null}
+            {Number(result.scannedSeasonsCount) > 0 ? (
+              <ResultItem label='עונות מקור' value={result.scannedSeasonsCount} />
+            ) : null}
           </Box>
 
           <Typography level='body-xs' sx={sx.resultNote}>
@@ -134,7 +179,40 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
         </Sheet>
       ) : null}
 
+
+      {auditResult ? (
+        <Sheet variant='outlined' sx={sx.result}>
+          <Typography level='title-sm'>מיפוי מבנה הביצוע הקבוצתי</Typography>
+
+          <Box sx={sx.resultGrid}>
+            <ResultItem label='נסרקו' value={auditResult.scannedRowsCount} />
+            <ResultItem label='מבנה חדש תקין' value={auditResult.currentRowsCount} />
+            <ResultItem label='ניתנים להמרה' value={auditResult.legacyConvertibleRowsCount} />
+            <ResultItem label='מבנה חלקי' value={auditResult.partialRowsCount} />
+            <ResultItem label='ללא מדדים' value={auditResult.missingRowsCount} />
+            <ResultItem
+              label='דורשים חישוב מחדש'
+              value={auditResult.requiresSourceRecalculationCount}
+            />
+          </Box>
+
+          <Typography level='body-xs' sx={sx.resultNote}>
+            המיפוי הוא קריאה בלבד. לא בוצעה כתיבה למסמכים.
+          </Typography>
+        </Sheet>
+      ) : null}
+
       <Box sx={sx.actions}>
+        <Button
+          variant='outlined'
+          color='primary'
+          loading={state.loading && state.mode === 'audit'}
+          disabled={state.loading}
+          onClick={runSchemaAudit}
+        >
+          מיפוי ביצוע קבוצתי
+        </Button>
+
         <Button
           variant='outlined'
           color='neutral'

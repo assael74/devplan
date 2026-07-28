@@ -26,6 +26,7 @@ export const resolveClubLevel = ({ clubId = '', clubLevel = null } = {}) => {
 export const normalizeIdPart = value =>
   normalizePlayerIdPart(value)
 
+
 export const normalizeAliasList = aliases =>
   (Array.isArray(aliases) ? aliases : [])
     .map(alias => clean(alias))

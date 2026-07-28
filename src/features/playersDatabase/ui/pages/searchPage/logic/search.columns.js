@@ -111,6 +111,28 @@ export function buildPlayerSearchColumns() {
   ]
 }
 
+
+
+const OPPORTUNITY_LABELS = {
+  proven_quality: 'איכות מוכחת',
+  interesting_anomaly: 'אנומליה מעניינת',
+  quality_anomaly: 'איכות ואנומליה',
+  above_target: 'ביצוע מעל היעד',
+  neutral: 'ללא יתרון מובהק',
+  unavailable: 'לא זמין',
+}
+
+const buildTeamPriorityTooltip = ({ sideLabel, performance = {} }) => {
+  const score = Number(performance.scoutPriorityRate)
+  const scoreLabel = Number.isFinite(score) ? `${Math.round(score)}%` : '—'
+  const opportunityKey = String(performance.opportunityType || '').trim()
+  const opportunityLabel = OPPORTUNITY_LABELS[opportunityKey] || ''
+
+  return opportunityLabel && opportunityKey !== 'unavailable'
+    ? `${sideLabel}: ${scoreLabel} · ${opportunityLabel}`
+    : `${sideLabel}: ${scoreLabel}`
+}
+
 export function buildTeamSearchColumns() {
   return [
     buildIndexColumn(),
@@ -123,16 +145,36 @@ export function buildTeamSearchColumns() {
     { key: 'goalsFor', label: 'זכות', sx: { ...sx.numberColumn, ...columnWidth('goalsFor') } },
     { key: 'goalsAgainst', label: 'חובה', sx: { ...sx.numberColumn, ...columnWidth('goalsAgainst') } },
     {
-      key: 'attackPriority', label: 'ביצוע התקפי',
+      key: 'attackPriority', label: 'עדיפות התקפית',
       sx: { ...sx.priorityColumn, ...columnWidth('attackPriority') },
-      render: row => <ScoutPriority value={row.offense?.priorityLevel} short fontSize={11} />,
-      getSortValue: row => Number(row.offense?.priorityRate || 0),
+      render: row => (
+        <ScoutPriority
+          value={row.offense?.priorityLevel}
+          tooltip={buildTeamPriorityTooltip({
+            sideLabel: 'עדיפות התקפית',
+            performance: row.offense,
+          })}
+          short
+          fontSize={11}
+        />
+      ),
+      getSortValue: row => Number(row.offense?.scoutPriorityRate || 0),
     },
     {
-      key: 'defensePriority', label: 'ביצוע הגנתי',
+      key: 'defensePriority', label: 'עדיפות הגנתית',
       sx: { ...sx.priorityColumn, ...columnWidth('defensePriority') },
-      render: row => <ScoutPriority value={row.defense?.priorityLevel} short fontSize={11} />,
-      getSortValue: row => Number(row.defense?.priorityRate || 0),
+      render: row => (
+        <ScoutPriority
+          value={row.defense?.priorityLevel}
+          tooltip={buildTeamPriorityTooltip({
+            sideLabel: 'עדיפות הגנתית',
+            performance: row.defense,
+          })}
+          short
+          fontSize={11}
+        />
+      ),
+      getSortValue: row => Number(row.defense?.scoutPriorityRate || 0),
     },
     { key: 'playersCount', label: 'שחקנים', sx: { ...sx.numberColumn, ...columnWidth('playersCount') } },
     buildActionsColumn(),

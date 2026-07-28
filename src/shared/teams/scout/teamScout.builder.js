@@ -140,17 +140,11 @@ const sortTeamScoutRows = (rows, sortMode) => {
 
   return [...rows].sort((a, b) => {
     const first = toNumber(
-      a[scoreKey] && (
-        a[scoreKey].scoutPriorityRate ??
-        a[scoreKey].combinedRate
-      ),
+      a[scoreKey] && a[scoreKey].scoutPriorityRate,
       -Infinity
     )
     const second = toNumber(
-      b[scoreKey] && (
-        b[scoreKey].scoutPriorityRate ??
-        b[scoreKey].combinedRate
-      ),
+      b[scoreKey] && b[scoreKey].scoutPriorityRate,
       -Infinity
     )
 
@@ -178,13 +172,14 @@ export const buildTeamScoutLeagueModel = ({
     mode: normalizationMode,
     manualFactor: normalizationFactor,
   })
+  const teamsCount = rankedRows.length
   const resultRows = rankedRows.map((row) => {
     return buildTeamScoutPerformance({
       row,
       leagueLevel,
       leagueNumGames,
       environmentFactor: environment.appliedFactor,
-      teamsCount: rankedRows.length,
+      teamsCount,
     })
   })
 

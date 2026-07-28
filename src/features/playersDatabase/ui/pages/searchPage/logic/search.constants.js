@@ -23,15 +23,15 @@ export const SEARCH_TEAM_INTERPRETATION_LEVELS = [
     value: 'elite',
     label: 'יעד מוביל',
     tone: 'elite',
-    summary: 'חריגה יוצאת דופן',
-    description: 'תוצאה חריגה במיוחד שמציבה את הקבוצה כיעד מוביל לבדיקה.',
+    summary: 'עדיפות מרבית לבדיקה',
+    description: 'ציון עדיפות סקאוטינג גבוה במיוחד שמציב את הקבוצה כיעד מוביל לבדיקה.',
   },
   {
     value: 'high',
     label: 'עדיפות גבוהה',
     tone: 'high',
-    summary: 'חריגה משמעותית',
-    description: 'תוצאה חזקה שמצדיקה עדיפות גבוהה בבדיקת הקבוצה והשחקנים.',
+    summary: 'עדיפות גבוהה לבדיקה',
+    description: 'ציון עדיפות סקאוטינג גבוה שמצדיק בדיקה מוקדמת של הקבוצה והשחקנים.',
   },
   {
     value: 'positive',
@@ -53,30 +53,6 @@ export const SEARCH_TEAM_INTERPRETATION_LEVELS = [
     tone: 'low',
     summary: 'מתחת לנקודת הייחוס',
     description: 'תוצאה נמוכה מנקודת הייחוס ולכן העדיפות לבדיקה נמוכה.',
-  },
-]
-
-export const SEARCH_TEAM_PERFORMANCE_TABS = [
-  {
-    value: 'performance',
-    label: 'חריגה ביחס למיקום',
-    help: 'משווה את ביצועי הכיבוש או הספיגה בפועל ליעד שהמודל מצפה לו מקבוצה במיקום הזה ובסביבת הליגה שלה.',
-    attackField: 'teamAttackPerformanceLevels',
-    defenseField: 'teamDefensePerformanceLevels',
-  },
-  {
-    value: 'ranking',
-    label: 'ביצוע לפי מיקום',
-    help: 'משווה בין מיקום הקבוצה בטבלה לבין הדירוג ההתקפי או ההגנתי שלה בתוך הליגה.',
-    attackField: 'teamAttackRankingLevels',
-    defenseField: 'teamDefenseRankingLevels',
-  },
-  {
-    value: 'combined',
-    label: 'ביצוע משולב',
-    help: 'משלב את הביצוע מול היעד עם הביצוע ביחס למיקום ומציג פרשנות אחת כוללת לכל צד.',
-    attackField: 'teamAttackCombinedLevels',
-    defenseField: 'teamDefenseCombinedLevels',
   },
 ]
 
@@ -132,7 +108,6 @@ export const createSearchCondition = id => ({
 })
 
 export const createSearchFilters = () => ({
-  query: '',
   searchContext: '',
   seasons: [],
   birthYears: [],
@@ -140,12 +115,8 @@ export const createSearchFilters = () => ({
   leagues: [],
   scoutProfiles: [],
   scoutCombinations: [],
-  teamAttackPerformanceLevels: [],
-  teamDefensePerformanceLevels: [],
-  teamAttackRankingLevels: [],
-  teamDefenseRankingLevels: [],
-  teamAttackCombinedLevels: [],
-  teamDefenseCombinedLevels: [],
+  teamAttackPriorityLevels: [],
+  teamDefensePriorityLevels: [],
   profileMatchMode: 'any',
   conditions: [],
 })

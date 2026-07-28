@@ -1,11 +1,5 @@
 export const collapseBoxSx = {
-  root: {
-    width: '100%',
-    minWidth: 0,
-  },
-
   header: (open, disabled = false) => ({
-    mt: 0.75,
     px: 1.25,
     py: 0.75,
     display: 'flex',

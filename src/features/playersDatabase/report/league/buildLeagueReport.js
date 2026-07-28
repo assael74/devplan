@@ -4,6 +4,7 @@ import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
 } from '../../../reports/reports.constants.js'
+import { buildTeamPerformanceSideViewModel } from '../../model/teamPerformance.viewModel.js'
 
 function clean(value) {
   return String(value || '').trim()
@@ -24,18 +25,7 @@ function formatReportDate(value = new Date()) {
 }
 
 function normalizePerformanceSide(side = {}) {
-  return {
-    performanceRate: toNumber(side.performanceRate),
-    performanceLevel: clean(side.performanceLevel) || 'unavailable',
-    qualityRate: toNumber(side.qualityRate),
-    anomalyRate: toNumber(side.anomalyRate),
-    combinedRate: toNumber(side.combinedRate),
-    combinedLevel: clean(side.combinedLevel) || 'unavailable',
-    priorityRate: toNumber(side.priorityRate),
-    priorityLevel: clean(side.priorityLevel) || 'unavailable',
-    anomalyLevel: clean(side.anomalyLevel) || 'unavailable',
-    rank: toNumber(side.rank),
-  }
+  return buildTeamPerformanceSideViewModel(side)
 }
 
 function calculateSuccessRate({ games, points }) {
@@ -75,17 +65,17 @@ function isRecommended(level) {
 
 function buildDistribution(rows = []) {
   return {
-    offenseAnomalyRecommended: rows.filter(row => (
-      isRecommended(row.offense.performanceLevel)
+    offensePriorityRecommended: rows.filter(row => (
+      isRecommended(row.offense.priority.level)
     )).length,
-    offenseCombinedRecommended: rows.filter(row => (
-      isRecommended(row.offense.combinedLevel)
+    defensePriorityRecommended: rows.filter(row => (
+      isRecommended(row.defense.priority.level)
+    )).length,
+    offenseAnomalyRecommended: rows.filter(row => (
+      isRecommended(row.offense.anomaly.level)
     )).length,
     defenseAnomalyRecommended: rows.filter(row => (
-      isRecommended(row.defense.performanceLevel)
-    )).length,
-    defenseCombinedRecommended: rows.filter(row => (
-      isRecommended(row.defense.combinedLevel)
+      isRecommended(row.defense.anomaly.level)
     )).length,
   }
 }

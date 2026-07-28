@@ -1,6 +1,6 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchContextQuery.js
 
-import { Chip, FormControl, FormLabel, Input, Stack } from '@mui/joy'
+import { Chip, FormControl, FormLabel, Stack } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { SEARCH_CONTEXT_TYPES } from '../logic/search.constants.js'
@@ -53,12 +53,6 @@ function EntityTypeSelector({ value, onSelect }) {
 }
 
 export default function SearchContextQuery({ filters, onUpdate, onToggle }) {
-  const freeTextPlaceholder = filters.searchContext === 'team'
-    ? 'חיפוש חופשי לפי שם קבוצה'
-    : filters.searchContext === 'player'
-      ? 'חיפוש חופשי לפי שם שחקן'
-      : 'יש לבחור הקשר חיפוש'
-
   return (
     <SearchQuerySection title='הקשר החיפוש' step='01'>
       <Stack sx={sx.root}>
@@ -66,13 +60,6 @@ export default function SearchContextQuery({ filters, onUpdate, onToggle }) {
           <EntityTypeSelector
             value={filters.searchContext}
             onSelect={value => onUpdate('searchContext', value)}
-          />
-
-          <Input
-            size='sm'
-            value={filters.query}
-            placeholder={freeTextPlaceholder}
-            onChange={event => onUpdate('query', event.target.value)}
           />
         </Stack>
 

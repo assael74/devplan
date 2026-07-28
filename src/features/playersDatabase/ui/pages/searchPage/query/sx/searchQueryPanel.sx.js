@@ -41,22 +41,18 @@ const columnBase = {
 }
 
 export const searchQueryPanelSx = {
-  panel: {
-    minWidth: 0,
-    m: 0,
-    p: 0,
-    gap: 0,
-    overflow: 'hidden',
-    border: '1px solid #dbe5f4',
-    borderRadius: 15,
-    bgcolor: '#fff',
-    boxShadow: '0 8px 22px rgba(11, 31, 77, 0.05)',
+  panel: (expanded) => ({
+    border: '1px solid',
+    borderColor: 'divider',
+    borderTopLeftRadius: 'var(--joy-radius-sm)',
+    borderTopRightRadius: 'var(--joy-radius-sm)',
+    borderBottomLeftRadius: expanded ? 0 : 'var(--joy-radius-sm)',
+    borderBottomRightRadius: expanded ? 0 : 'var(--joy-radius-sm)',
 
     '& > *': {
       m: 0,
     },
-  },
-
+  }),
 
   headerIdentity: {
     minWidth: 0,

@@ -11,6 +11,7 @@ import {
 import { normalizeSeasonLookupKey, normalizeSeasonIdentity, isSameSeason } from './season.model.js'
 import { normalizeTeamIdentity, resolveTeamLookupKey } from './teamIdentity.model.js'
 import { cleanValue } from './value.model.js'
+import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
@@ -273,6 +274,7 @@ export const buildTeamPageView = ({
     ? selectedTeamSeason.teamPlayers
     : []
   const playersCount = teamPlayers.length
+  const performanceView = buildTeamPerformanceViewModel(canonicalTeamSeason.performance)
 
   return {
     ...canonicalTeamSeason,
@@ -303,13 +305,14 @@ export const buildTeamPageView = ({
       goalsAgainst,
       goalsForPerGame: actual.goalsForPerGame,
       goalsAgainstPerGame: actual.goalsAgainstPerGame,
-      attackPerformance: canonicalTeamSeason.performance.offense.priorityRate,
-      defensePerformance: canonicalTeamSeason.performance.defense.priorityRate,
+      attackPerformance: performanceView.offense.priority.rate,
+      defensePerformance: performanceView.defense.priority.rate,
     },
     attackPerGame: games ? (goalsFor / games).toFixed(2) : '-',
     defensePerGame: games ? (goalsAgainst / games).toFixed(2) : '-',
-    offense: canonicalTeamSeason.performance.offense,
-    defense: canonicalTeamSeason.performance.defense,
+    offense: canonicalTeamSeason.performance?.offense || {},
+    defense: canonicalTeamSeason.performance?.defense || {},
+    performanceView,
     playersStatus: playersCount ? `${playersCount}` : 'אין סגל',
     statsStatus: playersCount
       ? `${teamPlayers.filter(player => Number(player?.playerStats?.minutes || player?.minutes || 0) > 0).length}`

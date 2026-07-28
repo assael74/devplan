@@ -25,12 +25,8 @@ export const cloneSearchFilters = filters => ({
   leagues: [...filters.leagues],
   scoutProfiles: [...filters.scoutProfiles],
   scoutCombinations: [...(filters.scoutCombinations || [])],
-  teamAttackPerformanceLevels: [...(filters.teamAttackPerformanceLevels || [])],
-  teamDefensePerformanceLevels: [...(filters.teamDefensePerformanceLevels || [])],
-  teamAttackRankingLevels: [...(filters.teamAttackRankingLevels || [])],
-  teamDefenseRankingLevels: [...(filters.teamDefenseRankingLevels || [])],
-  teamAttackCombinedLevels: [...(filters.teamAttackCombinedLevels || [])],
-  teamDefenseCombinedLevels: [...(filters.teamDefenseCombinedLevels || [])],
+  teamAttackPriorityLevels: [...(filters.teamAttackPriorityLevels || [])],
+  teamDefensePriorityLevels: [...(filters.teamDefensePriorityLevels || [])],
   conditions: filters.conditions.map(condition => ({ ...condition })),
 })
 
@@ -141,12 +137,8 @@ export default function useSearchQueryFilters() {
   const resetTeamPerformanceFilters = React.useCallback(() => {
     setQueryFilters(current => ({
       ...current,
-      teamAttackPerformanceLevels: [],
-      teamDefensePerformanceLevels: [],
-      teamAttackRankingLevels: [],
-      teamDefenseRankingLevels: [],
-      teamAttackCombinedLevels: [],
-      teamDefenseCombinedLevels: [],
+      teamAttackPriorityLevels: [],
+      teamDefensePriorityLevels: [],
     }))
   }, [])
 

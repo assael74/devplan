@@ -9,12 +9,10 @@ import {
 } from './buildTeamMinutesPlanReportModel.js'
 
 function hasSectionRows(sections = []) {
-  return sections.some(section => {
-    return Array.isArray(section.rows) && section.rows.length > 0
-  })
+  return sections.some(section => Array.isArray(section.rows) && section.rows.length > 0)
 }
 
-function buildLegacyViewModel(content = {}) {
+function buildStoredViewModel(content = {}) {
   const meta = content.meta || {}
   const sections = Array.isArray(content.sections) ? content.sections : []
 
@@ -40,7 +38,7 @@ function buildLegacyViewModel(content = {}) {
 
 export function buildTeamMinutesPlanViewModel(document = {}) {
   if (document.legacyViewModel) {
-    return buildLegacyViewModel(document.legacyViewModel)
+    return buildStoredViewModel(document.legacyViewModel)
   }
 
   const model = buildTeamMinutesPlanReportModel({
@@ -49,23 +47,15 @@ export function buildTeamMinutesPlanViewModel(document = {}) {
     seasonLabel: document.seasonLabel || '',
     reportDate: document.generatedAt || new Date(),
   })
-  const sections = Array.isArray(model.minutesGroups)
-    ? model.minutesGroups
-    : []
+  const sections = Array.isArray(model.minutesGroups) ? model.minutesGroups : []
 
   return {
     ...model,
     generatedAt: document.generatedAt || '',
     summary: {
-      squadRoles: Array.isArray(model.squadRoleSummary)
-        ? model.squadRoleSummary
-        : [],
-      layers: Array.isArray(model.layerSummary)
-        ? model.layerSummary
-        : [],
-      positions: Array.isArray(model.primaryPositionSummary)
-        ? model.primaryPositionSummary
-        : [],
+      squadRoles: Array.isArray(model.squadRoleSummary) ? model.squadRoleSummary : [],
+      layers: Array.isArray(model.layerSummary) ? model.layerSummary : [],
+      positions: Array.isArray(model.primaryPositionSummary) ? model.primaryPositionSummary : [],
     },
     sections,
     minutesGroups: sections,

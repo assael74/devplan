@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/logic/search.model.js
+// src/features/playersDatabase/ui/pages/searchPage/logic/search.model.js
 
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
@@ -66,7 +66,7 @@ const normalizeTeamSearchRow = teamSeason => {
   const offense = teamSeason.performance?.offense || {}
   const defense = teamSeason.performance?.defense || {}
   const ranking = teamSeason.ranking || {}
-  const primarySide = Number(offense.priorityRate || 0) >= Number(defense.priorityRate || 0)
+  const primarySide = Number(offense.scoutPriorityRate || 0) >= Number(defense.scoutPriorityRate || 0)
     ? offense
     : defense
 
@@ -95,11 +95,11 @@ const normalizeTeamSearchRow = teamSeason => {
       type: 'teamPerformance',
       id: clean(primarySide.side),
       label: clean(primarySide.priorityLevel),
-      score: primarySide.priorityRate ?? null,
+      score: primarySide.scoutPriorityRate ?? null,
       reliability: { level: '' },
       baseProfiles: [],
     },
-    score: Number(primarySide.priorityRate || 0),
+    score: Number(primarySide.scoutPriorityRate || 0),
     offense,
     defense,
   }

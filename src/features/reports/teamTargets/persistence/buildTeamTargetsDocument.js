@@ -4,6 +4,10 @@ import {
   sanitizeReportValue,
 } from '../../service/reportValue.js'
 
+import {
+  buildManagementTargetsReportContent,
+} from '../presentation/print/management.reportContent.js'
+
 export const TEAM_TARGETS_DOCUMENT_VERSION = 2
 
 export function buildTeamTargetsDocument({
@@ -11,13 +15,15 @@ export function buildTeamTargetsDocument({
   draft = {},
   generatedAt = new Date(),
 } = {}) {
+  const content = buildManagementTargetsReportContent({
+    team,
+    draft,
+    reportDate: generatedAt,
+  })
+
   return sanitizeReportValue({
-    id: 'teamTargets',
-    type: 'teamTargets',
-    mode: 'teamTargets',
+    ...content,
     documentVersion: TEAM_TARGETS_DOCUMENT_VERSION,
     generatedAt,
-    teamSnapshot: team,
-    draftSnapshot: draft,
   })
 }

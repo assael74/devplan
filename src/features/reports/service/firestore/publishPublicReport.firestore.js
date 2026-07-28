@@ -61,6 +61,19 @@ export async function publishPublicReport(rawInput) {
 
   const input = normalizePublishInput(rawInput)
   const reportId = input.id || buildPublicReportId(input.sourceKey)
+  const firestoreDocument = buildMainPublicReportDocument({
+  input,
+  reportId,
+  versionNumber: 1,
+  currentData: {},
+  versions: [],
+})
+
+console.log('[publishPublicReport] firestore document preview', {
+  input,
+  reportId,
+  firestoreDocument,
+})
 
   if (!reportId) {
     throw new Error('[publishPublicReport] Failed to create report id')

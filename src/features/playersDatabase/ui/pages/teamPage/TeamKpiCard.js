@@ -12,16 +12,50 @@ import ScoutPriority from '../../components/scout/ScoutPriority.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
+const renderDetail = (detail, detailSx) => {
+  const content = (
+    <Box key={detail.label} sx={detailSx}>
+      <Typography level='body-xs' sx={sx.teamKpiDetailLabel}>
+        {detail.label}
+      </Typography>
+
+      <Typography level='body-sm' sx={sx.teamKpiDetailValue}>
+        {detail.value}
+      </Typography>
+    </Box>
+  )
+
+  if (!detail.tooltip) return content
+
+  return (
+    <Tooltip key={detail.label} title={detail.tooltip} arrow>
+      {content}
+    </Tooltip>
+  )
+}
+
 export default function TeamKpiCard({
   title,
   value,
   iconId,
-  priorityLevel,
+  level,
+  primaryDetails = [],
   details = [],
+  performance = false,
 }) {
   return (
-    <Card sx={sx.teamKpiCard}>
-      <Box sx={sx.teamKpiMain}>
+    <Card
+      sx={[
+        sx.teamKpiCard,
+        performance && sx.teamKpiPerformanceCard,
+      ]}
+    >
+      <Box
+        sx={[
+          sx.teamKpiMain,
+          performance && sx.teamKpiPerformanceMain,
+        ]}
+      >
         <Box sx={sx.teamKpiText}>
           <Typography level='body-sm' sx={sx.teamKpiTitle}>
             {title}
@@ -32,11 +66,19 @@ export default function TeamKpiCard({
               {value}
             </Typography>
 
-            {priorityLevel ? (
-              <ScoutPriority value={priorityLevel} fontSize={12} />
+            {level ? (
+              <ScoutPriority value={level} fontSize={12} />
             ) : null}
           </Box>
         </Box>
+
+        {primaryDetails.length ? (
+          <Box sx={sx.teamKpiPrimaryDetails}>
+            {primaryDetails.map(detail => (
+              renderDetail(detail, sx.teamKpiPrimaryDetail)
+            ))}
+          </Box>
+        ) : null}
 
         {iconId ? (
           <Box sx={sx.teamKpiIcon}>
@@ -45,28 +87,15 @@ export default function TeamKpiCard({
         ) : null}
       </Box>
 
-      <Box sx={sx.teamKpiDetails}>
-        {details.map(detail => {
-          const content = (
-            <Box key={detail.label} sx={sx.teamKpiDetail}>
-              <Typography level='body-xs' sx={sx.teamKpiDetailLabel}>
-                {detail.label}
-              </Typography>
-
-              <Typography level='body-sm' sx={sx.teamKpiDetailValue}>
-                {detail.value}
-              </Typography>
-            </Box>
-          )
-
-          if (!detail.tooltip) return content
-
-          return (
-            <Tooltip key={detail.label} title={detail.tooltip} arrow>
-              {content}
-            </Tooltip>
-          )
-        })}
+      <Box
+        sx={[
+          sx.teamKpiDetails,
+          performance && sx.teamKpiPerformanceDetails,
+        ]}
+      >
+        {details.map(detail => (
+          renderDetail(detail, sx.teamKpiDetail)
+        ))}
       </Box>
     </Card>
   )

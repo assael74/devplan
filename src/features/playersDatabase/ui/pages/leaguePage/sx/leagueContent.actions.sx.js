@@ -46,6 +46,44 @@ export const leagueContentActionsSx = {
       fontWeight: 700,
     },
 
+  performanceMetricBox: {
+      display: 'grid',
+      gap: 0.65,
+      p: 1,
+      borderRadius: 8,
+      bgcolor: '#f7fbfe',
+      border: '1px solid #cfe0ec',
+    },
+
+  performanceMetricLabel: {
+      color: devPlanColors.primary,
+      fontWeight: 700,
+    },
+
+  performanceMetricOptions: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: 0.5,
+    },
+
+  performanceMetricButton: selected => ({
+      minWidth: 0,
+      minHeight: 32,
+      px: 0.6,
+      fontSize: 11,
+      fontWeight: 700,
+      whiteSpace: 'normal',
+      lineHeight: 1.15,
+      color: selected ? '#fff' : devPlanColors.primary,
+      bgcolor: selected ? devPlanColors.primary : '#fff',
+      borderColor: selected ? devPlanColors.primary : '#b9d8ef',
+
+      '&:hover': {
+        bgcolor: selected ? devPlanColors.primaryDark : devPlanColors.tertiaryLight,
+        borderColor: selected ? devPlanColors.primaryDark : devPlanColors.tertiary,
+      },
+    }),
+
   priorityFiltersRow: {
       width: '100%',
       display: 'grid',

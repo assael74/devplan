@@ -22,6 +22,8 @@ export default function LeagueActionsPanel({
   onDeleteTeams,
   onReport,
 }) {
+
+
   return (
     <InfoPanel sx={sx.insightsPanel}>
       <Stack spacing={1} className="dpScrollThin" sx={sx.insightsList}>
@@ -63,16 +65,17 @@ export default function LeagueActionsPanel({
           </Box>
         </Box>
 
+
         <Box sx={sx.priorityFiltersRow}>
           <ScoutPrioritySelect
-            label="ביצוע התקפי"
+            label='עדיפות התקפית'
             value={attackPriorityFilter}
             fontSize={11}
             onChange={onAttackPriorityFilterChange}
           />
 
           <ScoutPrioritySelect
-            label="ביצוע הגנתי"
+            label='עדיפות הגנתית'
             value={defensePriorityFilter}
             fontSize={11}
             onChange={onDefensePriorityFilterChange}

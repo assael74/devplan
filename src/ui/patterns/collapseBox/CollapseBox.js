@@ -35,7 +35,7 @@ export default function CollapseBox({
   )
 
   return (
-    <Box sx={[sx.root, rootSx]}>
+    <Box sx={rootSx}>
       <Box
         role="button"
         tabIndex={disabled ? -1 : 0}

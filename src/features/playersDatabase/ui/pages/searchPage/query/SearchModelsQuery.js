@@ -4,12 +4,7 @@ import * as React from 'react'
 import {
   Box,
   Checkbox,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
   Button,
-  Tooltip,
   Typography,
 } from '@mui/joy'
 
@@ -19,7 +14,6 @@ import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.j
 import {
   SEARCH_SCOUT_PROFILES,
   SEARCH_TEAM_INTERPRETATION_LEVELS,
-  SEARCH_TEAM_PERFORMANCE_TABS,
 } from '../logic/search.constants.js'
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchModelsQuerySx as sx } from './sx/searchModelsQuery.sx.js'
@@ -103,7 +97,7 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
   )
 }
 
-function TeamInterpretationSide({ title, field, values, help, onToggle }) {
+function TeamInterpretationSide({ title, field, values, onToggle }) {
   return (
     <Box sx={sx.teamSideSection}>
       <Typography level='title-sm' sx={sx.teamSideTitle}>
@@ -131,49 +125,28 @@ function TeamInterpretationSide({ title, field, values, help, onToggle }) {
   )
 }
 
-function TeamPerformanceTabs({ filters, onToggle, onReset }) {
-  const hasSelections = SEARCH_TEAM_PERFORMANCE_TABS.some(option => (
-    (filters[option.attackField] || []).length > 0 ||
-    (filters[option.defenseField] || []).length > 0
-  ))
-  const [tab, setTab] = React.useState('performance')
+function TeamPriorityFilters({ filters, onToggle, onReset }) {
+  const attackValues = filters.teamAttackPriorityLevels || []
+  const defenseValues = filters.teamDefensePriorityLevels || []
+  const hasSelections = attackValues.length > 0 || defenseValues.length > 0
 
   return (
-    <Tabs value={tab} onChange={(event, value) => setTab(value)} sx={sx.tabs}>
-      <TabList sx={sx.tabList}>
-        {SEARCH_TEAM_PERFORMANCE_TABS.map(option => (
-          <Tooltip
-            key={option.value}
-            title={option.help}
-            arrow
+    <Box sx={sx.teamContent}>
+      <Box sx={sx.teamSidesGrid}>
+        <TeamInterpretationSide
+          title='עדיפות התקפית'
+          field='teamAttackPriorityLevels'
+          values={attackValues}
+          onToggle={onToggle}
+        />
 
-          >
-            <Tab value={option.value} sx={sx.tab}>
-              {option.label}
-            </Tab>
-          </Tooltip>
-        ))}
-      </TabList>
-
-      {SEARCH_TEAM_PERFORMANCE_TABS.map(option => (
-        <TabPanel key={option.value} value={option.value} sx={sx.tabPanel}>
-          <Box sx={sx.teamSidesGrid}>
-            <TeamInterpretationSide
-              title='התקפה'
-              field={option.attackField}
-              values={filters[option.attackField] || []}
-              onToggle={onToggle}
-            />
-
-            <TeamInterpretationSide
-              title='הגנה'
-              field={option.defenseField}
-              values={filters[option.defenseField] || []}
-              onToggle={onToggle}
-            />
-          </Box>
-        </TabPanel>
-      ))}
+        <TeamInterpretationSide
+          title='עדיפות הגנתית'
+          field='teamDefensePriorityLevels'
+          values={defenseValues}
+          onToggle={onToggle}
+        />
+      </Box>
 
       <Button
         size='sm'
@@ -183,9 +156,9 @@ function TeamPerformanceTabs({ filters, onToggle, onReset }) {
         disabled={!hasSelections}
         onClick={onReset}
       >
-        איפוס ביצוע קבוצתי
+        איפוס עדיפויות
       </Button>
-    </Tabs>
+    </Box>
   )
 }
 
@@ -198,7 +171,7 @@ export default function SearchModelsQuery({ filters, onToggle, onResetTeamPerfor
       .filter(option => option.isCombination && selectedCombinations.includes(option.value))
       .flatMap(option => option.profileIds || [])
   )
-  const title = isTeam ? 'ביצוע קבוצתי' : 'פרופילי סקאוט'
+  const title = isTeam ? 'עדיפות סקאוטינג' : 'פרופילי סקאוט'
 
   return (
     <SearchQuerySection
@@ -211,7 +184,7 @@ export default function SearchModelsQuery({ filters, onToggle, onResetTeamPerfor
           <Typography level='body-sm'>יש לבחור הקשר חיפוש</Typography>
         </Box>
       ) : isTeam ? (
-        <TeamPerformanceTabs
+        <TeamPriorityFilters
           filters={filters}
           onToggle={onToggle}
           onReset={onResetTeamPerformance}

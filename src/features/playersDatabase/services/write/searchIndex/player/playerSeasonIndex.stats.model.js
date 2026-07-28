@@ -175,7 +175,7 @@ export const buildPlayerSeasonStatsMutation = ({
       entityId: id,
       displayName,
       normalizedDisplayName,
-      aliases,
+        aliases,
       playerId,
       externalPlayerId,
       playerDocumentId,

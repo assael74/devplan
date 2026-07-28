@@ -5,6 +5,7 @@ import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
 import { buildLeagueTeamSeasons } from '../domain/index.js'
 import { normalizeSeasonIdentity, normalizeSeasonLookupKey } from './season.model.js'
 import { cleanValue, toNumberOrZero } from './value.model.js'
+import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
 import { sortByTableRank } from '../ui/logic/tableRows.logic.js'
 
 const buildSeasonOption = ({ season, target }) => {
@@ -65,6 +66,7 @@ const buildTeamRow = teamSeason => {
   const stats = teamSeason?.stats?.actual || {}
   const ranking = teamSeason?.ranking || {}
   const performance = teamSeason?.performance || {}
+  const performanceView = buildTeamPerformanceViewModel(performance)
   const scoutSummary = teamSeason?.scoutProfilesSummary || {}
   const profilesCount = toNumberOrZero(scoutSummary.total)
 
@@ -89,9 +91,10 @@ const buildTeamRow = teamSeason => {
     teamStats: stats,
     playersCount: toNumberOrZero(teamSeason?.playersCount),
     profilesCount,
-    attackPriority: performance?.offense?.priorityLevel || 'neutral',
-    defensePriority: performance?.defense?.priorityLevel || 'neutral',
+    attackPriority: performanceView.offense.priority.level,
+    defensePriority: performanceView.defense.priority.level,
     performance,
+    performanceView,
     scoutSummary,
     scoutStatus: profilesCount > 0 ? 'full' : 'missing',
     source: teamSeason,

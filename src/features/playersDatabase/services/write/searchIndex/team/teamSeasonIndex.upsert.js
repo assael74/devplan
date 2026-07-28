@@ -69,8 +69,7 @@ export async function upsertTeamSeasonSearchIndexMany({
   docs.forEach(indexDoc => {
     batch.set(
       doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, indexDoc.id),
-      indexDoc,
-      { merge: true }
+      indexDoc
     )
   })
 

@@ -26,14 +26,6 @@ const addPriorityItems = ({ items, values, field, prefix, labelPrefix, options }
 export function buildActiveFilterItems(filters, options) {
   const items = []
 
-  if (filters.query) {
-    items.push({
-      key: 'query',
-      type: 'scalar',
-      field: 'query',
-      label: `חיפוש: ${filters.query}`,
-    })
-  }
 
   if (filters.searchContext) {
     items.push({
@@ -80,12 +72,8 @@ export function buildActiveFilterItems(filters, options) {
 
   if (isTeam) {
     const teamLevelGroups = [
-      ['teamAttackPerformanceLevels', 'חריגה התקפית', 'attack-performance'],
-      ['teamDefensePerformanceLevels', 'חריגה הגנתית', 'defense-performance'],
-      ['teamAttackRankingLevels', 'מיקום התקפי', 'attack-ranking'],
-      ['teamDefenseRankingLevels', 'מיקום הגנתי', 'defense-ranking'],
-      ['teamAttackCombinedLevels', 'משולב התקפי', 'attack-combined'],
-      ['teamDefenseCombinedLevels', 'משולב הגנתי', 'defense-combined'],
+      ['teamAttackPriorityLevels', 'עדיפות התקפית', 'attack-priority'],
+      ['teamDefensePriorityLevels', 'עדיפות הגנתית', 'defense-priority'],
     ]
 
     teamLevelGroups.forEach(([field, labelPrefix, prefix]) => {

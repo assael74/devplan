@@ -20,11 +20,10 @@ export const teamPageStatsSx = {
       lg: '1.05fr minmax(0, 1.48fr) minmax(0, 1.48fr)',
     },
     gap: 1,
+    alignItems: 'stretch',
 
     '& > *': {
       minWidth: 0,
-      minHeight: 106,
-      maxHeight: 118,
       p: 1.25,
     },
 
@@ -46,8 +45,7 @@ export const teamPageStatsSx = {
 
   teamKpiCard: {
     minWidth: 0,
-    minHeight: 106,
-    maxHeight: 118,
+    minHeight: 118,
     p: 1.25,
     display: 'grid',
     gridTemplateRows: 'minmax(0, 1fr) auto',
@@ -58,12 +56,25 @@ export const teamPageStatsSx = {
     overflow: 'hidden',
   },
 
+  teamKpiPerformanceCard: {
+    minHeight: 142,
+    gridTemplateRows: 'auto auto',
+    gap: 0.75,
+  },
+
   teamKpiMain: {
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
+  },
+
+  teamKpiPerformanceMain: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1.7fr) minmax(92px, 0.72fr) auto',
+    alignItems: 'center',
+    gap: 0.9,
   },
 
   teamKpiText: {
@@ -106,11 +117,38 @@ export const teamPageStatsSx = {
     bgcolor: devPlanColors.primaryLight,
   },
 
+  teamKpiPrimaryDetails: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: 0.45,
+  },
+
+  teamKpiPrimaryDetail: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+    px: 0.7,
+    py: 0.45,
+    borderRadius: 7,
+    bgcolor: '#f6f9fc',
+    border: '1px solid #e4edf6',
+    overflow: 'hidden',
+  },
+
   teamKpiDetails: {
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(68px, 1fr))',
     gap: 0.5,
+  },
+
+  teamKpiPerformanceDetails: {
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    pt: 0.7,
+    borderTop: '1px solid #e4edf6',
   },
 
   teamKpiDetail: {

@@ -48,14 +48,12 @@ const buildStatsScoutPlayerInput = (row, teamContext = {}) => {
     row.teamAttackPerformance,
     teamContext.attackPerformance,
     teamStats.attackPerformance,
-    teamContext.offense?.priorityRate,
     teamContext.offense?.scoutPriorityRate,
   )
   const teamDefensePerformance = pickFirstValue(
     row.teamDefensePerformance,
     teamContext.defensePerformance,
     teamStats.defensePerformance,
-    teamContext.defense?.priorityRate,
     teamContext.defense?.scoutPriorityRate,
   )
 

@@ -15,7 +15,7 @@ export const searchPageSx = {
     gap: 1.25,
     overflow: 'hidden',
   },
-  
+
   workspace: {
     minWidth: 0,
     minHeight: 0,

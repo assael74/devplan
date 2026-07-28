@@ -18,7 +18,6 @@ import {
   SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
 } from '../../catalog/genericObjects.catalog.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
-import { normalizePlayerNameValue } from '../../model/playerIdentity.model.js'
 import { toNumberOrZero } from '../../model/value.model.js'
 
 const DEFAULT_SEARCH_RESULTS_LIMIT = 250
@@ -48,10 +47,12 @@ const SEARCH_STAT_FIELD_MAP_BY_ENTITY = {
     goalsAgainst: 'goalsAgainst',
     attackPerformance: 'attackPerformance',
     attackPerformanceRate: 'attackPerformanceRate',
-    attackPriorityRate: 'attackPriorityRate',
+    attackPriorityRate: 'attackScoutPriorityRate',
+    attackScoutPriorityRate: 'attackScoutPriorityRate',
     defensePerformance: 'defensePerformance',
     defensePerformanceRate: 'defensePerformanceRate',
-    defensePriorityRate: 'defensePriorityRate',
+    defensePriorityRate: 'defenseScoutPriorityRate',
+    defenseScoutPriorityRate: 'defenseScoutPriorityRate',
     tableRank: 'tableRank',
     tableAttackRank: 'tableAttackRank',
     tableDefenseRank: 'tableDefenseRank',
@@ -65,10 +66,6 @@ const SCOUT_COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((map, combinat
 
 const clean = value => String(value ?? '').trim()
 
-const normalizeQueryValue = value =>
-  normalizePlayerNameValue(value)
-    .replace(/\s+/g, ' ')
-    .trim()
 
 const toUniqueCleanValues = values => (
   [...new Set((Array.isArray(values) ? values : [])
@@ -220,16 +217,6 @@ const expandVariantsByValues = ({
   ))
 }
 
-const buildTextConstraints = queryText => {
-  const safeValue = normalizeQueryValue(queryText)
-  if (!safeValue) return []
-
-  return [
-    where('normalizedDisplayName', '>=', safeValue),
-    where('normalizedDisplayName', '<=', `${safeValue}\uf8ff`),
-    orderBy('normalizedDisplayName'),
-  ]
-}
 
 const buildExactFilterConstraints = ({ entityType, filters }) => {
   const constraints = []
@@ -238,12 +225,8 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
     ['birthYear', Number(filters.birthYear)],
     ['leagueLevel', Number(filters.leagueLevel)],
     ['leagueId', clean(filters.leagueId)],
-    ['attackPerformanceLevel', clean(filters.attackPerformanceLevel)],
-    ['defensePerformanceLevel', clean(filters.defensePerformanceLevel)],
-    ['attackRankingLevel', clean(filters.attackRankingLevel)],
-    ['defenseRankingLevel', clean(filters.defenseRankingLevel)],
-    ['attackCombinedLevel', clean(filters.attackCombinedLevel)],
-    ['defenseCombinedLevel', clean(filters.defenseCombinedLevel)],
+    ['attackPriorityLevel', clean(filters.attackPriorityLevel)],
+    ['defensePriorityLevel', clean(filters.defensePriorityLevel)],
   ]
 
   exactFields.forEach(([field, value]) => {
@@ -307,12 +290,8 @@ const buildSearchQueryVariants = filters => {
 
   if (clean(filters.searchContext) === 'team') {
     const teamLevelFilters = [
-      ['attackPerformanceLevel', filters.teamAttackPerformanceLevels],
-      ['defensePerformanceLevel', filters.teamDefensePerformanceLevels],
-      ['attackRankingLevel', filters.teamAttackRankingLevels],
-      ['defenseRankingLevel', filters.teamDefenseRankingLevels],
-      ['attackCombinedLevel', filters.teamAttackCombinedLevels],
-      ['defenseCombinedLevel', filters.teamDefenseCombinedLevels],
+      ['attackPriorityLevel', filters.teamAttackPriorityLevels],
+      ['defensePriorityLevel', filters.teamDefensePriorityLevels],
     ]
 
     teamLevelFilters.forEach(([field, values]) => {
@@ -346,7 +325,6 @@ const buildSearchQuery = ({
     ...(shouldUseClientSideConditions
       ? []
       : buildConditionConstraints({ entityType, filters: safeFilters })),
-    ...buildTextConstraints(safeFilters.query),
   ]
 
   if (includeLimit) {
