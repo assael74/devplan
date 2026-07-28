@@ -26,6 +26,11 @@ const PLACEHOLDER_ACTIONS = [
     primary: true,
   },
   {
+    id: 'report',
+    label: 'תצוגה ופרסום דוח',
+    iconId: 'print',
+  },
+  {
     id: 'edit',
     label: 'עריכת פרטי שחקן',
     iconId: 'edit',

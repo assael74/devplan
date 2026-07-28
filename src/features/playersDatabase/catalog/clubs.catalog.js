@@ -84,6 +84,41 @@ const CLUB_PREFIX_SHORT_NAMES = [
 
 const clean = value => String(value ?? '').trim()
 
+const CLUB_LOCATION_ALIASES = [
+  { full: 'תל אביב', short: 'ת\"א' },
+  { full: 'פתח תקוה', short: 'פ\"ת' },
+  { full: 'כפר סבא', short: 'כפ\"ס' },
+  { full: 'באר שבע', short: 'ב\"ש' },
+  { full: 'ראשון לציון', short: 'ראשל\"צ' },
+  { full: 'ירושלים', short: 'י\"ם' },
+  { full: 'רמת השרון', short: 'רמה\"ש' },
+  { full: 'רמת גן', short: 'ר\"ג' },
+]
+
+const uniqueValues = values => Array.from(
+  new Set(values.map(clean).filter(Boolean))
+)
+
+const buildClubSearchAliases = club => {
+  const shortName = CLUB_SHORT_NAMES[club.name] || buildClubShortNameFromPrefix(club.name)
+  const baseValues = uniqueValues([club.name, club.sourceName, shortName, ...(club.aliases || [])])
+  const locationVariants = []
+
+  baseValues.forEach(value => {
+    CLUB_LOCATION_ALIASES.forEach(location => {
+      if (value.includes(location.full)) {
+        locationVariants.push(value.replace(location.full, location.short))
+      }
+
+      if (value.includes(location.short)) {
+        locationVariants.push(value.replace(location.short, location.full))
+      }
+    })
+  })
+
+  return uniqueValues([...baseValues, ...locationVariants])
+}
+
 const buildClubShortNameFromPrefix = name => {
   const clubName = clean(name)
   if (!clubName) return ''
@@ -113,6 +148,7 @@ const decorateAgeGroups = clubLevel =>
 const decorateClubCatalogItem = club => ({
   ...club,
   shortName: CLUB_SHORT_NAMES[club.name] || buildClubShortNameFromPrefix(club.name),
+  searchAliases: buildClubSearchAliases(club),
   ageGroups: decorateAgeGroups(club.clubLevel),
 });
 
@@ -203,7 +239,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "hapoel-hadera-arn",
-    name: "הפועל חדרה ערן",
+    name: "הפועל חדרה",
     clubLevel: 1,
     aliases: [],
   },
@@ -461,7 +497,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "beitar-haifa-yaakov",
-    name: "בית\"ר חיפה יעקב",
+    name: "בית\"ר חיפה",
     clubLevel: 3,
     aliases: [],
   },
@@ -509,7 +545,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "mk-nhll-yzraal",
-    name: "מועדון כדורגל נהלל יזרעאל",
+    name: "מועדון כדורגל נהלל",
     clubLevel: 4,
     aliases: [],
   },
@@ -791,7 +827,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "ms-haifa-ruby-shapira",
-    name: "מועדון ספורט חיפה רובי שפירא",
+    name: "מועדון ספורט חיפה",
     clubLevel: 4,
     aliases: [],
   },
@@ -1829,4 +1865,3 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
 export const PLAYERS_DATABASE_CLUBS_CATALOG = RAW_PLAYERS_DATABASE_CLUBS_CATALOG.map(
   decorateClubCatalogItem
 );
-

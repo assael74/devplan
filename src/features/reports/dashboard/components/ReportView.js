@@ -1,6 +1,8 @@
 // src/features/reports/dashboard/components/ReportView.js
 
 import Box from '@mui/joy/Box'
+import CircularProgress from '@mui/joy/CircularProgress'
+import Typography from '@mui/joy/Typography'
 
 import ViewDemoReport from './ViewDemoReport.js'
 import ViewHeader from './ViewHeader.js'
@@ -9,6 +11,12 @@ import ViewUrl from './ViewUrl.js'
 import { viewSx as sx } from './sx/view.sx.js'
 
 export default function ReportView({ model }) {
+  const hasSelectedPublication = Boolean(model.selectedPublicationId)
+  const isLoadingPublication =
+    hasSelectedPublication &&
+    model.loadingSelectedPublication &&
+    !model.selectedPublicationDocument
+
   return (
     <Box sx={sx.main}>
       <Box sx={sx.mainBody} className='dpScrollThin'>
@@ -30,11 +38,30 @@ export default function ReportView({ model }) {
             publication={model.selectedPublication}
           />
 
-          <ViewDemoReport
-            report={model.selectedReport}
-            publication={model.selectedPublication}
-            entity={model.selectedEntity}
-          />
+          {isLoadingPublication ? (
+            <Box
+              sx={{
+                minHeight: 240,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 1,
+              }}
+            >
+              <CircularProgress size='md' />
+
+              <Typography level='body-sm'>
+                טוען את תוכן הדוח שפורסם
+              </Typography>
+            </Box>
+          ) : (
+            <ViewDemoReport
+              report={model.selectedReport}
+              publication={model.selectedPublication}
+              entity={model.selectedEntity}
+            />
+          )}
         </Box>
       </Box>
     </Box>

@@ -1,7 +1,11 @@
 // features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.columns.js
 
+import * as React from 'react'
+import { Autocomplete, Typography } from '@mui/joy'
+
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
-import { shouldShowDisplayName } from './leagueImport.logic.js'
+
+const clean = value => String(value ?? '').trim()
 
 const compactColumnSx = { width: 66, minWidth: 66 }
 const numberInputSx = { minWidth: 48 }
@@ -18,6 +22,10 @@ const ltrNumberInputSx = {
 const clubOptions = PLAYERS_DATABASE_CLUBS_CATALOG.map(club => ({
   value: club.id,
   label: club.name,
+  displayLabel: club.shortName || club.name,
+  searchText: (club.searchAliases || [club.name, club.shortName, ...(club.aliases || [])])
+    .filter(Boolean)
+    .join(' '),
 }))
 
 const teamSlotOptions = [
@@ -26,16 +34,87 @@ const teamSlotOptions = [
   { value: '3', label: '3' },
 ]
 
+const normalizeSearchValue = value => clean(value)
+  .toLowerCase()
+  .replace(/["׳״'`.-]/g, '')
+  .replace(/\s+/g, ' ')
+
+const filterClubOptions = (options, state) => {
+  const query = normalizeSearchValue(state.inputValue)
+  if (!query) return options
+
+  return options.filter(option => normalizeSearchValue(
+    `${option.displayLabel || option.label || ''} ${option.searchText || ''}`
+  ).includes(query))
+}
+
+const emitClubChange = ({ row, rowIndex, column, value, onCellChange }) => {
+  if (typeof onCellChange !== 'function') return
+
+  onCellChange({
+    row,
+    rowIndex,
+    column,
+    value,
+  })
+}
+
+const renderClubCell = ({ row, rowIndex, column, value, onCellChange }) => {
+  const selectedOption = clubOptions.find(option => option.value === value) || null
+
+  if (selectedOption) {
+    return (
+      <Typography
+        level="body-sm"
+        noWrap
+        title={selectedOption.label}
+        sx={{ minWidth: 0, fontWeight: 700 }}
+      >
+        {selectedOption.displayLabel}
+      </Typography>
+    )
+  }
+
+  return (
+    <Autocomplete
+      size="sm"
+      options={clubOptions}
+      value={null}
+      placeholder="חיפוש מועדון"
+      getOptionLabel={option => option.displayLabel || option.label || ''}
+      isOptionEqualToValue={(option, selected) => option.value === selected.value}
+      filterOptions={filterClubOptions}
+      sx={column.inputSx}
+      onChange={(event, nextOption) => {
+        emitClubChange({
+          row,
+          rowIndex,
+          column,
+          value: nextOption ? nextOption.value : '',
+          onCellChange,
+        })
+      }}
+    />
+  )
+}
+
 const baseImportColumns = [
   { key: 'rank', required: true, label: 'מיקום', readOnly: true, sx: compactColumnSx, inputSx: numberInputSx },
   {
     key: 'clubId',
     required: true,
-    label: 'מועדון',
-    type: 'select',
+    label: 'שם מערכת',
     options: clubOptions,
-    sx: { width: 190, minWidth: 190 },
-    inputSx: { minWidth: 170 },
+    sx: { width: 210, minWidth: 210 },
+    inputSx: { minWidth: 190 },
+    render: renderClubCell,
+  },
+  {
+    key: 'teamName',
+    label: 'שם שנקלט',
+    readOnly: true,
+    sx: { width: 170, minWidth: 170 },
+    inputSx: { minWidth: 150 },
   },
   {
     key: 'teamSlot',
@@ -56,13 +135,6 @@ const baseImportColumns = [
   { key: 'points', required: true, label: 'נקודות', sx: compactColumnSx, inputSx: numberInputSx },
 ]
 
-const displayNameColumn = {
-  key: 'teamName',
-  label: 'שם בתצוגה',
-  sx: { width: 180, minWidth: 180 },
-  inputSx: { minWidth: 150 },
-}
-
 export const LEAGUE_IMPORT_PLACEHOLDER = [
   'מיקום',
   'קבוצה',
@@ -76,12 +148,4 @@ export const LEAGUE_IMPORT_PLACEHOLDER = [
   'נקודות',
 ].join('\t')
 
-export const buildLeagueImportColumns = rows => {
-  if (!rows.some(shouldShowDisplayName)) return baseImportColumns
-
-  return [
-    ...baseImportColumns.slice(0, 3),
-    displayNameColumn,
-    ...baseImportColumns.slice(3),
-  ]
-}
+export const buildLeagueImportColumns = () => baseImportColumns

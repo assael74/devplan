@@ -11,7 +11,7 @@ export {
   getReportDefinition,
   isReportTypeSupported,
   renderReport,
-} from './reports.registry.js'
+} from './registry/index.js'
 
 export {
   PUBLIC_REPORTS_COLLECTION,
@@ -46,8 +46,9 @@ export {
 } from './service/index.js'
 
 export {
+  publishTeamPlayersReport,
   publishReport,
-} from './service/publishReport.flow.js'
+} from './publishTeamPlayersReport.js'
 
 export {
   publishPublicReport as runPublishPublicReport,
@@ -57,16 +58,54 @@ export {
   getCurrentPublicReport as runGetCurrentPublicReport,
   getPublicReportVersion as runGetPublicReportVersion,
   getPublicReport as runGetPublicReport,
-} from './application/index.js'
+} from './service/index.js'
 
 export {
-  publishTeamPlayersReport,
-  publishManagementTargetsReport,
-  publishPlayerTargetsReport,
-} from './flows/index.js'
+  publishTeamTargetsReport as publishManagementTargetsReport,
+} from './teamTargets/index.js'
 
-export * from './model/index.js'
-export * from './renderers/index.js'
+export {
+  publishPlayerTargetsReport,
+} from './playerTargets/index.js'
+
+
+// Backward-compatible report builders without the legacy model barrel.
+export {
+  buildTeamTargetsPublicReportInput as buildManagementTargetsPublicReportInput,
+  buildTeamTargetsDocument as buildManagementTargetsReportContent,
+} from './teamTargets/index.js'
+
+export {
+  buildPlayerTargetsPublicReportInput,
+  buildPlayerTargetsDocument as buildPlayerTargetsReportContent,
+} from './playerTargets/index.js'
+
+export * from './teamTargets/presentation/print/index.js'
+
+export {
+  buildPlayerTargetsPrintModel,
+  buildPlayerTargetsPrintViewModel,
+} from './playerTargets/presentation/playerTargetsPrintModel.js'
+
+export {
+  sanitizeReportValue,
+  asReportArray,
+  asReportObject,
+  asReportText,
+  asReportNumber,
+  pickReportEntity,
+  pickReportMetaItems,
+  pickReportColumns,
+  pickReportRows,
+  pickReportFilters,
+  pickReportCounts,
+} from './service/reportValue.js'
+
+export {
+  ExternalReportRenderer,
+} from './renderers/external/index.js'
+
+export * from './performance/index.js'
 
 export {
   default as PublicReportPage,
@@ -75,3 +114,39 @@ export {
 export {
   default as DashboardPage,
 } from './dashboard/DashboardPage.js'
+
+export {
+  PlayerTargetsReportButton,
+} from './playerTargets/index.js'
+
+export {
+  TeamTargetsReportButton,
+  buildTeamTargetsDocument,
+  normalizeTeamTargetsDocument,
+  buildTeamTargetsViewModel,
+  buildTeamTargetsPublicReportInput,
+  publishTeamTargetsReport,
+  teamTargetsDefinition,
+} from './teamTargets/index.js'
+
+export {
+  TEAM_SEASON_PLAN_DOCUMENT_VERSION,
+  buildTeamSeasonPlanDocument,
+  normalizeTeamSeasonPlanDocument,
+  buildTeamSeasonPlanViewModel,
+  buildTeamSeasonPlanPublicReportInput,
+  publishTeamSeasonPlanReport,
+  publishTeamSeasonPlan,
+  teamSeasonPlanDefinition,
+} from './teamSeasonPlan/index.js'
+
+export {
+  TEAM_MINUTES_PLAN_DOCUMENT_VERSION,
+  buildTeamMinutesPlanDocument,
+  normalizeTeamMinutesPlanDocument,
+  buildTeamMinutesPlanViewModel,
+  buildTeamMinutesPlanPublicReportInput,
+  publishTeamMinutesPlanReport,
+  publishTeamMinutesPlan,
+  teamMinutesPlanDefinition,
+} from './teamMinutesPlan/index.js'

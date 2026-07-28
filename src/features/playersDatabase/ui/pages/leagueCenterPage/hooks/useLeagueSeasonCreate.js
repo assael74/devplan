@@ -6,7 +6,8 @@ import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/Snackba
 import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/snackbar/snackbar.format.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import {
-  createLeagueSeasonFlow,
+  PLAYERS_DATABASE_WRITE_ACTIONS,
+  runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
 import { buildServiceLeague } from '../logic/leagueCenter.logic.js'
 
@@ -33,13 +34,16 @@ export default function useLeagueSeasonCreate({ onSuccess } = {}) {
     setBusy(true)
 
     try {
-      const result = await createLeagueSeasonFlow({
-        league: serviceLeague,
-        season: {
-          ...season,
-          leagueId: serviceLeague.id,
+      const result = await runPlayersDatabaseWriteAction({
+        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON,
+        payload: {
+          league: serviceLeague,
+          season: {
+            ...season,
+            leagueId: serviceLeague.id,
+          },
+          target: season.target,
         },
-        target: season.target,
       })
 
       if (typeof onSuccess === 'function') {

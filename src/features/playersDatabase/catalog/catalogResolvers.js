@@ -17,6 +17,7 @@ const getAliases = (item = {}) => [
   item.name,
   item.label,
   ...(Array.isArray(item.aliases) ? item.aliases : []),
+  ...(Array.isArray(item.searchAliases) ? item.searchAliases : []),
 ].filter(Boolean)
 
 const stripClubPrefix = (teamName, clubName) => {

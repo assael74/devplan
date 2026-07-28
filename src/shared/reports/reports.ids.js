@@ -12,6 +12,10 @@ export const REPORT_SCOPE_IDS = {
   TEAM: 'team',
   PLAYERS: 'players',
   TEAMS: 'teams',
+  LEAGUE_SEASON: 'leagueSeason',
+  BIRTH_TEAM_SEASON: 'birthTeamSeason',
+  EXTERNAL_PLAYER: 'externalPlayer',
+  PLAYER_SEARCH: 'playerSearch',
 }
 
 export const REPORT_IDS = {
@@ -30,4 +34,8 @@ export const REPORT_IDS = {
   SQUAD_DETAILS: 'squadDetails',
   TEAM_VIDEO_DETAILS: 'teamVideoDetails',
   PLAYER_VIDEO_DETAILS: 'playerVideoDetails',
+  EXTERNAL_LEAGUE_TABLE: 'externalLeagueTable',
+  EXTERNAL_TEAM_DETAILS: 'externalTeamDetails',
+  EXTERNAL_PLAYER_DETAILS: 'externalPlayerDetails',
+  EXTERNAL_PLAYER_SEARCH_RESULTS: 'externalPlayerSearchResults',
 }

@@ -7,18 +7,18 @@ import Chip from '@mui/joy/Chip'
 import Typography from '@mui/joy/Typography'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-import {
-  ManagementReportRoot,
-  TeamPlayersPrintReport,
-} from '../../renderers/index.js'
+import PublicReportRenderer from '../../public/PublicReportRenderer.js'
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../model/index.js'
+} from '../../performance/index.js'
 
 import {
   PLAYER_REPORT_OPTIONS,
-  buildDemoInputModel,
+  buildDemoReportDraft,
+  buildManagementDemoDraft,
+  buildPlayerTargetsDemoDraft,
   isManagementPreviewReport,
+  isPlayerTargetsPreviewReport,
   isPlayersPreviewReport,
   resolvePlayerPreviewMode,
 } from '../logic/viewDemoReport.logic.js'
@@ -34,9 +34,13 @@ export default function ViewDemoReport({ report, publication, entity }) {
   const [previewPlayerMode, setPreviewPlayerMode] = useState(initialPlayerMode)
 
   const resolvedIsMobile = previewDevice === 'mobile'
-  const resolvedPlayerMode = previewPlayerMode
   const isPlayersPreview = isPlayersPreviewReport(report, publication)
   const isManagementPreview = isManagementPreviewReport(report)
+  const isPlayerTargetsPreview = isPlayerTargetsPreviewReport(report)
+  const publishedContent = publication && publication.reportContent
+    ? publication.reportContent
+    : null
+  const publishedReportType = publication?.reportType || report?.id || ''
 
   useEffect(() => {
     const nextMode = resolvePlayerPreviewMode(report, publication)
@@ -46,29 +50,62 @@ export default function ViewDemoReport({ report, publication, entity }) {
     }
   }, [publication, report])
 
-  const playerReportRootProps = useMemo(() => {
-    if (!isPlayersPreview) return null
+  const playerPreviewDraft = useMemo(() => {
+    if (!isPlayersPreview || publishedContent) return null
 
-    return {
-      inputModel: buildDemoInputModel({ mode: resolvedPlayerMode, entity, publication }),
-      presentation: 'url',
-      device: resolvedIsMobile ? 'mobile' : 'desktop',
-      reportOptions: PLAYER_REPORT_OPTIONS,
-      selectedReportValue: resolvedPlayerMode,
-      onReportChange: setPreviewPlayerMode,
-    }
-  }, [ entity, isPlayersPreview, publication, resolvedIsMobile, resolvedPlayerMode ])
+    return buildDemoReportDraft({
+      mode: previewPlayerMode,
+      entity,
+      publication,
+    })
+  }, [
+    entity,
+    isPlayersPreview,
+    previewPlayerMode,
+    publication,
+    publishedContent,
+  ])
 
-  const managementReportRootProps = useMemo(() => {
-    if (!isManagementPreview) return null
+  const managementPreviewDraft = useMemo(() => {
+    if (!isManagementPreview || publishedContent) return null
 
-    return {
-      team: entity || {},
-      draft: null,
-      presentation: 'url',
-      isMobile: resolvedIsMobile,
-    }
-  }, [ entity, isManagementPreview, resolvedIsMobile ])
+    return buildManagementDemoDraft({
+      entity,
+      publication,
+    })
+  }, [
+    entity,
+    isManagementPreview,
+    publication,
+    publishedContent,
+  ])
+
+  const playerTargetsPreviewDraft = useMemo(() => {
+    if (!isPlayerTargetsPreview || publishedContent) return null
+
+    return buildPlayerTargetsDemoDraft({
+      entity,
+      publication,
+    })
+  }, [
+    entity,
+    isPlayerTargetsPreview,
+    publication,
+    publishedContent,
+  ])
+
+  const previewDraft =
+    playerPreviewDraft ||
+    managementPreviewDraft ||
+    playerTargetsPreviewDraft
+
+  const rendererReportType = publishedContent
+    ? publishedReportType
+    : previewDraft?.reportType || ''
+
+  const rendererPayload = publishedContent
+    ? publishedContent
+    : previewDraft?.reportContent || null
 
   return (
     <Box sx={sx.previewRoot}>
@@ -85,7 +122,11 @@ export default function ViewDemoReport({ report, publication, entity }) {
 
             <Box sx={sx.previewNoticeInline}>
               <Typography level='body-xs' sx={sx.previewNoticeText}>
-                הדוח המוצג כאן הוא תצוגה מקדימה בלבד. הדוח שפורסם נטען רק בלחיצה על &quot;פתח דוח&quot;.
+                {publishedContent
+                  ? 'מוצגת הגרסה שפורסמה באמצעות אותו Renderer של הקישור הציבורי.'
+                  : isPlayersPreview || isManagementPreview || isPlayerTargetsPreview
+                    ? 'מוצגת טיוטה מקומית באמצעות אותו Renderer של הקישור הציבורי.'
+                    : 'טרם נבחר פרסום. מוצגת תצוגת הכנה מקומית בלבד.'}
               </Typography>
             </Box>
           </Box>
@@ -115,23 +156,35 @@ export default function ViewDemoReport({ report, publication, entity }) {
       </Box>
 
       <Box sx={sx.previewCanvas}>
-        {playerReportRootProps ? (
+        {rendererPayload && rendererReportType ? (
           <Box
             sx={{
               ...sx.demoReportRoot,
               ...(resolvedIsMobile ? sx.demoReportRootMobile : {}),
             }}
           >
-            <TeamPlayersPrintReport {...playerReportRootProps} />
-          </Box>
-        ) : managementReportRootProps ? (
-          <Box
-            sx={{
-              ...sx.demoReportRoot,
-              ...(resolvedIsMobile ? sx.demoReportRootMobile : {}),
-            }}
-          >
-            <ManagementReportRoot {...managementReportRootProps} />
+            <PublicReportRenderer
+              reportType={rendererReportType}
+              payload={rendererPayload}
+              presentation='url'
+              device={resolvedIsMobile ? 'mobile' : 'desktop'}
+              isMobile={resolvedIsMobile}
+              reportOptions={
+                !publishedContent && isPlayersPreview
+                  ? PLAYER_REPORT_OPTIONS
+                  : []
+              }
+              selectedReportValue={
+                !publishedContent && isPlayersPreview
+                  ? previewPlayerMode
+                  : null
+              }
+              onReportChange={
+                !publishedContent && isPlayersPreview
+                  ? setPreviewPlayerMode
+                  : null
+              }
+            />
           </Box>
         ) : (
           <Box sx={sx.previewEmpty}>

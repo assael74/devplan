@@ -47,6 +47,7 @@ export const sortSx = {
   },
 
   sortMenu: ({ width }) => ({
+    zIndex: 1800,
     width,
     minWidth: width,
     maxWidth: width,

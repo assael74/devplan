@@ -5,7 +5,7 @@ import Box from '@mui/joy/Box'
 import DashboardHeader from './components/DashboardHeader.js'
 import ReportView from './components/ReportView.js'
 import PublicationActionModal from './components/PublicationActionModal.js'
-import DashboardSidebar from './components/sidbar/DashboardSidebar.js'
+import DashboardSidebar from './components/sidebar/DashboardSidebar.js'
 import useDashboardPageModel from './dashboardPage.model.js'
 import { pageSx as sx } from './sx/page.sx.js'
 

@@ -7,4 +7,3 @@ export { TABS } from './ManagementTabs.js'
 export { default as ManagementToolbar } from './ManagementToolbar.js'
 
 export * from './targets/index.js'
-export * from './print/index.js'

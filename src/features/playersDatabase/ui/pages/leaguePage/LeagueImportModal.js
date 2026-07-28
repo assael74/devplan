@@ -22,6 +22,7 @@ export default function LeagueImportModal({
       onPaste={leagueImport.handlePreview}
       onCellChange={leagueImport.handleCellChange}
       busy={leagueImport.busy}
+      disabled={!leagueImport.canConfirm}
       onConfirm={leagueImport.handleConfirm}
       onClose={leagueImport.handleClose}
     />

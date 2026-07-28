@@ -27,6 +27,8 @@ import {
   LEAGUE_IMPORT_PLACEHOLDER,
 } from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
+import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { useLeagueReport } from './report/index.js'
 import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
 
 export default function LeaguePage() {
@@ -87,6 +89,12 @@ export default function LeaguePage() {
   ])
   const titleParts = splitLeagueTitle(league)
   const isActiveLeague = selectedSeasonOption?.target === 'current'
+  const leagueReport = useLeagueReport({
+    league,
+    teams: filteredTeams,
+    summary,
+    seasonKey: selectedSeasonKey,
+  })
 
   const handleTeamOpen = team => {
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
@@ -137,9 +145,19 @@ export default function LeaguePage() {
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDeleteTeams={() => teamsDelete.setOpen(true)}
+            onReport={leagueReport.openPreview}
           />
         </Box>
       </Box>
+
+      <ReportPreviewModal
+        open={leagueReport.open}
+        draft={leagueReport.draft}
+        busy={leagueReport.busy}
+        publication={leagueReport.publication}
+        onPublish={leagueReport.publish}
+        onClose={leagueReport.closePreview}
+      />
 
       <TeamUrlEditDrawer
         open={Boolean(teamUrlEditor.row)}

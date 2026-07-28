@@ -16,6 +16,13 @@ export const leagueContentActionsSx = {
       pr: 0.5,
     },
 
+  actionSelectorsRow: {
+      width: '100%',
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+      gap: 0.75,
+    },
+
   actionSeasonBox: {
       display: 'grid',
       gap: 0.5,
@@ -65,6 +72,25 @@ export const leagueContentActionsSx = {
 
       '&:hover': {
         bgcolor: devPlanColors.primaryDark,
+      },
+    },
+
+  sideReportButton: {
+      width: '100%',
+      minHeight: 42,
+      justifyContent: 'flex-start',
+      px: 1.5,
+      bgcolor: '#eef7ff',
+      color: '#0b5cad',
+      borderColor: '#8ec5ff',
+
+      '& .MuiButton-startDecorator': {
+        mr: 0.75,
+      },
+
+      '&:hover': {
+        bgcolor: '#dcebff',
+        borderColor: '#4f9cea',
       },
     },
 

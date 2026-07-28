@@ -70,12 +70,14 @@ export default function ReportShell({
   presentation = 'pdf',
   isMobile = null,
   status = 'draft',
-  entity,
+  entity = null,
+  showEntity = true,
   metaItems = [],
   metaColumns = 3,
   reportNumber,
   printPages = 1,
   fillPrintPage = false,
+  brand = null,
   brandName = 'DevPlan',
   brandSubtitle = 'מערכת ניהול וניתוח מקצועי',
   actions = null,
@@ -94,23 +96,50 @@ export default function ReportShell({
       ? buildReportUrlMobileSx({ systemColors })
       : buildReportUrlDesktopSx({ systemColors })
 
-  const shellEntity = { ...entity, systemColors }
+  const shellEntity = entity
+    ? { ...entity, systemColors }
+    : null
+  const resolvedBrand = {
+    name: brand?.name || brandName,
+    subtitle: brand?.subtitle || brandSubtitle,
+    logoUrl: brand?.logoUrl || '',
+    mark: brand?.mark || 'DP',
+    footerText: brand?.footerText || `${brand?.name || brandName} · ${brand?.subtitle || brandSubtitle}`,
+  }
 
   return (
     <Box component='article' sx={sx.root}>
       <Box sx={sx.topBar}>
         <Box sx={sx.brand}>
-          <Box sx={sx.brandMark}>DP</Box>
+          {resolvedBrand.logoUrl ? (
+            <Box
+              component='img'
+              src={resolvedBrand.logoUrl}
+              alt={resolvedBrand.name}
+              sx={{
+                display: 'block',
+                width: { xs: 154, md: 230 },
+                maxWidth: '46vw',
+                height: { xs: 34, md: 48 },
+                objectFit: 'contain',
+                objectPosition: 'left center',
+              }}
+            />
+          ) : (
+            <>
+              <Box sx={sx.brandMark}>{resolvedBrand.mark}</Box>
 
-          <Box sx={sx.brandCopy}>
-            <Typography component='span' sx={sx.brandName}>
-              {brandName}
-            </Typography>
+              <Box sx={sx.brandCopy}>
+                <Typography component='span' sx={sx.brandName}>
+                  {resolvedBrand.name}
+                </Typography>
 
-            <Typography component='span' sx={sx.brandSubtitle}>
-              {brandSubtitle}
-            </Typography>
-          </Box>
+                <Typography component='span' sx={sx.brandSubtitle}>
+                  {resolvedBrand.subtitle}
+                </Typography>
+              </Box>
+            </>
+          )}
         </Box>
 
         <Box
@@ -141,6 +170,7 @@ export default function ReportShell({
         onReportChange={onReportChange}
         presentation={presentation}
         entity={shellEntity}
+        showEntity={showEntity}
         sx={sx}
       />
 
@@ -166,7 +196,7 @@ export default function ReportShell({
 
         <Box component='footer' sx={sx.footer}>
           <Typography component='span'>
-            DevPlan · מערכת ניהול וניתוח מקצועי
+            {resolvedBrand.footerText}
           </Typography>
 
           {reportNumber ? (

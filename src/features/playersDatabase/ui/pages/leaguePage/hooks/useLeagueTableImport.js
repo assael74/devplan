@@ -18,6 +18,32 @@ import {
   formatGoalDifference,
 } from '../logic/leagueImport.logic.js'
 
+const clean = value => String(value ?? '').trim()
+
+const toImportNumber = value => {
+  const nextValue = Number(clean(value).replace(/\u200E/g, ''))
+  return Number.isFinite(nextValue) ? nextValue : null
+}
+
+const isImportRowReady = row => {
+  if (!clean(row?.clubId)) return false
+  if (!clean(row?.teamSlot)) return false
+  if (!Number.isFinite(toImportNumber(row?.rank)) || toImportNumber(row?.rank) <= 0) return false
+
+  return [
+    'games',
+    'wins',
+    'draws',
+    'losses',
+    'goalsFor',
+    'goalsAgainst',
+    'points',
+  ].every(field => {
+    const value = toImportNumber(row?.[field])
+    return Number.isFinite(value) && value >= 0
+  })
+}
+
 export function useLeagueTableImport({
   league = {},
   leagueDoc = {},
@@ -31,6 +57,9 @@ export function useLeagueTableImport({
   const [busy, setBusy] = React.useState(false)
   const [previewMessage, setPreviewMessage] = React.useState('')
   const [writeReport, setWriteReport] = React.useState(null)
+  const canConfirm = React.useMemo(() => {
+    return rows.length > 0 && rows.every(isImportRowReady)
+  }, [rows])
 
   const handlePreview = React.useCallback(() => {
     const preview = buildLeagueImportPreview({
@@ -62,6 +91,10 @@ export function useLeagueTableImport({
       if (column.key === 'goalDifference') {
         nextRow.goalDifference = formatGoalDifference(value)
       }
+
+      const valid = isImportRowReady(nextRow)
+      nextRow.valid = valid
+      nextRow.errors = valid ? [] : (Array.isArray(nextRow.errors) ? nextRow.errors : [])
 
       return nextRow
     }))
@@ -135,6 +168,7 @@ export function useLeagueTableImport({
     open,
     pasteValue,
     rows,
+    canConfirm,
     busy,
     previewMessage,
     setOpen,

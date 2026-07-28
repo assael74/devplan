@@ -16,20 +16,24 @@ export default function InfoPanel({ title, children, actions, sx: externalSx }) 
         spacing={1.5}
         sx={sx.infoContent}
       >
-        <Stack
-          direction='row'
-          spacing={1}
-          sx={sx.infoHeader}
-        >
-          <Typography
-            level='title-lg'
-            sx={sx.infoTitle}
+        {title || actions ? (
+          <Stack
+            direction='row'
+            spacing={1}
+            sx={sx.infoHeader}
           >
-            {title}
-          </Typography>
+            {title ? (
+              <Typography
+                level='title-lg'
+                sx={sx.infoTitle}
+              >
+                {title}
+              </Typography>
+            ) : null}
 
-          {actions || null}
-        </Stack>
+            {actions || null}
+          </Stack>
+        ) : null}
 
         {children}
       </Stack>

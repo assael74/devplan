@@ -102,6 +102,23 @@ export const dataImportTableSx = {
     },
   },
 
+  cellAutocomplete: {
+    width: '100%',
+    minWidth: 180,
+    minHeight: 28,
+    bgcolor: 'transparent',
+
+    '& input': {
+      fontSize: 11,
+      fontWeight: 400,
+      textAlign: 'right',
+    },
+
+    '&:focus-within': {
+      bgcolor: devPlanColors.primaryLight,
+    },
+  },
+
   cellSelect: {
     width: '100%',
     minWidth: 54,

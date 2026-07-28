@@ -123,6 +123,8 @@ export default function VideoEditDrawerBody({
         </Box>
       ) : null}
 
+      {isGeneral ? (
+        <>
       <Divider sx={{ my: 1.25 }}>
         <Typography level="body-xs" sx={{ opacity: 0.75 }}>
           קטגוריית וידאו
@@ -137,7 +139,7 @@ export default function VideoEditDrawerBody({
           placeholder="בחר קטגוריה ראשית"
           disabled={!!disabled}
           renderValue={() => {
-            if (!selectedPrimaryCategory) return '??? ???????'
+            if (!selectedPrimaryCategory) return 'ללא קטגוריה'
 
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
@@ -173,6 +175,8 @@ export default function VideoEditDrawerBody({
           ))}
         </Select>
       </Box>
+        </>
+      ) : null}
 
       <Divider sx={{ my: 1.25 }}>
         <Typography level="body-xs" sx={{ opacity: 0.75 }}>

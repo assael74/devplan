@@ -27,6 +27,8 @@ import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
 import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
+import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { useTeamReport } from './report/index.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
 export default function TeamPage() {
@@ -90,6 +92,11 @@ export default function TeamPage() {
     ))
   }, [players, profileOnly])
   const isActiveSeason = selectedSeasonOption?.target === 'current'
+  const teamReport = useTeamReport({
+    team,
+    players: visiblePlayers,
+    seasonKey: selectedSeasonKey,
+  })
 
   return (
     <PlayersDatabaseLayout>
@@ -115,11 +122,21 @@ export default function TeamPage() {
           onPlayersImport={() => rosterImport.setOpen(true)}
           onStatsImport={() => statsImport.setOpen(true)}
           onDeletePlayers={() => playersDelete.setOpen(true)}
+          onReport={teamReport.openPreview}
           onRoleOpen={roleEditor.open}
           onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))}
           onPlayerUrlEdit={playerUrlEditor.open}
         />
       </Box>
+
+      <ReportPreviewModal
+        open={teamReport.open}
+        draft={teamReport.draft}
+        busy={teamReport.busy}
+        publication={teamReport.publication}
+        onPublish={teamReport.publish}
+        onClose={teamReport.closePreview}
+      />
 
       <PlayerUrlEditDrawer
         open={Boolean(playerUrlEditor.row)}

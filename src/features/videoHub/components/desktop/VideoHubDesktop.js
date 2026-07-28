@@ -87,6 +87,21 @@ export default function VideoHubDesktop() {
   const { analysisEnriched, generalRaw, context } = useVideoHubData()
   const { notify } = useSnackbar()
 
+  const [tab, setTab] = useState(VIDEO_TAB.GENERAL)
+  const [filtersAna, setFiltersAna] = useState(DEFAULT_FILTERS_ANALYSIS)
+  const [filtersGen, setFiltersGen] = useState(DEFAULT_FILTERS_GENERAL)
+  const [cardView, setCardView] = useState('full')
+  const [videoSelectionMode, setVideoSelectionMode] = useState(false)
+  const [selectedVideoIds, setSelectedVideoIds] = useState([])
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  const { modal, open, openEdit, closeAll } = useVideoHubModal(tab)
+  const active = modal?.active || null
+
+  const { run } = useVideoHubUpdate(active)
+
   const taskContext = useMemo(() => {
     return buildTaskFabContext({
       location,
@@ -341,13 +356,6 @@ export default function VideoHubDesktop() {
         onSaveAttach={({ video, patch }) =>
           run('analysis', patch, {
             section: 'videoAttachDrawer',
-            videoId: video?.id,
-            createIfMissing: true,
-          })
-        }
-        onSaveEditAnalysis={({ video, patch }) =>
-          run('analysis', patch, {
-            section: 'videoEditDrawer',
             videoId: video?.id,
             createIfMissing: true,
           })

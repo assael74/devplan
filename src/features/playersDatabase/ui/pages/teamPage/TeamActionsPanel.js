@@ -38,6 +38,12 @@ const buildActions = ({ hasTeamPlayers, hasSeason }) => [
     disabled: !hasTeamPlayers,
   },
   {
+    id: 'report',
+    label: 'תצוגה ופרסום דוח',
+    iconId: 'print',
+    disabled: !hasSeason,
+  },
+  {
     id: 'link',
     label: 'עריכת קישור שנתון',
     iconId: 'addLink',
@@ -55,6 +61,7 @@ export default function TeamActionsPanel({
   onPlayersImport,
   onStatsImport,
   onDeletePlayers,
+  onReport,
 }) {
   const hasSeason = Boolean(selectedSeasonKey && seasonOptions.length)
   const actions = buildActions({ hasTeamPlayers, hasSeason })
@@ -70,7 +77,12 @@ export default function TeamActionsPanel({
       return
     }
 
-    if (actionId === 'deletePlayers') onDeletePlayers()
+    if (actionId === 'deletePlayers') {
+      onDeletePlayers()
+      return
+    }
+
+    if (actionId === 'report') onReport()
   }
 
   return (

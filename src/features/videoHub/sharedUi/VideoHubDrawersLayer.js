@@ -16,7 +16,6 @@ export default function VideoHubDrawersLayer({
   onCloseEditGeneral,
 
   onSaveAttach,
-  onSaveEditAnalysis,
 
   onSavedEditGeneral,
 
@@ -62,7 +61,6 @@ export default function VideoHubDrawersLayer({
         video={drawerVideo}
         context={context}
         anchor={anchor}
-        onSave={onSaveEditAnalysis}
       />
 
       <EditDrawer

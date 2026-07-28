@@ -20,49 +20,59 @@ export default function LeagueActionsPanel({
   onDefensePriorityFilterChange,
   onLoad,
   onDeleteTeams,
+  onReport,
 }) {
   return (
-    <InfoPanel title='פעולות אפשריות' sx={sx.insightsPanel}>
-      <Stack spacing={1} className='dpScrollThin' sx={sx.insightsList}>
-        <Box sx={sx.actionSeasonBox}>
-          <Typography level='body-xs' sx={sx.actionSeasonLabel}>עונת משחקים</Typography>
-          <Select
-            value={selectedSeasonKey || ''}
-            size='sm'
-            sx={sx.actionSeasonSelect}
-            onChange={(event, nextValue) => onSeasonChange(nextValue || '')}
-          >
-            {seasonOptions.length ? seasonOptions.map(option => (
-              <Option key={`${option.target}_${option.seasonKey}`} value={option.seasonKey}>
-                {option.seasonKey}
-              </Option>
-            )) : <Option value=''>אין עונות</Option>}
-          </Select>
-        </Box>
+    <InfoPanel sx={sx.insightsPanel}>
+      <Stack spacing={1} className="dpScrollThin" sx={sx.insightsList}>
+        <Box sx={sx.actionSelectorsRow}>
+          <Box sx={sx.actionSeasonBox}>
+            <Typography level="body-xs" sx={sx.actionSeasonLabel}>
+              עונת משחקים
+            </Typography>
 
-        <Box sx={sx.actionSeasonBox}>
-          <Typography level='body-xs' sx={sx.actionSeasonLabel}>שנתון</Typography>
-          <Select
-            value={selectedBirthYear ? String(selectedBirthYear) : ''}
-            size='sm'
-            sx={sx.actionSeasonSelect}
-            onChange={(event, nextValue) => onBirthYearChange(nextValue || '')}
-          >
-            {birthYearOptions.length ? birthYearOptions.map(year => (
-              <Option key={year} value={String(year)}>{year}</Option>
-            )) : <Option value=''>אין שנתונים</Option>}
-          </Select>
+            <Select
+              value={selectedSeasonKey || ''}
+              size="sm"
+              sx={sx.actionSeasonSelect}
+              onChange={(event, nextValue) => onSeasonChange(nextValue || '')}
+            >
+              {seasonOptions.length ? seasonOptions.map(option => (
+                <Option key={`${option.target}_${option.seasonKey}`} value={option.seasonKey}>
+                  {option.seasonKey}
+                </Option>
+              )) : <Option value="">אין עונות</Option>}
+            </Select>
+          </Box>
+
+          <Box sx={sx.actionSeasonBox}>
+            <Typography level="body-xs" sx={sx.actionSeasonLabel}>
+              שנתון
+            </Typography>
+
+            <Select
+              value={selectedBirthYear ? String(selectedBirthYear) : ''}
+              size="sm"
+              sx={sx.actionSeasonSelect}
+              onChange={(event, nextValue) => onBirthYearChange(nextValue || '')}
+            >
+              {birthYearOptions.length ? birthYearOptions.map(year => (
+                <Option key={year} value={String(year)}>{year}</Option>
+              )) : <Option value="">אין שנתונים</Option>}
+            </Select>
+          </Box>
         </Box>
 
         <Box sx={sx.priorityFiltersRow}>
           <ScoutPrioritySelect
-            label='ביצוע התקפי'
+            label="ביצוע התקפי"
             value={attackPriorityFilter}
             fontSize={11}
             onChange={onAttackPriorityFilterChange}
           />
+
           <ScoutPrioritySelect
-            label='ביצוע הגנתי'
+            label="ביצוע הגנתי"
             value={defensePriorityFilter}
             fontSize={11}
             onChange={onDefensePriorityFilterChange}
@@ -70,6 +80,15 @@ export default function LeagueActionsPanel({
         </Box>
 
         <Divider sx={sx.sidePanelDivider} />
+
+        <Button
+          variant="outlined"
+          startDecorator={iconUi({ id: 'print', size: 'sm' })}
+          sx={sx.sideReportButton}
+          onClick={onReport}
+        >
+          תצוגה ופרסום דוח
+        </Button>
 
         <Button
           startDecorator={iconUi({ id: 'upload', size: 'sm' })}
@@ -80,7 +99,7 @@ export default function LeagueActionsPanel({
         </Button>
 
         <Button
-          variant='outlined'
+          variant="outlined"
           startDecorator={iconUi({ id: 'delete', size: 'sm' })}
           sx={sx.sideDeleteButton}
           onClick={onDeleteTeams}

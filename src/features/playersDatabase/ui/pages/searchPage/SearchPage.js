@@ -11,11 +11,18 @@ import {
 import SearchHeader from './SearchHeader.js'
 import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
+import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { useSearchReport } from './report/index.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 export default function SearchPage() {
   const navigate = useNavigate()
   const search = useSearchPage()
+  const searchReport = useSearchReport({
+    rows: search.rows,
+    queryFilters: search.queryFilters,
+    summary: search.summary,
+  })
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'חיפוש במאגר' },
@@ -31,6 +38,8 @@ export default function SearchPage() {
         <SearchHeader
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
+          onReport={searchReport.openPreview}
+          reportDisabled={!search.hasLoaded || !search.rows.length}
         />
 
         <SearchWorkspace
@@ -39,6 +48,14 @@ export default function SearchPage() {
         />
       </Box>
 
+      <ReportPreviewModal
+        open={searchReport.open}
+        draft={searchReport.draft}
+        busy={searchReport.busy}
+        publication={searchReport.publication}
+        onPublish={searchReport.publish}
+        onClose={searchReport.closePreview}
+      />
     </PlayersDatabaseLayout>
   )
 }

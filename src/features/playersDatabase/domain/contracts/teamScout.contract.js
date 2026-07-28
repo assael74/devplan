@@ -19,6 +19,7 @@ export const createEmptyTeamScoutSide = side => ({
   combinedRate: null,
   combinedLevel: 'unavailable',
   qualityRate: null,
+  anomalyRate: null,
   scoutPriorityRate: null,
   priorityRate: null,
   priorityLevel: 'unavailable',
@@ -68,6 +69,11 @@ export const normalizeTeamScoutSide = (side, value = {}) => {
   const performanceRate = toRoundedDomainNumber(source.performanceRate)
   const rankingRate = toRoundedDomainNumber(source.rankingRate)
   const combinedRate = toRoundedDomainNumber(source.combinedRate)
+  const anomalyRate = toRoundedDomainNumber(
+    source.anomalyRate !== undefined
+      ? source.anomalyRate
+      : source.performanceRate
+  )
 
   return {
     ...createEmptyTeamScoutSide(side),
@@ -82,6 +88,7 @@ export const normalizeTeamScoutSide = (side, value = {}) => {
     combinedLevel: cleanDomainValue(source.combinedLevel) ||
       resolveTeamScoutPriorityLevel(combinedRate),
     qualityRate: toRoundedDomainNumber(source.qualityRate),
+    anomalyRate,
     scoutPriorityRate: toRoundedDomainNumber(source.scoutPriorityRate),
     priorityRate,
     priorityLevel: cleanDomainValue(source.priorityLevel) ||

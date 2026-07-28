@@ -13,12 +13,18 @@ import PlayerHeader from './PlayerHeader.js'
 import PlayerStatsOverview from './PlayerStatsOverview.js'
 import PlayerHistorySection from './PlayerHistorySection.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
+import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { usePlayerReport } from './report/index.js'
 import { playerPageSx as sx } from './sx/playerPage.sx.js'
 
 export default function PlayerPage() {
   const navigate = useNavigate()
   const { player } = usePlayerPage()
   const historyView = usePlayerHistoryView(player)
+  const playerReport = usePlayerReport({
+    player,
+    historyRows: historyView.rows,
+  })
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
@@ -49,6 +55,11 @@ export default function PlayerPage() {
   }
 
   const handleAction = actionId => {
+    if (actionId === 'report') {
+      playerReport.openPreview()
+      return
+    }
+
     console.info('Player placeholder action', actionId)
   }
 
@@ -79,6 +90,14 @@ export default function PlayerPage() {
           onAction={handleAction}
         />
       </Box>
+      <ReportPreviewModal
+        open={playerReport.open}
+        draft={playerReport.draft}
+        busy={playerReport.busy}
+        publication={playerReport.publication}
+        onPublish={playerReport.publish}
+        onClose={playerReport.closePreview}
+      />
     </PlayersDatabaseLayout>
   )
 }

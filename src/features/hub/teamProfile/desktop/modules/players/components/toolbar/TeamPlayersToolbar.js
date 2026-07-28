@@ -15,10 +15,12 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../../../../../../reports/model/teams/players/print/index.js'
+} from '../../../../../../../reports/performance/index.js'
 
 import {
   publishReport,
+  publishTeamMinutesPlanReport,
+  publishTeamSeasonPlanReport,
 } from '../../../../../../../reports/index.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
@@ -267,14 +269,30 @@ export default function TeamPlayersToolbar({
     })
 
     try {
-      const response = await publishReport({
-        team,
-        rows,
-        filters,
-        summary,
-        seasonLabel,
-        mode: currentManagementPrintMode,
-      })
+      let response
+
+      if (currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.SEASON_PLAN) {
+        response = await publishTeamSeasonPlanReport({
+          team,
+          rows,
+          seasonLabel,
+        })
+      } else if (currentManagementPrintMode === TEAM_PLAYERS_PRINT_MODES.MINUTES_PLAN) {
+        response = await publishTeamMinutesPlanReport({
+          team,
+          rows,
+          seasonLabel,
+        })
+      } else {
+        response = await publishReport({
+          team,
+          rows,
+          filters,
+          summary,
+          seasonLabel,
+          mode: currentManagementPrintMode,
+        })
+      }
 
       const publishResult = response && response.result ? response.result : {}
 

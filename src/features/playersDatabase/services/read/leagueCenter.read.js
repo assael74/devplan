@@ -3,5 +3,5 @@
 import { readLeaguesMasterDocument } from './leaguesMaster.read.js'
 
 export const readLeagueCenterData = async () => ({
-  leaguesMasterDoc: await readLeaguesMasterDocument(),
+  leaguesMasterDoc: await readLeaguesMasterDocument({ fresh: true }),
 })

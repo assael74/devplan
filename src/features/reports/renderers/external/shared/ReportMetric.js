@@ -1,0 +1,18 @@
+// features/reports/renderers/external/shared/ReportMetric.js
+
+import { Box, Typography } from '@mui/joy'
+
+import { reportListSx as sx } from './reportList.sx.js'
+
+export default function ReportMetric({ label, value, compact = false }) {
+  return (
+    <Box sx={sx.metric({ compact })}>
+      <Typography component='span' sx={sx.metricLabel}>
+        {label}
+      </Typography>
+      <Typography component='span' sx={sx.metricValue}>
+        {value}
+      </Typography>
+    </Box>
+  )
+}

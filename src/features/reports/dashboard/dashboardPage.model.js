@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import {
@@ -8,6 +8,7 @@ import {
 } from '../../../shared/reports/index.js'
 import {
   deletePublicReport,
+  getPublicReport,
   getPublishedPublicReports,
   revokePublicReport,
 } from '../service/index.js'
@@ -119,6 +120,9 @@ export default function useDashboardPageModel() {
   const [publications, setPublications] = useState([])
   const [loadingPublications, setLoadingPublications] = useState(true)
   const [publicationError, setPublicationError] = useState(null)
+  const [selectedPublicationDocument, setSelectedPublicationDocument] = useState(null)
+  const [loadingSelectedPublication, setLoadingSelectedPublication] = useState(false)
+  const [selectedPublicationError, setSelectedPublicationError] = useState(null)
   const [publicationActionModal, setPublicationActionModal] = useState({
     open: false,
     action: '',
@@ -192,11 +196,73 @@ export default function useDashboardPageModel() {
     return reports.find(report => report.id === selectedReportId) || null
   }, [reports, selectedReportId])
 
-  const selectedPublication = useMemo(() => {
+  const selectedPublicationSummary = useMemo(() => {
     if (!selectedReport || !selectedPublicationId) return null
 
     return selectedReport.publications.find(publication => publication.id === selectedPublicationId) || null
   }, [selectedPublicationId, selectedReport])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadSelectedPublication() {
+      if (!selectedPublicationSummary?.reportId) {
+        setSelectedPublicationDocument(null)
+        setSelectedPublicationError(null)
+        setLoadingSelectedPublication(false)
+        return
+      }
+
+      setLoadingSelectedPublication(true)
+      setSelectedPublicationError(null)
+      setSelectedPublicationDocument(null)
+
+      try {
+        const report = await getPublicReport({
+          reportId: selectedPublicationSummary.reportId,
+          versionId: selectedPublicationSummary.versionId || '',
+        })
+
+        if (!active) return
+
+        setSelectedPublicationDocument(report)
+      } catch (error) {
+        if (!active) return
+
+        console.error('[useDashboardPageModel] Failed to load selected publication', error)
+        setSelectedPublicationError(error)
+      } finally {
+        if (active) {
+          setLoadingSelectedPublication(false)
+        }
+      }
+    }
+
+    loadSelectedPublication()
+
+    return () => {
+      active = false
+    }
+  }, [selectedPublicationSummary])
+
+  const selectedPublication = useMemo(() => {
+    if (!selectedPublicationSummary) return null
+    if (!selectedPublicationDocument) return selectedPublicationSummary
+
+    return {
+      ...selectedPublicationSummary,
+      ...selectedPublicationDocument,
+      entity: selectedPublicationSummary.entity || selectedPublicationDocument.entity || null,
+      entityName:
+        selectedPublicationSummary.entityName ||
+        selectedPublicationDocument.entityName ||
+        '',
+      avatarUrl:
+        selectedPublicationSummary.avatarUrl ||
+        selectedPublicationDocument.avatarUrl ||
+        '',
+    }
+  }, [selectedPublicationDocument, selectedPublicationSummary])
 
   const selectedEntity = useMemo(() => {
     if (!selectedPublication) return null
@@ -306,6 +372,7 @@ export default function useDashboardPageModel() {
 
         if (selectedPublicationId === publication.id) {
           setSelectedPublicationId('')
+          setSelectedPublicationDocument(null)
         }
 
         notify({
@@ -383,6 +450,8 @@ export default function useDashboardPageModel() {
 
     setSelectedReportId(nextReport.id)
     setSelectedPublicationId('')
+    setSelectedPublicationDocument(null)
+    setSelectedPublicationError(null)
     openReport(nextReport.id)
   }
 
@@ -407,6 +476,8 @@ export default function useDashboardPageModel() {
       if (selectedReportId === nextReportId) {
         setSelectedReportId('')
         setSelectedPublicationId('')
+        setSelectedPublicationDocument(null)
+        setSelectedPublicationError(null)
       }
 
       return
@@ -424,6 +495,8 @@ export default function useDashboardPageModel() {
 
     if (selectedPublicationId === nextPublicationId && selectedReportId === nextReport.id) {
       setSelectedPublicationId('')
+      setSelectedPublicationDocument(null)
+      setSelectedPublicationError(null)
       setSelectedReportId(nextReport.id)
       openReport(nextReport.id)
       return
@@ -431,6 +504,8 @@ export default function useDashboardPageModel() {
 
     setSelectedReportId(nextReport.id)
     setSelectedPublicationId(nextPublicationId)
+    setSelectedPublicationDocument(null)
+    setSelectedPublicationError(null)
     openReport(nextReport.id)
   }
 
@@ -445,10 +520,14 @@ export default function useDashboardPageModel() {
     selectedPublicationId,
     selectedReport,
     selectedPublication,
+    selectedPublicationSummary,
+    selectedPublicationDocument,
     selectedEntity,
     openReportIds,
     loadingPublications,
+    loadingSelectedPublication,
     publicationError,
+    selectedPublicationError,
     publicationActionModal,
     mainTitle,
     mainDescription,

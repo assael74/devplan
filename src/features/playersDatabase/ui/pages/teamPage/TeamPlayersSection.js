@@ -21,6 +21,7 @@ export default function TeamPlayersSection({
   onPlayersImport,
   onStatsImport,
   onDeletePlayers,
+  onReport,
   onRoleOpen,
   onPlayerOpen,
   onPlayerUrlEdit,
@@ -56,6 +57,7 @@ export default function TeamPlayersSection({
         onPlayersImport={onPlayersImport}
         onStatsImport={onStatsImport}
         onDeletePlayers={onDeletePlayers}
+        onReport={onReport}
       />
     </Box>
   )

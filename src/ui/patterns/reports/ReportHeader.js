@@ -15,10 +15,11 @@ export default function ReportHeader({
   selectedReportValue = null,
   onReportChange = null,
   presentation = 'pdf',
-  entity,
+  entity = null,
+  showEntity = true,
   sx,
 }) {
-  const entityColors = getReportEntityColors(entity.type)
+  const entityColors = getReportEntityColors(entity?.type)
   const canSwitchReports = (
     presentation !== 'pdf' &&
     Array.isArray(reportOptions) &&
@@ -103,13 +104,17 @@ export default function ReportHeader({
         </Box>
       </Box>
 
-      <Box sx={sx.entity}>
-        <Avatar src={entity.avatarUrl || undefined} alt={entity.name}>
-          {getInitials(entity.name)}
-        </Avatar>
+      {showEntity && entity ? (
+        <Box sx={sx.entity}>
+          <Avatar src={entity.avatarUrl || undefined} alt={entity.name}>
+            {getInitials(entity.name)}
+          </Avatar>
 
-        <Typography component='p' sx={sx.entityName({ entityColors })}>{entity.name}</Typography>
-      </Box>
+          <Typography component='p' sx={sx.entityName({ entityColors })}>
+            {entity.name}
+          </Typography>
+        </Box>
+      ) : null}
     </Box>
   )
 }

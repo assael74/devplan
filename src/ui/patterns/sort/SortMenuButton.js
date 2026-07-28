@@ -79,6 +79,14 @@ export default function SortMenuButton({
         <Menu
           placement="bottom-start"
           size={size}
+          keepMounted
+          slotProps={{
+            root: {
+              sx: {
+                zIndex: 1800,
+              },
+            },
+          }}
           sx={sx.sortMenu({ width: rootWidth })}
         >
           {sortOptions.map(item => {

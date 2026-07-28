@@ -262,13 +262,6 @@ export default function VideoHubMobile() {
               createIfMissing: true,
             })
           }
-          onSaveEditAnalysis={({ video, patch }) =>
-            run('analysis', patch, {
-              section: 'videoEditDrawer',
-              videoId: video?.id,
-              createIfMissing: true,
-            })
-          }
           onSavedEditGeneral={() => {}}
         />
 

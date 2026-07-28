@@ -5,11 +5,15 @@ const REGION_LABELS = [
   'צפון',
   'מרכז',
   'שרון',
+  'חוף',
   'שפלה',
   'נגב',
   'גליל',
   'חיפה',
   'ירושלים',
+  'דן',
+  'מפרץ',
+  'מזרח',
 ]
 
 const REGION_LABEL_BY_KEY = {
@@ -18,21 +22,29 @@ const REGION_LABEL_BY_KEY = {
   center: 'מרכז',
   central: 'מרכז',
   sharon: 'שרון',
+  hof: 'חוף',
+  coast: 'חוף',
   shefela: 'שפלה',
+  shfela: 'שפלה',
   negev: 'נגב',
   galil: 'גליל',
   haifa: 'חיפה',
   jerusalem: 'ירושלים',
+  dan: 'דן',
+  mifratz: 'מפרץ',
+  mizrah: 'מזרח',
+  mizrarh: 'מזרח',
 }
 
 const clean = value => String(value ?? '').trim()
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const normalizeRegionKey = value => clean(value).toLowerCase().replace(/[_\s-]+/g, '')
 
 const resolveRegionLabel = value => {
   const region = clean(value)
   if (!region) return ''
 
-  return REGION_LABEL_BY_KEY[region] || region
+  return REGION_LABEL_BY_KEY[normalizeRegionKey(region)] || region
 }
 
 export const splitLeagueTitle = league => {

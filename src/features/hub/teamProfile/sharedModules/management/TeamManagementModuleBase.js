@@ -10,9 +10,11 @@ import {
   ManagementInfo,
   ManagementTabs,
   ManagementTargets,
-  ManagementTargetsUrlButton,
   ManagementToolbar,
 } from '../../sharedUi/management/index.js'
+import {
+  TeamTargetsReportButton,
+} from '../../../../reports/teamTargets/index.js'
 
 import useTeamManagementModuleModel from './useTeamManagementModuleModel.js'
 import { teamManagementModuleSx } from './teamManagementModule.sx.js'
@@ -105,7 +107,7 @@ export default function TeamManagementModuleBase({
           onSave={handleSave}
           extraActions={
             activeTab.id === 'targets' ? (
-              <ManagementTargetsUrlButton
+              <TeamTargetsReportButton
                 team={team}
                 draft={draft}
                 disabled={pending}

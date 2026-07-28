@@ -113,7 +113,7 @@ export async function publishPublicReport(rawInput) {
         versionId: nextVersionId,
         versionNumber: nextVersionNumber,
         reportContent: input.reportContent,
-        publishedAt: input.reportContent?.meta?.reportDate || null,
+        publishedAt: input.generatedAt || new Date(),
         isCurrent: true,
       }),
     ].filter(Boolean)

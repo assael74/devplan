@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import {
+  Autocomplete,
   Input,
   Option,
   Select,
@@ -10,6 +11,22 @@ import {
 
 import { dataImportSx as sx } from '../sx/dataImport.sx.js'
 import { resolveDataImportOptions } from './dataImport.model.js'
+
+
+const normalizeSearchValue = value => String(value || '')
+  .toLowerCase()
+  .replace(/["׳״'`.-]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const filterAutocompleteOptions = (options, state) => {
+  const query = normalizeSearchValue(state.inputValue)
+  if (!query) return options
+
+  return options.filter(option => normalizeSearchValue(
+    `${option.displayLabel || option.label || ''} ${option.searchText || ''}`
+  ).includes(query))
+}
 
 const buildCellSx = ({ baseSx, columnSx, changedSx }) => ({
   ...baseSx,
@@ -58,6 +75,30 @@ export default function DataImportPreviewCell({
       >
         {value || '-'}
       </Typography>
+    )
+  }
+
+  if (column.type === 'autocomplete') {
+    const options = resolveDataImportOptions(column, row)
+    const selectedOption = options.find(option => option.value === value) || null
+
+    return (
+      <Autocomplete
+        size='sm'
+        options={options}
+        value={selectedOption}
+        placeholder='חיפוש מועדון'
+        getOptionLabel={option => option.displayLabel || option.label || ''}
+        isOptionEqualToValue={(option, selected) => option.value === selected.value}
+        filterOptions={filterAutocompleteOptions}
+        sx={buildCellSx({
+          baseSx: sx.cellAutocomplete,
+          columnSx: column.inputSx,
+        })}
+        onChange={(event, nextOption) => {
+          emitChange(nextOption ? nextOption.value : '')
+        }}
+      />
     )
   }
 

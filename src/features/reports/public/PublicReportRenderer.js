@@ -5,7 +5,7 @@ import { Alert, Typography } from '@mui/joy'
 
 import {
   getReportDefinition,
-} from '../reports.registry.js'
+} from '../registry/index.js'
 
 export default function PublicReportRenderer({
   reportType,
