@@ -34,7 +34,7 @@ export default function EntryPage() {
         <EntryHeader breadcrumbs={breadcrumbs} />
 
         <EntryRouteCards
-          onNavigateToLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
+          onNavigateToLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onNavigateToSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
         />
 

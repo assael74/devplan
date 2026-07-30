@@ -48,4 +48,20 @@ export const pdbTableSortSx = {
     lineHeight: 1,
     pointerEvents: 'none',
   },
+
+  headerActionButton: {
+    width: 28,
+    height: 28,
+    minWidth: 28,
+    minHeight: 28,
+    p: 0,
+    color: devPlanColors.primary,
+    borderColor: devPlanColors.primaryLight,
+    bgcolor: '#fff',
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primary,
+    },
+  },
 }

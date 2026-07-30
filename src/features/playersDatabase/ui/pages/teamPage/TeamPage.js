@@ -76,11 +76,16 @@ function TeamPageContent() {
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
-      to: PLAYERS_DATABASE_UI_ROUTES.leagues,
+      to: PLAYERS_DATABASE_UI_ROUTES.leagues({
+        seasonKey: selectedSeasonKey,
+        birthYear: team.birthYear,
+      }),
     },
     {
       label: team.leagueName,
-      to: PLAYERS_DATABASE_UI_ROUTES.league(leagueId),
+      to: PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
+        seasonKey: selectedSeasonKey,
+      }),
     },
     {
       label: team.name,
@@ -171,7 +176,9 @@ function TeamPageContent() {
             Promise.resolve(handleTeamFavoriteToggle()).catch(() => {})
           }}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
-          onLeague={() => navigate(PLAYERS_DATABASE_UI_ROUTES.league(leagueId))}
+          onLeague={() => navigate(PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
+            seasonKey: selectedSeasonKey,
+          }))}
         />
 
         <TeamStatsOverview team={team} />

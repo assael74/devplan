@@ -1,8 +1,9 @@
 // features/playersDatabase/ui/components/tables/dataTable/DataTableHeader.js
 
 import * as React from 'react'
-import { Box } from '@mui/joy'
+import { Box, IconButton, Tooltip } from '@mui/joy'
 
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { pdbTableSx as sx } from '../tables.sx.js'
 import {
   DATA_TABLE_SORT_DIRECTIONS,
@@ -12,7 +13,12 @@ export default function DataTableHeader({
   columns,
   sortState,
   onSort,
+  exportConfig = null,
+  onExport = null,
 }) {
+  const exportColumnKey = exportConfig?.placementColumnKey || 'actions'
+  const canExport = Boolean(exportConfig?.enabled && typeof onExport === 'function')
+
   return (
     <thead>
       <tr>
@@ -20,6 +26,7 @@ export default function DataTableHeader({
           const sortable = column.sortable !== false
           const active = sortState.key === column.key
           const direction = active ? sortState.direction : ''
+          const showExportButton = canExport && column.key === exportColumnKey
 
           return (
             <Box
@@ -38,7 +45,23 @@ export default function DataTableHeader({
                 ...column.headerSx,
               }}
             >
-              {sortable ? (
+              {showExportButton ? (
+                <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
+                  <IconButton
+                    size='sm'
+                    variant='outlined'
+                    color='neutral'
+                    aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                    sx={sx.headerActionButton}
+                    onClick={event => {
+                      event.stopPropagation()
+                      onExport()
+                    }}
+                  >
+                    {iconUi({ id: exportConfig.iconId || 'download', size: 'sm' })}
+                  </IconButton>
+                </Tooltip>
+              ) : sortable ? (
                 <Box
                   component='button'
                   type='button'

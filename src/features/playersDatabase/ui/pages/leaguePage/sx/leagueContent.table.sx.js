@@ -72,12 +72,6 @@ export const leagueContentTableSx = {
     fontWeight: 'inherit',
   },
 
-  teamNameNoLink: {
-    color: '#64727E',
-    fontWeight: 600,
-    opacity: 1,
-  },
-
   teamNameStatus: {
     emptyRoster: {
       color: '#9AA6AF',

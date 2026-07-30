@@ -136,7 +136,6 @@ const resolveTeamNameStatus = row => {
 
 const resolveTeamNameSx = row => ({
   ...sx.teamNameStatus[resolveTeamNameStatus(row)],
-  ...(!clean(row.teamUrl) ? sx.teamNameNoLink : {}),
 })
 
 export const buildLeagueTeamsColumns = ({

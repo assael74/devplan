@@ -48,7 +48,7 @@ export default function LeagueCenterFilters({ model }) {
         >
           <Option value='all'>כל השנתונים</Option>
           {model.birthYearOptions.map(year => (
-            <Option key={year} value={year}>
+            <Option key={year} value={String(year)}>
               {year}
             </Option>
           ))}

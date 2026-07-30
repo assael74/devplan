@@ -33,8 +33,10 @@ export default function LeaguesCenterPage() {
 
   const columns = React.useMemo(() => buildLeagueCenterColumns({
     onCreateSeason: seasonCreate.open,
-    onOpenLeague: row => navigate(PLAYERS_DATABASE_UI_ROUTES.league(row.leagueId)),
-  }), [navigate, seasonCreate.open])
+    onOpenLeague: row => navigate(PLAYERS_DATABASE_UI_ROUTES.league(row.leagueId, {
+      seasonKey: row.seasonKey || model.seasonKey,
+    })),
+  }), [model.seasonKey, navigate, seasonCreate.open])
 
   return (
     <PlayersDatabaseLayout>

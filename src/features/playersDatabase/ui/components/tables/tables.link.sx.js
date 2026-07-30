@@ -21,7 +21,7 @@ export const pdbTableLinkSx = {
     },
 
     '&:hover [data-link-indicator], &:focus-visible [data-link-indicator]': {
-      opacity: 0.85,
+      opacity: 1,
       transform: 'scale(1)',
     },
   },
@@ -38,8 +38,8 @@ export const pdbTableLinkSx = {
     height: 5,
     borderRadius: '50%',
     bgcolor: 'currentColor',
-    opacity: 0,
-    transform: 'scale(0.65)',
+    opacity: 0.72,
+    transform: 'scale(1)',
     transition: 'opacity 140ms ease, transform 140ms ease',
   },
 

@@ -22,7 +22,7 @@ export default function PlayerUrlEditDrawer({
       value={row?.playerUrl || ''}
       title='עריכת קישור שחקן'
       fieldLabel='קישור השחקן לעונה'
-      fieldPlaceholder='https://www.football.org.il/players/player/...'
+      fieldPlaceholder='הדבק כאן קישור מלא לשחקן'
     />
   )
 }

@@ -99,6 +99,7 @@ export default function EntitySeasonUrlDrawer({
           <FormLabel>{fieldLabel}</FormLabel>
           <Input
             autoFocus
+            autoComplete="off"
             value={draftValue}
             placeholder={fieldPlaceholder}
             onChange={event => setDraftValue(event.target.value)}

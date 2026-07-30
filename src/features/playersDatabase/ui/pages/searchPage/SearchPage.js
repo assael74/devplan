@@ -45,7 +45,7 @@ function SearchPageContent() {
       <Box sx={sx.page}>
         <SearchHeader
           breadcrumbs={breadcrumbs}
-          onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
+          onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onReport={() => setReportNameOpen(true)}
           onRefresh={() => setNormalizationOpen(true)}
           reportDisabled={

@@ -50,7 +50,6 @@ export default function useTeamUrlEditor({
           },
         },
       })
-
       notify({
         status: SNACK_STATUS.SUCCESS,
         title: 'קישור הקבוצה נשמר',

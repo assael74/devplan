@@ -1,7 +1,7 @@
 // features/playersDatabase/ui/hooks/useLeaguePage.js
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 import {
   buildLeaguePageSeasonOptions,
@@ -9,13 +9,23 @@ import {
   buildLeaguePageView,
   buildLeaguePageSummary,
 } from '../../model/leaguePage.model.js'
+import { normalizeSeasonLookupKey } from '../../model/season.model.js'
 import { toNumberOrZero } from '../../model/value.model.js'
 import { readLeaguePageData } from '../../services/read/index.js'
 
+const isSameSeasonKey = (left, right) => (
+  Boolean(
+    normalizeSeasonLookupKey(left) &&
+    normalizeSeasonLookupKey(left) === normalizeSeasonLookupKey(right)
+  )
+)
+
 export function useLeaguePage() {
   const { leagueId = '' } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedSeasonKey = normalizeSeasonLookupKey(searchParams.get('season'))
   const [leagueDoc, setLeagueDoc] = useState(null)
-  const [selectedSeasonKey, setSelectedSeasonKey] = useState('')
+  const [selectedSeasonKey, setSelectedSeasonKeyState] = useState(requestedSeasonKey)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
@@ -31,11 +41,24 @@ export function useLeaguePage() {
         if (!active) return
         setLeagueDoc(nextLeague)
         const options = buildLeaguePageSeasonOptions(nextLeague)
-        setSelectedSeasonKey(current => (
-          current && options.some(option => option.seasonKey === current)
-            ? current
-            : options[0]?.seasonKey || ''
-        ))
+        setSelectedSeasonKeyState(current => {
+          const requestedOption = options.find(option =>
+            isSameSeasonKey(option.seasonKey, requestedSeasonKey)
+          )
+          const currentOption = options.find(option =>
+            isSameSeasonKey(option.seasonKey, current)
+          )
+
+          if (requestedOption) {
+            return requestedOption.seasonKey
+          }
+
+          if (currentOption) {
+            return currentOption.seasonKey
+          }
+
+          return options[0]?.seasonKey || ''
+        })
       })
       .catch(err => {
         if (!active) return
@@ -45,19 +68,34 @@ export function useLeaguePage() {
       .finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }
-  }, [leagueId, reloadToken])
+  }, [leagueId, reloadToken, requestedSeasonKey])
 
   const seasonOptions = useMemo(() => buildLeaguePageSeasonOptions(leagueDoc), [leagueDoc])
   const selectedSeasonOption = useMemo(() => (
-    seasonOptions.find(option => option.seasonKey === selectedSeasonKey) || seasonOptions[0] || null
+    seasonOptions.find(option => isSameSeasonKey(option.seasonKey, selectedSeasonKey)) ||
+    seasonOptions[0] ||
+    null
   ), [seasonOptions, selectedSeasonKey])
   const birthYearOptions = useMemo(() => ([...new Set(seasonOptions
     .map(option => toNumberOrZero(option?.season?.birthYear)).filter(Boolean))]), [seasonOptions])
+  const setSelectedSeasonKey = useCallback(value => {
+    const nextSeasonKey = normalizeSeasonLookupKey(value)
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    if (nextSeasonKey) {
+      nextSearchParams.set('season', nextSeasonKey)
+    } else {
+      nextSearchParams.delete('season')
+    }
+
+    setSelectedSeasonKeyState(nextSeasonKey)
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [searchParams, setSearchParams])
   const setSelectedBirthYear = useCallback(value => {
     const birthYear = toNumberOrZero(value)
     const matchingSeason = seasonOptions.find(option => toNumberOrZero(option?.season?.birthYear) === birthYear)
     if (matchingSeason?.seasonKey) setSelectedSeasonKey(matchingSeason.seasonKey)
-  }, [seasonOptions])
+  }, [seasonOptions, setSelectedSeasonKey])
   const teams = useMemo(() => buildLeaguePageTeams({
     season: selectedSeasonOption?.season,
     leagueDoc,

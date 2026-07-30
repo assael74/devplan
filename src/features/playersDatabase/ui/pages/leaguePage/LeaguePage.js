@@ -108,8 +108,15 @@ function LeaguePageContent() {
   ])
 
 
+  const selectedBirthYear = selectedSeasonOption?.season?.birthYear || league.birthYear
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
-    { label: 'מרכז ליגות', to: PLAYERS_DATABASE_UI_ROUTES.leagues },
+    {
+      label: 'מרכז ליגות',
+      to: PLAYERS_DATABASE_UI_ROUTES.leagues({
+        seasonKey: selectedSeasonKey,
+        birthYear: selectedBirthYear,
+      }),
+    },
     { label: league.name },
   ])
   const titleParts = splitLeagueTitle(league)
@@ -157,7 +164,10 @@ function LeaguePageContent() {
           levelLabel={league.levelLabel}
           active={isActiveLeague}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
-          onBack={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
+          onBack={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues({
+            seasonKey: selectedSeasonKey,
+            birthYear: selectedBirthYear,
+          }))}
         />
 
         <LeagueStatsOverview
@@ -170,6 +180,7 @@ function LeaguePageContent() {
             rows={filteredTeams}
             loading={loading}
             error={error}
+            selectedSeasonOption={selectedSeasonOption}
             onTeamOpen={handleTeamOpen}
             onTeamUrlEdit={teamUrlEditor.open}
             onFavoriteToggle={handleFavoriteToggle}
@@ -178,7 +189,7 @@ function LeaguePageContent() {
           <LeagueActionsPanel
             selectedSeasonKey={selectedSeasonKey}
             seasonOptions={seasonOptions}
-            selectedBirthYear={league.birthYear}
+            selectedBirthYear={selectedBirthYear}
             birthYearOptions={birthYearOptions}
             onSeasonChange={setSelectedSeasonKey}
             onBirthYearChange={setSelectedBirthYear}

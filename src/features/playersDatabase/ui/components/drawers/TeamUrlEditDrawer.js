@@ -22,7 +22,7 @@ export default function TeamUrlEditDrawer({
       value={row?.teamUrl || ''}
       title='עריכת קישור קבוצה'
       fieldLabel='קישור הקבוצה לעונה'
-      fieldPlaceholder='https://www.football.org.il/team-details/...'
+      fieldPlaceholder='הדבק כאן קישור מלא לקבוצה'
     />
   )
 }

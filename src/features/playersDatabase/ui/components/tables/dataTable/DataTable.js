@@ -13,6 +13,7 @@ import {
   DATA_TABLE_SORT_DIRECTIONS,
   sortDataTableRows,
 } from './dataTable.sort.js'
+import exportDataTableRowsToXlsx from './dataTable.export.js'
 
 export default function DataTable({
   columns = [],
@@ -25,6 +26,7 @@ export default function DataTable({
   bodyScrollSx,
   defaultSort,
   renderExpandedRow,
+  exportConfig = null,
 }) {
   const [expandedRowKey, setExpandedRowKey] = React.useState('')
   const [sortState, setSortState] = React.useState(() => ({
@@ -86,11 +88,30 @@ export default function DataTable({
     setExpandedRowKey(current => (current === rowKey ? '' : rowKey))
   }
 
+  const handleExport = React.useCallback(() => {
+    if (!exportConfig?.enabled) return false
+
+    const exportRows = typeof exportConfig.getRows === 'function'
+      ? exportConfig.getRows(sortedRows, {
+        rawRows: exportConfig.rawRows || [],
+      })
+      : sortedRows
+
+    return exportDataTableRowsToXlsx({
+      rows: exportRows,
+      columns: exportConfig.columns || [],
+      fileName: exportConfig.fileName,
+      sheetName: exportConfig.sheetName,
+    })
+  }, [exportConfig, sortedRows])
+
   const header = (
     <DataTableHeader
       columns={columns}
       sortState={sortState}
       onSort={handleSort}
+      exportConfig={exportConfig}
+      onExport={handleExport}
     />
   )
 
