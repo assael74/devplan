@@ -19,6 +19,8 @@ const resolveCombinationProfileIds = combinationId => (
 
 export const cloneSearchFilters = filters => ({
   ...filters,
+  favoritesOnly: Boolean(filters.favoritesOnly),
+  expectedLeagueLevelChanges: [...(filters.expectedLeagueLevelChanges || [])],
   seasons: [...filters.seasons],
   birthYears: [...filters.birthYears],
   leagueLevels: [...filters.leagueLevels],
@@ -168,6 +170,13 @@ export default function useSearchQueryFilters() {
         return {
           ...current,
           [item.field]: '',
+        }
+      }
+
+      if (item.type === 'boolean') {
+        return {
+          ...current,
+          [item.field]: false,
         }
       }
 

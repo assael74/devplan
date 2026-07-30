@@ -6,6 +6,7 @@ export const REPORT_TYPES = {
   PERFORMANCE: 'performance',
   TEAM_TARGETS: 'teamTargets',
   PLAYER_TARGETS: 'playerTargets',
+  DB_SEARCH: 'dbSearch',
   EXTERNAL_LEAGUE_TABLE: 'externalLeagueTable',
   EXTERNAL_TEAM_DETAILS: 'externalTeamDetails',
   EXTERNAL_PLAYER_DETAILS: 'externalPlayerDetails',
@@ -19,6 +20,8 @@ export const REPORT_ENTITY_TYPES = {
   BIRTH_TEAM_SEASON: 'birthTeamSeason',
   EXTERNAL_PLAYER: 'externalPlayer',
   PLAYER_SEARCH: 'playerSearch',
+  TEAMS_LIST: 'teamsList',
+  PLAYERS_LIST: 'playersList',
 }
 
 export const PUBLIC_REPORT_STATUS = {

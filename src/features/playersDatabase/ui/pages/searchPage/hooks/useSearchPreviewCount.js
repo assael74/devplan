@@ -3,11 +3,30 @@
 import * as React from 'react'
 
 import { readSearchPageCount } from '../../../../services/read/index.js'
+import { usePlayersDatabaseFavorites } from '../../../favorites/index.js'
 
 export default function useSearchPreviewCount({
   queryFilters,
   queryFiltersKey,
 }) {
+  const favorites = usePlayersDatabaseFavorites()
+  const favoriteEntityIds = React.useMemo(() => {
+    if (!queryFilters.favoritesOnly) return []
+
+    return queryFilters.searchContext === 'team'
+      ? favorites.birthTeamFavorites.map(item => item.entityId)
+      : favorites.playerFavorites.map(item => item.entityId)
+  }, [
+    favorites.birthTeamFavorites,
+    favorites.playerFavorites,
+    queryFilters.favoritesOnly,
+    queryFilters.searchContext,
+  ])
+  const favoritesKey = React.useMemo(
+    () => favoriteEntityIds.slice().sort().join('|'),
+    [favoriteEntityIds]
+  )
+
   const [previewCount, setPreviewCount] = React.useState(0)
   const [previewLoading, setPreviewLoading] = React.useState(true)
   const [previewError, setPreviewError] = React.useState(null)
@@ -18,7 +37,10 @@ export default function useSearchPreviewCount({
     setPreviewLoading(true)
     setPreviewError(null)
 
-    readSearchPageCount({ filters: queryFilters })
+    readSearchPageCount({
+      filters: queryFilters,
+      favoriteEntityIds,
+    })
       .then(count => {
         if (!active) return
         setPreviewCount(count)
@@ -34,7 +56,7 @@ export default function useSearchPreviewCount({
     return () => {
       active = false
     }
-  }, [queryFiltersKey, queryFilters])
+  }, [favoritesKey, queryFiltersKey, queryFilters, favoriteEntityIds])
 
   return {
     previewCount,

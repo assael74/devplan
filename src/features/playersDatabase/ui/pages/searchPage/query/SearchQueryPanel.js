@@ -65,6 +65,7 @@ export default function SearchQueryPanel({
           ) : null}
         </Stack>
       )}
+      headerSx={sx.collapseHeader(expanded)}
       contentSx={sx.collapseContent}
       innerSx={sx.collapseInner}
       rootSx={sx.panel(expanded)}

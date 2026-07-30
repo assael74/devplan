@@ -8,6 +8,7 @@ import {
   updateLeagueSeasonTableRank,
 } from './leagues/index.js'
 import {
+  addFavoriteFlow,
   clearLeagueSeasonTeamsFlow,
   clearTeamSeasonPlayersFlow,
   createLeagueSeasonFlow,
@@ -19,10 +20,10 @@ import {
   pasteLeagueTableFlow,
   pasteTeamPlayerStatsFlow,
   pasteTeamPlayersFlow,
+  removeFavoriteFlow,
   removePlayerScoutProfileFlow,
   updateLeagueSeasonMetaFlow,
   updateLeagueSeasonUrlFlow,
-  updatePlayerFavoriteFlow,
   updatePlayerRoleFlow,
   updatePlayerSeasonNotesFlow,
   updatePlayerSeasonUrlFlow,
@@ -50,7 +51,8 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   UPDATE_PLAYER_SEASON_URL: 'updatePlayerSeasonUrl',
   UPDATE_LEAGUE_SEASON_META: 'updateLeagueSeasonMeta',
   UPDATE_LEAGUE_SEASON_URL: 'updateLeagueSeasonUrl',
-  UPDATE_PLAYER_FAVORITE: 'updatePlayerFavorite',
+  ADD_FAVORITE: 'addFavorite',
+  REMOVE_FAVORITE: 'removeFavorite',
 }
 
 const WRITE_ACTION_RUNNERS = {
@@ -76,7 +78,8 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL]: updatePlayerSeasonUrlFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_META]: updateLeagueSeasonMetaFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL]: updateLeagueSeasonUrlFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_FAVORITE]: updatePlayerFavoriteFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.ADD_FAVORITE]: addFavoriteFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_FAVORITE]: removeFavoriteFlow,
 }
 
 export async function runPlayersDatabaseWriteAction({

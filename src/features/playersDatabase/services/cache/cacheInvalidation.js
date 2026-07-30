@@ -136,11 +136,6 @@ export const invalidatePlayersDatabaseWriteCache = ({
     invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
   }
 
-  if (actionType === 'updatePlayerFavorite') {
-    invalidatePlayerDocumentCache(playerId)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.team)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
-  }
 
   if (actionType === 'clearLeagueSeasonTeams') {
     invalidateLeagueDocumentCache(leagueId)

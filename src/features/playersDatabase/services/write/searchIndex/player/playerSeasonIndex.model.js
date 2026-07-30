@@ -99,7 +99,6 @@ export const buildPlayerSeasonIndexDoc = ({
     playerUrl: clean(player.playerUrl),
     rosterStatus: getRosterStatus(player),
     isYoungerAgeGroup: Boolean(player.isYoungerAgeGroup),
-    favorite: Boolean(player.favorite),
     notes: clean(player.notes),
 
     leagueId: clean(league.id || teamScope.leagueId),

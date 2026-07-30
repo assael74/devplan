@@ -184,7 +184,6 @@ export const buildPlayerSeasonStatsMutation = ({
       isYoungerAgeGroup: Boolean(
         player.isYoungerAgeGroup || existingData.isYoungerAgeGroup
       ),
-      favorite: Boolean(player.favorite || existingData.favorite),
       notes: clean(player.notes || existingData.notes),
       leagueId,
       seasonId,

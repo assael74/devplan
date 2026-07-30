@@ -1,5 +1,7 @@
 // features/playersDatabase/services/read/index.js
 
+export { readFavorites } from './favorites.read.js'
+
 export {
   getLeagueById,
   hasLeagueById,

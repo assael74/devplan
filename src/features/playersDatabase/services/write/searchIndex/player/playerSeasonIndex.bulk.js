@@ -74,46 +74,6 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
   })
 }
 
-export async function updatePlayerFavoriteSearchIndexes({
-  player = {},
-  favorite = false,
-} = {}) {
-  const playerId = clean(player.playerId)
-  if (!playerId) throw new Error('Missing player id')
-
-  const rowsQuery = query(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-    where('playerId', '==', playerId)
-  )
-  const snapshot = await getDocs(rowsQuery)
-  const batch = writeBatch(db)
-  let rowsCount = 0
-
-  snapshot.docs.forEach(indexDoc => {
-    const data = indexDoc.data() || {}
-    if (clean(data.entityType) !== 'playerSeason') return
-
-    rowsCount += 1
-    batch.set(
-      indexDoc.ref,
-      {
-        favorite: Boolean(favorite),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    )
-  })
-
-  await commitBatchWhenNeeded({ batch, operationsCount: rowsCount })
-
-  return buildSearchIndexWriteResult({
-    entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
-    operation: 'updateFavorite',
-    rowsCount,
-    favorite: Boolean(favorite),
-  })
-}
-
 export async function updatePlayerSeasonSearchIndexesSeasonMeta({
   league = {},
   season = {},

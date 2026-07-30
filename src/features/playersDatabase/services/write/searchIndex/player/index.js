@@ -30,7 +30,7 @@
  * - Applies focused updates such as URL, notes, role and profile removal.
  *
  * playerSeasonIndex.bulk.js
- * - Applies cross-document updates such as favorite, team URL and season meta.
+ * - Applies cross-document updates such as team URL and season meta.
  *
  * playerSeasonIndex.query.js
  * - Locates player-season index documents by explicit scope and identity.
@@ -49,6 +49,7 @@ export {
 
 export {
   clearPlayerSeasonSearchIndexScoutProfile,
+  updatePlayerSeasonSearchIndexScoutProfiles,
   updatePlayerSeasonSearchIndexFields,
   updatePlayerSeasonSearchIndexNotes,
   updatePlayerSeasonSearchIndexPlayerUrl,
@@ -56,7 +57,6 @@ export {
 } from './playerSeasonIndex.patch.js'
 
 export {
-  updatePlayerFavoriteSearchIndexes,
   updatePlayerSeasonSearchIndexesSeasonMeta,
   updatePlayerSeasonSearchIndexTeamUrl,
 } from './playerSeasonIndex.bulk.js'

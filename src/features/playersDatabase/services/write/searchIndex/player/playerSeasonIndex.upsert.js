@@ -140,7 +140,6 @@ export async function upsertPlayerSeasonSearchIndexMany({
         playerDocumentId: clean(indexDoc.playerDocumentId || existingData.playerDocumentId),
         playerUrl: clean(indexDoc.playerUrl || existingData.playerUrl),
         rosterStatus: getRosterStatus(player) || clean(existingData.rosterStatus || 'regular'),
-        favorite: Boolean(player.favorite || existingData.favorite),
         notes: clean(player.notes || existingData.notes),
       }
     )

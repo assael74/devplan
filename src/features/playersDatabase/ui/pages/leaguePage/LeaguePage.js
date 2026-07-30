@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
+import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
+import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from '../../hooks/useLeaguePage.js'
 import {
@@ -32,9 +34,10 @@ import { useLeagueReport } from './report/index.js'
 import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
 
 
-export default function LeaguePage() {
+function LeaguePageContent() {
   const navigate = useNavigate()
   const { notify } = useSnackbar()
+  const favorites = usePlayersDatabaseFavorites()
   const [attackPriorityFilter, setAttackPriorityFilter] = React.useState('')
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
   const {
@@ -52,6 +55,17 @@ export default function LeaguePage() {
     loading,
     error,
   } = useLeaguePage()
+
+  const teamsWithFavorites = React.useMemo(() => (
+    teams.map(team => ({
+      ...team,
+      favorite: favorites.isBirthTeamFavorite(team.birthTeamId),
+      favoritePending: favorites.isFavoritePending(
+        PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+        team.birthTeamId
+      ),
+    }))
+  ), [favorites, teams])
 
   const teamUrlEditor = useTeamUrlEditor({
     leagueId: league.id,
@@ -78,7 +92,7 @@ export default function LeaguePage() {
   ), [leagueImport.rows])
 
   const filteredTeams = React.useMemo(() => (
-    teams.filter(team => {
+    teamsWithFavorites.filter(team => {
       const attackLevel = team.performanceView?.offense?.priority?.level || ''
       const defenseLevel = team.performanceView?.defense?.priority?.level || ''
 
@@ -88,7 +102,7 @@ export default function LeaguePage() {
       )
     })
   ), [
-    teams,
+    teamsWithFavorites,
     attackPriorityFilter,
     defensePriorityFilter,
   ])
@@ -115,8 +129,25 @@ export default function LeaguePage() {
     }))
   }
 
+  const handleFavoriteToggle = team => {
+    const payload = {
+      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+      entityId: team.birthTeamId,
+    }
+
+    if (favorites.isBirthTeamFavorite(team.birthTeamId)) {
+      return favorites.removeFavorite(payload)
+    }
+
+    return favorites.addFavorite({
+      ...payload,
+      displayName: team.name,
+      birthYear: league.birthYear,
+    })
+  }
+
   return (
-    <PlayersDatabaseLayout>
+    <>
       <Box sx={sx.page}>
         <LeagueHeader
           breadcrumbs={breadcrumbs}
@@ -141,6 +172,7 @@ export default function LeaguePage() {
             error={error}
             onTeamOpen={handleTeamOpen}
             onTeamUrlEdit={teamUrlEditor.open}
+            onFavoriteToggle={handleFavoriteToggle}
           />
 
           <LeagueActionsPanel
@@ -209,6 +241,14 @@ export default function LeaguePage() {
         report={leagueImport.writeReport}
         onClose={leagueImport.closeWriteReport}
       />
+    </>
+  )
+}
+
+export default function LeaguePage() {
+  return (
+    <PlayersDatabaseLayout>
+      <LeaguePageContent />
     </PlayersDatabaseLayout>
   )
 }

@@ -1,10 +1,13 @@
 // features/playersDatabase/ui/pages/playerPage/PlayerPage.js
 
+import * as React from 'react'
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { usePlayerPage } from '../../hooks/usePlayerPage.js'
+import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
+import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
@@ -17,9 +20,16 @@ import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { usePlayerReport } from './report/index.js'
 import { playerPageSx as sx } from './sx/playerPage.sx.js'
 
-export default function PlayerPage() {
+function PlayerPageContent() {
   const navigate = useNavigate()
   const { player } = usePlayerPage()
+  const favorites = usePlayersDatabaseFavorites()
+  const playerId = String(player.playerId || '').trim()
+  const playerFavorite = favorites.isPlayerFavorite(playerId)
+  const playerFavoriteLoading = favorites.isFavoritePending(
+    PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+    playerId
+  )
   const historyView = usePlayerHistoryView(player)
   const playerReport = usePlayerReport({
     player,
@@ -50,6 +60,26 @@ export default function PlayerPage() {
     }))
   }
 
+
+  const handleFavoriteToggle = React.useCallback(() => {
+    if (!playerId) return null
+
+    const payload = {
+      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+      entityId: playerId,
+    }
+
+    if (favorites.isPlayerFavorite(playerId)) {
+      return favorites.removeFavorite(payload)
+    }
+
+    return favorites.addFavorite({
+      ...payload,
+      displayName: player.fullName,
+      birthYear: player.birthYear,
+    })
+  }, [favorites, player.birthYear, player.fullName, playerId])
+
   const handleHistoryOpen = row => {
     console.info('Player season context', row)
   }
@@ -64,11 +94,16 @@ export default function PlayerPage() {
   }
 
   return (
-    <PlayersDatabaseLayout>
+    <>
       <Box sx={sx.page}>
         <PlayerHeader
           breadcrumbs={breadcrumbs}
           player={player}
+          favorite={playerFavorite}
+          favoriteLoading={playerFavoriteLoading}
+          onFavoriteToggle={() => {
+            Promise.resolve(handleFavoriteToggle()).catch(() => {})
+          }}
           onSearch={handleNavigateToSearch}
           onTeam={handleNavigateToTeam}
         />
@@ -98,6 +133,14 @@ export default function PlayerPage() {
         onPublish={playerReport.publish}
         onClose={playerReport.closePreview}
       />
+    </>
+  )
+}
+
+export default function PlayerPage() {
+  return (
+    <PlayersDatabaseLayout>
+      <PlayerPageContent />
     </PlayersDatabaseLayout>
   )
 }

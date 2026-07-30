@@ -4,21 +4,21 @@ import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const scoutPriorityColors = {
   leadingTarget: {
-    main: '#1F7A4D',
-    light: '#E8F5EE',
-    text: '#175C3A',
+    main: '#5B963F',
+    light: '#E8F3E2',
+    text: '#2F5F24',
   },
 
   highPriority: {
-    main: '#2F86C7',
-    light: '#EAF5FC',
-    text: '#215F8F',
+    main: '#27CCB1',
+    light: '#E8FAF7',
+    text: '#176F62',
   },
 
   positive: {
-    main: '#4F9A73',
-    light: '#EDF7F1',
-    text: '#356B4F',
+    main: '#B7D9A8',
+    light: '#F5FAF2',
+    text: '#557A48',
   },
 
   regular: {

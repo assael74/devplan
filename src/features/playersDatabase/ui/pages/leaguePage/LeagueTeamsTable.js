@@ -12,13 +12,17 @@ export default function LeagueTeamsTable({
   error = '',
   onTeamOpen,
   onTeamUrlEdit,
+  onFavoriteToggle,
 }) {
   const columns = React.useMemo(() => (
     buildLeagueTeamsColumns({
       onTeamOpen,
       onTeamUrlEdit,
+      onFavoriteToggle: row => {
+        Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
+      },
     })
-  ), [onTeamOpen, onTeamUrlEdit])
+  ), [onFavoriteToggle, onTeamOpen, onTeamUrlEdit])
 
   return (
     <DataTable

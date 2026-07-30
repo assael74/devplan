@@ -1,3 +1,4 @@
+export * from './favorites/index.js'
 // features/playersDatabase/services/write/flows/index.js
 
 export * from './league/index.js'

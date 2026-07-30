@@ -10,6 +10,13 @@ export const SEARCH_CONTEXT_TYPES = [
   { value: 'team', label: 'קבוצה' },
 ]
 
+export const SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS = [
+  { value: 'relegation', label: 'ירידה צפויה' },
+  { value: 'unchanged', label: 'ללא שינוי' },
+  { value: 'promotion', label: 'עלייה צפויה' },
+  { value: 'unknown', label: 'לא ניתן לחשב' },
+]
+
 export const SEARCH_PROFILE_MATCH_MODES = [
   { value: 'any', label: 'התאמה לפרופיל אחד לפחות' },
   { value: 'all', label: 'התאמה לכל הפרופילים' },
@@ -109,6 +116,8 @@ export const createSearchCondition = id => ({
 
 export const createSearchFilters = () => ({
   searchContext: '',
+  favoritesOnly: false,
+  expectedLeagueLevelChanges: [],
   seasons: [],
   birthYears: [],
   leagueLevels: [],

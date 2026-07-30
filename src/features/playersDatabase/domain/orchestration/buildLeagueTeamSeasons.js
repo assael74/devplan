@@ -54,6 +54,7 @@ export const buildLeagueTeamSeasons = ({
           normalization: engineResult?.normalization || {},
           leagueLevel: engineResult?.leagueLevel || leagueLevel,
           leagueGames: engineResult?.leagueNumGames || leagueNumGames,
+          engineVersion: engineResult?.engineVersion,
           calculatedAt: seasonSource.updatedAt || null,
         },
       }),

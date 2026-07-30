@@ -29,6 +29,3 @@ export {
   upsertProfiledPlayerDocsMany,
 } from './playerScoutProfiles.js'
 
-export {
-  updatePlayerFavorite,
-} from './playerFavorite.js'

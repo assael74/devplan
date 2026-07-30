@@ -4,7 +4,7 @@ import * as React from 'react'
 import {
   Box,
   Checkbox,
-  Button,
+  IconButton,
   Typography,
 } from '@mui/joy'
 
@@ -16,6 +16,7 @@ import {
   SEARCH_TEAM_INTERPRETATION_LEVELS,
 } from '../logic/search.constants.js'
 import SearchQuerySection from './SearchQuerySection.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { searchModelsQuerySx as sx } from './sx/searchModelsQuery.sx.js'
 
 
@@ -41,6 +42,13 @@ function SelectableModelCard({ selected, disabled = false, onClick, children, de
         }
       }}
     >
+      <Box sx={sx.cardContent}>
+        {children}
+        <Typography level='body-xs' sx={sx.description}>
+          {description}
+        </Typography>
+      </Box>
+
       <Checkbox
         checked={selected}
         readOnly
@@ -49,13 +57,6 @@ function SelectableModelCard({ selected, disabled = false, onClick, children, de
         sx={sx.checkbox}
         tabIndex={-1}
       />
-
-      <Box sx={sx.cardContent}>
-        {children}
-        <Typography level='body-xs' sx={sx.description}>
-          {description}
-        </Typography>
-      </Box>
     </Box>
   )
 }
@@ -98,11 +99,30 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
 }
 
 function TeamInterpretationSide({ title, field, values, onToggle }) {
+  const handleReset = event => {
+    event.stopPropagation()
+    values.forEach(value => onToggle(field, value))
+  }
   return (
     <Box sx={sx.teamSideSection}>
-      <Typography level='title-sm' sx={sx.teamSideTitle}>
-        {title}
-      </Typography>
+      <Box sx={sx.teamSideHeader}>
+        <Typography level='title-sm' sx={sx.teamSideTitle}>
+          {title}
+        </Typography>
+
+        <IconButton
+          size='sm'
+          variant='plain'
+          color='neutral'
+          aria-label={`איפוס ${title}`}
+          title={`איפוס ${title}`}
+          disabled={values.length === 0}
+          sx={sx.sideResetButton}
+          onClick={handleReset}
+        >
+          {iconUi({ id: 'reset', size: 'sm' })}
+        </IconButton>
+      </Box>
 
       <Box sx={sx.levelsGrid}>
         {SEARCH_TEAM_INTERPRETATION_LEVELS.map(option => (
@@ -125,10 +145,9 @@ function TeamInterpretationSide({ title, field, values, onToggle }) {
   )
 }
 
-function TeamPriorityFilters({ filters, onToggle, onReset }) {
+function TeamPriorityFilters({ filters, onToggle }) {
   const attackValues = filters.teamAttackPriorityLevels || []
   const defenseValues = filters.teamDefensePriorityLevels || []
-  const hasSelections = attackValues.length > 0 || defenseValues.length > 0
 
   return (
     <Box sx={sx.teamContent}>
@@ -147,22 +166,11 @@ function TeamPriorityFilters({ filters, onToggle, onReset }) {
           onToggle={onToggle}
         />
       </Box>
-
-      <Button
-        size='sm'
-        variant='plain'
-        color='neutral'
-        sx={sx.resetButton}
-        disabled={!hasSelections}
-        onClick={onReset}
-      >
-        איפוס עדיפויות
-      </Button>
     </Box>
   )
 }
 
-export default function SearchModelsQuery({ filters, onToggle, onResetTeamPerformance }) {
+export default function SearchModelsQuery({ filters, onToggle }) {
   const isTeam = filters.searchContext === 'team'
   const isPlayer = filters.searchContext === 'player'
   const selectedCombinations = filters.scoutCombinations || []
@@ -187,7 +195,6 @@ export default function SearchModelsQuery({ filters, onToggle, onResetTeamPerfor
         <TeamPriorityFilters
           filters={filters}
           onToggle={onToggle}
-          onReset={onResetTeamPerformance}
         />
       ) : (
         <Box sx={sx.grid}>

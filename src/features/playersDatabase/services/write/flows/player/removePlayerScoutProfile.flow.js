@@ -7,29 +7,55 @@ import {
   removePlayerSeasonScoutProfile,
 } from '../../players/index.js'
 import {
-  clearPlayerSeasonSearchIndexScoutProfile,
+  updatePlayerSeasonSearchIndexScoutProfiles,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import {
   updateTeamSeasonPlayerScoutProfiles,
 } from '../../teams/index.js'
 
-const buildClearedScoutProfilePayload = (payload = {}) => ({
-  ...payload,
-  player: {
-    ...(payload.player || {}),
-    scoutProfiles: [],
-    scoutSignals: [],
-  },
-  scoutProfiles: [],
+const clean = value => String(value || '').trim()
+
+const normalizeProfileForWrite = profile => ({
+  ...profile,
+  profileId: clean(profile?.profileId || profile?.id),
+  reliabilityLevel: clean(
+    profile?.reliabilityLevel || profile?.reliability?.level
+  ),
+  reliabilityScore: profile?.reliabilityScore ?? profile?.reliability?.score ?? null,
 })
 
-export async function removePlayerScoutProfileFlow(payload = {}) {
-  const clearedPayload = buildClearedScoutProfilePayload(payload)
+const buildRemainingProfilesPayload = (payload = {}) => {
+  const profileId = clean(payload.profileId)
+  const sourceProfiles = Array.isArray(payload.player?.scoutProfiles)
+    ? payload.player.scoutProfiles
+    : Array.isArray(payload.player?.scoutSignals)
+      ? payload.player.scoutSignals
+      : []
+  const remainingProfiles = sourceProfiles
+    .map(normalizeProfileForWrite)
+    .filter(profile => profile.profileId && profile.profileId !== profileId)
 
-  // Team season is the operational source of truth for the squad.
-  // Stop before updating derived documents when the team season is missing.
-  const teamSeasonResult = await updateTeamSeasonPlayerScoutProfiles(clearedPayload)
+  return {
+    ...payload,
+    profileId,
+    player: {
+      ...(payload.player || {}),
+      scoutProfiles: remainingProfiles,
+      scoutSignals: remainingProfiles,
+    },
+    scoutProfiles: remainingProfiles,
+  }
+}
+
+export async function removePlayerScoutProfileFlow(payload = {}) {
+  const nextPayload = buildRemainingProfilesPayload(payload)
+
+  if (!nextPayload.profileId) {
+    throw new Error('Missing scout profile id')
+  }
+
+  const teamSeasonResult = await updateTeamSeasonPlayerScoutProfiles(nextPayload)
 
   if (!teamSeasonResult.updated) {
     return {
@@ -44,10 +70,10 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
     }
   }
 
-  const playerSeasonResult = await removePlayerSeasonScoutProfile(clearedPayload)
-  const playerSeasonIndexResult = await clearPlayerSeasonSearchIndexScoutProfile(clearedPayload)
+  const playerSeasonResult = await removePlayerSeasonScoutProfile(nextPayload)
+  const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles(nextPayload)
   const summaryPayload = {
-    ...clearedPayload,
+    ...nextPayload,
     scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
   }
   const leagueTableRankScoutProfilesResult = await updateLeagueSeasonTableRankScoutProfilesSummary(summaryPayload)

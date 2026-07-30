@@ -3,7 +3,8 @@
 export const TEAM_PLAYERS_TABLE_WIDTHS = {
   number: '4%',
   avatar: '4%',
-  fullName: '17%',
+  favorite: '4%',
+  fullName: '13%',
   positionLayer: '10%',
   primaryPosition: '11%',
   games: '6%',

@@ -1,11 +1,17 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.patch.js
 
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+import { adaptPlayerScoutEngineResult } from '../../../../domain/index.js'
 import { clean } from '../../leagues/leagueDoc.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
 import { buildPlayerSeasonIndexDoc } from './playerSeasonIndex.model.js'
+import {
+  buildScoutProfileSearchIds,
+  normalizeScoutSignalsForIndex,
+} from './playerSeasonIndex.scout.js'
 import {
   buildPlayerSeasonIndexIdFromPayload,
   findPlayerSeasonIndexDocForPayload,
@@ -94,18 +100,50 @@ export const updatePlayerSeasonSearchIndexRole = payload => {
   })
 }
 
-export const clearPlayerSeasonSearchIndexScoutProfile = payload =>
-  updatePlayerSeasonSearchIndexFields({
+export const updatePlayerSeasonSearchIndexScoutProfiles = payload => {
+  const player = payload?.player || {}
+  const scoutSignals = normalizeScoutSignalsForIndex(player)
+  const playerScout = adaptPlayerScoutEngineResult({
+    signals: scoutSignals,
+    combinations: Array.isArray(player.scoutCombinations)
+      ? player.scoutCombinations
+      : [],
+  })
+  const primaryProfile = playerScout.primaryProfile
+  const secondaryProfile = playerScout.secondaryProfile
+  const scoutProfileIds = playerScout.profileIds
+  const scoutCombinationIds = playerScout.combinationIds
+
+  return updatePlayerSeasonSearchIndexFields({
     ...payload,
+    player,
     fields: {
-      primaryScoutProfileId: '',
-      primaryScoutReliabilityLevel: '',
-      primaryScoutScore: null,
-      secondaryScoutProfileId: '',
-      secondaryScoutReliabilityLevel: '',
-      secondaryScoutScore: null,
-      scoutProfileIds: [],
-      scoutCombinationIds: [],
-      scoutProfileSearchIds: [],
+      primaryScoutProfileId: clean(primaryProfile?.id),
+      primaryScoutReliabilityLevel: clean(primaryProfile?.reliability?.level),
+      primaryScoutScore: Number.isFinite(Number(primaryProfile?.score))
+        ? Number(primaryProfile.score)
+        : null,
+      secondaryScoutProfileId: clean(secondaryProfile?.id),
+      secondaryScoutReliabilityLevel: clean(secondaryProfile?.reliability?.level),
+      secondaryScoutScore: Number.isFinite(Number(secondaryProfile?.score))
+        ? Number(secondaryProfile.score)
+        : null,
+      scoutProfileIds,
+      scoutCombinationIds,
+      scoutProfileSearchIds: buildScoutProfileSearchIds({
+        scoutProfileIds,
+        scoutCombinationIds,
+      }),
+    },
+  })
+}
+
+export const clearPlayerSeasonSearchIndexScoutProfile = payload =>
+  updatePlayerSeasonSearchIndexScoutProfiles({
+    ...payload,
+    player: {
+      ...(payload.player || {}),
+      scoutProfiles: [],
+      scoutSignals: [],
     },
   })

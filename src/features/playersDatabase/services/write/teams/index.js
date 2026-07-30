@@ -12,10 +12,6 @@
  * - Removes one team season without deleting other seasons.
  * - Supports league-season deletion flows.
  *
- * teamPlayerFavorite.js
- * - Updates favorite for every occurrence of a player.
- * - Scans current and history across team documents.
- *
  * teamSeason.model.js
  * - Normalizes roster players and team-season data.
  * - Builds team-season rows and merges current/history records.
@@ -65,6 +61,3 @@ export {
   removeTeamSeason,
 } from './teamDelete.js'
 
-export {
-  updatePlayerFavoriteInAllTeamSeasons,
-} from './teamPlayerFavorite.js'

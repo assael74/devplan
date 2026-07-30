@@ -35,7 +35,7 @@ export default function SearchHeader({
         <Button
           variant='outlined'
           sx={sx.leaguesButton}
-          startDecorator={iconUi({ id: 'league', size: 'sm' })}
+          startDecorator={iconUi({ id: 'back', size: 'sm' })}
           onClick={onLeagues}
         >
           פריסת ליגות

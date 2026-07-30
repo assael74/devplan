@@ -3,12 +3,84 @@
 import {
   Box,
   Button,
+  Input,
   Option,
   Select,
   Typography,
 } from '@mui/joy'
 
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { scoutPriorityColors } from '../../../components/scout/ScoutPriority.js'
 import { searchResultsSidebarSx as sx } from './sx/searchResultsSidebar.sx.js'
+
+const priorityOptionDisplay = {
+  elite: {
+    iconId: 'leadingTarget',
+    colors: scoutPriorityColors.leadingTarget,
+  },
+  high: {
+    iconId: 'highPriority',
+    colors: scoutPriorityColors.highPriority,
+  },
+  positive: {
+    iconId: 'positivePriority',
+    colors: scoutPriorityColors.positive,
+  },
+  neutral: {
+    iconId: 'regularPriority',
+    colors: scoutPriorityColors.regular,
+  },
+  low: {
+    iconId: 'lowPriority',
+    colors: scoutPriorityColors.lowPriority,
+  },
+}
+
+function ResultFilterSearch({
+  label,
+  field,
+  value = '',
+  onChange,
+}) {
+  return (
+    <Box sx={sx.filterField}>
+      <Typography level='body-xs' sx={sx.filterLabel}>
+        {label}
+      </Typography>
+
+      <Input
+        size='sm'
+        value={value}
+        placeholder='חיפוש לפי שם קבוצה'
+        onChange={event => onChange(field, event.target.value)}
+        sx={sx.filterInput}
+      />
+    </Box>
+  )
+}
+
+function FilterOptionContent({ option }) {
+  const display = priorityOptionDisplay[option.tone]
+
+  if (!display) return option.label
+
+  return (
+    <Box sx={sx.priorityOption}>
+      {iconUi({
+        id: display.iconId,
+        size: 'sm',
+        sx: sx.priorityOptionIcon(display.colors),
+      })}
+
+      <Typography
+        component='span'
+        sx={sx.priorityOptionLabel(display.colors)}
+      >
+        {option.label}
+      </Typography>
+    </Box>
+  )
+}
 
 function ResultFilterSelect({
   label,
@@ -35,7 +107,7 @@ function ResultFilterSelect({
       >
         {options.map(option => (
           <Option key={option.value} value={option.value}>
-            {option.label}
+            <FilterOptionContent option={option} />
           </Option>
         ))}
       </Select>
@@ -73,24 +145,33 @@ export default function SearchResultsFilters({
       </Box>
 
       <Box sx={sx.filtersGrid}>
-        <ResultFilterSelect
-          label='עונה'
-          field='seasons'
-          value={filters.seasons}
-          options={options.seasons}
+        <ResultFilterSearch
+          label='חיפוש קבוצה'
+          field='teamSearch'
+          value={filters.teamSearch}
           onChange={onChange}
         />
 
-        <ResultFilterSelect
-          label='ליגה'
-          field='leagues'
-          value={filters.leagues}
-          options={options.leagues}
-          onChange={onChange}
-        />
+        <Box sx={sx.filtersRow}>
+          <ResultFilterSelect
+            label='עונה'
+            field='seasons'
+            value={filters.seasons}
+            options={options.seasons}
+            onChange={onChange}
+          />
+
+          <ResultFilterSelect
+            label='ליגה'
+            field='leagues'
+            value={filters.leagues}
+            options={options.leagues}
+            onChange={onChange}
+          />
+        </Box>
 
         {isTeam ? (
-          <>
+          <Box sx={sx.filtersRow}>
             <ResultFilterSelect
               label='ביצוע התקפי'
               field='attackLevels'
@@ -106,7 +187,7 @@ export default function SearchResultsFilters({
               options={options.defenseLevels}
               onChange={onChange}
             />
-          </>
+          </Box>
         ) : (
           <>
             <ResultFilterSelect

@@ -30,6 +30,6 @@ export const createEmptyPlayerSeason = () => ({
   scout: createEmptyPlayerScout(),
   teamPerformance: createEmptyTeamScout(),
   completeness: createEmptyCompleteness(),
-  metadata: { favorite: false, notes: '', playerUrl: '', teamUrl: '', seasonUrl: '', rosterStatus: '', sourceCollection: '', sourceDocumentId: '', sourceTarget: '', updatedAt: null },
+  metadata: { notes: '', playerUrl: '', teamUrl: '', seasonUrl: '', rosterStatus: '', sourceCollection: '', sourceDocumentId: '', sourceTarget: '', updatedAt: null },
   calculation: { mode: 'projected', engineVersion: '', calculatedAt: null },
 })

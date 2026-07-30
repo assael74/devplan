@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Chip,
   IconButton,
   Tooltip,
 } from '@mui/joy'
@@ -10,23 +9,18 @@ import {
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import {
-  POSITION_LAYER_OPTIONS,
-  POSITION_OPTIONS,
-} from './teamPage.constants.js'
+  PlayerPositionChip,
+  getPlayerLayerLabel,
+  getPlayerPositionLabel,
+} from '../../../components/playerPosition/index.js'
+import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import { TEAM_PLAYERS_TABLE_WIDTHS } from './teamTableWidths.js'
-import { getOptionLabel } from './teamPage.utils.js'
 import { teamContentSx as sx } from '../sx/teamContent.sx.js'
 
 const toCount = value => {
   const nextValue = Number(value)
   return Number.isFinite(nextValue) ? nextValue : 0
-}
-
-const hasRoleValue = value => {
-  const nextValue = String(value || '').trim()
-  return !!nextValue && nextValue !== 'none' && nextValue !== '-'
 }
 
 const columnWidth = key => buildTableColumnWidth(
@@ -111,20 +105,14 @@ export const buildTeamPlayersColumns = ({
         ...sx.layerColumn,
         ...columnWidth('positionLayer'),
       },
-      getSortValue: row => (
-        getOptionLabel(POSITION_LAYER_OPTIONS, row.positionLayer) || ''
-      ),
+      getSortValue: row => getPlayerLayerLabel(row.positionLayer),
       render: row => (
-        <Chip
-          variant='soft'
+        <PlayerPositionChip
+          type='layer'
+          positionLayer={row.positionLayer}
+          primaryPosition={row.primaryPosition}
           onClick={() => onRoleOpen(row)}
-          sx={[
-            sx.roleChip,
-            hasRoleValue(row.positionLayer) && sx.roleChipSelected,
-          ]}
-        >
-          {getOptionLabel(POSITION_LAYER_OPTIONS, row.positionLayer)}
-        </Chip>
+        />
       ),
     },
     {
@@ -134,20 +122,14 @@ export const buildTeamPlayersColumns = ({
         ...sx.positionColumn,
         ...columnWidth('primaryPosition'),
       },
-      getSortValue: row => (
-        getOptionLabel(POSITION_OPTIONS, row.primaryPosition) || ''
-      ),
+      getSortValue: row => getPlayerPositionLabel(row.primaryPosition),
       render: row => (
-        <Chip
-          variant='soft'
+        <PlayerPositionChip
+          type='position'
+          positionLayer={row.positionLayer}
+          primaryPosition={row.primaryPosition}
           onClick={() => onRoleOpen(row)}
-          sx={[
-            sx.roleChip,
-            hasRoleValue(row.primaryPosition) && sx.roleChipSelected,
-          ]}
-        >
-          {getOptionLabel(POSITION_OPTIONS, row.primaryPosition)}
-        </Chip>
+        />
       ),
     },
     {

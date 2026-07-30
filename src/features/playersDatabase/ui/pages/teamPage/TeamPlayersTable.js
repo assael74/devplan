@@ -11,14 +11,18 @@ export default function TeamPlayersTable({
   onPlayerOpen,
   onRoleOpen,
   onPlayerUrlEdit,
+  onFavoriteToggle,
 }) {
   const columns = React.useMemo(() => (
     buildTeamPlayersColumns({
       onPlayerOpen,
       onRoleOpen,
       onPlayerUrlEdit,
+      onFavoriteToggle: row => {
+        Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
+      },
     })
-  ), [onPlayerOpen, onPlayerUrlEdit, onRoleOpen])
+  ), [onFavoriteToggle, onPlayerOpen, onPlayerUrlEdit, onRoleOpen])
 
   return (
     <DataTable

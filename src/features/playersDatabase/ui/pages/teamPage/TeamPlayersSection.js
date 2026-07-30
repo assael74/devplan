@@ -25,6 +25,7 @@ export default function TeamPlayersSection({
   onRoleOpen,
   onPlayerOpen,
   onPlayerUrlEdit,
+  onFavoriteToggle,
 }) {
   return (
     <Box sx={sx.contentGrid}>
@@ -44,6 +45,7 @@ export default function TeamPlayersSection({
           onRoleOpen={onRoleOpen}
           onPlayerOpen={onPlayerOpen}
           onPlayerUrlEdit={onPlayerUrlEdit}
+          onFavoriteToggle={onFavoriteToggle}
         />
       </Card>
 

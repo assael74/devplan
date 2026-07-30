@@ -13,16 +13,19 @@ export const searchModelsQuerySx = {
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 0.75,
+    gap: 0.65,
   },
 
   card: {
     minWidth: 0,
-    minHeight: 62,
+    minHeight: 46,
     display: 'flex',
     alignItems: 'flex-start',
-    gap: 0.75,
-    p: 0.75,
+    justifyContent: 'space-between',
+    gap: 0.45,
+    px: 0.6,
+    pt: 0.65,
+    pb: 0.1,
     borderRadius: 'sm',
     border: '1px solid',
     borderColor: 'neutral.200',
@@ -48,20 +51,23 @@ export const searchModelsQuerySx = {
 
   checkbox: {
     mt: 0.15,
+    ml: 0,
     flex: '0 0 auto',
   },
 
   cardContent: {
     minWidth: 0,
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 0.45,
+    gap: 0.18,
   },
 
   description: {
+    mt: 0.3,
     color: 'neutral.500',
-    lineHeight: 1.3,
+    lineHeight: 1.12,
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
@@ -71,12 +77,13 @@ export const searchModelsQuerySx = {
   teamContent: {
     minHeight: 0,
     height: '100%',
-    pb: 0.25,
+    pb: 0,
     overflow: 'hidden',
   },
 
   playerContent: {
     minHeight: 0,
+    pb: 0,
   },
 
   tabs: {
@@ -120,7 +127,7 @@ export const searchModelsQuerySx = {
   teamSidesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 0.75,
+    gap: 1,
 
     '@media (max-width: 900px)': {
       gridTemplateColumns: '1fr',
@@ -129,36 +136,40 @@ export const searchModelsQuerySx = {
 
   teamSideSection: {
     minWidth: 0,
-    p: 0.75,
+    px: 0.6,
+    pt: 0.45,
+    pb: 0.75,
     border: '1px solid',
     borderColor: 'neutral.200',
     borderRadius: 'md',
-    bgcolor: 'rgba(255,255,255,0.72)',
+    bgcolor: 'neutral.100',
+  },
+
+  teamSideHeader: {
+    minHeight: 24,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+    mb: 0.35,
   },
 
   teamSideTitle: {
-    display: 'inline-flex',
-    mb: 0.75,
+    minWidth: 0,
     color: devPlanColors.primaryDark,
   },
 
-  resetButton: {
-    position: 'sticky',
-    bottom: 0,
-    zIndex: 2,
+  sideResetButton: {
+    minWidth: 24,
+    minHeight: 24,
+    p: 0.25,
     flex: '0 0 auto',
-    mt: 0.75,
-    width: '100%',
-    minHeight: 30,
-    borderTop: '1px solid',
-    borderColor: 'neutral.200',
-    borderRadius: 0,
-    bgcolor: '#fff',
   },
 
   levelsGrid: {
     display: 'grid',
+    pt: 0.55,
     gridTemplateColumns: '1fr',
-    gap: 0.6,
+    gap: 0.9,
   },
 }

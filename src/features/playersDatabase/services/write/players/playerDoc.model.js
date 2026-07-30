@@ -94,7 +94,6 @@ export const buildPlayerBaseDoc = (
   ) || null,
   birthDate: currentData.birthDate ?? null,
   status: clean(currentData.status),
-  favorite: player.favorite ?? Boolean(currentData.favorite),
   notes: clean(player.rootNotes || currentData.notes),
   primaryPosition: clean(player.primaryPosition || currentData.primaryPosition),
   positionLayer: clean(player.positionLayer || currentData.positionLayer),

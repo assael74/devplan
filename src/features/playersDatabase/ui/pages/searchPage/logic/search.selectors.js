@@ -36,6 +36,30 @@ export function buildActiveFilterItems(filters, options) {
     })
   }
 
+  if (filters.favoritesOnly) {
+    items.push({
+      key: 'favorites-only',
+      type: 'boolean',
+      field: 'favoritesOnly',
+      label: 'מועדפים בלבד',
+    })
+  }
+
+  const expectedLevelChangeLabels = {
+    relegation: 'ירידה צפויה',
+    unchanged: 'ללא שינוי',
+    promotion: 'עלייה צפויה',
+    unknown: 'לא ניתן לחשב',
+  }
+
+  ;(filters.expectedLeagueLevelChanges || []).forEach(value => items.push({
+    key: `expected-level-change-${value}`,
+    type: 'array',
+    field: 'expectedLeagueLevelChanges',
+    value,
+    label: `שינוי רמה צפוי: ${expectedLevelChangeLabels[value] || value}`,
+  }))
+
   filters.seasons.forEach(value => items.push({
     key: `season-${value}`,
     type: 'array',

@@ -52,7 +52,7 @@ export default function ReportPreviewModal({
         >
           <Box>
             <Typography level='title-md'>תצוגה מקדימה לדוח</Typography>
-            <Typography level='body-xs'>התצוגה זהה לקישור הציבורי.</Typography>
+            <Typography level='body-xs'>תצוגת פיתוח מקומית ללא כתיבה למסד.</Typography>
           </Box>
 
           <Stack direction='row' spacing={1} sx={{ pl: 5 }}>
@@ -76,7 +76,7 @@ export default function ReportPreviewModal({
           </Stack>
         </Stack>
 
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%', overflow: 'auto' }}>
           {draft ? (
             <PublicReportRenderer
               reportType={draft.reportType}

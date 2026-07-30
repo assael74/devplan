@@ -7,33 +7,40 @@ import DataTable from '../../../components/tables/DataTable.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 import { buildSearchColumns } from '../logic/search.columns.js'
+import SearchResultNotes from './SearchResultNotes.js'
+import SearchResultRole from './SearchResultRole.js'
+import SearchResultScoutProfiles from './SearchResultScoutProfiles.js'
+import SearchResultTeamUrl from './SearchResultTeamUrl.js'
 import { searchResultsSectionSx as sx } from './sx/searchResultsSection.sx.js'
 
-const renderExpandedRow = row => (
-  <Box sx={sx.expandedDetails}>
-    <Box sx={sx.expandedItem}>
-      <Typography level='body-xs' sx={sx.expandedLabel}>עונה</Typography>
-      <Typography level='body-sm' sx={sx.expandedValue}>{row.seasonKey || '-'}</Typography>
-    </Box>
+const renderExpandedRow = ({ row, onNotesSave, onRoleEdit, onScoutProfileRemove, onTeamUrlEdit }) => {
+  const isPlayer = row?.entityType !== 'birthTeamSeason'
 
-    <Box sx={sx.expandedItem}>
-      <Typography level='body-xs' sx={sx.expandedLabel}>קבוצה</Typography>
-      <Typography level='body-sm' sx={sx.expandedValue}>{row.teamName || '-'}</Typography>
-    </Box>
+  return (
+    <Box sx={[
+      sx.expandedDetails,
+      !isPlayer && sx.expandedNotesOnly,
+    ]}>
+      {isPlayer ? (
+        <Box sx={sx.expandedScoutProfiles}>
+          <SearchResultScoutProfiles
+            row={row}
+            onRemove={onScoutProfileRemove}
+          />
+        </Box>
+      ) : null}
 
-    <Box sx={sx.expandedItem}>
-      <Typography level='body-xs' sx={sx.expandedLabel}>ליגה</Typography>
-      <Typography level='body-sm' sx={sx.expandedValue}>{row.leagueName || '-'}</Typography>
+      {isPlayer ? (
+        <>
+          <SearchResultNotes row={row} onSave={onNotesSave} />
+          <SearchResultRole row={row} onEdit={onRoleEdit} />
+        </>
+      ) : (
+        <SearchResultTeamUrl row={row} onEdit={onTeamUrlEdit} />
+      )}
     </Box>
-
-    <Box sx={sx.expandedItem}>
-      <Typography level='body-xs' sx={sx.expandedLabel}>סטטיסטיקה</Typography>
-      <Typography level='body-sm' sx={sx.expandedValue}>
-        {`${Number(row.minutes || 0)} דקות · ${Number(row.starts || 0)}/${Number(row.appearances || 0)} הרכב · ${Number(row.goals || 0)} שערים`}
-      </Typography>
-    </Box>
-  </Box>
-)
+  )
+}
 
 export default function SearchResultsSection({
   rows = [],
@@ -41,10 +48,18 @@ export default function SearchResultsSection({
   error = null,
   entityType = 'player',
   onEntityOpen,
+  onFavoriteToggle,
+  onNotesSave,
+  onRoleEdit,
+  onScoutProfileRemove,
+  onTeamUrlEdit,
 }) {
   const columns = React.useMemo(() => buildSearchColumns({
     entityType,
-  }), [entityType])
+    onFavoriteToggle: row => {
+      Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
+    },
+  }), [entityType, onFavoriteToggle])
   const entityLabel = entityType === 'team' ? 'קבוצות' : 'שחקנים'
   const entityColors = getEntityColors(entityType)
 
@@ -83,7 +98,17 @@ export default function SearchResultsSection({
           getRowKey={row => `${row.entityType}-${row.id}-${row.seasonKey}-${row.teamName}`}
           wrapSx={sx.tableWrap}
           tableSx={sx.table}
-          renderExpandedRow={renderExpandedRow}
+          defaultSort={{
+            key: entityType === 'team' ? 'teamName' : 'playerName',
+            direction: 'asc',
+          }}
+          renderExpandedRow={row => renderExpandedRow({
+            row,
+            onNotesSave,
+            onRoleEdit,
+            onScoutProfileRemove,
+            onTeamUrlEdit,
+          })}
         />
       )}
     </Card>

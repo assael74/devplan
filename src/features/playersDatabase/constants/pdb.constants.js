@@ -6,7 +6,20 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   teams: 'dbBirthTeams',
   searchIndexes: 'dbSearchIndexes',
   leaguesMaster: 'dbLeaguesMaster',
+  favorites: 'dbFavorites',
 }
+
+export const PLAYERS_DATABASE_FAVORITES_DOCUMENTS = {
+  PLAYERS: 'players',
+  BIRTH_TEAMS: 'birthTeams',
+}
+
+export const PLAYERS_DATABASE_FAVORITE_TYPES = {
+  PLAYER: 'player',
+  BIRTH_TEAM: 'birthTeam',
+}
+
+export const PLAYERS_DATABASE_FAVORITES_LIMIT = 500
 
 export const PLAYERS_DATABASE_IMPORT_FLOW = {
   PLAYERS: 'players',

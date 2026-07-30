@@ -112,6 +112,7 @@ const buildSeasonContextView = season => {
 
 export const buildEmptyPlayerPageView = playerId => ({
   id: cleanValue(playerId),
+  playerId: cleanValue(playerId),
   fullName: 'שחקן לא נמצא',
   teamName: '-',
   clubName: '-',
@@ -161,6 +162,7 @@ export const buildPlayerPageView = playerDomain => {
       playerDomain.identity?.playerDocumentId ||
       playerDomain.identity?.playerId
     ),
+    playerId: cleanValue(playerDomain.identity?.playerId),
     fullName: cleanValue(playerDomain.identity?.displayName || '-'),
     birthYear: playerDomain.identity?.birthYear ?? season.season?.birthYear ?? null,
     birthDate: playerDomain.identity?.birthDate ?? null,

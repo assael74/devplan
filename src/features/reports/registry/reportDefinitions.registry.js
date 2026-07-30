@@ -16,6 +16,11 @@ import {
 } from '../teamSeasonPlan/index.js'
 
 import {
+  DbSearchReportRenderer,
+  dbSearchDefinition,
+} from '../dbSearch/index.js'
+
+import {
   TeamMinutesPlanReportRenderer,
 } from '../teamMinutesPlan/index.js'
 
@@ -183,6 +188,28 @@ export const REPORT_DEFINITIONS = {
     id: REPORT_TYPES.PLAYER_TARGETS,
     label: 'יעדי שחקן',
     render: renderPlayerTargetsReport,
+  },
+
+  [REPORT_TYPES.DB_SEARCH]: {
+    ...dbSearchDefinition,
+    id: REPORT_TYPES.DB_SEARCH,
+    label: 'צילום חיפוש מסד נתונים',
+    render: (payload, options = {}) => {
+      const viewModel = buildViewModel(dbSearchDefinition, payload, options)
+
+      return (
+        <DbSearchReportRenderer
+          viewModel={viewModel}
+          presentation={options.presentation || 'url'}
+          device={options.device || ''}
+          isMobile={options.isMobile === true}
+          actions={options.actions || null}
+          reportOptions={options.reportOptions || []}
+          selectedReportValue={options.selectedReportValue || null}
+          onReportChange={options.onReportChange || null}
+        />
+      )
+    },
   },
 
   [REPORT_TYPES.EXTERNAL_LEAGUE_TABLE]: {

@@ -25,6 +25,7 @@ export {
 } from './leagues/index.js'
 
 export * from './searchIndex/index.js'
+export * from './favorites/index.js'
 
 export {
   PLAYERS_DATABASE_WRITE_ACTIONS,

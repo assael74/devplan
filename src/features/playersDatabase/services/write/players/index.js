@@ -23,10 +23,6 @@
  * - Creates, updates and clears season scout profiles.
  * - Synchronizes profile-driven player documents during statistics and role flows.
  *
- * playerFavorite.js
- * - Updates favorite at player-document root level.
- * - May create a player document with empty current/history arrays when none exists.
- *
  * playerSeasonDelete.js
  * - Removes one team-season context from player documents.
  * - Deletes the whole player document when current and history are both empty afterward.
@@ -42,7 +38,6 @@ export {
   removePlayerSeasonScoutProfile,
   syncPlayerScoutProfileDocsMany,
   syncPlayerRoleAndScoutProfileDoc,
-  updatePlayerFavorite,
   updatePlayerSeasonNotes,
   updatePlayerSeasonRole,
   updatePlayerSeasonUrl,

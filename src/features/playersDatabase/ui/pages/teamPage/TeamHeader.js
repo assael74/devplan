@@ -9,6 +9,7 @@ import {
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import ActivityStatusChip from '../../components/status/ActivityStatusChip.js'
+import FavoriteButton from '../../components/favorites/FavoriteButton.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
@@ -16,6 +17,9 @@ export default function TeamHeader({
   breadcrumbs,
   team,
   active,
+  favorite = false,
+  favoritePending = false,
+  onFavoriteToggle,
   onSearch,
   onLeague,
 }) {
@@ -28,6 +32,13 @@ export default function TeamHeader({
           <Typography level='h1' sx={sx.pageTitle}>
             {team.name}
           </Typography>
+
+          <FavoriteButton
+            favorite={favorite}
+            loading={favoritePending}
+            label={team.name}
+            onToggle={onFavoriteToggle}
+          />
 
           <Box sx={sx.birthYearChip}>
             שנתון {team.birthYear}

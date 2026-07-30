@@ -79,6 +79,16 @@ const toUniqueNumbers = values => (
     .filter(Number.isFinite))]
 )
 
+const chunkValues = (values = [], size = FIRESTORE_IN_MAX_VALUES) => {
+  const chunks = []
+
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size))
+  }
+
+  return chunks
+}
+
 const hasSearchIndexField = (entityType, field) => (
   SEARCH_INDEX_FIELDS_BY_ENTITY[entityType]?.has(field)
 )
@@ -175,6 +185,138 @@ const getSearchEntityType = filters => (
     : 'playerSeason'
 )
 
+const EXPECTED_LEVEL_CHANGE_DIRECTIONS = new Set([
+  'relegation',
+  'unchanged',
+  'promotion',
+  'unknown',
+])
+
+const getExpectedLevelChangeDirections = filters => (
+  toUniqueCleanValues(filters.expectedLeagueLevelChanges)
+    .filter(value => EXPECTED_LEVEL_CHANGE_DIRECTIONS.has(value))
+)
+
+const hasExpectedLevelChangeFilter = filters => (
+  getSearchEntityType(filters) === 'birthTeamSeason'
+  && getExpectedLevelChangeDirections(filters).length > 0
+)
+
+const buildExpectedLevelChange = ({ row = {}, sourceRow = null } = {}) => {
+  const currentLevel = Number(row.leagueLevel)
+  const nextSeasonLevel = Number(sourceRow?.leagueLevel)
+
+  if (!Number.isFinite(currentLevel) || currentLevel <= 0
+    || !Number.isFinite(nextSeasonLevel) || nextSeasonLevel <= 0) {
+    return {
+      currentLevel: Number.isFinite(currentLevel) ? currentLevel : null,
+      nextSeasonLevel: null,
+      levelGap: null,
+      direction: 'unknown',
+      sourceTeamId: clean(sourceRow?.birthTeamId || sourceRow?.teamId),
+      sourceBirthYear: Number(sourceRow?.birthYear) || null,
+      sourceTeamSlot: Number(sourceRow?.birthTeamSlot) || null,
+    }
+  }
+
+  const levelGap = nextSeasonLevel - currentLevel
+  const direction = levelGap > 0
+    ? 'relegation'
+    : levelGap < 0
+      ? 'promotion'
+      : 'unchanged'
+
+  return {
+    currentLevel,
+    nextSeasonLevel,
+    levelGap,
+    direction,
+    sourceTeamId: clean(sourceRow?.birthTeamId || sourceRow?.teamId),
+    sourceBirthYear: Number(sourceRow?.birthYear) || null,
+    sourceTeamSlot: Number(sourceRow?.birthTeamSlot) || null,
+  }
+}
+
+const buildExpectedLevelSourceKey = ({
+  seasonId,
+  clubId,
+  birthYear,
+  birthTeamSlot,
+} = {}) => [
+  clean(seasonId),
+  clean(clubId),
+  Number(birthYear) || 0,
+  Number(birthTeamSlot) || 1,
+].join('::')
+
+const readExpectedLevelSourceRows = async rows => {
+  const pairs = []
+  const seen = new Set()
+
+  rows.forEach(row => {
+    const seasonId = clean(row.seasonId)
+    const birthYear = Number(row.birthYear)
+    if (!seasonId || !Number.isFinite(birthYear) || birthYear <= 0) return
+
+    const key = `${seasonId}::${birthYear - 1}`
+    if (seen.has(key)) return
+    seen.add(key)
+    pairs.push({ seasonId, birthYear: birthYear - 1 })
+  })
+
+  const snapshots = await Promise.all(pairs.map(({ seasonId, birthYear }) => getDocs(query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('entityType', '==', 'birthTeamSeason'),
+    where('seasonId', '==', seasonId),
+    where('birthYear', '==', birthYear)
+  ))))
+
+  return snapshots.flatMap(snapshot => snapshot.docs.map(item => ({
+    id: item.id,
+    ...item.data(),
+  })))
+}
+
+const enrichRowsWithExpectedLevelChange = async rows => {
+  if (!rows.length || !rows.some(row => row.entityType === 'birthTeamSeason')) return rows
+
+  const sourceRows = await readExpectedLevelSourceRows(rows)
+  const sourceByKey = new Map(sourceRows.map(row => [
+    buildExpectedLevelSourceKey({
+      seasonId: row.seasonId,
+      clubId: row.clubId,
+      birthYear: row.birthYear,
+      birthTeamSlot: row.birthTeamSlot,
+    }),
+    row,
+  ]))
+
+  return rows.map(row => {
+    if (row.entityType !== 'birthTeamSeason') return row
+
+    const sourceRow = sourceByKey.get(buildExpectedLevelSourceKey({
+      seasonId: row.seasonId,
+      clubId: row.clubId,
+      birthYear: Number(row.birthYear) - 1,
+      birthTeamSlot: row.birthTeamSlot,
+    })) || null
+
+    return {
+      ...row,
+      expectedLeagueLevelChange: buildExpectedLevelChange({ row, sourceRow }),
+    }
+  })
+}
+
+const filterRowsByExpectedLevelChange = ({ rows = [], filters = {} } = {}) => {
+  const directions = getExpectedLevelChangeDirections(filters)
+  if (!directions.length) return rows
+
+  return rows.filter(row => directions.includes(
+    clean(row.expectedLeagueLevelChange?.direction) || 'unknown'
+  ))
+}
+
 const shouldFilterConditionsClientSide = ({ filters = {} } = {}) => (
   hasSearchConditions(filters)
 )
@@ -236,6 +378,16 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
 
     constraints.push(where(field, '==', value))
   })
+
+  const favoriteEntityIds = toUniqueCleanValues(filters.favoriteEntityIds)
+  const favoriteEntityField = entityType === 'birthTeamSeason'
+    ? 'birthTeamId'
+    : 'playerId'
+
+  if (filters.favoritesOnly && favoriteEntityIds.length
+    && hasSearchIndexField(entityType, favoriteEntityField)) {
+    constraints.push(buildValueConstraint(favoriteEntityField, favoriteEntityIds))
+  }
 
   if (entityType === 'playerSeason') {
     const scoutProfiles = toUniqueCleanValues(filters.scoutProfiles)
@@ -303,6 +455,19 @@ const buildSearchQueryVariants = filters => {
     })
   }
 
+  if (filters.favoritesOnly) {
+    const favoriteChunks = chunkValues(toUniqueCleanValues(filters.favoriteEntityIds))
+
+    if (!favoriteChunks.length) return []
+
+    variants = variants.flatMap(variant => (
+      favoriteChunks.map(favoriteEntityIds => ({
+        ...variant,
+        favoriteEntityIds,
+      }))
+    ))
+  }
+
   return variants
 }
 
@@ -353,6 +518,18 @@ const mergeSnapshots = snapshots => {
   })
 
   return rows
+}
+
+const finalizeSearchRows = async ({ rows = [], filters = {}, maxRows = null } = {}) => {
+  const enrichedRows = await enrichRowsWithExpectedLevelChange(rows)
+  const filteredRows = filterRowsByExpectedLevelChange({
+    rows: enrichedRows,
+    filters,
+  })
+
+  return Number.isFinite(Number(maxRows))
+    ? filteredRows.slice(0, Number(maxRows))
+    : filteredRows
 }
 
 const filterDocsBySearchVariant = ({ docs = [], filters = {} } = {}) => {
@@ -415,6 +592,7 @@ const countSearchVariant = async filters => {
 
 export async function readSearchPageData({
   filters = {},
+  favoriteEntityIds = [],
   maxRows = DEFAULT_SEARCH_RESULTS_LIMIT,
 } = {}) {
   if (!clean(filters.searchContext)) {
@@ -426,6 +604,7 @@ export async function readSearchPageData({
 
   const queryFilters = {
     ...filters,
+    favoriteEntityIds,
     maxRows,
   }
   const variants = buildSearchQueryVariants(queryFilters)
@@ -443,18 +622,46 @@ export async function readSearchPageData({
       }))
   )
 
+  const mergedRows = mergeSnapshots(docsByVariant.map(docs => ({ docs })))
+  const rows = await finalizeSearchRows({
+    rows: mergedRows,
+    filters: queryFilters,
+    maxRows,
+  })
+
   return {
-    totalCount: counts.reduce((total, count) => total + count, 0),
-    rows: mergeSnapshots(docsByVariant.map(docs => ({ docs }))).slice(0, maxRows),
+    totalCount: hasExpectedLevelChangeFilter(queryFilters)
+      ? rows.length
+      : counts.reduce((total, count) => total + count, 0),
+    rows,
   }
 }
 
 export async function readSearchPageCount({
   filters = {},
+  favoriteEntityIds = [],
 } = {}) {
   if (!clean(filters.searchContext)) return 0
 
-  const variants = buildSearchQueryVariants(filters)
+  const variants = buildSearchQueryVariants({
+    ...filters,
+    favoriteEntityIds,
+  })
+  if (hasExpectedLevelChangeFilter(filters)) {
+    const docsByVariant = await Promise.all(
+      variants
+        .filter(Boolean)
+        .map(variant => getDocsForSearchVariant({ filters: variant }))
+    )
+    const mergedRows = mergeSnapshots(docsByVariant.map(docs => ({ docs })))
+    const rows = await finalizeSearchRows({
+      rows: mergedRows,
+      filters,
+    })
+
+    return rows.length
+  }
+
   const counts = await Promise.all(
     variants
       .filter(Boolean)
@@ -466,12 +673,14 @@ export async function readSearchPageCount({
 
 export async function readSearchPageRows({
   filters = {},
+  favoriteEntityIds = [],
   maxRows = DEFAULT_SEARCH_RESULTS_LIMIT,
 } = {}) {
   if (!clean(filters.searchContext)) return []
 
   const queryFilters = {
     ...filters,
+    favoriteEntityIds,
     maxRows,
   }
   const variants = buildSearchQueryVariants(queryFilters)
@@ -484,5 +693,9 @@ export async function readSearchPageRows({
       }))
   )
 
-  return mergeSnapshots(docsByVariant.map(docs => ({ docs }))).slice(0, maxRows)
+  return finalizeSearchRows({
+    rows: mergeSnapshots(docsByVariant.map(docs => ({ docs }))),
+    filters: queryFilters,
+    maxRows,
+  })
 }

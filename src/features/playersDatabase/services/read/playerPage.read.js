@@ -134,7 +134,6 @@ const buildFallbackPlayerDocument = async playerId => {
     birthYear: identity?.birthYear ?? null,
     birthDate: identity?.birthDate ?? null,
     status: cleanValue(identity?.status),
-    favorite: Boolean(identity?.favorite),
     notes: cleanValue(identity?.notes),
     avatarUrl: cleanValue(identity?.avatarUrl),
     current,
@@ -202,7 +201,6 @@ const adaptPlayerDocument = playerDocument => {
     seasons,
     activeSeason,
     metadata: {
-      favorite: Boolean(playerDocument.favorite),
       notes: cleanValue(playerDocument.notes),
       updatedAt: playerDocument.updatedAt || null,
     },

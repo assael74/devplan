@@ -23,6 +23,11 @@ export const searchResultsTableSx = {
     textAlign: 'center',
   },
 
+  ageGroupColumn: {
+    width: 92,
+    textAlign: 'center',
+  },
+
   seasonColumn: {
     width: 76,
     textAlign: 'center',
@@ -66,6 +71,15 @@ export const searchResultsTableSx = {
   scoreColumn: {
     width: 72,
     textAlign: 'center',
+  },
+
+  favoriteColumn: {
+    width: 44,
+    minWidth: 44,
+    maxWidth: 44,
+    px: 0.25,
+    textAlign: 'center',
+    overflow: 'visible',
   },
 
   actionsColumn: {

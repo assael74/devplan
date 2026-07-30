@@ -52,6 +52,11 @@ export default function useSearchPage() {
     resetQuery: query.resetQuery,
     updateResultFilter: results.updateResultFilter,
     resetResultFilters: results.resetResultFilters,
+    toggleFavorite: results.toggleFavorite,
+    saveNotes: results.saveNotes,
+    removeScoutProfile: results.removeScoutProfile,
+    teamUrlEditor: results.teamUrlEditor,
+    roleEditor: results.roleEditor,
     loadDocuments: results.loadDocuments,
   }
 }

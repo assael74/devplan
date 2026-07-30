@@ -95,6 +95,7 @@ export const adaptTeamSearchIndexDocument = document => {
       ),
       clubId: cleanDomainValue(source.clubId),
       displayName: cleanDomainValue(source.displayName),
+      teamSlot: toDomainNumber(source.birthTeamSlot),
     },
     season: {
       seasonId: cleanDomainValue(source.seasonId),
@@ -127,6 +128,17 @@ export const adaptTeamSearchIndexDocument = document => {
       defenseRank: toDomainNumber(source.tableDefenseRank),
     },
     performance,
+    expectedLeagueLevelChange: source.expectedLeagueLevelChange && typeof source.expectedLeagueLevelChange === 'object'
+      ? {
+        currentLevel: toDomainNumber(source.expectedLeagueLevelChange.currentLevel),
+        nextSeasonLevel: toDomainNumber(source.expectedLeagueLevelChange.nextSeasonLevel),
+        levelGap: toDomainNumber(source.expectedLeagueLevelChange.levelGap),
+        direction: cleanDomainValue(source.expectedLeagueLevelChange.direction) || 'unknown',
+        sourceTeamId: cleanDomainValue(source.expectedLeagueLevelChange.sourceTeamId),
+        sourceBirthYear: toDomainNumber(source.expectedLeagueLevelChange.sourceBirthYear),
+        sourceTeamSlot: toDomainNumber(source.expectedLeagueLevelChange.sourceTeamSlot),
+      }
+      : null,
     completeness: {
       ...result.completeness,
       hasStats: true,

@@ -4,6 +4,8 @@ import * as React from 'react'
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
+import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
+import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useTeamPage } from '../../hooks/useTeamPage.js'
 import {
@@ -31,9 +33,10 @@ import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { useTeamReport } from './report/index.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
-export default function TeamPage() {
+function TeamPageContent() {
   const navigate = useNavigate()
   const { notify } = useSnackbar()
+  const favorites = usePlayersDatabaseFavorites()
   const [profileOnly, setProfileOnly] = React.useState(false)
   const {
     leagueId,
@@ -84,13 +87,70 @@ export default function TeamPage() {
     },
   ])
   const visiblePlayers = React.useMemo(() => {
-    if (!profileOnly) return players
+    const filteredPlayers = !profileOnly
+      ? players
+      : players.filter(player => (
+        Array.isArray(player.scoutProfiles) &&
+        player.scoutProfiles.length > 0
+      ))
 
-    return players.filter(player => (
-      Array.isArray(player.scoutProfiles) &&
-      player.scoutProfiles.length > 0
-    ))
-  }, [players, profileOnly])
+    return filteredPlayers.map(player => ({
+      ...player,
+      favorite: favorites.isPlayerFavorite(player.playerId),
+      favoritePending: favorites.isFavoritePending(
+        PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+        player.playerId
+      ),
+    }))
+  }, [
+    favorites.pendingKeysRevision,
+    favorites.playerFavoritesMap,
+    players,
+    profileOnly,
+  ])
+  const teamFavorite = favorites.isBirthTeamFavorite(team.birthTeamId)
+  const teamFavoritePending = favorites.isFavoritePending(
+    PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+    team.birthTeamId
+  )
+
+  const handleTeamFavoriteToggle = React.useCallback(() => {
+    const payload = {
+      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+      entityId: team.birthTeamId,
+    }
+
+    if (!team.birthTeamId) return null
+    if (favorites.isBirthTeamFavorite(team.birthTeamId)) {
+      return favorites.removeFavorite(payload)
+    }
+
+    return favorites.addFavorite({
+      ...payload,
+      displayName: team.name,
+      birthYear: team.birthYear,
+    })
+  }, [favorites, team.birthTeamId, team.birthYear, team.name])
+
+  const handlePlayerFavoriteToggle = React.useCallback(player => {
+    if (!player?.playerId) return null
+
+    const payload = {
+      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+      entityId: player.playerId,
+    }
+
+    if (favorites.isPlayerFavorite(player.playerId)) {
+      return favorites.removeFavorite(payload)
+    }
+
+    return favorites.addFavorite({
+      ...payload,
+      displayName: player.fullName,
+      birthYear: team.birthYear,
+    })
+  }, [favorites, team.birthYear])
+
   const isActiveSeason = selectedSeasonOption?.target === 'current'
   const teamReport = useTeamReport({
     team,
@@ -99,12 +159,17 @@ export default function TeamPage() {
   })
 
   return (
-    <PlayersDatabaseLayout>
+    <>
       <Box sx={sx.page}>
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}
           active={isActiveSeason}
+          favorite={teamFavorite}
+          favoritePending={teamFavoritePending}
+          onFavoriteToggle={() => {
+            Promise.resolve(handleTeamFavoriteToggle()).catch(() => {})
+          }}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
           onLeague={() => navigate(PLAYERS_DATABASE_UI_ROUTES.league(leagueId))}
         />
@@ -126,6 +191,7 @@ export default function TeamPage() {
           onRoleOpen={roleEditor.open}
           onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))}
           onPlayerUrlEdit={playerUrlEditor.open}
+          onFavoriteToggle={handlePlayerFavoriteToggle}
         />
       </Box>
 
@@ -219,6 +285,14 @@ export default function TeamPage() {
         report={statsImport.writeReport}
         onClose={statsImport.closeWriteReport}
       />
+    </>
+  )
+}
+
+export default function TeamPage() {
+  return (
+    <PlayersDatabaseLayout>
+      <TeamPageContent />
     </PlayersDatabaseLayout>
   )
 }

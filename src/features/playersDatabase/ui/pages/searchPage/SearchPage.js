@@ -1,5 +1,6 @@
 // features/playersDatabase/ui/pages/searchPage/SearchPage.js
 
+import * as React from 'react'
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
@@ -13,15 +14,20 @@ import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
 import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { useSearchReport } from './report/index.js'
+import DbSearchReportNameModal from './report/DbSearchReportNameModal.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
-export default function SearchPage() {
+function SearchPageContent() {
   const navigate = useNavigate()
+  const [reportNameOpen, setReportNameOpen] = React.useState(false)
   const search = useSearchPage()
   const searchReport = useSearchReport({
     rows: search.rows,
     queryFilters: search.queryFilters,
+    queryActiveItems: search.queryActiveItems,
+    resultFilters: search.resultFilters,
     summary: search.summary,
+    loadedEntityType: search.loadedEntityType,
   })
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
@@ -33,13 +39,16 @@ export default function SearchPage() {
   }
 
   return (
-    <PlayersDatabaseLayout>
+    <>
       <Box sx={sx.page}>
         <SearchHeader
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
-          onReport={searchReport.openPreview}
-          reportDisabled={!search.hasLoaded || !search.rows.length}
+          onReport={() => setReportNameOpen(true)}
+          reportDisabled={
+            !search.hasLoaded ||
+            !search.rows.length
+          }
         />
 
         <SearchWorkspace
@@ -47,6 +56,17 @@ export default function SearchPage() {
           onEntityOpen={handleEntityOpen}
         />
       </Box>
+
+      <DbSearchReportNameModal
+        open={reportNameOpen}
+        busy={searchReport.busy}
+        entityType={search.loadedEntityType}
+        onClose={() => setReportNameOpen(false)}
+        onConfirm={reportName => {
+          setReportNameOpen(false)
+          searchReport.openPreview(reportName)
+        }}
+      />
 
       <ReportPreviewModal
         open={searchReport.open}
@@ -56,6 +76,14 @@ export default function SearchPage() {
         onPublish={searchReport.publish}
         onClose={searchReport.closePreview}
       />
+    </>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <PlayersDatabaseLayout>
+      <SearchPageContent />
     </PlayersDatabaseLayout>
   )
 }

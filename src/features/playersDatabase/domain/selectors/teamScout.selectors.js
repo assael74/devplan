@@ -29,10 +29,12 @@ export const selectTeamPerformanceMetrics = (teamSeason, side) => {
     },
     target: {
       rate: value.targetRate,
+      normalized: value.targetNormalized,
       level: value.targetLevel,
     },
     ranking: {
       rate: value.rankingRate,
+      normalized: value.rankingNormalized,
       level: value.rankingLevel,
     },
     anomaly: {

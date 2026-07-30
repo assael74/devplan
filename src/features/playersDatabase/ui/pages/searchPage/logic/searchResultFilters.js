@@ -1,5 +1,7 @@
 // features/playersDatabase/ui/pages/searchPage/logic/searchResultFilters.js
 
+import { SCOUT_PRIORITY_DISPLAY } from '../../../logic/scout/scoutDisplay.constants.js'
+
 const clean = value => String(value || '').trim()
 
 const uniqueOptions = (rows, valueGetter, labelGetter = valueGetter) => {
@@ -20,7 +22,22 @@ const uniqueOptions = (rows, valueGetter, labelGetter = valueGetter) => {
   ))
 }
 
+const TEAM_PRIORITY_LEVELS = [
+  'elite',
+  'high',
+  'positive',
+  'neutral',
+  'low',
+]
+
+const TEAM_PRIORITY_OPTIONS = TEAM_PRIORITY_LEVELS.map(value => ({
+  value,
+  label: SCOUT_PRIORITY_DISPLAY[value]?.label || value,
+  tone: SCOUT_PRIORITY_DISPLAY[value]?.tone || value,
+}))
+
 export const createSearchResultFilters = () => ({
+  teamSearch: '',
   seasons: [],
   leagues: [],
   teams: [],
@@ -43,16 +60,8 @@ export const buildSearchResultFilterOptions = ({
       ...common,
       teams: [],
       profiles: [],
-      attackLevels: uniqueOptions(
-        rows,
-        row => row.offense?.priorityLevel,
-        row => row.offense?.priorityLevel
-      ),
-      defenseLevels: uniqueOptions(
-        rows,
-        row => row.defense?.priorityLevel,
-        row => row.defense?.priorityLevel
-      ),
+      attackLevels: TEAM_PRIORITY_OPTIONS,
+      defenseLevels: TEAM_PRIORITY_OPTIONS,
     }
   }
 
@@ -69,12 +78,20 @@ const includesAny = (selected, value) => (
   !selected.length || selected.includes(clean(value))
 )
 
+const includesSearch = (searchValue, value) => {
+  const query = clean(searchValue).toLocaleLowerCase('he')
+  if (!query) return true
+
+  return clean(value).toLocaleLowerCase('he').includes(query)
+}
+
 export const filterSearchResultRows = ({
   rows = [],
   filters = createSearchResultFilters(),
   entityType = 'player',
 } = {}) => (
   rows.filter(row => {
+    if (!includesSearch(filters.teamSearch, row.teamName)) return false
     if (!includesAny(filters.seasons, row.seasonKey)) return false
     if (!includesAny(filters.leagues, row.leagueName)) return false
 
@@ -92,7 +109,9 @@ export const filterSearchResultRows = ({
 )
 
 export const hasSearchResultFilters = filters => (
-  Object.values(filters || {}).some(values => (
-    Array.isArray(values) && values.length > 0
+  Object.values(filters || {}).some(value => (
+    Array.isArray(value)
+      ? value.length > 0
+      : Boolean(clean(value))
   ))
 )

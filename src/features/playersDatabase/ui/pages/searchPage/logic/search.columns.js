@@ -3,16 +3,22 @@
 import { Box, IconButton } from '@mui/joy'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 
+import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
 import ScoutPriority from '../../../components/scout/ScoutPriority.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
+import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import { buildPlayerScoutProfileOptions } from '../../../logic/scoutDisplay.logic.js'
 import { searchResultsTableSx as sx } from '../results/sx/searchResultsTable.sx.js'
-import { SEARCH_RESULTS_TABLE_WIDTHS } from './searchTableWidths.js'
+import {
+  PLAYER_SEARCH_TABLE_WIDTHS,
+  TEAM_SEARCH_TABLE_WIDTHS,
+} from './searchTableWidths.js'
 
-const columnWidth = key => buildTableColumnWidth(SEARCH_RESULTS_TABLE_WIDTHS[key])
+const playerColumnWidth = key => buildTableColumnWidth(PLAYER_SEARCH_TABLE_WIDTHS[key])
+const teamColumnWidth = key => buildTableColumnWidth(TEAM_SEARCH_TABLE_WIDTHS[key])
 
 const PROFILE_OPTION_BY_ID = buildPlayerScoutProfileOptions().reduce((map, option) => {
   map[option.value] = option
@@ -39,15 +45,23 @@ const buildProfileTooltip = profileDisplay => {
   )
 }
 
-const buildIndexColumn = () => ({
-  key: 'number',
-  label: '#',
+
+const buildFavoriteColumn = ({ columnWidth, onFavoriteToggle }) => ({
+  key: 'favorite',
+  label: '',
   sortable: false,
-  sx: { ...sx.indexColumn, ...columnWidth('number') },
-  render: (row, index) => index + 1,
+  sx: { ...sx.favoriteColumn, ...columnWidth('favorite') },
+  render: row => (
+    <FavoriteButton
+      favorite={row.favorite}
+      loading={row.favoritePending}
+      label={row.playerName || row.teamName}
+      onToggle={() => onFavoriteToggle?.(row)}
+    />
+  ),
 })
 
-const buildActionsColumn = () => ({
+const buildActionsColumn = columnWidth => ({
   key: 'actions',
   label: '',
   sortable: false,
@@ -68,30 +82,36 @@ const buildActionsColumn = () => ({
   ),
 })
 
-export function buildPlayerSearchColumns() {
+export function buildPlayerSearchColumns({ onFavoriteToggle } = {}) {
   return [
-    buildIndexColumn(),
     {
       key: 'avatar', label: '', sortable: false,
-      sx: { ...sx.avatarColumn, ...columnWidth('avatar') },
+      sx: { ...sx.avatarColumn, ...playerColumnWidth('avatar') },
       render: row => <Box component='img' src={row.avatarUrl || playerImage} alt='' sx={sx.avatar} />,
     },
-    { key: 'playerName', label: 'שחקן', sx: { ...sx.playerColumn, ...columnWidth('playerName') } },
-    { key: 'birthYear', label: 'שנתון', sx: { ...sx.yearColumn, ...columnWidth('birthYear') } },
-    { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...columnWidth('seasonKey') } },
-    { key: 'teamName', label: 'קבוצה', sx: { ...sx.teamColumn, ...columnWidth('teamName') } },
-    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...columnWidth('leagueName') } },
-    { key: 'minutes', label: 'דקות', sx: { ...sx.numberColumn, ...columnWidth('minutes') } },
+    {
+      key: 'playerName',
+      label: 'שחקן',
+      sx: { ...sx.playerColumn, ...playerColumnWidth('playerName') },
+      getHref: row => row.playerUrl,
+      getLinkAriaLabel: row => `פתיחת קישור השחקן ${row.playerName || ''}`,
+    },
+    { key: 'birthYear', label: 'שנתון', sx: { ...sx.yearColumn, ...playerColumnWidth('birthYear') } },
+    { key: 'ageGroupLabel', label: 'קבוצת גיל', sx: { ...sx.ageGroupColumn, ...playerColumnWidth('ageGroupLabel') } },
+    { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...playerColumnWidth('seasonKey') } },
+    { key: 'teamName', label: 'קבוצה', sx: { ...sx.teamColumn, ...playerColumnWidth('teamName') } },
+    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...playerColumnWidth('leagueName') } },
+    { key: 'minutes', label: 'דקות', sx: { ...sx.numberColumn, ...playerColumnWidth('minutes') } },
     {
       key: 'startsAppearances', label: 'הרכב',
-      sx: { ...sx.numberColumn, ...columnWidth('startsAppearances') },
+      sx: { ...sx.numberColumn, ...playerColumnWidth('startsAppearances') },
       render: row => `${Number(row.starts || 0)}/${Number(row.appearances || 0)}`,
       getSortValue: row => Number(row.starts || 0),
     },
-    { key: 'goals', label: 'שערים', sx: { ...sx.numberColumn, ...columnWidth('goals') } },
+    { key: 'goals', label: 'שערים', sx: { ...sx.numberColumn, ...playerColumnWidth('goals') } },
     {
       key: 'primaryProfile', label: 'פרופיל סקאוט',
-      sx: { ...sx.profileColumn, ...columnWidth('primaryProfile') },
+      sx: { ...sx.profileColumn, ...playerColumnWidth('primaryProfile') },
       render: row => {
         const display = row.scoutProfileDisplay || {}
         if (!display.label || display.label === '-') return '-'
@@ -107,7 +127,11 @@ export function buildPlayerSearchColumns() {
         )
       },
     },
-    buildActionsColumn(),
+    buildFavoriteColumn({
+      columnWidth: playerColumnWidth,
+      onFavoriteToggle,
+    }),
+    buildActionsColumn(playerColumnWidth),
   ]
 }
 
@@ -133,20 +157,28 @@ const buildTeamPriorityTooltip = ({ sideLabel, performance = {} }) => {
     : `${sideLabel}: ${scoreLabel}`
 }
 
-export function buildTeamSearchColumns() {
+export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
   return [
-    buildIndexColumn(),
-    { key: 'teamName', label: 'קבוצה', sx: { ...sx.teamColumn, ...columnWidth('teamName') } },
-    { key: 'birthYear', label: 'שנתון', sx: { ...sx.yearColumn, ...columnWidth('birthYear') } },
-    { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...columnWidth('seasonKey') } },
-    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...columnWidth('leagueName') } },
-    { key: 'tableRank', label: 'מיקום', sx: { ...sx.numberColumn, ...columnWidth('tableRank') } },
-    { key: 'appearances', label: 'משחקים', sx: { ...sx.numberColumn, ...columnWidth('appearances') } },
-    { key: 'goalsFor', label: 'זכות', sx: { ...sx.numberColumn, ...columnWidth('goalsFor') } },
-    { key: 'goalsAgainst', label: 'חובה', sx: { ...sx.numberColumn, ...columnWidth('goalsAgainst') } },
+    {
+      key: 'teamName',
+      label: 'קבוצה',
+      sx: { ...sx.teamColumn, ...teamColumnWidth('teamName') },
+      getHref: row => row.teamUrl,
+      getLinkAriaLabel: row => `פתיחת קישור הקבוצה ${row.teamName || ''}`,
+    },
+    { key: 'birthYear', label: 'שנתון', sx: { ...sx.yearColumn, ...teamColumnWidth('birthYear') } },
+    { key: 'ageGroupLabel', label: 'קבוצת גיל', sx: { ...sx.ageGroupColumn, ...teamColumnWidth('ageGroupLabel') } },
+    { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...teamColumnWidth('seasonKey') } },
+    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...teamColumnWidth('leagueName') } },
+    buildTableRankColumn({
+      sx: { ...sx.numberColumn, ...teamColumnWidth('tableRank') },
+    }),
+    { key: 'appearances', label: 'משחקים', sx: { ...sx.numberColumn, ...teamColumnWidth('appearances') } },
+    { key: 'goalsFor', label: 'זכות', sx: { ...sx.numberColumn, ...teamColumnWidth('goalsFor') } },
+    { key: 'goalsAgainst', label: 'חובה', sx: { ...sx.numberColumn, ...teamColumnWidth('goalsAgainst') } },
     {
       key: 'attackPriority', label: 'עדיפות התקפית',
-      sx: { ...sx.priorityColumn, ...columnWidth('attackPriority') },
+      sx: { ...sx.priorityColumn, ...teamColumnWidth('attackPriority') },
       render: row => (
         <ScoutPriority
           value={row.offense?.priorityLevel}
@@ -162,7 +194,7 @@ export function buildTeamSearchColumns() {
     },
     {
       key: 'defensePriority', label: 'עדיפות הגנתית',
-      sx: { ...sx.priorityColumn, ...columnWidth('defensePriority') },
+      sx: { ...sx.priorityColumn, ...teamColumnWidth('defensePriority') },
       render: row => (
         <ScoutPriority
           value={row.defense?.priorityLevel}
@@ -176,13 +208,20 @@ export function buildTeamSearchColumns() {
       ),
       getSortValue: row => Number(row.defense?.scoutPriorityRate || 0),
     },
-    { key: 'playersCount', label: 'שחקנים', sx: { ...sx.numberColumn, ...columnWidth('playersCount') } },
-    buildActionsColumn(),
+    { key: 'playersCount', label: 'שחקנים', sx: { ...sx.numberColumn, ...teamColumnWidth('playersCount') } },
+    buildFavoriteColumn({
+      columnWidth: teamColumnWidth,
+      onFavoriteToggle,
+    }),
+    buildActionsColumn(teamColumnWidth),
   ]
 }
 
-export function buildSearchColumns({ entityType = 'player' } = {}) {
+export function buildSearchColumns({
+  entityType = 'player',
+  onFavoriteToggle,
+} = {}) {
   return entityType === 'team'
-    ? buildTeamSearchColumns()
-    : buildPlayerSearchColumns()
+    ? buildTeamSearchColumns({ onFavoriteToggle })
+    : buildPlayerSearchColumns({ onFavoriteToggle })
 }

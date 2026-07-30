@@ -17,46 +17,298 @@ function createSearchReportId() {
   return `search-${Date.now()}`
 }
 
-export function buildSearchReport({
-  searchReportId = '',
-  rows = [],
-  queryFilters = {},
-  summary = {},
-} = {}) {
-  const reportId = searchReportId || createSearchReportId()
+const clean = value => String(value || '').trim()
+
+const cloneValue = value => {
+  if (Array.isArray(value)) return value.map(cloneValue)
+  if (!value || typeof value !== 'object') return value
+
+  return Object.entries(value).reduce((result, [key, item]) => {
+    if (typeof item !== 'function' && item !== undefined) {
+      result[key] = cloneValue(item)
+    }
+    return result
+  }, {})
+}
+
+const RESULT_FILTER_LABELS = {
+  teamSearch: 'חיפוש קבוצה',
+  playerSearch: 'חיפוש שחקן',
+  seasons: 'עונות בתצוגה',
+  leagues: 'ליגות בתצוגה',
+  teams: 'קבוצות בתצוגה',
+  profiles: 'פרופילים בתצוגה',
+  attackLevels: 'עדיפות התקפית בתצוגה',
+  defenseLevels: 'עדיפות הגנתית בתצוגה',
+}
+
+const PRIORITY_LEVEL_LABELS = {
+  elite: 'יעד מוביל',
+  high: 'עדיפות גבוהה',
+  positive: 'חיובי',
+  neutral: 'רגיל',
+  low: 'עדיפות נמוכה',
+}
+
+const buildResultFilterItems = (filters = {}) => Object.entries(filters)
+  .flatMap(([field, rawValue]) => {
+    const values = Array.isArray(rawValue)
+      ? rawValue
+      : clean(rawValue)
+        ? [rawValue]
+        : []
+
+    return values.map((value, index) => ({
+      id: `${field}-${index}-${clean(value)}`,
+      label: RESULT_FILTER_LABELS[field] || field,
+      value: field === 'attackLevels' || field === 'defenseLevels'
+        ? PRIORITY_LEVEL_LABELS[value] || clean(value)
+        : clean(value),
+    }))
+  })
+
+const normalizeQueryItems = items => (Array.isArray(items) ? items : [])
+  .map((item, index) => ({
+    id: clean(item?.key || item?.id) || `query-item-${index + 1}`,
+    label: clean(item?.label),
+  }))
+  .filter(item => item.label)
+
+const buildTeamSnapshotRow = (row = {}, index = 0) => ({
+  id: clean(row.id || row.birthTeamId) || `team-${index + 1}`,
+  birthTeamId: clean(row.birthTeamId),
+  teamName: clean(row.teamName || row.playerName) || 'קבוצה ללא שם',
+  teamUrl: clean(row.teamUrl),
+  favorite: row.favorite === true,
+  seasonKey: clean(row.seasonKey),
+  birthYear: row.birthYear ?? '',
+  leagueName: clean(row.leagueName),
+  leagueLevel: row.leagueLevel ?? '',
+  ageGroupLabel: clean(row.ageGroupLabel),
+  appearances: Number(row.appearances || 0),
+  tableRank: Number(row.tableRank || 0),
+  tableAttackRank: Number(row.tableAttackRank || 0),
+  tableDefenseRank: Number(row.tableDefenseRank || 0),
+  goalsFor: Number(row.goalsFor || 0),
+  goalsAgainst: Number(row.goalsAgainst || 0),
+  offense: cloneValue(row.offense || {}),
+  defense: cloneValue(row.defense || {}),
+  expectedLeagueLevelChange: cloneValue(row.expectedLeagueLevelChange || null),
+  metadata: cloneValue(row.metadata || {}),
+  calculation: cloneValue(row.calculation || {}),
+})
+
+const buildPlayerSnapshotRow = (row = {}, index = 0) => ({
+  id: clean(row.id || row.playerId) || `player-${index + 1}`,
+  playerId: clean(row.playerId),
+  playerName: clean(row.playerName) || 'שחקן ללא שם',
+  playerUrl: clean(row.playerUrl),
+  avatarUrl: clean(row.avatarUrl),
+  favorite: row.favorite === true,
+  seasonKey: clean(row.seasonKey),
+  birthYear: row.birthYear ?? '',
+  ageGroupLabel: clean(row.ageGroupLabel),
+  teamName: clean(row.teamName),
+  leagueName: clean(row.leagueName),
+  leagueLevel: row.leagueLevel ?? '',
+  positionLayer: clean(row.positionLayer),
+  primaryPosition: clean(row.primaryPosition),
+  numShirt: clean(row.numShirt),
+  minutes: Number(row.minutes || 0),
+  appearances: Number(row.appearances || 0),
+  starts: Number(row.starts || 0),
+  goals: Number(row.goals || 0),
+  primaryProfile: clean(row.primaryProfile),
+  scoutProfiles: cloneValue(row.scoutProfiles || []),
+  scoutProfileDisplay: cloneValue(row.scoutProfileDisplay || {}),
+  score: Number(row.score || 0),
+  reliability: clean(row.reliability),
+  notes: clean(row.notes),
+  metadata: cloneValue(row.metadata || {}),
+  calculation: cloneValue(row.calculation || {}),
+})
+
+const collectTeamCapabilities = rows => {
+  const availableDomains = []
+  const availableDimensions = [
+    'teamName',
+    'seasonKey',
+    'birthYear',
+    'leagueName',
+    'leagueLevel',
+  ]
+  const availableFields = new Set([
+    'teamName',
+    'seasonKey',
+    'birthYear',
+    'leagueName',
+    'leagueLevel',
+    'favorite',
+    'appearances',
+    'tableRank',
+    'tableAttackRank',
+    'tableDefenseRank',
+    'goalsFor',
+    'goalsAgainst',
+  ])
+
+  const offenseFields = new Set()
+  const defenseFields = new Set()
+
+  rows.forEach(row => {
+    Object.keys(row.offense || {}).forEach(field => offenseFields.add(field))
+    Object.keys(row.defense || {}).forEach(field => defenseFields.add(field))
+  })
+
+  if (offenseFields.size) {
+    availableDomains.push('offense')
+    offenseFields.forEach(field => availableFields.add(`offense.${field}`))
+  }
+
+  if (defenseFields.size) {
+    availableDomains.push('defense')
+    defenseFields.forEach(field => availableFields.add(`defense.${field}`))
+  }
+
+  if (rows.some(row => row.expectedLeagueLevelChange)) {
+    availableDimensions.push('expectedLeagueLevelChange')
+    availableFields.add('expectedLeagueLevelChange.direction')
+    availableFields.add('expectedLeagueLevelChange.levelGap')
+  }
 
   return {
-    sourceKey: `externalPlayerSearchResults:${reportId}`,
-    reportType: REPORT_TYPES.EXTERNAL_PLAYER_SEARCH_RESULTS,
-    entityType: REPORT_ENTITY_TYPES.PLAYER_SEARCH,
+    availableDomains,
+    availableDimensions,
+    availableFields: [...availableFields],
+  }
+}
+
+const collectPlayerCapabilities = rows => {
+  const availableFields = new Set([
+    'playerName',
+    'teamName',
+    'seasonKey',
+    'birthYear',
+    'ageGroupLabel',
+    'leagueName',
+    'leagueLevel',
+    'favorite',
+    'positionLayer',
+    'primaryPosition',
+    'minutes',
+    'appearances',
+    'starts',
+    'goals',
+    'primaryProfile',
+    'score',
+    'reliability',
+  ])
+
+  if (rows.some(row => row.scoutProfiles?.length)) {
+    availableFields.add('scoutProfiles')
+  }
+
+  return {
+    availableDomains: ['playerStats', 'scoutProfiles'],
+    availableDimensions: [
+      'playerName',
+      'teamName',
+      'seasonKey',
+      'birthYear',
+      'leagueName',
+      'leagueLevel',
+      'primaryProfile',
+    ],
+    availableFields: [...availableFields],
+  }
+}
+
+export function buildSearchReport({
+  searchReportId = '',
+  reportName = '',
+  rows = [],
+  queryFilters = {},
+  queryActiveItems = [],
+  resultFilters = {},
+  summary = {},
+  loadedEntityType = '',
+} = {}) {
+  const entityType = loadedEntityType === 'player'
+    ? REPORT_ENTITY_TYPES.PLAYERS_LIST
+    : REPORT_ENTITY_TYPES.TEAMS_LIST
+  const isPlayersList = entityType === REPORT_ENTITY_TYPES.PLAYERS_LIST
+  const reportId = searchReportId || createSearchReportId()
+  const normalizedReportName = clean(reportName)
+  const snapshotRows = (Array.isArray(rows) ? rows : []).map(
+    isPlayersList ? buildPlayerSnapshotRow : buildTeamSnapshotRow
+  )
+  const capabilities = isPlayersList
+    ? collectPlayerCapabilities(snapshotRows)
+    : collectTeamCapabilities(snapshotRows)
+
+  const seasonsCount = new Set(snapshotRows.map(row => row.seasonKey).filter(Boolean)).size
+  const birthYearsCount = new Set(snapshotRows.map(row => row.birthYear).filter(Boolean)).size
+  const contextCount = new Set(
+    snapshotRows
+      .map(row => isPlayersList ? row.teamName : row.leagueName)
+      .filter(Boolean)
+  ).size
+
+  return {
+    sourceKey: `dbSearch:${reportId}`,
+    reportType: REPORT_TYPES.DB_SEARCH,
+    entityType,
     entityId: reportId,
     reportContent: {
-      schemaVersion: 1,
-      reportType: REPORT_TYPES.EXTERNAL_PLAYER_SEARCH_RESULTS,
-      entity: {
-        type: REPORT_ENTITY_TYPES.PLAYER_SEARCH,
-        id: reportId,
-        name: 'תוצאות חיפוש שחקנים',
-        avatarUrl: '',
-      },
+      id: REPORT_TYPES.DB_SEARCH,
+      type: REPORT_TYPES.DB_SEARCH,
+      mode: REPORT_TYPES.DB_SEARCH,
+      documentVersion: 1,
       meta: {
-        title: 'תוצאות חיפוש שחקנים',
-        subtitle: 'צילום רשומות שנבחרו במאגר',
+        reportName: normalizedReportName,
+        title: isPlayersList ? 'צילום חיפוש שחקנים' : 'צילום חיפוש קבוצות',
+        subtitle: 'מצב היסטורי של תוצאות החיפוש והנתונים שנשלפו',
         reportDate: formatReportDate(),
-        columns: 2,
+        columns: 4,
         items: [
-          { id: 'results', label: 'רשומות', value: String(rows.length) },
-          { id: 'entityType', label: 'סוג חיפוש', value: 'שחקנים' },
+          {
+            id: 'results',
+            label: isPlayersList ? 'שחקנים בצילום' : 'קבוצות בצילום',
+            value: String(snapshotRows.length),
+          },
+          { id: 'seasons', label: 'עונות', value: String(seasonsCount) },
+          { id: 'birthYears', label: 'שנתונים', value: String(birthYearsCount) },
+          {
+            id: 'context',
+            label: isPlayersList ? 'קבוצות' : 'ליגות',
+            value: String(contextCount),
+          },
         ],
       },
-      content: {
-        title: 'צילום תוצאות החיפוש',
-        description: 'מבנה הרשומות והפילטרים שיוצגו בדוח ייבנה בשלב התוכן.',
+      entity: {
+        type: entityType,
+        id: reportId,
+        name: isPlayersList ? 'רשימת שחקנים' : 'רשימת קבוצות',
+        avatarUrl: '',
       },
       snapshot: {
-        queryFilters,
-        summary,
-        rows,
+        capturedAt: new Date().toISOString(),
+        sourceResultCount: Number(summary.total || snapshotRows.length),
+        displayedResultCount: snapshotRows.length,
+      },
+      sourceQuery: {
+        queryFilters: cloneValue(queryFilters),
+        queryItems: normalizeQueryItems(queryActiveItems),
+        resultFilters: cloneValue(resultFilters),
+        resultItems: buildResultFilterItems(resultFilters),
+      },
+      dataCapabilities: capabilities,
+      rows: snapshotRows,
+      presentation: {
+        defaultSort: isPlayersList
+          ? { field: 'minutes', direction: 'desc' }
+          : { field: 'tableRank', direction: 'asc' },
+        visibleDomains: capabilities.availableDomains,
       },
     },
   }

@@ -21,7 +21,7 @@ import {
   buildPublicReportVersionOption,
 } from './publicReportVersions.model.js'
 
-const PUBLIC_REPORT_WRITE_DISABLED = false
+const PUBLIC_REPORT_WRITE_DISABLED = true
 
 function ensurePublicReportInput(input) {
   if (!input || typeof input !== 'object') {

@@ -8,9 +8,6 @@ export {
   updatePlayerRoleFlow,
 } from './updatePlayerRole.flow.js'
 
-export {
-  updatePlayerFavoriteFlow,
-} from './updatePlayerFavorite.flow.js'
 
 export {
   updatePlayerSeasonNotesFlow,

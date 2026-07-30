@@ -53,6 +53,18 @@ export const resolveTeamScoutPriorityLevel = (rate) => {
   return TEAM_SCOUT_PRIORITY_LEVEL.LOW
 }
 
+export const resolveTeamScoutPriorityScoreLevel = (score) => {
+  const value = Number(score)
+
+  if (!Number.isFinite(value)) return TEAM_SCOUT_PRIORITY_LEVEL.UNAVAILABLE
+  if (value >= 80) return TEAM_SCOUT_PRIORITY_LEVEL.ELITE
+  if (value >= 70) return TEAM_SCOUT_PRIORITY_LEVEL.HIGH
+  if (value >= 60) return TEAM_SCOUT_PRIORITY_LEVEL.POSITIVE
+  if (value >= 50) return TEAM_SCOUT_PRIORITY_LEVEL.NEUTRAL
+
+  return TEAM_SCOUT_PRIORITY_LEVEL.LOW
+}
+
 export const resolveTeamScoutAnomalyLevel = (rate) => {
   const value = Number(rate)
 

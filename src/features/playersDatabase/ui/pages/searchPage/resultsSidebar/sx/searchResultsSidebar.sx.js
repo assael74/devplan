@@ -46,6 +46,12 @@ export const searchResultsSidebarSx = {
   },
   filtersGrid: {
     display: 'grid',
+    gap: 1.7,
+  },
+  filtersRow: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: 0.65,
   },
   filterField: {
@@ -56,10 +62,32 @@ export const searchResultsSidebarSx = {
   filterLabel: {
     color: devPlanColors.secondary,
   },
+  filterInput: {
+    minHeight: 30,
+    fontSize: 12,
+  },
   filterSelect: {
     minHeight: 30,
     fontSize: 12,
   },
+  priorityOption: {
+    minWidth: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.55,
+  },
+  priorityOptionIcon: colors => ({
+    flexShrink: 0,
+    color: colors.main,
+    fontSize: 15,
+  }),
+  priorityOptionLabel: colors => ({
+    minWidth: 0,
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1.2,
+  }),
 
   state: {
     minHeight: 130,

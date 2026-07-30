@@ -53,7 +53,6 @@ export const normalizeSearchResultRow = row => ({
   score: toNumberOrZero(row.primaryScoutScore),
   note: cleanValue(row.notes || row.seasonNotes || '-'),
   avatarUrl: cleanValue(row.avatarUrl),
-  favorite: Boolean(row.favorite),
   leagueId: cleanValue(row.leagueId),
   teamId: cleanValue(row.birthTeamId || row.teamId),
   seasonKey: cleanValue(row.seasonKey),
@@ -67,14 +66,12 @@ export const buildSearchPageView = (rows = []) => {
 
   const highReliability = results.filter(row => row.reliability === 'גבוהה').length
   const interesting = results.filter(row => row.score >= 80).length
-  const saved = results.filter(row => row.favorite).length
 
   return {
     results,
     summary: {
       total: results.length,
       highReliability,
-      saved,
       interesting,
     },
     activityItems: [

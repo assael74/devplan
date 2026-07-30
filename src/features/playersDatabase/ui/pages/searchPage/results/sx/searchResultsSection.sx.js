@@ -20,7 +20,7 @@ export const searchResultsSectionSx = {
     px: 1.4,
     py: 0.85,
     display: 'flex',
-    gap: 1,
+    gap: 0.6,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottom: '1px solid #dbe5f4',
@@ -86,6 +86,7 @@ export const searchResultsSectionSx = {
     boxSizing: 'border-box',
     overflowY: 'auto',
     overflowX: 'hidden',
+    scrollbarGutter: 'stable',
     border: 0,
     borderRadius: 0,
   },
@@ -116,16 +117,66 @@ export const searchResultsSectionSx = {
       textOverflow: 'clip',
       whiteSpace: 'normal',
     },
+
+    '& tbody > tr[aria-hidden="true"]': {
+      height: 0,
+      visibility: 'hidden',
+
+      '& > td': {
+        height: 0,
+        minHeight: 0,
+        p: '0 !important',
+        border: '0 !important',
+      },
+    },
+
+    '& tbody > tr[aria-hidden="true"] > td > div': {
+      maxHeight: 0,
+    },
+
+    '& tbody > tr[aria-hidden="false"] > td > div': {
+      maxHeight: 320,
+    },
+
+    '& tbody > tr[aria-hidden] > td > div > div': {
+      px: 0.65,
+      py: 0.55,
+    },
+
+    '& tbody > tr:has(+ tr[aria-hidden="false"]) > td': {
+      bgcolor: '#eef4fa',
+      borderBottomColor: 'transparent',
+    },
+
+    '& tbody > tr[aria-hidden="false"] > td': {
+      bgcolor: '#eaf1f8 !important',
+    },
   },
 
   expandedDetails: {
     minWidth: 0,
+    pt: 0.45,
+    px: 0.65,
+    pb: 0.25,
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'repeat(4, minmax(0, 1fr))',
+      lg: 'minmax(0, 2fr) minmax(260px, 1fr)',
     },
-    gap: 1,
+    gap: 0.45,
+    alignItems: 'stretch',
+    bgcolor: '#eaf1f8',
+    borderTop: '2px solid #c9d9ea',
+    borderRadius: '0 0 8px 8px',
+  },
+
+  expandedScoutProfiles: {
+    minWidth: 0,
+    gridColumn: '1 / -1',
+  },
+
+  expandedNotesOnly: {
+    gridTemplateColumns: 'minmax(0, 1fr)',
   },
 
   expandedItem: {

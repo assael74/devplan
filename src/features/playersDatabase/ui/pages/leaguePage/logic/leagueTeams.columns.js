@@ -3,6 +3,8 @@
 import { Box, IconButton, Tooltip } from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
+import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
+import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
 import TeamName from '../../../components/teams/TeamName.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -133,23 +135,16 @@ const resolveTeamNameSx = row => ({
 export const buildLeagueTeamsColumns = ({
   onTeamOpen,
   onTeamUrlEdit,
+  onFavoriteToggle,
 }) => {
   return [
-  {
-    key: 'tableRank',
-    label: 'מיקום',
+  buildTableRankColumn({
     sx: {
       ...sx.rankColumn,
       ...columnWidth('tableRank'),
     },
     defaultSortDirection: 'asc',
-    getSortValue: row => toCount(row.tableRank),
-    render: row => (
-      <Box sx={sx.rankBadge}>
-        {row.tableRank || '-'}
-      </Box>
-    ),
-  },
+  }),
   {
     key: 'teamAvatar',
     label: '',
@@ -314,6 +309,23 @@ export const buildLeagueTeamsColumns = ({
           {row.profilesCount || 0}
         </Box>
       </Box>
+    ),
+  },
+  {
+    key: 'favorite',
+    label: '',
+    sortable: false,
+    sx: {
+      ...sx.actionColumn,
+      ...columnWidth('favorite'),
+    },
+    render: row => (
+      <FavoriteButton
+        favorite={row.favorite}
+        loading={row.favoritePending}
+        label={row.name}
+        onToggle={() => onFavoriteToggle?.(row)}
+      />
     ),
   },
   {

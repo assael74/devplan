@@ -54,6 +54,23 @@ export const searchQueryPanelSx = {
     },
   }),
 
+
+  collapseHeader: expanded => ({
+    minHeight: 48,
+    px: 1.15,
+    py: 0.45,
+    bgcolor: expanded ? '#eef3f8' : '#eaf0f6',
+    color: devPlanColors.primaryDark,
+    borderRadius: expanded
+      ? 'var(--joy-radius-sm) var(--joy-radius-sm) 0 0'
+      : 'var(--joy-radius-sm)',
+    borderBottom: expanded ? '1px solid #d6e0eb' : 'none',
+    '&:hover': {
+      bgcolor: expanded ? '#e7eef6' : '#e2eaf3',
+      color: devPlanColors.primaryDark,
+    },
+  }),
+
   headerIdentity: {
     minWidth: 0,
     display: 'flex',
@@ -62,8 +79,8 @@ export const searchQueryPanelSx = {
   },
 
   headerIcon: entityColors => ({
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     display: 'grid',
     placeItems: 'center',
     flex: '0 0 auto',
