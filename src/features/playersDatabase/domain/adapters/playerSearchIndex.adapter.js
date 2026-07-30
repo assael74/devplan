@@ -30,6 +30,7 @@ export const adaptPlayerSearchIndexDocument = document => {
       rates: { minutesPerGame: toDomainNumber(source.minutesPerGame), goalsPer90: toDomainNumber(source.goalsPer90) },
     },
     scout: normalizePlayerScout({ profiles, profileIds: source.scoutProfileIds, combinationIds: source.scoutCombinationIds, searchIds: source.scoutProfileSearchIds }),
+    expectedLevelDelta: source.expectedLevelDelta === null || source.expectedLevelDelta === undefined ? null : toDomainNumber(source.expectedLevelDelta),
     completeness: { ...result.completeness, hasStats: true, hasRanking: source.teamTableRank !== null && source.teamTableRank !== undefined, hasScoutProfiles: profiles.length > 0 || toDomainArray(source.scoutProfileIds).length > 0 },
     metadata: { notes: cleanDomainValue(firstDomainValue(source.notes, source.seasonNotes)), playerUrl: cleanDomainValue(source.playerUrl), teamUrl: cleanDomainValue(source.teamUrl), seasonUrl: cleanDomainValue(source.seasonUrl), rosterStatus: cleanDomainValue(source.rosterStatus), sourceCollection: cleanDomainValue(source.sourceCollection) || 'players', sourceDocumentId: cleanDomainValue(source.sourceDocumentId), sourceTarget: lifecycle.type, updatedAt: source.updatedAt || null },
     calculation: { mode: lifecycle.usesProjection ? 'projected' : 'final', engineVersion: cleanDomainValue(source.engineVersion), calculatedAt: source.calculatedAt || source.updatedAt || null },

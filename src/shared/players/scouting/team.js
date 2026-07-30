@@ -103,10 +103,8 @@ const getTeamScoutRate = ({ team = {}, side = '' } = {}) => {
   const sideData = getTeamScoutSide({ team, side }) || {}
 
   return pickNum(
-    sideData.priorityRate,
-    sideData.scoutPriorityRate,
+    sideData.scoutPriorityScore,
     sideData.qualityRate,
-    sideData.combinedRate,
     sideData.anomalyRate
   )
 }

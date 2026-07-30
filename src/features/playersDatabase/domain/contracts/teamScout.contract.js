@@ -2,7 +2,6 @@
 
 import {
   resolveTeamScoutAnomalyLevel,
-  resolveTeamScoutPriorityLevel,
   resolveTeamScoutPriorityScoreLevel,
 } from '../../../../shared/teams/scout/index.js'
 import {
@@ -21,7 +20,7 @@ export const createEmptyTeamScoutSide = side => ({
   anomalyRate: null,
   anomalyLevel: 'unavailable',
   qualityRate: null,
-  scoutPriorityRate: null,
+  scoutPriorityScore: null,
   priorityLevel: 'unavailable',
   opportunityType: 'unavailable',
   rank: null,
@@ -64,25 +63,23 @@ export const normalizeTeamScoutSide = (side, value = {}) => {
   const rankingNormalized = toDomainNumber(source.rankingNormalized)
   const anomalyRate = toDomainNumber(source.anomalyRate)
   const qualityRate = toDomainNumber(source.qualityRate)
-  const scoutPriorityRate = toDomainNumber(source.scoutPriorityRate)
+  const scoutPriorityScore = toDomainNumber(source.scoutPriorityScore)
 
   return {
     ...createEmptyTeamScoutSide(side),
     targetRate,
     targetNormalized,
-    targetLevel: cleanDomainValue(source.targetLevel) ||
-      resolveTeamScoutPriorityLevel(targetRate),
+    targetLevel: cleanDomainValue(source.targetLevel) || 'unavailable',
     rankingRate,
     rankingNormalized,
-    rankingLevel: cleanDomainValue(source.rankingLevel) ||
-      resolveTeamScoutPriorityLevel(rankingRate),
+    rankingLevel: cleanDomainValue(source.rankingLevel) || 'unavailable',
     anomalyRate,
     anomalyLevel: cleanDomainValue(source.anomalyLevel) ||
       resolveTeamScoutAnomalyLevel(anomalyRate),
     qualityRate,
-    scoutPriorityRate,
+    scoutPriorityScore,
     priorityLevel: cleanDomainValue(source.priorityLevel) ||
-      resolveTeamScoutPriorityScoreLevel(scoutPriorityRate),
+      resolveTeamScoutPriorityScoreLevel(scoutPriorityScore),
     opportunityType: cleanDomainValue(source.opportunityType) || 'unavailable',
     rank: toDomainNumber(source.rank),
     benchmark: {

@@ -5,7 +5,7 @@ import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 
 const TEAM_ENTITY_TYPE = 'birthTeamSeason'
-const TARGET_SCHEMA_VERSION = 3
+const TARGET_SCHEMA_VERSION = 4
 const SAMPLE_LIMIT = 20
 
 const hasValue = value => (
@@ -17,12 +17,14 @@ const SIDE_FIELDS = {
     current: [
       'attackQualityRate',
       'attackTargetRate',
+      'attackTargetNormalized',
       'attackTargetLevel',
       'attackRankingRate',
+      'attackRankingNormalized',
       'attackRankingLevel',
       'attackAnomalyRate',
       'attackAnomalyLevel',
-      'attackScoutPriorityRate',
+      'attackScoutPriorityScore',
       'attackPriorityLevel',
       'attackOpportunityType',
     ],
@@ -31,7 +33,6 @@ const SIDE_FIELDS = {
       'attackPerformanceRate',
       'attackRankingRate',
       'attackCombinedRate',
-      'attackPriorityRate',
     ],
     deprecated: [
       'attackPerformance',
@@ -41,19 +42,20 @@ const SIDE_FIELDS = {
       'attackPositionAnomalyLevel',
       'attackCombinedRate',
       'attackCombinedLevel',
-      'attackPriorityRate',
     ],
   },
   defense: {
     current: [
       'defenseQualityRate',
       'defenseTargetRate',
+      'defenseTargetNormalized',
       'defenseTargetLevel',
       'defenseRankingRate',
+      'defenseRankingNormalized',
       'defenseRankingLevel',
       'defenseAnomalyRate',
       'defenseAnomalyLevel',
-      'defenseScoutPriorityRate',
+      'defenseScoutPriorityScore',
       'defensePriorityLevel',
       'defenseOpportunityType',
     ],
@@ -62,7 +64,6 @@ const SIDE_FIELDS = {
       'defensePerformanceRate',
       'defenseRankingRate',
       'defenseCombinedRate',
-      'defensePriorityRate',
     ],
     deprecated: [
       'defensePerformance',
@@ -72,7 +73,6 @@ const SIDE_FIELDS = {
       'defensePositionAnomalyLevel',
       'defenseCombinedRate',
       'defenseCombinedLevel',
-      'defensePriorityRate',
     ],
   },
 }

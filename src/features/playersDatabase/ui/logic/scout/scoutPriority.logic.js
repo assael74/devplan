@@ -10,3 +10,8 @@ export function formatRate(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '-'
   return `${Math.round(Number(value))}%`
 }
+
+export function formatScore(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-'
+  return `${Math.round(Number(value))}`
+}

@@ -57,27 +57,27 @@ export function buildDbSearchTeamColumns({
 
   if (
     availableDomains.includes('offense') &&
-    hasField(availableFields, 'offense.scoutPriorityRate')
+    hasField(availableFields, 'offense.scoutPriorityScore')
   ) {
     columns.push({
       id: 'offensePriority',
       label: 'עדיפות התקפית',
-      field: 'offense.scoutPriorityRate',
+      field: 'offense.scoutPriorityScore',
       sortable: true,
-      kind: 'rate',
+      kind: 'score',
     })
   }
 
   if (
     availableDomains.includes('defense') &&
-    hasField(availableFields, 'defense.scoutPriorityRate')
+    hasField(availableFields, 'defense.scoutPriorityScore')
   ) {
     columns.push({
       id: 'defensePriority',
       label: 'עדיפות הגנתית',
-      field: 'defense.scoutPriorityRate',
+      field: 'defense.scoutPriorityScore',
       sortable: true,
-      kind: 'rate',
+      kind: 'score',
     })
   }
 

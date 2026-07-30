@@ -15,11 +15,13 @@ import useSearchPage from './hooks/useSearchPage.js'
 import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { useSearchReport } from './report/index.js'
 import DbSearchReportNameModal from './report/DbSearchReportNameModal.js'
+import SearchIndexNormalizationModal from './admin/SearchIndexNormalizationModal.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 function SearchPageContent() {
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
+  const [normalizationOpen, setNormalizationOpen] = React.useState(false)
   const search = useSearchPage()
   const searchReport = useSearchReport({
     rows: search.rows,
@@ -45,6 +47,7 @@ function SearchPageContent() {
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues)}
           onReport={() => setReportNameOpen(true)}
+          onRefresh={() => setNormalizationOpen(true)}
           reportDisabled={
             !search.hasLoaded ||
             !search.rows.length
@@ -56,6 +59,11 @@ function SearchPageContent() {
           onEntityOpen={handleEntityOpen}
         />
       </Box>
+
+      <SearchIndexNormalizationModal
+        open={normalizationOpen}
+        onClose={() => setNormalizationOpen(false)}
+      />
 
       <DbSearchReportNameModal
         open={reportNameOpen}

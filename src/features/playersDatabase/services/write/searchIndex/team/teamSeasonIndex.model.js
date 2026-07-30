@@ -170,6 +170,11 @@ export const buildTeamSeasonIndexDoc = ({
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
     leagueLevel: toNumberOrZero(league.level),
+    expectedLevelDelta: row.expectedLevelDelta !== null
+      && row.expectedLevelDelta !== undefined
+      && Number.isFinite(Number(row.expectedLevelDelta))
+      ? Number(row.expectedLevelDelta)
+      : null,
     region: clean(league.region),
     seasonDataStatus: resolveSeasonDataStatus(target),
     seasonDataCompleteness: resolveSeasonDataCompleteness(target),
@@ -185,30 +190,34 @@ export const buildTeamSeasonIndexDoc = ({
     goalsAgainstPerGame: games ? roundNumber(goalsAgainst / games) : 0,
     teamGamePlayed: games,
     ...normalization,
-    teamPerformanceSchemaVersion: 3,
+    teamPerformanceSchemaVersion: 4,
 
     attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
     attackTargetRate: roundOptionalWholeNumber(offense?.targetRate),
+    attackTargetNormalized: roundOptionalWholeNumber(offense?.targetNormalized),
     attackTargetLevel: offense?.targetLevel ?? '',
     attackRankingRate: roundOptionalWholeNumber(offense?.rankingRate),
+    attackRankingNormalized: roundOptionalWholeNumber(offense?.rankingNormalized),
     attackRankingLevel: offense?.rankingLevel ?? '',
     attackAnomalyRate: roundOptionalWholeNumber(offense?.anomalyRate),
     attackAnomalyLevel: offense?.anomalyLevel ?? '',
-    attackScoutPriorityRate: roundOptionalWholeNumber(
-      offense?.scoutPriorityRate
+    attackScoutPriorityScore: roundOptionalWholeNumber(
+      offense?.scoutPriorityScore ?? offense?.scoutPriorityRate
     ),
     attackPriorityLevel: offense?.priorityLevel ?? '',
     attackOpportunityType: offense?.opportunityType ?? '',
 
     defenseQualityRate: roundOptionalWholeNumber(defense?.qualityRate),
     defenseTargetRate: roundOptionalWholeNumber(defense?.targetRate),
+    defenseTargetNormalized: roundOptionalWholeNumber(defense?.targetNormalized),
     defenseTargetLevel: defense?.targetLevel ?? '',
     defenseRankingRate: roundOptionalWholeNumber(defense?.rankingRate),
+    defenseRankingNormalized: roundOptionalWholeNumber(defense?.rankingNormalized),
     defenseRankingLevel: defense?.rankingLevel ?? '',
     defenseAnomalyRate: roundOptionalWholeNumber(defense?.anomalyRate),
     defenseAnomalyLevel: defense?.anomalyLevel ?? '',
-    defenseScoutPriorityRate: roundOptionalWholeNumber(
-      defense?.scoutPriorityRate
+    defenseScoutPriorityScore: roundOptionalWholeNumber(
+      defense?.scoutPriorityScore ?? defense?.scoutPriorityRate
     ),
     defensePriorityLevel: defense?.priorityLevel ?? '',
     defenseOpportunityType: defense?.opportunityType ?? '',

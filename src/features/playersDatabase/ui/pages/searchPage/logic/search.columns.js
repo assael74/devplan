@@ -147,8 +147,8 @@ const OPPORTUNITY_LABELS = {
 }
 
 const buildTeamPriorityTooltip = ({ sideLabel, performance = {} }) => {
-  const score = Number(performance.scoutPriorityRate)
-  const scoreLabel = Number.isFinite(score) ? `${Math.round(score)}%` : '—'
+  const score = Number(performance.scoutPriorityScore)
+  const scoreLabel = Number.isFinite(score) ? `${Math.round(score)}` : '—'
   const opportunityKey = String(performance.opportunityType || '').trim()
   const opportunityLabel = OPPORTUNITY_LABELS[opportunityKey] || ''
 
@@ -190,7 +190,7 @@ export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
           fontSize={11}
         />
       ),
-      getSortValue: row => Number(row.offense?.scoutPriorityRate || 0),
+      getSortValue: row => Number(row.offense?.scoutPriorityScore ?? 0),
     },
     {
       key: 'defensePriority', label: 'עדיפות הגנתית',
@@ -206,7 +206,7 @@ export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
           fontSize={11}
         />
       ),
-      getSortValue: row => Number(row.defense?.scoutPriorityRate || 0),
+      getSortValue: row => Number(row.defense?.scoutPriorityScore ?? 0),
     },
     { key: 'playersCount', label: 'שחקנים', sx: { ...sx.numberColumn, ...teamColumnWidth('playersCount') } },
     buildFavoriteColumn({

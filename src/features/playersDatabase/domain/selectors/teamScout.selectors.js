@@ -21,7 +21,7 @@ export const selectTeamPerformanceMetrics = (teamSeason, side) => {
 
   return {
     priority: {
-      rate: value.scoutPriorityRate,
+      score: value.scoutPriorityScore,
       level: value.priorityLevel,
     },
     quality: {

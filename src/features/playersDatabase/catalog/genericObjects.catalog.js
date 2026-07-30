@@ -382,6 +382,7 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   birthYear: 0,
   leagueTotalRound: 0,
   leagueLevel: 0,
+  expectedLevelDelta: null,
   region: '',
   seasonDataStatus: '',
   seasonDataCompleteness: '',
@@ -415,27 +416,31 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   projectedTeamGamePlayed: 0,
   searchTeamGamePlayed: 0,
 
-  teamPerformanceSchemaVersion: 3,
+  teamPerformanceSchemaVersion: 4,
 
   attackQualityRate: null,
   attackTargetRate: null,
+  attackTargetNormalized: null,
   attackTargetLevel: '',
   attackRankingRate: null,
+  attackRankingNormalized: null,
   attackRankingLevel: '',
   attackAnomalyRate: null,
   attackAnomalyLevel: '',
-  attackScoutPriorityRate: null,
+  attackScoutPriorityScore: null,
   attackPriorityLevel: '',
   attackOpportunityType: '',
 
   defenseQualityRate: null,
   defenseTargetRate: null,
+  defenseTargetNormalized: null,
   defenseTargetLevel: '',
   defenseRankingRate: null,
+  defenseRankingNormalized: null,
   defenseRankingLevel: '',
   defenseAnomalyRate: null,
   defenseAnomalyLevel: '',
-  defenseScoutPriorityRate: null,
+  defenseScoutPriorityScore: null,
   defensePriorityLevel: '',
   defenseOpportunityType: '',
 
@@ -464,6 +469,8 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   playerUrl: '',
   favorite: false,
   notes: '',
+  rosterStatus: 'regular',
+  isYoungerAgeGroup: false,
 
   leagueId: '',
   seasonId: '',
@@ -484,6 +491,7 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   birthYear: 0,
   leagueTotalRound: 0,
   leagueLevel: 0,
+  expectedLevelDelta: null,
   region: '',
 
   primaryPosition: '',
@@ -558,6 +566,3 @@ export const SEARCHINDEX_DATABASE_GENERIC_OBJECTS_CATALOG = {
   birthTeamSeason: SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
   playerSeason: SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
 };
-
-
-

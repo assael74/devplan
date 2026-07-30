@@ -26,6 +26,13 @@ export const formatRate = value => {
   return `${Math.round(numberValue)}%`
 }
 
+export const formatScore = value => {
+  const numberValue = Number(value)
+  if (!Number.isFinite(numberValue)) return '-'
+
+  return `${Math.round(numberValue)}`
+}
+
 export const formatValue = value => {
   if (value === null || value === undefined || value === '') return '-'
 

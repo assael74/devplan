@@ -121,7 +121,7 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
     <PlayersDatabaseModal
       open={open}
       title='רענון אינדקס החיפוש'
-      description='רענון שחקנים קיימים ובנייה מחדש של קבוצות מתוך טבלאות הליגה'
+      description='רענון שחקנים וקבוצות, כולל חישוב שינוי רמת הליגה הצפוי'
       iconId='refresh'
       size='md'
       hideFooter
@@ -129,7 +129,7 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
       onClose={onClose}
     >
       <Alert color='warning' variant='soft'>
-        מומלץ לבצע תחילה בדיקה ללא כתיבה. בקבוצות, הרצה בפועל תחשב מחדש את הביצועים מטבלאות הליגה ותעדכן את אינדקס החיפוש.
+        מומלץ לבצע תחילה בדיקה ללא כתיבה. הרצה מלאה תבנה מחדש את הקבוצות, תחשב שינוי רמה צפוי ותעדכן את השחקנים בהתאם לקבוצתם.
       </Alert>
 
       <FormControl sx={sx.field}>
@@ -169,6 +169,10 @@ export default function SearchIndexNormalizationModal({ open, onClose }) {
             {Number(result.scannedSeasonsCount) > 0 ? (
               <ResultItem label='עונות מקור' value={result.scannedSeasonsCount} />
             ) : null}
+            <ResultItem label='שינוי חושב לקבוצות' value={result.teamDeltaCalculatedCount} />
+            <ResultItem label='שינוי לא ידוע בקבוצות' value={result.teamDeltaUnknownCount} />
+            <ResultItem label='שחקנים מותאמים' value={result.playerDeltaMatchedCount} />
+            <ResultItem label='שחקנים ללא התאמה' value={result.playerDeltaUnknownCount} />
           </Box>
 
           <Typography level='body-xs' sx={sx.resultNote}>

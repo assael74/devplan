@@ -20,6 +20,7 @@ const buildSearchIndexScoutSide = ({
     source[`${prefix}TargetRate`],
     source[`${prefix}PerformanceRate`]
   ),
+  targetNormalized: source[`${prefix}TargetNormalized`],
   targetLevel: firstDomainValue(
     source[`${prefix}TargetLevel`],
     source[`${prefix}PerformanceLevel`]
@@ -28,6 +29,7 @@ const buildSearchIndexScoutSide = ({
     source[`${prefix}RankingRate`],
     source[`${prefix}PositionAnomalyRate`]
   ),
+  rankingNormalized: source[`${prefix}RankingNormalized`],
   rankingLevel: firstDomainValue(
     source[`${prefix}RankingLevel`],
     source[`${prefix}PositionAnomalyLevel`]
@@ -41,7 +43,13 @@ const buildSearchIndexScoutSide = ({
     source[`${prefix}CombinedLevel`]
   ),
   qualityRate: source[`${prefix}QualityRate`],
+  scoutPriorityScore: firstDomainValue(
+    source[`${prefix}ScoutPriorityScore`],
+    source[`${prefix}ScoutPriorityRate`],
+    source[`${prefix}PriorityRate`]
+  ),
   scoutPriorityRate: firstDomainValue(
+    source[`${prefix}ScoutPriorityScore`],
     source[`${prefix}ScoutPriorityRate`],
     source[`${prefix}PriorityRate`]
   ),
@@ -128,24 +136,36 @@ export const adaptTeamSearchIndexDocument = document => {
       defenseRank: toDomainNumber(source.tableDefenseRank),
     },
     performance,
-    expectedLeagueLevelChange: source.expectedLeagueLevelChange && typeof source.expectedLeagueLevelChange === 'object'
-      ? {
-        currentLevel: toDomainNumber(source.expectedLeagueLevelChange.currentLevel),
-        nextSeasonLevel: toDomainNumber(source.expectedLeagueLevelChange.nextSeasonLevel),
-        levelGap: toDomainNumber(source.expectedLeagueLevelChange.levelGap),
-        direction: cleanDomainValue(source.expectedLeagueLevelChange.direction) || 'unknown',
-        sourceTeamId: cleanDomainValue(source.expectedLeagueLevelChange.sourceTeamId),
-        sourceBirthYear: toDomainNumber(source.expectedLeagueLevelChange.sourceBirthYear),
-        sourceTeamSlot: toDomainNumber(source.expectedLeagueLevelChange.sourceTeamSlot),
+    expectedLeagueLevelChange: (() => {
+      const currentLevel = toDomainNumber(source.leagueLevel)
+      const delta = source.expectedLevelDelta === null || source.expectedLevelDelta === undefined
+        ? null
+        : toDomainNumber(source.expectedLevelDelta)
+      const direction = delta === null
+        ? 'unknown'
+        : delta > 0
+          ? 'promotion'
+          : delta < 0
+            ? 'relegation'
+            : 'unchanged'
+
+      return {
+        currentLevel,
+        nextSeasonLevel: delta === null || currentLevel === null ? null : currentLevel - delta,
+        levelGap: delta === null ? null : -delta,
+        expectedLevelDelta: delta,
+        direction,
       }
-      : null,
+    })(),
     completeness: {
       ...result.completeness,
       hasStats: true,
       hasRanking: hasDomainValue(source.tableRank),
       hasPerformance:
         hasDomainValue(source.attackScoutPriorityRate) ||
+        hasDomainValue(source.attackScoutPriorityScore) ||
         hasDomainValue(source.defenseScoutPriorityRate) ||
+        hasDomainValue(source.defenseScoutPriorityScore) ||
         hasDomainValue(source.attackPriorityRate) ||
         hasDomainValue(source.defensePriorityRate) ||
         hasDomainValue(source.attackPerformanceRate) ||

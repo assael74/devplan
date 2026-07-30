@@ -89,16 +89,23 @@ const formatRate = value => {
   return number === null ? 'לא זמין' : `${Math.round(number)}%`
 }
 
+const formatScore = value => {
+  const number = toNumericValue(value)
+  return number === null ? 'לא זמין' : `${Math.round(number)}`
+}
+
+const formatNormalizedScore = formatScore
+
 const buildPriorityTooltip = ({ sideLabel, view }) => {
   const opportunity = OPPORTUNITY_LABELS[view?.opportunityType] || 'לא זמין'
 
   return (
     <Box>
-      <Box>{`עדיפות ${sideLabel}: ${formatRate(view?.priority?.rate)}`}</Box>
+      <Box>{`עדיפות ${sideLabel}: ${formatScore(view?.priority?.score ?? view?.priority?.rate)}`}</Box>
       <Box>{`סוג הזדמנות: ${opportunity}`}</Box>
-      <Box>{`איכות מוחלטת: ${formatRate(view?.quality?.rate)}`}</Box>
-      <Box>{`ביצוע מול יעד: ${formatRate(view?.target?.rate)}`}</Box>
-      <Box>{`חריגה מהמיקום: ${formatRate(view?.ranking?.rate)}`}</Box>
+      <Box>{`איכות מוחלטת: ${formatNormalizedScore(view?.quality?.rate)}`}</Box>
+      <Box>{`ביצוע מול יעד מנורמל: ${formatNormalizedScore(view?.target?.normalized ?? view?.target?.rate)}`}</Box>
+      <Box>{`חריגה מהמיקום מנורמלת: ${formatNormalizedScore(view?.ranking?.normalized ?? view?.ranking?.rate)}`}</Box>
       <Box>{`ציון אנומליה: ${formatRate(view?.anomaly?.rate)}`}</Box>
     </Box>
   )
@@ -241,6 +248,7 @@ export const buildLeagueTeamsColumns = ({
     },
     getSortValue: row => (
       resolvePrioritySortValue(
+        row?.performanceView?.offense?.priority?.score ??
         row?.performanceView?.offense?.priority?.rate
       )
     ),
@@ -269,6 +277,7 @@ export const buildLeagueTeamsColumns = ({
     },
     getSortValue: row => (
       resolvePrioritySortValue(
+        row?.performanceView?.defense?.priority?.score ??
         row?.performanceView?.defense?.priority?.rate
       )
     ),

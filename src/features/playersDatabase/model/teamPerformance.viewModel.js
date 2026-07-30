@@ -7,14 +7,24 @@ const toNullableNumber = value => {
   return Number.isFinite(number) ? number : null
 }
 
-const normalizeMetric = ({ rate, level } = {}) => ({
+const normalizeMetric = ({ rate, normalized, level } = {}) => ({
   rate: toNullableNumber(rate),
+  normalized: toNullableNumber(normalized),
   level: clean(level) || 'unavailable',
 })
 
+const normalizePriority = ({ score, level } = {}) => {
+  const value = toNullableNumber(score)
+
+  return {
+    score: value,
+    level: clean(level) || 'unavailable',
+  }
+}
+
 export const buildTeamPerformanceSideViewModel = (side = {}) => ({
-  priority: normalizeMetric({
-    rate: side.scoutPriorityRate,
+  priority: normalizePriority({
+    score: side.scoutPriorityScore,
     level: side.priorityLevel,
   }),
   quality: {
@@ -22,10 +32,12 @@ export const buildTeamPerformanceSideViewModel = (side = {}) => ({
   },
   target: normalizeMetric({
     rate: side.targetRate,
+    normalized: side.targetNormalized,
     level: side.targetLevel,
   }),
   ranking: normalizeMetric({
     rate: side.rankingRate,
+    normalized: side.rankingNormalized,
     level: side.rankingLevel,
   }),
   anomaly: normalizeMetric({

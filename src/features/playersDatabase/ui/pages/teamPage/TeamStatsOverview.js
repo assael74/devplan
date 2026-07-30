@@ -3,7 +3,7 @@
 import { Box } from '@mui/joy'
 
 import TeamKpiCard from './TeamKpiCard.js'
-import { formatRate, formatValue } from './logic/teamPage.utils.js'
+import { formatRate, formatScore, formatValue } from './logic/teamPage.utils.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
 const resolveSide = (team, side) => (
@@ -34,7 +34,7 @@ export default function TeamStatsOverview({ team }) {
         <TeamKpiCard
           performance
           title='עדיפות התקפית'
-          value={formatRate(offense.priority?.rate)}
+          value={formatScore(offense.priority?.score ?? offense.priority?.rate)}
           iconId='stats'
           level={offense.priority?.level}
           primaryDetails={[
@@ -49,12 +49,12 @@ export default function TeamStatsOverview({ team }) {
             },
             {
               label: 'ביצוע מול יעד',
-              value: formatRate(offense.target?.rate),
+              value: formatRate(offense.target?.normalized ?? offense.target?.rate),
               tooltip: 'ביצוע הכיבוש בפועל ביחס ליעד שנקבע לפי מיקום הקבוצה.',
             },
             {
               label: 'חריגה מהמיקום',
-              value: formatRate(offense.ranking?.rate),
+              value: formatRate(offense.ranking?.normalized ?? offense.ranking?.rate),
               tooltip: 'הפער בין מיקום הקבוצה בטבלה לבין דירוגה בכיבוש שערים.',
             },
             {
@@ -68,7 +68,7 @@ export default function TeamStatsOverview({ team }) {
         <TeamKpiCard
           performance
           title='עדיפות הגנתית'
-          value={formatRate(defense.priority?.rate)}
+          value={formatScore(defense.priority?.score ?? defense.priority?.rate)}
           iconId='defensive'
           level={defense.priority?.level}
           primaryDetails={[
@@ -83,12 +83,12 @@ export default function TeamStatsOverview({ team }) {
             },
             {
               label: 'ביצוע מול יעד',
-              value: formatRate(defense.target?.rate),
+              value: formatRate(defense.target?.normalized ?? defense.target?.rate),
               tooltip: 'ביצוע הספיגה בפועל ביחס ליעד שנקבע לפי מיקום הקבוצה.',
             },
             {
               label: 'חריגה מהמיקום',
-              value: formatRate(defense.ranking?.rate),
+              value: formatRate(defense.ranking?.normalized ?? defense.ranking?.rate),
               tooltip: 'הפער בין מיקום הקבוצה בטבלה לבין דירוגה במניעת שערים.',
             },
             {

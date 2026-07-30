@@ -80,9 +80,12 @@ const normalizeTeamSearchRow = teamSeason => {
   const offense = teamSeason.performance?.offense || {}
   const defense = teamSeason.performance?.defense || {}
   const ranking = teamSeason.ranking || {}
-  const primarySide = Number(offense.scoutPriorityRate || 0) >= Number(defense.scoutPriorityRate || 0)
+  const offensePriorityScore = offense.scoutPriorityScore
+  const defensePriorityScore = defense.scoutPriorityScore
+  const primarySide = Number(offensePriorityScore || 0) >= Number(defensePriorityScore || 0)
     ? offense
     : defense
+  const primaryScore = primarySide.scoutPriorityScore
 
   return {
     ...teamSeason,
@@ -121,11 +124,11 @@ const normalizeTeamSearchRow = teamSeason => {
       type: 'teamPerformance',
       id: clean(primarySide.side),
       label: clean(primarySide.priorityLevel),
-      score: primarySide.scoutPriorityRate ?? null,
+      score: primaryScore ?? null,
       reliability: { level: '' },
       baseProfiles: [],
     },
-    score: Number(primarySide.scoutPriorityRate || 0),
+    score: Number(primaryScore || 0),
     offense,
     defense,
     teamUrl: clean(teamSeason.metadata?.teamUrl),

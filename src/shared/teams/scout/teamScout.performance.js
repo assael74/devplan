@@ -129,7 +129,7 @@ const applyScoutPriorityCaps = ({ rate, qualityRate } = {}) => {
   return priority
 }
 
-const buildScoutPriorityRate = ({
+const buildScoutPriorityScore = ({
   qualityRate,
   targetRate,
   rankingRate,
@@ -314,12 +314,12 @@ export const buildTeamScoutPerformance = ({
   const defenseTargetNormalized = normalizeTargetRate(defensePerformanceRate)
   const offenseRankingNormalized = normalizeDeviationRate(offenseRankingRate)
   const defenseRankingNormalized = normalizeDeviationRate(defenseRankingRate)
-  const offenseScoutPriorityRate = buildScoutPriorityRate({
+  const offenseScoutPriorityScore = buildScoutPriorityScore({
     qualityRate: offenseQualityRate,
     targetRate: offensePerformanceRate,
     rankingRate: offenseRankingRate,
   })
-  const defenseScoutPriorityRate = buildScoutPriorityRate({
+  const defenseScoutPriorityScore = buildScoutPriorityScore({
     qualityRate: defenseQualityRate,
     targetRate: defensePerformanceRate,
     rankingRate: defenseRankingRate,
@@ -348,8 +348,8 @@ export const buildTeamScoutPerformance = ({
       anomalyRate: offenseCombinedRate,
       anomalyLevel: resolveTeamScoutAnomalyLevel(offenseCombinedRate),
       qualityRate: offenseQualityRate,
-      scoutPriorityRate: offenseScoutPriorityRate,
-      priorityLevel: resolveTeamScoutPriorityScoreLevel(offenseScoutPriorityRate),
+      scoutPriorityScore: offenseScoutPriorityScore,
+      priorityLevel: resolveTeamScoutPriorityScoreLevel(offenseScoutPriorityScore),
       opportunityType: offenseOpportunityType,
     },
     defense: {
@@ -362,8 +362,8 @@ export const buildTeamScoutPerformance = ({
       anomalyRate: defenseCombinedRate,
       anomalyLevel: resolveTeamScoutAnomalyLevel(defenseCombinedRate),
       qualityRate: defenseQualityRate,
-      scoutPriorityRate: defenseScoutPriorityRate,
-      priorityLevel: resolveTeamScoutPriorityScoreLevel(defenseScoutPriorityRate),
+      scoutPriorityScore: defenseScoutPriorityScore,
+      priorityLevel: resolveTeamScoutPriorityScoreLevel(defenseScoutPriorityScore),
       opportunityType: defenseOpportunityType,
     },
   }

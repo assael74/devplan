@@ -5,7 +5,10 @@ import { Box, Sheet, Typography } from '@mui/joy'
 
 import { SortMenuButton } from '../../../../../ui/patterns/sort/index.js'
 
-import { resolveTeamScoutPriorityLevel } from '../../../../../shared/teams/scout/index.js'
+import {
+  resolveTeamScoutPriorityLevel,
+  resolveTeamScoutPriorityScoreLevel,
+} from '../../../../../shared/teams/scout/index.js'
 import {
   ReportList,
   ReportListRow,
@@ -56,6 +59,11 @@ function formatRate(value) {
   return Number.isFinite(number) ? `${Math.round(number)}%` : '—'
 }
 
+function formatScore(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.round(number) : '—'
+}
+
 function getLevel(value) {
   return LEVEL_DISPLAY[value] || LEVEL_DISPLAY.unavailable
 }
@@ -64,30 +72,41 @@ function resolveQualityLevel(rate) {
   return resolveTeamScoutPriorityLevel(rate)
 }
 
+function resolvePriorityLevel(score) {
+  return resolveTeamScoutPriorityScoreLevel(score)
+}
+
 function getViewValue(side = {}, view = 'combined') {
   if (view === 'performance') {
     return {
-      rate: side.anomalyRate,
-      level: side.performanceLevel,
+      value: side.anomaly?.rate ?? side.anomalyRate,
+      level: side.anomaly?.level ?? side.performanceLevel,
+      format: 'rate',
     }
   }
 
   if (view === 'quality') {
+    const value = side.quality?.rate ?? side.qualityRate
+
     return {
-      rate: side.qualityRate,
-      level: resolveQualityLevel(side.qualityRate),
+      value,
+      level: resolveQualityLevel(value),
+      format: 'score',
     }
   }
 
+  const value = side.priority?.score ?? side.scoutPriorityScore
+
   return {
-    rate: side.combinedRate,
-    level: side.combinedLevel,
+    value,
+    level: side.priority?.level ?? resolvePriorityLevel(value),
+    format: 'score',
   }
 }
 
 function getSortValue(row, sortBy, view) {
-  if (sortBy === 'offense') return Number(getViewValue(row.offense, view).rate) || 0
-  if (sortBy === 'defense') return Number(getViewValue(row.defense, view).rate) || 0
+  if (sortBy === 'offense') return Number(getViewValue(row.offense, view).value) || 0
+  if (sortBy === 'defense') return Number(getViewValue(row.defense, view).value) || 0
   return Number(row[sortBy]) || 0
 }
 
@@ -139,7 +158,9 @@ function PerformanceValue({ side = {}, view = 'combined', label }) {
         {display.label}
       </Typography>
       <Typography component='span' sx={sx.performanceRate}>
-        {formatRate(value.rate)}
+        {value.format === 'rate'
+          ? formatRate(value.value)
+          : formatScore(value.value)}
       </Typography>
     </Box>
   )

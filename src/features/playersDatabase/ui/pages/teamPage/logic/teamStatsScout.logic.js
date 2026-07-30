@@ -48,13 +48,13 @@ const buildStatsScoutPlayerInput = (row, teamContext = {}) => {
     row.teamAttackPerformance,
     teamContext.attackPerformance,
     teamStats.attackPerformance,
-    teamContext.offense?.scoutPriorityRate,
+    teamContext.offense?.scoutPriorityScore,
   )
   const teamDefensePerformance = pickFirstValue(
     row.teamDefensePerformance,
     teamContext.defensePerformance,
     teamStats.defensePerformance,
-    teamContext.defense?.scoutPriorityRate,
+    teamContext.defense?.scoutPriorityScore,
   )
 
   const playerStats = {
@@ -164,4 +164,3 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
     return buildEmptyStatsScoutPreview()
   }
 }
-

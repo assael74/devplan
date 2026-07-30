@@ -31,6 +31,12 @@ function formatRate(value) {
     : '—'
 }
 
+function formatScore(value) {
+  return Number.isFinite(Number(value))
+    ? Math.round(Number(value))
+    : '—'
+}
+
 function MetaItem({ item = {} }) {
   return (
     <Sheet variant='outlined' sx={sx.metaItem}>
@@ -109,6 +115,10 @@ function resolvePath(row, path) {
     .reduce((value, key) => value?.[key], row)
 }
 
+function resolveColumnValue(row, column = {}) {
+  return column.field ? resolvePath(row, column.field) : undefined
+}
+
 function normalizeSortValue(value) {
   if (value === null || value === undefined || value === '') return 0
   return value
@@ -133,7 +143,11 @@ function renderCell(row, column) {
   }
 
   if (column.kind === 'rate') {
-    return formatRate(resolvePath(row, column.field))
+    return formatRate(resolveColumnValue(row, column))
+  }
+
+  if (column.kind === 'score') {
+    return formatScore(resolveColumnValue(row, column))
   }
 
   if (column.kind === 'expectedLevelChange') {
@@ -142,7 +156,7 @@ function renderCell(row, column) {
     ] || '—'
   }
 
-  const value = resolvePath(row, column.field)
+  const value = resolveColumnValue(row, column)
   return value === 0 ? 0 : value || '—'
 }
 
@@ -216,8 +230,8 @@ export default function TeamsListContent({
     })
 
     return [...filtered].sort((first, second) => {
-      const firstValue = normalizeSortValue(resolvePath(first, sort.field))
-      const secondValue = normalizeSortValue(resolvePath(second, sort.field))
+      const firstValue = normalizeSortValue(resolveColumnValue(first, sort))
+      const secondValue = normalizeSortValue(resolveColumnValue(second, sort))
       const direction = sort.direction === 'desc' ? -1 : 1
 
       if (typeof firstValue === 'string' || typeof secondValue === 'string') {
@@ -228,11 +242,11 @@ export default function TeamsListContent({
     })
   }, [capabilities, filters, model.rows, sort])
 
-  const toggleSort = field => {
+  const toggleSort = column => {
     setSort(current => ({
-      field,
+      field: column.field,
       direction:
-        current.field === field && current.direction === 'asc'
+        current.field === column.field && current.direction === 'asc'
           ? 'desc'
           : 'asc',
     }))
@@ -354,7 +368,7 @@ export default function TeamsListContent({
                       data-sortable={column.sortable ? 'true' : undefined}
                       onClick={
                         column.sortable
-                          ? () => toggleSort(column.field)
+                          ? () => toggleSort(column)
                           : undefined
                       }
                     >

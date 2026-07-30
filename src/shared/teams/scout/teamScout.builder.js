@@ -140,11 +140,11 @@ const sortTeamScoutRows = (rows, sortMode) => {
 
   return [...rows].sort((a, b) => {
     const first = toNumber(
-      a[scoreKey] && a[scoreKey].scoutPriorityRate,
+      a[scoreKey]?.scoutPriorityScore,
       -Infinity
     )
     const second = toNumber(
-      b[scoreKey] && b[scoreKey].scoutPriorityRate,
+      b[scoreKey]?.scoutPriorityScore,
       -Infinity
     )
 

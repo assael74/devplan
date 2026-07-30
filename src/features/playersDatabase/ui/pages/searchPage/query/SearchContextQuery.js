@@ -1,9 +1,8 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchContextQuery.js
 
-import { Chip, FormControl, FormLabel, Stack, Tooltip } from '@mui/joy'
+import { Chip, Divider, FormControl, FormLabel, Stack, Tooltip } from '@mui/joy'
 import ArrowDownwardRounded from '@mui/icons-material/ArrowDownwardRounded'
 import ArrowUpwardRounded from '@mui/icons-material/ArrowUpwardRounded'
-import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded'
 import RemoveRounded from '@mui/icons-material/RemoveRounded'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -22,7 +21,12 @@ const EXPECTED_LEVEL_CHANGE_ICONS = {
   relegation: ArrowDownwardRounded,
   unchanged: RemoveRounded,
   promotion: ArrowUpwardRounded,
-  unknown: HelpOutlineRounded,
+}
+
+const EXPECTED_LEVEL_CHANGE_COLORS = {
+  promotion: 'success',
+  relegation: 'danger',
+  unchanged: 'neutral',
 }
 
 function MultiSelectChips({ values, selected = [], onToggle, prefix = '' }) {
@@ -66,6 +70,38 @@ function EntityTypeSelector({ value, onSelect }) {
   )
 }
 
+function ExpectedLevelChangeFilters({ selected = [], onToggle }) {
+  return (
+    <FormControl sx={sx.inlineFilterGroup}>
+      <FormLabel sx={sx.groupLabel}>שינוי רמה צפוי</FormLabel>
+      <Stack direction='row' sx={sx.chipGroup}>
+        {SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS
+          .filter(option => option.value !== 'unknown')
+          .map(option => {
+          const Icon = EXPECTED_LEVEL_CHANGE_ICONS[option.value] || RemoveRounded
+          const isSelected = selected.includes(option.value)
+
+          return (
+            <Tooltip key={option.value} title={option.label} placement='top'>
+              <Chip
+                size='sm'
+                color={EXPECTED_LEVEL_CHANGE_COLORS[option.value] || 'neutral'}
+                variant={isSelected ? 'solid' : 'outlined'}
+                sx={sx.expectedLevelChip}
+                aria-label={option.label}
+                aria-pressed={isSelected}
+                onClick={() => onToggle(option.value)}
+              >
+                <Icon sx={sx.expectedLevelIcon} />
+              </Chip>
+            </Tooltip>
+          )
+        })}
+      </Stack>
+    </FormControl>
+  )
+}
+
 export default function SearchContextQuery({ filters, onUpdate, onToggle }) {
   return (
     <SearchQuerySection title='הקשר החיפוש' step='01'>
@@ -78,46 +114,29 @@ export default function SearchContextQuery({ filters, onUpdate, onToggle }) {
         </Stack>
 
         {filters.searchContext ? (
-          <FormControl sx={sx.filterGroup}>
-            <FormLabel sx={sx.groupLabel}>מקור הרשומות</FormLabel>
-            <Stack direction='row' sx={sx.chipGroup}>
-              <Chip
-                size='md'
-                variant={filters.favoritesOnly ? 'solid' : 'outlined'}
-                sx={sx.filterChip}
-                onClick={() => onUpdate('favoritesOnly', !filters.favoritesOnly)}
-              >
-                מועדפים בלבד
-              </Chip>
-            </Stack>
-          </FormControl>
-        ) : null}
+          <Stack direction='row' sx={sx.contextFiltersRow}>
+            <FormControl sx={sx.inlineFilterGroup}>
+              <FormLabel sx={sx.groupLabel}>מקור הרשומות</FormLabel>
+              <Stack direction='row' sx={sx.chipGroup}>
+                <Chip
+                  size='sm'
+                  variant={filters.favoritesOnly ? 'solid' : 'outlined'}
+                  sx={sx.filterChip}
+                  onClick={() => onUpdate('favoritesOnly', !filters.favoritesOnly)}
+                >
+                  מועדפים
+                </Chip>
+              </Stack>
+            </FormControl>
 
-        {filters.searchContext === 'team' ? (
-          <FormControl sx={sx.filterGroup}>
-            <FormLabel sx={sx.groupLabel}>שינוי רמה צפוי</FormLabel>
-            <Stack direction='row' sx={sx.chipGroup}>
-              {SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS.map(option => {
-                const Icon = EXPECTED_LEVEL_CHANGE_ICONS[option.value] || HelpOutlineRounded
-
-                return (
-                  <Tooltip key={option.value} title={option.label} placement='top'>
-                    <Chip
-                      size='md'
-                      variant={filters.expectedLeagueLevelChanges.includes(option.value)
-                        ? 'solid'
-                        : 'outlined'}
-                      sx={sx.filterChip}
-                      aria-label={option.label}
-                      onClick={() => onToggle('expectedLeagueLevelChanges', option.value)}
-                    >
-                      <Icon fontSize='small' />
-                    </Chip>
-                  </Tooltip>
-                )
-              })}
-            </Stack>
-          </FormControl>
+            <>
+              <Divider orientation='vertical' sx={sx.contextFiltersDivider} />
+              <ExpectedLevelChangeFilters
+                selected={filters.expectedLeagueLevelChanges}
+                onToggle={value => onToggle('expectedLeagueLevelChanges', value)}
+              />
+            </>
+          </Stack>
         ) : null}
 
         <FormControl sx={sx.filterGroup}>

@@ -119,6 +119,12 @@ export const buildPlayerSeasonIndexDoc = ({
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
     leagueLevel: toNumberOrZero(league.level),
+    expectedLevelDelta: !player.isYoungerAgeGroup
+      && team.expectedLevelDelta !== null
+      && team.expectedLevelDelta !== undefined
+      && Number.isFinite(Number(team.expectedLevelDelta))
+      ? Number(team.expectedLevelDelta)
+      : null,
     region: clean(league.region),
 
     primaryPosition: clean(player.primaryPosition),
