@@ -1,6 +1,6 @@
-// src/features/coreData/resolvers/builders/teamAbilities.builder.js
+// src/coreData/resolvers/builders/teamAbilities.builder.js
 
-import { SQUAD_ROLE_OPTIONS } from '../../../../shared/players/players.constants.js'
+import { SQUAD_ROLE_OPTIONS } from '../../../shared/players/players.constants.js'
 
 const safeNum = (v) => {
   const n = Number(v)

@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { Box, Chip, Divider, Input, Sheet, Table, Typography, Select, Option } from '@mui/joy'
 import SearchRounded from '@mui/icons-material/SearchRounded'
 
-import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../shared/format/dateUtils.js'
 import { iconUi } from '../../../../../../../../../ui/core/icons/iconUi.js'
 import { resolvePerformanceDomain } from './performance.domain.logic'
 

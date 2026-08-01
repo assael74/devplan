@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.js'
 import {
+  LEAGUE_CENTER_ALL_SEASONS_KEY,
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
   buildLeagueCenterAgeGroupOptions,
   buildLeagueCenterBirthYearOptions,
@@ -23,6 +24,7 @@ const cleanSeasonKey = value => String(value || '').trim()
 const cleanFilterValue = value => String(value || '').trim() || 'all'
 const hasSeasonOption = (options = [], seasonKey = '') => {
   const selected = normalizeSeasonLookupKey(seasonKey)
+  if (selected === LEAGUE_CENTER_ALL_SEASONS_KEY) return true
   return Boolean(selected && options.some(option =>
     normalizeSeasonLookupKey(option) === selected
   ))
@@ -37,7 +39,7 @@ export function useLeagueCenter() {
   const [ageGroup, setAgeGroup] = useState('all')
   const [birthYear, setBirthYearState] = useState(requestedBirthYear)
   const [seasonKey, setSeasonKeyState] = useState(
-    requestedSeasonKey || LEAGUE_CENTER_DEFAULT_SEASON_KEY
+    requestedSeasonKey || LEAGUE_CENTER_ALL_SEASONS_KEY
   )
   const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -88,7 +90,12 @@ export function useLeagueCenter() {
     const nextSeasonKey = cleanSeasonKey(value) || LEAGUE_CENTER_DEFAULT_SEASON_KEY
     const nextSearchParams = new URLSearchParams(searchParams)
 
-    nextSearchParams.set('season', nextSeasonKey)
+    if (nextSeasonKey === LEAGUE_CENTER_ALL_SEASONS_KEY) {
+      nextSearchParams.delete('season')
+    } else {
+      nextSearchParams.set('season', nextSeasonKey)
+    }
+
     setSeasonKeyState(nextSeasonKey)
     setSearchParams(nextSearchParams, { replace: true })
   }, [searchParams, setSearchParams])
@@ -109,6 +116,10 @@ export function useLeagueCenter() {
   useEffect(() => {
     if (requestedSeasonKey && requestedSeasonKey !== seasonKey) {
       setSeasonKeyState(requestedSeasonKey)
+    }
+
+    if (!requestedSeasonKey && seasonKey !== LEAGUE_CENTER_ALL_SEASONS_KEY) {
+      setSeasonKeyState(LEAGUE_CENTER_ALL_SEASONS_KEY)
     }
   }, [requestedSeasonKey, seasonKey])
 

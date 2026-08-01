@@ -5,6 +5,7 @@ import Box from '@mui/joy/Box'
 import DashboardHeader from './components/DashboardHeader.js'
 import ReportView from './components/ReportView.js'
 import PublicationActionModal from './components/PublicationActionModal.js'
+import EditDbSearchMetadataModal from './components/EditDbSearchMetadataModal.js'
 import DashboardSidebar from './components/sidebar/DashboardSidebar.js'
 import useDashboardPageModel from './dashboardPage.model.js'
 import { pageSx as sx } from './sx/page.sx.js'
@@ -33,6 +34,14 @@ export default function DashboardPage() {
         onPublicationShare={model.onPublicationShare}
         onPublicationStop={model.onPublicationStop}
         onPublicationDelete={model.onPublicationDelete}
+      />
+
+      <EditDbSearchMetadataModal
+        open={model.editDbSearchModal.open}
+        publication={model.editDbSearchModal.publication}
+        loading={model.editDbSearchModal.loading}
+        onClose={model.closeDbSearchMetadataEditor}
+        onSave={model.saveDbSearchMetadata}
       />
 
       <PublicationActionModal

@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/mergeShorts.js
+// src/coreData/resolvers/mergeShorts.js
 export function mergeShorts(shorts, mainDoc, mergeDocs, idField, extra = () => ({})) {
   if (!Array.isArray(shorts) || shorts.length === 0) return []
 

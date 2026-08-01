@@ -1,7 +1,7 @@
 // preview/previewDomainCard/domains/player/info/logic/playerInfo.domain.logic.js
 
 import { DOMAIN_STATE } from '../../../../../preview.state'
-import { formatPhoneNumber } from '../../../../../../../../../../shared/format/contactUtiles.js'
+import { formatPhoneNumber } from '../../../../../../../../../../shared/format/contactUtils.js'
 
 export const toStr = (value) => {
   return value == null ? '' : String(value)

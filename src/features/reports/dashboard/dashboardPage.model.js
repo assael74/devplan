@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import {
   REPORT_CATEGORY_OPTIONS,
   REPORT_CATALOG,
   mergeReportsWithPublications,
-} from '../../../shared/reports/index.js'
+} from '../catalog/index.js'
 import {
   deletePublicReport,
   getPublicReport,
   getPublishedPublicReports,
   revokePublicReport,
 } from '../service/index.js'
+import { updateDbSearchReportMetadata } from '../dbSearch/integration/index.js'
 import { PUBLIC_REPORT_STATUS } from '../reports.constants.js'
 import { DASH_MODES } from './data/dashboardModes.js'
 import { useSnackbar } from '../../../ui/core/feedback/snackbar/SnackbarProvider.js'
@@ -123,6 +124,11 @@ export default function useDashboardPageModel() {
   const [selectedPublicationDocument, setSelectedPublicationDocument] = useState(null)
   const [loadingSelectedPublication, setLoadingSelectedPublication] = useState(false)
   const [selectedPublicationError, setSelectedPublicationError] = useState(null)
+  const [editDbSearchModal, setEditDbSearchModal] = useState({
+    open: false,
+    publication: null,
+    loading: false,
+  })
   const [publicationActionModal, setPublicationActionModal] = useState({
     open: false,
     action: '',
@@ -305,6 +311,78 @@ export default function useDashboardPageModel() {
         details: mapFirestoreErrorToDetails(error),
       })
       window.prompt('העתק קישור', clean(publication?.versionUrl || publication?.url || ''))
+    }
+  }
+
+
+  function openDbSearchMetadataEditor(publication) {
+    if (!publication || publication.reportType !== 'dbSearch') return
+
+    setEditDbSearchModal({
+      open: true,
+      publication,
+      loading: false,
+    })
+  }
+
+  function closeDbSearchMetadataEditor() {
+    setEditDbSearchModal(current => (
+      current.loading
+        ? current
+        : { open: false, publication: null, loading: false }
+    ))
+  }
+
+  async function saveDbSearchMetadata(metadata) {
+    const publication = editDbSearchModal.publication
+
+    if (!publication) return
+
+    setEditDbSearchModal(current => ({ ...current, loading: true }))
+
+    try {
+      const result = await updateDbSearchReportMetadata({
+        report: publication,
+        metadata,
+      })
+
+      if (!result?.writeSkipped) {
+        const refreshedReport = await getPublicReport({
+          reportId: publication.reportId,
+        })
+
+        setSelectedPublicationDocument(refreshedReport)
+      } else {
+        setSelectedPublicationDocument(current => ({
+          ...current,
+          reportContent: {
+            ...(current?.reportContent || publication.reportContent || {}),
+            meta: {
+              ...(current?.reportContent?.meta || publication.reportContent?.meta || {}),
+              ...metadata,
+            },
+          },
+        }))
+      }
+
+      notify({
+        status: SNACK_STATUS.SUCCESS,
+        title: result?.writeSkipped ? 'השינוי הוכן' : 'הדוח עודכן',
+        message: result?.writeSkipped
+          ? 'כתיבת הדוחות חסומה כרגע; מבנה הגרסה נבנה ללא כתיבה.'
+          : 'פרטי הדוח נשמרו כגרסה חדשה.',
+      })
+
+      setEditDbSearchModal({ open: false, publication: null, loading: false })
+    } catch (error) {
+      console.error('[useDashboardPageModel] Failed to update dbSearch metadata', error)
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: 'עדכון הדוח נכשל',
+        message: 'לא הצלחנו לשמור את פרטי הדוח.',
+        details: mapFirestoreErrorToDetails(error),
+      })
+      setEditDbSearchModal(current => ({ ...current, loading: false }))
     }
   }
 
@@ -529,6 +607,7 @@ export default function useDashboardPageModel() {
     publicationError,
     selectedPublicationError,
     publicationActionModal,
+    editDbSearchModal,
     mainTitle,
     mainDescription,
     emptyText,
@@ -538,6 +617,9 @@ export default function useDashboardPageModel() {
     onPublicationShare,
     onPublicationStop,
     onPublicationDelete,
+    openDbSearchMetadataEditor,
+    closeDbSearchMetadataEditor,
+    saveDbSearchMetadata,
     closePublicationActionModal,
     confirmPublicationAction,
   }

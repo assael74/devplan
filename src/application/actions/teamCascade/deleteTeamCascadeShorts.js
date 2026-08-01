@@ -1,7 +1,7 @@
 // src/application/actions/teamCascade/deleteTeamCascadeShorts.js
 
 import { deleteShortItemsByIds } from '../../../services/firestore/shorts/shortsDelete.js'
-import { TEAM_CASCADE_DELETE_KEYS } from '../../../shared/entityLifecycle/cascade/team/teamCascadeDelete.keys.js'
+import { TEAM_CASCADE_DELETE_KEYS } from './teamCascadeDelete.keys.js'
 
 const emptyResult = label => ({
   label,

@@ -5,7 +5,7 @@ import { Box, Table, Typography } from '@mui/joy'
 
 import GamesBulkDeleteStatusChip from './GamesBulkDeleteStatusChip.js'
 import { gamesDeleteModalSx as sx } from '../sx/gamesDeleteModal.sx.js'
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 
 const getOpponent = game => {
   return game?.rivel || game?.rival || '-'

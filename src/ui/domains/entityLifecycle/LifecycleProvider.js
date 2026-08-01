@@ -3,13 +3,13 @@
 import React, { createContext, useContext, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { useEntityLifecycle } from '../../../shared/entityLifecycle/useEntityLifecycle.js'
+import { useEntityLifecycle } from './useEntityLifecycle.js'
 import ArchiveEntityDialog from './ArchiveEntityDialog.js'
 import EntityLifecycleDialog from './EntityLifecycleDialog.js'
 import ArchiveRestoreEntityDialog from './ArchiveRestoreEntityDialog.js'
 
 import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider.js'
-import { useCoreData } from '../../../features/coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 
 import {
   deleteEntity,

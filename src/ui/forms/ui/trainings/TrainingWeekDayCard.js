@@ -14,7 +14,7 @@ import TrainingLocationField from '../../../fields/inputUi/trainings/TrainingLoc
 
 import { trainingWeekSx as sx } from './sx/trainingWeekForm.sx'
 import { safeStr } from '../../helpers/trainings/trainingsWeekForm.helpers'
-import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../shared/format/dateUtils.js'
 import { DEFAULT_TRAINING_DAY } from '../../../../shared/trainings/trainingsWeek.model.js'
 
 const numOr = (v, fallback) => (Number(v) || fallback)

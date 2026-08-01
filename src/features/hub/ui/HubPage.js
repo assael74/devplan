@@ -10,7 +10,7 @@ import PreviewPanel from '../components/desktop/PreviewPanel'
 import HubRootDesktop from '../components/desktop/HubRootDesktop'
 import HubRootMobile from '../components/mobile/HubRootMobile'
 
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { useHubState } from '../domain/hub.state'
 import { buildRoutesByType, buildCountsByType } from './hub.routes'
 import { useCreateModal } from '../../../ui/forms/create/CreateModalProvider'

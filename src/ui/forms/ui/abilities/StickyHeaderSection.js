@@ -7,7 +7,7 @@ import PlayerSelectField from '../../../fields/selectUi/players/PlayerSelectFiel
 import RoleSelectField from '../../../fields/selectUi/roles/RoleSelectField.js'
 import JoyStarRatingStatic from '../../../domains/ratings/JoyStarRating.js'
 import { iconUi } from '../../../core/icons/iconUi'
-import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../shared/format/dateUtils.js'
 
 export default function StickyHeaderSection({
   vaSx,

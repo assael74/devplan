@@ -9,18 +9,18 @@ import {
   Option,
   Select,
   Sheet,
-  Stack,
   Table,
   Typography,
 } from '@mui/joy'
 
+import ScoutPriority from '../../../../../ui/patterns/scout/ScoutPriority.js'
+import ExpectedLevelDeltaChip from '../../../../../ui/patterns/status/ExpectedLevelDeltaChip.js'
 import { teamsListSx as sx } from './teamsList.sx.js'
 
 const EXPECTED_LEVEL_LABELS = {
   relegation: 'ירידה צפויה',
   unchanged: 'ללא שינוי',
   promotion: 'עלייה צפויה',
-  unknown: 'לא ניתן לחשב',
 }
 
 const clean = value => String(value || '').trim()
@@ -35,55 +35,6 @@ function formatScore(value) {
   return Number.isFinite(Number(value))
     ? Math.round(Number(value))
     : '—'
-}
-
-function MetaItem({ item = {} }) {
-  return (
-    <Sheet variant='outlined' sx={sx.metaItem}>
-      <Typography level='body-xs'>{item.label || ''}</Typography>
-      <Typography level='title-md'>{item.value || '—'}</Typography>
-    </Sheet>
-  )
-}
-
-
-function QuerySnapshot({ queryItems = [], resultItems = [] }) {
-  if (!queryItems.length && !resultItems.length) return null
-
-  return (
-    <Sheet variant='outlined' sx={sx.querySnapshot}>
-      <Box sx={sx.querySnapshotHeader}>
-        <Typography level='title-sm'>תנאי הצילום</Typography>
-        <Typography level='body-xs'>הפילטרים שהיו פעילים בזמן יצירת ה־Snapshot</Typography>
-      </Box>
-
-      {queryItems.length ? (
-        <Box sx={sx.queryGroup}>
-          <Typography level='body-xs' sx={sx.queryGroupLabel}>שאילתת מקור</Typography>
-          <Box sx={sx.queryChips}>
-            {queryItems.map(item => (
-              <Chip key={item.id || item.label} size='sm' variant='soft'>
-                {item.label}
-              </Chip>
-            ))}
-          </Box>
-        </Box>
-      ) : null}
-
-      {resultItems.length ? (
-        <Box sx={sx.queryGroup}>
-          <Typography level='body-xs' sx={sx.queryGroupLabel}>סינון תוצאות לפני הצילום</Typography>
-          <Box sx={sx.queryChips}>
-            {resultItems.map(item => (
-              <Chip key={item.id || `${item.label}-${item.value}`} size='sm' variant='outlined'>
-                {item.label}: {item.value}
-              </Chip>
-            ))}
-          </Box>
-        </Box>
-      ) : null}
-    </Sheet>
-  )
 }
 
 function FilterSelect({ label, value, options = [], onChange }) {
@@ -138,26 +89,47 @@ function renderCell(row, column) {
     )
   }
 
-  if (column.kind === 'goals') {
-    return `${row.goalsFor || 0}:${row.goalsAgainst || 0}`
-  }
-
   if (column.kind === 'rate') {
     return formatRate(resolveColumnValue(row, column))
   }
 
-  if (column.kind === 'score') {
-    return formatScore(resolveColumnValue(row, column))
+  if (column.kind === 'scoutPriority') {
+    const performance = row[column.domain] || {}
+    const value = performance.priorityLevel
+
+    if (!value) return null
+
+    return (
+      <ScoutPriority
+        value={value}
+        short
+        fontSize={11}
+        tooltip={`${column.label}: ${formatScore(performance.scoutPriorityScore)}`}
+      />
+    )
   }
 
   if (column.kind === 'expectedLevelChange') {
-    return EXPECTED_LEVEL_LABELS[
-      row.expectedLeagueLevelChange?.direction
-    ] || '—'
+    return (
+      <ExpectedLevelDeltaChip
+        direction={row.expectedLeagueLevelChange?.direction}
+        iconOnly
+      />
+    )
   }
 
   const value = resolveColumnValue(row, column)
   return value === 0 ? 0 : value || '—'
+}
+
+function resolveCellTitle(row, column) {
+  if (column.kind === 'team') return row.teamName || ''
+  if (column.kind === 'scoutPriority' || column.kind === 'expectedLevelChange') return undefined
+
+  const value = renderCell(row, column)
+  return typeof value === 'string' || typeof value === 'number'
+    ? String(value)
+    : undefined
 }
 
 export default function TeamsListContent({
@@ -178,7 +150,7 @@ export default function TeamsListContent({
     favoritesOnly: false,
   })
   const [sort, setSort] = React.useState(model.defaultSort || {
-    field: 'tableRank',
+    field: 'teamName',
     direction: 'asc',
   })
 
@@ -193,7 +165,7 @@ export default function TeamsListContent({
       favoritesOnly: false,
     })
     setSort(model.defaultSort || {
-      field: 'tableRank',
+      field: 'teamName',
       direction: 'asc',
     })
   }, [model.entityId, model.snapshot?.capturedAt])
@@ -254,30 +226,7 @@ export default function TeamsListContent({
 
   return (
     <Box sx={sx.root({ device })}>
-      <Stack spacing={2}>
-        <Box sx={sx.header}>
-          <Typography level='h2'>{model.title}</Typography>
-          {model.subtitle ? (
-            <Typography level='body-sm'>{model.subtitle}</Typography>
-          ) : null}
-        </Box>
-
-        {model.metaItems?.length ? (
-          <Box sx={sx.metaGrid}>
-            {model.metaItems.map(item => (
-              <MetaItem
-                key={item.id || item.label}
-                item={item}
-              />
-            ))}
-          </Box>
-        ) : null}
-
-        <QuerySnapshot
-          queryItems={model.sourceQueryItems}
-          resultItems={model.sourceResultItems}
-        />
-
+      <Box sx={sx.content}>
         {!isPdf ? (
           <Sheet variant='outlined' sx={sx.filters}>
             <Box sx={sx.filtersRow}>
@@ -348,6 +297,10 @@ export default function TeamsListContent({
               <Chip size='sm' variant='soft'>
                 מוצגות {rows.length} מתוך {model.totalRows || 0}
               </Chip>
+
+              <Typography level='body-xs' sx={sx.localFilterNote}>
+                הסינון והמיון משנים את התצוגה בלבד
+              </Typography>
             </Box>
           </Sheet>
         ) : null}
@@ -360,12 +313,26 @@ export default function TeamsListContent({
               size='sm'
               sx={sx.table({ isPdf })}
             >
+              <colgroup>
+                {(model.columns || []).map(column => (
+                  <col key={column.id} style={{ width: column.width }} />
+                ))}
+              </colgroup>
+
               <thead>
                 <tr>
                   {(model.columns || []).map(column => (
                     <th
                       key={column.id}
+                      data-align={column.headerAlign || column.align || 'center'}
                       data-sortable={column.sortable ? 'true' : undefined}
+                      aria-sort={
+                        sort.field === column.field
+                          ? sort.direction === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                          : undefined
+                      }
                       onClick={
                         column.sortable
                           ? () => toggleSort(column)
@@ -373,16 +340,23 @@ export default function TeamsListContent({
                       }
                     >
                       {column.label}
+                      {column.sortable && sort.field === column.field
+                        ? sort.direction === 'asc' ? ' ▲' : ' ▼'
+                        : null}
                     </th>
                   ))}
                 </tr>
               </thead>
 
               <tbody>
-                {rows.map(row => (
-                  <tr key={row.id}>
+                {rows.map((row, rowIndex) => (
+                  <tr key={`${row.id || row.teamId || 'team'}:${rowIndex}`}>
                     {(model.columns || []).map(column => (
-                      <td key={`${row.id}:${column.id}`}>
+                      <td
+                        key={`${row.id || row.teamId || 'team'}:${rowIndex}:${column.id}`}
+                        data-align={column.align || 'center'}
+                        title={resolveCellTitle(row, column)}
+                      >
                         {renderCell(row, column)}
                       </td>
                     ))}
@@ -396,7 +370,7 @@ export default function TeamsListContent({
             </Box>
           )}
         </Sheet>
-      </Stack>
+      </Box>
     </Box>
   )
 }

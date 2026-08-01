@@ -1,7 +1,7 @@
 // src/application/actions/teamCascade/archiveTeamCascadePayments.js
 
 import { patchShortItemsByIds } from '../../../services/firestore/shorts/shortsPatchMany.js'
-import { TEAM_CASCADE_DELETE_KEYS } from '../../../shared/entityLifecycle/cascade/team/teamCascadeDelete.keys.js'
+import { TEAM_CASCADE_DELETE_KEYS } from './teamCascadeDelete.keys.js'
 
 const now = () => Date.now()
 

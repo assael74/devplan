@@ -1,6 +1,6 @@
 // src/features/reports/dashboard/logic/viewDemoReport.logic.js
 
-import { REPORT_IDS } from '../../../../shared/reports/reports.ids.js'
+import { REPORT_IDS } from '../../catalog/reports.ids.js'
 import { REPORT_TYPES } from '../../reports.constants.js'
 
 import {

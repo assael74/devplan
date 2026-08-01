@@ -22,13 +22,13 @@
  * - חישוב statistics לשחקנים וקבוצות
  * - חיבור סרטונים לישויות
  */
- // src/features/coreData/resolve/enrich-stage.js
- // src/features/coreData/resolve/enrich-stage.js
-import { getPlayerGeneralPosition } from '../../../shared/players/player.positions.utils.js'
-import { getPlayerAge } from '../../../shared/players/player.age.utils.js'
-import { getPlayerFullName } from '../../../shared/players/player.name.utils.js'
-import { buildTeamTargetsState } from '../../../shared/teams/targets/index.js'
-import { buildPlayerTargetsState } from '../../../shared/players/targets/index.js'
+ // src/coreData/resolve/enrich-stage.js
+ // src/coreData/resolve/enrich-stage.js
+import { getPlayerGeneralPosition } from '../../shared/players/player.positions.utils.js'
+import { getPlayerAge } from '../../shared/players/player.age.utils.js'
+import { getPlayerFullName } from '../../shared/players/player.name.utils.js'
+import { buildTeamTargetsState } from '../../shared/teams/targets/index.js'
+import { buildPlayerTargetsState } from '../../shared/players/targets/index.js'
 
 import {
  buildScoutGamesSummary,

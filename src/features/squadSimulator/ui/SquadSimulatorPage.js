@@ -9,7 +9,7 @@ import {
   getSquadSimulatorTeamIds,
   isAdminAuthUser,
 } from '../../../shared/access/index.js'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 
 import { squadSimulatorSx as sx } from './components/sx/squadSimulator.sx.js'
 import { GoalTiersPanel, RosterPanel, SimulatorHeader, SimulatorToolbar } from './components/index.js'

@@ -1,4 +1,4 @@
-/// src/features/coreData/resolvers/coreData.resolver.js
+/// src/coreData/resolvers/coreData.resolver.js
 /**
  * Wrapper עבור מנוע הנתונים החדש.
  * משאיר את ה-API של resolveCoreData זהה

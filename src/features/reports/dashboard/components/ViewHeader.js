@@ -1,10 +1,11 @@
 // src/features/reports/dashboard/components/ViewHeader.js
 
 import Avatar from '@mui/joy/Avatar'
+import Button from '@mui/joy/Button'
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
 
-import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../shared/format/dateUtils.js'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 import { viewSx as sx } from './sx/view.sx.js'
 
@@ -43,7 +44,7 @@ function resolveAvatarSrc(entity, publication) {
     ''
 }
 
-export default function ViewHeader({ report, publication, entity }) {
+export default function ViewHeader({ report, publication, entity, onEditMetadata }) {
   const reportTitle = report?.label || 'בחר סוג דוח'
   const hasPublication = Boolean(publication?.id)
   const entityName = resolveEntityName(entity)
@@ -87,6 +88,16 @@ export default function ViewHeader({ report, publication, entity }) {
           {publicationDate}
         </Typography>
       </Box>
+
+      {publication?.reportType === 'dbSearch' && onEditMetadata ? (
+        <Button
+          size='sm'
+          variant='soft'
+          onClick={() => onEditMetadata(publication)}
+        >
+          עריכת פרטי דוח
+        </Button>
+      ) : null}
 
       <Avatar
         src={avatarSrc}

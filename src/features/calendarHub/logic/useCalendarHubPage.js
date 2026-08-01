@@ -1,9 +1,9 @@
-// src/features/calendar/logic/useCalendarHubPage.js
+// src/features/calendarHub/logic/useCalendarHubPage.js
 
 import { useMemo, useState } from 'react'
 import useCalendarCoreData from '../hooks/useCalendarCoreData.js'
 
-import { buildCalendarEventsDomain } from '../../../shared/calendar/calendar.hub.builders.js'
+import { buildCalendarEventsDomain } from '../domain/calendar.hub.builders.js'
 
 import {
   addDays,

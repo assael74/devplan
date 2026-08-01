@@ -1,6 +1,6 @@
 // domains/player/payments/logic/playerPayments.domain.logic.js
 
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import { PAYMENT_TYPES, PAYMENT_STATUSES } from '../../../../../../../../../../shared/payments/payments.constants.js'
 
 const safeArr = (v) => (Array.isArray(v) ? v : [])

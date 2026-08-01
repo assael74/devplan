@@ -12,7 +12,6 @@ import {
 import SearchHeader from './SearchHeader.js'
 import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
-import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
 import { useSearchReport } from './report/index.js'
 import DbSearchReportNameModal from './report/DbSearchReportNameModal.js'
 import SearchIndexNormalizationModal from './admin/SearchIndexNormalizationModal.js'
@@ -40,6 +39,11 @@ function SearchPageContent() {
     navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))
   }
 
+  const handleCreateReport = async reportDetails => {
+    const published = await searchReport.publishAndOpen(reportDetails)
+    if (published) setReportNameOpen(false)
+  }
+
   return (
     <>
       <Box sx={sx.page}>
@@ -48,10 +52,7 @@ function SearchPageContent() {
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onReport={() => setReportNameOpen(true)}
           onRefresh={() => setNormalizationOpen(true)}
-          reportDisabled={
-            !search.hasLoaded ||
-            !search.rows.length
-          }
+          reportDisabled={!search.hasLoaded || !search.rows.length}
         />
 
         <SearchWorkspace
@@ -68,21 +69,10 @@ function SearchPageContent() {
       <DbSearchReportNameModal
         open={reportNameOpen}
         busy={searchReport.busy}
+        error={searchReport.error}
         entityType={search.loadedEntityType}
         onClose={() => setReportNameOpen(false)}
-        onConfirm={reportName => {
-          setReportNameOpen(false)
-          searchReport.openPreview(reportName)
-        }}
-      />
-
-      <ReportPreviewModal
-        open={searchReport.open}
-        draft={searchReport.draft}
-        busy={searchReport.busy}
-        publication={searchReport.publication}
-        onPublish={searchReport.publish}
-        onClose={searchReport.closePreview}
+        onConfirm={handleCreateReport}
       />
     </>
   )

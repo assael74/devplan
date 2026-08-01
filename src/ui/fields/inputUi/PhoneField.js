@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Input, FormControl, FormLabel } from '@mui/joy';
 import { iconUi } from '../../core/icons/iconUi.js';
-import { formatPhoneNumber } from '../../../shared/format/contactUtiles.js'
+import { formatPhoneNumber } from '../../../shared/format/contactUtils.js'
 
 export default function PhoneField({
   value,

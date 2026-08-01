@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import ScoutPriority from '../../components/scout/ScoutPriority.js'
+import ScoutPriority from '../../../../../ui/patterns/scout/ScoutPriority.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 

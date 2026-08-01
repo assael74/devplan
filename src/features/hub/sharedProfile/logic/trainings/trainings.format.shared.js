@@ -1,6 +1,6 @@
 // src/features/hub/sharedProfile/logic/trainings/trainings.format.shared.js
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 import { toValidDate } from './trainings.date.shared.js'
 
 export const formatShortDateIl = (value) => {

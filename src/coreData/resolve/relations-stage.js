@@ -18,7 +18,7 @@
  * בסיום שלב זה נוצר מבנה הנתונים הסופי
  * שמוחזר למערכת.
  */
- // src/features/coreData/resolve/relations-stage.js
+ // src/coreData/resolve/relations-stage.js
  import {
    buildTeamAbilitiesSummary,
    buildVideosWithEntities,

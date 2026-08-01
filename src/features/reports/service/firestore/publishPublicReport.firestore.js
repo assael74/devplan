@@ -11,6 +11,7 @@ import {
 } from '../publicReport.refs.js'
 import { buildPublicReportUrl } from '../publicReport.url.js'
 import { buildMainPublicReportDocument } from './publicReportDocuments.model.js'
+import { logPublicReportDocumentMeasurement } from './measurePublicReportDocument.js'
 import {
   getPublicReportIndexRef,
   upsertPublicReportIndexDocumentInTransaction,
@@ -21,7 +22,7 @@ import {
   buildPublicReportVersionOption,
 } from './publicReportVersions.model.js'
 
-const PUBLIC_REPORT_WRITE_DISABLED = true
+const PUBLIC_REPORT_WRITE_DISABLED = false
 
 function ensurePublicReportInput(input) {
   if (!input || typeof input !== 'object') {
@@ -56,24 +57,50 @@ function normalizePublishInput(input) {
   }
 }
 
+export function buildPublicReportDocumentPreview(rawInput) {
+  ensurePublicReportInput(rawInput)
+
+  const input = normalizePublishInput(rawInput)
+  const reportId = input.id || buildPublicReportId(input.sourceKey)
+
+  if (!reportId) {
+    throw new Error('[buildPublicReportDocumentPreview] Failed to create report id')
+  }
+
+  return buildMainPublicReportDocument({
+    input,
+    reportId,
+    versionNumber: 1,
+    currentData: {},
+    versions: [],
+  })
+}
+
 export async function publishPublicReport(rawInput) {
   ensurePublicReportInput(rawInput)
 
   const input = normalizePublishInput(rawInput)
   const reportId = input.id || buildPublicReportId(input.sourceKey)
   const firestoreDocument = buildMainPublicReportDocument({
-  input,
-  reportId,
-  versionNumber: 1,
-  currentData: {},
-  versions: [],
-})
+    input,
+    reportId,
+    versionNumber: 1,
+    currentData: {},
+    versions: [],
+  })
 
-console.log('[publishPublicReport] firestore document preview', {
-  input,
-  reportId,
-  firestoreDocument,
-})
+  if (input.reportType === 'dbSearch') {
+    logPublicReportDocumentMeasurement({
+      document: firestoreDocument,
+      label: 'dbSearch',
+    })
+  }
+
+  console.log('[publishPublicReport] firestore document preview', {
+    input,
+    reportId,
+    firestoreDocument,
+  })
 
   if (!reportId) {
     throw new Error('[publishPublicReport] Failed to create report id')

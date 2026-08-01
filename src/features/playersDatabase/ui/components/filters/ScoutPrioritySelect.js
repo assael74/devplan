@@ -1,10 +1,10 @@
-﻿// features/playersDatabase/ui/components/filters/ScoutPrioritySelect.js
+// features/playersDatabase/ui/components/filters/ScoutPrioritySelect.js
 
 import * as React from 'react'
 import { Box, Option, Select, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { scoutPriorityColors } from '../scout/ScoutPriority.js'
+import { scoutPriorityColors } from '../../../../../ui/patterns/scout/ScoutPriority.js'
 
 const optionStyles = {
   elite: {

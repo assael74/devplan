@@ -67,6 +67,43 @@ const buildResultFilterItems = (filters = {}) => Object.entries(filters)
     }))
   })
 
+
+const CANONICAL_RESULT_FILTER_FIELDS = [
+  'teamSearch',
+  'playerSearch',
+  'seasons',
+  'birthYears',
+  'leagues',
+  'leagueLevels',
+  'teams',
+  'profiles',
+  'attackLevels',
+  'defenseLevels',
+  'combinedLevels',
+  'expectedLevelDirections',
+  'favoritesOnly',
+]
+
+const normalizeFilterValue = value => {
+  if (Array.isArray(value)) {
+    const values = [...new Set(value.map(item => clean(item)).filter(Boolean))]
+    return values.length ? values : undefined
+  }
+
+  if (typeof value === 'boolean') return value ? true : undefined
+
+  const normalized = clean(value)
+  return normalized || undefined
+}
+
+const buildCanonicalResultFilters = (filters = {}) => (
+  CANONICAL_RESULT_FILTER_FIELDS.reduce((result, field) => {
+    const value = normalizeFilterValue(filters[field])
+    if (value !== undefined) result[field] = value
+    return result
+  }, {})
+)
+
 const normalizeQueryItems = items => (Array.isArray(items) ? items : [])
   .map((item, index) => ({
     id: clean(item?.key || item?.id) || `query-item-${index + 1}`,
@@ -74,30 +111,87 @@ const normalizeQueryItems = items => (Array.isArray(items) ? items : [])
   }))
   .filter(item => item.label)
 
-const buildTeamSnapshotRow = (row = {}, index = 0) => ({
-  id: clean(row.id || row.birthTeamId) || `team-${index + 1}`,
-  birthTeamId: clean(row.birthTeamId),
-  teamName: clean(row.teamName || row.playerName) || 'קבוצה ללא שם',
-  teamUrl: clean(row.teamUrl),
-  favorite: row.favorite === true,
-  seasonKey: clean(row.seasonKey),
-  birthYear: row.birthYear ?? '',
-  leagueName: clean(row.leagueName),
-  leagueLevel: row.leagueLevel ?? '',
-  ageGroupLabel: clean(row.ageGroupLabel),
-  appearances: Number(row.appearances || 0),
-  tableRank: Number(row.tableRank || 0),
-  tableAttackRank: Number(row.tableAttackRank || 0),
-  tableDefenseRank: Number(row.tableDefenseRank || 0),
-  goalsFor: Number(row.goalsFor || 0),
-  goalsAgainst: Number(row.goalsAgainst || 0),
-  offense: cloneValue(row.offense || {}),
-  defense: cloneValue(row.defense || {}),
-  expectedLeagueLevelChange: cloneValue(row.expectedLeagueLevelChange || null),
-  metadata: cloneValue(row.metadata || {}),
-  calculation: cloneValue(row.calculation || {}),
-})
+const SCOUT_SNAPSHOT_FIELDS = [
+  'targetRate',
+  'rankingRate',
+  'anomalyRate',
+  'qualityRate',
+  'scoutPriorityScore',
+  'priorityLevel',
+  'opportunityType',
+]
 
+const compactObject = value => Object.entries(value || {}).reduce(
+  (result, [key, item]) => {
+    if (item !== undefined && item !== null && item !== '') {
+      result[key] = item
+    }
+    return result
+  },
+  {}
+)
+
+const buildScoutDomainSnapshot = (row = {}, domain = '') => {
+  const source = row[domain] || row.calculation?.[domain] || {}
+
+  return compactObject(
+    SCOUT_SNAPSHOT_FIELDS.reduce((result, field) => {
+      result[field] = source[field]
+      return result
+    }, {})
+  )
+}
+
+const buildExpectedLevelSnapshot = (row = {}) => {
+  const source = row.expectedLeagueLevelChange ||
+    row.calculation?.expectedLeagueLevelChange ||
+    null
+
+  if (!source || typeof source !== 'object') return null
+
+  const snapshot = compactObject({
+    direction: source.direction,
+    levelGap: source.levelGap ?? source.expectedLevelDelta,
+  })
+
+  return Object.keys(snapshot).length ? snapshot : null
+}
+
+const buildTeamSnapshotRow = ({
+  row = {},
+  index = 0,
+  visibleDomains = [],
+} = {}) => {
+  const snapshot = compactObject({
+    id: clean(row.id || row.birthTeamId) || `team-${index + 1}`,
+    birthTeamId: clean(row.birthTeamId),
+    teamName: clean(row.teamName || row.playerName) || 'קבוצה ללא שם',
+    teamUrl: clean(row.teamUrl),
+    favorite: row.favorite === true,
+    seasonKey: clean(row.seasonKey),
+    birthYear: row.birthYear ?? '',
+    leagueId: clean(row.leagueId),
+    leagueName: clean(row.leagueName),
+    leagueLevel: row.leagueLevel ?? '',
+    ageGroupLabel: clean(row.ageGroupLabel),
+    appearances: Number(row.appearances || 0),
+    tableRank: Number(row.tableRank || 0),
+    tableAttackRank: Number(row.tableAttackRank || 0),
+    tableDefenseRank: Number(row.tableDefenseRank || 0),
+    goalsFor: Number(row.goalsFor || 0),
+    goalsAgainst: Number(row.goalsAgainst || 0),
+    expectedLeagueLevelChange: buildExpectedLevelSnapshot(row),
+  })
+
+  visibleDomains.forEach(domain => {
+    const domainSnapshot = buildScoutDomainSnapshot(row, domain)
+    if (Object.keys(domainSnapshot).length) {
+      snapshot[domain] = domainSnapshot
+    }
+  })
+
+  return snapshot
+}
 const buildPlayerSnapshotRow = (row = {}, index = 0) => ({
   id: clean(row.id || row.playerId) || `player-${index + 1}`,
   playerId: clean(row.playerId),
@@ -128,106 +222,59 @@ const buildPlayerSnapshotRow = (row = {}, index = 0) => ({
   calculation: cloneValue(row.calculation || {}),
 })
 
-const collectTeamCapabilities = rows => {
-  const availableDomains = []
-  const availableDimensions = [
-    'teamName',
-    'seasonKey',
-    'birthYear',
-    'leagueName',
-    'leagueLevel',
-  ]
-  const availableFields = new Set([
-    'teamName',
-    'seasonKey',
-    'birthYear',
-    'leagueName',
-    'leagueLevel',
-    'favorite',
-    'appearances',
-    'tableRank',
-    'tableAttackRank',
-    'tableDefenseRank',
-    'goalsFor',
-    'goalsAgainst',
-  ])
-
-  const offenseFields = new Set()
-  const defenseFields = new Set()
+const collectRowFields = rows => {
+  const fields = new Set()
 
   rows.forEach(row => {
-    Object.keys(row.offense || {}).forEach(field => offenseFields.add(field))
-    Object.keys(row.defense || {}).forEach(field => defenseFields.add(field))
+    Object.entries(row || {}).forEach(([key, value]) => {
+      fields.add(key)
+
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        Object.keys(value).forEach(childKey => fields.add(`${key}.${childKey}`))
+      }
+    })
   })
 
-  if (offenseFields.size) {
-    availableDomains.push('offense')
-    offenseFields.forEach(field => availableFields.add(`offense.${field}`))
-  }
+  return fields
+}
 
-  if (defenseFields.size) {
-    availableDomains.push('defense')
-    defenseFields.forEach(field => availableFields.add(`defense.${field}`))
-  }
-
-  if (rows.some(row => row.expectedLeagueLevelChange)) {
-    availableDimensions.push('expectedLeagueLevelChange')
-    availableFields.add('expectedLeagueLevelChange.direction')
-    availableFields.add('expectedLeagueLevelChange.levelGap')
-  }
+const collectTeamCapabilities = rows => {
+  const fields = collectRowFields(rows)
+  const domains = ['offense', 'defense'].filter(domain => (
+    rows.some(row => row?.[domain] && Object.keys(row[domain]).length)
+  ))
 
   return {
-    availableDomains,
-    availableDimensions,
-    availableFields: [...availableFields],
+    schema: 'dbSearchTeams.v1',
+    domains,
+    supports: {
+      localFiltering: true,
+      favorites: fields.has('favorite'),
+      expectedLevelChange: fields.has('expectedLeagueLevelChange.direction'),
+    },
   }
 }
 
 const collectPlayerCapabilities = rows => {
-  const availableFields = new Set([
-    'playerName',
-    'teamName',
-    'seasonKey',
-    'birthYear',
-    'ageGroupLabel',
-    'leagueName',
-    'leagueLevel',
-    'favorite',
-    'positionLayer',
-    'primaryPosition',
-    'minutes',
-    'appearances',
-    'starts',
-    'goals',
-    'primaryProfile',
-    'score',
-    'reliability',
-  ])
-
-  if (rows.some(row => row.scoutProfiles?.length)) {
-    availableFields.add('scoutProfiles')
-  }
+  const fields = collectRowFields(rows)
 
   return {
-    availableDomains: ['playerStats', 'scoutProfiles'],
-    availableDimensions: [
-      'playerName',
-      'teamName',
-      'seasonKey',
-      'birthYear',
-      'leagueName',
-      'leagueLevel',
-      'primaryProfile',
-    ],
-    availableFields: [...availableFields],
+    schema: 'dbSearchPlayers.v1',
+    domains: ['playerStats', 'scoutProfiles'],
+    supports: {
+      localFiltering: true,
+      favorites: fields.has('favorite'),
+      scoutProfiles: fields.has('scoutProfiles'),
+    },
   }
 }
 
 export function buildSearchReport({
   searchReportId = '',
   reportName = '',
+  reportPurpose = '',
+  reportDescription = '',
   rows = [],
-  queryFilters = {},
   queryActiveItems = [],
   resultFilters = {},
   summary = {},
@@ -239,9 +286,17 @@ export function buildSearchReport({
   const isPlayersList = entityType === REPORT_ENTITY_TYPES.PLAYERS_LIST
   const reportId = searchReportId || createSearchReportId()
   const normalizedReportName = clean(reportName)
-  const snapshotRows = (Array.isArray(rows) ? rows : []).map(
-    isPlayersList ? buildPlayerSnapshotRow : buildTeamSnapshotRow
-  )
+  const normalizedReportPurpose = clean(reportPurpose)
+  const normalizedReportDescription = clean(reportDescription)
+  const canonicalResultFilters = buildCanonicalResultFilters(resultFilters)
+  const visibleDomains = isPlayersList
+    ? []
+    : ['offense', 'defense']
+  const snapshotRows = (Array.isArray(rows) ? rows : []).map((row, index) => (
+    isPlayersList
+      ? buildPlayerSnapshotRow(row, index)
+      : buildTeamSnapshotRow({ row, index, visibleDomains })
+  ))
   const capabilities = isPlayersList
     ? collectPlayerCapabilities(snapshotRows)
     : collectTeamCapabilities(snapshotRows)
@@ -266,6 +321,8 @@ export function buildSearchReport({
       documentVersion: 1,
       meta: {
         reportName: normalizedReportName,
+        reportPurpose: normalizedReportPurpose,
+        reportDescription: normalizedReportDescription,
         title: isPlayersList ? 'צילום חיפוש שחקנים' : 'צילום חיפוש קבוצות',
         subtitle: 'מצב היסטורי של תוצאות החיפוש והנתונים שנשלפו',
         reportDate: formatReportDate(),
@@ -297,18 +354,16 @@ export function buildSearchReport({
         displayedResultCount: snapshotRows.length,
       },
       sourceQuery: {
-        queryFilters: cloneValue(queryFilters),
-        queryItems: normalizeQueryItems(queryActiveItems),
-        resultFilters: cloneValue(resultFilters),
-        resultItems: buildResultFilterItems(resultFilters),
+        conditions: normalizeQueryItems(queryActiveItems),
+        filters: canonicalResultFilters,
       },
       dataCapabilities: capabilities,
       rows: snapshotRows,
       presentation: {
         defaultSort: isPlayersList
           ? { field: 'minutes', direction: 'desc' }
-          : { field: 'tableRank', direction: 'asc' },
-        visibleDomains: capabilities.availableDomains,
+          : { field: 'teamName', direction: 'asc' },
+        visibleDomains: capabilities.domains,
       },
     },
   }

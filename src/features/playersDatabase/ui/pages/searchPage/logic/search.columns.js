@@ -4,7 +4,7 @@ import { Box, IconButton } from '@mui/joy'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 
 import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
-import ScoutPriority from '../../../components/scout/ScoutPriority.js'
+import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'

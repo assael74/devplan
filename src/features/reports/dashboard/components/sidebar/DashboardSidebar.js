@@ -3,7 +3,7 @@
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'
 import { sidebarSx as sx } from './sx/sidebar.sx.js'

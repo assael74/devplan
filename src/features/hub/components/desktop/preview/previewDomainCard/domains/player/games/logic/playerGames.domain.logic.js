@@ -1,7 +1,7 @@
 // preview/previewDomainCard/domains/player/games/logic/playerGames.domain.logic.js
 
 import { DOMAIN_STATE } from '../../../../../preview.state'
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import {
   GAME_TYPE,
   GAME_DIFFICULTY,

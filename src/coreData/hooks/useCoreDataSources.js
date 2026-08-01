@@ -13,8 +13,8 @@ import {
   rolesShortsRef,
   videosShortsRef,
   videoAnalysisShortsRef,
-} from '../../../services/firestore/shortsCollections'
-import { subscribeShorts } from '../../../services/firestore/shorts/shorts.subscribe'
+} from '../../services/firestore/shortsCollections'
+import { subscribeShorts } from '../../services/firestore/shorts/shorts.subscribe'
 
 const SOURCE_CONFIG = [
   ['clubs', clubsShortsRef, 'setClubsShorts'],

@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/payments.builders.js
+// src/coreData/resolvers/builders/payments.builders.js
 
 import { safeArr, safeId, normalizeIds } from '../../utils/data.utils.js'
 import { pushToMapArray } from '../../utils/map.utils.js'

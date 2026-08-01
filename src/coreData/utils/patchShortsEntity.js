@@ -1,5 +1,5 @@
-// src/features/coreData/utils/patchShortsEntity.js
-import { shortsUpdateRouter } from '../../../services/firestore/shorts/shortsUpdateRouter.js'
+// src/coreData/utils/patchShortsEntity.js
+import { shortsUpdateRouter } from '../../services/firestore/shorts/shortsUpdateRouter.js'
 
 const splitShortKey = (shortKey) => {
   const [entityType, docName] = String(shortKey || '').split('.')

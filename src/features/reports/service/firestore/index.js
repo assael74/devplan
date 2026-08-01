@@ -3,6 +3,7 @@
 export {
   publishPublicReport,
   publishPublicReportDocument,
+  buildPublicReportDocumentPreview,
 } from './publishPublicReport.firestore.js'
 
 export {
@@ -23,3 +24,12 @@ export {
 export {
   deletePublicReport,
 } from './deletePublicReport.firestore.js'
+
+export {
+  measurePublicReportDocument,
+  logPublicReportDocumentMeasurement,
+} from './measurePublicReportDocument.js'
+
+export {
+  waitForPublicReportAvailability,
+} from './verifyPublicReport.firestore.js'

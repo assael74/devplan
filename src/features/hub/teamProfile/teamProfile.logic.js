@@ -1,7 +1,7 @@
 // src/features/hub/teamProfile/teamProfile.logic.js
 
 import { useCallback, useMemo } from 'react'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './teamProfile.routes'
 import {

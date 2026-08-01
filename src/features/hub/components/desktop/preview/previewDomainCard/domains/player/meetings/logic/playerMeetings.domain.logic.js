@@ -1,7 +1,7 @@
 // domains/player/meetings/logic/playerMeetings.domain.logic.js
 
 import { DOMAIN_STATE } from '../../../../../preview.state'
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import { clean } from '../../../../../../../../../../shared/format/string.js'
 import { MEETING_STATUSES, MEETING_TYPES } from '../../../../../../../../../../shared/meetings/meetings.constants.js'
 import { getStatusId } from '../../../../../../../../../../shared/meetings/meetings.status.js'

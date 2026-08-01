@@ -8,7 +8,7 @@ import ParentFormModal from './ParentFormModal'
 import { cardSx as sx } from '../sx/ParentsTab.sx.js'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { formatPhoneNumber } from '../../../../../../../shared/format/contactUtiles.js'
+import { formatPhoneNumber } from '../../../../../../../shared/format/contactUtils.js'
 
 import { usePlayerHubUpdate } from '../../../../../hooks/players/usePlayerHubUpdate.js'
 

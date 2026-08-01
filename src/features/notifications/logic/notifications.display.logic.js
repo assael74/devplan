@@ -1,6 +1,6 @@
 // src/features/notifications/logic/notifications.display.logic.js
 
-import { getFullDateIl } from '../../../shared/format/dateUtiles'
+import { getFullDateIl } from '../../../shared/format/dateUtils'
 import { getNotificationCategoryMeta } from './notifications.logic'
 import { buildNotificationEntities } from './notifications.entities.logic'
 

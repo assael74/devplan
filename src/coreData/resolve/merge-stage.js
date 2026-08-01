@@ -18,7 +18,7 @@
  *
  * חשוב:  בשלב זה אין עדיין קשרים בין הישויות. זהו רק שלב יצירת הנתונים הראשוני.
  */
- // src/features/coreData/resolve/merge-stage.js
+ // src/coreData/resolve/merge-stage.js
 import { mergeShorts } from '../resolvers/mergeShorts.js'
 
 const PLAYER_MERGE_DOCS = [

@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Typography, Avatar, Tooltip, Divider, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../shared/format/dateUtils.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { resolveGameStatusMeta } from '../../../../../../../../shared/games/games.constants.js'
 import { sectionsSx as sx } from './sx/sections.sx.js'

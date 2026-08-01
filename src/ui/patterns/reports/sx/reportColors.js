@@ -1,6 +1,6 @@
 // ui/patterns/reports/sx/reportColors.js
 
-import { COLORS, getEntityColors } from '../../../core/theme/Colors.js'
+import { COLORS, devPlanColors, getEntityColors } from '../../../core/theme/Colors.js'
 
 export const REPORT_TYPES = {
   GOALS: 'goals',
@@ -18,6 +18,13 @@ const REPORT_TYPE_COLORS = {
   goals: { accent: '#0F766E', accentDark: '#115E59', softBg: '#F0FDFA', border: '#99F6E4', text: '#134E4A' },
   performance: { accent: '#2563EB', accentDark: '#1D4ED8', softBg: '#EFF6FF', border: '#BFDBFE', text: '#1E3A8A' },
   insights: { accent: '#7C3AED', accentDark: '#6D28D9', softBg: '#F5F3FF', border: '#DDD6FE', text: '#4C1D95' },
+  dbSearch: {
+    accent: devPlanColors.tertiary,
+    accentDark: devPlanColors.primaryDark,
+    softBg: devPlanColors.tertiaryLight,
+    border: devPlanColors.primaryLight,
+    text: devPlanColors.primary,
+  },
 }
 
 const REPORT_STATUS_COLORS = {
@@ -27,9 +34,9 @@ const REPORT_STATUS_COLORS = {
 }
 
 export const REPORT_SYSTEM_COLORS = {
-  primary: '#173B57',
-  primaryDark: '#102B40',
-  primaryLight: '#E8F0F5',
+  primary: devPlanColors.primary,
+  primaryDark: devPlanColors.primaryDark,
+  primaryLight: devPlanColors.primaryLight,
   surface: COLORS.entity.domain.base.bg,
   border: COLORS.entity.domain.base.border,
   text: COLORS.entity.domain.base.text,

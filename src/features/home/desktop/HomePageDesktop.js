@@ -6,7 +6,7 @@ import { Box } from '@mui/joy'
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
 import { pageSx as sx } from './page.sx.js'
 
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import usePersonalTasks from '../sharedHook/usePersonalTasks.js'
 
 import { buildWorkspaceBuckets } from '../sharedLogic/home.workspace.js'

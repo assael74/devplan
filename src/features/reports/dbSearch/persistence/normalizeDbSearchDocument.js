@@ -18,6 +18,8 @@ export function normalizeDbSearchDocument(content = {}) {
     meta: {
       ...meta,
       reportName: clean(meta.reportName) || clean(meta.title),
+      reportPurpose: clean(meta.reportPurpose),
+      reportDescription: clean(meta.reportDescription),
       title: clean(meta.title),
       subtitle: clean(meta.subtitle),
       reportDate: clean(meta.reportDate),
@@ -28,6 +30,11 @@ export function normalizeDbSearchDocument(content = {}) {
     snapshot: content.snapshot || {},
     sourceQuery: content.sourceQuery || {},
     dataCapabilities: {
+      schema: clean(capabilities.schema),
+      domains: asArray(capabilities.domains),
+      supports: capabilities.supports && typeof capabilities.supports === 'object'
+        ? capabilities.supports
+        : {},
       availableDomains: asArray(capabilities.availableDomains),
       availableDimensions: asArray(capabilities.availableDimensions),
       availableFields: asArray(capabilities.availableFields),

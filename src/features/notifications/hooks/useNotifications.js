@@ -1,7 +1,7 @@
 // src/features/notifications/hooks/useNotifications.js
 
 import { useCallback, useMemo, useState } from 'react'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 
 import {
   markNotificationAsRead,

@@ -1,6 +1,6 @@
 // src/features/hub/sharedProfile/logic/videos/videoDomain.shared.js
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 
 const DOMAIN_STATE = {
   PARTIAL: 'PARTIAL',

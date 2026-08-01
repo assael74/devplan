@@ -1,6 +1,6 @@
-// src/features/coreData/resolvers/builders/performance.builders.js
+// src/coreData/resolvers/builders/performance.builders.js
 
-import { calculateFullPlayerStats, calculateFullTeamStats } from '../../../../shared/stats/stats.calc.js'
+import { calculateFullPlayerStats, calculateFullTeamStats } from '../../../shared/stats/stats.calc.js'
 
 const safeId = (v) => (v == null ? '' : String(v))
 const safeArr = (v) => (Array.isArray(v) ? v : [])

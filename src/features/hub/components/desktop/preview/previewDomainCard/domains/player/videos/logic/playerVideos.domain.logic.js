@@ -1,7 +1,7 @@
 // preview/PreviewDomainCard/domains/player/videos/playerVideos.domain.logic.js
 
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import { buildVideoInsights } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
 
 const safe = (v) => (v == null ? '' : String(v))

@@ -19,7 +19,7 @@
  * המטרה:
  * לאפשר גישה מהירה לנתונים בלי לבצע חיפושים חוזרים במערכים.
  */
- // src/features/coreData/resolve/index-stage.js
+ // src/coreData/resolve/index-stage.js
 import {
   buildVideosByMeetingId,
   buildVideosByPlayerId,

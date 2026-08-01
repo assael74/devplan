@@ -6,6 +6,6 @@ export {
   scoutProfileChipVariants,
 } from './scoutColors.sx.js'
 
-export { scoutPrioritySx } from './scoutPriority.sx.js'
+export { scoutPrioritySx } from '../../../../../../ui/patterns/scout/scoutPriority.presentation.js'
 export { scoutProfileChipSx } from './scoutProfileChip.sx.js'
 export { scoutProfileTooltipSx } from './scoutProfileTooltip.sx.js'

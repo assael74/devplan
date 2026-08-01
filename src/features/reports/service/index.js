@@ -35,6 +35,9 @@ export {
 export {
   publishPublicReport,
   publishPublicReportDocument,
+  buildPublicReportDocumentPreview,
+  measurePublicReportDocument,
+  logPublicReportDocumentMeasurement,
   revokePublicReport,
   deletePublicReport,
   updatePublicReportIndexDocument,
@@ -42,4 +45,5 @@ export {
   getCurrentPublicReport,
   getPublicReportVersion,
   getPublicReport,
+  waitForPublicReportAvailability,
 } from './firestore/index.js'

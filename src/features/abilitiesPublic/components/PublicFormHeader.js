@@ -7,7 +7,7 @@ import StarRating from '../../../ui/domains/ratings/JoyStarRating.js'
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
 import { domainsHeaderSx as sx } from './sx/domainsHeader.sx'
 
-import { getFullDateIl } from '../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../shared/format/dateUtils.js'
 
 import playerImage from '../../../ui/core/images/playerImage.jpg'
 import roleImage from '../../../ui/core/images/roleImage.png'

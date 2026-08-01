@@ -1,6 +1,6 @@
 // preview/previewDomainCard/domains/team/games/logic/teamGames.rows.logic.js
 
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import {
   GAME_TYPE,
   GAME_DIFFICULTY,

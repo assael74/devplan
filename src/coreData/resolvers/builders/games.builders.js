@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/games.builders.js
+// src/coreData/resolvers/builders/games.builders.js
 
 import {
   safeArr,

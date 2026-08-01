@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback } from 'react'
 import ObjectCreateModalV2 from './ObjectCreateModalV2'
 import { useCreateModalState } from './useCreateModal'
-import { useCoreData } from '../../../features/coreData/CoreDataProvider'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { createEntity, unwrapActionResult } from '../../../application/index.js'
 import { getCreateMeta } from './createRegistry'
 

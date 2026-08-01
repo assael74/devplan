@@ -25,6 +25,7 @@ export default function ReportView({ model }) {
             report={model.selectedReport}
             publication={model.selectedPublication}
             entity={model.selectedEntity}
+            onEditMetadata={model.openDbSearchMetadataEditor}
           />
 
           <ViewKpiRow
@@ -60,6 +61,7 @@ export default function ReportView({ model }) {
               report={model.selectedReport}
               publication={model.selectedPublication}
               entity={model.selectedEntity}
+            onEditMetadata={model.openDbSearchMetadataEditor}
             />
           )}
         </Box>

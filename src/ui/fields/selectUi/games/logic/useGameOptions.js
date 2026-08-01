@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 import {
   GAME_TYPE,
   GAME_STATUS,

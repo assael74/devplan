@@ -10,7 +10,7 @@ import MenuButton from '@mui/joy/MenuButton'
 import MenuItem from '@mui/joy/MenuItem'
 import Typography from '@mui/joy/Typography'
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 import { PUBLIC_REPORT_STATUS } from '../../../reports.constants.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'

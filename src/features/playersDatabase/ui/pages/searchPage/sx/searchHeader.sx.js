@@ -29,6 +29,24 @@ export const searchHeaderSx = {
     justifyContent: 'flex-start',
   },
   
+
+  reportButton: {
+    minHeight: 38,
+    px: 2,
+    bgcolor: devPlanColors.primary,
+    color: '#FFFFFF',
+    borderColor: devPlanColors.primary,
+    '&:hover': {
+      bgcolor: devPlanColors.primaryDark,
+      borderColor: devPlanColors.primaryDark,
+    },
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.primaryLight,
+      color: devPlanColors.secondary,
+      borderColor: devPlanColors.primaryLight,
+    },
+  },
+
   leaguesButton: {
     minHeight: 38,
     px: 2,

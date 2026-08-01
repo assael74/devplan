@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/index.js
+// src/coreData/resolvers/builders/index.js
 
 export * from './events.builders'
 export * from './games.builders'

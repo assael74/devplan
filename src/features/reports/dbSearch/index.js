@@ -5,3 +5,8 @@ export { normalizeDbSearchDocument } from './persistence/normalizeDbSearchDocume
 export { buildDbSearchViewModel } from './presentation/buildDbSearchViewModel.js'
 export { dbSearchDefinition } from './dbSearch.definition.js'
 export { DbSearchReportRenderer } from './renderer/index.js'
+export {
+  DbSearchReportPreviewModal,
+  publishDbSearchReport,
+  useDbSearchReportPreview,
+} from './integration/index.js'

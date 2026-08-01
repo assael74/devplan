@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, Button, Card, Divider, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { formatPhoneNumber } from '../../../../../../../../shared/format/contactUtiles.js'
+import { formatPhoneNumber } from '../../../../../../../../shared/format/contactUtils.js'
 
 import { cardSx as sx } from '../../sx/card.sx.js'
 

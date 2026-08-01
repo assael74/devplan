@@ -1,6 +1,6 @@
-// src/features/coreData/resolvers/builders/advancedStats.builder.js
+// src/coreData/resolvers/builders/advancedStats.builder.js
 
-import { statsParm } from '../../../../shared/stats/statsParmList.js'
+import { statsParm } from '../../../shared/stats/statsParmList.js'
 
 export const EXCLUDED_ADVANCED_STATS_IDS = new Set([
   'isStarting',

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useLocation, useParams, useSearchParams } from 'react-router-dom'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './playerProfile.routes'
 import {

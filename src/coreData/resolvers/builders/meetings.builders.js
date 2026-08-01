@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/meetings.builders.js
+// src/coreData/resolvers/builders/meetings.builders.js
 
 import {
   safeArr,

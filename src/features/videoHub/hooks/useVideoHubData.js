@@ -1,7 +1,7 @@
 // src/features/videoHub/hooks/useVideoHubData.js
 
 import { useMemo } from 'react'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 
 import { buildVideoHubContext } from '../logic/videoHub.context.js'
 import { enrichVideoAnalysis } from '../logic/videoHub.logic.js'

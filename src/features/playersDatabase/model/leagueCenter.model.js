@@ -6,8 +6,10 @@ import { isSameSeason, normalizeSeasonIdentity, normalizeSeasonLookupKey, resolv
 import { normalizeTeamStats } from './teamStats.model.js'
 import { cleanValue, toNumberOrZero } from './value.model.js'
 
-export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = '26/27'
+export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
+export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
 const DEFAULT_SEASON_OPTIONS = ['26/27', '25/26', '24/25', '23/24', '22/23']
+const LEAGUE_CENTER_CURRENT_SEASON_KEY = DEFAULT_SEASON_OPTIONS[0]
 
 const clean = cleanValue
 const toNumber = toNumberOrZero
@@ -27,6 +29,9 @@ const isSameSeasonKey = (left, right) => isSameSeason(
 )
 
 export const resolveLeagueCenterSeasonTarget = seasonKey =>
+  normalizeSeasonKey(seasonKey) === LEAGUE_CENTER_ALL_SEASONS_KEY
+    ? 'all'
+    :
   normalizeSeasonKey(seasonKey) === '26/27' ? 'current' : 'history'
 
 const getLeagueIds = league => [
@@ -238,7 +243,7 @@ const buildMasterLeagueSeasonRows = league => {
   const seasons = Array.isArray(league?.seasons) ? league.seasons : []
   const currentSeason =
     seasons.find(season => clean(season?.currentDocRef)) ||
-    seasons.find(season => normalizeSeasonKey(season?.seasonKey) === LEAGUE_CENTER_DEFAULT_SEASON_KEY) ||
+    seasons.find(season => normalizeSeasonKey(season?.seasonKey) === LEAGUE_CENTER_CURRENT_SEASON_KEY) ||
     seasons[0] ||
     null
 
@@ -306,26 +311,55 @@ export const buildLeagueCenterRows = ({
 }) => {
   const leagueDocsMap = buildLeagueDocsMap(leagueDocs)
   const catalogIds = new Set(PLAYERS_DATABASE_LEAGUES_CATALOG.map(item => item.id))
+  const shouldShowAllSeasons = normalizeSeasonKey(selectedSeasonKey) === LEAGUE_CENTER_ALL_SEASONS_KEY
 
-  const catalogRows = PLAYERS_DATABASE_LEAGUES_CATALOG.map(catalog => {
+  const buildRowsForLeague = ({ league, catalog, hasLeagueDoc }) => {
+    if (!shouldShowAllSeasons) {
+      return [buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey,
+      })]
+    }
+
+    const seasons = getLeagueSeasons(league)
+    if (!seasons.length) {
+      return [buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey: '',
+      })]
+    }
+
+    return seasons.map(({ season }) => (
+      buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey: resolveSeasonLookupKey(season),
+      })
+    ))
+  }
+
+  const catalogRows = PLAYERS_DATABASE_LEAGUES_CATALOG.flatMap(catalog => {
     const league = leagueDocsMap.get(catalog.id) || catalog
 
-    return buildLeagueCenterRow({
+    return buildRowsForLeague({
       league,
       catalog,
       hasLeagueDoc: league?.hasLeagueDoc ?? league !== catalog,
-      selectedSeasonKey,
     })
   })
 
   const extraRows = leagueDocs
     .filter(league => !getLeagueIds(league).some(id => catalogIds.has(id)))
-    .map(league => (
-      buildLeagueCenterRow({
+    .flatMap(league => (
+      buildRowsForLeague({
         league,
         catalog: getCatalogLeague(league),
         hasLeagueDoc: league?.hasLeagueDoc ?? true,
-        selectedSeasonKey,
       })
     ))
 
@@ -333,7 +367,7 @@ export const buildLeagueCenterRows = ({
 }
 
 export const buildLeagueCenterSeasonOptions = leagueDocs => {
-  const keys = new Set(DEFAULT_SEASON_OPTIONS)
+  const keys = new Set([LEAGUE_CENTER_ALL_SEASONS_KEY, ...DEFAULT_SEASON_OPTIONS])
 
   leagueDocs.forEach(league => {
     getLeagueSeasons(league).forEach(({ season }) => {

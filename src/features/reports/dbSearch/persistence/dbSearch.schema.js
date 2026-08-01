@@ -44,6 +44,8 @@ function createPublicReportSchema({ reportType, content, schemaVersion = 1 } = {
 
 const META_FIELDS = {
   reportName: { type: 'string', required: true },
+  reportPurpose: { type: 'string', required: true },
+  reportDescription: { type: 'string', required: false },
   title: { type: 'string', required: true },
   subtitle: { type: 'string', required: false },
   reportDate: { type: 'string', required: true },
@@ -52,9 +54,12 @@ const META_FIELDS = {
 }
 
 const DATA_CAPABILITIES_FIELDS = {
-  availableDomains: { type: 'array', required: true },
-  availableDimensions: { type: 'array', required: true },
-  availableFields: { type: 'array', required: true },
+  schema: { type: 'string', required: false },
+  domains: { type: 'array', required: false },
+  supports: { type: 'object', required: false },
+  availableDomains: { type: 'array', required: false },
+  availableDimensions: { type: 'array', required: false },
+  availableFields: { type: 'array', required: false },
 }
 
 export const DB_SEARCH_CONTENT_FIELDS = {

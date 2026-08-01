@@ -1,3 +1,5 @@
+import { getDbSearchTeamColumnWidth } from './dbSearchTeams.table.js'
+
 const hasField = (availableFields, field) => availableFields.includes(field)
 
 export function buildDbSearchTeamColumns({
@@ -7,7 +9,7 @@ export function buildDbSearchTeamColumns({
   const columns = [
     {
       id: 'teamName',
-      label: 'קבוצה',
+      label: 'שם קבוצה',
       field: 'teamName',
       sortable: true,
       kind: 'team',
@@ -48,11 +50,22 @@ export function buildDbSearchTeamColumns({
     columns.push({ id: 'appearances', label: 'מש׳', field: 'appearances' })
   }
 
-  if (
-    hasField(availableFields, 'goalsFor') ||
-    hasField(availableFields, 'goalsAgainst')
-  ) {
-    columns.push({ id: 'goals', label: 'שערים', kind: 'goals' })
+  if (hasField(availableFields, 'goalsFor')) {
+    columns.push({
+      id: 'goalsFor',
+      label: 'שערים',
+      field: 'goalsFor',
+      sortable: true,
+    })
+  }
+
+  if (hasField(availableFields, 'goalsAgainst')) {
+    columns.push({
+      id: 'goalsAgainst',
+      label: 'ספיגה',
+      field: 'goalsAgainst',
+      sortable: true,
+    })
   }
 
   if (
@@ -64,7 +77,8 @@ export function buildDbSearchTeamColumns({
       label: 'עדיפות התקפית',
       field: 'offense.scoutPriorityScore',
       sortable: true,
-      kind: 'score',
+      kind: 'scoutPriority',
+      domain: 'offense',
     })
   }
 
@@ -77,7 +91,8 @@ export function buildDbSearchTeamColumns({
       label: 'עדיפות הגנתית',
       field: 'defense.scoutPriorityScore',
       sortable: true,
-      kind: 'score',
+      kind: 'scoutPriority',
+      domain: 'defense',
     })
   }
 
@@ -89,5 +104,10 @@ export function buildDbSearchTeamColumns({
     })
   }
 
-  return columns
+  return columns.map(column => ({
+    ...column,
+    width: getDbSearchTeamColumnWidth(column.id),
+    align: column.id === 'teamName' ? 'right' : 'center',
+    headerAlign: column.id === 'teamName' ? 'left' : 'center',
+  }))
 }

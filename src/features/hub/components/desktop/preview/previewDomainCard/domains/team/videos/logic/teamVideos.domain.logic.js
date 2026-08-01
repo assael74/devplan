@@ -1,7 +1,7 @@
 // preview/PreviewDomainCard/domains/team/videos/teamVideos.domain.logic.js
 
 import { DOMAIN_STATE, getDomainState } from '../../../../../preview.state'
-import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../../../shared/format/dateUtils.js'
 import { buildVideoInsights } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.build.js'
 import { buildTagsByIdObject, getVideoType } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.helpers.js'
 import { resolveVideoMonthKey } from '../../../../../../../../../../shared/videoAnalysis/insights/videoInsights.months.js'

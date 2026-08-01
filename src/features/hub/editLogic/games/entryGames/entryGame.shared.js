@@ -1,6 +1,6 @@
 // features/hub/editLogic/games/entryGames/entryGame.shared.js
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 
 export const safe = (value) => (value == null ? '' : String(value))
 

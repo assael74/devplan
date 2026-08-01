@@ -1,6 +1,6 @@
 // src/application/actions/teamCascade/prepareTeamCascadeDeletePlan.action.js
 
-import { collectTeamCascadeDeletePlan } from '../../../shared/entityLifecycle/cascade/team/collectTeamCascadeDeletePlan.js'
+import { collectTeamCascadeDeletePlan } from './collectTeamCascadeDeletePlan.js'
 
 export function prepareTeamCascadeDeletePlan({ entity, shorts } = {}) {
   if (!entity?.id) {

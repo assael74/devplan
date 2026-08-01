@@ -6,7 +6,7 @@ import { Avatar, Box, Chip, IconButton, Tooltip, Typography } from '@mui/joy'
 import roleImage from '../../../core/images/roleImage.png'
 import { iconUi } from '../../../core/icons/iconUi.js'
 import { STAFF_ROLE_OPTIONS } from '../../../../shared/roles/roles.constants.js'
-import { formatPhoneNumber } from '../../../../shared/format/contactUtiles.js'
+import { formatPhoneNumber } from '../../../../shared/format/contactUtils.js'
 import { staffSx } from './staff.sx.js'
 
 

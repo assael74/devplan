@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/teamPerformance.builder.js
+// src/coreData/resolvers/builders/teamPerformance.builder.js
 
 const safeNum = (v, fallback = 0) => {
   const n = Number(v)

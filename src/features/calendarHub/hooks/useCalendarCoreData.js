@@ -1,7 +1,7 @@
 // src/features/calendarHub/hooks/useCalendarCoreData.js
 
 import { useMemo } from 'react'
-import { useCoreData } from '../../coreData/CoreDataProvider.js'
+import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 
 export default function useCalendarCoreData() {
   const core = useCoreData()

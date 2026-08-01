@@ -14,7 +14,7 @@ import {
   compactMediaSx
 } from '../../../../../../../../ui/domains/video/videoAnalysis/desktop/videoCard/sx/videoPreviewMedia.sx.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../shared/format/dateUtils.js'
 import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 

@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/events.builders.js
+// src/coreData/resolvers/builders/events.builders.js
 
 import {
   safeArr,

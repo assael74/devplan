@@ -34,8 +34,9 @@ export default function SearchHeader({
         </Button>
 
         <Button
-          variant='outlined'
+          variant='solid'
           disabled={reportDisabled}
+          sx={sx.reportButton}
           startDecorator={iconUi({ id: 'print', size: 'sm' })}
           onClick={onReport}
         >

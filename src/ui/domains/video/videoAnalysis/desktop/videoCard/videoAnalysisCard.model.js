@@ -1,4 +1,4 @@
-import { getFullDateIl } from '../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../shared/format/dateUtils.js'
 
 const safe = value => (value == null ? '' : String(value)).trim()
 

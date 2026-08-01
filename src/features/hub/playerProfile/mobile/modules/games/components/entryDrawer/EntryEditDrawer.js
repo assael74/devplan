@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
-import { getFullDateIl } from '../../../../../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../../../../../shared/format/dateUtils.js'
 
 import DrawerShell from '../../../../../../../../ui/patterns/drawer/DrawerShell.js'
 import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'

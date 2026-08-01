@@ -1,4 +1,4 @@
-import { getFullDateIl } from '../../../../shared/format/dateUtiles.js'
+import { getFullDateIl } from '../../../../shared/format/dateUtils.js'
 import { toValidDate } from './schedule.date.js'
 
 export const formatShortDateIl = (value) => {

@@ -1,4 +1,4 @@
-// src/features/coreData/resolvers/builders/scoutGames.builders.js
+// src/coreData/resolvers/builders/scoutGames.builders.js
 
 import { safeArr, safeBool, safeNum, safeStr } from '../../utils/data.utils.js'
 

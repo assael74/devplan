@@ -57,11 +57,11 @@ export default function LeagueCenterFilters({ model }) {
         <Select
           value={model.seasonKey}
           sx={sx.filterSelect}
-          onChange={(event, value) => model.setSeasonKey(value || '26/27')}
+          onChange={(event, value) => model.setSeasonKey(value || 'all')}
         >
           {model.seasonOptions.map(seasonKey => (
             <Option key={seasonKey} value={seasonKey}>
-              {seasonKey}
+              {seasonKey === 'all' ? 'כל העונות' : seasonKey}
             </Option>
           ))}
         </Select>
