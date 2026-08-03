@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react'
 import { Dropdown, Menu, MenuButton, MenuItem, ListDivider, IconButton } from '@mui/joy'
-import MoreVertRounded from '@mui/icons-material/MoreVertRounded'
 
 import { useLifecycle } from '../../../ui/domains/entityLifecycle/LifecycleProvider.js'
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
@@ -71,7 +70,7 @@ export default function EntityActionsMenu({
           },
         }}
       >
-        <MoreVertRounded />
+        {iconUi({ id: 'more', size: 'sm' })}
       </MenuButton>
 
       <Menu placement="bottom-end" sx={{ minWidth: 220 }}>

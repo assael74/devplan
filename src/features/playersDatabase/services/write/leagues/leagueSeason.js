@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/leagues/leagueSeason.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
@@ -13,6 +13,7 @@ import {
 } from './leagueDoc.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export { buildSeasonKey } from './leagueDoc.js'
 
 export const buildSeasonDoc = (season = {}) => {
@@ -77,7 +78,7 @@ export async function upsertLeagueSeason({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -143,7 +144,7 @@ export async function updateLeagueSeasonUrl({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -204,7 +205,7 @@ export async function updateLeagueSeasonMeta({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)

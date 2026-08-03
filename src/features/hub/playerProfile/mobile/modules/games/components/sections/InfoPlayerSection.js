@@ -3,7 +3,7 @@ import { Box, Typography, Tooltip, Avatar, Divider } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtils.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
-import { playerGamesSectionsSx as sx } from '../../sx/playerGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 
 import {
   getHomeAwayLabel,

@@ -17,8 +17,8 @@ export default function TeamManagementModule(props) {
       isMobile={false}
       saveSource="TeamManagementModule"
       toolbarWrapSx={teamManagementModuleSx.desktopToolbarWrap}
-      staffWrapSx={teamManagementModuleSx.desktopStaffWrap}
-      wrapStaff
+      rolesWrapSx={teamManagementModuleSx.desktopRolesWrap}
+      wrapRoles
     />
   )
 }

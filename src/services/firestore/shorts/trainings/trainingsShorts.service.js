@@ -1,9 +1,10 @@
 // C:\projects\devplan\src\services\firestore\shorts\trainings\trainingsShorts.service.js
-import { doc, runTransaction, Timestamp } from 'firebase/firestore'
+import { doc, Timestamp } from 'firebase/firestore'
 import { db } from '../../../firebase/firebase.js'
 import { shortsRefs } from '../shorts.refs.js'
 
 import { upsertWeekDraftIntoTeamsTrainingList } from './trainingsShorts.upsert.js'
+import { trackedRunTransaction } from '../../usage/firestoreUsage.instrumentation.js'
 
 const safeStr = (v) => String(v ?? '').trim()
 
@@ -37,7 +38,7 @@ export async function upsertTrainingWeek({
     }
   }
 
-  return runTransaction(db, async (tx) => {
+  return trackedRunTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
     const data = snap.exists() ? (snap.data() || {}) : {}
 
@@ -72,5 +73,10 @@ export async function upsertTrainingWeek({
       updated: true,
       meta,
     }
+  }, {
+    feature: 'hub',
+    action: 'training-week-save',
+    collection: 'teamsShorts',
+    operationSubtype: 'training-transaction',
   })
 }

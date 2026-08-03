@@ -29,7 +29,7 @@ import {
   LEAGUE_IMPORT_PLACEHOLDER,
 } from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
-import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { useLeagueReport } from './report/index.js'
 import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
 

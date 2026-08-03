@@ -10,12 +10,19 @@ export default function DbSearchReportRenderer({
   presentation = 'url',
   device = 'desktop',
   loading = false,
+  actions = null,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
 }) {
   if (presentation === 'pdf') {
     return (
       <PdfReport
         model={viewModel}
         device={device}
+        reportOptions={reportOptions}
+        selectedReportValue={selectedReportValue}
+        onReportChange={onReportChange}
       />
     )
   }
@@ -25,6 +32,10 @@ export default function DbSearchReportRenderer({
       model={viewModel}
       device={device}
       loading={loading}
+      actions={actions}
+      reportOptions={reportOptions}
+      selectedReportValue={selectedReportValue}
+      onReportChange={onReportChange}
     />
   )
 }

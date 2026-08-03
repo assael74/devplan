@@ -1,6 +1,6 @@
 // teamProfile/sharedLogic/abilities/inviteLogic/abilitiesInvite.logic.js
 
-import { createAbilitiesInvite } from '../../../../../abilitiesPublic/invites/abilitiesInvites.create.service.js'
+import { createAbilitiesInvite } from '../../../../../abilitiesPublic/publicApi.js'
 import roleImage from '../../../../../../ui/core/images/roleImage.png'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 

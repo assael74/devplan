@@ -15,13 +15,10 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import {
   TEAM_PLAYERS_PRINT_MODES,
-} from '../../../../../../../reports/performance/index.js'
-
-import {
   publishReport,
   publishTeamMinutesPlanReport,
   publishTeamSeasonPlanReport,
-} from '../../../../../../../reports/index.js'
+} from '../../../../../../../reports/publicApi.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 import TeamPlayersFiltersBar from './TeamPlayersFiltersBar.js'

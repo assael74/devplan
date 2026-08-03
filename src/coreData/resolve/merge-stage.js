@@ -35,6 +35,7 @@ const PRIVATE_PLAYER_MERGE_DOCS = [
   'privatePlayersInfo',
   'privatePlayersStats',
   'privatePlayersAbilities',
+  'privatePlayerFollowUps',
 ]
 
 const EXTERNAL_GAME_MERGE_DOCS = ['gamePlayers']

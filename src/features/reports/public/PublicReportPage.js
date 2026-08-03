@@ -19,12 +19,12 @@ import {
   getPublicReport,
   buildPublicReportUrl,
   buildPublicReportShareUrl,
-  buildPublicReportShareText,
   PUBLIC_REPORT_ERROR_CODES,
 } from '../service/index.js'
 
 import PublicReportRenderer from './PublicReportRenderer.js'
 import { publicReportSx as sx } from './sx/publicReport.sx.js'
+import exportPublicReportToXlsx from '../service/exportPublicReport.xlsx.js'
 
 function PublicReportState({ loading = false, title, text }) {
   return (
@@ -249,6 +249,14 @@ function PdfButton({ documentTitle, renderContent }) {
 
 function ReportActions({ report, shareCopied = false, onShare }) {
   const documentTitle = getReportPageTitle(report)
+  const canExportExcel = report?.reportType === 'dbSearch'
+
+  const handleExcel = () => {
+    const exported = exportPublicReportToXlsx(report)
+    if (!exported) {
+      window.alert('אין נתונים זמינים לייצוא Excel.')
+    }
+  }
 
   return (
     <>
@@ -267,6 +275,39 @@ function ReportActions({ report, shareCopied = false, onShare }) {
           />
         )}
       />
+
+      {canExportExcel ? (
+        <>
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <Tooltip title='Excel' variant='soft'>
+              <Button
+                size='sm'
+                variant='soft'
+                color='neutral'
+                startDecorator={iconUi({ id: 'download' })}
+                sx={{ border: '1px solid', borderColor: 'divider' }}
+                onClick={handleExcel}
+              >
+                Excel
+              </Button>
+            </Tooltip>
+          </Box>
+
+          <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+            <Tooltip title='Excel' variant='soft'>
+              <IconButton
+                size='sm'
+                variant='soft'
+                color='neutral'
+                sx={{ border: '1px solid', borderColor: 'divider' }}
+                onClick={handleExcel}
+              >
+                {iconUi({ id: 'download' })}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </>
+      ) : null}
     </>
   )
 }
@@ -390,11 +431,7 @@ export default function PublicReportPage() {
       versionId: versionIdValue,
     })
 
-    const shareText = buildPublicReportShareText({
-      report: state.report,
-      url: currentUrl,
-    })
-    const copied = await copyText(shareText || currentUrl)
+    const copied = await copyText(currentUrl)
 
     if (copied) {
       setShareCopied(true)

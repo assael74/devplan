@@ -1,4 +1,4 @@
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -6,6 +6,7 @@ import {
   buildLeagueCenterRows,
 } from '../../../model/leagueCenter.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const INDEX_DOC_ID = 'all'
 
 const clean = value => String(value ?? '').trim()
@@ -53,7 +54,7 @@ export async function syncLeagueCenterIndexRows({
 
   if (!safeLeagues.length && !safeRemovedIds.size) return null
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(leagueCenterIndexRef())
     const existingRows = snapshot.exists() && Array.isArray(snapshot.data()?.rows)
       ? snapshot.data().rows

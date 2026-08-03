@@ -63,7 +63,7 @@ export const formSx = {
     bgcolor: 'background.surface',
     display: 'flex',
     flexDirection: 'column',
-    minHeight: 'calc(100dvh - 120px)',
+    minHeight: 0,
   },
 
   emptyState: {

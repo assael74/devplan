@@ -7,7 +7,7 @@ import { VIDEO_TAB } from '../logic/videoHub.model.js'
 import VideoShareModal from '../components/modal/VideoShareModal.js'
 import VideoHubFabMenu from './VideoHubFabMenu.js'
 import DriveVideoPlayer from '../../../ui/domains/video/DriveVideoPlayer.js'
-import { BulkVideosImportDrawer } from '../../bulkActions/videos/import/index.js'
+import { BulkVideosImportDrawer } from '../../bulkActions/publicApi.js'
 
 export default function VideoHubGlobalLayer({
   tab,

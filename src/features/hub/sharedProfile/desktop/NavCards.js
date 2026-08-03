@@ -1,9 +1,9 @@
 // src/features/hub/sharedProfile/NavCards.js
 import React, { useMemo } from 'react'
 import { Box, Sheet, Typography } from '@mui/joy'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { setTabInSearch } from '../profile.routes'
+import { buildProfileTabPath } from '../profile.routes'
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 import { sheetSx, boxSx } from './nav.sx'
 import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
@@ -31,7 +31,8 @@ export default function NavCards({
   iconMap,
   activeColor,
 }) {
-  const [sp, setSp] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const list = useMemo(() => (Array.isArray(tabs) ? tabs : []), [tabs])
 
   return (
@@ -44,8 +45,19 @@ export default function NavCards({
           active={String(t.key) === String(activeTab)}
           colorKey={activeColor || t.color}
           onClick={() => {
-            const next = setTabInSearch(sp, list, defaultTab, t.key)
-            setSp(next)
+            const pathname = buildProfileTabPath({
+              pathname: location.pathname,
+              tabs: list,
+              defaultTab,
+              tabKey: t.key,
+            })
+            const search = new URLSearchParams(location.search)
+            search.delete('tab')
+
+            navigate({
+              pathname,
+              search: search.toString() ? `?${search.toString()}` : '',
+            })
           }}
         />
       ))}

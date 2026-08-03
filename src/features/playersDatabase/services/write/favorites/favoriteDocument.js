@@ -2,7 +2,6 @@
 
 import {
   doc,
-  runTransaction,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -19,6 +18,7 @@ import {
   normalizeFavoriteItems,
 } from '../../../model/favorite.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const resolveFavoriteDocumentId = favoriteType => {
   if (favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER) {
     return PLAYERS_DATABASE_FAVORITES_DOCUMENTS.PLAYERS
@@ -45,7 +45,7 @@ export async function addFavorite({
 } = {}) {
   const ref = favoriteDocRef(favoriteType)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const currentItems = normalizeFavoriteItems(currentData.items)
@@ -91,7 +91,7 @@ export async function removeFavorite({
     throw new Error('Missing favorite entity id')
   }
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
 
     if (!snapshot.exists()) {

@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/delete/searchIndex.delete.js
 
-import { collection, deleteDoc, doc, getDocs, query, where, writeBatch } from 'firebase/firestore'
+import { collection, doc, query, where } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedDeleteDoc, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
@@ -11,8 +12,20 @@ import { collectIndexMeta, dataMatchesPlayer } from '../read/searchIndexMeta.rea
 import { buildSearchIndexWriteResult } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'searchIndex-delete',
+  operationSubtype: 'maintenance-query',
+})
+
 const deleteSnapshotDocs = async snapshot => {
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'searchIndex-delete',
+    operationSubtype: 'maintenance-batch',
+  })
 
   snapshot.docs.forEach(indexDoc => {
     batch.delete(indexDoc.ref)
@@ -38,7 +51,7 @@ export async function deleteSearchIndexesForLeagueSeason({
     where('leagueId', '==', leagueId),
     where('seasonKey', '==', seasonKey)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const meta = collectIndexMeta(snapshot)
   const rowsCount = await deleteSnapshotDocs(snapshot)
 
@@ -71,7 +84,7 @@ export async function deleteSearchIndexesForTeamSeason({
     where('seasonKey', '==', seasonKey),
     where('teamId', '==', teamId)
   )
-  const playerSnapshot = await getDocs(playerRowsQuery)
+  const playerSnapshot = await readSearchIndexes(playerRowsQuery)
   const matchingPlayerDocs = {
     docs: playerSnapshot.docs.filter(indexDoc => {
       const data = indexDoc.data() || {}
@@ -87,7 +100,14 @@ export async function deleteSearchIndexesForTeamSeason({
   let teamRowsCount = 0
 
   if (teamSeasonIndexId) {
-    await deleteDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, teamSeasonIndexId))
+    await trackedDeleteDoc(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, teamSeasonIndexId),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+        action: 'delete-team-season-index',
+      }
+    )
     teamRowsCount = 1
   }
 
@@ -120,7 +140,7 @@ export async function deleteSearchIndexForTeamPlayerSeason({
     where('seasonKey', '==', seasonKey),
     where('teamId', '==', teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {
     docs: snapshot.docs.filter(indexDoc => {
       const data = indexDoc.data() || {}
@@ -132,7 +152,7 @@ export async function deleteSearchIndexForTeamPlayerSeason({
   }
   const meta = collectIndexMeta(matchingDocs)
   const rowsCount = await deleteSnapshotDocs(matchingDocs)
-  const remainingSnapshot = await getDocs(rowsQuery)
+  const remainingSnapshot = await readSearchIndexes(rowsQuery)
 
   const remainingRowsCount = remainingSnapshot.docs.filter(indexDoc => {
     const data = indexDoc.data() || {}
@@ -174,7 +194,7 @@ export async function deletePlayerSearchIndexesForTeamSeason({
     where('seasonKey', '==', seasonKey),
     where('teamId', '==', teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {
     docs: snapshot.docs.filter(indexDoc => {
       const data = indexDoc.data() || {}

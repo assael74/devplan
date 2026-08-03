@@ -103,18 +103,22 @@ export default function ReportShell({
     name: brand?.name || brandName,
     subtitle: brand?.subtitle || brandSubtitle,
     logoUrl: brand?.logoUrl || '',
+    markLogoUrl: brand?.markLogoUrl || '',
+    fullLogoUrl: brand?.fullLogoUrl || '',
     mark: brand?.mark || 'DP',
     footerText: brand?.footerText || `${brand?.name || brandName} · ${brand?.subtitle || brandSubtitle}`,
   }
+  const headerLogoUrl = resolvedBrand.fullLogoUrl || resolvedBrand.logoUrl
+  const footerLogoUrl = resolvedBrand.markLogoUrl || resolvedBrand.logoUrl || resolvedBrand.fullLogoUrl
 
   return (
     <Box component='article' sx={sx.root}>
       <Box sx={sx.topBar}>
         <Box sx={sx.brand}>
-          {resolvedBrand.logoUrl ? (
+          {headerLogoUrl ? (
             <Box
               component='img'
-              src={resolvedBrand.logoUrl}
+              src={headerLogoUrl}
               alt={resolvedBrand.name}
               sx={{
                 display: 'block',
@@ -195,9 +199,20 @@ export default function ReportShell({
         </Box>
 
         <Box component='footer' sx={sx.footer}>
-          <Typography component='span'>
-            {resolvedBrand.footerText}
-          </Typography>
+          <Box sx={sx.footerBrand}>
+            {footerLogoUrl ? (
+              <Box
+                component='img'
+                src={footerLogoUrl}
+                alt={resolvedBrand.name}
+                sx={sx.footerLogo}
+              />
+            ) : null}
+
+            <Typography component='span' sx={sx.footerText}>
+              {resolvedBrand.footerText}
+            </Typography>
+          </Box>
 
           {reportNumber ? (
             <Typography component='span'>

@@ -28,7 +28,7 @@ import {
   getCreatedWhatsappText,
   createInviteFlow,
   clean,
-} from '../../../../sharedLogic/abilities'
+} from '../../../../../sharedLogic/abilities'
 
 export default function AbilitiesInviteCreateDrawer({
   open,

@@ -42,7 +42,17 @@ export default function AbilitiesExplainerPage() {
         </Box>
       </Sheet>
 
-      <Box sx={{ height: '100vh', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable', pb: 25 }} className='dpScrollThin'>
+      <Box
+        className='dpScrollThin'
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          scrollbarGutter: 'stable',
+          pb: 25,
+        }}
+      >
         <AbilitiesExplainerSections sections={sections} />
       </Box>
     </Sheet>

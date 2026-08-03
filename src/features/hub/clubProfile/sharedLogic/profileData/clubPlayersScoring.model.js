@@ -1,10 +1,10 @@
-// src/features/hub/clubProfile/sharedLogic/profileData/clubPlayersScoring.model.js
+// features/hub/clubProfile/sharedLogic/profileData/clubPlayersScoring.model.js
 
 import {
   buildPlayerGamesBase,
   buildPlayerScoringModel,
   buildPlayerProfileInsightModel,
-} from '../../../playerProfile/sharedLogic/profileData/index.js'
+} from '../../../domain/scoring/index.js'
 
 const emptyArray = []
 

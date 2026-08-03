@@ -7,7 +7,6 @@ import PlayersListPane from '../lists/players/PlayersListPane.js'
 import TeamsListPane from '../lists/teams/TeamsListPane.js'
 import ClubsListPane from '../lists/clubs/ClubsListPane.js'
 import PrivatesListPane from '../lists/privates/PrivatesListPane.js'
-import HubStaffList from '../lists/staff/HubStaffList.js'
 import HubScoutingList from '../lists/scout/HubScoutingList.js'
 
 import { hubMobileSx as sx } from './sx/hubMobile.sx'
@@ -16,10 +15,6 @@ const EMPTY_BY_MODE = {
   clubs: {
     title: 'מועדונים',
     text: 'רשימת המועדונים למובייל תחובר בשלב הבא.',
-  },
-  staff: {
-    title: 'צוות מקצועי',
-    text: 'רשימת אנשי הצוות למובייל תחובר בשלב הבא.',
   },
   privates: {
     title: 'שחקנים פרטיים',
@@ -112,19 +107,6 @@ export default function HubContentMobile({ mode, listProps = {} }) {
           onSelect={listProps.onSelectScout}
           selectedId={listProps.selectedScoutId}
           onOpenActions={listProps.onOpenScoutActions}
-        />
-      </Box>
-    )
-  }
-
-  if (mode === 'staff') {
-    return (
-      <Box sx={sx.listWraper}>
-        <HubStaffList
-          rows={listProps.staffRows || []}
-          onSelect={listProps.onSelectStaff}
-          selectedId={listProps.selectedStaffId}
-          onOpenActions={listProps.onOpenStaffActions}
         />
       </Box>
     )

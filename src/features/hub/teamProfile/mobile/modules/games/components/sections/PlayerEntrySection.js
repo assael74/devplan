@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Chip, Typography, Tooltip, IconButton } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { playerGamesSectionsSx as sx } from '../../sx/playerGames.sections.sx.js'
+import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import {
   getGamePlayers,
   getSquadPlayers,

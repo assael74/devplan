@@ -19,16 +19,16 @@ const numberFormatter = new Intl.NumberFormat('en-US', {
 const resolveValue = (row, metric) =>
   Number(row?.[metric] || 0)
 
-const resolveProgress = (value, maxValue) => {
-  if (!maxValue || value <= 0) return 0
+const resolveProgress = (value, totalValue) => {
+  if (!totalValue || value <= 0) return 0
 
   return Math.min(
     100,
-    Math.max(4, (value / maxValue) * 100)
+    Math.max(4, (value / totalValue) * 100)
   )
 }
 
-const formatMetric = (value, metric, maxValue) => {
+const formatMetric = (value, metric, totalValue) => {
   const valueText = (
     metric === 'estimatedReadKb' ||
     metric === 'estimatedWriteKb' ||
@@ -37,9 +37,9 @@ const formatMetric = (value, metric, maxValue) => {
     ? `${numberFormatter.format(value)} KB`
     : numberFormatter.format(value)
 
-  if (!maxValue) return valueText
+  if (!totalValue) return valueText
 
-  const percent = Math.round((value / maxValue) * 100)
+  const percent = Math.round((value / totalValue) * 100)
   return `${valueText} · ${percent}%`
 }
 
@@ -60,11 +60,9 @@ export default function UsageBarsCard({
 
   const visibleRows = rows.slice(0, resolvedLimit)
 
-  const maxValue = Math.max(
-    0,
-    ...visibleRows.map(row =>
-      resolveValue(row, metric)
-    )
+  const totalValue = rows.reduce(
+    (sum, row) => sum + resolveValue(row, metric),
+    0
   )
 
   return (
@@ -136,7 +134,7 @@ export default function UsageBarsCard({
 
                 <LinearProgress
                   determinate
-                  value={resolveProgress(value, maxValue)}
+                  value={resolveProgress(value, totalValue)}
                   size="sm"
                   color={
                     metric.includes('Write')
@@ -152,7 +150,7 @@ export default function UsageBarsCard({
                 />
 
                 <Typography level="body-xs" textColor="text.tertiary" sx={sx.typo}>
-                  {formatMetric(value, metric, maxValue)}
+                  {formatMetric(value, metric, totalValue)}
                 </Typography>
               </Box>
             )

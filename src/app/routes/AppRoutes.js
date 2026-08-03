@@ -3,7 +3,7 @@
 import React from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { useAuth } from '../../features/auth'
+import { useAuth } from '../../application/auth/index.js'
 import { useCoreData } from '../../coreData/CoreDataProvider.js'
 import buildReportsPublicRoutes from './ReportsPublicRoutes.js'
 import renderAuthenticatedRoutes from './AuthenticatedRoutes'

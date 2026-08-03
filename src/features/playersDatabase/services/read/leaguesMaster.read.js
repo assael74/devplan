@@ -1,8 +1,9 @@
 // features/playersDatabase/services/read/leaguesMaster.read.js
 
-import { doc, getDoc } from 'firebase/firestore'
+import { doc } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedGetDoc } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG } from '../../catalog/genericObjects.catalog.js'
 import {
@@ -24,7 +25,11 @@ export async function readLeaguesMasterDocument({ fresh = false } = {}) {
   return readWithDocumentCache({
     key: buildLeaguesMasterCacheKey(),
     read: async () => {
-      const snapshot = await getDoc(leaguesMasterDocRef())
+      const snapshot = await trackedGetDoc(leaguesMasterDocRef(), {
+        feature: 'playersDatabase',
+        action: 'leagues-master-read',
+        collection: PLAYERS_DATABASE_COLLECTIONS.leaguesMaster,
+      })
 
       if (!snapshot.exists()) {
         return {

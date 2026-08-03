@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Button } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
-import { useAuth } from '../../features/auth'
+import { useAuth } from '../../application/auth/index.js'
 import NotificationsBell from '../../features/notifications/components/NotificationsBell'
 import NotificationsDrawer from '../../features/notifications/components/NotificationsDrawer'
 import { useNotificationsContext } from '../NotificationsProvider'

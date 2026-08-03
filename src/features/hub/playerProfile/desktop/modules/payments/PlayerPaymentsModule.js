@@ -14,6 +14,7 @@ const PaymentsToolbar = React.lazy(() => import('./components/toolbar/PaymentsTo
 const PaymentsTable = React.lazy(() => import('./components/table/PaymentsTable'))
 const ParentsTab = React.lazy(() => import('./components/ParentsTab'))
 const EditDrawer = React.lazy(() => import('./components/drawer/EditDrawer.js'))
+const PrivatePlayerPaymentsView = React.lazy(() => import('../../../sharedModules/payments/PrivatePlayerPaymentsView.js'))
 
 export default function PlayerPaymentsModule({ entity, context }) {
   const model = usePlayerPaymentsModuleModel({ entity })
@@ -24,6 +25,7 @@ export default function PlayerPaymentsModule({ entity, context }) {
     filters,
     editingPayment,
 
+    itemsAll,
     itemsFiltered,
     summary,
     options,
@@ -32,6 +34,8 @@ export default function PlayerPaymentsModule({ entity, context }) {
     setFilters,
     setEditingPayment,
   } = model
+
+  const isPrivatePlayer = player?.isPrivatePlayer === true
 
   return (
     <SectionPanel>
@@ -55,25 +59,31 @@ export default function PlayerPaymentsModule({ entity, context }) {
             </TabPanel>
 
             <TabPanel value={1} sx={{ px: 1, py: 0.5 }}>
-              <Box sx={sx.boxWrap}>
-                <PaymentsToolbar
-                  filters={filters}
-                  onChangeFilters={setFilters}
-                  options={options}
-                  summary={summary}
-                />
-              </Box>
-
-              {itemsFiltered.length === 0 ? (
-                <EmptyState
-                  title="אין תשלומים"
-                  desc="אין נתוני תשלום בהתאמה לפילטרים."
-                />
+              {isPrivatePlayer ? (
+                <PrivatePlayerPaymentsView items={itemsAll} />
               ) : (
-                <PaymentsTable
-                  items={itemsFiltered}
-                  onEdit={payment => setEditingPayment(payment)}
-                />
+                <>
+                  <Box sx={sx.boxWrap}>
+                    <PaymentsToolbar
+                      filters={filters}
+                      onChangeFilters={setFilters}
+                      options={options}
+                      summary={summary}
+                    />
+                  </Box>
+
+                  {itemsFiltered.length === 0 ? (
+                    <EmptyState
+                      title="אין תשלומים"
+                      desc="אין נתוני תשלום בהתאמה לפילטרים."
+                    />
+                  ) : (
+                    <PaymentsTable
+                      items={itemsFiltered}
+                      onEdit={payment => setEditingPayment(payment)}
+                    />
+                  )}
+                </>
               )}
             </TabPanel>
           </Tabs>

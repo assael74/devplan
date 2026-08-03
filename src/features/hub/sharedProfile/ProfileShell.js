@@ -1,7 +1,10 @@
-// src/features/hub/sharedProfile/ProfileShell.js
+// features/hub/sharedProfile/ProfileShell.js
 
 import React from 'react'
-import { Box, CircularProgress, Sheet, Typography } from '@mui/joy'
+import { Box, Button, CircularProgress, Sheet, Typography } from '@mui/joy'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { iconUi } from '../../../ui/core/icons/iconUi.js'
 
 function ModuleLoadingFallback() {
   return (
@@ -34,35 +37,75 @@ export default function ProfileShell({
   headerProps,
   navProps,
   rendererProps,
+  backRoute,
+  scrollMode = 'page',
 }) {
-  const isMeetings = tab === 'meetings'
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isContained = scrollMode === 'contained'
+
+  const handleBack = () => {
+    const returnTo = location.state?.returnTo || backRoute
+
+    if (returnTo) {
+      navigate(returnTo)
+      return
+    }
+
+    navigate(-1)
+  }
+
+  const backAction = (
+    <Button
+      size="sm"
+      variant="plain"
+      color="neutral"
+      startDecorator={iconUi({ id: 'back', size: 'sm' })}
+      onClick={handleBack}
+      sx={{
+        minHeight: 30,
+        px: 0.75,
+        flexShrink: 0,
+      }}
+    >
+      חזרה
+    </Button>
+  )
 
   return (
     <Sheet
       sx={{
-        height: '100dvh',
+        height: '100%',
         bgcolor: 'background.body',
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
+        overflow: 'hidden',
       }}
     >
-
-      {HeaderComp ? <HeaderComp entity={entity} context={context} tab={tab} {...headerProps} /> : null}
+      {HeaderComp ? (
+        <HeaderComp
+          entity={entity}
+          context={context}
+          tab={tab}
+          backAction={backAction}
+          {...headerProps}
+        />
+      ) : null}
 
       {NavComp ? (
-        <Box sx={{ px: 1.25, pt: 1 }}>
+        <Box sx={{ px: 1.25, pt: 0.75, flexShrink: 0 }}>
           <NavComp entity={entity} context={context} tab={tab} {...navProps} />
         </Box>
       ) : null}
 
       <Box
-        className="dpScrollThin"
+        className={isContained ? undefined : 'dpScrollThin'}
         sx={{
           flex: 1,
           minHeight: 0,
-          overflow: isMeetings ? 'hidden' : 'auto',
-          pt: 1.25,
+          overflow: isContained ? 'hidden' : 'auto',
+          pt: 1,
           pb: 2,
           scrollPaddingBottom: 8,
           overscrollBehavior: 'contain',
@@ -73,10 +116,9 @@ export default function ProfileShell({
             <RendererComp entity={entity} context={context} tab={tab} {...rendererProps} />
           </React.Suspense>
         ) : null}
-
       </Box>
 
-      {FabComp ?
+      {FabComp ? (
         <FabComp
           entity={entity}
           context={context}
@@ -85,8 +127,7 @@ export default function ProfileShell({
           taskContext={taskContext}
           {...fabProps}
         />
-        : null
-      }
+      ) : null}
     </Sheet>
   )
 }

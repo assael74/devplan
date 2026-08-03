@@ -25,6 +25,8 @@ export default function TrainingSchedulePreview({
   showNextWeek = true,
   showCreate = true,
   onDone,
+  onSave,
+  savePending = false,
   context,
 }) {
   const [createOpen, setCreateOpen] = useState(false)
@@ -146,7 +148,9 @@ export default function TrainingSchedulePreview({
         open={createOpen}
         team={entity}
         onClose={handleCloseDrawer}
+        onSave={onSave}
         onSaved={handleCreateDone}
+        pending={savePending}
         teamId={teamId}
         context={context}
       />
@@ -156,7 +160,9 @@ export default function TrainingSchedulePreview({
         team={entity}
         week={editingDay}
         onClose={handleCloseEditDay}
+        onSave={onSave}
         onSaved={handleEditDaySaved}
+        pending={savePending}
         context={context}
       />
     </>

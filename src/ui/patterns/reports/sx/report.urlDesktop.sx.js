@@ -82,8 +82,8 @@ export const buildReportUrlDesktopSx = ({
 
   header: {
     px: 3,
-    pb: 1.5,
-    pt: 0.5
+    pb: 1.25,
+    pt: 1.2,
   },
 
   scrollArea: {
@@ -95,16 +95,16 @@ export const buildReportUrlDesktopSx = ({
 
   mainRow: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 2.5,
-    mb: 1.5,
+    mb: 1.25,
   },
 
   title: {
     m: 0,
     color: 'var(--report-system-dark)',
-    fontSize: 'clamp(26px, 4vw, 38px)',
+    fontSize: 'clamp(25px, 3.6vw, 35px)',
     lineHeight: 1.12,
     fontWeight: 700,
   },
@@ -112,14 +112,15 @@ export const buildReportUrlDesktopSx = ({
   date: {
     display: 'flex',
     flexDirection: 'column',
-    minWidth: 195,
-    px: 1.875,
-    py: 1,
-    background: 'linear-gradient(180deg, #F8FBFD 0%, #EEF4F8 100%)',
+    minWidth: 168,
+    px: 1.35,
+    py: 0.85,
+    mt: 0.35,
+    bgcolor: '#F8FBFD',
     border: '1px solid rgba(42, 96, 136, 0.14)',
-    borderRadius: '14px',
+    borderRadius: '12px',
     textAlign: 'left',
-    boxShadow: '0 8px 18px rgba(23, 59, 87, 0.08)',
+    boxShadow: '0 6px 14px rgba(23, 59, 87, 0.06)',
     transition: 'box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease',
     '&:hover': {
       boxShadow: '0 12px 24px rgba(23, 59, 87, 0.12)',
@@ -349,6 +350,7 @@ export const buildReportUrlDesktopSx = ({
 
   footer: {
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 2,
     mt: 'auto',
@@ -361,6 +363,26 @@ export const buildReportUrlDesktopSx = ({
     fontWeight: 700,
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
+  },
+
+  footerBrand: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0,
+  },
+
+  footerLogo: {
+    width: 20,
+    height: 20,
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+
+  footerText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 })
 

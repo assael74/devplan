@@ -9,7 +9,6 @@ import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
 import { sharedSx } from './../../sharedProfile/mobile/shared.sx.js'
 
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 
 const c = (entity) => getEntityColors(entity)
 
@@ -72,7 +71,7 @@ export default function ProfileSectionMobile({
             aria-label="חזרה"
             sx={{ flexShrink: 0 }}
           >
-            <ArrowBackRoundedIcon />
+            {iconUi({ id: 'back', size: 'sm' })}
           </IconButton>
         </Box>
       </Box>

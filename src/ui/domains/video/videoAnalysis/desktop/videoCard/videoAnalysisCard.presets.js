@@ -22,6 +22,14 @@ export const VIDEO_ANALYSIS_CARD_PRESETS = {
     menu: () => [],
   },
 
+  profile: {
+    showYm: true,
+    maxVisibleTags: 3,
+    showDivider: true,
+    playButtonColor: 'primary',
+    menu: () => [],
+  },
+
   team: {
     showYm: true,
     maxVisibleTags: 3,

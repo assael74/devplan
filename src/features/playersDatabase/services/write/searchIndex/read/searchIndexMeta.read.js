@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/read/searchIndexMeta.read.js
 
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, query, where } from 'firebase/firestore'
+import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { buildPlayerMatchValues, normalizePlayerNameValue } from '../../../../model/playerIdentity.model.js'
@@ -8,6 +9,13 @@ import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
 import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildSearchIndexMetaResult } from '../shared/searchIndexResult.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'searchIndexMeta-read',
+  operationSubtype: 'maintenance-query',
+})
 
 export const normalizeText = value =>
   clean(value).toLowerCase()
@@ -71,7 +79,7 @@ export async function getSearchIndexMetaForTeamSeason({
     where('seasonKey', '==', seasonKey),
     where('teamId', '==', teamId)
   )
-  const playerSnapshot = await getDocs(playerRowsQuery)
+  const playerSnapshot = await readSearchIndexes(playerRowsQuery)
   const matchingPlayerDocs = {
     docs: playerSnapshot.docs.filter(indexDoc => {
       const data = indexDoc.data() || {}
@@ -108,7 +116,7 @@ export async function getSearchIndexMetaForTeamPlayerSeason({
     where('seasonKey', '==', seasonKey),
     where('teamId', '==', teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {
     docs: snapshot.docs.filter(indexDoc => {
       const data = indexDoc.data() || {}
@@ -141,7 +149,7 @@ export async function getSearchIndexMetaForLeagueSeason({
     where('leagueId', '==', leagueId),
     where('seasonKey', '==', seasonKey)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const teamMap = new Map()
 
   snapshot.docs.forEach(indexDoc => {

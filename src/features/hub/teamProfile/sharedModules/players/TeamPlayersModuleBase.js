@@ -6,11 +6,14 @@ import { Box } from '@mui/joy'
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 import EntityImageModal from '../../../../../ui/domains/entityImage/EntityImageModal.js'
 
-import { PlayersBulkDeleteModal, PlayersBulkPasteDrawer } from '../../../../bulkActions/players/index.js'
+import {
+  PlayersBulkDeleteModal,
+  PlayersBulkPasteDrawer,
+} from '../../../../bulkActions/publicApi.js'
 
 import useTeamPlayersModuleModel from './useTeamPlayersModuleModel.js'
 import { teamPlayersModuleSx } from './teamPlayersModule.sx.js'
-import { TEAM_PLAYERS_PRINT_MODES } from '../../../../reports/performance/index.js'
+import { TEAM_PLAYERS_PRINT_MODES } from '../../../../reports/publicApi.js'
 import { TEAM_PLAYERS_VIEW_MODES } from './teamPlayersModule.constants.js'
 
 export default function TeamPlayersModuleBase({

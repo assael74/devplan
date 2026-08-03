@@ -224,6 +224,39 @@ export const createEntityHandlers = {
     }
   },
 
+
+  privatePaymentAgreement: async ({ draft }) => {
+    const id = makeId()
+    const now = Date.now()
+    const totalAmount = Number(String(draft.totalAmount || '').replace(/,/g, ''))
+    const initialStatus = { id: 'new', time: now }
+
+    const paymentProfitItem = {
+      id,
+      type: 'privateAgreement',
+      paymentFor: 'התקשרות פרטית',
+      price: totalAmount,
+      totalAmount,
+      startDate: clean(draft.startDate),
+      durationMonths: 18,
+      installments: [],
+    }
+
+    const paymentOperativeItem = {
+      id,
+      playerId: clean(draft.playerId),
+      status: initialStatus,
+    }
+
+    await createShort({ shortKey: 'payments.paymentProfit', item: paymentProfitItem })
+    await createShort({ shortKey: 'payments.paymentOperative', item: paymentOperativeItem })
+
+    return {
+      ...paymentProfitItem,
+      ...paymentOperativeItem,
+    }
+  },
+
   game: async ({ draft }) => {
     return createGameShorts({ draft })
   },

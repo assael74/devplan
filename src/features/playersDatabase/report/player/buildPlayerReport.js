@@ -3,7 +3,7 @@
 import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
-} from '../../../reports/reports.constants.js'
+} from '../../../reports/publicApi.js'
 
 function formatReportDate(value = new Date()) {
   return new Intl.DateTimeFormat('he-IL').format(value)

@@ -13,6 +13,7 @@ import TrainingsWeekToolbar from './components/TrainingsWeekToolbar.js'
 import TrainingsRows from './components/TrainingsRows.js'
 
 import { useTeamTrainingsModuleModel } from '../../../sharedModules/trainings'
+import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
 
 import { profileSx as sx } from './../../sx/profile.sx'
 
@@ -36,6 +37,17 @@ export default function TeamTrainingsModule({ entity, context }) {
     context,
     buildMobileModel: true,
   })
+
+
+  const { run, pending } = useTeamHubUpdate(liveTeam)
+
+  const handleSave = (patch, meta) => {
+    return run(
+      'training',
+      patch,
+      meta
+    )
+  }
 
   return (
     <SectionPanelMobile>
@@ -82,7 +94,9 @@ export default function TeamTrainingsModule({ entity, context }) {
         open={createOpen}
         team={liveTeam}
         onClose={handleCloseCreate}
+        onSave={handleSave}
         onSaved={handleCloseCreate}
+        pending={pending}
         teamId={teamId}
         context={context}
       />
@@ -92,7 +106,9 @@ export default function TeamTrainingsModule({ entity, context }) {
         team={liveTeam}
         week={editingDay}
         onClose={handleCloseEdit}
+        onSave={handleSave}
         onSaved={handleCloseEdit}
+        pending={pending}
         context={context}
       />
     </SectionPanelMobile>

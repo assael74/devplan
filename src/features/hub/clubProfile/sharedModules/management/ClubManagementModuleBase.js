@@ -4,7 +4,7 @@ import React from 'react'
 import { Box } from '@mui/joy'
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
-import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaffCard.js'
+import RolesCard from '../../../../../ui/domains/roles/RolesCard.js'
 
 import useClubManagementModuleModel from './useClubManagementModuleModel.js'
 
@@ -18,7 +18,7 @@ export default function ClubManagementModuleBase({
   isMobile = false,
   rootSx,
   emptyWrapSx,
-  staffWrapSx,
+  rolesWrapSx,
 
   createIfMissing = false,
 
@@ -27,7 +27,7 @@ export default function ClubManagementModuleBase({
 }) {
   const {
     club,
-    staffPool,
+    rolesPool,
     baseModel,
     draft,
     isDirty,
@@ -87,10 +87,10 @@ export default function ClubManagementModuleBase({
             pending={pending}
           />
 
-          <Box sx={staffWrapSx || { minWidth: 0, alignSelf: 'start', height: 'auto' }}>
-            <ManagementStaffCard
+          <Box sx={rolesWrapSx || { minWidth: 0, alignSelf: 'start', height: 'auto' }}>
+            <RolesCard
               clubId={baseModel.id}
-              roles={staffPool}
+              roles={rolesPool}
               disabled={pending}
               compact={isMobile}
             />

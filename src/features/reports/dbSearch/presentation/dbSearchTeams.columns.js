@@ -16,6 +16,16 @@ export function buildDbSearchTeamColumns({
     },
   ]
 
+  if (hasField(availableFields, 'clubLevel')) {
+    columns.push({
+      id: 'clubLevel',
+      label: 'רמת מועדון',
+      field: 'clubLevel',
+      sortable: true,
+      kind: 'clubLevel',
+    })
+  }
+
   if (hasField(availableFields, 'seasonKey')) {
     columns.push({ id: 'seasonKey', label: 'עונה', field: 'seasonKey' })
   }
@@ -25,15 +35,13 @@ export function buildDbSearchTeamColumns({
   }
 
   if (hasField(availableFields, 'leagueName')) {
-    columns.push({ id: 'leagueName', label: 'ליגה', field: 'leagueName' })
-  }
-
-  if (hasField(availableFields, 'leagueLevel')) {
     columns.push({
-      id: 'leagueLevel',
-      label: 'רמה',
-      field: 'leagueLevel',
+      id: 'leagueName',
+      label: 'ליגה',
+      field: 'leagueName',
       sortable: true,
+      kind: 'league',
+      showLevel: hasField(availableFields, 'leagueLevel'),
     })
   }
 
@@ -107,7 +115,7 @@ export function buildDbSearchTeamColumns({
   return columns.map(column => ({
     ...column,
     width: getDbSearchTeamColumnWidth(column.id),
-    align: column.id === 'teamName' ? 'right' : 'center',
-    headerAlign: column.id === 'teamName' ? 'left' : 'center',
+    align: ['teamName', 'clubLevel', 'leagueName'].includes(column.id) ? 'left' : 'center',
+    headerAlign: ['teamName', 'clubLevel', 'leagueName'].includes(column.id) ? 'left' : 'center',
   }))
 }

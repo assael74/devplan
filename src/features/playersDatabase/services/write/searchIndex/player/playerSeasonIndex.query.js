@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.query.js
 
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, query, where } from 'firebase/firestore'
+import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
@@ -13,6 +14,13 @@ import {
   isSamePlayerSeasonIndexContext,
   normalizeText,
 } from './playerSeasonIndex.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'playerSeasonIndex-query',
+  operationSubtype: 'maintenance-query',
+})
 
 export const buildPlayerSeasonIndexIdFromPayload = ({
   season = {},
@@ -66,7 +74,7 @@ export const findPlayerSeasonIndexDocForPayload = async ({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const existingDocs = snapshot.docs.filter(playerDoc => (
     isSamePlayerSeasonIndexContext(playerDoc.data() || {}, indexScope)
   ))

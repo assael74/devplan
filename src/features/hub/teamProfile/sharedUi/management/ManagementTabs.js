@@ -20,10 +20,10 @@ export const TABS = [
     icon: 'targets',
   },
   {
-    id: 'staff',
+    id: 'roles',
     label: 'צוות מקצועי',
     labelH: 'ניהול הצוות המקצועי של הקבוצה',
-    icon: 'staff',
+    icon: 'roles',
   },
 ]
 

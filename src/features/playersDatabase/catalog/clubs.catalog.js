@@ -229,7 +229,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-ashdvd",
     name: "מועדון ספורט אשדוד",
     clubLevel: 1,
-    aliases: [],
+    aliases: ['מ.ס. אשדוד'],
   },
   {
     id: "hapoel-haifa",
@@ -319,7 +319,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-nvh-yvsf",
     name: "מועדון כדורגל נוה יוסף",
     clubLevel: 2,
-    aliases: [],
+    aliases: ['מ.כ. נוה יוסף'],
   },
   {
     id: "maccabi-shvhm",
@@ -355,7 +355,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-beer-sheva",
     name: "מועדון ספורט באר שבע",
     clubLevel: 2,
-    aliases: ['מ.ס. ב"ש'],
+    aliases: ['מ.ס. ב"ש', 'מ.ס. באר שבע'],
   },
   {
     id: "hapoel-kryt-avnv",
@@ -385,7 +385,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-kryt-ym",
     name: "מועדון ספורט קרית ים",
     clubLevel: 3,
-    aliases: [],
+    aliases: ['מ.ס. קרית ים', 'מ.ס. קרית ים "שלו"'],
   },
   {
     id: "maccabi-bnei-ryynh",
@@ -397,7 +397,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "maccabi-ironi-kiryat-ata",
     name: "מכבי עירוני קרית אתא",
     clubLevel: 3,
-    aliases: [],
+    aliases: ['מכבי ע.ק. אתא'],
   },
   {
     id: "mk-maccabi-ashklvn",
@@ -493,7 +493,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "maccabi-ironi-bt-ym",
     name: "מכבי עירוני בת ים",
     clubLevel: 3,
-    aliases: [],
+    aliases: ['מכבי ע. בת ים', 'מכבי ע. בת ים משה נהרדע'],
   },
   {
     id: "beitar-haifa-yaakov",
@@ -509,9 +509,9 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "maccabi-nvvh-shann-aldd",
-    name: "מכבי נווה שאנן אלדד",
+    name: "מכבי נווה שאנן",
     clubLevel: 3,
-    aliases: [],
+    aliases: ['מכבי נווה שאנן אלד', 'מכבי נווה שאנן יוסי שטח'],
   },
   {
     id: "maccabi-amk-hpr",
@@ -547,7 +547,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-nhll-yzraal",
     name: "מועדון כדורגל נהלל",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. נהלל'],
   },
   {
     id: "maccabi-ironi-kpr-yvnh",
@@ -559,7 +559,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-kdymh-tsvrn",
     name: "מועדון ספורט קדימה צורן",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. קדימה צורן'],
   },
   {
     id: "hapoel-mth-ashr",
@@ -571,7 +571,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-kpr-kasm",
     name: "מועדון ספורט כפר קאסם",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. כפר קאסם'],
   },
   {
     id: "ayhvd-bnei-bkh",
@@ -583,13 +583,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-maccabi-ironi-ashdvd",
     name: "מועדון כדורגל מכבי עירוני אשדוד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. מכבי עירוני אשדוד'],
   },
   {
     id: "ms-hapoel-lvd-bnei-rgb",
     name: "מועדון ספורט הפועל לוד בני רגב",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. הפועל לוד בני רגב'],
   },
   {
     id: "hapoel-mrmvrk-rehovot",
@@ -601,7 +601,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-ironi-avr-yhvdh",
     name: "מועדון כדורגל עירוני אור יהודה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. עירוני אור יהודה'],
   },
   {
     id: "tsayry-avm-al-pahm",
@@ -613,31 +613,31 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "as-ashdvd",
     name: "אגודת ספורט אשדוד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['א.ס. אשדוד'],
   },
   {
     id: "ms-rmlh",
     name: "מועדון ספורט רמלה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. רמלה'],
   },
   {
     id: "as-rmt-alyhv",
     name: "א.ס רמת אליהו",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['א.ס. רמת אליהו גנט דעבול'],
   },
   {
     id: "ironi-bar-yakb",
     name: "עירוני באר יעקב",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מכבי באר יעקב עמית'],
   },
   {
     id: "ms-kpr-yasyf",
     name: "מועדון ספורט כפר יאסיף",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. כפר יאסיף'],
   },
   {
     id: "maccabi-kfar-saba",
@@ -655,7 +655,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-kryt-hyym",
     name: "מועדון כדורגל קרית חיים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. קרית חיים'],
   },
   {
     id: "avtsmh-mk-hvlvn",
@@ -667,7 +667,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-hapoel-glbva",
     name: "מועדון כדורגל הפועל גלבוע",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. הפועל גלבוע'],
   },
   {
     id: "ironi-ashklvn",
@@ -679,7 +679,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-tyrh",
     name: "מועדון ספורט טירה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. טירה'],
   },
   {
     id: "hapoel-ironi-arabh",
@@ -709,7 +709,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-prds-hnh-krkvr",
     name: "מועדון ספורט פרדס חנה כרכור",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. פרדס חנה כרכור'],
   },
   {
     id: "beitar-ironi-kiryat-gat-dudu",
@@ -733,13 +733,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-shefa-amr",
     name: "מועדון ספורט שפרעם",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. שפרעם'],
   },
   {
     id: "mk-karmel-haifa",
     name: "מועדון כדורגל כרמל חיפה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. כרמל חיפה'],
   },
   {
     id: "beitar-ramat-gan",
@@ -751,19 +751,19 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-bnei-hgvln-vhglyl",
     name: "מועדון ספורט בני הגולן והגליל",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. בני הגולן והגליל'],
   },
   {
     id: "ms-dymvnh",
     name: "מועדון ספורט דימונה",
     clubLevel: 4,
-    aliases: ['מ.ס דימונה'],
+    aliases: ['מ.ס דימונה', 'מ.ס. דימונה'],
   },
   {
     id: "ms-bnei-ypv-avrtvdvksym",
     name: "מועדון ספורט בני יפו אורתודוכסים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. בני יפו אורתודוכסים'],
   },
   {
     id: "maccabi-yhvd-mvnvsvn",
@@ -781,7 +781,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-tsayry-kpr-kna",
     name: "מועדון ספורט צעירי כפר כנא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. צעירי כפר כנא'],
   },
   {
     id: "tsayry-sakhnin",
@@ -805,7 +805,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-tzirei-haifa",
     name: "מועדון ספורט צעירי חיפה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. צעירי חיפה'],
   },
   {
     id: "ahvvh-kpr-kra",
@@ -829,7 +829,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-haifa-ruby-shapira",
     name: "מועדון ספורט חיפה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. חיפה רובי שפירא'],
   },
   {
     id: "maccabi-kryt-mlaky-ironi",
@@ -860,7 +860,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל בנימינה",
     sourceName: "מועדון כדורגל בנימינה (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל בנימינה (נוער)"],
+    aliases: ["מועדון כדורגל בנימינה (נוער)", 'מ.כ. בנימינה'],
   },
   {
     id: "hapoel-ms-hbl-mvdyayn",
@@ -879,7 +879,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-ironi-aryal",
     name: "מועדון כדורגל עירוני אריאל",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. עירוני אריאל'],
   },
   {
     id: "hapoel-nhlt-yhvdh-rishon-letzion",
@@ -929,13 +929,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל גליל גולן",
     sourceName: "מועדון כדורגל גליל גולן (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל גליל גולן (נוער)"],
+    aliases: ["מועדון כדורגל גליל גולן (נוער)", 'מ.כ. גליל גולן'],
   },
   {
     id: "mk-ahvvh-kpr-mnda",
     name: "מועדון כדורגל אחווה כפר מנדא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. אחווה כפר מנדא'],
   },
   {
     id: "maccabi-gan-yavne",
@@ -979,26 +979,26 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל גני תקווה",
     sourceName: "מועדון כדורגל גני תקווה (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל גני תקווה (נוער)"],
+    aliases: ["מועדון כדורגל גני תקווה (נוער)", 'מ.כ. גני תקווה'],
   },
   {
     id: "mk-tsayry-aylvt",
     name: "מועדון כדורגל צעירי עילוט",
     sourceName: "מועדון כדורגל צעירי עילוט (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל צעירי עילוט (נוער)"],
+    aliases: ["מועדון כדורגל צעירי עילוט (נוער)", 'מ.כ. צעירי עילוט'],
   },
   {
     id: "mk-mytr",
     name: "מועדון כדורגל מיתר",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. מיתר'],
   },
   {
     id: "ms-shykvn-hmzrh",
     name: "מועדון ספורט שיכון המזרח",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. שיכון המזרח'],
   },
   {
     id: "hapoel-yvknam",
@@ -1036,7 +1036,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-shefa-amr",
     name: "מועדון כדורגל שפרעם",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. שפרעם'],
   },
   {
     id: "ironi-byt-shmsh",
@@ -1091,14 +1091,14 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-hapoel-yrvhm",
     name: "מועדון ספורט הפועל ירוחם",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. הפועל ירוחם'],
   },
   {
     id: "ms-ramh",
     name: "מועדון ספורט ראמה",
     sourceName: "מועדון ספורט ראמה (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט ראמה (נוער)"],
+    aliases: ["מועדון ספורט ראמה (נוער)", 'מ.ס. ראמה'],
   },
   {
     id: "hapoel-azvr",
@@ -1110,13 +1110,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-shdrvt",
     name: "מועדון כדורגל שדרות",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. שדרות'],
   },
   {
     id: "mk-hapoel-bnei-ashdvd",
     name: "מועדון כדורגל הפועל בני אשדוד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. הפועל בני אשדוד'],
   },
   {
     id: "beitar-umm-al-fahm",
@@ -1128,7 +1128,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "beitar-tel-aviv",
     name: "בית\"ר תל אביב",
     clubLevel: 4,
-    aliases: ['בית"ר תל אביב חולון 1'],
+    aliases: ['בית"ר תל אביב חולון 1', 'בית"ר תל אביב', 'בית"ר תל אביב חולון'],
   },
   {
     id: "hapoel-regional-council-mshgb",
@@ -1141,7 +1141,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "maccabi-hshkmh-hn",
     name: "מכבי השקמה חן",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מכבי השקמה חן דרום'],
   },
   {
     id: "ahly-tmrh",
@@ -1153,13 +1153,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-kbbyr",
     name: "מועדון כדורגל כבביר",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. כבביר'],
   },
   {
     id: "mk-ironi-klnsvah",
     name: "מועדון כדורגל עירוני קלנסואה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. עירוני קלנסואה'],
   },
   {
     id: "ironi-bnei-kabvl",
@@ -1184,7 +1184,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל מעיליא",
     sourceName: "מועדון כדורגל מעיליא (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל מעיליא (נוער)"],
+    aliases: ["מועדון כדורגל מעיליא (נוער)", 'מ.כ. מעיליא'],
   },
   {
     id: "maccabi-ironi-ntybvt",
@@ -1222,7 +1222,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-tsayry-kpr-mnda",
     name: "מועדון ספורט צעירי כפר מנדא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. צעירי כפר מנדא'],
   },
   {
     id: "maccabi-netanya-2",
@@ -1261,7 +1261,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-alnhdh-ntsrt",
     name: "מועדון כדורגל אלנהדה נצרת",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. אלנהדה נצרת'],
   },
   {
     id: "tsayry-shab",
@@ -1292,7 +1292,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-tsayry-tyrh",
     name: "מועדון כדורגל צעירי טירה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. צעירי טירה'],
   },
   {
     id: "mvadvn-tsayry-rht",
@@ -1356,7 +1356,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל מכבי נהריה",
     sourceName: "מועדון כדורגל מכבי נהריה (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל מכבי נהריה (נוער)"],
+    aliases: ["מועדון כדורגל מכבי נהריה (נוער)", 'מ.כ. מכבי נהריה'],
   },
   {
     id: "maccabi-ironi-brtah",
@@ -1375,7 +1375,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "as-hvlvn-mvr",
     name: "אגודת ספורט חולון מור",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['א.ס. חולון מור'],
   },
   {
     id: "hapoel-ayhvd-bnei-smya",
@@ -1402,14 +1402,14 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל מזכרת בתיה",
     sourceName: "מועדון כדורגל מזכרת בתיה (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל מזכרת בתיה (נוער)"],
+    aliases: ["מועדון כדורגל מזכרת בתיה (נוער)", 'מ.כ. מזכרת בתיה'],
   },
   {
     id: "ms-amk-hpr",
     name: "מועדון ספורט עמק חפר",
     sourceName: "מועדון ספורט עמק חפר (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט עמק חפר (נוער)"],
+    aliases: ["מועדון ספורט עמק חפר (נוער)", 'מ.ס. עמק חפר'],
   },
   {
     id: "ayhvd-hapoel-byr-al-mksvr",
@@ -1428,14 +1428,14 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-tsayry-tmrh",
     name: "מועדון כדורגל צעירי טמרה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. צעירי טמרה'],
   },
   {
     id: "ms-bnei-ypya",
     name: "מועדון ספורט בני יפיע",
     sourceName: "מועדון ספורט בני יפיע (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט בני יפיע (נוער)"],
+    aliases: ["מועדון ספורט בני יפיע (נוער)", 'מ.ס. בני יפיע'],
   },
   {
     id: "hapoel-nhf",
@@ -1448,7 +1448,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-ard",
     name: "מועדון כדורגל ערד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. ערד'],
   },
   {
     id: "maccabi-ironi-hvrh",
@@ -1461,21 +1461,21 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-avr-akyba",
     name: "מועדון כדורגל אור עקיבא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. אור עקיבא'],
   },
   {
     id: "ms-gbat-shmval",
     name: "מועדון ספורט גבעת שמואל",
     sourceName: "מועדון ספורט גבעת שמואל (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט גבעת שמואל (נוער)"],
+    aliases: ["מועדון ספורט גבעת שמואל (נוער)", 'מ.ס. גבעת שמואל'],
   },
   {
     id: "ms-kdvrgl-hapoel-kryt-ym",
     name: "מועדון ספורט כדורגל הפועל קרית ים",
     sourceName: "מועדון ספורט כדורגל הפועל קרית ים (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט כדורגל הפועל קרית ים (נוער)"],
+    aliases: ["מועדון ספורט כדורגל הפועל קרית ים (נוער)", 'מ.ס. הפועל קרית ים'],
   },
   {
     id: "ayhvd-bnei-mgdl-krvm",
@@ -1494,7 +1494,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-rishon-letzion",
     name: "מועדון ספורט ראשון לציון",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. ראשון לציון'],
   },
   {
     id: "maccabi-tsvrn",
@@ -1520,7 +1520,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון ספורט רשת מתנ\"סים טבעון",
     sourceName: "מועדון ספורט רשת מתנ\"סים טבעון (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט רשת מתנ\"סים טבעון (נוער)"],
+    aliases: ["מועדון ספורט רשת מתנ\"סים טבעון (נוער)", 'מ.ס. רשת מתנ"סים טבעון'],
   },
   {
     id: "maccabi-zkrvn-yakb",
@@ -1553,13 +1553,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-bnei-raanana-avzy-khn",
     name: "מועדון כדורגל בני רעננה עוזי כהן",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. בני רעננה עוזי כהן'],
   },
   {
     id: "ms-kpr-kma",
     name: "מועדון ספורט כפר כמא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. כפר כמא'],
   },
   {
     id: "hapoel-bnei-zlph",
@@ -1579,20 +1579,20 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל מג'דל כרום שאגור",
     sourceName: "מועדון כדורגל מג'דל כרום שאגור (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל מג'דל כרום שאגור (נוער)"],
+    aliases: ["מועדון כדורגל מג'דל כרום שאגור (נוער)", "מ.כ. מג'דל כרום שאגור"],
   },
   {
     id: "ms-byt-gan",
     name: "מועדון ספורט בית ג'אן",
     clubLevel: 4,
-    aliases: [],
+    aliases: ["מ.ס. בית ג'אן"],
   },
   {
     id: "ms-netanya-kolt-khen",
     name: "מועדון ספורט נתניה קולט כהן",
     sourceName: "מועדון ספורט נתניה קולט כהן (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט נתניה קולט כהן (נוער)"],
+    aliases: ["מועדון ספורט נתניה קולט כהן (נוער)", 'מ.ס. נתניה קולט כהן'],
   },
   {
     id: "maccabi-gbat-shmval",
@@ -1632,7 +1632,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-kabvl",
     name: "מועדון ספורט כאבול",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. כאבול'],
   },
   {
     id: "maccabi-ahvvh-prdys",
@@ -1650,7 +1650,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-jerusalem",
     name: "מועדון כדורגל ירושלים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. ירושלים'],
   },
   {
     id: "regional-council-shar-hngb",
@@ -1669,7 +1669,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-mtn",
     name: "מועדון כדורגל מתנ\"ס אופקים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. מתנ"ס אופקים'],
   },
   {
     id: "hapoel-rht",
@@ -1681,7 +1681,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-kdvrgl-mshhd",
     name: "מועדון ספורט כדורגל משהד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. משהד'],
   },
   {
     id: "maccabi-bnei-abv-snan",
@@ -1693,13 +1693,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "ms-hapoel-shgb-shlvm",
     name: "מועדון ספורט הפועל שגב שלום",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. הפועל שגב שלום'],
   },
   {
     id: "ms-kryyt-hyym",
     name: "מועדון ספורט קריית חיים",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. קריית חיים'],
   },
   {
     id: "hapoel-ahly-shab",
@@ -1711,7 +1711,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-hapoel-psvth",
     name: "מועדון כדורגל הפועל פסוטה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. הפועל פסוטה'],
   },
   {
     id: "maccabi-ahvvh-shab",
@@ -1728,9 +1728,9 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
   },
   {
     id: "beitar-kiryat-ata-kfir",
-    name: "בית\"ר קרית אתא כפיר",
+    name: "בית\"ר קרית אתא",
     clubLevel: 4,
-    aliases: [],
+    aliases: ["בית\"ר קרית אתא כפיר"],
   },
   {
     id: "hapoel-bsmt-tbavn",
@@ -1743,7 +1743,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון ספורט בני פורדיס",
     sourceName: "מועדון ספורט בני פורדיס (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון ספורט בני פורדיס (נוער)"],
+    aliases: ["מועדון ספורט בני פורדיס (נוער)", 'מ.ס. בני פורדיס'],
   },
   {
     id: "maccabi-bnei-tvraan",
@@ -1781,7 +1781,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-hapoel-rmt-yshy",
     name: "מועדון כדורגל הפועל רמת ישי",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. הפועל רמת ישי'],
   },
   {
     id: "elitzur-ypv-tel-aviv",
@@ -1799,13 +1799,13 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     id: "mk-tzofi-haifa-samir-prahod",
     name: "מועדון כדורגל צופי חיפה סמיר פרהוד",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.כ. צופי חיפה סמיר פרהוד'],
   },
   {
     id: "ms-tsayry-tayibe",
     name: "מועדון ספורט צעירי טייבה",
     clubLevel: 4,
-    aliases: [],
+    aliases: ['מ.ס. צעירי טייבה'],
   },
   {
     id: "maccabi-gbatyym",
@@ -1845,7 +1845,7 @@ const RAW_PLAYERS_DATABASE_CLUBS_CATALOG = [
     name: "מועדון כדורגל מועצה אזורית יואב",
     sourceName: "מועדון כדורגל מועצה אזורית יואב (נוער)",
     clubLevel: 4,
-    aliases: ["מועדון כדורגל מועצה אזורית יואב (נוער)"],
+    aliases: ["מועדון כדורגל מועצה אזורית יואב (נוער)", 'מ.כ. מועצה אזורית יואב'],
   },
   {
     id: "bnei-ytsalal-rehovot",

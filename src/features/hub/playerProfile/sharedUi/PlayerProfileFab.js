@@ -17,10 +17,14 @@ const FAB_ENTITY_BY_TAB = {
   trainings: 'player',
 }
 
-function presetForTab(tab, entity, context) {
+function presetForTab(tab, entity, context, isPrivatePlayer = false) {
   const playerId = entity?.id || null
   const teamId = context?.team?.id || entity?.teamId || null
   const clubId = context?.club?.id || entity?.clubId || null
+
+  if (isPrivatePlayer && (tab === 'meetings' || tab === 'payments')) {
+    return { playerId }
+  }
 
   if (tab === 'meetings') return { playerId, teamId, clubId }
   if (tab === 'payments') return { playerId, teamId, clubId }
@@ -79,7 +83,7 @@ export default function PlayerProfileFab({
   const { openCreate } = useCreateModal()
 
   const actions = React.useMemo(() => {
-    return buildFabActions({
+    const builtActions = buildFabActions({
       area: 'player',
       mode: tab,
       taskContext,
@@ -89,17 +93,22 @@ export default function PlayerProfileFab({
       },
       handlers: {
         onAddMeeting: () => {
-          openCreate('meeting', presetForTab('meetings', entity, context), {
+          openCreate('meeting', presetForTab('meetings', entity, context, isPrivatePlayer), {
             player: entity,
             ...(context || {}),
           })
         },
 
         onAddPayment: () => {
-          openCreate('payment', presetForTab('payments', entity, context), {
-            player: entity,
-            ...(context || {}),
-          })
+          openCreate(
+            isPrivatePlayer ? 'privatePaymentAgreement' : 'payment',
+            presetForTab('payments', entity, context, isPrivatePlayer),
+            {
+              player: entity,
+              isPrivatePlayer,
+              ...(context || {}),
+            }
+          )
         },
 
         onAddGame: () => {
@@ -149,6 +158,22 @@ export default function PlayerProfileFab({
         onOpenTrainingsInsights: () => onOpenTrainingsInsights?.(),
       },
     })
+
+    if (!isPrivatePlayer || tab !== 'payments') return builtActions
+
+    const privateAgreements = Array.isArray(entity?.payments)
+      ? entity.payments.filter(payment => payment?.type === 'privateAgreement')
+      : []
+    const hasOpenAgreement = privateAgreements.some(payment => {
+      const totalAmount = Number(payment?.totalAmount || payment?.price || 0)
+      const installments = Array.isArray(payment?.installments) ? payment.installments : []
+      const paidAmount = installments.reduce((sum, item) => sum + Number(item?.amount || 0), 0)
+      return totalAmount > 0 && paidAmount < totalAmount
+    })
+
+    return hasOpenAgreement
+      ? builtActions.filter(action => action?.id !== 'add-payment')
+      : builtActions
   }, [
     tab,
     openCreate,

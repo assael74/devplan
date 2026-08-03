@@ -1,17 +1,14 @@
-// teamProfile/desktop/modules/videos/components/TeamVideoList.js
-
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
-import TeamVideoRow from './TeamVideoRow.js'
+import { VideoAnalysisCard } from '../../../../../../../ui/domains/video/videoAnalysis/desktop/index.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
 export default function TeamVideosList({
   rows,
+  onLinkVideo,
   onEditVideo,
-  onOpenEdit,
   onWatchVideo,
-  onOpenNotes,
 }) {
   if (!rows?.length) {
     return (
@@ -25,14 +22,23 @@ export default function TeamVideosList({
   }
 
   return (
-    <Box sx={{ display: 'grid', gap: 0.35 }}>
-      {rows.map((row) => (
-        <TeamVideoRow
-          key={row.id}
+    <Box sx={{
+      display: 'grid',
+      gap: 1.25,
+      width: '100%',
+      pt: 1,
+      alignContent: 'start',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(214px, 214px))',
+    }}>
+      {rows.map(row => (
+        <VideoAnalysisCard
+          key={row?.id || row?.videoId || row?.docId || row?.link}
           video={row}
-          onWatchVideo={onWatchVideo}
+          preset="profile"
+          from="profile"
+          onWatch={onWatchVideo}
           onEdit={onEditVideo}
-          onOpenNotes={onOpenNotes}
+          onLink={onLinkVideo}
         />
       ))}
     </Box>

@@ -69,6 +69,8 @@ const buildTeamRow = teamSeason => {
   const performanceView = buildTeamPerformanceViewModel(performance)
   const scoutSummary = teamSeason?.scoutProfilesSummary || {}
   const profilesCount = toNumberOrZero(scoutSummary.total)
+  const clubId = cleanValue(teamSeason?.identity?.clubId)
+  const club = getClubById(clubId)
 
   return {
     id: cleanValue(
@@ -79,7 +81,8 @@ const buildTeamRow = teamSeason => {
     teamId: cleanValue(teamSeason?.identity?.teamId),
     birthTeamId: cleanValue(teamSeason?.identity?.teamId),
     teamDocumentId: cleanValue(teamSeason?.identity?.teamDocumentId),
-    clubId: cleanValue(teamSeason?.identity?.clubId),
+    clubId,
+    clubLevel: toNumberOrZero(teamSeason?.clubLevel || club?.clubLevel),
     teamUrl: cleanValue(teamSeason?.metadata?.teamUrl),
     tableRank: toNumberOrZero(ranking.tableRank),
     name: resolveTeamName(teamSeason),

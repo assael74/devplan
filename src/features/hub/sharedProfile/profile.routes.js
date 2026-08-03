@@ -24,3 +24,28 @@ export function setTabInSearch(searchParams, tabs, defaultTab, tabKey) {
   next.set('tab', normalizeTabKey(tabs, tabKey, defaultTab))
   return next
 }
+
+export function buildProfileTabPath({ pathname, tabs, defaultTab, tabKey }) {
+  const nextTab = normalizeTabKey(tabs, tabKey, defaultTab)
+  const parts = String(pathname || '')
+    .split('/')
+    .filter(Boolean)
+
+  const tabKeys = new Set(
+    (Array.isArray(tabs) ? tabs : [])
+      .map((item) => String(item?.key || '').trim().toLowerCase())
+      .filter(Boolean)
+  )
+
+  const lastIndex = parts.length - 1
+  const lastPart = String(parts[lastIndex] || '').trim().toLowerCase()
+
+  if (lastIndex >= 0 && tabKeys.has(lastPart)) {
+    parts[lastIndex] = nextTab
+  } else {
+    parts.push(nextTab)
+  }
+
+  return `/${parts.join('/')}`
+}
+

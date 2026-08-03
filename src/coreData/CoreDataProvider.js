@@ -1,7 +1,7 @@
 // src/coreData/CoreDataProvider.js
 import React, { createContext, useContext, useMemo } from 'react'
 import { mergeShorts } from './resolvers/mergeShorts.js'
-import { useAuth } from '../features/auth/index.js'
+import { useAuth } from '../application/auth/index.js'
 import { buildCoreDataStatus } from './coreData.status.js'
 import { useCoreDataSources } from './hooks/useCoreDataSources.js'
 import { buildCoreDataContextValue } from './coreData.contextValue.js'

@@ -3,7 +3,7 @@
 import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
-} from '../../../reports/reports.constants.js'
+} from '../../../reports/publicApi.js'
 
 function formatReportDate(value = new Date()) {
   return new Intl.DateTimeFormat('he-IL').format(value)
@@ -164,7 +164,10 @@ const buildTeamSnapshotRow = ({
 } = {}) => {
   const snapshot = compactObject({
     id: clean(row.id || row.birthTeamId) || `team-${index + 1}`,
+    clubId: clean(row.clubId),
+    clubLevel: Number(row.clubLevel || 0),
     birthTeamId: clean(row.birthTeamId),
+    teamSlot: Number(row.teamSlot || row.birthTeamSlot || 1) || 1,
     teamName: clean(row.teamName || row.playerName) || 'קבוצה ללא שם',
     teamUrl: clean(row.teamUrl),
     favorite: row.favorite === true,
@@ -362,7 +365,7 @@ export function buildSearchReport({
       presentation: {
         defaultSort: isPlayersList
           ? { field: 'minutes', direction: 'desc' }
-          : { field: 'teamName', direction: 'asc' },
+          : { field: 'clubLevel', direction: 'asc', secondaryField: 'teamName', secondaryDirection: 'asc' },
         visibleDomains: capabilities.domains,
       },
     },

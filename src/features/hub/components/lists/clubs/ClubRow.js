@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { listSx as sx } from '../list.sx.js'
@@ -78,13 +77,15 @@ export default function ClubRow({
         <IconButton
           size="sm"
           variant="plain"
+          className="hub-row-action"
+          sx={sx.actionButton(selected)}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation()
             onOpenActions(club)
           }}
         >
-          <MoreVertRoundedIcon />
+          {iconUi({ id: 'more', size: 'small' })}
         </IconButton>
       )}
     </Box>

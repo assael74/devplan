@@ -37,6 +37,18 @@ export function normalizePlayerPayments(player) {
         : null
 
     const typeId = toStr(payment?.type || 'monthlyPayment')
+    const installments = Array.isArray(payment?.installments) ? payment.installments : []
+    const totalAmount = toNum(payment?.totalAmount ?? payment?.price ?? 0)
+    const paidAmount = installments.reduce((sum, item) => sum + toNum(item?.amount), 0)
+    const remainingAmount = Math.max(0, totalAmount - paidAmount)
+    const agreementStatus =
+      typeId === 'privateAgreement'
+        ? paidAmount >= totalAmount && totalAmount > 0
+          ? 'closed'
+          : paidAmount > 0
+            ? 'partial'
+            : 'open'
+        : ''
 
     return {
       id: pickId(payment, index),
@@ -46,6 +58,13 @@ export function normalizePlayerPayments(player) {
       clubId: toStr(payment?.clubId || player?.clubId || player?.club?.id || ''),
 
       price: toNum(payment?.price ?? payment?.amount ?? 0),
+      totalAmount,
+      paidAmount,
+      remainingAmount,
+      startDate: toStr(payment?.startDate || ''),
+      durationMonths: toNum(payment?.durationMonths || 0),
+      installments,
+      agreementStatus,
 
       typeId,
       paymentFor: toStr(payment?.paymentFor || payment?.title || ''),

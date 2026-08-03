@@ -30,7 +30,6 @@ export function buildFabActions({
     onCreatePlayers: pick(handlers.onCreatePlayers, noOp),
     onImportPlayers: pick(handlers.onImportPlayers, noOp),
     onCreateTag: pick(handlers.onCreateTag, noOp),
-    onCreateStaff: pick(handlers.onCreateStaff, noOp),
     onCreateScout: pick(handlers.onCreateScout, noOp),
     onAddMeeting: pick(handlers.onAddMeeting, noOp),
     onAddPayment: pick(handlers.onAddPayment, noOp),

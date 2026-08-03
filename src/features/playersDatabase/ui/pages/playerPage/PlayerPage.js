@@ -16,7 +16,7 @@ import PlayerHeader from './PlayerHeader.js'
 import PlayerStatsOverview from './PlayerStatsOverview.js'
 import PlayerHistorySection from './PlayerHistorySection.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
-import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { usePlayerReport } from './report/index.js'
 import { playerPageSx as sx } from './sx/playerPage.sx.js'
 

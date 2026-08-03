@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/teams/teamDelete.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
@@ -12,6 +12,7 @@ import {
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const getPlayerMergeKey = player => (
   buildPlayerMatchValues(player)[0] || ''
 ).toLowerCase()
@@ -54,7 +55,7 @@ export async function removeTeamSeason({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -109,7 +110,7 @@ export async function removeTeamPlayerFromSeason({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -177,7 +178,7 @@ export async function clearTeamSeasonPlayers({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {

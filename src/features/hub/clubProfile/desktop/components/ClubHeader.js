@@ -4,12 +4,10 @@ import React, { useMemo } from 'react'
 
 import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
-import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
-import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
 
-export default function ClubHeader({ entity, context }) {
+export default function ClubHeader({ entity, context, backAction }) {
   const ifaLink = entity?.ifaLink || entity?.clubIfaLink || null
   const fallbackAvatar = buildFallbackAvatar({
     entityType: 'club',
@@ -21,14 +19,6 @@ export default function ClubHeader({ entity, context }) {
     source: entity?.photo || fallbackAvatar,
   })
 
-  const metaCounts = useMemo(() => {
-    const teamsCount = countHeaderItems(entity?.teams)
-
-    return {
-      teams: teamsCount,
-      isDeletable: teamsCount === 0,
-    }
-  }, [entity?.teams])
 
   return (
     <>
@@ -36,20 +26,9 @@ export default function ClubHeader({ entity, context }) {
         title={entity?.clubName || ''}
         subtitle={context?.project?.label || ''}
         avatarSrc={image.photo}
+        backAction={backAction}
         onAvatarClick={image.openModal}
-        right={
-          <>
-            <ProfileIfaButton ifaLink={ifaLink} />
-
-            <EntityActionsMenu
-              entityType="club"
-              entityId={entity?.id}
-              entityName={entity?.clubName}
-              metaCounts={metaCounts}
-              isArchived={entity?.active === false}
-            />
-          </>
-        }
+        right={<ProfileIfaButton ifaLink={ifaLink} />}
       />
       <ProfileHeaderImageModal
         image={image}

@@ -1,8 +1,7 @@
 // features/hub/sharedProfile/desktop/HeaderStrip.js
 
 import React from 'react'
-import { Sheet, Box, Typography, Avatar } from '@mui/joy'
-import ifaImage from '../../../../ui/core/images/ifaImage.png'
+import { Avatar, Box, Sheet, Typography } from '@mui/joy'
 
 export default function HeaderStrip({
   title,
@@ -10,6 +9,7 @@ export default function HeaderStrip({
   avatarSrc,
   avatarAlt,
   left,
+  backAction,
   right,
   sticky = true,
   sx,
@@ -24,6 +24,7 @@ export default function HeaderStrip({
         px: 1.25,
         py: 0.5,
         borderRadius: 12,
+        flexShrink: 0,
         ...(sticky ? { position: 'sticky', top: 0, zIndex: 10 } : null),
         ...sx,
       }}
@@ -38,9 +39,9 @@ export default function HeaderStrip({
             onClick={isClickable ? onAvatarClick : undefined}
             onKeyDown={
               isClickable
-                ? (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
+                ? event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
                       onAvatarClick()
                     }
                   }
@@ -52,12 +53,20 @@ export default function HeaderStrip({
               cursor: isClickable ? 'pointer' : 'default',
               lineHeight: 0,
               '&:focus-visible': isClickable
-                ? { outline: '2px solid', outlineColor: 'primary.400', outlineOffset: 2 }
+                ? {
+                    outline: '2px solid',
+                    outlineColor: 'primary.400',
+                    outlineOffset: 2,
+                  }
                 : undefined,
               '&:hover ._hdrAvatarOverlay': isClickable ? { opacity: 1 } : undefined,
             }}
           >
-            <Avatar src={avatarSrc || ''} alt={avatarAlt || ''} sx={{ width: 60, height: 60 }} />
+            <Avatar
+              src={avatarSrc || ''}
+              alt={avatarAlt || ''}
+              sx={{ width: 52, height: 52 }}
+            />
 
             {isClickable ? (
               <Box
@@ -77,7 +86,7 @@ export default function HeaderStrip({
         )}
 
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography level="title-lg" noWrap>
+          <Typography level="title-md" noWrap>
             {title || ''}
           </Typography>
 
@@ -91,6 +100,12 @@ export default function HeaderStrip({
         {right ? (
           <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
             {right}
+          </Box>
+        ) : null}
+
+        {backAction ? (
+          <Box sx={{ ml: 0, mr: 'auto', flexShrink: 0 }}>
+            {backAction}
           </Box>
         ) : null}
       </Box>

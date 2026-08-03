@@ -1,6 +1,7 @@
 export const PAYMENT_TYPES = [
   { id: 'monthlyPayment', labelH: 'חודשי', idIcon: 'monthlyPayment', disabled: false },
   { id: 'oneTimePayment', labelH: 'חד פעמי', idIcon: 'oneTimePayment', disabled: false },
+  { id: 'privateAgreement', labelH: 'התקשרות פרטית', idIcon: 'payments', disabled: false },
 ]
 
 export const PAYMENT_STATUSES = [

@@ -20,7 +20,6 @@ import TrainingsTypeSelectField from '../../../../fields/selectUi/trainings/Trai
 import TrainingsStatusSelectField from '../../../../fields/selectUi/trainings/TrainingsSatusSelectField.js'
 import TrainingLocationField from '../../../../fields/inputUi/trainings/TrainingLocationField.js'
 
-import { useTeamHubUpdate } from '../../../../../features/hub/hooks/teams/useTeamHubUpdate.js'
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { getEntityColors } from '../../../../core/theme/Colors.js'
 import { trainingWeekDrawerSx as sx } from '../../sx/trainingWeekDrawer.sx.js'
@@ -39,7 +38,9 @@ export default function EditDayTrainingDrawer({
   team = null,
   week = null,
   onClose,
+  onSave,
   onSaved,
+  pending = false,
   title = 'עריכת יום אימון',
   subtitle = 'עדכון שעה, משך, סוג ומיקום ליום שנבחר',
 }) {
@@ -55,8 +56,15 @@ export default function EditDayTrainingDrawer({
   const isValid = useMemo(() => getIsValid(draft), [draft])
   const patch = useMemo(() => buildPatch(draft, initial, team), [draft, initial, team])
 
-  const { run, pending } = useTeamHubUpdate(team)
-  const canSave = Boolean(initial?.teamId && initial?.weekId && initial?.dayKey && isValid && isDirty && !pending)
+  const canSave = Boolean(
+    onSave &&
+    initial?.teamId &&
+    initial?.weekId &&
+    initial?.dayKey &&
+    isValid &&
+    isDirty &&
+    !pending
+  )
 
   const handleChange = (key, value) => {
     setDraft((prev) => ({
@@ -72,11 +80,16 @@ export default function EditDayTrainingDrawer({
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('training', patch, {
-      section: 'training',
-      teamId: initial.teamId,
-      createIfMissing: true,
-    })
+    if (!onSave) return
+
+    await onSave(
+      patch,
+      {
+        section: 'training',
+        teamId: initial.teamId,
+        createIfMissing: true,
+      }
+    )
 
     if (onSaved) onSaved(patch, draft)
     if (onClose) onClose()

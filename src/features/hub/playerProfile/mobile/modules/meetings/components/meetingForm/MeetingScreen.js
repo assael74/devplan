@@ -8,7 +8,7 @@ import {
   buildMeetingEditBundle,
   getIsMeetingEditValid,
   isMeetingEditDirty,
-} from '../../../../../../editLogic/mettings/index.js'
+} from '../../../../../../editLogic/meetings/index.js'
 
 import { formSx } from '../sx/form.sx.js'
 

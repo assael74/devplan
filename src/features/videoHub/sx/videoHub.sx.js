@@ -1,6 +1,7 @@
 export const videoHubSx = {
   page: {
-    height: '100vh',
+    height: '100%',
+    minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 1.25

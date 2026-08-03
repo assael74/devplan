@@ -2,8 +2,9 @@
 
 import React, { useMemo } from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 
 import { listSx as sx } from '../list.sx.js'
 
@@ -74,13 +75,15 @@ export default function PrivateRow({
         <IconButton
           size="sm"
           variant="plain"
+          className="hub-row-action"
+          sx={sx.actionButton(selected)}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation()
             onOpenActions(player)
           }}
         >
-          <MoreVertRoundedIcon />
+          {iconUi({ id: 'more', size: 'small' })}
         </IconButton>
       )}
     </Box>

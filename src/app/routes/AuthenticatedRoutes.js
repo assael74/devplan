@@ -22,6 +22,9 @@ import {
   FirestoreUsagePage,
   HomePage,
   HubPage,
+  PrivatePage,
+  RolesPage,
+  ScoutPage,
   PlayerProfilePage,
   PlayersDatabaseLeaguePage,
   PlayersDatabaseLeaguesCenterPage,
@@ -48,6 +51,10 @@ function renderAdminRoutes() {
 
       <Route path={ADMIN_ROUTES.home} element={lazyRoute(<HomePage />, <HomeSkeleton />)} />
       <Route path={ADMIN_ROUTES.hub} element={lazyRoute(<HubPage />, <HubSkeleton />)} />
+      <Route path={ADMIN_ROUTES.privatePlayers} element={lazyRoute(<PrivatePage />, <HubSkeleton />)} />
+      <Route path={ADMIN_ROUTES.roles} element={lazyRoute(<RolesPage />, <HubSkeleton />)} />
+      <Route path={ADMIN_ROUTES.staffLegacy} element={<Navigate to={ADMIN_ROUTES.roles} replace />} />
+      <Route path={ADMIN_ROUTES.scouting} element={lazyRoute(<ScoutPage />, <HubSkeleton />)} />
       <Route path={ADMIN_ROUTES.calendar} element={lazyRoute(<CalendarHubPage />, <CalendarSkeleton />)} />
       <Route path={ADMIN_ROUTES.video} element={lazyRoute(<VideoHubPage />, <VideoSkeleton />)} />
       <Route path={ADMIN_ROUTES.tags} element={lazyRoute(<TagsManagementPage />, <TagsSkeleton />)} />

@@ -2,10 +2,7 @@
 
 import {
   collection,
-  getDoc,
-  getDocs,
   query,
-  runTransaction,
   where,
 } from 'firebase/firestore'
 
@@ -22,6 +19,7 @@ import { buildSeasonDoc, isSameSeason } from './leagueSeason.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
 
+import { trackedGetDoc, trackedGetDocs, trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' } = {}) => {
   const isHistory = clean(target) === 'history'
 
@@ -46,7 +44,7 @@ export async function getLeagueSeasonDeleteDependencies({
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
-  const leagueSnapshot = await getDoc(leagueDocRef(leagueId))
+  const leagueSnapshot = await trackedGetDoc(leagueDocRef(leagueId), { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.leagues, action: 'league-delete-dependencies', operationSubtype: 'maintenance-getDoc' })
   const leagueData = leagueSnapshot.exists() ? leagueSnapshot.data() || {} : {}
   const seasonRow = getLeagueSeasonRow({
     leagueData,
@@ -59,7 +57,7 @@ export async function getLeagueSeasonDeleteDependencies({
     where('leagueId', '==', leagueId),
     where('seasonKey', '==', seasonKey)
   )
-  const searchSnapshot = await getDocs(rowsQuery)
+  const searchSnapshot = await trackedGetDocs(rowsQuery, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'league-delete-dependencies', operationSubtype: 'maintenance-query' })
   let teamIndexesCount = 0
   let playerIndexesCount = 0
 
@@ -107,7 +105,7 @@ export async function removeLeagueSeason({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -184,7 +182,7 @@ export async function removeLeagueSeasonTeam({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -264,7 +262,7 @@ export async function clearLeagueSeasonTeams({
 
   const ref = leagueDocRef(leagueId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {

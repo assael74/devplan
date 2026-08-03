@@ -164,6 +164,9 @@ const FULL_NAV_SECTIONS = [
     items: [
       { label: 'שולחן עבודה אישי', path: '/home', iconId: 'workspace' },
       { label: 'מרכז שליטה', path: '/hub', iconId: 'dashboard' },
+      { label: 'שחקנים פרטיים', path: '/private-players', iconId: 'private' },
+      { label: 'צוות מקצועי', path: '/roles', iconId: 'roles' },
+      { label: 'שחקנים במעקב', path: '/scouting', iconId: 'scouting' },
     ],
   },
   {

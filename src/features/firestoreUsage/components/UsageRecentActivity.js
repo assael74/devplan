@@ -81,7 +81,7 @@ export default function UsageRecentActivity({
                 </Typography>
 
                 <Typography level="body-xs" textColor="text.tertiary" noWrap>
-                  {entry.feature} · {entry.collection} · {entry.operation}
+                  {entry.feature} · {entry.collection} · {entry.displayOperation}
                 </Typography>
               </Box>
 

@@ -1,3 +1,4 @@
+export { default as VideoAnalysisMobileList } from './VideoAnalysisMobileList.js'
 export { default as VideoAnalysisMobileCard } from './videoCard/VideoAnalysisMobileCard.js'
 //export { default as VideoAnalysisMobileRow } from './videoRow/VideoAnalysisMobileRow.js'
 

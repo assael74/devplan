@@ -38,9 +38,7 @@ export const layoutSx = {
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    WebkitOverflowScrolling: 'touch',
+    overflow: 'hidden',
     bgcolor: 'background.body',
     borderRadius: 'lg',
     border: '1px solid',
@@ -99,11 +97,15 @@ export const layoutSx = {
   },
 
   boxMain: {
+    height: '100%',
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
     bgcolor: 'background.body',
     borderRadius: 'lg',
     border: '1px solid',
     borderColor: 'divider',
-    minHeight: '100%',
     p: { xs: 1, sm: 1 },
   }
 }

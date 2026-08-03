@@ -271,6 +271,7 @@ export function buildDbSearchViewModel(document = {}) {
     }
     : {
       search: hasField(availableFields, 'teamName'),
+      clubLevel: hasField(availableFields, 'clubLevel'),
       season: hasField(availableFields, 'seasonKey'),
       birthYear: hasField(availableFields, 'birthYear'),
       league: hasField(availableFields, 'leagueName'),
@@ -317,12 +318,15 @@ export function buildDbSearchViewModel(document = {}) {
     columns: isPlayersList
       ? buildDbSearchPlayerColumns({ availableFields })
       : buildDbSearchTeamColumns({ availableDomains, availableFields }),
-    defaultSort: document.presentation?.defaultSort || (
-      isPlayersList
-        ? { field: 'minutes', direction: 'desc' }
-        : { field: 'teamName', direction: 'asc' }
-    ),
+    defaultSort: isPlayersList
+      ? document.presentation?.defaultSort || { field: 'minutes', direction: 'desc' }
+      : { field: 'clubLevel', direction: 'asc', secondaryField: 'teamName', secondaryDirection: 'asc' },
     filterOptions: {
+      clubLevels: filterCapabilities.clubLevel
+        ? unique(rows.map(row => row.clubLevel)).sort(
+          (a, b) => Number(a) - Number(b)
+        )
+        : [],
       seasons: filterCapabilities.season
         ? unique(rows.map(row => row.seasonKey))
         : [],

@@ -1,12 +1,14 @@
 // src/services/firestore/shorts/gameStats/teamLiveGameStatsCreate.js
 
-import { doc, runTransaction, Timestamp } from 'firebase/firestore'
+import { doc, Timestamp } from 'firebase/firestore'
 
 import { db } from '../../../firebase/firebase.js'
 import { gameStatsShortsRef } from '../../shortsCollections.js'
 import { shortsRefs } from '../shorts.refs.js'
 
 import { applyStatsRates, buildNextTeamStatsItem, buildStatsGameRef } from '../../../../shared/stats/engine/index.js'
+
+import { trackedRunTransaction } from '../../usage/firestoreUsage.instrumentation.js'
 
 import {
   buildShortDocRef,
@@ -224,7 +226,7 @@ export async function createTeamOnlyGameStatsDoc({ payload, dryRun = false } = {
     return buildDryRunSummary({ payload, gameId, teamId })
   }
 
-  return runTransaction(db, async tx => {
+  return trackedRunTransaction(db, async tx => {
     const gameInfoDoc = await readShortListDoc(tx, refs.gameInfoRef)
     const teamsStatsDoc = await readShortListDoc(tx, refs.teamsStatsRef)
 
@@ -318,5 +320,10 @@ export async function createTeamOnlyGameStatsDoc({ payload, dryRun = false } = {
       status,
       teamStats,
     })
+  }, {
+    feature: 'hub',
+    action: 'team-live-game-stats-create',
+    collection: 'gameStatsShorts',
+    operationSubtype: 'game-stats-transaction',
   })
 }

@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.patch.js
 
-import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
+import { createTrackedWriteBatch } from '../../../../../../services/firestore/usage/index.js'
 
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
@@ -34,7 +35,12 @@ export async function updatePlayerSeasonSearchIndexFields({
   if (!id) throw new Error('Missing player season index id')
 
   const ref = existingDoc?.ref || doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id)
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'playerSeasonIndex-patch',
+    operationSubtype: 'maintenance-batch',
+  })
 
   batch.set(
     ref,

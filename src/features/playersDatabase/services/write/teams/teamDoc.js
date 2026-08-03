@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/teams/teamDoc.js
 
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -14,6 +14,7 @@ import {
 } from '../../../model/value.model.js'
 import { clean } from '../leagues/leagueDoc.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const getBirthTeamId = team => resolveBirthTeamDocumentId(team)
 
 export const teamDocRef = teamId =>
@@ -48,7 +49,7 @@ export async function ensureTeamDoc(team = {}) {
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const docData = buildTeamBaseDoc({

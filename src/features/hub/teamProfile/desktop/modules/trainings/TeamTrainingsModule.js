@@ -7,6 +7,7 @@ import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel.js'
 import { TrainingSchedulePreview } from '../../../../../../ui/patterns/schedule'
 
 import { useTeamTrainingsModuleModel } from '../../../sharedModules/trainings'
+import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
 
 export default function TeamTrainingsModule({ entity, context }) {
   const {
@@ -17,6 +18,16 @@ export default function TeamTrainingsModule({ entity, context }) {
     context,
     buildMobileModel: false,
   })
+
+  const { run, pending } = useTeamHubUpdate(liveTeam)
+
+  const handleSave = (patch, meta) => {
+    return run(
+      'training',
+      patch,
+      meta
+    )
+  }
 
   return (
     <SectionPanel>
@@ -30,6 +41,8 @@ export default function TeamTrainingsModule({ entity, context }) {
         showNextWeek
         showHeader
         showStats
+        onSave={handleSave}
+        savePending={pending}
       />
     </SectionPanel>
   )

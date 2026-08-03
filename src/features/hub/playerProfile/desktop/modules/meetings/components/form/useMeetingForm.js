@@ -9,7 +9,7 @@ import {
   buildMeetingEditBundle,
   isMeetingEditDirty,
   getIsMeetingEditValid,
-} from '../../../../../../editLogic/mettings/index.js'
+} from '../../../../../../editLogic/meetings/index.js'
 
 export default function useMeetingForm(selected) {
   const [isEditing, setIsEditing] = useState(false)

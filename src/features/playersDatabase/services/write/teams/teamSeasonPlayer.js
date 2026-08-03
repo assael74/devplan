@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/teams/teamSeasonPlayer.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
@@ -10,6 +10,7 @@ import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
 import { getPlayerMergeKey } from './teamSeason.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export async function updateTeamSeasonPlayerUrl({
   season = {},
   team = {},
@@ -30,7 +31,7 @@ export async function updateTeamSeasonPlayerUrl({
       .filter(Boolean)
   )
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const isHistory = clean(target) === 'history'
     const fieldKey = isHistory ? 'history' : 'current'
@@ -146,7 +147,7 @@ export async function updateTeamSeasonPlayerScoutProfiles({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -237,7 +238,7 @@ export async function updateTeamSeasonPlayerRole({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {
@@ -315,7 +316,7 @@ export async function updateTeamSeasonPlayerRoleAndScoutProfiles({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {

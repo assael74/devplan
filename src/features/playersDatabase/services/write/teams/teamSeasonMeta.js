@@ -1,12 +1,13 @@
 // features/playersDatabase/services/write/teams/teamSeasonMeta.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
 import { isSameSeason, normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { teamDocRef } from './teamDoc.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export async function updateTeamSeasonTeamUrl({
   season = {},
   team = {},
@@ -24,7 +25,7 @@ export async function updateTeamSeasonTeamUrl({
 
   const ref = teamDocRef(birthTeamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
 
     if (!snapshot.exists()) {
@@ -144,7 +145,7 @@ export async function updateTeamSeasonsMetaMany({
 
   for (const teamId of teamIds) {
     const ref = teamDocRef(teamId)
-    results.push(await runTransaction(db, async transaction => {
+    results.push(await trackedRunTransaction(db, async transaction => {
       const snapshot = await transaction.get(ref)
       if (!snapshot.exists()) {
         return {

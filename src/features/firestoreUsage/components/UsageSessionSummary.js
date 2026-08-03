@@ -68,8 +68,29 @@ export default function UsageSessionSummary({ summary, totals }) {
       <Divider />
 
       <SummaryRow
-        label="Listeners פתוחים"
-        value={numberFormatter.format(totals.listeners)}
+        label="פתיחות Listener בסשן"
+        value={numberFormatter.format(summary.listenerOpens)}
+      />
+
+      <Divider />
+
+      <SummaryRow
+        label="Listeners פעילים כרגע"
+        value={numberFormatter.format(summary.activeListeners)}
+      />
+
+      <Divider />
+
+      <SummaryRow
+        label="Initial snapshots"
+        value={numberFormatter.format(summary.listenerInitials)}
+      />
+
+      <Divider />
+
+      <SummaryRow
+        label="Listener updates"
+        value={numberFormatter.format(summary.listenerUpdates)}
       />
 
       <Divider />

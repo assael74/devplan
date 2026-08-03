@@ -1,4 +1,4 @@
-import { getDoc } from 'firebase/firestore'
+import { trackedGetDoc } from '../../../../services/firestore/usage/index.js'
 
 import { PUBLIC_REPORT_STATUS } from '../../reports.constants.js'
 import { publicReportRef } from '../publicReport.refs.js'
@@ -19,7 +19,12 @@ export async function waitForPublicReportAvailability({
   const totalAttempts = Math.max(1, Number(attempts) || 1)
 
   for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
-    const snapshot = await getDoc(publicReportRef(reportId))
+    const snapshot = await trackedGetDoc(publicReportRef(reportId), {
+      feature: 'reports',
+      action: 'verify-public-report-availability',
+      collection: 'publicReports',
+      meta: { attempt, totalAttempts },
+    })
 
     if (snapshot.exists()) {
       const data = snapshot.data() || {}

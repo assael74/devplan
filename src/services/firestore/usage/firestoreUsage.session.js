@@ -1,20 +1,42 @@
 // src/services/firestore/usage/firestoreUsage.session.js
 
+const FIRESTORE_USAGE_CHANNEL = 'devplan-firestore-usage'
+
+const createRuntimeId = () => (
+  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+)
+
+const runtimeId = createRuntimeId()
+const seenEntryIds = new Set()
+let usageChannel = null
+
 const createEmptyBucket = () => ({
+  calls: 0,
+  failures: 0,
+  durationMs: 0,
+
   reads: 0,
   writes: 0,
 
-  // מחיקת מסמך אמיתית באמצעות deleteDoc / tx.delete
   documentDeletes: 0,
-
-  // מחיקת פריטים מתוך מערך ואז כתיבת המסמך מחדש
   logicalDeletes: 0,
 
   listeners: 0,
+  activeListeners: 0,
+  listenerCloses: 0,
+  listenerInitials: 0,
   listenerUpdates: 0,
 
   estimatedReadKb: 0,
   estimatedWriteKb: 0,
+})
+
+const createFeatureDetails = () => ({
+  totals: createEmptyBucket(),
+  byCollection: {},
+  byShortKey: {},
+  byAction: {},
+  byProcess: {},
 })
 
 const createEmptyUsageState = () => ({
@@ -27,20 +49,43 @@ const createEmptyUsageState = () => ({
   byShortKey: {},
   byFeature: {},
   byAction: {},
+  byProcess: {},
+  byFeatureDetails: {},
 
+  activeListenerIds: {},
   recentEntries: [],
   expensiveActions: [],
 })
 
 let usageState = createEmptyUsageState()
+let entrySequence = 0
+
+export function getFirestoreUsageRuntimeId() {
+  return runtimeId
+}
 
 export function getFirestoreUsageSession() {
   return usageState
 }
 
-export function resetFirestoreUsageSession() {
+const resetLocalSession = () => {
   usageState = createEmptyUsageState()
+  entrySequence = 0
+  seenEntryIds.clear()
   return usageState
+}
+
+export function resetFirestoreUsageSession({ broadcast = true } = {}) {
+  const nextState = resetLocalSession()
+
+  if (broadcast && usageChannel) {
+    usageChannel.postMessage({
+      type: 'reset',
+      sourceRuntimeId: runtimeId,
+    })
+  }
+
+  return nextState
 }
 
 const ensureBucket = (target, key) => {
@@ -53,6 +98,16 @@ const ensureBucket = (target, key) => {
   return target[cleanKey]
 }
 
+const ensureFeatureDetails = (target, feature) => {
+  const cleanFeature = feature || 'unknown'
+
+  if (!target[cleanFeature]) {
+    target[cleanFeature] = createFeatureDetails()
+  }
+
+  return target[cleanFeature]
+}
+
 const addToBucket = (bucket, entry) => {
   const docsCount = Number(entry.docsCount || 0)
   const readsCount = Number(entry.readsCount || docsCount || 0)
@@ -60,6 +115,13 @@ const addToBucket = (bucket, entry) => {
   const documentDeletesCount = Number(entry.documentDeletesCount || 0)
   const logicalDeletesCount = Number(entry.logicalDeletesCount || 0)
   const estimatedKb = Number(entry.estimatedKb || 0)
+
+  bucket.calls += 1
+  bucket.durationMs += Number(entry.durationMs || 0)
+
+  if (entry.status === 'error') {
+    bucket.failures += 1
+  }
 
   if (entry.operation === 'read') {
     bucket.reads += readsCount
@@ -76,7 +138,10 @@ const addToBucket = (bucket, entry) => {
   }
 
   if (entry.operation === 'logical-delete') {
-    bucket.logicalDeletes += logicalDeletesCount || 1
+    const count = logicalDeletesCount || 1
+    bucket.logicalDeletes += count
+    bucket.writes += count
+    bucket.estimatedWriteKb += estimatedKb
   }
 
   if (entry.operation === 'transaction') {
@@ -91,25 +156,95 @@ const addToBucket = (bucket, entry) => {
 
   if (entry.operation === 'listener-open') {
     bucket.listeners += 1
+    bucket.activeListeners += 1
+  }
+
+  if (entry.operation === 'listener-close') {
+    bucket.listenerCloses += 1
+    bucket.activeListeners = Math.max(0, bucket.activeListeners - 1)
   }
 
   if (entry.operation === 'listener-update') {
-    bucket.listenerUpdates += 1
+    if (entry.listenerPhase === 'initial') {
+      bucket.listenerInitials += 1
+    } else {
+      bucket.listenerUpdates += 1
+    }
+
     bucket.reads += readsCount
     bucket.estimatedReadKb += estimatedKb
   }
 }
 
+const buildProcessKey = entry => [
+  entry.feature || 'unknown',
+  entry.action || entry.operation || 'unknown',
+  entry.collection || 'unknown',
+].join('::')
+
+const addToFeatureDetails = (details, entry) => {
+  addToBucket(details.totals, entry)
+  addToBucket(ensureBucket(details.byCollection, entry.collection), entry)
+
+  if (entry.shortKey) {
+    addToBucket(ensureBucket(details.byShortKey, entry.shortKey), entry)
+  }
+
+  if (entry.action) {
+    addToBucket(ensureBucket(details.byAction, entry.action), entry)
+  }
+
+  addToBucket(ensureBucket(details.byProcess, buildProcessKey(entry)), entry)
+}
+
+const updateActiveListenerRegistry = entry => {
+  if (!entry.listenerId) return
+
+  if (entry.operation === 'listener-open') {
+    usageState.activeListenerIds[entry.listenerId] = {
+      listenerId: entry.listenerId,
+      collection: entry.collection,
+      shortKey: entry.shortKey,
+      feature: entry.feature,
+      action: entry.action,
+      openedAt: entry.createdAt,
+      runtimeId: entry.runtimeId || null,
+    }
+  }
+
+  if (entry.operation === 'listener-close') {
+    delete usageState.activeListenerIds[entry.listenerId]
+  }
+}
+
+const broadcastEntry = normalized => {
+  if (!usageChannel) return
+
+  usageChannel.postMessage({
+    type: 'entry',
+    sourceRuntimeId: runtimeId,
+    entry: normalized,
+  })
+}
+
 export function pushFirestoreUsageEntry(entry = {}, config = {}) {
+  entrySequence += 1
+
+  const createdAt = entry.createdAt || new Date().toISOString()
   const normalized = {
-    createdAt: new Date().toISOString(),
+    id: entry.id || `${runtimeId}-${createdAt}-${entrySequence}`,
+    createdAt,
+    runtimeId: entry.runtimeId || runtimeId,
 
     operation: entry.operation || 'read',
+    operationSubtype: entry.operationSubtype || null,
 
     collection: entry.collection || 'unknown',
     shortKey: entry.shortKey || null,
     feature: entry.feature || null,
     action: entry.action || null,
+    route: entry.route || null,
+    queryKey: entry.queryKey || null,
 
     docsCount: Number(entry.docsCount || 0),
     readsCount: Number(entry.readsCount || 0),
@@ -122,16 +257,33 @@ export function pushFirestoreUsageEntry(entry = {}, config = {}) {
     estimatedReadKb: Number(entry.estimatedReadKb || 0),
     estimatedWriteKb: Number(entry.estimatedWriteKb || 0),
 
+    listenerId: entry.listenerId || null,
+    listenerPhase: entry.listenerPhase || null,
+    fromCache: Boolean(entry.fromCache),
+
+    status: entry.status || 'success',
+    durationMs: Number(entry.durationMs || 0),
+    errorCode: entry.errorCode || null,
+
     source: entry.source || 'client',
     meta: entry.meta || null,
   }
 
+  if (seenEntryIds.has(normalized.id)) {
+    return normalized
+  }
+  seenEntryIds.add(normalized.id)
+
   usageState.updatedAt = normalized.createdAt
 
   addToBucket(usageState.totals, normalized)
-
   addToBucket(
     ensureBucket(usageState.byCollection, normalized.collection),
+    normalized
+  )
+
+  addToBucket(
+    ensureBucket(usageState.byProcess, buildProcessKey(normalized)),
     normalized
   )
 
@@ -147,6 +299,11 @@ export function pushFirestoreUsageEntry(entry = {}, config = {}) {
       ensureBucket(usageState.byFeature, normalized.feature),
       normalized
     )
+
+    addToFeatureDetails(
+      ensureFeatureDetails(usageState.byFeatureDetails, normalized.feature),
+      normalized
+    )
   }
 
   if (normalized.action) {
@@ -155,6 +312,8 @@ export function pushFirestoreUsageEntry(entry = {}, config = {}) {
       normalized
     )
   }
+
+  updateActiveListenerRegistry(normalized)
 
   usageState.recentEntries = [
     normalized,
@@ -166,9 +325,7 @@ export function pushFirestoreUsageEntry(entry = {}, config = {}) {
     normalized.estimatedReadKb +
     normalized.estimatedWriteKb
 
-  const threshold = Number(
-    config.expensiveActionKbThreshold || 250
-  )
+  const threshold = Number(config.expensiveActionKbThreshold || 250)
 
   if (totalKb >= threshold) {
     usageState.expensiveActions = [
@@ -180,5 +337,28 @@ export function pushFirestoreUsageEntry(entry = {}, config = {}) {
     ].slice(0, Number(config.maxExpensiveActions || 20))
   }
 
+  if (!config.skipBroadcast) {
+    broadcastEntry(normalized)
+  }
+
   return normalized
+}
+
+if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+  usageChannel = new BroadcastChannel(FIRESTORE_USAGE_CHANNEL)
+  usageChannel.onmessage = event => {
+    const message = event?.data || {}
+    if (message.sourceRuntimeId === runtimeId) return
+
+    if (message.type === 'reset') {
+      resetFirestoreUsageSession({ broadcast: false })
+      return
+    }
+
+    if (message.type === 'entry' && message.entry) {
+      pushFirestoreUsageEntry(message.entry, {
+        skipBroadcast: true,
+      })
+    }
+  }
 }

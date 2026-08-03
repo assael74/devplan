@@ -46,6 +46,7 @@ export default function ParentDrawer({
 
   const { run, pending } = usePlayerHubUpdate(player)
 
+  const playerId = player?.id || player?.playerId || player?.entityId || player?.docId || ''
   const parents = Array.isArray(player?.parents) ? player.parents : []
   const isEdit = Boolean(parent?.id)
 
@@ -73,7 +74,7 @@ export default function ParentDrawer({
   }, [initial, pending])
 
   const handleSave = useCallback(async () => {
-    if (!canSave) return
+    if (!canSave || !playerId) return
 
     const patch = buildParentsPlayerPatch({
       player,
@@ -82,15 +83,16 @@ export default function ParentDrawer({
       editingId: parent?.id || '',
     })
 
-    await run('playerParentsEdit', patch, {
+    await run(patch, {
       section: 'playerParents',
-      playerId: player?.id,
+      id: playerId,
+      playerId,
       createIfMissing: true,
     })
 
     onSaved(patch)
     onClose()
-  }, [canSave, player, parents, draft, parent?.id, run, onSaved, onClose])
+  }, [canSave, playerId, player, parents, draft, parent?.id, run, onSaved, onClose])
 
   const headerAvatar = (
     <Avatar
@@ -114,7 +116,7 @@ export default function ParentDrawer({
       entity="player"
       open={!!open}
       onClose={onClose}
-      size="sm"
+      size="md"
       saving={pending}
       isDirty={isDirty}
       canSave={canSave}

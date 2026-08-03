@@ -24,15 +24,25 @@ export const teamsListSx = {
 
   filtersRow: {
     display: 'flex',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     alignItems: 'center',
+    gap: 0.6,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+
+  filtersMetaRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 1,
     minWidth: 0,
+    pt: 0.75,
   },
 
   filterControl: {
-    minWidth: 140,
-    flex: '1 1 140px',
+    minWidth: 104,
+    flex: '1 1 104px',
 
     '& button': {
       borderColor: 'var(--db-search-tertiary)',
@@ -40,8 +50,8 @@ export const teamsListSx = {
   },
 
   searchInput: {
-    minWidth: 180,
-    flex: '1.4 1 180px',
+    minWidth: 150,
+    flex: '1.3 1 150px',
     '--Input-focusedHighlight': 'var(--db-search-tertiary)',
   },
 
@@ -49,6 +59,20 @@ export const teamsListSx = {
     color: 'var(--db-search-secondary)',
     marginInlineStart: 'auto',
     whiteSpace: 'nowrap',
+    display: 'none',
+  },
+
+  sortIndicator: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 10,
+    height: 10,
+    ml: 0.35,
+    fontSize: 8,
+    lineHeight: 1,
+    opacity: 0.82,
+    verticalAlign: 'middle',
   },
 
   tableWrap: {
@@ -127,6 +151,30 @@ export const teamsListSx = {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
     },
+  },
+
+  leagueCell: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-start',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+
+  clubLevelChip: {
+    minWidth: 28,
+    height: 18,
+    px: 0.6,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    bgcolor: '#F3F4F6',
+    color: '#4B5563',
+    fontSize: 10,
+    fontWeight: 750,
+    lineHeight: 1,
+    letterSpacing: 0,
   },
 
   empty: {

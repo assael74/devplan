@@ -6,7 +6,7 @@ const c = getEntityColors('players')
 
 export const profileSx = {
   sheetNotActive: {
-    height: '100dvh',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -21,7 +21,7 @@ export const profileSx = {
   },
 
   sheet: {
-    height: '100dvh',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',

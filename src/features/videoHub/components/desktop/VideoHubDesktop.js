@@ -14,7 +14,7 @@ import { deleteVideosBulk } from '../../application/videoHub.actions.js'
 
 import {
   VideosBulkDeleteModal,
-} from '../../../bulkActions/videos/delete/index.js'
+} from '../../../bulkActions/publicApi.js'
 
 import { VIDEO_TAB } from '../../logic/videoHub.model.js'
 import {

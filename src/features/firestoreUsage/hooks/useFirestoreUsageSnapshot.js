@@ -7,7 +7,7 @@ import {
   resetFirestoreUsageSnapshot,
 } from '../../../services/firestore/usage/index.js'
 
-const DEFAULT_REFRESH_INTERVAL = 1000
+const DEFAULT_REFRESH_INTERVAL = 3000
 
 const cloneSnapshot = snapshot => {
   if (!snapshot) return null

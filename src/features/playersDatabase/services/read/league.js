@@ -1,8 +1,9 @@
 // features/playersDatabase/services/read/league.js
 
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
+import { collection, doc } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedGetDoc, trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import {
   buildLeagueDocumentCacheKey,
@@ -20,7 +21,11 @@ const leagueDocRef = leagueId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, clean(leagueId))
 
 const readLeagueDocumentFromFirestore = async leagueId => {
-  const snapshot = await getDoc(leagueDocRef(leagueId))
+  const snapshot = await trackedGetDoc(leagueDocRef(leagueId), {
+    feature: 'playersDatabase',
+    action: 'league-read',
+    collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+  })
   if (!snapshot.exists()) return null
 
   return {
@@ -33,7 +38,11 @@ export async function listLeagues() {
   return readWithDocumentCache({
     key: buildLeaguesCollectionCacheKey(),
     read: async () => {
-      const snapshot = await getDocs(leaguesRef())
+      const snapshot = await trackedGetDocs(leaguesRef(), {
+        feature: 'playersDatabase',
+        action: 'leagues-list',
+        collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      })
       const rows = snapshot.docs.map(item => ({
         id: item.id,
         ...item.data(),

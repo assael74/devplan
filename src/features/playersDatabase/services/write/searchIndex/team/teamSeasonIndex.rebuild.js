@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.rebuild.js
 
-import { collection, getDocs } from 'firebase/firestore'
+import { collection } from 'firebase/firestore'
+import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
@@ -10,6 +11,13 @@ import {
   buildExpectedLevelDelta,
   buildExpectedLevelKey,
 } from '../shared/expectedLevelDelta.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'teamSeasonIndex-rebuild',
+  operationSubtype: 'maintenance-query',
+})
 
 const buildLeagueIdentity = (leagueData = {}, leagueDocumentId = '') => ({
   ...leagueData,
@@ -138,7 +146,7 @@ const attachExpectedLevelDelta = entries => {
 export async function rebuildTeamSeasonSearchIndexesFromLeagues({
   dryRun = false,
 } = {}) {
-  const leaguesSnapshot = await getDocs(
+  const leaguesSnapshot = await readSearchIndexes(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.leagues)
   )
   const collected = collectRebuildEntries(leaguesSnapshot)

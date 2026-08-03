@@ -3,16 +3,23 @@
 import { getEntityColors } from '../../../../../../core/theme/Colors'
 import { tabClasses } from '@mui/joy/Tab'
 
-// from = "hub" | "team" | "videoHub" | "teamDomainModal" | any string path key
+// from = "hub" | "profile" | "team" | "videoHub" | "teamDomainModal" | any string path key
 export const buildVideoAnalysisSx = (from = 'videoHub') => {
   const entityType = 'videoAnalysis'
   const c = getEntityColors(entityType)
 
-  const isHub = from === 'hub' || from === 'videoHub'
+  const isHub = from === 'hub' || from === 'profile' || from === 'videoHub'
 
   // knobs
   const sizeMap = {
     videoHub: {
+      mediaW: 214,
+      cardH: 238,
+      bodyPad: 0.85,
+      tagsMinH: 10,
+      titleSize: '0.7rem',
+    },
+    profile: {
       mediaW: 214,
       cardH: 238,
       bodyPad: 0.85,

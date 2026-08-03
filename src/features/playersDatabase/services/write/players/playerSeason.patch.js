@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/players/playerSeason.patch.js
 
-import { runTransaction, serverTimestamp } from 'firebase/firestore'
+import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
@@ -11,6 +11,7 @@ import {
 } from './playerDoc.model.js'
 import { findPlayerSeasonRowIndex } from './playerSeason.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export const patchPlayerSeason = async ({
   season = {},
   team = {},
@@ -28,7 +29,7 @@ export const patchPlayerSeason = async ({
 
   const ref = playerDocRef(playerDocumentId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {

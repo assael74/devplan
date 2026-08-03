@@ -11,11 +11,11 @@ import {
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
-import { BulkPasteDrawer } from '../../../../bulkActions/games/import/index.js'
 import {
+  BulkPasteDrawer,
   GamesBulkDeleteModal,
   GAMES_DELETE_SCOPE,
-} from '../../../../bulkActions/games/delete/index.js'
+} from '../../../../bulkActions/publicApi.js'
 
 import useTeamGamesModuleModel from './useTeamGamesModuleModel.js'
 

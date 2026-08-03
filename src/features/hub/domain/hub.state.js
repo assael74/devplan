@@ -4,22 +4,21 @@ import { useMemo, useState, useCallback } from 'react'
 import { useHubSelectors } from './hub.selectors'
 import { createHubSelectionHandlers } from './hub.selection'
 
-const MODE = {
+export const HUB_MODE = {
   CLUBS: 'clubs',
   TEAMS: 'teams',
   PLAYERS: 'players',
-  STAFF: 'staff',
   PRIVATES: 'privates',
   SCOUTING: 'scouting',
 }
 
-const getEmptySelectionForMode = (m) => {
-  if (m === MODE.CLUBS) return { type: 'club', id: null }
-  if (m === MODE.TEAMS) return { type: 'team', id: null }
-  if (m === MODE.PLAYERS) return { type: 'player', id: null }
-  if (m === MODE.STAFF) return { type: 'staff', id: null }
-  if (m === MODE.PRIVATES) return { type: 'player', id: null }
-  if (m === MODE.SCOUTING) return { type: 'scout', id: null }
+function getEmptySelection(mode) {
+  if (mode === HUB_MODE.CLUBS) return { type: 'club', id: null }
+  if (mode === HUB_MODE.TEAMS) return { type: 'team', id: null }
+  if (mode === HUB_MODE.PLAYERS) return { type: 'player', id: null }
+  if (mode === HUB_MODE.PRIVATES) return { type: 'player', id: null }
+  if (mode === HUB_MODE.SCOUTING) return { type: 'scout', id: null }
+
   return { type: 'club', id: null }
 }
 
@@ -27,130 +26,140 @@ export function useHubState({
   corePlayers,
   coreClubs,
   coreTeams,
-  coreRoles,
   coreScouting,
+  initialMode = HUB_MODE.CLUBS,
 }) {
-  const [mode, setMode] = useState(MODE.CLUBS)
+  const [mode, setMode] = useState(initialMode)
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const [previewSelection, setPreviewSelection] = useState(
-    getEmptySelectionForMode(MODE.CLUBS)
+  const [controlSelection, setControlSelection] = useState(
+    getEmptySelection(initialMode)
   )
   const [selectionByMode, setSelectionByMode] = useState({})
 
   const {
     playersUi,
+    clubPlayersUi,
+    privatePlayersUi,
     playersById,
     clubsById,
     teamsById,
-    rolesById,
     scoutsById,
     filteredPlayers,
     clubGroups,
-    staffRows,
     scoutRows,
     counts,
   } = useHubSelectors({
     corePlayers,
     coreClubs,
     coreTeams,
-    coreRoles,
     coreScouting,
     query,
     mode,
   })
 
   const resolvedEntity = useMemo(() => {
-    const selType = previewSelection?.type
-    const selId = previewSelection?.id
+    const type = controlSelection?.type
+    const id = controlSelection?.id
 
-    if (!selType || !selId) return null
+    if (!type || !id) return null
 
-    if (selType === 'player') return playersById[selId] || null
-    if (selType === 'club') return clubsById[selId] || null
-    if (selType === 'team') return teamsById[selId] || null
-    if (selType === 'staff') return rolesById[selId] || null
-    if (selType === 'scout') return scoutsById[selId] || null
+    if (type === 'player') return playersById[id] || null
+    if (type === 'club') return clubsById[id] || null
+    if (type === 'team') return teamsById[id] || null
+    if (type === 'scout') return scoutsById[id] || null
 
     return null
-  }, [previewSelection, playersById, clubsById, teamsById, rolesById, scoutsById])
+  }, [controlSelection, playersById, clubsById, teamsById, scoutsById])
 
-  const preview = useMemo(() => {
-    if (!resolvedEntity) return { type: previewSelection.type, data: null }
+  const controlSelectionView = useMemo(() => {
+    if (!resolvedEntity) {
+      return {
+        type: controlSelection.type,
+        data: null,
+      }
+    }
+
     return {
-      type: previewSelection.type,
+      type: controlSelection.type,
       data: resolvedEntity,
     }
-  }, [resolvedEntity, previewSelection.type])
+  }, [resolvedEntity, controlSelection.type])
 
-  const cacheSelectionForMode = useCallback((m, selection) => {
-    if (!m || !selection) return
-    setSelectionByMode((prev) => ({ ...prev, [m]: selection }))
+  const cacheSelectionForMode = useCallback((nextMode, selection) => {
+    if (!nextMode || !selection) return
+
+    setSelectionByMode((prev) => ({
+      ...prev,
+      [nextMode]: selection,
+    }))
   }, [])
 
   const getCachedSelectionForMode = useCallback(
-    (m) => selectionByMode[m] || null,
+    (nextMode) => selectionByMode[nextMode] || null,
     [selectionByMode]
   )
 
   const setModeSafe = useCallback(
     (nextMode) => {
       setMode((prevMode) => {
-        const nm = nextMode || MODE.PLAYERS
-        if (prevMode === nm) return prevMode
+        const resolvedMode = nextMode || HUB_MODE.PLAYERS
+        if (prevMode === resolvedMode) return prevMode
 
-        cacheSelectionForMode(prevMode, previewSelection)
+        cacheSelectionForMode(prevMode, controlSelection)
 
         setSelectedPlayer(null)
         setDrawerOpen(false)
 
-        const cached = selectionByMode[nm] || null
-        setPreviewSelection(cached || getEmptySelectionForMode(nm))
+        const cached = selectionByMode[resolvedMode] || null
+        setControlSelection(cached || getEmptySelection(resolvedMode))
 
-        return nm
+        return resolvedMode
       })
     },
-    [cacheSelectionForMode, previewSelection, selectionByMode]
+    [cacheSelectionForMode, controlSelection, selectionByMode]
   )
 
   const selection = useMemo(
     () =>
       createHubSelectionHandlers({
-        MODE,
+        MODE: HUB_MODE,
         playersUi,
         clubsById,
         teamsById,
         setMode: setModeSafe,
         setDrawerOpen,
         setSelectedPlayer,
-        setPreviewSelection: (next) => {
+        setControlSelection: (next) => {
           const type = next?.type
           const id = next?.data?.id || next?.id || null
-          setPreviewSelection({ type, id })
+
+          setControlSelection({ type, id })
         },
       }),
     [playersUi, clubsById, teamsById, setModeSafe]
   )
 
   return {
-    MODE,
+    MODE: HUB_MODE,
     mode,
     query,
     drawerOpen,
     selectedPlayer,
 
-    previewSelection: preview,
-    rawSelection: previewSelection,
+    controlSelection: controlSelectionView,
+    rawControlSelection: controlSelection,
 
-    setPreviewSelection,
+    setControlSelection,
     cacheSelectionForMode,
     getCachedSelectionForMode,
 
     counts,
+    clubPlayersUi,
+    privatePlayersUi,
     filteredPlayers,
     clubGroups,
-    staffRows,
     scoutRows,
 
     setMode: setModeSafe,

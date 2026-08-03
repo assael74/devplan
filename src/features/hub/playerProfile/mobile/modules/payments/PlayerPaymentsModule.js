@@ -18,6 +18,7 @@ const ParentDrawer = React.lazy(() => import('./components/parentDrawer/parentDr
 const PaymentsTabsBar = React.lazy(() => import('./components/PaymentsTabsBar.js'))
 const PaymentsList = React.lazy(() => import('./components/PaymentsList.js'))
 const ParentsSection = React.lazy(() => import('./components/ParentsSection.js'))
+const PrivatePlayerPaymentsView = React.lazy(() => import('../../../sharedModules/payments/PrivatePlayerPaymentsView.js'))
 
 export default function PlayerPaymentsModule({ entity, context }) {
   const model = usePlayerPaymentsModuleModel({ entity })
@@ -52,6 +53,8 @@ export default function PlayerPaymentsModule({ entity, context }) {
     handleCloseParentDrawer,
   } = model
 
+  const isPrivatePlayer = player?.isPrivatePlayer === true
+
   if (!player) {
     return (
       <SectionPanelMobile>
@@ -73,25 +76,29 @@ export default function PlayerPaymentsModule({ entity, context }) {
       </Box>
 
       {activeTab === 'payments' ? (
-        <>
-          <Box sx={sx.moduleRoot}>
-            <PaymentsToolbar
-              mode="payments"
-              filteredCount={itemsFiltered.length}
-              totalCount={itemsAll.length}
-              indicators={indicators}
-              summary={summary}
-              hasActiveFilters={hasActiveFilters}
-              onOpenFilters={() => setFiltersOpen(true)}
-              onClearIndicator={handleClearIndicator}
-            />
-          </Box>
+        isPrivatePlayer ? (
+          <PrivatePlayerPaymentsView items={itemsAll} />
+        ) : (
+          <>
+            <Box sx={sx.moduleRoot}>
+              <PaymentsToolbar
+                mode="payments"
+                filteredCount={itemsFiltered.length}
+                totalCount={itemsAll.length}
+                indicators={indicators}
+                summary={summary}
+                hasActiveFilters={hasActiveFilters}
+                onOpenFilters={() => setFiltersOpen(true)}
+                onClearIndicator={handleClearIndicator}
+              />
+            </Box>
 
-          <PaymentsList
-            items={itemsFiltered}
-            onEditPayment={payment => setEditingPayment(payment || null)}
-          />
-        </>
+            <PaymentsList
+              items={itemsFiltered}
+              onEditPayment={payment => setEditingPayment(payment || null)}
+            />
+          </>
+        )
       ) : (
         <>
           <Box sx={sx.moduleRoot}>

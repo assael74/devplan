@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/leagues/leagueTableRank.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
@@ -20,6 +20,7 @@ import {
 import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
 import { normalizeTeamStats } from '../../../model/teamStats.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const buildTableRankRow = (row = {}) => {
   const rank = toNumberOrZero(row.position ?? row.rank ?? row.leaguePosition)
   const identity = normalizeTeamIdentity({ team: row })
@@ -33,6 +34,7 @@ const buildTableRankRow = (row = {}) => {
   return {
     rank,
     clubId: identity.clubId,
+    clubLevel: toNumberOrZero(row.clubLevel),
     birthTeamId: identity.birthTeamId,
     birthTeamSlot: identity.birthTeamSlot,
     teamId: identity.birthTeamId,
@@ -87,7 +89,7 @@ export async function updateLeagueSeasonTableRank({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
@@ -268,7 +270,7 @@ export async function updateLeagueSeasonTableRankTeamUrl({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
 
     if (!snapshot.exists()) {
@@ -426,7 +428,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)

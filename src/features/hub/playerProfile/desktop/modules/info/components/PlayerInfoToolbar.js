@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { Box, Button, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { PlayerTargetsReportButton } from '../../../../../../reports/playerTargets/index.js'
+import { PlayerTargetsReportButton } from '../../../../../../reports/publicApi.js'
 
 import { toolbarSx as sx } from './sx/toolbar.sx.js'
 

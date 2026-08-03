@@ -1,25 +1,22 @@
 // src/features/firestoreUsage/FirestoreUsagePage.js
 
 import React from 'react'
-import {
-  Box,
-  Card,
-  Typography,
-} from '@mui/joy'
+import { Box } from '@mui/joy'
 
 import useFirestoreUsageSnapshot from './hooks/useFirestoreUsageSnapshot.js'
+import useOfficialFirestoreUsage from './hooks/useOfficialFirestoreUsage.js'
 import { buildFirestoreUsageViewModel } from './sharedLogic/firestoreUsageViewModel.js'
 
 import UsageHeader from './components/UsageHeader.js'
-import UsageFilters from './components/UsageFilters.js'
-import UsageKpis from './components/UsageKpis.js'
-import UsageBillingLimits from './components/UsageBillingLimits.js'
 import UsageBarsCard from './components/UsageBarsCard.js'
 import UsageExpensiveActions from './components/UsageExpensiveActions.js'
 import UsageAlerts from './components/UsageAlerts.js'
-import UsageSessionSummary from './components/UsageSessionSummary.js'
 import UsageDrilldownDrawer from './components/UsageDrilldownDrawer.js'
-import UsageRecentActivity from './components/UsageRecentActivity.js'
+import UsageOfficialStatus from './components/UsageOfficialStatus.js'
+import UsageFilters from './components/UsageFilters.js'
+import UsageProcessesTable from './components/UsageProcessesTable.js'
+import UsageListenersTable from './components/UsageListenersTable.js'
+import UsagePayloadSummary from './components/UsagePayloadSummary.js'
 
 import {
   firestoreUsageAsideColumnSx,
@@ -29,13 +26,14 @@ import {
   firestoreUsagePageSx,
   firestoreUsagePrimaryLayoutSx,
   firestoreUsageScrollSx,
-  firestoreUsageSplitLayoutSx,
 } from './sx/firestoreUsage.sx.js'
 
 export default function FirestoreUsagePage() {
-  const [selectedFeature, setSelectedFeature] = React.useState('all')
   const [barLimit, setBarLimit] = React.useState(5)
+  const [selectedFeature, setSelectedFeature] = React.useState('all')
   const [drilldown, setDrilldown] = React.useState(null)
+
+  const officialUsage = useOfficialFirestoreUsage()
 
   const {
     snapshot,
@@ -45,14 +43,14 @@ export default function FirestoreUsagePage() {
     exportJson,
   } = useFirestoreUsageSnapshot({
     autoRefresh: true,
-    refreshInterval: 1000,
+    refreshInterval: 3000,
   })
 
   const viewModel = React.useMemo(
     () => buildFirestoreUsageViewModel(snapshot, {
       feature: selectedFeature,
     }),
-    [selectedFeature, snapshot]
+    [snapshot, selectedFeature]
   )
 
   const openDrilldown = React.useCallback((type, row = {}) => {
@@ -67,9 +65,6 @@ export default function FirestoreUsagePage() {
     <Box component="main" sx={firestoreUsagePageSx}>
       <Box sx={firestoreUsageHeaderSx}>
         <UsageHeader
-          startedAt={viewModel.startedAt}
-          updatedAt={viewModel.updatedAt}
-          lastRefreshedAt={lastRefreshedAt}
           hasActivity={viewModel.hasActivity}
           onRefresh={refresh}
           onReset={reset}
@@ -79,21 +74,36 @@ export default function FirestoreUsagePage() {
 
       <Box className="dpScrollThin" sx={firestoreUsageScrollSx}>
         <Box sx={firestoreUsageContentSx}>
+          <UsageOfficialStatus
+            source={viewModel.officialSources}
+            official={officialUsage}
+            onRefresh={officialUsage.refresh}
+          />
+
           <UsageFilters
             features={viewModel.filterOptions.features}
-            selectedFeature={viewModel.selectedFeature}
+            selectedFeature={selectedFeature}
             onFeatureChange={setSelectedFeature}
           />
 
-          <UsageKpis items={viewModel.kpis} />
+          <UsageProcessesTable
+            rows={viewModel.processes}
+            onRowClick={row => openDrilldown('action', {
+              name: row.action,
+            })}
+          />
 
           <Box sx={firestoreUsagePrimaryLayoutSx}>
             <Box sx={firestoreUsageMainColumnSx}>
               <UsageAlerts viewModel={viewModel} />
 
+              {viewModel.expensiveActions.length > 0 ? (
+                <UsageExpensiveActions rows={viewModel.expensiveActions} />
+              ) : null}
+
               <UsageBarsCard
                 title="שימוש לפי Collection"
-                note="Reads בסשן"
+                note="חלק מכלל ה-Reads שנמדדו בסשן"
                 rows={viewModel.collections}
                 metric="reads"
                 limit={barLimit}
@@ -103,108 +113,10 @@ export default function FirestoreUsagePage() {
             </Box>
 
             <Box sx={firestoreUsageAsideColumnSx}>
-              <UsageBillingLimits limits={viewModel.billingLimits} />
-
-              <UsageRecentActivity
-                entries={viewModel.recentEntries}
-                onEntryClick={entry =>
-                  openDrilldown('action', {
-                    name: entry.action,
-                  })
-                }
-              />
-
-              <UsageSessionSummary
-                summary={viewModel.summary}
-                totals={viewModel.totals}
-              />
+              <UsageListenersTable rows={viewModel.activeListeners} />
+              <UsagePayloadSummary payload={viewModel.payloadSummary} />
             </Box>
           </Box>
-
-          <Box sx={firestoreUsageSplitLayoutSx}>
-            <UsageBarsCard
-              title="שימוש לפי Feature"
-              note="נפח כולל משוער"
-              rows={viewModel.features}
-              metric="totalEstimatedKb"
-              limit={barLimit}
-              onLimitChange={setBarLimit}
-              onRowClick={row => openDrilldown('feature', row)}
-            />
-
-            <UsageBarsCard
-              title="שימוש לפי Action"
-              note="כמות פעולות"
-              rows={viewModel.actions}
-              metric="totalOperations"
-              limit={barLimit}
-              onLimitChange={setBarLimit}
-              onRowClick={row => openDrilldown('action', row)}
-            />
-          </Box>
-
-          <Box sx={firestoreUsageSplitLayoutSx}>
-            <UsageBarsCard
-              title="Read Payload לפי Collection"
-              note="Estimated KB"
-              rows={viewModel.collections}
-              metric="estimatedReadKb"
-              limit={barLimit}
-              onLimitChange={setBarLimit}
-              onRowClick={row => openDrilldown('collection', row)}
-            />
-
-            <UsageBarsCard
-              title="Write Payload לפי Collection"
-              note="Estimated KB"
-              rows={viewModel.collections}
-              metric="estimatedWriteKb"
-              limit={barLimit}
-              onLimitChange={setBarLimit}
-              onRowClick={row => openDrilldown('collection', row)}
-            />
-          </Box>
-
-          <UsageExpensiveActions rows={viewModel.expensiveActions} />
-
-          <Card
-            variant="outlined"
-            sx={{
-              p: 2,
-              borderRadius: 'lg',
-              borderStyle: 'dashed',
-              boxShadow: 'none',
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: '1fr auto',
-              },
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography level="title-md">
-                מטרת המסך
-              </Typography>
-
-              <Typography
-                level="body-sm"
-                textColor="text.tertiary"
-                sx={{ mt: 0.5 }}
-              >
-                להפוך את נתוני Firestore להחלטות מוצר: לזהות מה יקר,
-                למה הוא יקר, ואיזה תהליך צריך לעבור אופטימיזציה.
-              </Typography>
-            </Box>
-
-            <Typography
-              level="body-xs"
-              textColor="text.tertiary"
-            >
-              Session memory only
-            </Typography>
-          </Card>
         </Box>
       </Box>
 

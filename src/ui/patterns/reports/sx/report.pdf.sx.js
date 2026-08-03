@@ -226,6 +226,7 @@ export const buildReportPdfSx = ({ systemColors, printPages = 1, fillPrintPage =
 
   footer: {
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 2,
     mt: 'auto',
@@ -238,6 +239,26 @@ export const buildReportPdfSx = ({ systemColors, printPages = 1, fillPrintPage =
     fontWeight: 700,
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
+  },
+
+  footerBrand: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.75,
+    minWidth: 0,
+  },
+
+  footerLogo: {
+    width: 20,
+    height: 20,
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+
+  footerText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 })
 

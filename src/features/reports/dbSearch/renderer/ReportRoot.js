@@ -2,6 +2,7 @@ import React from 'react'
 import { Alert, Box, Chip, Typography } from '@mui/joy'
 
 import { ReportShell } from '../../../../ui/patterns/reports/index.js'
+import { EXTERNAL_REPORT_BRAND } from '../../renderers/external/reportBrand.js'
 import PlayersListContent from './playersList/PlayersListContent.js'
 import TeamsListContent from './teamsList/TeamsListContent.js'
 
@@ -50,6 +51,10 @@ export default function ReportRoot({
   model = null,
   presentation = 'url',
   device = 'desktop',
+  actions = null,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
 }) {
   if (!model) {
     return <Alert color='warning'>לא התקבל מודל דוח להצגה.</Alert>
@@ -89,6 +94,11 @@ export default function ReportRoot({
         metaItems={model.metaItems}
         metaColumns={device === 'mobile' ? 2 : 4}
         reportNumber={model.entityId}
+        brand={EXTERNAL_REPORT_BRAND}
+        actions={actions}
+        reportOptions={reportOptions}
+        selectedReportValue={selectedReportValue}
+        onReportChange={onReportChange}
       >
         <ReportPurpose
           purpose={model.reportPurpose}

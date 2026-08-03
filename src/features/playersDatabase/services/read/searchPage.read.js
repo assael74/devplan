@@ -2,8 +2,6 @@
 
 import {
   collection,
-  getDocs,
-  getCountFromServer,
   limit,
   or,
   query,
@@ -11,6 +9,7 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedGetCountFromServer, trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { SCOUT_PROFILE_COMBINATIONS } from '../../../../shared/players/scouting/index.js'
 import {
   SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
@@ -466,7 +465,13 @@ const getDocsForSearchVariant = async ({ filters = {}, includeLimit = false } = 
   })
   if (!searchQuery) return []
 
-  const snapshot = await getDocs(searchQuery)
+  const snapshot = await trackedGetDocs(searchQuery, {
+    feature: 'playersDatabase',
+    action: 'search-results-read',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    queryKey: entityType,
+    meta: { includeLimit },
+  })
   return filterDocsBySearchVariant({ docs: snapshot.docs, filters })
 }
 
@@ -481,11 +486,21 @@ const countSearchVariant = async filters => {
   if (!searchQuery) return 0
 
   if (profileIds.length === 2 || shouldUseClientSideConditions) {
-    const snapshot = await getDocs(searchQuery)
+    const snapshot = await trackedGetDocs(searchQuery, {
+      feature: 'playersDatabase',
+      action: 'search-count-client-filter',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      queryKey: entityType,
+    })
     return filterDocsBySearchVariant({ docs: snapshot.docs, filters }).length
   }
 
-  const snapshot = await getCountFromServer(searchQuery)
+  const snapshot = await trackedGetCountFromServer(searchQuery, {
+    feature: 'playersDatabase',
+    action: 'search-count',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    queryKey: entityType,
+  })
   return snapshot.data().count || 0
 }
 

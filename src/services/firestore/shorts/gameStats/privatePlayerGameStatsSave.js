@@ -1,10 +1,12 @@
 // src/services/firestore/shorts/gameStats/privatePlayerGameStatsSave.js
 
-import { doc, runTransaction, Timestamp } from 'firebase/firestore'
+import { doc, Timestamp } from 'firebase/firestore'
 
 import { db } from '../../../firebase/firebase.js'
 import { gameStatsShortsRef } from '../../shortsCollections.js'
 import { shortsRefs } from '../shorts.refs.js'
+
+import { trackedRunTransaction } from '../../usage/firestoreUsage.instrumentation.js'
 
 import {
   applyStatsDelta,
@@ -314,7 +316,7 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
     return buildDryRunSummary({ payload, gameId, playerId })
   }
 
-  return runTransaction(db, async tx => {
+  return trackedRunTransaction(db, async tx => {
     const externalGameInfoDoc = await readShortListDoc(
       tx,
       refs.externalGameInfoRef
@@ -454,5 +456,10 @@ export async function savePrivatePlayerGameStatsDoc({ payload, dryRun = false } 
       nextPlayerStats,
       nextPrivateStatsItem,
     })
+  }, {
+    feature: 'hub',
+    action: 'private-player-game-stats-save',
+    collection: 'gameStatsShorts',
+    operationSubtype: 'game-stats-transaction',
   })
 }

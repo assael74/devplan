@@ -16,7 +16,7 @@ export default function ManagementToolbar({
   extraActions = null,
   isMobile = false,
 }) {
-  const nonShow = activeTab.id === 'staff'
+  const nonShow = activeTab.id === 'roles'
   const showStatus = !nonShow && !isMobile
 
   return (

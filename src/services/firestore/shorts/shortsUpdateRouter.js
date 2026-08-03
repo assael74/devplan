@@ -125,6 +125,9 @@ export const shortsUpdateRouterMap = {
     weight: { shortKey: 'privates.privatePlayersInfo', path: 'weight', mode: 'replace' },
     payments: { shortKey: 'privates.privatePlayersInfo', path: 'playerPayments', mode: 'replace' },
     parents: { shortKey: 'privates.privatePlayersInfo', path: 'parents', mode: 'replace' },
+    personalNotes: { shortKey: 'privates.privatePlayerFollowUps', path: 'personalNotes', mode: 'merge' },
+    personalNotesUpdatedAt: { shortKey: 'privates.privatePlayerFollowUps', path: 'personalNotesUpdatedAt', mode: 'merge' },
+    followUps: { shortKey: 'privates.privatePlayerFollowUps', path: 'followUps', mode: 'replace' },
 
     abilities: { shortKey: 'privates.privatePlayersAbilities', path: 'abilities', mode: 'merge' },
     formIds: { shortKey: 'privates.privatePlayersAbilities', path: 'formIds', mode: 'merge' },
@@ -154,6 +157,10 @@ export const shortsUpdateRouterMap = {
     paymentFor: { shortKey: 'payments.paymentProfit', path: 'paymentFor', mode: 'merge' },
     price: { shortKey: 'payments.paymentProfit', path: 'price', mode: 'merge' },
     type: { shortKey: 'payments.paymentProfit', path: 'type', mode: 'merge' },
+    totalAmount: { shortKey: 'payments.paymentProfit', path: 'totalAmount', mode: 'merge' },
+    startDate: { shortKey: 'payments.paymentProfit', path: 'startDate', mode: 'merge' },
+    durationMonths: { shortKey: 'payments.paymentProfit', path: 'durationMonths', mode: 'merge' },
+    installments: { shortKey: 'payments.paymentProfit', path: 'installments', mode: 'replace' },
   },
 
   games: {

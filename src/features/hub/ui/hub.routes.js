@@ -23,7 +23,7 @@ export function buildRoutesByType(selection) {
       info: `/clubs/${id}/info`,
       teams: `/clubs/${id}/teams`,
       players: `/clubs/${id}/players`,
-      staff: `/clubs/${id}/staff`,
+      management: `/clubs/${id}/management`,
       video: `/clubs/${id}/video`,
     }
   }
@@ -32,7 +32,7 @@ export function buildRoutesByType(selection) {
     return {
       full: `/teams/${id}`,
       info: `/teams/${id}/info`,
-      roles: `/teams/${id}/roles`,
+      management: `/teams/${id}/management`,
       players: `/teams/${id}/players`,
       games: `/teams/${id}/games`,
       performance: `/teams/${id}/performance`,

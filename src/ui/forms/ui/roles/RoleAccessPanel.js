@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, Checkbox, FormControl, FormHelperText, FormLabel, Input, Option, Select, Typography } from '@mui/joy'
 
-import { useAuth } from '../../../../features/auth/index.js'
+import { useAuth } from '../../../../application/auth/index.js'
 
 import {
   MODULE_ROLE_OPTIONS,

@@ -7,7 +7,11 @@ import PlayerHeader from './components/PlayerHeader'
 import PlayerNav from './components/PlayerNav'
 
 import PlayerModules from '../sharedUi/PlayerModules.js'
-import { desktopPlayerModulesMap, desktopProjectPlayerModulesMap } from './playerModules.map'
+import {
+  desktopPlayerModulesMap,
+  desktopPrivatePlayerModulesMap,
+  desktopProjectPlayerModulesMap,
+} from './playerModules.map'
 
 import PlayerProfileFab from '../sharedUi/PlayerProfileFab'
 
@@ -29,7 +33,11 @@ export default function PlayerProfileDesktop({
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [trainingsInsightsRequest, setTrainingsInsightsRequest] = useState(0)
 
-  const modulesMap = isProject ? desktopProjectPlayerModulesMap : desktopPlayerModulesMap
+  const modulesMap = isProject
+    ? desktopProjectPlayerModulesMap
+    : isPrivatePlayer
+      ? desktopPrivatePlayerModulesMap
+      : desktopPlayerModulesMap
 
   return (
     <ProfileShell
@@ -37,6 +45,7 @@ export default function PlayerProfileDesktop({
       entity={entity}
       context={context}
       taskContext={taskContext}
+      scrollMode={tab === 'meetings' ? 'contained' : 'page'}
       headerProps={{ counts }}
       HeaderComp={PlayerHeader}
       NavComp={PlayerNav}

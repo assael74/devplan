@@ -5,13 +5,15 @@
 הוא “מפעיל את המנוע ושומר תוצאה”
 */
 
-import { doc, runTransaction, Timestamp } from 'firebase/firestore'
+import { doc, Timestamp } from 'firebase/firestore'
 import { db } from '../../../firebase/firebase.js'
 import { abilitiesShortsCollectionRef } from '../../shortsCollections.js'
 import { shortsRefs } from '../shorts.refs.js'
 
 import { makeId } from '../../../../utils/id.js'
 import { safeStr } from '../../../../shared/abilities/engine/abilitiesHistory.utils.js'
+import { trackedRunTransaction } from '../../usage/firestoreUsage.instrumentation.js'
+
 import {
   buildFormEntry,
   normalizeStoredForm,
@@ -169,7 +171,7 @@ export async function upsertAbilitiesHistory({ draft, dryRun = false } = {}) {
     }
   }
 
-  return runTransaction(db, async (tx) => {
+  return trackedRunTransaction(db, async (tx) => {
     const playersSnap = await tx.get(playersAbilitiesRef)
     const playersData = playersSnap.exists() ? (playersSnap.data() || {}) : {}
     const list = Array.isArray(playersData?.list) ? playersData.list : []
@@ -244,5 +246,10 @@ export async function upsertAbilitiesHistory({ draft, dryRun = false } = {}) {
         potentialReliability: nextItem?.reliability?.potential || null,
       },
     }
+  }, {
+    feature: 'hub',
+    action: 'abilities-history-upsert',
+    collection: 'abilitiesShorts',
+    operationSubtype: 'abilities-transaction',
   })
 }

@@ -3,21 +3,22 @@
 export const headerSx = {
   root: {
     display: 'flex',
-    alignItems: {
-      xs: 'flex-start',
-      md: 'center',
-    },
+    alignItems: 'center',
     justifyContent: 'space-between',
-    flexDirection: {
-      xs: 'column',
-      md: 'row',
-    },
-    gap: 1.25,
+    flexWrap: 'wrap',
+    gap: 1,
+  },
+
+  titleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 1,
   },
 
   boxHead: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 'md',
     display: 'grid',
     placeItems: 'center',
@@ -26,19 +27,10 @@ export const headerSx = {
     flexShrink: 0,
   },
 
-  boxWrap: {
+  actions: {
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 1,
+    gap: 0.75,
   },
-
-  grid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: {
-      xs: 1,
-      md: 2,
-    },
-  }
 }

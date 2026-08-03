@@ -1,17 +1,14 @@
-// playerProfile/modules/videos/components/PlayerVideoList.js
-
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
-import { VideoAnalysisRow } from '../../../../../../../ui/domains/video/videoAnalysis/desktop/index.js'
+import { VideoAnalysisCard } from '../../../../../../../ui/domains/video/videoAnalysis/desktop/index.js'
 
 import { listSx as sx } from '../sx/list.sx.js'
 
 export default function PlayerVideosList({
   rows,
+  onLinkVideo,
   onEditVideo,
-  onOpenEdit,
   onWatchVideo,
-  onOpenNotes,
 }) {
   if (!rows?.length) {
     return (
@@ -25,13 +22,23 @@ export default function PlayerVideosList({
   }
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, pt: 1 }}>
-      {rows.map((row) => (
-        <VideoAnalysisRow
-          key={row.id}
+    <Box sx={{
+      display: 'grid',
+      gap: 1.25,
+      width: '100%',
+      pt: 1,
+      alignContent: 'start',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(214px, 214px))',
+    }}>
+      {rows.map(row => (
+        <VideoAnalysisCard
+          key={row?.id || row?.videoId || row?.docId || row?.link}
           video={row}
+          preset="profile"
+          from="profile"
           onWatch={onWatchVideo}
           onEdit={onEditVideo}
+          onLink={onLinkVideo}
         />
       ))}
     </Box>

@@ -3,7 +3,7 @@
 import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
-} from '../../../reports/reports.constants.js'
+} from '../../../reports/publicApi.js'
 import { buildTeamPerformanceSideViewModel } from '../../model/teamPerformance.viewModel.js'
 
 function clean(value) {
@@ -40,6 +40,8 @@ function buildLeagueRow(team = {}) {
 
   return {
     id: clean(team.id || team.birthTeamId || team.teamId),
+    clubId: clean(team.clubId),
+    clubLevel: toCount(team.clubLevel),
     teamId: clean(team.teamId || team.birthTeamId),
     name: clean(team.name) || 'קבוצה',
     tableRank: toCount(team.tableRank),

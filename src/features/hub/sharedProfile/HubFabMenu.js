@@ -19,8 +19,6 @@ export default function HubFabMenu({ mode, context, handlers, permissions, taskC
       ? 'הוספת קבוצה'
       : mode === 'clubs'
       ? 'הוספת מועדון'
-      : mode === 'staff'
-      ? 'הוספת איש צוות'
       : mode === 'scouting'
       ? 'הוספת שחקן למעקב'
       : 'פתיחת אובייקט'

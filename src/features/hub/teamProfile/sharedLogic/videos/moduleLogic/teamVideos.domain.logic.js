@@ -4,7 +4,7 @@ import {
   getMonthKey,
   getMonthLabel,
   resolveVideosDomain,
-} from '../../../../sharedProfile/logic/videos/index.js'
+} from '../../../../domain/videos/index.js'
 
 export { getMonthKey, getMonthLabel }
 

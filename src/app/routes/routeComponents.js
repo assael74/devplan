@@ -8,6 +8,9 @@ const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
 const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
 const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
 const loadHubPage = () => import('../../features/hub/ui/HubPage')
+const loadPrivatePage = () => import('../../features/hub/scopes/PrivatePage.js')
+const loadRolesPage = () => import('../../features/roles/RolesPage.js')
+const loadScoutPage = () => import('../../features/hub/scopes/ScoutPage.js')
 const loadPlayerProfilePage = () => import('../../features/hub/playerProfile/PlayerProfilePage')
 const loadTeamProfilePage = () => import('../../features/hub/teamProfile/TeamProfilePage')
 const loadClubProfilePage = () => import('../../features/hub/clubProfile/ClubProfilePage')
@@ -78,6 +81,9 @@ export const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPag
 export const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)
 
 export const HubPage = React.lazy(loadHubPage)
+export const PrivatePage = React.lazy(loadPrivatePage)
+export const RolesPage = React.lazy(loadRolesPage)
+export const ScoutPage = React.lazy(loadScoutPage)
 export const PlayerProfilePage = React.lazy(loadPlayerProfilePage)
 export const TeamProfilePage = React.lazy(loadTeamProfilePage)
 export const ClubProfilePage = React.lazy(loadClubProfilePage)
@@ -97,6 +103,9 @@ export const ReportsDashboardPage = React.lazy(loadReportsDashboardPage)
 
 export const ADMIN_ROUTE_LOADERS = [
   loadHubPage,
+  loadPrivatePage,
+  loadRolesPage,
+  loadScoutPage,
   loadCalendarHubPage,
   loadVideoHubPage,
   loadTagsManagementPage,

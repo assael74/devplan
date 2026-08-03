@@ -14,7 +14,17 @@ export default function HubScoutingList({ rows = [], onSelect }) {
   const [selectedId, setSelectedId] = useState(null)
 
   return (
-    <Sheet sx={{ p: 0.75 }}>
+    <Sheet
+      className="dpScrollThin"
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollbarGutter: 'stable',
+        p: 0.75,
+      }}
+    >
       <List sx={{ p: 0, display: 'grid', gap: 0.75 }}>
         {rows.map((row) => {
           const id = row?.id

@@ -13,9 +13,13 @@ import { hubMobileSx as sx } from './sx/hubMobile.sx'
 
 export default function HubRootMobile({
   mode,
+  title,
+  subtitle,
   counts = {},
   tabsMeta = [],
+  singleMode = false,
   onModeChange,
+  onScopeBack,
   mobileListsProps = {},
 
   handlers,
@@ -23,7 +27,7 @@ export default function HubRootMobile({
   taskContext,
   permissions,
 }) {
-  const [mobileView, setMobileView] = useState('home')
+  const [mobileView, setMobileView] = useState(singleMode ? 'section' : 'home')
 
   const handleSelectMode = (nextMode) => {
     onModeChange(nextMode)
@@ -31,6 +35,11 @@ export default function HubRootMobile({
   }
 
   const handleBack = () => {
+    if (singleMode) {
+      onScopeBack?.()
+      return
+    }
+
     setMobileView('home')
   }
 
@@ -38,6 +47,8 @@ export default function HubRootMobile({
     <Sheet sx={sx.root}>
       {mobileView === 'home' ? (
         <HubHomeMobile
+          title={title}
+          subtitle={subtitle}
           tabsMeta={tabsMeta}
           counts={counts}
           onSelectMode={handleSelectMode}
@@ -46,6 +57,7 @@ export default function HubRootMobile({
         <>
           <HubSectionScreenMobile
             mode={mode}
+            title={title}
             tabsMeta={tabsMeta}
             onBack={handleBack}
           >

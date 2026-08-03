@@ -16,7 +16,7 @@ export default function ClubManagementModule(props) {
       Section={SectionPanel}
       isMobile={false}
       rootSx={sx.root}
-      staffWrapSx={{ minWidth: 0, alignSelf: 'start', height: 'auto' }}
+      rolesWrapSx={{ minWidth: 0, alignSelf: 'start', height: 'auto' }}
       createIfMissing={false}
       ClubManagementInfoCard={ClubManagementInfoCard}
     />

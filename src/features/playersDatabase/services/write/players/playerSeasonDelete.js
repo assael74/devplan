@@ -1,8 +1,9 @@
 // features/playersDatabase/services/write/players/playerSeasonDelete.js
 
-import { deleteField, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { deleteField, doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
+import { createTrackedWriteBatch, trackedGetDoc } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
 import {
@@ -33,14 +34,14 @@ export async function removePlayerSeasonDocsMany({
   if (!seasonId && !seasonKey) return { rowsCount: 0 }
   if (!ids.length) return { rowsCount: 0 }
 
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.players, action: 'remove-player-seasons', operationSubtype: 'maintenance-batch' })
   let rowsCount = 0
   let updatedCount = 0
   let deletedCount = 0
 
   for (const playerDocumentId of ids) {
     const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.players, playerDocumentId)
-    const snapshot = await getDoc(ref)
+    const snapshot = await trackedGetDoc(ref, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.players, action: 'remove-player-seasons', operationSubtype: 'maintenance-getDoc' })
     if (!snapshot.exists()) continue
 
     const data = snapshot.data() || {}

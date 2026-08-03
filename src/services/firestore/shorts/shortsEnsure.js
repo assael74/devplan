@@ -1,6 +1,7 @@
 // src/services/shorts/shortsEnsure.js
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase' // תעדכן לפי הנתיב אצלך
+import { trackedRunTransaction } from '../usage/firestoreUsage.instrumentation.js'
 
 // refs – תעדכן אם אצלך שמות שונים
 const playersShortsDocRef = (playerId) => doc(db, 'playersShorts', String(playerId))
@@ -13,7 +14,7 @@ export async function ensurePlayerAbilitiesBootstrap({ playerId }) {
   const pRef = playersShortsDocRef(pid)
   const aRef = abilitiesShortsDocRef(pid)
 
-  return runTransaction(db, async (tx) => {
+  return trackedRunTransaction(db, async (tx) => {
     const [pSnap, aSnap] = await Promise.all([tx.get(pRef), tx.get(aRef)])
 
     // 1) playersShorts/{playerId} for playersAbilities
@@ -58,5 +59,10 @@ export async function ensurePlayerAbilitiesBootstrap({ playerId }) {
     }
 
     return { ok: true, playerId: pid }
+  }, {
+    feature: 'coreData',
+    action: 'shorts-ensure-bootstrap',
+    collection: 'playersShorts/abilitiesShorts',
+    operationSubtype: 'ensure-bootstrap',
   })
 }

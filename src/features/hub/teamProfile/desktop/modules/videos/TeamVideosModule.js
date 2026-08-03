@@ -8,7 +8,6 @@ import TeamVideosToolbar from './components/toolbar/TeamVideosToolbar.js'
 import TeamVideosList from './components/TeamVideosList.js'
 
 import TeamVideosInsightsDrawer from './components/insightsDrawer/TeamVideosInsightsDrawer.js'
-import EditDrawer from './components/drawer/EditDrawer.js'
 
 import {
   TeamVideosModuleBase,
@@ -23,7 +22,6 @@ export default function TeamVideosModule(props) {
       ToolbarComponent={TeamVideosToolbar}
       ListComponent={TeamVideosList}
       InsightsDrawerComponent={TeamVideosInsightsDrawer}
-      EditDrawerComponent={EditDrawer}
       toolbarWrapSx={teamVideosModuleSx.desktopToolbarWrap}
       seasonStartYear={2025}
     />

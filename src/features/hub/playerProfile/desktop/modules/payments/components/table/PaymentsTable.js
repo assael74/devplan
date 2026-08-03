@@ -1,9 +1,7 @@
-// playerProfile/desktop/modules/payments/components/table/PaymentsTable.js
+// features/hub/playerProfile/desktop/modules/payments/components/table/PaymentsTable.js
 
 import React from 'react'
 import { Table, Box, Typography, Chip, IconButton, Tooltip } from '@mui/joy'
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
-import EditRoundedIcon from '@mui/icons-material/EditRounded'
 
 import {
   getPaymentStatusMeta,

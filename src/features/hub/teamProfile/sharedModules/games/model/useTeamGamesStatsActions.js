@@ -11,7 +11,7 @@ import {
   loadProfileGameStats,
   resolveStatsDocumentId,
   saveProfileGameStats,
-} from '../../../../sharedProfile/logic/games/index.js'
+} from '../../../../application/games/index.js'
 
 import {
   useGameStatsHubDrafts,

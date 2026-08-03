@@ -10,6 +10,10 @@ export default function UrlReport({
   model = null,
   device = 'desktop',
   loading = false,
+  actions = null,
+  reportOptions = [],
+  selectedReportValue = null,
+  onReportChange = null,
 }) {
   if (loading) {
     return (
@@ -25,6 +29,10 @@ export default function UrlReport({
         model={model}
         presentation='url'
         device={device}
+        actions={actions}
+        reportOptions={reportOptions}
+        selectedReportValue={selectedReportValue}
+        onReportChange={onReportChange}
       />
     </Box>
   )

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   PLAYER_TABS,
   PLAYER_PROJECT_TABS,
+  PRIVATE_PLAYER_TABS,
 } from '../playerProfile.routes'
 
 import PlayerHeader from './components/PlayerHeader'
@@ -14,7 +15,11 @@ import PlayerHeader from './components/PlayerHeader'
 import PlayerModules from '../sharedUi/PlayerModules.js'
 import PlayerProfileFab from '../sharedUi/PlayerProfileFab'
 
-import { mobilePlayerModulesMap, mobileProjectPlayerModulesMap } from './playerModulesMobile.map'
+import {
+  mobilePlayerModulesMap,
+  mobilePrivatePlayerModulesMap,
+  mobileProjectPlayerModulesMap,
+} from './playerModulesMobile.map'
 
 import NavCardsMobile from '../../sharedProfile/mobile/NavCardsMobile'
 import ProfileSectionMobile from './ProfileSectionMobile'
@@ -51,11 +56,17 @@ export default function PlayerProfileMobile({
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
 
-  const modulesMap = isProject ? mobileProjectPlayerModulesMap : mobilePlayerModulesMap
+  const modulesMap = isProject
+    ? mobileProjectPlayerModulesMap
+    : isPrivatePlayer
+      ? mobilePrivatePlayerModulesMap
+      : mobilePlayerModulesMap
 
   const tabs = useMemo(() => {
-    return isProject ? PLAYER_PROJECT_TABS : PLAYER_TABS
-  }, [isProject])
+    if (isProject) return PLAYER_PROJECT_TABS
+    if (isPrivatePlayer) return PRIVATE_PLAYER_TABS
+    return PLAYER_TABS
+  }, [isProject, isPrivatePlayer])
 
   const tabsMeta = useMemo(() => {
     return tabs.map((item) => ({
@@ -73,7 +84,7 @@ export default function PlayerProfileMobile({
   }
 
   const handleBackToHub = () => {
-    navigate('/hub')
+    navigate(isPrivatePlayer ? '/private-players' : '/hub')
   }
 
   const fabProps = {
@@ -97,6 +108,7 @@ export default function PlayerProfileMobile({
           tab={tab}
           counts={counts}
           onBack={handleBackToHub}
+          isPrivatePlayer={isPrivatePlayer}
         />
 
         <Box className="dpScrollThin" sx={sx.scrollNotActive}>
@@ -116,6 +128,7 @@ export default function PlayerProfileMobile({
         tab={tab}
         counts={counts}
         onBack={handleBackToHub}
+        isPrivatePlayer={isPrivatePlayer}
       />
 
       <Box sx={{ flex: 1, minHeight: 0 }}>

@@ -3,7 +3,7 @@
 export const pdbLayoutSx = {
   root: {
     width: '100%',
-    height: 'calc(100dvh - 64px)',
+    height: '100%',
     minWidth: 0,
     minHeight: 0,
     overflowX: 'hidden',

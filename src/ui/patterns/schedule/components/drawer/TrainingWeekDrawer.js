@@ -16,7 +16,6 @@ import {
 
 import TrainingCreateFields from '../../../../forms/ui/trainings/TrainingCreateFields.js'
 
-import { useTeamHubUpdate } from '../../../../../features/hub/hooks/teams/useTeamHubUpdate.js'
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { trainingWeekDrawerSx as sx } from '../../sx/trainingWeekDrawer.sx.js'
 import { getEntityColors } from '../../../../core/theme/Colors.js'
@@ -34,7 +33,9 @@ export default function TrainingWeekDrawer({
   team,
   context,
   onClose,
+  onSave,
   onSaved,
+  pending = false,
   title = 'יצירת שבוע אימונים',
   subtitle = 'הגדרת ימים, עומס ותוכן שבועי',
 }) {
@@ -51,17 +52,27 @@ export default function TrainingWeekDrawer({
   const isDirty = useMemo(() => getIsDirty(draft, initial), [draft, initial])
   const patch = useMemo(() => buildPatch(draft, initial), [draft, initial])
 
-  const { run, pending } = useTeamHubUpdate(team)
-  const canSave = Boolean(initial?.id && isValid && isDirty && !pending)
+  const canSave = Boolean(
+    onSave &&
+    initial?.id &&
+    isValid &&
+    isDirty &&
+    !pending
+  )
 
   const handleSave = async () => {
     if (!canSave) return
 
-    await run('training', patch, {
-      section: 'training',
-      teamId: initial.id,
-      createIfMissing: true,
-    })
+    if (!onSave) return
+
+    await onSave(
+      patch,
+      {
+        section: 'training',
+        teamId: initial.id,
+        createIfMissing: true,
+      }
+    )
 
     onSaved(patch, draft)
     onClose()

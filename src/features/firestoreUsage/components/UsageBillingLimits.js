@@ -36,11 +36,11 @@ export default function UsageBillingLimits({ limits }) {
       >
         <Box>
           <Typography level="title-lg">
-            גבולות תשלום Firestore
+            {limits?.title || 'השוואת הסשן למכסת ייחוס'}
           </Typography>
 
-          <Typography level="body-xs" textColor="text.tertiary">
-            לפי free tier הרשמי של Cloud Firestore
+          <Typography level="body-xs" textColor="warning.600" fontWeight="lg">
+            {limits?.subtitle || 'App instrumentation — לא נתוני Billing רשמיים'}
           </Typography>
         </Box>
 

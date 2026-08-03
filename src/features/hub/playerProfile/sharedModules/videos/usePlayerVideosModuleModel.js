@@ -1,5 +1,3 @@
-// playerProfile/sharedModules/videos/usePlayerVideosModuleModel.js
-
 import { useEffect, useMemo, useState } from 'react'
 
 import {
@@ -26,6 +24,7 @@ export default function usePlayerVideosModuleModel({
 
   const [filters, setFilters] = useState(initialFilters)
   const [insightsOpen, setInsightsOpen] = useState(false)
+  const [attachingVideo, setAttachingVideo] = useState(null)
   const [editingVideo, setEditingVideo] = useState(null)
   const [watchVideo, setWatchVideo] = useState(null)
 
@@ -34,9 +33,7 @@ export default function usePlayerVideosModuleModel({
     direction: 'desc',
   })
 
-  const tags = useMemo(() => {
-    return resolveContextTags(context)
-  }, [context?.tags, context?.tagsArr])
+  const tags = useMemo(() => resolveContextTags(context), [context?.tags, context?.tagsArr])
 
   const domain = useMemo(() => {
     return resolvePlayerVideosFiltersDomain(livePlayer, filters, {
@@ -46,75 +43,42 @@ export default function usePlayerVideosModuleModel({
   }, [livePlayer, filters, tags, seasonStartYear])
 
   useEffect(() => {
-    if (videoInsightsRequest > 0) {
-      setInsightsOpen(true)
-    }
+    if (videoInsightsRequest > 0) setInsightsOpen(true)
   }, [videoInsightsRequest])
 
-  const {
-    summary,
-    videos,
-    allVideos,
-    options,
-    indicators,
-  } = domain || {}
+  const { summary, videos, allVideos, options, indicators } = domain || {}
 
   const sortedVideos = useMemo(() => {
     return sortPlayerVideosRows(videos, sort)
   }, [videos, sort])
 
-  const handleChangeFilters = patch => {
-    setFilters(prev => ({
-      ...prev,
-      ...(patch || {}),
-    }))
-  }
-
-  const handleResetFilters = () => {
-    setFilters(createInitialPlayerVideosFilters())
-  }
-
-  const handleChangeSortBy = value => {
-    setSort(prev => ({
-      ...prev,
-      by: value,
-    }))
-  }
-
-  const handleChangeSortDirection = value => {
-    setSort(prev => ({
-      ...prev,
-      direction: value,
-    }))
-  }
-
+  const handleChangeFilters = patch => setFilters(prev => ({ ...prev, ...(patch || {}) }))
+  const handleResetFilters = () => setFilters(createInitialPlayerVideosFilters())
+  const handleChangeSortBy = value => setSort(prev => ({ ...prev, by: value }))
+  const handleChangeSortDirection = value => setSort(prev => ({ ...prev, direction: value }))
   const handleWatch = video => {
-    if (!video) return
-    setWatchVideo(video)
+    if (video) setWatchVideo(video)
   }
 
   return {
     livePlayer,
     tags,
-
     summary,
     videos: videos || [],
     allVideos: allVideos || [],
     options,
     indicators,
     sortedVideos,
-
     filters,
     sort,
-
     insightsOpen,
+    attachingVideo,
     editingVideo,
     watchVideo,
-
     setInsightsOpen,
+    setAttachingVideo,
     setEditingVideo,
     setWatchVideo,
-
     handleChangeFilters,
     handleResetFilters,
     handleChangeSortBy,

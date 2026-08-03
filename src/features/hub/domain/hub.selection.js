@@ -8,7 +8,7 @@ export function createHubSelectionHandlers({
   setMode,
   setDrawerOpen,
   setSelectedPlayer,
-  setPreviewSelection,
+  setControlSelection,
 }) {
   const resetPlayerSelection = () => {
     setSelectedPlayer(null)
@@ -22,12 +22,12 @@ export function createHubSelectionHandlers({
 
   function handleSelectPlayer(p) {
     setSelectedPlayer(p)
-    setPreviewSelection({ type: 'player', data: p })
+    setControlSelection({ type: 'player', data: p })
   }
 
   function handleOpenActions(p) {
     setSelectedPlayer(p)
-    setPreviewSelection({ type: 'player', data: p })
+    setControlSelection({ type: 'player', data: p })
     setDrawerOpen(true)
   }
 
@@ -37,7 +37,7 @@ export function createHubSelectionHandlers({
     const clubId = clubGroup?.clubId || null
     const full = clubId ? clubsById[clubId] : null
 
-    setPreviewSelection({
+    setControlSelection({
       type: 'club',
       data: {
         ...(full || {}),
@@ -61,7 +61,7 @@ export function createHubSelectionHandlers({
     const clubId = full?.clubId || clubGroup?.clubId || null
     const fullClub = clubId ? clubsById[clubId] : null
 
-    setPreviewSelection({
+    setControlSelection({
       type: 'team',
       data: {
         ...(full || {}),
@@ -78,14 +78,9 @@ export function createHubSelectionHandlers({
     })
   }
 
-  function handleSelectStaff(staff) {
-    resetPlayerSelection()
-    setPreviewSelection({ type: 'staff', data: staff })
-  }
-
   function handleSelectScout(scout) {
     resetScoutSelection()
-    setPreviewSelection({ type: 'scout', data: scout })
+    setControlSelection({ type: 'scout', data: scout })
   }
 
   function selectClubById(clubId) {
@@ -124,7 +119,6 @@ export function createHubSelectionHandlers({
     handleOpenActions,
     handleSelectClub,
     handleSelectTeam,
-    handleSelectStaff,
     handleSelectScout,
     selectClubById,
     selectTeamById,

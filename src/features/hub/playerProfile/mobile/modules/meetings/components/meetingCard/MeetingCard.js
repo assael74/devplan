@@ -1,9 +1,7 @@
-// playerProfile/mobile/modules/meetings/components/meetingCard/MeetingCard.js
+// features/hub/playerProfile/mobile/modules/meetings/components/meetingCard/MeetingCard.js
 
 import React from 'react'
 import { Box, Card, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/joy'
-import EditRoundedIcon from '@mui/icons-material/EditRounded'
-import NotesRoundedIcon from '@mui/icons-material/NotesRounded'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { cardSx as sx } from '../sx/card.sx.js'
@@ -61,7 +59,7 @@ export default function MeetingCard({ meeting, active, onSelect, onQuickEdit }) 
                 onQuickEdit(meeting)
               }}
             >
-              <EditRoundedIcon />
+              {iconUi({ id: 'edit', size: 'sm' })}
             </IconButton>
           </Tooltip>
         </Stack>
@@ -81,7 +79,7 @@ export default function MeetingCard({ meeting, active, onSelect, onQuickEdit }) 
           <Chip
             size="sm"
             variant={hasNotes ? 'soft' : 'outlined'}
-            startDecorator={<NotesRoundedIcon />}
+            startDecorator={iconUi({ id: 'notes', size: 'sm' })}
             sx={{ bgcolor: hasNotes ? '#16A34A' : '#FEF2F2' }}
           >
             {hasNotes ? 'יש הערות' : 'ללא הערות'}

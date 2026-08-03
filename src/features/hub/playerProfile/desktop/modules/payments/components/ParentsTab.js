@@ -25,6 +25,7 @@ export default function ParentsTab({ player }) {
 
   const { run, pending } = usePlayerHubUpdate(player)
 
+  const playerId = player?.id || player?.playerId || player?.entityId || player?.docId || ''
   const parents = Array.isArray(player?.parents) ? player.parents : []
   const canCreateParent = getCanCreateParent(parents)
 
@@ -50,39 +51,22 @@ export default function ParentsTab({ player }) {
   }
 
   const handleDelete = async (parentToDelete) => {
-    if (pending || !parentToDelete?.id) return
+    if (pending || !playerId || !parentToDelete?.id) return
 
     const patch = buildRemoveParentPlayerPatch({
       parents,
       parentId: parentToDelete.id,
     })
 
-    await run('playerParentsEdit', patch, {
+    await run(patch, {
       section: 'playerParents',
-      playerId: player?.id,
+      id: playerId,
+      playerId,
       createIfMissing: false,
     })
   }
 
-  const handleSubmit = async (formData) => {
-    if (pending) return
 
-    const patch = buildParentsPlayerPatch({
-      player,
-      parents,
-      draft: formData,
-      editingId: formData?.id || draft?.id || '',
-    })
-
-    await run('playerParentsEdit', patch, {
-      section: 'playerParents',
-      playerId: player?.id,
-      createIfMissing: true,
-    })
-
-    setOpen(false)
-    setDraft(null)
-  }
 
   return (
     <Box>
@@ -172,9 +156,12 @@ export default function ParentsTab({ player }) {
       <ParentFormModal
         open={open}
         onClose={handleClose}
-        initialData={draft}
-        saving={pending}
-        onSubmit={handleSubmit}
+        player={player}
+        parent={draft}
+        onSaved={() => {
+          setOpen(false)
+          setDraft(null)
+        }}
       />
     </Box>
   )

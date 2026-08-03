@@ -1,9 +1,19 @@
 // src/features/playersDatabase/ui/pages/searchPage/logic/search.model.js
 
+import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
 
 const clean = value => String(value ?? '').trim()
+
+const toNumberOrZero = value => {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+const getClubById = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
+  club => clean(club.id) === clean(clubId)
+) || null
 
 const LEAGUE_BY_ID = PLAYERS_DATABASE_LEAGUES_CATALOG.reduce((map, league) => {
   map[clean(league.id)] = league
@@ -86,11 +96,15 @@ const normalizeTeamSearchRow = teamSeason => {
     ? offense
     : defense
   const primaryScore = primarySide.scoutPriorityScore
+  const clubId = clean(identity.clubId)
+  const club = getClubById(clubId)
 
   return {
     ...teamSeason,
     id: clean(identity.teamDocumentId || identity.teamId || teamSeason.id),
     birthTeamId: clean(identity.teamId),
+    clubId,
+    clubLevel: toNumberOrZero(teamSeason.clubLevel || club?.clubLevel),
     entityType: 'birthTeamSeason',
     playerName: resolveTeamName({
       displayName: identity.displayName,

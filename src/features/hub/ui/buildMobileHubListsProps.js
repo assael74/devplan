@@ -8,13 +8,11 @@ export function buildMobileHubListsProps({
   teams = [],
   clubPlayers = [],
   privatePlayers = [],
-  staffRows = [],
   scoutRows = [],
-  previewSelection,
+  controlSelection,
   onSelectClub,
   onSelectTeam,
   onSelectPlayer,
-  onSelectStaff,
   onSelectScout,
   onOpenActions,
   onOpenRoute,
@@ -29,7 +27,7 @@ export function buildMobileHubListsProps({
       clubs,
       onSelectClub,
       selectedClubId:
-        previewSelection?.type === 'club' ? previewSelection.data?.id : null,
+        controlSelection?.type === 'club' ? controlSelection.data?.id : null,
       onOpenClubActions: onOpenActions,
       onOpenClubRoute: (club) => openFullRoute('club', club),
     },
@@ -38,7 +36,7 @@ export function buildMobileHubListsProps({
       teams,
       onSelectTeam,
       selectedTeamId:
-        previewSelection?.type === 'team' ? previewSelection.data?.id : null,
+        controlSelection?.type === 'team' ? controlSelection.data?.id : null,
       onOpenTeamActions: onOpenActions,
       onOpenTeamRoute: (team) => openFullRoute('team', team),
     },
@@ -47,24 +45,16 @@ export function buildMobileHubListsProps({
       players: clubPlayers,
       onSelectPlayer,
       selectedPlayerId:
-        previewSelection?.type === 'player' ? previewSelection.data?.id : null,
+        controlSelection?.type === 'player' ? controlSelection.data?.id : null,
       onOpenPlayerActions: onOpenActions,
       onOpenPlayerRoute: (player) => openFullRoute('player', player),
-    },
-
-    [MODE.STAFF]: {
-      staffRows,
-      onSelectStaff,
-      selectedStaffId:
-        previewSelection?.type === 'staff' ? previewSelection.data?.id : null,
-      onOpenStaffActions: onOpenActions,
     },
 
     [MODE.PRIVATES]: {
       players: privatePlayers,
       onSelectPlayer,
       selectedPlayerId:
-        previewSelection?.type === 'player' ? previewSelection.data?.id : null,
+        controlSelection?.type === 'player' ? controlSelection.data?.id : null,
       onOpenPlayerActions: onOpenActions,
       onOpenPlayerRoute: (player) => openFullRoute('player', player),
     },
@@ -73,7 +63,7 @@ export function buildMobileHubListsProps({
       scoutRows,
       onSelectScout,
       selectedScoutId:
-        previewSelection?.type === 'scout' ? previewSelection.data?.id : null,
+        controlSelection?.type === 'scout' ? controlSelection.data?.id : null,
       onOpenScoutActions: onOpenActions,
       onOpenScoutRoute: (scout) => openFullRoute('player', scout),
     },

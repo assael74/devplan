@@ -76,14 +76,20 @@ export default function VideoEditDrawerBody({
   const tagOptions = useMemo(() => {
     if (isGeneral) return VIDEO_SEED_TAGS
 
-    const opts =
-      context?.tags ||
-      context?.tagOptions ||
-      context?.analysisTags ||
-      []
+    const candidates = [
+      context?.analysisTags,
+      context?.videoTags,
+      context?.tagOptions,
+      VIDEO_SEED_TAGS,
+    ]
 
-    return Array.isArray(opts) ? opts : []
-  }, [isGeneral, context?.tags, context?.tagOptions, context?.analysisTags])
+    return candidates.find(options => Array.isArray(options) && options.length) || []
+  }, [
+    isGeneral,
+    context?.analysisTags,
+    context?.videoTags,
+    context?.tagOptions,
+  ])
 
   const selectedTagTypeIds = useMemo(() => {
     const selected = new Set(safeArr(draft?.tagIds).map(safeStr))

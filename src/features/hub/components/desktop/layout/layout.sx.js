@@ -3,28 +3,16 @@
 export const layoutSx = {
   listPane: {
     width: '100%',
-    flex: { xs: 1, md: '0 0 34.5%' },
+    flex: { xs: 1, md: '0 0 30%' },
     minWidth: { md: 0 },
-    height: 'auto',
+    height: '100%',
     minHeight: 0,
 
     borderRadius: 'sm',
     border: '1px solid',
     borderColor: 'divider',
 
-    overflowY: 'auto',
-    scrollbarGutter: 'stable',
-    scrollbarWidth: 'thin',
-
-    '&::-webkit-scrollbar': { width: 6},
-    '&::-webkit-scrollbar-track': { background: 'transparent' },
-    '&::-webkit-scrollbar-thumb': {
-      borderRadius: 999,
-      backgroundColor: 'rgba(0,0,0,0.25)',
-    },
-    '&:hover::-webkit-scrollbar-thumb': {
-      backgroundColor: 'rgba(0,0,0,0.38)',
-    },
+    overflow: 'hidden',
   },
 
   sheet: {

@@ -12,7 +12,6 @@ export function useHubSelectors({
   corePlayers,
   coreClubs,
   coreTeams,
-  coreRoles,
   coreScouting,
   query,
   mode,
@@ -35,7 +34,6 @@ export function useHubSelectors({
   const playersById = useMemo(() => buildIdMap(playersUi), [playersUi])
   const clubsById = useMemo(() => buildIdMap(coreClubs), [coreClubs])
   const teamsById = useMemo(() => buildIdMap(coreTeams), [coreTeams])
-  const rolesById = useMemo(() => buildIdMap(coreRoles), [coreRoles])
 
   const scoutBase = useMemo(
     () => buildScoutingPlayers(coreScouting, playersById),
@@ -43,14 +41,6 @@ export function useHubSelectors({
   )
 
   const scoutsById = useMemo(() => buildIdMap(scoutBase), [scoutBase])
-
-  const staffRows = useMemo(() => {
-    if (!query) return coreRoles || []
-    const q = query.toLowerCase()
-    return (coreRoles || []).filter((r) =>
-      `${r?.fullName || ''}`.toLowerCase().includes(q)
-    )
-  }, [coreRoles, query])
 
   const scoutRows = useMemo(() => {
     if (!query) return scoutBase
@@ -66,10 +56,9 @@ export function useHubSelectors({
       privates: privatePlayersUi.length,
       teams: (coreTeams || []).length,
       clubs: (coreClubs || []).length,
-      staff: (coreRoles || []).length,
       scouting: scoutBase.length,
     }),
-    [clubPlayersUi, privatePlayersUi, coreTeams, coreClubs, coreRoles, scoutBase]
+    [clubPlayersUi, privatePlayersUi, coreTeams, coreClubs, scoutBase]
   )
 
   return {
@@ -79,9 +68,7 @@ export function useHubSelectors({
     playersById,
     clubsById,
     teamsById,
-    rolesById,
     scoutsById,
-    staffRows,
     scoutRows,
     counts,
   }

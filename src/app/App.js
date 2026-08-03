@@ -9,7 +9,7 @@ import AppShell from '../ui/core/layout/AppShell'
 import RtlCacheProvider from './RtlCacheProvider'
 import { CoreDataProvider } from '../coreData/CoreDataProvider.js'
 
-import { AuthProvider } from '../features/auth'
+import { AuthProvider } from '../application/auth/index.js'
 import { NotificationsProvider } from './NotificationsProvider'
 
 import { AppProviders } from './providers'

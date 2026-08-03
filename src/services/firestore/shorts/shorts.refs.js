@@ -26,6 +26,7 @@ export const shortsRefs = {
     privatePlayersInfo: { collection: 'privatePlayersShorts', docId: 'zkkQfN3g2ip89C83KQPK' },
     privatePlayersAbilities: { collection: 'privatePlayersShorts', docId: 'bZfjSd0JONvq5rPwu88b' },
     privatePlayersStats: { collection: 'privatePlayersShorts', docId: 'URkfw8ewNUECN1CKXtFP' },
+    privatePlayerFollowUps: { collection: 'privatePlayersShorts', docId: 'zTLy8Zt1FVTzxT3796ar' },
   },
 
   payments: {

@@ -7,7 +7,7 @@ import {
   getMonthKeyLabel,
   getVideoMonthKey,
   resolveVideosFiltersDomain,
-} from '../../../../sharedProfile/logic/videos/index.js'
+} from '../../../../domain/videos/index.js'
 
 export {
   VIDEO_SCOPE_OPTIONS,

@@ -17,7 +17,7 @@ export const teamManagementModuleSx = {
     boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
   },
 
-  desktopStaffWrap: {
+  desktopRolesWrap: {
     mt: 2,
   },
 }

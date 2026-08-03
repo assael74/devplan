@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/leagues/leagueDoc.js
 
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -11,6 +11,7 @@ import {
 import { buildSeasonKey } from '../../../model/season.model.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export { buildSeasonKey, toNumberOrZero }
 export const clean = cleanValue
 
@@ -71,7 +72,7 @@ export async function ensureLeagueDoc(league = {}, options = {}) {
 
   const ref = leagueDocRef(leagueId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const docData = buildLeagueBaseDoc(league, currentData)

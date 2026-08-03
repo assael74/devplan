@@ -5,10 +5,8 @@ import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
-import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
-import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 
 const getTeamId = context =>
@@ -85,31 +83,16 @@ function PlayerSubtitle({ context, onTeamClick }) {
   )
 }
 
-export default function PlayerHeader({ entity, context }) {
+export default function PlayerHeader({ entity, context, backAction }) {
   const navigate = useNavigate()
   const photoSrc = entity?.photo || playerImage
+  const ifaLink = entity?.ifaLink || entity?.playerIfaLink || null
   const image = useProfileHeaderImage({
     entityId: entity?.id,
     source: photoSrc,
   })
 
-  const ifaLink = entity?.ifaLink || entity?.playerIfaLink || null
 
-  const metaCounts = useMemo(() => {
-    const paymentsCount = countHeaderItems(entity?.payments)
-    const meetingsCount = countHeaderItems(entity?.meetings)
-    const gamesCount = countHeaderItems(entity?.playerGames)
-
-    return {
-      payments: paymentsCount,
-      games: gamesCount,
-      meetings: meetingsCount,
-      isDeletable:
-        paymentsCount === 0 &&
-        meetingsCount === 0 &&
-        gamesCount === 0,
-    }
-  }, [entity?.payments, entity?.meetings, entity?.playerGames])
 
   const fullName = useMemo(() => {
     const firstName = entity?.playerFirstName || ''
@@ -136,20 +119,9 @@ export default function PlayerHeader({ entity, context }) {
           />
         }
         avatarSrc={image.photo}
+        backAction={backAction}
         onAvatarClick={image.openModal}
-        right={
-          <>
-            <ProfileIfaButton ifaLink={ifaLink} />
-
-            <EntityActionsMenu
-              entityType="player"
-              entityId={entity?.id}
-              entityName={fullName}
-              metaCounts={metaCounts}
-              isArchived={entity?.active === false}
-            />
-          </>
-        }
+        right={<ProfileIfaButton ifaLink={ifaLink} />}
       />
       <ProfileHeaderImageModal
         image={image}

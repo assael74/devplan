@@ -21,7 +21,7 @@ export default function PlayerMeetingsModule({ entity }) {
 
   return (
     <>
-      <Box sx={{ height: 'calc(100vh - 180px)', minHeight: 520, overflowY: 'hidden' }}>
+      <Box sx={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
         <Box sx={sx.root}>
           <Box sx={sx.paneWrapRight}>
             <MeetingsListPane

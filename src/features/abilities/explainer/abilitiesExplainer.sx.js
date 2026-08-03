@@ -2,6 +2,9 @@
 
 export const abilitiesExplainerSx = {
   page: {
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
     p: { xs: 1.5, md: 2 },
     display: 'flex',
     flexDirection: 'column',

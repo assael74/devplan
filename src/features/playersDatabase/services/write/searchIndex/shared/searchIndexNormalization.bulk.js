@@ -2,18 +2,24 @@
 
 import {
   collection,
-  getDocs,
   query,
   serverTimestamp,
   where,
-  writeBatch,
 } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { rebuildTeamSeasonSearchIndexesFromLeagues } from '../team/teamSeasonIndex.rebuild.js'
 import { buildExpectedLevelKey } from './expectedLevelDelta.model.js'
 import { buildPlayerSeasonSearchMetrics } from './searchIndexNormalization.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'searchIndexNormalization-bulk',
+  operationSubtype: 'maintenance-query',
+})
 
 const SEARCH_INDEX_NORMALIZATION_BATCH_SIZE = 450
 
@@ -52,7 +58,12 @@ const commitNormalizationRows = async rows => {
 
   for (let startIndex = 0; startIndex < rows.length; startIndex += SEARCH_INDEX_NORMALIZATION_BATCH_SIZE) {
     const rowsChunk = rows.slice(startIndex, startIndex + SEARCH_INDEX_NORMALIZATION_BATCH_SIZE)
-    const batch = writeBatch(db)
+    const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'searchIndexNormalization-bulk',
+    operationSubtype: 'maintenance-batch',
+  })
 
     rowsChunk.forEach(({ ref, patch }) => {
       batch.set(ref, { ...patch, updatedAt: serverTimestamp() }, { merge: true })
@@ -70,7 +81,7 @@ const rebuildPlayerRows = async ({ dryRun = false, teamDeltaByKey = new Map() } 
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.player)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   let playerDeltaMatchedCount = 0
   let playerDeltaUnknownCount = 0
   const rows = snapshot.docs.map(indexDoc => {

@@ -3,14 +3,8 @@
 export const firestoreUsagePageSx = {
   width: '100%',
   minWidth: 0,
-  height: {
-    xs: 'calc(100dvh - 72px)',
-    md: 'calc(100dvh - 96px)',
-  },
-  maxHeight: {
-    xs: 'calc(100dvh - 72px)',
-    md: 'calc(100dvh - 96px)',
-  },
+  height: '100%',
+  maxHeight: '100%',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',

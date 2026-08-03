@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.upsert.js
 
-import { doc, writeBatch } from 'firebase/firestore'
+import { doc } from 'firebase/firestore'
+import { createTrackedWriteBatch } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
@@ -50,7 +51,12 @@ export async function upsertTeamSeasonSearchIndexMany({
     ])
   )
 
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-upsert',
+    operationSubtype: 'maintenance-batch',
+  })
   const docs = safeRows
     .map(row => {
       const rowKey = clean(resolveTeamLookupKey(row) || row.clubId)

@@ -1,12 +1,20 @@
 // features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.bulk.js
 
-import { collection, getDocs, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
+import { collection, query, serverTimestamp, where } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'teamSeasonIndex-bulk',
+  operationSubtype: 'maintenance-query',
+})
 
 export async function updateSearchIndexesLeagueSeasonUrl({
   league = {},
@@ -24,8 +32,13 @@ export async function updateSearchIndexesLeagueSeasonUrl({
     where('leagueId', '==', leagueId),
     where('seasonKey', '==', seasonKey)
   )
-  const snapshot = await getDocs(rowsQuery)
-  const batch = writeBatch(db)
+  const snapshot = await readSearchIndexes(rowsQuery)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-bulk',
+    operationSubtype: 'maintenance-batch',
+  })
 
   snapshot.docs.forEach(indexDoc => {
     batch.set(
@@ -65,8 +78,13 @@ export async function updateTeamSeasonSearchIndexesSeasonMeta({
     where('seasonKey', '==', seasonKey),
     where('entityType', '==', 'birthTeamSeason')
   )
-  const snapshot = await getDocs(rowsQuery)
-  const batch = writeBatch(db)
+  const snapshot = await readSearchIndexes(rowsQuery)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-bulk',
+    operationSubtype: 'maintenance-batch',
+  })
 
   const nextBirthYear = toNumberOrZero(
     birthYear !== null && birthYear !== undefined

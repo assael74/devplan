@@ -2,14 +2,16 @@
 
 import {
   doc,
-  getDocs,
   orderBy,
   query,
-  runTransaction,
   serverTimestamp,
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import {
+  trackedGetDocs,
+  trackedRunTransaction,
+} from '../../../../services/firestore/usage/index.js'
 import { PUBLIC_REPORT_STATUS } from '../../reports.constants.js'
 import { PUBLIC_REPORT_INDEXES_COLLECTION } from '../publicReport.constants.js'
 import { buildPublicReportId, buildPublicReportVersionId } from '../publicReport.id.js'
@@ -247,7 +249,7 @@ export async function updatePublicReportIndexDocument(input) {
     throw new Error('[updatePublicReportIndexDocument] reportId is required')
   }
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const indexRef = getPublicReportIndexRef(input.reportType)
     const indexSnapshot = await transaction.get(indexRef)
     const indexData = indexSnapshot.exists()
@@ -265,15 +267,26 @@ export async function updatePublicReportIndexDocument(input) {
       versions: Array.isArray(input.versions) ? input.versions : [],
       now,
     })
+  }, {
+    feature: 'reports',
+    action: 'update-public-report-index',
+    collection: 'publicReportsIndexByType',
+    operationSubtype: 'report-index-transaction',
   })
 }
 
 export async function getPublishedPublicReports() {
-  const snapshots = await getDocs(
+  const snapshots = await trackedGetDocs(
     query(
       publicReportIndexesCollectionRef(),
       orderBy('latestUpdatedAt', 'desc')
-    )
+    ),
+    {
+      feature: 'reports',
+      action: 'get-published-public-reports',
+      collection: 'publicReportsIndexByType',
+      queryKey: 'published-public-reports',
+    }
   )
 
   return snapshots.docs.flatMap(snapshot => {

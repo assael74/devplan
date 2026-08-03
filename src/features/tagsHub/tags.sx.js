@@ -5,8 +5,8 @@ export const tagSx = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
-    height: 'calc(100dvh - 92px)',
-    maxHeight: 'calc(100dvh - 92px)',
+    height: '100%',
+    maxHeight: '100%',
     overflow: 'hidden',
   },
 

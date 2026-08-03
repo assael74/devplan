@@ -2,12 +2,11 @@
 
 import {
   collection,
-  getDocs,
   query,
   serverTimestamp,
   where,
-  writeBatch,
 } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
@@ -19,6 +18,13 @@ import {
   buildPlayerSeasonIndexScope,
   isSamePlayerSeasonIndexContext,
 } from './playerSeasonIndex.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'playerSeasonIndex-bulk',
+  operationSubtype: 'maintenance-query',
+})
 
 export async function updatePlayerSeasonSearchIndexTeamUrl({
   league = {},
@@ -45,8 +51,13 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
-  const batch = writeBatch(db)
+  const snapshot = await readSearchIndexes(rowsQuery)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'playerSeasonIndex-bulk',
+    operationSubtype: 'maintenance-batch',
+  })
   let updatedRowsCount = 0
 
   snapshot.docs.forEach(playerDoc => {
@@ -92,8 +103,13 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
     where('seasonKey', '==', seasonKey),
     where('entityType', '==', 'playerSeason')
   )
-  const snapshot = await getDocs(rowsQuery)
-  const batch = writeBatch(db)
+  const snapshot = await readSearchIndexes(rowsQuery)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'playerSeasonIndex-bulk',
+    operationSubtype: 'maintenance-batch',
+  })
 
   const nextBirthYear = toNumberOrZero(
     birthYear !== null && birthYear !== undefined

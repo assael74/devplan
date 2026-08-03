@@ -29,7 +29,7 @@ import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
 import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
-import { ReportPreviewModal } from '../../../../reports/external/ui/index.js'
+import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { useTeamReport } from './report/index.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 

@@ -17,18 +17,18 @@ export const PLAYER_SEARCH_TABLE_WIDTHS = {
 }
 
 export const TEAM_SEARCH_TABLE_WIDTHS = {
-  teamName: '14%',
+  teamName: '16%',
   birthYear: '6%',
   ageGroupLabel: '8%',
-  seasonKey: '7%',
-  leagueName: '16%',
+  seasonKey: '6%',
+  leagueName: '18%',
   tableRank: '6%',
   appearances: '7%',
   goalsFor: '6%',
   goalsAgainst: '6%',
-  attackPriority: '12%',
-  defensePriority: '12%',
-  playersCount: '7%',
+  attackPriority: '11%',
+  defensePriority: '11%',
+  playersCount: '6%',
   favorite: '4%',
   actions: '4%',
 }

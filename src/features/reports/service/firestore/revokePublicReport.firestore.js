@@ -1,11 +1,11 @@
 // src/features/reports/service/firestore/revokePublicReport.firestore.js
 
 import {
-  runTransaction,
   serverTimestamp,
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedRunTransaction } from '../../../../services/firestore/usage/index.js'
 import { PUBLIC_REPORT_STATUS } from '../../reports.constants.js'
 import {
   publicReportRef,
@@ -32,7 +32,7 @@ export async function revokePublicReport({
   const reportRef = publicReportRef(safeReportId)
   const now = new Date()
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const reportSnapshot = await transaction.get(reportRef)
 
     if (!reportSnapshot.exists()) {
@@ -116,5 +116,10 @@ export async function revokePublicReport({
       reportType: nextReportType,
       status: PUBLIC_REPORT_STATUS.REVOKED,
     }
+  }, {
+    feature: 'reports',
+    action: 'revoke-public-report',
+    collection: 'publicReports',
+    operationSubtype: 'revoke-report-transaction',
   })
 }

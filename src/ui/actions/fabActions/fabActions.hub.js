@@ -14,7 +14,6 @@ export function buildHubFabActions({
     onCreateTeam,
     onCreatePlayer,
     onCreatePrivatePlayer,
-    onCreateStaff,
     onCreateScout,
   } = handlers
 
@@ -86,22 +85,6 @@ export function buildHubFabActions({
     })
   }
 
-  if (mode === 'staff') {
-    return composeFabActions({
-      primaryActions: [
-        {
-          id: 'staff',
-          label: 'הוסף איש צוות',
-          icon: iconUi({ id: 'addRole' }),
-          onClick: onCreateStaff,
-          color: 'role',
-          disabled: !allowCreate,
-        },
-      ],
-      taskAction,
-      primarySection: { id: 'section-actions', label: 'פעולות', colorKey: 'role' },
-    })
-  }
 
   if (mode === 'scouting') {
     return composeFabActions({

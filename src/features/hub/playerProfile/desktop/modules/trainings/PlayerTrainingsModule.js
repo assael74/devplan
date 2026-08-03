@@ -8,6 +8,7 @@ import EmptyState from '../../../../sharedProfile/EmptyState.js'
 import { TrainingSchedulePreview } from '../../../../../../ui/patterns/schedule'
 
 import { usePlayerTrainingsModuleModel } from '../../../sharedModules/trainings'
+import { useTeamHubUpdate } from '../../../../hooks/teams/useTeamHubUpdate.js'
 
 export default function PlayerTrainingsModule({ entity, context }) {
   const {
@@ -19,6 +20,16 @@ export default function PlayerTrainingsModule({ entity, context }) {
     context,
     buildMobileModel: false,
   })
+
+  const { run, pending } = useTeamHubUpdate(player)
+
+  const handleSave = (patch, meta) => {
+    return run(
+      'training',
+      patch,
+      meta
+    )
+  }
 
   if (state === 'EMPTY') {
     return (
@@ -40,6 +51,8 @@ export default function PlayerTrainingsModule({ entity, context }) {
         title="אימוני שחקן"
         showHeader
         showStats
+        onSave={handleSave}
+        savePending={pending}
         showNextWeek
       />
     </SectionPanel>

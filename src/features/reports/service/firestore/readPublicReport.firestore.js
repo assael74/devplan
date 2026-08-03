@@ -1,11 +1,11 @@
 // src/features/reports/service/firestore/readPublicReport.firestore.js
 
+import { orderBy, query } from 'firebase/firestore'
+
 import {
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-} from 'firebase/firestore'
+  trackedGetDoc,
+  trackedGetDocs,
+} from '../../../../services/firestore/usage/index.js'
 
 import { PUBLIC_REPORT_STATUS } from '../../reports.constants.js'
 import {
@@ -32,11 +32,17 @@ async function loadPublicReportVersionOptions({
     return currentData.versions
   }
 
-  const snapshots = await getDocs(
+  const snapshots = await trackedGetDocs(
     query(
       publicReportVersionsCollectionRef(reportId),
       orderBy('versionNumber', 'asc')
-    )
+    ),
+    {
+      feature: 'reports',
+      action: 'load-report-version-options',
+      collection: 'publicReports/versions',
+      queryKey: `public-report-versions:${reportId}`,
+    }
   )
 
   const options = snapshots.docs
@@ -77,7 +83,11 @@ export async function getCurrentPublicReport(reportId) {
     throw new Error('[getCurrentPublicReport] reportId is required')
   }
 
-  const snapshot = await getDoc(publicReportRef(reportId))
+  const snapshot = await trackedGetDoc(publicReportRef(reportId), {
+    feature: 'reports',
+    action: 'get-current-public-report',
+    collection: 'publicReports',
+  })
 
   if (!snapshot.exists()) return null
 
@@ -111,8 +121,16 @@ export async function getPublicReportVersion({ reportId, versionId } = {}) {
   }
 
   const [versionSnapshot, currentSnapshot] = await Promise.all([
-    getDoc(publicReportVersionRef({ reportId, versionId })),
-    getDoc(publicReportRef(reportId)),
+    trackedGetDoc(publicReportVersionRef({ reportId, versionId }), {
+      feature: 'reports',
+      action: 'get-public-report-version',
+      collection: 'publicReports/versions',
+    }),
+    trackedGetDoc(publicReportRef(reportId), {
+      feature: 'reports',
+      action: 'get-public-report-current-for-version',
+      collection: 'publicReports',
+    }),
   ])
 
   const currentData = currentSnapshot.exists()

@@ -1,7 +1,7 @@
 // src/features/hub/playerProfile/playerProfile.logic.js
 
-import { useMemo } from 'react'
-import { useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { useCallback, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { buildTaskFabContext } from '../../../ui/actions/buildTaskFabContext.js'
 import { getTabFromUrl } from './playerProfile.routes'
@@ -12,14 +12,11 @@ import {
   buildProfileTagsById,
   findProfileEntityById,
   resolveProfilePageState,
-  resolveProfileRawTab,
-  resolveProfileSelectedTab,
 } from '../sharedProfile/logic/profileModel.shared.js'
+import useProfileRouteModel from '../sharedProfile/logic/useProfileRouteModel.js'
 
 export default function usePlayerProfilePageModel() {
-  const location = useLocation()
-  const { playerId, tabKey } = useParams()
-  const [searchParams] = useSearchParams()
+  const { playerId } = useParams()
 
   const {
     players,
@@ -40,6 +37,22 @@ export default function usePlayerProfilePageModel() {
 
   const isProject = entity?.type === 'project'
   const isPrivatePlayer = entity?.isPrivatePlayer === true
+
+  const resolveTab = useCallback(({ tabKeyParam, searchParams }) => {
+    return getTabFromUrl({
+      tabKeyParam,
+      searchParams,
+      isProject,
+      isPrivatePlayer,
+    })
+  }, [isProject, isPrivatePlayer])
+
+  const {
+    location,
+    rawTab,
+    tab,
+    selectedTab,
+  } = useProfileRouteModel({ resolveTab })
 
   const tagsById = useMemo(() => {
     return buildProfileTagsById(tags)
@@ -79,28 +92,6 @@ export default function usePlayerProfilePageModel() {
       calculationMode: 'games',
     })
   }, [entity, team])
-
-  const rawTab = useMemo(() => {
-    return resolveProfileRawTab({
-      tabKey,
-      searchParams,
-    })
-  }, [tabKey, searchParams])
-
-  const tab = useMemo(() => {
-    return getTabFromUrl({
-      tabKeyParam: tabKey,
-      searchParams,
-      isProject,
-    })
-  }, [tabKey, searchParams, isProject])
-
-  const selectedTab = useMemo(() => {
-    return resolveProfileSelectedTab({
-      rawTab,
-      tab,
-    })
-  }, [rawTab, tab])
 
   const taskContext = useMemo(() => {
     return buildTaskFabContext({

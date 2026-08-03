@@ -350,6 +350,7 @@ export const buildReportUrlMobileSx = ({
 
   footer: {
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
     mt: 'auto',
@@ -362,6 +363,26 @@ export const buildReportUrlMobileSx = ({
     fontWeight: 700,
     breakInside: 'avoid',
     pageBreakInside: 'avoid',
+  },
+
+  footerBrand: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    minWidth: 0,
+  },
+
+  footerLogo: {
+    width: 16,
+    height: 16,
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+
+  footerText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 })
 

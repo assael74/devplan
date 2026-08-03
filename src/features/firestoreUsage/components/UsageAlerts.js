@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Card,
+  Chip,
   Typography,
 } from '@mui/joy'
 
@@ -14,28 +15,38 @@ const buildAlerts = viewModel => {
   const alerts = []
   const heaviestCollection = viewModel.collections[0]
 
-  if (
-    heaviestCollection &&
-    heaviestCollection.totalEstimatedKb >= 1000
-  ) {
+  if (heaviestCollection) {
+    const reads = Number(heaviestCollection.reads || 0)
+    const writes = Number(heaviestCollection.writes || 0)
+    const readKb = Number(heaviestCollection.estimatedReadKb || 0)
+    const writeKb = Number(heaviestCollection.estimatedWriteKb || 0)
+    const averageReadKb = reads > 0 ? readKb / reads : 0
+    const isHeavy = heaviestCollection.totalEstimatedKb >= 1000
+
     alerts.push({
-      id: 'heavy-collection',
-      color: 'danger',
-      icon: <ErrorOutlineRoundedIcon />,
-      title: `${heaviestCollection.name} הוא ה-collection הכבד ביותר`,
-      description:
-        `${heaviestCollection.totalEstimatedKb.toFixed(2)} KB נטענו או נכתבו בסשן. ` +
-        'כדאי לבדוק pagination, lazy loading או פיצול payload.',
-    })
-  } else if (heaviestCollection) {
-    alerts.push({
-      id: 'top-collection',
-      color: 'warning',
-      icon: <WarningAmberRoundedIcon />,
-      title: `${heaviestCollection.name} מוביל בצריכת נתונים`,
-      description:
-        `${heaviestCollection.totalEstimatedKb.toFixed(2)} KB בסשן הנוכחי. ` +
-        'כדאי לעקוב אם המספר ממשיך לגדול לאורך עבודה רגילה.',
+      id: isHeavy ? 'heavy-collection' : 'top-collection',
+      color: isHeavy ? 'danger' : 'primary',
+      icon: isHeavy ? <ErrorOutlineRoundedIcon /> : <WarningAmberRoundedIcon />,
+      title: isHeavy
+        ? `${heaviestCollection.name} מעביר נפח נתונים גבוה`
+        : `${heaviestCollection.name} הוא מקור ה-payload הגדול ביותר בסשן`,
+      description: isHeavy
+        ? 'הנפח אינו חיוב בפני עצמו, אך הוא עלול להשפיע על זמן טעינה, זיכרון ותעבורה.'
+        : 'זהו מדד ביצועים ונפח בלבד — לא התראת חיוב.',
+      metrics: [
+        { label: 'קריאות מסמך', value: reads.toLocaleString('he-IL') },
+        { label: 'נפח קריאה משוער', value: `${readKb.toFixed(2)} KB` },
+        { label: 'ממוצע למסמך', value: `${averageReadKb.toFixed(2)} KB` },
+        ...(writes > 0
+          ? [{ label: 'כתיבות', value: writes.toLocaleString('he-IL') }]
+          : []),
+        ...(writeKb > 0
+          ? [{ label: 'נפח כתיבה משוער', value: `${writeKb.toFixed(2)} KB` }]
+          : []),
+      ],
+      note: reads > 0
+        ? `מבחינת מכסת Firestore: ${reads.toLocaleString('he-IL')} קריאות מסמך בלבד מתוך המכסה היומית.`
+        : 'לא נרשמו קריאות מסמך עבור Collection זה בסשן הנוכחי.',
     })
   }
 
@@ -80,7 +91,16 @@ export default function UsageAlerts({ viewModel }) {
   const alerts = buildAlerts(viewModel)
 
   return (
-    <Card variant="outlined" sx={{ p: 2, borderRadius: 'lg', boxShadow: 'sm' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        p: 2,
+        borderRadius: 'lg',
+        boxShadow: 'sm',
+        height: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       <Typography level="title-lg" sx={{ mb: 1.5 }}>
         התראות מערכת
       </Typography>
@@ -102,6 +122,37 @@ export default function UsageAlerts({ viewModel }) {
               <Typography level="body-xs" sx={{ mt: 0.5 }}>
                 {alert.description}
               </Typography>
+
+              {Array.isArray(alert.metrics) && alert.metrics.length > 0 ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 0.75,
+                    mt: 1,
+                  }}
+                >
+                  {alert.metrics.map(metric => (
+                    <Chip
+                      key={`${alert.id}-${metric.label}`}
+                      size="sm"
+                      variant="outlined"
+                      color="neutral"
+                    >
+                      {metric.label}: {metric.value}
+                    </Chip>
+                  ))}
+                </Box>
+              ) : null}
+
+              {alert.note ? (
+                <Typography
+                  level="body-xs"
+                  sx={{ mt: 1, fontWeight: 600 }}
+                >
+                  {alert.note}
+                </Typography>
+              ) : null}
             </Box>
           </Alert>
         ))}

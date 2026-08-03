@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/teams/teamSeasonRoster.js
 
-import { runTransaction } from 'firebase/firestore'
+
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
@@ -18,6 +18,7 @@ import {
   upsertSeasonRows,
 } from './teamSeason.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export async function upsertTeamSeasonPlayers({
   season = {},
   team = {},
@@ -31,7 +32,7 @@ export async function upsertTeamSeasonPlayers({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildTeamBaseDoc({ ...team, teamDocumentId: teamId }, currentData)
@@ -99,7 +100,7 @@ export async function appendTeamSeasonPlayer({
 
   const ref = teamDocRef(teamId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) throw new Error('Team document not found')
 

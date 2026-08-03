@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.patch.js
 
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { collection, doc, query, serverTimestamp, where } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedGetDoc, trackedGetDocs, trackedUpdateDoc } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { isSameSeason, normalizeSeasonIdentity } from '../../../../model/season.model.js'
@@ -8,6 +9,13 @@ import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
 import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonIndexId, resolveClubLevel } from './teamSeasonIndex.model.js'
 import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'teamSeasonIndex-patch',
+  operationSubtype: 'maintenance-query',
+})
 
 export async function updateTeamSeasonSearchIndexRosterMeta({
   league = {},
@@ -28,7 +36,12 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
   const id = buildTeamSeasonIndexId({ leagueId, seasonKey, teamId, clubId })
   if (!id) throw new Error('Missing team season index id')
 
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-patch',
+    operationSubtype: 'maintenance-batch',
+  })
   batch.set(
     doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id),
     {
@@ -103,7 +116,7 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
       PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
       expectedEntityId
     )
-    const directSnapshot = await getDoc(directRef)
+    const directSnapshot = await trackedGetDoc(directRef, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'teamSeasonIndex-read', operationSubtype: 'maintenance-getDoc' })
 
     if (directSnapshot.exists()) {
       const data = directSnapshot.data() || {}
@@ -115,10 +128,10 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
       )
 
       if (isMatchingIndex) {
-        await updateDoc(directRef, {
+        await trackedUpdateDoc(directRef, {
           teamUrl,
           updatedAt: serverTimestamp(),
-        })
+        }, { __firestoreUsageContext: { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'teamSeasonIndex-update', operationSubtype: 'maintenance-updateDoc' } })
 
         return buildSearchIndexWriteResult({
           entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
@@ -137,7 +150,7 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
     where('entityType', '==', 'birthTeamSeason'),
     where('birthTeamId', '==', birthTeamId)
   )
-  const querySnapshot = await getDocs(indexQuery)
+  const querySnapshot = await readSearchIndexes(indexQuery)
   const matchingDoc = querySnapshot.docs.find(snapshot => {
     const data = snapshot.data() || {}
     if (!isSameSeason(data, { seasonId, seasonKey })) return false
@@ -158,10 +171,10 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
     })
   }
 
-  await updateDoc(matchingDoc.ref, {
+  await trackedUpdateDoc(matchingDoc.ref, {
     teamUrl,
     updatedAt: serverTimestamp(),
-  })
+  }, { __firestoreUsageContext: { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'teamSeasonIndex-update', operationSubtype: 'maintenance-updateDoc' } })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
@@ -190,7 +203,7 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   if (!id) throw new Error('Missing team season index id')
 
   const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id)
-  const snapshot = await getDoc(ref)
+  const snapshot = await trackedGetDoc(ref, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'teamSeasonIndex-read', operationSubtype: 'maintenance-getDoc' })
   if (!snapshot.exists()) {
     return buildSearchIndexWriteResult({
       entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
@@ -202,7 +215,7 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
     })
   }
 
-  await updateDoc(ref, {
+  await trackedUpdateDoc(ref, {
     scoutProfiledPlayersCount: toNumberOrZero(scoutProfilesSummary.total),
     scoutProfilesSummary: {
       total: toNumberOrZero(scoutProfilesSummary.total),
@@ -210,7 +223,7 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
     },
     sourceTarget: clean(target) === 'history' ? 'history' : 'current',
     updatedAt: serverTimestamp(),
-  })
+  }, { __firestoreUsageContext: { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'teamSeasonIndex-update', operationSubtype: 'maintenance-updateDoc' } })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,

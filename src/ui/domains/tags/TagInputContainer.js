@@ -9,32 +9,10 @@ import { tagsSx as sx } from './tags.sx'
 import { getEntityColors } from '../../core/theme/Colors'
 import { useTagPickerOptions } from './hooks/useTagPickerOptions'
 import { iconUi } from '../../core/icons/iconUi.js'
-import { VIDEO_TAG_TYPE_BY_ID } from '../../../shared/video/index.js'
+import { getTagTypeMeta } from './tagTypeMeta.js'
 
 const safeId = (v) => String(v ?? '').trim()
 const safeLabel = (v) => String(v ?? '').trim()
-
-const TAG_TYPE_COLORS = {
-  formation: '#7C3AED',
-  pitch_area: '#0891B2',
-  game_principle: '#2563EB',
-  action_technique: '#16A34A',
-  situation: '#F97316',
-  position_role: '#0F766E',
-  mental: '#D97706',
-}
-
-function getTagTypeMeta(tag) {
-  const tagType = safeId(tag?.tagType)
-  const typeMeta = VIDEO_TAG_TYPE_BY_ID[tagType] || null
-  const color = TAG_TYPE_COLORS[tagType] || ''
-
-  return {
-    color,
-    iconId: typeMeta?.iconId || '',
-    label: typeMeta?.label || tagType,
-  }
-}
 
 function renderTagTypeIcon(tag, fallbackColor) {
   const meta = getTagTypeMeta(tag)

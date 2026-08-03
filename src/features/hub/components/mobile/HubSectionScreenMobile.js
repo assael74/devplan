@@ -1,26 +1,15 @@
-// features/hub/components/mobile/HubSectionScreenMobile.js
+// src/features/hub/components/mobile/HubSectionScreenMobile.js
 
 import React, { useMemo } from 'react'
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
-import { hubMobileSx as sx } from './sx/hubMobile.sx'
-import HeaderStripMobile from '../../sharedProfile/mobile/HeaderStripMobile'
-
-import playersImg from '../../../../ui/core/images/players.png'
-import staffImg from '../../../../ui/core/images/staff.png'
-import teamsImg from '../../../../ui/core/images/teams.png'
-
-export function getMobileSectionImage(key) {
-  if (key === 'players') return playersImg
-  if (key === 'staff') return staffImg
-  if (key === 'teams') return teamsImg
-  if (key === 'clubs') return teamsImg
-  return playersImg
-}
+import HeaderStripMobile from '../../sharedProfile/mobile/HeaderStripMobile.js'
+import { hubMobileSx as sx } from './sx/hubMobile.sx.js'
 
 export default function HubSectionScreenMobile({
   mode,
+  title,
   tabsMeta = [],
   children,
   onBack,
@@ -32,17 +21,16 @@ export default function HubSectionScreenMobile({
   const pathItems = useMemo(() => {
     return [
       {
-        label: 'מרכז שליטה',
+        label: title || 'מרכז שליטה',
         onClick: () => navigate('/hub'),
       },
     ]
-  }, [navigate])
+  }, [navigate, title])
 
   const subtitle = useMemo(() => {
     if (mode === 'players') return 'רשימת שחקנים'
     if (mode === 'teams') return 'רשימת קבוצות'
     if (mode === 'clubs') return 'רשימת מועדונים'
-    if (mode === 'staff') return 'רשימת אנשי צוות'
     if (mode === 'privates') return 'שחקנים פרטיים'
     if (mode === 'scouting') return 'שחקנים למעקב'
     return 'רשימת אובייקטים'
@@ -51,7 +39,7 @@ export default function HubSectionScreenMobile({
   return (
     <Box sx={sx.boxWraper}>
       <HeaderStripMobile
-        avatarSrc={getMobileSectionImage(mode)}
+        avatarContent={currentTab?.icon || null}
         title={currentTab?.label || 'אזור'}
         subtitle={subtitle}
         onBack={onBack}

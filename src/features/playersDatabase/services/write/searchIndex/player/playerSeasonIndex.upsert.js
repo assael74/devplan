@@ -3,11 +3,10 @@
 import {
   collection,
   doc,
-  getDocs,
   query,
-  writeBatch,
   where,
 } from 'firebase/firestore'
+import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
@@ -25,6 +24,13 @@ import {
   isSamePlayerSeasonIndexContext,
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'playerSeasonIndex-upsert',
+  operationSubtype: 'maintenance-query',
+})
 
 export async function upsertPlayerSeasonSearchIndexMany({
   league = {},
@@ -65,12 +71,17 @@ export async function upsertPlayerSeasonSearchIndexMany({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const existingDocs = snapshot.docs.filter(playerDoc => (
     isSamePlayerSeasonIndexContext(playerDoc.data() || {}, indexScope)
   ))
   const existingLookup = buildPlayerSeasonIndexLookup(existingDocs)
-  const batch = writeBatch(db)
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'playerSeasonIndex-upsert',
+    operationSubtype: 'maintenance-batch',
+  })
   let rowsCount = 0
   let createdCount = 0
   let updatedCount = 0

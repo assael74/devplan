@@ -1,11 +1,11 @@
 import * as React from 'react'
 
-import { publishDbSearchReport } from '../../../../../reports/dbSearch/index.js'
 import {
   buildPublicReportDocumentPreview,
   logPublicReportDocumentMeasurement,
+  publishDbSearchReport,
   waitForPublicReportAvailability,
-} from '../../../../../reports/service/index.js'
+} from '../../../../../reports/publicApi.js'
 import { buildSearchReport } from '../../../../report/index.js'
 
 const clean = value => String(value || '').trim()
@@ -24,20 +24,16 @@ const closePublishWindow = nextWindow => {
 }
 
 export default function useSearchReport(input = {}) {
-  const reportIdRef = React.useRef('')
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
 
   const buildDraft = React.useCallback(details => {
     const draft = buildSearchReport({
       ...input,
-      searchReportId: reportIdRef.current,
       reportName: clean(details?.reportName),
       reportPurpose: clean(details?.reportPurpose),
       reportDescription: clean(details?.reportDescription),
     })
-
-    reportIdRef.current = draft.entityId
 
     const firestoreDocument = buildPublicReportDocumentPreview(draft)
     logPublicReportDocumentMeasurement({

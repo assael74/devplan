@@ -1,14 +1,12 @@
-// src/features/hub/teamProfile/mobile/components/TeamHeader.js
+// features/hub/teamProfile/mobile/components/TeamHeader.js
 
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
-import EntityActionsMenu from '../../../../hub/sharedProfile/EntityActionsMenu.js'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
-import { ProfileHeaderImageModal } from '../../../../hub/sharedProfile/ui/index.js'
-import { countHeaderItems } from '../../../../hub/sharedProfile/logic/headerModel.shared.js'
+import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
 
 const resolveClubName = ({ entity, context }) => {
   return (
@@ -29,26 +27,12 @@ export default function TeamHeader({ entity, context, onBack }) {
     parentEntity: context?.club || entity?.club,
     subline: resolveClubName({ entity, context }),
   })
+  const ifaLink = entity?.ifaLink || null
   const image = useProfileHeaderImage({
     entityId: entity?.id,
     source,
   })
 
-  const metaCounts = useMemo(() => {
-    const playersCount = countHeaderItems(entity?.players)
-    const meetingsCount = countHeaderItems(entity?.meetings)
-    const gamesCount = countHeaderItems(entity?.teamGames)
-
-    return {
-      players: playersCount,
-      games: gamesCount,
-      meetings: meetingsCount,
-      isDeletable:
-        playersCount === 0 &&
-        meetingsCount === 0 &&
-        gamesCount === 0,
-    }
-  }, [entity?.players, entity?.meetings, entity?.teamGames])
 
   const subtitle = useMemo(() => {
     const clubName = resolveClubName({ entity, context })
@@ -79,16 +63,7 @@ export default function TeamHeader({ entity, context, onBack }) {
         onAvatarClick={image.openModal}
         onBack={onBack}
         pathItems={pathItems}
-        right={
-          <EntityActionsMenu
-            entityType="team"
-            entityId={entity?.id}
-            entityName={entity?.teamName}
-            entity={entity}
-            metaCounts={metaCounts}
-            isArchived={entity?.active === false}
-          />
-        }
+        right={<ProfileIfaButton ifaLink={ifaLink} />}
       />
       <ProfileHeaderImageModal
         image={image}

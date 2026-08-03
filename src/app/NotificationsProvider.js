@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import useNotifications from '../features/notifications/hooks/useNotifications'
 
-import { useAuth } from '../features/auth'
+import { useAuth } from '../application/auth/index.js'
 
 const NotificationsContext = createContext(null)
 

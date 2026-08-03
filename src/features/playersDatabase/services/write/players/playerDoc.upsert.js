@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/players/playerDoc.upsert.js
 
-import { deleteField, runTransaction } from 'firebase/firestore'
+import { deleteField } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { getTeamById } from '../../read/team.js'
@@ -16,6 +16,7 @@ import {
   removePlayerSeasonRow,
 } from './playerSeason.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export const upsertProfiledPlayerDoc = async ({
   season = {},
   team = {},
@@ -37,7 +38,7 @@ export const upsertProfiledPlayerDoc = async ({
   const teamDoc = teamDocumentId ? await getTeamById(teamDocumentId) : null
   const resolvedTeam = teamDoc ? { ...teamDoc, ...team } : team
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildPlayerBaseDoc(

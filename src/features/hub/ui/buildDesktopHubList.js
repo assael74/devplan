@@ -6,7 +6,6 @@ import PlayersListPane from '../components/lists/players/PlayersListPane.js'
 import TeamsListPane from '../components/lists/teams/TeamsListPane.js'
 import PrivatesListPane from '../components/lists/privates/PrivatesListPane.js'
 import ClubsListPane from '../components/lists/clubs/ClubsListPane.js'
-import HubStaffList from '../components/lists/staff/HubStaffList.js'
 import HubScoutingList from '../components/lists/scout/HubScoutingList.js'
 
 export function buildDesktopHubList({
@@ -16,13 +15,11 @@ export function buildDesktopHubList({
   teams = [],
   clubPlayers = [],
   privatePlayers = [],
-  previewSelection,
-  staffRows = [],
+  controlSelection,
   scoutRows = [],
   onSelectClub,
   onSelectTeam,
   onSelectPlayer,
-  onSelectStaff,
   onSelectScout,
   onOpenActions,
 }) {
@@ -32,7 +29,7 @@ export function buildDesktopHubList({
         clubs={clubs}
         isMobile={false}
         onSelect={onSelectClub}
-        selectedId={previewSelection?.type === 'club' ? previewSelection.data?.id : null}
+        selectedId={controlSelection?.type === 'club' ? controlSelection.data?.id : null}
       />
     )
   }
@@ -43,7 +40,7 @@ export function buildDesktopHubList({
         teams={teams}
         isMobile={false}
         onSelect={onSelectTeam}
-        selectedId={previewSelection?.type === 'team' ? previewSelection.data?.id : null}
+        selectedId={controlSelection?.type === 'team' ? controlSelection.data?.id : null}
       />
     )
   }
@@ -54,14 +51,10 @@ export function buildDesktopHubList({
         players={clubPlayers}
         isMobile={false}
         onSelect={onSelectPlayer}
-        selectedId={previewSelection?.type === 'player' ? previewSelection.data?.id : null}
+        selectedId={controlSelection?.type === 'player' ? controlSelection.data?.id : null}
         onOpenActions={onOpenActions}
       />
     )
-  }
-
-  if (mode === MODE.STAFF) {
-    return <HubStaffList rows={staffRows} onSelect={onSelectStaff} isMobile={false} />
   }
 
   if (mode === MODE.PRIVATES) {
@@ -70,7 +63,7 @@ export function buildDesktopHubList({
         isMobile={false}
         players={privatePlayers}
         onSelect={onSelectPlayer}
-        selectedId={previewSelection?.type === 'player' ? previewSelection.data?.id : null}
+        selectedId={controlSelection?.type === 'player' ? controlSelection.data?.id : null}
         onOpenActions={onOpenActions}
       />
     )

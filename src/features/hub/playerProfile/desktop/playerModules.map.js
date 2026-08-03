@@ -15,6 +15,18 @@ export const desktopProjectPlayerModulesMap = {
   trainings: lazyModule(() => import('./modules/trainings/PlayerTrainingsModule')),
 }
 
+
+export const desktopPrivatePlayerModulesMap = {
+  info: lazyModule(() => import('./modules/info/PlayerInfoModule')),
+  abilities: lazyModule(() => import('./modules/abilities/PlayerAbilitiesModule')),
+  games: lazyModule(() => import('./modules/games/PlayerGamesModule')),
+  performance: lazyModule(() => import('./modules/performance/PlayerPerformanceModule')),
+  meetings: lazyModule(() => import('./modules/meetings/PlayerMeetingsModule')),
+  payments: lazyModule(() => import('./modules/payments/PlayerPaymentsModule')),
+  videoAnalysis: lazyModule(() => import('./modules/videos/PlayerVideosModule.js')),
+  activity: lazyModule(() => import('./modules/activity/PlayerActivityModule.js')),
+}
+
 export const desktopPlayerModulesMap = {
   info: lazyModule(() => import('./modules/info/PlayerInfoModule')),
   abilities: lazyModule(() => import('./modules/abilities/PlayerAbilitiesModule')),

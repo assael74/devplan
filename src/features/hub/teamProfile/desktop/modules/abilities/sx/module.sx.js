@@ -13,8 +13,8 @@ export const moduleSx = {
     flex: 1,
     minHeight: 0,
     position: 'relative',
-    overflowY: 'auto',
-    height: 'calc(100vh - 210px)',
+    overflowY: 'visible',
+    height: 'auto',
   },
 
   sticky: {

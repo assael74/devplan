@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/leagues/leaguesMaster.sync.js
 
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -13,6 +13,7 @@ import {
   sortLeaguesMasterEntries,
 } from './leaguesMaster.model.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const MASTER_DOC_ID = 'all'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -32,7 +33,7 @@ export async function syncLeaguesMasterDocument({
 
   if (!safeLeagues.length && !removedIds.size) return null
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const masterSnapshot = await transaction.get(leaguesMasterRef())
     const existingMaster = masterSnapshot.exists()
       ? masterSnapshot.data() || {}

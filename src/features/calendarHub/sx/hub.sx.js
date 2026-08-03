@@ -3,7 +3,7 @@
 export const hubSx = {
   page: {
     width: '100%',
-    height: 'calc(100dvh - var(--appShellHeaderH, 64px))',
+    height: '100%',
     display: 'grid',
     minHeight: 0,
     gridTemplateColumns: { xs: '1fr', lg: '220px 1fr' },

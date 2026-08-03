@@ -21,7 +21,20 @@ export default function ClubsListPane({
   }
 
   return (
-    <Box sx={{ p: 1, display: 'grid', gap: 0.5 }}>
+    <Box
+      className="dpScrollThin"
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollbarGutter: 'stable',
+        p: 1,
+        display: 'grid',
+        alignContent: 'start',
+        gap: 0.5,
+      }}
+    >
       {clubs.map((club) => (
         <ClubRow
           key={club.id}

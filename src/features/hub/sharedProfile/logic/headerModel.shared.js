@@ -1,8 +1,4 @@
-// src/features/hub/sharedProfile/logic/headerModel.shared.js
-
-export const countHeaderItems = items => {
-  return Array.isArray(items) ? items.length : 0
-}
+// features/hub/sharedProfile/logic/headerModel.shared.js
 
 export const appendImageCacheVersion = url => {
   if (!url) return ''

@@ -1,11 +1,10 @@
 // src/features/reports/service/firestore/deletePublicReport.firestore.js
 
-import {
-  getDocs,
-  runTransaction,
-} from 'firebase/firestore'
-
 import { db } from '../../../../services/firebase/firebase.js'
+import {
+  trackedGetDocs,
+  trackedRunTransaction,
+} from '../../../../services/firestore/usage/index.js'
 import {
   publicReportRef,
   publicReportVersionsCollectionRef,
@@ -29,12 +28,18 @@ export async function deletePublicReport({
   }
 
   const reportRef = publicReportRef(safeReportId)
-  const versionsSnapshot = await getDocs(
-    publicReportVersionsCollectionRef(safeReportId)
+  const versionsSnapshot = await trackedGetDocs(
+    publicReportVersionsCollectionRef(safeReportId),
+    {
+      feature: 'reports',
+      action: 'load-report-versions-for-delete',
+      collection: 'publicReports/versions',
+      queryKey: `delete-report-versions:${safeReportId}`,
+    }
   )
   const now = new Date()
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const reportSnapshot = await transaction.get(reportRef)
     const currentData = reportSnapshot.exists()
       ? reportSnapshot.data() || {}
@@ -83,5 +88,10 @@ export async function deletePublicReport({
       reportType: nextReportType,
       deleted: reportSnapshot.exists(),
     }
+  }, {
+    feature: 'reports',
+    action: 'delete-public-report',
+    collection: 'publicReports',
+    operationSubtype: 'delete-report-transaction',
   })
 }

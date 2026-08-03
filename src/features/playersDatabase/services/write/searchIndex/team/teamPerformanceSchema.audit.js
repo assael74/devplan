@@ -1,8 +1,16 @@
 // features/playersDatabase/services/write/searchIndex/team/teamPerformanceSchema.audit.js
 
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, query, where } from 'firebase/firestore'
+import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+
+const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
+  feature: 'playersDatabase',
+  collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+  action: 'teamPerformanceSchema-audit',
+  operationSubtype: 'maintenance-query',
+})
 
 const TEAM_ENTITY_TYPE = 'birthTeamSeason'
 const TARGET_SCHEMA_VERSION = 4
@@ -123,7 +131,7 @@ export async function auditTeamPerformanceSearchIndexSchema() {
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', TEAM_ENTITY_TYPE)
   )
-  const snapshot = await getDocs(rowsQuery)
+  const snapshot = await readSearchIndexes(rowsQuery)
   const counts = {
     scannedRowsCount: snapshot.docs.length,
     currentRowsCount: 0,

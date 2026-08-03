@@ -1,7 +1,7 @@
 //  hub/playerProfile/desktop/modules/abilities/components/inviteDrawer/AbilitiesInviteCreateDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../../../../../../../auth/index.js'
+import { useAuth } from '../../../../../../../../application/auth/index.js'
 import {
   Box,
   Button,

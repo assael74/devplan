@@ -1,12 +1,11 @@
-// teamProfile/desktop/modules/players/components/TeamPlayerRow.js
+// features/hub/teamProfile/desktop/modules/players/components/TeamPlayerRow.js
 
 import React from 'react'
 import { Box, Checkbox, Chip, IconButton, Tooltip, Typography } from '@mui/joy'
-import EditRounded from '@mui/icons-material/EditRounded'
 
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import EntityActionsMenu from '../../../../../sharedProfile/EntityActionsMenu.js'
-import { TEAM_PLAYERS_PRINT_MODES } from '../../../../../../reports/performance/index.js'
+import { TEAM_PLAYERS_PRINT_MODES } from '../../../../../../reports/publicApi.js'
 
 import PlayerIdentityCell from './sections/PlayerIdentityCell.js'
 import PerformanceCell from './sections/PerformanceCell.js'
@@ -138,7 +137,7 @@ function ActionsCell({ row, onEditPlayer }) {
     <Box sx={sx.actionsCell}>
       <Tooltip title="עריכת נתוני שחקן">
         <IconButton size="sm" variant="plain" onClick={() => onEditPlayer(row)}>
-          <EditRounded fontSize="sm" />
+          {iconUi({ id: 'edit', size: 'sm' })}
         </IconButton>
       </Tooltip>
 

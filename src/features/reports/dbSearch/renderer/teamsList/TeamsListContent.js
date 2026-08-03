@@ -15,6 +15,8 @@ import {
 
 import ScoutPriority from '../../../../../ui/patterns/scout/ScoutPriority.js'
 import ExpectedLevelDeltaChip from '../../../../../ui/patterns/status/ExpectedLevelDeltaChip.js'
+import LeagueName from '../components/LeagueName.js'
+import TeamName from '../components/TeamName.js'
 import { teamsListSx as sx } from './teamsList.sx.js'
 
 const EXPECTED_LEVEL_LABELS = {
@@ -75,13 +77,24 @@ function normalizeSortValue(value) {
   return value
 }
 
+function resolveTeamSlot(row = {}) {
+  const directSlot = Number(row.teamSlot || row.birthTeamSlot)
+  if (Number.isFinite(directSlot) && directSlot > 0) return directSlot
+
+  const match = clean(row.teamName).match(/\s([2-3])$/)
+  return match ? Number(match[1]) : 1
+}
+
 function renderCell(row, column) {
   if (column.kind === 'team') {
     return (
       <Box sx={sx.teamCell}>
-        <Typography level='body-sm' fontWeight={600} noWrap>
-          {row.teamName || '—'}
-        </Typography>
+        <TeamName
+          value={row.teamName}
+          slot={resolveTeamSlot(row)}
+          fontSize={13}
+          nameSx={{ fontWeight: 650 }}
+        />
         {row.favorite ? (
           <Chip size='sm' variant='soft'>מועדף</Chip>
         ) : null}
@@ -91,6 +104,35 @@ function renderCell(row, column) {
 
   if (column.kind === 'rate') {
     return formatRate(resolveColumnValue(row, column))
+  }
+
+  if (column.kind === 'clubLevel') {
+    const clubLevel = Number(resolveColumnValue(row, column))
+
+    if (!Number.isFinite(clubLevel) || clubLevel <= 0) return 'ג€”'
+
+    return (
+      <Box
+        component='span'
+        title={`רמת מועדון ${clubLevel}`}
+        sx={sx.clubLevelChip}
+      >
+        {`C${clubLevel}`}
+      </Box>
+    )
+  }
+
+  if (column.kind === 'league') {
+    return (
+      <Box sx={sx.leagueCell}>
+        <LeagueName
+          value={row.leagueName}
+          level={row.leagueLevel}
+          showLevel={column.showLevel}
+          fontSize={12}
+        />
+      </Box>
+    )
   }
 
   if (column.kind === 'scoutPriority') {
@@ -124,6 +166,13 @@ function renderCell(row, column) {
 
 function resolveCellTitle(row, column) {
   if (column.kind === 'team') return row.teamName || ''
+  if (column.kind === 'league') return [
+    row.leagueName,
+    row.leagueLevel ? `רמה ${row.leagueLevel}` : '',
+  ].filter(Boolean).join(' · ')
+  if (column.kind === 'clubLevel') {
+    return row.clubLevel ? `רמת מועדון ${row.clubLevel}` : ''
+  }
   if (column.kind === 'scoutPriority' || column.kind === 'expectedLevelChange') return undefined
 
   const value = renderCell(row, column)
@@ -142,6 +191,7 @@ export default function TeamsListContent({
   const isPdf = presentation === 'pdf'
   const [filters, setFilters] = React.useState({
     search: '',
+    clubLevel: '',
     season: '',
     birthYear: '',
     league: '',
@@ -157,6 +207,7 @@ export default function TeamsListContent({
   React.useEffect(() => {
     setFilters({
       search: '',
+      clubLevel: '',
       season: '',
       birthYear: '',
       league: '',
@@ -187,6 +238,7 @@ export default function TeamsListContent({
           .includes(filters.search.toLocaleLowerCase('he'))
       ) return false
 
+      if (capabilities.clubLevel && filters.clubLevel && clean(row.clubLevel) !== filters.clubLevel) return false
       if (capabilities.season && filters.season && clean(row.seasonKey) !== filters.season) return false
       if (capabilities.birthYear && filters.birthYear && clean(row.birthYear) !== filters.birthYear) return false
       if (capabilities.league && filters.league && clean(row.leagueName) !== filters.league) return false
@@ -202,15 +254,25 @@ export default function TeamsListContent({
     })
 
     return [...filtered].sort((first, second) => {
-      const firstValue = normalizeSortValue(resolveColumnValue(first, sort))
-      const secondValue = normalizeSortValue(resolveColumnValue(second, sort))
-      const direction = sort.direction === 'desc' ? -1 : 1
+      const compareValues = (field, directionValue = 'asc') => {
+        const firstValue = normalizeSortValue(resolvePath(first, field))
+        const secondValue = normalizeSortValue(resolvePath(second, field))
+        const direction = directionValue === 'desc' ? -1 : 1
 
-      if (typeof firstValue === 'string' || typeof secondValue === 'string') {
-        return String(firstValue).localeCompare(String(secondValue), 'he') * direction
+        if (typeof firstValue === 'string' || typeof secondValue === 'string') {
+          return String(firstValue).localeCompare(String(secondValue), 'he') * direction
+        }
+
+        return (Number(firstValue) - Number(secondValue)) * direction
       }
 
-      return (Number(firstValue) - Number(secondValue)) * direction
+      const primary = compareValues(sort.field, sort.direction)
+      if (primary !== 0) return primary
+
+      const secondaryField = sort.secondaryField || (sort.field === 'teamName' ? '' : 'teamName')
+      return secondaryField
+        ? compareValues(secondaryField, sort.secondaryDirection || 'asc')
+        : 0
     })
   }, [capabilities, filters, model.rows, sort])
 
@@ -237,6 +299,15 @@ export default function TeamsListContent({
                   value={filters.search}
                   onChange={event => updateFilter('search', event.target.value)}
                   sx={sx.searchInput}
+                />
+              ) : null}
+
+              {capabilities.clubLevel ? (
+                <FilterSelect
+                  label='רמת מועדון'
+                  value={filters.clubLevel}
+                  options={options.clubLevels}
+                  onChange={value => updateFilter('clubLevel', value)}
                 />
               ) : null}
 
@@ -284,7 +355,9 @@ export default function TeamsListContent({
                   onChange={value => updateFilter('expectedLevelChange', value)}
                 />
               ) : null}
+            </Box>
 
+            <Box sx={sx.filtersMetaRow}>
               {capabilities.favorites ? (
                 <Checkbox
                   size='sm'
@@ -340,9 +413,11 @@ export default function TeamsListContent({
                       }
                     >
                       {column.label}
-                      {column.sortable && sort.field === column.field
-                        ? sort.direction === 'asc' ? ' ▲' : ' ▼'
-                        : null}
+                      {column.sortable && sort.field === column.field ? (
+                        <Box component='span' sx={sx.sortIndicator}>
+                          {sort.direction === 'asc' ? '▲' : '▼'}
+                        </Box>
+                      ) : null}
                     </th>
                   ))}
                 </tr>

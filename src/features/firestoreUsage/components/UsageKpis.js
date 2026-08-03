@@ -10,7 +10,8 @@ import {
 
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
-import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded'
+import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded'
+import SensorsRoundedIcon from '@mui/icons-material/SensorsRounded'
 import SyncRoundedIcon from '@mui/icons-material/SyncRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import UploadRoundedIcon from '@mui/icons-material/UploadRounded'
@@ -21,7 +22,8 @@ import { getUsageStatusColor } from '../sharedLogic/firestoreUsageThresholds.js'
 const KPI_ICONS = {
   reads: VisibilityRoundedIcon,
   writes: EditRoundedIcon,
-  logicalDeletes: DeleteSweepRoundedIcon,
+  documentDeletes: DeleteForeverRoundedIcon,
+  activeListeners: SensorsRoundedIcon,
   listenerUpdates: SyncRoundedIcon,
   estimatedReadKb: DownloadRoundedIcon,
   estimatedWriteKb: UploadRoundedIcon,
@@ -30,7 +32,8 @@ const KPI_ICONS = {
 const KPI_COLORS = {
   reads: 'primary',
   writes: 'success',
-  logicalDeletes: 'danger',
+  documentDeletes: 'danger',
+  activeListeners: 'warning',
   listenerUpdates: 'warning',
   estimatedReadKb: 'neutral',
   estimatedWriteKb: 'neutral',

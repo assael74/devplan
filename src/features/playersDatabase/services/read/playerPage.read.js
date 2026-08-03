@@ -1,8 +1,9 @@
 // features/playersDatabase/services/read/playerPage.read.js
 
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
+import { collection, doc } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedGetDoc, trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { adaptPlayerDocumentSeason } from '../../domain/index.js'
 import { cleanValue } from '../../model/value.model.js'
@@ -33,8 +34,14 @@ const buildFallbackPlayerDocument = async playerId => {
   const safePlayerId = cleanValue(playerId)
   if (!safePlayerId) return null
 
-  const snapshot = await getDocs(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.teams)
+  const snapshot = await trackedGetDocs(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
+    {
+      feature: 'playersDatabase',
+      action: 'player-fallback-teams-scan',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      meta: { playerId: safePlayerId },
+    }
   )
 
   const current = []
@@ -214,7 +221,11 @@ export async function readPlayerPageData({ playerId = '' } = {}) {
   return readWithDocumentCache({
     key: buildPlayerDocumentCacheKey(safePlayerId),
     read: async () => {
-      const snapshot = await getDoc(playerDocRef(safePlayerId))
+      const snapshot = await trackedGetDoc(playerDocRef(safePlayerId), {
+        feature: 'playersDatabase',
+        action: 'player-read',
+        collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      })
       const playerDocument = snapshot.exists()
         ? {
           id: snapshot.id,

@@ -105,6 +105,17 @@ export const CREATE_TYPES = {
     size: 'lg',
   },
 
+  privatePaymentAgreement: {
+    type: 'privatePaymentAgreement',
+    title: 'פתיחת תשלום חדש',
+    iconKey: 'addPayment',
+    entityType: 'player',
+    domainColor: '#0f766e',
+    form: null,
+    formLoader: () => import('../PrivatePaymentAgreementCreateForm.js'),
+    size: 'lg',
+  },
+
   scout: {
     type: 'scout',
     title: 'יצירת סקאוט',

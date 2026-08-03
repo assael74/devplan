@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/players/playerScoutProfiles.js
 
-import { runTransaction, serverTimestamp } from 'firebase/firestore'
+import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
@@ -17,6 +17,7 @@ import {
 } from './playerSeason.model.js'
 import { upsertProfiledPlayerDoc } from './playerDoc.upsert.js'
 
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export const clearExistingPlayerSeasonProfiles = async ({
   season = {},
   team = {},
@@ -30,7 +31,7 @@ export const clearExistingPlayerSeasonProfiles = async ({
 
   const ref = playerDocRef(playerDocumentId)
 
-  return runTransaction(db, async transaction => {
+  return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     if (!snapshot.exists()) {
       return {

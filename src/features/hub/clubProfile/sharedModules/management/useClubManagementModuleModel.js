@@ -29,7 +29,7 @@ export default function useClubManagementModuleModel({
 }) {
   const club = entity || null
 
-  const staffPool = useMemo(() => {
+  const rolesPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
   }, [context?.roles])
 
@@ -88,7 +88,7 @@ export default function useClubManagementModuleModel({
 
   return {
     club,
-    staffPool,
+    rolesPool,
     baseModel,
     draft,
     patch,

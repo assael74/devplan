@@ -4,7 +4,7 @@ import React from 'react'
 import { Box } from '@mui/joy'
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
-import ManagementStaffCard from '../../../../../ui/domains/staff/ManagementStaffCard.js'
+import RolesCard from '../../../../../ui/domains/roles/RolesCard.js'
 
 import {
   ManagementInfo,
@@ -14,7 +14,7 @@ import {
 } from '../../sharedUi/management/index.js'
 import {
   TeamTargetsReportButton,
-} from '../../../../reports/teamTargets/index.js'
+} from '../../../../reports/publicApi.js'
 
 import useTeamManagementModuleModel from './useTeamManagementModuleModel.js'
 import { teamManagementModuleSx } from './teamManagementModule.sx.js'
@@ -31,8 +31,8 @@ export default function TeamManagementModuleBase({
 
   toolbarWrapSx,
   emptyWrapSx,
-  staffWrapSx,
-  wrapStaff = false,
+  rolesWrapSx,
+  wrapRoles = false,
 }) {
   const model = useTeamManagementModuleModel({
     entity,
@@ -45,7 +45,7 @@ export default function TeamManagementModuleBase({
   const {
     team,
     activeTab,
-    staffPool,
+    rolesPool,
     baseModel,
     draft,
     clubName,
@@ -78,11 +78,11 @@ export default function TeamManagementModuleBase({
     )
   }
 
-  const staffCard = (
-    <ManagementStaffCard
+  const rolesCard = (
+    <RolesCard
       isMobile={isMobile}
       teamId={baseModel.id}
-      roles={staffPool}
+      roles={rolesPool}
       disabled={pending}
       compact={isMobile}
     />
@@ -139,12 +139,12 @@ export default function TeamManagementModuleBase({
         />
       )}
 
-      {activeTab.id === 'staff' && (
-        wrapStaff ? (
-          <Box sx={staffWrapSx || teamManagementModuleSx.desktopStaffWrap}>
-            {staffCard}
+      {activeTab.id === 'roles' && (
+        wrapRoles ? (
+          <Box sx={rolesWrapSx || teamManagementModuleSx.desktopRolesWrap}>
+            {rolesCard}
           </Box>
-        ) : staffCard
+        ) : rolesCard
       )}
     </Wrap>
   )

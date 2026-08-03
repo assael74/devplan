@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { Sheet, Box, Typography, Avatar, IconButton, Link } from '@mui/joy'
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+
+import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 
 import { sharedSx as sx } from './shared.sx'
 
@@ -55,6 +56,7 @@ export default function HeaderStripMobile({
   subtitle,
   avatarSrc,
   avatarAlt,
+  avatarContent,
   right,
   sticky = true,
   onAvatarClick,
@@ -77,7 +79,7 @@ export default function HeaderStripMobile({
               aria-label="חזרה"
               sx={{ flexShrink: 0 }}
             >
-              <ArrowBackRoundedIcon />
+              {iconUi({ id: 'back', size: 'sm' })}
             </IconButton>
 
             <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
@@ -134,7 +136,9 @@ export default function HeaderStripMobile({
                 src={avatarSrc || ''}
                 alt={avatarAlt || ''}
                 sx={{ width: 45, height: 45 }}
-              />
+              >
+                {!avatarSrc ? avatarContent : null}
+              </Avatar>
               <Box className="_hdrAvatarOverlay" sx={sx.avatarBox} />
             </Box>
           </Box>

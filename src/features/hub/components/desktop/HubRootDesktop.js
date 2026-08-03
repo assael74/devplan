@@ -4,35 +4,51 @@ import React from 'react'
 import { Sheet } from '@mui/joy'
 
 import HubToolbar from './navigation/HubToolbar'
-import PlayersLayout from './layout/PlayersLayout'
+import HubDesktopLayout from './layout/HubDesktopLayout.js'
 import HubFabMenu from '../../sharedProfile/HubFabMenu.js'
+import HubListPanel from '../lists/HubListPanel.js'
 
 export default function HubRootDesktop({
   mode,
+  title,
+  subtitle,
   onModeChange,
-  query,
-  onQueryChange,
   counts,
   tabsMeta,
   list,
-  preview,
+  control,
   handlers,
   context,
   taskContext,
   permissions,
 }) {
-  return (
-    <Sheet sx={{ height: '100%', bgcolor: 'background.body', px: 1 }}>
-      <HubToolbar
-        mode={mode}
-        onModeChange={onModeChange}
-        query={query}
-        onQueryChange={onQueryChange}
-        counts={counts}
-        tabsMeta={tabsMeta}
-      />
+  const listPanel = (
+    <HubListPanel
+      mode={mode}
+      onModeChange={onModeChange}
+      counts={counts}
+      tabsMeta={tabsMeta}
+    >
+      {list}
+    </HubListPanel>
+  )
 
-      <PlayersLayout list={list} preview={preview} />
+  return (
+    <Sheet
+      sx={{
+        height: '100%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: 0,
+        overflow: 'hidden',
+        bgcolor: 'background.body',
+        px: 1,
+      }}
+    >
+      <HubToolbar title={title} subtitle={subtitle} />
+
+      <HubDesktopLayout list={listPanel} control={control} />
 
       <HubFabMenu
         mode={mode}

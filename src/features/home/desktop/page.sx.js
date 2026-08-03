@@ -75,8 +75,8 @@ export const pageSx = {
   },
 
   loadBox: {
-    height: 'calc(100vh - 110px)',
-    minHeight: 'calc(100vh - 110px)',
+    height: '100%',
+    minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 1.2,

@@ -1,3 +1,4 @@
+import { getFirestoreUsageCoverage } from '../../../services/firestore/usage/index.js'
 import {
   FIRESTORE_FREE_TIER_LIMITS,
   FIRESTORE_USAGE_THRESHOLDS,
@@ -5,32 +6,40 @@ import {
 } from './firestoreUsageThresholds.js'
 
 const EMPTY_BUCKET = {
+  calls: 0,
+  failures: 0,
+  durationMs: 0,
   reads: 0,
   writes: 0,
   documentDeletes: 0,
   logicalDeletes: 0,
   listeners: 0,
+  activeListeners: 0,
+  listenerCloses: 0,
+  listenerInitials: 0,
   listenerUpdates: 0,
   estimatedReadKb: 0,
   estimatedWriteKb: 0,
 }
 
 const toNumber = value => Number(value || 0)
-
-const roundKb = value =>
-  Number(toNumber(value).toFixed(2))
+const roundKb = value => Number(toNumber(value).toFixed(2))
 
 const normalizeBucket = bucket => ({
   ...EMPTY_BUCKET,
   ...(bucket || {}),
-
+  calls: toNumber(bucket?.calls),
+  failures: toNumber(bucket?.failures),
+  durationMs: toNumber(bucket?.durationMs),
   reads: toNumber(bucket?.reads),
   writes: toNumber(bucket?.writes),
   documentDeletes: toNumber(bucket?.documentDeletes),
   logicalDeletes: toNumber(bucket?.logicalDeletes),
   listeners: toNumber(bucket?.listeners),
+  activeListeners: toNumber(bucket?.activeListeners),
+  listenerCloses: toNumber(bucket?.listenerCloses),
+  listenerInitials: toNumber(bucket?.listenerInitials),
   listenerUpdates: toNumber(bucket?.listenerUpdates),
-
   estimatedReadKb: roundKb(bucket?.estimatedReadKb),
   estimatedWriteKb: roundKb(bucket?.estimatedWriteKb),
 })
@@ -39,7 +48,6 @@ const bucketTotalOperations = bucket =>
   toNumber(bucket.reads) +
   toNumber(bucket.writes) +
   toNumber(bucket.documentDeletes) +
-  toNumber(bucket.logicalDeletes) +
   toNumber(bucket.listenerUpdates)
 
 const bucketTotalKb = bucket =>
@@ -47,84 +55,6 @@ const bucketTotalKb = bucket =>
     toNumber(bucket.estimatedReadKb) +
       toNumber(bucket.estimatedWriteKb)
   )
-
-const addEntryToBucket = (bucket, entry) => {
-  if (entry.operation === 'read') {
-    bucket.reads += toNumber(entry.readsCount) || toNumber(entry.docsCount)
-    bucket.estimatedReadKb += toNumber(entry.estimatedKb)
-  }
-
-  if (entry.operation === 'write') {
-    bucket.writes += toNumber(entry.writesCount) || 1
-    bucket.estimatedWriteKb += toNumber(entry.estimatedKb)
-  }
-
-  if (entry.operation === 'document-delete') {
-    bucket.documentDeletes += toNumber(entry.documentDeletesCount) || 1
-  }
-
-  if (entry.operation === 'logical-delete') {
-    bucket.logicalDeletes += toNumber(entry.logicalDeletesCount) || 1
-  }
-
-  if (entry.operation === 'transaction') {
-    bucket.reads += toNumber(entry.readsCount)
-    bucket.writes += toNumber(entry.writesCount)
-    bucket.documentDeletes += toNumber(entry.documentDeletesCount)
-    bucket.logicalDeletes += toNumber(entry.logicalDeletesCount)
-    bucket.estimatedReadKb += toNumber(entry.estimatedReadKb)
-    bucket.estimatedWriteKb += toNumber(entry.estimatedWriteKb)
-  }
-
-  if (entry.operation === 'listener-open') {
-    bucket.listeners += 1
-  }
-
-  if (entry.operation === 'listener-update') {
-    bucket.listenerUpdates += 1
-    bucket.reads += toNumber(entry.readsCount) || toNumber(entry.docsCount)
-    bucket.estimatedReadKb += toNumber(entry.estimatedKb)
-  }
-}
-
-const ensureRecordBucket = (record, key) => {
-  const cleanKey = key || 'unknown'
-
-  if (!record[cleanKey]) {
-    record[cleanKey] = { ...EMPTY_BUCKET }
-  }
-
-  return record[cleanKey]
-}
-
-const addEntryToRecord = (record, key, entry) => {
-  if (!key) return
-  addEntryToBucket(ensureRecordBucket(record, key), entry)
-}
-
-const buildRecordsFromEntries = entries => {
-  const totals = { ...EMPTY_BUCKET }
-  const byCollection = {}
-  const byShortKey = {}
-  const byFeature = {}
-  const byAction = {}
-
-  entries.forEach(entry => {
-    addEntryToBucket(totals, entry)
-    addEntryToRecord(byCollection, entry.collection || 'unknown', entry)
-    addEntryToRecord(byShortKey, entry.shortKey, entry)
-    addEntryToRecord(byFeature, entry.feature || 'unknown', entry)
-    addEntryToRecord(byAction, entry.action || 'unknown', entry)
-  })
-
-  return {
-    totals,
-    byCollection,
-    byShortKey,
-    byFeature,
-    byAction,
-  }
-}
 
 const mapBucketRecord = record =>
   Object.entries(record || {}).map(([key, rawBucket]) => {
@@ -134,32 +64,56 @@ const mapBucketRecord = record =>
       key,
       name: key,
       ...bucket,
-
       totalOperations: bucketTotalOperations(bucket),
       totalEstimatedKb: bucketTotalKb(bucket),
     }
   })
 
-const sortRows = (
-  rows,
-  field = 'totalEstimatedKb'
-) =>
-  [...rows].sort((a, b) => {
-    const fieldDiff =
-      toNumber(b?.[field]) -
-      toNumber(a?.[field])
+const mapProcessRecord = record =>
+  Object.entries(record || {}).map(([key, rawBucket]) => {
+    const [feature, action, collection] = String(key).split('::')
+    const bucket = normalizeBucket(rawBucket)
+    const calls = Math.max(1, bucket.calls)
 
+    return {
+      key,
+      name: action || 'unknown',
+      feature: feature || 'unknown',
+      action: action || 'unknown',
+      collection: collection || 'unknown',
+      ...bucket,
+      totalOperations: bucketTotalOperations(bucket),
+      totalEstimatedKb: bucketTotalKb(bucket),
+      averageReads: Number((bucket.reads / calls).toFixed(2)),
+      averageWrites: Number((bucket.writes / calls).toFixed(2)),
+      averageDurationMs: Number((bucket.durationMs / calls).toFixed(2)),
+    }
+  })
+
+const resolveProcessRisk = row => {
+  if (row.failures > 0 || row.averageReads >= 500 || row.writes >= 1000) {
+    return 'danger'
+  }
+
+  if (row.averageReads >= 100 || row.writes >= 250 || row.calls >= 100) {
+    return 'warning'
+  }
+
+  return 'success'
+}
+
+const sortRows = (rows, field = 'totalEstimatedKb') =>
+  [...rows].sort((a, b) => {
+    const fieldDiff = toNumber(b?.[field]) - toNumber(a?.[field])
     if (fieldDiff !== 0) return fieldDiff
 
-    return String(a?.name || '').localeCompare(
-      String(b?.name || '')
-    )
+    return String(a?.name || '').localeCompare(String(b?.name || ''))
   })
 
 const buildKpis = totals => [
   {
     id: 'reads',
-    label: 'Reads בסשן',
+    label: 'Tracked Reads בסשן',
     value: totals.reads,
     format: 'number',
     status: resolveUsageStatus(
@@ -169,7 +123,7 @@ const buildKpis = totals => [
   },
   {
     id: 'writes',
-    label: 'Writes בסשן',
+    label: 'Tracked Writes בסשן',
     value: totals.writes,
     format: 'number',
     status: resolveUsageStatus(
@@ -178,198 +132,160 @@ const buildKpis = totals => [
     ),
   },
   {
-    id: 'logicalDeletes',
-    label: 'מחיקות לוגיות',
-    value: totals.logicalDeletes,
+    id: 'documentDeletes',
+    label: 'Document Deletes',
+    value: totals.documentDeletes,
     format: 'number',
     status: resolveUsageStatus(
-      totals.logicalDeletes,
-      FIRESTORE_USAGE_THRESHOLDS.logicalDeletes
+      totals.documentDeletes,
+      FIRESTORE_USAGE_THRESHOLDS.documentDeletes
     ),
   },
   {
-    id: 'listenerUpdates',
-    label: 'Listener Updates',
-    value: totals.listenerUpdates,
+    id: 'activeListeners',
+    label: 'Listeners פעילים כרגע',
+    value: totals.activeListeners,
     format: 'number',
     status: resolveUsageStatus(
-      totals.listenerUpdates,
-      FIRESTORE_USAGE_THRESHOLDS.listenerUpdates
-    ),
-  },
-  {
-    id: 'estimatedReadKb',
-    label: 'Estimated Read KB',
-    value: totals.estimatedReadKb,
-    format: 'kb',
-    status: resolveUsageStatus(
-      totals.estimatedReadKb,
-      FIRESTORE_USAGE_THRESHOLDS.estimatedReadKb
-    ),
-  },
-  {
-    id: 'estimatedWriteKb',
-    label: 'Estimated Write KB',
-    value: totals.estimatedWriteKb,
-    format: 'kb',
-    status: resolveUsageStatus(
-      totals.estimatedWriteKb,
-      FIRESTORE_USAGE_THRESHOLDS.estimatedWriteKb
+      totals.activeListeners,
+      FIRESTORE_USAGE_THRESHOLDS.activeListeners
     ),
   },
 ]
 
 const buildExpensiveActions = actions =>
-  (Array.isArray(actions) ? actions : []).map(
-    (action, index) => ({
-      id:
-        action?.createdAt ||
-        `${action?.action || 'action'}-${index}`,
-
-      collection: action?.collection || 'unknown',
-      shortKey: action?.shortKey || null,
-      feature: action?.feature || 'unknown',
-      action: action?.action || 'unknown',
-      operation: action?.operation || 'unknown',
-
-      reads:
-        toNumber(action?.readsCount) ||
-        toNumber(action?.docsCount),
-
-      writes: toNumber(action?.writesCount),
-
-      logicalDeletes: toNumber(
-        action?.logicalDeletesCount
-      ),
-
-      documentDeletes: toNumber(
-        action?.documentDeletesCount
-      ),
-
-      estimatedReadKb: roundKb(
-        action?.estimatedReadKb
-      ),
-
-      estimatedWriteKb: roundKb(
-        action?.estimatedWriteKb
-      ),
-
-      totalEstimatedKb: roundKb(
-        action?.totalEstimatedKb
-      ),
-
-      createdAt: action?.createdAt || null,
-      meta: action?.meta || null,
-    })
-  )
+  (Array.isArray(actions) ? actions : []).map((action, index) => ({
+    id: action?.id || action?.createdAt || `${action?.action || 'action'}-${index}`,
+    collection: action?.collection || 'unknown',
+    shortKey: action?.shortKey || null,
+    feature: action?.feature || 'unknown',
+    action: action?.action || 'unknown',
+    operation: action?.operation || 'unknown',
+    reads: toNumber(action?.readsCount) || toNumber(action?.docsCount),
+    writes: toNumber(action?.writesCount),
+    logicalDeletes: toNumber(action?.logicalDeletesCount),
+    documentDeletes: toNumber(action?.documentDeletesCount),
+    estimatedReadKb: roundKb(action?.estimatedReadKb),
+    estimatedWriteKb: roundKb(action?.estimatedWriteKb),
+    totalEstimatedKb: roundKb(action?.totalEstimatedKb),
+    createdAt: action?.createdAt || null,
+    meta: action?.meta || null,
+  }))
 
 const buildRecentEntries = entries =>
-  (Array.isArray(entries) ? entries : []).map(
-    (entry, index) => ({
-      id: entry?.createdAt || `${entry?.action || 'entry'}-${index}`,
-      createdAt: entry?.createdAt || null,
-      collection: entry?.collection || 'unknown',
-      shortKey: entry?.shortKey || null,
-      feature: entry?.feature || 'unknown',
-      action: entry?.action || 'unknown',
-      operation: entry?.operation || 'unknown',
-      reads: toNumber(entry?.readsCount) || toNumber(entry?.docsCount),
-      writes: toNumber(entry?.writesCount),
-      logicalDeletes: toNumber(entry?.logicalDeletesCount),
-      documentDeletes: toNumber(entry?.documentDeletesCount),
-      estimatedReadKb: roundKb(entry?.estimatedReadKb || entry?.estimatedKb),
-      estimatedWriteKb: roundKb(entry?.estimatedWriteKb),
-      totalEstimatedKb: roundKb(
-        toNumber(entry?.estimatedKb) +
-          toNumber(entry?.estimatedReadKb) +
-          toNumber(entry?.estimatedWriteKb)
-      ),
-      meta: entry?.meta || null,
-    })
-  )
+  (Array.isArray(entries) ? entries : []).map((entry, index) => ({
+    id: entry?.id || entry?.createdAt || `${entry?.action || 'entry'}-${index}`,
+    createdAt: entry?.createdAt || null,
+    collection: entry?.collection || 'unknown',
+    shortKey: entry?.shortKey || null,
+    feature: entry?.feature || 'unknown',
+    action: entry?.action || 'unknown',
+    operation: entry?.operation || 'unknown',
+    displayOperation:
+      entry?.operation === 'listener-update' && entry?.listenerPhase === 'initial'
+        ? 'listener-initial'
+        : entry?.operation || 'unknown',
+    operationSubtype: entry?.operationSubtype || null,
+    listenerId: entry?.listenerId || null,
+    listenerPhase: entry?.listenerPhase || null,
+    fromCache: Boolean(entry?.fromCache),
+    status: entry?.status || 'success',
+    reads: toNumber(entry?.readsCount) || toNumber(entry?.docsCount),
+    writes: toNumber(entry?.writesCount),
+    logicalDeletes: toNumber(entry?.logicalDeletesCount),
+    documentDeletes: toNumber(entry?.documentDeletesCount),
+    estimatedReadKb: roundKb(entry?.estimatedReadKb || entry?.estimatedKb),
+    estimatedWriteKb: roundKb(entry?.estimatedWriteKb),
+    totalEstimatedKb: roundKb(
+      toNumber(entry?.estimatedKb) +
+        toNumber(entry?.estimatedReadKb) +
+        toNumber(entry?.estimatedWriteKb)
+    ),
+    meta: entry?.meta || null,
+  }))
 
-const buildFilterOptions = (entries, snapshot) => {
-  const featureSet = new Set()
-
-  if (Array.isArray(entries)) {
-    entries.forEach(entry => {
-      if (entry?.feature) featureSet.add(entry.feature)
-    })
-  }
-
-  Object.keys(snapshot?.byFeature || {}).forEach(feature =>
-    featureSet.add(feature)
-  )
-
-  return {
-    features: [
-      { id: 'all', label: 'הכל' },
-      ...Array.from(featureSet)
-        .sort((a, b) => String(a).localeCompare(String(b)))
-        .map(feature => ({
-          id: feature,
-          label: feature,
-        })),
-    ],
-  }
-}
+const buildFilterOptions = snapshot => ({
+  features: [
+    { id: 'all', label: 'הכל' },
+    ...Object.keys(snapshot?.byFeature || {})
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(feature => ({ id: feature, label: feature })),
+  ],
+})
 
 const buildBillingLimits = totals => {
-  const dailyReads = FIRESTORE_FREE_TIER_LIMITS.reads.limit
-  const dailyWrites = FIRESTORE_FREE_TIER_LIMITS.writes.limit
-  const dailyDeletes = FIRESTORE_FREE_TIER_LIMITS.documentDeletes.limit
-
   const rows = [
     {
       id: 'reads',
-      label: 'Reads חינם ביום',
+      label: 'Reads שנמדדו בסשן',
       value: toNumber(totals.reads),
-      limit: dailyReads,
+      limit: FIRESTORE_FREE_TIER_LIMITS.reads.limit,
       unit: 'reads',
       period: 'day',
     },
     {
       id: 'writes',
-      label: 'Writes חינם ביום',
+      label: 'Writes שנמדדו בסשן',
       value: toNumber(totals.writes),
-      limit: dailyWrites,
+      limit: FIRESTORE_FREE_TIER_LIMITS.writes.limit,
       unit: 'writes',
       period: 'day',
     },
     {
       id: 'deletes',
-      label: 'Deletes חינם ביום',
-      value:
-        toNumber(totals.documentDeletes) +
-        toNumber(totals.logicalDeletes),
-      limit: dailyDeletes,
+      label: 'Deletes שנמדדו בסשן',
+      value: toNumber(totals.documentDeletes),
+      limit: FIRESTORE_FREE_TIER_LIMITS.documentDeletes.limit,
       unit: 'deletes',
       period: 'day',
     },
   ].map(row => ({
     ...row,
-    percent: row.limit
-      ? Math.min(100, (row.value / row.limit) * 100)
-      : 0,
+    percent: row.limit ? Math.min(100, (row.value / row.limit) * 100) : 0,
     remaining: Math.max(0, row.limit - row.value),
     status: resolveUsageStatus(row.value, {
-      warning: row.limit * 0.7,
-      danger: row.limit * 0.9,
+      warning: row.limit * 0.5,
+      danger: row.limit * 0.75,
     }),
   }))
 
   return {
     rows,
-    sourceUrl: 'https://firebase.google.com/docs/firestore/quotas',
+    sourceUrl: 'https://firebase.google.com/docs/firestore/pricing',
+    title: 'השוואת הסשן למכסת ייחוס',
+    subtitle: 'App instrumentation — לא נתוני Billing רשמיים',
     note:
-      'Free tier: 50K reads/day, 20K writes/day, 20K deletes/day, 1 GiB stored, 10 GiB outbound transfer/month. Quotas reset around midnight Pacific time.',
+      'המספרים מייצגים רק פעולות שנמדדו בטאב הנוכחי. לבדיקת חיוב בפועל יש להשתמש ב-Firebase Usage וב-Google Cloud Billing.',
   }
 }
 
-export function buildFirestoreUsageViewModel(
-  snapshot,
-  options = {}
-) {
+const resolveSource = (snapshot, selectedFeature) => {
+  if (selectedFeature === 'all') {
+    return {
+      totals: snapshot?.totals,
+      byCollection: snapshot?.byCollection,
+      byShortKey: snapshot?.byShortKey,
+      byFeature: snapshot?.byFeature,
+      byAction: snapshot?.byAction,
+      byProcess: snapshot?.byProcess,
+    }
+  }
+
+  const details = snapshot?.byFeatureDetails?.[selectedFeature]
+
+  return {
+    totals: details?.totals || snapshot?.byFeature?.[selectedFeature],
+    byCollection: details?.byCollection || {},
+    byShortKey: details?.byShortKey || {},
+    byFeature: {
+      [selectedFeature]: details?.totals || snapshot?.byFeature?.[selectedFeature],
+    },
+    byAction: details?.byAction || {},
+    byProcess: details?.byProcess || {},
+  }
+}
+
+export function buildFirestoreUsageViewModel(snapshot, options = {}) {
   const selectedFeature = options.feature || 'all'
   const allEntries = Array.isArray(snapshot?.recentEntries)
     ? snapshot.recentEntries
@@ -379,46 +295,18 @@ export function buildFirestoreUsageViewModel(
       ? allEntries
       : allEntries.filter(entry => entry?.feature === selectedFeature)
 
-  const hasEntrySource = allEntries.length > 0
-  const source = hasEntrySource
-    ? buildRecordsFromEntries(filteredEntries)
-    : {
-        totals:
-          selectedFeature === 'all'
-            ? snapshot?.totals
-            : snapshot?.byFeature?.[selectedFeature],
-        byCollection:
-          selectedFeature === 'all'
-            ? snapshot?.byCollection
-            : {},
-        byShortKey:
-          selectedFeature === 'all'
-            ? snapshot?.byShortKey
-            : {},
-        byFeature:
-          selectedFeature === 'all'
-            ? snapshot?.byFeature
-            : {
-                [selectedFeature]: snapshot?.byFeature?.[selectedFeature],
-              },
-        byAction:
-          selectedFeature === 'all'
-            ? snapshot?.byAction
-            : {},
-      }
-
+  const source = resolveSource(snapshot, selectedFeature)
   const totals = normalizeBucket(source.totals)
-  const collections = sortRows(
-    mapBucketRecord(source.byCollection)
-  )
-  const shortKeys = sortRows(
-    mapBucketRecord(source.byShortKey)
-  )
-  const features = sortRows(
-    mapBucketRecord(source.byFeature)
-  )
-  const actions = sortRows(
-    mapBucketRecord(source.byAction)
+  const collections = sortRows(mapBucketRecord(source.byCollection))
+  const shortKeys = sortRows(mapBucketRecord(source.byShortKey))
+  const features = sortRows(mapBucketRecord(source.byFeature))
+  const actions = sortRows(mapBucketRecord(source.byAction))
+  const processes = sortRows(
+    mapProcessRecord(source.byProcess).map(row => ({
+      ...row,
+      risk: resolveProcessRisk(row),
+    })),
+    'totalOperations'
   )
   const expensiveActions = buildExpensiveActions(
     selectedFeature === 'all'
@@ -430,36 +318,67 @@ export function buildFirestoreUsageViewModel(
   const recentEntries = buildRecentEntries(filteredEntries)
 
   return {
+    coverage: getFirestoreUsageCoverage(),
     startedAt: snapshot?.startedAt || null,
     updatedAt: snapshot?.updatedAt || null,
     selectedFeature,
-
     totals,
     kpis: buildKpis(totals),
     billingLimits: buildBillingLimits(totals),
-    filterOptions: buildFilterOptions(allEntries, snapshot),
-
+    payloadSummary: {
+      estimatedReadKb: totals.estimatedReadKb,
+      estimatedWriteKb: totals.estimatedWriteKb,
+      totalEstimatedKb: bucketTotalKb(totals),
+    },
+    filterOptions: buildFilterOptions(snapshot),
     collections,
     shortKeys,
     features,
     actions,
+    processes,
     expensiveActions,
     recentEntries,
-
+    activeListeners: Object.values(snapshot?.activeListenerIds || {}),
+    officialSources: {
+      billingStatus: 'not-connected',
+      plan: 'Blaze',
+      links: [
+        {
+          id: 'firestore-usage',
+          label: 'Firebase Usage',
+          href: 'https://console.firebase.google.com/',
+        },
+        {
+          id: 'cloud-billing',
+          label: 'Google Cloud Billing',
+          href: 'https://console.cloud.google.com/billing',
+        },
+        {
+          id: 'firestore-monitoring',
+          label: 'Firestore Monitoring',
+          href: 'https://console.cloud.google.com/firestore/databases',
+        },
+      ],
+    },
     hasActivity:
-      bucketTotalOperations(totals) > 0 ||
-      bucketTotalKb(totals) > 0,
-
+      bucketTotalOperations(totals) > 0 || bucketTotalKb(totals) > 0,
     summary: {
       collectionsCount: collections.length,
       featuresCount: features.length,
       actionsCount: actions.length,
-      expensiveActionsCount:
-        expensiveActions.length,
-      totalOperations:
-        bucketTotalOperations(totals),
-      totalEstimatedKb:
-        bucketTotalKb(totals),
+      processesCount: processes.length,
+      failuresCount: totals.failures,
+      expensiveActionsCount: expensiveActions.length,
+      totalOperations: bucketTotalOperations(totals),
+      totalEstimatedKb: bucketTotalKb(totals),
+      activeListeners: totals.activeListeners,
+      listenerOpens: totals.listeners,
+      listenerCloses: totals.listenerCloses,
+      listenerInitials: totals.listenerInitials,
+      listenerUpdates: totals.listenerUpdates,
+      logicalDeletes: totals.logicalDeletes,
+      recentEntriesRetained: allEntries.length,
+      recentEntriesAreSample: allEntries.length >= 200,
     },
   }
 }

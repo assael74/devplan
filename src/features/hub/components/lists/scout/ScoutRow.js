@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import { listSx as sx } from '../list.sx.js'
@@ -56,13 +55,15 @@ export default function ScoutRow({
         <IconButton
           size="sm"
           variant="plain"
+          className="hub-row-action"
+          sx={sx.actionButton(selected)}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation()
             onOpenActions(scout)
           }}
         >
-          <MoreVertRoundedIcon />
+          {iconUi({ id: 'more', size: 'small' })}
         </IconButton>
       )}
     </Box>

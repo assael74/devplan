@@ -4,6 +4,7 @@ import { Box, IconButton } from '@mui/joy'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 
 import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
+import LeagueName from '../../../components/leagues/LeagueName.js'
 import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
@@ -19,6 +20,12 @@ import {
 
 const playerColumnWidth = key => buildTableColumnWidth(PLAYER_SEARCH_TABLE_WIDTHS[key])
 const teamColumnWidth = key => buildTableColumnWidth(TEAM_SEARCH_TABLE_WIDTHS[key])
+
+const searchResultLinkSx = {
+  '& [data-link-indicator]': {
+    display: 'none',
+  },
+}
 
 const PROFILE_OPTION_BY_ID = buildPlayerScoutProfileOptions().reduce((map, option) => {
   map[option.value] = option
@@ -93,6 +100,7 @@ export function buildPlayerSearchColumns({ onFavoriteToggle } = {}) {
       key: 'playerName',
       label: 'שחקן',
       sx: { ...sx.playerColumn, ...playerColumnWidth('playerName') },
+      linkSx: searchResultLinkSx,
       getHref: row => row.playerUrl,
       getLinkAriaLabel: row => `פתיחת קישור השחקן ${row.playerName || ''}`,
     },
@@ -100,7 +108,19 @@ export function buildPlayerSearchColumns({ onFavoriteToggle } = {}) {
     { key: 'ageGroupLabel', label: 'קבוצת גיל', sx: { ...sx.ageGroupColumn, ...playerColumnWidth('ageGroupLabel') } },
     { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...playerColumnWidth('seasonKey') } },
     { key: 'teamName', label: 'קבוצה', sx: { ...sx.teamColumn, ...playerColumnWidth('teamName') } },
-    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...playerColumnWidth('leagueName') } },
+    {
+      key: 'leagueName',
+      label: 'ליגה',
+      sx: { ...sx.leagueColumn, ...playerColumnWidth('leagueName') },
+      render: row => (
+        <LeagueName
+          value={row.leagueName}
+          level={row.leagueLevel}
+          showLevel
+        />
+      ),
+      getSortValue: row => row.leagueName || '',
+    },
     { key: 'minutes', label: 'דקות', sx: { ...sx.numberColumn, ...playerColumnWidth('minutes') } },
     {
       key: 'startsAppearances', label: 'הרכב',
@@ -163,13 +183,26 @@ export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
       key: 'teamName',
       label: 'קבוצה',
       sx: { ...sx.teamColumn, ...teamColumnWidth('teamName') },
+      linkSx: searchResultLinkSx,
       getHref: row => row.teamUrl,
       getLinkAriaLabel: row => `פתיחת קישור הקבוצה ${row.teamName || ''}`,
     },
     { key: 'birthYear', label: 'שנתון', sx: { ...sx.yearColumn, ...teamColumnWidth('birthYear') } },
     { key: 'ageGroupLabel', label: 'קבוצת גיל', sx: { ...sx.ageGroupColumn, ...teamColumnWidth('ageGroupLabel') } },
     { key: 'seasonKey', label: 'עונה', sx: { ...sx.seasonColumn, ...teamColumnWidth('seasonKey') } },
-    { key: 'leagueName', label: 'ליגה', sx: { ...sx.leagueColumn, ...teamColumnWidth('leagueName') } },
+    {
+      key: 'leagueName',
+      label: 'ליגה',
+      sx: { ...sx.leagueColumn, ...teamColumnWidth('leagueName') },
+      render: row => (
+        <LeagueName
+          value={row.leagueName}
+          level={row.leagueLevel}
+          showLevel
+        />
+      ),
+      getSortValue: row => row.leagueName || '',
+    },
     buildTableRankColumn({
       sx: { ...sx.numberColumn, ...teamColumnWidth('tableRank') },
     }),

@@ -1,4 +1,5 @@
-export { default as VideoAnalysisRow } from './videoRow/VideoAnalysisRow.js'
+export { default as VideoAnalysisCard } from './videoCard/VideoAnalysisCard.js'
+export { default as VideoAnalysisMiniCard } from './videoCard/VideoAnalysisMiniCard.js'
 
 export {
   getVideoAssignmentModel,

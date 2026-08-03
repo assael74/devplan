@@ -2,8 +2,8 @@
 export const hubSx = {
   // TagsManagementMobile
   root: {
-    minHeight: '100dvh',
-    height: '100dvh',
+    minHeight: 0,
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     bgcolor: 'background.body',

@@ -5,8 +5,8 @@ import { devPlanColors } from '../../../../ui/core/theme/Colors.js'
 export const pageSx = {
   page: {
     width: '100%',
-    height: 'calc(100dvh - 64px)',
-    maxHeight: 'calc(100dvh - 64px)',
+    height: '100%',
+    maxHeight: '100%',
     minHeight: 0,
     display: 'grid',
     gridTemplateColumns: '300px minmax(0, 1fr)',

@@ -1,8 +1,7 @@
 // src/features/reports/service/firestore/publishPublicReport.firestore.js
 
-import { runTransaction } from 'firebase/firestore'
-
 import { db } from '../../../../services/firebase/firebase.js'
+import { trackedRunTransaction } from '../../../../services/firestore/usage/index.js'
 import { PUBLIC_REPORT_STATUS } from '../../reports.constants.js'
 import { buildPublicReportId, buildPublicReportVersionId } from '../publicReport.id.js'
 import {
@@ -120,7 +119,7 @@ export async function publishPublicReport(rawInput) {
 
   const reportRef = publicReportRef(reportId)
 
-  const result = await runTransaction(db, async transaction => {
+  const result = await trackedRunTransaction(db, async transaction => {
     const indexRef = getPublicReportIndexRef(input.reportType)
     const reportSnapshot = await transaction.get(reportRef)
     const indexSnapshot = await transaction.get(indexRef)
@@ -208,6 +207,11 @@ export async function publishPublicReport(rawInput) {
       versionNumber: nextVersionNumber,
       archived: exists,
     }
+  }, {
+    feature: 'reports',
+    action: 'publish-public-report',
+    collection: 'publicReports',
+    operationSubtype: 'publish-report-transaction',
   })
 
   return {

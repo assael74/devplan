@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { GAMES_DELETE_SCOPE } from '../../../../../bulkActions/games/delete/index.js'
+import { GAMES_DELETE_SCOPE } from '../../../../../bulkActions/publicApi.js'
 import { deleteEntity, unwrapActionResult } from '../../../../application/index.js'
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 

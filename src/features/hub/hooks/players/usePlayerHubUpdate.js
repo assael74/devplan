@@ -7,6 +7,16 @@ function isPrivatePlayer(player = {}) {
   return player?.playerSource === 'private' || player?.isPrivatePlayer === true
 }
 
+function resolvePlayerId(player = {}) {
+  return (
+    player?.id ||
+    player?.playerId ||
+    player?.entityId ||
+    player?.docId ||
+    null
+  )
+}
+
 function buildPlayerName(player = {}) {
   return (
     [player?.playerFirstName, player?.playerLastName].filter(Boolean).join(' ') ||
@@ -17,7 +27,7 @@ function buildPlayerName(player = {}) {
 }
 
 export function usePlayerHubUpdate(active) {
-  const activeId = active?.id || null
+  const activeId = resolvePlayerId(active)
   const activeName = useMemo(() => buildPlayerName(active), [active])
   const activeIsPrivate = useMemo(() => isPrivatePlayer(active), [active])
 
@@ -39,7 +49,12 @@ export function usePlayerHubUpdate(active) {
 
   const run = (patch = {}, meta = {}) => {
     const targetPlayer = meta?.player || active || null
-    const targetId = meta?.playerId || meta?.id || targetPlayer?.id || activeId || null
+    const targetId =
+      meta?.id ||
+      meta?.playerId ||
+      resolvePlayerId(targetPlayer) ||
+      activeId ||
+      null
 
     const targetIsPrivate =
       meta?.routerEntityType === 'privates' ||

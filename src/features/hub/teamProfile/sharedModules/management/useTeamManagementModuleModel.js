@@ -25,7 +25,7 @@ export default function useTeamManagementModuleModel({
 
   const [activeTab, setActiveTab] = useState(TABS[0])
 
-  const staffPool = useMemo(() => {
+  const rolesPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
   }, [context?.roles])
 
@@ -95,7 +95,7 @@ export default function useTeamManagementModuleModel({
   return {
     team,
     activeTab,
-    staffPool,
+    rolesPool,
     baseModel,
     draft,
     clubName,

@@ -9,6 +9,7 @@ export default function PriceField({
   error = false,
   disabled = false,
   size = 'sm',
+  max = null,
 }) {
 
   return (
@@ -22,7 +23,7 @@ export default function PriceField({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0 הכנס סכום"
         startDecorator="₪"
-        slotProps={{ input: { min: 0, max: 20 } }}
+        slotProps={{ input: { min: 0, ...(max != null ? { max } : {}) } }}
         step={1}
         disabled={disabled}
       />

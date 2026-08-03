@@ -12,6 +12,17 @@ export const PLAYER_PROJECT_TABS = [
   { key: 'payments', label: 'תשלומים', iconKey: 'payments', color: 'project' },
 ]
 
+export const PRIVATE_PLAYER_TABS = [
+  { key: 'info', label: 'מידע', iconKey: 'info', color: 'player' },
+  { key: 'abilities', label: 'יכולות', iconKey: 'abilities', color: 'player' },
+  { key: 'games', label: 'משחקים', iconKey: 'games', color: 'team' },
+  { key: 'performance', label: 'ביצועים', iconKey: 'performance', color: 'team' },
+  { key: 'meetings', label: 'מפגשים', iconKey: 'meetings', color: 'training' },
+  { key: 'videoAnalysis', label: 'ניתוחי וידאו', iconKey: 'videos', color: 'videoAnalysis' },
+  { key: 'payments', label: 'תשלומים', iconKey: 'payments', color: 'project' },
+  { key: 'activity', label: 'עדכונים ומעקב', iconKey: 'tasks', color: 'task' },
+]
+
 export const PLAYER_TABS = [
   { key: 'info', label: 'מידע', iconKey: 'info', color: 'player' },
   { key: 'abilities', label: 'יכולות', iconKey: 'abilities', color: 'player' },
@@ -22,9 +33,15 @@ export const PLAYER_TABS = [
 
 export const DEFAULT_TAB = 'info'
 
-export function getTabFromUrl({ tabKeyParam, searchParams, isProject }) {
+export function getTabFromUrl({ tabKeyParam, searchParams, isProject, isPrivatePlayer }) {
+  const tabs = isProject
+    ? PLAYER_PROJECT_TABS
+    : isPrivatePlayer
+      ? PRIVATE_PLAYER_TABS
+      : PLAYER_TABS
+
   return getTabGeneric({
-    tabs: isProject ? PLAYER_PROJECT_TABS : PLAYER_TABS,
+    tabs,
     defaultTab: DEFAULT_TAB,
     tabKeyParam,
     searchParams,
