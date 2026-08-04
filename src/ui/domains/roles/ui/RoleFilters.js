@@ -1,41 +1,45 @@
 // src/ui/domains/roles/ui/RoleFilters.js
 
 import React from 'react'
-import { Box, Input, Option, Select, Chip } from '@mui/joy'
-import SearchRounded from '@mui/icons-material/SearchRounded'
+import { Box, Chip, Input, Option, Select } from '@mui/joy'
+import { iconUi } from '../../../core/icons/iconUi.js'
+import { rolesSx } from './roles.sx.js'
 
 export default function RoleFilters({
   filters,
   onChange,
   roleOptions = [],
   contactOptions = [],
+  assignmentOptions = [],
+  teamOptions = [],
   resultCount = 0,
   totalCount = 0,
-  compact = false
+  compact = false,
+  pageMode = false,
 }) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center' }}>
+    <Box sx={rolesSx.filters(pageMode)}>
+      <Box sx={rolesSx.filtersRow}>
         {!compact && (
           <Input
             size="sm"
-            placeholder="חיפוש איש צוות..."
+            placeholder="חיפוש לפי שם, תפקיד, טלפון, מייל או שיוך"
             value={filters?.search || ''}
             onChange={(e) => onChange({ search: e.target.value })}
-            startDecorator={<SearchRounded />}
-            sx={{ minWidth: 220, flex: 1 }}
+            startDecorator={iconUi({ id: 'search' })}
+            sx={rolesSx.searchInput}
           />
         )}
 
         <Select
           size="sm"
           value={filters?.roleType || 'all'}
-          onChange={(e, v) => onChange({ roleType: v || 'all' })}
-          sx={{ minWidth: 170 }}
+          onChange={(e, value) => onChange({ roleType: value || 'all' })}
+          sx={rolesSx.filterSelect(170)}
         >
-          {roleOptions.map((o) => (
-            <Option key={o.id} value={o.id}>
-              {o.label}
+          {roleOptions.map((option) => (
+            <Option key={option.id} value={option.id}>
+              {option.label}
             </Option>
           ))}
         </Select>
@@ -43,18 +47,46 @@ export default function RoleFilters({
         <Select
           size="sm"
           value={filters?.contact || 'all'}
-          onChange={(e, v) => onChange({ contact: v || 'all' })}
-          sx={{ minWidth: 145 }}
+          onChange={(e, value) => onChange({ contact: value || 'all' })}
+          sx={rolesSx.filterSelect(160)}
         >
-          {contactOptions.map((o) => (
-            <Option key={o.id} value={o.id}>
-              {o.label}
+          {contactOptions.map((option) => (
+            <Option key={option.id} value={option.id}>
+              {option.label}
             </Option>
           ))}
         </Select>
 
-        <Chip size="sm" variant="soft">
-          {`מוצג: ${resultCount}/${totalCount}`}
+        <Select
+          size="sm"
+          value={filters?.assignment || 'all'}
+          onChange={(e, value) => onChange({ assignment: value || 'all' })}
+          sx={rolesSx.filterSelect(170)}
+        >
+          {assignmentOptions.map((option) => (
+            <Option key={option.id} value={option.id}>
+              {option.label}
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          size="sm"
+          value={filters?.team || 'all'}
+          onChange={(e, value) => onChange({ team: value || 'all' })}
+          sx={rolesSx.filterSelect(160)}
+        >
+          {teamOptions.map((option) => (
+            <Option key={option.id} value={option.id}>
+              {option.label}
+            </Option>
+          ))}
+        </Select>
+
+        <Box sx={{ flex: 1, minWidth: 8 }} />
+
+        <Chip size="sm" variant="soft" color="neutral" sx={rolesSx.resultChip}>
+          {`מוצגים: ${resultCount}/${totalCount}`}
         </Chip>
       </Box>
     </Box>

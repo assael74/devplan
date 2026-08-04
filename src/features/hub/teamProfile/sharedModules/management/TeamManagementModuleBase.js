@@ -45,6 +45,8 @@ export default function TeamManagementModuleBase({
   const {
     team,
     activeTab,
+    isEditingInfo,
+    saveAttempted,
     rolesPool,
     baseModel,
     draft,
@@ -54,6 +56,7 @@ export default function TeamManagementModuleBase({
     pending,
 
     setActiveTab,
+    setIsEditingInfo,
     setDraft,
 
     handleReset,
@@ -69,10 +72,10 @@ export default function TeamManagementModuleBase({
       <Wrap>
         {emptyWrapSx ? (
           <Box sx={emptyWrapSx}>
-            <EmptyState title="אין מידע לקבוצה" />
+            <EmptyState title='אין מידע לקבוצה' />
           </Box>
         ) : (
-          <EmptyState title="אין מידע לקבוצה" />
+          <EmptyState title='אין מידע לקבוצה' />
         )}
       </Wrap>
     )
@@ -103,6 +106,8 @@ export default function TeamManagementModuleBase({
           isDirty={isDirty}
           canSave={canSave}
           pending={pending}
+          isEditing={activeTab.id !== 'info' || isEditingInfo}
+          onEdit={() => setIsEditingInfo(true)}
           onReset={handleReset}
           onSave={handleSave}
           extraActions={
@@ -125,6 +130,8 @@ export default function TeamManagementModuleBase({
           clubName={clubName}
           onDraft={setDraft}
           pending={pending}
+          readOnly={!isEditingInfo}
+          saveAttempted={saveAttempted}
         />
       )}
 

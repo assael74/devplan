@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import {
   createGameStatsDraftFromDoc,
-} from '../../../../../../ui/forms/gameStatsForm/logic/index.js'
+} from '../../../../../../ui/forms/gameStats/logic/index.js'
 
 import {
   buildProfileStatsDeleteAction,

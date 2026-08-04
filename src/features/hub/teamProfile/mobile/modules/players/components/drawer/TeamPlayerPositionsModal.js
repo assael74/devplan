@@ -8,7 +8,7 @@ import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import DrawerShell from '../../../../../../../../ui/patterns/drawer/DrawerShell.js'
 import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
-import PlayerPositionFieldPitch from '../../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect.js'
+import PlayerPositionFieldPitch from '../../../../../../../../ui/fields/players/PlayerPositionsSelect.js'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { usePlayerHubUpdate } from './../../../../../../hooks/players/usePlayerHubUpdate.js'

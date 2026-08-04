@@ -1,0 +1,97 @@
+// ui/fields/players/PlayerSelectField.js
+
+import React, { useMemo, useCallback, useRef, useState } from 'react'
+import {
+  Select,
+  Option,
+  FormControl,
+  FormLabel,
+} from '@mui/joy'
+
+import playerImage from '../../core/images/playerImage.jpg'
+import { entitySelectSlotProps } from '../core/sx/select.sx.js'
+
+import { buildOptions, findSelected } from './logic/playerSelect.logic'
+import PlayerSelectValue from './ui/PlayerSelectValue'
+import PlayerOptionRow from './ui/PlayerOptionRow'
+
+const clean = (v) => String(v === null || v === undefined ? '' : v).trim()
+
+export default function PlayerSelectField({
+  value,
+  onChange,
+  options = [],
+  disabled,
+  required,
+  error,
+  size = 'sm',
+  readOnly,
+  label = 'שייך שחקן',
+  placeholder = 'בחר…',
+  teamId,
+}) {
+  const [listboxOpen, setListboxOpen] = useState(false)
+  const suppressNextOpenRef = useRef(false)
+
+  const normalizedOptions = useMemo(
+    () => buildOptions(options, teamId, playerImage),
+    [options, teamId]
+  )
+
+  const selectedOpt = useMemo(
+    () => findSelected(value, normalizedOptions),
+    [value, normalizedOptions]
+  )
+
+  const handleChange = useCallback(
+    (_, nextValue) => {
+      suppressNextOpenRef.current = true
+      setListboxOpen(false)
+
+      window.setTimeout(() => {
+        suppressNextOpenRef.current = false
+      }, 0)
+
+      if (!readOnly) onChange(clean(nextValue))
+    },
+    [onChange, readOnly]
+  )
+
+  const handleListboxOpenChange = useCallback((_, open) => {
+    if (suppressNextOpenRef.current && open) {
+      setListboxOpen(false)
+      return
+    }
+
+    setListboxOpen(open)
+  }, [])
+  
+  return (
+    <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
+      <FormLabel required={required} sx={{ fontSize: '12px' }}>
+        {label}
+      </FormLabel>
+
+      <Select
+        size={size}
+        disabled={disabled}
+        readOnly={readOnly}
+        value={clean(value) || null}
+        onChange={handleChange}
+        listboxOpen={listboxOpen}
+        onListboxOpenChange={handleListboxOpenChange}
+        placeholder={placeholder}
+        slotProps={entitySelectSlotProps}
+        renderValue={() => (
+          <PlayerSelectValue opt={selectedOpt} />
+        )}
+      >
+        {normalizedOptions.map((opt) => (
+          <Option key={opt.value} value={opt.value} disabled={opt.disabled}>
+            <PlayerOptionRow opt={opt} />
+          </Option>
+        ))}
+      </Select>
+    </FormControl>
+  )
+}

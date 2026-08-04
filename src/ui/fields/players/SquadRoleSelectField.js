@@ -1,0 +1,85 @@
+// ui/fields/players/SquadRoleSelectField.js
+
+import React, { useMemo, useCallback } from 'react'
+import {
+  Select,
+  Option,
+  FormControl,
+  FormLabel,
+} from '@mui/joy'
+
+import { SQUAD_ROLE_OPTIONS } from '../../../shared/players/players.constants.js'
+
+import {
+  buildSquadRoleOptions,
+  findSquadRoleOption,
+} from './logic/squadRoleSelect.logic.js'
+
+import SquadRoleSelectValue from './ui/SquadRoleSelectValue.js'
+import SquadRoleOptionRow from './ui/SquadRoleOptionRow.js'
+
+const clean = (value) => String(value || '').trim()
+
+export default function SquadRoleSelectField({
+  value,
+  onChange,
+  options = SQUAD_ROLE_OPTIONS,
+  disabled = false,
+  required = false,
+  error,
+  size = 'sm',
+  readOnly = false,
+  label = 'תפקיד בסגל',
+  placeholder = 'בחר תפקיד...',
+  allowEmpty = true,
+  emptyLabel = 'ללא מעמד',
+}) {
+  const normalizedOptions = useMemo(
+    () => buildSquadRoleOptions(options),
+    [options]
+  )
+
+  const selectedOpt = useMemo(
+    () => findSquadRoleOption(value, normalizedOptions),
+    [value, normalizedOptions]
+  )
+
+  const handleChange = useCallback(
+    (_, nextValue) => {
+      if (readOnly || typeof onChange !== 'function') return
+
+      onChange(clean(nextValue))
+    },
+    [onChange, readOnly]
+  )
+
+  return (
+    <FormControl sx={{ width: '100%' }} error={Boolean(error)}>
+      <FormLabel required={required} sx={{ fontSize: '12px' }}>
+        {label}
+      </FormLabel>
+
+      <Select
+        size={size}
+        disabled={disabled}
+        readOnly={readOnly}
+        value={clean(value) || null}
+        onChange={handleChange}
+        placeholder={placeholder}
+        renderValue={() => <SquadRoleSelectValue opt={selectedOpt} />}
+      >
+        {allowEmpty && (
+          <Option value="">
+            {emptyLabel}
+          </Option>
+        )}
+
+        {normalizedOptions.map((opt) => (
+          <Option key={opt.value} value={opt.value}>
+            <SquadRoleOptionRow opt={opt} />
+          </Option>
+        ))}
+      </Select>
+    </FormControl>
+  )
+}

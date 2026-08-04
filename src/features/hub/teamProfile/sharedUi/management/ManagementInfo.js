@@ -1,26 +1,52 @@
 // teamProfile/sharedUi/management/ManagementInfo.js
 
 import React from 'react'
-import { Box, Sheet } from '@mui/joy'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
 
-import TeamLeagueNameField from '../../../../../ui/fields/inputUi/teams/TeamLeagueNameField'
-import TeamLeagueLevelField from '../../../../../ui/fields/inputUi/teams/TeamLeagueLevelField'
-import TeamLeagueRoundField from '../../../../../ui/fields/inputUi/teams/TeamLeagueRoundField'
-
-import TeamNameField from '../../../../../ui/fields/inputUi/teams/TeamNameField.js'
-import TeamIfaLinkField from '../../../../../ui/fields/inputUi/teams/TeamIfaLinkField.js'
-import TeamActiveSelector from '../../../../../ui/fields/checkUi/teams/TeamActiveSelector.js'
-import TeamProjectSelector from '../../../../../ui/fields/checkUi/teams/TeamProjectSelector.js'
-import ClubNameField from '../../../../../ui/fields/inputUi/clubs/ClubNameField.js'
-import YearPicker from '../../../../../ui/fields/dateUi/YearPicker'
+import { teamEditLayout } from '../../../../../ui/forms/teams/edit.layout.js'
+import TeamIdentityFields from '../../../../../ui/forms/teams/edit/TeamIdentityFields.js'
+import TeamLeagueFields from '../../../../../ui/forms/teams/edit/TeamLeagueFields.js'
+import TeamSourceFields from '../../../../../ui/forms/teams/edit/TeamSourceFields.js'
 
 import { infoSx as sx } from './sx/info.sx.js'
+
+const emptyValue = 'לא הוזן'
+
+function SectionTitle({ title, helper }) {
+  return (
+    <Box sx={sx.sectionTitleWrap}>
+      <Typography level='title-sm' sx={sx.sectionTitle}>
+        {title}
+      </Typography>
+      {helper ? (
+        <Typography level='body-xs' sx={sx.sectionHelper}>
+          {helper}
+        </Typography>
+      ) : null}
+    </Box>
+  )
+}
+
+function InfoValue({ label, value, wide = false }) {
+  return (
+    <Box sx={sx.readItem(wide)}>
+      <Typography level='body-xs' sx={sx.readLabel}>
+        {label}
+      </Typography>
+      <Typography level='title-sm' sx={sx.readValue}>
+        {value || emptyValue}
+      </Typography>
+    </Box>
+  )
+}
 
 export default function ManagementInfo({
   draft,
   clubName,
   onDraft,
   pending,
+  readOnly = false,
+  saveAttempted = false,
   isMobile = false,
 }) {
   const handleDraft = (field, value) => {
@@ -30,105 +56,89 @@ export default function ManagementInfo({
     })
   }
 
+  const teamNameMissing = saveAttempted && !String(draft.teamName || '').trim()
+
+  if (readOnly) {
+    return (
+      <Sheet variant='plain' sx={sx.card(isMobile, false)}>
+        <Box sx={sx.statusRow(isMobile)}>
+          <Chip size='sm' variant='soft' color={draft.active ? 'success' : 'neutral'}>
+            {draft.active ? 'פעילה' : 'לא פעילה'}
+          </Chip>
+          <Chip size='sm' variant='soft' color={draft.project ? 'primary' : 'neutral'}>
+            {draft.project ? 'פרויקט פעיל' : 'לא פרויקט'}
+          </Chip>
+        </Box>
+
+        <Box sx={sx.readGrid(isMobile)}>
+          <InfoValue label='שם קבוצה' value={draft.teamName} />
+          <InfoValue label='מועדון' value={clubName} />
+          <InfoValue label='שנתון' value={draft.teamYear} />
+          <InfoValue label='ליגה' value={draft.league} />
+          <InfoValue label='רמת ליגה' value={draft.leagueLevel} />
+          <InfoValue label='מחזור נוכחי' value={draft.leagueRound} />
+          <InfoValue label='מחזורי ליגה' value={draft.leagueNumGames} />
+          <InfoValue label='קישור התאחדות' value={draft.ifaLink} wide />
+        </Box>
+      </Sheet>
+    )
+  }
+
   return (
-    <Sheet variant="soft" sx={sx.card(isMobile)}>
-      <Box sx={sx.firstRow}>
-        <Box sx={sx.chipsRow(isMobile)}>
-          <TeamActiveSelector
-            value={draft.active}
-            onChange={(value) => handleDraft('active', value)}
-          />
-
-          <TeamProjectSelector
-            value={draft.project}
-            onChange={(value) => handleDraft('project', value)}
-          />
-        </Box>
-
+    <Sheet variant='plain' sx={sx.card(isMobile, true)}>
+      <Box sx={sx.editHeader(isMobile)}>
         <Box sx={{ minWidth: 0 }}>
-          <YearPicker
-            label="שנתון"
-            size="sm"
-            value={draft.teamYear}
-            onChange={(value) => handleDraft('teamYear', value)}
-            range={{
-              past: 20,
-              future: 0,
-            }}
-          />
+          <Typography level='title-sm' sx={sx.editTitle}>
+            עריכת מידע כללי
+          </Typography>
+          <Typography level='body-xs' sx={sx.editSubtitle}>
+            עדכון זהות הקבוצה, שיוך חיצוני ונתוני הליגה
+          </Typography>
         </Box>
+
+        <Chip size='sm' variant='soft' color='primary'>
+          מצב עריכה
+        </Chip>
       </Box>
 
-      <Box sx={sx.secondRow}>
-        <TeamNameField
-          value={draft.teamName}
-          size="sm"
-          onChange={(value) => handleDraft('teamName', value)}
-        />
+      <Box sx={sx.sectionBlock}>
+        <SectionTitle title='מידע בסיסי' />
 
-        <ClubNameField
-          value={clubName}
-          onChange={() => {}}
-          readOnly
-          required
-          disabled={false}
-          helperText=""
+        <TeamIdentityFields
+          draft={draft}
+          clubName={clubName}
+          showClub
+          onField={handleDraft}
+          teamNameError={teamNameMissing}
+          teamNameHelper={teamNameMissing ? 'שם קבוצה הוא שדה חובה' : ''}
+          layout={teamEditLayout.profile[isMobile ? 'mobile' : 'desktop'].identity}
+          statusLayout={teamEditLayout.profile[isMobile ? 'mobile' : 'desktop'].status}
         />
       </Box>
 
-      <Box sx={sx.thirdRow}>
-        <TeamIfaLinkField
-          value={draft.ifaLink}
-          onChange={(value) => handleDraft('ifaLink', value)}
+      <Box sx={sx.sectionBlock}>
+        <SectionTitle title='מקור חיצוני' helper='קישור לפרופיל הקבוצה באתר ההתאחדות' />
+
+        <TeamSourceFields
+          draft={draft}
+          onField={handleDraft}
+          layout={{ minWidth: 0 }}
         />
       </Box>
 
-      <Box sx={sx.forthRow(isMobile)}>
-        <Box sx={{ minWidth: 0 }}>
-          <TeamLeagueNameField
-            value={draft.league || ''}
-            size="sm"
-            label="ליגה"
-            variant="outlined"
-            disabled={pending}
-            onChange={(value) => handleDraft('league', value)}
-          />
-        </Box>
+      <Box sx={sx.sectionBlock}>
+        <SectionTitle title='שיוך ליגה' helper='נתונים לעריכת הקשר הליגה והמחזורים' />
 
-        <Box sx={{ minWidth: 0 }}>
-          <TeamLeagueLevelField
-            value={draft.leagueLevel || ''}
-            size="sm"
-            label="רמת ליגה"
-            variant="outlined"
-            disabled={pending}
-            onChange={(value) => handleDraft('leagueLevel', value)}
-          />
-        </Box>
-
-        <Box sx={{ minWidth: 0 }}>
-          <TeamLeagueRoundField
-            value={draft.leagueRound || ''}
-            size="sm"
-            variant="outlined"
-            disabled={pending}
-            max={40}
-            onChange={(value) => handleDraft('leagueRound', value)}
-          />
-        </Box>
-
-        <Box sx={{ minWidth: 0 }}>
-          <TeamLeagueRoundField
-            value={draft.leagueNumGames || ''}
-            size="sm"
-            placeholder='סה"כ מחזורים'
-            label="מחזורי ליגה"
-            variant="outlined"
-            disabled={pending}
-            max={40}
-            onChange={(value) => handleDraft('leagueNumGames', value)}
-          />
-        </Box>
+        <TeamLeagueFields
+          draft={draft}
+          onField={handleDraft}
+          disabled={pending}
+          showPosition={false}
+          showStats={false}
+          showRounds
+          variant='outlined'
+          mainLayout={teamEditLayout.profile[isMobile ? 'mobile' : 'desktop'].league}
+        />
       </Box>
     </Sheet>
   )

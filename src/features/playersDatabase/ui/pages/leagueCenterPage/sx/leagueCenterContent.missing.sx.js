@@ -3,64 +3,79 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterMissingSx = {
-  missingPanel: {
+  workQueuePanel: {
+    width: '100%',
+    height: '100%',
     minWidth: 0,
     minHeight: 0,
-    height: '100%',
-    p: 1,
+    alignSelf: 'stretch',
     overflow: 'hidden',
-    borderRadius: 8,
-    border: '1px solid #dbe5f4',
-    boxShadow: '0 10px 28px rgba(11, 31, 77, 0.06)',
+    borderColor: '#d8e2e9',
+    boxShadow: 'none',
+    bgcolor: '#f3f6f8',
+
+    '& > div > div:first-of-type': {
+      pb: 0.75,
+      borderBottom: '1px solid #d8e2e9',
+    },
   },
 
-  missingContent: {
-    height: '100%',
+  workQueueList: {
     minHeight: 0,
-    display: 'grid',
-    gridTemplateRows: 'auto minmax(0, 1fr)',
-    gap: 1.25,
-  },
-
-  missingList: {
-    minHeight: 0,
+    flex: 1,
+    alignContent: 'start',
     overflowY: 'auto',
     overflowX: 'hidden',
-    pr: 0.5,
   },
 
-  panelTitle: {
-    color: '#0b1f4d',
-    fontSize: 18,
-    fontWeight: 700,
-  },
-
-  missingItem: {
+  workQueueItem: {
+    width: '100%',
+    minHeight: 52,
+    px: 1,
+    py: 0.75,
     display: 'grid',
-    gridTemplateColumns: '8px minmax(0, 1fr) auto',
+    gridTemplateColumns: '36px minmax(0, 1fr)',
     gap: 0.75,
     alignItems: 'center',
-    p: 0.75,
+    justifyItems: 'stretch',
+    textAlign: 'right',
     borderRadius: 8,
-    border: `1px solid ${devPlanColors.primaryLight}`,
+    border: '1px solid #d6e0e7',
     bgcolor: '#fff',
+    color: devPlanColors.primaryDark,
+    boxShadow: '0 2px 7px rgba(16, 43, 64, 0.025)',
+
+    '&:hover': {
+      bgcolor: devPlanColors.tertiaryLight,
+      borderColor: devPlanColors.tertiary,
+    },
   },
 
-  missingDot: {
-    width: 8,
-    height: 8,
+  workQueueCount: {
+    width: 32,
+    height: 32,
     borderRadius: '50%',
-    bgcolor: devPlanColors.primary,
-  },
-
-  missingTitle: {
-    color: '#1769d7',
-    fontSize: 12,
+    display: 'grid',
+    placeItems: 'center',
+    bgcolor: '#e2ebf1',
+    color: devPlanColors.primary,
     fontWeight: 700,
   },
 
-  missingValue: {
-    color: '#0b1f4d',
-    fontSize: 14,
+  workQueueCopy: {
+    minWidth: 0,
+  },
+
+  workQueueTitle: {
+    color: devPlanColors.primaryDark,
+    fontSize: 13,
+    fontWeight: 700,
+    lineHeight: 1.2,
+  },
+
+  workQueueCaption: {
+    mt: 0.25,
+    color: devPlanColors.secondary,
+    lineHeight: 1.2,
   },
 }

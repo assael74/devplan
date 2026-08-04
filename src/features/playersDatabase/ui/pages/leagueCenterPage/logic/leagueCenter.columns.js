@@ -1,6 +1,6 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenter.columns.js
 
-import { Box, IconButton, Stack, Tooltip } from '@mui/joy'
+import { Button, Stack, Tooltip } from '@mui/joy'
 
 import StatusPill from '../../../components/status/StatusPill.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -8,8 +8,6 @@ import { leagueCenterContentSx as sx } from '../sx/leagueCenterContent.sx.js'
 
 const BASE_COLUMNS = [
   { key: 'name', label: 'ליגה' },
-  { key: 'ageGroup', label: 'גיל' },
-  { key: 'seasonKey', label: 'עונה' },
   { key: 'teamsCount', label: 'קבוצות' },
   {
     key: 'tableStatus',
@@ -42,30 +40,28 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
           <Stack direction='row' spacing={0.5} sx={sx.rowActions}>
             {!row.hasSelectedSeason ? (
               <Tooltip title='יצירת עונה'>
-                <IconButton
+                <Button
                   size='sm'
                   variant='outlined'
-                  sx={sx.actionIconButton}
+                  sx={sx.createSeasonButton}
+                  startDecorator={iconUi({ id: 'addSeason', size: 'sm' })}
                   onClick={() => onCreateSeason(row)}
                 >
-                  {iconUi({ id: 'addSeason', size: 'sm' })}
-                </IconButton>
+                  יצירת עונה
+                </Button>
               </Tooltip>
             ) : (
-              <Box sx={sx.actionIconPlaceholder} />
-            )}
-
-            <Tooltip title='כניסה לליגה'>
-              <IconButton
-                disabled={!row.hasLeagueDoc}
+              <Button
                 size='sm'
-                variant='outlined'
-                sx={sx.actionIconButton}
+                variant='soft'
+                disabled={!row.hasLeagueDoc}
+                sx={sx.openLeagueButton}
+                endDecorator={iconUi({ id: 'viewLeague', size: 'sm' })}
                 onClick={() => onOpenLeague(row)}
               >
-                {iconUi({ id: 'viewLeague', size: 'sm' })}
-              </IconButton>
-            </Tooltip>
+                פתח ליגה
+              </Button>
+            )}
           </Stack>
         ),
       }
@@ -77,26 +73,6 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
         sx: sx.leagueNameColumn,
         headerSx: sx.leagueNameHeader,
         cellSx: sx.leagueNameCell,
-      }
-    }
-
-    if (column.key === 'ageGroup') {
-      return {
-        ...column,
-        key: 'birthYear',
-        label: 'שנתון',
-        sx: sx.compactColumn,
-        headerSx: sx.centerColumn,
-        cellSx: sx.centerColumn,
-      }
-    }
-
-    if (column.key === 'seasonKey') {
-      return {
-        ...column,
-        sx: sx.seasonColumn,
-        headerSx: sx.centerColumn,
-        cellSx: sx.centerColumn,
       }
     }
 

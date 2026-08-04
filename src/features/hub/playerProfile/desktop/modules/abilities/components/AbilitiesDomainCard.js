@@ -18,7 +18,6 @@ import {
   isFilled,
   toFixed1,
   getScoreColor,
-  calcDomainScore,
   DOMAIN_ACCENT,
 } from './../../../../sharedLogic'
 
@@ -35,13 +34,16 @@ import {
   domainItemBarSx,
 } from '../sx/Ability.module.sx'
 
+const EMPTY = '\u2014'
+const DOMAIN_AVG_LABEL = '\u05de\u05de\u05d5\u05e6\u05e2 \u05d3\u05d5\u05de\u05d9\u05d9\u05df'
+const NO_DOMAIN_DATA = '\u05d0\u05d9\u05df \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05d1\u05d3\u05d5\u05de\u05d9\u05d9\u05df \u05d6\u05d4'
+
 export default function AbilitiesDomainCard({ domain }) {
   const domainAvg = Number(domain?.avg)
   const pct = Number(domain?.coveragePct || 0)
   const domainColor = domain?.color || getScoreColor(domainAvg)
   const filledCount = Number(domain?.filled || 0)
   const accent = DOMAIN_ACCENT[domain?.domain] || 'neutral'
-  const avgLabel = domain?.hasRated ? domain?.avgLabel : '—'
 
   return (
     <Card variant="outlined" sx={domainCardSx(accent)}>
@@ -76,7 +78,7 @@ export default function AbilitiesDomainCard({ domain }) {
 
           <Stack spacing={0.25}>
             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-              ממוצע דומיין
+              {DOMAIN_AVG_LABEL}
             </Typography>
             <LinearProgress determinate value={pct} color={domainColor} sx={domainAvgBarSx} />
           </Stack>
@@ -111,7 +113,7 @@ export default function AbilitiesDomainCard({ domain }) {
                   color={itemColor}
                   sx={domainItemChipSx(filled)}
                 >
-                  {filled ? item?.value : '—'}
+                  {filled ? item?.value : EMPTY}
                 </Chip>
 
                 <LinearProgress
@@ -130,7 +132,7 @@ export default function AbilitiesDomainCard({ domain }) {
         {filledCount === 0 && (
           <Box sx={domainEmptyBoxSx}>
             <Typography level="body-xs" color="neutral">
-              אין נתונים בדומיין זה
+              {NO_DOMAIN_DATA}
             </Typography>
           </Box>
         )}

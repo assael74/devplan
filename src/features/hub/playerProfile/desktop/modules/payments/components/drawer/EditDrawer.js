@@ -8,7 +8,7 @@ import DrawerShell from '../../../../../../../../ui/patterns/drawer/DrawerShell.
 import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
 import { usePaymentHubUpdate } from '../../../../../../hooks/payments/usePaymentHubUpdate.js'
-import PaymentCreateFields from '../../../../../../../../ui/forms/ui/payments/PaymentCreateFields.js'
+import PaymentCreateFields from '../../../../../../../../ui/forms/payments/PaymentCreateFields.js'
 
 import {
   buildPaymentEditInitial,

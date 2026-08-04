@@ -1,62 +1,37 @@
-// playerProfile/mobile/modules/info/components/PlayerBirthCard.js
+// features/hub/playerProfile/mobile/modules/info/components/PlayerBirthCard.js
 
 import React from 'react'
-import { Box, Typography, Sheet } from '@mui/joy'
+import { Box, Sheet, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import PlayerBirthFields from '../../../../../../../ui/forms/players/edit/PlayerBirthFields.js'
+
 import { infoModuleSx as sx } from '../info.module.sx.js'
 
-import {
-  YearPicker,
-  DateInputField,
-  MonthNumberPicker,
-} from '../../../../../../../ui/fields'
-
 export default function PlayerBirthCard({ draft, setDraft, pending }) {
-  const setField = (key) => (value) => {
+  const handleField = (key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
       <Box sx={sx.cardHead}>
-        <Typography level="title-md" noWrap startDecorator={iconUi({ id: 'birth' })}>
+        <Typography
+          level="title-md"
+          noWrap
+          startDecorator={iconUi({ id: 'birth' })}
+        >
           תאריך לידה ושנתון
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'grid', gap: 0.875, minWidth: 0 }}>
-        <Box sx={sx.formGrid3}>
-          <Box sx={{ minWidth: 0 }}>
-            <DateInputField
-              label="תאריך לידה"
-              value={draft?.birthDay || ''}
-              onChange={setField('birthDay')}
-              disabled={pending}
-            />
-          </Box>
-
-          <Box sx={{ minWidth: 0 }}>
-            <MonthNumberPicker
-              label="חודש"
-              icon={false}
-              value={draft?.month || ''}
-              onChange={setField('month')}
-              disabled={pending}
-            />
-          </Box>
-
-          <Box sx={{ minWidth: 0 }}>
-            <YearPicker
-              label="שנתון"
-              icon={false}
-              value={draft?.year || ''}
-              onChange={setField('year')}
-              disabled={pending}
-            />
-          </Box>
-        </Box>
-      </Box>
+      <PlayerBirthFields
+        draft={draft}
+        onField={handleField}
+        disabled={pending}
+        layout={sx.formGrid3}
+        mode="split"
+      />
     </Sheet>
   )
 }

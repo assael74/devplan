@@ -2,28 +2,37 @@
 
 const clean = value => String(value || '').trim()
 
-export const buildMissingItems = summary => [
+export const buildWorkQueueItems = summary => [
   {
-    id: 'unopened',
-    label: 'ליגות מהקטלוג שעדיין לא נפתחו',
-    value: summary.unopenedCatalogLeagues,
+    id: 'missing',
+    label: 'ליגות ללא נתונים',
+    caption: 'נדרש להתחיל טעינת עונה',
+    value: summary.missingData,
+    status: 'missing',
   },
   {
     id: 'tables',
     label: 'ליגות בלי טבלה מלאה',
-    value: summary.totalLeagues - summary.fullTables,
+    caption: 'טבלת ליגה חסרה או חלקית',
+    value: summary.missingTables,
+    status: 'partial',
   },
   {
     id: 'teams',
-    label: 'ליגות עם טעינת שחקנים חלקית',
+    label: 'ליגות בלי שחקנים מלאים',
+    caption: 'נדרשת השלמת סגלים',
     value: summary.partialTeams,
+    status: 'partial',
   },
   {
-    id: 'profiles',
-    label: 'שחקנים עם פרופיל סקאוט',
-    value: summary.profiledPlayers,
+    id: 'stats',
+    label: 'ליגות בלי סטטיסטיקות מלאות',
+    caption: 'נדרשת השלמת נתוני ביצוע',
+    value: summary.partialStats,
+    status: 'partial',
   },
 ]
+
 
 export const buildServiceLeague = row => ({
   ...(row?.catalog || {}),

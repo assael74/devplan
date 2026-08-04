@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, FormControl, FormLabel, Option, Select, IconButton, Tooltip } from '@mui/joy'
 
-import MonthYearPicker from '../../../../../../../../ui/fields/dateUi/MonthYearPicker.js'
+import MonthYearPicker from '../../../../../../../../ui/fields/core/MonthYearPicker.js'
 import { toYearMonth, getPaymentStatusMeta, getPaymentTypeMeta } from '../../../../../../../../shared/payments/payments.utils.js'
 
 import PaymentsSummary from './PaymentsSummary'

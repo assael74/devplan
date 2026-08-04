@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, ModalDialog, Typography, Box, Button, Divider, Chip, Avatar } from '@mui/joy'
 
-import PlayerPositionFieldPitch from '../../fields/selectUi/players/PlayerPositionsSelect'
+import PlayerPositionFieldPitch from '../../fields/players/PlayerPositionsSelect'
 import { iconUi } from '../../core/icons/iconUi'
 import playerImage from '../../core/images/playerImage.jpg'
 import { useUpdateAction } from '../../domains/entityActions/updateAction.js'

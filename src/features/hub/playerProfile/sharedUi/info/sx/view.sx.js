@@ -302,4 +302,12 @@ export const viewSx = {
   emptySub: {
     color: 'text.tertiary',
   },
+
+  emptyActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    mt: 0.75,
+  },
 }

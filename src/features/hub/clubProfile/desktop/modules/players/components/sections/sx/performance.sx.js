@@ -2,31 +2,40 @@
 
 export const performanceSx = {
   root: {
-    width: 250,
+    width: 210,
     minWidth: 0,
     display: 'grid',
-    gap: 0.3,
-    px: 1,
-    py: 0.3,
-    borderRadius: 'md',
+    gap: 0.35,
+    px: 0.8,
+    py: 0.45,
+    borderRadius: 9,
     bgcolor: 'background.level1',
-    boxShadow: 'inset 0 0 0 1px var(--joy-palette-divider)',
     overflow: 'hidden',
     flexShrink: 0,
+    border: '1px solid',
+    borderColor: 'divider',
   },
 
   top: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 0.6,
     minWidth: 0,
     overflow: 'hidden',
   },
 
+  title: {
+    fontWeight: 700,
+    color: 'text.secondary',
+    whiteSpace: 'nowrap',
+  },
+
   profileChip: {
     flexShrink: 1,
     minWidth: 0,
-    maxWidth: 116,
+    maxWidth: 112,
+    minHeight: 22,
     fontWeight: 700,
     border: '1px solid',
     borderColor: 'divider',
@@ -42,17 +51,9 @@ export const performanceSx = {
   scoreChip: {
     flexShrink: 0,
     minWidth: 42,
+    minHeight: 22,
     justifyContent: 'center',
-    fontWeight: 700,
-    border: '1px solid',
-    borderColor: 'divider',
-  },
-
-  impactChip: {
-    flexShrink: 0,
-    minWidth: 46,
-    justifyContent: 'center',
-    fontWeight: 700,
+    fontWeight: 800,
     border: '1px solid',
     borderColor: 'divider',
   },
@@ -61,7 +62,7 @@ export const performanceSx = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 1,
+    gap: 0.75,
     minWidth: 0,
     overflow: 'hidden',
     color: 'text.tertiary',
@@ -73,19 +74,9 @@ export const performanceSx = {
   metaMain: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.85,
+    gap: 0.75,
     minWidth: 0,
     overflow: 'hidden',
-  },
-
-  metaSide: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.25,
-    flexShrink: 0,
-    color: 'text.secondary',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
   },
 
   metaItem: {
@@ -94,5 +85,15 @@ export const performanceSx = {
     gap: 0.25,
     minWidth: 0,
     whiteSpace: 'nowrap',
+    color: 'text.tertiary',
+  },
+
+  emptyTitle: {
+    fontWeight: 700,
+    color: 'text.secondary',
+  },
+
+  emptyText: {
+    color: 'text.tertiary',
   },
 }

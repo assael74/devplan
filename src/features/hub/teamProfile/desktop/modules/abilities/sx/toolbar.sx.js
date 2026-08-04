@@ -7,53 +7,61 @@ const c = getEntityColors('teams')
 export const toolbarSx = {
   toolbar: {
     display: 'grid',
-    gap: 0.9,
+    gap: 0.75,
     p: 1,
-    borderRadius: '16px',
+    borderRadius: 'md',
     bgcolor: 'background.surface',
-    boxShadow: 'sm',
-    backdropFilter: 'blur(10px)',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'none',
   },
 
-  topGrid: {
-    display: 'flex',
-    gap: 1.25,
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-
-  starsWrap: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 2,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    flex: '0 0 auto',
-    width: 'fit-content',
-    minWidth: 'fit-content',
-  },
-
-  starItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    mx: 0.5,
-  },
-
-  actionsWrap: {
-    display: 'flex',
-    flexDirection: {
-      xs: 'column',
-      sm: 'row',
-    },
-    alignItems: {
-      xs: 'stretch',
-      sm: 'center',
-    },
-    justifyContent: 'flex-start',
-    gap: 1,
+  summaryRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+    gap: 0.75,
     minWidth: 0,
-    flex: 1,
+  },
+
+  summaryMetric: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+    minWidth: 0,
+    p: 0.75,
+    borderRadius: 'sm',
+    bgcolor: 'background.level1',
+  },
+
+  summaryIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 'sm',
+    display: 'grid',
+    placeItems: 'center',
+    bgcolor: 'background.surface',
+    color: 'text.secondary',
+    flexShrink: 0,
+  },
+
+  summaryLabel: {
+    color: 'text.tertiary',
+    fontWeight: 700,
+    lineHeight: 1.1,
+  },
+
+  summaryValue: {
+    fontWeight: 700,
+    lineHeight: 1.2,
+  },
+
+  filtersRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    minWidth: 0,
   },
 
   insightsBtn: {

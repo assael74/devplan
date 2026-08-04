@@ -213,6 +213,13 @@ const buildLeagueCenterRow = ({
     ageGroup: toAgeGroupLabel(ageGroupId),
     ageGroupId,
     ageGroupLabel: clean(league?.ageGroupLabel || catalog?.ageGroupLabel),
+    level: toNumber(
+      league?.level !== undefined && league?.level !== null
+        ? league.level
+        : catalog?.level
+    ) || '',
+    region: clean(league?.region || catalog?.region),
+    order: toNumber(catalog?.order),
     birthYear: birthYear || '',
     seasonKey: resolveSeasonLookupKey(seasonIdentity) || selectedSeasonKey,
     seasonId: seasonIdentity.seasonId,
@@ -229,6 +236,25 @@ const buildLeagueCenterRow = ({
     statsStatus: tableRows.length
       ? getStatsStatus(tableRows)
       : getCountStatus(scoutProfilesCount),
+    dataStatus: (() => {
+      const statuses = [
+        getTableStatusFromCounts({
+          tableRows,
+          expectedTeamsCount: teamsCount,
+          tableRankCount,
+        }),
+        tableRows.length
+          ? getTeamsStatus(tableRows)
+          : getCountStatus(playersCount || playersWithScoutProfileCount),
+        tableRows.length
+          ? getStatsStatus(tableRows)
+          : getCountStatus(scoutProfilesCount),
+      ]
+
+      if (statuses.every(status => status === 'full')) return 'full'
+      if (statuses.every(status => status === 'missing')) return 'missing'
+      return 'partial'
+    })(),
     playersWithProfiles: tableRows.length
       ? getProfiledPlayersCount(tableRows)
       : playersWithScoutProfileCount,
@@ -429,6 +455,19 @@ export const buildLeagueCenterAgeGroupOptions = rows => {
   return Array.from(map.values())
 }
 
+export const buildLeagueCenterLevelOptions = rows => (
+  Array.from(new Set(
+    rows
+      .map(row => toNumber(row.level))
+      .filter(Boolean)
+  ))
+    .sort((left, right) => left - right)
+    .map(level => ({
+      value: String(level),
+      label: `רמה ${level}`,
+    }))
+)
+
 export const buildLeagueCenterLeagueOptions = rows => {
   const map = new Map()
 
@@ -461,8 +500,13 @@ export const buildLeagueCenterSummary = rows => ({
   unopenedCatalogLeagues: rows.filter(row => (
     row.catalogLeagueId && !row.hasLeagueDoc
   )).length,
+  fullData: rows.filter(row => row.dataStatus === 'full').length,
+  partialData: rows.filter(row => row.dataStatus === 'partial').length,
+  missingData: rows.filter(row => row.dataStatus === 'missing').length,
   fullTables: rows.filter(row => row.tableStatus === 'full').length,
+  missingTables: rows.filter(row => row.tableStatus !== 'full').length,
   partialTeams: rows.filter(row => row.teamsStatus !== 'full').length,
+  partialStats: rows.filter(row => row.statsStatus !== 'full').length,
   profiledPlayers: rows.reduce(
     (sum, row) => sum + toNumber(row.playersWithProfiles),
     0

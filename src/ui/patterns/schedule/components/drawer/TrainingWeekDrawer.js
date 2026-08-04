@@ -14,7 +14,7 @@ import {
   IconButton,
 } from '@mui/joy'
 
-import TrainingCreateFields from '../../../../forms/ui/trainings/TrainingCreateFields.js'
+import TrainingCreateFields from '../../../../forms/trainings/TrainingCreateFields.js'
 
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { trainingWeekDrawerSx as sx } from '../../sx/trainingWeekDrawer.sx.js'

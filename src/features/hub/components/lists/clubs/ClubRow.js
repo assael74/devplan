@@ -3,6 +3,7 @@
 import React from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 
 import { listSx as sx } from '../list.sx.js'
 
@@ -29,7 +30,12 @@ export default function ClubRow({
       name: club?.clubName,
     })
 
-  const subLine = [club?.clubCity, club?.clubYear, club?.active === false ? 'לא פעיל' : null].filter(Boolean).join(' • ')
+  const clubName = club?.clubName || club?.name || 'מועדון'
+  const subLine = [
+    club?.clubCity || club?.city,
+    club?.clubYear || club?.year,
+    club?.active === false ? 'לא פעיל' : null,
+  ].filter(Boolean).join(' · ')
 
   const handleRowClick = (e) => {
     e.stopPropagation()
@@ -45,7 +51,7 @@ export default function ClubRow({
 
     onSelect(club)
   }
-  
+
   return (
     <Box
       onMouseDown={(e) => e.stopPropagation()}
@@ -53,22 +59,19 @@ export default function ClubRow({
       sx={sx.row(selected)}
     >
       <Avatar size="sm" src={src}>
-        {club?.clubName[0] || '?'}
+        {clubName[0] || '?'}
       </Avatar>
 
       <Box sx={{ minWidth: 0, flex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <ColorDot active={club?.active} />
+
           <Typography level="title-sm" noWrap sx={{ minWidth: 0 }}>
-            {club?.clubName || 'מועדון'}
+            {clubName}
           </Typography>
         </Box>
 
-        <Typography
-          level="body-xs"
-          sx={{ opacity: 0.75, mt: 0.25, lineHeight: 1.2, ml: 1 }}
-          noWrap
-        >
+        <Typography level="body-xs" sx={sx.subLine} noWrap>
           {subLine}
         </Typography>
       </Box>

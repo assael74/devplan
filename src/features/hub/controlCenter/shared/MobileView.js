@@ -3,6 +3,7 @@
 import React from 'react'
 import { Avatar, Box, Button, Sheet, Typography } from '@mui/joy'
 
+import AttentionPanel from './AttentionPanel.js'
 import DomainCard from './DomainCard.js'
 import KpiRow from './KpiRow.js'
 import { devPlanColors, getEntityColors } from '../../../../ui/core/theme/Colors.js'
@@ -84,10 +85,12 @@ export default function MobileView({ model, onBack, onOpenRoute, emptyText }) {
           },
         }}
       >
-        לפרופיל המלא
+        {model.actionLabel || 'לפרופיל המלא'}
       </Button>
 
       <KpiRow items={model.kpis} compact={true} />
+
+      <AttentionPanel items={model.attentionItems} />
 
       <Box
         className="dpScrollThin"

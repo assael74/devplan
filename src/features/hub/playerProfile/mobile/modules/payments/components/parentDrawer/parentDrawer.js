@@ -15,10 +15,10 @@ import {
   Typography,
 } from '@mui/joy'
 
-import ParentNameField from '../../../../../../../../ui/fields/inputUi/parent/ParentNameField.js'
-import EmailField from '../../../../../../../../ui/fields/inputUi/parent/EmailField.js'
-import PhoneField from '../../../../../../../../ui/fields/inputUi/parent/PhoneField.js'
-import ParentRoleSelectField from '../../../../../../../../ui/fields/selectUi/parent/ParentRoleSelectField.js'
+import ParentFields from '../../../../../../../../ui/forms/parents/ParentFields.js'
+import {
+  getParentFormLayout,
+} from '../../../../../../../../ui/forms/parents/form.layout.js'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
@@ -59,6 +59,7 @@ export default function ParentDrawer({
   const playerId = player?.id || player?.playerId || player?.entityId || player?.docId || ''
   const parents = Array.isArray(player?.parents) ? player.parents : []
   const isEdit = Boolean(parent?.id)
+  const layout = getParentFormLayout({ isMobile: true })
 
   const fieldErrors = useMemo(() => {
     return getParentEditFieldErrors(draft)
@@ -135,60 +136,13 @@ export default function ParentDrawer({
               </Box>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 1 }}>
-              <Box sx={{ minWidth: 0 }}>
-                <ParentRoleSelectField
-                  value={draft?.parentRole || ''}
-                  error={fieldErrors?.parentRole}
-                  onChange={(value) => {
-                    setDraft((prev) => ({
-                      ...prev,
-                      parentRole: value || '',
-                    }))
-                  }}
-                />
-              </Box>
-
-              <Box sx={{ minWidth: 0 }}>
-                <ParentNameField
-                  value={draft?.parentName || ''}
-                  error={fieldErrors?.parentName}
-                  onChange={(value) => {
-                    setDraft((prev) => ({
-                      ...prev,
-                      parentName: value || '',
-                    }))
-                  }}
-                />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
-              <Box sx={{ minWidth: 0 }}>
-                <EmailField
-                  value={draft?.parentEmail || ''}
-                  onChange={(value) => {
-                    setDraft((prev) => ({
-                      ...prev,
-                      parentEmail: value || '',
-                    }))
-                  }}
-                />
-              </Box>
-
-              <Box sx={{ minWidth: 0 }}>
-                <PhoneField
-                  value={draft?.parentPhone || ''}
-                  error={fieldErrors?.parentPhone}
-                  onChange={(value) => {
-                    setDraft((prev) => ({
-                      ...prev,
-                      parentPhone: value || '',
-                    }))
-                  }}
-                />
-              </Box>
-            </Box>
+            <ParentFields
+              draft={draft}
+              onDraft={setDraft}
+              layout={layout}
+              errors={fieldErrors}
+              disabled={pending}
+            />
           </Box>
         </DialogContent>
 

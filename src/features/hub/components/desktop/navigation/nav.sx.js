@@ -8,11 +8,14 @@ export const navSx = {
     position: 'sticky',
     top: 0,
     zIndex: 10,
-    px: 1.5,
-    py: 1,
+    minHeight: 68,
+    px: 1.25,
+    py: 0.75,
     borderBottom: '1px solid',
     borderColor: 'divider',
     borderRadius: 'sm',
+    display: 'flex',
+    alignItems: 'center',
   },
 
   headerTabs: (entityType) => {

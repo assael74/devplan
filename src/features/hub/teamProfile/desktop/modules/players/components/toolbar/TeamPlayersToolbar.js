@@ -396,7 +396,7 @@ export default function TeamPlayersToolbar({
         onResetFilters={onResetFilters}
       />
 
-      <Box sx={sx.toolbarRow}>
+      <Box sx={sx.actionsRow}>
         <TeamPlayersSortMenu
           sortBy={sortBy}
           sortDirection={sortDirection}

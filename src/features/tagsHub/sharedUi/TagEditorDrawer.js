@@ -4,7 +4,7 @@ import React, { useMemo, useCallback } from 'react'
 
 import DrawerShell from '../../../ui/patterns/drawer/DrawerShell'
 import DrawerHeaderShell from '../../../ui/patterns/drawer/DrawerHeaderShell'
-import TagsCreateFields from '../../../ui/forms/ui/tags/TagsCreateFields.js'
+import TagsCreateFields from '../../../ui/forms/tags/TagsCreateFields.js'
 
 import { useUpdateAction } from '../../../ui/domains/entityActions/updateAction.js'
 import { useLifecycle } from '../../../ui/domains/entityLifecycle/LifecycleProvider'

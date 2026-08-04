@@ -27,7 +27,7 @@ export default function ClubTeamRow({ row, onEdit, performance }) {
   }
 
   const chipSx = {
-    flexShrink: 0,
+    ...sx.statusChip,
     ...(chip.tone === 'custom'
       ? {
           bgcolor: chip.bgColor || undefined,
@@ -51,25 +51,30 @@ export default function ClubTeamRow({ row, onEdit, performance }) {
     >
       <InfoSection row={row} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <LeagueSection row={row} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <PerformanceSection row={row} performance={performance} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <Box sx={sx.ratingCol}>
         <Typography level="body-xs" sx={sx.ratingTitle}>
-          פוטנציאל ({Number(row?.level) || 0})
+          פוטנציאל
         </Typography>
 
-        <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
+        <Box sx={sx.ratingValueRow}>
+          <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
+          <Typography level="body-xs" sx={sx.ratingNumber}>
+            {Number(row?.level) || 0}
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.dividerSoft} />
 
       <Box sx={sx.statusCol}>
         <Chip
@@ -88,7 +93,7 @@ export default function ClubTeamRow({ row, onEdit, performance }) {
 
       <Box sx={sx.actionsCellSx}>
         <Tooltip title="עריכת קבוצה">
-          <IconButton size="sm" variant="plain" onClick={handleEdit}>
+          <IconButton size="sm" variant="plain" color="neutral" onClick={handleEdit} sx={sx.actionButton}>
             {iconUi({ id: 'more' })}
           </IconButton>
         </Tooltip>

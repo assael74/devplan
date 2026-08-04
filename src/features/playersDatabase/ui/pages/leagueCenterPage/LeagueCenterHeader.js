@@ -17,7 +17,7 @@ export default function LeagueCenterHeader({
         <Breadcrumbs items={breadcrumbs} />
 
         <Typography level='h1' sx={sx.pageTitle}>
-          מרכז ליגות
+          ניהול נתוני ליגות
         </Typography>
       </Stack>
 

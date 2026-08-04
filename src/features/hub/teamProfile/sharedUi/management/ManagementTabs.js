@@ -36,28 +36,19 @@ export default function ManagementTabs({ activeTab, onTabChange, isMobile = fals
         return (
           <Button
             key={tab.id}
-            variant="plain"
-            color="neutral"
+            variant='plain'
+            color='neutral'
             onClick={() => onTabChange(tab)}
             sx={sx.tabBtn(selected, isMobile)}
           >
             <Box sx={sx.tabIcon(selected, isMobile)}>
-              {iconUi({ id: tab.icon, })}
+              {iconUi({ id: tab.icon })}
             </Box>
 
             <Box sx={sx.tabText(isMobile)}>
-              <Typography
-                level="title-sm"
-                sx={sx.tabLabel(selected, isMobile)}
-              >
+              <Typography level='title-sm' sx={sx.tabLabel(selected, isMobile)}>
                 {tab.label}
               </Typography>
-
-              {!isMobile && (
-                <Typography level="body-xs" sx={sx.tabSub(selected)}>
-                  {tab.labelH}
-                </Typography>
-              )}
             </Box>
           </Button>
         )

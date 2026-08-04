@@ -13,17 +13,18 @@ export default function RoleToolbar({
   pending = false,
   onAdd,
   compact = false,
+  pageMode = false,
   sx,
 }) {
   return (
-    <Box sx={[rolesSx.toolbar(compact), sx]}>
+    <Box sx={[rolesSx.toolbar(compact, pageMode), sx]}>
       <Box sx={rolesSx.toolbarInfo(compact)}>
-        <Box sx={rolesSx.toolbarIconBox(compact)}>
+        <Box sx={rolesSx.toolbarIconBox(compact, pageMode)}>
           {iconUi({ id: 'role' })}
         </Box>
 
         <Box sx={rolesSx.toolbarText}>
-          <Typography level={compact ? 'body-sm' : 'title-sm'} sx={rolesSx.title(compact)}>
+          <Typography level={compact ? 'body-sm' : 'title-md'} sx={rolesSx.title(compact, pageMode)}>
             {title}
           </Typography>
 

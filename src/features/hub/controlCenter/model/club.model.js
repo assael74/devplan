@@ -28,10 +28,7 @@ function getCount(club, key) {
 
 function getSummary(club, key, count) {
   if (key === 'management') {
-    const values = [
-      club?.city,
-      club?.active === false ? 'בארכיון' : 'פעיל',
-    ].filter(Boolean)
+    const values = [club?.city, club?.active === false ? 'בארכיון' : 'פעיל'].filter(Boolean)
 
     return {
       primary: values.join(' · ') || 'פרטי מועדון',
@@ -59,6 +56,17 @@ function getSummary(club, key, count) {
   }
 }
 
+const DOMAIN_PRIORITY = {
+  teams: 10,
+  players: 20,
+  management: 30,
+}
+
+function getDomainStatus(key, count) {
+  if (['teams', 'players'].includes(key)) return count > 0 ? 'ok' : 'missing'
+  return 'info'
+}
+
 function buildDomain(club, tab) {
   const count = getCount(club, tab.key)
   const summary = getSummary(club, tab.key, count)
@@ -72,21 +80,51 @@ function buildDomain(club, tab) {
     count,
     primary: summary.primary,
     secondary: summary.secondary,
+    status: getDomainStatus(tab.key, count),
+    priority: DOMAIN_PRIORITY[tab.key] || 999,
+    actionText: 'פתח',
   }
+}
+
+function getProfileCompleteness(club) {
+  const fields = [club?.clubName || club?.name, club?.city || club?.clubCity]
+  const completed = fields.filter(Boolean).length
+
+  return Math.round((completed / fields.length) * 100)
+}
+
+function buildAttentionItems({ teamsCount, playersCount, isArchived }) {
+  return [
+    isArchived ? { id: 'archived', status: 'attention', text: 'המועדון נמצא בארכיון' } : null,
+    teamsCount ? null : { id: 'missingTeams', status: 'missing', text: 'לא הוגדרו קבוצות במועדון' },
+    playersCount ? null : { id: 'missingPlayers', status: 'missing', text: 'לא נמצאו שחקנים במועדון' },
+  ].filter(Boolean)
+}
+
+function buildKpis({ completeness, teamsCount, playersCount, isArchived }) {
+  return [
+    { id: 'profileCompleteness', label: 'שלמות מועדון', value: `${completeness}%`, secondary: 'פרטי מועדון ומיקום' },
+    { id: 'teams', label: 'קבוצות', value: teamsCount, secondary: 'קבוצות במועדון' },
+    { id: 'players', label: 'שחקנים', value: playersCount, secondary: 'שחקנים משויכים' },
+    { id: 'status', label: 'סטטוס', value: isArchived ? 'בארכיון' : 'פעיל', secondary: 'מצב פעילות' },
+  ]
 }
 
 export function buildClubModel(club) {
   if (!club?.id) return null
 
-  const subtitle = [
-    club?.city,
-    club?.active === false ? 'בארכיון' : '',
-  ].filter(Boolean).join(' · ')
+  const subtitle = [club?.city || club?.clubCity, club?.active === false ? 'בארכיון' : ''].filter(Boolean).join(' · ')
 
   const avatar = resolveEntityAvatar({
     entityType: 'club',
     entity: club,
   })
+
+  const teamsCount = getCount(club, 'teams')
+  const playersCount = getCount(club, 'players')
+  const isArchived = club?.active === false
+  const completeness = getProfileCompleteness(club)
+  const attentionItems = buildAttentionItems({ teamsCount, playersCount, isArchived })
 
   return {
     entity: club,
@@ -95,6 +133,12 @@ export function buildClubModel(club) {
     title: club?.clubName || club?.name || 'מועדון',
     subtitle,
     profileRoute: `/clubs/${club.id}`,
-    domains: CLUB_TABS.map((tab) => buildDomain(club, tab)),
+    actionLabel: 'לניהול המועדון',
+    healthStatus: attentionItems.length ? 'attention' : 'ok',
+    kpis: buildKpis({ completeness, teamsCount, playersCount, isArchived }),
+    attentionItems,
+    domains: CLUB_TABS
+      .map((tab) => buildDomain(club, tab))
+      .sort((a, b) => a.priority - b.priority),
   }
 }

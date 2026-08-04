@@ -2,85 +2,90 @@
 
 import { getEntityColors } from '../../../core/theme/Colors'
 
-function resolveDrawerSize(size) {
+function resolveSize(size) {
   if (size === 'lg') return 'lg'
   if (size === 'md') return 'md'
   return 'sm'
 }
 
-function getDrawerHeight(size) {
-  const normalized = resolveDrawerSize(size)
-
-  if (normalized === 'lg') return '88dvh'
-  if (normalized === 'md') return '74dvh'
-
-  return '58dvh'
-}
-
-function getDrawerWidth(size) {
-  const normalized = resolveDrawerSize(size)
+function getModalWidth(size) {
+  const normalized = resolveSize(size)
 
   if (normalized === 'lg') {
-    return {
-      xs: '100%',
-      sm: 680,
-      md: 760,
-    }
+    return 'min(860px, calc(100vw - 32px))'
   }
 
   if (normalized === 'md') {
-    return {
-      xs: '100%',
-      sm: 600,
-      md: 660,
-    }
+    return 'min(720px, calc(100vw - 32px))'
   }
 
-  return {
-    xs: '100%',
-    sm: 520,
-    md: 560,
-  }
+  return 'min(580px, calc(100vw - 32px))'
 }
 
-export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
-  const c = getEntityColors(entityType)
-  const drawerHeight = getDrawerHeight(size)
-  const drawerWidth = getDrawerWidth(size)
+function getModalHeight(size) {
+  const normalized = resolveSize(size)
+
+  if (normalized === 'lg') {
+    return 'min(92dvh, 860px)'
+  }
+
+  if (normalized === 'md') {
+    return 'min(78dvh, 720px)'
+  }
+
+  return 'min(68dvh, 620px)'
+}
+
+export function buildCreateModalSx(
+  entityType,
+  domainColor,
+  size = 'sm'
+) {
+  const colors = getEntityColors(entityType)
+  const width = getModalWidth(size)
+  const maxHeight = getModalHeight(size)
 
   return {
-    drawerSx: {
-      bgcolor: 'transparent',
-      p: { xs: 0, sm: 1.5, md: 3 },
-      boxShadow: 'none',
-      overflow: 'hidden',
+    root: {
+      backdropFilter: 'blur(6px)',
+      display: 'flex',
       alignItems: 'center',
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
+      p: { xs: 1.5, sm: 2 },
     },
 
-    drawerSheet: {
-      borderRadius: { xs: '16px 16px 0 0', sm: 'md' },
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 0,
-      height: drawerHeight,
-      maxHeight: drawerHeight,
+    motionWrap: {
+      width,
+      maxHeight,
       minHeight: 0,
-      minWidth: 0,
-      boxSizing: 'border-box',
+      display: 'grid',
+    },
+
+    dialog: {
+      position: 'relative',
+      inset: 'auto',
+      transform: 'none',
+      m: 0,
+      p: 0,
+      width: '100%',
+      maxWidth: '100%',
+      maxHeight: 'inherit',
+      minHeight: 0,
       overflow: 'hidden',
-      width: drawerWidth,
-      mx: 'auto',
+      borderRadius: { xs: 22, md: 28 },
       bgcolor: 'background.body',
       boxShadow: 'lg',
+      display: 'grid',
+      gridTemplateRows: 'auto minmax(0, 1fr) auto',
+      gap: 0,
     },
 
-    headerSx: {
+    header: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 1,
-      p: 1.5,
+      p: 1.15,
       borderBottom: '1px solid',
       borderColor: 'divider',
       flexShrink: 0,
@@ -94,13 +99,13 @@ export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
     },
 
     headerIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 10,
+      width: 36,
+      height: 36,
+      borderRadius: 12,
       display: 'grid',
       placeItems: 'center',
-      bgcolor: domainColor || c.surface,
-      color: c.text,
+      bgcolor: domainColor || colors.surface,
+      color: colors.text,
       border: '1px solid',
       borderColor: domainColor
         ? `color-mix(in srgb, ${domainColor} 28%, divider)`
@@ -122,14 +127,27 @@ export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
       },
     },
 
+    titleWrap: {
+      minWidth: 0,
+      display: 'grid',
+      gap: 0.15,
+    },
+
+    kicker: {
+      color: 'text.tertiary',
+      fontWeight: 700,
+      lineHeight: 1.1,
+    },
+
     title: {
       fontWeight: 700,
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      lineHeight: 1.2,
     },
 
-    dialogContentSx: {
+    dialogContent: {
       display: 'flex',
       flexDirection: 'column',
       minHeight: 0,
@@ -139,19 +157,18 @@ export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
 
     content: {
       display: 'grid',
-      gap: 1.25,
-      p: 2,
-      px: { xs: 2, sm: 3 },
+      gap: 0.9,
+      p: 1.25,
+      px: { xs: 1.25, sm: 1.75 },
       overflowY: 'auto',
+      overflowX: 'hidden',
       minHeight: 0,
-      flex: 1,
     },
 
-    footerSx: {
-      pt: 1,
-      mt: 'auto',
-      px: 2,
-      pb: 1,
+    footer: {
+      pt: 0.75,
+      px: 1.5,
+      pb: 0.75,
       borderTop: '1px solid',
       borderColor: 'divider',
       display: 'flex',
@@ -162,14 +179,14 @@ export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
       flexShrink: 0,
     },
 
-    footerActionsSx: {
+    footerActions: {
       display: 'flex',
       alignItems: 'center',
       gap: 0.75,
       flexWrap: 'wrap',
     },
 
-    icoRes: {
+    resetButton: {
       height: 36,
       width: 36,
       flexShrink: 0,
@@ -177,16 +194,16 @@ export function buildCreateModalSx(entityType, domainColor, size = 'sm') {
       borderColor: 'divider',
     },
 
-    confirmButtonSx: {
-      bgcolor: c.accent,
-      color: c.textAcc,
+    confirmButton: {
+      bgcolor: colors.accent,
+      color: colors.textAcc,
       transition: 'filter .15s ease, transform .12s ease',
       border: '1px solid',
       borderColor: 'divider',
 
       '&:hover': {
-        bgcolor: c.accent,
-        color: c.textAcc,
+        bgcolor: colors.accent,
+        color: colors.textAcc,
         filter: 'brightness(0.96)',
         transform: 'translateY(-1px)',
       },

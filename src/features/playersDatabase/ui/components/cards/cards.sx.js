@@ -84,16 +84,18 @@ export const pdbCardSx = {
 }
 
 export function getStatIconSx(tone) {
-  const isSolid = tone === 'solid'
+  const tones = {
+    solid: { bgcolor: devPlanColors.primary, color: '#fff' },
+    info: { bgcolor: devPlanColors.tertiaryLight, color: devPlanColors.tertiary },
+    success: { bgcolor: '#eaf8f0', color: '#1f8a4c' },
+    warning: { bgcolor: '#fff5e5', color: '#b46a00' },
+    neutral: { bgcolor: devPlanColors.primaryLight, color: devPlanColors.secondary },
+  }
+  const selected = tones[tone] || tones.neutral
 
   return {
     ...pdbCardSx.statIcon,
-    bgcolor: isSolid
-      ? devPlanColors.primary
-      : devPlanColors.primaryLight,
-    color: isSolid
-      ? '#fff'
-      : devPlanColors.primary,
+    ...selected,
 
     '& svg': {
       color: 'inherit',

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Box, Sheet, Textarea, Typography } from '@mui/joy'
-import MeetingCommentsField from '../../../../../../../../ui/fields/inputUi/meetings/MeetingCommentsField.js'
+import MeetingCommentsField from '../../../../../../../../ui/fields/meetings/MeetingCommentsField.js'
 
 import { formSx } from '../sx/form.sx.js'
 

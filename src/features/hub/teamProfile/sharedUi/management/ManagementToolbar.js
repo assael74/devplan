@@ -11,31 +11,34 @@ export default function ManagementToolbar({
   isDirty,
   canSave,
   pending,
+  isEditing = true,
+  onEdit,
   onReset,
   onSave,
   extraActions = null,
   isMobile = false,
 }) {
   const nonShow = activeTab.id === 'roles'
-  const showStatus = !nonShow && !isMobile
+  const showStatus = !nonShow && !isMobile && isEditing
+  const showEditButton = activeTab.id === 'info' && !isEditing
 
   return (
     <Box sx={sx.toolbar(nonShow, isMobile)}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={sx.titleArea}>
         <Box sx={sx.headerDot} />
 
-        <Typography level="title-sm" sx={{ fontWeight: 700 }}>
+        <Typography level='title-sm' sx={sx.title(isMobile)} noWrap>
           {activeTab?.labelH || 'ניהול'}
         </Typography>
 
         {showStatus && (
-          <Box sx={{ pl: 2 }}>
+          <Box sx={sx.statusWrap}>
             {isDirty ? (
-              <Chip size="sm" variant="soft" color="warning">
+              <Chip size='sm' variant='soft' color='warning'>
                 לא נשמר
               </Chip>
             ) : (
-              <Chip size="sm" variant="soft" color="success">
+              <Chip size='sm' variant='soft' color='neutral'>
                 שמור
               </Chip>
             )}
@@ -47,54 +50,83 @@ export default function ManagementToolbar({
         <Box sx={sx.toolbarActions(isMobile)}>
           {extraActions}
 
-          {isMobile ? (
-            <IconButton
-              size="sm"
-              variant="soft"
-              color="neutral"
-              disabled={!isDirty || pending}
-              onClick={onReset}
-              sx={{ border: '1px solid', borderColor: 'divider' }}
-            >
-              {iconUi({ id: 'reset' })}
-            </IconButton>
+          {showEditButton ? (
+            isMobile ? (
+              <IconButton
+                size='sm'
+                variant='soft'
+                color='neutral'
+                disabled={pending}
+                onClick={onEdit}
+                sx={sx.secondaryAction}
+              >
+                {iconUi({ id: 'edit' })}
+              </IconButton>
+            ) : (
+              <Button
+                size='sm'
+                variant='soft'
+                color='neutral'
+                disabled={pending}
+                onClick={onEdit}
+                startDecorator={iconUi({ id: 'edit' })}
+                sx={sx.secondaryAction}
+              >
+                עריכה
+              </Button>
+            )
           ) : (
-            <Button
-              size="sm"
-              variant="soft"
-              color="neutral"
-              disabled={!isDirty || pending}
-              onClick={onReset}
-              startDecorator={iconUi({ id: 'reset' })}
-              sx={{ border: '1px solid', borderColor: 'divider' }}
-            >
-              איפוס
-            </Button>
-          )}
+            <>
+              {isMobile ? (
+                <IconButton
+                  size='sm'
+                  variant='soft'
+                  color='neutral'
+                  disabled={pending}
+                  onClick={onReset}
+                  sx={sx.secondaryAction}
+                >
+                  {iconUi({ id: 'reset' })}
+                </IconButton>
+              ) : (
+                <Button
+                  size='sm'
+                  variant='soft'
+                  color='neutral'
+                  disabled={pending}
+                  onClick={onReset}
+                  startDecorator={iconUi({ id: 'reset' })}
+                  sx={sx.secondaryAction}
+                >
+                  ביטול
+                </Button>
+              )}
 
-          {isMobile ? (
-            <IconButton
-              size="sm"
-              variant="solid"
-              disabled={!canSave}
-              loading={pending}
-              onClick={onSave}
-              sx={sx.mobileSaveBtn}
-            >
-              {iconUi({ id: 'save' })}
-            </IconButton>
-          ) : (
-            <Button
-              size="sm"
-              variant="solid"
-              disabled={!canSave}
-              loading={pending}
-              onClick={onSave}
-              sx={sx.confBtn}
-              startDecorator={iconUi({ id: 'save' })}
-            >
-              שמירה
-            </Button>
+              {isMobile ? (
+                <IconButton
+                  size='sm'
+                  variant='solid'
+                  disabled={!canSave}
+                  loading={pending}
+                  onClick={onSave}
+                  sx={sx.saveAction(canSave)}
+                >
+                  {iconUi({ id: 'save' })}
+                </IconButton>
+              ) : (
+                <Button
+                  size='sm'
+                  variant='solid'
+                  disabled={!canSave}
+                  loading={pending}
+                  onClick={onSave}
+                  sx={sx.saveAction(canSave)}
+                  startDecorator={iconUi({ id: 'save' })}
+                >
+                  שמירה
+                </Button>
+              )}
+            </>
           )}
         </Box>
       )}

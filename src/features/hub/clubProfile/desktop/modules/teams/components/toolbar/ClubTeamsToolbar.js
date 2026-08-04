@@ -1,7 +1,7 @@
 // clubProfile/desktop/modules/teams/components/toolbar/ClubTeamsToolbar.js
 
 import React from 'react'
-import { Box, Input, Chip } from '@mui/joy'
+import { Box, Chip, Input } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
@@ -35,21 +35,10 @@ export default function ClubTeamsToolbar({
           value={filters?.search || ''}
           onChange={(e) => onChangeFilters({ search: e.target.value })}
           startDecorator={iconUi({ id: 'search' })}
-          placeholder="חיפוש קבוצה לפי שם / שנתון / ליגה"
+          placeholder="חיפוש קבוצה לפי שם, שנתון או ליגה"
           size="sm"
           sx={sx.searchInput}
         />
-
-        <Chip
-          size="sm"
-          variant={filters?.onlyProject ? 'solid' : 'soft'}
-          color={filters?.onlyProject ? 'success' : 'neutral'}
-          startDecorator={iconUi({ id: 'project' })}
-          onClick={onToggleOnlyProject}
-          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
-        >
-          פרויקט ({summary?.projectTeamsTotal ?? 0})
-        </Chip>
 
         <Chip
           size="sm"
@@ -57,17 +46,28 @@ export default function ClubTeamsToolbar({
           color={filters?.onlyActive ? 'success' : 'neutral'}
           startDecorator={iconUi({ id: 'active' })}
           onClick={onToggleOnlyActive}
-          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
+          sx={sx.filterChip}
         >
-          פעילה ({summary?.activeTeamsTotal ?? 0})
+          פעילה
         </Chip>
 
-        <Box sx={{ flex: 1 }} />
+        <Chip
+          size="sm"
+          variant={filters?.onlyProject ? 'solid' : 'soft'}
+          color={filters?.onlyProject ? 'success' : 'neutral'}
+          startDecorator={iconUi({ id: 'project' })}
+          onClick={onToggleOnlyProject}
+          sx={sx.filterChip}
+        >
+          פרויקט
+        </Chip>
+
+        <Box sx={{ flex: 1, minWidth: 8 }} />
 
         <Chip
           size="sm"
           variant="soft"
-          color="danger"
+          color="neutral"
           disabled={!hasActiveFilters}
           onClick={onResetFilters}
           startDecorator={iconUi({ id: 'reset' })}

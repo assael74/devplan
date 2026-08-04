@@ -87,4 +87,49 @@ export const schedulePreviewSx = {
     minHeight: 0,
     height: '100%',
   }),
+
+  emptyState: {
+    minHeight: 260,
+    p: 2,
+    borderRadius: 'md',
+    border: '1px dashed',
+    borderColor: 'divider',
+    bgcolor: 'background.surface',
+    display: 'grid',
+    placeItems: 'center',
+    textAlign: 'center',
+    gap: 1,
+  },
+
+  emptyIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 'md',
+    display: 'grid',
+    placeItems: 'center',
+    bgcolor: 'background.level1',
+    color: 'text.secondary',
+  },
+
+  emptyTextWrap: {
+    display: 'grid',
+    gap: 0.35,
+    maxWidth: 520,
+  },
+
+  emptyTitle: {
+    fontWeight: 700,
+  },
+
+  emptyText: {
+    color: 'text.tertiary',
+  },
+
+  emptyActions: {
+    display: 'flex',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    mt: 0.25,
+  },
 }

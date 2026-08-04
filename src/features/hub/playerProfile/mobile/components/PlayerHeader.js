@@ -3,10 +3,24 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+
+const playerHeaderColors = getEntityColors('players')
+
+const playerHeaderSx = {
+  bgcolor: 'rgba(76, 110, 245, 0.05)',
+  border: '1px solid',
+  borderColor: 'rgba(76, 110, 245, 0.16)',
+  '& .MuiAvatar-root': {
+    border: '1px solid',
+    borderColor: playerHeaderColors.accent,
+    boxShadow: '0 0 0 4px rgba(76, 110, 245, 0.08)',
+  },
+}
 
 export default function PlayerHeader({ entity, context, onBack, isPrivatePlayer = false }) {
   const navigate = useNavigate()
@@ -50,6 +64,7 @@ export default function PlayerHeader({ entity, context, onBack, isPrivatePlayer 
         onBack={onBack}
         pathItems={pathItems}
         right={<ProfileIfaButton ifaLink={ifaLink} />}
+        sx={playerHeaderSx}
       />
       <ProfileHeaderImageModal
         image={image}

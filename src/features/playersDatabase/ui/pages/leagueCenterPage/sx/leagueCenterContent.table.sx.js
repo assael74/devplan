@@ -3,102 +3,94 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterTableSx = {
-  tableScroll: {
+  tablePanel: {
+    width: '100%',
+    height: '100%',
     minWidth: 0,
     minHeight: 0,
-    height: '100%',
     overflow: 'hidden',
+    border: '1px solid #c8d7e2',
+    boxShadow: '0 10px 24px rgba(16, 43, 64, 0.075)',
+    bgcolor: '#fff',
 
-    '& table': {
-      fontSize: 12,
+    '& > div > div:first-of-type': {
+      mx: -1.25,
+      mt: -1.25,
+      mb: 0.25,
+      px: 1.5,
+      py: 1.05,
+      borderBottom: '1px solid #c8d7e2',
+      bgcolor: '#edf3f7',
     },
+  },
 
+  tableArea: {
+    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+
+  tableCount: {
+    px: 1,
+    py: 0.5,
+    borderRadius: 8,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.primaryLight}`,
+    color: devPlanColors.primary,
+    fontWeight: 700,
+  },
+
+  tableScroll: {
+    width: '100%',
+    height: '100%',
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden',
+    borderRadius: 7,
+    border: '1px solid #dbe4ea',
+
+    '& table': { fontSize: 12 },
     '& th': {
       px: 1,
-      py: 0.75,
+      py: 0.85,
+      bgcolor: '#f4f7f9',
+      borderBottom: '1px solid #b8c8d4',
     },
-
-    '& td': {
-      px: 1,
-      py: 0.65,
-    },
-
-    '& button': {
-      minWidth: 0,
-      minHeight: 28,
-      px: 1.25,
-      fontSize: 12,
-    },
+    '& td': { px: 1, py: 0.7, borderBottomColor: '#dce5eb' },
+    '& tbody tr': { transition: 'background-color 140ms ease' },
+    '& tbody tr:hover': { bgcolor: devPlanColors.tertiaryLight },
+    '& button': { minWidth: 0, minHeight: 28, px: 1.25, fontSize: 12 },
   },
 
   tableBodyScroll: {
-    maxHeight: '100%',
+    height: '100%',
+    maxHeight: 'none',
   },
 
-  leagueNameColumn: {
-    width: '34%',
-    minWidth: 260,
-  },
+  leagueNameColumn: { width: '38%', minWidth: 280 },
+  leagueNameHeader: { textAlign: 'left', pl: 1.5, pr: 1.5 },
+  leagueNameCell: { textAlign: 'left', pl: 1.5, pr: 1.5 },
+  centerColumn: { textAlign: 'center' },
+  countColumn: { width: 92, textAlign: 'center' },
+  actionsColumn: { width: 130, textAlign: 'center' },
+  rowActions: { alignItems: 'center', justifyContent: 'center', width: '100%' },
 
-  leagueNameHeader: {
-    textAlign: 'left',
-    pl: 1.5,
-    pr: 1.5,
-  },
-
-  leagueNameCell: {
-    textAlign: 'left',
-    pl: 1.5,
-    pr: 1.5,
-  },
-
-  centerColumn: {
-    textAlign: 'center',
-  },
-
-  compactColumn: {
-    width: 76,
-  },
-
-  seasonColumn: {
-    width: 96,
-  },
-
-  countColumn: {
-    width: 86,
-    textAlign: 'center',
-  },
-
-  actionsColumn: {
-    width: 82,
-    textAlign: 'center',
-  },
-
-  rowActions: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-
-  actionIconPlaceholder: {
-    width: 28,
-    height: 28,
-    flexShrink: 0,
-  },
-
-  actionIconButton: {
-    minWidth: 28,
-    width: 28,
-    height: 28,
-    minHeight: 28,
-    p: 0,
+  createSeasonButton: {
     color: devPlanColors.primary,
-    borderColor: '#c7dbf8',
+    borderColor: devPlanColors.primaryLight,
     bgcolor: '#fff',
+  },
+
+  openLeagueButton: {
+    color: devPlanColors.primary,
+    bgcolor: devPlanColors.primaryLight,
+    fontWeight: 700,
 
     '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-      borderColor: devPlanColors.primary,
+      bgcolor: devPlanColors.tertiaryLight,
+      color: devPlanColors.tertiary,
     },
   },
 }

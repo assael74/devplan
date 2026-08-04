@@ -9,32 +9,28 @@ export default function LeagueCenterOverview({ summary }) {
   return (
     <Box sx={sx.statsGrid}>
       <StatCard
-        title='ליגות במערכת'
+        title='ליגות בהקשר'
         value={summary.totalLeagues}
-        caption='כל הליגות הפעילות'
+        caption='לפי שנתון, רמה ועונה'
         iconId='playersDatabase'
         tone='info'
+        sx={sx.summaryCard}
       />
       <StatCard
-        title='ליגות עם טבלה מלאה'
-        value={summary.fullTables}
-        caption='מוכנות לחישוב ביצועי קבוצות'
+        title='מלאות'
+        value={summary.fullData}
+        caption='טבלה, שחקנים וסטטיסטיקות'
         iconId='defensive'
         tone='success'
+        sx={sx.summaryCard}
       />
       <StatCard
-        title='ליגות חלקיות'
-        value={summary.partialTeams}
-        caption='חסר סגל או סטטיסטיקות'
+        title='חלקיות'
+        value={summary.partialData}
+        caption='מידע קיים אך חלקי'
         iconId='warning'
         tone='warning'
-      />
-      <StatCard
-        title='שחקנים מסומנים'
-        value={summary.profiledPlayers}
-        caption='עם פרופיל סקאוט'
-        iconId='players'
-        tone='neutral'
+        sx={sx.summaryCard}
       />
     </Box>
   )

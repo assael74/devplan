@@ -28,15 +28,12 @@ export default function PerformanceSection({ performance }) {
   if (!model.ready) {
     return (
       <Box sx={sx.root}>
-        <Box sx={sx.top}>
-          <Chip size="sm" variant="soft" color="neutral" sx={sx.profileChip}>
-            אין מדידה
-          </Chip>
-        </Box>
-
-        <Box sx={sx.meta}>
-          <Typography level="body-xs">ביצועים לא זמינים</Typography>
-        </Box>
+        <Typography level="body-xs" sx={sx.emptyTitle}>
+          אין מדידה
+        </Typography>
+        <Typography level="body-xs" sx={sx.emptyText}>
+          ביצועים לא זמינים
+        </Typography>
       </Box>
     )
   }
@@ -44,6 +41,21 @@ export default function PerformanceSection({ performance }) {
   return (
     <Box sx={sx.root}>
       <Box sx={sx.top}>
+        <Typography level="body-xs" sx={sx.title}>
+          ביצועים
+        </Typography>
+
+        <Chip
+          size="sm"
+          variant="soft"
+          color={model.impactColor}
+          sx={sx.impactChip}
+        >
+          {model.impactLabel}
+        </Chip>
+      </Box>
+
+      <Box sx={sx.meta}>
         <Chip
           size="sm"
           variant="soft"
@@ -57,24 +69,9 @@ export default function PerformanceSection({ performance }) {
           {model.profile.label}
         </Chip>
 
-        <Chip
-          size="sm"
-          variant="soft"
-          color={model.impactColor}
-          sx={sx.impactChip}
-        >
-          {model.impactLabel}
-        </Chip>
-      </Box>
-
-      <Box sx={sx.meta}>
         <Box sx={sx.metaMain}>
           <MetaItem icon="games">
             {model.meta.gamesCount} משחקים
-          </MetaItem>
-
-          <MetaItem icon="analytics">
-            מדד קבוצתי
           </MetaItem>
         </Box>
       </Box>

@@ -1,47 +1,63 @@
-// playerProfile/desktop/modules/info/components/PlayerBirthCard.js
+// features/hub/playerProfile/desktop/modules/info/components/PlayerBirthCard.js
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { Box, Typography, Sheet, Button, Chip } from '@mui/joy'
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import React from 'react'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
+
+import PlayerBirthFields from '../../../../../../../ui/forms/players/edit/PlayerBirthFields.js'
+
 import { sharedSx as sx } from './sx/shared.sx.js'
-import { MonthYearPicker, DateInputField } from '../../../../../../../ui/fields'
+
+const TEXT = {
+  title: 'תאריך לידה ושנתון',
+  year: 'שנתון',
+  noYear: 'ללא שנתון',
+  fullDate: 'תאריך מלא',
+  noFullDate: 'ללא תאריך מלא',
+}
 
 export default function PlayerBirthCard({ draft, setDraft, pending }) {
-  const hasBirth = Boolean(draft.birth)
-  const hasBirthDay = Boolean(draft.birthDay)
+  const hasBirth = Boolean(draft?.birth)
+  const hasBirthDay = Boolean(draft?.birthDay)
+
+  const handleField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
       <Box sx={sx.cardHead}>
         <Box sx={sx.cardTitle}>
-          {iconUi({ id: 'birth', size: 'sm' }) || null}
           <Typography level="title-md" noWrap>
-            תאריך לידה ושנתון
+            {TEXT.title}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Chip size="sm" variant="soft" color={hasBirth ? 'primary' : 'neutral'}>
-            {hasBirth ? `שנתון ${draft.birth}` : 'ללא שנתון'}
+          <Chip
+            size="sm"
+            variant="soft"
+            color={hasBirth ? 'primary' : 'neutral'}
+          >
+            {hasBirth ? `${TEXT.year} ${draft.birth}` : TEXT.noYear}
           </Chip>
 
-          <Chip size="sm" variant="soft" color={hasBirthDay ? 'primary' : 'neutral'}>
-            {hasBirthDay ? 'תאריך מלא' : 'ללא תאריך מלא'}
+          <Chip
+            size="sm"
+            variant="soft"
+            color={hasBirthDay ? 'primary' : 'neutral'}
+          >
+            {hasBirthDay ? TEXT.fullDate : TEXT.noFullDate}
           </Chip>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gap: 1 }}>
-        <MonthYearPicker
-          value={draft.birth}
-          onChange={(v) => setDraft((prev) => ({ ...prev, birth: v }))}
-        />
-
-        <DateInputField
-          value={draft.birthDay}
-          onChange={(v) => setDraft((prev) => ({ ...prev, birthDay: v }))}
-        />
-      </Box>
+      <PlayerBirthFields
+        draft={draft}
+        onField={handleField}
+        disabled={pending}
+        layout={{ display: 'grid', gap: 1 }}
+        mode="combined"
+      />
     </Sheet>
   )
 }

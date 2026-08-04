@@ -1,20 +1,18 @@
+// features/hub/playerProfile/desktop/modules/info/components/PlayerPositionCard.js
+
 import React, { useMemo, useState } from 'react'
 import { Box, Chip, Sheet, Snackbar, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { positionSx as sx } from './sx/position.sx.js'
 
-import PlayerPositionFieldPitch from '../../../../../../../ui/fields/selectUi/players/PlayerPositionsSelect.js'
+import PlayerPositionFields from '../../../../../../../ui/forms/players/edit/PlayerPositionFields.js'
 
 import {
   buildPlayerTargetsState,
 } from '../../../../../../../shared/players/targets/index.js'
 
 const emptyText = '—'
-
-const safeArr = (value) => {
-  return Array.isArray(value) ? value.filter(Boolean) : []
-}
 
 const getPositionsText = (positions = []) => {
   if (!Array.isArray(positions) || !positions.length) return 'לא נבחרו עמדות'
@@ -54,35 +52,6 @@ export default function PlayerPositionCard({
     targets?.labels?.role ||
     targets?.role?.label ||
     emptyText
-
-    const handlePositions = (positions) => {
-      const nextPositions = safeArr(positions)
-
-      setDraft((prev) => {
-        const currentPrimary = prev?.primaryPosition || ''
-
-        const nextPrimaryPosition = nextPositions.includes(currentPrimary) ? currentPrimary : ''
-
-        return {
-          ...prev,
-          positions: nextPositions,
-          primaryPosition: nextPrimaryPosition,
-        }
-      })
-    }
-
-    const handlePrimaryPosition = (primaryPosition) => {
-      setDraft((prev) => {
-        const positions = safeArr(prev?.positions)
-
-        const nextPrimaryPosition = positions.includes(primaryPosition) ? primaryPosition : positions[0] || ''
-
-        return {
-          ...prev,
-          primaryPosition: nextPrimaryPosition,
-        }
-      })
-    }
 
   return (
     <>
@@ -144,14 +113,12 @@ export default function PlayerPositionCard({
         </Box>
 
         <Box sx={sx.positionGrid}>
-        <PlayerPositionFieldPitch
-          value={Array.isArray(draft?.positions) ? draft.positions : []}
-          primaryPosition={draft?.primaryPosition || ''}
-          disabled={pending}
-          onChange={handlePositions}
-          onPrimaryPositionChange={handlePrimaryPosition}
-          onLimitReached={() => setSnack(true)}
-         />
+          <PlayerPositionFields
+            draft={draft}
+            onDraft={setDraft}
+            disabled={pending}
+            onLimitReached={() => setSnack(true)}
+          />
         </Box>
       </Sheet>
 

@@ -5,8 +5,8 @@ import { Box, Typography, Chip, Divider, Button, IconButton } from '@mui/joy'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
 
-import TeamSelectField from '../../../../ui/fields/selectUi/teams/TeamSelectField.js'
-import PlayerSelectField from '../../../../ui/fields/selectUi/players/PlayerSelectField.js'
+import TeamSelectField from '../../../../ui/fields/teams/TeamSelectField.js'
+import PlayerSelectField from '../../../../ui/fields/players/PlayerSelectField.js'
 
 export default function CalendarSelectorPanel({
   teams = [],

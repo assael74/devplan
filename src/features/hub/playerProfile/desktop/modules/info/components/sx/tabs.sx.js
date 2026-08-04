@@ -1,53 +1,54 @@
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { devPlanColors, getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 
 export const tabsSx = {
   tabsShell: {
-    display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-    gap: 0.75,
-    p: 1,
-    mb: 1,
-    borderRadius: 'lg',
+    display: 'inline-grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, auto))',
+    gap: 0.15,
+    mb: 0.85,
+    p: 0.18,
+    borderRadius: 'sm',
     bgcolor: 'background.level1',
     border: '1px solid',
     borderColor: 'divider',
-    boxShadow: 'sm',
+    boxShadow: 'none',
+    overflowX: 'auto',
+    minWidth: 0,
+    maxWidth: '100%',
   },
 
   tabBtn: (selected) => ({
-    justifyContent: 'flex-start',
-    gap: 1,
-    minHeight: 54,
-    px: 1.25,
-    py: 1,
-    borderRadius: 'md',
+    justifyContent: 'center',
+    gap: 0.4,
+    minHeight: 30,
+    px: 0.85,
+    py: 0.32,
+    borderRadius: 'sm',
     border: '1px solid',
-    borderColor: selected ? `${c.accent}66` : 'transparent',
-    bgcolor: selected ? c.bg : 'background.surface',
-    color: selected ? c.text : 'text.secondary',
-    boxShadow: selected ? 'sm' : 'none',
-    transition: 'background .15s ease, transform .12s ease, box-shadow .15s ease',
+    borderColor: selected ? devPlanColors.border : 'transparent',
+    bgcolor: selected ? 'background.surface' : 'transparent',
+    color: selected ? 'text.primary' : 'text.secondary',
+    boxShadow: 'none',
+    transition: 'background .15s ease, border-color .15s ease, color .15s ease',
+    minWidth: 0,
 
     '&:hover': {
-      bgcolor: selected ? c.bg : 'background.level2',
-      transform: 'translateY(-1px)',
-      boxShadow: 'sm',
+      bgcolor: selected ? 'background.surface' : devPlanColors.secondaryLight,
+      borderColor: selected ? devPlanColors.border : 'divider',
     },
   }),
 
   tabIcon: (selected) => ({
-    width: 34,
-    height: 34,
-    borderRadius: 'md',
+    width: 20,
+    height: 20,
+    borderRadius: 'sm',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
-    bgcolor: selected ? 'rgba(255,255,255,0.45)' : 'background.level1',
-    color: selected ? c.text : 'text.tertiary',
-    border: '1px solid',
-    borderColor: 'divider',
+    bgcolor: selected ? c.bg : 'transparent',
+    color: selected ? c.accent : 'text.tertiary',
 
     '& svg': {
       fill: 'currentColor',
@@ -62,10 +63,11 @@ export const tabsSx = {
   },
 
   tabLabel: (selected) => ({
-    fontWeight: 700,
-    color: selected ? c.text : 'text.primary',
+    fontWeight: selected ? 600 : 500,
+    color: selected ? 'text.primary' : 'text.secondary',
     lineHeight: 1.2,
     whiteSpace: 'nowrap',
+    fontSize: '0.78rem',
   }),
 
   tabSub: (selected) => ({

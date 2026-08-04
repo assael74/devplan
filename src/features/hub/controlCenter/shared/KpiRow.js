@@ -5,10 +5,10 @@ import { Box } from '@mui/joy'
 
 import KpiCard from './KpiCard.js'
 
-const EMPTY_KPI_SLOTS = [null, null, null, null, null]
-
 export default function KpiRow({ items, compact = false }) {
-  const list = Array.isArray(items) && items.length ? items : EMPTY_KPI_SLOTS
+  const list = Array.isArray(items) ? items.filter(Boolean) : []
+
+  if (!list.length) return null
 
   return (
     <Box
@@ -21,7 +21,7 @@ export default function KpiRow({ items, compact = false }) {
         pb: 0.25,
       } : {
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
         gap: 1,
       }}
     >

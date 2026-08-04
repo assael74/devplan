@@ -15,9 +15,10 @@ export default function StatCard({
   caption,
   iconId,
   tone = 'soft',
+  sx: externalSx,
 }) {
   return (
-    <Card sx={sx.card}>
+    <Card sx={{ ...sx.card, ...externalSx }}>
       <Stack sx={sx.statContent}>
         <Stack
           spacing={0.5}

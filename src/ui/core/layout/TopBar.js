@@ -4,6 +4,9 @@ import React from 'react'
 import { Box, IconButton, Typography } from '@mui/joy'
 import MenuIcon from '@mui/icons-material/Menu'
 
+import logoMark from '../images/logo-mark.png'
+import { devPlanColors } from '../theme/Colors.js'
+
 export default function TopBar({ title = 'DevPlan', right, onMenuClick }) {
   return (
     <Box
@@ -31,18 +34,43 @@ export default function TopBar({ title = 'DevPlan', right, onMenuClick }) {
         <MenuIcon />
       </IconButton>
 
-      <Typography
-        level="title-md"
+      <Box
         sx={{
           flex: 1,
           minWidth: 0,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.9,
+          color: devPlanColors.primary,
         }}
       >
-        {title}
-      </Typography>
+        <Box
+          component="img"
+          src={logoMark}
+          alt=""
+          aria-hidden="true"
+          sx={{
+            width: 32,
+            height: 32,
+            objectFit: 'contain',
+            flexShrink: 0,
+          }}
+        />
+
+        <Typography
+          level="title-md"
+          sx={{
+            minWidth: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            color: 'inherit',
+            fontWeight: 800,
+          }}
+        >
+          {title}
+        </Typography>
+      </Box>
 
       {right ? (
         <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1 }}>

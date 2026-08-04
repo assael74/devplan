@@ -11,7 +11,7 @@ import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/Drawer
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider.js'
 
-import GameEditFields from '../../../../../../../../ui/forms/ui/games/GameEditFields.js'
+import GameEditFields from '../../../../../../../../ui/forms/games/GameEditFields.js'
 
 import {
   buildExternalGameEditInitial,

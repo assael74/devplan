@@ -10,9 +10,7 @@ function asArray(value) {
 function countValues(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 0
 
-  return Object.values(value).filter((item) => {
-    return item !== null && item !== ''
-  }).length
+  return Object.values(value).filter((item) => item !== null && item !== '').length
 }
 
 function getCount(team, key) {
@@ -30,10 +28,7 @@ function getCount(team, key) {
 
 function getSummary(team, key, count) {
   if (key === 'management') {
-    const values = [
-      team?.club?.clubName || team?.clubName,
-      team?.teamYear || team?.birthYear,
-    ].filter(Boolean)
+    const values = [team?.club?.clubName || team?.clubName, team?.teamYear || team?.birthYear].filter(Boolean)
 
     return {
       primary: values.join(' · ') || 'פרטי קבוצה',
@@ -96,6 +91,22 @@ function getSummary(team, key, count) {
   }
 }
 
+const DOMAIN_PRIORITY = {
+  games: 10,
+  players: 20,
+  performance: 30,
+  trainings: 40,
+  abilities: 50,
+  videos: 60,
+  management: 70,
+}
+
+function getDomainStatus(key, count) {
+  if (['players', 'games'].includes(key)) return count > 0 ? 'ok' : 'missing'
+  if (['abilities', 'videos', 'trainings'].includes(key)) return count > 0 ? 'ok' : 'empty'
+  return 'info'
+}
+
 function buildDomain(team, tab) {
   const count = getCount(team, tab.key)
   const summary = getSummary(team, tab.key, count)
@@ -109,7 +120,38 @@ function buildDomain(team, tab) {
     count,
     primary: summary.primary,
     secondary: summary.secondary,
+    status: getDomainStatus(tab.key, count),
+    priority: DOMAIN_PRIORITY[tab.key] || 999,
+    actionText: 'פתח',
   }
+}
+
+function getProfileCompleteness(team) {
+  const fields = [
+    team?.teamName || team?.name,
+    team?.club?.clubName || team?.clubName,
+    team?.teamYear || team?.birthYear,
+    team?.leagueName,
+  ]
+  const completed = fields.filter(Boolean).length
+
+  return Math.round((completed / fields.length) * 100)
+}
+
+function buildAttentionItems({ playersCount, gamesCount }) {
+  return [
+    playersCount ? null : { id: 'missingPlayers', status: 'missing', text: 'לא משויך סגל שחקנים' },
+    gamesCount ? null : { id: 'missingGames', status: 'missing', text: 'חסרים נתוני משחקים' },
+  ].filter(Boolean)
+}
+
+function buildKpis({ completeness, playersCount, gamesCount, videosCount }) {
+  return [
+    { id: 'profileCompleteness', label: 'שלמות קבוצה', value: `${completeness}%`, secondary: 'פרטי קבוצה ושיוך' },
+    { id: 'players', label: 'שחקנים', value: playersCount, secondary: 'שחקנים בסגל' },
+    { id: 'games', label: 'משחקים', value: gamesCount, secondary: 'נתוני משחק זמינים' },
+    { id: 'videos', label: 'וידאו', value: videosCount, secondary: 'ניתוחים משויכים' },
+  ]
 }
 
 export function buildTeamModel(team) {
@@ -128,6 +170,12 @@ export function buildTeamModel(team) {
     subline: team?.teamYear || '',
   })
 
+  const playersCount = getCount(team, 'players')
+  const gamesCount = getCount(team, 'games')
+  const videosCount = getCount(team, 'videos')
+  const completeness = getProfileCompleteness(team)
+  const attentionItems = buildAttentionItems({ playersCount, gamesCount })
+
   return {
     entity: team,
     avatar,
@@ -135,6 +183,12 @@ export function buildTeamModel(team) {
     title: team?.teamName || team?.name || 'קבוצה',
     subtitle,
     profileRoute: `/teams/${team.id}`,
-    domains: TEAM_TABS.map((tab) => buildDomain(team, tab)),
+    actionLabel: 'לניהול הקבוצה',
+    healthStatus: attentionItems.length ? 'attention' : 'ok',
+    kpis: buildKpis({ completeness, playersCount, gamesCount, videosCount }),
+    attentionItems,
+    domains: TEAM_TABS
+      .map((tab) => buildDomain(team, tab))
+      .sort((a, b) => a.priority - b.priority),
   }
 }

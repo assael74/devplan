@@ -20,7 +20,7 @@ const statsIconTone = {
   partial: {
     borderColor: 'warning.300',
     bgcolor: 'warning.50',
-    color: 'warning.800',
+    color: 'warning.700',
     hoverBg: 'warning.100',
     shadow: '0 1px 4px rgba(176, 112, 0, 0.18)',
   },
@@ -28,7 +28,7 @@ const statsIconTone = {
   committed: {
     borderColor: 'success.400',
     bgcolor: 'success.100',
-    color: 'success.800',
+    color: 'success.700',
     hoverBg: 'success.200',
     shadow: '0 1px 5px rgba(23, 126, 62, 0.22)',
   },

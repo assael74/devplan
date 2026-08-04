@@ -10,7 +10,7 @@ import {
   FormHelperText
 } from '@mui/joy'
 
-import AbilitiesMultiSelectField from '../../../../../../../ui/fields/selectUi/abilities/AbilitiesMultiSelectField.js'
+import AbilitiesMultiSelectField from '../../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'
 
 export default function AbilitiesFiltersContent({
   selectedDomains,

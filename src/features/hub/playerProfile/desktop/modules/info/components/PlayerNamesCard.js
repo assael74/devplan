@@ -1,15 +1,16 @@
-// playerProfile/desktop/modules/info/components/PlayerNamesCard.js
+// features/hub/playerProfile/desktop/modules/info/components/PlayerNamesCard.js
 
 import React from 'react'
-import { Box, Typography, Sheet, Chip } from '@mui/joy'
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
+
+import PlayerNamesFields from '../../../../../../../ui/forms/players/edit/PlayerNamesFields.js'
+
 import { sharedSx as sx } from './sx/shared.sx.js'
 
-import {
-  PlayerFirstNameField,
-  PlayerLastNameField,
-  PlayerShortNameField,
-} from '../../../../../../../ui/fields'
+const TEXT = {
+  noName: 'ללא שם',
+  title: 'שמות',
+}
 
 const getChipText = (draft = {}) => {
   const fullName = [draft.playerFirstName, draft.playerLastName]
@@ -17,46 +18,41 @@ const getChipText = (draft = {}) => {
     .join(' ')
     .trim()
 
-  return fullName || draft.playerShortName || 'ללא שם'
+  return fullName || draft.playerShortName || TEXT.noName
 }
 
 export default function PlayerNamesCard({ draft, setDraft, pending }) {
   const chipText = getChipText(draft)
 
+  const handleField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
   return (
     <Sheet variant="outlined" sx={sx.card}>
       <Box sx={sx.cardHead}>
         <Box sx={sx.cardTitle}>
-          {iconUi({ id: 'name', size: 'sm' }) || null}
           <Typography level="title-md" noWrap>
-            שמות
+            {TEXT.title}
           </Typography>
         </Box>
 
-        <Chip size="sm" variant="soft" color={chipText === 'ללא שם' ? 'neutral' : 'primary'}>
+        <Chip
+          size="sm"
+          variant="soft"
+          color={chipText === TEXT.noName ? 'neutral' : 'primary'}
+        >
           {chipText}
         </Chip>
       </Box>
 
-      <Box sx={sx.formGrid2}>
-        <PlayerFirstNameField
-          value={draft.playerFirstName}
-          disabled={pending}
-          onChange={(value) => setDraft((prev) => ({ ...prev, playerFirstName: value }))}
-        />
-
-        <PlayerLastNameField
-          value={draft.playerLastName}
-          disabled={pending}
-          onChange={(value) => setDraft((prev) => ({ ...prev, playerLastName: value }))}
-        />
-
-        <PlayerShortNameField
-          value={draft.playerShortName}
-          disabled={pending}
-          onChange={(value) => setDraft((prev) => ({ ...prev, playerShortName: value }))}
-        />
-      </Box>
+      <PlayerNamesFields
+        draft={draft}
+        onField={handleField}
+        disabled={pending}
+        layout={sx.formGrid2}
+        showShortName
+      />
     </Sheet>
   )
 }

@@ -1,9 +1,5 @@
 // teamProfile/desktop/modules/abilities/sx/module.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-
 export const moduleSx = {
   toolbarWrap: {
     width: '100%',
@@ -43,16 +39,21 @@ export const moduleSx = {
     },
   },
 
-  domainCard: (accent) => ({
+  domainCard: {
     height: '100%',
     borderRadius: 'md',
     bgcolor: 'background.surface',
-    transition: 'all 120ms ease',
+    transition: 'border-color 120ms ease, box-shadow 120ms ease',
     '&:hover': {
       boxShadow: 'sm',
-      borderColor: `${accent}.400`,
+      borderColor: 'primary.outlinedBorder',
     },
-  }),
+  },
+
+  domainTitle: {
+    color: 'text.primary',
+    fontWeight: 700,
+  },
 
   domainAvgCircle: {
     position: 'absolute',

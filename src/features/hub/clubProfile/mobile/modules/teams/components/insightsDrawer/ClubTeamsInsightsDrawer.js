@@ -22,7 +22,7 @@ import { buildFallbackAvatar } from '../../../../../../../../ui/core/avatars/fal
 
 import { buildClubTeamsInsights } from '../../../../../sharedLogic/teams/insightsLogic/index.js'
 
-const c = getEntityColors('clubs')
+const c = getEntityColors('teams')
 
 export default function ClubTeamsInsightsDrawer({
   open,

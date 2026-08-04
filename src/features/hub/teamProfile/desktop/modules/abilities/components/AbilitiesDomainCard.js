@@ -1,4 +1,4 @@
-// playerProfile/modules/abilities/components/AbilitiesDomainCard.js
+// teamProfile/desktop/modules/abilities/components/AbilitiesDomainCard.js
 
 import {
   Box,
@@ -18,8 +18,6 @@ import {
   isFilled,
   toFixed1,
   getScoreColor,
-  calcDomainScore,
-  DOMAIN_ACCENT,
 } from './../../../../sharedLogic/abilities'
 
 import { moduleSx as sx } from '../sx/module.sx.js'
@@ -27,24 +25,22 @@ import { moduleSx as sx } from '../sx/module.sx.js'
 export default function AbilitiesDomainCard({ domain }) {
   const domainAvg = Number(domain?.avg)
   const pct = Number(domain?.coveragePct || 0)
-  const domainColor = domain?.color || getScoreColor(domainAvg)
+  const domainScoreColor = getScoreColor(domainAvg)
   const filledCount = Number(domain?.filled || 0)
-  const accent = DOMAIN_ACCENT[domain?.domain] || 'neutral'
-  const avgLabel = domain?.hasRated ? domain?.avgLabel : '—'
 
   return (
-    <Card variant="outlined" sx={sx.domainCard(accent)}>
+    <Card variant="outlined" sx={sx.domainCard}>
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography
             level="title-sm"
             startDecorator={iconUi({ id: domain?.domain })}
-            sx={{color: `${accent}.700`, fontWeight: 600}}
+            sx={sx.domainTitle}
           >
             {domain?.domainLabel}
           </Typography>
 
-          <Chip size="sm" variant="soft" color={accent}>
+          <Chip size="sm" variant="soft" color="neutral">
             {filledCount}/{domain?.items?.length || 0}
           </Chip>
         </Stack>
@@ -54,7 +50,7 @@ export default function AbilitiesDomainCard({ domain }) {
             <CircularProgress
               determinate
               value={pct}
-              color={domainColor}
+              color={domainScoreColor}
               size="sm"
               sx={{ width: 48, height: 48 }}
             />
@@ -67,7 +63,7 @@ export default function AbilitiesDomainCard({ domain }) {
             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
               ממוצע דומיין
             </Typography>
-            <LinearProgress determinate value={pct} color={domainColor} sx={{ width: 160 }} />
+            <LinearProgress determinate value={pct} color={domainScoreColor} sx={{ width: 160 }} />
           </Stack>
         </Stack>
 
@@ -100,7 +96,7 @@ export default function AbilitiesDomainCard({ domain }) {
                   color={itemColor}
                   sx={{ minWidth: 32, fontWeight: filled ? 600 : 400 }}
                 >
-                  {filled ? item?.value : '—'}
+                  {filled ? item?.value : '-'}
                 </Chip>
 
                 <LinearProgress

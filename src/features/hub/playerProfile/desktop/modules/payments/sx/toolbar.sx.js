@@ -39,7 +39,7 @@ export const toolbarSx = {
     gridTemplateColumns: 'repeat(4, minmax(120px, 0.75fr))',
     gap: 1,
     px: 1,
-    '@media (max-width: 900px)': { gridTemplateColumns: 'repeat(2, minmax(120px, 0.75fr))' },
+    '@media (max-width: 700px)': { gridTemplateColumns: 'repeat(2, minmax(120px, 0.75fr))' },
   },
 
   selectValueRow: {

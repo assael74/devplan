@@ -2,10 +2,12 @@
 
 export const targetsSx = {
   card: (isMobile) => ({
-    p: isMobile ? 1 : 1.25,
-    mt: isMobile ? 1 : 2,
+    p: isMobile ? 1 : 1.15,
+    mt: isMobile ? 1 : 1,
     borderRadius: 'md',
-    boxShadow: 'sm',
+    boxShadow: 'none',
+    border: '1px solid',
+    borderColor: 'divider',
     bgcolor: 'background.surface',
     display: 'flex',
     flexDirection: 'column',
@@ -14,50 +16,42 @@ export const targetsSx = {
     minHeight: 0,
   }),
 
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 1,
-    minWidth: 0,
-    pb: 1,
-    borderBottom: '1px solid',
-    borderColor: 'divider',
-  },
-
-  leagueTargetsGrid: {
+  targetSetupGrid: (isMobile) => ({
     display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      md: 'minmax(220px, 0.9fr) minmax(0, 3fr)',
-    },
-    gap: 1.25,
+    gridTemplateColumns: isMobile
+      ? '1fr'
+      : {
+          xs: '1fr',
+          lg: 'minmax(0, 1fr) minmax(280px, 0.42fr)',
+        },
+    gap: 1,
     alignItems: 'start',
     minWidth: 0,
-  },
+  }),
 
-  leagueActualCol: {
+  actualPanel: (isMobile) => ({
     display: 'grid',
-    gap: 1,
-    gridTemplateColumns: {
-      xs: '1fr 1fr',
-      sm: 'repeat(3, minmax(0, 1fr))',
-      md: '1fr',
-    },
-    p: 1,
+    gridTemplateColumns: isMobile
+      ? '1fr 1fr'
+      : {
+          xs: '1fr 1fr',
+          sm: 'repeat(3, minmax(0, 1fr))',
+          xl: 'repeat(5, minmax(0, 1fr))',
+        },
+    gap: 0.85,
+    p: 0.9,
     borderRadius: 'md',
     bgcolor: 'background.level1',
     border: '1px solid',
     borderColor: 'divider',
     minWidth: 0,
-  },
+  }),
 
-  leagueTargetsCol: {
+  targetPickerPanel: {
     display: 'grid',
-    gap: 1,
     alignContent: 'start',
     minWidth: 0,
-    p: 1,
+    p: 0.9,
     borderRadius: 'md',
     bgcolor: 'background.level1',
     border: '1px solid',

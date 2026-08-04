@@ -48,7 +48,7 @@ export const rowsSx = {
 
   rowPrimary: (mode = 'profile') => ({
     fontWeight: 700,
-    color: 'neutral.800',
+    color: 'neutral.700',
     letterSpacing: '0.02em',
     ...(mode === 'modal'
       ? {

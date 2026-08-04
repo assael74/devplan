@@ -8,6 +8,7 @@ import RoleList from './ui/RoleList.js'
 import RolePicker from './ui/RolePicker.js'
 import RoleFilters from './ui/RoleFilters.js'
 import RoleSummary from './ui/RoleSummary.js'
+import RoleManagementDrawer from './ui/RoleManagementDrawer.js'
 
 import { useDynamicUpdateAction } from '../entityActions/useDynamicUpdateAction.js'
 import { useCreateModal } from '../../forms/create/CreateModalProvider.js'
@@ -16,24 +17,37 @@ import {
   buildMembershipPatch,
   buildRoleOptions,
   buildRoleSummary,
+  buildTeamOptions,
   createRoleFilters,
   filterRoleRows,
+  ROLE_ASSIGNMENT_OPTIONS,
   ROLE_CONTACT_OPTIONS,
 } from './logic/roles.logic.js'
 
 import { buildExcludeIds, buildRoleRows } from './logic/roles.selectors.js'
 import { rolesSx } from './ui/roles.sx.js'
 
-export default function RolesCard({ title = 'צוות מקצועי', teamId, clubId, roles = [], context, compact = false, disabled = false, slotProps }) {
+export default function RolesCard({
+  title = 'צוות מקצועי',
+  teamId,
+  clubId,
+  roles = [],
+  context,
+  compact = false,
+  disabled = false,
+  slotProps,
+  pageMode = false,
+}) {
   const [open, setOpen] = useState(false)
+  const [managementDrawer, setManagementDrawer] = useState(null)
   const [filters, setFilters] = useState(createRoleFilters())
   const { openCreate } = useCreateModal()
 
   const globalMode = !teamId && !clubId
 
   const rows = useMemo(
-    () => buildRoleRows({ roles, teamId, clubId }),
-    [roles, teamId, clubId]
+    () => buildRoleRows({ roles, teamId, clubId, context }),
+    [roles, teamId, clubId, context]
   )
 
   const filteredRows = useMemo(
@@ -43,6 +57,7 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
 
   const summary = useMemo(() => buildRoleSummary(rows), [rows])
   const roleOptions = useMemo(() => buildRoleOptions(rows), [rows])
+  const teamOptions = useMemo(() => buildTeamOptions(rows), [rows])
   const excludeIds = useMemo(() => buildExcludeIds(rows), [rows])
 
   const { runUpdate, pending } = useDynamicUpdateAction({
@@ -100,6 +115,14 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
     })
   }, [runUpdate, teamId, clubId, context])
 
+  const handleOpenManagementDrawer = useCallback((mode, role) => {
+    setManagementDrawer({ mode, role })
+  }, [])
+
+  const handleCloseManagementDrawer = useCallback(() => {
+    setManagementDrawer(null)
+  }, [])
+
   const subtitle = globalMode
     ? `${rows.length} אנשי צוות במאגר`
     : `${rows.length} אנשי צוות משויכים`
@@ -108,7 +131,7 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
     <>
       <Sheet
         variant="plain"
-        sx={[rolesSx.card(compact), slotProps?.rootSx]}
+        sx={[rolesSx.card(compact, pageMode), slotProps?.rootSx]}
       >
         <RoleToolbar
           title={title}
@@ -118,10 +141,11 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
           pending={pending}
           onAdd={handleOpen}
           compact={compact}
+          pageMode={pageMode}
           sx={slotProps?.headerSx}
         />
 
-        <RoleSummary summary={summary} />
+        <RoleSummary summary={summary} pageMode={pageMode} />
 
         {!compact ? (
           <RoleFilters
@@ -129,8 +153,11 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
             onChange={handleFilters}
             roleOptions={roleOptions}
             contactOptions={ROLE_CONTACT_OPTIONS}
+            assignmentOptions={ROLE_ASSIGNMENT_OPTIONS}
+            teamOptions={teamOptions}
             resultCount={filteredRows.length}
             totalCount={rows.length}
+            pageMode={pageMode}
           />
         ) : null}
 
@@ -144,9 +171,12 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
             disabled={disabled}
             pending={pending}
             onRemove={handleRemove}
+            onOpenDrawer={handleOpenManagementDrawer}
+            selectedRoleId={managementDrawer?.role?.id}
             showActions={!globalMode}
             emptyText={globalMode ? 'עדיין לא נוצרו אנשי צוות' : 'עדיין לא שויך צוות מקצועי'}
             compact={compact}
+            pageMode={pageMode}
           />
         </Sheet>
       </Sheet>
@@ -164,6 +194,13 @@ export default function RolesCard({ title = 'צוות מקצועי', teamId, clu
           subtitle={teamId ? 'שיוך לקבוצה' : 'שיוך למועדון'}
         />
       ) : null}
+
+      <RoleManagementDrawer
+        open={!!managementDrawer}
+        mode={managementDrawer?.mode}
+        role={managementDrawer?.role}
+        onClose={handleCloseManagementDrawer}
+      />
     </>
   )
 }

@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import TeamLeaguePosField from '../../../../../../ui/fields/inputUi/teams/TeamLeaguePosField'
+import TeamLeaguePosField from '../../../../../../ui/fields/leagues/TeamLeaguePosField'
 
 import {
   TEAM_TARGET_POSITION_MODE,
@@ -38,19 +38,19 @@ const TARGET_RANK_MODES = [
 const TARGET_RANK_POSITION = [
   {
     id: 'top',
-    label: 'צמרת · מקומות 1 - 4',
+    label: 'צמרת - מקומות 1 עד 4',
   },
   {
     id: 'midHigh',
-    label: 'אמצע עליון · מקומות 5 - 8',
+    label: 'אמצע עליון - מקומות 5 עד 8',
   },
   {
     id: 'midLow',
-    label: 'אמצע תחתון · מקומות 9 - 13',
+    label: 'אמצע תחתון - מקומות 9 עד 13',
   },
   {
     id: 'bottom',
-    label: 'תחתון · מקום 14 ומטה',
+    label: 'תחתון - מקום 14 ומטה',
   },
 ]
 
@@ -131,8 +131,8 @@ export default function TargetRankPicker({
   return (
     <Box sx={sx.root}>
       <ButtonGroup
-        size="sm"
-        variant="soft"
+        size='sm'
+        variant='soft'
         buttonFlex={1}
         disabled={pending}
         orientation='horizontal'
@@ -147,14 +147,14 @@ export default function TargetRankPicker({
               variant={selected ? 'solid' : 'soft'}
               color={selected ? 'primary' : 'neutral'}
               onClick={() => handleMode(item.id)}
-              sx={{ minHeight: 48 }}
+              sx={sx.modeButton}
             >
               <Box sx={sx.modeText(selected)}>
-                <Typography level="title-sm" sx={{ fontWeight: 700, color: 'inherit' }}>
+                <Typography level='title-sm' sx={{ fontWeight: 700, color: 'inherit' }}>
                   {item.label}
                 </Typography>
 
-                <Typography level="body-xs" sx={sx.modeHelper(selected)}>
+                <Typography level='body-xs' sx={sx.modeHelper(selected)}>
                   {item.helper}
                 </Typography>
               </Box>
@@ -167,10 +167,10 @@ export default function TargetRankPicker({
         <Box sx={sx.exactField(isMobile)}>
           <TeamLeaguePosField
             value={draft.targetPosition || ''}
-            size="sm"
-            label="מקום יעד"
-            variant="soft"
-            color="primary"
+            size='sm'
+            label='מקום יעד'
+            variant='soft'
+            color='primary'
             disabled={pending}
             onChange={handleExact}
           />
@@ -179,15 +179,15 @@ export default function TargetRankPicker({
 
       {mode === 'range' && (
         <Box sx={sx.rangeField(isMobile)}>
-          <FormControl size="sm">
+          <FormControl size='sm'>
             <FormLabel>טווח מיקומים</FormLabel>
 
             <Select
-              size="sm"
+              size='sm'
               value={draft.targetPosition || null}
-              placeholder="בחר טווח מיקומים"
-              variant="soft"
-              color="primary"
+              placeholder='בחר טווח מיקומים'
+              variant='soft'
+              color='primary'
               disabled={pending}
               onChange={(event, value) => handleRange(value)}
             >

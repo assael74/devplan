@@ -1,0 +1,155 @@
+// ui/forms/tasks/TasksCreateFields.js
+
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
+
+import TaskTitleField from '../../fields/tasks/TaskTitleField.js'
+import TaskUrlField from '../../fields/tasks/TaskUrlField.js'
+import TaskDescriptionField from '../../fields/tasks/TaskDescriptionField.js'
+import TaskDueDateField from '../../fields/tasks/TaskDueDateField.js'
+
+import TaskWorkspaceSelectField from '../../fields/tasks/TaskWorkspaceSelectField.js'
+import TaskStatusSelectField from '../../fields/tasks/TaskStatusSelectField.js'
+import TaskPrioritySelectField from '../../fields/tasks/TaskPrioritySelectField.js'
+import TaskComplexitySelectField from '../../fields/tasks/TaskComplexitySelectField.js'
+import TaskTypeSelectField from '../../fields/tasks/TaskTypeSelectField.js'
+
+import { pcfSx } from './sx/tasksCreateForm.sx.js'
+
+const clean = (v) => String(v ?? '').trim()
+
+export default function TasksCreateFields({
+  onDraft,
+  layout,
+  draft = {},
+  context = {},
+  validity = {},
+  fieldDisabled = {},
+}) {
+  const setField = (key, value) => {
+    onDraft((prev) => {
+      const next = {
+        ...(prev || {}),
+        [key]: value,
+      }
+
+      if (key === 'workspace') {
+        const currentTaskType = clean(next?.taskType)
+        const workspaceChanged = clean(prev?.workspace) !== clean(value)
+
+        if (workspaceChanged && currentTaskType) {
+          next.taskType = ''
+        }
+      }
+
+      return next
+    })
+  }
+
+  return (
+    <Box sx={pcfSx.root(layout)}>
+      <Box sx={pcfSx.block(layout.topCols, 1)}>
+        <Box sx={{ minWidth: 0 }}>
+          <TaskTitleField
+            value={draft?.title || ''}
+            onChange={(value) => setField('title', value)}
+            required
+            error={!validity?.title}
+            helperText={!validity?.title ? 'יש להזין כותרת למשימה' : ''}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskWorkspaceSelectField
+            value={draft?.workspace || ''}
+            required
+            error={!validity?.workspace}
+            disabled={fieldDisabled?.workspace}
+            onChange={(value) => setField('workspace', value)}
+            helperText={!validity?.workspace ? 'יש לבחור אזור עבודה' : ''}
+          />
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 1 }}>
+        <Typography level="title-sm" sx={pcfSx.title}>
+          פרטי משימה
+        </Typography>
+      </Divider>
+
+      <Box sx={pcfSx.block(layout.mainCols, 2)}>
+        <Box sx={{ minWidth: 0 }}>
+          <TaskDescriptionField
+            value={draft?.description || ''}
+            onChange={(value) => setField('description', value)}
+          />
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 1 }}>
+        <Typography level="title-sm" sx={pcfSx.title}>
+          סיווג וניהול
+        </Typography>
+      </Divider>
+
+      <Box sx={pcfSx.block(layout.metaCols, 1)}>
+        <Box sx={{ minWidth: 0 }}>
+          <TaskTypeSelectField
+            workspace={draft?.workspace || ''}
+            value={draft?.taskType || ''}
+            required
+            error={!validity?.taskType}
+            onChange={(value) => setField('taskType', value)}
+            helperText={!validity?.taskType ? 'יש לבחור סוג משימה' : ''}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskStatusSelectField
+            value={draft?.status || ''}
+            disabled={fieldDisabled?.status}
+            onChange={(value) => setField('status', value)}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskPrioritySelectField
+            value={draft?.priority || ''}
+            onChange={(value) => setField('priority', value)}
+          />
+
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskDueDateField
+            value={draft?.dueDate || ''}
+            onChange={(value) => setField('dueDate', value)}
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 0 }}>
+          <TaskComplexitySelectField
+            value={draft?.complexity || ''}
+            onChange={(value) => setField('complexity', value)}
+          />
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 1 }}>
+        <Typography level="title-sm" sx={pcfSx.title}>
+          קישור למשימה
+        </Typography>
+      </Divider>
+
+      <Box sx={pcfSx.block(layout.topCols, 1)}>
+        <Box sx={{ minWidth: 0 }}>
+          <TaskUrlField
+            value={draft?.url || ''}
+            disabled={fieldDisabled?.url}
+            onChange={(value) => setField('url', value)}
+          />
+        </Box>
+      </Box>
+    </Box>
+  )
+}

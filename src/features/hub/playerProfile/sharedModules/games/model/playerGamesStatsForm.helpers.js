@@ -2,7 +2,7 @@
 
 import {
   createInitialGameStatsDraft,
-} from '../../../../../../ui/forms/gameStatsForm/logic/index.js'
+} from '../../../../../../ui/forms/gameStats/logic/index.js'
 
 import {
   getPlayerId,
@@ -10,7 +10,7 @@ import {
   isPlayerInSquad,
   isPlayerStarting,
   toNumber,
-} from '../../../../../../ui/forms/gameStatsForm/logic/core/form.helpers.js'
+} from '../../../../../../ui/forms/gameStats/logic/core/form.helpers.js'
 
 import {
   clean,

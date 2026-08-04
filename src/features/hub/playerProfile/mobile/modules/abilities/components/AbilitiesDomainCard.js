@@ -26,6 +26,10 @@ import {
 
 import { moduleSx as sx } from '../sx/Ability.module.sx'
 
+const EMPTY = '\u2014'
+const FILLED_LABEL = '\u05de\u05dc\u05d0\u05d9\u05dd'
+const NO_DOMAIN_DATA = '\u05d0\u05d9\u05df \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05d1\u05d3\u05d5\u05de\u05d9\u05d9\u05df \u05d6\u05d4'
+
 export default function AbilitiesDomainCard({ domain, defaultExpanded = false }) {
   const domainAvg = Number(domain?.avg)
   const pct = Number(domain?.coveragePct || 0)
@@ -48,13 +52,13 @@ export default function AbilitiesDomainCard({ domain, defaultExpanded = false })
               </Typography>
 
               <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
-                {filledCount}/{domain?.items?.length || 0} abilities מלאים
+                {filledCount}/{domain?.items?.length || 0} {FILLED_LABEL}
               </Typography>
             </Box>
 
             <Box sx={sx.summaryStats}>
               <Chip size="sm" variant="soft" color={accent}>
-                {domain?.hasRated ? domain?.avgLabel : '—'}
+                {domain?.hasRated ? domain?.avgLabel : EMPTY}
               </Chip>
 
               <Box sx={sx.avgCircle}>
@@ -101,7 +105,7 @@ export default function AbilitiesDomainCard({ domain, defaultExpanded = false })
                     color={itemColor}
                     sx={{ minWidth: 32, fontWeight: filled ? 600 : 400 }}
                   >
-                    {filled ? item?.value : '—'}
+                    {filled ? item?.value : EMPTY}
                   </Chip>
 
                   <LinearProgress
@@ -120,7 +124,7 @@ export default function AbilitiesDomainCard({ domain, defaultExpanded = false })
           {filledCount === 0 ? (
             <Box sx={sx.empty}>
               <Typography level="body-xs" color="neutral">
-                אין נתונים בדומיין זה
+                {NO_DOMAIN_DATA}
               </Typography>
             </Box>
           ) : null}

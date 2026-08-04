@@ -9,7 +9,7 @@ import {
   ChipDelete,
 } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
-import AbilitiesMultiSelectField from '../../../../../../../ui/fields/selectUi/abilities/AbilitiesMultiSelectField.js'
+import AbilitiesMultiSelectField from '../../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { playerAbilitiesToolbarSx as sx } from '../sx/playerAbilities.toolbar.sx.js'
 import { toFixed1, clamp0to5 } from './../../../../sharedLogic'

@@ -1,33 +1,38 @@
-// playerProfile/desktop/modules/info/components/PlayerStatusCard.js
+// features/hub/playerProfile/desktop/modules/info/components/PlayerStatusCard.js
 
 import React from 'react'
-import { Box, Typography, Sheet, Chip } from '@mui/joy'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
+
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import PlayerContactFields from '../../../../../../../ui/forms/players/edit/PlayerContactFields.js'
+
 import { sharedSx as sx } from './sx/shared.sx.js'
 
-import {
-  PhoneField,
-  PlayerIfaLinkField,
-  PlayerActiveSelector,
-  SquadRoleSelectField,
-} from '../../../../../../../ui/fields'
+const TEXT = {
+  active: 'פעיל',
+  notActive: 'לא פעיל',
+  title: 'קשר ומקור',
+}
 
 const getPlayerActiveChipMeta = (active) => {
   return active
-    ? { color: 'success', iconId: 'active', label: 'פעיל' }
-    : { color: 'danger', iconId: 'notActive', label: 'לא פעיל' }
+    ? { color: 'success', iconId: 'active', label: TEXT.active }
+    : { color: 'danger', iconId: 'notActive', label: TEXT.notActive }
 }
 
 export default function PlayerStatusCard({ draft, setDraft, pending }) {
   const activeMeta = getPlayerActiveChipMeta(draft?.active)
 
+  const handleField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
   return (
     <Sheet variant="outlined" sx={sx.card}>
       <Box sx={sx.cardHead}>
         <Box sx={sx.cardTitle}>
-          {iconUi?.({ id: 'info', size: 'sm' }) || null}
           <Typography level="title-md" noWrap>
-            סטטוס וטלפון
+            {TEXT.title}
           </Typography>
         </Box>
 
@@ -41,46 +46,13 @@ export default function PlayerStatusCard({ draft, setDraft, pending }) {
         </Chip>
       </Box>
 
-      <Box sx={sx.statusCardBody}>
-        <Box sx={sx.statusTopRow}>
-          <Box sx={{ minWidth: 0, width: '100%', pt: 2 }}>
-            <PlayerActiveSelector
-              value={draft.active}
-              disabled={pending}
-              onChange={(value) => setDraft((prev) => ({ ...prev, active: value }))}
-            />
-          </Box>
-
-          <Box sx={{ minWidth: 0, width: '100%' }}>
-            <PlayerIfaLinkField
-              value={draft.ifaLink}
-              disabled={pending}
-              onChange={(value) => setDraft((prev) => ({ ...prev, ifaLink: value }))}
-              size="sm"
-            />
-          </Box>
-        </Box>
-
-        <Box sx={sx.statusBottomRow}>
-          <Box sx={{ minWidth: 0, width: '100%' }}>
-            <PhoneField
-              size="sm"
-              value={draft.phone}
-              disabled={pending}
-              onChange={(value) => setDraft((prev) => ({ ...prev, phone: value }))}
-            />
-          </Box>
-
-          <Box sx={{ minWidth: 0, width: '100%' }}>
-            <SquadRoleSelectField
-              size="sm"
-              value={draft.squadRole}
-              disabled={pending}
-              onChange={(value) => setDraft((prev) => ({ ...prev, squadRole: value || '' }))}
-            />
-          </Box>
-        </Box>
-      </Box>
+      <PlayerContactFields
+        draft={draft}
+        onField={handleField}
+        disabled={pending}
+        topLayout={sx.statusTopRow}
+        bottomLayout={sx.statusBottomRow}
+      />
     </Sheet>
   )
 }

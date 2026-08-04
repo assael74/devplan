@@ -14,11 +14,8 @@ import {
   IconButton,
 } from '@mui/joy'
 
-import HourInputField from '../../../../fields/dateUi/HourInputField.js'
-import DurationField from '../../../../fields/inputUi/trainings/DurationField.js'
-import TrainingsTypeSelectField from '../../../../fields/selectUi/trainings/TrainingsTypeSelectField.js'
-import TrainingsStatusSelectField from '../../../../fields/selectUi/trainings/TrainingsSatusSelectField.js'
-import TrainingLocationField from '../../../../fields/inputUi/trainings/TrainingLocationField.js'
+import TrainingDayEditFields from '../../../../forms/trainings/TrainingDayEditFields.js'
+import { getTrainingDayEditFormLayout } from '../../../../forms/trainings/dayEdit.layout.js'
 
 import { iconUi } from '../../../../core/icons/iconUi.js'
 import { getEntityColors } from '../../../../core/theme/Colors.js'
@@ -32,6 +29,7 @@ import {
 } from './logic/editDayTrainingDrawer.logic.js'
 
 const c = getEntityColors('training')
+const layout = getTrainingDayEditFormLayout()
 
 export default function EditDayTrainingDrawer({
   open,
@@ -65,13 +63,6 @@ export default function EditDayTrainingDrawer({
     isDirty &&
     !pending
   )
-
-  const handleChange = (key, value) => {
-    setDraft((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
 
   const handleReset = () => {
     setDraft(initial)
@@ -128,56 +119,11 @@ export default function EditDayTrainingDrawer({
         </DialogTitle>
 
         <DialogContent sx={{ gap: 2 }}>
-          <Box sx={{ display: 'grid', gap: 1.5, py: 0.5, px: 1 }}>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 1,
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: '1fr 1fr',
-              },
-              my: 1
-            }}
-          >
-            <HourInputField
-              value={draft?.hour || ''}
-              onChange={(value) => handleChange('hour', value || '')}
-            />
-
-            <DurationField
-              value={draft?.duration ?? 0}
-              onChange={(value) => handleChange('duration', value ?? 0)}
-            />
-            </Box>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 1,
-                my: 1,
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  md: '1fr 1fr',
-                },
-              }}
-            >
-              <TrainingsTypeSelectField
-                value={draft?.type || ''}
-                onChange={(value) => handleChange('type', value || '')}
-              />
-
-              <TrainingsStatusSelectField
-                value={draft?.status || ''}
-                onChange={(value) => handleChange('status', value || '')}
-              />
-            </Box>
-
-            <TrainingLocationField
-              value={draft?.location || ''}
-              placeholder="לדוגמה: מגרש סינטטי"
-              onChange={(v) => setDraft({ ...draft, location: v })}
+          <Box sx={{ py: 0.5, px: 1 }}>
+            <TrainingDayEditFields
+              draft={draft}
+              layout={layout}
+              onDraft={setDraft}
             />
           </Box>
         </DialogContent>

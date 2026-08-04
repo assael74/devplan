@@ -1,7 +1,17 @@
 // src/ui/theme/Colors.js
 
-// --- עקרון: צבעים מבדילים בין ישויות, דומיינים נשארים ניטרליים ---
+// Colors separate entity context, action intent, and business status.
+const STATUS_COLORS = {
+  success: { softBg: '#ECFDF5', solid: '#16A34A', text: '#065F46' },
+  warning: { softBg: '#FFFBEB', solid: '#F59E0B', text: '#7C2D12' },
+  danger: { softBg: '#FEF2F2', solid: '#DC2626', text: '#7F1D1D' },
+  info: { softBg: '#EFF6FF', solid: '#2563EB', text: '#1E3A8A' },
+  neutral: { softBg: '#F8FAFC', solid: '#CBD5E1', text: '#334155' },
+}
+
 export const COLORS = {
+  status: STATUS_COLORS,
+
   entity: {
     player: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#ffffff' },
     players: { bg: '#d3dffb', surface: '#FFFFFF', accent: '#4C6EF5', text: '#111827', textAcc: '#ffffff' },
@@ -51,13 +61,7 @@ export const COLORS = {
       general: { bg: '#dfe8f1', accent: '#64748B', text: '#1E293B', },
   },
 
-    status: {
-      success: { softBg: '#ECFDF5', solid: '#16A34A', text: '#065F46' },
-      warning: { softBg: '#FFFBEB', solid: '#F59E0B', text: '#7C2D12' },
-      danger: { softBg: '#FEF2F2', solid: '#DC2626', text: '#7F1D1D' },
-      info: { softBg: '#EFF6FF', solid: '#2563EB', text: '#1E3A8A' },
-      neutral: { softBg: '#F8FAFC', solid: '#CBD5E1', text: '#334155' },
-    },
+    status: STATUS_COLORS,
 
     domain: {
       base: { bg: '#FFFFFF', border: '#E5E7EB', text: '#111827', subText: '#6B7280' },
@@ -65,8 +69,6 @@ export const COLORS = {
       selected: { bg: '#EEF2FF', border: '#C7D2FE' },
       disabled: { bg: '#F3F4F6', text: '#9CA3AF' },
     },
-
-    project: { softBg: '#DCFCE7', solid: '#22C55E', text: '#14532D' },
 
     action: {
       primary: { solid: '#2563EB', hover: '#1D4ED8', text: '#FFFFFF' },
@@ -90,9 +92,18 @@ export const devPlanColors = {
   primaryLight: '#E8F0F5',
 
   secondary: '#657684',
+  secondaryLight: '#F3F6F8',
 
   tertiary: '#2F86C7',
+  tertiaryDark: '#176BA6',
   tertiaryLight: '#EAF5FC',
+
+  border: '#D6E0E7',
+  surface: '#FFFFFF',
+  body: '#F6F8FA',
+
+  text: '#173B57',
+  subText: '#657684',
 }
 
 export function getEntityColors(type) {

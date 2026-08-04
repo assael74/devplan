@@ -19,7 +19,7 @@ export const leagueCenterPageSx = {
       md: 1,
     },
     display: 'grid',
-    gridTemplateRows: 'auto auto auto minmax(0, 1fr)',
+    gridTemplateRows: 'auto auto minmax(0, 1fr)',
     gap: 1.5,
     overflow: 'hidden',
   },

@@ -96,7 +96,7 @@ export default function TeamPlayersFiltersBar({
   const performanceProfileBuckets = Array.isArray(summary?.performanceProfileBuckets) ? summary.performanceProfileBuckets : []
 
   return (
-    <Box sx={sx.toolbarRow}>
+    <Box sx={sx.filtersRow}>
       <Input
         value={filters?.search || ''}
         onChange={(e) => onChangeSearch(e.target.value)}

@@ -3,14 +3,17 @@
 import React from 'react'
 import {
   Box,
+  Button,
   CircularProgress,
   Modal,
   ModalDialog,
+  Sheet,
   Typography,
 } from '@mui/joy'
 
-import EmptyState from '../../../sharedProfile/EmptyState.js'
-import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
+import GameStatsCreateForm from '../../../../../ui/forms/gameStats/GameStatsCreateForm.js'
+import { useCreateModal } from '../../../../../ui/forms/create/CreateModalProvider.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import {
   BulkPasteDrawer,
   GamesBulkDeleteModal,
@@ -49,6 +52,7 @@ export default function TeamGamesModuleBase({
     gamesInsightsRequest,
     enableStatsForm,
   })
+  const { openCreate } = useCreateModal()
 
   const {
     liveTeam,
@@ -130,44 +134,69 @@ export default function TeamGamesModuleBase({
   const Wrap = Section
   const finalToolbarWrapSx = toolbarWrapSx || desktopTeamGamesModuleSx.toolbarWrap
 
+  const handleCreateGame = () => {
+    openCreate('game', {
+      teamId: liveTeam?.id || '',
+      clubId: context?.club?.id || liveTeam?.clubId || '',
+    }, { team: liveTeam, ...(context || {}) })
+  }
+
   return (
     <>
       <Wrap>
-        <Box sx={finalToolbarWrapSx}>
-          <ToolbarComponent
-            summary={summary}
-            filters={filters}
-            indicators={indicators}
-            options={options}
-            onOpenInsights={() => setInsightsOpen(true)}
-            onChangeFilters={handleChangeFilters}
-            onResetFilters={handleResetFilters}
-            sortBy={sort.by}
-            performanceView={performanceView}
-            onChangePerformanceView={setPerformanceView}
-            sortDirection={sort.direction}
-            onChangeSortBy={handleChangeSortBy}
-            onChangeSortDirection={handleChangeSortDirection}
-            deleteSelectionMode={deleteSelectionMode}
-            selectedGameIds={selectedGameIds}
-            onEnterDeleteSelectionMode={handleEnterDeleteSelectionMode}
-            onExitDeleteSelectionMode={handleExitDeleteSelectionMode}
-            onSelectAllVisibleGames={handleSelectAllVisibleGames}
-            onClearGameSelection={handleClearGameSelection}
-            onOpenSelectedDelete={handleOpenSelectedDelete}
-            onOpenAllTeamGamesDelete={handleOpenAllTeamGamesDelete}
-          />
-        </Box>
+        {hasAnyGames ? (
+          <Box sx={finalToolbarWrapSx}>
+            <ToolbarComponent
+              summary={summary}
+              filters={filters}
+              indicators={indicators}
+              options={options}
+              onOpenInsights={() => setInsightsOpen(true)}
+              onChangeFilters={handleChangeFilters}
+              onResetFilters={handleResetFilters}
+              sortBy={sort.by}
+              performanceView={performanceView}
+              onChangePerformanceView={setPerformanceView}
+              sortDirection={sort.direction}
+              onChangeSortBy={handleChangeSortBy}
+              onChangeSortDirection={handleChangeSortDirection}
+              deleteSelectionMode={deleteSelectionMode}
+              selectedGameIds={selectedGameIds}
+              onEnterDeleteSelectionMode={handleEnterDeleteSelectionMode}
+              onExitDeleteSelectionMode={handleExitDeleteSelectionMode}
+              onSelectAllVisibleGames={handleSelectAllVisibleGames}
+              onClearGameSelection={handleClearGameSelection}
+              onOpenSelectedDelete={handleOpenSelectedDelete}
+              onOpenAllTeamGamesDelete={handleOpenAllTeamGamesDelete}
+            />
+          </Box>
+        ) : null}
 
         {!hasRows ? (
-          <EmptyState
-            title="אין משחקים"
-            subtitle={
-              hasAnyGames
-                ? 'לא נמצאו משחקים לפי הפילטרים שנבחרו'
-                : 'עדיין לא נוספו משחקים לקבוצה'
-            }
-          />
+          <Sheet variant="plain" sx={desktopTeamGamesModuleSx.emptyState}>
+            <Box sx={desktopTeamGamesModuleSx.emptyIcon}>
+              {iconUi({ id: hasAnyGames ? 'filters' : 'games' })}
+            </Box>
+
+            <Typography level="title-md" sx={desktopTeamGamesModuleSx.emptyTitle}>
+              {hasAnyGames ? 'לא נמצאו משחקים לפי הסינון' : 'אין עדיין משחקים לקבוצה'}
+            </Typography>
+
+            <Typography level="body-sm" sx={desktopTeamGamesModuleSx.emptyText}>
+              {hasAnyGames
+                ? 'אפשר לאפס את המסננים כדי לחזור לרשימת המשחקים המלאה.'
+                : 'יצירת משחק ראשון תפתח את אזור ניהול המשחקים, הסגל והמדדים.'}
+            </Typography>
+
+            <Button
+              size="sm"
+              variant="solid"
+              onClick={hasAnyGames ? handleResetFilters : handleCreateGame}
+              startDecorator={iconUi({ id: hasAnyGames ? 'reset' : 'addGame' })}
+            >
+              {hasAnyGames ? 'איפוס מסננים' : 'יצירת משחק'}
+            </Button>
+          </Sheet>
         ) : (
           <ListComponent
             rows={sortedGames}

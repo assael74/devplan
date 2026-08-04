@@ -7,7 +7,7 @@ import GenericFabMenu from '../../ui/actions/GenericFabMenu.js'
 import { buildFabActions } from '../../ui/actions/fabActions.factory.js'
 import { buildTaskFabContext } from '../../ui/actions/buildTaskFabContext.js'
 import { useCreateModal } from '../../ui/forms/create/CreateModalProvider.js'
-import { buildTaskPresetDraft } from '../../ui/forms/helpers/tasksForm.helpers.js'
+import { buildTaskPresetDraft } from '../../ui/forms/tasks/taskForm.helpers.js'
 import { getEntityColors } from '../../ui/core/theme/Colors.js'
 
 export default function TaskFab() {

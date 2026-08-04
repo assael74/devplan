@@ -1,7 +1,7 @@
-// C:\projects\devplan\src\ui\patterns\schedule\TrainingSchedulePreview.js
+// ui/patterns/schedule/TrainingSchedulePreview.js
 
 import React, { useMemo, useCallback, useState } from 'react'
-import { Box, Chip, Sheet, Typography, IconButton, Tooltip } from '@mui/joy'
+import { Box, Button, Chip, Sheet, Typography, IconButton, Tooltip } from '@mui/joy'
 
 import ScheduleWeekBlock from './ScheduleWeekBlock.js'
 import TrainingWeekDrawer from './components/drawer/TrainingWeekDrawer.js'
@@ -10,14 +10,10 @@ import EditDayTrainingDrawer from './components/editDrawer/EditDayTrainingDrawer
 import { buildScheduleHeaderStats, buildScheduleModel } from './logic/schedule.logic.js'
 import { schedulePreviewSx as sx } from './sx/schedulePreview.sx.js'
 
-import { getEntityColors } from '../../core/theme/Colors.js'
 import { iconUi } from '../../core/icons/iconUi.js'
-
-const c = getEntityColors('training')
 
 export default function TrainingSchedulePreview({
   entity = null,
-  entityType = 'team',
   trainingWeeks = null,
   selectedWeekId = '',
   mode = 'profile',
@@ -38,8 +34,10 @@ export default function TrainingSchedulePreview({
   )
 
   const stats = useMemo(() => buildScheduleHeaderStats(model), [model])
-
   const teamId = String(entity?.id || entity?.teamId || '').trim()
+  const visibleTrainingsCount =
+    (model?.summary?.currentWeekCount || 0) + (model?.summary?.nextWeekCount || 0)
+  const showCentralEmpty = showNextWeek && mode === 'profile' && visibleTrainingsCount === 0
 
   const handleCreateWeek = useCallback(() => {
     if (!teamId) return
@@ -121,27 +119,67 @@ export default function TrainingSchedulePreview({
           </Box>
         </Sheet>
 
-        <Box sx={sx.weeksGrid(mode)}>
-          <ScheduleWeekBlock
-            title="השבוע"
-            subtitle={model?.currentWeekRangeLabel || model?.currentWeekId || ''}
-            rows={model?.currentWeek?.rows || []}
-            count={model?.summary?.currentWeekCount || 0}
-            mode={mode}
-            onRowClick={handleEditRow}
-          />
+        {showCentralEmpty ? (
+          <Sheet variant="plain" sx={sx.emptyState}>
+            <Box sx={sx.emptyIcon}>
+              {iconUi({ id: 'training' })}
+            </Box>
 
-          {showNextWeek ? (
+            <Box sx={sx.emptyTextWrap}>
+              <Typography level="title-md" sx={sx.emptyTitle}>
+                אין אימונים לשבוע הנוכחי או לשבוע הבא
+              </Typography>
+
+              <Typography level="body-sm" sx={sx.emptyText}>
+                אפשר ליצור שבוע אימונים חדש או להעתיק תכנון משבוע קודם כאשר קיימים נתונים קודמים.
+              </Typography>
+            </Box>
+
+            <Box sx={sx.emptyActions}>
+              <Button
+                size="sm"
+                variant="solid"
+                disabled={!teamId}
+                onClick={handleCreateWeek}
+                startDecorator={iconUi({ id: 'addTraining' })}
+              >
+                יצירת שבוע אימונים
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outlined"
+                color="neutral"
+                disabled
+                startDecorator={iconUi({ id: 'reset' })}
+              >
+                העתקת שבוע קודם
+              </Button>
+            </Box>
+          </Sheet>
+        ) : (
+          <Box sx={sx.weeksGrid(mode)}>
             <ScheduleWeekBlock
-              title="שבוע הבא"
-              subtitle={model?.nextWeekRangeLabel || model?.nextWeekId || ''}
-              rows={model?.nextWeek?.rows || []}
-              count={model?.summary?.nextWeekCount || 0}
+              title="השבוע"
+              subtitle={model?.currentWeekRangeLabel || model?.currentWeekId || ''}
+              rows={model?.currentWeek?.rows || []}
+              count={model?.summary?.currentWeekCount || 0}
               mode={mode}
               onRowClick={handleEditRow}
             />
-          ) : null}
-        </Box>
+
+            {showNextWeek ? (
+              <ScheduleWeekBlock
+                title="שבוע הבא"
+                subtitle={model?.nextWeekRangeLabel || model?.nextWeekId || ''}
+                rows={model?.nextWeek?.rows || []}
+                count={model?.summary?.nextWeekCount || 0}
+                mode={mode}
+                onRowClick={handleEditRow}
+              />
+            ) : null}
+          </Box>
+        )}
       </Box>
 
       <TrainingWeekDrawer

@@ -62,12 +62,13 @@ export default function HeaderStripMobile({
   onAvatarClick,
   onBack,
   pathItems,
+  sx: customSx,
 }) {
   const isClickable = typeof onAvatarClick === 'function'
   const hasRight = !!right
 
   return (
-    <Sheet variant="soft" sx={sx.headerSheet(sticky)}>
+    <Sheet variant="soft" sx={{ ...sx.headerSheet(sticky), ...customSx }}>
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <Box sx={sx.topRow}>
           <Box sx={sx.iconBox}>

@@ -25,7 +25,7 @@ export default function ClubPlayerRow({ row, performance, onEditPosition }) {
   }
 
   const chipSx = {
-    flexShrink: 0,
+    ...sx.statusChip,
     ...(chip.tone === 'custom'
       ? {
           bgcolor: chip.bgColor || undefined,
@@ -45,25 +45,30 @@ export default function ClubPlayerRow({ row, performance, onEditPosition }) {
     >
       <InfoSection row={row} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <PositionsSection row={row} onEditPosition={onEditPosition} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <PerformanceSection row={row} performance={performance} />
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.divider} />
 
       <Box sx={sx.ratingCol}>
         <Typography level="body-xs" sx={sx.ratingTitle}>
-          יכולת ({Number(row?.level) || 0})
+          יכולת
         </Typography>
 
-        <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
+        <Box sx={sx.ratingValueRow}>
+          <JoyStarRatingStatic value={Number(row?.level) || 0} size="xs" />
+          <Typography level="body-xs" sx={sx.ratingNumber}>
+            {Number(row?.level) || 0}
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider orientation="vertical" />
+      <Divider orientation="vertical" sx={sx.dividerSoft} />
 
       <Box sx={sx.statusCol}>
         <Chip

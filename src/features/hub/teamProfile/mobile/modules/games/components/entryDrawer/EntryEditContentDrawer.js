@@ -11,11 +11,11 @@ import {
   Divider,
 } from '@mui/joy'
 
-import OnSquadSelector from '../../../../../../../../ui/fields/checkUi/games/OnSquadSelector.js'
-import OnSquadStart from '../../../../../../../../ui/fields/checkUi/games/OnSquadStart.js'
-import GoalField from '../../../../../../../../ui/fields/inputUi/games/GoalField.js'
-import AssistField from '../../../../../../../../ui/fields/inputUi/games/AssistField.js'
-import TimePlayedField from '../../../../../../../../ui/fields/inputUi/games/TimePlayedField.js'
+import OnSquadSelector from '../../../../../../../../ui/fields/games/OnSquadSelector.js'
+import OnSquadStart from '../../../../../../../../ui/fields/games/OnSquadStart.js'
+import GoalField from '../../../../../../../../ui/fields/games/GoalField.js'
+import AssistField from '../../../../../../../../ui/fields/games/AssistField.js'
+import TimePlayedField from '../../../../../../../../ui/fields/games/TimePlayedField.js'
 
 import EntryBulkBar from './EntryBulkBar.js'
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'

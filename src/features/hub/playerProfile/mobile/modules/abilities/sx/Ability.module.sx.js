@@ -36,7 +36,8 @@ export const moduleSx = {
       px: 1.1,
     },
     '&:hover': {
-      borderColor: `${accent}.400`,
+      borderColor: 'neutral.300',
+      bgcolor: 'background.level1',
     },
   }),
 

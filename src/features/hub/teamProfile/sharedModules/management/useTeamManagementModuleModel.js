@@ -24,6 +24,8 @@ export default function useTeamManagementModuleModel({
   const team = entity || null
 
   const [activeTab, setActiveTab] = useState(TABS[0])
+  const [isEditingInfo, setIsEditingInfo] = useState(false)
+  const [saveAttempted, setSaveAttempted] = useState(false)
 
   const rolesPool = useMemo(() => {
     return Array.isArray(context?.roles) ? context.roles : []
@@ -33,11 +35,25 @@ export default function useTeamManagementModuleModel({
     return buildTeamEditInitial(team)
   }, [team])
 
-  const [draft, setDraft] = useState(baseModel)
+  const [draft, setDraftState] = useState(baseModel)
+
+  const setDraft = useCallback((nextDraft) => {
+    setDraftState(nextDraft)
+    setSaveAttempted(false)
+  }, [])
 
   useEffect(() => {
-    setDraft(baseModel)
+    setDraftState(baseModel)
+    setIsEditingInfo(false)
+    setSaveAttempted(false)
   }, [baseModel])
+
+  useEffect(() => {
+    if (activeTab.id !== 'info') {
+      setIsEditingInfo(false)
+      setSaveAttempted(false)
+    }
+  }, [activeTab.id])
 
   const { run, pending } = useTeamHubUpdate(team)
 
@@ -60,21 +76,29 @@ export default function useTeamManagementModuleModel({
     return isTeamEditDirty(draft, baseModel)
   }, [draft, baseModel])
 
+  const hasRequiredInfo = useMemo(() => {
+    return Boolean(String(draft?.teamName || '').trim())
+  }, [draft?.teamName])
+
   const canSave = useMemo(() => {
     return (
       Boolean(baseModel?.id) &&
+      hasRequiredInfo &&
       isDirty &&
       Object.keys(patch).length > 0 &&
       !pending
     )
-  }, [baseModel?.id, isDirty, patch, pending])
+  }, [baseModel?.id, hasRequiredInfo, isDirty, patch, pending])
 
   const handleReset = useCallback(() => {
     if (pending) return
-    setDraft(baseModel)
+    setDraftState(baseModel)
+    setIsEditingInfo(false)
+    setSaveAttempted(false)
   }, [baseModel, pending])
 
   const handleSave = useCallback(async () => {
+    setSaveAttempted(true)
     if (!canSave) return
 
     await run('teamEdit', patch, {
@@ -90,11 +114,15 @@ export default function useTeamManagementModuleModel({
     })
 
     onClose()
+    setIsEditingInfo(false)
+    setSaveAttempted(false)
   }, [canSave, run, patch, saveSource, baseModel.id, team, onSaved, onClose])
 
   return {
     team,
     activeTab,
+    isEditingInfo,
+    saveAttempted,
     rolesPool,
     baseModel,
     draft,
@@ -105,6 +133,7 @@ export default function useTeamManagementModuleModel({
     pending,
 
     setActiveTab,
+    setIsEditingInfo,
     setDraft,
 
     handleReset,

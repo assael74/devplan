@@ -1,10 +1,16 @@
 import { extendTheme } from '@mui/joy/styles'
+import '@fontsource/heebo/400.css'
+import '@fontsource/heebo/500.css'
+import '@fontsource/heebo/600.css'
+import '@fontsource/heebo/700.css'
+
+const appFontFamily = '"Heebo", Arial, sans-serif'
 
 export const theme = extendTheme({
   direction: 'rtl',
   fontFamily: {
-    body: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-    display: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+    body: appFontFamily,
+    display: appFontFamily,
   },
   radius: {
     sm: '10px',

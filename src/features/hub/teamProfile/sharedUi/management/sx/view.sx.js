@@ -5,24 +5,26 @@ export const viewSx = {
     display: 'grid',
     gap: print ? 1.25 : 1,
     minWidth: 0,
-    mt: print ? 0 : 1,
+    mt: print ? 0 : 0.25,
   }),
 
   importantGrid: (isMobile, print) => ({
     display: 'grid',
     gridTemplateColumns: print
       ? 'repeat(5, minmax(0, 1fr))'
-      : {
-          xs: '1fr 1fr',
-          sm: 'repeat(3, minmax(0, 1fr))',
-          md: 'repeat(5, minmax(0, 1fr))',
-        },
+      : isMobile
+        ? '1fr 1fr'
+        : {
+            xs: '1fr 1fr',
+            sm: 'repeat(3, minmax(0, 1fr))',
+            xl: 'repeat(5, minmax(0, 1fr))',
+          },
     gap: 0.75,
     minWidth: 0,
   }),
 
   metric: (print) => ({
-    p: print ? 0.9 : 1,
+    p: print ? 0.9 : 0.95,
     borderRadius: 'md',
     border: '1px solid',
     borderColor: 'divider',
@@ -56,18 +58,19 @@ export const viewSx = {
       ? '1fr 1fr'
       : {
           xs: '1fr',
-          xl: '1fr 1fr',
+          md: 'repeat(2, minmax(0, 1fr))',
+          xl: 'repeat(4, minmax(0, 1fr))',
         },
-    gap: 1,
+    gap: 0.85,
     minWidth: 0,
   }),
 
   section: (print) => ({
-    p: 1,
+    p: print ? 1 : 0.9,
     borderRadius: 'md',
     border: '1px solid',
     borderColor: 'divider',
-    bgcolor: print ? '#fff' : 'background.surface',
+    bgcolor: print ? '#fff' : 'transparent',
     minWidth: 0,
     breakInside: 'avoid',
   }),
@@ -75,7 +78,7 @@ export const viewSx = {
   sectionHeader: {
     display: 'grid',
     gap: 0.15,
-    pb: 0.75,
+    pb: 0.65,
     mb: 0.5,
     borderBottom: '1px solid',
     borderColor: 'divider',
@@ -91,7 +94,7 @@ export const viewSx = {
 
   rows: {
     display: 'grid',
-    gap: 0.5,
+    gap: 0.45,
   },
 
   row: (print) => ({
@@ -102,11 +105,11 @@ export const viewSx = {
           xs: '1fr',
           sm: 'minmax(0, 1fr) auto',
         },
-    gap: 0.75,
+    gap: 0.65,
     alignItems: print ? 'center' : { xs: 'start', sm: 'center' },
     minWidth: 0,
-    px: 0.75,
-    py: 0.65,
+    px: 0.7,
+    py: 0.58,
     borderRadius: 'sm',
     bgcolor: print ? '#f8f9fb' : 'background.level1',
   }),
@@ -129,7 +132,7 @@ export const viewSx = {
 
   chips: (print) => ({
     display: 'flex',
-    gap: 0.5,
+    gap: 0.45,
     alignItems: 'center',
     justifyContent: print ? 'flex-end' : 'flex-start',
     flexWrap: 'wrap',
@@ -146,13 +149,13 @@ export const viewSx = {
   },
 
   empty: (print) => ({
-    p: 1.25,
+    p: 1.15,
     borderRadius: 'md',
     border: '1px solid',
     borderColor: 'divider',
-    bgcolor: print ? '#fff' : 'background.surface',
+    bgcolor: print ? '#fff' : 'background.level1',
     display: 'grid',
-    gap: 0.25,
+    gap: 0.5,
   }),
 
   emptyTitle: {
@@ -161,5 +164,10 @@ export const viewSx = {
 
   emptyText: {
     color: 'text.tertiary',
+  },
+
+  emptyAction: {
+    justifySelf: 'start',
+    mt: 0.25,
   },
 }

@@ -13,7 +13,7 @@ const getTeamId = team => {
 }
 
 const getTeamName = team => {
-  return team?.teamName || team?.label || '—'
+  return team?.teamName || team?.label || 'ללא שם'
 }
 
 const getLeagueLabel = team => {

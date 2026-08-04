@@ -1,4 +1,4 @@
-// ui/forms/create/createRegistry.js
+// src/ui/forms/create/createRegistry.js
 
 import { iconUi } from '../../core/icons/iconUi.js'
 
@@ -8,8 +8,7 @@ export const CREATE_TYPES = {
     title: 'יצירת מועדון',
     iconKey: 'addClub',
     entityType: 'club',
-    form: null,
-    formLoader: () => import('../ClubCreateForm.js'),
+    formLoader: () => import('../clubs/ClubCreateForm.js'),
     size: 'md',
   },
 
@@ -18,8 +17,7 @@ export const CREATE_TYPES = {
     title: 'יצירת קבוצה',
     iconKey: 'addTeam',
     entityType: 'team',
-    form: null,
-    formLoader: () => import('../TeamCreateForm.js'),
+    formLoader: () => import('../teams/TeamCreateForm.js'),
     size: 'md',
   },
 
@@ -28,8 +26,7 @@ export const CREATE_TYPES = {
     title: 'יצירת שחקן',
     iconKey: 'addPlayer',
     entityType: 'player',
-    form: null,
-    formLoader: () => import('../PlayerCreateForm.js'),
+    formLoader: () => import('../players/PlayerCreateForm.js'),
     size: 'lg',
   },
 
@@ -38,8 +35,7 @@ export const CREATE_TYPES = {
     title: 'יצירת שחקן פרטי',
     iconKey: 'addPlayer',
     entityType: 'privatePlayer',
-    form: null,
-    formLoader: () => import('../PrivateCreateForm.js'),
+    formLoader: () => import('../privates/PrivateCreateForm.js'),
     size: 'lg',
   },
 
@@ -48,8 +44,7 @@ export const CREATE_TYPES = {
     title: 'יצירת מספר שחקנים',
     iconKey: 'addPlayer',
     entityType: 'players',
-    form: null,
-    formLoader: () => import('../PlayerMultiCreateForm.js'),
+    formLoader: () => import('../players/PlayerMultiCreateForm.js'),
     size: 'lg',
   },
 
@@ -58,8 +53,7 @@ export const CREATE_TYPES = {
     title: 'יצירת איש צוות',
     iconKey: 'addRole',
     entityType: 'role',
-    form: null,
-    formLoader: () => import('../RoleCreateForm.js'),
+    formLoader: () => import('../roles/RoleCreateForm.js'),
     size: 'lg',
   },
 
@@ -68,8 +62,7 @@ export const CREATE_TYPES = {
     title: 'יצירת משחק',
     iconKey: 'addGame',
     entityType: 'team',
-    form: null,
-    formLoader: () => import('../GameCreateForm.js'),
+    formLoader: () => import('../games/GameCreateForm.js'),
     size: 'lg',
   },
 
@@ -78,8 +71,7 @@ export const CREATE_TYPES = {
     title: 'יצירת מספר משחקים',
     iconKey: 'addGame',
     entityType: 'team',
-    form: null,
-    formLoader: () => import('../GameMultiCreateForm.js'),
+    formLoader: () => import('../games/GameMultiCreateForm.js'),
     size: 'lg',
   },
 
@@ -89,8 +81,7 @@ export const CREATE_TYPES = {
     iconKey: 'addMeeting',
     entityType: 'player',
     domainColor: '#f7b13b',
-    form: null,
-    formLoader: () => import('../MeetingCreateForm.js'),
+    formLoader: () => import('../meetings/MeetingCreateForm.js'),
     size: 'lg',
   },
 
@@ -100,8 +91,7 @@ export const CREATE_TYPES = {
     iconKey: 'addPayment',
     entityType: 'player',
     domainColor: '#0f766e',
-    form: null,
-    formLoader: () => import('../PaymentCreateForm.js'),
+    formLoader: () => import('../payments/PaymentCreateForm.js'),
     size: 'lg',
   },
 
@@ -111,8 +101,7 @@ export const CREATE_TYPES = {
     iconKey: 'addPayment',
     entityType: 'player',
     domainColor: '#0f766e',
-    form: null,
-    formLoader: () => import('../PrivatePaymentAgreementCreateForm.js'),
+    formLoader: () => import('../payments/PrivatePaymentAgreementCreateForm.js'),
     size: 'lg',
   },
 
@@ -122,7 +111,6 @@ export const CREATE_TYPES = {
     iconKey: 'scouting',
     entityType: 'scout',
     domainColor: '#96ede6',
-    form: null,
     formLoader: null,
     size: 'lg',
   },
@@ -133,8 +121,7 @@ export const CREATE_TYPES = {
     iconKey: 'addTag',
     entityType: 'tag',
     domainColor: '#96ede6',
-    form: null,
-    formLoader: () => import('../TagsCreateForm.js'),
+    formLoader: () => import('../tags/TagsCreateForm.js'),
     size: 'lg',
   },
 
@@ -144,8 +131,7 @@ export const CREATE_TYPES = {
     iconKey: 'video',
     entityType: 'videoAnalysis',
     domainColor: '#96ede6',
-    form: null,
-    formLoader: () => import('../VideoAnalysisCreateForm.js'),
+    formLoader: () => import('../videos/VideoAnalysisCreateForm.js'),
     size: 'lg',
   },
 
@@ -154,8 +140,7 @@ export const CREATE_TYPES = {
     title: 'יצירת וידאו חדש',
     iconKey: 'video',
     entityType: 'videoGeneral',
-    form: null,
-    formLoader: () => import('../VideoCreateForm.js'),
+    formLoader: () => import('../videos/VideoCreateForm.js'),
     size: 'lg',
   },
 
@@ -164,8 +149,7 @@ export const CREATE_TYPES = {
     title: 'יצירת טופס יכולות חדש',
     iconKey: 'abilities',
     entityType: 'abilities',
-    form: null,
-    formLoader: () => import('../AbilitiesCreateForm.js'),
+    formLoader: () => import('../abilities/AbilitiesCreateForm.js'),
     size: 'lg',
   },
 
@@ -174,8 +158,7 @@ export const CREATE_TYPES = {
     title: 'תכנון שבוע אימונים',
     iconKey: 'training',
     entityType: 'team',
-    form: null,
-    formLoader: () => import('../TrainingWeekCreateForm.js'),
+    formLoader: () => import('../trainings/TrainingWeekCreateForm.js'),
     size: 'lg',
   },
 
@@ -184,8 +167,7 @@ export const CREATE_TYPES = {
     title: 'משימה חדשה',
     iconKey: 'task',
     entityType: 'task',
-    form: null,
-    formLoader: () => import('../TasksCreateForm.js'),
+    formLoader: () => import('../tasks/TasksCreateForm.js'),
     size: 'lg',
   },
 }
@@ -197,8 +179,7 @@ export function getCreateMeta(type) {
       title: 'יצירת אובייקט',
       iconKey: 'add',
       entityType: 'player',
-      form: null,
-      formLoader: null,
+        formLoader: null,
       size: 'lg',
     }
   )

@@ -1,7 +1,7 @@
-// ui/forms/create/CreateModalProvider.js
+// src/ui/forms/create/CreateModalProvider.js
 
 import React, { useMemo, useCallback } from 'react'
-import ObjectCreateModalV2 from './ObjectCreateModalV2'
+import ObjectCreateModal from './ObjectCreateModal'
 import { useCreateModalState } from './useCreateModal'
 import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { createEntity, unwrapActionResult } from '../../../application/index.js'
@@ -150,7 +150,7 @@ export default function CreateModalProvider({ children }) {
   return (
     <Ctx.Provider value={{ openCreate, closeCreate }}>
       {children}
-      <ObjectCreateModalV2 {...sharedProps} />
+      <ObjectCreateModal {...sharedProps} />
     </Ctx.Provider>
   )
 }

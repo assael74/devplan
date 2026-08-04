@@ -10,7 +10,7 @@ import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/Drawer
 
 import { useGameHubUpdate } from '../../../../../../hooks/games/useGameHubUpdate.js'
 
-import GameEntryFields from '../../../../../../../../ui/forms/ui/games/GameEntryFields.js'
+import GameEntryFields from '../../../../../../../../ui/forms/games/GameEntryFields.js'
 
 import {
   buildPlayerGameEntryInitial,

@@ -1,73 +1,78 @@
-// src/features/hub/clubProfile/desktop/modules/management/ClubManagementInfoCard.js
+// features/hub/clubProfile/desktop/modules/management/components/ClubManagementInfoCard.js
 
 import React from 'react'
-import { Box, Sheet, Typography, Button, Chip } from '@mui/joy'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
 
-import ClubNameField from '../../../../../../../ui/fields/inputUi/clubs/ClubNameField.js'
-import ClubIfaLinkField from '../../../../../../../ui/fields/inputUi/clubs/ClubIfaLinkField.js'
-import ClubActiveSelector from '../../../../../../../ui/fields/checkUi/clubs/ClubActiveSelector.js'
+import ClubEditFields from '../../../../../../../ui/forms/clubs/ClubEditFields.js'
 
 import { moduleSx as sx } from '../sx/module.sx'
 
+const emptyValue = 'לא הוזן'
+
 export default function ClubManagementInfoCard({
   draft,
-  isDirty,
   onDraft,
-  onConfirm,
-  onReset,
-  pending
+  pending,
+  readOnly = false,
 }) {
+  const clubName = String(draft?.clubName || '').trim() || emptyValue
+  const ifaLink = String(draft?.ifaLink || '').trim() || emptyValue
+
+  if (readOnly) {
+    return (
+      <Sheet variant="plain" sx={sx.infoCard}>
+        <Box sx={sx.statusRow}>
+          <Chip size="sm" variant="soft" color={draft?.active ? 'success' : 'neutral'}>
+            {draft?.active ? 'פעיל' : 'לא פעיל'}
+          </Chip>
+        </Box>
+
+        <Box sx={sx.readGrid}>
+          <Box sx={sx.readItem}>
+            <Typography level="body-xs" sx={sx.readLabel}>
+              שם מועדון
+            </Typography>
+            <Typography level="title-sm" sx={sx.readValue}>
+              {clubName}
+            </Typography>
+          </Box>
+
+          <Box sx={sx.readItem}>
+            <Typography level="body-xs" sx={sx.readLabel}>
+              קישור התאחדות
+            </Typography>
+            <Typography level="title-sm" sx={sx.readLink} title={ifaLink}>
+              {ifaLink}
+            </Typography>
+          </Box>
+        </Box>
+      </Sheet>
+    )
+  }
+
   return (
-    <Sheet variant="soft" sx={sx.cardSx}>
-      {/* ✅ header: title + dirty + actions right */}
-      <Box sx={sx.cardHeader}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-          <Typography level="title-sm" sx={{ whiteSpace: 'nowrap' }}>
-            ניהול מועדון
+    <Sheet variant="plain" sx={sx.infoCard}>
+      <Box sx={sx.editHeader}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography level="title-sm" sx={sx.editTitle}>
+            עריכת מידע מועדון
           </Typography>
-          {isDirty ? (
-            <Chip size="sm" variant="soft" color="warning">
-              לא נשמר
-            </Chip>
-          ) : null}
+          <Typography level="body-xs" sx={sx.editSubtitle}>
+            עדכון שם המועדון, קישור התאחדות וסטטוס פעילות
+          </Typography>
         </Box>
 
-        <Box sx={sx.actions}>
-          <Button size="sm" variant="soft" color="neutral" disabled={!isDirty} onClick={onReset}>
-            איפוס
-          </Button>
-          <Button size="sm" variant="solid" color="success" disabled={pending || !isDirty} onClick={onConfirm} loading={pending}>
-            אישור
-          </Button>
-        </Box>
+        <Chip size="sm" variant="soft" color="neutral">
+          מצב עריכה
+        </Chip>
       </Box>
 
-      {/* ✅ Row 1: chips + year (year is visually secondary) */}
-      <Box sx={sx.firstRow}>
-        {/* ציפס */}
-        <Box sx={sx.chipsRow}>
-          <ClubActiveSelector
-            value={draft.active}
-            onChange={(v) => onDraft({ ...draft, active: v })}
-          />
-        </Box>
-      </Box>
-
-      <Box sx={sx.secondRow}>
-        <ClubNameField
-          required
-          value={draft?.clubName}
-          onChange={(v) => onDraft({ ...draft, clubName: v })}
-        />
-      </Box>
-
-      {/* ✅ Row 2: Team name (primary) + Club (readOnly secondary) */}
-      <Box sx={sx.thirdRow}>
-        <ClubIfaLinkField
-          value={draft.ifaLink}
-          onChange={(v) => onDraft({ ...draft, ifaLink: v })}
-        />
-      </Box>
+      <ClubEditFields
+        draft={draft}
+        onDraft={onDraft}
+        variant="profile"
+        disabled={pending}
+      />
     </Sheet>
   )
 }

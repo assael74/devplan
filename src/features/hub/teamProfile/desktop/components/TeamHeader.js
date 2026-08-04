@@ -5,9 +5,24 @@ import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
+
+const teamHeaderColors = getEntityColors('teams')
+
+const teamHeaderSx = {
+  bgcolor: 'rgba(16, 185, 129, 0.045)',
+  border: '1px solid',
+  borderColor: 'rgba(16, 185, 129, 0.16)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
+  '& .MuiAvatar-root': {
+    border: '1px solid',
+    borderColor: teamHeaderColors.accent,
+    boxShadow: '0 0 0 4px rgba(16, 185, 129, 0.08)',
+  },
+}
 
 const getClubId = ({ entity, context }) =>
   context?.club?.id ||
@@ -61,7 +76,7 @@ function TeamSubtitle({ entity, context, onClubClick }) {
             minHeight: 22,
             px: 0.5,
             py: 0,
-            fontWeight: 700,
+            fontWeight: 600,
             color: 'text.secondary',
             borderRadius: 'sm',
             cursor: clubId ? 'pointer' : 'default',
@@ -127,6 +142,7 @@ export default function TeamHeader({ entity, context, backAction }) {
         backAction={backAction}
         onAvatarClick={image.openModal}
         right={<ProfileIfaButton ifaLink={ifaLink} />}
+        sx={teamHeaderSx}
       />
       <ProfileHeaderImageModal
         image={image}

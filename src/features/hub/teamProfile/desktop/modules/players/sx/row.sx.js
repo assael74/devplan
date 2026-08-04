@@ -1,9 +1,5 @@
 // teamProfile/desktop/modules/players/sx/row.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('players')
-
 export const rowSx = {
   row: {
     display: 'grid',
@@ -16,32 +12,20 @@ export const rowSx = {
     borderRadius: 12,
     border: '1px solid',
     borderColor: 'divider',
-    bgcolor: 'background.level3',
+    bgcolor: 'background.surface',
     position: 'relative',
     overflow: 'hidden',
     transition: 'transform .14s ease, box-shadow .14s ease, border-color .14s ease, background-color .14s ease',
 
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      width: 3,
-      height: '100%',
-      bgcolor: c.bg,
-      opacity: 0.95,
-    },
-
     '&:hover': {
-      bgcolor: `${c.accent}66`,
-      boxShadow: 'sm',
+      bgcolor: 'background.level1',
+      borderColor: 'neutral.300',
+      boxShadow: 'none',
     },
   },
 
   rowKey: {
-    '&::before': {
-      bgcolor: c.accent,
-    },
+    borderColor: 'primary.outlinedBorder',
   },
 
   rowPerformanceView: {
@@ -78,7 +62,7 @@ export const rowSx = {
   },
 
   rowProject: {
-    boxShadow: `inset 0 0 0 1px ${c.bg}18`,
+    boxShadow: 'none',
   },
 
   rowInactive: {

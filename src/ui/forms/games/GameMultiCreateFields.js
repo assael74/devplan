@@ -1,0 +1,254 @@
+// ui/forms/games/GameMultiCreateFields.js
+
+import React from 'react'
+import { Box, Typography, Divider, Button, Chip } from '@mui/joy'
+
+import DateInputField from '../../fields/core/DateInputField'
+import HourInputField from '../../fields/core/HourInputField'
+import ClubSelectField from '../../fields/clubs/ClubSelectField.js'
+import ClubNameField from '../../fields/clubs/ClubNameField.js'
+import TeamNameField from '../../fields/teams/TeamNameField.js'
+import TeamSelectField from '../../fields/teams/TeamSelectField.js'
+import GameHomeSelector from '../../fields/games/GameHomeSelector.js'
+import GameDurationSelectField from '../../fields/games/GameDurationSelectField.js'
+import GameTypeSelectField from '../../fields/games/GameTypeSelectField.js'
+import GameRivalField from '../../fields/games/GameRivalField.js'
+
+import { makeId } from '../../../utils/id.js'
+import { iconUi } from '../../core/icons/iconUi.js'
+import { multiSx as sx } from './sx/multiCreate.sx.js'
+
+const DEFAULT_GAME_HOUR = '12:00'
+
+function createRow(defaults = {}) {
+  return {
+    uiKey: makeId('gameRow'),
+    rivel: '',
+    gameDate: '',
+    gameHour: defaults?.gameHour || DEFAULT_GAME_HOUR,
+    home: defaults?.home ?? true,
+    type: defaults?.type || '',
+    gameDuration: defaults?.gameDuration || '',
+  }
+}
+
+export default function GameMultiCreateFields({
+  draft,
+  onDraft,
+  validity,
+  layout,
+  context,
+  isPrivatePlayer = false,
+}) {
+  const defaults = draft?.defaults || {}
+  const games = Array.isArray(draft?.games) ? draft.games : []
+
+  function updateDefaults(patch) {
+    const nextDefaults = { ...defaults, ...patch }
+
+    const nextGames = games.map((row) => ({
+      ...row,
+      home: patch.home !== undefined ? patch.home : row.home,
+      type: patch.type !== undefined ? patch.type : row.type,
+      gameDuration: patch.gameDuration !== undefined ? patch.gameDuration : row.gameDuration,
+    }))
+
+    onDraft({
+      ...draft,
+      defaults: nextDefaults,
+      games: nextGames,
+    })
+  }
+
+  function updateRow(rowUiKey, patch) {
+    const nextGames = games.map((row) =>
+      row.uiKey === rowUiKey ? { ...row, ...patch } : row
+    )
+
+    onDraft({
+      ...draft,
+      games: nextGames,
+    })
+  }
+
+  function addRow() {
+    if (games.length >= 10) return
+
+    onDraft({
+      ...draft,
+      games: [...games, createRow(defaults)],
+    })
+  }
+
+  function removeRow(rowUiKey) {
+    if (games.length <= 2) return
+
+    onDraft({
+      ...draft,
+      games: games.filter((row) => row.uiKey !== rowUiKey),
+    })
+  }
+
+  return (
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.header}>
+        <Box>
+          <Typography level="title-md">הוספת מספר משחקים</Typography>
+          <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
+            מינימום 2 משחקים · עד 10 משחקים
+          </Typography>
+        </Box>
+
+        <Chip size="sm" color={validity?.isValid ? 'success' : 'neutral'}>
+          {games.length} משחקים
+        </Chip>
+      </Box>
+
+      <Divider>
+        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25 }}>
+          ברירות מחדל
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.block(layout.defaultsCols, 1.5)}>
+        {isPrivatePlayer ? (
+          <>
+            <ClubNameField
+              value={draft?.clubName || context?.player?.clubName || ''}
+              size="sm"
+              readOnly
+            />
+
+            <TeamNameField
+              value={draft?.teamName || context?.player?.teamName || ''}
+              size="sm"
+              readOnly
+            />
+          </>
+        ) : (
+          <>
+            <ClubSelectField
+              value={draft.clubId}
+              size="sm"
+              options={context?.clubs || []}
+              disabled
+            />
+
+            <TeamSelectField
+              value={draft.teamId}
+              size="sm"
+              options={context?.teams || []}
+              disabled
+              clubId={draft.clubId}
+            />
+          </>
+        )}
+      </Box>
+
+      <Box sx={sx.block(layout.defaultsCols, 1)}>
+        <GameTypeSelectField
+          id="multiGameType"
+          size="sm"
+          required
+          label="סוג משחק"
+          value={defaults?.type || ''}
+          onChange={(value) => updateDefaults({ type: value })}
+        />
+
+        <GameDurationSelectField
+          size="sm"
+          required
+          placeholder="משך משחק"
+          value={defaults?.gameDuration || ''}
+          onChange={(value) => updateDefaults({ gameDuration: value })}
+        />
+      </Box>
+
+      <Divider>
+        <Typography level="title-sm" sx={{ mt: 0.25, mb: 0.25 }}>
+          רשימת משחקים
+        </Typography>
+      </Divider>
+
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        {games.map((row, index) => {
+          const rowValidity = validity?.rowValidity[index] || {}
+
+          return (
+            <Box key={row.uiKey} sx={sx.rowCard(rowValidity?.isValid)}>
+              <Box sx={sx.rowHeader}>
+                <Typography level="title-sm">משחק {index + 1}</Typography>
+
+                <Box sx={sx.rowActions}>
+                  {!rowValidity?.isValid && (
+                    <Chip size="sm" color="danger" variant="soft">
+                      חסרים שדות
+                    </Chip>
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="plain"
+                    color="danger"
+                    disabled={games.length <= 2}
+                    onClick={() => removeRow(row.uiKey)}
+                  >
+                    הסר
+                  </Button>
+                </Box>
+              </Box>
+
+              <Box sx={sx.block(layout.rowCols, 1)}>
+                <GameRivalField
+                  id={`rivel-${row.uiKey}`}
+                  size="sm"
+                  required
+                  value={row?.rivel || ''}
+                  variant="outlined"
+                  onChange={(value) => updateRow(row.uiKey, { rivel: value })}
+                />
+
+                <DateInputField
+                  label="תאריך משחק"
+                  required
+                  size="sm"
+                  value={row?.gameDate || ''}
+                  onChange={(value) => updateRow(row.uiKey, { gameDate: value })}
+                />
+
+                <HourInputField
+                  size="sm"
+                  value={row?.gameHour || ''}
+                  onChange={(value) => updateRow(row.uiKey, { gameHour: value })}
+                />
+
+                <GameHomeSelector
+                  id={`home-${row.uiKey}`}
+                  size="sm"
+                  value={row?.home}
+                  onChange={(value) => updateRow(row.uiKey, { home: value })}
+                />
+              </Box>
+            </Box>
+          )
+        })}
+      </Box>
+
+      <Box sx={sx.footer}>
+        <Button
+          size="sm"
+          variant="soft"
+          onClick={addRow}
+          startDecorator={iconUi({ id: 'add' })}
+          disabled={games.length >= 10}
+        >
+          הוסף משחק
+        </Button>
+
+        <Typography level="body-xs" sx={{ color: 'text.secondary' }}>
+          סוג משחק ומשך משחק נקבעים כברירת מחדל לכל השורות
+        </Typography>
+      </Box>
+    </Box>
+  )
+}

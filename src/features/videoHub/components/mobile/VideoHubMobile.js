@@ -17,7 +17,7 @@ import { VIDEO_ANALYSIS_EDIT_ADAPTER } from '../../logic/videoHub.editAdapters.j
 import useVideoHubData from '../../hooks/useVideoHubData.js'
 import { useCreateModal } from '../../../../ui/forms/create/CreateModalProvider.js'
 import { buildTaskFabContext } from '../../../../ui/actions/buildTaskFabContext.js'
-import { buildTaskPresetDraft } from '../../../../ui/forms/helpers/tasksForm.helpers.js'
+import { buildTaskPresetDraft } from '../../../../ui/forms/tasks/taskForm.helpers.js'
 
 import { useVideoHubModal } from '../../hooks/useVideoHubModal.js'
 import { useVideoHubUpdate } from '../../hooks/useVideoHubUpdate.js'

@@ -19,6 +19,7 @@ export default function RolesPage() {
     >
       <RolesCard
         roles={core.roles || []}
+        pageMode
         context={{
           clubs: core.clubs || [],
           teams: core.teams || [],

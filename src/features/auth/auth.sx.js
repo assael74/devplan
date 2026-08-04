@@ -26,6 +26,14 @@ export const authSx = {
     bgcolor: 'background.level1',
   },
 
+  logoFull: {
+    width: 184,
+    maxWidth: '70%',
+    height: 'auto',
+    display: 'block',
+    mb: 1.5,
+  },
+
   content: {
     p: { xs: 2, sm: 3 },
     display: 'flex',

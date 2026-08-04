@@ -4,7 +4,7 @@ export const positionSx = {
   col: {
     display: 'grid',
     gap: 0.25,
-    width: 250,
+    width: 210,
     minWidth: 0,
     alignContent: 'center',
     justifyItems: 'start',

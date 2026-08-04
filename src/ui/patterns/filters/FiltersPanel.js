@@ -3,7 +3,7 @@
 import React from 'react'
 import { Box, Sheet, Typography, Chip, Input } from '@mui/joy'
 import { alpha } from '@mui/system'
-import MonthYearPicker from '../../fields/dateUi/MonthYearPicker.js'
+import MonthYearPicker from '../../fields/core/MonthYearPicker.js'
 import { iconUi } from '../../core/icons/iconUi.js'
 
 const TONE_COLORS = {

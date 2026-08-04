@@ -4,10 +4,10 @@ import React, { useMemo } from 'react'
 import { Box, Button, Typography } from '@mui/joy'
 import RestartAltRounded from '@mui/icons-material/RestartAltRounded'
 
-import PhoneField from '../../../../ui/fields/inputUi/PhoneField.js'
-import GenericInputField from '../../../../ui/fields/inputUi/GenericInputField.js'
-import ScoutFullNameField from '../../../../ui/fields/inputUi/scouting/ScoutFullNameField.js'
-import ScoutIfaLinkField from '../../../../ui/fields/inputUi/scouting/ScoutIfaLinkField.js'
+import ScoutFields from '../../../../ui/forms/scouting/ScoutFields.js'
+import {
+  getScoutFormLayout,
+} from '../../../../ui/forms/scouting/form.layout.js'
 
 import { scoutFormSx } from './scoutForm.sx.js'
 
@@ -21,6 +21,8 @@ export default function ScoutForm({
   onReset,
   onSave,
 }) {
+  const layout = getScoutFormLayout()
+
   const hint = useMemo(() => {
     if (locked) return 'הטופס נעול לעריכה'
     if (isDirty) return 'יש שינויים שלא נשמרו'
@@ -29,54 +31,12 @@ export default function ScoutForm({
 
   return (
     <>
-      <Box sx={scoutFormSx.row1}>
-        <ScoutFullNameField
-          value={draft.playerName}
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, playerName: v }))}
-        />
-
-        <PhoneField
-          value={draft.phone}
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, phone: v }))}
-        />
-
-        <ScoutIfaLinkField
-          value={draft.ifaLink}
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, ifaLink: v }))}
-        />
-      </Box>
-
-      <Box sx={scoutFormSx.row2}>
-        <GenericInputField
-          value={draft.clubName}
-          label='שם מועדון'
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, clubName: v }))}
-        />
-
-        <GenericInputField
-          value={draft.teamName}
-          label='שם קבוצה'
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, teamName: v }))}
-        />
-
-        <GenericInputField
-          value={draft.league}
-          label='ליגה'
-          size='sm'
-          onChange={(v) => setDraft((d) => ({ ...d, league: v }))}
-        />
-      </Box>
-
-      <GenericInputField
-        value={draft.notes}
-        label='הערות'
-        size='sm'
-        onChange={(v) => setDraft((d) => ({ ...d, notes: v }))}
+      <ScoutFields
+        draft={draft}
+        onDraft={setDraft}
+        layout={layout}
+        disabled={pending}
+        readOnly={locked}
       />
 
       <Box sx={scoutFormSx.footer}>

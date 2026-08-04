@@ -1,8 +1,6 @@
 // teamProfile/sharedUi/management/sx/toolbar.sx.js
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const toolbarSx = {
   toolbar: (nonShow, isMobile) => ({
@@ -10,19 +8,19 @@ export const toolbarSx = {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: isMobile ? 0.75 : 1,
-    px: isMobile ? 1 : 1.25,
+    px: isMobile ? 0.9 : 1,
     py: !nonShow
       ? isMobile
-        ? 0.75
-        : 0.85
+        ? 0.65
+        : 0.65
       : isMobile
-        ? 1
-        : 1.6,
+        ? 0.85
+        : 1.1,
     borderRadius: 'md',
     bgcolor: 'background.surface',
     border: '1px solid',
     borderColor: 'divider',
-    boxShadow: 'sm',
+    boxShadow: 'none',
     minWidth: 0,
     flexWrap: 'nowrap',
   }),
@@ -30,62 +28,94 @@ export const toolbarSx = {
   titleArea: {
     display: 'flex',
     alignItems: 'center',
-    gap: 1,
+    gap: 0.75,
     minWidth: 0,
   },
 
   headerDot: {
-    width: 10,
-    height: 10,
+    width: 8,
+    height: 8,
     borderRadius: 999,
-    bgcolor: c.accent,
-    boxShadow: '0 0 0 4px rgba(76,110,245,0.12)',
+    bgcolor: devPlanColors.tertiary,
+    boxShadow: `0 0 0 4px ${devPlanColors.tertiaryLight}`,
     flexShrink: 0,
   },
 
   title: (isMobile) => ({
-    fontWeight: 700,
+    fontWeight: 600,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     maxWidth: isMobile ? 170 : 'none',
   }),
 
+  statusWrap: {
+    pl: 0.5,
+    flexShrink: 0,
+  },
+
   toolbarActions: (isMobile) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: isMobile ? 0.5 : 0.75,
+    gap: isMobile ? 0.45 : 0.6,
     flexShrink: 0,
     flexWrap: 'nowrap',
   }),
 
-  mobileSaveBtn: {
-    bgcolor: c.bg,
-    color: c.text,
+  secondaryAction: {
     border: '1px solid',
     borderColor: 'divider',
+    fontWeight: 600,
+  },
+
+  saveAction: (enabled) => ({
+    bgcolor: enabled ? devPlanColors.primary : 'neutral.softBg',
+    color: enabled ? '#fff' : 'text.tertiary',
+    fontWeight: 600,
+    boxShadow: 'none',
+    px: 1.5,
+    transition: 'background .15s ease, transform .12s ease',
+    border: '1px solid',
+    borderColor: enabled ? devPlanColors.primary : 'divider',
 
     '&:hover': {
-      bgcolor: c.bg,
-      color: c.text,
-      filter: 'brightness(0.96)',
+      bgcolor: enabled ? devPlanColors.primaryDark : 'neutral.softBg',
+      color: enabled ? '#fff' : 'text.tertiary',
+      transform: enabled ? 'translateY(-1px)' : 'none',
+    },
+
+    '&.Mui-disabled': {
+      bgcolor: 'neutral.softBg',
+      color: 'text.tertiary',
+      borderColor: 'divider',
+    },
+  }),
+
+  mobileSaveBtn: {
+    bgcolor: devPlanColors.primary,
+    color: '#fff',
+    border: '1px solid',
+    borderColor: devPlanColors.primary,
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryDark,
+      color: '#fff',
     },
   },
 
   confBtn: {
-    bgcolor: c.bg,
-    color: c.text,
-    fontWeight: 700,
-    boxShadow: 'sm',
+    bgcolor: devPlanColors.primary,
+    color: '#fff',
+    fontWeight: 600,
+    boxShadow: 'none',
     px: 1.5,
-    transition: 'filter .15s ease, transform .12s ease',
+    transition: 'background .15s ease, transform .12s ease',
     border: '1px solid',
-    borderColor: 'divider',
+    borderColor: devPlanColors.primary,
 
     '&:hover': {
-      bgcolor: c.bg,
-      color: c.text,
-      filter: 'brightness(0.96)',
+      bgcolor: devPlanColors.primaryDark,
+      color: '#fff',
       transform: 'translateY(-1px)',
     },
   },

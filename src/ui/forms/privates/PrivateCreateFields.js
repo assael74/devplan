@@ -1,0 +1,92 @@
+// ui/forms/privates/PrivateCreateFields.js
+
+import React from 'react'
+import { Box, Typography, Divider } from '@mui/joy'
+
+import PlayerFirstNameField from '../../fields/players/PlayerFirstNameField'
+import PlayerLastNameField from '../../fields/players/PlayerLastNameField'
+import TeamNameField from '../../fields/teams/TeamNameField'
+import ClubNameField from '../../fields/clubs/ClubNameField'
+import MonthYearPicker from '../../fields/core/MonthYearPicker'
+
+import { createSx as sx } from './sx/create.sx.js'
+
+const clean = (v) => String(v ?? '').trim()
+
+export default function PrivateCreateFields({
+  draft,
+  layout,
+  onDraft,
+  context,
+  validity,
+  fieldDisabled = {},
+}) {
+  const playerFirstName = draft?.playerFirstName || ''
+  const playerLastName = draft?.playerLastName || ''
+  const clubName = draft?.clubName || ''
+  const teamName = draft?.teamName || ''
+  const birth = draft?.birth || ''
+
+  return (
+    <Box sx={sx.root(layout)}>
+      <Box sx={sx.block(layout.topCols, 1)}>
+        <PlayerFirstNameField
+          required
+          value={playerFirstName}
+          onChange={(v) => onDraft({ ...draft, playerFirstName: v })}
+          error={!validity.okFirst && clean(playerFirstName).length > 0}
+          size="sm"
+        />
+
+        <PlayerLastNameField
+          required
+          value={playerLastName}
+          onChange={(v) => onDraft({ ...draft, playerLastName: v })}
+          error={!validity.okLast && clean(playerLastName).length > 0}
+          size="sm"
+        />
+      </Box>
+
+      <Divider>
+        <Typography level="title-sm" sx={sx.title}>
+          שיוך למועדון וקבוצה
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.block(layout.mainCols, 2)}>
+        <ClubNameField
+          required
+          value={clubName}
+          onChange={(v) => onDraft({ ...draft, clubName: v })}
+          error={!validity.okClub && clean(clubName).length > 0}
+          size="sm"
+        />
+
+        <TeamNameField
+          required
+          value={teamName}
+          onChange={(v) => onDraft({ ...draft, teamName: v })}
+          error={!validity.okTeam && clean(teamName).length > 0}
+          size="sm"
+        />
+      </Box>
+
+      <Divider>
+        <Typography level="title-sm" sx={sx.title}>
+          שנתון
+        </Typography>
+      </Divider>
+
+      <Box sx={sx.block(layout.metaCols, 1)}>
+        <MonthYearPicker
+          required
+          label='שנתון'
+          value={birth}
+          onChange={(v) => onDraft({ ...draft, birth: v })}
+          size="sm"
+          error={!validity.okBirth && clean(birth).length > 0}
+        />
+      </Box>
+    </Box>
+  )
+}

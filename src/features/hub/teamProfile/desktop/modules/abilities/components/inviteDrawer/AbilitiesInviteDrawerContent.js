@@ -11,8 +11,8 @@ import {
   Typography,
 } from '@mui/joy'
 
-import RoleSelectField from '../../../../../../../../ui/fields/selectUi/roles/RoleSelectField.js'
-import AbilitiesMultiSelectField from '../../../../../../../../ui/fields/selectUi/abilities/AbilitiesMultiSelectField.js'
+import RoleSelectField from '../../../../../../../../ui/fields/roles/RoleSelectField.js'
+import AbilitiesMultiSelectField from '../../../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { editDrawerSx as sx } from './sx/drawer.sx.js'
 import {

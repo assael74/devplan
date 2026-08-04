@@ -10,11 +10,14 @@ export default function RoleList({
   disabled = false,
   pending = false,
   onRemove,
+  onOpenDrawer,
+  selectedRoleId,
   showActions = true,
   formatPhone,
   isMobile = false,
   emptyText = 'עדיין לא שויך צוות מקצועי',
   compact = false,
+  pageMode = false,
 }) {
   if (!value.length) {
     return (
@@ -29,7 +32,7 @@ export default function RoleList({
   }
 
   return (
-    <Box sx={rolesSx.list(compact)}>
+    <Box sx={rolesSx.list(compact, pageMode)}>
       {value.map((role) => (
         <RoleRow
           key={role.id}
@@ -37,10 +40,13 @@ export default function RoleList({
           disabled={disabled}
           pending={pending}
           onRemove={onRemove}
+          onOpenDrawer={onOpenDrawer}
+          selected={selectedRoleId === role.id}
           showActions={showActions}
           formatPhone={formatPhone}
           isMobile={isMobile}
           compact={compact}
+          pageMode={pageMode}
         />
       ))}
     </Box>

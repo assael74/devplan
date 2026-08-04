@@ -1,7 +1,7 @@
 // clubProfile/desktop/modules/teams/components/sections/LeagueSection.js
 
 import React from 'react'
-import { Box, Chip } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
@@ -11,21 +11,15 @@ import {
 
 import { leagueSx as sx } from './sx/league.sx.js'
 
-function LeagueChip({
-  icon,
-  color = 'neutral',
-  children,
-}) {
+function LeagueMetric({ icon, label, value, tone = 'neutral' }) {
   return (
-    <Chip
-      size="sm"
-      variant="soft"
-      color={color}
-      startDecorator={iconUi({ id: icon, size: 'xs' })}
-      sx={sx.chip}
-    >
-      {children}
-    </Chip>
+    <Box sx={sx.metric(tone)}>
+      {iconUi({ id: icon, size: 'xs' })}
+      <Typography level="body-xs" sx={sx.metricText}>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </Typography>
+    </Box>
   )
 }
 
@@ -35,30 +29,19 @@ export default function LeagueSection({ row }) {
   if (!model.hasLeagueData) {
     return (
       <Box sx={sx.root}>
-        <Chip size="sm" variant="outlined" color="neutral" sx={sx.chip}>
+        <Typography level="body-xs" sx={sx.emptyText}>
           ללא נתוני ליגה
-        </Chip>
+        </Typography>
       </Box>
     )
   }
 
   return (
     <Box sx={sx.root}>
-      <LeagueChip icon="leaguePos">
-        מקום {model.position}
-      </LeagueChip>
-
-      <LeagueChip icon="points">
-        {model.points} נק׳
-      </LeagueChip>
-
-      <LeagueChip icon="goal" color="success">
-        {model.goalsFor}
-      </LeagueChip>
-
-      <LeagueChip icon="goal" color="danger">
-        {model.goalsAgainst}
-      </LeagueChip>
+      <LeagueMetric icon="leaguePos" label="מקום" value={model.position} />
+      <LeagueMetric icon="points" label="נקודות" value={model.points} />
+      <LeagueMetric icon="goal" label="זכות" value={model.goalsFor} tone="success" />
+      <LeagueMetric icon="goal" label="חובה" value={model.goalsAgainst} tone="danger" />
     </Box>
   )
 }

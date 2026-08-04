@@ -3,10 +3,24 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
 import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+
+const clubHeaderColors = getEntityColors('clubs')
+
+const clubHeaderSx = {
+  bgcolor: 'rgba(217, 119, 6, 0.05)',
+  border: '1px solid',
+  borderColor: 'rgba(217, 119, 6, 0.16)',
+  '& .MuiAvatar-root': {
+    border: '1px solid',
+    borderColor: clubHeaderColors.accent,
+    boxShadow: '0 0 0 4px rgba(217, 119, 6, 0.08)',
+  },
+}
 
 export default function ClubHeader({ entity, context, onBack }) {
   const navigate = useNavigate()
@@ -51,6 +65,7 @@ export default function ClubHeader({ entity, context, onBack }) {
         onBack={onBack}
         pathItems={pathItems}
         right={<ProfileIfaButton ifaLink={ifaLink} />}
+        sx={clubHeaderSx}
       />
       <ProfileHeaderImageModal
         image={image}

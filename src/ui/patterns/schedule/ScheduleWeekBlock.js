@@ -1,4 +1,4 @@
-// C:\projects\devplan\src\ui\patterns\schedule\ScheduleWeekBlock.js
+// ui/patterns/schedule/ScheduleWeekBlock.js
 
 import React from 'react'
 import { Box, Chip, Sheet, Typography } from '@mui/joy'
@@ -70,7 +70,7 @@ export default function ScheduleWeekBlock({
               </Typography>
 
               <Typography level="body-xs" sx={{ color: 'text.tertiary', mt: 0.25 }}>
-                המערכת לא זיהתה ימים רלוונטיים לשבוע זה.
+                אפשר ליצור שבוע אימונים חדש כדי להתחיל לתכנן.
               </Typography>
             </Box>
           </Box>

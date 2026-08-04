@@ -5,7 +5,7 @@ import GenericFabMenu from '../../../../ui/actions/GenericFabMenu'
 import { buildFabActions } from '../../../../ui/actions/fabActions.factory'
 import { useCreateModal } from '../../../../ui/forms/create/CreateModalProvider'
 import { getEntityColors } from '../../../../ui/core/theme/Colors'
-import { buildTaskPresetDraft } from '../../../../ui/forms/helpers/tasksForm.helpers.js'
+import { buildTaskPresetDraft } from '../../../../ui/forms/tasks/taskForm.helpers.js'
 
 const FAB_ENTITY_BY_TAB = {
   games: 'team',

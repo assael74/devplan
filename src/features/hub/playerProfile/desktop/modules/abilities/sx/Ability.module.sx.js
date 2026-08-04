@@ -68,10 +68,13 @@ export const domainCardSx = (accent) => ({
   height: '100%',
   borderRadius: 'md',
   bgcolor: 'background.surface',
+  borderColor: 'divider',
+  boxShadow: 'xs',
   transition: 'all 120ms ease',
   '&:hover': {
     boxShadow: 'sm',
-    borderColor: `${accent}.400`,
+    borderColor: 'neutral.300',
+    bgcolor: 'background.level1',
   },
 })
 

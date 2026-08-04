@@ -8,6 +8,23 @@ import { PlayerTargetsReportButton } from '../../../../../../reports/publicApi.j
 
 import { toolbarSx as sx } from './sx/toolbar.sx.js'
 
+const TEXT = {
+  fallbackTitle: '\u05de\u05d9\u05d3\u05e2 \u05d0\u05d9\u05e9\u05d9 \u05d5\u05db\u05dc\u05dc\u05d9 \u05e9\u05dc \u05d4\u05e9\u05d7\u05e7\u05df',
+  detailsSubtitle: '\u05e4\u05e8\u05d8\u05d9\u05dd, \u05e7\u05e9\u05e8, \u05e9\u05d9\u05d5\u05da \u05d5\u05de\u05e6\u05d1 \u05de\u05e7\u05e6\u05d5\u05e2\u05d9',
+  positionSubtitle: '\u05e2\u05de\u05d3\u05d5\u05ea, \u05e9\u05db\u05d1\u05ea \u05d9\u05e2\u05d3 \u05d5\u05ea\u05e4\u05e7\u05d9\u05d3 \u05d1\u05e1\u05d2\u05dc',
+  targetsSubtitle: '\u05d9\u05e2\u05d3\u05d9\u05dd \u05d0\u05d9\u05e9\u05d9\u05d9\u05dd \u05dc\u05e4\u05d9 \u05e2\u05de\u05d3\u05d4 \u05d5\u05d9\u05e2\u05d3 \u05e7\u05d1\u05d5\u05e6\u05d4',
+  saved: '\u05e9\u05de\u05d5\u05e8',
+  unsaved: '\u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05dc\u05d0 \u05e0\u05e9\u05de\u05e8\u05d5',
+  reset: '\u05d1\u05d9\u05d8\u05d5\u05dc',
+  save: '\u05e9\u05de\u05d9\u05e8\u05d4',
+}
+
+const SUBTITLE_BY_TAB = {
+  details: TEXT.detailsSubtitle,
+  position: TEXT.positionSubtitle,
+  targets: TEXT.targetsSubtitle,
+}
+
 export default function PlayerInfoToolbar({
   activeTab,
   player,
@@ -28,29 +45,29 @@ export default function PlayerInfoToolbar({
     }
   }, [player, draft])
 
+  const subtitle = SUBTITLE_BY_TAB[activeTab?.id] || TEXT.detailsSubtitle
+
   return (
     <Box sx={sx.toolbar(false)}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={sx.titleArea}>
         <Box sx={sx.headerDot} />
 
-        <Typography level='title-sm' sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-          {activeTab?.labelH || ''}
-        </Typography>
+        <Box sx={sx.titleCopy}>
+          <Typography level='title-sm' sx={sx.title}>
+            {activeTab?.labelH || TEXT.fallbackTitle}
+          </Typography>
 
-        <Box sx={{ pl: 2 }}>
-          {isDirty ? (
-            <Chip size='sm' variant='soft' color='warning'>
-              לא נשמר
-            </Chip>
-          ) : (
-            <Chip size='sm' variant='soft' color='success'>
-              שמור
-            </Chip>
-          )}
+          <Typography level='body-xs' sx={sx.subtitle}>
+            {subtitle}
+          </Typography>
         </Box>
       </Box>
 
       <Box sx={sx.toolbarActions}>
+        <Chip size='sm' variant='soft' color={isDirty ? 'warning' : 'success'} sx={sx.statusChip}>
+          {isDirty ? TEXT.unsaved : TEXT.saved}
+        </Chip>
+
         {isTargetsTab ? (
           <PlayerTargetsReportButton
             player={livePlayer}
@@ -66,9 +83,9 @@ export default function PlayerInfoToolbar({
           disabled={!isDirty || pending}
           onClick={onReset}
           startDecorator={iconUi({ id: 'reset' })}
-          sx={{ border: '1px solid', borderColor: 'divider' }}
+          sx={sx.secondaryAction}
         >
-          איפוס
+          {TEXT.reset}
         </Button>
 
         <Button
@@ -77,10 +94,10 @@ export default function PlayerInfoToolbar({
           disabled={!canSave}
           loading={pending}
           onClick={onSave}
-          sx={sx.confBtn}
+          sx={sx.confBtn(canSave)}
           startDecorator={iconUi({ id: 'save' })}
         >
-          שמירה
+          {TEXT.save}
         </Button>
       </Box>
     </Box>

@@ -1,9 +1,5 @@
 // teamProfile/sharedModules/management/teamManagementModule.sx.js
 
-import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-
 export const teamManagementModuleSx = {
   desktopToolbarWrap: {
     position: 'sticky',
@@ -14,7 +10,7 @@ export const teamManagementModuleSx = {
     borderRadius: 'md',
     bgcolor: 'background.body',
     mb: 0.5,
-    boxShadow: `inset 0 0 1px 2px ${c.accent}33`,
+    boxShadow: 'none',
   },
 
   desktopRolesWrap: {

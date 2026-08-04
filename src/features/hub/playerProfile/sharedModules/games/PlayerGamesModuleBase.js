@@ -10,7 +10,7 @@ import {
 } from '@mui/joy'
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
-import GameStatsCreateForm from '../../../../../ui/forms/gameStatsForm/GameStatsCreateForm.js'
+import GameStatsCreateForm from '../../../../../ui/forms/gameStats/GameStatsCreateForm.js'
 
 import usePlayerGamesModuleModel from './usePlayerGamesModuleModel.js'
 import { playerGamesModuleSx } from './playerGamesModule.sx.js'

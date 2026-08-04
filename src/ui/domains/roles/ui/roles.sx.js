@@ -1,7 +1,7 @@
 // src/ui/domains/roles/ui/roles.sx.js
 
 import { alpha } from '@mui/material/styles'
-import { getEntityColors } from '../../../core/theme/Colors.js'
+import { devPlanColors, getEntityColors } from '../../../core/theme/Colors.js'
 
 const c = getEntityColors('roles')
 
@@ -15,11 +15,11 @@ export const rolesSx = {
     minHeight: 0,
     height: compact ? 200 : '100%',
     p: compact ? 0.75 : 1.25,
-    borderRadius: compact ? 'md' : 'lg',
-    bgcolor: c.bg,
+    borderRadius: 'md',
+    bgcolor: 'background.surface',
     border: '1px solid',
-    borderColor: alpha(c.accent, 0.16),
-    boxShadow: 'sm',
+    borderColor: compact ? 'divider' : devPlanColors.border,
+    boxShadow: compact ? 'none' : `0 8px 20px ${alpha(devPlanColors.primaryDark, 0.05)}`,
     overflow: 'hidden',
   }),
 
@@ -28,12 +28,10 @@ export const rolesSx = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: compact ? 0.75 : 1,
-    p: compact ? 0.65 : 1,
+    p: 0,
     borderRadius: 'md',
-    bgcolor: alpha(c.surface, 0.82),
-    border: '1px solid',
-    borderColor: alpha(c.accent, 0.12),
-    backdropFilter: 'blur(6px)',
+    bgcolor: 'transparent',
+    border: 'none',
     flexShrink: 0,
   }),
 
@@ -52,9 +50,9 @@ export const rolesSx = {
     borderRadius: compact ? 10 : 12,
     display: 'grid',
     placeItems: 'center',
-    bgcolor: alpha(c.accent, 0.12),
-    color: c.accent,
-    boxShadow: `inset 0 0 0 1px ${alpha(c.accent, 0.12)}`,
+    bgcolor: 'background.level1',
+    color: 'text.secondary',
+    boxShadow: 'inset 0 0 0 1px var(--joy-palette-divider)',
   }),
 
   toolbarText: {
@@ -63,7 +61,7 @@ export const rolesSx = {
   },
 
   title: (compact = false) => ({
-    color: c.text,
+    color: 'text.primary',
     whiteSpace: 'nowrap',
     fontWeight: 600,
     fontSize: compact ? 14 : undefined,
@@ -71,7 +69,7 @@ export const rolesSx = {
   }),
 
   subtitle: (compact = false) => ({
-    color: alpha(c.text, 0.72),
+    color: 'text.tertiary',
     whiteSpace: 'nowrap',
     fontSize: compact ? 11 : undefined,
     mt: 0.15,
@@ -81,12 +79,58 @@ export const rolesSx = {
     height: compact ? 22 : undefined,
     px: compact ? 0.7 : undefined,
     fontSize: compact ? 11 : undefined,
-    bgcolor: alpha(c.accent, 0.12),
-    color: c.accent,
+    bgcolor: 'background.level1',
+    color: 'text.secondary',
     fontWeight: 700,
     border: '1px solid',
-    borderColor: alpha(c.accent, 0.16),
+    borderColor: 'divider',
   }),
+
+  summary: (pageMode = false) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    px: pageMode ? 0.25 : 0,
+  }),
+
+  filters: (pageMode = false) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.75,
+    p: pageMode ? 0.75 : 0,
+    borderRadius: pageMode ? 'md' : 0,
+    bgcolor: pageMode ? 'background.level1' : 'transparent',
+    border: pageMode ? '1px solid' : 'none',
+    borderColor: 'divider',
+  }),
+
+  filtersRow: {
+    display: 'flex',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+
+  searchInput: {
+    minWidth: 260,
+    flex: 1,
+    bgcolor: 'background.surface',
+  },
+
+  filterSelect: width => ({
+    minWidth: width,
+    bgcolor: 'background.surface',
+    flexShrink: 0,
+  }),
+
+  resultChip: {
+    flexShrink: 0,
+    fontWeight: 700,
+    border: '1px solid',
+    borderColor: 'divider',
+  },
 
   addBtn: (compact = false) => ({
     minHeight: compact ? 28 : 25,
@@ -96,10 +140,10 @@ export const rolesSx = {
     fontSize: compact ? 11 : 10,
     fontWeight: 700,
     whiteSpace: 'nowrap',
-    bgcolor: c.accent,
+    bgcolor: devPlanColors.primary,
     color: '#fff',
     '&:hover': {
-      bgcolor: c.accent,
+      bgcolor: devPlanColors.primaryDark,
       filter: 'brightness(0.96)',
     },
     '&:disabled': {
@@ -117,53 +161,79 @@ export const rolesSx = {
     bgcolor: 'transparent',
   }),
 
-  list: (compact = false) => ({
+  list: (compact = false, pageMode = false) => ({
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? 0.45 : 0.75,
+    gap: compact ? 0.45 : pageMode ? 0.65 : 0.75,
     minWidth: 0,
     borderRadius: 'md',
   }),
 
-  row: (compact = false) => ({
+  row: (compact = false, pageMode = false, selected = false) => ({
     position: 'relative',
-    display: 'flex',
+    display: pageMode && !compact ? 'grid' : 'flex',
+    gridTemplateColumns: pageMode && !compact
+      ? {
+          xs: 'minmax(0, 1fr) auto',
+          lg: 'minmax(240px, 1.2fr) minmax(220px, .9fr) minmax(280px, 1.15fr) auto',
+        }
+      : undefined,
     alignItems: 'center',
-    gap: compact ? 0.65 : 1,
+    gap: compact ? 0.65 : pageMode ? 1.1 : 1,
     minWidth: 0,
-    p: compact ? 0.65 : 1,
+    p: compact ? 0.65 : pageMode ? 0.85 : 1,
     pr: compact ? 0.85 : 1,
     borderRadius: compact ? 10 : 'md',
-    bgcolor: alpha(c.surface, 0.92),
+    bgcolor: selected ? devPlanColors.tertiaryLight : '#FFFFFF',
     border: '1px solid',
-    borderColor: alpha(c.accent, 0.08),
-    transition: 'all .18s ease',
-    boxShadow: `0 2px 10px ${alpha(c.accent, 0.04)}`,
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      right: 0,
-      top: compact ? 6 : 8,
-      bottom: compact ? 6 : 8,
-      width: compact ? 3 : 4,
-      borderRadius: 999,
-      bgcolor: alpha(c.accent, 0.7),
-    },
+    borderColor: selected ? devPlanColors.tertiary : pageMode ? devPlanColors.border : 'divider',
+    transition: 'background-color .18s ease, border-color .18s ease, box-shadow .18s ease',
+    boxShadow: compact ? 'none' : `0 3px 10px ${alpha(devPlanColors.primaryDark, 0.045)}`,
     '&:hover': {
-      transform: compact ? 'none' : 'translateY(-1px)',
-      boxShadow: compact
-        ? `0 4px 10px ${alpha(c.accent, 0.06)}`
-        : `0 8px 18px ${alpha(c.accent, 0.08)}`,
-      borderColor: alpha(c.accent, 0.16),
+      bgcolor: selected ? devPlanColors.tertiaryLight : devPlanColors.tertiaryLight,
+      borderColor: selected ? devPlanColors.tertiary : devPlanColors.border,
+      boxShadow: compact ? 'none' : `0 6px 16px ${alpha(devPlanColors.primaryDark, 0.08)}`,
     },
+    ...(pageMode && !compact
+      ? {
+          '& > :nth-of-type(1)': {
+            gridColumn: { xs: '1 / 2', lg: 'auto' },
+          },
+          '& > :nth-of-type(2)': {
+            gridColumn: { xs: '1 / -1', lg: 'auto' },
+          },
+          '& > :nth-of-type(3)': {
+            gridColumn: { xs: '1 / -1', lg: 'auto' },
+          },
+          '& > :nth-of-type(4)': {
+            gridColumn: { xs: '2 / 3', lg: 'auto' },
+            gridRow: { xs: '1', lg: 'auto' },
+          },
+        }
+      : {}),
   }),
+
+  identityCell: (compact = false) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: compact ? 0.65 : 0.85,
+    minWidth: 0,
+    overflow: 'hidden',
+  }),
+
+  identityText: {
+    display: 'grid',
+    gap: 0.35,
+    minWidth: 0,
+    justifyItems: 'start',
+  },
 
   avatar: (compact = false) => ({
     width: compact ? 34 : 42,
     height: compact ? 34 : 42,
     borderRadius: '50%',
     flexShrink: 0,
-    boxShadow: `0 0 0 2px ${alpha(c.accent, 0.08)}`,
+    boxShadow: '0 0 0 2px var(--joy-palette-background-level1)',
   }),
 
   rowMain: (compact = false) => ({
@@ -183,8 +253,8 @@ export const rolesSx = {
   }),
 
   name: (compact = false) => ({
-    fontWeight: 600,
-    color: c.text,
+    fontWeight: 700,
+    color: 'text.primary',
     minWidth: 0,
     fontSize: compact ? 13 : undefined,
     lineHeight: compact ? 1.1 : undefined,
@@ -195,10 +265,10 @@ export const rolesSx = {
     height: compact ? 20 : undefined,
     px: compact ? 0.5 : undefined,
     fontSize: compact ? 10 : undefined,
-    bgcolor: alpha(c.accent, 0.12),
-    color: c.accent,
+    bgcolor: 'background.level1',
+    color: devPlanColors.secondary,
     border: '1px solid',
-    borderColor: alpha(c.accent, 0.14),
+    borderColor: 'divider',
     fontWeight: 600,
   }),
 
@@ -207,7 +277,18 @@ export const rolesSx = {
     alignItems: 'center',
     gap: compact ? 0.75 : 1.25,
     flexWrap: 'wrap',
-    color: alpha(c.text, 0.74),
+    color: 'text.tertiary',
+  }),
+
+  contactCell: (compact = false) => ({
+    display: 'flex',
+    alignItems: compact ? 'center' : 'flex-start',
+    justifyContent: 'center',
+    flexDirection: compact ? 'row' : 'column',
+    gap: compact ? 0.75 : 0.35,
+    minWidth: 0,
+    overflow: 'hidden',
+    color: devPlanColors.secondary,
   }),
 
   contactItem: (compact = false) => ({
@@ -218,10 +299,48 @@ export const rolesSx = {
   }),
 
   contactText: (compact = false) => ({
-    color: alpha(c.text, 0.74),
-    fontSize: compact ? 11 : 12,
+    color: devPlanColors.secondary,
+    fontSize: compact ? 11 : 12.5,
     direction: 'ltr',
   }),
+
+  assignmentCell: {
+    display: 'grid',
+    gap: 0.25,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+
+  assignmentLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.45,
+    minWidth: 0,
+    color: devPlanColors.secondary,
+  },
+
+  assignmentText: {
+    color: devPlanColors.secondary,
+    fontWeight: 600,
+    minWidth: 0,
+  },
+
+  assignmentMoreChip: {
+    justifySelf: 'start',
+    minHeight: 20,
+    fontSize: 11,
+    fontWeight: 700,
+    border: '1px solid',
+    borderColor: 'divider',
+  },
+
+  statusChip: {
+    justifySelf: 'start',
+    minHeight: 22,
+    fontWeight: 700,
+    border: '1px solid',
+    borderColor: 'divider',
+  },
 
   actions: (compact = false) => ({
     display: 'flex',
@@ -230,6 +349,14 @@ export const rolesSx = {
     flexShrink: 0,
     pl: compact ? 0.15 : 0.5,
   }),
+
+  actionBtn: {
+    color: devPlanColors.secondary,
+    '&:hover': {
+      color: devPlanColors.tertiary,
+      bgcolor: 'transparent',
+    },
+  },
 
   removeBtn: (compact = false) => ({
     width: compact ? 28 : undefined,
@@ -249,10 +376,10 @@ export const rolesSx = {
     textAlign: 'center',
     p: compact ? 1.25 : 2,
     borderRadius: 'md',
-    bgcolor: alpha(c.surface, 0.8),
+    bgcolor: 'background.level1',
     border: '1px dashed',
-    borderColor: alpha(c.accent, 0.2),
-    color: alpha(c.text, 0.7),
+    borderColor: 'divider',
+    color: 'text.tertiary',
   }),
 
   drawerContent: {

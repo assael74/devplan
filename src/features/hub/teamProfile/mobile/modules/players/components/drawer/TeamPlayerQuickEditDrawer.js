@@ -1,26 +1,16 @@
 // teamProfile/mobile/modules/players/components/drawer/TeamPlayerQuickEditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Box, Typography } from '@mui/joy'
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 import DrawerShell from '../../../../../../../../ui/patterns/drawer/DrawerShell.js'
 import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 
+import PlayerQuickEditFields from '../../../../../../../../ui/forms/players/PlayerQuickEditFields.js'
+
 import { usePlayerHubUpdate } from './../../../../../../hooks/players/usePlayerHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'
-import {
-  PlayerIfaLinkField,
-  PlayerFirstNameField,
-  PlayerLastNameField,
-  PlayerShortNameField,
-  DateInputField,
-} from '../../../../../../../../ui/fields'
-import ProjectStatusSelectField from '../../../../../../../../ui/fields/selectUi/players/ProjectStatusSelectField.js'
-import PlayerActiveSelector from '../../../../../../../../ui/fields/checkUi/players/PlayerActiveSelector.js'
-import SquadRoleSelectField from '../../../../../../../../ui/fields/selectUi/players/SquadRoleSelectField.js'
-import PlayerTypeSelector from '../../../../../../../../ui/fields/checkUi/players/PlayerTypeSelector.js'
 
 import {
   buildPlayerEditInitial,
@@ -134,89 +124,12 @@ export default function TeamPlayerQuickEditDrawer({
         />
       }
     >
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', alignItems: 'center', gap: 2, minWidth: 0 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <PlayerActiveSelector
-          size="md"
-          value={draft?.active}
-          onChange={() =>
-            setDraft((prev) => ({
-              ...prev,
-              active: !prev.active,
-            }))
-          }
-        />
-
-        <PlayerTypeSelector
-          size="md"
-          value={draft?.type === 'project'}
-          onChange={(next) =>
-            setDraft((prev) => ({
-              ...prev,
-              type: next ? 'project' : 'noneType',
-            }))
-          }
-        />
-      </Box>
-
-      <SquadRoleSelectField
-        size="md"
-        value={draft?.squadRole}
-        onChange={(value) =>
-          setDraft((prev) => ({
-            ...prev,
-            squadRole: value,
-          }))
-        }
-      />
-
-      <ProjectStatusSelectField
-        label="סטטוס פרויקט"
-        size="sm"
-        value={draft?.projectStatus}
-        onChange={(value) =>
-          setDraft((prev) => ({
-            ...prev,
-            projectStatus: value,
-          }))
-        }
+      <PlayerQuickEditFields
+        draft={draft}
+        setDraft={setDraft}
         disabled={pending}
+        mode="mobile"
       />
-
-      <PlayerShortNameField
-        size="sm"
-        value={draft?.playerShortName || ''}
-        onChange={(value) =>
-          setDraft((prev) => ({
-            ...prev,
-            playerShortName: value,
-          }))
-        }
-      />
-
-      <DateInputField
-        value={draft?.birthDay || ''}
-        onChange={(value) =>
-          setDraft((prev) => ({
-            ...prev,
-            birthDay: value,
-          }))
-        }
-        label="יום הולדת"
-        size="sm"
-      />
-
-      <PlayerIfaLinkField
-        size="sm"
-        value={draft?.ifaLink || ''}
-        onChange={(value) =>
-          setDraft((prev) => ({
-            ...prev,
-            ifaLink: value,
-          }))
-        }
-      />
-    </Box>
     </DrawerShell>
   )
 }

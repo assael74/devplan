@@ -1,3 +1,5 @@
+// ui/patterns/schedule/logic/schedule.model.js
+
 import {
   flattenTrainingWeeks,
   groupTrainingRowsByWeek,
@@ -43,10 +45,10 @@ export const buildScheduleModel = ({
   const allRows = flattenTrainingWeeks({ trainingWeeks: weeks })
 
   const rawCurrentWeek =
-    weekGroups.find((x) => x.weekId === currentWeekId) || createEmptyWeekGroup(currentWeekId)
+    weekGroups.find((item) => item.weekId === currentWeekId) || createEmptyWeekGroup(currentWeekId)
 
   const rawNextWeek =
-    weekGroups.find((x) => x.weekId === nextWeekId) || createEmptyWeekGroup(nextWeekId)
+    weekGroups.find((item) => item.weekId === nextWeekId) || createEmptyWeekGroup(nextWeekId)
 
   const currentMeta = buildWeekMeta(rawCurrentWeek.weekId)
   const nextMeta = buildWeekMeta(rawNextWeek.weekId)
@@ -81,7 +83,7 @@ export const buildScheduleHeaderStats = (model) => {
   const summary = model?.summary || {}
 
   return [
-    { id: 'all', label: 'סה״כ', value: summary.totalTrainings || 0, color: 'neutral' },
+    { id: 'all', label: 'סה"כ', value: summary.totalTrainings || 0, color: 'neutral' },
     { id: 'current', label: 'השבוע', value: summary.currentWeekCount || 0, color: 'primary' },
     { id: 'next', label: 'שבוע הבא', value: summary.nextWeekCount || 0, color: 'success' },
   ]

@@ -5,7 +5,7 @@ import { Box } from '@mui/joy'
 
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
 import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
-import TasksCreateFields from '../../../../../ui/forms/ui/tasks/TasksCreateFields.js'
+import TasksCreateFields from '../../../../../ui/forms/tasks/TasksCreateFields.js'
 
 import { useTaskUpdate } from '../../../sharedHook/useTaskUpdate.js'
 import { useLifecycle } from '../../../../../ui/domains/entityLifecycle/LifecycleProvider'

@@ -5,7 +5,7 @@ import { useTheme } from '@mui/joy/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
-import TeamSelectField from '../../../../ui/fields/selectUi/teams/TeamSelectField.js'
+import TeamSelectField from '../../../../ui/fields/teams/TeamSelectField.js'
 import {
   EXACT_TARGET_OPTIONS,
   FORMATION_OPTIONS,

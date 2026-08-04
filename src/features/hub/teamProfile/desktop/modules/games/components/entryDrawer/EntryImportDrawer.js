@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import PlayerSelectField from '../../../../../../../../ui/fields/selectUi/players/PlayerSelectField.js'
+import PlayerSelectField from '../../../../../../../../ui/fields/players/PlayerSelectField.js'
 
 import { importSx as sx } from './sx/import.sx.js'
 import { useEntryImportDrawerModel } from './hooks/useEntryImportDrawerModel.js'

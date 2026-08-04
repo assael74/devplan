@@ -22,7 +22,7 @@ const getTeamId = team => {
 }
 
 const getPlayerName = player => {
-  return player?.playerFullName || player?.fullName || player?.label || '—'
+  return player?.playerFullName || player?.fullName || player?.label || 'ללא שם'
 }
 
 const getTeam = row => {
@@ -30,7 +30,7 @@ const getTeam = row => {
 }
 
 const getTeamName = team => {
-  return team?.teamName || team?.label || '—'
+  return team?.teamName || team?.label || 'ללא קבוצה'
 }
 
 export default function InfoSection({ row }) {
@@ -88,7 +88,7 @@ export default function InfoSection({ row }) {
               <Chip
                 size="sm"
                 variant="soft"
-                color="warning"
+                color="neutral"
                 startDecorator={iconUi({
                   id: squadRoleMeta.iconId,
                   sx: { color: squadRoleMeta.color },
@@ -98,7 +98,7 @@ export default function InfoSection({ row }) {
                 {squadRoleMeta.label}
               </Chip>
             ) : (
-              <Chip size="sm" color="danger" variant="soft" sx={sx.roleChip}>
+              <Chip size="sm" color="neutral" variant="soft" sx={sx.roleChip}>
                 לא הוגדר מעמד
               </Chip>
             )}

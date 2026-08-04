@@ -14,19 +14,34 @@ export const positionSx = {
 
   headWrap: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
     gap: 1,
     minWidth: 0,
-    mb: 1
+    mb: 1,
+
+    '@media (max-width: 900px)': {
+      flexDirection: 'column',
+    },
   },
 
   headSecondWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'minmax(170px, .75fr) minmax(140px, .6fr) minmax(240px, 1fr)',
+    },
     gap: 1,
-    minWidth: 0
+    minWidth: 0,
+    flex: 1,
+  },
+
+  summaryChips: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 1,
+    flexWrap: 'wrap',
+    flex: '0 0 auto',
   },
 
   positionGrid: {

@@ -11,15 +11,15 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import LeagueCenterHeader from './LeagueCenterHeader.js'
+import LeagueCenterContext from './LeagueCenterContext.js'
 import LeagueCenterOverview from './LeagueCenterOverview.js'
-import LeagueCenterFilters from './LeagueCenterFilters.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
-import LeagueCenterMissingPanel from './LeagueCenterMissingPanel.js'
+import LeagueCenterWorkQueue from './LeagueCenterWorkQueue.js'
 import LeagueCenterSeasonModal from './LeagueCenterSeasonModal.js'
 import { WriteFlowReportModal } from '../../components/modals/index.js'
 import useLeagueSeasonCreate from './hooks/useLeagueSeasonCreate.js'
 import { buildLeagueCenterColumns } from './logic/leagueCenter.columns.js'
-import { buildMissingItems } from './logic/leagueCenter.logic.js'
+import { buildWorkQueueItems } from './logic/leagueCenter.logic.js'
 import { leagueCenterPageSx as pageSx } from './sx/leagueCenterPage.sx.js'
 import { leagueCenterContentSx as contentSx } from './sx/leagueCenterContent.sx.js'
 
@@ -28,7 +28,7 @@ export default function LeaguesCenterPage() {
   const model = useLeagueCenter()
   const seasonCreate = useLeagueSeasonCreate({ onSuccess: model.reload })
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
-    { label: 'מרכז ליגות' },
+    { label: 'ניהול נתוני ליגות' },
   ])
 
   const columns = React.useMemo(() => buildLeagueCenterColumns({
@@ -37,6 +37,15 @@ export default function LeaguesCenterPage() {
       seasonKey: row.seasonKey || model.seasonKey,
     })),
   }), [model.seasonKey, navigate, seasonCreate.open])
+
+  const workItems = React.useMemo(
+    () => buildWorkQueueItems(model.summary),
+    [model.summary]
+  )
+
+  const handleWorkItemSelect = item => {
+    model.setDataStatus(item.status || 'all')
+  }
 
   return (
     <PlayersDatabaseLayout>
@@ -47,12 +56,18 @@ export default function LeaguesCenterPage() {
           onNavigateToEntry={() => navigate(PLAYERS_DATABASE_UI_ROUTES.entry)}
         />
 
-        <LeagueCenterOverview summary={model.summary} />
-        <LeagueCenterFilters model={model} />
+        <LeagueCenterContext model={model} />
 
         <Box sx={contentSx.contentGrid}>
-          <LeagueCenterTable columns={columns} model={model} />
-          <LeagueCenterMissingPanel items={buildMissingItems(model.summary)} />
+          <Box sx={contentSx.mainColumn}>
+            <LeagueCenterOverview summary={model.summary} />
+            <LeagueCenterTable columns={columns} model={model} />
+          </Box>
+
+          <LeagueCenterWorkQueue
+            items={workItems}
+            onSelect={handleWorkItemSelect}
+          />
         </Box>
       </Box>
 

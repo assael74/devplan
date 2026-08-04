@@ -4,10 +4,25 @@ import React, { useMemo } from 'react'
 import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 import HeaderStrip from '../../../../hub/sharedProfile/desktop/HeaderStrip'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+
+const playerHeaderColors = getEntityColors('players')
+
+const playerHeaderSx = {
+  bgcolor: 'rgba(76, 110, 245, 0.05)',
+  border: '1px solid',
+  borderColor: 'rgba(76, 110, 245, 0.16)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
+  '& .MuiAvatar-root': {
+    border: '1px solid',
+    borderColor: playerHeaderColors.accent,
+    boxShadow: '0 0 0 4px rgba(76, 110, 245, 0.08)',
+  },
+}
 
 const getTeamId = context =>
   context?.team?.id ||
@@ -122,6 +137,7 @@ export default function PlayerHeader({ entity, context, backAction }) {
         backAction={backAction}
         onAvatarClick={image.openModal}
         right={<ProfileIfaButton ifaLink={ifaLink} />}
+        sx={playerHeaderSx}
       />
       <ProfileHeaderImageModal
         image={image}

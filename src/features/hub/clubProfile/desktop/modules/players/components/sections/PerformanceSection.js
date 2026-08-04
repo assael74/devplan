@@ -29,15 +29,12 @@ export default function PerformanceSection({ row, performance }) {
   if (!model.ready) {
     return (
       <Box sx={sx.root}>
-        <Box sx={sx.top}>
-          <Chip size="sm" variant="soft" color="neutral" sx={sx.profileChip}>
-            אין מדידה
-          </Chip>
-        </Box>
-
-        <Box sx={sx.meta}>
-          <Typography level="body-xs">ביצועים לא זמינים</Typography>
-        </Box>
+        <Typography level="body-xs" sx={sx.emptyTitle}>
+          אין מדידה
+        </Typography>
+        <Typography level="body-xs" sx={sx.emptyText}>
+          ביצועים לא זמינים
+        </Typography>
       </Box>
     )
   }
@@ -45,6 +42,16 @@ export default function PerformanceSection({ row, performance }) {
   return (
     <Box sx={sx.root}>
       <Box sx={sx.top}>
+        <Typography level="body-xs" sx={sx.title}>
+          משחקים
+        </Typography>
+
+        <Chip size="sm" variant="outlined" color="neutral" sx={sx.scoreChip}>
+          {model.ratingLabel}
+        </Chip>
+      </Box>
+
+      <Box sx={sx.meta}>
         <Chip
           size="sm"
           variant="soft"
@@ -58,29 +65,10 @@ export default function PerformanceSection({ row, performance }) {
           {model.profile?.shortLabel || model.profile?.label || 'פרופיל'}
         </Chip>
 
-        <Chip size="sm" variant="outlined" color="neutral" sx={sx.scoreChip}>
-          {model.ratingLabel}
-        </Chip>
-
-        <Chip
-          size="sm"
-          variant="soft"
-          color={model.impactColor}
-          sx={sx.impactChip}
-        >
-          {model.impactLabel}
-        </Chip>
-      </Box>
-
-      <Box sx={sx.meta}>
         <Box sx={sx.metaMain}>
-          <MetaItem icon="goal">{model.stats.goals}</MetaItem>
-          <MetaItem icon="assists">{model.stats.assists}</MetaItem>
-          <MetaItem icon="playTimeRate">{model.stats.minutesPctLabel}</MetaItem>
-        </Box>
-
-        <Box sx={sx.metaSide}>
-          {model.meta.ratedGames} משחקים
+          <MetaItem icon="games">
+            {model.meta.ratedGames} משחקים
+          </MetaItem>
         </Box>
       </Box>
     </Box>

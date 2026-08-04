@@ -1,67 +1,61 @@
 // teamProfile/sharedUi/management/sx/tabs.sx.js
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const tabsSx = {
   tabsShell: (isMobile) => ({
-    display: 'grid',
-    gridTemplateColumns: isMobile
-      ? 'repeat(3, minmax(0, 1fr))'
-      : {
-          xs: '1fr',
-          md: 'repeat(3, minmax(0, 1fr))',
-        },
-    gap: isMobile ? 0.5 : 0.75,
-    mb: 1,
-    borderRadius: 'lg',
+    display: 'inline-grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, auto))',
+    gap: 0.15,
+    mb: isMobile ? 0.65 : 0.85,
+    p: 0.18,
+    borderRadius: 'sm',
     bgcolor: 'background.level1',
-    boxShadow: 'sm',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'none',
     overflowX: 'auto',
     minWidth: 0,
+    maxWidth: '100%',
   }),
 
   tabBtn: (selected, isMobile) => ({
-    justifyContent: 'flex-start',
-    gap: isMobile ? 0.5 : 1,
-    minHeight: { xs: 27, sm: 54 },
-    px: isMobile ? 0.5 : 1.25,
-    py: isMobile ? 0.5 : undefined,
-    borderRadius: 'md',
+    justifyContent: 'center',
+    gap: 0.4,
+    minHeight: isMobile ? 28 : 30,
+    px: isMobile ? 0.65 : 0.85,
+    py: 0.32,
+    borderRadius: 'sm',
     border: '1px solid',
-    borderColor: selected ? `${c.accent}66` : 'divider',
-    bgcolor: selected ? c.bg : 'background.surface',
-    color: selected ? c.text : 'text.secondary',
-    boxShadow: selected ? 'sm' : 'none',
-    transition: 'background .15s ease, transform .12s ease, box-shadow .15s ease',
+    borderColor: selected ? devPlanColors.border : 'transparent',
+    bgcolor: selected ? 'background.surface' : 'transparent',
+    color: selected ? 'text.primary' : 'text.secondary',
+    boxShadow: 'none',
+    transition: 'background .15s ease, border-color .15s ease, color .15s ease',
     minWidth: 0,
 
     '&:hover': {
-      bgcolor: selected ? c.bg : 'background.level2',
-      transform: isMobile ? 'none' : 'translateY(-1px)',
-      boxShadow: 'sm',
+      bgcolor: selected ? 'background.surface' : devPlanColors.secondaryLight,
+      borderColor: selected ? devPlanColors.border : 'divider',
     },
   }),
 
   tabIcon: (selected, isMobile) => ({
-    width: isMobile ? 24 : 34,
-    height: isMobile ? 20 : 34,
-    borderRadius: 'md',
+    width: isMobile ? 18 : 20,
+    height: isMobile ? 18 : 20,
+    borderRadius: 'sm',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
-    bgcolor: selected ? 'rgba(255,255,255,0.45)' : 'background.level1',
-    color: selected ? c.text : 'text.tertiary',
-    border: '1px solid',
-    borderColor: 'divider',
+    bgcolor: selected ? devPlanColors.tertiaryLight : 'transparent',
+    color: selected ? devPlanColors.tertiary : 'text.tertiary',
 
     '& svg': {
       fill: 'currentColor',
     },
   }),
 
-  tabText: (isMobile) => ({
+  tabText: () => ({
     display: 'grid',
     gap: 0.1,
     minWidth: 0,
@@ -69,15 +63,15 @@ export const tabsSx = {
   }),
 
   tabLabel: (selected, isMobile) => ({
-    fontWeight: 700,
-    color: selected ? c.text : 'text.primary',
+    fontWeight: selected ? 600 : 500,
+    color: selected ? 'text.primary' : 'text.secondary',
     lineHeight: 1.2,
     whiteSpace: 'nowrap',
-    fontSize: isMobile ? '0.68rem' : undefined,
+    fontSize: isMobile ? '0.7rem' : '0.78rem',
   }),
 
   tabSub: (selected) => ({
-    color: selected ? c.text : 'text.tertiary',
+    color: selected ? devPlanColors.subText : 'text.tertiary',
     opacity: selected ? 0.82 : 1,
     lineHeight: 1.25,
     whiteSpace: 'nowrap',

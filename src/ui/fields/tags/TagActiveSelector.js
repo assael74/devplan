@@ -1,0 +1,23 @@
+import * as React from 'react';
+import { chipActiveProps } from '../core/sx/checkField.sx.js'
+import { iconUi } from '../../core/icons/iconUi.js';
+import { Box, Chip } from '@mui/joy';
+
+export default function TagActiveSelector({ value = false, onChange, size = 'sm' }) {
+  const isActive = value === true;
+
+  return (
+    <Box>
+      <Chip
+        size={size}
+        variant={isActive ? 'solid' : 'outlined'}
+        color={isActive ? 'success' : 'neutral'}
+        startDecorator={iconUi({ id: 'active' })}
+        onClick={() => onChange(!isActive)}
+        {...chipActiveProps}
+      >
+        פעיל
+      </Chip>
+    </Box>
+  );
+}

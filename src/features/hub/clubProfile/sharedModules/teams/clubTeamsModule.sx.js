@@ -2,7 +2,7 @@
 
 import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('clubs')
+const c = getEntityColors('teams')
 
 export const clubTeamsModuleSx = {
   desktopToolbarWrap: {

@@ -7,7 +7,7 @@ import DrawerHeaderShell from '../../../../../../../../ui/patterns/drawer/Drawer
 
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import TeamEditFields from '../../../../../../../../ui/forms/ui/teams/TeamEditFields.js'
+import TeamEditFields from '../../../../../../../../ui/forms/teams/TeamEditFields.js'
 
 import { useTeamHubUpdate } from '../../../../../../hooks/teams/useTeamHubUpdate.js'
 import { useLifecycle } from '../../../../../../../../ui/domains/entityLifecycle/LifecycleProvider'

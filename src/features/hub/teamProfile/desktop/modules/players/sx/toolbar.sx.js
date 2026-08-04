@@ -22,6 +22,28 @@ export const toolbarSx = {
     flexWrap: 'wrap',
   },
 
+  filtersRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0.5,
+    minWidth: 0,
+    flexWrap: 'wrap',
+    pb: 0.6,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+  },
+
+  actionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0.5,
+    minWidth: 0,
+    flexWrap: 'wrap',
+    pt: 0.15,
+  },
+
   toolbarInput: {
     width: 220,
     maxWidth: '100%',

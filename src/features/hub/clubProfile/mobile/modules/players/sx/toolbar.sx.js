@@ -2,7 +2,7 @@
 
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
-const c = getEntityColors('teams')
+const c = getEntityColors('players')
 
 export const toolbarSx = {
   toolbar: {

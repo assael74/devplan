@@ -1,5 +1,7 @@
 // hub/components/lists/list.sx.js
 
+import { devPlanColors } from '../../../../ui/core/theme/Colors.js'
+
 export const listSx = {
   root: (isMobile) => ({
     display: 'flex',
@@ -11,6 +13,7 @@ export const listSx = {
   }),
 
   row: (selected) => ({
+    position: 'relative',
     width: '100%',
     minWidth: 0,
     minHeight: 62,
@@ -22,12 +25,12 @@ export const listSx = {
     gap: 1,
     borderRadius: 12,
     cursor: 'pointer',
-    bgcolor: selected ? 'background.level2' : 'transparent',
+    bgcolor: selected ? devPlanColors.tertiaryLight : 'transparent',
     border: '1px solid',
-    borderColor: selected ? 'primary.outlinedBorder' : 'transparent',
+    borderColor: selected ? devPlanColors.tertiary : 'transparent',
     transition: 'background-color 140ms ease, border-color 140ms ease',
     '&:hover': {
-      bgcolor: 'background.level1',
+      bgcolor: selected ? devPlanColors.tertiaryLight : devPlanColors.secondaryLight,
     },
     '&:hover .hub-row-action, &:focus-within .hub-row-action': {
       opacity: 1,

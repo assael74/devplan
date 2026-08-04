@@ -4,9 +4,23 @@ import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { resolveEntityAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
+import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
 import HeaderStripMobile from '../../../../hub/sharedProfile/mobile/HeaderStripMobile'
 import { useProfileHeaderImage } from '../../../../hub/sharedProfile/hooks/index.js'
 import { ProfileHeaderImageModal, ProfileIfaButton } from '../../../../hub/sharedProfile/ui/index.js'
+
+const teamHeaderColors = getEntityColors('teams')
+
+const teamHeaderSx = {
+  bgcolor: 'rgba(16, 185, 129, 0.045)',
+  border: '1px solid',
+  borderColor: 'rgba(16, 185, 129, 0.16)',
+  '& .MuiAvatar-root': {
+    border: '1px solid',
+    borderColor: teamHeaderColors.accent,
+    boxShadow: '0 0 0 4px rgba(16, 185, 129, 0.08)',
+  },
+}
 
 const resolveClubName = ({ entity, context }) => {
   return (
@@ -64,6 +78,7 @@ export default function TeamHeader({ entity, context, onBack }) {
         onBack={onBack}
         pathItems={pathItems}
         right={<ProfileIfaButton ifaLink={ifaLink} />}
+        sx={teamHeaderSx}
       />
       <ProfileHeaderImageModal
         image={image}

@@ -1,7 +1,7 @@
 // features/hub/ui/HubPage.helpers.js
 
 import { iconUi } from '../../../ui/core/icons/iconUi.js'
-import { buildTaskPresetDraft } from '../../../ui/forms/helpers/tasksForm.helpers.js'
+import { buildTaskPresetDraft } from '../../../ui/forms/tasks/taskForm.helpers.js'
 
 const buildAllTabs = (MODE) => [
   { value: MODE.CLUBS, label: 'מועדונים', icon: iconUi({ id: 'clubs' }) },

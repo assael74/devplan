@@ -1,5 +1,9 @@
 // src/ui/avatars/fallbackAvatar.js
 
+import playerImage from '../images/playerImage.jpg'
+
+const PLAYER_ENTITY_TYPES = new Set(['player', 'players', 'privatePlayer', 'private'])
+
 const PALETTE_BY_TYPE = {
   club: [
     ['#0EA5E9', '#2563EB'], // sky->blue
@@ -208,6 +212,10 @@ export function resolveEntityAvatar({
     return directPhoto
   }
 
+  if (PLAYER_ENTITY_TYPES.has(resolvedEntityType)) {
+    return playerFallback || playerImage
+  }
+
   const parentPhoto = clean(
     safeParentEntity.avatarUrl ||
     safeParentEntity.photo ||
@@ -218,10 +226,6 @@ export function resolveEntityAvatar({
 
   if (parentPhoto) {
     return parentPhoto
-  }
-
-  if (resolvedEntityType === 'player' && playerFallback) {
-    return playerFallback
   }
 
   return buildFallbackAvatar({
