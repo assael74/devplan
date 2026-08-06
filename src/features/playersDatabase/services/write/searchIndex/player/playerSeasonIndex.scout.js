@@ -64,3 +64,43 @@ export const buildScoutProfileSearchIds = ({
   ...scoutProfileIds,
   ...scoutCombinationIds,
 ])
+
+const toNullableNumber = value => (
+  Number.isFinite(Number(value))
+    ? Number(value)
+    : null
+)
+
+export const buildPlayerScoutIndexFields = player => {
+  const scoutSignals = normalizeScoutSignalsForIndex(player)
+  const scout = adaptPlayerScoutEngineResult({
+    signals: scoutSignals,
+    combinations: Array.isArray(player?.scoutCombinations)
+      ? player.scoutCombinations
+      : [],
+  })
+  const primaryProfile = scout.primaryProfile
+  const secondaryProfile = scout.secondaryProfile
+  const scoutProfileIds = scout.profileIds
+  const scoutCombinationIds = scout.combinationIds
+
+  return {
+    primaryScoutProfileId: clean(primaryProfile?.id),
+    primaryScoutReliabilityLevel: clean(
+      primaryProfile?.reliability?.level
+    ),
+    primaryScoutScore: toNullableNumber(primaryProfile?.score),
+    secondaryScoutProfileId: clean(secondaryProfile?.id),
+    secondaryScoutReliabilityLevel: clean(
+      secondaryProfile?.reliability?.level
+    ),
+    secondaryScoutScore: toNullableNumber(secondaryProfile?.score),
+    scoutProfileIds,
+    scoutCombinationIds,
+    scoutProfileSearchIds: buildScoutProfileSearchIds({
+      scoutProfileIds,
+      scoutCombinationIds,
+    }),
+  }
+}
+

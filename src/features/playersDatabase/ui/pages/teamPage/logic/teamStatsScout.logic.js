@@ -1,8 +1,10 @@
-// features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
+// src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
 
 import { buildPlayerScoutResult } from '../../../../../../shared/players/scouting/index.js'
-import { adaptPlayerScoutEngineResult } from '../../../../domain/index.js'
-import { normalizeTeamStats } from '../../../../model/teamStats.model.js'
+import {
+  adaptPlayerScoutEngineResult,
+  buildPlayerScoutCalculationContract,
+} from '../../../../domain/index.js'
 import { clean, toNumber } from './teamPage.utils.js'
 
 const buildEmptyStatsScoutPreview = () => ({
@@ -10,53 +12,10 @@ const buildEmptyStatsScoutPreview = () => ({
   scoutProfiles: [],
   scoutCombinations: [],
   bestScoutSignal: null,
+  scoutCalculationContract: null,
 })
 
-const pickFirstValue = (...values) => values.find(value => (
-  value !== null
-  && value !== undefined
-  && value !== ''
-))
-
-const buildStatsScoutPlayerInput = (row, teamContext = {}) => {
-  const teamStats = teamContext.teamStats || {}
-  const teamGames = pickFirstValue(
-    row.teamGames,
-    row.teamGamePlayed,
-    teamContext.gamesPlayed,
-    teamContext.teamGamePlayed,
-    teamStats.gamesPlayed,
-    teamStats.teamGamePlayed,
-  )
-  const teamGoalsFor = pickFirstValue(
-    row.teamGoalsFor,
-    teamContext.goalsFor,
-    teamStats.goalsFor,
-  )
-  const teamGoalsAgainst = pickFirstValue(
-    row.teamGoalsAgainst,
-    teamContext.goalsAgainst,
-    teamStats.goalsAgainst,
-  )
-  const teamRank = pickFirstValue(
-    row.teamRank,
-    teamContext.rank,
-    teamContext.tableRank,
-    teamContext.position,
-  )
-  const teamAttackPerformance = pickFirstValue(
-    row.teamAttackPerformance,
-    teamContext.attackPerformance,
-    teamStats.attackPerformance,
-    teamContext.offense?.scoutPriorityScore,
-  )
-  const teamDefensePerformance = pickFirstValue(
-    row.teamDefensePerformance,
-    teamContext.defensePerformance,
-    teamStats.defensePerformance,
-    teamContext.defense?.scoutPriorityScore,
-  )
-
+const buildStatsPlayer = row => {
   const playerStats = {
     games: toNumber(row.games),
     goals: toNumber(row.goals),
@@ -66,64 +25,21 @@ const buildStatsScoutPlayerInput = (row, teamContext = {}) => {
     substituteIn: toNumber(row.substituteIn),
     substitutedOut: toNumber(row.substitutedOut),
     teamMinutes: toNumber(row.teamMinutes),
-    teamGames: toNumber(teamGames),
-    teamRank: teamRank ?? null,
-    teamGoalsFor: toNumber(teamGoalsFor),
-    teamGoalsAgainst: toNumber(teamGoalsAgainst),
-    teamAttackPerformance: teamAttackPerformance ?? null,
-    teamDefensePerformance: teamDefensePerformance ?? null,
+    teamGames: toNumber(row.teamGames),
+    teamRank: row.teamRank === undefined ? null : row.teamRank,
+    teamGoalsFor: toNumber(row.teamGoalsFor),
+    teamGoalsAgainst: toNumber(row.teamGoalsAgainst),
   }
 
   return {
     ...row,
     ...playerStats,
-    birthYear: pickFirstValue(row.birthYear, teamContext.birthYear),
-    teamBirthYear: pickFirstValue(teamContext.birthYear, teamContext.ageGroupYear),
-    clubLevel: pickFirstValue(row.clubLevel, teamContext.clubLevel),
-    teamNumber: pickFirstValue(row.teamNumber, teamContext.teamNumber),
+    playerStats,
     subIn: playerStats.substituteIn,
     subOut: playerStats.substitutedOut,
-    playerStats,
-    isYoungerAgeGroup: row.rosterStatus === 'youngerAgeGroup' || Boolean(row.isYoungerAgeGroup),
-  }
-}
-
-const buildStatsScoutTeamInput = ({ team = {}, season = {} } = {}) => {
-  const normalizedStats = normalizeTeamStats(team, {
-    season,
-    gamesCandidates: [
-      team.gamesPlayed,
-      team.teamGamePlayed,
-      team.teamStats?.teamGamePlayed,
-      team.teamStats?.gamesPlayed,
-      season.teamGamePlayed,
-      season.gamesPlayed,
-    ],
-    goalsForCandidates: [team.goalsFor, team.teamStats?.goalsFor, season.goalsFor],
-    goalsAgainstCandidates: [
-      team.goalsAgainst,
-      team.teamStats?.goalsAgainst,
-      season.goalsAgainst,
-    ],
-  })
-
-  return {
-    ...team,
-    ...(team.teamStats || {}),
-    leagueTotalRound: pickFirstValue(team.leagueTotalRound, season.leagueTotalRound),
-    leagueGameTime: pickFirstValue(team.leagueGameTime, season.leagueGameTime),
-    leagueNumGames: pickFirstValue(team.leagueTotalRound, season.leagueTotalRound),
-    gamesPlayed: normalizedStats.gamesPlayed,
-    teamGamePlayed: normalizedStats.gamesPlayed,
-    goalsFor: normalizedStats.goalsFor,
-    goalsAgainst: normalizedStats.goalsAgainst,
-    teamStats: {
-      ...(team.teamStats || {}),
-      teamGamePlayed: normalizedStats.gamesPlayed,
-      gamesPlayed: normalizedStats.gamesPlayed,
-      goalsFor: normalizedStats.goalsFor,
-      goalsAgainst: normalizedStats.goalsAgainst,
-    },
+    isYoungerAgeGroup:
+      row.rosterStatus === 'youngerAgeGroup' ||
+      Boolean(row.isYoungerAgeGroup),
   }
 }
 
@@ -135,11 +51,15 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
   }
 
   try {
-    const teamInput = buildStatsScoutTeamInput({ team, season })
-    const result = buildPlayerScoutResult({
-      player: buildStatsScoutPlayerInput(row, teamInput),
-      team: teamInput,
+    const contract = buildPlayerScoutCalculationContract({
+      player: buildStatsPlayer(row),
+      team,
       season,
+    })
+    const result = buildPlayerScoutResult({
+      player: contract.player,
+      team: contract.team,
+      season: contract.season,
       perspective: 'players_database_stats_preview',
     })
     const scoutSignals = Array.isArray(result?.signals) ? result.signals : []
@@ -158,6 +78,7 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       })),
       scoutCombinations: scout.combinations,
       bestScoutSignal: result?.bestSignal || scoutSignals[0] || null,
+      scoutCalculationContract: contract.context,
     }
   } catch (error) {
     console.warn('playersDatabase stats scout profile failed', error)

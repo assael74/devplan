@@ -18,6 +18,7 @@ export default function DataImportPasteArea({
   onPasteChange,
   onPaste,
   onFileSelect,
+  onClear,
 }) {
   const fileInputRef = React.useRef(null)
 
@@ -99,19 +100,32 @@ export default function DataImportPasteArea({
           השורה הראשונה יכולה לשמש כשורת כותרות.
         </Typography>
 
-        <Button
-          size='sm'
-          variant='solid'
-          disabled={!pasteValue}
-          startDecorator={iconUi({
-            id: 'addStats',
-            size: 'sm',
-          })}
-          onClick={onPaste}
-          sx={sx.pasteButton}
-        >
-          הצג נתונים
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            size='sm'
+            variant='outlined'
+            color='danger'
+            disabled={!pasteValue}
+            startDecorator={iconUi({ id: 'delete', size: 'sm' })}
+            onClick={onClear}
+          >
+            ניקוי מלא
+          </Button>
+
+          <Button
+            size='sm'
+            variant='solid'
+            disabled={!pasteValue}
+            startDecorator={iconUi({
+              id: 'addStats',
+              size: 'sm',
+            })}
+            onClick={onPaste}
+            sx={sx.pasteButton}
+          >
+            הצג נתונים
+          </Button>
+        </Box>
       </Box>
     </Card>
   )

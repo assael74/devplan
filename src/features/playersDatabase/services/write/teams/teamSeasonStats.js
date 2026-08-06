@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/teams/teamSeasonStats.js
+// src/features/playersDatabase/services/write/teams/teamSeasonStats.js
 
 
 
@@ -14,11 +14,20 @@ import {
 } from './teamSeason.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+
+const hasNumberValue = value => (
+  value !== undefined &&
+  value !== null &&
+  value !== '' &&
+  Number.isFinite(Number(value))
+)
+
 export async function updateTeamSeasonPlayerStats({
   season = {},
   team = {},
   target = 'current',
   players = [],
+  scoutSyncMode = 'replace',
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
@@ -43,9 +52,16 @@ export async function updateTeamSeasonPlayerStats({
     })
     const seasonDoc = {
       ...baseSeasonDoc,
+      seasonStatus: clean(season.seasonStatus) === 'completed'
+        ? 'completed'
+        : 'active',
+      leagueTotalRound: hasNumberValue(season.leagueTotalRound)
+        ? Number(season.leagueTotalRound)
+        : Number(baseSeasonDoc.leagueTotalRound) || 0,
       teamPlayers: mergeTeamPlayerStats({
         existingPlayers: baseSeasonDoc.teamPlayers,
         players,
+        scoutSyncMode,
       }),
       updatedAt: new Date().toISOString(),
     }

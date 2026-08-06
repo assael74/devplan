@@ -28,19 +28,6 @@ export default function usePlayerHistoryView(player) {
     [sourceRows]
   )
 
-  React.useEffect(() => {
-    if (selectedSeasonKey) return
-
-    const currentRow = rows.find(row => row.isCurrentSeason)
-    const firstRow = rows[0]
-
-    setSelectedSeasonKey(
-      currentRow?.seasonKey ||
-      firstRow?.seasonKey ||
-      ''
-    )
-  }, [rows, selectedSeasonKey])
-
   const seasonOptions = React.useMemo(() => {
     const keys = [...new Set(
       rows
@@ -73,13 +60,23 @@ export default function usePlayerHistoryView(player) {
     })
   }, [filter, rows, selectedSeasonKey])
 
+  const handleSeasonChange = React.useCallback(seasonKey => {
+    setSelectedSeasonKey(seasonKey || '')
+    setFilter(PLAYER_HISTORY_FILTERS.ALL)
+  }, [])
+
+  const handleFilterChange = React.useCallback(nextFilter => {
+    setFilter(nextFilter)
+    setSelectedSeasonKey('')
+  }, [])
+
   return {
     filter,
-    setFilter,
+    setFilter: handleFilterChange,
     rows,
     visibleRows,
     selectedSeasonKey,
-    setSelectedSeasonKey,
+    setSelectedSeasonKey: handleSeasonChange,
     seasonOptions,
     hasRealData: sourceRows.length > 0,
   }

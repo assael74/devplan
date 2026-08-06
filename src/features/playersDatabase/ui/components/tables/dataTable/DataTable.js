@@ -26,6 +26,7 @@ export default function DataTable({
   bodyScrollSx,
   defaultSort,
   renderExpandedRow,
+  getRowSx,
   exportConfig = null,
 }) {
   const [expandedRowKey, setExpandedRowKey] = React.useState('')
@@ -124,6 +125,7 @@ export default function DataTable({
       expandedRowKey={expandedRowKey}
       onToggleExpandedRow={toggleExpandedRow}
       renderExpandedRow={renderExpandedRow}
+      getRowSx={getRowSx}
     />
   )
 

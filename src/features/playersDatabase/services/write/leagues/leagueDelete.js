@@ -249,6 +249,64 @@ export async function removeLeagueSeasonTeam({
   return result
 }
 
+export async function getLeagueSeasonTeams({
+  league = {},
+  season = {},
+  target = 'current',
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const snapshot = await trackedGetDoc(
+    leagueDocRef(leagueId),
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      action: 'league-season-teams',
+      operationSubtype: 'maintenance-getDoc',
+    }
+  )
+
+  if (!snapshot.exists()) {
+    return {
+      leagueId,
+      seasonId,
+      seasonKey,
+      target: clean(target) === 'history'
+        ? 'history'
+        : 'current',
+      seasonExists: false,
+      teams: [],
+    }
+  }
+
+  const seasonRow = getLeagueSeasonRow({
+    leagueData: snapshot.data() || {},
+    season: {
+      seasonId,
+      seasonKey,
+    },
+    target,
+  })
+
+  return {
+    leagueId,
+    seasonId,
+    seasonKey,
+    target: clean(target) === 'history'
+      ? 'history'
+      : 'current',
+    seasonExists: Boolean(seasonRow),
+    teams: Array.isArray(seasonRow?.tableRank)
+      ? seasonRow.tableRank
+      : [],
+  }
+}
+
 export async function clearLeagueSeasonTeams({
   league = {},
   season = {},

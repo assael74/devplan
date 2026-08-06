@@ -5,6 +5,7 @@ import { Box } from '@mui/joy'
 import PlayerKpiCard from './PlayerKpiCard.js'
 import {
   formatValue,
+  resolveCertaintyLabel,
   resolveCurrentSeasonContext,
 } from './logic/playerPage.utils.js'
 import { playerPageSx as sx } from './sx/playerPage.sx.js'
@@ -14,10 +15,8 @@ export default function PlayerStatsOverview({
   historyRows = [],
 }) {
   const current = resolveCurrentSeasonContext(historyRows)
-  const certainty = (
-    player.certainty ||
-    player.reliability ||
-    '-'
+  const certainty = resolveCertaintyLabel(
+    player.certainty || player.reliability
   )
 
   const startsRate = current.games

@@ -50,6 +50,33 @@ export const normalizePlayerScoutProfiles = player => {
     }))
 }
 
+
+export const normalizePlayerScoutCombinations = player => {
+  const combinations = Array.isArray(player?.scoutCombinations)
+    ? player.scoutCombinations
+    : []
+
+  return combinations
+    .filter(combination => clean(combination?.id || combination?.combinationId))
+    .map(combination => ({
+      id: clean(combination.id || combination.combinationId),
+      idIcon: clean(combination.idIcon),
+      label: clean(combination.label),
+      group: clean(combination.group),
+      interest: clean(combination.interest),
+      description: clean(combination.description),
+      profileIds: [...new Set(
+        (Array.isArray(combination.profileIds)
+          ? combination.profileIds
+          : Array.isArray(combination.matchedProfileIds)
+            ? combination.matchedProfileIds
+            : [])
+          .map(clean)
+          .filter(Boolean)
+      )],
+    }))
+}
+
 export const hasPlayerScoutProfiles = player =>
   normalizePlayerScoutProfiles(player).length > 0
 

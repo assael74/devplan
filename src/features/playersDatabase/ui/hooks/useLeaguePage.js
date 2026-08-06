@@ -10,7 +10,6 @@ import {
   buildLeaguePageSummary,
 } from '../../model/leaguePage.model.js'
 import { normalizeSeasonLookupKey } from '../../model/season.model.js'
-import { toNumberOrZero } from '../../model/value.model.js'
 import { readLeaguePageData } from '../../services/read/index.js'
 
 const isSameSeasonKey = (left, right) => (
@@ -53,6 +52,10 @@ export function useLeaguePage() {
             return requestedOption.seasonKey
           }
 
+          if (requestedSeasonKey) {
+            return ''
+          }
+
           if (currentOption) {
             return currentOption.seasonKey
           }
@@ -72,12 +75,12 @@ export function useLeaguePage() {
 
   const seasonOptions = useMemo(() => buildLeaguePageSeasonOptions(leagueDoc), [leagueDoc])
   const selectedSeasonOption = useMemo(() => (
-    seasonOptions.find(option => isSameSeasonKey(option.seasonKey, selectedSeasonKey)) ||
-    seasonOptions[0] ||
-    null
+    seasonOptions.find(option => isSameSeasonKey(option.seasonKey, selectedSeasonKey)) || null
   ), [seasonOptions, selectedSeasonKey])
-  const birthYearOptions = useMemo(() => ([...new Set(seasonOptions
-    .map(option => toNumberOrZero(option?.season?.birthYear)).filter(Boolean))]), [seasonOptions])
+  const selectionError = useMemo(() => {
+    if (loading || error || !requestedSeasonKey || selectedSeasonOption) return ''
+    return `לא נמצאה גרסת ליגה לעונת ${requestedSeasonKey}`
+  }, [error, loading, requestedSeasonKey, selectedSeasonOption])
   const setSelectedSeasonKey = useCallback(value => {
     const nextSeasonKey = normalizeSeasonLookupKey(value)
     const nextSearchParams = new URLSearchParams(searchParams)
@@ -91,11 +94,6 @@ export function useLeaguePage() {
     setSelectedSeasonKeyState(nextSeasonKey)
     setSearchParams(nextSearchParams, { replace: true })
   }, [searchParams, setSearchParams])
-  const setSelectedBirthYear = useCallback(value => {
-    const birthYear = toNumberOrZero(value)
-    const matchingSeason = seasonOptions.find(option => toNumberOrZero(option?.season?.birthYear) === birthYear)
-    if (matchingSeason?.seasonKey) setSelectedSeasonKey(matchingSeason.seasonKey)
-  }, [seasonOptions, setSelectedSeasonKey])
   const teams = useMemo(() => buildLeaguePageTeams({
     season: selectedSeasonOption?.season,
     leagueDoc,
@@ -109,8 +107,8 @@ export function useLeaguePage() {
   const summary = useMemo(() => buildLeaguePageSummary({ teams, league }), [league, teams])
 
   return {
-    league, leagueDoc, teams, summary, seasonOptions, birthYearOptions,
+    league, leagueDoc, teams, summary, seasonOptions,
     selectedSeasonKey, selectedSeasonOption, setSelectedSeasonKey,
-    setSelectedBirthYear, reload, loading, error,
+    reload, loading, error, selectionError,
   }
 }

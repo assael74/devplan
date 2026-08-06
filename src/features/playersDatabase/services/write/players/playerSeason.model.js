@@ -1,9 +1,13 @@
 // features/playersDatabase/services/write/players/playerSeason.model.js
 
 import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
-import { normalizePlayerStats } from '../../../model/playerStats.model.js'
+import {
+  normalizePlayerStats,
+  normalizePlayerStatsStatus,
+} from '../../../model/playerStats.model.js'
 import {
   isSamePlayerSource,
+  normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
 } from './playerDoc.model.js'
 
@@ -135,6 +139,7 @@ export const buildPlayerSeasonDoc = ({
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
     numShirt: clean(player.numShirt),
+    statsStatus: normalizePlayerStatsStatus(player.statsStatus),
     playerStats: {
       games: playerStats.games,
       goals: playerStats.goals,
@@ -152,6 +157,7 @@ export const buildPlayerSeasonDoc = ({
       teamDefensePerformance: null,
     },
     scoutProfiles: normalizePlayerScoutProfiles(player),
+    scoutCombinations: normalizePlayerScoutCombinations(player),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -190,8 +196,8 @@ export const buildPlayerSeasonRowsFromTeamDoc = ({
           ...seasonRow,
         },
         player: {
-          ...matchedPlayer,
           ...player,
+          ...matchedPlayer,
         },
       }),
       sourceTarget: clean(seasonRow.__sourceTarget) || 'history',

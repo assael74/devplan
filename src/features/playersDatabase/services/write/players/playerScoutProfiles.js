@@ -72,6 +72,7 @@ export const clearExistingPlayerSeasonProfiles = async ({
         ...player,
         scoutSignals: [],
         scoutProfiles: [],
+        scoutCombinations: [],
       },
     })
     const nextRows = upsertSeasonRows({
@@ -131,7 +132,17 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   team = {},
   target = 'current',
   player = {},
+  scoutSyncMode = 'replace',
 } = {}) {
+  if (!hasPlayerScoutProfiles(player) && scoutSyncMode === 'preserve') {
+    return {
+      playerDocumentId: buildPlayerDocumentId(player),
+      updated: false,
+      skipped: true,
+      reason: 'preserveExistingProfiles',
+    }
+  }
+
   return hasPlayerScoutProfiles(player)
     ? upsertProfiledPlayerDoc({
         season,
@@ -152,6 +163,7 @@ export async function syncPlayerScoutProfileDocsMany({
   team = {},
   target = 'current',
   players = [],
+  scoutSyncMode = 'replace',
 } = {}) {
   const safePlayers = Array.isArray(players) ? players : []
   const results = []
@@ -164,6 +176,7 @@ export async function syncPlayerScoutProfileDocsMany({
         team,
         target,
         player,
+        scoutSyncMode,
       }))
     } catch (error) {
       failures.push({

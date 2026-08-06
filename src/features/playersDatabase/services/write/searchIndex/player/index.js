@@ -60,3 +60,9 @@ export {
   updatePlayerSeasonSearchIndexesSeasonMeta,
   updatePlayerSeasonSearchIndexTeamUrl,
 } from './playerSeasonIndex.bulk.js'
+
+
+export {
+  resolvePlayerIdentities,
+  resolvePlayerIdentity,
+} from './playerIdentity.resolve.js'

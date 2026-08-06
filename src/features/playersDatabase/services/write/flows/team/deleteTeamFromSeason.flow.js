@@ -14,6 +14,12 @@ import {
   removeTeamSeason,
 } from '../../teams/index.js'
 
+const mergePlayerDocumentIds = (...groups) => Array.from(new Set(
+  groups
+    .flatMap(group => (Array.isArray(group) ? group : []))
+    .filter(Boolean)
+))
+
 const runDeleteStage = async ({
   stage,
   results,
@@ -41,38 +47,23 @@ export async function deleteTeamFromSeasonFlow(payload = {}) {
     action: () => getSearchIndexMetaForTeamSeason(payload),
   })
 
-  const leagueTableRankResult = await runDeleteStage({
-    stage: 'removeLeagueSeasonTeam',
-    results,
-    action: () => removeLeagueSeasonTeam(payload),
-  })
-
-  if (!leagueTableRankResult.removed) {
-    return {
-      leagueTableRankResult,
-      teamSeasonResult: null,
-      searchIndexResult: null,
-      searchIndexMetaResult,
-      playerSeasonDocsResult: null,
-      rowsCount: 0,
-      completed: false,
-      stoppedAt: 'leagueTableRank',
-      syncStatus: 'stopped',
-    }
-  }
-
   const teamSeasonResult = await runDeleteStage({
     stage: 'removeTeamSeason',
     results,
     action: () => removeTeamSeason(payload),
   })
 
+  const playerDocumentIds = mergePlayerDocumentIds(
+    teamSeasonResult.playerDocumentIds,
+    searchIndexMetaResult.playerDocumentIds
+  )
+
   const playerSeasonDocsResult = await runDeleteStage({
     stage: 'removePlayerSeasonDocsMany',
     results,
     action: () => removePlayerSeasonDocsMany({
       ...payload,
-      playerDocumentIds: searchIndexMetaResult.playerDocumentIds,
+      playerDocumentIds,
     }),
   })
 
@@ -82,12 +73,19 @@ export async function deleteTeamFromSeasonFlow(payload = {}) {
     action: () => deleteSearchIndexesForTeamSeason(payload),
   })
 
+  const leagueTableRankResult = await runDeleteStage({
+    stage: 'removeLeagueSeasonTeam',
+    results,
+    action: () => removeLeagueSeasonTeam(payload),
+  })
+
   return {
     leagueTableRankResult,
     teamSeasonResult,
     searchIndexResult,
     searchIndexMetaResult,
     playerSeasonDocsResult,
+    playerDocumentIds,
     rowsCount: searchIndexResult.rowsCount,
     completed: true,
     syncStatus: 'complete',

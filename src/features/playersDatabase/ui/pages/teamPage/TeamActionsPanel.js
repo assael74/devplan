@@ -53,6 +53,7 @@ const buildActions = ({ hasTeamPlayers, hasSeason }) => [
 
 export default function TeamActionsPanel({
   selectedSeasonKey,
+  selectedSeasonOptionKey,
   seasonOptions,
   hasTeamPlayers,
   profileOnly,
@@ -63,7 +64,7 @@ export default function TeamActionsPanel({
   onDeletePlayers,
   onReport,
 }) {
-  const hasSeason = Boolean(selectedSeasonKey && seasonOptions.length)
+  const hasSeason = Boolean(selectedSeasonOptionKey && seasonOptions.length)
   const actions = buildActions({ hasTeamPlayers, hasSeason })
 
   const handleAction = actionId => {
@@ -93,22 +94,45 @@ export default function TeamActionsPanel({
 
       <Box sx={sx.actionSeasonBox}>
         <Typography level='body-xs' sx={sx.actionSeasonLabel}>
-          עונת משחקים
+          גרסת קבוצה
         </Typography>
 
         <Select
           size='sm'
-          value={selectedSeasonKey || ''}
+          value={selectedSeasonOptionKey || ''}
           onChange={(_, value) => onSeasonChange(value || '')}
           sx={sx.actionSeasonSelect}
+          renderValue={selected => {
+            const option = seasonOptions.find(item => item.optionKey === selected?.value)
+            if (!option) return 'בחר גרסת קבוצה'
+
+            return (
+              <Box sx={sx.actionSeasonValue}>
+                <Typography sx={sx.actionSeasonValuePrimary}>
+                  {option.primaryLabel}
+                </Typography>
+                <Typography sx={sx.actionSeasonValueSecondary}>
+                  {option.secondaryLabel}
+                </Typography>
+              </Box>
+            )
+          }}
         >
           {seasonOptions.length ? (
             seasonOptions.map(option => (
               <Option
-                key={`${option.target}-${option.seasonKey}`}
-                value={option.seasonKey}
+                key={option.optionKey}
+                value={option.optionKey}
+                sx={sx.actionSeasonOption}
               >
-                {option.seasonKey}
+                <Box sx={sx.actionSeasonOptionContent}>
+                  <Typography sx={sx.actionSeasonOptionPrimary}>
+                    {option.primaryLabel}
+                  </Typography>
+                  <Typography sx={sx.actionSeasonOptionSecondary}>
+                    {option.secondaryLabel}
+                  </Typography>
+                </Box>
               </Option>
             ))
           ) : (

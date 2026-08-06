@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/playerPage/PlayerHistoryTable.js
+// src/features/playersDatabase/ui/pages/playerPage/PlayerHistoryTable.js
 
 import {
   Box,
@@ -9,7 +9,9 @@ import {
 
 import DataTable from '../../components/tables/DataTable.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import ScoutCompactTooltip from '../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../components/scout/ScoutProfileChip.js'
+import { buildScoutCompactView } from '../../components/scout/scoutDisplay.model.js'
 import {
   resolveProfilesLabel,
   toNumber,
@@ -22,32 +24,6 @@ import { playerContentSx as sx } from './sx/playerContent.sx.js'
 const columnWidth = key => ({
   width: PLAYER_HISTORY_TABLE_WIDTHS[key],
 })
-
-const buildProfileTooltip = profileDisplay => {
-  if (profileDisplay?.type !== 'combination') {
-    return profileDisplay?.label || ''
-  }
-
-  return (
-    <Box sx={sx.profileTooltip}>
-      <Box sx={sx.profileTooltipTitle}>
-        {profileDisplay.label}
-      </Box>
-
-      <Box sx={sx.profileTooltipMeta}>
-        פרופיל משולב מתוך:
-      </Box>
-
-      <Box sx={sx.profileTooltipList}>
-        {(profileDisplay.baseProfiles || []).map(profile => (
-          <Box key={profile.id} sx={sx.profileTooltipItem}>
-            {profile.label}
-          </Box>
-        ))}
-      </Box>
-    </Box>
-  )
-}
 
 const buildColumns = ({ onRowOpen }) => [
   {
@@ -124,24 +100,33 @@ const buildColumns = ({ onRowOpen }) => [
     label: 'פרופילי סקאוט',
     sx: columnWidth('scoutProfiles'),
     getSortValue: row => row.scoutProfiles?.length || 0,
-    render: row => (
-      <Box sx={sx.profileCell}>
-        <ScoutProfileChip
-          label={
-            row.scoutProfileDisplay?.label ||
-            row.profile ||
-            resolveProfilesLabel(row.scoutProfiles)
-          }
-          tooltip={buildProfileTooltip(row.scoutProfileDisplay)}
-          variant={
-            row.scoutProfileDisplay?.type === 'combination'
-              ? 'combination'
-              : 'default'
-          }
-          fontSize={11}
-        />
-      </Box>
-    ),
+    render: row => {
+      const profileView = buildScoutCompactView({
+        profiles: row.scoutProfiles,
+        combinations: row.scoutCombinations,
+        display: row.scoutProfileDisplay,
+        fallbackLabel: row.profile || resolveProfilesLabel(row.scoutProfiles),
+      })
+
+      if (!profileView.label || profileView.label === '-') return '-'
+
+      return (
+        <Box sx={sx.profileCell}>
+          <ScoutProfileChip
+            label={profileView.label}
+            tooltip={(
+              <ScoutCompactTooltip
+                title={profileView.tooltipTitle}
+                items={profileView.tooltipItems}
+                isCombination={profileView.isCombination}
+              />
+            )}
+            variant={profileView.variant}
+            fontSize={11}
+          />
+        </Box>
+      )
+    },
   },
   {
     key: 'actions',
@@ -168,7 +153,6 @@ const buildColumns = ({ onRowOpen }) => [
 ]
 
 export default function PlayerHistoryTable({ rows = [], onRowOpen = () => {} }) {
-  console.log(rows)
   return (
     <DataTable
       className='dpScrollThin'

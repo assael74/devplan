@@ -36,6 +36,11 @@ export default function TeamPlayersTable({
       }}
       wrapSx={sx.tableWrap}
       tableSx={sx.playersTable}
+      getRowSx={row => (
+        row.rosterStatus === 'youngerAgeGroup'
+          ? sx.youngerAgeRow
+          : null
+      )}
     />
   )
 }

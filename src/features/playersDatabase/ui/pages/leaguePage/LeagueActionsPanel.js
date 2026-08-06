@@ -10,10 +10,7 @@ import { leagueContentSx as sx } from './sx/leagueContent.sx.js'
 export default function LeagueActionsPanel({
   selectedSeasonKey,
   seasonOptions = [],
-  selectedBirthYear,
-  birthYearOptions = [],
   onSeasonChange,
-  onBirthYearChange,
   attackPriorityFilter,
   defensePriorityFilter,
   onAttackPriorityFilterChange,
@@ -30,39 +27,52 @@ export default function LeagueActionsPanel({
         <Box sx={sx.actionSelectorsRow}>
           <Box sx={sx.actionSeasonBox}>
             <Typography level="body-xs" sx={sx.actionSeasonLabel}>
-              עונת משחקים
+              גרסת ליגה
             </Typography>
 
             <Select
               value={selectedSeasonKey || ''}
-              size="sm"
+              size='sm'
               sx={sx.actionSeasonSelect}
-              onChange={(event, nextValue) => onSeasonChange(nextValue || '')}
+              onChange={(_, nextValue) => onSeasonChange(nextValue || '')}
+              renderValue={selected => {
+                const option = seasonOptions.find(item => (
+                  item.seasonKey === selected?.value
+                ))
+
+                if (!option) return 'בחר גרסת ליגה'
+
+                return (
+                  <Box sx={sx.actionSeasonValue}>
+                    <Typography sx={sx.actionSeasonValuePrimary}>
+                      {option.primaryLabel || option.label}
+                    </Typography>
+                    <Typography sx={sx.actionSeasonValueSecondary}>
+                      {option.secondaryLabel}
+                    </Typography>
+                  </Box>
+                )
+              }}
             >
               {seasonOptions.length ? seasonOptions.map(option => (
-                <Option key={`${option.target}_${option.seasonKey}`} value={option.seasonKey}>
-                  {option.seasonKey}
+                <Option
+                  key={`${option.target}_${option.seasonKey}`}
+                  value={option.seasonKey}
+                  sx={sx.actionSeasonOption}
+                >
+                  <Box sx={sx.actionSeasonOptionContent}>
+                    <Typography sx={sx.actionSeasonOptionPrimary}>
+                      {option.primaryLabel || option.label}
+                    </Typography>
+                    <Typography sx={sx.actionSeasonOptionSecondary}>
+                      {option.secondaryLabel}
+                    </Typography>
+                  </Box>
                 </Option>
-              )) : <Option value="">אין עונות</Option>}
+              )) : <Option value=''>אין עונות</Option>}
             </Select>
           </Box>
 
-          <Box sx={sx.actionSeasonBox}>
-            <Typography level="body-xs" sx={sx.actionSeasonLabel}>
-              שנתון
-            </Typography>
-
-            <Select
-              value={selectedBirthYear ? String(selectedBirthYear) : ''}
-              size="sm"
-              sx={sx.actionSeasonSelect}
-              onChange={(event, nextValue) => onBirthYearChange(nextValue || '')}
-            >
-              {birthYearOptions.length ? birthYearOptions.map(year => (
-                <Option key={year} value={String(year)}>{year}</Option>
-              )) : <Option value="">אין שנתונים</Option>}
-            </Select>
-          </Box>
         </Box>
 
 

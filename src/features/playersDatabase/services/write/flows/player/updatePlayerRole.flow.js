@@ -37,8 +37,13 @@ export async function updatePlayerRoleFlow(payload = {}) {
     positionLayer: player.positionLayer,
     numShirt: player.numShirt,
   }
-  const scoutProfiles = Array.isArray(player.scoutSignals)
-    ? player.scoutSignals
+  const scoutProfiles = Array.isArray(player.scoutProfiles)
+    ? player.scoutProfiles
+    : Array.isArray(player.scoutSignals)
+      ? player.scoutSignals
+      : []
+  const scoutCombinations = Array.isArray(player.scoutCombinations)
+    ? player.scoutCombinations
     : []
 
   // Team season is the operational source of truth for the player in the squad.
@@ -46,6 +51,7 @@ export async function updatePlayerRoleFlow(payload = {}) {
   const teamSeasonResult = await updateTeamSeasonPlayerRoleAndScoutProfiles({
     ...rolePayload,
     scoutProfiles,
+    scoutCombinations,
   })
 
   if (!teamSeasonResult.updated) {

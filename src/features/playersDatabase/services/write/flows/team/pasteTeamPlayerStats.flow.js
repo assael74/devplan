@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
+// src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
 import {
   updateLeagueSeasonTableRankScoutProfilesSummary,
@@ -7,6 +7,7 @@ import {
   syncPlayerScoutProfileDocsMany,
 } from '../../players/index.js'
 import {
+  resolvePlayerIdentities,
   updatePlayerSeasonSearchIndexStatsMany,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
@@ -16,7 +17,10 @@ import {
 } from '../../teams/index.js'
 import {
   buildScoutProfilesSummary,
+  buildStatsPlayersWithScoutSignals,
+  resolveScoutSyncMode,
 } from '../shared.js'
+import { buildPlayerMatchValues } from '../../../../model/playerIdentity.model.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player stats sync failed at ${stage}`)
@@ -29,6 +33,7 @@ const buildSyncError = ({ stage, cause, results = {} }) => {
   return error
 }
 
+
 const assertTeamSeasonUpdated = result => {
   if (!result?.teamDocumentId || !result?.seasonId) {
     throw new Error('Team season stats were not updated')
@@ -37,7 +42,23 @@ const assertTeamSeasonUpdated = result => {
 
 export async function pasteTeamPlayerStatsFlow(payload = {}) {
   const results = {}
-  const scoutProfilesSummary = buildScoutProfilesSummary(payload.players)
+  const resolvedPlayers = await resolvePlayerIdentities({
+    players: payload.players,
+    season: payload.season || {},
+  })
+  const scoutSyncMode = resolveScoutSyncMode({
+    season: payload.season || {},
+  })
+  const calculatedPlayers = buildStatsPlayersWithScoutSignals({
+    players: resolvedPlayers,
+    team: payload.team || {},
+    season: payload.season || {},
+  })
+  const resolvedPayload = {
+    ...payload,
+    players: calculatedPlayers,
+    scoutSyncMode,
+  }
 
   try {
     results.teamDocResult = await ensureTeamDoc(payload.team || {})
@@ -57,7 +78,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
 
   try {
     results.teamSeasonResult = await updateTeamSeasonPlayerStats({
-      ...payload,
+      ...resolvedPayload,
       team,
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
@@ -69,16 +90,16 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   }
 
-  const syncedPlayers = Array.isArray(results.teamSeasonResult.players)
+  const teamSeasonPlayers = Array.isArray(results.teamSeasonResult.players)
     ? results.teamSeasonResult.players
-    : Array.isArray(payload.players)
-      ? payload.players
-      : []
+    : []
+  const syncedPlayers = teamSeasonPlayers
   const syncedPayload = {
-    ...payload,
+    ...resolvedPayload,
     team,
     players: syncedPlayers,
   }
+  const scoutProfilesSummary = buildScoutProfilesSummary(teamSeasonPlayers)
 
   try {
     results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(syncedPayload)
@@ -141,6 +162,9 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   return {
     ...results,
     rowsCount: results.playerSeasonIndexResult.rowsCount,
+    calculatedPlayersCount: calculatedPlayers.length,
+    syncedPlayersCount: syncedPlayers.length,
+    scoutSyncMode,
     syncStatus: 'complete',
   }
 }

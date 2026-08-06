@@ -298,14 +298,15 @@ export const buildLeagueTeamsColumns = ({
   },
   {
     key: 'rosterProfiles',
-    label: 'סגל / פרופילים',
+    label: 'סגל / שחקנים / פרופילים',
     sx: {
       ...sx.rosterProfilesColumn,
       ...columnWidth('rosterProfiles'),
     },
     getSortValue: row => (
-      (toCount(row.playersCount) * 10000) +
-      toCount(row.profilesCount)
+      (toCount(row.playersCount) * 1000000) +
+      (toCount(row.profilesCount) * 1000) +
+      toCount(row.profileAssignmentsCount)
     ),
     render: row => (
       <Box sx={sx.rosterProfilesCell}>
@@ -315,6 +316,10 @@ export const buildLeagueTeamsColumns = ({
         <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
         <Box component='span' sx={sx.rosterProfilesValue}>
           {row.profilesCount || 0}
+        </Box>
+        <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
+        <Box component='span' sx={sx.rosterProfilesValue}>
+          {row.profileAssignmentsCount || 0}
         </Box>
       </Box>
     ),

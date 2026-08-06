@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/SearchPage.js
+// src/features/playersDatabase/ui/pages/searchPage/SearchPage.js
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
@@ -14,13 +14,11 @@ import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
 import { useSearchReport } from './report/index.js'
 import DbSearchReportNameModal from './report/DbSearchReportNameModal.js'
-import SearchIndexNormalizationModal from './admin/SearchIndexNormalizationModal.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 function SearchPageContent() {
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
-  const [normalizationOpen, setNormalizationOpen] = React.useState(false)
   const search = useSearchPage()
   const searchReport = useSearchReport({
     rows: search.rows,
@@ -36,7 +34,9 @@ function SearchPageContent() {
   ])
 
   const handleEntityOpen = row => {
-    navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))
+    navigate(PLAYERS_DATABASE_UI_ROUTES.player(
+      row.playerDocumentId || row.id
+    ))
   }
 
   const handleCreateReport = async reportDetails => {
@@ -51,7 +51,6 @@ function SearchPageContent() {
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onReport={() => setReportNameOpen(true)}
-          onRefresh={() => setNormalizationOpen(true)}
           reportDisabled={!search.hasLoaded || !search.rows.length}
         />
 
@@ -60,11 +59,6 @@ function SearchPageContent() {
           onEntityOpen={handleEntityOpen}
         />
       </Box>
-
-      <SearchIndexNormalizationModal
-        open={normalizationOpen}
-        onClose={() => setNormalizationOpen(false)}
-      />
 
       <DbSearchReportNameModal
         open={reportNameOpen}

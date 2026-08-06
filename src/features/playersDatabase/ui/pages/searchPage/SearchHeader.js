@@ -10,7 +10,6 @@ export default function SearchHeader({
   breadcrumbs,
   onLeagues,
   onReport,
-  onRefresh,
   reportDisabled = false,
 }) {
   return (
@@ -24,15 +23,6 @@ export default function SearchHeader({
       </Stack>
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
-        <Button
-          variant='outlined'
-          color='neutral'
-          startDecorator={iconUi({ id: 'refresh', size: 'sm' })}
-          onClick={onRefresh}
-        >
-          רענון מסמכים
-        </Button>
-
         <Button
           variant='solid'
           disabled={reportDisabled}

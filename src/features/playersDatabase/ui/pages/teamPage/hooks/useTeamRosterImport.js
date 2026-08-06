@@ -6,6 +6,9 @@ import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
+import {
+  resolveTeamPlayerIdentityPreview,
+} from '../../../../services/write/players/index.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { parsePlayerRosterRows } from '../logic/teamRosterImport.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
@@ -24,17 +27,67 @@ export default function useTeamRosterImport({
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
 
-  const parse = React.useCallback(() => {
-    setRows(parsePlayerRosterRows(pasteValue))
-  }, [pasteValue])
+  const buildSeason = React.useCallback(() => ({
+    ...(selectedSeasonOption?.season || {}),
+    leagueId,
+    ageGroupId: team.ageGroupId,
+    birthYear: team.birthYear,
+    seasonId: selectedSeasonOption?.seasonId,
+    seasonKey: selectedSeasonOption?.seasonKey,
+  }), [leagueId, selectedSeasonOption, team.ageGroupId, team.birthYear])
+
+  const parse = React.useCallback(async () => {
+    const parsedRows = parsePlayerRosterRows(pasteValue)
+
+    if (!parsedRows.length || !selectedSeasonOption) {
+      setRows(parsedRows)
+      return
+    }
+
+    setBusy(true)
+
+    try {
+      const previewRows = await resolveTeamPlayerIdentityPreview({
+        players: parsedRows,
+        season: buildSeason(),
+      })
+
+      setRows(previewRows)
+    } catch (error) {
+      console.error('[playersDatabase/identity-preview]', error)
+      setRows(parsedRows.map(row => ({
+        ...row,
+        identityStatus: 'נדרשת בדיקה',
+        identityMessage: 'בדיקת הזהות נכשלה',
+        identityValid: false,
+      })))
+    } finally {
+      setBusy(false)
+    }
+  }, [buildSeason, pasteValue, selectedSeasonOption])
 
   const changeCell = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => (
       index === rowIndex
-        ? { ...row, [column.key]: value }
+        ? {
+          ...row,
+          [column.key]: value,
+          identityStatus: 'יש לעדכן תצוגה',
+          identityMessage: 'לחץ שוב על הצג נתונים',
+          identityValid: false,
+        }
         : row
     )))
   }, [])
+
+  const getRowStatus = React.useCallback(row => ({
+    valid: row?.identityValid !== false,
+    message: row?.identityValid === false
+      ? row.identityMessage || 'נדרשת בדיקת זהות'
+      : '',
+  }), [])
+
+  const hasIdentityErrors = rows.some(row => row.identityValid === false)
 
   const closeWriteReport = React.useCallback(() => {
     setWriteReport(null)
@@ -46,7 +99,7 @@ export default function useTeamRosterImport({
   }, [busy])
 
   const confirm = React.useCallback(async () => {
-    if (!selectedSeasonOption) return
+    if (!selectedSeasonOption || hasIdentityErrors) return
 
     setBusy(true)
 
@@ -56,13 +109,7 @@ export default function useTeamRosterImport({
         payload: {
           target: selectedSeasonOption.target,
           league: leagueDoc || { id: leagueId },
-          season: {
-            ...(selectedSeasonOption.season || {}),
-            leagueId,
-            ageGroupId: team.ageGroupId,
-            seasonId: selectedSeasonOption.seasonId,
-            seasonKey: selectedSeasonOption.seasonKey,
-          },
+          season: buildSeason(),
           team,
           players: rows,
         },
@@ -95,6 +142,8 @@ export default function useTeamRosterImport({
       setBusy(false)
     }
   }, [
+    buildSeason,
+    hasIdentityErrors,
     leagueDoc,
     leagueId,
     notify,
@@ -110,10 +159,12 @@ export default function useTeamRosterImport({
     rows,
     busy,
     writeReport,
+    hasIdentityErrors,
     setOpen,
     setPasteValue,
     parse,
     changeCell,
+    getRowStatus,
     close,
     closeWriteReport,
     confirm,

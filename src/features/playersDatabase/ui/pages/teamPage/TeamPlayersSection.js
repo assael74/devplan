@@ -13,6 +13,7 @@ import { teamContentSx as sx } from './sx/teamContent.sx.js'
 export default function TeamPlayersSection({
   players,
   selectedSeasonKey,
+  selectedSeasonOptionKey,
   seasonOptions,
   hasTeamPlayers,
   profileOnly,
@@ -51,6 +52,7 @@ export default function TeamPlayersSection({
 
       <TeamActionsPanel
         selectedSeasonKey={selectedSeasonKey}
+        selectedSeasonOptionKey={selectedSeasonOptionKey}
         seasonOptions={seasonOptions}
         hasTeamPlayers={hasTeamPlayers}
         profileOnly={profileOnly}

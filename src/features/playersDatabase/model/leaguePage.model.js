@@ -8,16 +8,41 @@ import { cleanValue, toNumberOrZero } from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
 import { sortByTableRank } from '../ui/logic/tableRows.logic.js'
 
-const buildSeasonOption = ({ season, target }) => {
+const getSeasonSortValue = value => {
+  const match = String(value || '').match(/(\d{2,4})/)
+  if (!match) return 0
+
+  const year = Number(match[1])
+  return year < 100 ? 2000 + year : year
+}
+
+const buildSeasonOption = ({ season, target, league }) => {
   const identity = normalizeSeasonIdentity({ season })
+
+  const seasonKey = normalizeSeasonLookupKey(
+    identity.seasonKey || identity.seasonId
+  )
+  const birthYear = toNumberOrZero(season?.birthYear)
 
   return {
     target,
     season,
     seasonId: identity.seasonId,
-    seasonKey: normalizeSeasonLookupKey(
-      identity.seasonKey || identity.seasonId
-    ),
+    seasonKey,
+    birthYear,
+    label: [
+      seasonKey,
+      birthYear ? `שנתון ${birthYear}` : '',
+    ].filter(Boolean).join(' · '),
+    primaryLabel: [
+      cleanValue(league?.leagueName || league?.name || 'ליגה'),
+      seasonKey,
+    ].filter(Boolean).join(' · '),
+    secondaryLabel: [
+      birthYear ? `שנתון ${birthYear}` : '',
+      cleanValue(league?.ageGroupLabel || league?.ageGroupId),
+    ].filter(Boolean).join(' · '),
+    sortValue: getSeasonSortValue(seasonKey || identity.seasonId),
   }
 }
 
@@ -28,6 +53,7 @@ export const buildLeaguePageSeasonOptions = league => {
     options.push(buildSeasonOption({
       season: league.current,
       target: 'current',
+      league,
     }))
   }
 
@@ -38,10 +64,16 @@ export const buildLeaguePageSeasonOptions = league => {
     options.push(buildSeasonOption({
       season,
       target: 'history',
+      league,
     }))
   })
 
-  return options.filter(option => option.seasonKey || option.seasonId)
+  return options
+    .filter(option => option.seasonKey || option.seasonId)
+    .sort((left, right) => (
+      right.sortValue - left.sortValue ||
+      String(right.seasonKey).localeCompare(String(left.seasonKey), 'he')
+    ))
 }
 
 const getClubById = clubId =>
@@ -69,6 +101,11 @@ const buildTeamRow = teamSeason => {
   const performanceView = buildTeamPerformanceViewModel(performance)
   const scoutSummary = teamSeason?.scoutProfilesSummary || {}
   const profilesCount = toNumberOrZero(scoutSummary.total)
+  const profileAssignmentsCount = Object.values(
+    scoutSummary.profileCounts || {}
+  ).reduce((total, value) => (
+    total + toNumberOrZero(value)
+  ), 0)
   const clubId = cleanValue(teamSeason?.identity?.clubId)
   const club = getClubById(clubId)
 
@@ -94,6 +131,7 @@ const buildTeamRow = teamSeason => {
     teamStats: stats,
     playersCount: toNumberOrZero(teamSeason?.playersCount),
     profilesCount,
+    profileAssignmentsCount,
     attackPriority: performanceView.offense.priority.level,
     defensePriority: performanceView.defense.priority.level,
     performance,
@@ -132,6 +170,7 @@ export const buildLeaguePageView = ({ league, leagueId, selectedSeason }) => ({
   ) || '-',
   ageGroup: cleanValue(league?.ageGroupLabel || league?.ageGroupId || '-'),
   birthYear: selectedSeason?.birthYear || '-',
+  level: toNumberOrZero(league?.level) || '',
   levelLabel: getLeagueLevelLabel(league?.level),
   leagueTotalRound: selectedSeason?.leagueTotalRound || '-',
   gameTime: selectedSeason?.gameTime || league?.gameTime || '-',

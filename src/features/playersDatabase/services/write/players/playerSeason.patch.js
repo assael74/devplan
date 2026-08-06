@@ -130,15 +130,34 @@ export const removePlayerSeasonScoutProfile = ({
   const currentProfiles = Array.isArray(payload.player?.scoutProfiles)
     ? payload.player.scoutProfiles
     : []
+  const currentCombinations = Array.isArray(payload.player?.scoutCombinations)
+    ? payload.player.scoutCombinations
+    : []
+  const nextProfiles = removeProfileId
+    ? currentProfiles.filter(
+        profile => clean(profile.profileId || profile.id) !== removeProfileId
+      )
+    : []
+  const nextProfileIds = new Set(
+    nextProfiles
+      .map(profile => clean(profile.profileId || profile.id))
+      .filter(Boolean)
+  )
+  const nextCombinations = currentCombinations.filter(combination => {
+    const profileIds = Array.isArray(combination.profileIds)
+      ? combination.profileIds
+      : Array.isArray(combination.matchedProfileIds)
+        ? combination.matchedProfileIds
+        : []
+
+    return profileIds.every(profileId => nextProfileIds.has(clean(profileId)))
+  })
 
   return patchPlayerSeason({
     ...payload,
     patch: {
-      scoutProfiles: removeProfileId
-        ? currentProfiles.filter(
-            profile => clean(profile.profileId) !== removeProfileId
-          )
-        : [],
+      scoutProfiles: nextProfiles,
+      scoutCombinations: nextCombinations,
     },
   })
 }

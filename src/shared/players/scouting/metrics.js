@@ -16,6 +16,15 @@ const pickNum = (...values) => {
   return 0
 }
 
+const pickPositiveNum = (...values) => {
+  for (const value of values) {
+    const n = toNum(value, null)
+    if (Number.isFinite(n) && n > 0) return n
+  }
+
+  return 0
+}
+
 const hasValue = (value) => {
   return value !== null && value !== undefined && value !== ''
 }
@@ -37,7 +46,7 @@ const hasPosition = (player = {}) => {
 }
 
 const getTeamGames = ({ team, player }) => {
-  return pickNum(
+  return pickPositiveNum(
     team?.gamesPlayed,
     team?.playedGames,
     team?.games,
@@ -59,7 +68,12 @@ const getPlayerGames = (player = {}) => {
 
 const getSeasonMinutes = ({ team, player }) => {
   const teamGames = getTeamGames({ team, player })
-  const gameTime = pickNum(team?.leagueGameTime, player?.gameTime, 90)
+  const gameTime = pickPositiveNum(
+    team?.leagueGameTime,
+    team?.gameTime,
+    player?.gameTime,
+    90,
+  )
 
   return teamGames * gameTime
 }
@@ -83,10 +97,16 @@ const getGoalGames = (player = {}) => {
 }
 
 const getTeamNumber = ({ team = {}, player = {} } = {}) => {
-  const teamId = String(team?.teamId || player?.teamId || '')
-  const match = teamId.match(/[_-](\d+)$/)
+  const value = pickNum(
+    team?.birthTeamSlot,
+    team?.teamSlot,
+    team?.teamNumber,
+    player?.birthTeamSlot,
+    player?.teamSlot,
+    player?.teamNumber,
+  )
 
-  return match ? Number(match[1]) : 1
+  return value > 0 ? value : 1
 }
 
 export const buildScoutMetrics = ({ player = {}, team = {} } = {}) => {
@@ -135,11 +155,13 @@ export const buildScoutMetrics = ({ player = {}, team = {} } = {}) => {
 
     hasPosition: hasPosition(player),
     isYoungerAgeGroup:
+      player?.isYoungerAgeGroup === true ||
+      String(player?.rosterStatus || '').trim() === 'youngerAgeGroup' ||
       Boolean(birthYear && teamBirthYear && birthYear > teamBirthYear) ||
       toNum(player?.playingUpMinutes, 0) > 0,
     topClubOpportunityEligible:
-      clubLevel === 1 ||
-      (clubLevel === 2 && teamNumber === 1),
+      (clubLevel === 1 || clubLevel === 2) &&
+      teamNumber === 1,
   }
 }
 

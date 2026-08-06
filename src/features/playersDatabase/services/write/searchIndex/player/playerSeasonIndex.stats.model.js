@@ -1,27 +1,27 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.model.js
 
-import { adaptPlayerScoutEngineResult } from '../../../../domain/index.js'
-import { normalizePlayerStats } from '../../../../model/playerStats.model.js'
+import {
+  buildPlayerIdentityKey,
+  resolvePlayerIdentityBirthYear,
+} from '../../../../model/playerIdentity.model.js'
+import {
+  normalizePlayerStats,
+  normalizePlayerStatsStatus,
+  PLAYER_STATS_STATUS,
+} from '../../../../model/playerStats.model.js'
 import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
 import { buildPlayerDocumentId, hasPlayerScoutProfiles } from '../../players/index.js'
 import {
   buildInternalPlayerId,
   buildPlayerAliases,
   buildPlayerSeasonIndexId,
-  buildScoutProfileSearchIds,
+  buildPlayerScoutIndexFields,
   getRosterStatus,
-  normalizeScoutSignalsForIndex,
   normalizeText,
   resolveClubLevel,
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
-
-const toNullableNumber = value => (
-  Number.isFinite(Number(value))
-    ? Number(value)
-    : null
-)
 
 export const buildPlayerSeasonStatsFailure = ({
   identity = {},
@@ -86,6 +86,12 @@ export const buildPlayerSeasonStatsMutation = ({
   const externalPlayerId = clean(
     player.externalPlayerId || existingData.externalPlayerId
   )
+  const identityBirthYear = Number(
+    player.identityBirthYear || existingData.identityBirthYear
+  ) || resolvePlayerIdentityBirthYear({ player, season })
+  const identityKey = clean(
+    player.identityKey || existingData.identityKey
+  ) || buildPlayerIdentityKey({ player, season })
   const playerId = clean(
     player.matchedPlayerId ||
     player.playerId ||
@@ -103,20 +109,7 @@ export const buildPlayerSeasonStatsMutation = ({
       ? buildPlayerDocumentId({ ...player, playerId })
       : ''
   )
-  const playerScout = adaptPlayerScoutEngineResult({
-    signals: normalizeScoutSignalsForIndex(player),
-    combinations: Array.isArray(player.scoutCombinations)
-      ? player.scoutCombinations
-      : [],
-  })
-  const primaryScoutSignal = playerScout.primaryProfile
-  const secondaryScoutSignal = playerScout.secondaryProfile
-  const scoutProfileIds = playerScout.profileIds
-  const scoutCombinationIds = playerScout.combinationIds
-  const scoutProfileSearchIds = buildScoutProfileSearchIds({
-    scoutProfileIds,
-    scoutCombinationIds,
-  })
+  const scoutIndexFields = buildPlayerScoutIndexFields(player)
   const playerStats = normalizePlayerStats(player)
   const resolvedAgeGroupId = clean(
     team.ageGroupId ||
@@ -134,6 +127,7 @@ export const buildPlayerSeasonStatsMutation = ({
   )
   const normalization = buildPlayerSeasonSearchMetrics({
     target,
+    seasonStatus: season.seasonStatus,
     ageGroupId: resolvedAgeGroupId,
     leagueTotalRound: resolvedLeagueTotalRound,
     teamGamePlayed: resolvedTeamGamePlayed,
@@ -178,6 +172,8 @@ export const buildPlayerSeasonStatsMutation = ({
         aliases,
       playerId,
       externalPlayerId,
+      identityBirthYear,
+      identityKey,
       playerDocumentId,
       playerUrl: clean(player.playerUrl || existingData.playerUrl),
       rosterStatus,
@@ -201,6 +197,10 @@ export const buildPlayerSeasonStatsMutation = ({
       teamUrl: clean(team.teamUrl || existingData.teamUrl),
       seasonUrl: clean(season.seasonUrl || existingData.seasonUrl),
       seasonNotes: clean(player.notes || existingData.seasonNotes),
+      statsStatus: normalizePlayerStatsStatus(
+        player.statsStatus,
+        existingData.statsStatus || PLAYER_STATS_STATUS.LOADED
+      ),
       ageGroupId: resolvedAgeGroupId,
       ageGroupLabel: clean(
         team.ageGroupLabel ||
@@ -256,19 +256,7 @@ export const buildPlayerSeasonStatsMutation = ({
       teamGames: playerStats.teamGames,
       minutesPerGame: playerStats.minutesPerGame,
       ...normalization,
-      primaryScoutProfileId: clean(primaryScoutSignal?.id),
-      primaryScoutReliabilityLevel: clean(
-        primaryScoutSignal?.reliability?.level
-      ),
-      primaryScoutScore: toNullableNumber(primaryScoutSignal?.score),
-      secondaryScoutProfileId: clean(secondaryScoutSignal?.id),
-      secondaryScoutReliabilityLevel: clean(
-        secondaryScoutSignal?.reliability?.level
-      ),
-      secondaryScoutScore: toNullableNumber(secondaryScoutSignal?.score),
-      scoutProfileIds,
-      scoutCombinationIds,
-      scoutProfileSearchIds,
+      ...scoutIndexFields,
       sourceCollection: playerDocumentId ? 'players' : 'birthTeams',
       sourceDocumentId:
         playerDocumentId || teamScope.birthTeamDocumentId,

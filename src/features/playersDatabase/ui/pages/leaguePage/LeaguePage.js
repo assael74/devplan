@@ -46,14 +46,13 @@ function LeaguePageContent() {
     teams,
     summary,
     seasonOptions,
-    birthYearOptions,
     selectedSeasonKey,
     selectedSeasonOption,
     setSelectedSeasonKey,
-    setSelectedBirthYear,
     reload,
     loading,
     error,
+    selectionError,
   } = useLeaguePage()
 
   const teamsWithFavorites = React.useMemo(() => (
@@ -115,6 +114,7 @@ function LeaguePageContent() {
       to: PLAYERS_DATABASE_UI_ROUTES.leagues({
         seasonKey: selectedSeasonKey,
         birthYear: selectedBirthYear,
+        level: league.level,
       }),
     },
     { label: league.name },
@@ -167,6 +167,7 @@ function LeaguePageContent() {
           onBack={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues({
             seasonKey: selectedSeasonKey,
             birthYear: selectedBirthYear,
+            level: league.level,
           }))}
         />
 
@@ -179,7 +180,7 @@ function LeaguePageContent() {
           <LeagueTeamsTable
             rows={filteredTeams}
             loading={loading}
-            error={error}
+            error={error || selectionError}
             selectedSeasonOption={selectedSeasonOption}
             onTeamOpen={handleTeamOpen}
             onTeamUrlEdit={teamUrlEditor.open}
@@ -189,10 +190,7 @@ function LeaguePageContent() {
           <LeagueActionsPanel
             selectedSeasonKey={selectedSeasonKey}
             seasonOptions={seasonOptions}
-            selectedBirthYear={selectedBirthYear}
-            birthYearOptions={birthYearOptions}
             onSeasonChange={setSelectedSeasonKey}
-            onBirthYearChange={setSelectedBirthYear}
             attackPriorityFilter={attackPriorityFilter}
             defensePriorityFilter={defensePriorityFilter}
             onAttackPriorityFilterChange={setAttackPriorityFilter}

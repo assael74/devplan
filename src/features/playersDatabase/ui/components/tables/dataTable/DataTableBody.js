@@ -18,6 +18,7 @@ export default function DataTableBody({
   expandedRowKey,
   onToggleExpandedRow,
   renderExpandedRow,
+  getRowSx,
 }) {
   return (
     <tbody>
@@ -39,7 +40,12 @@ export default function DataTableBody({
 
           return (
             <React.Fragment key={rowKey}>
-              <tr>
+              <Box
+                component='tr'
+                sx={typeof getRowSx === 'function'
+                  ? getRowSx(row, index)
+                  : getRowSx}
+              >
                 {columns.map(column => (
                   <DataTableCell
                     key={column.key}
@@ -49,7 +55,7 @@ export default function DataTableBody({
                     rowContext={rowContext}
                   />
                 ))}
-              </tr>
+              </Box>
 
               {renderExpandedRow ? (
                 <Box

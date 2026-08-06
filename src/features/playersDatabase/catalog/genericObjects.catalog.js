@@ -148,6 +148,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           aliases: [],
           playerUrl: '',
           numShirt: '',
+          statsStatus: 'missing',
 
           rosterStatus: 'regular',
           isYoungerAgeGroup: false,
@@ -206,6 +207,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           aliases: [],
           playerUrl: '',
           numShirt: '',
+          statsStatus: 'missing',
 
           rosterStatus: 'regular',
           isYoungerAgeGroup: false,
@@ -277,6 +279,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       primaryPosition: '',
       positionLayer: '',
       numShirt: '',
+      statsStatus: 'missing',
       playerStats: {
         games: 0,
         goals: 0,
@@ -323,6 +326,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       primaryPosition: '',
       positionLayer: '',
       numShirt: '',
+      statsStatus: 'missing',
       playerStats: {
         games: 0,
         goals: 0,
@@ -462,12 +466,13 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
 
   displayName: '',
   normalizedDisplayName: '',
+  aliases: [],
+  identityKey: '',
 
   playerId: '',
   playerDocumentId: '',
   externalPlayerId: '',
   playerUrl: '',
-  favorite: false,
   notes: '',
   rosterStatus: 'regular',
   isYoungerAgeGroup: false,
@@ -498,6 +503,7 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   positionLayer: '',
   numShirt: '',
   seasonNotes: '',
+  statsStatus: 'missing',
 
   teamTableRank: 0,
   teamTableAttackRank: 0,

@@ -13,7 +13,7 @@ export default function LeagueCenterTableFilters({ model }) {
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={sx.tableFilters}>
       <Input
-        placeholder='חיפוש בליגות שנבחרו...'
+        placeholder='חיפוש לפי שם ליגה...'
         value={model.query}
         sx={sx.tableSearch}
         onChange={event => model.setQuery(event.target.value)}

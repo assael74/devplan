@@ -5,6 +5,20 @@ import {
   toNumberOrZero,
 } from './value.model.js'
 
+export const PLAYER_STATS_STATUS = {
+  MISSING: 'missing',
+  LOADED: 'loaded',
+}
+
+export const normalizePlayerStatsStatus = (
+  value,
+  fallback = PLAYER_STATS_STATUS.MISSING
+) => (
+  String(value || '').trim() === PLAYER_STATS_STATUS.LOADED
+    ? PLAYER_STATS_STATUS.LOADED
+    : fallback
+)
+
 const resolveStatValue = ({ stats = {}, source = {}, key, legacyKeys = [] }) => {
   if (hasValue(stats[key])) return stats[key]
   if (hasValue(source[key])) return source[key]

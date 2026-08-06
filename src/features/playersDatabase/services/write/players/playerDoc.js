@@ -6,6 +6,7 @@
 export {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
+  normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
 } from './playerDoc.model.js'
 

@@ -12,6 +12,24 @@ export const buildStatsHeaderMap = headers => headers.reduce((map, header, index
   if (normalizedHeader.includes('אינדקס')) map.index = index
 
   if (
+    normalizedHeader === 'שנתון' ||
+    normalizedHeader.includes('שנת לידה')
+  ) {
+    map.birthYear = index
+  }
+
+  if (
+    normalizedHeader.includes('מזהה שחקן') ||
+    normalizedHeader.includes('מזהה התאחדות')
+  ) {
+    map.externalPlayerId = index
+  }
+
+  if (normalizedHeader.includes('קישור שחקן')) {
+    map.playerUrl = index
+  }
+
+  if (
     normalizedHeader.includes('שם השחקן') ||
     normalizedHeader.includes('שם שחקן')
   ) {
@@ -49,6 +67,7 @@ export const buildStatsHeaderMap = headers => headers.reduce((map, header, index
   if (normalizedHeader.includes('הוחלף')) map.substitutedOut = index
 
   if (
+    normalizedHeader === 'דקות' ||
     normalizedHeader.includes('דקות ליגה') ||
     normalizedHeader.includes('דקות משחק')
   ) {

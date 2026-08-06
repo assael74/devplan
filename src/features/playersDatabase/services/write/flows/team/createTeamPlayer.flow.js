@@ -4,6 +4,7 @@ import {
   updateLeagueSeasonTableRankTeamUrl,
 } from '../../leagues/index.js'
 import {
+  resolvePlayerIdentity,
   updateTeamSeasonSearchIndexRosterMeta,
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
@@ -19,6 +20,10 @@ async function createTeamPlayerFlow({
   payload = {},
   player = {},
 } = {}) {
+  const resolvedPlayer = await resolvePlayerIdentity({
+    player,
+    season: payload.season || {},
+  })
   const teamDocResult = await ensureTeamDoc(payload.team || {})
   const team = {
     ...(payload.team || {}),
@@ -28,7 +33,7 @@ async function createTeamPlayerFlow({
   const teamSeasonResult = await appendTeamSeasonPlayer({
     ...payload,
     team,
-    player,
+    player: resolvedPlayer,
   })
   const teamWithRosterMeta = {
     ...team,

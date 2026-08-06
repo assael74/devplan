@@ -8,6 +8,9 @@ import {
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
 import {
+  resolveTeamPlayerIdentities,
+} from '../../players/index.js'
+import {
   ensureTeamDoc,
   upsertTeamSeasonPlayers,
 } from '../../teams/index.js'
@@ -68,7 +71,8 @@ const normalizeTeamPlayersPayload = payload => {
 export async function pasteTeamPlayersFlow(payload = {}) {
   const normalizedPayload = normalizeTeamPlayersPayload(payload)
   const results = {}
-  const players = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
+  const rawPlayers = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
+  let players = rawPlayers
 
   try {
     results.teamDocResult = await ensureTeamDoc(normalizedPayload.team || {})
@@ -84,6 +88,19 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     ...(normalizedPayload.team || {}),
     birthTeamDocumentId: results.teamDocResult.birthTeamDocumentId,
     teamDocumentId: results.teamDocResult.teamDocumentId,
+  }
+
+  try {
+    players = await resolveTeamPlayerIdentities({
+      players: rawPlayers,
+      season: normalizedPayload.season,
+    })
+  } catch (error) {
+    throw buildSyncError({
+      stage: 'resolveTeamPlayerIdentities',
+      cause: error,
+      results,
+    })
   }
 
   try {

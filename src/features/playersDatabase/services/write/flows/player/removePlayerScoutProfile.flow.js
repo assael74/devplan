@@ -16,14 +16,54 @@ import {
 
 const clean = value => String(value || '').trim()
 
+const resolveReliabilityScore = profile => {
+  if (profile?.reliabilityScore !== undefined &&
+      profile?.reliabilityScore !== null) {
+    return profile.reliabilityScore
+  }
+
+  if (profile?.reliability?.score !== undefined &&
+      profile?.reliability?.score !== null) {
+    return profile.reliability.score
+  }
+
+  return null
+}
+
 const normalizeProfileForWrite = profile => ({
   ...profile,
   profileId: clean(profile?.profileId || profile?.id),
   reliabilityLevel: clean(
     profile?.reliabilityLevel || profile?.reliability?.level
   ),
-  reliabilityScore: profile?.reliabilityScore ?? profile?.reliability?.score ?? null,
+  reliabilityScore: resolveReliabilityScore(profile),
 })
+
+const resolveCombinationProfileIds = combination => (
+  Array.isArray(combination?.profileIds)
+    ? combination.profileIds
+    : Array.isArray(combination?.matchedProfileIds)
+      ? combination.matchedProfileIds
+      : []
+)
+
+const filterScoutCombinations = ({
+  combinations = [],
+  profiles = [],
+} = {}) => {
+  const profileIds = new Set(
+    profiles
+      .map(profile => clean(profile?.profileId || profile?.id))
+      .filter(Boolean)
+  )
+
+  return combinations.filter(combination => (
+    resolveCombinationProfileIds(combination)
+      .map(clean)
+      .filter(Boolean)
+      .every(profileId => profileIds.has(profileId))
+  ))
+}
 
 const buildRemainingProfilesPayload = (payload = {}) => {
   const profileId = clean(payload.profileId)
@@ -35,6 +75,13 @@ const buildRemainingProfilesPayload = (payload = {}) => {
   const remainingProfiles = sourceProfiles
     .map(normalizeProfileForWrite)
     .filter(profile => profile.profileId && profile.profileId !== profileId)
+  const sourceCombinations = Array.isArray(payload.player?.scoutCombinations)
+    ? payload.player.scoutCombinations
+    : []
+  const remainingCombinations = filterScoutCombinations({
+    combinations: sourceCombinations,
+    profiles: remainingProfiles,
+  })
 
   return {
     ...payload,
@@ -43,8 +90,10 @@ const buildRemainingProfilesPayload = (payload = {}) => {
       ...(payload.player || {}),
       scoutProfiles: remainingProfiles,
       scoutSignals: remainingProfiles,
+      scoutCombinations: remainingCombinations,
     },
     scoutProfiles: remainingProfiles,
+    scoutCombinations: remainingCombinations,
   }
 }
 

@@ -41,6 +41,66 @@ export const teamContentActionsSx = {
       fontWeight: 700,
     },
 
+
+  actionSeasonValue: {
+      minWidth: 0,
+      display: 'grid',
+      gap: 0.15,
+      justifyItems: 'start',
+      textAlign: 'left',
+    },
+
+  actionSeasonValuePrimary: {
+      minWidth: 0,
+      color: devPlanColors.primaryDark,
+      fontSize: 12,
+      fontWeight: 700,
+      lineHeight: 1.2,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+
+  actionSeasonValueSecondary: {
+      minWidth: 0,
+      color: devPlanColors.secondary,
+      fontSize: 10,
+      fontWeight: 500,
+      lineHeight: 1.15,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+
+  actionSeasonOption: {
+      minHeight: 52,
+      py: 0.75,
+      alignItems: 'center',
+    },
+
+  actionSeasonOptionContent: {
+      minWidth: 0,
+      width: '100%',
+      display: 'grid',
+      gap: 0.25,
+      justifyItems: 'start',
+      textAlign: 'left',
+    },
+
+  actionSeasonOptionPrimary: {
+      color: devPlanColors.primaryDark,
+      fontSize: 12,
+      fontWeight: 700,
+      lineHeight: 1.25,
+    },
+
+  actionSeasonOptionSecondary: {
+      color: devPlanColors.secondary,
+      fontSize: 10.5,
+      fontWeight: 500,
+      lineHeight: 1.2,
+    },
+
   actionFiltersRow: {
       width: '100%',
       minWidth: 0,

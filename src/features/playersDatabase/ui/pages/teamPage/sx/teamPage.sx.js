@@ -12,4 +12,11 @@ export const teamPageSx = {
   ...teamPageActionsSx,
   ...teamPageStatsSx,
   ...teamPageStatusSx,
+  loadingState: {
+    minHeight: 320,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1,
+  }
 }

@@ -34,6 +34,7 @@
 export {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
+  normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
   removePlayerSeasonScoutProfile,
   syncPlayerScoutProfileDocsMany,
@@ -48,3 +49,8 @@ export {
 export {
   removePlayerSeasonDocsMany,
 } from './playerSeasonDelete.js'
+
+export {
+  resolveTeamPlayerIdentities,
+  resolveTeamPlayerIdentityPreview,
+} from './playerIdentity.resolve.js'

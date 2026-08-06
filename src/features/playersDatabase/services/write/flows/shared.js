@@ -3,34 +3,23 @@
 import {
   buildPlayerScoutResult,
 } from '../../../../../shared/players/scouting/index.js'
-import { normalizePlayerStats } from '../../../model/playerStats.model.js'
+import { buildPlayerScoutCalculationContract } from '../../../domain/index.js'
 import {
-  buildTeamStatsAliases,
-  normalizeTeamStats,
-} from '../../../model/teamStats.model.js'
+  normalizePlayerStats,
+  PLAYER_STATS_STATUS,
+} from '../../../model/playerStats.model.js'
+export { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
 
-export const buildScoutProfilesSummary = (players = []) => {
-  const profileCounts = {}
-  let total = 0
-
-  ;(Array.isArray(players) ? players : []).forEach(player => {
-    const signals = Array.isArray(player?.scoutSignals) ? player.scoutSignals : []
-    if (!signals.length) return
-
-    total += 1
-    signals.forEach(signal => {
-      const profileId = String(signal?.profileId || '').trim()
-      if (!profileId) return
-
-      profileCounts[profileId] = (profileCounts[profileId] || 0) + 1
-    })
-  })
-
-  return {
-    total,
-    profileCounts,
-  }
+export const SCOUT_SYNC_MODE = {
+  PRESERVE: 'preserve',
+  REPLACE: 'replace',
 }
+
+export const resolveScoutSyncMode = ({ season = {} } = {}) => (
+  String(season.seasonStatus || '').trim().toLowerCase() === 'completed'
+    ? SCOUT_SYNC_MODE.PRESERVE
+    : SCOUT_SYNC_MODE.REPLACE
+)
 
 const buildScoutPlayerForRoleUpdate = ({
   player = {},
@@ -57,70 +46,94 @@ const buildScoutPlayerForRoleUpdate = ({
   }
 }
 
-const buildScoutTeamForRoleUpdate = ({
+const isScoutExcludedRosterStatus = player => [
+  'retired',
+  'transferredOut',
+].includes(String(player?.rosterStatus || '').trim())
+
+export const buildPlayerWithScoutSignals = ({
+  player = {},
   team = {},
   season = {},
+  perspective = 'players_database',
 } = {}) => {
-  const teamStats = normalizeTeamStats(team, {
+  if (isScoutExcludedRosterStatus(player)) {
+    return {
+      ...player,
+      scoutSignals: [],
+      scoutProfiles: [],
+      scoutCombinations: [],
+      bestScoutSignal: null,
+      scoutCalculationStatus: 'success',
+    }
+  }
+
+  const contract = buildPlayerScoutCalculationContract({
+    player: buildScoutPlayerForRoleUpdate({
+      player,
+      primaryPosition: player.primaryPosition || '',
+      positionLayer: player.positionLayer || '',
+      numShirt: player.numShirt || '',
+    }),
+    team,
     season,
-    gamesCandidates: [
-      team.teamStats?.teamGamePlayed,
-      team.teamGamePlayed,
-      team.games,
-      team.gamesPlayed,
-    ],
-    goalsForCandidates: [team.teamStats?.goalsFor, team.goalsFor],
+  })
+  const scoutResult = buildPlayerScoutResult({
+    player: contract.player,
+    team: contract.team,
+    season: contract.season,
+    perspective,
   })
 
   return {
-    ...team,
-    season,
-    ...buildTeamStatsAliases(teamStats),
-    leagueTotalRound: team.leagueTotalRound ?? season.leagueTotalRound,
-    leagueGameTime: team.leagueGameTime ?? season.leagueGameTime,
-    offense: team.offense,
-    defense: team.defense,
-    teamScout: team.teamScout,
-    teamStats: {
-      ...(team.teamStats || {}),
-      gamesPlayed: teamStats.gamesPlayed,
-      teamGamePlayed: teamStats.gamesPlayed,
-      goalsFor: teamStats.goalsFor,
-      goalsAgainst: teamStats.goalsAgainst,
-    },
+    ...player,
+    scoutSignals: Array.isArray(scoutResult?.signals)
+      ? scoutResult.signals
+      : [],
+    scoutProfiles: Array.isArray(scoutResult?.signals)
+      ? scoutResult.signals
+      : [],
+    scoutCombinations: Array.isArray(scoutResult?.combinations)
+      ? scoutResult.combinations
+      : [],
+    bestScoutSignal: scoutResult?.bestSignal || null,
+    scoutCalculationStatus: 'success',
   }
 }
 
+export const buildStatsPlayersWithScoutSignals = ({
+  players = [],
+  team = {},
+  season = {},
+} = {}) => (Array.isArray(players) ? players : []).map(player => (
+  buildPlayerWithScoutSignals({
+    player: {
+      ...player,
+      statsStatus: PLAYER_STATS_STATUS.LOADED,
+      scoutSignals: undefined,
+      scoutProfiles: undefined,
+      scoutCombinations: undefined,
+      bestScoutSignal: undefined,
+    },
+    team,
+    season,
+    perspective: 'players_database_stats_write',
+  })
+))
+
 export const buildRoleUpdatedPlayerWithScoutSignals = (payload = {}) => {
   const player = payload.player || {}
-  const primaryPosition = payload.primaryPosition || player.primaryPosition || ''
-  const positionLayer = payload.positionLayer || player.positionLayer || ''
-  const numShirt = payload.numShirt || player.numShirt || ''
   const rolePlayer = {
     ...player,
-    primaryPosition,
-    positionLayer,
-    numShirt,
+    primaryPosition: payload.primaryPosition || player.primaryPosition || '',
+    positionLayer: payload.positionLayer || player.positionLayer || '',
+    numShirt: payload.numShirt || player.numShirt || '',
   }
-  const scoutResult = buildPlayerScoutResult({
-    player: buildScoutPlayerForRoleUpdate({
-      player: rolePlayer,
-      primaryPosition,
-      positionLayer,
-      numShirt,
-    }),
-    team: buildScoutTeamForRoleUpdate({
-      team: payload.team || {},
-      season: payload.season || {},
-    }),
+
+  return buildPlayerWithScoutSignals({
+    player: rolePlayer,
+    team: payload.team || {},
     season: payload.season || {},
     perspective: 'players_database_role_update',
   })
-
-  return {
-    ...rolePlayer,
-    scoutSignals: scoutResult.signals,
-    scoutCombinations: scoutResult.combinations,
-    bestScoutSignal: scoutResult.bestSignal,
-  }
 }

@@ -131,6 +131,7 @@ export const buildTeamSeasonIndexDoc = ({
   const points = getRowPoints(row)
   const normalization = buildTeamSeasonSearchMetrics({
     target,
+    seasonStatus: season.seasonStatus,
     leagueTotalRound: season.leagueTotalRound,
     teamGamePlayed: games,
     points,

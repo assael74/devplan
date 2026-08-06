@@ -151,6 +151,7 @@ export const normalizePlayerScoutCombination = combination => {
 
   return {
     id: combinationId,
+    idIcon: cleanDomainValue(source.idIcon || catalogCombination.idIcon),
     label: cleanDomainValue(source.label || catalogCombination.label || combinationId),
     group: cleanDomainValue(source.group || catalogCombination.group),
     interest: cleanDomainValue(source.interest || catalogCombination.interest),

@@ -1,6 +1,8 @@
 // features/playersDatabase/model/teamPage.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
+import { resolveAgeGroupLabel } from '../catalog/ageGroups.catalog.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
 import {
   adaptBirthTeamDocumentSeason,
@@ -18,54 +20,216 @@ import {
   TEAM_SCOUT_SORT_MODE,
 } from '../../../shared/teams/scout/index.js'
 
-const buildSeasonOption = ({ season, target }) => {
+const TEAM_PAGE_FUTURE_SEASON_KEY = '26/27'
+
+const resolveSeasonStartYear = seasonKey => {
+  const match = cleanValue(seasonKey).match(/^(\d{2})[\/_-](\d{2})$/)
+  return match ? 2000 + Number(match[1]) : null
+}
+
+const resolveSeasonAgeGroupLabel = ({
+  seasonKey = '',
+  birthYear = null,
+  ageGroupId = '',
+  ageGroupLabel = '',
+} = {}) => {
+  const startYear = resolveSeasonStartYear(seasonKey)
+  const ageGroupNumber = startYear && birthYear
+    ? startYear - Number(birthYear) + 1
+    : null
+
+  if (ageGroupNumber) {
+    return resolveAgeGroupLabel({
+      ageGroupId: `u${ageGroupNumber}`,
+    })
+  }
+
+  return resolveAgeGroupLabel({
+    ageGroupId,
+    ageGroupLabel,
+  })
+}
+
+
+const resolveLeagueOptionLabel = ({ season = {}, leagueId = '' } = {}) => {
+  const directLabel = cleanValue(
+    season?.leagueName ||
+    season?.leagueLabel
+  )
+  if (directLabel) return directLabel
+
+  const catalogLeague = PLAYERS_DATABASE_LEAGUES_CATALOG.find(item => (
+    cleanValue(item?.id) === cleanValue(leagueId)
+  ))
+
+  return cleanValue(catalogLeague?.name || catalogLeague?.leagueName || leagueId)
+}
+
+const resolveSeasonSortValue = seasonKey => {
+  const match = cleanValue(seasonKey).match(/^(\d{2})[\/_-](\d{2})$/)
+  return match ? Number(match[1]) : 0
+}
+
+const resolveExpectedBirthYear = ({ teamDoc = {}, teamId = '' } = {}) => {
+  const direct = Number(
+    teamDoc?.birthYear ||
+    teamDoc?.identity?.birthYear ||
+    teamDoc?.metadata?.birthYear ||
+    0
+  )
+  if (direct) return direct
+
+  const match = cleanValue(teamId).match(/(?:^|_)(19|20)\d{2}(?:_|$)/)
+  return match ? Number(match[0].replace(/_/g, '')) : null
+}
+
+const resolveOptionTeamName = ({ season = {}, teamDoc = {} } = {}) => cleanValue(
+  season?.displayName ||
+  season?.teamName ||
+  teamDoc?.displayName ||
+  teamDoc?.teamName ||
+  teamDoc?.name ||
+  'קבוצה'
+)
+
+const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
   const identity = normalizeSeasonIdentity({ season })
+  const seasonKey = normalizeSeasonLookupKey(identity.seasonKey || identity.seasonId)
+  const birthYear = Number(season?.birthYear || teamDoc?.birthYear || 0) || null
+  const resolvedLeagueId = cleanValue(season?.leagueId || leagueId)
+  const leagueName = resolveLeagueOptionLabel({
+    season,
+    leagueId: resolvedLeagueId,
+  })
+  const ageGroupLabel = resolveSeasonAgeGroupLabel({
+    seasonKey,
+    birthYear,
+    ageGroupId: season?.ageGroupId,
+    ageGroupLabel: season?.ageGroupLabel,
+  })
+  const teamName = resolveOptionTeamName({ season, teamDoc })
+  const optionKey = [
+    seasonKey,
+    birthYear || '',
+    resolvedLeagueId,
+    target,
+  ].join('|')
 
   return {
+    optionKey,
     target,
     season,
     seasonId: identity.seasonId,
-    seasonKey: normalizeSeasonLookupKey(identity.seasonKey || identity.seasonId),
+    seasonKey,
+    birthYear,
+    leagueId: resolvedLeagueId,
+    leagueName,
+    ageGroupLabel,
+    teamName,
+    primaryLabel: [
+      teamName,
+      birthYear ? `שנתון ${birthYear}` : '',
+      seasonKey,
+    ].filter(Boolean).join(' · '),
+    secondaryLabel: [
+      leagueName,
+      ageGroupLabel && ageGroupLabel !== '-' ? ageGroupLabel : '',
+    ].filter(Boolean).join(' · '),
   }
 }
 
-export const buildTeamPageSeasonOptions = (league, teamDoc = {}) => {
+export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') => {
   const options = []
   const seen = new Set()
+  const expectedBirthYear = resolveExpectedBirthYear({ teamDoc, teamId })
 
   const pushOption = option => {
-    const key = `${option.target}-${option.seasonKey || option.seasonId}`
-    if (!option.seasonKey && !option.seasonId) return
-    if (seen.has(key)) return
+    if (!option.optionKey || seen.has(option.optionKey)) return
+    if (
+      expectedBirthYear &&
+      option.birthYear &&
+      Number(option.birthYear) !== Number(expectedBirthYear)
+    ) return
 
-    seen.add(key)
+    seen.add(option.optionKey)
     options.push(option)
   }
-
-  if (league?.current?.seasonId || league?.current?.seasonKey) {
-    pushOption(buildSeasonOption({ season: league.current, target: 'current' }))
-  }
-
-  const history = Array.isArray(league?.history) ? league.history : []
-  history.forEach(season => {
-    if (!season?.seasonId && !season?.seasonKey) return
-    pushOption(buildSeasonOption({ season, target: 'history' }))
-  })
 
   const teamCurrent = Array.isArray(teamDoc?.current) ? teamDoc.current : []
   teamCurrent.forEach(season => {
     if (!season?.seasonId && !season?.seasonKey) return
-    pushOption(buildSeasonOption({ season, target: 'current' }))
+    pushOption(buildSeasonOption({
+      season,
+      target: 'current',
+      teamDoc,
+    }))
   })
 
   const teamHistory = Array.isArray(teamDoc?.history) ? teamDoc.history : []
   teamHistory.forEach(season => {
     if (!season?.seasonId && !season?.seasonKey) return
-    pushOption(buildSeasonOption({ season, target: 'history' }))
+    pushOption(buildSeasonOption({
+      season,
+      target: 'history',
+      teamDoc,
+    }))
   })
 
-  return options.filter(option => option.seasonKey || option.seasonId)
+  if (!options.length) {
+    const leagueId = cleanValue(league?.leagueId || league?.id)
+
+    if (league?.current?.seasonId || league?.current?.seasonKey) {
+      pushOption(buildSeasonOption({
+        season: league.current,
+        target: 'current',
+        leagueId,
+        teamDoc,
+      }))
+    }
+
+    const history = Array.isArray(league?.history) ? league.history : []
+    history.forEach(season => {
+      if (!season?.seasonId && !season?.seasonKey) return
+      pushOption(buildSeasonOption({
+        season,
+        target: 'history',
+        leagueId,
+        teamDoc,
+      }))
+    })
+  }
+
+  const hasFutureSeason = options.some(option => (
+    option.seasonKey === TEAM_PAGE_FUTURE_SEASON_KEY
+  ))
+
+  if (expectedBirthYear && !hasFutureSeason) {
+    const routeLeagueId = cleanValue(league?.leagueId || league?.id)
+
+    pushOption(buildSeasonOption({
+      season: {
+        seasonId: TEAM_PAGE_FUTURE_SEASON_KEY,
+        seasonKey: TEAM_PAGE_FUTURE_SEASON_KEY,
+        birthYear: expectedBirthYear,
+        leagueId: routeLeagueId,
+        leagueName: 'ליגה טרם הוגדרה',
+      },
+      target: 'future',
+      leagueId: routeLeagueId,
+      teamDoc,
+    }))
+  }
+
+  return options
+    .filter(option => option.seasonKey || option.seasonId)
+    .sort((left, right) => {
+      const seasonOrder = resolveSeasonSortValue(right.seasonKey) - resolveSeasonSortValue(left.seasonKey)
+      if (seasonOrder) return seasonOrder
+
+      return Number(right.birthYear || 0) - Number(left.birthYear || 0)
+    })
 }
+
 
 const findTeamRow = ({ season, teamId }) => {
   const rows = Array.isArray(season?.tableRank) ? season.tableRank : []
@@ -113,6 +277,32 @@ export const findTeamPageSeasonDoc = ({ teamDoc, selectedSeasonOption }) => {
   return rows.find(row => isSameSeason(row, selectedSeasonOption)) || null
 }
 
+export const findTeamPageLeagueSeasonDoc = ({ leagueDoc, selectedSeasonOption }) => {
+  if (!leagueDoc || !selectedSeasonOption) return null
+
+  const current = leagueDoc?.current
+  if (
+    current &&
+    typeof current === 'object' &&
+    isSameSeason(current, selectedSeasonOption)
+  ) {
+    return {
+      season: current,
+      target: 'current',
+    }
+  }
+
+  const history = Array.isArray(leagueDoc?.history) ? leagueDoc.history : []
+  const historySeason = history.find(row => isSameSeason(row, selectedSeasonOption))
+
+  return historySeason
+    ? {
+      season: historySeason,
+      target: 'history',
+    }
+    : null
+}
+
 const getClubIdFromTeamId = teamId => cleanValue(teamId).split('_').filter(Boolean)[0] || ''
 
 const getClubById = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
@@ -150,6 +340,10 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     playerDocumentId: playerSeason.identity?.playerDocumentId || '',
     externalPlayerId: playerSeason.identity?.externalPlayerId || '',
     playerUrl: playerSeason.metadata?.playerUrl || '',
+    rosterStatus: playerSeason.metadata?.rosterStatus || 'regular',
+    isYoungerAgeGroup: (
+      playerSeason.metadata?.rosterStatus === 'youngerAgeGroup'
+    ),
     number: playerSeason.position?.shirtNumber || `${index + 1}`,
     numShirt: playerSeason.position?.shirtNumber || '',
     fullName: playerSeason.identity?.displayName || '',
@@ -172,6 +366,7 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     profile: display.label || '-',
     reliability: display.reliability?.level || '-',
     scoutProfiles: scout.profiles || [],
+    scoutCombinations: scout.combinations || [],
     scoutProfileDisplay: display,
   }
 }
@@ -209,12 +404,19 @@ export const buildTeamPageView = ({
   leagueDoc,
   teamDoc,
   selectedSeasonOption,
+  selectedLeagueSeason,
   selectedTeamSeason,
 }) => {
-  const season = selectedSeasonOption?.season || {}
-  const target = selectedSeasonOption?.target || 'current'
-  const teamRow = findTeamRow({ season, teamId }) || {}
-  const tableRank = Array.isArray(season?.tableRank) ? season.tableRank : []
+  const leagueSeason = selectedLeagueSeason?.season || {}
+  const leagueTarget = selectedLeagueSeason?.target || selectedSeasonOption?.target || 'current'
+  const teamTarget = selectedSeasonOption?.target || leagueTarget
+  const teamRow = findTeamRow({
+    season: leagueSeason,
+    teamId,
+  }) || {}
+  const tableRank = Array.isArray(leagueSeason?.tableRank)
+    ? leagueSeason.tableRank
+    : []
   const teamIdentity = normalizeTeamIdentity({
     team: teamRow,
     fallback: {
@@ -225,20 +427,24 @@ export const buildTeamPageView = ({
     },
   })
 
-  const performance = buildScoutResultMap({ tableRank, leagueDoc, season }).get(
+  const performance = buildScoutResultMap({
+    tableRank,
+    leagueDoc,
+    season: leagueSeason,
+  }).get(
     resolveTeamLookupKey(teamRow) || resolveTeamLookupKey(teamIdentity)
   ) || null
 
   const leagueTeamSeason = adaptLeagueTableTeam({
     leagueDocument: leagueDoc || {},
-    seasonDocument: season,
+    seasonDocument: leagueSeason,
     tableRow: teamRow,
-    target,
+    target: leagueTarget,
   })
   const birthTeamSeason = adaptBirthTeamDocumentSeason({
     teamDocument: teamDoc || {},
     seasonDocument: selectedTeamSeason || {},
-    target,
+    target: teamTarget,
     league: leagueDoc || {},
   })
 
@@ -275,6 +481,8 @@ export const buildTeamPageView = ({
     : []
   const playersCount = teamPlayers.length
   const performanceView = buildTeamPerformanceViewModel(canonicalTeamSeason.performance)
+  const clubId = canonicalTeamSeason.identity.clubId || getClubIdFromTeamId(teamId)
+  const club = getClubById(clubId)
 
   return {
     ...canonicalTeamSeason,
@@ -282,7 +490,10 @@ export const buildTeamPageView = ({
     id: cleanValue(teamId),
     birthTeamId: canonicalTeamSeason.identity.teamId || cleanValue(teamId),
     teamDocumentId: canonicalTeamSeason.identity.teamDocumentId || cleanValue(teamId),
-    clubId: canonicalTeamSeason.identity.clubId || getClubIdFromTeamId(teamId),
+    clubId,
+    clubLevel: Number(club?.clubLevel || canonicalTeamSeason.clubLevel || 0),
+    birthTeamSlot: canonicalTeamSeason.identity.teamSlot || 1,
+    teamSlot: canonicalTeamSeason.identity.teamSlot || 1,
     name: canonicalTeamSeason.identity.displayName,
     leagueId: canonicalTeamSeason.league.leagueId,
     leagueName: cleanValue(leagueDoc?.leagueName || leagueDoc?.name || leagueDoc?.id || '-'),

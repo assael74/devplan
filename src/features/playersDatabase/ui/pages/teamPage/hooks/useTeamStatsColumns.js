@@ -2,21 +2,35 @@
 
 import * as React from 'react'
 import {
+  Box,
+  Chip,
   Option,
   Select,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
+import { buildScoutDisplayItems } from '../../../components/scout/scoutDisplay.model.js'
 import {
   PLAYER_STATS_BASE_COLUMNS,
   STATS_ROSTER_STATUS_OPTIONS,
 } from '../logic/teamPage.constants.js'
 import { clean } from '../logic/teamPage.utils.js'
 import {
+  STATS_IDENTITY_STATUS,
   findStatsRosterMatch,
   getRosterPlayerOptionValue,
+  getStatsIdentityLabel,
 } from '../logic/teamStatsMatch.logic.js'
+
+const getIdentityColor = status => ({
+  [STATS_IDENTITY_STATUS.ROSTER_MATCH]: 'success',
+  [STATS_IDENTITY_STATUS.SYSTEM_MATCH]: 'primary',
+  [STATS_IDENTITY_STATUS.NEW_PLAYER]: 'neutral',
+  [STATS_IDENTITY_STATUS.AMBIGUOUS]: 'warning',
+  [STATS_IDENTITY_STATUS.UNRESOLVED]: 'danger',
+}[status] || 'neutral')
 
 export default function useTeamStatsColumns({ players, rosterLookup }) {
   const rosterPlayerOptions = React.useMemo(() => players
@@ -30,11 +44,12 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
     ...PLAYER_STATS_BASE_COLUMNS[1],
     render: ({ row, rowIndex, column, value, onCellChange }) => {
       const matchedPlayer = findStatsRosterMatch(row, rosterLookup)
-      const isException = STATS_ROSTER_STATUS_OPTIONS.some(option => (
-        option.value === row.rosterStatus
-      ))
+      const identityResolved = [
+        STATS_IDENTITY_STATUS.ROSTER_MATCH,
+        STATS_IDENTITY_STATUS.SYSTEM_MATCH,
+      ].includes(row.identityStatus)
 
-      if ((matchedPlayer && row.rosterStatus === 'regular') || isException) {
+      if (identityResolved) {
         return (
           <Typography level='body-sm' sx={{ fontWeight: 600, textAlign: 'left' }}>
             {value || '-'}
@@ -45,7 +60,7 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
       return (
         <Select
           size='sm'
-          value={row.matchedPlayerId || null}
+          value={matchedPlayer ? row.matchedPlayerId || null : null}
           placeholder={value || 'בחר שחקן מהסגל'}
           sx={{ minWidth: 190, textAlign: 'left' }}
           onChange={(event, nextValue) => {
@@ -69,24 +84,56 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
     },
   }), [rosterLookup, rosterPlayerOptions])
 
-  const exceptionColumn = React.useMemo(() => ({
-    key: 'rosterStatus',
-    label: 'סיווג חריג',
-    sx: { minWidth: 150 },
-    render: ({ row, rowIndex, column, onCellChange }) => {
-      const matchedPlayer = findStatsRosterMatch(row, rosterLookup)
-      const isException = STATS_ROSTER_STATUS_OPTIONS.some(option => (
-        option.value === row.rosterStatus
-      ))
+  const identityColumn = React.useMemo(() => ({
+    key: 'identityStatus',
+    label: 'זיהוי שחקן',
+    readOnly: true,
+    sx: { minWidth: 132 },
+    render: ({ row }) => (
+      <Tooltip title={row.identityMessage || getStatsIdentityLabel(row.identityStatus)}>
+        <Chip
+          size='sm'
+          variant='soft'
+          color={getIdentityColor(row.identityStatus)}
+          sx={{ fontWeight: 600 }}
+        >
+          {getStatsIdentityLabel(row.identityStatus)}
+        </Chip>
+      </Tooltip>
+    ),
+  }), [])
 
-      if (matchedPlayer && !isException) return null
+  const statusColumn = React.useMemo(() => ({
+    key: 'rosterStatus',
+    label: 'סטטוס בסגל',
+    sx: { minWidth: 155 },
+    render: ({ row, rowIndex, column, onCellChange }) => {
+      if (row.identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH) {
+        return (
+          <Typography level='body-sm' sx={{ fontWeight: 600 }}>
+            שחקן סגל
+          </Typography>
+        )
+      }
+
+      const selectedOption = STATS_ROSTER_STATUS_OPTIONS.find(option => (
+        option.value === row.rosterStatus
+      )) || null
+
+      if (selectedOption) {
+        return (
+          <Typography level='body-sm' sx={{ fontWeight: 600 }}>
+            {selectedOption.label}
+          </Typography>
+        )
+      }
 
       return (
         <Select
           size='sm'
-          value={isException ? row.rosterStatus : null}
-          placeholder='בחר חריג'
-          sx={{ minWidth: 150 }}
+          value={null}
+          placeholder='בחר סטטוס'
+          sx={{ minWidth: 155 }}
           onChange={(event, nextValue) => {
             if (typeof onCellChange !== 'function') return
 
@@ -106,16 +153,24 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
         </Select>
       )
     },
-  }), [rosterLookup])
+  }), [])
 
   const scoutProfileColumn = React.useMemo(() => ({
     key: 'scoutProfiles',
-    label: 'פרופיל סקאוט',
-    sx: { width: 132, minWidth: 132 },
+    label: 'פרופילי סקאוט',
+    sx: { width: 250, minWidth: 250 },
     render: ({ row }) => {
-      const signal = row.bestScoutSignal || row.scoutSignals?.[0] || null
+      const displayItems = buildScoutDisplayItems({
+        profiles: [
+          ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
+          ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
+        ],
+        combinations: Array.isArray(row.scoutCombinations)
+          ? row.scoutCombinations
+          : [],
+      })
 
-      if (!signal) {
+      if (!displayItems.length) {
         return (
           <Typography level='body-sm' sx={{ color: 'neutral.500' }}>
             -
@@ -123,26 +178,71 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
         )
       }
 
-      const label = clean(signal.profileLabel || signal.label || signal.profileId) || 'פרופיל סקאוט'
-      const score = Number.isFinite(Number(signal.score))
-        ? Math.round(Number(signal.score))
-        : null
-      const reliability = signal.reliability?.label ||
-        signal.reliability?.level ||
-        signal.reliabilityLevel ||
-        ''
-      const tooltip = [
-        label,
-        score !== null ? `ציון ${score}` : '',
-        reliability ? `אמינות ${reliability}` : '',
-      ].filter(Boolean).join(' · ')
+      const primaryItem = displayItems[0]
+      const extraCount = Math.max(0, displayItems.length - 1)
+      const profileLabels = [
+        ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
+        ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
+      ]
+        .map(profile => clean(
+          profile.profileLabel ||
+          profile.label ||
+          profile.profileId ||
+          profile.id
+        ))
+        .filter(Boolean)
+      const combinationLabels = (Array.isArray(row.scoutCombinations)
+        ? row.scoutCombinations
+        : [])
+        .map(combination => clean(
+          combination.label ||
+          combination.id ||
+          combination.combinationId
+        ))
+        .filter(Boolean)
+      const tooltip = (
+        <Box sx={{ minWidth: 170 }}>
+          {!!combinationLabels.length && (
+            <>
+              <Typography level='title-sm' sx={{ mb: 0.5 }}>
+                קומבינציות
+              </Typography>
+              {combinationLabels.map(label => (
+                <Typography key={`combination__${label}`} level='body-xs'>
+                  • {label}
+                </Typography>
+              ))}
+            </>
+          )}
+
+          {!!profileLabels.length && (
+            <>
+              <Typography
+                level='title-sm'
+                sx={{ mt: combinationLabels.length ? 1 : 0, mb: 0.5 }}
+              >
+                פרופילי סקאוט
+              </Typography>
+              {profileLabels.map(label => (
+                <Typography key={`profile__${label}`} level='body-xs'>
+                  • {label}
+                </Typography>
+              ))}
+            </>
+          )}
+        </Box>
+      )
 
       return (
-        <ScoutProfileChip
-          label={label}
-          tooltip={tooltip}
-          fontSize={11}
-        />
+        <Box sx={{ display: 'flex', minWidth: 0 }}>
+          <ScoutProfileChip
+            label={`${primaryItem.label}${extraCount ? ` +${extraCount}` : ''}`}
+            tooltip={tooltip}
+            iconId={primaryItem.iconId}
+            variant={primaryItem.type === 'combination' ? 'combination' : 'default'}
+            fontSize={10}
+          />
+        </Box>
       )
     },
   }), [])
@@ -150,8 +250,9 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
   return React.useMemo(() => [
     PLAYER_STATS_BASE_COLUMNS[0],
     nameColumn,
-    exceptionColumn,
+    identityColumn,
+    statusColumn,
     scoutProfileColumn,
     ...PLAYER_STATS_BASE_COLUMNS.slice(2),
-  ], [exceptionColumn, nameColumn, scoutProfileColumn])
+  ], [identityColumn, nameColumn, scoutProfileColumn, statusColumn])
 }

@@ -37,6 +37,20 @@ export const PLAYER_STATS_BASE_COLUMNS = [
   { key: 'minutes', label: 'דקות משחק', sx: { width: 92 } },
 ]
 
+
+export const STATS_SEASON_STATUS_OPTIONS = [
+  {
+    value: 'active',
+    label: 'עדכון עונה פעילה',
+    description: 'תחזית לפי מספר משחקי הליגה ועדכון מלא של פרופילי הסקאוט.',
+  },
+  {
+    value: 'completed',
+    label: 'טעינת עונה מלאה',
+    description: 'ללא תחזית וללא מחיקה של פרופילי סקאוט קיימים.',
+  },
+]
+
 export const STATS_ROSTER_STATUS_OPTIONS = [
   { value: 'transferredOut', label: 'עבר קבוצה' },
   { value: 'transferredIn', label: 'הגיע מקבוצה אחרת' },

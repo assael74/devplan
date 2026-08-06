@@ -5,6 +5,7 @@
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
 import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
@@ -17,28 +18,16 @@ const getPlayerMergeKey = player => (
   buildPlayerMatchValues(player)[0] || ''
 ).toLowerCase()
 
-export const buildTeamPlayersScoutProfilesSummary = (players = []) => {
-  const profileCounts = {}
-  let total = 0
+export const buildTeamPlayersScoutProfilesSummary = buildScoutProfilesSummary
 
-  ;(Array.isArray(players) ? players : []).forEach(player => {
-    const profiles = Array.isArray(player?.scoutProfiles) ? player.scoutProfiles : []
-    if (!profiles.length) return
-
-    total += 1
-    profiles.forEach(profile => {
-      const profileId = clean(profile?.profileId)
-      if (!profileId) return
-
-      profileCounts[profileId] = (profileCounts[profileId] || 0) + 1
-    })
-  })
-
-  return {
-    total,
-    profileCounts,
-  }
-}
+const resolvePlayerDocumentIds = players => Array.from(new Set(
+  (Array.isArray(players) ? players : [])
+    .map(player => clean(
+      player?.playerDocumentId ||
+      player?.documentId
+    ))
+    .filter(Boolean)
+))
 
 const removeSeasonRows = ({ rows = [], season = {} } = {}) =>
   (Array.isArray(rows) ? rows : []).filter(row => !isSameSeason(row, season))
@@ -73,7 +62,17 @@ export async function removeTeamSeason({
     const isHistory = clean(target) === 'history'
     const fieldKey = isHistory ? 'history' : 'current'
     const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
-    const nextRows = removeSeasonRows({ rows, season: { seasonId, seasonKey } })
+    const removedRows = rows.filter(row => (
+      isSameSeason(row, { seasonId, seasonKey })
+    ))
+    const removedPlayers = removedRows.flatMap(row => (
+      Array.isArray(row.teamPlayers) ? row.teamPlayers : []
+    ))
+    const playerDocumentIds = resolvePlayerDocumentIds(removedPlayers)
+    const nextRows = removeSeasonRows({
+      rows,
+      season: { seasonId, seasonKey },
+    })
 
     transaction.set(
       ref,
@@ -91,6 +90,8 @@ export async function removeTeamSeason({
       seasonKey,
       target: isHistory ? 'history' : 'current',
       removed: nextRows.length !== rows.length,
+      removedPlayersCount: removedPlayers.length,
+      playerDocumentIds,
     }
   })
 }
@@ -201,15 +202,17 @@ export async function clearTeamSeasonPlayers({
     const fieldKey = isHistory ? 'history' : 'current'
     const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
     let removedPlayersCount = 0
+    let removedPlayers = []
     let seasonFound = false
 
     const nextRows = rows.map(row => {
       if (!isSameSeason(row, { seasonId, seasonKey })) return row
 
       seasonFound = true
-      removedPlayersCount = Array.isArray(row.teamPlayers)
-        ? row.teamPlayers.length
-        : 0
+      removedPlayers = Array.isArray(row.teamPlayers)
+        ? row.teamPlayers
+        : []
+      removedPlayersCount = removedPlayers.length
 
       return {
         ...row,
@@ -255,6 +258,7 @@ export async function clearTeamSeasonPlayers({
       target: isHistory ? 'history' : 'current',
       updated: true,
       removedPlayersCount,
+      playerDocumentIds: resolvePlayerDocumentIds(removedPlayers),
       playersCount: 0,
       scoutProfilesSummary: {
         total: 0,

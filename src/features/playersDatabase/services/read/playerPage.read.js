@@ -17,6 +17,18 @@ const playerDocRef = documentId => (
   doc(db, PLAYERS_DATABASE_COLLECTIONS.players, cleanValue(documentId))
 )
 
+const resolvePlayerDocumentCandidates = playerId => {
+  const safePlayerId = cleanValue(playerId)
+  const candidates = [safePlayerId]
+  const legacyExternalMatch = safePlayerId.match(/^player__(?:19|20)\d{2}__(\d+)$/)
+
+  if (legacyExternalMatch) {
+    candidates.push(`external__${legacyExternalMatch[1]}`)
+  }
+
+  return [...new Set(candidates.filter(Boolean))]
+}
+
 const normalizeMatchValues = value => (
   buildPlayerMatchValues(value)
     .map(item => cleanValue(item).toLowerCase())
@@ -221,17 +233,29 @@ export async function readPlayerPageData({ playerId = '' } = {}) {
   return readWithDocumentCache({
     key: buildPlayerDocumentCacheKey(safePlayerId),
     read: async () => {
-      const snapshot = await trackedGetDoc(playerDocRef(safePlayerId), {
-        feature: 'playersDatabase',
-        action: 'player-read',
-        collection: PLAYERS_DATABASE_COLLECTIONS.players,
-      })
-      const playerDocument = snapshot.exists()
-        ? {
+      const candidates = resolvePlayerDocumentCandidates(safePlayerId)
+      let playerDocument = null
+
+      for (const documentId of candidates) {
+        const snapshot = await trackedGetDoc(playerDocRef(documentId), {
+          feature: 'playersDatabase',
+          action: 'player-read',
+          collection: PLAYERS_DATABASE_COLLECTIONS.players,
+          meta: { requestedPlayerId: safePlayerId, documentId },
+        })
+
+        if (!snapshot.exists()) continue
+
+        playerDocument = {
           id: snapshot.id,
           ...snapshot.data(),
         }
-        : await buildFallbackPlayerDocument(safePlayerId)
+        break
+      }
+
+      if (!playerDocument) {
+        playerDocument = await buildFallbackPlayerDocument(safePlayerId)
+      }
 
       if (!playerDocument) return null
 

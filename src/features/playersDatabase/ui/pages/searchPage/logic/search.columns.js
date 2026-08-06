@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/logic/search.columns.js
+// src/features/playersDatabase/ui/pages/searchPage/logic/search.columns.js
 
 import { Box, IconButton } from '@mui/joy'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
@@ -6,12 +6,12 @@ import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
 import LeagueName from '../../../components/leagues/LeagueName.js'
 import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
+import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
-import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
+import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
-import { buildPlayerScoutProfileOptions } from '../../../logic/scoutDisplay.logic.js'
 import { searchResultsTableSx as sx } from '../results/sx/searchResultsTable.sx.js'
 import {
   PLAYER_SEARCH_TABLE_WIDTHS,
@@ -21,37 +21,17 @@ import {
 const playerColumnWidth = key => buildTableColumnWidth(PLAYER_SEARCH_TABLE_WIDTHS[key])
 const teamColumnWidth = key => buildTableColumnWidth(TEAM_SEARCH_TABLE_WIDTHS[key])
 
+const toNumberOrZero = value => {
+  const number = Number(value)
+
+  return Number.isFinite(number) ? number : 0
+}
+
 const searchResultLinkSx = {
   '& [data-link-indicator]': {
     display: 'none',
   },
 }
-
-const PROFILE_OPTION_BY_ID = buildPlayerScoutProfileOptions().reduce((map, option) => {
-  map[option.value] = option
-  return map
-}, {})
-
-const buildProfileTooltip = profileDisplay => {
-  const option = PROFILE_OPTION_BY_ID[profileDisplay?.id]
-  if (!option?.profile) return profileDisplay?.label || profileDisplay?.id || ''
-
-  return (
-    <ScoutProfileTooltip
-      profile={option.profile}
-      fields={[
-        'parameters',
-        'group',
-        'interest',
-        'teamFilter',
-        'positionContext',
-        'positionDependency',
-        'reviews',
-      ]}
-    />
-  )
-}
-
 
 const buildFavoriteColumn = ({ columnWidth, onFavoriteToggle }) => ({
   key: 'favorite',
@@ -133,14 +113,27 @@ export function buildPlayerSearchColumns({ onFavoriteToggle } = {}) {
       key: 'primaryProfile', label: 'פרופיל סקאוט',
       sx: { ...sx.profileColumn, ...playerColumnWidth('primaryProfile') },
       render: row => {
-        const display = row.scoutProfileDisplay || {}
-        if (!display.label || display.label === '-') return '-'
+        const profileView = buildScoutCompactView({
+          profiles: row.scoutProfiles,
+          combinations: row.scoutCombinations,
+          display: row.scoutProfileDisplay,
+          fallbackLabel: row.primaryProfile,
+        })
+
+        if (!profileView.label || profileView.label === '-') return '-'
+
         return (
           <Box sx={sx.profileCell}>
             <ScoutProfileChip
-              label={display.label}
-              tooltip={buildProfileTooltip(display)}
-              variant={display.type === 'combination' ? 'combination' : 'default'}
+              label={profileView.label}
+              tooltip={(
+                <ScoutCompactTooltip
+                  title={profileView.tooltipTitle}
+                  items={profileView.tooltipItems}
+                  isCombination={profileView.isCombination}
+                />
+              )}
+              variant={profileView.variant}
               fontSize={11}
             />
           </Box>
@@ -154,7 +147,6 @@ export function buildPlayerSearchColumns({ onFavoriteToggle } = {}) {
     buildActionsColumn(playerColumnWidth),
   ]
 }
-
 
 
 const OPPORTUNITY_LABELS = {
@@ -223,7 +215,7 @@ export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
           fontSize={11}
         />
       ),
-      getSortValue: row => Number(row.offense?.scoutPriorityScore ?? 0),
+      getSortValue: row => toNumberOrZero(row.offense?.scoutPriorityScore),
     },
     {
       key: 'defensePriority', label: 'עדיפות הגנתית',
@@ -239,7 +231,7 @@ export function buildTeamSearchColumns({ onFavoriteToggle } = {}) {
           fontSize={11}
         />
       ),
-      getSortValue: row => Number(row.defense?.scoutPriorityScore ?? 0),
+      getSortValue: row => toNumberOrZero(row.defense?.scoutPriorityScore),
     },
     { key: 'playersCount', label: 'שחקנים', sx: { ...sx.numberColumn, ...teamColumnWidth('playersCount') } },
     buildFavoriteColumn({

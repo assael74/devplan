@@ -70,6 +70,7 @@ const normalizePlayerSearchRow = playerSeason => {
     goals: Number(actual.goals || 0),
     primaryProfile: clean(primaryProfile?.label || display.label) || '-',
     scoutProfiles: Array.isArray(scout.profiles) ? scout.profiles : [],
+    scoutCombinations: Array.isArray(scout.combinations) ? scout.combinations : [],
     scoutProfileDisplay: display,
     score: Number(display.score ?? primaryProfile?.score ?? 0),
     reliability: clean(display.reliability?.level),

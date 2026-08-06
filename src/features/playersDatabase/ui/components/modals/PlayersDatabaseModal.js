@@ -4,7 +4,6 @@ import * as React from 'react'
 import {
   Box,
   Button,
-  CircularProgress,
   DialogContent,
   DialogTitle,
   Modal,
@@ -51,6 +50,7 @@ export default function PlayersDatabaseModal({
   hideFooter = false,
   persistent = false,
   contentSx,
+  headerActions = null,
   onConfirm,
   onClose,
 }) {
@@ -113,6 +113,12 @@ export default function PlayersDatabaseModal({
                       </Typography>
                     ) : null}
                   </Box>
+
+                  {headerActions ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      {headerActions}
+                    </Box>
+                  ) : null}
                 </Box>
 
                 <ModalClose
@@ -141,11 +147,9 @@ export default function PlayersDatabaseModal({
                     loading={busy}
                     disabled={disabled || busy}
                     startDecorator={
-                      busy
-                        ? <CircularProgress size='sm' />
-                        : confirmIconId
-                          ? iconUi({ id: confirmIconId, size: 'sm' })
-                          : null
+                      !busy && confirmIconId
+                        ? iconUi({ id: confirmIconId, size: 'sm' })
+                        : null
                     }
                     onClick={handleConfirm}
                     sx={sx.confirmButton}

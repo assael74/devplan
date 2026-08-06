@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/shared/playerSeasonScope.js
+// src/features/playersDatabase/services/write/shared/playerSeasonScope.js
 
 import {
   cleanValue,
@@ -21,6 +21,16 @@ export {
   resolveBirthTeamId,
   resolveBirthTeamSlot,
 }
+
+const resolveExplicitTeamSlot = ({
+  team = {},
+  row = {},
+} = {}) => toNumberOrZero(pickFirstValue(
+  team.birthTeamSlot,
+  team.teamSlot,
+  row.birthTeamSlot,
+  row.teamSlot
+))
 
 export const buildPlayerSeasonScope = ({
   season = {},
@@ -59,8 +69,72 @@ export const buildPlayerSeasonScope = ({
     )),
     birthTeamId: teamIdentity.birthTeamId,
     birthTeamDocumentId: teamIdentity.birthTeamDocumentId,
-    birthTeamSlot: teamIdentity.birthTeamSlot,
+    birthTeamSlot: resolveExplicitTeamSlot({
+      team,
+      row,
+    }),
   }
+}
+
+const matchesExactTeamIdentity = ({
+  rowScope,
+  targetScope,
+}) => {
+  if (targetScope.birthTeamDocumentId) {
+    return (
+      rowScope.birthTeamDocumentId ===
+      targetScope.birthTeamDocumentId
+    )
+  }
+
+  if (targetScope.birthTeamId) {
+    if (rowScope.birthTeamId !== targetScope.birthTeamId) {
+      return false
+    }
+
+    if (
+      targetScope.birthTeamSlot &&
+      rowScope.birthTeamSlot !== targetScope.birthTeamSlot
+    ) return false
+
+    return true
+  }
+
+  return null
+}
+
+const matchesLegacyTeamIdentity = ({
+  rowScope,
+  targetScope,
+}) => {
+  if (
+    targetScope.clubId &&
+    rowScope.clubId !== targetScope.clubId
+  ) return false
+
+  if (
+    targetScope.ageGroupId &&
+    rowScope.ageGroupId !== targetScope.ageGroupId
+  ) return false
+
+  if (
+    !targetScope.ageGroupId &&
+    targetScope.ageGroupLabel &&
+    rowScope.ageGroupLabel !== targetScope.ageGroupLabel
+  ) return false
+
+  if (
+    targetScope.birthYear &&
+    rowScope.birthYear &&
+    rowScope.birthYear !== targetScope.birthYear
+  ) return false
+
+  if (
+    targetScope.birthTeamSlot &&
+    rowScope.birthTeamSlot !== targetScope.birthTeamSlot
+  ) return false
+
+  return true
 }
 
 export const isSamePlayerSeasonScope = (row = {}, scope = {}) => {
@@ -72,38 +146,20 @@ export const isSamePlayerSeasonScope = (row = {}, scope = {}) => {
   })
 
   if (!isSameSeason(rowScope, targetScope)) return false
-  if (targetScope.leagueId && rowScope.leagueId !== targetScope.leagueId) return false
-  if (targetScope.clubId && rowScope.clubId !== targetScope.clubId) return false
-  if (targetScope.ageGroupId && rowScope.ageGroupId !== targetScope.ageGroupId) return false
   if (
-    !targetScope.ageGroupId &&
-    targetScope.ageGroupLabel &&
-    rowScope.ageGroupLabel !== targetScope.ageGroupLabel
-  ) return false
-  if (
-    targetScope.birthYear &&
-    rowScope.birthYear &&
-    rowScope.birthYear !== targetScope.birthYear
+    targetScope.leagueId &&
+    rowScope.leagueId !== targetScope.leagueId
   ) return false
 
-  const hasClubAndAgeScope = Boolean(
-    targetScope.clubId &&
-    (
-      targetScope.ageGroupId ||
-      targetScope.ageGroupLabel ||
-      targetScope.birthYear
-    )
-  )
+  const exactMatch = matchesExactTeamIdentity({
+    rowScope,
+    targetScope,
+  })
 
-  if (
-    !hasClubAndAgeScope &&
-    targetScope.birthTeamId &&
-    rowScope.birthTeamId !== targetScope.birthTeamId
-  ) return false
-  if (
-    targetScope.birthTeamSlot &&
-    rowScope.birthTeamSlot !== targetScope.birthTeamSlot
-  ) return false
+  if (exactMatch !== null) return exactMatch
 
-  return true
+  return matchesLegacyTeamIdentity({
+    rowScope,
+    targetScope,
+  })
 }

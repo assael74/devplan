@@ -2,12 +2,13 @@
 
 export const PLAYERS_DATABASE_UI_ROUTES = {
   entry: '/players-database',
-  leagues: ({ seasonKey, birthYear } = {}) => {
+  leagues: ({ seasonKey, birthYear, level } = {}) => {
     const basePath = '/players-database/leagues'
     const params = new URLSearchParams()
 
     if (seasonKey) params.set('season', seasonKey)
     if (birthYear && birthYear !== 'all') params.set('birthYear', birthYear)
+    if (level && level !== 'all') params.set('level', level)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
@@ -19,11 +20,15 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
 
     return `${basePath}?season=${encodeURIComponent(seasonKey)}`
   },
-  team: ({ leagueId, teamId, seasonKey } = {}) => {
+  team: ({ leagueId, teamId, seasonKey, versionKey } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}/teams/${teamId || ''}`
-    if (!seasonKey) return basePath
+    const params = new URLSearchParams()
 
-    return `${basePath}?season=${encodeURIComponent(seasonKey)}`
+    if (seasonKey) params.set('season', seasonKey)
+    if (versionKey) params.set('version', versionKey)
+
+    const query = params.toString()
+    return query ? `${basePath}?${query}` : basePath
   },
   player: playerId => `/players-database/players/${playerId || ''}`,
 }

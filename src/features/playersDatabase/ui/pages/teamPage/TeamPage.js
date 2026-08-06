@@ -1,7 +1,7 @@
 // features/playersDatabase/ui/pages/teamPage/TeamPage.js
 
 import * as React from 'react'
-import { Box } from '@mui/joy'
+import { Box, CircularProgress, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
@@ -46,9 +46,13 @@ function TeamPageContent() {
     hasTeamPlayers,
     seasonOptions,
     selectedSeasonKey,
+    selectedSeasonOptionKey,
     selectedSeasonOption,
     setSelectedSeasonKey,
     reload,
+    loading,
+    error,
+    selectionError,
   } = useTeamPage()
 
   const sharedActionContext = {
@@ -79,6 +83,7 @@ function TeamPageContent() {
       to: PLAYERS_DATABASE_UI_ROUTES.leagues({
         seasonKey: selectedSeasonKey,
         birthYear: team.birthYear,
+        level: team.league?.leagueLevel || team.leagueLevel,
       }),
     },
     {
@@ -163,6 +168,23 @@ function TeamPageContent() {
     seasonKey: selectedSeasonKey,
   })
 
+  if (loading) {
+    return (
+      <Box sx={sx.loadingState}>
+        <CircularProgress size='sm' />
+        <Typography level='body-sm'>טוען את גרסת הקבוצה...</Typography>
+      </Box>
+    )
+  }
+
+  if (error || selectionError) {
+    return (
+      <Box sx={sx.loadingState}>
+        <Typography level='body-sm'>{error || selectionError}</Typography>
+      </Box>
+    )
+  }
+
   return (
     <>
       <Box sx={sx.page}>
@@ -186,6 +208,7 @@ function TeamPageContent() {
         <TeamPlayersSection
           players={visiblePlayers}
           selectedSeasonKey={selectedSeasonKey}
+          selectedSeasonOptionKey={selectedSeasonOptionKey}
           seasonOptions={seasonOptions}
           hasTeamPlayers={hasTeamPlayers}
           profileOnly={profileOnly}
@@ -196,7 +219,9 @@ function TeamPageContent() {
           onDeletePlayers={() => playersDelete.setOpen(true)}
           onReport={teamReport.openPreview}
           onRoleOpen={roleEditor.open}
-          onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(row.id))}
+          onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(
+            row.playerDocumentId || row.id
+          ))}
           onPlayerUrlEdit={playerUrlEditor.open}
           onFavoriteToggle={handlePlayerFavoriteToggle}
         />
@@ -255,8 +280,11 @@ function TeamPageContent() {
         pasteValue={statsImport.pasteValue}
         busy={statsImport.busy}
         hasInvalidRows={statsImport.hasInvalidRows}
+        seasonStatus={statsImport.seasonStatus}
+        onSeasonStatusChange={statsImport.changeSeasonStatus}
         onPasteChange={statsImport.setPasteValue}
         onPaste={statsImport.parse}
+        onClear={statsImport.clearPaste}
         onCellChange={statsImport.changeCell}
         getRowStatus={statsImport.getRowStatus}
         onConfirm={statsImport.confirm}

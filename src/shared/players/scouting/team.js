@@ -89,30 +89,64 @@ const perGame = (value, games) => {
   return Number.isFinite(n) && g > 0 ? round(n / g) : null
 }
 
-const POSITIVE_TEAM_RATE = 100
-const CLEAR_POSITIVE_TEAM_RATE = 115
+const POSITIVE_TEAM_SCORE = 60
 const GOALS_BYPASS_TOTAL = 10
 
-const getTeamScoutSide = ({ team = {}, side = '' } = {}) => {
-  const scout = team.teamScout || team.scout || {}
+const hasScoutSideValue = value => Boolean(
+  value &&
+  typeof value === 'object' &&
+  (
+    value.priorityLevel ||
+    value.scoutPriorityScore !== null && value.scoutPriorityScore !== undefined ||
+    value.priority?.level ||
+    value.priority?.score !== null && value.priority?.score !== undefined
+  )
+)
 
-  return team[side] || scout[side] || team.teamPerformance?.[side] || null
+const getTeamScoutSide = ({ team = {}, side = '' } = {}) => {
+  const candidates = [
+    team[side],
+    team.performance?.[side],
+    team.teamScout?.[side],
+    team.scout?.[side],
+    team.teamPerformance?.[side],
+    team.domain?.performance?.[side],
+    team.performanceView?.[side],
+  ]
+
+  return candidates.find(hasScoutSideValue) || null
 }
 
-const getTeamScoutRate = ({ team = {}, side = '' } = {}) => {
+const POSITIVE_PRIORITY_LEVELS = new Set([
+  'positive',
+  'high',
+  'elite',
+  'חיובי',
+  'עדיפות גבוהה',
+  'יעד מוביל',
+])
+
+const getTeamScoutScore = ({ team = {}, side = '' } = {}) => {
   const sideData = getTeamScoutSide({ team, side }) || {}
 
-  return pickNum(
-    sideData.scoutPriorityScore,
-    sideData.qualityRate,
-    sideData.anomalyRate
-  )
+  return pickNum(sideData.scoutPriorityScore, sideData.priority?.score)
 }
 
-const isTeamScoutSidePositive = ({ team = {}, side = '', threshold = POSITIVE_TEAM_RATE } = {}) => {
-  const rate = getTeamScoutRate({ team, side })
+const getTeamScoutPriorityLevel = ({ team = {}, side = '' } = {}) => {
+  const sideData = getTeamScoutSide({ team, side }) || {}
 
-  return Number.isFinite(rate) && rate >= threshold
+  return String(sideData.priorityLevel || sideData.priority?.level || '').trim().toLowerCase()
+}
+
+const isTeamScoutSidePositive = ({ team = {}, side = '' } = {}) => {
+  const priorityLevel = getTeamScoutPriorityLevel({ team, side })
+
+  if (priorityLevel) {
+    return POSITIVE_PRIORITY_LEVELS.has(priorityLevel)
+  }
+
+  const score = getTeamScoutScore({ team, side })
+  return Number.isFinite(score) && score >= POSITIVE_TEAM_SCORE
 }
 
 export const passesPlayerScoutTeamFilter = ({
@@ -124,16 +158,6 @@ export const passesPlayerScoutTeamFilter = ({
   const goals = Number(metrics.goals)
   const attackPositive = isTeamScoutSidePositive({ team, side: 'offense' })
   const defensePositive = isTeamScoutSidePositive({ team, side: 'defense' })
-  const attackClear = isTeamScoutSidePositive({
-    team,
-    side: 'offense',
-    threshold: CLEAR_POSITIVE_TEAM_RATE,
-  })
-  const defenseClear = isTeamScoutSidePositive({
-    team,
-    side: 'defense',
-    threshold: CLEAR_POSITIVE_TEAM_RATE,
-  })
   const goalsBypassOk = Number.isFinite(goals) && goals >= GOALS_BYPASS_TOTAL
 
   if (!filter || filter === TEAM_FILTER.ANY) return true
@@ -143,7 +167,7 @@ export const passesPlayerScoutTeamFilter = ({
     return attackPositive || goalsBypassOk
   }
   if (filter === TEAM_FILTER.ANY_POSITIVE) return attackPositive || defensePositive
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return attackClear || defenseClear
+  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return attackPositive || defensePositive
 
   return false
 }
@@ -242,96 +266,6 @@ const levelEnabled = ({ profile, settings }) => {
   if (!levels.length) return true
 
   return levels.some((level) => settings.enabledLevels.includes(level))
-}
-
-const teamFilterPasses = ({ filter, metrics, settings }) => {
-  if (filter === TEAM_FILTER.ANY) return true
-
-  const deepSearch = settings.searchDistance >= 2
-  const baseAttackActive =
-    settings.attackPerformanceThreshold !== null &&
-    settings.attackPerformanceThreshold !== undefined
-  const baseDefenseActive =
-    settings.defensePerformanceThreshold !== null &&
-    settings.defensePerformanceThreshold !== undefined
-  const attackThreshold = deepSearch
-    ? settings.deepAttackPerformanceThreshold
-    : settings.attackPerformanceThreshold
-  const defenseThreshold = deepSearch
-    ? settings.deepDefensePerformanceThreshold
-    : settings.defensePerformanceThreshold
-  const attackActive = baseAttackActive
-  const defenseActive = baseDefenseActive
-  const attack = Number(metrics.attackEdge)
-  const defense = Number(metrics.defenseEdge)
-  const goals = Number(metrics.goals)
-  const attackOk = attackActive && Number.isFinite(attack) && attack >= attackThreshold
-  const defenseOk = defenseActive && Number.isFinite(defense) && defense >= defenseThreshold
-  const goalsBypassOk = Number.isFinite(goals) && goals >= 10
-
-  if (deepSearch) {
-    const clearThreshold = settings.deepClearPerformanceThreshold
-
-    if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-    if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
-    if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
-      return attackOk || goalsBypassOk
-    }
-    if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
-    if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
-      return (
-        (Number.isFinite(attack) && attack >= clearThreshold) ||
-        (Number.isFinite(defense) && defense >= clearThreshold)
-      )
-    }
-
-    return false
-  }
-
-  if (!attackActive && !defenseActive) return false
-  if (attackActive && !attackOk) return false
-  if (defenseActive && !defenseOk) return false
-
-  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-  if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
-  if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
-    return attackOk || goalsBypassOk
-  }
-  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) {
-    const clearThreshold = deepSearch
-      ? settings.deepClearPerformanceThreshold
-      : settings.clearPerformanceThreshold
-
-    return attackOk || defenseOk ||
-      (Number.isFinite(attack) && attack >= clearThreshold) ||
-      (Number.isFinite(defense) && defense >= clearThreshold)
-  }
-
-  return false
-}
-
-export const passesScoutTeamPerformance = ({ filter, team = {}, signal = {} } = {}) => {
-  const attack = Number(team.attackEdge)
-  const defense = Number(team.defenseEdge)
-  const goals = Number(signal?.metrics?.goals)
-  const attackOk = Number.isFinite(attack) && attack >= 0.1
-  const defenseOk = Number.isFinite(defense) && defense >= 0.1
-  const goalsBypassOk = Number.isFinite(goals) && goals >= 10
-  const clearOk =
-    (Number.isFinite(attack) && attack >= 0.1) ||
-    (Number.isFinite(defense) && defense >= 0.1)
-
-  if (!filter || filter === TEAM_FILTER.ANY) return true
-  if (filter === TEAM_FILTER.ATTACK_POSITIVE) return attackOk
-  if (filter === TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10) {
-    return attackOk || goalsBypassOk
-  }
-  if (filter === TEAM_FILTER.ANY_POSITIVE) return attackOk || defenseOk
-  if (filter === TEAM_FILTER.DEFENSE_POSITIVE) return defenseOk
-  if (filter === TEAM_FILTER.CLEAR_POSITIVE) return clearOk
-
-  return false
 }
 
 export const buildTeamDrilldown = ({

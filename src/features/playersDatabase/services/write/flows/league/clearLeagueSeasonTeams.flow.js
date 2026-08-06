@@ -1,6 +1,10 @@
 // features/playersDatabase/services/write/flows/league/clearLeagueSeasonTeams.flow.js
 
-import { clearLeagueSeasonTeams, syncLeaguesMasterDocument } from '../../leagues/index.js'
+import {
+  clearLeagueSeasonTeams,
+  getLeagueSeasonTeams,
+  syncLeaguesMasterDocument,
+} from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import { deleteSearchIndexesForLeagueSeason, getSearchIndexMetaForLeagueSeason } from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
@@ -26,19 +30,21 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     action: () => getSearchIndexMetaForLeagueSeason(payload),
   })
 
-  const leagueSeasonResult = await runStage({
-    stage: 'clearLeagueSeasonTeams',
+  const leagueSeasonSnapshot = await runStage({
+    stage: 'getLeagueSeasonTeams',
     results,
-    action: () => clearLeagueSeasonTeams(payload),
+    action: () => getLeagueSeasonTeams(payload),
   })
 
-  const indexedTeams = Array.isArray(metaResult.teams) ? metaResult.teams : []
+  const indexedTeams = Array.isArray(metaResult.teams)
+    ? metaResult.teams
+    : []
   const indexedTeamMap = new Map(indexedTeams.map(team => [
     `${team.birthTeamId}__${team.birthTeamSlot || 1}`,
     team,
   ]))
-  const leagueTeams = Array.isArray(leagueSeasonResult.teams)
-    ? leagueSeasonResult.teams
+  const leagueTeams = Array.isArray(leagueSeasonSnapshot.teams)
+    ? leagueSeasonSnapshot.teams
     : []
   const teamMap = new Map(indexedTeamMap)
 
@@ -79,13 +85,22 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     })
     teamSeasonResults.push(teamResult)
 
+    const playerDocumentIds = Array.from(new Set([
+      ...(Array.isArray(team.playerDocumentIds)
+        ? team.playerDocumentIds
+        : []),
+      ...(Array.isArray(teamResult.playerDocumentIds)
+        ? teamResult.playerDocumentIds
+        : []),
+    ].filter(Boolean)))
+
     const playerDocsResult = await runStage({
       stage: `removePlayerSeasonDocsMany:${team.birthTeamId}:${team.birthTeamSlot}`,
       results,
       action: () => removePlayerSeasonDocsMany({
         ...payload,
         team,
-        playerDocumentIds: team.playerDocumentIds,
+        playerDocumentIds,
       }),
     })
     playerSeasonDocsResults.push(playerDocsResult)
@@ -97,17 +112,27 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     action: () => deleteSearchIndexesForLeagueSeason(payload),
   })
 
+  const leagueSeasonResult = await runStage({
+    stage: 'clearLeagueSeasonTeams',
+    results,
+    action: () => clearLeagueSeasonTeams(payload),
+  })
+
   const masterResult = await runStage({
     stage: 'syncLeaguesMasterDocument',
     results,
-    action: () => syncLeaguesMasterDocument({ leagues: [payload.league] }),
+    action: () => syncLeaguesMasterDocument({
+      leagues: [payload.league],
+    }),
   })
 
   return {
     status: 'complete',
     syncStatus: 'complete',
     completed: true,
-    removedTeamsCount: leagueSeasonResult.removedTeamsCount || teams.length,
+    removedTeamsCount:
+      leagueSeasonResult.removedTeamsCount ||
+      teams.length,
     removedSearchIndexesCount: searchIndexesResult.rowsCount || 0,
     metaResult,
     teamSeasonResults,

@@ -63,20 +63,18 @@ export default function PlayerActionsPanel({
           onChange={(_, value) => onSeasonChange(value || '')}
           sx={sx.filterSeasonSelect}
         >
-          {seasonOptions.length ? (
-            seasonOptions.map(option => (
-              <Option
-                key={option.seasonKey}
-                value={option.seasonKey}
-              >
-                {option.label}
-              </Option>
-            ))
-          ) : (
-            <Option value=''>
-              אין עונות
+          <Option value=''>
+            כל העונות
+          </Option>
+
+          {seasonOptions.map(option => (
+            <Option
+              key={option.seasonKey}
+              value={option.seasonKey}
+            >
+              {option.label}
             </Option>
-          )}
+          ))}
         </Select>
 
         <Typography level='body-xs' sx={sx.filtersLabel}>

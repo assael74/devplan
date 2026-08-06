@@ -2,6 +2,14 @@
 
 import { clean } from './teamPage.utils.js'
 
+export const STATS_IDENTITY_STATUS = {
+  ROSTER_MATCH: 'roster_match',
+  SYSTEM_MATCH: 'system_match',
+  NEW_PLAYER: 'new_player',
+  AMBIGUOUS: 'ambiguous',
+  UNRESOLVED: 'unresolved',
+}
+
 export const normalizePlayerNameValue = value => clean(value)
   .replace(/[.״"׳']/g, '')
   .replace(/\s+/g, ' ')
@@ -79,6 +87,26 @@ export const findStatsRosterMatch = (row, rosterLookup) => {
   return null
 }
 
+const mergeRosterPlayerContext = ({ row, player }) => ({
+  ...row,
+  playerId: clean(player?.playerId),
+  playerDocumentId: clean(player?.playerDocumentId),
+  externalPlayerId: clean(player?.externalPlayerId),
+  identityKey: clean(player?.identityKey),
+  normalizedName: clean(player?.normalizedName || player?.fullName),
+  birthYear: player?.birthYear ?? player?.yearOfBirth ?? row.birthYear,
+  yearOfBirth: player?.yearOfBirth ?? player?.birthYear ?? row.yearOfBirth,
+  primaryPosition: clean(player?.primaryPosition || row.primaryPosition),
+  positionLayer: clean(player?.positionLayer || row.positionLayer),
+  positions: Array.isArray(player?.positions)
+    ? player.positions
+    : Array.isArray(row.positions)
+      ? row.positions
+      : [],
+  clubLevel: player?.clubLevel ?? row.clubLevel,
+  birthTeamSlot: player?.birthTeamSlot ?? player?.teamSlot ?? row.birthTeamSlot,
+})
+
 export const enrichStatsRowForPreview = (row, rosterLookup) => {
   const matchedPlayer = findStatsRosterMatch(row, rosterLookup)
   const matchedName = matchedPlayer?.fullName || row.fullName || ''
@@ -86,8 +114,7 @@ export const enrichStatsRowForPreview = (row, rosterLookup) => {
   const isAlias = matchedPlayer
     && pastedName
     && normalizePlayerNameValue(pastedName) !== normalizePlayerNameValue(matchedName)
-
-  return {
+  const baseRow = {
     ...row,
     fullName: matchedName,
     originalFullName: pastedName,
@@ -96,7 +123,59 @@ export const enrichStatsRowForPreview = (row, rosterLookup) => {
     matchedPlayerName: matchedPlayer?.fullName || '',
     rosterStatus: matchedPlayer ? 'regular' : 'unresolved',
     isYoungerAgeGroup: false,
+    identityStatus: matchedPlayer
+      ? STATS_IDENTITY_STATUS.ROSTER_MATCH
+      : STATS_IDENTITY_STATUS.UNRESOLVED,
+    identityMessage: matchedPlayer
+      ? 'זוהה בסגל לפי שם'
+      : 'טרם בוצע חיפוש במערכת',
+  }
+
+  return matchedPlayer
+    ? mergeRosterPlayerContext({ row: baseRow, player: matchedPlayer })
+    : baseRow
+}
+
+export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
+  if (row.identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH) return row
+
+  const matchStatus = clean(resolvedPlayer?.identityMatchStatus)
+  const candidateIds = Array.isArray(resolvedPlayer?.identityCandidateIds)
+    ? resolvedPlayer.identityCandidateIds
+    : []
+
+  if (matchStatus === 'matched') {
+    return {
+      ...row,
+      ...resolvedPlayer,
+      identityStatus: STATS_IDENTITY_STATUS.SYSTEM_MATCH,
+      identityMessage: 'זוהה שחקן קיים במערכת',
+    }
+  }
+
+  if (matchStatus === 'ambiguous') {
+    return {
+      ...row,
+      identityStatus: STATS_IDENTITY_STATUS.AMBIGUOUS,
+      identityMessage: candidateIds.length
+        ? `נמצאו ${candidateIds.length} התאמות אפשריות`
+        : 'נמצאו כמה התאמות אפשריות',
+      identityCandidateIds: candidateIds,
+    }
+  }
+
+  return {
+    ...row,
+    ...resolvedPlayer,
+    identityStatus: STATS_IDENTITY_STATUS.NEW_PLAYER,
+    identityMessage: 'לא נמצאה זהות קיימת במערכת',
   }
 }
 
-
+export const getStatsIdentityLabel = status => ({
+  [STATS_IDENTITY_STATUS.ROSTER_MATCH]: 'זוהה בסגל',
+  [STATS_IDENTITY_STATUS.SYSTEM_MATCH]: 'זוהה במערכת',
+  [STATS_IDENTITY_STATUS.NEW_PLAYER]: 'שחקן חדש',
+  [STATS_IDENTITY_STATUS.AMBIGUOUS]: 'נדרשת בדיקה',
+  [STATS_IDENTITY_STATUS.UNRESOLVED]: 'לא זוהה',
+}[clean(status)] || 'לא זוהה')

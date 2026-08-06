@@ -1,5 +1,6 @@
 // features/playersDatabase/model/playerPage.model.js
 
+import { resolveAgeGroupLabel } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 import {
@@ -83,16 +84,15 @@ const buildSeasonContextView = season => {
     teamId: cleanValue(season?.team?.teamId),
     birthTeamId: cleanValue(season?.team?.teamId),
     birthTeamDocumentId: cleanValue(season?.team?.teamDocumentId),
-    teamName: cleanValue(
-      season?.team?.ageGroupLabel ||
-      season?.team?.displayName ||
-      season?.team?.ageGroupId ||
-      '-'
-    ),
+    teamName: resolveAgeGroupLabel({
+      ageGroupId: season?.team?.ageGroupId,
+      ageGroupLabel: season?.team?.ageGroupLabel,
+    }),
     ageGroupId: cleanValue(season?.team?.ageGroupId),
-    ageGroupLabel: cleanValue(
-      season?.team?.ageGroupLabel || season?.team?.ageGroupId || '-'
-    ),
+    ageGroupLabel: resolveAgeGroupLabel({
+      ageGroupId: season?.team?.ageGroupId,
+      ageGroupLabel: season?.team?.ageGroupLabel,
+    }),
     leagueId: cleanValue(season?.team?.leagueId),
     leagueName: cleanValue(
       league?.name || season?.team?.leagueId || '-'
@@ -167,12 +167,10 @@ export const buildPlayerPageView = playerDomain => {
     birthYear: playerDomain.identity?.birthYear ?? season.season?.birthYear ?? null,
     birthDate: playerDomain.identity?.birthDate ?? null,
     clubName: getClubShortName(season.team?.clubId) || '-',
-    teamName: cleanValue(
-      season.team?.ageGroupLabel ||
-      season.team?.displayName ||
-      season.team?.ageGroupId ||
-      '-'
-    ),
+    teamName: resolveAgeGroupLabel({
+      ageGroupId: season.team?.ageGroupId,
+      ageGroupLabel: season.team?.ageGroupLabel,
+    }),
     leagueName: cleanValue(league?.name || season.team?.leagueId || '-'),
     leagueId: cleanValue(season.team?.leagueId),
     teamId: cleanValue(season.team?.teamId),

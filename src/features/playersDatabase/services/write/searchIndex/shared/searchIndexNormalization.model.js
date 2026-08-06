@@ -21,6 +21,7 @@ const roundSearchValue = value => Math.round(toSafeNumber(value))
 
 const resolveSeasonProjectionState = ({
   target = 'current',
+  seasonStatus = '',
   gamesPlayed = 0,
   leagueTotalRound = 0,
 } = {}) => {
@@ -28,7 +29,12 @@ const resolveSeasonProjectionState = ({
   const safeLeagueTotalRound = Math.max(0, toSafeNumber(leagueTotalRound))
   const remainingTeamGames = Math.max(0, safeLeagueTotalRound - safeGamesPlayed)
   const hasProjectionBase = safeGamesPlayed > 0 && safeLeagueTotalRound > 0
-  const isCompleted = String(target || '').trim() === 'history' || remainingTeamGames === 0
+  const normalizedSeasonStatus = String(seasonStatus || '').trim().toLowerCase()
+  const isCompleted = (
+    normalizedSeasonStatus === 'completed' ||
+    String(target || '').trim() === 'history' ||
+    remainingTeamGames === 0
+  )
   const canProject = !isCompleted && hasProjectionBase
 
   return {
@@ -42,6 +48,7 @@ const resolveSeasonProjectionState = ({
 export const buildPlayerSeasonSearchMetrics = ({
   target = 'current',
   ageGroupId = '',
+  seasonStatus = '',
   leagueTotalRound = 0,
   teamGamePlayed = 0,
   stats = {},
@@ -57,6 +64,7 @@ export const buildPlayerSeasonSearchMetrics = ({
   const gameMinutes = resolvePlayersDatabaseLeagueGameTime(ageGroupId)
   const state = resolveSeasonProjectionState({
     target,
+    seasonStatus,
     gamesPlayed: safeTeamGamePlayed,
     leagueTotalRound,
   })
@@ -113,6 +121,7 @@ export const buildPlayerSeasonSearchMetrics = ({
 
 export const buildTeamSeasonSearchMetrics = ({
   target = 'current',
+  seasonStatus = '',
   leagueTotalRound = 0,
   teamGamePlayed = 0,
   points = 0,
@@ -125,6 +134,7 @@ export const buildTeamSeasonSearchMetrics = ({
   const safeGoalsAgainst = Math.max(0, toSafeNumber(goalsAgainst))
   const state = resolveSeasonProjectionState({
     target,
+    seasonStatus,
     gamesPlayed: safeGamesPlayed,
     leagueTotalRound,
   })

@@ -2,6 +2,7 @@
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import {
+  isValidExternalPlayerId,
   normalizePlayerIdPart,
   normalizePlayerNameValue,
   resolveInternalPlayerId,
@@ -152,7 +153,10 @@ export const buildInternalPlayerId = ({
   if (existingPlayerId) return existingPlayerId
 
   const birthYear = clean(player.birthYear || season.birthYear)
-  const externalPlayerId = clean(player.externalPlayerId)
+  const externalPlayerId = isValidExternalPlayerId({
+    externalPlayerId: player.externalPlayerId,
+    birthYear,
+  }) ? clean(player.externalPlayerId) : ''
   const fallbackName = normalizeIdPart(player.normalizedName || player.fullName)
   const sourceId = externalPlayerId || fallbackName
 

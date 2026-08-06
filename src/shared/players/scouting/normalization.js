@@ -1,5 +1,7 @@
 // src/shared/players/scouting/normalization.js
 
+export const DEFAULT_LEAGUE_GAMES = 30
+
 export const PLAYER_SCOUT_NORMALIZATION_MODE = {
   AUTO: 'auto',
   RAW: 'raw',
@@ -17,6 +19,15 @@ const pickNum = (...values) => {
   for (const value of values) {
     const nextValue = toNum(value, null)
     if (Number.isFinite(nextValue)) return nextValue
+  }
+
+  return 0
+}
+
+const pickPositiveNum = (...values) => {
+  for (const value of values) {
+    const nextValue = toNum(value, null)
+    if (Number.isFinite(nextValue) && nextValue > 0) return nextValue
   }
 
   return 0
@@ -41,16 +52,31 @@ const capNumber = (value, maxValue) => {
 }
 
 const getLeagueTotalRound = ({ team = {}, season = {} } = {}) =>
-  pickNum(
+  pickPositiveNum(
     team.leagueTotalRound,
     team.leagueNumGames,
     team.totalLeagueGames,
     season.leagueTotalRound,
-    season.leagueNumGames
+    season.leagueNumGames,
+    DEFAULT_LEAGUE_GAMES,
   )
 
+const isSeasonCompleted = ({ team = {}, season = {} } = {}) => {
+  const status = String(
+    season.seasonStatus ||
+    team.seasonStatus ||
+    ''
+  ).trim().toLowerCase()
+
+  return (
+    status === 'completed' ||
+    season.isCompleted === true ||
+    team.isCompleted === true
+  )
+}
+
 const getTeamGamesPlayed = ({ team = {}, player = {} } = {}) =>
-  pickNum(
+  pickPositiveNum(
     team.gamesPlayed,
     team.playedGames,
     team.games,
@@ -61,8 +87,15 @@ const getTeamGamesPlayed = ({ team = {}, player = {} } = {}) =>
     player.leagueGames
   )
 
-const getLeagueGameTime = ({ team = {}, player = {} } = {}) =>
-  pickNum(team.leagueGameTime, team.gameTime, player.gameTime, 90)
+const getLeagueGameTime = ({ team = {}, season = {}, player = {} } = {}) =>
+  pickPositiveNum(
+    season.leagueGameTime,
+    season.gameTime,
+    team.leagueGameTime,
+    team.gameTime,
+    player.gameTime,
+    90,
+  )
 
 const getTeamGoals = team =>
   pickNum(team.goalsFor, team.leagueGoalsFor, team.teamGoals, team.teamStats?.goalsFor)
@@ -78,7 +111,7 @@ export const buildPlayerScoutNormalization = ({
 } = {}) => {
   const leagueTotalRound = getLeagueTotalRound({ team, season })
   const teamGamesPlayed = getTeamGamesPlayed({ team, player })
-  const leagueGameTime = getLeagueGameTime({ team, player })
+  const leagueGameTime = getLeagueGameTime({ team, season, player })
   const fullSeasonMinutes = leagueTotalRound * leagueGameTime
   const rawStats = {
     games: pickNum(player.games, player.gamesPlayed, player.appearances, player.matches, player.apps),
@@ -91,6 +124,7 @@ export const buildPlayerScoutNormalization = ({
     goalGames: pickNum(player.goalGames, player.gamesWithGoals, player.scoringGames),
   }
   const canProject =
+    !isSeasonCompleted({ team, season }) &&
     mode !== PLAYER_SCOUT_NORMALIZATION_MODE.RAW &&
     leagueTotalRound > 0 &&
     teamGamesPlayed > 0 &&

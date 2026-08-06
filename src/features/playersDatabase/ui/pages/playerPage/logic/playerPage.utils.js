@@ -1,6 +1,32 @@
 // features/playersDatabase/ui/pages/playerPage/logic/playerPage.utils.js
 
+import { resolveAgeGroupLabel } from '../../../../catalog/ageGroups.catalog.js'
+
 const cleanValue = value => String(value || '').trim()
+
+const RELIABILITY_LABELS = {
+  high: 'גבוהה',
+  medium: 'בינונית',
+  low: 'נמוכה',
+}
+
+export const resolveCertaintyLabel = value => {
+  if (value && typeof value === 'object') {
+    const level = cleanValue(value.level)
+    const label = cleanValue(value.label)
+
+    return RELIABILITY_LABELS[level.toLowerCase()] ||
+      label ||
+      level ||
+      'לא ידועה'
+  }
+
+  const level = cleanValue(value)
+
+  return RELIABILITY_LABELS[level.toLowerCase()] ||
+    level ||
+    'לא ידועה'
+}
 
 export const toNumber = value => {
   const nextValue = Number(value)
@@ -52,9 +78,9 @@ export const resolvePlayerHeaderMeta = player => {
       player.yearOfBirth ||
       parsedMeta.birthYear
     ),
-    certainty: cleanValue(
+    certainty: resolveCertaintyLabel(
       player.certainty || player.reliability
-    ) || 'לא ידועה',
+    ),
   }
 }
 
@@ -86,8 +112,14 @@ export const resolvePlayerHistoryRows = player => {
         row.lifecycle?.type === 'current'
       ),
       clubName: row.clubShortName || row.clubName || row.club || '-',
-      ageGroupLabel: row.ageGroupLabel || row.teamName || row.team || '-',
-      teamName: row.ageGroupLabel || row.teamName || row.team || '-',
+      ageGroupLabel: resolveAgeGroupLabel({
+        ageGroupId: row.ageGroupId,
+        ageGroupLabel: row.ageGroupLabel || row.teamName || row.team,
+      }),
+      teamName: resolveAgeGroupLabel({
+        ageGroupId: row.ageGroupId,
+        ageGroupLabel: row.ageGroupLabel || row.teamName || row.team,
+      }),
       leagueName: row.leagueName || row.league || '-',
       games: toNumber(row.games),
       starts: toNumber(row.starts),
@@ -96,7 +128,18 @@ export const resolvePlayerHistoryRows = player => {
       yellowCards: toNumber(row.yellowCards),
       scoutProfiles: Array.isArray(row.scoutProfiles)
         ? row.scoutProfiles
-        : [],
+        : Array.isArray(row.scout?.profiles)
+          ? row.scout.profiles
+          : [],
+      scoutProfileCount: Math.max(
+        Array.isArray(row.scoutProfiles)
+          ? row.scoutProfiles.length
+          : 0,
+        Array.isArray(row.scout?.profiles)
+          ? row.scout.profiles.length
+          : 0,
+        Number(row.scoutProfileCount) || 0
+      ),
       scoutProfileDisplay,
       profile: scoutProfileDisplay.label || '-',
       placeholder: Boolean(row.placeholder),

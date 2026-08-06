@@ -63,6 +63,24 @@ const buildParsedStatsRow = ({
     id: `${rowIndex + 1}_${fullName || cells[0] || 'player'}`,
     index: index || `${rowIndex + 1}`,
     fullName,
+    birthYear: toNumber(getStatsCell({
+      cells,
+      headerMap,
+      fallback,
+      key: 'birthYear',
+    })),
+    externalPlayerId: clean(getStatsCell({
+      cells,
+      headerMap,
+      fallback,
+      key: 'externalPlayerId',
+    })),
+    playerUrl: clean(getStatsCell({
+      cells,
+      headerMap,
+      fallback,
+      key: 'playerUrl',
+    })),
     games: toNumber(getStatsCell({
       cells,
       headerMap,

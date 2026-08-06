@@ -34,6 +34,14 @@ export const leagueCenterFiltersSx = {
     borderColor: '#cbd9e4',
   },
 
+  contextResetButton: {
+    minWidth: 72,
+    alignSelf: { xs: 'stretch', lg: 'flex-end' },
+    color: devPlanColors.primary,
+    borderColor: '#cbd9e4',
+    bgcolor: '#fff',
+  },
+
   contextSummary: {
     flex: 1,
     minWidth: 0,

@@ -1,6 +1,6 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterContext.js
 
-import { Box, Option, Select, Stack, Typography } from '@mui/joy'
+import { Box, Button, Option, Select, Stack, Typography } from '@mui/joy'
 
 import InfoPanel from '../../components/cards/InfoPanel.js'
 import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
@@ -19,6 +19,7 @@ export default function LeagueCenterContext({ model }) {
             sx={sx.contextSelect}
             onChange={(event, value) => model.setBirthYear(value || 'all')}
           >
+            <Option value='all'>כל השנתונים</Option>
             {model.birthYearOptions.map(year => (
               <Option key={year} value={String(year)}>{year}</Option>
             ))}
@@ -32,6 +33,7 @@ export default function LeagueCenterContext({ model }) {
             sx={sx.contextSelect}
             onChange={(event, value) => model.setLeagueLevel(value || 'all')}
           >
+            <Option value='all'>כל הרמות</Option>
             {model.levelOptions.map(option => (
               <Option key={option.value} value={option.value}>{option.label}</Option>
             ))}
@@ -45,6 +47,7 @@ export default function LeagueCenterContext({ model }) {
             sx={sx.contextSelect}
             onChange={(event, value) => model.setSeasonKey(value || 'all')}
           >
+            <Option value='all'>כל העונות</Option>
             {model.seasonOptions
               .filter(option => option !== 'all')
               .map(option => (
@@ -52,6 +55,14 @@ export default function LeagueCenterContext({ model }) {
               ))}
           </Select>
         </Box>
+
+        <Button
+          variant='outlined'
+          sx={sx.contextResetButton}
+          onClick={model.resetPrimaryFilters}
+        >
+          איפוס
+        </Button>
 
         <Stack sx={sx.contextSummary}>
           <Typography level='body-xs' sx={sx.contextSummaryLabel}>הקשר פעיל</Typography>

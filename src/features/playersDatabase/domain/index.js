@@ -5,6 +5,7 @@ export * from './contracts/lifecycle.contract.js'
 export * from './contracts/completeness.contract.js'
 export * from './contracts/playerScout.contract.js'
 export * from './contracts/teamScout.contract.js'
+export * from './contracts/playerScoutInput.contract.js'
 export * from './contracts/playerSeason.contract.js'
 export * from './contracts/teamSeason.contract.js'
 

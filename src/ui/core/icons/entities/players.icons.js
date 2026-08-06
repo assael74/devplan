@@ -27,6 +27,10 @@ import {
   Layers,
   Waves,
   Box,
+  Logout,
+  PersonAddAlt1,
+  PersonOff,
+  Moving,
 } from '@mui/icons-material'
 
 function PositionLetterIcon({ text, fontSize = 'md', sx = {} }) {
@@ -90,6 +94,11 @@ export const playerIcons = {
   underusedProspect: <ModelTraining />,
   blockedTopTeam: <RemoveModerator />,
   elite: <Stars />,
+
+  rosterYounger: <Moving />,
+  rosterLeft: <Logout />,
+  rosterRetired: <PersonOff />,
+  rosterJoined: <PersonAddAlt1 />,
 
   defense: <Security />,
   midfield: <Radar />,

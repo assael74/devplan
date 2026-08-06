@@ -52,6 +52,7 @@ export {
 export {
   clearLeagueSeasonTeams,
   getLeagueSeasonDeleteDependencies,
+  getLeagueSeasonTeams,
   removeLeagueSeason,
   removeLeagueSeasonTeam,
 } from './leagueDelete.js'

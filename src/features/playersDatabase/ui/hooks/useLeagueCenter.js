@@ -21,14 +21,6 @@ import { filterByText, filterByValue } from '../logic/filters.logic.js'
 
 const cleanSeasonKey = value => String(value || '').trim()
 const cleanFilterValue = value => String(value || '').trim() || 'all'
-const hasSeasonOption = (options = [], seasonKey = '') => {
-  const selected = normalizeSeasonLookupKey(seasonKey)
-  if (selected === LEAGUE_CENTER_ALL_SEASONS_KEY) return true
-  return Boolean(selected && options.some(option => (
-    normalizeSeasonLookupKey(option) === selected
-  )))
-}
-
 export function useLeagueCenter() {
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedSeasonKey = cleanSeasonKey(searchParams.get('season'))
@@ -39,7 +31,7 @@ export function useLeagueCenter() {
   const [birthYear, setBirthYearState] = useState(requestedBirthYear)
   const [leagueLevel, setLeagueLevelState] = useState(requestedLevel)
   const [seasonKey, setSeasonKeyState] = useState(
-    requestedSeasonKey || LEAGUE_CENTER_DEFAULT_SEASON_KEY
+    requestedSeasonKey || LEAGUE_CENTER_ALL_SEASONS_KEY
   )
   const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -76,24 +68,23 @@ export function useLeagueCenter() {
   )
   const allRows = useMemo(() => buildLeagueCenterRowsFromMasterDocument({
     leaguesMasterDoc,
-    selectedSeasonKey: seasonKey,
-  }), [leaguesMasterDoc, seasonKey])
+    selectedSeasonKey: LEAGUE_CENTER_ALL_SEASONS_KEY,
+  }), [leaguesMasterDoc])
 
   const birthYearOptions = useMemo(
     () => buildLeagueCenterBirthYearOptions(allRows),
     [allRows]
   )
-  const birthYearRows = useMemo(
-    () => filterByValue(allRows, 'birthYear', birthYear),
-    [allRows, birthYear]
-  )
   const levelOptions = useMemo(
-    () => buildLeagueCenterLevelOptions(birthYearRows),
-    [birthYearRows]
+    () => buildLeagueCenterLevelOptions(allRows),
+    [allRows]
   )
-  const contextRows = useMemo(() => (
-    filterByValue(birthYearRows, 'level', leagueLevel)
-  ), [birthYearRows, leagueLevel])
+  const contextRows = useMemo(() => {
+    const bySeason = filterByValue(allRows, 'seasonKey', seasonKey)
+    const byBirthYear = filterByValue(bySeason, 'birthYear', birthYear)
+
+    return filterByValue(byBirthYear, 'level', leagueLevel)
+  }, [allRows, birthYear, leagueLevel, seasonKey])
   const leagues = useMemo(() => {
     const byText = filterByText(contextRows, query, ['name', 'leagueName'])
     return filterByValue(byText, 'dataStatus', dataStatus)
@@ -131,33 +122,27 @@ export function useLeagueCenter() {
     updateParam('level', nextValue)
   }, [updateParam])
 
-  useEffect(() => {
-    if (!seasonOptions.length) return
 
-    const availableSeasons = seasonOptions.filter(option => (
-      option !== LEAGUE_CENTER_ALL_SEASONS_KEY
-    ))
-    const fallbackSeason = availableSeasons[0] || LEAGUE_CENTER_DEFAULT_SEASON_KEY
+  const resetPrimaryFilters = useCallback(() => {
+    setSeasonKeyState(LEAGUE_CENTER_ALL_SEASONS_KEY)
+    setBirthYearState('all')
+    setLeagueLevelState('all')
 
-    if (
-      seasonKey !== LEAGUE_CENTER_ALL_SEASONS_KEY &&
-      hasSeasonOption(seasonOptions, seasonKey)
-    ) return
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.delete('season')
+    nextSearchParams.delete('birthYear')
+    nextSearchParams.delete('level')
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
-    setSeasonKey(fallbackSeason)
-  }, [seasonKey, seasonOptions, setSeasonKey])
-
-  useEffect(() => {
-    if (!leaguesMasterDoc || !birthYearOptions.length) return
-    if (birthYear !== 'all' && birthYearOptions.some(year => String(year) === birthYear)) return
-    setBirthYear(String(birthYearOptions[0]))
-  }, [birthYear, birthYearOptions, leaguesMasterDoc, setBirthYear])
-
-  useEffect(() => {
-    if (!leaguesMasterDoc || !levelOptions.length) return
-    if (leagueLevel !== 'all' && levelOptions.some(option => option.value === leagueLevel)) return
-    setLeagueLevel(levelOptions[0].value)
-  }, [leagueLevel, leaguesMasterDoc, levelOptions, setLeagueLevel])
+  const resetContext = useCallback(() => {
+    setSeasonKeyState(LEAGUE_CENTER_ALL_SEASONS_KEY)
+    setBirthYearState('all')
+    setLeagueLevelState('all')
+    setQuery('')
+    setDataStatus('all')
+    setSearchParams(new URLSearchParams(), { replace: true })
+  }, [setSearchParams])
 
   return {
     query,
@@ -182,5 +167,7 @@ export function useLeagueCenter() {
     leagueDocs,
     catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
     reload,
+    resetPrimaryFilters,
+    resetContext,
   }
 }

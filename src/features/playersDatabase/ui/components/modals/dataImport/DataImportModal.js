@@ -21,9 +21,12 @@ export default function DataImportModal({
   pastePlaceholder = '',
   busy = false,
   disabled = false,
+  beforePaste = null,
+  headerActions = null,
   onPasteChange,
   onPaste,
   onFileSelect,
+  onClear,
   onCellChange,
   getRowStatus,
   onConfirm,
@@ -41,16 +44,20 @@ export default function DataImportModal({
       busy={busy}
       disabled={disabled || !rows.length}
       contentSx={sx.modalContent}
+      headerActions={headerActions}
       onConfirm={onConfirm}
       onClose={onClose}
     >
       <Box sx={sx.content}>
+        {beforePaste}
+
         <DataImportPasteArea
           pasteValue={pasteValue}
           pastePlaceholder={pastePlaceholder}
           onPasteChange={onPasteChange}
           onPaste={onPaste}
           onFileSelect={onFileSelect}
+          onClear={onClear}
         />
 
         <DataImportPreviewTable
