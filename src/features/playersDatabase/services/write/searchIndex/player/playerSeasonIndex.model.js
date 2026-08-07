@@ -4,6 +4,7 @@ import { serverTimestamp } from 'firebase/firestore'
 import {
   buildPlayerIdentityKey,
   isValidExternalPlayerId,
+  resolvePlayerIdentityBirthYear,
 } from '../../../../model/playerIdentity.model.js'
 import {
   normalizePlayerStats,
@@ -92,6 +93,10 @@ export const buildPlayerSeasonIndexDoc = ({
     playerId,
     playerDocumentId,
     externalPlayerId,
+    identityBirthYear: resolvePlayerIdentityBirthYear({
+      player,
+      season,
+    }),
     identityKey: clean(player.identityKey) || buildPlayerIdentityKey({
       birthYear: season.birthYear,
       normalizedName: normalizedDisplayName,

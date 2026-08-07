@@ -227,6 +227,14 @@ export const buildTeamSeasonIndexDoc = ({
     scoutProfiledPlayersCount: toNumberOrZero(
       row.scoutProfiledPlayersCount ?? row.scoutProfilesSummary?.total
     ),
+    scoutProfilesSummary: {
+      total: toNumberOrZero(row.scoutProfilesSummary?.total),
+      profileCounts:
+        row.scoutProfilesSummary?.profileCounts &&
+        typeof row.scoutProfilesSummary.profileCounts === 'object'
+          ? { ...row.scoutProfilesSummary.profileCounts }
+          : {},
+    },
 
     sourceCollection: 'leagues',
     sourceDocumentId: leagueId,

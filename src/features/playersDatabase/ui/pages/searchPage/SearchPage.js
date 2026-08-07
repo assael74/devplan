@@ -19,7 +19,9 @@ import { searchPageSx as sx } from './sx/searchPage.sx.js'
 function SearchPageContent() {
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
+
   const search = useSearchPage()
+
   const searchReport = useSearchReport({
     rows: search.rows,
     queryFilters: search.queryFilters,
@@ -34,14 +36,19 @@ function SearchPageContent() {
   ])
 
   const handleEntityOpen = row => {
-    navigate(PLAYERS_DATABASE_UI_ROUTES.player(
-      row.playerDocumentId || row.id
-    ))
+    navigate(
+      PLAYERS_DATABASE_UI_ROUTES.player(
+        row.playerDocumentId || row.id
+      )
+    )
   }
 
   const handleCreateReport = async reportDetails => {
     const published = await searchReport.publishAndOpen(reportDetails)
-    if (published) setReportNameOpen(false)
+
+    if (published) {
+      setReportNameOpen(false)
+    }
   }
 
   return (

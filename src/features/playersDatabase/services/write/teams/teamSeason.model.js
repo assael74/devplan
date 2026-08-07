@@ -20,6 +20,7 @@ import {
 } from '../../../model/season.model.js'
 import { normalizeTeamStats } from '../../../model/teamStats.model.js'
 import { pickFirstValue } from '../../../model/value.model.js'
+import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
@@ -294,23 +295,49 @@ const mergeExistingTeamPlayerStats = ({
 
 const resetTeamPlayerStats = ({
   player = {},
+  team = {},
+  season = {},
   scoutSyncMode = 'replace',
-} = {}) => ({
-  ...player,
-  statsStatus: PLAYER_STATS_STATUS.LOADED,
-  playerStats: normalizePlayerStats({}),
-  scoutProfiles: scoutSyncMode === 'preserve'
-    ? normalizePlayerScoutProfiles(player)
-    : [],
-  scoutCombinations: scoutSyncMode === 'preserve'
-    ? normalizePlayerScoutCombinations(player)
-    : [],
-  updatedAt: new Date().toISOString(),
-})
+} = {}) => {
+  const resetPlayer = {
+    ...player,
+    statsStatus: PLAYER_STATS_STATUS.LOADED,
+    playerStats: normalizePlayerStats({}),
+    scoutSignals: undefined,
+    scoutProfiles: undefined,
+    scoutCombinations: undefined,
+    bestScoutSignal: undefined,
+  }
+  const calculatedPlayer = buildPlayerScoutState({
+    player: resetPlayer,
+    team,
+    season,
+    perspective: 'players_database_stats_reset',
+  })
+
+  return {
+    ...calculatedPlayer,
+    scoutProfiles: scoutSyncMode === 'preserve'
+      ? mergeScoutProfiles({
+          existingProfiles: normalizePlayerScoutProfiles(player),
+          nextProfiles: calculatedPlayer.scoutProfiles,
+        })
+      : calculatedPlayer.scoutProfiles,
+    scoutCombinations: scoutSyncMode === 'preserve'
+      ? mergeScoutCombinations({
+          existingCombinations: normalizePlayerScoutCombinations(player),
+          nextCombinations: calculatedPlayer.scoutCombinations,
+        })
+      : calculatedPlayer.scoutCombinations,
+    updatedAt: new Date().toISOString(),
+  }
+}
 
 export const mergeTeamPlayerStats = ({
   existingPlayers = [],
   players = [],
+  team = {},
+  season = {},
   scoutSyncMode = 'replace',
 } = {}) => {
   const nextPlayers = (Array.isArray(existingPlayers) ? existingPlayers : []).map(player => (
@@ -320,6 +347,8 @@ export const mergeTeamPlayerStats = ({
         ...player,
         aliases: normalizeAliases(player.aliases),
       },
+      team,
+      season,
       scoutSyncMode,
     })
   ))

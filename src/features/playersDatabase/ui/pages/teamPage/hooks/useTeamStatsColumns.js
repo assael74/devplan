@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/hooks/useTeamStatsColumns.js
+// src/features/playersDatabase/ui/pages/teamPage/hooks/useTeamStatsColumns.js
 
 import * as React from 'react'
 import {
@@ -11,12 +11,12 @@ import {
 } from '@mui/joy'
 
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
-import { buildScoutDisplayItems } from '../../../components/scout/scoutDisplay.model.js'
+import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
+import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import {
   PLAYER_STATS_BASE_COLUMNS,
   STATS_ROSTER_STATUS_OPTIONS,
 } from '../logic/teamPage.constants.js'
-import { clean } from '../logic/teamPage.utils.js'
 import {
   STATS_IDENTITY_STATUS,
   findStatsRosterMatch,
@@ -160,17 +160,19 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
     label: 'פרופילי סקאוט',
     sx: { width: 250, minWidth: 250 },
     render: ({ row }) => {
-      const displayItems = buildScoutDisplayItems({
-        profiles: [
-          ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
-          ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
-        ],
+      const profiles = [
+        ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
+        ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
+      ]
+      const scoutView = buildScoutCompactView({
+        profiles,
         combinations: Array.isArray(row.scoutCombinations)
           ? row.scoutCombinations
           : [],
+        display: row.scoutProfileDisplay || {},
       })
 
-      if (!displayItems.length) {
+      if (!scoutView.primaryItem || !scoutView.label) {
         return (
           <Typography level='body-sm' sx={{ color: 'neutral.500' }}>
             -
@@ -178,68 +180,19 @@ export default function useTeamStatsColumns({ players, rosterLookup }) {
         )
       }
 
-      const primaryItem = displayItems[0]
-      const extraCount = Math.max(0, displayItems.length - 1)
-      const profileLabels = [
-        ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
-        ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
-      ]
-        .map(profile => clean(
-          profile.profileLabel ||
-          profile.label ||
-          profile.profileId ||
-          profile.id
-        ))
-        .filter(Boolean)
-      const combinationLabels = (Array.isArray(row.scoutCombinations)
-        ? row.scoutCombinations
-        : [])
-        .map(combination => clean(
-          combination.label ||
-          combination.id ||
-          combination.combinationId
-        ))
-        .filter(Boolean)
-      const tooltip = (
-        <Box sx={{ minWidth: 170 }}>
-          {!!combinationLabels.length && (
-            <>
-              <Typography level='title-sm' sx={{ mb: 0.5 }}>
-                קומבינציות
-              </Typography>
-              {combinationLabels.map(label => (
-                <Typography key={`combination__${label}`} level='body-xs'>
-                  • {label}
-                </Typography>
-              ))}
-            </>
-          )}
-
-          {!!profileLabels.length && (
-            <>
-              <Typography
-                level='title-sm'
-                sx={{ mt: combinationLabels.length ? 1 : 0, mb: 0.5 }}
-              >
-                פרופילי סקאוט
-              </Typography>
-              {profileLabels.map(label => (
-                <Typography key={`profile__${label}`} level='body-xs'>
-                  • {label}
-                </Typography>
-              ))}
-            </>
-          )}
-        </Box>
-      )
-
       return (
         <Box sx={{ display: 'flex', minWidth: 0 }}>
           <ScoutProfileChip
-            label={`${primaryItem.label}${extraCount ? ` +${extraCount}` : ''}`}
-            tooltip={tooltip}
-            iconId={primaryItem.iconId}
-            variant={primaryItem.type === 'combination' ? 'combination' : 'default'}
+            label={scoutView.label}
+            tooltip={(
+              <ScoutCompactTooltip
+                title={scoutView.tooltipTitle}
+                items={scoutView.tooltipItems}
+                isCombination={scoutView.isCombination}
+              />
+            )}
+            iconId={scoutView.primaryItem.iconId}
+            variant={scoutView.variant}
             fontSize={10}
           />
         </Box>

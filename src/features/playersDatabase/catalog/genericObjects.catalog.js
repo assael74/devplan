@@ -1,4 +1,13 @@
-﻿// features/playersDatabase/catalog/genericObjects.catalog.js
+// src/features/playersDatabase/catalog/genericObjects.catalog.js
+
+// Firestore schema contracts.
+// These objects represent the real document shapes written to Firestore.
+// Keep their fields and nested structures aligned with the active write builders.
+// The four active contracts below must not be treated as UI catalogs or examples:
+// PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG,
+// BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG,
+// SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
+// SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT.
 
 export const PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG = {
   id: 'all',
@@ -129,24 +138,37 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   birthYear: 0,
   birthTeamSlot: 1,
   displayName: '',
+  teamId: '',
+  createdAt: null,
 
   current: [
     {
       seasonId: '',
+      ageGroupId: '',
+      seasonStatus: '',
       leagueId: '',
       teamUrl: '',
       birthYear: 0,
       leagueTotalRound: 0,
       seasonKey: '',
+      playersCount: 0,
+      playerSeasonIndexCount: 0,
+      scoutProfiledPlayersCount: 0,
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
       teamPlayers: [
         {
           playerId: '',
           externalPlayerId: '',
           playerDocumentId: '',
+          identityKey: '',
           fullName: '',
           normalizedName: '',
           aliases: [],
           playerUrl: '',
+          notes: '',
           numShirt: '',
           statsStatus: 'missing',
 
@@ -171,9 +193,12 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
             teamGoalsAgainst: 0,
             teamAttackPerformance: null,
             teamDefensePerformance: null,
+            minutesPerGame: 0,
+            goalsPer90: 0,
           },
 
           scoutProfiles: [],
+          scoutCombinations: [],
           updatedAt: null,
         },
       ],
@@ -182,8 +207,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         points: 0,
         goalsFor: 0,
         goalsAgainst: 0,
-        attackPerformance: null,
-        defensePerformance: null,
+        teamGamePlayed: 0,
       },
       updatedAt: null,
     },
@@ -192,20 +216,31 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   history: [
     {
       seasonId: '',
+      ageGroupId: '',
+      seasonStatus: '',
       seasonKey: '',
       leagueId: '',
       teamUrl: '',
       birthYear: 0,
       leagueTotalRound: 0,
+      playersCount: 0,
+      playerSeasonIndexCount: 0,
+      scoutProfiledPlayersCount: 0,
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
       teamPlayers: [
         {
           playerId: '',
           externalPlayerId: '',
           playerDocumentId: '',
+          identityKey: '',
           fullName: '',
           normalizedName: '',
           aliases: [],
           playerUrl: '',
+          notes: '',
           numShirt: '',
           statsStatus: 'missing',
 
@@ -230,9 +265,12 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
             teamGoalsAgainst: 0,
             teamAttackPerformance: null,
             teamDefensePerformance: null,
+            minutesPerGame: 0,
+            goalsPer90: 0,
           },
 
           scoutProfiles: [],
+          scoutCombinations: [],
           updatedAt: null,
         },
       ],
@@ -241,8 +279,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         points: 0,
         goalsFor: 0,
         goalsAgainst: 0,
-        attackPerformance: null,
-        defensePerformance: null,
+        teamGamePlayed: 0,
       },
       updatedAt: null,
     },
@@ -307,6 +344,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           score: null,
         }
       ],
+      scoutCombinations: [],
       updatedAt: null,
     },
   ],
@@ -354,6 +392,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           score: null,
         }
       ],
+      scoutCombinations: [],
       closedAt: null,
     },
   ],
@@ -380,6 +419,7 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   teamId: '',
   teamDocumentId: '',
   teamUrl: '',
+  seasonUrl: '',
 
   ageGroupId: '',
   ageGroupLabel: '',
@@ -451,6 +491,10 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   playersCount: 0,
   playerSeasonIndexCount: 0,
   scoutProfiledPlayersCount: 0,
+  scoutProfilesSummary: {
+    total: 0,
+    profileCounts: {},
+  },
 
   sourceCollection: 'leagues',
   sourceDocumentId: '',
@@ -468,6 +512,7 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   normalizedDisplayName: '',
   aliases: [],
   identityKey: '',
+  identityBirthYear: 0,
 
   playerId: '',
   playerDocumentId: '',

@@ -1,5 +1,9 @@
 // src/features/playersDatabase/domain/adapters/playerSearchIndex.adapter.js
 
+import {
+  normalizePlayerStatsStatus,
+  PLAYER_STATS_STATUS,
+} from '../../model/playerStats.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyPlayerSeason } from '../contracts/playerSeason.contract.js'
 import { normalizePlayerScout } from '../contracts/playerScout.contract.js'
@@ -15,12 +19,17 @@ export const adaptPlayerSearchIndexDocument = document => {
   const result = createEmptyPlayerSeason()
   const lifecycle = createLifecycle(source.sourceTarget === 'history' || source.seasonDataStatus === 'historical' ? 'history' : 'current')
   const profiles = buildIndexProfiles(source)
+  const statsStatus = normalizePlayerStatsStatus(
+    source.statsStatus,
+    PLAYER_STATS_STATUS.MISSING
+  )
 
   return {
     ...result,
     identity: { playerId: cleanDomainValue(source.playerId), playerDocumentId: cleanDomainValue(source.playerDocumentId), externalPlayerId: cleanDomainValue(source.externalPlayerId), displayName: cleanDomainValue(source.displayName), normalizedName: cleanDomainValue(source.normalizedDisplayName), aliases: toDomainArray(source.aliases) },
     season: { seasonId: cleanDomainValue(source.seasonId), seasonKey: cleanDomainValue(source.seasonKey), birthYear: toDomainNumber(source.birthYear) },
     lifecycle,
+    statsStatus,
     team: { teamId: cleanDomainValue(firstDomainValue(source.birthTeamId, source.teamId)), teamDocumentId: cleanDomainValue(firstDomainValue(source.birthTeamDocumentId, source.teamDocumentId)), clubId: cleanDomainValue(source.clubId), leagueId: cleanDomainValue(source.leagueId), leagueLevel: toDomainNumber(source.leagueLevel), ageGroupId: cleanDomainValue(source.ageGroupId), ageGroupLabel: cleanDomainValue(source.ageGroupLabel), birthTeamSlot: toDomainNumber(source.birthTeamSlot), displayName: cleanDomainValue(firstDomainValue(source.teamDisplayName, source.teamName)) },
     position: { layer: cleanDomainValue(source.positionLayer), primary: cleanDomainValue(source.primaryPosition), shirtNumber: cleanDomainValue(source.numShirt) },
     stats: {
@@ -31,7 +40,15 @@ export const adaptPlayerSearchIndexDocument = document => {
     },
     scout: normalizePlayerScout({ profiles, profileIds: source.scoutProfileIds, combinationIds: source.scoutCombinationIds, searchIds: source.scoutProfileSearchIds }),
     expectedLevelDelta: source.expectedLevelDelta === null || source.expectedLevelDelta === undefined ? null : toDomainNumber(source.expectedLevelDelta),
-    completeness: { ...result.completeness, hasStats: true, hasRanking: source.teamTableRank !== null && source.teamTableRank !== undefined, hasScoutProfiles: profiles.length > 0 || toDomainArray(source.scoutProfileIds).length > 0 },
+    completeness: {
+      ...result.completeness,
+      hasStats: statsStatus === PLAYER_STATS_STATUS.LOADED,
+      hasRanking: source.teamTableRank !== null && source.teamTableRank !== undefined,
+      hasScoutProfiles: (
+        profiles.length > 0 ||
+        toDomainArray(source.scoutProfileIds).length > 0
+      ),
+    },
     metadata: { notes: cleanDomainValue(firstDomainValue(source.notes, source.seasonNotes)), playerUrl: cleanDomainValue(source.playerUrl), teamUrl: cleanDomainValue(source.teamUrl), seasonUrl: cleanDomainValue(source.seasonUrl), rosterStatus: cleanDomainValue(source.rosterStatus), sourceCollection: cleanDomainValue(source.sourceCollection) || 'players', sourceDocumentId: cleanDomainValue(source.sourceDocumentId), sourceTarget: lifecycle.type, updatedAt: source.updatedAt || null },
     calculation: { mode: lifecycle.usesProjection ? 'projected' : 'final', engineVersion: cleanDomainValue(source.engineVersion), calculatedAt: source.calculatedAt || source.updatedAt || null },
   }

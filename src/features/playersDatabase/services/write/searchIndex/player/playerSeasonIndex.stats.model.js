@@ -23,6 +23,27 @@ import {
 } from './playerSeasonIndex.model.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
+
+const resolveExpectedLevelDelta = ({
+  player = {},
+  team = {},
+  existingData = {},
+} = {}) => {
+  if (player.isYoungerAgeGroup) return null
+
+  if (
+    team.expectedLevelDelta !== null &&
+    team.expectedLevelDelta !== undefined &&
+    Number.isFinite(Number(team.expectedLevelDelta))
+  ) {
+    return Number(team.expectedLevelDelta)
+  }
+
+  return existingData.expectedLevelDelta !== undefined
+    ? existingData.expectedLevelDelta
+    : null
+}
+
 export const buildPlayerSeasonStatsFailure = ({
   identity = {},
   player = {},
@@ -214,6 +235,11 @@ export const buildPlayerSeasonStatsMutation = ({
       leagueLevel: toNumberOrZero(
         league.level || existingData.leagueLevel
       ),
+      expectedLevelDelta: resolveExpectedLevelDelta({
+        player,
+        team,
+        existingData,
+      }),
       region: clean(league.region || existingData.region),
       primaryPosition: clean(
         player.primaryPosition || existingData.primaryPosition

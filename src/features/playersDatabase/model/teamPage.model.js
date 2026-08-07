@@ -11,6 +11,9 @@ import {
   adaptTeamScoutEngineRow,
 } from '../domain/index.js'
 import { normalizeSeasonLookupKey, normalizeSeasonIdentity, isSameSeason } from './season.model.js'
+import {
+  PLAYER_STATS_STATUS,
+} from './playerStats.model.js'
 import { normalizeTeamIdentity, resolveTeamLookupKey } from './teamIdentity.model.js'
 import { cleanValue } from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
@@ -341,6 +344,7 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     externalPlayerId: playerSeason.identity?.externalPlayerId || '',
     playerUrl: playerSeason.metadata?.playerUrl || '',
     rosterStatus: playerSeason.metadata?.rosterStatus || 'regular',
+    statsStatus: playerSeason.statsStatus || PLAYER_STATS_STATUS.MISSING,
     isYoungerAgeGroup: (
       playerSeason.metadata?.rosterStatus === 'youngerAgeGroup'
     ),
@@ -526,7 +530,9 @@ export const buildTeamPageView = ({
     performanceView,
     playersStatus: playersCount ? `${playersCount}` : 'אין סגל',
     statsStatus: playersCount
-      ? `${teamPlayers.filter(player => Number(player?.playerStats?.minutes || player?.minutes || 0) > 0).length}`
+      ? `${teamPlayers.filter(player => (
+          player.statsStatus === PLAYER_STATS_STATUS.LOADED
+        )).length}`
       : '0',
   }
 }

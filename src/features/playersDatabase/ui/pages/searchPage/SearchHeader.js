@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/SearchHeader.js
+// src/features/playersDatabase/ui/pages/searchPage/SearchHeader.js
 
 import { Box, Button, Stack, Typography } from '@mui/joy'
 
@@ -10,7 +10,9 @@ export default function SearchHeader({
   breadcrumbs,
   onLeagues,
   onReport,
+  onAudit,
   reportDisabled = false,
+  auditBusy = false,
 }) {
   return (
     <Box sx={sx.root}>
@@ -23,6 +25,21 @@ export default function SearchHeader({
       </Stack>
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
+        <Button
+          variant='outlined'
+          loading={auditBusy}
+          disabled={auditBusy}
+          sx={sx.auditButton}
+          startDecorator={
+            !auditBusy
+              ? iconUi({ id: 'search', size: 'sm' })
+              : null
+          }
+          onClick={onAudit}
+        >
+          Audit Firestore
+        </Button>
+
         <Button
           variant='solid'
           disabled={reportDisabled}

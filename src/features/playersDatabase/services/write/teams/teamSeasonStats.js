@@ -61,6 +61,8 @@ export async function updateTeamSeasonPlayerStats({
       teamPlayers: mergeTeamPlayerStats({
         existingPlayers: baseSeasonDoc.teamPlayers,
         players,
+        team,
+        season,
         scoutSyncMode,
       }),
       updatedAt: new Date().toISOString(),

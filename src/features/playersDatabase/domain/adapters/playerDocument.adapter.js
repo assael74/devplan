@@ -1,7 +1,11 @@
 // src/features/playersDatabase/domain/adapters/playerDocument.adapter.js
 
 import { normalizePlayerIdentity } from '../../model/playerIdentity.model.js'
-import { normalizePlayerStats } from '../../model/playerStats.model.js'
+import {
+  normalizePlayerStats,
+  normalizePlayerStatsStatus,
+  PLAYER_STATS_STATUS,
+} from '../../model/playerStats.model.js'
 import { normalizeSeasonIdentity } from '../../model/season.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyPlayerSeason } from '../contracts/playerSeason.contract.js'
@@ -21,6 +25,10 @@ export const adaptPlayerDocumentSeason = ({ playerDocument = {}, seasonDocument 
   const identity = normalizePlayerIdentity({ ...playerDocument, ...seasonDocument })
   const seasonIdentity = normalizeSeasonIdentity({ season: seasonDocument })
   const stats = normalizePlayerStats(seasonDocument)
+  const statsStatus = normalizePlayerStatsStatus(
+    seasonDocument.statsStatus,
+    PLAYER_STATS_STATUS.MISSING
+  )
   const lifecycle = createLifecycle(target)
   const result = createEmptyPlayerSeason()
   const profiles = seasonDocument.scoutProfiles || seasonDocument.scoutSignals || []
@@ -30,6 +38,7 @@ export const adaptPlayerDocumentSeason = ({ playerDocument = {}, seasonDocument 
     identity: { playerId: cleanDomainValue(identity.playerId), playerDocumentId: cleanDomainValue(identity.playerDocumentId), externalPlayerId: cleanDomainValue(identity.externalPlayerId), displayName: cleanDomainValue(identity.fullName), normalizedName: cleanDomainValue(identity.normalizedName), aliases: toDomainArray(playerDocument.aliases) },
     season: { seasonId: cleanDomainValue(seasonIdentity.seasonId), seasonKey: cleanDomainValue(seasonIdentity.seasonKey), birthYear: toDomainNumber(firstDomainValue(seasonDocument.birthYear, playerDocument.birthYear)) },
     lifecycle,
+    statsStatus,
     team: {
       teamId: cleanDomainValue(firstDomainValue(seasonDocument.birthTeamId, seasonDocument.teamId, team.birthTeamId, team.teamId)),
       teamDocumentId: cleanDomainValue(firstDomainValue(seasonDocument.birthTeamDocumentId, seasonDocument.teamDocumentId, team.birthTeamDocumentId, team.teamDocumentId)),
@@ -47,7 +56,12 @@ export const adaptPlayerDocumentSeason = ({ playerDocument = {}, seasonDocument 
     },
     scout: normalizePlayerScout({ profiles, combinations: seasonDocument.scoutCombinations || [], profileIds: seasonDocument.scoutProfileIds, combinationIds: seasonDocument.scoutCombinationIds, searchIds: seasonDocument.scoutProfileSearchIds }),
     teamPerformance: teamScout || result.teamPerformance,
-    completeness: { ...result.completeness, hasStats: true, hasPerformance: Boolean(teamScout), hasScoutProfiles: profiles.length > 0 },
+    completeness: {
+      ...result.completeness,
+      hasStats: statsStatus === PLAYER_STATS_STATUS.LOADED,
+      hasPerformance: Boolean(teamScout),
+      hasScoutProfiles: profiles.length > 0,
+    },
     metadata: { notes: cleanDomainValue(firstDomainValue(seasonDocument.notes, playerDocument.notes)), playerUrl: cleanDomainValue(firstDomainValue(seasonDocument.playerUrl, playerDocument.playerUrl)), teamUrl: cleanDomainValue(firstDomainValue(seasonDocument.teamUrl, team.teamUrl)), seasonUrl: cleanDomainValue(seasonDocument.seasonUrl), rosterStatus: cleanDomainValue(seasonDocument.rosterStatus), sourceCollection: 'players', sourceDocumentId: cleanDomainValue(identity.playerDocumentId), sourceTarget: lifecycle.type, updatedAt: seasonDocument.updatedAt || playerDocument.updatedAt || null },
     calculation: { mode: lifecycle.usesProjection ? 'projected' : 'final', engineVersion: cleanDomainValue(seasonDocument.engineVersion), calculatedAt: seasonDocument.calculatedAt || seasonDocument.updatedAt || null },
   }

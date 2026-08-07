@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/sx/searchHeader.sx.js
+// src/features/playersDatabase/ui/pages/searchPage/sx/searchHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
@@ -29,6 +29,19 @@ export const searchHeaderSx = {
     justifyContent: 'flex-start',
   },
   
+
+
+  auditButton: {
+    minHeight: 38,
+    px: 2,
+    bgcolor: '#fff',
+    color: devPlanColors.primary,
+    borderColor: devPlanColors.border,
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primary,
+    },
+  },
 
   reportButton: {
     minHeight: 38,
