@@ -3,9 +3,6 @@
 /**
  * Data import modal UI
  *
- * DataImportModal.js
- * - Orchestrates the import modal and preserves the public props contract.
- *
  * DataImportPasteArea.js
  * - Handles pasted tabular content and optional spreadsheet file selection.
  *
@@ -22,6 +19,5 @@
  * - Holds default columns, option resolution and row-status logic.
  */
 
-export { default as DataImportModal } from './DataImportModal.js'
 export { default as DataImportPasteArea } from './DataImportPasteArea.js'
 export { default as DataImportPreviewTable } from './DataImportPreviewTable.js'

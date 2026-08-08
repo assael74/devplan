@@ -1,4 +1,4 @@
-// src/features/playersDatabase/catalog/genericObjects.catalog.js
+// features/playersDatabase/catalog/genericObjects.catalog.js
 
 // Firestore schema contracts.
 // These objects represent the real document shapes written to Firestore.

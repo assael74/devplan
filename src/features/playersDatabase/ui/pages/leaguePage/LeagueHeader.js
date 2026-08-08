@@ -1,18 +1,25 @@
 // features/playersDatabase/ui/pages/leaguePage/LeagueHeader.js
 
-import { Box, Button, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import ActivityStatusChip from '../../components/status/ActivityStatusChip.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
+import { leagueHeaderSx as sx } from './sx/leagueHeader.sx.js'
 
 function TitleChip({ children, tone = 'primary' }) {
   return (
-    <Box sx={{
-      ...sx.titleChip,
-      ...(tone === 'tertiary' ? sx.titleChipTertiary : {}),
-    }}>
+    <Box
+      sx={[
+        sx.titleChip,
+        tone === 'tertiary' && sx.titleChipTertiary,
+      ]}
+    >
       {children}
     </Box>
   )
@@ -61,7 +68,10 @@ export default function LeagueHeader({
         <Stack direction='row' spacing={1} sx={sx.actions}>
           <Button
             sx={sx.primaryButton}
-            startDecorator={iconUi({ id: 'playerDatabase', size: 'sm' })}
+            startDecorator={iconUi({
+              id: 'playerDatabase',
+              size: 'sm',
+            })}
             onClick={onSearch}
           >
             מעבר לעמוד חיפוש
@@ -70,7 +80,10 @@ export default function LeagueHeader({
           <Button
             variant='outlined'
             sx={sx.secondaryButton}
-            startDecorator={iconUi({ id: 'back', size: 'sm' })}
+            startDecorator={iconUi({
+              id: 'back',
+              size: 'sm',
+            })}
             onClick={onBack}
           >
             חזרה למרכז ליגות

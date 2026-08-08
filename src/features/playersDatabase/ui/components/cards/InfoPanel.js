@@ -7,25 +7,25 @@ import {
   Typography,
 } from '@mui/joy'
 
-import { pdbCardSx as sx } from './cards.sx.js'
+import { infoPanelSx as sx } from './infoPanel.sx.js'
 
 export default function InfoPanel({ title, children, actions, sx: externalSx }) {
   return (
-    <Card sx={{ ...sx.card, ...externalSx }}>
+    <Card sx={[sx.card, externalSx]}>
       <Stack
         spacing={1.5}
-        sx={sx.infoContent}
+        sx={sx.content}
       >
         {title || actions ? (
           <Stack
             direction='row'
             spacing={1}
-            sx={sx.infoHeader}
+            sx={sx.header}
           >
             {title ? (
               <Typography
                 level='title-lg'
-                sx={sx.infoTitle}
+                sx={sx.title}
               >
                 {title}
               </Typography>

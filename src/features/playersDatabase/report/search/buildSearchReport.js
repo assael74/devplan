@@ -1,5 +1,6 @@
 // features/playersDatabase/report/search/buildSearchReport.js
 
+import { pickDefinedValue } from '../../model/value.model.js'
 import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
@@ -151,7 +152,7 @@ const buildExpectedLevelSnapshot = (row = {}) => {
 
   const snapshot = compactObject({
     direction: source.direction,
-    levelGap: source.levelGap ?? source.expectedLevelDelta,
+    levelGap: pickDefinedValue(source.levelGap, source.expectedLevelDelta),
   })
 
   return Object.keys(snapshot).length ? snapshot : null
@@ -172,10 +173,10 @@ const buildTeamSnapshotRow = ({
     teamUrl: clean(row.teamUrl),
     favorite: row.favorite === true,
     seasonKey: clean(row.seasonKey),
-    birthYear: row.birthYear ?? '',
+    birthYear: pickDefinedValue(row.birthYear, ''),
     leagueId: clean(row.leagueId),
     leagueName: clean(row.leagueName),
-    leagueLevel: row.leagueLevel ?? '',
+    leagueLevel: pickDefinedValue(row.leagueLevel, ''),
     ageGroupLabel: clean(row.ageGroupLabel),
     appearances: Number(row.appearances || 0),
     tableRank: Number(row.tableRank || 0),
@@ -203,11 +204,11 @@ const buildPlayerSnapshotRow = (row = {}, index = 0) => ({
   avatarUrl: clean(row.avatarUrl),
   favorite: row.favorite === true,
   seasonKey: clean(row.seasonKey),
-  birthYear: row.birthYear ?? '',
+  birthYear: pickDefinedValue(row.birthYear, ''),
   ageGroupLabel: clean(row.ageGroupLabel),
   teamName: clean(row.teamName),
   leagueName: clean(row.leagueName),
-  leagueLevel: row.leagueLevel ?? '',
+  leagueLevel: pickDefinedValue(row.leagueLevel, ''),
   positionLayer: clean(row.positionLayer),
   primaryPosition: clean(row.primaryPosition),
   numShirt: clean(row.numShirt),
@@ -298,7 +299,11 @@ export function buildSearchReport({
   const snapshotRows = (Array.isArray(rows) ? rows : []).map((row, index) => (
     isPlayersList
       ? buildPlayerSnapshotRow(row, index)
-      : buildTeamSnapshotRow({ row, index, visibleDomains })
+      : buildTeamSnapshotRow({
+        row,
+        index,
+        visibleDomains,
+      })
   ))
   const capabilities = isPlayersList
     ? collectPlayerCapabilities(snapshotRows)
@@ -336,8 +341,16 @@ export function buildSearchReport({
             label: isPlayersList ? 'שחקנים בצילום' : 'קבוצות בצילום',
             value: String(snapshotRows.length),
           },
-          { id: 'seasons', label: 'עונות', value: String(seasonsCount) },
-          { id: 'birthYears', label: 'שנתונים', value: String(birthYearsCount) },
+          {
+            id: 'seasons',
+            label: 'עונות',
+            value: String(seasonsCount),
+          },
+          {
+            id: 'birthYears',
+            label: 'שנתונים',
+            value: String(birthYearsCount),
+          },
           {
             id: 'context',
             label: isPlayersList ? 'קבוצות' : 'ליגות',
@@ -364,8 +377,16 @@ export function buildSearchReport({
       rows: snapshotRows,
       presentation: {
         defaultSort: isPlayersList
-          ? { field: 'minutes', direction: 'desc' }
-          : { field: 'clubLevel', direction: 'asc', secondaryField: 'teamName', secondaryDirection: 'asc' },
+          ? {
+            field: 'minutes',
+            direction: 'desc',
+          }
+          : {
+            field: 'clubLevel',
+            direction: 'asc',
+            secondaryField: 'teamName',
+            secondaryDirection: 'asc',
+          },
         visibleDomains: capabilities.domains,
       },
     },

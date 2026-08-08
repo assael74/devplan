@@ -18,7 +18,7 @@ import {
   formatGoalDifference,
 } from '../logic/leagueImport.logic.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toImportNumber = value => {
   const nextValue = Number(clean(value).replace(/\u200E/g, ''))
@@ -73,6 +73,14 @@ export function useLeagueTableImport({
     setPreviewMessage(preview.message || '')
   }, [pasteValue, league, leagueDoc, selectedSeasonOption])
 
+  const handleClear = React.useCallback(() => {
+    if (busy) return
+
+    setPasteValue('')
+    setRows([])
+    setPreviewMessage('')
+  }, [busy])
+
   const handleCellChange = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => {
       if (index !== rowIndex) return row
@@ -101,7 +109,10 @@ export function useLeagueTableImport({
   }, [])
 
   const handleConfirm = React.useCallback(async () => {
-    const serviceLeague = buildServiceLeague({ league, leagueDoc })
+    const serviceLeague = buildServiceLeague({
+      league,
+      leagueDoc,
+    })
     const serviceSeason = buildServiceSeason({
       league,
       leagueDoc,
@@ -174,6 +185,7 @@ export function useLeagueTableImport({
     setOpen,
     setPasteValue,
     handlePreview,
+    handleClear,
     handleCellChange,
     handleConfirm,
     handleClose: () => setOpen(false),

@@ -8,7 +8,7 @@ import {
   resolveCertaintyLabel,
   resolveCurrentSeasonContext,
 } from './logic/playerPage.utils.js'
-import { playerPageSx as sx } from './sx/playerPage.sx.js'
+import { playerStatsOverviewSx as sx } from './sx/playerStatsOverview.sx.js'
 
 export default function PlayerStatsOverview({
   player,

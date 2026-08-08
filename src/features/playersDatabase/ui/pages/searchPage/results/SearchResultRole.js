@@ -1,6 +1,9 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchResultRole.js
 
-import { Box, Typography } from '@mui/joy'
+import {
+  Box,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { PlayerPositionChip } from '../../../components/playerPosition/index.js'
@@ -14,7 +17,10 @@ export default function SearchResultRole({ row, onEdit }) {
     <Box sx={sx.root}>
       <Box sx={sx.header}>
         <Box sx={sx.titleWrap}>
-          <Box sx={sx.icon}>{iconUi({ id: 'playersDatabase', size: 'sm' })}</Box>
+          <Box sx={sx.icon}>{iconUi({
+            id: 'playersDatabase',
+            size: 'sm',
+          })}</Box>
           <Typography level='title-sm' sx={sx.title}>
             חוליה ועמדה
           </Typography>

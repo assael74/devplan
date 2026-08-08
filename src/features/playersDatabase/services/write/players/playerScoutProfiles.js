@@ -3,7 +3,10 @@
 import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../leagues/leagueDoc.js'
 import {
   buildPlayerBaseDoc,
   buildPlayerDocumentId,
@@ -26,7 +29,10 @@ export const clearExistingPlayerSeasonProfiles = async ({
 } = {}) => {
   const playerDocumentId = buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
-  if (!playerDocumentId) return { skipped: true, reason: 'missingPlayerDocumentId' }
+  if (!playerDocumentId) return {
+    skipped: true,
+    reason: 'missingPlayerDocumentId',
+  }
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = playerDocRef(playerDocumentId)
@@ -44,7 +50,10 @@ export const clearExistingPlayerSeasonProfiles = async ({
 
     const currentData = snapshot.data() || {}
     const baseDoc = buildPlayerBaseDoc(
-      { ...player, playerDocumentId },
+      {
+        ...player,
+        playerDocumentId,
+      },
       currentData,
       season,
       team
@@ -54,7 +63,11 @@ export const clearExistingPlayerSeasonProfiles = async ({
     const rows = isHistory ? baseDoc.history : baseDoc.current
     const existingSeasonIndex = findPlayerSeasonRowIndex({
       rows,
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
     })
     if (existingSeasonIndex === -1) {
@@ -66,7 +79,11 @@ export const clearExistingPlayerSeasonProfiles = async ({
       }
     }
     const seasonDoc = buildPlayerSeasonDoc({
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
       player: {
         ...player,
@@ -77,7 +94,11 @@ export const clearExistingPlayerSeasonProfiles = async ({
     })
     const nextRows = upsertSeasonRows({
       rows,
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
       seasonDoc,
     })

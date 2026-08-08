@@ -2,6 +2,7 @@
 
 import { clean } from './teamPage.utils.js'
 
+import { pickDefinedValue } from '../../../../model/value.model.js'
 export const STATS_IDENTITY_STATUS = {
   ROSTER_MATCH: 'roster_match',
   SYSTEM_MATCH: 'system_match',
@@ -94,8 +95,8 @@ const mergeRosterPlayerContext = ({ row, player }) => ({
   externalPlayerId: clean(player?.externalPlayerId),
   identityKey: clean(player?.identityKey),
   normalizedName: clean(player?.normalizedName || player?.fullName),
-  birthYear: player?.birthYear ?? player?.yearOfBirth ?? row.birthYear,
-  yearOfBirth: player?.yearOfBirth ?? player?.birthYear ?? row.yearOfBirth,
+  birthYear: pickDefinedValue(player?.birthYear, player?.yearOfBirth, row.birthYear),
+  yearOfBirth: pickDefinedValue(player?.yearOfBirth, player?.birthYear, row.yearOfBirth),
   primaryPosition: clean(player?.primaryPosition || row.primaryPosition),
   positionLayer: clean(player?.positionLayer || row.positionLayer),
   positions: Array.isArray(player?.positions)
@@ -103,8 +104,8 @@ const mergeRosterPlayerContext = ({ row, player }) => ({
     : Array.isArray(row.positions)
       ? row.positions
       : [],
-  clubLevel: player?.clubLevel ?? row.clubLevel,
-  birthTeamSlot: player?.birthTeamSlot ?? player?.teamSlot ?? row.birthTeamSlot,
+  clubLevel: pickDefinedValue(player?.clubLevel, row.clubLevel),
+  birthTeamSlot: pickDefinedValue(player?.birthTeamSlot, player?.teamSlot, row.birthTeamSlot),
 })
 
 export const enrichStatsRowForPreview = (row, rosterLookup) => {
@@ -132,7 +133,10 @@ export const enrichStatsRowForPreview = (row, rosterLookup) => {
   }
 
   return matchedPlayer
-    ? mergeRosterPlayerContext({ row: baseRow, player: matchedPlayer })
+    ? mergeRosterPlayerContext({
+      row: baseRow,
+      player: matchedPlayer,
+    })
     : baseRow
 }
 

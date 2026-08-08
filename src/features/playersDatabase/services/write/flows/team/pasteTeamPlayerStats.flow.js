@@ -1,11 +1,7 @@
-// src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
+// features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
-import {
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-} from '../../leagues/index.js'
-import {
-  syncPlayerScoutProfileDocsMany,
-} from '../../players/index.js'
+import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
+import { syncPlayerScoutProfileDocsMany } from '../../players/index.js'
 import {
   resolvePlayerIdentities,
   updatePlayerSeasonSearchIndexStatsMany,

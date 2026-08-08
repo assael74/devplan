@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/shared/playerSeasonScope.js
+// features/playersDatabase/services/write/shared/playerSeasonScope.js
 
 import {
   cleanValue,

@@ -3,9 +3,7 @@
 import * as React from 'react'
 import { Box } from '@mui/joy'
 
-import {
-  PlayersDatabaseFavoritesProvider,
-} from '../favorites/index.js'
+import { PlayersDatabaseFavoritesProvider } from '../favorites/index.js'
 import { pdbLayoutSx as sx } from './layout.sx.js'
 
 export default function PlayersDatabaseLayout({ children }) {

@@ -95,7 +95,10 @@ export async function removeFavorite({
     const snapshot = await transaction.get(ref)
 
     if (!snapshot.exists()) {
-      return { entityId: normalizedEntityId, removed: false }
+      return {
+        entityId: normalizedEntityId,
+        removed: false,
+      }
     }
 
     const currentData = snapshot.data() || {}
@@ -105,7 +108,10 @@ export async function removeFavorite({
     )
 
     if (nextItems.length === currentItems.length) {
-      return { entityId: normalizedEntityId, removed: false }
+      return {
+        entityId: normalizedEntityId,
+        removed: false,
+      }
     }
 
     transaction.set(
@@ -117,6 +123,9 @@ export async function removeFavorite({
       { merge: true }
     )
 
-    return { entityId: normalizedEntityId, removed: true }
+    return {
+      entityId: normalizedEntityId,
+      removed: true,
+    }
   })
 }

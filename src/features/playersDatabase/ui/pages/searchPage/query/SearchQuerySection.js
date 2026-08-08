@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchQuerySection.js
 
-import { Box, Divider, Typography } from '@mui/joy'
+import {
+  Box,
+  Divider,
+  Typography,
+} from '@mui/joy'
 
 import { searchQuerySectionSx as sx } from './sx/searchQuerySection.sx.js'
 

@@ -6,7 +6,10 @@ import {
   syncLeaguesMasterDocument,
 } from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
-import { deleteSearchIndexesForLeagueSeason, getSearchIndexMetaForLeagueSeason } from '../../searchIndex/index.js'
+import {
+  deleteSearchIndexesForLeagueSeason,
+  getSearchIndexMetaForLeagueSeason,
+} from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 
@@ -18,7 +21,12 @@ const runStage = async ({ stage, results, action }) => {
     results[stage] = result
     return result
   } catch (error) {
-    throw attachWriteFlowReport({ error, stage, results, flow: FLOW })
+    throw attachWriteFlowReport({
+      error,
+      stage,
+      results,
+      flow: FLOW,
+    })
   }
 }
 
@@ -81,7 +89,10 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     const teamResult = await runStage({
       stage: `removeTeamSeason:${team.birthTeamId}:${team.birthTeamSlot}`,
       results,
-      action: () => removeTeamSeason({ ...payload, team }),
+      action: () => removeTeamSeason({
+        ...payload,
+        team,
+      }),
     })
     teamSeasonResults.push(teamResult)
 

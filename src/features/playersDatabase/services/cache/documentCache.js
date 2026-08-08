@@ -73,7 +73,10 @@ export const readWithDocumentCache = async ({ key, read }) => {
     .then(read)
     .then(value => {
       if (requestRevision === cacheRevision) {
-        setDocumentCacheValue({ key, value })
+        setDocumentCacheValue({
+          key,
+          value,
+        })
       }
 
       return value

@@ -1,8 +1,11 @@
 // features/playersDatabase/ui/components/report/ReportMetric.js
 
-import { Box, Typography } from '@mui/joy'
+import {
+  Box,
+  Typography,
+} from '@mui/joy'
 
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportMetricSx as sx } from './sx/reportMetric.sx.js'
 
 export default function ReportMetric({ label, value, compact = false }) {
   return (

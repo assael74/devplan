@@ -1,14 +1,23 @@
-// src/features/playersDatabase/services/write/teams/teamSeasonPlayer.js
+// features/playersDatabase/services/write/teams/teamSeasonPlayer.js
 
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../leagues/leagueDoc.js'
 import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
 import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import { isSameSeason, normalizeSeasonIdentity } from '../../../model/season.model.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+} from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
+import {
+  buildTeamBaseDoc,
+  teamDocRef,
+} from './teamDoc.js'
 import { getPlayerMergeKey } from './teamSeason.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
@@ -52,7 +61,10 @@ export async function updateTeamSeasonPlayerUrl({
 
     const currentData = snapshot.data() || {}
     const rows = Array.isArray(currentData[fieldKey]) ? currentData[fieldKey] : []
-    const seasonIndex = rows.findIndex(row => isSameSeason(row, { seasonId, seasonKey }))
+    const seasonIndex = rows.findIndex(row => isSameSeason(row, {
+      seasonId,
+      seasonKey,
+    }))
 
     if (seasonIndex === -1) {
       return {
@@ -189,7 +201,10 @@ const patchTeamSeasonPlayer = async ({
         updated: false,
         reason: 'teamDocMissing',
         scoutProfilesSummary: includeScoutSummary
-          ? { total: 0, profileCounts: {} }
+          ? {
+            total: 0,
+            profileCounts: {},
+          }
           : null,
       })
     }
@@ -209,7 +224,10 @@ const patchTeamSeasonPlayer = async ({
     let playerUpdated = false
 
     const nextRows = rows.map(row => {
-      if (!isSameSeason(row, { seasonId, seasonKey })) return row
+      if (!isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      })) return row
 
       const teamPlayers = Array.isArray(row.teamPlayers)
         ? row.teamPlayers
@@ -236,7 +254,10 @@ const patchTeamSeasonPlayer = async ({
     })
 
     const seasonDoc = nextRows.find(row => (
-      isSameSeason(row, { seasonId, seasonKey })
+      isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      })
     )) || null
     const teamPlayers = Array.isArray(seasonDoc?.teamPlayers)
       ? seasonDoc.teamPlayers

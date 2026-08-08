@@ -1,8 +1,14 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterTableFilters.js
 
-import { Button, Input, Option, Select, Stack } from '@mui/joy'
+import {
+  Button,
+  Input,
+  Option,
+  Select,
+  Stack,
+} from '@mui/joy'
 
-import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
+import { leagueCenterTableFiltersSx as sx } from './sx/leagueCenterTableFilters.sx.js'
 
 export default function LeagueCenterTableFilters({ model }) {
   const reset = () => {
@@ -11,7 +17,10 @@ export default function LeagueCenterTableFilters({ model }) {
   }
 
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={sx.tableFilters}>
+    <Stack direction={{
+      xs: 'column',
+      md: 'row',
+    }} spacing={1} sx={sx.tableFilters}>
       <Input
         placeholder='חיפוש לפי שם ליגה...'
         value={model.query}

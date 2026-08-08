@@ -1,11 +1,23 @@
 // features/playersDatabase/ui/pages/entryPage/EntryRouteCards.js
 
-import { Box, Button, Card, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Card,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import { RouteCardVisual } from './EntryVisuals.js'
-import { entryContentSx as sx } from './sx/entryContent.sx.js'
+import { entryRouteCardsSx as sx } from './sx/entryRouteCards.sx.js'
 
-function ActionHeroCard({ title, text, buttonLabel, onClick, variant }) {
+function ActionHeroCard({
+  title,
+  text,
+  buttonLabel,
+  onClick,
+  variant,
+}) {
   return (
     <Card sx={sx.actionCard}>
       <RouteCardVisual variant={variant} />

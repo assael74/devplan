@@ -20,7 +20,13 @@ import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { searchModelsQuerySx as sx } from './sx/searchModelsQuery.sx.js'
 
 
-function SelectableModelCard({ selected, disabled = false, onClick, children, description }) {
+function SelectableModelCard({
+  selected,
+  disabled = false,
+  onClick,
+  children,
+  description,
+}) {
   const handleClick = () => {
     if (disabled) return
     onClick()
@@ -120,7 +126,10 @@ function TeamInterpretationSide({ title, field, values, onToggle }) {
           sx={sx.sideResetButton}
           onClick={handleReset}
         >
-          {iconUi({ id: 'reset', size: 'sm' })}
+          {iconUi({
+            id: 'reset',
+            size: 'sm',
+          })}
         </IconButton>
       </Box>
 

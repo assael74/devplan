@@ -1,8 +1,6 @@
 // features/playersDatabase/services/write/flows/team/createTeamPlayer.flow.js
 
-import {
-  updateLeagueSeasonTableRankTeamUrl,
-} from '../../leagues/index.js'
+import { updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
 import {
   resolvePlayerIdentity,
   updateTeamSeasonSearchIndexRosterMeta,
@@ -12,9 +10,7 @@ import {
   appendTeamSeasonPlayer,
   ensureTeamDoc,
 } from '../../teams/index.js'
-import {
-  upsertOfficialPlayerDoc,
-} from '../../players/index.js'
+import { upsertOfficialPlayerDoc } from '../../players/index.js'
 
 async function createTeamPlayerFlow({
   payload = {},

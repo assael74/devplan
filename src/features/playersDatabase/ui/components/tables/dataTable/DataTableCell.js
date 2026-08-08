@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Box } from '@mui/joy'
 
-import { pdbTableSx as sx } from '../tables.sx.js'
+import { dataTableCellSx as sx } from './sx/dataTableCell.sx.js'
 import {
   cleanDataTableHref,
   resolveDataTableColumnSx,
@@ -39,10 +39,10 @@ function DataTableCellLink({
       rel='noopener noreferrer'
       referrerPolicy='no-referrer'
       aria-label={ariaLabel}
-      sx={{
-        ...sx.cellLink,
-        ...linkSx,
-      }}
+      sx={[
+        sx.cellLink,
+        linkSx,
+      ]}
       onClick={event => {
         event.stopPropagation()
 
@@ -79,14 +79,14 @@ export default function DataTableCell({
     <Box
       component='td'
       data-column={column.key}
-      sx={{
-        ...column.sx,
-        ...resolveDataTableColumnSx(
+      sx={[
+        column.sx,
+        resolveDataTableColumnSx(
           column.cellSx,
           row,
           index
         ),
-      }}
+      ]}
     >
       {column.getHref ? (
         <DataTableCellLink

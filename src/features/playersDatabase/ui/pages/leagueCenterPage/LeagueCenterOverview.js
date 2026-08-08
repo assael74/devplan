@@ -3,7 +3,7 @@
 import { Box } from '@mui/joy'
 
 import StatCard from '../../components/cards/StatCard.js'
-import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
+import { leagueCenterOverviewSx as sx } from './sx/leagueCenterOverview.sx.js'
 
 export default function LeagueCenterOverview({ summary }) {
   return (

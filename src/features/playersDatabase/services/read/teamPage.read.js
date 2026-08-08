@@ -9,5 +9,8 @@ export const readTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
     getTeamById(teamId),
   ])
 
-  return { leagueDoc, teamDoc }
+  return {
+    leagueDoc,
+    teamDoc,
+  }
 }

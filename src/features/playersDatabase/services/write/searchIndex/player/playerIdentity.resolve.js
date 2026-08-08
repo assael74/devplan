@@ -55,7 +55,10 @@ const findLegacyNameMatches = async ({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('normalizedDisplayName', '==', normalizedName)
   ))
-  const identityBirthYear = resolvePlayerIdentityBirthYear({ player, season })
+  const identityBirthYear = resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  })
   const seasonBirthYear = Number(season.birthYear)
   const isYounger = Boolean(
     player.isYoungerAgeGroup || clean(player.rosterStatus) === 'youngerAgeGroup'
@@ -80,7 +83,10 @@ const findIdentityKeyMatches = async ({
   player = {},
   season = {},
 } = {}) => {
-  const identityKey = buildPlayerIdentityKey({ player, season })
+  const identityKey = buildPlayerIdentityKey({
+    player,
+    season,
+  })
   if (!identityKey) return []
 
   return findByField({
@@ -102,10 +108,16 @@ const resolveExistingPlayerIds = async ({
     if (matches.length) return matches
   }
 
-  const identityMatches = await findIdentityKeyMatches({ player, season })
+  const identityMatches = await findIdentityKeyMatches({
+    player,
+    season,
+  })
   if (identityMatches.length) return identityMatches
 
-  return findLegacyNameMatches({ player, season })
+  return findLegacyNameMatches({
+    player,
+    season,
+  })
 }
 
 const enrichResolvedPlayer = ({
@@ -117,8 +129,14 @@ const enrichResolvedPlayer = ({
 } = {}) => ({
   ...player,
   playerId,
-  identityBirthYear: resolvePlayerIdentityBirthYear({ player, season }),
-  identityKey: buildPlayerIdentityKey({ player, season }),
+  identityBirthYear: resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  }),
+  identityKey: buildPlayerIdentityKey({
+    player,
+    season,
+  }),
   identityMatchStatus: matchStatus,
   identityCandidateIds: candidateIds,
 })
@@ -133,7 +151,10 @@ const buildResolutionKey = ({
   const externalPlayerId = clean(player.externalPlayerId)
   if (externalPlayerId) return `externalPlayerId:${externalPlayerId}`
 
-  const identityKey = buildPlayerIdentityKey({ player, season })
+  const identityKey = buildPlayerIdentityKey({
+    player,
+    season,
+  })
   return identityKey ? `identityKey:${identityKey}` : ''
 }
 
@@ -151,7 +172,10 @@ export async function resolvePlayerIdentity({
     })
   }
 
-  const matches = await resolveExistingPlayerIds({ player, season })
+  const matches = await resolveExistingPlayerIds({
+    player,
+    season,
+  })
   if (matches.length === 1) {
     return enrichResolvedPlayer({
       player,
@@ -179,7 +203,10 @@ export async function resolvePlayerIdentities({
   const results = []
 
   for (const player of safePlayers) {
-    const resolutionKey = buildResolutionKey({ player, season })
+    const resolutionKey = buildResolutionKey({
+      player,
+      season,
+    })
     const previous = resolutionKey ? resolvedByKey.get(resolutionKey) : null
 
     if (previous) {
@@ -193,7 +220,10 @@ export async function resolvePlayerIdentities({
       continue
     }
 
-    const resolvedPlayer = await resolvePlayerIdentity({ player, season })
+    const resolvedPlayer = await resolvePlayerIdentity({
+      player,
+      season,
+    })
     if (resolutionKey) resolvedByKey.set(resolutionKey, resolvedPlayer)
     results.push(resolvedPlayer)
   }

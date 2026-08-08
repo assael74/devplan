@@ -1,12 +1,21 @@
 // features/playersDatabase/services/read/playerPage.read.js
 
-import { collection, doc } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+} from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
-import { trackedGetDoc, trackedGetDocs } from '../../../../services/firestore/usage/index.js'
+import {
+  trackedGetDoc,
+  trackedGetDocs,
+} from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { adaptPlayerDocumentSeason } from '../../domain/index.js'
-import { cleanValue } from '../../model/value.model.js'
+import {
+  cleanValue,
+  pickDefinedValue,
+} from '../../model/value.model.js'
 import { buildPlayerMatchValues } from '../../model/playerIdentity.model.js'
 import {
   buildPlayerDocumentCacheKey,
@@ -150,8 +159,8 @@ const buildFallbackPlayerDocument = async playerId => {
       '-'
     ),
     normalizedName: cleanValue(identity?.normalizedName),
-    birthYear: identity?.birthYear ?? null,
-    birthDate: identity?.birthDate ?? null,
+    birthYear: pickDefinedValue(identity?.birthYear, null),
+    birthDate: pickDefinedValue(identity?.birthDate, null),
     status: cleanValue(identity?.status),
     notes: cleanValue(identity?.notes),
     avatarUrl: cleanValue(identity?.avatarUrl),
@@ -210,8 +219,8 @@ const adaptPlayerDocument = playerDocument => {
         activeSeason?.identity?.normalizedName ||
         playerDocument.normalizedName
       ),
-      birthYear: playerDocument.birthYear ?? activeSeason?.season?.birthYear ?? null,
-      birthDate: playerDocument.birthDate ?? null,
+      birthYear: pickDefinedValue(playerDocument.birthYear, activeSeason?.season?.birthYear, null),
+      birthDate: pickDefinedValue(playerDocument.birthDate, null),
       status: cleanValue(playerDocument.status),
       avatarUrl: cleanValue(playerDocument.avatarUrl),
     },
@@ -241,7 +250,10 @@ export async function readPlayerPageData({ playerId = '' } = {}) {
           feature: 'playersDatabase',
           action: 'player-read',
           collection: PLAYERS_DATABASE_COLLECTIONS.players,
-          meta: { requestedPlayerId: safePlayerId, documentId },
+          meta: {
+            requestedPlayerId: safePlayerId,
+            documentId,
+          },
         })
 
         if (!snapshot.exists()) continue

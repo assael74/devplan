@@ -52,7 +52,10 @@ export default function PlayerPositionChip({
     <Chip
       size='sm'
       variant={selected ? 'soft' : 'outlined'}
-      startDecorator={selected ? iconUi({ id: iconId, size: 'sm' }) : null}
+      startDecorator={selected ? iconUi({
+        id: iconId,
+        size: 'sm',
+      }) : null}
       onClick={onClick}
       sx={sx.root({
         selected,

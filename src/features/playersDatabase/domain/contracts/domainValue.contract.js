@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/contracts/domainValue.contract.js
+// features/playersDatabase/domain/contracts/domainValue.contract.js
 
 export const cleanDomainValue = value => String(value === null || value === undefined ? '' : value).trim()
 

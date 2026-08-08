@@ -1,6 +1,10 @@
 // features/playersDatabase/services/audit/playerScout.audit.js
 
-import { collection, query, where } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+} from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
 import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
@@ -160,7 +164,11 @@ const collectIssues = ({ teamRows, playerRows, searchRows }) => {
   teamRows.forEach(teamRow => {
     const key = buildKey(teamRow)
     if (!key) {
-      issues.push({ type: 'missing_scope_key', severity: 'critical', row: teamRow })
+      issues.push({
+        type: 'missing_scope_key',
+        severity: 'critical',
+        row: teamRow,
+      })
       return
     }
 
@@ -168,22 +176,42 @@ const collectIssues = ({ teamRows, playerRows, searchRows }) => {
     const matchingSearchRows = searchIndex.get(key) || []
 
     if (matchingPlayerRows.length > 1) {
-      issues.push({ type: 'duplicate_player_season_rows', severity: 'critical', key, rows: matchingPlayerRows })
+      issues.push({
+        type: 'duplicate_player_season_rows',
+        severity: 'critical',
+        key,
+        rows: matchingPlayerRows,
+      })
     }
 
     if (matchingSearchRows.length > 1) {
-      issues.push({ type: 'duplicate_search_index_rows', severity: 'critical', key, rows: matchingSearchRows })
+      issues.push({
+        type: 'duplicate_search_index_rows',
+        severity: 'critical',
+        key,
+        rows: matchingSearchRows,
+      })
     }
 
     const playerRow = matchingPlayerRows[0]
     const searchRow = matchingSearchRows[0]
 
     if (teamRow.profileIds.length && !playerRow) {
-      issues.push({ type: 'profile_missing_from_player_document', severity: 'high', key, teamRow })
+      issues.push({
+        type: 'profile_missing_from_player_document',
+        severity: 'high',
+        key,
+        teamRow,
+      })
     }
 
     if (teamRow.profileIds.length && !searchRow) {
-      issues.push({ type: 'profile_missing_from_search_index', severity: 'high', key, teamRow })
+      issues.push({
+        type: 'profile_missing_from_search_index',
+        severity: 'high',
+        key,
+        teamRow,
+      })
     }
 
     if (playerRow && !sameIds(teamRow.profileIds, playerRow.profileIds)) {
@@ -210,28 +238,48 @@ const collectIssues = ({ teamRows, playerRows, searchRows }) => {
       ['transferredOut', 'retired'].includes(teamRow.rosterStatus) &&
       teamRow.profileIds.length
     ) {
-      issues.push({ type: 'excluded_player_has_profiles', severity: 'medium', key, teamRow })
+      issues.push({
+        type: 'excluded_player_has_profiles',
+        severity: 'medium',
+        key,
+        teamRow,
+      })
     }
 
     if (
       teamRow.scoutCalculationStatus &&
       teamRow.scoutCalculationStatus !== 'success'
     ) {
-      issues.push({ type: 'scout_calculation_not_successful', severity: 'high', key, teamRow })
+      issues.push({
+        type: 'scout_calculation_not_successful',
+        severity: 'high',
+        key,
+        teamRow,
+      })
     }
   })
 
   playerRows.forEach(row => {
     const key = buildKey(row)
     if (row.profileIds.length && !(teamIndex.get(key) || []).length) {
-      issues.push({ type: 'orphan_player_profile_row', severity: 'medium', key, row })
+      issues.push({
+        type: 'orphan_player_profile_row',
+        severity: 'medium',
+        key,
+        row,
+      })
     }
   })
 
   searchRows.forEach(row => {
     const key = buildKey(row)
     if (row.profileIds.length && !(teamIndex.get(key) || []).length) {
-      issues.push({ type: 'orphan_search_profile_row', severity: 'medium', key, row })
+      issues.push({
+        type: 'orphan_search_profile_row',
+        severity: 'medium',
+        key,
+        row,
+      })
     }
   })
 

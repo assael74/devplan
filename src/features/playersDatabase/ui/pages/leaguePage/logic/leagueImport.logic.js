@@ -5,7 +5,8 @@ import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalo
 import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
 import { buildLeagueTablePastePreview } from '../../../../import/logic/leagueTablePastePreview.js'
 
-const clean = value => String(value ?? '').trim()
+import { pickDefinedValue } from '../../../../model/value.model.js'
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumber = value => {
   const nextValue = Number(clean(value).replace(/\u200E/g, ''))
@@ -138,19 +139,19 @@ const mapPreviewRow = row => {
 
   return {
     id: `league_table_${row.displayIndex}`,
-    rank: data.leaguePosition ?? '',
+    rank: pickDefinedValue(data.leaguePosition, ''),
     clubId: data.clubId || '',
     clubName: data.clubCatalogName || data.clubName || '',
     teamSlot,
     teamName: data.clubName || data.clubCatalogName || '',
-    games: data.games ?? '',
-    wins: data.wins ?? '',
-    draws: data.draws ?? '',
-    losses: data.losses ?? '',
-    goalsFor: data.goalsFor ?? '',
-    goalsAgainst: data.goalsAgainst ?? '',
-    goalDifference: formatGoalDifference(data.goalDifference ?? ''),
-    points: data.points ?? '',
+    games: pickDefinedValue(data.games, ''),
+    wins: pickDefinedValue(data.wins, ''),
+    draws: pickDefinedValue(data.draws, ''),
+    losses: pickDefinedValue(data.losses, ''),
+    goalsFor: pickDefinedValue(data.goalsFor, ''),
+    goalsAgainst: pickDefinedValue(data.goalsAgainst, ''),
+    goalDifference: formatGoalDifference(pickDefinedValue(data.goalDifference, '')),
+    points: pickDefinedValue(data.points, ''),
     valid: row.valid,
     errors: row.errors || [],
   }
@@ -162,8 +163,15 @@ export const buildLeagueImportPreview = ({
   leagueDoc = {},
   selectedSeasonOption = {},
 } = {}) => {
-  const serviceLeague = buildServiceLeague({ league, leagueDoc })
-  const serviceSeason = buildServiceSeason({ league, leagueDoc, selectedSeasonOption })
+  const serviceLeague = buildServiceLeague({
+    league,
+    leagueDoc,
+  })
+  const serviceSeason = buildServiceSeason({
+    league,
+    leagueDoc,
+    selectedSeasonOption,
+  })
   const preview = buildLeagueTablePastePreview(text, {
     leagueId: serviceLeague.id,
     leagueName: serviceLeague.name,

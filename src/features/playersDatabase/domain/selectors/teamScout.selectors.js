@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/selectors/teamScout.selectors.js
+// features/playersDatabase/domain/selectors/teamScout.selectors.js
 
 import { createEmptyTeamScoutSide } from '../contracts/teamScout.contract.js'
 

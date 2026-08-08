@@ -4,9 +4,7 @@ import {
   syncLeaguesMasterDocument,
   upsertLeagueSeason,
 } from '../../leagues/index.js'
-import {
-  attachWriteFlowReport,
-} from '../writeFlowReport.js'
+import { attachWriteFlowReport } from '../writeFlowReport.js'
 
 export async function createLeagueSeasonFlow(payload = {}) {
   const results = {}

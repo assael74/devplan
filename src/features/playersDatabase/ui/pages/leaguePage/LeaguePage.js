@@ -2,7 +2,10 @@
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import {
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
@@ -33,8 +36,8 @@ import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { useLeagueReport } from './report/index.js'
 import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
 
-
 function LeaguePageContent() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { notify } = useSnackbar()
   const favorites = usePlayersDatabaseFavorites()
@@ -107,15 +110,30 @@ function LeaguePageContent() {
   ])
 
 
-  const selectedBirthYear = selectedSeasonOption?.season?.birthYear || league.birthYear
+  const pageSearchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+  const hasCenterContext = (
+    pageSearchParams.has('centerSeason') ||
+    pageSearchParams.has('centerBirthYear') ||
+    pageSearchParams.has('centerLevel')
+  )
+  const centerBackPath = PLAYERS_DATABASE_UI_ROUTES.leagues({
+    seasonKey: hasCenterContext
+      ? pageSearchParams.get('centerSeason') || 'all'
+      : pageSearchParams.get('season'),
+    birthYear: hasCenterContext
+      ? pageSearchParams.get('centerBirthYear') || 'all'
+      : pageSearchParams.get('birthYear'),
+    level: hasCenterContext
+      ? pageSearchParams.get('centerLevel') || 'all'
+      : pageSearchParams.get('level'),
+  })
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
-      to: PLAYERS_DATABASE_UI_ROUTES.leagues({
-        seasonKey: selectedSeasonKey,
-        birthYear: selectedBirthYear,
-        level: league.level,
-      }),
+      to: centerBackPath,
     },
     { label: league.name },
   ])
@@ -128,11 +146,19 @@ function LeaguePageContent() {
     seasonKey: selectedSeasonKey,
   })
 
+  const handleBackToCenter = () => {
+    navigate(centerBackPath, {
+      replace: true,
+      state: null,
+    })
+  }
+
   const handleTeamOpen = team => {
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
       leagueId: league.id,
       teamId: team.id,
       seasonKey: selectedSeasonKey,
+      fromLeague: `${location.pathname}${location.search}`,
     }))
   }
 
@@ -164,11 +190,7 @@ function LeaguePageContent() {
           levelLabel={league.levelLabel}
           active={isActiveLeague}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
-          onBack={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues({
-            seasonKey: selectedSeasonKey,
-            birthYear: selectedBirthYear,
-            level: league.level,
-          }))}
+          onBack={handleBackToCenter}
         />
 
         <LeagueStatsOverview

@@ -8,119 +8,122 @@ import {
   FormLabel,
   Option,
   Select,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
-import DataImportModal from '../../components/modals/DataImportModal.js'
-
-const clean = value => String(value || '').trim()
-
-function ExternalMetaLink({ href, children }) {
-  const safeHref = clean(href)
-
-  if (!safeHref) {
-    return (
-      <Typography component='span' level='body-sm'>
-        {children}
-      </Typography>
-    )
-  }
-
-  return (
-    <Typography
-      component='a'
-      href={safeHref}
-      target='_blank'
-      rel='noopener noreferrer'
-      referrerPolicy='no-referrer'
-      level='body-sm'
-      sx={{
-        color: 'primary.700',
-        fontWeight: 600,
-        textDecoration: 'none',
-        '&:hover': { textDecoration: 'underline' },
-      }}
-    >
-      {children}
-    </Typography>
-  )
-}
-
+import PlayersDatabaseModal from '../../components/modals/PlayersDatabaseModal.js'
+import DataImportPasteArea from '../../components/modals/dataImport/DataImportPasteArea.js'
+import DataImportPreviewTable from '../../components/modals/dataImport/DataImportPreviewTable.js'
 import {
   PLAYER_ROSTER_COLUMNS,
   PLAYER_ROSTER_PLACEHOLDER,
   PLAYER_STATS_PLACEHOLDER,
   STATS_SEASON_STATUS_OPTIONS,
 } from './logic/teamPage.constants.js'
+import { teamImportModalsSx as sx } from './sx/teamImportModals.sx.js'
+
+function clean(value) {
+  return String(value || '').trim()
+}
+
+function ExternalMetaLink({ href, children, missingLabel }) {
+  const safeHref = clean(href)
+
+  if (!safeHref) {
+    return (
+      <Typography
+        component='span'
+        level='body-sm'
+        sx={sx.missingLink}
+      >
+        {missingLabel || 'לא הוגדר קישור למקור'}
+      </Typography>
+    )
+  }
+
+  return (
+    <Tooltip title={safeHref} placement='top' arrow>
+      <Typography
+        component='a'
+        href={safeHref}
+        target='_blank'
+        rel='noopener noreferrer'
+        referrerPolicy='no-referrer'
+        level='body-sm'
+        dir='ltr'
+        sx={sx.metaLink}
+      >
+        {children}
+      </Typography>
+    </Tooltip>
+  )
+}
 
 export function TeamRosterImportModal({
-  open,
-  hasTeamPlayers,
-  teamName,
+  team,
   seasonKey,
-  columns = PLAYER_ROSTER_COLUMNS,
-  rows,
-  pasteValue,
-  busy,
-  onPasteChange,
-  onPaste,
-  onCellChange,
-  onConfirm,
-  onClose,
+  hasTeamPlayers,
+  controller,
 }) {
   return (
-    <DataImportModal
-      open={open}
+    <PlayersDatabaseModal
+      open={controller.open}
       title={hasTeamPlayers ? 'טעינת שחקן בודד' : 'טעינת סגל'}
-      description={`${teamName} · עונה ${seasonKey || '-'}`}
+      description={`${team.name} · עונה ${seasonKey || '-'}`}
       iconId='upload'
       confirmLabel='אישור טעינת סגל'
-      columns={columns}
-      rows={rows}
-      pasteValue={pasteValue}
-      pastePlaceholder={PLAYER_ROSTER_PLACEHOLDER}
-      busy={busy}
-      disabled={!rows.length}
-      onPasteChange={onPasteChange}
-      onPaste={onPaste}
-      onCellChange={onCellChange}
-      onConfirm={onConfirm}
-      onClose={onClose}
-    />
+      confirmIconId='upload'
+      size='xl'
+      busy={controller.busy}
+      disabled={!controller.rows.length}
+      contentSx={sx.modalContent}
+      onConfirm={controller.confirm}
+      onClose={controller.close}
+    >
+      <Box sx={sx.content}>
+        <DataImportPasteArea
+          pasteValue={controller.pasteValue}
+          pastePlaceholder={PLAYER_ROSTER_PLACEHOLDER}
+          onPasteChange={controller.setPasteValue}
+          onPaste={controller.parse}
+          onClear={controller.clearPaste}
+        />
+
+        <DataImportPreviewTable
+          columns={PLAYER_ROSTER_COLUMNS}
+          rows={controller.rows}
+          onCellChange={controller.changeCell}
+          getRowStatus={controller.getRowStatus}
+        />
+      </Box>
+    </PlayersDatabaseModal>
   )
 }
 
 export function TeamStatsImportModal({
-  open,
   team,
-  teamUrl,
-  leagueName,
-  leagueUrl,
   seasonKey,
   hasTeamPlayers,
   columns,
-  rows,
-  pasteValue,
-  busy,
-  hasInvalidRows,
-  seasonStatus,
-  onSeasonStatusChange,
-  onPasteChange,
-  onClear,
-  onPaste,
-  onCellChange,
-  getRowStatus,
-  onConfirm,
-  onClose,
+  source,
+  controller,
 }) {
+  const resolvedTeamUrl = clean(source.teamUrl || team.teamUrl)
+  const resolvedLeagueName = clean(source.leagueName || team.leagueName)
+  const resolvedLeagueUrl = clean(source.leagueUrl)
+
   return (
-    <DataImportModal
-      open={open}
+    <PlayersDatabaseModal
+      open={controller.open}
       title={`טעינת סטטיסטיקות - ${team.name}`}
       description={(
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
-          <ExternalMetaLink href={teamUrl}>
-            {team.name}
+        <Box sx={sx.description}>
+          <ExternalMetaLink
+            href={resolvedTeamUrl}
+            missingLabel='לא הוגדר קישור לקבוצה'
+          >
+            {team.name || 'קבוצה'}
           </ExternalMetaLink>
 
           <Typography component='span' level='body-sm'>·</Typography>
@@ -147,28 +150,37 @@ export function TeamStatsImportModal({
             </>
           ) : null}
 
-          {leagueName ? (
-            <>
-              <Typography component='span' level='body-sm'>·</Typography>
-              <ExternalMetaLink href={leagueUrl}>
-                {leagueName}
-              </ExternalMetaLink>
-            </>
-          ) : null}
+          <>
+            <Typography component='span' level='body-sm'>·</Typography>
+            <ExternalMetaLink
+              href={resolvedLeagueUrl}
+              missingLabel='לא הוגדר קישור לליגה'
+            >
+              {resolvedLeagueName || 'ליגה'}
+            </ExternalMetaLink>
+          </>
         </Box>
       )}
       iconId='addStats'
       confirmLabel='אישור טעינת סטטיסטיקות'
-      columns={columns}
-      rows={rows}
-      pasteValue={pasteValue}
-      pastePlaceholder={PLAYER_STATS_PLACEHOLDER}
-      beforePaste={(
-        <FormControl size='sm' sx={{ maxWidth: 320 }}>
+      confirmIconId='upload'
+      size='xl'
+      busy={controller.busy}
+      disabled={
+        !hasTeamPlayers ||
+        !controller.rows.length ||
+        controller.hasInvalidRows
+      }
+      contentSx={sx.modalContent}
+      onConfirm={controller.confirm}
+      onClose={controller.close}
+    >
+      <Box sx={[sx.content, sx.statsContent]}>
+        <FormControl size='sm' sx={sx.seasonStatus}>
           <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
           <Select
-            value={seasonStatus}
-            onChange={(event, value) => onSeasonStatusChange(value)}
+            value={controller.seasonStatus}
+            onChange={(event, value) => controller.changeSeasonStatus(value)}
           >
             {STATS_SEASON_STATUS_OPTIONS.map(option => (
               <Option key={option.value} value={option.value}>
@@ -178,20 +190,26 @@ export function TeamStatsImportModal({
           </Select>
           <FormHelperText>
             {STATS_SEASON_STATUS_OPTIONS.find(option => (
-              option.value === seasonStatus
+              option.value === controller.seasonStatus
             ))?.description || ''}
           </FormHelperText>
         </FormControl>
-      )}
-      busy={busy}
-      disabled={!hasTeamPlayers || !rows.length || hasInvalidRows}
-      onPasteChange={onPasteChange}
-      onPaste={onPaste}
-      onClear={onClear}
-      onCellChange={onCellChange}
-      getRowStatus={getRowStatus}
-      onConfirm={onConfirm}
-      onClose={onClose}
-    />
+
+        <DataImportPasteArea
+          pasteValue={controller.pasteValue}
+          pastePlaceholder={PLAYER_STATS_PLACEHOLDER}
+          onPasteChange={controller.setPasteValue}
+          onPaste={controller.parse}
+          onClear={controller.clearPaste}
+        />
+
+        <DataImportPreviewTable
+          columns={columns}
+          rows={controller.rows}
+          onCellChange={controller.changeCell}
+          getRowStatus={controller.getRowStatus}
+        />
+      </Box>
+    </PlayersDatabaseModal>
   )
 }

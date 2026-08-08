@@ -1,8 +1,11 @@
 // features/playersDatabase/ui/components/report/ReportListRow.js
 
-import { Box, Sheet } from '@mui/joy'
+import {
+  Box,
+  Sheet,
+} from '@mui/joy'
 
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportListRowSx as sx } from './sx/reportListRow.sx.js'
 
 export default function ReportListRow({
   identity,

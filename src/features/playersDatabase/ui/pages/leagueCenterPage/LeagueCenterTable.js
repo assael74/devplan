@@ -1,11 +1,13 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterTable.js
 
-import { Stack, Typography } from '@mui/joy'
+import {
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import InfoPanel from '../../components/cards/InfoPanel.js'
 import DataTable from '../../components/tables/DataTable.js'
-import LeagueCenterTableFilters from './LeagueCenterTableFilters.js'
-import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
+import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({ columns, model }) {
   const hasContext = model.birthYear !== 'all' && model.leagueLevel !== 'all'
@@ -25,7 +27,6 @@ export default function LeagueCenterTable({ columns, model }) {
       )}
       sx={sx.tablePanel}
     >
-      <LeagueCenterTableFilters model={model} />
       <Stack sx={sx.tableArea}>
         <DataTable
           columns={columns}
@@ -33,6 +34,7 @@ export default function LeagueCenterTable({ columns, model }) {
           getRowKey={row => `${row.id}_${row.seasonKey}`}
           emptyText={emptyText}
           wrapSx={sx.tableScroll}
+          tableSx={sx.noRowHoverTable}
           bodyScrollSx={sx.tableBodyScroll}
         />
       </Stack>

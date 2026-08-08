@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/contracts/lifecycle.contract.js
+// features/playersDatabase/domain/contracts/lifecycle.contract.js
 
 import { cleanDomainValue } from './domainValue.contract.js'
 

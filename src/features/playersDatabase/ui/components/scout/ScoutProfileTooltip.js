@@ -9,7 +9,7 @@ import {
   buildScoutProfileTooltipItems,
   DEFAULT_SCOUT_PROFILE_TOOLTIP_FIELDS,
 } from '../../logic/scoutDisplay.logic.js'
-import { scoutProfileTooltipSx as sx } from './sx/scoutComponents.sx.js'
+import { scoutProfileTooltipSx as sx } from './sx/scoutProfileTooltip.sx.js'
 
 const DEFAULT_FIELDS = DEFAULT_SCOUT_PROFILE_TOOLTIP_FIELDS
 
@@ -88,7 +88,11 @@ function SecondaryTooltipItem({ item }) {
   )
 }
 
-export default function ScoutProfileTooltip({ profile = {}, fields = DEFAULT_FIELDS, title }) {
+export default function ScoutProfileTooltip({
+  profile = {},
+  fields = DEFAULT_FIELDS,
+  title,
+}) {
   const items = buildScoutProfileTooltipItems({
     profile,
     fields,

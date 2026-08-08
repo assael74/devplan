@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/components/scout/scoutDisplay.model.js
+// features/playersDatabase/ui/components/scout/scoutDisplay.model.js
 
 const clean = value => String(value || '').trim()
 

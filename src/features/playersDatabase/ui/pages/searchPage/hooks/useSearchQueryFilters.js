@@ -49,7 +49,10 @@ export default function useSearchQueryFilters() {
   }), [queryFilters])
 
   const updateQueryFilter = React.useCallback((key, value) => {
-    setQueryFilters(current => ({ ...current, [key]: value }))
+    setQueryFilters(current => ({
+      ...current,
+      [key]: value,
+    }))
   }, [])
 
   const toggleQueryArrayValue = React.useCallback((key, value) => {
@@ -105,7 +108,11 @@ export default function useSearchQueryFilters() {
           ...current,
           conditions: current.conditions.map(condition => (
             condition.field === field
-              ? { ...condition, operator, value }
+              ? {
+                ...condition,
+                operator,
+                value,
+              }
               : condition
           )),
         }

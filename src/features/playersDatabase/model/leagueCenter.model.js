@@ -2,9 +2,18 @@
 
 import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
-import { isSameSeason, normalizeSeasonIdentity, normalizeSeasonLookupKey, resolveSeasonLookupKey } from './season.model.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+  normalizeSeasonLookupKey,
+  resolveSeasonLookupKey,
+} from './season.model.js'
 import { normalizeTeamStats } from './teamStats.model.js'
-import { cleanValue, toNumberOrZero } from './value.model.js'
+import {
+  cleanValue,
+  toNumberOrZero,
+  pickDefinedValue,
+} from './value.model.js'
 
 export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
 export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
@@ -24,8 +33,14 @@ const toAgeGroupLabel = value => {
 const normalizeSeasonKey = normalizeSeasonLookupKey
 
 const isSameSeasonKey = (left, right) => isSameSeason(
-  { seasonId: left, seasonKey: left },
-  { seasonId: right, seasonKey: right }
+  {
+    seasonId: left,
+    seasonKey: left,
+  },
+  {
+    seasonId: right,
+    seasonKey: right,
+  }
 )
 
 export const resolveLeagueCenterSeasonTarget = seasonKey =>
@@ -208,8 +223,14 @@ const buildLeagueCenterRow = ({
     id: clean(league?.id || league?.leagueId || catalog?.id),
     leagueId: clean(league?.leagueId || league?.id || catalog?.id),
     catalogLeagueId: clean(catalog?.id || league?.catalogLeagueId),
-    name: buildLeagueName({ league, catalog }),
-    leagueName: buildCleanLeagueName({ league, catalog }),
+    name: buildLeagueName({
+      league,
+      catalog,
+    }),
+    leagueName: buildCleanLeagueName({
+      league,
+      catalog,
+    }),
     ageGroup: toAgeGroupLabel(ageGroupId),
     ageGroupId,
     ageGroupLabel: clean(league?.ageGroupLabel || catalog?.ageGroupLabel),
@@ -294,7 +315,7 @@ const buildMasterLeagueDoc = league => {
     ageGroupId: clean(league?.ageGroupId),
     ageGroupLabel: clean(league?.ageGroupLabel),
     region: clean(league?.region),
-    level: league?.level ?? null,
+    level: pickDefinedValue(league?.level, null),
     current,
     history,
     hasLeagueDoc: Boolean(leagueDocumentId),
@@ -375,7 +396,7 @@ export const buildLeagueCenterRows = ({
     return buildRowsForLeague({
       league,
       catalog,
-      hasLeagueDoc: league?.hasLeagueDoc ?? league !== catalog,
+      hasLeagueDoc: pickDefinedValue(league?.hasLeagueDoc, league !== catalog),
     })
   })
 
@@ -385,7 +406,7 @@ export const buildLeagueCenterRows = ({
       buildRowsForLeague({
         league,
         catalog: getCatalogLeague(league),
-        hasLeagueDoc: league?.hasLeagueDoc ?? true,
+        hasLeagueDoc: pickDefinedValue(league?.hasLeagueDoc, true),
       })
     ))
 

@@ -6,7 +6,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import { pdbTableSx as sx } from '../tables.sx.js'
+import { dataTableBodySx as sx } from './sx/dataTableBody.sx.js'
 import DataTableCell from './DataTableCell.js'
 import { resolveDataTableRowKey } from './dataTable.model.js'
 

@@ -1,15 +1,11 @@
 // features/playersDatabase/services/write/flows/team/pasteTeamPlayers.flow.js
 
-import {
-  updateLeagueSeasonTableRankTeamUrl,
-} from '../../leagues/index.js'
+import { updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
 import {
   updateTeamSeasonSearchIndexRosterMeta,
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
-import {
-  resolveTeamPlayerIdentities,
-} from '../../players/index.js'
+import { resolveTeamPlayerIdentities } from '../../players/index.js'
 import {
   ensureTeamDoc,
   upsertTeamSeasonPlayers,

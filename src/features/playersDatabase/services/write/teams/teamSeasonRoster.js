@@ -9,7 +9,10 @@ import {
   normalizeSeasonIdentity,
 } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
+import {
+  buildTeamBaseDoc,
+  teamDocRef,
+} from './teamDoc.js'
 import {
   buildPlayerLookup,
   buildTeamSeasonDoc,
@@ -35,11 +38,17 @@ export async function upsertTeamSeasonPlayers({
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildTeamBaseDoc({ ...team, teamDocumentId: teamId }, currentData)
+    const baseDoc = buildTeamBaseDoc({
+      ...team,
+      teamDocumentId: teamId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const targetRows = isHistory ? baseDoc.history : baseDoc.current
     const existingSeason = (Array.isArray(targetRows) ? targetRows : [])
-      .find(row => isSameSeason(row, { seasonId, seasonKey }))
+      .find(row => isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      }))
 
     if (Array.isArray(existingSeason?.teamPlayers) && existingSeason.teamPlayers.length > 0) {
       const error = new Error('Team roster already exists for this season')
@@ -50,8 +59,16 @@ export async function upsertTeamSeasonPlayers({
     }
 
     const seasonDoc = buildTeamSeasonDoc({
-      season: { ...season, seasonId, seasonKey },
-      team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
+      team: {
+        ...team,
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+      },
       players,
     })
     const nextData = isHistory
@@ -59,7 +76,10 @@ export async function upsertTeamSeasonPlayers({
           ...baseDoc,
           history: upsertSeasonRows({
             rows: baseDoc.history,
-            season: { seasonId, seasonKey },
+            season: {
+              seasonId,
+              seasonKey,
+            },
             seasonDoc,
           }),
         }
@@ -67,7 +87,10 @@ export async function upsertTeamSeasonPlayers({
           ...baseDoc,
           current: upsertSeasonRows({
             rows: baseDoc.current,
-            season: { seasonId, seasonKey },
+            season: {
+              seasonId,
+              seasonKey,
+            },
             seasonDoc,
           }),
         }
@@ -105,11 +128,17 @@ export async function appendTeamSeasonPlayer({
     if (!snapshot.exists()) throw new Error('Team document not found')
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({ ...team, teamDocumentId: teamId }, currentData)
+    const baseDoc = buildTeamBaseDoc({
+      ...team,
+      teamDocumentId: teamId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const targetRows = isHistory ? baseDoc.history : baseDoc.current
     const seasonIndex = (Array.isArray(targetRows) ? targetRows : [])
-      .findIndex(row => isSameSeason(row, { seasonId, seasonKey }))
+      .findIndex(row => isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      }))
 
     if (seasonIndex === -1) throw new Error('Team season not found')
 
@@ -141,8 +170,14 @@ export async function appendTeamSeasonPlayer({
         : row
     ))
     const nextData = isHistory
-      ? { ...baseDoc, history: nextRows }
-      : { ...baseDoc, current: nextRows }
+      ? {
+        ...baseDoc,
+        history: nextRows,
+      }
+      : {
+        ...baseDoc,
+        current: nextRows,
+      }
 
     transaction.set(ref, nextData, { merge: true })
 

@@ -1,6 +1,8 @@
+// features/playersDatabase/import/logic/leagueXlsx.js
+
 import * as XLSX from 'xlsx'
 
-const clean = (value) => String(value ?? '').trim()
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const cellText = (value) => {
   if (value === null || value === undefined) return ''

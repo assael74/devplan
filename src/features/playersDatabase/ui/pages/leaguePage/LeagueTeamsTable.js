@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import DataTable from '../../components/tables/DataTable.js'
 import { buildLeagueTeamsColumns } from './logic/leagueTeams.columns.js'
-import { leagueContentSx as sx } from './sx/leagueContent.sx.js'
+import { leagueTeamsTableSx as sx } from './sx/leagueTeamsTable.sx.js'
 
 const clean = value => String(value || '').trim()
 const resolveTeamUrl = row => clean(row?.teamUrl || row?.teamStats?.teamUrl)

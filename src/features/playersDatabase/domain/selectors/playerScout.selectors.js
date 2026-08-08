@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/selectors/playerScout.selectors.js
+// features/playersDatabase/domain/selectors/playerScout.selectors.js
 
 import { createEmptyPlayerScoutDisplay } from '../contracts/playerScout.contract.js'
 

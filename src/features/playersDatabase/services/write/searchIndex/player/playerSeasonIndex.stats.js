@@ -7,10 +7,16 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  createTrackedWriteBatch,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../../leagues/leagueDoc.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
   buildSearchIndexWriteResult,

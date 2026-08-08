@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchResultTeamUrl.js
 
-import { Box, Button, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { searchResultTeamUrlSx as sx } from './sx/searchResultTeamUrl.sx.js'
@@ -15,7 +19,10 @@ export default function SearchResultTeamUrl({ row, onEdit }) {
       <Box sx={sx.header}>
         <Box sx={sx.titleWrap}>
           <Box sx={sx.icon}>
-            {iconUi({ id: 'link', size: 'sm' })}
+            {iconUi({
+              id: 'link',
+              size: 'sm',
+            })}
           </Box>
           <Typography level='title-sm' sx={sx.title}>
             קישור קבוצה
@@ -25,7 +32,10 @@ export default function SearchResultTeamUrl({ row, onEdit }) {
         <Button
           size='sm'
           variant='plain'
-          startDecorator={iconUi({ id: 'edit', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'edit',
+            size: 'sm',
+          })}
           onClick={() => onEdit?.(row)}
           sx={sx.editButton}
         >

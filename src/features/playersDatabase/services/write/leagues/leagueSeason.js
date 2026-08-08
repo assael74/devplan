@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/leagues/leagueSeason.js
 
+import { pickDefinedValue } from '../../../model/value.model.js'
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -53,7 +54,10 @@ const upsertHistorySeason = (history = [], seasonDoc = {}) => {
 
   return rows.map((row, index) => (
     index === seasonIndex
-      ? { ...row, ...seasonDoc }
+      ? {
+        ...row,
+        ...seasonDoc,
+      }
       : row
   ))
 }
@@ -81,7 +85,10 @@ export async function upsertLeagueSeason({
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const existingSeason = isHistory
@@ -147,14 +154,21 @@ export async function updateLeagueSeasonUrl({
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const nextData = isHistory
       ? {
           ...baseDoc,
           history: updateHistorySeason({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey: resolvedSeasonKey },
+            season: {
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            },
             patch: {
               seasonUrl: clean(seasonUrl),
               updatedAt: new Date().toISOString(),
@@ -164,7 +178,11 @@ export async function updateLeagueSeasonUrl({
       : {
           ...baseDoc,
           current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey: resolvedSeasonKey })),
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            })),
             seasonId,
             seasonKey: resolvedSeasonKey,
             seasonUrl: clean(seasonUrl),
@@ -208,11 +226,14 @@ export async function updateLeagueSeasonMeta({
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const patch = {
-      birthYear: toNumberOrZero(birthYear ?? season.birthYear),
-      leagueTotalRound: toNumberOrZero(leagueTotalRound ?? season.leagueTotalRound),
+      birthYear: toNumberOrZero(pickDefinedValue(birthYear, season.birthYear)),
+      leagueTotalRound: toNumberOrZero(pickDefinedValue(leagueTotalRound, season.leagueTotalRound)),
       updatedAt: new Date().toISOString(),
     }
     const nextData = isHistory
@@ -220,14 +241,22 @@ export async function updateLeagueSeasonMeta({
           ...baseDoc,
           history: updateHistorySeason({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey: resolvedSeasonKey },
+            season: {
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            },
             patch,
           }),
         }
       : {
           ...baseDoc,
           current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey: resolvedSeasonKey })),
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            })),
             seasonId,
             seasonKey: resolvedSeasonKey,
             ...patch,
@@ -261,13 +290,20 @@ export const updateHistorySeason = ({
   const rows = Array.isArray(history) ? history : []
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-  const seasonIndex = rows.findIndex(row => isSameSeason(row, { ...season, seasonId, seasonKey }))
+  const seasonIndex = rows.findIndex(row => isSameSeason(row, {
+    ...season,
+    seasonId,
+    seasonKey,
+  }))
 
   if (seasonIndex === -1) {
     return [
       ...rows,
       {
-        ...buildSeasonDoc({ ...season, seasonKey }),
+        ...buildSeasonDoc({
+          ...season,
+          seasonKey,
+        }),
         ...patch,
       },
     ]
@@ -275,7 +311,10 @@ export const updateHistorySeason = ({
 
   return rows.map((row, index) => (
     index === seasonIndex
-      ? { ...cleanSeasonComputedFields(row), ...patch }
+      ? {
+        ...cleanSeasonComputedFields(row),
+        ...patch,
+      }
       : cleanSeasonComputedFields(row)
   ))
 }

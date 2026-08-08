@@ -6,9 +6,16 @@ import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
 import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
-import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+import {
+  buildSearchIndexWriteResult,
+  SEARCH_INDEX_ENTITY_TYPES,
+} from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
-import { buildTeamScoutLeagueModel, TEAM_SCOUT_NORMALIZATION_MODE, TEAM_SCOUT_SORT_MODE } from '../../../../../../shared/teams/scout/index.js'
+import {
+  buildTeamScoutLeagueModel,
+  TEAM_SCOUT_NORMALIZATION_MODE,
+  TEAM_SCOUT_SORT_MODE,
+} from '../../../../../../shared/teams/scout/index.js'
 import {
   buildRankMap,
   buildTeamSeasonIndexDoc,
@@ -79,7 +86,10 @@ export async function upsertTeamSeasonSearchIndexMany({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: docs.length })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: docs.length,
+  })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,

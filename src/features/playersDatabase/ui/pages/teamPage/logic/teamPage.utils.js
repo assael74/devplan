@@ -1,6 +1,6 @@
 // features/playersDatabase/ui/pages/teamPage/logic/teamPage.utils.js
 
-export const clean = value => String(value ?? '').trim()
+export const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 export const toNumber = value => Number(clean(value).replace(/,/g, '')) || 0
 

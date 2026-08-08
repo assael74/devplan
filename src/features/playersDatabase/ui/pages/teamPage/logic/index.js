@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/teamPage/logic/index.js
+// features/playersDatabase/ui/pages/teamPage/logic/index.js
 
 /**
  * Team page UI logic

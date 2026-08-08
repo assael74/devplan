@@ -1,11 +1,26 @@
 // features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.bulk.js
 
-import { collection, query, serverTimestamp, where } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  collection,
+  query,
+  serverTimestamp,
+  where,
+} from 'firebase/firestore'
+import {
+  createTrackedWriteBatch,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
-import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
+import {
+  buildSearchIndexWriteResult,
+  SEARCH_INDEX_ENTITY_TYPES,
+} from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
@@ -51,7 +66,10 @@ export async function updateSearchIndexesLeagueSeasonUrl({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: snapshot.docs.length })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: snapshot.docs.length,
+  })
 
   return buildSearchIndexWriteResult({
     operation: 'updateLeagueSeasonUrl',
@@ -121,7 +139,10 @@ export async function updateTeamSeasonSearchIndexesSeasonMeta({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: snapshot.docs.length })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: snapshot.docs.length,
+  })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,

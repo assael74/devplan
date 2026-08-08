@@ -1,10 +1,18 @@
 // features/playersDatabase/services/write/teams/teamSeasonMeta.js
 
+import { pickDefinedValue } from '../../../model/value.model.js'
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
-import { isSameSeason, normalizeSeasonIdentity } from '../../../model/season.model.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../leagues/leagueDoc.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+} from '../../../model/season.model.js'
 import { teamDocRef } from './teamDoc.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
@@ -52,7 +60,10 @@ export async function updateTeamSeasonTeamUrl({
       : historyValue
         ? [historyValue]
         : []
-    const requestedSeason = { seasonId, seasonKey }
+    const requestedSeason = {
+      seasonId,
+      seasonKey,
+    }
     const currentIndex = currentRows.findIndex(row => isSameSeason(row, requestedSeason))
     const historyIndex = historyRows.findIndex(row => isSameSeason(row, requestedSeason))
     const sourceTarget = currentIndex >= 0
@@ -137,7 +148,11 @@ export async function updateTeamSeasonsMetaMany({
   const seasonId = clean(season.seasonId)
   if (!seasonId) throw new Error('Missing season id')
 
-  const teamIds = getTeamMetaUpdateIds({ team, rows, teams })
+  const teamIds = getTeamMetaUpdateIds({
+    team,
+    rows,
+    teams,
+  })
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const isHistory = clean(target) === 'history'
   const fieldKey = isHistory ? 'history' : 'current'
@@ -160,13 +175,16 @@ export async function updateTeamSeasonsMetaMany({
       const rowsData = Array.isArray(currentData[fieldKey]) ? currentData[fieldKey] : []
       let updated = false
       const nextRows = rowsData.map(row => {
-        if (!isSameSeason(row, { seasonId, seasonKey })) return row
+        if (!isSameSeason(row, {
+          seasonId,
+          seasonKey,
+        })) return row
 
         updated = true
         return {
           ...row,
-          birthYear: toNumberOrZero(birthYear ?? season.birthYear),
-          leagueTotalRound: toNumberOrZero(leagueTotalRound ?? season.leagueTotalRound),
+          birthYear: toNumberOrZero(pickDefinedValue(birthYear, season.birthYear)),
+          leagueTotalRound: toNumberOrZero(pickDefinedValue(leagueTotalRound, season.leagueTotalRound)),
           updatedAt: new Date().toISOString(),
         }
       })

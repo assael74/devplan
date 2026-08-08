@@ -6,9 +6,21 @@ const AGE_GROUPS = [
     label: 'ילדים ב',
     kind: 'teams',
     slots: [
-      { id: 'kids-b-1', order: 1, label: 'קבוצה 1' },
-      { id: 'kids-b-2', order: 2, label: 'קבוצה 2' },
-      { id: 'kids-b-3', order: 3, label: 'קבוצה 3' },
+      {
+        id: 'kids-b-1',
+        order: 1,
+        label: 'קבוצה 1',
+      },
+      {
+        id: 'kids-b-2',
+        order: 2,
+        label: 'קבוצה 2',
+      },
+      {
+        id: 'kids-b-3',
+        order: 3,
+        label: 'קבוצה 3',
+      },
     ],
   },
   {
@@ -16,9 +28,21 @@ const AGE_GROUPS = [
     label: 'ילדים א',
     kind: 'teams',
     slots: [
-      { id: 'kids-a-1', order: 1, label: 'קבוצה 1' },
-      { id: 'kids-a-2', order: 2, label: 'קבוצה 2' },
-      { id: 'kids-a-3', order: 3, label: 'קבוצה 3' },
+      {
+        id: 'kids-a-1',
+        order: 1,
+        label: 'קבוצה 1',
+      },
+      {
+        id: 'kids-a-2',
+        order: 2,
+        label: 'קבוצה 2',
+      },
+      {
+        id: 'kids-a-3',
+        order: 3,
+        label: 'קבוצה 3',
+      },
     ],
   },
   {
@@ -26,8 +50,16 @@ const AGE_GROUPS = [
     label: 'נערים ג',
     kind: 'teams',
     slots: [
-      { id: 'teens-g-1', order: 1, label: 'קבוצה 1' },
-      { id: 'teens-g-2', order: 2, label: 'קבוצה 2' },
+      {
+        id: 'teens-g-1',
+        order: 1,
+        label: 'קבוצה 1',
+      },
+      {
+        id: 'teens-g-2',
+        order: 2,
+        label: 'קבוצה 2',
+      },
     ],
   },
   {
@@ -35,8 +67,16 @@ const AGE_GROUPS = [
     label: 'נערים ב',
     kind: 'teams',
     slots: [
-      { id: 'teens-b-1', order: 1, label: 'קבוצה 1' },
-      { id: 'teens-b-2', order: 2, label: 'קבוצה 2' },
+      {
+        id: 'teens-b-1',
+        order: 1,
+        label: 'קבוצה 1',
+      },
+      {
+        id: 'teens-b-2',
+        order: 2,
+        label: 'קבוצה 2',
+      },
     ],
   },
   {
@@ -44,8 +84,16 @@ const AGE_GROUPS = [
     label: 'נערים א',
     kind: 'teams',
     slots: [
-      { id: 'teens-a-1', order: 1, label: 'קבוצה 1' },
-      { id: 'teens-a-2', order: 2, label: 'קבוצה 2' },
+      {
+        id: 'teens-a-1',
+        order: 1,
+        label: 'קבוצה 1',
+      },
+      {
+        id: 'teens-a-2',
+        order: 2,
+        label: 'קבוצה 2',
+      },
     ],
   },
   {
@@ -76,23 +124,59 @@ const CLUB_SHORT_NAMES = {
 };
 
 const CLUB_PREFIX_SHORT_NAMES = [
-  { prefix: 'מועדון ספורט כדורגל', short: 'מ.ס' },
-  { prefix: 'מועדון כדורגל', short: 'מ.כ' },
-  { prefix: 'מועדון ספורט', short: 'מ.ס' },
-  { prefix: 'אגודת ספורט', short: 'א.ס' },
+  {
+    prefix: 'מועדון ספורט כדורגל',
+    short: 'מ.ס',
+  },
+  {
+    prefix: 'מועדון כדורגל',
+    short: 'מ.כ',
+  },
+  {
+    prefix: 'מועדון ספורט',
+    short: 'מ.ס',
+  },
+  {
+    prefix: 'אגודת ספורט',
+    short: 'א.ס',
+  },
 ]
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const CLUB_LOCATION_ALIASES = [
-  { full: 'תל אביב', short: 'ת\"א' },
-  { full: 'פתח תקוה', short: 'פ\"ת' },
-  { full: 'כפר סבא', short: 'כפ\"ס' },
-  { full: 'באר שבע', short: 'ב\"ש' },
-  { full: 'ראשון לציון', short: 'ראשל\"צ' },
-  { full: 'ירושלים', short: 'י\"ם' },
-  { full: 'רמת השרון', short: 'רמה\"ש' },
-  { full: 'רמת גן', short: 'ר\"ג' },
+  {
+    full: 'תל אביב',
+    short: 'ת\"א',
+  },
+  {
+    full: 'פתח תקוה',
+    short: 'פ\"ת',
+  },
+  {
+    full: 'כפר סבא',
+    short: 'כפ\"ס',
+  },
+  {
+    full: 'באר שבע',
+    short: 'ב\"ש',
+  },
+  {
+    full: 'ראשון לציון',
+    short: 'ראשל\"צ',
+  },
+  {
+    full: 'ירושלים',
+    short: 'י\"ם',
+  },
+  {
+    full: 'רמת השרון',
+    short: 'רמה\"ש',
+  },
+  {
+    full: 'רמת גן',
+    short: 'ר\"ג',
+  },
 ]
 
 const uniqueValues = values => Array.from(
@@ -142,7 +226,11 @@ const decorateAgeGroups = clubLevel =>
             ? ageGroup.slots.map(slot => ({ ...slot }))
             : undefined,
         }
-      : { id: ageGroup.id, label: ageGroup.label, kind: ageGroup.kind }
+      : {
+        id: ageGroup.id,
+        label: ageGroup.label,
+        kind: ageGroup.kind,
+      }
   );
 
 const decorateClubCatalogItem = club => ({

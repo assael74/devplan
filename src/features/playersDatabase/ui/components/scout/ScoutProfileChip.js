@@ -8,11 +8,11 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { scoutProfileChipSx as sx } from './sx/scoutProfileChip.sx.js'
 import {
   scoutProfileChipColors,
-  scoutProfileChipSx as sx,
   scoutProfileChipVariants,
-} from './sx/scoutComponents.sx.js'
+} from './sx/scoutColors.sx.js'
 
 export { scoutProfileChipColors }
 
@@ -48,12 +48,25 @@ export default function ScoutProfileChip({
       title={tooltipTitle}
       arrow
     >
-      <Box sx={sx.root({ colors, fontSize, })}>
-        {iconUi({ id: iconId, size: 'sm', sx: sx.icon({ colors, fontSize, }),})}
+      <Box sx={sx.root({
+        colors,
+        fontSize,
+      })}>
+        {iconUi({
+          id: iconId,
+          size: 'sm',
+          sx: sx.icon({
+            colors,
+            fontSize,
+          }),
+        })}
 
         <Typography
           component='span'
-          sx={sx.label({ colors, fontSize, })}
+          sx={sx.label({
+            colors,
+            fontSize,
+          })}
         >
           {label}
         </Typography>

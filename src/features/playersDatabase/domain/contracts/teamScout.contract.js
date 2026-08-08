@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/contracts/teamScout.contract.js
+// features/playersDatabase/domain/contracts/teamScout.contract.js
 
 import {
   resolveTeamScoutAnomalyLevel,

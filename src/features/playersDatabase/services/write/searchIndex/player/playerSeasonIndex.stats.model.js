@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.model.js
 
+import { pickDefinedValue } from '../../../../model/value.model.js'
 import {
   buildPlayerIdentityKey,
   resolvePlayerIdentityBirthYear,
@@ -9,8 +10,14 @@ import {
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
 } from '../../../../model/playerStats.model.js'
-import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
-import { buildPlayerDocumentId, hasPlayerScoutProfiles } from '../../players/index.js'
+import {
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
+import {
+  buildPlayerDocumentId,
+  hasPlayerScoutProfiles,
+} from '../../players/index.js'
 import {
   buildInternalPlayerId,
   buildPlayerAliases,
@@ -86,7 +93,10 @@ export const buildPlayerSeasonStatsMutation = ({
 
   if (rosterStatus === 'retired') {
     return existingDoc
-      ? { type: 'delete', ref: existingDoc.ref }
+      ? {
+        type: 'delete',
+        ref: existingDoc.ref,
+      }
       : { type: 'skip' }
   }
 
@@ -109,15 +119,24 @@ export const buildPlayerSeasonStatsMutation = ({
   )
   const identityBirthYear = Number(
     player.identityBirthYear || existingData.identityBirthYear
-  ) || resolvePlayerIdentityBirthYear({ player, season })
+  ) || resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  })
   const identityKey = clean(
     player.identityKey || existingData.identityKey
-  ) || buildPlayerIdentityKey({ player, season })
+  ) || buildPlayerIdentityKey({
+    player,
+    season,
+  })
   const playerId = clean(
     player.matchedPlayerId ||
     player.playerId ||
     existingData.playerId
-  ) || buildInternalPlayerId({ player, season })
+  ) || buildInternalPlayerId({
+    player,
+    season,
+  })
   const aliases = buildPlayerAliases({
     player,
     displayName,
@@ -127,7 +146,10 @@ export const buildPlayerSeasonStatsMutation = ({
     player.playerDocumentId || existingData.playerDocumentId
   ) || (
     hasPlayerScoutProfiles(player)
-      ? buildPlayerDocumentId({ ...player, playerId })
+      ? buildPlayerDocumentId({
+        ...player,
+        playerId,
+      })
       : ''
   )
   const scoutIndexFields = buildPlayerScoutIndexFields(player)
@@ -258,17 +280,17 @@ export const buildPlayerSeasonStatsMutation = ({
         team.tableDefenseRank || existingData.teamTableDefenseRank
       ),
       teamGoalsFor: toNumberOrZero(
-        team.teamStats?.goalsFor ??
-        team.goalsFor ??
-        existingData.teamGoalsFor
+        pickDefinedValue(team.teamStats?.goalsFor, team.goalsFor, existingData.teamGoalsFor)
       ),
       teamGoalsAgainst: toNumberOrZero(
-        team.teamStats?.goalsAgainst ??
-        team.goalsAgainst ??
-        existingData.teamGoalsAgainst
+        pickDefinedValue(
+          team.teamStats?.goalsAgainst,
+          team.goalsAgainst,
+          existingData.teamGoalsAgainst,
+        )
       ),
       teamGoalsForPerGame: toNumberOrZero(
-        team.goalsForPerGame ?? existingData.teamGoalsForPerGame
+        pickDefinedValue(team.goalsForPerGame, existingData.teamGoalsForPerGame)
       ),
       teamGamePlayed: resolvedTeamGamePlayed,
       games: playerStats.games,

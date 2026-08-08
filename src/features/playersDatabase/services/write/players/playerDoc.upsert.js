@@ -4,7 +4,10 @@ import { deleteField } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { getTeamById } from '../../read/team.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../leagues/leagueDoc.js'
 import {
   buildPlayerBaseDoc,
   buildPlayerDocumentId,
@@ -25,7 +28,10 @@ export const upsertProfiledPlayerDoc = async ({
 } = {}) => {
   const playerDocumentId = buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
-  if (!playerDocumentId) return { skipped: true, reason: 'missingPlayerDocumentId' }
+  if (!playerDocumentId) return {
+    skipped: true,
+    reason: 'missingPlayerDocumentId',
+  }
   if (!seasonId) throw new Error('Missing season id')
 
   const ref = playerDocRef(playerDocumentId)
@@ -36,13 +42,19 @@ export const upsertProfiledPlayerDoc = async ({
     team.teamId
   )
   const teamDoc = teamDocumentId ? await getTeamById(teamDocumentId) : null
-  const resolvedTeam = teamDoc ? { ...teamDoc, ...team } : team
+  const resolvedTeam = teamDoc ? {
+    ...teamDoc,
+    ...team,
+  } : team
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const baseDoc = buildPlayerBaseDoc(
-      { ...player, playerDocumentId },
+      {
+        ...player,
+        playerDocumentId,
+      },
       currentData,
       season,
       resolvedTeam
@@ -50,7 +62,11 @@ export const upsertProfiledPlayerDoc = async ({
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const seasonDoc = buildPlayerSeasonDoc({
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team: resolvedTeam,
       player,
     })
@@ -59,7 +75,11 @@ export const upsertProfiledPlayerDoc = async ({
     const hydratedRows = shouldHydrateFromTeamDoc
       ? buildPlayerSeasonRowsFromTeamDoc({
           teamDoc,
-          season: { ...season, seasonId, seasonKey },
+          season: {
+            ...season,
+            seasonId,
+            seasonKey,
+          },
           team: resolvedTeam,
           player,
           target: isHistory ? 'history' : 'current',
@@ -69,7 +89,11 @@ export const upsertProfiledPlayerDoc = async ({
           history: [],
         }
 
-    const seasonScope = { ...season, seasonId, seasonKey }
+    const seasonScope = {
+      ...season,
+      seasonId,
+      seasonKey,
+    }
     const sourceCurrentRows = snapshot.exists()
       ? baseDoc.current
       : hydratedRows.current

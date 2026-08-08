@@ -1,7 +1,9 @@
+// features/playersDatabase/import/logic/buildPlayersDatabaseWritePlan.js
+
 import { PLAYERS_DATABASE_RESOLUTION_MODE } from '../../model/playersDatabaseEntityPolicy.js'
 import { buildTeamIdentity } from '../../catalog/teamIdentity.js'
 
-const clean = (value) => String(value ?? '').trim()
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumberOrZero = (value) => {
   const n = Number(value)
@@ -48,7 +50,10 @@ const buildCatalogRef = (label, catalogMatch, rowPlan) => ({
 const addUniqueRef = (target, key, item) => {
   const safeKey = clean(key).toLowerCase()
   if (!safeKey || target.some((ref) => ref.key === safeKey)) return
-  target.push({ key: safeKey, ...item })
+  target.push({
+    key: safeKey,
+    ...item,
+  })
 }
 
 const hasDuplicateManagedPlayer = (importPlan, externalPlayerId) => {

@@ -6,28 +6,27 @@ import {
   PLAYER_HISTORY_FILTERS,
   PLAYER_HISTORY_PLACEHOLDER_ROWS,
 } from '../logic/playerPage.constants.js'
-import {
-  resolvePlayerHistoryRows,
-} from '../logic/playerPage.utils.js'
+import { resolvePlayerHistoryRows } from '../logic/playerPage.utils.js'
 
-export default function usePlayerHistoryView(player) {
+export default function usePlayerHistoryView(
+  player,
+  selectedSeasonKey,
+  onSeasonChange
+) {
   const [filter, setFilter] = React.useState(
     PLAYER_HISTORY_FILTERS.ALL
   )
-  const [selectedSeasonKey, setSelectedSeasonKey] = React.useState('')
 
   const sourceRows = React.useMemo(
     () => resolvePlayerHistoryRows(player),
     [player]
   )
-
   const rows = React.useMemo(
     () => sourceRows.length
       ? sourceRows
       : PLAYER_HISTORY_PLACEHOLDER_ROWS,
     [sourceRows]
   )
-
   const seasonOptions = React.useMemo(() => {
     const keys = [...new Set(
       rows
@@ -40,10 +39,11 @@ export default function usePlayerHistoryView(player) {
       label: seasonKey,
     }))
   }, [rows])
-
-  const visibleRows = React.useMemo(() => {
-    return rows.filter(row => {
-      const matchesSeason = !selectedSeasonKey ||
+  const visibleRows = React.useMemo(() => (
+    rows.filter(row => {
+      const shouldFilterBySeason = filter === PLAYER_HISTORY_FILTERS.ALL
+      const matchesSeason = !shouldFilterBySeason ||
+        !selectedSeasonKey ||
         row.seasonKey === selectedSeasonKey
 
       if (!matchesSeason) return false
@@ -58,16 +58,22 @@ export default function usePlayerHistoryView(player) {
 
       return true
     })
-  }, [filter, rows, selectedSeasonKey])
+  ), [
+    filter,
+    rows,
+    selectedSeasonKey,
+  ])
 
   const handleSeasonChange = React.useCallback(seasonKey => {
-    setSelectedSeasonKey(seasonKey || '')
     setFilter(PLAYER_HISTORY_FILTERS.ALL)
-  }, [])
+
+    if (onSeasonChange) {
+      onSeasonChange(seasonKey || '')
+    }
+  }, [onSeasonChange])
 
   const handleFilterChange = React.useCallback(nextFilter => {
     setFilter(nextFilter)
-    setSelectedSeasonKey('')
   }, [])
 
   return {
@@ -75,7 +81,9 @@ export default function usePlayerHistoryView(player) {
     setFilter: handleFilterChange,
     rows,
     visibleRows,
-    selectedSeasonKey,
+    selectedSeasonKey: filter === PLAYER_HISTORY_FILTERS.ALL
+      ? selectedSeasonKey
+      : '',
     setSelectedSeasonKey: handleSeasonChange,
     seasonOptions,
     hasRealData: sourceRows.length > 0,

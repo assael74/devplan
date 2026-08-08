@@ -1,8 +1,12 @@
 // features/playersDatabase/ui/pages/entryPage/EntryVisuals.js
 
-import { Box, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
-import { entryContentSx as sx } from './sx/entryContent.sx.js'
+import { entryVisualsSx as sx } from './sx/entryVisuals.sx.js'
 
 const PREVIEW_BAR_HEIGHTS = [18, 30, 44, 28]
 
@@ -14,7 +18,15 @@ export function DataPreviewGraphic() {
       <Box sx={sx.previewChartCard}>
         <Box sx={sx.previewChartBars}>
           {PREVIEW_BAR_HEIGHTS.map((height, index) => (
-            <Box key={index} sx={{ ...sx.previewChartBar, height }} />
+            <Box
+              key={index}
+              sx={[
+                sx.previewChartBar,
+                {
+                  height,
+                },
+              ]}
+            />
           ))}
         </Box>
       </Box>

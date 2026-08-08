@@ -99,38 +99,65 @@ export default function useTeamStatsImport({
     ))
 
     if (!clean(row.fullName)) {
-      return { valid: false, message: 'חסר שם שחקן' }
+      return {
+        valid: false,
+        message: 'חסר שם שחקן',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.AMBIGUOUS) {
-      return { valid: false, message: row.identityMessage || 'נדרשת בדיקת זהות' }
+      return {
+        valid: false,
+        message: row.identityMessage || 'נדרשת בדיקת זהות',
+      }
     }
 
     if (status === 'transferredOut') {
-      return { valid: true, message: 'סווג כשחקן שעבר קבוצה' }
+      return {
+        valid: true,
+        message: 'סווג כשחקן שעבר קבוצה',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER && isException) {
-      return { valid: true, message: 'שחקן חדש סווג במפורש בסגל העונה' }
+      return {
+        valid: true,
+        message: 'שחקן חדש סווג במפורש בסגל העונה',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER) {
-      return { valid: false, message: 'יש לבחור סטטוס בסגל העונה' }
+      return {
+        valid: false,
+        message: 'יש לבחור סטטוס בסגל העונה',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH && status === 'regular') {
-      return { valid: true, message: 'זוהה כשחקן סגל' }
+      return {
+        valid: true,
+        message: 'זוהה כשחקן סגל',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH && isException) {
-      return { valid: true, message: 'זוהה במערכת וסווג בסגל העונה' }
+      return {
+        valid: true,
+        message: 'זוהה במערכת וסווג בסגל העונה',
+      }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH) {
-      return { valid: false, message: 'יש לבחור סטטוס בסגל העונה' }
+      return {
+        valid: false,
+        message: 'יש לבחור סטטוס בסגל העונה',
+      }
     }
 
-    return { valid: false, message: 'זהות השחקן לא נפתרה' }
+    return {
+      valid: false,
+      message: 'זהות השחקן לא נפתרה',
+    }
   }, [])
 
   const hasInvalidRows = React.useMemo(() => (
@@ -207,7 +234,10 @@ export default function useTeamStatsImport({
         })
       }
 
-      const nextRow = { ...row, [column.key]: value }
+      const nextRow = {
+        ...row,
+        [column.key]: value,
+      }
 
       if (column.key === 'rosterStatus') {
         nextRow.rosterStatus = value || 'unresolved'

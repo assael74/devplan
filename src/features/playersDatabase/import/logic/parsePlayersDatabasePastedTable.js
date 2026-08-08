@@ -1,4 +1,6 @@
-const cleanCell = (value) => String(value ?? '').trim()
+// features/playersDatabase/import/logic/parsePlayersDatabasePastedTable.js
+
+const cleanCell = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const detectDelimiter = (text) => {
   const firstLine = String(text || '').split(/\r?\n/)[0] || ''

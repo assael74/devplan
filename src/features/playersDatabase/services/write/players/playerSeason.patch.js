@@ -3,7 +3,10 @@
 import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../leagues/leagueDoc.js'
 import {
   buildPlayerDocumentId,
   normalizePlayerScoutProfiles,
@@ -47,7 +50,11 @@ export const patchPlayerSeason = async ({
     const rows = Array.isArray(data[fieldKey]) ? data[fieldKey] : []
     const seasonIndex = findPlayerSeasonRowIndex({
       rows,
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
     })
     if (seasonIndex === -1) {

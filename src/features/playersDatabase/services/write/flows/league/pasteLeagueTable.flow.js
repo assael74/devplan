@@ -5,9 +5,7 @@ import {
   syncLeaguesMasterDocument,
   updateLeagueSeasonTableRank,
 } from '../../leagues/index.js'
-import {
-  upsertTeamSeasonSearchIndexMany,
-} from '../../searchIndex/index.js'
+import { upsertTeamSeasonSearchIndexMany } from '../../searchIndex/index.js'
 import {
   assertWriteResultClean,
   attachWriteFlowReport,

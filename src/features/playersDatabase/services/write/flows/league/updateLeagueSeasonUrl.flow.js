@@ -1,8 +1,6 @@
 // features/playersDatabase/services/write/flows/league/updateLeagueSeasonUrl.flow.js
 
-import {
-  updateLeagueSeasonUrl,
-} from '../../leagues/index.js'
+import { updateLeagueSeasonUrl } from '../../leagues/index.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `League season URL sync failed at ${stage}`)

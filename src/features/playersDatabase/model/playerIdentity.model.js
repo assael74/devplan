@@ -65,7 +65,10 @@ export const buildPlayerIdentityKey = ({
   fullName = '',
 } = {}) => {
   const year = cleanValue(
-    birthYear || resolvePlayerIdentityBirthYear({ player, season })
+    birthYear || resolvePlayerIdentityBirthYear({
+      player,
+      season,
+    })
   )
   const name = normalizePlayerIdPart(
     normalizedName ||

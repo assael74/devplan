@@ -11,12 +11,18 @@ export const getLeagueSeasonRows = league => {
   const rows = []
 
   if (league?.current?.seasonId || league?.current?.seasonKey) {
-    rows.push({ target: 'current', season: league.current })
+    rows.push({
+      target: 'current',
+      season: league.current,
+    })
   }
 
   ;(Array.isArray(league?.history) ? league.history : []).forEach(season => {
     if (season?.seasonId || season?.seasonKey) {
-      rows.push({ target: 'history', season })
+      rows.push({
+        target: 'history',
+        season,
+      })
     }
   })
 
@@ -73,7 +79,10 @@ export const buildLeaguesMasterSeasonEntry = ({
 export const buildLeaguesMasterLeagueEntry = (league, existing = {}) => {
   const leagueId = clean(league?.leagueId || league?.id)
   const seasons = getLeagueSeasonRows(league).map(row => ({
-    ...buildLeaguesMasterSeasonEntry({ leagueId, ...row }),
+    ...buildLeaguesMasterSeasonEntry({
+      leagueId,
+      ...row,
+    }),
     leagueName: clean(league?.leagueName || league?.name),
     ageGroupId: clean(league?.ageGroupId),
     ageGroupLabel: clean(league?.ageGroupLabel),

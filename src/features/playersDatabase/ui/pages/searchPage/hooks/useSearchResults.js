@@ -231,7 +231,10 @@ export default function useSearchResults({ queryFilters }) {
     })
     setLoadedRows(current => current.map(item => (
       getRowNoteKey(item) === noteKey
-        ? { ...item, notes: nextNotes }
+        ? {
+          ...item,
+          notes: nextNotes,
+        }
         : item
     )))
 
@@ -283,7 +286,10 @@ export default function useSearchResults({ queryFilters }) {
     } catch (error) {
       setLoadedRows(current => current.map(item => (
         getRowNoteKey(item) === noteKey
-          ? { ...item, notes: previousNotes }
+          ? {
+            ...item,
+            notes: previousNotes,
+          }
           : item
       )))
       throw error
@@ -318,7 +324,10 @@ export default function useSearchResults({ queryFilters }) {
     })
     setLoadedRows(current => current.map(item => (
       getRowNoteKey(item) === getRowNoteKey(row)
-        ? { ...item, scoutProfiles: nextProfiles }
+        ? {
+          ...item,
+          scoutProfiles: nextProfiles,
+        }
         : item
     )))
 
@@ -371,7 +380,10 @@ export default function useSearchResults({ queryFilters }) {
     } catch (error) {
       setLoadedRows(current => current.map(item => (
         getRowNoteKey(item) === getRowNoteKey(row)
-          ? { ...item, scoutProfiles: previousProfiles }
+          ? {
+            ...item,
+            scoutProfiles: previousProfiles,
+          }
           : item
       )))
       throw error

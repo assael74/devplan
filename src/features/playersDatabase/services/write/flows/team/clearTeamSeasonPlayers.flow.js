@@ -1,8 +1,17 @@
 // features/playersDatabase/services/write/flows/team/clearTeamSeasonPlayers.flow.js
 
-import { syncLeaguesMasterDocument, updateLeagueSeasonTableRankScoutProfilesSummary, updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
+import {
+  syncLeaguesMasterDocument,
+  updateLeagueSeasonTableRankScoutProfilesSummary,
+  updateLeagueSeasonTableRankTeamUrl,
+} from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
-import { deletePlayerSearchIndexesForTeamSeason, getSearchIndexMetaForTeamSeason, updateTeamSeasonSearchIndexRosterMeta, updateTeamSeasonSearchIndexScoutProfilesSummary } from '../../searchIndex/index.js'
+import {
+  deletePlayerSearchIndexesForTeamSeason,
+  getSearchIndexMetaForTeamSeason,
+  updateTeamSeasonSearchIndexRosterMeta,
+  updateTeamSeasonSearchIndexScoutProfilesSummary,
+} from '../../searchIndex/index.js'
 import { clearTeamSeasonPlayers } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 
@@ -20,7 +29,12 @@ const runStage = async ({ stage, results, action }) => {
     results[stage] = result
     return result
   } catch (error) {
-    throw attachWriteFlowReport({ error, stage, results, flow: FLOW })
+    throw attachWriteFlowReport({
+      error,
+      stage,
+      results,
+      flow: FLOW,
+    })
   }
 }
 
@@ -76,7 +90,10 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     results,
     action: () => updateLeagueSeasonTableRankScoutProfilesSummary({
       ...payload,
-      scoutProfilesSummary: { total: 0, profileCounts: {} },
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
     }),
   })
 
@@ -96,7 +113,10 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     results,
     action: () => updateTeamSeasonSearchIndexScoutProfilesSummary({
       ...payload,
-      scoutProfilesSummary: { total: 0, profileCounts: {} },
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
     }),
   })
 

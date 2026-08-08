@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import { dataImportSx as sx } from '../sx/dataImport.sx.js'
+import { dataImportPreviewCellSx as sx } from './DataImportPreviewCell.sx.js'
 import { resolveDataImportOptions } from './dataImport.model.js'
 
 

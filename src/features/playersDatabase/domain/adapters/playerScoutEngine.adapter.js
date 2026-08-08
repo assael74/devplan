@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/adapters/playerScoutEngine.adapter.js
+// features/playersDatabase/domain/adapters/playerScoutEngine.adapter.js
 
 import { normalizePlayerScout } from '../contracts/playerScout.contract.js'
 

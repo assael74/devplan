@@ -1,4 +1,4 @@
-﻿// features/playersDatabase/ui/logic/tableRows.logic.js
+// features/playersDatabase/ui/logic/tableRows.logic.js
 
 export function sortByTableRank(rows = []) {
   return [...rows].sort((a, b) => Number(a.tableRank || a.rank || 0) - Number(b.tableRank || b.rank || 0))
@@ -18,5 +18,8 @@ export function summarizeScoutProfiles(players = []) {
       acc.profileCounts[profileId] = (acc.profileCounts[profileId] || 0) + 1
     })
     return acc
-  }, { total: 0, profileCounts: {} })
+  }, {
+    total: 0,
+    profileCounts: {},
+  })
 }

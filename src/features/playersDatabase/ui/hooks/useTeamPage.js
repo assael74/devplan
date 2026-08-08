@@ -1,33 +1,84 @@
 // features/playersDatabase/ui/hooks/useTeamPage.js
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 
 import {
+  adaptTeamPagePlayerRow,
   buildTeamPageSeasonOptions,
   buildTeamPageView,
-  findTeamPageSeasonDoc,
   findTeamPageLeagueSeasonDoc,
-  adaptTeamPagePlayerRow,
+  findTeamPageSeasonDoc,
 } from '../../model/teamPage.model.js'
 import { normalizeSeasonLookupKey } from '../../model/season.model.js'
 import { readTeamPageData } from '../../services/read/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../logic/routeBuilders.js'
 
+function cleanValue(value) {
+  return String(value || '').trim()
+}
+
+function findRequestedSeasonOption({
+  seasonOptions,
+  requestedOptionKey,
+  requestedSeasonKey,
+  leagueId,
+}) {
+  if (!seasonOptions.length) return null
+
+  if (requestedOptionKey) {
+    return seasonOptions.find(option => (
+      option.optionKey === requestedOptionKey
+    )) || null
+  }
+
+  if (requestedSeasonKey) {
+    const seasonMatches = seasonOptions.filter(option => (
+      option.seasonKey === requestedSeasonKey
+    ))
+    const leagueMatch = seasonMatches.find(option => (
+      cleanValue(option.leagueId) === cleanValue(leagueId)
+    ))
+
+    return leagueMatch || seasonMatches[0] || null
+  }
+
+  return seasonOptions[0]
+}
+
 export function useTeamPage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { leagueId = '', teamId = '' } = useParams()
   const [searchParams] = useSearchParams()
-  const requestedSeasonKey = normalizeSeasonLookupKey(searchParams.get('season'))
-  const requestedOptionKey = String(searchParams.get('version') || '').trim()
+  const requestedSeasonKey = normalizeSeasonLookupKey(
+    searchParams.get('season')
+  )
+  const requestedOptionKey = cleanValue(
+    searchParams.get('version')
+  )
+  const fromLeague = cleanValue(
+    searchParams.get('fromLeague')
+  )
   const [leagueDoc, setLeagueDoc] = useState(null)
   const [teamDoc, setTeamDoc] = useState(null)
-  const [selectedOptionKey, setSelectedOptionKey] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const reload = useCallback(() => setRefreshKey(value => value + 1), [])
+  const reload = useCallback(() => {
+    setRefreshKey(value => value + 1)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -37,7 +88,10 @@ export function useTeamPage() {
     setLeagueDoc(null)
     setTeamDoc(null)
 
-    readTeamPageData({ leagueId, teamId })
+    readTeamPageData({
+      leagueId,
+      teamId,
+    })
       .then(data => {
         if (!active) return
         setLeagueDoc(data.leagueDoc)
@@ -50,62 +104,82 @@ export function useTeamPage() {
         setError(err?.message || 'טעינת הקבוצה נכשלה')
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (active) {
+          setLoading(false)
+        }
       })
 
-    return () => { active = false }
-  }, [leagueId, teamId, refreshKey])
+    return () => {
+      active = false
+    }
+  }, [
+    leagueId,
+    teamId,
+    refreshKey,
+  ])
 
   const seasonOptions = useMemo(
-    () => buildTeamPageSeasonOptions(leagueDoc, teamDoc, teamId),
-    [leagueDoc, teamDoc, teamId]
+    () => buildTeamPageSeasonOptions(
+      leagueDoc,
+      teamDoc,
+      teamId
+    ),
+    [
+      leagueDoc,
+      teamDoc,
+      teamId,
+    ]
   )
-
-  useEffect(() => {
-    if (!seasonOptions.length) return
-
-    const requestedOption = requestedOptionKey
-      ? seasonOptions.find(option => option.optionKey === requestedOptionKey)
-      : seasonOptions.find(option => option.seasonKey === requestedSeasonKey)
-
-    setSelectedOptionKey(currentOptionKey => {
-      if (requestedOption) return requestedOption.optionKey
-
-      if (requestedOptionKey || requestedSeasonKey) return ''
-
-      const currentOption = seasonOptions.find(option => (
-        option.optionKey === currentOptionKey
-      ))
-
-      if (currentOption) return currentOptionKey
-
-      return seasonOptions[0].optionKey
-    })
-  }, [requestedOptionKey, requestedSeasonKey, seasonOptions])
-
-  const selectedSeasonOption = useMemo(() => (
-    seasonOptions.find(option => option.optionKey === selectedOptionKey) || null
-  ), [seasonOptions, selectedOptionKey])
-
+  const selectedSeasonOption = useMemo(() => findRequestedSeasonOption({
+    seasonOptions,
+    requestedOptionKey,
+    requestedSeasonKey,
+    leagueId,
+  }), [
+    leagueId,
+    requestedOptionKey,
+    requestedSeasonKey,
+    seasonOptions,
+  ])
+  const selectedSeasonKey = selectedSeasonOption?.seasonKey || requestedSeasonKey
+  const selectedSeasonOptionKey = selectedSeasonOption?.optionKey || ''
   const selectionError = useMemo(() => {
-    if (loading || error || !seasonOptions.length) return ''
-    if (selectedSeasonOption) return ''
+    if (
+      loading ||
+      error ||
+      !seasonOptions.length ||
+      selectedSeasonOption
+    ) {
+      return ''
+    }
 
-    return requestedSeasonKey
-      ? `לא נמצאה גרסת קבוצה לעונת ${requestedSeasonKey}`
-      : 'לא נמצאה גרסת קבוצה מתאימה'
-  }, [error, loading, requestedSeasonKey, seasonOptions.length, selectedSeasonOption])
+    if (requestedSeasonKey) {
+      return `לא נמצאה גרסת קבוצה לעונת ${requestedSeasonKey}`
+    }
+
+    return 'לא נמצאה גרסת קבוצה מתאימה'
+  }, [
+    error,
+    loading,
+    requestedSeasonKey,
+    seasonOptions.length,
+    selectedSeasonOption,
+  ])
 
   const selectedLeagueSeason = useMemo(() => findTeamPageLeagueSeasonDoc({
     leagueDoc,
     selectedSeasonOption,
-  }), [leagueDoc, selectedSeasonOption])
-
+  }), [
+    leagueDoc,
+    selectedSeasonOption,
+  ])
   const selectedTeamSeason = useMemo(() => findTeamPageSeasonDoc({
     teamDoc,
     selectedSeasonOption,
-  }), [teamDoc, selectedSeasonOption])
-
+  }), [
+    teamDoc,
+    selectedSeasonOption,
+  ])
   const team = useMemo(() => buildTeamPageView({
     teamId,
     leagueDoc,
@@ -121,17 +195,24 @@ export function useTeamPage() {
     selectedLeagueSeason,
     selectedTeamSeason,
   ])
+  const players = useMemo(() => {
+    if (!Array.isArray(selectedTeamSeason?.teamPlayers)) {
+      return []
+    }
 
-  const players = useMemo(() => (
-    Array.isArray(selectedTeamSeason?.teamPlayers)
-      ? selectedTeamSeason.teamPlayers.map((player, index) => adaptTeamPagePlayerRow({
+    return selectedTeamSeason.teamPlayers.map((player, index) => (
+      adaptTeamPagePlayerRow({
         player,
         index,
         selectedSeasonOption,
         teamSeason: team?.domain || team,
-      }))
-      : []
-  ), [selectedTeamSeason, selectedSeasonOption, team])
+      })
+    ))
+  }, [
+    selectedTeamSeason,
+    selectedSeasonOption,
+    team,
+  ])
 
   const changeSeason = useCallback(value => {
     const nextOption = seasonOptions.find(option => (
@@ -146,24 +227,39 @@ export function useTeamPage() {
       teamId,
       seasonKey: nextOption.seasonKey,
       versionKey: nextOption.optionKey,
+      fromLeague,
     })
 
-    if (nextLeagueId !== leagueId) {
-      navigate(nextPath)
-      return
-    }
-
-    setSelectedOptionKey(nextOption.optionKey)
-    navigate(nextPath, { replace: true })
-  }, [leagueId, navigate, seasonOptions, teamId])
+    navigate(nextPath, {
+      replace: true,
+      state: location.state,
+    })
+  }, [
+    fromLeague,
+    leagueId,
+    location.state,
+    navigate,
+    seasonOptions,
+    teamId,
+  ])
 
   return {
-    leagueId, leagueDoc, team, teamDoc, players,
+    leagueId,
+    leagueDoc,
+    team,
+    teamDoc,
+    players,
     hasTeamPlayers: players.length > 0,
     seasonOptions,
-    selectedSeasonKey: selectedSeasonOption?.seasonKey || '',
-    selectedSeasonOptionKey: selectedOptionKey,
-    selectedSeasonOption, selectedLeagueSeason, selectedTeamSeason,
-    setSelectedSeasonKey: changeSeason, reload, loading, error, selectionError,
+    selectedSeasonKey,
+    selectedSeasonOptionKey,
+    selectedSeasonOption,
+    selectedLeagueSeason,
+    selectedTeamSeason,
+    setSelectedSeasonKey: changeSeason,
+    reload,
+    loading,
+    error,
+    selectionError,
   }
 }

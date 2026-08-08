@@ -1,9 +1,12 @@
 // features/playersDatabase/ui/components/report/ReportListToolbar.js
 
-import { Box, Typography } from '@mui/joy'
+import {
+  Box,
+  Typography,
+} from '@mui/joy'
 
 import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportListToolbarSx as sx } from './sx/reportListToolbar.sx.js'
 
 export default function ReportListToolbar({
   entityType = 'team',

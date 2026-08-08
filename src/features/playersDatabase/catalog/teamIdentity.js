@@ -1,6 +1,6 @@
-// src/features/playersDatabase/catalog/teamIdentity.js
+// features/playersDatabase/catalog/teamIdentity.js
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toPositiveInt = (value, fallback = 1) => {
   const n = Number(value)

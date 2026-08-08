@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsImport.headers.js
+// features/playersDatabase/ui/pages/teamPage/logic/teamStatsImport.headers.js
 
 import { clean } from './teamPage.utils.js'
 

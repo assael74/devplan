@@ -51,7 +51,10 @@ function buildLeagueRow(team = {}) {
     points,
     successRate: toNumber(team.successRate) !== null
       ? toNumber(team.successRate)
-      : calculateSuccessRate({ games, points }),
+      : calculateSuccessRate({
+        games,
+        points,
+      }),
     playersCount: toCount(team.playersCount),
     profilesCount: toCount(team.profilesCount),
     offense: normalizePerformanceSide(performance.offense),
@@ -118,10 +121,26 @@ export function buildLeagueReport({
         columns: 2,
         showEntity: false,
         items: [
-          { id: 'season', label: 'עונה', value: resolvedSeasonKey || '—' },
-          { id: 'league', label: 'ליגה', value: clean(league.name) || '—' },
-          { id: 'ageGroup', label: 'קבוצת גיל', value: league.ageGroup || '—' },
-          { id: 'level', label: 'רמת ליגה', value: league.levelLabel || '—' },
+          {
+            id: 'season',
+            label: 'עונה',
+            value: resolvedSeasonKey || '—',
+          },
+          {
+            id: 'league',
+            label: 'ליגה',
+            value: clean(league.name) || '—',
+          },
+          {
+            id: 'ageGroup',
+            label: 'קבוצת גיל',
+            value: league.ageGroup || '—',
+          },
+          {
+            id: 'level',
+            label: 'רמת ליגה',
+            value: league.levelLabel || '—',
+          },
         ],
       },
       content: {

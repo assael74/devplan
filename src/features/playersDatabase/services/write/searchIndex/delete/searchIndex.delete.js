@@ -1,14 +1,29 @@
 // features/playersDatabase/services/write/searchIndex/delete/searchIndex.delete.js
 
-import { collection, doc, query, where } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedDeleteDoc, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  collection,
+  doc,
+  query,
+  where,
+} from 'firebase/firestore'
+import {
+  createTrackedWriteBatch,
+  trackedDeleteDoc,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
-import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonIndexId } from '../team/teamSeasonIndex.model.js'
-import { collectIndexMeta, dataMatchesPlayer } from '../read/searchIndexMeta.read.js'
+import {
+  collectIndexMeta,
+  dataMatchesPlayer,
+} from '../read/searchIndexMeta.read.js'
 import { buildSearchIndexWriteResult } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 
@@ -31,7 +46,10 @@ const deleteSnapshotDocs = async snapshot => {
     batch.delete(indexDoc.ref)
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: snapshot.docs.length })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: snapshot.docs.length,
+  })
 
   return snapshot.docs.length
 }
@@ -96,7 +114,12 @@ export async function deleteSearchIndexesForTeamSeason({
   }
   const meta = collectIndexMeta(matchingPlayerDocs)
   const playerRowsCount = await deleteSnapshotDocs(matchingPlayerDocs)
-  const teamSeasonIndexId = buildTeamSeasonIndexId({ leagueId, seasonKey, teamId, clubId })
+  const teamSeasonIndexId = buildTeamSeasonIndexId({
+    leagueId,
+    seasonKey,
+    teamId,
+    clubId,
+  })
   let teamRowsCount = 0
 
   if (teamSeasonIndexId) {

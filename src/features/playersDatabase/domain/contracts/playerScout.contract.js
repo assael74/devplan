@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/contracts/playerScout.contract.js
+// features/playersDatabase/domain/contracts/playerScout.contract.js
 
 import {
   buildScoutProfileCombinations,

@@ -1,13 +1,15 @@
 // features/playersDatabase/ui/components/tables/dataTable/DataTableHeader.js
 
 import * as React from 'react'
-import { Box, IconButton, Tooltip } from '@mui/joy'
+import {
+  Box,
+  IconButton,
+  Tooltip,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { pdbTableSx as sx } from '../tables.sx.js'
-import {
-  DATA_TABLE_SORT_DIRECTIONS,
-} from './dataTable.sort.js'
+import { dataTableHeaderSx as sx } from './sx/dataTableHeader.sx.js'
+import { DATA_TABLE_SORT_DIRECTIONS } from './dataTable.sort.js'
 
 export default function DataTableHeader({
   columns,
@@ -40,10 +42,10 @@ export default function DataTableHeader({
                     : 'descending'
                   : 'none'
               }
-              sx={{
-                ...column.sx,
-                ...column.headerSx,
-              }}
+              sx={[
+                column.sx,
+                column.headerSx,
+              ]}
             >
               {showExportButton ? (
                 <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
@@ -58,7 +60,10 @@ export default function DataTableHeader({
                       onExport()
                     }}
                   >
-                    {iconUi({ id: exportConfig.iconId || 'download', size: 'sm' })}
+                    {iconUi({
+                      id: exportConfig.iconId || 'download',
+                      size: 'sm',
+                    })}
                   </IconButton>
                 </Tooltip>
               ) : sortable ? (

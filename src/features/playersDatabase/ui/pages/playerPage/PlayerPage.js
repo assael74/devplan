@@ -15,14 +15,32 @@ import {
 import PlayerHeader from './PlayerHeader.js'
 import PlayerStatsOverview from './PlayerStatsOverview.js'
 import PlayerHistorySection from './PlayerHistorySection.js'
+import PlayerActionsPanel from './PlayerActionsPanel.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { usePlayerReport } from './report/index.js'
 import { playerPageSx as sx } from './sx/playerPage.sx.js'
 
+function getPathParam(path, key) {
+  const queryIndex = String(path || '').indexOf('?')
+
+  if (queryIndex < 0) return ''
+
+  const params = new URLSearchParams(
+    String(path).slice(queryIndex + 1)
+  )
+
+  return String(params.get(key) || '').trim()
+}
+
 function PlayerPageContent() {
   const navigate = useNavigate()
-  const { player } = usePlayerPage()
+  const {
+    player,
+    selectedSeasonKey,
+    setSelectedSeasonKey,
+    fromTeam,
+  } = usePlayerPage()
   const favorites = usePlayersDatabaseFavorites()
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
@@ -30,17 +48,50 @@ function PlayerPageContent() {
     PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
     playerId
   )
-  const historyView = usePlayerHistoryView(player)
+  const historyView = usePlayerHistoryView(
+    player,
+    selectedSeasonKey,
+    setSelectedSeasonKey
+  )
   const playerReport = usePlayerReport({
     player,
     historyRows: historyView.rows,
   })
 
+  const fallbackLeaguePath = player.leagueId
+    ? PLAYERS_DATABASE_UI_ROUTES.league(
+      player.leagueId,
+      {
+        seasonKey: player.seasonKey,
+      }
+    )
+    : ''
+  const fallbackTeamPath = player.leagueId && player.teamId
+    ? PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId: player.leagueId,
+      teamId: player.teamId,
+      seasonKey: player.seasonKey,
+    })
+    : ''
+  const fromLeague = getPathParam(fromTeam, 'fromLeague')
+  const leagueBackPath = fromLeague || fallbackLeaguePath
+  const teamBackPath = fromTeam || fallbackTeamPath
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
-    {
-      label: 'חיפוש מועמדים',
-      to: PLAYERS_DATABASE_UI_ROUTES.search,
-    },
+    player.leagueId
+      ? {
+        label: player.leagueName || 'ליגה',
+        to: leagueBackPath,
+      }
+      : null,
+    player.leagueId && player.teamId
+      ? {
+        label: player.teamName || 'קבוצה',
+        to: teamBackPath,
+      }
+      : {
+        label: 'חיפוש מועמדים',
+        to: PLAYERS_DATABASE_UI_ROUTES.search,
+      },
     {
       label: player.fullName,
     },
@@ -51,14 +102,14 @@ function PlayerPageContent() {
   }
 
   const handleNavigateToTeam = () => {
-    if (!player.leagueId || !player.teamId) return
+    if (!teamBackPath) return
 
-    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
-      leagueId: player.leagueId,
-      teamId: player.teamId,
-      seasonKey: player.seasonKey,
-    }))
+    navigate(teamBackPath, {
+      replace: true,
+      state: null,
+    })
   }
+
 
 
   const handleFavoriteToggle = React.useCallback(() => {
@@ -113,17 +164,22 @@ function PlayerPageContent() {
           historyRows={historyView.rows}
         />
 
-        <PlayerHistorySection
-          rows={historyView.visibleRows}
-          selectedSeasonKey={historyView.selectedSeasonKey}
-          seasonOptions={historyView.seasonOptions}
-          filter={historyView.filter}
-          hasRealData={historyView.hasRealData}
-          onSeasonChange={historyView.setSelectedSeasonKey}
-          onFilterChange={historyView.setFilter}
-          onRowOpen={handleHistoryOpen}
-          onAction={handleAction}
-        />
+        <Box sx={sx.contentGrid}>
+          <PlayerHistorySection
+            rows={historyView.visibleRows}
+            hasRealData={historyView.hasRealData}
+            onRowOpen={handleHistoryOpen}
+          />
+
+          <PlayerActionsPanel
+            selectedSeasonKey={historyView.selectedSeasonKey}
+            seasonOptions={historyView.seasonOptions}
+            filter={historyView.filter}
+            onSeasonChange={historyView.setSelectedSeasonKey}
+            onFilterChange={historyView.setFilter}
+            onAction={handleAction}
+          />
+        </Box>
       </Box>
       <ReportPreviewModal
         open={playerReport.open}

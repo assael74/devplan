@@ -1,25 +1,60 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterContext.js
 
-import { Box, Button, Option, Select, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Option,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import InfoPanel from '../../components/cards/InfoPanel.js'
-import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
+import { leagueCenterContextSx as sx } from './sx/leagueCenterContext.sx.js'
 
 export default function LeagueCenterContext({ model }) {
   const selectedYear = model.birthYear === 'all' ? '' : model.birthYear
   const selectedLevel = model.leagueLevel === 'all' ? '' : model.leagueLevel
+  const hasBirthYearOption = model.birthYearOptions.some(
+    year => String(year) === model.birthYear
+  )
+  const hasLevelOption = model.levelOptions.some(
+    option => option.value === model.leagueLevel
+  )
+  const hasSeasonOption = model.seasonOptions.includes(model.seasonKey)
+
+  const handleBirthYearChange = (event, value) => {
+    if (!value) return
+    model.setBirthYear(value)
+  }
+
+  const handleLevelChange = (event, value) => {
+    if (!value) return
+    model.setLeagueLevel(value)
+  }
+
+  const handleSeasonChange = (event, value) => {
+    if (!value) return
+    model.setSeasonKey(value)
+  }
 
   return (
     <InfoPanel sx={sx.contextPanel}>
-      <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} sx={sx.contextRow}>
+      <Stack direction={{
+        xs: 'column',
+        lg: 'row',
+      }} spacing={1} sx={sx.contextRow}>
         <Box sx={sx.contextField}>
           <Typography level='body-xs' sx={sx.contextLabel}>שנתון</Typography>
           <Select
             value={model.birthYear}
             sx={sx.contextSelect}
-            onChange={(event, value) => model.setBirthYear(value || 'all')}
+            onChange={handleBirthYearChange}
           >
             <Option value='all'>כל השנתונים</Option>
+            {model.birthYear !== 'all' && !hasBirthYearOption && (
+              <Option value={model.birthYear}>{model.birthYear}</Option>
+            )}
             {model.birthYearOptions.map(year => (
               <Option key={year} value={String(year)}>{year}</Option>
             ))}
@@ -31,9 +66,14 @@ export default function LeagueCenterContext({ model }) {
           <Select
             value={model.leagueLevel}
             sx={sx.contextSelect}
-            onChange={(event, value) => model.setLeagueLevel(value || 'all')}
+            onChange={handleLevelChange}
           >
             <Option value='all'>כל הרמות</Option>
+            {model.leagueLevel !== 'all' && !hasLevelOption && (
+              <Option value={model.leagueLevel}>
+                רמה {model.leagueLevel}
+              </Option>
+            )}
             {model.levelOptions.map(option => (
               <Option key={option.value} value={option.value}>{option.label}</Option>
             ))}
@@ -45,9 +85,12 @@ export default function LeagueCenterContext({ model }) {
           <Select
             value={model.seasonKey}
             sx={sx.contextSelect}
-            onChange={(event, value) => model.setSeasonKey(value || 'all')}
+            onChange={handleSeasonChange}
           >
             <Option value='all'>כל העונות</Option>
+            {model.seasonKey !== 'all' && !hasSeasonOption && (
+              <Option value={model.seasonKey}>{model.seasonKey}</Option>
+            )}
             {model.seasonOptions
               .filter(option => option !== 'all')
               .map(option => (

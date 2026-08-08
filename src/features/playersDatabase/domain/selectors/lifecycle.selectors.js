@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/selectors/lifecycle.selectors.js
+// features/playersDatabase/domain/selectors/lifecycle.selectors.js
 
 export const selectIsCurrentSeason = value => value?.lifecycle?.type === 'current'
 export const selectIsFinalSeason = value => Boolean(value?.lifecycle?.isFinal)

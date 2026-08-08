@@ -7,7 +7,11 @@ import {
   normalizePlayerNameValue,
   resolveInternalPlayerId,
 } from '../../../../model/playerIdentity.model.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import {
   buildPlayerSeasonScope,
   isSamePlayerSeasonScope,
@@ -69,7 +73,11 @@ export const buildPlayerSeasonIndexIdentity = ({
   team = {},
   row = {},
 } = {}) => {
-  const scope = buildPlayerSeasonScope({ season, team, row })
+  const scope = buildPlayerSeasonScope({
+    season,
+    team,
+    row,
+  })
 
   return {
     playerId: clean(
@@ -127,7 +135,11 @@ export const findExistingPlayerSeasonIndexDoc = ({
   season = {},
   team = {},
 } = {}) => {
-  const identity = buildPlayerSeasonIndexIdentity({ player, season, team })
+  const identity = buildPlayerSeasonIndexIdentity({
+    player,
+    season,
+    team,
+  })
   const key = buildPlayerSeasonIndexIdentityKey(identity)
   const matches = key ? lookup?.get(key) || [] : []
 

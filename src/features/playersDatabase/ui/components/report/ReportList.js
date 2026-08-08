@@ -1,8 +1,11 @@
 // features/playersDatabase/ui/components/report/ReportList.js
 
-import { Box, Sheet } from '@mui/joy'
+import {
+  Box,
+  Sheet,
+} from '@mui/joy'
 
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportListSx as sx } from './sx/reportList.sx.js'
 
 export default function ReportList({ rows = [], renderRow, emptyText = 'אין נתונים להצגה.' }) {
   if (!rows.length) {

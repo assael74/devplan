@@ -6,9 +6,7 @@ import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
-import {
-  resolveTeamPlayerIdentityPreview,
-} from '../../../../services/write/players/index.js'
+import { resolveTeamPlayerIdentityPreview } from '../../../../services/write/players/index.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { parsePlayerRosterRows } from '../logic/teamRosterImport.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
@@ -93,6 +91,13 @@ export default function useTeamRosterImport({
     setWriteReport(null)
   }, [])
 
+  const clearPaste = React.useCallback(() => {
+    if (busy) return
+
+    setPasteValue('')
+    setRows([])
+  }, [busy])
+
   const close = React.useCallback(() => {
     if (busy) return
     setOpen(false)
@@ -162,6 +167,7 @@ export default function useTeamRosterImport({
     hasIdentityErrors,
     setOpen,
     setPasteValue,
+    clearPaste,
     parse,
     changeCell,
     getRowStatus,

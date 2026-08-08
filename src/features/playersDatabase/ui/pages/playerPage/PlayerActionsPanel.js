@@ -13,10 +13,8 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import {
-  PLAYER_HISTORY_FILTER_OPTIONS,
-} from './logic/playerPage.constants.js'
-import { playerContentSx as sx } from './sx/playerContent.sx.js'
+import { PLAYER_HISTORY_FILTER_OPTIONS } from './logic/playerPage.constants.js'
+import { playerActionsPanelSx as sx } from './sx/playerActionsPanel.sx.js'
 
 const PLACEHOLDER_ACTIONS = [
   {

@@ -20,8 +20,7 @@ import { WriteFlowReportModal } from '../../components/modals/index.js'
 import useLeagueSeasonCreate from './hooks/useLeagueSeasonCreate.js'
 import { buildLeagueCenterColumns } from './logic/leagueCenter.columns.js'
 import { buildWorkQueueItems } from './logic/leagueCenter.logic.js'
-import { leagueCenterPageSx as pageSx } from './sx/leagueCenterPage.sx.js'
-import { leagueCenterContentSx as contentSx } from './sx/leagueCenterContent.sx.js'
+import { leaguesCenterPageSx as sx } from './sx/leaguesCenterPage.sx.js'
 
 export default function LeaguesCenterPage() {
   const navigate = useNavigate()
@@ -33,10 +32,34 @@ export default function LeaguesCenterPage() {
 
   const columns = React.useMemo(() => buildLeagueCenterColumns({
     onCreateSeason: seasonCreate.open,
-    onOpenLeague: row => navigate(PLAYERS_DATABASE_UI_ROUTES.league(row.leagueId, {
-      seasonKey: row.seasonKey || model.seasonKey,
-    })),
-  }), [model.seasonKey, navigate, seasonCreate.open])
+    onOpenLeague: row => {
+      const rowSeasonKey = row.seasonKey && row.seasonKey !== 'all'
+        ? row.seasonKey
+        : row.seasonId
+      const leagueSeasonKey = rowSeasonKey || (
+        model.seasonKey !== 'all' ? model.seasonKey : ''
+      )
+      const leaguePath = PLAYERS_DATABASE_UI_ROUTES.league(
+        row.leagueId,
+        {
+          seasonKey: leagueSeasonKey,
+          birthYear: row.birthYear || model.birthYear,
+          level: row.level || model.leagueLevel,
+          centerSeasonKey: model.seasonKey,
+          centerBirthYear: model.birthYear,
+          centerLevel: model.leagueLevel,
+        }
+      )
+
+      navigate(leaguePath)
+    },
+  }), [
+    model.birthYear,
+    model.leagueLevel,
+    model.seasonKey,
+    navigate,
+    seasonCreate.open,
+  ])
 
   const workItems = React.useMemo(
     () => buildWorkQueueItems(model.summary),
@@ -49,7 +72,7 @@ export default function LeaguesCenterPage() {
 
   return (
     <PlayersDatabaseLayout>
-      <Box sx={pageSx.page}>
+      <Box sx={sx.page}>
         <LeagueCenterHeader
           breadcrumbs={breadcrumbs}
           onNavigateToSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
@@ -58,8 +81,8 @@ export default function LeaguesCenterPage() {
 
         <LeagueCenterContext model={model} />
 
-        <Box sx={contentSx.contentGrid}>
-          <Box sx={contentSx.mainColumn}>
+        <Box sx={sx.contentGrid}>
+          <Box sx={sx.mainColumn}>
             <LeagueCenterOverview summary={model.summary} />
             <LeagueCenterTable columns={columns} model={model} />
           </Box>

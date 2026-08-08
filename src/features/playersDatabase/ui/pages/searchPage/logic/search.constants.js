@@ -6,20 +6,44 @@ import {
 } from '../../../logic/scoutDisplay.logic.js'
 
 export const SEARCH_CONTEXT_TYPES = [
-  { value: 'player', label: 'שחקן' },
-  { value: 'team', label: 'קבוצה' },
+  {
+    value: 'player',
+    label: 'שחקן',
+  },
+  {
+    value: 'team',
+    label: 'קבוצה',
+  },
 ]
 
 export const SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS = [
-  { value: 'relegation', label: 'ירידה צפויה' },
-  { value: 'unchanged', label: 'ללא שינוי' },
-  { value: 'promotion', label: 'עלייה צפויה' },
-  { value: 'unknown', label: 'לא ניתן לחשב' },
+  {
+    value: 'relegation',
+    label: 'ירידה צפויה',
+  },
+  {
+    value: 'unchanged',
+    label: 'ללא שינוי',
+  },
+  {
+    value: 'promotion',
+    label: 'עלייה צפויה',
+  },
+  {
+    value: 'unknown',
+    label: 'לא ניתן לחשב',
+  },
 ]
 
 export const SEARCH_PROFILE_MATCH_MODES = [
-  { value: 'any', label: 'התאמה לפרופיל אחד לפחות' },
-  { value: 'all', label: 'התאמה לכל הפרופילים' },
+  {
+    value: 'any',
+    label: 'התאמה לפרופיל אחד לפחות',
+  },
+  {
+    value: 'all',
+    label: 'התאמה לכל הפרופילים',
+  },
 ]
 
 export const SEARCH_SCOUT_PROFILES = buildPlayerScoutProfileOptions()
@@ -80,16 +104,37 @@ export const SEARCH_TEAM_PERFORMANCE_HELP = {
 }
 
 export const SEARCH_PLAYER_STAT_FIELDS = [
-  { value: 'goals', label: 'שערים' },
-  { value: 'appearances', label: 'משחקים' },
-  { value: 'minutes', label: 'דקות' },
+  {
+    value: 'goals',
+    label: 'שערים',
+  },
+  {
+    value: 'appearances',
+    label: 'משחקים',
+  },
+  {
+    value: 'minutes',
+    label: 'דקות',
+  },
 ]
 
 export const SEARCH_TEAM_STAT_FIELDS = [
-  { value: 'goalsFor', label: 'שערי זכות' },
-  { value: 'goalsAgainst', label: 'שערי חובה' },
-  { value: 'teamGamePlayed', label: 'משחקים' },
-  { value: 'tableRank', label: 'מיקום בטבלה' },
+  {
+    value: 'goalsFor',
+    label: 'שערי זכות',
+  },
+  {
+    value: 'goalsAgainst',
+    label: 'שערי חובה',
+  },
+  {
+    value: 'teamGamePlayed',
+    label: 'משחקים',
+  },
+  {
+    value: 'tableRank',
+    label: 'מיקום בטבלה',
+  },
 ]
 
 export const SEARCH_STAT_FIELDS = [
@@ -100,11 +145,26 @@ export const SEARCH_STAT_FIELDS = [
 ]
 
 export const SEARCH_OPERATORS = [
-  { value: 'gte', label: 'לפחות' },
-  { value: 'lte', label: 'לכל היותר' },
-  { value: 'gt', label: 'גדול מ-' },
-  { value: 'lt', label: 'קטן מ-' },
-  { value: 'eq', label: 'שווה' },
+  {
+    value: 'gte',
+    label: 'לפחות',
+  },
+  {
+    value: 'lte',
+    label: 'לכל היותר',
+  },
+  {
+    value: 'gt',
+    label: 'גדול מ-',
+  },
+  {
+    value: 'lt',
+    label: 'קטן מ-',
+  },
+  {
+    value: 'eq',
+    label: 'שווה',
+  },
 ]
 
 export const createSearchCondition = id => ({

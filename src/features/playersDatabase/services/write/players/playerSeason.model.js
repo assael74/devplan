@@ -1,6 +1,11 @@
 // features/playersDatabase/services/write/players/playerSeason.model.js
 
-import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../leagues/leagueDoc.js'
+import { pickDefinedValue } from '../../../model/value.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
@@ -63,7 +68,10 @@ export const isSamePlayerSeasonRow = ({
     return false
   }
 
-  const targetTeamId = getTargetSeasonRowTeamId({ season, team })
+  const targetTeamId = getTargetSeasonRowTeamId({
+    season,
+    team,
+  })
   if (!targetTeamId) return true
 
   return getPlayerSeasonRowTeamId(row) === targetTeamId
@@ -149,10 +157,10 @@ export const buildPlayerSeasonDoc = ({
       substituteIn: playerStats.substituteIn,
       substitutedOut: playerStats.substitutedOut,
       teamMinutes: 0,
-      teamGames: toNumberOrZero(team.teamStats?.teamGamePlayed ?? team.teamGamePlayed),
+      teamGames: toNumberOrZero(pickDefinedValue(team.teamStats?.teamGamePlayed, team.teamGamePlayed)),
       teamRank: toNumberOrZero(team.tableRank),
-      teamGoalsFor: toNumberOrZero(team.teamStats?.goalsFor ?? team.goalsFor),
-      teamGoalsAgainst: toNumberOrZero(team.teamStats?.goalsAgainst ?? team.goalsAgainst),
+      teamGoalsFor: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsFor, team.goalsFor)),
+      teamGoalsAgainst: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsAgainst, team.goalsAgainst)),
       teamAttackPerformance: null,
       teamDefensePerformance: null,
     },
@@ -256,7 +264,10 @@ export const upsertSeasonRows = ({
 
   return safeRows.map((row, index) => (
     index === seasonIndex
-      ? { ...row, ...seasonDoc }
+      ? {
+        ...row,
+        ...seasonDoc,
+      }
       : row
   ))
 }

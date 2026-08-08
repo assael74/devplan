@@ -7,7 +7,43 @@ import {
   selectPlayerScoutDisplay,
   selectPlayerScoutProfiles,
 } from '../domain/index.js'
-import { cleanValue } from './value.model.js'
+import { normalizeSeasonLookupKey } from './season.model.js'
+import {
+  cleanValue,
+  pickFirstValue,
+} from './value.model.js'
+
+
+function findPlayerActiveSeason(playerDomain, selectedSeasonKey, selectedTeamId) {
+  const seasons = Array.isArray(playerDomain?.seasons)
+    ? playerDomain.seasons
+    : []
+  const seasonKey = normalizeSeasonLookupKey(selectedSeasonKey)
+  const teamId = cleanValue(selectedTeamId)
+
+  if (seasonKey) {
+    const seasonMatches = seasons.filter(item => (
+      normalizeSeasonLookupKey(
+        item?.season?.seasonKey || item?.season?.seasonId
+      ) === seasonKey
+    ))
+    const teamMatch = seasonMatches.find(item => (
+      cleanValue(item?.team?.teamId) === teamId
+    ))
+
+    return teamMatch || seasonMatches[0] || null
+  }
+
+  if (teamId) {
+    const teamMatch = seasons.find(item => (
+      cleanValue(item?.team?.teamId) === teamId
+    ))
+
+    if (teamMatch) return teamMatch
+  }
+
+  return playerDomain?.activeSeason || seasons[0] || null
+}
 
 const RELIABILITY_LABELS = {
   high: 'גבוהה',
@@ -140,10 +176,18 @@ export const buildEmptyPlayerPageView = playerId => ({
   reasons: ['לא נמצא מסמך שחקן מתאים.'],
 })
 
-export const buildPlayerPageView = playerDomain => {
-  if (!playerDomain?.activeSeason) return null
+export const buildPlayerPageView = (
+  playerDomain,
+  selectedSeasonKey = '',
+  selectedTeamId = ''
+) => {
+  const season = findPlayerActiveSeason(
+    playerDomain,
+    selectedSeasonKey,
+    selectedTeamId
+  )
 
-  const season = playerDomain.activeSeason
+  if (!season) return null
   const stats = season.stats?.actual || {}
   const profiles = selectPlayerScoutProfiles(season)
   const display = selectPlayerScoutDisplay(season)
@@ -164,8 +208,13 @@ export const buildPlayerPageView = playerDomain => {
     ),
     playerId: cleanValue(playerDomain.identity?.playerId),
     fullName: cleanValue(playerDomain.identity?.displayName || '-'),
-    birthYear: playerDomain.identity?.birthYear ?? season.season?.birthYear ?? null,
-    birthDate: playerDomain.identity?.birthDate ?? null,
+    birthYear: pickFirstValue(
+      playerDomain.identity?.birthYear,
+      season.season?.birthYear
+    ) || null,
+    birthDate: pickFirstValue(
+      playerDomain.identity?.birthDate
+    ) || null,
     clubName: getClubShortName(season.team?.clubId) || '-',
     teamName: resolveAgeGroupLabel({
       ageGroupId: season.team?.ageGroupId,
@@ -195,7 +244,10 @@ export const buildPlayerPageView = playerDomain => {
     seasonContexts,
     history: seasonContexts,
     seasons: seasonContexts,
-    reasons: buildReasons({ season, display }),
+    reasons: buildReasons({
+      season,
+      display,
+    }),
     avatarUrl: cleanValue(playerDomain.identity?.avatarUrl),
   }
 }

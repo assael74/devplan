@@ -1,11 +1,19 @@
 // features/playersDatabase/ui/pages/leaguePage/LeagueActionsPanel.js
 
-import { Box, Button, Divider, Option, Select, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Divider,
+  Option,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import InfoPanel from '../../components/cards/InfoPanel.js'
 import ScoutPrioritySelect from '../../components/filters/ScoutPrioritySelect.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { leagueContentSx as sx } from './sx/leagueContent.sx.js'
+import { leagueActionsPanelSx as sx } from './sx/leagueActionsPanel.sx.js'
 
 export default function LeagueActionsPanel({
   selectedSeasonKey,
@@ -19,7 +27,17 @@ export default function LeagueActionsPanel({
   onDeleteTeams,
   onReport,
 }) {
+  const hasSelectedSeason = seasonOptions.some(option => (
+    option.seasonKey === selectedSeasonKey
+  ))
+  const seasonSelectValue = hasSelectedSeason
+    ? selectedSeasonKey
+    : null
 
+  const handleSeasonChange = (_, nextValue) => {
+    if (!nextValue || nextValue === selectedSeasonKey) return
+    onSeasonChange(nextValue)
+  }
 
   return (
     <InfoPanel sx={sx.insightsPanel}>
@@ -31,10 +49,11 @@ export default function LeagueActionsPanel({
             </Typography>
 
             <Select
-              value={selectedSeasonKey || ''}
+              value={seasonSelectValue}
               size='sm'
+              disabled={!seasonOptions.length}
               sx={sx.actionSeasonSelect}
-              onChange={(_, nextValue) => onSeasonChange(nextValue || '')}
+              onChange={handleSeasonChange}
               renderValue={selected => {
                 const option = seasonOptions.find(item => (
                   item.seasonKey === selected?.value
@@ -54,7 +73,7 @@ export default function LeagueActionsPanel({
                 )
               }}
             >
-              {seasonOptions.length ? seasonOptions.map(option => (
+              {seasonOptions.map(option => (
                 <Option
                   key={`${option.target}_${option.seasonKey}`}
                   value={option.seasonKey}
@@ -69,7 +88,7 @@ export default function LeagueActionsPanel({
                     </Typography>
                   </Box>
                 </Option>
-              )) : <Option value=''>אין עונות</Option>}
+              ))}
             </Select>
           </Box>
 
@@ -96,7 +115,10 @@ export default function LeagueActionsPanel({
 
         <Button
           variant="outlined"
-          startDecorator={iconUi({ id: 'print', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'print',
+            size: 'sm',
+          })}
           sx={sx.sideReportButton}
           onClick={onReport}
         >
@@ -104,7 +126,10 @@ export default function LeagueActionsPanel({
         </Button>
 
         <Button
-          startDecorator={iconUi({ id: 'upload', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'upload',
+            size: 'sm',
+          })}
           sx={sx.sideLoadButton}
           onClick={onLoad}
         >
@@ -113,7 +138,10 @@ export default function LeagueActionsPanel({
 
         <Button
           variant="outlined"
-          startDecorator={iconUi({ id: 'delete', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'delete',
+            size: 'sm',
+          })}
           sx={sx.sideDeleteButton}
           onClick={onDeleteTeams}
         >

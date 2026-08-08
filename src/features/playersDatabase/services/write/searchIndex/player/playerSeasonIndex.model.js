@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.model.js
 
 import { serverTimestamp } from 'firebase/firestore'
+import { pickDefinedValue } from '../../../../model/value.model.js'
 import {
   buildPlayerIdentityKey,
   isValidExternalPlayerId,
@@ -10,7 +11,11 @@ import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
 } from '../../../../model/playerStats.model.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
   buildPlayerDocumentId,
@@ -25,9 +30,7 @@ import {
   normalizeText,
   resolveClubLevel,
 } from './playerSeasonIndex.identity.js'
-import {
-  buildPlayerScoutIndexFields,
-} from './playerSeasonIndex.scout.js'
+import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
 export * from './playerSeasonIndex.identity.js'
@@ -49,11 +52,21 @@ export const buildPlayerSeasonIndexDoc = ({
     externalPlayerId: player.externalPlayerId,
     birthYear: season.birthYear,
   }) ? clean(player.externalPlayerId) : ''
-  const playerId = buildInternalPlayerId({ player, season })
-  const aliases = buildPlayerAliases({ player, displayName })
+  const playerId = buildInternalPlayerId({
+    player,
+    season,
+  })
+  const aliases = buildPlayerAliases({
+    player,
+    displayName,
+  })
   const playerStats = normalizePlayerStats(player)
   const teamScope = buildPlayerSeasonScope({
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   })
   const teamId = teamScope.birthTeamId
@@ -110,7 +123,10 @@ export const buildPlayerSeasonIndexDoc = ({
     seasonId,
     seasonKey,
     clubId: clean(team.clubId),
-    clubLevel: resolveClubLevel({ clubId: team.clubId, clubLevel: team.clubLevel }),
+    clubLevel: resolveClubLevel({
+      clubId: team.clubId,
+      clubLevel: team.clubLevel,
+    }),
     birthTeamId: teamId,
     birthTeamDocumentId: teamScope.birthTeamDocumentId,
     birthTeamSlot: teamScope.birthTeamSlot,
@@ -141,10 +157,10 @@ export const buildPlayerSeasonIndexDoc = ({
     teamTableRank: toNumberOrZero(team.tableRank),
     teamTableAttackRank: toNumberOrZero(team.tableAttackRank),
     teamTableDefenseRank: toNumberOrZero(team.tableDefenseRank),
-    teamGoalsFor: toNumberOrZero(team.teamStats?.goalsFor ?? team.goalsFor),
-    teamGoalsAgainst: toNumberOrZero(team.teamStats?.goalsAgainst ?? team.goalsAgainst),
+    teamGoalsFor: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsFor, team.goalsFor)),
+    teamGoalsAgainst: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsAgainst, team.goalsAgainst)),
     teamGoalsForPerGame: toNumberOrZero(team.goalsForPerGame),
-    teamGamePlayed: toNumberOrZero(team.teamStats?.teamGamePlayed ?? team.teamGamePlayed),
+    teamGamePlayed: toNumberOrZero(pickDefinedValue(team.teamStats?.teamGamePlayed, team.teamGamePlayed)),
 
     games: playerStats.games,
     goals: playerStats.goals,

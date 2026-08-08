@@ -132,7 +132,10 @@ const buildExistingIdentityLookup = docs => {
     }
   })
 
-  return { byExternalId, byIdentityKey }
+  return {
+    byExternalId,
+    byIdentityKey,
+  }
 }
 
 

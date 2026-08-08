@@ -1,7 +1,12 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchResultNotes.js
 
 import * as React from 'react'
-import { Box, Button, Textarea, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Textarea,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { searchResultNotesSx as sx } from './sx/searchResultNotes.sx.js'
@@ -41,7 +46,10 @@ export default function SearchResultNotes({
     <Box sx={sx.root}>
       <Box sx={sx.header}>
         <Box sx={sx.titleWrap}>
-          <Box sx={sx.icon}>{iconUi({ id: 'notes', size: 'sm' })}</Box>
+          <Box sx={sx.icon}>{iconUi({
+            id: 'notes',
+            size: 'sm',
+          })}</Box>
           <Typography level='title-sm' sx={sx.title}>הערות</Typography>
         </Box>
 
@@ -63,7 +71,10 @@ export default function SearchResultNotes({
                 <Button
                   size='sm'
                   loading={Boolean(row?.notesPending)}
-                  startDecorator={iconUi({ id: 'save', size: 'xs' })}
+                  startDecorator={iconUi({
+                    id: 'save',
+                    size: 'xs',
+                  })}
                   sx={sx.saveButton}
                   onClick={handleSave}
                 >
@@ -74,7 +85,10 @@ export default function SearchResultNotes({
               <Button
                 size='sm'
                 variant='plain'
-                startDecorator={iconUi({ id: 'edit', size: 'sm' })}
+                startDecorator={iconUi({
+                  id: 'edit',
+                  size: 'sm',
+                })}
                 sx={sx.editButton}
                 onClick={() => setEditing(true)}
               >
@@ -91,7 +105,10 @@ export default function SearchResultNotes({
         readOnly={!editing}
         value={editing ? value : String(row?.notes || '')}
         placeholder={editing ? 'הוספת הערות לעונת השחקן' : 'לא נוספו הערות.'}
-        sx={sx.textarea({ editing, hasNotes })}
+        sx={sx.textarea({
+          editing,
+          hasNotes,
+        })}
         onChange={event => setValue(event.target.value)}
       />
 

@@ -1,8 +1,15 @@
 // features/playersDatabase/ui/pages/teamPage/TeamPage.js
 
 import * as React from 'react'
-import { Box, CircularProgress, Typography } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import {
+  Box,
+  CircularProgress,
+  Typography,
+} from '@mui/joy'
+import {
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
@@ -16,8 +23,12 @@ import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarPr
 import TeamHeader from './TeamHeader.js'
 import TeamStatsOverview from './TeamStatsOverview.js'
 import TeamPlayersSection from './TeamPlayersSection.js'
+import TeamActionsPanel from './TeamActionsPanel.js'
 import TeamRoleModal from './TeamRoleModal.js'
-import { SeasonDeleteConfirmModal, WriteFlowReportModal } from '../../components/modals/index.js'
+import {
+  SeasonDeleteConfirmModal,
+  WriteFlowReportModal,
+} from '../../components/modals/index.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
 import {
   TeamRosterImportModal,
@@ -34,6 +45,7 @@ import { useTeamReport } from './report/index.js'
 import { teamPageSx as sx } from './sx/teamPage.sx.js'
 
 function TeamPageContent() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { notify } = useSnackbar()
   const favorites = usePlayersDatabaseFavorites()
@@ -48,6 +60,8 @@ function TeamPageContent() {
     selectedSeasonKey,
     selectedSeasonOptionKey,
     selectedSeasonOption,
+    selectedLeagueSeason,
+    selectedTeamSeason,
     setSelectedSeasonKey,
     reload,
     loading,
@@ -75,8 +89,18 @@ function TeamPageContent() {
   const statsColumns = useTeamStatsColumns({
     players,
     rosterLookup: statsImport.rosterLookup,
+    getRowStatus: statsImport.getRowStatus,
   })
 
+  const pageSearchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+  const fromLeaguePath = pageSearchParams.get('fromLeague') || ''
+  const leagueFallbackPath = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
+    seasonKey: selectedSeasonKey,
+  })
+  const leagueBackPath = fromLeaguePath || leagueFallbackPath
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
@@ -88,9 +112,7 @@ function TeamPageContent() {
     },
     {
       label: team.leagueName,
-      to: PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
-        seasonKey: selectedSeasonKey,
-      }),
+      to: leagueBackPath,
     },
     {
       label: team.name,
@@ -123,6 +145,13 @@ function TeamPageContent() {
     PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
     team.birthTeamId
   )
+
+  const handleBackToLeague = () => {
+    navigate(leagueBackPath, {
+      replace: true,
+      state: null,
+    })
+  }
 
   const handleTeamFavoriteToggle = React.useCallback(() => {
     const payload = {
@@ -198,33 +227,41 @@ function TeamPageContent() {
             Promise.resolve(handleTeamFavoriteToggle()).catch(() => {})
           }}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
-          onLeague={() => navigate(PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
-            seasonKey: selectedSeasonKey,
-          }))}
+          onLeague={handleBackToLeague}
         />
 
         <TeamStatsOverview team={team} />
 
-        <TeamPlayersSection
-          players={visiblePlayers}
-          selectedSeasonKey={selectedSeasonKey}
-          selectedSeasonOptionKey={selectedSeasonOptionKey}
-          seasonOptions={seasonOptions}
-          hasTeamPlayers={hasTeamPlayers}
-          profileOnly={profileOnly}
-          onSeasonChange={setSelectedSeasonKey}
-          onProfileOnlyChange={setProfileOnly}
-          onPlayersImport={() => rosterImport.setOpen(true)}
-          onStatsImport={() => statsImport.setOpen(true)}
-          onDeletePlayers={() => playersDelete.setOpen(true)}
-          onReport={teamReport.openPreview}
-          onRoleOpen={roleEditor.open}
-          onPlayerOpen={row => navigate(PLAYERS_DATABASE_UI_ROUTES.player(
-            row.playerDocumentId || row.id
-          ))}
-          onPlayerUrlEdit={playerUrlEditor.open}
-          onFavoriteToggle={handlePlayerFavoriteToggle}
-        />
+        <Box sx={sx.contentGrid}>
+          <TeamPlayersSection
+            players={visiblePlayers}
+            onRoleOpen={roleEditor.open}
+            onPlayerOpen={row => navigate(
+              PLAYERS_DATABASE_UI_ROUTES.player({
+                playerId: row.playerDocumentId || row.id,
+                seasonKey: selectedSeasonKey,
+                teamId: team.birthTeamId || team.id,
+                leagueId: selectedSeasonOption?.leagueId || leagueId,
+                fromTeam: `${location.pathname}${location.search}`,
+              })
+            )}
+            onPlayerUrlEdit={playerUrlEditor.open}
+            onFavoriteToggle={handlePlayerFavoriteToggle}
+          />
+
+          <TeamActionsPanel
+            selectedSeasonOptionKey={selectedSeasonOptionKey}
+            seasonOptions={seasonOptions}
+            hasTeamPlayers={hasTeamPlayers}
+            profileOnly={profileOnly}
+            onSeasonChange={setSelectedSeasonKey}
+            onProfileOnlyChange={setProfileOnly}
+            onPlayersImport={() => rosterImport.setOpen(true)}
+            onStatsImport={() => statsImport.setOpen(true)}
+            onDeletePlayers={() => playersDelete.setOpen(true)}
+            onReport={teamReport.openPreview}
+          />
+        </Box>
       </Box>
 
       <ReportPreviewModal
@@ -256,39 +293,33 @@ function TeamPageContent() {
       />
 
       <TeamRosterImportModal
-        open={rosterImport.open}
-        hasTeamPlayers={hasTeamPlayers}
-        teamName={team.name}
+        team={team}
         seasonKey={selectedSeasonKey}
-        rows={rosterImport.rows}
-        pasteValue={rosterImport.pasteValue}
-        busy={rosterImport.busy}
-        onPasteChange={rosterImport.setPasteValue}
-        onPaste={rosterImport.parse}
-        onCellChange={rosterImport.changeCell}
-        onConfirm={rosterImport.confirm}
-        onClose={rosterImport.close}
+        hasTeamPlayers={hasTeamPlayers}
+        controller={rosterImport}
       />
 
       <TeamStatsImportModal
-        open={statsImport.open}
         team={team}
         seasonKey={selectedSeasonKey}
         hasTeamPlayers={hasTeamPlayers}
         columns={statsColumns}
-        rows={statsImport.rows}
-        pasteValue={statsImport.pasteValue}
-        busy={statsImport.busy}
-        hasInvalidRows={statsImport.hasInvalidRows}
-        seasonStatus={statsImport.seasonStatus}
-        onSeasonStatusChange={statsImport.changeSeasonStatus}
-        onPasteChange={statsImport.setPasteValue}
-        onPaste={statsImport.parse}
-        onClear={statsImport.clearPaste}
-        onCellChange={statsImport.changeCell}
-        getRowStatus={statsImport.getRowStatus}
-        onConfirm={statsImport.confirm}
-        onClose={statsImport.close}
+        source={{
+          teamUrl:
+            selectedTeamSeason?.teamUrl ||
+            team.teamUrl ||
+            selectedSeasonOption?.season?.teamUrl ||
+            '',
+          leagueName:
+            selectedSeasonOption?.leagueName ||
+            team.leagueName ||
+            '',
+          leagueUrl:
+            selectedLeagueSeason?.season?.seasonUrl ||
+            selectedSeasonOption?.season?.seasonUrl ||
+            '',
+        }}
+        controller={statsImport}
       />
 
 

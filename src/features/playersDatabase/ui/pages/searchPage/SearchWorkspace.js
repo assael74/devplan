@@ -7,7 +7,7 @@ import { PlayerRoleEditModal } from '../../components/playerRole/index.js'
 import SearchQueryPanel from './query/SearchQueryPanel.js'
 import SearchResultsSection from './results/SearchResultsSection.js'
 import SearchResultsSidebar from './resultsSidebar/SearchResultsSidebar.js'
-import { searchPageSx as sx } from './sx/searchPage.sx.js'
+import { searchWorkspaceSx as sx } from './sx/searchWorkspace.sx.js'
 
 export default function SearchWorkspace({ search, onEntityOpen }) {
   const queryEntityType = search.queryFilters.searchContext || 'player'

@@ -28,7 +28,7 @@ const TARGET_OPTIONS = [
   },
 ]
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumberOrZero = value => {
   const n = Number(value)
@@ -62,13 +62,19 @@ export default function CreateSeasonModal({
   onConfirm,
 }) {
   const [form, setForm] = React.useState(() => (
-    getInitialState({ league, defaultSeasonKey })
+    getInitialState({
+      league,
+      defaultSeasonKey,
+    })
   ))
 
   React.useEffect(() => {
     if (!open) return
 
-    setForm(getInitialState({ league, defaultSeasonKey }))
+    setForm(getInitialState({
+      league,
+      defaultSeasonKey,
+    }))
   }, [defaultSeasonKey, league, open])
 
   const updateField = (field, value) => {

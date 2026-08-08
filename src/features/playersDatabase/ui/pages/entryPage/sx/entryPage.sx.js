@@ -1,4 +1,4 @@
-// entryPage/features/playersDatabase/ui/entryPage.sx.js
+// features/playersDatabase/ui/pages/entryPage/sx/EntryPage.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
@@ -24,56 +24,73 @@ export const entryPageSx = {
     overflow: 'hidden',
   },
 
-  header: {
+  infoGrid: {
+    minWidth: 0,
+    minHeight: 0,
+    height: '100%',
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      xl: 'minmax(0, 1fr) 360px',
+    },
+    gap: 2,
+    alignItems: 'stretch',
+    overflow: 'hidden',
+
+    '& > *': {
+      minWidth: 0,
+      minHeight: 0,
+      height: '100%',
+    },
+  },
+
+  capabilities: {
+    height: 100,
+    minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    color: devPlanColors.secondary,
+    pr: 0.75,
+
+    '& p': {
+      lineHeight: 1.55,
+    },
+  },
+
+  statsGrid: {
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      lg: '520px minmax(0, 1fr)',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      xl: 'repeat(4, minmax(0, 1fr))',
     },
-    gridTemplateAreas: {
-      xs: `
-        "content"
-        "visual"
-      `,
-      lg: '"content visual"',
+    gap: 1.25,
+
+    '& > *': {
+      minWidth: 0,
+      minHeight: 98,
+      maxHeight: 108,
+      p: 1.25,
     },
-    gap: 2,
-    alignItems: 'center',
-  },
 
-  headerContent: {
-    gridArea: 'content',
-    width: '100%',
-    minWidth: 0,
-    alignItems: 'flex-start',
-    justifySelf: 'stretch',
-    textAlign: 'left',
-  },
-
-  headerVisual: {
-    gridArea: 'visual',
-    width: '100%',
-    minWidth: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-
-  pageTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 40,
-      md: 54,
+    '& h2': {
+      fontSize: 27,
+      lineHeight: 1,
     },
-    lineHeight: 1.05,
-    fontWeight: 700,
-  },
 
-  pageDescription: {
-    maxWidth: 680,
-    color: devPlanColors.secondary,
-    lineHeight: 1.55,
-    textAlign: 'left',
+    '& [class*="MuiTypography-body-sm"]': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      fontSize: 13,
+    },
+
+    '& [class*="MuiTypography-body-xs"]': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      fontSize: 11,
+    },
   },
 }

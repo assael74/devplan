@@ -1,6 +1,10 @@
 // features/playersDatabase/services/write/searchIndex/team/teamPerformanceSchema.audit.js
 
-import { collection, query, where } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+} from 'firebase/firestore'
 import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'

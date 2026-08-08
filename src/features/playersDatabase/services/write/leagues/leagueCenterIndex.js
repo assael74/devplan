@@ -1,15 +1,18 @@
-import { doc, serverTimestamp } from 'firebase/firestore'
+// features/playersDatabase/services/write/leagues/leagueCenterIndex.js
+
+import {
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import {
-  buildLeagueCenterRows,
-} from '../../../model/leagueCenter.model.js'
+import { buildLeagueCenterRows } from '../../../model/leagueCenter.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const INDEX_DOC_ID = 'all'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const leagueCenterIndexRef = () =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagueCenterIndex, INDEX_DOC_ID)
@@ -67,8 +70,14 @@ export async function syncLeagueCenterIndexRows({
 
       const leagueSnapshot = await transaction.get(leagueRef(leagueId))
       const leagueData = leagueSnapshot.exists()
-        ? { id: leagueId, ...leagueSnapshot.data() }
-        : { ...league, id: leagueId }
+        ? {
+          id: leagueId,
+          ...leagueSnapshot.data(),
+        }
+        : {
+          ...league,
+          id: leagueId,
+        }
 
       const row = buildLeagueCenterRows({
         leagueDocs: [leagueData],

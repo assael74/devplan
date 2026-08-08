@@ -4,9 +4,7 @@ import {
   SCOUT_PROFILE_COMBINATIONS,
   SCOUT_PROFILES,
 } from '../../../../../shared/players/scouting/index.js'
-import {
-  TEAM_SCOUT_PRIORITY_LEVEL,
-} from '../../../../../shared/teams/scout/index.js'
+import { TEAM_SCOUT_PRIORITY_LEVEL } from '../../../../../shared/teams/scout/index.js'
 import {
   SCOUT_INTEREST_DISPLAY,
   SCOUT_PROFILE_GROUP_LABELS,

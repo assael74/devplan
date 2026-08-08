@@ -6,63 +6,35 @@ import {
   Typography,
 } from '@mui/joy'
 
-import TeamActionsPanel from './TeamActionsPanel.js'
 import TeamPlayersTable from './TeamPlayersTable.js'
-import { teamContentSx as sx } from './sx/teamContent.sx.js'
+import { teamPlayersSectionSx as sx } from './sx/teamPlayersSection.sx.js'
 
 export default function TeamPlayersSection({
   players,
-  selectedSeasonKey,
-  selectedSeasonOptionKey,
-  seasonOptions,
-  hasTeamPlayers,
-  profileOnly,
-  onSeasonChange,
-  onProfileOnlyChange,
-  onPlayersImport,
-  onStatsImport,
-  onDeletePlayers,
-  onReport,
   onRoleOpen,
   onPlayerOpen,
   onPlayerUrlEdit,
   onFavoriteToggle,
 }) {
   return (
-    <Box sx={sx.contentGrid}>
-      <Card sx={sx.playersPanel}>
-        <Box sx={sx.playersHeader}>
-          <Typography level='title-lg' sx={sx.panelTitle}>
-            סגל שנתון
-          </Typography>
+    <Card sx={sx.playersPanel}>
+      <Box sx={sx.playersHeader}>
+        <Typography level='title-lg' sx={sx.panelTitle}>
+          סגל שנתון
+        </Typography>
 
-          <Typography level='body-sm' sx={sx.playersCount}>
-            {players.length} שחקנים
-          </Typography>
-        </Box>
+        <Typography level='body-sm' sx={sx.playersCount}>
+          {players.length} שחקנים
+        </Typography>
+      </Box>
 
-        <TeamPlayersTable
-          players={players}
-          onRoleOpen={onRoleOpen}
-          onPlayerOpen={onPlayerOpen}
-          onPlayerUrlEdit={onPlayerUrlEdit}
-          onFavoriteToggle={onFavoriteToggle}
-        />
-      </Card>
-
-      <TeamActionsPanel
-        selectedSeasonKey={selectedSeasonKey}
-        selectedSeasonOptionKey={selectedSeasonOptionKey}
-        seasonOptions={seasonOptions}
-        hasTeamPlayers={hasTeamPlayers}
-        profileOnly={profileOnly}
-        onSeasonChange={onSeasonChange}
-        onProfileOnlyChange={onProfileOnlyChange}
-        onPlayersImport={onPlayersImport}
-        onStatsImport={onStatsImport}
-        onDeletePlayers={onDeletePlayers}
-        onReport={onReport}
+      <TeamPlayersTable
+        players={players}
+        onRoleOpen={onRoleOpen}
+        onPlayerOpen={onPlayerOpen}
+        onPlayerUrlEdit={onPlayerUrlEdit}
+        onFavoriteToggle={onFavoriteToggle}
       />
-    </Box>
+    </Card>
   )
 }

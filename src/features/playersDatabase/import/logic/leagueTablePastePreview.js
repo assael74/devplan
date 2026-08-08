@@ -1,11 +1,14 @@
+// features/playersDatabase/import/logic/leagueTablePastePreview.js
+
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
+import { pickDefinedValue } from '../../model/value.model.js'
 import {
   buildTeamIdentity,
   inferTeamSlotByLeagueLevel,
 } from '../../catalog/teamIdentity.js'
 
-const clean = (value) => String(value ?? '').trim()
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const normalizeHeader = (value) =>
   clean(value)
@@ -59,7 +62,13 @@ const splitLine = (line = '', delimiter = null) => {
 const parseText = (text = '') => {
   const rawText = String(text || '').trim()
   if (!rawText) {
-    return { ok: false, message: 'לא הודבקו נתונים', lines: [], headers: [], rows: [] }
+    return {
+      ok: false,
+      message: 'לא הודבקו נתונים',
+      lines: [],
+      headers: [],
+      rows: [],
+    }
   }
 
   const lines = rawText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
@@ -85,7 +94,10 @@ const mapColumns = (headers = []) => {
       return
     }
 
-    if (clean(header)) unknownHeaders.push({ header, index })
+    if (clean(header)) unknownHeaders.push({
+      header,
+      index,
+    })
   })
 
   const missingRequired = required.filter((field) => mapped[field] === undefined)
@@ -116,7 +128,10 @@ const splitGoals = (value) => {
   const parts = text.split(/[-:]/).map(toNumber)
 
   if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) {
-    return { goalsFor: null, goalsAgainst: null }
+    return {
+      goalsFor: null,
+      goalsAgainst: null,
+    }
   }
 
   return {
@@ -194,7 +209,10 @@ const mapHeaderlessRow = (cells = [], rowIndex = 0) => {
   }
 
   const data = candidates
-    .map((candidate) => ({ candidate, score: candidateScore(candidate) }))
+    .map((candidate) => ({
+      candidate,
+      score: candidateScore(candidate),
+    }))
     .sort((a, b) => b.score - a.score)[0]?.candidate || {}
 
   return {
@@ -208,7 +226,7 @@ const mapHeaderlessRow = (cells = [], rowIndex = 0) => {
 const mapRows = ({ rows = [], columnsMap = {} }) =>
   rows.map((row, rowIndex) => {
     const data = Object.entries(columnsMap.mapped).reduce((acc, [field, index]) => {
-      acc[field] = row[index] ?? ''
+      acc[field] = pickDefinedValue(row[index], '')
       return acc
     }, {})
 
@@ -335,7 +353,10 @@ export function buildLeagueTablePastePreview(text = '', options = {}) {
 
   const columnsMap = mapColumns(parsed.headers)
   const sourceRows = columnsMap.ok
-    ? mapRows({ rows: parsed.rows, columnsMap })
+    ? mapRows({
+      rows: parsed.rows,
+      columnsMap,
+    })
     : parsed.lines.map((line, index) => mapHeaderlessRow(splitLine(line, parsed.delimiter), index))
 
   if (!columnsMap.ok && !sourceRows.length) {
@@ -382,9 +403,9 @@ export function buildLeagueTableWritePlanFromPreview(preview = {}, context = {})
     leaguesToUpsert: [{
       id: clean(context.leagueId),
       leagueName: clean(context.leagueName),
-      level: context.level ?? null,
+      level: pickDefinedValue(context.level, null),
       region: clean(context.region),
-      leagueNum: context.leagueNum ?? null,
+      leagueNum: pickDefinedValue(context.leagueNum, null),
       ageGroupId: clean(context.ageGroupId),
       ageGroupLabel: clean(context.ageGroupLabel),
       seasons: {

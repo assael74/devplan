@@ -1,4 +1,4 @@
-// src/features/playersDatabase/model/teamPerformance.viewModel.js
+// features/playersDatabase/model/teamPerformance.viewModel.js
 
 const clean = value => String(value || '').trim()
 

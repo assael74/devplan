@@ -1,9 +1,14 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterWorkQueue.js
 
-import { Box, Button, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import InfoPanel from '../../components/cards/InfoPanel.js'
-import { leagueCenterContentSx as sx } from './sx/leagueCenterContent.sx.js'
+import { leagueCenterWorkQueueSx as sx } from './sx/leagueCenterWorkQueue.sx.js'
 
 export default function LeagueCenterWorkQueue({ items, onSelect }) {
   return (

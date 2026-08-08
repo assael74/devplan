@@ -1,6 +1,12 @@
-import { resolveClubCatalogMatch, resolveLeagueCatalogMatch, resolveTeamCatalogMatch } from '../../catalog/catalogResolvers.js'
+// features/playersDatabase/import/logic/buildPlayersDatabaseLeagueTableImportPlan.js
 
-const clean = (value) => String(value ?? '').trim()
+import {
+  resolveClubCatalogMatch,
+  resolveLeagueCatalogMatch,
+  resolveTeamCatalogMatch,
+} from '../../catalog/catalogResolvers.js'
+
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const normalizeKey = (value) =>
   clean(value)

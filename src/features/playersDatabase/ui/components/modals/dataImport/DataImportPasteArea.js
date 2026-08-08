@@ -10,7 +10,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { dataImportSx as sx } from '../sx/dataImport.sx.js'
+import { dataImportPasteAreaSx as sx } from './DataImportPasteArea.sx.js'
 
 export default function DataImportPasteArea({
   pasteValue,
@@ -64,7 +64,10 @@ export default function DataImportPasteArea({
         <Button
           size='sm'
           variant='outlined'
-          startDecorator={iconUi({ id: 'upload', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'upload',
+            size: 'sm',
+          })}
           onClick={handleFileButtonClick}
           sx={sx.fileButton}
         >
@@ -100,13 +103,16 @@ export default function DataImportPasteArea({
           השורה הראשונה יכולה לשמש כשורת כותרות.
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={sx.pasteActions}>
           <Button
             size='sm'
             variant='outlined'
             color='danger'
             disabled={!pasteValue}
-            startDecorator={iconUi({ id: 'delete', size: 'sm' })}
+            startDecorator={iconUi({
+              id: 'delete',
+              size: 'sm',
+            })}
             onClick={onClear}
           >
             ניקוי מלא

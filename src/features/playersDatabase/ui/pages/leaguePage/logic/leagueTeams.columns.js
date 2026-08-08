@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/pages/leaguePage/logic/leagueTeams.columns.js
 
-import { Box, IconButton, Tooltip } from '@mui/joy'
+import {
+  Box,
+  IconButton,
+  Tooltip,
+} from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
@@ -10,8 +14,9 @@ import TeamName from '../../../components/teams/TeamName.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { buildFallbackAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
-import { leagueContentSx as sx } from '../sx/leagueContent.sx.js'
+import { leagueTeamsColumnsSx as sx } from '../sx/leagueTeams.columns.sx.js'
 
+import { pickDefinedValue } from '../../../../model/value.model.js'
 const toCount = value => {
   const nextValue = Number(value)
   return Number.isFinite(nextValue) ? nextValue : 0
@@ -101,11 +106,11 @@ const buildPriorityTooltip = ({ sideLabel, view }) => {
 
   return (
     <Box>
-      <Box>{`עדיפות ${sideLabel}: ${formatScore(view?.priority?.score ?? view?.priority?.rate)}`}</Box>
+      <Box>{`עדיפות ${sideLabel}: ${formatScore(pickDefinedValue(view?.priority?.score, view?.priority?.rate))}`}</Box>
       <Box>{`סוג הזדמנות: ${opportunity}`}</Box>
       <Box>{`איכות מוחלטת: ${formatNormalizedScore(view?.quality?.rate)}`}</Box>
-      <Box>{`ביצוע מול יעד מנורמל: ${formatNormalizedScore(view?.target?.normalized ?? view?.target?.rate)}`}</Box>
-      <Box>{`חריגה מהמיקום מנורמלת: ${formatNormalizedScore(view?.ranking?.normalized ?? view?.ranking?.rate)}`}</Box>
+      <Box>{`ביצוע מול יעד מנורמל: ${formatNormalizedScore(pickDefinedValue(view?.target?.normalized, view?.target?.rate))}`}</Box>
+      <Box>{`חריגה מהמיקום מנורמלת: ${formatNormalizedScore(pickDefinedValue(view?.ranking?.normalized, view?.ranking?.rate))}`}</Box>
       <Box>{`ציון אנומליה: ${formatRate(view?.anomaly?.rate)}`}</Box>
     </Box>
   )
@@ -247,8 +252,10 @@ export const buildLeagueTeamsColumns = ({
     },
     getSortValue: row => (
       resolvePrioritySortValue(
-        row?.performanceView?.offense?.priority?.score ??
-        row?.performanceView?.offense?.priority?.rate
+        pickDefinedValue(
+          row?.performanceView?.offense?.priority?.score,
+          row?.performanceView?.offense?.priority?.rate,
+        )
       )
     ),
     render: row => {
@@ -276,8 +283,10 @@ export const buildLeagueTeamsColumns = ({
     },
     getSortValue: row => (
       resolvePrioritySortValue(
-        row?.performanceView?.defense?.priority?.score ??
-        row?.performanceView?.defense?.priority?.rate
+        pickDefinedValue(
+          row?.performanceView?.defense?.priority?.score,
+          row?.performanceView?.defense?.priority?.rate,
+        )
       )
     ),
     render: row => {
@@ -359,7 +368,10 @@ export const buildLeagueTeamsColumns = ({
             sx={sx.tableButton}
             onClick={() => onTeamOpen(row)}
           >
-            {iconUi({ id: 'view', size: 'sm' })}
+            {iconUi({
+              id: 'view',
+              size: 'sm',
+            })}
           </IconButton>
         </Tooltip>
 
@@ -374,7 +386,10 @@ export const buildLeagueTeamsColumns = ({
               onTeamUrlEdit(row)
             }}
           >
-            {iconUi({ id: 'more', size: 'sm' })}
+            {iconUi({
+              id: 'more',
+              size: 'sm',
+            })}
           </IconButton>
         </Tooltip>
       </Box>

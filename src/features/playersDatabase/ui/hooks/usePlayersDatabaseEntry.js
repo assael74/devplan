@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+// features/playersDatabase/ui/hooks/usePlayersDatabaseEntry.js
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 import { readLeaguesMasterDocument } from '../../services/read/index.js'
 

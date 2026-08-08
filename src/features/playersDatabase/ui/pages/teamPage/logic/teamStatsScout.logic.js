@@ -1,11 +1,14 @@
-// src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
+// features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
 
 import { buildPlayerScoutResult } from '../../../../../../shared/players/scouting/index.js'
 import {
   adaptPlayerScoutEngineResult,
   buildPlayerScoutCalculationContract,
 } from '../../../../domain/index.js'
-import { clean, toNumber } from './teamPage.utils.js'
+import {
+  clean,
+  toNumber,
+} from './teamPage.utils.js'
 
 const buildEmptyStatsScoutPreview = () => ({
   scoutSignals: [],

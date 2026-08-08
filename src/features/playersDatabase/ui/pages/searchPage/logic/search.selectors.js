@@ -9,7 +9,14 @@ export function buildSearchSummary(rows = []) {
   }
 }
 
-const addPriorityItems = ({ items, values, field, prefix, labelPrefix, options }) => {
+const addPriorityItems = ({
+  items,
+  values,
+  field,
+  prefix,
+  labelPrefix,
+  options,
+}) => {
   values.forEach(value => {
     const option = options.find(item => item.value === value)
 

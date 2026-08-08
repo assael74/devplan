@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/adapters/teamDocument.adapter.js
+// features/playersDatabase/domain/adapters/teamDocument.adapter.js
 
 import { normalizeTeamIdentity } from '../../model/teamIdentity.model.js'
 import { normalizeTeamStats } from '../../model/teamStats.model.js'

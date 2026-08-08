@@ -1,21 +1,18 @@
 // features/playersDatabase/services/write/flows/league/updateLeagueSeasonMeta.flow.js
 
-import {
-  updateLeagueSeasonMeta,
-} from '../../leagues/index.js'
+import { pickDefinedValue } from '../../../../model/value.model.js'
+import { updateLeagueSeasonMeta } from '../../leagues/index.js'
 import {
   updatePlayerSeasonSearchIndexesSeasonMeta,
   updateTeamSeasonSearchIndexesSeasonMeta,
 } from '../../searchIndex/index.js'
-import {
-  updateTeamSeasonsMetaMany,
-} from '../../teams/index.js'
+import { updateTeamSeasonsMetaMany } from '../../teams/index.js'
 
 export async function updateLeagueSeasonMetaFlow(payload = {}) {
   const season = {
     ...(payload.season || {}),
-    birthYear: payload.birthYear ?? payload.season?.birthYear,
-    leagueTotalRound: payload.leagueTotalRound ?? payload.season?.leagueTotalRound,
+    birthYear: pickDefinedValue(payload.birthYear, payload.season?.birthYear),
+    leagueTotalRound: pickDefinedValue(payload.leagueTotalRound, payload.season?.leagueTotalRound),
   }
   const metaPayload = {
     ...payload,

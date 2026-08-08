@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import { dataImportSx as sx } from '../sx/dataImport.sx.js'
+import { dataImportPreviewTableSx as sx } from './DataImportPreviewTable.sx.js'
 import DataImportPreviewCell from './DataImportPreviewCell.js'
 import DataImportStatusCell from './DataImportStatusCell.js'
 import { resolveDataImportRowStatus } from './dataImport.model.js'

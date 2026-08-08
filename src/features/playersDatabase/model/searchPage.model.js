@@ -3,7 +3,10 @@
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
-import { cleanValue, toNumberOrZero } from './value.model.js'
+import {
+  cleanValue,
+  toNumberOrZero,
+} from './value.model.js'
 
 const RELIABILITY_LABELS = {
   high: 'גבוהה',

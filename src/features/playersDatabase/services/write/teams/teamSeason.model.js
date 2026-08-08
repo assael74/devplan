@@ -1,6 +1,10 @@
-// src/features/playersDatabase/services/write/teams/teamSeason.model.js
+// features/playersDatabase/services/write/teams/teamSeason.model.js
 
-import { buildSeasonKey, clean, toNumberOrZero } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../leagues/leagueDoc.js'
 import {
   buildPlayerIdentityKey,
   buildPlayerMatchValues,
@@ -19,7 +23,10 @@ import {
   normalizeSeasonIdentity,
 } from '../../../model/season.model.js'
 import { normalizeTeamStats } from '../../../model/teamStats.model.js'
-import { pickFirstValue } from '../../../model/value.model.js'
+import {
+  pickFirstValue,
+  pickDefinedValue,
+} from '../../../model/value.model.js'
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import {
   buildPlayerDocumentId,
@@ -78,7 +85,10 @@ export const normalizeTeamPlayer = (player, season = {}) => {
   })
 
   return {
-    playerId: buildInternalPlayerId({ player, season }),
+    playerId: buildInternalPlayerId({
+      player,
+      season,
+    }),
     playerDocumentId: hasPlayerScoutProfiles(player)
       ? buildPlayerDocumentId(player)
       : identity.playerDocumentId,
@@ -100,21 +110,25 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     statsStatus: normalizePlayerStatsStatus(player.statsStatus),
     playerStats: {
       ...playerStats,
-      teamRank: player.playerStats?.teamRank ?? player.teamRank ?? null,
+      teamRank: pickDefinedValue(player.playerStats?.teamRank, player.teamRank, null),
       teamGoalsFor: toNumberOrZero(
-        player.playerStats?.teamGoalsFor ?? player.teamGoalsFor
+        pickDefinedValue(player.playerStats?.teamGoalsFor, player.teamGoalsFor)
       ),
       teamGoalsAgainst: toNumberOrZero(
-        player.playerStats?.teamGoalsAgainst ?? player.teamGoalsAgainst
+        pickDefinedValue(player.playerStats?.teamGoalsAgainst, player.teamGoalsAgainst)
       ),
       teamAttackPerformance:
-        player.playerStats?.teamAttackPerformance ??
-        player.teamAttackPerformance ??
-        null,
+        pickDefinedValue(
+          player.playerStats?.teamAttackPerformance,
+          player.teamAttackPerformance,
+          null,
+        ),
       teamDefensePerformance:
-        player.playerStats?.teamDefensePerformance ??
-        player.teamDefensePerformance ??
-        null,
+        pickDefinedValue(
+          player.playerStats?.teamDefensePerformance,
+          player.teamDefensePerformance,
+          null,
+        ),
     },
     scoutProfiles: normalizePlayerScoutProfiles(player),
     scoutCombinations: normalizePlayerScoutCombinations(player),
@@ -266,7 +280,10 @@ const mergeExistingTeamPlayerStats = ({
   identityKey: clean(statsPlayer.identityKey || existingPlayer.identityKey),
   fullName: clean(existingPlayer.fullName || statsPlayer.fullName),
   normalizedName: normalizePlayerName(existingPlayer.normalizedName || existingPlayer.fullName || statsPlayer.fullName),
-  aliases: mergePlayerAliases({ existingPlayer, statsPlayer }),
+  aliases: mergePlayerAliases({
+    existingPlayer,
+    statsPlayer,
+  }),
   playerUrl: clean(statsPlayer.playerUrl || existingPlayer.playerUrl),
   notes: clean(existingPlayer.notes || statsPlayer.notes),
   rosterStatus: clean(statsPlayer.rosterStatus || existingPlayer.rosterStatus) || 'regular',
@@ -446,7 +463,10 @@ export const upsertSeasonRows = ({
 
   return safeRows.map((row, index) => (
     index === seasonIndex
-      ? { ...row, ...seasonDoc }
+      ? {
+        ...row,
+        ...seasonDoc,
+      }
       : row
   ))
 }

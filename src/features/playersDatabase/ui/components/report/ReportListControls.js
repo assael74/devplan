@@ -4,7 +4,7 @@ import { Box } from '@mui/joy'
 
 import { SortMenuButton } from '../../../../../ui/patterns/sort/index.js'
 import ReportViewToggle from './ReportViewToggle.js'
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportListControlsSx as sx } from './sx/reportListControls.sx.js'
 
 export default function ReportListControls({
   view,

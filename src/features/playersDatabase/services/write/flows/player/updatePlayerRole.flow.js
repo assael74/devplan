@@ -1,21 +1,13 @@
 // features/playersDatabase/services/write/flows/player/updatePlayerRole.flow.js
 
-import {
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-} from '../../leagues/index.js'
-import {
-  syncPlayerRoleAndScoutProfileDoc,
-} from '../../players/index.js'
+import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
+import { syncPlayerRoleAndScoutProfileDoc } from '../../players/index.js'
 import {
   updatePlayerSeasonSearchIndexRole,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import {
-  updateTeamSeasonPlayerRoleAndScoutProfiles,
-} from '../../teams/index.js'
-import {
-  buildRoleUpdatedPlayerWithScoutSignals,
-} from '../shared.js'
+import { updateTeamSeasonPlayerRoleAndScoutProfiles } from '../../teams/index.js'
+import { buildRoleUpdatedPlayerWithScoutSignals } from '../shared.js'
 
 const buildPlayerSyncResult = result => ({
   rowsCount: result && !result.skipped ? 1 : 0,

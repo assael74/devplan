@@ -1,6 +1,9 @@
 // features/playersDatabase/services/write/teams/teamDoc.js
 
-import { doc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -21,7 +24,10 @@ export const teamDocRef = teamId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.teams, clean(teamId))
 
 export const buildTeamBaseDoc = (team = {}, currentData = {}) => {
-  const identity = normalizeTeamIdentity({ team, fallback: currentData })
+  const identity = normalizeTeamIdentity({
+    team,
+    fallback: currentData,
+  })
   const birthTeamId = identity.birthTeamDocumentId
 
   return {

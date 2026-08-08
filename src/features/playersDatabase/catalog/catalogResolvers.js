@@ -1,9 +1,11 @@
+// features/playersDatabase/catalog/catalogResolvers.js
+
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from './clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from './leagues.catalog.js'
 import { PLAYERS_DATABASE_TEAMS_CATALOG } from './teams.catalog.js'
 import { buildClubTeamSlots } from './teamSlots.catalog.js'
 
-const clean = (value) => String(value ?? '').trim()
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 export const normalizeCatalogName = (value) =>
   clean(value)
@@ -62,7 +64,10 @@ export function resolveTeamCatalogMatch(teamName, context = {}) {
   const clubName = clean(context.clubName)
   const seasonId = clean(context.seasonId)
   const ageGroup = clean(context.ageGroup)
-  const club = context.club || (clubId || clubName ? { id: clubId, name: clubName } : null)
+  const club = context.club || (clubId || clubName ? {
+    id: clubId,
+    name: clubName,
+  } : null)
 
   const slotMatch = resolveTeamSlotMatch(teamName, {
     club,

@@ -2,13 +2,25 @@
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from './clubs.catalog.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const CLUB_PREFIX_SHORT_NAMES = [
-  { prefix: 'מועדון ספורט כדורגל', short: 'מ.ס' },
-  { prefix: 'מועדון כדורגל', short: 'מ.כ' },
-  { prefix: 'מועדון ספורט', short: 'מ.ס' },
-  { prefix: 'אגודת ספורט', short: 'א.ס' },
+  {
+    prefix: 'מועדון ספורט כדורגל',
+    short: 'מ.ס',
+  },
+  {
+    prefix: 'מועדון כדורגל',
+    short: 'מ.כ',
+  },
+  {
+    prefix: 'מועדון ספורט',
+    short: 'מ.ס',
+  },
+  {
+    prefix: 'אגודת ספורט',
+    short: 'א.ס',
+  },
 ]
 
 const shortenClubName = value => {
@@ -57,7 +69,10 @@ export const buildTeamDisplayName = ({
   teamId = '',
   teamSlot = '',
 } = {}) => {
-  const baseName = resolveClubDisplayName({ clubName, clubId }) || shortenClubName(teamId)
+  const baseName = resolveClubDisplayName({
+    clubName,
+    clubId,
+  }) || shortenClubName(teamId)
   const slot = Number(teamSlot) || getTeamSlotFromTeamId(teamId)
 
   if (!baseName) return ''

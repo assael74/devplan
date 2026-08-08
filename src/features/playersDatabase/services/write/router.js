@@ -1,8 +1,6 @@
 // features/playersDatabase/services/write/router.js
 
-import {
-  invalidatePlayersDatabaseWriteCache,
-} from '../cache/index.js'
+import { invalidatePlayersDatabaseWriteCache } from '../cache/index.js'
 import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,

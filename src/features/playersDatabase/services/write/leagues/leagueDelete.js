@@ -15,11 +15,18 @@ import {
   cleanSeasonComputedFields,
   leagueDocRef,
 } from './leagueDoc.js'
-import { buildSeasonDoc, isSameSeason } from './leagueSeason.js'
+import {
+  buildSeasonDoc,
+  isSameSeason,
+} from './leagueSeason.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 
 
-import { trackedGetDoc, trackedGetDocs, trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import {
+  trackedGetDoc,
+  trackedGetDocs,
+  trackedRunTransaction,
+} from '../../../../../services/firestore/usage/index.js'
 const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' } = {}) => {
   const isHistory = clean(target) === 'history'
 
@@ -44,11 +51,19 @@ export async function getLeagueSeasonDeleteDependencies({
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId) throw new Error('Missing season id')
 
-  const leagueSnapshot = await trackedGetDoc(leagueDocRef(leagueId), { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.leagues, action: 'league-delete-dependencies', operationSubtype: 'maintenance-getDoc' })
+  const leagueSnapshot = await trackedGetDoc(leagueDocRef(leagueId), {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+    action: 'league-delete-dependencies',
+    operationSubtype: 'maintenance-getDoc',
+  })
   const leagueData = leagueSnapshot.exists() ? leagueSnapshot.data() || {} : {}
   const seasonRow = getLeagueSeasonRow({
     leagueData,
-    season: { seasonId, seasonKey },
+    season: {
+      seasonId,
+      seasonKey,
+    },
     target,
   })
   const tableRank = Array.isArray(seasonRow?.tableRank) ? seasonRow.tableRank : []
@@ -57,7 +72,12 @@ export async function getLeagueSeasonDeleteDependencies({
     where('leagueId', '==', leagueId),
     where('seasonKey', '==', seasonKey)
   )
-  const searchSnapshot = await trackedGetDocs(rowsQuery, { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes, action: 'league-delete-dependencies', operationSubtype: 'maintenance-query' })
+  const searchSnapshot = await trackedGetDocs(rowsQuery, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'league-delete-dependencies',
+    operationSubtype: 'maintenance-query',
+  })
   let teamIndexesCount = 0
   let playerIndexesCount = 0
 
@@ -118,19 +138,28 @@ export async function removeLeagueSeason({
     }
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const nextData = isHistory
       ? {
           ...baseDoc,
           history: removeHistorySeason({
             history: baseDoc.history,
-            season: { seasonId, seasonKey },
+            season: {
+              seasonId,
+              seasonKey,
+            },
           }),
         }
       : {
           ...baseDoc,
-          current: isSameSeason(baseDoc.current, { seasonId, seasonKey }) ? null : baseDoc.current,
+          current: isSameSeason(baseDoc.current, {
+            seasonId,
+            seasonKey,
+          }) ? null : baseDoc.current,
         }
 
     transaction.set(ref, nextData, { merge: true })
@@ -195,11 +224,17 @@ export async function removeLeagueSeasonTeam({
     }
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const nextHistory = isHistory
       ? (Array.isArray(baseDoc.history) ? baseDoc.history : []).map(row => (
-          isSameSeason(row, { seasonId, seasonKey })
+          isSameSeason(row, {
+            seasonId,
+            seasonKey,
+          })
             ? {
                 ...cleanSeasonComputedFields(row),
                 tableRank: removeTeamFromTableRank({
@@ -211,9 +246,16 @@ export async function removeLeagueSeasonTeam({
             : cleanSeasonComputedFields(row)
         ))
       : baseDoc.history
-    const nextCurrent = !isHistory && isSameSeason(baseDoc.current, { seasonId, seasonKey })
+    const nextCurrent = !isHistory && isSameSeason(baseDoc.current, {
+      seasonId,
+      seasonKey,
+    })
       ? {
-          ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
+          ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+            ...season,
+            seasonId,
+            seasonKey,
+          })),
           tableRank: removeTeamFromTableRank({
             tableRank: baseDoc.current?.tableRank || [],
             team,
@@ -334,12 +376,18 @@ export async function clearLeagueSeasonTeams({
     }
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const rows = isHistory
       ? (Array.isArray(baseDoc.history) ? baseDoc.history : [])
       : [baseDoc.current]
-    const seasonRow = rows.find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+    const seasonRow = rows.find(row => isSameSeason(row, {
+      seasonId,
+      seasonKey,
+    })) || null
 
     if (!seasonRow) {
       return {
@@ -368,7 +416,10 @@ export async function clearLeagueSeasonTeams({
     if (isHistory) {
       const nextHistory = (Array.isArray(baseDoc.history) ? baseDoc.history : [])
         .map(row => (
-          isSameSeason(row, { seasonId, seasonKey })
+          isSameSeason(row, {
+            seasonId,
+            seasonKey,
+          })
             ? clearedSeason
             : cleanSeasonComputedFields(row)
         ))

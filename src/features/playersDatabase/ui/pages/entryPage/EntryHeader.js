@@ -1,10 +1,14 @@
 // features/playersDatabase/ui/pages/entryPage/EntryHeader.js
 
-import { Box, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import { DataPreviewGraphic } from './EntryVisuals.js'
-import { entryPageSx as sx } from './sx/entryPage.sx.js'
+import { entryHeaderSx as sx } from './sx/entryHeader.sx.js'
 
 export default function EntryHeader({ breadcrumbs }) {
   return (

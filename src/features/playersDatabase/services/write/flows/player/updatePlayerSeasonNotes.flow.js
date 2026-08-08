@@ -1,11 +1,7 @@
 // features/playersDatabase/services/write/flows/player/updatePlayerSeasonNotes.flow.js
 
-import {
-  updatePlayerSeasonNotes,
-} from '../../players/index.js'
-import {
-  updatePlayerSeasonSearchIndexNotes,
-} from '../../searchIndex/index.js'
+import { updatePlayerSeasonNotes } from '../../players/index.js'
+import { updatePlayerSeasonSearchIndexNotes } from '../../searchIndex/index.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player season notes sync failed at ${stage}`)

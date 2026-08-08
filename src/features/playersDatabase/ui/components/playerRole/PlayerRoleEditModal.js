@@ -1,7 +1,12 @@
 // features/playersDatabase/ui/components/playerRole/PlayerRoleEditModal.js
 
 import * as React from 'react'
-import { Box, Option, Select, Typography } from '@mui/joy'
+import {
+  Box,
+  Option,
+  Select,
+  Typography,
+} from '@mui/joy'
 
 import PlayersDatabaseModal from '../modals/PlayersDatabaseModal.js'
 import {

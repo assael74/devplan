@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/adapters/teamSearchIndex.adapter.js
+// features/playersDatabase/domain/adapters/teamSearchIndex.adapter.js
 
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyTeamSeason } from '../contracts/teamSeason.contract.js'

@@ -6,10 +6,16 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  createTrackedWriteBatch,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { rebuildTeamSeasonSearchIndexesFromLeagues } from '../team/teamSeasonIndex.rebuild.js'
 import { buildExpectedLevelKey } from './expectedLevelDelta.model.js'
 import { buildPlayerSeasonSearchMetrics } from './searchIndexNormalization.model.js'
@@ -66,7 +72,10 @@ const commitNormalizationRows = async rows => {
   })
 
     rowsChunk.forEach(({ ref, patch }) => {
-      batch.set(ref, { ...patch, updatedAt: serverTimestamp() }, { merge: true })
+      batch.set(ref, {
+        ...patch,
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
     })
 
     await batch.commit()
@@ -86,12 +95,18 @@ const rebuildPlayerRows = async ({ dryRun = false, teamDeltaByKey = new Map() } 
   let playerDeltaUnknownCount = 0
   const rows = snapshot.docs.map(indexDoc => {
     const data = indexDoc.data() || {}
-    const patch = buildPlayerNormalizationPatch({ data, teamDeltaByKey })
+    const patch = buildPlayerNormalizationPatch({
+      data,
+      teamDeltaByKey,
+    })
 
     if (patch.expectedLevelDelta === null) playerDeltaUnknownCount += 1
     else playerDeltaMatchedCount += 1
 
-    return { ref: indexDoc.ref, patch }
+    return {
+      ref: indexDoc.ref,
+      patch,
+    }
   })
   const updatedRowsCount = !dryRun && rows.length > 0
     ? await commitNormalizationRows(rows)
@@ -137,7 +152,10 @@ export async function rebuildSearchIndexNormalization({
     ? await rebuildTeamSeasonSearchIndexesFromLeagues({ dryRun: includeTeams ? dryRun : true })
     : emptyTeamResult
   const playerResult = includePlayers
-    ? await rebuildPlayerRows({ dryRun, teamDeltaByKey: teamResult.teamDeltaByKey })
+    ? await rebuildPlayerRows({
+      dryRun,
+      teamDeltaByKey: teamResult.teamDeltaByKey,
+    })
     : emptyPlayerResult
 
   return {

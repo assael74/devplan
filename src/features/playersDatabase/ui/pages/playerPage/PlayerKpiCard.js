@@ -7,7 +7,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { playerPageSx as sx } from './sx/playerPage.sx.js'
+import { playerKpiCardSx as sx } from './sx/playerKpiCard.sx.js'
 
 export default function PlayerKpiCard({
   title,

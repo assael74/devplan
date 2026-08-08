@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsImport.logic.js
+// features/playersDatabase/ui/pages/teamPage/logic/teamStatsImport.logic.js
 
 import {
   buildStatsHeaderMap,

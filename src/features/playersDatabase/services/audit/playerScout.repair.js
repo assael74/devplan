@@ -1,6 +1,9 @@
 // features/playersDatabase/services/audit/playerScout.repair.js
 
-import { doc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../services/firestore/usage/index.js'
@@ -66,7 +69,10 @@ const buildRepairActions = ({ audit, rows }) => {
 
 export async function buildPlayerScoutRepairPreview() {
   const audit = await buildPlayerScoutAudit()
-  const actions = buildRepairActions({ audit, rows: audit })
+  const actions = buildRepairActions({
+    audit,
+    rows: audit,
+  })
 
   return {
     generatedAt: new Date().toISOString(),

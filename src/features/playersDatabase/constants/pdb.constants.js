@@ -1,3 +1,5 @@
+// features/playersDatabase/constants/pdb.constants.js
+
 export const PLAYERS_DATABASE_ROUTE = '/players-database'
 
 export const PLAYERS_DATABASE_COLLECTIONS = {
@@ -56,25 +58,93 @@ export const PLAYERS_DATABASE_CHECKPOINT = {
 export const PLAYERS_DATABASE_PAGE_SIZE = 50
 
 export const PLAYERS_DATABASE_TABLE_COLUMNS = [
-  { id: 'name', label: 'שם', width: 190 },
-  { id: 'birthYear', label: 'שנתון', width: 80 },
-  { id: 'clubName', label: 'מועדון', width: 150 },
-  { id: 'teamName', label: 'קבוצה', width: 150 },
-  { id: 'leagueName', label: 'ליגה', width: 150 },
-  { id: 'minutes', label: 'דקות', width: 80 },
-  { id: 'goals', label: 'שערים', width: 70 },
-  { id: 'playingUpMinutes', label: 'שנתון מעל', width: 110 },
-  { id: 'trend', label: 'מגמה', width: 110 },
-  { id: 'tracking', label: 'מעקב', width: 110 },
-  { id: 'latestSnapshotAt', label: 'עדכון', width: 100 },
+  {
+    id: 'name',
+    label: 'שם',
+    width: 190,
+  },
+  {
+    id: 'birthYear',
+    label: 'שנתון',
+    width: 80,
+  },
+  {
+    id: 'clubName',
+    label: 'מועדון',
+    width: 150,
+  },
+  {
+    id: 'teamName',
+    label: 'קבוצה',
+    width: 150,
+  },
+  {
+    id: 'leagueName',
+    label: 'ליגה',
+    width: 150,
+  },
+  {
+    id: 'minutes',
+    label: 'דקות',
+    width: 80,
+  },
+  {
+    id: 'goals',
+    label: 'שערים',
+    width: 70,
+  },
+  {
+    id: 'playingUpMinutes',
+    label: 'שנתון מעל',
+    width: 110,
+  },
+  {
+    id: 'trend',
+    label: 'מגמה',
+    width: 110,
+  },
+  {
+    id: 'tracking',
+    label: 'מעקב',
+    width: 110,
+  },
+  {
+    id: 'latestSnapshotAt',
+    label: 'עדכון',
+    width: 100,
+  },
 ]
 
 export const PLAYERS_DATABASE_FILTERS = [
-  { id: 'search', label: 'חיפוש', placeholder: 'שם שחקן או external id' },
-  { id: 'birthYear', label: 'שנתון', placeholder: 'כל השנתונים' },
-  { id: 'clubId', label: 'מועדון', placeholder: 'כל המועדונים' },
-  { id: 'leagueId', label: 'ליגה', placeholder: 'כל הליגות' },
-  { id: 'trendStatus', label: 'מגמה', placeholder: 'כל המגמות' },
-  { id: 'trackingStatus', label: 'מעקב', placeholder: 'הכל' },
+  {
+    id: 'search',
+    label: 'חיפוש',
+    placeholder: 'שם שחקן או external id',
+  },
+  {
+    id: 'birthYear',
+    label: 'שנתון',
+    placeholder: 'כל השנתונים',
+  },
+  {
+    id: 'clubId',
+    label: 'מועדון',
+    placeholder: 'כל המועדונים',
+  },
+  {
+    id: 'leagueId',
+    label: 'ליגה',
+    placeholder: 'כל הליגות',
+  },
+  {
+    id: 'trendStatus',
+    label: 'מגמה',
+    placeholder: 'כל המגמות',
+  },
+  {
+    id: 'trackingStatus',
+    label: 'מעקב',
+    placeholder: 'הכל',
+  },
 ]
 

@@ -1,6 +1,7 @@
-﻿// features/playersDatabase/ui/logic/filters.logic.js
+// features/playersDatabase/ui/logic/filters.logic.js
 
-const clean = value => String(value ?? '').trim().toLowerCase()
+import { pickDefinedValue } from '../../model/value.model.js'
+const clean = value => String(value === null || value === undefined ? '' : value).trim().toLowerCase()
 
 export function filterByText(rows = [], query = '', fields = []) {
   const safeQuery = clean(query)
@@ -13,5 +14,5 @@ export function filterByText(rows = [], query = '', fields = []) {
 
 export function filterByValue(rows = [], field, value) {
   if (!value || value === 'all') return rows
-  return rows.filter(row => String(row?.[field] ?? '') === String(value))
+  return rows.filter(row => String(pickDefinedValue(row?.[field], '')) === String(value))
 }

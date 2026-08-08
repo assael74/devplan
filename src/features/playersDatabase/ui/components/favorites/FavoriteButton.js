@@ -1,7 +1,14 @@
 // features/playersDatabase/ui/components/favorites/FavoriteButton.js
 
-import { CircularProgress, IconButton, Tooltip } from '@mui/joy'
-import { Star, StarBorder } from '@mui/icons-material'
+import {
+  CircularProgress,
+  IconButton,
+  Tooltip,
+} from '@mui/joy'
+import {
+  Star,
+  StarBorder,
+} from '@mui/icons-material'
 
 import { favoriteButtonSx as sx } from './sx/favoriteButton.sx.js'
 

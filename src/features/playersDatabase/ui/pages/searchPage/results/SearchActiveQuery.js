@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchActiveQuery.js
 
-import { Box, Chip, Typography } from '@mui/joy'
+import {
+  Box,
+  Chip,
+  Typography,
+} from '@mui/joy'
 
 import { searchActiveQuerySx as sx } from './sx/searchActiveQuery.sx.js'
 

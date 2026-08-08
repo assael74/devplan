@@ -35,10 +35,26 @@ export function buildPlayerReport({
         reportDate: formatReportDate(),
         columns: 2,
         items: [
-          { id: 'birthYear', label: 'שנתון', value: String(player.birthYear || '—') },
-          { id: 'position', label: 'עמדה', value: player.positionLabel || player.position || '—' },
-          { id: 'team', label: 'קבוצה נוכחית', value: player.teamName || '—' },
-          { id: 'seasons', label: 'עונות בדוח', value: String(historyRows.length) },
+          {
+            id: 'birthYear',
+            label: 'שנתון',
+            value: String(player.birthYear || '—'),
+          },
+          {
+            id: 'position',
+            label: 'עמדה',
+            value: player.positionLabel || player.position || '—',
+          },
+          {
+            id: 'team',
+            label: 'קבוצה נוכחית',
+            value: player.teamName || '—',
+          },
+          {
+            id: 'seasons',
+            label: 'עונות בדוח',
+            value: String(historyRows.length),
+          },
         ],
       },
       content: {

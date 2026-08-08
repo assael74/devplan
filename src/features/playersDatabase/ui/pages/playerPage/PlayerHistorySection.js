@@ -6,69 +6,47 @@ import {
   Typography,
 } from '@mui/joy'
 
-import PlayerActionsPanel from './PlayerActionsPanel.js'
 import PlayerHistoryTable from './PlayerHistoryTable.js'
-import { playerContentSx as sx } from './sx/playerContent.sx.js'
+import { playerHistorySectionSx as sx } from './sx/playerHistorySection.sx.js'
 
-export default function PlayerHistorySection({
-  rows,
-  selectedSeasonKey,
-  seasonOptions,
-  filter,
-  hasRealData,
-  onSeasonChange,
-  onFilterChange,
-  onRowOpen,
-  onAction,
-}) {
+export default function PlayerHistorySection({ rows, hasRealData, onRowOpen }) {
   return (
-    <Box sx={sx.contentGrid}>
-      <Card sx={sx.historyPanel}>
-        <Box sx={sx.historyHeader}>
-          <Box>
-            <Typography
-              level='title-lg'
-              sx={sx.panelTitle}
-            >
-              היסטוריית ביצועים
-            </Typography>
-
-            <Typography
-              level='body-xs'
-              sx={sx.panelSubtitle}
-            >
-              סטטיסטיקה ופרופילי סקאוט לפי עונה וקבוצה
-            </Typography>
-          </Box>
+    <Card sx={sx.historyPanel}>
+      <Box sx={sx.historyHeader}>
+        <Box>
+          <Typography
+            level='title-lg'
+            sx={sx.panelTitle}
+          >
+            היסטוריית ביצועים
+          </Typography>
 
           <Typography
-            level='body-sm'
-            sx={sx.rowsCount}
+            level='body-xs'
+            sx={sx.panelSubtitle}
           >
-            {rows.length} הקשרים
+            סטטיסטיקה ופרופילי סקאוט לפי עונה וקבוצה
           </Typography>
         </Box>
 
-        {!hasRealData ? (
-          <Box sx={sx.placeholderBanner}>
-            מוצגים נתוני placeholder עד לחיבור מסמכי העונות.
-          </Box>
-        ) : null}
+        <Typography
+          level='body-sm'
+          sx={sx.rowsCount}
+        >
+          {rows.length} הקשרים
+        </Typography>
+      </Box>
 
-        <PlayerHistoryTable
-          rows={rows}
-          onRowOpen={onRowOpen}
-        />
-      </Card>
+      {!hasRealData ? (
+        <Box sx={sx.placeholderBanner}>
+          מוצגים נתוני placeholder עד לחיבור מסמכי העונות.
+        </Box>
+      ) : null}
 
-      <PlayerActionsPanel
-        selectedSeasonKey={selectedSeasonKey}
-        seasonOptions={seasonOptions}
-        filter={filter}
-        onSeasonChange={onSeasonChange}
-        onFilterChange={onFilterChange}
-        onAction={onAction}
+      <PlayerHistoryTable
+        rows={rows}
+        onRowOpen={onRowOpen}
       />
-    </Box>
+    </Card>
   )
 }

@@ -1,12 +1,18 @@
-// src/features/playersDatabase/services/write/teams/teamSeasonStats.js
+// features/playersDatabase/services/write/teams/teamSeasonStats.js
 
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../leagues/leagueDoc.js'
 import { isSameSeason } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
+import {
+  buildTeamBaseDoc,
+  teamDocRef,
+} from './teamDoc.js'
 import {
   buildTeamSeasonDoc,
   mergeTeamPlayerStats,
@@ -39,15 +45,29 @@ export async function updateTeamSeasonPlayerStats({
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildTeamBaseDoc({ ...team, teamDocumentId: teamId }, currentData)
+    const baseDoc = buildTeamBaseDoc({
+      ...team,
+      teamDocumentId: teamId,
+    }, currentData)
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const rows = isHistory ? baseDoc.history : baseDoc.current
     const existingSeason = (Array.isArray(rows) ? rows : [])
-      .find(row => isSameSeason(row, { seasonId, seasonKey }))
+      .find(row => isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      }))
     const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
-      season: { ...season, seasonId, seasonKey },
-      team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
+      team: {
+        ...team,
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+      },
       players: [],
     })
     const seasonDoc = {
@@ -72,7 +92,10 @@ export async function updateTeamSeasonPlayerStats({
           ...baseDoc,
           history: upsertSeasonRows({
             rows: baseDoc.history,
-            season: { seasonId, seasonKey },
+            season: {
+              seasonId,
+              seasonKey,
+            },
             seasonDoc,
           }),
         }
@@ -80,7 +103,10 @@ export async function updateTeamSeasonPlayerStats({
           ...baseDoc,
           current: upsertSeasonRows({
             rows: baseDoc.current,
-            season: { seasonId, seasonKey },
+            season: {
+              seasonId,
+              seasonKey,
+            },
             seasonDoc,
           }),
         }

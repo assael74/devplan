@@ -1,6 +1,13 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchContextQuery.js
 
-import { Chip, Divider, FormControl, FormLabel, Stack, Tooltip } from '@mui/joy'
+import {
+  Chip,
+  Divider,
+  FormControl,
+  FormLabel,
+  Stack,
+  Tooltip,
+} from '@mui/joy'
 import ArrowDownwardRounded from '@mui/icons-material/ArrowDownwardRounded'
 import ArrowUpwardRounded from '@mui/icons-material/ArrowUpwardRounded'
 import RemoveRounded from '@mui/icons-material/RemoveRounded'
@@ -59,7 +66,10 @@ function EntityTypeSelector({ value, onSelect }) {
             size='lg'
             variant={selected ? 'solid' : 'outlined'}
             sx={sx.filterChip}
-            startDecorator={iconUi({ id: option.value, size: 'sm' })}
+            startDecorator={iconUi({
+              id: option.value,
+              size: 'sm',
+            })}
             onClick={() => onSelect(selected ? '' : option.value)}
           >
             {option.label}

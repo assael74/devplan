@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/components/modals/SeasonDeleteConfirmModal.js
 
-import { Alert, Box, Typography } from '@mui/joy'
+import {
+  Alert,
+  Box,
+  Typography,
+} from '@mui/joy'
 import PlayersDatabaseModal from './PlayersDatabaseModal.js'
 
 export default function SeasonDeleteConfirmModal({

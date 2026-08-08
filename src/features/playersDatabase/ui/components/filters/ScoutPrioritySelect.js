@@ -1,10 +1,16 @@
 // features/playersDatabase/ui/components/filters/ScoutPrioritySelect.js
 
 import * as React from 'react'
-import { Box, Option, Select, Typography } from '@mui/joy'
+import {
+  Box,
+  Option,
+  Select,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { scoutPriorityColors } from '../../../../../ui/patterns/scout/ScoutPriority.js'
+import { scoutPrioritySelectSx as styles } from './scoutPrioritySelect.sx.js'
 
 const optionStyles = {
   elite: {
@@ -59,36 +65,25 @@ function PriorityOptionContent({
   short = false,
 }) {
   return (
-    <Box sx={{
-      minWidth: 0,
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 0.5,
-      color: option.colors.text,
+    <Box sx={styles.optionContent({
+      colors: option.colors,
       fontSize,
-    }}>
+    })}>
       {iconUi({
         id: option.iconId,
         size: 'sm',
-        sx: {
-          flexShrink: 0,
-          color: option.colors.main,
-          fontSize: fontSize + 2,
-        },
+        sx: styles.optionIcon({
+          colors: option.colors,
+          fontSize,
+        }),
       })}
 
       <Typography
         component='span'
-        sx={{
-          minWidth: 0,
-          color: option.colors.text,
+        sx={styles.optionLabel({
+          colors: option.colors,
           fontSize,
-          fontWeight: 700,
-          lineHeight: 1,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+        })}
       >
         {short ? option.shortLabel : option.label}
       </Typography>
@@ -102,24 +97,16 @@ export default function ScoutPrioritySelect({
   onChange,
   fontSize = 12,
   shortValueLabel = true,
-  sx = {},
+  sx: externalSx = {},
 }) {
   const selectedOption = priorityOptions.find(option => option.value === (value || '')) || priorityOptions[0]
 
   return (
-    <Box sx={{
-      minWidth: 0,
-      display: 'grid',
-      gap: 0.45,
-    }}>
+    <Box sx={styles.root}>
       {label ? (
         <Typography
           level='body-xs'
-          sx={{
-            color: '#2F86C7',
-            fontSize,
-            fontWeight: 700,
-          }}
+          sx={styles.label(fontSize)}
         >
           {label}
         </Typography>
@@ -136,38 +123,14 @@ export default function ScoutPrioritySelect({
             short={shortValueLabel}
           />
         )}
-        sx={{
-          minWidth: 0,
-          width: '100%',
-          minHeight: 34,
-          bgcolor: '#fff',
-          borderColor: '#b9d8ef',
-          fontSize,
-
-          '& .MuiSelect-indicator': {
-            display: 'none',
-          },
-
-          '& .MuiSelect-button': {
-            minWidth: 0,
-            pr: 0,
-          },
-
-          ...sx,
-        }}
+        sx={[styles.select(fontSize), externalSx]}
         onChange={(event, nextValue) => onChange?.(nextValue || '')}
       >
         {priorityOptions.map(option => (
           <Option
             key={option.value || 'all'}
             value={option.value}
-            sx={{
-              fontSize,
-
-              '&.Mui-selected': {
-                fontWeight: 700,
-              },
-            }}
+            sx={styles.option(fontSize)}
           >
             <PriorityOptionContent
               option={option}

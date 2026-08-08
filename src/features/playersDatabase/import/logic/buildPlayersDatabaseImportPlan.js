@@ -1,3 +1,5 @@
+// features/playersDatabase/import/logic/buildPlayersDatabaseImportPlan.js
+
 import {
   PLAYERS_DATABASE_RESOLUTION_MODE,
   resolvePlayersDatabaseEntityPolicy,
@@ -56,7 +58,7 @@ const createEmptyPlan = () => ({
   rows: [],
 })
 
-const clean = (value) => String(value ?? '').trim()
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const pick = (row = {}, keys = []) => {
   for (const key of keys) {

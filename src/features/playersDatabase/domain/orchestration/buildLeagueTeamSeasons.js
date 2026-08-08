@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
+// features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
 
 import {
   buildTeamScoutLeagueModel,
@@ -18,6 +18,12 @@ const resolveTeamKey = value => cleanDomainValue(
   value?.id ||
   value?.rank
 )
+
+function pickRank(value, fallback) {
+  return value === null || value === undefined
+    ? fallback
+    : value
+}
 
 export const buildLeagueTeamSeasons = ({
   leagueDocument = {},
@@ -75,8 +81,8 @@ export const buildLeagueTeamSeasons = ({
       performance: performance || teamSeason.performance,
       ranking: {
         ...teamSeason.ranking,
-        attackRank: performance?.offense?.rank ?? teamSeason.ranking.attackRank,
-        defenseRank: performance?.defense?.rank ?? teamSeason.ranking.defenseRank,
+        attackRank: pickRank(performance?.offense?.rank, teamSeason.ranking.attackRank),
+        defenseRank: pickRank(performance?.defense?.rank, teamSeason.ranking.defenseRank),
       },
       completeness: {
         ...teamSeason.completeness,

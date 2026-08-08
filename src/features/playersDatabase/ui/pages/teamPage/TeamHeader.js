@@ -11,7 +11,7 @@ import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import ActivityStatusChip from '../../components/status/ActivityStatusChip.js'
 import FavoriteButton from '../../components/favorites/FavoriteButton.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { teamPageSx as sx } from './sx/teamPage.sx.js'
+import { teamHeaderSx as sx } from './sx/teamHeader.sx.js'
 
 export default function TeamHeader({
   breadcrumbs,
@@ -56,7 +56,10 @@ export default function TeamHeader({
         <Stack direction='row' spacing={1} sx={sx.headerActions}>
           <Button
             sx={sx.primaryButton}
-            startDecorator={iconUi({ id: 'playerDatabase', size: 'sm' })}
+            startDecorator={iconUi({
+              id: 'playerDatabase',
+              size: 'sm',
+            })}
             onClick={onSearch}
           >
             מעבר לעמוד חיפוש
@@ -65,7 +68,10 @@ export default function TeamHeader({
           <Button
             variant='outlined'
             sx={sx.secondaryButton}
-            startDecorator={iconUi({ id: 'back', size: 'sm' })}
+            startDecorator={iconUi({
+              id: 'back',
+              size: 'sm',
+            })}
             onClick={onLeague}
           >
             חזרה לליגה

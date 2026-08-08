@@ -38,10 +38,26 @@ export function buildTeamReport({
         reportDate: formatReportDate(),
         columns: 2,
         items: [
-          { id: 'season', label: 'עונה', value: resolvedSeasonKey || '—' },
-          { id: 'birthYear', label: 'שנתון', value: String(team.birthYear || '—') },
-          { id: 'league', label: 'ליגה', value: team.leagueName || '—' },
-          { id: 'players', label: 'שחקנים', value: String(players.length) },
+          {
+            id: 'season',
+            label: 'עונה',
+            value: resolvedSeasonKey || '—',
+          },
+          {
+            id: 'birthYear',
+            label: 'שנתון',
+            value: String(team.birthYear || '—'),
+          },
+          {
+            id: 'league',
+            label: 'ליגה',
+            value: team.leagueName || '—',
+          },
+          {
+            id: 'players',
+            label: 'שחקנים',
+            value: String(players.length),
+          },
         ],
       },
       content: {

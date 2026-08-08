@@ -7,6 +7,7 @@ import {
 } from '@mui/joy'
 
 import { devPlanColors } from '../../../../../ui/core/theme/Colors.js'
+import { activityStatusChipSx as chipSx } from './activityStatusChip.sx.js'
 
 export default function ActivityStatusChip({
   active = false,
@@ -18,7 +19,7 @@ export default function ActivityStatusChip({
   activeBg = '#ECFDF5',
   inactiveBg = '#FEF2F2',
   textColor = devPlanColors.primaryDark,
-  sx,
+  sx: externalSx,
 }) {
   const color = active
     ? activeColor
@@ -36,37 +37,23 @@ export default function ActivityStatusChip({
 
   return (
     <Box
-      sx={{
-        minHeight: 28,
-        px: 1.2,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.75,
-        borderRadius: 999,
-        bgcolor: backgroundColor,
-        border: `1px solid ${color}`,
-        color: textColor,
-        ...sx,
-      }}
+      sx={[
+        chipSx.root({
+          backgroundColor,
+          color,
+          textColor,
+        }),
+        externalSx,
+      ]}
     >
       <Box
         aria-hidden='true'
-        sx={{
-          width: 7,
-          height: 7,
-          flexShrink: 0,
-          borderRadius: '50%',
-          bgcolor: color,
-        }}
+        sx={chipSx.dot(color)}
       />
 
       <Typography
         level='body-xs'
-        sx={{
-          color: textColor,
-          fontWeight: 700,
-          whiteSpace: 'nowrap',
-        }}
+        sx={chipSx.label(textColor)}
       >
         {resolvedLabel}
       </Typography>

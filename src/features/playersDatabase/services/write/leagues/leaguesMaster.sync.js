@@ -1,6 +1,9 @@
 // features/playersDatabase/services/write/leagues/leaguesMaster.sync.js
 
-import { doc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'

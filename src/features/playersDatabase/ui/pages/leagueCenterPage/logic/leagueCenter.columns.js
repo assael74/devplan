@@ -1,14 +1,24 @@
 // features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenter.columns.js
 
-import { Button, Stack, Tooltip } from '@mui/joy'
+import {
+  Button,
+  Stack,
+  Tooltip,
+} from '@mui/joy'
 
 import StatusPill from '../../../components/status/StatusPill.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { leagueCenterContentSx as sx } from '../sx/leagueCenterContent.sx.js'
+import { leagueCenterColumnsSx as sx } from '../sx/leagueCenter.columns.sx.js'
 
 const BASE_COLUMNS = [
-  { key: 'name', label: 'ליגה' },
-  { key: 'teamsCount', label: 'קבוצות' },
+  {
+    key: 'name',
+    label: 'ליגה',
+  },
+  {
+    key: 'teamsCount',
+    label: 'קבוצות',
+  },
   {
     key: 'tableStatus',
     label: 'טבלה',
@@ -24,8 +34,14 @@ const BASE_COLUMNS = [
     label: 'סטטיסטיקות',
     render: row => <StatusPill value={row.statsStatus} />,
   },
-  { key: 'playersWithProfiles', label: 'שחקנים בפרופיל' },
-  { key: 'actions', label: '' },
+  {
+    key: 'playersWithProfiles',
+    label: 'שחקנים בפרופיל',
+  },
+  {
+    key: 'actions',
+    label: '',
+  },
 ]
 
 export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
@@ -33,6 +49,7 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
     if (column.key === 'actions') {
       return {
         ...column,
+        sortable: false,
         sx: sx.actionsColumn,
         headerSx: sx.centerColumn,
         cellSx: sx.centerColumn,
@@ -44,7 +61,10 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
                   size='sm'
                   variant='outlined'
                   sx={sx.createSeasonButton}
-                  startDecorator={iconUi({ id: 'addSeason', size: 'sm' })}
+                  startDecorator={iconUi({
+                    id: 'addSeason',
+                    size: 'sm',
+                  })}
                   onClick={() => onCreateSeason(row)}
                 >
                   יצירת עונה
@@ -56,10 +76,13 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
                 variant='soft'
                 disabled={!row.hasLeagueDoc}
                 sx={sx.openLeagueButton}
-                endDecorator={iconUi({ id: 'viewLeague', size: 'sm' })}
+                endDecorator={iconUi({
+                  id: 'viewLeague',
+                  size: 'sm',
+                })}
                 onClick={() => onOpenLeague(row)}
               >
-                פתח ליגה
+                צפה בליגה
               </Button>
             )}
           </Stack>
@@ -76,7 +99,16 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
       }
     }
 
-    if (column.key === 'teamsCount' || column.key === 'playersWithProfiles') {
+    if (column.key === 'playersWithProfiles') {
+      return {
+        ...column,
+        sx: sx.profilesColumn,
+        headerSx: sx.centerColumn,
+        cellSx: sx.centerColumn,
+      }
+    }
+
+    if (column.key === 'teamsCount') {
       return {
         ...column,
         sx: sx.countColumn,

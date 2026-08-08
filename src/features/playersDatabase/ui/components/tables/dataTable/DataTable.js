@@ -6,7 +6,7 @@ import {
   Table,
 } from '@mui/joy'
 
-import { pdbTableSx as sx } from '../tables.sx.js'
+import { dataTableSx as sx } from './sx/dataTable.sx.js'
 import DataTableBody from './DataTableBody.js'
 import DataTableHeader from './DataTableHeader.js'
 import {
@@ -133,20 +133,20 @@ export default function DataTable({
     return (
       <Box
         className={className}
-        sx={{
-          ...sx.wrap,
-          ...sx.splitWrap,
-          ...wrapSx,
-        }}
+        sx={[
+          sx.wrap,
+          sx.splitWrap,
+          wrapSx,
+        ]}
       >
         <Box sx={sx.headerWrap}>
           <Table
             size='sm'
-            sx={{
-              ...sx.table,
-              ...sx.headerTable,
-              ...tableSx,
-            }}
+            sx={[
+              sx.table,
+              sx.headerTable,
+              tableSx,
+            ]}
           >
             {header}
           </Table>
@@ -154,19 +154,19 @@ export default function DataTable({
 
         <Box
           className='dpScrollThin'
-          sx={{
-            ...sx.bodyWrap,
-            ...bodyScrollSx,
-          }}
+          sx={[
+            sx.bodyWrap,
+            bodyScrollSx,
+          ]}
         >
           <Table
             hoverRow
             size='sm'
-            sx={{
-              ...sx.table,
-              ...sx.bodyTable,
-              ...tableSx,
-            }}
+            sx={[
+              sx.table,
+              sx.bodyTable,
+              tableSx,
+            ]}
           >
             {body}
           </Table>
@@ -178,19 +178,19 @@ export default function DataTable({
   return (
     <Box
       className={className}
-      sx={{
-        ...sx.wrap,
-        ...wrapSx,
-      }}
+      sx={[
+        sx.wrap,
+        wrapSx,
+      ]}
     >
       <Table
         hoverRow
         stickyHeader
         size='sm'
-        sx={{
-          ...sx.table,
-          ...tableSx,
-        }}
+        sx={[
+          sx.table,
+          tableSx,
+        ]}
       >
         {header}
         {body}

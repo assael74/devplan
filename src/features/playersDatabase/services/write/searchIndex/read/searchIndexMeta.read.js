@@ -1,13 +1,23 @@
 // features/playersDatabase/services/write/searchIndex/read/searchIndexMeta.read.js
 
-import { collection, query, where } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+} from 'firebase/firestore'
 import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildPlayerMatchValues, normalizePlayerNameValue } from '../../../../model/playerIdentity.model.js'
+import {
+  buildPlayerMatchValues,
+  normalizePlayerNameValue,
+} from '../../../../model/playerIdentity.model.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
-import { clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { buildSearchIndexMetaResult } from '../shared/searchIndexResult.model.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {

@@ -1,13 +1,17 @@
 // features/playersDatabase/ui/components/cards/StatCard.js
 
 import * as React from 'react'
-import { Card, Stack, Typography } from '@mui/joy'
+import {
+  Card,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import {
   getStatIconSx,
-  pdbCardSx as sx,
-} from './cards.sx.js'
+  statCardSx as sx,
+} from './statCard.sx.js'
 
 export default function StatCard({
   title,
@@ -18,22 +22,22 @@ export default function StatCard({
   sx: externalSx,
 }) {
   return (
-    <Card sx={{ ...sx.card, ...externalSx }}>
-      <Stack sx={sx.statContent}>
+    <Card sx={[sx.card, externalSx]}>
+      <Stack sx={sx.content}>
         <Stack
           spacing={0.5}
-          sx={sx.statText}
+          sx={sx.text}
         >
           <Typography
             level='body-sm'
-            sx={sx.statTitle}
+            sx={sx.title}
           >
             {title}
           </Typography>
 
           <Typography
             level='h2'
-            sx={sx.statValue}
+            sx={sx.value}
           >
             {value}
           </Typography>
@@ -41,7 +45,7 @@ export default function StatCard({
           {caption ? (
             <Typography
               level='body-xs'
-              sx={sx.statCaption}
+              sx={sx.caption}
             >
               {caption}
             </Typography>
@@ -50,7 +54,10 @@ export default function StatCard({
 
         {iconId ? (
           <Stack sx={getStatIconSx(tone)}>
-            {iconUi({ id: iconId, size: 'md', })}
+            {iconUi({
+              id: iconId,
+              size: 'md',
+            })}
           </Stack>
         ) : null}
       </Stack>

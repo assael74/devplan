@@ -11,7 +11,10 @@ import {
   normalizeSeasonIdentity,
 } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import { buildTeamBaseDoc, teamDocRef } from './teamDoc.js'
+import {
+  buildTeamBaseDoc,
+  teamDocRef,
+} from './teamDoc.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const getPlayerMergeKey = player => (
@@ -58,12 +61,19 @@ export async function removeTeamSeason({
     }
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({ ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId }, currentData)
+    const baseDoc = buildTeamBaseDoc({
+      ...team,
+      birthTeamDocumentId: teamId,
+      teamDocumentId: teamId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const fieldKey = isHistory ? 'history' : 'current'
     const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
     const removedRows = rows.filter(row => (
-      isSameSeason(row, { seasonId, seasonKey })
+      isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      })
     ))
     const removedPlayers = removedRows.flatMap(row => (
       Array.isArray(row.teamPlayers) ? row.teamPlayers : []
@@ -71,7 +81,10 @@ export async function removeTeamSeason({
     const playerDocumentIds = resolvePlayerDocumentIds(removedPlayers)
     const nextRows = removeSeasonRows({
       rows,
-      season: { seasonId, seasonKey },
+      season: {
+        seasonId,
+        seasonKey,
+      },
     })
 
     transaction.set(
@@ -127,12 +140,19 @@ export async function removeTeamPlayerFromSeason({
     }
 
     const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({ ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId }, currentData)
+    const baseDoc = buildTeamBaseDoc({
+      ...team,
+      birthTeamDocumentId: teamId,
+      teamDocumentId: teamId,
+    }, currentData)
     const isHistory = clean(target) === 'history'
     const fieldKey = isHistory ? 'history' : 'current'
     const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
     const nextRows = rows.map(row => {
-      if (!isSameSeason(row, { seasonId, seasonKey })) return row
+      if (!isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      })) return row
 
       return {
         ...row,
@@ -141,7 +161,10 @@ export async function removeTeamPlayerFromSeason({
         updatedAt: new Date().toISOString(),
       }
     })
-    const seasonRow = nextRows.find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+    const seasonRow = nextRows.find(row => isSameSeason(row, {
+      seasonId,
+      seasonKey,
+    })) || null
     const teamPlayers = Array.isArray(seasonRow?.teamPlayers) ? seasonRow.teamPlayers : []
 
     transaction.set(
@@ -195,7 +218,11 @@ export async function clearTeamSeasonPlayers({
 
     const currentData = snapshot.data() || {}
     const baseDoc = buildTeamBaseDoc(
-      { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+      {
+        ...team,
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+      },
       currentData
     )
     const isHistory = clean(target) === 'history'
@@ -206,7 +233,10 @@ export async function clearTeamSeasonPlayers({
     let seasonFound = false
 
     const nextRows = rows.map(row => {
-      if (!isSameSeason(row, { seasonId, seasonKey })) return row
+      if (!isSameSeason(row, {
+        seasonId,
+        seasonKey,
+      })) return row
 
       seasonFound = true
       removedPlayers = Array.isArray(row.teamPlayers)

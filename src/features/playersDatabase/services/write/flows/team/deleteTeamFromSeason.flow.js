@@ -1,18 +1,12 @@
 // features/playersDatabase/services/write/flows/team/deleteTeamFromSeason.flow.js
 
-import {
-  removeLeagueSeasonTeam,
-} from '../../leagues/index.js'
-import {
-  removePlayerSeasonDocsMany,
-} from '../../players/index.js'
+import { removeLeagueSeasonTeam } from '../../leagues/index.js'
+import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
   deleteSearchIndexesForTeamSeason,
   getSearchIndexMetaForTeamSeason,
 } from '../../searchIndex/index.js'
-import {
-  removeTeamSeason,
-} from '../../teams/index.js'
+import { removeTeamSeason } from '../../teams/index.js'
 
 const mergePlayerDocumentIds = (...groups) => Array.from(new Set(
   groups

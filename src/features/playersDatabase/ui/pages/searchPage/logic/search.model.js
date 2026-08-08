@@ -1,10 +1,11 @@
-// src/features/playersDatabase/ui/pages/searchPage/logic/search.model.js
+// features/playersDatabase/ui/pages/searchPage/logic/search.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
 
-const clean = value => String(value ?? '').trim()
+import { pickDefinedValue } from '../../../../model/value.model.js'
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumberOrZero = value => {
   const number = Number(value)
@@ -60,8 +61,8 @@ const normalizePlayerSearchRow = playerSeason => {
     playerName: clean(identity.displayName) || 'שחקן ללא שם',
     teamName: resolveTeamName(team) || '-',
     leagueName: resolveLeagueName(team.leagueId) || '-',
-    leagueLevel: team.leagueLevel ?? '-',
-    birthYear: season.birthYear ?? '-',
+    leagueLevel: pickDefinedValue(team.leagueLevel, '-'),
+    birthYear: pickDefinedValue(season.birthYear, '-'),
     ageGroupLabel: clean(team.ageGroupLabel) || '-',
     seasonKey: clean(season.seasonKey || season.seasonId) || '-',
     minutes: Number(actual.minutes || 0),
@@ -72,7 +73,7 @@ const normalizePlayerSearchRow = playerSeason => {
     scoutProfiles: Array.isArray(scout.profiles) ? scout.profiles : [],
     scoutCombinations: Array.isArray(scout.combinations) ? scout.combinations : [],
     scoutProfileDisplay: display,
-    score: Number(display.score ?? primaryProfile?.score ?? 0),
+    score: Number(pickDefinedValue(display.score, primaryProfile?.score, 0)),
     reliability: clean(display.reliability?.level),
     avatarUrl: clean(metadata.avatarUrl),
     playerUrl: clean(metadata.playerUrl),
@@ -120,8 +121,8 @@ const normalizeTeamSearchRow = teamSeason => {
       birthTeamSlot: identity.teamSlot,
     }) || '-',
     leagueName: resolveLeagueName(league.leagueId) || '-',
-    leagueLevel: league.leagueLevel ?? '-',
-    birthYear: season.birthYear ?? '-',
+    leagueLevel: pickDefinedValue(league.leagueLevel, '-'),
+    birthYear: pickDefinedValue(season.birthYear, '-'),
     ageGroupLabel: clean(league.ageGroupLabel) || '-',
     seasonKey: clean(season.seasonKey || season.seasonId) || '-',
     minutes: 0,
@@ -139,7 +140,7 @@ const normalizeTeamSearchRow = teamSeason => {
       type: 'teamPerformance',
       id: clean(primarySide.side),
       label: clean(primarySide.priorityLevel),
-      score: primaryScore ?? null,
+      score: pickDefinedValue(primaryScore, null),
       reliability: { level: '' },
       baseProfiles: [],
     },

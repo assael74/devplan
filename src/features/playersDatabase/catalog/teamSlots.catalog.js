@@ -1,10 +1,36 @@
+// features/playersDatabase/catalog/teamSlots.catalog.js
+
 export const PLAYERS_DATABASE_TEAM_SLOT_TEMPLATE = [
-  { ageGroupId: 'u19', ageGroupLabel: 'נוער', maxSlots: 3 },
-  { ageGroupId: 'u17', ageGroupLabel: 'נערים א', maxSlots: 3 },
-  { ageGroupId: 'u16', ageGroupLabel: 'נערים ב', maxSlots: 3 },
-  { ageGroupId: 'u15', ageGroupLabel: 'נערים ג', maxSlots: 3 },
-  { ageGroupId: 'u14', ageGroupLabel: 'ילדים א', maxSlots: 3 },
-  { ageGroupId: 'u13', ageGroupLabel: 'ילדים ב', maxSlots: 3 },
+  {
+    ageGroupId: 'u19',
+    ageGroupLabel: 'נוער',
+    maxSlots: 3,
+  },
+  {
+    ageGroupId: 'u17',
+    ageGroupLabel: 'נערים א',
+    maxSlots: 3,
+  },
+  {
+    ageGroupId: 'u16',
+    ageGroupLabel: 'נערים ב',
+    maxSlots: 3,
+  },
+  {
+    ageGroupId: 'u15',
+    ageGroupLabel: 'נערים ג',
+    maxSlots: 3,
+  },
+  {
+    ageGroupId: 'u14',
+    ageGroupLabel: 'ילדים א',
+    maxSlots: 3,
+  },
+  {
+    ageGroupId: 'u13',
+    ageGroupLabel: 'ילדים ב',
+    maxSlots: 3,
+  },
 ]
 
 const toPositiveInt = (value, fallback) => {

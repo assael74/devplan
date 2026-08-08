@@ -6,12 +6,22 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  createTrackedWriteBatch,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
-import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+import {
+  buildSearchIndexWriteResult,
+  SEARCH_INDEX_ENTITY_TYPES,
+} from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 import {
@@ -35,12 +45,21 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const teamScope = buildPlayerSeasonScope({
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   })
   const indexScope = buildPlayerSeasonIndexScope({
     league,
-    season: { ...season, seasonId, seasonKey, leagueId },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+      leagueId,
+    },
     team,
   })
   const teamId = teamScope.birthTeamId
@@ -75,7 +94,10 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: updatedRowsCount })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: updatedRowsCount,
+  })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
@@ -153,7 +175,10 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: snapshot.docs.length })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: snapshot.docs.length,
+  })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,

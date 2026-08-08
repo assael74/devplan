@@ -6,11 +6,20 @@ import {
   query,
   where,
 } from 'firebase/firestore'
-import { createTrackedWriteBatch, trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
+import {
+  createTrackedWriteBatch,
+  trackedGetDocs,
+} from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
-import { buildSearchIndexWriteResult, SEARCH_INDEX_ENTITY_TYPES } from '../shared/searchIndexResult.model.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../../leagues/leagueDoc.js'
+import {
+  buildSearchIndexWriteResult,
+  SEARCH_INDEX_ENTITY_TYPES,
+} from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
@@ -43,12 +52,21 @@ export async function upsertPlayerSeasonSearchIndexMany({
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const teamScope = buildPlayerSeasonScope({
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   })
   const indexScope = buildPlayerSeasonIndexScope({
     league,
-    season: { ...season, seasonId, seasonKey, leagueId },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+      leagueId,
+    },
     team,
   })
   const teamId = teamScope.birthTeamId
@@ -92,7 +110,11 @@ export async function upsertPlayerSeasonSearchIndexMany({
     const match = findExistingPlayerSeasonIndexDoc({
       lookup: existingLookup,
       player,
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
     })
     const existingDoc = match.snapshot
@@ -122,7 +144,11 @@ export async function upsertPlayerSeasonSearchIndexMany({
     const existingData = existingDoc?.data?.() || {}
     const indexDoc = buildPlayerSeasonIndexDoc({
       league,
-      season: { ...season, seasonId, seasonKey },
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+      },
       team,
       target,
       player: {
@@ -156,7 +182,10 @@ export async function upsertPlayerSeasonSearchIndexMany({
     )
   })
 
-  await commitBatchWhenNeeded({ batch, operationsCount: rowsCount })
+  await commitBatchWhenNeeded({
+    batch,
+    operationsCount: rowsCount,
+  })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,

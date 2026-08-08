@@ -95,15 +95,31 @@ const collectRebuildEntries = leaguesSnapshot => {
       }
 
       season.tableRank.forEach(row => {
-        const indexDoc = buildTeamSeasonIndexDoc({ league, season, target, row })
+        const indexDoc = buildTeamSeasonIndexDoc({
+          league,
+          season,
+          target,
+          row,
+        })
         if (!indexDoc.id || !indexDoc.clubId || !indexDoc.seasonId || !indexDoc.birthYear) return
 
-        entries.push({ league, season, target, row, indexDoc, calculateExpectedLevelDelta })
+        entries.push({
+          league,
+          season,
+          target,
+          row,
+          indexDoc,
+          calculateExpectedLevelDelta,
+        })
       })
     })
   })
 
-  return { entries, scannedSeasonsCount, skippedSeasonsCount }
+  return {
+    entries,
+    scannedSeasonsCount,
+    skippedSeasonsCount,
+  }
 }
 
 const attachExpectedLevelDelta = entries => {
@@ -132,15 +148,25 @@ const attachExpectedLevelDelta = entries => {
       })
       : null
 
-    entry.row = { ...entry.row, expectedLevelDelta }
-    entry.indexDoc = { ...entry.indexDoc, expectedLevelDelta }
+    entry.row = {
+      ...entry.row,
+      expectedLevelDelta,
+    }
+    entry.indexDoc = {
+      ...entry.indexDoc,
+      expectedLevelDelta,
+    }
     teamDeltaByKey.set(buildExpectedLevelKey(current), expectedLevelDelta)
 
     if (expectedLevelDelta === null) teamDeltaUnknownCount += 1
     else teamDeltaCalculatedCount += 1
   })
 
-  return { teamDeltaByKey, teamDeltaCalculatedCount, teamDeltaUnknownCount }
+  return {
+    teamDeltaByKey,
+    teamDeltaCalculatedCount,
+    teamDeltaUnknownCount,
+  }
 }
 
 export async function rebuildTeamSeasonSearchIndexesFromLeagues({

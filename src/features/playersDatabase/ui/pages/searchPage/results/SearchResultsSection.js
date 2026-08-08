@@ -1,7 +1,12 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchResultsSection.js
 
 import * as React from 'react'
-import { Box, Card, CircularProgress, Typography } from '@mui/joy'
+import {
+  Box,
+  Card,
+  CircularProgress,
+  Typography,
+} from '@mui/joy'
 
 import DataTable from '../../../components/tables/DataTable.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -13,7 +18,13 @@ import SearchResultScoutProfiles from './SearchResultScoutProfiles.js'
 import SearchResultTeamUrl from './SearchResultTeamUrl.js'
 import { searchResultsSectionSx as sx } from './sx/searchResultsSection.sx.js'
 
-const renderExpandedRow = ({ row, onNotesSave, onRoleEdit, onScoutProfileRemove, onTeamUrlEdit }) => {
+const renderExpandedRow = ({
+  row,
+  onNotesSave,
+  onRoleEdit,
+  onScoutProfileRemove,
+  onTeamUrlEdit,
+}) => {
   const isPlayer = row?.entityType !== 'birthTeamSeason'
 
   return (
@@ -56,10 +67,11 @@ export default function SearchResultsSection({
 }) {
   const columns = React.useMemo(() => buildSearchColumns({
     entityType,
+    onEntityOpen,
     onFavoriteToggle: row => {
       Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
     },
-  }), [entityType, onFavoriteToggle])
+  }), [entityType, onEntityOpen, onFavoriteToggle])
   const entityLabel = entityType === 'team' ? 'קבוצות' : 'שחקנים'
   const entityColors = getEntityColors(entityType)
 
@@ -68,7 +80,10 @@ export default function SearchResultsSection({
       <Box sx={sx.header}>
         <Box sx={sx.headerIdentity}>
           <Box sx={sx.headerIcon(entityColors)}>
-            {iconUi({ id: 'view', size: 'sm' })}
+            {iconUi({
+              id: 'view',
+              size: 'sm',
+            })}
           </Box>
 
           <Box sx={sx.headerCopy}>

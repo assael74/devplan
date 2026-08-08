@@ -10,6 +10,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { inlineSelectConfirmSx as sx } from './InlineSelectConfirm.sx.js'
 
 export default function InlineSelectConfirm({
   value = '',
@@ -29,29 +30,14 @@ export default function InlineSelectConfirm({
   const changed = draftValue !== (value || '')
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 0.5,
-        minWidth: 0,
-      }}
-    >
+    <Box sx={sx.root}>
       <Select
         size='sm'
         value={draftValue}
         disabled={disabled || busy}
         placeholder={placeholder}
         onChange={(_, nextValue) => setDraftValue(nextValue || '')}
-        sx={{
-          minHeight: 28,
-          minWidth: 82,
-          maxWidth: 118,
-          fontSize,
-          borderRadius: 7,
-          '--Select-decoratorChildHeight': '26px',
-        }}
+        sx={sx.select(fontSize)}
       >
         <Option value=''>ללא</Option>
 
@@ -73,15 +59,12 @@ export default function InlineSelectConfirm({
             disabled={disabled || busy}
             aria-label='אישור שינוי'
             onClick={() => onConfirm?.(draftValue)}
-            sx={{
-              width: 28,
-              minWidth: 28,
-              height: 28,
-              minHeight: 28,
-              borderRadius: 7,
-            }}
+            sx={sx.confirmButton}
           >
-            {iconUi({ id: 'save', size: 'sm' })}
+            {iconUi({
+              id: 'save',
+              size: 'sm',
+            })}
           </IconButton>
         </Tooltip>
       ) : null}

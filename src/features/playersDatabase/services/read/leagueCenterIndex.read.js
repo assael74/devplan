@@ -1,4 +1,9 @@
-import { doc, getDoc } from 'firebase/firestore'
+// features/playersDatabase/services/read/leagueCenterIndex.read.js
+
+import {
+  doc,
+  getDoc,
+} from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'

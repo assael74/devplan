@@ -11,10 +11,13 @@ import {
   ModalDialog,
   Typography,
 } from '@mui/joy'
-import { AnimatePresence, motion } from 'framer-motion'
+import {
+  AnimatePresence,
+  motion,
+} from 'framer-motion'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { modalSx as sx } from './sx/modal.sx.js'
+import { modalSx as sx } from './sx/playersDatabaseModal.sx.js'
 
 const motionProps = {
   initial: {
@@ -92,7 +95,10 @@ export default function PlayersDatabaseModal({
                 <Box sx={sx.headerContent}>
                   {iconId ? (
                     <Box sx={sx.headerIcon}>
-                      {iconUi({ id: iconId, size: 'md' })}
+                      {iconUi({
+                        id: iconId,
+                        size: 'md',
+                      })}
                     </Box>
                   ) : null}
 
@@ -115,7 +121,7 @@ export default function PlayersDatabaseModal({
                   </Box>
 
                   {headerActions ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Box sx={sx.headerActions}>
                       {headerActions}
                     </Box>
                   ) : null}
@@ -131,10 +137,7 @@ export default function PlayersDatabaseModal({
               <DialogContent sx={sx.dialogContent}>
                 <Box
                   className='dpScrollThin'
-                  sx={{
-                    ...sx.content,
-                    ...(contentSx || {}),
-                  }}
+                  sx={[sx.content, contentSx]}
                 >
                   {children}
                 </Box>
@@ -148,7 +151,10 @@ export default function PlayersDatabaseModal({
                     disabled={disabled || busy}
                     startDecorator={
                       !busy && confirmIconId
-                        ? iconUi({ id: confirmIconId, size: 'sm' })
+                        ? iconUi({
+                          id: confirmIconId,
+                          size: 'sm',
+                        })
                         : null
                     }
                     onClick={handleConfirm}
@@ -174,4 +180,3 @@ export default function PlayersDatabaseModal({
     </AnimatePresence>
   )
 }
-

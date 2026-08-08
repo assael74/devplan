@@ -1,8 +1,6 @@
-// src/features/playersDatabase/domain/orchestration/buildPlayerScoutState.js
+// features/playersDatabase/domain/orchestration/buildPlayerScoutState.js
 
-import {
-  buildPlayerScoutResult,
-} from '../../../../shared/players/scouting/index.js'
+import { buildPlayerScoutResult } from '../../../../shared/players/scouting/index.js'
 import { normalizePlayerStats } from '../../model/playerStats.model.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
 

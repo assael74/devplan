@@ -1,12 +1,16 @@
 // features/playersDatabase/services/write/leagues/leagueDoc.js
 
-import { doc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import {
   cleanValue,
   toNumberOrZero,
+  pickDefinedValue,
 } from '../../../model/value.model.js'
 import { buildSeasonKey } from '../../../model/season.model.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
@@ -57,7 +61,7 @@ export const buildLeagueBaseDoc = (league = {}, currentData = {}) => ({
   region: clean(league.region || currentData.region),
   ageGroupId: clean(league.ageGroupId || currentData.ageGroupId),
   ageGroupLabel: clean(league.ageGroupLabel || currentData.ageGroupLabel),
-  level: league.level ?? currentData.level ?? null,
+  level: pickDefinedValue(league.level, currentData.level, null),
   current: currentData.current ? cleanSeasonComputedFields(currentData.current) : null,
   history: Array.isArray(currentData.history)
     ? currentData.history.map(cleanSeasonComputedFields)

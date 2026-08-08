@@ -1,3 +1,5 @@
+// features/playersDatabase/ui/pages/searchPage/report/DbSearchReportNameModal.js
+
 import * as React from 'react'
 import {
   FormControl,
@@ -16,7 +18,9 @@ const NAME_MAX_LENGTH = 80
 const PURPOSE_MIN_LENGTH = 5
 const PURPOSE_MAX_LENGTH = 180
 const DESCRIPTION_MAX_LENGTH = 1000
-const clean = value => String(value || '').trim()
+function clean(value) {
+  return String(value || '').trim()
+}
 
 export default function DbSearchReportNameModal({
   open = false,
@@ -84,7 +88,11 @@ export default function DbSearchReportNameModal({
             name='dbSearchReportName'
             value={reportName}
             placeholder='לדוגמה: קבוצות שנתון 2010 בעדיפות התקפית'
-            slotProps={{ input: { maxLength: NAME_MAX_LENGTH } }}
+            slotProps={{
+              input: {
+                maxLength: NAME_MAX_LENGTH,
+              },
+            }}
             onChange={event => setReportName(event.target.value)}
           />
           <FormHelperText>
@@ -101,7 +109,11 @@ export default function DbSearchReportNameModal({
             name='dbSearchReportPurpose'
             value={reportPurpose}
             placeholder='לדוגמה: איתור קבוצות עם שחקני התקפה מתחת לרדאר'
-            slotProps={{ input: { maxLength: PURPOSE_MAX_LENGTH } }}
+            slotProps={{
+              input: {
+                maxLength: PURPOSE_MAX_LENGTH,
+              },
+            }}
             onChange={event => setReportPurpose(event.target.value)}
           />
           <FormHelperText>
@@ -120,7 +132,11 @@ export default function DbSearchReportNameModal({
             maxRows={8}
             value={reportDescription}
             placeholder='הקשר מקצועי, אופן השימוש המתוכנן בתוצאות או נקודות שחשוב לזכור.'
-            slotProps={{ textarea: { maxLength: DESCRIPTION_MAX_LENGTH } }}
+            slotProps={{
+              textarea: {
+                maxLength: DESCRIPTION_MAX_LENGTH,
+              },
+            }}
             onChange={event => setReportDescription(event.target.value)}
           />
           <FormHelperText>

@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/contracts/playerScoutInput.contract.js
+// features/playersDatabase/domain/contracts/playerScoutInput.contract.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../catalog/leagues.catalog.js'
@@ -99,7 +99,10 @@ export const buildPlayerScoutCalculationContract = ({
   team = {},
   season = {},
 } = {}) => {
-  const ageGroupId = resolveAgeGroupId({ team, season })
+  const ageGroupId = resolveAgeGroupId({
+    team,
+    season,
+  })
   const gameTime = resolvePlayersDatabaseLeagueGameTime(ageGroupId)
   const leagueTotalRound = positiveNumber(
     season.leagueTotalRound,
@@ -109,7 +112,11 @@ export const buildPlayerScoutCalculationContract = ({
     team.league?.leagueGames,
     team.domain?.league?.leagueGames
   ) || DEFAULT_LEAGUE_GAMES
-  const teamGames = resolveTeamGames({ player, team, season })
+  const teamGames = resolveTeamGames({
+    player,
+    team,
+    season,
+  })
   const clubId = cleanDomainValue(firstDomainValue(
     team.clubId,
     team.identity?.clubId,
@@ -137,8 +144,16 @@ export const buildPlayerScoutCalculationContract = ({
     team.lifecycle?.isFinal === true ? 'completed' : ''
   )) || 'active'
   const performance = resolveTeamPerformance(team)
-  const goalsFor = resolveTeamGoalsFor({ player, team, season })
-  const goalsAgainst = resolveTeamGoalsAgainst({ player, team, season })
+  const goalsFor = resolveTeamGoalsFor({
+    player,
+    team,
+    season,
+  })
+  const goalsAgainst = resolveTeamGoalsAgainst({
+    player,
+    team,
+    season,
+  })
   const birthYear = toDomainNumber(firstDomainValue(player.birthYear, player.yearOfBirth))
   const teamBirthYear = toDomainNumber(firstDomainValue(
     team.birthYear,

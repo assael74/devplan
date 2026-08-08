@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/components/scout/ScoutCompactTooltip.js
+// features/playersDatabase/ui/components/scout/ScoutCompactTooltip.js
 
 import {
   Box,

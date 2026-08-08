@@ -1,8 +1,11 @@
-// src/features/playersDatabase/ui/pages/searchPage/SearchPage.js
+// features/playersDatabase/ui/pages/searchPage/SearchPage.js
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import {
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import {
@@ -17,6 +20,7 @@ import DbSearchReportNameModal from './report/DbSearchReportNameModal.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 function SearchPageContent() {
+  const location = useLocation()
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
 
@@ -36,10 +40,33 @@ function SearchPageContent() {
   ])
 
   const handleEntityOpen = row => {
-    navigate(
-      PLAYERS_DATABASE_UI_ROUTES.player(
-        row.playerDocumentId || row.id
+    const navigationState = {
+      state: {
+        from: `${location.pathname}${location.search}`,
+        fromPage: 'search',
+      },
+    }
+
+    if (row.entityType === 'birthTeamSeason') {
+      navigate(
+        PLAYERS_DATABASE_UI_ROUTES.team({
+          leagueId: row.leagueId,
+          teamId: row.birthTeamId || row.teamId || row.id,
+          seasonKey: row.seasonKey,
+        }),
+        navigationState
       )
+      return
+    }
+
+    navigate(
+      PLAYERS_DATABASE_UI_ROUTES.player({
+        playerId: row.playerDocumentId || row.id,
+        seasonKey: row.seasonKey,
+        teamId: row.teamId,
+        leagueId: row.leagueId,
+      }),
+      navigationState
     )
   }
 

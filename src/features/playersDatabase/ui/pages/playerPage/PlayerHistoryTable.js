@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/playerPage/PlayerHistoryTable.js
+// features/playersDatabase/ui/pages/playerPage/PlayerHistoryTable.js
 
 import {
   Box,
@@ -16,10 +16,8 @@ import {
   resolveProfilesLabel,
   toNumber,
 } from './logic/playerPage.utils.js'
-import {
-  PLAYER_HISTORY_TABLE_WIDTHS,
-} from './logic/playerTableWidths.js'
-import { playerContentSx as sx } from './sx/playerContent.sx.js'
+import { PLAYER_HISTORY_TABLE_WIDTHS } from './logic/playerTableWidths.js'
+import { playerHistoryTableSx as sx } from './sx/playerHistoryTable.sx.js'
 
 const columnWidth = key => ({
   width: PLAYER_HISTORY_TABLE_WIDTHS[key],

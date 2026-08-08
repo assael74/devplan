@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import DataTable from '../../components/tables/DataTable.js'
 import { buildTeamPlayersColumns } from './logic/teamPlayers.columns.js'
-import { teamContentSx as sx } from './sx/teamContent.sx.js'
+import { teamPlayersTableSx as sx } from './sx/teamPlayersTable.sx.js'
 
 export default function TeamPlayersTable({
   players,
@@ -36,11 +36,6 @@ export default function TeamPlayersTable({
       }}
       wrapSx={sx.tableWrap}
       tableSx={sx.playersTable}
-      getRowSx={row => (
-        row.rosterStatus === 'youngerAgeGroup'
-          ? sx.youngerAgeRow
-          : null
-      )}
     />
   )
 }

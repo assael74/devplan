@@ -3,7 +3,10 @@
 import * as React from 'react'
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
-import { PLAYERS_DATABASE_WRITE_ACTIONS, runPlayersDatabaseWriteAction } from '../../../../services/write/index.js'
+import {
+  PLAYERS_DATABASE_WRITE_ACTIONS,
+  runPlayersDatabaseWriteAction,
+} from '../../../../services/write/index.js'
 
 export default function useLeagueSeasonTeamsDelete({
   league,
@@ -25,7 +28,11 @@ export default function useLeagueSeasonTeamsDelete({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_LEAGUE_SEASON_TEAMS,
         payload: {
           target: selectedSeasonOption.target,
-          league: { ...(leagueDoc || {}), ...league, id: league.id },
+          league: {
+            ...(leagueDoc || {}),
+            ...league,
+            id: league.id,
+          },
           season: {
             ...(selectedSeasonOption.season || {}),
             leagueId: league.id,
@@ -51,7 +58,10 @@ export default function useLeagueSeasonTeamsDelete({
         failedStage: error?.stage || 'unknown',
         message: error?.message || 'מחיקת קבוצות העונה נכשלה',
         completedStages: Object.keys(error?.results || {}),
-        failures: [{ code: error?.code || 'WRITE_FLOW_FAILED', message: error?.message || 'מחיקת קבוצות העונה נכשלה' }],
+        failures: [{
+          code: error?.code || 'WRITE_FLOW_FAILED',
+          message: error?.message || 'מחיקת קבוצות העונה נכשלה',
+        }],
         duplicates: [],
         results: error?.results || {},
       })

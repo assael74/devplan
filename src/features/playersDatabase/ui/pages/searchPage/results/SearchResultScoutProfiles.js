@@ -1,5 +1,6 @@
 // features/playersDatabase/ui/pages/searchPage/results/SearchResultScoutProfiles.js
 
+import { pickDefinedValue } from '../../../../model/value.model.js'
 import {
   Box,
   Chip,
@@ -31,7 +32,7 @@ const resolveReliabilityLabel = reliability => {
 }
 
 const resolveReliabilityScore = profile => {
-  const value = profile?.reliability?.score ?? profile?.reliabilityScore ?? profile?.score
+  const value = pickDefinedValue(profile?.reliability?.score, profile?.reliabilityScore, profile?.score)
   return Number.isFinite(Number(value)) ? Math.round(Number(value)) : null
 }
 
@@ -99,7 +100,10 @@ export default function SearchResultScoutProfiles({ row, onRemove }) {
                 >
                   {pending
                     ? <CircularProgress size='sm' />
-                    : iconUi({ id: 'delete', size: 'sm' })}
+                    : iconUi({
+                      id: 'delete',
+                      size: 'sm',
+                    })}
                 </IconButton>
               </Tooltip>
             </Box>

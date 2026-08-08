@@ -1,3 +1,5 @@
+// features/playersDatabase/model/playersDatabaseEntityPolicy.js
+
 import { resolvePlayersDatabaseCatalogMatches } from '../catalog/catalogResolvers.js'
 
 export const PLAYERS_DATABASE_RESOLUTION_MODE = {
@@ -17,7 +19,7 @@ export const PLAYERS_DATABASE_RECORD_KIND = {
   SNAPSHOT: 'snapshot',
 }
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const hasText = value => clean(value).length > 0
 
 const pick = (row = {}, keys = []) => {

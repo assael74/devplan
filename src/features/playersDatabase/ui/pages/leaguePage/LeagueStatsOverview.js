@@ -1,10 +1,14 @@
 // features/playersDatabase/ui/pages/leaguePage/LeagueStatsOverview.js
 
-import { Box, Card, Typography } from '@mui/joy'
+import {
+  Box,
+  Card,
+  Typography,
+} from '@mui/joy'
 
 import StatCard from '../../components/cards/StatCard.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
+import { leagueStatsOverviewSx as sx } from './sx/leagueStatsOverview.sx.js'
 
 function LeagueKpiDetail({ label, value }) {
   return (
@@ -30,7 +34,10 @@ function LeagueSummaryStatCard({
         </Box>
 
         <Box sx={sx.leagueStateIcon}>
-          {iconUi({ id: 'league', size: 'sm' })}
+          {iconUi({
+            id: 'league',
+            size: 'sm',
+          })}
         </Box>
       </Box>
 

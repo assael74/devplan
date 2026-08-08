@@ -1,17 +1,28 @@
-﻿// features/playersDatabase/ui/components/filters/FiltersBar.js
+// features/playersDatabase/ui/components/filters/FiltersBar.js
 
 import * as React from 'react'
-import { Card, Input, Option, Select, Stack } from '@mui/joy'
+import {
+  Card,
+  Input,
+  Option,
+  Select,
+  Stack,
+} from '@mui/joy'
+
+import { filtersBarSx as sx } from './filtersBar.sx.js'
 
 export default function FiltersBar({ searchValue = '', onSearchChange, filters = [] }) {
   return (
-    <Card sx={{ borderRadius: 8, border: '1px solid #dbe5f4' }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} alignItems='stretch'>
+    <Card sx={sx.card}>
+      <Stack direction={{
+        xs: 'column',
+        md: 'row',
+      }} spacing={1.25} alignItems='stretch'>
         <Input
           value={searchValue}
           onChange={event => onSearchChange(event.target.value)}
           placeholder='חיפוש שחקן, קבוצה, ליגה...'
-          sx={{ minWidth: { md: 320 } }}
+          sx={sx.search}
         />
 
         {filters.map(filter => (
@@ -19,7 +30,7 @@ export default function FiltersBar({ searchValue = '', onSearchChange, filters =
             key={filter.key}
             value={filter.value || 'all'}
             onChange={(event, value) => filter.onChange(value)}
-            sx={{ minWidth: 170 }}
+            sx={sx.filter}
           >
             {(filter.options || []).map(option => (
               <Option key={option.value} value={option.value}>{option.label}</Option>

@@ -1,22 +1,20 @@
 // features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.columns.js
 
 import * as React from 'react'
-import { Autocomplete, Typography } from '@mui/joy'
+import {
+  Autocomplete,
+  Typography,
+} from '@mui/joy'
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
+import { leagueImportColumnsSx as sx } from './leagueImport.columns.sx.js'
 
-const clean = value => String(value ?? '').trim()
-
-const compactColumnSx = { width: 66, minWidth: 66 }
-const numberInputSx = { minWidth: 48 }
-const ltrNumberInputSx = {
-  minWidth: 48,
-  '& input': {
-    direction: 'ltr',
-    textAlign: 'left',
-    fontSize: 12,
-    fontWeight: 400,
-  },
+function clean(value) {
+  return String(
+    value === null || value === undefined
+      ? ''
+      : value
+  ).trim()
 }
 
 const clubOptions = PLAYERS_DATABASE_CLUBS_CATALOG.map(club => ({
@@ -29,15 +27,26 @@ const clubOptions = PLAYERS_DATABASE_CLUBS_CATALOG.map(club => ({
 }))
 
 const teamSlotOptions = [
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
+  {
+    value: '1',
+    label: '1',
+  },
+  {
+    value: '2',
+    label: '2',
+  },
+  {
+    value: '3',
+    label: '3',
+  },
 ]
 
-const normalizeSearchValue = value => clean(value)
-  .toLowerCase()
-  .replace(/["׳״'`.-]/g, '')
-  .replace(/\s+/g, ' ')
+function normalizeSearchValue(value) {
+  return clean(value)
+    .toLowerCase()
+    .replace(/["׳״'`.-]/g, '')
+    .replace(/\s+/g, ' ')
+}
 
 const filterClubOptions = (options, state) => {
   const query = normalizeSearchValue(state.inputValue)
@@ -48,7 +57,13 @@ const filterClubOptions = (options, state) => {
   ).includes(query))
 }
 
-const emitClubChange = ({ row, rowIndex, column, value, onCellChange }) => {
+const emitClubChange = ({
+  row,
+  rowIndex,
+  column,
+  value,
+  onCellChange,
+}) => {
   if (typeof onCellChange !== 'function') return
 
   onCellChange({
@@ -59,7 +74,13 @@ const emitClubChange = ({ row, rowIndex, column, value, onCellChange }) => {
   })
 }
 
-const renderClubCell = ({ row, rowIndex, column, value, onCellChange }) => {
+const renderClubCell = ({
+  row,
+  rowIndex,
+  column,
+  value,
+  onCellChange,
+}) => {
   const selectedOption = clubOptions.find(option => option.value === value) || null
 
   if (selectedOption) {
@@ -68,7 +89,7 @@ const renderClubCell = ({ row, rowIndex, column, value, onCellChange }) => {
         level="body-sm"
         noWrap
         title={selectedOption.label}
-        sx={{ minWidth: 0, fontWeight: 700 }}
+        sx={sx.selectedClub}
       >
         {selectedOption.displayLabel}
       </Typography>
@@ -99,22 +120,29 @@ const renderClubCell = ({ row, rowIndex, column, value, onCellChange }) => {
 }
 
 const baseImportColumns = [
-  { key: 'rank', required: true, label: 'מיקום', readOnly: true, sx: compactColumnSx, inputSx: numberInputSx },
+  {
+    key: 'rank',
+    required: true,
+    label: 'מיקום',
+    readOnly: true,
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
   {
     key: 'clubId',
     required: true,
     label: 'שם מערכת',
     options: clubOptions,
-    sx: { width: 210, minWidth: 210 },
-    inputSx: { minWidth: 190 },
+    sx: sx.clubColumn,
+    inputSx: sx.clubInput,
     render: renderClubCell,
   },
   {
     key: 'teamName',
     label: 'שם שנקלט',
     readOnly: true,
-    sx: { width: 170, minWidth: 170 },
-    inputSx: { minWidth: 150 },
+    sx: sx.teamNameColumn,
+    inputSx: sx.teamNameInput,
   },
   {
     key: 'teamSlot',
@@ -122,17 +150,61 @@ const baseImportColumns = [
     label: 'קבוצה',
     type: 'select',
     options: teamSlotOptions,
-    sx: { width: 64, minWidth: 64 },
-    inputSx: { minWidth: 48 },
+    sx: sx.teamSlotColumn,
+    inputSx: sx.teamSlotInput,
   },
-  { key: 'games', required: true, label: 'משחקים', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'wins', label: 'ניצחונות', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'draws', label: 'תיקו', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'losses', label: 'הפסדים', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'goalsFor', required: true, label: 'זכות', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'goalsAgainst', required: true, label: 'חובה', sx: compactColumnSx, inputSx: numberInputSx },
-  { key: 'goalDifference', label: 'הפרש', sx: compactColumnSx, inputSx: ltrNumberInputSx },
-  { key: 'points', required: true, label: 'נקודות', sx: compactColumnSx, inputSx: numberInputSx },
+  {
+    key: 'games',
+    required: true,
+    label: 'משחקים',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'wins',
+    label: 'ניצחונות',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'draws',
+    label: 'תיקו',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'losses',
+    label: 'הפסדים',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'goalsFor',
+    required: true,
+    label: 'זכות',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'goalsAgainst',
+    required: true,
+    label: 'חובה',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
+  {
+    key: 'goalDifference',
+    label: 'הפרש',
+    sx: sx.compactColumn,
+    inputSx: sx.ltrNumberInput,
+  },
+  {
+    key: 'points',
+    required: true,
+    label: 'נקודות',
+    sx: sx.compactColumn,
+    inputSx: sx.numberInput,
+  },
 ]
 
 export const LEAGUE_IMPORT_PLACEHOLDER = [
@@ -148,4 +220,6 @@ export const LEAGUE_IMPORT_PLACEHOLDER = [
   'נקודות',
 ].join('\t')
 
-export const buildLeagueImportColumns = () => baseImportColumns
+export function buildLeagueImportColumns() {
+  return baseImportColumns
+}

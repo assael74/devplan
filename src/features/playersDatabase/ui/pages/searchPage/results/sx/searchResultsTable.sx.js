@@ -83,9 +83,9 @@ export const searchResultsTableSx = {
   },
 
   actionsColumn: {
-    width: 48,
-    minWidth: 48,
-    maxWidth: 48,
+    width: 64,
+    minWidth: 64,
+    maxWidth: 64,
     px: 0.25,
     textAlign: 'center',
     overflow: 'visible',
@@ -101,6 +101,13 @@ export const searchResultsTableSx = {
     objectFit: 'cover',
     borderRadius: '50%',
     border: `1px solid ${devPlanColors.primaryLight}`,
+  },
+
+  actionsCell: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0.5,
   },
 
   actionButton: {

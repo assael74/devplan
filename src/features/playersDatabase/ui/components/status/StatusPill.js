@@ -1,4 +1,4 @@
-﻿// features/playersDatabase/ui/components/status/StatusPill.js
+// features/playersDatabase/ui/components/status/StatusPill.js
 
 import * as React from 'react'
 import { Chip } from '@mui/joy'

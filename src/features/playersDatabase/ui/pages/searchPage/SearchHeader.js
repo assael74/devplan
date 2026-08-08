@@ -1,6 +1,11 @@
-// src/features/playersDatabase/ui/pages/searchPage/SearchHeader.js
+// features/playersDatabase/ui/pages/searchPage/SearchHeader.js
 
-import { Box, Button, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
@@ -10,9 +15,7 @@ export default function SearchHeader({
   breadcrumbs,
   onLeagues,
   onReport,
-  onAudit,
   reportDisabled = false,
-  auditBusy = false,
 }) {
   return (
     <Box sx={sx.root}>
@@ -26,25 +29,13 @@ export default function SearchHeader({
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
         <Button
-          variant='outlined'
-          loading={auditBusy}
-          disabled={auditBusy}
-          sx={sx.auditButton}
-          startDecorator={
-            !auditBusy
-              ? iconUi({ id: 'search', size: 'sm' })
-              : null
-          }
-          onClick={onAudit}
-        >
-          Audit Firestore
-        </Button>
-
-        <Button
           variant='solid'
           disabled={reportDisabled}
           sx={sx.reportButton}
-          startDecorator={iconUi({ id: 'print', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'print',
+            size: 'sm',
+          })}
           onClick={onReport}
         >
           תצוגה ופרסום דוח
@@ -53,7 +44,10 @@ export default function SearchHeader({
         <Button
           variant='outlined'
           sx={sx.leaguesButton}
-          startDecorator={iconUi({ id: 'back', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'back',
+            size: 'sm',
+          })}
           onClick={onLeagues}
         >
           פריסת ליגות

@@ -14,7 +14,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { teamContentSx as sx } from './sx/teamContent.sx.js'
+import { teamActionsPanelSx as sx } from './sx/teamActionsPanel.sx.js'
 
 const buildActions = ({ hasTeamPlayers, hasSeason }) => [
   {
@@ -52,7 +52,6 @@ const buildActions = ({ hasTeamPlayers, hasSeason }) => [
 ]
 
 export default function TeamActionsPanel({
-  selectedSeasonKey,
   selectedSeasonOptionKey,
   seasonOptions,
   hasTeamPlayers,
@@ -65,7 +64,10 @@ export default function TeamActionsPanel({
   onReport,
 }) {
   const hasSeason = Boolean(selectedSeasonOptionKey && seasonOptions.length)
-  const actions = buildActions({ hasTeamPlayers, hasSeason })
+  const actions = buildActions({
+    hasTeamPlayers,
+    hasSeason,
+  })
 
   const handleAction = actionId => {
     if (actionId === 'players') {
@@ -144,7 +146,10 @@ export default function TeamActionsPanel({
       <Box sx={sx.actionFiltersRow}>
         <Chip
           variant={profileOnly ? 'solid' : 'soft'}
-          startDecorator={iconUi({ id: 'profile', size: 'sm' })}
+          startDecorator={iconUi({
+            id: 'profile',
+            size: 'sm',
+          })}
           onClick={() => onProfileOnlyChange(!profileOnly)}
           sx={profileOnly ? sx.actionFilterChipActive : sx.actionFilterChip}
         >
@@ -160,7 +165,10 @@ export default function TeamActionsPanel({
             key={action.id}
             disabled={action.disabled}
             variant={action.primary ? 'solid' : 'outlined'}
-            startDecorator={iconUi({ id: action.iconId, size: 'sm' })}
+            startDecorator={iconUi({
+              id: action.iconId,
+              size: 'sm',
+            })}
             sx={
               action.primary
                 ? sx.primaryActionButton

@@ -1,10 +1,13 @@
 // features/playersDatabase/ui/components/modals/dataImport/DataImportStatusCell.js
 
 import * as React from 'react'
-import { Box, Tooltip } from '@mui/joy'
+import {
+  Box,
+  Tooltip,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { dataImportSx as sx } from '../sx/dataImport.sx.js'
+import { dataImportStatusCellSx as sx } from './DataImportStatusCell.sx.js'
 
 export default function DataImportStatusCell({ valid, message }) {
   const content = (

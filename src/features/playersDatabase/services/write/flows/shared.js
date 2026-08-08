@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/flows/shared.js
+// features/playersDatabase/services/write/flows/shared.js
 
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import {

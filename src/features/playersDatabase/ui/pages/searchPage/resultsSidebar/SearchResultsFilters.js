@@ -11,7 +11,7 @@ import {
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { scoutPriorityColors } from '../../../../../../ui/patterns/scout/ScoutPriority.js'
-import { searchResultsSidebarSx as sx } from './sx/searchResultsSidebar.sx.js'
+import { searchResultsFiltersSx as sx } from './sx/SearchResultsFilters.sx.js'
 
 const priorityOptionDisplay = {
   elite: {

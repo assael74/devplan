@@ -10,11 +10,16 @@ import {
   adaptPlayerDocumentSeason,
   adaptTeamScoutEngineRow,
 } from '../domain/index.js'
-import { normalizeSeasonLookupKey, normalizeSeasonIdentity, isSameSeason } from './season.model.js'
 import {
-  PLAYER_STATS_STATUS,
-} from './playerStats.model.js'
-import { normalizeTeamIdentity, resolveTeamLookupKey } from './teamIdentity.model.js'
+  normalizeSeasonLookupKey,
+  normalizeSeasonIdentity,
+  isSameSeason,
+} from './season.model.js'
+import { PLAYER_STATS_STATUS } from './playerStats.model.js'
+import {
+  normalizeTeamIdentity,
+  resolveTeamLookupKey,
+} from './teamIdentity.model.js'
 import { cleanValue } from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
 import {
@@ -110,7 +115,10 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
     ageGroupId: season?.ageGroupId,
     ageGroupLabel: season?.ageGroupLabel,
   })
-  const teamName = resolveOptionTeamName({ season, teamDoc })
+  const teamName = resolveOptionTeamName({
+    season,
+    teamDoc,
+  })
   const optionKey = [
     seasonKey,
     birthYear || '',
@@ -144,7 +152,10 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
 export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') => {
   const options = []
   const seen = new Set()
-  const expectedBirthYear = resolveExpectedBirthYear({ teamDoc, teamId })
+  const expectedBirthYear = resolveExpectedBirthYear({
+    teamDoc,
+    teamId,
+  })
 
   const pushOption = option => {
     if (!option.optionKey || seen.has(option.optionKey)) return
@@ -460,11 +471,24 @@ export const buildTeamPageView = ({
     identity: {
       ...birthTeamSeason.identity,
       ...leagueTeamSeason.identity,
-      displayName: resolveTeamName({ teamRow, teamDoc, teamId }),
+      displayName: resolveTeamName({
+        teamRow,
+        teamDoc,
+        teamId,
+      }),
     },
-    season: { ...birthTeamSeason.season, ...leagueTeamSeason.season },
-    league: { ...birthTeamSeason.league, ...leagueTeamSeason.league },
-    stats: { actual, projected: birthTeamSeason.stats.projected },
+    season: {
+      ...birthTeamSeason.season,
+      ...leagueTeamSeason.season,
+    },
+    league: {
+      ...birthTeamSeason.league,
+      ...leagueTeamSeason.league,
+    },
+    stats: {
+      actual,
+      projected: birthTeamSeason.stats.projected,
+    },
     ranking: leagueTeamSeason.ranking,
     performance: performance || birthTeamSeason.performance,
     scoutProfilesSummary: leagueTeamSeason.scoutProfilesSummary,

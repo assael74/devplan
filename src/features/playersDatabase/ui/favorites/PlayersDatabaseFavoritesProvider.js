@@ -2,9 +2,7 @@
 
 import * as React from 'react'
 
-import {
-  PLAYERS_DATABASE_FAVORITE_TYPES,
-} from '../../constants/pdb.constants.js'
+import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../constants/pdb.constants.js'
 import { buildFavoritesMap } from '../../model/favorite.model.js'
 import { readFavorites } from '../../services/read/index.js'
 import {

@@ -1,6 +1,14 @@
+// features/playersDatabase/ui/components/tables/dataTable/dataTable.export.js
+
 import * as XLSX from 'xlsx'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => {
+  const safeValue = value === null || value === undefined
+    ? ''
+    : value
+
+  return String(safeValue).trim()
+}
 
 const resolveColumnValue = ({ column = {}, row = {}, index = 0 } = {}) => {
   if (typeof column.value === 'function') {
@@ -10,9 +18,9 @@ const resolveColumnValue = ({ column = {}, row = {}, index = 0 } = {}) => {
   return row[column.key]
 }
 
-const buildExportRows = ({ rows = [], columns = [] } = {}) => (
-  (Array.isArray(rows) ? rows : []).map((row, index) => (
-    columns.reduce((result, column) => {
+const buildExportRows = ({ rows = [], columns = [] } = {}) => {
+  return (Array.isArray(rows) ? rows : []).map((row, index) => {
+    return columns.reduce((result, column) => {
       result[column.label || column.key] = resolveColumnValue({
         column,
         row,
@@ -21,8 +29,8 @@ const buildExportRows = ({ rows = [], columns = [] } = {}) => (
 
       return result
     }, {})
-  ))
-)
+  })
+}
 
 export default function exportDataTableRowsToXlsx({
   rows = [],

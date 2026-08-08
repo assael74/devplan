@@ -1,4 +1,7 @@
-const clean = (value) => String(value ?? '').trim()
+// features/playersDatabase/import/logic/buildPlayersDatabaseLeagueTableWritePlan.js
+
+import { pickDefinedValue } from '../../model/value.model.js'
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumOrNull = (value) => {
   const text = clean(value)
@@ -36,7 +39,7 @@ const standingRow = (rowPlan) => {
 
   return {
     rowId: clean(identity.rowId),
-    leaguePosition: toNumOrNull(sourceRow.leaguePosition ?? sourceRow.position),
+    leaguePosition: toNumOrNull(pickDefinedValue(sourceRow.leaguePosition, sourceRow.position)),
     clubId: clean(identity.clubMatch?.id),
     clubName: clean(identity.clubMatch?.name || identity.clubName),
     games: toNumOrNull(sourceRow.games),
@@ -45,8 +48,11 @@ const standingRow = (rowPlan) => {
     losses: toNumOrNull(sourceRow.losses),
     goalsFor,
     goalsAgainst,
-    goalDifference: explicitDiff ?? (
-      goalsFor === null || goalsAgainst === null ? null : goalsFor - goalsAgainst
+    goalDifference: pickDefinedValue(
+      explicitDiff,
+      (
+            goalsFor === null || goalsAgainst === null ? null : goalsFor - goalsAgainst
+          ),
     ),
     points: toNumOrNull(sourceRow.points),
   }
@@ -61,7 +67,7 @@ const leagueBase = (context, rows) => {
     id: leagueId,
     catalogLeagueId: clean(context.leagueCatalogId),
     leagueName: clean(item.name || context.leagueName),
-    level: item.level ?? null,
+    level: pickDefinedValue(item.level, null),
     region: clean(item.region),
     leagueNum: context.leagueNum === '' ? null : Number(context.leagueNum),
     ageGroupId: clean(item.ageGroupId || context.ageGroupId),

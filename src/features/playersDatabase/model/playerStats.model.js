@@ -40,18 +40,46 @@ const resolveOptionalStatValue = ({ stats = {}, source = {}, key }) => {
 
 export const normalizePlayerStats = (player = {}) => {
   const stats = player.playerStats || {}
-  const games = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'games' }))
-  const goals = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'goals' }))
-  const minutes = toNumberOrZero(resolveStatValue({ stats, source: player, key: 'minutes' }))
-  const minutesPerGame = resolveOptionalStatValue({ stats, source: player, key: 'minutesPerGame' })
-  const goalsPer90 = resolveOptionalStatValue({ stats, source: player, key: 'goalsPer90' })
+  const games = toNumberOrZero(resolveStatValue({
+    stats,
+    source: player,
+    key: 'games',
+  }))
+  const goals = toNumberOrZero(resolveStatValue({
+    stats,
+    source: player,
+    key: 'goals',
+  }))
+  const minutes = toNumberOrZero(resolveStatValue({
+    stats,
+    source: player,
+    key: 'minutes',
+  }))
+  const minutesPerGame = resolveOptionalStatValue({
+    stats,
+    source: player,
+    key: 'minutesPerGame',
+  })
+  const goalsPer90 = resolveOptionalStatValue({
+    stats,
+    source: player,
+    key: 'goalsPer90',
+  })
 
   return {
     games,
     goals,
-    yellowCards: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'yellowCards' })),
+    yellowCards: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'yellowCards',
+    })),
     minutes,
-    starts: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'starts' })),
+    starts: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'starts',
+    })),
     substituteIn: toNumberOrZero(resolveStatValue({
       stats,
       source: player,
@@ -64,8 +92,16 @@ export const normalizePlayerStats = (player = {}) => {
       key: 'substitutedOut',
       legacyKeys: ['subOut'],
     })),
-    teamMinutes: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'teamMinutes' })),
-    teamGames: toNumberOrZero(resolveStatValue({ stats, source: player, key: 'teamGames' })),
+    teamMinutes: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'teamMinutes',
+    })),
+    teamGames: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'teamGames',
+    })),
     minutesPerGame: toNumberOrZero(
       hasValue(minutesPerGame) ? minutesPerGame : (games ? minutes / games : 0)
     ),

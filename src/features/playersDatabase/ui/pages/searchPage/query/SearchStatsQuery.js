@@ -1,23 +1,63 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchStatsQuery.js
 
 import * as React from 'react'
-import { Box, Button, Input, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Input,
+  Typography,
+} from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchStatsQuerySx as sx } from './sx/searchStatsQuery.sx.js'
 
 const PLAYER_PRESET_CONDITIONS = [
-  { field: 'goals', operator: 'gte', label: 'שערים לפחות', placeholder: 'מספר שערים' },
-  { field: 'appearances', operator: 'gte', label: 'משחקים לפחות', placeholder: 'מספר משחקים' },
-  { field: 'minutes', operator: 'gte', label: 'דקות לפחות', placeholder: 'מספר דקות' },
+  {
+    field: 'goals',
+    operator: 'gte',
+    label: 'שערים לפחות',
+    placeholder: 'מספר שערים',
+  },
+  {
+    field: 'appearances',
+    operator: 'gte',
+    label: 'משחקים לפחות',
+    placeholder: 'מספר משחקים',
+  },
+  {
+    field: 'minutes',
+    operator: 'gte',
+    label: 'דקות לפחות',
+    placeholder: 'מספר דקות',
+  },
 ]
 
 const TEAM_PRESET_CONDITIONS = [
-  { field: 'goalsFor', operator: 'gte', label: 'שערי זכות לפחות', placeholder: 'מספר שערים' },
-  { field: 'goalsAgainst', operator: 'lte', label: 'שערי חובה עד', placeholder: 'מספר שערים' },
-  { field: 'teamGamePlayed', operator: 'gte', label: 'משחקים לפחות', placeholder: 'מספר משחקים' },
-  { field: 'tableRank', operator: 'lte', label: 'מיקום בטבלה עד', placeholder: 'מיקום' },
+  {
+    field: 'goalsFor',
+    operator: 'gte',
+    label: 'שערי זכות לפחות',
+    placeholder: 'מספר שערים',
+  },
+  {
+    field: 'goalsAgainst',
+    operator: 'lte',
+    label: 'שערי חובה עד',
+    placeholder: 'מספר שערים',
+  },
+  {
+    field: 'teamGamePlayed',
+    operator: 'gte',
+    label: 'משחקים לפחות',
+    placeholder: 'מספר משחקים',
+  },
+  {
+    field: 'tableRank',
+    operator: 'lte',
+    label: 'מיקום בטבלה עד',
+    placeholder: 'מיקום',
+  },
 ]
 
 function getConditionValue(conditions, field) {
@@ -48,7 +88,10 @@ export default function SearchStatsQuery({
       <Button
         size='sm'
         variant={expanded ? 'soft' : 'outlined'}
-        startDecorator={iconUi({ id: 'add', size: 'sm' })}
+        startDecorator={iconUi({
+          id: 'add',
+          size: 'sm',
+        })}
         sx={sx.addButton}
         onClick={() => setExpanded(current => !current)}
       >
@@ -72,7 +115,12 @@ export default function SearchStatsQuery({
                 size='sm'
                 type='number'
                 sx={sx.input}
-                slotProps={{ input: { min: 0, inputMode: 'numeric' } }}
+                slotProps={{
+                  input: {
+                    min: 0,
+                    inputMode: 'numeric',
+                  },
+                }}
                 value={getConditionValue(conditions, preset.field)}
                 placeholder={preset.placeholder}
                 onChange={event => onSetCondition({
@@ -91,7 +139,10 @@ export default function SearchStatsQuery({
         size='sm'
         variant='plain'
         color='neutral'
-        startDecorator={iconUi({ id: 'reset', size: 'sm' })}
+        startDecorator={iconUi({
+          id: 'reset',
+          size: 'sm',
+        })}
         sx={sx.resetButton}
         disabled={conditions.length === 0}
         onClick={onResetConditions}

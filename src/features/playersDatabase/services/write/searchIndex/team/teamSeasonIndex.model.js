@@ -5,11 +5,19 @@ import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalo
 import { adaptTeamScoutEngineRow } from '../../../../domain/index.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
-import { normalizeTeamIdentity, resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
+import {
+  normalizeTeamIdentity,
+  resolveTeamLookupKey,
+} from '../../../../model/teamIdentity.model.js'
 import { normalizeTeamStats } from '../../../../model/teamStats.model.js'
-import { buildSeasonKey, clean, toNumberOrZero } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+  toNumberOrZero,
+} from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
+import { pickDefinedValue } from '../../../../model/value.model.js'
 export const normalizeText = value =>
   clean(value).toLowerCase()
 
@@ -48,7 +56,7 @@ export const buildTeamSeasonIndexId = ({
   ].filter(Boolean).join('__')
 
 export const getRowTableRank = row =>
-  toNumberOrZero(row.position ?? row.rank ?? row.leaguePosition)
+  toNumberOrZero(pickDefinedValue(row.position, row.rank, row.leaguePosition))
 
 export const normalizeTableRowStats = row => normalizeTeamStats(row, {
   gamesCandidates: [row.games, row.teamGamePlayed, row.teamStats?.teamGamePlayed],
@@ -113,7 +121,12 @@ export const buildTeamSeasonIndexDoc = ({
     teamIdentity.teamId ||
     teamIdentity.teamSlotId
   )
-  const id = buildTeamSeasonIndexId({ leagueId, seasonKey, teamId, clubId })
+  const id = buildTeamSeasonIndexId({
+    leagueId,
+    seasonKey,
+    teamId,
+    clubId,
+  })
   const games = getRowGames(row)
   const goalsFor = getRowGoalsFor(row)
   const goalsAgainst = getRowGoalsAgainst(row)
@@ -157,7 +170,10 @@ export const buildTeamSeasonIndexDoc = ({
     seasonId,
     seasonKey,
     clubId,
-    clubLevel: resolveClubLevel({ clubId, clubLevel: row.clubLevel }),
+    clubLevel: resolveClubLevel({
+      clubId,
+      clubLevel: row.clubLevel,
+    }),
     birthTeamId: teamId,
     birthTeamDocumentId: teamIdentity.birthTeamDocumentId || teamId,
     birthTeamSlot: teamIdentity.birthTeamSlot || 1,
@@ -196,36 +212,36 @@ export const buildTeamSeasonIndexDoc = ({
     attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
     attackTargetRate: roundOptionalWholeNumber(offense?.targetRate),
     attackTargetNormalized: roundOptionalWholeNumber(offense?.targetNormalized),
-    attackTargetLevel: offense?.targetLevel ?? '',
+    attackTargetLevel: pickDefinedValue(offense?.targetLevel, ''),
     attackRankingRate: roundOptionalWholeNumber(offense?.rankingRate),
     attackRankingNormalized: roundOptionalWholeNumber(offense?.rankingNormalized),
-    attackRankingLevel: offense?.rankingLevel ?? '',
+    attackRankingLevel: pickDefinedValue(offense?.rankingLevel, ''),
     attackAnomalyRate: roundOptionalWholeNumber(offense?.anomalyRate),
-    attackAnomalyLevel: offense?.anomalyLevel ?? '',
+    attackAnomalyLevel: pickDefinedValue(offense?.anomalyLevel, ''),
     attackScoutPriorityScore: roundOptionalWholeNumber(
-      offense?.scoutPriorityScore ?? offense?.scoutPriorityRate
+      pickDefinedValue(offense?.scoutPriorityScore, offense?.scoutPriorityRate)
     ),
-    attackPriorityLevel: offense?.priorityLevel ?? '',
-    attackOpportunityType: offense?.opportunityType ?? '',
+    attackPriorityLevel: pickDefinedValue(offense?.priorityLevel, ''),
+    attackOpportunityType: pickDefinedValue(offense?.opportunityType, ''),
 
     defenseQualityRate: roundOptionalWholeNumber(defense?.qualityRate),
     defenseTargetRate: roundOptionalWholeNumber(defense?.targetRate),
     defenseTargetNormalized: roundOptionalWholeNumber(defense?.targetNormalized),
-    defenseTargetLevel: defense?.targetLevel ?? '',
+    defenseTargetLevel: pickDefinedValue(defense?.targetLevel, ''),
     defenseRankingRate: roundOptionalWholeNumber(defense?.rankingRate),
     defenseRankingNormalized: roundOptionalWholeNumber(defense?.rankingNormalized),
-    defenseRankingLevel: defense?.rankingLevel ?? '',
+    defenseRankingLevel: pickDefinedValue(defense?.rankingLevel, ''),
     defenseAnomalyRate: roundOptionalWholeNumber(defense?.anomalyRate),
-    defenseAnomalyLevel: defense?.anomalyLevel ?? '',
+    defenseAnomalyLevel: pickDefinedValue(defense?.anomalyLevel, ''),
     defenseScoutPriorityScore: roundOptionalWholeNumber(
-      defense?.scoutPriorityScore ?? defense?.scoutPriorityRate
+      pickDefinedValue(defense?.scoutPriorityScore, defense?.scoutPriorityRate)
     ),
-    defensePriorityLevel: defense?.priorityLevel ?? '',
-    defenseOpportunityType: defense?.opportunityType ?? '',
+    defensePriorityLevel: pickDefinedValue(defense?.priorityLevel, ''),
+    defenseOpportunityType: pickDefinedValue(defense?.opportunityType, ''),
     playersCount: toNumberOrZero(row.playersCount),
     playerSeasonIndexCount: toNumberOrZero(row.playerSeasonIndexCount),
     scoutProfiledPlayersCount: toNumberOrZero(
-      row.scoutProfiledPlayersCount ?? row.scoutProfilesSummary?.total
+      pickDefinedValue(row.scoutProfiledPlayersCount, row.scoutProfilesSummary?.total)
     ),
     scoutProfilesSummary: {
       total: toNumberOrZero(row.scoutProfilesSummary?.total),

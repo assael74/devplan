@@ -1,7 +1,12 @@
 // features/playersDatabase/ui/pages/searchPage/query/SearchQueryPanel.js
 
 import * as React from 'react'
-import { Box, Button, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/joy'
 
 import { CollapseBox } from '../../../../../../ui/patterns/collapseBox/index.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -38,7 +43,10 @@ export default function SearchQueryPanel({
       title={(
         <Box sx={sx.headerIdentity}>
           <Box sx={sx.headerIcon(entityColors)}>
-            {iconUi({ id: 'search', size: 'sm' })}
+            {iconUi({
+              id: 'search',
+              size: 'sm',
+            })}
           </Box>
 
           <Typography level='title-md' sx={sx.headerTitle}>

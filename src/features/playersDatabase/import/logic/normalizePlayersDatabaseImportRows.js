@@ -1,4 +1,6 @@
-const clean = (value) => String(value ?? '').trim()
+// features/playersDatabase/import/logic/normalizePlayersDatabaseImportRows.js
+
+const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
 const HEADER_ALIASES = {
   externalPlayerId: [

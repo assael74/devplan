@@ -1,4 +1,4 @@
-﻿// src/features/playersDatabase/index.js
+// features/playersDatabase/index.js
 
 export { default } from './ui/pages/entryPage/EntryPage.js'
 export { default as EntryPage } from './ui/pages/entryPage/EntryPage.js'

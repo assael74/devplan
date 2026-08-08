@@ -12,10 +12,8 @@ import ActivityStatusChip from '../../components/status/ActivityStatusChip.js'
 import FavoriteButton from '../../components/favorites/FavoriteButton.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
-import {
-  resolvePlayerHeaderMeta,
-} from './logic/playerPage.utils.js'
-import { playerPageSx as sx } from './sx/playerPage.sx.js'
+import { resolvePlayerHeaderMeta } from './logic/playerPage.utils.js'
+import { playerHeaderSx as sx } from './sx/playerHeader.sx.js'
 
 export default function PlayerHeader({
   breadcrumbs = [],

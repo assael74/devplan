@@ -1,10 +1,18 @@
 // features/playersDatabase/services/write/players/playerDoc.model.js
 
-import { deleteField, doc, serverTimestamp } from 'firebase/firestore'
+import {
+  deleteField,
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { clean, toNumberOrZero } from '../leagues/leagueDoc.js'
+import {
+  clean,
+  toNumberOrZero,
+} from '../leagues/leagueDoc.js'
+import { pickDefinedValue } from '../../../model/value.model.js'
 import {
   buildPlayerDocumentId as buildCanonicalPlayerDocumentId,
   buildPlayerMatchValues,
@@ -34,13 +42,11 @@ export const normalizePlayerScoutProfiles = player => {
         ),
         score: Number.isFinite(
           Number(
-            profile.reliability?.score ??
-            profile.reliabilityScore
+            pickDefinedValue(profile.reliability?.score, profile.reliabilityScore)
           )
         )
           ? Number(
-              profile.reliability?.score ??
-              profile.reliabilityScore
+              pickDefinedValue(profile.reliability?.score, profile.reliabilityScore)
             )
           : null,
       },
@@ -114,12 +120,14 @@ export const buildPlayerBaseDoc = (
     player.normalizedName || player.fullName || currentData.normalizedName
   ),
   birthYear: toNumberOrZero(
-    player.birthYear ??
-    season.birthYear ??
-    team.birthYear ??
-    currentData.birthYear
+    pickDefinedValue(
+      player.birthYear,
+      season.birthYear,
+      team.birthYear,
+      currentData.birthYear,
+    )
   ) || null,
-  birthDate: currentData.birthDate ?? null,
+  birthDate: pickDefinedValue(currentData.birthDate, null),
   status: clean(currentData.status),
   notes: clean(player.rootNotes || currentData.notes),
   primaryPosition: clean(player.primaryPosition || currentData.primaryPosition),

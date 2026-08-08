@@ -1,8 +1,11 @@
 // features/playersDatabase/ui/components/report/ReportViewToggle.js
 
-import { Box, Button } from '@mui/joy'
+import {
+  Box,
+  Button,
+} from '@mui/joy'
 
-import { reportListSx as sx } from './reportList.sx.js'
+import { reportViewToggleSx as sx } from './sx/reportViewToggle.sx.js'
 
 export default function ReportViewToggle({
   value,

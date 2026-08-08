@@ -10,7 +10,7 @@ import {
 
 import ScoutPriority from '../../../../../ui/patterns/scout/ScoutPriority.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { teamPageSx as sx } from './sx/teamPage.sx.js'
+import { teamKpiCardSx as sx } from './sx/teamKpiCard.sx.js'
 
 const renderDetail = (detail, detailSx) => {
   const content = (
@@ -82,7 +82,10 @@ export default function TeamKpiCard({
 
         {iconId ? (
           <Box sx={sx.teamKpiIcon}>
-            {iconUi({ id: iconId, size: 'md' })}
+            {iconUi({
+              id: iconId,
+              size: 'md',
+            })}
           </Box>
         ) : null}
       </Box>

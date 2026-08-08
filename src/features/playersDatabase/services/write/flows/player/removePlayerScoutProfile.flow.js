@@ -1,18 +1,12 @@
 // features/playersDatabase/services/write/flows/player/removePlayerScoutProfile.flow.js
 
-import {
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-} from '../../leagues/index.js'
-import {
-  removePlayerSeasonScoutProfile,
-} from '../../players/index.js'
+import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
+import { removePlayerSeasonScoutProfile } from '../../players/index.js'
 import {
   updatePlayerSeasonSearchIndexScoutProfiles,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import {
-  updateTeamSeasonPlayerScoutProfiles,
-} from '../../teams/index.js'
+import { updateTeamSeasonPlayerScoutProfiles } from '../../teams/index.js'
 
 const clean = value => String(value || '').trim()
 

@@ -9,7 +9,10 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
-import { trackedGetCountFromServer, trackedGetDocs } from '../../../../services/firestore/usage/index.js'
+import {
+  trackedGetCountFromServer,
+  trackedGetDocs,
+} from '../../../../services/firestore/usage/index.js'
 import { SCOUT_PROFILE_COMBINATIONS } from '../../../../shared/players/scouting/index.js'
 import {
   SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
@@ -66,7 +69,7 @@ const SCOUT_COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((map, combinat
   return map
 }, {})
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 
 const toUniqueCleanValues = values => (
@@ -128,7 +131,10 @@ const normalizeSearchConditionField = ({ entityType, field } = {}) => (
 )
 
 const buildConditionConstraint = ({ entityType, condition = {} } = {}) => {
-  const field = normalizeSearchConditionField({ entityType, field: condition.field })
+  const field = normalizeSearchConditionField({
+    entityType,
+    field: condition.field,
+  })
   const operator = clean(condition.operator)
   const value = Number(condition.value)
 
@@ -149,12 +155,18 @@ const buildConditionConstraint = ({ entityType, condition = {} } = {}) => {
 
 const buildConditionConstraints = ({ entityType, filters = {} } = {}) => (
   (Array.isArray(filters.conditions) ? filters.conditions : [])
-    .map(condition => buildConditionConstraint({ entityType, condition }))
+    .map(condition => buildConditionConstraint({
+      entityType,
+      condition,
+    }))
     .filter(Boolean)
 )
 
 const matchesSearchCondition = ({ entityType, data = {}, condition = {} } = {}) => {
-  const field = normalizeSearchConditionField({ entityType, field: condition.field })
+  const field = normalizeSearchConditionField({
+    entityType,
+    field: condition.field,
+  })
   const operator = clean(condition.operator)
   const expectedValue = Number(condition.value)
   const actualValue = Number(data[field])
@@ -174,7 +186,11 @@ const matchesSearchCondition = ({ entityType, data = {}, condition = {} } = {}) 
 
 const matchesSearchConditions = ({ entityType, data = {}, filters = {} } = {}) => (
   (Array.isArray(filters.conditions) ? filters.conditions : [])
-    .every(condition => matchesSearchCondition({ entityType, data, condition }))
+    .every(condition => matchesSearchCondition({
+      entityType,
+      data,
+      condition,
+    }))
 )
 
 const hasSearchConditions = filters => (
@@ -390,10 +406,16 @@ const buildSearchQuery = ({
   })
   const constraints = [
     where('entityType', '==', entityType),
-    ...buildExactFilterConstraints({ entityType, filters: safeFilters }),
+    ...buildExactFilterConstraints({
+      entityType,
+      filters: safeFilters,
+    }),
     ...(shouldUseClientSideConditions
       ? []
-      : buildConditionConstraints({ entityType, filters: safeFilters })),
+      : buildConditionConstraints({
+        entityType,
+        filters: safeFilters,
+      })),
   ]
 
   if (includeLimit) {
@@ -472,7 +494,10 @@ const getDocsForSearchVariant = async ({ filters = {}, includeLimit = false } = 
     queryKey: entityType,
     meta: { includeLimit },
   })
-  return filterDocsBySearchVariant({ docs: snapshot.docs, filters })
+  return filterDocsBySearchVariant({
+    docs: snapshot.docs,
+    filters,
+  })
 }
 
 const countSearchVariant = async filters => {
@@ -492,7 +517,10 @@ const countSearchVariant = async filters => {
       collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
       queryKey: entityType,
     })
-    return filterDocsBySearchVariant({ docs: snapshot.docs, filters }).length
+    return filterDocsBySearchVariant({
+      docs: snapshot.docs,
+      filters,
+    }).length
   }
 
   const snapshot = await trackedGetCountFromServer(searchQuery, {
@@ -531,7 +559,10 @@ export async function readSearchPageData({
     variants
       .filter(Boolean)
       .map(variant => getDocsForSearchVariant({
-        filters: { ...variant, maxRows },
+        filters: {
+          ...variant,
+          maxRows,
+        },
         includeLimit: true,
       }))
   )
@@ -584,7 +615,10 @@ export async function readSearchPageRows({
     variants
       .filter(Boolean)
       .map(variant => getDocsForSearchVariant({
-        filters: { ...variant, maxRows },
+        filters: {
+          ...variant,
+          maxRows,
+        },
         includeLimit: true,
       }))
   )

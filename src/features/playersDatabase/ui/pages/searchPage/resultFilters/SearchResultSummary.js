@@ -1,20 +1,47 @@
 // features/playersDatabase/ui/pages/searchPage/resultFilters/SearchResultSummary.js
 
-import { Box, Typography } from '@mui/joy'
+import {
+  Box,
+  Typography,
+} from '@mui/joy'
 
 import { searchResultSummarySx as sx } from './sx/searchResultSummary.sx.js'
 
 export default function SearchResultSummary({ summary = {}, entityType = 'player' }) {
   const items = entityType === 'team'
     ? [
-      { key: 'total', label: 'קבוצות', value: summary.total || 0 },
-      { key: 'leagues', label: 'ליגות', value: summary.leagues || 0 },
+      {
+        key: 'total',
+        label: 'קבוצות',
+        value: summary.total || 0,
+      },
+      {
+        key: 'leagues',
+        label: 'ליגות',
+        value: summary.leagues || 0,
+      },
     ]
     : [
-      { key: 'total', label: 'שחקנים', value: summary.total || 0 },
-      { key: 'teams', label: 'קבוצות', value: summary.teams || 0 },
-      { key: 'leagues', label: 'ליגות', value: summary.leagues || 0 },
-      { key: 'profiles', label: 'עם פרופיל', value: summary.profiles || 0 },
+      {
+        key: 'total',
+        label: 'שחקנים',
+        value: summary.total || 0,
+      },
+      {
+        key: 'teams',
+        label: 'קבוצות',
+        value: summary.teams || 0,
+      },
+      {
+        key: 'leagues',
+        label: 'ליגות',
+        value: summary.leagues || 0,
+      },
+      {
+        key: 'profiles',
+        label: 'עם פרופיל',
+        value: summary.profiles || 0,
+      },
     ]
 
   return (

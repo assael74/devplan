@@ -1,10 +1,17 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.query.js
 
-import { collection, query, where } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+} from 'firebase/firestore'
 import { trackedGetDocs } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
+import {
+  buildSeasonKey,
+  clean,
+} from '../../leagues/leagueDoc.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
   buildPlayerSeasonIndexId,
@@ -32,7 +39,11 @@ export const buildPlayerSeasonIndexIdFromPayload = ({
   const displayName = clean(player.matchedPlayerName || player.fullName)
   const normalizedDisplayName = normalizeText(player.normalizedName || displayName)
   const teamScope = buildPlayerSeasonScope({
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   })
 
@@ -59,12 +70,21 @@ export const findPlayerSeasonIndexDocForPayload = async ({
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const teamScope = buildPlayerSeasonScope({
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   })
   const indexScope = buildPlayerSeasonIndexScope({
     league,
-    season: { ...season, seasonId, seasonKey, leagueId },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+      leagueId,
+    },
     team,
   })
   const teamId = teamScope.birthTeamId
@@ -82,7 +102,11 @@ export const findPlayerSeasonIndexDocForPayload = async ({
   return findExistingPlayerSeasonIndexDoc({
     lookup: buildPlayerSeasonIndexLookup(existingDocs),
     player,
-    season: { ...season, seasonId, seasonKey },
+    season: {
+      ...season,
+      seasonId,
+      seasonKey,
+    },
     team,
   }).snapshot
 }

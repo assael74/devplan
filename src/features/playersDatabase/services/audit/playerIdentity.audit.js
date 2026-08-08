@@ -9,9 +9,7 @@ import {
 import { db } from '../../../../services/firebase/firebase.js'
 import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
-import {
-  SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
-} from '../../catalog/genericObjects.catalog.js'
+import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/genericObjects.catalog.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -206,7 +204,10 @@ const validateExactSchema = ({ data = {}, schema = {} } = {}) => {
     const actualValue = data[key]
     const expectedValue = schema[key]
 
-    if (isTypeValid({ actualValue, expectedValue })) return result
+    if (isTypeValid({
+      actualValue,
+      expectedValue,
+    })) return result
 
     result.push({
       field: key,
@@ -444,7 +445,10 @@ export async function buildPlayerIdentityAudit() {
   ])
   const searchPlayers = searchResult.rows
   const schemaAudit = searchResult.schemaAudit
-  const issues = collectIssues({ teamPlayers, searchPlayers })
+  const issues = collectIssues({
+    teamPlayers,
+    searchPlayers,
+  })
 
   return {
     generatedAt: new Date().toISOString(),

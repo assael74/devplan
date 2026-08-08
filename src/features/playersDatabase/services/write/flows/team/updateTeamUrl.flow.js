@@ -1,15 +1,11 @@
 // features/playersDatabase/services/write/flows/team/updateTeamUrl.flow.js
 
-import {
-  updateLeagueSeasonTableRankTeamUrl,
-} from '../../leagues/index.js'
+import { updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
 import {
   updatePlayerSeasonSearchIndexTeamUrl,
   updateTeamSeasonSearchIndexTeamUrl,
 } from '../../searchIndex/index.js'
-import {
-  updateTeamSeasonTeamUrl,
-} from '../../teams/index.js'
+import { updateTeamSeasonTeamUrl } from '../../teams/index.js'
 
 const clean = value => String(value || '').trim()
 

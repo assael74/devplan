@@ -1,6 +1,10 @@
 // features/playersDatabase/ui/pages/entryPage/EntryPage.js
 
-import { Box, Stack, Typography } from '@mui/joy'
+import {
+  Box,
+  Stack,
+  Typography,
+} from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
@@ -13,8 +17,7 @@ import {
 import { usePlayersDatabaseEntry } from '../../hooks/usePlayersDatabaseEntry.js'
 import EntryHeader from './EntryHeader.js'
 import EntryRouteCards from './EntryRouteCards.js'
-import { entryPageSx as pageSx } from './sx/entryPage.sx.js'
-import { entryContentSx as contentSx } from './sx/entryContent.sx.js'
+import { entryPageSx as sx } from './sx/entryPage.sx.js'
 
 const formatCount = value => {
   const nextValue = Number(value)
@@ -30,7 +33,7 @@ export default function EntryPage() {
 
   return (
     <PlayersDatabaseLayout>
-      <Box sx={pageSx.page}>
+      <Box sx={sx.page}>
         <EntryHeader breadcrumbs={breadcrumbs} />
 
         <EntryRouteCards
@@ -38,9 +41,9 @@ export default function EntryPage() {
           onNavigateToSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
         />
 
-        <Box sx={contentSx.infoGrid}>
+        <Box sx={sx.infoGrid}>
           <InfoPanel title='סיכום מסמך האב'>
-            <Box sx={contentSx.statsGrid}>
+            <Box sx={sx.statsGrid}>
               <StatCard
                 title='שחקנים'
                 value={formatCount(entry.summary.playersCount)}
@@ -69,7 +72,7 @@ export default function EntryPage() {
           </InfoPanel>
 
           <InfoPanel title='מה אפשר לעשות כאן?'>
-            <Stack spacing={1.1} className='dpScrollThin' sx={contentSx.capabilities}>
+            <Stack spacing={1.1} className='dpScrollThin' sx={sx.capabilities}>
               <Typography level='body-md'>
                 לזהות קבוצות חריגות לפי ביצועים מול מיקום בטבלה.
               </Typography>

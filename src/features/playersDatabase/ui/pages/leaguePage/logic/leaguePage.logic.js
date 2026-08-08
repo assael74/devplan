@@ -36,7 +36,7 @@ const REGION_LABEL_BY_KEY = {
   mizrarh: 'מזרח',
 }
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const normalizeRegionKey = value => clean(value).toLowerCase().replace(/[_\s-]+/g, '')
 

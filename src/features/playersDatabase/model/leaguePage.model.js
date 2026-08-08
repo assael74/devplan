@@ -3,8 +3,14 @@
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
 import { buildLeagueTeamSeasons } from '../domain/index.js'
-import { normalizeSeasonIdentity, normalizeSeasonLookupKey } from './season.model.js'
-import { cleanValue, toNumberOrZero } from './value.model.js'
+import {
+  normalizeSeasonIdentity,
+  normalizeSeasonLookupKey,
+} from './season.model.js'
+import {
+  cleanValue,
+  toNumberOrZero,
+} from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
 import { sortByTableRank } from '../ui/logic/tableRows.logic.js'
 

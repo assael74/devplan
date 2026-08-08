@@ -1,6 +1,9 @@
 // features/playersDatabase/ui/pages/teamPage/logic/teamRosterImport.logic.js
 
-import { clean, isSmallIndex } from './teamPage.utils.js'
+import {
+  clean,
+  isSmallIndex,
+} from './teamPage.utils.js'
 
 const HEADER_ALIASES = {
   index: [
@@ -160,7 +163,14 @@ export const parsePlayerRosterRows = value => {
 
   return dataRows.map((cells, rowIndex) => (
     usesHeader
-      ? parseMappedRow({ cells, headerMap, rowIndex })
-      : parsePositionalRow({ cells, rowIndex })
+      ? parseMappedRow({
+        cells,
+        headerMap,
+        rowIndex,
+      })
+      : parsePositionalRow({
+        cells,
+        rowIndex,
+      })
   ))
 }

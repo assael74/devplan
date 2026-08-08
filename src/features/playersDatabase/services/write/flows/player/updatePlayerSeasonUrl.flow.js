@@ -1,14 +1,8 @@
 // features/playersDatabase/services/write/flows/player/updatePlayerSeasonUrl.flow.js
 
-import {
-  updatePlayerSeasonUrl,
-} from '../../players/index.js'
-import {
-  updatePlayerSeasonSearchIndexPlayerUrl,
-} from '../../searchIndex/index.js'
-import {
-  updateTeamSeasonPlayerUrl,
-} from '../../teams/index.js'
+import { updatePlayerSeasonUrl } from '../../players/index.js'
+import { updatePlayerSeasonSearchIndexPlayerUrl } from '../../searchIndex/index.js'
+import { updateTeamSeasonPlayerUrl } from '../../teams/index.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player season URL sync failed at ${stage}`)

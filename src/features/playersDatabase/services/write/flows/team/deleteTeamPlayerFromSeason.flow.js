@@ -4,18 +4,14 @@ import {
   updateLeagueSeasonTableRankScoutProfilesSummary,
   updateLeagueSeasonTableRankTeamUrl,
 } from '../../leagues/index.js'
-import {
-  removePlayerSeasonDocsMany,
-} from '../../players/index.js'
+import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
   deleteSearchIndexForTeamPlayerSeason,
   getSearchIndexMetaForTeamPlayerSeason,
   updateTeamSeasonSearchIndexRosterMeta,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import {
-  removeTeamPlayerFromSeason,
-} from '../../teams/index.js'
+import { removeTeamPlayerFromSeason } from '../../teams/index.js'
 
 const runDeleteStage = async ({
   stage,

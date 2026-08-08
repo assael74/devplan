@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/leagues/leagueTableRank.js
 
+import { pickDefinedValue } from '../../../model/value.model.js'
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -11,7 +12,10 @@ import {
   leagueDocRef,
   toNumberOrZero,
 } from './leagueDoc.js'
-import { buildSeasonDoc, updateHistorySeason } from './leagueSeason.js'
+import {
+  buildSeasonDoc,
+  updateHistorySeason,
+} from './leagueSeason.js'
 import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 import {
   isSameSeason,
@@ -22,7 +26,7 @@ import { normalizeTeamStats } from '../../../model/teamStats.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const buildTableRankRow = (row = {}) => {
-  const rank = toNumberOrZero(row.position ?? row.rank ?? row.leaguePosition)
+  const rank = toNumberOrZero(pickDefinedValue(row.position, row.rank, row.leaguePosition))
   const identity = normalizeTeamIdentity({ team: row })
   const teamStats = normalizeTeamStats(row, {
     gamesCandidates: [row.games],
@@ -92,8 +96,14 @@ export async function updateLeagueSeasonTableRank({
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const { seasonKey } = normalizeSeasonIdentity({ season: { ...season, seasonId } })
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
+    const { seasonKey } = normalizeSeasonIdentity({ season: {
+      ...season,
+      seasonId,
+    } })
     const isHistory = clean(target) === 'history'
     const tableRank = buildTableRank(rows)
     const nextData = isHistory
@@ -101,14 +111,22 @@ export async function updateLeagueSeasonTableRank({
           ...baseDoc,
           history: updateHistorySeasonTableRank({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey },
+            season: {
+              ...season,
+              seasonId,
+              seasonKey,
+            },
             tableRank,
           }),
         }
       : {
         ...baseDoc,
         current: {
-          ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
+          ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+            ...season,
+            seasonId,
+            seasonKey,
+          })),
           seasonId,
           seasonKey,
           birthYear: toNumberOrZero(season.birthYear),
@@ -287,7 +305,10 @@ export async function updateLeagueSeasonTableRankTeamUrl({
     const currentData = snapshot.data() || {}
     const currentSeason = currentData.current || null
     const history = Array.isArray(currentData.history) ? currentData.history : []
-    const requestedSeason = { seasonId, seasonKey }
+    const requestedSeason = {
+      seasonId,
+      seasonKey,
+    }
     const currentMatches = isSameSeason(currentSeason, requestedSeason)
     const historyIndex = history.findIndex(row => isSameSeason(row, requestedSeason))
     const sourceTarget = currentMatches
@@ -431,15 +452,25 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildLeagueBaseDoc({ ...league, id: leagueId }, currentData)
-    const { seasonKey } = normalizeSeasonIdentity({ season: { ...season, seasonId } })
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
+    const { seasonKey } = normalizeSeasonIdentity({ season: {
+      ...season,
+      seasonId,
+    } })
     const isHistory = clean(target) === 'history'
     const nextData = isHistory
       ? {
           ...baseDoc,
           history: updateHistorySeasonTableRankScoutProfilesSummary({
             history: baseDoc.history,
-            season: { ...season, seasonId, seasonKey },
+            season: {
+              ...season,
+              seasonId,
+              seasonKey,
+            },
             team,
             scoutProfilesSummary,
           }),
@@ -447,7 +478,11 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
       : {
           ...baseDoc,
           current: {
-            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({ ...season, seasonId, seasonKey })),
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+              ...season,
+              seasonId,
+              seasonKey,
+            })),
             tableRank: updateTableRankRowScoutProfilesSummary({
               tableRank: baseDoc.current?.tableRank || [],
               team,

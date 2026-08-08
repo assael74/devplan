@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/teamPage/logic/teamPlayers.columns.js
+// features/playersDatabase/ui/pages/teamPage/logic/teamPlayers.columns.js
 
 import {
   Box,
@@ -18,7 +18,7 @@ import {
 } from '../../../components/playerPosition/index.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import { TEAM_PLAYERS_TABLE_WIDTHS } from './teamTableWidths.js'
-import { teamContentSx as sx } from '../sx/teamContent.sx.js'
+import { teamPlayersColumnsSx as sx } from '../sx/teamPlayers.columns.sx.js'
 
 const PLAYER_STATUS_DISPLAY = {
   youngerAgeGroup: {
@@ -274,7 +274,10 @@ export const buildTeamPlayersColumns = ({
             sx={sx.tableIconButton}
             onClick={() => onPlayerOpen(row)}
           >
-            {iconUi({ id: 'view', size: 'sm' })}
+            {iconUi({
+              id: 'view',
+              size: 'sm',
+            })}
           </IconButton>
         </Tooltip>
 
@@ -289,7 +292,10 @@ export const buildTeamPlayersColumns = ({
               onPlayerUrlEdit(row)
             }}
           >
-            {iconUi({ id: 'more', size: 'sm' })}
+            {iconUi({
+              id: 'more',
+              size: 'sm',
+            })}
           </IconButton>
         </Tooltip>
       </Box>

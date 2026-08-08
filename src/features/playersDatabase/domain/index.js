@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/index.js
+// features/playersDatabase/domain/index.js
 
 export * from './contracts/domainValue.contract.js'
 export * from './contracts/lifecycle.contract.js'
