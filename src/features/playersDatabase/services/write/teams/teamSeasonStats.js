@@ -51,6 +51,15 @@ export async function updateTeamSeasonPlayerStats({
     }, currentData)
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
+    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
+      ? 'completed'
+      : 'active'
+    const effectiveSeason = {
+      ...season,
+      seasonId,
+      seasonKey,
+      seasonStatus,
+    }
     const rows = isHistory ? baseDoc.history : baseDoc.current
     const existingSeason = (Array.isArray(rows) ? rows : [])
       .find(row => isSameSeason(row, {
@@ -58,11 +67,7 @@ export async function updateTeamSeasonPlayerStats({
         seasonKey,
       }))
     const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
-      season: {
-        ...season,
-        seasonId,
-        seasonKey,
-      },
+      season: effectiveSeason,
       team: {
         ...team,
         birthTeamDocumentId: teamId,
@@ -72,9 +77,7 @@ export async function updateTeamSeasonPlayerStats({
     })
     const seasonDoc = {
       ...baseSeasonDoc,
-      seasonStatus: clean(season.seasonStatus) === 'completed'
-        ? 'completed'
-        : 'active',
+      seasonStatus,
       leagueTotalRound: hasNumberValue(season.leagueTotalRound)
         ? Number(season.leagueTotalRound)
         : Number(baseSeasonDoc.leagueTotalRound) || 0,
@@ -82,7 +85,7 @@ export async function updateTeamSeasonPlayerStats({
         existingPlayers: baseSeasonDoc.teamPlayers,
         players,
         team,
-        season,
+        season: effectiveSeason,
         scoutSyncMode,
       }),
       updatedAt: new Date().toISOString(),

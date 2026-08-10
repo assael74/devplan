@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/TeamPage.js
+// src/features/playersDatabase/ui/pages/teamPage/TeamPage.js
 
 import * as React from 'react'
 import {
@@ -15,41 +15,57 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useTeamPage } from '../../hooks/useTeamPage.js'
+import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
+import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
+import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
 import TeamStatsOverview from './TeamStatsOverview.js'
 import TeamPlayersSection from './TeamPlayersSection.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
-import TeamRoleModal from './TeamRoleModal.js'
 import {
+  PlayerRoleEditModal,
+  RosterImportModal,
   SeasonDeleteConfirmModal,
+  StatsImportModal,
+  TaskEditModal,
+  WorkTaskModal,
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
+import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
-import {
-  TeamRosterImportModal,
-  TeamStatsImportModal,
-} from './TeamImportModals.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
+import useTeamUrlEditor from '../leaguePage/hooks/useTeamUrlEditor.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
 import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
+import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useTeamReport } from './report/index.js'
-import { teamPageSx as sx } from './sx/teamPage.sx.js'
+import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import { teamPageSx } from './sx/teamPage.sx.js'
+
+const sx = {
+  ...pageCoreLayoutSx,
+  ...teamPageSx,
+}
 
 function TeamPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const { notify } = useSnackbar()
   const favorites = usePlayersDatabaseFavorites()
+  const tasksModel = usePlayersDatabaseTasks()
+  const taskActions = usePlayersDatabaseTaskActions()
   const [profileOnly, setProfileOnly] = React.useState(false)
+  const [taskModalOpen, setTaskModalOpen] = React.useState(false)
+  const [editTask, setEditTask] = React.useState(null)
   const {
     leagueId,
     leagueDoc,
@@ -78,6 +94,7 @@ function TeamPageContent() {
     reload,
   }
   const roleEditor = useTeamRoleEditor(sharedActionContext)
+  const teamUrlEditor = useTeamUrlEditor(sharedActionContext)
   const playerUrlEditor = usePlayerUrlEditor(sharedActionContext)
   const rosterImport = useTeamRosterImport(sharedActionContext)
   const statsImport = useTeamStatsImport({
@@ -140,6 +157,13 @@ function TeamPageContent() {
     players,
     profileOnly,
   ])
+  const hasTeamStats = React.useMemo(() => (
+    players.some(player => (
+      player.statsStatus === PLAYER_STATS_STATUS.LOADED ||
+      Number(player.games || 0) > 0 ||
+      Number(player.minutes || 0) > 0
+    ))
+  ), [players])
   const teamFavorite = favorites.isBirthTeamFavorite(team.birthTeamId)
   const teamFavoritePending = favorites.isFavoritePending(
     PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
@@ -190,7 +214,52 @@ function TeamPageContent() {
     })
   }, [favorites, team.birthYear])
 
+  const handleTaskEditSave = async patch => {
+    if (!editTask?.id || taskActions.pending) return
+
+    const nextPatch = {
+      ...patch,
+      doneAt: patch.status === TASK_STATUS.DONE
+        ? Date.now()
+        : null,
+    }
+
+    await taskActions.updateTask(editTask, nextPatch)
+    setEditTask(null)
+  }
+
+  const handleTaskEditDone = async task => {
+    if (!task?.id || taskActions.pending) return
+
+    await taskActions.markDone(task)
+    setEditTask(null)
+  }
+
   const isActiveSeason = selectedSeasonOption?.target === 'current'
+  const teamTasks = React.useMemo(() => {
+    const teamIds = new Set([
+      team.birthTeamId,
+      team.teamId,
+      team.teamDocumentId,
+      team.id,
+    ].map(value => String(value || '').trim()).filter(Boolean))
+
+    return tasksModel.tasks.filter(task => {
+      const context = task?.workContext || {}
+      const taskTeamId = String(context.birthTeamId || context.teamId || '').trim()
+      const sameTeam = taskTeamId && teamIds.has(taskTeamId)
+      const sameSeason = String(context.seasonKey || '') === String(selectedSeasonKey || '')
+
+      return sameTeam && sameSeason
+    })
+  }, [
+    selectedSeasonKey,
+    tasksModel.tasks,
+    team.birthTeamId,
+    team.id,
+    team.teamDocumentId,
+    team.teamId,
+  ])
   const teamReport = useTeamReport({
     team,
     players: visiblePlayers,
@@ -221,6 +290,7 @@ function TeamPageContent() {
           breadcrumbs={breadcrumbs}
           team={team}
           active={isActiveSeason}
+          seasonKey={selectedSeasonKey}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}
           onFavoriteToggle={() => {
@@ -230,29 +300,34 @@ function TeamPageContent() {
           onLeague={handleBackToLeague}
         />
 
-        <TeamStatsOverview team={team} />
-
         <Box sx={sx.contentGrid}>
-          <TeamPlayersSection
-            players={visiblePlayers}
-            onRoleOpen={roleEditor.open}
-            onPlayerOpen={row => navigate(
-              PLAYERS_DATABASE_UI_ROUTES.player({
-                playerId: row.playerDocumentId || row.id,
-                seasonKey: selectedSeasonKey,
-                teamId: team.birthTeamId || team.id,
-                leagueId: selectedSeasonOption?.leagueId || leagueId,
-                fromTeam: `${location.pathname}${location.search}`,
-              })
-            )}
-            onPlayerUrlEdit={playerUrlEditor.open}
-            onFavoriteToggle={handlePlayerFavoriteToggle}
-          />
+          <Box sx={sx.mainColumn}>
+            <TeamStatsOverview team={team} />
+
+            <TeamPlayersSection
+              players={visiblePlayers}
+              team={team}
+              seasonKey={selectedSeasonKey}
+              onRoleOpen={roleEditor.open}
+              onPlayerOpen={row => navigate(
+                PLAYERS_DATABASE_UI_ROUTES.player({
+                  playerId: row.playerDocumentId || row.id,
+                  seasonKey: selectedSeasonKey,
+                  teamId: team.birthTeamId || team.id,
+                  leagueId: selectedSeasonOption?.leagueId || leagueId,
+                  fromTeam: `${location.pathname}${location.search}`,
+                })
+              )}
+              onPlayerUrlEdit={playerUrlEditor.open}
+              onFavoriteToggle={handlePlayerFavoriteToggle}
+            />
+          </Box>
 
           <TeamActionsPanel
             selectedSeasonOptionKey={selectedSeasonOptionKey}
             seasonOptions={seasonOptions}
             hasTeamPlayers={hasTeamPlayers}
+            hasTeamStats={hasTeamStats}
             profileOnly={profileOnly}
             onSeasonChange={setSelectedSeasonKey}
             onProfileOnlyChange={setProfileOnly}
@@ -260,6 +335,11 @@ function TeamPageContent() {
             onStatsImport={() => statsImport.setOpen(true)}
             onDeletePlayers={() => playersDelete.setOpen(true)}
             onReport={teamReport.openPreview}
+            onTeamLink={() => teamUrlEditor.open(team)}
+            tasks={teamTasks}
+            tasksLoading={tasksModel.loading}
+            onTaskCreate={() => setTaskModalOpen(true)}
+            onTaskEdit={setEditTask}
           />
         </Box>
       </Box>
@@ -273,6 +353,30 @@ function TeamPageContent() {
         onClose={teamReport.closePreview}
       />
 
+      <TaskEditModal
+        open={Boolean(editTask)}
+        task={editTask}
+        busy={taskActions.pending}
+        onSave={handleTaskEditSave}
+        onDone={handleTaskEditDone}
+        onClose={() => setEditTask(null)}
+      />
+
+      <WorkTaskModal
+        open={taskModalOpen}
+        mode='team'
+        onClose={() => setTaskModalOpen(false)}
+      />
+
+      <TeamUrlEditDrawer
+        open={Boolean(teamUrlEditor.row)}
+        row={teamUrlEditor.row}
+        seasonLabel={selectedSeasonOption?.seasonKey || selectedSeasonKey}
+        saving={teamUrlEditor.saving}
+        onSave={teamUrlEditor.save}
+        onClose={teamUrlEditor.close}
+      />
+
       <PlayerUrlEditDrawer
         open={Boolean(playerUrlEditor.row)}
         row={playerUrlEditor.row}
@@ -282,8 +386,9 @@ function TeamPageContent() {
         onClose={playerUrlEditor.close}
       />
 
-      <TeamRoleModal
-        row={roleEditor.row}
+      <PlayerRoleEditModal
+        open={Boolean(roleEditor.row)}
+        playerName={roleEditor.row?.fullName || ''}
         draft={roleEditor.draft}
         busy={roleEditor.busy}
         changed={roleEditor.changed}
@@ -292,14 +397,14 @@ function TeamPageContent() {
         onClose={roleEditor.close}
       />
 
-      <TeamRosterImportModal
+      <RosterImportModal
         team={team}
         seasonKey={selectedSeasonKey}
         hasTeamPlayers={hasTeamPlayers}
         controller={rosterImport}
       />
 
-      <TeamStatsImportModal
+      <StatsImportModal
         team={team}
         seasonKey={selectedSeasonKey}
         hasTeamPlayers={hasTeamPlayers}

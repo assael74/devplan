@@ -43,6 +43,15 @@ export async function upsertTeamSeasonPlayers({
       teamDocumentId: teamId,
     }, currentData)
     const isHistory = clean(target) === 'history'
+    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
+      ? 'completed'
+      : 'active'
+    const effectiveSeason = {
+      ...season,
+      seasonId,
+      seasonKey,
+      seasonStatus,
+    }
     const targetRows = isHistory ? baseDoc.history : baseDoc.current
     const existingSeason = (Array.isArray(targetRows) ? targetRows : [])
       .find(row => isSameSeason(row, {
@@ -59,11 +68,7 @@ export async function upsertTeamSeasonPlayers({
     }
 
     const seasonDoc = buildTeamSeasonDoc({
-      season: {
-        ...season,
-        seasonId,
-        seasonKey,
-      },
+      season: effectiveSeason,
       team: {
         ...team,
         birthTeamDocumentId: teamId,
@@ -188,6 +193,7 @@ export async function appendTeamSeasonPlayer({
       seasonKey,
       target: isHistory ? 'history' : 'current',
       playersCount: nextPlayers.length,
+      players: nextPlayers,
       player: normalizedPlayer,
     }
   })

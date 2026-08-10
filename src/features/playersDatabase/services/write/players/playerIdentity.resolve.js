@@ -149,6 +149,23 @@ const isInvalidInternalPlayerId = ({
   return Boolean(year && normalizedId === `player_${year}_${year}`)
 }
 
+const buildIdentityCandidate = (row = {}) => ({
+  playerId: clean(row.playerId),
+  playerDocumentId: clean(row.playerDocumentId),
+  externalPlayerId: clean(row.externalPlayerId),
+  displayName: clean(row.displayName || row.fullName),
+  identityBirthYear: Number(row.identityBirthYear || row.birthYear) || 0,
+  birthYear: Number(row.birthYear) || 0,
+  playerUrl: clean(row.playerUrl),
+  seasonId: clean(row.seasonId),
+  seasonKey: clean(row.seasonKey),
+  ageGroupId: clean(row.ageGroupId),
+  ageGroupLabel: clean(row.ageGroupLabel),
+  birthTeamDocumentId: clean(row.birthTeamDocumentId),
+  teamId: clean(row.teamId || row.birthTeamId),
+  teamUrl: clean(row.teamUrl),
+})
+
 const resolveExistingCandidate = ({
   candidates = [],
   displayName = '',
@@ -162,11 +179,7 @@ const resolveExistingCandidate = ({
     error.details = {
       displayName,
       identityKey,
-      candidates: uniqueCandidates.map(item => ({
-        playerId: clean(item.playerId),
-        externalPlayerId: clean(item.externalPlayerId),
-        displayName: clean(item.displayName),
-      })),
+      candidates: uniqueCandidates.map(buildIdentityCandidate),
     }
     throw error
   }
@@ -224,8 +237,14 @@ const buildIdentityPreview = ({
       if (identityCandidate && existingExternalId !== externalPlayerId) {
         return {
           identityStatus: 'נדרשת בדיקה',
-          identityMessage: `קיים שחקן בשם זה עם מזהה התאחדות ${existingExternalId}`,
+          identityMessage: `התנגשות מזהים: במאגר ${existingExternalId} · בטעינה ${externalPlayerId}`,
           identityValid: false,
+          identityConflictType: 'externalPlayerId',
+          identityExistingExternalPlayerId: existingExternalId,
+          identityIncomingExternalPlayerId: externalPlayerId,
+          identityCandidates: [
+            buildIdentityCandidate(identityCandidate),
+          ],
         }
       }
 
@@ -252,10 +271,15 @@ const buildIdentityPreview = ({
       identityValid: true,
     }
   } catch (error) {
+    const identityCandidates = Array.isArray(error.details?.candidates)
+      ? error.details.candidates
+      : []
+
     return {
       identityStatus: 'נדרשת בדיקה',
       identityMessage: error.message || 'נמצאו כמה התאמות אפשריות',
       identityValid: false,
+      identityCandidates,
     }
   }
 }
@@ -275,6 +299,7 @@ const resolvePlayerIdentity = ({
     birthYear,
   })
   const externalPlayerId = validExternalId ? identity.externalPlayerId : ''
+  const ignoreIdentityConflict = clean(player.identityResolution) === 'ignoreConflict'
 
   if (identity.playerId && !isInvalidInternalPlayerId({
     playerId: identity.playerId,
@@ -297,11 +322,15 @@ const resolvePlayerIdentity = ({
       displayName: identity.fullName,
       identityKey,
     })
-    const identityCandidate = externalCandidate || resolveExistingCandidate({
-      candidates: lookup.byIdentityKey.get(identityKey) || [],
-      displayName: identity.fullName,
-      identityKey,
-    })
+    const identityCandidate = externalCandidate || (
+      ignoreIdentityConflict
+        ? null
+        : resolveExistingCandidate({
+          candidates: lookup.byIdentityKey.get(identityKey) || [],
+          displayName: identity.fullName,
+          identityKey,
+        })
+    )
     const existingExternalId = clean(identityCandidate?.externalPlayerId)
 
     if (identityCandidate && existingExternalId && existingExternalId !== externalPlayerId) {
@@ -330,11 +359,13 @@ const resolvePlayerIdentity = ({
     }
   }
 
-  const candidate = resolveExistingCandidate({
-    candidates: lookup.byIdentityKey.get(identityKey) || [],
-    displayName: identity.fullName,
-    identityKey,
-  })
+  const candidate = ignoreIdentityConflict
+    ? null
+    : resolveExistingCandidate({
+      candidates: lookup.byIdentityKey.get(identityKey) || [],
+      displayName: identity.fullName,
+      identityKey,
+    })
 
   return {
     ...player,

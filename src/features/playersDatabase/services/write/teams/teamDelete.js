@@ -184,6 +184,7 @@ export async function removeTeamPlayerFromSeason({
       target: isHistory ? 'history' : 'current',
       removed: true,
       playersCount: teamPlayers.length,
+      players: teamPlayers,
       scoutProfilesSummary: buildTeamPlayersScoutProfilesSummary(teamPlayers),
     }
   })

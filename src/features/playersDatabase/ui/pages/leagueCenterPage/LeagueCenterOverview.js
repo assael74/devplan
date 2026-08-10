@@ -2,13 +2,13 @@
 
 import { Box } from '@mui/joy'
 
-import StatCard from '../../components/cards/StatCard.js'
+import KpiCard from '../../components/kpi/KpiCard.js'
 import { leagueCenterOverviewSx as sx } from './sx/leagueCenterOverview.sx.js'
 
 export default function LeagueCenterOverview({ summary }) {
   return (
     <Box sx={sx.statsGrid}>
-      <StatCard
+      <KpiCard
         title='ליגות בהקשר'
         value={summary.totalLeagues}
         caption='לפי שנתון, רמה ועונה'
@@ -16,15 +16,15 @@ export default function LeagueCenterOverview({ summary }) {
         tone='info'
         sx={sx.summaryCard}
       />
-      <StatCard
+      <KpiCard
         title='מלאות'
         value={summary.fullData}
-        caption='טבלה, שחקנים וסטטיסטיקות'
+        caption='טבלה וכיסוי קבוצות היעד'
         iconId='defensive'
         tone='success'
         sx={sx.summaryCard}
       />
-      <StatCard
+      <KpiCard
         title='חלקיות'
         value={summary.partialData}
         caption='מידע קיים אך חלקי'

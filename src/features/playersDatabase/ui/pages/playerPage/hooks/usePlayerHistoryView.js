@@ -1,22 +1,12 @@
-// features/playersDatabase/ui/pages/playerPage/hooks/usePlayerHistoryView.js
+// src/features/playersDatabase/ui/pages/playerPage/hooks/usePlayerHistoryView.js
 
 import * as React from 'react'
 
-import {
-  PLAYER_HISTORY_FILTERS,
-  PLAYER_HISTORY_PLACEHOLDER_ROWS,
-} from '../logic/playerPage.constants.js'
+import { PLAYER_HISTORY_PLACEHOLDER_ROWS } from '../logic/playerPage.constants.js'
 import { resolvePlayerHistoryRows } from '../logic/playerPage.utils.js'
 
-export default function usePlayerHistoryView(
-  player,
-  selectedSeasonKey,
-  onSeasonChange
-) {
-  const [filter, setFilter] = React.useState(
-    PLAYER_HISTORY_FILTERS.ALL
-  )
-
+export default function usePlayerHistoryView(player) {
+  const [selectedSeasonKey, setSelectedSeasonKey] = React.useState('')
   const sourceRows = React.useMemo(
     () => resolvePlayerHistoryRows(player),
     [player]
@@ -40,51 +30,20 @@ export default function usePlayerHistoryView(
     }))
   }, [rows])
   const visibleRows = React.useMemo(() => (
-    rows.filter(row => {
-      const shouldFilterBySeason = filter === PLAYER_HISTORY_FILTERS.ALL
-      const matchesSeason = !shouldFilterBySeason ||
-        !selectedSeasonKey ||
-        row.seasonKey === selectedSeasonKey
+    selectedSeasonKey
+      ? rows.filter(row => row.seasonKey === selectedSeasonKey)
+      : rows
+  ), [rows, selectedSeasonKey])
 
-      if (!matchesSeason) return false
-
-      if (filter === PLAYER_HISTORY_FILTERS.CURRENT) {
-        return row.isCurrentSeason
-      }
-
-      if (filter === PLAYER_HISTORY_FILTERS.PREVIOUS) {
-        return !row.isCurrentSeason
-      }
-
-      return true
-    })
-  ), [
-    filter,
-    rows,
-    selectedSeasonKey,
-  ])
-
-  const handleSeasonChange = React.useCallback(seasonKey => {
-    setFilter(PLAYER_HISTORY_FILTERS.ALL)
-
-    if (onSeasonChange) {
-      onSeasonChange(seasonKey || '')
-    }
-  }, [onSeasonChange])
-
-  const handleFilterChange = React.useCallback(nextFilter => {
-    setFilter(nextFilter)
-  }, [])
+  React.useEffect(() => {
+    setSelectedSeasonKey('')
+  }, [player.playerId])
 
   return {
-    filter,
-    setFilter: handleFilterChange,
     rows,
     visibleRows,
-    selectedSeasonKey: filter === PLAYER_HISTORY_FILTERS.ALL
-      ? selectedSeasonKey
-      : '',
-    setSelectedSeasonKey: handleSeasonChange,
+    selectedSeasonKey,
+    setSelectedSeasonKey,
     seasonOptions,
     hasRealData: sourceRows.length > 0,
   }

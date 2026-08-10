@@ -1,11 +1,10 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/sx/leagueCenter.columns.sx.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/sx/leagueCenter.columns.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterColumnsSx = {
   leagueNameColumn: {
-    width: '30%',
-    minWidth: 220,
+    minWidth: 180,
   },
 
   leagueNameHeader: {
@@ -24,18 +23,7 @@ export const leagueCenterColumnsSx = {
     textAlign: 'center',
   },
 
-  countColumn: {
-    width: 92,
-    textAlign: 'center',
-  },
-
-  profilesColumn: {
-    width: 150,
-    textAlign: 'center',
-  },
-
   actionsColumn: {
-    width: 130,
     textAlign: 'center',
   },
 

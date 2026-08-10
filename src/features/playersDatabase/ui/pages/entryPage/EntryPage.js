@@ -8,8 +8,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import StatCard from '../../components/cards/StatCard.js'
-import InfoPanel from '../../components/cards/InfoPanel.js'
+import KpiCard from '../../components/kpi/KpiCard.js'
+import InfoPanel from '../../components/page/InfoPanel.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
@@ -44,25 +44,25 @@ export default function EntryPage() {
         <Box sx={sx.infoGrid}>
           <InfoPanel title='סיכום מסמך האב'>
             <Box sx={sx.statsGrid}>
-              <StatCard
+              <KpiCard
                 title='שחקנים'
                 value={formatCount(entry.summary.playersCount)}
                 caption='במסמך האב'
                 iconId='players'
               />
-              <StatCard
+              <KpiCard
                 title='קבוצות'
                 value={formatCount(entry.summary.teamsCount)}
                 caption='בכל העונות'
                 iconId='teams'
               />
-              <StatCard
+              <KpiCard
                 title='ליגות'
                 value={formatCount(entry.summary.leaguesCount)}
                 caption='בלשכה המרכזית'
                 iconId='playersDatabase'
               />
-              <StatCard
+              <KpiCard
                 title='עם פרופיל סקאוט'
                 value={formatCount(entry.summary.playersWithScoutProfileCount)}
                 caption='לפחות אחד'

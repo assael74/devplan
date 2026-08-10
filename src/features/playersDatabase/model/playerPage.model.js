@@ -1,4 +1,4 @@
-// features/playersDatabase/model/playerPage.model.js
+// src/features/playersDatabase/model/playerPage.model.js
 
 import { resolveAgeGroupLabel } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
@@ -51,9 +51,31 @@ const RELIABILITY_LABELS = {
   low: 'נמוכה',
 }
 
+const cleanReliabilityValue = value => {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === 'object'
+  ) {
+    return ''
+  }
+
+  return cleanValue(value)
+}
+
 const resolveReliabilityLabel = reliability => {
-  const level = cleanValue(reliability?.level || reliability)
-  return RELIABILITY_LABELS[level.toLowerCase()] || cleanValue(reliability?.label) || level || '-'
+  const source = reliability && typeof reliability === 'object'
+    ? reliability
+    : {}
+  const level = cleanReliabilityValue(
+    source.level || reliability
+  )
+  const label = cleanReliabilityValue(source.label)
+
+  return RELIABILITY_LABELS[level.toLowerCase()] ||
+    label ||
+    level ||
+    '-'
 }
 
 const getClub = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
@@ -98,7 +120,7 @@ const buildReasons = ({ season, display }) => {
     : ['השחקן מופיע במאגר, אך עדיין אין מספיק נתונים להסבר מפורט.']
 }
 
-const buildSeasonContextView = season => {
+const buildSeasonContextView = (season, identity = {}) => {
   const stats = season?.stats?.actual || {}
   const display = selectPlayerScoutDisplay(season)
   const profiles = selectPlayerScoutProfiles(season)
@@ -110,11 +132,24 @@ const buildSeasonContextView = season => {
       season?.team?.teamId,
       season?.team?.clubId,
     ].filter(Boolean).join('_'),
+    seasonId: cleanValue(
+      season?.season?.seasonId || season?.season?.seasonKey || '-'
+    ),
     seasonKey: cleanValue(
       season?.season?.seasonKey || season?.season?.seasonId || '-'
     ),
+    target: season?.lifecycle?.type === 'current'
+      ? 'current'
+      : 'history',
     isCurrentSeason: season?.lifecycle?.type === 'current',
     lifecycle: season?.lifecycle,
+    playerId: cleanValue(identity.playerId),
+    playerDocumentId: cleanValue(
+      identity.playerDocumentId || identity.playerId
+    ),
+    externalPlayerId: cleanValue(identity.externalPlayerId),
+    fullName: cleanValue(identity.displayName),
+    playerUrl: cleanValue(season?.metadata?.playerUrl || season?.playerUrl),
     clubId: cleanValue(season?.team?.clubId),
     clubName: getClubShortName(season?.team?.clubId) || '-',
     teamId: cleanValue(season?.team?.teamId),
@@ -159,7 +194,6 @@ export const buildEmptyPlayerPageView = playerId => ({
   ageLabel: '-',
   position: '-',
   reliability: '-',
-  certainty: '-',
   minutes: 0,
   goals: 0,
   goalsPerGame: '0.00',
@@ -196,8 +230,12 @@ export const buildPlayerPageView = (
   const goals = Number(stats.goals) || 0
   const minutes = Number(stats.minutes) || 0
   const league = getLeague(season.team?.leagueId)
-  const seasonContexts = (playerDomain.seasons || []).map(buildSeasonContextView)
-  const reliability = resolveReliabilityLabel(display.reliability)
+  const seasonContexts = (playerDomain.seasons || []).map(seasonRow => (
+    buildSeasonContextView(seasonRow, playerDomain.identity || {})
+  ))
+  const reliability = profiles.length
+    ? resolveReliabilityLabel(display.reliability)
+    : '-'
 
   return {
     domain: playerDomain,
@@ -207,6 +245,7 @@ export const buildPlayerPageView = (
       playerDomain.identity?.playerId
     ),
     playerId: cleanValue(playerDomain.identity?.playerId),
+    externalPlayerId: cleanValue(playerDomain.identity?.externalPlayerId),
     fullName: cleanValue(playerDomain.identity?.displayName || '-'),
     birthYear: pickFirstValue(
       playerDomain.identity?.birthYear,
@@ -229,11 +268,12 @@ export const buildPlayerPageView = (
     ageLabel: season.season?.birthYear
       ? `שנתון ${season.season.birthYear}`
       : '-',
+    primaryPosition: cleanValue(season.position?.primary),
+    positionLayer: cleanValue(season.position?.layer),
     position: cleanValue(
       season.position?.primary || season.position?.layer || '-'
     ),
     reliability,
-    certainty: reliability,
     minutes,
     goals,
     goalsPerGame: games ? (goals / games).toFixed(2) : '0.00',

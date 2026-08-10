@@ -16,9 +16,9 @@ import {
   LEAGUE_CENTER_ALL_SEASONS_KEY,
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
   buildLeagueCenterBirthYearOptions,
-  buildLeagueCenterLeagueDocsFromMasterDocument,
+  buildLeagueCenterLeagueDocuments,
   buildLeagueCenterLevelOptions,
-  buildLeagueCenterRowsFromMasterDocument,
+  buildLeagueCenterRows,
   buildLeagueCenterSeasonOptions,
   buildLeagueCenterSummary,
   resolveLeagueCenterSeasonTarget,
@@ -48,6 +48,7 @@ export function useLeagueCenter() {
   const [query, setQuery] = useState('')
   const [dataStatus, setDataStatus] = useState('all')
   const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
+  const [leagueDocuments, setLeagueDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -58,12 +59,23 @@ export function useLeagueCenter() {
     try {
       const {
         leaguesMasterDoc: nextMasterDoc,
+        leagueDocuments: nextLeagueDocuments,
       } = await readLeagueCenterData()
 
       setLeaguesMasterDoc(nextMasterDoc || null)
-      return nextMasterDoc || null
+      setLeagueDocuments(
+        Array.isArray(nextLeagueDocuments) ? nextLeagueDocuments : []
+      )
+
+      return {
+        leaguesMasterDoc: nextMasterDoc || null,
+        leagueDocuments: Array.isArray(nextLeagueDocuments)
+          ? nextLeagueDocuments
+          : [],
+      }
     } catch (err) {
       setLeaguesMasterDoc(null)
+      setLeagueDocuments([])
       setError(err?.message || 'טעינת מרכז הליגות נכשלה')
       throw err
     } finally {
@@ -76,17 +88,23 @@ export function useLeagueCenter() {
   }, [reload])
 
   const leagueDocs = useMemo(
-    () => buildLeagueCenterLeagueDocsFromMasterDocument({ leaguesMasterDoc }),
-    [leaguesMasterDoc]
+    () => buildLeagueCenterLeagueDocuments({
+      leaguesMasterDoc,
+      leagueDocuments,
+    }),
+    [
+      leagueDocuments,
+      leaguesMasterDoc,
+    ]
   )
   const seasonOptions = useMemo(
     () => buildLeagueCenterSeasonOptions(leagueDocs),
     [leagueDocs]
   )
-  const allRows = useMemo(() => buildLeagueCenterRowsFromMasterDocument({
-    leaguesMasterDoc,
+  const allRows = useMemo(() => buildLeagueCenterRows({
+    leagueDocs,
     selectedSeasonKey: LEAGUE_CENTER_ALL_SEASONS_KEY,
-  }), [leaguesMasterDoc])
+  }), [leagueDocs])
   const birthYearOptions = useMemo(
     () => buildLeagueCenterBirthYearOptions(allRows),
     [allRows]
@@ -122,7 +140,7 @@ export function useLeagueCenter() {
     const byText = filterByText(
       contextRows,
       query,
-      ['name', 'leagueName']
+      ['teamSearchText']
     )
 
     return filterByValue(
@@ -232,12 +250,14 @@ export function useLeagueCenter() {
     setSeasonKey,
     seasonTarget: resolveLeagueCenterSeasonTarget(seasonKey),
     seasonOptions,
+    allRows,
     contextRows,
     leagues,
     summary,
     loading,
     error,
     leagueDocs,
+    leagueDocuments,
     catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
     reload,
     resetPrimaryFilters,

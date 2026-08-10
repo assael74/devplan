@@ -1,25 +1,8 @@
-// features/playersDatabase/ui/pages/teamPage/sx/TeamHeader.sx.js
+// src/features/playersDatabase/ui/pages/teamPage/sx/teamHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamHeaderSx = {
-  header: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      lg: 'minmax(0, 1fr) auto',
-    },
-    gap: 2,
-    alignItems: 'end',
-  },
-
-  headerCopy: {
-    minWidth: 0,
-    gap: 0.75,
-    alignItems: 'flex-start',
-  },
-
   pageTitle: {
     color: devPlanColors.primaryDark,
     fontSize: {
@@ -38,21 +21,28 @@ export const teamHeaderSx = {
     flexWrap: 'wrap',
   },
 
-  birthYearChip: {
-    minHeight: 38,
-    px: 1.8,
+  contextChip: {
+    minHeight: 34,
+    px: 1.4,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
-    bgcolor: devPlanColors.tertiary,
+    bgcolor: '#fff',
     border: `1px solid ${devPlanColors.primary}`,
-    color: '#fff',
-    fontSize: 18,
+    color: devPlanColors.primaryDark,
+    fontSize: 13,
     fontWeight: 700,
     lineHeight: 1,
     whiteSpace: 'nowrap',
-    boxShadow: '0 8px 20px rgba(47, 134, 199, 0.24)',
+  },
+
+  birthYearChip: {
+    bgcolor: devPlanColors.tertiary,
+    color: '#fff',
+    borderColor: devPlanColors.primary,
+    fontSize: 15,
+    boxShadow: '0 6px 16px rgba(47, 134, 199, 0.20)',
   },
 
   headerActions: {

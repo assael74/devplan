@@ -3,23 +3,6 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterHeaderSx = {
-  header: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      lg: 'minmax(0, 1fr) auto',
-    },
-    gap: 2,
-    alignItems: 'end',
-  },
-
-  headerCopy: {
-    minWidth: 0,
-    gap: 0.5,
-    alignItems: 'flex-start',
-  },
-
   pageTitle: {
     color: '#0b1f4d',
     fontSize: {

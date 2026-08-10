@@ -89,11 +89,13 @@ export const buildPlayerScoutIndexFields = player => {
     primaryScoutReliabilityLevel: clean(
       primaryProfile?.reliability?.level
     ),
+    primaryScoutWarnings: uniqueCleanValues(primaryProfile?.warnings),
     primaryScoutScore: toNullableNumber(primaryProfile?.score),
     secondaryScoutProfileId: clean(secondaryProfile?.id),
     secondaryScoutReliabilityLevel: clean(
       secondaryProfile?.reliability?.level
     ),
+    secondaryScoutWarnings: uniqueCleanValues(secondaryProfile?.warnings),
     secondaryScoutScore: toNullableNumber(secondaryProfile?.score),
     scoutProfileIds,
     scoutCombinationIds,

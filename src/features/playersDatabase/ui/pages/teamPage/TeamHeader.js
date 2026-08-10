@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/TeamHeader.js
+// src/features/playersDatabase/ui/pages/teamPage/TeamHeader.js
 
 import {
   Box,
@@ -7,9 +7,10 @@ import {
   Typography,
 } from '@mui/joy'
 
-import Breadcrumbs from '../../layout/Breadcrumbs.js'
-import ActivityStatusChip from '../../components/status/ActivityStatusChip.js'
-import FavoriteButton from '../../components/favorites/FavoriteButton.js'
+import PageHeader from '../../components/page/PageHeader.js'
+import ActivityStatusChip from '../../components/page/ActivityStatusChip.js'
+import FavoriteButton from '../../components/actions/FavoriteButton.js'
+import LeagueName from '../../components/entities/LeagueName.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamHeaderSx as sx } from './sx/teamHeader.sx.js'
 
@@ -17,67 +18,78 @@ export default function TeamHeader({
   breadcrumbs,
   team,
   active,
+  seasonKey,
   favorite = false,
   favoritePending = false,
   onFavoriteToggle,
   onSearch,
   onLeague,
 }) {
-  return (
-    <Box sx={sx.header}>
-      <Stack sx={sx.headerCopy}>
-        <Breadcrumbs items={breadcrumbs} />
+  const actions = (
+    <Stack sx={sx.headerActionsPanel}>
+      <ActivityStatusChip
+        active={active}
+        activeLabel='ליגה פעילה'
+        inactiveLabel='ליגה לא פעילה'
+      />
 
-        <Box sx={sx.titleRow}>
-          <Typography level='h1' sx={sx.pageTitle}>
-            {team.name}
-          </Typography>
+      <Stack direction='row' spacing={1} sx={sx.headerActions}>
+        <Button
+          sx={sx.primaryButton}
+          startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
+          onClick={onSearch}
+        >
+          מעבר לעמוד חיפוש
+        </Button>
 
-          <FavoriteButton
-            favorite={favorite}
-            loading={favoritePending}
-            label={team.name}
-            onToggle={onFavoriteToggle}
-          />
-
-          <Box sx={sx.birthYearChip}>
-            שנתון {team.birthYear}
-          </Box>
-        </Box>
+        <Button
+          variant='outlined'
+          sx={sx.secondaryButton}
+          startDecorator={iconUi({id: 'back', size: 'sm'})}
+          onClick={onLeague}
+        >
+          חזרה לליגה
+        </Button>
       </Stack>
+    </Stack>
+  )
 
-      <Stack sx={sx.headerActionsPanel}>
-        <ActivityStatusChip
-          active={active}
-          activeLabel='ליגה פעילה'
-          inactiveLabel='ליגה לא פעילה'
+  return (
+    <PageHeader
+      breadcrumbs={breadcrumbs}
+      actions={actions}
+    >
+      <Box sx={sx.titleRow}>
+        <Typography level='h1' sx={sx.pageTitle}>
+          {team.name}
+        </Typography>
+
+        <FavoriteButton
+          favorite={favorite}
+          loading={favoritePending}
+          label={team.name}
+          onToggle={onFavoriteToggle}
         />
 
-        <Stack direction='row' spacing={1} sx={sx.headerActions}>
-          <Button
-            sx={sx.primaryButton}
-            startDecorator={iconUi({
-              id: 'playerDatabase',
-              size: 'sm',
-            })}
-            onClick={onSearch}
-          >
-            מעבר לעמוד חיפוש
-          </Button>
+        <Box sx={[sx.contextChip, sx.birthYearChip]}>
+          שנתון {team.birthYear}
+        </Box>
 
-          <Button
-            variant='outlined'
-            sx={sx.secondaryButton}
-            startDecorator={iconUi({
-              id: 'back',
-              size: 'sm',
-            })}
-            onClick={onLeague}
-          >
-            חזרה לליגה
-          </Button>
-        </Stack>
-      </Stack>
-    </Box>
+        <Box sx={sx.contextChip}>
+          {team.ageGroupLabel || team.ageGroupId || '-'}
+          {seasonKey ? ` · עונה ${seasonKey}` : ''}
+        </Box>
+
+        <Box sx={sx.contextChip}>
+          <LeagueName
+            value={team.leagueName}
+            level={team.league?.leagueLevel || team.leagueLevel}
+            showLevel
+            fontSize={13}
+            levelFontSize={10}
+          />
+        </Box>
+      </Box>
+    </PageHeader>
   )
 }

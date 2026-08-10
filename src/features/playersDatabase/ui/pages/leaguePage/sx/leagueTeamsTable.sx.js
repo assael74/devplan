@@ -1,6 +1,11 @@
-// features/playersDatabase/ui/pages/leaguePage/sx/LeagueTeamsTable.sx.js
+// src/features/playersDatabase/ui/pages/leaguePage/sx/leagueTeamsTable.sx.js
 
 export const leagueTeamsTableSx = {
+  tableWrap: {
+    border: 0,
+    borderRadius: 0,
+  },
+
   leagueTable: {
     '& th:first-of-type, & td:first-of-type': {
       textAlign: 'center',

@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from '@mui/joy'
 
-import DataTable from '../../components/tables/DataTable.js'
+import DataTable from '../../components/tables/dataTable/index.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ScoutCompactTooltip from '../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../components/scout/ScoutProfileChip.js'

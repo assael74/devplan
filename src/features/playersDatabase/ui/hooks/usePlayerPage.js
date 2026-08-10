@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/hooks/usePlayerPage.js
+// src/features/playersDatabase/ui/hooks/usePlayerPage.js
 
 import {
   useCallback,
@@ -40,6 +40,7 @@ export function usePlayerPage() {
   const [row, setRow] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -63,7 +64,7 @@ export function usePlayerPage() {
     return () => {
       active = false
     }
-  }, [playerId])
+  }, [playerId, reloadKey])
 
   const player = useMemo(() => (
     buildPlayerPageView(
@@ -105,11 +106,16 @@ export function usePlayerPage() {
     playerId,
   ])
 
+  const reload = useCallback(() => {
+    setReloadKey(value => value + 1)
+  }, [])
+
   return {
     player,
     selectedSeasonKey: player.seasonKey || requestedSeasonKey,
     setSelectedSeasonKey,
     fromTeam,
+    reload,
     loading,
     error,
   }

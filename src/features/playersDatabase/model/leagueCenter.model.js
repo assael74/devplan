@@ -14,6 +14,11 @@ import {
   toNumberOrZero,
   pickDefinedValue,
 } from './value.model.js'
+import {
+  buildTeamScoutLeagueModel,
+  TEAM_SCOUT_NORMALIZATION_MODE,
+  TEAM_SCOUT_SORT_MODE,
+} from '../../../shared/teams/scout/index.js'
 
 export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
 export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
@@ -125,65 +130,138 @@ const getTableRows = season =>
     ? season.tableRank.filter(row => row && (row.teamId || row.clubId || row.rank))
     : []
 
-const getCountStatus = count => (toNumber(count) > 0 ? 'full' : 'missing')
+const resolveTableRowTeamName = row => clean(
+  row?.teamName ||
+  row?.name ||
+  row?.displayName ||
+  row?.clubName
+)
 
-const getTableStatusFromCounts = ({ tableRows, expectedTeamsCount, tableRankCount }) => {
-  if (tableRows.length) {
-    return getTableStatus(tableRows, expectedTeamsCount)
-  }
+const buildTableRowTeamNames = rows => (
+  Array.from(new Set(
+    rows
+      .map(resolveTableRowTeamName)
+      .filter(Boolean)
+  ))
+)
 
-  if (tableRankCount > 0 && expectedTeamsCount > 0) {
-    return tableRankCount >= expectedTeamsCount ? 'full' : 'partial'
-  }
+const PRIORITY_TARGET_LEVELS = new Set(['positive', 'high', 'elite'])
 
-  if (tableRankCount > 0) return 'full'
+const isPlayerStatsComplete = row => (
+  Boolean(row?.hasPlayers) && Boolean(row?.statsComplete)
+)
 
+const getCoverageStatus = ({ completeCount = 0, targetCount = 0 } = {}) => {
+  if (!targetCount) return 'full'
+  if (completeCount >= targetCount) return 'full'
+  if (completeCount > 0) return 'partial'
   return 'missing'
 }
 
-const getStatsStatus = rows => {
-  if (!rows.length) return 'missing'
+const getTableStatus = rows => (rows.length ? 'full' : 'missing')
 
-  const rowsWithStats = rows.filter(row => {
-    const stats = normalizeTeamStats(row)
-    return (
-      stats.gamesPlayed > 0 ||
-      stats.goalsFor > 0 ||
-      stats.goalsAgainst > 0 ||
-      stats.points > 0
-    )
-  }).length
-
-  if (rowsWithStats === rows.length) return 'full'
-  if (rowsWithStats > 0) return 'partial'
-
-  return 'missing'
-}
-
-const getTeamsStatus = rows => {
-  if (!rows.length) return 'missing'
-
-  const rowsWithPlayers = rows.filter(row =>
-    toNumber(row?.scoutProfilesSummary?.total) > 0
-  ).length
-
-  if (rowsWithPlayers === rows.length) return 'full'
-  if (rowsWithPlayers > 0) return 'partial'
-
-  return 'missing'
-}
-
-const getTableStatus = (rows, expectedTeamsCount) => {
-  if (!rows.length) return 'missing'
-  if (!expectedTeamsCount) return 'full'
-
-  return rows.length >= expectedTeamsCount ? 'full' : 'partial'
-}
-
-const getProfiledPlayersCount = rows =>
+const getProfiledPlayersCount = rows => (
   rows.reduce((total, row) => (
     total + toNumber(row?.scoutProfilesSummary?.total)
   ), 0)
+)
+
+const buildPriorityCoverage = ({
+  tableRows = [],
+  leagueLevel,
+  leagueNumGames,
+} = {}) => {
+  if (!tableRows.length) {
+    return {
+      combined: { completeCount: 0, targetCount: 0, status: 'missing' },
+      offense: { completeCount: 0, targetCount: 0, status: 'missing' },
+      defense: { completeCount: 0, targetCount: 0, status: 'missing' },
+    }
+  }
+
+  const result = buildTeamScoutLeagueModel({
+    leagueLevel,
+    leagueNumGames: leagueNumGames || 30,
+    rows: tableRows,
+    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
+  })
+  const scoutRows = Array.isArray(result?.rows) ? result.rows : []
+  const combinedTargets = new Set()
+  let offenseTargetCount = 0
+  let offenseCompleteCount = 0
+  let defenseTargetCount = 0
+  let defenseCompleteCount = 0
+
+  scoutRows.forEach((row, index) => {
+    const source = row?.source || {}
+    const rowKey = clean(
+      source?.birthTeamId ||
+      source?.teamId ||
+      row?.teamId ||
+      source?.clubId ||
+      `${source?.rank || row?.position || index}`
+    )
+    const complete = isPlayerStatsComplete(source)
+    const offenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.offense?.priorityLevel))
+    const defenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.defense?.priorityLevel))
+
+    if (offenseTarget) {
+      offenseTargetCount += 1
+      if (complete) offenseCompleteCount += 1
+      if (rowKey) combinedTargets.add(rowKey)
+    }
+
+    if (defenseTarget) {
+      defenseTargetCount += 1
+      if (complete) defenseCompleteCount += 1
+      if (rowKey) combinedTargets.add(rowKey)
+    }
+  })
+
+  const combinedTargetCount = combinedTargets.size
+  const completeTargetKeys = new Set(
+    tableRows
+      .filter(isPlayerStatsComplete)
+      .map((row, index) => clean(
+        row?.birthTeamId ||
+        row?.teamId ||
+        row?.clubId ||
+        `${row?.rank || index}`
+      ))
+      .filter(Boolean)
+  )
+  const combinedCompleteCount = Array.from(combinedTargets).filter(
+    key => completeTargetKeys.has(key)
+  ).length
+
+  return {
+    combined: {
+      completeCount: combinedCompleteCount,
+      targetCount: combinedTargetCount,
+      status: getCoverageStatus({
+        completeCount: combinedCompleteCount,
+        targetCount: combinedTargetCount,
+      }),
+    },
+    offense: {
+      completeCount: offenseCompleteCount,
+      targetCount: offenseTargetCount,
+      status: getCoverageStatus({
+        completeCount: offenseCompleteCount,
+        targetCount: offenseTargetCount,
+      }),
+    },
+    defense: {
+      completeCount: defenseCompleteCount,
+      targetCount: defenseTargetCount,
+      status: getCoverageStatus({
+        completeCount: defenseCompleteCount,
+        targetCount: defenseTargetCount,
+      }),
+    },
+  }
+}
 
 const buildLeagueName = ({ league, catalog }) => {
   const ageLabel = clean(league?.ageGroupLabel || catalog?.ageGroupLabel)
@@ -212,12 +290,24 @@ const buildLeagueCenterRow = ({
     season?.tableRankCount
   )
   const teamsCount = expectedTeamsCount || tableRows.length
+  const leagueLevel = toNumber(
+    league?.level !== undefined && league?.level !== null
+      ? league.level
+      : catalog?.level
+  ) || ''
+  const priorityCoverage = buildPriorityCoverage({
+    tableRows,
+    leagueLevel,
+    leagueNumGames: toNumber(season?.leagueTotalRound),
+  })
+  const tableStatus = getTableStatus(tableRows)
   const ageGroupId = clean(league?.ageGroupId || catalog?.ageGroupId)
   const birthYear = toNumber(season?.birthYear)
   const seasonIdentity = normalizeSeasonIdentity({ season: season || {} })
   const playersCount = toNumber(season?.playersCount)
   const playersWithScoutProfileCount = toNumber(season?.playersWithScoutProfileCount)
   const scoutProfilesCount = toNumber(season?.scoutProfilesCount)
+  const teamNames = buildTableRowTeamNames(tableRows)
 
   return {
     id: clean(league?.id || league?.leagueId || catalog?.id),
@@ -234,11 +324,7 @@ const buildLeagueCenterRow = ({
     ageGroup: toAgeGroupLabel(ageGroupId),
     ageGroupId,
     ageGroupLabel: clean(league?.ageGroupLabel || catalog?.ageGroupLabel),
-    level: toNumber(
-      league?.level !== undefined && league?.level !== null
-        ? league.level
-        : catalog?.level
-    ) || '',
+    level: leagueLevel,
     region: clean(league?.region || catalog?.region),
     order: toNumber(catalog?.order),
     birthYear: birthYear || '',
@@ -246,39 +332,33 @@ const buildLeagueCenterRow = ({
     seasonId: seasonIdentity.seasonId,
     selectedTarget: target,
     teamsCount,
-    tableStatus: getTableStatusFromCounts({
-      tableRows,
-      expectedTeamsCount: teamsCount,
-      tableRankCount,
-    }),
-    teamsStatus: tableRows.length
-      ? getTeamsStatus(tableRows)
-      : getCountStatus(playersCount || playersWithScoutProfileCount),
-    statsStatus: tableRows.length
-      ? getStatsStatus(tableRows)
-      : getCountStatus(scoutProfilesCount),
+    tableStatus,
+    playersStatsStatus: priorityCoverage.combined.status,
+    playersStatsCompleteCount: priorityCoverage.combined.completeCount,
+    playersStatsTargetCount: priorityCoverage.combined.targetCount,
+    offensePriorityStatus: priorityCoverage.offense.status,
+    offensePriorityCompleteCount: priorityCoverage.offense.completeCount,
+    offensePriorityTargetCount: priorityCoverage.offense.targetCount,
+    defensePriorityStatus: priorityCoverage.defense.status,
+    defensePriorityCompleteCount: priorityCoverage.defense.completeCount,
+    defensePriorityTargetCount: priorityCoverage.defense.targetCount,
     dataStatus: (() => {
       const statuses = [
-        getTableStatusFromCounts({
-          tableRows,
-          expectedTeamsCount: teamsCount,
-          tableRankCount,
-        }),
-        tableRows.length
-          ? getTeamsStatus(tableRows)
-          : getCountStatus(playersCount || playersWithScoutProfileCount),
-        tableRows.length
-          ? getStatsStatus(tableRows)
-          : getCountStatus(scoutProfilesCount),
+        tableStatus,
+        priorityCoverage.combined.status,
+        priorityCoverage.offense.status,
+        priorityCoverage.defense.status,
       ]
 
       if (statuses.every(status => status === 'full')) return 'full'
-      if (statuses.every(status => status === 'missing')) return 'missing'
+      if (tableStatus === 'missing') return 'missing'
       return 'partial'
     })(),
     playersWithProfiles: tableRows.length
       ? getProfiledPlayersCount(tableRows)
       : playersWithScoutProfileCount,
+    teamNames,
+    teamSearchText: teamNames.join(' '),
     hasLeagueDoc,
     hasSelectedSeason: Boolean(season),
     catalog,
@@ -329,6 +409,45 @@ export const buildLeagueCenterLeagueDocsFromMasterDocument = ({
     ? leaguesMasterDoc.leagues.map(buildMasterLeagueDoc)
     : []
 )
+
+export const buildLeagueCenterLeagueDocuments = ({
+  leaguesMasterDoc = {},
+  leagueDocuments = [],
+} = {}) => {
+  const masterDocs = buildLeagueCenterLeagueDocsFromMasterDocument({
+    leaguesMasterDoc,
+  })
+  const liveDocs = Array.isArray(leagueDocuments)
+    ? leagueDocuments.filter(Boolean)
+    : []
+  const liveMap = buildLeagueDocsMap(liveDocs)
+
+  const mergedDocs = masterDocs.map(masterDoc => {
+    const liveDoc = getLeagueIds(masterDoc)
+      .map(id => liveMap.get(id))
+      .find(Boolean)
+
+    if (!liveDoc) return masterDoc
+
+    return {
+      ...masterDoc,
+      ...liveDoc,
+      id: clean(liveDoc.id || masterDoc.id),
+      leagueId: clean(liveDoc.leagueId || liveDoc.id || masterDoc.leagueId),
+      catalogLeagueId: clean(masterDoc.catalogLeagueId || liveDoc.catalogLeagueId),
+      hasLeagueDoc: true,
+    }
+  })
+
+  const mergedIds = new Set(
+    mergedDocs.flatMap(getLeagueIds)
+  )
+  const extraLiveDocs = liveDocs.filter(league => (
+    !getLeagueIds(league).some(id => mergedIds.has(id))
+  ))
+
+  return [...mergedDocs, ...extraLiveDocs]
+}
 
 export const buildLeagueCenterRowsFromMasterDocument = ({
   leaguesMasterDoc = {},
@@ -526,8 +645,8 @@ export const buildLeagueCenterSummary = rows => ({
   missingData: rows.filter(row => row.dataStatus === 'missing').length,
   fullTables: rows.filter(row => row.tableStatus === 'full').length,
   missingTables: rows.filter(row => row.tableStatus !== 'full').length,
-  partialTeams: rows.filter(row => row.teamsStatus !== 'full').length,
-  partialStats: rows.filter(row => row.statsStatus !== 'full').length,
+  partialTeams: rows.filter(row => row.playersStatsStatus !== 'full').length,
+  partialStats: rows.filter(row => row.playersStatsStatus !== 'full').length,
   profiledPlayers: rows.reduce(
     (sum, row) => sum + toNumber(row.playersWithProfiles),
     0

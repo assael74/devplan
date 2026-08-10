@@ -175,43 +175,54 @@ export const buildNormalizedPlayerScoutInput = ({
   const projectedTeamGoals = normalization.applied
     ? roundNumber(teamGoals * normalization.factor, 3)
     : teamGoals
-  const playerInput = {
+  const buildPlayerInput = nextStats => ({
     ...player,
-    games: stats.games,
-    gamesPlayed: stats.games,
-    appearances: stats.games,
-    goals: stats.goals,
-    leagueGoals: stats.goals,
-    yellowCards: stats.yellowCards,
-    minutes: stats.minutes,
-    totalMinutes: stats.minutes,
-    playedMinutes: stats.minutes,
-    starts: stats.starts,
-    lineupStarts: stats.starts,
-    subIn: stats.subIn,
-    subbedIn: stats.subIn,
-    subOut: stats.subOut,
-    subbedOut: stats.subOut,
-    goalGames: stats.goalGames,
+    games: nextStats.games,
+    gamesPlayed: nextStats.games,
+    appearances: nextStats.games,
+    goals: nextStats.goals,
+    leagueGoals: nextStats.goals,
+    yellowCards: nextStats.yellowCards,
+    minutes: nextStats.minutes,
+    totalMinutes: nextStats.minutes,
+    playedMinutes: nextStats.minutes,
+    starts: nextStats.starts,
+    lineupStarts: nextStats.starts,
+    subIn: nextStats.subIn,
+    subbedIn: nextStats.subIn,
+    subOut: nextStats.subOut,
+    subbedOut: nextStats.subOut,
+    goalGames: nextStats.goalGames,
     scoutRawStats: normalization.rawStats,
     scoutProjectedStats: normalization.projectedStats,
     scoutNormalization: normalization,
-  }
-  const teamInput = {
+  })
+  const buildTeamInput = ({ gamesPlayed, goalsFor }) => ({
     ...team,
-    games: normalization.applied ? normalization.leagueTotalRound : normalization.teamGamesPlayed,
-    gamesPlayed: normalization.applied ? normalization.leagueTotalRound : normalization.teamGamesPlayed,
-    playedGames: normalization.applied ? normalization.leagueTotalRound : normalization.teamGamesPlayed,
-    teamGamesCount: normalization.applied ? normalization.leagueTotalRound : normalization.teamGamesPlayed,
+    games: gamesPlayed,
+    gamesPlayed,
+    playedGames: gamesPlayed,
+    teamGamesCount: gamesPlayed,
     leagueGameTime: normalization.leagueGameTime,
-    goalsFor: projectedTeamGoals,
-    leagueGoalsFor: projectedTeamGoals,
-    teamGoals: projectedTeamGoals,
-  }
+    goalsFor,
+    leagueGoalsFor: goalsFor,
+    teamGoals: goalsFor,
+  })
+  const normalizedTeamGames = normalization.applied
+    ? normalization.leagueTotalRound
+    : normalization.teamGamesPlayed
 
   return {
-    player: playerInput,
-    team: teamInput,
+    player: buildPlayerInput(stats),
+    team: buildTeamInput({
+      gamesPlayed: normalizedTeamGames,
+      goalsFor: projectedTeamGoals,
+    }),
+    reliabilityPlayer: buildPlayerInput(normalization.rawStats),
+    reliabilityTeam: buildTeamInput({
+      gamesPlayed: normalization.teamGamesPlayed,
+      goalsFor: teamGoals,
+    }),
     normalization,
   }
 }

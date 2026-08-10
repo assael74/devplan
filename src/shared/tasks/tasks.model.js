@@ -31,6 +31,7 @@ export function buildTaskInitial(now = Date.now()) {
 
     contextArea: '',
     contextMode: '',
+    workContext: null,
 
     createdAt: now,
     updatedAt: now,
@@ -67,6 +68,7 @@ export function normalizeTask(task = {}, now = Date.now()) {
 
     contextArea: typeof task?.contextArea === 'string' ? task.contextArea : '',
     contextMode: typeof task?.contextMode === 'string' ? task.contextMode : '',
+    workContext: normalizeWorkContext(task?.workContext),
 
     createdAt: Number.isFinite(Number(task?.createdAt)) ? Number(task.createdAt) : now,
     updatedAt: Number.isFinite(Number(task?.updatedAt)) ? Number(task.updatedAt) : now,
@@ -135,6 +137,17 @@ function normalizeTaskType(workspace, taskType) {
   if (validIds.includes(taskType)) return taskType
 
   return getDefaultTaskTypeByWorkspace(workspace)
+}
+
+
+function normalizeWorkContext(workContext) {
+  if (!workContext || typeof workContext !== 'object' || Array.isArray(workContext)) {
+    return null
+  }
+
+  return Object.fromEntries(
+    Object.entries(workContext).filter(([, value]) => value !== undefined)
+  )
 }
 
 function normalizeParentTaskId(parentTaskId) {

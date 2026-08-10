@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/contracts/playerScout.contract.js
+// src/features/playersDatabase/domain/contracts/playerScout.contract.js
 
 import {
   buildScoutProfileCombinations,
@@ -78,13 +78,25 @@ const resolveCatalogProfile = profileId => PROFILE_BY_ID[profileId] || null
 
 const resolveCatalogCombination = combinationId => COMBINATION_BY_ID[combinationId] || null
 
+const cleanReliabilityValue = value => {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === 'object'
+  ) {
+    return ''
+  }
+
+  return cleanDomainValue(value)
+}
+
 export const normalizeScoutReliability = reliability => {
   const source = reliability && typeof reliability === 'object'
     ? reliability
     : {}
 
   return {
-    level: cleanDomainValue(
+    level: cleanReliabilityValue(
       source.level ||
       source.reliabilityLevel ||
       source.profileReliability ||
@@ -93,7 +105,7 @@ export const normalizeScoutReliability = reliability => {
     score: toDomainNumber(
       source.score !== undefined ? source.score : source.reliabilityScore
     ),
-    label: cleanDomainValue(source.label),
+    label: cleanReliabilityValue(source.label),
     factors: toDomainArray(source.factors),
   }
 }

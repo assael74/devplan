@@ -63,6 +63,7 @@ function PriorityOptionContent({
   option,
   fontSize,
   short = false,
+  count = null,
 }) {
   return (
     <Box sx={styles.optionContent({
@@ -86,6 +87,7 @@ function PriorityOptionContent({
         })}
       >
         {short ? option.shortLabel : option.label}
+        {Number.isFinite(count) ? ` · ${count}` : ''}
       </Typography>
     </Box>
   )
@@ -97,9 +99,24 @@ export default function ScoutPrioritySelect({
   onChange,
   fontSize = 12,
   shortValueLabel = true,
+  thresholdMode = false,
+  counts = {},
   sx: externalSx = {},
 }) {
-  const selectedOption = priorityOptions.find(option => option.value === (value || '')) || priorityOptions[0]
+  const options = thresholdMode
+    ? priorityOptions
+      .filter(option => ['', 'positive', 'high', 'elite'].includes(option.value))
+      .map(option => ({
+        ...option,
+        label: option.value && option.value !== 'elite'
+          ? `${option.label} ומעלה`
+          : option.label,
+        shortLabel: option.value && option.value !== 'elite'
+          ? `${option.shortLabel}+`
+          : option.shortLabel,
+      }))
+    : priorityOptions
+  const selectedOption = options.find(option => option.value === (value || '')) || options[0]
 
   return (
     <Box sx={styles.root}>
@@ -121,12 +138,13 @@ export default function ScoutPrioritySelect({
             option={selectedOption}
             fontSize={fontSize}
             short={shortValueLabel}
+            count={counts[selectedOption.value || 'all']}
           />
         )}
         sx={[styles.select(fontSize), externalSx]}
         onChange={(event, nextValue) => onChange?.(nextValue || '')}
       >
-        {priorityOptions.map(option => (
+        {options.map(option => (
           <Option
             key={option.value || 'all'}
             value={option.value}
@@ -135,6 +153,7 @@ export default function ScoutPrioritySelect({
             <PriorityOptionContent
               option={option}
               fontSize={fontSize}
+              count={counts[option.value || 'all']}
             />
           </Option>
         ))}

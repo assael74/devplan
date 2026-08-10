@@ -3,7 +3,7 @@
 import { Box } from '@mui/joy'
 
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
-import { PlayerRoleEditModal } from '../../components/playerRole/index.js'
+import { PlayerRoleEditModal } from '../../components/modals/index.js'
 import SearchQueryPanel from './query/SearchQueryPanel.js'
 import SearchResultsSection from './results/SearchResultsSection.js'
 import SearchResultsSidebar from './resultsSidebar/SearchResultsSidebar.js'

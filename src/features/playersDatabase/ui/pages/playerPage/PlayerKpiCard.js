@@ -1,8 +1,9 @@
-// features/playersDatabase/ui/pages/playerPage/PlayerKpiCard.js
+// src/features/playersDatabase/ui/pages/playerPage/PlayerKpiCard.js
 
 import {
   Box,
   Card,
+  Chip,
   Typography,
 } from '@mui/joy'
 
@@ -20,10 +21,7 @@ export default function PlayerKpiCard({
     <Card sx={sx.playerKpiCard}>
       <Box sx={sx.playerKpiMain}>
         <Box sx={sx.playerKpiText}>
-          <Typography
-            level='body-sm'
-            sx={sx.playerKpiTitle}
-          >
+          <Typography level='body-sm' sx={sx.playerKpiTitle}>
             {title}
           </Typography>
 
@@ -40,33 +38,32 @@ export default function PlayerKpiCard({
 
         {iconId ? (
           <Box sx={sx.playerKpiIcon}>
-            {iconUi({
-              id: iconId,
-              size: 'md',
-            })}
+            {iconUi({id: iconId, size: 'md'})}
           </Box>
         ) : null}
       </Box>
 
       <Box sx={sx.playerKpiDetails}>
         {details.map(detail => (
-          <Box
-            key={detail.label}
-            sx={sx.playerKpiDetail}
-          >
-            <Typography
-              level='body-xs'
-              sx={sx.playerKpiDetailLabel}
-            >
+          <Box key={detail.label} sx={sx.playerKpiDetail}>
+            <Typography level='body-xs' sx={sx.playerKpiDetailLabel}>
               {detail.label}
             </Typography>
 
-            <Typography
-              level='body-sm'
-              sx={sx.playerKpiDetailValue}
-            >
-              {detail.value}
-            </Typography>
+            {detail.chip ? (
+              <Chip
+                size='sm'
+                variant='soft'
+                color={detail.color || 'neutral'}
+                sx={sx.playerKpiDetailChip}
+              >
+                {detail.value}
+              </Chip>
+            ) : (
+              <Typography level='body-sm' sx={sx.playerKpiDetailValue}>
+                {detail.value}
+              </Typography>
+            )}
           </Box>
         ))}
       </Box>

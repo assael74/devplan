@@ -14,6 +14,7 @@ import {
 } from '../../searchIndex/index.js'
 import { clearTeamSeasonPlayers } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const FLOW = 'clearTeamSeasonPlayers'
 
@@ -80,7 +81,7 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
       ...payload,
       team: {
         ...(payload.team || {}),
-        playersCount: 0,
+        ...buildTeamLoadStatus([]),
       },
     }),
   })

@@ -1,25 +1,10 @@
-// features/playersDatabase/ui/pages/playerPage/sx/PlayerHeader.sx.js
+// src/features/playersDatabase/ui/pages/playerPage/sx/playerHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const playerHeaderSx = {
   header: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      lg: 'minmax(0, 1fr) auto',
-    },
-    gap: 2,
     alignItems: 'stretch',
-  },
-
-  headerCopy: {
-    minWidth: 0,
-    height: '100%',
-    gap: 0.75,
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
   },
 
   titleRow: {
@@ -57,6 +42,22 @@ export const playerHeaderSx = {
     fontWeight: 700,
   },
 
+  teamChip: {
+    minHeight: 30,
+    px: 1.25,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.border}`,
+    color: devPlanColors.primaryDark,
+    fontSize: 13,
+    fontWeight: 700,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  },
+
   birthYearChip: {
     minHeight: 38,
     px: 1.8,
@@ -72,6 +73,27 @@ export const playerHeaderSx = {
     lineHeight: 1,
     whiteSpace: 'nowrap',
     boxShadow: '0 8px 20px rgba(47, 134, 199, 0.24)',
+  },
+
+  seasonChip: {
+    minHeight: 30,
+    px: 1.25,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    bgcolor: devPlanColors.primaryLight,
+    border: `1px solid ${devPlanColors.primary}`,
+    color: devPlanColors.primary,
+    fontSize: 13,
+    fontWeight: 700,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  },
+
+  reliabilityChip: {
+    minHeight: 28,
+    fontWeight: 700,
   },
 
   headerActionsPanel: {

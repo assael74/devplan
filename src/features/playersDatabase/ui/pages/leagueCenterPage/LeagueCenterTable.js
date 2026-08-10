@@ -1,12 +1,7 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterTable.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterTable.js
 
-import {
-  Stack,
-  Typography,
-} from '@mui/joy'
-
-import InfoPanel from '../../components/cards/InfoPanel.js'
-import DataTable from '../../components/tables/DataTable.js'
+import PageContentPanel from '../../components/page/PageContentPanel.js'
+import DataTable from '../../components/tables/dataTable/index.js'
 import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({ columns, model }) {
@@ -18,26 +13,21 @@ export default function LeagueCenterTable({ columns, model }) {
       : 'בחר שנתון ורמת ליגה כדי להתחיל')
 
   return (
-    <InfoPanel
+    <PageContentPanel
       title='הליגות הרלוונטיות'
-      actions={(
-        <Typography level='body-xs' sx={sx.tableCount}>
-          {model.leagues.length} ליגות
-        </Typography>
-      )}
-      sx={sx.tablePanel}
+      meta={`${model.leagues.length} ליגות`}
+      headerTone='soft'
+      panelSx={sx.tablePanel}
     >
-      <Stack sx={sx.tableArea}>
-        <DataTable
-          columns={columns}
-          rows={model.leagues}
-          getRowKey={row => `${row.id}_${row.seasonKey}`}
-          emptyText={emptyText}
-          wrapSx={sx.tableScroll}
-          tableSx={sx.noRowHoverTable}
-          bodyScrollSx={sx.tableBodyScroll}
-        />
-      </Stack>
-    </InfoPanel>
+      <DataTable
+        columns={columns}
+        rows={model.leagues}
+        getRowKey={row => `${row.id}_${row.seasonKey}`}
+        emptyText={emptyText}
+        wrapSx={sx.tableScroll}
+        tableSx={sx.noRowHoverTable}
+        bodyScrollSx={sx.tableBodyScroll}
+      />
+    </PageContentPanel>
   )
 }

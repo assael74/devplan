@@ -1,13 +1,12 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterHeader.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterHeader.js
 
 import {
-  Box,
   Button,
   Stack,
   Typography,
 } from '@mui/joy'
 
-import Breadcrumbs from '../../layout/Breadcrumbs.js'
+import PageHeader from '../../components/page/PageHeader.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { leagueCenterHeaderSx as sx } from './sx/leagueCenterHeader.sx.js'
 
@@ -16,40 +15,35 @@ export default function LeagueCenterHeader({
   onNavigateToSearch,
   onNavigateToEntry,
 }) {
+  const actions = (
+    <Stack direction='row' spacing={1} sx={sx.headerActions}>
+      <Button
+        sx={sx.primaryButton}
+        startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
+        onClick={onNavigateToSearch}
+      >
+        מעבר לעמוד חיפוש
+      </Button>
+
+      <Button
+        variant='outlined'
+        sx={sx.secondaryButton}
+        startDecorator={iconUi({id: 'back', size: 'sm'})}
+        onClick={onNavigateToEntry}
+      >
+        חזרה לדף הפתיחה
+      </Button>
+    </Stack>
+  )
+
   return (
-    <Box sx={sx.header}>
-      <Stack sx={sx.headerCopy}>
-        <Breadcrumbs items={breadcrumbs} />
-
-        <Typography level='h1' sx={sx.pageTitle}>
-          ניהול נתוני ליגות
-        </Typography>
-      </Stack>
-
-      <Stack direction='row' spacing={1} sx={sx.headerActions}>
-        <Button
-          sx={sx.primaryButton}
-          startDecorator={iconUi({
-            id: 'playerDatabase',
-            size: 'sm',
-          })}
-          onClick={onNavigateToSearch}
-        >
-          מעבר לעמוד חיפוש
-        </Button>
-
-        <Button
-          variant='outlined'
-          sx={sx.secondaryButton}
-          startDecorator={iconUi({
-            id: 'back',
-            size: 'sm',
-          })}
-          onClick={onNavigateToEntry}
-        >
-          חזרה לדף הפתיחה
-        </Button>
-      </Stack>
-    </Box>
+    <PageHeader
+      breadcrumbs={breadcrumbs}
+      actions={actions}
+    >
+      <Typography level='h1' sx={sx.pageTitle}>
+        ניהול נתוני ליגות
+      </Typography>
+    </PageHeader>
   )
 }

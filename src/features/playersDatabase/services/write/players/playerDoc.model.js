@@ -50,6 +50,15 @@ export const normalizePlayerScoutProfiles = player => {
             )
           : null,
       },
+      warnings: [...new Set(
+        (Array.isArray(profile.warnings)
+          ? profile.warnings
+          : Array.isArray(profile.reliability?.warnings)
+            ? profile.reliability.warnings
+            : [])
+          .map(clean)
+          .filter(Boolean)
+      )],
       score: Number.isFinite(Number(profile.score))
         ? Number(profile.score)
         : null,

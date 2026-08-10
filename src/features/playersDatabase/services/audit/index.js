@@ -14,3 +14,9 @@ export {
   applyPlayerScoutRepair,
   buildPlayerScoutRepairPreview,
 } from './playerScout.repair.js'
+
+export {
+  buildPlayerScoutRulesAudit,
+  downloadPlayerScoutRulesAudit,
+} from './playerScoutRules.audit.js'
+

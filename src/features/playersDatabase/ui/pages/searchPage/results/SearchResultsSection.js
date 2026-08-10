@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import DataTable from '../../../components/tables/DataTable.js'
+import DataTable from '../../../components/tables/dataTable/index.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 import { buildSearchColumns } from '../logic/search.columns.js'

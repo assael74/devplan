@@ -6,7 +6,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { PlayerPositionChip } from '../../../components/playerPosition/index.js'
+import PlayerPositionChip from '../../../components/playerMeta/PlayerPositionChip.js'
 import { searchResultRoleSx as sx } from './sx/searchResultRole.sx.js'
 
 export default function SearchResultRole({ row, onEdit }) {

@@ -7,6 +7,7 @@ import {
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
 import { resolveTeamPlayerIdentityPreview } from '../../../../services/write/players/index.js'
+import { readPlayerIdentityReview } from '../../../../services/read/index.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { parsePlayerRosterRows } from '../logic/teamRosterImport.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
@@ -24,6 +25,14 @@ export default function useTeamRosterImport({
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
+  const [identityReview, setIdentityReview] = React.useState({
+    open: false,
+    rowIndex: -1,
+    row: null,
+    candidates: [],
+    loading: false,
+    error: '',
+  })
 
   const buildSeason = React.useCallback(() => ({
     ...(selectedSeasonOption?.season || {}),
@@ -73,10 +82,134 @@ export default function useTeamRosterImport({
           identityStatus: 'יש לעדכן תצוגה',
           identityMessage: 'לחץ שוב על הצג נתונים',
           identityValid: false,
+          identityResolution: '',
+          identityConflictType: '',
+          identityExistingExternalPlayerId: '',
+          identityIncomingExternalPlayerId: '',
+          identityCandidates: [],
         }
         : row
     )))
   }, [])
+
+  const closeIdentityReview = React.useCallback(() => {
+    setIdentityReview({
+      open: false,
+      rowIndex: -1,
+      row: null,
+      candidates: [],
+      loading: false,
+      error: '',
+    })
+  }, [])
+
+  const openIdentityReview = React.useCallback(async rowIndex => {
+    const row = rows[rowIndex]
+    if (!row) return
+
+    const candidates = Array.isArray(row.identityCandidates)
+      ? row.identityCandidates
+      : []
+
+    setIdentityReview({
+      open: true,
+      rowIndex,
+      row,
+      candidates,
+      loading: true,
+      error: '',
+    })
+
+    try {
+      const review = await readPlayerIdentityReview({
+        candidates,
+      })
+
+      setIdentityReview(current => ({
+        ...current,
+        candidates: review.candidates,
+        loading: false,
+      }))
+    } catch (error) {
+      console.error('[playersDatabase/identity-review]', error)
+
+      setIdentityReview(current => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error
+          ? error.message
+          : 'טעינת פרטי השחקן נכשלה',
+      }))
+    }
+  }, [rows])
+
+  const resolveIdentityReview = React.useCallback(({
+    action,
+    candidate = {},
+  }) => {
+    const rowIndex = identityReview.rowIndex
+    if (rowIndex < 0) return
+
+    setRows(currentRows => currentRows.map((row, index) => {
+      if (index !== rowIndex) return row
+
+      if (action === 'useExisting') {
+        const existingExternalPlayerId = String(
+          candidate.externalPlayerId || ''
+        ).trim()
+        const incomingPlayerUrl = String(row.playerUrl || '').trim()
+        const playerUrl = existingExternalPlayerId
+          ? incomingPlayerUrl.replace(
+            /([?&]player_id=)\d+/i,
+            `$1${existingExternalPlayerId}`
+          )
+          : incomingPlayerUrl
+
+        return {
+          ...row,
+          playerId: candidate.playerId || '',
+          playerDocumentId: candidate.playerDocumentId || '',
+          externalPlayerId: existingExternalPlayerId || row.externalPlayerId,
+          playerUrl: playerUrl || candidate.playerUrl || '',
+          identityResolution: 'useExisting',
+          identityStatus: 'זוהה כשחקן קיים',
+          identityMessage: existingExternalPlayerId
+            ? `אושר כשחקן הקיים · מזהה ${existingExternalPlayerId}`
+            : 'אושר כשחקן הקיים',
+          identityValid: true,
+        }
+      }
+
+      if (action === 'newPlayer') {
+        return {
+          ...row,
+          playerId: '',
+          playerDocumentId: '',
+          identityResolution: 'ignoreConflict',
+          identityStatus: 'אושר כשחקן חדש',
+          identityMessage: 'אושר כשחקן אחר למרות התאמת השם',
+          identityValid: true,
+        }
+      }
+
+      if (action === 'incomingIdCorrect') {
+        return {
+          ...row,
+          identityResolution: 'replaceExternalPending',
+          identityStatus: 'דורש עדכון מזהה',
+          identityMessage: 'סומן שזה אותו שחקן והמזהה החדש נכון; יש לעדכן את הזהות הקיימת לפני טעינת הסגל',
+          identityValid: false,
+        }
+      }
+
+      return row
+    }))
+
+    closeIdentityReview()
+  }, [
+    closeIdentityReview,
+    identityReview.rowIndex,
+  ])
 
   const getRowStatus = React.useCallback(row => ({
     valid: row?.identityValid !== false,
@@ -170,6 +303,10 @@ export default function useTeamRosterImport({
     clearPaste,
     parse,
     changeCell,
+    identityReview,
+    openIdentityReview,
+    closeIdentityReview,
+    resolveIdentityReview,
     getRowStatus,
     close,
     closeWriteReport,

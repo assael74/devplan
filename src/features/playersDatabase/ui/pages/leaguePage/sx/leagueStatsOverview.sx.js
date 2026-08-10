@@ -3,18 +3,13 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueStatsOverviewSx = {
-  statsGrid: {
-    display: 'grid',
+  kpiRow: {
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
-      xl: 'repeat(4, minmax(0, 1fr))',
+      xl: 'repeat(3, minmax(0, 1fr))',
     },
     gap: 1.25,
-
-    '& > *': {
-      minWidth: 0,
-    },
   },
 
   summaryStatCard: {
@@ -32,16 +27,16 @@ export const leagueStatsOverviewSx = {
 
   leagueStateMain: {
     minWidth: 0,
+    display: 'grid',
+    gap: 0.45,
+  },
+
+  leagueStateValueRow: {
+    minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
-  },
-
-  leagueStateText: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.4,
   },
 
   leagueStateTitle: {
@@ -59,8 +54,8 @@ export const leagueStatsOverviewSx = {
   },
 
   leagueStateIcon: {
-    width: 42,
-    height: 42,
+    width: 36,
+    height: 36,
     flexShrink: 0,
     display: 'inline-flex',
     alignItems: 'center',

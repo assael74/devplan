@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/sx/TeamStatsOverview.sx.js
+// src/features/playersDatabase/ui/pages/teamPage/sx/teamStatsOverview.sx.js
 
 export const teamStatsOverviewSx = {
   statsSection: {
@@ -9,24 +9,18 @@ export const teamStatsOverviewSx = {
     alignItems: 'stretch',
   },
 
-  statsGrid: {
-    minWidth: 0,
-    display: 'grid',
+  kpiRow: {
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
-      lg: '1.05fr minmax(0, 1.48fr) minmax(0, 1.48fr)',
+      lg: 'repeat(3, minmax(0, 1fr))',
     },
-    gap: 1,
-    alignItems: 'stretch',
-
     '& > *': {
-      minWidth: 0,
-      p: 1.25,
+      p: 1,
     },
 
     '& h2': {
-      fontSize: 28,
+      fontSize: 26,
       lineHeight: 1,
     },
 

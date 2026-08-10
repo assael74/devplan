@@ -35,6 +35,18 @@ export const searchHeaderSx = {
     justifyContent: 'flex-start',
   },
 
+  auditButton: {
+    minHeight: 38,
+    px: 2,
+    bgcolor: '#fff',
+    color: devPlanColors.primary,
+    borderColor: 'divider',
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primary,
+    },
+  },
+
   reportButton: {
     minHeight: 38,
     px: 2,

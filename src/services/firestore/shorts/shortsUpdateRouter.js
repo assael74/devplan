@@ -274,6 +274,9 @@ export const shortsUpdateRouterMap = {
     sortOrder: { shortKey: 'tasks.tasksInfo', path: 'sortOrder', mode: 'merge' },
     dueDate: { shortKey: 'tasks.tasksInfo', path: 'dueDate', mode: 'merge' },
     doneAt: { shortKey: 'tasks.tasksInfo', path: 'doneAt', mode: 'merge' },
+    contextArea: { shortKey: 'tasks.tasksInfo', path: 'contextArea', mode: 'merge' },
+    contextMode: { shortKey: 'tasks.tasksInfo', path: 'contextMode', mode: 'merge' },
+    workContext: { shortKey: 'tasks.tasksInfo', path: 'workContext', mode: 'merge' },
   },
 }
 

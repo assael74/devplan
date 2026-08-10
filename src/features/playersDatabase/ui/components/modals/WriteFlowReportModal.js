@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/modals/WriteFlowReportModal.js
+// src/features/playersDatabase/ui/components/modals/WriteFlowReportModal.js
 
 import * as React from 'react'
 import {
@@ -10,8 +10,8 @@ import {
   Typography,
 } from '@mui/joy'
 
-import PlayersDatabaseModal from './PlayersDatabaseModal.js'
-import { writeFlowReportSx as sx } from './sx/writeFlowReport.sx.js'
+import RegularModal from './RegularModal.js'
+import { writeReportModalSx as sx } from './sx/writeReportModal.sx.js'
 
 const clean = value => String(value || '').trim()
 
@@ -45,7 +45,7 @@ export default function WriteFlowReportModal({
   }
 
   return (
-    <PlayersDatabaseModal
+    <RegularModal
       open={open}
       title='דוח תהליך כתיבה'
       description='הדוח נשאר פתוח עד לסגירה ידנית'
@@ -172,6 +172,6 @@ export default function WriteFlowReportModal({
           סגירת הדוח
         </Button>
       </Box>
-    </PlayersDatabaseModal>
+    </RegularModal>
   )
 }

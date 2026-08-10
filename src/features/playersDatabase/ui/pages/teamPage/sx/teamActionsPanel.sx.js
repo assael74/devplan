@@ -1,28 +1,8 @@
-// features/playersDatabase/ui/pages/teamPage/sx/TeamActionsPanel.sx.js
+// src/features/playersDatabase/ui/pages/teamPage/sx/teamActionsPanel.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamActionsPanelSx = {
-  panelTitle: {
-    color: devPlanColors.primaryDark,
-    fontWeight: 700,
-  },
-
-  actionsPanel: {
-    minWidth: 0,
-    minHeight: 0,
-    width: 250,
-    maxWidth: '100%',
-    p: 1.25,
-    display: 'grid',
-    gridTemplateRows: 'auto auto auto auto minmax(0, 1fr)',
-    gap: 1,
-    overflow: 'hidden',
-    borderRadius: 8,
-    border: '1px solid #dbe5f4',
-    boxShadow: '0 10px 28px rgba(11, 31, 77, 0.06)',
-  },
-
   actionSeasonBox: {
     display: 'grid',
     gap: 0.5,
@@ -45,7 +25,6 @@ export const teamActionsPanelSx = {
     borderColor: '#b9d8ef',
     fontWeight: 700,
   },
-
 
   actionSeasonValue: {
     minWidth: 0,
@@ -173,109 +152,55 @@ export const teamActionsPanelSx = {
     },
   },
 
-  actionFilterChipDisabled: {
-    width: '100%',
-    minHeight: 30,
-    justifyContent: 'center',
-    borderRadius: 8,
-    color: devPlanColors.secondary,
-    bgcolor: '#f5f7f9',
-    border: '1px solid #dfe7ef',
-    fontSize: 11,
-    fontWeight: 700,
-  },
-
   actionDivider: {
-    my: 0.25,
+    my: 0.15,
     borderColor: '#dbe5f4',
   },
 
+  actionsRow: {
+    width: '100%',
+    display: 'grid',
+    gridTemplateColumns: '0.9fr auto auto auto',
+    gap: 0.5,
+  },
+
   primaryActionButton: {
-    width: 'calc(100% - 10px)',
-    minHeight: 36,
-    px: 1.25,
-    gap: 1,
-    alignSelf: 'center',
-    justifyContent: 'flex-start',
+    minWidth: 0,
+    px: 0.75,
     bgcolor: devPlanColors.primary,
     color: '#fff',
+    fontSize: 11.5,
+    fontWeight: 700,
 
     '&:hover': {
       bgcolor: devPlanColors.primaryDark,
     },
 
-    '& .MuiButton-startDecorator': {
-      marginInlineEnd: 0.5,
-    },
-  },
-
-  secondaryActionButton: {
-    width: 'calc(100% - 10px)',
-    minHeight: 36,
-    px: 1.25,
-    gap: 1,
-    alignSelf: 'center',
-    justifyContent: 'flex-start',
-    bgcolor: '#fff',
-    color: devPlanColors.primary,
-    borderColor: devPlanColors.primary,
-
-    '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-      borderColor: devPlanColors.primaryDark,
-    },
-
-    '& .MuiButton-startDecorator': {
-      marginInlineEnd: 0.5,
-    },
-  },
-
-  dangerActionButton: {
-    width: 'calc(100% - 10px)',
-    minHeight: 36,
-    px: 1.25,
-    gap: 1,
-    alignSelf: 'center',
-    justifyContent: 'flex-start',
-    bgcolor: '#fff',
-    color: '#9A1B1B',
-    borderColor: '#F1B6B6',
-
-    '&:hover': {
-      bgcolor: '#FDECEC',
-      borderColor: '#C92A2A',
-    },
-
     '&.Mui-disabled': {
-      color: '#9AA7B2',
-      borderColor: '#DCE4EA',
-      bgcolor: '#F7FAFC',
-    },
-
-    '& .MuiButton-startDecorator': {
-      marginInlineEnd: 0.5,
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.secondary,
     },
   },
 
-  actionsList: {
-    width: '100%',
-    minHeight: 0,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    alignItems: 'center',
-    pr: 0,
+  secondaryIconButton: {
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    borderColor: devPlanColors.tertiary,
+
+    '&:hover': {
+      bgcolor: '#dcebff',
+      borderColor: devPlanColors.tertiaryDark,
+    },
   },
 
-  actionItem: {
-    display: 'grid',
-    gap: 0.35,
+  dangerIconButton: {
+    color: '#9a1b1b',
+    bgcolor: '#fff',
+    borderColor: '#f1b6b6',
+
+    '&:hover': {
+      bgcolor: '#fff1f1',
+      borderColor: '#d84a4a',
+    },
   },
-
-  actionDescription: {
-    px: 0.5,
-    color: devPlanColors.secondary,
-    fontSize: 11,
-    lineHeight: 1.25,
-  }
-
 }

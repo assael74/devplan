@@ -1,73 +1,97 @@
-// features/playersDatabase/ui/pages/playerPage/PlayerStatsOverview.js
+// src/features/playersDatabase/ui/pages/playerPage/PlayerStatsOverview.js
 
 import { Box } from '@mui/joy'
 
+import KpiRow from '../../components/kpi/KpiRow.js'
 import PlayerKpiCard from './PlayerKpiCard.js'
 import {
   formatValue,
-  resolveCertaintyLabel,
-  resolveCurrentSeasonContext,
+  resolvePlayerScopeReliability,
 } from './logic/playerPage.utils.js'
 import { playerStatsOverviewSx as sx } from './sx/playerStatsOverview.sx.js'
 
+const sumRows = (rows, key) => rows.reduce(
+  (total, row) => total + Number(row[key] || 0),
+  0
+)
+
+const resolveScopeLabel = (rows, key, pluralLabel) => {
+  const values = [...new Set(
+    rows
+      .map(row => String(row[key] || '').trim())
+      .filter(value => value && value !== '-')
+  )]
+
+  if (!values.length) return '-'
+  if (values.length === 1) return values[0]
+
+  return `${values.length} ${pluralLabel}`
+}
+
 export default function PlayerStatsOverview({
-  player,
   historyRows = [],
+  selectedSeasonKey = '',
 }) {
-  const current = resolveCurrentSeasonContext(historyRows)
-  const certainty = resolveCertaintyLabel(
-    player.certainty || player.reliability
-  )
-
-  const startsRate = current.games
-    ? `${Math.round((current.starts / current.games) * 100)}%`
+  const scopeRows = selectedSeasonKey
+    ? historyRows.filter(row => row.seasonKey === selectedSeasonKey)
+    : historyRows
+  const games = sumRows(scopeRows, 'games')
+  const starts = sumRows(scopeRows, 'starts')
+  const minutes = sumRows(scopeRows, 'minutes')
+  const goals = sumRows(scopeRows, 'goals')
+  const yellowCards = sumRows(scopeRows, 'yellowCards')
+  const profileCount = sumRows(scopeRows, 'scoutProfileCount')
+  const reliability = resolvePlayerScopeReliability(scopeRows)
+  const startsRate = games
+    ? `${Math.round((starts / games) * 100)}%`
     : '-'
-
-  const goalsPerGame = current.games
-    ? (current.goals / current.games).toFixed(2)
+  const goalsPerGame = games
+    ? (goals / games).toFixed(2)
     : '-'
+  const placeholder = scopeRows.every(row => row.placeholder)
+  const seasonLabel = selectedSeasonKey || 'כל העונות'
 
   return (
     <Box sx={sx.statsSection}>
-      <Box sx={sx.statsGrid}>
+      <KpiRow sx={sx.kpiRow}>
         <PlayerKpiCard
-          title='ודאות האיתור'
-          value={certainty}
+          title='פרופילי סקאוט'
+          value={profileCount}
           iconId='targets'
           details={[
             {
-              label: 'פרופילים',
-              value: formatValue(
-                current.scoutProfiles?.length
-              ),
+              label: 'רמת אמינות',
+              value: reliability.label,
+              color: reliability.color,
+              chip: true,
             },
             {
               label: 'עונה',
-              value: formatValue(current.seasonKey),
+              value: seasonLabel,
             },
           ]}
         />
 
         <PlayerKpiCard
           title='דקות משחק'
-          value={formatValue(current.minutes)}
+          value={formatValue(minutes)}
           iconId='hour'
           details={[
             {
               label: 'משחקים',
-              value: formatValue(current.games),
+              value: formatValue(games),
             },
             {
               label: 'הרכב',
-              value: formatValue(current.starts),
+              value: formatValue(starts),
             },
           ]}
-          placeholder={current.placeholder}
+          placeholder={placeholder}
         />
 
         <PlayerKpiCard
           title='שערים'
-          value={formatValue(current.goals)}
+          value={formatValue(goals)}
           iconId='goals'
           details={[
             {
@@ -76,10 +100,10 @@ export default function PlayerStatsOverview({
             },
             {
               label: 'צהובים',
-              value: formatValue(current.yellowCards),
+              value: formatValue(yellowCards),
             },
           ]}
-          placeholder={current.placeholder}
+          placeholder={placeholder}
         />
 
         <PlayerKpiCard
@@ -89,16 +113,16 @@ export default function PlayerStatsOverview({
           details={[
             {
               label: 'מועדון',
-              value: formatValue(current.clubName),
+              value: resolveScopeLabel(scopeRows, 'clubName', 'מועדונים'),
             },
             {
               label: 'קבוצת גיל',
-              value: formatValue(current.teamName),
+              value: resolveScopeLabel(scopeRows, 'teamName', 'קבוצות גיל'),
             },
           ]}
-          placeholder={current.placeholder}
+          placeholder={placeholder}
         />
-      </Box>
+      </KpiRow>
     </Box>
   )
 }

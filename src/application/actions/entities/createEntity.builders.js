@@ -383,5 +383,6 @@ export const buildTaskCreateItem = ({ id, draft, now = Date.now() }) => {
     doneAt: draft?.status === TASK_STATUS.DONE ? now : null,
     contextArea: clean(draft?.contextArea),
     contextMode: clean(draft?.contextMode),
+    workContext: draft?.workContext || null,
   }, now)
 }

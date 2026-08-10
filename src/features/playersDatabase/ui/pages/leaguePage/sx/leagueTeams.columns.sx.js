@@ -124,6 +124,10 @@ export const leagueTeamsColumnsSx = {
     lineHeight: 1,
   },
 
+  actionHeader: {
+    p: 0.75,
+  },
+
   actionColumn: {
     width: 86,
     minWidth: 86,

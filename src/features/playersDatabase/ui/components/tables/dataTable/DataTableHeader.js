@@ -19,7 +19,13 @@ export default function DataTableHeader({
   onExport = null,
 }) {
   const exportColumnKey = exportConfig?.placementColumnKey || 'actions'
+  const hasExport = Boolean(exportConfig && typeof onExport === 'function')
   const canExport = Boolean(exportConfig?.enabled && typeof onExport === 'function')
+  const exportAlign = exportConfig?.align || 'center'
+  const exportAlignSx = (
+    sx.headerActionAlign[exportAlign] ||
+    sx.headerActionAlign.center
+  )
 
   return (
     <thead>
@@ -28,7 +34,7 @@ export default function DataTableHeader({
           const sortable = column.sortable !== false
           const active = sortState.key === column.key
           const direction = active ? sortState.direction : ''
-          const showExportButton = canExport && column.key === exportColumnKey
+          const showExportButton = hasExport && column.key === exportColumnKey
 
           return (
             <Box
@@ -48,24 +54,32 @@ export default function DataTableHeader({
               ]}
             >
               {showExportButton ? (
-                <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
-                  <IconButton
-                    size='sm'
-                    variant='outlined'
-                    color='neutral'
-                    aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
-                    sx={sx.headerActionButton}
-                    onClick={event => {
-                      event.stopPropagation()
-                      onExport()
-                    }}
-                  >
-                    {iconUi({
-                      id: exportConfig.iconId || 'download',
-                      size: 'sm',
-                    })}
-                  </IconButton>
-                </Tooltip>
+                <Box
+                  sx={[
+                    sx.headerActionWrap,
+                    exportAlignSx,
+                  ]}
+                >
+                  <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
+                    <IconButton
+                      size='sm'
+                      variant='outlined'
+                      color='neutral'
+                      aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                      sx={sx.headerActionButton}
+                      disabled={!canExport}
+                      onClick={event => {
+                        event.stopPropagation()
+                        onExport()
+                      }}
+                    >
+                      {iconUi({
+                        id: exportConfig.iconId || 'download',
+                        size: 'sm',
+                      })}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               ) : sortable ? (
                 <Box
                   component='button'

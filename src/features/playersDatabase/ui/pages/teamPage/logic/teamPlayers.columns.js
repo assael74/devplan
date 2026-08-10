@@ -11,11 +11,10 @@ import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.j
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import {
-  PlayerPositionChip,
+import PlayerPositionChip, {
   getPlayerLayerLabel,
   getPlayerPositionLabel,
-} from '../../../components/playerPosition/index.js'
+} from '../../../components/playerMeta/PlayerPositionChip.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import { TEAM_PLAYERS_TABLE_WIDTHS } from './teamTableWidths.js'
 import { teamPlayersColumnsSx as sx } from '../sx/teamPlayers.columns.sx.js'

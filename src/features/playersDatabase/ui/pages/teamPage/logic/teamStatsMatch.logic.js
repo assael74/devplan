@@ -22,10 +22,29 @@ const buildPlayerNameVariants = value => {
   const variants = new Set()
 
   if (normalizedName) variants.add(normalizedName)
-  if (parts.length === 2) variants.add(`${parts[1]} ${parts[0]}`)
+
+  if (parts.length === 2) {
+    variants.add(`${parts[1]} ${parts[0]}`)
+  }
+
+  if (parts.length >= 3 && parts.length <= 4) {
+    variants.add([...parts].reverse().join(' '))
+    variants.add([...parts.slice(1), parts[0]].join(' '))
+    variants.add([parts[parts.length - 1], ...parts.slice(0, -1)].join(' '))
+  }
+
+  if (parts.length === 4) {
+    variants.add([...parts.slice(2), ...parts.slice(0, 2)].join(' '))
+  }
 
   return variants
 }
+
+const buildRosterNameVariants = player => [
+  player?.fullName,
+  player?.normalizedName,
+  ...(Array.isArray(player?.aliases) ? player.aliases : []),
+]
 
 export const getRosterPlayerOptionValue = player => clean(
   player?.playerDocumentId ||
@@ -41,13 +60,11 @@ export const buildRosterLookup = players => {
   const byOptionValue = new Map()
 
   players.forEach(player => {
-    buildPlayerNameVariants(player.fullName).forEach(name => {
-      names.add(name)
-      if (!byName.has(name)) byName.set(name, player)
-    })
-    buildPlayerNameVariants(player.normalizedName).forEach(name => {
-      names.add(name)
-      if (!byName.has(name)) byName.set(name, player)
+    buildRosterNameVariants(player).forEach(value => {
+      buildPlayerNameVariants(value).forEach(name => {
+        names.add(name)
+        if (!byName.has(name)) byName.set(name, player)
+      })
     })
 
     if (player.externalPlayerId) ids.add(clean(player.externalPlayerId))

@@ -3,7 +3,7 @@
 export {
   POSITION_LAYER_OPTIONS,
   POSITION_OPTIONS,
-} from '../../../components/playerRole/playerRole.options.js'
+} from '../../../components/playerMeta/playerRole.options.js'
 
 export const PLAYER_ROSTER_PLACEHOLDER = [
   'אינדקס\tשם השחקן\tמזהה שחקן חיצוני\tקישור שחקן',

@@ -21,10 +21,7 @@
  *
  * deleteLeagueSeason.flow.js
  * - Removes one league season and its dependent season-scoped records.
- *
- * leagueTableRank.js
- * - Compatibility export only; it is not an orchestration flow.
- */
+ * */
 
 export {
   createLeagueSeasonFlow,

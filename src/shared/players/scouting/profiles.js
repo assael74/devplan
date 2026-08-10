@@ -157,7 +157,7 @@ export const SCOUT_PROFILES = [
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
-    rules: [{ metric: 'goals', op: 'between', min: 7, max: 9, reason: 'near_double_digit_goals' }],
+    rules: [{ metric: 'goals', op: 'between', min: 7, max: 14, reason: 'near_double_digit_goals' }],
     deepRules: [{ metric: 'goals', op: 'between', min: 10, max: 14, reason: 'strong_secondary_goal_total' }],
     deps: { position: DEP_MED, team: DEP_LOW },
   },

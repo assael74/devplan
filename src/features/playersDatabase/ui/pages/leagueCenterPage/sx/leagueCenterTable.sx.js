@@ -1,54 +1,11 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/sx/LeagueCenterTable.sx.js
-
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+// src/features/playersDatabase/ui/pages/leagueCenterPage/sx/leagueCenterTable.sx.js
 
 export const leagueCenterTableSx = {
   tablePanel: {
-    p: 0,
     width: '100%',
     height: '100%',
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
-    border: '1px solid #c8d7e2',
+    borderColor: '#c8d7e2',
     boxShadow: '0 10px 24px rgba(16, 43, 64, 0.075)',
-    bgcolor: '#fff',
-
-    '& > div > div:first-of-type': {
-      mb: 0,
-      px: 1.5,
-      py: 1.05,
-      borderBottom: '1px solid #c8d7e2',
-      bgcolor: '#edf3f7',
-    },
-
-    '& > div': {
-      p: 0,
-      gap: 0,
-    },
-
-    '& > div > :not(style) ~ :not(style)': {
-      marginTop: 0,
-    },
-  },
-
-  tableArea: {
-    flex: 1,
-    p: 0,
-    width: '100%',
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-
-  tableCount: {
-    px: 1,
-    py: 0.5,
-    borderRadius: 8,
-    bgcolor: '#fff',
-    border: `1px solid ${devPlanColors.primaryLight}`,
-    color: devPlanColors.primary,
-    fontWeight: 700,
   },
 
   tableScroll: {
@@ -57,15 +14,11 @@ export const leagueCenterTableSx = {
     minWidth: 0,
     minHeight: 0,
     overflow: 'hidden',
-    borderRadius: '0 0 0 0',
-    border: '1px solid #dbe4ea',
+    border: 0,
+    borderRadius: 0,
 
     '& table': {
       fontSize: 12,
-    },
-    '& > div:first-of-type': {
-      borderTopLeftRadius: 0,
-      borderTopRightRadius: 0,
     },
     '& th': {
       px: 1,

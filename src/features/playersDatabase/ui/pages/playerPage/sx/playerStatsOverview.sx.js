@@ -9,14 +9,11 @@ export const playerStatsOverviewSx = {
     alignItems: 'stretch',
   },
 
-  statsGrid: {
-    minWidth: 0,
-    display: 'grid',
+  kpiRow: {
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
       lg: 'repeat(4, minmax(0, 1fr))',
     },
-    gap: 1,
   },
 }

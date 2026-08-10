@@ -12,7 +12,7 @@ import {
   toNumberOrZero,
 } from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
-import { sortByTableRank } from '../ui/logic/tableRows.logic.js'
+import { sortByTableRank } from './tableRows.model.js'
 
 const getSeasonSortValue = value => {
   const match = String(value || '').match(/(\d{2,4})/)
@@ -136,6 +136,9 @@ const buildTeamRow = teamSeason => {
     games: toNumberOrZero(stats.gamesPlayed),
     teamStats: stats,
     playersCount: toNumberOrZero(teamSeason?.playersCount),
+    hasPlayers: Boolean(teamSeason?.loadStatus?.hasPlayers),
+    hasStats: Boolean(teamSeason?.loadStatus?.hasStats),
+    statsComplete: Boolean(teamSeason?.loadStatus?.statsComplete),
     profilesCount,
     profileAssignmentsCount,
     attackPriority: performanceView.offense.priority.level,
@@ -182,25 +185,42 @@ export const buildLeaguePageView = ({ league, leagueId, selectedSeason }) => ({
   gameTime: selectedSeason?.gameTime || league?.gameTime || '-',
 })
 
-export const buildLeaguePageSummary = ({ teams, league }) => ({
-  teamsCount: teams.length,
-  birthYear: league.birthYear,
-  goalsCount: teams.reduce(
-    (total, team) => total + toNumberOrZero(team.goalsFor),
-    0
-  ),
-  profilesCount: teams.reduce(
-    (total, team) => total + toNumberOrZero(team.profilesCount),
-    0
-  ),
-  attackPositive: teams.filter(
-    team => ['elite', 'high', 'positive'].includes(team.attackPriority)
-  ).length,
-  defensePositive: teams.filter(
-    team => ['elite', 'high', 'positive'].includes(team.defensePriority)
-  ).length,
-  recommendedTeams: teams.filter(team => (
-    ['elite', 'high'].includes(team.attackPriority) ||
-    ['elite', 'high'].includes(team.defensePriority)
-  )).length,
-})
+const POSITIVE_PRIORITY_LEVELS = ['elite', 'high', 'positive']
+
+const isTeamStatsComplete = team => (
+  Boolean(team?.hasPlayers) && Boolean(team?.statsComplete)
+)
+
+export const buildLeaguePageSummary = ({ teams, league }) => {
+  const attackTargets = teams.filter(
+    team => POSITIVE_PRIORITY_LEVELS.includes(team.attackPriority)
+  )
+  const defenseTargets = teams.filter(
+    team => POSITIVE_PRIORITY_LEVELS.includes(team.defensePriority)
+  )
+  const attackComplete = attackTargets.filter(isTeamStatsComplete).length
+  const defenseComplete = defenseTargets.filter(isTeamStatsComplete).length
+
+  return {
+    teamsCount: teams.length,
+    birthYear: league.birthYear,
+    goalsCount: teams.reduce(
+      (total, team) => total + toNumberOrZero(team.goalsFor),
+      0
+    ),
+    profilesCount: teams.reduce(
+      (total, team) => total + toNumberOrZero(team.profilesCount),
+      0
+    ),
+    attackPositive: attackTargets.length,
+    attackComplete,
+    attackMissing: Math.max(0, attackTargets.length - attackComplete),
+    defensePositive: defenseTargets.length,
+    defenseComplete,
+    defenseMissing: Math.max(0, defenseTargets.length - defenseComplete),
+    recommendedTeams: teams.filter(team => (
+      ['elite', 'high'].includes(team.attackPriority) ||
+      ['elite', 'high'].includes(team.defensePriority)
+    )).length,
+  }
+}

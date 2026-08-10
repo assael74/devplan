@@ -49,6 +49,27 @@ export const dataTableHeaderSx = {
     pointerEvents: 'none',
   },
 
+  headerActionWrap: {
+    width: '100%',
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+
+  headerActionAlign: {
+    start: {
+      justifyContent: 'flex-start',
+    },
+
+    center: {
+      justifyContent: 'center',
+    },
+
+    end: {
+      justifyContent: 'flex-end',
+    },
+  },
+
   headerActionButton: {
     width: 28,
     height: 28,
@@ -62,6 +83,13 @@ export const dataTableHeaderSx = {
     '&:hover': {
       bgcolor: devPlanColors.primaryLight,
       borderColor: devPlanColors.primary,
+    },
+
+    '&:disabled': {
+      opacity: 0.45,
+      color: devPlanColors.secondary,
+      borderColor: '#cfd9e2',
+      bgcolor: '#f7f9fb',
     },
   },
 }

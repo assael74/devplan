@@ -160,13 +160,18 @@ export const buildPlayerSeasonStatsMutation = ({
     existingData.ageGroupId
   )
   const resolvedLeagueTotalRound = toNumberOrZero(
-    season.leagueTotalRound || existingData.leagueTotalRound
+    pickDefinedValue(
+      season.leagueTotalRound,
+      existingData.leagueTotalRound
+    )
   )
   const resolvedTeamGamePlayed = toNumberOrZero(
-    team.teamStats?.teamGamePlayed ||
-    team.teamGamePlayed ||
-    existingData.teamGamePlayed ||
-    playerStats.teamGames
+    pickDefinedValue(
+      team.teamStats?.teamGamePlayed,
+      team.teamGamePlayed,
+      existingData.teamGamePlayed,
+      playerStats.teamGames
+    )
   )
   const normalization = buildPlayerSeasonSearchMetrics({
     target,

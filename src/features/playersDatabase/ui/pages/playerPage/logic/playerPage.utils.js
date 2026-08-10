@@ -1,8 +1,18 @@
-// features/playersDatabase/ui/pages/playerPage/logic/playerPage.utils.js
+// src/features/playersDatabase/ui/pages/playerPage/logic/playerPage.utils.js
 
 import { resolveAgeGroupLabel } from '../../../../catalog/ageGroups.catalog.js'
 
-const cleanValue = value => String(value || '').trim()
+const cleanValue = value => {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === 'object'
+  ) {
+    return ''
+  }
+
+  return String(value).trim()
+}
 
 const RELIABILITY_LABELS = {
   high: 'גבוהה',
@@ -10,7 +20,13 @@ const RELIABILITY_LABELS = {
   low: 'נמוכה',
 }
 
-export const resolveCertaintyLabel = value => {
+const RELIABILITY_COLORS = {
+  high: 'success',
+  medium: 'warning',
+  low: 'danger',
+}
+
+export const resolveReliabilityLabel = value => {
   if (value && typeof value === 'object') {
     const level = cleanValue(value.level)
     const label = cleanValue(value.label)
@@ -18,14 +34,74 @@ export const resolveCertaintyLabel = value => {
     return RELIABILITY_LABELS[level.toLowerCase()] ||
       label ||
       level ||
-      'לא ידועה'
+      '-'
   }
 
   const level = cleanValue(value)
 
   return RELIABILITY_LABELS[level.toLowerCase()] ||
     level ||
-    'לא ידועה'
+    '-'
+}
+
+export const resolveReliabilityLevel = value => {
+  const source = value && typeof value === 'object'
+    ? value
+    : {}
+  const level = cleanValue(
+    source.level ||
+    source.reliabilityLevel ||
+    value
+  ).toLowerCase()
+
+  if (RELIABILITY_LABELS[level]) return level
+
+  const label = cleanValue(source.label || value)
+  const matchedLevel = Object.entries(RELIABILITY_LABELS).find(
+    ([, reliabilityLabel]) => reliabilityLabel === label
+  )
+
+  return matchedLevel ? matchedLevel[0] : ''
+}
+
+export const resolveReliabilityColor = value => {
+  const level = resolveReliabilityLevel(value)
+
+  return RELIABILITY_COLORS[level] || 'neutral'
+}
+
+export const resolvePlayerScopeReliability = rows => {
+  const levels = [...new Set(
+    (Array.isArray(rows) ? rows : [])
+      .filter(row => Number(row.scoutProfileCount || 0) > 0)
+      .map(row => resolveReliabilityLevel(
+        row.scoutProfileDisplay?.reliability ||
+        row.scout?.display?.reliability ||
+        row.reliability
+      ))
+      .filter(Boolean)
+  )]
+
+  if (!levels.length) {
+    return {
+      label: '-',
+      color: 'neutral',
+    }
+  }
+
+  if (levels.length > 1) {
+    return {
+      label: 'משתנה',
+      color: 'neutral',
+    }
+  }
+
+  const level = levels[0]
+
+  return {
+    label: RELIABILITY_LABELS[level] || '-',
+    color: RELIABILITY_COLORS[level] || 'neutral',
+  }
 }
 
 export const toNumber = value => {
@@ -69,6 +145,9 @@ export const parsePlayerMeta = value => {
 
 export const resolvePlayerHeaderMeta = player => {
   const parsedMeta = parsePlayerMeta(player.ageLabel)
+  const scoutProfiles = Array.isArray(player.scoutProfiles)
+    ? player.scoutProfiles
+    : []
 
   return {
     fullName: cleanValue(player.fullName) || 'שחקן ללא שם',
@@ -78,9 +157,8 @@ export const resolvePlayerHeaderMeta = player => {
       player.yearOfBirth ||
       parsedMeta.birthYear
     ),
-    certainty: resolveCertaintyLabel(
-      player.certainty || player.reliability
-    ),
+    hasScoutProfiles: scoutProfiles.length > 0,
+    reliability: resolveReliabilityLabel(player.reliability),
   }
 }
 

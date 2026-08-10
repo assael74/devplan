@@ -21,11 +21,13 @@ const buildIndexProfiles = document => [
     profileId: document.primaryScoutProfileId,
     profileScore: document.primaryScoutScore,
     profileReliability: document.primaryScoutReliabilityLevel,
+    warnings: toDomainArray(document.primaryScoutWarnings),
   },
   {
     profileId: document.secondaryScoutProfileId,
     profileScore: document.secondaryScoutScore,
     profileReliability: document.secondaryScoutReliabilityLevel,
+    warnings: toDomainArray(document.secondaryScoutWarnings),
   },
 ].filter(profile => cleanDomainValue(profile.profileId))
 

@@ -1,42 +1,18 @@
-// features/playersDatabase/ui/pages/playerPage/PlayerHistorySection.js
+// src/features/playersDatabase/ui/pages/playerPage/PlayerHistorySection.js
 
-import {
-  Box,
-  Card,
-  Typography,
-} from '@mui/joy'
+import { Box } from '@mui/joy'
 
+import PageContentPanel from '../../components/page/PageContentPanel.js'
 import PlayerHistoryTable from './PlayerHistoryTable.js'
 import { playerHistorySectionSx as sx } from './sx/playerHistorySection.sx.js'
 
 export default function PlayerHistorySection({ rows, hasRealData, onRowOpen }) {
   return (
-    <Card sx={sx.historyPanel}>
-      <Box sx={sx.historyHeader}>
-        <Box>
-          <Typography
-            level='title-lg'
-            sx={sx.panelTitle}
-          >
-            היסטוריית ביצועים
-          </Typography>
-
-          <Typography
-            level='body-xs'
-            sx={sx.panelSubtitle}
-          >
-            סטטיסטיקה ופרופילי סקאוט לפי עונה וקבוצה
-          </Typography>
-        </Box>
-
-        <Typography
-          level='body-sm'
-          sx={sx.rowsCount}
-        >
-          {rows.length} הקשרים
-        </Typography>
-      </Box>
-
+    <PageContentPanel
+      title='היסטוריית ביצועים'
+      subtitle='סטטיסטיקה ופרופילי סקאוט לפי עונה וקבוצה'
+      meta={`${rows.length} הקשרים`}
+    >
       {!hasRealData ? (
         <Box sx={sx.placeholderBanner}>
           מוצגים נתוני placeholder עד לחיבור מסמכי העונות.
@@ -47,6 +23,6 @@ export default function PlayerHistorySection({ rows, hasRealData, onRowOpen }) {
         rows={rows}
         onRowOpen={onRowOpen}
       />
-    </Card>
+    </PageContentPanel>
   )
 }

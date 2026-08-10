@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/index.js
+// src/features/playersDatabase/domain/index.js
 
 export * from './contracts/domainValue.contract.js'
 export * from './contracts/lifecycle.contract.js'
@@ -22,3 +22,4 @@ export * from './selectors/teamScout.selectors.js'
 export * from './selectors/lifecycle.selectors.js'
 
 export * from './orchestration/buildLeagueTeamSeasons.js'
+export * from './orchestration/buildDbPlayerScoutResult.js'

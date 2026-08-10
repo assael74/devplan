@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leaguePage/LeaguePage.js
+// src/features/playersDatabase/ui/pages/leaguePage/LeaguePage.js
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
@@ -13,6 +13,8 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from '../../hooks/useLeaguePage.js'
+import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
+import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
@@ -21,11 +23,18 @@ import LeagueHeader from './LeagueHeader.js'
 import LeagueStatsOverview from './LeagueStatsOverview.js'
 import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
-import LeagueImportModal from './LeagueImportModal.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
-import { SeasonDeleteConfirmModal, WriteFlowReportModal } from '../../components/modals/index.js'
+import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js'
+import {
+  LeagueImportModal,
+  SeasonDeleteConfirmModal,
+  TaskEditModal,
+  WorkTaskModal,
+  WriteFlowReportModal,
+} from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
 import useTeamUrlEditor from './hooks/useTeamUrlEditor.js'
+import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
 import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
 import {
   buildLeagueImportColumns,
@@ -33,16 +42,48 @@ import {
 } from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
+import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useLeagueReport } from './report/index.js'
-import { leaguePageSx as sx } from './sx/leaguePage.sx.js'
+import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
+
+
+const PRIORITY_RANK = {
+  low: 1,
+  neutral: 2,
+  positive: 3,
+  high: 4,
+  elite: 5,
+}
+
+const matchesPriorityThreshold = (level, threshold) => {
+  if (!threshold) return true
+  return (PRIORITY_RANK[level] || 0) >= (PRIORITY_RANK[threshold] || 0)
+}
+
+const buildPriorityCounts = (teams, side) => {
+  const getLevel = team => side === 'attack'
+    ? team.performanceView?.offense?.priority?.level || ''
+    : team.performanceView?.defense?.priority?.level || ''
+
+  return {
+    all: teams.length,
+    positive: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'positive')).length,
+    high: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'high')).length,
+    elite: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'elite')).length,
+  }
+}
 
 function LeaguePageContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const { notify } = useSnackbar()
   const favorites = usePlayersDatabaseFavorites()
+  const tasksModel = usePlayersDatabaseTasks()
+  const taskActions = usePlayersDatabaseTaskActions()
   const [attackPriorityFilter, setAttackPriorityFilter] = React.useState('')
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
+  const [taskModalOpen, setTaskModalOpen] = React.useState(false)
+  const [editTask, setEditTask] = React.useState(null)
   const {
     league,
     leagueDoc,
@@ -76,6 +117,21 @@ function LeaguePageContent() {
     notify,
     reload,
   })
+  const leagueUrlEditor = useLeagueUrlEditor({
+    league,
+    leagueDoc,
+    selectedSeasonOption,
+    notify,
+    reload,
+  })
+  const attackPriorityCounts = React.useMemo(
+    () => buildPriorityCounts(teamsWithFavorites, 'attack'),
+    [teamsWithFavorites]
+  )
+  const defensePriorityCounts = React.useMemo(
+    () => buildPriorityCounts(teamsWithFavorites, 'defense'),
+    [teamsWithFavorites]
+  )
   const teamsDelete = useLeagueSeasonTeamsDelete({
     league,
     leagueDoc,
@@ -99,8 +155,8 @@ function LeaguePageContent() {
       const defenseLevel = team.performanceView?.defense?.priority?.level || ''
 
       return (
-        (!attackPriorityFilter || attackLevel === attackPriorityFilter)
-        && (!defensePriorityFilter || defenseLevel === defensePriorityFilter)
+        matchesPriorityThreshold(attackLevel, attackPriorityFilter)
+        && matchesPriorityThreshold(defenseLevel, defensePriorityFilter)
       )
     })
   ), [
@@ -109,6 +165,32 @@ function LeaguePageContent() {
     defensePriorityFilter,
   ])
 
+
+  const leagueTasks = React.useMemo(() => (
+    tasksModel.tasks.filter(task => {
+      const context = task?.workContext || {}
+      const sameLeague = String(context.leagueId || '') === String(league.id || '')
+      const sameSeason = String(context.seasonKey || '') === String(selectedSeasonKey || '')
+      return sameLeague && sameSeason
+    })
+  ), [
+    league.id,
+    selectedSeasonKey,
+    tasksModel.tasks,
+  ])
+
+  const leagueTaskContext = React.useMemo(() => ({
+    league,
+    seasonKey: selectedSeasonKey,
+    teams,
+    url: `${location.pathname}${location.search}`,
+  }), [
+    league,
+    location.pathname,
+    location.search,
+    selectedSeasonKey,
+    teams,
+  ])
 
   const pageSearchParams = React.useMemo(
     () => new URLSearchParams(location.search),
@@ -139,6 +221,10 @@ function LeaguePageContent() {
   ])
   const titleParts = splitLeagueTitle(league)
   const isActiveLeague = selectedSeasonOption?.target === 'current'
+  const isHistoricalLoadedLeague = (
+    selectedSeasonOption?.target === 'history' &&
+    teams.length > 0
+  )
   const leagueReport = useLeagueReport({
     league,
     teams: filteredTeams,
@@ -179,6 +265,27 @@ function LeaguePageContent() {
     })
   }
 
+  const handleTaskEditSave = async patch => {
+    if (!editTask?.id || taskActions.pending) return
+
+    const nextPatch = {
+      ...patch,
+      doneAt: patch.status === TASK_STATUS.DONE
+        ? Date.now()
+        : null,
+    }
+
+    await taskActions.updateTask(editTask, nextPatch)
+    setEditTask(null)
+  }
+
+  const handleTaskEditDone = async task => {
+    if (!task?.id || taskActions.pending) return
+
+    await taskActions.markDone(task)
+    setEditTask(null)
+  }
+
   return (
     <>
       <Box sx={sx.page}>
@@ -187,27 +294,31 @@ function LeaguePageContent() {
           title={titleParts.name}
           region={titleParts.region}
           ageGroup={league.ageGroup}
-          levelLabel={league.levelLabel}
+          level={league.level}
+          birthYear={league.birthYear}
           active={isActiveLeague}
+          seasonKey={selectedSeasonKey}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
           onBack={handleBackToCenter}
         />
 
-        <LeagueStatsOverview
-          summary={summary}
-          roundsCount={league.leagueTotalRound}
-        />
-
         <Box sx={sx.contentGrid}>
-          <LeagueTeamsTable
-            rows={filteredTeams}
-            loading={loading}
-            error={error || selectionError}
-            selectedSeasonOption={selectedSeasonOption}
-            onTeamOpen={handleTeamOpen}
-            onTeamUrlEdit={teamUrlEditor.open}
-            onFavoriteToggle={handleFavoriteToggle}
-          />
+          <Box sx={sx.mainColumn}>
+            <LeagueStatsOverview
+              summary={summary}
+              roundsCount={league.leagueTotalRound}
+            />
+
+            <LeagueTeamsTable
+              rows={filteredTeams}
+              loading={loading}
+              error={error || selectionError}
+              selectedSeasonOption={selectedSeasonOption}
+              onTeamOpen={handleTeamOpen}
+              onTeamUrlEdit={teamUrlEditor.open}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
+          </Box>
 
           <LeagueActionsPanel
             selectedSeasonKey={selectedSeasonKey}
@@ -215,14 +326,39 @@ function LeaguePageContent() {
             onSeasonChange={setSelectedSeasonKey}
             attackPriorityFilter={attackPriorityFilter}
             defensePriorityFilter={defensePriorityFilter}
+            attackPriorityCounts={attackPriorityCounts}
+            defensePriorityCounts={defensePriorityCounts}
             onAttackPriorityFilterChange={setAttackPriorityFilter}
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
+            onLeagueUrlEdit={leagueUrlEditor.show}
+            hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
+            loadDisabled={isHistoricalLoadedLeague}
+            loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
             onDeleteTeams={() => teamsDelete.setOpen(true)}
             onReport={leagueReport.openPreview}
+            tasks={leagueTasks}
+            tasksLoading={tasksModel.loading}
+            onTaskCreate={() => setTaskModalOpen(true)}
+            onTaskEdit={setEditTask}
           />
         </Box>
       </Box>
+
+      <TaskEditModal
+        open={Boolean(editTask)}
+        task={editTask}
+        busy={taskActions.pending}
+        onSave={handleTaskEditSave}
+        onDone={handleTaskEditDone}
+        onClose={() => setEditTask(null)}
+      />
+
+      <WorkTaskModal
+        open={taskModalOpen}
+        leagueContext={leagueTaskContext}
+        onClose={() => setTaskModalOpen(false)}
+      />
 
       <ReportPreviewModal
         open={leagueReport.open}
@@ -231,6 +367,15 @@ function LeaguePageContent() {
         publication={leagueReport.publication}
         onPublish={leagueReport.publish}
         onClose={leagueReport.closePreview}
+      />
+
+      <LeagueUrlEditDrawer
+        open={leagueUrlEditor.open}
+        league={league}
+        season={selectedSeasonOption}
+        saving={leagueUrlEditor.saving}
+        onClose={leagueUrlEditor.close}
+        onSave={leagueUrlEditor.save}
       />
 
       <TeamUrlEditDrawer

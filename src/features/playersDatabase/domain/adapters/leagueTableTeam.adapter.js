@@ -146,6 +146,18 @@ export const adaptLeagueTableTeam = ({
         tableRow.teamPlayersCount
       )
     ),
+    loadStatus: {
+      hasPlayers: hasOwn(tableRow, 'hasPlayers')
+        ? Boolean(tableRow.hasPlayers)
+        : toDomainNumberOrZero(
+            firstDomainValue(
+              tableRow.playersCount,
+              tableRow.teamPlayersCount
+            )
+          ) > 0,
+      hasStats: Boolean(tableRow.hasStats),
+      statsComplete: Boolean(tableRow.statsComplete),
+    },
     completeness: {
       ...result.completeness,
       hasStats: hasTeamStats(tableRow),

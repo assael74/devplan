@@ -80,6 +80,10 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
         birthTeamSlot: 1,
         teamId: '',
         teamUrl: '',
+        playersCount: 0,
+        hasPlayers: false,
+        hasStats: false,
+        statsComplete: false,
         teamStats: {
           points: 0,
           goalsFor: 0,
@@ -111,6 +115,10 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
           birthTeamSlot: 1,
           teamId: '',
           teamUrl: '',
+          playersCount: 0,
+          hasPlayers: false,
+          hasStats: false,
+          statsComplete: false,
           teamStats: {
             points: 0,
             goalsFor: 0,
@@ -595,10 +603,12 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
 
   primaryScoutProfileId: '',
   primaryScoutReliabilityLevel: '',
+  primaryScoutWarnings: [],
   primaryScoutScore: null,
 
   secondaryScoutProfileId: '',
   secondaryScoutReliabilityLevel: '',
+  secondaryScoutWarnings: [],
   secondaryScoutScore: null,
   scoutProfileIds: [],
   scoutCombinationIds: [],

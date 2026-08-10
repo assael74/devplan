@@ -150,7 +150,20 @@ export const buildPlayerNameVariants = value => {
   const variants = new Set()
 
   if (normalizedName) variants.add(normalizedName)
-  if (parts.length === 2) variants.add(`${parts[1]} ${parts[0]}`)
+
+  if (parts.length === 2) {
+    variants.add(`${parts[1]} ${parts[0]}`)
+  }
+
+  if (parts.length >= 3 && parts.length <= 4) {
+    variants.add([...parts].reverse().join(' '))
+    variants.add([...parts.slice(1), parts[0]].join(' '))
+    variants.add([parts[parts.length - 1], ...parts.slice(0, -1)].join(' '))
+  }
+
+  if (parts.length === 4) {
+    variants.add([...parts.slice(2), ...parts.slice(0, 2)].join(' '))
+  }
 
   return variants
 }

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/modals/CreateSeasonModal.js
+// src/features/playersDatabase/ui/components/modals/CreateSeasonModal.js
 
 import * as React from 'react'
 import {
@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/joy'
 
-import PlayersDatabaseModal from './PlayersDatabaseModal.js'
-import { createSeasonSx as sx } from './sx/createSeason.sx.js'
+import RegularModal from './RegularModal.js'
+import { createSeasonModalSx as sx } from './sx/createSeasonModal.sx.js'
 
 const CURRENT_SEASON_KEY = '26/27'
 const SEASON_OPTIONS = ['26/27', '25/26', '24/25', '23/24', '22/23']
@@ -113,7 +113,7 @@ export default function CreateSeasonModal({
   const leagueName = clean(league?.name || league?.leagueName) || '-'
 
   return (
-    <PlayersDatabaseModal
+    <RegularModal
       open={open}
       title='יצירת עונה'
       description='פתיחת עונה לליגה שנבחרה והגדרת נתוני בסיס לעונה.'
@@ -257,6 +257,6 @@ export default function CreateSeasonModal({
           </Typography>
         </Box>
       </Stack>
-    </PlayersDatabaseModal>
+    </RegularModal>
   )
 }

@@ -20,6 +20,17 @@ const RELIABILITY_LABELS = {
   low: 'נמוכה',
 }
 
+const WARNING_LABELS = {
+  low_player_sample: 'מדגם שחקן נמוך',
+  low_team_games_sample: 'מדגם קבוצתי נמוך',
+}
+
+const resolveSampleWarning = profile => (
+  (Array.isArray(profile?.warnings) ? profile.warnings : [])
+    .map(warning => WARNING_LABELS[clean(warning)] || '')
+    .find(Boolean) || ''
+)
+
 const clean = value => String(value || '').trim()
 
 const resolveReliabilityLevel = reliability => clean(
@@ -61,6 +72,7 @@ export default function SearchResultScoutProfiles({ row, onRemove }) {
           const pending = pendingIds.has(profile.id)
           const reliabilityScore = resolveReliabilityScore(profile)
           const reliabilityLabel = resolveReliabilityLabel(profile.reliability)
+          const sampleWarning = resolveSampleWarning(profile)
 
           return (
             <Box key={profile.id} sx={sx.profileItem}>
@@ -84,6 +96,7 @@ export default function SearchResultScoutProfiles({ row, onRemove }) {
               >
                 ודאות {reliabilityLabel}
                 {reliabilityScore !== null ? ` · ${reliabilityScore}` : ''}
+                {sampleWarning ? ` · ${sampleWarning}` : ''}
               </Chip>
 
               <Tooltip title='מחיקת פרופיל'>

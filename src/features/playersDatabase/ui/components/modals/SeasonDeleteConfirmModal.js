@@ -1,11 +1,11 @@
-// features/playersDatabase/ui/components/modals/SeasonDeleteConfirmModal.js
+// src/features/playersDatabase/ui/components/modals/SeasonDeleteConfirmModal.js
 
 import {
   Alert,
   Box,
   Typography,
 } from '@mui/joy'
-import PlayersDatabaseModal from './PlayersDatabaseModal.js'
+import ConfirmModal from './ConfirmModal.js'
 
 export default function SeasonDeleteConfirmModal({
   open,
@@ -18,7 +18,7 @@ export default function SeasonDeleteConfirmModal({
   onClose,
 }) {
   return (
-    <PlayersDatabaseModal
+    <ConfirmModal
       open={open}
       title={title}
       description={description}
@@ -36,6 +36,6 @@ export default function SeasonDeleteConfirmModal({
           <Typography level='body-sm'>עונה: {seasonKey || '—'}</Typography>
         </Box>
       </Alert>
-    </PlayersDatabaseModal>
+    </ConfirmModal>
   )
 }

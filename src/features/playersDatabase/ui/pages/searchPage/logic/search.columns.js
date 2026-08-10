@@ -11,8 +11,8 @@ import {
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 
-import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
-import LeagueName from '../../../components/leagues/LeagueName.js'
+import FavoriteButton from '../../../components/actions/FavoriteButton.js'
+import LeagueName from '../../../components/entities/LeagueName.js'
 import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
 import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'

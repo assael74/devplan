@@ -1,6 +1,9 @@
 // features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
-import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
+import {
+  updateLeagueSeasonTableRankScoutProfilesSummary,
+  updateLeagueSeasonTableRankTeamUrl,
+} from '../../leagues/index.js'
 import { syncPlayerScoutProfileDocsMany } from '../../players/index.js'
 import {
   resolvePlayerIdentities,
@@ -17,6 +20,7 @@ import {
   resolveScoutSyncMode,
 } from '../shared.js'
 import { buildPlayerMatchValues } from '../../../../model/playerIdentity.model.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player stats sync failed at ${stage}`)
@@ -90,9 +94,13 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     ? results.teamSeasonResult.players
     : []
   const syncedPlayers = teamSeasonPlayers
+  const teamWithLoadStatus = {
+    ...team,
+    ...buildTeamLoadStatus(syncedPlayers),
+  }
   const syncedPayload = {
     ...resolvedPayload,
-    team,
+    team: teamWithLoadStatus,
     players: syncedPlayers,
   }
   const scoutProfilesSummary = buildScoutProfilesSummary(teamSeasonPlayers)
@@ -112,6 +120,19 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   } catch (error) {
     throw buildSyncError({
       stage: 'syncPlayerScoutProfileDocsMany',
+      cause: error,
+      results,
+    })
+  }
+
+  try {
+    results.leagueTableRankLoadStatusResult = await updateLeagueSeasonTableRankTeamUrl({
+      ...payload,
+      team: teamWithLoadStatus,
+    })
+  } catch (error) {
+    throw buildSyncError({
+      stage: 'updateLeagueSeasonTableRankLoadStatus',
       cause: error,
       results,
     })

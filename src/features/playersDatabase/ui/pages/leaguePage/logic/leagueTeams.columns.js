@@ -8,9 +8,9 @@ import {
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
-import FavoriteButton from '../../../components/favorites/FavoriteButton.js'
+import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
-import TeamName from '../../../components/teams/TeamName.js'
+import TeamName from '../../../components/entities/TeamName.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { buildFallbackAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
@@ -358,6 +358,7 @@ export const buildLeagueTeamsColumns = ({
       ...sx.actionColumn,
       ...columnWidth('actions'),
     },
+    headerSx: sx.actionHeader,
     render: row => (
       <Box sx={sx.rowActions}>
         <Tooltip title='כניסה לקבוצה'>

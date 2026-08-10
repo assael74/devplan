@@ -1,16 +1,16 @@
-// features/playersDatabase/ui/pages/playerPage/sx/PlayerKpiCard.sx.js
+// src/features/playersDatabase/ui/pages/playerPage/sx/playerKpiCard.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const playerKpiCardSx = {
   playerKpiCard: {
     minWidth: 0,
-    minHeight: 106,
-    maxHeight: 118,
-    p: 1.25,
+    minHeight: 94,
+    maxHeight: 104,
+    p: 1,
     display: 'grid',
     gridTemplateRows: 'minmax(0, 1fr) auto',
-    gap: 0.75,
+    gap: 0.55,
     borderRadius: 8,
     border: '1px solid #dbe5f4',
     boxShadow: '0 8px 22px rgba(11, 31, 77, 0.05)',
@@ -40,7 +40,7 @@ export const playerKpiCardSx = {
 
   playerKpiValue: {
     color: devPlanColors.primaryDark,
-    fontSize: 30,
+    fontSize: 28,
     lineHeight: 1,
     fontWeight: 700,
   },
@@ -50,8 +50,8 @@ export const playerKpiCardSx = {
   },
 
   playerKpiIcon: {
-    width: 42,
-    height: 42,
+    width: 38,
+    height: 38,
     flexShrink: 0,
     display: 'inline-flex',
     alignItems: 'center',
@@ -90,6 +90,13 @@ export const playerKpiCardSx = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+  },
+
+  playerKpiDetailChip: {
+    minHeight: 22,
+    px: 0.75,
+    fontSize: 11,
+    fontWeight: 700,
   },
 
   playerKpiDetailValue: {

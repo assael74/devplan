@@ -1,21 +1,8 @@
-// features/playersDatabase/ui/pages/leaguePage/sx/LeagueActionsPanel.sx.js
+// src/features/playersDatabase/ui/pages/leaguePage/sx/leagueActionsPanel.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueActionsPanelSx = {
-  insightsPanel: {
-    height: '100%',
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-
-  insightsList: {
-    minHeight: 0,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    pr: 0.5,
-  },
-
   actionSelectorsRow: {
     width: '100%',
     display: 'grid',
@@ -106,44 +93,6 @@ export const leagueActionsPanelSx = {
     lineHeight: 1.2,
   },
 
-  performanceMetricBox: {
-    display: 'grid',
-    gap: 0.65,
-    p: 1,
-    borderRadius: 8,
-    bgcolor: '#f7fbfe',
-    border: '1px solid #cfe0ec',
-  },
-
-  performanceMetricLabel: {
-    color: devPlanColors.primary,
-    fontWeight: 700,
-  },
-
-  performanceMetricOptions: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: 0.5,
-  },
-
-  performanceMetricButton: selected => ({
-    minWidth: 0,
-    minHeight: 32,
-    px: 0.6,
-    fontSize: 11,
-    fontWeight: 700,
-    whiteSpace: 'normal',
-    lineHeight: 1.15,
-    color: selected ? '#fff' : devPlanColors.primary,
-    bgcolor: selected ? devPlanColors.primary : '#fff',
-    borderColor: selected ? devPlanColors.primary : '#b9d8ef',
-
-    '&:hover': {
-      bgcolor: selected ? devPlanColors.primaryDark : devPlanColors.tertiaryLight,
-      borderColor: selected ? devPlanColors.primaryDark : devPlanColors.tertiary,
-    },
-  }),
-
   priorityFiltersRow: {
     width: '100%',
     display: 'grid',
@@ -152,62 +101,87 @@ export const leagueActionsPanelSx = {
   },
 
   sidePanelDivider: {
-    my: 0.25,
-    borderColor: '#dbe5f4',
+    my: 0.15,
+    borderColor: devPlanColors.border,
+  },
+
+  actionsRow: {
+    width: '100%',
+    display: 'grid',
+    gridTemplateColumns: '3fr repeat(3, 0.75fr)',
+    gap: 0.5,
+    alignItems: 'stretch',
   },
 
   sideLoadButton: {
-    width: '100%',
-    minHeight: 42,
-    justifyContent: 'flex-start',
-    px: 1.5,
-    bgcolor: devPlanColors.primary,
-    color: '#fff',
-
-    '& .MuiButton-startDecorator': {
-      mr: 0.75,
-    },
+    minWidth: 0,
+    minHeight: 38,
+    px: 0.75,
+    bgcolor: '#fff',
+    color: devPlanColors.primary,
+    borderColor: devPlanColors.primary,
+    fontSize: 11.5,
+    fontWeight: 700,
 
     '&:hover': {
-      bgcolor: devPlanColors.primaryDark,
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primaryDark,
+    },
+
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.secondary,
     },
   },
 
+  sideLinkButton: {
+    width: '100%',
+    minWidth: 0,
+    minHeight: 38,
+    color: devPlanColors.primary,
+    bgcolor: '#fff',
+    borderColor: devPlanColors.primary,
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primaryDark,
+    },
+  },
   sideReportButton: {
     width: '100%',
-    minHeight: 42,
-    justifyContent: 'flex-start',
-    px: 1.5,
-    bgcolor: '#eef7ff',
-    color: '#0b5cad',
-    borderColor: '#8ec5ff',
-
-    '& .MuiButton-startDecorator': {
-      mr: 0.75,
-    },
+    minWidth: 0,
+    minHeight: 38,
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    borderColor: devPlanColors.tertiary,
 
     '&:hover': {
       bgcolor: '#dcebff',
-      borderColor: '#4f9cea',
+      borderColor: devPlanColors.tertiaryDark,
     },
   },
 
   sideDeleteButton: {
     width: '100%',
-    minHeight: 42,
-    justifyContent: 'flex-start',
-    px: 1.5,
-    bgcolor: '#fff',
+    minWidth: 0,
+    minHeight: 38,
     color: '#9a1b1b',
+    bgcolor: '#fff',
     borderColor: '#f1b6b6',
-
-    '& .MuiButton-startDecorator': {
-      mr: 0.75,
-    },
 
     '&:hover': {
       bgcolor: '#fff1f1',
       borderColor: '#d84a4a',
     },
   },
+
+  taskSection: {
+    minHeight: 0,
+    flex: 1,
+    mt: 0.25,
+    pt: 1,
+    borderTop: '2px solid #d6e2eb',
+    overflow: 'hidden',
+  },
+
 }

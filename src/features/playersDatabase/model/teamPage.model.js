@@ -149,6 +149,22 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
   }
 }
 
+const findTeamRow = ({ season, teamId }) => {
+  const rows = Array.isArray(season?.tableRank) ? season.tableRank : []
+  const key = cleanValue(teamId)
+
+  return rows.find(row => {
+    const identity = normalizeTeamIdentity({ team: row })
+    return [
+      identity.teamId,
+      identity.birthTeamId,
+      identity.teamDocumentId,
+      identity.birthTeamDocumentId,
+      identity.teamSlotId,
+    ].includes(key)
+  }) || null
+}
+
 export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') => {
   const options = []
   const seen = new Set()
@@ -189,29 +205,33 @@ export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') =>
     }))
   })
 
-  if (!options.length) {
-    const leagueId = cleanValue(league?.leagueId || league?.id)
+  const leagueId = cleanValue(league?.leagueId || league?.id)
+  const pushLeagueOption = ({ season, target }) => {
+    if (!season?.seasonId && !season?.seasonKey) return
+    if (!findTeamRow({ season, teamId })) return
 
-    if (league?.current?.seasonId || league?.current?.seasonKey) {
-      pushOption(buildSeasonOption({
-        season: league.current,
-        target: 'current',
-        leagueId,
-        teamDoc,
-      }))
-    }
+    pushOption(buildSeasonOption({
+      season,
+      target,
+      leagueId,
+      teamDoc,
+    }))
+  }
 
-    const history = Array.isArray(league?.history) ? league.history : []
-    history.forEach(season => {
-      if (!season?.seasonId && !season?.seasonKey) return
-      pushOption(buildSeasonOption({
-        season,
-        target: 'history',
-        leagueId,
-        teamDoc,
-      }))
+  if (league?.current?.seasonId || league?.current?.seasonKey) {
+    pushLeagueOption({
+      season: league.current,
+      target: 'current',
     })
   }
+
+  const history = Array.isArray(league?.history) ? league.history : []
+  history.forEach(season => {
+    pushLeagueOption({
+      season,
+      target: 'history',
+    })
+  })
 
   const hasFutureSeason = options.some(option => (
     option.seasonKey === TEAM_PAGE_FUTURE_SEASON_KEY
@@ -244,22 +264,6 @@ export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') =>
     })
 }
 
-
-const findTeamRow = ({ season, teamId }) => {
-  const rows = Array.isArray(season?.tableRank) ? season.tableRank : []
-  const key = cleanValue(teamId)
-
-  return rows.find(row => {
-    const identity = normalizeTeamIdentity({ team: row })
-    return [
-      identity.teamId,
-      identity.birthTeamId,
-      identity.teamDocumentId,
-      identity.birthTeamDocumentId,
-      identity.teamSlotId,
-    ].includes(key)
-  }) || null
-}
 
 const buildScoutResultMap = ({ tableRank = [], leagueDoc = {}, season = {} } = {}) => {
   const result = buildTeamScoutLeagueModel({

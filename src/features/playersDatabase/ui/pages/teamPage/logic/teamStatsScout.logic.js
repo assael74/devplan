@@ -1,8 +1,8 @@
-// features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
+// src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
 
-import { buildPlayerScoutResult } from '../../../../../../shared/players/scouting/index.js'
 import {
   adaptPlayerScoutEngineResult,
+  buildDbPlayerScoutResult,
   buildPlayerScoutCalculationContract,
 } from '../../../../domain/index.js'
 import {
@@ -59,7 +59,7 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       team,
       season,
     })
-    const result = buildPlayerScoutResult({
+    const result = buildDbPlayerScoutResult({
       player: contract.player,
       team: contract.team,
       season: contract.season,

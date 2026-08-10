@@ -25,7 +25,34 @@ import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
 import { normalizeTeamStats } from '../../../model/teamStats.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
-const buildTableRankRow = (row = {}) => {
+const hasOwn = (source, key) => (
+  Boolean(source) &&
+  Object.prototype.hasOwnProperty.call(source, key)
+)
+
+const findExistingTableRankRow = ({
+  tableRank = [],
+  row = {},
+} = {}) => {
+  const identity = normalizeTeamIdentity({ team: row })
+  const teamId = clean(identity.birthTeamId)
+  const clubId = clean(identity.clubId)
+
+  return (Array.isArray(tableRank) ? tableRank : []).find(existingRow => {
+    const existingIdentity = normalizeTeamIdentity({ team: existingRow })
+    const existingTeamId = clean(existingIdentity.birthTeamId)
+    const existingClubId = clean(existingIdentity.clubId)
+
+    if (teamId && existingTeamId) return teamId === existingTeamId
+
+    return !teamId && clubId && existingClubId === clubId
+  }) || null
+}
+
+const buildTableRankRow = ({
+  row = {},
+  existingRow = null,
+} = {}) => {
   const rank = toNumberOrZero(pickDefinedValue(row.position, row.rank, row.leaguePosition))
   const identity = normalizeTeamIdentity({ team: row })
   const teamStats = normalizeTeamStats(row, {
@@ -34,6 +61,9 @@ const buildTableRankRow = (row = {}) => {
     goalsAgainstCandidates: [row.goalsAgainst],
     pointsCandidates: [row.points],
   })
+  const existingPlayersCount = hasOwn(existingRow, 'playersCount')
+    ? toNumberOrZero(existingRow.playersCount)
+    : 0
 
   return {
     rank,
@@ -42,7 +72,17 @@ const buildTableRankRow = (row = {}) => {
     birthTeamId: identity.birthTeamId,
     birthTeamSlot: identity.birthTeamSlot,
     teamId: identity.birthTeamId,
-    teamUrl: clean(row.teamUrl),
+    teamUrl: clean(row.teamUrl) || clean(existingRow?.teamUrl),
+    playersCount: existingPlayersCount,
+    hasPlayers: hasOwn(existingRow, 'hasPlayers')
+      ? Boolean(existingRow.hasPlayers)
+      : existingPlayersCount > 0,
+    hasStats: hasOwn(existingRow, 'hasStats')
+      ? Boolean(existingRow.hasStats)
+      : false,
+    statsComplete: hasOwn(existingRow, 'statsComplete')
+      ? Boolean(existingRow.statsComplete)
+      : false,
     teamStats: {
       points: teamStats.points,
       goalsFor: teamStats.goalsFor,
@@ -50,16 +90,25 @@ const buildTableRankRow = (row = {}) => {
       teamGamePlayed: teamStats.gamesPlayed,
     },
     scoutProfilesSummary: {
-      total: 0,
-      profileCounts: {},
+      total: toNumberOrZero(existingRow?.scoutProfilesSummary?.total),
+      profileCounts: existingRow?.scoutProfilesSummary?.profileCounts || {},
     },
     updatedAt: new Date().toISOString(),
   }
 }
 
-const buildTableRank = rows =>
+const buildTableRank = ({
+  rows = [],
+  existingTableRank = [],
+} = {}) =>
   (Array.isArray(rows) ? rows : [])
-    .map(row => buildTableRankRow(row))
+    .map(row => buildTableRankRow({
+      row,
+      existingRow: findExistingTableRankRow({
+        tableRank: existingTableRank,
+        row,
+      }),
+    }))
     .filter(row => row.rank || row.clubId || row.birthTeamId || row.teamId)
 
 const updateHistorySeasonTableRank = ({
@@ -105,7 +154,22 @@ export async function updateLeagueSeasonTableRank({
       seasonId,
     } })
     const isHistory = clean(target) === 'history'
-    const tableRank = buildTableRank(rows)
+    const existingSeason = isHistory
+      ? (Array.isArray(baseDoc.history) ? baseDoc.history : [])
+          .find(row => isSameSeason(row, {
+            seasonId,
+            seasonKey,
+          }))
+      : isSameSeason(baseDoc.current, {
+          seasonId,
+          seasonKey,
+        })
+        ? baseDoc.current
+        : null
+    const tableRank = buildTableRank({
+      rows,
+      existingTableRank: existingSeason?.tableRank || [],
+    })
     const nextData = isHistory
       ? {
           ...baseDoc,
@@ -174,9 +238,18 @@ const updateTableRankRowTeamUrl = ({
 
     return {
       ...row,
-      teamUrl,
+      teamUrl: teamUrl || clean(row.teamUrl),
       ...(Number.isFinite(Number(team.playersCount))
         ? { playersCount: Number(team.playersCount) }
+        : {}),
+      ...(hasOwn(team, 'hasPlayers')
+        ? { hasPlayers: Boolean(team.hasPlayers) }
+        : {}),
+      ...(hasOwn(team, 'hasStats')
+        ? { hasStats: Boolean(team.hasStats) }
+        : {}),
+      ...(hasOwn(team, 'statsComplete')
+        ? { statsComplete: Boolean(team.statsComplete) }
         : {}),
       updatedAt: new Date().toISOString(),
     }
@@ -371,9 +444,18 @@ export async function updateLeagueSeasonTableRankTeamUrl({
       index === teamRowIndex
         ? {
             ...row,
-            teamUrl,
+            teamUrl: teamUrl || clean(row.teamUrl),
             ...(hasFiniteNumberValue(team.playersCount)
               ? { playersCount: Number(team.playersCount) }
+              : {}),
+            ...(hasOwn(team, 'hasPlayers')
+              ? { hasPlayers: Boolean(team.hasPlayers) }
+              : {}),
+            ...(hasOwn(team, 'hasStats')
+              ? { hasStats: Boolean(team.hasStats) }
+              : {}),
+            ...(hasOwn(team, 'statsComplete')
+              ? { statsComplete: Boolean(team.statsComplete) }
               : {}),
             updatedAt: new Date().toISOString(),
           }
@@ -420,6 +502,15 @@ export async function updateLeagueSeasonTableRankTeamUrl({
       teamUrl,
       playersCount: hasFiniteNumberValue(team.playersCount)
         ? Number(team.playersCount)
+        : undefined,
+      hasPlayers: hasOwn(team, 'hasPlayers')
+        ? Boolean(team.hasPlayers)
+        : undefined,
+      hasStats: hasOwn(team, 'hasStats')
+        ? Boolean(team.hasStats)
+        : undefined,
+      statsComplete: hasOwn(team, 'statsComplete')
+        ? Boolean(team.statsComplete)
         : undefined,
       seasonPlayersCount: hasPlayersCount ? playersCount : undefined,
       sourceTarget,

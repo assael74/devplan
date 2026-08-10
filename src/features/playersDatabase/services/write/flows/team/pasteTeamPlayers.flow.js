@@ -11,6 +11,7 @@ import {
   upsertTeamSeasonPlayers,
 } from '../../teams/index.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import {
   assertWriteResultClean,
   attachWriteFlowReport,
@@ -118,9 +119,10 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     ? results.teamSeasonResult.players
     : players
 
+  const teamLoadStatus = buildTeamLoadStatus(indexedPlayers)
   const teamWithRosterMeta = {
     ...team,
-    playersCount: results.teamSeasonResult.playersCount,
+    ...teamLoadStatus,
   }
 
   try {

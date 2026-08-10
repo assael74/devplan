@@ -1,13 +1,12 @@
-// features/playersDatabase/ui/pages/leaguePage/LeagueStatsOverview.js
+// src/features/playersDatabase/ui/pages/leaguePage/LeagueStatsOverview.js
 
 import {
   Box,
-  Card,
   Typography,
 } from '@mui/joy'
 
-import StatCard from '../../components/cards/StatCard.js'
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import KpiCard from '../../components/kpi/KpiCard.js'
+import KpiRow from '../../components/kpi/KpiRow.js'
 import { leagueStatsOverviewSx as sx } from './sx/leagueStatsOverview.sx.js'
 
 function LeagueKpiDetail({ label, value }) {
@@ -19,69 +18,71 @@ function LeagueKpiDetail({ label, value }) {
   )
 }
 
-function LeagueSummaryStatCard({
+function LeagueSummaryFooter({
   teamsCount,
   roundsCount,
   goalsCount,
   profilesCount,
 }) {
   return (
-    <Card sx={sx.summaryStatCard}>
-      <Box sx={sx.leagueStateMain}>
-        <Box sx={sx.leagueStateText}>
-          <Typography sx={sx.leagueStateTitle}>מצב ליגה</Typography>
-          <Typography sx={sx.leagueStateValue}>{teamsCount || '-'}</Typography>
-        </Box>
-
-        <Box sx={sx.leagueStateIcon}>
-          {iconUi({
-            id: 'league',
-            size: 'sm',
-          })}
-        </Box>
-      </Box>
-
-      <Box sx={sx.leagueStateDetails}>
-        <LeagueKpiDetail label='קבוצות' value={teamsCount} />
-        <LeagueKpiDetail label='מחזורים' value={roundsCount} />
-        <LeagueKpiDetail label='שערים' value={goalsCount} />
-        <LeagueKpiDetail label='פרופילים' value={profilesCount} />
-      </Box>
-    </Card>
+    <Box sx={sx.leagueStateDetails}>
+      <LeagueKpiDetail label='קבוצות' value={teamsCount} />
+      <LeagueKpiDetail label='מחזורים' value={roundsCount} />
+      <LeagueKpiDetail label='שערים' value={goalsCount} />
+      <LeagueKpiDetail label='פרופילים' value={profilesCount} />
+    </Box>
   )
 }
 
 export default function LeagueStatsOverview({ summary = {}, roundsCount }) {
+  const attackRequired = summary.attackPositive || 0
+  const attackMissing = summary.attackMissing || 0
+  const attackCompleted = Math.max(0, attackRequired - attackMissing)
+
+  const defenseRequired = summary.defensePositive || 0
+  const defenseMissing = summary.defenseMissing || 0
+  const defenseCompleted = Math.max(0, defenseRequired - defenseMissing)
+
+  const summaryFooter = (
+    <LeagueSummaryFooter
+      teamsCount={summary.teamsCount}
+      roundsCount={roundsCount}
+      goalsCount={summary.goalsCount}
+      profilesCount={summary.profilesCount}
+    />
+  )
+
   return (
-    <Box sx={sx.statsGrid}>
-      <LeagueSummaryStatCard
-        teamsCount={summary.teamsCount}
-        roundsCount={roundsCount}
-        goalsCount={summary.goalsCount}
-        profilesCount={summary.profilesCount}
+    <KpiRow sx={sx.kpiRow}>
+      <KpiCard
+        title='מצב ליגה'
+        value={summary.teamsCount}
+        iconId='league'
+        tone='neutral'
+        footer={summaryFooter}
       />
 
-      <StatCard
+      <KpiCard
         title='חוזקות התקפיות'
         value={summary.attackPositive}
-        caption='קבוצות חיוביות ומעלה'
+        caption={
+          `הושלם ${attackCompleted} / נדרש ${attackRequired} · ` +
+          `חסרים ${attackMissing}`
+        }
         iconId='stats'
+        tone={attackMissing > 0 ? 'warning' : 'success'}
       />
 
-      <StatCard
+      <KpiCard
         title='חוזקות הגנתיות'
         value={summary.defensePositive}
-        caption='קבוצות חיוביות ומעלה'
+        caption={
+          `הושלם ${defenseCompleted} / נדרש ${defenseRequired} · ` +
+          `חסרים ${defenseMissing}`
+        }
         iconId='defensive'
+        tone={defenseMissing > 0 ? 'warning' : 'success'}
       />
-
-      <StatCard
-        title='מומלצות לטעינת שחקנים'
-        value={summary.recommendedTeams}
-        caption='עדיפות גבוהה או יעד מוביל'
-        iconId='targets'
-        tone='solid'
-      />
-    </Box>
+    </KpiRow>
   )
 }

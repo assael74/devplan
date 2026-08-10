@@ -37,8 +37,19 @@ const interestScore = (interest) => {
   return 55
 }
 
-const buildSignal = ({ profile, metrics, availability, ruleResult, context }) => {
-  const reliability = buildScoutReliability({ profile, metrics, availability })
+const buildSignal = ({
+  profile,
+  metrics,
+  reliabilityMetrics,
+  availability,
+  ruleResult,
+  context,
+}) => {
+  const reliability = buildScoutReliability({
+    profile,
+    metrics: reliabilityMetrics,
+    availability,
+  })
   const score = Math.round(
     (interestScore(profile.interest) * 0.45) +
     (ruleResult.score * 0.35) +
@@ -74,9 +85,13 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
     player: normalizedInput.player,
     team: normalizedInput.team,
   })
+  const reliabilityMetrics = buildScoutMetrics({
+    player: normalizedInput.reliabilityPlayer,
+    team: normalizedInput.reliabilityTeam,
+  })
   const availability = getScoutDataAvailability({
-    player: normalizedInput.player,
-    team: normalizedInput.team,
+    player: normalizedInput.reliabilityPlayer,
+    team: normalizedInput.reliabilityTeam,
   })
   const context = {
     perspective,
@@ -100,6 +115,7 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
       return buildSignal({
         profile,
         metrics,
+        reliabilityMetrics,
         availability,
         ruleResult,
         context,

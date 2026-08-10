@@ -19,6 +19,7 @@ export { readLeagueCenterData } from './leagueCenter.read.js'
 export { readLeaguesMasterDocument } from './leaguesMaster.read.js'
 
 export { readPlayerPageData } from './playerPage.read.js'
+export { readPlayerIdentityReview } from './playerIdentityReview.read.js'
 export {
   readSearchPageCount,
   readSearchPageData,
@@ -29,3 +30,9 @@ export {
   clearPlayersDatabaseDocumentCache,
   getPlayersDatabaseCacheDebugSnapshot,
 } from '../cache/index.js'
+
+export {
+  buildLeagueTeamsForBirthYear,
+  readLeagueTeamsForBirthYear,
+} from './workTasks.read.js'
+export { subscribePlayersDatabaseTasks } from './tasks.read.js'

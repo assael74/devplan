@@ -1,20 +1,20 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterContext.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterContext.js
 
 import {
   Box,
-  Button,
+  IconButton,
+  Input,
   Option,
   Select,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
-import InfoPanel from '../../components/cards/InfoPanel.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { leagueCenterContextSx as sx } from './sx/leagueCenterContext.sx.js'
 
 export default function LeagueCenterContext({ model }) {
-  const selectedYear = model.birthYear === 'all' ? '' : model.birthYear
-  const selectedLevel = model.leagueLevel === 'all' ? '' : model.leagueLevel
   const hasBirthYearOption = model.birthYearOptions.some(
     year => String(year) === model.birthYear
   )
@@ -38,20 +38,42 @@ export default function LeagueCenterContext({ model }) {
     model.setSeasonKey(value)
   }
 
+  const handleDataStatusChange = (event, value) => {
+    model.setDataStatus(value || 'all')
+  }
+
   return (
-    <InfoPanel sx={sx.contextPanel}>
-      <Stack direction={{
-        xs: 'column',
-        lg: 'row',
-      }} spacing={1} sx={sx.contextRow}>
+    <Stack spacing={1} sx={sx.contextSection}>
+      <Box sx={sx.sectionHeader}>
+        <Typography level='title-sm' sx={sx.sectionTitle}>
+          פילטרים
+        </Typography>
+
+        <Tooltip title='איפוס פילטרים'>
+          <IconButton
+            size='sm'
+            variant='outlined'
+            color='neutral'
+            aria-label='איפוס פילטרים'
+            sx={sx.resetButton}
+            onClick={model.resetContext}
+          >
+            {iconUi({id: 'reset', size: 'sm'})}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <Box sx={sx.primaryFilters}>
         <Box sx={sx.contextField}>
           <Typography level='body-xs' sx={sx.contextLabel}>שנתון</Typography>
           <Select
+            size='sm'
+            indicator={null}
             value={model.birthYear}
             sx={sx.contextSelect}
             onChange={handleBirthYearChange}
           >
-            <Option value='all'>כל השנתונים</Option>
+            <Option value='all'>הכל</Option>
             {model.birthYear !== 'all' && !hasBirthYearOption && (
               <Option value={model.birthYear}>{model.birthYear}</Option>
             )}
@@ -62,13 +84,15 @@ export default function LeagueCenterContext({ model }) {
         </Box>
 
         <Box sx={sx.contextField}>
-          <Typography level='body-xs' sx={sx.contextLabel}>רמת ליגה</Typography>
+          <Typography level='body-xs' sx={sx.contextLabel}>רמה</Typography>
           <Select
+            size='sm'
+            indicator={null}
             value={model.leagueLevel}
             sx={sx.contextSelect}
             onChange={handleLevelChange}
           >
-            <Option value='all'>כל הרמות</Option>
+            <Option value='all'>הכל</Option>
             {model.leagueLevel !== 'all' && !hasLevelOption && (
               <Option value={model.leagueLevel}>
                 רמה {model.leagueLevel}
@@ -83,11 +107,13 @@ export default function LeagueCenterContext({ model }) {
         <Box sx={sx.contextField}>
           <Typography level='body-xs' sx={sx.contextLabel}>עונה</Typography>
           <Select
+            size='sm'
+            indicator={null}
             value={model.seasonKey}
             sx={sx.contextSelect}
             onChange={handleSeasonChange}
           >
-            <Option value='all'>כל העונות</Option>
+            <Option value='all'>הכל</Option>
             {model.seasonKey !== 'all' && !hasSeasonOption && (
               <Option value={model.seasonKey}>{model.seasonKey}</Option>
             )}
@@ -98,27 +124,36 @@ export default function LeagueCenterContext({ model }) {
               ))}
           </Select>
         </Box>
+      </Box>
 
-        <Button
-          variant='outlined'
-          sx={sx.contextResetButton}
-          onClick={model.resetPrimaryFilters}
-        >
-          איפוס
-        </Button>
+      <Box sx={sx.secondaryFilters}>
+        <Box sx={sx.contextField}>
+          <Typography level='body-xs' sx={sx.contextLabel}>חיפוש קבוצה</Typography>
+          <Input
+            size='sm'
+            placeholder='שם קבוצה...'
+            value={model.query}
+            sx={sx.contextInput}
+            onChange={event => model.setQuery(event.target.value)}
+          />
+        </Box>
 
-        <Stack sx={sx.contextSummary}>
-          <Typography level='body-xs' sx={sx.contextSummaryLabel}>הקשר פעיל</Typography>
-          <Typography sx={sx.contextSummaryValue}>
-            {selectedYear ? `שנתון ${selectedYear}` : 'בחר שנתון'}
-            {selectedLevel ? ` · רמה ${selectedLevel}` : ''}
-            {model.seasonKey !== 'all' ? ` · ${model.seasonKey}` : ''}
-          </Typography>
-          <Typography level='body-xs' sx={sx.contextSummaryCaption}>
-            {model.summary.totalLeagues} ליגות רלוונטיות
-          </Typography>
-        </Stack>
-      </Stack>
-    </InfoPanel>
+        <Box sx={sx.contextField}>
+          <Typography level='body-xs' sx={sx.contextLabel}>מצב נתונים</Typography>
+          <Select
+            size='sm'
+            indicator={null}
+            value={model.dataStatus}
+            sx={sx.contextSelect}
+            onChange={handleDataStatusChange}
+          >
+            <Option value='all'>הכל</Option>
+            <Option value='full'>מלא</Option>
+            <Option value='partial'>חלקי</Option>
+            <Option value='missing'>חסר</Option>
+          </Select>
+        </Box>
+      </Box>
+    </Stack>
   )
 }

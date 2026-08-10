@@ -15,7 +15,9 @@ export default function SearchHeader({
   breadcrumbs,
   onLeagues,
   onReport,
+  onScoutAudit,
   reportDisabled = false,
+  scoutAuditBusy = false,
 }) {
   return (
     <Box sx={sx.root}>
@@ -28,6 +30,24 @@ export default function SearchHeader({
       </Stack>
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
+        <Button
+          variant='outlined'
+          loading={scoutAuditBusy}
+          disabled={scoutAuditBusy}
+          sx={sx.auditButton}
+          startDecorator={
+            !scoutAuditBusy
+              ? iconUi({
+                id: 'search',
+                size: 'sm',
+              })
+              : null
+          }
+          onClick={onScoutAudit}
+        >
+          Audit Scout
+        </Button>
+
         <Button
           variant='solid'
           disabled={reportDisabled}

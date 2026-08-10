@@ -1,60 +1,50 @@
-// features/playersDatabase/ui/pages/teamPage/TeamActionsPanel.js
+// src/features/playersDatabase/ui/pages/teamPage/TeamActionsPanel.js
 
 import * as React from 'react'
 import {
   Box,
   Button,
-  Card,
   Chip,
   Divider,
+  IconButton,
   Option,
   Select,
-  Stack,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import PageSidePanel from '../../components/page/PageSidePanel.js'
+import { WorkTaskList } from '../../components/modals/index.js'
 import { teamActionsPanelSx as sx } from './sx/teamActionsPanel.sx.js'
 
-const buildActions = ({ hasTeamPlayers, hasSeason }) => [
-  {
-    id: 'players',
-    label: hasTeamPlayers ? 'טעינת שחקן בודד' : 'טעינת סגל',
-    iconId: 'upload',
-    primary: true,
-    disabled: !hasSeason,
-  },
-  {
-    id: 'stats',
-    label: 'טעינת סטטיסטיקות',
+const buildPrimaryAction = ({ hasTeamPlayers, hasTeamStats, hasSeason }) => {
+  if (!hasTeamPlayers) {
+    return {
+      label: 'טעינת סגל',
+      iconId: 'addPlayers',
+      disabled: !hasSeason,
+      action: 'players',
+      disabledReason: 'יש לבחור גרסת קבוצה',
+    }
+  }
+
+  return {
+    label: 'טעינת סטטיסטיקה',
     iconId: 'addStats',
-    disabled: !hasTeamPlayers || !hasSeason,
-  },
-  {
-    id: 'deletePlayers',
-    label: 'מחיקת שחקנים',
-    iconId: 'delete',
-    danger: true,
-    disabled: !hasTeamPlayers,
-  },
-  {
-    id: 'report',
-    label: 'תצוגה ופרסום דוח',
-    iconId: 'print',
-    disabled: !hasSeason,
-  },
-  {
-    id: 'link',
-    label: 'עריכת קישור שנתון',
-    iconId: 'addLink',
-    disabled: false,
-  },
-]
+    disabled: !hasSeason || hasTeamStats,
+    action: 'stats',
+    disabledReason: hasTeamStats
+      ? 'סטטיסטיקה כבר נטענה לקבוצה'
+      : 'יש לבחור גרסת קבוצה',
+  }
+}
 
 export default function TeamActionsPanel({
   selectedSeasonOptionKey,
   seasonOptions,
   hasTeamPlayers,
+  hasTeamStats,
   profileOnly,
   onSeasonChange,
   onProfileOnlyChange,
@@ -62,38 +52,38 @@ export default function TeamActionsPanel({
   onStatsImport,
   onDeletePlayers,
   onReport,
+  onTeamLink,
+  tasks = [],
+  tasksLoading,
+  onTaskCreate,
+  onTaskEdit,
 }) {
   const hasSeason = Boolean(selectedSeasonOptionKey && seasonOptions.length)
-  const actions = buildActions({
+  const primaryAction = React.useMemo(() => buildPrimaryAction({
     hasTeamPlayers,
+    hasTeamStats,
     hasSeason,
-  })
+  }), [
+    hasSeason,
+    hasTeamPlayers,
+    hasTeamStats,
+  ])
 
-  const handleAction = actionId => {
-    if (actionId === 'players') {
+  const handlePrimaryAction = () => {
+    if (primaryAction.disabled) return
+
+    if (primaryAction.action === 'players') {
       onPlayersImport()
       return
     }
 
-    if (actionId === 'stats') {
+    if (primaryAction.action === 'stats') {
       onStatsImport()
-      return
     }
-
-    if (actionId === 'deletePlayers') {
-      onDeletePlayers()
-      return
-    }
-
-    if (actionId === 'report') onReport()
   }
 
   return (
-    <Card sx={sx.actionsPanel}>
-      <Typography level='title-lg' sx={sx.panelTitle}>
-        פעולות אפשריות
-      </Typography>
-
+    <PageSidePanel>
       <Box sx={sx.actionSeasonBox}>
         <Typography level='body-xs' sx={sx.actionSeasonLabel}>
           גרסת קבוצה
@@ -105,7 +95,9 @@ export default function TeamActionsPanel({
           onChange={(_, value) => onSeasonChange(value || '')}
           sx={sx.actionSeasonSelect}
           renderValue={selected => {
-            const option = seasonOptions.find(item => item.optionKey === selected?.value)
+            const option = seasonOptions.find(item => (
+              item.optionKey === selected?.value
+            ))
             if (!option) return 'בחר גרסת קבוצה'
 
             return (
@@ -146,10 +138,7 @@ export default function TeamActionsPanel({
       <Box sx={sx.actionFiltersRow}>
         <Chip
           variant={profileOnly ? 'solid' : 'soft'}
-          startDecorator={iconUi({
-            id: 'profile',
-            size: 'sm',
-          })}
+          startDecorator={iconUi({id: 'profile', size: 'sm'})}
           onClick={() => onProfileOnlyChange(!profileOnly)}
           sx={profileOnly ? sx.actionFilterChipActive : sx.actionFilterChip}
         >
@@ -159,29 +148,69 @@ export default function TeamActionsPanel({
 
       <Divider sx={sx.actionDivider} />
 
-      <Stack spacing={1} className='dpScrollThin' sx={sx.actionsList}>
-        {actions.map(action => (
+      <Box sx={sx.actionsRow}>
+        <Tooltip title={primaryAction.disabled ? primaryAction.disabledReason : ''}>
           <Button
-            key={action.id}
-            disabled={action.disabled}
-            variant={action.primary ? 'solid' : 'outlined'}
-            startDecorator={iconUi({
-              id: action.iconId,
-              size: 'sm',
-            })}
-            sx={
-              action.primary
-                ? sx.primaryActionButton
-                : action.danger
-                  ? sx.dangerActionButton
-                  : sx.secondaryActionButton
-            }
-            onClick={() => handleAction(action.id)}
+            variant='outlined'
+            disabled={primaryAction.disabled}
+            startDecorator={iconUi({id: primaryAction.iconId, size: 'md'})}
+            sx={sx.primaryActionButton}
+            onClick={handlePrimaryAction}
+            size='sm'
           >
-            {action.label}
+            {primaryAction.label}
           </Button>
-        ))}
-      </Stack>
-    </Card>
+        </Tooltip>
+
+        <Tooltip title='עריכת קישור קבוצה'>
+          <IconButton
+            variant='outlined'
+            aria-label='עריכת קישור קבוצה'
+            sx={sx.secondaryIconButton}
+            onClick={onTeamLink}
+            size='sm'
+          >
+            {iconUi({id: 'addLink', size: 'sm'})}
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title='תצוגה ופרסום דוח'>
+          <IconButton
+            variant='outlined'
+            aria-label='תצוגה ופרסום דוח'
+            disabled={!hasSeason}
+            sx={sx.secondaryIconButton}
+            onClick={onReport}
+            size='sm'
+          >
+            {iconUi({id: 'print', size: 'sm'})}
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title='מחיקת שחקנים'>
+          <IconButton
+            variant='outlined'
+            aria-label='מחיקת שחקנים'
+            disabled={!hasTeamPlayers}
+            sx={sx.dangerIconButton}
+            onClick={onDeletePlayers}
+            size='sm'
+          >
+            {iconUi({id: 'delete', size: 'sm'})}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <Divider sx={sx.actionDivider} />
+
+      <WorkTaskList
+        title='משימות לקבוצה'
+        emptyText='אין משימות פעילות לקבוצה ולעונה הנוכחית'
+        tasks={tasks}
+        loading={tasksLoading}
+        onCreate={onTaskCreate}
+        onEdit={onTaskEdit}
+      />
+    </PageSidePanel>
   )
 }

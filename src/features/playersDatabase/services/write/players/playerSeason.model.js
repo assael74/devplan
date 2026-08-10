@@ -206,6 +206,16 @@ export const buildPlayerSeasonRowsFromTeamDoc = ({
         player: {
           ...player,
           ...matchedPlayer,
+          playerStats: matchedPlayer.playerStats || {},
+          scoutSignals: Array.isArray(matchedPlayer.scoutSignals)
+            ? matchedPlayer.scoutSignals
+            : [],
+          scoutProfiles: Array.isArray(matchedPlayer.scoutProfiles)
+            ? matchedPlayer.scoutProfiles
+            : [],
+          scoutCombinations: Array.isArray(matchedPlayer.scoutCombinations)
+            ? matchedPlayer.scoutCombinations
+            : [],
         },
       }),
       sourceTarget: clean(seasonRow.__sourceTarget) || 'history',

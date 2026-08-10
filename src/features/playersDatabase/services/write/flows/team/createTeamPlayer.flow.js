@@ -11,6 +11,7 @@ import {
   ensureTeamDoc,
 } from '../../teams/index.js'
 import { upsertOfficialPlayerDoc } from '../../players/index.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 async function createTeamPlayerFlow({
   payload = {},
@@ -33,7 +34,7 @@ async function createTeamPlayerFlow({
   })
   const teamWithRosterMeta = {
     ...team,
-    playersCount: teamSeasonResult.playersCount,
+    ...buildTeamLoadStatus(teamSeasonResult.players),
   }
   const leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl({
     ...payload,

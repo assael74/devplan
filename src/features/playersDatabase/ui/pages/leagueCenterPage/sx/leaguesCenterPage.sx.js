@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/sx/LeaguesCenterPage.sx.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/sx/leaguesCenterPage.sx.js
 
 export const leaguesCenterPageSx = {
   page: {
@@ -17,13 +17,13 @@ export const leaguesCenterPageSx = {
       md: 1,
     },
     display: 'grid',
-    gridTemplateRows: 'auto auto minmax(0, 1fr)',
+    gridTemplateRows: 'auto minmax(0, 1fr)',
     gap: 1.5,
     overflow: 'hidden',
   },
 
   contentGrid: {
-    order: 3,
+    order: 2,
     width: '100%',
     height: '100%',
     minWidth: 0,
@@ -31,7 +31,7 @@ export const leaguesCenterPageSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: 'minmax(0, 1fr)',
-      xl: 'minmax(0, 1fr) 300px',
+      xl: 'minmax(0, 1fr) 270px',
     },
     gap: 1.5,
     alignItems: 'stretch',

@@ -4,21 +4,18 @@ import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueHeaderSx = {
   header: {
-    minWidth: 0,
-    display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
       lg: 'minmax(760px, 1fr) auto',
     },
-    gap: 2,
-    alignItems: 'end',
   },
 
-  headerCopy: {
+
+  titleNameRow: {
     minWidth: 0,
-    width: '100%',
-    gap: 0.75,
-    alignItems: 'flex-start',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
   },
 
   pageTitle: {
@@ -47,7 +44,9 @@ export const leagueHeaderSx = {
 
   titleRegion: {
     color: devPlanColors.tertiary,
-    mr: 2,
+    fontSize: { xs: 34, md: 44 },
+    fontWeight: 700,
+    lineHeight: 1.05,
   },
 
   titleChip: {

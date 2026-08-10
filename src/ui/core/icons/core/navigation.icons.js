@@ -44,6 +44,4 @@ export const navigationIcons = {
   firestoreUsage: <DataObject />,
   viewLeague: <Visibility />,
   view: <Visibility />,
-  addLeague: <AddCircleOutline />,
-  addSeason: <PlaylistAdd />
 };

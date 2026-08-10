@@ -1,6 +1,6 @@
-// features/playersDatabase/domain/orchestration/buildPlayerScoutState.js
+// src/features/playersDatabase/domain/orchestration/buildPlayerScoutState.js
 
-import { buildPlayerScoutResult } from '../../../../shared/players/scouting/index.js'
+import { buildDbPlayerScoutResult } from './buildDbPlayerScoutResult.js'
 import { normalizePlayerStats } from '../../model/playerStats.model.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
 
@@ -61,7 +61,7 @@ export const buildPlayerScoutState = ({
     team,
     season,
   })
-  const scoutResult = buildPlayerScoutResult({
+  const scoutResult = buildDbPlayerScoutResult({
     player: contract.player,
     team: contract.team,
     season: contract.season,

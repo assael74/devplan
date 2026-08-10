@@ -12,6 +12,7 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { removeTeamPlayerFromSeason } from '../../teams/index.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const runDeleteStage = async ({
   stage,
@@ -88,7 +89,7 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
 
   const teamWithRosterMeta = {
     ...(payload.team || {}),
-    playersCount: teamPlayerResult.playersCount,
+    ...buildTeamLoadStatus(teamPlayerResult.players),
   }
 
   const leagueTableRankResult = await runDeleteStage({
