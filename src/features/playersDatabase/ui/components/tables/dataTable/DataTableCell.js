@@ -9,12 +9,7 @@ import {
   resolveDataTableColumnSx,
 } from './dataTable.model.js'
 
-function DataTableCellLink({
-  column,
-  row,
-  index,
-  children,
-}) {
+function DataTableCellLink({ column, row, index, children }) {
   const href = column.getHref
     ? cleanDataTableHref(column.getHref(row, index))
     : ''
@@ -65,12 +60,7 @@ function DataTableCellLink({
   )
 }
 
-export default function DataTableCell({
-  column,
-  row,
-  index,
-  rowContext,
-}) {
+export default function DataTableCell({ column, row, index, rowContext }) {
   const content = column.render
     ? column.render(row, index, rowContext)
     : row[column.key]

@@ -7,6 +7,8 @@ import {
 } from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
+import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
+import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
@@ -151,7 +153,7 @@ export const buildLeagueTeamsColumns = ({
   return [
   buildTableRankColumn({
     sx: {
-      ...sx.rankColumn,
+      ...columnSx.indexColumn,
       ...columnWidth('tableRank'),
     },
     defaultSortDirection: 'asc',
@@ -161,7 +163,7 @@ export const buildLeagueTeamsColumns = ({
     label: '',
     sortable: false,
     sx: {
-      ...sx.avatarColumn,
+      ...columnSx.avatarColumn,
       ...columnWidth('teamAvatar'),
     },
     render: row => (
@@ -184,12 +186,12 @@ export const buildLeagueTeamsColumns = ({
     key: 'name',
     label: 'קבוצה',
     sx: {
-      ...sx.teamNameColumn,
+      ...columnSx.nameColumn,
       ...columnWidth('name'),
     },
-    headerSx: sx.teamNameHeader,
+    headerSx: columnSx.nameHeader,
     cellSx: row => ({
-      ...sx.teamNameCell,
+      ...columnSx.nameCell,
       ...resolveTeamNameSx(row),
     }),
     getHref: row => row.teamUrl,
@@ -211,7 +213,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'games',
     label: 'משחקים',
     sx: {
-      ...sx.compactTableColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('games'),
     },
     getSortValue: row => toCount(row.games),
@@ -220,7 +222,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'goalsFor',
     label: 'שערים שכבשו',
     sx: {
-      ...sx.compactTableColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('goalsFor'),
     },
     getSortValue: row => toCount(row.goalsFor),
@@ -229,7 +231,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'goalsAgainst',
     label: 'שערים שספגו',
     sx: {
-      ...sx.compactTableColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('goalsAgainst'),
     },
     getSortValue: row => toCount(row.goalsAgainst),
@@ -238,7 +240,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'points',
     label: 'נקודות',
     sx: {
-      ...sx.compactTableColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('points'),
     },
     getSortValue: row => toCount(row.points),
@@ -247,7 +249,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'attackPriority',
     label: 'עדיפות התקפית',
     sx: {
-      ...sx.priorityColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('attackPriority'),
     },
     getSortValue: row => (
@@ -278,7 +280,7 @@ export const buildLeagueTeamsColumns = ({
     key: 'defensePriority',
     label: 'עדיפות הגנתית',
     sx: {
-      ...sx.priorityColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('defensePriority'),
     },
     getSortValue: row => (
@@ -338,7 +340,7 @@ export const buildLeagueTeamsColumns = ({
     label: '',
     sortable: false,
     sx: {
-      ...sx.actionColumn,
+      ...columnSx.actionsColumn,
       ...columnWidth('favorite'),
     },
     render: row => (
@@ -355,7 +357,7 @@ export const buildLeagueTeamsColumns = ({
     label: '',
     sortable: false,
     sx: {
-      ...sx.actionColumn,
+      ...columnSx.actionsColumn,
       ...columnWidth('actions'),
     },
     headerSx: sx.actionHeader,
@@ -366,7 +368,7 @@ export const buildLeagueTeamsColumns = ({
             size='sm'
             variant='outlined'
             aria-label='כניסה לקבוצה'
-            sx={sx.tableButton}
+            sx={actionSx.actionButton}
             onClick={() => onTeamOpen(row)}
           >
             {iconUi({
@@ -381,7 +383,7 @@ export const buildLeagueTeamsColumns = ({
             size='sm'
             variant='outlined'
             aria-label='פעולות נוספות'
-            sx={sx.tableButton}
+            sx={actionSx.actionButton}
             onClick={event => {
               event.stopPropagation()
               onTeamUrlEdit(row)

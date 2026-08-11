@@ -12,8 +12,16 @@ export const PLAYER_SEARCH_TABLE_WIDTHS = {
   startsAppearances: '7%',
   goals: '7%',
   primaryProfile: '15%',
-  favorite: '4%',
-  actions: '4%',
+  favorite: {
+    width: '4%',
+    minWidth: 44,
+    maxWidth: 44,
+  },
+  actions: {
+    width: '4%',
+    minWidth: 64,
+    maxWidth: 64,
+  },
 }
 
 export const TEAM_SEARCH_TABLE_WIDTHS = {
@@ -29,6 +37,14 @@ export const TEAM_SEARCH_TABLE_WIDTHS = {
   attackPriority: '11%',
   defensePriority: '11%',
   playersCount: '6%',
-  favorite: '4%',
-  actions: '4%',
+  favorite: {
+    width: '4%',
+    minWidth: 44,
+    maxWidth: 44,
+  },
+  actions: {
+    width: '4%',
+    minWidth: 64,
+    maxWidth: 64,
+  },
 }

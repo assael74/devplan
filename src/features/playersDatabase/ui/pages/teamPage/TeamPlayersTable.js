@@ -22,11 +22,7 @@ const resolveActual = row => (
   {}
 )
 
-const buildTeamPlayersExportConfig = ({
-  players,
-  team,
-  seasonKey,
-}) => ({
+const buildTeamPlayersExportConfig = ({ players, team, seasonKey }) => ({
   enabled: players.length > 0,
   placementColumnKey: 'actions',
   align: 'end',

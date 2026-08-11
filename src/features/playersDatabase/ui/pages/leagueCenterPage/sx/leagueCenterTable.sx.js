@@ -9,11 +9,6 @@ export const leagueCenterTableSx = {
   },
 
   tableScroll: {
-    width: '100%',
-    height: '100%',
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
     border: 0,
     borderRadius: 0,
 
@@ -38,13 +33,6 @@ export const leagueCenterTableSx = {
       px: 1,
       py: 0.7,
       borderBottomColor: '#dce5eb',
-    },
-    '& tbody tr:hover': {
-      bgcolor: 'transparent',
-    },
-    '& tbody tr:hover td': {
-      bgcolor: 'transparent',
-      '--TableCell-dataBackground': 'transparent',
     },
     '& button': {
       minWidth: 0,

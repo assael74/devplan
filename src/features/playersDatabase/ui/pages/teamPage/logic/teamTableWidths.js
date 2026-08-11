@@ -1,17 +1,34 @@
 // features/playersDatabase/ui/pages/teamPage/logic/teamTableWidths.js
 
 export const TEAM_PLAYERS_TABLE_WIDTHS = {
-  number: '4%',
-  avatar: '4%',
+  number: {
+    width: '4%',
+    minWidth: 50,
+    maxWidth: 50,
+  },
+  avatar: {
+    width: '4%',
+    minWidth: 44,
+    maxWidth: 44,
+  },
   favorite: '4%',
   fullName: '15%',
-  positionLayer: '10%',
-  primaryPosition: '10%',
+  positionLayer: {
+    width: '10%',
+    minWidth: 98,
+  },
+  primaryPosition: {
+    width: '10%',
+    minWidth: 108,
+  },
   games: '6%',
   goals: '6%',
   starts: '5%',
   yellowCards: '7%',
   minutes: '6%',
   profile: '20%',
-  actions: '8%',
+  actions: {
+    width: '8%',
+    minWidth: 82,
+  },
 }

@@ -3,34 +3,6 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueTeamsColumnsSx = {
-  rankColumn: {
-    width: 62,
-    minWidth: 58,
-    maxWidth: 68,
-  },
-
-  rankBadge: {
-    minWidth: 26,
-    height: 24,
-    px: 0.75,
-    mx: 'auto',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 6,
-    bgcolor: '#edf4fd',
-    border: '1px solid #cfe0f6',
-    color: devPlanColors.primaryDark,
-    fontWeight: 700,
-    lineHeight: 1,
-  },
-
-  avatarColumn: {
-    width: 42,
-    minWidth: 38,
-    maxWidth: 44,
-  },
-
   teamAvatar: {
     width: 26,
     height: 26,
@@ -38,19 +10,6 @@ export const leagueTeamsColumnsSx = {
     display: 'block',
     objectFit: 'contain',
     borderRadius: '50%',
-  },
-
-  teamNameColumn: {
-    width: '21%',
-    minWidth: 126,
-  },
-
-  teamNameHeader: {
-    textAlign: 'left',
-  },
-
-  teamNameCell: {
-    textAlign: 'left',
   },
 
   teamNameInherit: {
@@ -78,19 +37,7 @@ export const leagueTeamsColumnsSx = {
     },
   },
 
-  compactTableColumn: {
-    width: 72,
-    minWidth: 58,
-  },
-
-  priorityColumn: {
-    width: 94,
-    minWidth: 78,
-  },
-
   rosterProfilesColumn: {
-    width: 92,
-    minWidth: 84,
     whiteSpace: 'normal',
     lineHeight: 1.15,
   },
@@ -128,35 +75,13 @@ export const leagueTeamsColumnsSx = {
     p: 0.75,
   },
 
-  actionColumn: {
-    width: 86,
-    minWidth: 86,
-    maxWidth: 90,
-  },
-
   rowActions: {
+    width: 70,
+    minWidth: 70,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'flex-end',
     flexWrap: 'nowrap',
     gap: 0.5,
-    width: 70,
-    minWidth: 70,
-  },
-
-  tableButton: {
-    width: 30,
-    height: 30,
-    minWidth: 30,
-    minHeight: 30,
-    p: 0,
-    color: devPlanColors.primary,
-    borderColor: devPlanColors.primaryLight,
-    bgcolor: '#fff',
-
-    '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-      borderColor: devPlanColors.primary,
-    },
   },
 }

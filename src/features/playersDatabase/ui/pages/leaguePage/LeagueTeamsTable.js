@@ -172,7 +172,6 @@ export default function LeagueTeamsTable({
             : error || 'אין נתוני טבלה לעונה שנבחרה'
         }
         wrapSx={sx.tableWrap}
-        tableSx={sx.leagueTable}
         exportConfig={exportConfig}
       />
     </PageContentPanel>

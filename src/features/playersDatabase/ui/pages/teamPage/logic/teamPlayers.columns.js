@@ -7,6 +7,8 @@ import {
 } from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
+import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
+import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
@@ -55,8 +57,8 @@ const renderPlayerName = row => {
   const status = PLAYER_STATUS_DISPLAY[row.rosterStatus]
 
   return (
-    <Box sx={sx.playerNameContent}>
-      <Box component='span' sx={sx.playerNameText}>
+    <Box sx={columnSx.nameContent}>
+      <Box component='span' sx={columnSx.nameText}>
         {row.fullName || '-'}
       </Box>
 
@@ -78,17 +80,13 @@ const renderPlayerName = row => {
   )
 }
 
-export const buildTeamPlayersColumns = ({
-  onPlayerOpen,
-  onRoleOpen,
-  onPlayerUrlEdit,
-}) => [
+export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlEdit }) => [
   {
     key: 'number',
     label: '#',
     sortable: false,
     sx: {
-      ...sx.indexColumn,
+      ...columnSx.indexColumn,
       ...columnWidth('number'),
     },
     render: (row, index) => index + 1,
@@ -98,7 +96,7 @@ export const buildTeamPlayersColumns = ({
     label: '',
     sortable: false,
     sx: {
-      ...sx.avatarColumn,
+      ...columnSx.avatarColumn,
       ...columnWidth('avatar'),
     },
     render: row => (
@@ -106,7 +104,7 @@ export const buildTeamPlayersColumns = ({
         component='img'
         src={row.avatarUrl || playerImage}
         alt=''
-        sx={sx.playerAvatar}
+        sx={columnSx.avatarImage}
       />
     ),
   },
@@ -114,11 +112,11 @@ export const buildTeamPlayersColumns = ({
     key: 'fullName',
     label: 'שם שחקן',
     sx: {
-      ...sx.playerNameColumn,
+      ...columnSx.nameColumn,
       ...columnWidth('fullName'),
     },
-    headerSx: sx.playerNameHeader,
-    cellSx: sx.playerNameCell,
+    headerSx: columnSx.nameHeader,
+    cellSx: columnSx.nameCell,
     getHref: row => row.playerUrl,
     getLinkAriaLabel: row => `פתיחת קישור השחקן ${row.fullName || ''}`,
     getSortValue: row => row.fullName || '',
@@ -128,7 +126,7 @@ export const buildTeamPlayersColumns = ({
     key: 'positionLayer',
     label: 'חוליה',
     sx: {
-      ...sx.layerColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('positionLayer'),
     },
     getSortValue: row => getPlayerLayerLabel(row.positionLayer),
@@ -145,7 +143,7 @@ export const buildTeamPlayersColumns = ({
     key: 'primaryPosition',
     label: 'עמדה',
     sx: {
-      ...sx.positionColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('primaryPosition'),
     },
     getSortValue: row => getPlayerPositionLabel(row.primaryPosition),
@@ -162,7 +160,7 @@ export const buildTeamPlayersColumns = ({
     key: 'games',
     label: 'משחקים',
     sx: {
-      ...sx.statColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('games'),
     },
     getSortValue: row => toCount(row.games),
@@ -171,7 +169,7 @@ export const buildTeamPlayersColumns = ({
     key: 'goals',
     label: 'שערים',
     sx: {
-      ...sx.statColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('goals'),
     },
     getSortValue: row => toCount(row.goals),
@@ -180,7 +178,7 @@ export const buildTeamPlayersColumns = ({
     key: 'starts',
     label: 'הרכב',
     sx: {
-      ...sx.statColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('starts'),
     },
     getSortValue: row => toCount(row.starts),
@@ -189,7 +187,7 @@ export const buildTeamPlayersColumns = ({
     key: 'yellowCards',
     label: 'צהובים',
     sx: {
-      ...sx.statColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('yellowCards'),
     },
     getSortValue: row => toCount(row.yellowCards),
@@ -198,7 +196,7 @@ export const buildTeamPlayersColumns = ({
     key: 'minutes',
     label: 'דקות',
     sx: {
-      ...sx.minutesColumn,
+      ...columnSx.numericColumn,
       ...columnWidth('minutes'),
     },
     defaultSortDirection: 'desc',
@@ -208,7 +206,7 @@ export const buildTeamPlayersColumns = ({
     key: 'profile',
     label: 'פרופיל סקאוט',
     sx: {
-      ...sx.profileColumn,
+      ...columnSx.profileColumn,
       ...columnWidth('profile'),
     },
     getSortValue: row => buildScoutCompactView({
@@ -260,17 +258,17 @@ export const buildTeamPlayersColumns = ({
     label: '',
     sortable: false,
     sx: {
-      ...sx.actionsColumn,
+      ...columnSx.actionsColumn,
       ...columnWidth('actions'),
     },
     render: row => (
-      <Box sx={sx.rowActions}>
+      <Box sx={actionSx.rowActions}>
         <Tooltip title='כניסה לשחקן'>
           <IconButton
             size='sm'
             variant='outlined'
             aria-label='כניסה לשחקן'
-            sx={sx.tableIconButton}
+            sx={actionSx.actionButton}
             onClick={() => onPlayerOpen(row)}
           >
             {iconUi({
@@ -285,7 +283,7 @@ export const buildTeamPlayersColumns = ({
             size='sm'
             variant='outlined'
             aria-label='פעולות נוספות'
-            sx={sx.tableIconButton}
+            sx={actionSx.actionButton}
             onClick={event => {
               event.stopPropagation()
               onPlayerUrlEdit(row)

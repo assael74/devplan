@@ -3,34 +3,12 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterColumnsSx = {
-  leagueNameColumn: {
-    minWidth: 180,
-  },
-
   leagueNameHeader: {
-    textAlign: 'left',
-    pl: 1.5,
     pr: 1.5,
   },
 
   leagueNameCell: {
-    textAlign: 'left',
-    pl: 1.5,
     pr: 1.5,
-  },
-
-  centerColumn: {
-    textAlign: 'center',
-  },
-
-  actionsColumn: {
-    textAlign: 'center',
-  },
-
-  rowActions: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
   },
 
   createSeasonButton: {

@@ -8,6 +8,8 @@ import {
 } from '@mui/joy'
 
 import DataTable from '../../components/tables/dataTable/index.js'
+import { dataTableActionsSx } from '../../components/tables/dataTable/sx/dataTableActions.sx.js'
+import { dataTableColumnsSx } from '../../components/tables/dataTable/sx/dataTableColumns.sx.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ScoutCompactTooltip from '../../components/scout/ScoutCompactTooltip.js'
 import ScoutProfileChip from '../../components/scout/ScoutProfileChip.js'
@@ -19,7 +21,8 @@ import {
 import { PLAYER_HISTORY_TABLE_WIDTHS } from './logic/playerTableWidths.js'
 import { playerHistoryTableSx as sx } from './sx/playerHistoryTable.sx.js'
 
-const columnWidth = key => ({
+const columnSx = (key, sharedSx = {}) => ({
+  ...sharedSx,
   width: PLAYER_HISTORY_TABLE_WIDTHS[key],
 })
 
@@ -27,7 +30,10 @@ const buildColumns = ({ onRowOpen }) => [
   {
     key: 'seasonKey',
     label: 'עונה',
-    sx: columnWidth('seasonKey'),
+    sx: columnSx(
+      'seasonKey',
+      dataTableColumnsSx.centerColumn
+    ),
     defaultSortDirection: 'desc',
     getSortValue: row => row.seasonKey || '',
     render: row => (
@@ -51,52 +57,79 @@ const buildColumns = ({ onRowOpen }) => [
   {
     key: 'clubName',
     label: 'מועדון',
-    sx: columnWidth('clubName'),
+    sx: columnSx(
+      'clubName',
+      dataTableColumnsSx.centerColumn
+    ),
   },
   {
     key: 'teamName',
     label: 'קבוצת גיל',
-    sx: columnWidth('teamName'),
+    sx: columnSx(
+      'teamName',
+      dataTableColumnsSx.centerColumn
+    ),
   },
   {
     key: 'leagueName',
     label: 'ליגה',
-    sx: columnWidth('leagueName'),
+    sx: columnSx(
+      'leagueName',
+      dataTableColumnsSx.centerColumn
+    ),
   },
   {
     key: 'games',
     label: 'משחקים',
-    sx: columnWidth('games'),
+    sx: columnSx(
+      'games',
+      dataTableColumnsSx.numericColumn
+    ),
     getSortValue: row => toNumber(row.games),
   },
   {
     key: 'starts',
     label: 'הרכב',
-    sx: columnWidth('starts'),
+    sx: columnSx(
+      'starts',
+      dataTableColumnsSx.numericColumn
+    ),
     getSortValue: row => toNumber(row.starts),
   },
   {
     key: 'minutes',
     label: 'דקות',
-    sx: columnWidth('minutes'),
+    sx: columnSx(
+      'minutes',
+      dataTableColumnsSx.numericColumn
+    ),
     getSortValue: row => toNumber(row.minutes),
   },
   {
     key: 'goals',
     label: 'שערים',
-    sx: columnWidth('goals'),
+    sx: columnSx(
+      'goals',
+      dataTableColumnsSx.numericColumn
+    ),
     getSortValue: row => toNumber(row.goals),
   },
   {
     key: 'yellowCards',
     label: 'צהובים',
-    sx: columnWidth('yellowCards'),
+    sx: columnSx(
+      'yellowCards',
+      dataTableColumnsSx.numericColumn
+    ),
     getSortValue: row => toNumber(row.yellowCards),
   },
   {
     key: 'scoutProfiles',
     label: 'פרופילי סקאוט',
-    sx: columnWidth('scoutProfiles'),
+    sx: columnSx(
+      'scoutProfiles',
+      dataTableColumnsSx.profileColumn
+    ),
     getSortValue: row => row.scoutProfiles?.length || 0,
     render: row => {
       const profileView = buildScoutCompactView({
@@ -130,20 +163,20 @@ const buildColumns = ({ onRowOpen }) => [
     key: 'actions',
     label: '',
     sortable: false,
-    sx: columnWidth('actions'),
+    sx: columnSx(
+      'actions',
+      dataTableColumnsSx.actionsColumn
+    ),
     render: row => (
       <Tooltip title='פתיחת פרטי העונה'>
         <IconButton
           size='sm'
           variant='outlined'
           aria-label='פתיחת פרטי העונה'
-          sx={sx.tableIconButton}
+          sx={dataTableActionsSx.actionButton}
           onClick={() => onRowOpen(row)}
         >
-          {iconUi({
-            id: 'view',
-            size: 'sm',
-          })}
+          {iconUi({ id: 'view', size: 'sm' })}
         </IconButton>
       </Tooltip>
     ),

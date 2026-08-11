@@ -11,6 +11,8 @@ import StatusPill from '../../../components/page/StatusPill.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { LEAGUE_CENTER_TABLE_WIDTHS } from './leagueCenterTableWidths.js'
+import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
+import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { leagueCenterColumnsSx as sx } from '../sx/leagueCenter.columns.sx.js'
 
 const columnWidth = key => buildTableColumnWidth(
@@ -114,13 +116,13 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
         ...column,
         sortable: false,
         sx: {
-          ...sx.actionsColumn,
+          ...columnSx.actionsColumn,
           ...widthSx,
         },
-        headerSx: sx.centerColumn,
-        cellSx: sx.centerColumn,
+        headerSx: columnSx.centerColumn,
+        cellSx: columnSx.centerColumn,
         render: row => (
-          <Stack direction='row' spacing={0.5} sx={sx.rowActions}>
+          <Stack direction='row' spacing={0.5} sx={actionSx.rowActions}>
             {!row.hasSelectedSeason ? (
               <Tooltip title='יצירת עונה'>
                 <Button
@@ -154,22 +156,28 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
       return {
         ...column,
         sx: {
-          ...sx.leagueNameColumn,
+          ...columnSx.nameColumn,
           ...widthSx,
         },
-        headerSx: sx.leagueNameHeader,
-        cellSx: sx.leagueNameCell,
+        headerSx: {
+          ...columnSx.nameHeader,
+          ...sx.leagueNameHeader,
+        },
+        cellSx: {
+          ...columnSx.nameCell,
+          ...sx.leagueNameCell,
+        },
       }
     }
 
     return {
       ...column,
       sx: {
-        ...sx.centerColumn,
+        ...columnSx.centerColumn,
         ...widthSx,
       },
-      headerSx: sx.centerColumn,
-      cellSx: sx.centerColumn,
+      headerSx: columnSx.centerColumn,
+      cellSx: columnSx.centerColumn,
     }
   })
 )

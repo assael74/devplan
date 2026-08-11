@@ -129,24 +129,49 @@ export default function DataTable({
     />
   )
 
+  const splitWrapSx = [
+    sx.wrap,
+    sx.splitWrap,
+    wrapSx,
+  ]
+
+  const headerTableSx = [
+    sx.table,
+    sx.headerTable,
+    tableSx,
+  ]
+
+  const bodyWrapSx = [
+    sx.bodyWrap,
+    bodyScrollSx,
+  ]
+
+  const bodyTableSx = [
+    sx.table,
+    sx.bodyTable,
+    tableSx,
+  ]
+
+  const regularWrapSx = [
+    sx.wrap,
+    wrapSx,
+  ]
+
+  const regularTableSx = [
+    sx.table,
+    tableSx,
+  ]
+
   if (bodyScrollSx) {
     return (
       <Box
         className={className}
-        sx={[
-          sx.wrap,
-          sx.splitWrap,
-          wrapSx,
-        ]}
+        sx={splitWrapSx}
       >
         <Box sx={sx.headerWrap}>
           <Table
             size='sm'
-            sx={[
-              sx.table,
-              sx.headerTable,
-              tableSx,
-            ]}
+            sx={headerTableSx}
           >
             {header}
           </Table>
@@ -154,19 +179,12 @@ export default function DataTable({
 
         <Box
           className='dpScrollThin'
-          sx={[
-            sx.bodyWrap,
-            bodyScrollSx,
-          ]}
+          sx={bodyWrapSx}
         >
           <Table
             hoverRow
             size='sm'
-            sx={[
-              sx.table,
-              sx.bodyTable,
-              tableSx,
-            ]}
+            sx={bodyTableSx}
           >
             {body}
           </Table>
@@ -178,19 +196,13 @@ export default function DataTable({
   return (
     <Box
       className={className}
-      sx={[
-        sx.wrap,
-        wrapSx,
-      ]}
+      sx={regularWrapSx}
     >
       <Table
         hoverRow
         stickyHeader
         size='sm'
-        sx={[
-          sx.table,
-          tableSx,
-        ]}
+        sx={regularTableSx}
       >
         {header}
         {body}
