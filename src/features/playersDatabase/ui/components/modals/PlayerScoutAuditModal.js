@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Chip,
+  Input,
   Stack,
   Table,
   Typography,
@@ -89,24 +90,57 @@ export default function PlayerScoutAuditModal({
   repairBusy,
   repairPreview,
   repairResult,
-  onRun,
+  partialAuditDefaults,
+  onRunFull,
+  onRunPartial,
   onDownload,
   onRepairPreview,
   onRepairApply,
   onClose,
 }) {
+  const [teamDocumentId, setTeamDocumentId] = React.useState('')
+  const [seasonKey, setSeasonKey] = React.useState('')
+
+  React.useEffect(() => {
+    if (!open) return
+
+    setTeamDocumentId(
+      clean(partialAuditDefaults?.teamDocumentId)
+    )
+    setSeasonKey(
+      clean(partialAuditDefaults?.seasonKey)
+    )
+  }, [
+    open,
+    partialAuditDefaults?.teamDocumentId,
+    partialAuditDefaults?.seasonKey,
+  ])
+
   const summary = audit?.summary || {}
   const issues = Array.isArray(audit?.issues)
     ? audit.issues
     : []
   const visibleIssues = issues.slice(0, 250)
   const previewSummary = repairPreview?.summary || {}
+  const partialAuditDisabled = (
+    busy ||
+    repairBusy ||
+    !clean(teamDocumentId) ||
+    !clean(seasonKey)
+  )
+
+  const handlePartialRun = () => {
+    onRunPartial({
+      teamDocumentId: clean(teamDocumentId),
+      seasonKey: clean(seasonKey),
+    })
+  }
 
   return (
     <RegularModal
       open={open}
       title='Audit פרופילי Scout'
-      description='קריאה בלבד: חישוב מחדש לפי חוקי ה-Scout הנוכחיים והשוואה למצב השמור.'
+      description='בחר את היקף הבדיקה. פתיחת המודאל אינה מבצעת קריאות Firestore.'
       iconId='search'
       size='xl'
       busy={busy}
@@ -115,28 +149,12 @@ export default function PlayerScoutAuditModal({
         <Stack direction='row' spacing={0.75}>
           <Button
             size='sm'
-            variant='outlined'
-            loading={busy}
-            disabled={busy}
-            startDecorator={
-              !busy
-                ? iconUi({id: 'search', size: 'sm'})
-                : null
-            }
-            onClick={onRun}
-          >
-            הרץ מחדש
-          </Button>
-
-          <Button
-            size='sm'
             variant='soft'
-            disabled={!audit || busy}
+            disabled={!audit || busy || repairBusy}
             onClick={onDownload}
           >
             הורד JSON
           </Button>
-
 
           <Button
             size='sm'
@@ -165,43 +183,123 @@ export default function PlayerScoutAuditModal({
       onClose={onClose}
     >
       <Box sx={sx.content}>
+        <Box sx={sx.auditChoiceGrid}>
+          <Box sx={sx.auditChoiceCard}>
+            <Box sx={sx.auditChoiceCopy}>
+              <Typography level='title-md' sx={sx.sectionTitle}>
+                Audit חלקי
+              </Typography>
+
+              <Typography level='body-sm' sx={sx.auditChoiceDescription}>
+                בודק רק קבוצה ועונה אחת. החישוב משווה את שחקני אותה קבוצה בין dbBirthTeams, dbPlayers ו-dbSearchIndexes, בלי לסרוק את יתר מאגר השחקנים.
+              </Typography>
+            </Box>
+
+            <Box sx={sx.partialAuditFields}>
+              <Input
+                size='sm'
+                value={teamDocumentId}
+                placeholder='teamDocumentId'
+                disabled={busy || repairBusy}
+                onChange={event => setTeamDocumentId(event.target.value)}
+              />
+
+              <Input
+                size='sm'
+                value={seasonKey}
+                placeholder='עונה, לדוגמה 25/26'
+                disabled={busy || repairBusy}
+                onChange={event => setSeasonKey(event.target.value)}
+              />
+            </Box>
+
+            <Button
+              variant='solid'
+              loading={busy}
+              disabled={partialAuditDisabled}
+              startDecorator={
+                !busy
+                  ? iconUi({
+                      id: 'search',
+                      size: 'sm',
+                    })
+                  : null
+              }
+              onClick={handlePartialRun}
+            >
+              הרץ Audit חלקי
+            </Button>
+          </Box>
+
+          <Box sx={sx.auditChoiceCard}>
+            <Box sx={sx.auditChoiceCopy}>
+              <Typography level='title-md' sx={sx.sectionTitle}>
+                Audit מלא
+              </Typography>
+
+              <Typography level='body-sm' sx={sx.auditChoiceDescription}>
+                סורק את כל מאגר הקבוצות, השחקנים והאינדקסים. הבדיקה מיועדת לביקורת מערכת כוללת ועלולה לבצע מספר גדול של קריאות Firestore.
+              </Typography>
+            </Box>
+
+            <Button
+              variant='outlined'
+              loading={busy}
+              disabled={busy || repairBusy}
+              startDecorator={
+                !busy
+                  ? iconUi({
+                      id: 'search',
+                      size: 'sm',
+                    })
+                  : null
+              }
+              onClick={onRunFull}
+            >
+              הרץ Audit מלא
+            </Button>
+          </Box>
+        </Box>
+
         {error ? (
           <Typography level='body-sm' color='danger'>
             {error}
           </Typography>
         ) : null}
 
-        <Box sx={sx.summaryGrid}>
-          <SummaryCard
-            label='שורות שחושבו מחדש'
-            value={summary.checkedTeamPlayerRows || 0}
-          />
-          <SummaryCard
-            label='שחקנים עם פער'
-            value={summary.rowsWithProfileDiff || 0}
-            tone={summary.rowsWithProfileDiff ? 'danger' : 'success'}
-          />
-          <SummaryCard
-            label='פרופילים חסרים'
-            value={summary.missingProfilesCount || 0}
-            tone={summary.missingProfilesCount ? 'danger' : 'success'}
-          />
-          <SummaryCard
-            label='פרופילים מיותרים'
-            value={summary.extraProfilesCount || 0}
-            tone={summary.extraProfilesCount ? 'warning' : 'success'}
-          />
-          <SummaryCard
-            label='פערי סנכרון'
-            value={summary.syncIssuesCount || 0}
-            tone={summary.syncIssuesCount ? 'warning' : 'success'}
-          />
-          <SummaryCard
-            label='שורות שדולגו'
-            value={summary.skippedRows || 0}
-            tone={summary.skippedRows ? 'warning' : 'neutral'}
-          />
-        </Box>
+        {audit ? (
+          <Box sx={sx.summaryGrid}>
+            <SummaryCard
+              label='שורות שחושבו מחדש'
+              value={summary.checkedTeamPlayerRows || 0}
+            />
+            <SummaryCard
+              label='שחקנים עם פער'
+              value={summary.rowsWithProfileDiff || 0}
+              tone={summary.rowsWithProfileDiff ? 'danger' : 'success'}
+            />
+            <SummaryCard
+              label='פרופילים חסרים'
+              value={summary.missingProfilesCount || 0}
+              tone={summary.missingProfilesCount ? 'danger' : 'success'}
+            />
+            <SummaryCard
+              label='פרופילים מיותרים'
+              value={summary.extraProfilesCount || 0}
+              tone={summary.extraProfilesCount ? 'warning' : 'success'}
+            />
+            <SummaryCard
+              label='פערי סנכרון'
+              value={summary.syncIssuesCount || 0}
+              tone={summary.syncIssuesCount ? 'warning' : 'success'}
+            />
+            <SummaryCard
+              label='שורות שדולגו'
+              value={summary.skippedRows || 0}
+              tone={summary.skippedRows ? 'warning' : 'neutral'}
+            />
+          </Box>
+        ) : null}
 
         {repairPreview ? (
           <Box sx={sx.repairBox}>

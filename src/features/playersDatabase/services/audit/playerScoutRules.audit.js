@@ -2,12 +2,16 @@
 
 import {
   collection,
+  doc,
   query,
   where,
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
-import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
+import {
+  trackedGetDoc,
+  trackedGetDocs,
+} from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { buildPlayerScoutState } from '../../domain/orchestration/buildPlayerScoutState.js'
 
@@ -44,6 +48,28 @@ const toNullableNumber = (...values) => {
   const number = Number(value)
 
   return Number.isFinite(number) ? number : null
+}
+
+const toAuditTimestamp = value => {
+  if (!value) return null
+
+  if (typeof value?.toDate === 'function') {
+    return value.toDate().toISOString()
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  if (Number.isFinite(Number(value?.seconds))) {
+    return new Date(Number(value.seconds) * 1000).toISOString()
+  }
+
+  const parsed = new Date(value)
+
+  return Number.isNaN(parsed.getTime())
+    ? clean(value) || null
+    : parsed.toISOString()
 }
 
 const getProfiles = source => (
@@ -260,6 +286,9 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
         playerId: clean(data.playerId || season.playerId),
         playerDocumentId: snapshot.id,
         fullName: clean(data.fullName || season.fullName),
+        playerDocumentCreatedAt: toAuditTimestamp(data.createdAt),
+        playerDocumentUpdatedAt: toAuditTimestamp(data.updatedAt),
+        playerSeasonUpdatedAt: toAuditTimestamp(season.updatedAt),
         profileIds: getProfileIds(season),
         combinationIds: getCombinationIds(season),
         reliabilityByProfile: getProfileReliability(season),
@@ -278,6 +307,7 @@ const flattenSearchPlayerDocs = docs => docs.map(snapshot => {
     source: 'dbSearchIndexes',
     sourceDocumentId: snapshot.id,
     fullName: clean(data.displayName || data.fullName),
+    searchIndexUpdatedAt: toAuditTimestamp(data.updatedAt),
     profileIds: getSearchProfileIds(data),
     combinationIds: getSearchCombinationIds(data),
     reliabilityByProfile: getSearchReliability(data),
@@ -476,6 +506,11 @@ const buildRecalculatedRows = ({
               data.teamName ||
               data.name
             ),
+            teamDocumentCreatedAt: toAuditTimestamp(data.createdAt),
+            teamDocumentUpdatedAt: toAuditTimestamp(data.updatedAt),
+            teamSeasonUpdatedAt: toAuditTimestamp(season.updatedAt),
+            teamPlayerUpdatedAt: toAuditTimestamp(player.updatedAt),
+            teamIndexUpdatedAt: toAuditTimestamp(teamIndexRow.updatedAt),
             stats: {
               games: Number(player.playerStats?.games) || 0,
               goals: Number(player.playerStats?.goals) || 0,
@@ -522,10 +557,28 @@ const buildRecalculatedRows = ({
   }
 }
 
+const buildIssueTimestamps = ({
+  row,
+  playerRow = null,
+  searchRow = null,
+}) => ({
+  teamDocumentCreatedAt: row.teamDocumentCreatedAt,
+  teamDocumentUpdatedAt: row.teamDocumentUpdatedAt,
+  teamSeasonUpdatedAt: row.teamSeasonUpdatedAt,
+  teamPlayerUpdatedAt: row.teamPlayerUpdatedAt,
+  teamIndexUpdatedAt: row.teamIndexUpdatedAt,
+  playerDocumentCreatedAt: playerRow?.playerDocumentCreatedAt || null,
+  playerDocumentUpdatedAt: playerRow?.playerDocumentUpdatedAt || null,
+  playerSeasonUpdatedAt: playerRow?.playerSeasonUpdatedAt || null,
+  searchIndexUpdatedAt: searchRow?.searchIndexUpdatedAt || null,
+})
+
 const buildIssue = ({
   type,
   source,
   row,
+  playerRow = null,
+  searchRow = null,
   actualProfiles = [],
   actualCombinations = [],
 }) => ({
@@ -548,6 +601,11 @@ const buildIssue = ({
   actualCombinations,
   stats: row.stats,
   teamContext: row.teamContext,
+  timestamps: buildIssueTimestamps({
+    row,
+    playerRow,
+    searchRow,
+  }),
 })
 
 const collectIssues = ({
@@ -633,12 +691,19 @@ const collectIssues = ({
       row,
       keyBuilder: buildPlayerKeys,
     })
+    const searchRow = findIndexed({
+      index: searchIndex,
+      row,
+      keyBuilder: buildPlayerKeys,
+    })
 
     if (row.expectedProfileIds.length && !playerRow) {
       issues.push(buildIssue({
         type: 'missing_player_document',
         source: 'dbPlayers',
         row,
+        playerRow,
+        searchRow,
       }))
     } else if (playerRow && (
       !sameValues(row.expectedProfileIds, playerRow.profileIds) ||
@@ -648,6 +713,8 @@ const collectIssues = ({
         type: 'player_document_mismatch',
         source: 'dbPlayers',
         row,
+        playerRow,
+        searchRow,
         actualProfiles: playerRow.profileIds,
         actualCombinations: playerRow.combinationIds,
       }))
@@ -677,17 +744,13 @@ const collectIssues = ({
       })
     }
 
-    const searchRow = findIndexed({
-      index: searchIndex,
-      row,
-      keyBuilder: buildPlayerKeys,
-    })
-
     if (row.expectedProfileIds.length && !searchRow) {
       issues.push(buildIssue({
         type: 'missing_search_index',
         source: 'dbSearchIndexes',
         row,
+        playerRow,
+        searchRow,
       }))
     } else if (searchRow && (
       !sameValues(row.expectedProfileIds, searchRow.profileIds) ||
@@ -697,6 +760,8 @@ const collectIssues = ({
         type: 'search_index_mismatch',
         source: 'dbSearchIndexes',
         row,
+        playerRow,
+        searchRow,
         actualProfiles: searchRow.profileIds,
         actualCombinations: searchRow.combinationIds,
       }))
@@ -854,6 +919,147 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
     playerRows: flattenPlayerDocs(playerSnapshot.docs),
     searchRows: flattenSearchPlayerDocs(playerSearchSnapshot.docs),
     teamIndexRows,
+  }
+}
+
+
+const readScopedAuditData = async ({
+  teamDocumentId,
+  seasonKey,
+  includeRepairData = false,
+}) => {
+  const safeTeamDocumentId = clean(teamDocumentId)
+  const safeSeasonKey = clean(seasonKey)
+
+  if (!safeTeamDocumentId) {
+    throw new Error('Missing team document id for scoped scout audit')
+  }
+  if (!safeSeasonKey) {
+    throw new Error('Missing season key for scoped scout audit')
+  }
+
+  const [teamSnapshot, playerSearchSnapshot, teamSearchSnapshot] = await Promise.all([
+    trackedGetDoc(
+      doc(
+        db,
+        PLAYERS_DATABASE_COLLECTIONS.teams,
+        safeTeamDocumentId
+      ),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+        action: 'playerScoutRules-scopedAudit',
+        operationSubtype: 'team-read',
+      }
+    ),
+    trackedGetDocs(
+      query(
+        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+        where('entityType', '==', 'playerSeason'),
+        where('teamDocumentId', '==', safeTeamDocumentId),
+        where('seasonKey', '==', safeSeasonKey)
+      ),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+        action: 'playerScoutRules-scopedAudit',
+        operationSubtype: 'player-index-query',
+      }
+    ),
+    trackedGetDocs(
+      query(
+        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+        where('entityType', '==', 'birthTeamSeason'),
+        where('teamDocumentId', '==', safeTeamDocumentId),
+        where('seasonKey', '==', safeSeasonKey)
+      ),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+        action: 'playerScoutRules-scopedAudit',
+        operationSubtype: 'team-index-query',
+      }
+    ),
+  ])
+
+  if (!teamSnapshot.exists()) {
+    throw new Error(`Team document not found: ${safeTeamDocumentId}`)
+  }
+
+  const teamIndexRows = flattenTeamIndexDocs(teamSearchSnapshot.docs)
+  const recalculatedAll = buildRecalculatedRows({
+    teamDocs: [teamSnapshot],
+    teamIndexRows,
+    includeRepairData,
+  })
+  const teamRows = recalculatedAll.rows.filter(row => (
+    clean(row.seasonKey || row.seasonId) === safeSeasonKey
+  ))
+  const skippedRows = recalculatedAll.skipped.filter(row => (
+    clean(row.seasonKey || row.seasonId) === safeSeasonKey
+  ))
+  const playerDocumentIds = unique(
+    teamRows.map(row => row.playerDocumentId)
+  )
+  const playerSnapshots = await Promise.all(
+    playerDocumentIds.map(playerDocumentId => trackedGetDoc(
+      doc(
+        db,
+        PLAYERS_DATABASE_COLLECTIONS.players,
+        playerDocumentId
+      ),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.players,
+        action: 'playerScoutRules-scopedAudit',
+        operationSubtype: 'player-read',
+      }
+    ))
+  )
+  const existingPlayerSnapshots = playerSnapshots.filter(snapshot => (
+    snapshot.exists()
+  ))
+
+  return {
+    teamRows,
+    skippedRows,
+    playerRows: flattenPlayerDocs(existingPlayerSnapshots),
+    searchRows: flattenSearchPlayerDocs(playerSearchSnapshot.docs),
+    teamIndexRows,
+  }
+}
+
+export async function buildScopedPlayerScoutRulesAudit({
+  teamDocumentId,
+  seasonKey,
+  includeRepairData = false,
+} = {}) {
+  const rows = await readScopedAuditData({
+    teamDocumentId,
+    seasonKey,
+    includeRepairData,
+  })
+  const issues = collectIssues({
+    teamRows: rows.teamRows,
+    skippedRows: rows.skippedRows,
+    playerRows: rows.playerRows,
+    searchRows: rows.searchRows,
+  })
+
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: 'read-only-scoped',
+    purpose: 'verify-player-scout-scope-after-write',
+    scope: {
+      teamDocumentId: clean(teamDocumentId),
+      seasonKey: clean(seasonKey),
+    },
+    summary: buildSummary({
+      ...rows,
+      issues,
+    }),
+    issues,
+    recalculatedRows: rows.teamRows,
   }
 }
 

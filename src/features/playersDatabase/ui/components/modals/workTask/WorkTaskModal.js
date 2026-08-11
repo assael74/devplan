@@ -30,6 +30,7 @@ export default function WorkTaskModal({
     open,
     model,
     leagueContext: teamMode ? null : leagueContext,
+    mode,
     onClose,
   })
 

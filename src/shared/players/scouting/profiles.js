@@ -12,7 +12,10 @@ const DEP_LOW = 'low'
 const DEP_MED = 'medium'
 const DEP_HIGH = 'high'
 
-const sameBelow = [SCOUT_LEVEL.SAME, SCOUT_LEVEL.BELOW]
+const sameBelow = [
+  SCOUT_LEVEL.SAME,
+  SCOUT_LEVEL.BELOW,
+]
 
 export const SCOUT_PROFILES = [
   {
@@ -23,9 +26,26 @@ export const SCOUT_PROFILES = [
     interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
-    rules: [{ metric: 'goals', op: 'gte', value: 15, reason: 'elite_goal_total' }],
-    deepRules: [{ metric: 'goals', op: 'gte', value: 20, reason: 'exceptional_goal_total' }],
-    deps: { position: DEP_LOW, team: DEP_LOW },
+    rules: [
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 15,
+        reason: 'elite_goal_total',
+      },
+    ],
+    deepRules: [
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 20,
+        reason: 'exceptional_goal_total',
+      },
+    ],
+    deps: {
+      position: DEP_LOW,
+      team: DEP_LOW,
+    },
   },
   {
     id: 'killer_efficiency',
@@ -36,16 +56,49 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
     rules: [
-      { metric: 'minutes', op: 'gte', value: 600, reason: 'minimum_minutes_sample' },
-      { metric: 'goals', op: 'gte', value: 5, reason: 'enough_goal_sample' },
-      { metric: 'goalsPer90', op: 'gte', value: 0.65, reason: 'elite_goals_per_90' },
+      {
+        metric: 'minutes',
+        op: 'gte',
+        value: 600,
+        reason: 'minimum_minutes_sample',
+      },
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 5,
+        reason: 'enough_goal_sample',
+      },
+      {
+        metric: 'goalsPerGameDuration',
+        op: 'gte',
+        value: 0.65,
+        reason: 'elite_goals_per_game_duration',
+      },
     ],
     deepRules: [
-      { metric: 'minutes', op: 'gte', value: 900, reason: 'deep_minutes_sample' },
-      { metric: 'goals', op: 'gte', value: 8, reason: 'strong_goal_sample' },
-      { metric: 'goalsPer90', op: 'gte', value: 0.85, reason: 'exceptional_goals_per_90' },
+      {
+        metric: 'minutes',
+        op: 'gte',
+        value: 900,
+        reason: 'deep_minutes_sample',
+      },
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 8,
+        reason: 'strong_goal_sample',
+      },
+      {
+        metric: 'goalsPerGameDuration',
+        op: 'gte',
+        value: 0.85,
+        reason: 'exceptional_goals_per_game_duration',
+      },
     ],
-    deps: { position: DEP_MED, team: DEP_LOW },
+    deps: {
+      position: DEP_MED,
+      team: DEP_LOW,
+    },
   },
   {
     id: 'last_station',
@@ -57,15 +110,40 @@ export const SCOUT_PROFILES = [
     teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
     positionContext: 'defense_midfield',
     rules: [
-      { metric: 'minutesPct', op: 'gte', value: 0.85, reason: 'very_high_minutes' },
-      { metric: 'yellowCards', op: 'between', min: 0, max: 6, reason: 'low_cards' },
+      {
+        metric: 'minutesPct',
+        op: 'gte',
+        value: 0.85,
+        reason: 'very_high_minutes',
+      },
+      {
+        metric: 'yellowCards',
+        op: 'between',
+        min: 0,
+        max: 6,
+        reason: 'low_cards',
+      },
     ],
     deepRules: [
-      { metric: 'minutesPct', op: 'gte', value: 0.9, reason: 'elite_minutes_load' },
-      { metric: 'yellowCards', op: 'between', min: 0, max: 6, reason: 'low_cards' },
+      {
+        metric: 'minutesPct',
+        op: 'gte',
+        value: 0.9,
+        reason: 'elite_minutes_load',
+      },
+      {
+        metric: 'yellowCards',
+        op: 'between',
+        min: 0,
+        max: 6,
+        reason: 'low_cards',
+      },
     ],
-    deps: { position: DEP_HIGH, team: DEP_MED },
-    reviews: [SCOUT_REVIEW.POSITION],
+    deps: {
+      position: DEP_HIGH,
+      team: DEP_MED,
+    },
+    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'back_threat',
@@ -76,11 +154,28 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
     positionContext: 'defense_midfield',
-    rules: [{ metric: 'goals', op: 'gte', value: 5, reason: 'defensive_goal_threat' }],
-    deepRules: [{ metric: 'goals', op: 'gte', value: 7, reason: 'elite_defensive_goal_threat' }],
-    deps: { position: DEP_HIGH, team: DEP_MED },
+    rules: [
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 5,
+        reason: 'defensive_goal_threat',
+      },
+    ],
+    deepRules: [
+      {
+        metric: 'goals',
+        op: 'gte',
+        value: 7,
+        reason: 'elite_defensive_goal_threat',
+      },
+    ],
+    deps: {
+      position: DEP_HIGH,
+      team: DEP_MED,
+    },
     warnings: [SCOUT_WARNING.ROLE_INFERENCE],
-    reviews: [SCOUT_REVIEW.POSITION],
+    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'promoted_talent',
@@ -91,14 +186,35 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
-      { metric: 'isYoungerAgeGroup', op: 'truthy', reason: 'younger_age_group' },
-      { metric: 'games', op: 'gte', value: 3, reason: 'minimum_games_sample' },
+      {
+        metric: 'isYoungerAgeGroup',
+        op: 'truthy',
+        reason: 'younger_age_group',
+      },
+      {
+        metric: 'games',
+        op: 'gte',
+        value: 3,
+        reason: 'minimum_games_sample',
+      },
     ],
     deepRules: [
-      { metric: 'isYoungerAgeGroup', op: 'truthy', reason: 'younger_age_group' },
-      { metric: 'games', op: 'gte', value: 6, reason: 'deep_games_sample' },
+      {
+        metric: 'isYoungerAgeGroup',
+        op: 'truthy',
+        reason: 'younger_age_group',
+      },
+      {
+        metric: 'games',
+        op: 'gte',
+        value: 6,
+        reason: 'deep_games_sample',
+      },
     ],
-    deps: { position: DEP_LOW, team: DEP_LOW },
+    deps: {
+      position: DEP_LOW,
+      team: DEP_LOW,
+    },
   },
   {
     id: 'single_engine',
@@ -109,14 +225,37 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
-      { metric: 'goalsShareOfTeam', op: 'gte', value: 0.4, reason: 'high_team_goals_share' },
-      { metric: 'startsPct', op: 'gte', value: 0.85, reason: 'max_starter_load' },
+      {
+        metric: 'goalsShareOfTeam',
+        op: 'gte',
+        value: 0.4,
+        reason: 'high_team_goals_share',
+      },
+      {
+        metric: 'startsPct',
+        op: 'gte',
+        value: 0.85,
+        reason: 'max_starter_load',
+      },
     ],
     deepRules: [
-      { metric: 'goalsShareOfTeam', op: 'gte', value: 0.5, reason: 'elite_team_goals_share' },
-      { metric: 'startsPct', op: 'gte', value: 0.9, reason: 'elite_starter_share' },
+      {
+        metric: 'goalsShareOfTeam',
+        op: 'gte',
+        value: 0.5,
+        reason: 'elite_team_goals_share',
+      },
+      {
+        metric: 'startsPct',
+        op: 'gte',
+        value: 0.9,
+        reason: 'elite_starter_share',
+      },
     ],
-    deps: { position: DEP_HIGH, team: DEP_HIGH },
+    deps: {
+      position: DEP_HIGH,
+      team: DEP_HIGH,
+    },
   },
   {
     id: 'lineup_banker',
@@ -127,14 +266,37 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
     rules: [
-      { metric: 'startsPct', op: 'gte', value: 0.9, reason: 'near_full_starter' },
-      { metric: 'subOut', op: 'eq', value: 0, reason: 'never_subbed_out' },
+      {
+        metric: 'startsPct',
+        op: 'gte',
+        value: 0.9,
+        reason: 'near_full_starter',
+      },
+      {
+        metric: 'subOut',
+        op: 'eq',
+        value: 0,
+        reason: 'never_subbed_out',
+      },
     ],
     deepRules: [
-      { metric: 'startsPct', op: 'gte', value: 0.95, reason: 'elite_starter_share' },
-      { metric: 'subOut', op: 'eq', value: 0, reason: 'never_subbed_out' },
+      {
+        metric: 'startsPct',
+        op: 'gte',
+        value: 0.95,
+        reason: 'elite_starter_share',
+      },
+      {
+        metric: 'subOut',
+        op: 'eq',
+        value: 0,
+        reason: 'never_subbed_out',
+      },
     ],
-    deps: { position: DEP_LOW, team: DEP_MED },
+    deps: {
+      position: DEP_LOW,
+      team: DEP_MED,
+    },
   },
   {
     id: 'pro_anchor',
@@ -145,9 +307,26 @@ export const SCOUT_PROFILES = [
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
     positionContext: 'not_attack',
-    rules: [{ metric: 'minutesPct', op: 'gte', value: 0.9, reason: 'max_minutes_load' }],
-    deepRules: [{ metric: 'minutesPct', op: 'gte', value: 0.95, reason: 'elite_minutes_load' }],
-    deps: { position: DEP_MED, team: DEP_MED },
+    rules: [
+      {
+        metric: 'minutesPct',
+        op: 'gte',
+        value: 0.9,
+        reason: 'max_minutes_load',
+      },
+    ],
+    deepRules: [
+      {
+        metric: 'minutesPct',
+        op: 'gte',
+        value: 0.95,
+        reason: 'elite_minutes_load',
+      },
+    ],
+    deps: {
+      position: DEP_MED,
+      team: DEP_MED,
+    },
   },
   {
     id: 'secondary_threat',
@@ -157,53 +336,150 @@ export const SCOUT_PROFILES = [
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
-    rules: [{ metric: 'goals', op: 'between', min: 7, max: 14, reason: 'near_double_digit_goals' }],
-    deepRules: [{ metric: 'goals', op: 'between', min: 10, max: 14, reason: 'strong_secondary_goal_total' }],
-    deps: { position: DEP_MED, team: DEP_LOW },
+    rules: [
+      {
+        metric: 'goals',
+        op: 'between',
+        min: 7,
+        max: 9,
+        reason: 'near_double_digit_goals',
+      },
+    ],
+    deepRules: [
+      {
+        metric: 'goals',
+        op: 'between',
+        min: 10,
+        max: 14,
+        reason: 'strong_secondary_goal_total',
+      },
+    ],
+    deps: {
+      position: DEP_MED,
+      team: DEP_LOW,
+    },
   },
   {
     id: 'underused_prospect',
     idIcon: 'underusedProspect',
-    label: 'לא מקבל הזדמנות',
+    label: 'שחקן איכותי שלא מקבל הזדמנות',
     group: 'opportunity',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY,
+    teamFilter: TEAM_FILTER.CLEAR_POSITIVE,
     rules: [
-      { metric: 'topClubOpportunityEligible', op: 'truthy', reason: 'top_club_or_level_two_first_team' },
-      { metric: 'minutesPct', op: 'between', min: 0.05, max: 0.15, reason: 'low_minutes_share' },
-      { metric: 'isYoungerAgeGroup', op: 'falsy', reason: 'not_younger_age_group' },
+      {
+        metric: 'topClubOpportunityEligible',
+        op: 'truthy',
+        reason: 'top_club_or_level_two_first_team',
+      },
+      {
+        metric: 'minutesPct',
+        op: 'between',
+        min: 0.05,
+        max: 0.15,
+        reason: 'low_minutes_share',
+      },
+      {
+        metric: 'isYoungerAgeGroup',
+        op: 'falsy',
+        reason: 'not_younger_age_group',
+      },
     ],
     deepRules: [
-      { metric: 'topClubOpportunityEligible', op: 'truthy', reason: 'top_club_or_level_two_first_team' },
-      { metric: 'minutesPct', op: 'between', min: 0.05, max: 0.15, reason: 'low_minutes_share' },
-      { metric: 'isYoungerAgeGroup', op: 'falsy', reason: 'not_younger_age_group' },
-      { metric: 'games', op: 'gte', value: 5, reason: 'minimum_games_sample' },
+      {
+        metric: 'clubLevel',
+        op: 'eq',
+        value: 1,
+        reason: 'top_club_only',
+      },
+      {
+        metric: 'minutesPct',
+        op: 'between',
+        min: 0.05,
+        max: 0.15,
+        reason: 'low_minutes_share',
+      },
+      {
+        metric: 'isYoungerAgeGroup',
+        op: 'falsy',
+        reason: 'not_younger_age_group',
+      },
+      {
+        metric: 'games',
+        op: 'gte',
+        value: 5,
+        reason: 'minimum_games_sample',
+      },
     ],
-    deps: { position: DEP_MED, team: DEP_LOW },
+    deps: {
+      position: DEP_MED,
+      team: DEP_HIGH,
+    },
   },
   {
     id: 'blocked_top_team',
     idIcon: 'blockedTopTeam',
-    label: 'מתקשה לפרוץ',
+    label: 'שחקן איכותי שלא מצליח לפרוץ',
     group: 'opportunity',
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY,
+    teamFilter: TEAM_FILTER.ANY_POSITIVE,
     rules: [
-      { metric: 'topClubOpportunityEligible', op: 'truthy', reason: 'top_club_first_team' },
-      { metric: 'games', op: 'gte', value: 10, reason: 'many_appearances' },
-      { metric: 'minutesPerGame', op: 'lte', value: 25, reason: 'low_minutes_per_appearance' },
-      { metric: 'subIn', op: 'gte', value: 6, reason: 'frequent_substitute_in' },
-      { metric: 'starts', op: 'lte', value: 3, reason: 'few_starts' },
+      {
+        metric: 'games',
+        op: 'gte',
+        value: 10,
+        reason: 'many_appearances',
+      },
+      {
+        metric: 'minutesPerGame',
+        op: 'lte',
+        value: 25,
+        reason: 'low_minutes_per_appearance',
+      },
+      {
+        metric: 'subIn',
+        op: 'gte',
+        value: 6,
+        reason: 'frequent_substitute_in',
+      },
+      {
+        metric: 'starts',
+        op: 'lte',
+        value: 3,
+        reason: 'few_starts',
+      },
     ],
     deepRules: [
-      { metric: 'topClubOpportunityEligible', op: 'truthy', reason: 'top_club_first_team' },
-      { metric: 'games', op: 'gte', value: 15, reason: 'many_appearances' },
-      { metric: 'minutesPerGame', op: 'lte', value: 25, reason: 'low_minutes_per_appearance' },
-      { metric: 'subIn', op: 'gte', value: 10, reason: 'frequent_substitute_in' },
-      { metric: 'starts', op: 'lte', value: 3, reason: 'few_starts' },
+      {
+        metric: 'games',
+        op: 'gte',
+        value: 15,
+        reason: 'many_appearances',
+      },
+      {
+        metric: 'minutesPerGame',
+        op: 'lte',
+        value: 25,
+        reason: 'low_minutes_per_appearance',
+      },
+      {
+        metric: 'subIn',
+        op: 'gte',
+        value: 10,
+        reason: 'frequent_substitute_in',
+      },
+      {
+        metric: 'starts',
+        op: 'lte',
+        value: 3,
+        reason: 'few_starts',
+      },
     ],
-    deps: { position: DEP_LOW, team: DEP_LOW },
+    deps: {
+      position: DEP_LOW,
+      team: DEP_MED,
+    },
   },
 ]

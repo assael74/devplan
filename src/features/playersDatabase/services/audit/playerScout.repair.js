@@ -146,8 +146,8 @@ const buildPreviewSummary = ({ audit, affectedRows }) => {
   }
 }
 
-export async function buildPlayerScoutRepairPreview() {
-  const audit = await buildPlayerScoutRulesAudit({
+export async function buildPlayerScoutRepairPreview({ audit: sourceAudit } = {}) {
+  const audit = sourceAudit || await buildPlayerScoutRulesAudit({
     includeRepairData: true,
   })
   const affectedRows = buildAffectedRows(audit)
@@ -314,12 +314,15 @@ const syncScope = async ({ team, scope }) => {
   }
 }
 
-export async function applyPlayerScoutRepair({ confirmed = false } = {}) {
+export async function applyPlayerScoutRepair({
+  confirmed = false,
+  audit: sourceAudit,
+} = {}) {
   if (!confirmed) {
     throw new Error('Player scout repair requires explicit confirmation')
   }
 
-  const audit = await buildPlayerScoutRulesAudit({
+  const audit = sourceAudit || await buildPlayerScoutRulesAudit({
     includeRepairData: true,
   })
   const affectedRows = buildAffectedRows(audit)

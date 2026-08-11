@@ -23,17 +23,33 @@ export const buildPlayerDocumentId = player =>
   buildCanonicalPlayerDocumentId(player)
 
 export const normalizePlayerScoutProfiles = player => {
-  const sourceProfiles = Array.isArray(player?.scoutSignals)
+  const scoutSignals = Array.isArray(player?.scoutSignals)
     ? player.scoutSignals
-    : Array.isArray(player?.scoutProfiles)
-      ? player.scoutProfiles
-      : []
+    : []
+
+  const scoutProfiles = Array.isArray(player?.scoutProfiles)
+    ? player.scoutProfiles
+    : []
+
+  const sourceProfiles = scoutSignals.length > 0
+    ? scoutSignals
+    : scoutProfiles
 
   return sourceProfiles
-    .filter(profile => clean(profile.profileId))
+    .filter(profile =>
+      clean(
+        profile.profileId ||
+        profile.id
+      )
+    )
     .map(profile => ({
-      profileId: clean(profile.profileId),
-      positionContext: clean(profile.positionContext),
+      profileId: clean(
+        profile.profileId ||
+        profile.id
+      ),
+      positionContext: clean(
+        profile.positionContext
+      ),
       reliability: {
         level: clean(
           profile.reliability?.level ||
@@ -42,29 +58,40 @@ export const normalizePlayerScoutProfiles = player => {
         ),
         score: Number.isFinite(
           Number(
-            pickDefinedValue(profile.reliability?.score, profile.reliabilityScore)
+            pickDefinedValue(
+              profile.reliability?.score,
+              profile.reliabilityScore
+            )
           )
         )
           ? Number(
-              pickDefinedValue(profile.reliability?.score, profile.reliabilityScore)
+              pickDefinedValue(
+                profile.reliability?.score,
+                profile.reliabilityScore
+              )
             )
           : null,
       },
-      warnings: [...new Set(
-        (Array.isArray(profile.warnings)
-          ? profile.warnings
-          : Array.isArray(profile.reliability?.warnings)
-            ? profile.reliability.warnings
-            : [])
-          .map(clean)
-          .filter(Boolean)
-      )],
-      score: Number.isFinite(Number(profile.score))
+      warnings: [
+        ...new Set(
+          (
+            Array.isArray(profile.warnings)
+              ? profile.warnings
+              : Array.isArray(profile.reliability?.warnings)
+                ? profile.reliability.warnings
+                : []
+          )
+            .map(clean)
+            .filter(Boolean)
+        ),
+      ],
+      score: Number.isFinite(
+        Number(profile.score)
+      )
         ? Number(profile.score)
         : null,
     }))
 }
-
 
 export const normalizePlayerScoutCombinations = player => {
   const combinations = Array.isArray(player?.scoutCombinations)
@@ -72,23 +99,45 @@ export const normalizePlayerScoutCombinations = player => {
     : []
 
   return combinations
-    .filter(combination => clean(combination?.id || combination?.combinationId))
+    .filter(combination =>
+      clean(
+        combination?.id ||
+        combination?.combinationId
+      )
+    )
     .map(combination => ({
-      id: clean(combination.id || combination.combinationId),
-      idIcon: clean(combination.idIcon),
-      label: clean(combination.label),
-      group: clean(combination.group),
-      interest: clean(combination.interest),
-      description: clean(combination.description),
-      profileIds: [...new Set(
-        (Array.isArray(combination.profileIds)
-          ? combination.profileIds
-          : Array.isArray(combination.matchedProfileIds)
-            ? combination.matchedProfileIds
-            : [])
-          .map(clean)
-          .filter(Boolean)
-      )],
+      id: clean(
+        combination.id ||
+        combination.combinationId
+      ),
+      idIcon: clean(
+        combination.idIcon
+      ),
+      label: clean(
+        combination.label
+      ),
+      group: clean(
+        combination.group
+      ),
+      interest: clean(
+        combination.interest
+      ),
+      description: clean(
+        combination.description
+      ),
+      profileIds: [
+        ...new Set(
+          (
+            Array.isArray(combination.profileIds)
+              ? combination.profileIds
+              : Array.isArray(combination.matchedProfileIds)
+                ? combination.matchedProfileIds
+                : []
+          )
+            .map(clean)
+            .filter(Boolean)
+        ),
+      ],
     }))
 }
 
@@ -98,23 +147,37 @@ export const hasPlayerScoutProfiles = player =>
 export const getPlayerIdentityKeys = entity =>
   new Set(
     buildPlayerMatchValues(entity)
-      .map(value => clean(value).toLowerCase())
+      .map(value =>
+        clean(value).toLowerCase()
+      )
       .filter(Boolean)
   )
 
-export const isSamePlayerSource = (candidate = {}, player = {}) => {
-  const candidateKeys = getPlayerIdentityKeys(candidate)
-  const playerKeys = getPlayerIdentityKeys(player)
+export const isSamePlayerSource = (
+  candidate = {},
+  player = {}
+) => {
+  const candidateKeys =
+    getPlayerIdentityKeys(candidate)
+
+  const playerKeys =
+    getPlayerIdentityKeys(player)
 
   for (const key of playerKeys) {
-    if (candidateKeys.has(key)) return true
+    if (candidateKeys.has(key)) {
+      return true
+    }
   }
 
   return false
 }
 
 export const playerDocRef = playerDocumentId =>
-  doc(db, PLAYERS_DATABASE_COLLECTIONS.players, clean(playerDocumentId))
+  doc(
+    db,
+    PLAYERS_DATABASE_COLLECTIONS.players,
+    clean(playerDocumentId)
+  )
 
 export const buildPlayerBaseDoc = (
   player = {},
@@ -122,29 +185,78 @@ export const buildPlayerBaseDoc = (
   season = {},
   team = {}
 ) => ({
-  id: clean(player.playerDocumentId || buildPlayerDocumentId(player)),
-  externalPlayerId: clean(player.externalPlayerId || currentData.externalPlayerId),
-  fullName: clean(player.fullName || currentData.fullName),
-  normalizedName: normalizePlayerNameValue(
-    player.normalizedName || player.fullName || currentData.normalizedName
+  id: clean(
+    player.playerDocumentId ||
+    buildPlayerDocumentId(player)
   ),
+
+  externalPlayerId: clean(
+    player.externalPlayerId ||
+    currentData.externalPlayerId
+  ),
+
+  fullName: clean(
+    player.fullName ||
+    currentData.fullName
+  ),
+
+  normalizedName: normalizePlayerNameValue(
+    player.normalizedName ||
+    player.fullName ||
+    currentData.normalizedName
+  ),
+
   birthYear: toNumberOrZero(
     pickDefinedValue(
       player.birthYear,
       season.birthYear,
       team.birthYear,
-      currentData.birthYear,
+      currentData.birthYear
     )
   ) || null,
-  birthDate: pickDefinedValue(currentData.birthDate, null),
-  status: clean(currentData.status),
-  notes: clean(player.rootNotes || currentData.notes),
-  primaryPosition: clean(player.primaryPosition || currentData.primaryPosition),
-  positionLayer: clean(player.positionLayer || currentData.positionLayer),
-  numShirt: clean(player.numShirt || currentData.numShirt),
-  current: Array.isArray(currentData.current) ? currentData.current : [],
-  history: Array.isArray(currentData.history) ? currentData.history : [],
+
+  birthDate: pickDefinedValue(
+    currentData.birthDate,
+    null
+  ),
+
+  status: clean(
+    currentData.status
+  ),
+
+  notes: clean(
+    player.rootNotes ||
+    currentData.notes
+  ),
+
+  primaryPosition: clean(
+    player.primaryPosition ||
+    currentData.primaryPosition
+  ),
+
+  positionLayer: clean(
+    player.positionLayer ||
+    currentData.positionLayer
+  ),
+
+  numShirt: clean(
+    player.numShirt ||
+    currentData.numShirt
+  ),
+
+  current: Array.isArray(currentData.current)
+    ? currentData.current
+    : [],
+
+  history: Array.isArray(currentData.history)
+    ? currentData.history
+    : [],
+
   scoutProfiles: deleteField(),
-  createdAt: currentData.createdAt || serverTimestamp(),
+
+  createdAt:
+    currentData.createdAt ||
+    serverTimestamp(),
+
   updatedAt: serverTimestamp(),
 })

@@ -5,14 +5,25 @@ import { clean } from '../../leagues/leagueDoc.js'
 import { uniqueCleanValues } from './playerSeasonIndex.identity.js'
 
 export const normalizeScoutSignalsForIndex = player => {
-  const sourceProfiles = Array.isArray(player?.scoutSignals)
+  const scoutSignals = Array.isArray(player?.scoutSignals)
     ? player.scoutSignals
-    : Array.isArray(player?.scoutProfiles)
-      ? player.scoutProfiles
-      : []
+    : []
+
+  const scoutProfiles = Array.isArray(player?.scoutProfiles)
+    ? player.scoutProfiles
+    : []
+
+  const sourceProfiles = scoutSignals.length > 0
+    ? scoutSignals
+    : scoutProfiles
 
   return sourceProfiles
-    .filter(profile => clean(profile?.profileId))
+    .filter(profile =>
+      clean(
+        profile?.profileId ||
+        profile?.id
+      )
+    )
     .map(profile => {
       const reliabilityLevel = clean(
         profile.reliability?.level ||
@@ -32,7 +43,10 @@ export const normalizeScoutSignalsForIndex = player => {
 
       return {
         ...profile,
-        profileId: clean(profile.profileId),
+        profileId: clean(
+          profile.profileId ||
+          profile.id
+        ),
         reliability: {
           level: reliabilityLevel,
           score: reliabilityScore,

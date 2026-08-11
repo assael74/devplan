@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/searchPage/SearchHeader.js
+// src/features/playersDatabase/ui/pages/searchPage/SearchHeader.js
 
 import {
   Box,
@@ -17,7 +17,6 @@ export default function SearchHeader({
   onReport,
   onScoutAudit,
   reportDisabled = false,
-  scoutAuditBusy = false,
 }) {
   return (
     <Box sx={sx.root}>
@@ -32,17 +31,11 @@ export default function SearchHeader({
       <Stack direction='row' spacing={1} sx={sx.actions}>
         <Button
           variant='outlined'
-          loading={scoutAuditBusy}
-          disabled={scoutAuditBusy}
           sx={sx.auditButton}
-          startDecorator={
-            !scoutAuditBusy
-              ? iconUi({
-                id: 'search',
-                size: 'sm',
-              })
-              : null
-          }
+          startDecorator={iconUi({
+            id: 'search',
+            size: 'sm',
+          })}
           onClick={onScoutAudit}
         >
           Audit Scout

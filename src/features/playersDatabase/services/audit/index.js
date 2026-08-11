@@ -1,4 +1,4 @@
-// features/playersDatabase/services/audit/index.js
+// src/features/playersDatabase/services/audit/index.js
 
 export {
   buildPlayerIdentityAudit,
@@ -17,6 +17,7 @@ export {
 
 export {
   buildPlayerScoutRulesAudit,
+  buildScopedPlayerScoutRulesAudit,
   downloadPlayerScoutRulesAudit,
 } from './playerScoutRules.audit.js'
 

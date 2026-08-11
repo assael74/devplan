@@ -11,6 +11,45 @@ export const playerScoutAuditSx = {
     gap: 1.5,
   },
 
+  auditChoiceGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      lg: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 1,
+  },
+
+  auditChoiceCard: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 1,
+    p: 1.25,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.level1',
+  },
+
+  auditChoiceCopy: {
+    display: 'grid',
+    gap: 0.35,
+  },
+
+  auditChoiceDescription: {
+    color: 'neutral.600',
+    lineHeight: 1.6,
+  },
+
+  partialAuditFields: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'minmax(0, 1fr) 150px',
+    },
+    gap: 0.75,
+  },
+
   summaryGrid: {
     display: 'grid',
     gridTemplateColumns: {

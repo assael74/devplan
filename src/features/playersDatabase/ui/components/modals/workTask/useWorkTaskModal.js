@@ -15,19 +15,30 @@ import {
   getWorkTaskSteps,
 } from './workTask.model.js'
 
+const EMPTY_MODEL = {}
+const EMPTY_OPTIONS = []
+
 export default function useWorkTaskModal({
   open,
   model,
   leagueContext,
+  mode,
   onClose,
 }) {
-  const safeModel = model || {}
-  const allRows = Array.isArray(safeModel.allRows) ? safeModel.allRows : []
-  const levelOptions = Array.isArray(safeModel.levelOptions) ? safeModel.levelOptions : []
-  const birthYearOptions = Array.isArray(safeModel.birthYearOptions) ? safeModel.birthYearOptions : []
+  const teamMode = mode === 'team'
+  const safeModel = model || EMPTY_MODEL
+  const allRows = Array.isArray(safeModel.allRows)
+    ? safeModel.allRows
+    : EMPTY_OPTIONS
+  const levelOptions = Array.isArray(safeModel.levelOptions)
+    ? safeModel.levelOptions
+    : EMPTY_OPTIONS
+  const birthYearOptions = Array.isArray(safeModel.birthYearOptions)
+    ? safeModel.birthYearOptions
+    : EMPTY_OPTIONS
   const leagueDocuments = Array.isArray(safeModel.leagueDocuments)
     ? safeModel.leagueDocuments
-    : []
+    : EMPTY_OPTIONS
   const initialBirthYear = safeModel.birthYear === 'all' ? '' : safeModel.birthYear
   const initialLeagueLevel = safeModel.leagueLevel === 'all'
     ? ''
@@ -41,12 +52,19 @@ export default function useWorkTaskModal({
     if (!open) return
 
     setActiveStep(0)
-    setWorkRoute(leagueContext ? LEAGUE_PAGE_ROUTE : '')
+    setWorkRoute(
+      teamMode
+        ? TEAM_ROUTE
+        : leagueContext
+        ? LEAGUE_PAGE_ROUTE
+        : ''
+    )
     setCreateLoading(false)
     setCreateError('')
   }, [
     leagueContext,
     open,
+    teamMode,
   ])
 
   const leagueFlow = useWorkTaskLeagueFlow({
