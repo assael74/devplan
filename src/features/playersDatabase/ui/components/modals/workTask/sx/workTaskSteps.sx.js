@@ -1,8 +1,8 @@
-// src/features/playersDatabase/ui/components/modals/workTask/sx/workTaskLeagueFlow.sx.js
+// src/features/playersDatabase/ui/components/modals/workTask/sx/workTaskSteps.sx.js
 
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
-export const workTaskLeagueFlowSx = {
+export const workTaskStepsSx = {
   stepContent: {
       width: '100%',
       maxWidth: 620,
@@ -260,4 +260,85 @@ export const workTaskLeagueFlowSx = {
       justifyContent: 'flex-start',
       gap: 0.75,
     },
+
+
+  teamContextGrid: {
+    mt: 1.5,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 1.25,
+  },
+
+  fieldWrapCompact: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.5,
+  },
+
+  teamContextPreview: {
+    mt: 1.5,
+    px: 1.25,
+    py: 0.9,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 10,
+    bgcolor: devPlanColors.primaryLight,
+  },
+
+  teamContextTitle: {
+    color: devPlanColors.primaryDark,
+    fontSize: 18,
+    fontWeight: 700,
+  },
+
+  teamLookupContext: {
+    px: 1.25,
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.8,
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 10,
+    bgcolor: devPlanColors.primaryLight,
+  },
+
+  teamLookupTitle: {
+    minWidth: 0,
+    flex: 1,
+    color: devPlanColors.primaryDark,
+    fontSize: 18,
+    fontWeight: 700,
+  },
+
+  teamYearChip: {
+    flex: '0 0 auto',
+    bgcolor: devPlanColors.tertiaryLight,
+    color: devPlanColors.tertiaryDark,
+  },
+
+  teamTaskSectionTitle: {
+    mt: 1.25,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  teamTaskChoiceWrap: {
+    mt: 1,
+  },
+
+  teamTaskChoiceGrid: {
+    mt: 0.75,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
 }

@@ -90,13 +90,13 @@ export default function useWorkTaskModal({
   const steps = React.useMemo(() => getWorkTaskSteps(workRoute), [workRoute])
 
   const canContinue = React.useMemo(() => {
-    if (activeStep === 0) return Boolean(workRoute)
-
     if (workRoute === LEAGUE_PAGE_ROUTE) {
       if (activeStep === 0) return Boolean(leagueFlow.leagueTaskType)
       if (leagueFlow.leagueTaskType === 'teams') return true
       return Boolean(leagueFlow.leagueTeamId)
     }
+
+    if (activeStep === 0) return Boolean(workRoute)
 
     if (workRoute === TEAM_ROUTE) {
       if (activeStep === 1) {

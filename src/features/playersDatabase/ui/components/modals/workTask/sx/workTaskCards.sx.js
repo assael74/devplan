@@ -1,8 +1,8 @@
-// src/features/playersDatabase/ui/components/modals/workTask/sx/workTaskChoiceCard.sx.js
+// src/features/playersDatabase/ui/components/modals/workTask/sx/workTaskCards.sx.js
 
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
-export const workTaskChoiceCardSx = {
+export const workTaskCardsSx = {
   routeCard: {
       minWidth: 0,
       minHeight: 116,
@@ -352,4 +352,66 @@ export const workTaskChoiceCardSx = {
       color: '#DC2626',
     },
 
+
+  teamAppearanceCard: {
+    minWidth: 0,
+    p: 0.8,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 0.65,
+    borderColor: devPlanColors.border,
+    borderRadius: 10,
+    bgcolor: devPlanColors.surface,
+    textAlign: 'left',
+    '--Button-gap': '0px',
+    '--Button-paddingInline': '0px',
+    '&:hover': {
+      borderColor: devPlanColors.tertiary,
+      bgcolor: devPlanColors.tertiaryLight,
+    },
+    '&.Mui-disabled': {
+      opacity: 0.55,
+      borderColor: devPlanColors.border,
+      bgcolor: devPlanColors.secondaryLight,
+    },
+  },
+
+  teamAppearanceCardSelected: {
+    borderWidth: 2,
+    borderColor: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    boxShadow: `0 0 0 1px ${devPlanColors.tertiaryDark}`,
+  },
+
+  teamAppearanceMeta: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.75,
+  },
+
+  teamAppearanceSeason: {
+    color: devPlanColors.tertiaryDark,
+    fontSize: 16,
+    fontWeight: 700,
+  },
+
+  teamAppearanceLevel: {
+    color: devPlanColors.secondary,
+  },
+
+  teamTaskChoice: {
+    minHeight: 52,
+    borderColor: devPlanColors.border,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  teamTaskChoiceSelected: {
+    borderColor: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    color: devPlanColors.tertiaryDark,
+  },
 }

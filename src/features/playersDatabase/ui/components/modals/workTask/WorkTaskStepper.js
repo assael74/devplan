@@ -19,22 +19,13 @@ export default function WorkTaskStepper({ activeStep, steps }) {
 
         return (
           <Box key={label} sx={sx.stepItem}>
-            <Box
-              sx={[
-                sx.stepNumber,
-                active && sx.stepNumberActive,
-                complete && sx.stepNumberComplete,
-              ]}
-            >
+            <Box sx={sx.resolveStepNumber(active, complete)}>
               {stepNumber}
             </Box>
 
             <Typography
               level='body-xs'
-              sx={[
-                sx.stepLabel,
-                active && sx.stepLabelActive,
-              ]}
+              sx={sx.resolveStepLabel(active)}
             >
               {label}
             </Typography>
