@@ -1,14 +1,14 @@
-// src/features/playersDatabase/ui/pages/playerPage/PlayerStatsOverview.js
+// src/features/playersDatabase/ui/pages/playerPage/PlayerKpiOverview.js
 
 import { Box } from '@mui/joy'
 
 import KpiRow from '../../components/kpi/KpiRow.js'
-import PlayerKpiCard from './PlayerKpiCard.js'
+import KpiCard from '../../components/kpi/KpiCard.js'
 import {
   formatValue,
   resolvePlayerScopeReliability,
 } from './logic/playerPage.utils.js'
-import { playerStatsOverviewSx as sx } from './sx/playerStatsOverview.sx.js'
+import { playerKpiOverviewSx as sx } from './sx/playerKpiOverview.sx.js'
 
 const sumRows = (rows, key) => rows.reduce(
   (total, row) => total + Number(row[key] || 0),
@@ -28,7 +28,7 @@ const resolveScopeLabel = (rows, key, pluralLabel) => {
   return `${values.length} ${pluralLabel}`
 }
 
-export default function PlayerStatsOverview({
+export default function PlayerKpiOverview({
   historyRows = [],
   selectedSeasonKey = '',
 }) {
@@ -52,9 +52,9 @@ export default function PlayerStatsOverview({
   const seasonLabel = selectedSeasonKey || 'כל העונות'
 
   return (
-    <Box sx={sx.statsSection}>
+    <Box sx={sx.kpiSection}>
       <KpiRow sx={sx.kpiRow}>
-        <PlayerKpiCard
+        <KpiCard
           title='פרופילי סקאוט'
           value={profileCount}
           iconId='targets'
@@ -72,7 +72,7 @@ export default function PlayerStatsOverview({
           ]}
         />
 
-        <PlayerKpiCard
+        <KpiCard
           title='דקות משחק'
           value={formatValue(minutes)}
           iconId='hour'
@@ -89,7 +89,7 @@ export default function PlayerStatsOverview({
           placeholder={placeholder}
         />
 
-        <PlayerKpiCard
+        <KpiCard
           title='שערים'
           value={formatValue(goals)}
           iconId='goals'
@@ -106,7 +106,7 @@ export default function PlayerStatsOverview({
           placeholder={placeholder}
         />
 
-        <PlayerKpiCard
+        <KpiCard
           title='הופעות בהרכב'
           value={startsRate}
           iconId='isStart'

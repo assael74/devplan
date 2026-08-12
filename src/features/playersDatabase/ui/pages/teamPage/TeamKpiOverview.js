@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/TeamStatsOverview.js
+// src/features/playersDatabase/ui/pages/teamPage/TeamKpiOverview.js
 
 import { Box } from '@mui/joy'
 
@@ -9,19 +9,20 @@ import {
   formatScore,
   formatValue,
 } from './logic/teamPage.utils.js'
-import { teamStatsOverviewSx as sx } from './sx/teamStatsOverview.sx.js'
+import { teamKpiOverviewSx as sx } from './sx/teamKpiOverview.sx.js'
 
 import { pickDefinedValue } from '../../../model/value.model.js'
+
 const resolveSide = (team, side) => (
   team?.performanceView?.[side] || {}
 )
 
-export default function TeamStatsOverview({ team }) {
+export default function TeamKpiOverview({ team }) {
   const offense = resolveSide(team, 'offense')
   const defense = resolveSide(team, 'defense')
 
   return (
-    <Box sx={sx.statsSection}>
+    <Box sx={sx.kpiSection}>
       <KpiRow sx={sx.kpiRow}>
         <TeamKpiCard
           performance

@@ -43,6 +43,10 @@ export const kpiCardSx = {
     fontWeight: 700,
   },
 
+  placeholderValue: {
+    color: devPlanColors.secondary,
+  },
+
   caption: {
     color: devPlanColors.secondary,
   },
@@ -59,6 +63,95 @@ export const kpiCardSx = {
     borderRadius: '50%',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  detailsCard: {
+    minHeight: 94,
+    maxHeight: 104,
+    p: 1,
+    display: 'grid',
+    gridTemplateRows: 'minmax(0, 1fr) auto',
+    gap: 0.55,
+    boxShadow: '0 8px 22px rgba(11, 31, 77, 0.05)',
+    overflow: 'hidden',
+  },
+
+  main: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  text: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.5,
+  },
+
+  detailsTitle: {
+    fontSize: 13,
+    lineHeight: 1.15,
+  },
+
+  detailsValue: {
+    fontSize: 28,
+  },
+
+  detailsIcon: {
+    width: 38,
+    height: 38,
+  },
+
+  details: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.5,
+  },
+
+  detail: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+    px: 0.65,
+    py: 0.35,
+    borderRadius: 7,
+    bgcolor: '#f6f9fc',
+    border: '1px solid #e4edf6',
+    overflow: 'hidden',
+  },
+
+  detailLabel: {
+    minWidth: 0,
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+
+  detailChip: {
+    minHeight: 22,
+    px: 0.75,
+    fontSize: 11,
+    fontWeight: 700,
+  },
+
+  detailValue: {
+    flexShrink: 0,
+    maxWidth: '62%',
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    lineHeight: 1,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 }
 

@@ -1,7 +1,7 @@
-// features/playersDatabase/ui/pages/playerPage/sx/PlayerStatsOverview.sx.js
+// src/features/playersDatabase/ui/pages/playerPage/sx/playerKpiOverview.sx.js
 
-export const playerStatsOverviewSx = {
-  statsSection: {
+export const playerKpiOverviewSx = {
+  kpiSection: {
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: '1fr',

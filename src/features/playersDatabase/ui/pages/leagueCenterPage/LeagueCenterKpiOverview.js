@@ -1,13 +1,13 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterOverview.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterKpiOverview.js
 
 import { Box } from '@mui/joy'
 
 import KpiCard from '../../components/kpi/KpiCard.js'
-import { leagueCenterOverviewSx as sx } from './sx/leagueCenterOverview.sx.js'
+import { leagueCenterKpiOverviewSx as sx } from './sx/leagueCenterKpiOverview.sx.js'
 
-export default function LeagueCenterOverview({ summary }) {
+export default function LeagueCenterKpiOverview({ summary }) {
   return (
-    <Box sx={sx.statsGrid}>
+    <Box sx={sx.kpiGrid}>
       <KpiCard
         title='ליגות בהקשר'
         value={summary.totalLeagues}

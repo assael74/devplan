@@ -1,4 +1,4 @@
-// src/features/playersDatabase/ui/pages/leaguePage/LeagueStatsOverview.js
+// src/features/playersDatabase/ui/pages/leaguePage/LeagueKpiOverview.js
 
 import {
   Box,
@@ -7,13 +7,13 @@ import {
 
 import KpiCard from '../../components/kpi/KpiCard.js'
 import KpiRow from '../../components/kpi/KpiRow.js'
-import { leagueStatsOverviewSx as sx } from './sx/leagueStatsOverview.sx.js'
+import { leagueKpiOverviewSx as sx } from './sx/leagueKpiOverview.sx.js'
 
 function LeagueKpiDetail({ label, value }) {
   return (
-    <Box sx={sx.leagueStateDetail}>
-      <Typography sx={sx.leagueStateDetailValue}>{value || '-'}</Typography>
-      <Typography sx={sx.leagueStateDetailLabel}>{label}</Typography>
+    <Box sx={sx.summaryDetail}>
+      <Typography sx={sx.summaryDetailValue}>{value || '-'}</Typography>
+      <Typography sx={sx.summaryDetailLabel}>{label}</Typography>
     </Box>
   )
 }
@@ -25,7 +25,7 @@ function LeagueSummaryFooter({
   profilesCount,
 }) {
   return (
-    <Box sx={sx.leagueStateDetails}>
+    <Box sx={sx.summaryDetails}>
       <LeagueKpiDetail label='קבוצות' value={teamsCount} />
       <LeagueKpiDetail label='מחזורים' value={roundsCount} />
       <LeagueKpiDetail label='שערים' value={goalsCount} />
@@ -34,7 +34,7 @@ function LeagueSummaryFooter({
   )
 }
 
-export default function LeagueStatsOverview({ summary = {}, roundsCount }) {
+export default function LeagueKpiOverview({ summary = {}, roundsCount }) {
   const attackRequired = summary.attackPositive || 0
   const attackMissing = summary.attackMissing || 0
   const attackCompleted = Math.max(0, attackRequired - attackMissing)

@@ -47,6 +47,7 @@ export const teamKpiCardSx = {
     color: devPlanColors.secondary,
     fontWeight: 700,
     fontSize: 13,
+    lineHeight: 1.2,
   },
 
   teamKpiValueRow: {
@@ -59,7 +60,7 @@ export const teamKpiCardSx = {
 
   teamKpiValue: {
     color: devPlanColors.primaryDark,
-    fontSize: 27,
+    fontSize: 26,
     lineHeight: 1,
     fontWeight: 700,
   },
@@ -132,7 +133,7 @@ export const teamKpiCardSx = {
     minWidth: 0,
     color: devPlanColors.secondary,
     fontSize: 11,
-    lineHeight: 1,
+    lineHeight: 1.15,
     fontWeight: 600,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -142,8 +143,8 @@ export const teamKpiCardSx = {
   teamKpiDetailValue: {
     flexShrink: 0,
     color: devPlanColors.primaryDark,
-    fontSize: 12,
-    lineHeight: 1,
-    fontWeight: 800,
+    fontSize: 13,
+    lineHeight: 1.2,
+    fontWeight: 700,
   },
 }

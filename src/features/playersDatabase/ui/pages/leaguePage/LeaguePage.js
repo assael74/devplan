@@ -20,7 +20,7 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import LeagueHeader from './LeagueHeader.js'
-import LeagueStatsOverview from './LeagueStatsOverview.js'
+import LeagueKpiOverview from './LeagueKpiOverview.js'
 import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
@@ -304,7 +304,7 @@ function LeaguePageContent() {
 
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
-            <LeagueStatsOverview
+            <LeagueKpiOverview
               summary={summary}
               roundsCount={league.leagueTotalRound}
             />

@@ -16,7 +16,7 @@ import {
 } from '../../logic/routeBuilders.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import PlayerHeader from './PlayerHeader.js'
-import PlayerStatsOverview from './PlayerStatsOverview.js'
+import PlayerKpiOverview from './PlayerKpiOverview.js'
 import PlayerHistorySection from './PlayerHistorySection.js'
 import PlayerActionsPanel from './PlayerActionsPanel.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
@@ -249,7 +249,7 @@ function PlayerPageContent() {
 
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
-            <PlayerStatsOverview
+            <PlayerKpiOverview
               historyRows={historyView.rows}
               selectedSeasonKey={historyView.selectedSeasonKey}
             />

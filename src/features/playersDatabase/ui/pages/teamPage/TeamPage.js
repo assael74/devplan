@@ -24,7 +24,7 @@ import {
 import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
-import TeamStatsOverview from './TeamStatsOverview.js'
+import TeamKpiOverview from './TeamKpiOverview.js'
 import TeamPlayersSection from './TeamPlayersSection.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
 import {
@@ -302,7 +302,7 @@ function TeamPageContent() {
 
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
-            <TeamStatsOverview team={team} />
+            <TeamKpiOverview team={team} />
 
             <TeamPlayersSection
               players={visiblePlayers}

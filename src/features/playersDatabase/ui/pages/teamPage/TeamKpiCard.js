@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/TeamKpiCard.js
+// src/features/playersDatabase/ui/pages/teamPage/TeamKpiCard.js
 
 import * as React from 'react'
 import {
@@ -54,9 +54,6 @@ export default function TeamKpiCard({
         sx={[
           sx.teamKpiMain,
           performance && sx.teamKpiPerformanceMain,
-          performance &&
-            !primaryDetails.length &&
-            sx.teamKpiPerformanceMainCompact,
         ]}
       >
         <Box sx={sx.teamKpiText}>

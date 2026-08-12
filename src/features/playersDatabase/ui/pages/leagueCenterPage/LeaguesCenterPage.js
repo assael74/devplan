@@ -13,7 +13,7 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import LeagueCenterHeader from './LeagueCenterHeader.js'
-import LeagueCenterOverview from './LeagueCenterOverview.js'
+import LeagueCenterKpiOverview from './LeagueCenterKpiOverview.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
 import LeagueCenterSidePanel from './LeagueCenterSidePanel.js'
 import {
@@ -107,7 +107,7 @@ export default function LeaguesCenterPage() {
 
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
-            <LeagueCenterOverview summary={model.summary} />
+            <LeagueCenterKpiOverview summary={model.summary} />
             <LeagueCenterTable columns={columns} model={model} />
           </Box>
 
