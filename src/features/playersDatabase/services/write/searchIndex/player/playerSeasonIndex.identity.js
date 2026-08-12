@@ -6,6 +6,7 @@ import {
   normalizePlayerIdPart,
   normalizePlayerNameValue,
   resolveInternalPlayerId,
+  resolvePlayerIdentityBirthYear,
 } from '../../../../model/playerIdentity.model.js'
 import {
   buildSeasonKey,
@@ -164,7 +165,10 @@ export const buildInternalPlayerId = ({
   const existingPlayerId = resolveInternalPlayerId(player)
   if (existingPlayerId) return existingPlayerId
 
-  const birthYear = clean(player.birthYear || season.birthYear)
+  const birthYear = clean(resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  }) || player.birthYear || season.birthYear)
   const externalPlayerId = isValidExternalPlayerId({
     externalPlayerId: player.externalPlayerId,
     birthYear,

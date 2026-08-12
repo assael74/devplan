@@ -154,13 +154,25 @@ export const buildPlayerScoutCalculationContract = ({
     team,
     season,
   })
-  const birthYear = toDomainNumber(firstDomainValue(player.birthYear, player.yearOfBirth))
   const teamBirthYear = toDomainNumber(firstDomainValue(
     team.birthYear,
     season.birthYear,
     team.season?.birthYear,
     team.domain?.season?.birthYear
   ))
+  const explicitYoungerAgeGroup = Boolean(
+    player.isYoungerAgeGroup ||
+    cleanDomainValue(player.rosterStatus) === 'youngerAgeGroup'
+  )
+  const birthYear = explicitYoungerAgeGroup && teamBirthYear
+    ? teamBirthYear + 1
+    : toDomainNumber(firstDomainValue(player.birthYear, player.yearOfBirth))
+  const playingUpMinutes = toDomainNumber(firstDomainValue(
+    player.playingUpMinutes,
+    explicitYoungerAgeGroup ? player.minutes : null,
+    explicitYoungerAgeGroup ? player.playerStats?.minutes : null,
+    explicitYoungerAgeGroup ? 1 : null
+  ), 0)
 
   const normalizedTeam = {
     ...team,
@@ -199,6 +211,8 @@ export const buildPlayerScoutCalculationContract = ({
     birthYear,
     yearOfBirth: birthYear,
     teamBirthYear,
+    isYoungerAgeGroup: explicitYoungerAgeGroup || Boolean(player.isYoungerAgeGroup),
+    playingUpMinutes,
     clubLevel,
     birthTeamSlot,
     teamSlot: birthTeamSlot,

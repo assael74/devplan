@@ -17,6 +17,7 @@ import {
   buildPlayerDocumentId as buildCanonicalPlayerDocumentId,
   buildPlayerMatchValues,
   normalizePlayerNameValue,
+  resolvePlayerIdentityBirthYear,
 } from '../../../model/playerIdentity.model.js'
 
 export const buildPlayerDocumentId = player =>
@@ -206,7 +207,10 @@ export const buildPlayerBaseDoc = (
     currentData.normalizedName
   ),
 
-  birthYear: toNumberOrZero(
+  birthYear: resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  }) || toNumberOrZero(
     pickDefinedValue(
       player.birthYear,
       season.birthYear,

@@ -90,6 +90,13 @@ export const buildPlayerSeasonStatsMutation = ({
 } = {}) => {
   const existingData = existingDoc?.data?.() || {}
   const rosterStatus = getRosterStatus(player)
+  const resolvedIdentityBirthYear = resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  })
+  const explicitYoungerAgeGroup = Boolean(
+    player.isYoungerAgeGroup || rosterStatus === 'youngerAgeGroup'
+  )
 
   if (rosterStatus === 'retired') {
     return existingDoc
@@ -117,17 +124,14 @@ export const buildPlayerSeasonStatsMutation = ({
   const externalPlayerId = clean(
     player.externalPlayerId || existingData.externalPlayerId
   )
-  const identityBirthYear = Number(
-    player.identityBirthYear || existingData.identityBirthYear
-  ) || resolvePlayerIdentityBirthYear({
-    player,
-    season,
-  })
+  const identityBirthYear = explicitYoungerAgeGroup
+    ? resolvedIdentityBirthYear
+    : Number(player.identityBirthYear || existingData.identityBirthYear) || resolvedIdentityBirthYear
   const identityKey = clean(
     player.identityKey || existingData.identityKey
   ) || buildPlayerIdentityKey({
-    player,
-    season,
+    birthYear: identityBirthYear,
+    normalizedName: normalizedDisplayName,
   })
   const playerId = clean(
     player.matchedPlayerId ||

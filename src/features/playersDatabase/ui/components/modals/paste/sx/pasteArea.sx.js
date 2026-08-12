@@ -73,8 +73,8 @@ export const pasteAreaSx = {
   },
 
   inputCompact: {
-    minHeight: 58,
-    maxHeight: 76,
+    minHeight: 42,
+    maxHeight: 54,
   },
 
   footer: {
@@ -99,6 +99,10 @@ export const pasteAreaSx = {
     minWidth: 120,
     bgcolor: devPlanColors.primary,
     color: '#fff',
+
+    '& svg': {
+      color: '#fff',
+    },
 
     '&:hover': {
       bgcolor: devPlanColors.primaryDark,

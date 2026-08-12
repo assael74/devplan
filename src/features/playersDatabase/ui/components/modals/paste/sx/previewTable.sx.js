@@ -41,6 +41,25 @@ export const previewTableSx = {
     flexWrap: 'wrap',
   },
 
+  sortableHeader: {
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0.35,
+    userSelect: 'none',
+  },
+
+  sortIndicator: {
+    width: 8,
+    minWidth: 8,
+    color: devPlanColors.secondary,
+    fontSize: 10,
+    fontWeight: 700,
+    lineHeight: 1,
+    opacity: 0.75,
+  },
+
   tableWrap: {
     minWidth: 0,
     minHeight: 0,

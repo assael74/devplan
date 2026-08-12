@@ -17,12 +17,12 @@ export const playerHeaderSx = {
 
   playerAvatar: {
     width: {
-      xs: 58,
-      md: 68,
+      xs: 52,
+      md: 58,
     },
     height: {
-      xs: 58,
-      md: 68,
+      xs: 52,
+      md: 58,
     },
     display: 'block',
     objectFit: 'cover',
@@ -43,6 +43,8 @@ export const playerHeaderSx = {
   },
 
   teamChip: {
+    minWidth: 0,
+    maxWidth: 180,
     minHeight: 30,
     px: 1.25,
     display: 'inline-flex',
@@ -59,8 +61,8 @@ export const playerHeaderSx = {
   },
 
   birthYearChip: {
-    minHeight: 38,
-    px: 1.8,
+    minHeight: 34,
+    px: 1.55,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -68,7 +70,7 @@ export const playerHeaderSx = {
     bgcolor: devPlanColors.tertiary,
     border: `1px solid ${devPlanColors.primary}`,
     color: '#fff',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 700,
     lineHeight: 1,
     whiteSpace: 'nowrap',

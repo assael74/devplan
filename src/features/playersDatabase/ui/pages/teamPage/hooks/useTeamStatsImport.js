@@ -22,20 +22,6 @@ import {
 import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 
-const resolveSeasonStatus = selectedSeasonOption => {
-  const storedStatus = clean(
-    selectedSeasonOption?.season?.seasonStatus ||
-    selectedSeasonOption?.seasonStatus
-  ).toLowerCase()
-
-  if (storedStatus === 'completed') return 'completed'
-  if (storedStatus === 'active') return 'active'
-
-  return selectedSeasonOption?.target === 'history'
-    ? 'completed'
-    : 'active'
-}
-
 export default function useTeamStatsImport({
   leagueId,
   leagueDoc,
@@ -51,18 +37,15 @@ export default function useTeamStatsImport({
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
-  const [seasonStatus, setSeasonStatus] = React.useState(
-    resolveSeasonStatus(selectedSeasonOption)
-  )
+  const [seasonStatus, setSeasonStatus] = React.useState('')
 
   const rosterLookup = React.useMemo(() => buildRosterLookup(players), [players])
 
   React.useEffect(() => {
-    setSeasonStatus(resolveSeasonStatus(selectedSeasonOption))
+    if (open) setSeasonStatus('')
   }, [
+    open,
     selectedSeasonOption?.seasonId,
-    selectedSeasonOption?.season?.seasonStatus,
-    selectedSeasonOption?.seasonStatus,
     selectedSeasonOption?.target,
   ])
 
@@ -163,8 +146,22 @@ export default function useTeamStatsImport({
   const hasInvalidRows = React.useMemo(() => (
     rows.some(row => !getRowStatus(row).valid)
   ), [getRowStatus, rows])
+  const exceptionRowsCount = React.useMemo(() => (
+    rows.filter(row => STATS_ROSTER_STATUS_OPTIONS.some(option => (
+      option.value === clean(row.rosterStatus)
+    ))).length
+  ), [rows])
 
   const parse = React.useCallback(async () => {
+    if (!seasonStatus) {
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: '׳ ׳“׳¨׳© ׳¡׳•׳’ ׳˜׳¢׳™׳ ׳”',
+        message: '׳‘׳—׳¨ ׳׳ ׳–׳• ׳¢׳•׳ ׳” ׳₪׳¢׳™׳׳” ׳׳• ׳¢׳•׳ ׳” ׳׳׳׳” ׳׳₪׳ ׳™ ׳”׳¦׳’׳× ׳”׳ ׳×׳•׳ ׳™׳',
+      })
+      return
+    }
+
     setBusy(true)
 
     try {
@@ -192,7 +189,7 @@ export default function useTeamStatsImport({
     } finally {
       setBusy(false)
     }
-  }, [enrichWithScout, notify, pasteValue, rosterLookup, seasonContext])
+  }, [enrichWithScout, notify, pasteValue, rosterLookup, seasonContext, seasonStatus])
 
   const changeCell = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => {
@@ -249,7 +246,7 @@ export default function useTeamStatsImport({
   }, [enrichWithScout, players])
 
   const changeSeasonStatus = React.useCallback(value => {
-    const nextStatus = value === 'completed' ? 'completed' : 'active'
+    const nextStatus = ['active', 'completed'].includes(value) ? value : ''
 
     setSeasonStatus(nextStatus)
     setRows(currentRows => currentRows.map(row => ({
@@ -259,7 +256,7 @@ export default function useTeamStatsImport({
         team,
         season: {
           ...seasonContext,
-          seasonStatus: nextStatus,
+          seasonStatus: nextStatus || seasonContext.seasonStatus,
         },
       }),
     })))
@@ -286,7 +283,7 @@ export default function useTeamStatsImport({
   }, [busy])
 
   const confirm = React.useCallback(async () => {
-    if (!selectedSeasonOption || !hasTeamPlayers || hasInvalidRows) return
+    if (!selectedSeasonOption || !hasTeamPlayers || hasInvalidRows || !seasonStatus) return
 
     const validRows = rows.filter(row => getRowStatus(row).valid)
     setBusy(true)
@@ -353,6 +350,7 @@ export default function useTeamStatsImport({
     seasonStatus,
     rosterLookup,
     hasInvalidRows,
+    exceptionRowsCount,
     setOpen,
     setPasteValue,
     clearPaste,

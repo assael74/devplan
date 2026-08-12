@@ -267,6 +267,22 @@ const PlayerUrlIcon = ({ playerUrl }) => {
   )
 }
 
+const resolveScoutProfileSortLabel = row => {
+  const profiles = [
+    ...(Array.isArray(row.scoutProfiles) ? row.scoutProfiles : []),
+    ...(Array.isArray(row.scoutSignals) ? row.scoutSignals : []),
+  ]
+  const scoutView = buildScoutCompactView({
+    profiles,
+    combinations: Array.isArray(row.scoutCombinations)
+      ? row.scoutCombinations
+      : [],
+    display: row.scoutProfileDisplay || {},
+  })
+
+  return scoutView.label || ''
+}
+
 export default function useTeamStatsColumns({
   players,
   rosterLookup,
@@ -390,10 +406,18 @@ export default function useTeamStatsColumns({
     },
   }), [])
 
+  const minutesColumn = React.useMemo(() => ({
+    ...PLAYER_STATS_BASE_COLUMNS[5],
+    sortable: true,
+    sortValue: row => toFiniteNumber(row.minutes) ?? -1,
+  }), [])
+
   const identityColumn = React.useMemo(() => ({
     key: 'identityStatus',
     label: 'זיהוי שחקן',
     readOnly: true,
+    sortable: true,
+    sortValue: row => getStatsIdentityLabel(row.identityStatus),
     sx: sx.identityColumn,
     render: ({ row }) => (
       <Tooltip title={row.identityMessage || getStatsIdentityLabel(row.identityStatus)}>
@@ -464,6 +488,8 @@ export default function useTeamStatsColumns({
   const scoutProfileColumn = React.useMemo(() => ({
     key: 'scoutProfiles',
     label: 'פרופילי סקאוט',
+    sortable: true,
+    sortValue: resolveScoutProfileSortLabel,
     sx: sx.scoutProfileColumn,
     render: ({ row }) => {
       const profiles = [
@@ -515,12 +541,13 @@ export default function useTeamStatsColumns({
     gamesColumn,
     goalsColumn,
     startsColumn,
-    PLAYER_STATS_BASE_COLUMNS[5],
+    minutesColumn,
     minutesPctColumn,
   ], [
     gamesColumn,
     goalsColumn,
     identityColumn,
+    minutesColumn,
     minutesPctColumn,
     nameColumn,
     scoutProfileColumn,

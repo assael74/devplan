@@ -16,6 +16,7 @@ export default function PasteArea({
   value,
   placeholder,
   compact = false,
+  pasteDisabled = false,
   onChange,
   onPaste,
   onFileSelect,
@@ -107,7 +108,7 @@ export default function PasteArea({
           <Button
             size='sm'
             variant='solid'
-            disabled={!value}
+            disabled={!value || pasteDisabled}
             startDecorator={iconUi({id: 'addStats', size: 'sm'})}
             onClick={onPaste}
             sx={sx.pasteButton}

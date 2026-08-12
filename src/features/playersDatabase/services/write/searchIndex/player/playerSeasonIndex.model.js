@@ -52,6 +52,10 @@ export const buildPlayerSeasonIndexDoc = ({
     externalPlayerId: player.externalPlayerId,
     birthYear: season.birthYear,
   }) ? clean(player.externalPlayerId) : ''
+  const identityBirthYear = resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  })
   const playerId = buildInternalPlayerId({
     player,
     season,
@@ -106,12 +110,9 @@ export const buildPlayerSeasonIndexDoc = ({
     playerId,
     playerDocumentId,
     externalPlayerId,
-    identityBirthYear: resolvePlayerIdentityBirthYear({
-      player,
-      season,
-    }),
+    identityBirthYear,
     identityKey: clean(player.identityKey) || buildPlayerIdentityKey({
-      birthYear: season.birthYear,
+      birthYear: identityBirthYear,
       normalizedName: normalizedDisplayName,
     }),
     playerUrl: clean(player.playerUrl),

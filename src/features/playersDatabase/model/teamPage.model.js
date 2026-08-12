@@ -493,6 +493,18 @@ export const buildTeamPageView = ({
       actual,
       projected: birthTeamSeason.stats.projected,
     },
+    metadata: {
+      ...birthTeamSeason.metadata,
+      teamUrl: cleanValue(
+        birthTeamSeason.metadata?.teamUrl ||
+        leagueTeamSeason.metadata?.teamUrl
+      ),
+      seasonUrl: cleanValue(
+        birthTeamSeason.metadata?.seasonUrl ||
+        leagueTeamSeason.metadata?.seasonUrl ||
+        leagueDoc?.leagueUrl
+      ),
+    },
     ranking: leagueTeamSeason.ranking,
     performance: performance || birthTeamSeason.performance,
     scoutProfilesSummary: leagueTeamSeason.scoutProfilesSummary,

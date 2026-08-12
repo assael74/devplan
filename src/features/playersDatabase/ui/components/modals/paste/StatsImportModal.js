@@ -22,8 +22,9 @@ function clean(value) {
   return String(value || '').trim()
 }
 
-function MetaLink({ href, children, missingLabel }) {
+function MetaLink({ href, children }) {
   const safeHref = clean(href)
+  const missingLabel = children
 
   if (!safeHref) {
     return (
@@ -61,7 +62,11 @@ export default function StatsImportModal({
 }) {
   const teamUrl = clean(source.teamUrl || team.teamUrl)
   const leagueName = clean(source.leagueName || team.leagueName)
-  const leagueUrl = clean(source.leagueUrl)
+  const leagueUrl = clean(source.leagueUrl || team?.domain?.metadata?.seasonUrl)
+  const hasPreviewRows = controller.rows.length > 0
+  const seasonStatusOption = STATS_SEASON_STATUS_OPTIONS.find(option => (
+    option.value === controller.seasonStatus
+  ))
 
   const description = (
     <Box sx={sx.description}>
@@ -70,18 +75,9 @@ export default function StatsImportModal({
       </MetaLink>
 
       <Typography component='span' level='body-sm'>·</Typography>
-      <Typography component='span' level='body-sm'>
-        {team.ageGroupLabel || team.ageGroupId || '-'}
-      </Typography>
-
-      {team.birthYear ? (
-        <>
-          <Typography component='span' level='body-sm'>·</Typography>
-          <Typography component='span' level='body-sm'>
-            שנתון {team.birthYear}
-          </Typography>
-        </>
-      ) : null}
+      <MetaLink href={leagueUrl} missingLabel='לא הוגדר קישור לליגה'>
+        {leagueName || 'ליגה'}
+      </MetaLink>
 
       {seasonKey ? (
         <>
@@ -92,18 +88,30 @@ export default function StatsImportModal({
         </>
       ) : null}
 
-      <Typography component='span' level='body-sm'>·</Typography>
-      <MetaLink href={leagueUrl} missingLabel='לא הוגדר קישור לליגה'>
-        {leagueName || 'ליגה'}
-      </MetaLink>
+      {team.birthYear ? (
+        <>
+          <Typography component='span' level='body-sm'>·</Typography>
+          <Typography component='span' level='body-sm'>
+            שנתון {team.birthYear}
+          </Typography>
+        </>
+      ) : null}
     </Box>
   )
 
   const beforePaste = (
-    <FormControl size='sm' sx={sx.seasonStatus}>
+    <FormControl
+      size='sm'
+      required
+      sx={[
+        sx.seasonStatus,
+        hasPreviewRows ? sx.seasonStatusCompact : null,
+      ]}
+    >
       <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
       <Select
-        value={controller.seasonStatus}
+        value={controller.seasonStatus || null}
+        placeholder='בחר סוג טעינה'
         onChange={(event, value) => controller.changeSeasonStatus(value)}
       >
         {STATS_SEASON_STATUS_OPTIONS.map(option => (
@@ -112,11 +120,11 @@ export default function StatsImportModal({
           </Option>
         ))}
       </Select>
-      <FormHelperText>
-        {STATS_SEASON_STATUS_OPTIONS.find(option => (
-          option.value === controller.seasonStatus
-        ))?.description || ''}
-      </FormHelperText>
+      {!hasPreviewRows ? (
+        <FormHelperText>
+          {seasonStatusOption?.description || 'בחירה חובה לפני הצגת הנתונים'}
+        </FormHelperText>
+      ) : null}
     </FormControl>
   )
 
@@ -131,9 +139,17 @@ export default function StatsImportModal({
       value={controller.pasteValue}
       placeholder={PLAYER_STATS_PLACEHOLDER}
       busy={controller.busy}
-      disabled={!hasTeamPlayers || controller.hasInvalidRows}
+      disabled={!hasTeamPlayers || controller.hasInvalidRows || !controller.seasonStatus}
       confirmLabel='אישור טעינת סטטיסטיקות'
       beforePaste={beforePaste}
+      pasteDisabled={!controller.seasonStatus}
+      previewSummary={[
+        {
+          key: 'exceptions',
+          color: controller.exceptionRowsCount ? 'warning' : 'neutral',
+          label: `${controller.exceptionRowsCount} חריגים`,
+        },
+      ]}
       onValueChange={controller.setPasteValue}
       onPaste={controller.parse}
       onClear={controller.clearPaste}

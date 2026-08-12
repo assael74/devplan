@@ -21,6 +21,7 @@ import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
+import { buildLeaguePageTeams } from '../../../model/leaguePage.model.js'
 import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
@@ -56,6 +57,67 @@ const sx = {
   ...teamPageSx,
 }
 
+const cleanKey = value => String(value || '').trim()
+
+const buildTeamNavigationLabel = teamRow => [
+  teamRow.tableRank ? `מקום ${teamRow.tableRank}` : '',
+  teamRow.teamSlot && teamRow.teamSlot > 1 ? `קבוצה ${teamRow.teamSlot}` : '',
+  teamRow.hasStats ? 'סטטיסטיקה' : teamRow.hasPlayers ? 'סגל' : 'ללא סגל',
+].filter(Boolean).join(' · ')
+
+const resolveScoutProfileId = profile => cleanKey(
+  profile?.profileId ||
+  profile?.id
+)
+
+const resolveScoutProfileLabel = profile => cleanKey(
+  profile?.profileLabel ||
+  profile?.label ||
+  profile?.name ||
+  resolveScoutProfileId(profile)
+) || 'פרופיל סקאוט'
+
+const buildProfileFilterOptions = players => {
+  const profileMap = new Map()
+  let playersWithProfilesCount = 0
+
+  players.forEach(player => {
+    const profiles = Array.isArray(player.scoutProfiles)
+      ? player.scoutProfiles
+      : []
+
+    if (profiles.length) playersWithProfilesCount += 1
+
+    profiles.forEach(profile => {
+      const id = resolveScoutProfileId(profile)
+      if (!id) return
+
+      const current = profileMap.get(id) || {
+        value: id,
+        label: resolveScoutProfileLabel(profile),
+        count: 0,
+      }
+
+      profileMap.set(id, {
+        ...current,
+        count: current.count + 1,
+      })
+    })
+  })
+
+  return [
+    {
+      value: 'all',
+      label: 'כל הפרופילים',
+      count: playersWithProfilesCount,
+    },
+    ...Array.from(profileMap.values()).sort((left, right) => (
+      right.count - left.count ||
+      left.label.localeCompare(right.label, 'he')
+    )),
+  ]
+}
+
 function TeamPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -64,6 +126,7 @@ function TeamPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileOnly, setProfileOnly] = React.useState(false)
+  const [profileFilterKey, setProfileFilterKey] = React.useState('all')
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
   const {
@@ -118,6 +181,52 @@ function TeamPageContent() {
     seasonKey: selectedSeasonKey,
   })
   const leagueBackPath = fromLeaguePath || leagueFallbackPath
+  const leagueTeamsNavigation = React.useMemo(() => {
+    const rows = buildLeaguePageTeams({
+      season: selectedLeagueSeason?.season,
+      leagueDoc,
+      target: selectedSeasonOption?.target || 'current',
+    })
+    const options = rows
+      .map(teamRow => ({
+        value: cleanKey(teamRow.id || teamRow.teamDocumentId || teamRow.birthTeamId),
+        label: teamRow.name,
+        secondaryLabel: buildTeamNavigationLabel(teamRow),
+        keys: [
+          teamRow.id,
+          teamRow.teamId,
+          teamRow.birthTeamId,
+          teamRow.teamDocumentId,
+        ].map(cleanKey).filter(Boolean),
+      }))
+      .filter(option => option.value)
+    const currentKeys = new Set([
+      team.id,
+      team.teamId,
+      team.birthTeamId,
+      team.teamDocumentId,
+    ].map(cleanKey).filter(Boolean))
+    const currentIndex = options.findIndex(option => (
+      option.keys.some(key => currentKeys.has(key))
+    ))
+
+    return {
+      options,
+      value: currentIndex >= 0 ? options[currentIndex].value : '',
+      previousValue: currentIndex > 0 ? options[currentIndex - 1].value : '',
+      nextValue: currentIndex >= 0 && currentIndex < options.length - 1
+        ? options[currentIndex + 1].value
+        : '',
+    }
+  }, [
+    leagueDoc,
+    selectedLeagueSeason,
+    selectedSeasonOption,
+    team.birthTeamId,
+    team.id,
+    team.teamDocumentId,
+    team.teamId,
+  ])
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
@@ -135,13 +244,26 @@ function TeamPageContent() {
       label: team.name,
     },
   ])
+  const profileFilterOptions = React.useMemo(
+    () => buildProfileFilterOptions(players),
+    [players]
+  )
   const visiblePlayers = React.useMemo(() => {
-    const filteredPlayers = !profileOnly
-      ? players
-      : players.filter(player => (
-        Array.isArray(player.scoutProfiles) &&
-        player.scoutProfiles.length > 0
-      ))
+    const filteredPlayers = players.filter(player => {
+      const profiles = Array.isArray(player.scoutProfiles)
+        ? player.scoutProfiles
+        : []
+
+      if (profileFilterKey !== 'all') {
+        return profiles.some(profile => (
+          resolveScoutProfileId(profile) === profileFilterKey
+        ))
+      }
+
+      if (profileOnly) return profiles.length > 0
+
+      return true
+    })
 
     return filteredPlayers.map(player => ({
       ...player,
@@ -155,8 +277,19 @@ function TeamPageContent() {
     favorites.pendingKeysRevision,
     favorites.playerFavoritesMap,
     players,
+    profileFilterKey,
     profileOnly,
   ])
+  const handleProfileOnlyChange = React.useCallback(nextValue => {
+    setProfileOnly(nextValue)
+    if (!nextValue) setProfileFilterKey('all')
+  }, [])
+  const handleProfileFilterChange = React.useCallback(nextValue => {
+    const value = cleanKey(nextValue) || 'all'
+
+    setProfileFilterKey(value)
+    if (value !== 'all') setProfileOnly(true)
+  }, [])
   const hasTeamStats = React.useMemo(() => (
     players.some(player => (
       player.statsStatus === PLAYER_STATS_STATUS.LOADED ||
@@ -176,6 +309,27 @@ function TeamPageContent() {
       state: null,
     })
   }
+
+  const handleTeamNavigate = React.useCallback(nextTeamId => {
+    const cleanTeamId = cleanKey(nextTeamId)
+    if (!cleanTeamId || cleanTeamId === leagueTeamsNavigation.value) return
+
+    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId,
+      teamId: cleanTeamId,
+      seasonKey: selectedSeasonKey,
+      fromLeague: leagueBackPath,
+    }), {
+      state: location.state,
+    })
+  }, [
+    leagueBackPath,
+    leagueId,
+    leagueTeamsNavigation.value,
+    location.state,
+    navigate,
+    selectedSeasonKey,
+  ])
 
   const handleTeamFavoriteToggle = React.useCallback(() => {
     const payload = {
@@ -329,8 +483,13 @@ function TeamPageContent() {
             hasTeamPlayers={hasTeamPlayers}
             hasTeamStats={hasTeamStats}
             profileOnly={profileOnly}
+            profileFilterKey={profileFilterKey}
+            profileFilterOptions={profileFilterOptions}
             onSeasonChange={setSelectedSeasonKey}
-            onProfileOnlyChange={setProfileOnly}
+            teamNavigation={leagueTeamsNavigation}
+            onTeamNavigate={handleTeamNavigate}
+            onProfileOnlyChange={handleProfileOnlyChange}
+            onProfileFilterChange={handleProfileFilterChange}
             onPlayersImport={() => rosterImport.setOpen(true)}
             onStatsImport={() => statsImport.setOpen(true)}
             onDeletePlayers={() => playersDelete.setOpen(true)}
@@ -421,7 +580,11 @@ function TeamPageContent() {
             '',
           leagueUrl:
             selectedLeagueSeason?.season?.seasonUrl ||
+            selectedLeagueSeason?.season?.leagueUrl ||
             selectedSeasonOption?.season?.seasonUrl ||
+            selectedSeasonOption?.season?.leagueUrl ||
+            team.domain?.metadata?.seasonUrl ||
+            leagueDoc?.leagueUrl ||
             '',
         }}
         controller={statsImport}

@@ -21,6 +21,16 @@ export const resolvePlayerIdentityBirthYear = ({
   player = {},
   season = {},
 } = {}) => {
+  const seasonBirthYear = Number(season.birthYear)
+  const isYounger = Boolean(
+    player.isYoungerAgeGroup ||
+    cleanValue(player.rosterStatus) === 'youngerAgeGroup'
+  )
+
+  if (isYounger && Number.isFinite(seasonBirthYear) && seasonBirthYear > 0) {
+    return seasonBirthYear + 1
+  }
+
   const directYear = Number(
     pickFirstValue(
       player.identityBirthYear,
@@ -29,13 +39,7 @@ export const resolvePlayerIdentityBirthYear = ({
   )
   if (Number.isFinite(directYear) && directYear > 0) return directYear
 
-  const seasonBirthYear = Number(season.birthYear)
   if (!Number.isFinite(seasonBirthYear) || seasonBirthYear <= 0) return 0
-
-  const isYounger = Boolean(
-    player.isYoungerAgeGroup ||
-    cleanValue(player.rosterStatus) === 'youngerAgeGroup'
-  )
 
   return isYounger ? seasonBirthYear + 1 : seasonBirthYear
 }

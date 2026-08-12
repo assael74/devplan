@@ -31,4 +31,18 @@ export const statsImportModalSx = {
   seasonStatus: {
     maxWidth: 320,
   },
+
+  seasonStatusCompact: {
+    maxWidth: 260,
+
+    '& .MuiFormLabel-root': {
+      fontSize: 12,
+      lineHeight: 1.2,
+    },
+
+    '& .MuiSelect-root': {
+      minHeight: 30,
+      fontSize: 12,
+    },
+  },
 }

@@ -2,7 +2,6 @@ import * as React from 'react'
 import {
   Box,
   Button,
-  CircularProgress,
   DialogContent,
   DialogTitle,
   Modal,
@@ -106,11 +105,9 @@ export default function AnimatedModal({
                     loading={busy}
                     disabled={disabled || busy}
                     startDecorator={
-                      busy
-                        ? <CircularProgress size='sm' />
-                        : confirmIconId
-                          ? iconUi({ id: confirmIconId, size: 'sm' })
-                          : null
+                      !busy && confirmIconId
+                        ? iconUi({ id: confirmIconId, size: 'sm' })
+                        : null
                     }
                     onClick={handleConfirm}
                     sx={sx.confirmButton}

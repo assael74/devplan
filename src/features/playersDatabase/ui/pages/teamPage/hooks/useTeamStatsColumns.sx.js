@@ -27,15 +27,25 @@ export const teamStatsColumnsSx = {
     display: 'flex',
     alignItems: 'center',
     gap: 0.5,
+    minWidth: 0,
   },
 
   matchSelect: {
-    minWidth: 190,
+    minWidth: 0,
+    width: 150,
+    maxWidth: 150,
     textAlign: 'left',
+
+    '& button': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
   },
 
   identityColumn: {
-    minWidth: 132,
+    width: 126,
+    minWidth: 126,
   },
 
   identityChip: {
@@ -43,7 +53,8 @@ export const teamStatsColumnsSx = {
   },
 
   statusColumn: {
-    minWidth: 155,
+    width: 132,
+    minWidth: 132,
   },
 
   statusText: {
@@ -51,7 +62,15 @@ export const teamStatsColumnsSx = {
   },
 
   statusSelect: {
-    minWidth: 155,
+    minWidth: 0,
+    width: 118,
+    maxWidth: 118,
+
+    '& button': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
   },
 
   scoutProfileColumn: {

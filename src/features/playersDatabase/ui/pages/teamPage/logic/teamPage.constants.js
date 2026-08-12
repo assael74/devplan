@@ -101,6 +101,10 @@ export const STATS_SEASON_STATUS_OPTIONS = [
 
 export const STATS_ROSTER_STATUS_OPTIONS = [
   {
+    value: 'regular',
+    label: 'כן בסגל',
+  },
+  {
     value: 'transferredOut',
     label: 'עבר קבוצה',
   },
@@ -117,4 +121,3 @@ export const STATS_ROSTER_STATUS_OPTIONS = [
     label: 'שנתון צעיר',
   },
 ]
-

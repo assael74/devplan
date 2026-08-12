@@ -15,12 +15,78 @@ import PreviewCell from './PreviewCell.js'
 import StatusCell from './StatusCell.js'
 import { resolvePasteRowStatus } from './paste.model.js'
 
+const sortRows = ({
+  rows,
+  columns,
+  sort,
+}) => {
+  const indexedRows = rows.map((row, index) => ({
+    row,
+    rowIndex: index,
+  }))
+
+  if (!sort?.key) return indexedRows
+
+  const column = columns.find(item => item.key === sort.key)
+  if (!column?.sortable) return indexedRows
+
+  const direction = sort.direction === 'desc' ? -1 : 1
+  const getValue = item => {
+    if (typeof column.sortValue === 'function') {
+      return column.sortValue(item.row)
+    }
+
+    return item.row?.[column.key]
+  }
+
+  return [...indexedRows].sort((left, right) => (
+    String(getValue(left) || '').localeCompare(
+      String(getValue(right) || ''),
+      'he',
+      {
+        numeric: true,
+        sensitivity: 'base',
+      }
+    ) * direction
+  ))
+}
+
 export default function PreviewTable({
   columns,
   rows,
   onCellChange,
   getRowStatus,
+  summary = [],
 }) {
+  const [sort, setSort] = React.useState(null)
+  const visibleRows = React.useMemo(() => sortRows({
+    rows,
+    columns,
+    sort,
+  }), [
+    columns,
+    rows,
+    sort,
+  ])
+
+  const toggleSort = column => {
+    if (!column.sortable) return
+
+    setSort(current => {
+      if (current?.key !== column.key) {
+        return {
+          key: column.key,
+          direction: 'asc',
+        }
+      }
+
+      return {
+        key: column.key,
+        direction: current.direction === 'asc' ? 'desc' : 'asc',
+      }
+    })
+  }
+
   return (
     <Card sx={sx.previewPanel}>
       <Box sx={sx.previewHeader}>
@@ -30,13 +96,6 @@ export default function PreviewTable({
             sx={sx.sectionTitle}
           >
             תצוגה ועריכת נתונים
-          </Typography>
-
-          <Typography
-            level='body-xs'
-            sx={sx.sectionDescription}
-          >
-            ניתן לבדוק ולתקן את הנתונים לפני הטעינה.
           </Typography>
         </Box>
 
@@ -60,6 +119,17 @@ export default function PreviewTable({
           >
             {columns.length} עמודות
           </Chip>
+
+          {summary.map(item => (
+            <Chip
+              key={item.key || item.label}
+              size='sm'
+              variant='soft'
+              color={item.color || 'neutral'}
+            >
+              {item.label}
+            </Chip>
+          ))}
         </Stack>
       </Box>
 
@@ -87,15 +157,27 @@ export default function PreviewTable({
                   component='th'
                   key={column.key}
                   sx={column.sx}
+                  onClick={() => toggleSort(column)}
                 >
-                  {column.label}
+                  <Box sx={column.sortable ? sx.sortableHeader : null}>
+                    {column.label}
+                    {sort?.key === column.key ? (
+                      <Typography
+                        component='span'
+                        level='body-xs'
+                        sx={sx.sortIndicator}
+                      >
+                        {sort.direction === 'asc' ? '↑' : '↓'}
+                      </Typography>
+                    ) : null}
+                  </Box>
                 </Box>
               ))}
             </tr>
           </thead>
 
           <tbody>
-            {rows.map((row, rowIndex) => {
+            {visibleRows.map(({ row, rowIndex }) => {
               const rowStatus = resolvePasteRowStatus({
                 columns,
                 row,

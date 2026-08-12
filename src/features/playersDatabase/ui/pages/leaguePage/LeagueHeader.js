@@ -30,12 +30,17 @@ export default function LeagueHeader({
   title = '',
   region = '',
   ageGroup = '',
-  levelLabel = '',
+  birthYear = '',
   active = false,
   seasonKey = '',
   onSearch,
   onBack,
 }) {
+  const seasonChipLabel = [
+    seasonKey ? `עונה ${seasonKey}` : '',
+    birthYear ? `שנתון ${birthYear}` : '',
+  ].filter(Boolean).join(' · ')
+
   const actions = (
     <Stack sx={sx.actionsPanel}>
       <ActivityStatusChip
@@ -84,8 +89,8 @@ export default function LeagueHeader({
 
         <Box sx={sx.titleChips}>
           <TitleChip tone='tertiary'>{ageGroup}</TitleChip>
-          {seasonKey ? (
-            <TitleChip>{`עונה ${seasonKey}`}</TitleChip>
+          {seasonChipLabel ? (
+            <TitleChip>{seasonChipLabel}</TitleChip>
           ) : null}
         </Box>
       </Box>

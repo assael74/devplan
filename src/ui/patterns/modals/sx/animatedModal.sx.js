@@ -112,6 +112,9 @@ export const animatedModalSx = {
     minHeight: 38,
     bgcolor: devPlanColors.primary,
     color: '#FFFFFF',
+    '& svg': {
+      color: '#FFFFFF',
+    },
     '&:hover': { bgcolor: devPlanColors.primaryDark },
   },
 

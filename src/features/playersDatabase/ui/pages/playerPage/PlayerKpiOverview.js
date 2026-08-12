@@ -5,6 +5,11 @@ import { Box } from '@mui/joy'
 import KpiRow from '../../components/kpi/KpiRow.js'
 import KpiCard from '../../components/kpi/KpiCard.js'
 import {
+  getPlayerLayerLabel,
+  getPlayerPositionLabel,
+} from '../../components/playerMeta/PlayerPositionChip.js'
+import { getPlayerGeneralPosition } from '../../../../../shared/players/player.positions.utils.js'
+import {
   formatValue,
   resolvePlayerScopeReliability,
 } from './logic/playerPage.utils.js'
@@ -29,6 +34,7 @@ const resolveScopeLabel = (rows, key, pluralLabel) => {
 }
 
 export default function PlayerKpiOverview({
+  player = {},
   historyRows = [],
   selectedSeasonKey = '',
 }) {
@@ -50,6 +56,12 @@ export default function PlayerKpiOverview({
     : '-'
   const placeholder = scopeRows.every(row => row.placeholder)
   const seasonLabel = selectedSeasonKey || 'כל העונות'
+  const resolvedLayer = player.positionLayer || getPlayerGeneralPosition({
+    positions: player.primaryPosition ? [player.primaryPosition] : [],
+    primaryPosition: player.primaryPosition,
+  }).layerKey
+  const positionLabel = getPlayerPositionLabel(player.primaryPosition) || 'לא הוגדרה'
+  const layerLabel = getPlayerLayerLabel(resolvedLayer) || 'לא הוגדרה'
 
   return (
     <Box sx={sx.kpiSection}>
@@ -118,6 +130,14 @@ export default function PlayerKpiOverview({
             {
               label: 'קבוצת גיל',
               value: resolveScopeLabel(scopeRows, 'teamName', 'קבוצות גיל'),
+            },
+            {
+              label: 'עמדה',
+              value: positionLabel,
+            },
+            {
+              label: 'חוליה',
+              value: layerLabel,
             },
           ]}
           placeholder={placeholder}

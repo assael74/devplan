@@ -10,11 +10,13 @@ import {
 
 import PageHeader from '../../components/page/PageHeader.js'
 import FavoriteButton from '../../components/actions/FavoriteButton.js'
-import PlayerPositionChip from '../../components/playerMeta/PlayerPositionChip.js'
+import TeamName from '../../components/entities/TeamName.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import { resolvePlayerHeaderMeta } from './logic/playerPage.utils.js'
 import { playerHeaderSx as sx } from './sx/playerHeader.sx.js'
+
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 export default function PlayerHeader({
   breadcrumbs = [],
@@ -33,6 +35,8 @@ export default function PlayerHeader({
     fullName,
     birthYear,
   } = resolvePlayerHeaderMeta(player)
+  const clubName = clean(player.clubName)
+  const teamSlot = Number(player.birthTeamSlot || player.teamSlot || 1) || 1
 
   const canNavigateToTeam = !!player.leagueId && !!player.teamId
   const actions = (
@@ -95,26 +99,19 @@ export default function PlayerHeader({
           onToggle={onFavoriteToggle}
         />
 
-        {player.clubName && player.clubName !== '-' ? (
-          <Box sx={sx.teamChip}>
-            {player.clubName}
-          </Box>
-        ) : null}
-
-        <PlayerPositionChip
-          primaryPosition={player.primaryPosition}
-          positionLayer={player.positionLayer}
-        />
-
-        <PlayerPositionChip
-          primaryPosition={player.primaryPosition}
-          positionLayer={player.positionLayer}
-          type='layer'
-        />
-
         {birthYear ? (
           <Box sx={sx.birthYearChip}>
             {birthYear}
+          </Box>
+        ) : null}
+
+        {clubName && clubName !== '-' ? (
+          <Box sx={sx.teamChip}>
+            <TeamName
+              value={clubName}
+              slot={teamSlot}
+              fontSize={13}
+            />
           </Box>
         ) : null}
 

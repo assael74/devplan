@@ -250,6 +250,7 @@ function PlayerPageContent() {
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
             <PlayerKpiOverview
+              player={player}
               historyRows={historyView.rows}
               selectedSeasonKey={historyView.selectedSeasonKey}
             />

@@ -12,6 +12,7 @@ import {
   normalizePlayerIdentity,
   normalizePlayerNameValue,
   normalizePlayerIdPart,
+  resolvePlayerIdentityBirthYear,
 } from '../../../model/playerIdentity.model.js'
 import {
   normalizePlayerStats,
@@ -45,7 +46,10 @@ const buildInternalPlayerId = ({
   const identity = normalizePlayerIdentity(player)
   if (identity.playerId) return identity.playerId
 
-  const birthYear = clean(pickFirstValue(player.birthYear, season.birthYear))
+  const birthYear = clean(resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  }) || pickFirstValue(player.birthYear, season.birthYear))
   const externalPlayerId = isValidExternalPlayerId({
     externalPlayerId: identity.externalPlayerId,
     birthYear,
@@ -74,7 +78,11 @@ const uniqueCleanValues = values =>
 export const normalizeTeamPlayer = (player, season = {}) => {
   const identity = normalizePlayerIdentity(player)
   const playerStats = normalizePlayerStats(player)
-  const birthYear = clean(pickFirstValue(player.birthYear, season.birthYear))
+  const identityBirthYear = resolvePlayerIdentityBirthYear({
+    player,
+    season,
+  })
+  const birthYear = clean(identityBirthYear || pickFirstValue(player.birthYear, season.birthYear))
   const externalPlayerId = isValidExternalPlayerId({
     externalPlayerId: identity.externalPlayerId,
     birthYear,
@@ -470,4 +478,3 @@ export const upsertSeasonRows = ({
       : row
   ))
 }
-
