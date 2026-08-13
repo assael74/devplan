@@ -12,12 +12,24 @@ import {
   trackedGetDoc,
   trackedGetDocs,
 } from '../../../../services/firestore/usage/index.js'
+import { buildPlayerScoutAuditCost } from './playerScout.cost.js'
+import { buildPlayerScoutShadowComparison } from './playerScoutShadow.audit.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { buildPlayerScoutState } from '../../domain/orchestration/buildPlayerScoutState.js'
+import { buildPlayerDocumentId } from '../../model/playerIdentity.model.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
+
+const hasOwn = (source, key) => Object.prototype.hasOwnProperty.call(
+  source && typeof source === 'object' ? source : {},
+  key
+)
+
+const isObject = value => Boolean(
+  value && typeof value === 'object' && !Array.isArray(value)
+)
 
 const unique = values => [
   ...new Set(
@@ -271,6 +283,12 @@ const findIndexed = ({ index, row, keyBuilder }) => {
 const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
   const data = snapshot.data() || {}
   const rows = []
+  const rootSchemaMissingFields = [
+    !hasOwn(data, 'favorite') ? 'favorite' : '',
+    !isObject(data.tracking) ? 'tracking' : '',
+    !isObject(data.verification) ? 'verification' : '',
+    !Array.isArray(data.events) ? 'events' : '',
+  ].filter(Boolean)
 
   ;['current', 'history'].forEach(sourceTarget => {
     const seasons = Array.isArray(data[sourceTarget])
@@ -278,6 +296,12 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
       : []
 
     seasons.forEach(season => {
+      const seasonSchemaMissingFields = [
+        !hasOwn(season, 'clubLevel') ? 'clubLevel' : '',
+        !hasOwn(season, 'clubStrengthLevel') ? 'clubStrengthLevel' : '',
+        !hasOwn(season, 'leagueLevel') ? 'leagueLevel' : '',
+      ].filter(Boolean)
+
       rows.push({
         ...season,
         source: 'dbPlayers',
@@ -292,6 +316,12 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
         profileIds: getProfileIds(season),
         combinationIds: getCombinationIds(season),
         reliabilityByProfile: getProfileReliability(season),
+        rootSchemaMissingFields,
+        seasonSchemaMissingFields,
+        schemaMissingFields: unique([
+          ...rootSchemaMissingFields,
+          ...seasonSchemaMissingFields.map(field => `season.${field}`),
+        ]),
       })
     })
   })
@@ -494,12 +524,17 @@ const buildRecalculatedRows = ({
             playerDocumentId: clean(player.playerDocumentId),
             externalPlayerId: clean(player.externalPlayerId),
             fullName: clean(player.fullName),
+            primaryPosition: clean(
+              player.primaryPosition ||
+              player.position
+            ),
             seasonId: clean(seasonContext.seasonId),
             seasonKey: clean(seasonContext.seasonKey),
             birthTeamId: clean(team.birthTeamId),
             birthTeamDocumentId: snapshot.id,
             teamId: clean(team.birthTeamId),
             teamDocumentId: snapshot.id,
+            clubId: clean(team.clubId),
             teamName: clean(
               teamIndexRow.displayName ||
               data.displayName ||
@@ -529,6 +564,14 @@ const buildRecalculatedRows = ({
               goalsAgainst: toNumber(teamIndexRow.goalsAgainst),
               ageGroupId: clean(teamIndexRow.ageGroupId),
               clubLevel: toNumber(teamIndexRow.clubLevel),
+              clubStrengthLevel: toNullableNumber(
+                teamIndexRow.clubStrengthLevel,
+                teamIndexRow.clubLevel
+              ),
+              leagueLevel: toNullableNumber(
+                teamIndexRow.leagueLevel,
+                teamIndexRow.level
+              ),
             },
             actualProfileIds: getProfileIds(player),
             actualCombinationIds: getCombinationIds(player),
@@ -623,6 +666,7 @@ const collectIssues = ({
     rows: searchRows,
     keyBuilder: buildPlayerKeys,
   })
+  const reportedRootSchemaPlayerIds = new Set()
 
   teamRows.forEach(row => {
     if (
@@ -696,6 +740,72 @@ const collectIssues = ({
       row,
       keyBuilder: buildPlayerKeys,
     })
+
+    if (playerRow) {
+      const rootMissingFields = Array.isArray(
+        playerRow.rootSchemaMissingFields
+      ) ? playerRow.rootSchemaMissingFields : []
+      const seasonMissingFields = Array.isArray(
+        playerRow.seasonSchemaMissingFields
+      ) ? playerRow.seasonSchemaMissingFields : []
+      const rootPlayerKey = clean(
+        playerRow.playerDocumentId ||
+        playerRow.sourceDocumentId ||
+        row.playerDocumentId ||
+        row.playerId
+      )
+
+      if (
+        rootMissingFields.length &&
+        rootPlayerKey &&
+        !reportedRootSchemaPlayerIds.has(rootPlayerKey)
+      ) {
+        reportedRootSchemaPlayerIds.add(rootPlayerKey)
+        issues.push({
+          type: 'player_schema_outdated',
+          severity: 'medium',
+          source: 'dbPlayers',
+          schemaScope: 'root',
+          playerId: row.playerId,
+          playerDocumentId: clean(
+            playerRow.playerDocumentId || row.playerDocumentId
+          ),
+          fullName: row.fullName,
+          seasonId: row.seasonId,
+          seasonKey: row.seasonKey,
+          teamDocumentId: row.teamDocumentId,
+          birthTeamDocumentId: row.birthTeamDocumentId,
+          birthTeamId: row.birthTeamId,
+          clubId: row.clubId,
+          teamName: row.teamName,
+          missingFields: rootMissingFields,
+        })
+      }
+
+      if (seasonMissingFields.length) {
+        issues.push({
+          type: 'player_schema_outdated',
+          severity: 'medium',
+          source: 'dbPlayers',
+          schemaScope: 'season',
+          playerId: row.playerId,
+          playerDocumentId: clean(
+            playerRow.playerDocumentId || row.playerDocumentId
+          ),
+          fullName: row.fullName,
+          seasonId: row.seasonId,
+          seasonKey: row.seasonKey,
+          teamDocumentId: row.teamDocumentId,
+          birthTeamDocumentId: row.birthTeamDocumentId,
+          birthTeamId: row.birthTeamId,
+          clubId: row.clubId,
+          teamName: row.teamName,
+          missingFields: seasonMissingFields.map(
+            field => `season.${field}`
+          ),
+        })
+      }
+    }
 
     if (row.expectedProfileIds.length && !playerRow) {
       issues.push(buildIssue({
@@ -824,6 +934,9 @@ const buildSummary = ({
   const historyStatusIssues = issues.filter(issue => (
     issue.type === 'history_season_status_invalid'
   ))
+  const schemaIssues = issues.filter(issue => (
+    issue.type === 'player_schema_outdated'
+  ))
 
   return {
     checkedTeamPlayerRows: teamRows.length,
@@ -843,6 +956,7 @@ const buildSummary = ({
     syncIssuesCount: syncIssues.length,
     reliabilityIssuesCount: reliabilityIssues.length,
     historyStatusIssuesCount: historyStatusIssues.length,
+    schemaIssuesCount: schemaIssues.length,
     totalIssues: issues.length,
     missingProfilesById: countValues(
       birthTeamIssues.flatMap(issue => issue.missingProfiles)
@@ -853,6 +967,40 @@ const buildSummary = ({
     issuesByType: countValues(issues.map(issue => issue.type)),
     issuesBySource: countValues(issues.map(issue => issue.source)),
   }
+}
+
+const buildAuditScopeStats = searchRows => {
+  const scopes = new Map()
+
+  ;(Array.isArray(searchRows) ? searchRows : []).forEach(row => {
+    const teamDocumentId = clean(row.teamDocumentId)
+    const seasonKey = clean(row.seasonKey || row.seasonId)
+    if (!teamDocumentId || !seasonKey) return
+
+    const scopeKey = `${teamDocumentId}::${seasonKey}`
+    const current = scopes.get(scopeKey) || {
+      scopeKey,
+      teamDocumentId,
+      seasonKey,
+      clubIds: [],
+      teamIds: [],
+      playerSearchIndexes: 0,
+    }
+
+    current.clubIds = unique([
+      ...current.clubIds,
+      row.clubId,
+    ])
+    current.teamIds = unique([
+      ...current.teamIds,
+      row.teamId,
+      row.birthTeamId,
+    ])
+    current.playerSearchIndexes += 1
+    scopes.set(scopeKey, current)
+  })
+
+  return [...scopes.values()]
 }
 
 const readAuditData = async ({ includeRepairData = false } = {}) => {
@@ -913,12 +1061,23 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
     includeRepairData,
   })
 
+  const searchRows = flattenSearchPlayerDocs(playerSearchSnapshot.docs)
+
   return {
     teamRows: recalculated.rows,
     skippedRows: recalculated.skipped,
     playerRows: flattenPlayerDocs(playerSnapshot.docs),
-    searchRows: flattenSearchPlayerDocs(playerSearchSnapshot.docs),
+    searchRows,
     teamIndexRows,
+    cost: {
+      audit: buildPlayerScoutAuditCost({
+        teamDocuments: teamSnapshot.docs.length,
+        playerDocuments: playerSnapshot.docs.length,
+        playerSearchIndexes: playerSearchSnapshot.docs.length,
+        teamSearchIndexes: teamSearchSnapshot.docs.length,
+      }),
+      scopeStats: buildAuditScopeStats(searchRows),
+    },
   }
 }
 
@@ -998,8 +1157,28 @@ const readScopedAuditData = async ({
   const skippedRows = recalculatedAll.skipped.filter(row => (
     clean(row.seasonKey || row.seasonId) === safeSeasonKey
   ))
+  const scopedSearchRows = flattenSearchPlayerDocs(
+    playerSearchSnapshot.docs
+  )
+  const scopedSearchIndex = buildIndex({
+    rows: scopedSearchRows,
+    keyBuilder: buildPlayerKeys,
+  })
   const playerDocumentIds = unique(
-    teamRows.map(row => row.playerDocumentId)
+    teamRows.flatMap(row => {
+      const searchRow = findIndexed({
+        index: scopedSearchIndex,
+        row,
+        keyBuilder: buildPlayerKeys,
+      })
+
+      return [
+        row.playerDocumentId,
+        searchRow?.playerDocumentId,
+        buildPlayerDocumentId(row),
+        row.playerId,
+      ]
+    })
   )
   const playerSnapshots = await Promise.all(
     playerDocumentIds.map(playerDocumentId => trackedGetDoc(
@@ -1020,12 +1199,27 @@ const readScopedAuditData = async ({
     snapshot.exists()
   ))
 
+  const searchRows = flattenSearchPlayerDocs(
+    playerSearchSnapshot.docs
+  )
+
   return {
     teamRows,
     skippedRows,
     playerRows: flattenPlayerDocs(existingPlayerSnapshots),
-    searchRows: flattenSearchPlayerDocs(playerSearchSnapshot.docs),
+    searchRows,
     teamIndexRows,
+    cost: {
+      audit: buildPlayerScoutAuditCost({
+        teamDocuments: 1,
+        playerDocuments: existingPlayerSnapshots.length,
+        playerSearchIndexes: playerSearchSnapshot.docs.length,
+        teamSearchIndexes: teamSearchSnapshot.docs.length,
+        directPlayerLookups: playerDocumentIds.length,
+        scoped: true,
+      }),
+      scopeStats: buildAuditScopeStats(searchRows),
+    },
   }
 }
 
@@ -1046,7 +1240,7 @@ export async function buildScopedPlayerScoutRulesAudit({
     searchRows: rows.searchRows,
   })
 
-  return {
+  const audit = {
     generatedAt: new Date().toISOString(),
     mode: 'read-only-scoped',
     purpose: 'verify-player-scout-scope-after-write',
@@ -1058,8 +1252,15 @@ export async function buildScopedPlayerScoutRulesAudit({
       ...rows,
       issues,
     }),
+    cost: rows.cost,
     issues,
     recalculatedRows: rows.teamRows,
+    repairDataIncluded: includeRepairData === true,
+  }
+
+  return {
+    ...audit,
+    shadow: buildPlayerScoutShadowComparison({ audit }),
   }
 }
 
@@ -1076,7 +1277,7 @@ export async function buildPlayerScoutRulesAudit({
     searchRows: rows.searchRows,
   })
 
-  return {
+  const audit = {
     generatedAt: new Date().toISOString(),
     mode: 'read-only',
     purpose: 'recalculate-player-scout-with-current-rules-and-compare-stored-state',
@@ -1084,8 +1285,15 @@ export async function buildPlayerScoutRulesAudit({
       ...rows,
       issues,
     }),
+    cost: rows.cost,
     issues,
     recalculatedRows: rows.teamRows,
+    repairDataIncluded: includeRepairData === true,
+  }
+
+  return {
+    ...audit,
+    shadow: buildPlayerScoutShadowComparison({ audit }),
   }
 }
 

@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
+// src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
 import {
   updateLeagueSeasonTableRankScoutProfilesSummary,
@@ -21,6 +21,7 @@ import {
 } from '../shared.js'
 import { buildPlayerMatchValues } from '../../../../model/playerIdentity.model.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player stats sync failed at ${stage}`)
@@ -102,6 +103,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     ...resolvedPayload,
     team: teamWithLoadStatus,
     players: syncedPlayers,
+    teamDocument: results.teamSeasonResult.teamDocument || null,
   }
   const scoutProfilesSummary = buildScoutProfilesSummary(teamSeasonPlayers)
 
@@ -166,6 +168,23 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   }
 
+  try {
+    results.playerScoutShadowResult = buildPlayerScoutShadowAudit({
+      players: syncedPlayers,
+      league: payload.league || {},
+      team: teamWithLoadStatus,
+      season: payload.season || {},
+      snapshotRows: results.playerSeasonIndexResult?.snapshotRows || [],
+    })
+  } catch (error) {
+    results.playerScoutShadowResult = {
+      engineVersion: 'scouting-v2-shadow',
+      mode: 'shadow',
+      status: 'failed',
+      error: error?.message || 'Shadow scout calculation failed',
+    }
+  }
+
   if (results.playerScoutProfileDocsResult.failedCount) {
     throw buildSyncError({
       stage: 'playerScoutProfileDocsPartialFailure',
@@ -183,5 +202,6 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     syncedPlayersCount: syncedPlayers.length,
     scoutSyncMode,
     syncStatus: 'complete',
+    shadowStatus: results.playerScoutShadowResult?.status || 'complete',
   }
 }

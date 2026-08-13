@@ -80,7 +80,8 @@ export const firestoreUsageSplitLayoutSx = {
   display: 'grid',
   gridTemplateColumns: {
     xs: '1fr',
-    lg: 'repeat(2, minmax(0, 1fr))',
+    xl: 'minmax(0, 1.35fr) minmax(300px, 0.65fr)',
   },
+  alignItems: 'stretch',
   gap: 2,
 }

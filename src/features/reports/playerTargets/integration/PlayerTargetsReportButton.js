@@ -9,6 +9,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'
+import { devPlanColors } from '../../../../ui/core/theme/Colors.js'
 
 import {
   publishPlayerTargetsReport,
@@ -55,6 +56,33 @@ function openPublishWindow() {
   if (typeof window === 'undefined') return null
 
   return window.open('', '_blank')
+}
+
+const reportButtonSx = {
+  bgcolor: devPlanColors.tertiaryLight,
+  color: devPlanColors.primary,
+  fontWeight: 700,
+  border: '1px solid',
+  borderColor: 'rgba(47, 134, 199, 0.22)',
+  boxShadow: '0 6px 14px rgba(47, 134, 199, 0.12)',
+
+  '&:hover': {
+    bgcolor: devPlanColors.tertiary,
+    color: '#fff',
+  },
+
+  '&.Mui-disabled': {
+    bgcolor: devPlanColors.secondaryLight,
+    color: devPlanColors.subText,
+    borderColor: 'transparent',
+    boxShadow: 'none',
+  },
+}
+
+const reportIconButtonSx = {
+  ...reportButtonSx,
+  minWidth: 32,
+  minHeight: 32,
 }
 
 export default function PlayerTargetsReportButton({
@@ -161,6 +189,7 @@ export default function PlayerTargetsReportButton({
             color={publishState.error ? 'danger' : 'primary'}
             disabled={isDisabled}
             onClick={handlePublishReport}
+            sx={reportIconButtonSx}
             aria-label='יצירת קישור דוח יעדים ציבורי לשחקן'
           >
             {icon}
@@ -173,6 +202,7 @@ export default function PlayerTargetsReportButton({
             disabled={isDisabled}
             startDecorator={icon}
             onClick={handlePublishReport}
+            sx={reportButtonSx}
           >
             צור דוח יעדים
           </Button>

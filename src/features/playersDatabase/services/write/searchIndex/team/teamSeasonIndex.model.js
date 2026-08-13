@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.model.js
+// src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.model.js
 
 import { serverTimestamp } from 'firebase/firestore'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
@@ -27,6 +27,34 @@ export const resolveClubLevel = ({ clubId = '', clubLevel = null } = {}) => {
 
   const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clean(clubId))
   return toNumberOrZero(club?.clubLevel)
+}
+
+export const resolveClubStrengthLevel = ({
+  clubId = '',
+  clubLevel = null,
+  clubStrengthLevel = null,
+} = {}) => {
+  const directStrengthLevel = Number(clubStrengthLevel)
+  if (Number.isFinite(directStrengthLevel) && directStrengthLevel > 0) {
+    return directStrengthLevel
+  }
+
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clean(clubId))
+  const catalogStrengthLevel = Number(club?.clubStrengthLevel)
+
+  if (Number.isFinite(catalogStrengthLevel) && catalogStrengthLevel > 0) {
+    return catalogStrengthLevel
+  }
+
+  return resolveClubLevel({
+    clubId,
+    clubLevel,
+  })
+}
+
+const resolveNeedLevel = ({ needs = [], id = '' } = {}) => {
+  const need = (Array.isArray(needs) ? needs : []).find(item => item?.id === id)
+  return clean(need?.level) || 'none'
 }
 
 export const roundNumber = (value, digits = 3) => {
@@ -130,10 +158,12 @@ export const buildTeamSeasonIndexDoc = ({
   const games = getRowGames(row)
   const goalsFor = getRowGoalsFor(row)
   const goalsAgainst = getRowGoalsAgainst(row)
+  const scoutSource = scoutResult || {}
   const performance = adaptTeamScoutEngineRow({
-    row: scoutResult || {},
+    row: scoutSource,
     source: {
-      normalization: scoutResult?.normalization || {},
+      engineVersion: 'scouting-v2',
+      normalization: scoutSource.normalization || {},
       leagueLevel: league.level,
       leagueGames: season.leagueTotalRound,
       calculatedAt: season.updatedAt || null,
@@ -174,6 +204,11 @@ export const buildTeamSeasonIndexDoc = ({
       clubId,
       clubLevel: row.clubLevel,
     }),
+    clubStrengthLevel: resolveClubStrengthLevel({
+      clubId,
+      clubLevel: row.clubLevel,
+      clubStrengthLevel: scoutSource.clubStrengthLevel || row.clubStrengthLevel,
+    }),
     birthTeamId: teamId,
     birthTeamDocumentId: teamIdentity.birthTeamDocumentId || teamId,
     birthTeamSlot: teamIdentity.birthTeamSlot || 1,
@@ -207,7 +242,7 @@ export const buildTeamSeasonIndexDoc = ({
     goalsAgainstPerGame: games ? roundNumber(goalsAgainst / games) : 0,
     teamGamePlayed: games,
     ...normalization,
-    teamPerformanceSchemaVersion: 4,
+    teamPerformanceSchemaVersion: 5,
 
     attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
     attackTargetRate: roundOptionalWholeNumber(offense?.targetRate),
@@ -238,6 +273,31 @@ export const buildTeamSeasonIndexDoc = ({
     ),
     defensePriorityLevel: pickDefinedValue(defense?.priorityLevel, ''),
     defenseOpportunityType: pickDefinedValue(defense?.opportunityType, ''),
+
+    teamScoutEngineVersion: 'scouting-v2',
+    scoutCompetitionRelation: clean(
+      scoutSource.scoutContext?.competition?.relation
+    ),
+    scoutCompetitionGap: scoutSource.scoutContext?.competition?.gap === null ||
+      scoutSource.scoutContext?.competition?.gap === undefined
+      ? null
+      : Number(scoutSource.scoutContext.competition.gap),
+    attackingNeedLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'attacking_need',
+    }),
+    defensiveNeedLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'defensive_need',
+    }),
+    balanceProblemLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'balance_problem',
+    }),
+    recruitmentWindow: clean(
+      scoutSource.recruitmentOpportunity?.window
+    ) || 'none',
+
     playersCount: toNumberOrZero(row.playersCount),
     playerSeasonIndexCount: toNumberOrZero(row.playerSeasonIndexCount),
     scoutProfiledPlayersCount: toNumberOrZero(

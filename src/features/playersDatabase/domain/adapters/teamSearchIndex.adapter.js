@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/adapters/teamSearchIndex.adapter.js
+// src/features/playersDatabase/domain/adapters/teamSearchIndex.adapter.js
 
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyTeamSeason } from '../contracts/teamSeason.contract.js'
@@ -10,6 +10,22 @@ import {
   toDomainNumber,
   toDomainNumberOrZero,
 } from '../contracts/domainValue.contract.js'
+
+const buildSearchIndexNeed = (id, value) => {
+  const level = cleanDomainValue(value) || 'none'
+
+  return {
+    id,
+    level,
+    active: level !== 'none' && level !== 'unknown',
+  }
+}
+
+const buildSearchIndexNeeds = source => [
+  buildSearchIndexNeed('attacking_need', source.attackingNeedLevel),
+  buildSearchIndexNeed('defensive_need', source.defensiveNeedLevel),
+  buildSearchIndexNeed('balance_problem', source.balanceProblemLevel),
+]
 
 const buildSearchIndexScoutSide = ({
   prefix,
@@ -83,8 +99,25 @@ export const adaptTeamSearchIndexDocument = document => {
       leagueGames: source.leagueTotalRound,
       tableRank: source.tableRank,
     },
+    scoutContext: {
+      competition: {
+        relation: cleanDomainValue(source.scoutCompetitionRelation),
+        gap: toDomainNumber(source.scoutCompetitionGap),
+        clubLevel: toDomainNumber(source.clubLevel),
+        clubStrengthLevel: toDomainNumber(source.clubStrengthLevel),
+        leagueLevel: toDomainNumber(source.leagueLevel),
+      },
+      performance: null,
+      futureCompetition: null,
+    },
+    needs: buildSearchIndexNeeds(source),
+    recruitmentOpportunity: {
+      window: cleanDomainValue(source.recruitmentWindow) || 'none',
+      needs: buildSearchIndexNeeds(source).filter(need => need.active),
+      reasons: [],
+    },
     source: {
-      engineVersion: source.engineVersion,
+      engineVersion: cleanDomainValue(source.teamScoutEngineVersion) || source.engineVersion,
       calculatedAt: source.calculatedAt || source.updatedAt,
     },
   })

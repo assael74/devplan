@@ -14,6 +14,7 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
+import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 
 const toNumber = value => {
   const next = Number(value)
@@ -42,6 +43,104 @@ const resolveRisk = rows => {
   if (maxPercent >= 100) return { label: 'חריגה מהמכסה החינמית', color: 'danger' }
   if (maxPercent >= 75) return { label: 'קרוב לחיוב', color: 'warning' }
   return { label: 'בתוך המכסה החינמית', color: 'success' }
+}
+
+const resolveNextResetAt = data => {
+  const startAt = data?.interval?.startAt
+  const startDate = startAt ? new Date(startAt) : null
+
+  if (startDate && !Number.isNaN(startDate.getTime())) {
+    const resetDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
+    const nextLocalReset = new Date()
+
+    nextLocalReset.setHours(
+      resetDate.getHours(),
+      resetDate.getMinutes(),
+      resetDate.getSeconds(),
+      resetDate.getMilliseconds()
+    )
+
+    if (nextLocalReset.getTime() <= Date.now()) {
+      nextLocalReset.setDate(nextLocalReset.getDate() + 1)
+    }
+
+    return nextLocalReset
+  }
+
+  return null
+}
+
+const formatDuration = ms => {
+  const totalMinutes = Math.max(0, Math.ceil(Number(ms || 0) / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours <= 0) return `${minutes} דק׳`
+  return `${hours} שעות ${minutes} דק׳`
+}
+
+const formatLocalDateTime = value => {
+  if (!value) return '-'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+
+  return new Intl.DateTimeFormat('he-IL', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function OfficialResetWindow({ data }) {
+  const [now, setNow] = React.useState(() => Date.now())
+  const nextResetAt = resolveNextResetAt(data)
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now())
+    }, 30000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  if (!nextResetAt) return null
+
+  const remainingMs = nextResetAt.getTime() - now
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        px: 1,
+        py: 0.75,
+        borderRadius: 'md',
+        bgcolor: 'background.level1',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1.5,
+        flexWrap: 'wrap',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+        <Chip size="sm" variant="soft" color="primary" sx={{ minHeight: 24 }}>
+          <ScheduleRoundedIcon fontSize="small" />
+        </Chip>
+
+        <Box sx={{ minWidth: 0 }}>
+          <Typography level="body-xs" fontWeight={700}>
+            מתאפס בעוד {formatDuration(remainingMs)}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Typography level="body-xs" textColor="text.tertiary">
+        {formatLocalDateTime(nextResetAt)}
+      </Typography>
+    </Box>
+  )
 }
 
 const KPI_META = {
@@ -169,6 +268,9 @@ export default function UsageOfficialStatus({ source, official, onRefresh }) {
   const links = Array.isArray(source?.links) ? source.links : []
   const data = official?.data || null
   const connected = official?.status === 'connected' && data
+  const officialUpdatedAt = formatLocalDateTime(
+    data?.updatedAt || official?.lastUpdatedAt
+  )
 
   const rows = connected
     ? [
@@ -233,7 +335,7 @@ export default function UsageOfficialStatus({ source, official, onRefresh }) {
 
             {connected && (
               <Typography level="body-xs" textColor="text.tertiary">
-                עודכן {data.updatedAt || official?.lastUpdatedAt || ''}
+                עודכן {officialUpdatedAt}
               </Typography>
             )}
           </Box>
@@ -272,6 +374,10 @@ export default function UsageOfficialStatus({ source, official, onRefresh }) {
           <Alert color="danger" variant="soft" sx={{ mt: 1 }}>
             {official.error}
           </Alert>
+        )}
+
+        {connected && (
+          <OfficialResetWindow data={data} />
         )}
       </Card>
       {connected && (

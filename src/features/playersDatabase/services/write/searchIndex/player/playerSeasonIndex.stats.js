@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.js
+// src/features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.js
 
 import {
   collection,
@@ -91,7 +91,9 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
       indexScope.clubId ? 'clubId' : 'teamId',
       '==',
       indexScope.clubId || teamId
-    )
+    ),
+    where('seasonKey', '==', seasonKey),
+    where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.playerSeason)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const existingDocs = snapshot.docs.filter(playerDoc => (
@@ -110,6 +112,7 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
   let deletedCount = 0
   const failures = []
   const duplicates = []
+  const snapshotRows = []
 
   safePlayers.forEach(player => {
     const match = findExistingPlayerSeasonIndexDoc({
@@ -150,6 +153,8 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
     })
 
     if (mutation.type === 'skip') return
+
+    if (mutation.snapshotAudit) snapshotRows.push(mutation.snapshotAudit)
 
     rowsCount += 1
 
@@ -192,5 +197,6 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
     duplicateCount: duplicates.length,
     failures,
     duplicates,
+    snapshotRows,
   })
 }

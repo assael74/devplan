@@ -151,6 +151,7 @@ const buildTeamPlayerUpdateResult = ({
   target,
   updated,
   scoutProfilesSummary,
+  teamDocument = null,
   reason = '',
 }) => ({
   birthTeamDocumentId: teamId,
@@ -163,6 +164,7 @@ const buildTeamPlayerUpdateResult = ({
   ...(scoutProfilesSummary
     ? { scoutProfilesSummary }
     : {}),
+  ...(teamDocument ? { teamDocument } : {}),
 })
 
 const patchTeamSeasonPlayer = async ({
@@ -266,6 +268,14 @@ const patchTeamSeasonPlayer = async ({
       ? buildScoutProfilesSummary(teamPlayers)
       : null
 
+    const nextTeamDocument = playerUpdated
+      ? {
+          ...baseDoc,
+          [fieldKey]: nextRows,
+          updatedAt,
+        }
+      : baseDoc
+
     if (playerUpdated) {
       transaction.set(
         ref,
@@ -284,6 +294,7 @@ const patchTeamSeasonPlayer = async ({
       target: fieldKey,
       updated: playerUpdated,
       scoutProfilesSummary,
+      teamDocument: nextTeamDocument,
     })
   })
 }

@@ -22,7 +22,7 @@ export function PlayerEntrySection({ game, onEditEntry }) {
       onEditEntry(game)
     }
   }
-  
+
   return (
     <Box sx={sx.entryCellSx}>
       <Tooltip title="עדכון רישום במשחק">
@@ -31,11 +31,17 @@ export function PlayerEntrySection({ game, onEditEntry }) {
         </IconButton>
       </Tooltip>
 
-      <Chip size="md" variant={variant} color={isStarter ? 'success' : 'danger'} startDecorator={iconUi({id: iconStart})}>
+      <Chip
+        size="md"
+        variant={variant}
+        color={isStarter ? 'success' : 'danger'}
+        startDecorator={iconUi({id: iconStart})}
+        sx={sx.entryStatusChipSx}
+      >
         {isStarter ? 'הרכב' : 'ספסל'}
       </Chip>
 
-      <Chip size="md" variant="soft" startDecorator={iconUi({id: 'timePlayed'})}>
+      <Chip size="md" variant="soft" startDecorator={iconUi({id: 'timePlayed'})} sx={sx.entryTimeChipSx}>
         {time} דק׳
       </Chip>
     </Box>

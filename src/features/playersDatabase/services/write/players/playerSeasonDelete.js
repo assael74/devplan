@@ -1,7 +1,6 @@
 // features/playersDatabase/services/write/players/playerSeasonDelete.js
 
 import {
-  deleteField,
   doc,
   serverTimestamp,
 } from 'firebase/firestore'
@@ -104,7 +103,6 @@ export async function removePlayerSeasonDocsMany({
       {
         current,
         history,
-        scoutProfiles: deleteField(),
         updatedAt: serverTimestamp(),
       },
       { merge: true }

@@ -4,7 +4,7 @@ import {
   buildScoutProfileCombinations,
   SCOUT_PROFILE_COMBINATIONS,
   SCOUT_PROFILES,
-} from '../../../../shared/players/scouting/index.js'
+} from '../../../../shared/scouting/players/index.js'
 import {
   cleanDomainValue,
   toDomainArray,
@@ -45,6 +45,13 @@ export const createEmptyPlayerScoutProfile = () => ({
   metrics: {},
   reviews: [],
   warnings: [],
+  positionContext: '',
+  profileDepth: null,
+  scoutContext: null,
+  spotlights: [],
+  opportunity: null,
+  requiredReview: [],
+  matchedRules: [],
   source: {
     engineVersion: '',
     calculatedAt: null,
@@ -123,9 +130,13 @@ export const normalizePlayerScoutProfile = profile => {
   return {
     ...createEmptyPlayerScoutProfile(),
     id: profileId,
-    label: cleanDomainValue(source.label || catalogProfile.label || profileId),
+    label: cleanDomainValue(
+      source.profileLabel || source.label || catalogProfile.label || profileId
+    ),
     group: cleanDomainValue(source.group || catalogProfile.group),
-    interest: cleanDomainValue(source.interest || catalogProfile.interest),
+    interest: cleanDomainValue(
+      source.interestLevel || source.interest || catalogProfile.interest
+    ),
     score: toDomainNumber(
       source.score !== undefined ? source.score : source.profileScore
     ),
@@ -142,6 +153,18 @@ export const normalizePlayerScoutProfile = profile => {
     reviews: toDomainArray(source.reviews || catalogProfile.reviews),
     warnings: toDomainArray(source.warnings || source.profileWarnings || catalogProfile.warnings),
     positionContext: cleanDomainValue(source.positionContext),
+    profileDepth: source.profileDepth && typeof source.profileDepth === 'object'
+      ? source.profileDepth
+      : null,
+    scoutContext: source.scoutContext && typeof source.scoutContext === 'object'
+      ? source.scoutContext
+      : null,
+    spotlights: toDomainArray(source.spotlights),
+    opportunity: source.opportunity && typeof source.opportunity === 'object'
+      ? source.opportunity
+      : null,
+    requiredReview: toDomainArray(source.requiredReview || source.reviews),
+    matchedRules: toDomainArray(source.matchedRules),
     source: {
       engineVersion: cleanDomainValue(
         source.engineVersion || source.source?.engineVersion

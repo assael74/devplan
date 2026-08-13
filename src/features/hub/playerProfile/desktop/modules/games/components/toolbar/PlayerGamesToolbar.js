@@ -49,6 +49,18 @@ export default function PlayerGamesToolbar({
   return (
     <Box sx={sx.toolbar}>
       <Box sx={sx.toolbarTop}>
+        <Chip
+          size="sm"
+          variant="soft"
+          color="danger"
+          disabled={!hasActiveFilters}
+          onClick={onResetFilters}
+          startDecorator={iconUi({ id: 'reset' })}
+          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
+        >
+          איפוס
+        </Chip>
+
         <Input
           value={filters?.search || ''}
           onChange={(e) => onChangeFilters({ search: e.target.value })}
@@ -233,19 +245,6 @@ export default function PlayerGamesToolbar({
           ))}
         </Select>
 
-        <Box sx={{ flex: 1 }} />
-
-        <Chip
-          size="sm"
-          variant="soft"
-          color="danger"
-          disabled={!hasActiveFilters}
-          onClick={onResetFilters}
-          startDecorator={iconUi({ id: 'reset' })}
-          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
-        >
-          איפוס
-        </Chip>
       </Box>
 
       <PlayerGamesBottomBar

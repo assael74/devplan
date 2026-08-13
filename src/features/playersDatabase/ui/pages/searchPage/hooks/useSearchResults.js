@@ -182,10 +182,49 @@ export default function useSearchResults({ queryFilters }) {
 
     if (!entityId) return null
 
+    const identity = row?.identity || {}
+    const season = row?.season || {}
+    const team = row?.team || {}
+    const metadata = row?.metadata || {}
+    const scouting = isBirthTeam
+      ? null
+      : {
+          season: {
+            ...season,
+            seasonId: season.seasonId || row?.seasonId || '',
+            seasonKey: season.seasonKey || row?.seasonKey || '',
+            birthYear: season.birthYear || row?.birthYear || null,
+          },
+          team: {
+            ...team,
+            birthTeamId: team.birthTeamId || team.teamId || row?.birthTeamId || '',
+            teamId: team.teamId || team.birthTeamId || row?.birthTeamId || '',
+          },
+          target: metadata.sourceTarget || row?.lifecycle?.type || 'current',
+          player: {
+            ...identity,
+            playerId: row?.playerId || identity.playerId,
+            playerDocumentId:
+              identity.playerDocumentId ||
+              metadata.sourceDocumentId ||
+              row?.playerDocumentId ||
+              row?.id,
+            fullName: row?.playerName || identity.displayName || '',
+            playerStats: row?.stats?.actual || {},
+            primaryPosition: row?.position?.primary || row?.primaryPosition || '',
+            positionLayer: row?.position?.layer || row?.positionLayer || '',
+            scoutProfiles: row?.scout?.profiles || row?.scoutProfiles || [],
+            scoutSignals: row?.scout?.profiles || row?.scoutProfiles || [],
+          },
+        }
+
     if (row.favorite) {
       return favorites.removeFavorite({
         favoriteType,
         entityId,
+        scouting: scouting
+          ? { playerDocumentId: scouting.player.playerDocumentId }
+          : null,
       })
     }
 
@@ -194,6 +233,7 @@ export default function useSearchResults({ queryFilters }) {
       entityId,
       displayName: isBirthTeam ? row.teamName : row.playerName,
       birthYear: row.birthYear,
+      scouting,
     })
   }, [favorites])
 

@@ -6,6 +6,7 @@ export * from './contracts/completeness.contract.js'
 export * from './contracts/playerScout.contract.js'
 export * from './contracts/teamScout.contract.js'
 export * from './contracts/playerScoutInput.contract.js'
+export * from './contracts/playerDocumentState.contract.js'
 export * from './contracts/playerSeason.contract.js'
 export * from './contracts/teamSeason.contract.js'
 
@@ -23,3 +24,7 @@ export * from './selectors/lifecycle.selectors.js'
 
 export * from './orchestration/buildLeagueTeamSeasons.js'
 export * from './orchestration/buildDbPlayerScoutResult.js'
+export * from './orchestration/buildDbPlayerScoutLegacyResult.js'
+
+export * from './orchestration/buildPlayerScoutShadowAudit.js'
+export * from './orchestration/buildTeamScoutShadowAudit.js'

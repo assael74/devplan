@@ -69,9 +69,50 @@ export function getFirestoreUsageSession() {
 }
 
 const resetLocalSession = () => {
+  const activeListenerIds = { ...(usageState.activeListenerIds || {}) }
   usageState = createEmptyUsageState()
+  usageState.activeListenerIds = activeListenerIds
   entrySequence = 0
   seenEntryIds.clear()
+
+  Object.values(activeListenerIds).forEach(listener => {
+    const entry = {
+      operation: 'listener-open',
+      collection: listener.collection,
+      shortKey: listener.shortKey,
+      feature: listener.feature,
+      action: listener.action,
+      listenerId: listener.listenerId,
+      listenerPhase: 'open',
+      createdAt: listener.openedAt || usageState.startedAt,
+      runtimeId: listener.runtimeId,
+      source: 'client',
+      meta: {
+        restoredAfterReset: true,
+      },
+    }
+
+    addToBucket(usageState.totals, entry)
+    addToBucket(ensureBucket(usageState.byCollection, entry.collection), entry)
+    addToBucket(ensureBucket(usageState.byProcess, buildProcessKey(entry)), entry)
+
+    if (entry.shortKey) {
+      addToBucket(ensureBucket(usageState.byShortKey, entry.shortKey), entry)
+    }
+
+    if (entry.feature) {
+      addToBucket(ensureBucket(usageState.byFeature, entry.feature), entry)
+      addToFeatureDetails(
+        ensureFeatureDetails(usageState.byFeatureDetails, entry.feature),
+        entry
+      )
+    }
+
+    if (entry.action) {
+      addToBucket(ensureBucket(usageState.byAction, entry.action), entry)
+    }
+  })
+
   return usageState
 }
 

@@ -67,8 +67,12 @@ export const buildPlayerScoutState = ({
     season: contract.season,
     perspective,
   })
+  const engineVersion = scoutResult?.engineVersion || 'scouting-v2'
   const signals = Array.isArray(scoutResult?.signals)
-    ? scoutResult.signals
+    ? scoutResult.signals.map(signal => ({
+        ...signal,
+        engineVersion,
+      }))
     : []
 
   return {
@@ -79,6 +83,17 @@ export const buildPlayerScoutState = ({
       ? scoutResult.combinations
       : [],
     bestScoutSignal: scoutResult?.bestSignal || null,
+    scoutCandidateSignals: Array.isArray(scoutResult?.candidateSignals)
+      ? scoutResult.candidateSignals
+      : [],
+    scoutSpotlights: Array.isArray(scoutResult?.spotlights)
+      ? scoutResult.spotlights
+      : [],
+    scoutOpportunity: scoutResult?.opportunity || null,
+    scoutVerification: scoutResult?.verification || null,
+    scoutProfileProgression: scoutResult?.profileProgression || null,
+    scoutProfileHierarchy: scoutResult?.profileHierarchy || null,
+    scoutEngineVersion: engineVersion,
     scoutCalculationStatus: 'success',
   }
 }

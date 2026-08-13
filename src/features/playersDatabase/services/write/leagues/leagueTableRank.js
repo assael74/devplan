@@ -68,7 +68,9 @@ const buildTableRankRow = ({
   return {
     rank,
     clubId: identity.clubId,
-    clubLevel: toNumberOrZero(row.clubLevel),
+    clubLevel: toNumberOrZero(
+      pickDefinedValue(row.clubLevel, existingRow?.clubLevel)
+    ),
     birthTeamId: identity.birthTeamId,
     birthTeamSlot: identity.birthTeamSlot,
     teamId: identity.birthTeamId,
@@ -84,6 +86,7 @@ const buildTableRankRow = ({
       ? Boolean(existingRow.statsComplete)
       : false,
     teamStats: {
+      ...(existingRow?.teamStats || {}),
       points: teamStats.points,
       goalsFor: teamStats.goalsFor,
       goalsAgainst: teamStats.goalsAgainst,

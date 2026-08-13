@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/contracts/playerScoutInput.contract.js
+// src/features/playersDatabase/domain/contracts/playerScoutInput.contract.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../catalog/leagues.catalog.js'
@@ -87,6 +87,8 @@ export const createEmptyPlayerScoutCalculationContract = () => ({
     teamGames: null,
     seasonMinutes: null,
     clubLevel: null,
+    clubStrengthLevel: null,
+    leagueLevel: null,
     birthTeamSlot: null,
     seasonStatus: '',
   },
@@ -120,14 +122,35 @@ export const buildPlayerScoutCalculationContract = ({
   const clubId = cleanDomainValue(firstDomainValue(
     team.clubId,
     team.identity?.clubId,
-    team.domain?.identity?.clubId
+    team.domain?.identity?.clubId,
+    player.clubId,
+    player.team?.clubId
   ))
   const club = resolveClub(clubId)
   const clubLevel = toDomainNumber(firstDomainValue(
     team.clubLevel,
     team.club?.clubLevel,
-    club?.clubLevel,
-    player.clubLevel
+    team.domain?.club?.clubLevel,
+    player.clubLevel,
+    player.team?.clubLevel,
+    club?.clubLevel
+  ))
+  const clubStrengthLevel = toDomainNumber(firstDomainValue(
+    team.clubStrengthLevel,
+    team.club?.clubStrengthLevel,
+    team.domain?.club?.clubStrengthLevel,
+    player.clubStrengthLevel,
+    player.team?.clubStrengthLevel,
+    club?.clubStrengthLevel,
+    clubLevel
+  ))
+  const leagueLevel = toDomainNumber(firstDomainValue(
+    season.leagueLevel,
+    team.leagueLevel,
+    team.league?.level,
+    team.domain?.league?.level,
+    player.leagueLevel,
+    player.team?.leagueLevel
   ))
   const birthTeamSlot = positiveNumber(
     team.birthTeamSlot,
@@ -179,6 +202,8 @@ export const buildPlayerScoutCalculationContract = ({
     ...(team.teamStats || {}),
     clubId,
     clubLevel,
+    clubStrengthLevel,
+    leagueLevel,
     ageGroupId,
     birthYear: teamBirthYear,
     birthTeamSlot,
@@ -214,9 +239,24 @@ export const buildPlayerScoutCalculationContract = ({
     isYoungerAgeGroup: explicitYoungerAgeGroup || Boolean(player.isYoungerAgeGroup),
     playingUpMinutes,
     clubLevel,
+    clubStrengthLevel,
+    leagueLevel,
     birthTeamSlot,
     teamSlot: birthTeamSlot,
     teamNumber: birthTeamSlot,
+    verification: player.verification && typeof player.verification === 'object'
+      ? player.verification
+      : {
+          mode: 'manual',
+          answers: Array.isArray(player.verificationAnswers)
+            ? player.verificationAnswers
+            : [],
+        },
+    verificationAnswers: Array.isArray(player.verification?.answers)
+      ? player.verification.answers
+      : Array.isArray(player.verificationAnswers)
+        ? player.verificationAnswers
+        : [],
     teamGames,
     teamGoalsFor: goalsFor,
     teamGoalsAgainst: goalsAgainst,
@@ -236,6 +276,7 @@ export const buildPlayerScoutCalculationContract = ({
     ...season,
     ageGroupId,
     birthYear: teamBirthYear,
+    leagueLevel,
     leagueTotalRound,
     leagueNumGames: leagueTotalRound,
     leagueGameTime: gameTime,
@@ -260,6 +301,8 @@ export const buildPlayerScoutCalculationContract = ({
       teamGames,
       seasonMinutes: teamGames * gameTime,
       clubLevel,
+      clubStrengthLevel,
+      leagueLevel,
       birthTeamSlot,
       seasonStatus,
       offensePriorityLevel: cleanDomainValue(

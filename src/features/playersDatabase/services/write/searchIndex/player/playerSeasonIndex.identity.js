@@ -29,6 +29,21 @@ export const resolveClubLevel = ({ clubId = '', clubLevel = null } = {}) => {
   return toNumberOrZero(club?.clubLevel)
 }
 
+export const resolveClubStrengthLevel = ({ clubId = '', clubLevel = null, clubStrengthLevel = null } = {}) => {
+  const directClubStrengthLevel = Number(clubStrengthLevel)
+  if (Number.isFinite(directClubStrengthLevel) && directClubStrengthLevel > 0) {
+    return directClubStrengthLevel
+  }
+
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clean(clubId))
+  const catalogClubStrengthLevel = Number(club?.clubStrengthLevel)
+  if (Number.isFinite(catalogClubStrengthLevel) && catalogClubStrengthLevel > 0) {
+    return catalogClubStrengthLevel
+  }
+
+  return resolveClubLevel({ clubId, clubLevel })
+}
+
 export const normalizeIdPart = value =>
   normalizePlayerIdPart(value)
 

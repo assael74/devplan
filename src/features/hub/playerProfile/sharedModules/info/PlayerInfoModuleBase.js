@@ -133,6 +133,7 @@ export default function PlayerInfoModuleBase({
       <PlayerNamesCard draft={draft} setDraft={setDraft} pending={pending} />
       <PlayerBirthCard draft={draft} setDraft={setDraft} pending={pending} />
       <PlayerAffiliationCard
+        player={player}
         draft={draft}
         setDraft={setDraft}
         pending={pending}
@@ -152,6 +153,7 @@ export default function PlayerInfoModuleBase({
 
         <DetailsGroup title={TEXT.affiliation} subtitle={TEXT.affiliationSub}>
           <PlayerAffiliationCard
+            player={player}
             draft={draft}
             setDraft={setDraft}
             pending={pending}
@@ -192,9 +194,9 @@ export default function PlayerInfoModuleBase({
     </Box>
   ) : (
     <>
-      <PlayerInfoTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
       <Box sx={toolbarWrapSx}>
+        <PlayerInfoTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
         <PlayerInfoToolbar
           activeTab={activeTab}
           player={player}

@@ -1,16 +1,21 @@
 // playerProfile/desktop/modules/info/module.sx.js
 
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+
 export const moduleSx = {
   stickyToolbar: {
     position: 'sticky',
-    top: -6,
-    zIndex: 5,
+    top: 0,
+    zIndex: 20,
     display: 'grid',
-    gap: 1,
+    gap: 0.65,
+    p: 0.65,
     borderRadius: 'md',
-    bgcolor: 'background.body',
-    mb: 0.5,
-    boxShadow: 'none',
+    bgcolor: devPlanColors.surface,
+    border: '1px solid',
+    borderColor: devPlanColors.border,
+    mb: 1,
+    boxShadow: '0 10px 24px rgba(16, 43, 64, 0.10)',
   },
 
   grid: {

@@ -4,7 +4,7 @@ import {
   SCOUT_INTEREST,
   SCOUT_REVIEW,
   TEAM_FILTER,
-} from '../../../../../shared/players/scouting/index.js'
+} from '../../../../../shared/scouting/players/index.js'
 import { POSITION_LAYERS } from '../../../../../shared/players/players.constants.js'
 
 export const SCOUT_PRIORITY_DISPLAY = {

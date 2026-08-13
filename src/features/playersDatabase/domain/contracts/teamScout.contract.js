@@ -1,9 +1,9 @@
-// features/playersDatabase/domain/contracts/teamScout.contract.js
+// src/features/playersDatabase/domain/contracts/teamScout.contract.js
 
 import {
   resolveTeamScoutAnomalyLevel,
   resolveTeamScoutPriorityScoreLevel,
-} from '../../../../shared/teams/scout/index.js'
+} from '../../../../shared/scouting/teams/index.js'
 import {
   cleanDomainValue,
   toDomainNumber,
@@ -44,6 +44,17 @@ export const createEmptyTeamScout = () => ({
     leagueLevel: null,
     leagueGames: null,
     tableRank: null,
+    scout: {
+      competition: null,
+      performance: null,
+      futureCompetition: null,
+    },
+  },
+  needs: [],
+  recruitmentOpportunity: {
+    window: 'none',
+    needs: [],
+    reasons: [],
   },
   source: {
     engineVersion: '',
@@ -54,6 +65,15 @@ export const createEmptyTeamScout = () => ({
 const firstDefined = (...values) => values.find(value => (
   value !== undefined && value !== null && value !== ''
 ))
+
+const normalizeNeed = value => ({
+  id: cleanDomainValue(value?.id),
+  level: cleanDomainValue(value?.level),
+  active: Boolean(value?.active),
+  evidence: Array.isArray(value?.evidence)
+    ? value.evidence.map(cleanDomainValue).filter(Boolean)
+    : [],
+})
 
 export const normalizeTeamScoutSide = (side, value = {}) => {
   const source = value && typeof value === 'object' ? value : {}
@@ -108,6 +128,9 @@ export const normalizeTeamScout = ({
   defense = {},
   normalization = {},
   context = {},
+  scoutContext = null,
+  needs = [],
+  recruitmentOpportunity = {},
   source = {},
 } = {}) => ({
   offense: normalizeTeamScoutSide('offense', offense),
@@ -121,6 +144,23 @@ export const normalizeTeamScout = ({
     leagueLevel: toDomainNumber(context.leagueLevel),
     leagueGames: toDomainNumber(context.leagueGames),
     tableRank: toDomainNumber(context.tableRank),
+    scout: scoutContext && typeof scoutContext === 'object'
+      ? scoutContext
+      : {
+        competition: null,
+        performance: null,
+        futureCompetition: null,
+      },
+  },
+  needs: (Array.isArray(needs) ? needs : []).map(normalizeNeed),
+  recruitmentOpportunity: {
+    window: cleanDomainValue(recruitmentOpportunity.window) || 'none',
+    needs: (Array.isArray(recruitmentOpportunity.needs)
+      ? recruitmentOpportunity.needs
+      : []).map(normalizeNeed),
+    reasons: Array.isArray(recruitmentOpportunity.reasons)
+      ? recruitmentOpportunity.reasons.map(cleanDomainValue).filter(Boolean)
+      : [],
   },
   source: {
     engineVersion: cleanDomainValue(source.engineVersion),

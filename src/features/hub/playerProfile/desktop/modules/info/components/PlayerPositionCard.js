@@ -89,7 +89,7 @@ export default function PlayerPositionCard({
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={sx.summaryChips}>
             <Chip
               size="sm"
               variant="soft"

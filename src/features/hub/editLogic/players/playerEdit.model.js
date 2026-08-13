@@ -146,13 +146,15 @@ export function buildPlayerEditInitial(player = {}) {
 
     clubId: clean(source?.clubId),
     teamId: clean(source?.teamId),
+    clubName: clean(source?.clubName || source?.club?.clubName || source?.club?.name),
+    teamName: clean(source?.teamName || source?.team?.teamName || source?.team?.name),
 
     heightCm: clean(source?.heightCm ?? source?.height ?? source?.physical?.heightCm),
     weightKg: clean(source?.weightKg ?? source?.weight ?? source?.physical?.weightKg),
 
     name: buildPlayerName(source),
     photo: source?.photo || '',
-    teamName: buildPlayerMeta(source),
+    metaName: buildPlayerMeta(source),
 
     playerFirstName: clean(source?.playerFirstName),
     playerLastName: clean(source?.playerLastName),
@@ -196,6 +198,8 @@ export function isPlayerEditDirty(draft = {}, initial = {}) {
     draft.year !== initial.year ||
     draft.clubId !== initial.clubId ||
     draft.teamId !== initial.teamId ||
+    draft.clubName !== initial.clubName ||
+    draft.teamName !== initial.teamName ||
     draft.heightCm !== initial.heightCm ||
     draft.weightKg !== initial.weightKg ||
     draft.playerFirstName !== initial.playerFirstName ||
@@ -251,6 +255,8 @@ export function buildPlayerEditPatch(draft = {}, initial = {}) {
 
   addNullableIfChanged(next, draft, initial, 'clubId')
   addNullableIfChanged(next, draft, initial, 'teamId')
+  addNullableIfChanged(next, draft, initial, 'clubName')
+  addNullableIfChanged(next, draft, initial, 'teamName')
   addNullableIfChanged(next, draft, initial, 'heightCm')
   addNullableIfChanged(next, draft, initial, 'weightKg')
 

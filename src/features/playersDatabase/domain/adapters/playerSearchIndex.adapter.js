@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/adapters/playerSearchIndex.adapter.js
+// src/features/playersDatabase/domain/adapters/playerSearchIndex.adapter.js
 
 import {
   normalizePlayerStatsStatus,
@@ -62,7 +62,14 @@ export const adaptPlayerSearchIndexDocument = document => {
       teamId: cleanDomainValue(firstDomainValue(source.birthTeamId, source.teamId)),
       teamDocumentId: cleanDomainValue(firstDomainValue(source.birthTeamDocumentId, source.teamDocumentId)),
       clubId: cleanDomainValue(source.clubId),
+      clubName: cleanDomainValue(source.clubName),
+      clubLevel: toDomainNumber(source.clubLevel),
+      clubStrengthLevel: toDomainNumber(firstDomainValue(
+        source.clubStrengthLevel,
+        source.clubLevel
+      )),
       leagueId: cleanDomainValue(source.leagueId),
+      leagueName: cleanDomainValue(source.leagueName),
       leagueLevel: toDomainNumber(source.leagueLevel),
       ageGroupId: cleanDomainValue(source.ageGroupId),
       ageGroupLabel: cleanDomainValue(source.ageGroupLabel),

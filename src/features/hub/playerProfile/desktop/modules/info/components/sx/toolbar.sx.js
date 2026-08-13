@@ -12,11 +12,8 @@ export const toolbarSx = {
     py: 0.8,
     minHeight: 60,
     borderRadius: 'md',
-    bgcolor: 'background.level1',
-    border: '1px solid',
-    borderColor: devPlanColors.border,
-    borderBottomColor: devPlanColors.tertiaryLight,
-    boxShadow: '0 1px 0 rgba(16, 43, 64, 0.04)',
+    bgcolor: devPlanColors.secondaryLight,
+    boxShadow: 'inset 0 0 0 1px rgba(23, 59, 87, 0.08)',
     minWidth: 0,
     flexWrap: 'nowrap',
 
@@ -41,6 +38,7 @@ export const toolbarSx = {
 
   title: {
     fontWeight: 700,
+    color: devPlanColors.primary,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -48,7 +46,7 @@ export const toolbarSx = {
   },
 
   subtitle: {
-    color: 'text.secondary',
+    color: devPlanColors.subText,
     lineHeight: 1.25,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -73,14 +71,26 @@ export const toolbarSx = {
     height: 8,
     borderRadius: 999,
     bgcolor: c.accent,
-    boxShadow: `0 0 0 4px ${c.bg}`,
+    boxShadow: `0 0 0 4px ${c.bg}, 0 0 0 7px ${devPlanColors.surface}`,
     flexShrink: 0,
   },
 
   secondaryAction: {
-    border: '1px solid',
-    borderColor: 'divider',
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.secondary,
     fontWeight: 600,
+    boxShadow: 'inset 0 0 0 1px rgba(101, 118, 132, 0.24)',
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      color: devPlanColors.primary,
+    },
+
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.subText,
+      boxShadow: 'none',
+    },
   },
 
   confBtn: (enabled) => ({

@@ -142,21 +142,52 @@ function PlayerPageContent() {
   const handleFavoriteToggle = React.useCallback(() => {
     if (!playerId) return null
 
+    const activeSeason = player.activeSeason || {}
+    const scouting = {
+      season: activeSeason.season || {},
+      team: activeSeason.team || {},
+      target: activeSeason.lifecycle?.type || 'current',
+      player: {
+        ...(player.domain?.identity || {}),
+        playerId,
+        playerDocumentId: player.id,
+        fullName: player.fullName,
+        playerStats: activeSeason.stats?.actual || {},
+        primaryPosition: activeSeason.position?.primary || '',
+        positionLayer: activeSeason.position?.layer || '',
+        scoutProfiles: activeSeason.scout?.profiles || [],
+        scoutSignals: activeSeason.scout?.profiles || [],
+      },
+    }
     const payload = {
       favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
       entityId: playerId,
     }
 
     if (favorites.isPlayerFavorite(playerId)) {
-      return favorites.removeFavorite(payload)
+      return favorites.removeFavorite({
+        ...payload,
+        scouting: {
+          playerDocumentId: player.id,
+        },
+      })
     }
 
     return favorites.addFavorite({
       ...payload,
       displayName: player.fullName,
       birthYear: player.birthYear,
+      scouting,
     })
-  }, [favorites, player.birthYear, player.fullName, playerId])
+  }, [
+    favorites,
+    player.activeSeason,
+    player.birthYear,
+    player.domain,
+    player.fullName,
+    player.id,
+    playerId,
+  ])
 
   const handleTaskEditSave = async patch => {
     if (!editTask?.id || taskActions.pending) return

@@ -13,7 +13,11 @@ export const positionSx = {
   },
 
   headWrap: {
-    display: 'flex',
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'minmax(0, 1fr) auto',
+    },
     alignItems: 'stretch',
     justifyContent: 'space-between',
     gap: 1,
@@ -21,7 +25,7 @@ export const positionSx = {
     mb: 1,
 
     '@media (max-width: 900px)': {
-      flexDirection: 'column',
+      gridTemplateColumns: '1fr',
     },
   },
 
@@ -38,10 +42,18 @@ export const positionSx = {
 
   summaryChips: {
     display: 'flex',
-    alignItems: 'flex-start',
-    gap: 1,
-    flexWrap: 'wrap',
-    flex: '0 0 auto',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignSelf: 'stretch',
+    gap: 0.75,
+    flexWrap: 'nowrap',
+    minWidth: 150,
+    flexShrink: 0,
+
+    '& .MuiChip-root': {
+      flexShrink: 0,
+      fontWeight: 700,
+    },
   },
 
   positionGrid: {

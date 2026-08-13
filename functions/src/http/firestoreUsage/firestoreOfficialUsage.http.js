@@ -3,7 +3,6 @@ const { admin } = require('../../config/admin')
 const { readFirestoreUsageMetrics } = require('../../services/firestoreUsage/readFirestoreUsageMetrics')
 
 const REGION = 'europe-west1'
-const DEFAULT_ADMIN_EMAILS = ['assael74@gmail.com']
 
 function getAllowedEmails() {
   const configured = String(process.env.FIRESTORE_USAGE_ADMIN_EMAILS || '')
@@ -11,7 +10,9 @@ function getAllowedEmails() {
     .map(value => value.trim().toLowerCase())
     .filter(Boolean)
 
-  return new Set(configured.length ? configured : DEFAULT_ADMIN_EMAILS)
+  if (!configured.length) return null
+
+  return new Set(configured)
 }
 
 async function requireAdmin(req) {
@@ -20,8 +21,16 @@ async function requireAdmin(req) {
   if (!token) throw Object.assign(new Error('unauthorized'), { status: 401 })
 
   const decoded = await admin.auth().verifyIdToken(token)
+  const allowedEmails = getAllowedEmails()
+  if (!allowedEmails) {
+    throw Object.assign(
+      new Error('firestore usage admin emails are not configured'),
+      { status: 500 }
+    )
+  }
+
   const email = String(decoded.email || '').trim().toLowerCase()
-  if (!email || !getAllowedEmails().has(email)) {
+  if (!email || !allowedEmails.has(email)) {
     throw Object.assign(new Error('forbidden'), { status: 403 })
   }
 

@@ -105,6 +105,16 @@ export const buildPlayerScoutIndexFields = player => {
     ),
     primaryScoutWarnings: uniqueCleanValues(primaryProfile?.warnings),
     primaryScoutScore: toNullableNumber(primaryProfile?.score),
+    primaryScoutInterestLevel: clean(primaryProfile?.interest),
+    primaryScoutProfileDepthPct: toNullableNumber(
+      primaryProfile?.profileDepth?.depthPct
+    ),
+    primaryScoutOpportunityStatus: clean(
+      primaryProfile?.opportunity?.actionStatus
+    ),
+    primaryScoutTeamGateMode: clean(
+      primaryProfile?.scoutContext?.teamGate?.mode
+    ),
     secondaryScoutProfileId: clean(secondaryProfile?.id),
     secondaryScoutReliabilityLevel: clean(
       secondaryProfile?.reliability?.level

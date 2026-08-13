@@ -1,7 +1,6 @@
 // features/playersDatabase/services/write/players/playerDoc.model.js
 
 import {
-  deleteField,
   doc,
   serverTimestamp,
 } from 'firebase/firestore'
@@ -23,6 +22,36 @@ import {
 export const buildPlayerDocumentId = player =>
   buildCanonicalPlayerDocumentId(player)
 
+const compactScoutValue = value => {
+  if (value === undefined) return undefined
+
+  if (Array.isArray(value)) {
+    return value
+      .map(compactScoutValue)
+      .filter(item => item !== undefined)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce((result, [key, item]) => {
+      const compacted = compactScoutValue(item)
+      if (compacted === undefined) return result
+
+      return {
+        ...result,
+        [key]: compacted,
+      }
+    }, {})
+  }
+
+  return value
+}
+
+const normalizeScoutProfileArray = values => (
+  Array.isArray(values)
+    ? values.map(compactScoutValue).filter(Boolean)
+    : []
+)
+
 export const normalizePlayerScoutProfiles = player => {
   const scoutSignals = Array.isArray(player?.scoutSignals)
     ? player.scoutSignals
@@ -37,43 +66,16 @@ export const normalizePlayerScoutProfiles = player => {
     : scoutProfiles
 
   return sourceProfiles
-    .filter(profile =>
-      clean(
-        profile.profileId ||
-        profile.id
+    .filter(profile => clean(profile.profileId || profile.id))
+    .map((profile) => {
+      const reliabilityScoreValue = pickDefinedValue(
+        profile.reliability?.score,
+        profile.reliabilityScore
       )
-    )
-    .map(profile => ({
-      profileId: clean(
-        profile.profileId ||
-        profile.id
-      ),
-      positionContext: clean(
-        profile.positionContext
-      ),
-      reliability: {
-        level: clean(
-          profile.reliability?.level ||
-          profile.reliabilityLevel ||
-          ''
-        ),
-        score: Number.isFinite(
-          Number(
-            pickDefinedValue(
-              profile.reliability?.score,
-              profile.reliabilityScore
-            )
-          )
-        )
-          ? Number(
-              pickDefinedValue(
-                profile.reliability?.score,
-                profile.reliabilityScore
-              )
-            )
-          : null,
-      },
-      warnings: [
+      const reliabilityScore = Number.isFinite(Number(reliabilityScoreValue))
+        ? Number(reliabilityScoreValue)
+        : null
+      const warnings = [
         ...new Set(
           (
             Array.isArray(profile.warnings)
@@ -85,13 +87,41 @@ export const normalizePlayerScoutProfiles = player => {
             .map(clean)
             .filter(Boolean)
         ),
-      ],
-      score: Number.isFinite(
-        Number(profile.score)
-      )
-        ? Number(profile.score)
-        : null,
-    }))
+      ]
+
+      return compactScoutValue({
+        profileId: clean(profile.profileId || profile.id),
+        profileLabel: clean(profile.profileLabel || profile.label),
+        engineVersion: clean(profile.engineVersion),
+        perspective: clean(profile.perspective),
+        searchLevels: normalizeScoutProfileArray(profile.searchLevels),
+        teamFilter: clean(profile.teamFilter),
+        positionContext: clean(profile.positionContext),
+        interestLevel: clean(profile.interestLevel || profile.interest),
+        profileDepth: profile.profileDepth || null,
+        reliability: {
+          ...(profile.reliability || {}),
+          level: clean(
+            profile.reliability?.level ||
+            profile.reliabilityLevel ||
+            ''
+          ),
+          score: reliabilityScore,
+        },
+        warnings,
+        score: Number.isFinite(Number(profile.score))
+          ? Number(profile.score)
+          : null,
+        reasons: normalizeScoutProfileArray(profile.reasons),
+        requiredReview: normalizeScoutProfileArray(
+          profile.requiredReview || profile.reviews
+        ),
+        matchedRules: normalizeScoutProfileArray(profile.matchedRules),
+        scoutContext: profile.scoutContext || null,
+        spotlights: normalizeScoutProfileArray(profile.spotlights),
+        opportunity: profile.opportunity || null,
+      })
+    })
 }
 
 export const normalizePlayerScoutCombinations = player => {
@@ -256,7 +286,6 @@ export const buildPlayerBaseDoc = (
     ? currentData.history
     : [],
 
-  scoutProfiles: deleteField(),
 
   createdAt:
     currentData.createdAt ||

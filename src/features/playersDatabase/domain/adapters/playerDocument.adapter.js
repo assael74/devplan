@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/adapters/playerDocument.adapter.js
+// src/features/playersDatabase/domain/adapters/playerDocument.adapter.js
 
 import { normalizePlayerIdentity } from '../../model/playerIdentity.model.js'
 import {
@@ -10,6 +10,11 @@ import { normalizeSeasonIdentity } from '../../model/season.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyPlayerSeason } from '../contracts/playerSeason.contract.js'
 import { normalizePlayerScout } from '../contracts/playerScout.contract.js'
+import {
+  normalizePlayerEventsState,
+  normalizePlayerTrackingState,
+  normalizePlayerVerificationState,
+} from '../contracts/playerDocumentState.contract.js'
 import {
   cleanDomainValue,
   firstDomainValue,
@@ -52,6 +57,9 @@ export const adaptPlayerDocumentSeason = ({
   const lifecycle = createLifecycle(target)
   const result = createEmptyPlayerSeason()
   const profiles = seasonDocument.scoutProfiles || seasonDocument.scoutSignals || []
+  const tracking = normalizePlayerTrackingState(playerDocument)
+  const verification = normalizePlayerVerificationState(playerDocument)
+  const events = normalizePlayerEventsState(playerDocument)
 
   return {
     ...result,
@@ -69,13 +77,31 @@ export const adaptPlayerDocumentSeason = ({
       birthYear: toDomainNumber(firstDomainValue(seasonDocument.birthYear, playerDocument.birthYear)),
     },
     lifecycle,
+    tracking,
+    verification,
+    events,
     statsStatus,
     team: {
       teamId: cleanDomainValue(firstDomainValue(seasonDocument.birthTeamId, seasonDocument.teamId, team.birthTeamId, team.teamId)),
       teamDocumentId: cleanDomainValue(firstDomainValue(seasonDocument.birthTeamDocumentId, seasonDocument.teamDocumentId, team.birthTeamDocumentId, team.teamDocumentId)),
       clubId: cleanDomainValue(firstDomainValue(seasonDocument.clubId, team.clubId)),
+      clubName: cleanDomainValue(firstDomainValue(seasonDocument.clubName, team.clubName)),
+      clubLevel: toDomainNumber(firstDomainValue(
+        seasonDocument.clubLevel,
+        team.clubLevel,
+        playerDocument.clubLevel
+      )),
+      clubStrengthLevel: toDomainNumber(firstDomainValue(
+        seasonDocument.clubStrengthLevel,
+        team.clubStrengthLevel,
+        playerDocument.clubStrengthLevel,
+        seasonDocument.clubLevel,
+        team.clubLevel,
+        playerDocument.clubLevel
+      )),
       leagueId: cleanDomainValue(firstDomainValue(seasonDocument.leagueId, team.leagueId)),
-      leagueLevel: toDomainNumber(firstDomainValue(seasonDocument.leagueLevel, team.leagueLevel)),
+      leagueName: cleanDomainValue(firstDomainValue(seasonDocument.leagueName, team.leagueName)),
+      leagueLevel: toDomainNumber(firstDomainValue(seasonDocument.leagueLevel, team.leagueLevel, playerDocument.leagueLevel)),
       ageGroupId: cleanDomainValue(firstDomainValue(seasonDocument.ageGroupId, team.ageGroupId)),
       ageGroupLabel: cleanDomainValue(firstDomainValue(seasonDocument.ageGroupLabel, team.ageGroupLabel)),
       birthTeamSlot: toDomainNumber(firstDomainValue(seasonDocument.birthTeamSlot, team.birthTeamSlot)),

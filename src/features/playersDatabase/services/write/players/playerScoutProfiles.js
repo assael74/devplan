@@ -19,8 +19,56 @@ import {
   upsertSeasonRows,
 } from './playerSeason.model.js'
 import { upsertProfiledPlayerDoc } from './playerDoc.upsert.js'
+import {
+  normalizeScoutingPlayerEvents,
+  normalizeScoutingPlayerTracking,
+  SCOUTING_PLAYER_TRACKING_REASONS,
+} from './scoutingPlayerLifecycle.model.js'
+import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+
+const hasProfiles = source => (
+  (Array.isArray(source?.scoutProfiles) && source.scoutProfiles.length > 0) ||
+  (Array.isArray(source?.scoutSignals) && source.scoutSignals.length > 0)
+)
+
+const hasProfilesInPlayerDocument = data => (
+  hasProfiles(data) ||
+  ['current', 'history'].some(target => (
+    (Array.isArray(data?.[target]) ? data[target] : []).some(hasProfiles)
+  ))
+)
+
+const buildCompatibleTracking = data => {
+  const current = normalizeScoutingPlayerTracking({
+    ...(data?.tracking || {}),
+    favorite:
+      data?.tracking?.favorite === true ||
+      data?.favorite === true,
+    watchlist:
+      data?.tracking?.watchlist === true ||
+      data?.watchlist === true,
+  })
+  const reasons = [
+    ...current.trackingReasons,
+    current.favorite
+      ? SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE
+      : '',
+    current.watchlist
+      ? SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST
+      : '',
+    hasProfilesInPlayerDocument(data)
+      ? SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+      : '',
+  ].filter(Boolean)
+
+  return {
+    ...current,
+    trackingReasons: [...new Set(reasons)],
+  }
+}
+
 export const clearExistingPlayerSeasonProfiles = async ({
   season = {},
   team = {},
@@ -106,6 +154,14 @@ export const clearExistingPlayerSeasonProfiles = async ({
     transaction.set(
       ref,
       {
+        favorite:
+          currentData.favorite === true ||
+          currentData.tracking?.favorite === true,
+        tracking: buildCompatibleTracking(currentData),
+        verification: normalizeScoutingPlayerVerification(
+          currentData.verification
+        ),
+        events: normalizeScoutingPlayerEvents(currentData.events),
         ...(isHistory ? { history: nextRows } : { current: nextRows }),
         updatedAt: serverTimestamp(),
       },
@@ -125,6 +181,7 @@ export async function upsertProfiledPlayerDocsMany({
   team = {},
   target = 'current',
   players = [],
+  teamDocument = null,
 } = {}) {
   const profiledPlayers = (Array.isArray(players) ? players : [])
     .filter(hasPlayerScoutProfiles)
@@ -136,6 +193,7 @@ export async function upsertProfiledPlayerDocsMany({
       team,
       target,
       player,
+      teamDocument,
     }))
   }
 
@@ -154,6 +212,7 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   target = 'current',
   player = {},
   scoutSyncMode = 'replace',
+  teamDocument = null,
 } = {}) {
   if (!hasPlayerScoutProfiles(player) && scoutSyncMode === 'preserve') {
     return {
@@ -170,6 +229,7 @@ export async function syncPlayerRoleAndScoutProfileDoc({
         team,
         target,
         player,
+        teamDocument,
       })
     : clearExistingPlayerSeasonProfiles({
         season,
@@ -185,6 +245,7 @@ export async function syncPlayerScoutProfileDocsMany({
   target = 'current',
   players = [],
   scoutSyncMode = 'replace',
+  teamDocument = null,
 } = {}) {
   const safePlayers = Array.isArray(players) ? players : []
   const results = []
@@ -198,6 +259,7 @@ export async function syncPlayerScoutProfileDocsMany({
         target,
         player,
         scoutSyncMode,
+        teamDocument,
       }))
     } catch (error) {
       failures.push({

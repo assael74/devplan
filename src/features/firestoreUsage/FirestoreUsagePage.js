@@ -17,6 +17,7 @@ import UsageFilters from './components/UsageFilters.js'
 import UsageProcessesTable from './components/UsageProcessesTable.js'
 import UsageListenersTable from './components/UsageListenersTable.js'
 import UsagePayloadSummary from './components/UsagePayloadSummary.js'
+import UsageKpis from './components/UsageKpis.js'
 
 import {
   firestoreUsageAsideColumnSx,
@@ -26,6 +27,7 @@ import {
   firestoreUsagePageSx,
   firestoreUsagePrimaryLayoutSx,
   firestoreUsageScrollSx,
+  firestoreUsageSplitLayoutSx,
 } from './sx/firestoreUsage.sx.js'
 
 export default function FirestoreUsagePage() {
@@ -86,6 +88,8 @@ export default function FirestoreUsagePage() {
             onFeatureChange={setSelectedFeature}
           />
 
+          <UsageKpis items={viewModel.kpis} />
+
           <UsageProcessesTable
             rows={viewModel.processes}
             onRowClick={row => openDrilldown('action', {
@@ -93,10 +97,13 @@ export default function FirestoreUsagePage() {
             })}
           />
 
+          <Box sx={firestoreUsageSplitLayoutSx}>
+            <UsageAlerts viewModel={viewModel} />
+            <UsagePayloadSummary payload={viewModel.payloadSummary} />
+          </Box>
+
           <Box sx={firestoreUsagePrimaryLayoutSx}>
             <Box sx={firestoreUsageMainColumnSx}>
-              <UsageAlerts viewModel={viewModel} />
-
               {viewModel.expensiveActions.length > 0 ? (
                 <UsageExpensiveActions rows={viewModel.expensiveActions} />
               ) : null}
@@ -114,7 +121,6 @@ export default function FirestoreUsagePage() {
 
             <Box sx={firestoreUsageAsideColumnSx}>
               <UsageListenersTable rows={viewModel.activeListeners} />
-              <UsagePayloadSummary payload={viewModel.payloadSummary} />
             </Box>
           </Box>
         </Box>

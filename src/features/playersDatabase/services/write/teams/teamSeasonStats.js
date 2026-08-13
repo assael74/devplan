@@ -125,6 +125,7 @@ export async function updateTeamSeasonPlayerStats({
       rowsCount: (Array.isArray(players) ? players : []).length,
       playersCount: seasonDoc.teamPlayers.length,
       players: seasonDoc.teamPlayers,
+      teamDocument: nextData,
     }
   })
 }

@@ -45,6 +45,8 @@ export default function UsagePayloadSummary({ payload }) {
         minHeight: 0,
         height: '100%',
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Typography level="title-lg">נפח משוער</Typography>
@@ -57,6 +59,7 @@ export default function UsagePayloadSummary({ payload }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
           gap: 1,
+          mt: 'auto',
         }}
       >
         <PayloadMetric

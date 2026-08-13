@@ -125,6 +125,62 @@ export const playerScoutAuditSx = {
     color: 'neutral.500',
   },
 
+  shadowBox: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 1,
+    p: 1.25,
+    border: '1px solid',
+    borderColor: 'primary.300',
+    borderRadius: 8,
+    bgcolor: 'primary.softBg',
+  },
+
+  shadowHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  shadowSummaryGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: 'repeat(2, minmax(0, 1fr))',
+      lg: 'repeat(4, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
+
+  shadowNote: {
+    color: 'neutral.600',
+    lineHeight: 1.6,
+  },
+
+  shadowTableWrap: {
+    maxHeight: 360,
+    overflow: 'auto',
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  shadowTable: {
+    minWidth: 1120,
+
+    '& th': {
+      textAlign: 'right',
+      whiteSpace: 'nowrap',
+      fontWeight: 700,
+    },
+
+    '& td': {
+      textAlign: 'right',
+      verticalAlign: 'top',
+    },
+  },
+
   successBox: {
     p: 1.25,
     borderRadius: 8,
@@ -162,6 +218,35 @@ export const playerScoutAuditSx = {
       lg: 'repeat(5, minmax(0, 1fr))',
     },
     gap: 1,
+  },
+
+  repairCostBox: {
+    display: 'grid',
+    gap: 0.75,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  repairCostGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: 'repeat(2, minmax(0, 1fr))',
+      lg: 'repeat(4, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
+
+  repairCostBreakdown: {
+    color: 'neutral.600',
+    lineHeight: 1.6,
+  },
+
+  costNote: {
+    color: 'neutral.600',
+    lineHeight: 1.6,
   },
 
   repairNote: {

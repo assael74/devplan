@@ -29,6 +29,7 @@ import {
   getRosterStatus,
   normalizeText,
   resolveClubLevel,
+  resolveClubStrengthLevel,
 } from './playerSeasonIndex.identity.js'
 import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
@@ -127,6 +128,11 @@ export const buildPlayerSeasonIndexDoc = ({
     clubLevel: resolveClubLevel({
       clubId: team.clubId,
       clubLevel: team.clubLevel,
+    }),
+    clubStrengthLevel: resolveClubStrengthLevel({
+      clubId: team.clubId,
+      clubLevel: team.clubLevel,
+      clubStrengthLevel: team.clubStrengthLevel,
     }),
     birthTeamId: teamId,
     birthTeamDocumentId: teamScope.birthTeamDocumentId,

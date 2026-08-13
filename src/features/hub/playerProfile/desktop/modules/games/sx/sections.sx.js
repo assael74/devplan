@@ -1,9 +1,5 @@
 // hub/playerProfile/desktop/modules/games/sx/sections.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('players')
-
 export const sectionsSx = {
   infoCellSx: {
     minWidth: 0,
@@ -54,7 +50,37 @@ export const sectionsSx = {
     display: 'flex',
     alignItems: 'center',
     justifyItems: 'start',
-    gap: 0.55,
-    px: 1,
+    gap: 1,
+    px: 0.35,
+    overflow: 'hidden',
+
+    '& .MuiIconButton-root': {
+      flex: '0 0 auto',
+    },
+
+    '& .MuiChip-root': {
+      minWidth: 0,
+      maxWidth: 77,
+      flex: '0 1 auto',
+    },
+
+    '& .MuiChip-label': {
+      minWidth: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
+
+  entryStatusChipSx: {
+    //width: 74,
+    //flex: '0 0 74px',
+    justifyContent: 'center',
+  },
+
+  entryTimeChipSx: {
+    //width: 58,
+    //flex: '0 0 58px',
+    justifyContent: 'center',
   },
 }

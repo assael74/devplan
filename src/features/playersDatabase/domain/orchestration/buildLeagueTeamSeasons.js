@@ -1,12 +1,13 @@
-// features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
+// src/features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
 
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
   TEAM_SCOUT_SORT_MODE,
-} from '../../../../shared/teams/scout/index.js'
+} from '../../../../shared/scouting/teams/index.js'
 import { adaptLeagueTableTeam } from '../adapters/leagueTableTeam.adapter.js'
 import { adaptTeamScoutEngineRow } from '../adapters/teamScoutEngine.adapter.js'
+import { enrichTeamScoutInputRows } from '../adapters/teamScoutInput.adapter.js'
 import { cleanDomainValue } from '../contracts/domainValue.contract.js'
 
 const resolveTeamKey = value => cleanDomainValue(
@@ -46,7 +47,7 @@ export const buildLeagueTeamSeasons = ({
   const engineResult = buildTeamScoutLeagueModel({
     leagueLevel,
     leagueNumGames,
-    rows: tableRows,
+    rows: enrichTeamScoutInputRows(tableRows),
     normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })
@@ -60,7 +61,7 @@ export const buildLeagueTeamSeasons = ({
           normalization: engineResult?.normalization || {},
           leagueLevel: engineResult?.leagueLevel || leagueLevel,
           leagueGames: engineResult?.leagueNumGames || leagueNumGames,
-          engineVersion: engineResult?.engineVersion,
+          engineVersion: 'scouting-v2',
           calculatedAt: seasonSource.updatedAt || null,
         },
       }),

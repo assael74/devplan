@@ -14,12 +14,23 @@ const TEXT = {
 }
 
 export default function PlayerAffiliationCard({
+  player,
   draft,
+  setDraft,
+  pending = false,
   clubsOptions = [],
   teamsOptions = [],
 }) {
-  const hasClub = Boolean(draft?.clubId)
-  const hasTeam = Boolean(draft?.teamId)
+  const isPrivatePlayer =
+    player?.isPrivatePlayer === true ||
+    player?.playerSource === 'private'
+
+  const hasClub = isPrivatePlayer
+    ? Boolean(String(draft?.clubName || '').trim())
+    : Boolean(draft?.clubId)
+  const hasTeam = isPrivatePlayer
+    ? Boolean(String(draft?.teamName || '').trim())
+    : Boolean(draft?.teamId)
 
   return (
     <Sheet variant="outlined" sx={sx.card}>
@@ -51,9 +62,13 @@ export default function PlayerAffiliationCard({
 
       <PlayerAffiliationFields
         draft={draft}
+        onDraft={setDraft}
         clubsOptions={clubsOptions}
         teamsOptions={teamsOptions}
         layout={sx.formGrid2}
+        disabled={pending || !isPrivatePlayer}
+        hideTeam={false}
+        freeText={isPrivatePlayer}
       />
     </Sheet>
   )

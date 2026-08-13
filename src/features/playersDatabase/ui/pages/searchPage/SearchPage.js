@@ -24,6 +24,7 @@ import {
   applyPlayerScoutRepair,
   buildPlayerScoutRepairPreview,
   buildPlayerScoutRulesAudit,
+  buildPlayerScoutShadowComparison,
   buildScopedPlayerScoutRulesAudit,
   downloadPlayerScoutRulesAudit,
 } from '../../../services/audit/index.js'
@@ -164,7 +165,9 @@ function SearchPageContent() {
     resetAuditActions()
 
     try {
-      const result = await buildPlayerScoutRulesAudit()
+      const result = await buildPlayerScoutRulesAudit({
+        includeRepairData: true,
+      })
       setScoutAudit(result)
     } catch (error) {
       console.error('[playersDatabase] Full scout rules audit failed:', error)
@@ -201,6 +204,7 @@ function SearchPageContent() {
       const result = await buildScopedPlayerScoutRulesAudit({
         teamDocumentId: safeTeamDocumentId,
         seasonKey: safeSeasonKey,
+        includeRepairData: true,
       })
       setScoutAudit(result)
     } catch (error) {
@@ -285,7 +289,7 @@ function SearchPageContent() {
         audit => audit.recalculatedRows || []
       )
 
-      setScoutAudit({
+      const verificationAudit = {
         generatedAt: new Date().toISOString(),
         mode: 'read-only-scoped-verification',
         purpose: 'verify-repaired-player-scout-scopes',
@@ -304,7 +308,12 @@ function SearchPageContent() {
             sum + Number(audit.summary?.teamSeasonIndexes || 0)
           ), 0),
           totalIssues: issues.length,
-          syncIssuesCount: issues.length,
+          syncIssuesCount: issues.filter(issue => (
+            issue.type !== 'player_schema_outdated'
+          )).length,
+          schemaIssuesCount: issues.filter(issue => (
+            issue.type === 'player_schema_outdated'
+          )).length,
           issuesByType: issues.reduce((result, issue) => {
             const type = issue.type || 'unknown'
             result[type] = Number(result[type] || 0) + 1
@@ -318,6 +327,13 @@ function SearchPageContent() {
         },
         issues,
         recalculatedRows,
+      }
+
+      setScoutAudit({
+        ...verificationAudit,
+        shadow: buildPlayerScoutShadowComparison({
+          audit: verificationAudit,
+        }),
       })
     } catch (error) {
       console.error('[playersDatabase] Scout repair failed:', error)

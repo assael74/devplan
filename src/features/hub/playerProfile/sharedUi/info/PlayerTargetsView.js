@@ -141,10 +141,10 @@ export default function PlayerTargetsView({
         <Typography level='title-sm' sx={sx.emptyTitle}>{TEXT.noTarget}</Typography>
         <Typography level='body-xs' sx={sx.emptySub}>{TEXT.noTargetHelp}</Typography>
         <Box sx={sx.emptyActions}>
-          <Button size='sm' variant='solid' disabled={pending} onClick={onOpenPosition} startDecorator={iconUi({ id: 'position' })}>
+          <Button size='sm' variant='solid' disabled={pending} onClick={onOpenPosition} startDecorator={iconUi({ id: 'position' })} sx={sx.emptyPrimaryAction}>
             {TEXT.setPosition}
           </Button>
-          <Button size='sm' variant='soft' color='neutral' disabled startDecorator={iconUi({ id: 'targets' })}>
+          <Button size='sm' variant='soft' color='neutral' disabled startDecorator={iconUi({ id: 'targets' })} sx={sx.emptyDisabledAction}>
             {TEXT.teamTargetAction}
           </Button>
         </Box>

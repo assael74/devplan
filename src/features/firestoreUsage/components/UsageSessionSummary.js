@@ -32,7 +32,7 @@ function SummaryRow({ label, value }) {
   )
 }
 
-export default function UsageSessionSummary({ summary, totals }) {
+export default function UsageSessionSummary({ summary }) {
   return (
     <Card variant="outlined" sx={{ p: 2, borderRadius: 'lg', boxShadow: 'sm' }}>
       <Typography level="title-lg" sx={{ mb: 1 }}>

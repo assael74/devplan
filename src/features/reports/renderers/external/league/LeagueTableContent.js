@@ -1,4 +1,4 @@
-// features/reports/renderers/external/league/LeagueTableContent.js
+// src/features/reports/renderers/external/league/LeagueTableContent.js
 
 import * as React from 'react'
 import { Box, Sheet, Typography } from '@mui/joy'
@@ -8,7 +8,7 @@ import { SortMenuButton } from '../../../../../ui/patterns/sort/index.js'
 import {
   resolveTeamScoutPriorityLevel,
   resolveTeamScoutPriorityScoreLevel,
-} from '../../../../../shared/teams/scout/index.js'
+} from '../../../../../shared/scouting/teams/index.js'
 import {
   ReportList,
   ReportListRow,
@@ -49,6 +49,12 @@ const HEADERS = [
   { id: 'defense', label: 'ביצוע הגנתי' },
 ]
 
+function firstValue(primary, fallback) {
+  return primary === null || primary === undefined
+    ? fallback
+    : primary
+}
+
 function toDisplayNumber(value) {
   const number = Number(value)
   return Number.isFinite(number) ? number : 0
@@ -79,14 +85,14 @@ function resolvePriorityLevel(score) {
 function getViewValue(side = {}, view = 'combined') {
   if (view === 'performance') {
     return {
-      value: side.anomaly?.rate ?? side.anomalyRate,
-      level: side.anomaly?.level ?? side.performanceLevel,
+      value: firstValue(side.anomaly?.rate, side.anomalyRate),
+      level: firstValue(side.anomaly?.level, side.performanceLevel),
       format: 'rate',
     }
   }
 
   if (view === 'quality') {
-    const value = side.quality?.rate ?? side.qualityRate
+    const value = firstValue(side.quality?.rate, side.qualityRate)
 
     return {
       value,
@@ -95,11 +101,11 @@ function getViewValue(side = {}, view = 'combined') {
     }
   }
 
-  const value = side.priority?.score ?? side.scoutPriorityScore
+  const value = firstValue(side.priority?.score, side.scoutPriorityScore)
 
   return {
     value,
-    level: side.priority?.level ?? resolvePriorityLevel(value),
+    level: firstValue(side.priority?.level, resolvePriorityLevel(value)),
     format: 'score',
   }
 }

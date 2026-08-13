@@ -22,7 +22,7 @@ export default function SectionPanel({
         minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: isContained ? 'hidden' : 'visible',
       }}
     >
       <Box
@@ -70,7 +70,7 @@ export default function SectionPanel({
           pr: 0.5,
           pb: isContained ? 7 : 1,
           overflowY: isContained ? 'auto' : 'visible',
-          overflowX: 'hidden',
+          overflowX: isContained ? 'hidden' : 'visible',
         }}
       >
         {children}

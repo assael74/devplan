@@ -28,6 +28,7 @@ import {
 import {
   buildTeamSeasonIndexId,
   resolveClubLevel,
+  resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
 import {
   buildSearchIndexWriteResult,
@@ -95,6 +96,11 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
       clubLevel: resolveClubLevel({
         clubId,
         clubLevel: team.clubLevel,
+      }),
+      clubStrengthLevel: resolveClubStrengthLevel({
+        clubId,
+        clubLevel: team.clubLevel,
+        clubStrengthLevel: team.clubStrengthLevel,
       }),
       birthTeamId: teamId,
       birthTeamDocumentId: teamIdentity.birthTeamDocumentId || teamId,

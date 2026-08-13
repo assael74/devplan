@@ -61,9 +61,12 @@ export async function updatePlayerRoleFlow(payload = {}) {
     }
   }
 
-  // The player document is synchronized once. The previous flow wrote the same
-  // player season twice through two separate transactions.
-  const playerSeasonResult = await syncPlayerRoleAndScoutProfileDoc(rolePayload)
+  // Reuse the team document already read and updated in the team transaction.
+  // The player sync falls back to its own read only when no team document exists.
+  const playerSeasonResult = await syncPlayerRoleAndScoutProfileDoc({
+    ...rolePayload,
+    teamDocument: teamSeasonResult.teamDocument || null,
+  })
   const playerScoutProfileDocsResult = buildPlayerSyncResult(playerSeasonResult)
   const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexRole(rolePayload)
   const leagueTableRankScoutProfilesResult = await updateLeagueSeasonTableRankScoutProfilesSummary({

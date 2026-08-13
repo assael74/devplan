@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.model.js
+// src/features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.model.js
 
 import { pickDefinedValue } from '../../../../model/value.model.js'
 import {
@@ -26,9 +26,11 @@ import {
   getRosterStatus,
   normalizeText,
   resolveClubLevel,
+  resolveClubStrengthLevel,
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import { buildPlayerSeasonStatsSnapshots } from './playerSeasonIndex.snapshot.js'
 
 
 const resolveExpectedLevelDelta = ({
@@ -185,6 +187,18 @@ export const buildPlayerSeasonStatsMutation = ({
     teamGamePlayed: resolvedTeamGamePlayed,
     stats: playerStats,
   })
+  const statsSnapshots = buildPlayerSeasonStatsSnapshots({
+    existingData,
+    nextStats: {
+      teamGamePlayed: resolvedTeamGamePlayed,
+      games: playerStats.games,
+      goals: playerStats.goals,
+      minutes: playerStats.minutes,
+      starts: playerStats.starts,
+      substituteIn: playerStats.substituteIn,
+      substitutedOut: playerStats.substitutedOut,
+    },
+  })
   const id = existingDoc?.id || buildPlayerSeasonIndexId({
     seasonKey,
     clubId: teamScope.clubId || team.clubId || existingData.clubId,
@@ -215,6 +229,13 @@ export const buildPlayerSeasonStatsMutation = ({
     id,
     ref: existingDoc?.ref || null,
     created: !existingDoc,
+    snapshotAudit: {
+      playerId,
+      displayName,
+      previous: statsSnapshots.previous,
+      current: statsSnapshots.current,
+      changed: statsSnapshots.changed,
+    },
     data: {
       id,
       entityType: 'playerSeason',
@@ -240,6 +261,12 @@ export const buildPlayerSeasonStatsMutation = ({
       clubLevel: resolveClubLevel({
         clubId: team.clubId || existingData.clubId,
         clubLevel: team.clubLevel || existingData.clubLevel,
+      }),
+      clubStrengthLevel: resolveClubStrengthLevel({
+        clubId: team.clubId || existingData.clubId,
+        clubLevel: team.clubLevel || existingData.clubLevel,
+        clubStrengthLevel:
+          team.clubStrengthLevel || existingData.clubStrengthLevel,
       }),
       birthTeamId: teamScope.birthTeamId,
       birthTeamDocumentId: teamScope.birthTeamDocumentId,
@@ -312,6 +339,10 @@ export const buildPlayerSeasonStatsMutation = ({
       teamMinutes: playerStats.teamMinutes,
       teamGames: playerStats.teamGames,
       minutesPerGame: playerStats.minutesPerGame,
+      statsSnapshots: {
+        previous: statsSnapshots.previous,
+        current: statsSnapshots.current,
+      },
       ...normalization,
       ...scoutIndexFields,
       sourceCollection: playerDocumentId ? 'players' : 'birthTeams',

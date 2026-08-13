@@ -37,7 +37,16 @@ export const toolbarSx = {
     display: 'flex',
     gap: 0.75,
     alignItems: 'center',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    minWidth: 0,
+    scrollbarWidth: 'none',
+    '&::-webkit-scrollbar': {
+      width: 0,
+      height: 0,
+      display: 'none',
+    },
   },
 
   toolbarBottom: {

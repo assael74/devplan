@@ -80,6 +80,7 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     entityId = '',
     displayName = '',
     birthYear = null,
+    scouting = null,
   } = {}) => {
     const normalizedEntityId = String(entityId || '').trim()
     const pendingKey = buildPendingKey(favoriteType, normalizedEntityId)
@@ -114,6 +115,7 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
           entityId: normalizedEntityId,
           displayName,
           birthYear,
+          scouting,
         },
       })
 
@@ -131,6 +133,7 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
   const removeFavorite = React.useCallback(async ({
     favoriteType = '',
     entityId = '',
+    scouting = null,
   } = {}) => {
     const normalizedEntityId = String(entityId || '').trim()
     const pendingKey = buildPendingKey(favoriteType, normalizedEntityId)
@@ -157,6 +160,7 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
         payload: {
           favoriteType,
           entityId: normalizedEntityId,
+          scouting,
         },
       })
     } catch (writeError) {

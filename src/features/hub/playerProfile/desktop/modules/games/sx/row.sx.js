@@ -1,8 +1,6 @@
 // playerProfile/desktop/modules/games/sx/row.sx.js
 
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('videoAnalysis')
+import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const rowSx = {
   panelSx: open => ({
@@ -20,7 +18,7 @@ export const rowSx = {
       right: 0,
       width: 3,
       opacity: 0.95,
-      bgcolor: c.accent,
+      bgcolor: devPlanColors.tertiary,
       zIndex: 2,
       borderTopRightRadius: 'inherit',
       borderBottomRightRadius: 'inherit',
@@ -32,7 +30,7 @@ export const rowSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: '330px 1px .3fr 1px minmax(96px,.7fr) 1px minmax(80px,.8fr) 1px .5fr 1px 48px',
+      md: 'minmax(230px, 1fr) 1px minmax(70px, .30fr) 1px minmax(132px, .8fr) 1px minmax(122px, .72fr) 1px minmax(138px, .68fr) 1px 64px',
     },
     gap: 1,
     alignItems: 'stretch',
@@ -40,14 +38,14 @@ export const rowSx = {
     py: 0.95,
     borderRadius: open ? '12px 12px 0 0' : 'lg',
     border: '1px solid',
-    borderColor: open ? `${c.accent}66` : 'divider',
-    bgcolor: open ? `${c.bg}44` : 'background.level2',
+    borderColor: open ? devPlanColors.tertiary : devPlanColors.border,
+    bgcolor: open ? devPlanColors.tertiaryLight : devPlanColors.secondaryLight,
     transition: 'transform .14s ease, box-shadow .14s ease, border-color .14s ease',
     cursor: 'pointer',
     overflow: 'hidden',
 
     '&:hover': {
-      bgcolor: `${c.bg}66`,
+      bgcolor: devPlanColors.primaryLight,
       boxShadow: 'sm',
     },
   }),
@@ -56,7 +54,7 @@ export const rowSx = {
     display: { xs: 'none', lg: 'block' },
     mx: 0.75,
     my: 0.5,
-    bgcolor: `${c.accent}22`,
+    bgcolor: devPlanColors.border,
   },
 
   performanceCellSx: {
@@ -103,8 +101,9 @@ export const rowSx = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 0.5,
-    px: 0.5,
+    gap: 0.35,
+    px: 0.25,
+    overflow: 'hidden',
   },
 
   toggleIconSx: open => ({
@@ -122,7 +121,7 @@ export const rowSx = {
     transition: 'grid-template-rows .22s ease',
     border: open ? '1px solid' : 0,
     borderTop: 0,
-    borderColor: `${c.accent}44`,
+    borderColor: devPlanColors.border,
     borderRadius: '0 0 12px 12px',
     bgcolor: 'background.surface',
     overflow: 'hidden',

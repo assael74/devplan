@@ -21,3 +21,7 @@ export {
   downloadPlayerScoutRulesAudit,
 } from './playerScoutRules.audit.js'
 
+
+export {
+  buildPlayerScoutShadowComparison,
+} from './playerScoutShadow.audit.js'

@@ -54,3 +54,15 @@ export {
   resolveTeamPlayerIdentities,
   resolveTeamPlayerIdentityPreview,
 } from './playerIdentity.resolve.js'
+
+
+export {
+  ensureFavoriteScoutingPlayerDoc,
+  ensureManualScoutingPlayerDoc,
+  ensureScoutingPlayerDoc,
+  ensureTransferredScoutingPlayerDoc,
+  ensureWatchlistScoutingPlayerDoc,
+  updateScoutingPlayerFavoriteState,
+  SCOUTING_PLAYER_EVENT_TYPES,
+  SCOUTING_PLAYER_TRACKING_REASONS,
+} from './scoutingPlayerDoc.js'

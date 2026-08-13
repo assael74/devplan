@@ -19,18 +19,9 @@ import { trackedRunTransaction } from '../../../../../services/firestore/usage/i
 export { buildSeasonKey, toNumberOrZero }
 export const clean = cleanValue
 
-export const cleanTeamStatsComputedFields = (teamStats = {}) => {
-  const {
-    attackPerformance,
-    defensePerformance,
-    attackNormalPerformance,
-    defenseNormalPerformance,
-    scoutPerformance,
-    ...truthStats
-  } = teamStats || {}
-
-  return truthStats
-}
+export const cleanTeamStatsComputedFields = (teamStats = {}) => ({
+  ...(teamStats || {}),
+})
 
 export const cleanTableRankComputedFields = tableRank =>
   (Array.isArray(tableRank) ? tableRank : []).map(row => ({
@@ -38,18 +29,10 @@ export const cleanTableRankComputedFields = tableRank =>
     teamStats: cleanTeamStatsComputedFields(row?.teamStats),
   }))
 
-export const cleanSeasonComputedFields = (season = {}) => {
-  const {
-    goalsEnvironment,
-    scoutEnvironment,
-    ...seasonDoc
-  } = season || {}
-
-  return {
-    ...seasonDoc,
-    tableRank: cleanTableRankComputedFields(seasonDoc.tableRank),
-  }
-}
+export const cleanSeasonComputedFields = (season = {}) => ({
+  ...(season || {}),
+  tableRank: cleanTableRankComputedFields(season?.tableRank),
+})
 
 export const leagueDocRef = leagueId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, clean(leagueId))

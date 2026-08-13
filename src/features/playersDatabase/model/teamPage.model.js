@@ -1,4 +1,4 @@
-// features/playersDatabase/model/teamPage.model.js
+// src/features/playersDatabase/model/teamPage.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { resolveAgeGroupLabel } from '../catalog/ageGroups.catalog.js'
@@ -26,7 +26,8 @@ import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
   TEAM_SCOUT_SORT_MODE,
-} from '../../../shared/teams/scout/index.js'
+} from '../../../shared/scouting/teams/index.js'
+import { enrichTeamScoutInputRows } from '../domain/adapters/teamScoutInput.adapter.js'
 
 const TEAM_PAGE_FUTURE_SEASON_KEY = '26/27'
 
@@ -269,7 +270,7 @@ const buildScoutResultMap = ({ tableRank = [], leagueDoc = {}, season = {} } = {
   const result = buildTeamScoutLeagueModel({
     leagueLevel: leagueDoc?.level,
     leagueNumGames: season?.leagueTotalRound || 30,
-    rows: tableRank,
+    rows: enrichTeamScoutInputRows(tableRank),
     normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })

@@ -13,7 +13,7 @@ import {
   trackedGetCountFromServer,
   trackedGetDocs,
 } from '../../../../services/firestore/usage/index.js'
-import { SCOUT_PROFILE_COMBINATIONS } from '../../../../shared/players/scouting/index.js'
+import { SCOUT_PROFILE_COMBINATIONS } from '../../../../shared/scouting/players/index.js'
 import {
   SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
   SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,

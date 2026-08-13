@@ -1,4 +1,4 @@
-// features/playersDatabase/catalog/genericObjects.catalog.js
+// src/features/playersDatabase/catalog/genericObjects.catalog.js
 
 // Firestore schema contracts.
 // These objects represent the real document shapes written to Firestore.
@@ -62,9 +62,12 @@ export const PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG = {
 export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
   id: '',
   leagueId: '',
+  leagueName: '',
   region: '',
   ageGroupId: '',
   ageGroupLabel: '',
+  level: null,
+  createdAt: null,
 
   current: {
     seasonId: '',
@@ -72,10 +75,13 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
     seasonUrl: '',
     birthYear: 0, // חובה
     leagueTotalRound: 0,
+    goalsEnvironment: null,
+    scoutEnvironment: null,
     tableRank: [
       {
         rank: 0,
         clubId: '',
+        clubLevel: 0,
         birthTeamId: '',
         birthTeamSlot: 1,
         teamId: '',
@@ -89,6 +95,11 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
           goalsFor: 0,
           goalsAgainst: 0,
           teamGamePlayed: 0,
+          attackPerformance: null,
+          defensePerformance: null,
+          attackNormalPerformance: null,
+          defenseNormalPerformance: null,
+          scoutPerformance: null,
         },
         scoutProfilesSummary: {
           total: 0,
@@ -107,10 +118,13 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasonUrl: '',
       birthYear: 0, // חובה
       leagueTotalRound: 0,
+      goalsEnvironment: null,
+      scoutEnvironment: null,
       tableRank: [
         {
           rank: 0,
           clubId: '',
+          clubLevel: 0,
           birthTeamId: '',
           birthTeamSlot: 1,
           teamId: '',
@@ -124,6 +138,11 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
             goalsFor: 0,
             goalsAgainst: 0,
             teamGamePlayed: 0,
+            attackPerformance: null,
+            defensePerformance: null,
+            attackNormalPerformance: null,
+            defenseNormalPerformance: null,
+            scoutPerformance: null,
           },
           scoutProfilesSummary: {
             total: 0,
@@ -296,6 +315,99 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   updatedAt: null,
 };
 
+const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
+  profileId: '',
+  profileLabel: '',
+  engineVersion: 'scouting-v2',
+  perspective: '',
+  searchLevels: [],
+  teamFilter: '',
+  positionContext: '',
+  interestLevel: '',
+  profileDepth: {
+    depth: 0,
+    depthPct: 0,
+    measurableRuleCount: 0,
+    rules: [
+      {
+        metric: '',
+        reason: '',
+        depth: 0,
+        depthPct: 0,
+      },
+    ],
+  },
+  reliability: {
+    level: '',
+    score: null,
+    factors: {},
+    warnings: [],
+  },
+  warnings: [],
+  score: null,
+  reasons: [],
+  requiredReview: [],
+  matchedRules: [],
+  scoutContext: {
+    team: {
+      classification: '',
+      relevantSide: '',
+      attack: {
+        classification: '',
+        priorityLevel: '',
+        score: null,
+      },
+      defense: {
+        classification: '',
+        priorityLevel: '',
+        score: null,
+      },
+      legacyFilter: '',
+    },
+    competition: {
+      classification: '',
+      clubLevel: null,
+      clubStrengthLevel: null,
+      leagueLevel: null,
+      levelGap: null,
+    },
+    position: {
+      evidence: '',
+      requiredContext: '',
+      positionValue: '',
+    },
+    teamGate: {
+      passed: false,
+      mode: '',
+      reason: '',
+      legacyFilterPassed: null,
+      clubStrengthLevel: null,
+      leagueLevel: null,
+    },
+  },
+  spotlights: [
+    {
+      id: '',
+      confidence: '',
+      effect: '',
+      evidence: [],
+      details: {},
+    },
+  ],
+  opportunity: {
+    actionStatus: '',
+    exposureLevel: '',
+    reasons: [],
+    evidence: {
+      profileId: '',
+      reliabilityLevel: '',
+      clubLevel: 0,
+      clubStrengthLevel: 0,
+      spotlightIds: [],
+    },
+  },
+};
+
 export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   id: '',
   externalPlayerId: '',
@@ -306,6 +418,49 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   status: '',
   favorite: false,
   notes: '',
+  primaryPosition: '',
+  positionLayer: '',
+  numShirt: '',
+
+  tracking: {
+    favorite: false,
+    watchlist: false,
+    firstTrackedAt: null,
+    trackingReasons: [],
+  },
+
+  verification: {
+    mode: 'manual',
+    answers: [
+      {
+        questionId: '',
+        answer: 'unknown',
+        sourceType: '',
+        sourceLabel: '',
+        answeredAt: null,
+        reviewAfter: null,
+      },
+    ],
+    updatedAt: null,
+  },
+
+  events: [
+    {
+      eventKey: '',
+      type: '',
+      seasonId: '',
+      seasonKey: '',
+      clubId: '',
+      birthTeamId: '',
+      profileId: '',
+      fromClubId: '',
+      toClubId: '',
+      fromBirthTeamId: '',
+      toBirthTeamId: '',
+      detectedAt: null,
+    },
+  ],
+
   createdAt: null,
   updatedAt: null,
 
@@ -314,11 +469,20 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasonId: '',
       seasonKey: '',
       leagueId: '',
+      leagueName: '',
+      ageGroupId: '',
+      ageGroupLabel: '',
       clubId: '',
+      clubName: '',
+      clubLevel: 0,
+      clubStrengthLevel: 0,
+      leagueLevel: 0,
+      teamName: '',
       birthTeamId: '',
       birthTeamDocumentId: '',
       birthTeamSlot: 1,
       teamId: '',
+      birthYear: null,
       playerUrl: '',
       notes: '',
       primaryPosition: '',
@@ -341,17 +505,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         teamAttackPerformance: null,
         teamDefensePerformance: null,
       },
-      scoutProfiles: [
-        {
-          profileId: '',
-          positionContext: '',
-          reliability: {
-            level: '',
-            score: null,
-          },
-          score: null,
-        }
-      ],
+      scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
       scoutCombinations: [],
       updatedAt: null,
     },
@@ -362,11 +516,20 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasonId: '',
       seasonKey: '',
       leagueId: '',
+      leagueName: '',
+      ageGroupId: '',
+      ageGroupLabel: '',
       clubId: '',
+      clubName: '',
+      clubLevel: 0,
+      clubStrengthLevel: 0,
+      leagueLevel: 0,
+      teamName: '',
       birthTeamId: '',
       birthTeamDocumentId: '',
       birthTeamSlot: 1,
       teamId: '',
+      birthYear: null,
       playerUrl: '',
       notes: '',
       primaryPosition: '',
@@ -389,17 +552,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         teamAttackPerformance: null,
         teamDefensePerformance: null,
       },
-      scoutProfiles: [
-        {
-          profileId: '',
-          positionContext: '',
-          reliability: {
-            level: '',
-            score: null,
-          },
-          score: null,
-        }
-      ],
+      scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
       scoutCombinations: [],
       closedAt: null,
     },
@@ -421,6 +574,7 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   seasonKey: '',
   clubId: '',
   clubLevel: 0,
+  clubStrengthLevel: 0,
   birthTeamId: '',
   birthTeamDocumentId: '',
   birthTeamSlot: 1,
@@ -468,7 +622,7 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   projectedTeamGamePlayed: 0,
   searchTeamGamePlayed: 0,
 
-  teamPerformanceSchemaVersion: 4,
+  teamPerformanceSchemaVersion: 5,
 
   attackQualityRate: null,
   attackTargetRate: null,
@@ -495,6 +649,14 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   defenseScoutPriorityScore: null,
   defensePriorityLevel: '',
   defenseOpportunityType: '',
+
+  teamScoutEngineVersion: '',
+  scoutCompetitionRelation: '',
+  scoutCompetitionGap: null,
+  attackingNeedLevel: 'none',
+  defensiveNeedLevel: 'none',
+  balanceProblemLevel: 'none',
+  recruitmentWindow: 'none',
 
   playersCount: 0,
   playerSeasonIndexCount: 0,
@@ -535,6 +697,7 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   seasonKey: '',
   clubId: '',
   clubLevel: 0,
+  clubStrengthLevel: 0,
   birthTeamId: '',
   birthTeamDocumentId: '',
   birthTeamSlot: 1,
@@ -579,6 +742,21 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   goalsPer90: 0,
   goalsPerGameDuration: 0,
 
+  statsSnapshots: {
+    previous: null,
+    current: {
+      capturedAt: '',
+      snapshotKey: '',
+      teamGamePlayed: 0,
+      games: 0,
+      goals: 0,
+      minutes: 0,
+      starts: 0,
+      substituteIn: 0,
+      substitutedOut: 0,
+    },
+  },
+
   gameMinutes: 0,
   seasonStatus: '',
   normalizationStatus: '',
@@ -605,6 +783,10 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   primaryScoutReliabilityLevel: '',
   primaryScoutWarnings: [],
   primaryScoutScore: null,
+  primaryScoutInterestLevel: '',
+  primaryScoutProfileDepthPct: null,
+  primaryScoutOpportunityStatus: '',
+  primaryScoutTeamGateMode: '',
 
   secondaryScoutProfileId: '',
   secondaryScoutReliabilityLevel: '',

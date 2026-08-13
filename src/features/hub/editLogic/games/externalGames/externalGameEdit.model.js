@@ -69,6 +69,7 @@ const buildComparableExternalGameDraft = (draft = {}) => {
 
     gameDate: safe(draft?.gameDate),
     gameHour: safe(draft?.gameHour),
+    gameLeagueNum: toNumOrEmpty(draft?.gameLeagueNum),
     rivel: safe(draft?.rivel),
     home: toBool(draft?.home, true),
     difficulty: safe(draft?.difficulty),
@@ -219,6 +220,7 @@ export function buildExternalGameEditPatch({ draft }) {
     type: safe(draft?.type),
     gameDate: safe(draft?.gameDate),
     gameHour: safe(draft?.gameHour),
+    gameLeagueNum: safe(draft?.gameLeagueNum),
     gameDuration: safe(draft?.gameDuration),
     gameStatus,
     goalsFor,

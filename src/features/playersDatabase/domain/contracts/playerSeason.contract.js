@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/contracts/playerSeason.contract.js
+// src/features/playersDatabase/domain/contracts/playerSeason.contract.js
 
 import { createEmptyCompleteness } from './completeness.contract.js'
 import { createLifecycle } from './lifecycle.contract.js'
@@ -31,11 +31,27 @@ export const createEmptyPlayerSeason = () => ({
     birthYear: null,
   },
   lifecycle: createLifecycle('current'),
+  tracking: {
+    favorite: false,
+    watchlist: false,
+    firstTrackedAt: null,
+    trackingReasons: [],
+  },
+  verification: {
+    mode: 'manual',
+    answers: [],
+    updatedAt: null,
+  },
+  events: [],
   team: {
     teamId: '',
     teamDocumentId: '',
     clubId: '',
+    clubName: '',
+    clubLevel: null,
+    clubStrengthLevel: null,
     leagueId: '',
+    leagueName: '',
     leagueLevel: null,
     ageGroupId: '',
     ageGroupLabel: '',

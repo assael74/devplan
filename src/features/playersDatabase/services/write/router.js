@@ -27,6 +27,11 @@ import {
   updatePlayerSeasonUrlFlow,
   updateTeamUrlFlow,
 } from './flows/index.js'
+import {
+  ensureManualScoutingPlayerDoc,
+  ensureTransferredScoutingPlayerDoc,
+  ensureWatchlistScoutingPlayerDoc,
+} from './players/index.js'
 
 export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   ENSURE_LEAGUE_DOC: 'ensureLeagueDoc',
@@ -51,6 +56,9 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   UPDATE_LEAGUE_SEASON_URL: 'updateLeagueSeasonUrl',
   ADD_FAVORITE: 'addFavorite',
   REMOVE_FAVORITE: 'removeFavorite',
+  ENSURE_PLAYER_WATCHLIST: 'ensurePlayerWatchlist',
+  ENSURE_PLAYER_MANUAL: 'ensurePlayerManual',
+  ENSURE_PLAYER_TRANSFER: 'ensurePlayerTransfer',
 }
 
 const WRITE_ACTION_RUNNERS = {
@@ -78,6 +86,9 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL]: updateLeagueSeasonUrlFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.ADD_FAVORITE]: addFavoriteFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_FAVORITE]: removeFavoriteFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_PLAYER_WATCHLIST]: ensureWatchlistScoutingPlayerDoc,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_PLAYER_MANUAL]: ensureManualScoutingPlayerDoc,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_PLAYER_TRANSFER]: ensureTransferredScoutingPlayerDoc,
 }
 
 export async function runPlayersDatabaseWriteAction({

@@ -1,10 +1,21 @@
 import { safeArr } from './calendar.hub.utils.js'
-import { normalizeGameEvent } from './calendar.hub.games.js'
+import { normalizeGameEvent, normalizePlayerGameEvent } from './calendar.hub.games.js'
 import { normalizeTrainingEvent, collectTeamTrainings } from './calendar.hub.trainings.js'
 import {
   normalizeTeamMeetingEvent,
   normalizePlayerMeetingEvent,
 } from './calendar.hub.meetings.js'
+
+const isPrivatePlayer = (player) =>
+  player?.isPrivatePlayer === true ||
+  player?.privatePlayer === true ||
+  player?.isPrivate === true ||
+  ['private', 'privatePlayer', 'privatePlayers'].includes(String(player?.playerSource || ''))
+
+const collectPrivatePlayerGames = (player) => [
+  ...safeArr(player?.playerGames),
+  ...safeArr(player?.externalGames),
+]
 
 export function buildCalendarEventsFromTeams({ teams = [] }) {
   const events = []
@@ -33,6 +44,13 @@ export function buildCalendarEventsFromPlayers({ players = [] }) {
   const events = []
 
   for (const player of safeArr(players)) {
+    if (isPrivatePlayer(player)) {
+      for (const game of collectPrivatePlayerGames(player)) {
+        const normalized = normalizePlayerGameEvent(game, player)
+        if (normalized) events.push(normalized)
+      }
+    }
+
     for (const meeting of safeArr(player?.meetings || player?.playerMeetings)) {
       const normalized = normalizePlayerMeetingEvent(meeting, player)
       if (normalized) events.push(normalized)

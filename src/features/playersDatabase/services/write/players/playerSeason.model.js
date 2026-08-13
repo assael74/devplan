@@ -5,6 +5,7 @@ import {
   clean,
   toNumberOrZero,
 } from '../leagues/leagueDoc.js'
+import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
 import { pickDefinedValue } from '../../../model/value.model.js'
 import {
   normalizePlayerStats,
@@ -15,6 +16,44 @@ import {
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
 } from './playerDoc.model.js'
+
+
+const resolvePositiveLevel = values => {
+  const match = (Array.isArray(values) ? values : [])
+    .map(value => Number(value))
+    .find(value => Number.isFinite(value) && value > 0)
+
+  return match || 0
+}
+
+const resolveSeasonClubLevels = ({ team = {} } = {}) => {
+  const clubId = clean(team.clubId)
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clubId)
+  const clubLevel = resolvePositiveLevel([
+    team.clubLevel,
+    team.club?.clubLevel,
+    club?.clubLevel,
+  ])
+  const clubStrengthLevel = resolvePositiveLevel([
+    team.clubStrengthLevel,
+    team.club?.clubStrengthLevel,
+    club?.clubStrengthLevel,
+    clubLevel,
+  ])
+
+  return {
+    clubLevel,
+    clubStrengthLevel: clubStrengthLevel || clubLevel,
+  }
+}
+
+const resolveSeasonLeagueLevel = ({ season = {}, team = {} } = {}) =>
+  resolvePositiveLevel([
+    season.leagueLevel,
+    season.level,
+    team.leagueLevel,
+    team.league?.level,
+  ])
 
 export const getTeamSeasonRows = teamDoc => [
   ...(Array.isArray(teamDoc?.current)
@@ -109,6 +148,8 @@ export const buildPlayerSeasonDoc = ({
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const playerStats = normalizePlayerStats(player)
   const clubId = clean(team.clubId)
+  const { clubLevel, clubStrengthLevel } = resolveSeasonClubLevels({ team })
+  const leagueLevel = resolveSeasonLeagueLevel({ season, team })
   const clubName = clean(team.clubName || team.displayName || team.teamName)
   const ageGroupId = clean(season.ageGroupId || team.ageGroupId)
   const ageGroupLabel = clean(
@@ -127,6 +168,9 @@ export const buildPlayerSeasonDoc = ({
     ageGroupLabel,
     clubId,
     clubName,
+    clubLevel,
+    clubStrengthLevel,
+    leagueLevel,
     teamName: clubName,
     birthTeamId: clean(team.birthTeamId || team.teamId),
     birthTeamDocumentId: clean(

@@ -1,4 +1,4 @@
-// features/playersDatabase/model/leagueCenter.model.js
+// src/features/playersDatabase/model/leagueCenter.model.js
 
 import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
@@ -18,7 +18,8 @@ import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
   TEAM_SCOUT_SORT_MODE,
-} from '../../../shared/teams/scout/index.js'
+} from '../../../shared/scouting/teams/index.js'
+import { enrichTeamScoutInputRows } from '../domain/adapters/teamScoutInput.adapter.js'
 
 export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
 export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
@@ -182,7 +183,7 @@ const buildPriorityCoverage = ({
   const result = buildTeamScoutLeagueModel({
     leagueLevel,
     leagueNumGames: leagueNumGames || 30,
-    rows: tableRows,
+    rows: enrichTeamScoutInputRows(tableRows),
     normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })

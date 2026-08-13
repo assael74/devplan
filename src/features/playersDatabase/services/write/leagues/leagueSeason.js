@@ -27,6 +27,8 @@ export const buildSeasonDoc = (season = {}) => {
     seasonUrl: clean(season.seasonUrl),
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+    goalsEnvironment: season.goalsEnvironment || null,
+    scoutEnvironment: season.scoutEnvironment || null,
     tableRank: Array.isArray(season.tableRank) ? season.tableRank : [],
     updatedAt: new Date().toISOString(),
   }

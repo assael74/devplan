@@ -125,7 +125,7 @@ export default function PlayerGameRow({
                 variant="plain"
                 onClick={handleEditGame}
               >
-                {iconUi({ id: 'more' })}
+                {iconUi({ id: 'edit' })}
               </IconButton>
             </Tooltip>
           ) : null}

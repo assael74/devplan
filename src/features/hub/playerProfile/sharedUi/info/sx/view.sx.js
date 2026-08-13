@@ -1,6 +1,6 @@
 // features/hub/playerProfile/sharedUi/info/sx/view.sx.js
 
-import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
+import { devPlanColors, getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('teams')
 
@@ -309,5 +309,37 @@ export const viewSx = {
     gap: 0.75,
     flexWrap: 'wrap',
     mt: 0.75,
+  },
+
+  emptyPrimaryAction: {
+    bgcolor: devPlanColors.tertiary,
+    color: '#fff',
+    fontWeight: 700,
+    px: 1.4,
+    boxShadow: '0 8px 18px rgba(47, 134, 199, 0.22)',
+
+    '&:hover': {
+      bgcolor: devPlanColors.tertiaryDark,
+      color: '#fff',
+    },
+
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.subText,
+      boxShadow: 'none',
+    },
+  },
+
+  emptyDisabledAction: {
+    bgcolor: devPlanColors.primaryLight,
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+    px: 1.4,
+
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.primaryLight,
+      color: devPlanColors.secondary,
+      opacity: 0.75,
+    },
   },
 }

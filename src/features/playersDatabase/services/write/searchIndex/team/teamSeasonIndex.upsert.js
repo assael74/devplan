@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.upsert.js
+// src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.upsert.js
 
 import { doc } from 'firebase/firestore'
 import { createTrackedWriteBatch } from '../../../../../../services/firestore/usage/index.js'
@@ -6,6 +6,7 @@ import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
 import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
+import { buildTeamScoutShadowAudit } from '../../../../domain/orchestration/buildTeamScoutShadowAudit.js'
 import {
   buildSearchIndexWriteResult,
   SEARCH_INDEX_ENTITY_TYPES,
@@ -15,12 +16,14 @@ import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
   TEAM_SCOUT_SORT_MODE,
-} from '../../../../../../shared/teams/scout/index.js'
+} from '../../../../../../shared/scouting/teams/index.js'
 import {
   buildRankMap,
   buildTeamSeasonIndexDoc,
   getRowGoalsAgainst,
   getRowGoalsFor,
+  resolveClubLevel,
+  resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
 
 export async function upsertTeamSeasonSearchIndexMany({
@@ -35,6 +38,23 @@ export async function upsertTeamSeasonSearchIndexMany({
   if (!seasonId) throw new Error('Missing season id')
 
   const safeRows = Array.isArray(rows) ? rows : []
+  const scoutRows = safeRows.map(row => {
+    const clubLevel = resolveClubLevel({
+      clubId: row.clubId,
+      clubLevel: row.clubLevel,
+    })
+    const clubStrengthLevel = resolveClubStrengthLevel({
+      clubId: row.clubId,
+      clubLevel,
+      clubStrengthLevel: row.clubStrengthLevel,
+    })
+
+    return {
+      ...row,
+      clubLevel,
+      clubStrengthLevel,
+    }
+  })
   const tableAttackRanks = buildRankMap({
     rows: safeRows,
     valueGetter: getRowGoalsFor,
@@ -49,7 +69,7 @@ export async function upsertTeamSeasonSearchIndexMany({
     buildTeamScoutLeagueModel({
       leagueLevel: league.level,
       leagueNumGames: season.leagueTotalRound || 30,
-      rows: safeRows,
+      rows: scoutRows,
       normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
       sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
     }).rows.map(row => [
@@ -91,9 +111,27 @@ export async function upsertTeamSeasonSearchIndexMany({
     operationsCount: docs.length,
   })
 
+  let shadowAudit = null
+
+  try {
+    shadowAudit = buildTeamScoutShadowAudit({
+      league,
+      season,
+      rows: scoutRows,
+    })
+  } catch (error) {
+    shadowAudit = {
+      engineVersion: 'scouting-v2',
+      mode: 'primary-diagnostics',
+      status: 'failed',
+      error: error?.message || 'Team shadow scout calculation failed',
+    }
+  }
+
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
     operation: 'upsertMany',
     rowsCount: docs.length,
+    shadowAudit,
   })
 }
