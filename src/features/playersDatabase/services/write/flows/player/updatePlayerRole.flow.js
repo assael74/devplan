@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/player/updatePlayerRole.flow.js
+// src/features/playersDatabase/services/write/flows/player/updatePlayerRole.flow.js
 
 import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
 import { syncPlayerRoleAndScoutProfileDoc } from '../../players/index.js'
@@ -7,7 +7,6 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { updateTeamSeasonPlayerRoleAndScoutProfiles } from '../../teams/index.js'
-import { buildRoleUpdatedPlayerWithScoutSignals } from '../shared.js'
 
 const buildPlayerSyncResult = result => ({
   rowsCount: result && !result.skipped ? 1 : 0,
@@ -21,30 +20,9 @@ const buildPlayerSyncResult = result => ({
 })
 
 export async function updatePlayerRoleFlow(payload = {}) {
-  const player = buildRoleUpdatedPlayerWithScoutSignals(payload)
-  const rolePayload = {
-    ...payload,
-    player,
-    primaryPosition: player.primaryPosition,
-    positionLayer: player.positionLayer,
-    numShirt: player.numShirt,
-  }
-  const scoutProfiles = Array.isArray(player.scoutProfiles)
-    ? player.scoutProfiles
-    : Array.isArray(player.scoutSignals)
-      ? player.scoutSignals
-      : []
-  const scoutCombinations = Array.isArray(player.scoutCombinations)
-    ? player.scoutCombinations
-    : []
-
   // Team season is the operational source of truth for the player in the squad.
-  // Role, scout profiles and the team summary are committed in one transaction.
-  const teamSeasonResult = await updateTeamSeasonPlayerRoleAndScoutProfiles({
-    ...rolePayload,
-    scoutProfiles,
-    scoutCombinations,
-  })
+  // Resolve the canonical player there before recalculating role-dependent scout state.
+  const teamSeasonResult = await updateTeamSeasonPlayerRoleAndScoutProfiles(payload)
 
   if (!teamSeasonResult.updated) {
     return {
@@ -59,6 +37,15 @@ export async function updatePlayerRoleFlow(payload = {}) {
       completed: false,
       stoppedAt: 'teamSeason',
     }
+  }
+
+  const player = teamSeasonResult.player || payload.player || {}
+  const rolePayload = {
+    ...payload,
+    player,
+    primaryPosition: player.primaryPosition || '',
+    positionLayer: player.positionLayer || '',
+    numShirt: player.numShirt || '',
   }
 
   // Reuse the team document already read and updated in the team transaction.

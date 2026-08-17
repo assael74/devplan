@@ -16,20 +16,24 @@ export const buildPlayerScoutSpotlights = ({
   profile,
   player,
   metrics,
-  reliability,
   scoutContext,
   futureCompetitionPath,
   playerTrajectory,
+  currentSeasonKey,
+  currentSeasonStatus,
 } = {}) => {
   return [
     ...buildPlayerCurrentSpotlights({
       profile,
       player,
       metrics,
-      reliability,
-      scoutContext,
+          scoutContext,
     }),
-    ...buildPlayerFutureSpotlights({ futureCompetitionPath }),
+    ...buildPlayerFutureSpotlights({
+      futureCompetitionPath,
+      currentSeasonKey,
+      currentSeasonStatus,
+    }),
     ...buildPlayerTrajectorySpotlights({ playerTrajectory }),
   ]
 }

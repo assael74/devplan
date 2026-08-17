@@ -15,6 +15,15 @@ const buildEmptyStatsScoutPreview = () => ({
   scoutProfiles: [],
   scoutCombinations: [],
   bestScoutSignal: null,
+  scoutCandidateSignals: [],
+  scoutSpotlights: [],
+  scoutOpportunity: null,
+  scoutVerification: null,
+  scoutProfileProgression: null,
+  scoutProfileHierarchy: null,
+  scoutTrajectory: null,
+  scoutTransferContext: null,
+  scoutEngineVersion: 'scouting-v2',
   scoutCalculationContract: null,
 })
 
@@ -49,7 +58,7 @@ const buildStatsPlayer = row => {
 export const buildStatsScoutPreview = ({ row, team, season }) => {
   const status = clean(row?.rosterStatus || 'regular')
 
-  if (!clean(row?.fullName) || status === 'retired' || status === 'transferredOut') {
+  if (!clean(row?.fullName) || status === 'retired') {
     return buildEmptyStatsScoutPreview()
   }
 
@@ -65,22 +74,47 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       season: contract.season,
       perspective: 'players_database_stats_preview',
     })
-    const scoutSignals = Array.isArray(result?.signals) ? result.signals : []
-    const scout = adaptPlayerScoutEngineResult(result)
+    const rawSignals = Array.isArray(result?.signals) ? result.signals : []
+    const orderedProfileIds = Array.isArray(result?.profileHierarchy?.orderedProfileIds)
+      ? result.profileHierarchy.orderedProfileIds
+      : []
+    const signalByProfileId = new Map(
+      rawSignals.map(signal => [signal.profileId, signal])
+    )
+    const orderedSignals = orderedProfileIds
+      .map(profileId => signalByProfileId.get(profileId))
+      .filter(Boolean)
+    const orderedSignalIds = new Set(
+      orderedSignals.map(signal => signal.profileId)
+    )
+    const scoutSignals = [
+      ...orderedSignals,
+      ...rawSignals.filter(signal => !orderedSignalIds.has(signal.profileId)),
+    ]
+    const scout = adaptPlayerScoutEngineResult({
+      ...result,
+      signals: scoutSignals,
+    })
 
     return {
       scout,
       scoutSignals,
-      scoutProfiles: scout.profiles.map(profile => ({
-        profileId: profile.id,
-        label: profile.label,
-        profileScore: profile.score,
-        profileReliability: profile.reliability.level,
-        profileWarnings: profile.warnings,
-        positionContext: profile.positionContext || '',
-      })),
+      scoutProfiles: scoutSignals,
       scoutCombinations: scout.combinations,
       bestScoutSignal: result?.bestSignal || scoutSignals[0] || null,
+      scoutCandidateSignals: Array.isArray(result?.candidateSignals)
+        ? result.candidateSignals
+        : [],
+      scoutSpotlights: Array.isArray(result?.spotlights)
+        ? result.spotlights
+        : [],
+      scoutOpportunity: result?.opportunity || null,
+      scoutVerification: result?.verification || null,
+      scoutProfileProgression: scout.profileProgression,
+      scoutProfileHierarchy: scout.profileHierarchy,
+      scoutTrajectory: scout.trajectory,
+      scoutTransferContext: scout.transferContext,
+      scoutEngineVersion: result?.engineVersion || 'scouting-v2',
       scoutCalculationContract: contract.context,
     }
   } catch (error) {

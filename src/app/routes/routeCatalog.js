@@ -19,6 +19,8 @@ export const ADMIN_ROUTES = {
   calendar: '/calendar',
   video: '/video',
   tags: '/tags',
+  finance: '/finance',
+  paymentsLegacy: '/payments',
   playersDatabase: '/players-database',
   playersDatabaseLeagues: '/players-database/leagues',
   playersDatabaseSearch: '/players-database/search',

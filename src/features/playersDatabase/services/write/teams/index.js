@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/teams/index.js
+// src/features/playersDatabase/services/write/teams/index.js
 
 /**
  * Team write services
@@ -29,6 +29,10 @@
  * - Applies season-specific player updates inside a team document.
  * - Updates player URL, position, layer, shirt number and scout profiles.
  *
+ * teamSeasonScoutContext.js
+ * - Recalculates current player scout state after league/team context changes.
+ * - Uses the canonical team-season players without changing stats-load progression.
+ *
  * teamSeasonMeta.js
  * - Updates team-season URL and season metadata.
  * - Applies metadata updates across multiple team documents.
@@ -45,13 +49,17 @@ export {
 export {
   appendTeamSeasonPlayer,
   updateTeamSeasonPlayerStats,
+  removeTeamSeasonPlayerScoutProfile,
   updateTeamSeasonPlayerScoutProfiles,
   updateTeamSeasonPlayerRole,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
+  updateTeamSeasonPlayerVerificationAndScout,
   upsertTeamSeasonPlayers,
   updateTeamSeasonsMetaMany,
   updateTeamSeasonTeamUrl,
   updateTeamSeasonPlayerUrl,
+  updateLeagueTeamPlayersScoutContextMany,
+  updateTeamSeasonPlayersScoutContext,
 } from './teamSeason.js'
 
 export {

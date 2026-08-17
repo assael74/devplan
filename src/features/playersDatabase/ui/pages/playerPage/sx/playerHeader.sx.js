@@ -93,16 +93,11 @@ export const playerHeaderSx = {
     whiteSpace: 'nowrap',
   },
 
-  reliabilityChip: {
-    minHeight: 28,
-    fontWeight: 700,
-  },
-
   headerActionsPanel: {
     height: '100%',
     gap: 1,
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
   },
 
   headerActions: {

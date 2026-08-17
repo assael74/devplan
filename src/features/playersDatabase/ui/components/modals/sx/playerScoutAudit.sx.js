@@ -59,6 +59,24 @@ export const playerScoutAuditSx = {
     gap: 1,
   },
 
+  auditStatusBox: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 1,
+    p: 1.25,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  auditStatusHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
   summaryCard: {
     minWidth: 0,
     p: 1,
@@ -134,6 +152,14 @@ export const playerScoutAuditSx = {
     borderColor: 'primary.300',
     borderRadius: 8,
     bgcolor: 'primary.softBg',
+
+    '& > summary': {
+      listStyle: 'none',
+    },
+
+    '& > summary::-webkit-details-marker': {
+      display: 'none',
+    },
   },
 
   shadowHeader: {
@@ -141,6 +167,7 @@ export const playerScoutAuditSx = {
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
+    cursor: 'pointer',
   },
 
   shadowSummaryGrid: {
@@ -230,6 +257,33 @@ export const playerScoutAuditSx = {
     bgcolor: 'background.surface',
   },
 
+  detailsBox: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.75,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+
+    '& > summary': {
+      listStyle: 'none',
+    },
+
+    '& > summary::-webkit-details-marker': {
+      display: 'none',
+    },
+  },
+
+  detailsSummary: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    cursor: 'pointer',
+  },
+
   repairCostGrid: {
     display: 'grid',
     gridTemplateColumns: {
@@ -242,6 +296,16 @@ export const playerScoutAuditSx = {
   repairCostBreakdown: {
     color: 'neutral.600',
     lineHeight: 1.6,
+  },
+
+  repairRouteRow: {
+    display: 'grid',
+    gap: 0.25,
+    p: 0.75,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 6,
+    bgcolor: 'background.level1',
   },
 
   costNote: {

@@ -39,7 +39,7 @@ const buildGrowthSpotlight = (trajectory) => {
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.MULTI_SEASON_GROWTH,
     confidence: resolveConfidence(trajectory.confidence),
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: trajectory.evidence || [],
     details: {
       direction: trajectory.direction,
@@ -57,7 +57,7 @@ const buildTransferUpSpotlight = (trajectory) => {
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.TRANSFERRED_UP,
     confidence: resolveConfidence(trajectory.confidence),
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.REDUCES_IMMEDIACY,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: ['player_recently_moved_to_stronger_environment'],
     details: transfer,
   })

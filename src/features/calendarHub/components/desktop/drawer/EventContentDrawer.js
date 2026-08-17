@@ -19,6 +19,19 @@ export default function EventContentDrawer({
     })
   }
 
+  function setCalendar(value) {
+    const selectedCalendar = calendars.find((item) => item.id === value)
+    const isPlayer = selectedCalendar?.type === 'player'
+    const isTeam = selectedCalendar?.type === 'team'
+
+    onDraft?.({
+      ...draft,
+      calendarId: value || '',
+      playerId: isPlayer ? selectedCalendar.entityId : '',
+      teamId: isTeam ? selectedCalendar.entityId : '',
+    })
+  }
+
   return (
     <Box sx={{ display: 'grid', gap: 1.25 }}>
       <FormControl size="sm">
@@ -39,7 +52,7 @@ export default function EventContentDrawer({
         <FormLabel>יומן</FormLabel>
         <Select
           value={draft?.calendarId || ''}
-          onChange={(_, v) => setField('calendarId', v || '')}
+          onChange={(_, v) => setCalendar(v || '')}
         >
           {calendars.map((c) => (
             <Option key={c.id} value={c.id}>

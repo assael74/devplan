@@ -17,19 +17,11 @@ import {
   PROFILE_DISTANCE_STATUS,
 } from './playerProfileProgression.model.js'
 
-const getProfileRules = ({ profile, searchDistance = 0 }) => {
-  const deepRules = Array.isArray(profile?.deepRules) ? profile.deepRules : []
-
-  if (searchDistance >= 2 && deepRules.length) return deepRules
-
-  return Array.isArray(profile?.rules) ? profile.rules : []
-}
-
 const getPreviousDistance = ({ previousProfileDistances, profileId }) => {
   if (!previousProfileDistances) return null
 
   if (Array.isArray(previousProfileDistances)) {
-    const match = previousProfileDistances.find((item) => item?.profileId === profileId)
+    const match = previousProfileDistances.find(item => item?.profileId === profileId)
     const value = match?.distance
 
     if (value === null || value === undefined || value === '') return null
@@ -54,18 +46,16 @@ const isNearProfileCandidate = (distanceResult) => {
 export const buildPlayerProfileProgression = ({
   player,
   team,
-  searchDistance = 0,
   profiles = SCOUT_PROFILES,
   previousProfileDistances,
 } = {}) => {
   const metrics = buildScoutMetrics({ player, team })
   const distances = profiles
-    .filter((profile) => (
+    .filter(profile => (
       profile.group !== 'opportunity' &&
       NEAR_PROFILE_ELIGIBLE_PROFILE_IDS.includes(profile.id)
     ))
     .map((profile) => {
-      const rules = getProfileRules({ profile, searchDistance })
       const previousDistance = getPreviousDistance({
         previousProfileDistances,
         profileId: profile.id,
@@ -73,7 +63,7 @@ export const buildPlayerProfileProgression = ({
 
       return buildPlayerProfileDistance({
         profile,
-        rules,
+        rules: profile.rules,
         metrics,
         previousDistance,
       })

@@ -21,7 +21,9 @@ import {
   ReportNameModal,
 } from '../../components/modals/index.js'
 import {
+  applyPlayerScoutEngineRefresh,
   applyPlayerScoutRepair,
+  buildPlayerScoutEngineRefreshPreview,
   buildPlayerScoutRepairPreview,
   buildPlayerScoutRulesAudit,
   buildPlayerScoutShadowComparison,
@@ -92,6 +94,8 @@ function SearchPageContent() {
   const [scoutRepairBusy, setScoutRepairBusy] = React.useState(false)
   const [scoutRepairPreview, setScoutRepairPreview] = React.useState(null)
   const [scoutRepairResult, setScoutRepairResult] = React.useState(null)
+  const [engineRefreshPreview, setEngineRefreshPreview] = React.useState(null)
+  const [engineRefreshResult, setEngineRefreshResult] = React.useState(null)
 
   const search = useSearchPage()
 
@@ -156,6 +160,8 @@ function SearchPageContent() {
     setScoutAuditError('')
     setScoutRepairPreview(null)
     setScoutRepairResult(null)
+    setEngineRefreshPreview(null)
+    setEngineRefreshResult(null)
   }
 
   const handleScoutAuditFullRun = async () => {
@@ -219,6 +225,68 @@ function SearchPageContent() {
     }
   }
 
+  const handleEngineRefreshPreview = async () => {
+    if (scoutRepairBusy || scoutAuditBusy || !scoutAudit) return
+
+    setScoutRepairBusy(true)
+    setScoutAuditError('')
+    setEngineRefreshResult(null)
+
+    try {
+      const result = buildPlayerScoutEngineRefreshPreview({
+        audit: scoutAudit,
+      })
+      setEngineRefreshPreview(result)
+    } catch (error) {
+      console.error('[playersDatabase] Engine refresh preview failed:', error)
+      setScoutAuditError(
+        error instanceof Error
+          ? error.message
+          : 'תצוגת Refresh Engine State נכשלה'
+      )
+    } finally {
+      setScoutRepairBusy(false)
+    }
+  }
+
+  const handleEngineRefreshApply = async () => {
+    if (
+      scoutRepairBusy ||
+      scoutAuditBusy ||
+      !engineRefreshPreview ||
+      !scoutAudit
+    ) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'לרענן את ה-Engine Computed State במסמכי השחקנים? scoutVerification ונתונים אנושיים לא ישתנו.'
+    )
+
+    if (!confirmed) return
+
+    setScoutRepairBusy(true)
+    setScoutAuditError('')
+
+    try {
+      const result = await applyPlayerScoutEngineRefresh({
+        confirmed: true,
+        audit: scoutAudit,
+      })
+      setEngineRefreshResult(result)
+      setEngineRefreshPreview(null)
+    } catch (error) {
+      console.error('[playersDatabase] Engine refresh failed:', error)
+      setScoutAuditError(
+        error instanceof Error
+          ? error.message
+          : 'Refresh Engine State נכשל'
+      )
+    } finally {
+      setScoutRepairBusy(false)
+    }
+  }
+
   const handleScoutRepairPreview = async () => {
     if (
       scoutRepairBusy ||
@@ -278,8 +346,11 @@ function SearchPageContent() {
       setScoutRepairBusy(false)
       setScoutAuditBusy(true)
 
+      const verificationScopes = Array.isArray(result.verificationScopes)
+        ? result.verificationScopes
+        : result.results
       const scopedAudits = await Promise.all(
-        result.results.map(scope => buildScopedPlayerScoutRulesAudit({
+        verificationScopes.map(scope => buildScopedPlayerScoutRulesAudit({
           teamDocumentId: scope.teamDocumentId,
           seasonKey: scope.seasonKey,
         }))
@@ -308,12 +379,60 @@ function SearchPageContent() {
             sum + Number(audit.summary?.teamSeasonIndexes || 0)
           ), 0),
           totalIssues: issues.length,
-          syncIssuesCount: issues.filter(issue => (
-            issue.type !== 'player_schema_outdated'
-          )).length,
-          schemaIssuesCount: issues.filter(issue => (
-            issue.type === 'player_schema_outdated'
-          )).length,
+          syncIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.syncIssuesCount || 0)
+          ), 0),
+          engineDiagnosticIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.engineDiagnosticIssuesCount || 0)
+          ), 0),
+          repairableIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.repairableIssuesCount || 0)
+          ), 0),
+          reportOnlyIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.reportOnlyIssuesCount || 0)
+          ), 0),
+          rowsWithProfileDiff: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.rowsWithProfileDiff || 0)
+          ), 0),
+          missingProfilesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.missingProfilesCount || 0)
+          ), 0),
+          extraProfilesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.extraProfilesCount || 0)
+          ), 0),
+          reliabilityIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.reliabilityIssuesCount || 0)
+          ), 0),
+          seasonStatusIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.seasonStatusIssuesCount || 0)
+          ), 0),
+          historyStatusIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.historyStatusIssuesCount || 0)
+          ), 0),
+          schemaIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.schemaIssuesCount || 0)
+          ), 0),
+          schemaAutoRepairIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.schemaAutoRepairIssuesCount || 0)
+          ), 0),
+          schemaSafeDeleteIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.schemaSafeDeleteIssuesCount || 0)
+          ), 0),
+          schemaReportOnlyIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.schemaReportOnlyIssuesCount || 0)
+          ), 0),
+          measurementIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.measurementIssuesCount || 0)
+          ), 0),
+          trackingIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.trackingIssuesCount || 0)
+          ), 0),
+          projectionIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.projectionIssuesCount || 0)
+          ), 0),
+          stateIssuesCount: scopedAudits.reduce((sum, audit) => (
+            sum + Number(audit.summary?.stateIssuesCount || 0)
+          ), 0),
           issuesByType: issues.reduce((result, issue) => {
             const type = issue.type || 'unknown'
             result[type] = Number(result[type] || 0) + 1
@@ -353,6 +472,8 @@ function SearchPageContent() {
     setScoutAuditError('')
     setScoutRepairPreview(null)
     setScoutRepairResult(null)
+    setEngineRefreshPreview(null)
+    setEngineRefreshResult(null)
   }
 
   const handleScoutAuditDownload = () => {
@@ -393,12 +514,16 @@ function SearchPageContent() {
         repairBusy={scoutRepairBusy}
         repairPreview={scoutRepairPreview}
         repairResult={scoutRepairResult}
+        engineRefreshPreview={engineRefreshPreview}
+        engineRefreshResult={engineRefreshResult}
         partialAuditDefaults={partialAuditDefaults}
         onRunFull={handleScoutAuditFullRun}
         onRunPartial={handleScoutAuditPartialRun}
         onDownload={handleScoutAuditDownload}
         onRepairPreview={handleScoutRepairPreview}
         onRepairApply={handleScoutRepairApply}
+        onEngineRefreshPreview={handleEngineRefreshPreview}
+        onEngineRefreshApply={handleEngineRefreshApply}
         onClose={() => setScoutAuditOpen(false)}
       />
     </>

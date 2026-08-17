@@ -8,7 +8,7 @@ import {
 
 import {
   buildPlayerSeasonSummaries,
-  compareOptionalLevel,
+  compareCompetitiveLevel,
   getDelta,
   normalizePlayerSeasonStints,
 } from './playerTrajectory.utils.js'
@@ -38,8 +38,8 @@ const buildPairEvidence = (previous, current) => {
   const evidence = []
   const minutesDelta = getDelta(previous.minutesPct, current.minutesPct)
   const startsDelta = getDelta(previous.startsPct, current.startsPct)
-  const leagueChange = compareOptionalLevel(previous.leagueLevel, current.leagueLevel)
-  const clubChange = compareOptionalLevel(
+  const leagueChange = compareCompetitiveLevel(previous.leagueLevel, current.leagueLevel)
+  const clubChange = compareCompetitiveLevel(
     previous.clubStrengthLevel || previous.clubLevel,
     current.clubStrengthLevel || current.clubLevel
   )

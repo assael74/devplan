@@ -9,8 +9,7 @@ import {
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
-import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
-import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
+import ScoutStoryChip from '../../../components/scout/ScoutStoryChip.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import PlayerPositionChip, {
@@ -214,6 +213,7 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlE
       combinations: row.scoutCombinations,
       display: row.scoutProfileDisplay,
       fallbackLabel: row.profile,
+      player: row,
     }).label,
     render: row => {
       const profileDisplay = row.scoutProfileDisplay || {}
@@ -222,31 +222,22 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlE
         combinations: row.scoutCombinations,
         display: profileDisplay,
         fallbackLabel: row.profile,
+        player: row,
       })
       const reliability = (
         profileDisplay.reliability?.level ||
         row.reliability ||
         ''
       )
-
-      if (!profileView.label || profileView.label === '-') return '-'
+      const chipLabel = profileView.label && reliability && reliability !== '-'
+        ? `${profileView.label} · ${reliability}`
+        : profileView.label
 
       return (
         <Box sx={sx.profileCell}>
-          <ScoutProfileChip
-            label={
-              reliability && reliability !== '-'
-                ? `${profileView.label} · ${reliability}`
-                : profileView.label
-            }
-            tooltip={(
-              <ScoutCompactTooltip
-                title={profileView.tooltipTitle}
-                items={profileView.tooltipItems}
-                isCombination={profileView.isCombination}
-              />
-            )}
-            variant={profileView.variant}
+          <ScoutStoryChip
+            player={row}
+            label={chipLabel}
             fontSize={11}
           />
         </Box>

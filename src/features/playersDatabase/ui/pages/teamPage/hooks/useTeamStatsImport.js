@@ -152,6 +152,11 @@ export default function useTeamStatsImport({
     ))).length
   ), [rows])
 
+  const isTransferRosterStatus = React.useCallback(status => (
+    status === 'transferredOut' ||
+    status === 'transferredIn'
+  ), [])
+
   const parse = React.useCallback(async () => {
     if (!seasonStatus) {
       notify({
@@ -239,11 +244,14 @@ export default function useTeamStatsImport({
       if (column.key === 'rosterStatus') {
         nextRow.rosterStatus = value || 'unresolved'
         nextRow.isYoungerAgeGroup = value === 'youngerAgeGroup'
+        nextRow.manualTransferDirection = isTransferRosterStatus(value)
+          ? clean(row.manualTransferDirection) || 'unknown'
+          : ''
       }
 
       return enrichWithScout(nextRow)
     }))
-  }, [enrichWithScout, players])
+  }, [enrichWithScout, isTransferRosterStatus, players])
 
   const changeSeasonStatus = React.useCallback(value => {
     const nextStatus = ['active', 'completed'].includes(value) ? value : ''

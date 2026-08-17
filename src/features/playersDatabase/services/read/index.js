@@ -1,4 +1,4 @@
-// features/playersDatabase/services/read/index.js
+// src/features/playersDatabase/services/read/index.js
 
 export { readFavorites } from './favorites.read.js'
 
@@ -18,7 +18,12 @@ export { readLeaguePageData } from './leaguePage.read.js'
 export { readLeagueCenterData } from './leagueCenter.read.js'
 export { readLeaguesMasterDocument } from './leaguesMaster.read.js'
 
-export { readPlayerPageData } from './playerPage.read.js'
+export {
+  readPlayerPageData,
+  readPlayerSource,
+} from './playerPage.read.js'
+export { readPlayerNarrativePlan } from './playerNarrative.read.js'
+export { readPlayerScoutMeasurementHistory } from './playerScoutHistory.read.js'
 export { readPlayerIdentityReview } from './playerIdentityReview.read.js'
 export {
   readSearchPageCount,

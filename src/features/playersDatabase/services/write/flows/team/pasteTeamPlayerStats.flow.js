@@ -14,12 +14,7 @@ import {
   ensureTeamDoc,
   updateTeamSeasonPlayerStats,
 } from '../../teams/index.js'
-import {
-  buildScoutProfilesSummary,
-  buildStatsPlayersWithScoutSignals,
-  resolveScoutSyncMode,
-} from '../shared.js'
-import { buildPlayerMatchValues } from '../../../../model/playerIdentity.model.js'
+import { buildScoutProfilesSummary } from '../shared.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
 
@@ -35,6 +30,30 @@ const buildSyncError = ({ stage, cause, results = {} }) => {
 }
 
 
+const resolvePlayerProjectionKey = player => String(
+  player?.playerId ||
+  player?.externalPlayerId ||
+  player?.identityKey ||
+  player?.playerDocumentId ||
+  player?.fullName ||
+  ''
+).trim()
+
+const mergeScoutedPlayerProjections = ({ players = [], scoutedPlayers = [] } = {}) => {
+  const scoutedLookup = new Map(
+    (Array.isArray(scoutedPlayers) ? scoutedPlayers : [])
+      .map(player => [resolvePlayerProjectionKey(player), player])
+      .filter(([key]) => key)
+  )
+
+  return (Array.isArray(players) ? players : []).map(player => {
+    const key = resolvePlayerProjectionKey(player)
+    const scoutedPlayer = key ? scoutedLookup.get(key) : null
+
+    return scoutedPlayer ? { ...player, ...scoutedPlayer } : player
+  })
+}
+
 const assertTeamSeasonUpdated = result => {
   if (!result?.teamDocumentId || !result?.seasonId) {
     throw new Error('Team season stats were not updated')
@@ -47,18 +66,9 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     players: payload.players,
     season: payload.season || {},
   })
-  const scoutSyncMode = resolveScoutSyncMode({
-    season: payload.season || {},
-  })
-  const calculatedPlayers = buildStatsPlayersWithScoutSignals({
-    players: resolvedPlayers,
-    team: payload.team || {},
-    season: payload.season || {},
-  })
   const resolvedPayload = {
     ...payload,
-    players: calculatedPlayers,
-    scoutSyncMode,
+    players: resolvedPlayers,
   }
 
   try {
@@ -108,20 +118,39 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   const scoutProfilesSummary = buildScoutProfilesSummary(teamSeasonPlayers)
 
   try {
-    results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(syncedPayload)
+    results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany(syncedPayload)
   } catch (error) {
     throw buildSyncError({
-      stage: 'updatePlayerSeasonSearchIndexStatsMany',
+      stage: 'syncPlayerScoutProfileDocsMany',
       cause: error,
       results,
     })
   }
 
+  if (results.playerScoutProfileDocsResult.failedCount) {
+    throw buildSyncError({
+      stage: 'playerScoutProfileDocsPartialFailure',
+      cause: new Error(
+        `${results.playerScoutProfileDocsResult.failedCount} player documents failed to sync`
+      ),
+      results,
+    })
+  }
+
+  const searchIndexPlayers = mergeScoutedPlayerProjections({
+    players: syncedPlayers,
+    scoutedPlayers: results.playerScoutProfileDocsResult.scoutedPlayers,
+  })
+  const searchIndexPayload = {
+    ...syncedPayload,
+    players: searchIndexPlayers,
+  }
+
   try {
-    results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany(syncedPayload)
+    results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(searchIndexPayload)
   } catch (error) {
     throw buildSyncError({
-      stage: 'syncPlayerScoutProfileDocsMany',
+      stage: 'updatePlayerSeasonSearchIndexStatsMany',
       cause: error,
       results,
     })
@@ -185,22 +214,11 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     }
   }
 
-  if (results.playerScoutProfileDocsResult.failedCount) {
-    throw buildSyncError({
-      stage: 'playerScoutProfileDocsPartialFailure',
-      cause: new Error(
-        `${results.playerScoutProfileDocsResult.failedCount} player documents failed to sync`
-      ),
-      results,
-    })
-  }
-
   return {
     ...results,
     rowsCount: results.playerSeasonIndexResult.rowsCount,
-    calculatedPlayersCount: calculatedPlayers.length,
+    calculatedPlayersCount: teamSeasonPlayers.length,
     syncedPlayersCount: syncedPlayers.length,
-    scoutSyncMode,
     syncStatus: 'complete',
     shadowStatus: results.playerScoutShadowResult?.status || 'complete',
   }

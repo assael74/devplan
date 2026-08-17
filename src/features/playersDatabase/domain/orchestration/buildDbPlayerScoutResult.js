@@ -17,6 +17,9 @@ export const buildDbPlayerScoutResult = ({
   playerSeasonStints,
   previousProfileDistances,
   verificationAnswers,
+  immediacyContext,
+  manualReview,
+  manualImmediacyDecision,
 } = {}) => {
   const result = buildPlayerScoutResult({
     player,
@@ -31,6 +34,9 @@ export const buildDbPlayerScoutResult = ({
     playerSeasonStints,
     previousProfileDistances,
     verificationAnswers,
+    immediacyContext,
+    manualReview,
+    manualImmediacyDecision,
   })
 
   return {

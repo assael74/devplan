@@ -11,6 +11,12 @@ import {
   toDomainNumber,
   uniqueDomainValues,
 } from './domainValue.contract.js'
+import {
+  buildPlayerScoutStatsLoadMeasurementHistoryEvents,
+  buildPlayerScoutStatsLoadMeasurementsFromHistory,
+  normalizePlayerScoutStatsLoadMeasurementHistory,
+  normalizePlayerScoutStatsLoadMeasurements,
+} from '../../model/playerScoutMeasurement.model.js'
 
 const PROFILE_BY_ID = SCOUT_PROFILES.reduce((map, profile) => {
   map[profile.id] = profile
@@ -22,20 +28,12 @@ const COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((map, combination) =
   return map
 }, {})
 
-export const createEmptyScoutReliability = () => ({
-  level: '',
-  score: null,
-  label: '',
-  factors: [],
-})
-
 export const createEmptyPlayerScoutProfile = () => ({
   id: '',
   label: '',
   group: '',
   interest: '',
   score: null,
-  reliability: createEmptyScoutReliability(),
   match: {
     passed: false,
     passedRules: [],
@@ -47,11 +45,11 @@ export const createEmptyPlayerScoutProfile = () => ({
   warnings: [],
   positionContext: '',
   profileDepth: null,
+  profileStrength: null,
   scoutContext: null,
   spotlights: [],
-  opportunity: null,
   requiredReview: [],
-  matchedRules: [],
+  matchEvidence: [],
   source: {
     engineVersion: '',
     calculatedAt: null,
@@ -63,7 +61,6 @@ export const createEmptyPlayerScoutDisplay = () => ({
   id: '',
   label: '',
   score: null,
-  reliability: createEmptyScoutReliability(),
   baseProfiles: [],
 })
 
@@ -77,6 +74,19 @@ export const createEmptyPlayerScout = () => ({
   searchIds: [],
   primaryCombination: null,
   display: createEmptyPlayerScoutDisplay(),
+  candidateSignals: [],
+  spotlights: [],
+  verification: null,
+  profileProgression: null,
+  profileHierarchy: null,
+  profileCaseStrength: null,
+  playerReview: null,
+  trajectory: null,
+  transferContext: null,
+  engineVersion: '',
+  statsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(),
+  statsLoadMeasurementHistory: [],
+  statsLoadMeasurementHistoryEvents: [],
   hasProfiles: false,
   hasCombination: false,
 })
@@ -85,48 +95,10 @@ const resolveCatalogProfile = profileId => PROFILE_BY_ID[profileId] || null
 
 const resolveCatalogCombination = combinationId => COMBINATION_BY_ID[combinationId] || null
 
-const cleanReliabilityValue = value => {
-  if (
-    value === null ||
-    value === undefined ||
-    typeof value === 'object'
-  ) {
-    return ''
-  }
-
-  return cleanDomainValue(value)
-}
-
-export const normalizeScoutReliability = reliability => {
-  const source = reliability && typeof reliability === 'object'
-    ? reliability
-    : {}
-
-  return {
-    level: cleanReliabilityValue(
-      source.level ||
-      source.reliabilityLevel ||
-      source.profileReliability ||
-      reliability
-    ),
-    score: toDomainNumber(
-      source.score !== undefined ? source.score : source.reliabilityScore
-    ),
-    label: cleanReliabilityValue(source.label),
-    factors: toDomainArray(source.factors),
-  }
-}
-
 export const normalizePlayerScoutProfile = profile => {
   const source = profile && typeof profile === 'object' ? profile : {}
   const profileId = cleanDomainValue(source.profileId || source.id)
   const catalogProfile = resolveCatalogProfile(profileId) || {}
-  const reliabilitySource = source.reliability || {
-    level: source.reliabilityLevel || source.profileReliability,
-    score: source.reliabilityScore,
-    factors: source.reliabilityFactors,
-  }
-
   return {
     ...createEmptyPlayerScoutProfile(),
     id: profileId,
@@ -140,7 +112,6 @@ export const normalizePlayerScoutProfile = profile => {
     score: toDomainNumber(
       source.score !== undefined ? source.score : source.profileScore
     ),
-    reliability: normalizeScoutReliability(reliabilitySource),
     match: {
       passed: source.passed !== undefined ? Boolean(source.passed) : true,
       passedRules: toDomainArray(source.passedRules || source.match?.passedRules),
@@ -156,15 +127,15 @@ export const normalizePlayerScoutProfile = profile => {
     profileDepth: source.profileDepth && typeof source.profileDepth === 'object'
       ? source.profileDepth
       : null,
+    profileStrength: source.profileStrength && typeof source.profileStrength === 'object'
+      ? source.profileStrength
+      : null,
     scoutContext: source.scoutContext && typeof source.scoutContext === 'object'
       ? source.scoutContext
       : null,
     spotlights: toDomainArray(source.spotlights),
-    opportunity: source.opportunity && typeof source.opportunity === 'object'
-      ? source.opportunity
-      : null,
     requiredReview: toDomainArray(source.requiredReview || source.reviews),
-    matchedRules: toDomainArray(source.matchedRules),
+    matchEvidence: toDomainArray(source.matchEvidence),
     source: {
       engineVersion: cleanDomainValue(
         source.engineVersion || source.source?.engineVersion
@@ -226,7 +197,7 @@ const buildDisplay = ({ profiles, combinations }) => {
       id: primaryCombination.id,
       label: primaryCombination.label,
       score: primaryProfile && primaryProfile.score !== undefined ? primaryProfile.score : null,
-      reliability: primaryProfile?.reliability || createEmptyScoutReliability(),
+      profileStrength: primaryProfile?.profileStrength || null,
       baseProfiles: primaryCombination.profileIds.map(profileId => ({
         id: profileId,
         label: cleanDomainValue(PROFILE_BY_ID[profileId]?.label || profileId),
@@ -241,7 +212,7 @@ const buildDisplay = ({ profiles, combinations }) => {
     id: primaryProfile.id,
     label: primaryProfile.label,
     score: primaryProfile.score,
-    reliability: primaryProfile.reliability,
+    profileStrength: primaryProfile.profileStrength || null,
     baseProfiles: [],
   }
 }
@@ -252,6 +223,19 @@ export const normalizePlayerScout = ({
   combinationIds = [],
   profileIds = [],
   searchIds = [],
+  candidateSignals = [],
+  spotlights = [],
+  opportunity = null,
+  verification = null,
+  profileProgression = null,
+  profileHierarchy = null,
+  profileCaseStrength = null,
+  playerReview = null,
+  trajectory = null,
+  transferContext = null,
+  engineVersion = '',
+  statsLoadMeasurements = null,
+  statsLoadMeasurementHistory = [],
 } = {}) => {
   const normalizedProfiles = toDomainArray(profiles)
     .map(normalizePlayerScoutProfile)
@@ -261,6 +245,15 @@ export const normalizePlayerScout = ({
     combinations,
     combinationIds,
   })
+  const normalizedMeasurementHistory = normalizePlayerScoutStatsLoadMeasurementHistory(
+    statsLoadMeasurementHistory
+  )
+  const normalizedMeasurements = normalizePlayerScoutStatsLoadMeasurements(
+    statsLoadMeasurements
+  )
+  const resolvedMeasurements = normalizedMeasurements.current || normalizedMeasurements.previous
+    ? normalizedMeasurements
+    : buildPlayerScoutStatsLoadMeasurementsFromHistory(normalizedMeasurementHistory)
 
   return {
     profiles: normalizedProfiles,
@@ -281,6 +274,38 @@ export const normalizePlayerScout = ({
       profiles: normalizedProfiles,
       combinations: normalizedCombinations,
     }),
+    candidateSignals: toDomainArray(candidateSignals),
+    spotlights: toDomainArray(spotlights),
+    opportunity: opportunity && typeof opportunity === 'object'
+      ? opportunity
+      : null,
+    verification: verification && typeof verification === 'object'
+      ? verification
+      : null,
+    profileProgression: profileProgression && typeof profileProgression === 'object'
+      ? profileProgression
+      : null,
+    profileHierarchy: profileHierarchy && typeof profileHierarchy === 'object'
+      ? profileHierarchy
+      : null,
+    profileCaseStrength: profileCaseStrength && typeof profileCaseStrength === 'object'
+      ? profileCaseStrength
+      : null,
+    playerReview: playerReview && typeof playerReview === 'object'
+      ? playerReview
+      : null,
+    trajectory: trajectory && typeof trajectory === 'object'
+      ? trajectory
+      : null,
+    transferContext: transferContext && typeof transferContext === 'object'
+      ? transferContext
+      : null,
+    engineVersion: cleanDomainValue(engineVersion),
+    statsLoadMeasurements: resolvedMeasurements,
+    statsLoadMeasurementHistory: normalizedMeasurementHistory,
+    statsLoadMeasurementHistoryEvents: buildPlayerScoutStatsLoadMeasurementHistoryEvents(
+      normalizedMeasurementHistory
+    ),
     hasProfiles: normalizedProfiles.length > 0,
     hasCombination: normalizedCombinations.length > 0,
   }

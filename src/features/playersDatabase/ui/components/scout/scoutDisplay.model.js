@@ -2,6 +2,12 @@
 
 const clean = value => String(value || '').trim()
 
+const cleanDisplayLabel = value => {
+  const label = clean(value)
+
+  return label === '-' ? '' : label
+}
+
 const uniqueById = values => {
   const seen = new Set()
 
@@ -37,6 +43,22 @@ const resolveCombinationProfileIds = combination => (
       ? combination.matchedProfileIds
       : []
 ).map(clean).filter(Boolean)
+
+export const buildScoutNearProfileLabel = player => {
+  const nearProfile = (
+    player?.scoutProfileProgression?.nearestProfile ||
+    (Array.isArray(player?.scoutCandidateSignals)
+      ? player.scoutCandidateSignals[0]
+      : null)
+  )
+  const label = cleanDisplayLabel(
+    nearProfile?.profileLabel ||
+    nearProfile?.label ||
+    nearProfile?.profileId
+  )
+
+  return label ? `קרוב · ${label}` : ''
+}
 
 const resolveDisplayProfileIds = display => (
   Array.isArray(display?.baseProfiles)
@@ -106,6 +128,7 @@ export const buildScoutCompactView = ({
   combinations = [],
   display = {},
   fallbackLabel = '',
+  player = null,
 } = {}) => {
   const displayItems = buildScoutDisplayItems({
     profiles,
@@ -125,10 +148,11 @@ export const buildScoutCompactView = ({
     : null
   const primaryItem = displayItems[0] || fallbackCombination
   const isCombination = primaryItem?.type === 'combination'
-  const baseLabel = clean(
-    primaryItem?.label ||
-    display.label ||
-    fallbackLabel
+  const baseLabel = (
+    cleanDisplayLabel(primaryItem?.label) ||
+    cleanDisplayLabel(display.label) ||
+    buildScoutNearProfileLabel(player) ||
+    cleanDisplayLabel(fallbackLabel)
   )
   const extraCount = displayItems.length
     ? Math.max(0, displayItems.length - 1)
@@ -148,7 +172,12 @@ export const buildScoutCompactView = ({
       ? 'combination'
       : 'default',
     isCombination,
-    tooltipTitle: clean(display.label || primaryItem?.label) || 'פרופילי סקאוט',
+    tooltipTitle: (
+      cleanDisplayLabel(display.label) ||
+      cleanDisplayLabel(primaryItem?.label) ||
+      buildScoutNearProfileLabel(player) ||
+      'פרופילי סקאוט'
+    ),
     tooltipItems: buildProfileTooltipItems({
       profiles,
       display,

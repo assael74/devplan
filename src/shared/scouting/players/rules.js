@@ -22,45 +22,51 @@ const isMatch = ({ value, rule }) => {
   return false
 }
 
-const getProfileRules = ({ profile, searchDistance = 0 }) => {
-  const deepRules = Array.isArray(profile?.deepRules) ? profile.deepRules : []
+const resolveThreshold = (rule = {}) => {
+  if (rule.op === 'between') {
+    return {
+      min: rule.min,
+      max: rule.max,
+    }
+  }
 
-  if (searchDistance >= 2 && deepRules.length) return deepRules
+  if (rule.op === 'in') return Array.isArray(rule.values) ? rule.values : []
+  if (rule.op === 'truthy') return true
+  if (rule.op === 'falsy') return false
 
-  return Array.isArray(profile?.rules) ? profile.rules : []
+  return rule.value
 }
 
-export const evaluateScoutRules = ({ profile, metrics, searchDistance = 0 }) => {
-  const rules = getProfileRules({ profile, searchDistance })
-  const matched = []
-  const missed = []
+const buildRuleEvidence = ({ rule, actual, matched }) => ({
+  metric: rule.metric,
+  reason: rule.reason || rule.metric,
+  op: rule.op,
+  actual,
+  threshold: resolveThreshold(rule),
+  matched,
+})
 
-  rules.forEach((rule) => {
-    const value = metrics?.[rule.metric]
+export const evaluateScoutRules = ({ profile, metrics }) => {
+  const rules = Array.isArray(profile?.rules) ? profile.rules : []
+  const evidence = rules.map((rule) => {
+    const actual = metrics?.[rule.metric]
 
-    if (isMatch({ value, rule })) {
-      matched.push({
-        metric: rule.metric,
-        reason: rule.reason || rule.metric,
-        value,
-      })
-      return
-    }
-
-    missed.push({
-      metric: rule.metric,
-      reason: rule.reason || rule.metric,
-      value,
+    return buildRuleEvidence({
+      rule,
+      actual,
+      matched: isMatch({ value: actual, rule }),
     })
   })
+  const matchedEvidence = evidence.filter(item => item.matched)
+  const missedRules = evidence.filter(item => !item.matched)
 
   return {
-    matched: matched.length === rules.length,
-    matchedCount: matched.length,
-    totalCount: rules.length,
-    score: rules.length ? Math.round((matched.length / rules.length) * 100) : 0,
-    reasons: matched.map((item) => item.reason),
-    matchedRules: matched,
-    missedRules: missed,
+    matched: evidence.length > 0 && missedRules.length === 0,
+    matchedCount: matchedEvidence.length,
+    totalCount: evidence.length,
+    score: evidence.length ? Math.round((matchedEvidence.length / evidence.length) * 100) : 0,
+    reasons: matchedEvidence.map(item => item.reason),
+    missedRules,
+    matchEvidence: evidence,
   }
 }

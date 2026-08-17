@@ -1,30 +1,31 @@
 // src/shared/scouting/players/opportunity/playerOpportunity.model.js
 
 export const PLAYER_SCOUT_ACTION_STATUS = {
-  IMMEDIATE: 'immediate',
-  PRIORITY: 'priority',
+  REMOVE: 'remove',
   WATCH: 'watch',
-  EXPOSED: 'exposed',
+  PRIORITY: 'priority',
+  IMMEDIATE: 'immediate',
 }
 
-export const PLAYER_SCOUT_OPPORTUNITY_REASON = {
-  STRONG_SIGNAL: 'strong_signal',
-  RELIABLE_SIGNAL: 'reliable_signal',
-  LOW_RELIABILITY: 'low_reliability',
-  EARLY_BREAKTHROUGH: 'early_breakthrough',
-  UNDEREXPOSED: 'underexposed',
-  HIDDEN_PERFORMER: 'hidden_performer',
-  POSITIONAL_OUTLIER: 'positional_outlier',
-  PLAYS_ABOVE_CLUB_LEVEL: 'plays_above_club_level',
-  PLAYS_BELOW_CLUB_LEVEL: 'plays_below_club_level',
-  ADVERSE_TEAM_CONTEXT: 'adverse_team_context',
-  STRONG_TEAM_CONTEXT: 'strong_team_context',
+export const PLAYER_SCOUT_IMMEDIACY_BOOST = {
+  EARLY_AGE_GROUP: 'early_age_group',
+  PROFILE_COMBINATION: 'profile_combination',
+  IDEAL_CLUB_RANGE: 'ideal_club_range',
+  IDEAL_LEAGUE_LEVEL: 'ideal_league_level',
   FUTURE_LEVEL_RISK: 'future_level_risk',
-  FUTURE_LEVEL_UPSIDE: 'future_level_upside',
-  MULTI_SEASON_GROWTH: 'multi_season_growth',
-  TRANSFERRED_UP: 'transferred_up',
-  TRANSFERRED_DOWN: 'transferred_down',
-  TOP_CLUB_EXPOSURE: 'top_club_exposure',
+  PLAYING_UP_VALIDATION: 'playing_up_validation',
+  PROFILE_PERSISTENCE: 'profile_persistence',
+  PROFILE_COMBINATION_PERSISTENCE: 'profile_combination_persistence',
+}
+
+export const PLAYER_SCOUT_IMMEDIACY_REDUCTION = {
+  SIGNAL_DECAY: 'signal_decay',
+}
+
+export const PLAYER_SCOUT_IMMEDIACY_SOURCE = {
+  PROFILE: 'profile',
+  NEAR_PROFILE: 'near_profile',
+  NONE: 'none',
 }
 
 export const PLAYER_SCOUT_EXPOSURE_LEVEL = {

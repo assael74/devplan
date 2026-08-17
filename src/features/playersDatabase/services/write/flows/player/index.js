@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/player/index.js
+// src/features/playersDatabase/services/write/flows/player/index.js
 
 export {
   removePlayerScoutProfileFlow,
@@ -16,3 +16,11 @@ export {
 export {
   updatePlayerSeasonUrlFlow,
 } from './updatePlayerSeasonUrl.flow.js'
+
+export {
+  updatePlayerVerificationFlow,
+} from './updatePlayerVerification.flow.js'
+
+export {
+  updatePlayerScoutReviewFlow,
+} from './updatePlayerScoutReview.flow.js'

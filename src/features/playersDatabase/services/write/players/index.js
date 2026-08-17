@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/index.js
+// src/features/playersDatabase/services/write/players/index.js
 
 /**
  * Player write services
@@ -36,7 +36,9 @@ export {
   hasPlayerScoutProfiles,
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
+  normalizePlayerScoutStory,
   removePlayerSeasonScoutProfile,
+  resolveExistingPlayerDocumentIds,
   syncPlayerScoutProfileDocsMany,
   syncPlayerRoleAndScoutProfileDoc,
   updatePlayerSeasonNotes,
@@ -63,6 +65,18 @@ export {
   ensureTransferredScoutingPlayerDoc,
   ensureWatchlistScoutingPlayerDoc,
   updateScoutingPlayerFavoriteState,
+  updateScoutingPlayerVerificationAnswer,
+  resolvePlayerTrackingReasons,
+  shouldHavePlayerDocument,
   SCOUTING_PLAYER_EVENT_TYPES,
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerDoc.js'
+
+export {
+  saveApprovedNarrative,
+} from './playerNarrative.js'
+
+
+export {
+  updateScoutingPlayerReview,
+} from './scoutingPlayerReview.write.js'

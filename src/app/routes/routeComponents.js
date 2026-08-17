@@ -6,6 +6,7 @@ const loadHomePage = () => import('../../features/home/HomePage')
 const loadCalendarHubPage = () => import('../../features/calendarHub/CalendarHubPage')
 const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
 const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
+const loadFinancePage = () => import('../../features/finance/FinancePage.js')
 const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
 const loadHubPage = () => import('../../features/hub/ui/HubPage')
 const loadPrivatePage = () => import('../../features/hub/scopes/PrivatePage.js')
@@ -72,6 +73,7 @@ export const HomePage = React.lazy(loadHomePage)
 export const CalendarHubPage = React.lazy(loadCalendarHubPage)
 export const VideoHubPage = React.lazy(loadVideoHubPage)
 export const TagsManagementPage = React.lazy(loadTagsManagementPage)
+export const FinancePage = React.lazy(loadFinancePage)
 export const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
 export const PlayersDatabaseLeaguesCenterPage = React.lazy(loadPlayersDatabaseLeaguesCenterPage)
 export const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
@@ -109,6 +111,7 @@ export const ADMIN_ROUTE_LOADERS = [
   loadCalendarHubPage,
   loadVideoHubPage,
   loadTagsManagementPage,
+  loadFinancePage,
   loadFirestoreUsagePage,
   loadReportsDashboardPage,
 ]

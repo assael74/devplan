@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/team/index.js
+// src/features/playersDatabase/services/write/searchIndex/team/index.js
 
 /**
  * Team-season search-index write services
@@ -30,6 +30,7 @@ export {
 } from './teamSeasonIndex.model.js'
 
 export {
+  buildTeamSeasonSearchIndexDocuments,
   upsertTeamSeasonSearchIndexMany,
 } from './teamSeasonIndex.upsert.js'
 

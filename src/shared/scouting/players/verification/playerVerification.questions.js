@@ -47,7 +47,7 @@ const hasActionableSignal = ({ signals, candidateSignals }) => (
 const isHighActionStatus = opportunity => [
   'immediate',
   'priority',
-].includes(opportunity?.actionStatus)
+].includes(opportunity?.effectiveActionStatus)
 
 export const PLAYER_VERIFICATION_QUESTIONS = [
   {

@@ -10,10 +10,6 @@ import {
 } from './metrics.js'
 
 import {
-  buildScoutReliability,
-} from './rel.js'
-
-import {
   evaluateScoutRules,
 } from './rules.js'
 
@@ -40,8 +36,7 @@ import {
 } from './spotlights/index.js'
 
 import {
-  aggregatePlayerScoutOpportunity,
-  buildPlayerSignalOpportunity,
+  buildPlayerScoutOpportunity,
 } from './opportunity/index.js'
 
 import {
@@ -62,6 +57,18 @@ import {
   comparePlayerScoutSignalsByHierarchy,
 } from './profileHierarchy/index.js'
 
+import {
+  buildPlayerProfileStrength,
+} from './profileStrength/index.js'
+
+import {
+  buildPlayerProfileCaseStrength,
+} from './profileCaseStrength/index.js'
+
+import {
+  buildPlayerManualReview,
+} from './manualReview/index.js'
+
 const resolvePlayerTrajectory = ({ playerTrajectory, playerSeasonStints }) => {
   if (playerTrajectory) return playerTrajectory
   if (!Array.isArray(playerSeasonStints) || playerSeasonStints.length < 2) return null
@@ -79,38 +86,30 @@ const interestScore = (interest) => {
 const buildSignal = ({
   profile,
   metrics,
-  reliabilityMetrics,
-  availability,
   ruleResult,
   context,
   scoutContext,
   player,
   futureCompetitionPath,
   playerTrajectory,
+  currentSeasonKey,
+  currentSeasonStatus,
 }) => {
-  const reliability = buildScoutReliability({
-    profile,
-    metrics: reliabilityMetrics,
-    availability,
-  })
   const spotlights = buildPlayerScoutSpotlights({
     profile,
     player,
     metrics,
-    reliability,
     scoutContext,
     futureCompetitionPath,
     playerTrajectory,
+    currentSeasonKey,
+    currentSeasonStatus,
   })
-  const profileDepth = buildPlayerProfileDepth({
-    profile,
-    metrics,
-    searchDistance: context.searchDistance,
-  })
+  const profileDepth = buildPlayerProfileDepth({ profile, metrics })
+  const profileStrength = buildPlayerProfileStrength({ profileDepth })
   const score = Math.round(
-    (interestScore(profile.interest) * 0.45) +
-    (ruleResult.score * 0.35) +
-    (reliability.score * 0.2)
+    (interestScore(profile.interest) * 0.55) +
+    (ruleResult.score * 0.45)
   )
 
   const signal = {
@@ -124,20 +123,17 @@ const buildSignal = ({
     spotlights,
     interestLevel: profile.interest,
     profileDepth,
-    reliability,
+    profileStrength,
     score,
     reasons: ruleResult.reasons,
-    warnings: reliability.warnings,
+    warnings: profile.warnings || [],
     requiredReview: profile.reviews || [],
     metrics,
     normalization: context.normalization || null,
-    matchedRules: ruleResult.matchedRules,
+    matchEvidence: ruleResult.matchEvidence,
   }
 
-  return {
-    ...signal,
-    opportunity: buildPlayerSignalOpportunity({ signal }),
-  }
+  return signal
 }
 
 const buildPlayerScoutSignalsFromNormalizedInput = ({
@@ -147,18 +143,12 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
   profiles = SCOUT_PROFILES,
   futureCompetitionPath,
   playerTrajectory,
+  currentSeasonKey,
+  currentSeasonStatus,
 } = {}) => {
   const metrics = buildScoutMetrics({
     player: normalizedInput.player,
     team: normalizedInput.team,
-  })
-  const reliabilityMetrics = buildScoutMetrics({
-    player: normalizedInput.reliabilityPlayer,
-    team: normalizedInput.reliabilityTeam,
-  })
-  const availability = getScoutDataAvailability({
-    player: normalizedInput.reliabilityPlayer,
-    team: normalizedInput.reliabilityTeam,
   })
   const context = {
     perspective,
@@ -168,7 +158,7 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
 
   return profiles
     .map((profile) => {
-      const ruleResult = evaluateScoutRules({ profile, metrics, searchDistance })
+      const ruleResult = evaluateScoutRules({ profile, metrics })
 
       if (!ruleResult.matched) return null
 
@@ -189,8 +179,6 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
       return buildSignal({
         profile,
         metrics,
-        reliabilityMetrics,
-        availability,
         ruleResult,
         context,
         scoutContext: {
@@ -200,6 +188,8 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
         player: normalizedInput.player,
         futureCompetitionPath,
         playerTrajectory,
+        currentSeasonKey,
+        currentSeasonStatus,
       })
     })
     .filter(Boolean)
@@ -236,6 +226,8 @@ export const buildPlayerScoutSignals = ({
     profiles,
     futureCompetitionPath,
     playerTrajectory: resolvedPlayerTrajectory,
+    currentSeasonKey: season?.seasonKey || season?.season || '',
+    currentSeasonStatus: season?.seasonStatus || '',
   })
 }
 
@@ -252,6 +244,9 @@ export const buildPlayerScoutResult = ({
   playerSeasonStints,
   previousProfileDistances,
   verificationAnswers,
+  immediacyContext,
+  manualReview,
+  manualImmediacyDecision,
 } = {}) => {
   const resolvedPlayerTrajectory = resolvePlayerTrajectory({
     playerTrajectory,
@@ -266,7 +261,6 @@ export const buildPlayerScoutResult = ({
   const profileProgression = buildPlayerProfileProgression({
     player: normalizedInput.player,
     team: normalizedInput.team,
-    searchDistance,
     profiles,
     previousProfileDistances,
   })
@@ -288,9 +282,28 @@ export const buildPlayerScoutResult = ({
     profiles,
     futureCompetitionPath,
     playerTrajectory: resolvedPlayerTrajectory,
+    currentSeasonKey: season?.seasonKey || season?.season || '',
+    currentSeasonStatus: season?.seasonStatus || '',
   })
+  const combinations = buildScoutProfileCombinations({ signals })
   const profileHierarchy = buildPlayerProfileHierarchy({ signals })
-  const opportunity = aggregatePlayerScoutOpportunity(signals)
+  const profileCaseStrength = buildPlayerProfileCaseStrength({
+    signals,
+    combinations,
+    profileHierarchy,
+  })
+  const opportunity = buildPlayerScoutOpportunity({
+    signals,
+    candidateSignals,
+    combinations,
+    profileCaseStrength,
+    playerTrajectory: resolvedPlayerTrajectory,
+    futureCompetitionPath,
+    immediacyContext,
+    currentSeasonKey: season?.seasonKey || season?.season || '',
+    currentSeasonStatus: season?.seasonStatus || '',
+    manualImmediacyDecision,
+  })
   const verification = buildPlayerVerification({
     player: normalizedInput.player,
     signals,
@@ -299,6 +312,7 @@ export const buildPlayerScoutResult = ({
     answers: verificationAnswers,
     profiles,
   })
+  const playerReview = buildPlayerManualReview({ review: manualReview })
 
   return {
     signals,
@@ -307,8 +321,10 @@ export const buildPlayerScoutResult = ({
     spotlights: aggregatePlayerScoutSpotlights(signals),
     opportunity,
     verification,
-    combinations: buildScoutProfileCombinations({ signals }),
+    playerReview,
+    combinations,
     profileHierarchy,
+    profileCaseStrength,
     bestSignal: profileHierarchy.primarySignal,
     normalization: normalizedInput.normalization,
     normalizedPlayer: normalizedInput.player,
@@ -331,6 +347,9 @@ export const buildPlayersScoutSignals = ({
   playerSeasonStints,
   previousProfileDistances,
   verificationAnswers,
+  immediacyContext,
+  manualReview,
+  manualImmediacyDecision,
 } = {}) => {
   const safePlayers = Array.isArray(players) ? players : []
 
@@ -352,6 +371,12 @@ export const buildPlayersScoutSignals = ({
           player?.verification?.answers ||
           player?.verificationAnswers ||
           verificationAnswers,
+        immediacyContext: player?.immediacyContext || immediacyContext,
+        manualReview: player?.manualReview || manualReview,
+        manualImmediacyDecision:
+          player?.manualImmediacyDecision ||
+          player?.opportunity?.manualDecision ||
+          manualImmediacyDecision,
       })
 
       return {
@@ -361,11 +386,13 @@ export const buildPlayersScoutSignals = ({
         candidateSignals: result.candidateSignals,
         profileProgression: result.profileProgression,
         profileHierarchy: result.profileHierarchy,
+        profileCaseStrength: result.profileCaseStrength,
         combinations: result.combinations,
         bestSignal: result.bestSignal,
         spotlights: result.spotlights,
         opportunity: result.opportunity,
         verification: result.verification,
+        playerReview: result.playerReview,
         playerTrajectory: result.playerTrajectory,
       }
     })

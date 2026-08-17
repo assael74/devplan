@@ -16,7 +16,7 @@ const ratio = (value, total) => {
 
 const seasonOrder = (stint = {}) => {
   const seasonKey = String(stint.seasonKey || stint.season || '')
-  const match = seasonKey.match(/(\d{2,4})\s*\/\s*(\d{2,4})/)
+  const match = seasonKey.match(/(?:^|[^0-9])(\d{2,4})\s*[\/_-]\s*(\d{2,4})(?:$|[^0-9])/)
 
   if (match) {
     const first = Number(match[1])
@@ -39,6 +39,19 @@ const getProfileIds = (stint = {}) => {
 
 const getStats = (stint = {}) => stint.playerStats || stint.stats || {}
 
+const getNearProfileIds = (stint = {}) => {
+  const progression = stint.scoutProfileProgression || stint.profileProgression || {}
+  const nearProfiles = Array.isArray(progression.nearProfiles)
+    ? progression.nearProfiles
+    : Array.isArray(stint.scoutCandidateSignals)
+      ? stint.scoutCandidateSignals
+      : []
+
+  return nearProfiles
+    .map(item => item?.profileId || item?.id || '')
+    .filter(Boolean)
+}
+
 export const normalizePlayerSeasonStint = (stint = {}, inputIndex = 0) => {
   const stats = getStats(stint)
   const minutes = toNumber(stats.minutes, toNumber(stint.minutes, 0))
@@ -58,10 +71,15 @@ export const normalizePlayerSeasonStint = (stint = {}, inputIndex = 0) => {
     seasonId: stint.seasonId || '',
     seasonKey: stint.seasonKey || stint.season || '',
     seasonOrder: seasonOrder(stint),
+    seasonStatus: stint.seasonStatus || (stint.lifecycle?.isFinal === true ? 'completed' : ''),
     leagueId: stint.leagueId || '',
     clubId: stint.clubId || '',
+    clubName: stint.clubName || stint.teamName || '',
     birthTeamId: stint.birthTeamId || '',
+    birthTeamDocumentId: stint.birthTeamDocumentId || stint.teamDocumentId || '',
     teamId: stint.teamId || '',
+    teamName: stint.teamName || stint.clubName || '',
+    rosterStatus: stint.rosterStatus || '',
     clubLevel,
     clubStrengthLevel,
     leagueLevel,
@@ -78,6 +96,7 @@ export const normalizePlayerSeasonStint = (stint = {}, inputIndex = 0) => {
     startsPct: ratio(starts, effectiveTeamGames),
     goalsPer90: storedGoalsPer90 || (minutes > 0 ? ratio(goals * 90, minutes) : 0),
     profileIds: getProfileIds(stint),
+    nearProfileIds: getNearProfileIds(stint),
   }
 }
 
@@ -94,6 +113,10 @@ export const normalizePlayerSeasonStints = (stints = []) => {
 
 const mergeProfileIds = (stints = []) => {
   return [...new Set(stints.flatMap(stint => stint.profileIds || []))]
+}
+
+const mergeNearProfileIds = (stints = []) => {
+  return [...new Set(stints.flatMap(stint => stint.nearProfileIds || []))]
 }
 
 const buildSeasonSummary = (seasonStints = []) => {
@@ -124,6 +147,7 @@ const buildSeasonSummary = (seasonStints = []) => {
     seasonId: latest.seasonId || first.seasonId,
     seasonKey: latest.seasonKey || first.seasonKey,
     seasonOrder: latest.seasonOrder,
+    seasonStatus: latest.seasonStatus || first.seasonStatus || '',
     stintsCount: seasonStints.length,
     clubId: latest.clubId,
     birthTeamId: latest.birthTeamId,
@@ -144,6 +168,7 @@ const buildSeasonSummary = (seasonStints = []) => {
     startsPct: ratio(totals.starts, totals.teamGames || totals.games),
     goalsPer90: totals.minutes > 0 ? ratio(totals.goals * 90, totals.minutes) : 0,
     profileIds: mergeProfileIds(seasonStints),
+    nearProfileIds: mergeNearProfileIds(seasonStints),
   }
 }
 
@@ -163,7 +188,8 @@ export const buildPlayerSeasonSummaries = (normalizedStints = []) => {
     .sort((a, b) => a.seasonOrder - b.seasonOrder)
 }
 
-export const compareOptionalLevel = (previousLevel, currentLevel) => {
+// Competitive-level contract: lower numeric values represent stronger levels.
+export const compareCompetitiveLevel = (previousLevel, currentLevel) => {
   const previous = toNumber(previousLevel, 0)
   const current = toNumber(currentLevel, 0)
 
@@ -173,6 +199,8 @@ export const compareOptionalLevel = (previousLevel, currentLevel) => {
 
   return 0
 }
+
+export const compareOptionalLevel = compareCompetitiveLevel
 
 export const getDelta = (previousValue, currentValue) => {
   return toNumber(currentValue, 0) - toNumber(previousValue, 0)

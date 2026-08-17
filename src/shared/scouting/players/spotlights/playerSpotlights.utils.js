@@ -19,18 +19,6 @@ const DEFENSIVE_POSITIONS = new Set([
   'dml',
 ])
 
-export const resolveSpotlightConfidence = (reliability = {}) => {
-  if (reliability.level === 'high') {
-    return PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.HIGH
-  }
-
-  if (reliability.level === 'medium') {
-    return PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM
-  }
-
-  return PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.LOW
-}
-
 export const resolvePlayerPositionValue = (player = {}) => {
   const values = [
     player.positionLayer,

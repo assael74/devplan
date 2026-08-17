@@ -13,11 +13,6 @@ const getProfileDepth = (signal) => {
   return Number.isFinite(depth) ? depth : 0
 }
 
-const getReliabilityScore = (signal) => {
-  const score = Number(signal?.reliability?.score)
-  return Number.isFinite(score) ? score : 0
-}
-
 const getLegacyScore = (signal) => {
   const score = Number(signal?.score)
   return Number.isFinite(score) ? score : 0
@@ -31,10 +26,6 @@ export const comparePlayerScoutSignalsByHierarchy = (a, b) => {
   const depthDiff = getProfileDepth(b) - getProfileDepth(a)
 
   if (depthDiff) return depthDiff
-
-  const reliabilityDiff = getReliabilityScore(b) - getReliabilityScore(a)
-
-  if (reliabilityDiff) return reliabilityDiff
 
   return getLegacyScore(b) - getLegacyScore(a)
 }

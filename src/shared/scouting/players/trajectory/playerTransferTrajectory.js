@@ -5,7 +5,8 @@ import {
 } from './playerTrajectory.model.js'
 
 import {
-  compareOptionalLevel,
+  compareCompetitiveLevel,
+  getDelta,
 } from './playerTrajectory.utils.js'
 
 const hasClubChanged = (previous, current) => {
@@ -33,6 +34,40 @@ const resolveTransferDirection = ({ clubChange, leagueChange }) => {
   return PLAYER_TRANSFER_DIRECTION.UNKNOWN
 }
 
+const resolveMoveType = direction => {
+  if (direction === PLAYER_TRANSFER_DIRECTION.UP) return 'upgrade'
+  if (direction === PLAYER_TRANSFER_DIRECTION.DOWN) return 'downgrade'
+  if (direction === PLAYER_TRANSFER_DIRECTION.LATERAL) return 'lateral'
+  if (direction === PLAYER_TRANSFER_DIRECTION.MIXED) return 'mixed'
+  return 'unknown'
+}
+
+const buildProfileChange = (previous = {}, current = {}) => {
+  const previousIds = new Set(previous.profileIds || [])
+  const currentIds = new Set(current.profileIds || [])
+
+  return {
+    added: [...currentIds].filter(profileId => !previousIds.has(profileId)),
+    lost: [...previousIds].filter(profileId => !currentIds.has(profileId)),
+    retained: [...currentIds].filter(profileId => previousIds.has(profileId)),
+  }
+}
+
+const buildTransferImpact = (previous = {}, current = {}) => ({
+  minutesPctDelta: getDelta(previous.minutesPct, current.minutesPct),
+  startsPctDelta: getDelta(previous.startsPct, current.startsPct),
+  goalsPer90Delta: getDelta(previous.goalsPer90, current.goalsPer90),
+  roleChanged: Boolean(
+    (previous.primaryPosition || current.primaryPosition) &&
+    previous.primaryPosition !== current.primaryPosition
+  ),
+  positionLayerChanged: Boolean(
+    (previous.positionLayer || current.positionLayer) &&
+    previous.positionLayer !== current.positionLayer
+  ),
+  profileChange: buildProfileChange(previous, current),
+})
+
 export const buildPlayerTransferEvents = (stints = []) => {
   const events = []
 
@@ -42,26 +77,43 @@ export const buildPlayerTransferEvents = (stints = []) => {
 
     if (!hasClubChanged(previous, current)) continue
 
-    const clubChange = compareOptionalLevel(
+    const clubChange = compareCompetitiveLevel(
       previous.clubStrengthLevel || previous.clubLevel,
       current.clubStrengthLevel || current.clubLevel
     )
-    const leagueChange = compareOptionalLevel(
+    const leagueChange = compareCompetitiveLevel(
       previous.leagueLevel,
       current.leagueLevel
     )
+    const direction = resolveTransferDirection({ clubChange, leagueChange })
 
     events.push({
       type: 'transfer',
       seasonKey: current.seasonKey || previous.seasonKey || '',
       fromClubId: previous.clubId,
+      fromClubName: previous.clubName || '',
+      fromBirthTeamId: previous.birthTeamId || '',
+      fromBirthTeamDocumentId: previous.birthTeamDocumentId || '',
+      fromTeamName: previous.teamName || previous.clubName || '',
       toClubId: current.clubId,
+      toClubName: current.clubName || '',
+      toBirthTeamId: current.birthTeamId || '',
+      toBirthTeamDocumentId: current.birthTeamDocumentId || '',
+      toTeamName: current.teamName || current.clubName || '',
       fromClubStrengthLevel: previous.clubStrengthLevel || previous.clubLevel || 0,
       toClubStrengthLevel: current.clubStrengthLevel || current.clubLevel || 0,
       fromLeagueLevel: previous.leagueLevel || 0,
       toLeagueLevel: current.leagueLevel || 0,
-      direction: resolveTransferDirection({ clubChange, leagueChange }),
+      clubStrengthChange: clubChange,
+      leagueLevelChange: leagueChange,
+      direction,
+      moveType: resolveMoveType(direction),
       sameSeason: previous.seasonOrder === current.seasonOrder,
+      fromPrimaryPosition: previous.primaryPosition || '',
+      toPrimaryPosition: current.primaryPosition || '',
+      fromPositionLayer: previous.positionLayer || '',
+      toPositionLayer: current.positionLayer || '',
+      impact: buildTransferImpact(previous, current),
     })
   }
 

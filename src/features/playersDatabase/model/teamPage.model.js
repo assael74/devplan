@@ -36,12 +36,7 @@ const resolveSeasonStartYear = seasonKey => {
   return match ? 2000 + Number(match[1]) : null
 }
 
-const resolveSeasonAgeGroupLabel = ({
-  seasonKey = '',
-  birthYear = null,
-  ageGroupId = '',
-  ageGroupLabel = '',
-} = {}) => {
+const resolveSeasonAgeGroupLabel = ({ seasonKey = '', birthYear = null, ageGroupId = '', ageGroupLabel = '' } = {}) => {
   const startYear = resolveSeasonStartYear(seasonKey)
   const ageGroupNumber = startYear && birthYear
     ? startYear - Number(birthYear) + 1
@@ -387,16 +382,26 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     reliability: display.reliability?.level || '-',
     scoutProfiles: scout.profiles || [],
     scoutCombinations: scout.combinations || [],
+    scoutCandidateSignals: scout.candidateSignals || [],
+    scoutSpotlights: scout.spotlights || [],
+    scoutOpportunity: scout.opportunity || null,
+    scoutVerification: scout.verification || null,
+    scoutProfileProgression: scout.profileProgression || null,
+    scoutProfileHierarchy: scout.profileHierarchy || null,
+    scoutTrajectory: scout.trajectory || null,
+    scoutTransferContext: scout.transferContext || null,
+    scoutEngineVersion: scout.engineVersion || '',
+    scoutStatsLoadMeasurements: scout.statsLoadMeasurements || {
+      previous: null,
+      current: null,
+    },
+    scoutStatsLoadMeasurementHistory: scout.statsLoadMeasurementHistory || [],
+    scoutStatsLoadMeasurementHistoryEvents: scout.statsLoadMeasurementHistoryEvents || [],
     scoutProfileDisplay: display,
   }
 }
 
-export const adaptTeamPagePlayerRow = ({
-  player = {},
-  index = 0,
-  selectedSeasonOption = null,
-  teamSeason = null,
-} = {}) => {
+export const adaptTeamPagePlayerRow = ({ player = {}, index = 0, selectedSeasonOption = null, teamSeason = null } = {}) => {
   const playerSeason = adaptPlayerDocumentSeason({
     playerDocument: player,
     seasonDocument: player,

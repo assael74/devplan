@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/leagues/leagueTableRank.js
+// src/features/playersDatabase/services/write/leagues/leagueTableRank.js
 
 import { pickDefinedValue } from '../../../model/value.model.js'
 
@@ -30,10 +30,7 @@ const hasOwn = (source, key) => (
   Object.prototype.hasOwnProperty.call(source, key)
 )
 
-const findExistingTableRankRow = ({
-  tableRank = [],
-  row = {},
-} = {}) => {
+const findExistingTableRankRow = ({ tableRank = [], row = {} } = {}) => {
   const identity = normalizeTeamIdentity({ team: row })
   const teamId = clean(identity.birthTeamId)
   const clubId = clean(identity.clubId)
@@ -49,10 +46,7 @@ const findExistingTableRankRow = ({
   }) || null
 }
 
-const buildTableRankRow = ({
-  row = {},
-  existingRow = null,
-} = {}) => {
+const buildTableRankRow = ({ row = {}, existingRow = null } = {}) => {
   const rank = toNumberOrZero(pickDefinedValue(row.position, row.rank, row.leaguePosition))
   const identity = normalizeTeamIdentity({ team: row })
   const teamStats = normalizeTeamStats(row, {
@@ -100,10 +94,7 @@ const buildTableRankRow = ({
   }
 }
 
-const buildTableRank = ({
-  rows = [],
-  existingTableRank = [],
-} = {}) =>
+const buildTableRank = ({ rows = [], existingTableRank = [] } = {}) =>
   (Array.isArray(rows) ? rows : [])
     .map(row => buildTableRankRow({
       row,
@@ -223,10 +214,7 @@ export async function updateLeagueSeasonTableRank({
   return result
 }
 
-const updateTableRankRowTeamUrl = ({
-  tableRank = [],
-  team = {},
-} = {}) => {
+const updateTableRankRowTeamUrl = ({ tableRank = [], team = {} } = {}) => {
   const teamId = normalizeTeamIdentity({ team }).birthTeamId
   const clubId = clean(team.clubId)
   const teamUrl = clean(team.teamUrl)
@@ -272,11 +260,7 @@ const hasTableRankPlayersCount = tableRank =>
     hasFiniteNumberValue(row?.playersCount)
   )
 
-const updateHistorySeasonTableRankTeamUrl = ({
-  history = [],
-  season = {},
-  team = {},
-} = {}) =>
+const updateHistorySeasonTableRankTeamUrl = ({ history = [], season = {}, team = {} } = {}) =>
   updateHistorySeason({
     history,
     season,
@@ -290,11 +274,7 @@ const updateHistorySeasonTableRankTeamUrl = ({
     },
   })
 
-const updateTableRankRowScoutProfilesSummary = ({
-  tableRank = [],
-  team = {},
-  scoutProfilesSummary = {},
-} = {}) => {
+const updateTableRankRowScoutProfilesSummary = ({ tableRank = [], team = {}, scoutProfilesSummary = {} } = {}) => {
   const teamId = normalizeTeamIdentity({ team }).birthTeamId
   const clubId = clean(team.clubId)
 
@@ -317,12 +297,7 @@ const updateTableRankRowScoutProfilesSummary = ({
   })
 }
 
-const updateHistorySeasonTableRankScoutProfilesSummary = ({
-  history = [],
-  season = {},
-  team = {},
-  scoutProfilesSummary = {},
-} = {}) =>
+const updateHistorySeasonTableRankScoutProfilesSummary = ({ history = [], season = {}, team = {}, scoutProfilesSummary = {} } = {}) =>
   updateHistorySeason({
     history,
     season,
@@ -337,11 +312,7 @@ const updateHistorySeasonTableRankScoutProfilesSummary = ({
     },
   })
 
-export async function updateLeagueSeasonTableRankTeamUrl({
-  league = {},
-  season = {},
-  team = {},
-} = {}) {
+export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season = {}, team = {} } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
@@ -603,4 +574,90 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
   })
 
   return result
+}
+
+
+const applyScoutProfilesSummaries = ({ tableRank = [], summaries = [] } = {}) => (
+  (Array.isArray(summaries) ? summaries : []).reduce(
+    (nextTableRank, item) => updateTableRankRowScoutProfilesSummary({
+      tableRank: nextTableRank,
+      team: item?.team || {},
+      scoutProfilesSummary: item?.scoutProfilesSummary || {},
+    }),
+    Array.isArray(tableRank) ? tableRank : []
+  )
+)
+
+export async function updateLeagueSeasonTableRankScoutProfilesSummaries({ league = {}, season = {}, target = 'current', summaries = [] } = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const ref = leagueDocRef(leagueId)
+
+  return trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    const currentData = snapshot.exists() ? snapshot.data() || {} : {}
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
+    const { seasonKey } = normalizeSeasonIdentity({ season: {
+      ...season,
+      seasonId,
+    } })
+    const isHistory = clean(target) === 'history'
+    const updatedAt = new Date().toISOString()
+    let nextData = baseDoc
+
+    if (isHistory) {
+      const history = (Array.isArray(baseDoc.history) ? baseDoc.history : []).map(row => {
+        if (!isSameSeason(row, {
+          seasonId,
+          seasonKey,
+        })) return row
+
+        return {
+          ...row,
+          tableRank: applyScoutProfilesSummaries({
+            tableRank: row.tableRank,
+            summaries,
+          }),
+          updatedAt,
+        }
+      })
+
+      nextData = {
+        ...baseDoc,
+        history,
+      }
+    } else {
+      nextData = {
+        ...baseDoc,
+        current: {
+          ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+            ...season,
+            seasonId,
+            seasonKey,
+          })),
+          tableRank: applyScoutProfilesSummaries({
+            tableRank: baseDoc.current?.tableRank || [],
+            summaries,
+          }),
+          updatedAt,
+        },
+      }
+    }
+
+    transaction.set(ref, nextData, { merge: true })
+
+    return {
+      leagueId,
+      seasonId,
+      seasonKey,
+      target: isHistory ? 'history' : 'current',
+      rowsCount: Array.isArray(summaries) ? summaries.length : 0,
+    }
+  })
 }

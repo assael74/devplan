@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/scoutingPlayerDoc.js
+// src/features/playersDatabase/services/write/players/scoutingPlayerDoc.js
 
 export {
   ensureFavoriteScoutingPlayerDoc,
@@ -19,6 +19,8 @@ export {
   normalizeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
   normalizeScoutingPlayerTrackingReason,
+  resolvePlayerTrackingReasons,
+  shouldHavePlayerDocument,
 } from './scoutingPlayerLifecycle.model.js'
 
 export {
@@ -26,3 +28,7 @@ export {
   normalizeScoutingPlayerVerification,
   normalizeScoutingPlayerVerificationAnswer,
 } from './scoutingPlayerVerification.model.js'
+
+export {
+  updateScoutingPlayerVerificationAnswer,
+} from './scoutingPlayerVerification.write.js'

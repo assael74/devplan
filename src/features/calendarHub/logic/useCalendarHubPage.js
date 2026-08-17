@@ -70,8 +70,10 @@ export default function useCalendarHubPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState('create')
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [initialDraft, setInitialDraft] = useState(null)
 
   const [draft, setDraft] = useState({
+    calendarId: '',
     type: 'meeting',
     title: '',
     date: '',
@@ -81,6 +83,12 @@ export default function useCalendarHubPage() {
     teamId: '',
     playerId: '',
   })
+
+  const buildCalendarId = (value = {}) => {
+    if (value?.playerId) return `player:${value.playerId}`
+    if (value?.teamId) return `team:${value.teamId}`
+    return ''
+  }
 
   const weekDays = useMemo(() => buildWeekDays(weekStart), [weekStart])
 
@@ -237,7 +245,8 @@ export default function useCalendarHubPage() {
     setDrawerMode('create')
     setSelectedEvent(null)
 
-    setDraft({
+    const nextDraft = {
+      calendarId: buildCalendarId(selection),
       type: 'meeting',
       title: '',
       date: toISODate(selectedDay || new Date()),
@@ -246,7 +255,10 @@ export default function useCalendarHubPage() {
       status: 'planned',
       teamId: selection?.teamId || '',
       playerId: selection?.playerId || '',
-    })
+    }
+
+    setInitialDraft(nextDraft)
+    setDraft(nextDraft)
 
     setDrawerOpen(true)
   }
@@ -259,7 +271,8 @@ export default function useCalendarHubPage() {
     const hh = String(start.getHours()).padStart(2, '0')
     const mm = String(start.getMinutes()).padStart(2, '0')
 
-    setDraft({
+    const nextDraft = {
+      calendarId: buildCalendarId(event),
       type: event?.type || 'meeting',
       title: event?.title || '',
       date: toISODate(start),
@@ -271,7 +284,10 @@ export default function useCalendarHubPage() {
       status: event?.status || 'planned',
       teamId: event?.teamId || '',
       playerId: event?.playerId || '',
-    })
+    }
+
+    setInitialDraft(nextDraft)
+    setDraft(nextDraft)
 
     setDrawerOpen(true)
   }
@@ -332,6 +348,7 @@ export default function useCalendarHubPage() {
     drawerOpen,
     drawerMode,
     selectedEvent,
+    initialDraft,
     draft,
     setDraft,
 

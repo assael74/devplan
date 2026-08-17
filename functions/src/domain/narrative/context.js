@@ -1,0 +1,197 @@
+// C:\projects\devplan\functions\src\domain\narrative\context.js
+
+const { resolveProfileLabel } = require('./profileLabels')
+const { resolveAgeGroupLabel } = require('./ageGroupLabels')
+
+function clean(value) {
+  return String(value || '').trim()
+}
+
+function isPresent(value) {
+  return value !== null && value !== undefined && value !== ''
+}
+
+function firstPresent(...values) {
+  return values.find(isPresent)
+}
+
+function numberOrNull(value) {
+  if (!isPresent(value)) return null
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function valueOrNull(value) {
+  return isPresent(value) ? value : null
+}
+
+function resolvePlayingUp({ playerBirthYear, groupBirthYear, isYoungerAgeGroup }) {
+  if (typeof isYoungerAgeGroup === 'boolean') return isYoungerAgeGroup
+
+  const playerYear = numberOrNull(playerBirthYear)
+  const groupYear = numberOrNull(groupBirthYear)
+  if (playerYear === null || groupYear === null) return null
+
+  return playerYear > groupYear
+}
+
+function findTeamSeason(team = {}, entry = {}) {
+  const seasonKey = clean(entry.seasonKey)
+  const seasonId = clean(entry.seasonId)
+  const rows = [
+    ...(Array.isArray(team.current) ? team.current : []),
+    ...(Array.isArray(team.history) ? team.history : []),
+  ]
+
+  return rows.find(row => (
+    (seasonKey && clean(row.seasonKey) === seasonKey) ||
+    (seasonId && clean(row.seasonId) === seasonId)
+  )) || null
+}
+
+function findTeamPlayer(teamSeason = {}, player = {}) {
+  const playerDocumentId = clean(player.id || player.playerDocumentId)
+  const playerId = clean(player.playerId)
+  const externalPlayerId = clean(player.externalPlayerId)
+  const rows = Array.isArray(teamSeason.teamPlayers) ? teamSeason.teamPlayers : []
+
+  return rows.find(row => (
+    (playerDocumentId && clean(row.playerDocumentId) === playerDocumentId) ||
+    (playerId && clean(row.playerId) === playerId) ||
+    (externalPlayerId && clean(row.externalPlayerId) === externalPlayerId)
+  )) || null
+}
+
+function enrichStats({ entry = {}, teamSeason = null, teamPlayer = null }) {
+  const stats = entry.playerStats || {}
+  const safeTeamPlayer = teamPlayer || {}
+  const safeTeamSeason = teamSeason || {}
+  const teamPlayerStats = safeTeamPlayer.playerStats || {}
+  const teamStats = safeTeamSeason.teamStats || {}
+
+  return {
+    games: numberOrNull(stats.games),
+    goals: numberOrNull(stats.goals),
+    minutes: numberOrNull(stats.minutes),
+    starts: numberOrNull(stats.starts),
+    substituteIn: numberOrNull(stats.substituteIn),
+    substitutedOut: numberOrNull(stats.substitutedOut),
+    teamMinutes: numberOrNull(stats.teamMinutes),
+    teamGames: numberOrNull(firstPresent(
+      stats.teamGames,
+      teamPlayerStats.teamGames,
+      teamStats.teamGamePlayed
+    )),
+    teamRank: numberOrNull(firstPresent(
+      stats.teamRank,
+      teamPlayerStats.teamRank,
+      safeTeamSeason.tableRank
+    )),
+    teamGoalsFor: numberOrNull(firstPresent(
+      stats.teamGoalsFor,
+      teamPlayerStats.teamGoalsFor,
+      teamStats.goalsFor
+    )),
+    teamGoalsAgainst: numberOrNull(firstPresent(
+      stats.teamGoalsAgainst,
+      teamPlayerStats.teamGoalsAgainst,
+      teamStats.goalsAgainst
+    )),
+    teamAttackPerformance: valueOrNull(firstPresent(
+      stats.teamAttackPerformance,
+      teamPlayerStats.teamAttackPerformance,
+      safeTeamSeason.offense,
+      safeTeamSeason.performance?.offense,
+      safeTeamSeason.teamScout?.offense
+    )),
+    teamDefensePerformance: valueOrNull(firstPresent(
+      stats.teamDefensePerformance,
+      teamPlayerStats.teamDefensePerformance,
+      safeTeamSeason.defense,
+      safeTeamSeason.performance?.defense,
+      safeTeamSeason.teamScout?.defense
+    )),
+  }
+}
+
+function buildEntry({ entry = {}, player = {}, teamsById = new Map() }) {
+  const teamDocumentId = clean(entry.birthTeamDocumentId)
+  const team = teamsById.get(teamDocumentId) || null
+  const teamSeason = team ? findTeamSeason(team, entry) : null
+  const teamPlayer = teamSeason ? findTeamPlayer(teamSeason, player) : null
+  const profiles = Array.isArray(entry.scoutProfiles) ? entry.scoutProfiles : []
+  const groupBirthYear = numberOrNull(entry.birthYear)
+
+  return {
+    seasonId: clean(entry.seasonId),
+    seasonKey: clean(entry.seasonKey),
+    seasonStatus: clean(entry.seasonStatus),
+    clubId: clean(entry.clubId || team?.clubId),
+    clubName: clean(entry.clubName),
+    teamName: clean(entry.teamName || team?.displayName),
+    birthTeamId: clean(entry.birthTeamId || team?.birthTeamId),
+    birthTeamDocumentId: teamDocumentId,
+    birthTeamSlot: numberOrNull(firstPresent(entry.birthTeamSlot, team?.birthTeamSlot)),
+    leagueId: clean(entry.leagueId),
+    leagueName: clean(entry.leagueName),
+    leagueLevel: numberOrNull(entry.leagueLevel),
+    clubLevel: numberOrNull(entry.clubLevel),
+    clubStrengthLevel: numberOrNull(entry.clubStrengthLevel),
+    ageGroupId: clean(entry.ageGroupId),
+    ageGroupLabel: resolveAgeGroupLabel({
+      ageGroupId: entry.ageGroupId,
+      ageGroupLabel: entry.ageGroupLabel,
+    }),
+    groupBirthYear,
+    isPlayingUp: resolvePlayingUp({
+      playerBirthYear: player.birthYear,
+      groupBirthYear,
+      isYoungerAgeGroup: entry.isYoungerAgeGroup,
+    }),
+    primaryPosition: clean(entry.primaryPosition),
+    positionLayer: clean(entry.positionLayer),
+    stats: enrichStats({ entry, teamSeason, teamPlayer }),
+    profiles: profiles.map(profile => ({
+      profileId: clean(profile.profileId),
+      profileLabel: resolveProfileLabel(profile),
+      interestLevel: clean(profile.interestLevel),
+      score: numberOrNull(profile.score),
+      profileDepth: valueOrNull(profile.profileDepth),
+      reliability: profile.reliability || null,
+      positionContext: clean(profile.positionContext),
+      scoutContext: profile.scoutContext || null,
+    })),
+    priority: entry.scoutOpportunity || null,
+    verification: entry.scoutVerification || null,
+    progression: entry.scoutProfileProgression || null,
+    trajectory: entry.scoutTrajectory || null,
+    transferContext: entry.scoutTransferContext || null,
+  }
+}
+
+function buildContext({ player = {}, teams = [] } = {}) {
+  const teamsById = new Map(teams.map(team => [clean(team.id), team]))
+  const entries = [
+    ...(Array.isArray(player.history) ? player.history : []),
+    ...(Array.isArray(player.current) ? player.current : []),
+  ]
+
+  return {
+    player: {
+      playerId: clean(player.playerId || player.id),
+      playerDocumentId: clean(player.id || player.playerDocumentId),
+      externalPlayerId: clean(player.externalPlayerId),
+      fullName: clean(player.fullName || player.displayName),
+      birthYear: numberOrNull(player.birthYear),
+      birthDate: player.birthDate || null,
+      primaryPosition: clean(player.primaryPosition),
+      positionLayer: clean(player.positionLayer),
+    },
+    entries: entries.map(entry => buildEntry({ entry, player, teamsById })),
+    events: Array.isArray(player.events) ? player.events : [],
+    verification: player.verification || null,
+  }
+}
+
+module.exports = { buildContext }

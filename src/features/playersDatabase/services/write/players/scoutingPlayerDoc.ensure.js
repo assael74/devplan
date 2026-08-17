@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/scoutingPlayerDoc.ensure.js
+// src/features/playersDatabase/services/write/players/scoutingPlayerDoc.ensure.js
 
 import {
   serverTimestamp,
@@ -19,6 +19,7 @@ import {
 import {
   buildPlayerSeasonDoc,
   buildPlayerSeasonRowsFromTeamDoc,
+  findPlayerSeasonRowIndex,
   removePlayerSeasonRow,
 } from './playerSeason.model.js'
 import {
@@ -27,16 +28,13 @@ import {
   mergeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
   normalizeScoutingPlayerTrackingReason,
+  resolvePlayerTrackingReasons,
   SCOUTING_PLAYER_EVENT_TYPES,
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
 
-const buildCreatedEvent = ({
-  season = {},
-  team = {},
-  trackedAt = '',
-} = {}) => ({
+const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => ({
   eventKey: [
     SCOUTING_PLAYER_EVENT_TYPES.PLAYER_DOCUMENT_CREATED,
     clean(season.seasonKey || season.seasonId),
@@ -131,11 +129,6 @@ export const ensureScoutingPlayerDoc = async ({
       resolvedTeam
     )
     const isHistory = clean(target) === 'history'
-    const seasonDoc = buildPlayerSeasonDoc({
-      season: seasonScope,
-      team: resolvedTeam,
-      player,
-    })
     const shouldHydrateFromTeamDoc = !snapshot.exists() && teamDoc
     const hydratedRows = shouldHydrateFromTeamDoc
       ? buildPlayerSeasonRowsFromTeamDoc({
@@ -155,6 +148,20 @@ export const ensureScoutingPlayerDoc = async ({
     const sourceHistoryRows = snapshot.exists()
       ? baseDoc.history
       : hydratedRows.history
+    const sourceSeasonRows = isHistory ? sourceHistoryRows : sourceCurrentRows
+    const sourceSeasonIndex = findPlayerSeasonRowIndex({
+      rows: sourceSeasonRows,
+      season: seasonScope,
+      team: resolvedTeam,
+    })
+    const sourceSeasonRow = sourceSeasonIndex >= 0
+      ? sourceSeasonRows[sourceSeasonIndex]
+      : null
+    const seasonDoc = sourceSeasonRow || buildPlayerSeasonDoc({
+      season: seasonScope,
+      team: resolvedTeam,
+      player,
+    })
     const currentWithoutSeason = removePlayerSeasonRow({
       rows: sourceCurrentRows,
       season: seasonScope,
@@ -233,10 +240,7 @@ export const ensureScoutingPlayerDoc = async ({
 }
 
 
-export const updateScoutingPlayerFavoriteState = async ({
-  playerDocumentId = '',
-  favorite = false,
-} = {}) => {
+export const updateScoutingPlayerFavoriteState = async ({ playerDocumentId = '', favorite = false } = {}) => {
   const normalizedPlayerDocumentId = clean(playerDocumentId)
 
   if (!normalizedPlayerDocumentId) {
@@ -271,14 +275,22 @@ export const updateScoutingPlayerFavoriteState = async ({
         currentData.watchlist === true,
     })
     const nextFavorite = favorite === true
+    const nextTracking = {
+      ...currentTracking,
+      favorite: nextFavorite,
+    }
 
     transaction.set(
       ref,
       {
         favorite: nextFavorite,
         tracking: {
-          ...currentTracking,
-          favorite: nextFavorite,
+          ...nextTracking,
+          trackingReasons: resolvePlayerTrackingReasons({
+            ...currentData,
+            favorite: nextFavorite,
+            tracking: nextTracking,
+          }),
         },
         updatedAt: serverTimestamp(),
       },

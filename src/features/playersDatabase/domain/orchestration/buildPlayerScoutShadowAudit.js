@@ -6,10 +6,9 @@ import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInp
 
 const clean = value => String(value || '').trim()
 
-const isScoutExcludedRosterStatus = player => [
-  'retired',
-  'transferredOut',
-].includes(clean(player?.rosterStatus))
+const isScoutExcludedRosterStatus = player => (
+  clean(player?.rosterStatus) === 'retired'
+)
 
 const uniqueValues = values => Array.from(new Set(
   (Array.isArray(values) ? values : [])
@@ -191,7 +190,7 @@ const buildPlayerShadowRow = ({
     addedProfileIds,
     removedProfileIds,
     sameProfiles: addedProfileIds.length === 0 && removedProfileIds.length === 0,
-    opportunityStatus: clean(v2Result.opportunity?.actionStatus),
+    opportunityStatus: clean(v2Result.opportunity?.effectiveActionStatus),
     teamGateMode: clean(teamGate?.mode),
     teamGateReason: clean(teamGate?.reason),
     primaryProfileId: clean(v2Result.profileHierarchy?.primaryProfileId),

@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/favorites/playerFavoriteLifecycle.js
+// src/features/playersDatabase/services/write/favorites/playerFavoriteLifecycle.js
 
 import {
   doc,
@@ -35,6 +35,7 @@ import {
   buildScoutingPlayerTracking,
   mergeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
+  resolvePlayerTrackingReasons,
   SCOUTING_PLAYER_EVENT_TYPES,
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from '../players/scoutingPlayerLifecycle.model.js'
@@ -291,13 +292,22 @@ export async function removePlayerFavoriteWithLifecycle({ entityId = '', playerD
           playerData.watchlist === true,
       })
 
+      const nextTracking = {
+        ...tracking,
+        favorite: false,
+      }
+
       transaction.set(
         playerRef,
         {
           favorite: false,
           tracking: {
-            ...tracking,
-            favorite: false,
+            ...nextTracking,
+            trackingReasons: resolvePlayerTrackingReasons({
+              ...playerData,
+              favorite: false,
+              tracking: nextTracking,
+            }),
           },
           updatedAt: serverTimestamp(),
         },

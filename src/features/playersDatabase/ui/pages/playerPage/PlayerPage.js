@@ -16,18 +16,25 @@ import {
 } from '../../logic/routeBuilders.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import PlayerHeader from './PlayerHeader.js'
-import PlayerKpiOverview from './PlayerKpiOverview.js'
-import PlayerHistorySection from './PlayerHistorySection.js'
+import PlayerScoutOverview from './PlayerScoutOverview.js'
 import PlayerActionsPanel from './PlayerActionsPanel.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
-import { TaskEditModal } from '../../components/modals/index.js'
+import {
+  PlayerNarrativeModal,
+  PlayerScoutReviewModal,
+  TaskEditModal,
+} from '../../components/modals/index.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
-import { resolvePlayerScopeReliability } from './logic/playerPage.utils.js'
+import usePlayerNarrative from './hooks/usePlayerNarrative.js'
+import usePlayerScoutReview from './hooks/usePlayerScoutReview.js'
+import { readPlayerSource } from '../../../services/read/index.js'
+import { downloadPlayerJson } from './logic/playerJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import { playerPageSx } from './sx/playerPage.sx.js'
 
 function getPathParam(path, key) {
   const queryIndex = String(path || '').indexOf('?')
@@ -53,6 +60,7 @@ function PlayerPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [editTask, setEditTask] = React.useState(null)
+  const [playerJsonLoading, setPlayerJsonLoading] = React.useState(false)
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -67,15 +75,6 @@ function PlayerPageContent() {
       )) || null
       : null
   ), [historyView.rows, historyView.selectedSeasonKey])
-  const scopeReliability = React.useMemo(() => (
-    resolvePlayerScopeReliability(historyView.visibleRows)
-  ), [historyView.visibleRows])
-  const scopeProfileCount = React.useMemo(() => (
-    historyView.visibleRows.reduce(
-      (total, row) => total + Number(row.scoutProfileCount || 0),
-      0
-    )
-  ), [historyView.visibleRows])
   const playerUrlEditor = usePlayerUrlEditor({
     player,
     selectedSeasonRow,
@@ -85,6 +84,16 @@ function PlayerPageContent() {
   const playerReport = usePlayerReport({
     player,
     historyRows: historyView.visibleRows,
+  })
+  const narrative = usePlayerNarrative({
+    player,
+    reload,
+    notify,
+  })
+  const scoutReview = usePlayerScoutReview({
+    player,
+    notify,
+    reload,
   })
 
   const fallbackLeaguePath = player.leagueId
@@ -241,9 +250,37 @@ function PlayerPageContent() {
     tasksModel.tasks,
   ])
 
-  const handleHistoryOpen = row => {
-    console.info('Player season context', row)
-  }
+  const handlePlayerJson = React.useCallback(async () => {
+    if (!playerId || playerJsonLoading) return
+
+    setPlayerJsonLoading(true)
+
+    try {
+      const playerDocument = await readPlayerSource({ playerId })
+
+      if (!playerDocument) {
+        notify({
+          status: 'error',
+          message: 'לא נמצא מסמך שחקן ליצוא.',
+        })
+        return
+      }
+
+      downloadPlayerJson(playerDocument)
+      notify({
+        status: 'success',
+        message: 'קובץ JSON נוצר בהצלחה.',
+      })
+    } catch (error) {
+      console.error('Player JSON export failed', error)
+      notify({
+        status: 'error',
+        message: 'יצירת קובץ JSON נכשלה.',
+      })
+    } finally {
+      setPlayerJsonLoading(false)
+    }
+  }, [notify, playerId, playerJsonLoading])
 
   const handleAction = actionId => {
     if (actionId === 'report') {
@@ -266,9 +303,6 @@ function PlayerPageContent() {
           breadcrumbs={breadcrumbs}
           player={player}
           seasonLabel={historyView.selectedSeasonKey || 'כל העונות'}
-          reliabilityLabel={scopeReliability.label}
-          reliabilityColor={scopeReliability.color}
-          hasScoutProfiles={scopeProfileCount > 0}
           favorite={playerFavorite}
           favoriteLoading={playerFavoriteLoading}
           onFavoriteToggle={() => {
@@ -279,17 +313,17 @@ function PlayerPageContent() {
         />
 
         <Box sx={sx.contentGrid}>
-          <Box sx={sx.mainColumn}>
-            <PlayerKpiOverview
+          <Box className='dpScrollThin' sx={[sx.mainColumn, playerPageSx.mainColumn]}>
+            <PlayerScoutOverview
               player={player}
               historyRows={historyView.rows}
               selectedSeasonKey={historyView.selectedSeasonKey}
-            />
-
-            <PlayerHistorySection
-              rows={historyView.visibleRows}
-              hasRealData={historyView.hasRealData}
-              onRowOpen={handleHistoryOpen}
+              narrativeView={narrative.view}
+              narrativeLoading={narrative.loading}
+              playerJsonLoading={playerJsonLoading}
+              onNarrativeGenerate={narrative.generate}
+              onPlayerJson={handlePlayerJson}
+              onReviewOpen={scoutReview.open}
             />
           </Box>
 
@@ -305,6 +339,18 @@ function PlayerPageContent() {
         </Box>
       </Box>
 
+      <PlayerScoutReviewModal
+        open={Boolean(scoutReview.draft)}
+        playerName={player.fullName}
+        seasonKey={scoutReview.seasonKey}
+        draft={scoutReview.draft}
+        busy={scoutReview.saving}
+        changed={scoutReview.changed}
+        onDraftChange={scoutReview.setDraft}
+        onConfirm={scoutReview.save}
+        onClose={scoutReview.close}
+      />
+
       <TaskEditModal
         open={Boolean(editTask)}
         task={editTask}
@@ -312,6 +358,17 @@ function PlayerPageContent() {
         onSave={handleTaskEditSave}
         onDone={handleTaskEditDone}
         onClose={() => setEditTask(null)}
+      />
+
+      <PlayerNarrativeModal
+        open={narrative.open}
+        session={narrative.session}
+        presentation={narrative.presentation}
+        refining={narrative.refining}
+        saving={narrative.saving}
+        onRefine={narrative.refine}
+        onClose={narrative.close}
+        onApprove={narrative.approve}
       />
 
       <PlayerUrlEditDrawer

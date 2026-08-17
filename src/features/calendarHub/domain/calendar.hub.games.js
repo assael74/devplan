@@ -73,6 +73,11 @@ export function normalizePlayerGameEvent(gameRaw, player) {
 
   const rival = g?.rivel || g?.rival || g?.opponent || ''
   const competition = g?.type || g?.competition || ''
+  const playerName = toPlayerName(player) || player?.playerFullName || player?.fullName || ''
+  const rawTitle = String(g?.title || '').trim()
+  const gameTitle = rawTitle && rawTitle !== 'משחק'
+    ? rawTitle
+    : rival || competition || 'משחק'
   const home =
     typeof g?.home === 'boolean'
       ? g.home
@@ -97,13 +102,13 @@ export function normalizePlayerGameEvent(gameRaw, player) {
     endAt,
     durationMin,
 
-    title: g?.title || rival || competition || 'Game',
+    title: [playerName, gameTitle].filter(Boolean).join(' - '),
     status: g?.status || 'planned',
 
     teamId: '',
     teamName: '',
     playerId: player?.id,
-    playerName: toPlayerName(player) || player?.playerFullName || player?.fullName || '',
+    playerName,
 
     clubId: player?.clubId || '',
     clubName: player?.club?.clubName || player?.clubName || '',

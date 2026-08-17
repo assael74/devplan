@@ -3,7 +3,6 @@
 import {
   Box,
   Button,
-  Chip,
   Stack,
   Typography,
 } from '@mui/joy'
@@ -22,9 +21,6 @@ export default function PlayerHeader({
   breadcrumbs = [],
   player = {},
   seasonLabel = 'כל העונות',
-  reliabilityLabel = '-',
-  reliabilityColor = 'neutral',
-  hasScoutProfiles = false,
   favorite = false,
   favoriteLoading = false,
   onFavoriteToggle,
@@ -41,17 +37,6 @@ export default function PlayerHeader({
   const canNavigateToTeam = !!player.leagueId && !!player.teamId
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
-      {hasScoutProfiles ? (
-        <Chip
-          size='sm'
-          variant='soft'
-          color={reliabilityColor}
-          sx={sx.reliabilityChip}
-        >
-          {`אמינות פרופיל ${reliabilityLabel}`}
-        </Chip>
-      ) : null}
-
       <Stack direction='row' spacing={1} sx={sx.headerActions}>
         <Button
           sx={sx.primaryButton}

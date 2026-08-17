@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/playerDoc.upsert.js
+// src/features/playersDatabase/services/write/players/playerDoc.upsert.js
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { getTeamById } from '../../read/team.js'
@@ -14,6 +14,7 @@ import {
 import {
   buildPlayerSeasonDoc,
   buildPlayerSeasonRowsFromTeamDoc,
+  findPlayerSeasonRowIndex,
   removePlayerSeasonRow,
 } from './playerSeason.model.js'
 import {
@@ -24,6 +25,8 @@ import {
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
+import { buildPlayerScoutStatsLoadMeasurementHistory } from '../../../model/playerScoutMeasurement.model.js'
+import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 
@@ -74,6 +77,9 @@ export const upsertProfiledPlayerDoc = async ({
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
+    const verification = normalizeScoutingPlayerVerification(
+      currentData.verification
+    )
     const baseDoc = buildPlayerBaseDoc(
       {
         ...player,
@@ -85,12 +91,17 @@ export const upsertProfiledPlayerDoc = async ({
     )
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
-    const seasonDoc = buildPlayerSeasonDoc({
-      season: {
-        ...season,
-        seasonId,
-        seasonKey,
-      },
+    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
+      ? 'completed'
+      : 'active'
+    const seasonScope = {
+      ...season,
+      seasonId,
+      seasonKey,
+      seasonStatus,
+    }
+    const initialSeasonDoc = buildPlayerSeasonDoc({
+      season: seasonScope,
       team: resolvedTeam,
       player,
     })
@@ -99,11 +110,7 @@ export const upsertProfiledPlayerDoc = async ({
     const hydratedRows = shouldHydrateFromTeamDoc
       ? buildPlayerSeasonRowsFromTeamDoc({
           teamDoc,
-          season: {
-            ...season,
-            seasonId,
-            seasonKey,
-          },
+          season: seasonScope,
           team: resolvedTeam,
           player,
           target: isHistory ? 'history' : 'current',
@@ -113,17 +120,21 @@ export const upsertProfiledPlayerDoc = async ({
           history: [],
         }
 
-    const seasonScope = {
-      ...season,
-      seasonId,
-      seasonKey,
-    }
     const sourceCurrentRows = snapshot.exists()
       ? baseDoc.current
       : hydratedRows.current
     const sourceHistoryRows = snapshot.exists()
       ? baseDoc.history
       : hydratedRows.history
+    const sourceSeasonRows = isHistory ? sourceHistoryRows : sourceCurrentRows
+    const sourceSeasonIndex = findPlayerSeasonRowIndex({
+      rows: sourceSeasonRows,
+      season: seasonScope,
+      team: resolvedTeam,
+    })
+    const sourceSeasonRow = sourceSeasonIndex >= 0
+      ? sourceSeasonRows[sourceSeasonIndex]
+      : null
     const currentWithoutSeason = removePlayerSeasonRow({
       rows: sourceCurrentRows,
       season: seasonScope,
@@ -133,6 +144,44 @@ export const upsertProfiledPlayerDoc = async ({
       rows: sourceHistoryRows,
       season: seasonScope,
       team: resolvedTeam,
+    })
+    const playerSeasonStints = [
+      ...historyWithoutSeason,
+      ...currentWithoutSeason,
+      initialSeasonDoc,
+    ]
+    const scoutedPlayer = buildPlayerScoutState({
+      player: {
+        ...player,
+        playerSeasonStints,
+        playerReview: currentData.playerReview || player.playerReview || null,
+        manualImmediacyDecision:
+          currentData.manualImmediacyDecision ||
+          player.manualImmediacyDecision ||
+          null,
+        verification,
+        verificationAnswers: verification.answers,
+      },
+      team: resolvedTeam,
+      season: seasonScope,
+      verificationAnswers: verification.answers,
+      manualReview: currentData.playerReview || player.playerReview || null,
+      manualImmediacyDecision:
+        currentData.manualImmediacyDecision ||
+        player.manualImmediacyDecision ||
+        null,
+    })
+    const scoutStatsLoadMeasurementHistory = buildPlayerScoutStatsLoadMeasurementHistory({
+      existingHistory: sourceSeasonRow?.scoutStatsLoadMeasurementHistory,
+      measurements: player.scoutStatsLoadMeasurements,
+    })
+    const seasonDoc = buildPlayerSeasonDoc({
+      season: seasonScope,
+      team: resolvedTeam,
+      player: {
+        ...scoutedPlayer,
+        scoutStatsLoadMeasurementHistory,
+      },
     })
 
     const trackedAt = new Date().toISOString()
@@ -153,7 +202,7 @@ export const upsertProfiledPlayerDoc = async ({
       reason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
       season: seasonScope,
       team: resolvedTeam,
-      player,
+      player: scoutedPlayer,
       trackedAt,
     })
     const createdEvents = snapshot.exists()
@@ -176,9 +225,12 @@ export const upsertProfiledPlayerDoc = async ({
         currentData.favorite === true ||
         currentData.tracking?.favorite === true,
       tracking,
-      verification: normalizeScoutingPlayerVerification(
-        currentData.verification
-      ),
+      playerReview: scoutedPlayer.playerReview || baseDoc.playerReview || null,
+      manualImmediacyDecision:
+        scoutedPlayer.manualImmediacyDecision ||
+        baseDoc.manualImmediacyDecision ||
+        null,
+      verification,
       events,
       current: isHistory
         ? currentWithoutSeason
@@ -195,6 +247,10 @@ export const upsertProfiledPlayerDoc = async ({
       created: !snapshot.exists(),
       scoutProfilesCount: seasonDoc.scoutProfiles.length,
       trackingReason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
+      scoutedPlayer: {
+        ...scoutedPlayer,
+        playerDocumentId,
+      },
     }
   })
 }

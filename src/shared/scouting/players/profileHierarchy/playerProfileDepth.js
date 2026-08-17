@@ -5,14 +5,6 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(number) ? number : null
 }
 
-const resolveProfileRules = ({ profile, searchDistance = 0 }) => {
-  const deepRules = Array.isArray(profile?.deepRules) ? profile.deepRules : []
-
-  if (searchDistance >= 2 && deepRules.length) return deepRules
-
-  return Array.isArray(profile?.rules) ? profile.rules : []
-}
-
 const getGteDepth = ({ value, target }) => {
   const current = toFiniteNumber(value)
   const threshold = toFiniteNumber(target)
@@ -47,8 +39,8 @@ const getRuleDepth = ({ rule, metrics }) => {
   return null
 }
 
-export const buildPlayerProfileDepth = ({ profile, metrics, searchDistance = 0 } = {}) => {
-  const rules = resolveProfileRules({ profile, searchDistance })
+export const buildPlayerProfileDepth = ({ profile, metrics } = {}) => {
+  const rules = Array.isArray(profile?.rules) ? profile.rules : []
   const measurableRules = rules
     .map((rule) => {
       const depth = getRuleDepth({ rule, metrics })
@@ -64,7 +56,7 @@ export const buildPlayerProfileDepth = ({ profile, metrics, searchDistance = 0 }
     })
     .filter(Boolean)
   const depth = measurableRules.length
-    ? Math.min(...measurableRules.map((item) => item.depth))
+    ? Math.min(...measurableRules.map(item => item.depth))
     : 0
 
   return {

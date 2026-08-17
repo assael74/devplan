@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/playerSeason.patch.js
+// src/features/playersDatabase/services/write/players/playerSeason.patch.js
 
 import { serverTimestamp } from 'firebase/firestore'
 
@@ -9,10 +9,17 @@ import {
 } from '../leagues/leagueDoc.js'
 import {
   buildPlayerDocumentId,
+  normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
+  normalizePlayerScoutStory,
   playerDocRef,
 } from './playerDoc.model.js'
 import { findPlayerSeasonRowIndex } from './playerSeason.model.js'
+import { removePlayerScoutProfileFromComputedState } from '../../../domain/orchestration/mutatePlayerScoutProfileState.js'
+import {
+  normalizeScoutingPlayerTracking,
+  resolvePlayerTrackingReasons,
+} from './scoutingPlayerLifecycle.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export const patchPlayerSeason = async ({
@@ -21,6 +28,7 @@ export const patchPlayerSeason = async ({
   player = {},
   target = 'current',
   patch = {},
+  buildRootPatch = null,
 } = {}) => {
   const playerDocumentId = clean(
     player.playerDocumentId ||
@@ -77,9 +85,18 @@ export const patchPlayerSeason = async ({
         : row
     ))
 
+    const rootPatch = typeof buildRootPatch === 'function'
+      ? buildRootPatch({
+          data,
+          fieldKey,
+          nextRows,
+        })
+      : {}
+
     transaction.set(
       ref,
       {
+        ...rootPatch,
         [fieldKey]: nextRows,
         updatedAt: serverTimestamp(),
       },
@@ -129,42 +146,45 @@ export const updatePlayerSeasonRole = ({
     },
   })
 
-export const removePlayerSeasonScoutProfile = ({
-  profileId = '',
-  ...payload
-} = {}) => {
+export const removePlayerSeasonScoutProfile = ({ profileId = '', ...payload } = {}) => {
   const removeProfileId = clean(profileId)
-  const currentProfiles = Array.isArray(payload.player?.scoutProfiles)
-    ? payload.player.scoutProfiles
-    : []
-  const currentCombinations = Array.isArray(payload.player?.scoutCombinations)
-    ? payload.player.scoutCombinations
-    : []
-  const nextProfiles = removeProfileId
-    ? currentProfiles.filter(
-        profile => clean(profile.profileId || profile.id) !== removeProfileId
-      )
-    : []
-  const nextProfileIds = new Set(
-    nextProfiles
-      .map(profile => clean(profile.profileId || profile.id))
-      .filter(Boolean)
-  )
-  const nextCombinations = currentCombinations.filter(combination => {
-    const profileIds = Array.isArray(combination.profileIds)
-      ? combination.profileIds
-      : Array.isArray(combination.matchedProfileIds)
-        ? combination.matchedProfileIds
-        : []
+  if (!removeProfileId) throw new Error('Missing scout profile id')
 
-    return profileIds.every(profileId => nextProfileIds.has(clean(profileId)))
+  const nextPlayer = removePlayerScoutProfileFromComputedState({
+    player: payload.player || {},
+    profileId: removeProfileId,
   })
 
   return patchPlayerSeason({
     ...payload,
+    player: nextPlayer,
     patch: {
-      scoutProfiles: nextProfiles,
-      scoutCombinations: nextCombinations,
+      scoutProfiles: normalizePlayerScoutProfiles(nextPlayer),
+      scoutCombinations: normalizePlayerScoutCombinations(nextPlayer),
+      ...normalizePlayerScoutStory(nextPlayer),
+    },
+    buildRootPatch: ({ data, fieldKey, nextRows }) => {
+      const currentTracking = normalizeScoutingPlayerTracking({
+        ...(data.tracking || {}),
+        favorite:
+          data.tracking?.favorite === true ||
+          data.favorite === true,
+        watchlist:
+          data.tracking?.watchlist === true ||
+          data.watchlist === true,
+      })
+      const nextDocument = {
+        ...data,
+        [fieldKey]: nextRows,
+        tracking: currentTracking,
+      }
+
+      return {
+        tracking: {
+          ...currentTracking,
+          trackingReasons: resolvePlayerTrackingReasons(nextDocument),
+        },
+      }
     },
   })
 }

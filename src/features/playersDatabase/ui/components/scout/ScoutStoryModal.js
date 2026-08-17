@@ -148,8 +148,8 @@ export default function ScoutStoryModal({
   return (
     <RegularModal
       open={open}
-      title='סיפור סקאוט'
-      description='פירוט האיתות, ההקשר והאמינות של פרופיל השחקן.'
+      title='סיפור הסקאוטינג'
+      description='למה השחקן מעניין, מה ההקשר שלו ומה נכון לבדוק בהמשך.'
       iconId='performanceProfile'
       size='md'
       hideFooter

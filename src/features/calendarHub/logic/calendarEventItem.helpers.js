@@ -135,8 +135,61 @@ function resolveEventTeamFromContext(event, context) {
   return null
 }
 
+function resolveEventPlayerFromContext(event, context) {
+  if (!event) return null
+
+  const players = Array.isArray(context?.players) ? context.players : []
+  if (!players.length) return null
+
+  const eventPlayerId = event?.playerId || event?.player?.id || ''
+  const eventPlayerName = event?.playerName || event?.player?.playerFullName || event?.player?.name || ''
+
+  if (eventPlayerId) {
+    const byId = players.find((player) => player?.id === eventPlayerId)
+    if (byId) return byId
+  }
+
+  if (eventPlayerName) {
+    const byName = players.find((player) => {
+      const playerName = [
+        player?.playerFirstName,
+        player?.playerLastName,
+      ].filter(Boolean).join(' ').trim() ||
+        player?.playerFullName ||
+        player?.fullName ||
+        player?.name ||
+        ''
+
+      return playerName === eventPlayerName
+    })
+
+    if (byName) return byName
+  }
+
+  return null
+}
+
 export function buildCalendarEventMetaPhoto(event, context) {
   if (!event) return ''
+
+  if (event?.source === 'privatePlayer' || event?.meta?.kind === 'private_player_game') {
+    const player =
+      resolveEventPlayerFromContext(event, context) ||
+      event?.player ||
+      {
+        id: event?.playerId,
+        playerName: event?.playerName,
+        name: event?.playerName,
+      }
+
+    return (
+      resolveEntityAvatar({
+        entityType: 'privatePlayer',
+        entity: player,
+        subline: event?.clubName || event?.teamName || '',
+      }) || ''
+    )
+  }
 
   const team =
     resolveEventTeamFromContext(event, context) ||

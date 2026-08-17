@@ -6,6 +6,7 @@ const { notifyNow } = require('./src/http/notifications/notifyNow.http')
 const { onMeetingCreated } = require('./src/triggers/meetings/onMeetingCreated.trigger')
 const { onPendingRegistrationCreated } = require('./src/triggers/roles/onPendingRegistrationCreated.trigger')
 const { firestoreOfficialUsage } = require('./src/http/firestoreUsage/firestoreOfficialUsage.http')
+const { playerNarrative } = require('./src/http/narrative/playerNarrative.http')
 
 exports.submitPublicAbilitiesInvite = submitPublicAbilitiesInvite
 exports.shareAbilitiesInvite = shareAbilitiesInvite
@@ -15,3 +16,5 @@ exports.onMeetingCreated = onMeetingCreated
 exports.onPendingRegistrationCreated = onPendingRegistrationCreated
 
 exports.firestoreOfficialUsage = firestoreOfficialUsage
+
+exports.playerNarrative = playerNarrative

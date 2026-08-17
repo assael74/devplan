@@ -20,13 +20,24 @@ const buildIndexProfiles = document => [
   {
     profileId: document.primaryScoutProfileId,
     profileScore: document.primaryScoutScore,
-    profileReliability: document.primaryScoutReliabilityLevel,
+    interestLevel: document.primaryScoutInterestLevel,
+    profileStrength: document.primaryScoutProfileStrengthDepthPct !== null &&
+      document.primaryScoutProfileStrengthDepthPct !== undefined
+      ? {
+          depthPct: toDomainNumber(document.primaryScoutProfileStrengthDepthPct),
+        }
+      : null,
     warnings: toDomainArray(document.primaryScoutWarnings),
   },
   {
     profileId: document.secondaryScoutProfileId,
     profileScore: document.secondaryScoutScore,
-    profileReliability: document.secondaryScoutReliabilityLevel,
+    profileStrength: document.secondaryScoutProfileStrengthDepthPct !== null &&
+      document.secondaryScoutProfileStrengthDepthPct !== undefined
+      ? {
+          depthPct: toDomainNumber(document.secondaryScoutProfileStrengthDepthPct),
+        }
+      : null,
     warnings: toDomainArray(document.secondaryScoutWarnings),
   },
 ].filter(profile => cleanDomainValue(profile.profileId))
@@ -34,7 +45,10 @@ const buildIndexProfiles = document => [
 export const adaptPlayerSearchIndexDocument = document => {
   const source = document && typeof document === 'object' ? document : {}
   const result = createEmptyPlayerSeason()
-  const lifecycle = createLifecycle(source.sourceTarget === 'history' || source.seasonDataStatus === 'historical' ? 'history' : 'current')
+  const target = source.sourceTarget === 'history' || source.seasonDataStatus === 'historical'
+    ? 'history'
+    : 'current'
+  const lifecycle = createLifecycle(target, source.seasonStatus)
   const profiles = buildIndexProfiles(source)
   const statsStatus = normalizePlayerStatsStatus(
     source.statsStatus,
@@ -54,6 +68,7 @@ export const adaptPlayerSearchIndexDocument = document => {
     season: {
       seasonId: cleanDomainValue(source.seasonId),
       seasonKey: cleanDomainValue(source.seasonKey),
+      seasonStatus: lifecycle.seasonStatus,
       birthYear: toDomainNumber(source.birthYear),
     },
     lifecycle,
@@ -109,6 +124,88 @@ export const adaptPlayerSearchIndexDocument = document => {
       profileIds: source.scoutProfileIds,
       combinationIds: source.scoutCombinationIds,
       searchIds: source.scoutProfileSearchIds,
+      profileProgression: cleanDomainValue(source.nearScoutProfileId)
+        ? {
+            distances: [],
+            nearProfiles: [
+              {
+                profileId: cleanDomainValue(source.nearScoutProfileId),
+                distancePct: toDomainNumber(source.nearScoutProfileDistancePct),
+                trend: cleanDomainValue(source.nearScoutProfileTrend),
+              },
+            ],
+            nearestProfile: {
+              profileId: cleanDomainValue(source.nearScoutProfileId),
+              distancePct: toDomainNumber(source.nearScoutProfileDistancePct),
+              trend: cleanDomainValue(source.nearScoutProfileTrend),
+            },
+          }
+        : null,
+      opportunity: (
+        cleanDomainValue(source.scoutEffectiveImmediacyStatus) ||
+        cleanDomainValue(source.scoutAutomaticImmediacyStatus) ||
+        cleanDomainValue(source.scoutManualImmediacyStatus)
+      )
+        ? {
+            effectiveActionStatus: cleanDomainValue(source.scoutEffectiveImmediacyStatus),
+            baseActionStatus: cleanDomainValue(source.scoutBaseImmediacyStatus) || 'watch',
+            automaticActionStatus: cleanDomainValue(source.scoutAutomaticImmediacyStatus) || 'watch',
+            manualActionStatus: cleanDomainValue(source.scoutManualImmediacyStatus),
+            hasManualDecision: Boolean(source.scoutHasManualImmediacyDecision),
+            boostScore: toDomainNumberOrZero(source.scoutImmediacyBoostScore),
+            reductionScore: toDomainNumberOrZero(source.scoutImmediacyReductionScore),
+            netScore: toDomainNumberOrZero(source.scoutImmediacyNetScore),
+            boosts: toDomainArray(source.scoutImmediacyBoostIds).map(id => ({ id })),
+            reductions: toDomainArray(source.scoutImmediacyReductionIds).map(id => ({ id })),
+            signalPersistence: {
+              profileRepeat: {
+                seasons: toDomainNumberOrZero(source.scoutProfilePersistenceSeasons),
+              },
+              combinationRepeat: {
+                seasons: toDomainNumberOrZero(source.scoutCombinationPersistenceSeasons),
+              },
+              decay: {
+                seasonsWithoutSignal: toDomainNumberOrZero(source.scoutSignalDecaySeasons),
+                lastSignalSeasonKey: cleanDomainValue(source.scoutSignalDecayLastSeasonKey),
+              },
+            },
+            exposureLevel: cleanDomainValue(source.scoutExposureLevel),
+          }
+        : null,
+      profileCaseStrength: (
+        toDomainNumberOrZero(source.scoutProfileCaseStrengthProfileCount) > 0 ||
+        Boolean(source.scoutProfileCaseHasCombination)
+      )
+        ? {
+            profileCount: toDomainNumberOrZero(source.scoutProfileCaseStrengthProfileCount),
+            hasDefinedCombination: Boolean(source.scoutProfileCaseHasCombination),
+            combinationIds: toDomainArray(source.scoutProfileCaseCombinationIds),
+            primaryProfileId: cleanDomainValue(source.primaryScoutProfileId),
+          }
+        : null,
+      verification: cleanDomainValue(source.scoutNextBestCheckId)
+        ? {
+            nextBestCheck: {
+              questionId: cleanDomainValue(source.scoutNextBestCheckId),
+            },
+          }
+        : null,
+      transferContext: (
+        cleanDomainValue(source.scoutTransferMoveType) ||
+        cleanDomainValue(source.scoutTransferDirection) ||
+        cleanDomainValue(source.scoutTransferFromClubId) ||
+        cleanDomainValue(source.scoutTransferToClubId)
+      )
+        ? {
+            type: 'transfer',
+            moveType: cleanDomainValue(source.scoutTransferMoveType),
+            direction: cleanDomainValue(source.scoutTransferDirection),
+            fromClubId: cleanDomainValue(source.scoutTransferFromClubId),
+            toClubId: cleanDomainValue(source.scoutTransferToClubId),
+            sameSeason: Boolean(source.scoutTransferSameSeason),
+          }
+        : null,
+      engineVersion: cleanDomainValue(source.scoutEngineVersion),
     }),
     expectedLevelDelta: source.expectedLevelDelta === null || source.expectedLevelDelta === undefined ? null : toDomainNumber(source.expectedLevelDelta),
     completeness: {

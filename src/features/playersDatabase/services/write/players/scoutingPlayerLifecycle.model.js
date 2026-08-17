@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/scoutingPlayerLifecycle.model.js
+// src/features/playersDatabase/services/write/players/scoutingPlayerLifecycle.model.js
 
 import { clean } from '../leagues/leagueDoc.js'
 
@@ -44,6 +44,49 @@ export const normalizeScoutingPlayerTrackingReason = value => {
     : SCOUTING_PLAYER_TRACKING_REASONS.MANUAL
 }
 
+
+const hasScoutProfiles = source => (
+  (Array.isArray(source?.scoutProfiles) && source.scoutProfiles.length > 0) ||
+  (Array.isArray(source?.scoutSignals) && source.scoutSignals.length > 0)
+)
+
+const hasScoutProfilesInPlayer = player => (
+  hasScoutProfiles(player) ||
+  ['current', 'history'].some(target => (
+    (Array.isArray(player?.[target]) ? player[target] : []).some(hasScoutProfiles)
+  ))
+)
+
+export const resolvePlayerTrackingReasons = player => {
+  const tracking = player?.tracking && typeof player.tracking === 'object'
+    ? player.tracking
+    : {}
+  const storedReasons = (Array.isArray(tracking.trackingReasons)
+    ? tracking.trackingReasons
+    : [])
+    .map(normalizeScoutingPlayerTrackingReason)
+    .filter(reason => (
+      reason === SCOUTING_PLAYER_TRACKING_REASONS.MANUAL ||
+      reason === SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER
+    ))
+  const favorite = tracking.favorite === true || player?.favorite === true
+  const watchlist = tracking.watchlist === true || player?.watchlist === true
+  const reasons = [
+    ...storedReasons,
+    favorite ? SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE : '',
+    watchlist ? SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST : '',
+    hasScoutProfilesInPlayer(player)
+      ? SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+      : '',
+  ].filter(Boolean)
+
+  return [...new Set(reasons)]
+}
+
+export const shouldHavePlayerDocument = player => (
+  resolvePlayerTrackingReasons(player).length > 0
+)
+
 export const normalizeScoutingPlayerTracking = value => {
   const tracking = value && typeof value === 'object'
     ? value
@@ -65,11 +108,7 @@ export const normalizeScoutingPlayerTracking = value => {
   }
 }
 
-export const buildScoutingPlayerTracking = ({
-  currentTracking = {},
-  reason = '',
-  trackedAt = '',
-} = {}) => {
+export const buildScoutingPlayerTracking = ({ currentTracking = {}, reason = '', trackedAt = '' } = {}) => {
   const normalizedReason = normalizeScoutingPlayerTrackingReason(reason)
   const current = normalizeScoutingPlayerTracking(currentTracking)
   const trackingReasons = [
@@ -99,6 +138,8 @@ export const buildScoutingPlayerEventKey = event => [
   clean(event.profileId),
   clean(event.fromClubId),
   clean(event.toClubId),
+  clean(event.fromBirthTeamId),
+  clean(event.toBirthTeamId),
 ].filter(Boolean).join('__')
 
 export const normalizeScoutingPlayerEvents = value => {
@@ -168,13 +209,27 @@ export const buildScoutingPlayerReasonEvents = ({
     const event = {
       ...baseEvent,
       fromClubId: clean(transfer.fromClubId || team.clubId),
+      fromClubName: clean(transfer.fromClubName || team.clubName || team.displayName),
       toClubId: clean(transfer.toClubId),
+      toClubName: clean(transfer.toClubName),
       fromBirthTeamId: clean(
         transfer.fromBirthTeamId ||
         team.birthTeamId ||
         team.teamId
       ),
+      fromBirthTeamDocumentId: clean(
+        transfer.fromBirthTeamDocumentId ||
+        team.birthTeamDocumentId ||
+        team.teamDocumentId
+      ),
       toBirthTeamId: clean(transfer.toBirthTeamId),
+      toBirthTeamDocumentId: clean(transfer.toBirthTeamDocumentId),
+      direction: clean(transfer.direction),
+      moveType: clean(transfer.moveType),
+      fromClubStrengthLevel: transfer.fromClubStrengthLevel || null,
+      toClubStrengthLevel: transfer.toClubStrengthLevel || null,
+      fromLeagueLevel: transfer.fromLeagueLevel || null,
+      toLeagueLevel: transfer.toLeagueLevel || null,
     }
 
     return [{
@@ -193,10 +248,7 @@ export const buildScoutingPlayerReasonEvents = ({
   }]
 }
 
-export const mergeScoutingPlayerEvents = ({
-  currentEvents = [],
-  nextEvents = [],
-} = {}) => {
+export const mergeScoutingPlayerEvents = ({ currentEvents = [], nextEvents = [] } = {}) => {
   const eventsByKey = new Map()
 
   normalizeScoutingPlayerEvents(currentEvents).forEach(event => {

@@ -14,22 +14,18 @@ import {
 import {
   buildSpotlight,
   isDefensivePosition,
-  resolveSpotlightConfidence,
 } from './playerSpotlights.utils.js'
 
-const buildEarlyBreakthroughSpotlight = ({ profile, metrics, reliability }) => {
+const buildEarlyBreakthroughSpotlight = ({ profile, metrics }) => {
   if (!metrics.isYoungerAgeGroup) return null
   if (metrics.games < 3) return null
 
-  const sampleLevel = reliability.factors?.sampleSize?.level || ''
-  const confidence = metrics.games >= 6
-    ? sampleLevel || PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM
-    : PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.LOW
-
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.EARLY_BREAKTHROUGH,
-    confidence,
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+    confidence: metrics.games >= 6
+      ? PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.HIGH
+      : PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: [
       'younger_age_group',
       'meaningful_games_sample',
@@ -42,14 +38,14 @@ const buildEarlyBreakthroughSpotlight = ({ profile, metrics, reliability }) => {
   })
 }
 
-const buildCompetitionSpotlight = ({ scoutContext, reliability }) => {
+const buildCompetitionSpotlight = ({ scoutContext }) => {
   const competition = scoutContext.competition || {}
 
   if (competition.classification === PLAYER_COMPETITION_CONTEXT.ABOVE_CLUB_LEVEL) {
     return buildSpotlight({
       id: PLAYER_SCOUT_SPOTLIGHT.PLAYS_ABOVE_CLUB_LEVEL,
       confidence: PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.HIGH,
-      effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+      effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
       evidence: ['league_stronger_than_club_level'],
       details: {
         clubLevel: competition.clubLevel,
@@ -78,7 +74,7 @@ const buildCompetitionSpotlight = ({ scoutContext, reliability }) => {
   return null
 }
 
-const buildTeamContextSpotlight = ({ scoutContext, reliability }) => {
+const buildTeamContextSpotlight = ({ scoutContext }) => {
   const teamContext = scoutContext.team || {}
 
   if (teamContext.classification === PLAYER_TEAM_CONTEXT.ADVERSE) {
@@ -112,14 +108,13 @@ const buildTeamContextSpotlight = ({ scoutContext, reliability }) => {
   return null
 }
 
-const buildUnderexposedSpotlight = ({ metrics, reliability }) => {
+const buildUnderexposedSpotlight = ({ metrics }) => {
   if (!metrics.clubStrengthLevel || metrics.clubStrengthLevel < 3) return null
-  if (reliability.level === 'low') return null
 
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.UNDEREXPOSED,
-    confidence: resolveSpotlightConfidence(reliability),
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+    confidence: PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: ['signal_outside_top_club_levels'],
     details: {
       clubLevel: metrics.clubLevel,
@@ -128,11 +123,10 @@ const buildUnderexposedSpotlight = ({ metrics, reliability }) => {
   })
 }
 
-const buildHiddenPerformerSpotlight = ({ metrics, scoutContext, reliability }) => {
+const buildHiddenPerformerSpotlight = ({ metrics, scoutContext }) => {
   const teamContext = scoutContext.team || {}
 
   if (teamContext.classification !== PLAYER_TEAM_CONTEXT.ADVERSE) return null
-  if (reliability.level === 'low') return null
 
   const hasOutputSignal = metrics.goals >= 5 || metrics.minutesPct >= 0.85
 
@@ -140,8 +134,8 @@ const buildHiddenPerformerSpotlight = ({ metrics, scoutContext, reliability }) =
 
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.HIDDEN_PERFORMER,
-    confidence: resolveSpotlightConfidence(reliability),
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+    confidence: PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: [
       'profile_detected_in_adverse_environment',
       'meaningful_individual_output',
@@ -154,7 +148,7 @@ const buildHiddenPerformerSpotlight = ({ metrics, scoutContext, reliability }) =
   })
 }
 
-const buildPositionalOutlierSpotlight = ({ profile, player, metrics, reliability }) => {
+const buildPositionalOutlierSpotlight = ({ profile, player, metrics }) => {
   const attackingProfile = profile.group === 'attack' || profile.group === 'attack_creation'
 
   if (!attackingProfile) return null
@@ -163,8 +157,8 @@ const buildPositionalOutlierSpotlight = ({ profile, player, metrics, reliability
 
   return buildSpotlight({
     id: PLAYER_SCOUT_SPOTLIGHT.POSITIONAL_OUTLIER,
-    confidence: resolveSpotlightConfidence(reliability),
-    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.SUPPORTS_ACTION,
+    confidence: PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE.MEDIUM,
+    effect: PLAYER_SCOUT_SPOTLIGHT_EFFECT.CONTEXT_ONLY,
     evidence: [
       'attacking_signal_from_defensive_position',
       'meaningful_goal_output',
@@ -180,16 +174,15 @@ export const buildPlayerCurrentSpotlights = ({
   profile,
   player,
   metrics,
-  reliability,
   scoutContext,
 }) => {
   const candidates = [
-    buildEarlyBreakthroughSpotlight({ profile, metrics, reliability }),
-    buildCompetitionSpotlight({ scoutContext, reliability }),
-    buildTeamContextSpotlight({ scoutContext, reliability }),
-    buildUnderexposedSpotlight({ metrics, reliability }),
-    buildHiddenPerformerSpotlight({ metrics, scoutContext, reliability }),
-    buildPositionalOutlierSpotlight({ profile, player, metrics, reliability }),
+    buildEarlyBreakthroughSpotlight({ profile, metrics }),
+    buildCompetitionSpotlight({ scoutContext }),
+    buildTeamContextSpotlight({ scoutContext }),
+    buildUnderexposedSpotlight({ metrics }),
+    buildHiddenPerformerSpotlight({ metrics, scoutContext }),
+    buildPositionalOutlierSpotlight({ profile, player, metrics }),
   ]
 
   return candidates.filter(Boolean)

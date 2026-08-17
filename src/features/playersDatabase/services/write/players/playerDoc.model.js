@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/playerDoc.model.js
+// src/features/playersDatabase/services/write/players/playerDoc.model.js
 
 import {
   doc,
@@ -12,6 +12,11 @@ import {
   toNumberOrZero,
 } from '../leagues/leagueDoc.js'
 import { pickDefinedValue } from '../../../model/value.model.js'
+import {
+  normalizeScoutingPlayerEvents,
+  normalizeScoutingPlayerTracking,
+} from './scoutingPlayerLifecycle.model.js'
+import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
 import {
   buildPlayerDocumentId as buildCanonicalPlayerDocumentId,
   buildPlayerMatchValues,
@@ -46,11 +51,44 @@ const compactScoutValue = value => {
   return value
 }
 
+const normalizePlayerScoutTrajectory = value => {
+  const trajectory = value && typeof value === 'object'
+    ? value
+    : null
+
+  if (!trajectory) return null
+
+  return compactScoutValue({
+    direction: trajectory.direction,
+    confidence: trajectory.confidence,
+    evidence: Array.isArray(trajectory.evidence) ? trajectory.evidence : [],
+    stintsCount: trajectory.stintsCount,
+    seasonsCount: trajectory.seasonsCount,
+    latestTransfer: trajectory.latestTransfer || null,
+    transferEvents: Array.isArray(trajectory.transferEvents)
+      ? trajectory.transferEvents
+      : [],
+  })
+}
+
 const normalizeScoutProfileArray = values => (
   Array.isArray(values)
     ? values.map(compactScoutValue).filter(Boolean)
     : []
 )
+
+export const normalizePlayerScoutStory = player => ({
+  scoutCandidateSignals: normalizeScoutProfileArray(player?.scoutCandidateSignals),
+  scoutSpotlights: normalizeScoutProfileArray(player?.scoutSpotlights),
+  scoutOpportunity: compactScoutValue(player?.scoutOpportunity || null),
+  scoutVerification: compactScoutValue(player?.scoutVerification || null),
+  scoutProfileProgression: compactScoutValue(player?.scoutProfileProgression || null),
+  scoutProfileHierarchy: compactScoutValue(player?.scoutProfileHierarchy || null),
+  scoutProfileCaseStrength: compactScoutValue(player?.scoutProfileCaseStrength || null),
+  scoutTrajectory: normalizePlayerScoutTrajectory(player?.scoutTrajectory),
+  scoutTransferContext: compactScoutValue(player?.scoutTransferContext || null),
+  scoutEngineVersion: clean(player?.scoutEngineVersion),
+})
 
 export const normalizePlayerScoutProfiles = player => {
   const scoutSignals = Array.isArray(player?.scoutSignals)
@@ -67,22 +105,13 @@ export const normalizePlayerScoutProfiles = player => {
 
   return sourceProfiles
     .filter(profile => clean(profile.profileId || profile.id))
-    .map((profile) => {
-      const reliabilityScoreValue = pickDefinedValue(
-        profile.reliability?.score,
-        profile.reliabilityScore
-      )
-      const reliabilityScore = Number.isFinite(Number(reliabilityScoreValue))
-        ? Number(reliabilityScoreValue)
-        : null
+    .map(profile => {
       const warnings = [
         ...new Set(
           (
             Array.isArray(profile.warnings)
               ? profile.warnings
-              : Array.isArray(profile.reliability?.warnings)
-                ? profile.reliability.warnings
-                : []
+              : []
           )
             .map(clean)
             .filter(Boolean)
@@ -92,22 +121,13 @@ export const normalizePlayerScoutProfiles = player => {
       return compactScoutValue({
         profileId: clean(profile.profileId || profile.id),
         profileLabel: clean(profile.profileLabel || profile.label),
-        engineVersion: clean(profile.engineVersion),
         perspective: clean(profile.perspective),
         searchLevels: normalizeScoutProfileArray(profile.searchLevels),
         teamFilter: clean(profile.teamFilter),
         positionContext: clean(profile.positionContext),
         interestLevel: clean(profile.interestLevel || profile.interest),
         profileDepth: profile.profileDepth || null,
-        reliability: {
-          ...(profile.reliability || {}),
-          level: clean(
-            profile.reliability?.level ||
-            profile.reliabilityLevel ||
-            ''
-          ),
-          score: reliabilityScore,
-        },
+        profileStrength: profile.profileStrength || null,
         warnings,
         score: Number.isFinite(Number(profile.score))
           ? Number(profile.score)
@@ -116,10 +136,9 @@ export const normalizePlayerScoutProfiles = player => {
         requiredReview: normalizeScoutProfileArray(
           profile.requiredReview || profile.reviews
         ),
-        matchedRules: normalizeScoutProfileArray(profile.matchedRules),
+        matchEvidence: normalizeScoutProfileArray(profile.matchEvidence),
         scoutContext: profile.scoutContext || null,
         spotlights: normalizeScoutProfileArray(profile.spotlights),
-        opportunity: profile.opportunity || null,
       })
     })
 }
@@ -210,86 +229,118 @@ export const playerDocRef = playerDocumentId =>
     clean(playerDocumentId)
   )
 
-export const buildPlayerBaseDoc = (
-  player = {},
-  currentData = {},
-  season = {},
-  team = {}
-) => ({
-  id: clean(
-    player.playerDocumentId ||
-    buildPlayerDocumentId(player)
-  ),
+export const buildPlayerBaseDoc = (player = {}, currentData = {}, season = {}, team = {}) => {
+  const currentTracking = normalizeScoutingPlayerTracking({
+    ...(currentData.tracking || {}),
+    favorite:
+      currentData.tracking?.favorite === true ||
+      currentData.favorite === true,
+    watchlist: currentData.tracking?.watchlist === true,
+  })
 
-  externalPlayerId: clean(
-    player.externalPlayerId ||
-    currentData.externalPlayerId
-  ),
+  return {
+    id: clean(
+      player.playerDocumentId ||
+      buildPlayerDocumentId(player)
+    ),
 
-  fullName: clean(
-    player.fullName ||
-    currentData.fullName
-  ),
+    externalPlayerId: clean(
+      player.externalPlayerId ||
+      currentData.externalPlayerId
+    ),
 
-  normalizedName: normalizePlayerNameValue(
-    player.normalizedName ||
-    player.fullName ||
-    currentData.normalizedName
-  ),
+    fullName: clean(
+      player.fullName ||
+      currentData.fullName
+    ),
 
-  birthYear: resolvePlayerIdentityBirthYear({
-    player,
-    season,
-  }) || toNumberOrZero(
-    pickDefinedValue(
-      player.birthYear,
-      season.birthYear,
-      team.birthYear,
-      currentData.birthYear
-    )
-  ) || null,
+    normalizedName: normalizePlayerNameValue(
+      player.normalizedName ||
+      player.fullName ||
+      currentData.normalizedName
+    ),
 
-  birthDate: pickDefinedValue(
-    currentData.birthDate,
-    null
-  ),
+    birthYear: resolvePlayerIdentityBirthYear({
+      player,
+      season,
+    }) || toNumberOrZero(
+      pickDefinedValue(
+        player.birthYear,
+        season.birthYear,
+        team.birthYear,
+        currentData.birthYear
+      )
+    ) || null,
 
-  status: clean(
-    currentData.status
-  ),
+    birthDate: pickDefinedValue(
+      currentData.birthDate,
+      null
+    ),
 
-  notes: clean(
-    player.rootNotes ||
-    currentData.notes
-  ),
+    status: clean(
+      currentData.status
+    ),
 
-  primaryPosition: clean(
-    player.primaryPosition ||
-    currentData.primaryPosition
-  ),
+    favorite:
+      currentData.favorite === true ||
+      currentTracking.favorite === true,
 
-  positionLayer: clean(
-    player.positionLayer ||
-    currentData.positionLayer
-  ),
+    notes: clean(
+      player.rootNotes ||
+      currentData.notes
+    ),
 
-  numShirt: clean(
-    player.numShirt ||
-    currentData.numShirt
-  ),
+    primaryPosition: clean(
+      player.primaryPosition ||
+      currentData.primaryPosition
+    ),
 
-  current: Array.isArray(currentData.current)
-    ? currentData.current
-    : [],
+    positionLayer: clean(
+      player.positionLayer ||
+      currentData.positionLayer
+    ),
 
-  history: Array.isArray(currentData.history)
-    ? currentData.history
-    : [],
+    numShirt: clean(
+      player.numShirt ||
+      currentData.numShirt
+    ),
 
+    tracking: currentTracking,
 
-  createdAt:
-    currentData.createdAt ||
-    serverTimestamp(),
+    playerReview: compactScoutValue(
+      player.playerReview ||
+      currentData.playerReview ||
+      null
+    ),
 
-  updatedAt: serverTimestamp(),
-})
+    manualImmediacyDecision: compactScoutValue(
+      player.manualImmediacyDecision ||
+      currentData.manualImmediacyDecision ||
+      null
+    ),
+
+    manualImmediacyHistory: normalizeScoutProfileArray(
+      currentData.manualImmediacyHistory
+    ),
+
+    verification: normalizeScoutingPlayerVerification(
+      currentData.verification
+    ),
+
+    events: normalizeScoutingPlayerEvents(currentData.events),
+
+    current: Array.isArray(currentData.current)
+      ? currentData.current
+      : [],
+
+    history: Array.isArray(currentData.history)
+      ? currentData.history
+      : [],
+
+    createdAt:
+      currentData.createdAt ||
+      serverTimestamp(),
+
+    updatedAt: serverTimestamp(),
+  }
+}

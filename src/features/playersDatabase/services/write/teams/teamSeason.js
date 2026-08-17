@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/teams/teamSeason.js
+// src/features/playersDatabase/services/write/teams/teamSeason.js
 
 /**
  * Compatibility export for team-season write services.
@@ -17,9 +17,11 @@ export {
 } from './teamSeasonStats.js'
 
 export {
+  removeTeamSeasonPlayerScoutProfile,
   updateTeamSeasonPlayerScoutProfiles,
   updateTeamSeasonPlayerRole,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
+  updateTeamSeasonPlayerVerificationAndScout,
   updateTeamSeasonPlayerUrl,
 } from './teamSeasonPlayer.js'
 
@@ -27,3 +29,8 @@ export {
   updateTeamSeasonsMetaMany,
   updateTeamSeasonTeamUrl,
 } from './teamSeasonMeta.js'
+
+export {
+  updateLeagueTeamPlayersScoutContextMany,
+  updateTeamSeasonPlayersScoutContext,
+} from './teamSeasonScoutContext.js'

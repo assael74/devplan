@@ -1,7 +1,6 @@
-// features/playersDatabase/services/write/teams/teamSeason.model.js
+// src/features/playersDatabase/services/write/teams/teamSeason.model.js
 
 import {
-  buildSeasonKey,
   clean,
   toNumberOrZero,
 } from '../leagues/leagueDoc.js'
@@ -29,20 +28,24 @@ import {
   pickDefinedValue,
 } from '../../../model/value.model.js'
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
+import { PLAYER_SCOUT_ACTIVE_ENGINE } from '../../../domain/orchestration/buildDbPlayerScoutResult.js'
+import {
+  buildPlayerScoutStatsLoadMeasurement,
+  buildPlayerScoutStatsLoadMeasurements,
+  normalizePlayerScoutStatsLoadMeasurements,
+} from '../../../model/playerScoutMeasurement.model.js'
 import {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
+  normalizePlayerScoutStory,
 } from '../players/index.js'
 
 const normalizePlayerName = normalizePlayerNameValue
 const normalizeIdPart = normalizePlayerIdPart
 
-const buildInternalPlayerId = ({
-  player = {},
-  season = {},
-} = {}) => {
+const buildInternalPlayerId = ({ player = {}, season = {} } = {}) => {
   const identity = normalizePlayerIdentity(player)
   if (identity.playerId) return identity.playerId
 
@@ -108,6 +111,7 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     playerUrl: clean(player.playerUrl),
     notes: clean(player.notes),
     rosterStatus: clean(player.rosterStatus) || 'regular',
+    manualTransferDirection: clean(player.manualTransferDirection),
     isYoungerAgeGroup: Boolean(
       player.isYoungerAgeGroup ||
       clean(player.rosterStatus) === 'youngerAgeGroup'
@@ -140,6 +144,10 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     },
     scoutProfiles: normalizePlayerScoutProfiles(player),
     scoutCombinations: normalizePlayerScoutCombinations(player),
+    ...normalizePlayerScoutStory(player),
+    scoutStatsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(
+      player.scoutStatsLoadMeasurements
+    ),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -162,10 +170,7 @@ export const buildPlayerLookup = players => {
   return lookup
 }
 
-export const findExistingPlayerIndex = ({
-  lookup,
-  player,
-} = {}) => {
+export const findExistingPlayerIndex = ({ lookup, player } = {}) => {
   const keys = getPlayerMergeKeys(player)
 
   for (const key of keys) {
@@ -179,10 +184,7 @@ const shouldAppendStatsPlayer = player => Boolean(
   clean(player.playerId || player.externalPlayerId || player.fullName)
 )
 
-const mergePlayerAliases = ({
-  existingPlayer = {},
-  statsPlayer = {},
-} = {}) => {
+const mergePlayerAliases = ({ existingPlayer = {}, statsPlayer = {} } = {}) => {
   const existingName = normalizePlayerName(existingPlayer.fullName)
   const statsName = clean(statsPlayer.fullName)
   const statsNameKey = normalizePlayerName(statsName)
@@ -196,98 +198,18 @@ const mergePlayerAliases = ({
 }
 
 
-const mergeScoutProfiles = ({
-  existingProfiles = [],
-  nextProfiles = [],
-} = {}) => {
-  const profiles = new Map()
-
-  ;(Array.isArray(existingProfiles) ? existingProfiles : []).forEach(profile => {
-    const profileId = clean(profile?.profileId)
-    if (!profileId) return
-    profiles.set(profileId, profile)
-  })
-
-  ;(Array.isArray(nextProfiles) ? nextProfiles : []).forEach(profile => {
-    const profileId = clean(profile?.profileId)
-    if (!profileId) return
-    profiles.set(profileId, profile)
-  })
-
-  return [...profiles.values()]
-}
-
-const mergeScoutCombinations = ({
-  existingCombinations = [],
-  nextCombinations = [],
-} = {}) => {
-  const combinations = new Map()
-
-  ;(Array.isArray(existingCombinations) ? existingCombinations : []).forEach(combination => {
-    const combinationId = clean(combination?.id || combination?.combinationId)
-    if (!combinationId) return
-    combinations.set(combinationId, combination)
-  })
-
-  ;(Array.isArray(nextCombinations) ? nextCombinations : []).forEach(combination => {
-    const combinationId = clean(combination?.id || combination?.combinationId)
-    if (!combinationId) return
-    combinations.set(combinationId, combination)
-  })
-
-  return [...combinations.values()]
-}
-
-const resolveMergedScoutCombinations = ({
-  existingPlayer = {},
-  statsPlayer = {},
-  scoutSyncMode = 'replace',
-} = {}) => {
-  const rosterStatus = clean(statsPlayer.rosterStatus || existingPlayer.rosterStatus)
-  const nextCombinations = Array.isArray(statsPlayer.scoutCombinations)
-    ? statsPlayer.scoutCombinations
-    : []
-
-  if (rosterStatus === 'transferredOut') return []
-  if (scoutSyncMode !== 'preserve') return nextCombinations
-
-  return mergeScoutCombinations({
-    existingCombinations: existingPlayer.scoutCombinations,
-    nextCombinations,
-  })
-}
-
-const resolveMergedScoutProfiles = ({
-  existingPlayer = {},
-  statsPlayer = {},
-  scoutSyncMode = 'replace',
-} = {}) => {
-  const rosterStatus = clean(statsPlayer.rosterStatus || existingPlayer.rosterStatus)
-  const nextProfiles = Array.isArray(statsPlayer.scoutProfiles)
-    ? statsPlayer.scoutProfiles
-    : []
-
-  if (rosterStatus === 'transferredOut') return []
-  if (scoutSyncMode !== 'preserve') return nextProfiles
-
-  return mergeScoutProfiles({
-    existingProfiles: existingPlayer.scoutProfiles,
-    nextProfiles,
-  })
-}
-
-const mergeExistingTeamPlayerStats = ({
-  existingPlayer = {},
-  statsPlayer = {},
-  scoutSyncMode = 'replace',
-} = {}) => ({
+const mergeExistingTeamPlayerStats = ({ existingPlayer = {}, statsPlayer = {} } = {}) => ({
   ...existingPlayer,
   playerId: clean(existingPlayer.playerId || statsPlayer.playerId),
   playerDocumentId: clean(statsPlayer.playerDocumentId || existingPlayer.playerDocumentId),
   externalPlayerId: clean(statsPlayer.externalPlayerId || existingPlayer.externalPlayerId),
   identityKey: clean(statsPlayer.identityKey || existingPlayer.identityKey),
   fullName: clean(existingPlayer.fullName || statsPlayer.fullName),
-  normalizedName: normalizePlayerName(existingPlayer.normalizedName || existingPlayer.fullName || statsPlayer.fullName),
+  normalizedName: normalizePlayerName(
+    existingPlayer.normalizedName ||
+    existingPlayer.fullName ||
+    statsPlayer.fullName
+  ),
   aliases: mergePlayerAliases({
     existingPlayer,
     statsPlayer,
@@ -295,6 +217,10 @@ const mergeExistingTeamPlayerStats = ({
   playerUrl: clean(statsPlayer.playerUrl || existingPlayer.playerUrl),
   notes: clean(existingPlayer.notes || statsPlayer.notes),
   rosterStatus: clean(statsPlayer.rosterStatus || existingPlayer.rosterStatus) || 'regular',
+  manualTransferDirection: clean(
+    statsPlayer.manualTransferDirection ||
+    existingPlayer.manualTransferDirection
+  ),
   isYoungerAgeGroup: Boolean(
     statsPlayer.isYoungerAgeGroup ||
     existingPlayer.isYoungerAgeGroup ||
@@ -305,84 +231,96 @@ const mergeExistingTeamPlayerStats = ({
   numShirt: clean(existingPlayer.numShirt || statsPlayer.numShirt),
   statsStatus: PLAYER_STATS_STATUS.LOADED,
   playerStats: normalizePlayerStats(statsPlayer),
-  scoutProfiles: resolveMergedScoutProfiles({
-    existingPlayer,
-    statsPlayer,
-    scoutSyncMode,
-  }),
-  scoutCombinations: resolveMergedScoutCombinations({
-    existingPlayer,
-    statsPlayer,
-    scoutSyncMode,
-  }),
-  updatedAt: new Date().toISOString(),
 })
 
-const resetTeamPlayerStats = ({
-  player = {},
-  team = {},
-  season = {},
-  scoutSyncMode = 'replace',
-} = {}) => {
-  const resetPlayer = {
-    ...player,
-    statsStatus: PLAYER_STATS_STATUS.LOADED,
-    playerStats: normalizePlayerStats({}),
-    scoutSignals: undefined,
-    scoutProfiles: undefined,
-    scoutCombinations: undefined,
-    bestScoutSignal: undefined,
+const buildScoutCalculationMeasurements = ({ existingMeasurements = {}, player = {}, team = {} } = {}) => {
+  const incomingMeasurement = buildPlayerScoutStatsLoadMeasurement({
+    player: {
+      ...player,
+      scoutEngineVersion: PLAYER_SCOUT_ACTIVE_ENGINE,
+    },
+    team,
+  })
+  const currentMeasurement = existingMeasurements.current
+  const unchanged = Boolean(
+    currentMeasurement?.snapshotKey &&
+    currentMeasurement.snapshotKey === incomingMeasurement.snapshotKey &&
+    currentMeasurement.engineVersion === incomingMeasurement.engineVersion
+  )
+
+  if (unchanged) return existingMeasurements
+
+  return {
+    previous: currentMeasurement,
+    current: currentMeasurement,
   }
+}
+
+const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = {}, season = {} } = {}) => {
+  const existingMeasurements = normalizePlayerScoutStatsLoadMeasurements(
+    existingPlayer?.scoutStatsLoadMeasurements
+  )
+  const calculationMeasurements = buildScoutCalculationMeasurements({
+    existingMeasurements,
+    player,
+    team,
+  })
   const calculatedPlayer = buildPlayerScoutState({
-    player: resetPlayer,
+    player: {
+      ...player,
+      scoutStatsLoadMeasurements: calculationMeasurements,
+      scoutSignals: undefined,
+      scoutProfiles: undefined,
+      scoutCombinations: undefined,
+      bestScoutSignal: undefined,
+    },
     team,
     season,
-    perspective: 'players_database_stats_reset',
+    perspective: 'players_database_stats_write',
+  })
+  const scoutStatsLoadMeasurements = buildPlayerScoutStatsLoadMeasurements({
+    existingMeasurements,
+    player: calculatedPlayer,
+    team,
   })
 
   return {
     ...calculatedPlayer,
-    scoutProfiles: scoutSyncMode === 'preserve'
-      ? mergeScoutProfiles({
-          existingProfiles: normalizePlayerScoutProfiles(player),
-          nextProfiles: calculatedPlayer.scoutProfiles,
-        })
-      : calculatedPlayer.scoutProfiles,
-    scoutCombinations: scoutSyncMode === 'preserve'
-      ? mergeScoutCombinations({
-          existingCombinations: normalizePlayerScoutCombinations(player),
-          nextCombinations: calculatedPlayer.scoutCombinations,
-        })
-      : calculatedPlayer.scoutCombinations,
+    scoutStatsLoadMeasurements,
     updatedAt: new Date().toISOString(),
   }
 }
 
-export const mergeTeamPlayerStats = ({
-  existingPlayers = [],
-  players = [],
-  team = {},
-  season = {},
-  scoutSyncMode = 'replace',
-} = {}) => {
-  const nextPlayers = (Array.isArray(existingPlayers) ? existingPlayers : []).map(player => (
-    resetTeamPlayerStats({
-      player: {
-        ...normalizeTeamPlayer(player),
-        ...player,
-        aliases: normalizeAliases(player.aliases),
-      },
-      team,
-      season,
-      scoutSyncMode,
-    })
-  ))
-  const lookup = buildPlayerLookup(nextPlayers)
+const resetTeamPlayerStats = ({ player = {}, team = {}, season = {} } = {}) => (
+  buildFullStatsScoutPlayer({
+    player: {
+      ...player,
+      statsStatus: PLAYER_STATS_STATUS.LOADED,
+      playerStats: normalizePlayerStats({}),
+    },
+    existingPlayer: player,
+    team,
+    season,
+  })
+)
+
+export const mergeTeamPlayerStats = ({ existingPlayers = [], players = [], team = {}, season = {} } = {}) => {
+  const sourcePlayers = (Array.isArray(existingPlayers) ? existingPlayers : []).map(player => ({
+    ...normalizeTeamPlayer(player, season),
+    ...player,
+    aliases: normalizeAliases(player.aliases),
+    scoutStatsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(
+      player.scoutStatsLoadMeasurements
+    ),
+  }))
+  const nextPlayers = [...sourcePlayers]
+  const lookup = buildPlayerLookup(sourcePlayers)
+  const updatedIndexes = new Set()
   const appendedKeys = new Set()
 
   ;(Array.isArray(players) ? players : []).forEach(player => {
     const statsPlayer = {
-      ...normalizeTeamPlayer(player),
+      ...normalizeTeamPlayer(player, season),
       aliases: uniqueCleanValues([
         ...(Array.isArray(player.aliases) ? player.aliases : []),
         player.originalFullName,
@@ -403,11 +341,18 @@ export const mergeTeamPlayerStats = ({
     })
 
     if (existingIndex !== -1) {
-      nextPlayers[existingIndex] = mergeExistingTeamPlayerStats({
-        existingPlayer: nextPlayers[existingIndex],
+      const existingPlayer = sourcePlayers[existingIndex]
+      const mergedPlayer = mergeExistingTeamPlayerStats({
+        existingPlayer,
         statsPlayer,
-        scoutSyncMode,
       })
+      nextPlayers[existingIndex] = buildFullStatsScoutPlayer({
+        player: mergedPlayer,
+        existingPlayer,
+        team,
+        season,
+      })
+      updatedIndexes.add(existingIndex)
       getPlayerMergeKeys(nextPlayers[existingIndex]).forEach(key => lookup.set(key, existingIndex))
       return
     }
@@ -416,18 +361,33 @@ export const mergeTeamPlayerStats = ({
     if (!appendKey || appendedKeys.has(appendKey) || !shouldAppendStatsPlayer(statsPlayer)) return
 
     appendedKeys.add(appendKey)
-    nextPlayers.push(statsPlayer)
-    getPlayerMergeKeys(statsPlayer).forEach(key => lookup.set(key, nextPlayers.length - 1))
+    const calculatedPlayer = buildFullStatsScoutPlayer({
+      player: {
+        ...statsPlayer,
+        statsStatus: PLAYER_STATS_STATUS.LOADED,
+      },
+      team,
+      season,
+    })
+    nextPlayers.push(calculatedPlayer)
+    const nextIndex = nextPlayers.length - 1
+    getPlayerMergeKeys(calculatedPlayer).forEach(key => lookup.set(key, nextIndex))
+  })
+
+  sourcePlayers.forEach((player, index) => {
+    if (updatedIndexes.has(index)) return
+
+    nextPlayers[index] = resetTeamPlayerStats({
+      player,
+      team,
+      season,
+    })
   })
 
   return nextPlayers
 }
 
-export const buildTeamSeasonDoc = ({
-  season = {},
-  team = {},
-  players = [],
-} = {}) => {
+export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}) => {
   const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
 
   return {
@@ -459,11 +419,7 @@ export const buildTeamSeasonDoc = ({
   }
 }
 
-export const upsertSeasonRows = ({
-  rows = [],
-  season = {},
-  seasonDoc = {},
-} = {}) => {
+export const upsertSeasonRows = ({ rows = [], season = {}, seasonDoc = {} } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
   const seasonIndex = safeRows.findIndex(row => isSameSeason(row, season))
 

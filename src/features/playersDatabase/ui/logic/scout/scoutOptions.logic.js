@@ -3,7 +3,7 @@
 import {
   SCOUT_PROFILE_COMBINATIONS,
   SCOUT_PROFILES,
-} from '../../../../../shared/players/scouting/index.js'
+} from '../../../../../shared/scouting/players/index.js'
 import { TEAM_SCOUT_PRIORITY_LEVEL } from '../../../../../shared/scouting/teams/index.js'
 import {
   SCOUT_INTEREST_DISPLAY,

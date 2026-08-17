@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/player/removePlayerScoutProfile.flow.js
+// src/features/playersDatabase/services/write/flows/player/removePlayerScoutProfile.flow.js
 
 import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
 import { removePlayerSeasonScoutProfile } from '../../players/index.js'
@@ -6,101 +6,20 @@ import {
   updatePlayerSeasonSearchIndexScoutProfiles,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import { updateTeamSeasonPlayerScoutProfiles } from '../../teams/index.js'
+import { removeTeamSeasonPlayerScoutProfile } from '../../teams/index.js'
 
 const clean = value => String(value || '').trim()
 
-const resolveReliabilityScore = profile => {
-  if (profile?.reliabilityScore !== undefined &&
-      profile?.reliabilityScore !== null) {
-    return profile.reliabilityScore
-  }
-
-  if (profile?.reliability?.score !== undefined &&
-      profile?.reliability?.score !== null) {
-    return profile.reliability.score
-  }
-
-  return null
-}
-
-const normalizeProfileForWrite = profile => ({
-  ...profile,
-  profileId: clean(profile?.profileId || profile?.id),
-  reliabilityLevel: clean(
-    profile?.reliabilityLevel || profile?.reliability?.level
-  ),
-  reliabilityScore: resolveReliabilityScore(profile),
-})
-
-const resolveCombinationProfileIds = combination => (
-  Array.isArray(combination?.profileIds)
-    ? combination.profileIds
-    : Array.isArray(combination?.matchedProfileIds)
-      ? combination.matchedProfileIds
-      : []
-)
-
-const filterScoutCombinations = ({
-  combinations = [],
-  profiles = [],
-} = {}) => {
-  const profileIds = new Set(
-    profiles
-      .map(profile => clean(profile?.profileId || profile?.id))
-      .filter(Boolean)
-  )
-
-  return combinations.filter(combination => (
-    resolveCombinationProfileIds(combination)
-      .map(clean)
-      .filter(Boolean)
-      .every(profileId => profileIds.has(profileId))
-  ))
-}
-
-const buildRemainingProfilesPayload = (payload = {}) => {
+export async function removePlayerScoutProfileFlow(payload = {}) {
   const profileId = clean(payload.profileId)
-  const sourceProfiles = Array.isArray(payload.player?.scoutProfiles)
-    ? payload.player.scoutProfiles
-    : Array.isArray(payload.player?.scoutSignals)
-      ? payload.player.scoutSignals
-      : []
-  const remainingProfiles = sourceProfiles
-    .map(normalizeProfileForWrite)
-    .filter(profile => profile.profileId && profile.profileId !== profileId)
-  const sourceCombinations = Array.isArray(payload.player?.scoutCombinations)
-    ? payload.player.scoutCombinations
-    : []
-  const remainingCombinations = filterScoutCombinations({
-    combinations: sourceCombinations,
-    profiles: remainingProfiles,
-  })
+  if (!profileId) throw new Error('Missing scout profile id')
 
-  return {
+  const teamSeasonResult = await removeTeamSeasonPlayerScoutProfile({
     ...payload,
     profileId,
-    player: {
-      ...(payload.player || {}),
-      scoutProfiles: remainingProfiles,
-      scoutSignals: remainingProfiles,
-      scoutCombinations: remainingCombinations,
-    },
-    scoutProfiles: remainingProfiles,
-    scoutCombinations: remainingCombinations,
-  }
-}
+  })
 
-export async function removePlayerScoutProfileFlow(payload = {}) {
-  const nextPayload = buildRemainingProfilesPayload(payload)
-
-  if (!nextPayload.profileId) {
-    throw new Error('Missing scout profile id')
-  }
-
-  const teamSeasonResult = await updateTeamSeasonPlayerScoutProfiles(nextPayload)
-
-  if (!teamSeasonResult.updated) {
+  if (!teamSeasonResult.updated || !teamSeasonResult.player) {
     return {
       playerSeasonResult: null,
       teamSeasonResult,
@@ -113,6 +32,17 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
     }
   }
 
+  const nextPayload = {
+    ...payload,
+    profileId,
+    player: teamSeasonResult.player,
+    scoutProfiles: Array.isArray(teamSeasonResult.player.scoutProfiles)
+      ? teamSeasonResult.player.scoutProfiles
+      : [],
+    scoutCombinations: Array.isArray(teamSeasonResult.player.scoutCombinations)
+      ? teamSeasonResult.player.scoutCombinations
+      : [],
+  }
   const playerSeasonResult = await removePlayerSeasonScoutProfile(nextPayload)
   const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles(nextPayload)
   const summaryPayload = {

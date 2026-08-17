@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/player/index.js
+// src/features/playersDatabase/services/write/searchIndex/player/index.js
 
 /**
  * Player-season search-index write services
@@ -50,6 +50,7 @@ export {
 export {
   clearPlayerSeasonSearchIndexScoutProfile,
   updatePlayerSeasonSearchIndexScoutProfiles,
+  updatePlayerSeasonSearchIndexScoutContextMany,
   updatePlayerSeasonSearchIndexFields,
   updatePlayerSeasonSearchIndexNotes,
   updatePlayerSeasonSearchIndexPlayerUrl,

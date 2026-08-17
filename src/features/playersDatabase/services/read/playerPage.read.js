@@ -11,7 +11,11 @@ import {
   trackedGetDocs,
 } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
-import { adaptPlayerDocumentSeason } from '../../domain/index.js'
+import {
+  adaptPlayerDocumentSeason,
+  normalizePlayerEventsState,
+} from '../../domain/index.js'
+import { normalizePlayerNarrative } from '../../domain/narrative/index.js'
 import {
   cleanValue,
   pickDefinedValue,
@@ -228,11 +232,48 @@ const adaptPlayerDocument = playerDocument => {
     history,
     seasons,
     activeSeason,
+    events: normalizePlayerEventsState(playerDocument),
+    narrative: normalizePlayerNarrative(playerDocument.scoutNarrative),
     metadata: {
       notes: cleanValue(playerDocument.notes),
       updatedAt: playerDocument.updatedAt || null,
     },
   }
+}
+
+const loadPlayerSource = async ({ playerId = '', action = 'player-read' } = {}) => {
+  const safePlayerId = cleanValue(playerId)
+  if (!safePlayerId) return null
+
+  const candidates = resolvePlayerDocumentCandidates(safePlayerId)
+
+  for (const documentId of candidates) {
+    const snapshot = await trackedGetDoc(playerDocRef(documentId), {
+      feature: 'playersDatabase',
+      action,
+      collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      meta: {
+        requestedPlayerId: safePlayerId,
+        documentId,
+      },
+    })
+
+    if (!snapshot.exists()) continue
+
+    return {
+      id: snapshot.id,
+      ...snapshot.data(),
+    }
+  }
+
+  return buildFallbackPlayerDocument(safePlayerId)
+}
+
+export async function readPlayerSource({ playerId = '' } = {}) {
+  return loadPlayerSource({
+    playerId,
+    action: 'player-json-read',
+  })
 }
 
 export async function readPlayerPageData({ playerId = '' } = {}) {
@@ -242,32 +283,10 @@ export async function readPlayerPageData({ playerId = '' } = {}) {
   return readWithDocumentCache({
     key: buildPlayerDocumentCacheKey(safePlayerId),
     read: async () => {
-      const candidates = resolvePlayerDocumentCandidates(safePlayerId)
-      let playerDocument = null
-
-      for (const documentId of candidates) {
-        const snapshot = await trackedGetDoc(playerDocRef(documentId), {
-          feature: 'playersDatabase',
-          action: 'player-read',
-          collection: PLAYERS_DATABASE_COLLECTIONS.players,
-          meta: {
-            requestedPlayerId: safePlayerId,
-            documentId,
-          },
-        })
-
-        if (!snapshot.exists()) continue
-
-        playerDocument = {
-          id: snapshot.id,
-          ...snapshot.data(),
-        }
-        break
-      }
-
-      if (!playerDocument) {
-        playerDocument = await buildFallbackPlayerDocument(safePlayerId)
-      }
+      const playerDocument = await loadPlayerSource({
+        playerId: safePlayerId,
+        action: 'player-read',
+      })
 
       if (!playerDocument) return null
 

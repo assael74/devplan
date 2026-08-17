@@ -1,6 +1,6 @@
 // features/calendarHub/components/desktop/CalendarHubDesktop.js
 
-import React, { useMemo, useCallback, useState } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { Box, Typography } from '@mui/joy'
 import { useLocation } from 'react-router-dom'
 
@@ -19,8 +19,6 @@ import { buildTaskFabContext } from '../../../../ui/actions/buildTaskFabContext.
 import { buildTaskPresetDraft } from '../../../../ui/forms/tasks/taskForm.helpers.js'
 
 export default function CalendarHubDesktop() {
-  const [initialDraft] = useState(null)
-
   const location = useLocation()
   const { openCreate } = useCreateModal()
 
@@ -49,6 +47,7 @@ export default function CalendarHubDesktop() {
 
     drawerOpen,
     drawerMode,
+    initialDraft,
     draft,
     setDraft,
 
@@ -79,6 +78,34 @@ export default function CalendarHubDesktop() {
   const onAddMeeting = useCallback(() => {
     openCalendarCreate()
   }, [openCalendarCreate])
+
+  const calendars = useMemo(() => {
+    const playerName = (player = {}) => (
+      [player?.playerFirstName, player?.playerLastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim() ||
+      player?.playerFullName ||
+      player?.fullName ||
+      player?.name ||
+      'שחקן'
+    )
+
+    return [
+      ...(teams || []).map((team) => ({
+        id: `team:${team?.id}`,
+        label: team?.teamName || team?.name || 'קבוצה',
+        type: 'team',
+        entityId: team?.id || '',
+      })),
+      ...(players || []).map((player) => ({
+        id: `player:${player?.id}`,
+        label: playerName(player),
+        type: 'player',
+        entityId: player?.id || '',
+      })),
+    ].filter((item) => item.entityId)
+  }, [teams, players])
 
   return (
     <Box dir="rtl" sx={sx.page}>
@@ -137,6 +164,7 @@ export default function CalendarHubDesktop() {
         draft={draft}
         onDraft={setDraft}
         initialDraft={initialDraft}
+        calendars={calendars}
         mode={drawerMode}
         onSave={(nextDraft) => {
           console.log('calendar draft save', nextDraft)

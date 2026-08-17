@@ -26,19 +26,8 @@ import {
   resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
 
-export async function upsertTeamSeasonSearchIndexMany({
-  league = {},
-  season = {},
-  target = 'current',
-  rows = [],
-} = {}) {
-  const leagueId = clean(league.id || season.leagueId)
-  const seasonId = clean(season.seasonId)
-  if (!leagueId) throw new Error('Missing league id')
-  if (!seasonId) throw new Error('Missing season id')
-
-  const safeRows = Array.isArray(rows) ? rows : []
-  const scoutRows = safeRows.map(row => {
+const buildScoutRows = rows => (
+  (Array.isArray(rows) ? rows : []).map(row => {
     const clubLevel = resolveClubLevel({
       clubId: row.clubId,
       clubLevel: row.clubLevel,
@@ -55,6 +44,11 @@ export async function upsertTeamSeasonSearchIndexMany({
       clubStrengthLevel,
     }
   })
+)
+
+export const buildTeamSeasonSearchIndexDocuments = ({ league = {}, season = {}, target = 'current', rows = [] } = {}) => {
+  const safeRows = Array.isArray(rows) ? rows : []
+  const scoutRows = buildScoutRows(safeRows)
   const tableAttackRanks = buildRankMap({
     rows: safeRows,
     valueGetter: getRowGoalsFor,
@@ -77,16 +71,10 @@ export async function upsertTeamSeasonSearchIndexMany({
       row,
     ])
   )
-
-  const batch = createTrackedWriteBatch(db, {
-    feature: 'playersDatabase',
-    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-    action: 'teamSeasonIndex-upsert',
-    operationSubtype: 'maintenance-batch',
-  })
-  const docs = safeRows
+  const documents = safeRows
     .map(row => {
       const rowKey = clean(resolveTeamLookupKey(row) || row.clubId)
+
       return buildTeamSeasonIndexDoc({
         league,
         season,
@@ -99,7 +87,35 @@ export async function upsertTeamSeasonSearchIndexMany({
     })
     .filter(row => row.id && row.leagueId && row.seasonId && (row.teamId || row.clubId))
 
-  docs.forEach(indexDoc => {
+  return {
+    documents,
+    scoutRows,
+  }
+}
+
+export async function upsertTeamSeasonSearchIndexMany({ league = {}, season = {}, target = 'current', rows = [] } = {}) {
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const {
+    documents,
+    scoutRows,
+  } = buildTeamSeasonSearchIndexDocuments({
+    league,
+    season,
+    target,
+    rows,
+  })
+  const batch = createTrackedWriteBatch(db, {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-upsert',
+    operationSubtype: 'maintenance-batch',
+  })
+
+  documents.forEach(indexDoc => {
     batch.set(
       doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, indexDoc.id),
       indexDoc
@@ -108,7 +124,7 @@ export async function upsertTeamSeasonSearchIndexMany({
 
   await commitBatchWhenNeeded({
     batch,
-    operationsCount: docs.length,
+    operationsCount: documents.length,
   })
 
   let shadowAudit = null
@@ -131,7 +147,7 @@ export async function upsertTeamSeasonSearchIndexMany({
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
     operation: 'upsertMany',
-    rowsCount: docs.length,
+    rowsCount: documents.length,
     shadowAudit,
   })
 }

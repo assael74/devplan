@@ -62,4 +62,13 @@ export const scoutProfileChipVariants = {
     hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.24)',
     icon: devPlanColors.tertiary,
   },
+
+  nearProfile: {
+    background: '#F4F7EC',
+    text: '#435B22',
+    border: '#A8C064',
+    shadow: '0 4px 14px rgba(112, 138, 52, 0.14)',
+    hoverShadow: '0 6px 18px rgba(112, 138, 52, 0.2)',
+    icon: '#6E8B2D',
+  },
 }

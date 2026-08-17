@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/leagues/index.js
+// src/features/playersDatabase/services/write/leagues/index.js
 
 /**
  * League write services
@@ -45,6 +45,7 @@ export {
 
 export {
   updateLeagueSeasonTableRankScoutProfilesSummary,
+  updateLeagueSeasonTableRankScoutProfilesSummaries,
   updateLeagueSeasonTableRankTeamUrl,
   updateLeagueSeasonTableRank,
 } from './leagueTableRank.js'

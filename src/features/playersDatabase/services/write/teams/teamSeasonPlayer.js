@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/teams/teamSeasonPlayer.js
+// src/features/playersDatabase/services/write/teams/teamSeasonPlayer.js
 
 
 
@@ -19,6 +19,9 @@ import {
   teamDocRef,
 } from './teamDoc.js'
 import { getPlayerMergeKey } from './teamSeason.model.js'
+import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
+import { removePlayerScoutProfileFromComputedState } from '../../../domain/orchestration/mutatePlayerScoutProfileState.js'
+import { normalizePlayerScoutStory } from '../players/playerDoc.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export async function updateTeamSeasonPlayerUrl({
@@ -152,6 +155,7 @@ const buildTeamPlayerUpdateResult = ({
   updated,
   scoutProfilesSummary,
   teamDocument = null,
+  player = null,
   reason = '',
 }) => ({
   birthTeamDocumentId: teamId,
@@ -165,6 +169,7 @@ const buildTeamPlayerUpdateResult = ({
     ? { scoutProfilesSummary }
     : {}),
   ...(teamDocument ? { teamDocument } : {}),
+  ...(player ? { player } : {}),
 })
 
 const patchTeamSeasonPlayer = async ({
@@ -224,6 +229,7 @@ const patchTeamSeasonPlayer = async ({
       : []
     const updatedAt = new Date().toISOString()
     let playerUpdated = false
+    let updatedPlayer = null
 
     const nextRows = rows.map(row => {
       if (!isSameSeason(row, {
@@ -241,11 +247,14 @@ const patchTeamSeasonPlayer = async ({
 
         playerUpdated = true
 
-        return {
+        const nextUpdatedPlayer = {
           ...nextPlayer,
-          ...buildPatch(nextPlayer),
+          ...buildPatch(nextPlayer, row, baseDoc),
           updatedAt,
         }
+        updatedPlayer = nextUpdatedPlayer
+
+        return nextUpdatedPlayer
       })
 
       return {
@@ -295,15 +304,41 @@ const patchTeamSeasonPlayer = async ({
       updated: playerUpdated,
       scoutProfilesSummary,
       teamDocument: nextTeamDocument,
+      player: updatedPlayer,
     })
   })
 }
 
-export async function updateTeamSeasonPlayerScoutProfiles({
-  scoutProfiles = [],
-  scoutCombinations = [],
-  ...payload
-} = {}) {
+
+export async function removeTeamSeasonPlayerScoutProfile({ profileId = '', player = {}, ...payload } = {}) {
+  const removeProfileId = clean(profileId)
+  if (!removeProfileId) throw new Error('Missing scout profile id')
+
+  return patchTeamSeasonPlayer({
+    ...payload,
+    includeScoutSummary: true,
+    player,
+    buildPatch: currentPlayer => {
+      const nextPlayer = removePlayerScoutProfileFromComputedState({
+        player: currentPlayer,
+        profileId: removeProfileId,
+      })
+
+      return {
+        scoutProfiles: Array.isArray(nextPlayer.scoutProfiles)
+          ? nextPlayer.scoutProfiles
+          : [],
+        scoutCombinations: Array.isArray(nextPlayer.scoutCombinations)
+          ? nextPlayer.scoutCombinations
+          : [],
+        bestScoutSignal: nextPlayer.bestScoutSignal || null,
+        ...normalizePlayerScoutStory(nextPlayer),
+      }
+    },
+  })
+}
+
+export async function updateTeamSeasonPlayerScoutProfiles({ scoutProfiles = [], scoutCombinations = [], player = {}, ...payload } = {}) {
   const safeScoutProfiles = Array.isArray(scoutProfiles)
     ? scoutProfiles
     : []
@@ -314,19 +349,16 @@ export async function updateTeamSeasonPlayerScoutProfiles({
   return patchTeamSeasonPlayer({
     ...payload,
     includeScoutSummary: true,
+    player,
     buildPatch: () => ({
       scoutProfiles: safeScoutProfiles,
       scoutCombinations: safeScoutCombinations,
+      ...normalizePlayerScoutStory(player),
     }),
   })
 }
 
-export async function updateTeamSeasonPlayerRole({
-  primaryPosition = '',
-  positionLayer = '',
-  numShirt = '',
-  ...payload
-} = {}) {
+export async function updateTeamSeasonPlayerRole({ primaryPosition = '', positionLayer = '', numShirt = '', ...payload } = {}) {
   return patchTeamSeasonPlayer({
     ...payload,
     buildPatch: () => ({
@@ -334,33 +366,104 @@ export async function updateTeamSeasonPlayerRole({
       positionLayer: clean(positionLayer),
       numShirt: clean(numShirt),
     }),
+  })
+}
+
+
+export async function updateTeamSeasonPlayerVerificationAndScout({
+  season = {},
+  team = {},
+  target = 'current',
+  player = {},
+  verificationAnswers = [],
+  ...payload
+} = {}) {
+  return patchTeamSeasonPlayer({
+    ...payload,
+    season,
+    team,
+    target,
+    player,
+    buildPatch: (currentPlayer, seasonRow) => {
+      const calculatedPlayer = buildPlayerScoutState({
+        player: currentPlayer,
+        team: {
+          ...team,
+          ...seasonRow,
+        },
+        season: {
+          ...season,
+          ...seasonRow,
+        },
+        perspective: 'players_database_verification_update',
+        verificationAnswers: Array.isArray(verificationAnswers)
+          ? verificationAnswers
+          : [],
+      })
+
+      return {
+        scoutProfiles: Array.isArray(calculatedPlayer.scoutProfiles)
+          ? calculatedPlayer.scoutProfiles
+          : [],
+        scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
+          ? calculatedPlayer.scoutCombinations
+          : [],
+        bestScoutSignal: calculatedPlayer.bestScoutSignal || null,
+        ...normalizePlayerScoutStory(calculatedPlayer),
+      }
+    },
   })
 }
 
 export async function updateTeamSeasonPlayerRoleAndScoutProfiles({
+  season = {},
+  team = {},
+  target = 'current',
+  player = {},
   primaryPosition = '',
   positionLayer = '',
   numShirt = '',
-  scoutProfiles = [],
-  scoutCombinations = [],
   ...payload
 } = {}) {
-  const safeScoutProfiles = Array.isArray(scoutProfiles)
-    ? scoutProfiles
-    : []
-  const safeScoutCombinations = Array.isArray(scoutCombinations)
-    ? scoutCombinations
-    : []
-
   return patchTeamSeasonPlayer({
     ...payload,
+    season,
+    team,
+    target,
+    player,
     includeScoutSummary: true,
-    buildPatch: () => ({
-      primaryPosition: clean(primaryPosition),
-      positionLayer: clean(positionLayer),
-      numShirt: clean(numShirt),
-      scoutProfiles: safeScoutProfiles,
-      scoutCombinations: safeScoutCombinations,
-    }),
+    buildPatch: (currentPlayer, seasonRow) => {
+      const rolePlayer = {
+        ...currentPlayer,
+        primaryPosition: clean(primaryPosition),
+        positionLayer: clean(positionLayer),
+        numShirt: clean(numShirt),
+      }
+      const calculatedPlayer = buildPlayerScoutState({
+        player: rolePlayer,
+        team: {
+          ...team,
+          ...seasonRow,
+        },
+        season: {
+          ...season,
+          ...seasonRow,
+        },
+        perspective: 'players_database_role_update',
+      })
+
+      return {
+        primaryPosition: calculatedPlayer.primaryPosition,
+        positionLayer: calculatedPlayer.positionLayer,
+        numShirt: calculatedPlayer.numShirt,
+        scoutProfiles: Array.isArray(calculatedPlayer.scoutProfiles)
+          ? calculatedPlayer.scoutProfiles
+          : [],
+        scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
+          ? calculatedPlayer.scoutCombinations
+          : [],
+        ...normalizePlayerScoutStory(calculatedPlayer),
+      }
+    },
   })
 }

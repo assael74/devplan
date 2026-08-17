@@ -19,6 +19,7 @@ import {
   AbilitiesExplainerPage,
   CalendarHubPage,
   ClubProfilePage,
+  FinancePage,
   FirestoreUsagePage,
   HomePage,
   HubPage,
@@ -58,6 +59,8 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.calendar} element={lazyRoute(<CalendarHubPage />, <CalendarSkeleton />)} />
       <Route path={ADMIN_ROUTES.video} element={lazyRoute(<VideoHubPage />, <VideoSkeleton />)} />
       <Route path={ADMIN_ROUTES.tags} element={lazyRoute(<TagsManagementPage />, <TagsSkeleton />)} />
+      <Route path={ADMIN_ROUTES.finance} element={lazyRoute(<FinancePage />)} />
+      <Route path={ADMIN_ROUTES.paymentsLegacy} element={<Navigate to={ADMIN_ROUTES.finance} replace />} />
 
       <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
       <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />

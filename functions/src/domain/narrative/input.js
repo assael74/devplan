@@ -1,0 +1,36 @@
+// C:\projects\devplan\functions\src\domain\narrative\input.js
+
+const { buildContext } = require('./context')
+const { buildEvidence } = require('./evidence')
+const { buildTimeline } = require('./timeline')
+const { buildMeaning } = require('./meaning')
+const { buildRelationship } = require('./relationship')
+const { buildDecisionContext } = require('./decision')
+const { buildHash } = require('./hash')
+
+function buildInput({ player = {}, teams = [], futureProjection = null } = {}) {
+  const context = buildContext({ player, teams })
+  const timeline = buildTimeline(context)
+  const relationships = buildRelationship(context)
+  const decision = buildDecisionContext({ context, futureProjection })
+  const evidence = buildEvidence(context, decision)
+  const meaning = buildMeaning({ context, timeline, decision })
+  const inputHash = buildHash(meaning)
+
+  return {
+    version: 2,
+    player: context.player,
+    context: {
+      entries: context.entries,
+      verification: context.verification,
+    },
+    evidence,
+    timeline,
+    relationships,
+    decision,
+    meaning,
+    inputHash,
+  }
+}
+
+module.exports = { buildInput }

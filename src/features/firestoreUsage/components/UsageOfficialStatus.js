@@ -16,6 +16,8 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 
+const DISPLAY_TIME_ZONE = 'Asia/Jerusalem'
+
 const toNumber = value => {
   const next = Number(value)
   return Number.isFinite(next) ? next : 0
@@ -50,21 +52,13 @@ const resolveNextResetAt = data => {
   const startDate = startAt ? new Date(startAt) : null
 
   if (startDate && !Number.isNaN(startDate.getTime())) {
-    const resetDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
-    const nextLocalReset = new Date()
+    let resetDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
 
-    nextLocalReset.setHours(
-      resetDate.getHours(),
-      resetDate.getMinutes(),
-      resetDate.getSeconds(),
-      resetDate.getMilliseconds()
-    )
-
-    if (nextLocalReset.getTime() <= Date.now()) {
-      nextLocalReset.setDate(nextLocalReset.getDate() + 1)
+    while (resetDate.getTime() <= Date.now()) {
+      resetDate = new Date(resetDate.getTime() + 24 * 60 * 60 * 1000)
     }
 
-    return nextLocalReset
+    return resetDate
   }
 
   return null
@@ -88,6 +82,7 @@ const formatLocalDateTime = value => {
   return new Intl.DateTimeFormat('he-IL', {
     dateStyle: 'short',
     timeStyle: 'short',
+    timeZone: DISPLAY_TIME_ZONE,
   }).format(date)
 }
 

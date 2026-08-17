@@ -3,9 +3,10 @@
 // Firestore schema contracts.
 // These objects represent the real document shapes written to Firestore.
 // Keep their fields and nested structures aligned with the active write builders.
-// The four active contracts below must not be treated as UI catalogs or examples:
+// The five active contracts below must not be treated as UI catalogs or examples:
 // PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG,
 // BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG,
+// PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG,
 // SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
 // SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT.
 
@@ -158,6 +159,250 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
   updatedAt: null,
 };
 
+export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
+  'scoutOpportunity',
+  'scoutVerification',
+  'scoutProfileProgression',
+  'scoutProfileHierarchy',
+  'scoutProfileCaseStrength',
+  'scoutTrajectory',
+  'scoutTransferContext',
+]
+
+const PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT = {
+  version: 1,
+  inputHash: '',
+  scope: '',
+  seasonKeys: [],
+  profileRefs: [
+    {
+      seasonKey: '',
+      birthTeamId: '',
+      birthTeamDocumentId: '',
+      birthTeamSlot: 0,
+      profileId: '',
+    },
+  ],
+  revision: 0,
+  generatedAt: null,
+  approvedAt: null,
+  source: 'ai',
+  generator: {
+    model: '',
+    promptVersion: '',
+  },
+  content: {
+    title: '',
+    summary: '',
+  },
+}
+
+const PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT = {
+  version: 1,
+  seasons: [
+    {
+      seasonId: '',
+      seasonKey: '',
+      approved: PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT,
+    },
+  ],
+  career: PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT,
+}
+
+const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
+  scoutCandidateSignals: [
+    {
+      id: 'near_profile',
+      profileId: '',
+      profileLabel: '',
+      distance: null,
+      distancePct: null,
+      status: '',
+      trend: '',
+      distanceDelta: null,
+      distanceDeltaPct: null,
+    },
+  ],
+  scoutSpotlights: [
+    {
+      id: '',
+      confidence: '',
+      effect: '',
+      evidence: [],
+      details: {},
+    },
+  ],
+  scoutOpportunity: {
+    effectiveActionStatus: '',
+    baseActionStatus: 'watch',
+    automaticActionStatus: 'watch',
+    manualActionStatus: '',
+    hasManualDecision: false,
+    profilesRemoved: false,
+    manualDecision: {
+      hasDecision: false,
+      actionStatus: '',
+      reason: '',
+      note: '',
+      decidedAt: null,
+      seasonKey: '',
+      profileIds: [],
+    },
+    source: '',
+    boostScore: 0,
+    reductionScore: 0,
+    netScore: 0,
+    boosts: [
+      {
+        id: '',
+        points: 0,
+        details: {},
+      },
+    ],
+    reductions: [
+      {
+        id: '',
+        points: 0,
+        details: {},
+      },
+    ],
+    signalPersistence: {
+      profileRepeat: {
+        profileId: '',
+        seasons: 0,
+      },
+      combinationRepeat: {
+        combinationId: '',
+        profileIds: [],
+        seasons: 0,
+      },
+      decay: {
+        seasonsWithoutSignal: 0,
+        profileIds: [],
+        lastSignalSeasonKey: '',
+        currentSeasonKey: '',
+        currentSeasonCounted: false,
+      },
+      reasons: [],
+    },
+    exposureLevel: '',
+    reasons: [],
+    profileIds: [],
+    candidateProfileIds: [],
+    bestProfileId: '',
+  },
+  scoutVerification: {
+    checks: [],
+    answeredChecks: [],
+    missingChecks: [],
+    nextBestCheck: null,
+    dimensions: {},
+    completion: {
+      answered: 0,
+      total: 0,
+      complete: false,
+    },
+  },
+  scoutProfileProgression: {
+    distances: [],
+    nearProfiles: [],
+    nearestProfile: null,
+  },
+  scoutProfileHierarchy: {
+    primaryProfileId: '',
+    primarySignal: null,
+    supportingProfileIds: [],
+    supportingSignals: [],
+    orderedProfileIds: [],
+  },
+  scoutProfileCaseStrength: {
+    primaryProfileId: '',
+    primaryProfileStrength: {
+      depth: 0,
+      depthPct: 0,
+      measurableRuleCount: 0,
+    },
+    profileCount: 0,
+    profileIds: [],
+    supportingProfileIds: [],
+    hasDefinedCombination: false,
+    combinationCount: 0,
+    combinationIds: [],
+  },
+  scoutTrajectory: {
+    direction: '',
+    confidence: '',
+    evidence: [],
+    stintsCount: 0,
+    seasonsCount: 0,
+    latestTransfer: null,
+    transferEvents: [],
+  },
+  scoutTransferContext: {
+    type: 'transfer',
+    seasonKey: '',
+    fromClubId: '',
+    fromClubName: '',
+    fromBirthTeamId: '',
+    fromBirthTeamDocumentId: '',
+    fromTeamName: '',
+    toClubId: '',
+    toClubName: '',
+    toBirthTeamId: '',
+    toBirthTeamDocumentId: '',
+    toTeamName: '',
+    fromClubStrengthLevel: 0,
+    toClubStrengthLevel: 0,
+    fromLeagueLevel: 0,
+    toLeagueLevel: 0,
+    clubStrengthChange: 0,
+    leagueLevelChange: 0,
+    direction: '',
+    moveType: '',
+    sameSeason: false,
+    fromPrimaryPosition: '',
+    toPrimaryPosition: '',
+    fromPositionLayer: '',
+    toPositionLayer: '',
+    impact: {
+      minutesPctDelta: 0,
+      startsPctDelta: 0,
+      goalsPer90Delta: 0,
+      roleChanged: false,
+      positionLayerChanged: false,
+      profileChange: {
+        added: [],
+        lost: [],
+        retained: [],
+      },
+    },
+  },
+  scoutEngineVersion: 'scouting-v2',
+};
+
+export const PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT = {
+  snapshotKey: '',
+  capturedAt: '',
+  engineVersion: 'scouting-v2',
+  primaryProfileId: '',
+  profileIds: [],
+  profileStates: [
+    {
+      profileId: '',
+      matched: false,
+      depth: null,
+      distance: null,
+    },
+  ],
+};
+
+const PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT = {
+  previous: null,
+  current: null,
+};
+
+// Canonical operational Team Season document.
+// Source of truth for roster/stats and the season-level computed scout state.
 export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   id: '',
   clubId: '',
@@ -177,6 +422,8 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       teamUrl: '',
       birthYear: 0,
       leagueTotalRound: 0,
+      leagueLevel: 0,
+      expectedLevelDelta: null,
       seasonKey: '',
       playersCount: 0,
       playerSeasonIndexCount: 0,
@@ -200,6 +447,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           statsStatus: 'missing',
 
           rosterStatus: 'regular',
+          manualTransferDirection: '',
           isYoungerAgeGroup: false,
 
           primaryPosition: '',
@@ -226,6 +474,8 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
 
           scoutProfiles: [],
           scoutCombinations: [],
+          ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
+          scoutStatsLoadMeasurements: PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT,
           updatedAt: null,
         },
       ],
@@ -250,6 +500,8 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       teamUrl: '',
       birthYear: 0,
       leagueTotalRound: 0,
+      leagueLevel: 0,
+      expectedLevelDelta: null,
       playersCount: 0,
       playerSeasonIndexCount: 0,
       scoutProfiledPlayersCount: 0,
@@ -272,6 +524,7 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
           statsStatus: 'missing',
 
           rosterStatus: 'regular',
+          manualTransferDirection: '',
           isYoungerAgeGroup: false,
 
           primaryPosition: '',
@@ -298,6 +551,8 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
 
           scoutProfiles: [],
           scoutCombinations: [],
+          ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
+          scoutStatsLoadMeasurements: PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT,
           updatedAt: null,
         },
       ],
@@ -318,7 +573,6 @@ export const BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG = {
 const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
   profileId: '',
   profileLabel: '',
-  engineVersion: 'scouting-v2',
   perspective: '',
   searchLevels: [],
   teamFilter: '',
@@ -337,17 +591,25 @@ const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
       },
     ],
   },
-  reliability: {
-    level: '',
-    score: null,
-    factors: {},
-    warnings: [],
+  profileStrength: {
+    depth: 0,
+    depthPct: 0,
+    measurableRuleCount: 0,
   },
   warnings: [],
   score: null,
   reasons: [],
   requiredReview: [],
-  matchedRules: [],
+  matchEvidence: [
+    {
+      metric: '',
+      actual: null,
+      op: '',
+      threshold: null,
+      reason: '',
+      matched: false,
+    },
+  ],
   scoutContext: {
     team: {
       classification: '',
@@ -394,20 +656,66 @@ const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
       details: {},
     },
   ],
-  opportunity: {
-    actionStatus: '',
-    exposureLevel: '',
-    reasons: [],
-    evidence: {
-      profileId: '',
-      reliabilityLevel: '',
-      clubLevel: 0,
-      clubStrengthLevel: 0,
-      spotlightIds: [],
-    },
+};
+
+const PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT = {
+  note: '',
+  updatedAt: null,
+  seasonKey: '',
+};
+
+const PLAYER_MANUAL_REVIEW_GENERIC_OBJECT = {
+  position: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    value: '',
+    status: 'unknown',
+  },
+  agent_status: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    value: 'unknown',
+  },
+  transfer_history: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    status: 'unknown',
+    transfers: [],
+  },
+  goal_distribution: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    status: 'unknown',
+  },
+  minutes_distribution: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    status: 'unknown',
+  },
+  visual_review: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    status: 'unknown',
+  },
+  agent_path_fit: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    value: 'unknown',
+  },
+  scout_path_fit: {
+    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
+    value: 'unknown',
   },
 };
 
+const PLAYER_MANUAL_IMMEDIACY_DECISION_GENERIC_OBJECT = {
+  actionStatus: '',
+  reason: '',
+  note: '',
+  decidedAt: null,
+  seasonKey: '',
+  profileIds: [],
+};
+
+const PLAYER_MANUAL_IMMEDIACY_HISTORY_GENERIC_OBJECT = {
+  ...PLAYER_MANUAL_IMMEDIACY_DECISION_GENERIC_OBJECT,
+};
+
+// Canonical tracked Player document.
+// Source of truth for multi-season scout history, manual review and manual immediacy.
 export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   id: '',
   externalPlayerId: '',
@@ -428,6 +736,10 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     firstTrackedAt: null,
     trackingReasons: [],
   },
+
+  playerReview: PLAYER_MANUAL_REVIEW_GENERIC_OBJECT,
+  manualImmediacyDecision: PLAYER_MANUAL_IMMEDIACY_DECISION_GENERIC_OBJECT,
+  manualImmediacyHistory: [PLAYER_MANUAL_IMMEDIACY_HISTORY_GENERIC_OBJECT],
 
   verification: {
     mode: 'manual',
@@ -454,12 +766,24 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       birthTeamId: '',
       profileId: '',
       fromClubId: '',
+      fromClubName: '',
       toClubId: '',
+      toClubName: '',
       fromBirthTeamId: '',
+      fromBirthTeamDocumentId: '',
       toBirthTeamId: '',
+      toBirthTeamDocumentId: '',
+      moveType: '',
+      direction: '',
+      fromClubStrengthLevel: null,
+      toClubStrengthLevel: null,
+      fromLeagueLevel: null,
+      toLeagueLevel: null,
       detectedAt: null,
     },
   ],
+
+  scoutNarrative: PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT,
 
   createdAt: null,
   updatedAt: null,
@@ -468,6 +792,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     {
       seasonId: '',
       seasonKey: '',
+      seasonStatus: '',
       leagueId: '',
       leagueName: '',
       ageGroupId: '',
@@ -477,6 +802,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       clubLevel: 0,
       clubStrengthLevel: 0,
       leagueLevel: 0,
+      expectedLevelDelta: null,
       teamName: '',
       birthTeamId: '',
       birthTeamDocumentId: '',
@@ -488,6 +814,9 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       primaryPosition: '',
       positionLayer: '',
       numShirt: '',
+      rosterStatus: 'regular',
+      manualTransferDirection: '',
+      isYoungerAgeGroup: false,
       statsStatus: 'missing',
       playerStats: {
         games: 0,
@@ -507,6 +836,8 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       },
       scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
       scoutCombinations: [],
+      ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
+      scoutStatsLoadMeasurementHistory: [PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT],
       updatedAt: null,
     },
   ],
@@ -515,6 +846,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     {
       seasonId: '',
       seasonKey: '',
+      seasonStatus: '',
       leagueId: '',
       leagueName: '',
       ageGroupId: '',
@@ -524,6 +856,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       clubLevel: 0,
       clubStrengthLevel: 0,
       leagueLevel: 0,
+      expectedLevelDelta: null,
       teamName: '',
       birthTeamId: '',
       birthTeamDocumentId: '',
@@ -535,6 +868,9 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       primaryPosition: '',
       positionLayer: '',
       numShirt: '',
+      rosterStatus: 'regular',
+      manualTransferDirection: '',
+      isYoungerAgeGroup: false,
       statsStatus: 'missing',
       playerStats: {
         games: 0,
@@ -554,7 +890,9 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       },
       scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
       scoutCombinations: [],
-      closedAt: null,
+      ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
+      scoutStatsLoadMeasurementHistory: [PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT],
+      updatedAt: null,
     },
   ],
 
@@ -673,6 +1011,8 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   updatedAt: null,
 };
 
+// Player Season search projection only.
+// Never treat this document as the source of truth for profile evidence or player history.
 export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   id: '',
   entityType: 'playerSeason',
@@ -780,16 +1120,42 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   searchStarts: 0,
 
   primaryScoutProfileId: '',
-  primaryScoutReliabilityLevel: '',
+  primaryScoutProfileStrengthDepthPct: null,
   primaryScoutWarnings: [],
   primaryScoutScore: null,
   primaryScoutInterestLevel: '',
-  primaryScoutProfileDepthPct: null,
-  primaryScoutOpportunityStatus: '',
   primaryScoutTeamGateMode: '',
+  nearScoutProfileId: '',
+  nearScoutProfileDistancePct: null,
+  nearScoutProfileTrend: '',
+  scoutEffectiveImmediacyStatus: '',
+  scoutBaseImmediacyStatus: 'watch',
+  scoutAutomaticImmediacyStatus: 'watch',
+  scoutManualImmediacyStatus: '',
+  scoutHasManualImmediacyDecision: false,
+  scoutImmediacyBoostScore: 0,
+  scoutImmediacyBoostIds: [],
+  scoutImmediacyReductionScore: 0,
+  scoutImmediacyReductionIds: [],
+  scoutImmediacyNetScore: 0,
+  scoutProfilePersistenceSeasons: 0,
+  scoutCombinationPersistenceSeasons: 0,
+  scoutSignalDecaySeasons: 0,
+  scoutSignalDecayLastSeasonKey: '',
+  scoutProfileCaseStrengthProfileCount: 0,
+  scoutProfileCaseHasCombination: false,
+  scoutProfileCaseCombinationIds: [],
+  scoutExposureLevel: '',
+  scoutNextBestCheckId: '',
+  scoutEngineVersion: 'scouting-v2',
+  scoutTransferMoveType: '',
+  scoutTransferDirection: '',
+  scoutTransferFromClubId: '',
+  scoutTransferToClubId: '',
+  scoutTransferSameSeason: false,
 
   secondaryScoutProfileId: '',
-  secondaryScoutReliabilityLevel: '',
+  secondaryScoutProfileStrengthDepthPct: null,
   secondaryScoutWarnings: [],
   secondaryScoutScore: null,
   scoutProfileIds: [],

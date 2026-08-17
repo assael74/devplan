@@ -7,17 +7,18 @@ import {
   IconButton,
   Option,
   Select,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
-import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
+import ScoutStoryChip from '../../../components/scout/ScoutStoryChip.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import {
   PLAYER_STATS_BASE_COLUMNS,
   STATS_ROSTER_STATUS_OPTIONS,
+  STATS_TRANSFER_DIRECTION_OPTIONS,
 } from '../logic/teamPage.constants.js'
 import {
   STATS_IDENTITY_STATUS,
@@ -278,10 +279,16 @@ const resolveScoutProfileSortLabel = row => {
       ? row.scoutCombinations
       : [],
     display: row.scoutProfileDisplay || {},
+    player: row,
   })
 
   return scoutView.label || ''
 }
+
+const isTransferRosterStatus = status => (
+  status === 'transferredOut' ||
+  status === 'transferredIn'
+)
 
 export default function useTeamStatsColumns({
   players,
@@ -409,7 +416,10 @@ export default function useTeamStatsColumns({
   const minutesColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[5],
     sortable: true,
-    sortValue: row => toFiniteNumber(row.minutes) ?? -1,
+    sortValue: row => {
+      const minutes = toFiniteNumber(row.minutes)
+      return minutes === null ? -1 : minutes
+    },
   }), [])
 
   const identityColumn = React.useMemo(() => ({
@@ -446,41 +456,66 @@ export default function useTeamStatsColumns({
         )
       }
 
-      const selectedOption = STATS_ROSTER_STATUS_OPTIONS.find(option => (
+      const selectedStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
         option.value === row.rosterStatus
-      )) || null
-
-      if (selectedOption) {
-        return (
-          <Typography level='body-sm' sx={sx.statusText}>
-            {selectedOption.label}
-          </Typography>
-        )
-      }
+      ))
+        ? row.rosterStatus
+        : null
+      const showTransferDirection = isTransferRosterStatus(row.rosterStatus)
 
       return (
-        <Select
-          size='sm'
-          value={null}
-          placeholder='בחר סטטוס'
-          sx={sx.statusSelect}
-          onChange={(event, nextValue) => {
-            if (typeof onCellChange !== 'function') return
+        <Stack spacing={0.5} sx={sx.statusStack}>
+          <Select
+            size='sm'
+            value={selectedStatus}
+            placeholder='בחר סטטוס'
+            sx={sx.statusSelect}
+            onChange={(event, nextValue) => {
+              if (typeof onCellChange !== 'function') return
 
-            onCellChange({
-              row,
-              rowIndex,
-              column,
-              value: nextValue || 'unresolved',
-            })
-          }}
-        >
-          {STATS_ROSTER_STATUS_OPTIONS.map(option => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+              onCellChange({
+                row,
+                rowIndex,
+                column,
+                value: nextValue || 'unresolved',
+              })
+            }}
+          >
+            {STATS_ROSTER_STATUS_OPTIONS.map(option => (
+              <Option key={option.value} value={option.value}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
+
+          {showTransferDirection ? (
+            <Select
+              size='sm'
+              value={row.manualTransferDirection || 'unknown'}
+              placeholder='כיוון מעבר'
+              sx={sx.transferDirectionSelect}
+              onChange={(event, nextValue) => {
+                if (typeof onCellChange !== 'function') return
+
+                onCellChange({
+                  row,
+                  rowIndex,
+                  column: {
+                    ...column,
+                    key: 'manualTransferDirection',
+                  },
+                  value: nextValue || 'unknown',
+                })
+              }}
+            >
+              {STATS_TRANSFER_DIRECTION_OPTIONS.map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          ) : null}
+        </Stack>
       )
     },
   }), [])
@@ -502,29 +537,14 @@ export default function useTeamStatsColumns({
           ? row.scoutCombinations
           : [],
         display: row.scoutProfileDisplay || {},
+        player: row,
       })
-
-      if (!scoutView.primaryItem || !scoutView.label) {
-        return (
-          <Typography level='body-sm' sx={sx.emptyProfile}>
-            -
-          </Typography>
-        )
-      }
 
       return (
         <Box sx={sx.profileWrap}>
-          <ScoutProfileChip
+          <ScoutStoryChip
+            player={row}
             label={scoutView.label}
-            tooltip={(
-              <ScoutCompactTooltip
-                title={scoutView.tooltipTitle}
-                items={scoutView.tooltipItems}
-                isCombination={scoutView.isCombination}
-              />
-            )}
-            iconId={scoutView.primaryItem.iconId}
-            variant={scoutView.variant}
             fontSize={10}
           />
         </Box>

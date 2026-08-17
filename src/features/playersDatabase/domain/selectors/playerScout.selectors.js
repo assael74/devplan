@@ -24,8 +24,8 @@ export const selectPlayerScoutDisplay = playerSeason => (
   playerSeason?.scout?.display || createEmptyPlayerScoutDisplay()
 )
 
-export const selectPlayerScoutReliability = playerSeason => (
-  selectPlayerScoutDisplay(playerSeason).reliability
+export const selectPlayerScoutProfileStrength = playerSeason => (
+  selectPlayerScoutDisplay(playerSeason).profileStrength || null
 )
 
 export const selectHasPlayerScoutProfile = playerSeason => Boolean(

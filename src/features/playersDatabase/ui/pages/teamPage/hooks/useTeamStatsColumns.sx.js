@@ -53,8 +53,8 @@ export const teamStatsColumnsSx = {
   },
 
   statusColumn: {
-    width: 132,
-    minWidth: 132,
+    width: 150,
+    minWidth: 150,
   },
 
   statusText: {
@@ -63,8 +63,25 @@ export const teamStatsColumnsSx = {
 
   statusSelect: {
     minWidth: 0,
-    width: 118,
-    maxWidth: 118,
+    width: 136,
+    maxWidth: 136,
+
+    '& button': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
+
+  statusStack: {
+    minWidth: 0,
+    width: 136,
+  },
+
+  transferDirectionSelect: {
+    minWidth: 0,
+    width: 136,
+    maxWidth: 136,
 
     '& button': {
       overflow: 'hidden',

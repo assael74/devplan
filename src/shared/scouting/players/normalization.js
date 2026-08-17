@@ -218,11 +218,6 @@ export const buildNormalizedPlayerScoutInput = ({
       gamesPlayed: normalizedTeamGames,
       goalsFor: projectedTeamGoals,
     }),
-    reliabilityPlayer: buildPlayerInput(normalization.rawStats),
-    reliabilityTeam: buildTeamInput({
-      gamesPlayed: normalization.teamGamesPlayed,
-      goalsFor: teamGoals,
-    }),
     normalization,
   }
 }

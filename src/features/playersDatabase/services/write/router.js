@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/router.js
+// src/features/playersDatabase/services/write/router.js
 
 import { invalidatePlayersDatabaseWriteCache } from '../cache/index.js'
 import {
@@ -23,7 +23,9 @@ import {
   updateLeagueSeasonMetaFlow,
   updateLeagueSeasonUrlFlow,
   updatePlayerRoleFlow,
+  updatePlayerScoutReviewFlow,
   updatePlayerSeasonNotesFlow,
+  updatePlayerVerificationFlow,
   updatePlayerSeasonUrlFlow,
   updateTeamUrlFlow,
 } from './flows/index.js'
@@ -50,6 +52,8 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   CREATE_TEAM_OFFICIAL_PLAYER: 'createTeamOfficialPlayer',
   UPDATE_PLAYER_SEASON_NOTES: 'updatePlayerSeasonNotes',
   UPDATE_PLAYER_SEASON_ROLE: 'updatePlayerSeasonRole',
+  UPDATE_PLAYER_SCOUT_REVIEW: 'updatePlayerScoutReview',
+  UPDATE_PLAYER_VERIFICATION: 'updatePlayerVerification',
   REMOVE_PLAYER_SCOUT_PROFILE: 'removePlayerScoutProfile',
   UPDATE_PLAYER_SEASON_URL: 'updatePlayerSeasonUrl',
   UPDATE_LEAGUE_SEASON_META: 'updateLeagueSeasonMeta',
@@ -80,6 +84,8 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_OFFICIAL_PLAYER]: createTeamOfficialPlayerFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_NOTES]: updatePlayerSeasonNotesFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_ROLE]: updatePlayerRoleFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SCOUT_REVIEW]: updatePlayerScoutReviewFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_VERIFICATION]: updatePlayerVerificationFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_PLAYER_SCOUT_PROFILE]: removePlayerScoutProfileFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL]: updatePlayerSeasonUrlFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_META]: updateLeagueSeasonMetaFlow,
@@ -91,10 +97,7 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_PLAYER_TRANSFER]: ensureTransferredScoutingPlayerDoc,
 }
 
-export async function runPlayersDatabaseWriteAction({
-  actionType = '',
-  payload = {},
-} = {}) {
+export async function runPlayersDatabaseWriteAction({ actionType = '', payload = {} } = {}) {
   const runAction = WRITE_ACTION_RUNNERS[actionType]
 
   if (!runAction) {

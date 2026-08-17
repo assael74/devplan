@@ -54,7 +54,8 @@ export const adaptPlayerDocumentSeason = ({
     seasonDocument.statsStatus,
     PLAYER_STATS_STATUS.MISSING
   )
-  const lifecycle = createLifecycle(target)
+  const seasonStatus = cleanDomainValue(seasonDocument.seasonStatus)
+  const lifecycle = createLifecycle(target, seasonStatus)
   const result = createEmptyPlayerSeason()
   const profiles = seasonDocument.scoutProfiles || seasonDocument.scoutSignals || []
   const tracking = normalizePlayerTrackingState(playerDocument)
@@ -74,6 +75,7 @@ export const adaptPlayerDocumentSeason = ({
     season: {
       seasonId: cleanDomainValue(seasonIdentity.seasonId),
       seasonKey: cleanDomainValue(seasonIdentity.seasonKey),
+      seasonStatus: lifecycle.seasonStatus,
       birthYear: toDomainNumber(firstDomainValue(seasonDocument.birthYear, playerDocument.birthYear)),
     },
     lifecycle,
@@ -141,6 +143,18 @@ export const adaptPlayerDocumentSeason = ({
       profileIds: seasonDocument.scoutProfileIds,
       combinationIds: seasonDocument.scoutCombinationIds,
       searchIds: seasonDocument.scoutProfileSearchIds,
+      candidateSignals: seasonDocument.scoutCandidateSignals,
+      spotlights: seasonDocument.scoutSpotlights,
+      opportunity: seasonDocument.scoutOpportunity,
+      verification: seasonDocument.scoutVerification,
+      profileProgression: seasonDocument.scoutProfileProgression,
+      profileHierarchy: seasonDocument.scoutProfileHierarchy,
+      profileCaseStrength: seasonDocument.scoutProfileCaseStrength,
+      playerReview: playerDocument.playerReview || seasonDocument.playerReview || null,
+      trajectory: seasonDocument.scoutTrajectory,
+      transferContext: seasonDocument.scoutTransferContext,
+      engineVersion: seasonDocument.scoutEngineVersion,
+      statsLoadMeasurementHistory: seasonDocument.scoutStatsLoadMeasurementHistory,
     }),
     teamPerformance: teamScout || result.teamPerformance,
     completeness: {

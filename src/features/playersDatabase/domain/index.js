@@ -28,3 +28,6 @@ export * from './orchestration/buildDbPlayerScoutLegacyResult.js'
 
 export * from './orchestration/buildPlayerScoutShadowAudit.js'
 export * from './orchestration/buildTeamScoutShadowAudit.js'
+
+export * from './adapters/playerNarrative.adapter.js'
+export * from './narrative/index.js'

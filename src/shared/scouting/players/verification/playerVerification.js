@@ -92,7 +92,7 @@ const aggregateDimensions = checks => {
 
 const resolveDynamicPriorityScore = ({ question, context }) => {
   let score = PRIORITY_SCORE[question.priority] || 0
-  const actionStatus = context.opportunity?.actionStatus || ''
+  const actionStatus = context.opportunity?.effectiveActionStatus || ''
 
   if (['immediate', 'priority'].includes(actionStatus)) score += 10
 

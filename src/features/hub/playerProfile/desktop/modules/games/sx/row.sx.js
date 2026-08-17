@@ -30,7 +30,7 @@ export const rowSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'minmax(230px, 1fr) 1px minmax(70px, .30fr) 1px minmax(132px, .8fr) 1px minmax(122px, .72fr) 1px minmax(138px, .68fr) 1px 64px',
+      md: 'minmax(230px, 1fr) 1px minmax(70px, .30fr) 1px minmax(138px, .9fr) 1px minmax(122px, .72fr) 1px minmax(138px, .68fr) 1px 64px',
     },
     gap: 1,
     alignItems: 'stretch',

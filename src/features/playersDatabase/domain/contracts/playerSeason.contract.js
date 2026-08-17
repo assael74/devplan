@@ -28,6 +28,7 @@ export const createEmptyPlayerSeason = () => ({
   season: {
     seasonId: '',
     seasonKey: '',
+    seasonStatus: 'active',
     birthYear: null,
   },
   lifecycle: createLifecycle('current'),

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/logic/teamPage.constants.js
+// src/features/playersDatabase/ui/pages/teamPage/logic/teamPage.constants.js
 
 export {
   POSITION_LAYER_OPTIONS,
@@ -95,7 +95,7 @@ export const STATS_SEASON_STATUS_OPTIONS = [
   {
     value: 'completed',
     label: 'טעינת עונה מלאה',
-    description: 'ללא תחזית וללא מחיקה של פרופילי סקאוט קיימים.',
+    description: 'ללא תחזית, עם חישוב מחדש מלא של מצב הסקאוט לפי הנתונים שנטענו.',
   },
 ]
 
@@ -119,5 +119,24 @@ export const STATS_ROSTER_STATUS_OPTIONS = [
   {
     value: 'youngerAgeGroup',
     label: 'שנתון צעיר',
+  },
+]
+
+export const STATS_TRANSFER_DIRECTION_OPTIONS = [
+  {
+    value: 'unknown',
+    label: 'לא ידוע',
+  },
+  {
+    value: 'up',
+    label: 'התקדם',
+  },
+  {
+    value: 'lateral',
+    label: 'אותה רמה',
+  },
+  {
+    value: 'down',
+    label: 'הלך אחורה',
   },
 ]
