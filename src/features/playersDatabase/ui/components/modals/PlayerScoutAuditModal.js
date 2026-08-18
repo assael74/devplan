@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  Input,
   Stack,
   Table,
   Typography,
@@ -14,38 +13,15 @@ import {
 import RegularModal from './RegularModal.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { playerScoutAuditSx as sx } from './sx/playerScoutAudit.sx.js'
+import {
+  buildPlayerScoutCollectionHealth,
+  buildPlayerScoutHealthSummary,
+  getPlayerScoutIssueDefinition,
+} from './playerScoutAuditHealth.model.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
-
-const ISSUE_LABELS = {
-  birth_team_mismatch: 'פער מול החישוב החדש',
-  missing_player_document: 'מסמך שחקן חסר',
-  player_document_mismatch: 'פער במסמך שחקן',
-  missing_search_index: 'אינדקס שחקן חסר',
-  search_index_mismatch: 'פער באינדקס שחקן',
-  missing_team_performance_context: 'חסר הקשר ביצועי קבוצה',
-  birth_team_reliability_mismatch: 'פער באמינות במסמך קבוצה',
-  player_document_reliability_mismatch: 'פער באמינות במסמך שחקן',
-  search_index_reliability_mismatch: 'פער באמינות באינדקס',
-  current_season_status_invalid: 'סטטוס עונה נוכחית חסר או לא תקין',
-  history_season_status_invalid: 'סטטוס עונת עבר לא תקין',
-  player_schema_outdated: 'Schema שחקן דורש עדכון',
-  player_season_context_outdated: 'הקשר עונה במסמך השחקן דורש סנכרון',
-  team_player_schema_outdated: 'Schema שחקן בקבוצה דורש עדכון',
-  team_player_state_outdated: 'Scout State בקבוצה לא מסונכרן',
-  player_narrative_schema_invalid: 'מבנה סיפור השחקן לא תקין',
-  search_index_schema_outdated: 'Schema אינדקס שחקן דורש עדכון',
-  team_scout_state_mismatch: 'Current Scout State בקבוצה לא מסונכרן',
-  player_scout_state_mismatch: 'Current Scout State במסמך שחקן לא מסונכרן',
-  search_index_scout_projection_mismatch: 'פער ב-Scout projection באינדקס',
-  team_stats_measurement_outdated: 'Full Stats measurement לא מסונכרן',
-  player_measurement_history_outdated: 'Measurement History במסמך שחקן לא מסונכרנת',
-  player_tracking_mismatch: 'Tracking reasons לא מסונכרנים',
-  player_season_status_mismatch: 'סטטוס עונה במסמך שחקן לא מסונכרן',
-  search_index_season_status_mismatch: 'סטטוס עונה באינדקס לא מסונכרן',
-}
 
 const joinValues = values => (
   Array.isArray(values) && values.length
@@ -63,6 +39,131 @@ function SummaryCard({ label, value, tone = 'neutral' }) {
       <Typography level='h3' sx={sx.summaryValue}>
         {value}
       </Typography>
+    </Box>
+  )
+}
+
+function HealthKpiCard({ label, value, description, tone = 'neutral' }) {
+  return (
+    <Box sx={[sx.healthKpiCard, sx.summaryTone[tone]]}>
+      <Box sx={sx.healthKpiTopRow}>
+        <Typography level='title-sm' sx={sx.sectionTitle}>
+          {label}
+        </Typography>
+
+        <Typography level='h2' sx={sx.healthKpiValue}>
+          {value}
+        </Typography>
+      </Box>
+
+      <Typography level='body-xs' sx={sx.healthKpiDescription}>
+        {description}
+      </Typography>
+    </Box>
+  )
+}
+
+function HealthIssueGroups({ groups }) {
+  if (!groups.length) {
+    return (
+      <Box sx={sx.healthClearBox}>
+        <Typography level='title-sm' sx={sx.sectionTitle}>
+          לא נמצאו בעיות מערכת
+        </Typography>
+        <Typography level='body-sm' sx={sx.auditChoiceDescription}>
+          לא נמצאו פערי סנכרון, מבנה או מצב מנוע שדורשים פעולה.
+        </Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <Box sx={sx.healthFindingsSection}>
+      <Typography level='title-md' sx={sx.sectionTitle}>
+        מה נמצא?
+      </Typography>
+
+      <Stack spacing={0.75}>
+        {groups.map(group => (
+          <Box key={group.id} sx={sx.healthFindingGroup}>
+            <Box sx={sx.healthFindingHeader}>
+              <Box>
+                <Typography level='title-sm' sx={sx.sectionTitle}>
+                  {group.title}
+                </Typography>
+                <Typography level='body-xs' sx={sx.healthFindingDescription}>
+                  {group.description}
+                </Typography>
+              </Box>
+
+              <Chip size='sm' variant='soft' color={group.tone}>
+                {group.count}
+              </Chip>
+            </Box>
+
+            <Typography level='body-xs' sx={sx.healthFindingImpact}>
+              אם לא מתקנים: {group.impact}
+            </Typography>
+
+            <Stack spacing={0.5}>
+              {group.entries.slice(0, 5).map(item => (
+                <Box key={item.type} sx={sx.healthFindingRow}>
+                  <Box sx={sx.healthFindingCopy}>
+                    <Typography level='body-sm' sx={sx.healthFindingTitle}>
+                      {item.title}
+                    </Typography>
+                    <Typography level='body-xs' sx={sx.healthFindingDescription}>
+                      {item.explanation}
+                    </Typography>
+                  </Box>
+
+                  <Typography level='body-sm' sx={sx.healthFindingCount}>
+                    {item.count}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  )
+}
+
+function CollectionHealthStatus({ items }) {
+  return (
+    <Box sx={sx.collectionHealthBox}>
+      <Box>
+        <Typography level='title-sm' sx={sx.sectionTitle}>
+          מצב לפי אזור במערכת
+        </Typography>
+        <Typography level='body-xs' sx={sx.healthFindingDescription}>
+          מציג באיזה חלק של המערכת נמצאו הבעיות. המספרים אינם מדד נוסף, אלא דרך לאתר את מקור הבעיה.
+        </Typography>
+      </Box>
+
+      <Box sx={sx.collectionHealthGrid}>
+        {items.map(item => (
+          <Box key={item.id} sx={sx.collectionHealthRow}>
+            <Box sx={sx.collectionHealthCopy}>
+              <Typography level='body-sm' sx={sx.healthFindingTitle}>
+                {item.title}
+              </Typography>
+              <Typography level='body-xs' sx={sx.healthFindingDescription}>
+                {item.checked} מסמכים נבדקו
+              </Typography>
+            </Box>
+
+            <Chip
+              size='sm'
+              variant='soft'
+              color={item.issues ? 'warning' : 'success'}
+            >
+              {item.issues ? `${item.issues} בעיות` : 'תקין'}
+            </Chip>
+          </Box>
+        ))}
+      </Box>
     </Box>
   )
 }
@@ -107,34 +208,18 @@ export default function PlayerScoutAuditModal({
   repairResult,
   engineRefreshPreview,
   engineRefreshResult,
-  partialAuditDefaults,
+  documentRewritePreview,
+  documentRewriteResult,
   onRunFull,
-  onRunPartial,
   onDownload,
   onRepairPreview,
   onRepairApply,
   onEngineRefreshPreview,
   onEngineRefreshApply,
+  onDocumentRewritePreview,
+  onDocumentRewriteApply,
   onClose,
 }) {
-  const [teamDocumentId, setTeamDocumentId] = React.useState('')
-  const [seasonKey, setSeasonKey] = React.useState('')
-
-  React.useEffect(() => {
-    if (!open) return
-
-    setTeamDocumentId(
-      clean(partialAuditDefaults?.teamDocumentId)
-    )
-    setSeasonKey(
-      clean(partialAuditDefaults?.seasonKey)
-    )
-  }, [
-    open,
-    partialAuditDefaults?.teamDocumentId,
-    partialAuditDefaults?.seasonKey,
-  ])
-
   const summary = audit?.summary || {}
   const issues = Array.isArray(audit?.issues)
     ? audit.issues
@@ -142,6 +227,8 @@ export default function PlayerScoutAuditModal({
   const previewSummary = repairPreview?.summary || {}
   const enginePreviewSummary = engineRefreshPreview?.summary || {}
   const engineFieldCounts = enginePreviewSummary.fieldCounts || {}
+  const rewriteSummary = documentRewritePreview?.summary || {}
+  const rewriteCost = documentRewritePreview?.cost || {}
   const auditCost = audit?.cost?.audit || {}
   const runtimeCost = audit?.cost?.runtime || {}
   const runtimeFlows = runtimeCost.flows || {}
@@ -159,182 +246,107 @@ export default function PlayerScoutAuditModal({
   const shadowChangedRows = Array.isArray(shadow?.changedRows)
     ? shadow.changedRows.slice(0, 100)
     : []
-  const partialAuditDisabled = (
-    busy ||
-    repairBusy ||
-    !clean(teamDocumentId) ||
-    !clean(seasonKey)
-  )
   const actionableIssues = issues.filter(issue => issue.repairable !== false)
   const visibleIssues = actionableIssues.slice(0, 250)
   const narrativeIssues = issues.filter(issue => (
     issue.type === 'player_narrative_schema_invalid'
   ))
-  const repairableIssuesCount = Number(summary.repairableIssuesCount || 0)
-  const engineDiagnosticIssuesCount = Number(summary.engineDiagnosticIssuesCount || 0)
   const schemaReportOnlyIssuesCount = Number(summary.schemaReportOnlyIssuesCount || 0)
+  const health = buildPlayerScoutHealthSummary({ issues, summary })
+  const collectionHealth = buildPlayerScoutCollectionHealth({ issues, auditCost })
+  const needsVerification = !!(
+    repairResult || engineRefreshResult || documentRewriteResult
+  )
   const quietDetails = [
-    `Measurement ${summary.measurementIssuesCount || 0}`,
-    `Tracking ${summary.trackingIssuesCount || 0}`,
-    `Projection ${summary.projectionIssuesCount || 0}`,
-    `Current State ${summary.stateIssuesCount || 0}`,
-    `Profile diff ${summary.rowsWithProfileDiff || 0}`,
-    `Reads ${auditCost.reads?.total || 0}`,
+    `פערי מדידה ${summary.measurementIssuesCount || 0}`,
+    `פערי מעקב שחקנים ${summary.trackingIssuesCount || 0}`,
+    `פערי אינדקס חיפוש ${summary.projectionIssuesCount || 0}`,
+    `פערי מצב מנוע ${summary.stateIssuesCount || 0}`,
+    `פערי פרופיל ${summary.rowsWithProfileDiff || 0}`,
+    `קריאות למסד הנתונים ${auditCost.reads?.total || 0}`,
   ].join(' · ')
 
-  const handlePartialRun = () => {
-    onRunPartial({
-      teamDocumentId: clean(teamDocumentId),
-      seasonKey: clean(seasonKey),
-    })
+
+  let primaryAction = {
+    label: audit ? 'הרץ בדיקה מחדש' : 'הרץ בדיקת מערכת',
+    description: 'בדיקה מלאה של הקבוצות, מסמכי השחקנים והאינדקסים.',
+    onClick: onRunFull,
+    color: 'primary',
+  }
+
+  if (needsVerification) {
+    primaryAction = {
+      label: 'אמת את התיקון',
+      description: 'הפעולה האחרונה הסתיימה. הרץ בדיקה מלאה כדי לוודא שלא נשארו פערים.',
+      onClick: onRunFull,
+      color: 'primary',
+    }
+  } else if (repairPreview && health.repairableCount) {
+    primaryAction = {
+      label: 'בצע את התיקון המוצע',
+      description: 'התיקון יטפל רק בפערים שהבדיקה סימנה כניתנים לתיקון אוטומטי.',
+      onClick: onRepairApply,
+      color: 'warning',
+    }
+  } else if (health.repairableCount) {
+    primaryAction = {
+      label: 'הצג תיקון מוצע',
+      description: 'לפני כתיבה תוצג רשימת היעדים והערכת העלות.',
+      onClick: onRepairPreview,
+      color: 'warning',
+    }
+  } else if (engineRefreshPreview && health.engineCount) {
+    primaryAction = {
+      label: 'רענן את מצב המנוע',
+      description: 'יעודכנו רק שדות מצב הסקאוטינג שהבדיקה זיהתה כמיושנים.',
+      onClick: onEngineRefreshApply,
+      color: 'primary',
+    }
+  } else if (health.engineCount) {
+    primaryAction = {
+      label: 'בדוק תיקון מצב מנוע',
+      description: 'תוצג תצוגה מקדימה לפני כל כתיבה.',
+      onClick: onEngineRefreshPreview,
+      color: 'primary',
+    }
   }
 
   return (
     <RegularModal
       open={open}
-      title='Audit פרופילי Scout'
-      description='בחר את היקף הבדיקה. פתיחת המודאל אינה מבצעת קריאות Firestore.'
+      title='בדיקת תקינות סקאוטינג'
+      description='בדיקה שוטפת שמוודאת שהמידע מסונכרן, שמבנה הנתונים תקין ושמצב הסקאוטינג מעודכן.'
       iconId='search'
       size='xl'
       busy={busy}
       hideFooter
-      headerActions={(
-        <Stack direction='row' spacing={0.75}>
-          <Button
-            size='sm'
-            variant='soft'
-            disabled={!audit || busy || repairBusy}
-            onClick={onDownload}
-          >
-            הורד JSON
-          </Button>
-
-          <Button
-            size='sm'
-            variant='outlined'
-            color='primary'
-            loading={repairBusy}
-            disabled={!audit || busy || repairBusy || !engineDiagnosticIssuesCount}
-            onClick={onEngineRefreshPreview}
-          >
-            Refresh Engine Preview
-          </Button>
-
-          <Button
-            size='sm'
-            variant='solid'
-            color='primary'
-            loading={repairBusy}
-            disabled={!engineRefreshPreview || busy || repairBusy}
-            onClick={onEngineRefreshApply}
-          >
-            רענן Engine State
-          </Button>
-
-          <Button
-            size='sm'
-            variant='outlined'
-            color='warning'
-            loading={repairBusy}
-            disabled={!audit || busy || repairBusy}
-            onClick={onRepairPreview}
-          >
-            Repair Preview
-          </Button>
-
-          <Button
-            size='sm'
-            variant='solid'
-            color='danger'
-            loading={repairBusy}
-            disabled={!repairPreview || busy || repairBusy}
-            onClick={onRepairApply}
-          >
-            בצע Repair
-          </Button>
-        </Stack>
-      )}
       contentSx={sx.modalContent}
       onClose={onClose}
     >
       <Box sx={sx.content}>
-        <Box sx={sx.auditChoiceGrid}>
-          <Box sx={sx.auditChoiceCard}>
-            <Box sx={sx.auditChoiceCopy}>
+        {!audit ? (
+          <Box sx={sx.healthStartBox}>
+            <Box sx={sx.healthStartCopy}>
               <Typography level='title-md' sx={sx.sectionTitle}>
-                Audit חלקי
+                בדיקת מערכת מלאה
               </Typography>
-
               <Typography level='body-sm' sx={sx.auditChoiceDescription}>
-                בודק רק קבוצה ועונה אחת. החישוב משווה את שחקני אותה קבוצה בין dbBirthTeams, dbPlayers ו-dbSearchIndexes, בלי לסרוק את יתר מאגר השחקנים.
+                הבדיקה משווה בין מסמכי הקבוצות, מסמכי השחקנים ואינדקס החיפוש, ומסבירה מה לא תקין ומה נדרש לעשות. הבדיקה עצמה אינה משנה נתונים.
               </Typography>
-            </Box>
-
-            <Box sx={sx.partialAuditFields}>
-              <Input
-                size='sm'
-                value={teamDocumentId}
-                placeholder='teamDocumentId'
-                disabled={busy || repairBusy}
-                onChange={event => setTeamDocumentId(event.target.value)}
-              />
-
-              <Input
-                size='sm'
-                value={seasonKey}
-                placeholder='עונה, לדוגמה 25/26'
-                disabled={busy || repairBusy}
-                onChange={event => setSeasonKey(event.target.value)}
-              />
             </Box>
 
             <Button
               variant='solid'
-              loading={busy}
-              disabled={partialAuditDisabled}
-              startDecorator={
-                !busy
-                  ? iconUi({
-                      id: 'search',
-                      size: 'sm',
-                    })
-                  : null
-              }
-              onClick={handlePartialRun}
-            >
-              הרץ Audit חלקי
-            </Button>
-          </Box>
-
-          <Box sx={sx.auditChoiceCard}>
-            <Box sx={sx.auditChoiceCopy}>
-              <Typography level='title-md' sx={sx.sectionTitle}>
-                Audit מלא
-              </Typography>
-
-              <Typography level='body-sm' sx={sx.auditChoiceDescription}>
-                סורק את כל מאגר הקבוצות, השחקנים והאינדקסים. הבדיקה מיועדת לביקורת מערכת כוללת ועלולה לבצע מספר גדול של קריאות Firestore.
-              </Typography>
-            </Box>
-
-            <Button
-              variant='outlined'
+              color='primary'
               loading={busy}
               disabled={busy || repairBusy}
-              startDecorator={
-                !busy
-                  ? iconUi({
-                      id: 'search',
-                      size: 'sm',
-                    })
-                  : null
-              }
+              startDecorator={!busy ? iconUi({ id: 'search', size: 'sm' }) : null}
               onClick={onRunFull}
             >
-              הרץ Audit מלא
+              הרץ בדיקת מערכת
             </Button>
           </Box>
-        </Box>
+        ) : null}
 
         {error ? (
           <Typography level='body-sm' color='danger'>
@@ -347,120 +359,193 @@ export default function PlayerScoutAuditModal({
             <Box sx={sx.auditStatusHeader}>
               <Box>
                 <Typography level='title-md' sx={sx.sectionTitle}>
-                  מצב האודיט
+                  מצב המערכת
                 </Typography>
-                <Typography level='body-xs' sx={sx.auditChoiceDescription}>
-                  המספרים הראשיים מציגים מה ניתן לתקן עכשיו. אבחוני מנוע ו-Schema לדיווח בלבד אינם חלק מה-Repair.
+                <Typography level='body-sm' sx={sx.auditChoiceDescription}>
+                  {health.isHealthy
+                    ? 'הבדיקה לא מצאה בעיה שדורשת פעולה.'
+                    : `נמצאו ${health.attentionCount} בעיות שדורשות בדיקה או תיקון.`}
                 </Typography>
               </Box>
 
               <Chip
                 size='sm'
                 variant='soft'
-                color={repairableIssuesCount ? 'warning' : 'success'}
+                color={health.isHealthy ? 'success' : 'warning'}
               >
-                {repairableIssuesCount ? 'דורש טיפול' : 'אין פערים לתיקון'}
+                {health.isHealthy ? 'המערכת תקינה' : 'נדרש טיפול'}
               </Chip>
             </Box>
 
             <Box sx={sx.summaryGrid}>
-              <SummaryCard
-                label='שורות שחושבו מחדש'
-                value={summary.checkedTeamPlayerRows || 0}
+              <HealthKpiCard
+                label='דורש טיפול'
+                value={health.attentionCount}
+                description='כל הבעיות שהמערכת יודעת לתקן או שדורשות חישוב מחדש של מצב הסקאוטינג.'
+                tone={health.attentionCount ? 'warning' : 'success'}
               />
-              <SummaryCard
-                label='לתיקון עכשיו'
-                value={repairableIssuesCount}
-                tone={repairableIssuesCount ? 'warning' : 'success'}
+              <HealthKpiCard
+                label='בעיות סנכרון'
+                value={health.syncCount}
+                description='אותו מידע אינו תואם בין מסמך הקבוצה, מסמך השחקן או אינדקס החיפוש.'
+                tone={health.syncCount ? 'warning' : 'success'}
               />
-              <SummaryCard
-                label='פערי סנכרון'
-                value={summary.syncIssuesCount || 0}
-                tone={summary.syncIssuesCount ? 'warning' : 'success'}
-              />
-              <SummaryCard
-                label='Schema לתיקון'
-                value={summary.schemaAutoRepairIssuesCount || 0}
-                tone={summary.schemaAutoRepairIssuesCount ? 'warning' : 'success'}
-              />
-              <SummaryCard
-                label='אבחון מנוע'
-                value={engineDiagnosticIssuesCount}
-                tone='neutral'
-              />
-              <SummaryCard
-                label='דיווח בלבד'
-                value={schemaReportOnlyIssuesCount}
-                tone='neutral'
+              <HealthKpiCard
+                label='בעיות מבנה'
+                value={health.schemaCount}
+                description='מסמך חסר שדה נדרש או שמבנה הנתונים שלו אינו תואם למבנה הנוכחי.'
+                tone={health.schemaCount ? 'warning' : 'success'}
               />
             </Box>
 
+            <Box sx={sx.primaryActionBox}>
+              <Box sx={sx.primaryActionCopy}>
+                <Typography level='title-sm' sx={sx.sectionTitle}>
+                  הפעולה המומלצת עכשיו
+                </Typography>
+                <Typography level='body-xs' sx={sx.auditChoiceDescription}>
+                  {primaryAction.description}
+                </Typography>
+              </Box>
+
+              <Button
+                variant='solid'
+                color={primaryAction.color}
+                loading={busy || repairBusy}
+                disabled={busy || repairBusy}
+                onClick={primaryAction.onClick}
+              >
+                {primaryAction.label}
+              </Button>
+            </Box>
+
+            <HealthIssueGroups groups={health.groups} />
+
+            <CollectionHealthStatus items={collectionHealth} />
+
             <Typography level='body-xs' sx={sx.costNote}>
-              {quietDetails}
+              פירוט הבדיקה: {quietDetails} · מידע לבדיקה בלבד {schemaReportOnlyIssuesCount}
             </Typography>
           </Box>
         ) : null}
 
         {audit?.cost?.audit ? (
           <Typography level='body-xs' sx={sx.costNote}>
-            מסמכים שנמצאו: קבוצות {auditCost.documentsObserved?.teamDocuments || 0} · dbPlayers {auditCost.documentsObserved?.playerDocuments || 0} · Player SearchIndex {auditCost.documentsObserved?.playerSearchIndexes || 0} · Team SearchIndex {auditCost.documentsObserved?.teamSearchIndexes || 0}. Player document lookups: {auditCost.documentsObserved?.playerDocumentLookups || 0}.
+            מסמכים שנבדקו: קבוצות {auditCost.documentsObserved?.teamDocuments || 0} · שחקנים {auditCost.documentsObserved?.playerDocuments || 0} · אינדקס שחקנים {auditCost.documentsObserved?.playerSearchIndexes || 0} · אינדקס קבוצות {auditCost.documentsObserved?.teamSearchIndexes || 0} · בדיקות התאמה למסמכי שחקן {auditCost.documentsObserved?.playerDocumentLookups || 0}.
           </Typography>
         ) : null}
+
+        <Box component='details' sx={sx.advancedToolsBox}>
+          <Box component='summary' sx={sx.detailsSummary}>
+            <Box>
+              <Typography level='title-sm' sx={sx.sectionTitle}>
+                כלים מתקדמים
+              </Typography>
+              <Typography level='body-xs' sx={sx.repairCostBreakdown}>
+                הורדת נתוני הבדיקה וכלים מיוחדים לשינוי מבנה המערכת. בדרך כלל אין צורך להשתמש בהם.
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={sx.advancedToolsGrid}>
+            <Box sx={sx.advancedToolCard}>
+              <Typography level='title-sm' sx={sx.sectionTitle}>
+                נתוני הבדיקה
+              </Typography>
+              <Typography level='body-xs' sx={sx.auditChoiceDescription}>
+                הורד את תוצאת הבדיקה המלאה לצורך בדיקה טכנית או תיעוד.
+              </Typography>
+
+              <Button
+                size='sm'
+                variant='outlined'
+                color='neutral'
+                disabled={!audit || busy || repairBusy}
+                startDecorator={iconUi({ id: 'download', size: 'sm' })}
+                onClick={onDownload}
+              >
+                הורד נתוני בדיקה
+              </Button>
+            </Box>
+
+            <Box sx={sx.advancedToolCard}>
+              <Typography level='title-sm' sx={sx.sectionTitle}>
+                מיגרציה ושכתוב מסמכים
+              </Typography>
+              <Typography level='body-xs' sx={sx.auditChoiceDescription}>
+                כלי מיוחד לשינוי מבנה מסמכים. אינו חלק מתחזוקה שוטפת.
+              </Typography>
+
+              <Button
+                size='sm'
+                variant={documentRewritePreview ? 'solid' : 'outlined'}
+                color='warning'
+                loading={repairBusy}
+                disabled={!audit || busy || repairBusy}
+                onClick={documentRewritePreview
+                  ? onDocumentRewriteApply
+                  : onDocumentRewritePreview}
+              >
+                {documentRewritePreview ? 'בצע שכתוב מסמכים' : 'הצג שכתוב מוצע'}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
 
         {audit?.cost?.runtime ? (
           <Box component='details' sx={sx.detailsBox}>
             <Box component='summary' sx={sx.detailsSummary}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
-                בדיקת עלויות Runtime
+                בדיקת עלויות פעולות
               </Typography>
               <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-                הערכת עלויות תפעוליות לפי המסמכים שכבר נקראו
+                הערכת מספר הקריאות והכתיבות שפעולות שונות עשויות לבצע
               </Typography>
             </Box>
 
             <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-              האומדן משתמש רק במסמכים שכבר נקראו באודיט. הוא אינו מבצע Firestore reads נוספים לצורך תמחור.
+              האומדן משתמש רק במסמכים שכבר נקראו בבדיקה ואינו מבצע קריאות נוספות למסד הנתונים רק לצורך ההערכה.
             </Typography>
 
             <Box sx={sx.repairCostGrid}>
               <SummaryCard
-                label='Full Stats · Reads מינימום'
+                label='טעינת סטטיסטיקה מלאה · קריאות מינימום'
                 value={runtimeFlows.fullStatsLoad?.readsMinimum || 0}
               />
               <SummaryCard
-                label='Full Stats · Writes מקסימום'
+                label='טעינת סטטיסטיקה מלאה · כתיבות מקסימום'
                 value={runtimeFlows.fullStatsLoad?.writesMaximum || 0}
                 tone={runtimeFlows.fullStatsLoad?.writesMaximum ? 'warning' : 'success'}
               />
               <SummaryCard
-                label='Team Context · Reads מינימום'
+                label='עדכון הקשר קבוצה · קריאות מינימום'
                 value={runtimeFlows.teamContextUpdate?.readsMinimum || 0}
               />
               <SummaryCard
-                label='Team Context · Writes מקסימום'
+                label='עדכון הקשר קבוצה · כתיבות מקסימום'
                 value={runtimeFlows.teamContextUpdate?.writesMaximum || 0}
                 tone={runtimeFlows.teamContextUpdate?.writesMaximum ? 'warning' : 'success'}
               />
               <SummaryCard
-                label='Role Edit · Reads/Writes'
+                label='עריכת תפקיד · קריאות/כתיבות'
                 value={`${runtimeFlows.roleEdit?.readsTypical || 0}/${runtimeFlows.roleEdit?.writesTypical || 0}`}
               />
               <SummaryCard
-                label='Verification · Reads/Writes'
+                label='עדכון אימות · קריאות/כתיבות'
                 value={`${runtimeFlows.verificationUpdate?.readsTypical || 0}/${runtimeFlows.verificationUpdate?.writesTypical || 0}`}
               />
               <SummaryCard
-                label='Profile Mutation · Reads/Writes'
+                label='שינוי פרופיל ידני · קריאות/כתיבות'
                 value={`${runtimeFlows.manualProfileMutation?.readsTypical || 0}/${runtimeFlows.manualProfileMutation?.writesTypical || 0}`}
               />
               <SummaryCard
-                label='Story open · Reads'
+                label='פתיחת סיפור · קריאות'
                 value={`0-${runtimeFlows.storyOpen?.readsMaximum || 0}`}
               />
             </Box>
 
             <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-              Full Stats אינו כולל באומדן את עלות Identity Resolution המשתנה. שאילתות Player SearchIndex ברמת מועדון מוצגות כמינימום בלבד.
+              טעינת סטטיסטיקה מלאה אינה כוללת באומדן את עלות התאמת זהויות השחקנים, שמשתנה לפי המקרה. חיפושים באינדקס ברמת מועדון מוצגים כמינימום בלבד.
             </Typography>
 
             {runtimeRisks.length ? (
@@ -484,10 +569,10 @@ export default function PlayerScoutAuditModal({
             <Box component='summary' sx={sx.shadowHeader}>
               <Box>
                 <Typography level='title-md' sx={sx.sectionTitle}>
-                  V2 פעיל — השוואה מול Legacy
+                  המנוע החדש פעיל — השוואה מול המנוע הישן
                 </Typography>
                 <Typography level='body-xs' sx={sx.shadowNote}>
-                  Read-only · ללא כתיבות וללא Firestore reads נוספים. מגמת Closing Gap בין snapshots עדיין אינה נכללת בהשוואה זו.
+                  בדיקה בלבד, ללא שינוי נתונים וללא קריאות נוספות למסד הנתונים. השוואת השיפור בין שתי טעינות הסטטיסטיקה האחרונות עדיין אינה נכללת בבדיקה הזו.
                 </Typography>
               </Box>
 
@@ -498,11 +583,11 @@ export default function PlayerScoutAuditModal({
 
             <Box sx={sx.shadowSummaryGrid}>
               <SummaryCard
-                label='Legacy עם Profile'
+                label='המנוע הישן עם פרופיל'
                 value={shadowSummary.v1ProfiledPlayers || 0}
               />
               <SummaryCard
-                label='V2 פעיל עם Profile'
+                label='המנוע החדש עם פרופיל'
                 value={shadowSummary.v2ProfiledPlayers || 0}
               />
               <SummaryCard
@@ -511,24 +596,24 @@ export default function PlayerScoutAuditModal({
                 tone={shadowSummary.changedProfilePlayers ? 'warning' : 'success'}
               />
               <SummaryCard
-                label='נוסף ב-V2 הפעיל'
+                label='נוסף במנוע החדש'
                 value={shadowSummary.v2AddedProfilePlayers || 0}
               />
               <SummaryCard
-                label='קיים רק ב-Legacy'
+                label='קיים רק במנוע הישן'
                 value={shadowSummary.v2RemovedProfilePlayers || 0}
                 tone={shadowSummary.v2RemovedProfilePlayers ? 'warning' : 'success'}
               />
               <SummaryCard
-                label='Near Profile'
+                label='קרוב לפרופיל'
                 value={shadowSummary.nearProfilePlayers || 0}
               />
               <SummaryCard
-                label='Next Best Check'
+                label='הבדיקה הבאה המומלצת'
                 value={shadowSummary.playersWithNextBestCheck || 0}
               />
               <SummaryCard
-                label='Contract issues'
+                label='בעיות במבנה הנתונים'
                 value={shadowSummary.contractIssuePlayers || 0}
                 tone={shadowSummary.contractIssuePlayers ? 'danger' : 'success'}
               />
@@ -536,11 +621,11 @@ export default function PlayerScoutAuditModal({
 
             <Box sx={sx.profileCountsGrid}>
               <ProfileCounts
-                title='Profiles שנוספו ב-V2 הפעיל'
+                title='פרופילים שנוספו במנוע החדש'
                 values={shadowSummary.addedProfilesById}
               />
               <ProfileCounts
-                title='Profiles שקיימים רק ב-Legacy'
+                title='פרופילים שקיימים רק במנוע הישן'
                 values={shadowSummary.removedProfilesById}
               />
             </Box>
@@ -557,12 +642,12 @@ export default function PlayerScoutAuditModal({
                       <th>שחקן</th>
                       <th>קבוצה</th>
                       <th>עונה</th>
-                      <th>Legacy</th>
-                      <th>V2 פעיל</th>
-                      <th>Primary</th>
-                      <th>Near</th>
-                      <th>Opportunity</th>
-                      <th>Gate</th>
+                      <th>מנוע ישן</th>
+                      <th>מנוע חדש</th>
+                      <th>פרופיל ראשי</th>
+                      <th>קרוב לפרופיל</th>
+                      <th>מידיות</th>
+                      <th>הקשר</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -584,7 +669,7 @@ export default function PlayerScoutAuditModal({
               </Box>
             ) : (
               <Typography level='body-sm' sx={sx.emptyText}>
-                אין שינויי Profile בין Legacy ל-V2 הפעיל בסקופ שנבדק.
+                לא נמצאו שינויי פרופיל בין המנוע הישן למנוע החדש בתחום שנבדק.
               </Typography>
             )}
           </Box>
@@ -594,10 +679,10 @@ export default function PlayerScoutAuditModal({
           <Box sx={sx.repairBox}>
             <Box sx={sx.repairHeader}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
-                Refresh Engine State Preview
+                תצוגה מקדימה לרענון מצב המנוע
               </Typography>
               <Chip size='sm' color='primary' variant='soft'>
-                scoutVerification נשמר
+                אימותי הסקאוט נשמרים
               </Chip>
             </Box>
 
@@ -611,22 +696,22 @@ export default function PlayerScoutAuditModal({
                 value={enginePreviewSummary.affectedPlayerSeasons || 0}
               />
               <SummaryCard
-                label='Reads מקסימום'
+                label='קריאות מקסימום'
                 value={engineRefreshPreview.cost?.readsMaximum || 0}
               />
               <SummaryCard
-                label='Writes מקסימום'
+                label='כתיבות מקסימום'
                 value={engineRefreshPreview.cost?.writesMaximum || 0}
               />
             </Box>
 
             <ProfileCounts
-              title='שדות Engine לעדכון'
+              title='שדות מצב מנוע לעדכון'
               values={engineFieldCounts}
             />
 
             <Typography level='body-xs' sx={sx.costNote}>
-              מתעדכנים רק שדות Engine Computed State. לא נוגעים ב-scoutVerification, בפרופילים ידניים או ב-SearchIndex. אין Audit אימות אוטומטי לאחר הכתיבה כדי לחסוך קריאות.
+              מתעדכנים רק השדות שהמנוע מחשב. לא נוגעים באימותים ידניים, בפרופילים ידניים או באינדקס החיפוש. לאחר הכתיבה לא רצה בדיקת אימות אוטומטית כדי לחסוך קריאות.
             </Typography>
           </Box>
         ) : null}
@@ -634,7 +719,7 @@ export default function PlayerScoutAuditModal({
         {engineRefreshResult ? (
           <Box sx={sx.repairBox}>
             <Typography level='title-sm' sx={sx.sectionTitle}>
-              Refresh Engine State הושלם
+              רענון מצב המנוע הושלם
             </Typography>
 
             <Typography level='body-sm'>
@@ -643,11 +728,85 @@ export default function PlayerScoutAuditModal({
           </Box>
         ) : null}
 
+        {documentRewritePreview ? (
+          <Box sx={sx.repairBox}>
+            <Box sx={sx.repairHeader}>
+              <Typography level='title-sm' sx={sx.sectionTitle}>
+                תצוגה מקדימה לשכתוב מסמכים
+              </Typography>
+              <Chip size='sm' color='warning' variant='soft'>
+                ללא קריאות נוספות בזמן הכתיבה
+              </Chip>
+            </Box>
+
+            <Box sx={sx.repairGrid}>
+              <SummaryCard
+                label='מסמכים לשכתוב'
+                value={rewriteSummary.documentsToRewrite || 0}
+              />
+              <SummaryCard
+                label='דולגו מטעמי בטיחות'
+                value={rewriteSummary.documentsSkippedForSafety || 0}
+                tone={rewriteSummary.documentsSkippedForSafety ? 'warning' : 'success'}
+              />
+              <SummaryCard
+                label='מסמכי קבוצה'
+                value={rewriteSummary.teamDocuments || 0}
+              />
+              <SummaryCard
+                label='מסמכי שחקן'
+                value={rewriteSummary.playerDocuments || 0}
+              />
+              <SummaryCard
+                label='אינדקס שחקנים'
+                value={rewriteSummary.playerSearchIndexes || 0}
+              />
+              <SummaryCard
+                label='אינדקס קבוצות'
+                value={rewriteSummary.teamSearchIndexes || 0}
+              />
+              <SummaryCard
+                label='שדות להוספה'
+                value={rewriteSummary.fieldsAdded || 0}
+              />
+              <SummaryCard
+                label='שדות להסרה'
+                value={rewriteSummary.fieldsRemoved || 0}
+                tone={rewriteSummary.fieldsRemoved ? 'warning' : 'success'}
+              />
+              <SummaryCard
+                label='כתיבות'
+                value={rewriteCost.writesMaximum || 0}
+                tone={rewriteCost.writesMaximum ? 'warning' : 'success'}
+              />
+            </Box>
+
+            <Typography level='body-xs' sx={sx.costNote}>
+              השכתוב משתמש במסמכים שכבר נקראו בבדיקה. בזמן הביצוע צפויות {rewriteCost.reads || 0} קריאות ועד {rewriteCost.writesMaximum || 0} כתיבות, המחולקות ל-{rewriteCost.batches || 0} קבוצות כתיבה. כל מסמך מוחלף לפי מבנה הנתונים המרכזי: שדות חסרים מתווספים, שדות ישנים מוסרים ומצב הסקאוטינג מחושב מחדש כאשר יש מספיק מידע. מסמכים שאין להם התאמה חד-משמעית מדולגים ואינם נכתבים.
+            </Typography>
+
+            <Typography level='body-xs' sx={sx.repairNote}>
+              לא רצה בדיקת אימות אוטומטית לאחר השכתוב כדי לחסוך קריאות. כאשר רוצים לאמת את התוצאה, יש להריץ בדיקת מערכת מלאה מחדש.
+            </Typography>
+          </Box>
+        ) : null}
+
+        {documentRewriteResult ? (
+          <Box sx={sx.repairResultBox}>
+            <Typography level='title-sm' sx={sx.sectionTitle}>
+              שכתוב המסמכים הושלם
+            </Typography>
+            <Typography level='body-sm'>
+              {documentRewriteResult.writesPerformed || 0} מסמכים שוכתבו ב-{documentRewriteResult.batchesCommitted || 0} קבוצות כתיבה · קריאות נוספות: {documentRewriteResult.readsPerformed || 0}.
+            </Typography>
+          </Box>
+        ) : null}
+
         {repairPreview ? (
           <Box sx={sx.repairBox}>
             <Box sx={sx.repairHeader}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
-                Repair Preview
+                תצוגה מקדימה לתיקון
               </Typography>
               <Chip size='sm' color='warning' variant='soft'>
                 עדיין לא בוצעו כתיבות
@@ -656,7 +815,7 @@ export default function PlayerScoutAuditModal({
 
             <Box sx={sx.repairGrid}>
               <SummaryCard
-                label='Scopes לתיקון'
+                label='תחומי קבוצה ועונה לתיקון'
                 value={previewSummary.affectedTeamSeasonScopes || 0}
               />
               <SummaryCard
@@ -664,25 +823,25 @@ export default function PlayerScoutAuditModal({
                 value={previewSummary.affectedTeamDocuments || 0}
               />
               <SummaryCard
-                label='dbPlayers ליצור'
+                label='מסמכי שחקן ליצור'
                 value={previewSummary.playerDocsMissingBeforeRepair || 0}
               />
               <SummaryCard
-                label='dbPlayers לסנכרן'
+                label='מסמכי שחקן לסנכרן'
                 value={previewSummary.playerDocsExistingWithDiff || 0}
               />
               <SummaryCard
-                label='SearchIndex'
+                label='אינדקס חיפוש'
                 value={previewSummary.searchIndexDocumentsWithDiff || 0}
               />
               <SummaryCard
-                label='Schema לתיקון'
+                label='מבנה מסמך לתיקון'
                 value={previewSummary.schemaIssues || 0}
               />
             </Box>
 
             <Typography level='body-xs' sx={sx.costNote}>
-              לא לתיקון: Schema report-only {previewSummary.nonRepairableSchemaIssues || 0} · Current State {previewSummary.stateIssues || 0} · Measurement {previewSummary.measurementIssues || 0} · Tracking {previewSummary.trackingIssues || 0} · Projection {previewSummary.projectionIssues || 0}
+              לא לתיקון אוטומטי: בעיות מבנה לדיווח בלבד {previewSummary.nonRepairableSchemaIssues || 0} · מצב מנוע {previewSummary.stateIssues || 0} · מדידות {previewSummary.measurementIssues || 0} · מעקב שחקנים {previewSummary.trackingIssues || 0} · אינדקס חיפוש {previewSummary.projectionIssues || 0}
             </Typography>
 
             {repairRoutes.length ? (
@@ -712,20 +871,20 @@ export default function PlayerScoutAuditModal({
 
             <Box sx={sx.repairCostBox}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
-                עלות משוערת ל-Apply Repair
+                עלות משוערת לביצוע התיקון
               </Typography>
 
               <Box sx={sx.repairCostGrid}>
                 <SummaryCard
                   label={repairReads.processEstimateIsMinimum
-                    ? 'Reads מינימום לתהליך'
-                    : 'Reads לכל התהליך'}
+                    ? 'קריאות מינימום לתהליך'
+                    : 'קריאות לכל התהליך'}
                   value={repairReads.processEstimateIsMinimum
                     ? `לפחות ${repairReads.processEstimatedMin || 0}`
                     : `${repairReads.processEstimatedMin || 0}-${repairReads.processEstimatedMax || 0}`}
                 />
                 <SummaryCard
-                  label='Writes מקסימום'
+                  label='כתיבות מקסימום'
                   value={repairWrites.estimatedMax || 0}
                   tone={repairWrites.estimatedMax ? 'warning' : 'success'}
                 />
@@ -734,31 +893,31 @@ export default function PlayerScoutAuditModal({
                   value={repairAffected.playerOperations || 0}
                 />
                 <SummaryCard
-                  label='Schema documents'
+                  label='מסמכי מבנה'
                   value={repairAffected.schemaPlayerDocuments || 0}
                 />
               </Box>
 
               <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-                Apply reads: {repairReads.applyEstimateIsMinimum ? 'לפחות ' : ''}{repairReads.applyEstimated || 0} · Verification reads: {repairVerification.runsAutomatically
+                קריאות בזמן התיקון: {repairReads.applyEstimateIsMinimum ? 'לפחות ' : ''}{repairReads.applyEstimated || 0} · קריאות לבדיקת אימות: {repairVerification.runsAutomatically
                   ? `${repairReads.verificationEstimatedMin || 0}-${repairReads.verificationEstimatedMax || 0}`
                   : 'לא רץ אוטומטית'}
               </Typography>
 
               <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-                Apply breakdown: קבוצה {repairReads.teamDocuments || 0} · שחקנים {repairReads.playerDocuments || 0} · Schema {repairReads.schemaPlayerDocuments || 0} · SearchIndex {repairReads.searchIndexEstimateExact ? '' : 'לפחות '}{repairReads.searchIndexes || 0}
+                פירוט הקריאות: קבוצה {repairReads.teamDocuments || 0} · שחקנים {repairReads.playerDocuments || 0} · מבנה {repairReads.schemaPlayerDocuments || 0} · אינדקס חיפוש {repairReads.searchIndexEstimateExact ? '' : 'לפחות '}{repairReads.searchIndexes || 0}
               </Typography>
 
               <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-                Writes מקסימום: קבוצה {repairWrites.teamDocuments || 0} · שחקנים {repairWrites.playerDocumentsMax || 0} · Schema {repairWrites.schemaPlayerDocumentsMax || 0} · SearchIndex {repairWrites.searchIndexesMax || 0}
+                כתיבות מקסימום: קבוצה {repairWrites.teamDocuments || 0} · שחקנים {repairWrites.playerDocumentsMax || 0} · מבנה {repairWrites.schemaPlayerDocumentsMax || 0} · אינדקס חיפוש {repairWrites.searchIndexesMax || 0}
               </Typography>
             </Box>
 
             <Typography level='body-xs' sx={sx.repairNote}>
-              מסמכי שחקן חסרים הם מועמדים בלבד. יצירה תתבצע רק אם החישוב מחדש משאיר לשחקן Scout Profile. {repairReads.searchIndexEstimateExact === false
-                ? 'לפחות אחד מה-SearchIndex queries של Apply פועל ברמת מועדון. לכן ערכי ה-reads המוצגים הם מינימום בלבד; המערכת לא מבצעת קריאה נוספת לכל המועדון רק כדי לחשב אומדן עלות.'
-                : 'אומדן ה-SearchIndex תואם להיקף שנצפה באודיט.'} {repairAffected.schemaOnlyRepair
-                ? 'ב-Repair שמכיל רק Schema לא רץ Verification Audit אוטומטי לאחר Apply.'
+              מסמכי שחקן חסרים הם מועמדים בלבד. יצירה תתבצע רק אם החישוב מחדש משאיר לשחקן פרופיל סקאוטינג. {repairReads.searchIndexEstimateExact === false
+                ? 'לפחות אחד מחיפושי אינדקס החיפוש בזמן התיקון פועל ברמת מועדון. לכן מספר הקריאות המוצג הוא מינימום בלבד; המערכת לא מבצעת קריאה נוספת לכל המועדון רק כדי לחשב אומדן עלות.'
+                : 'אומדן אינדקס החיפוש תואם להיקף שנצפה בבדיקה.'} {repairAffected.schemaOnlyRepair
+                ? 'בתיקון שמכיל רק בעיות מבנה לא רצה בדיקת אימות אוטומטית לאחר הביצוע.'
                 : ''}
             </Typography>
           </Box>
@@ -767,13 +926,13 @@ export default function PlayerScoutAuditModal({
         {repairResult ? (
           <Box sx={sx.repairResultBox}>
             <Typography level='title-sm' sx={sx.sectionTitle}>
-              Repair הושלם
+              התיקון הושלם
             </Typography>
             <Typography level='body-sm'>
               {repairResult.teamDocumentsUpdated || 0} מסמכי קבוצה עודכנו · {' '}
               {repairResult.playerDocumentsCreated || 0} מסמכי שחקן נוצרו · {' '}
               {repairResult.playerDocumentsUpdated || 0} מסמכי שחקן סונכרנו · {' '}
-              {repairResult.playerSchemaDocumentsUpdated || 0} מסמכי שחקן תוקנו ב-Schema · {' '}
+              {repairResult.playerSchemaDocumentsUpdated || 0} מסמכי שחקן תוקנו במבנה המסמך · {' '}
               {repairResult.searchIndexRowsUpdated || 0} אינדקסים עודכנו
             </Typography>
           </Box>
@@ -786,7 +945,7 @@ export default function PlayerScoutAuditModal({
                 אבחון פרופילים
               </Typography>
               <Typography level='body-xs' sx={sx.repairCostBreakdown}>
-                פערי Discovery/Engine שאינם חלק מ-Repair אוטומטי
+                פערי גילוי ומנוע שאינם חלק מתיקון אוטומטי
               </Typography>
             </Box>
 
@@ -803,22 +962,11 @@ export default function PlayerScoutAuditModal({
           </Box>
         ) : null}
 
-        {!busy && audit && !issues.length ? (
-          <Box sx={sx.successBox}>
-            <Typography level='title-md' sx={sx.successTitle}>
-              לא נמצאו פערים
-            </Typography>
-            <Typography level='body-sm'>
-              החישוב לפי החוקים הנוכחיים תואם למסמכים הקיימים.
-            </Typography>
-          </Box>
-        ) : null}
-
         {narrativeIssues.length ? (
-          <Box sx={sx.issuesSection}>
-            <Box sx={sx.issuesHeader}>
+          <Box component='details' sx={sx.detailsBox}>
+            <Box component='summary' sx={sx.issuesHeader}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
-                Narrative לבדיקה
+                סיפורי שחקן לבדיקה
               </Typography>
               <Typography level='body-xs' sx={sx.issueCount}>
                 {narrativeIssues.length} מסמכים · ללא תיקון אוטומטי
@@ -841,8 +989,8 @@ export default function PlayerScoutAuditModal({
         ) : null}
 
         {actionableIssues.length ? (
-          <Box sx={sx.issuesSection}>
-            <Box sx={sx.issuesHeader}>
+          <Box component='details' sx={sx.detailsBox}>
+            <Box component='summary' sx={sx.issuesHeader}>
               <Typography level='title-sm' sx={sx.sectionTitle}>
                 פערים לתיקון
               </Typography>
@@ -871,7 +1019,7 @@ export default function PlayerScoutAuditModal({
                       <td>{clean(issue.fullName) || clean(issue.playerId) || '-'}</td>
                       <td>{clean(issue.seasonKey || issue.seasonId) || '-'}</td>
                       <td>{clean(issue.teamName) || '-'}</td>
-                      <td>{ISSUE_LABELS[issue.type] || issue.type}</td>
+                      <td>{getPlayerScoutIssueDefinition(issue.type).title}</td>
                       <td>{joinValues(
                         issue.missingProfiles || issue.missingFields
                       )}</td>

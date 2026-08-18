@@ -9,7 +9,6 @@ import {
 
 import RegularModal from '../modals/RegularModal.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import ScoutReliability from './ScoutReliability.js'
 import { scoutStoryModalSx as sx } from './sx/scoutStoryModal.sx.js'
 
 export function ScoutStorySection({
@@ -142,7 +141,6 @@ export default function ScoutStoryModal({
   profileLabel = 'פרופיל סקאוט',
   profileDescription = '',
   profileIconId = 'performanceProfile',
-  reliability,
   children,
 }) {
   return (
@@ -183,13 +181,6 @@ export default function ScoutStoryModal({
             ) : null}
           </Box>
 
-          {reliability ? (
-            <ScoutReliability
-              level={reliability.level}
-              score={reliability.score}
-              label={reliability.label}
-            />
-          ) : null}
         </Box>
 
         <Divider sx={sx.divider} />

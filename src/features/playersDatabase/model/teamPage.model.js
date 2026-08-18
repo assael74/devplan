@@ -379,7 +379,7 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     yellowCards: actual.yellowCards || 0,
     minutes: actual.minutes || 0,
     profile: display.label || '-',
-    reliability: display.reliability?.level || '-',
+    profileStrength: display.profileStrength || null,
     scoutProfiles: scout.profiles || [],
     scoutCombinations: scout.combinations || [],
     scoutCandidateSignals: scout.candidateSignals || [],

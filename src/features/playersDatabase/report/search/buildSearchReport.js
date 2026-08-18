@@ -220,7 +220,7 @@ const buildPlayerSnapshotRow = (row = {}, index = 0) => ({
   scoutProfiles: cloneValue(row.scoutProfiles || []),
   scoutProfileDisplay: cloneValue(row.scoutProfileDisplay || {}),
   score: Number(row.score || 0),
-  reliability: clean(row.reliability),
+  profileStrength: cloneValue(row.profileStrength || null),
   notes: clean(row.notes),
   metadata: cloneValue(row.metadata || {}),
   calculation: cloneValue(row.calculation || {}),

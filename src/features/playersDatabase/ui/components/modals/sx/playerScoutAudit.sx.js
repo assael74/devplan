@@ -53,8 +53,8 @@ export const playerScoutAuditSx = {
   summaryGrid: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: 'repeat(2, minmax(0, 1fr))',
-      lg: 'repeat(6, minmax(0, 1fr))',
+      xs: '1fr',
+      md: 'repeat(3, minmax(0, 1fr))',
     },
     gap: 1,
   },
@@ -75,6 +75,227 @@ export const playerScoutAuditSx = {
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
+  },
+
+  healthStartBox: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: {
+      xs: 'column',
+      sm: 'row',
+    },
+    alignItems: {
+      xs: 'stretch',
+      sm: 'center',
+    },
+    justifyContent: 'space-between',
+    gap: 1.5,
+    p: 1.5,
+    border: '1px solid',
+    borderColor: 'primary.200',
+    borderRadius: 8,
+    bgcolor: 'primary.softBg',
+  },
+
+  healthStartCopy: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.35,
+  },
+
+  healthKpiCard: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.6,
+    p: 1.1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+  },
+
+  healthKpiTopRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  healthKpiValue: {
+    fontWeight: 700,
+    lineHeight: 1,
+  },
+
+  healthKpiDescription: {
+    color: 'neutral.600',
+    lineHeight: 1.55,
+  },
+
+  primaryActionBox: {
+    display: 'flex',
+    flexDirection: {
+      xs: 'column',
+      sm: 'row',
+    },
+    alignItems: {
+      xs: 'stretch',
+      sm: 'center',
+    },
+    justifyContent: 'space-between',
+    gap: 1.5,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.level1',
+  },
+
+  primaryActionCopy: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.25,
+  },
+
+  healthClearBox: {
+    display: 'grid',
+    gap: 0.25,
+    p: 1,
+    borderRadius: 8,
+    bgcolor: 'success.softBg',
+  },
+
+  healthFindingsSection: {
+    display: 'grid',
+    gap: 0.75,
+  },
+
+  healthFindingGroup: {
+    display: 'grid',
+    gap: 0.65,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  healthFindingHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  healthFindingImpact: {
+    color: 'neutral.600',
+    lineHeight: 1.5,
+  },
+
+  healthFindingRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    p: 0.75,
+    borderRadius: 6,
+    bgcolor: 'background.level1',
+  },
+
+  healthFindingCopy: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.15,
+  },
+
+  healthFindingTitle: {
+    fontWeight: 600,
+  },
+
+  healthFindingDescription: {
+    color: 'neutral.600',
+    lineHeight: 1.5,
+  },
+
+  healthFindingCount: {
+    minWidth: 32,
+    textAlign: 'center',
+    fontWeight: 700,
+  },
+
+
+  collectionHealthBox: {
+    display: 'grid',
+    gap: 0.75,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  collectionHealthGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(3, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
+
+  collectionHealthRow: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    p: 0.85,
+    borderRadius: 7,
+    bgcolor: 'background.level1',
+  },
+
+  collectionHealthCopy: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.15,
+  },
+
+  advancedToolsBox: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 1,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+
+    '& > summary': {
+      listStyle: 'none',
+    },
+
+    '& > summary::-webkit-details-marker': {
+      display: 'none',
+    },
+  },
+
+  advancedToolsGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      lg: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
+
+  advancedToolCard: {
+    minWidth: 0,
+    display: 'grid',
+    alignContent: 'start',
+    gap: 0.75,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.level1',
   },
 
   summaryCard: {

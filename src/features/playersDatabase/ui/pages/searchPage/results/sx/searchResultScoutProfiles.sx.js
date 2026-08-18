@@ -29,7 +29,7 @@ export const searchResultScoutProfilesSx = {
     bgcolor: '#f7faff',
   },
 
-  reliabilityChip: {
+  strengthChip: {
     minHeight: 23,
     borderRadius: 999,
     fontSize: 11,

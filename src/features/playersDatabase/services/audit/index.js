@@ -37,3 +37,10 @@ export {
   resolveDeprecatedSchemaFields,
   resolveSchemaMigrationAction,
 } from './playerDocumentMigration.policy.js'
+
+export {
+  applyPlayerScoutDocumentRewrite,
+  buildPlayerScoutDocumentRewritePlan,
+  buildPlayerScoutDocumentRewritePreview,
+} from './playerScoutDocumentRewrite.audit.js'
+

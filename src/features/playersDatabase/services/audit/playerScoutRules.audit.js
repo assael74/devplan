@@ -17,6 +17,7 @@ import {
   buildPlayerScoutRuntimeCostCheck,
 } from './playerScout.cost.js'
 import { buildPlayerScoutShadowComparison } from './playerScoutShadow.audit.js'
+import { buildPlayerScoutDocumentRewritePlan } from './playerScoutDocumentRewrite.audit.js'
 import {
   PLAYER_DOCUMENT_SCHEMA_SCOPES,
   classifyUnexpectedSchemaFields,
@@ -198,8 +199,10 @@ const buildNestedSchemaDiff = ({ source, schema, path = '' } = {}) => {
 const topLevelFieldOf = path => clean(path).split('.')[0]
 
 const buildTopLevelSchemaDiff = ({ source = {}, schema = {} } = {}) => {
-  const sourceKeys = Object.keys(source)
-  const schemaKeys = Object.keys(schema)
+  const safeSource = isPlainObject(source) ? source : {}
+  const safeSchema = isPlainObject(schema) ? schema : {}
+  const sourceKeys = Object.keys(safeSource)
+  const schemaKeys = Object.keys(safeSchema)
   const sourceKeySet = new Set(sourceKeys)
   const schemaKeySet = new Set(schemaKeys)
   const missingFields = schemaKeys.filter(field => !sourceKeySet.has(field))
@@ -207,15 +210,15 @@ const buildTopLevelSchemaDiff = ({ source = {}, schema = {} } = {}) => {
   const invalidTypes = schemaKeys.reduce((result, field) => {
     if (!sourceKeySet.has(field)) return result
     if (isSchemaTypeValid({
-      actualValue: source[field],
-      expectedValue: schema[field],
+      actualValue: safeSource[field],
+      expectedValue: safeSchema[field],
       fieldPath: field,
     })) return result
 
     result.push({
       field,
-      expectedType: getValueType(schema[field]),
-      actualType: getValueType(source[field]),
+      expectedType: getValueType(safeSchema[field]),
+      actualType: getValueType(safeSource[field]),
     })
     return result
   }, [])
@@ -359,9 +362,14 @@ const fieldValue = (source, field) => (
   source && source[field] !== undefined ? source[field] : null
 )
 
-const getMismatchedFields = ({ actual = {}, expected = {} } = {}) => (
-  Object.keys(expected).filter(field => !sameJson(actual[field], expected[field]))
-)
+const getMismatchedFields = ({ actual = {}, expected = {} } = {}) => {
+  const safeActual = isPlainObject(actual) ? actual : {}
+  const safeExpected = isPlainObject(expected) ? expected : {}
+
+  return Object.keys(safeExpected).filter(field => (
+    !sameJson(safeActual[field], safeExpected[field])
+  ))
+}
 
 const MEASUREMENT_AUDIT_FIELD_NAMES = [
   'snapshotKey',
@@ -650,18 +658,27 @@ const buildIndex = ({ rows = [], keyBuilder }) => {
 
 const findIndexed = ({ index, row, keyBuilder }) => {
   const keys = unique(keyBuilder(row))
+  const matches = []
 
-  for (const key of keys) {
-    const matches = index.get(key) || []
-    if (matches.length) return matches[0]
-  }
+  keys.forEach(key => {
+    ;(index.get(key) || []).forEach(match => {
+      if (!matches.includes(match)) matches.push(match)
+    })
+  })
 
-  return null
+  return matches.length === 1 ? matches[0] : null
 }
 
 const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
   const data = snapshot.data() || {}
   const rows = []
+  const playerReview = data.playerReview && typeof data.playerReview === 'object'
+    ? data.playerReview
+    : null
+  const manualImmediacyDecision = data.manualImmediacyDecision &&
+    typeof data.manualImmediacyDecision === 'object'
+    ? data.manualImmediacyDecision
+    : null
   const rootSchemaDiff = buildTopLevelSchemaDiff({
     source: data,
     schema: PLAYER_ROOT_SCHEMA_TEMPLATE,
@@ -716,6 +733,8 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
         verificationAnswers: Array.isArray(data.verification?.answers)
           ? data.verification.answers
           : [],
+        playerReview,
+        manualImmediacyDecision,
         trackingReasons: normalizedTracking.trackingReasons,
         expectedTrackingReasons,
         scoutStatsLoadMeasurementHistory: normalizePlayerScoutStatsLoadMeasurementHistory(
@@ -867,6 +886,21 @@ const buildSeasonContext = ({ season, teamIndex, sourceTarget }) => ({
     : clean(season.seasonStatus) || 'active',
 })
 
+const resolveAuditManualDecisionForSeason = ({ playerRow, seasonContext }) => {
+  const decision = playerRow?.manualImmediacyDecision
+  if (!decision || typeof decision !== 'object') return null
+
+  const decisionSeasonKey = clean(decision.seasonKey)
+  const currentSeasonKey = clean(
+    seasonContext?.seasonKey ||
+    seasonContext?.seasonId
+  )
+
+  if (!decisionSeasonKey || !currentSeasonKey) return null
+
+  return decisionSeasonKey === currentSeasonKey ? decision : null
+}
+
 const buildAuditPlayerSeasonStints = ({ playerRows = [], playerRow = null, currentStint = {} } = {}) => {
   const playerDocumentId = clean(
     playerRow?.playerDocumentId ||
@@ -1007,19 +1041,37 @@ const buildRecalculatedRows = ({ teamDocs, teamIndexRows, playerRows = [], inclu
             playerRow,
             currentStint: playerScope,
           })
+          const manualImmediacyDecision = resolveAuditManualDecisionForSeason({
+            playerRow,
+            seasonContext,
+          })
           const playerCalculated = canRecalculateScout && playerRow
             ? buildPlayerScoutState({
                 player: {
                   ...player,
                   playerSeasonStints,
+                  playerReview: playerRow.playerReview,
+                  manualImmediacyDecision,
                 },
                 team,
                 season: seasonContext,
                 perspective: 'players_database_scout_rules_audit_player',
                 verificationAnswers,
+                manualReview: playerRow.playerReview,
+                manualImmediacyDecision,
               })
             : null
-          const canonicalProjectionSource = player
+          const canonicalProjectionSource = playerCalculated
+            ? {
+                ...player,
+                ...playerCalculated,
+              }
+            : teamCalculated
+              ? {
+                  ...player,
+                  ...teamCalculated,
+                }
+              : player
           const expectedTeamScoutState = teamCalculated
             ? normalizePlayerScoutState(teamCalculated)
             : null
@@ -1055,6 +1107,11 @@ const buildRecalculatedRows = ({ teamDocs, teamIndexRows, playerRows = [], inclu
             canRecalculateScout,
             playerId: clean(player.playerId),
             playerDocumentId: clean(player.playerDocumentId),
+            resolvedPlayerDocumentId: clean(
+              playerRow?.playerDocumentId ||
+              playerRow?.sourceDocumentId ||
+              player.playerDocumentId
+            ),
             externalPlayerId: clean(player.externalPlayerId),
             identityKey: clean(player.identityKey),
             normalizedName: clean(player.normalizedName),
@@ -2275,8 +2332,7 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
   const [
     teamSnapshot,
     playerSnapshot,
-    playerSearchSnapshot,
-    teamSearchSnapshot,
+    searchSnapshot,
   ] = await Promise.all([
     trackedGetDocs(
       collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
@@ -2299,30 +2355,24 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
     trackedGetDocs(
       query(
         collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', '==', 'playerSeason')
+        where('entityType', 'in', ['playerSeason', 'birthTeamSeason'])
       ),
       {
         feature: 'playersDatabase',
         collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
         action: 'playerScoutRules-audit',
-        operationSubtype: 'player-index-query',
-      }
-    ),
-    trackedGetDocs(
-      query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', '==', 'birthTeamSeason')
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'playerScoutRules-audit',
-        operationSubtype: 'team-index-query',
+        operationSubtype: 'scout-index-query',
       }
     ),
   ])
 
-  const teamIndexRows = flattenTeamIndexDocs(teamSearchSnapshot.docs)
+  const playerSearchDocs = searchSnapshot.docs.filter(snapshot => (
+    clean(snapshot.data()?.entityType) === 'playerSeason'
+  ))
+  const teamSearchDocs = searchSnapshot.docs.filter(snapshot => (
+    clean(snapshot.data()?.entityType) === 'birthTeamSeason'
+  ))
+  const teamIndexRows = flattenTeamIndexDocs(teamSearchDocs)
   const playerRows = flattenPlayerDocs(playerSnapshot.docs)
   const recalculated = buildRecalculatedRows({
     teamDocs: teamSnapshot.docs,
@@ -2331,7 +2381,16 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
     includeRepairData,
   })
 
-  const searchRows = flattenSearchPlayerDocs(playerSearchSnapshot.docs)
+  const searchRows = flattenSearchPlayerDocs(playerSearchDocs)
+  const documentRewritePlan = includeRepairData
+    ? buildPlayerScoutDocumentRewritePlan({
+        teamSnapshots: teamSnapshot.docs,
+        playerSnapshots: playerSnapshot.docs,
+        playerSearchSnapshots: playerSearchDocs,
+        teamSearchSnapshots: teamSearchDocs,
+        recalculatedRows: recalculated.rows,
+      })
+    : null
 
   return {
     teamRows: recalculated.rows,
@@ -2339,12 +2398,13 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
     playerRows,
     searchRows,
     teamIndexRows,
+    documentRewritePlan,
     cost: {
       audit: buildPlayerScoutAuditCost({
         teamDocuments: teamSnapshot.docs.length,
         playerDocuments: playerSnapshot.docs.length,
-        playerSearchIndexes: playerSearchSnapshot.docs.length,
-        teamSearchIndexes: teamSearchSnapshot.docs.length,
+        playerSearchIndexes: playerSearchDocs.length,
+        teamSearchIndexes: teamSearchDocs.length,
       }),
       runtime: buildRuntimeCost({
         teamRows: recalculated.rows,
@@ -2491,6 +2551,15 @@ const readScopedAuditData = async ({
   const searchRows = flattenSearchPlayerDocs(
     playerSearchSnapshot.docs
   )
+  const documentRewritePlan = includeRepairData
+    ? buildPlayerScoutDocumentRewritePlan({
+        teamSnapshots: [teamSnapshot],
+        playerSnapshots: existingPlayerSnapshots,
+        playerSearchSnapshots: playerSearchSnapshot.docs,
+        teamSearchSnapshots: teamSearchSnapshot.docs,
+        recalculatedRows: verificationAwareTeamRows,
+      })
+    : null
 
   return {
     teamRows: verificationAwareTeamRows,
@@ -2498,6 +2567,7 @@ const readScopedAuditData = async ({
     playerRows,
     searchRows,
     teamIndexRows,
+    documentRewritePlan,
     cost: {
       audit: buildPlayerScoutAuditCost({
         teamDocuments: 1,
@@ -2519,6 +2589,7 @@ const readScopedAuditData = async ({
 }
 
 export async function buildScopedPlayerScoutRulesAudit({ teamDocumentId, seasonKey, includeRepairData = false } = {}) {
+  const generatedAt = new Date().toISOString()
   const rows = await readScopedAuditData({
     teamDocumentId,
     seasonKey,
@@ -2532,7 +2603,7 @@ export async function buildScopedPlayerScoutRulesAudit({ teamDocumentId, seasonK
   })
 
   const audit = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     mode: 'read-only-scoped',
     purpose: 'verify-player-scout-scope-after-write',
     governance: PLAYER_SCOUT_AUDIT_GOVERNANCE,
@@ -2547,6 +2618,12 @@ export async function buildScopedPlayerScoutRulesAudit({ teamDocumentId, seasonK
     cost: rows.cost,
     issues,
     recalculatedRows: rows.teamRows,
+    documentRewritePlan: rows.documentRewritePlan
+      ? {
+          ...rows.documentRewritePlan,
+          sourceAuditGeneratedAt: generatedAt,
+        }
+      : null,
     repairDataIncluded: includeRepairData === true,
   }
 
@@ -2557,6 +2634,7 @@ export async function buildScopedPlayerScoutRulesAudit({ teamDocumentId, seasonK
 }
 
 export async function buildPlayerScoutRulesAudit({ includeRepairData = false } = {}) {
+  const generatedAt = new Date().toISOString()
   const rows = await readAuditData({
     includeRepairData,
   })
@@ -2568,7 +2646,7 @@ export async function buildPlayerScoutRulesAudit({ includeRepairData = false } =
   })
 
   const audit = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     mode: 'read-only',
     purpose: 'recalculate-player-scout-with-current-rules-and-compare-stored-state',
     governance: PLAYER_SCOUT_AUDIT_GOVERNANCE,
@@ -2579,6 +2657,12 @@ export async function buildPlayerScoutRulesAudit({ includeRepairData = false } =
     cost: rows.cost,
     issues,
     recalculatedRows: rows.teamRows,
+    documentRewritePlan: rows.documentRewritePlan
+      ? {
+          ...rows.documentRewritePlan,
+          sourceAuditGeneratedAt: generatedAt,
+        }
+      : null,
     repairDataIncluded: includeRepairData === true,
   }
 

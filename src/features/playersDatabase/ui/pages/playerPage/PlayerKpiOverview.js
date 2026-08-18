@@ -11,7 +11,7 @@ import {
 import { getPlayerGeneralPosition } from '../../../../../shared/players/player.positions.utils.js'
 import {
   formatValue,
-  resolvePlayerScopeReliability,
+  resolvePlayerScopeProfileStrength,
 } from './logic/playerPage.utils.js'
 import { playerKpiOverviewSx as sx } from './sx/playerKpiOverview.sx.js'
 
@@ -47,7 +47,7 @@ export default function PlayerKpiOverview({
   const goals = sumRows(scopeRows, 'goals')
   const yellowCards = sumRows(scopeRows, 'yellowCards')
   const profileCount = sumRows(scopeRows, 'scoutProfileCount')
-  const reliability = resolvePlayerScopeReliability(scopeRows)
+  const profileStrength = resolvePlayerScopeProfileStrength(scopeRows)
   const startsRate = games
     ? `${Math.round((starts / games) * 100)}%`
     : '-'
@@ -72,9 +72,9 @@ export default function PlayerKpiOverview({
           iconId='targets'
           details={[
             {
-              label: 'רמת אמינות',
-              value: reliability.label,
-              color: reliability.color,
+              label: 'חוזק פרופיל',
+              value: profileStrength.label,
+              color: profileStrength.color,
               chip: true,
             },
             {

@@ -45,39 +45,6 @@ function findPlayerActiveSeason(playerDomain, selectedSeasonKey, selectedTeamId)
   return playerDomain?.activeSeason || seasons[0] || null
 }
 
-const RELIABILITY_LABELS = {
-  high: 'גבוהה',
-  medium: 'בינונית',
-  low: 'נמוכה',
-}
-
-const cleanReliabilityValue = value => {
-  if (
-    value === null ||
-    value === undefined ||
-    typeof value === 'object'
-  ) {
-    return ''
-  }
-
-  return cleanValue(value)
-}
-
-const resolveReliabilityLabel = reliability => {
-  const source = reliability && typeof reliability === 'object'
-    ? reliability
-    : {}
-  const level = cleanReliabilityValue(
-    source.level || reliability
-  )
-  const label = cleanReliabilityValue(source.label)
-
-  return RELIABILITY_LABELS[level.toLowerCase()] ||
-    label ||
-    level ||
-    '-'
-}
-
 const getClub = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
   club => cleanValue(club.id) === cleanValue(clubId)
 ) || null
@@ -193,7 +160,7 @@ export const buildEmptyPlayerPageView = playerId => ({
   seasonKey: '',
   ageLabel: '-',
   position: '-',
-  reliability: '-',
+  profileStrength: null,
   minutes: 0,
   goals: 0,
   goalsPerGame: '0.00',
@@ -203,7 +170,7 @@ export const buildEmptyPlayerPageView = playerId => ({
     type: 'none',
     id: '',
     label: '',
-    reliability: {},
+    profileStrength: null,
     baseProfiles: [],
   },
   seasonContexts: [],
@@ -233,9 +200,9 @@ export const buildPlayerPageView = (
   const seasonContexts = (playerDomain.seasons || []).map(seasonRow => (
     buildSeasonContextView(seasonRow, playerDomain.identity || {})
   ))
-  const reliability = profiles.length
-    ? resolveReliabilityLabel(display.reliability)
-    : '-'
+  const profileStrength = profiles.length
+    ? display.profileStrength || null
+    : null
 
   return {
     domain: playerDomain,
@@ -273,7 +240,7 @@ export const buildPlayerPageView = (
     position: cleanValue(
       season.position?.primary || season.position?.layer || '-'
     ),
-    reliability,
+    profileStrength,
     minutes,
     goals,
     goalsPerGame: games ? (goals / games).toFixed(2) : '0.00',

@@ -14,93 +14,39 @@ const cleanValue = value => {
   return String(value).trim()
 }
 
-const RELIABILITY_LABELS = {
-  high: 'גבוהה',
-  medium: 'בינונית',
-  low: 'נמוכה',
-}
-
-const RELIABILITY_COLORS = {
-  high: 'success',
-  medium: 'warning',
-  low: 'danger',
-}
-
-export const resolveReliabilityLabel = value => {
+const resolveStrengthDepthPct = value => {
   if (value && typeof value === 'object') {
-    const level = cleanValue(value.level)
-    const label = cleanValue(value.label)
-
-    return RELIABILITY_LABELS[level.toLowerCase()] ||
-      label ||
-      level ||
-      '-'
+    const number = Number(value.depthPct)
+    return Number.isFinite(number) ? number : null
   }
 
-  const level = cleanValue(value)
-
-  return RELIABILITY_LABELS[level.toLowerCase()] ||
-    level ||
-    '-'
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
 }
 
-export const resolveReliabilityLevel = value => {
-  const source = value && typeof value === 'object'
-    ? value
-    : {}
-  const level = cleanValue(
-    source.level ||
-    source.reliabilityLevel ||
-    value
-  ).toLowerCase()
+export const resolvePlayerScopeProfileStrength = rows => {
+  const depthValues = (Array.isArray(rows) ? rows : []).flatMap(row => {
+    const profiles = Array.isArray(row.scoutProfiles)
+      ? row.scoutProfiles
+      : []
 
-  if (RELIABILITY_LABELS[level]) return level
+    return profiles
+      .map(profile => resolveStrengthDepthPct(profile?.profileStrength))
+      .filter(value => value !== null)
+  })
 
-  const label = cleanValue(source.label || value)
-  const matchedLevel = Object.entries(RELIABILITY_LABELS).find(
-    ([, reliabilityLabel]) => reliabilityLabel === label
-  )
-
-  return matchedLevel ? matchedLevel[0] : ''
-}
-
-export const resolveReliabilityColor = value => {
-  const level = resolveReliabilityLevel(value)
-
-  return RELIABILITY_COLORS[level] || 'neutral'
-}
-
-export const resolvePlayerScopeReliability = rows => {
-  const levels = [...new Set(
-    (Array.isArray(rows) ? rows : [])
-      .filter(row => Number(row.scoutProfileCount || 0) > 0)
-      .map(row => resolveReliabilityLevel(
-        row.scoutProfileDisplay?.reliability ||
-        row.scout?.display?.reliability ||
-        row.reliability
-      ))
-      .filter(Boolean)
-  )]
-
-  if (!levels.length) {
+  if (!depthValues.length) {
     return {
       label: '-',
       color: 'neutral',
     }
   }
 
-  if (levels.length > 1) {
-    return {
-      label: 'משתנה',
-      color: 'neutral',
-    }
-  }
-
-  const level = levels[0]
+  const maxDepthPct = Math.max(...depthValues)
 
   return {
-    label: RELIABILITY_LABELS[level] || '-',
-    color: RELIABILITY_COLORS[level] || 'neutral',
+    label: `${Math.round(maxDepthPct)}%`,
+    color: 'neutral',
   }
 }
 
@@ -158,7 +104,6 @@ export const resolvePlayerHeaderMeta = player => {
       parsedMeta.birthYear
     ),
     hasScoutProfiles: scoutProfiles.length > 0,
-    reliability: resolveReliabilityLabel(player.reliability),
   }
 }
 
@@ -172,7 +117,6 @@ export const resolvePlayerHistoryRows = player => {
       type: 'none',
       id: '',
       label: '',
-      reliability: {},
       baseProfiles: [],
     }
 

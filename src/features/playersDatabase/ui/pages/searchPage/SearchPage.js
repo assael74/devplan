@@ -21,8 +21,10 @@ import {
   ReportNameModal,
 } from '../../components/modals/index.js'
 import {
+  applyPlayerScoutDocumentRewrite,
   applyPlayerScoutEngineRefresh,
   applyPlayerScoutRepair,
+  buildPlayerScoutDocumentRewritePreview,
   buildPlayerScoutEngineRefreshPreview,
   buildPlayerScoutRepairPreview,
   buildPlayerScoutRulesAudit,
@@ -96,6 +98,8 @@ function SearchPageContent() {
   const [scoutRepairResult, setScoutRepairResult] = React.useState(null)
   const [engineRefreshPreview, setEngineRefreshPreview] = React.useState(null)
   const [engineRefreshResult, setEngineRefreshResult] = React.useState(null)
+  const [documentRewritePreview, setDocumentRewritePreview] = React.useState(null)
+  const [documentRewriteResult, setDocumentRewriteResult] = React.useState(null)
 
   const search = useSearchPage()
 
@@ -162,6 +166,8 @@ function SearchPageContent() {
     setScoutRepairResult(null)
     setEngineRefreshPreview(null)
     setEngineRefreshResult(null)
+    setDocumentRewritePreview(null)
+    setDocumentRewriteResult(null)
   }
 
   const handleScoutAuditFullRun = async () => {
@@ -467,6 +473,68 @@ function SearchPageContent() {
     }
   }
 
+  const handleDocumentRewritePreview = () => {
+    if (scoutRepairBusy || scoutAuditBusy || !scoutAudit) return
+
+    setScoutAuditError('')
+    setDocumentRewriteResult(null)
+
+    try {
+      setDocumentRewritePreview(
+        buildPlayerScoutDocumentRewritePreview({
+          audit: scoutAudit,
+        })
+      )
+    } catch (error) {
+      console.error('[playersDatabase] Document rewrite preview failed:', error)
+      setScoutAuditError(
+        error instanceof Error
+          ? error.message
+          : 'תצוגת שכתוב המסמכים נכשלה'
+      )
+    }
+  }
+
+  const handleDocumentRewriteApply = async () => {
+    if (
+      scoutRepairBusy ||
+      scoutAuditBusy ||
+      !scoutAudit ||
+      !documentRewritePreview
+    ) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'לשכתב את מסמכי הקבוצה, השחקנים וה-SearchIndex לפי ה-Catalog הנוכחי? השכתוב יסיר שדות שאינם ב-genericObjects.catalog.js ויוסיף שדות חסרים. Apply אינו מבצע קריאות Firestore נוספות.'
+    )
+
+    if (!confirmed) return
+
+    setScoutRepairBusy(true)
+    setScoutAuditError('')
+
+    try {
+      const result = await applyPlayerScoutDocumentRewrite({
+        confirmed: true,
+        audit: scoutAudit,
+      })
+      setDocumentRewriteResult(result)
+      setDocumentRewritePreview(null)
+    } catch (error) {
+      console.error('[playersDatabase] Document rewrite failed:', error)
+      const baseMessage = error instanceof Error
+        ? error.message
+        : 'שכתוב המסמכים נכשל'
+      const batchDetails = Number.isFinite(error?.failedBatchIndex)
+        ? ` | batch ${error.failedBatchIndex + 1} נכשל | ${Number(error.batchesCommitted || 0)} batches הושלמו | ${Number(error.writesCommitted || 0)} writes הושלמו`
+        : ''
+      setScoutAuditError(`${baseMessage}${batchDetails}`)
+    } finally {
+      setScoutRepairBusy(false)
+    }
+  }
+
   const handleScoutAuditOpen = () => {
     setScoutAuditOpen(true)
     setScoutAuditError('')
@@ -474,6 +542,8 @@ function SearchPageContent() {
     setScoutRepairResult(null)
     setEngineRefreshPreview(null)
     setEngineRefreshResult(null)
+    setDocumentRewritePreview(null)
+    setDocumentRewriteResult(null)
   }
 
   const handleScoutAuditDownload = () => {
@@ -524,6 +594,10 @@ function SearchPageContent() {
         onRepairApply={handleScoutRepairApply}
         onEngineRefreshPreview={handleEngineRefreshPreview}
         onEngineRefreshApply={handleEngineRefreshApply}
+        documentRewritePreview={documentRewritePreview}
+        documentRewriteResult={documentRewriteResult}
+        onDocumentRewritePreview={handleDocumentRewritePreview}
+        onDocumentRewriteApply={handleDocumentRewriteApply}
         onClose={() => setScoutAuditOpen(false)}
       />
     </>

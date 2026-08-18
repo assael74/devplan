@@ -17,10 +17,22 @@ export const PLAYER_DOCUMENT_MIGRATION_ACTIONS = Object.freeze({
 // A field may be added only after all active readers and writers were migrated.
 // Empty lists mean that unexpected fields are reported but never deleted automatically.
 export const PLAYER_DOCUMENT_DEPRECATED_FIELDS = Object.freeze({
-  [PLAYER_DOCUMENT_SCHEMA_SCOPES.TEAM_PLAYER]: Object.freeze([]),
+  [PLAYER_DOCUMENT_SCHEMA_SCOPES.TEAM_PLAYER]: Object.freeze([
+    'reliability',
+    'reliabilityScore',
+    'reliabilityLevel',
+  ]),
   [PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_ROOT]: Object.freeze([]),
-  [PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_SEASON]: Object.freeze([]),
-  [PLAYER_DOCUMENT_SCHEMA_SCOPES.SEARCH_INDEX]: Object.freeze([]),
+  [PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_SEASON]: Object.freeze([
+    'reliability',
+    'reliabilityScore',
+    'reliabilityLevel',
+  ]),
+  [PLAYER_DOCUMENT_SCHEMA_SCOPES.SEARCH_INDEX]: Object.freeze([
+    'primaryScoutOpportunityStatus',
+    'primaryScoutProfileDepthPct',
+    'secondaryScoutProfileDepthPct',
+  ]),
 })
 
 const clean = value => String(

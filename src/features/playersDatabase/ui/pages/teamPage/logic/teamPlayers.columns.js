@@ -224,14 +224,7 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlE
         fallbackLabel: row.profile,
         player: row,
       })
-      const reliability = (
-        profileDisplay.reliability?.level ||
-        row.reliability ||
-        ''
-      )
-      const chipLabel = profileView.label && reliability && reliability !== '-'
-        ? `${profileView.label} · ${reliability}`
-        : profileView.label
+      const chipLabel = profileView.label
 
       return (
         <Box sx={sx.profileCell}>
