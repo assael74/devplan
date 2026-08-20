@@ -22,14 +22,15 @@ function resolveSeasonStartYear(value) {
   return year < 100 ? 2000 + year : year
 }
 
-function resolveLatestEntry(player = {}) {
-  const entries = [
-    ...(Array.isArray(player.history) ? player.history : []),
-    ...(Array.isArray(player.current) ? player.current : []),
-  ]
+function resolveActiveEntry(player = {}) {
+  const current = Array.isArray(player.current) ? player.current : []
+  const history = Array.isArray(player.history) ? player.history : []
 
-  return [...entries]
-    .filter(entry => clean(entry.seasonKey || entry.seasonId))
+  return [...current, ...history]
+    .filter(entry => (
+      clean(entry.seasonKey || entry.seasonId) &&
+      clean(entry.seasonStatus).toLowerCase() !== 'completed'
+    ))
     .sort((left, right) => (
       resolveSeasonStartYear(right.seasonKey || right.seasonId) -
       resolveSeasonStartYear(left.seasonKey || left.seasonId)
@@ -46,7 +47,7 @@ function buildTeamSeasonIndexId(entry = {}) {
 }
 
 async function readLatestTeamProjection(player = {}) {
-  const entry = resolveLatestEntry(player)
+  const entry = resolveActiveEntry(player)
   if (!entry) return null
 
   const documentId = buildTeamSeasonIndexId(entry)

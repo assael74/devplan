@@ -14,22 +14,14 @@ const REASON_ICONS = ['stats', 'performance', 'trend', 'completed']
 function ProfileEvidenceCard({ evidence, index }) {
   return (
     <Box sx={sx.whyEvidenceCard}>
-      <Box sx={sx.whyEvidenceTop}>
+      <Box sx={sx.whyEvidenceIdentity}>
         <Box sx={sx.whyEvidenceIcon}>
-          {iconUi({id: REASON_ICONS[index] || 'stats', size: 'sm'})}
+          {iconUi({id: REASON_ICONS[index] || 'stats', size: 'md'})}
         </Box>
 
-        <Box sx={sx.whyEvidenceHeading}>
-          <Typography level='title-sm' sx={sx.whyEvidenceTitle}>
-            {evidence.title}
-          </Typography>
-
-          {evidence.metricLabel && evidence.metricLabel !== evidence.title ? (
-            <Typography level='body-xs' sx={sx.whyEvidenceMetric}>
-              {evidence.metricLabel}
-            </Typography>
-          ) : null}
-        </Box>
+        <Typography level='title-sm' sx={sx.whyEvidenceTitle}>
+          {evidence.title}
+        </Typography>
       </Box>
 
       <Box sx={sx.whyEvidenceValueRow}>
@@ -45,9 +37,9 @@ function ProfileEvidenceCard({ evidence, index }) {
       </Box>
 
       {evidence.rule ? (
-        <Box sx={sx.whyRuleRow}>
+        <Box sx={sx.whyRuleCompact}>
           <Typography level='body-xs' sx={sx.whyRuleLabel}>
-            תנאי הפרופיל
+            רף
           </Typography>
 
           <Typography level='body-xs' sx={sx.whyRuleValue}>
@@ -75,64 +67,54 @@ function ProfileEvidenceCard({ evidence, index }) {
   )
 }
 
-export default function PlayerScoutReasons({ why = {} }) {
+export default function PlayerScoutReasons({ profile = null }) {
+  const why = profile?.why || {}
   const evidence = Array.isArray(why.evidence) ? why.evidence : []
   const matchedCount = Number(why.matchedCount || 0)
   const requiredCount = Number(why.requiredCount || 0)
   const countLabel = requiredCount
     ? `${matchedCount} מתוך ${requiredCount} תנאים מתקיימים`
     : ''
+  if (!profile) {
+    return (
+      <Box sx={sx.profileWorkspaceDetail}>
+        <Typography level='body-sm' sx={sx.emptyText}>
+          בחר פרופיל כדי לראות את פירוט התנאים שלו.
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
-    <Box sx={sx.sectionCard}>
-      <Box sx={sx.sectionHeader}>
-        <Box sx={sx.sectionHeading}>
-          <Box sx={[sx.sectionIcon, sx.sectionIconTone.info]}>
-            {iconUi({id: 'stats', size: 'sm'})}
-          </Box>
+    <Box sx={sx.profileWorkspaceDetail}>
+      <Box sx={sx.profileDetailHeader}>
+        <Box sx={sx.profileDetailTitleCompact}>
+          <Typography level='title-sm' sx={sx.profileDetailTitle}>
+            למה הפרופיל הזה?
+          </Typography>
+        </Box>
 
-          <Box>
-            <Typography level='title-md' sx={sx.sectionTitle}>
-              למה הפרופיל הזה?
-            </Typography>
+        <Box sx={sx.whyProfileMeta}>
+          {countLabel ? (
+            <Chip size='sm' variant='soft' color='primary'>
+              {countLabel}
+            </Chip>
+          ) : null}
 
-            <Typography level='body-xs' sx={sx.sectionSubtitle}>
-              התנאים שהמנוע זיהה בפועל והפער שלהם מרף הפרופיל
-            </Typography>
-          </Box>
+          {why.profileDepthLabel ? (
+            <Chip
+              size='sm'
+              variant='soft'
+              color={profile.role === 'near' ? 'warning' : 'success'}
+            >
+              {why.profileDepthLabel}
+            </Chip>
+          ) : null}
         </Box>
       </Box>
 
-      {why.profileLabel ? (
-        <Box sx={sx.whyProfileSummary}>
-          <Box sx={sx.whyProfileIdentity}>
-            <Typography level='body-xs' sx={sx.whyProfileEyebrow}>
-              הפרופיל הראשי
-            </Typography>
-
-            <Typography level='title-md' sx={sx.whyProfileName}>
-              {why.profileLabel}
-            </Typography>
-          </Box>
-
-          <Box sx={sx.whyProfileMeta}>
-            {countLabel ? (
-              <Chip size='sm' variant='soft' color='primary'>
-                {countLabel}
-              </Chip>
-            ) : null}
-
-            {why.profileDepthLabel ? (
-              <Chip size='sm' variant='soft' color='success'>
-                {why.profileDepthLabel}
-              </Chip>
-            ) : null}
-          </Box>
-        </Box>
-      ) : null}
-
       {evidence.length ? (
-        <Box sx={sx.whyEvidenceGrid}>
+        <Box sx={sx.whyEvidenceGrid(evidence.length)}>
           {evidence.map((item, index) => (
             <ProfileEvidenceCard
               key={item.id}
@@ -142,7 +124,7 @@ export default function PlayerScoutReasons({ why = {} }) {
           ))}
         </Box>
       ) : (
-        <Typography level='body-sm' sx={sx.emptyText}>
+        <Typography level='body-sm' sx={sx.profileDetailEmpty}>
           אין כרגע פירוט תנאים מספיק כדי להסביר את הפרופיל.
         </Typography>
       )}

@@ -36,6 +36,46 @@ function resolvePlayingUp({ playerBirthYear, groupBirthYear, isYoungerAgeGroup }
   return playerYear > groupYear
 }
 
+function resolveSeasonStartYear(value) {
+  const match = clean(value).match(/^(\d{2,4})\/(\d{2,4})$/)
+  if (!match) return 0
+
+  const year = Number(match[1])
+  if (!Number.isFinite(year)) return 0
+
+  return year < 100 ? 2000 + year : year
+}
+
+function resolveActivePlayerEntry(player = {}) {
+  const current = Array.isArray(player.current) ? player.current : []
+  const history = Array.isArray(player.history) ? player.history : []
+  const entries = [...current, ...history]
+
+  return [...entries]
+    .filter(entry => (
+      clean(entry.seasonKey || entry.seasonId) &&
+      clean(entry.seasonStatus).toLowerCase() !== 'completed'
+    ))
+    .sort((left, right) => (
+      resolveSeasonStartYear(right.seasonKey || right.seasonId) -
+      resolveSeasonStartYear(left.seasonKey || left.seasonId)
+    ))[0] || null
+}
+
+function normalizeCombination(combination = {}) {
+  return {
+    id: clean(combination.id),
+    label: clean(combination.label),
+    interestLevel: clean(combination.interestLevel || combination.interest),
+    profileIds: Array.isArray(combination.profileIds)
+      ? combination.profileIds.map(clean).filter(Boolean)
+      : [],
+    matchedProfileIds: Array.isArray(combination.matchedProfileIds)
+      ? combination.matchedProfileIds.map(clean).filter(Boolean)
+      : [],
+  }
+}
+
 function findTeamSeason(team = {}, entry = {}) {
   const seasonKey = clean(entry.seasonKey)
   const seasonId = clean(entry.seasonId)
@@ -115,7 +155,31 @@ function enrichStats({ entry = {}, teamSeason = null, teamPlayer = null }) {
   }
 }
 
-function buildEntry({ entry = {}, player = {}, teamsById = new Map() }) {
+function normalizeProfile(profile = {}) {
+  return {
+    profileId: clean(profile.profileId || profile.id),
+    profileLabel: resolveProfileLabel(profile),
+    interestLevel: clean(profile.interestLevel || profile.interest),
+    score: numberOrNull(profile.score),
+    profileDepth: valueOrNull(profile.profileDepth),
+    profileStrength: valueOrNull(profile.profileStrength),
+    positionContext: clean(profile.positionContext),
+    scoutContext: valueOrNull(profile.scoutContext),
+    requiredReview: Array.isArray(profile.requiredReview)
+      ? profile.requiredReview
+      : Array.isArray(profile.reviews) ? profile.reviews : [],
+    warnings: Array.isArray(profile.warnings) ? profile.warnings : [],
+    matchEvidence: Array.isArray(profile.matchEvidence) ? profile.matchEvidence : [],
+  }
+}
+
+function buildEntry({
+  entry = {},
+  player = {},
+  teamsById = new Map(),
+  sourceTarget = '',
+  isActiveSeason = false,
+}) {
   const teamDocumentId = clean(entry.birthTeamDocumentId)
   const team = teamsById.get(teamDocumentId) || null
   const teamSeason = team ? findTeamSeason(team, entry) : null
@@ -124,6 +188,8 @@ function buildEntry({ entry = {}, player = {}, teamsById = new Map() }) {
   const groupBirthYear = numberOrNull(entry.birthYear)
 
   return {
+    sourceTarget: clean(sourceTarget),
+    isActiveSeason: Boolean(isActiveSeason),
     seasonId: clean(entry.seasonId),
     seasonKey: clean(entry.seasonKey),
     seasonStatus: clean(entry.seasonStatus),
@@ -152,30 +218,33 @@ function buildEntry({ entry = {}, player = {}, teamsById = new Map() }) {
     primaryPosition: clean(entry.primaryPosition),
     positionLayer: clean(entry.positionLayer),
     stats: enrichStats({ entry, teamSeason, teamPlayer }),
-    profiles: profiles.map(profile => ({
-      profileId: clean(profile.profileId),
-      profileLabel: resolveProfileLabel(profile),
-      interestLevel: clean(profile.interestLevel),
-      score: numberOrNull(profile.score),
-      profileDepth: valueOrNull(profile.profileDepth),
-      reliability: profile.reliability || null,
-      positionContext: clean(profile.positionContext),
-      scoutContext: profile.scoutContext || null,
-    })),
-    priority: entry.scoutOpportunity || null,
-    verification: entry.scoutVerification || null,
-    progression: entry.scoutProfileProgression || null,
-    trajectory: entry.scoutTrajectory || null,
-    transferContext: entry.scoutTransferContext || null,
+    profiles: profiles.map(normalizeProfile),
+    combinations: Array.isArray(entry.scoutCombinations)
+      ? entry.scoutCombinations.map(normalizeCombination)
+      : [],
+    profileHierarchy: valueOrNull(entry.scoutProfileHierarchy),
+    profileCaseStrength: valueOrNull(entry.scoutProfileCaseStrength),
+    playerInterest: valueOrNull(entry.scoutPlayerInterest),
+    opportunity: valueOrNull(entry.scoutOpportunity),
+    verification: valueOrNull(entry.scoutVerification),
+    progression: valueOrNull(entry.scoutProfileProgression),
+    trajectory: valueOrNull(entry.scoutTrajectory),
+    transferContext: valueOrNull(entry.scoutTransferContext),
+    futureCompetitionPath: isActiveSeason
+      ? valueOrNull(entry.futureCompetitionPath)
+      : null,
+    engineVersion: clean(entry.scoutEngineVersion),
+    statsLoadMeasurementHistory: Array.isArray(entry.scoutStatsLoadMeasurementHistory)
+      ? entry.scoutStatsLoadMeasurementHistory
+      : [],
   }
 }
 
 function buildContext({ player = {}, teams = [] } = {}) {
   const teamsById = new Map(teams.map(team => [clean(team.id), team]))
-  const entries = [
-    ...(Array.isArray(player.history) ? player.history : []),
-    ...(Array.isArray(player.current) ? player.current : []),
-  ]
+  const history = Array.isArray(player.history) ? player.history : []
+  const current = Array.isArray(player.current) ? player.current : []
+  const activeEntry = resolveActivePlayerEntry(player)
 
   return {
     player: {
@@ -188,9 +257,26 @@ function buildContext({ player = {}, teams = [] } = {}) {
       primaryPosition: clean(player.primaryPosition),
       positionLayer: clean(player.positionLayer),
     },
-    entries: entries.map(entry => buildEntry({ entry, player, teamsById })),
+    entries: [
+      ...history.map(entry => buildEntry({
+        entry,
+        player,
+        teamsById,
+        sourceTarget: 'history',
+        isActiveSeason: entry === activeEntry,
+      })),
+      ...current.map(entry => buildEntry({
+        entry,
+        player,
+        teamsById,
+        sourceTarget: 'current',
+        isActiveSeason: entry === activeEntry,
+      })),
+    ],
     events: Array.isArray(player.events) ? player.events : [],
     verification: player.verification || null,
+    playerReview: player.playerReview || null,
+    manualImmediacyDecision: player.manualImmediacyDecision || null,
   }
 }
 

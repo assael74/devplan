@@ -4,6 +4,7 @@ import { resolveAgeGroupLabel } from '../../catalog/ageGroups.catalog.js'
 import { resolveSeasonLookupKey } from '../../model/season.model.js'
 import { buildAgeContext } from './narrativeAge.js'
 import { buildNarrativeEvidence } from './narrativeEvidence.js'
+import { buildNarrativeScoutContract } from './narrativeScoutContract.js'
 
 const clean = value => String(value || '').trim()
 
@@ -110,12 +111,17 @@ const buildEntry = ({ season, playerBirthYear, teams }) => {
     groupBirthYear: source?.season?.birthYear,
     season: source?.season,
   })
+  const scoutContract = buildNarrativeScoutContract(source?.scout)
+
+  const sourceTarget = source?.metadata?.sourceTarget || ''
+  const isCurrent = source?.lifecycle?.type === 'current' || sourceTarget === 'current'
 
   return {
     seasonId: source?.season?.seasonId || '',
     seasonKey: source?.season?.seasonKey || '',
     seasonStatus: source?.season?.seasonStatus || '',
-    sourceTarget: source?.metadata?.sourceTarget || '',
+    sourceTarget,
+    temporalRole: isCurrent ? 'current' : 'historical',
     team: {
       teamId: source?.team?.teamId || '',
       teamDocumentId: source?.team?.teamDocumentId || '',
@@ -144,18 +150,9 @@ const buildEntry = ({ season, playerBirthYear, teams }) => {
     lifecycle: source?.lifecycle || null,
     position: source?.position || {},
     scout: {
-      profileIds: Array.isArray(source?.scout?.profileIds)
-        ? source.scout.profileIds
-        : [],
-      primaryProfile: source?.scout?.primaryProfile || null,
-      secondaryProfile: source?.scout?.secondaryProfile || null,
-      opportunity: source?.scout?.opportunity || null,
-      verification: source?.scout?.verification || null,
-      profileProgression: source?.scout?.profileProgression || null,
-      trajectory: source?.scout?.trajectory || null,
-      transferContext: source?.scout?.transferContext || null,
+      contract: scoutContract,
     },
-    evidence: buildNarrativeEvidence(source),
+    evidence: buildNarrativeEvidence(source, scoutContract),
   }
 }
 

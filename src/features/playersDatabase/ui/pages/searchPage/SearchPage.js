@@ -266,7 +266,7 @@ function SearchPageContent() {
     }
 
     const confirmed = window.confirm(
-      'לרענן את ה-Engine Computed State במסמכי השחקנים? scoutVerification ונתונים אנושיים לא ישתנו.'
+      'לרענן את מצב הסקאוטינג לפי הסדר: מסמכי קבוצה, מסמכי שחקן ואינדקס החיפוש? מידע אנושי והיסטוריית מדידות לא ישתנו.'
     )
 
     if (!confirmed) return

@@ -80,9 +80,11 @@ export const createEmptyPlayerScout = () => ({
   profileProgression: null,
   profileHierarchy: null,
   profileCaseStrength: null,
+  playerInterest: null,
   playerReview: null,
   trajectory: null,
   transferContext: null,
+  futureCompetitionPath: null,
   engineVersion: '',
   statsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(),
   statsLoadMeasurementHistory: [],
@@ -230,9 +232,11 @@ export const normalizePlayerScout = ({
   profileProgression = null,
   profileHierarchy = null,
   profileCaseStrength = null,
+  playerInterest = null,
   playerReview = null,
   trajectory = null,
   transferContext = null,
+  futureCompetitionPath = null,
   engineVersion = '',
   statsLoadMeasurements = null,
   statsLoadMeasurementHistory = [],
@@ -291,6 +295,9 @@ export const normalizePlayerScout = ({
     profileCaseStrength: profileCaseStrength && typeof profileCaseStrength === 'object'
       ? profileCaseStrength
       : null,
+    playerInterest: playerInterest && typeof playerInterest === 'object'
+      ? playerInterest
+      : null,
     playerReview: playerReview && typeof playerReview === 'object'
       ? playerReview
       : null,
@@ -299,6 +306,9 @@ export const normalizePlayerScout = ({
       : null,
     transferContext: transferContext && typeof transferContext === 'object'
       ? transferContext
+      : null,
+    futureCompetitionPath: futureCompetitionPath && typeof futureCompetitionPath === 'object'
+      ? futureCompetitionPath
       : null,
     engineVersion: cleanDomainValue(engineVersion),
     statsLoadMeasurements: resolvedMeasurements,

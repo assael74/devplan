@@ -25,6 +25,18 @@ const getLteDepth = ({ value, target }) => {
   return Math.max(0, (threshold - current) / threshold)
 }
 
+const getBetweenDepth = ({ value, min, max, direction }) => {
+  const current = toFiniteNumber(value)
+  const lower = toFiniteNumber(min)
+  const upper = toFiniteNumber(max)
+
+  if (!Number.isFinite(current) || !Number.isFinite(lower) || !Number.isFinite(upper)) return null
+  if (current < lower || current > upper) return null
+  if (direction !== 'higher' || lower <= 0) return null
+
+  return Math.max(0, (current - lower) / lower)
+}
+
 const getRuleDepth = ({ rule, metrics }) => {
   const value = metrics?.[rule.metric]
 
@@ -34,6 +46,15 @@ const getRuleDepth = ({ rule, metrics }) => {
 
   if (rule.op === 'lte' || rule.op === 'lt') {
     return getLteDepth({ value, target: rule.value })
+  }
+
+  if (rule.op === 'between') {
+    return getBetweenDepth({
+      value,
+      min: rule.min,
+      max: rule.max,
+      direction: rule.depthDirection,
+    })
   }
 
   return null

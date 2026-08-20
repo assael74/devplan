@@ -11,6 +11,7 @@ function numberOrNull(value) {
   return Number.isFinite(number) ? number : null
 }
 
+
 function resolveSeasonStartYear(value) {
   const match = clean(value).match(/^(\d{2,4})\/(\d{2,4})$/)
   if (!match) return 0
@@ -22,7 +23,13 @@ function resolveSeasonStartYear(value) {
 }
 
 function resolveLatestEntry(entries = []) {
-  return [...entries]
+  const activeEntry = entries.find(entry => entry?.isActiveSeason === true)
+  if (activeEntry) return activeEntry
+
+  const currentEntries = entries.filter(entry => clean(entry.sourceTarget) === 'current')
+  const candidates = currentEntries.length ? currentEntries : entries
+
+  return [...candidates]
     .filter(entry => clean(entry.seasonKey || entry.seasonId))
     .sort((left, right) => (
       resolveSeasonStartYear(right.seasonKey || right.seasonId) -
@@ -30,7 +37,18 @@ function resolveLatestEntry(entries = []) {
     ))[0] || null
 }
 
-function resolveFutureOutlook(expectedLevelDelta) {
+function resolveFutureOutlookFromPath(path = null) {
+  const outlook = clean(path?.outlook).toLowerCase()
+
+  if (outlook === 'risk') return 'competition_down'
+  if (outlook === 'upside') return 'competition_up'
+  if (outlook === 'stable') return 'competition_stable'
+  if (outlook === 'mixed') return 'competition_mixed'
+
+  return 'unknown'
+}
+
+function resolveFutureOutlookFromDelta(expectedLevelDelta) {
   const delta = numberOrNull(expectedLevelDelta)
   if (delta === null) return 'unknown'
   if (delta < 0) return 'competition_down'
@@ -39,32 +57,79 @@ function resolveFutureOutlook(expectedLevelDelta) {
   return 'competition_stable'
 }
 
+function resolveNextCompetitionLevel(path = null) {
+  const steps = Array.isArray(path?.steps) ? path.steps : []
+  const firstStep = steps.find(step => numberOrNull(step?.leagueLevel) !== null)
+
+  return firstStep ? numberOrNull(firstStep.leagueLevel) : null
+}
+
 function buildDecisionContext({ context = {}, futureProjection = null } = {}) {
   const entries = Array.isArray(context.entries) ? context.entries : []
   const latestEntry = resolveLatestEntry(entries)
-  const opportunity = latestEntry?.priority || null
-  const expectedLevelDelta = numberOrNull(futureProjection?.expectedLevelDelta)
+  const opportunity = latestEntry?.opportunity || null
+  const playerInterest = latestEntry?.playerInterest || null
+  const futurePath = latestEntry?.futureCompetitionPath || null
+  const pathOutlook = resolveFutureOutlookFromPath(futurePath)
+  const projectionDelta = numberOrNull(futureProjection?.expectedLevelDelta)
   const currentCompetitionLevel = numberOrNull(
-    futureProjection?.leagueLevel !== undefined
-      ? futureProjection.leagueLevel
-      : latestEntry?.leagueLevel
+    futurePath?.current?.leagueLevel !== undefined
+      ? futurePath.current.leagueLevel
+      : futureProjection?.leagueLevel !== undefined
+        ? futureProjection.leagueLevel
+        : latestEntry?.leagueLevel
   )
-  const nextCompetitionLevel = expectedLevelDelta !== null && currentCompetitionLevel !== null
-    ? currentCompetitionLevel - expectedLevelDelta
+  const pathNextLevel = resolveNextCompetitionLevel(futurePath)
+  const projectionNextLevel = projectionDelta !== null && currentCompetitionLevel !== null
+    ? currentCompetitionLevel - projectionDelta
     : null
+  const futureOutlook = pathOutlook !== 'unknown'
+    ? pathOutlook
+    : resolveFutureOutlookFromDelta(projectionDelta)
 
   return {
     seasonKey: clean(latestEntry?.seasonKey || latestEntry?.seasonId),
-    actionStatus: clean(opportunity?.actionStatus),
+    interestLevel: clean(playerInterest?.interestLevel),
+    playerInterestLevel: clean(playerInterest?.interestLevel),
+    profileInterestLevel: clean(playerInterest?.profileInterestLevel),
+    combinationInterestLevel: clean(playerInterest?.combinationInterestLevel),
+    interestAssessment: playerInterest ? {
+      assessmentScope: clean(playerInterest.assessmentScope),
+      reasons: Array.isArray(playerInterest.reasons) ? playerInterest.reasons : [],
+      limitingFactors: Array.isArray(playerInterest.limitingFactors)
+        ? playerInterest.limitingFactors
+        : [],
+      upgradeConditions: Array.isArray(playerInterest.upgradeConditions)
+        ? playerInterest.upgradeConditions
+        : [],
+    } : null,
+    actionStatus: clean(opportunity?.effectiveActionStatus),
+    automaticActionStatus: clean(
+      opportunity?.automaticActionStatus ||
+      opportunity?.baseActionStatus
+    ),
+    manualActionStatus: clean(opportunity?.manualActionStatus),
+    hasManualDecision: Boolean(opportunity?.hasManualDecision),
+    manualDecision: opportunity?.manualDecision || context.manualImmediacyDecision || null,
+    baseActionStatus: clean(opportunity?.baseActionStatus),
+    boostScore: numberOrNull(opportunity?.boostScore),
+    reductionScore: numberOrNull(opportunity?.reductionScore),
+    netScore: numberOrNull(opportunity?.netScore),
+    boosts: Array.isArray(opportunity?.boosts) ? opportunity.boosts : [],
+    reductions: Array.isArray(opportunity?.reductions) ? opportunity.reductions : [],
+    signalPersistence: opportunity?.signalPersistence || null,
     exposureLevel: clean(opportunity?.exposureLevel),
     reasons: Array.isArray(opportunity?.reasons)
       ? opportunity.reasons.map(clean).filter(Boolean)
       : [],
-    futureOutlook: resolveFutureOutlook(expectedLevelDelta),
-    expectedLevelDelta,
+    futureOutlook,
+    futureCompetitionPath: futurePath,
+    expectedLevelDelta: projectionDelta,
     currentCompetitionLevel,
-    nextCompetitionLevel,
-    projectionSource: futureProjection ? 'team_search_index' : '',
+    nextCompetitionLevel: pathNextLevel !== null ? pathNextLevel : projectionNextLevel,
+    projectionSource: futurePath
+      ? 'player_future_competition_path'
+      : futureProjection ? 'team_search_index' : '',
   }
 }
 

@@ -6,6 +6,7 @@ import { Box, Button, Chip, Textarea, Typography } from '@mui/joy'
 
 import RegularModal from './RegularModal.js'
 import { playerNarrativeModalSx as sx } from './sx/playerNarrativeModal.sx.js'
+import { formatNarrativeTextNumbers } from '../../logic/narrativeText.logic.js'
 
 const ENTITY_PRIORITY = {
   player: 1,
@@ -19,53 +20,77 @@ const ENTITY_PRIORITY = {
 
 const ACTION_VIEW = {
   immediate: {
-    interestLabel: 'בדיקה מיידית',
-    timingLabel: 'מיידי',
-    color: 'danger',
+    label: 'בדיקה מיידית',
+    color: 'success',
     variant: 'solid',
   },
   priority: {
-    interestLabel: 'עדיפות גבוהה',
-    timingLabel: 'בקרוב',
-    color: 'warning',
+    label: 'עדיפות גבוהה לבדיקה',
+    color: 'success',
     variant: 'soft',
   },
   watch: {
-    interestLabel: 'מעקב',
-    timingLabel: 'המשך מעקב',
+    label: 'מעקב',
     color: 'neutral',
     variant: 'soft',
   },
   exposed: {
-    interestLabel: 'חשיפה גבוהה',
-    timingLabel: 'יתרון תזמון נמוך',
+    label: 'מעקב · חשיפה גבוהה',
     color: 'primary',
+    variant: 'soft',
+  },
+}
+
+const INTEREST_VIEW = {
+  super_interesting: {
+    label: 'מעניין מאוד',
+    color: 'success',
+    variant: 'solid',
+  },
+  interesting: {
+    label: 'מעניין',
+    color: 'primary',
+    variant: 'soft',
+  },
+  reasonable: {
+    label: 'עניין מוגבל',
+    color: 'neutral',
     variant: 'soft',
   },
 }
 
 const FUTURE_OUTLOOK_VIEW = {
   competition_down: {
-    label: 'רמת התחרות צפויה לרדת',
-    shortLabel: '↓ רמת התחרות צפויה לרדת',
+    label: '↓ רמת התחרות צפויה לרדת',
     color: 'warning',
+    variant: 'solid',
   },
   competition_up: {
-    label: 'רמת התחרות צפויה לעלות',
-    shortLabel: '↑ רמת התחרות צפויה לעלות',
+    label: '↑ רמת התחרות צפויה לעלות',
     color: 'primary',
+    variant: 'soft',
   },
   competition_stable: {
-    label: 'רמת התחרות צפויה להישאר דומה',
-    shortLabel: '→ התחרות צפויה להישאר דומה',
+    label: '→ התחרות צפויה להישאר דומה',
     color: 'neutral',
+    variant: 'soft',
+  },
+  competition_mixed: {
+    label: '↔ תחזית התחרות מעורבת',
+    color: 'neutral',
+    variant: 'soft',
   },
 }
 
-const CERTAINTY_VIEW = {
-  high: 'גבוהה',
-  medium: 'בינונית',
-  low: 'נמוכה',
+const STRENGTH_LABELS = {
+  elite: 'חריג',
+  very_high: 'גבוה מאוד',
+  high: 'גבוה',
+  strong: 'חזק',
+  medium: 'בינוני',
+  moderate: 'בינוני',
+  low: 'נמוך',
+  weak: 'חלש',
 }
 
 function clean(value) {
@@ -76,13 +101,6 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function resolveParagraphs(summary = '') {
-  return String(summary || '')
-    .split(/\n\s*\n/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
 function normalizeEntities(presentation = {}) {
   const entities = Array.isArray(presentation?.entities)
     ? presentation.entities
@@ -90,11 +108,11 @@ function normalizeEntities(presentation = {}) {
   const seen = new Set()
 
   return entities
-    .map((entity) => ({
+    .map(entity => ({
       type: clean(entity?.type),
       label: clean(entity?.label),
     }))
-    .filter((entity) => {
+    .filter(entity => {
       if (!entity.label) return false
 
       const key = entity.label.toLocaleLowerCase('he')
@@ -111,59 +129,104 @@ function normalizeEntities(presentation = {}) {
 function buildHighlightRegex(entities) {
   if (!entities.length) return null
 
-  return new RegExp(`(${entities.map((entity) => escapeRegExp(entity.label)).join('|')})`, 'giu')
+  return new RegExp(`(${entities.map(entity => escapeRegExp(entity.label)).join('|')})`, 'giu')
 }
 
 function findEntity(entities, value) {
   const normalized = clean(value).toLocaleLowerCase('he')
-  return entities.find((entity) => entity.label.toLocaleLowerCase('he') === normalized) || null
+  return entities.find(entity => entity.label.toLocaleLowerCase('he') === normalized) || null
 }
 
-function resolveDecisionView(presentation = {}) {
+function resolveStrengthLabel(value) {
+  if (value === null || value === undefined || value === '') return ''
+
+  if (typeof value === 'number') return String(Math.round(value))
+  if (typeof value === 'string') return STRENGTH_LABELS[clean(value)] || clean(value)
+  if (typeof value !== 'object') return ''
+
+  const depthPct = Number(value.depthPct)
+  if (Number.isFinite(depthPct)) return `${Math.round(depthPct)}%+ מעל הרף`
+
+  if (value.primaryProfileStrength) {
+    return resolveStrengthLabel(value.primaryProfileStrength)
+  }
+
+  const candidate = value.label || value.level || value.band || value.status || value.strength
+  if (candidate !== null && candidate !== undefined && candidate !== '') {
+    return STRENGTH_LABELS[clean(candidate)] || clean(candidate)
+  }
+
+  const numeric = value.score !== undefined ? value.score : value.value
+  if (numeric === null || numeric === undefined || numeric === '') return ''
+
+  const number = Number(numeric)
+  return Number.isFinite(number) ? String(Math.round(number)) : clean(numeric)
+}
+
+function resolveDecisionView(content = {}, presentation = {}) {
+  const action = content.action || {}
+  const conclusion = content.conclusion || {}
   const decision = presentation?.decision || {}
-  const actionStatus = clean(decision.actionStatus)
-  const futureOutlook = clean(decision.futureOutlook)
-  const certaintyLevel = clean(decision.certaintyLevel)
-  const certaintyScore = Number(decision.certaintyScore)
+  const actionStatus = clean(action.status || decision.actionStatus)
+  const interestLevel = clean(conclusion.interestLevel || decision.interestLevel)
+  const resolvedFutureOutlook = clean(decision.futureOutlook)
+  const futureOutlook = resolvedFutureOutlook === 'competition_stable'
+    ? ''
+    : resolvedFutureOutlook
 
   return {
+    interestLevel,
+    interest: INTEREST_VIEW[interestLevel] || null,
     actionStatus,
-    futureOutlook,
     action: ACTION_VIEW[actionStatus] || null,
+    actionText: clean(action.text),
+    isManual: Boolean(action.isManual || decision.hasManualDecision),
+    automaticStatus: clean(action.automaticStatus || decision.automaticActionStatus),
+    manualStatus: clean(action.manualStatus || decision.manualActionStatus),
+    futureOutlook,
     future: FUTURE_OUTLOOK_VIEW[futureOutlook] || null,
-    certaintyScore: Number.isFinite(certaintyScore) ? certaintyScore : null,
-    certaintyLabel: CERTAINTY_VIEW[certaintyLevel] || '',
-    currentCompetitionLevel: decision.currentCompetitionLevel,
-    nextCompetitionLevel: decision.nextCompetitionLevel,
+    profileLabel: clean(conclusion.primaryProfile?.profileLabel),
+    profileStrength: resolveStrengthLabel(conclusion.profileStrength),
+    caseStrength: resolveStrengthLabel(conclusion.caseStrength),
   }
 }
 
-function resolveDecisionParagraph(paragraphs = []) {
-  if (paragraphs.length < 4) return ''
-  return paragraphs[paragraphs.length - 1]
+
+function resolveDecisionCallout(decision = {}) {
+  if (decision.actionStatus === 'immediate') {
+    return 'מומלץ לקדם בדיקה מיידית של השחקן.'
+  }
+
+  if (decision.actionStatus === 'priority') {
+    return 'המידע הקיים מצדיק מעבר ממעקב לבדיקה ממוקדת.'
+  }
+
+  return ''
 }
 
-function resolveStoryParagraphs(paragraphs = []) {
-  if (paragraphs.length < 4) return paragraphs
-  return paragraphs.slice(0, -1)
-}
+function resolveLegacyContent(content = {}) {
+  const summary = clean(content.summary)
+  const paragraphs = summary
+    .split(/\n\s*\n/)
+    .map(item => item.trim())
+    .filter(Boolean)
 
-function resolveCompetitionDetail(decisionView = {}) {
-  if (!decisionView.future || decisionView.futureOutlook === 'competition_stable') return ''
-
-  const current = Number(decisionView.currentCompetitionLevel)
-  const next = Number(decisionView.nextCompetitionLevel)
-  if (!Number.isFinite(current) || !Number.isFinite(next)) return ''
-
-  return `רמה ${current} → רמה ${next}`
+  return {
+    conclusionText: clean(content.conclusion?.text) || paragraphs[0] || '',
+    whyInteresting: clean(content.whyInteresting) || paragraphs[1] || '',
+    professionalContext: clean(content.professionalContext) || paragraphs[2] || '',
+    strengths: Array.isArray(content.strengths) ? content.strengths.map(clean).filter(Boolean) : [],
+    unknowns: Array.isArray(content.unknowns) ? content.unknowns.map(clean).filter(Boolean) : [],
+  }
 }
 
 function HighlightedText({ text, presentation }) {
+  const safeText = formatNarrativeTextNumbers(text)
   const entities = normalizeEntities(presentation)
   const regex = buildHighlightRegex(entities)
-  if (!regex) return text
+  if (!regex) return safeText
 
-  return String(text || '').split(regex).map((part, index) => {
+  return safeText.split(regex).map((part, index) => {
     const entity = findEntity(entities, part)
     if (!entity) return part
 
@@ -194,6 +257,165 @@ function DecisionChip({ label, color = 'neutral', variant = 'soft', emphasis = f
   )
 }
 
+function NarrativeSection({ title, text, presentation, emphasis = false }) {
+  if (!clean(text)) return null
+
+  return (
+    <Box sx={emphasis ? sx.leadSection : sx.section}>
+      <Typography level='body-xs' sx={sx.sectionLabel}>
+        {title}
+      </Typography>
+      <Typography level={emphasis ? 'body-lg' : 'body-md'} sx={sx.sectionText}>
+        <HighlightedText text={text} presentation={presentation} />
+      </Typography>
+    </Box>
+  )
+}
+
+function NarrativeListSection({ title, items, presentation }) {
+  const safeItems = Array.isArray(items) ? items.map(clean).filter(Boolean) : []
+  if (!safeItems.length) return null
+
+  return (
+    <Box sx={sx.section}>
+      <Typography level='body-xs' sx={sx.sectionLabel}>
+        {title}
+      </Typography>
+
+      <Box sx={sx.list}>
+        {safeItems.map((item, index) => (
+          <Box key={`${index}-${item.slice(0, 24)}`} sx={sx.listItem}>
+            <Box component='span' sx={sx.listBullet}>•</Box>
+            <Typography level='body-md' sx={sx.sectionText}>
+              <HighlightedText text={item} presentation={presentation} />
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
+export function PlayerNarrativeContent({ content = {}, presentation = null }) {
+  const structured = resolveLegacyContent(content)
+  const decisionView = resolveDecisionView(content, presentation)
+  const decisionCallout = resolveDecisionCallout(decisionView)
+
+  return (
+    <Box sx={sx.body}>
+      <Box sx={sx.storyHeader}>
+        <Box sx={sx.storyMark} />
+        <Typography level='h3' sx={sx.title}>
+          <HighlightedText text={content.title || 'תמונת מצב מקצועית'} presentation={presentation} />
+        </Typography>
+      </Box>
+
+      <Box sx={sx.decisionCard(decisionView)}>
+        <Box sx={sx.decisionHeader}>
+          <Typography level='title-sm' sx={sx.decisionTitle}>
+            מסקנה מקצועית
+          </Typography>
+
+          <Box sx={sx.decisionChips}>
+            <DecisionChip
+              label={decisionView.interest ? decisionView.interest.label : ''}
+              color={decisionView.interest ? decisionView.interest.color : 'neutral'}
+              variant={decisionView.interest ? decisionView.interest.variant : 'soft'}
+              emphasis={decisionView.interestLevel === 'super_interesting'}
+            />
+
+            <DecisionChip
+              label={decisionView.action ? decisionView.action.label : 'פעולה: לא נקבעה'}
+              color={decisionView.action ? decisionView.action.color : 'neutral'}
+              variant={decisionView.action ? decisionView.action.variant : 'soft'}
+              emphasis={decisionView.actionStatus === 'immediate' || decisionView.actionStatus === 'priority'}
+            />
+
+            <DecisionChip
+              label={decisionView.profileStrength
+                ? `חוזק פרופיל · ${decisionView.profileStrength}`
+                : ''}
+            />
+
+            <DecisionChip
+              label={decisionView.future ? decisionView.future.label : ''}
+              color={decisionView.future ? decisionView.future.color : 'neutral'}
+              variant={decisionView.future ? decisionView.future.variant : 'soft'}
+              emphasis={decisionView.futureOutlook === 'competition_down'}
+            />
+
+            {decisionView.isManual ? (
+              <DecisionChip label='החלטה ידנית' color='warning' variant='outlined' />
+            ) : null}
+          </Box>
+        </Box>
+
+        {decisionCallout ? (
+          <Typography level='title-sm' sx={sx.decisionCallout(decisionView)}>
+            {decisionCallout}
+          </Typography>
+        ) : null}
+
+        {decisionView.profileLabel ? (
+          <Typography level='body-xs' sx={sx.primaryProfileText}>
+            פרופיל מרכזי: <HighlightedText text={decisionView.profileLabel} presentation={presentation} />
+          </Typography>
+        ) : null}
+
+        {structured.conclusionText ? (
+          <Typography level='body-sm' sx={sx.recommendationText}>
+            <HighlightedText text={structured.conclusionText} presentation={presentation} />
+          </Typography>
+        ) : null}
+      </Box>
+
+      <Box sx={sx.storyBody}>
+        <NarrativeSection
+          title='למה הוא מעניין'
+          text={structured.whyInteresting}
+          presentation={presentation}
+          emphasis
+        />
+
+        <NarrativeSection
+          title='הקשר מקצועי'
+          text={structured.professionalContext}
+          presentation={presentation}
+        />
+
+        <NarrativeListSection
+          title='מה מחזק את העניין'
+          items={structured.strengths}
+          presentation={presentation}
+        />
+
+        <NarrativeListSection
+          title='מה עדיין צריך לבדוק'
+          items={structured.unknowns}
+          presentation={presentation}
+        />
+
+        <Box sx={sx.actionSection(decisionView)}>
+          <Box sx={sx.actionHeader}>
+            <Typography level='body-xs' sx={sx.sectionLabel}>
+              מה עושים עכשיו
+            </Typography>
+            {decisionView.isManual ? (
+              <Chip size='sm' variant='outlined' color='warning'>
+                החלטה ידנית
+              </Chip>
+            ) : null}
+          </Box>
+
+          <Typography level='body-md' sx={sx.actionText}>
+            {decisionView.actionText || 'לא נקבעה כרגע המלצת פעולה במודל הסקאוט.'}
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
 export default function PlayerNarrativeModal({
   open,
   session,
@@ -206,14 +428,6 @@ export default function PlayerNarrativeModal({
 }) {
   const [instruction, setInstruction] = React.useState('')
   const content = session?.draft || {}
-  const paragraphs = resolveParagraphs(content.summary)
-  const decisionView = resolveDecisionView(presentation)
-  const decisionParagraph = resolveDecisionParagraph(paragraphs)
-  const storyParagraphs = resolveStoryParagraphs(paragraphs)
-  const competitionDetail = resolveCompetitionDetail(decisionView)
-  const certaintyText = decisionView.certaintyScore !== null
-    ? `${decisionView.certaintyScore}${decisionView.certaintyLabel ? ` · ${decisionView.certaintyLabel}` : ''}`
-    : decisionView.certaintyLabel || 'לא נקבעה'
 
   const handleRefine = async () => {
     const safeInstruction = clean(instruction)
@@ -227,128 +441,47 @@ export default function PlayerNarrativeModal({
     <RegularModal
       open={open}
       title='סיפור שחקן'
-      description='תצוגה מקדימה לפני שמירה.'
-      confirmLabel='אשר ושמור'
+      description='טיוטה לעבודה. הסיפור המאושר ישתנה רק לאחר שמירה מפורשת.'
+      confirmLabel='שמור כסיפור מאושר'
       cancelLabel='ביטול'
       busy={saving || refining}
       onConfirm={onApprove}
       onClose={onClose}
     >
-      <Box sx={sx.body}>
-        <Box sx={sx.storyHeader}>
-          <Box sx={sx.storyMark} />
-          <Typography level='h3' sx={sx.title}>
-            <HighlightedText text={content.title || 'תמונת מצב מקצועית'} presentation={presentation} />
+      <PlayerNarrativeContent
+        content={content}
+        presentation={presentation}
+      />
+
+      {onRefine ? (
+        <Box sx={sx.refineBox}>
+          <Typography level='body-xs' sx={sx.refineLabel}>
+            חידוד עם AI
           </Typography>
+
+          <Box sx={sx.refineRow}>
+            <Textarea
+              value={instruction}
+              minRows={1}
+              maxRows={3}
+              placeholder='לדוגמה: קצר יותר, תן יותר דגש על ההקשר ההגנתי...'
+              disabled={refining || saving}
+              onChange={event => setInstruction(event.target.value)}
+              sx={sx.refineInput}
+            />
+
+            <Button
+              size='sm'
+              variant='soft'
+              disabled={!clean(instruction) || refining || saving}
+              onClick={handleRefine}
+              sx={sx.refineButton}
+            >
+              {refining ? 'מחדד...' : 'חדד'}
+            </Button>
+          </Box>
         </Box>
-
-        <Box sx={sx.decisionCard(decisionView)}>
-          <Box sx={sx.decisionHeader}>
-            <Typography level='title-sm' sx={sx.decisionTitle}>
-              מסקנה מקצועית
-            </Typography>
-
-            <Box sx={sx.decisionChips}>
-              <DecisionChip
-                label={decisionView.action
-                  ? decisionView.action.interestLabel
-                  : 'מידיות: לא נקבעה'}
-                color={decisionView.action ? decisionView.action.color : 'neutral'}
-                variant={decisionView.actionStatus === 'immediate' ? 'solid' : 'soft'}
-                emphasis={decisionView.actionStatus === 'immediate'}
-              />
-
-              <DecisionChip
-                label={`ודאות ${certaintyText}`}
-                color={decisionView.certaintyLabel === 'גבוהה'
-                  ? 'success'
-                  : decisionView.certaintyLabel === 'נמוכה'
-                    ? 'warning'
-                    : 'neutral'}
-              />
-
-              <DecisionChip
-                label={decisionView.future
-                  ? `${decisionView.future.shortLabel}${competitionDetail ? ` · ${competitionDetail}` : ''}`
-                  : 'עונה הבאה: לא נקבע'}
-                color={decisionView.future ? decisionView.future.color : 'neutral'}
-                variant={decisionView.futureOutlook === 'competition_down' ? 'solid' : 'soft'}
-                emphasis={decisionView.futureOutlook === 'competition_down'}
-              />
-            </Box>
-          </Box>
-
-          {decisionParagraph ? (
-            <Typography level='body-sm' sx={sx.recommendationText}>
-              <HighlightedText text={decisionParagraph} presentation={presentation} />
-            </Typography>
-          ) : null}
-        </Box>
-
-        {storyParagraphs.length ? (
-          <Box sx={sx.storyBody}>
-            {storyParagraphs.map((paragraph, index) => {
-              const isLead = index === 0
-              const isClosing = index === storyParagraphs.length - 1 && storyParagraphs.length > 1
-
-              return (
-                <Box
-                  key={`${index}-${paragraph.slice(0, 24)}`}
-                  sx={isLead
-                    ? sx.leadParagraph
-                    : isClosing
-                      ? sx.closingParagraph
-                      : sx.paragraph}
-                >
-                  {isClosing ? (
-                    <Typography level='body-xs' sx={sx.closingLabel}>
-                      מה עדיין צריך לבדוק
-                    </Typography>
-                  ) : null}
-
-                  <Typography level={isLead ? 'body-lg' : 'body-md'} sx={sx.summary}>
-                    <HighlightedText text={paragraph} presentation={presentation} />
-                  </Typography>
-                </Box>
-              )
-            })}
-          </Box>
-        ) : (
-          <Typography level='body-md' sx={sx.summary}>
-            אין כרגע מספיק מידע להצגת סיפור.
-          </Typography>
-        )}
-
-        {onRefine ? (
-          <Box sx={sx.refineBox}>
-            <Typography level='body-xs' sx={sx.refineLabel}>
-              חידוד עם AI
-            </Typography>
-
-            <Box sx={sx.refineRow}>
-              <Textarea
-                value={instruction}
-                minRows={1}
-                maxRows={3}
-                placeholder='לדוגמה: קצר יותר, תן יותר דגש על ההקשר ההגנתי...'
-                disabled={refining || saving}
-                onChange={event => setInstruction(event.target.value)}
-                sx={sx.refineInput}
-              />
-
-              <Button
-                size='sm'
-                variant='soft'
-                disabled={!clean(instruction) || refining || saving}
-                onClick={handleRefine}
-                sx={sx.refineButton}
-              >
-                {refining ? 'מחדד...' : 'חדד'}
-              </Button>
-            </Box>
-          </Box>
-        ) : null}
-      </Box>
+      ) : null}
     </RegularModal>
   )
 }

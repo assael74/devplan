@@ -226,10 +226,13 @@ export default function PlayerScoutAuditModal({
     : []
   const previewSummary = repairPreview?.summary || {}
   const enginePreviewSummary = engineRefreshPreview?.summary || {}
-  const engineFieldCounts = enginePreviewSummary.fieldCounts || {}
+  const engineTeamFieldCounts = enginePreviewSummary.teamFieldCounts || {}
+  const enginePlayerFieldCounts = enginePreviewSummary.playerFieldCounts || {}
+  const engineSearchFieldCounts = enginePreviewSummary.searchIndexFieldCounts || {}
   const rewriteSummary = documentRewritePreview?.summary || {}
   const rewriteCost = documentRewritePreview?.cost || {}
   const auditCost = audit?.cost?.audit || {}
+  const auditReadSafety = audit?.cost?.readSafety || audit?.readSafety || {}
   const runtimeCost = audit?.cost?.runtime || {}
   const runtimeFlows = runtimeCost.flows || {}
   const runtimeRisks = Array.isArray(runtimeCost.risks) ? runtimeCost.risks : []
@@ -281,33 +284,33 @@ export default function PlayerScoutAuditModal({
       onClick: onRunFull,
       color: 'primary',
     }
+  } else if (engineRefreshPreview && health.engineCount) {
+    primaryAction = {
+      label: 'רענן את מצב הסקאוטינג',
+      description: 'מצב הסקאוטינג יחושב מחדש לפני תיקוני סנכרון, ורק ליעדים שהוצגו בתצוגה המקדימה.',
+      onClick: onEngineRefreshApply,
+      color: 'primary',
+    }
+  } else if (health.engineCount) {
+    primaryAction = {
+      label: 'בדוק רענון מצב הסקאוטינג',
+      description: 'לפני תיקוני סנכרון נבדוק אילו מצבי סקאוטינג דורשים חישוב מחדש. לא תתבצע כתיבה בשלב הזה.',
+      onClick: onEngineRefreshPreview,
+      color: 'primary',
+    }
   } else if (repairPreview && health.repairableCount) {
     primaryAction = {
       label: 'בצע את התיקון המוצע',
-      description: 'התיקון יטפל רק בפערים שהבדיקה סימנה כניתנים לתיקון אוטומטי.',
+      description: 'התיקון יטפל רק בפערי הסנכרון והנתונים שנותרו לאחר שמצב הסקאוטינג מעודכן.',
       onClick: onRepairApply,
       color: 'warning',
     }
   } else if (health.repairableCount) {
     primaryAction = {
       label: 'הצג תיקון מוצע',
-      description: 'לפני כתיבה תוצג רשימת היעדים והערכת העלות.',
+      description: 'לפני כתיבה תוצג רשימת פערי הסנכרון שנותרו והערכת העלות.',
       onClick: onRepairPreview,
       color: 'warning',
-    }
-  } else if (engineRefreshPreview && health.engineCount) {
-    primaryAction = {
-      label: 'רענן את מצב המנוע',
-      description: 'יעודכנו רק שדות מצב הסקאוטינג שהבדיקה זיהתה כמיושנים.',
-      onClick: onEngineRefreshApply,
-      color: 'primary',
-    }
-  } else if (health.engineCount) {
-    primaryAction = {
-      label: 'בדוק תיקון מצב מנוע',
-      description: 'תוצג תצוגה מקדימה לפני כל כתיבה.',
-      onClick: onEngineRefreshPreview,
-      color: 'primary',
     }
   }
 
@@ -432,6 +435,12 @@ export default function PlayerScoutAuditModal({
         {audit?.cost?.audit ? (
           <Typography level='body-xs' sx={sx.costNote}>
             מסמכים שנבדקו: קבוצות {auditCost.documentsObserved?.teamDocuments || 0} · שחקנים {auditCost.documentsObserved?.playerDocuments || 0} · אינדקס שחקנים {auditCost.documentsObserved?.playerSearchIndexes || 0} · אינדקס קבוצות {auditCost.documentsObserved?.teamSearchIndexes || 0} · בדיקות התאמה למסמכי שחקן {auditCost.documentsObserved?.playerDocumentLookups || 0}.
+          </Typography>
+        ) : null}
+
+        {audit && auditReadSafety.hardLimit ? (
+          <Typography level='body-xs' sx={sx.costNote}>
+            בטיחות קריאות: הבדיקה מוגבלת לעד {auditReadSafety.safetyLimit || 0} קריאות מתוך תקרה קשיחה של {auditReadSafety.hardLimit || 0}. בבדיקה הנוכחית בוצעו {auditReadSafety.readsUsed || 0} קריאות ונשאר תקציב של {auditReadSafety.remainingBudget || 0}.
           </Typography>
         ) : null}
 
@@ -688,12 +697,24 @@ export default function PlayerScoutAuditModal({
 
             <Box sx={sx.repairGrid}>
               <SummaryCard
+                label='מסמכי קבוצה'
+                value={enginePreviewSummary.affectedTeamDocuments || 0}
+              />
+              <SummaryCard
+                label='מצבי שחקן בקבוצה'
+                value={enginePreviewSummary.affectedTeamPlayerStates || 0}
+              />
+              <SummaryCard
                 label='מסמכי שחקן'
                 value={enginePreviewSummary.affectedPlayerDocuments || 0}
               />
               <SummaryCard
                 label='עונות שחקן'
                 value={enginePreviewSummary.affectedPlayerSeasons || 0}
+              />
+              <SummaryCard
+                label='אינדקסי חיפוש'
+                value={enginePreviewSummary.affectedSearchIndexes || 0}
               />
               <SummaryCard
                 label='קריאות מקסימום'
@@ -706,12 +727,20 @@ export default function PlayerScoutAuditModal({
             </Box>
 
             <ProfileCounts
-              title='שדות מצב מנוע לעדכון'
-              values={engineFieldCounts}
+              title='שדות מנוע במסמכי הקבוצה'
+              values={engineTeamFieldCounts}
+            />
+            <ProfileCounts
+              title='שדות מנוע במסמכי השחקן'
+              values={enginePlayerFieldCounts}
+            />
+            <ProfileCounts
+              title='שדות סקאוטינג באינדקס החיפוש'
+              values={engineSearchFieldCounts}
             />
 
             <Typography level='body-xs' sx={sx.costNote}>
-              מתעדכנים רק השדות שהמנוע מחשב. לא נוגעים באימותים ידניים, בפרופילים ידניים או באינדקס החיפוש. לאחר הכתיבה לא רצה בדיקת אימות אוטומטית כדי לחסוך קריאות.
+              סדר הרענון הוא מסמכי קבוצה → מסמכי שחקן → אינדקס החיפוש. מתעדכנים רק שדות שמחושבים על ידי המנוע; מידע אנושי, היסטוריית מדידות ו-Closing Gap אינם משתנים. לאחר הכתיבה לא רצה בדיקת אימות אוטומטית כדי לחסוך קריאות.
             </Typography>
           </Box>
         ) : null}
@@ -723,7 +752,7 @@ export default function PlayerScoutAuditModal({
             </Typography>
 
             <Typography level='body-sm'>
-              {engineRefreshResult.playerDocumentsUpdated || 0} מסמכי שחקן עודכנו · {engineRefreshResult.playerSeasonsUpdated || 0} עונות עודכנו · {engineRefreshResult.skippedDocuments || 0} מסמכים דולגו.
+              {engineRefreshResult.summary?.teamDocumentsUpdated || 0} מסמכי קבוצה עודכנו · {engineRefreshResult.summary?.teamPlayerStatesUpdated || 0} מצבי שחקן בקבוצה עודכנו · {engineRefreshResult.summary?.playerDocumentsUpdated || engineRefreshResult.playerDocumentsUpdated || 0} מסמכי שחקן עודכנו · {engineRefreshResult.summary?.playerSeasonsUpdated || engineRefreshResult.playerSeasonsUpdated || 0} עונות שחקן עודכנו · {engineRefreshResult.summary?.searchIndexesUpdated || 0} אינדקסי חיפוש עודכנו · {engineRefreshResult.summary?.skipped || engineRefreshResult.skippedDocuments || 0} יעדים דולגו.
             </Typography>
           </Box>
         ) : null}

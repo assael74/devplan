@@ -29,12 +29,17 @@ import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import usePlayerNarrative from './hooks/usePlayerNarrative.js'
 import usePlayerScoutReview from './hooks/usePlayerScoutReview.js'
 import { readPlayerSource } from '../../../services/read/index.js'
-import { downloadPlayerJson } from './logic/playerJson.logic.js'
+import {
+  downloadPlayerJson,
+  downloadTeamJson,
+} from './logic/playerJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { playerPageSx } from './sx/playerPage.sx.js'
+import { buildPlayerScoutView } from './logic/playerScoutView.js'
+import { buildPlayerSeasonNumbersRow } from './logic/playerTeamSource.logic.js'
 
 function getPathParam(path, key) {
   const queryIndex = String(path || '').indexOf('?')
@@ -53,6 +58,7 @@ function PlayerPageContent() {
   const { notify } = useSnackbar()
   const {
     player,
+    teamSource,
     fromTeam,
     reload,
   } = usePlayerPage()
@@ -68,13 +74,12 @@ function PlayerPageContent() {
     playerId
   )
   const historyView = usePlayerHistoryView(player)
-  const selectedSeasonRow = React.useMemo(() => (
-    historyView.selectedSeasonKey
-      ? historyView.rows.find(row => (
-        row.seasonKey === historyView.selectedSeasonKey
-      )) || null
-      : null
-  ), [historyView.rows, historyView.selectedSeasonKey])
+  const selectedSeasonRow = historyView.selectedRow
+  const selectedNumbersRow = React.useMemo(() => buildPlayerSeasonNumbersRow({
+    row: selectedSeasonRow || {},
+    player,
+    teamSource: teamSource || {},
+  }), [player, selectedSeasonRow, teamSource])
   const playerUrlEditor = usePlayerUrlEditor({
     player,
     selectedSeasonRow,
@@ -95,6 +100,10 @@ function PlayerPageContent() {
     notify,
     reload,
   })
+  const scoutView = React.useMemo(() => buildPlayerScoutView({
+    player,
+    historyRows: historyView.rows,
+  }), [player, historyView.rows])
 
   const fallbackLeaguePath = player.leagueId
     ? PLAYERS_DATABASE_UI_ROUTES.league(
@@ -282,6 +291,25 @@ function PlayerPageContent() {
     }
   }, [notify, playerId, playerJsonLoading])
 
+
+  const handleTeamJson = React.useCallback(() => {
+    const teamDocument = teamSource?.teamDoc
+
+    if (!teamDocument) {
+      notify({
+        status: 'warning',
+        message: 'מסמך הקבוצה אינו זמין כרגע להורדה.',
+      })
+      return
+    }
+
+    downloadTeamJson(teamDocument)
+    notify({
+      status: 'success',
+      message: 'מסמך הקבוצה הורד בהצלחה.',
+    })
+  }, [notify, teamSource])
+
   const handleAction = actionId => {
     if (actionId === 'report') {
       playerReport.openPreview()
@@ -290,6 +318,11 @@ function PlayerPageContent() {
 
     if (actionId === 'link') {
       playerUrlEditor.open()
+      return
+    }
+
+    if (actionId === 'review') {
+      scoutReview.open()
       return
     }
 
@@ -302,7 +335,7 @@ function PlayerPageContent() {
         <PlayerHeader
           breadcrumbs={breadcrumbs}
           player={player}
-          seasonLabel={historyView.selectedSeasonKey || 'כל העונות'}
+          seasonLabel={historyView.latestSeasonKey || 'כל העונות'}
           favorite={playerFavorite}
           favoriteLoading={playerFavoriteLoading}
           onFavoriteToggle={() => {
@@ -317,22 +350,29 @@ function PlayerPageContent() {
             <PlayerScoutOverview
               player={player}
               historyRows={historyView.rows}
-              selectedSeasonKey={historyView.selectedSeasonKey}
+              selectedRow={selectedNumbersRow}
+              selectedContextId={historyView.selectedContextId}
+              contextOptions={historyView.contextOptions}
               narrativeView={narrative.view}
               narrativeLoading={narrative.loading}
+              narrativeDeleting={narrative.deleting}
               playerJsonLoading={playerJsonLoading}
+              reportLoading={playerReport.busy}
+              onContextChange={historyView.setSelectedContextId}
               onNarrativeGenerate={narrative.generate}
+              onNarrativeRefine={narrative.editApproved}
+              onNarrativeDelete={narrative.removeApproved}
               onPlayerJson={handlePlayerJson}
-              onReviewOpen={scoutReview.open}
+              onTeamJson={handleTeamJson}
+              teamJsonAvailable={Boolean(teamSource?.teamDoc)}
+              onReport={playerReport.openPreview}
             />
           </Box>
 
           <PlayerActionsPanel
-            selectedSeasonKey={historyView.selectedSeasonKey}
-            seasonOptions={historyView.seasonOptions}
+            recommendedActions={scoutView.nextActions}
             tasks={playerTasks}
             tasksLoading={tasksModel.loading}
-            onSeasonChange={historyView.setSelectedSeasonKey}
             onAction={handleAction}
             onTaskEdit={setEditTask}
           />

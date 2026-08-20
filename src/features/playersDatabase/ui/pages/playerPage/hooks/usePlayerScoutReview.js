@@ -7,8 +7,29 @@ import {
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
+import { SCOUT_REVIEW } from '../../../../../../shared/scouting/players/ids.js'
 
 const cloneValue = value => JSON.parse(JSON.stringify(value || {}))
+
+
+const buildProfileRelevanceIssues = player => {
+  const profiles = Array.isArray(player?.activeSeason?.scout?.profiles)
+    ? player.activeSeason.scout.profiles
+    : []
+
+  return profiles
+    .filter(profile => (
+      Array.isArray(profile?.requiredReview) &&
+      profile.requiredReview.includes(SCOUT_REVIEW.PROFILE_RELEVANCE)
+    ))
+    .map(profile => ({
+      profileId: String(profile?.id || profile?.profileId || '').trim(),
+      profileLabel: String(profile?.label || profile?.profileLabel || '').trim(),
+      positionEvidence: String(profile?.scoutContext?.position?.evidence || '').trim(),
+      requiredContext: String(profile?.positionContext || '').trim(),
+    }))
+    .filter(issue => issue.profileId)
+}
 
 const buildInitialDraft = player => {
   const activeSeason = player?.activeSeason || {}
@@ -95,6 +116,7 @@ export default function usePlayerScoutReview({ player, notify, reload }) {
   const [draft, setDraft] = React.useState(null)
   const [initialDraft, setInitialDraft] = React.useState(null)
   const [saving, setSaving] = React.useState(false)
+  const profileRelevanceIssues = React.useMemo(() => buildProfileRelevanceIssues(player), [player])
 
   const open = React.useCallback(() => {
     const nextDraft = buildInitialDraft(player)
@@ -173,5 +195,6 @@ export default function usePlayerScoutReview({ player, notify, reload }) {
     saving,
     changed,
     seasonKey: player?.activeSeason?.season?.seasonKey || '',
+    profileRelevanceIssues,
   }
 }

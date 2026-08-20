@@ -144,6 +144,7 @@ const buildColumns = ({ onRowOpen }) => [
       return (
         <Box sx={sx.profileCell}>
           <ScoutProfileChip
+            profileId={profileView.primaryItem?.id || ''}
             label={profileView.label}
             tooltip={(
               <ScoutCompactTooltip

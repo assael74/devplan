@@ -9,6 +9,7 @@ import {
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { playerNarrativeCardSx as sx } from './sx/playerNarrativeCard.sx.js'
+import { formatNarrativeTextNumbers } from '../../logic/narrativeText.logic.js'
 
 const formatDate = value => {
   if (!value) return ''
@@ -119,11 +120,11 @@ export default function PlayerNarrativeCard({
         </Box>
 
         <Typography level='h3' sx={sx.title}>
-          {content.title || 'תמונת מצב מקצועית'}
+          {formatNarrativeTextNumbers(content.title || 'תמונת מצב מקצועית')}
         </Typography>
 
         <Typography level='body-sm' sx={sx.summary}>
-          {firstParagraph(content.summary) || 'הסיפור המקצועי נשמר ומוכן לצפייה.'}
+          {formatNarrativeTextNumbers(firstParagraph(content.summary)) || 'הסיפור המקצועי נשמר ומוכן לצפייה.'}
         </Typography>
 
         <Box sx={sx.footer}>

@@ -86,7 +86,6 @@ function buildPlayerInTeamSnapshot(entry = {}) {
         profileId: clean(profile.profileId),
         profileLabel: clean(profile.profileLabel),
         positionContext: clean(profile.positionContext),
-        reliabilityLevel: clean(profile.reliability?.level),
       })),
     },
     appearances: numberOrNull(stats.games),

@@ -1,74 +1,60 @@
-// features/playersDatabase/ui/components/scout/sx/scoutColors.sx.js
+// src/features/playersDatabase/ui/components/scout/sx/scoutColors.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const scoutPriorityColors = {
-  leadingTarget: {
-    main: '#5B963F',
-    light: '#E8F3E2',
-    text: '#2F5F24',
+  immediate: {
+    main: '#1F6B45',
+    light: '#E7F4EC',
+    text: '#174D34',
   },
-
-  highPriority: {
-    main: '#27CCB1',
-    light: '#E8FAF7',
-    text: '#176F62',
+  priority: {
+    main: '#68B98A',
+    light: '#EFF9F3',
+    text: '#2E6B48',
   },
-
-  positive: {
-    main: '#B7D9A8',
-    light: '#F5FAF2',
-    text: '#557A48',
+  watch: {
+    main: devPlanColors.secondary,
+    light: devPlanColors.secondaryLight,
+    text: devPlanColors.primary,
   },
-
-  regular: {
-    main: '#657684',
-    light: '#F1F4F6',
-    text: '#4D5B66',
+  remove: {
+    main: '#B74B55',
+    light: '#FCEFF1',
+    text: '#7B2E36',
   },
-
-  lowPriority: {
-    main: '#C58A32',
-    light: '#FBF3E6',
-    text: '#8A5E1F',
+  low: {
+    main: '#B77A26',
+    light: '#FFF7E9',
+    text: '#7A511B',
   },
 }
 
 export const scoutProfileChipColors = {
-  background: [
-    'linear-gradient(',
-    '90deg,',
-    '#173B57 0%,',
-    '#245F89 55%,',
-    '#2F86C7 100%',
-    ')',
-  ].join(' '),
-
+  background: `linear-gradient(90deg, ${devPlanColors.primary} 0%, ${devPlanColors.tertiaryDark} 55%, ${devPlanColors.tertiary} 100%)`,
   text: '#FFFFFF',
   border: 'rgba(255, 255, 255, 0.18)',
-  shadow: '0 4px 14px rgba(47, 134, 199, 0.28)',
-  hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.34)',
-  icon: '#BFE4FF',
+  shadow: '0 4px 14px rgba(47, 134, 199, 0.20)',
+  hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.28)',
+  icon: '#D6EDFC',
 }
 
 export const scoutProfileChipVariants = {
   default: scoutProfileChipColors,
-
   combination: {
     background: devPlanColors.tertiaryLight,
     text: devPlanColors.primaryDark,
     border: devPlanColors.tertiary,
-    shadow: '0 4px 14px rgba(47, 134, 199, 0.18)',
-    hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.24)',
+    shadow: '0 4px 14px rgba(47, 134, 199, 0.14)',
+    hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.20)',
     icon: devPlanColors.tertiary,
   },
-
   nearProfile: {
-    background: '#F4F7EC',
-    text: '#435B22',
-    border: '#A8C064',
-    shadow: '0 4px 14px rgba(112, 138, 52, 0.14)',
-    hoverShadow: '0 6px 18px rgba(112, 138, 52, 0.2)',
-    icon: '#6E8B2D',
+    background: '#F6F8EE',
+    text: '#4F6127',
+    border: '#B6C87B',
+    shadow: '0 4px 14px rgba(112, 138, 52, 0.12)',
+    hoverShadow: '0 6px 18px rgba(112, 138, 52, 0.18)',
+    icon: '#708B35',
   },
 }

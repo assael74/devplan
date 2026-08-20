@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import {
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -25,6 +26,7 @@ function cleanValue(value) {
 }
 
 export function usePlayerPage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { playerId = '' } = useParams()
   const [searchParams] = useSearchParams()
@@ -106,14 +108,35 @@ export function usePlayerPage() {
     playerId,
   ])
 
+
+  const setSelectedSeasonContext = useCallback(context => {
+    const nextSeasonKey = normalizeSeasonLookupKey(context?.seasonKey)
+    const nextTeamId = cleanValue(context?.teamId)
+    const nextLeagueId = cleanValue(context?.leagueId)
+    const nextPath = PLAYERS_DATABASE_UI_ROUTES.player({
+      playerId,
+      seasonKey: nextSeasonKey,
+      teamId: nextTeamId,
+      leagueId: nextLeagueId,
+      fromTeam,
+    })
+
+    navigate(nextPath, {
+      replace: true,
+      state: null,
+    })
+  }, [fromTeam, navigate, playerId])
+
   const reload = useCallback(() => {
     setReloadKey(value => value + 1)
   }, [])
 
   return {
     player,
+    teamSource: location.state?.playerTeamSource || null,
     selectedSeasonKey: player.seasonKey || requestedSeasonKey,
     setSelectedSeasonKey,
+    setSelectedSeasonContext,
     fromTeam,
     reload,
     loading,

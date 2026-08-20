@@ -224,6 +224,7 @@ export function buildPlayerSearchColumns({ onEntityOpen, onFavoriteToggle } = {}
         return (
           <Box sx={sx.profileCell}>
             <ScoutProfileChip
+              profileId={profileView.primaryItem?.id || ''}
               label={profileView.label}
               tooltip={(
                 <ScoutCompactTooltip

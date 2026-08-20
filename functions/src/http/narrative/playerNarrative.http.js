@@ -40,7 +40,7 @@ const playerNarrative = onRequest({
   region: REGION,
   cors: true,
   secrets: [OPENAI_API_KEY],
-  timeoutSeconds: 60,
+  timeoutSeconds: 120,
 }, async (req, res) => {
   try {
     if (req.method !== 'POST') {

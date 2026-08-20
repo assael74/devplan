@@ -4,10 +4,6 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
-  Option,
-  Select,
-  Tooltip,
   Typography,
 } from '@mui/joy'
 
@@ -16,23 +12,7 @@ import PageSidePanel from '../../components/page/PageSidePanel.js'
 import { WorkTaskList } from '../../components/modals/index.js'
 import { playerActionsPanelSx as sx } from './sx/playerActionsPanel.sx.js'
 
-const PRIMARY_ACTION = {
-  id: 'profile',
-  label: 'פרופיל סקאוט',
-  iconId: 'profile',
-}
-
 const SECONDARY_ACTIONS = [
-  {
-    id: 'report',
-    label: 'תצוגה ופרסום דוח',
-    iconId: 'print',
-  },
-  {
-    id: 'edit',
-    label: 'עריכת פרטי שחקן',
-    iconId: 'edit',
-  },
   {
     id: 'link',
     label: 'עריכת קישור שחקן',
@@ -41,83 +21,90 @@ const SECONDARY_ACTIONS = [
 ]
 
 export default function PlayerActionsPanel({
-  selectedSeasonKey,
-  seasonOptions = [],
+  recommendedActions = [],
   tasks = [],
   tasksLoading,
-  onSeasonChange,
   onAction = () => {},
   onTaskEdit,
 }) {
+  const primaryActions = recommendedActions.slice(0, 2)
+
   return (
     <PageSidePanel>
-      <Box sx={sx.seasonBox}>
-        <Typography level='body-xs' sx={sx.seasonLabel}>
-          עונת משחקים
-        </Typography>
+      <Box sx={sx.recommendedBox}>
+        <Box sx={sx.sectionHeading}>
+          <Box sx={sx.sectionIcon}>
+            {iconUi({id: 'targets', size: 'sm'})}
+          </Box>
 
-        <Select
-          size='sm'
-          value={selectedSeasonKey || ''}
-          onChange={(_, value) => onSeasonChange(value || '')}
-          sx={sx.seasonSelect}
-        >
-          <Option value=''>
-            כל העונות
-          </Option>
+          <Box>
+            <Typography level='title-sm' sx={sx.sectionTitle}>
+              פעולות מומלצות
+            </Typography>
 
-          {seasonOptions.map(option => (
-            <Option
-              key={option.seasonKey}
-              value={option.seasonKey}
+            <Typography level='body-xs' sx={sx.sectionSubtitle}>
+              שתי הפעולות החשובות ביותר כרגע
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={sx.recommendedList}>
+          {primaryActions.length ? primaryActions.map((action, index) => (
+            <Button
+              key={action.id || index}
+              size='sm'
+              variant={index === 0 ? 'solid' : 'outlined'}
+              startDecorator={iconUi({id: index === 0 ? 'priorityHigh' : 'check', size: 'sm'})}
+              sx={index === 0 ? sx.primaryRecommendedButton : sx.secondaryRecommendedButton}
+              onClick={() => onAction('review')}
             >
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+              {action.title}
+            </Button>
+          )) : (
+            <Typography level='body-xs' sx={sx.emptyRecommended}>
+              אין כרגע פעולה דחופה שהמערכת ממליצה עליה.
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       <Divider sx={sx.divider} />
 
-      <Box sx={sx.actionsRow}>
+      <Box sx={sx.editableBox}>
+        <Typography level='body-xs' sx={sx.editableLabel}>
+          עדכון שחקן
+        </Typography>
+
+        <Typography level='body-xs' sx={sx.editableText}>
+          Player Review, רמת עניין ידנית, מעברי קבוצה ופרטים מקצועיים מנוהלים מכאן.
+        </Typography>
+
         <Button
-          variant='outlined'
           size='sm'
-          startDecorator={iconUi({id: PRIMARY_ACTION.iconId, size: 'md'})}
-          sx={sx.primaryActionButton}
-          onClick={() => onAction(PRIMARY_ACTION.id)}
+          variant='outlined'
+          startDecorator={iconUi({id: 'edit', size: 'sm'})}
+          onClick={() => onAction('review')}
         >
-          {PRIMARY_ACTION.label}
+          פתח עריכה מקצועית
         </Button>
-
-        {SECONDARY_ACTIONS.map(action => {
-          const linkDisabled = action.id === 'link' && !selectedSeasonKey
-          const title = linkDisabled
-            ? 'בחר עונה לעריכת קישור השחקן'
-            : action.label
-
-          return (
-            <Tooltip key={action.id} title={title}>
-              <span>
-                <IconButton
-                  variant='outlined'
-                  size='sm'
-                  aria-label={action.label}
-                  disabled={linkDisabled}
-                  sx={sx.secondaryIconButton}
-                  onClick={() => onAction(action.id)}
-                >
-                  {iconUi({id: action.iconId, size: 'sm'})}
-                </IconButton>
-              </span>
-            </Tooltip>
-          )
-        })}
       </Box>
 
-      <Typography level='body-xs' sx={sx.placeholderNote}>
-        פעולות אלו הן placeholders לחיבור עתידי.
-      </Typography>
+      <Divider sx={sx.divider} />
+
+      <Box sx={sx.actionList}>
+        {SECONDARY_ACTIONS.map(action => (
+          <Button
+            key={action.id}
+            size='sm'
+            variant='plain'
+            startDecorator={iconUi({id: action.iconId, size: 'sm'})}
+            sx={sx.actionButton}
+            onClick={() => onAction(action.id)}
+          >
+            {action.label}
+          </Button>
+        ))}
+      </Box>
 
       <Divider sx={sx.divider} />
 

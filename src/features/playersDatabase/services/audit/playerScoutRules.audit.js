@@ -3,7 +3,9 @@
 import {
   collection,
   doc,
+  limit,
   query,
+  startAfter,
   where,
 } from 'firebase/firestore'
 
@@ -52,6 +54,83 @@ import { buildPlayerScoutIndexFields } from '../write/searchIndex/player/playerS
 import {
   normalizePlayerScoutStory as normalizePlayerScoutState,
 } from '../write/players/playerDoc.model.js'
+
+
+const PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT = 50000
+const PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT = 49000
+
+const estimateSnapshotReads = snapshot => Math.max(
+  1,
+  Array.isArray(snapshot?.docs) ? snapshot.docs.length : 0
+)
+
+const FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT = 10000
+
+const readAuditSnapshotWithinBudget = async ({
+  source,
+  metadata,
+  budget,
+  reservedReads = 0,
+  label,
+}) => {
+  const availableReads = Math.max(
+    0,
+    Number(budget || 0) - Number(reservedReads || 0)
+  )
+
+  if (availableReads < 1) {
+    throw new Error(
+      `Audit stopped before ${label}: read safety budget exhausted. ` +
+      `The audit is capped below ${PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT} document reads.`
+    )
+  }
+
+  const documents = []
+  let readsUsed = 0
+  let cursor = null
+
+  while (readsUsed < availableReads) {
+    const remainingAllowance = availableReads - readsUsed
+    const pageLimit = Math.min(
+      FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT,
+      remainingAllowance
+    )
+    const constraints = []
+
+    if (cursor) constraints.push(startAfter(cursor))
+    constraints.push(limit(pageLimit))
+
+    const pageSnapshot = await trackedGetDocs(
+      query(source, ...constraints),
+      metadata
+    )
+    const pageReads = estimateSnapshotReads(pageSnapshot)
+
+    readsUsed += pageReads
+    documents.push(...pageSnapshot.docs)
+
+    if (pageSnapshot.docs.length < pageLimit) {
+      return {
+        snapshot: { docs: documents },
+        readsUsed,
+      }
+    }
+
+    if (readsUsed >= availableReads) {
+      throw new Error(
+        `Audit stopped while reading ${label}: the source reached the ` +
+        `${availableReads}-document safety allowance. No incomplete audit result was produced. ` +
+        `The audit is capped below ${PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT} document reads.`
+      )
+    }
+
+    cursor = pageSnapshot.docs[pageSnapshot.docs.length - 1]
+  }
+
+  throw new Error(
+    `Audit stopped while reading ${label}: read safety allowance exhausted.`
+  )
+}
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -948,13 +1027,23 @@ const buildAuditPlayerSeasonStints = ({ playerRows = [], playerRow = null, curre
   return stints
 }
 
-const buildRecalculatedRows = ({ teamDocs, teamIndexRows, playerRows = [], includeRepairData = false }) => {
+const buildRecalculatedRows = ({
+  teamDocs,
+  teamIndexRows,
+  playerRows = [],
+  searchRows = [],
+  includeRepairData = false,
+}) => {
   const teamIndex = buildIndex({
     rows: teamIndexRows,
     keyBuilder: buildTeamKeys,
   })
   const playerIndex = buildIndex({
     rows: playerRows,
+    keyBuilder: buildPlayerKeys,
+  })
+  const searchIndex = buildIndex({
+    rows: searchRows,
     keyBuilder: buildPlayerKeys,
   })
   const rows = []
@@ -1019,6 +1108,11 @@ const buildRecalculatedRows = ({ teamDocs, teamIndexRows, playerRows = [], inclu
           }
           const playerRow = findIndexed({
             index: playerIndex,
+            row: playerScope,
+            keyBuilder: buildPlayerKeys,
+          })
+          const searchRow = findIndexed({
+            index: searchIndex,
             row: playerScope,
             keyBuilder: buildPlayerKeys,
           })
@@ -1229,6 +1323,7 @@ const buildRecalculatedRows = ({ teamDocs, teamIndexRows, playerRows = [], inclu
               ? getProfileReliability(playerCalculated)
               : {},
             expectedPlayerScoutState,
+            searchIndexDocumentId: clean(searchRow?.sourceDocumentId),
             expectedSearchIndexScoutFields: buildPlayerScoutIndexFields(
               canonicalProjectionSource
             ),
@@ -2329,42 +2424,54 @@ const buildRuntimeCost = ({ teamRows = [], playerRows = [], searchRows = [], tea
 }
 
 const readAuditData = async ({ includeRepairData = false } = {}) => {
-  const [
-    teamSnapshot,
-    playerSnapshot,
-    searchSnapshot,
-  ] = await Promise.all([
-    trackedGetDocs(
-      collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.teams,
-        action: 'playerScoutRules-audit',
-        operationSubtype: 'audit-read',
-      }
+  let remainingReadBudget = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT
+
+  const teamRead = await readAuditSnapshotWithinBudget({
+    source: collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      action: 'playerScoutRules-audit',
+      operationSubtype: 'audit-read',
+    },
+    budget: remainingReadBudget,
+    reservedReads: 2,
+    label: 'team documents',
+  })
+  const teamSnapshot = teamRead.snapshot
+  remainingReadBudget -= teamRead.readsUsed
+
+  const playerRead = await readAuditSnapshotWithinBudget({
+    source: collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      action: 'playerScoutRules-audit',
+      operationSubtype: 'audit-read',
+    },
+    budget: remainingReadBudget,
+    reservedReads: 1,
+    label: 'player documents',
+  })
+  const playerSnapshot = playerRead.snapshot
+  remainingReadBudget -= playerRead.readsUsed
+
+  const searchRead = await readAuditSnapshotWithinBudget({
+    source: query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', 'in', ['playerSeason', 'birthTeamSeason'])
     ),
-    trackedGetDocs(
-      collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.players,
-        action: 'playerScoutRules-audit',
-        operationSubtype: 'audit-read',
-      }
-    ),
-    trackedGetDocs(
-      query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', 'in', ['playerSeason', 'birthTeamSeason'])
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'playerScoutRules-audit',
-        operationSubtype: 'scout-index-query',
-      }
-    ),
-  ])
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'playerScoutRules-audit',
+      operationSubtype: 'scout-index-query',
+    },
+    budget: remainingReadBudget,
+    label: 'search index documents',
+  })
+  const searchSnapshot = searchRead.snapshot
+  remainingReadBudget -= searchRead.readsUsed
 
   const playerSearchDocs = searchSnapshot.docs.filter(snapshot => (
     clean(snapshot.data()?.entityType) === 'playerSeason'
@@ -2374,14 +2481,15 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
   ))
   const teamIndexRows = flattenTeamIndexDocs(teamSearchDocs)
   const playerRows = flattenPlayerDocs(playerSnapshot.docs)
+  const searchRows = flattenSearchPlayerDocs(playerSearchDocs)
   const recalculated = buildRecalculatedRows({
     teamDocs: teamSnapshot.docs,
     teamIndexRows,
     playerRows,
+    searchRows,
     includeRepairData,
   })
 
-  const searchRows = flattenSearchPlayerDocs(playerSearchDocs)
   const documentRewritePlan = includeRepairData
     ? buildPlayerScoutDocumentRewritePlan({
         teamSnapshots: teamSnapshot.docs,
@@ -2413,6 +2521,12 @@ const readAuditData = async ({ includeRepairData = false } = {}) => {
         teamIndexRows,
       }),
       scopeStats: buildAuditScopeStats(searchRows),
+      readSafety: {
+        hardLimit: PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT,
+        safetyLimit: PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+        readsUsed: PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT - remainingReadBudget,
+        remainingBudget: remainingReadBudget,
+      },
     },
   }
 }
@@ -2422,6 +2536,7 @@ const readScopedAuditData = async ({
   teamDocumentId,
   seasonKey,
   includeRepairData = false,
+  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
 }) => {
   const safeTeamDocumentId = clean(teamDocumentId)
   const safeSeasonKey = clean(seasonKey)
@@ -2433,49 +2548,70 @@ const readScopedAuditData = async ({
     throw new Error('Missing season key for scoped scout audit')
   }
 
-  const [teamSnapshot, playerSearchSnapshot, teamSearchSnapshot] = await Promise.all([
-    trackedGetDoc(
-      doc(
-        db,
-        PLAYERS_DATABASE_COLLECTIONS.teams,
-        safeTeamDocumentId
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.teams,
-        action: 'playerScoutRules-scopedAudit',
-        operationSubtype: 'team-read',
-      }
+  let remainingReadBudget = Math.min(
+    PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+    Math.max(1, Number(readSafetyLimit || 0))
+  )
+
+  if (remainingReadBudget < 3) {
+    throw new Error(
+      'Scoped player scout audit stopped: fewer than 3 reads remain in the shared safety budget.'
+    )
+  }
+
+  const teamSnapshot = await trackedGetDoc(
+    doc(
+      db,
+      PLAYERS_DATABASE_COLLECTIONS.teams,
+      safeTeamDocumentId
     ),
-    trackedGetDocs(
-      query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', '==', 'playerSeason'),
-        where('teamDocumentId', '==', safeTeamDocumentId),
-        where('seasonKey', '==', safeSeasonKey)
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'playerScoutRules-scopedAudit',
-        operationSubtype: 'player-index-query',
-      }
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      action: 'playerScoutRules-scopedAudit',
+      operationSubtype: 'team-read',
+    }
+  )
+  remainingReadBudget -= 1
+
+  const playerSearchRead = await readAuditSnapshotWithinBudget({
+    source: query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', '==', 'playerSeason'),
+      where('teamDocumentId', '==', safeTeamDocumentId),
+      where('seasonKey', '==', safeSeasonKey)
     ),
-    trackedGetDocs(
-      query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', '==', 'birthTeamSeason'),
-        where('teamDocumentId', '==', safeTeamDocumentId),
-        where('seasonKey', '==', safeSeasonKey)
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'playerScoutRules-scopedAudit',
-        operationSubtype: 'team-index-query',
-      }
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'playerScoutRules-scopedAudit',
+      operationSubtype: 'player-index-query',
+    },
+    budget: remainingReadBudget,
+    reservedReads: 1,
+    label: 'scoped player search indexes',
+  })
+  remainingReadBudget -= playerSearchRead.readsUsed
+  const playerSearchSnapshot = playerSearchRead.snapshot
+
+  const teamSearchRead = await readAuditSnapshotWithinBudget({
+    source: query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', '==', 'birthTeamSeason'),
+      where('teamDocumentId', '==', safeTeamDocumentId),
+      where('seasonKey', '==', safeSeasonKey)
     ),
-  ])
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'playerScoutRules-scopedAudit',
+      operationSubtype: 'team-index-query',
+    },
+    budget: remainingReadBudget,
+    label: 'scoped team search indexes',
+  })
+  remainingReadBudget -= teamSearchRead.readsUsed
+  const teamSearchSnapshot = teamSearchRead.snapshot
 
   if (!teamSnapshot.exists()) {
     throw new Error(`Team document not found: ${safeTeamDocumentId}`)
@@ -2488,9 +2624,6 @@ const readScopedAuditData = async ({
     includeRepairData,
   })
   const teamRows = recalculatedAll.rows.filter(row => (
-    clean(row.seasonKey || row.seasonId) === safeSeasonKey
-  ))
-  const skippedRows = recalculatedAll.skipped.filter(row => (
     clean(row.seasonKey || row.seasonId) === safeSeasonKey
   ))
   const scopedSearchRows = flattenSearchPlayerDocs(
@@ -2516,6 +2649,13 @@ const readScopedAuditData = async ({
       ]
     })
   )
+  if (playerDocumentIds.length > remainingReadBudget) {
+    throw new Error(
+      `Scoped player scout audit stopped before player reads: ${playerDocumentIds.length} ` +
+      `documents are required but only ${remainingReadBudget} reads remain in the safety budget.`
+    )
+  }
+
   const playerSnapshots = await Promise.all(
     playerDocumentIds.map(playerDocumentId => trackedGetDoc(
       doc(
@@ -2531,6 +2671,7 @@ const readScopedAuditData = async ({
       }
     ))
   )
+  remainingReadBudget -= playerDocumentIds.length
   const existingPlayerSnapshots = playerSnapshots.filter(snapshot => (
     snapshot.exists()
   ))
@@ -2539,6 +2680,7 @@ const readScopedAuditData = async ({
     teamDocs: [teamSnapshot],
     teamIndexRows,
     playerRows,
+    searchRows: flattenSearchPlayerDocs(playerSearchSnapshot.docs),
     includeRepairData,
   })
   const verificationAwareTeamRows = verificationAwareRecalculated.rows.filter(row => (
@@ -2584,16 +2726,34 @@ const readScopedAuditData = async ({
         teamIndexRows,
       }),
       scopeStats: buildAuditScopeStats(searchRows),
+      readSafety: {
+        hardLimit: PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT,
+        safetyLimit: Math.min(
+          PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+          Math.max(1, Number(readSafetyLimit || 0))
+        ),
+        readsUsed: Math.min(
+          PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+          Math.max(1, Number(readSafetyLimit || 0))
+        ) - remainingReadBudget,
+        remainingBudget: remainingReadBudget,
+      },
     },
   }
 }
 
-export async function buildScopedPlayerScoutRulesAudit({ teamDocumentId, seasonKey, includeRepairData = false } = {}) {
+export async function buildScopedPlayerScoutRulesAudit({
+  teamDocumentId,
+  seasonKey,
+  includeRepairData = false,
+  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+} = {}) {
   const generatedAt = new Date().toISOString()
   const rows = await readScopedAuditData({
     teamDocumentId,
     seasonKey,
     includeRepairData,
+    readSafetyLimit,
   })
   const issues = collectIssues({
     teamRows: rows.teamRows,

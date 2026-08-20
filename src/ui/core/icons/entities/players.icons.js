@@ -1,3 +1,5 @@
+// src/ui/core/icons/entities/players.icons.js
+
 import React from 'react'
 import {
   AddCircle,
@@ -91,6 +93,7 @@ export const playerIcons = {
   killerEfficiency: <TrackChanges />,
   targetWorker: <FitnessCenter />,
   secondaryThreat: <AddCircle />,
+  doubleDigitThreat: <SportsSoccer />,
   underusedProspect: <ModelTraining />,
   blockedTopTeam: <RemoveModerator />,
   elite: <Stars />,

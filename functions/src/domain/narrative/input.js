@@ -18,11 +18,12 @@ function buildInput({ player = {}, teams = [], futureProjection = null } = {}) {
   const inputHash = buildHash(meaning)
 
   return {
-    version: 2,
+    version: 3,
     player: context.player,
     context: {
       entries: context.entries,
       verification: context.verification,
+      playerReview: context.playerReview,
     },
     evidence,
     timeline,

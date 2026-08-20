@@ -4,7 +4,7 @@ const percent = value => `${Math.round(Number(value || 0) * 100)}%`
 
 const resolveProfileLabels = entries => [...new Set(
   entries
-    .map(entry => entry?.scout?.primaryProfile?.label)
+    .map(entry => entry?.scout?.contract?.profiles?.primary?.label)
     .filter(Boolean)
 )]
 

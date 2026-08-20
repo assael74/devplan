@@ -2,10 +2,41 @@
 
 import {
   NARRATIVE_SCOPE,
+  NARRATIVE_VERSION,
+  createEmptyNarrativeContent,
   createEmptyNarrativeSnapshot,
 } from './narrative.contract.js'
 
 const clean = value => String(value || '').trim()
+
+
+const normalizeApprovedContent = value => {
+  const source = value && typeof value === 'object' ? value : {}
+  const empty = createEmptyNarrativeContent()
+
+  return {
+    ...empty,
+    title: clean(source.title),
+    summary: clean(source.summary),
+    conclusion: source.conclusion && typeof source.conclusion === 'object'
+      ? source.conclusion
+      : null,
+    whyInteresting: clean(source.whyInteresting),
+    professionalContext: clean(source.professionalContext),
+    strengths: Array.isArray(source.strengths)
+      ? source.strengths.map(clean).filter(Boolean)
+      : [],
+    unknowns: Array.isArray(source.unknowns)
+      ? source.unknowns.map(clean).filter(Boolean)
+      : [],
+    action: source.action && typeof source.action === 'object'
+      ? source.action
+      : null,
+    evidenceRefs: Array.isArray(source.evidenceRefs)
+      ? [...new Set(source.evidenceRefs.map(clean).filter(Boolean))]
+      : [],
+  }
+}
 
 const getScopeSeasons = ({ input, scope, seasonKey }) => {
   const seasons = Array.isArray(input?.seasons) ? input.seasons : []
@@ -28,9 +59,14 @@ const buildProfileRefs = seasons => {
     const entries = Array.isArray(season?.entries) ? season.entries : []
 
     entries.forEach(entry => {
-      const profileIds = Array.isArray(entry?.scout?.profileIds)
-        ? entry.scout.profileIds
-        : []
+      const contractProfiles = entry?.scout?.contract?.profiles || {}
+      const matchedProfiles = [
+        contractProfiles.primary,
+        ...(Array.isArray(contractProfiles.supporting) ? contractProfiles.supporting : []),
+      ].filter(Boolean)
+      const profileIds = matchedProfiles
+        .map(profile => clean(profile?.id))
+        .filter(Boolean)
 
       profileIds.forEach(profileId => {
         const ref = {
@@ -93,6 +129,7 @@ export const buildApprovedSnapshot = ({
 
   return {
     ...empty,
+    version: NARRATIVE_VERSION,
     inputHash: session.inputHash,
     scope: session.scope || '',
     seasonKeys,
@@ -105,9 +142,6 @@ export const buildApprovedSnapshot = ({
       ...empty.generator,
       ...generator,
     },
-    content: {
-      ...empty.content,
-      ...session.draft,
-    },
+    content: normalizeApprovedContent(session.draft),
   }
 }

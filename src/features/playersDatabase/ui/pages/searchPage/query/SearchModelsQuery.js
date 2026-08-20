@@ -81,6 +81,7 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
       onClick={handleToggle}
     >
       <ScoutProfileChip
+        profileId={option.profile?.id || option.id || ''}
         label={option.label}
         tooltip={option.isCombination ? option.tooltip : (
           <ScoutProfileTooltip

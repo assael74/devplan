@@ -1,6 +1,6 @@
 // src/features/playersDatabase/ui/pages/playerPage/sx/playerScoutOverview.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import { COLORS, devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const softBorder = `1px solid ${devPlanColors.border}`
 
@@ -12,14 +12,110 @@ export const playerScoutOverviewSx = {
   headerActions: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0.75,
+    gap: 0.45,
     flexWrap: 'wrap',
+  },
+
+  headerIconButton: {
+    width: 30,
+    minWidth: 30,
+    height: 30,
+    minHeight: 30,
+    borderColor: devPlanColors.border,
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.surface,
+
+    '&:hover': {
+      bgcolor: devPlanColors.tertiaryLight,
+      borderColor: devPlanColors.tertiary,
+    },
   },
 
   content: {
     p: 1,
-    gap: 0.8,
+    gap: 1.05,
     overflow: 'visible',
+  },
+
+
+  seasonContextBar: {
+    minWidth: 0,
+    px: 1,
+    py: 0.75,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    borderRadius: 10,
+    border: `1px solid ${devPlanColors.border}`,
+    bgcolor: devPlanColors.primaryLight,
+    boxShadow: '0 3px 10px rgba(23, 59, 87, 0.05)',
+  },
+
+  seasonContextHeading: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+  },
+
+  seasonContextIcon: {
+    width: 28,
+    height: 28,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 8,
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.tertiaryDark,
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  seasonContextTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  sectionBandHeader: {
+    minWidth: 0,
+    px: 1,
+    py: 0.7,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    borderBottom: `1px solid ${devPlanColors.border}`,
+    bgcolor: COLORS.entity.team.bg,
+  },
+
+  sectionBandTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  sectionBandSubtitle: {
+    mt: 0.05,
+    color: devPlanColors.secondary,
+  },
+
+  sectionBandIndex: {
+    minWidth: 28,
+    height: 28,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 8,
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.tertiaryDark,
+    border: `1px solid ${devPlanColors.border}`,
+    fontWeight: 700,
+  },
+
+  seasonProfilesSection: {
+    minWidth: 0,
+    borderRadius: 10,
+    border: `1px solid ${COLORS.entity.scouting.accent}`,
+    bgcolor: COLORS.entity.scouting.surface,
+    overflow: 'hidden',
+    boxShadow: '0 5px 16px rgba(124, 58, 237, 0.08)',
   },
 
   decisionBar: {
@@ -336,6 +432,86 @@ export const playerScoutOverviewSx = {
     fontWeight: 700,
   },
 
+  profileWorkspaceTop: {
+    minWidth: 0,
+    px: 1,
+    py: 0.8,
+    bgcolor: COLORS.entity.scouting.bg,
+    borderBottom: `1px solid ${COLORS.entity.scouting.accent}`,
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: '260px minmax(0, 1fr)',
+    },
+    alignItems: 'start',
+    gap: 0.8,
+  },
+
+  profileWorkspaceHeading: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.8,
+    whiteSpace: 'nowrap',
+  },
+
+  profileWorkspaceTitleRow: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+    whiteSpace: 'nowrap',
+  },
+
+  profileCountText: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  profileTabsRow: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 0.55,
+  },
+
+  profileTabWrap: {
+    minWidth: 0,
+    maxWidth: '100%',
+  },
+
+  profileWorkspaceDetail: {
+    minWidth: 0,
+    bgcolor: devPlanColors.surface,
+  },
+
+  profileDetailHeader: {
+    minWidth: 0,
+    px: 1,
+    py: 0.55,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  profileDetailTitleCompact: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+
+  profileDetailTitle: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+    lineHeight: 1.2,
+    whiteSpace: 'nowrap',
+  },
+
   nearProfileCompact: {
     minWidth: 185,
     height: '100%',
@@ -480,23 +656,37 @@ export const playerScoutOverviewSx = {
     flexWrap: 'wrap',
   },
 
-  whyEvidenceGrid: {
-    p: 0.9,
+  whyEvidenceGrid: count => ({
+    p: 0.8,
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      md: 'repeat(2, minmax(0, 1fr))',
-      xl: 'repeat(4, minmax(0, 1fr))',
+      sm: Number(count) > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)',
+      lg: 'repeat(3, minmax(0, 1fr))',
     },
-    gap: 0.65,
-  },
+    gap: 0.7,
+    alignItems: 'stretch',
+  }),
 
   whyEvidenceCard: {
     minWidth: 0,
-    p: 0.85,
+    minHeight: 126,
+    p: 0.8,
+    display: 'grid',
+    gridTemplateRows: 'auto auto auto 1fr',
+    alignContent: 'start',
     borderRadius: 7,
-    bgcolor: '#FBFDFE',
-    border: '1px solid #E2EAF0',
+    bgcolor: devPlanColors.surface,
+    border: `1px solid ${devPlanColors.tertiary}` ,
+    boxShadow: '0 4px 12px rgba(23, 107, 166, 0.08)',
+  },
+
+  whyEvidenceIdentity: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: '28px minmax(0, 1fr)',
+    alignItems: 'center',
+    gap: 0.55,
   },
 
   whyEvidenceTop: {
@@ -507,8 +697,8 @@ export const playerScoutOverviewSx = {
   },
 
   whyEvidenceIcon: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     display: 'grid',
     placeItems: 'center',
     borderRadius: 7,
@@ -523,7 +713,7 @@ export const playerScoutOverviewSx = {
   whyEvidenceTitle: {
     color: devPlanColors.primaryDark,
     fontWeight: 700,
-    lineHeight: 1.25,
+    lineHeight: 1.2,
   },
 
   whyEvidenceMetric: {
@@ -532,7 +722,7 @@ export const playerScoutOverviewSx = {
   },
 
   whyEvidenceValueRow: {
-    mt: 0.55,
+    mt: 0.35,
     display: 'flex',
     alignItems: 'baseline',
     gap: 0.45,
@@ -542,10 +732,20 @@ export const playerScoutOverviewSx = {
     color: devPlanColors.primaryDark,
     fontWeight: 700,
     lineHeight: 1,
+    fontSize: 24,
   },
 
   whyEvidenceUnit: {
     color: devPlanColors.secondary,
+  },
+
+  whyRuleCompact: {
+    mt: 0.35,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.55,
+    minWidth: 0,
   },
 
   whyRuleRow: {
@@ -566,10 +766,13 @@ export const playerScoutOverviewSx = {
     color: devPlanColors.primaryDark,
     fontWeight: 700,
     textAlign: 'left',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 
   whyEvidenceMeta: {
-    mt: 0.55,
+    mt: 0.4,
     display: 'flex',
     alignItems: 'center',
     gap: 0.5,
@@ -859,6 +1062,7 @@ export const playerScoutOverviewSx = {
   questionsCard: {
     bgcolor: '#fffaf1',
     borderColor: '#eadbb7',
+    boxShadow: '0 4px 14px rgba(157, 107, 22, 0.08)',
   },
 
   actionCard: {
@@ -967,6 +1171,16 @@ export const playerScoutOverviewSx = {
     p: 1.25,
   },
 
+  storyModalActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    flexWrap: 'wrap',
+    px: 1.25,
+    pt: 1,
+    pb: 0.25,
+  },
+
   storyLead: {
     p: 1.25,
     borderRadius: 7,
@@ -990,4 +1204,621 @@ export const playerScoutOverviewSx = {
     gap: 0.75,
     marginInlineStart: 'auto',
   },
+
+  heroCard: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      lg: '220px minmax(0, 1fr)',
+    },
+    gap: 0.8,
+    p: 0.8,
+    borderRadius: 10,
+    bgcolor: devPlanColors.surface,
+    border: `1px solid ${devPlanColors.border}`,
+    boxShadow: '0 8px 24px rgba(23, 59, 87, 0.06)',
+  },
+
+  heroDecisionRail: {
+    display: 'grid',
+    gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.65,
+  },
+
+  heroDecisionItem: tone => ({
+    minWidth: 0,
+    p: 1,
+    borderRadius: 8,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+    bgcolor: tone?.bg || devPlanColors.secondaryLight,
+  }),
+
+  heroDecisionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.55,
+  },
+
+  heroDecisionIcon: tone => ({
+    width: 26,
+    height: 26,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 7,
+    bgcolor: '#FFFFFFCC',
+    color: tone?.icon || devPlanColors.primary,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  heroDecisionLabel: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  decisionInfoButton: tone => ({
+    width: 30,
+    minWidth: 30,
+    height: 30,
+    minHeight: 30,
+    marginInlineStart: 'auto',
+    color: tone?.icon || devPlanColors.secondary,
+    bgcolor: '#FFFFFFD9',
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+    boxShadow: '0 2px 6px rgba(23, 59, 87, 0.08)',
+
+    '&:hover': {
+      color: tone?.text || devPlanColors.tertiaryDark,
+      bgcolor: '#FFFFFF',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 10px rgba(23, 59, 87, 0.14)',
+    },
+  }),
+
+  heroDecisionValue: tone => ({
+    mt: 0.65,
+    color: tone?.text || devPlanColors.primaryDark,
+    fontSize: 25,
+    lineHeight: 1.05,
+    fontWeight: 700,
+  }),
+
+  heroDecisionNote: {
+    mt: 0.35,
+    color: devPlanColors.secondary,
+  },
+
+  immediacyModalBody: {
+    display: 'grid',
+    gap: 1,
+    p: 1,
+  },
+
+  immediacyStatusFlow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) 64px minmax(0, 1fr)',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
+  immediacyStatusItem: tone => ({
+    minWidth: 0,
+    p: 0.72,
+    borderRadius: 8,
+    bgcolor: tone?.bg || devPlanColors.secondaryLight,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  immediacyModalLabel: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  immediacyModalValue: tone => ({
+    mt: 0.2,
+    color: tone?.text || devPlanColors.primaryDark,
+    fontWeight: 700,
+  }),
+
+  immediacyFlowScore: tone => ({
+    width: 58,
+    height: 58,
+    display: 'grid',
+    placeItems: 'center',
+    alignContent: 'center',
+    borderRadius: '50%',
+    bgcolor: tone?.bg || devPlanColors.tertiaryLight,
+    color: tone?.text || devPlanColors.tertiaryDark,
+    border: `2px solid ${tone?.border || devPlanColors.border}`,
+    fontWeight: 700,
+  }),
+
+  immediacyModalReasons: {
+    display: 'grid',
+    gap: 0.65,
+  },
+
+  immediacyModalReason: tone => ({
+    display: 'grid',
+    gridTemplateColumns: '36px minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: 0.75,
+    p: 0.8,
+    borderRadius: 8,
+    bgcolor: tone?.bg || devPlanColors.tertiaryLight,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  immediacyModalReasonIcon: tone => ({
+    width: 36,
+    height: 36,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 9,
+    bgcolor: '#FFFFFFD9',
+    color: tone?.icon || devPlanColors.tertiaryDark,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  immediacyModalReasonText: {
+    color: devPlanColors.primaryDark,
+    lineHeight: 1.45,
+    fontWeight: 700,
+  },
+
+  immediacyFactorPoints: tone => ({
+    minWidth: 48,
+    px: 0.8,
+    py: 0.45,
+    borderRadius: 999,
+    textAlign: 'center',
+    bgcolor: '#FFFFFFD9',
+    color: tone?.text || devPlanColors.primaryDark,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+    fontSize: 13,
+    fontWeight: 700,
+  }),
+
+  immediacyScoreSummary: tone => ({
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: 'repeat(2, minmax(0, 1fr))',
+      sm: 'repeat(4, minmax(0, 1fr))',
+    },
+    gap: 0.6,
+    p: 0.8,
+    borderRadius: 8,
+    bgcolor: tone?.bg || devPlanColors.secondaryLight,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  immediacyScoreValue: {
+    mt: 0.15,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  immediacyModalEmpty: {
+    color: devPlanColors.secondary,
+  },
+
+  immediacyManualBox: {
+    display: 'grid',
+    justifyItems: 'start',
+    gap: 0.45,
+    p: 0.8,
+    borderRadius: 8,
+    bgcolor: '#FFFBEB',
+    border: '1px solid #F3D89D',
+  },
+
+  strengthModalBody: {
+    display: 'grid',
+    gap: 1,
+    p: 1,
+  },
+
+  strengthModalHeadline: tone => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    p: 0.9,
+    borderRadius: 8,
+    bgcolor: tone?.bg || devPlanColors.secondaryLight,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  strengthProfileLabel: {
+    mt: 0.2,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  strengthDepthBadge: tone => ({
+    flexShrink: 0,
+    px: 1,
+    py: 0.65,
+    borderRadius: 999,
+    bgcolor: '#FFFFFFD9',
+    color: tone?.text || devPlanColors.primaryDark,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+    fontWeight: 700,
+  }),
+
+  strengthRules: {
+    display: 'grid',
+    gap: 0.65,
+  },
+
+  strengthRule: {
+    display: 'grid',
+    gridTemplateColumns: '38px minmax(0, 1fr)',
+    gap: 0.75,
+    alignItems: 'start',
+    p: 0.85,
+    borderRadius: 8,
+    bgcolor: devPlanColors.surface,
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  strengthRuleIcon: tone => ({
+    width: 38,
+    height: 38,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 9,
+    bgcolor: tone?.bg || devPlanColors.secondaryLight,
+    color: tone?.icon || devPlanColors.primary,
+    border: `1px solid ${tone?.border || devPlanColors.border}`,
+  }),
+
+  strengthRuleBody: {
+    minWidth: 0,
+  },
+
+  strengthRuleTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  strengthRuleValues: {
+    mt: 0.65,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 0.55,
+  },
+
+  strengthRuleValue: {
+    mt: 0.1,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  strengthFootnote: {
+    color: devPlanColors.secondary,
+    lineHeight: 1.45,
+  },
+
+  heroNarrative: {
+    minWidth: 0,
+    p: 1.15,
+    borderRadius: 8,
+    bgcolor: devPlanColors.primaryLight,
+    border: '1px solid #D6E5EE',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+
+  heroNarrativeTop: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  heroEyebrow: {
+    color: devPlanColors.tertiaryDark,
+    fontWeight: 700,
+  },
+
+  heroTitle: {
+    mt: 0.15,
+    color: devPlanColors.primaryDark,
+    fontSize: { xs: 22, md: 28 },
+    lineHeight: 1.2,
+    fontWeight: 700,
+  },
+
+  heroSummary: {
+    mt: 0.7,
+    color: '#36566D',
+    lineHeight: 1.65,
+    maxWidth: 900,
+  },
+
+  immediacyReasons: {
+    mt: 0.85,
+    pt: 0.75,
+    borderTop: '1px solid #CFE0EB',
+  },
+
+  immediacyReasonsLabel: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  immediacyReasonChips: {
+    mt: 0.45,
+    display: 'flex',
+    gap: 0.45,
+    flexWrap: 'wrap',
+  },
+
+  manualReasonText: {
+    mt: 0.45,
+    color: '#7C5C1E',
+  },
+
+  heroFooter: {
+    mt: 'auto',
+    pt: 0.9,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    flexWrap: 'wrap',
+  },
+
+  heroBasis: {
+    color: devPlanColors.secondary,
+  },
+
+  heroActions: {
+    display: 'flex',
+    gap: 0.6,
+  },
+
+  numbersCard: {
+    borderRadius: 10,
+    border: `1px solid ${devPlanColors.tertiary}`,
+    bgcolor: devPlanColors.surface,
+    overflow: 'hidden',
+    boxShadow: '0 4px 14px rgba(28, 58, 79, 0.07)',
+  },
+
+  numbersHeader: {
+    px: 1.1,
+    py: 0.8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    borderBottom: `1px solid ${devPlanColors.border}`,
+    bgcolor: devPlanColors.tertiaryLight,
+  },
+
+  numbersHeading: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.7,
+  },
+
+  numbersHeadingIcon: {
+    width: 30,
+    height: 30,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 8,
+    bgcolor: devPlanColors.tertiaryLight,
+    color: devPlanColors.tertiaryDark,
+  },
+
+  contextSelect: {
+    minWidth: { xs: 240, md: 390 },
+    maxWidth: 520,
+    bgcolor: '#fff',
+    color: devPlanColors.primaryDark,
+    borderColor: devPlanColors.border,
+    fontWeight: 700,
+  },
+
+  numbersBody: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+  },
+
+  numberGroup: {
+    minWidth: 0,
+    p: 0.9,
+  },
+
+  numberGroupTeam: {
+    bgcolor: '#F5FAFD',
+    borderBottom: `1px solid ${devPlanColors.border}`,
+  },
+
+  numberGroupPlayer: {
+    bgcolor: '#F8FCFA',
+  },
+
+  numberGroupHeader: {
+    mb: 0.7,
+    display: 'grid',
+    gridTemplateColumns: '40px minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: 0.7,
+  },
+
+  numberGroupHeaderCompact: {
+    mb: 0.6,
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 0.7,
+  },
+
+  numberGroupAvatar: {
+    width: 40,
+    height: 40,
+    display: 'block',
+    objectFit: 'cover',
+    borderRadius: 9,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  numberGroupIdentity: {
+    minWidth: 0,
+  },
+
+  numberGroupEntityTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  numberGroupEntitySub: {
+    color: devPlanColors.secondary,
+  },
+
+  numberGroupBadge: {
+    px: 0.7,
+    py: 0.3,
+    borderRadius: 999,
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.tertiaryDark,
+    border: `1px solid ${devPlanColors.border}`,
+    fontWeight: 700,
+  },
+
+  numberGridPlayer: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+    gap: 0.5,
+  },
+
+  numberGridTeam: {
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+    gap: 0.5,
+  },
+
+  numberStatItem: {
+    minWidth: 0,
+    p: 0.7,
+    borderRadius: 7,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.border}`,
+    textAlign: 'center',
+  },
+
+  numberStatLabel: {
+    color: devPlanColors.secondary,
+  },
+
+  numberStatValue: {
+    mt: 0.15,
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  profileStrip: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', lg: 'auto minmax(0, 1fr) auto' },
+    gap: 0.8,
+    alignItems: 'center',
+    p: 0.75,
+    borderRadius: 9,
+    bgcolor: '#FAFBFC',
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  profileStripPrimary: {
+    display: 'grid',
+    gap: 0.4,
+  },
+
+  profileStripSupporting: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.4,
+  },
+
+  profileStripNear: {
+    display: 'grid',
+    gap: 0.4,
+  },
+
+  profileStripLabel: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  profileStripEmpty: {
+    p: 0.8,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.6,
+    borderRadius: 8,
+    bgcolor: devPlanColors.secondaryLight,
+    color: devPlanColors.secondary,
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  profileTooltip: {
+    maxWidth: 260,
+  },
+
+  profileTooltipTitle: {
+    color: 'inherit',
+    fontWeight: 700,
+  },
+
+  profileTooltipText: {
+    mt: 0.35,
+    color: 'inherit',
+    lineHeight: 1.45,
+  },
+
+  questionText: {
+    minWidth: 0,
+  },
+
+  questionMeta: {
+    mt: 0.1,
+    color: devPlanColors.secondary,
+  },
+
+  nextActionsList: {
+    mt: 0.85,
+    display: 'grid',
+    gap: 0.65,
+  },
+
+  nextActionItem: {
+    display: 'grid',
+    gridTemplateColumns: '28px minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: 0.7,
+    p: 0.7,
+    borderRadius: 7,
+    bgcolor: '#FFFFFFCC',
+    border: '1px solid #D9E9DF',
+  },
+
+  nextActionIndex: {
+    width: 26,
+    height: 26,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 999,
+    bgcolor: '#E4F6EB',
+    color: '#176C49',
+    fontWeight: 700,
+  },
+
+  nextActionBody: {
+    minWidth: 0,
+  },
+
 }

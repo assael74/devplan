@@ -15,57 +15,83 @@ function addEvidence(list, item) {
   list.push(item)
 }
 
+function resolveDisplayPercent(metric, actual) {
+  if (clean(metric) !== 'minutesPct') return null
+
+  const numeric = Number(actual)
+  if (!Number.isFinite(numeric)) return null
+
+  const percent = numeric <= 1.5 ? numeric * 100 : numeric
+  return Math.min(100, Math.max(0, Math.round(percent)))
+}
+
+function addProfileMatchEvidence(evidence, prefix, profile = {}) {
+  const profileId = clean(profile.profileId)
+  if (!profileId) return
+
+  addEvidence(evidence, {
+    id: `${prefix}.profile.${profileId}.label`,
+    type: 'profile',
+    value: clean(profile.profileLabel || profileId),
+  })
+  addEvidence(evidence, {
+    id: `${prefix}.profile.${profileId}.strength`,
+    type: 'profile_strength',
+    value: profile.profileStrength || null,
+  })
+
+  const matches = Array.isArray(profile.matchEvidence)
+    ? profile.matchEvidence.filter(item => item && item.matched)
+    : []
+
+  matches.forEach((item, index) => {
+    addEvidence(evidence, {
+      id: `${prefix}.profile.${profileId}.match.${index}`,
+      type: 'profile_match',
+      value: {
+        metric: clean(item.metric),
+        actual: item.actual,
+        displayPercent: resolveDisplayPercent(item.metric, item.actual),
+        op: clean(item.op),
+        threshold: item.threshold,
+        reason: clean(item.reason),
+        matched: true,
+      },
+    })
+  })
+}
+
 function addScoutSideEvidence(evidence, prefix, side, snapshot) {
   if (!snapshot) return
 
   addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.targetRate`,
-    type: 'number',
-    value: snapshot.target?.rate,
+    id: `${prefix}.teamScout.${side}.target`,
+    type: 'team_context',
+    value: snapshot.target,
   })
   addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.targetLevel`,
-    type: 'label',
-    value: clean(snapshot.target?.level),
+    id: `${prefix}.teamScout.${side}.ranking`,
+    type: 'team_context',
+    value: snapshot.ranking,
   })
   addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.rankingRate`,
-    type: 'number',
-    value: snapshot.ranking?.rate,
+    id: `${prefix}.teamScout.${side}.anomaly`,
+    type: 'team_context',
+    value: snapshot.anomaly,
   })
   addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.rankingLevel`,
-    type: 'label',
-    value: clean(snapshot.ranking?.level),
+    id: `${prefix}.teamScout.${side}.quality`,
+    type: 'team_context',
+    value: snapshot.quality,
   })
   addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.anomalyRate`,
-    type: 'number',
-    value: snapshot.anomaly?.rate,
-  })
-  addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.anomalyLevel`,
-    type: 'label',
-    value: clean(snapshot.anomaly?.level),
-  })
-  addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.qualityRate`,
-    type: 'number',
-    value: snapshot.quality?.rate,
-  })
-  addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.priorityLevel`,
-    type: 'label',
-    value: clean(snapshot.priority?.level),
-  })
-  addEvidence(evidence, {
-    id: `${prefix}.teamScout.${side}.scoutPriorityScore`,
-    type: 'number',
-    value: snapshot.priority?.score,
+    id: `${prefix}.teamScout.${side}.priority`,
+    type: 'team_context',
+    value: snapshot.priority,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.opportunityType`,
-    type: 'label',
+    type: 'team_context',
     value: clean(snapshot.opportunityType),
   })
 }
@@ -93,10 +119,53 @@ function addPlayerInTeamEvidence(evidence, prefix, snapshot) {
   })
 }
 
+function addImmediacyEvidence(evidence, decision = {}) {
+  addEvidence(evidence, {
+    id: 'decision.actionStatus',
+    type: 'immediacy',
+    value: clean(decision.actionStatus),
+  })
+  addEvidence(evidence, {
+    id: 'decision.automaticActionStatus',
+    type: 'immediacy',
+    value: clean(decision.automaticActionStatus),
+  })
+  addEvidence(evidence, {
+    id: 'decision.manualActionStatus',
+    type: 'immediacy',
+    value: clean(decision.manualActionStatus),
+  })
+  addEvidence(evidence, {
+    id: 'decision.hasManualDecision',
+    type: 'boolean',
+    value: Boolean(decision.hasManualDecision),
+  })
+  addEvidence(evidence, {
+    id: 'decision.boosts',
+    type: 'immediacy_factors',
+    value: Array.isArray(decision.boosts) && decision.boosts.length
+      ? decision.boosts
+      : null,
+  })
+  addEvidence(evidence, {
+    id: 'decision.reductions',
+    type: 'immediacy_factors',
+    value: Array.isArray(decision.reductions) && decision.reductions.length
+      ? decision.reductions
+      : null,
+  })
+  addEvidence(evidence, {
+    id: 'decision.signalPersistence',
+    type: 'persistence',
+    value: decision.signalPersistence || null,
+  })
+}
+
 function buildEvidence(context = {}, decision = {}) {
   const evidence = []
+  const entries = Array.isArray(context.entries) ? context.entries : []
 
-  context.entries.forEach((entry, index) => {
+  entries.forEach((entry, index) => {
     const prefix = `season.${entry.seasonKey || entry.seasonId || index}`
     const stats = entry.stats || {}
     const teamScoutSnapshot = buildTeamScoutSnapshot(entry)
@@ -125,27 +194,41 @@ function buildEvidence(context = {}, decision = {}) {
       })
     }
 
-    entry.profiles.forEach(profile => {
-      const profileId = clean(profile.profileId)
-      if (!profileId) return
+    const profiles = Array.isArray(entry.profiles) ? entry.profiles : []
+    profiles.forEach(profile => addProfileMatchEvidence(evidence, prefix, profile))
 
-      addEvidence(evidence, {
-        id: `${prefix}.profile.${profileId}`,
-        type: 'profile',
-        value: profile.profileLabel || profileId,
-      })
+    addEvidence(evidence, {
+      id: `${prefix}.profileCaseStrength`,
+      type: 'profile_case_strength',
+      value: entry.profileCaseStrength || null,
+    })
+    addEvidence(evidence, {
+      id: `${prefix}.progression`,
+      type: 'profile_progression',
+      value: entry.progression || null,
+    })
+    addEvidence(evidence, {
+      id: `${prefix}.trajectory`,
+      type: 'trajectory',
+      value: entry.trajectory || null,
+    })
+    addEvidence(evidence, {
+      id: `${prefix}.verification`,
+      type: 'verification',
+      value: entry.verification || null,
     })
   })
 
-  addEvidence(evidence, {
-    id: 'decision.actionStatus',
-    type: 'label',
-    value: clean(decision.actionStatus),
-  })
+  addImmediacyEvidence(evidence, decision)
   addEvidence(evidence, {
     id: 'decision.futureOutlook',
-    type: 'label',
+    type: 'future_competition',
     value: clean(decision.futureOutlook),
+  })
+  addEvidence(evidence, {
+    id: 'decision.futureCompetitionPath',
+    type: 'future_competition',
+    value: decision.futureCompetitionPath || null,
   })
   addEvidence(evidence, {
     id: 'decision.currentCompetitionLevel',
@@ -158,9 +241,14 @@ function buildEvidence(context = {}, decision = {}) {
     value: decision.nextCompetitionLevel,
   })
   addEvidence(evidence, {
-    id: 'decision.expectedLevelDelta',
-    type: 'number',
-    value: decision.expectedLevelDelta,
+    id: 'player.review',
+    type: 'player_review',
+    value: context.playerReview || null,
+  })
+  addEvidence(evidence, {
+    id: 'player.verification',
+    type: 'verification',
+    value: context.verification || null,
   })
 
   return evidence

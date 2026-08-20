@@ -170,7 +170,7 @@ export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
 ]
 
 const PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT = {
-  version: 1,
+  version: 2,
   inputHash: '',
   scope: '',
   seasonKeys: [],
@@ -194,11 +194,18 @@ const PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT = {
   content: {
     title: '',
     summary: '',
+    conclusion: null,
+    whyInteresting: '',
+    professionalContext: '',
+    strengths: [],
+    unknowns: [],
+    action: null,
+    evidenceRefs: [],
   },
 }
 
 const PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT = {
-  version: 1,
+  version: 2,
   seasons: [
     {
       seasonId: '',
@@ -266,6 +273,16 @@ const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
         details: {},
       },
     ],
+    evaluations: [
+      {
+        id: '',
+        result: '',
+        points: 0,
+        reason: '',
+        profileId: '',
+        details: {},
+      },
+    ],
     signalPersistence: {
       profileRepeat: {
         profileId: '',
@@ -328,6 +345,16 @@ const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
     hasDefinedCombination: false,
     combinationCount: 0,
     combinationIds: [],
+  },
+  scoutPlayerInterest: {
+    assessmentScope: 'player_career',
+    interestLevel: '',
+    profileInterestLevel: '',
+    combinationInterestLevel: '',
+    primaryProfileId: '',
+    reasons: [],
+    limitingFactors: [],
+    upgradeConditions: [],
   },
   scoutTrajectory: {
     direction: '',

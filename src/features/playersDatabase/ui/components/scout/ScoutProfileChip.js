@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/scout/ScoutProfileChip.js
+// src/features/playersDatabase/ui/components/scout/ScoutProfileChip.js
 
 import * as React from 'react'
 import {
@@ -7,6 +7,7 @@ import {
   Typography,
 } from '@mui/joy'
 
+import { SCOUT_PROFILES } from '../../../../../shared/scouting/players/profiles.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { scoutProfileChipSx as sx } from './sx/scoutProfileChip.sx.js'
 import {
@@ -16,10 +17,17 @@ import {
 
 export { scoutProfileChipColors }
 
-const resolveTooltipTitle = tooltipLabel => {
-  if (React.isValidElement(tooltipLabel)) {
-    return tooltipLabel
+function resolveProfile(profileId, label) {
+  const definition = SCOUT_PROFILES.find(item => item.id === profileId) || null
+
+  return {
+    label: label || definition?.label || 'פרופיל סקאוט',
+    iconId: definition?.idIcon || 'performanceProfile',
   }
+}
+
+function resolveTooltipTitle(tooltipLabel) {
+  if (React.isValidElement(tooltipLabel)) return tooltipLabel
 
   return (
     <Box sx={sx.tooltipContent}>
@@ -29,46 +37,38 @@ const resolveTooltipTitle = tooltipLabel => {
 }
 
 export default function ScoutProfileChip({
-  label = 'פרופיל סקאוט',
+  profileId = '',
+  label = '',
   tooltip,
-  iconId = 'performanceProfile',
+  iconId = '',
   fontSize = 13,
   variant = 'default',
+  selected = false,
+  onClick,
 }) {
-  const tooltipLabel = tooltip || label
+  const profile = resolveProfile(profileId, label)
+  const tooltipLabel = tooltip || profile.label
   const tooltipTitle = resolveTooltipTitle(tooltipLabel)
-
-  const colors = (
-    scoutProfileChipVariants[variant] ||
-    scoutProfileChipVariants.default
-  )
+  const colors = scoutProfileChipVariants[variant] || scoutProfileChipVariants.default
+  const interactive = typeof onClick === 'function'
 
   return (
-    <Tooltip
-      title={tooltipTitle}
-      arrow
-    >
-      <Box sx={sx.root({
-        colors,
-        fontSize,
-      })}>
+    <Tooltip title={tooltipTitle} arrow>
+      <Box
+        component={interactive ? 'button' : 'span'}
+        type={interactive ? 'button' : undefined}
+        aria-pressed={interactive ? selected : undefined}
+        sx={sx.root({ colors, fontSize, interactive, selected })}
+        onClick={onClick}
+      >
         {iconUi({
-          id: iconId,
+          id: iconId || profile.iconId,
           size: 'sm',
-          sx: sx.icon({
-            colors,
-            fontSize,
-          }),
+          sx: sx.icon({ colors, fontSize, selected }),
         })}
 
-        <Typography
-          component='span'
-          sx={sx.label({
-            colors,
-            fontSize,
-          })}
-        >
-          {label}
+        <Typography component='span' sx={sx.label({ colors, fontSize, selected })}>
+          {profile.label}
         </Typography>
       </Box>
     </Tooltip>

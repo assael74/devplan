@@ -66,6 +66,7 @@ export const normalizePlayerScoutStatsLoadMeasurement = measurement => {
 
   return {
     snapshotKey,
+    loadType: clean(measurement.loadType),
     capturedAt: clean(measurement.capturedAt),
     engineVersion: clean(measurement.engineVersion),
     primaryProfileId: clean(measurement.primaryProfileId),

@@ -24,32 +24,47 @@ const buildOpenQuestions = verification => {
   return verification.nextBestCheck ? [verification.nextBestCheck] : []
 }
 
+const findCurrentEntry = seasons => {
+  const entries = (Array.isArray(seasons) ? seasons : [])
+    .flatMap(season => Array.isArray(season?.entries) ? season.entries : [])
+
+  return entries.find(entry => (
+    entry?.lifecycle?.type === 'current' || entry?.sourceTarget === 'current'
+  )) || entries[entries.length - 1] || null
+}
+
 const buildUnknowns = seasons => {
-  const values = Array.isArray(seasons) ? seasons : []
-  const verification = values
-    .map(season => season?.scout?.verification)
-    .filter(Boolean)
-  const current = verification[verification.length - 1] || null
+  const currentEntry = findCurrentEntry(seasons)
+  const contract = currentEntry?.scout?.contract || null
+  const verification = contract?.verification || null
+  const contractQuestions = Array.isArray(contract?.openQuestions)
+    ? contract.openQuestions
+    : []
 
   return {
-    verification: current,
-    openQuestions: buildOpenQuestions(current),
+    verification,
+    openQuestions: contractQuestions.length
+      ? contractQuestions
+      : buildOpenQuestions(verification),
   }
 }
+
 
 export const buildNarrativeInput = ({ player = {}, seasons = [], teams = [], events = [] } = {}) => {
   const input = createEmptyNarrativeInput()
   const identity = buildPlayerIdentity(player)
 
+  const timeline = buildNarrativeTimeline({
+    seasons,
+    teams,
+    playerBirthYear: identity.birthYear,
+  })
+
   return {
     ...input,
     player: identity,
-    seasons: buildNarrativeTimeline({
-      seasons,
-      teams,
-      playerBirthYear: identity.birthYear,
-    }),
+    seasons: timeline,
     events: Array.isArray(events) ? events : [],
-    unknowns: buildUnknowns(seasons),
+    unknowns: buildUnknowns(timeline),
   }
 }

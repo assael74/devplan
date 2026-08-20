@@ -92,6 +92,7 @@ export const buildPlayerScoutOpportunity = ({
     netScore: automaticImmediacy.netScore,
     boosts: automaticImmediacy.boosts,
     reductions: automaticImmediacy.reductions,
+    evaluations: automaticImmediacy.evaluations,
     signalPersistence: automaticImmediacy.signalPersistence,
     exposureLevel: getExposureLevel(safeSignals),
     reasons: [

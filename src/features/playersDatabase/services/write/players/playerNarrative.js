@@ -4,6 +4,7 @@ import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { NARRATIVE_VERSION } from '../../../domain/narrative/narrative.contract.js'
 import {
   buildApprovedNarrative,
   normalizePlayerNarrative,
@@ -54,6 +55,7 @@ export const saveApprovedNarrative = async ({
     const current = normalizePlayerNarrative(data.scoutNarrative)
     const next = {
       ...current,
+      version: NARRATIVE_VERSION,
       career: careerSnapshot
         ? buildApprovedNarrative(careerSnapshot)
         : current.career,
@@ -65,6 +67,45 @@ export const saveApprovedNarrative = async ({
             snapshot: seasonSnapshot,
           })
         : current.seasons,
+    }
+
+    transaction.set(
+      ref,
+      {
+        scoutNarrative: next,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    )
+
+    return {
+      updated: true,
+      scoutNarrative: next,
+    }
+  })
+}
+
+
+export const deleteApprovedNarrative = async ({ playerDocumentId } = {}) => {
+  if (!playerDocumentId) throw new Error('Missing player document id')
+
+  const ref = playerDocRef(playerDocumentId)
+
+  return trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) {
+      return {
+        updated: false,
+        reason: 'playerDocumentMissing',
+      }
+    }
+
+    const data = snapshot.data() || {}
+    const current = normalizePlayerNarrative(data.scoutNarrative)
+    const next = {
+      ...current,
+      version: NARRATIVE_VERSION,
+      career: null,
     }
 
     transaction.set(

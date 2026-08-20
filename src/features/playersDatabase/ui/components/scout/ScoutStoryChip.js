@@ -212,6 +212,7 @@ export default function ScoutStoryChip({ player = {}, label = '', fontSize = 11 
         }}
       >
         <ScoutProfileChip
+          profileId={profileView.primaryItem?.id || ''}
           label={chipLabel}
           tooltip='פתיחת סיפור סקאוט'
           iconId={isNearProfileOnly

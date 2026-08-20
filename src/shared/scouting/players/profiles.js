@@ -114,9 +114,17 @@ export const SCOUT_PROFILES = [
     rules: [
       {
         metric: 'goals',
-        op: 'gte',
-        value: 5,
+        op: 'between',
+        min: 3,
+        max: 5,
+        depthDirection: 'higher',
         reason: 'defensive_goal_threat',
+      },
+      {
+        metric: 'minutesPct',
+        op: 'gte',
+        value: 0.7,
+        reason: 'high_minutes_share',
       },
     ],
     deps: {
@@ -240,13 +248,37 @@ export const SCOUT_PROFILES = [
       {
         metric: 'goals',
         op: 'between',
-        min: 7,
+        min: 6,
         max: 9,
+        depthDirection: 'higher',
         reason: 'near_double_digit_goals',
       },
     ],
     deps: {
       position: DEP_MED,
+      team: DEP_LOW,
+    },
+  },
+  {
+    id: 'double_digit_threat',
+    idIcon: 'doubleDigitThreat',
+    label: 'תפוקה דו־ספרתית',
+    group: 'attack',
+    interest: SCOUT_INTEREST.INTERESTING,
+    searchLevels: sameBelow,
+    teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
+    rules: [
+      {
+        metric: 'goals',
+        op: 'between',
+        min: 10,
+        max: 14,
+        depthDirection: 'higher',
+        reason: 'double_digit_goal_output',
+      },
+    ],
+    deps: {
+      position: DEP_LOW,
       team: DEP_LOW,
     },
   },

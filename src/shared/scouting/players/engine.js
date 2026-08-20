@@ -23,6 +23,7 @@ import {
 } from './normalization.js'
 
 import {
+  PLAYER_POSITION_EVIDENCE,
   buildPlayerScoutContext,
 } from './context/index.js'
 
@@ -69,11 +70,34 @@ import {
   buildPlayerManualReview,
 } from './manualReview/index.js'
 
+import {
+  buildPlayerInterest,
+} from './playerInterest/index.js'
+
+import {
+  SCOUT_REVIEW,
+} from './ids.js'
+
 const resolvePlayerTrajectory = ({ playerTrajectory, playerSeasonStints }) => {
   if (playerTrajectory) return playerTrajectory
   if (!Array.isArray(playerSeasonStints) || playerSeasonStints.length < 2) return null
 
   return buildPlayerTrajectory({ stints: playerSeasonStints })
+}
+
+const resolveRequiredReview = ({ profile, scoutContext }) => {
+  const reviews = Array.isArray(profile.reviews) ? [...profile.reviews] : []
+  const hasPositionMismatch =
+    scoutContext?.position?.evidence === PLAYER_POSITION_EVIDENCE.MISMATCH
+
+  if (
+    hasPositionMismatch &&
+    !reviews.includes(SCOUT_REVIEW.PROFILE_RELEVANCE)
+  ) {
+    reviews.push(SCOUT_REVIEW.PROFILE_RELEVANCE)
+  }
+
+  return reviews
 }
 
 const interestScore = (interest) => {
@@ -127,7 +151,7 @@ const buildSignal = ({
     score,
     reasons: ruleResult.reasons,
     warnings: profile.warnings || [],
-    requiredReview: profile.reviews || [],
+    requiredReview: resolveRequiredReview({ profile, scoutContext }),
     metrics,
     normalization: context.normalization || null,
     matchEvidence: ruleResult.matchEvidence,
@@ -313,6 +337,15 @@ export const buildPlayerScoutResult = ({
     profiles,
   })
   const playerReview = buildPlayerManualReview({ review: manualReview })
+  const playerInterest = buildPlayerInterest({
+    signals,
+    combinations,
+    profileHierarchy,
+    profileCaseStrength,
+    opportunity,
+    verification,
+    playerReview,
+  })
 
   return {
     signals,
@@ -325,6 +358,7 @@ export const buildPlayerScoutResult = ({
     combinations,
     profileHierarchy,
     profileCaseStrength,
+    playerInterest,
     bestSignal: profileHierarchy.primarySignal,
     normalization: normalizedInput.normalization,
     normalizedPlayer: normalizedInput.player,
@@ -387,6 +421,7 @@ export const buildPlayersScoutSignals = ({
         profileProgression: result.profileProgression,
         profileHierarchy: result.profileHierarchy,
         profileCaseStrength: result.profileCaseStrength,
+        playerInterest: result.playerInterest,
         combinations: result.combinations,
         bestSignal: result.bestSignal,
         spotlights: result.spotlights,

@@ -58,6 +58,28 @@ const getClubShortName = clubId => {
   return cleanValue(club?.shortName || club?.name || '')
 }
 
+const hasPerformanceValue = performance => {
+  if (!performance || typeof performance !== 'object') return false
+
+  const hasNumber = value => (
+    value !== null &&
+    value !== undefined &&
+    cleanValue(value) !== '' &&
+    Number.isFinite(Number(value))
+  )
+  const level = cleanValue(performance.priorityLevel)
+
+  return (
+    hasNumber(performance.scoutPriorityScore) ||
+    hasNumber(performance.rank) ||
+    Boolean(level && level !== 'unavailable')
+  )
+}
+
+const pickPerformance = (...values) => (
+  values.find(hasPerformanceValue) || null
+)
+
 const buildReasons = ({ season, display }) => {
   const stats = season?.stats?.actual || {}
   const reasons = []
@@ -131,6 +153,8 @@ const buildSeasonContextView = (season, identity = {}) => {
       ageGroupId: season?.team?.ageGroupId,
       ageGroupLabel: season?.team?.ageGroupLabel,
     }),
+    birthTeamSlot: Number(season?.team?.birthTeamSlot) || 0,
+    isYoungerAgeGroup: Boolean(season?.scout?.profileHierarchy?.primarySignal?.metrics?.isYoungerAgeGroup),
     leagueId: cleanValue(season?.team?.leagueId),
     leagueName: cleanValue(
       league?.name || season?.team?.leagueId || '-'
@@ -140,6 +164,27 @@ const buildSeasonContextView = (season, identity = {}) => {
     minutes: Number(stats.minutes) || 0,
     goals: Number(stats.goals) || 0,
     yellowCards: Number(stats.yellowCards) || 0,
+    teamGames: Number(season?.stats?.context?.teamGames) || 0,
+    teamRank: Number(season?.stats?.context?.teamRank) || 0,
+    teamGoalsFor: Number(season?.stats?.context?.teamGoalsFor) || 0,
+    teamGoalsAgainst: Number(season?.stats?.context?.teamGoalsAgainst) || 0,
+    teamAttackPerformance: pickPerformance(
+      season?.stats?.context?.teamAttackPerformance,
+      season?.teamPerformance?.offense
+    ),
+    teamDefensePerformance: pickPerformance(
+      season?.stats?.context?.teamDefensePerformance,
+      season?.teamPerformance?.defense
+    ),
+    minutesPct: season?.scout?.profileHierarchy?.primarySignal?.metrics?.minutesPct,
+    clubLevel: Number(season?.team?.clubLevel) || 0,
+    clubStrengthLevel: Number(season?.team?.clubStrengthLevel) || 0,
+    leagueLevel: Number(season?.team?.leagueLevel) || 0,
+    seasonStatus: cleanValue(season?.season?.seasonStatus),
+    teamAttackRank: Number(season?.teamPerformance?.offense?.rank) || 0,
+    teamDefenseRank: Number(season?.teamPerformance?.defense?.rank) || 0,
+    teamAttackLevel: cleanValue(season?.teamPerformance?.offense?.priorityLevel),
+    teamDefenseLevel: cleanValue(season?.teamPerformance?.defense?.priorityLevel),
     projectedStats: season?.stats?.projected || null,
     scoutProfiles: profiles,
     scoutProfileDisplay: display,

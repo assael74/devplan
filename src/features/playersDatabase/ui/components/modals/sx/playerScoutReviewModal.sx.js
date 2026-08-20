@@ -25,6 +25,21 @@ export const playerScoutReviewModalSx = {
     backgroundColor: devPlanColors.primaryLight,
   },
 
+
+  profileRelevanceSection: {
+    backgroundColor: devPlanColors.primaryLight,
+  },
+
+  profileRelevanceList: {
+    display: 'grid',
+    gap: 0.7,
+  },
+
+  profileRelevanceItem: {
+    display: 'grid',
+    gap: 0.3,
+  },
+
   sectionTitle: {
     color: devPlanColors.primaryDark,
     fontWeight: 700,

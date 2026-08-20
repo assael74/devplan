@@ -73,6 +73,7 @@ export {
 } from './scoutingPlayerDoc.js'
 
 export {
+  deleteApprovedNarrative,
   saveApprovedNarrative,
 } from './playerNarrative.js'
 

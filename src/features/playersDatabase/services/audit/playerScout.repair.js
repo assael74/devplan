@@ -1158,35 +1158,59 @@ const ENGINE_REFRESH_STATE_FIELDS = [
   'scoutOpportunity',
   'scoutProfileProgression',
   'scoutProfileHierarchy',
+  'scoutProfileCaseStrength',
+  'scoutPlayerInterest',
   'scoutTrajectory',
   'scoutTransferContext',
   'scoutEngineVersion',
 ]
 
-const engineStateIssueTypes = new Set([
+const ENGINE_REFRESH_READ_HARD_LIMIT = 50000
+const ENGINE_REFRESH_READ_SAFETY_LIMIT = 49000
+
+const teamEngineStateIssueTypes = new Set([
+  'team_scout_state_mismatch',
+  'birth_team_mismatch',
+  'birth_team_reliability_mismatch',
+])
+
+const playerEngineStateIssueTypes = new Set([
   'player_scout_state_mismatch',
   'player_document_mismatch',
   'player_document_reliability_mismatch',
 ])
 
-const playerDocumentIdOf = row => clean(
-  row?.playerDocumentId || row?.sourceDocumentId
-)
+const searchEngineStateIssueTypes = new Set([
+  'search_index_mismatch',
+  'search_index_scout_projection_mismatch',
+])
 
-const getEngineRefreshIssues = audit => (
-  (Array.isArray(audit?.issues) ? audit.issues : [])
-    .filter(issue => engineStateIssueTypes.has(issue?.type))
-)
-
-const getEngineRefreshFields = issue => {
+const getEngineRefreshFields = ({ issue, scope }) => {
   const stateFields = unique(
     (Array.isArray(issue?.mismatchedFields) ? issue.mismatchedFields : [])
       .filter(field => ENGINE_REFRESH_STATE_FIELDS.includes(field))
   )
 
   if (
-    issue?.type === 'player_document_mismatch' ||
-    issue?.type === 'player_document_reliability_mismatch'
+    scope === 'team' &&
+    (
+      issue?.type === 'birth_team_mismatch' ||
+      issue?.type === 'birth_team_reliability_mismatch'
+    )
+  ) {
+    return unique([
+      ...stateFields,
+      'scoutProfiles',
+      'scoutCombinations',
+    ])
+  }
+
+  if (
+    scope === 'player' &&
+    (
+      issue?.type === 'player_document_mismatch' ||
+      issue?.type === 'player_document_reliability_mismatch'
+    )
   ) {
     return unique([
       ...stateFields,
@@ -1198,63 +1222,209 @@ const getEngineRefreshFields = issue => {
   return stateFields
 }
 
-const buildEngineRefreshTargets = audit => {
+const buildEngineSeasonTarget = ({
+  issue,
+  row,
+  fields,
+  expectedState,
+  expectedProfiles,
+  expectedCombinations,
+}) => ({
+  playerId: clean(issue.playerId || row.playerId),
+  playerDocumentId: clean(
+    issue.playerDocumentId ||
+    row.playerDocumentId ||
+    row.resolvedPlayerDocumentId
+  ),
+  externalPlayerId: clean(issue.externalPlayerId || row.externalPlayerId),
+  identityKey: clean(issue.identityKey || row.identityKey),
+  normalizedName: clean(issue.normalizedName || row.normalizedName),
+  fullName: clean(issue.fullName || row.fullName),
+  seasonKey: seasonKeyOf(issue),
+  sourceTarget: clean(row.sourceTarget) === 'history' ? 'history' : 'current',
+  teamDocumentId: clean(
+    issue.teamDocumentId || row.teamDocumentId || row.birthTeamDocumentId
+  ),
+  birthTeamDocumentId: clean(
+    row.birthTeamDocumentId || issue.teamDocumentId
+  ),
+  fields,
+  expectedState,
+  expectedProfiles: Array.isArray(expectedProfiles) ? expectedProfiles : [],
+  expectedCombinations: Array.isArray(expectedCombinations)
+    ? expectedCombinations
+    : [],
+})
+
+const mergeEngineSeasonTarget = ({ current, next }) => ({
+  ...current,
+  ...next,
+  fields: unique([
+    ...(Array.isArray(current?.fields) ? current.fields : []),
+    ...(Array.isArray(next?.fields) ? next.fields : []),
+  ]),
+})
+
+const buildTeamEngineRefreshTargets = audit => {
   const targetsByDocument = new Map()
 
-  getEngineRefreshIssues(audit).forEach(issue => {
-    const fields = getEngineRefreshFields(issue)
-    if (!fields.length) return
+  ;(Array.isArray(audit?.issues) ? audit.issues : [])
+    .filter(issue => teamEngineStateIssueTypes.has(issue?.type))
+    .forEach(issue => {
+      const row = findAuditRowForIssue({ audit, issue })
+      if (!row || !isPlainObject(row.expectedTeamScoutState)) return
 
-    const row = findAuditRowForIssue({ audit, issue })
-    const playerDocumentId = clean(
-      issue.playerDocumentId || row?.playerDocumentId
-    )
+      const fields = getEngineRefreshFields({
+        issue,
+        scope: 'team',
+      })
+      if (!fields.length) return
 
-    if (!row || !playerDocumentId || !isPlainObject(row.expectedPlayerScoutState)) {
-      return
-    }
+      const teamDocumentId = clean(
+        issue.teamDocumentId || row.teamDocumentId || row.birthTeamDocumentId
+      )
+      if (!teamDocumentId) return
 
-    const current = targetsByDocument.get(playerDocumentId) || {
-      playerDocumentId,
-      seasonsByKey: new Map(),
-    }
-    const seasonKey = seasonKeyOf(issue)
-    const teamDocumentId = clean(
-      issue.teamDocumentId || row.teamDocumentId || row.birthTeamDocumentId
-    )
-    const birthTeamDocumentId = clean(
-      row.birthTeamDocumentId || issue.teamDocumentId
-    )
-    const targetKey = [
-      seasonKey,
-      birthTeamDocumentId || teamDocumentId,
-    ].join('::')
-    const existing = current.seasonsByKey.get(targetKey) || {
-      playerId: clean(issue.playerId || row.playerId),
-      seasonKey,
-      teamDocumentId,
-      birthTeamDocumentId,
-      fields: [],
-      expectedState: row.expectedPlayerScoutState,
-      expectedProfiles: Array.isArray(row.expectedPlayerScoutProfiles)
-        ? row.expectedPlayerScoutProfiles
-        : [],
-      expectedCombinations: Array.isArray(row.expectedPlayerScoutCombinations)
-        ? row.expectedPlayerScoutCombinations
-        : [],
-    }
+      const target = buildEngineSeasonTarget({
+        issue,
+        row,
+        fields,
+        expectedState: row.expectedTeamScoutState,
+        expectedProfiles: row.expectedTeamScoutProfiles,
+        expectedCombinations: row.expectedTeamScoutCombinations,
+      })
+      const identity = (
+        target.playerId ||
+        target.playerDocumentId ||
+        target.externalPlayerId ||
+        target.identityKey ||
+        target.normalizedName
+      )
+      if (!identity || !target.seasonKey) return
 
-    current.seasonsByKey.set(targetKey, {
-      ...existing,
-      fields: unique([...existing.fields, ...fields]),
+      const key = [
+        target.sourceTarget,
+        target.seasonKey,
+        identity,
+      ].join('::')
+      const currentDocument = targetsByDocument.get(teamDocumentId) || {
+        teamDocumentId,
+        seasonsByKey: new Map(),
+      }
+      const currentTarget = currentDocument.seasonsByKey.get(key)
+
+      currentDocument.seasonsByKey.set(
+        key,
+        currentTarget
+          ? mergeEngineSeasonTarget({
+              current: currentTarget,
+              next: target,
+            })
+          : target
+      )
+      targetsByDocument.set(teamDocumentId, currentDocument)
     })
-    targetsByDocument.set(playerDocumentId, current)
-  })
+
+  return [...targetsByDocument.values()].map(target => ({
+    teamDocumentId: target.teamDocumentId,
+    seasons: [...target.seasonsByKey.values()],
+  }))
+}
+
+const buildPlayerEngineRefreshTargets = audit => {
+  const targetsByDocument = new Map()
+
+  ;(Array.isArray(audit?.issues) ? audit.issues : [])
+    .filter(issue => playerEngineStateIssueTypes.has(issue?.type))
+    .forEach(issue => {
+      const fields = getEngineRefreshFields({
+        issue,
+        scope: 'player',
+      })
+      if (!fields.length) return
+
+      const row = findAuditRowForIssue({ audit, issue })
+      const playerDocumentId = clean(
+        issue.playerDocumentId ||
+        row?.playerDocumentId ||
+        row?.resolvedPlayerDocumentId
+      )
+
+      if (
+        !row ||
+        !playerDocumentId ||
+        !isPlainObject(row.expectedPlayerScoutState)
+      ) {
+        return
+      }
+
+      const target = buildEngineSeasonTarget({
+        issue,
+        row,
+        fields,
+        expectedState: row.expectedPlayerScoutState,
+        expectedProfiles: row.expectedPlayerScoutProfiles,
+        expectedCombinations: row.expectedPlayerScoutCombinations,
+      })
+      const key = [
+        target.sourceTarget,
+        target.seasonKey,
+        target.birthTeamDocumentId || target.teamDocumentId,
+      ].join('::')
+      const currentDocument = targetsByDocument.get(playerDocumentId) || {
+        playerDocumentId,
+        seasonsByKey: new Map(),
+      }
+      const currentTarget = currentDocument.seasonsByKey.get(key)
+
+      currentDocument.seasonsByKey.set(
+        key,
+        currentTarget
+          ? mergeEngineSeasonTarget({
+              current: currentTarget,
+              next: target,
+            })
+          : target
+      )
+      targetsByDocument.set(playerDocumentId, currentDocument)
+    })
 
   return [...targetsByDocument.values()].map(target => ({
     playerDocumentId: target.playerDocumentId,
     seasons: [...target.seasonsByKey.values()],
   }))
+}
+
+const buildSearchEngineRefreshTargets = audit => {
+  const targets = new Map()
+
+  ;(Array.isArray(audit?.issues) ? audit.issues : [])
+    .filter(issue => searchEngineStateIssueTypes.has(issue?.type))
+    .forEach(issue => {
+      const row = findAuditRowForIssue({ audit, issue })
+      const searchIndexDocumentId = clean(row?.searchIndexDocumentId)
+
+      if (
+        !row ||
+        !searchIndexDocumentId ||
+        !isPlainObject(row.expectedSearchIndexScoutFields)
+      ) {
+        return
+      }
+
+      targets.set(searchIndexDocumentId, {
+        searchIndexDocumentId,
+        playerId: clean(row.playerId),
+        playerDocumentId: clean(
+          row.playerDocumentId || row.resolvedPlayerDocumentId
+        ),
+        seasonKey: seasonKeyOf(row),
+        teamDocumentId: clean(row.teamDocumentId),
+        expectedFields: row.expectedSearchIndexScoutFields,
+      })
+    })
+
+  return [...targets.values()]
 }
 
 const findSeasonIndexForEngineRefresh = ({ seasons, target }) => {
@@ -1282,8 +1452,8 @@ const findSeasonIndexForEngineRefresh = ({ seasons, target }) => {
   return bySeason.length === 1 ? bySeason[0].index : -1
 }
 
-const patchEngineComputedState = ({ season, target }) => {
-  const next = { ...season }
+const patchEngineComputedState = ({ source, target }) => {
+  const next = { ...source }
 
   target.fields.forEach(field => {
     if (field === 'scoutProfiles') {
@@ -1303,6 +1473,89 @@ const patchEngineComputedState = ({ season, target }) => {
   return next
 }
 
+const patchTeamEngineComputedState = ({ data, target }) => {
+  const current = Array.isArray(data.current) ? [...data.current] : []
+  const history = Array.isArray(data.history) ? [...data.history] : []
+  let playerStatesUpdated = 0
+  let ambiguousTargets = 0
+
+  target.seasons.forEach(seasonTarget => {
+    const seasons = seasonTarget.sourceTarget === 'history'
+      ? history
+      : current
+    const seasonIndex = findSeasonIndexForEngineRefresh({
+      seasons,
+      target: seasonTarget,
+    })
+
+    if (seasonIndex < 0) {
+      ambiguousTargets += 1
+      return
+    }
+
+    const season = seasons[seasonIndex] || {}
+    const players = Array.isArray(season.teamPlayers)
+      ? [...season.teamPlayers]
+      : []
+    const matches = players
+      .map((player, index) => ({ player, index }))
+      .filter(({ player }) => samePlayer({
+        player,
+        row: seasonTarget,
+      }))
+
+    if (matches.length !== 1) {
+      ambiguousTargets += 1
+      return
+    }
+
+    const playerIndex = matches[0].index
+    players[playerIndex] = patchEngineComputedState({
+      source: players[playerIndex],
+      target: seasonTarget,
+    })
+    seasons[seasonIndex] = {
+      ...season,
+      teamPlayers: players,
+    }
+    playerStatesUpdated += 1
+  })
+
+  return {
+    current,
+    history,
+    playerStatesUpdated,
+    ambiguousTargets,
+  }
+}
+
+const buildEngineFieldCounts = ({ targets, nestedKey }) => {
+  const fieldCounts = {}
+
+  targets.forEach(target => {
+    const nestedTargets = Array.isArray(target?.[nestedKey])
+      ? target[nestedKey]
+      : []
+
+    nestedTargets.forEach(item => {
+      ;(Array.isArray(item?.fields) ? item.fields : []).forEach(field => {
+        fieldCounts[field] = Number(fieldCounts[field] || 0) + 1
+      })
+    })
+  })
+
+  return fieldCounts
+}
+
+const assertEngineRefreshReadSafety = readsMaximum => {
+  if (readsMaximum > ENGINE_REFRESH_READ_SAFETY_LIMIT) {
+    throw new Error(
+      `Engine refresh requires up to ${readsMaximum} document reads, above the ` +
+      `${ENGINE_REFRESH_READ_SAFETY_LIMIT} safety limit. No writes were started.`
+    )
+  }
+}
+
 export function buildPlayerScoutEngineRefreshPreview({ audit } = {}) {
   if (!audit) {
     throw new Error('Player scout engine refresh preview requires a source audit')
@@ -1314,144 +1567,356 @@ export function buildPlayerScoutEngineRefreshPreview({ audit } = {}) {
     )
   }
 
-  const targets = buildEngineRefreshTargets(audit)
-  const fieldCounts = {}
+  const teamTargets = buildTeamEngineRefreshTargets(audit)
+  const playerTargets = buildPlayerEngineRefreshTargets(audit)
+  const searchIndexTargets = buildSearchEngineRefreshTargets(audit)
+  const readsMaximum = (
+    teamTargets.length +
+    playerTargets.length +
+    searchIndexTargets.length
+  )
+  const writesMaximum = readsMaximum
 
-  targets.forEach(target => {
-    target.seasons.forEach(season => {
-      season.fields.forEach(field => {
-        fieldCounts[field] = Number(fieldCounts[field] || 0) + 1
-      })
-    })
-  })
+  assertEngineRefreshReadSafety(readsMaximum)
 
   return {
     generatedAt: new Date().toISOString(),
     mode: 'engine-refresh-preview',
+    order: [
+      PLAYERS_DATABASE_COLLECTIONS.teams,
+      PLAYERS_DATABASE_COLLECTIONS.players,
+      PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    ],
     summary: {
-      affectedPlayerDocuments: targets.length,
-      affectedPlayerSeasons: targets.reduce(
+      affectedTeamDocuments: teamTargets.length,
+      affectedTeamPlayerStates: teamTargets.reduce(
         (sum, target) => sum + target.seasons.length,
         0
       ),
-      preservedHumanFields: ['scoutVerification'],
-      fieldCounts,
+      affectedPlayerDocuments: playerTargets.length,
+      affectedPlayerSeasons: playerTargets.reduce(
+        (sum, target) => sum + target.seasons.length,
+        0
+      ),
+      affectedSearchIndexes: searchIndexTargets.length,
+      preservedHumanFields: [
+        'tracking',
+        'playerReview',
+        'manualImmediacyDecision',
+        'manualImmediacyHistory',
+        'verification',
+        'events',
+        'scoutNarrative',
+      ],
+      teamFieldCounts: buildEngineFieldCounts({
+        targets: teamTargets,
+        nestedKey: 'seasons',
+      }),
+      playerFieldCounts: buildEngineFieldCounts({
+        targets: playerTargets,
+        nestedKey: 'seasons',
+      }),
+      searchIndexFieldCounts: searchIndexTargets.reduce((counts, target) => {
+        Object.keys(target.expectedFields || {}).forEach(field => {
+          counts[field] = Number(counts[field] || 0) + 1
+        })
+        return counts
+      }, {}),
     },
     cost: {
-      readsMaximum: targets.length,
-      writesMaximum: targets.length,
+      teamReadsMaximum: teamTargets.length,
+      playerReadsMaximum: playerTargets.length,
+      searchIndexReadsMaximum: searchIndexTargets.length,
+      readsMaximum,
+      teamWritesMaximum: teamTargets.length,
+      playerWritesMaximum: playerTargets.length,
+      searchIndexWritesMaximum: searchIndexTargets.length,
+      writesMaximum,
+      readSafety: {
+        hardLimit: ENGINE_REFRESH_READ_HARD_LIMIT,
+        safetyLimit: ENGINE_REFRESH_READ_SAFETY_LIMIT,
+        remainingBudget: ENGINE_REFRESH_READ_SAFETY_LIMIT - readsMaximum,
+      },
     },
-    targets,
+    targets: {
+      teams: teamTargets,
+      players: playerTargets,
+      searchIndexes: searchIndexTargets,
+    },
   }
 }
 
-export async function applyPlayerScoutEngineRefresh({ confirmed = false, audit } = {}) {
+const applyTeamEngineRefreshTarget = async target => {
+  const teamRef = doc(
+    db,
+    PLAYERS_DATABASE_COLLECTIONS.teams,
+    target.teamDocumentId
+  )
+
+  return trackedRunTransaction(
+    db,
+    async transaction => {
+      const snapshot = await transaction.get(teamRef)
+
+      if (!snapshot.exists()) {
+        return {
+          teamDocumentId: target.teamDocumentId,
+          updated: false,
+          skipped: 'missing_team_document',
+          playerStatesUpdated: 0,
+        }
+      }
+
+      const data = snapshot.data() || {}
+      const patched = patchTeamEngineComputedState({
+        data,
+        target,
+      })
+
+      if (!patched.playerStatesUpdated) {
+        return {
+          teamDocumentId: target.teamDocumentId,
+          updated: false,
+          skipped: patched.ambiguousTargets
+            ? 'team_player_not_uniquely_matched'
+            : 'no_changes',
+          playerStatesUpdated: 0,
+        }
+      }
+
+      transaction.set(teamRef, {
+        current: patched.current,
+        history: patched.history,
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+
+      return {
+        teamDocumentId: target.teamDocumentId,
+        updated: true,
+        playerStatesUpdated: patched.playerStatesUpdated,
+        ambiguousTargets: patched.ambiguousTargets,
+      }
+    },
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      action: 'playerScoutEngineRefresh-updateTeam',
+      operationSubtype: 'maintenance-transaction',
+    }
+  )
+}
+
+const applyPlayerEngineRefreshTarget = async target => {
+  const playerRef = doc(
+    db,
+    PLAYERS_DATABASE_COLLECTIONS.players,
+    target.playerDocumentId
+  )
+
+  return trackedRunTransaction(
+    db,
+    async transaction => {
+      const snapshot = await transaction.get(playerRef)
+
+      if (!snapshot.exists()) {
+        return {
+          playerDocumentId: target.playerDocumentId,
+          updated: false,
+          skipped: 'missing_player_document',
+          seasonsUpdated: 0,
+        }
+      }
+
+      const data = snapshot.data() || {}
+      const current = Array.isArray(data.current) ? [...data.current] : []
+      const history = Array.isArray(data.history) ? [...data.history] : []
+      let seasonsUpdated = 0
+      let ambiguousTargets = 0
+
+      target.seasons.forEach(seasonTarget => {
+        let container = current
+        let index = findSeasonIndexForEngineRefresh({
+          seasons: current,
+          target: seasonTarget,
+        })
+
+        if (index < 0) {
+          container = history
+          index = findSeasonIndexForEngineRefresh({
+            seasons: history,
+            target: seasonTarget,
+          })
+        }
+
+        if (index < 0) {
+          ambiguousTargets += 1
+          return
+        }
+
+        container[index] = patchEngineComputedState({
+          source: container[index],
+          target: seasonTarget,
+        })
+        seasonsUpdated += 1
+      })
+
+      if (!seasonsUpdated) {
+        return {
+          playerDocumentId: target.playerDocumentId,
+          updated: false,
+          skipped: ambiguousTargets
+            ? 'season_not_uniquely_matched'
+            : 'no_changes',
+          seasonsUpdated: 0,
+        }
+      }
+
+      transaction.set(playerRef, {
+        current,
+        history,
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+
+      return {
+        playerDocumentId: target.playerDocumentId,
+        updated: true,
+        seasonsUpdated,
+        ambiguousTargets,
+      }
+    },
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      action: 'playerScoutEngineRefresh-updatePlayer',
+      operationSubtype: 'maintenance-transaction',
+    }
+  )
+}
+
+const applySearchIndexEngineRefreshTarget = async target => {
+  const searchRef = doc(
+    db,
+    PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    target.searchIndexDocumentId
+  )
+
+  return trackedRunTransaction(
+    db,
+    async transaction => {
+      const snapshot = await transaction.get(searchRef)
+
+      if (!snapshot.exists()) {
+        return {
+          searchIndexDocumentId: target.searchIndexDocumentId,
+          updated: false,
+          skipped: 'missing_search_index',
+        }
+      }
+
+      transaction.set(searchRef, {
+        ...stripUndefined(target.expectedFields),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+
+      return {
+        searchIndexDocumentId: target.searchIndexDocumentId,
+        updated: true,
+      }
+    },
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'playerScoutEngineRefresh-updateSearchIndex',
+      operationSubtype: 'maintenance-transaction',
+    }
+  )
+}
+
+const summarizeEngineRefreshResults = ({
+  teamResults,
+  playerResults,
+  searchIndexResults,
+}) => ({
+  teamDocumentsUpdated: teamResults.filter(result => result.updated).length,
+  teamPlayerStatesUpdated: teamResults.reduce(
+    (sum, result) => sum + Number(result.playerStatesUpdated || 0),
+    0
+  ),
+  playerDocumentsUpdated: playerResults.filter(result => result.updated).length,
+  playerSeasonsUpdated: playerResults.reduce(
+    (sum, result) => sum + Number(result.seasonsUpdated || 0),
+    0
+  ),
+  searchIndexesUpdated: searchIndexResults.filter(result => result.updated).length,
+  skipped: [
+    ...teamResults,
+    ...playerResults,
+    ...searchIndexResults,
+  ].filter(result => !result.updated).length,
+})
+
+export async function applyPlayerScoutEngineRefresh({
+  confirmed = false,
+  audit,
+} = {}) {
   if (!confirmed) {
     throw new Error('Player scout engine refresh requires explicit confirmation')
   }
 
   const preview = buildPlayerScoutEngineRefreshPreview({ audit })
-  const results = []
+  assertEngineRefreshReadSafety(preview.cost.readsMaximum)
 
-  for (const target of preview.targets) {
-    const playerRef = doc(
-      db,
-      PLAYERS_DATABASE_COLLECTIONS.players,
-      target.playerDocumentId
-    )
+  const teamResults = []
+  const playerResults = []
+  const searchIndexResults = []
 
-    const result = await trackedRunTransaction(
-      db,
-      async transaction => {
-        const snapshot = await transaction.get(playerRef)
+  try {
+    for (const target of preview.targets.teams) {
+      teamResults.push(await applyTeamEngineRefreshTarget(target))
+    }
 
-        if (!snapshot.exists()) {
-          return {
-            playerDocumentId: target.playerDocumentId,
-            updated: false,
-            skipped: 'missing_player_document',
-            seasonsUpdated: 0,
-          }
-        }
+    for (const target of preview.targets.players) {
+      playerResults.push(await applyPlayerEngineRefreshTarget(target))
+    }
 
-        const data = snapshot.data() || {}
-        const current = Array.isArray(data.current) ? [...data.current] : []
-        const history = Array.isArray(data.history) ? [...data.history] : []
-        let seasonsUpdated = 0
-        let ambiguousTargets = 0
+    for (const target of preview.targets.searchIndexes) {
+      searchIndexResults.push(await applySearchIndexEngineRefreshTarget(target))
+    }
+  } catch (error) {
+    const progress = summarizeEngineRefreshResults({
+      teamResults,
+      playerResults,
+      searchIndexResults,
+    })
 
-        target.seasons.forEach(seasonTarget => {
-          let container = current
-          let index = findSeasonIndexForEngineRefresh({
-            seasons: current,
-            target: seasonTarget,
-          })
-
-          if (index < 0) {
-            container = history
-            index = findSeasonIndexForEngineRefresh({
-              seasons: history,
-              target: seasonTarget,
-            })
-          }
-
-          if (index < 0) {
-            ambiguousTargets += 1
-            return
-          }
-
-          container[index] = patchEngineComputedState({
-            season: container[index],
-            target: seasonTarget,
-          })
-          seasonsUpdated += 1
-        })
-
-        if (!seasonsUpdated) {
-          return {
-            playerDocumentId: target.playerDocumentId,
-            updated: false,
-            skipped: ambiguousTargets ? 'season_not_uniquely_matched' : 'no_changes',
-            seasonsUpdated: 0,
-          }
-        }
-
-        transaction.set(playerRef, {
-          current,
-          history,
-          updatedAt: serverTimestamp(),
-        }, { merge: true })
-
-        return {
-          playerDocumentId: target.playerDocumentId,
-          updated: true,
-          skipped: '',
-          seasonsUpdated,
-          ambiguousTargets,
-        }
-      },
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.players,
-        action: 'playerScoutEngineRefresh',
-        operationSubtype: 'maintenance-transaction',
-      }
-    )
-
-    results.push(result)
+    error.engineRefreshProgress = {
+      ...progress,
+      plannedReadsMaximum: preview.cost.readsMaximum,
+      plannedWritesMaximum: preview.cost.writesMaximum,
+    }
+    throw error
   }
+
+  const summary = summarizeEngineRefreshResults({
+    teamResults,
+    playerResults,
+    searchIndexResults,
+  })
 
   return {
     generatedAt: new Date().toISOString(),
     mode: 'engine-refresh-apply',
-    playerDocumentsUpdated: results.filter(result => result.updated).length,
-    playerSeasonsUpdated: results.reduce(
-      (sum, result) => sum + Number(result.seasonsUpdated || 0),
-      0
-    ),
-    skippedDocuments: results.filter(result => !result.updated).length,
-    preservedHumanFields: ['scoutVerification'],
-    results,
+    order: preview.order,
+    summary,
+    cost: preview.cost,
+    teamResults,
+    playerResults,
+    searchIndexResults,
+
+    // Backward-compatible UI fields.
+    playerDocumentsUpdated: summary.playerDocumentsUpdated,
+    playerSeasonsUpdated: summary.playerSeasonsUpdated,
+    skippedDocuments: summary.skipped,
   }
 }
 

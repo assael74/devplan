@@ -122,6 +122,7 @@ export const resolvePlayerHistoryRows = player => {
 
     return {
       ...row,
+      sourceIndex: index,
       id: row.id || [
         row.seasonKey,
         row.teamId,
@@ -148,6 +149,21 @@ export const resolvePlayerHistoryRows = player => {
       minutes: toNumber(row.minutes),
       goals: toNumber(row.goals),
       yellowCards: toNumber(row.yellowCards),
+      playerStats: row.playerStats && typeof row.playerStats === 'object'
+        ? row.playerStats
+        : {},
+      teamGames: toNumber(row.teamGames || row.playerStats?.teamGames),
+      teamRank: toNumber(row.teamRank || row.playerStats?.teamRank),
+      teamGoalsFor: toNumber(row.teamGoalsFor || row.playerStats?.teamGoalsFor),
+      teamGoalsAgainst: toNumber(row.teamGoalsAgainst || row.playerStats?.teamGoalsAgainst),
+      teamAttackPerformance:
+        row.teamAttackPerformance ||
+        row.playerStats?.teamAttackPerformance ||
+        null,
+      teamDefensePerformance:
+        row.teamDefensePerformance ||
+        row.playerStats?.teamDefensePerformance ||
+        null,
       scoutProfiles: Array.isArray(row.scoutProfiles)
         ? row.scoutProfiles
         : Array.isArray(row.scout?.profiles)
@@ -169,11 +185,59 @@ export const resolvePlayerHistoryRows = player => {
   })
 }
 
-export const resolveCurrentSeasonContext = rows => {
-  if (!rows.length) return {}
+const resolveSeasonStartYear = seasonKey => {
+  const value = String(seasonKey || '').trim()
+  const firstPart = value.split('/')[0]
+  const number = Number(firstPart)
 
-  return rows.find(row => row.isCurrentSeason) || rows[0] || {}
+  if (!Number.isFinite(number)) return -1
+  if (firstPart.length === 2) return 2000 + number
+
+  return number
 }
+
+const resolveContextUpdatedAt = row => {
+  const value = row?.updatedAt
+
+  if (typeof value === 'string') {
+    const time = Date.parse(value)
+    return Number.isFinite(time) ? time : 0
+  }
+
+  if (value && typeof value === 'object') {
+    const seconds = Number(value.seconds)
+    return Number.isFinite(seconds) ? seconds * 1000 : 0
+  }
+
+  return 0
+}
+
+export const resolveLatestSeasonContext = rows => {
+  const safeRows = Array.isArray(rows) ? rows.filter(Boolean) : []
+
+  if (!safeRows.length) return {}
+
+  const currentRows = safeRows.filter(row => row.isCurrentSeason)
+  const candidates = currentRows.length ? currentRows : safeRows
+
+  return candidates.slice().sort((left, right) => {
+    const seasonDelta = resolveSeasonStartYear(right.seasonKey) -
+      resolveSeasonStartYear(left.seasonKey)
+
+    if (seasonDelta) return seasonDelta
+
+    const updatedDelta = resolveContextUpdatedAt(right) -
+      resolveContextUpdatedAt(left)
+
+    if (updatedDelta) return updatedDelta
+
+    return Number(left.sourceIndex || 0) - Number(right.sourceIndex || 0)
+  })[0] || {}
+}
+
+export const resolveCurrentSeasonContext = rows => (
+  resolveLatestSeasonContext(rows)
+)
 
 export const resolveProfilesLabel = profiles => {
   if (!Array.isArray(profiles) || !profiles.length) {

@@ -11,53 +11,100 @@ const toRate = (value, total) => {
   return numberValue / numberTotal
 }
 
-const buildStatsEvidence = season => {
+const toNullableNumber = value => {
+  if (value === null || value === undefined || value === '') return null
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+const buildUsageEvidence = season => {
   const stats = season?.stats?.actual || {}
   const context = season?.stats?.context || {}
 
   return {
-    games: Number(stats.games) || 0,
-    starts: Number(stats.starts) || 0,
-    minutes: Number(stats.minutes) || 0,
-    goals: Number(stats.goals) || 0,
-    yellowCards: Number(stats.yellowCards) || 0,
-    substituteIn: Number(stats.substituteIn) || 0,
-    substitutedOut: Number(stats.substitutedOut) || 0,
+    games: toNullableNumber(stats.games),
+    starts: toNullableNumber(stats.starts),
+    minutes: toNullableNumber(stats.minutes),
+    goals: toNullableNumber(stats.goals),
     startRate: toRate(stats.starts, stats.games),
-    goalsPerGame: toRate(stats.goals, stats.games),
-    teamGames: Number(context.teamGames) || 0,
-    teamRank: context.teamRank === null || context.teamRank === undefined
-      ? null
-      : Number(context.teamRank),
-    teamGoalsFor: Number(context.teamGoalsFor) || 0,
-    teamGoalsAgainst: Number(context.teamGoalsAgainst) || 0,
+    appearanceRate: toRate(stats.games, context.teamGames),
     goalShare: toRate(stats.goals, context.teamGoalsFor),
   }
 }
 
-const buildProfileEvidence = season => {
-  const profile = season?.scout?.primaryProfile
-
-  if (!profile) return null
+const buildTeamContextEvidence = season => {
+  const context = season?.stats?.context || {}
 
   return {
-    id: profile.id || '',
-    label: profile.label || '',
-    score: profile.score === undefined ? null : profile.score,
-    interest: profile.interest || '',
-    profileStrength: profile.profileStrength || null,
-    profileDepth: profile.profileDepth || null,
-    metrics: profile.metrics || {},
-    reasons: profile.match?.reasons || [],
-    matchEvidence: profile.matchEvidence || [],
-    warnings: profile.warnings || [],
+    teamGames: toNullableNumber(context.teamGames),
+    teamRank: toNullableNumber(context.teamRank),
+    teamGoalsFor: toNullableNumber(context.teamGoalsFor),
+    teamGoalsAgainst: toNullableNumber(context.teamGoalsAgainst),
+    performance: season?.teamPerformance || null,
   }
 }
 
-export const buildNarrativeEvidence = season => ({
-  stats: buildStatsEvidence(season),
-  profile: buildProfileEvidence(season),
-  teamPerformance: season?.teamPerformance || null,
-  measurements: season?.scout?.statsLoadMeasurements || null,
-  measurementEvents: season?.scout?.statsLoadMeasurementHistoryEvents || [],
+const buildProfileEvidenceItem = profile => {
+  if (!profile) return null
+
+  return {
+    profileId: profile.id || '',
+    profileLabel: profile.label || '',
+    profileStrength: profile.profileStrength || null,
+    matchEvidence: Array.isArray(profile.matchEvidence) ? profile.matchEvidence : [],
+    requiredReview: Array.isArray(profile.requiredReview) ? profile.requiredReview : [],
+    warnings: Array.isArray(profile.warnings) ? profile.warnings : [],
+  }
+}
+
+const buildProfileCaseEvidence = contract => ({
+  primary: buildProfileEvidenceItem(contract?.profiles?.primary),
+  supporting: (Array.isArray(contract?.profiles?.supporting)
+    ? contract.profiles.supporting
+    : [])
+    .map(buildProfileEvidenceItem)
+    .filter(Boolean),
+  near: contract?.profiles?.near || null,
+  caseStrength: contract?.profileCaseStrength || null,
 })
+
+const buildImmediacyEvidence = contract => {
+  const immediacy = contract?.immediacy || {}
+
+  return {
+    effectiveActionStatus: immediacy.effectiveActionStatus || '',
+    automatic: immediacy.automatic || null,
+    manual: immediacy.manual || null,
+  }
+}
+
+const buildProgressEvidence = contract => ({
+  persistence: contract?.persistence || null,
+  trajectory: contract?.trajectory || null,
+  progression: contract?.progression || null,
+  closingGap: contract?.closingGap || null,
+  measurements: contract?.measurements || null,
+  measurementEvents: Array.isArray(contract?.measurementEvents)
+    ? contract.measurementEvents
+    : [],
+})
+
+export const buildNarrativeEvidence = (season, contract = null) => {
+  const isCurrent = season?.lifecycle?.type === 'current' ||
+    season?.metadata?.sourceTarget === 'current'
+
+  return {
+    profileCase: buildProfileCaseEvidence(contract),
+    immediacy: buildImmediacyEvidence(contract),
+    progress: buildProgressEvidence(contract),
+    usage: buildUsageEvidence(season),
+    teamContext: buildTeamContextEvidence(season),
+    futureCompetition: isCurrent ? contract?.futureCompetition || null : null,
+    playerReview: contract?.playerReview || null,
+    verification: contract?.verification || null,
+    openQuestions: Array.isArray(contract?.openQuestions)
+      ? contract.openQuestions
+      : [],
+  }
+}

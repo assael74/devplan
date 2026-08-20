@@ -1,8 +1,10 @@
-// features/playersDatabase/services/audit/playerIdentity.audit.js
+// src/features/playersDatabase/services/audit/playerIdentity.audit.js
 
 import {
   collection,
+  limit,
   query,
+  startAfter,
   where,
 } from 'firebase/firestore'
 
@@ -10,6 +12,83 @@ import { db } from '../../../../services/firebase/firebase.js'
 import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/genericObjects.catalog.js'
+
+
+const PLAYER_IDENTITY_AUDIT_READ_HARD_LIMIT = 50000
+const PLAYER_IDENTITY_AUDIT_READ_SAFETY_LIMIT = 49000
+
+const estimateSnapshotReads = snapshot => Math.max(
+  1,
+  Array.isArray(snapshot?.docs) ? snapshot.docs.length : 0
+)
+
+const FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT = 10000
+
+const readIdentitySnapshotWithinBudget = async ({
+  source,
+  metadata,
+  budget,
+  reservedReads = 0,
+  label,
+}) => {
+  const availableReads = Math.max(
+    0,
+    Number(budget || 0) - Number(reservedReads || 0)
+  )
+
+  if (availableReads < 1) {
+    throw new Error(
+      `Audit stopped before ${label}: read safety budget exhausted. ` +
+      `The audit is capped below ${PLAYER_IDENTITY_AUDIT_READ_HARD_LIMIT} document reads.`
+    )
+  }
+
+  const documents = []
+  let readsUsed = 0
+  let cursor = null
+
+  while (readsUsed < availableReads) {
+    const remainingAllowance = availableReads - readsUsed
+    const pageLimit = Math.min(
+      FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT,
+      remainingAllowance
+    )
+    const constraints = []
+
+    if (cursor) constraints.push(startAfter(cursor))
+    constraints.push(limit(pageLimit))
+
+    const pageSnapshot = await trackedGetDocs(
+      query(source, ...constraints),
+      metadata
+    )
+    const pageReads = estimateSnapshotReads(pageSnapshot)
+
+    readsUsed += pageReads
+    documents.push(...pageSnapshot.docs)
+
+    if (pageSnapshot.docs.length < pageLimit) {
+      return {
+        snapshot: { docs: documents },
+        readsUsed,
+      }
+    }
+
+    if (readsUsed >= availableReads) {
+      throw new Error(
+        `Audit stopped while reading ${label}: the source reached the ` +
+        `${availableReads}-document safety allowance. No incomplete audit result was produced. ` +
+        `The audit is capped below ${PLAYER_IDENTITY_AUDIT_READ_HARD_LIMIT} document reads.`
+      )
+    }
+
+    cursor = pageSnapshot.docs[pageSnapshot.docs.length - 1]
+  }
+
+  throw new Error(
+    `Audit stopped while reading ${label}: read safety allowance exhausted.`
+  )
+}
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -267,37 +346,46 @@ const buildPlayerSeasonSchemaAudit = snapshots => {
   }
 }
 
-const readTeamPlayers = async () => {
-  const snapshot = await trackedGetDocs(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
-    {
+const readTeamPlayers = async ({ budget }) => {
+  const result = await readIdentitySnapshotWithinBudget({
+    source: collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
+    metadata: {
       feature: 'playersDatabase',
       collection: PLAYERS_DATABASE_COLLECTIONS.teams,
       action: 'playerIdentity-audit',
       operationSubtype: 'audit-read',
-    }
-  )
+    },
+    budget,
+    reservedReads: 1,
+    label: 'team documents',
+  })
 
-  return snapshot.docs.flatMap(flattenTeamDocument)
+  return {
+    rows: result.snapshot.docs.flatMap(flattenTeamDocument),
+    readsUsed: result.readsUsed,
+  }
 }
 
-const readSearchPlayers = async () => {
-  const snapshot = await trackedGetDocs(
-    query(
+const readSearchPlayers = async ({ budget }) => {
+  const result = await readIdentitySnapshotWithinBudget({
+    source: query(
       collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
       where('entityType', '==', 'playerSeason')
     ),
-    {
+    metadata: {
       feature: 'playersDatabase',
       collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
       action: 'playerIdentity-audit',
       operationSubtype: 'audit-query',
-    }
-  )
+    },
+    budget,
+    label: 'player search index documents',
+  })
 
   return {
-    rows: snapshot.docs.map(flattenSearchPlayer),
-    schemaAudit: buildPlayerSeasonSchemaAudit(snapshot.docs),
+    rows: result.snapshot.docs.map(flattenSearchPlayer),
+    schemaAudit: buildPlayerSeasonSchemaAudit(result.snapshot.docs),
+    readsUsed: result.readsUsed,
   }
 }
 
@@ -439,10 +527,19 @@ const countIssues = issues => issues.reduce((result, issue) => {
 }, {})
 
 export async function buildPlayerIdentityAudit() {
-  const [teamPlayers, searchResult] = await Promise.all([
-    readTeamPlayers(),
-    readSearchPlayers(),
-  ])
+  let remainingReadBudget = PLAYER_IDENTITY_AUDIT_READ_SAFETY_LIMIT
+
+  const teamResult = await readTeamPlayers({
+    budget: remainingReadBudget,
+  })
+  remainingReadBudget -= teamResult.readsUsed
+
+  const searchResult = await readSearchPlayers({
+    budget: remainingReadBudget,
+  })
+  remainingReadBudget -= searchResult.readsUsed
+
+  const teamPlayers = teamResult.rows
   const searchPlayers = searchResult.rows
   const schemaAudit = searchResult.schemaAudit
   const issues = collectIssues({
@@ -453,6 +550,12 @@ export async function buildPlayerIdentityAudit() {
   return {
     generatedAt: new Date().toISOString(),
     mode: 'read-only',
+    readSafety: {
+      hardLimit: PLAYER_IDENTITY_AUDIT_READ_HARD_LIMIT,
+      safetyLimit: PLAYER_IDENTITY_AUDIT_READ_SAFETY_LIMIT,
+      readsUsed: PLAYER_IDENTITY_AUDIT_READ_SAFETY_LIMIT - remainingReadBudget,
+      remainingBudget: remainingReadBudget,
+    },
     collections: {
       teams: PLAYERS_DATABASE_COLLECTIONS.teams,
       searchIndexes: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,

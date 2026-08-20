@@ -103,6 +103,7 @@ export default function PlayerScoutReviewModal({
   open,
   playerName = '',
   seasonKey = '',
+  profileRelevanceIssues = [],
   draft,
   busy = false,
   changed = false,
@@ -154,6 +155,33 @@ export default function PlayerScoutReviewModal({
       onClose={onClose}
     >
       <Box sx={sx.content}>
+
+        {profileRelevanceIssues.length ? (
+          <Box sx={[sx.section, sx.profileRelevanceSection]}>
+            <Typography level='title-sm' sx={sx.sectionTitle}>
+              בדיקת רלוונטיות פרופיל
+            </Typography>
+
+            <Typography level='body-xs' sx={sx.helperText}>
+              העמדה שעודכנה אינה מתיישבת עם ההנחה המקצועית של הפרופיל. הפרופיל לא הוסר אוטומטית; מומלץ לבדוק אם הוא עדיין מייצג נכון את השחקן.
+            </Typography>
+
+            <Box sx={sx.profileRelevanceList}>
+              {profileRelevanceIssues.map(issue => (
+                <Box key={issue.profileId} sx={sx.profileRelevanceItem}>
+                  <Typography level='body-sm' sx={sx.label}>
+                    {issue.profileLabel || issue.profileId}
+                  </Typography>
+
+                  <Typography level='body-xs' sx={sx.helperText}>
+                    אם הבדיקה המקצועית מאשרת שהפרופיל אינו רלוונטי, אפשר להסיר אותו ידנית ממסך הפרופילים.
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        ) : null}
+
         <Box sx={sx.section}>
           <Typography level='title-sm' sx={sx.sectionTitle}>
             מידע על השחקן

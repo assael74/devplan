@@ -2,6 +2,7 @@
 
 import { resolveCurrentSeasonContext } from './playerPage.utils.js'
 import { SCOUT_PROFILES } from '../../../../../../shared/scouting/players/profiles.js'
+import { SCOUT_REVIEW } from '../../../../../../shared/scouting/players/ids.js'
 
 const ACTION_LABELS = {
   immediate: 'לבדוק עכשיו',
@@ -20,11 +21,39 @@ const ACTION_NOTES = {
 }
 
 const ACTION_COLORS = {
-  immediate: 'danger',
-  priority: 'warning',
-  watch: 'neutral',
-  remove: 'neutral',
-  unknown: 'neutral',
+  immediate: 'immediate',
+  priority: 'priority',
+  watch: 'watch',
+  remove: 'remove',
+  unknown: 'unknown',
+}
+
+const IMMEDIACY_REASON_LABELS = {
+  early_age_group: 'גיל מוקדם שמצדיק זיהוי ומעקב מוקדם',
+  profile_combination: 'שילוב פרופילים מחזק את המקרה',
+  ideal_club_range: 'חוזק המועדון נמצא בטווח הסקאוטינג המועדף',
+  ideal_league_level: 'רמת הליגה היא רמת יעד לסקאוטינג',
+  future_level_risk: 'סביבת התחרות העתידית מחייבת תשומת לב מוקדמת',
+  playing_up_validation: 'משחק מעל השנתון עם מדגם משחקים מספק',
+  profile_persistence: 'הפרופיל חוזר לאורך יותר מעונה אחת',
+  profile_combination_persistence: 'שילוב הפרופילים חוזר לאורך יותר מעונה אחת',
+  signal_decay: 'הסימן נחלש לאורך זמן',
+  profile_repeat_2: 'הפרופיל נשמר שתי עונות ברציפות',
+  closing_gap: 'השחקן מתקרב באופן משמעותי לפרופיל',
+  future_competition_risk: 'סביבת התחרות העתידית משפיעה על התזמון',
+}
+
+const IMMEDIACY_EVALUATION_RESULT_LABELS = {
+  boost: 'תרם',
+  no_change: 'נבדק ולא התקיים',
+  reduction: 'הפחית',
+  not_applicable: 'לא היה רלוונטי לבדיקה',
+}
+
+const IMMEDIACY_REDUCTION_LABELS = {
+  signal_decay: 'הסימן נחלש לאורך זמן',
+  profile_decay: 'הפרופיל לא נשמר לאורך זמן',
+  exposure_high: 'רמת החשיפה מפחיתה את יתרון התזמון',
 }
 
 const TRAJECTORY_LABELS = {
@@ -239,7 +268,7 @@ const resolveProfileLabel = profile => {
   )
 }
 
-const buildProfileItem = (profile, hierarchySignal = null) => {
+const buildProfileItem = (profile, hierarchySignal = null, role = 'supporting') => {
   if (!profile && !hierarchySignal) return null
 
   const source = profile || hierarchySignal
@@ -248,11 +277,14 @@ const buildProfileItem = (profile, hierarchySignal = null) => {
       ? source.profileDepth.depthPct
       : hierarchySignal?.profileDepth?.depthPct
   )
+
   return {
     id: resolveProfileId(source),
     label: resolveProfileLabel(source),
+    role,
     depthPct,
     depthLabel: depthPct === null ? '' : formatDepth(depthPct),
+    why: buildWhyView(source),
   }
 }
 
@@ -291,7 +323,8 @@ const buildProfilesView = scout => {
     .filter(profileId => profileId && profileId !== resolvedPrimaryId)
     .map(profileId => buildProfileItem(
       byId.get(profileId),
-      supportingSignalById.get(profileId) || null
+      supportingSignalById.get(profileId) || null,
+      'supporting'
     ))
     .filter(Boolean)
   const nearProfile = progression.nearestProfile || (Array.isArray(progression.nearProfiles)
@@ -299,13 +332,18 @@ const buildProfilesView = scout => {
     : null)
 
   return {
-    primary: buildProfileItem(primaryProfile, hierarchy.primarySignal),
-    supporting,
+    primary: buildProfileItem(primaryProfile, hierarchy.primarySignal, 'primary'),
+    supporting: supporting.map(profile => ({
+      ...profile,
+      role: 'supporting',
+    })),
     near: nearProfile ? {
       id: clean(nearProfile.profileId || nearProfile.id),
       label: clean(nearProfile.profileLabel || nearProfile.label) || resolveProfileLabel(nearProfile),
+      role: 'near',
       distance: toNumber(nearProfile.distance),
       distancePct: toNumber(nearProfile.distancePct),
+      why: buildNearWhyView(nearProfile),
     } : null,
   }
 }
@@ -316,6 +354,137 @@ const formatDepth = value => {
   if (number === null) return ''
 
   return `${number >= 0 ? '+' : ''}${Math.round(number)}% מעל הרף`
+}
+
+const formatStrengthThreshold = evidence => {
+  if (!evidence) return '-'
+
+  const metric = clean(evidence.metric)
+  const threshold = evidence.threshold
+
+  if (typeof threshold === 'number') {
+    return formatMetricValue(metric, threshold)
+  }
+
+  if (threshold && typeof threshold === 'object') {
+    const min = threshold.min !== undefined ? formatMetricValue(metric, threshold.min) : ''
+    const max = threshold.max !== undefined ? formatMetricValue(metric, threshold.max) : ''
+
+    if (min && max) return `${min}–${max}`
+    if (min) return `מ־${min}`
+    if (max) return `עד ${max}`
+  }
+
+  return '-'
+}
+
+const buildImmediacyFactors = opportunity => {
+  const evaluations = Array.isArray(opportunity?.evaluations) ? opportunity.evaluations : []
+
+  if (evaluations.length) {
+    return evaluations.map((item, index) => {
+      const id = clean(item?.id) || `evaluation_${index}`
+      const result = clean(item?.result) || 'not_applicable'
+      const rawPoints = toNumber(item?.points) || 0
+
+      return {
+        id,
+        type: result,
+        result,
+        points: result === 'not_applicable' ? null : rawPoints,
+        label: IMMEDIACY_REASON_LABELS[id] || IMMEDIACY_REDUCTION_LABELS[id] || id,
+        resultLabel: IMMEDIACY_EVALUATION_RESULT_LABELS[result] || result,
+        reason: clean(item?.reason),
+        profileId: clean(item?.profileId),
+        details: item?.details && typeof item.details === 'object' ? item.details : {},
+      }
+    })
+  }
+
+  const boosts = Array.isArray(opportunity?.boosts) ? opportunity.boosts : []
+  const reductions = Array.isArray(opportunity?.reductions) ? opportunity.reductions : []
+  const boostIds = new Set(boosts.map(item => clean(item?.id)).filter(Boolean))
+  const factors = boosts.map((item, index) => {
+    const id = clean(item?.id) || `boost_${index}`
+    const points = Math.abs(toNumber(item?.points) || 0)
+
+    return {
+      id,
+      type: 'boost',
+      result: 'boost',
+      points,
+      label: IMMEDIACY_REASON_LABELS[id] || id,
+      resultLabel: IMMEDIACY_EVALUATION_RESULT_LABELS.boost,
+    }
+  })
+
+  reductions.forEach((item, index) => {
+    const id = clean(item?.id) || `reduction_${index}`
+    const points = -Math.abs(toNumber(item?.points) || 0)
+
+    factors.push({
+      id,
+      type: 'reduction',
+      result: 'reduction',
+      points,
+      label: IMMEDIACY_REDUCTION_LABELS[id] || IMMEDIACY_REASON_LABELS[id] || id,
+      resultLabel: IMMEDIACY_EVALUATION_RESULT_LABELS.reduction,
+    })
+  })
+
+  const reasons = Array.isArray(opportunity?.reasons) ? opportunity.reasons : []
+  reasons.forEach(reason => {
+    const id = clean(reason)
+    if (!id || boostIds.has(id)) return
+
+    factors.push({
+      id,
+      type: 'context',
+      result: 'context',
+      points: null,
+      label: IMMEDIACY_REASON_LABELS[id] || id,
+      resultLabel: 'מידע',
+    })
+  })
+
+  return factors
+}
+
+const buildProfileStrengthDetails = primaryProfile => {
+  if (!primaryProfile) {
+    return {
+      measurableRuleCount: 0,
+      depthPct: null,
+      rules: [],
+    }
+  }
+
+  const strength = primaryProfile.profileStrength || primaryProfile.profileDepth || {}
+  const depthRules = Array.isArray(primaryProfile?.profileDepth?.rules)
+    ? primaryProfile.profileDepth.rules
+    : []
+  const evidence = Array.isArray(primaryProfile.matchEvidence) ? primaryProfile.matchEvidence : []
+  const rules = depthRules.map((rule, index) => {
+    const match = evidence.find(item => (
+      clean(item?.reason) === clean(rule?.reason) ||
+      clean(item?.metric) === clean(rule?.metric)
+    )) || null
+    const metric = clean(rule?.metric || match?.metric)
+
+    return {
+      id: clean(rule?.reason) || `${metric}_${index}`,
+      label: METRIC_LABELS[metric] || metric || 'תנאי מקצועי',
+      actual: match ? formatMetricValue(metric, match.actual) : '-',
+      threshold: match ? formatStrengthThreshold(match) : '-',
+      depthPct: toNumber(rule?.depthPct),
+    }
+  })
+
+  return {
+    measurableRuleCount: toNumber(strength.measurableRuleCount) || rules.length,
+    depthPct: toNumber(strength.depthPct),
+    rules,
+  }
 }
 
 const formatRuleTarget = rule => {
@@ -584,6 +753,43 @@ const buildWhyView = primaryProfile => {
   }
 }
 
+const buildNearWhyView = nearProfile => {
+  if (!nearProfile) {
+    return {
+      profileLabel: '',
+      profileDepthLabel: '',
+      matchedCount: 0,
+      requiredCount: 0,
+      evidence: [],
+      mode: 'near',
+    }
+  }
+
+  const ruleDistances = Array.isArray(nearProfile.ruleDistances)
+    ? nearProfile.ruleDistances
+    : []
+  const distancePct = toNumber(nearProfile.distancePct)
+  const evidence = ruleDistances.slice(0, 4).map((rule, index) => ({
+    id: `${clean(rule.metric)}_${clean(rule.reason)}_near_${index}`,
+    title: REASON_LABELS[rule.reason] || METRIC_LABELS[rule.metric] || 'תנאי מקצועי',
+    metricLabel: METRIC_LABELS[rule.metric] || clean(rule.metric),
+    value: formatMetricValue(rule.metric, rule.value),
+    unit: METRIC_UNITS[rule.metric] || '',
+    rule: formatRuleTarget(rule),
+    delta: rule.matched ? 'תנאי מתקיים' : distancePct === null ? '' : `חסרים ${Math.round(distancePct)}%`,
+    supplement: '',
+  }))
+
+  return {
+    profileLabel: clean(nearProfile.profileLabel || nearProfile.label),
+    profileDepthLabel: distancePct === null ? '' : `חסרים ${Math.round(distancePct)}%`,
+    matchedCount: ruleDistances.filter(rule => rule.matched).length,
+    requiredCount: ruleDistances.length,
+    evidence,
+    mode: 'near',
+  }
+}
+
 const buildContext = profile => {
   const scoutContext = profile?.scoutContext || {}
   const competition = scoutContext.competition || {}
@@ -724,7 +930,69 @@ const isPlayerReviewAnswered = (fieldId, entry = {}) => {
   return clean(entry.status) === 'reviewed'
 }
 
+
+const buildProfileRelevanceChecks = scout => (
+  (Array.isArray(scout?.profiles) ? scout.profiles : [])
+    .filter(profile => (
+      Array.isArray(profile?.requiredReview) &&
+      profile.requiredReview.includes(SCOUT_REVIEW.PROFILE_RELEVANCE)
+    ))
+    .map(profile => ({
+      id: `${SCOUT_REVIEW.PROFILE_RELEVANCE}:${resolveProfileId(profile)}`,
+      label: `בדוק רלוונטיות של ${resolveProfileLabel(profile)}`,
+      answer: 'unknown',
+      answerLabel: 'דורש בדיקה',
+      answered: false,
+      priority: 'high',
+      score: 100,
+      inputMode: 'manual',
+      tone: 'ask',
+      profileId: resolveProfileId(profile),
+      reviewId: SCOUT_REVIEW.PROFILE_RELEVANCE,
+    }))
+    .filter(check => check.profileId)
+)
+
 const buildQuestions = scout => {
+  const profileRelevanceChecks = buildProfileRelevanceChecks(scout)
+  const verification = scout?.verification && typeof scout.verification === 'object'
+    ? scout.verification
+    : {}
+  const verificationChecks = Array.isArray(verification.missingChecks)
+    ? verification.missingChecks
+    : []
+
+  if (verificationChecks.length) {
+    const checks = [
+      ...profileRelevanceChecks,
+      ...verificationChecks
+      .slice()
+      .sort((a, b) => Number(b?.recommendationScore || 0) - Number(a?.recommendationScore || 0))
+      .map(check => ({
+        id: clean(check.questionId),
+        label: clean(check.label) || 'בדיקה מקצועית',
+        answer: clean(check.answer) || 'unknown',
+        answerLabel: check.answered ? 'נבדק' : 'לא ידוע',
+        answered: Boolean(check.answered),
+        priority: clean(check.priority),
+        score: Number(check.recommendationScore || 0),
+        inputMode: clean(check.inputMode),
+        tone: check.answered ? 'ok' : 'ask',
+      })),
+    ]
+    const answered = checks.filter(check => check.answered).length
+
+    return {
+      completion: {
+        answered,
+        total: checks.length,
+        complete: answered === checks.length,
+      },
+      checks,
+      nextBest: verification.nextBestCheck || null,
+    }
+  }
+
   const review = scout?.playerReview && typeof scout.playerReview === 'object'
     ? scout.playerReview
     : {}
@@ -742,6 +1010,8 @@ const buildQuestions = scout => {
       answerLabel: answered ? 'נבדק' : 'לא ידוע',
       answered,
       priority: '',
+      score: 0,
+      inputMode: 'manual',
       tone: answered ? 'ok' : 'ask',
     }
   })
@@ -750,10 +1020,14 @@ const buildQuestions = scout => {
   return {
     completion: {
       answered,
-      total: allChecks.length,
-      complete: answered === allChecks.length,
+      total: allChecks.length + profileRelevanceChecks.length,
+      complete: answered === allChecks.length && profileRelevanceChecks.length === 0,
     },
-    checks: allChecks.filter(check => !check.answered),
+    checks: [
+      ...profileRelevanceChecks,
+      ...allChecks.filter(check => !check.answered),
+    ],
+    nextBest: null,
   }
 }
 
@@ -839,35 +1113,41 @@ const buildDataDepth = ({ historyRows, row }) => {
   }
 }
 
-const buildNextAction = ({ interest, questions }) => {
+const buildNextActions = ({ interest, questions }) => {
   const checks = Array.isArray(questions.checks) ? questions.checks : []
-  const nextCheck = checks.find(check => !check.answered) || checks[0] || null
+  const openChecks = checks.filter(check => !check.answered)
+  const rankedChecks = openChecks
+    .slice()
+    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
+  const actions = rankedChecks.slice(0, 2).map(check => ({
+    id: check.id,
+    title: check.label,
+    description: check.score
+      ? `בדיקה מומלצת · ציון תועלת ${check.score}`
+      : 'בדיקה מקצועית מומלצת',
+    quickAnswer: check.inputMode === 'manual',
+    type: 'review',
+  }))
 
-  if (nextCheck) {
-    return {
-      title: `הפעולה הבאה: ${nextCheck.label}`,
-      description: 'השלמת נקודת האימות תחדד את רמת הוודאות ואת הדחיפות.',
-    }
-  }
+  if (actions.length) return actions
 
   if (interest.status === 'immediate' || interest.status === 'priority') {
-    return {
-      title: 'הפעולה הבאה: צפייה מקצועית',
-      description: 'מומלץ לתעד התרשמות מקצועית כדי להפוך את הסיגנל להחלטת עבודה.',
-    }
+    return [{
+      id: 'visual_review',
+      title: 'צפייה מקצועית ממוקדת',
+      description: 'השלב הבא הוא לאמת את המקרה בצפייה מקצועית.',
+      quickAnswer: false,
+      type: 'review',
+    }]
   }
 
-  if (interest.status === 'watch' || interest.status === 'exposed') {
-    return {
-      title: 'הפעולה הבאה: המשך מעקב',
-      description: 'אין כרגע שאלת אימות דחופה. כדאי לעקוב אחרי המדידה הבאה.',
-    }
-  }
-
-  return {
-    title: 'הפעולה הבאה: טרם נקבעה',
-    description: 'המנוע עדיין לא קבע רמת עניין שממנה ניתן לגזור פעולת המשך.',
-  }
+  return [{
+    id: 'continue_watch',
+    title: 'המשך מעקב',
+    description: 'להמשיך לעקוב אחרי המדידה המקצועית הבאה.',
+    quickAnswer: false,
+    type: 'watch',
+  }]
 }
 
 const hasMetric = (profile, metric) => (
@@ -1066,8 +1346,44 @@ const buildPlayerStory = ({
   }
 }
 
-export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey }) => {
-  const row = resolveScoutRow(historyRows, selectedSeasonKey)
+
+const buildPlayerFallbackStory = historyRows => {
+  const safeRows = Array.isArray(historyRows) ? historyRows : []
+  const row = resolveCurrentSeasonContext(safeRows) || {}
+  const scout = row.scout || {}
+  const opportunity = scout.opportunity || {}
+  const rawProfiles = Array.isArray(scout.profiles)
+    ? scout.profiles
+    : Array.isArray(row.scoutProfiles)
+      ? row.scoutProfiles
+      : []
+  const profiles = opportunity.profilesRemoved === true ? [] : rawProfiles
+  const profileHierarchy = scout.profileHierarchy && typeof scout.profileHierarchy === 'object'
+    ? scout.profileHierarchy
+    : row.scoutProfileHierarchy || {}
+  const primaryProfileId = clean(profileHierarchy.primaryProfileId)
+  const primaryProfile = profiles.find(profile => resolveProfileId(profile) === primaryProfileId) ||
+    profileHierarchy.primarySignal ||
+    scout.primaryProfile ||
+    profiles[0] ||
+    null
+  const context = buildContext(primaryProfile)
+  const questions = buildQuestions(scout)
+  const reasons = buildMainReasons(primaryProfile)
+  const trajectory = buildTrajectory(scout, safeRows)
+
+  return buildPlayerStory({
+    row,
+    primaryProfile,
+    reasons,
+    context,
+    trajectory,
+    questions,
+  })
+}
+
+export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey, selectedRow = null }) => {
+  const row = selectedRow || resolveScoutRow(historyRows, selectedSeasonKey)
   const scout = row.scout || {}
   const opportunity = scout.opportunity || {}
   const rawProfiles = Array.isArray(scout.profiles)
@@ -1097,19 +1413,36 @@ export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey })
     profiles,
     profileHierarchy,
   })
-  const story = buildPlayerStory({
-    row,
-    primaryProfile,
-    reasons,
-    context,
-    trajectory,
-    questions,
-  })
+  const story = buildPlayerFallbackStory(historyRows)
+  const immediacyFactors = buildImmediacyFactors(opportunity)
+  const immediacyReasons = immediacyFactors.map(item => ({
+    id: item.id,
+    label: item.label,
+  }))
+  const manualDecision = opportunity.manualDecision || {}
+  const automaticActionStatus = clean(opportunity.automaticActionStatus) || effectiveActionStatus || 'unknown'
+  const baseActionStatus = clean(opportunity.baseActionStatus) || 'unknown'
   const interest = {
     status: effectiveActionStatus,
     label: ACTION_LABELS[effectiveActionStatus] || ACTION_LABELS.unknown,
     color: ACTION_COLORS[effectiveActionStatus] || ACTION_COLORS.unknown,
     note: ACTION_NOTES[effectiveActionStatus] || ACTION_NOTES.unknown,
+    automaticStatus: automaticActionStatus,
+    automaticLabel: ACTION_LABELS[automaticActionStatus] || ACTION_LABELS.unknown,
+    baseStatus: baseActionStatus,
+    baseLabel: ACTION_LABELS[baseActionStatus] || ACTION_LABELS.unknown,
+    isManual: Boolean(opportunity.hasManualDecision || manualDecision.hasDecision),
+    manualReason: clean(manualDecision.reason),
+    manualNote: clean(manualDecision.note),
+    reasons: immediacyReasons,
+    factors: immediacyFactors,
+    boostScore: toNumber(opportunity.boostScore) || 0,
+    reductionScore: toNumber(opportunity.reductionScore) || 0,
+    netScore: toNumber(opportunity.netScore) || 0,
+    boostCount: immediacyFactors.filter(item => item.type === 'boost').length,
+    noChangeCount: immediacyFactors.filter(item => item.type === 'no_change').length,
+    reductionCount: immediacyFactors.filter(item => item.type === 'reduction').length,
+    notApplicableCount: immediacyFactors.filter(item => item.type === 'not_applicable').length,
   }
 
   return {
@@ -1136,18 +1469,20 @@ export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey })
     badges: buildBadges({ primaryProfile, context, opportunity }),
     interest,
     playerReview: scout.playerReview || {},
-    manualDecision: opportunity.manualDecision || {},
+    manualDecision,
     profileStrength: {
       depthPct: profilesView.primary?.depthPct !== undefined
         ? profilesView.primary.depthPct
         : null,
       label: profilesView.primary?.depthLabel || '-',
+      profileLabel: profilesView.primary?.label || '',
+      ...buildProfileStrengthDetails(primaryProfile),
     },
     reasons,
     context,
     trajectory,
     questions,
-    nextAction: buildNextAction({ interest, questions }),
+    nextActions: buildNextActions({ interest, questions }),
     supportingProfiles: profilesView.supporting,
   }
 }

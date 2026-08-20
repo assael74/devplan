@@ -10,6 +10,14 @@ import {
 
 const unique = (values = []) => [...new Set(values.filter(Boolean))]
 
+const ATTACKING_OUTPUT_PROFILE_ORDER = Object.freeze([
+  'secondary_threat',
+  'double_digit_threat',
+  'clear_scorer',
+])
+
+const getAttackingOutputRank = (profileId) => ATTACKING_OUTPUT_PROFILE_ORDER.indexOf(profileId)
+
 const normalizeSeasonKey = value => String(value || '').trim()
 
 const normalizeSeasonStatus = value => String(value || '').trim().toLowerCase()
@@ -184,6 +192,42 @@ const getCurrentTrackedProfileIds = ({ signals, candidateSignals }) => {
   ]))
 }
 
+const resolveAttackingOutputUpgrade = ({ signals, historicalSummaries }) => {
+  const currentProfileIds = new Set(signals.map(signal => signal.profileId))
+  const currentProfileId = [...currentProfileIds]
+    .filter(profileId => getAttackingOutputRank(profileId) >= 0)
+    .sort((a, b) => getAttackingOutputRank(b) - getAttackingOutputRank(a))[0] || ''
+
+  if (!currentProfileId) {
+    return {
+      upgraded: false,
+      fromProfileId: '',
+      toProfileId: '',
+    }
+  }
+
+  for (let index = historicalSummaries.length - 1; index >= 0; index -= 1) {
+    const historicalProfileIds = [...getProfileIds(historicalSummaries[index])]
+      .filter(profileId => getAttackingOutputRank(profileId) >= 0)
+      .sort((a, b) => getAttackingOutputRank(b) - getAttackingOutputRank(a))
+    const previousProfileId = historicalProfileIds[0] || ''
+
+    if (!previousProfileId) continue
+
+    return {
+      upgraded: getAttackingOutputRank(currentProfileId) > getAttackingOutputRank(previousProfileId),
+      fromProfileId: previousProfileId,
+      toProfileId: currentProfileId,
+    }
+  }
+
+  return {
+    upgraded: false,
+    fromProfileId: '',
+    toProfileId: currentProfileId,
+  }
+}
+
 const resolveLastHistoricalSignal = historicalSummaries => {
   for (let index = historicalSummaries.length - 1; index >= 0; index -= 1) {
     const summary = historicalSummaries[index]
@@ -312,6 +356,10 @@ export const buildPlayerSignalPersistence = ({
     currentSeasonOrder: historicalContext.currentSeasonOrder,
     excludedProfileIds: repeatedCombinationProfileIds,
   })
+  const attackingOutputUpgrade = resolveAttackingOutputUpgrade({
+    signals: safeSignals,
+    historicalSummaries: historicalContext.historicalSummaries,
+  })
   const decay = resolveDecay({
     historicalSummaries: historicalContext.historicalSummaries,
     currentTrackedProfileIds: getCurrentTrackedProfileIds({
@@ -345,6 +393,7 @@ export const buildPlayerSignalPersistence = ({
   return {
     profileRepeat,
     combinationRepeat,
+    attackingOutputUpgrade,
     decay,
     reasons,
   }

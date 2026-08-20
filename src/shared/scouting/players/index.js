@@ -29,3 +29,5 @@ export * from './profileCaseStrength/index.js'
 
 export * from './manualReview/index.js'
 export * from './signalPersistence/index.js'
+
+export * from './playerInterest/index.js'

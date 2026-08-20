@@ -5,6 +5,7 @@ import {
   aggregatePlayerScoutSpotlights,
   buildPlayerProfileCaseStrength,
   buildPlayerProfileHierarchy,
+  buildPlayerInterest,
   buildPlayerVerification,
   buildScoutProfileCombinations,
 } from '../../../../shared/scouting/players/index.js'
@@ -81,6 +82,15 @@ export const removePlayerScoutProfileFromComputedState = ({ player = {}, profile
     opportunity,
     answers: resolveVerificationAnswers(player.scoutVerification),
   })
+  const playerInterest = buildPlayerInterest({
+    signals,
+    combinations,
+    profileHierarchy,
+    profileCaseStrength,
+    opportunity,
+    verification,
+    playerReview: player.playerReview,
+  })
 
   return {
     ...player,
@@ -98,5 +108,6 @@ export const removePlayerScoutProfileFromComputedState = ({ player = {}, profile
     ),
     scoutProfileHierarchy: profileHierarchy,
     scoutProfileCaseStrength: profileCaseStrength,
+    scoutPlayerInterest: playerInterest,
   }
 }

@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Button,
   Chip,
   Typography,
 } from '@mui/joy'
@@ -10,7 +9,7 @@ import {
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerScoutOverviewSx as sx } from '../sx/playerScoutOverview.sx.js'
 
-export default function PlayerScoutQuestions({ questions = {}, nextAction = {}, onReview }) {
+export default function PlayerScoutQuestions({ questions = {} }) {
   const checks = Array.isArray(questions.checks) ? questions.checks : []
   const completion = questions.completion || {}
   const answered = Number(completion.answered || 0)
@@ -18,87 +17,56 @@ export default function PlayerScoutQuestions({ questions = {}, nextAction = {}, 
   const openCount = Math.max(0, total - answered)
 
   return (
-    <Box sx={sx.bottomDecisionGrid}>
-      <Box sx={[sx.bottomDecisionCard, sx.questionsCard]}>
-        <Box sx={sx.bottomDecisionHeader}>
-          <Box sx={[sx.sectionIcon, sx.sectionIconTone.question]}>
-            {iconUi({id: 'warning', size: 'sm'})}
-          </Box>
-
-          <Box sx={sx.bottomDecisionHeading}>
-            <Typography level='title-md' sx={sx.sectionTitle}>
-              מה עדיין חסר
-            </Typography>
-
-            <Typography level='body-xs' sx={sx.sectionSubtitle}>
-              מה עדיין צריך לאמת לפני שמחזקים את המסקנה
-            </Typography>
-          </Box>
-
-          <Box sx={sx.questionsHeaderActions}>
-            {total ? (
-              <Chip size='sm' variant='soft' color={openCount ? 'warning' : 'success'}>
-                {openCount ? `${openCount} פתוחות` : 'הושלם'}
-              </Chip>
-            ) : null}
-
-            <Button
-              size='sm'
-              variant='outlined'
-              startDecorator={iconUi({id: 'edit', size: 'sm'})}
-              onClick={onReview}
-            >
-              עדכון בדיקה
-            </Button>
-          </Box>
+    <Box sx={[sx.bottomDecisionCard, sx.questionsCard]}>
+      <Box sx={sx.bottomDecisionHeader}>
+        <Box sx={[sx.sectionIcon, sx.sectionIconTone.question]}>
+          {iconUi({ id: 'warning', size: 'sm' })}
         </Box>
 
-        {checks.length ? (
-          <Box sx={sx.openQuestionsList}>
-            {checks.slice(0, 3).map(check => (
-              <Box key={check.id} sx={sx.openQuestionRow}>
-                <Box sx={[sx.questionBullet, check.answered ? sx.questionDone : sx.questionOpen]}>
-                  {check.answered ? '✓' : '!'}
-                </Box>
+        <Box sx={sx.bottomDecisionHeading}>
+          <Typography level='title-md' sx={sx.sectionTitle}>
+            מה עדיין צריך לברר
+          </Typography>
 
+          <Typography level='body-xs' sx={sx.sectionSubtitle}>
+            החוסרים המקצועיים שעדיין משפיעים על איכות ההחלטה
+          </Typography>
+        </Box>
+
+        {total ? (
+          <Chip size='sm' variant='soft' color={openCount ? 'warning' : 'success'}>
+            {openCount ? `${openCount} פתוחות` : 'הושלם'}
+          </Chip>
+        ) : null}
+      </Box>
+
+      {checks.length ? (
+        <Box sx={sx.openQuestionsList}>
+          {checks.slice(0, 4).map(check => (
+            <Box key={check.id} sx={sx.openQuestionRow}>
+              <Box sx={[sx.questionBullet, check.answered ? sx.questionDone : sx.questionOpen]}>
+                {check.answered ? '✓' : '!'}
+              </Box>
+
+              <Box sx={sx.questionText}>
                 <Typography level='body-sm' sx={sx.questionLabel}>
                   {check.label}
                 </Typography>
+
+                {check.score ? (
+                  <Typography level='body-xs' sx={sx.questionMeta}>
+                    {`תועלת מיידית ${check.score}`}
+                  </Typography>
+                ) : null}
               </Box>
-            ))}
-          </Box>
-        ) : (
-          <Typography level='body-sm' sx={sx.bottomEmptyText}>
-            אין כרגע שאלות אימות פתוחות לשחקן.
-          </Typography>
-        )}
-      </Box>
-
-      <Box sx={[sx.bottomDecisionCard, sx.actionCard]}>
-        <Box sx={sx.bottomDecisionHeader}>
-          <Box sx={[sx.sectionIcon, sx.actionIcon]}>
-            {iconUi({id: 'targets', size: 'sm'})}
-          </Box>
-
-          <Box sx={sx.bottomDecisionHeading}>
-            <Typography level='title-md' sx={sx.actionTitle}>
-              הפעולה הבאה
-            </Typography>
-
-            <Typography level='body-xs' sx={sx.actionEyebrow}>
-              המשך העבודה מתוך מצב הסקאוטינג הנוכחי
-            </Typography>
-          </Box>
+            </Box>
+          ))}
         </Box>
-
-        <Typography level='title-lg' sx={sx.nextActionTitle}>
-          {String(nextAction.title || '').replace('הפעולה הבאה: ', '')}
+      ) : (
+        <Typography level='body-sm' sx={sx.bottomEmptyText}>
+          אין כרגע בדיקות מקצועיות פתוחות לשחקן.
         </Typography>
-
-        <Typography level='body-sm' sx={sx.nextActionDescription}>
-          {nextAction.description}
-        </Typography>
-      </Box>
+      )}
     </Box>
   )
 }

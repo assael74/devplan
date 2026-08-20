@@ -133,6 +133,7 @@ function TeamPageContent() {
     leagueId,
     leagueDoc,
     team,
+    teamDoc,
     players,
     hasTeamPlayers,
     seasonOptions,
@@ -508,7 +509,16 @@ function TeamPageContent() {
                   teamId: team.birthTeamId || team.id,
                   leagueId: selectedSeasonOption?.leagueId || leagueId,
                   fromTeam: `${location.pathname}${location.search}`,
-                })
+                }),
+                {
+                  state: {
+                    playerTeamSource: {
+                      team,
+                      teamDoc,
+                      selectedTeamSeason,
+                    },
+                  },
+                }
               )}
               onPlayerUrlEdit={playerUrlEditor.open}
               onFavoriteToggle={handlePlayerFavoriteToggle}

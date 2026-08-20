@@ -1,5 +1,9 @@
 // src/features/playersDatabase/domain/narrative/narrativeHash.js
 
+import { NARRATIVE_MEANING_VERSION } from './narrative.contract.js'
+
+const FINGERPRINT_PERCENT_STEP = 10
+
 const sortValue = value => {
   if (Array.isArray(value)) return value.map(sortValue)
   if (!value || typeof value !== 'object') return value
@@ -12,8 +16,35 @@ const sortValue = value => {
     }), {})
 }
 
+const roundFingerprintPercent = value => {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return value
+
+  return Math.round(number / FINGERPRINT_PERCENT_STEP) * FINGERPRINT_PERCENT_STEP
+}
+
+const normalizeFingerprintValue = (value, key = '') => {
+  if (Array.isArray(value)) return value.map(item => normalizeFingerprintValue(item))
+  if (!value || typeof value !== 'object') {
+    if (
+      key === 'strengthDepthPct' ||
+      key === 'distancePct' ||
+      key === 'distanceDeltaPct'
+    ) {
+      return roundFingerprintPercent(value)
+    }
+
+    return value
+  }
+
+  return Object.entries(value).reduce((result, [childKey, childValue]) => ({
+    ...result,
+    [childKey]: normalizeFingerprintValue(childValue, childKey),
+  }), {})
+}
+
 export const serializeNarrativeMeaning = meaning => JSON.stringify(
-  sortValue(meaning || {})
+  sortValue(normalizeFingerprintValue(meaning || {}))
 )
 
 export const buildNarrativeHash = meaning => {
@@ -25,7 +56,7 @@ export const buildNarrativeHash = meaning => {
     hash = Math.imul(hash, 16777619)
   }
 
-  return `n1_${(hash >>> 0).toString(16).padStart(8, '0')}`
+  return `n${NARRATIVE_MEANING_VERSION}_${(hash >>> 0).toString(16).padStart(8, '0')}`
 }
 
 export const buildSeasonHash = seasonMeaning => buildNarrativeHash({

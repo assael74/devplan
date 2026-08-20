@@ -6,6 +6,7 @@ export const NEAR_PROFILE_ELIGIBLE_PROFILE_IDS = Object.freeze([
   'killer_efficiency',
   'single_engine',
   'secondary_threat',
+  'double_digit_threat',
 ])
 
 export const PROFILE_DISTANCE_STATUS = Object.freeze({

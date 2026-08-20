@@ -1,29 +1,69 @@
 // src/features/playersDatabase/ui/pages/playerPage/sx/playerActionsPanel.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import { COLORS, devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const playerActionsPanelSx = {
-  seasonBox: {
+  recommendedBox: {
+    display: 'grid',
+    gap: 0.8,
+    p: 0.9,
+    borderRadius: 8,
+    bgcolor: COLORS.status.success.softBg,
+    border: `1px solid ${COLORS.status.success.solid}55`,
+  },
+
+  sectionHeading: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+  },
+
+  sectionIcon: {
+    width: 30,
+    height: 30,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 8,
+    bgcolor: COLORS.status.success.softBg,
+    color: COLORS.status.success.text,
+  },
+
+  sectionTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  sectionSubtitle: {
+    color: devPlanColors.secondary,
+  },
+
+  recommendedList: {
     display: 'grid',
     gap: 0.5,
-    p: 1,
-    borderRadius: 8,
-    bgcolor: devPlanColors.tertiaryLight,
-    border: `1px solid ${devPlanColors.tertiary}`,
   },
 
-  seasonLabel: {
-    color: devPlanColors.tertiary,
+  primaryRecommendedButton: {
+    justifyContent: 'flex-start',
+    bgcolor: COLORS.status.success.text,
+    color: '#fff',
     fontWeight: 700,
+
+    '&:hover': {
+      bgcolor: '#064E3B',
+    },
   },
 
-  seasonSelect: {
-    width: '100%',
-    minHeight: 34,
+  secondaryRecommendedButton: {
+    justifyContent: 'flex-start',
+    color: COLORS.status.success.text,
+    borderColor: `${COLORS.status.success.solid}88`,
     bgcolor: '#fff',
-    color: devPlanColors.primaryDark,
-    borderColor: '#b9d8ef',
     fontWeight: 700,
+  },
+
+  emptyRecommended: {
+    color: devPlanColors.secondary,
+    lineHeight: 1.45,
   },
 
   divider: {
@@ -31,40 +71,33 @@ export const playerActionsPanelSx = {
     borderColor: devPlanColors.border,
   },
 
-  actionsRow: {
-    width: '100%',
+  editableBox: {
     display: 'grid',
-    gridTemplateColumns: '0.9fr auto auto auto',
-    gap: 0.5,
-  },
-
-  primaryActionButton: {
-    minWidth: 0,
-    px: 0.75,
-    bgcolor: devPlanColors.primary,
-    color: '#fff',
-    fontSize: 11.5,
-    fontWeight: 700,
-
-    '&:hover': {
-      bgcolor: devPlanColors.primaryDark,
-    },
-  },
-
-  secondaryIconButton: {
-    color: devPlanColors.tertiaryDark,
+    gap: 0.55,
+    p: 0.8,
+    borderRadius: 8,
     bgcolor: devPlanColors.tertiaryLight,
-    borderColor: devPlanColors.tertiary,
-
-    '&:hover': {
-      bgcolor: '#dcebff',
-      borderColor: devPlanColors.tertiaryDark,
-    },
+    border: `1px solid ${devPlanColors.border}`,
   },
 
-  placeholderNote: {
+  editableLabel: {
+    color: devPlanColors.tertiaryDark,
+    fontWeight: 700,
+  },
+
+  editableText: {
     color: devPlanColors.secondary,
-    textAlign: 'center',
-    lineHeight: 1.4,
+    lineHeight: 1.45,
+  },
+
+  actionList: {
+    display: 'grid',
+    gap: 0.25,
+  },
+
+  actionButton: {
+    justifyContent: 'flex-start',
+    color: devPlanColors.primary,
+    fontWeight: 700,
   },
 }

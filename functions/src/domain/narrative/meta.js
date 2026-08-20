@@ -30,19 +30,6 @@ function resolveLatestEntry(entries = []) {
     ))[0] || null
 }
 
-function resolveCertainty(entries = []) {
-  const latestEntry = resolveLatestEntry(entries)
-  const profiles = Array.isArray(latestEntry?.profiles) ? latestEntry.profiles : []
-  const profile = [...profiles]
-    .filter(item => item && item.reliability)
-    .sort((left, right) => Number(right.score || 0) - Number(left.score || 0))[0] || null
-
-  return {
-    score: numberOrNull(profile?.reliability?.score),
-    level: clean(profile?.reliability?.level),
-  }
-}
-
 function buildSeasonKeys(entries = []) {
   return [...new Set(
     entries
@@ -97,8 +84,6 @@ function addPresentationEntity(entities, seen, type, value) {
 function buildPresentation(entries = [], player = {}, decision = {}) {
   const entities = []
   const seen = new Set()
-  const certainty = resolveCertainty(entries)
-
   addPresentationEntity(entities, seen, 'player', player.fullName)
   addPresentationEntity(entities, seen, 'birthYear', player.birthYear)
 
@@ -120,12 +105,13 @@ function buildPresentation(entries = [], player = {}, decision = {}) {
     entities,
     decision: {
       actionStatus: clean(decision.actionStatus),
+      automaticActionStatus: clean(decision.automaticActionStatus),
+      manualActionStatus: clean(decision.manualActionStatus),
+      hasManualDecision: Boolean(decision.hasManualDecision),
       exposureLevel: clean(decision.exposureLevel),
       futureOutlook: clean(decision.futureOutlook),
       currentCompetitionLevel: decision.currentCompetitionLevel,
       nextCompetitionLevel: decision.nextCompetitionLevel,
-      certaintyScore: certainty.score,
-      certaintyLevel: certainty.level,
     },
   }
 }

@@ -22,6 +22,13 @@ export const PLAYER_SCOUT_IMMEDIACY_REDUCTION = {
   SIGNAL_DECAY: 'signal_decay',
 }
 
+export const PLAYER_SCOUT_IMMEDIACY_EVALUATION_RESULT = {
+  BOOST: 'boost',
+  NO_CHANGE: 'no_change',
+  REDUCTION: 'reduction',
+  NOT_APPLICABLE: 'not_applicable',
+}
+
 export const PLAYER_SCOUT_IMMEDIACY_SOURCE = {
   PROFILE: 'profile',
   NEAR_PROFILE: 'near_profile',

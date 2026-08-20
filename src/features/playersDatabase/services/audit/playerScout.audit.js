@@ -1,14 +1,93 @@
-// features/playersDatabase/services/audit/playerScout.audit.js
+// src/features/playersDatabase/services/audit/playerScout.audit.js
 
 import {
   collection,
+  limit,
   query,
+  startAfter,
   where,
 } from 'firebase/firestore'
 
 import { db } from '../../../../services/firebase/firebase.js'
 import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
+
+
+const PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT = 50000
+const PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT = 49000
+
+const estimateSnapshotReads = snapshot => Math.max(
+  1,
+  Array.isArray(snapshot?.docs) ? snapshot.docs.length : 0
+)
+
+const FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT = 10000
+
+const readSnapshotWithinBudget = async ({
+  source,
+  metadata,
+  budget,
+  reservedReads = 0,
+  label,
+}) => {
+  const availableReads = Math.max(
+    0,
+    Number(budget || 0) - Number(reservedReads || 0)
+  )
+
+  if (availableReads < 1) {
+    throw new Error(
+      `Audit stopped before ${label}: read safety budget exhausted. ` +
+      `The audit is capped below ${PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT} document reads.`
+    )
+  }
+
+  const documents = []
+  let readsUsed = 0
+  let cursor = null
+
+  while (readsUsed < availableReads) {
+    const remainingAllowance = availableReads - readsUsed
+    const pageLimit = Math.min(
+      FIRESTORE_STRUCTURED_QUERY_MAX_LIMIT,
+      remainingAllowance
+    )
+    const constraints = []
+
+    if (cursor) constraints.push(startAfter(cursor))
+    constraints.push(limit(pageLimit))
+
+    const pageSnapshot = await trackedGetDocs(
+      query(source, ...constraints),
+      metadata
+    )
+    const pageReads = estimateSnapshotReads(pageSnapshot)
+
+    readsUsed += pageReads
+    documents.push(...pageSnapshot.docs)
+
+    if (pageSnapshot.docs.length < pageLimit) {
+      return {
+        snapshot: { docs: documents },
+        readsUsed,
+      }
+    }
+
+    if (readsUsed >= availableReads) {
+      throw new Error(
+        `Audit stopped while reading ${label}: the source reached the ` +
+        `${availableReads}-document safety allowance. No incomplete audit result was produced. ` +
+        `The audit is capped below ${PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT} document reads.`
+      )
+    }
+
+    cursor = pageSnapshot.docs[pageSnapshot.docs.length - 1]
+  }
+
+  throw new Error(
+    `Audit stopped while reading ${label}: read safety allowance exhausted.`
+  )
+}
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -293,43 +372,62 @@ const countBy = (rows, field) => rows.reduce((result, row) => {
 }, {})
 
 export const readPlayerScoutAuditCollections = async () => {
-  const [teamSnapshot, playerSnapshot, searchSnapshot] = await Promise.all([
-    trackedGetDocs(
-      collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.teams,
-        action: 'playerScout-audit',
-        operationSubtype: 'audit-read',
-      }
+  let remainingReadBudget = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT
+
+  const teamRead = await readSnapshotWithinBudget({
+    source: collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      action: 'playerScout-audit',
+      operationSubtype: 'audit-read',
+    },
+    budget: remainingReadBudget,
+    reservedReads: 2,
+    label: 'team documents',
+  })
+  remainingReadBudget -= teamRead.readsUsed
+
+  const playerRead = await readSnapshotWithinBudget({
+    source: collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      action: 'playerScout-audit',
+      operationSubtype: 'audit-read',
+    },
+    budget: remainingReadBudget,
+    reservedReads: 1,
+    label: 'player documents',
+  })
+  remainingReadBudget -= playerRead.readsUsed
+
+  const searchRead = await readSnapshotWithinBudget({
+    source: query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', '==', 'playerSeason')
     ),
-    trackedGetDocs(
-      collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.players,
-        action: 'playerScout-audit',
-        operationSubtype: 'audit-read',
-      }
-    ),
-    trackedGetDocs(
-      query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-        where('entityType', '==', 'playerSeason')
-      ),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'playerScout-audit',
-        operationSubtype: 'audit-query',
-      }
-    ),
-  ])
+    metadata: {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'playerScout-audit',
+      operationSubtype: 'audit-query',
+    },
+    budget: remainingReadBudget,
+    label: 'player search index documents',
+  })
+  remainingReadBudget -= searchRead.readsUsed
 
   return {
-    teamRows: flattenTeamDocs(teamSnapshot.docs),
-    playerRows: flattenPlayerDocs(playerSnapshot.docs),
-    searchRows: flattenSearchDocs(searchSnapshot.docs),
+    teamRows: flattenTeamDocs(teamRead.snapshot.docs),
+    playerRows: flattenPlayerDocs(playerRead.snapshot.docs),
+    searchRows: flattenSearchDocs(searchRead.snapshot.docs),
+    readSafety: {
+      hardLimit: PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT,
+      safetyLimit: PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+      readsUsed: PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT - remainingReadBudget,
+      remainingBudget: remainingReadBudget,
+    },
   }
 }
 
@@ -346,6 +444,7 @@ export async function buildPlayerScoutAudit() {
       players: PLAYERS_DATABASE_COLLECTIONS.players,
       searchIndexes: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
     },
+    readSafety: rows.readSafety,
     summary: {
       teamPlayerRows: rows.teamRows.length,
       playerSeasonRows: rows.playerRows.length,

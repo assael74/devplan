@@ -38,6 +38,13 @@ const resolveOptionalStatValue = ({ stats = {}, source = {}, key }) => {
   return null
 }
 
+const resolveOptionalContextValue = ({ stats = {}, source = {}, key }) => {
+  if (stats[key] !== undefined) return stats[key]
+  if (source[key] !== undefined) return source[key]
+
+  return null
+}
+
 export const normalizePlayerStats = (player = {}) => {
   const stats = player.playerStats || {}
   const games = toNumberOrZero(resolveStatValue({
@@ -102,6 +109,31 @@ export const normalizePlayerStats = (player = {}) => {
       source: player,
       key: 'teamGames',
     })),
+    teamRank: resolveOptionalContextValue({
+      stats,
+      source: player,
+      key: 'teamRank',
+    }),
+    teamGoalsFor: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'teamGoalsFor',
+    })),
+    teamGoalsAgainst: toNumberOrZero(resolveStatValue({
+      stats,
+      source: player,
+      key: 'teamGoalsAgainst',
+    })),
+    teamAttackPerformance: resolveOptionalContextValue({
+      stats,
+      source: player,
+      key: 'teamAttackPerformance',
+    }),
+    teamDefensePerformance: resolveOptionalContextValue({
+      stats,
+      source: player,
+      key: 'teamDefensePerformance',
+    }),
     minutesPerGame: toNumberOrZero(
       hasValue(minutesPerGame) ? minutesPerGame : (games ? minutes / games : 0)
     ),

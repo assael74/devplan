@@ -85,6 +85,7 @@ export const normalizePlayerScoutStory = player => ({
   scoutProfileProgression: compactScoutValue(player?.scoutProfileProgression || null),
   scoutProfileHierarchy: compactScoutValue(player?.scoutProfileHierarchy || null),
   scoutProfileCaseStrength: compactScoutValue(player?.scoutProfileCaseStrength || null),
+  scoutPlayerInterest: compactScoutValue(player?.scoutPlayerInterest || null),
   scoutTrajectory: normalizePlayerScoutTrajectory(player?.scoutTrajectory),
   scoutTransferContext: compactScoutValue(player?.scoutTransferContext || null),
   scoutEngineVersion: clean(player?.scoutEngineVersion),

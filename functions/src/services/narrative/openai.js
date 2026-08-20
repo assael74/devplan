@@ -2,6 +2,7 @@
 
 const DEFAULT_MODEL = 'gpt-5.6'
 const OPENAI_URL = 'https://api.openai.com/v1/responses'
+const OPENAI_TIMEOUT_MS = 90000
 
 function clean(value) {
   return String(value || '').trim()
@@ -13,13 +14,31 @@ function buildDraftSchema() {
     additionalProperties: false,
     properties: {
       title: { type: 'string' },
-      summary: { type: 'string' },
+      conclusionText: { type: 'string' },
+      whyInteresting: { type: 'string' },
+      professionalContext: { type: 'string' },
+      strengths: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      unknowns: {
+        type: 'array',
+        items: { type: 'string' },
+      },
       evidenceRefs: {
         type: 'array',
         items: { type: 'string' },
       },
     },
-    required: ['title', 'summary', 'evidenceRefs'],
+    required: [
+      'title',
+      'conclusionText',
+      'whyInteresting',
+      'professionalContext',
+      'strengths',
+      'unknowns',
+      'evidenceRefs',
+    ],
   }
 }
 
@@ -60,33 +79,49 @@ async function createNarrativeDraft({ userInput = '' } = {}) {
   }
 
   const model = resolveModel()
-  const response = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      store: false,
-      reasoning: { effort: 'low' },
-      input: [
-        {
-          role: 'user',
-          content: userInput,
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'player_scout_narrative',
-          strict: true,
-          schema: buildDraftSchema(),
-        },
+  let response
+
+  try {
+    response = await fetch(OPENAI_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-    }),
-    signal: AbortSignal.timeout(45000),
-  })
+      body: JSON.stringify({
+        model,
+        store: false,
+        reasoning: { effort: 'low' },
+        input: [
+          {
+            role: 'user',
+            content: userInput,
+          },
+        ],
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'player_scout_narrative_v2',
+            strict: true,
+            schema: buildDraftSchema(),
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+    })
+  } catch (error) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw Object.assign(new Error('OpenAI narrative generation timed out'), {
+        status: 504,
+        details: {
+          provider: 'openai',
+          timeoutMs: OPENAI_TIMEOUT_MS,
+        },
+      })
+    }
+
+    throw error
+  }
 
   const payload = await response.json().catch(() => ({}))
 

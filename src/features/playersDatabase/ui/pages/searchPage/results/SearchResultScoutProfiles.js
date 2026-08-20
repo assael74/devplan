@@ -45,6 +45,7 @@ export default function SearchResultScoutProfiles({ row, onRemove }) {
           return (
             <Box key={profile.id} sx={sx.profileItem}>
               <ScoutProfileChip
+                profileId={profile.id}
                 label={profile.label || profile.id}
                 tooltip={(
                   <ScoutProfileTooltip
