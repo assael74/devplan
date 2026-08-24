@@ -43,6 +43,37 @@ const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   operationSubtype: 'maintenance-query',
 })
 
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isMutationDataUnchanged = ({
+  existingData = {},
+  mutationData = {},
+} = {}) => (
+  Object.keys(mutationData).every(key => (
+    JSON.stringify(normalizeComparableValue(existingData[key])) ===
+    JSON.stringify(normalizeComparableValue(mutationData[key]))
+  ))
+)
+
 export async function updatePlayerSeasonSearchIndexStatsMany({
   league = {},
   season = {},
@@ -110,9 +141,11 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
   let createdCount = 0
   let updatedCount = 0
   let deletedCount = 0
+  let unchangedCount = 0
   const failures = []
   const duplicates = []
   const snapshotRows = []
+  const writtenSearchIndexDocumentIds = []
 
   safePlayers.forEach(player => {
     const match = findExistingPlayerSeasonIndexDoc({
@@ -156,7 +189,25 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
 
     if (mutation.snapshotAudit) snapshotRows.push(mutation.snapshotAudit)
 
+    if (
+      mutation.type === 'set' &&
+      existingDoc &&
+      isMutationDataUnchanged({
+        existingData: existingDoc.data() || {},
+        mutationData: mutation.data || {},
+      })
+    ) {
+      unchangedCount += 1
+      return
+    }
+
     rowsCount += 1
+    const writtenDocumentId = clean(
+      mutation.ref?.id || mutation.id
+    )
+    if (writtenDocumentId) {
+      writtenSearchIndexDocumentIds.push(writtenDocumentId)
+    }
 
     if (mutation.type === 'delete') {
       deletedCount += 1
@@ -193,10 +244,14 @@ export async function updatePlayerSeasonSearchIndexStatsMany({
     createdCount,
     updatedCount,
     deletedCount,
+    unchangedCount,
     failedCount: failures.length,
     duplicateCount: duplicates.length,
     failures,
     duplicates,
     snapshotRows,
+    writtenSearchIndexDocumentIds: [
+      ...new Set(writtenSearchIndexDocumentIds),
+    ],
   })
 }

@@ -23,15 +23,27 @@ const PROFILE_BY_ID = SCOUT_PROFILES.reduce((map, profile) => {
   return map
 }, {})
 
+const ACTIVE_PROFILE_ID_SET = new Set(SCOUT_PROFILES.map(profile => profile.id))
+
 const COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((map, combination) => {
   map[combination.id] = combination
   return map
 }, {})
 
+const ACTIVE_COMBINATION_ID_SET = new Set(
+  SCOUT_PROFILE_COMBINATIONS.map(combination => combination.id)
+)
+
 export const createEmptyPlayerScoutProfile = () => ({
   id: '',
   label: '',
+  shortLabel: '',
   group: '',
+  profileIdentity: '',
+  classificationState: '',
+  sourcePreliminaryProfileId: '',
+  reclassifiedToProfileId: '',
+  reclassificationReason: '',
   interest: '',
   score: null,
   match: {
@@ -46,6 +58,7 @@ export const createEmptyPlayerScoutProfile = () => ({
   positionContext: '',
   profileDepth: null,
   profileStrength: null,
+  profileConfidence: null,
   scoutContext: null,
   spotlights: [],
   requiredReview: [],
@@ -107,7 +120,17 @@ export const normalizePlayerScoutProfile = profile => {
     label: cleanDomainValue(
       source.profileLabel || source.label || catalogProfile.label || profileId
     ),
+    shortLabel: cleanDomainValue(
+      source.profileShortLabel || source.shortLabel || catalogProfile.shortLabel
+    ),
     group: cleanDomainValue(source.group || catalogProfile.group),
+    profileIdentity: cleanDomainValue(
+      source.profileIdentity || source.identity || catalogProfile.profileIdentity
+    ),
+    classificationState: cleanDomainValue(source.classificationState),
+    sourcePreliminaryProfileId: cleanDomainValue(source.sourcePreliminaryProfileId),
+    reclassifiedToProfileId: cleanDomainValue(source.reclassifiedToProfileId),
+    reclassificationReason: cleanDomainValue(source.reclassificationReason),
     interest: cleanDomainValue(
       source.interestLevel || source.interest || catalogProfile.interest
     ),
@@ -132,6 +155,9 @@ export const normalizePlayerScoutProfile = profile => {
     profileStrength: source.profileStrength && typeof source.profileStrength === 'object'
       ? source.profileStrength
       : null,
+    profileConfidence: source.profileConfidence && typeof source.profileConfidence === 'object'
+      ? source.profileConfidence
+      : null,
     scoutContext: source.scoutContext && typeof source.scoutContext === 'object'
       ? source.scoutContext
       : null,
@@ -155,8 +181,7 @@ export const normalizePlayerScoutCombination = combination => {
   const catalogCombination = resolveCatalogCombination(combinationId) || {}
   const profileIds = uniqueDomainValues(
     source.matchedProfileIds || source.profileIds || catalogCombination.profileIds
-  )
-
+  ).filter(profileId => ACTIVE_PROFILE_ID_SET.has(profileId))
   return {
     id: combinationId,
     idIcon: cleanDomainValue(source.idIcon || catalogCombination.idIcon),
@@ -170,27 +195,48 @@ export const normalizePlayerScoutCombination = combination => {
   }
 }
 
-const buildDerivedCombinations = profiles => buildScoutProfileCombinations({
-  signals: profiles.map(profile => ({ profileId: profile.id })),
-}).map(normalizePlayerScoutCombination)
+const buildDerivedCombinations = ({ profiles }) => (
+  buildScoutProfileCombinations({
+    signals: profiles.map(profile => ({ profileId: profile.id })),
+  }).map(normalizePlayerScoutCombination)
+)
 
-const mergeCombinations = ({ profiles, combinations, combinationIds }) => {
+const mergeCombinations = ({
+  profiles,
+  combinations,
+  combinationIds,
+}) => {
+  const profileIdSet = new Set(profiles.map(profile => profile.id))
   const values = [
     ...toDomainArray(combinations),
     ...toDomainArray(combinationIds),
-    ...buildDerivedCombinations(profiles),
+    ...buildDerivedCombinations({
+      profiles,
+    }),
   ].map(normalizePlayerScoutCombination)
 
   const seen = new Set()
   return values.filter(combination => {
-    if (!combination.id || seen.has(combination.id)) return false
+    if (
+      !combination.id ||
+      !ACTIVE_COMBINATION_ID_SET.has(combination.id) ||
+      seen.has(combination.id)
+    ) return false
+
+    const catalogCombination = resolveCatalogCombination(combination.id)
+    if (catalogCombination) {
+      const requiredProfileIds = toDomainArray(catalogCombination.profileIds)
+      const profilesMatch = requiredProfileIds.every(profileId => profileIdSet.has(profileId))
+
+      if (!profilesMatch) return false
+    }
+
     seen.add(combination.id)
     return true
   })
 }
 
-const buildDisplay = ({ profiles, combinations }) => {
-  const primaryProfile = profiles[0] || null
+const buildDisplay = ({ primaryProfile, combinations }) => {
   const primaryCombination = combinations[0] || null
 
   if (primaryCombination) {
@@ -224,8 +270,10 @@ export const normalizePlayerScout = ({
   combinations = [],
   combinationIds = [],
   profileIds = [],
+  preliminaryProfileIds = [],
   searchIds = [],
   candidateSignals = [],
+  evidence = [],
   spotlights = [],
   opportunity = null,
   verification = null,
@@ -243,12 +291,7 @@ export const normalizePlayerScout = ({
 } = {}) => {
   const normalizedProfiles = toDomainArray(profiles)
     .map(normalizePlayerScoutProfile)
-    .filter(profile => profile.id)
-  const normalizedCombinations = mergeCombinations({
-    profiles: normalizedProfiles,
-    combinations,
-    combinationIds,
-  })
+    .filter(profile => profile.id && ACTIVE_PROFILE_ID_SET.has(profile.id))
   const normalizedMeasurementHistory = normalizePlayerScoutStatsLoadMeasurementHistory(
     statsLoadMeasurementHistory
   )
@@ -259,26 +302,87 @@ export const normalizePlayerScout = ({
     ? normalizedMeasurements
     : buildPlayerScoutStatsLoadMeasurementsFromHistory(normalizedMeasurementHistory)
 
+  const normalizedHierarchy = profileHierarchy && typeof profileHierarchy === 'object'
+    ? profileHierarchy
+    : null
+  const hierarchyPrimaryProfileId = cleanDomainValue(normalizedHierarchy?.primaryProfileId)
+  const signalPreliminaryProfileIds = toDomainArray(profiles)
+    .filter(profile => (
+      cleanDomainValue(profile?.profileIdentity || profile?.identity).toLowerCase() === 'preliminary'
+    ))
+    .map(profile => cleanDomainValue(profile?.profileId || profile?.id))
+    .filter(Boolean)
+  const resolvedPreliminaryProfileIds = uniqueDomainValues([
+    ...toDomainArray(preliminaryProfileIds),
+    ...toDomainArray(normalizedHierarchy?.preliminaryProfileIds),
+    ...signalPreliminaryProfileIds,
+  ])
+  const preliminaryProfileIdSet = new Set(resolvedPreliminaryProfileIds)
+  const suppressedProfileIds = uniqueDomainValues(
+    normalizedHierarchy?.suppressedProfileIds
+  )
+  const suppressedProfileIdSet = new Set(suppressedProfileIds)
+  const activeProfiles = normalizedProfiles.filter(profile => (
+    !suppressedProfileIdSet.has(profile.id)
+  ))
+  const activeProfileIdSet = new Set(activeProfiles.map(profile => profile.id))
+  const hierarchyProfessionalProfileIds = uniqueDomainValues(
+    normalizedHierarchy?.professionalProfileIds
+  ).filter(profileId => activeProfileIdSet.has(profileId))
+  const hierarchyPrimaryProfile = activeProfiles.find(profile => (
+    profile.id === hierarchyPrimaryProfileId &&
+    profile.profileIdentity === 'core' &&
+    !preliminaryProfileIdSet.has(profile.id)
+  )) || null
+  const fallbackPrimaryProfile = activeProfiles.find(profile => (
+    profile.profileIdentity === 'core' &&
+    !preliminaryProfileIdSet.has(profile.id)
+  )) || null
+  const primaryProfile = hierarchyPrimaryProfile || fallbackPrimaryProfile
+  const primaryProfileId = primaryProfile?.id || ''
+  const hierarchySecondaryProfile = hierarchyProfessionalProfileIds
+    .filter(profileId => profileId !== primaryProfileId)
+    .map(profileId => activeProfiles.find(profile => profile.id === profileId))
+    .find(profile => (
+      profile?.profileIdentity === 'core' &&
+      !preliminaryProfileIdSet.has(profile.id)
+    )) || null
+  const fallbackSecondaryProfile = activeProfiles.find(profile => (
+    profile.id !== primaryProfileId &&
+    profile.profileIdentity === 'core' &&
+    !preliminaryProfileIdSet.has(profile.id)
+  )) || null
+  const secondaryProfile = hierarchySecondaryProfile || fallbackSecondaryProfile
+  const normalizedCombinations = mergeCombinations({
+    profiles: activeProfiles,
+    combinations,
+    combinationIds,
+  })
+
   return {
     profiles: normalizedProfiles,
     profileIds: uniqueDomainValues([
-      ...normalizedProfiles.map(profile => profile.id),
-      ...toDomainArray(profileIds),
+      ...activeProfiles.map(profile => profile.id),
+      ...toDomainArray(profileIds).filter(profileId => (
+        ACTIVE_PROFILE_ID_SET.has(profileId) &&
+        !suppressedProfileIdSet.has(profileId)
+      )),
     ]),
-    primaryProfile: normalizedProfiles[0] || null,
-    secondaryProfile: normalizedProfiles[1] || null,
+    preliminaryProfileIds: resolvedPreliminaryProfileIds,
+    primaryProfile,
+    secondaryProfile,
     combinations: normalizedCombinations,
-    combinationIds: uniqueDomainValues([
-      ...normalizedCombinations.map(combination => combination.id),
-      ...toDomainArray(combinationIds),
-    ]),
+    combinationIds: uniqueDomainValues(
+      normalizedCombinations.map(combination => combination.id)
+    ),
     searchIds: uniqueDomainValues(searchIds),
     primaryCombination: normalizedCombinations[0] || null,
     display: buildDisplay({
-      profiles: normalizedProfiles,
+      primaryProfile,
       combinations: normalizedCombinations,
     }),
     candidateSignals: toDomainArray(candidateSignals),
+    evidence: toDomainArray(evidence),
     spotlights: toDomainArray(spotlights),
     opportunity: opportunity && typeof opportunity === 'object'
       ? opportunity
@@ -289,9 +393,7 @@ export const normalizePlayerScout = ({
     profileProgression: profileProgression && typeof profileProgression === 'object'
       ? profileProgression
       : null,
-    profileHierarchy: profileHierarchy && typeof profileHierarchy === 'object'
-      ? profileHierarchy
-      : null,
+    profileHierarchy: normalizedHierarchy,
     profileCaseStrength: profileCaseStrength && typeof profileCaseStrength === 'object'
       ? profileCaseStrength
       : null,

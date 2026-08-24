@@ -2,7 +2,7 @@
 
 import { SCOUT_REVIEW } from '../../../../shared/scouting/players/ids.js'
 
-export const NARRATIVE_SCOUT_CONTRACT_VERSION = 2
+export const NARRATIVE_SCOUT_CONTRACT_VERSION = 3
 
 const clean = value => String(value || '').trim()
 
@@ -25,6 +25,7 @@ const buildProfile = profile => {
     id,
     label: clean(profile.label || profile.profileLabel),
     group: clean(profile.group),
+    profileIdentity: clean(profile.profileIdentity || profile.identity).toLowerCase(),
     interest: clean(profile.interest || profile.interestLevel),
     score: toNullableNumber(profile.score),
     profileStrength: profile.profileStrength && typeof profile.profileStrength === 'object'
@@ -248,11 +249,31 @@ export const buildNarrativeScoutContract = (scout = {}) => {
     ? source.statsLoadMeasurements
     : null
 
+  const hierarchy = source.profileHierarchy && typeof source.profileHierarchy === 'object'
+    ? source.profileHierarchy
+    : {}
+  const primaryProfileId = clean(hierarchy.primaryProfileId)
+  const primaryProfile = primaryProfileId
+    ? profiles.find(profile => profile.id === primaryProfileId) || null
+    : null
+  const resolveProfilesByIds = ids => toArray(ids)
+    .map(clean)
+    .filter(Boolean)
+    .map(profileId => profiles.find(profile => profile.id === profileId) || null)
+    .filter(Boolean)
+  const supportingProfiles = resolveProfilesByIds(hierarchy.supportingProfileIds)
+  const professionalProfiles = resolveProfilesByIds(hierarchy.professionalProfileIds)
+  const opportunityProfiles = resolveProfilesByIds(hierarchy.opportunityProfileIds)
+  const preliminaryProfiles = resolveProfilesByIds(hierarchy.preliminaryProfileIds)
+
   return {
     contractVersion: NARRATIVE_SCOUT_CONTRACT_VERSION,
     profiles: {
-      primary: profiles[0] || null,
-      supporting: profiles.slice(1),
+      primary: primaryProfile,
+      supporting: supportingProfiles,
+      professional: professionalProfiles,
+      opportunity: opportunityProfiles,
+      preliminary: preliminaryProfiles,
       near: buildNearProfile({
         progression,
         candidateSignals: source.candidateSignals,
@@ -261,6 +282,7 @@ export const buildNarrativeScoutContract = (scout = {}) => {
     profileCaseStrength: source.profileCaseStrength && typeof source.profileCaseStrength === 'object'
       ? source.profileCaseStrength
       : null,
+    scoutEvidence: toArray(source.evidence),
     playerInterest: source.playerInterest && typeof source.playerInterest === 'object'
       ? source.playerInterest
       : null,

@@ -10,6 +10,12 @@ const toNullableNumber = value => (
     : null
 )
 
+const REMOVED_SCOUT_PROFILE_IDS = new Set([
+  'single_engine',
+  'lineup_banker',
+  'pro_anchor',
+])
+
 export const normalizeScoutSignalsForIndex = player => {
   const scoutSignals = Array.isArray(player?.scoutSignals)
     ? player.scoutSignals
@@ -36,7 +42,8 @@ export const normalizeScoutSignalsForIndex = player => {
 export const buildScoutProfileIds = scoutSignals => (
   uniqueCleanValues(
     (Array.isArray(scoutSignals) ? scoutSignals : [])
-      .map(signal => signal?.profileId)
+      .map(signal => clean(signal?.profileId))
+      .filter(profileId => !REMOVED_SCOUT_PROFILE_IDS.has(profileId))
   )
 )
 
@@ -78,14 +85,39 @@ export const buildPlayerScoutIndexFields = player => {
       : Array.isArray(player?.scoutCombinations)
         ? player.scoutCombinations
         : [],
+    scoutEvidence: profilesRemoved
+      ? []
+      : Array.isArray(player?.scoutEvidence)
+        ? player.scoutEvidence
+        : [],
     profileCaseStrength: profilesRemoved
       ? null
       : player?.scoutProfileCaseStrength || null,
+    profileHierarchy: profilesRemoved
+      ? null
+      : player?.scoutProfileHierarchy || null,
     opportunity,
   })
   const primaryProfile = scout.primaryProfile
   const secondaryProfile = scout.secondaryProfile
-  const scoutProfileIds = scout.profileIds
+  const signalPreliminaryProfileIds = scoutSignals
+    .filter(signal => (
+      clean(signal?.profileIdentity || signal?.identity).toLowerCase() === 'preliminary'
+    ))
+    .map(signal => clean(signal?.profileId || signal?.id))
+    .filter(Boolean)
+  const scoutPreliminaryProfileIds = uniqueCleanValues([
+    ...(Array.isArray(scout?.preliminaryProfileIds)
+      ? scout.preliminaryProfileIds
+      : []),
+    ...(Array.isArray(scout?.profileHierarchy?.preliminaryProfileIds)
+      ? scout.profileHierarchy.preliminaryProfileIds
+      : []),
+    ...signalPreliminaryProfileIds,
+  ])
+  const preliminaryProfileIdSet = new Set(scoutPreliminaryProfileIds)
+  const scoutProfileIds = uniqueCleanValues(scout.profileIds)
+    .filter(profileId => !preliminaryProfileIdSet.has(profileId))
   const scoutCombinationIds = scout.combinationIds
   const nearestProfile = opportunity?.profilesRemoved === true
     ? null
@@ -99,7 +131,26 @@ export const buildPlayerScoutIndexFields = player => {
     ? null
     : player?.scoutProfileCaseStrength || null
   const nextBestCheck = player?.scoutVerification?.nextBestCheck || null
-  const transferContext = player?.scoutTransferContext || player?.scoutTrajectory?.latestTransfer || null
+  const isRealTransferContext = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return false
+    }
+
+    const fromClubId = clean(value.fromClubId)
+    const toClubId = clean(value.toClubId)
+
+    return Boolean(
+      fromClubId &&
+      toClubId &&
+      fromClubId !== toClubId
+    )
+  }
+
+  const transferContext = isRealTransferContext(player?.scoutTransferContext)
+    ? player.scoutTransferContext
+    : isRealTransferContext(player?.scoutTrajectory?.latestTransfer)
+      ? player.scoutTrajectory.latestTransfer
+      : null
 
   return {
     ...buildProfileIndexFields({
@@ -159,6 +210,7 @@ export const buildPlayerScoutIndexFields = player => {
       profile: secondaryProfile,
     }),
     scoutProfileIds,
+    scoutPreliminaryProfileIds,
     scoutCombinationIds,
     scoutProfileSearchIds: buildScoutProfileSearchIds({
       scoutProfileIds,

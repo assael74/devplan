@@ -50,8 +50,6 @@ export {
   appendTeamSeasonPlayer,
   updateTeamSeasonPlayerStats,
   removeTeamSeasonPlayerScoutProfile,
-  updateTeamSeasonPlayerScoutProfiles,
-  updateTeamSeasonPlayerRole,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
   updateTeamSeasonPlayerVerificationAndScout,
   upsertTeamSeasonPlayers,

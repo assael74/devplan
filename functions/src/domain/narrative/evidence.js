@@ -9,6 +9,37 @@ function clean(value) {
   return String(value || '').trim()
 }
 
+function cleanUserLabel(value) {
+  return clean(value)
+    .replace(/סיגנלים/g, 'סימנים')
+    .replace(/סיגנאלים/g, 'סימנים')
+    .replace(/סיגנל/g, 'סימן')
+    .replace(/סיגנאל/g, 'סימן')
+    .replace(/המנוע/g, 'מודל הסקאוט')
+    .replace(/מנוע/g, 'מודל הסקאוט')
+}
+
+function normalizeVerificationEvidence(value = null) {
+  if (!value || typeof value !== 'object') return value
+
+  const normalizeCheck = check => ({
+    ...check,
+    label: cleanUserLabel(check?.label),
+  })
+
+  return {
+    ...value,
+    nextBestCheck: value.nextBestCheck ? normalizeCheck(value.nextBestCheck) : null,
+    checks: Array.isArray(value.checks) ? value.checks.map(normalizeCheck) : [],
+    missingChecks: Array.isArray(value.missingChecks)
+      ? value.missingChecks.map(normalizeCheck)
+      : [],
+    answeredChecks: Array.isArray(value.answeredChecks)
+      ? value.answeredChecks.map(normalizeCheck)
+      : [],
+  }
+}
+
 function addEvidence(list, item) {
   if (!item.id) return
   if (item.value === null || item.value === undefined || item.value === '') return
@@ -25,7 +56,7 @@ function resolveDisplayPercent(metric, actual) {
   return Math.min(100, Math.max(0, Math.round(percent)))
 }
 
-function addProfileMatchEvidence(evidence, prefix, profile = {}) {
+function addProfileMatchEvidence(evidence, prefix, profile = {}, meta = {}) {
   const profileId = clean(profile.profileId)
   if (!profileId) return
 
@@ -33,11 +64,33 @@ function addProfileMatchEvidence(evidence, prefix, profile = {}) {
     id: `${prefix}.profile.${profileId}.label`,
     type: 'profile',
     value: clean(profile.profileLabel || profileId),
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.profile.${profileId}.strength`,
     type: 'profile_strength',
     value: profile.profileStrength || null,
+    ...meta,
+  })
+  addEvidence(evidence, {
+    id: `${prefix}.profile.${profileId}.identity`,
+    type: 'profile_identity',
+    value: clean(profile.profileIdentity),
+    ...meta,
+  })
+  addEvidence(evidence, {
+    id: `${prefix}.profile.${profileId}.shortLabel`,
+    type: 'profile',
+    value: clean(profile.profileShortLabel),
+    ...meta,
+  })
+  addEvidence(evidence, {
+    id: `${prefix}.profile.${profileId}.requiredReview`,
+    type: 'review_requirements',
+    value: Array.isArray(profile.requiredReview) && profile.requiredReview.length
+      ? profile.requiredReview
+      : null,
+    ...meta,
   })
 
   const matches = Array.isArray(profile.matchEvidence)
@@ -57,65 +110,76 @@ function addProfileMatchEvidence(evidence, prefix, profile = {}) {
         reason: clean(item.reason),
         matched: true,
       },
+      ...meta,
     })
   })
 }
 
-function addScoutSideEvidence(evidence, prefix, side, snapshot) {
+function addScoutSideEvidence(evidence, prefix, side, snapshot, meta = {}) {
   if (!snapshot) return
 
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.target`,
     type: 'team_context',
     value: snapshot.target,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.ranking`,
     type: 'team_context',
     value: snapshot.ranking,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.anomaly`,
     type: 'team_context',
     value: snapshot.anomaly,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.quality`,
     type: 'team_context',
     value: snapshot.quality,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.priority`,
     type: 'team_context',
     value: snapshot.priority,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.teamScout.${side}.opportunityType`,
     type: 'team_context',
     value: clean(snapshot.opportunityType),
+    ...meta,
   })
 }
 
-function addPlayerInTeamEvidence(evidence, prefix, snapshot) {
+function addPlayerInTeamEvidence(evidence, prefix, snapshot, meta = {}) {
   addEvidence(evidence, {
     id: `${prefix}.playerInTeam.appearanceRate`,
     type: 'ratio',
     value: snapshot.appearanceRate,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.playerInTeam.startRate`,
     type: 'ratio',
     value: snapshot.startRate,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.playerInTeam.startShareOfAppearances`,
     type: 'ratio',
     value: snapshot.startShareOfAppearances,
+    ...meta,
   })
   addEvidence(evidence, {
     id: `${prefix}.playerInTeam.goalShare`,
     type: 'ratio',
     value: snapshot.goalShare,
+    ...meta,
   })
 }
 
@@ -166,56 +230,77 @@ function buildEvidence(context = {}, decision = {}) {
   const entries = Array.isArray(context.entries) ? context.entries : []
 
   entries.forEach((entry, index) => {
-    const prefix = `season.${entry.seasonKey || entry.seasonId || index}`
+    const seasonKey = clean(entry.seasonKey || entry.seasonId || index)
+    const prefix = `season.${seasonKey}`
     const stats = entry.stats || {}
     const teamScoutSnapshot = buildTeamScoutSnapshot(entry)
     const playerInTeamSnapshot = buildPlayerInTeamSnapshot(entry)
+    const isDecisionSeason = seasonKey === clean(decision.seasonKey)
+    const meta = {
+      seasonKey,
+      temporalRole: isDecisionSeason ? 'focus' : clean(entry.temporalRole || 'history'),
+      seasonStatus: clean(entry.seasonStatus),
+      isDecisionSeason,
+    }
 
-    addEvidence(evidence, { id: `${prefix}.games`, type: 'number', value: stats.games })
-    addEvidence(evidence, { id: `${prefix}.goals`, type: 'number', value: stats.goals })
-    addEvidence(evidence, { id: `${prefix}.minutes`, type: 'number', value: stats.minutes })
-    addEvidence(evidence, { id: `${prefix}.starts`, type: 'number', value: stats.starts })
-    addEvidence(evidence, { id: `${prefix}.teamGames`, type: 'number', value: stats.teamGames })
-    addEvidence(evidence, { id: `${prefix}.teamGoalsFor`, type: 'number', value: stats.teamGoalsFor })
-    addEvidence(evidence, { id: `${prefix}.teamGoalsAgainst`, type: 'number', value: stats.teamGoalsAgainst })
-    addEvidence(evidence, { id: `${prefix}.teamRank`, type: 'number', value: stats.teamRank })
-    addEvidence(evidence, { id: `${prefix}.leagueLevel`, type: 'number', value: entry.leagueLevel })
-    addEvidence(evidence, { id: `${prefix}.clubStrengthLevel`, type: 'number', value: entry.clubStrengthLevel })
+    addEvidence(evidence, { id: `${prefix}.games`, type: 'number', value: stats.games, ...meta })
+    addEvidence(evidence, { id: `${prefix}.goals`, type: 'number', value: stats.goals, ...meta })
+    addEvidence(evidence, { id: `${prefix}.minutes`, type: 'number', value: stats.minutes, ...meta })
+    addEvidence(evidence, { id: `${prefix}.starts`, type: 'number', value: stats.starts, ...meta })
+    addEvidence(evidence, { id: `${prefix}.teamGames`, type: 'number', value: stats.teamGames, ...meta })
+    addEvidence(evidence, { id: `${prefix}.teamGoalsFor`, type: 'number', value: stats.teamGoalsFor, ...meta })
+    addEvidence(evidence, { id: `${prefix}.teamGoalsAgainst`, type: 'number', value: stats.teamGoalsAgainst, ...meta })
+    addEvidence(evidence, { id: `${prefix}.teamRank`, type: 'number', value: stats.teamRank, ...meta })
+    addEvidence(evidence, { id: `${prefix}.leagueLevel`, type: 'number', value: entry.leagueLevel, ...meta })
+    addEvidence(evidence, { id: `${prefix}.clubStrengthLevel`, type: 'number', value: entry.clubStrengthLevel, ...meta })
 
-    addScoutSideEvidence(evidence, prefix, 'attack', teamScoutSnapshot.attack)
-    addScoutSideEvidence(evidence, prefix, 'defense', teamScoutSnapshot.defense)
-    addPlayerInTeamEvidence(evidence, prefix, playerInTeamSnapshot)
+    addScoutSideEvidence(evidence, prefix, 'attack', teamScoutSnapshot.attack, meta)
+    addScoutSideEvidence(evidence, prefix, 'defense', teamScoutSnapshot.defense, meta)
+    addPlayerInTeamEvidence(evidence, prefix, playerInTeamSnapshot, meta)
 
     if (entry.isPlayingUp !== null) {
       addEvidence(evidence, {
         id: `${prefix}.isPlayingUp`,
         type: 'boolean',
         value: entry.isPlayingUp,
+        ...meta,
       })
     }
 
     const profiles = Array.isArray(entry.profiles) ? entry.profiles : []
-    profiles.forEach(profile => addProfileMatchEvidence(evidence, prefix, profile))
+    profiles.forEach(profile => addProfileMatchEvidence(evidence, prefix, profile, meta))
 
     addEvidence(evidence, {
       id: `${prefix}.profileCaseStrength`,
       type: 'profile_case_strength',
       value: entry.profileCaseStrength || null,
+      ...meta,
     })
     addEvidence(evidence, {
       id: `${prefix}.progression`,
       type: 'profile_progression',
       value: entry.progression || null,
+      ...meta,
     })
     addEvidence(evidence, {
       id: `${prefix}.trajectory`,
       type: 'trajectory',
       value: entry.trajectory || null,
+      ...meta,
     })
     addEvidence(evidence, {
       id: `${prefix}.verification`,
       type: 'verification',
-      value: entry.verification || null,
+      value: normalizeVerificationEvidence(entry.verification),
+      ...meta,
+    })
+    addEvidence(evidence, {
+      id: `${prefix}.scoutEvidence`,
+      type: 'scout_evidence',
+      value: Array.isArray(entry.scoutEvidence) && entry.scoutEvidence.length
+        ? entry.scoutEvidence
+        : null,
+      ...meta,
     })
   })
 
@@ -248,10 +333,14 @@ function buildEvidence(context = {}, decision = {}) {
   addEvidence(evidence, {
     id: 'player.verification',
     type: 'verification',
-    value: context.verification || null,
+    value: normalizeVerificationEvidence(context.verification),
   })
 
-  return evidence
+  return evidence.sort((left, right) => {
+    const leftFocus = left?.isDecisionSeason === true ? 1 : 0
+    const rightFocus = right?.isDecisionSeason === true ? 1 : 0
+    return rightFocus - leftFocus
+  })
 }
 
 module.exports = { buildEvidence }

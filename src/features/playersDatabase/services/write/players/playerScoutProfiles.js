@@ -26,10 +26,12 @@ import {
   upsertSeasonRows,
 } from './playerSeason.model.js'
 import { upsertProfiledPlayerDoc } from './playerDoc.upsert.js'
+import { ensureScoutingPlayerDoc } from './scoutingPlayerDoc.ensure.js'
 import {
   normalizeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
   resolvePlayerTrackingReasons,
+  SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
 import { buildPlayerScoutStatsLoadMeasurementHistory } from '../../../model/playerScoutMeasurement.model.js'
@@ -241,6 +243,28 @@ export async function upsertProfiledPlayerDocsMany({
   }
 }
 
+const resolveTrackingDocReason = player => {
+  if (hasPlayerScoutProfiles(player)) {
+    return SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+  }
+
+  const reasons = resolvePlayerTrackingReasons(player)
+  const reasonPriority = [
+    SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER,
+    SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE,
+    SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST,
+    SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
+  ]
+
+  return reasonPriority.find(reason => reasons.includes(reason)) || ''
+}
+
+const resolveTransferContext = player => (
+  player?.scoutTransferContext ||
+  player?.scoutTrajectory?.latestTransfer ||
+  {}
+)
+
 export async function syncPlayerRoleAndScoutProfileDoc({
   season = {},
   team = {},
@@ -248,20 +272,36 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   player = {},
   teamDocument = null,
 } = {}) {
-  return hasPlayerScoutProfiles(player)
-    ? upsertProfiledPlayerDoc({
-        season,
-        team,
-        target,
-        player,
-        teamDocument,
-      })
-    : clearExistingPlayerSeasonProfiles({
-        season,
-        team,
-        target,
-        player,
-      })
+  const trackingReason = resolveTrackingDocReason(player)
+
+  if (trackingReason === SCOUTING_PLAYER_TRACKING_REASONS.PROFILE) {
+    return upsertProfiledPlayerDoc({
+      season,
+      team,
+      target,
+      player,
+      teamDocument,
+    })
+  }
+
+  if (trackingReason) {
+    return ensureScoutingPlayerDoc({
+      season,
+      team,
+      target,
+      player,
+      teamDocument,
+      reason: trackingReason,
+      transfer: resolveTransferContext(player),
+    })
+  }
+
+  return clearExistingPlayerSeasonProfiles({
+    season,
+    team,
+    target,
+    player,
+  })
 }
 
 export async function syncPlayerScoutProfileDocsMany({
@@ -274,13 +314,15 @@ export async function syncPlayerScoutProfileDocsMany({
   const safePlayers = Array.isArray(players) ? players : []
   const lookupPlayers = safePlayers.filter(player => (
     !hasPlayerScoutProfiles(player) &&
-    !clean(player.playerDocumentId)
+    !clean(player.playerDocumentId) &&
+    !resolveTrackingDocReason(player)
   ))
   const existingPlayerDocumentIds = lookupPlayers.length
     ? await resolveExistingPlayerDocumentIds(lookupPlayers)
     : new Set()
   const playersToSync = safePlayers.filter(player => (
     hasPlayerScoutProfiles(player) ||
+    Boolean(resolveTrackingDocReason(player)) ||
     Boolean(clean(player.playerDocumentId)) ||
     existingPlayerDocumentIds.has(buildPlayerDocumentId(player))
   ))
@@ -316,12 +358,20 @@ export async function syncPlayerScoutProfileDocsMany({
     clearedCount: results.filter(
       result => result.updated && result.scoutProfilesCount === 0
     ).length,
+    unchangedCount: results.filter(result => result.writeSkipped).length,
     skippedCount: skippedUntrackedCount + results.filter(result => result.skipped).length,
     failedCount: failures.length,
     failures,
     playerDocumentIds: results
       .map(result => result.playerDocumentId)
       .filter(Boolean),
+    writtenPlayerDocumentIds: results
+      .filter(result => (
+        !result.skipped &&
+        result.writeSkipped !== true &&
+        clean(result.playerDocumentId)
+      ))
+      .map(result => clean(result.playerDocumentId)),
     scoutedPlayers: results
       .map(result => result.scoutedPlayer)
       .filter(Boolean),

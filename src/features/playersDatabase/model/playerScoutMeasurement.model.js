@@ -342,8 +342,7 @@ export const buildPlayerScoutStatsLoadMeasurement = ({ player = {}, team = {}, c
     .filter(Boolean)
   const primaryProfileId = clean(
     player.scoutProfileHierarchy?.primaryProfileId ||
-    player.bestScoutSignal?.profileId ||
-    profileIds[0]
+    player.bestScoutSignal?.profileId
   )
 
   return {

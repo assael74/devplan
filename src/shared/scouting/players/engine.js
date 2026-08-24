@@ -63,6 +63,14 @@ import {
 } from './profileStrength/index.js'
 
 import {
+  buildPlayerProfileConfidence,
+} from './profileConfidence/index.js'
+
+import {
+  buildPlayerScoutEvidence,
+} from './evidence/index.js'
+
+import {
   buildPlayerProfileCaseStrength,
 } from './profileCaseStrength/index.js'
 
@@ -73,6 +81,10 @@ import {
 import {
   buildPlayerInterest,
 } from './playerInterest/index.js'
+
+import {
+  reclassifyPlayerScoutSignals,
+} from './reclassification/index.js'
 
 import {
   SCOUT_REVIEW,
@@ -100,13 +112,6 @@ const resolveRequiredReview = ({ profile, scoutContext }) => {
   return reviews
 }
 
-const interestScore = (interest) => {
-  if (interest === 'super_interesting') return 95
-  if (interest === 'interesting') return 75
-
-  return 55
-}
-
 const buildSignal = ({
   profile,
   metrics,
@@ -129,16 +134,20 @@ const buildSignal = ({
     currentSeasonKey,
     currentSeasonStatus,
   })
-  const profileDepth = buildPlayerProfileDepth({ profile, metrics })
+  const profileDepth = buildPlayerProfileDepth({
+    profile,
+    metrics,
+    competitionContext: scoutContext?.competition,
+    teamContext: scoutContext?.team,
+  })
   const profileStrength = buildPlayerProfileStrength({ profileDepth })
-  const score = Math.round(
-    (interestScore(profile.interest) * 0.55) +
-    (ruleResult.score * 0.45)
-  )
+  const score = ruleResult.score
 
   const signal = {
     profileId: profile.id,
     profileLabel: profile.label,
+    profileShortLabel: profile.shortLabel || '',
+    profileIdentity: profile.profileIdentity || '',
     perspective: context.perspective || '',
     searchLevels: profile.searchLevels || [],
     teamFilter: profile.teamFilter || '',
@@ -181,6 +190,7 @@ const buildPlayerScoutSignalsFromNormalizedInput = ({
   }
 
   return profiles
+    .filter(profile => profile?.reclassificationOnly !== true)
     .map((profile) => {
       const ruleResult = evaluateScoutRules({ profile, metrics })
 
@@ -288,10 +298,17 @@ export const buildPlayerScoutResult = ({
     profiles,
     previousProfileDistances,
   })
+  const scoutEvidence = buildPlayerScoutEvidence({
+    metrics: buildScoutMetrics({
+      player: normalizedInput.player,
+      team: normalizedInput.team,
+    }),
+  })
   const candidateSignals = profileProgression.nearProfiles.map((item) => ({
     id: 'near_profile',
     profileId: item.profileId,
     profileLabel: item.profileLabel,
+    profileShortLabel: item.profileShortLabel || '',
     distance: item.distance,
     distancePct: item.distancePct,
     status: item.status,
@@ -299,7 +316,7 @@ export const buildPlayerScoutResult = ({
     distanceDelta: item.distanceDelta,
     distanceDeltaPct: item.distanceDeltaPct,
   }))
-  const signals = buildPlayerScoutSignalsFromNormalizedInput({
+  const preliminarySignals = buildPlayerScoutSignalsFromNormalizedInput({
     normalizedInput,
     perspective,
     searchDistance,
@@ -309,18 +326,59 @@ export const buildPlayerScoutResult = ({
     currentSeasonKey: season?.seasonKey || season?.season || '',
     currentSeasonStatus: season?.seasonStatus || '',
   })
-  const combinations = buildScoutProfileCombinations({ signals })
-  const profileHierarchy = buildPlayerProfileHierarchy({ signals })
-  const profileCaseStrength = buildPlayerProfileCaseStrength({
-    signals,
+  const preliminaryCombinations = buildScoutProfileCombinations({
+    signals: preliminarySignals,
+  })
+  const preliminaryHierarchy = buildPlayerProfileHierarchy({
+    signals: preliminarySignals,
+  })
+  const preliminaryCaseStrength = buildPlayerProfileCaseStrength({
+    signals: preliminarySignals,
+    combinations: preliminaryCombinations,
+    profileHierarchy: preliminaryHierarchy,
+  })
+  const preliminaryOpportunity = buildPlayerScoutOpportunity({
+    signals: preliminarySignals,
+    candidateSignals,
+    combinations: preliminaryCombinations,
+    profileCaseStrength: preliminaryCaseStrength,
+    playerTrajectory: resolvedPlayerTrajectory,
+    futureCompetitionPath,
+    immediacyContext,
+    currentSeasonKey: season?.seasonKey || season?.season || '',
+    currentSeasonStatus: season?.seasonStatus || '',
+    manualImmediacyDecision,
+  })
+  const preliminaryVerification = buildPlayerVerification({
+    player: normalizedInput.player,
+    signals: preliminarySignals,
+    candidateSignals,
+    opportunity: preliminaryOpportunity,
+    answers: verificationAnswers,
+    profiles,
+  })
+  const reclassificationResult = reclassifyPlayerScoutSignals({
+    signals: preliminarySignals,
+    player: normalizedInput.player,
+    verification: preliminaryVerification,
+  })
+  const classifiedSignals = reclassificationResult.signals
+  const combinations = buildScoutProfileCombinations({
+    signals: classifiedSignals,
+  })
+  const classifiedHierarchy = buildPlayerProfileHierarchy({
+    signals: classifiedSignals,
+  })
+  const classifiedCaseStrength = buildPlayerProfileCaseStrength({
+    signals: classifiedSignals,
     combinations,
-    profileHierarchy,
+    profileHierarchy: classifiedHierarchy,
   })
   const opportunity = buildPlayerScoutOpportunity({
-    signals,
+    signals: classifiedSignals,
     candidateSignals,
     combinations,
-    profileCaseStrength,
+    profileCaseStrength: classifiedCaseStrength,
     playerTrajectory: resolvedPlayerTrajectory,
     futureCompetitionPath,
     immediacyContext,
@@ -330,11 +388,24 @@ export const buildPlayerScoutResult = ({
   })
   const verification = buildPlayerVerification({
     player: normalizedInput.player,
-    signals,
+    signals: classifiedSignals,
     candidateSignals,
     opportunity,
     answers: verificationAnswers,
     profiles,
+  })
+  const signals = classifiedSignals.map(signal => ({
+    ...signal,
+    profileConfidence: buildPlayerProfileConfidence({
+      signal,
+      verification,
+    }),
+  }))
+  const profileHierarchy = buildPlayerProfileHierarchy({ signals })
+  const profileCaseStrength = buildPlayerProfileCaseStrength({
+    signals,
+    combinations,
+    profileHierarchy,
   })
   const playerReview = buildPlayerManualReview({ review: manualReview })
   const playerInterest = buildPlayerInterest({
@@ -350,6 +421,7 @@ export const buildPlayerScoutResult = ({
   return {
     signals,
     candidateSignals,
+    scoutEvidence,
     profileProgression,
     spotlights: aggregatePlayerScoutSpotlights(signals),
     opportunity,
@@ -359,6 +431,8 @@ export const buildPlayerScoutResult = ({
     profileHierarchy,
     profileCaseStrength,
     playerInterest,
+    preliminarySignal: profileHierarchy.primaryPreliminarySignal || null,
+    reclassification: reclassificationResult.reclassification,
     bestSignal: profileHierarchy.primarySignal,
     normalization: normalizedInput.normalization,
     normalizedPlayer: normalizedInput.player,
@@ -422,6 +496,7 @@ export const buildPlayersScoutSignals = ({
         profileHierarchy: result.profileHierarchy,
         profileCaseStrength: result.profileCaseStrength,
         playerInterest: result.playerInterest,
+        preliminarySignal: result.preliminarySignal,
         combinations: result.combinations,
         bestSignal: result.bestSignal,
         spotlights: result.spotlights,

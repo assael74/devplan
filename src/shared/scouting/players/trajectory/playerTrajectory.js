@@ -77,8 +77,18 @@ const buildPairEvidence = (previous, current) => {
     }
   }
 
+  const currentNearProfileIds = new Set(current.nearProfileIds || [])
+  const lostProfilesStillNear = profiles.lost.filter(profileId => (
+    currentNearProfileIds.has(profileId)
+  ))
+
   return {
     evidence: unique(evidence),
+    profileChange: {
+      added: profiles.added,
+      lost: profiles.lost,
+      lostProfilesStillNear,
+    },
     deltas: {
       minutesPct: minutesDelta,
       startsPct: startsDelta,
@@ -108,6 +118,92 @@ const NEGATIVE_EVIDENCE = new Set([
   PLAYER_TRAJECTORY_EVIDENCE.PROFILE_LOST,
 ])
 
+const PERFORMANCE_POSITIVE_EVIDENCE = new Set([
+  PLAYER_TRAJECTORY_EVIDENCE.MINUTES_UP,
+  PLAYER_TRAJECTORY_EVIDENCE.STARTS_UP,
+  PLAYER_TRAJECTORY_EVIDENCE.PRODUCTION_UP,
+  PLAYER_TRAJECTORY_EVIDENCE.PROFILE_ADDED,
+])
+
+const PERFORMANCE_NEGATIVE_EVIDENCE = new Set([
+  PLAYER_TRAJECTORY_EVIDENCE.MINUTES_DOWN,
+  PLAYER_TRAJECTORY_EVIDENCE.STARTS_DOWN,
+  PLAYER_TRAJECTORY_EVIDENCE.PRODUCTION_DOWN,
+  PLAYER_TRAJECTORY_EVIDENCE.PROFILE_LOST,
+])
+
+const resolveCompetitiveDirection = comparison => {
+  const leagueChange = Number(comparison?.deltas?.leagueLevel) || 0
+  const clubChange = Number(comparison?.deltas?.clubLevel) || 0
+
+  if (leagueChange > 0 || clubChange > 0) return 1
+  if (leagueChange < 0 || clubChange < 0) return -1
+
+  return 0
+}
+
+const countEvidence = (evidence, allowed) => (
+  evidence.filter(item => allowed.has(item)).length
+)
+
+const hasLostProfileStillNear = comparison => (
+  Array.isArray(comparison?.profileChange?.lostProfilesStillNear) &&
+  comparison.profileChange.lostProfilesStillNear.length > 0
+)
+
+const resolveLatestPairDirection = ({ comparison, previous, current }) => {
+  if (!comparison || !previous || !current) return PLAYER_TRAJECTORY_DIRECTION.UNKNOWN
+  if (isBreakthrough(previous, current)) return PLAYER_TRAJECTORY_DIRECTION.BREAKTHROUGH
+
+  const evidence = Array.isArray(comparison.evidence)
+    ? comparison.evidence
+    : []
+  const competitiveDirection = resolveCompetitiveDirection(comparison)
+  const positivePerformance = countEvidence(evidence, PERFORMANCE_POSITIVE_EVIDENCE)
+  const negativePerformance = countEvidence(evidence, PERFORMANCE_NEGATIVE_EVIDENCE)
+  const profileAdded = evidence.includes(PLAYER_TRAJECTORY_EVIDENCE.PROFILE_ADDED)
+  const profileLost = evidence.includes(PLAYER_TRAJECTORY_EVIDENCE.PROFILE_LOST)
+  const lostProfileStillNear = hasLostProfileStillNear(comparison)
+
+  if (competitiveDirection > 0) {
+    if (profileLost && lostProfileStillNear) {
+      return PLAYER_TRAJECTORY_DIRECTION.STABLE
+    }
+
+    if (negativePerformance > 0) {
+      return PLAYER_TRAJECTORY_DIRECTION.STABLE
+    }
+
+    return PLAYER_TRAJECTORY_DIRECTION.UP
+  }
+
+  if (competitiveDirection < 0) {
+    if (negativePerformance > 0) return PLAYER_TRAJECTORY_DIRECTION.DOWN
+
+    const strongImprovement = profileAdded && positivePerformance >= 2
+    if (strongImprovement) return PLAYER_TRAJECTORY_DIRECTION.UP
+
+    return PLAYER_TRAJECTORY_DIRECTION.STABLE
+  }
+
+  if (profileLost && lostProfileStillNear) {
+    return PLAYER_TRAJECTORY_DIRECTION.STABLE
+  }
+
+  if (profileLost && !profileAdded) return PLAYER_TRAJECTORY_DIRECTION.DOWN
+  if (profileAdded && !profileLost) return PLAYER_TRAJECTORY_DIRECTION.UP
+
+  if (positivePerformance >= negativePerformance + 2) {
+    return PLAYER_TRAJECTORY_DIRECTION.UP
+  }
+
+  if (negativePerformance >= positivePerformance + 2) {
+    return PLAYER_TRAJECTORY_DIRECTION.DOWN
+  }
+
+  return PLAYER_TRAJECTORY_DIRECTION.STABLE
+}
+
 const isBreakthrough = (previous, current) => {
   const minutesDelta = getDelta(previous.minutesPct, current.minutesPct)
   const startsDelta = getDelta(previous.startsPct, current.startsPct)
@@ -125,16 +221,14 @@ const isBreakthrough = (previous, current) => {
 
 const resolveDirection = ({ comparisons, latestPrevious, latest }) => {
   if (!latestPrevious || !latest) return PLAYER_TRAJECTORY_DIRECTION.UNKNOWN
-  if (isBreakthrough(latestPrevious, latest)) return PLAYER_TRAJECTORY_DIRECTION.BREAKTHROUGH
 
-  const evidence = comparisons.flatMap(comparison => comparison.evidence)
-  const positive = evidence.filter(item => POSITIVE_EVIDENCE.has(item)).length
-  const negative = evidence.filter(item => NEGATIVE_EVIDENCE.has(item)).length
+  const latestComparison = comparisons[comparisons.length - 1] || null
 
-  if (positive >= negative + 2) return PLAYER_TRAJECTORY_DIRECTION.UP
-  if (negative >= positive + 2) return PLAYER_TRAJECTORY_DIRECTION.DOWN
-
-  return PLAYER_TRAJECTORY_DIRECTION.STABLE
+  return resolveLatestPairDirection({
+    comparison: latestComparison,
+    previous: latestPrevious,
+    current: latest,
+  })
 }
 
 const resolveConfidence = (seasonSummaries, comparisons) => {

@@ -1,6 +1,7 @@
 // src/features/playersDatabase/services/write/flows/player/updatePlayerVerification.flow.js
 
 import { getTeamById } from '../../../read/team.js'
+import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
 import {
   ensureManualScoutingPlayerDoc,
   syncPlayerRoleAndScoutProfileDoc,
@@ -8,6 +9,7 @@ import {
 } from '../../players/index.js'
 import {
   updatePlayerSeasonSearchIndexScoutProfiles,
+  updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import {
   updateTeamSeasonPlayerVerificationAndScout,
@@ -108,57 +110,212 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     playerDocumentId: verificationResult.playerDocumentId,
   }
 
+  let teamSeasonResult = null
+  let playerSeasonResult = null
+  let playerSeasonIndexResult = null
+  let leagueTableRankScoutProfilesResult = null
+  let teamSeasonIndexScoutProfilesResult = null
+
   try {
-    const teamSeasonResult = await updateTeamSeasonPlayerVerificationAndScout({
+    teamSeasonResult = await updateTeamSeasonPlayerVerificationAndScout({
       ...payload,
       player,
       verificationAnswers,
     })
-
-    if (!teamSeasonResult.updated) {
-      return {
-        verificationResult,
-        teamSeasonResult,
-        playerSeasonResult: null,
-        playerSeasonIndexResult: null,
-        humanStateCommitted: true,
-        projectionsCompleted: false,
-        completed: true,
-        stoppedAt: 'teamSeason',
-      }
-    }
-
-    const calculatedPlayer = teamSeasonResult.player || player
-    const syncPayload = {
-      ...payload,
-      player: calculatedPlayer,
-      teamDocument: teamSeasonResult.teamDocument || null,
-    }
-    const playerSeasonResult = await syncPlayerRoleAndScoutProfileDoc(syncPayload)
-    const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles({
-      ...payload,
-      player: calculatedPlayer,
-    })
-
+  } catch (error) {
     return {
       verificationResult,
       teamSeasonResult,
       playerSeasonResult,
       playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
       humanStateCommitted: true,
-      projectionsCompleted: true,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
       completed: true,
+      stoppedAt: 'teamSeason',
+      projectionError: clean(error?.message) || 'Verification team projection failed',
+    }
+  }
+
+  if (!teamSeasonResult.updated) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'teamSeason',
+    }
+  }
+
+  const calculatedPlayer = teamSeasonResult.player || player
+  const syncPayload = {
+    ...payload,
+    player: calculatedPlayer,
+    teamDocument: teamSeasonResult.teamDocument || null,
+  }
+
+  try {
+    playerSeasonResult = await syncPlayerRoleAndScoutProfileDoc(syncPayload)
+  } catch (error) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'playerDocument',
+      projectionError: clean(error?.message) || 'Verification player document sync failed',
+    }
+  }
+
+  try {
+    playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles({
+      ...payload,
+      player: calculatedPlayer,
+    })
+    if (!playerSeasonIndexResult?.updated) {
+      return {
+        verificationResult,
+        teamSeasonResult,
+        playerSeasonResult,
+        playerSeasonIndexResult,
+        leagueTableRankScoutProfilesResult,
+        teamSeasonIndexScoutProfilesResult,
+        humanStateCommitted: true,
+        teamCanonicalCommitted: true,
+        projectionsCompleted: false,
+        completed: true,
+        stoppedAt: 'playerSearchIndex',
+        projectionError: clean(
+          playerSeasonIndexResult?.reason ||
+          'Player season SearchIndex is missing'
+        ),
+      }
     }
   } catch (error) {
     return {
       verificationResult,
-      teamSeasonResult: null,
-      playerSeasonResult: null,
-      playerSeasonIndexResult: null,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
       humanStateCommitted: true,
+      teamCanonicalCommitted: true,
       projectionsCompleted: false,
       completed: true,
-      projectionError: clean(error?.message) || 'Verification projection sync failed',
+      stoppedAt: 'playerSearchIndex',
+      projectionError: clean(error?.message) || 'Verification search index sync failed',
     }
+  }
+
+  const summaryPayload = {
+    ...payload,
+    player: calculatedPlayer,
+    scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
+  }
+
+  try {
+    leagueTableRankScoutProfilesResult =
+      await updateLeagueSeasonTableRankScoutProfilesSummary(summaryPayload)
+    if (!leagueTableRankScoutProfilesResult?.updated) {
+      return {
+        verificationResult,
+        teamSeasonResult,
+        playerSeasonResult,
+        playerSeasonIndexResult,
+        leagueTableRankScoutProfilesResult,
+        teamSeasonIndexScoutProfilesResult,
+        humanStateCommitted: true,
+        teamCanonicalCommitted: true,
+        projectionsCompleted: false,
+        completed: true,
+        stoppedAt: 'leagueScoutSummary',
+        projectionError: clean(
+          leagueTableRankScoutProfilesResult?.reason ||
+          'League scout summary target is missing'
+        ),
+      }
+    }
+  } catch (error) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'leagueScoutSummary',
+      projectionError: clean(error?.message) || 'Verification league summary sync failed',
+    }
+  }
+
+  try {
+    teamSeasonIndexScoutProfilesResult =
+      await updateTeamSeasonSearchIndexScoutProfilesSummary(summaryPayload)
+    if (!teamSeasonIndexScoutProfilesResult?.updated) {
+      return {
+        verificationResult,
+        teamSeasonResult,
+        playerSeasonResult,
+        playerSeasonIndexResult,
+        leagueTableRankScoutProfilesResult,
+        teamSeasonIndexScoutProfilesResult,
+        humanStateCommitted: true,
+        teamCanonicalCommitted: true,
+        projectionsCompleted: false,
+        completed: true,
+        stoppedAt: 'teamSearchIndexSummary',
+        projectionError: clean(
+          teamSeasonIndexScoutProfilesResult?.reason ||
+          'Team season SearchIndex is missing'
+        ),
+      }
+    }
+  } catch (error) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'teamSearchIndexSummary',
+      projectionError: clean(error?.message) || 'Verification team summary sync failed',
+    }
+  }
+
+  return {
+    verificationResult,
+    teamSeasonResult,
+    playerSeasonResult,
+    playerSeasonIndexResult,
+    leagueTableRankScoutProfilesResult,
+    teamSeasonIndexScoutProfilesResult,
+    humanStateCommitted: true,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    completed: true,
   }
 }

@@ -11,7 +11,7 @@ import {
 import { db } from '../../../../services/firebase/firebase.js'
 import { trackedGetDocs } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
-import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/genericObjects.catalog.js'
+import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js'
 
 
 const PLAYER_IDENTITY_AUDIT_READ_HARD_LIMIT = 50000

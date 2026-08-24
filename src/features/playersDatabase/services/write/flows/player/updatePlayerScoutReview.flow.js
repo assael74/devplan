@@ -44,7 +44,21 @@ const ensureReviewPlayerDocument = async payload => {
 }
 
 export async function updatePlayerScoutReviewFlow(payload = {}) {
-  const reviewResult = await ensureReviewPlayerDocument(payload)
+  let reviewResult = null
+
+  try {
+    reviewResult = await ensureReviewPlayerDocument(payload)
+  } catch (error) {
+    return {
+      reviewResult: null,
+      playerSeasonIndexResult: null,
+      humanStateCommitted: false,
+      projectionsCompleted: false,
+      completed: false,
+      stoppedAt: 'humanReview',
+      error: clean(error?.message) || 'Player review write failed',
+    }
+  }
 
   if (!reviewResult.updated) {
     return {
@@ -74,6 +88,21 @@ export async function updatePlayerScoutReviewFlow(payload = {}) {
       ...payload,
       player: seasonPlayer,
     })
+
+    if (!playerSeasonIndexResult?.updated) {
+      return {
+        reviewResult,
+        playerSeasonIndexResult,
+        humanStateCommitted: true,
+        projectionsCompleted: false,
+        completed: true,
+        stoppedAt: 'playerSearchIndex',
+        projectionError: clean(
+          playerSeasonIndexResult?.reason ||
+          'Player season SearchIndex is missing'
+        ),
+      }
+    }
 
     return {
       reviewResult,

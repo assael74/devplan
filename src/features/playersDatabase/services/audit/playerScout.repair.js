@@ -9,6 +9,19 @@ import { db } from '../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { buildPlayerScoutRepairCost } from './playerScout.cost.js'
+import {
+  buildPlayerScoutRepairSelection,
+} from './playerScoutRepair.selection.js'
+import {
+  canDirectRepairSearchIndexIssue,
+  repairSearchIndexIssuesDirect,
+} from './playerScoutSearchIndex.directRepair.js'
+import {
+  buildPlayerScoutMigrationPlan,
+} from './playerScoutRepair.migrationPlan.js'
+import {
+  verifySelectedPlayerScoutRepair,
+} from './playerScoutRepair.verification.js'
 import { syncPlayerScoutProfileDocsMany } from '../write/players/index.js'
 import { updatePlayerSeasonSearchIndexStatsMany } from '../write/searchIndex/index.js'
 import {
@@ -23,6 +36,9 @@ import { buildPlayerScoutStatsLoadMeasurementHistory } from '../../model/playerS
 import { buildPlayerBaseDoc } from '../write/players/playerDoc.model.js'
 import { buildPlayerSeasonDoc } from '../write/players/playerSeason.model.js'
 import { normalizeTeamPlayer } from '../write/teams/teamSeason.model.js'
+import {
+  alignTeamPlayerWithCatalogSchema,
+} from './teamPlayerSchemaRepair.model.js'
 import { normalizePlayerNameValue } from '../../model/playerIdentity.model.js'
 
 const clean = value => String(
@@ -274,7 +290,43 @@ const issueTeamIds = ({ issue, row }) => unique([
   row?.teamId,
 ])
 
-const findSchemaSeasonIndex = ({ seasons, issue, row }) => {
+const seasonTargetIdentifiers = ({ issue, row }) => ({
+  issue: {
+    seasonKey: seasonKeyOf(issue),
+    birthTeamDocumentId: clean(issue?.birthTeamDocumentId),
+    teamDocumentId: clean(issue?.teamDocumentId),
+    birthTeamId: clean(issue?.birthTeamId),
+    teamId: clean(issue?.teamId),
+    clubId: clean(issue?.clubId),
+    teamName: clean(issue?.teamName),
+    clubName: clean(issue?.clubName),
+  },
+  row: {
+    seasonKey: seasonKeyOf(row),
+    birthTeamDocumentId: clean(row?.birthTeamDocumentId),
+    teamDocumentId: clean(row?.teamDocumentId),
+    birthTeamId: clean(row?.birthTeamId),
+    teamId: clean(row?.teamId),
+    clubId: clean(row?.clubId),
+    teamName: clean(row?.teamName),
+    clubName: clean(row?.clubName),
+  },
+  expectedTeamIds: issueTeamIds({ issue, row }),
+  expectedClubId: clean(issue?.clubId || row?.clubId),
+})
+
+const seasonTargetCandidate = season => ({
+  seasonKey: seasonKeyOf(season),
+  birthTeamDocumentId: clean(season?.birthTeamDocumentId),
+  teamDocumentId: clean(season?.teamDocumentId),
+  birthTeamId: clean(season?.birthTeamId),
+  teamId: clean(season?.teamId),
+  clubId: clean(season?.clubId),
+  teamName: clean(season?.teamName),
+  clubName: clean(season?.clubName),
+})
+
+const findSchemaSeasonTarget = ({ seasons, issue, row }) => {
   const sameSeasonIndexes = seasons
     .map((season, index) => ({ season, index }))
     .filter(({ season }) => sameSeason({
@@ -283,9 +335,23 @@ const findSchemaSeasonIndex = ({ seasons, issue, row }) => {
     }))
 
   if (sameSeasonIndexes.length === 1) {
-    return sameSeasonIndexes[0].index
+    return {
+      index: sameSeasonIndexes[0].index,
+      reason: '',
+      candidates: sameSeasonIndexes.map(({ season }) => (
+        seasonTargetCandidate(season)
+      )),
+      targetIdentifiers: seasonTargetIdentifiers({ issue, row }),
+    }
   }
-  if (!sameSeasonIndexes.length) return -1
+  if (!sameSeasonIndexes.length) {
+    return {
+      index: -1,
+      reason: 'season_target_not_found',
+      candidates: [],
+      targetIdentifiers: seasonTargetIdentifiers({ issue, row }),
+    }
+  }
 
   const expectedTeamIds = issueTeamIds({ issue, row })
   const expectedClubId = clean(issue?.clubId || row?.clubId)
@@ -301,7 +367,23 @@ const findSchemaSeasonIndex = ({ seasons, issue, row }) => {
     return teamMatches || clubMatches
   })
 
-  return matched.length === 1 ? matched[0].index : -1
+  return matched.length === 1
+    ? {
+        index: matched[0].index,
+        reason: '',
+        candidates: sameSeasonIndexes.map(({ season }) => (
+          seasonTargetCandidate(season)
+        )),
+        targetIdentifiers: seasonTargetIdentifiers({ issue, row }),
+      }
+    : {
+        index: -1,
+        reason: 'season_target_ambiguous',
+        candidates: sameSeasonIndexes.map(({ season }) => (
+          seasonTargetCandidate(season)
+        )),
+        targetIdentifiers: seasonTargetIdentifiers({ issue, row }),
+      }
 }
 
 const findAuditRowForIssue = ({ audit, issue }) => (
@@ -343,6 +425,15 @@ const stripUndefined = value => {
     result[key] = stripUndefined(item)
     return result
   }, {})
+}
+
+const normalizeSchemaFieldPath = field => {
+  if (typeof field === 'string') return clean(field)
+  if (field && typeof field === 'object' && typeof field.field === 'string') {
+    return clean(field.field)
+  }
+
+  return ''
 }
 
 const buildCanonicalRepairSeason = ({ season, row, target }) => {
@@ -477,7 +568,7 @@ const buildSchemaSeasonPatch = ({
   const fields = new Set([
     ...(Array.isArray(missingFields) ? missingFields : []),
     ...(Array.isArray(invalidTypes) ? invalidTypes : []),
-  ])
+  ].map(normalizeSchemaFieldPath).filter(Boolean))
   const canonical = buildCanonicalRepairSeason({
     season,
     row,
@@ -541,6 +632,7 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
 
     const data = snapshot.data() || {}
     const patch = {}
+    const diagnostics = []
     const rootIssues = issues.filter(issue => clean(issue.schemaScope) === 'root')
 
     if (rootIssues.length) {
@@ -548,7 +640,7 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
         rootIssues.flatMap(issue => ([
           ...(Array.isArray(issue.missingFields) ? issue.missingFields : []),
           ...(Array.isArray(issue.invalidTypes) ? issue.invalidTypes : []),
-        ]))
+        ].map(normalizeSchemaFieldPath).filter(Boolean)))
       )
       const baseDoc = buildPlayerBaseDoc({
         ...data,
@@ -556,7 +648,7 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
       }, data)
 
       rootRepairFields.forEach(field => {
-        if (field.includes('.')) return
+        if (typeof field !== 'string' || field.includes('.')) return
         if (!Object.prototype.hasOwnProperty.call(baseDoc, field)) return
 
         patch[field] = baseDoc[field]
@@ -570,7 +662,10 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
 
     ;['current', 'history'].forEach(target => {
       const schemaTargetIssues = issues.filter(issue => {
-        if (issue.type !== 'player_schema_outdated') return false
+        if (![
+          'player_schema_outdated',
+          'player_measurement_history_outdated',
+        ].includes(issue.type)) return false
         if (clean(issue.schemaScope) !== 'season') return false
         const row = findAuditRowForIssue({ audit, issue })
         return (clean(row?.sourceTarget) || 'current') === target
@@ -584,15 +679,41 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
       if (!targetIssues.length) return
 
       const seasons = Array.isArray(data[target]) ? [...data[target]] : []
+      let targetUpdated = false
 
       targetIssues.forEach(issue => {
         const row = findAuditRowForIssue({ audit, issue })
-        const seasonIndex = findSchemaSeasonIndex({
+        const seasonTarget = findSchemaSeasonTarget({
           seasons,
           issue,
           row,
         })
-        if (seasonIndex === -1) return
+        const seasonIndex = seasonTarget.index
+        if (seasonIndex === -1) {
+          const contextDiagnostic = issue.type === 'player_season_context_outdated'
+            ? {
+                candidateSeasonCount: (
+                  Array.isArray(seasonTarget.candidates)
+                    ? seasonTarget.candidates.length
+                    : 0
+                ),
+                candidateSeasons: Array.isArray(seasonTarget.candidates)
+                  ? seasonTarget.candidates
+                  : [],
+                targetIdentifiers: seasonTarget.targetIdentifiers || {},
+              }
+            : {}
+
+          diagnostics.push({
+            issueId: clean(issue?.issueId),
+            issueType: clean(issue?.type),
+            playerDocumentId,
+            seasonKey: seasonKeyOf(issue),
+            reason: seasonTarget.reason || 'season_target_not_found',
+            ...contextDiagnostic,
+          })
+          return
+        }
 
         seasons[seasonIndex] = issue.type === 'player_season_context_outdated'
           ? buildPlayerSeasonContextPatch({
@@ -607,19 +728,21 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
               invalidTypes: issue.invalidTypes,
               target,
             })
+        targetUpdated = true
       })
 
+      if (!targetUpdated) return
       patch[target] = seasons
     })
 
     if (!Object.keys(patch).length) {
-      return { playerDocumentId, updated: false }
+      return { playerDocumentId, updated: false, diagnostics }
     }
 
     patch.updatedAt = serverTimestamp()
     transaction.set(ref, patch, { merge: true })
 
-    return { playerDocumentId, updated: true }
+    return { playerDocumentId, updated: true, diagnostics }
   }, {
     feature: 'playersDatabase',
     collection: PLAYERS_DATABASE_COLLECTIONS.players,
@@ -630,10 +753,22 @@ const repairPlayerSchemaDocument = async ({ audit, issues }) => {
 
 const repairPlayerSchemaIssues = async ({ audit, issues }) => {
   const byPlayerDocumentId = new Map()
+  const missingPlayerDocumentId = []
 
   issues.forEach(issue => {
     const playerDocumentId = clean(issue.playerDocumentId)
-    if (!playerDocumentId) return
+    if (!playerDocumentId) {
+      missingPlayerDocumentId.push({
+        issueId: clean(issue.issueId),
+        type: clean(issue.type),
+        playerDocumentId,
+        playerId: clean(issue.playerId),
+        externalPlayerId: clean(issue.externalPlayerId),
+        teamDocumentId: clean(issue.teamDocumentId),
+        seasonKey: seasonKeyOf(issue),
+      })
+      return
+    }
 
     const current = byPlayerDocumentId.get(playerDocumentId) || []
     byPlayerDocumentId.set(playerDocumentId, [...current, issue])
@@ -648,7 +783,30 @@ const repairPlayerSchemaIssues = async ({ audit, issues }) => {
     }))
   }
 
-  return results
+  return {
+    results,
+    telemetry: {
+      schemaIssuesByType: (Array.isArray(issues) ? issues : []).reduce(
+        (summary, issue) => ({
+          ...summary,
+          [clean(issue.type)]: Number(summary[clean(issue.type)] || 0) + 1,
+        }),
+        {}
+      ),
+      schemaIssuesMissingPlayerDocumentId: missingPlayerDocumentId,
+      schemaIssuesGroupedByPlayerDocumentId: [...byPlayerDocumentId.entries()]
+        .map(([playerDocumentId, playerIssues]) => ({
+          playerDocumentId,
+          issuesCount: playerIssues.length,
+          issueIds: unique(playerIssues.map(issue => issue.issueId)),
+          issueTypes: unique(playerIssues.map(issue => issue.type)),
+        })),
+      schemaResultsCount: results.length,
+      playerSchemaDocumentsUpdated: results.filter(result => (
+        result.updated
+      )).length,
+    },
+  }
 }
 
 const countNonRepairableSchemaIssues = audit => (
@@ -677,7 +835,7 @@ const REPAIR_ROUTE_BY_ISSUE_TYPE = Object.freeze({
     target: 'dbBirthTeams',
   },
   team_player_schema_outdated: {
-    source: 'genericObjects.catalog.js',
+    source: 'direct document catalogs',
     target: 'dbBirthTeams',
   },
   team_stats_measurement_outdated: {
@@ -689,7 +847,7 @@ const REPAIR_ROUTE_BY_ISSUE_TYPE = Object.freeze({
     target: 'dbPlayers',
   },
   player_schema_outdated: {
-    source: 'genericObjects.catalog.js',
+    source: 'direct document catalogs',
     target: 'dbPlayers',
   },
   player_season_context_outdated: {
@@ -721,7 +879,7 @@ const REPAIR_ROUTE_BY_ISSUE_TYPE = Object.freeze({
     target: 'dbSearchIndexes',
   },
   search_index_schema_outdated: {
-    source: 'genericObjects.catalog.js + Team projection',
+    source: 'direct document catalogs + Team projection',
     target: 'dbSearchIndexes',
   },
   search_index_scout_projection_mismatch: {
@@ -774,6 +932,26 @@ const buildRepairRoutes = audit => {
   return [...routeMap.values()]
 }
 
+const countSelectedIssuesByType = ({
+  issues = [],
+  types = [],
+} = {}) => {
+  const typeSet = new Set(Array.isArray(types) ? types : [])
+
+  return (Array.isArray(issues) ? issues : []).filter(issue => (
+    typeSet.has(issue?.type)
+  )).length
+}
+
+const countSelectedIssuesByPredicate = ({
+  issues = [],
+  predicate,
+} = {}) => (
+  typeof predicate === 'function'
+    ? (Array.isArray(issues) ? issues : []).filter(predicate).length
+    : 0
+)
+
 const buildPreviewSummary = ({ audit, affectedRows }) => {
   const teamDocumentIds = unique(
     affectedRows.map(teamDocumentIdOf)
@@ -806,14 +984,55 @@ const buildPreviewSummary = ({ audit, affectedRows }) => {
         issue.type === 'search_index_mismatch' ||
         issue.type === 'search_index_reliability_mismatch' ||
         issue.type === 'search_index_scout_projection_mismatch' ||
-        issue.type === 'search_index_season_status_mismatch'
+        issue.type === 'search_index_season_status_mismatch' ||
+        issue.type === 'team_search_index_scout_summary_mismatch'
       ))
-      .map(issue => [
-        clean(issue.playerId || issue.playerDocumentId),
-        clean(issue.seasonKey || issue.seasonId),
-        clean(issue.teamDocumentId),
-      ].join('::'))
+      .map(issue => (
+        issue.type === 'team_search_index_scout_summary_mismatch'
+          ? clean(issue.searchIndexDocumentId)
+          : [
+              clean(issue.playerId || issue.playerDocumentId),
+              clean(issue.seasonKey || issue.seasonId),
+              clean(issue.teamDocumentId),
+            ].join('::')
+      ))
   )
+
+  const selectedIssues = Array.isArray(audit?.issues)
+    ? audit.issues
+    : []
+  const selectedBirthTeamIssues = selectedIssues.filter(issue => (
+    issue.type === 'birth_team_mismatch'
+  ))
+  const selectedSeasonStatusIssues = selectedIssues.filter(issue => ([
+    'current_season_status_invalid',
+    'history_season_status_invalid',
+    'player_season_status_mismatch',
+    'search_index_season_status_mismatch',
+  ].includes(issue.type)))
+  const selectedSchemaIssues = selectedIssues.filter(issue => ([
+    'team_player_schema_outdated',
+    'player_schema_outdated',
+    'search_index_schema_outdated',
+    'player_narrative_schema_invalid',
+  ].includes(issue.type)))
+  const selectedMeasurementIssues = selectedIssues.filter(issue => ([
+    'team_stats_measurement_outdated',
+    'player_measurement_history_outdated',
+  ].includes(issue.type)))
+  const selectedTrackingIssues = selectedIssues.filter(issue => (
+    issue.type === 'player_tracking_mismatch'
+  ))
+  const selectedProjectionIssues = selectedIssues.filter(issue => (
+    issue.type === 'search_index_scout_projection_mismatch'
+  ))
+  const selectedStateIssues = selectedIssues.filter(issue => ([
+    'team_scout_state_mismatch',
+    'player_scout_state_mismatch',
+  ].includes(issue.type)))
+  const selectedReliabilityIssues = selectedIssues.filter(issue => (
+    clean(issue.type).includes('reliability_mismatch')
+  ))
 
   return {
     affectedTeamDocuments: teamDocumentIds.length,
@@ -821,24 +1040,87 @@ const buildPreviewSummary = ({ audit, affectedRows }) => {
     playerDocsMissingBeforeRepair: missingPlayerDocumentIds.length,
     playerDocsExistingWithDiff: existingPlayerDocumentIds.length,
     searchIndexDocumentsWithDiff: searchDocumentKeys.length,
-    historyStatusIssues: audit.summary.historyStatusIssuesCount,
-    schemaIssues: audit.summary.schemaIssuesCount || 0,
+    historyStatusIssues: selectedSeasonStatusIssues.length,
+    schemaIssues: selectedSchemaIssues.length,
     nonRepairableSchemaIssues: countNonRepairableSchemaIssues(audit),
-    measurementIssues: audit.summary.measurementIssuesCount || 0,
-    trackingIssues: audit.summary.trackingIssuesCount || 0,
-    projectionIssues: audit.summary.projectionIssuesCount || 0,
-    stateIssues: audit.summary.stateIssuesCount || 0,
-    profileDiffRows: audit.summary.rowsWithProfileDiff,
-    reliabilityIssues: audit.summary.reliabilityIssuesCount,
+    measurementIssues: selectedMeasurementIssues.length,
+    trackingIssues: selectedTrackingIssues.length,
+    projectionIssues: selectedProjectionIssues.length,
+    stateIssues: selectedStateIssues.length,
+    profileDiffRows: selectedBirthTeamIssues.length,
+    reliabilityIssues: selectedReliabilityIssues.length,
   }
 }
 
-export async function buildPlayerScoutRepairPreview({ audit: sourceAudit } = {}) {
+const splitSelectedDirectRepairIssues = ({
+  selection,
+} = {}) => {
+  if (selection?.mode !== 'selected') {
+    return {
+      directIssues: [],
+      legacyIssues: Array.isArray(selection?.audit?.issues)
+        ? selection.audit.issues
+        : [],
+    }
+  }
+
+  const issues = Array.isArray(selection?.audit?.issues)
+    ? selection.audit.issues
+    : []
+  const directIssues = issues.filter(canDirectRepairSearchIndexIssue)
+  const directIssueIds = new Set(
+    directIssues.map(issue => clean(issue.issueId))
+  )
+
+  return {
+    directIssues,
+    legacyIssues: issues.filter(issue => (
+      !directIssueIds.has(clean(issue.issueId))
+    )),
+  }
+}
+
+const buildRepairAuditWithIssues = ({
+  audit,
+  issues = [],
+} = {}) => ({
+  ...audit,
+  issues,
+  auditIssues: (Array.isArray(audit?.auditIssues) ? audit.auditIssues : [])
+    .filter(issue => issues.some(selected => (
+      clean(selected.issueId) === clean(issue.issueId)
+    ))),
+  migrationIssues: (
+    Array.isArray(audit?.migrationIssues) ? audit.migrationIssues : []
+  ).filter(issue => issues.some(selected => (
+    clean(selected.issueId) === clean(issue.issueId)
+  ))),
+  diagnostics: (Array.isArray(audit?.diagnostics) ? audit.diagnostics : [])
+    .filter(issue => issues.some(selected => (
+      clean(selected.issueId) === clean(issue.issueId)
+    ))),
+})
+
+export async function buildPlayerScoutRepairPreview({
+  audit: sourceAudit,
+  selectedIssueIds,
+} = {}) {
   if (!sourceAudit) {
     throw new Error('Player scout repair preview requires a source audit')
   }
 
-  const audit = sourceAudit
+  const selection = buildPlayerScoutRepairSelection({
+    audit: sourceAudit,
+    selectedIssueIds,
+  })
+  const split = splitSelectedDirectRepairIssues({
+    selection,
+  })
+  const selectedAudit = selection.audit
+  const audit = buildRepairAuditWithIssues({
+    audit: selectedAudit,
+    issues: split.legacyIssues,
+  })
   const affectedRows = buildAffectedRows(audit)
   if (affectedRows.length && audit.repairDataIncluded !== true) {
     throw new Error(
@@ -855,17 +1137,58 @@ export async function buildPlayerScoutRepairPreview({ audit: sourceAudit } = {})
       operational: PLAYERS_DATABASE_COLLECTIONS.teams,
       scoutProfiles: PLAYERS_DATABASE_COLLECTIONS.players,
       projection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-      schema: 'genericObjects.catalog.js',
+      schema: 'direct document catalogs',
     },
-    summary: buildPreviewSummary({
-      audit,
-      affectedRows,
+    selection: {
+      mode: selection.mode,
+      selectedIssueIds: selection.selectedIssueIds,
+      ...selection.summary,
+    },
+    migrationPlan: buildPlayerScoutMigrationPlan({
+      issues: selection.selectedIssues,
     }),
-    cost: buildPlayerScoutRepairCost({
-      audit,
-      affectedRows,
-      schemaIssues,
-    }),
+    summary: {
+      ...buildPreviewSummary({
+        audit: selectedAudit,
+        affectedRows,
+      }),
+      selectedIssuesCount: selection.summary.selectedIssuesCount,
+    },
+    cost: {
+      ...buildPlayerScoutRepairCost({
+        audit,
+        affectedRows,
+        schemaIssues,
+      }),
+      directSearchIndex: {
+        issuesCount: split.directIssues.length,
+        readsMaximum: split.directIssues.length,
+        writesMaximum: split.directIssues.length,
+        verificationReadsMaximum: split.directIssues.length,
+        processReadsMaximum: split.directIssues.length * 2,
+        processWritesMaximum: split.directIssues.length,
+      },
+    },
+    directRepairs: {
+      searchIndexIssues: split.directIssues.map(issue => ({
+        issueId: issue.issueId,
+        repairType: issue.repair?.repairType,
+        target: clean(issue?.repairData?.writer) === 'DIRECT_TEAM_SEARCH_INDEX'
+          ? 'teamSearchIndex'
+          : 'playerSearchIndex',
+        searchIndexDocumentId: issue.searchIndexDocumentId,
+        fields: Object.keys(issue.repairData?.fields || {}),
+      })),
+      playerSearchIndexIssues: split.directIssues
+        .filter(issue => (
+          clean(issue?.repairData?.writer) === 'DIRECT_PLAYER_SEARCH_INDEX'
+        ))
+        .map(issue => ({
+          issueId: issue.issueId,
+          searchIndexDocumentId: issue.searchIndexDocumentId,
+          fields: Object.keys(issue.repairData?.fields || {}),
+        })),
+    },
     repairRoutes: buildRepairRoutes(audit),
     affectedScopes: unique(
       affectedRows.map(scopeKeyOf)
@@ -934,11 +1257,16 @@ const repairSeason = ({ season, rows, target }) => {
       player,
       row,
     }), season)
-
-    return {
+    const nextPlayer = {
       ...player,
       ...normalizedPlayer,
     }
+
+    return hasRepairAction(row, 'team_player_schema_outdated')
+      ? alignTeamPlayerWithCatalogSchema({
+          player: nextPlayer,
+        })
+      : nextPlayer
   })
 
   const shouldRepairCurrentSeasonStatus = rows.some(row => (
@@ -957,7 +1285,7 @@ const repairSeason = ({ season, rows, target }) => {
   }
 }
 
-const repairTeamDocument = async ({ teamDocumentId, rows }) => {
+export const repairTeamDocument = async ({ teamDocumentId, rows }) => {
   const ref = doc(
     db,
     PLAYERS_DATABASE_COLLECTIONS.teams,
@@ -1074,6 +1402,32 @@ const playersForRows = ({ players, rows }) => (
     .filter((player, index, all) => all.indexOf(player) === index)
 )
 
+const enrichPlayerTrackingReasonsForRepair = ({ player, row }) => {
+  const expectedTrackingReasons = unique(row?.expectedTrackingReasons)
+  if (!expectedTrackingReasons.length) return player
+
+  return {
+    ...player,
+    tracking: {
+      ...(player?.tracking || {}),
+      trackingReasons: unique([
+        ...(Array.isArray(player?.tracking?.trackingReasons)
+          ? player.tracking.trackingReasons
+          : []),
+        ...expectedTrackingReasons,
+      ]),
+    },
+  }
+}
+
+const playersForDocumentRows = ({ players, rows }) => (
+  playersForRows({ players, rows })
+    .map(player => {
+      const row = findMatchingRow({ player, rows })
+      return enrichPlayerTrackingReasonsForRepair({ player, row })
+    })
+)
+
 const syncScope = async ({ team, scope }) => {
   const season = scope.season
   const target = scope.target
@@ -1090,7 +1444,7 @@ const syncScope = async ({ team, scope }) => {
     rows,
     issueTypes: SEARCH_INDEX_SYNC_ISSUE_TYPES,
   })
-  const playerDocumentPlayers = playersForRows({
+  const playerDocumentPlayers = playersForDocumentRows({
     players,
     rows: playerDocumentRows,
   })
@@ -1154,6 +1508,7 @@ const syncScope = async ({ team, scope }) => {
 
 const ENGINE_REFRESH_STATE_FIELDS = [
   'scoutCandidateSignals',
+  'scoutEvidence',
   'scoutSpotlights',
   'scoutOpportunity',
   'scoutProfileProgression',
@@ -1162,8 +1517,11 @@ const ENGINE_REFRESH_STATE_FIELDS = [
   'scoutPlayerInterest',
   'scoutTrajectory',
   'scoutTransferContext',
+  'futureCompetitionPath',
   'scoutEngineVersion',
 ]
+
+const ENGINE_REFRESH_VERIFICATION_FIELD = 'scoutVerification'
 
 const ENGINE_REFRESH_READ_HARD_LIMIT = 50000
 const ENGINE_REFRESH_READ_SAFETY_LIMIT = 49000
@@ -1185,11 +1543,27 @@ const searchEngineStateIssueTypes = new Set([
   'search_index_scout_projection_mismatch',
 ])
 
-const getEngineRefreshFields = ({ issue, scope }) => {
+const getEngineRefreshFields = ({ issue, scope, expectedState }) => {
   const stateFields = unique(
     (Array.isArray(issue?.mismatchedFields) ? issue.mismatchedFields : [])
       .filter(field => ENGINE_REFRESH_STATE_FIELDS.includes(field))
   )
+  const verificationFields = (
+    scope === 'player' &&
+    Array.isArray(issue?.mismatchedFields) &&
+    issue.mismatchedFields.includes(ENGINE_REFRESH_VERIFICATION_FIELD) &&
+    isPlainObject(expectedState) &&
+    Object.prototype.hasOwnProperty.call(
+      expectedState,
+      ENGINE_REFRESH_VERIFICATION_FIELD
+    )
+  )
+    ? [ENGINE_REFRESH_VERIFICATION_FIELD]
+    : []
+  const refreshFields = unique([
+    ...stateFields,
+    ...verificationFields,
+  ])
 
   if (
     scope === 'team' &&
@@ -1199,7 +1573,7 @@ const getEngineRefreshFields = ({ issue, scope }) => {
     )
   ) {
     return unique([
-      ...stateFields,
+      ...refreshFields,
       'scoutProfiles',
       'scoutCombinations',
     ])
@@ -1213,13 +1587,13 @@ const getEngineRefreshFields = ({ issue, scope }) => {
     )
   ) {
     return unique([
-      ...stateFields,
+      ...refreshFields,
       'scoutProfiles',
       'scoutCombinations',
     ])
   }
 
-  return stateFields
+  return refreshFields
 }
 
 const buildEngineSeasonTarget = ({
@@ -1277,6 +1651,7 @@ const buildTeamEngineRefreshTargets = audit => {
       const fields = getEngineRefreshFields({
         issue,
         scope: 'team',
+        expectedState: row.expectedTeamScoutState,
       })
       if (!fields.length) return
 
@@ -1337,13 +1712,14 @@ const buildPlayerEngineRefreshTargets = audit => {
   ;(Array.isArray(audit?.issues) ? audit.issues : [])
     .filter(issue => playerEngineStateIssueTypes.has(issue?.type))
     .forEach(issue => {
+      const row = findAuditRowForIssue({ audit, issue })
       const fields = getEngineRefreshFields({
         issue,
         scope: 'player',
+        expectedState: row?.expectedPlayerScoutState,
       })
       if (!fields.length) return
 
-      const row = findAuditRowForIssue({ audit, issue })
       const playerDocumentId = clean(
         issue.playerDocumentId ||
         row?.playerDocumentId ||
@@ -1920,7 +2296,13 @@ export async function applyPlayerScoutEngineRefresh({
   }
 }
 
-export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceAudit } = {}) {
+export async function applyPlayerScoutRepair({
+  confirmed = false,
+  audit: sourceAudit,
+  selectedIssueIds,
+  verifySelected = true,
+  verificationReadSafetyLimit,
+} = {}) {
   if (!confirmed) {
     throw new Error('Player scout repair requires explicit confirmation')
   }
@@ -1929,7 +2311,17 @@ export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceA
     throw new Error('Player scout repair requires a source audit')
   }
 
-  const audit = sourceAudit
+  const selection = buildPlayerScoutRepairSelection({
+    audit: sourceAudit,
+    selectedIssueIds,
+  })
+  const split = splitSelectedDirectRepairIssues({
+    selection,
+  })
+  const audit = buildRepairAuditWithIssues({
+    audit: selection.audit,
+    issues: split.legacyIssues,
+  })
   const affectedRows = buildAffectedRows(audit)
   const schemaIssues = buildSchemaIssues(audit)
 
@@ -1941,12 +2333,19 @@ export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceA
   const teamDocumentIds = unique(
     affectedRows.map(teamDocumentIdOf)
   )
+  const directSearchIndexResult = await repairSearchIndexIssuesDirect({
+    issues: split.directIssues,
+  })
   const results = []
   const repairedTeamDocumentIds = []
-  const schemaResults = await repairPlayerSchemaIssues({
+  const schemaRepair = await repairPlayerSchemaIssues({
     audit,
     issues: schemaIssues,
   })
+  const schemaResults = Array.isArray(schemaRepair?.results)
+    ? schemaRepair.results
+    : []
+  const schemaTelemetry = schemaRepair?.telemetry || {}
 
   for (const teamDocumentId of teamDocumentIds) {
     const rows = affectedRows.filter(row => (
@@ -1965,6 +2364,30 @@ export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceA
       }))
     }
   }
+
+  const migrationPlan = buildPlayerScoutMigrationPlan({
+    issues: selection.selectedIssues,
+  })
+  const targetedVerification = (
+    selection.mode === 'selected' &&
+    verifySelected !== false
+  )
+    ? await verifySelectedPlayerScoutRepair({
+        selectedIssues: selection.selectedIssues,
+        readSafetyLimit: verificationReadSafetyLimit,
+      })
+    : {
+        executed: false,
+        reason: selection.mode === 'selected'
+          ? 'verification_disabled'
+          : 'legacy_full_repair_mode',
+        scopesCount: 0,
+        selectedIssuesCount: selection.summary.selectedIssuesCount,
+        verifiedIssuesCount: 0,
+        remainingIssuesCount: 0,
+        remainingIssueIds: [],
+        scopes: [],
+      }
 
   const verificationScopes = unique([
     ...results.map(result => [
@@ -1985,10 +2408,39 @@ export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceA
   return {
     generatedAt: new Date().toISOString(),
     mode: 'apply',
+    selection: {
+      mode: selection.mode,
+      selectedIssueIds: selection.selectedIssueIds,
+      ...selection.summary,
+    },
+    directSearchIndex: directSearchIndexResult,
+    migrationPlan,
+    targetedVerification,
+    schemaIssuesByType: schemaTelemetry.schemaIssuesByType || {},
+    schemaIssuesMissingPlayerDocumentId: Array.isArray(
+      schemaTelemetry.schemaIssuesMissingPlayerDocumentId
+    )
+      ? schemaTelemetry.schemaIssuesMissingPlayerDocumentId
+      : [],
+    schemaIssuesGroupedByPlayerDocumentId: Array.isArray(
+      schemaTelemetry.schemaIssuesGroupedByPlayerDocumentId
+    )
+      ? schemaTelemetry.schemaIssuesGroupedByPlayerDocumentId
+      : [],
+    schemaResultsCount: Number(schemaTelemetry.schemaResultsCount || 0),
     teamDocumentsUpdated: unique(repairedTeamDocumentIds).length,
+    teamDocumentIdsUpdated: unique(repairedTeamDocumentIds),
     playerSchemaDocumentsUpdated: schemaResults.filter(
       result => result.updated
     ).length,
+    playerSchemaDocumentIdsUpdated: unique(
+      schemaResults
+        .filter(result => result.updated)
+        .map(result => result.playerDocumentId)
+    ),
+    playerSchemaDiagnostics: schemaResults.flatMap(result => (
+      Array.isArray(result?.diagnostics) ? result.diagnostics : []
+    )),
     teamSeasonScopesSynced: results.length,
     playerDocumentsCreated: results.reduce((sum, result) => (
       sum + Number(result.playerDocs.createdCount || 0)
@@ -2006,6 +2458,38 @@ export async function applyPlayerScoutRepair({ confirmed = false, audit: sourceA
     searchIndexRowsDeleted: results.reduce((sum, result) => (
       sum + Number(result.searchIndex.deletedCount || 0)
     ), 0),
+    playerDocumentIdsWritten: unique(
+      results.flatMap(result => (
+        Array.isArray(result.playerDocs?.writtenPlayerDocumentIds)
+          ? result.playerDocs.writtenPlayerDocumentIds
+          : []
+      ))
+    ),
+    searchIndexDocumentIdsWritten: unique([
+      ...results.flatMap(result => (
+        Array.isArray(result.searchIndex?.writtenSearchIndexDocumentIds)
+          ? result.searchIndex.writtenSearchIndexDocumentIds
+          : []
+      )),
+      ...(Array.isArray(directSearchIndexResult?.results)
+        ? directSearchIndexResult.results
+          .filter(result => result?.changed === true)
+          .map(result => clean(result.searchIndexDocumentId))
+          .filter(Boolean)
+        : []),
+    ]),
+    writeOperations: {
+      teams: unique(repairedTeamDocumentIds).length,
+      playerSchemas: schemaResults.filter(result => result.updated).length,
+      players: results.reduce((sum, result) => (
+        sum + (Array.isArray(result.playerDocs?.writtenPlayerDocumentIds)
+          ? result.playerDocs.writtenPlayerDocumentIds.length
+          : 0)
+      ), 0),
+      searchIndexes: results.reduce((sum, result) => (
+        sum + Number(result.searchIndex?.rowsCount || 0)
+      ), 0) + Number(directSearchIndexResult?.writes || 0),
+    },
     verificationScopes,
     results,
   }

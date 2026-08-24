@@ -156,6 +156,26 @@ const buildEntry = ({ season, playerBirthYear, teams }) => {
   }
 }
 
+
+const markTemporalRoles = entries => {
+  const safeEntries = Array.isArray(entries) ? entries : []
+  const hasCurrent = safeEntries.some(entry => entry.temporalRole === 'current')
+
+  if (hasCurrent || !safeEntries.length) return safeEntries
+
+  const sorted = [...safeEntries].sort((left, right) => (
+    resolveSeasonLookupKey(left).localeCompare(resolveSeasonLookupKey(right))
+  ))
+  const latestKey = resolveSeasonLookupKey(sorted[sorted.length - 1])
+
+  return safeEntries.map(entry => ({
+    ...entry,
+    temporalRole: resolveSeasonLookupKey(entry) === latestKey
+      ? 'latest'
+      : 'historical',
+  }))
+}
+
 const groupEntries = entries => {
   const groups = new Map()
 
@@ -188,5 +208,5 @@ export const buildNarrativeTimeline = ({ seasons = [], teams = [], playerBirthYe
     teams,
   }))
 
-  return groupEntries(entries)
+  return groupEntries(markTemporalRoles(entries))
 }

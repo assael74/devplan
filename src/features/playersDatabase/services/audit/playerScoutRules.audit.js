@@ -13,12 +13,21 @@ import { db } from '../../../../services/firebase/firebase.js'
 import {
   trackedGetDoc,
   trackedGetDocs,
+  trackedGetDocsFromServer,
 } from '../../../../services/firestore/usage/index.js'
 import {
   buildPlayerScoutAuditCost,
   buildPlayerScoutRuntimeCostCheck,
 } from './playerScout.cost.js'
 import { buildPlayerScoutShadowComparison } from './playerScoutShadow.audit.js'
+import {
+  buildPlayerScoutAuditContractResult,
+} from './playerScoutAudit.contract.js'
+import {
+  PLAYER_SCOUT_AUDIT_READ_BUDGETS,
+  assertTeamSeasonScoutAuditReadPlan,
+  buildTeamSeasonScoutAuditReadPlan,
+} from './playerScoutAudit.readPlan.js'
 import { buildPlayerScoutDocumentRewritePlan } from './playerScoutDocumentRewrite.audit.js'
 import {
   PLAYER_DOCUMENT_SCHEMA_SCOPES,
@@ -29,6 +38,11 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { buildPlayerScoutState } from '../../domain/orchestration/buildPlayerScoutState.js'
 import { buildPlayerDocumentId } from '../../model/playerIdentity.model.js'
 import { buildPlayerStatsSnapshot } from '../../model/playerStatsSnapshot.model.js'
+import { buildScoutProfilesSummary } from '../../model/scoutProfilesSummary.model.js'
+import {
+  isSameSeason,
+  normalizeSeasonLookupKey,
+} from '../../model/season.model.js'
 import {
   buildPlayerScoutStatsLoadMeasurementHistory,
   buildPlayerScoutStatsLoadMeasurements,
@@ -36,12 +50,12 @@ import {
   normalizePlayerScoutStatsLoadMeasurementHistory,
   normalizePlayerScoutStatsLoadMeasurements,
 } from '../../model/playerScoutMeasurement.model.js'
+import { BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG } from '../../catalog/firestoreDocuments/birthTeamDocument.catalog.js'
 import {
-  BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG,
   PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS,
   PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG,
-  SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
-} from '../../catalog/genericObjects.catalog.js'
+} from '../../catalog/firestoreDocuments/playerDocument.catalog.js'
+import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.js'
 import { adaptTeamSearchIndexDocument } from '../../domain/index.js'
@@ -100,7 +114,7 @@ const readAuditSnapshotWithinBudget = async ({
     if (cursor) constraints.push(startAfter(cursor))
     constraints.push(limit(pageLimit))
 
-    const pageSnapshot = await trackedGetDocs(
+    const pageSnapshot = await trackedGetDocsFromServer(
       query(source, ...constraints),
       metadata
     )
@@ -145,7 +159,7 @@ const PLAYER_SCOUT_AUDIT_GOVERNANCE = Object.freeze({
   operationalSourceOfTruth: PLAYERS_DATABASE_COLLECTIONS.teams,
   scoutProfileSourceOfTruth: PLAYERS_DATABASE_COLLECTIONS.players,
   projectionCollection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-  schemaSourceOfTruth: 'genericObjects.catalog.js',
+  schemaSourceOfTruth: 'direct document catalogs',
 })
 
 const SCOUT_STATE_FIELD_NAMES = [
@@ -181,6 +195,11 @@ const TEAM_PLAYER_SCHEMA_TEMPLATE = withoutOptionalTransferFields(
 const PLAYER_SEASON_SCHEMA_TEMPLATE = withoutOptionalTransferFields(
   PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG.current?.[0] || {}
 )
+const TEAM_PLAYER_ALLOWED_OPTIONAL_FIELDS = OPTIONAL_TRANSFER_SCHEMA_FIELDS
+const PLAYER_SEASON_ALLOWED_OPTIONAL_FIELDS = OPTIONAL_TRANSFER_SCHEMA_FIELDS
+const PLAYER_ROOT_ALLOWED_OPTIONAL_FIELDS = new Set([
+  'scoutNarrative',
+])
 const PLAYER_ROOT_SCHEMA_TEMPLATE = Object.fromEntries(
   Object.entries(PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG).filter(
     ([field]) => field !== 'scoutNarrative'
@@ -206,6 +225,18 @@ const NULLABLE_STRUCTURED_FIELD_SET = new Set(
   PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS
 )
 
+const COMPUTED_SCOUT_NESTED_FIELDS = new Set([
+  'scoutOpportunity',
+  'scoutVerification',
+  'scoutProfileProgression',
+  'scoutProfileHierarchy',
+  'scoutProfileCaseStrength',
+  'scoutPlayerInterest',
+  'scoutTrajectory',
+  'scoutTransferContext',
+  'futureCompetitionPath',
+])
+
 const isNullableStructuredField = fieldPath => (
   NULLABLE_STRUCTURED_FIELD_SET.has(clean(fieldPath).split('.').pop())
 )
@@ -225,7 +256,14 @@ const isPlainObject = value => (
   !isTimestampLike(value)
 )
 
-const buildNestedSchemaDiff = ({ source, schema, path = '' } = {}) => {
+const topLevelFieldOf = path => clean(path).split('.')[0]
+
+const buildNestedSchemaDiff = ({
+  source,
+  schema,
+  path = '',
+  ignoredRootFields = new Set(),
+} = {}) => {
   const missingFields = []
   const invalidTypes = []
 
@@ -234,6 +272,9 @@ const buildNestedSchemaDiff = ({ source, schema, path = '' } = {}) => {
 
     Object.keys(schema).forEach(field => {
       const nextPath = path ? `${path}.${field}` : field
+      const rootField = topLevelFieldOf(nextPath)
+
+      if (path && ignoredRootFields.has(rootField)) return
       if (!hasOwn(actual, field)) {
         missingFields.push(nextPath)
         return
@@ -262,6 +303,7 @@ const buildNestedSchemaDiff = ({ source, schema, path = '' } = {}) => {
           source: actualValue,
           schema: expectedValue,
           path: nextPath,
+          ignoredRootFields,
         })
         missingFields.push(...nested.missingFields)
         invalidTypes.push(...nested.invalidTypes)
@@ -275,9 +317,44 @@ const buildNestedSchemaDiff = ({ source, schema, path = '' } = {}) => {
   }
 }
 
-const topLevelFieldOf = path => clean(path).split('.')[0]
+const hasNarrativeContentValue = content => (
+  Boolean(clean(content?.title)) ||
+  Boolean(clean(content?.summary)) ||
+  Boolean(content?.conclusion) ||
+  Boolean(clean(content?.whyInteresting)) ||
+  Boolean(clean(content?.professionalContext)) ||
+  (Array.isArray(content?.strengths) && content.strengths.length > 0) ||
+  (Array.isArray(content?.unknowns) && content.unknowns.length > 0) ||
+  Boolean(content?.action) ||
+  (Array.isArray(content?.evidenceRefs) && content.evidenceRefs.length > 0)
+)
 
-const buildTopLevelSchemaDiff = ({ source = {}, schema = {} } = {}) => {
+const hasNarrativeSnapshotValue = snapshot => {
+  if (!isPlainObject(snapshot)) return false
+
+  return Boolean(
+    clean(snapshot.inputHash) ||
+    snapshot.generatedAt ||
+    snapshot.approvedAt ||
+    hasNarrativeContentValue(snapshot.content || snapshot)
+  )
+}
+
+const hasPlayerNarrativeValue = narrative => {
+  if (!isPlainObject(narrative)) return false
+  if (hasNarrativeSnapshotValue(narrative.career)) return true
+
+  return (Array.isArray(narrative.seasons) ? narrative.seasons : []).some(
+    season => hasNarrativeSnapshotValue(season?.approved || season?.state?.approved)
+  )
+}
+
+const buildTopLevelSchemaDiff = ({
+  source = {},
+  schema = {},
+  ignoredNestedRootFields = new Set(),
+  allowedUnexpectedFields = new Set(),
+} = {}) => {
   const safeSource = isPlainObject(source) ? source : {}
   const safeSchema = isPlainObject(schema) ? schema : {}
   const sourceKeys = Object.keys(safeSource)
@@ -285,7 +362,10 @@ const buildTopLevelSchemaDiff = ({ source = {}, schema = {} } = {}) => {
   const sourceKeySet = new Set(sourceKeys)
   const schemaKeySet = new Set(schemaKeys)
   const missingFields = schemaKeys.filter(field => !sourceKeySet.has(field))
-  const unexpectedFields = sourceKeys.filter(field => !schemaKeySet.has(field))
+  const unexpectedFields = sourceKeys.filter(field => (
+    !schemaKeySet.has(field) &&
+    !allowedUnexpectedFields.has(field)
+  ))
   const invalidTypes = schemaKeys.reduce((result, field) => {
     if (!sourceKeySet.has(field)) return result
     if (isSchemaTypeValid({
@@ -305,6 +385,7 @@ const buildTopLevelSchemaDiff = ({ source = {}, schema = {} } = {}) => {
   const nestedSchemaDiff = buildNestedSchemaDiff({
     source,
     schema,
+    ignoredRootFields: ignoredNestedRootFields,
   })
   const nestedMissingFields = nestedSchemaDiff.missingFields.filter(path => (
     path.includes('.')
@@ -334,6 +415,78 @@ const getSchemaRepairFields = schemaDiff => unique([
     ? schemaDiff.nestedInvalidTypes.map(item => topLevelFieldOf(item.field))
     : []),
 ])
+
+export const buildPlayerScoutSchemaIssueState = ({
+  scope = '',
+  source = {},
+} = {}) => {
+  const configByScope = {
+    [PLAYER_DOCUMENT_SCHEMA_SCOPES.TEAM_PLAYER]: {
+      schema: TEAM_PLAYER_SCHEMA_TEMPLATE,
+      ignoredNestedRootFields: COMPUTED_SCOUT_NESTED_FIELDS,
+      allowedUnexpectedFields: TEAM_PLAYER_ALLOWED_OPTIONAL_FIELDS,
+    },
+    [PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_ROOT]: {
+      schema: PLAYER_ROOT_SCHEMA_TEMPLATE,
+      allowedUnexpectedFields: PLAYER_ROOT_ALLOWED_OPTIONAL_FIELDS,
+    },
+    [PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_SEASON]: {
+      schema: PLAYER_SEASON_SCHEMA_TEMPLATE,
+      ignoredNestedRootFields: COMPUTED_SCOUT_NESTED_FIELDS,
+      allowedUnexpectedFields: PLAYER_SEASON_ALLOWED_OPTIONAL_FIELDS,
+    },
+    [PLAYER_DOCUMENT_SCHEMA_SCOPES.SEARCH_INDEX]: {
+      schema: SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
+    },
+  }
+  const config = configByScope[scope]
+
+  if (!config) {
+    return {
+      supported: false,
+      hasIssue: true,
+      repairFields: [],
+      unexpectedFields: [],
+      invalidTypes: [],
+    }
+  }
+
+  const schemaDiff = buildTopLevelSchemaDiff({
+    source,
+    schema: config.schema,
+    ...(config.ignoredNestedRootFields
+      ? { ignoredNestedRootFields: config.ignoredNestedRootFields }
+      : {}),
+    ...(config.allowedUnexpectedFields
+      ? { allowedUnexpectedFields: config.allowedUnexpectedFields }
+      : {}),
+  })
+  const repairFields = unique([
+    ...getSchemaRepairFields(schemaDiff),
+    ...(scope === PLAYER_DOCUMENT_SCHEMA_SCOPES.PLAYER_SEASON
+      ? getScoutStateMissingFields(source)
+      : []),
+  ])
+  const unexpected = classifyUnexpectedSchemaFields({
+    scope,
+    fields: schemaDiff.unexpectedFields,
+  })
+
+  return {
+    supported: true,
+    hasIssue: Boolean(
+      repairFields.length || unexpected.unexpectedFields.length
+    ),
+    repairFields,
+    unexpectedFields: unexpected.unexpectedFields,
+    deprecatedFields: unexpected.deprecatedFields,
+    reportOnlyUnexpectedFields: unexpected.reportOnlyUnexpectedFields,
+    invalidTypes: Array.isArray(schemaDiff.invalidTypes)
+      ? schemaDiff.invalidTypes
+      : [],
+  }
+}
+
 
 const normalizeComparableValue = value => {
   if (value === undefined) return null
@@ -450,6 +603,11 @@ const getMismatchedFields = ({ actual = {}, expected = {} } = {}) => {
   ))
 }
 
+const getTeamScoutStateMismatchedFields = ({ actual = {}, expected = {} } = {}) => (
+  getMismatchedFields({ actual, expected })
+    .filter(field => field !== 'scoutVerification')
+)
+
 const MEASUREMENT_AUDIT_FIELD_NAMES = [
   'snapshotKey',
   'capturedAt',
@@ -493,9 +651,34 @@ const unique = values => [
   ),
 ]
 
-const hasTransferTrackingEvidence = player => Boolean(
-  player?.scoutTransferContext ||
-  player?.scoutTrajectory?.latestTransfer
+const resolvePreferredPlayerDocumentId = ({
+  row = {},
+  searchRow = null,
+} = {}) => (
+  clean(row.playerDocumentId) ||
+  clean(searchRow?.playerDocumentId) ||
+  clean(buildPlayerDocumentId(row)) ||
+  clean(row.playerId)
+)
+
+const hasRealTransferContext = value => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+
+  const fromClubId = clean(value.fromClubId)
+  const toClubId = clean(value.toClubId)
+
+  return Boolean(
+    fromClubId &&
+    toClubId &&
+    fromClubId !== toClubId
+  )
+}
+
+const hasTransferTrackingEvidence = player => (
+  hasRealTransferContext(player?.scoutTransferContext) ||
+  hasRealTransferContext(player?.scoutTrajectory?.latestTransfer)
 )
 
 const resolveAuditTrackingReasons = player => unique([
@@ -560,6 +743,20 @@ const getProfiles = source => (
 
 const getProfileIds = source => sorted(
   getProfiles(source).map(profile => profile?.profileId)
+)
+
+const getProfessionalProfileIds = source => (
+  sorted(source?.scoutProfileHierarchy?.professionalProfileIds)
+)
+
+const getProfileDetails = source => (
+  getProfiles(source)
+    .map(profile => ({
+      profileId: clean(profile?.profileId || profile?.id),
+      profileLabel: clean(profile?.profileLabel || profile?.label),
+      profileIdentity: clean(profile?.profileIdentity || profile?.identity),
+    }))
+    .filter(profile => profile.profileId)
 )
 
 const getProfileReliability = source => getProfiles(source).reduce((result, profile) => {
@@ -761,12 +958,13 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
   const rootSchemaDiff = buildTopLevelSchemaDiff({
     source: data,
     schema: PLAYER_ROOT_SCHEMA_TEMPLATE,
+    allowedUnexpectedFields: PLAYER_ROOT_ALLOWED_OPTIONAL_FIELDS,
   })
   const rootSchemaMissingFields = unique([
     ...rootSchemaDiff.missingFields,
     ...rootSchemaDiff.nestedMissingFields,
   ])
-  const narrativeSchemaDiff = hasOwn(data, 'scoutNarrative')
+  const narrativeSchemaDiff = hasPlayerNarrativeValue(data.scoutNarrative)
     ? buildTopLevelSchemaDiff({
         source: data.scoutNarrative,
         schema: PLAYER_NARRATIVE_SCHEMA_TEMPLATE,
@@ -787,6 +985,8 @@ const flattenPlayerDocs = docs => docs.flatMap(snapshot => {
       const seasonSchemaDiff = buildTopLevelSchemaDiff({
         source: season,
         schema: PLAYER_SEASON_SCHEMA_TEMPLATE,
+        ignoredNestedRootFields: COMPUTED_SCOUT_NESTED_FIELDS,
+        allowedUnexpectedFields: PLAYER_SEASON_ALLOWED_OPTIONAL_FIELDS,
       })
       const seasonSchemaMissingFields = unique([
         ...seasonSchemaDiff.missingFields,
@@ -1293,6 +1493,8 @@ const buildRecalculatedRows = ({
             teamPlayerSchemaDiff: buildTopLevelSchemaDiff({
               source: player,
               schema: TEAM_PLAYER_SCHEMA_TEMPLATE,
+              ignoredNestedRootFields: COMPUTED_SCOUT_NESTED_FIELDS,
+              allowedUnexpectedFields: TEAM_PLAYER_ALLOWED_OPTIONAL_FIELDS,
             }),
             teamScoutStateMissingFields: getScoutStateMissingFields(player),
             teamScoutStatsLoadMeasurements: scoutStatsLoadMeasurements,
@@ -1465,8 +1667,135 @@ const resolveAuditCategory = issueType => {
   return PLAYER_SCOUT_AUDIT_CATEGORY.SYNCHRONIZATION
 }
 
-const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
-  const issues = [...skippedRows]
+const normalizeScoutProfilesSummaryForAudit = summary => {
+  const profileCounts = summary?.profileCounts &&
+    typeof summary.profileCounts === 'object'
+    ? summary.profileCounts
+    : {}
+
+  return {
+    total: Number(summary?.total) || 0,
+    profileCounts: Object.keys(profileCounts)
+      .sort()
+      .reduce((result, profileId) => {
+        result[profileId] = Number(profileCounts[profileId]) || 0
+        return result
+      }, {}),
+  }
+}
+
+const buildTeamSummaryScopeKey = row => [
+  clean(row?.teamDocumentId || row?.birthTeamDocumentId || row?.teamId),
+  clean(row?.seasonKey || row?.seasonId),
+].join('::')
+
+const collectTeamSearchIndexSummaryIssues = ({
+  teamRows = [],
+  teamIndexRows = [],
+} = {}) => {
+  const issues = []
+  const groupedRows = (Array.isArray(teamRows) ? teamRows : []).reduce(
+    (result, row) => {
+      const scopeKey = buildTeamSummaryScopeKey(row)
+      if (!scopeKey || scopeKey === '::') return result
+      if (!result.has(scopeKey)) result.set(scopeKey, [])
+      result.get(scopeKey).push(row)
+      return result
+    },
+    new Map()
+  )
+  const teamIndex = buildIndex({
+    rows: Array.isArray(teamIndexRows) ? teamIndexRows : [],
+    keyBuilder: buildTeamKeys,
+  })
+
+  groupedRows.forEach(scopeRows => {
+    const referenceRow = scopeRows[0]
+    if (!referenceRow) return
+
+    const expectedSummary = normalizeScoutProfilesSummaryForAudit(
+      buildScoutProfilesSummary(scopeRows)
+    )
+    const teamIndexRow = findIndexed({
+      index: teamIndex,
+      row: referenceRow,
+      keyBuilder: buildTeamKeys,
+    })
+
+    if (!teamIndexRow) {
+      issues.push({
+        type: 'missing_team_search_index',
+        severity: 'medium',
+        source: 'dbSearchIndexes',
+        teamDocumentId: clean(referenceRow.teamDocumentId),
+        seasonId: clean(referenceRow.seasonId),
+        seasonKey: clean(referenceRow.seasonKey || referenceRow.seasonId),
+        teamName: clean(referenceRow.teamName),
+        expected: {
+          scoutProfiledPlayersCount: expectedSummary.total,
+          scoutProfilesSummary: expectedSummary,
+        },
+        actual: null,
+        repairable: false,
+      })
+      return
+    }
+
+    const actualSummary = normalizeScoutProfilesSummaryForAudit(
+      teamIndexRow.scoutProfilesSummary
+    )
+    const expected = {
+      scoutProfiledPlayersCount: expectedSummary.total,
+      scoutProfilesSummary: expectedSummary,
+    }
+    const actual = {
+      scoutProfiledPlayersCount: Number(
+        teamIndexRow.scoutProfiledPlayersCount
+      ) || 0,
+      scoutProfilesSummary: actualSummary,
+    }
+
+    if (!sameJson(expected, actual)) {
+      issues.push({
+        type: 'team_search_index_scout_summary_mismatch',
+        severity: 'medium',
+        source: 'dbSearchIndexes',
+        teamDocumentId: clean(referenceRow.teamDocumentId),
+        seasonId: clean(referenceRow.seasonId),
+        seasonKey: clean(referenceRow.seasonKey || referenceRow.seasonId),
+        teamName: clean(referenceRow.teamName),
+        searchIndexDocumentId: clean(teamIndexRow.sourceDocumentId),
+        expected,
+        actual,
+        mismatchedFields: Object.keys(expected).filter(field => (
+          !sameJson(expected[field], actual[field])
+        )),
+        repairData: {
+          writer: 'DIRECT_TEAM_SEARCH_INDEX',
+          fields: expected,
+        },
+        repairable: true,
+      })
+    }
+  })
+
+  return issues
+}
+
+const collectIssues = ({
+  teamRows,
+  skippedRows,
+  playerRows,
+  searchRows,
+  teamIndexRows = [],
+}) => {
+  const issues = [
+    ...skippedRows,
+    ...collectTeamSearchIndexSummaryIssues({
+      teamRows,
+      teamIndexRows,
+    }),
+  ]
   const playerIndex = buildIndex({
     rows: playerRows,
     keyBuilder: buildPlayerKeys,
@@ -1586,7 +1915,7 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
       })
     }
 
-    const teamScoutStateMismatchFields = getMismatchedFields({
+    const teamScoutStateMismatchFields = getTeamScoutStateMismatchedFields({
       actual: row.actualScoutState,
       expected: row.expectedTeamScoutState,
     })
@@ -1970,6 +2299,8 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
     }
 
     if (row.playerDocumentTrackingRequired && !playerRow) {
+      const computedTrackingReasons = sorted(row.expectedTrackingReasons)
+
       issues.push({
         ...buildIssue({
           type: 'missing_player_document',
@@ -1981,6 +2312,19 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
           expectedCombinations: row.actualCombinationIds,
         }),
         expectedTrackingReasons: row.expectedTrackingReasons,
+        computedTrackingReasons,
+        shouldHavePlayerDocument: true,
+        scoutProfileIds: getProfileIds(row),
+        scoutProfileDetails: getProfileDetails(row),
+        professionalProfileIds: getProfessionalProfileIds(row),
+        favorite: row.tracking?.favorite === true || row.favorite === true,
+        watchlist: row.tracking?.watchlist === true || row.watchlist === true,
+        manualTracking: computedTrackingReasons.includes(
+          SCOUTING_PLAYER_TRACKING_REASONS.MANUAL
+        ),
+        transferTracking: computedTrackingReasons.includes(
+          SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER
+        ),
       })
     } else if (
       playerRow &&
@@ -2098,6 +2442,7 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
         source: 'dbSearchIndexes',
         playerId: row.playerId,
         playerDocumentId: row.playerDocumentId,
+        searchIndexDocumentId: row.searchIndexDocumentId,
         fullName: row.fullName,
         seasonId: row.seasonId,
         seasonKey: row.seasonKey,
@@ -2106,6 +2451,18 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
         actualSeasonStatus: clean(searchRow.seasonStatus) || 'missing',
         expectedSeasonStatus: row.expectedSeasonStatus,
         missingFields: ['seasonStatus'],
+        expected: {
+          seasonStatus: row.expectedSeasonStatus,
+        },
+        actual: {
+          seasonStatus: clean(searchRow.seasonStatus) || '',
+        },
+        repairData: {
+          writer: 'DIRECT_PLAYER_SEARCH_INDEX',
+          fields: {
+            seasonStatus: row.expectedSeasonStatus,
+          },
+        },
       })
     } else if (searchRow && (
       !sameValues(row.canonicalProjectionProfileIds, searchRow.profileIds) ||
@@ -2197,18 +2554,40 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
       ))
 
       if (mismatchedScoutFields.length) {
+        const expectedScoutFields = mismatchedScoutFields.reduce(
+          (result, field) => {
+            result[field] = row.expectedSearchIndexScoutFields?.[field]
+            return result
+          },
+          {}
+        )
+        const actualScoutFields = mismatchedScoutFields.reduce(
+          (result, field) => {
+            result[field] = searchRow[field]
+            return result
+          },
+          {}
+        )
+
         issues.push({
           type: 'search_index_scout_projection_mismatch',
           severity: 'medium',
           source: 'dbSearchIndexes',
           playerId: row.playerId,
           playerDocumentId: row.playerDocumentId,
+          searchIndexDocumentId: row.searchIndexDocumentId,
           fullName: row.fullName,
           seasonId: row.seasonId,
           seasonKey: row.seasonKey,
           teamDocumentId: row.teamDocumentId,
           teamName: row.teamName,
           missingFields: mismatchedScoutFields,
+          expected: expectedScoutFields,
+          actual: actualScoutFields,
+          repairData: {
+            writer: 'DIRECT_PLAYER_SEARCH_INDEX',
+            fields: expectedScoutFields,
+          },
         })
       }
     }
@@ -2216,9 +2595,11 @@ const collectIssues = ({ teamRows, skippedRows, playerRows, searchRows }) => {
 
   return issues.map(issue => {
     const auditCategory = resolveAuditCategory(issue.type)
-    const repairable = issue.migrationAction === 'report_only'
+    const repairable = issue?.repairable === false
       ? false
-      : auditCategory !== PLAYER_SCOUT_AUDIT_CATEGORY.ENGINE_DIAGNOSTIC
+      : issue.migrationAction === 'report_only'
+        ? false
+        : auditCategory !== PLAYER_SCOUT_AUDIT_CATEGORY.ENGINE_DIAGNOSTIC
 
     return {
       ...issue,
@@ -2536,10 +2917,11 @@ const readScopedAuditData = async ({
   teamDocumentId,
   seasonKey,
   includeRepairData = false,
-  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_BUDGETS.TEAM_SEASON,
 }) => {
   const safeTeamDocumentId = clean(teamDocumentId)
   const safeSeasonKey = clean(seasonKey)
+  const searchIndexSeasonKey = normalizeSeasonLookupKey(safeSeasonKey)
 
   if (!safeTeamDocumentId) {
     throw new Error('Missing team document id for scoped scout audit')
@@ -2548,10 +2930,11 @@ const readScopedAuditData = async ({
     throw new Error('Missing season key for scoped scout audit')
   }
 
-  let remainingReadBudget = Math.min(
-    PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+  const scopedReadSafetyLimit = Math.min(
+    PLAYER_SCOUT_AUDIT_READ_BUDGETS.TEAM_SEASON,
     Math.max(1, Number(readSafetyLimit || 0))
   )
+  let remainingReadBudget = scopedReadSafetyLimit
 
   if (remainingReadBudget < 3) {
     throw new Error(
@@ -2574,12 +2957,36 @@ const readScopedAuditData = async ({
   )
   remainingReadBudget -= 1
 
+  if (!teamSnapshot.exists()) {
+    throw new Error(`Team document not found: ${safeTeamDocumentId}`)
+  }
+
+  const preflightRecalculated = buildRecalculatedRows({
+    teamDocs: [teamSnapshot],
+    teamIndexRows: [],
+    includeRepairData: false,
+  })
+  const preflightTeamRows = preflightRecalculated.rows.filter(row => (
+    isSameSeason(
+      row,
+      {
+        seasonId: safeSeasonKey,
+        seasonKey: safeSeasonKey,
+      }
+    )
+  ))
+  const readPlan = buildTeamSeasonScoutAuditReadPlan({
+    teamPlayersCount: preflightTeamRows.length,
+    requestedReadLimit: readSafetyLimit,
+  })
+  assertTeamSeasonScoutAuditReadPlan(readPlan)
+
   const playerSearchRead = await readAuditSnapshotWithinBudget({
     source: query(
       collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
       where('entityType', '==', 'playerSeason'),
       where('teamDocumentId', '==', safeTeamDocumentId),
-      where('seasonKey', '==', safeSeasonKey)
+      where('seasonKey', '==', searchIndexSeasonKey)
     ),
     metadata: {
       feature: 'playersDatabase',
@@ -2599,7 +3006,7 @@ const readScopedAuditData = async ({
       collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
       where('entityType', '==', 'birthTeamSeason'),
       where('teamDocumentId', '==', safeTeamDocumentId),
-      where('seasonKey', '==', safeSeasonKey)
+      where('seasonKey', '==', searchIndexSeasonKey)
     ),
     metadata: {
       feature: 'playersDatabase',
@@ -2613,10 +3020,6 @@ const readScopedAuditData = async ({
   remainingReadBudget -= teamSearchRead.readsUsed
   const teamSearchSnapshot = teamSearchRead.snapshot
 
-  if (!teamSnapshot.exists()) {
-    throw new Error(`Team document not found: ${safeTeamDocumentId}`)
-  }
-
   const teamIndexRows = flattenTeamIndexDocs(teamSearchSnapshot.docs)
   const recalculatedAll = buildRecalculatedRows({
     teamDocs: [teamSnapshot],
@@ -2624,7 +3027,13 @@ const readScopedAuditData = async ({
     includeRepairData,
   })
   const teamRows = recalculatedAll.rows.filter(row => (
-    clean(row.seasonKey || row.seasonId) === safeSeasonKey
+    isSameSeason(
+      row,
+      {
+        seasonId: safeSeasonKey,
+        seasonKey: safeSeasonKey,
+      }
+    )
   ))
   const scopedSearchRows = flattenSearchPlayerDocs(
     playerSearchSnapshot.docs
@@ -2634,19 +3043,17 @@ const readScopedAuditData = async ({
     keyBuilder: buildPlayerKeys,
   })
   const playerDocumentIds = unique(
-    teamRows.flatMap(row => {
+    teamRows.map(row => {
       const searchRow = findIndexed({
         index: scopedSearchIndex,
         row,
         keyBuilder: buildPlayerKeys,
       })
 
-      return [
-        row.playerDocumentId,
-        searchRow?.playerDocumentId,
-        buildPlayerDocumentId(row),
-        row.playerId,
-      ]
+      return resolvePreferredPlayerDocumentId({
+        row,
+        searchRow,
+      })
     })
   )
   if (playerDocumentIds.length > remainingReadBudget) {
@@ -2684,10 +3091,22 @@ const readScopedAuditData = async ({
     includeRepairData,
   })
   const verificationAwareTeamRows = verificationAwareRecalculated.rows.filter(row => (
-    clean(row.seasonKey || row.seasonId) === safeSeasonKey
+    isSameSeason(
+      row,
+      {
+        seasonId: safeSeasonKey,
+        seasonKey: safeSeasonKey,
+      }
+    )
   ))
   const verificationAwareSkippedRows = verificationAwareRecalculated.skipped.filter(row => (
-    clean(row.seasonKey || row.seasonId) === safeSeasonKey
+    isSameSeason(
+      row,
+      {
+        seasonId: safeSeasonKey,
+        seasonKey: safeSeasonKey,
+      }
+    )
   ))
 
   const searchRows = flattenSearchPlayerDocs(
@@ -2710,6 +3129,7 @@ const readScopedAuditData = async ({
     searchRows,
     teamIndexRows,
     documentRewritePlan,
+    readPlan,
     cost: {
       audit: buildPlayerScoutAuditCost({
         teamDocuments: 1,
@@ -2728,14 +3148,8 @@ const readScopedAuditData = async ({
       scopeStats: buildAuditScopeStats(searchRows),
       readSafety: {
         hardLimit: PLAYER_SCOUT_AUDIT_READ_HARD_LIMIT,
-        safetyLimit: Math.min(
-          PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
-          Math.max(1, Number(readSafetyLimit || 0))
-        ),
-        readsUsed: Math.min(
-          PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
-          Math.max(1, Number(readSafetyLimit || 0))
-        ) - remainingReadBudget,
+        safetyLimit: scopedReadSafetyLimit,
+        readsUsed: scopedReadSafetyLimit - remainingReadBudget,
         remainingBudget: remainingReadBudget,
       },
     },
@@ -2746,7 +3160,7 @@ export async function buildScopedPlayerScoutRulesAudit({
   teamDocumentId,
   seasonKey,
   includeRepairData = false,
-  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_SAFETY_LIMIT,
+  readSafetyLimit = PLAYER_SCOUT_AUDIT_READ_BUDGETS.TEAM_SEASON,
 } = {}) {
   const generatedAt = new Date().toISOString()
   const rows = await readScopedAuditData({
@@ -2755,18 +3169,42 @@ export async function buildScopedPlayerScoutRulesAudit({
     includeRepairData,
     readSafetyLimit,
   })
-  const issues = collectIssues({
+  const rawIssues = collectIssues({
     teamRows: rows.teamRows,
     skippedRows: rows.skippedRows,
     playerRows: rows.playerRows,
     searchRows: rows.searchRows,
+    teamIndexRows: rows.teamIndexRows,
   })
+  const auditContract = buildPlayerScoutAuditContractResult(
+    rawIssues,
+    {
+      teamRowsCount: rows.teamRows.length,
+      skippedRowsCount: rows.skippedRows.length,
+      playerRowsCount: rows.playerRows.length,
+      searchRowsCount: rows.searchRows.length,
+      teamIndexRowsCount: rows.teamIndexRows.length,
+      readsUsed: rows.cost?.readSafety?.readsUsed,
+      readSafetyLimit: rows.cost?.readSafety?.safetyLimit,
+      scoped: true,
+    }
+  )
+  const issues = auditContract.issues
 
   const audit = {
     generatedAt,
     mode: 'read-only-scoped',
     purpose: 'verify-player-scout-scope-after-write',
     governance: PLAYER_SCOUT_AUDIT_GOVERNANCE,
+    contract: {
+      version: auditContract.contractVersion,
+      checks: auditContract.checks,
+      coverage: auditContract.coverage,
+    },
+    auditIssues: auditContract.auditIssues,
+    migrationIssues: auditContract.migrationIssues,
+    diagnostics: auditContract.diagnostics,
+    contractSummary: auditContract.contractSummary,
     scope: {
       teamDocumentId: clean(teamDocumentId),
       seasonKey: clean(seasonKey),
@@ -2776,6 +3214,7 @@ export async function buildScopedPlayerScoutRulesAudit({
       issues,
     }),
     cost: rows.cost,
+    readPlan: rows.readPlan,
     issues,
     recalculatedRows: rows.teamRows,
     documentRewritePlan: rows.documentRewritePlan
@@ -2798,18 +3237,42 @@ export async function buildPlayerScoutRulesAudit({ includeRepairData = false } =
   const rows = await readAuditData({
     includeRepairData,
   })
-  const issues = collectIssues({
+  const rawIssues = collectIssues({
     teamRows: rows.teamRows,
     skippedRows: rows.skippedRows,
     playerRows: rows.playerRows,
     searchRows: rows.searchRows,
+    teamIndexRows: rows.teamIndexRows,
   })
+  const auditContract = buildPlayerScoutAuditContractResult(
+    rawIssues,
+    {
+      teamRowsCount: rows.teamRows.length,
+      skippedRowsCount: rows.skippedRows.length,
+      playerRowsCount: rows.playerRows.length,
+      searchRowsCount: rows.searchRows.length,
+      teamIndexRowsCount: rows.teamIndexRows.length,
+      readsUsed: rows.cost?.readSafety?.readsUsed,
+      readSafetyLimit: rows.cost?.readSafety?.safetyLimit,
+      scoped: false,
+    }
+  )
+  const issues = auditContract.issues
 
   const audit = {
     generatedAt,
     mode: 'read-only',
     purpose: 'recalculate-player-scout-with-current-rules-and-compare-stored-state',
     governance: PLAYER_SCOUT_AUDIT_GOVERNANCE,
+    contract: {
+      version: auditContract.contractVersion,
+      checks: auditContract.checks,
+      coverage: auditContract.coverage,
+    },
+    auditIssues: auditContract.auditIssues,
+    migrationIssues: auditContract.migrationIssues,
+    diagnostics: auditContract.diagnostics,
+    contractSummary: auditContract.contractSummary,
     summary: buildSummary({
       ...rows,
       issues,
@@ -2850,3 +3313,4 @@ export const downloadPlayerScoutRulesAudit = audit => {
   link.remove()
   URL.revokeObjectURL(url)
 }
+

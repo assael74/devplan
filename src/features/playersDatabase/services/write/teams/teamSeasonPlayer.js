@@ -331,41 +331,10 @@ export async function removeTeamSeasonPlayerScoutProfile({ profileId = '', playe
         scoutCombinations: Array.isArray(nextPlayer.scoutCombinations)
           ? nextPlayer.scoutCombinations
           : [],
-        bestScoutSignal: nextPlayer.bestScoutSignal || null,
+        bestScoutSignal: null,
         ...normalizePlayerScoutStory(nextPlayer),
       }
     },
-  })
-}
-
-export async function updateTeamSeasonPlayerScoutProfiles({ scoutProfiles = [], scoutCombinations = [], player = {}, ...payload } = {}) {
-  const safeScoutProfiles = Array.isArray(scoutProfiles)
-    ? scoutProfiles
-    : []
-  const safeScoutCombinations = Array.isArray(scoutCombinations)
-    ? scoutCombinations
-    : []
-
-  return patchTeamSeasonPlayer({
-    ...payload,
-    includeScoutSummary: true,
-    player,
-    buildPatch: () => ({
-      scoutProfiles: safeScoutProfiles,
-      scoutCombinations: safeScoutCombinations,
-      ...normalizePlayerScoutStory(player),
-    }),
-  })
-}
-
-export async function updateTeamSeasonPlayerRole({ primaryPosition = '', positionLayer = '', numShirt = '', ...payload } = {}) {
-  return patchTeamSeasonPlayer({
-    ...payload,
-    buildPatch: () => ({
-      primaryPosition: clean(primaryPosition),
-      positionLayer: clean(positionLayer),
-      numShirt: clean(numShirt),
-    }),
   })
 }
 
@@ -384,6 +353,7 @@ export async function updateTeamSeasonPlayerVerificationAndScout({
     team,
     target,
     player,
+    includeScoutSummary: true,
     buildPatch: (currentPlayer, seasonRow) => {
       const calculatedPlayer = buildPlayerScoutState({
         player: currentPlayer,
@@ -408,7 +378,7 @@ export async function updateTeamSeasonPlayerVerificationAndScout({
         scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
           ? calculatedPlayer.scoutCombinations
           : [],
-        bestScoutSignal: calculatedPlayer.bestScoutSignal || null,
+        bestScoutSignal: null,
         ...normalizePlayerScoutStory(calculatedPlayer),
       }
     },
@@ -462,6 +432,7 @@ export async function updateTeamSeasonPlayerRoleAndScoutProfiles({
         scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
           ? calculatedPlayer.scoutCombinations
           : [],
+        bestScoutSignal: null,
         ...normalizePlayerScoutStory(calculatedPlayer),
       }
     },

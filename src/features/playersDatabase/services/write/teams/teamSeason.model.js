@@ -286,6 +286,7 @@ const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = 
 
   return {
     ...calculatedPlayer,
+    bestScoutSignal: null,
     scoutStatsLoadMeasurements,
     updatedAt: new Date().toISOString(),
   }

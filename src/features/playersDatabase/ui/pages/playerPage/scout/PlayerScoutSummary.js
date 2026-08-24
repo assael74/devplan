@@ -202,7 +202,7 @@ function StrengthDetails({ open, profileStrength = {}, onClose }) {
     <RegularModal
       open={open}
       title='איך נקבע החוזק המקצועי?'
-      description='החוזק מבטא כמה עמוק השחקן עבר את תנאי הפרופיל הראשי.'
+      description='החוזק מבטא את עומק הפרופיל לפי הנתונים המספריים ובהתאם לסביבת התחרות.'
       iconId='completed'
       size='sm'
       hideFooter
@@ -223,6 +223,43 @@ function StrengthDetails({ open, profileStrength = {}, onClose }) {
             {profileStrength.label || '-'}
           </Box>
         </Box>
+
+        {profileStrength.baseDepthPct !== null && profileStrength.baseDepthPct !== undefined ? (
+          <Box sx={sx.strengthRules}>
+            <Box sx={sx.strengthRule}>
+              <Box sx={sx.strengthRuleBody}>
+                <Typography level='title-sm' sx={sx.strengthRuleTitle}>
+                  פירוק עומק
+                </Typography>
+
+                <Box sx={sx.strengthRuleValues}>
+                  <Box>
+                    <Typography level='body-xs' sx={sx.immediacyModalLabel}>בסיס מספרי</Typography>
+                    <Typography level='title-sm' sx={sx.strengthRuleValue}>
+                      {`${Math.round(profileStrength.baseDepthPct)}%`}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography level='body-xs' sx={sx.immediacyModalLabel}>התאמת הקשר</Typography>
+                    <Typography level='title-sm' sx={sx.strengthRuleValue}>
+                      {profileStrength.contextAdjustmentPct === null || profileStrength.contextAdjustmentPct === undefined
+                        ? '-'
+                        : `${profileStrength.contextAdjustmentPct > 0 ? '+' : ''}${Math.round(profileStrength.contextAdjustmentPct)}%`}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography level='body-xs' sx={sx.immediacyModalLabel}>עומק סופי</Typography>
+                    <Typography level='title-sm' sx={sx.strengthRuleValue}>
+                      {profileStrength.depthPct === null || profileStrength.depthPct === undefined
+                        ? '-'
+                        : `${Math.round(profileStrength.depthPct)}%`}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        ) : null}
 
         {rules.length ? (
           <Box sx={sx.strengthRules}>

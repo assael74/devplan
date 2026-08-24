@@ -589,7 +589,7 @@ export const buildScoutStorySummary = ({ primaryProfile, opportunity, nearProfil
     getScoutProfileLabel(primaryProfile.profileId || primaryProfile.id)
   const depth = Number(primaryProfile?.profileDepth?.depthPct)
   const depthText = Number.isFinite(depth)
-    ? ` והוא עובר את רף הפרופיל בכ־${Math.round(Math.abs(depth) <= 1 ? depth * 100 : depth)}%`
+    ? ` עם עומק פרופיל מחושב של כ־${Math.round(Math.abs(depth) <= 1 ? depth * 100 : depth)}%`
     : ''
   const actionSentence = ACTION_SENTENCES[clean(opportunity?.effectiveActionStatus)] || ''
   const exposureLevel = clean(opportunity?.exposureLevel)

@@ -101,7 +101,7 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       scoutSignals,
       scoutProfiles: scoutSignals,
       scoutCombinations: scout.combinations,
-      bestScoutSignal: result?.bestSignal || scoutSignals[0] || null,
+      bestScoutSignal: result?.bestSignal || scout.profileHierarchy?.primarySignal || null,
       scoutCandidateSignals: Array.isArray(result?.candidateSignals)
         ? result.candidateSignals
         : [],

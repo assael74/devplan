@@ -96,6 +96,7 @@ export const createEmptyPlayerScoutComputedState = () => ({
   scoutCombinations: [],
   bestScoutSignal: null,
   scoutCandidateSignals: [],
+  scoutEvidence: [],
   scoutSpotlights: [],
   scoutOpportunity: null,
   scoutVerification: null,
@@ -228,6 +229,9 @@ export const buildPlayerScoutState = ({
     bestScoutSignal: scoutResult?.bestSignal || null,
     scoutCandidateSignals: Array.isArray(scoutResult?.candidateSignals)
       ? scoutResult.candidateSignals
+      : [],
+    scoutEvidence: Array.isArray(scoutResult?.scoutEvidence)
+      ? scoutResult.scoutEvidence
       : [],
     scoutSpotlights: Array.isArray(scoutResult?.spotlights)
       ? scoutResult.spotlights

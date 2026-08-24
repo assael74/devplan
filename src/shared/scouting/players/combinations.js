@@ -15,31 +15,13 @@ export const SCOUT_PROFILE_COMBINATIONS = [
     profileIds: ['clear_scorer', 'killer_efficiency'],
   },
   {
-    id: 'stable_attacking_starter',
-    idIcon: 'secondaryThreat',
-    label: 'שחקן התקפה יציב',
-    group: 'attack',
-    description: 'שילוב של שחקן קבוע בהרכב וספק מספרים משני',
+    id: 'promoted_attacking_support',
+    idIcon: 'promotedTalent',
+    label: 'כישרון מוקפץ תומך',
+    group: 'development_attack',
+    description: 'שחקן צעיר מהשנתון שמקבל תפקיד התקפי תומך משמעותי',
     interest: SCOUT_INTEREST.SUPER,
-    profileIds: ['secondary_threat', 'lineup_banker'],
-  },
-  {
-    id: 'two_way_defensive_threat',
-    idIcon: 'backThreat',
-    label: 'הגנה ומספרים',
-    group: 'defense_midfield',
-    description: 'שילוב של שחקן הגנה קבוע בהרכב ועם תרומה התקפית של מספרים',
-    interest: SCOUT_INTEREST.SUPER,
-    profileIds: ['back_threat', 'pro_anchor'],
-  },
-  {
-    id: 'restricted_role',
-    idIcon: 'blockedTopTeam',
-    label: 'שחקן שלא נספר',
-    group: 'all',
-    interest: SCOUT_INTEREST.SUPER,
-    description: 'שילוב של שחקן שנכנס כחילוף קבוע ומקבל מעט דקות',
-    profileIds: ['underused_prospect', 'blocked_top_team'],
+    profileIds: ['promoted_talent', 'attacking_support'],
   },
 ]
 
@@ -54,9 +36,9 @@ export const buildScoutProfileCombinations = ({
   )
 
   return (Array.isArray(combinations) ? combinations : [])
-    .filter(combination =>
+    .filter(combination => (
       (combination.profileIds || []).every(profileId => signalIds.has(profileId))
-    )
+    ))
     .map(combination => ({
       ...combination,
       matchedProfileIds: combination.profileIds || [],

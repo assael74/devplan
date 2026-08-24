@@ -145,7 +145,7 @@ function resolveStrengthLabel(value) {
   if (typeof value !== 'object') return ''
 
   const depthPct = Number(value.depthPct)
-  if (Number.isFinite(depthPct)) return `${Math.round(depthPct)}%+ מעל הרף`
+  if (Number.isFinite(depthPct)) return `עומק פרופיל ${Math.round(depthPct)}%`
 
   if (value.primaryProfileStrength) {
     return resolveStrengthLabel(value.primaryProfileStrength)

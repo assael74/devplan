@@ -42,7 +42,6 @@ export {
   syncPlayerScoutProfileDocsMany,
   syncPlayerRoleAndScoutProfileDoc,
   updatePlayerSeasonNotes,
-  updatePlayerSeasonRole,
   updatePlayerSeasonUrl,
   upsertOfficialPlayerDoc,
   upsertProfiledPlayerDocsMany,

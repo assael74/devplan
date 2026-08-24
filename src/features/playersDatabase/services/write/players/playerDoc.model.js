@@ -23,6 +23,8 @@ import {
   normalizePlayerNameValue,
   resolvePlayerIdentityBirthYear,
 } from '../../../model/playerIdentity.model.js'
+import { PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG } from '../../../catalog/firestoreDocuments/playerDocument.catalog.js'
+import { buildPlayerManualReview } from '../../../../../shared/scouting/players/manualReview/playerManualReview.js'
 
 export const buildPlayerDocumentId = player =>
   buildCanonicalPlayerDocumentId(player)
@@ -68,6 +70,9 @@ const normalizePlayerScoutTrajectory = value => {
     transferEvents: Array.isArray(trajectory.transferEvents)
       ? trajectory.transferEvents
       : [],
+    comparisons: Array.isArray(trajectory.comparisons)
+      ? trajectory.comparisons
+      : [],
   })
 }
 
@@ -77,8 +82,33 @@ const normalizeScoutProfileArray = values => (
     : []
 )
 
+const cloneScoutContractValue = value => compactScoutValue(value)
+
+const resolvePlayerManualReview = ({ player = {}, currentData = {} } = {}) => (
+  buildPlayerManualReview({
+    review: player.playerReview || currentData.playerReview || {},
+  })
+)
+
+const resolveManualImmediacyDecision = ({ player = {}, currentData = {} } = {}) => {
+  const template = cloneScoutContractValue(
+    PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG.manualImmediacyDecision || {}
+  )
+  const source = player.manualImmediacyDecision && typeof player.manualImmediacyDecision === 'object'
+    ? player.manualImmediacyDecision
+    : currentData.manualImmediacyDecision && typeof currentData.manualImmediacyDecision === 'object'
+      ? currentData.manualImmediacyDecision
+      : {}
+
+  return compactScoutValue({
+    ...template,
+    ...source,
+  })
+}
+
 export const normalizePlayerScoutStory = player => ({
   scoutCandidateSignals: normalizeScoutProfileArray(player?.scoutCandidateSignals),
+  scoutEvidence: normalizeScoutProfileArray(player?.scoutEvidence),
   scoutSpotlights: normalizeScoutProfileArray(player?.scoutSpotlights),
   scoutOpportunity: compactScoutValue(player?.scoutOpportunity || null),
   scoutVerification: compactScoutValue(player?.scoutVerification || null),
@@ -88,6 +118,7 @@ export const normalizePlayerScoutStory = player => ({
   scoutPlayerInterest: compactScoutValue(player?.scoutPlayerInterest || null),
   scoutTrajectory: normalizePlayerScoutTrajectory(player?.scoutTrajectory),
   scoutTransferContext: compactScoutValue(player?.scoutTransferContext || null),
+  futureCompetitionPath: compactScoutValue(player?.futureCompetitionPath || null),
   scoutEngineVersion: clean(player?.scoutEngineVersion),
 })
 
@@ -122,6 +153,12 @@ export const normalizePlayerScoutProfiles = player => {
       return compactScoutValue({
         profileId: clean(profile.profileId || profile.id),
         profileLabel: clean(profile.profileLabel || profile.label),
+        profileShortLabel: clean(profile.profileShortLabel || profile.shortLabel),
+        profileIdentity: clean(profile.profileIdentity || profile.identity),
+        classificationState: clean(profile.classificationState),
+        sourcePreliminaryProfileId: clean(profile.sourcePreliminaryProfileId),
+        reclassifiedToProfileId: clean(profile.reclassifiedToProfileId),
+        reclassificationReason: clean(profile.reclassificationReason),
         perspective: clean(profile.perspective),
         searchLevels: normalizeScoutProfileArray(profile.searchLevels),
         teamFilter: clean(profile.teamFilter),
@@ -129,6 +166,7 @@ export const normalizePlayerScoutProfiles = player => {
         interestLevel: clean(profile.interestLevel || profile.interest),
         profileDepth: profile.profileDepth || null,
         profileStrength: profile.profileStrength || null,
+        profileConfidence: profile.profileConfidence || null,
         warnings,
         score: Number.isFinite(Number(profile.score))
           ? Number(profile.score)
@@ -308,17 +346,12 @@ export const buildPlayerBaseDoc = (player = {}, currentData = {}, season = {}, t
 
     tracking: currentTracking,
 
-    playerReview: compactScoutValue(
-      player.playerReview ||
-      currentData.playerReview ||
-      null
-    ),
+    playerReview: resolvePlayerManualReview({ player, currentData }),
 
-    manualImmediacyDecision: compactScoutValue(
-      player.manualImmediacyDecision ||
-      currentData.manualImmediacyDecision ||
-      null
-    ),
+    manualImmediacyDecision: resolveManualImmediacyDecision({
+      player,
+      currentData,
+    }),
 
     manualImmediacyHistory: normalizeScoutProfileArray(
       currentData.manualImmediacyHistory

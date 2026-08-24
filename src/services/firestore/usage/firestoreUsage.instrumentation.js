@@ -4,6 +4,7 @@ import {
   getCountFromServer,
   getDoc,
   getDocs,
+  getDocsFromServer,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -119,6 +120,57 @@ export async function trackedGetDocs(queryRef, context = {}) {
       errorCode: getErrorCode(error),
       meta: buildReadMeta({
         meta: context.meta,
+        billingEstimate: 'unknown-on-error',
+      }),
+    })
+
+    throw error
+  }
+}
+
+export async function trackedGetDocsFromServer(queryRef, context = {}) {
+  const startedAt = now()
+  const collection = context.collection || getCollectionFromRef(queryRef)
+
+  try {
+    const snapshot = await getDocsFromServer(queryRef)
+    const docs = snapshot.docs.map(item => item.data())
+    const docsCount = snapshot.size
+
+    trackFirestoreRead({
+      ...context,
+      collection,
+      operationSubtype: context.operationSubtype || 'getDocsFromServer',
+      docs,
+      docsCount,
+      readsCount: Math.max(1, docsCount),
+      durationMs: now() - startedAt,
+      meta: buildReadMeta({
+        meta: {
+          ...(context.meta || {}),
+          source: 'server',
+        },
+        billingEstimate: docsCount
+          ? 'returned-documents'
+          : 'minimum-query-read',
+      }),
+    })
+
+    return snapshot
+  } catch (error) {
+    trackFirestoreRead({
+      ...context,
+      collection,
+      operationSubtype: context.operationSubtype || 'getDocsFromServer',
+      readsCount: 0,
+      durationMs: now() - startedAt,
+      status: 'error',
+      errorCode: getErrorCode(error),
+      meta: buildReadMeta({
+        meta: {
+          ...(context.meta || {}),
+          source: 'server',
+        },
         billingEstimate: 'unknown-on-error',
       }),
     })

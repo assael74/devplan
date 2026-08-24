@@ -1,6 +1,10 @@
 // src/shared/scouting/players/opportunity/playerScoutOpportunity.js
 
 import {
+  SCOUT_PROFILE_IDENTITY,
+} from '../ids.js'
+
+import {
   PLAYER_SCOUT_EXPOSURE_LEVEL,
 } from './playerOpportunity.model.js'
 
@@ -23,6 +27,11 @@ const EXPOSURE_RANK = {
 const mergeUnique = (values = []) => {
   return [...new Set(values.filter(Boolean))]
 }
+
+const isPreliminarySignal = signal => (
+  (signal?.profileIdentity || signal?.identity || SCOUT_PROFILE_IDENTITY.CORE) ===
+  SCOUT_PROFILE_IDENTITY.PRELIMINARY
+)
 
 const getExposureLevel = (signals = []) => {
   return signals.reduce((current, signal) => {
@@ -59,8 +68,9 @@ export const buildPlayerScoutOpportunity = ({
 } = {}) => {
   const safeSignals = Array.isArray(signals) ? signals : []
   const safeCandidateSignals = Array.isArray(candidateSignals) ? candidateSignals : []
+  const activeSignals = safeSignals.filter(signal => !isPreliminarySignal(signal))
   const automaticImmediacy = buildPlayerAutomaticImmediacy({
-    signals: safeSignals,
+    signals: activeSignals,
     candidateSignals: safeCandidateSignals,
     combinations,
     profileCaseStrength,
@@ -94,13 +104,16 @@ export const buildPlayerScoutOpportunity = ({
     reductions: automaticImmediacy.reductions,
     evaluations: automaticImmediacy.evaluations,
     signalPersistence: automaticImmediacy.signalPersistence,
-    exposureLevel: getExposureLevel(safeSignals),
+    exposureLevel: getExposureLevel(activeSignals),
     reasons: [
       ...automaticImmediacy.boosts.map(boost => boost.id),
       ...automaticImmediacy.reductions.map(reduction => reduction.id),
     ],
-    profileIds: mergeUnique(safeSignals.map(signal => signal.profileId)),
+    profileIds: mergeUnique(activeSignals.map(signal => signal.profileId)),
+    preliminaryProfileIds: mergeUnique(
+      safeSignals.filter(isPreliminarySignal).map(signal => signal.profileId)
+    ),
     candidateProfileIds: mergeUnique(safeCandidateSignals.map(signal => signal.profileId)),
-    bestProfileId: profileCaseStrength.primaryProfileId || safeSignals[0]?.profileId || '',
+    bestProfileId: profileCaseStrength.primaryProfileId || activeSignals[0]?.profileId || '',
   }
 }

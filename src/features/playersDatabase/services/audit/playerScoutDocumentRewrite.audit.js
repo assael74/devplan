@@ -7,13 +7,13 @@ import {
 
 import { db } from '../../../../services/firebase/firebase.js'
 import { createTrackedWriteBatch } from '../../../../services/firestore/usage/index.js'
+import { BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG } from '../../catalog/firestoreDocuments/birthTeamDocument.catalog.js'
 import {
-  BIRTH_TEAMS_DATABASE_GENERIC_OBJECTS_CATALOG,
   PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS,
   PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG,
-  SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
-  SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
-} from '../../catalog/genericObjects.catalog.js'
+} from '../../catalog/firestoreDocuments/playerDocument.catalog.js'
+import { SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js'
+import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 
 const REWRITE_PLAN_VERSION = 4
@@ -931,7 +931,7 @@ export const buildPlayerScoutDocumentRewritePlan = ({
       teamSeason: 'dbBirthTeams',
       playerDocument: 'dbPlayers',
       searchIndex: 'projection',
-      schema: 'genericObjects.catalog.js',
+      schema: 'direct document catalogs',
     },
     readPolicy: {
       auditReadsReused: true,

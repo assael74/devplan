@@ -7,7 +7,7 @@ import {
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG } from '../../../catalog/genericObjects.catalog.js'
+import { PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG } from '../../../catalog/firestoreDocuments/leaguesMaster.catalog.js'
 import {
   buildLeaguesMasterLeagueEntry,
   buildLeaguesMasterLeagueMap,

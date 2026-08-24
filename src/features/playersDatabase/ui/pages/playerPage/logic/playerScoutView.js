@@ -268,6 +268,18 @@ const resolveProfileLabel = profile => {
   )
 }
 
+const resolveProfileIdentity = profile => {
+  const profileDefinition = resolveProfileDefinition(profile)
+
+  return clean(
+    profile?.profileIdentity ||
+    profile?.identity ||
+    profileDefinition?.profileIdentity
+  ).toLowerCase()
+}
+
+const isCoreProfile = profile => resolveProfileIdentity(profile) === 'core'
+
 const buildProfileItem = (profile, hierarchySignal = null, role = 'supporting') => {
   if (!profile && !hierarchySignal) return null
 
@@ -283,7 +295,7 @@ const buildProfileItem = (profile, hierarchySignal = null, role = 'supporting') 
     label: resolveProfileLabel(source),
     role,
     depthPct,
-    depthLabel: depthPct === null ? '' : formatDepth(depthPct),
+    depthLabel: depthPct === null ? '' : formatProfileDepth(depthPct),
     why: buildWhyView(source),
   }
 }
@@ -298,7 +310,10 @@ const buildProfilesView = scout => {
     : {}
   const byId = new Map(profiles.map(profile => [resolveProfileId(profile), profile]))
   const primaryProfileId = clean(hierarchy.primaryProfileId)
-  const primaryProfile = byId.get(primaryProfileId) || hierarchy.primarySignal || profiles[0] || null
+  const hierarchyPrimaryProfile = byId.get(primaryProfileId) || hierarchy.primarySignal || null
+  const primaryProfile = isCoreProfile(hierarchyPrimaryProfile)
+    ? hierarchyPrimaryProfile
+    : profiles.find(isCoreProfile) || null
   const resolvedPrimaryId = resolveProfileId(primaryProfile)
   const orderedProfileIds = Array.isArray(hierarchy.orderedProfileIds)
     ? hierarchy.orderedProfileIds.map(clean).filter(Boolean)
@@ -306,11 +321,27 @@ const buildProfilesView = scout => {
   const supportingProfileIds = Array.isArray(hierarchy.supportingProfileIds)
     ? hierarchy.supportingProfileIds.map(clean).filter(Boolean)
     : []
+  const preliminaryProfileIds = new Set([
+    ...(Array.isArray(hierarchy.preliminaryProfileIds)
+      ? hierarchy.preliminaryProfileIds.map(clean).filter(Boolean)
+      : []),
+    ...(Array.isArray(scout?.preliminaryProfileIds)
+      ? scout.preliminaryProfileIds.map(clean).filter(Boolean)
+      : []),
+    ...profiles
+      .filter(profile => (
+        clean(profile?.profileIdentity || profile?.identity).toLowerCase() === 'preliminary'
+      ))
+      .map(resolveProfileId)
+      .filter(Boolean),
+  ])
   const supportingOrder = orderedProfileIds.length
-    ? orderedProfileIds
+    ? orderedProfileIds.filter(profileId => !preliminaryProfileIds.has(profileId))
     : supportingProfileIds.length
-      ? supportingProfileIds
-      : profiles.map(resolveProfileId)
+      ? supportingProfileIds.filter(profileId => !preliminaryProfileIds.has(profileId))
+      : profiles
+          .map(resolveProfileId)
+          .filter(profileId => !preliminaryProfileIds.has(profileId))
   const supportingSignals = Array.isArray(hierarchy.supportingSignals)
     ? hierarchy.supportingSignals
     : []
@@ -348,7 +379,15 @@ const buildProfilesView = scout => {
   }
 }
 
-const formatDepth = value => {
+const formatProfileDepth = value => {
+  const number = toNumber(value)
+
+  if (number === null) return ''
+
+  return `עומק פרופיל ${Math.round(number)}%`
+}
+
+const formatRuleDepth = value => {
   const number = toNumber(value)
 
   if (number === null) return ''
@@ -455,6 +494,9 @@ const buildProfileStrengthDetails = primaryProfile => {
     return {
       measurableRuleCount: 0,
       depthPct: null,
+      baseDepthPct: null,
+      contextAdjustmentPct: null,
+      method: '',
       rules: [],
     }
   }
@@ -483,6 +525,9 @@ const buildProfileStrengthDetails = primaryProfile => {
   return {
     measurableRuleCount: toNumber(strength.measurableRuleCount) || rules.length,
     depthPct: toNumber(strength.depthPct),
+    baseDepthPct: toNumber(primaryProfile?.profileDepth?.baseDepthPct),
+    contextAdjustmentPct: toNumber(primaryProfile?.profileDepth?.contextAdjustmentPct),
+    method: clean(primaryProfile?.profileDepth?.method),
     rules,
   }
 }
@@ -620,7 +665,7 @@ const mergeProfileEvidence = ({ evidence, depthRule, metrics }) => {
   const metric = clean(evidence?.metric)
   const value = evidence?.actual
   const depthLabel = depthRule?.depthPct !== undefined
-    ? formatDepth(depthRule.depthPct)
+    ? formatRuleDepth(depthRule.depthPct)
     : buildDepthLabelForRule({ rule, value })
 
   return {
@@ -746,7 +791,7 @@ const buildWhyView = primaryProfile => {
 
   return {
     profileLabel: resolveProfileLabel(primaryProfile),
-    profileDepthLabel: depthPct === null ? '' : formatDepth(depthPct),
+    profileDepthLabel: depthPct === null ? '' : formatProfileDepth(depthPct),
     matchedCount: matchedEvidence.length,
     requiredCount: matchEvidence.length,
     evidence: buildEvidenceCards(primaryProfile),
@@ -1362,11 +1407,12 @@ const buildPlayerFallbackStory = historyRows => {
     ? scout.profileHierarchy
     : row.scoutProfileHierarchy || {}
   const primaryProfileId = clean(profileHierarchy.primaryProfileId)
-  const primaryProfile = profiles.find(profile => resolveProfileId(profile) === primaryProfileId) ||
-    profileHierarchy.primarySignal ||
-    scout.primaryProfile ||
-    profiles[0] ||
-    null
+  const hierarchyPrimaryProfile = profiles.find(
+    profile => resolveProfileId(profile) === primaryProfileId
+  ) || profileHierarchy.primarySignal || null
+  const primaryProfile = isCoreProfile(hierarchyPrimaryProfile)
+    ? hierarchyPrimaryProfile
+    : profiles.find(isCoreProfile) || null
   const context = buildContext(primaryProfile)
   const questions = buildQuestions(scout)
   const reasons = buildMainReasons(primaryProfile)
@@ -1396,11 +1442,12 @@ export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey, s
     ? scout.profileHierarchy
     : row.scoutProfileHierarchy || {}
   const primaryProfileId = clean(profileHierarchy.primaryProfileId)
-  const primaryProfile = profiles.find(profile => resolveProfileId(profile) === primaryProfileId) ||
-    profileHierarchy.primarySignal ||
-    scout.primaryProfile ||
-    profiles[0] ||
-    null
+  const hierarchyPrimaryProfile = profiles.find(
+    profile => resolveProfileId(profile) === primaryProfileId
+  ) || profileHierarchy.primarySignal || null
+  const primaryProfile = isCoreProfile(hierarchyPrimaryProfile)
+    ? hierarchyPrimaryProfile
+    : profiles.find(isCoreProfile) || null
   const effectiveActionStatus = clean(opportunity.effectiveActionStatus) || 'unknown'
   const context = buildContext(primaryProfile)
   const questions = buildQuestions(scout)

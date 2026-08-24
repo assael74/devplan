@@ -2,6 +2,14 @@
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
+const selectedState = {
+  selectedBackground: devPlanColors.primaryLight,
+  selectedText: devPlanColors.primaryDark,
+  selectedBorder: devPlanColors.primary,
+  selectedShadow: `0 4px 12px rgba(23, 59, 87, 0.20), 0 0 0 2px ${devPlanColors.surface}`,
+  selectedHoverShadow: `0 5px 14px rgba(23, 59, 87, 0.28), 0 0 0 2px ${devPlanColors.surface}`,
+}
+
 export const scoutPriorityColors = {
   immediate: {
     main: '#1F6B45',
@@ -37,6 +45,11 @@ export const scoutProfileChipColors = {
   shadow: '0 4px 14px rgba(47, 134, 199, 0.20)',
   hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.28)',
   icon: '#D6EDFC',
+  depthTrack: devPlanColors.surface,
+  depthTrackText: devPlanColors.primaryDark,
+  depthFill: `linear-gradient(90deg, ${devPlanColors.primary} 0%, ${devPlanColors.tertiaryDark} 100%)`,
+  depthFillText: '#FFFFFF',
+  ...selectedState,
 }
 
 export const scoutProfileChipVariants = {
@@ -48,6 +61,11 @@ export const scoutProfileChipVariants = {
     shadow: '0 4px 14px rgba(47, 134, 199, 0.14)',
     hoverShadow: '0 6px 18px rgba(47, 134, 199, 0.20)',
     icon: devPlanColors.tertiary,
+    depthTrack: devPlanColors.tertiaryLight,
+    depthTrackText: devPlanColors.primaryDark,
+    depthFill: devPlanColors.tertiary,
+    depthFillText: '#FFFFFF',
+    ...selectedState,
   },
   nearProfile: {
     background: '#F6F8EE',
@@ -56,5 +74,10 @@ export const scoutProfileChipVariants = {
     shadow: '0 4px 14px rgba(112, 138, 52, 0.12)',
     hoverShadow: '0 6px 18px rgba(112, 138, 52, 0.18)',
     icon: '#708B35',
+    depthTrack: '#F6F8EE',
+    depthTrackText: '#4F6127',
+    depthFill: '#B6C87B',
+    depthFillText: '#2F3E18',
+    ...selectedState,
   },
 }

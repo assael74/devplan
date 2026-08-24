@@ -3,6 +3,7 @@
 import {
   SCOUT_INTEREST,
   SCOUT_LEVEL,
+  SCOUT_PROFILE_IDENTITY,
   SCOUT_REVIEW,
   SCOUT_WARNING,
   TEAM_FILTER,
@@ -12,17 +13,29 @@ const DEP_LOW = 'low'
 const DEP_MED = 'medium'
 const DEP_HIGH = 'high'
 
+// Calibration candidate only. Backtest must run before this threshold is treated as final.
+export const PRELIMINARY_LOW_OUTPUT_MINUTES_PCT_CANDIDATE = 0.8
+
 const sameBelow = [
   SCOUT_LEVEL.SAME,
   SCOUT_LEVEL.BELOW,
 ]
+
+const clean = value => String(value || '').trim()
+
+const PROFESSIONAL_PROFILE_IDENTITIES = new Set([
+  SCOUT_PROFILE_IDENTITY.CORE,
+  SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
+])
 
 export const SCOUT_PROFILES = [
   {
     id: 'clear_scorer',
     idIcon: 'clearScorer',
     label: 'הסקורר המובהק',
+    shortLabel: 'סקורר',
     group: 'attack',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
@@ -44,6 +57,7 @@ export const SCOUT_PROFILES = [
     idIcon: 'killerEfficiency',
     label: 'ניצול מצבים קטלני',
     group: 'attack',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
@@ -64,6 +78,7 @@ export const SCOUT_PROFILES = [
         metric: 'goalsPerGameDuration',
         op: 'gte',
         value: 0.65,
+        distancePrecision: 2,
         reason: 'elite_goals_per_game_duration',
       },
     ],
@@ -73,29 +88,72 @@ export const SCOUT_PROFILES = [
     },
   },
   {
-    id: 'last_station',
-    idIcon: 'lastStation',
-    label: 'התחנה האחרונה',
-    group: 'defense_keeper',
-    interest: SCOUT_INTEREST.SUPER,
+    id: 'preliminary_low_output',
+    idIcon: 'preliminaryLowOutput',
+    label: 'שימוש גבוה · תפוקה נמוכה',
+    shortLabel: 'מחפש זהות',
+    group: 'all',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.PRELIMINARY,
+    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
-    positionContext: 'defense_midfield',
+    teamFilter: TEAM_FILTER.ANY_POSITIVE,
+    openContext: {
+      leagueLevelMax: 2,
+      clubStrengthLevelMax: 2,
+    },
     rules: [
       {
         metric: 'minutesPct',
         op: 'gte',
-        value: 0.85,
-        reason: 'very_high_minutes',
+        value: PRELIMINARY_LOW_OUTPUT_MINUTES_PCT_CANDIDATE,
+        reason: 'significant_minutes_low_output_candidate',
       },
       {
-        metric: 'yellowCards',
-        op: 'between',
-        min: 0,
-        max: 6,
-        reason: 'low_cards',
+        metric: 'goals',
+        op: 'lte',
+        value: 2,
+        reason: 'low_goal_output',
       },
     ],
+    deps: {
+      position: DEP_HIGH,
+      team: DEP_MED,
+    },
+    warnings: [SCOUT_WARNING.POSITION_MISSING],
+    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
+  },
+  {
+    id: 'last_station',
+    idIcon: 'lastStation',
+    label: 'התחנה האחרונה',
+    shortLabel: 'תחנה אחרונה',
+    group: 'defense_keeper',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
+    reclassificationOnly: true,
+    interest: SCOUT_INTEREST.SUPER,
+    searchLevels: sameBelow,
+    teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
+    positionContext: 'defense_midfield',
+    rules: [],
+    deps: {
+      position: DEP_HIGH,
+      team: DEP_MED,
+    },
+    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
+  },
+  {
+    id: 'attacking_support',
+    idIcon: 'attackingSupport',
+    label: 'תמיכה התקפית',
+    shortLabel: 'תמיכה התקפית',
+    group: 'attack',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
+    reclassificationOnly: true,
+    interest: SCOUT_INTEREST.INTERESTING,
+    searchLevels: sameBelow,
+    teamFilter: TEAM_FILTER.ANY_POSITIVE,
+    positionContext: 'attacking_support',
+    rules: [],
     deps: {
       position: DEP_HIGH,
       team: DEP_MED,
@@ -106,7 +164,9 @@ export const SCOUT_PROFILES = [
     id: 'back_threat',
     idIcon: 'backThreat',
     label: 'האיום מאחור',
+    shortLabel: 'איום מאחור',
     group: 'defense_keeper',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
@@ -138,7 +198,9 @@ export const SCOUT_PROFILES = [
     id: 'promoted_talent',
     idIcon: 'promotedTalent',
     label: 'הכישרון המוקפץ',
+    shortLabel: 'כישרון מוקפץ',
     group: 'all',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
@@ -161,89 +223,15 @@ export const SCOUT_PROFILES = [
     },
   },
   {
-    id: 'single_engine',
-    idIcon: 'singleEngine',
-    label: 'מקור תפוקה מרכזי',
-    group: 'attack_creation',
-    interest: SCOUT_INTEREST.INTERESTING,
-    searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY,
-    rules: [
-      {
-        metric: 'goalsShareOfTeam',
-        op: 'gte',
-        value: 0.4,
-        reason: 'high_team_goals_share',
-      },
-      {
-        metric: 'startsPct',
-        op: 'gte',
-        value: 0.85,
-        reason: 'max_starter_load',
-      },
-    ],
-    deps: {
-      position: DEP_HIGH,
-      team: DEP_HIGH,
-    },
-  },
-  {
-    id: 'lineup_banker',
-    idIcon: 'lineupBanker',
-    label: 'באנקר הרכב',
-    group: 'all',
-    interest: SCOUT_INTEREST.INTERESTING,
-    searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY_POSITIVE,
-    rules: [
-      {
-        metric: 'startsPct',
-        op: 'gte',
-        value: 0.9,
-        reason: 'near_full_starter',
-      },
-      {
-        metric: 'subOut',
-        op: 'eq',
-        value: 0,
-        reason: 'never_subbed_out',
-      },
-    ],
-    deps: {
-      position: DEP_LOW,
-      team: DEP_MED,
-    },
-  },
-  {
-    id: 'pro_anchor',
-    idIcon: 'proAnchor',
-    label: 'העוגן המקצועי',
-    group: 'defense_midfield',
-    interest: SCOUT_INTEREST.INTERESTING,
-    searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ANY_POSITIVE,
-    positionContext: 'not_attack',
-    rules: [
-      {
-        metric: 'minutesPct',
-        op: 'gte',
-        value: 0.9,
-        reason: 'max_minutes_load',
-      },
-    ],
-    deps: {
-      position: DEP_MED,
-      team: DEP_MED,
-    },
-  },
-  {
     id: 'secondary_threat',
     idIcon: 'secondaryThreat',
     label: 'האיום המשני',
+    shortLabel: 'איום משני',
     group: 'attack',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
-    teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
+    teamFilter: TEAM_FILTER.ANY,
     rules: [
       {
         metric: 'goals',
@@ -263,7 +251,9 @@ export const SCOUT_PROFILES = [
     id: 'double_digit_threat',
     idIcon: 'doubleDigitThreat',
     label: 'תפוקה דו־ספרתית',
+    shortLabel: 'דו־ספרתי',
     group: 'attack',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
@@ -287,6 +277,7 @@ export const SCOUT_PROFILES = [
     idIcon: 'underusedProspect',
     label: 'שחקן איכותי שלא מקבל הזדמנות',
     group: 'opportunity',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
@@ -319,6 +310,7 @@ export const SCOUT_PROFILES = [
     idIcon: 'blockedTopTeam',
     label: 'שחקן איכותי שלא מצליח לפרוץ',
     group: 'opportunity',
+    profileIdentity: SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
     interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
@@ -354,3 +346,40 @@ export const SCOUT_PROFILES = [
     },
   },
 ]
+
+export const resolveScoutProfileDefinition = profile => {
+  const profileId = clean(
+    typeof profile === 'string'
+      ? profile
+      : profile?.profileId || profile?.id
+  )
+
+  return SCOUT_PROFILES.find(item => clean(item.id) === profileId) || null
+}
+
+export const resolveScoutProfileIdentity = profile => {
+  const explicitIdentity = clean(
+    typeof profile === 'object'
+      ? profile?.profileIdentity || profile?.identity
+      : ''
+  )
+  if (explicitIdentity) return explicitIdentity
+
+  const definition = resolveScoutProfileDefinition(profile)
+  return clean(definition?.profileIdentity)
+}
+
+export const isProfessionalScoutProfile = profile => {
+  if (typeof profile?.isProfessional === 'boolean') {
+    return profile.isProfessional
+  }
+
+  const definition = resolveScoutProfileDefinition(profile)
+  if (typeof definition?.isProfessional === 'boolean') {
+    return definition.isProfessional
+  }
+
+  return PROFESSIONAL_PROFILE_IDENTITIES.has(
+    resolveScoutProfileIdentity(profile)
+  )
+}

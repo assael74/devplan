@@ -20,7 +20,6 @@ export {
   patchPlayerSeason,
   removePlayerSeasonScoutProfile,
   updatePlayerSeasonNotes,
-  updatePlayerSeasonRole,
   updatePlayerSeasonUrl,
 } from './playerSeason.patch.js'
 

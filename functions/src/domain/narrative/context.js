@@ -62,6 +62,18 @@ function resolveActivePlayerEntry(player = {}) {
     ))[0] || null
 }
 
+function resolveLatestPlayerEntry(player = {}) {
+  const current = Array.isArray(player.current) ? player.current : []
+  const history = Array.isArray(player.history) ? player.history : []
+
+  return [...current, ...history]
+    .filter(entry => clean(entry.seasonKey || entry.seasonId))
+    .sort((left, right) => (
+      resolveSeasonStartYear(right.seasonKey || right.seasonId) -
+      resolveSeasonStartYear(left.seasonKey || left.seasonId)
+    ))[0] || null
+}
+
 function normalizeCombination(combination = {}) {
   return {
     id: clean(combination.id),
@@ -159,6 +171,8 @@ function normalizeProfile(profile = {}) {
   return {
     profileId: clean(profile.profileId || profile.id),
     profileLabel: resolveProfileLabel(profile),
+    profileShortLabel: clean(profile.profileShortLabel || profile.shortLabel),
+    profileIdentity: clean(profile.profileIdentity || profile.identity),
     interestLevel: clean(profile.interestLevel || profile.interest),
     score: numberOrNull(profile.score),
     profileDepth: valueOrNull(profile.profileDepth),
@@ -179,6 +193,7 @@ function buildEntry({
   teamsById = new Map(),
   sourceTarget = '',
   isActiveSeason = false,
+  isLatestSeason = false,
 }) {
   const teamDocumentId = clean(entry.birthTeamDocumentId)
   const team = teamsById.get(teamDocumentId) || null
@@ -190,6 +205,10 @@ function buildEntry({
   return {
     sourceTarget: clean(sourceTarget),
     isActiveSeason: Boolean(isActiveSeason),
+    isLatestSeason: Boolean(isLatestSeason),
+    temporalRole: isActiveSeason
+      ? 'active'
+      : isLatestSeason ? 'latest' : 'history',
     seasonId: clean(entry.seasonId),
     seasonKey: clean(entry.seasonKey),
     seasonStatus: clean(entry.seasonStatus),
@@ -225,6 +244,7 @@ function buildEntry({
     profileHierarchy: valueOrNull(entry.scoutProfileHierarchy),
     profileCaseStrength: valueOrNull(entry.scoutProfileCaseStrength),
     playerInterest: valueOrNull(entry.scoutPlayerInterest),
+    scoutEvidence: Array.isArray(entry.scoutEvidence) ? entry.scoutEvidence : [],
     opportunity: valueOrNull(entry.scoutOpportunity),
     verification: valueOrNull(entry.scoutVerification),
     progression: valueOrNull(entry.scoutProfileProgression),
@@ -245,6 +265,7 @@ function buildContext({ player = {}, teams = [] } = {}) {
   const history = Array.isArray(player.history) ? player.history : []
   const current = Array.isArray(player.current) ? player.current : []
   const activeEntry = resolveActivePlayerEntry(player)
+  const latestEntry = resolveLatestPlayerEntry(player)
 
   return {
     player: {
@@ -264,6 +285,7 @@ function buildContext({ player = {}, teams = [] } = {}) {
         teamsById,
         sourceTarget: 'history',
         isActiveSeason: entry === activeEntry,
+        isLatestSeason: entry === latestEntry,
       })),
       ...current.map(entry => buildEntry({
         entry,
@@ -271,6 +293,7 @@ function buildContext({ player = {}, teams = [] } = {}) {
         teamsById,
         sourceTarget: 'current',
         isActiveSeason: entry === activeEntry,
+        isLatestSeason: entry === latestEntry,
       })),
     ],
     events: Array.isArray(player.events) ? player.events : [],

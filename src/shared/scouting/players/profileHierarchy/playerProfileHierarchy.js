@@ -1,12 +1,28 @@
 // src/shared/scouting/players/profileHierarchy/playerProfileHierarchy.js
 
-const INTEREST_RANK = {
-  super_interesting: 3,
-  interesting: 2,
-  reasonable: 1,
-}
+import {
+  SCOUT_PROFILE_IDENTITY,
+} from '../ids.js'
 
-const getInterestRank = (signal) => INTEREST_RANK[signal?.interestLevel] || 0
+import {
+  isProfessionalScoutProfile,
+} from '../profiles.js'
+
+import {
+  resolvePlayerProfileRelationships,
+} from './playerProfileRelationships.js'
+
+const resolveProfileIdentity = signal => (
+  signal?.profileIdentity || signal?.identity || SCOUT_PROFILE_IDENTITY.CORE
+)
+
+const isCoreProfileSignal = signal => (
+  resolveProfileIdentity(signal) === SCOUT_PROFILE_IDENTITY.CORE
+)
+
+const isPreliminaryProfileSignal = signal => (
+  resolveProfileIdentity(signal) === SCOUT_PROFILE_IDENTITY.PRELIMINARY
+)
 
 const getProfileDepth = (signal) => {
   const depth = Number(signal?.profileDepth?.depth)
@@ -19,10 +35,6 @@ const getLegacyScore = (signal) => {
 }
 
 export const comparePlayerScoutSignalsByHierarchy = (a, b) => {
-  const interestDiff = getInterestRank(b) - getInterestRank(a)
-
-  if (interestDiff) return interestDiff
-
   const depthDiff = getProfileDepth(b) - getProfileDepth(a)
 
   if (depthDiff) return depthDiff
@@ -31,16 +43,51 @@ export const comparePlayerScoutSignalsByHierarchy = (a, b) => {
 }
 
 export const buildPlayerProfileHierarchy = ({ signals } = {}) => {
-  const orderedSignals = Array.isArray(signals)
-    ? [...signals].sort(comparePlayerScoutSignalsByHierarchy)
-    : []
-  const primarySignal = orderedSignals[0] || null
+  const relationships = resolvePlayerProfileRelationships({ signals })
+  const rankedSignals = [...relationships.activeSignals]
+    .sort(comparePlayerScoutSignalsByHierarchy)
+  const coreSignals = rankedSignals.filter(isCoreProfileSignal)
+  const professionalSignals = rankedSignals.filter(isProfessionalScoutProfile)
+  const preliminarySignals = rankedSignals.filter(isPreliminaryProfileSignal)
+  const supportingEvidenceSignals = rankedSignals.filter(signal => (
+    resolveProfileIdentity(signal) === SCOUT_PROFILE_IDENTITY.SUPPORTING
+  ))
+  const opportunitySignals = rankedSignals.filter(signal => (
+    resolveProfileIdentity(signal) === SCOUT_PROFILE_IDENTITY.OPPORTUNITY
+  ))
+  const orderedSignals = [
+    ...coreSignals,
+    ...preliminarySignals,
+    ...supportingEvidenceSignals,
+    ...opportunitySignals,
+  ]
+  const primarySignal = orderedSignals.find(isCoreProfileSignal) || null
+  const primaryPreliminarySignal = preliminarySignals[0] || null
+  const primaryProfileId = primarySignal?.profileId || ''
+  const supportingSignals = orderedSignals.filter(signal => (
+    signal?.profileId !== primaryProfileId &&
+    resolveProfileIdentity(signal) !== SCOUT_PROFILE_IDENTITY.PRELIMINARY
+  ))
 
   return {
-    primaryProfileId: primarySignal?.profileId || '',
+    primaryProfileId,
     primarySignal,
-    supportingProfileIds: orderedSignals.slice(1).map((signal) => signal.profileId),
-    supportingSignals: orderedSignals.slice(1),
+    primaryProfileIdentity: primarySignal
+      ? resolveProfileIdentity(primarySignal)
+      : '',
+    professionalProfileIds: professionalSignals.map((signal) => signal.profileId),
+    preliminaryProfileIds: preliminarySignals.map((signal) => signal.profileId),
+    preliminarySignals,
+    primaryPreliminaryProfileId: primaryPreliminarySignal?.profileId || '',
+    primaryPreliminarySignal,
+    supportingProfileIds: supportingSignals.map((signal) => signal.profileId),
+    supportingSignals,
+    supportingEvidenceProfileIds: supportingEvidenceSignals.map((signal) => signal.profileId),
+    supportingEvidenceSignals,
+    opportunityProfileIds: opportunitySignals.map((signal) => signal.profileId),
+    opportunitySignals,
     orderedProfileIds: orderedSignals.map((signal) => signal.profileId),
+    suppressedProfileIds: relationships.suppressedProfileIds,
+    exclusiveFamilyWinners: relationships.exclusiveFamilyWinners,
   }
 }

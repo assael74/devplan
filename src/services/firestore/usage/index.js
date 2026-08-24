@@ -20,5 +20,5 @@ export {
   bytesToKb,
 } from './firestoreUsage.size.js'
 
-export { trackedGetDoc, trackedGetDocs, trackedGetCountFromServer, trackedSetDoc, trackedUpdateDoc, trackedDeleteDoc, createTrackedWriteBatch, trackedRunTransaction } from './firestoreUsage.instrumentation.js'
+export { trackedGetDoc, trackedGetDocs, trackedGetDocsFromServer, trackedGetCountFromServer, trackedSetDoc, trackedUpdateDoc, trackedDeleteDoc, createTrackedWriteBatch, trackedRunTransaction } from './firestoreUsage.instrumentation.js'
 export { FIRESTORE_USAGE_COVERAGE, getFirestoreUsageCoverage } from './firestoreUsage.coverage.js'

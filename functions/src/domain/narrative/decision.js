@@ -104,10 +104,7 @@ function buildDecisionContext({ context = {}, futureProjection = null } = {}) {
         : [],
     } : null,
     actionStatus: clean(opportunity?.effectiveActionStatus),
-    automaticActionStatus: clean(
-      opportunity?.automaticActionStatus ||
-      opportunity?.baseActionStatus
-    ),
+    automaticActionStatus: clean(opportunity?.automaticActionStatus),
     manualActionStatus: clean(opportunity?.manualActionStatus),
     hasManualDecision: Boolean(opportunity?.hasManualDecision),
     manualDecision: opportunity?.manualDecision || context.manualImmediacyDecision || null,

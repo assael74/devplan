@@ -10,15 +10,15 @@ const { buildHash } = require('./hash')
 
 function buildInput({ player = {}, teams = [], futureProjection = null } = {}) {
   const context = buildContext({ player, teams })
-  const timeline = buildTimeline(context)
   const relationships = buildRelationship(context)
   const decision = buildDecisionContext({ context, futureProjection })
+  const timeline = buildTimeline(context, decision)
   const evidence = buildEvidence(context, decision)
   const meaning = buildMeaning({ context, timeline, decision })
   const inputHash = buildHash(meaning)
 
   return {
-    version: 3,
+    version: 4,
     player: context.player,
     context: {
       entries: context.entries,

@@ -5,6 +5,9 @@ import {
   buildScoutProfileCombinations,
   TEAM_FILTER,
 } from '../../../../shared/players/scouting/index.js'
+import {
+  buildPlayerProfileHierarchy,
+} from '../../../../shared/scouting/players/index.js'
 
 const normalizePriorityLevel = value => (
   String(value || '')
@@ -100,11 +103,13 @@ export const buildDbPlayerScoutLegacyResult = ({
       team,
     })
   ))
+  const profileHierarchy = buildPlayerProfileHierarchy({ signals })
 
   return {
     ...result,
     signals,
     combinations: buildScoutProfileCombinations({ signals }),
-    bestSignal: signals[0] || null,
+    profileHierarchy,
+    bestSignal: profileHierarchy.primarySignal,
   }
 }

@@ -25,10 +25,40 @@ function buildProfileTooltip(profile, near = false) {
   )
 }
 
-function ProfileTab({ profile, selected, near, onSelect }) {
-  const canSelect = typeof onSelect === 'function'
+function resolveProfileDepth(profile = {}) {
+  const strengthDepth = Number(profile.profileStrength?.depthPct)
 
+  if (Number.isFinite(strengthDepth)) {
+    return strengthDepth
+  }
+
+  const profileDepth = Number(profile.profileDepth?.depthPct)
+
+  if (Number.isFinite(profileDepth)) {
+    return profileDepth
+  }
+
+  const directDepth = Number(profile.depthPct)
+
+  if (Number.isFinite(directDepth)) {
+    return directDepth
+  }
+
+  return null
+}
+
+function ProfileTab({
+  profile,
+  selected,
+  near,
+  onSelect,
+}) {
   if (!profile) return null
+
+  const canSelect = typeof onSelect === 'function'
+  const depthPct = near
+    ? null
+    : resolveProfileDepth(profile)
 
   return (
     <Box sx={sx.profileTabWrap}>
@@ -38,23 +68,40 @@ function ProfileTab({ profile, selected, near, onSelect }) {
         tooltip={buildProfileTooltip(profile, near)}
         variant={near ? 'nearProfile' : 'default'}
         fontSize={13}
+        depthPct={depthPct}
         selected={selected}
-        onClick={canSelect ? () => onSelect(profile.id) : undefined}
+        onClick={canSelect
+          ? () => onSelect(profile.id)
+          : undefined}
       />
     </Box>
   )
 }
 
-export default function PlayerScoutProfiles({ profiles = {}, selectedProfileId = '', onSelect }) {
+export default function PlayerScoutProfiles({
+  profiles = {},
+  selectedProfileId = '',
+  onSelect,
+}) {
   const primary = profiles.primary || null
-  const supporting = Array.isArray(profiles.supporting) ? profiles.supporting : []
+  const supporting = Array.isArray(profiles.supporting)
+    ? profiles.supporting
+    : []
   const near = profiles.near || null
-  const hasProfiles = Boolean(primary || supporting.length || near)
+
+  const hasProfiles = Boolean(
+    primary
+    || supporting.length
+    || near
+  )
 
   if (!hasProfiles) {
     return (
       <Box sx={sx.profileWorkspaceEmpty}>
-        {iconUi({ id: 'profile', size: 'md' })}
+        {iconUi({
+          id: 'profile',
+          size: 'md',
+        })}
 
         <Typography level='body-sm' sx={sx.emptyText}>
           עדיין לא זוהה פרופיל מקצועי פעיל לשחקן.
@@ -68,11 +115,14 @@ export default function PlayerScoutProfiles({ profiles = {}, selectedProfileId =
       <Box sx={sx.profileWorkspaceHeading}>
         <Box sx={sx.profileWorkspaceTitleRow}>
           <Box sx={[sx.sectionIcon, sx.sectionIconTone.profile]}>
-            {iconUi({ id: 'profile', size: 'sm' })}
+            {iconUi({
+              id: 'profile',
+              size: 'sm',
+            })}
           </Box>
 
           <Typography level='title-md' sx={sx.sectionTitle}>
-            פרופילים בעונה
+            פרופילים
           </Typography>
         </Box>
 
@@ -84,7 +134,10 @@ export default function PlayerScoutProfiles({ profiles = {}, selectedProfileId =
       <Box sx={sx.profileTabsRow}>
         <ProfileTab
           profile={primary}
-          selected={Boolean(primary && selectedProfileId === primary.id)}
+          selected={Boolean(
+            primary
+            && selectedProfileId === primary.id
+          )}
           onSelect={onSelect}
         />
 

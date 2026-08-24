@@ -1,5 +1,8 @@
 // src/features/playersDatabase/services/write/players/scoutingPlayerLifecycle.model.js
 
+import {
+  isProfessionalScoutProfile,
+} from '../../../../../shared/scouting/players/profiles.js'
 import { clean } from '../leagues/leagueDoc.js'
 
 export const SCOUTING_PLAYER_TRACKING_REASONS = Object.freeze({
@@ -45,15 +48,32 @@ export const normalizeScoutingPlayerTrackingReason = value => {
 }
 
 
-const hasScoutProfiles = source => (
-  (Array.isArray(source?.scoutProfiles) && source.scoutProfiles.length > 0) ||
-  (Array.isArray(source?.scoutSignals) && source.scoutSignals.length > 0)
+const getScoutProfiles = source => (
+  Array.isArray(source?.scoutSignals) && source.scoutSignals.length > 0
+    ? source.scoutSignals
+    : Array.isArray(source?.scoutProfiles)
+      ? source.scoutProfiles
+      : []
 )
 
-const hasScoutProfilesInPlayer = player => (
-  hasScoutProfiles(player) ||
+const hasProfessionalProfileIds = source => (
+  Array.isArray(source?.scoutProfileHierarchy?.professionalProfileIds) &&
+  source.scoutProfileHierarchy.professionalProfileIds
+    .map(clean)
+    .filter(Boolean)
+    .some(isProfessionalScoutProfile)
+)
+
+const hasProfessionalScoutProfile = source => (
+  hasProfessionalProfileIds(source) ||
+  getScoutProfiles(source).some(isProfessionalScoutProfile)
+)
+
+const hasProfessionalScoutProfileInPlayer = player => (
+  hasProfessionalScoutProfile(player) ||
   ['current', 'history'].some(target => (
-    (Array.isArray(player?.[target]) ? player[target] : []).some(hasScoutProfiles)
+    (Array.isArray(player?.[target]) ? player[target] : [])
+      .some(hasProfessionalScoutProfile)
   ))
 )
 
@@ -75,7 +95,7 @@ export const resolvePlayerTrackingReasons = player => {
     ...storedReasons,
     favorite ? SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE : '',
     watchlist ? SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST : '',
-    hasScoutProfilesInPlayer(player)
+    hasProfessionalScoutProfileInPlayer(player)
       ? SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
       : '',
   ].filter(Boolean)

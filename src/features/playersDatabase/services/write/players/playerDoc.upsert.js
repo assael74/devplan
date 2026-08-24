@@ -44,6 +44,71 @@ const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => (
   birthTeamId: clean(team.birthTeamId || team.teamId),
   detectedAt: trackedAt || null,
 })
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const stripPlayerDocTechnicalTimestamps = value => {
+  if (!value || typeof value !== 'object') return value
+
+  const next = {
+    ...value,
+  }
+
+  delete next.updatedAt
+
+  next.current = (Array.isArray(value.current) ? value.current : []).map(row => {
+    const nextRow = {
+      ...row,
+    }
+    delete nextRow.updatedAt
+    return nextRow
+  })
+
+  next.history = (Array.isArray(value.history) ? value.history : []).map(row => {
+    const nextRow = {
+      ...row,
+    }
+    delete nextRow.updatedAt
+    return nextRow
+  })
+
+  return next
+}
+
+const isPlayerDocStateUnchanged = ({
+  currentData = {},
+  nextData = {},
+} = {}) => (
+  JSON.stringify(
+    normalizeComparableValue(
+      stripPlayerDocTechnicalTimestamps(currentData)
+    )
+  ) ===
+  JSON.stringify(
+    normalizeComparableValue(
+      stripPlayerDocTechnicalTimestamps(nextData)
+    )
+  )
+)
 export const upsertProfiledPlayerDoc = async ({
   season = {},
   team = {},
@@ -187,13 +252,18 @@ export const upsertProfiledPlayerDoc = async ({
     const trackedAt = new Date().toISOString()
     const tracking = buildScoutingPlayerTracking({
       currentTracking: {
+        ...(player.tracking || {}),
         ...(currentData.tracking || {}),
         favorite:
           currentData.tracking?.favorite === true ||
-          currentData.favorite === true,
+          currentData.favorite === true ||
+          player.tracking?.favorite === true ||
+          player.favorite === true,
         watchlist:
           currentData.tracking?.watchlist === true ||
-          currentData.watchlist === true,
+          currentData.watchlist === true ||
+          player.tracking?.watchlist === true ||
+          player.watchlist === true,
       },
       reason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
       trackedAt,
@@ -240,11 +310,35 @@ export const upsertProfiledPlayerDoc = async ({
         : historyWithoutSeason,
     }
 
+    if (
+      snapshot.exists() &&
+      isPlayerDocStateUnchanged({
+        currentData,
+        nextData,
+      })
+    ) {
+      return {
+        playerDocumentId,
+        created: false,
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+        scoutProfilesCount: seasonDoc.scoutProfiles.length,
+        trackingReason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
+        scoutedPlayer: {
+          ...scoutedPlayer,
+          playerDocumentId,
+        },
+      }
+    }
+
     transaction.set(ref, nextData, { merge: true })
 
     return {
       playerDocumentId,
       created: !snapshot.exists(),
+      updated: true,
+      changed: true,
       scoutProfilesCount: seasonDoc.scoutProfiles.length,
       trackingReason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
       scoutedPlayer: {

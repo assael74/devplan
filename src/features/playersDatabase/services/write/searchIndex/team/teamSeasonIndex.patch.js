@@ -53,6 +53,29 @@ const teamSeasonIndexUpdateUsage = {
   },
 }
 
+const normalizeScoutProfilesSummary = summary => {
+  const profileCounts =
+    summary?.profileCounts &&
+    typeof summary.profileCounts === 'object'
+      ? summary.profileCounts
+      : {}
+
+  return {
+    total: toNumberOrZero(summary?.total),
+    profileCounts: Object.keys(profileCounts)
+      .sort()
+      .reduce((result, profileId) => {
+        result[profileId] = toNumberOrZero(profileCounts[profileId])
+        return result
+      }, {}),
+  }
+}
+
+const areScoutProfilesSummariesEqual = (left, right) => (
+  JSON.stringify(normalizeScoutProfilesSummary(left)) ===
+  JSON.stringify(normalizeScoutProfilesSummary(right))
+)
+
 export async function updateTeamSeasonSearchIndexRosterMeta({
   league = {},
   season = {},
@@ -282,12 +305,31 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
     })
   }
 
+  const existingData = snapshot.data() || {}
+  const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+
+  if (
+    toNumberOrZero(existingData.scoutProfiledPlayersCount) === normalizedSummary.total &&
+    areScoutProfilesSummariesEqual(
+      existingData.scoutProfilesSummary,
+      normalizedSummary
+    )
+  ) {
+    return buildSearchIndexWriteResult({
+      entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
+      operation: 'updateScoutProfilesSummary',
+      rowsCount: 0,
+      id,
+      updated: true,
+      changed: false,
+      writeSkipped: true,
+      scoutProfiledPlayersCount: normalizedSummary.total,
+    })
+  }
+
   await trackedUpdateDoc(ref, {
-    scoutProfiledPlayersCount: toNumberOrZero(scoutProfilesSummary.total),
-    scoutProfilesSummary: {
-      total: toNumberOrZero(scoutProfilesSummary.total),
-      profileCounts: scoutProfilesSummary.profileCounts || {},
-    },
+    scoutProfiledPlayersCount: normalizedSummary.total,
+    scoutProfilesSummary: normalizedSummary,
     sourceTarget: clean(target) === 'history' ? 'history' : 'current',
     updatedAt: serverTimestamp(),
   }, teamSeasonIndexUpdateUsage)

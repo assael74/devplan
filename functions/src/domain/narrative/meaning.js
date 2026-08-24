@@ -31,7 +31,7 @@ function resolvePrimaryProfile(entry = {}) {
     return profiles.find(profile => clean(profile.profileId) === primaryId) || null
   }
 
-  return profiles[0] || null
+  return null
 }
 
 function resolveSupportingProfiles(entry = {}, primaryProfile = null) {
@@ -46,8 +46,7 @@ function resolveSupportingProfiles(entry = {}, primaryProfile = null) {
       .filter(Boolean)
   }
 
-  const primaryId = clean(primaryProfile?.profileId)
-  return profiles.filter(profile => clean(profile.profileId) !== primaryId)
+  return []
 }
 
 function buildProfileMeaning(profile = null) {
@@ -56,7 +55,12 @@ function buildProfileMeaning(profile = null) {
   return {
     profileId: clean(profile.profileId),
     profileLabel: clean(profile.profileLabel),
+    profileShortLabel: clean(profile.profileShortLabel),
+    profileIdentity: clean(profile.profileIdentity),
     profileStrength: profile.profileStrength || null,
+    requiredReview: Array.isArray(profile.requiredReview)
+      ? profile.requiredReview.map(clean).filter(Boolean)
+      : [],
     warnings: Array.isArray(profile.warnings) ? profile.warnings.map(clean).filter(Boolean) : [],
   }
 }
@@ -85,6 +89,79 @@ function buildPersistenceMeaning(opportunity = null) {
   }
 }
 
+function cleanUserLabel(value) {
+  return clean(value)
+    .replace(/סיגנלים/g, 'סימנים')
+    .replace(/סיגנאלים/g, 'סימנים')
+    .replace(/סיגנל/g, 'סימן')
+    .replace(/סיגנאל/g, 'סימן')
+    .replace(/המנוע/g, 'מודל הסקאוט')
+    .replace(/מנוע/g, 'מודל הסקאוט')
+}
+
+function normalizeVerificationCheck(check = {}) {
+  return {
+    questionId: clean(check.questionId),
+    category: clean(check.category),
+    priority: clean(check.priority),
+    recommendationScore: numberOrNull(check.recommendationScore),
+    answer: clean(check.answer),
+    answered: Boolean(check.answered),
+    label: cleanUserLabel(check.label),
+  }
+}
+
+function buildVerificationContext(verification = null) {
+  if (!verification || typeof verification !== 'object') return null
+
+  const answeredChecks = Array.isArray(verification.answeredChecks)
+    ? verification.answeredChecks.map(normalizeVerificationCheck)
+    : []
+  const missingChecks = Array.isArray(verification.missingChecks)
+    ? verification.missingChecks.map(normalizeVerificationCheck)
+    : []
+  const nextBestCheck = verification.nextBestCheck
+    ? normalizeVerificationCheck(verification.nextBestCheck)
+    : null
+
+  return {
+    completion: verification.completion || null,
+    nextBestCheck,
+    answeredChecks,
+    missingChecks,
+  }
+}
+
+function normalizeReviewValue(review = {}) {
+  const status = clean(review.status)
+  const value = clean(review.value)
+
+  return {
+    status,
+    value,
+    note: clean(review.note),
+    seasonKey: clean(review.seasonKey),
+    isKnown: Boolean(
+      (status && status !== 'unknown') ||
+      (value && value !== 'unknown')
+    ),
+  }
+}
+
+function buildPlayerReviewContext(playerReview = null) {
+  if (!playerReview || typeof playerReview !== 'object') return null
+
+  const entries = Object.entries(playerReview).map(([field, review]) => ({
+    field: clean(field),
+    ...normalizeReviewValue(review || {}),
+  }))
+
+  return {
+    known: entries.filter(item => item.isKnown),
+    open: entries.filter(item => !item.isKnown),
+  }
+}
+
 function buildEntryMeaning(entry = {}, decision = {}) {
   const primaryProfile = resolvePrimaryProfile(entry)
   const supportingProfiles = resolveSupportingProfiles(entry, primaryProfile)
@@ -94,6 +171,8 @@ function buildEntryMeaning(entry = {}, decision = {}) {
   return {
     sourceTarget: clean(entry.sourceTarget),
     isActiveSeason: Boolean(entry.isActiveSeason),
+    isLatestSeason: Boolean(entry.isLatestSeason),
+    temporalRole: clean(entry.temporalRole),
     seasonKey: clean(entry.seasonKey || entry.seasonId),
     birthTeamDocumentId: clean(entry.birthTeamDocumentId),
     birthTeamSlot: entry.birthTeamSlot,
@@ -107,12 +186,19 @@ function buildEntryMeaning(entry = {}, decision = {}) {
       supporting: supportingProfiles.map(buildProfileMeaning).filter(Boolean),
       near: buildNearProfileMeaning(entry),
       caseStrength: entry.profileCaseStrength || null,
+      professionalProfileIds: Array.isArray(entry.profileHierarchy?.professionalProfileIds)
+        ? entry.profileHierarchy.professionalProfileIds.map(clean).filter(Boolean)
+        : [],
+      opportunityProfileIds: Array.isArray(entry.profileHierarchy?.opportunityProfileIds)
+        ? entry.profileHierarchy.opportunityProfileIds.map(clean).filter(Boolean)
+        : [],
+      preliminaryProfileIds: Array.isArray(entry.profileHierarchy?.preliminaryProfileIds)
+        ? entry.profileHierarchy.preliminaryProfileIds.map(clean).filter(Boolean)
+        : [],
     },
     immediacy: isDecisionSeason ? {
       effectiveActionStatus: clean(opportunity?.effectiveActionStatus),
-      automaticActionStatus: clean(
-        opportunity?.automaticActionStatus || opportunity?.baseActionStatus
-      ),
+      automaticActionStatus: clean(opportunity?.automaticActionStatus),
       manualActionStatus: clean(opportunity?.manualActionStatus),
       hasManualDecision: Boolean(opportunity?.hasManualDecision),
       baseActionStatus: clean(opportunity?.baseActionStatus),
@@ -130,16 +216,52 @@ function buildEntryMeaning(entry = {}, decision = {}) {
       attack: buildTeamScoutMeaning(entry.stats?.teamAttackPerformance),
       defense: buildTeamScoutMeaning(entry.stats?.teamDefensePerformance),
     },
-    verification: entry.verification || null,
+    verification: buildVerificationContext(entry.verification),
+    scoutEvidence: Array.isArray(entry.scoutEvidence) ? entry.scoutEvidence : [],
   }
 }
 
 function buildMeaning({ context = {}, timeline = {}, decision = {} } = {}) {
   const entries = Array.isArray(context.entries) ? context.entries : []
 
+  const entryMeanings = entries.map(entry => buildEntryMeaning(entry, decision))
+  const focusEntry = entryMeanings.find(entry => entry.seasonKey === clean(decision.seasonKey)) || null
+
+  const historyEntries = entryMeanings.filter(entry => (
+    !focusEntry || entry.seasonKey !== focusEntry.seasonKey
+  ))
+
   return {
-    version: 3,
-    entries: entries.map(entry => buildEntryMeaning(entry, decision)),
+    version: 6,
+    focus: {
+      season: focusEntry,
+      history: historyEntries,
+    },
+    currentAssessment: {
+      seasonKey: clean(decision.seasonKey),
+      playerInterest: decision.interestAssessment || null,
+      playerInterestLevel: clean(decision.playerInterestLevel || decision.interestLevel),
+      actionStatus: clean(decision.actionStatus),
+      automaticActionStatus: clean(decision.automaticActionStatus),
+      manualActionStatus: clean(decision.manualActionStatus),
+      hasManualDecision: Boolean(decision.hasManualDecision),
+      profileCaseStrength: focusEntry?.profiles?.caseStrength || null,
+      primaryProfile: focusEntry?.profiles?.primary || null,
+      supportingProfiles: focusEntry?.profiles?.supporting || [],
+      verification: focusEntry?.verification || null,
+      playerReview: buildPlayerReviewContext(context.playerReview),
+      scoutEvidence: focusEntry?.scoutEvidence || [],
+    },
+    historyContext: historyEntries.map(entry => ({
+      seasonKey: entry.seasonKey,
+      temporalRole: entry.temporalRole,
+      profiles: entry.profiles,
+      persistence: entry.persistence,
+      trajectory: entry.trajectory,
+      progression: entry.progression,
+      teamScout: entry.teamScout,
+    })),
+    entries: entryMeanings,
     transitions: (timeline.transitions || []).map(item => ({
       type: clean(item.type),
       seasonKey: clean(item.seasonKey),
@@ -150,8 +272,8 @@ function buildMeaning({ context = {}, timeline = {}, decision = {} } = {}) {
       fromLeagueLevel: item.fromLeagueLevel,
       toLeagueLevel: item.toLeagueLevel,
     })),
-    playerReview: context.playerReview || null,
-    verification: context.verification || null,
+    playerReview: buildPlayerReviewContext(context.playerReview),
+    verification: buildVerificationContext(context.verification),
     decision: {
       interestLevel: clean(decision.interestLevel),
       playerInterestLevel: clean(decision.playerInterestLevel || decision.interestLevel),

@@ -122,6 +122,7 @@ export const adaptPlayerSearchIndexDocument = document => {
     scout: normalizePlayerScout({
       profiles,
       profileIds: source.scoutProfileIds,
+      preliminaryProfileIds: source.scoutPreliminaryProfileIds,
       combinationIds: source.scoutCombinationIds,
       searchIds: source.scoutProfileSearchIds,
       profileProgression: cleanDomainValue(source.nearScoutProfileId)

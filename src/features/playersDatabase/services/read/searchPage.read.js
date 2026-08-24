@@ -14,10 +14,8 @@ import {
   trackedGetDocs,
 } from '../../../../services/firestore/usage/index.js'
 import { SCOUT_PROFILE_COMBINATIONS } from '../../../../shared/scouting/players/index.js'
-import {
-  SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
-  SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT,
-} from '../../catalog/genericObjects.catalog.js'
+import { SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js'
+import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
 import { toNumberOrZero } from '../../model/value.model.js'
 

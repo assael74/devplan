@@ -13,9 +13,27 @@ const toFiniteNumber = (value) => {
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value))
 
+const roundToPrecision = ({ value, precision }) => {
+  const number = toFiniteNumber(value)
+  const digits = Number(precision)
+
+  if (!Number.isFinite(number) || !Number.isInteger(digits) || digits < 0) {
+    return number
+  }
+
+  const factor = 10 ** digits
+  return Math.round(number * factor) / factor
+}
+
 const getGteDistance = ({ value, rule }) => {
-  const current = toFiniteNumber(value)
-  const target = toFiniteNumber(rule.value)
+  const current = roundToPrecision({
+    value,
+    precision: rule.distancePrecision,
+  })
+  const target = roundToPrecision({
+    value: rule.value,
+    precision: rule.distancePrecision,
+  })
 
   if (!Number.isFinite(current) || !Number.isFinite(target) || target <= 0) {
     return {
@@ -150,6 +168,13 @@ const resolveDistanceStatus = (distance) => {
   return PROFILE_DISTANCE_STATUS.OUTSIDE
 }
 
+const toDisplayDistancePct = (distance) => {
+  if (!Number.isFinite(distance)) return null
+  if (distance <= 0) return 0
+
+  return Math.max(1, Math.round(distance * 100))
+}
+
 const resolveDistanceTrend = ({ currentDistance, previousDistance }) => {
   if (!Number.isFinite(currentDistance) || !Number.isFinite(previousDistance)) {
     return {
@@ -202,6 +227,7 @@ export const buildPlayerProfileDistance = ({ profile, rules, metrics, previousDi
       target: rule.value,
       min: rule.min,
       max: rule.max,
+      distancePrecision: rule.distancePrecision,
       ...result,
     }
   })
@@ -220,13 +246,14 @@ export const buildPlayerProfileDistance = ({ profile, rules, metrics, previousDi
   return {
     profileId: profile.id,
     profileLabel: profile.label,
+    profileShortLabel: profile.shortLabel || '',
     group: profile.group,
     matched: profileMatched,
     distance,
-    distancePct: Number.isFinite(distance) ? Math.round(distance * 100) : null,
+    distancePct: toDisplayDistancePct(distance),
     status,
     previousDistance: Number.isFinite(previousDistance) ? previousDistance : null,
-    previousDistancePct: Number.isFinite(previousDistance) ? Math.round(previousDistance * 100) : null,
+    previousDistancePct: toDisplayDistancePct(previousDistance),
     distanceDelta: trendResult.delta,
     distanceDeltaPct: Number.isFinite(trendResult.delta) ? Math.round(trendResult.delta * 100) : null,
     trend: trendResult.trend,

@@ -6,6 +6,13 @@ export const SCOUT_INTEREST = {
   SUPER: 'super_interesting',
 }
 
+export const SCOUT_PROFILE_IDENTITY = {
+  CORE: 'core',
+  PRELIMINARY: 'preliminary',
+  SUPPORTING: 'supporting',
+  OPPORTUNITY: 'opportunity',
+}
+
 export const SCOUT_RELIABILITY = {
   HIGH: 'high',
   MEDIUM: 'medium',

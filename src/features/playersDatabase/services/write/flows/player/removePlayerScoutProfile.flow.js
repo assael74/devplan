@@ -10,14 +10,48 @@ import { removeTeamSeasonPlayerScoutProfile } from '../../teams/index.js'
 
 const clean = value => String(value || '').trim()
 
+const buildCommittedProjectionFailure = ({
+  stage,
+  error,
+  teamSeasonResult,
+  results = {},
+} = {}) => ({
+  ...results,
+  teamSeasonResult,
+  rowsCount: 1,
+  teamCanonicalCommitted: true,
+  projectionsCompleted: false,
+  completed: true,
+  stoppedAt: stage,
+  projectionError: clean(error?.message || `Remove profile projection failed at ${stage}`),
+})
+
 export async function removePlayerScoutProfileFlow(payload = {}) {
   const profileId = clean(payload.profileId)
   if (!profileId) throw new Error('Missing scout profile id')
 
-  const teamSeasonResult = await removeTeamSeasonPlayerScoutProfile({
-    ...payload,
-    profileId,
-  })
+  let teamSeasonResult = null
+
+  try {
+    teamSeasonResult = await removeTeamSeasonPlayerScoutProfile({
+      ...payload,
+      profileId,
+    })
+  } catch (error) {
+    return {
+      playerSeasonResult: null,
+      teamSeasonResult: null,
+      playerSeasonIndexResult: null,
+      leagueTableRankScoutProfilesResult: null,
+      teamSeasonIndexScoutProfilesResult: null,
+      rowsCount: 0,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
+      completed: false,
+      stoppedAt: 'teamSeason',
+      error: clean(error?.message || 'Remove profile team update failed'),
+    }
+  }
 
   if (!teamSeasonResult.updated || !teamSeasonResult.player) {
     return {
@@ -27,6 +61,8 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
       leagueTableRankScoutProfilesResult: null,
       teamSeasonIndexScoutProfilesResult: null,
       rowsCount: 0,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
       completed: false,
       stoppedAt: 'teamSeason',
     }
@@ -43,22 +79,102 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
       ? teamSeasonResult.player.scoutCombinations
       : [],
   }
-  const playerSeasonResult = await removePlayerSeasonScoutProfile(nextPayload)
-  const playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles(nextPayload)
+  const projectionResults = {
+    playerSeasonResult: null,
+    playerSeasonIndexResult: null,
+    leagueTableRankScoutProfilesResult: null,
+    teamSeasonIndexScoutProfilesResult: null,
+  }
+
+  try {
+    projectionResults.playerSeasonResult = await removePlayerSeasonScoutProfile(nextPayload)
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'playerDocument',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
+  try {
+    projectionResults.playerSeasonIndexResult =
+      await updatePlayerSeasonSearchIndexScoutProfiles(nextPayload)
+
+    if (!projectionResults.playerSeasonIndexResult?.updated) {
+      return buildCommittedProjectionFailure({
+        stage: 'playerSearchIndex',
+        error: new Error(
+          projectionResults.playerSeasonIndexResult?.reason || 'Player season SearchIndex is missing'
+        ),
+        teamSeasonResult,
+        results: projectionResults,
+      })
+    }
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'playerSearchIndex',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
   const summaryPayload = {
     ...nextPayload,
     scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
   }
-  const leagueTableRankScoutProfilesResult = await updateLeagueSeasonTableRankScoutProfilesSummary(summaryPayload)
-  const teamSeasonIndexScoutProfilesResult = await updateTeamSeasonSearchIndexScoutProfilesSummary(summaryPayload)
+
+  try {
+    projectionResults.leagueTableRankScoutProfilesResult =
+      await updateLeagueSeasonTableRankScoutProfilesSummary(summaryPayload)
+    if (!projectionResults.leagueTableRankScoutProfilesResult?.updated) {
+      return buildCommittedProjectionFailure({
+        stage: 'leagueScoutSummary',
+        error: new Error(
+          projectionResults.leagueTableRankScoutProfilesResult?.reason || 'League scout summary target is missing'
+        ),
+        teamSeasonResult,
+        results: projectionResults,
+      })
+    }
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'leagueScoutSummary',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
+  try {
+    projectionResults.teamSeasonIndexScoutProfilesResult =
+      await updateTeamSeasonSearchIndexScoutProfilesSummary(summaryPayload)
+    if (!projectionResults.teamSeasonIndexScoutProfilesResult?.updated) {
+      return buildCommittedProjectionFailure({
+        stage: 'teamSearchIndexSummary',
+        error: new Error(
+          projectionResults.teamSeasonIndexScoutProfilesResult?.reason || 'Team season SearchIndex is missing'
+        ),
+        teamSeasonResult,
+        results: projectionResults,
+      })
+    }
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'teamSearchIndexSummary',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
 
   return {
-    playerSeasonResult,
+    ...projectionResults,
     teamSeasonResult,
-    playerSeasonIndexResult,
-    leagueTableRankScoutProfilesResult,
-    teamSeasonIndexScoutProfilesResult,
     rowsCount: 1,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
     completed: true,
   }
 }

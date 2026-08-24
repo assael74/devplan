@@ -92,6 +92,7 @@ export const PLAYER_SCOUT_SEARCH_INDEX_FIELDS = Object.freeze([
   'scoutTransferToClubId',
   'scoutTransferSameSeason',
   'scoutProfileIds',
+  'scoutPreliminaryProfileIds',
   'scoutCombinationIds',
   'scoutProfileSearchIds',
 ])

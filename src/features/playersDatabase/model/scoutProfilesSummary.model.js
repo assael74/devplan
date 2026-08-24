@@ -2,10 +2,54 @@
 
 const clean = value => String(value || '').trim()
 
+const uniqueCleanValues = values => [
+  ...new Set(
+    (Array.isArray(values) ? values : [])
+      .map(clean)
+      .filter(Boolean)
+  ),
+]
+
 const resolvePlayerProfiles = player => {
   if (Array.isArray(player?.scoutProfiles)) return player.scoutProfiles
   if (Array.isArray(player?.scoutSignals)) return player.scoutSignals
   return []
+}
+
+const resolveProfileId = profile => clean(
+  typeof profile === 'string'
+    ? profile
+    : profile?.profileId || profile?.id
+)
+
+const resolveProfileIdentity = profile => clean(
+  typeof profile === 'object'
+    ? profile?.profileIdentity || profile?.identity
+    : ''
+)
+
+const resolveActiveProfessionalProfileIds = player => {
+  const hierarchy = player?.scoutProfileHierarchy &&
+    typeof player.scoutProfileHierarchy === 'object'
+    ? player.scoutProfileHierarchy
+    : null
+
+  if (hierarchy) {
+    return uniqueCleanValues(hierarchy.professionalProfileIds)
+  }
+
+  const preliminaryProfileIds = new Set(
+    uniqueCleanValues(player?.scoutPreliminaryProfileIds)
+  )
+
+  return uniqueCleanValues(
+    resolvePlayerProfiles(player)
+      .filter(profile => (
+        resolveProfileIdentity(profile) === 'core'
+      ))
+      .map(resolveProfileId)
+      .filter(profileId => !preliminaryProfileIds.has(profileId))
+  )
 }
 
 export const buildScoutProfilesSummary = (players = []) => {
@@ -13,14 +57,11 @@ export const buildScoutProfilesSummary = (players = []) => {
   let total = 0
 
   ;(Array.isArray(players) ? players : []).forEach(player => {
-    const profiles = resolvePlayerProfiles(player)
-    if (!profiles.length) return
+    const profileIds = resolveActiveProfessionalProfileIds(player)
+    if (!profileIds.length) return
 
     total += 1
-    profiles.forEach(profile => {
-      const profileId = clean(profile?.profileId)
-      if (!profileId) return
-
+    profileIds.forEach(profileId => {
       profileCounts[profileId] = (profileCounts[profileId] || 0) + 1
     })
   })

@@ -4,7 +4,7 @@ function clean(value) {
   return String(value || '').trim()
 }
 
-function buildTimeline(context = {}) {
+function buildTimeline(context = {}, decision = {}) {
   const seasonsMap = new Map()
 
   context.entries.forEach(entry => {
@@ -21,7 +21,13 @@ function buildTimeline(context = {}) {
     seasonsMap.get(seasonKey).entries.push(entry)
   })
 
-  const seasons = [...seasonsMap.values()]
+  const focusSeasonKey = clean(decision.seasonKey)
+  const seasons = [...seasonsMap.values()].map(season => ({
+    ...season,
+    temporalRole: season.seasonKey === focusSeasonKey ? 'focus' : 'history',
+    isFocusSeason: Boolean(focusSeasonKey && season.seasonKey === focusSeasonKey),
+    seasonStatus: clean(season.entries?.[0]?.seasonStatus),
+  }))
   const transitions = (Array.isArray(context.events) ? context.events : [])
     .filter(event => clean(event.type))
     .map(event => ({
@@ -39,7 +45,14 @@ function buildTimeline(context = {}) {
       toLeagueLevel: event.toLeagueLevel,
     }))
 
-  return { seasons, transitions }
+  return {
+    focusSeasonKey,
+    historySeasonKeys: seasons
+      .filter(season => !season.isFocusSeason)
+      .map(season => season.seasonKey),
+    seasons,
+    transitions,
+  }
 }
 
 module.exports = { buildTimeline }

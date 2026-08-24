@@ -128,24 +128,6 @@ export const updatePlayerSeasonUrl = ({ playerUrl = '', ...payload } = {}) =>
     },
   })
 
-export const updatePlayerSeasonRole = ({
-  player = {},
-  primaryPosition = '',
-  positionLayer = '',
-  numShirt = '',
-  ...payload
-} = {}) =>
-  patchPlayerSeason({
-    ...payload,
-    player,
-    patch: {
-      primaryPosition: clean(primaryPosition),
-      positionLayer: clean(positionLayer),
-      numShirt: clean(numShirt),
-      scoutProfiles: normalizePlayerScoutProfiles(player),
-    },
-  })
-
 export const removePlayerSeasonScoutProfile = ({ profileId = '', ...payload } = {}) => {
   const removeProfileId = clean(profileId)
   if (!removeProfileId) throw new Error('Missing scout profile id')

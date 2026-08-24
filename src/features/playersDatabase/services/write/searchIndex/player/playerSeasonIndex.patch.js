@@ -56,7 +56,18 @@ export async function updatePlayerSeasonSearchIndexFields({
   })
   if (!id) throw new Error('Missing player season index id')
 
-  const ref = existingDoc?.ref || doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id)
+  if (!existingDoc) {
+    return buildSearchIndexWriteResult({
+      entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
+      operation: 'patch',
+      rowsCount: 0,
+      id,
+      updated: false,
+      reason: 'playerSeasonIndexMissing',
+    })
+  }
+
+  const ref = existingDoc.ref
   const batch = createTrackedWriteBatch(db, {
     feature: 'playersDatabase',
     collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,

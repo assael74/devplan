@@ -146,6 +146,7 @@ export const adaptPlayerDocumentSeason = ({
       combinationIds: seasonDocument.scoutCombinationIds,
       searchIds: seasonDocument.scoutProfileSearchIds,
       candidateSignals: seasonDocument.scoutCandidateSignals,
+      evidence: seasonDocument.scoutEvidence,
       spotlights: seasonDocument.scoutSpotlights,
       opportunity: seasonDocument.scoutOpportunity,
       verification: seasonDocument.scoutVerification,

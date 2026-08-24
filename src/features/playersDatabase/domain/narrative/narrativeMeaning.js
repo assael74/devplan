@@ -26,7 +26,13 @@ const buildProfileMeaning = profile => {
 
   return {
     profileId: clean(profile.id),
+    profileLabel: clean(profile.label),
+    profileShortLabel: clean(profile.shortLabel),
+    profileIdentity: clean(profile.profileIdentity),
     strengthDepthPct: toNullableNumber(profile?.profileStrength?.depthPct),
+    requiredReview: unique(Array.isArray(profile.requiredReview)
+      ? profile.requiredReview.map(clean)
+      : []),
   }
 }
 
@@ -149,22 +155,69 @@ const buildFutureCompetitionMeaning = value => {
 
 
 const buildReviewMeaning = value => {
-  if (!value || typeof value !== 'object') return []
+  if (!value || typeof value !== 'object') return { known: [], open: [] }
 
-  return Object.entries(value)
-    .map(([field, review]) => ({
-      field: clean(field),
-      status: clean(review?.status || review?.value),
-    }))
-    .filter(item => item.field && item.status)
+  const entries = Object.entries(value)
+    .map(([field, review]) => {
+      const status = clean(review?.status)
+      const reviewValue = clean(review?.value)
+      const isKnown = Boolean(
+        (status && status !== 'unknown') ||
+        (reviewValue && reviewValue !== 'unknown')
+      )
+
+      return {
+        field: clean(field),
+        status,
+        value: reviewValue,
+        seasonKey: clean(review?.seasonKey),
+        isKnown,
+      }
+    })
+    .filter(item => item.field)
+
+  return {
+    known: entries.filter(item => item.isKnown),
+    open: entries.filter(item => !item.isKnown),
+  }
 }
 
-const buildVerificationMeaning = (verification, openQuestions) => ({
-  status: clean(verification?.status),
-  openQuestions: unique(Array.isArray(openQuestions)
-    ? openQuestions.map(clean)
-    : []),
-})
+const cleanUserLabel = value => clean(value)
+  .replace(/סיגנלים/g, 'סימנים')
+  .replace(/סיגנאלים/g, 'סימנים')
+  .replace(/סיגנל/g, 'סימן')
+  .replace(/סיגנאל/g, 'סימן')
+  .replace(/המנוע/g, 'מודל הסקאוט')
+  .replace(/מנוע/g, 'מודל הסקאוט')
+
+const buildVerificationMeaning = (verification, openQuestions) => {
+  const normalizeCheck = check => ({
+    questionId: clean(check?.questionId),
+    category: clean(check?.category),
+    priority: clean(check?.priority),
+    recommendationScore: toNullableNumber(check?.recommendationScore),
+    answer: clean(check?.answer),
+    answered: Boolean(check?.answered),
+    label: cleanUserLabel(check?.label),
+  })
+
+  return {
+    status: clean(verification?.status),
+    completion: verification?.completion || null,
+    nextBestCheck: verification?.nextBestCheck
+      ? normalizeCheck(verification.nextBestCheck)
+      : null,
+    answeredChecks: (Array.isArray(verification?.answeredChecks)
+      ? verification.answeredChecks
+      : []).map(normalizeCheck),
+    missingChecks: (Array.isArray(verification?.missingChecks)
+      ? verification.missingChecks
+      : []).map(normalizeCheck),
+    openQuestions: unique(Array.isArray(openQuestions)
+      ? openQuestions.map(cleanUserLabel)
+      : []),
+  }
+}
 
 const buildClosingGapMeaning = value => {
   if (!value || typeof value !== 'object') return null
@@ -188,9 +241,11 @@ const buildEntryMeaning = entry => {
     .map(buildProfileMeaning)
     .filter(Boolean)
   const isCurrent = entry?.lifecycle?.type === 'current' || entry?.sourceTarget === 'current'
+  const temporalRole = clean(entry?.temporalRole) || (isCurrent ? 'current' : 'historical')
 
   return {
     lifecycle: isCurrent ? 'current' : 'historical',
+    temporalRole,
     teamId: clean(entry?.team?.teamId),
     clubId: clean(entry?.team?.clubId),
     leagueLevel: toNullableNumber(entry?.team?.leagueLevel),
@@ -221,6 +276,7 @@ const buildEntryMeaning = entry => {
       contract?.openQuestions
     ),
     playerReview: buildReviewMeaning(contract?.playerReview),
+    scoutEvidence: Array.isArray(contract?.scoutEvidence) ? contract.scoutEvidence : [],
   }
 }
 
@@ -280,8 +336,24 @@ export const buildNarrativeMeaning = input => {
   const seasons = (Array.isArray(input?.seasons) ? input.seasons : [])
     .map(buildSeasonMeaning)
 
+  const seasonEntries = seasons.flatMap(season => (
+    (season.entries || []).map(entry => ({
+      ...entry,
+      seasonKey: season.seasonKey,
+    }))
+  ))
+  const currentEntries = seasonEntries.filter(entry => entry.temporalRole === 'current')
+  const latestEntries = seasonEntries.filter(entry => entry.temporalRole === 'latest')
+  const focusEntries = currentEntries.length ? currentEntries : latestEntries
+  const focusSeasonKey = focusEntries[0]?.seasonKey || ''
+
   return {
     ...result,
+    focus: {
+      seasonKey: focusSeasonKey,
+      entries: focusEntries,
+    },
+    historyContext: seasonEntries.filter(entry => entry.seasonKey !== focusSeasonKey),
     seasons,
     career: buildCareerMeaning({
       seasons,

@@ -15,6 +15,7 @@ export const adaptPlayerScoutEngineResult = (result = {}) => {
       .map(combination => combination?.combinationId || combination?.id)
       .filter(Boolean),
     candidateSignals: result.candidateSignals,
+    evidence: result.scoutEvidence,
     spotlights: result.spotlights,
     opportunity: result.opportunity,
     verification: result.verification,

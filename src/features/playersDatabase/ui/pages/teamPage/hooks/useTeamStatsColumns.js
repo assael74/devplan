@@ -194,15 +194,15 @@ const getMinutesPctMark = row => {
   }
 
   if (minutesPct >= 0.85) {
-    const yellowCards = toFiniteNumber(row.yellowCards)
-    const cardsOk = yellowCards !== null && yellowCards <= 6
+    const goals = toFiniteNumber(row.goals)
+    const goalsOk = goals !== null && goals <= 2
 
     return {
-      color: cardsOk ? 'success' : 'warning',
+      color: goalsOk ? 'success' : 'warning',
       variant: 'soft',
-      text: cardsOk
-        ? '85%+ מדקות הקבוצה ועד 6 צהובים · תנאי הבסיס של התחנה האחרונה'
-        : '85%+ מדקות הקבוצה, אבל תנאי הצהובים של התחנה האחרונה לא עבר',
+      text: goalsOk
+        ? '85%+ מדקות הקבוצה ועד 2 שערים · תנאי הבסיס של התחנה האחרונה'
+        : '85%+ מדקות הקבוצה, אבל תנאי השערים של התחנה האחרונה לא עבר',
     }
   }
 
