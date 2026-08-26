@@ -17,6 +17,11 @@ import { syncLeaguesMasterDocument } from './leaguesMaster.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export { buildSeasonKey } from './leagueDoc.js'
 
+const normalizeSeasonTableRank = value => {
+  if (value === null || value === undefined) return null
+  return Array.isArray(value) ? value : null
+}
+
 export const buildSeasonDoc = (season = {}) => {
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
@@ -27,9 +32,7 @@ export const buildSeasonDoc = (season = {}) => {
     seasonUrl: clean(season.seasonUrl),
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
-    goalsEnvironment: season.goalsEnvironment || null,
-    scoutEnvironment: season.scoutEnvironment || null,
-    tableRank: Array.isArray(season.tableRank) ? season.tableRank : [],
+    tableRank: normalizeSeasonTableRank(season.tableRank),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -98,16 +101,18 @@ export async function upsertLeagueSeason({
       : clean(baseDoc.current?.seasonKey) === seasonKey || clean(baseDoc.current?.seasonId) === seasonId
         ? baseDoc.current
         : null
+    const hasIncomingTableRank = Object.prototype.hasOwnProperty.call(
+      season,
+      'tableRank'
+    )
     const seasonDoc = buildSeasonDoc({
       ...(existingSeason || {}),
       ...season,
       seasonId,
       seasonKey,
-      tableRank: Array.isArray(existingSeason?.tableRank)
-        ? existingSeason.tableRank
-        : Array.isArray(season.tableRank)
-          ? season.tableRank
-          : [],
+      tableRank: hasIncomingTableRank
+        ? season.tableRank
+        : existingSeason?.tableRank,
     })
     const nextData = isHistory
       ? {

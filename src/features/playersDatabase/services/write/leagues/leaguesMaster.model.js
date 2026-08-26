@@ -29,6 +29,12 @@ export const getLeagueSeasonRows = league => {
   return rows
 }
 
+const countPlayers = tableRank =>
+  (Array.isArray(tableRank) ? tableRank : []).reduce(
+    (total, row) => total + toNumber(row?.playersCount),
+    0
+  )
+
 const countProfiledPlayers = tableRank =>
   (Array.isArray(tableRank) ? tableRank : []).reduce(
     (total, row) => total + toNumber(row?.scoutProfilesSummary?.total),
@@ -63,13 +69,11 @@ export const buildLeaguesMasterSeasonEntry = ({
     ageGroupId: '',
     ageGroupLabel: '',
     birthYear: toNumber(season?.birthYear),
-    teamsCount: toNumber(season?.teamsCount) || tableRank.length,
-    playersCount: toNumber(season?.playersCount),
-    playersWithScoutProfileCount:
-      toNumber(season?.playersWithScoutProfileCount) || countProfiledPlayers(tableRank),
-    scoutProfilesCount:
-      toNumber(season?.scoutProfilesCount) || countScoutProfiles(tableRank),
-    tableRankCount: toNumber(season?.tableRankCount) || tableRank.length,
+    teamsCount: tableRank.length,
+    playersCount: countPlayers(tableRank),
+    playersWithScoutProfileCount: countProfiledPlayers(tableRank),
+    scoutProfilesCount: countScoutProfiles(tableRank),
+    tableRankCount: tableRank.length,
     currentDocRef: target === 'current' ? leagueDocumentRef : '',
     historyDocRef: target === 'history' ? leagueDocumentRef : '',
     updatedAt: season?.updatedAt || null,

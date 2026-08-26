@@ -2,6 +2,9 @@
 
 import { invalidatePlayersDatabaseWriteCache } from '../cache/index.js'
 import {
+  rememberLastWriteAuditScopeFromResult,
+} from '../audit/audit.lastWrite.js'
+import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
 } from './leagues/index.js'
@@ -112,5 +115,12 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     result,
   })
 
-  return result
+  const auditScope = rememberLastWriteAuditScopeFromResult(result)
+
+  return auditScope
+    ? {
+        ...result,
+        auditScope,
+      }
+    : result
 }

@@ -101,7 +101,45 @@ export function buildActiveFilterItems(filters, options) {
 
   const isTeam = filters.searchContext === 'team'
 
+  if (!isTeam && filters.scoutImmediacyStatus) {
+    const immediacyLabels = {
+      immediate: 'מיידי',
+      priority: 'עדיפות',
+      watch: 'מעקב',
+      remove: 'הסרה',
+    }
+    items.push({
+      key: `immediacy-${filters.scoutImmediacyStatus}`,
+      type: 'scalar',
+      field: 'scoutImmediacyStatus',
+      label: `מיידיות: ${immediacyLabels[filters.scoutImmediacyStatus] || filters.scoutImmediacyStatus}`,
+    })
+  }
+
   if (isTeam) {
+    const balanceBandLabels = {
+      below_typical: 'מתחת לטווח',
+      typical: 'בטווח הרגיל',
+      above_typical: 'מעל הטווח',
+    }
+    const balanceFilters = [
+      ['teamBalanceMinutesBand', 'ריכוז דקות'],
+      ['teamBalanceProductionBand', 'ריכוז תפוקה'],
+      ['teamBalanceRotationBand', 'ריכוז פתיחות'],
+    ]
+
+    balanceFilters.forEach(([field, labelPrefix]) => {
+      const value = filters[field]
+      if (!value) return
+
+      items.push({
+        key: `${field}-${value}`,
+        type: 'scalar',
+        field,
+        label: `${labelPrefix}: ${balanceBandLabels[value] || value}`,
+      })
+    })
+
     const teamLevelGroups = [
       ['teamAttackPriorityLevels', 'עדיפות התקפית', 'attack-priority'],
       ['teamDefensePriorityLevels', 'עדיפות הגנתית', 'defense-priority'],

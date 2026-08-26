@@ -92,7 +92,7 @@ export const findPlayerSeasonIndexDocForPayload = async ({
 
   const rowsQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-    where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId),
+    where('birthTeamId', '==', teamId),
     where('seasonKey', '==', seasonKey),
     where('entityType', '==', 'playerSeason')
   )

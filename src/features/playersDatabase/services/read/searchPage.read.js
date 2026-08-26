@@ -29,21 +29,21 @@ const SEARCH_INDEX_FIELDS_BY_ENTITY = {
 
 const SEARCH_STAT_FIELD_MAP_BY_ENTITY = {
   playerSeason: {
-    appearances: 'searchGames',
-    games: 'searchGames',
-    goals: 'searchGoals',
-    minutes: 'searchMinutes',
-    starts: 'searchStarts',
+    appearances: 'projectedGames',
+    games: 'projectedGames',
+    goals: 'projectedGoals',
+    minutes: 'projectedMinutes',
+    starts: 'projectedStarts',
     subIns: 'substituteIn',
     subOuts: 'substitutedOut',
   },
   birthTeamSeason: {
-    appearances: 'teamGamePlayed',
-    games: 'teamGamePlayed',
-    teamGamePlayed: 'teamGamePlayed',
-    points: 'points',
-    goalsFor: 'goalsFor',
-    goalsAgainst: 'goalsAgainst',
+    appearances: 'projectedTeamGamePlayed',
+    games: 'projectedTeamGamePlayed',
+    teamGamePlayed: 'projectedTeamGamePlayed',
+    points: 'projectedPoints',
+    goalsFor: 'projectedGoalsFor',
+    goalsAgainst: 'projectedGoalsAgainst',
     attackPerformance: 'attackPerformance',
     attackPerformanceRate: 'attackPerformanceRate',
     attackPriorityScore: 'attackScoutPriorityScore',
@@ -275,6 +275,22 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
     ['attackPriorityLevel', clean(filters.attackPriorityLevel)],
     ['defensePriorityLevel', clean(filters.defensePriorityLevel)],
   ]
+
+  if (entityType === 'playerSeason') {
+    exactFields.push([
+      'scoutEffectiveImmediacyStatus',
+      clean(filters.scoutImmediacyStatus),
+    ])
+  }
+
+  if (entityType === 'birthTeamSeason') {
+    exactFields.push(
+      ['balanceReliability', clean(filters.teamBalanceReliability)],
+      ['balanceMinutesTop5Band', clean(filters.teamBalanceMinutesBand)],
+      ['balanceProductionTop1Band', clean(filters.teamBalanceProductionBand)],
+      ['balanceRotationStartsTop5Band', clean(filters.teamBalanceRotationBand)]
+    )
+  }
 
   exactFields.forEach(([field, value]) => {
     if (!hasSearchIndexField(entityType, field)) return

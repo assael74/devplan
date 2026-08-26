@@ -20,6 +20,7 @@ const normalizeHeader = (value) =>
 const columns = {
   leaguePosition: ['מיקום', 'מקום', 'leaguePosition', 'position', 'rank'],
   clubName: ['קבוצה', 'מועדון', 'שם קבוצה', 'שם מועדון', 'team', 'club'],
+  teamUrl: ['קישור קבוצה', 'קישור', 'teamUrl', 'team url', 'url'],
   games: ['משחקים', 'משחק', "מש'", 'מש', 'games', 'matches'],
   wins: ['ניצחונות', 'נצחונות', "נצ'", 'נצ', 'wins'],
   draws: ['תיקו', "תי'", 'draws'],
@@ -266,6 +267,7 @@ const normalizeRow = (row = {}, options = {}) => {
     data: {
       leaguePosition: toNumber(data.leaguePosition),
       clubName: clean(data.clubName),
+      teamUrl: clean(data.teamUrl),
       clubId: clean(clubMatch?.id),
       clubCatalogName: clean(clubMatch?.name),
       teamSlot,

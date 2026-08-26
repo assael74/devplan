@@ -403,7 +403,6 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
       : 'active',
     teamUrl: clean(team.teamUrl),
     teamPlayers: (Array.isArray(players) ? players : []).map(player => normalizeTeamPlayer(player, season)),
-    scoutProfiles: [],
     teamStats: {
       ...(() => {
         const teamStats = normalizeTeamStats(team)

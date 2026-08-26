@@ -38,7 +38,7 @@ export default function SearchHeader({
           })}
           onClick={onScoutAudit}
         >
-          Audit Scout
+          מצב הנתונים
         </Button>
 
         <Button

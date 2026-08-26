@@ -40,3 +40,7 @@ export {
   clearPlayersDatabaseDocumentCache,
   getPlayersDatabaseCacheDebugSnapshot,
 } from '../cache/index.js'
+
+export {
+  refreshTeamBalancesByDependency,
+} from './teams/index.js'

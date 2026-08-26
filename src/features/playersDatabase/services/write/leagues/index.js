@@ -46,6 +46,7 @@ export {
 export {
   updateLeagueSeasonTableRankScoutProfilesSummary,
   updateLeagueSeasonTableRankScoutProfilesSummaries,
+  updateLeagueSeasonTableRankTeamSyncMeta,
   updateLeagueSeasonTableRankTeamUrl,
   updateLeagueSeasonTableRank,
 } from './leagueTableRank.js'

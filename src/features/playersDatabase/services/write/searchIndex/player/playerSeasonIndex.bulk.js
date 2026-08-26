@@ -68,7 +68,9 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
 
   const rowsQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-    where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId)
+    where('birthTeamId', '==', teamId),
+    where('seasonKey', '==', seasonKey),
+    where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.playerSeason)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const batch = createTrackedWriteBatch(db, {
@@ -78,16 +80,22 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
     operationSubtype: 'maintenance-batch',
   })
   let updatedRowsCount = 0
+  let unchangedCount = 0
+  const nextTeamUrl = clean(team.teamUrl)
 
   snapshot.docs.forEach(playerDoc => {
     const data = playerDoc.data() || {}
     if (!isSamePlayerSeasonIndexContext(data, indexScope)) return
+    if (clean(data.teamUrl) === nextTeamUrl) {
+      unchangedCount += 1
+      return
+    }
 
     updatedRowsCount += 1
     batch.set(
       playerDoc.ref,
       {
-        teamUrl: clean(team.teamUrl),
+        teamUrl: nextTeamUrl,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -103,7 +111,8 @@ export async function updatePlayerSeasonSearchIndexTeamUrl({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
     operation: 'updateTeamUrl',
     rowsCount: updatedRowsCount,
-    teamUrl: clean(team.teamUrl),
+    unchangedCount,
+    teamUrl: nextTeamUrl,
   })
 }
 
@@ -144,6 +153,9 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
       : season.leagueTotalRound
   )
 
+  let updatedRowsCount = 0
+  let unchangedCount = 0
+
   snapshot.docs.forEach(indexDoc => {
     const data = indexDoc.data() || {}
     const target = clean(data.sourceTarget) === 'history' ? 'history' : 'current'
@@ -163,12 +175,24 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
       },
     })
 
+    const nextMeta = {
+      birthYear: nextBirthYear,
+      leagueTotalRound: nextLeagueTotalRound,
+      ...searchMetrics,
+    }
+    const unchanged = Object.keys(nextMeta).every(key => (
+      data[key] === nextMeta[key]
+    ))
+    if (unchanged) {
+      unchangedCount += 1
+      return
+    }
+
+    updatedRowsCount += 1
     batch.set(
       indexDoc.ref,
       {
-        birthYear: nextBirthYear,
-        leagueTotalRound: nextLeagueTotalRound,
-        ...searchMetrics,
+        ...nextMeta,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -177,12 +201,13 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
 
   await commitBatchWhenNeeded({
     batch,
-    operationsCount: snapshot.docs.length,
+    operationsCount: updatedRowsCount,
   })
 
   return buildSearchIndexWriteResult({
     entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
     operation: 'updateSeasonMeta',
-    rowsCount: snapshot.docs.length,
+    rowsCount: updatedRowsCount,
+    unchangedCount,
   })
 }

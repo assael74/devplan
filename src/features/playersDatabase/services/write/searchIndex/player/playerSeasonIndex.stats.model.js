@@ -275,7 +275,6 @@ export const buildPlayerSeasonStatsMutation = ({
       teamDocumentId: teamScope.birthTeamDocumentId,
       teamUrl: clean(team.teamUrl || existingData.teamUrl),
       seasonUrl: clean(season.seasonUrl || existingData.seasonUrl),
-      seasonNotes: clean(player.notes || existingData.seasonNotes),
       statsStatus: normalizePlayerStatsStatus(
         player.statsStatus,
         existingData.statsStatus || PLAYER_STATS_STATUS.LOADED

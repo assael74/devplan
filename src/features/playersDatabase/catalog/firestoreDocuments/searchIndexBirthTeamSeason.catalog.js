@@ -52,41 +52,19 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
 
   projectedPointsRaw: 0,
   projectedPoints: 0,
-  searchPoints: 0,
   projectedGoalsForRaw: 0,
   projectedGoalsFor: 0,
-  searchGoalsFor: 0,
   projectedGoalsAgainstRaw: 0,
   projectedGoalsAgainst: 0,
-  searchGoalsAgainst: 0,
   projectedTeamGamePlayedRaw: 0,
   projectedTeamGamePlayed: 0,
-  searchTeamGamePlayed: 0,
 
   teamPerformanceSchemaVersion: 5,
 
-  attackQualityRate: null,
-  attackTargetRate: null,
-  attackTargetNormalized: null,
-  attackTargetLevel: '',
-  attackRankingRate: null,
-  attackRankingNormalized: null,
-  attackRankingLevel: '',
-  attackAnomalyRate: null,
-  attackAnomalyLevel: '',
   attackScoutPriorityScore: null,
   attackPriorityLevel: '',
   attackOpportunityType: '',
 
-  defenseQualityRate: null,
-  defenseTargetRate: null,
-  defenseTargetNormalized: null,
-  defenseTargetLevel: '',
-  defenseRankingRate: null,
-  defenseRankingNormalized: null,
-  defenseRankingLevel: '',
-  defenseAnomalyRate: null,
-  defenseAnomalyLevel: '',
   defenseScoutPriorityScore: null,
   defensePriorityLevel: '',
   defenseOpportunityType: '',
@@ -99,9 +77,31 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   balanceProblemLevel: 'none',
   recruitmentWindow: 'none',
 
+  balanceDependencyKey: '',
+  balancePersistenceContractVersion: '',
+  balanceReliability: '',
+
+  balanceMinutesTop5Band: '',
+  balanceMinutesTop10Band: '',
+  balanceMinutesTop14Band: '',
+
+  balanceUsage70Band: '',
+  balanceUsage50Band: '',
+  balanceUsage30Band: '',
+  balanceUsage10Band: '',
+
+  balanceProductionTop1Band: '',
+  balanceProductionTop3Band: '',
+
+  balanceRotationStartsTop5Band: '',
+  balanceRotationStartsTop10Band: '',
+  balanceRotationStartsTop14Band: '',
+
+  balanceRotationSubInTop5Band: '',
+  balanceRotationSubInTop10Band: '',
+  balanceRotationSubInTop14Band: '',
+
   playersCount: 0,
-  playerSeasonIndexCount: 0,
-  scoutProfiledPlayersCount: 0,
   scoutProfilesSummary: {
     total: 0,
     profileCounts: {},
@@ -114,5 +114,5 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   updatedAt: null,
 };
 
-// Player Season search projection only.
-// Never treat this document as the source of truth for profile evidence or player history.
+// Birth-team-season search projection only.
+// Never treat this document as the source of truth for Team Balance evidence or team history.

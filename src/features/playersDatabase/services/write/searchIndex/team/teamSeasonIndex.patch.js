@@ -30,6 +30,7 @@ import {
   resolveClubLevel,
   resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
+import { buildTeamBalanceSearchIndexProjection } from './teamSeasonIndex.balance.js'
 import {
   buildSearchIndexWriteResult,
   SEARCH_INDEX_ENTITY_TYPES,
@@ -76,6 +77,7 @@ const areScoutProfilesSummariesEqual = (left, right) => (
   JSON.stringify(normalizeScoutProfilesSummary(right))
 )
 
+
 export async function updateTeamSeasonSearchIndexRosterMeta({
   league = {},
   season = {},
@@ -83,7 +85,8 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
   target = 'current',
   playersCount = 0,
   playerSeasonIndexCount = 0,
-  scoutProfiledPlayersCount = 0,
+  scoutProfilesSummary = null,
+  teamBalance = null,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const rawSeasonId = clean(season.seasonId)
@@ -135,8 +138,10 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
       birthYear: toNumberOrZero(season.birthYear),
       leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
       playersCount: toNumberOrZero(playersCount),
-      playerSeasonIndexCount: toNumberOrZero(playerSeasonIndexCount),
-      scoutProfiledPlayersCount: toNumberOrZero(scoutProfiledPlayersCount),
+      ...(scoutProfilesSummary !== null && scoutProfilesSummary !== undefined
+        ? { scoutProfilesSummary: normalizeScoutProfilesSummary(scoutProfilesSummary) }
+        : {}),
+      ...buildTeamBalanceSearchIndexProjection(teamBalance),
       sourceTarget: clean(target) === 'history' ? 'history' : 'current',
       updatedAt: serverTimestamp(),
     },
@@ -205,6 +210,19 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
       )
 
       if (isMatchingIndex) {
+        if (clean(data.teamUrl) === teamUrl) {
+          return buildSearchIndexWriteResult({
+            entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
+            operation: 'updateTeamUrl',
+            rowsCount: 0,
+            id: directSnapshot.id,
+            teamUrl,
+            updated: true,
+            changed: false,
+            writeSkipped: true,
+          })
+        }
+
         await trackedUpdateDoc(directRef, {
           teamUrl,
           updatedAt: serverTimestamp(),
@@ -222,10 +240,19 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
     }
   }
 
+  const fallbackConstraints = [
+    where('entityType', '==', 'birthTeamSeason'),
+    where('birthTeamId', '==', birthTeamId),
+  ]
+  if (seasonKey) {
+    fallbackConstraints.push(
+      where('seasonKey', '==', seasonKey)
+    )
+  }
+
   const indexQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-    where('entityType', '==', 'birthTeamSeason'),
-    where('birthTeamId', '==', birthTeamId)
+    ...fallbackConstraints
   )
   const querySnapshot = await readSearchIndexes(indexQuery)
   const matchingDoc = querySnapshot.docs.find(snapshot => {
@@ -251,6 +278,20 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
     })
   }
 
+  const matchingData = matchingDoc.data() || {}
+  if (clean(matchingData.teamUrl) === teamUrl) {
+    return buildSearchIndexWriteResult({
+      entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
+      operation: 'updateTeamUrl',
+      rowsCount: 0,
+      id: matchingDoc.id,
+      teamUrl,
+      updated: true,
+      changed: false,
+      writeSkipped: true,
+    })
+  }
+
   await trackedUpdateDoc(matchingDoc.ref, {
     teamUrl,
     updatedAt: serverTimestamp(),
@@ -272,6 +313,8 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   team = {},
   target = 'current',
   scoutProfilesSummary = {},
+  teamBalance = null,
+  playersCount = null,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -294,26 +337,94 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
     action: 'teamSeasonIndex-read',
     operationSubtype: 'maintenance-getDoc',
   })
+  const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+  const balanceProjection = buildTeamBalanceSearchIndexProjection(teamBalance)
+
   if (!snapshot.exists()) {
+    const batch = createTrackedWriteBatch(db, {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      action: 'teamSeasonIndex-patch',
+      operationSubtype: 'maintenance-batch',
+    })
+    batch.set(
+      ref,
+      {
+        id,
+        entityType: 'birthTeamSeason',
+        entityId: id,
+        leagueId,
+        seasonId,
+        seasonKey,
+        clubId,
+        clubLevel: resolveClubLevel({
+          clubId,
+          clubLevel: team.clubLevel,
+        }),
+        clubStrengthLevel: resolveClubStrengthLevel({
+          clubId,
+          clubLevel: team.clubLevel,
+          clubStrengthLevel: team.clubStrengthLevel,
+        }),
+        birthTeamId: teamId,
+        birthTeamDocumentId: teamIdentity.birthTeamDocumentId || teamId,
+        birthTeamSlot: toNumberOrZero(team.birthTeamSlot || team.teamSlot) || 1,
+        teamId,
+        teamDocumentId:
+          teamIdentity.birthTeamDocumentId ||
+          teamIdentity.teamDocumentId ||
+          teamId,
+        teamUrl: clean(team.teamUrl),
+        seasonUrl: clean(season.seasonUrl),
+        birthYear: toNumberOrZero(season.birthYear),
+        leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+        ...(playersCount !== null && playersCount !== undefined
+          ? { playersCount: toNumberOrZero(playersCount) }
+          : {}),
+        scoutProfilesSummary: normalizedSummary,
+        ...balanceProjection,
+        sourceTarget: clean(target) === 'history' ? 'history' : 'current',
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    )
+    await batch.commit()
+
     return buildSearchIndexWriteResult({
       entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
       operation: 'updateScoutProfilesSummary',
-      rowsCount: 0,
+      rowsCount: 1,
       id,
-      updated: false,
-      reason: 'teamSeasonIndexMissing',
+      updated: true,
+      created: true,
+      ...(playersCount !== null && playersCount !== undefined
+        ? { playersCount: toNumberOrZero(playersCount) }
+        : {}),
+      scoutProfiledPlayersCount: toNumberOrZero(scoutProfilesSummary.total),
     })
   }
 
   const existingData = snapshot.data() || {}
-  const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+
+  const existingBalanceProjection = Object.keys(balanceProjection).reduce((result, key) => ({
+    ...result,
+    [key]: existingData[key] ?? '',
+  }), {})
+  const hasPlayersCount = playersCount !== null && playersCount !== undefined
+  const normalizedPlayersCount = hasPlayersCount
+    ? toNumberOrZero(playersCount)
+    : null
+  const playersCountUnchanged = !hasPlayersCount || (
+    toNumberOrZero(existingData.playersCount) === normalizedPlayersCount
+  )
 
   if (
-    toNumberOrZero(existingData.scoutProfiledPlayersCount) === normalizedSummary.total &&
+    playersCountUnchanged &&
     areScoutProfilesSummariesEqual(
       existingData.scoutProfilesSummary,
       normalizedSummary
-    )
+    ) &&
+    JSON.stringify(existingBalanceProjection) === JSON.stringify(balanceProjection)
   ) {
     return buildSearchIndexWriteResult({
       entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
@@ -323,13 +434,15 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
       updated: true,
       changed: false,
       writeSkipped: true,
-      scoutProfiledPlayersCount: normalizedSummary.total,
     })
   }
 
   await trackedUpdateDoc(ref, {
-    scoutProfiledPlayersCount: normalizedSummary.total,
+    ...(hasPlayersCount
+      ? { playersCount: normalizedPlayersCount }
+      : {}),
     scoutProfilesSummary: normalizedSummary,
+    ...balanceProjection,
     sourceTarget: clean(target) === 'history' ? 'history' : 'current',
     updatedAt: serverTimestamp(),
   }, teamSeasonIndexUpdateUsage)
@@ -340,6 +453,9 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
     rowsCount: 1,
     id,
     updated: true,
+    ...(hasPlayersCount
+      ? { playersCount: normalizedPlayersCount }
+      : {}),
     scoutProfiledPlayersCount: toNumberOrZero(scoutProfilesSummary.total),
   })
 }

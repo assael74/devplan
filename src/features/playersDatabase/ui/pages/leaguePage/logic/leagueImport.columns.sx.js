@@ -52,4 +52,15 @@ export const leagueImportColumnsSx = {
   teamSlotInput: {
     minWidth: 48,
   },
+
+  teamUrlColumn: {
+    width: 64,
+    minWidth: 64,
+    textAlign: 'center',
+  },
+
+  teamUrlIndicator: {
+    textAlign: 'center',
+    fontWeight: 700,
+  },
 }

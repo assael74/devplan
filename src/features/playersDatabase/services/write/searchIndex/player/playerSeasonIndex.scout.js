@@ -127,30 +127,6 @@ export const buildPlayerScoutIndexFields = player => {
           ? player.scoutCandidateSignals[0]
           : null)
       )
-  const profileCaseStrength = profilesRemoved
-    ? null
-    : player?.scoutProfileCaseStrength || null
-  const nextBestCheck = player?.scoutVerification?.nextBestCheck || null
-  const isRealTransferContext = value => {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return false
-    }
-
-    const fromClubId = clean(value.fromClubId)
-    const toClubId = clean(value.toClubId)
-
-    return Boolean(
-      fromClubId &&
-      toClubId &&
-      fromClubId !== toClubId
-    )
-  }
-
-  const transferContext = isRealTransferContext(player?.scoutTransferContext)
-    ? player.scoutTransferContext
-    : isRealTransferContext(player?.scoutTrajectory?.latestTransfer)
-      ? player.scoutTrajectory.latestTransfer
-      : null
 
   return {
     ...buildProfileIndexFields({
@@ -165,46 +141,7 @@ export const buildPlayerScoutIndexFields = player => {
     nearScoutProfileDistancePct: toNullableNumber(nearestProfile?.distancePct),
     nearScoutProfileTrend: clean(nearestProfile?.trend),
     scoutEffectiveImmediacyStatus: clean(opportunity?.effectiveActionStatus),
-    scoutBaseImmediacyStatus: clean(opportunity?.baseActionStatus) || 'watch',
-    scoutAutomaticImmediacyStatus: clean(opportunity?.automaticActionStatus) || 'watch',
-    scoutManualImmediacyStatus: clean(opportunity?.manualActionStatus),
-    scoutHasManualImmediacyDecision: Boolean(opportunity?.hasManualDecision),
-    scoutImmediacyBoostScore: toNullableNumber(opportunity?.boostScore) || 0,
-    scoutImmediacyBoostIds: uniqueCleanValues(
-      (Array.isArray(opportunity?.boosts) ? opportunity.boosts : [])
-        .map(boost => boost?.id)
-    ),
-    scoutImmediacyReductionScore: toNullableNumber(opportunity?.reductionScore) || 0,
-    scoutImmediacyReductionIds: uniqueCleanValues(
-      (Array.isArray(opportunity?.reductions) ? opportunity.reductions : [])
-        .map(reduction => reduction?.id)
-    ),
-    scoutImmediacyNetScore: toNullableNumber(opportunity?.netScore) || 0,
-    scoutProfilePersistenceSeasons: Number(
-      opportunity?.signalPersistence?.profileRepeat?.seasons
-    ) || 0,
-    scoutCombinationPersistenceSeasons: Number(
-      opportunity?.signalPersistence?.combinationRepeat?.seasons
-    ) || 0,
-    scoutSignalDecaySeasons: Number(
-      opportunity?.signalPersistence?.decay?.seasonsWithoutSignal
-    ) || 0,
-    scoutSignalDecayLastSeasonKey: clean(
-      opportunity?.signalPersistence?.decay?.lastSignalSeasonKey
-    ),
-    scoutProfileCaseStrengthProfileCount: Number(profileCaseStrength?.profileCount) || 0,
-    scoutProfileCaseHasCombination: Boolean(profileCaseStrength?.hasDefinedCombination),
-    scoutProfileCaseCombinationIds: uniqueCleanValues(
-      profileCaseStrength?.combinationIds
-    ),
-    scoutExposureLevel: clean(opportunity?.exposureLevel),
-    scoutNextBestCheckId: clean(nextBestCheck?.questionId),
     scoutEngineVersion: clean(player?.scoutEngineVersion),
-    scoutTransferMoveType: clean(transferContext?.moveType),
-    scoutTransferDirection: clean(transferContext?.direction),
-    scoutTransferFromClubId: clean(transferContext?.fromClubId),
-    scoutTransferToClubId: clean(transferContext?.toClubId),
-    scoutTransferSameSeason: Boolean(transferContext?.sameSeason),
     ...buildProfileIndexFields({
       prefix: 'secondary',
       profile: secondaryProfile,

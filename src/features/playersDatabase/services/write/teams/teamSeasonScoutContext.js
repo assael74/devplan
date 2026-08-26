@@ -2,6 +2,7 @@
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import { adaptTeamSearchIndexDocument } from '../../../domain/index.js'
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
@@ -13,6 +14,65 @@ import {
   teamDocRef,
 } from './teamDoc.js'
 import { normalizeTeamPlayer } from './teamSeason.model.js'
+
+const isPlainObject = value => Boolean(
+  value &&
+  typeof value === 'object' &&
+  !Array.isArray(value) &&
+  Object.getPrototypeOf(value) === Object.prototype
+)
+
+const stripTeamScoutContextTechnicalTimestamps = rows => (
+  Array.isArray(rows) ? rows : []
+).map(row => {
+  const nextRow = isPlainObject(row) ? { ...row } : row
+  if (!isPlainObject(nextRow)) return nextRow
+
+  delete nextRow.updatedAt
+
+  if (Array.isArray(nextRow.teamPlayers)) {
+    nextRow.teamPlayers = nextRow.teamPlayers.map(player => {
+      if (!isPlainObject(player)) return player
+      const nextPlayer = { ...player }
+      delete nextPlayer.updatedAt
+      return nextPlayer
+    })
+  }
+
+  if (isPlainObject(nextRow.teamBalance)) {
+    nextRow.teamBalance = { ...nextRow.teamBalance }
+    if (isPlainObject(nextRow.teamBalance.source)) {
+      nextRow.teamBalance.source = { ...nextRow.teamBalance.source }
+      delete nextRow.teamBalance.source.updatedAt
+    }
+  }
+
+  return nextRow
+})
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (!isPlainObject(value)) return value
+
+  return Object.keys(value)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = normalizeComparableValue(value[key])
+      return acc
+    }, {})
+}
+
+const isSameTeamScoutContextRows = (currentRows, nextRows) => (
+  JSON.stringify(normalizeComparableValue(
+    stripTeamScoutContextTechnicalTimestamps(currentRows)
+  )) ===
+  JSON.stringify(normalizeComparableValue(
+    stripTeamScoutContextTechnicalTimestamps(nextRows)
+  ))
+)
 
 const buildTeamScoutContext = ({ teamIndexDocument = {}, season = {} } = {}) => {
   const domainTeam = adaptTeamSearchIndexDocument(teamIndexDocument)
@@ -210,7 +270,7 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
     })
     const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
     const updatedAt = new Date().toISOString()
-    const nextSeason = {
+    const nextSeasonWithoutBalance = {
       ...currentSeason,
       leagueId: clean(teamContext.leagueId || currentSeason.leagueId),
       ageGroupId: clean(teamContext.ageGroupId || currentSeason.ageGroupId),
@@ -225,7 +285,6 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       seasonStatus: effectiveSeason.seasonStatus,
       teamPlayers: nextPlayers,
       playersCount: nextPlayers.length,
-      scoutProfiledPlayersCount: scoutProfilesSummary.total,
       scoutProfilesSummary,
       teamStats: {
         ...(currentSeason.teamStats || {}),
@@ -233,6 +292,11 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       },
       updatedAt,
     }
+    const nextSeason = withTeamBalanceSnapshot({
+      seasonDoc: nextSeasonWithoutBalance,
+      teamDocument: baseDoc,
+      seasonTarget: fieldKey,
+    })
     const nextRows = rows.map((row, index) => (
       index === seasonIndex ? nextSeason : row
     ))
@@ -241,15 +305,27 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       [fieldKey]: nextRows,
       updatedAt,
     }
-
-    transaction.set(
-      ref,
-      {
-        [fieldKey]: nextRows,
-        updatedAt,
-      },
-      { merge: true }
+    const writeSkipped = isSameTeamScoutContextRows(
+      currentData[fieldKey],
+      nextRows
     )
+    const persistedSeason = writeSkipped
+      ? currentSeason
+      : nextSeason
+    const persistedTeamDocument = writeSkipped
+      ? currentData
+      : nextTeamDocument
+
+    if (!writeSkipped) {
+      transaction.set(
+        ref,
+        {
+          [fieldKey]: nextRows,
+          updatedAt,
+        },
+        { merge: true }
+      )
+    }
 
     return {
       teamDocumentId: teamId,
@@ -257,12 +333,22 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       seasonKey: effectiveSeason.seasonKey,
       target: fieldKey,
       updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
       skipped: false,
-      players: nextPlayers,
-      playersCount: nextPlayers.length,
-      scoutProfilesSummary,
+      players: Array.isArray(persistedSeason?.teamPlayers)
+        ? persistedSeason.teamPlayers
+        : [],
+      playersCount: Array.isArray(persistedSeason?.teamPlayers)
+        ? persistedSeason.teamPlayers.length
+        : 0,
+      scoutProfilesSummary: persistedSeason?.scoutProfilesSummary || {
+        total: 0,
+        profileCounts: {},
+      },
+      teamBalance: persistedSeason?.teamBalance || null,
       teamContext,
-      teamDocument: nextTeamDocument,
+      teamDocument: persistedTeamDocument,
     }
   })
 }

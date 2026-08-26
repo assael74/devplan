@@ -8,6 +8,11 @@ import { buildLeagueTeamsColumns } from './logic/leagueTeams.columns.js'
 import { leagueTeamsTableSx as sx } from './sx/leagueTeamsTable.sx.js'
 
 const clean = value => String(value || '').trim()
+const safeFilePart = value => clean(value)
+  .replace(/[\\/:*?"<>|]+/g, '-')
+  .replace(/\s+/g, ' ')
+  .replace(/-+/g, '-')
+  .trim()
 const toNumber = value => {
   const nextValue = Number(value)
   return Number.isFinite(nextValue) ? nextValue : 0
@@ -29,14 +34,23 @@ const resolvePriorityLabel = value => PRIORITY_LABELS[clean(value)] || clean(val
 
 const buildLeagueTableExportConfig = ({
   selectedSeasonOption,
+  leagueName = '',
+  ageGroup = '',
+  birthYear = '',
   rowsCount = 0,
+  buildTeamLink,
 } = {}) => ({
   enabled: rowsCount > 0,
   placementColumnKey: 'actions',
   align: 'end',
   buttonLabel: 'Excel',
   tooltip: 'הורדת טבלת הליגה המלאה',
-  fileName: `league-table-${clean(selectedSeasonOption?.seasonKey) || 'season'}`,
+  fileName: [
+    safeFilePart(leagueName) || 'ליגה',
+    safeFilePart(ageGroup) || 'קבוצת גיל',
+    safeFilePart(selectedSeasonOption?.seasonKey) || 'עונה',
+    safeFilePart(birthYear) || 'שנתון',
+  ].join(' - '),
   sheetName: 'League Table',
   getRows: rows => rows,
   columns: [
@@ -119,6 +133,11 @@ const buildLeagueTableExportConfig = ({
       value: row => toNumber(row?.profileAssignmentsCount),
     },
     {
+      key: 'teamPageLink',
+      label: 'קישור לקבוצה',
+      value: row => clean(buildTeamLink?.(row)),
+    },
+    {
       key: 'teamUrl',
       label: 'קישור מועדון',
       value: row => resolveTeamUrl(row),
@@ -131,6 +150,10 @@ export default function LeagueTeamsTable({
   loading = false,
   error = '',
   selectedSeasonOption = null,
+  leagueName = '',
+  ageGroup = '',
+  birthYear = '',
+  buildTeamLink,
   onTeamOpen,
   onTeamUrlEdit,
   onFavoriteToggle,
@@ -147,9 +170,20 @@ export default function LeagueTeamsTable({
   const exportConfig = React.useMemo(
     () => buildLeagueTableExportConfig({
       selectedSeasonOption,
+      leagueName,
+      ageGroup,
+      birthYear,
       rowsCount: rows.length,
+      buildTeamLink,
     }),
-    [rows.length, selectedSeasonOption]
+    [
+      ageGroup,
+      birthYear,
+      buildTeamLink,
+      leagueName,
+      rows.length,
+      selectedSeasonOption,
+    ]
   )
 
   return (

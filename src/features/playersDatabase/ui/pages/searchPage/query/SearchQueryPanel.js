@@ -97,6 +97,7 @@ export default function SearchQueryPanel({
           <SearchModelsQuery
             filters={search.queryFilters}
             onToggle={search.toggleQueryArrayValue}
+            onUpdate={search.updateQueryFilter}
             onResetTeamPerformance={search.resetTeamPerformanceFilters}
           />
         </Box>

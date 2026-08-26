@@ -1229,4 +1229,116 @@ export const playerScoutAuditSx = {
       verticalAlign: 'top',
     },
   },
+
+  combinedAuditIntro: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1,
+    flexWrap: 'wrap',
+    p: 1.25,
+    border: '1px solid',
+    borderColor: 'primary.200',
+    borderRadius: 8,
+    bgcolor: 'primary.softBg',
+  },
+
+  combinedAuditSummary: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+    flexWrap: 'wrap',
+  },
+
+  combinedAuditCollections: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+    flexWrap: 'wrap',
+  },
+
+  dataHealthRelationSection: {
+    display: 'grid',
+    gap: 1,
+    pt: 0.5,
+    borderTop: '1px solid',
+    borderColor: 'divider',
+  },
+
+  dataHealthRelationReads: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.75,
+    px: 0.75,
+    py: 0.55,
+    borderRadius: 6,
+    bgcolor: 'background.level1',
+  },
+
+  dataHealthRelationReadsValue: {
+    minWidth: 0,
+    color: 'neutral.700',
+    fontWeight: 600,
+    direction: 'ltr',
+    textAlign: 'left',
+    overflowWrap: 'anywhere',
+  },
+
+  combinedAuditGrid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      lg: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 0.75,
+  },
+
+  combinedAuditCard: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.75,
+    p: 1,
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 8,
+    bgcolor: 'background.surface',
+  },
+
+  combinedAuditCardHeader: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 0.75,
+  },
+
+  combinedAuditRelationStats: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    flexWrap: 'wrap',
+  },
+
+  combinedAuditIssues: {
+    display: 'grid',
+    gap: 0.5,
+  },
+
+  combinedAuditIssue: {
+    display: 'grid',
+    gap: 0.2,
+    p: 0.65,
+    borderRadius: 6,
+    bgcolor: 'warning.softBg',
+  },
+
+  combinedAuditIssueMessage: {
+    fontWeight: 600,
+  },
+
+  combinedAuditClean: {
+    color: 'success.700',
+  },
+
 }

@@ -36,6 +36,34 @@ import {
   findPlayerSeasonIndexDocForPayload,
 } from './playerSeasonIndex.query.js'
 
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isPatchUnchanged = ({ existingData = {}, fields = {} } = {}) => (
+  Object.keys(fields).every(key => (
+    JSON.stringify(normalizeComparableValue(existingData[key])) ===
+    JSON.stringify(normalizeComparableValue(fields[key]))
+  ))
+)
+
 export async function updatePlayerSeasonSearchIndexFields({
   league = {},
   season = {},
@@ -68,6 +96,23 @@ export async function updatePlayerSeasonSearchIndexFields({
   }
 
   const ref = existingDoc.ref
+  const existingData = existingDoc.data() || {}
+  if (isPatchUnchanged({
+    existingData,
+    fields,
+  })) {
+    return buildSearchIndexWriteResult({
+      entityType: SEARCH_INDEX_ENTITY_TYPES.playerSeason,
+      operation: 'patch',
+      rowsCount: 0,
+      id,
+      updated: true,
+      changed: false,
+      unchangedCount: 1,
+      writeSkipped: true,
+    })
+  }
+
   const batch = createTrackedWriteBatch(db, {
     feature: 'playersDatabase',
     collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
@@ -102,7 +147,6 @@ export const updatePlayerSeasonSearchIndexNotes = payload =>
     ...payload,
     fields: {
       notes: clean(payload.notes),
-      seasonNotes: clean(payload.notes),
     },
   })
 
@@ -189,7 +233,7 @@ export async function updatePlayerSeasonSearchIndexScoutContextMany({ league = {
   const snapshot = await trackedGetDocs(
     query(
       collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-      where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId),
+      where('birthTeamId', '==', teamId),
       where('seasonKey', '==', seasonKey),
       where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.playerSeason)
     ),
@@ -211,6 +255,7 @@ export async function updatePlayerSeasonSearchIndexScoutContextMany({ league = {
     operationSubtype: 'maintenance-batch',
   })
   let updatedCount = 0
+  let unchangedCount = 0
   let missingCount = 0
 
   ;(Array.isArray(players) ? players : []).forEach(player => {
@@ -227,25 +272,36 @@ export async function updatePlayerSeasonSearchIndexScoutContextMany({ league = {
       return
     }
 
+    const fields = {
+      clubLevel: toNumberOrZero(team.clubLevel),
+      clubStrengthLevel: toNumberOrZero(team.clubStrengthLevel || team.clubLevel),
+      leagueLevel: toNumberOrZero(team.leagueLevel || league.level),
+      leagueTotalRound: toNumberOrZero(team.leagueTotalRound || season.leagueTotalRound),
+      seasonStatus: clean(season.seasonStatus || team.seasonStatus) === 'completed'
+        ? 'completed'
+        : 'active',
+      teamTableRank: toNumberOrZero(team.tableRank),
+      teamTableAttackRank: toNumberOrZero(team.tableAttackRank),
+      teamTableDefenseRank: toNumberOrZero(team.tableDefenseRank),
+      teamGoalsFor: toNumberOrZero(team.teamStats?.goalsFor || team.goalsFor),
+      teamGoalsAgainst: toNumberOrZero(team.teamStats?.goalsAgainst || team.goalsAgainst),
+      teamGoalsForPerGame: Number(team.goalsForPerGame) || 0,
+      teamGamePlayed: toNumberOrZero(team.teamStats?.teamGamePlayed || team.teamGamePlayed),
+      teamGames: toNumberOrZero(team.teamStats?.teamGamePlayed || team.teamGamePlayed),
+      ...buildPlayerScoutIndexFields(player),
+    }
+    if (isPatchUnchanged({
+      existingData: existingDoc.data() || {},
+      fields,
+    })) {
+      unchangedCount += 1
+      return
+    }
+
     batch.set(
       existingDoc.ref,
       {
-        clubLevel: toNumberOrZero(team.clubLevel),
-        clubStrengthLevel: toNumberOrZero(team.clubStrengthLevel || team.clubLevel),
-        leagueLevel: toNumberOrZero(team.leagueLevel || league.level),
-        leagueTotalRound: toNumberOrZero(team.leagueTotalRound || season.leagueTotalRound),
-        seasonStatus: clean(season.seasonStatus || team.seasonStatus) === 'completed'
-          ? 'completed'
-          : 'active',
-        teamTableRank: toNumberOrZero(team.tableRank),
-        teamTableAttackRank: toNumberOrZero(team.tableAttackRank),
-        teamTableDefenseRank: toNumberOrZero(team.tableDefenseRank),
-        teamGoalsFor: toNumberOrZero(team.teamStats?.goalsFor || team.goalsFor),
-        teamGoalsAgainst: toNumberOrZero(team.teamStats?.goalsAgainst || team.goalsAgainst),
-        teamGoalsForPerGame: Number(team.goalsForPerGame) || 0,
-        teamGamePlayed: toNumberOrZero(team.teamStats?.teamGamePlayed || team.teamGamePlayed),
-        teamGames: toNumberOrZero(team.teamStats?.teamGamePlayed || team.teamGamePlayed),
-        ...buildPlayerScoutIndexFields(player),
+        ...fields,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -260,6 +316,7 @@ export async function updatePlayerSeasonSearchIndexScoutContextMany({ league = {
     operation: 'updateScoutContextMany',
     rowsCount: updatedCount,
     updatedCount,
+    unchangedCount,
     missingCount,
   })
 }

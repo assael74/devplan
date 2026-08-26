@@ -100,7 +100,7 @@ export async function deleteSearchIndexesForTeamSeason({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'playerSeason'),
     where('seasonKey', '==', seasonKey),
-    where('teamId', '==', teamId)
+    where('birthTeamId', '==', teamId)
   )
   const playerSnapshot = await readSearchIndexes(playerRowsQuery)
   const matchingPlayerDocs = {
@@ -161,7 +161,7 @@ export async function deleteSearchIndexForTeamPlayerSeason({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'playerSeason'),
     where('seasonKey', '==', seasonKey),
-    where('teamId', '==', teamId)
+    where('birthTeamId', '==', teamId)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {
@@ -173,17 +173,16 @@ export async function deleteSearchIndexForTeamPlayerSeason({
       return dataMatchesPlayer(data, player)
     }),
   }
-  const meta = collectIndexMeta(matchingDocs)
-  const rowsCount = await deleteSnapshotDocs(matchingDocs)
-  const remainingSnapshot = await readSearchIndexes(rowsQuery)
-
-  const remainingRowsCount = remainingSnapshot.docs.filter(indexDoc => {
+  const scopedRowsCount = snapshot.docs.filter(indexDoc => {
     const data = indexDoc.data() || {}
     if (birthTeamSlot && toNumberOrZero(data.birthTeamSlot) !== birthTeamSlot) return false
     if (leagueId && clean(data.leagueId) && clean(data.leagueId) !== leagueId) return false
 
     return true
   }).length
+  const meta = collectIndexMeta(matchingDocs)
+  const rowsCount = await deleteSnapshotDocs(matchingDocs)
+  const remainingRowsCount = Math.max(0, scopedRowsCount - rowsCount)
 
   return buildSearchIndexWriteResult({
     operation: 'deleteTeamPlayerSeason',
@@ -215,7 +214,7 @@ export async function deletePlayerSearchIndexesForTeamSeason({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'playerSeason'),
     where('seasonKey', '==', seasonKey),
-    where('teamId', '==', teamId)
+    where('birthTeamId', '==', teamId)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {

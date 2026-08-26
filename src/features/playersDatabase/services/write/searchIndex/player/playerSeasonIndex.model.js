@@ -158,7 +158,6 @@ export const buildPlayerSeasonIndexDoc = ({
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
     numShirt: clean(player.numShirt),
-    seasonNotes: clean(player.notes),
     statsStatus: normalizePlayerStatsStatus(player.statsStatus),
 
     teamTableRank: toNumberOrZero(team.tableRank),

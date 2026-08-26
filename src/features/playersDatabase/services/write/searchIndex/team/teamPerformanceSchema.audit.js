@@ -17,7 +17,7 @@ const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
 })
 
 const TEAM_ENTITY_TYPE = 'birthTeamSeason'
-const TARGET_SCHEMA_VERSION = 4
+const TARGET_SCHEMA_VERSION = 5
 const SAMPLE_LIMIT = 20
 
 const hasValue = value => (
@@ -27,15 +27,6 @@ const hasValue = value => (
 const SIDE_FIELDS = {
   attack: {
     current: [
-      'attackQualityRate',
-      'attackTargetRate',
-      'attackTargetNormalized',
-      'attackTargetLevel',
-      'attackRankingRate',
-      'attackRankingNormalized',
-      'attackRankingLevel',
-      'attackAnomalyRate',
-      'attackAnomalyLevel',
       'attackScoutPriorityScore',
       'attackPriorityLevel',
       'attackOpportunityType',
@@ -58,15 +49,6 @@ const SIDE_FIELDS = {
   },
   defense: {
     current: [
-      'defenseQualityRate',
-      'defenseTargetRate',
-      'defenseTargetNormalized',
-      'defenseTargetLevel',
-      'defenseRankingRate',
-      'defenseRankingNormalized',
-      'defenseRankingLevel',
-      'defenseAnomalyRate',
-      'defenseAnomalyLevel',
       'defenseScoutPriorityScore',
       'defensePriorityLevel',
       'defenseOpportunityType',

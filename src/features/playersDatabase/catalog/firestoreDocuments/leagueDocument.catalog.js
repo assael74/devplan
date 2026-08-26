@@ -2,6 +2,11 @@
 
 // Firestore source of truth: league document.
 
+export const LEAGUE_DOCUMENT_NULLABLE_ARRAY_PATHS = Object.freeze([
+  'current.tableRank',
+  'history[].tableRank',
+])
+
 export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
   id: '',
   leagueId: '',
@@ -18,8 +23,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
     seasonUrl: '',
     birthYear: 0, // חובה
     leagueTotalRound: 0,
-    goalsEnvironment: null,
-    scoutEnvironment: null,
+    // Contract: null = not loaded yet; [] = loaded and empty; rows = loaded table.
     tableRank: [
       {
         rank: 0,
@@ -38,11 +42,6 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
           goalsFor: 0,
           goalsAgainst: 0,
           teamGamePlayed: 0,
-          attackPerformance: null,
-          defensePerformance: null,
-          attackNormalPerformance: null,
-          defenseNormalPerformance: null,
-          scoutPerformance: null,
         },
         scoutProfilesSummary: {
           total: 0,
@@ -61,8 +60,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasonUrl: '',
       birthYear: 0, // חובה
       leagueTotalRound: 0,
-      goalsEnvironment: null,
-      scoutEnvironment: null,
+      // Contract: null = not loaded yet; [] = loaded and empty; rows = loaded table.
       tableRank: [
         {
           rank: 0,
@@ -81,12 +79,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
             goalsFor: 0,
             goalsAgainst: 0,
             teamGamePlayed: 0,
-            attackPerformance: null,
-            defensePerformance: null,
-            attackNormalPerformance: null,
-            defenseNormalPerformance: null,
-            scoutPerformance: null,
-          },
+                    },
           scoutProfilesSummary: {
             total: 0,
             profileCounts: {},

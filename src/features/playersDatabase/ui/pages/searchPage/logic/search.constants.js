@@ -49,6 +49,19 @@ export const SEARCH_PROFILE_MATCH_MODES = [
 export const SEARCH_SCOUT_PROFILES = buildPlayerScoutProfileOptions()
 export const SEARCH_TEAM_SCOUT_PRIORITIES = buildTeamScoutPriorityOptions()
 
+export const SEARCH_PLAYER_IMMEDIACY_LEVELS = [
+  { value: 'immediate', label: 'מיידי' },
+  { value: 'priority', label: 'עדיפות' },
+  { value: 'watch', label: 'מעקב' },
+  { value: 'remove', label: 'הסרה' },
+]
+
+export const SEARCH_TEAM_BALANCE_BANDS = [
+  { value: 'below_typical', label: 'מתחת לטווח' },
+  { value: 'typical', label: 'בטווח הרגיל' },
+  { value: 'above_typical', label: 'מעל הטווח' },
+]
+
 export const SEARCH_TEAM_INTERPRETATION_LEVELS = [
   {
     value: 'elite',
@@ -184,8 +197,13 @@ export const createSearchFilters = () => ({
   leagues: [],
   scoutProfiles: [],
   scoutCombinations: [],
+  scoutImmediacyStatus: '',
   teamAttackPriorityLevels: [],
   teamDefensePriorityLevels: [],
+  teamBalanceReliability: '',
+  teamBalanceMinutesBand: '',
+  teamBalanceProductionBand: '',
+  teamBalanceRotationBand: '',
   profileMatchMode: 'any',
   conditions: [],
 })

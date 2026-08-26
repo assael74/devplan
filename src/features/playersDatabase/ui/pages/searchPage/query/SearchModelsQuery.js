@@ -12,7 +12,9 @@ import ScoutBadge from '../../../components/scout/ScoutBadge.js'
 import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
 import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
 import {
+  SEARCH_PLAYER_IMMEDIACY_LEVELS,
   SEARCH_SCOUT_PROFILES,
+  SEARCH_TEAM_BALANCE_BANDS,
   SEARCH_TEAM_INTERPRETATION_LEVELS,
 } from '../logic/search.constants.js'
 import SearchQuerySection from './SearchQuerySection.js'
@@ -155,6 +157,75 @@ function TeamInterpretationSide({ title, field, values, onToggle }) {
   )
 }
 
+
+function ScalarFilterGroup({ title, field, value, options, onUpdate }) {
+  return (
+    <Box sx={sx.teamSideSection}>
+      <Typography level='title-sm' sx={sx.teamSideTitle}>
+        {title}
+      </Typography>
+
+      <Box sx={sx.levelsGrid}>
+        {options.map(option => (
+          <SelectableModelCard
+            key={`${field}-${option.value}`}
+            selected={value === option.value}
+            description={option.description || option.label}
+            onClick={() => onUpdate(field, value === option.value ? '' : option.value)}
+          >
+            <ScoutBadge
+              value={option.tone || option.value}
+              label={option.label}
+              fontSize={11}
+            />
+          </SelectableModelCard>
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
+function PlayerImmediacyFilter({ filters, onUpdate }) {
+  return (
+    <ScalarFilterGroup
+      title='רמת מיידיות'
+      field='scoutImmediacyStatus'
+      value={filters.scoutImmediacyStatus || ''}
+      options={SEARCH_PLAYER_IMMEDIACY_LEVELS}
+      onUpdate={onUpdate}
+    />
+  )
+}
+
+function TeamBalanceFilters({ filters, onUpdate }) {
+  const groups = [
+    ['ריכוז דקות', 'teamBalanceMinutesBand'],
+    ['ריכוז תפוקה', 'teamBalanceProductionBand'],
+    ['ריכוז פתיחות', 'teamBalanceRotationBand'],
+  ]
+
+  return (
+    <Box sx={sx.teamContent}>
+      <Typography level='title-sm' sx={sx.teamSideTitle}>
+        איזון קבוצתי
+      </Typography>
+
+      <Box sx={sx.teamSidesGrid}>
+        {groups.map(([title, field]) => (
+          <ScalarFilterGroup
+            key={field}
+            title={title}
+            field={field}
+            value={filters[field] || ''}
+            options={SEARCH_TEAM_BALANCE_BANDS}
+            onUpdate={onUpdate}
+          />
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
 function TeamPriorityFilters({ filters, onToggle }) {
   const attackValues = filters.teamAttackPriorityLevels || []
   const defenseValues = filters.teamDefensePriorityLevels || []
@@ -180,7 +251,7 @@ function TeamPriorityFilters({ filters, onToggle }) {
   )
 }
 
-export default function SearchModelsQuery({ filters, onToggle }) {
+export default function SearchModelsQuery({ filters, onToggle, onUpdate }) {
   const isTeam = filters.searchContext === 'team'
   const isPlayer = filters.searchContext === 'player'
   const selectedCombinations = filters.scoutCombinations || []
@@ -202,12 +273,23 @@ export default function SearchModelsQuery({ filters, onToggle }) {
           <Typography level='body-sm'>יש לבחור הקשר חיפוש</Typography>
         </Box>
       ) : isTeam ? (
-        <TeamPriorityFilters
-          filters={filters}
-          onToggle={onToggle}
-        />
+        <Box sx={sx.teamContent}>
+          <TeamPriorityFilters
+            filters={filters}
+            onToggle={onToggle}
+          />
+          <TeamBalanceFilters
+            filters={filters}
+            onUpdate={onUpdate}
+          />
+        </Box>
       ) : (
-        <Box sx={sx.grid}>
+        <Box sx={sx.playerContent}>
+          <PlayerImmediacyFilter
+            filters={filters}
+            onUpdate={onUpdate}
+          />
+          <Box sx={sx.grid}>
           {SEARCH_SCOUT_PROFILES.map(option => {
             const selected = option.isCombination
               ? selectedCombinations.includes(option.value)
@@ -224,6 +306,7 @@ export default function SearchModelsQuery({ filters, onToggle }) {
               />
             )
           })}
+          </Box>
         </Box>
       )}
     </SearchQuerySection>

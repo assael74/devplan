@@ -26,6 +26,7 @@ import {
   buildScoutingPlayerReasonEvents,
   buildScoutingPlayerTracking,
   mergeScoutingPlayerEvents,
+  normalizeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
   normalizeScoutingPlayerTrackingReason,
   resolvePlayerTrackingReasons,
@@ -33,6 +34,72 @@ import {
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
+
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const stripPlayerDocTechnicalTimestamps = value => {
+  if (!value || typeof value !== 'object') return value
+
+  const next = {
+    ...value,
+  }
+
+  delete next.updatedAt
+
+  next.current = (Array.isArray(value.current) ? value.current : []).map(row => {
+    const nextRow = {
+      ...row,
+    }
+    delete nextRow.updatedAt
+    return nextRow
+  })
+
+  next.history = (Array.isArray(value.history) ? value.history : []).map(row => {
+    const nextRow = {
+      ...row,
+    }
+    delete nextRow.updatedAt
+    return nextRow
+  })
+
+  return next
+}
+
+const isScoutingPlayerDocStateUnchanged = ({
+  currentData = {},
+  nextData = {},
+} = {}) => (
+  JSON.stringify(
+    normalizeComparableValue(
+      stripPlayerDocTechnicalTimestamps(currentData)
+    )
+  ) ===
+  JSON.stringify(
+    normalizeComparableValue(
+      stripPlayerDocTechnicalTimestamps(nextData)
+    )
+  )
+)
 
 const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => ({
   eventKey: [
@@ -200,13 +267,18 @@ export const ensureScoutingPlayerDoc = async ({
           team: resolvedTeam,
           trackedAt,
         })]
+    const currentEvents = normalizeScoutingPlayerEvents(currentData.events)
     const events = mergeScoutingPlayerEvents({
-      currentEvents: currentData.events,
+      currentEvents,
       nextEvents: [
         ...createdEvents,
         ...reasonEvents,
       ],
     })
+    const actualNewEventsCount = Math.max(
+      0,
+      events.length - currentEvents.length
+    )
     const nextData = {
       ...baseDoc,
       favorite:
@@ -226,14 +298,24 @@ export const ensureScoutingPlayerDoc = async ({
         : historyWithoutSeason,
     }
 
-    transaction.set(ref, nextData, { merge: true })
+    const writeSkipped = snapshot.exists() && isScoutingPlayerDocStateUnchanged({
+      currentData,
+      nextData,
+    })
+
+    if (!writeSkipped) {
+      transaction.set(ref, nextData, { merge: true })
+    }
 
     return {
       playerDocumentId,
       created: !snapshot.exists(),
+      updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
       trackingReason: normalizedReason,
       tracking,
-      eventsAdded: createdEvents.length + reasonEvents.length,
+      eventsAdded: writeSkipped ? 0 : actualNewEventsCount,
       scoutProfilesCount: seasonDoc.scoutProfiles.length,
     }
   })
@@ -279,27 +361,37 @@ export const updateScoutingPlayerFavoriteState = async ({ playerDocumentId = '',
       ...currentTracking,
       favorite: nextFavorite,
     }
-
-    transaction.set(
-      ref,
-      {
+    const nextTrackingWithReasons = {
+      ...nextTracking,
+      trackingReasons: resolvePlayerTrackingReasons({
+        ...currentData,
         favorite: nextFavorite,
-        tracking: {
-          ...nextTracking,
-          trackingReasons: resolvePlayerTrackingReasons({
-            ...currentData,
-            favorite: nextFavorite,
-            tracking: nextTracking,
-          }),
-        },
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
+        tracking: nextTracking,
+      }),
+    }
+    const favoriteStateUnchanged = (
+      currentData.favorite === nextFavorite &&
+      JSON.stringify(normalizeComparableValue(currentTracking)) ===
+        JSON.stringify(normalizeComparableValue(nextTrackingWithReasons))
     )
+
+    if (!favoriteStateUnchanged) {
+      transaction.set(
+        ref,
+        {
+          favorite: nextFavorite,
+          tracking: nextTrackingWithReasons,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
+    }
 
     return {
       playerDocumentId: normalizedPlayerDocumentId,
       updated: true,
+      changed: !favoriteStateUnchanged,
+      writeSkipped: favoriteStateUnchanged,
       favorite: nextFavorite,
     }
   })

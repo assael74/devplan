@@ -24,6 +24,35 @@ import { removePlayerScoutProfileFromComputedState } from '../../../domain/orche
 import { normalizePlayerScoutStory } from '../players/playerDoc.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
+  Object.keys(patch).every(key => (
+    JSON.stringify(normalizeComparableValue(current[key])) ===
+    JSON.stringify(normalizeComparableValue(patch[key]))
+  ))
+)
 export async function updateTeamSeasonPlayerUrl({
   season = {},
   team = {},
@@ -105,6 +134,23 @@ export async function updateTeamSeasonPlayerUrl({
       }
     }
 
+    const currentPlayer = teamPlayers[playerIndex] || {}
+    if (clean(currentPlayer.playerUrl) === nextPlayerUrl) {
+      return {
+        birthTeamDocumentId: teamId,
+        teamDocumentId: teamId,
+        seasonId,
+        seasonKey,
+        playerUrl: nextPlayerUrl,
+        target: fieldKey,
+        playerDocumentId: clean(player.playerDocumentId),
+        externalPlayerId: clean(player.externalPlayerId),
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+      }
+    }
+
     const nextPlayers = teamPlayers.map((row, index) => (
       index === playerIndex
         ? {
@@ -114,14 +160,18 @@ export async function updateTeamSeasonPlayerUrl({
           }
         : row
     ))
+    const nextSeasonWithoutBalance = {
+      ...seasonRow,
+      teamPlayers: nextPlayers,
+      updatedAt: new Date().toISOString(),
+    }
+    const nextSeason = withTeamBalanceSnapshot({
+      seasonDoc: nextSeasonWithoutBalance,
+      teamDocument: currentData,
+      seasonTarget: fieldKey,
+    })
     const nextRows = rows.map((row, index) => (
-      index === seasonIndex
-        ? {
-            ...row,
-            teamPlayers: nextPlayers,
-            updatedAt: new Date().toISOString(),
-          }
-        : row
+      index === seasonIndex ? nextSeason : row
     ))
 
     transaction.set(
@@ -143,6 +193,8 @@ export async function updateTeamSeasonPlayerUrl({
       playerDocumentId: clean(player.playerDocumentId),
       externalPlayerId: clean(player.externalPlayerId),
       updated: true,
+      changed: true,
+      writeSkipped: false,
     }
   })
 }
@@ -157,6 +209,8 @@ const buildTeamPlayerUpdateResult = ({
   teamDocument = null,
   player = null,
   reason = '',
+  changed,
+  writeSkipped,
 }) => ({
   birthTeamDocumentId: teamId,
   teamDocumentId: teamId,
@@ -164,6 +218,8 @@ const buildTeamPlayerUpdateResult = ({
   seasonKey,
   target,
   updated,
+  ...(typeof changed === 'boolean' ? { changed } : {}),
+  ...(typeof writeSkipped === 'boolean' ? { writeSkipped } : {}),
   ...(reason ? { reason } : {}),
   ...(scoutProfilesSummary
     ? { scoutProfilesSummary }
@@ -228,7 +284,8 @@ const patchTeamSeasonPlayer = async ({
       ? baseDoc[fieldKey]
       : []
     const updatedAt = new Date().toISOString()
-    let playerUpdated = false
+    let playerFound = false
+    let playerChanged = false
     let updatedPlayer = null
 
     const nextRows = rows.map(row => {
@@ -245,11 +302,21 @@ const patchTeamSeasonPlayer = async ({
           return nextPlayer
         }
 
-        playerUpdated = true
+        playerFound = true
+        const playerPatch = buildPatch(nextPlayer, row, baseDoc)
 
+        if (isPatchUnchanged({
+          current: nextPlayer,
+          patch: playerPatch,
+        })) {
+          updatedPlayer = nextPlayer
+          return nextPlayer
+        }
+
+        playerChanged = true
         const nextUpdatedPlayer = {
           ...nextPlayer,
-          ...buildPatch(nextPlayer, row, baseDoc),
+          ...playerPatch,
           updatedAt,
         }
         updatedPlayer = nextUpdatedPlayer
@@ -257,11 +324,19 @@ const patchTeamSeasonPlayer = async ({
         return nextUpdatedPlayer
       })
 
-      return {
+      if (!playerChanged) return row
+
+      const nextSeasonWithoutBalance = {
         ...row,
         teamPlayers: nextPlayers,
         updatedAt,
       }
+
+      return withTeamBalanceSnapshot({
+        seasonDoc: nextSeasonWithoutBalance,
+        teamDocument: baseDoc,
+        seasonTarget: fieldKey,
+      })
     })
 
     const seasonDoc = nextRows.find(row => (
@@ -277,7 +352,7 @@ const patchTeamSeasonPlayer = async ({
       ? buildScoutProfilesSummary(teamPlayers)
       : null
 
-    const nextTeamDocument = playerUpdated
+    const nextTeamDocument = playerChanged
       ? {
           ...baseDoc,
           [fieldKey]: nextRows,
@@ -285,7 +360,7 @@ const patchTeamSeasonPlayer = async ({
         }
       : baseDoc
 
-    if (playerUpdated) {
+    if (playerChanged) {
       transaction.set(
         ref,
         {
@@ -301,7 +376,9 @@ const patchTeamSeasonPlayer = async ({
       seasonId,
       seasonKey,
       target: fieldKey,
-      updated: playerUpdated,
+      updated: playerFound,
+      changed: playerChanged,
+      writeSkipped: playerFound && !playerChanged,
       scoutProfilesSummary,
       teamDocument: nextTeamDocument,
       player: updatedPlayer,

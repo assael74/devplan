@@ -1,16 +1,13 @@
 // features/playersDatabase/services/write/flows/team/clearTeamSeasonPlayers.flow.js
 
 import {
-  syncLeaguesMasterDocument,
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-  updateLeagueSeasonTableRankTeamUrl,
+  updateLeagueSeasonTableRankTeamSyncMeta,
 } from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
   deletePlayerSearchIndexesForTeamSeason,
   getSearchIndexMetaForTeamSeason,
   updateTeamSeasonSearchIndexRosterMeta,
-  updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { clearTeamSeasonPlayers } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
@@ -74,29 +71,23 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     action: () => deletePlayerSearchIndexesForTeamSeason(payload),
   })
 
-  const leagueRosterResult = await runStage({
-    stage: 'updateLeagueSeasonTableRankTeamUrl',
+  const leagueTeamMetaResult = await runStage({
+    stage: 'updateLeagueSeasonTableRankTeamSyncMeta',
     results,
-    action: () => updateLeagueSeasonTableRankTeamUrl({
+    action: () => updateLeagueSeasonTableRankTeamSyncMeta({
       ...payload,
       team: {
         ...(payload.team || {}),
         ...buildTeamLoadStatus([]),
       },
-    }),
-  })
-
-  const leagueProfilesResult = await runStage({
-    stage: 'updateLeagueSeasonTableRankScoutProfilesSummary',
-    results,
-    action: () => updateLeagueSeasonTableRankScoutProfilesSummary({
-      ...payload,
       scoutProfilesSummary: {
         total: 0,
         profileCounts: {},
       },
     }),
   })
+  const leagueRosterResult = leagueTeamMetaResult
+  const leagueProfilesResult = leagueTeamMetaResult
 
   const teamIndexRosterResult = await runStage({
     stage: 'updateTeamSeasonSearchIndexRosterMeta',
@@ -105,29 +96,15 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
       ...payload,
       playersCount: 0,
       playerSeasonIndexCount: 0,
-      scoutProfiledPlayersCount: 0,
-    }),
-  })
-
-  const teamIndexProfilesResult = await runStage({
-    stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
-    results,
-    action: () => updateTeamSeasonSearchIndexScoutProfilesSummary({
-      ...payload,
       scoutProfilesSummary: {
         total: 0,
         profileCounts: {},
       },
+      teamBalance: teamSeasonResult.teamBalance,
     }),
   })
 
-  const masterResult = await runStage({
-    stage: 'syncLeaguesMasterDocument',
-    results,
-    action: () => syncLeaguesMasterDocument({
-      leagues: [payload.league || { id: payload.season?.leagueId }],
-    }),
-  })
+
 
   return {
     status: 'complete',
@@ -143,7 +120,6 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     leagueRosterResult,
     leagueProfilesResult,
     teamIndexRosterResult,
-    teamIndexProfilesResult,
-    masterResult,
+    teamIndexProfilesResult: teamIndexRosterResult,
   }
 }

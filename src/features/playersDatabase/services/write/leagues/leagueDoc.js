@@ -19,20 +19,56 @@ import { trackedRunTransaction } from '../../../../../services/firestore/usage/i
 export { buildSeasonKey, toNumberOrZero }
 export const clean = cleanValue
 
-export const cleanTeamStatsComputedFields = (teamStats = {}) => ({
-  ...(teamStats || {}),
-})
+const normalizeLeagueLevel = value => {
+  if (value === null || value === undefined || value === '') return null
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : null
+}
 
-export const cleanTableRankComputedFields = tableRank =>
-  (Array.isArray(tableRank) ? tableRank : []).map(row => ({
+export const cleanTeamStatsComputedFields = (teamStats = {}) => {
+  const {
+    attackPerformance,
+    defensePerformance,
+    attackNormalPerformance,
+    defenseNormalPerformance,
+    scoutPerformance,
+    ...cleanTeamStats
+  } = teamStats || {}
+
+  return cleanTeamStats
+}
+
+export const cleanTableRankComputedFields = tableRank => {
+  if (tableRank === null || tableRank === undefined) return null
+  if (!Array.isArray(tableRank)) return tableRank
+
+  return tableRank.map(row => ({
     ...row,
     teamStats: cleanTeamStatsComputedFields(row?.teamStats),
   }))
+}
 
-export const cleanSeasonComputedFields = (season = {}) => ({
-  ...(season || {}),
-  tableRank: cleanTableRankComputedFields(season?.tableRank),
-})
+export const cleanSeasonComputedFields = (season = {}) => {
+  const {
+    goalsEnvironment,
+    scoutEnvironment,
+    teamsCount,
+    tableRankCount,
+    playersCount,
+    playersWithScoutProfileCount,
+    scoutProfilesCount,
+    ...cleanSeason
+  } = season || {}
+
+  return {
+    ...cleanSeason,
+    tableRank: cleanTableRankComputedFields(season?.tableRank),
+  }
+}
+
+const hasLeagueSeasonIdentity = season => Boolean(
+  clean(season?.seasonId) || clean(season?.seasonKey)
+)
 
 export const leagueDocRef = leagueId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, clean(leagueId))
@@ -44,14 +80,42 @@ export const buildLeagueBaseDoc = (league = {}, currentData = {}) => ({
   region: clean(league.region || currentData.region),
   ageGroupId: clean(league.ageGroupId || currentData.ageGroupId),
   ageGroupLabel: clean(league.ageGroupLabel || currentData.ageGroupLabel),
-  level: pickDefinedValue(league.level, currentData.level, null),
-  current: currentData.current ? cleanSeasonComputedFields(currentData.current) : null,
+  level: normalizeLeagueLevel(
+    pickDefinedValue(league.level, currentData.level, null)
+  ),
+  current: hasLeagueSeasonIdentity(currentData.current)
+    ? cleanSeasonComputedFields(currentData.current)
+    : null,
   history: Array.isArray(currentData.history)
     ? currentData.history.map(cleanSeasonComputedFields)
     : [],
   createdAt: currentData.createdAt || serverTimestamp(),
   updatedAt: serverTimestamp(),
 })
+
+
+const isSameLeagueRootState = (currentData = {}, nextData = {}) => {
+  const current = {
+    id: clean(currentData.id),
+    leagueId: clean(currentData.leagueId),
+    leagueName: clean(currentData.leagueName),
+    region: clean(currentData.region),
+    ageGroupId: clean(currentData.ageGroupId),
+    ageGroupLabel: clean(currentData.ageGroupLabel),
+    level: normalizeLeagueLevel(currentData.level),
+  }
+  const next = {
+    id: clean(nextData.id),
+    leagueId: clean(nextData.leagueId),
+    leagueName: clean(nextData.leagueName),
+    region: clean(nextData.region),
+    ageGroupId: clean(nextData.ageGroupId),
+    ageGroupLabel: clean(nextData.ageGroupLabel),
+    level: normalizeLeagueLevel(nextData.level),
+  }
+
+  return JSON.stringify(current) === JSON.stringify(next)
+}
 
 export async function ensureLeagueDoc(league = {}, options = {}) {
   const leagueId = clean(league.id)
@@ -63,16 +127,25 @@ export async function ensureLeagueDoc(league = {}, options = {}) {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     const docData = buildLeagueBaseDoc(league, currentData)
+    const writeSkipped = Boolean(
+      snapshot.exists() &&
+      isSameLeagueRootState(currentData, docData)
+    )
 
-    transaction.set(ref, docData, { merge: true })
+    if (!writeSkipped) {
+      transaction.set(ref, docData, { merge: true })
+    }
 
     return {
       leagueId,
       created: !snapshot.exists(),
+      updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
     }
   })
 
-  if (options.syncMaster !== false) {
+  if (options.syncMaster !== false && !result.writeSkipped) {
     await syncLeaguesMasterDocument({
       leagues: [league],
     })

@@ -119,7 +119,7 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
       team: teamWithRosterMeta,
       playersCount: teamPlayerResult.playersCount,
       playerSeasonIndexCount: searchIndexResult.remainingRowsCount,
-      scoutProfiledPlayersCount: teamPlayerResult.scoutProfilesSummary.total,
+      teamBalance: teamPlayerResult.teamBalance,
     }),
   })
 

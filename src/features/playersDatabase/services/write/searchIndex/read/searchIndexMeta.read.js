@@ -87,7 +87,7 @@ export async function getSearchIndexMetaForTeamSeason({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'playerSeason'),
     where('seasonKey', '==', seasonKey),
-    where('teamId', '==', teamId)
+    where('birthTeamId', '==', teamId)
   )
   const playerSnapshot = await readSearchIndexes(playerRowsQuery)
   const matchingPlayerDocs = {
@@ -124,7 +124,7 @@ export async function getSearchIndexMetaForTeamPlayerSeason({
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', 'playerSeason'),
     where('seasonKey', '==', seasonKey),
-    where('teamId', '==', teamId)
+    where('birthTeamId', '==', teamId)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const matchingDocs = {

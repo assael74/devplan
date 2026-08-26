@@ -34,6 +34,36 @@ import {
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
 
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) return value.map(normalizeComparableValue)
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isPlayerSeasonIndexWriteUnchanged = ({
+  existingData = {},
+  nextData = {},
+} = {}) => Object.keys(nextData)
+  .filter(key => key !== 'updatedAt')
+  .every(key => (
+    JSON.stringify(normalizeComparableValue(existingData[key])) ===
+    JSON.stringify(normalizeComparableValue(nextData[key]))
+  ))
+
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   feature: 'playersDatabase',
   collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
@@ -87,7 +117,9 @@ export async function upsertPlayerSeasonSearchIndexMany({
     ))
   const rowsQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
-    where(indexScope.clubId ? 'clubId' : 'teamId', '==', indexScope.clubId || teamId)
+    where('birthTeamId', '==', teamId),
+    where('seasonKey', '==', seasonKey),
+    where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.playerSeason)
   )
   const snapshot = await readSearchIndexes(rowsQuery)
   const existingDocs = snapshot.docs.filter(playerDoc => (
@@ -103,6 +135,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
   let rowsCount = 0
   let createdCount = 0
   let updatedCount = 0
+  let unchangedCount = 0
   const failures = []
   const duplicates = []
 
@@ -159,26 +192,39 @@ export async function upsertPlayerSeasonSearchIndexMany({
     const id = existingDoc?.id || indexDoc.id
     if (!id || !indexDoc.teamId || !indexDoc.seasonId || !indexDoc.displayName) return
 
+    const nextData = {
+      ...indexDoc,
+      id,
+      entityId: id,
+      aliases: buildPlayerAliases({
+        player,
+        displayName: indexDoc.displayName,
+        existingAliases: existingData.aliases,
+      }),
+      playerDocumentId: clean(indexDoc.playerDocumentId || existingData.playerDocumentId),
+      playerUrl: clean(indexDoc.playerUrl || existingData.playerUrl),
+      rosterStatus: getRosterStatus(player) || clean(existingData.rosterStatus || 'regular'),
+      notes: clean(player.notes || existingData.notes),
+    }
+
+    if (
+      existingDoc &&
+      isPlayerSeasonIndexWriteUnchanged({
+        existingData,
+        nextData,
+      })
+    ) {
+      unchangedCount += 1
+      return
+    }
+
     rowsCount += 1
     if (existingDoc) updatedCount += 1
     else createdCount += 1
 
     batch.set(
       existingDoc?.ref || doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id),
-      {
-        ...indexDoc,
-        id,
-        entityId: id,
-        aliases: buildPlayerAliases({
-          player,
-          displayName: indexDoc.displayName,
-          existingAliases: existingData.aliases,
-        }),
-        playerDocumentId: clean(indexDoc.playerDocumentId || existingData.playerDocumentId),
-        playerUrl: clean(indexDoc.playerUrl || existingData.playerUrl),
-        rosterStatus: getRosterStatus(player) || clean(existingData.rosterStatus || 'regular'),
-        notes: clean(player.notes || existingData.notes),
-      }
+      nextData
     )
   })
 
@@ -193,6 +239,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
     rowsCount,
     createdCount,
     updatedCount,
+    unchangedCount,
     failedCount: failures.length,
     duplicateCount: duplicates.length,
     failures,

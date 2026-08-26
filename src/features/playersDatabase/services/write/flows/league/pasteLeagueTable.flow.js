@@ -83,6 +83,17 @@ const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [
         Boolean(player.playerDocumentId) ||
         existingPlayerDocumentIds.has(buildPlayerDocumentId(player))
       ))
+      .map(player => {
+        if (player.playerDocumentId) return player
+
+        const playerDocumentId = buildPlayerDocumentId(player)
+        if (!existingPlayerDocumentIds.has(playerDocumentId)) return player
+
+        return {
+          ...player,
+          playerDocumentId,
+        }
+      })
 
     try {
       const result = await syncPlayerScoutProfileDocsMany({
@@ -264,9 +275,23 @@ export async function pasteLeagueTableFlow(payload = {}) {
     })
 
     stage = 'leaguesMaster'
-    results.leaguesMaster = await syncLeaguesMasterDocument({
-      leagues: [payload.league || {}],
-    })
+    const masterSyncRequired = Boolean(
+      results.leagueDocument?.changed ||
+      results.leagueTable?.changed ||
+      results.leagueScoutSummaries?.changed
+    )
+
+    results.leaguesMaster = masterSyncRequired
+      ? await syncLeaguesMasterDocument({
+          leagues: [payload.league || {}],
+        })
+      : {
+          updated: true,
+          changed: false,
+          writeSkipped: true,
+          masterSyncSkipped: true,
+          reason: 'noMasterAffectingChanges',
+        }
 
     return {
       status: 'complete',

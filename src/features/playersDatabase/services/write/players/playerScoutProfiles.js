@@ -82,6 +82,33 @@ export async function resolveExistingPlayerDocumentIds(players = []) {
   return existingIds
 }
 
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        if (key === 'updatedAt') return result
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isSamePersistedState = (current = {}, next = {}) => (
+  JSON.stringify(normalizeComparableValue(current)) ===
+  JSON.stringify(normalizeComparableValue(next))
+)
+
 const buildCompatibleTracking = data => {
   const current = normalizeScoutingPlayerTracking({
     ...(data?.tracking || {}),
@@ -188,18 +215,41 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
       history: isHistory ? nextRows : baseDoc.history,
     }
 
+    const nextPayload = {
+      favorite:
+        currentData.favorite === true ||
+        currentData.tracking?.favorite === true,
+      tracking: buildCompatibleTracking(nextTrackingSource),
+      verification: normalizeScoutingPlayerVerification(
+        currentData.verification
+      ),
+      events: normalizeScoutingPlayerEvents(currentData.events),
+      ...(isHistory ? { history: nextRows } : { current: nextRows }),
+    }
+    const currentPayload = {
+      favorite: currentData.favorite === true,
+      tracking: currentData.tracking || {},
+      verification: currentData.verification || {},
+      events: currentData.events || [],
+      ...(isHistory
+        ? { history: Array.isArray(currentData.history) ? currentData.history : [] }
+        : { current: Array.isArray(currentData.current) ? currentData.current : [] }),
+    }
+
+    if (isSamePersistedState(currentPayload, nextPayload)) {
+      return {
+        playerDocumentId,
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+        scoutProfilesCount: 0,
+      }
+    }
+
     transaction.set(
       ref,
       {
-        favorite:
-          currentData.favorite === true ||
-          currentData.tracking?.favorite === true,
-        tracking: buildCompatibleTracking(nextTrackingSource),
-        verification: normalizeScoutingPlayerVerification(
-          currentData.verification
-        ),
-        events: normalizeScoutingPlayerEvents(currentData.events),
-        ...(isHistory ? { history: nextRows } : { current: nextRows }),
+        ...nextPayload,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -208,6 +258,8 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
     return {
       playerDocumentId,
       updated: true,
+      changed: true,
+      writeSkipped: false,
       scoutProfilesCount: 0,
     }
   })

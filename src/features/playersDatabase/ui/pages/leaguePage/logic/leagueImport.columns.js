@@ -119,6 +119,17 @@ const renderClubCell = ({
   )
 }
 
+
+const renderTeamUrlCell = ({ value }) => (
+  <Typography
+    level='body-sm'
+    title={value ? 'קיים קישור לקבוצה' : 'אין קישור לקבוצה'}
+    sx={sx.teamUrlIndicator}
+  >
+    {value ? '✓' : '—'}
+  </Typography>
+)
+
 const baseImportColumns = [
   {
     key: 'rank',
@@ -152,6 +163,13 @@ const baseImportColumns = [
     options: teamSlotOptions,
     sx: sx.teamSlotColumn,
     inputSx: sx.teamSlotInput,
+  },
+  {
+    key: 'teamUrl',
+    label: 'קישור',
+    readOnly: true,
+    sx: sx.teamUrlColumn,
+    render: renderTeamUrlCell,
   },
   {
     key: 'games',
@@ -218,6 +236,7 @@ export const LEAGUE_IMPORT_PLACEHOLDER = [
   'שערי חובה',
   'הפרש שערים',
   'נקודות',
+  'קישור קבוצה',
 ].join('\t')
 
 export function buildLeagueImportColumns() {

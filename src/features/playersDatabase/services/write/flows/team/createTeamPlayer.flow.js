@@ -50,7 +50,7 @@ async function createTeamPlayerFlow({
     team: teamWithRosterMeta,
     playersCount: teamSeasonResult.playersCount,
     playerSeasonIndexCount: playerSeasonIndexResult.rowsCount,
-    scoutProfiledPlayersCount: 0,
+    teamBalance: teamSeasonResult.teamBalance,
   })
 
   return {

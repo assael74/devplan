@@ -160,7 +160,6 @@ export const normalizePlayerScoutProfiles = player => {
         reclassifiedToProfileId: clean(profile.reclassifiedToProfileId),
         reclassificationReason: clean(profile.reclassificationReason),
         perspective: clean(profile.perspective),
-        searchLevels: normalizeScoutProfileArray(profile.searchLevels),
         teamFilter: clean(profile.teamFilter),
         positionContext: clean(profile.positionContext),
         interestLevel: clean(profile.interestLevel || profile.interest),

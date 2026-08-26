@@ -239,6 +239,23 @@ function LeaguePageContent() {
     })
   }
 
+  const buildTeamLink = React.useCallback(team => {
+    const path = PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId: league.id,
+      teamId: team.id,
+      seasonKey: selectedSeasonKey,
+      fromLeague: `${location.pathname}${location.search}`,
+    })
+
+    if (typeof window === 'undefined') return path
+    return `${window.location.origin}${path}`
+  }, [
+    league.id,
+    location.pathname,
+    location.search,
+    selectedSeasonKey,
+  ])
+
   const handleTeamOpen = team => {
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
       leagueId: league.id,
@@ -314,6 +331,10 @@ function LeaguePageContent() {
               loading={loading}
               error={error || selectionError}
               selectedSeasonOption={selectedSeasonOption}
+              leagueName={titleParts.name}
+              ageGroup={league.ageGroup}
+              birthYear={league.birthYear}
+              buildTeamLink={buildTeamLink}
               onTeamOpen={handleTeamOpen}
               onTeamUrlEdit={teamUrlEditor.open}
               onFavoriteToggle={handleFavoriteToggle}

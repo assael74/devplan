@@ -6,10 +6,7 @@ import {
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
 import { resolveTeamPlayerIdentities } from '../../players/index.js'
-import {
-  ensureTeamDoc,
-  upsertTeamSeasonPlayers,
-} from '../../teams/index.js'
+import { upsertTeamSeasonPlayers } from '../../teams/index.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import {
@@ -72,22 +69,6 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   let players = rawPlayers
 
   try {
-    results.teamDocResult = await ensureTeamDoc(normalizedPayload.team || {})
-  } catch (error) {
-    throw buildSyncError({
-      stage: 'ensureTeamDoc',
-      cause: error,
-      results,
-    })
-  }
-
-  const team = {
-    ...(normalizedPayload.team || {}),
-    birthTeamDocumentId: results.teamDocResult.birthTeamDocumentId,
-    teamDocumentId: results.teamDocResult.teamDocumentId,
-  }
-
-  try {
     players = await resolveTeamPlayerIdentities({
       players: rawPlayers,
       season: normalizedPayload.season,
@@ -103,16 +84,27 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   try {
     results.teamSeasonResult = await upsertTeamSeasonPlayers({
       ...normalizedPayload,
-      team,
+      team: normalizedPayload.team || {},
       players,
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
+    results.teamDocResult = {
+      birthTeamDocumentId: results.teamSeasonResult.birthTeamDocumentId,
+      teamDocumentId: results.teamSeasonResult.teamDocumentId,
+      created: Boolean(results.teamSeasonResult.createdTeam),
+    }
   } catch (error) {
     throw buildSyncError({
       stage: 'upsertTeamSeasonPlayers',
       cause: error,
       results,
     })
+  }
+
+  const team = {
+    ...(normalizedPayload.team || {}),
+    birthTeamDocumentId: results.teamSeasonResult.birthTeamDocumentId,
+    teamDocumentId: results.teamSeasonResult.teamDocumentId,
   }
 
   const indexedPlayers = Array.isArray(results.teamSeasonResult.players)
@@ -162,6 +154,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       team: teamWithRosterMeta,
       playersCount: results.teamSeasonResult.playersCount,
       playerSeasonIndexCount: results.playerSeasonIndexResult.rowsCount,
+      teamBalance: results.teamSeasonResult.teamBalance,
     })
   } catch (error) {
     throw buildSyncError({

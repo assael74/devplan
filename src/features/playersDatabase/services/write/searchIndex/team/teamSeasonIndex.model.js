@@ -244,30 +244,12 @@ export const buildTeamSeasonIndexDoc = ({
     ...normalization,
     teamPerformanceSchemaVersion: 5,
 
-    attackQualityRate: roundOptionalWholeNumber(offense?.qualityRate),
-    attackTargetRate: roundOptionalWholeNumber(offense?.targetRate),
-    attackTargetNormalized: roundOptionalWholeNumber(offense?.targetNormalized),
-    attackTargetLevel: pickDefinedValue(offense?.targetLevel, ''),
-    attackRankingRate: roundOptionalWholeNumber(offense?.rankingRate),
-    attackRankingNormalized: roundOptionalWholeNumber(offense?.rankingNormalized),
-    attackRankingLevel: pickDefinedValue(offense?.rankingLevel, ''),
-    attackAnomalyRate: roundOptionalWholeNumber(offense?.anomalyRate),
-    attackAnomalyLevel: pickDefinedValue(offense?.anomalyLevel, ''),
     attackScoutPriorityScore: roundOptionalWholeNumber(
       pickDefinedValue(offense?.scoutPriorityScore, offense?.scoutPriorityRate)
     ),
     attackPriorityLevel: pickDefinedValue(offense?.priorityLevel, ''),
     attackOpportunityType: pickDefinedValue(offense?.opportunityType, ''),
 
-    defenseQualityRate: roundOptionalWholeNumber(defense?.qualityRate),
-    defenseTargetRate: roundOptionalWholeNumber(defense?.targetRate),
-    defenseTargetNormalized: roundOptionalWholeNumber(defense?.targetNormalized),
-    defenseTargetLevel: pickDefinedValue(defense?.targetLevel, ''),
-    defenseRankingRate: roundOptionalWholeNumber(defense?.rankingRate),
-    defenseRankingNormalized: roundOptionalWholeNumber(defense?.rankingNormalized),
-    defenseRankingLevel: pickDefinedValue(defense?.rankingLevel, ''),
-    defenseAnomalyRate: roundOptionalWholeNumber(defense?.anomalyRate),
-    defenseAnomalyLevel: pickDefinedValue(defense?.anomalyLevel, ''),
     defenseScoutPriorityScore: roundOptionalWholeNumber(
       pickDefinedValue(defense?.scoutPriorityScore, defense?.scoutPriorityRate)
     ),
@@ -299,10 +281,6 @@ export const buildTeamSeasonIndexDoc = ({
     ) || 'none',
 
     playersCount: toNumberOrZero(row.playersCount),
-    playerSeasonIndexCount: toNumberOrZero(row.playerSeasonIndexCount),
-    scoutProfiledPlayersCount: toNumberOrZero(
-      pickDefinedValue(row.scoutProfiledPlayersCount, row.scoutProfilesSummary?.total)
-    ),
     scoutProfilesSummary: {
       total: toNumberOrZero(row.scoutProfilesSummary?.total),
       profileCounts:

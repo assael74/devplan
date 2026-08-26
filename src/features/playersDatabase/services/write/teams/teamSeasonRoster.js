@@ -22,6 +22,7 @@ import {
 } from './teamSeason.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 export async function upsertTeamSeasonPlayers({
   season = {},
   team = {},
@@ -67,7 +68,7 @@ export async function upsertTeamSeasonPlayers({
       throw error
     }
 
-    const seasonDoc = buildTeamSeasonDoc({
+    const seasonDocWithoutBalance = buildTeamSeasonDoc({
       season: effectiveSeason,
       team: {
         ...team,
@@ -75,6 +76,11 @@ export async function upsertTeamSeasonPlayers({
         teamDocumentId: teamId,
       },
       players,
+    })
+    const seasonDoc = withTeamBalanceSnapshot({
+      seasonDoc: seasonDocWithoutBalance,
+      teamDocument: baseDoc,
+      seasonTarget: isHistory ? 'history' : 'current',
     })
     const nextData = isHistory
       ? {
@@ -111,6 +117,7 @@ export async function upsertTeamSeasonPlayers({
       playersCount: seasonDoc.teamPlayers.length,
       createdTeam: !snapshot.exists(),
       players: seasonDoc.teamPlayers,
+      teamBalance: seasonDoc.teamBalance || null,
     }
   })
 }
@@ -165,14 +172,18 @@ export async function appendTeamSeasonPlayer({
     }
 
     const nextPlayers = [...existingPlayers, normalizedPlayer]
+    const nextSeasonWithoutBalance = {
+      ...existingSeason,
+      teamPlayers: nextPlayers,
+      updatedAt: new Date().toISOString(),
+    }
+    const nextSeason = withTeamBalanceSnapshot({
+      seasonDoc: nextSeasonWithoutBalance,
+      teamDocument: baseDoc,
+      seasonTarget: isHistory ? 'history' : 'current',
+    })
     const nextRows = targetRows.map((row, index) => (
-      index === seasonIndex
-        ? {
-            ...row,
-            teamPlayers: nextPlayers,
-            updatedAt: new Date().toISOString(),
-          }
-        : row
+      index === seasonIndex ? nextSeason : row
     ))
     const nextData = isHistory
       ? {
@@ -195,6 +206,7 @@ export async function appendTeamSeasonPlayer({
       playersCount: nextPlayers.length,
       players: nextPlayers,
       player: normalizedPlayer,
+      teamBalance: nextSeason.teamBalance || null,
     }
   })
 }

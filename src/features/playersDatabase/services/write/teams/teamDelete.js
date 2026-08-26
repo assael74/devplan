@@ -17,6 +17,7 @@ import {
 } from './teamDoc.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 const getPlayerMergeKey = player => (
   buildPlayerMatchValues(player)[0] || ''
 ).toLowerCase()
@@ -154,12 +155,18 @@ export async function removeTeamPlayerFromSeason({
         seasonKey,
       })) return row
 
-      return {
+      const nextSeasonWithoutBalance = {
         ...row,
         teamPlayers: (Array.isArray(row.teamPlayers) ? row.teamPlayers : [])
           .filter(nextPlayer => getPlayerMergeKey(nextPlayer) !== playerKey),
         updatedAt: new Date().toISOString(),
       }
+
+      return withTeamBalanceSnapshot({
+        seasonDoc: nextSeasonWithoutBalance,
+        teamDocument: baseDoc,
+        seasonTarget: fieldKey,
+      })
     })
     const seasonRow = nextRows.find(row => isSameSeason(row, {
       seasonId,
@@ -186,6 +193,7 @@ export async function removeTeamPlayerFromSeason({
       playersCount: teamPlayers.length,
       players: teamPlayers,
       scoutProfilesSummary: buildTeamPlayersScoutProfilesSummary(teamPlayers),
+      teamBalance: seasonRow?.teamBalance || null,
     }
   })
 }
@@ -245,18 +253,22 @@ export async function clearTeamSeasonPlayers({
         : []
       removedPlayersCount = removedPlayers.length
 
-      return {
+      const nextSeasonWithoutBalance = {
         ...row,
         teamPlayers: [],
         playersCount: 0,
-        playerSeasonIndexCount: 0,
-        scoutProfiledPlayersCount: 0,
         scoutProfilesSummary: {
           total: 0,
           profileCounts: {},
         },
         updatedAt: new Date().toISOString(),
       }
+
+      return withTeamBalanceSnapshot({
+        seasonDoc: nextSeasonWithoutBalance,
+        teamDocument: baseDoc,
+        seasonTarget: fieldKey,
+      })
     })
 
     if (!seasonFound) {
@@ -295,6 +307,7 @@ export async function clearTeamSeasonPlayers({
         total: 0,
         profileCounts: {},
       },
+      teamBalance: nextRows.find(row => isSameSeason(row, { seasonId, seasonKey }))?.teamBalance || null,
     }
   })
 }

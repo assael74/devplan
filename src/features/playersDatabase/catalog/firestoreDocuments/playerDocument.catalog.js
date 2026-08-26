@@ -264,7 +264,6 @@ const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
   reclassifiedToProfileId: '',
   reclassificationReason: '',
   perspective: '',
-  searchLevels: [],
   teamFilter: '',
   positionContext: '',
   interestLevel: '',

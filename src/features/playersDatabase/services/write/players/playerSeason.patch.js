@@ -22,6 +22,34 @@ import {
 } from './scoutingPlayerLifecycle.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
+  Object.keys(patch).every(key => (
+    JSON.stringify(normalizeComparableValue(current[key])) ===
+    JSON.stringify(normalizeComparableValue(patch[key]))
+  ))
+)
 export const patchPlayerSeason = async ({
   season = {},
   team = {},
@@ -75,12 +103,16 @@ export const patchPlayerSeason = async ({
       }
     }
 
-    const nextRows = rows.map((row, index) => (
+    const currentSeasonRow = rows[seasonIndex] || {}
+    const seasonChanged = !isPatchUnchanged({
+      current: currentSeasonRow,
+      patch,
+    })
+    const candidateRows = rows.map((row, index) => (
       index === seasonIndex
         ? {
             ...row,
             ...patch,
-            updatedAt: new Date().toISOString(),
           }
         : row
     ))
@@ -89,15 +121,41 @@ export const patchPlayerSeason = async ({
       ? buildRootPatch({
           data,
           fieldKey,
-          nextRows,
+          nextRows: candidateRows,
         })
       : {}
+    const rootChanged = !isPatchUnchanged({
+      current: data,
+      patch: rootPatch,
+    })
+
+    if (!seasonChanged && !rootChanged) {
+      return {
+        playerDocumentId,
+        seasonId,
+        seasonKey,
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+      }
+    }
+
+    const nextRows = seasonChanged
+      ? candidateRows.map((row, index) => (
+          index === seasonIndex
+            ? {
+                ...row,
+                updatedAt: new Date().toISOString(),
+              }
+            : row
+        ))
+      : rows
 
     transaction.set(
       ref,
       {
         ...rootPatch,
-        [fieldKey]: nextRows,
+        ...(seasonChanged ? { [fieldKey]: nextRows } : {}),
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -108,6 +166,8 @@ export const patchPlayerSeason = async ({
       seasonId,
       seasonKey,
       updated: true,
+      changed: true,
+      writeSkipped: false,
     }
   })
 }

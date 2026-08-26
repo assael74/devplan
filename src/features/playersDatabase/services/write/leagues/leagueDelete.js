@@ -3,6 +3,7 @@
 import {
   collection,
   query,
+  serverTimestamp,
   where,
 } from 'firebase/firestore'
 
@@ -405,11 +406,6 @@ export async function clearLeagueSeasonTeams({
     const clearedSeason = {
       ...cleanSeasonComputedFields(seasonRow),
       tableRank: [],
-      tableRankCount: 0,
-      teamsCount: 0,
-      playersCount: 0,
-      playersWithScoutProfileCount: 0,
-      scoutProfilesCount: 0,
       updatedAt: new Date().toISOString(),
     }
 
@@ -426,12 +422,12 @@ export async function clearLeagueSeasonTeams({
 
       transaction.set(ref, {
         history: nextHistory,
-        updatedAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
       }, { merge: true })
     } else {
       transaction.set(ref, {
         current: clearedSeason,
-        updatedAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
       }, { merge: true })
     }
 

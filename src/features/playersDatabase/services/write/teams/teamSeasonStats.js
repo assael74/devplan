@@ -20,6 +20,7 @@ import {
 } from './teamSeason.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 
 const hasNumberValue = value => (
   value !== undefined &&
@@ -33,6 +34,82 @@ const isPlainObject = value => (
   typeof value === 'object' &&
   !Array.isArray(value) &&
   Object.getPrototypeOf(value) === Object.prototype
+)
+
+
+const normalizeComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(normalizeComparableValue)
+  }
+
+  if (!isPlainObject(value)) return value
+
+  return Object.keys(value)
+    .sort()
+    .reduce((result, key) => {
+      result[key] = normalizeComparableValue(value[key])
+      return result
+    }, {})
+}
+
+const stripTeamTechnicalTimestamps = value => {
+  const source = isPlainObject(value) ? value : {}
+  const next = {
+    ...source,
+  }
+
+  delete next.updatedAt
+
+  ;['current', 'history'].forEach(fieldKey => {
+    if (!Array.isArray(next[fieldKey])) return
+
+    next[fieldKey] = next[fieldKey].map(row => {
+      if (!isPlainObject(row)) return row
+
+      const nextRow = {
+        ...row,
+      }
+
+      delete nextRow.updatedAt
+
+      if (Array.isArray(nextRow.teamPlayers)) {
+        nextRow.teamPlayers = nextRow.teamPlayers.map(player => {
+          if (!isPlainObject(player)) return player
+
+          const nextPlayer = {
+            ...player,
+          }
+
+          delete nextPlayer.updatedAt
+          return nextPlayer
+        })
+      }
+
+      if (isPlainObject(nextRow.teamBalance)) {
+        nextRow.teamBalance = {
+          ...nextRow.teamBalance,
+          source: isPlainObject(nextRow.teamBalance.source)
+            ? {
+                ...nextRow.teamBalance.source,
+              }
+            : nextRow.teamBalance.source,
+        }
+
+        if (isPlainObject(nextRow.teamBalance.source)) {
+          delete nextRow.teamBalance.source.updatedAt
+        }
+      }
+
+      return nextRow
+    })
+  })
+
+  return next
+}
+
+const isSamePersistedTeamState = (current, next) => (
+  JSON.stringify(normalizeComparableValue(stripTeamTechnicalTimestamps(current))) ===
+  JSON.stringify(normalizeComparableValue(stripTeamTechnicalTimestamps(next)))
 )
 
 const stripUndefined = value => {
@@ -93,7 +170,7 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
       },
       players: [],
     })
-    const seasonDoc = stripUndefined({
+    const seasonDocWithoutBalance = stripUndefined({
       ...baseSeasonDoc,
       seasonStatus,
       leagueTotalRound: hasNumberValue(season.leagueTotalRound)
@@ -106,6 +183,11 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
         season: effectiveSeason,
       }),
       updatedAt: new Date().toISOString(),
+    })
+    const seasonDoc = withTeamBalanceSnapshot({
+      seasonDoc: seasonDocWithoutBalance,
+      teamDocument: baseDoc,
+      seasonTarget: isHistory ? 'history' : 'current',
     })
     const nextData = stripUndefined(isHistory
       ? {
@@ -131,7 +213,21 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
           }),
         })
 
-    transaction.set(ref, nextData, { merge: true })
+    const writeSkipped = snapshot.exists() && isSamePersistedTeamState(
+      currentData,
+      nextData
+    )
+
+    if (!writeSkipped) {
+      transaction.set(ref, nextData, { merge: true })
+    }
+
+    const persistedSeason = writeSkipped
+      ? existingSeason || seasonDoc
+      : seasonDoc
+    const persistedTeamDocument = writeSkipped
+      ? currentData
+      : nextData
 
     return {
       birthTeamDocumentId: teamId,
@@ -140,9 +236,17 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
       seasonKey,
       target: isHistory ? 'history' : 'current',
       rowsCount: (Array.isArray(players) ? players : []).length,
-      playersCount: seasonDoc.teamPlayers.length,
-      players: seasonDoc.teamPlayers,
-      teamDocument: nextData,
+      playersCount: Array.isArray(persistedSeason.teamPlayers)
+        ? persistedSeason.teamPlayers.length
+        : 0,
+      players: Array.isArray(persistedSeason.teamPlayers)
+        ? persistedSeason.teamPlayers
+        : [],
+      teamBalance: persistedSeason.teamBalance || null,
+      teamDocument: persistedTeamDocument,
+      updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
     }
   })
 }

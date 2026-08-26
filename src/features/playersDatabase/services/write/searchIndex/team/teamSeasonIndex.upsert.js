@@ -26,6 +26,20 @@ import {
   resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
 
+const TEAM_SEARCH_INDEX_TEAM_OWNED_FIELDS = new Set([
+  'playersCount',
+  'scoutProfilesSummary',
+  'teamUrl',
+])
+
+const stripTeamOwnedFieldsFromLeagueProjection = indexDoc => (
+  Object.fromEntries(
+    Object.entries(indexDoc || {}).filter(([key]) => (
+      !TEAM_SEARCH_INDEX_TEAM_OWNED_FIELDS.has(key)
+    ))
+  )
+)
+
 const buildScoutRows = rows => (
   (Array.isArray(rows) ? rows : []).map(row => {
     const clubLevel = resolveClubLevel({
@@ -116,9 +130,15 @@ export async function upsertTeamSeasonSearchIndexMany({ league = {}, season = {}
   })
 
   documents.forEach(indexDoc => {
+    const leagueProjection = stripTeamOwnedFieldsFromLeagueProjection(indexDoc)
+
+    // Ownership contract: this upsert owns League/Performance fields only.
+    // Team-owned roster/Scout/Balance fields share the document and are stripped
+    // explicitly before merge so a League refresh cannot overwrite them.
     batch.set(
       doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, indexDoc.id),
-      indexDoc
+      leagueProjection,
+      { merge: true }
     )
   })
 

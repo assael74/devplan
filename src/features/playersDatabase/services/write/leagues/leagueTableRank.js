@@ -1,5 +1,7 @@
 // src/features/playersDatabase/services/write/leagues/leagueTableRank.js
 
+import { serverTimestamp } from 'firebase/firestore'
+
 import { pickDefinedValue } from '../../../model/value.model.js'
 
 
@@ -128,6 +130,30 @@ const buildTableRank = ({ rows = [], existingTableRank = [] } = {}) =>
     }))
     .filter(row => row.rank || row.clubId || row.birthTeamId || row.teamId)
 
+
+const normalizeLeagueTableComparableValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeLeagueTableComparableValue(item))
+  }
+
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.keys(value)
+      .filter(key => key !== 'updatedAt')
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeLeagueTableComparableValue(value[key])
+        return result
+      }, {})
+  }
+
+  return value
+}
+
+const isSameLeagueSeasonPersistedState = (currentSeason, nextSeason) => (
+  JSON.stringify(normalizeLeagueTableComparableValue(currentSeason || null)) ===
+  JSON.stringify(normalizeLeagueTableComparableValue(nextSeason || null))
+)
+
 const updateHistorySeasonTableRank = ({
   history = [],
   season = {},
@@ -217,7 +243,19 @@ export async function updateLeagueSeasonTableRank({
         },
       }
 
-    transaction.set(ref, nextData, { merge: true })
+    const nextSeason = isHistory
+      ? (Array.isArray(nextData.history) ? nextData.history : [])
+          .find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+      : nextData.current || null
+    const writeSkipped = Boolean(
+      existingSeason &&
+      nextSeason &&
+      isSameLeagueSeasonPersistedState(existingSeason, nextSeason)
+    )
+
+    if (!writeSkipped) {
+      transaction.set(ref, nextData, { merge: true })
+    }
 
     return {
       leagueId,
@@ -225,10 +263,13 @@ export async function updateLeagueSeasonTableRank({
       seasonKey,
       target: isHistory ? 'history' : 'current',
       rowsCount: tableRank.length,
+      updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
     }
   })
 
-  if (syncMaster) {
+  if (syncMaster && !result.writeSkipped) {
     await syncLeaguesMasterDocument({
       leagues: [league],
     })
@@ -386,9 +427,9 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
       : historyIndex >= 0
         ? 'history'
         : ''
-    const seasonRow = currentMatches
+    const seasonRow = sourceTarget === 'current'
       ? currentSeason
-      : historyIndex >= 0
+      : sourceTarget === 'history' && historyIndex >= 0
         ? history[historyIndex]
         : null
 
@@ -478,6 +519,10 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
         Boolean(currentTeamRow.statsComplete) === effectiveStatsComplete
       )
     )
+    const masterSyncRequired = (
+      hasFiniteNumberValue(effectivePlayersCount) &&
+      toNumberOrZero(currentTeamRow.playersCount) !== Number(effectivePlayersCount)
+    )
 
     if (loadStatusUnchanged) {
       const playersCount = sumTableRankPlayersCount(tableRank)
@@ -498,6 +543,7 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
         updated: true,
         changed: false,
         writeSkipped: true,
+        masterSyncRequired: false,
       }
     }
 
@@ -527,7 +573,6 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
     const nextSeason = {
       ...seasonRow,
       tableRank: nextTableRank,
-      ...(hasPlayersCount ? { playersCount } : {}),
       updatedAt: new Date().toISOString(),
     }
 
@@ -536,7 +581,7 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
         ref,
         {
           current: nextSeason,
-          updatedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       )
@@ -549,7 +594,7 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
         ref,
         {
           history: nextHistory,
-          updatedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       )
@@ -576,10 +621,298 @@ export async function updateLeagueSeasonTableRankTeamUrl({ league = {}, season =
       seasonPlayersCount: hasPlayersCount ? playersCount : undefined,
       sourceTarget,
       updated: true,
+      masterSyncRequired,
     }
   })
 
-  if (result.updated && !result.writeSkipped) {
+  if (
+    result.updated &&
+    !result.writeSkipped &&
+    result.masterSyncRequired
+  ) {
+    await syncLeaguesMasterDocument({
+      leagues: [league],
+    })
+  }
+
+  return result
+}
+
+export async function updateLeagueSeasonTableRankTeamSyncMeta({
+  league = {},
+  season = {},
+  target = 'current',
+  team = {},
+  scoutProfilesSummary = {},
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId || team.leagueId)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const teamIdentity = normalizeTeamIdentity({ team })
+  const birthTeamId = clean(
+    teamIdentity.birthTeamId ||
+    teamIdentity.teamId ||
+    team.birthTeamId ||
+    team.teamId ||
+    team.birthTeamDocumentId ||
+    team.teamDocumentId ||
+    team.id
+  )
+  const clubId = clean(teamIdentity.clubId || team.clubId)
+  const teamUrl = clean(team.teamUrl)
+  const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId && !seasonKey) throw new Error('Missing season id')
+  if (!birthTeamId) throw new Error('Missing birth team id')
+
+  const ref = leagueDocRef(leagueId)
+
+  const result = await trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+
+    if (!snapshot.exists()) {
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        birthTeamId,
+        updated: false,
+        reason: 'leagueDocMissing',
+      }
+    }
+
+    const currentData = snapshot.data() || {}
+    const currentSeason = currentData.current || null
+    const history = Array.isArray(currentData.history) ? currentData.history : []
+    const requestedSeason = { seasonId, seasonKey }
+    const currentMatches = isSameSeason(currentSeason, requestedSeason)
+    const historyIndex = history.findIndex(row => isSameSeason(row, requestedSeason))
+    const preferHistory = clean(target) === 'history'
+    const sourceTarget = preferHistory
+      ? historyIndex >= 0
+        ? 'history'
+        : ''
+      : currentMatches
+        ? 'current'
+        : historyIndex >= 0
+          ? 'history'
+          : ''
+    const seasonRow = sourceTarget === 'current'
+      ? currentSeason
+      : sourceTarget === 'history' && historyIndex >= 0
+        ? history[historyIndex]
+        : null
+
+    if (!seasonRow) {
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        birthTeamId,
+        updated: false,
+        reason: 'leagueSeasonMissing',
+      }
+    }
+
+    const tableRank = Array.isArray(seasonRow.tableRank)
+      ? seasonRow.tableRank
+      : []
+    const teamRowIndex = tableRank.findIndex(row => {
+      const rowIdentity = normalizeTeamIdentity({ team: row })
+      const rowTeamId = clean(
+        rowIdentity.birthTeamId ||
+        rowIdentity.teamId ||
+        row?.birthTeamId ||
+        row?.teamId ||
+        row?.birthTeamDocumentId ||
+        row?.teamDocumentId ||
+        row?.id
+      )
+      const rowClubId = clean(rowIdentity.clubId || row?.clubId)
+
+      return (
+        rowTeamId === birthTeamId ||
+        (!rowTeamId && clubId && rowClubId === clubId)
+      )
+    })
+
+    if (teamRowIndex === -1) {
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        birthTeamId,
+        sourceTarget,
+        target: sourceTarget,
+        teamId: birthTeamId,
+        updated: false,
+        reason: 'leagueTeamRowMissing',
+      }
+    }
+
+    const currentTeamRow = tableRank[teamRowIndex] || {}
+    const effectiveTeamUrl = teamUrl || clean(currentTeamRow.teamUrl)
+    const effectivePlayersCount = hasFiniteNumberValue(team.playersCount)
+      ? Number(team.playersCount)
+      : hasFiniteNumberValue(currentTeamRow.playersCount)
+        ? Number(currentTeamRow.playersCount)
+        : undefined
+    const effectiveHasPlayers = hasOwn(team, 'hasPlayers')
+      ? Boolean(team.hasPlayers)
+      : hasOwn(currentTeamRow, 'hasPlayers')
+        ? Boolean(currentTeamRow.hasPlayers)
+        : undefined
+    const effectiveHasStats = hasOwn(team, 'hasStats')
+      ? Boolean(team.hasStats)
+      : hasOwn(currentTeamRow, 'hasStats')
+        ? Boolean(currentTeamRow.hasStats)
+        : undefined
+    const effectiveStatsComplete = hasOwn(team, 'statsComplete')
+      ? Boolean(team.statsComplete)
+      : hasOwn(currentTeamRow, 'statsComplete')
+        ? Boolean(currentTeamRow.statsComplete)
+        : undefined
+    const loadStatusUnchanged = (
+      clean(currentTeamRow.teamUrl) === effectiveTeamUrl &&
+      (
+        !hasFiniteNumberValue(effectivePlayersCount) ||
+        toNumberOrZero(currentTeamRow.playersCount) === Number(effectivePlayersCount)
+      ) &&
+      (
+        effectiveHasPlayers === undefined ||
+        Boolean(currentTeamRow.hasPlayers) === effectiveHasPlayers
+      ) &&
+      (
+        effectiveHasStats === undefined ||
+        Boolean(currentTeamRow.hasStats) === effectiveHasStats
+      ) &&
+      (
+        effectiveStatsComplete === undefined ||
+        Boolean(currentTeamRow.statsComplete) === effectiveStatsComplete
+      )
+    )
+    const scoutSummaryUnchanged = areScoutProfilesSummariesEqual(
+      currentTeamRow.scoutProfilesSummary,
+      normalizedSummary
+    )
+    const playersCountChanged = (
+      hasFiniteNumberValue(effectivePlayersCount) &&
+      toNumberOrZero(currentTeamRow.playersCount) !== Number(effectivePlayersCount)
+    )
+    const masterSyncRequired = playersCountChanged || !scoutSummaryUnchanged
+
+    if (loadStatusUnchanged && scoutSummaryUnchanged) {
+      const seasonPlayersCount = hasTableRankPlayersCount(tableRank)
+        ? sumTableRankPlayersCount(tableRank)
+        : undefined
+
+      return {
+        leagueId,
+        seasonId,
+        seasonKey,
+        birthTeamId,
+        teamUrl: effectiveTeamUrl,
+        playersCount: effectivePlayersCount,
+        hasPlayers: effectiveHasPlayers,
+        hasStats: effectiveHasStats,
+        statsComplete: effectiveStatsComplete,
+        seasonPlayersCount,
+        scoutProfilesSummary: normalizedSummary,
+        sourceTarget,
+        target: sourceTarget,
+        teamId: birthTeamId,
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+        masterSyncRequired: false,
+      }
+    }
+
+    const updatedAt = new Date().toISOString()
+    const nextTableRank = tableRank.map((row, index) => (
+      index === teamRowIndex
+        ? {
+            ...row,
+            teamUrl: effectiveTeamUrl,
+            ...(hasFiniteNumberValue(effectivePlayersCount)
+              ? { playersCount: Number(effectivePlayersCount) }
+              : {}),
+            ...(effectiveHasPlayers !== undefined
+              ? { hasPlayers: effectiveHasPlayers }
+              : {}),
+            ...(effectiveHasStats !== undefined
+              ? { hasStats: effectiveHasStats }
+              : {}),
+            ...(effectiveStatsComplete !== undefined
+              ? { statsComplete: effectiveStatsComplete }
+              : {}),
+            scoutProfilesSummary: normalizedSummary,
+            updatedAt,
+          }
+        : row
+    ))
+    const playersCount = sumTableRankPlayersCount(nextTableRank)
+    const hasPlayersCount = hasTableRankPlayersCount(nextTableRank)
+    const nextSeason = {
+      ...seasonRow,
+      tableRank: nextTableRank,
+      updatedAt,
+    }
+
+    if (sourceTarget === 'current') {
+      transaction.set(
+        ref,
+        {
+          current: nextSeason,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
+    } else {
+      const nextHistory = history.map((row, index) => (
+        index === historyIndex ? nextSeason : row
+      ))
+
+      transaction.set(
+        ref,
+        {
+          history: nextHistory,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
+    }
+
+    return {
+      leagueId,
+      seasonId,
+      seasonKey,
+      birthTeamId,
+      teamUrl: effectiveTeamUrl,
+      playersCount: hasFiniteNumberValue(effectivePlayersCount)
+        ? Number(effectivePlayersCount)
+        : undefined,
+      hasPlayers: effectiveHasPlayers,
+      hasStats: effectiveHasStats,
+      statsComplete: effectiveStatsComplete,
+      seasonPlayersCount: hasPlayersCount ? playersCount : undefined,
+      scoutProfilesSummary: normalizedSummary,
+      sourceTarget,
+      target: sourceTarget,
+      teamId: birthTeamId,
+      updated: true,
+      changed: true,
+      writeSkipped: false,
+      masterSyncRequired,
+    }
+  })
+
+  if (
+    result.updated &&
+    !result.writeSkipped &&
+    result.masterSyncRequired
+  ) {
     await syncLeaguesMasterDocument({
       leagues: [league],
     })
@@ -724,7 +1057,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
         ref,
         {
           history: nextHistory,
-          updatedAt,
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       )
@@ -737,7 +1070,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
             tableRank: nextTableRank,
             updatedAt,
           },
-          updatedAt,
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       )
@@ -837,7 +1170,23 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummaries({ league
       }
     }
 
-    transaction.set(ref, nextData, { merge: true })
+    const existingSeason = isHistory
+      ? (Array.isArray(baseDoc.history) ? baseDoc.history : [])
+          .find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+      : baseDoc.current || null
+    const nextSeason = isHistory
+      ? (Array.isArray(nextData.history) ? nextData.history : [])
+          .find(row => isSameSeason(row, { seasonId, seasonKey })) || null
+      : nextData.current || null
+    const writeSkipped = Boolean(
+      existingSeason &&
+      nextSeason &&
+      isSameLeagueSeasonPersistedState(existingSeason, nextSeason)
+    )
+
+    if (!writeSkipped) {
+      transaction.set(ref, nextData, { merge: true })
+    }
 
     return {
       leagueId,
@@ -845,6 +1194,9 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummaries({ league
       seasonKey,
       target: isHistory ? 'history' : 'current',
       rowsCount: Array.isArray(summaries) ? summaries.length : 0,
+      updated: true,
+      changed: !writeSkipped,
+      writeSkipped,
     }
   })
 }

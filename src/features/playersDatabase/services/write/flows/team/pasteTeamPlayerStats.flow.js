@@ -1,8 +1,7 @@
 // src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
 import {
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-  updateLeagueSeasonTableRankTeamUrl,
+  updateLeagueSeasonTableRankTeamSyncMeta,
 } from '../../leagues/index.js'
 import { syncPlayerScoutProfileDocsMany } from '../../players/index.js'
 import {
@@ -183,42 +182,20 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   }
 
   try {
-    results.leagueTableRankLoadStatusResult = await updateLeagueSeasonTableRankTeamUrl({
+    results.leagueTableRankTeamMetaResult = await updateLeagueSeasonTableRankTeamSyncMeta({
       ...payload,
       team: teamWithLoadStatus,
-    })
-    if (!results.leagueTableRankLoadStatusResult?.updated) {
-      return buildCommittedProjectionFailure({
-        stage: 'updateLeagueSeasonTableRankLoadStatus',
-        cause: new Error(
-          results.leagueTableRankLoadStatusResult?.reason ||
-          'League load-status projection target is missing'
-        ),
-        results,
-        teamSeasonPlayers,
-      })
-    }
-  } catch (error) {
-    return buildCommittedProjectionFailure({
-      stage: 'updateLeagueSeasonTableRankLoadStatus',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
-  }
-
-  try {
-    results.leagueTableRankScoutProfilesResult = await updateLeagueSeasonTableRankScoutProfilesSummary({
-      ...payload,
-      team,
       scoutProfilesSummary,
     })
-    if (!results.leagueTableRankScoutProfilesResult?.updated) {
+    results.leagueTableRankLoadStatusResult = results.leagueTableRankTeamMetaResult
+    results.leagueTableRankScoutProfilesResult = results.leagueTableRankTeamMetaResult
+
+    if (!results.leagueTableRankTeamMetaResult?.updated) {
       return buildCommittedProjectionFailure({
-        stage: 'updateLeagueSeasonTableRankScoutProfilesSummary',
+        stage: 'updateLeagueSeasonTableRankTeamMeta',
         cause: new Error(
-          results.leagueTableRankScoutProfilesResult?.reason ||
-          'League scout summary target is missing'
+          results.leagueTableRankTeamMetaResult?.reason ||
+          'League team metadata projection target is missing'
         ),
         results,
         teamSeasonPlayers,
@@ -226,7 +203,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     }
   } catch (error) {
     return buildCommittedProjectionFailure({
-      stage: 'updateLeagueSeasonTableRankScoutProfilesSummary',
+      stage: 'updateLeagueSeasonTableRankTeamMeta',
       cause: error,
       results,
       teamSeasonPlayers,
@@ -237,7 +214,9 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     results.teamSeasonIndexScoutProfilesResult = await updateTeamSeasonSearchIndexScoutProfilesSummary({
       ...payload,
       team,
+      playersCount: results.teamSeasonResult.playersCount,
       scoutProfilesSummary,
+      teamBalance: results.teamSeasonResult.teamBalance,
     })
     if (!results.teamSeasonIndexScoutProfilesResult?.updated) {
       return buildCommittedProjectionFailure({

@@ -1,137 +1,50 @@
 // src/features/playersDatabase/services/audit/index.js
 
 export {
-  buildPlayerIdentityAudit,
-  downloadPlayerIdentityAudit,
-} from './playerIdentity.audit.js'
+  AUDIT_COLLECTION_SCOPE,
+  AUDIT_RELATION_LABELS,
+  AUDIT_RELATION_SCOPE,
+  AUDIT_SCOPE_LABELS,
+  AUDIT_SCOPE_TYPE,
+  buildAuditCollectionScope,
+  buildAuditRelationsScope,
+  buildAuditTeamSeasonScope,
+  buildAuditTeamSeasonsScope,
+  normalizeAuditScope,
+} from './audit.scope.js'
 
 export {
-  buildPlayerScoutAudit,
-  downloadPlayerScoutAudit,
-} from './playerScout.audit.js'
+  AUDIT_ISSUE_CATEGORY,
+  AUDIT_ISSUE_CONTRACT_VERSION,
+  AUDIT_REPAIR_STATUS,
+  buildAuditResultV1,
+  normalizeAuditIssueV1,
+} from './audit.contract.js'
 
 export {
-  applyPlayerScoutEngineRefresh,
-  applyPlayerScoutRepair,
-  buildPlayerScoutEngineRefreshPreview,
-  buildPlayerScoutRepairPreview,
-} from './playerScout.repair.js'
+  runPlayerDatabaseAudit,
+} from './audit.service.js'
 
 export {
-  buildPlayerScoutRulesAudit,
-  buildScopedPlayerScoutRulesAudit,
-  downloadPlayerScoutRulesAudit,
-} from './playerScoutRules.audit.js'
+  AUDIT_REPAIR_ACTION,
+  AUDIT_REPAIR_ACTION_LABELS,
+  AUDIT_REPAIR_DECISION,
+  AUDIT_REPAIR_PLAN_VERSION,
+} from './repair/repair.contract.js'
 
 export {
-  buildPlayerScoutGlobalRepairPreview,
-} from './playerScoutGlobalRepair.preview.js'
+  buildPlayerDatabaseRepairPlan,
+} from './repair/repair.plan.js'
 
 export {
-  applyPlayerScoutGlobalDirectSearchIndexRepair,
-  applyPlayerScoutGlobalRepair,
-  applyPlayerScoutGlobalRegularRepair,
-  applyPlayerScoutGlobalSafeDependencyOverlapRepair,
-  buildPlayerScoutSafeDependencyWriteBudgetPlan,
-  applyPlayerScoutGlobalSelectedOverlapRepair,
-  applyPlayerScoutGlobalSelectedSafeRepair,
-  buildGlobalActualDocumentWritePreview,
-  buildMergedPlayerDocumentData,
-  buildPlayerScoutGlobalApplyPreview,
-  resolveGlobalRepairRowsForTarget,
-} from './playerScoutGlobalRepair.apply.js'
-
+  applyPlayerDatabaseRepairPlan,
+} from './repair/repair.apply.js'
 
 export {
-  buildPlayerScoutShadowComparison,
-} from './playerScoutShadow.audit.js'
+  verifyPlayerDatabaseRepair,
+} from './repair/repair.verify.js'
 
 
 export {
-  PLAYER_DOCUMENT_DEPRECATED_FIELDS,
-  PLAYER_DOCUMENT_MIGRATION_ACTIONS,
-  PLAYER_DOCUMENT_SCHEMA_SCOPES,
-  classifyUnexpectedSchemaFields,
-  resolveDeprecatedSchemaFields,
-  resolveSchemaMigrationAction,
-} from './playerDocumentMigration.policy.js'
-
-export {
-  applyPlayerScoutDocumentRewrite,
-  buildPlayerScoutDocumentRewritePlan,
-  buildPlayerScoutDocumentRewritePreview,
-} from './playerScoutDocumentRewrite.audit.js'
-
-
-export {
-  PLAYER_SCOUT_AUDIT_CHECKS,
-  PLAYER_SCOUT_AUDIT_CHECK_STATUS,
-  PLAYER_SCOUT_AUDIT_CONTRACT_VERSION,
-  PLAYER_SCOUT_AUDIT_PROCESS,
-  PLAYER_SCOUT_ISSUE_KIND,
-  PLAYER_SCOUT_REPAIR_TYPE,
-  buildPlayerScoutAuditContractResult,
-  buildPlayerScoutAuditCoverage,
-  normalizePlayerScoutAuditIssue,
-} from './playerScoutAudit.contract.js'
-
-
-export {
-  PLAYER_SCOUT_AUDIT_READ_BUDGETS,
-  PLAYER_SCOUT_AUDIT_READ_PLAN_MODE,
-  assertTeamSeasonScoutAuditReadPlan,
-  buildTeamSeasonScoutAuditReadPlan,
-} from './playerScoutAudit.readPlan.js'
-
-
-export {
-  buildPlayerScoutRepairSelection,
-} from './playerScoutRepair.selection.js'
-
-
-export {
-  canDirectRepairPlayerSearchIndexIssue,
-  canDirectRepairSearchIndexIssue,
-  canDirectRepairTeamSearchIndexIssue,
-  repairPlayerSearchIndexIssueDirect,
-  repairPlayerSearchIndexIssuesDirect,
-  repairSearchIndexIssueDirect,
-  repairSearchIndexIssuesDirect,
-} from './playerScoutSearchIndex.directRepair.js'
-
-
-export {
-  buildPlayerScoutMigrationPlan,
-} from './playerScoutRepair.migrationPlan.js'
-
-export {
-  verifySelectedPlayerScoutRepair,
-} from './playerScoutRepair.verification.js'
-
-
-export {
-  TEAM_PLAYER_SCHEMA_REPAIR_TEMPLATE,
-  alignTeamPlayerWithCatalogSchema,
-} from './teamPlayerSchemaRepair.model.js'
-
-export {
-  applyInvalidTransferPlayerDocumentDelete,
-  applyInvalidTransferPlayerSearchIndexCleanup,
-  applyInvalidTransferPlayerTeamCleanup,
-  buildInvalidTransferPlayerCleanupPreview,
-  verifyInvalidTransferPlayerCleanup,
-} from './invalidTransferPlayerCleanup.migration.js'
-
-export {
-  applyOrphanPlayerDocumentDelete,
-  applyOrphanPlayerDocumentSearchIndexCleanup,
-  applyOrphanPlayerDocumentTeamCleanup,
-  buildOrphanPlayerDocumentCleanupPreview,
-  verifyOrphanPlayerDocumentCleanup,
-} from './orphanPlayerDocumentCleanup.migration.js'
-
-
-export {
-  PLAYER_SCOUT_DATA_HEALTH_SCOPE,
-  buildPlayerScoutDataHealthAudit,
-} from './playerScoutDataHealth.audit.js'
+  getLastWriteAuditScope,
+} from './audit.lastWrite.js'
