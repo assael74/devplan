@@ -17,13 +17,13 @@ import {
   buildFavoriteItem,
   normalizeFavoriteItems,
 } from '../../../model/favorite.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
 import {
   buildSeasonKey,
   clean,
 } from '../leagues/leagueDoc.js'
 import {
   buildPlayerBaseDoc,
-  buildPlayerDocumentId,
   playerDocRef,
 } from '../players/playerDoc.model.js'
 import {
@@ -164,7 +164,7 @@ const buildPlayerFavoriteDocData = ({ currentData = {}, scouting = {}, trackedAt
 export async function addPlayerFavoriteWithLifecycle({ entityId = '', displayName = '', birthYear = null, scouting = {} } = {}) {
   const favoriteRef = playerFavoritesDocRef()
   const sourcePlayer = scouting.player || {}
-  const playerDocumentId = buildPlayerDocumentId({
+  const playerDocumentId = resolveWritablePlayerDocumentId({
     ...sourcePlayer,
     playerDocumentId: clean(
       sourcePlayer.playerDocumentId ||
@@ -244,7 +244,9 @@ export async function addPlayerFavoriteWithLifecycle({ entityId = '', displayNam
 
 export async function removePlayerFavoriteWithLifecycle({ entityId = '', playerDocumentId = '' } = {}) {
   const normalizedEntityId = clean(entityId)
-  const normalizedPlayerDocumentId = clean(playerDocumentId)
+  const normalizedPlayerDocumentId = clean(resolveWritablePlayerDocumentId({
+    playerDocumentId,
+  }))
 
   if (!normalizedEntityId) {
     throw new Error('Missing favorite entity id')

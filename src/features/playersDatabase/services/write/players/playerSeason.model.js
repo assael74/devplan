@@ -13,15 +13,13 @@ import {
   normalizePlayerStatsStatus,
 } from '../../../model/playerStats.model.js'
 import {
-  buildPlayerScoutStatsLoadMeasurementHistory,
-  normalizePlayerScoutStatsLoadMeasurementHistory,
-} from '../../../model/playerScoutMeasurement.model.js'
-import {
   isSamePlayerSource,
-  normalizePlayerScoutCombinations,
+  normalizePlayerScoutCombinationIds,
   normalizePlayerScoutProfiles,
   normalizePlayerScoutStory,
+  stripPlayerScoutV2SeasonFields,
 } from './playerDoc.model.js'
+import { isSamePlayerSeasonScope } from '../shared/playerSeasonScope.js'
 
 
 const resolvePositiveLevel = values => {
@@ -90,20 +88,97 @@ const resolveSeasonClubName = ({ team = {} } = {}) => {
   )
 }
 
-export const getTeamSeasonRows = teamDoc => [
-  ...(Array.isArray(teamDoc?.current)
-    ? teamDoc.current.map(row => ({
-        ...row,
-        __sourceTarget: 'current',
-      }))
-    : []),
-  ...(Array.isArray(teamDoc?.history)
-    ? teamDoc.history.map(row => ({
-        ...row,
-        __sourceTarget: 'history',
-      }))
-    : []),
-]
+const isPlainObject = value => Boolean(
+  value &&
+  typeof value === 'object' &&
+  !Array.isArray(value)
+)
+
+const buildTeamPlayerScoutHydration = player => {
+  const source = player && typeof player === 'object' ? player : {}
+  const primaryProfileId = clean(source.primaryScoutProfileId)
+  const primaryDepthPct = Number(source.primaryScoutProfileStrengthDepthPct)
+  const hasPrimaryDepth = Number.isFinite(primaryDepthPct)
+
+  return {
+    scoutProfiles: Array.isArray(source.scoutProfiles) && source.scoutProfiles.length
+      ? source.scoutProfiles
+      : primaryProfileId
+        ? [{
+            profileId: primaryProfileId,
+            strength: {
+              depthPct: hasPrimaryDepth ? primaryDepthPct : null,
+              baseDepthPct: null,
+              contextAdjustmentPct: null,
+            },
+            confidence: null,
+            reasons: [],
+          }]
+        : [],
+    scoutCombinationIds: Array.isArray(source.scoutCombinationIds)
+      ? source.scoutCombinationIds
+      : [],
+    scoutOpportunity: source.scoutOpportunity &&
+      typeof source.scoutOpportunity === 'object'
+      ? source.scoutOpportunity
+      : clean(source.scoutEffectiveImmediacyStatus)
+        ? {
+            effectiveActionStatus: clean(source.scoutEffectiveImmediacyStatus),
+            exposureLevel: '',
+            netScore: null,
+            reasons: [],
+          }
+        : null,
+    scoutPlayerInterest: source.scoutPlayerInterest &&
+      typeof source.scoutPlayerInterest === 'object'
+      ? source.scoutPlayerInterest
+      : clean(source.scoutPlayerInterestLevel)
+        ? {
+            interestLevel: clean(source.scoutPlayerInterestLevel),
+            reasons: [],
+            limitingFactors: [],
+          }
+        : null,
+    scoutEngineVersion: clean(source.scoutEngineVersion),
+  }
+}
+
+const buildTeamPerformanceSnapshot = ({
+  team = {},
+  performanceField = '',
+  fallbackField = '',
+  tableRankField = '',
+  playerPerformance = null,
+} = {}) => {
+  const performance = pickDefinedValue(
+    team[performanceField],
+    team[fallbackField],
+    team.performance?.[fallbackField],
+    playerPerformance,
+    null,
+  )
+
+  if (!isPlainObject(performance)) return performance || null
+
+  const rank = pickDefinedValue(team[tableRankField], performance.rank)
+  if (rank === undefined || rank === null || rank === '') return performance
+
+  return {
+    ...performance,
+    rank: Number.isFinite(Number(rank)) ? Number(rank) : performance.rank,
+  }
+}
+
+export const getTeamSeasonDocumentRow = teamSeasonDocument => {
+  if (!teamSeasonDocument?.seasonId && !teamSeasonDocument?.seasonKey) return null
+
+  return {
+    ...teamSeasonDocument,
+    __sourceTarget: clean(teamSeasonDocument.seasonStatus) === 'completed'
+      ? 'history'
+      : 'current',
+  }
+}
 
 export const getPlayerSeasonRowKey = (row = {}) => [
   clean(row.seasonKey || row.seasonId),
@@ -123,25 +198,10 @@ export const getTargetSeasonRowTeamId = ({ season = {}, team = {} } = {}) =>
   )
 
 export const isSamePlayerSeasonRow = ({ row = {}, season = {}, team = {} } = {}) => {
-  const seasonId = clean(season.seasonId)
-  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-  const rowSeasonId = clean(row.seasonId)
-  const rowSeasonKey = clean(row.seasonKey)
-
-  if (
-    (seasonKey && rowSeasonKey && rowSeasonKey !== seasonKey) ||
-    (seasonId && rowSeasonId && rowSeasonId !== seasonId)
-  ) {
-    return false
-  }
-
-  const targetTeamId = getTargetSeasonRowTeamId({
-    season,
-    team,
+  return isSamePlayerSeasonScope(row, {
+    ...season,
+    ...team,
   })
-  if (!targetTeamId) return true
-
-  return getPlayerSeasonRowTeamId(row) === targetTeamId
 }
 
 export const findPlayerSeasonRowIndex = ({ rows = [], season = {}, team = {} } = {}) =>
@@ -159,7 +219,10 @@ export const removePlayerSeasonRow = ({ rows = [], season = {}, team = {} } = {}
   }))
 )
 
-export const buildPlayerSeasonDoc = ({ season = {}, team = {}, player = {} } = {}) => {
+// Canonical persistence projection for Player Document current/history rows.
+// Team Season is consulted as input only; its roster/balance/summaries never
+// cross this boundary into Player persistence.
+export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, player = {} } = {}) => {
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const playerStats = normalizePlayerStats(player)
@@ -178,6 +241,20 @@ export const buildPlayerSeasonDoc = ({ season = {}, team = {}, player = {} } = {
     season.ageGroupId ||
     team.ageGroupId
   )
+  const teamAttackPerformance = buildTeamPerformanceSnapshot({
+    team,
+    performanceField: 'teamAttackPerformance',
+    fallbackField: 'offense',
+    tableRankField: 'tableAttackRank',
+    playerPerformance: playerStats.teamAttackPerformance,
+  })
+  const teamDefensePerformance = buildTeamPerformanceSnapshot({
+    team,
+    performanceField: 'teamDefensePerformance',
+    fallbackField: 'defense',
+    tableRankField: 'tableDefenseRank',
+    playerPerformance: playerStats.teamDefensePerformance,
+  })
 
   return {
     seasonId,
@@ -241,37 +318,26 @@ export const buildPlayerSeasonDoc = ({ season = {}, team = {}, player = {} } = {
       teamRank: toNumberOrZero(team.tableRank),
       teamGoalsFor: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsFor, team.goalsFor)),
       teamGoalsAgainst: toNumberOrZero(pickDefinedValue(team.teamStats?.goalsAgainst, team.goalsAgainst)),
-      teamAttackPerformance: pickDefinedValue(
-        team.offense,
-        team.performance?.offense,
-        player.playerStats?.teamAttackPerformance,
-        null
-      ),
-      teamDefensePerformance: pickDefinedValue(
-        team.defense,
-        team.performance?.defense,
-        player.playerStats?.teamDefensePerformance,
-        null
-      ),
+      teamAttackPerformance,
+      teamDefensePerformance,
     },
     scoutProfiles: normalizePlayerScoutProfiles(player),
-    scoutCombinations: normalizePlayerScoutCombinations(player),
+    scoutCombinationIds: normalizePlayerScoutCombinationIds(player),
     ...normalizePlayerScoutStory(player),
-    scoutStatsLoadMeasurementHistory: normalizePlayerScoutStatsLoadMeasurementHistory(
-      player.scoutStatsLoadMeasurementHistory
-    ),
     updatedAt: new Date().toISOString(),
   }
 }
 
-export const buildPlayerSeasonRowsFromTeamDoc = ({
-  teamDoc = {},
+export const buildPlayerSeasonDoc = buildPlayerSeasonCompactProjection
+
+export const buildPlayerSeasonRowsFromTeamSeasonDocument = ({
+  teamSeasonDocument = {},
   season = {},
   team = {},
   player = {},
-  target = 'current',
 } = {}) => {
-  const seasonRows = getTeamSeasonRows(teamDoc)
+  const teamSeasonRow = getTeamSeasonDocumentRow(teamSeasonDocument)
+  const seasonRows = teamSeasonRow ? [teamSeasonRow] : []
   const collectedRows = []
 
   seasonRows.forEach(seasonRow => {
@@ -293,30 +359,23 @@ export const buildPlayerSeasonRowsFromTeamDoc = ({
           seasonKey: clean(seasonRow.seasonKey || season.seasonKey),
         },
         team: {
-          ...teamDoc,
           ...team,
           ...seasonRow,
         },
         player: {
           ...player,
           ...matchedPlayer,
+          ...buildTeamPlayerScoutHydration(matchedPlayer),
           playerStats: matchedPlayer.playerStats || {},
           scoutSignals: Array.isArray(matchedPlayer.scoutSignals)
             ? matchedPlayer.scoutSignals
             : [],
-          scoutProfiles: Array.isArray(matchedPlayer.scoutProfiles)
-            ? matchedPlayer.scoutProfiles
-            : [],
           scoutCombinations: Array.isArray(matchedPlayer.scoutCombinations)
             ? matchedPlayer.scoutCombinations
             : [],
-          scoutStatsLoadMeasurementHistory: buildPlayerScoutStatsLoadMeasurementHistory({
-            existingHistory: matchedPlayer.scoutStatsLoadMeasurementHistory,
-            measurements: matchedPlayer.scoutStatsLoadMeasurements,
-          }),
         },
       }),
-      sourceTarget: clean(seasonRow.__sourceTarget) || 'history',
+      sourceTarget: clean(seasonRow.__sourceTarget) || 'current',
     })
   })
 
@@ -334,7 +393,7 @@ export const buildPlayerSeasonRowsFromTeamDoc = ({
   if (!hasHydratedFallbackRow) {
     collectedRows.push({
       row: fallbackRow,
-      sourceTarget: clean(target) === 'history' ? 'history' : 'current',
+      sourceTarget: clean(season.seasonStatus) === 'completed' ? 'history' : 'current',
     })
   }
 
@@ -370,14 +429,14 @@ export const upsertSeasonRows = ({ rows = [], season = {}, team = {}, seasonDoc 
     team,
   })
 
-  if (seasonIndex === -1) return [...safeRows, seasonDoc]
+  if (seasonIndex === -1) return [
+    ...safeRows,
+    stripPlayerScoutV2SeasonFields(seasonDoc),
+  ]
 
   return safeRows.map((row, index) => (
     index === seasonIndex
-      ? {
-        ...row,
-        ...seasonDoc,
-      }
+      ? stripPlayerScoutV2SeasonFields(seasonDoc)
       : row
   ))
 }

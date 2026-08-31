@@ -23,6 +23,34 @@ import {
   toNullablePositiveNumber,
 } from '../contracts/domainValue.contract.js'
 
+const hasOwn = (source, key) => (
+  Boolean(source) &&
+  Object.prototype.hasOwnProperty.call(source, key)
+)
+
+const buildTeamProjectionProfiles = seasonDocument => {
+  const primaryProfileId = cleanDomainValue(seasonDocument?.primaryScoutProfileId)
+  const profileIds = [
+    ...(Array.isArray(seasonDocument?.professionalScoutProfileIds)
+      ? seasonDocument.professionalScoutProfileIds
+      : primaryProfileId ? [primaryProfileId] : []),
+    ...(Array.isArray(seasonDocument?.preliminaryScoutProfileIds)
+      ? seasonDocument.preliminaryScoutProfileIds
+      : []),
+  ].map(cleanDomainValue).filter(Boolean)
+
+  return [...new Set(profileIds)].map(profileId => ({
+    profileId,
+    profileStrength: profileId === primaryProfileId
+      ? {
+          depthPct: toDomainNumber(
+            seasonDocument?.primaryScoutProfileStrengthDepthPct
+          ),
+        }
+      : null,
+  }))
+}
+
 const buildProjectedStats = seasonDocument => {
   const projected = seasonDocument.projectedStats || seasonDocument.normalizedStats || null
   if (!projected || typeof projected !== 'object') return null
@@ -57,7 +85,10 @@ export const adaptPlayerDocumentSeason = ({
   const seasonStatus = cleanDomainValue(seasonDocument.seasonStatus)
   const lifecycle = createLifecycle(target, seasonStatus)
   const result = createEmptyPlayerSeason()
-  const profiles = seasonDocument.scoutProfiles || seasonDocument.scoutSignals || []
+  const hasTeamScoutProjection = hasOwn(seasonDocument, 'primaryScoutProfileId')
+  const profiles = hasTeamScoutProjection
+    ? buildTeamProjectionProfiles(seasonDocument)
+    : seasonDocument.scoutProfiles || seasonDocument.scoutSignals || []
   const tracking = normalizePlayerTrackingState(playerDocument)
   const verification = normalizePlayerVerificationState(playerDocument)
   const events = normalizePlayerEventsState(playerDocument)
@@ -141,25 +172,39 @@ export const adaptPlayerDocumentSeason = ({
     },
     scout: normalizePlayerScout({
       profiles,
-      combinations: seasonDocument.scoutCombinations || [],
+      combinations: hasTeamScoutProjection ? [] : seasonDocument.scoutCombinations || [],
       profileIds: seasonDocument.scoutProfileIds,
       combinationIds: seasonDocument.scoutCombinationIds,
       searchIds: seasonDocument.scoutProfileSearchIds,
-      candidateSignals: seasonDocument.scoutCandidateSignals,
-      evidence: seasonDocument.scoutEvidence,
-      spotlights: seasonDocument.scoutSpotlights,
-      opportunity: seasonDocument.scoutOpportunity,
-      verification: seasonDocument.scoutVerification,
-      profileProgression: seasonDocument.scoutProfileProgression,
-      profileHierarchy: seasonDocument.scoutProfileHierarchy,
-      profileCaseStrength: seasonDocument.scoutProfileCaseStrength,
-      playerInterest: seasonDocument.scoutPlayerInterest,
+      candidateSignals: hasTeamScoutProjection
+        ? []
+        : seasonDocument.scoutCandidateSignals,
+      evidence: hasTeamScoutProjection ? [] : seasonDocument.scoutEvidence,
+      spotlights: hasTeamScoutProjection ? [] : seasonDocument.scoutSpotlights,
+      opportunity: hasTeamScoutProjection
+        ? {
+            effectiveActionStatus: cleanDomainValue(
+              seasonDocument.scoutEffectiveImmediacyStatus
+            ),
+          }
+        : seasonDocument.scoutOpportunity,
+      verification: hasTeamScoutProjection ? null : seasonDocument.scoutVerification,
+      profileProgression: hasTeamScoutProjection ? null : seasonDocument.scoutProfileProgression,
+      profileHierarchy: hasTeamScoutProjection ? null : seasonDocument.scoutProfileHierarchy,
+      profileCaseStrength: hasTeamScoutProjection ? null : seasonDocument.scoutProfileCaseStrength,
+      playerInterest: hasTeamScoutProjection
+        ? {
+            interestLevel: cleanDomainValue(seasonDocument.scoutPlayerInterestLevel),
+          }
+        : seasonDocument.scoutPlayerInterest,
       playerReview: playerDocument.playerReview || seasonDocument.playerReview || null,
-      trajectory: seasonDocument.scoutTrajectory,
-      transferContext: seasonDocument.scoutTransferContext,
-      futureCompetitionPath: seasonDocument.futureCompetitionPath,
+      trajectory: hasTeamScoutProjection ? null : seasonDocument.scoutTrajectory,
+      transferContext: hasTeamScoutProjection ? null : seasonDocument.scoutTransferContext,
+      futureCompetitionPath: hasTeamScoutProjection ? null : seasonDocument.futureCompetitionPath,
       engineVersion: seasonDocument.scoutEngineVersion,
-      statsLoadMeasurementHistory: seasonDocument.scoutStatsLoadMeasurementHistory,
+      statsLoadMeasurementHistory: hasTeamScoutProjection
+        ? []
+        : seasonDocument.scoutStatsLoadMeasurementHistory,
     }),
     teamPerformance: teamScout || result.teamPerformance,
     completeness: {

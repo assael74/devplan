@@ -15,6 +15,9 @@ import {
   normalizePlayerIdentity,
   normalizePlayerIdPart,
 } from '../../../model/playerIdentity.model.js'
+import {
+  buildPlayerIdentityCandidateKeys,
+} from '../../../domain/identity/playerIdentityCandidates.domain.js'
 
 const clean = value => String(value || '').trim()
 
@@ -62,22 +65,19 @@ const readPlayerIdentities = async ({
   const identityKeys = []
 
   players.forEach(player => {
-    const identity = normalizePlayerIdentity(player)
-    const externalPlayerId = isValidExternalPlayerId({
-      externalPlayerId: identity.externalPlayerId,
+    const keys = buildPlayerIdentityCandidateKeys({
+      player,
       birthYear,
     })
-      ? clean(identity.externalPlayerId)
+    const externalPlayerId = isValidExternalPlayerId({
+      externalPlayerId: keys.externalPlayerId,
+      birthYear,
+    })
+      ? clean(keys.externalPlayerId)
       : ''
 
     if (externalPlayerId) externalIds.push(externalPlayerId)
-
-    const identityKey = buildPlayerIdentityKey({
-      birthYear,
-      normalizedName: identity.normalizedName,
-    })
-
-    if (identityKey) identityKeys.push(identityKey)
+    if (keys.identityKey) identityKeys.push(keys.identityKey)
   })
 
   const [externalDocs, identityDocs] = await Promise.all([

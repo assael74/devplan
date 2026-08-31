@@ -7,6 +7,7 @@ export const leagueCenterKpiOverviewSx = {
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(3, minmax(0, 1fr))',
+      lg: 'repeat(6, minmax(0, 1fr))',
     },
     gap: 1,
   },

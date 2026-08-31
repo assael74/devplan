@@ -92,6 +92,7 @@ export const isValidExternalPlayerId = ({
   const year = cleanValue(birthYear)
 
   if (!externalId) return false
+  if (!/^\d{5,}$/.test(externalId)) return false
   if (externalId === year) return false
   if (/^(19|20)\d{2}$/.test(externalId)) return false
 
@@ -121,13 +122,24 @@ export const resolveInternalPlayerId = player => cleanValue(
   )
 )
 
-export const buildPlayerDocumentId = (player = {}) => {
-  const existingDocumentId = resolvePlayerDocumentId(player)
-  if (existingDocumentId) return existingDocumentId
+export const isInternalPlayerId = value => /^player__/.test(cleanValue(value))
 
+export const isCanonicalPlayerDocumentId = value => (
+  /^(?:external|name)__(?:.+)$/.test(cleanValue(value))
+)
+
+export const buildPlayerDocumentId = (player = {}) => {
   const externalPlayerId = resolveExternalPlayerId(player)
-  if (externalPlayerId) {
+  if (isValidExternalPlayerId({
+    externalPlayerId,
+    birthYear: player?.birthYear,
+  })) {
     return `external__${normalizePlayerIdPart(externalPlayerId)}`
+  }
+
+  const existingDocumentId = resolvePlayerDocumentId(player)
+  if (isCanonicalPlayerDocumentId(existingDocumentId)) {
+    return existingDocumentId
   }
 
   const normalizedName = normalizePlayerNameValue(
@@ -138,6 +150,10 @@ export const buildPlayerDocumentId = (player = {}) => {
     ? `name__${normalizePlayerIdPart(normalizedName)}`
     : ''
 }
+
+export const resolveWritablePlayerDocumentId = player => (
+  buildPlayerDocumentId(player)
+)
 
 export const resolvePlayerOptionValue = player => cleanValue(
   pickFirstValue(

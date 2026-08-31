@@ -25,12 +25,14 @@ export default function PasteModal({
   headerActions = null,
   pasteDisabled = false,
   previewSummary = [],
+  showSummaryCounts = true,
   onValueChange,
   onPaste,
   onFileSelect,
   onClear,
   onCellChange,
   getRowStatus,
+  getCellStatus,
   onConfirm,
   onClose,
 }) {
@@ -82,7 +84,9 @@ export default function PasteModal({
             rows={rows}
             onCellChange={onCellChange}
             getRowStatus={getRowStatus}
+            getCellStatus={getCellStatus}
             summary={previewSummary}
+            showSummaryCounts={showSummaryCounts}
           />
         ) : null}
       </Box>

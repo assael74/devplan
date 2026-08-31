@@ -6,6 +6,7 @@ import { pickDefinedValue } from '../../../../model/value.model.js'
 export const STATS_IDENTITY_STATUS = {
   ROSTER_MATCH: 'roster_match',
   SYSTEM_MATCH: 'system_match',
+  SYSTEM_CANDIDATE: 'system_candidate',
   NEW_PLAYER: 'new_player',
   AMBIGUOUS: 'ambiguous',
   UNRESOLVED: 'unresolved',
@@ -164,6 +165,9 @@ export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
   const candidateIds = Array.isArray(resolvedPlayer?.identityCandidateIds)
     ? resolvedPlayer.identityCandidateIds
     : []
+  const candidates = Array.isArray(resolvedPlayer?.identityCandidates)
+    ? resolvedPlayer.identityCandidates
+    : []
 
   if (matchStatus === 'matched') {
     return {
@@ -182,6 +186,23 @@ export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
         ? `נמצאו ${candidateIds.length} התאמות אפשריות`
         : 'נמצאו כמה התאמות אפשריות',
       identityCandidateIds: candidateIds,
+      identityCandidates: candidates,
+    }
+  }
+
+  if (matchStatus === 'candidate') {
+    const candidate = candidates[0] || null
+    const hasCanonicalPlayerId = Boolean(clean(candidate?.playerId))
+
+    return {
+      ...row,
+      ...resolvedPlayer,
+      identityStatus: STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE,
+      identityMessage: hasCanonicalPlayerId
+        ? 'נמצא Player Document קיים; נדרש אישור התאמה'
+        : 'קיים במערכת אך חסר קישור זהות קנוני',
+      identityCandidateIds: candidateIds,
+      identityCandidates: candidates,
     }
   }
 
@@ -196,6 +217,7 @@ export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
 export const getStatsIdentityLabel = status => ({
   [STATS_IDENTITY_STATUS.ROSTER_MATCH]: 'זוהה בסגל',
   [STATS_IDENTITY_STATUS.SYSTEM_MATCH]: 'זוהה במערכת',
+  [STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE]: 'נדרש אישור התאמה',
   [STATS_IDENTITY_STATUS.NEW_PLAYER]: 'שחקן חדש',
   [STATS_IDENTITY_STATUS.AMBIGUOUS]: 'נדרשת בדיקה',
   [STATS_IDENTITY_STATUS.UNRESOLVED]: 'לא זוהה',

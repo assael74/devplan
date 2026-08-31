@@ -19,7 +19,7 @@ export default function usePlayerUrlEditor({ player, selectedSeasonRow, notify, 
       ...selectedSeasonRow,
       fullName: player.fullName,
       playerId: player.playerId,
-      playerDocumentId: player.id,
+      playerDocumentId: player.domain?.identity?.playerDocumentId || '',
       externalPlayerId: player.externalPlayerId,
     })
   }, [player, selectedSeasonRow])

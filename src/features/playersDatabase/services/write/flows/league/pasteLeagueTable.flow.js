@@ -13,7 +13,6 @@ import {
   syncPlayerScoutProfileDocsMany,
 } from '../../players/index.js'
 import {
-  buildTeamSeasonSearchIndexDocuments,
   updatePlayerSeasonSearchIndexScoutContextMany,
   upsertTeamSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
@@ -217,13 +216,12 @@ export async function pasteLeagueTableFlow(payload = {}) {
       syncMaster: false,
     })
 
-    const preparedTeamIndexes = buildTeamSeasonSearchIndexDocuments(payload)
-
     stage = 'playerScoutContext'
     const playerScoutContextResult = await updateLeagueTeamPlayersScoutContextMany({
+      league: payload.league || {},
       season: payload.season || {},
       target: payload.target || 'current',
-      teamIndexDocuments: preparedTeamIndexes.documents,
+      rows: payload.rows || [],
     })
     results.playerScoutContext = buildPlayerScoutContextReport(playerScoutContextResult)
     assertWriteResultClean({

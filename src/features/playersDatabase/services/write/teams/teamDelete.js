@@ -1,313 +1,194 @@
-// features/playersDatabase/services/write/teams/teamDelete.js
-
-
-
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
-import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import {
-  isSameSeason,
-  normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+import { normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { getPlayerMergeKey } from './teamSeason.model.js'
+import { teamSeasonDocRef, buildTeamSeasonDocumentData } from './teamSeasonDoc.js'
 import {
-  buildTeamBaseDoc,
+  buildTeamRootWithSeasonIndex,
+  buildTeamRootWithoutSeasonIndex,
   teamDocRef,
 } from './teamDoc.js'
-
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
-const getPlayerMergeKey = player => (
-  buildPlayerMatchValues(player)[0] || ''
-).toLowerCase()
+import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
 
 export const buildTeamPlayersScoutProfilesSummary = buildScoutProfilesSummary
 
-const resolvePlayerDocumentIds = players => Array.from(new Set(
-  (Array.isArray(players) ? players : [])
-    .map(player => clean(
-      player?.playerDocumentId ||
-      player?.documentId
-    ))
-    .filter(Boolean)
-))
-
-const removeSeasonRows = ({ rows = [], season = {} } = {}) =>
-  (Array.isArray(rows) ? rows : []).filter(row => !isSameSeason(row, season))
-
-export async function removeTeamSeason({
-  season = {},
-  team = {},
-  target = 'current',
-} = {}) {
+const scope = ({ team = {}, season = {} } = {}) => {
   const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
-  if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
+  const identity = normalizeSeasonIdentity({ season })
+  if (!teamId || !identity.seasonId) throw new Error('Missing Team Season identity')
+  return { teamId, ...identity, ref: teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: identity.seasonKey }) }
+}
 
-  const ref = teamDocRef(teamId)
+const playerDocumentIds = players => [...new Set((Array.isArray(players) ? players : []).map(player => clean(player?.playerDocumentId)).filter(Boolean))]
 
+export async function removeTeamSeason({ season = {}, team = {} } = {}) {
+  const { teamId, seasonId, seasonKey, ref } = scope({ team, season })
+  const rootRef = teamDocRef(teamId)
   return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
+    const [rootSnapshot, snapshot] = await Promise.all([
+      transaction.get(rootRef),
+      transaction.get(ref),
+    ])
+    const rootData = rootSnapshot.exists() ? rootSnapshot.data() || {} : null
+    if (rootData) {
+      transaction.set(rootRef, buildTeamRootWithoutSeasonIndex({
+        team: { ...team, birthTeamDocumentId: teamId },
+        currentData: rootData,
         seasonKey,
-        removed: false,
-        reason: 'teamDocMissing',
-      }
+      }))
     }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({
-      ...team,
-      birthTeamDocumentId: teamId,
-      teamDocumentId: teamId,
-    }, currentData)
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-    const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
-    const removedRows = rows.filter(row => (
-      isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      })
-    ))
-    const removedPlayers = removedRows.flatMap(row => (
-      Array.isArray(row.teamPlayers) ? row.teamPlayers : []
-    ))
-    const playerDocumentIds = resolvePlayerDocumentIds(removedPlayers)
-    const nextRows = removeSeasonRows({
-      rows,
-      season: {
-        seasonId,
-        seasonKey,
-      },
-    })
-
-    transaction.set(
-      ref,
-      {
-        [fieldKey]: nextRows,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    )
-
-    return {
-      birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
-      removed: nextRows.length !== rows.length,
-      removedPlayersCount: removedPlayers.length,
-      playerDocumentIds,
-    }
+    if (!snapshot.exists()) return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: clean(season.seasonStatus) === 'completed' ? 'history' : 'current', removed: false, reason: 'teamSeasonMissing' }
+    const current = snapshot.data() || {}
+    const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
+    transaction.delete(ref)
+    return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: clean(current.seasonStatus) === 'completed' ? 'history' : 'current', removed: true, removedPlayersCount: players.length, playerDocumentIds: playerDocumentIds(players) }
   })
 }
 
-export async function removeTeamPlayerFromSeason({
+const updatePlayers = async ({
   season = {},
   team = {},
-  target = 'current',
-  player = {},
-} = {}) {
-  const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
-  const playerKey = getPlayerMergeKey(player)
-  if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
-  if (!playerKey) throw new Error('Missing player id')
-
-  const ref = teamDocRef(teamId)
-
+  mutate,
+  seasonStatusOverride = '',
+  syncTeamRoot = false,
+}) => {
+  const { teamId, seasonId, seasonKey, ref } = scope({ team, season })
+  const rootRef = teamDocRef(teamId)
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        removed: false,
-        reason: 'teamDocMissing',
-        playersCount: 0,
-        scoutProfilesSummary: buildTeamPlayersScoutProfilesSummary([]),
-      }
-    }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({
-      ...team,
-      birthTeamDocumentId: teamId,
-      teamDocumentId: teamId,
-    }, currentData)
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-    const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
-    const nextRows = rows.map(row => {
-      if (!isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      })) return row
-
-      const nextSeasonWithoutBalance = {
-        ...row,
-        teamPlayers: (Array.isArray(row.teamPlayers) ? row.teamPlayers : [])
-          .filter(nextPlayer => getPlayerMergeKey(nextPlayer) !== playerKey),
-        updatedAt: new Date().toISOString(),
-      }
-
-      return withTeamBalanceSnapshot({
-        seasonDoc: nextSeasonWithoutBalance,
-        teamDocument: baseDoc,
-        seasonTarget: fieldKey,
-      })
+    const rootSnapshot = syncTeamRoot
+      ? await transaction.get(rootRef)
+      : null
+    const sourceTarget = clean(season.seasonStatus) === 'completed' ? 'history' : 'current'
+    if (!snapshot.exists()) return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: sourceTarget, updated: false, reason: 'teamSeasonMissing' }
+    const current = snapshot.data() || {}
+    const seasonStatus = ['active', 'completed'].includes(clean(seasonStatusOverride))
+      ? clean(seasonStatusOverride)
+      : clean(current.seasonStatus) === 'completed'
+        ? 'completed'
+        : 'active'
+    const persistedTarget = seasonStatus === 'completed'
+      ? 'history'
+      : 'current'
+    const result = mutate(Array.isArray(current.teamPlayers) ? current.teamPlayers : [])
+    const next = withTeamBalanceSnapshot({
+      seasonDoc: { ...current, seasonStatus, teamPlayers: result.players, playersCount: result.players.length, scoutProfilesSummary: buildScoutProfilesSummary(result.players), updatedAt: new Date().toISOString() },
+      teamRoot: { ...team, id: teamId, birthTeamDocumentId: teamId },
     })
-    const seasonRow = nextRows.find(row => isSameSeason(row, {
-      seasonId,
-      seasonKey,
-    })) || null
-    const teamPlayers = Array.isArray(seasonRow?.teamPlayers) ? seasonRow.teamPlayers : []
-
-    transaction.set(
-      ref,
-      {
-        [fieldKey]: nextRows,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    )
-
-    return {
-      birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
-      removed: true,
-      playersCount: teamPlayers.length,
-      players: teamPlayers,
-      scoutProfilesSummary: buildTeamPlayersScoutProfilesSummary(teamPlayers),
-      teamBalance: seasonRow?.teamBalance || null,
+    const persisted = buildTeamSeasonDocumentData({ team: { ...team, birthTeamDocumentId: teamId }, season: { ...season, seasonId, seasonKey }, seasonDoc: next, existingData: current })
+    transaction.set(ref, persisted)
+    if (syncTeamRoot) {
+      transaction.set(rootRef, buildTeamRootWithSeasonIndex({
+        team: { ...team, birthTeamDocumentId: teamId },
+        currentData: rootSnapshot.exists() ? rootSnapshot.data() || {} : {},
+        season: persisted,
+      }))
     }
+    return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: persistedTarget, updated: true, players: persisted.teamPlayers, playersCount: persisted.teamPlayers.length, removedPlayersCount: result.removed.length, playerDocumentIds: playerDocumentIds(result.removed), scoutProfilesSummary: persisted.scoutProfilesSummary, teamBalance: persisted.teamBalance || null, seasonDocument: persisted }
   })
 }
 
+export async function removeTeamPlayerFromSeason({ player = {}, ...payload } = {}) {
+  const key = getPlayerMergeKey(player)
+  if (!key) throw new Error('Missing player id')
+  return updatePlayers({ ...payload, mutate: players => ({ players: players.filter(row => getPlayerMergeKey(row) !== key), removed: players.filter(row => getPlayerMergeKey(row) === key) }) })
+}
 
-export async function clearTeamSeasonPlayers({
-  season = {},
-  team = {},
-  target = 'current',
+const EMPTY_PLAYER_STATS = Object.freeze({
+  games: 0,
+  goals: 0,
+  yellowCards: 0,
+  minutes: 0,
+  starts: 0,
+  substituteIn: 0,
+  substitutedOut: 0,
+  teamMinutes: 0,
+  teamGames: 0,
+  teamRank: null,
+  teamGoalsFor: 0,
+  teamGoalsAgainst: 0,
+  minutesPerGame: 0,
+  goalsPer90: 0,
+})
+
+const clearTeamPlayerStatsDerivedState = player => {
+  const {
+    scoutSignals,
+    scoutCombinations,
+    scoutProfiles,
+    scoutCombinationIds,
+    scoutEvidence,
+    scoutCandidateSignals,
+    scoutProfileCaseStrength,
+    scoutOpportunity,
+    scoutProfileHierarchy,
+    scoutPlayerInterest,
+    scoutProfileProgression,
+    hierarchy,
+    opportunity,
+    interest,
+    progression,
+    combinations,
+    ...rosterPlayer
+  } = player || {}
+
+  return {
+    ...rosterPlayer,
+    statsStatus: 'missing',
+    playerStats: { ...EMPTY_PLAYER_STATS },
+    primaryScoutProfileId: '',
+    primaryScoutProfileStrengthDepthPct: null,
+    professionalScoutProfileIds: [],
+    preliminaryScoutProfileIds: [],
+    scoutEffectiveImmediacyStatus: '',
+    scoutPlayerInterestLevel: '',
+    scoutEngineVersion: '',
+  }
+}
+
+// Stats clearing keeps the canonical roster and League performance projection.
+// It only resets stats-owned player and Team Season derived state.
+export async function clearTeamSeasonStats(payload = {}) {
+  return updatePlayers({
+    ...payload,
+    seasonStatusOverride: clean(payload?.season?.seasonStatus),
+    syncTeamRoot: true,
+    mutate: players => ({
+      players: players.map(clearTeamPlayerStatsDerivedState),
+      removed: [],
+    }),
+  })
+}
+
+export async function clearTeamSeasonPlayerDocumentIds({
+  playerDocumentIds = [],
+  ...payload
 } = {}) {
-  const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
-  if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
+  const deletedIds = new Set(
+    (Array.isArray(playerDocumentIds) ? playerDocumentIds : [])
+      .map(clean)
+      .filter(Boolean)
+  )
+  if (!deletedIds.size) return {
+    updated: true,
+    changed: false,
+    players: [],
+    playersCount: 0,
+  }
 
-  const ref = teamDocRef(teamId)
-
-  return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        updated: false,
-        reason: 'teamDocMissing',
-        removedPlayersCount: 0,
-      }
-    }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc(
-      {
-        ...team,
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-      },
-      currentData
-    )
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-    const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
-    let removedPlayersCount = 0
-    let removedPlayers = []
-    let seasonFound = false
-
-    const nextRows = rows.map(row => {
-      if (!isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      })) return row
-
-      seasonFound = true
-      removedPlayers = Array.isArray(row.teamPlayers)
-        ? row.teamPlayers
-        : []
-      removedPlayersCount = removedPlayers.length
-
-      const nextSeasonWithoutBalance = {
-        ...row,
-        teamPlayers: [],
-        playersCount: 0,
-        scoutProfilesSummary: {
-          total: 0,
-          profileCounts: {},
-        },
-        updatedAt: new Date().toISOString(),
-      }
-
-      return withTeamBalanceSnapshot({
-        seasonDoc: nextSeasonWithoutBalance,
-        teamDocument: baseDoc,
-        seasonTarget: fieldKey,
-      })
-    })
-
-    if (!seasonFound) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        target: isHistory ? 'history' : 'current',
-        updated: false,
-        reason: 'teamSeasonMissing',
-        removedPlayersCount: 0,
-      }
-    }
-
-    transaction.set(
-      ref,
-      {
-        [fieldKey]: nextRows,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    )
-
-    return {
-      birthTeamDocumentId: teamId,
-      teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
-      updated: true,
-      removedPlayersCount,
-      playerDocumentIds: resolvePlayerDocumentIds(removedPlayers),
-      playersCount: 0,
-      scoutProfilesSummary: {
-        total: 0,
-        profileCounts: {},
-      },
-      teamBalance: nextRows.find(row => isSameSeason(row, { seasonId, seasonKey }))?.teamBalance || null,
-    }
+  return updatePlayers({
+    ...payload,
+    syncTeamRoot: true,
+    mutate: players => ({
+      players: players.map(player => (
+        deletedIds.has(clean(player?.playerDocumentId))
+          ? { ...player, playerDocumentId: '' }
+          : player
+      )),
+      removed: [],
+    }),
   })
 }

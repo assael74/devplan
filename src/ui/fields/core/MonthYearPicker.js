@@ -168,7 +168,7 @@ export default function MonthYearPicker({
           readOnly={readOnly}
           slotProps={{
             button: { ref: monthBtnRef },
-            listbox: { disablePortal: true, sx: sx.listbox },
+            listbox: { sx: sx.listbox },
           }}
           sx={sx.selectMonth}
           {...selectPropsM}
@@ -188,7 +188,7 @@ export default function MonthYearPicker({
           readOnly={readOnly}
           slotProps={{
             button: { ref: yearBtnRef },
-            listbox: { disablePortal: true, sx: sx.listbox },
+            listbox: { sx: sx.listbox },
           }}
           sx={sx.selectYear}
           {...selectPropsY}

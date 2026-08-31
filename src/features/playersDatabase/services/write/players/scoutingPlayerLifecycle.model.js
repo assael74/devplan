@@ -1,8 +1,5 @@
 // src/features/playersDatabase/services/write/players/scoutingPlayerLifecycle.model.js
 
-import {
-  isProfessionalScoutProfile,
-} from '../../../../../shared/scouting/players/profiles.js'
 import { clean } from '../leagues/leagueDoc.js'
 
 export const SCOUTING_PLAYER_TRACKING_REASONS = Object.freeze({
@@ -56,24 +53,36 @@ const getScoutProfiles = source => (
       : []
 )
 
-const hasProfessionalProfileIds = source => (
-  Array.isArray(source?.scoutProfileHierarchy?.professionalProfileIds) &&
-  source.scoutProfileHierarchy.professionalProfileIds
+const hasScoutProfileIds = source => (
+  [
+    ...(Array.isArray(source?.professionalScoutProfileIds)
+      ? source.professionalScoutProfileIds
+      : []),
+    ...(Array.isArray(source?.preliminaryScoutProfileIds)
+      ? source.preliminaryScoutProfileIds
+      : []),
+    ...(Array.isArray(source?.scoutProfileHierarchy?.professionalProfileIds)
+      ? source.scoutProfileHierarchy.professionalProfileIds
+      : []),
+    ...(Array.isArray(source?.scoutProfileHierarchy?.preliminaryProfileIds)
+      ? source.scoutProfileHierarchy.preliminaryProfileIds
+      : []),
+  ]
     .map(clean)
     .filter(Boolean)
-    .some(isProfessionalScoutProfile)
+    .length > 0
 )
 
-const hasProfessionalScoutProfile = source => (
-  hasProfessionalProfileIds(source) ||
-  getScoutProfiles(source).some(isProfessionalScoutProfile)
+const hasScoutProfile = source => (
+  hasScoutProfileIds(source) ||
+  getScoutProfiles(source).some(profile => clean(profile?.profileId || profile?.id))
 )
 
-const hasProfessionalScoutProfileInPlayer = player => (
-  hasProfessionalScoutProfile(player) ||
+const hasScoutProfileInPlayer = player => (
+  hasScoutProfile(player) ||
   ['current', 'history'].some(target => (
     (Array.isArray(player?.[target]) ? player[target] : [])
-      .some(hasProfessionalScoutProfile)
+      .some(hasScoutProfile)
   ))
 )
 
@@ -95,12 +104,30 @@ export const resolvePlayerTrackingReasons = player => {
     ...storedReasons,
     favorite ? SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE : '',
     watchlist ? SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST : '',
-    hasProfessionalScoutProfileInPlayer(player)
+    hasScoutProfileInPlayer(player)
       ? SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
       : '',
   ].filter(Boolean)
 
   return [...new Set(reasons)]
+}
+
+// This preserves the pre-refactor lifecycle priority.  Callers that need a
+// calculated scout result can invoke it only after that result is available.
+export const resolvePlayerLifecycleTrackingReason = player => {
+  if (hasScoutProfileInPlayer(player)) {
+    return SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+  }
+
+  const reasons = resolvePlayerTrackingReasons(player)
+  const reasonPriority = [
+    SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER,
+    SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE,
+    SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST,
+    SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
+  ]
+
+  return reasonPriority.find(reason => reasons.includes(reason)) || ''
 }
 
 export const shouldHavePlayerDocument = player => (

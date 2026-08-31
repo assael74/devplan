@@ -1,7 +1,10 @@
 // src/features/playersDatabase/ui/components/modals/paste/StatsImportModal.js
 
+import * as React from 'react'
 import {
   Box,
+  Button,
+  Chip,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -21,6 +24,8 @@ import { statsImportModalSx as sx } from './sx/statsImportModal.sx.js'
 function clean(value) {
   return String(value || '').trim()
 }
+
+const formatValidationNumber = value => new Intl.NumberFormat('en-US').format(value)
 
 function MetaLink({ href, children }) {
   const safeHref = clean(href)
@@ -49,6 +54,43 @@ function MetaLink({ href, children }) {
         {children}
       </Typography>
     </Tooltip>
+  )
+}
+
+function ValidationCheckChip({ check, onApplyMinutesAdjustment }) {
+  const isValid = check?.valid === true
+  const hasNumbers = Number.isFinite(check?.actual) && Number.isFinite(check?.limit)
+  const difference = Number(check?.difference || 0)
+  const valueLabel = hasNumbers
+    ? isValid
+      ? 'תקין'
+      : `חריגה ${formatValidationNumber(difference)}`
+    : 'לא תקין'
+  const adjustment = check?.adjustment
+
+  return (
+    <Box sx={sx.validationCheckWrap}>
+      <Chip
+        size='sm'
+        variant='soft'
+        color={isValid ? 'success' : 'danger'}
+        sx={[sx.validationIssuesChip, isValid ? sx.validationValidChip : sx.validationInvalidChip]}
+      >
+        <Box component='span' sx={sx.validationCheckLabel}>{check.label}</Box>
+        <Box component='span' sx={sx.validationCheckValue}>{valueLabel}</Box>
+      </Chip>
+      {adjustment ? (
+        <Button
+          size='sm'
+          variant='soft'
+          color='danger'
+          sx={sx.validationAdjustmentAction}
+          onClick={() => onApplyMinutesAdjustment?.(adjustment)}
+        >
+          הפחת דקה מכל השחקנים
+        </Button>
+      ) : null}
+    </Box>
   )
 }
 
@@ -100,36 +142,26 @@ export default function StatsImportModal({
   )
 
   const beforePaste = (
-    <FormControl
-      size='sm'
-      required
-      sx={[
-        sx.seasonStatus,
-        hasPreviewRows ? sx.seasonStatusCompact : null,
-      ]}
-    >
-      <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
-      <Select
-        value={controller.seasonStatus || null}
-        placeholder='בחר סוג טעינה'
-        onChange={(event, value) => controller.changeSeasonStatus(value)}
+    <>
+      <FormControl
+        size='sm'
+        required
+        sx={[sx.seasonStatus, hasPreviewRows ? sx.seasonStatusCompact : null]}
       >
-        {STATS_SEASON_STATUS_OPTIONS.map(option => (
-          <Option key={option.value} value={option.value}>
-            {option.label}
-          </Option>
-        ))}
-      </Select>
-      {!hasPreviewRows ? (
-        <FormHelperText>
-          {seasonStatusOption?.description || 'בחירה חובה לפני הצגת הנתונים'}
-        </FormHelperText>
-      ) : null}
-    </FormControl>
+        <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
+        <Select value={controller.seasonStatus || null} placeholder='בחר סוג טעינה' onChange={(event, value) => controller.changeSeasonStatus(value)}>
+          {STATS_SEASON_STATUS_OPTIONS.map(option => <Option key={option.value} value={option.value}>{option.label}</Option>)}
+        </Select>
+        {!hasPreviewRows ? <FormHelperText>{seasonStatusOption?.description || 'בחירה חובה לפני הצגת הנתונים'}</FormHelperText> : null}
+      </FormControl>
+    </>
   )
 
+  const validationChecks = controller.validation.checks || []
+
   return (
-    <PasteModal
+    <>
+      <PasteModal
       open={controller.open}
       title={`טעינת סטטיסטיקות - ${team.name}`}
       description={description}
@@ -143,20 +175,27 @@ export default function StatsImportModal({
       confirmLabel='אישור טעינת סטטיסטיקות'
       beforePaste={beforePaste}
       pasteDisabled={!controller.seasonStatus}
+      showSummaryCounts={false}
       previewSummary={[
-        {
-          key: 'exceptions',
-          color: controller.exceptionRowsCount ? 'warning' : 'neutral',
-          label: `${controller.exceptionRowsCount} חריגים`,
-        },
+        ...validationChecks.map(check => ({
+          key: check.code,
+          render: () => (
+            <ValidationCheckChip
+              check={check}
+              onApplyMinutesAdjustment={controller.applyEqualMinutesReduction}
+            />
+          ),
+        })),
       ]}
       onValueChange={controller.setPasteValue}
       onPaste={controller.parse}
       onClear={controller.clearPaste}
       onCellChange={controller.changeCell}
       getRowStatus={controller.getRowStatus}
+      getCellStatus={controller.getCellStatus}
       onConfirm={controller.confirm}
       onClose={controller.close}
-    />
+      />
+    </>
   )
 }

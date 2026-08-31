@@ -28,10 +28,19 @@ import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import usePlayerNarrative from './hooks/usePlayerNarrative.js'
 import usePlayerScoutReview from './hooks/usePlayerScoutReview.js'
-import { readPlayerSource } from '../../../services/read/index.js'
+import {
+  canReadPlayerSearchIndexExport,
+  canReadTeamSearchIndexExport,
+  readPlayerSearchIndexExport,
+  readPlayerSource,
+  readTeamSearchIndexExport,
+} from '../../../services/read/index.js'
 import {
   downloadPlayerJson,
+  downloadPlayerSearchIndexJson,
   downloadTeamJson,
+  downloadTeamSeasonJson,
+  downloadTeamSearchIndexJson,
 } from './logic/playerJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
@@ -67,6 +76,7 @@ function PlayerPageContent() {
   const taskActions = usePlayersDatabaseTaskActions()
   const [editTask, setEditTask] = React.useState(null)
   const [playerJsonLoading, setPlayerJsonLoading] = React.useState(false)
+  const [searchIndexJsonLoading, setSearchIndexJsonLoading] = React.useState(false)
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -168,7 +178,7 @@ function PlayerPageContent() {
       player: {
         ...(player.domain?.identity || {}),
         playerId,
-        playerDocumentId: player.id,
+        playerDocumentId: player.domain?.identity?.playerDocumentId || '',
         fullName: player.fullName,
         playerStats: activeSeason.stats?.actual || {},
         primaryPosition: activeSeason.position?.primary || '',
@@ -186,7 +196,7 @@ function PlayerPageContent() {
       return favorites.removeFavorite({
         ...payload,
         scouting: {
-          playerDocumentId: player.id,
+          playerDocumentId: player.domain?.identity?.playerDocumentId || '',
         },
       })
     }
@@ -310,6 +320,73 @@ function PlayerPageContent() {
     })
   }, [notify, teamSource])
 
+  const handleTeamSeasonJson = React.useCallback(() => {
+    const teamSeasonDocument = teamSource?.selectedTeamSeason
+
+    if (!teamSeasonDocument) {
+      notify({
+        status: 'warning',
+        message: 'נתוני קבוצת העונה אינם זמינים כרגע להורדה.',
+      })
+      return
+    }
+
+    downloadTeamSeasonJson(teamSeasonDocument)
+    notify({
+      status: 'success',
+      message: 'נתוני קבוצת העונה הורדו בהצלחה.',
+    })
+  }, [notify, teamSource])
+
+  const handleSearchIndexJson = React.useCallback(async ({ type } = {}) => {
+    if (searchIndexJsonLoading) return
+
+    const isPlayerIndex = type === 'player'
+    const canRead = isPlayerIndex
+      ? canReadPlayerSearchIndexExport(player)
+      : canReadTeamSearchIndexExport(player)
+
+    if (!canRead) {
+      notify({
+        status: 'warning',
+        message: 'אין הקשר עונה מלא לטעינת מסמך האינדקס.',
+      })
+      return
+    }
+
+    setSearchIndexJsonLoading(true)
+
+    try {
+      const searchIndexDocument = isPlayerIndex
+        ? await readPlayerSearchIndexExport({ player })
+        : await readTeamSearchIndexExport({ player })
+
+      if (!searchIndexDocument) {
+        notify({
+          status: 'warning',
+          message: 'לא נמצא מסמך אינדקס עבור ההקשר הנבחר.',
+        })
+        return
+      }
+
+      if (isPlayerIndex) downloadPlayerSearchIndexJson(searchIndexDocument)
+      else downloadTeamSearchIndexJson(searchIndexDocument)
+
+      notify({
+        status: 'success',
+        message: 'מסמך האינדקס הורד בהצלחה.',
+      })
+    } catch (error) {
+      console.error('Search index JSON export failed', error)
+      notify({
+        status: 'error',
+        message: 'הורדת מסמך האינדקס נכשלה.',
+      })
+    } finally {
+      setSearchIndexJsonLoading(false)
+    }
+  }, [notify, player, searchIndexJsonLoading])
+
   const handleAction = actionId => {
     if (actionId === 'report') {
       playerReport.openPreview()
@@ -357,6 +434,7 @@ function PlayerPageContent() {
               narrativeLoading={narrative.loading}
               narrativeDeleting={narrative.deleting}
               playerJsonLoading={playerJsonLoading}
+              searchIndexJsonLoading={searchIndexJsonLoading}
               reportLoading={playerReport.busy}
               onContextChange={historyView.setSelectedContextId}
               onNarrativeGenerate={narrative.generate}
@@ -364,7 +442,13 @@ function PlayerPageContent() {
               onNarrativeDelete={narrative.removeApproved}
               onPlayerJson={handlePlayerJson}
               onTeamJson={handleTeamJson}
+              onTeamSeasonJson={handleTeamSeasonJson}
+              onPlayerSearchIndexJson={() => handleSearchIndexJson({ type: 'player' })}
+              onTeamSearchIndexJson={() => handleSearchIndexJson({ type: 'team' })}
               teamJsonAvailable={Boolean(teamSource?.teamDoc)}
+              teamSeasonJsonAvailable={Boolean(teamSource?.selectedTeamSeason)}
+              playerSearchIndexJsonAvailable={canReadPlayerSearchIndexExport(player)}
+              teamSearchIndexJsonAvailable={canReadTeamSearchIndexExport(player)}
               onReport={playerReport.openPreview}
             />
           </Box>

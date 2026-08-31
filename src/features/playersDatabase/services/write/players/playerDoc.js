@@ -6,9 +6,11 @@
 export {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
+  normalizePlayerScoutCombinationIds,
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
   normalizePlayerScoutStory,
+  playerDocRef,
 } from './playerDoc.model.js'
 
 export {
@@ -17,14 +19,15 @@ export {
 } from './playerDoc.upsert.js'
 
 export {
+  buildPlayerSeasonScoutProfileRemoval,
   patchPlayerSeason,
-  removePlayerSeasonScoutProfile,
   updatePlayerSeasonNotes,
   updatePlayerSeasonUrl,
 } from './playerSeason.patch.js'
 
 export {
   clearExistingPlayerSeasonProfiles,
+  clearExistingPlayerSeasonProfilesMany,
   resolveExistingPlayerDocumentIds,
   syncPlayerRoleAndScoutProfileDoc,
   syncPlayerScoutProfileDocsMany,

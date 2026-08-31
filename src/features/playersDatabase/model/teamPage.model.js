@@ -161,7 +161,7 @@ const findTeamRow = ({ season, teamId }) => {
   }) || null
 }
 
-export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') => {
+export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamSeasons = [], teamId = '') => {
   const options = []
   const seen = new Set()
   const expectedBirthYear = resolveExpectedBirthYear({
@@ -181,22 +181,11 @@ export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamId = '') =>
     options.push(option)
   }
 
-  const teamCurrent = Array.isArray(teamDoc?.current) ? teamDoc.current : []
-  teamCurrent.forEach(season => {
+  ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(season => {
     if (!season?.seasonId && !season?.seasonKey) return
     pushOption(buildSeasonOption({
       season,
-      target: 'current',
-      teamDoc,
-    }))
-  })
-
-  const teamHistory = Array.isArray(teamDoc?.history) ? teamDoc.history : []
-  teamHistory.forEach(season => {
-    if (!season?.seasonId && !season?.seasonKey) return
-    pushOption(buildSeasonOption({
-      season,
-      target: 'history',
+      target: cleanValue(season?.seasonStatus) === 'completed' ? 'history' : 'current',
       teamDoc,
     }))
   })
@@ -283,11 +272,10 @@ const buildScoutResultMap = ({ tableRank = [], leagueDoc = {}, season = {} } = {
   ]))
 }
 
-export const findTeamPageSeasonDoc = ({ teamDoc, selectedSeasonOption }) => {
-  if (!teamDoc || !selectedSeasonOption) return null
+export const findTeamPageSeasonDoc = ({ teamSeasons = [], selectedSeasonOption }) => {
+  if (!selectedSeasonOption) return null
 
-  const fieldKey = selectedSeasonOption.target === 'history' ? 'history' : 'current'
-  const rows = Array.isArray(teamDoc[fieldKey]) ? teamDoc[fieldKey] : []
+  const rows = Array.isArray(teamSeasons) ? teamSeasons : []
   return rows.find(row => isSameSeason(row, selectedSeasonOption)) || null
 }
 
@@ -342,7 +330,11 @@ const resolveTeamName = ({ teamRow = {}, teamDoc = {}, teamId = '' } = {}) => {
   }) || cleanValue(teamId || '-')
 }
 
-export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
+export const normalizeTeamPagePlayerRow = ({
+  playerSeason = {},
+  index = 0,
+  isTeamScoutProjection = false,
+} = {}) => {
   const actual = playerSeason.stats?.actual || {}
   const scout = playerSeason.scout || {}
   const display = scout.display || {}
@@ -381,22 +373,32 @@ export const normalizeTeamPagePlayerRow = (playerSeason = {}, index = 0) => {
     profile: display.label || '-',
     profileStrength: display.profileStrength || null,
     scoutProfiles: scout.profiles || [],
-    scoutCombinations: scout.combinations || [],
-    scoutCandidateSignals: scout.candidateSignals || [],
-    scoutSpotlights: scout.spotlights || [],
-    scoutOpportunity: scout.opportunity || null,
-    scoutVerification: scout.verification || null,
-    scoutProfileProgression: scout.profileProgression || null,
-    scoutProfileHierarchy: scout.profileHierarchy || null,
-    scoutTrajectory: scout.trajectory || null,
-    scoutTransferContext: scout.transferContext || null,
+    // Team rows receive only the persisted Scout Projection. Rich fields are
+    // intentionally exposed only for non-projection callers (Player views).
+    ...(isTeamScoutProjection
+      ? {}
+      : {
+          scoutCombinations: scout.combinations || [],
+          scoutCandidateSignals: scout.candidateSignals || [],
+          scoutSpotlights: scout.spotlights || [],
+          scoutOpportunity: scout.opportunity || null,
+          scoutVerification: scout.verification || null,
+          scoutProfileProgression: scout.profileProgression || null,
+          scoutProfileHierarchy: scout.profileHierarchy || null,
+          scoutTrajectory: scout.trajectory || null,
+          scoutTransferContext: scout.transferContext || null,
+          scoutStatsLoadMeasurements: scout.statsLoadMeasurements || {
+            previous: null,
+            current: null,
+          },
+          scoutStatsLoadMeasurementHistory: scout.statsLoadMeasurementHistory || [],
+          scoutStatsLoadMeasurementHistoryEvents:
+            scout.statsLoadMeasurementHistoryEvents || [],
+        }),
     scoutEngineVersion: scout.engineVersion || '',
-    scoutStatsLoadMeasurements: scout.statsLoadMeasurements || {
-      previous: null,
-      current: null,
-    },
-    scoutStatsLoadMeasurementHistory: scout.statsLoadMeasurementHistory || [],
-    scoutStatsLoadMeasurementHistoryEvents: scout.statsLoadMeasurementHistoryEvents || [],
+    scoutEffectiveImmediacyStatus: scout.opportunity?.effectiveActionStatus || '',
+    scoutPlayerInterestLevel: scout.playerInterest?.interestLevel || '',
+    isTeamScoutProjection,
     scoutProfileDisplay: display,
   }
 }
@@ -421,20 +423,27 @@ export const adaptTeamPagePlayerRow = ({ player = {}, index = 0, selectedSeasonO
     teamScout: teamSeason?.performance || null,
   })
 
-  return normalizeTeamPagePlayerRow(playerSeason, index)
+  return normalizeTeamPagePlayerRow({
+    playerSeason,
+    index,
+    isTeamScoutProjection: Object.prototype.hasOwnProperty.call(
+      player,
+      'primaryScoutProfileId'
+    ),
+  })
 }
 
 export const buildTeamPageView = ({
   teamId,
   leagueDoc,
   teamDoc,
+  teamSeasons,
   selectedSeasonOption,
   selectedLeagueSeason,
   selectedTeamSeason,
 }) => {
   const leagueSeason = selectedLeagueSeason?.season || {}
   const leagueTarget = selectedLeagueSeason?.target || selectedSeasonOption?.target || 'current'
-  const teamTarget = selectedSeasonOption?.target || leagueTarget
   const teamRow = findTeamRow({
     season: leagueSeason,
     teamId,
@@ -469,7 +478,6 @@ export const buildTeamPageView = ({
   const birthTeamSeason = adaptBirthTeamDocumentSeason({
     teamDocument: teamDoc || {},
     seasonDocument: selectedTeamSeason || {},
-    target: teamTarget,
     league: leagueDoc || {},
   })
 
@@ -552,11 +560,15 @@ export const buildTeamPageView = ({
     birthYear: canonicalTeamSeason.season.birthYear || '-',
     seasonKey: canonicalTeamSeason.season.seasonKey || '-',
     tableRank: canonicalTeamSeason.ranking.tableRank || '-',
+    tableAttackRank: Number(canonicalTeamSeason.performance?.offense?.rank) || 0,
+    tableDefenseRank: Number(canonicalTeamSeason.performance?.defense?.rank) || 0,
     games,
     points,
     successPercent,
     goalsFor,
     goalsAgainst,
+    goalsForPerGame: Number(actual.goalsForPerGame) || 0,
+    goalsAgainstPerGame: Number(actual.goalsAgainstPerGame) || 0,
     teamUrl: canonicalTeamSeason.metadata.teamUrl,
     teamStats: {
       teamGamePlayed: games,
@@ -564,8 +576,8 @@ export const buildTeamPageView = ({
       points,
       goalsFor,
       goalsAgainst,
-      goalsForPerGame: actual.goalsForPerGame,
-      goalsAgainstPerGame: actual.goalsAgainstPerGame,
+      goalsForPerGame: Number(actual.goalsForPerGame) || 0,
+      goalsAgainstPerGame: Number(actual.goalsAgainstPerGame) || 0,
       attackPerformance: performanceView.offense.priority.score,
       defensePerformance: performanceView.defense.priority.score,
     },

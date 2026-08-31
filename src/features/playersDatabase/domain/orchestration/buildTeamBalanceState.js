@@ -17,7 +17,6 @@ const clean = value => String(
 export const buildTeamBalanceState = ({
   teamDocument = {},
   seasonDocument = {},
-  seasonTarget = null,
 } = {}) => {
   const teamSource = teamDocument && typeof teamDocument === 'object'
     ? teamDocument
@@ -34,7 +33,7 @@ export const buildTeamBalanceState = ({
     ...balance,
     outputContractVersion: TEAM_BALANCE_OUTPUT_CONTRACT_VERSION,
     source: {
-      collection: 'birthTeams',
+      collection: 'birthTeamSeasons',
       teamDocumentId: clean(
         teamSource.birthTeamDocumentId ||
         teamSource.teamDocumentId ||
@@ -42,12 +41,10 @@ export const buildTeamBalanceState = ({
       ),
       seasonId: clean(seasonSource.seasonId),
       seasonKey: clean(seasonSource.seasonKey),
-      seasonTarget: clean(
-        seasonTarget ||
-        seasonSource.target ||
-        seasonSource.seasonTarget
-      ) || null,
-      sourceType: 'teamDocumentStats',
+      seasonTarget: clean(seasonSource.seasonStatus) === 'completed'
+        ? 'history'
+        : 'current',
+      sourceType: 'teamSeasonDocumentStats',
       updatedAt: seasonSource.updatedAt || teamSource.updatedAt || null,
     },
   }

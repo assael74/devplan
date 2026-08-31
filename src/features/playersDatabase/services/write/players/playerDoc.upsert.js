@@ -1,7 +1,7 @@
 // src/features/playersDatabase/services/write/players/playerDoc.upsert.js
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { getTeamById } from '../../read/team.js'
+import { getTeamSeason } from '../../read/teamSeason.js'
 import {
   buildSeasonKey,
   clean,
@@ -13,20 +13,28 @@ import {
 } from './playerDoc.model.js'
 import {
   buildPlayerSeasonDoc,
-  buildPlayerSeasonRowsFromTeamDoc,
-  findPlayerSeasonRowIndex,
+  buildPlayerSeasonRowsFromTeamSeasonDocument,
   removePlayerSeasonRow,
 } from './playerSeason.model.js'
 import {
   buildScoutingPlayerReasonEvents,
   buildScoutingPlayerTracking,
   mergeScoutingPlayerEvents,
+  normalizeScoutingPlayerTracking,
+  resolvePlayerLifecycleTrackingReason,
+  resolvePlayerTrackingReasons,
   SCOUTING_PLAYER_EVENT_TYPES,
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
-import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
-import { buildPlayerScoutStatsLoadMeasurementHistory } from '../../../model/playerScoutMeasurement.model.js'
+import {
+  buildScoutingPlayerVerification,
+  normalizeScoutingPlayerVerification,
+} from './scoutingPlayerVerification.model.js'
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
+import {
+  PLAYER_VERIFICATION_ANSWER,
+  PLAYER_VERIFICATION_QUESTION,
+} from '../../../../../shared/scouting/players/verification/playerVerification.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 
@@ -114,7 +122,10 @@ export const upsertProfiledPlayerDoc = async ({
   team = {},
   target = 'current',
   player = {},
-  teamDocument = null,
+  teamSeasonDocument = null,
+  verificationAnswers = null,
+  confirmPositionContext = false,
+  resolveLifecycleAfterCalculation = false,
 } = {}) => {
   const playerDocumentId = buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
@@ -131,20 +142,39 @@ export const upsertProfiledPlayerDoc = async ({
     team.teamDocumentId ||
     team.teamId
   )
-  const teamDoc = teamDocument || (
-    teamDocumentId ? await getTeamById(teamDocumentId) : null
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const resolvedTeamSeasonDocument = teamSeasonDocument || (
+    teamDocumentId ? await getTeamSeason({
+      birthTeamDocumentId: teamDocumentId,
+      seasonKey,
+    }) : null
   )
-  const resolvedTeam = teamDoc ? {
-    ...teamDoc,
+  const resolvedTeam = resolvedTeamSeasonDocument ? {
+    ...resolvedTeamSeasonDocument,
     ...team,
   } : team
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const verification = normalizeScoutingPlayerVerification(
-      currentData.verification
-    )
+    const incomingVerification = normalizeScoutingPlayerVerification({
+      ...currentData.verification,
+      ...(Array.isArray(verificationAnswers)
+        ? { answers: verificationAnswers }
+        : {}),
+    })
+    // A manual role/layer update is an explicit professional indication. Keep
+    // the evidence with the Player Document so the reclassification remains
+    // stable on every later scout calculation.
+    const verification = confirmPositionContext
+      ? buildScoutingPlayerVerification({
+          currentVerification: incomingVerification,
+          questionId: PLAYER_VERIFICATION_QUESTION.POSITION_CONTEXT_VERIFIED,
+          answer: PLAYER_VERIFICATION_ANSWER.YES,
+          sourceType: 'player_role_update',
+          sourceLabel: 'עדכון עמדה / חוליה',
+        })
+      : incomingVerification
     const baseDoc = buildPlayerBaseDoc(
       {
         ...player,
@@ -154,7 +184,6 @@ export const upsertProfiledPlayerDoc = async ({
       season,
       resolvedTeam
     )
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
     const isHistory = clean(target) === 'history'
     const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
       ? 'completed'
@@ -171,14 +200,13 @@ export const upsertProfiledPlayerDoc = async ({
       player,
     })
 
-    const shouldHydrateFromTeamDoc = !snapshot.exists() && teamDoc
-    const hydratedRows = shouldHydrateFromTeamDoc
-      ? buildPlayerSeasonRowsFromTeamDoc({
-          teamDoc,
+    const shouldHydrateFromTeamSeason = !snapshot.exists() && resolvedTeamSeasonDocument
+    const hydratedRows = shouldHydrateFromTeamSeason
+      ? buildPlayerSeasonRowsFromTeamSeasonDocument({
+          teamSeasonDocument: resolvedTeamSeasonDocument,
           season: seasonScope,
           team: resolvedTeam,
           player,
-          target: isHistory ? 'history' : 'current',
         })
       : {
           current: [],
@@ -191,15 +219,6 @@ export const upsertProfiledPlayerDoc = async ({
     const sourceHistoryRows = snapshot.exists()
       ? baseDoc.history
       : hydratedRows.history
-    const sourceSeasonRows = isHistory ? sourceHistoryRows : sourceCurrentRows
-    const sourceSeasonIndex = findPlayerSeasonRowIndex({
-      rows: sourceSeasonRows,
-      season: seasonScope,
-      team: resolvedTeam,
-    })
-    const sourceSeasonRow = sourceSeasonIndex >= 0
-      ? sourceSeasonRows[sourceSeasonIndex]
-      : null
     const currentWithoutSeason = removePlayerSeasonRow({
       rows: sourceCurrentRows,
       season: seasonScope,
@@ -225,51 +244,95 @@ export const upsertProfiledPlayerDoc = async ({
           player.manualImmediacyDecision ||
           null,
         verification,
-        verificationAnswers: verification.answers,
+        verificationAnswers: Array.isArray(verificationAnswers)
+          ? verificationAnswers
+          : verification.answers,
       },
       team: resolvedTeam,
       season: seasonScope,
-      verificationAnswers: verification.answers,
+      verificationAnswers: Array.isArray(verificationAnswers)
+        ? verificationAnswers
+        : verification.answers,
       manualReview: currentData.playerReview || player.playerReview || null,
       manualImmediacyDecision:
         currentData.manualImmediacyDecision ||
         player.manualImmediacyDecision ||
         null,
     })
-    const scoutStatsLoadMeasurementHistory = buildPlayerScoutStatsLoadMeasurementHistory({
-      existingHistory: sourceSeasonRow?.scoutStatsLoadMeasurementHistory,
-      measurements: player.scoutStatsLoadMeasurements,
-    })
     const seasonDoc = buildPlayerSeasonDoc({
       season: seasonScope,
       team: resolvedTeam,
-      player: {
-        ...scoutedPlayer,
-        scoutStatsLoadMeasurementHistory,
-      },
+      player: scoutedPlayer,
     })
 
+    const nextCurrent = isHistory
+      ? currentWithoutSeason
+      : [...currentWithoutSeason, seasonDoc]
+    const nextHistory = isHistory
+      ? [...historyWithoutSeason, seasonDoc]
+      : historyWithoutSeason
+    const trackingReason = resolveLifecycleAfterCalculation
+      ? resolvePlayerLifecycleTrackingReason({
+          ...currentData,
+          ...scoutedPlayer,
+          current: nextCurrent,
+          history: nextHistory,
+          tracking: {
+            ...(player.tracking || {}),
+            ...(currentData.tracking || {}),
+          },
+        })
+      : SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+
+    if (!trackingReason && !snapshot.exists()) {
+      return {
+        playerDocumentId,
+        created: false,
+        updated: false,
+        skipped: true,
+        reason: 'playerDocNotRequired',
+        lifecycle: 'retain',
+        scoutProfilesCount: seasonDoc.scoutProfiles.length,
+        scoutedPlayer: {
+          ...scoutedPlayer,
+          playerDocumentId,
+        },
+      }
+    }
+
     const trackedAt = new Date().toISOString()
-    const tracking = buildScoutingPlayerTracking({
-      currentTracking: {
-        ...(player.tracking || {}),
-        ...(currentData.tracking || {}),
-        favorite:
-          currentData.tracking?.favorite === true ||
-          currentData.favorite === true ||
-          player.tracking?.favorite === true ||
-          player.favorite === true,
-        watchlist:
-          currentData.tracking?.watchlist === true ||
-          currentData.watchlist === true ||
-          player.tracking?.watchlist === true ||
-          player.watchlist === true,
-      },
-      reason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
-      trackedAt,
-    })
+    const currentTracking = {
+      ...(player.tracking || {}),
+      ...(currentData.tracking || {}),
+      favorite:
+        currentData.tracking?.favorite === true ||
+        currentData.favorite === true ||
+        player.tracking?.favorite === true ||
+        player.favorite === true,
+      watchlist:
+        currentData.tracking?.watchlist === true ||
+        currentData.watchlist === true ||
+        player.tracking?.watchlist === true ||
+        player.watchlist === true,
+    }
+    const tracking = trackingReason
+      ? buildScoutingPlayerTracking({
+          currentTracking,
+          reason: trackingReason,
+          trackedAt,
+        })
+      : {
+          ...normalizeScoutingPlayerTracking(currentTracking),
+          trackingReasons: resolvePlayerTrackingReasons({
+            ...currentData,
+            current: nextCurrent,
+            history: nextHistory,
+            tracking: currentTracking,
+          }),
+        }
+
     const profileEvents = buildScoutingPlayerReasonEvents({
-      reason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
+      reason: trackingReason,
       season: seasonScope,
       team: resolvedTeam,
       player: scoutedPlayer,
@@ -284,10 +347,10 @@ export const upsertProfiledPlayerDoc = async ({
         })]
     const events = mergeScoutingPlayerEvents({
       currentEvents: currentData.events,
-      nextEvents: [
+      nextEvents: trackingReason ? [
         ...createdEvents,
         ...profileEvents,
-      ],
+      ] : [],
     })
     const nextData = {
       ...baseDoc,
@@ -302,12 +365,8 @@ export const upsertProfiledPlayerDoc = async ({
         null,
       verification,
       events,
-      current: isHistory
-        ? currentWithoutSeason
-        : [...currentWithoutSeason, seasonDoc],
-      history: isHistory
-        ? [...historyWithoutSeason, seasonDoc]
-        : historyWithoutSeason,
+      current: nextCurrent,
+      history: nextHistory,
     }
 
     if (
@@ -324,7 +383,12 @@ export const upsertProfiledPlayerDoc = async ({
         changed: false,
         writeSkipped: true,
         scoutProfilesCount: seasonDoc.scoutProfiles.length,
-        trackingReason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
+        trackingReason,
+        lifecycle: trackingReason === SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+          ? 'profile'
+          : trackingReason
+            ? 'tracking'
+            : 'clear',
         scoutedPlayer: {
           ...scoutedPlayer,
           playerDocumentId,
@@ -340,7 +404,12 @@ export const upsertProfiledPlayerDoc = async ({
       updated: true,
       changed: true,
       scoutProfilesCount: seasonDoc.scoutProfiles.length,
-      trackingReason: SCOUTING_PLAYER_TRACKING_REASONS.PROFILE,
+      trackingReason,
+      lifecycle: trackingReason === SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
+        ? 'profile'
+        : trackingReason
+          ? 'tracking'
+          : 'clear',
       scoutedPlayer: {
         ...scoutedPlayer,
         playerDocumentId,

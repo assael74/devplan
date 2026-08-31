@@ -14,3 +14,6 @@ export * from './usePlayerGamesUiState.js'
 
 //  אחראי על פעולות טופס הסטטיסטיקה במסלול שחקן: פתיחה, טעינה, שמירה ומחיקה
 export * from './usePlayerGamesStatsActions.js'
+
+// אחראי על ייבוא משחקים מרובים לשחקן פרטי מתוך הדבקת טבלה
+export * from './usePlayerGamesImportActions.js'

@@ -1,6 +1,5 @@
 // src/features/playersDatabase/services/write/flows/player/updatePlayerVerification.flow.js
 
-import { getTeamById } from '../../../read/team.js'
 import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
 import {
   ensureManualScoutingPlayerDoc,
@@ -13,38 +12,9 @@ import {
 } from '../../searchIndex/index.js'
 import {
   updateTeamSeasonPlayerVerificationAndScout,
+  updateTeamSeasonPlayerScoutProjection,
 } from '../../teams/index.js'
 import { clean } from '../../leagues/leagueDoc.js'
-import { isSameSeason } from '../../../../model/season.model.js'
-import {
-  buildPlayerLookup,
-  findExistingPlayerIndex,
-} from '../../teams/teamSeason.model.js'
-
-const resolveTeamDocumentId = team => clean(
-  team?.birthTeamDocumentId ||
-  team?.birthTeamId ||
-  team?.teamDocumentId ||
-  team?.teamId
-)
-
-const resolveCanonicalTeamPlayer = ({ teamDocument = {}, season = {}, target = 'current', player = {} } = {}) => {
-  const fieldKey = clean(target) === 'history' ? 'history' : 'current'
-  const rows = Array.isArray(teamDocument[fieldKey])
-    ? teamDocument[fieldKey]
-    : []
-  const seasonRow = rows.find(row => isSameSeason(row, season)) || null
-  const teamPlayers = Array.isArray(seasonRow?.teamPlayers)
-    ? seasonRow.teamPlayers
-    : []
-  const playerIndex = findExistingPlayerIndex({
-    lookup: buildPlayerLookup(teamPlayers),
-    player,
-  })
-
-  return playerIndex >= 0 ? teamPlayers[playerIndex] : null
-}
-
 const ensureVerificationPlayerDocument = async payload => {
   let verificationResult = await updateScoutingPlayerVerificationAnswer(payload)
 
@@ -52,21 +22,11 @@ const ensureVerificationPlayerDocument = async payload => {
     return verificationResult
   }
 
-  const teamDocumentId = resolveTeamDocumentId(payload.team || {})
-  const teamDocument = teamDocumentId
-    ? await getTeamById(teamDocumentId)
-    : null
-  const canonicalPlayer = resolveCanonicalTeamPlayer({
-    teamDocument: teamDocument || {},
-    season: payload.season || {},
-    target: payload.target || 'current',
-    player: payload.player || {},
-  })
-  const player = canonicalPlayer || payload.player || {}
+  const player = payload.player || {}
   const ensureResult = await ensureManualScoutingPlayerDoc({
     ...payload,
     player,
-    teamDocument,
+    teamSeasonDocument: payload.teamSeasonDocument || null,
   })
 
   if (ensureResult.skipped) {
@@ -88,49 +48,27 @@ const ensureVerificationPlayerDocument = async payload => {
 }
 
 export async function updatePlayerVerificationFlow(payload = {}) {
-  const verificationResult = await ensureVerificationPlayerDocument(payload)
-
-  if (!verificationResult.updated) {
-    return {
-      verificationResult,
-      teamSeasonResult: null,
-      playerSeasonResult: null,
-      playerSeasonIndexResult: null,
-      humanStateCommitted: false,
-      projectionsCompleted: false,
-      completed: false,
-    }
-  }
-
-  const verificationAnswers = Array.isArray(verificationResult.verificationAnswers)
-    ? verificationResult.verificationAnswers
-    : []
-  const player = {
-    ...(payload.player || {}),
-    playerDocumentId: verificationResult.playerDocumentId,
-  }
-
   let teamSeasonResult = null
   let playerSeasonResult = null
   let playerSeasonIndexResult = null
   let leagueTableRankScoutProfilesResult = null
   let teamSeasonIndexScoutProfilesResult = null
+  let teamSeasonProjectionResult = null
 
   try {
     teamSeasonResult = await updateTeamSeasonPlayerVerificationAndScout({
       ...payload,
-      player,
-      verificationAnswers,
+      player: payload.player || {},
     })
   } catch (error) {
     return {
-      verificationResult,
+      verificationResult: null,
       teamSeasonResult,
       playerSeasonResult,
       playerSeasonIndexResult,
       leagueTableRankScoutProfilesResult,
       teamSeasonIndexScoutProfilesResult,
-      humanStateCommitted: true,
+      humanStateCommitted: false,
       teamCanonicalCommitted: false,
       projectionsCompleted: false,
       completed: true,
@@ -141,13 +79,13 @@ export async function updatePlayerVerificationFlow(payload = {}) {
 
   if (!teamSeasonResult.updated) {
     return {
-      verificationResult,
+      verificationResult: null,
       teamSeasonResult,
       playerSeasonResult,
       playerSeasonIndexResult,
       leagueTableRankScoutProfilesResult,
       teamSeasonIndexScoutProfilesResult,
-      humanStateCommitted: true,
+      humanStateCommitted: false,
       teamCanonicalCommitted: false,
       projectionsCompleted: false,
       completed: true,
@@ -155,11 +93,40 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     }
   }
 
-  const calculatedPlayer = teamSeasonResult.player || player
+  const canonicalPlayer = teamSeasonResult.player || payload.player || {}
+  const verificationResult = await ensureVerificationPlayerDocument({
+    ...payload,
+    player: canonicalPlayer,
+    teamSeasonDocument: teamSeasonResult.seasonDocument || null,
+  })
+
+  if (!verificationResult.updated) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: false,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: false,
+      stoppedAt: 'verification',
+    }
+  }
+
+  const verificationAnswers = Array.isArray(verificationResult.verificationAnswers)
+    ? verificationResult.verificationAnswers
+    : []
   const syncPayload = {
     ...payload,
-    player: calculatedPlayer,
-    teamDocument: teamSeasonResult.teamDocument || null,
+    player: {
+      ...canonicalPlayer,
+      playerDocumentId: verificationResult.playerDocumentId,
+    },
+    teamSeasonDocument: teamSeasonResult.seasonDocument || null,
+    verificationAnswers,
   }
 
   try {
@@ -181,10 +148,58 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     }
   }
 
+  const scoutedPlayer = playerSeasonResult?.scoutedPlayer
+  if (!scoutedPlayer) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      teamSeasonProjectionResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'playerDocument',
+      projectionError: 'Player scout calculation did not return a rich result',
+    }
+  }
+
+  try {
+    teamSeasonProjectionResult = await updateTeamSeasonPlayerScoutProjection({
+      ...payload,
+      player: scoutedPlayer,
+    })
+    if (!teamSeasonProjectionResult?.updated) {
+      throw new Error(
+        teamSeasonProjectionResult?.reason || 'Team season player is missing'
+      )
+    }
+    teamSeasonResult = teamSeasonProjectionResult
+  } catch (error) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      teamSeasonProjectionResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: true,
+      stoppedAt: 'teamSeasonProjection',
+      projectionError: clean(error?.message) || 'Verification team projection failed',
+    }
+  }
+
   try {
     playerSeasonIndexResult = await updatePlayerSeasonSearchIndexScoutProfiles({
       ...payload,
-      player: calculatedPlayer,
+      player: scoutedPlayer,
     })
     if (!playerSeasonIndexResult?.updated) {
       return {
@@ -224,7 +239,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
 
   const summaryPayload = {
     ...payload,
-    player: calculatedPlayer,
+    player: scoutedPlayer,
+    teamSeasonDocumentId: teamSeasonResult.teamSeasonDocumentId,
     scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
   }
 

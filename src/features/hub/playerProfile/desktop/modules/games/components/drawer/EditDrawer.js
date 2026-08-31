@@ -89,7 +89,7 @@ export default function EditDrawer({
   const handleSave = useCallback(async () => {
     if (!canSave) return
 
-    const patch = buildExternalGameEditPatch({ draft })
+    const patch = buildExternalGameEditPatch({ draft, initial })
     const gameId = getGameId(activeGame, draft)
 
     await run('updateExternalGame', patch, {
@@ -111,7 +111,7 @@ export default function EditDrawer({
     })
 
     onClose()
-  }, [canSave, activeGame, draft, run, onSaved, onClose])
+  }, [canSave, activeGame, draft, initial, run, onSaved, onClose])
 
   const handleDelete = useCallback(() => {
     const gameId = getGameId(activeGame, draft)

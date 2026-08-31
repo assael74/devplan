@@ -6,7 +6,7 @@ import {
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
-import { getTeamById } from '../../read/team.js'
+import { getTeamSeason } from '../../read/teamSeason.js'
 import {
   buildSeasonKey,
   clean,
@@ -16,9 +16,10 @@ import {
   buildPlayerDocumentId,
   playerDocRef,
 } from './playerDoc.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
 import {
-  buildPlayerSeasonDoc,
-  buildPlayerSeasonRowsFromTeamDoc,
+  buildPlayerSeasonCompactProjection,
+  buildPlayerSeasonRowsFromTeamSeasonDocument,
   findPlayerSeasonRowIndex,
   removePlayerSeasonRow,
 } from './playerSeason.model.js'
@@ -116,7 +117,7 @@ const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => (
   detectedAt: trackedAt || null,
 })
 
-const resolveScoutingPlayerTeam = async (team, teamDocument = null) => {
+const resolveScoutingPlayerTeam = async (team, season = {}, teamSeasonDocument = null) => {
   const teamDocumentId = clean(
     team.birthTeamDocumentId ||
     team.birthTeamId ||
@@ -124,20 +125,23 @@ const resolveScoutingPlayerTeam = async (team, teamDocument = null) => {
     team.teamId
   )
 
-  const providedTeamDocument = teamDocument && typeof teamDocument === 'object'
-    ? teamDocument
+  const providedTeamSeasonDocument = teamSeasonDocument && typeof teamSeasonDocument === 'object'
+    ? teamSeasonDocument
     : null
-  const teamDoc = providedTeamDocument || (
+  const resolvedTeamSeasonDocument = providedTeamSeasonDocument || (
     teamDocumentId
-      ? await getTeamById(teamDocumentId)
+      ? await getTeamSeason({
+          birthTeamDocumentId: teamDocumentId,
+          seasonKey: clean(season.seasonKey || season.seasonId),
+        })
       : null
   )
 
   return {
-    teamDoc,
-    resolvedTeam: teamDoc
+    teamSeasonDocument: resolvedTeamSeasonDocument,
+    resolvedTeam: resolvedTeamSeasonDocument
       ? {
-          ...teamDoc,
+          ...resolvedTeamSeasonDocument,
           ...team,
         }
       : team,
@@ -151,7 +155,7 @@ export const ensureScoutingPlayerDoc = async ({
   player = {},
   reason = SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
   transfer = {},
-  teamDocument = null,
+  teamSeasonDocument = null,
 } = {}) => {
   const playerDocumentId = buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
@@ -170,9 +174,9 @@ export const ensureScoutingPlayerDoc = async ({
 
   const ref = playerDocRef(playerDocumentId)
   const {
-    teamDoc,
+    teamSeasonDocument: resolvedTeamSeasonDocument,
     resolvedTeam,
-  } = await resolveScoutingPlayerTeam(team, teamDocument)
+  } = await resolveScoutingPlayerTeam(team, season, teamSeasonDocument)
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
@@ -196,14 +200,13 @@ export const ensureScoutingPlayerDoc = async ({
       resolvedTeam
     )
     const isHistory = clean(target) === 'history'
-    const shouldHydrateFromTeamDoc = !snapshot.exists() && teamDoc
-    const hydratedRows = shouldHydrateFromTeamDoc
-      ? buildPlayerSeasonRowsFromTeamDoc({
-          teamDoc,
+    const shouldHydrateFromTeamSeason = !snapshot.exists() && resolvedTeamSeasonDocument
+    const hydratedRows = shouldHydrateFromTeamSeason
+      ? buildPlayerSeasonRowsFromTeamSeasonDocument({
+          teamSeasonDocument: resolvedTeamSeasonDocument,
           season: seasonScope,
           team: resolvedTeam,
           player,
-          target: isHistory ? 'history' : 'current',
         })
       : {
           current: [],
@@ -224,10 +227,19 @@ export const ensureScoutingPlayerDoc = async ({
     const sourceSeasonRow = sourceSeasonIndex >= 0
       ? sourceSeasonRows[sourceSeasonIndex]
       : null
-    const seasonDoc = sourceSeasonRow || buildPlayerSeasonDoc({
-      season: seasonScope,
-      team: resolvedTeam,
-      player,
+    const seasonDoc = buildPlayerSeasonCompactProjection({
+      season: {
+        ...(sourceSeasonRow || {}),
+        ...seasonScope,
+      },
+      team: {
+        ...(sourceSeasonRow || {}),
+        ...resolvedTeam,
+      },
+      player: {
+        ...(sourceSeasonRow || {}),
+        ...player,
+      },
     })
     const currentWithoutSeason = removePlayerSeasonRow({
       rows: sourceCurrentRows,
@@ -323,7 +335,9 @@ export const ensureScoutingPlayerDoc = async ({
 
 
 export const updateScoutingPlayerFavoriteState = async ({ playerDocumentId = '', favorite = false } = {}) => {
-  const normalizedPlayerDocumentId = clean(playerDocumentId)
+  const normalizedPlayerDocumentId = clean(resolveWritablePlayerDocumentId({
+    playerDocumentId,
+  }))
 
   if (!normalizedPlayerDocumentId) {
     return {

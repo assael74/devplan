@@ -75,4 +75,5 @@ export const previewCellSx = {
       color: '#92400e',
     },
   },
+
 }

@@ -2,6 +2,7 @@
 
 import {
   collection,
+  documentId,
   query,
   where,
 } from 'firebase/firestore'
@@ -11,10 +12,16 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constant
 import {
   buildPlayerIdentityKey,
   createInternalPlayerId,
+  isValidExternalPlayerId,
   normalizePlayerNameValue,
   resolveInternalPlayerId,
   resolvePlayerIdentityBirthYear,
 } from '../../../../model/playerIdentity.model.js'
+import {
+  buildPlayerIdentityCandidateKeys,
+  buildPlayerIdentityCandidateMetadata,
+  resolvePlayerIdentityCandidates,
+} from '../../../../domain/identity/playerIdentityCandidates.domain.js'
 import { clean } from '../../leagues/leagueDoc.js'
 
 const readIdentityMatches = queryRef => trackedGetDocs(queryRef, {
@@ -65,12 +72,83 @@ const readIdentityFieldMatchesMany = async ({
   return [...docsById.values()]
 }
 
-const buildIdentityLookup = docs => {
+const readAliasMatchesMany = async ({ values = [] } = {}) => {
+  const safeValues = [...new Set((Array.isArray(values) ? values : [])
+    .map(clean)
+    .filter(Boolean))]
+  if (!safeValues.length) return []
+
+  const snapshots = await Promise.all(safeValues.map(value => readIdentityMatches(query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('aliases', 'array-contains', value)
+  ))))
+  const docsById = new Map()
+
+  snapshots.forEach(snapshot => {
+    snapshot.docs.forEach(item => {
+      if (clean(item.data()?.entityType) !== 'playerSeason') return
+      docsById.set(item.id, item)
+    })
+  })
+
+  return [...docsById.values()]
+}
+
+const readPlayerDocumentCandidatesMany = async ({ values = [] } = {}) => {
+  const safeValues = [...new Set((Array.isArray(values) ? values : [])
+    .map(clean)
+    .filter(Boolean))]
+  if (!safeValues.length) return []
+
+  const snapshots = await Promise.all(
+    chunkValues(safeValues).map(valueChunk => trackedGetDocs(query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
+      where(documentId(), 'in', valueChunk)
+    ), {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.players,
+      action: 'playerIdentity-document-fallback',
+      operationSubtype: 'identity-query',
+    }))
+  )
+
+  return snapshots.flatMap(snapshot => snapshot.docs.map(item => ({
+    ...(item.data() || {}),
+    id: item.id,
+    playerDocumentId: item.id,
+  })))
+}
+
+const readPlayerDocumentCanonicalMatchesMany = async ({ values = [] } = {}) => {
+  const safeValues = [...new Set((Array.isArray(values) ? values : [])
+    .map(clean)
+    .filter(Boolean))]
+  if (!safeValues.length) return []
+
+  const snapshots = await Promise.all(
+    chunkValues(safeValues).map(valueChunk => readIdentityMatches(query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('playerDocumentId', 'in', valueChunk)
+    )))
+  )
+
+  return snapshots.flatMap(snapshot => snapshot.docs
+    .filter(item => clean(item.data()?.entityType) === 'playerSeason')
+    .map(item => item.data() || {}))
+}
+
+const buildIdentityLookup = ({
+  searchIndexDocs = [],
+  playerDocuments = [],
+  playerDocumentCanonicalDocs = [],
+} = {}) => {
   const byExternalPlayerId = new Map()
   const byIdentityKey = new Map()
   const byNormalizedDisplayName = new Map()
+  const byPlayerDocumentId = new Map()
+  const canonicalByPlayerDocumentId = new Map()
 
-  ;(Array.isArray(docs) ? docs : []).forEach(item => {
+  ;(Array.isArray(searchIndexDocs) ? searchIndexDocs : []).forEach(item => {
     const data = item.data() || {}
     const playerId = clean(data.playerId)
     if (!playerId) return
@@ -87,12 +165,50 @@ const buildIdentityLookup = docs => {
     append(byExternalPlayerId, data.externalPlayerId)
     append(byIdentityKey, data.identityKey)
     append(byNormalizedDisplayName, data.normalizedDisplayName)
+    ;(Array.isArray(data.aliases) ? data.aliases : []).forEach(alias => {
+      append(byNormalizedDisplayName, normalizePlayerNameValue(alias))
+    })
+  })
+
+  ;(Array.isArray(playerDocumentCanonicalDocs) ? playerDocumentCanonicalDocs : []).forEach(data => {
+    const playerDocumentId = clean(data.playerDocumentId)
+    const playerId = clean(data.playerId)
+    if (!playerDocumentId || !playerId) return
+
+    const candidates = canonicalByPlayerDocumentId.get(playerDocumentId) || []
+    canonicalByPlayerDocumentId.set(playerDocumentId, [...candidates, data])
+  })
+
+  ;(Array.isArray(playerDocuments) ? playerDocuments : []).forEach(data => {
+    const playerDocumentId = clean(data.playerDocumentId || data.id)
+    if (!playerDocumentId) return
+
+    const canonicalCandidates = (canonicalByPlayerDocumentId.get(playerDocumentId) || [])
+    const canonicalPlayerIds = [...new Set(canonicalCandidates
+      .map(candidate => clean(candidate.playerId))
+      .filter(Boolean))]
+    const canonicalPlayerId = canonicalPlayerIds.length === 1
+      ? canonicalPlayerIds[0]
+      : ''
+
+    byPlayerDocumentId.set(playerDocumentId, [{
+      ...data,
+      playerDocumentId,
+      playerId: canonicalPlayerId,
+      canonicalPlayerIdMapping: canonicalPlayerId
+        ? 'resolved'
+        : canonicalPlayerIds.length > 1
+          ? 'ambiguous'
+          : 'missing',
+    }])
   })
 
   return {
     byExternalPlayerId,
     byIdentityKey,
     byNormalizedDisplayName,
+    byNormalizedName: byNormalizedDisplayName,
+    byPlayerDocumentId,
   }
 }
 
@@ -143,31 +259,13 @@ const resolveExistingPlayerIdsFromLookup = ({
   season = {},
   lookup,
 } = {}) => {
-  const externalPlayerId = clean(player.externalPlayerId)
+  const keys = buildPlayerIdentityCandidateKeys({ player, season })
+  const resolution = resolvePlayerIdentityCandidates({ keys, lookup })
 
-  if (externalPlayerId) {
-    const matches = getLookupPlayerIds(
-      lookup.byExternalPlayerId.get(externalPlayerId)
-    )
-    if (matches.length) return matches
+  return {
+    ...resolution,
+    playerIds: getLookupPlayerIds(resolution.candidates),
   }
-
-  const identityKey = buildPlayerIdentityKey({
-    player,
-    season,
-  })
-  if (identityKey) {
-    const matches = getLookupPlayerIds(
-      lookup.byIdentityKey.get(identityKey)
-    )
-    if (matches.length) return matches
-  }
-
-  return resolveLegacyNameMatchesFromLookup({
-    player,
-    season,
-    lookup,
-  })
 }
 
 const getPlayerIds = snapshot => [...new Set(
@@ -245,7 +343,12 @@ const resolveExistingPlayerIds = async ({
   player = {},
   season = {},
 } = {}) => {
-  const externalPlayerId = clean(player.externalPlayerId)
+  const externalPlayerId = isValidExternalPlayerId({
+    externalPlayerId: player.externalPlayerId,
+    birthYear: resolvePlayerIdentityBirthYear({ player, season }),
+  })
+    ? clean(player.externalPlayerId)
+    : ''
   if (externalPlayerId) {
     const matches = await findByField({
       field: 'externalPlayerId',
@@ -272,6 +375,7 @@ const enrichResolvedPlayer = ({
   playerId = '',
   matchStatus = '',
   candidateIds = [],
+  candidates = [],
 } = {}) => ({
   ...player,
   playerId,
@@ -285,6 +389,7 @@ const enrichResolvedPlayer = ({
   }),
   identityMatchStatus: matchStatus,
   identityCandidateIds: candidateIds,
+  identityCandidates: buildPlayerIdentityCandidateMetadata(candidates),
 })
 
 const buildResolutionKey = ({
@@ -294,7 +399,12 @@ const buildResolutionKey = ({
   const existingPlayerId = resolveInternalPlayerId(player)
   if (existingPlayerId) return `playerId:${existingPlayerId}`
 
-  const externalPlayerId = clean(player.externalPlayerId)
+  const externalPlayerId = isValidExternalPlayerId({
+    externalPlayerId: player.externalPlayerId,
+    birthYear: resolvePlayerIdentityBirthYear({ player, season }),
+  })
+    ? clean(player.externalPlayerId)
+    : ''
   if (externalPlayerId) return `externalPlayerId:${externalPlayerId}`
 
   const identityKey = buildPlayerIdentityKey({
@@ -348,27 +458,26 @@ export async function resolvePlayerIdentities({
   const unresolvedPlayers = safePlayers.filter(player => (
     !resolveInternalPlayerId(player)
   ))
-  const externalPlayerIds = unresolvedPlayers
-    .map(player => clean(player.externalPlayerId))
+  const candidateKeys = unresolvedPlayers.map(player => (
+    buildPlayerIdentityCandidateKeys({ player, season })
+  ))
+  const externalPlayerIds = candidateKeys
+    .map(keys => keys.externalPlayerId)
     .filter(Boolean)
-  const identityKeys = unresolvedPlayers
-    .map(player => buildPlayerIdentityKey({
-      player,
-      season,
-    }))
+  const identityKeys = candidateKeys
+    .map(keys => keys.identityKey)
     .filter(Boolean)
-  const normalizedNames = unresolvedPlayers
-    .map(player => normalizePlayerNameValue(
-      player.normalizedName ||
-      player.matchedPlayerName ||
-      player.fullName
-    ))
-    .filter(Boolean)
+  const normalizedNames = candidateKeys.flatMap(keys => keys.normalizedNames)
+  const aliasValues = candidateKeys.flatMap(keys => keys.aliasValues)
+  const playerDocumentIds = candidateKeys.flatMap(keys => keys.playerDocumentIds)
 
   const [
     externalDocs,
     identityDocs,
     legacyNameDocs,
+    aliasDocs,
+    playerDocuments,
+    playerDocumentCanonicalDocs,
   ] = await Promise.all([
     readIdentityFieldMatchesMany({
       field: 'externalPlayerId',
@@ -382,6 +491,15 @@ export async function resolvePlayerIdentities({
       field: 'normalizedDisplayName',
       values: normalizedNames,
     }),
+    readAliasMatchesMany({
+      values: aliasValues,
+    }),
+    readPlayerDocumentCandidatesMany({
+      values: playerDocumentIds,
+    }),
+    readPlayerDocumentCanonicalMatchesMany({
+      values: playerDocumentIds,
+    }),
   ])
   const docsById = new Map()
 
@@ -389,9 +507,14 @@ export async function resolvePlayerIdentities({
     ...externalDocs,
     ...identityDocs,
     ...legacyNameDocs,
+    ...aliasDocs,
   ].forEach(item => docsById.set(item.id, item))
 
-  const lookup = buildIdentityLookup([...docsById.values()])
+  const lookup = buildIdentityLookup({
+    searchIndexDocs: [...docsById.values()],
+    playerDocuments,
+    playerDocumentCanonicalDocs,
+  })
   const resolvedByKey = new Map()
   const results = []
 
@@ -411,6 +534,7 @@ export async function resolvePlayerIdentities({
         playerId: previous.playerId,
         matchStatus: previous.identityMatchStatus,
         candidateIds: previous.identityCandidateIds,
+        candidates: previous.identityCandidates,
       }))
       return
     }
@@ -426,24 +550,59 @@ export async function resolvePlayerIdentities({
         matchStatus: 'provided',
       })
     } else {
-      const matches = resolveExistingPlayerIdsFromLookup({
+      const resolution = resolveExistingPlayerIdsFromLookup({
         player,
         season,
         lookup,
       })
+      const matches = resolution.playerIds
+      const canCreate = clean(player.identityResolution) === 'createNew'
+      const approvedPlayerDocumentId = clean(player.approvedPlayerDocumentId)
+      const approvedIdentityCandidateId = clean(player.approvedIdentityCandidateId)
+      const approvedCanonicalPlayerId = clean(player.approvedCanonicalPlayerId)
+      const approvedCandidate = ['candidate', 'ambiguous'].includes(resolution.status)
+        ? resolution.candidates.find(candidate => {
+          const candidateDocumentId = clean(candidate.playerDocumentId || candidate.id)
+          const candidatePlayerId = clean(candidate.playerId)
+
+          return Boolean(candidatePlayerId) && (
+            (approvedPlayerDocumentId &&
+              candidateDocumentId === approvedPlayerDocumentId &&
+              candidatePlayerId === approvedCanonicalPlayerId) ||
+            (approvedIdentityCandidateId &&
+              candidatePlayerId === approvedIdentityCandidateId)
+          )
+        })
+        : null
+      const approvedPlayerId = clean(
+        approvedCandidate?.playerId
+      )
 
       resolvedPlayer = enrichResolvedPlayer({
         player,
         season,
-        playerId: matches.length === 1
+        playerId: approvedCandidate
+          ? approvedPlayerId
+          : resolution.status === 'matched' && matches.length === 1
           ? matches[0]
-          : createInternalPlayerId(),
-        matchStatus: matches.length === 1
+          : resolution.status === 'unresolved' && canCreate
+            ? createInternalPlayerId()
+            : '',
+        matchStatus: approvedCandidate
+          ? 'provided'
+          : resolution.status === 'matched' && matches.length === 1
           ? 'matched'
-          : matches.length > 1
+          : resolution.status === 'ambiguous'
             ? 'ambiguous'
-            : 'created',
-        candidateIds: matches.length > 1 ? matches : [],
+            : resolution.status === 'candidate'
+              ? 'candidate'
+              : canCreate
+                ? 'created'
+                : 'unresolved',
+        candidateIds: resolution.candidates.map(candidate => clean(
+          candidate.playerId || candidate.playerDocumentId || candidate.id
+        )).filter(Boolean),
+        candidates: resolution.candidates,
       })
     }
 

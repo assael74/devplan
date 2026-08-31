@@ -32,7 +32,7 @@ const getPlayerStats = player => (
 const isEligiblePlayer = player => (
   player &&
   typeof player === 'object' &&
-  !['retired', 'transferredOut'].includes(clean(player.rosterStatus)) &&
+  !['retired'].includes(clean(player.rosterStatus)) &&
   clean(player.statsStatus) === TEAM_BALANCE_STATS_STATUS.LOADED
 )
 

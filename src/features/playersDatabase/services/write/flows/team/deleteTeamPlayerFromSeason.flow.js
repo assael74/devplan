@@ -117,6 +117,7 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
     action: () => updateTeamSeasonSearchIndexRosterMeta({
       ...payload,
       team: teamWithRosterMeta,
+      teamSeasonDocumentId: teamPlayerResult.teamSeasonDocumentId,
       playersCount: teamPlayerResult.playersCount,
       playerSeasonIndexCount: searchIndexResult.remainingRowsCount,
       teamBalance: teamPlayerResult.teamBalance,
@@ -129,6 +130,7 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
     action: () => updateTeamSeasonSearchIndexScoutProfilesSummary({
       ...payload,
       team: payload.team || {},
+      teamSeasonDocumentId: teamPlayerResult.teamSeasonDocumentId,
       scoutProfilesSummary: teamPlayerResult.scoutProfilesSummary,
     }),
   })

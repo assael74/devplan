@@ -1,12 +1,13 @@
 // features/playersDatabase/services/write/flows/team/deleteTeamFromSeason.flow.js
 
-import { removeLeagueSeasonTeam } from '../../leagues/index.js'
+import { updateLeagueSeasonTableRankTeamSyncMeta } from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
   deleteSearchIndexesForTeamSeason,
   getSearchIndexMetaForTeamSeason,
 } from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
+import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const mergePlayerDocumentIds = (...groups) => Array.from(new Set(
   groups
@@ -68,9 +69,19 @@ export async function deleteTeamFromSeasonFlow(payload = {}) {
   })
 
   const leagueTableRankResult = await runDeleteStage({
-    stage: 'removeLeagueSeasonTeam',
+    stage: 'updateLeagueSeasonTableRankTeamSyncMeta',
     results,
-    action: () => removeLeagueSeasonTeam(payload),
+    action: () => updateLeagueSeasonTableRankTeamSyncMeta({
+      ...payload,
+      team: {
+        ...(payload.team || {}),
+        ...buildTeamLoadStatus([]),
+      },
+      scoutProfilesSummary: {
+        total: 0,
+        profileCounts: {},
+      },
+    }),
   })
 
   return {

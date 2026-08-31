@@ -48,6 +48,7 @@ async function createTeamPlayerFlow({
   const teamSeasonIndexResult = await updateTeamSeasonSearchIndexRosterMeta({
     ...payload,
     team: teamWithRosterMeta,
+    teamSeasonDocumentId: teamSeasonResult.teamSeasonDocumentId,
     playersCount: teamSeasonResult.playersCount,
     playerSeasonIndexCount: playerSeasonIndexResult.rowsCount,
     teamBalance: teamSeasonResult.teamBalance,
@@ -86,5 +87,4 @@ export async function createTeamOfficialPlayerFlow(payload = {}) {
     ...result,
   }
 }
-
 

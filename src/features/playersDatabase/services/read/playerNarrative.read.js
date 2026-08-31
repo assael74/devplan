@@ -5,7 +5,7 @@ import {
 } from '../../domain/index.js'
 import { buildNarrativePlan } from '../../domain/narrative/index.js'
 import { isSameSeason } from '../../model/season.model.js'
-import { getTeamById } from './team.js'
+import { getTeamSeason } from './teamSeason.js'
 
 const clean = value => String(value || '').trim()
 
@@ -13,67 +13,43 @@ const getTeamDocumentId = season => clean(
   season?.team?.teamDocumentId || season?.team?.teamId
 )
 
-const findTeamSeasonRow = ({ teamDocument, playerSeason }) => {
-  const current = Array.isArray(teamDocument?.current) ? teamDocument.current : []
-  const history = Array.isArray(teamDocument?.history) ? teamDocument.history : []
-  const rows = [...current, ...history]
+const adaptTeamSeason = ({ teamSeasonDocument, playerSeason }) => {
+  if (!teamSeasonDocument || !isSameSeason(teamSeasonDocument, playerSeason?.season || {})) return null
 
-  return rows.find(row => isSameSeason(row, playerSeason?.season || {})) || null
-}
-
-const adaptTeamSeason = ({ teamDocument, playerSeason }) => {
-  const row = findTeamSeasonRow({
-    teamDocument,
-    playerSeason,
-  })
-
-  if (!row) return null
-
-  const target = (Array.isArray(teamDocument?.history) ? teamDocument.history : [])
-    .includes(row)
-    ? 'history'
-    : 'current'
   const result = adaptBirthTeamDocumentSeason({
-    teamDocument,
-    seasonDocument: row,
-    target,
+    teamDocument: {},
+    seasonDocument: teamSeasonDocument,
   })
 
   return {
     ...result,
     ranking: {
       ...result.ranking,
-      tableRank: row.tableRank === undefined ? null : Number(row.tableRank),
-      attackRank: row.tableAttackRank === undefined ? null : Number(row.tableAttackRank),
-      defenseRank: row.tableDefenseRank === undefined ? null : Number(row.tableDefenseRank),
+      tableRank: teamSeasonDocument.tableRank === undefined ? null : Number(teamSeasonDocument.tableRank),
+      attackRank: teamSeasonDocument.tableAttackRank === undefined ? null : Number(teamSeasonDocument.tableAttackRank),
+      defenseRank: teamSeasonDocument.tableDefenseRank === undefined ? null : Number(teamSeasonDocument.tableDefenseRank),
     },
-    performance: row.teamScout || row.performance || result.performance,
+    performance: teamSeasonDocument.teamScout || teamSeasonDocument.performance || result.performance,
     completeness: {
       ...result.completeness,
-      hasRanking: row.tableRank !== undefined && row.tableRank !== null,
-      hasPerformance: Boolean(row.teamScout || row.performance),
+      hasRanking: teamSeasonDocument.tableRank !== undefined && teamSeasonDocument.tableRank !== null,
+      hasPerformance: Boolean(teamSeasonDocument.teamScout || teamSeasonDocument.performance),
     },
   }
 }
 
 const readNarrativeTeams = async seasons => {
   const rows = Array.isArray(seasons) ? seasons : []
-  const documentIds = [...new Set(rows.map(getTeamDocumentId).filter(Boolean))]
-  const documents = await Promise.all(documentIds.map(getTeamById))
-  const documentMap = new Map(
-    documents.filter(Boolean).map(document => [clean(document.id), document])
-  )
-
-  return rows
-    .map(playerSeason => {
-      const documentId = getTeamDocumentId(playerSeason)
-      const teamDocument = documentMap.get(documentId)
-
-      return teamDocument
-        ? adaptTeamSeason({ teamDocument, playerSeason })
-        : null
+  const teams = await Promise.all(rows.map(async playerSeason => {
+    const teamSeasonDocument = await getTeamSeason({
+      birthTeamDocumentId: getTeamDocumentId(playerSeason),
+      seasonKey: playerSeason?.season?.seasonKey || playerSeason?.season?.seasonId,
     })
-    .filter(Boolean)
+
+    return adaptTeamSeason({ teamSeasonDocument, playerSeason })
+  }))
+
+  return teams.filter(Boolean)
 }
 
 export const readPlayerNarrativePlan = async ({ playerDomain = {} } = {}) => {

@@ -1,11 +1,5 @@
 // src/shared/scouting/players/ids.js
 
-export const SCOUT_INTEREST = {
-  REASONABLE: 'reasonable',
-  INTERESTING: 'interesting',
-  SUPER: 'super_interesting',
-}
-
 export const SCOUT_PROFILE_IDENTITY = {
   CORE: 'core',
   PRELIMINARY: 'preliminary',

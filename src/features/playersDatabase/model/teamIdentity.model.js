@@ -5,6 +5,10 @@ import {
   pickFirstValue,
   toPositiveNumberOrFallback,
 } from './value.model.js'
+import {
+  buildSeasonKey,
+  normalizeSeasonLookupKey,
+} from './season.model.js'
 
 export const normalizeTeamIdentity = ({
   team = {},
@@ -83,4 +87,15 @@ export const resolveTeamLookupKey = team => {
     identity.teamId ||
     identity.teamSlotId
   )
+}
+
+
+export const buildTeamSeasonDocumentId = (birthTeamDocumentId, seasonKey) => {
+  const safeBirthTeamDocumentId = cleanValue(birthTeamDocumentId)
+  const normalizedSeasonKey = normalizeSeasonLookupKey(seasonKey)
+  const safeSeasonKey = buildSeasonKey(normalizedSeasonKey)
+
+  if (!safeBirthTeamDocumentId || !safeSeasonKey) return ''
+
+  return `${safeBirthTeamDocumentId}__${safeSeasonKey}`
 }

@@ -142,7 +142,7 @@ export default function BulkPasteDrawer({
 
         <Divider />
 
-        <Box sx={sx.drawerBody}>
+        <Box className="dpScrollThin" sx={sx.drawerBody}>
           <BulkPasteInput
             value={text}
             onChange={setText}

@@ -3,8 +3,12 @@
 import * as React from 'react'
 import {
   Box,
+  Button,
   Chip,
+  Dropdown,
   IconButton,
+  Menu,
+  MenuButton,
   Option,
   Select,
   Stack,
@@ -18,7 +22,6 @@ import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.mo
 import {
   PLAYER_STATS_BASE_COLUMNS,
   STATS_ROSTER_STATUS_OPTIONS,
-  STATS_TRANSFER_DIRECTION_OPTIONS,
 } from '../logic/teamPage.constants.js'
 import {
   STATS_IDENTITY_STATUS,
@@ -32,6 +35,7 @@ function getIdentityColor(status) {
   const colors = {
     [STATS_IDENTITY_STATUS.ROSTER_MATCH]: 'success',
     [STATS_IDENTITY_STATUS.SYSTEM_MATCH]: 'primary',
+    [STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE]: 'warning',
     [STATS_IDENTITY_STATUS.NEW_PLAYER]: 'neutral',
     [STATS_IDENTITY_STATUS.AMBIGUOUS]: 'warning',
     [STATS_IDENTITY_STATUS.UNRESOLVED]: 'danger',
@@ -52,6 +56,52 @@ const resolvePlayerUrl = value => {
 
   return `https://www.football.org.il${path}`
 }
+
+const TRANSFER_DIRECTIONS = ['unknown', 'up', 'lateral', 'down']
+
+const getNextTransferDirection = value => {
+  const currentIndex = TRANSFER_DIRECTIONS.indexOf(value)
+  return TRANSFER_DIRECTIONS[(currentIndex + 1) % TRANSFER_DIRECTIONS.length]
+}
+
+const getTransferDirectionIcon = value => ({
+  up: 'sortUp',
+  lateral: 'swapVert',
+  down: 'sortDown',
+}[value] || 'swapVert')
+
+const getTransferDirectionColor = value => ({
+  up: 'success',
+  lateral: 'primary',
+  down: 'danger',
+}[value] || 'neutral')
+
+const getMinutesCorrectionImpactLabel = row => {
+  const impact = row?.statsMinutesCorrection
+  if (!impact) return ''
+
+  const added = Array.isArray(impact.addedProfiles) ? impact.addedProfiles : []
+  const removed = Array.isArray(impact.removedProfiles) ? impact.removedProfiles : []
+  const addedLabel = added.length ? `נוספו: ${added.map(item => item.label).join(', ')}` : ''
+  const removedLabel = removed.length ? `הוסרו: ${removed.map(item => item.label).join(', ')}` : ''
+
+  if (!addedLabel && !removedLabel) {
+    return `תיקון דקות: -${impact.amount} · ללא שינוי בפרופיל`
+  }
+
+  return [
+    `תיקון דקות: -${impact.amount}`,
+    addedLabel,
+    removedLabel,
+  ].filter(Boolean).join(' · ')
+}
+
+const getTransferDirectionLabel = value => ({
+  unknown: 'כיוון מעבר: לא ידוע',
+  up: 'כיוון מעבר: התקדם לרמה גבוהה יותר',
+  lateral: 'כיוון מעבר: אותה רמה',
+  down: 'כיוון מעבר: ירד רמה',
+}[value] || 'כיוון מעבר: לא ידוע')
 
 const toFiniteNumber = value => {
   const numberValue = Number(value)
@@ -294,6 +344,7 @@ export default function useTeamStatsColumns({
   players,
   rosterLookup,
   getRowStatus,
+  getCellStatus,
 }) {
   const rosterPlayerOptions = React.useMemo(() => players
     .map(player => ({
@@ -304,12 +355,9 @@ export default function useTeamStatsColumns({
 
   const nameColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[1],
-    render: ({ row, rowIndex, column, value, onCellChange }) => {
+    render: ({ row, rowIndex, column, value, onCellChange, cellStatus }) => {
       const matchedPlayer = findStatsRosterMatch(row, rosterLookup)
-      const rowStatus = typeof getRowStatus === 'function'
-        ? getRowStatus(row)
-        : null
-      const rowValid = rowStatus?.valid === true
+      const rowValid = cellStatus?.valid !== false
 
       if (rowValid) {
         return (
@@ -318,7 +366,7 @@ export default function useTeamStatsColumns({
               level='body-sm'
               sx={sx.validName}
             >
-              {value || '-'}
+              {row.originalFullName || value || '-'}
             </Typography>
 
             <PlayerUrlIcon playerUrl={row.playerUrl} />
@@ -326,65 +374,32 @@ export default function useTeamStatsColumns({
         )
       }
 
-      return (
-        <Box sx={sx.matchRow}>
-          <Select
-            size='sm'
-            value={matchedPlayer ? row.matchedPlayerId || null : null}
-            placeholder={value || 'בחר שחקן מהסגל'}
-            sx={sx.matchSelect}
-            onChange={(event, nextValue) => {
-              if (typeof onCellChange !== 'function') return
-
-              onCellChange({
-                row,
-                rowIndex,
-                column: {
-                  ...column,
-                  key: 'fullNameRosterMatch',
-                },
-                value: nextValue || '',
-              })
-            }}
-          >
-            {rosterPlayerOptions.map(option => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-
-          <PlayerUrlIcon playerUrl={row.playerUrl} />
-        </Box>
-      )
+      return <NameMatchPopover
+        value={row.originalFullName || value}
+        selectedValue={matchedPlayer ? row.matchedPlayerId || '' : ''}
+        message={cellStatus?.message || 'בחר שחקן מהסגל'}
+        options={rosterPlayerOptions}
+        playerUrl={row.playerUrl}
+        onChange={nextValue => onCellChange?.({ row, rowIndex, column: { ...column, key: 'fullNameRosterMatch' }, value: nextValue })}
+      />
     },
-  }), [getRowStatus, rosterLookup, rosterPlayerOptions])
+  }), [getCellStatus, rosterLookup, rosterPlayerOptions])
 
   const gamesColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[2],
-    readOnly: true,
-    render: ({ row, value }) => renderMarkedNumber({
-      value,
-      mark: getGamesMark(row),
-    }),
   }), [])
 
   const goalsColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[3],
-    readOnly: true,
-    render: ({ value }) => renderMarkedNumber({
-      value,
-      mark: getGoalMark(value),
-    }),
+    sortable: true,
+    sortValue: row => {
+      const goals = toFiniteNumber(row.goals)
+      return goals === null ? -1 : goals
+    },
   }), [])
 
   const startsColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[4],
-    readOnly: true,
-    render: ({ row, value }) => renderMarkedNumber({
-      value,
-      mark: getStartsMark(row),
-    }),
   }), [])
 
   const minutesPctColumn = React.useMemo(() => ({
@@ -429,18 +444,45 @@ export default function useTeamStatsColumns({
     sortable: true,
     sortValue: row => getStatsIdentityLabel(row.identityStatus),
     sx: sx.identityColumn,
-    render: ({ row }) => (
-      <Tooltip title={row.identityMessage || getStatsIdentityLabel(row.identityStatus)}>
-        <Chip
-          size='sm'
-          variant='soft'
-          color={getIdentityColor(row.identityStatus)}
-          sx={sx.identityChip}
-        >
-          {getStatsIdentityLabel(row.identityStatus)}
-        </Chip>
-      </Tooltip>
-    ),
+    render: ({ row, rowIndex, column, cellStatus, onCellChange }) => {
+      const isInvalidIdentity = cellStatus?.valid === false
+      const isUnidentifiedPlayer = row.identityStatus === STATS_IDENTITY_STATUS.UNRESOLVED || (
+        row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER && isInvalidIdentity
+      )
+      const requiresSystemCandidateApproval = row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE
+      const requiresAmbiguousChoice = row.identityStatus === STATS_IDENTITY_STATUS.AMBIGUOUS
+      const identityLabel = isUnidentifiedPlayer
+        ? 'לא זוהה שחקן'
+        : isInvalidIdentity
+        ? cellStatus.message || 'נדרשת הכרעת זהות'
+        : getStatsIdentityLabel(row.identityStatus)
+
+      if (requiresSystemCandidateApproval || requiresAmbiguousChoice) {
+        return (
+          <IdentityResolutionPopover
+            row={row}
+            rowIndex={rowIndex}
+            column={column}
+            onCellChange={onCellChange}
+            mode={requiresSystemCandidateApproval ? 'systemCandidate' : 'ambiguous'}
+            label={requiresSystemCandidateApproval ? 'אשר התאמה' : 'בחר התאמה'}
+          />
+        )
+      }
+
+      return (
+        <Tooltip title={cellStatus?.message || row.identityMessage || identityLabel}>
+          <Chip
+            size='sm'
+            variant='soft'
+            color={isInvalidIdentity ? 'danger' : getIdentityColor(row.identityStatus)}
+            sx={sx.identityChip}
+          >
+            {identityLabel}
+          </Chip>
+        </Tooltip>
+      )
+    },
   }), [])
 
   const statusColumn = React.useMemo(() => ({
@@ -464,7 +506,7 @@ export default function useTeamStatsColumns({
       const showTransferDirection = isTransferRosterStatus(row.rosterStatus)
 
       return (
-        <Stack spacing={0.5} sx={sx.statusStack}>
+        <Stack direction='row' spacing={0.5} sx={sx.statusStack}>
           <Select
             size='sm'
             value={selectedStatus}
@@ -489,12 +531,17 @@ export default function useTeamStatsColumns({
           </Select>
 
           {showTransferDirection ? (
-            <Select
-              size='sm'
-              value={row.manualTransferDirection || 'unknown'}
-              placeholder='כיוון מעבר'
-              sx={sx.transferDirectionSelect}
-              onChange={(event, nextValue) => {
+            <Tooltip title={getTransferDirectionLabel(
+              row.manualTransferDirection || 'unknown'
+            )}>
+              <Chip
+                size='sm'
+                variant='soft'
+                color={getTransferDirectionColor(
+                  row.manualTransferDirection || 'unknown'
+                )}
+                sx={sx.transferDirectionChip}
+                onClick={() => {
                 if (typeof onCellChange !== 'function') return
 
                 onCellChange({
@@ -504,16 +551,20 @@ export default function useTeamStatsColumns({
                     ...column,
                     key: 'manualTransferDirection',
                   },
-                  value: nextValue || 'unknown',
+                  value: getNextTransferDirection(
+                    row.manualTransferDirection || 'unknown'
+                  ),
                 })
               }}
-            >
-              {STATS_TRANSFER_DIRECTION_OPTIONS.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
+              >
+                {iconUi({
+                  id: getTransferDirectionIcon(
+                    row.manualTransferDirection || 'unknown'
+                  ),
+                  size: 'sm',
+                })}
+              </Chip>
+            </Tooltip>
           ) : null}
         </Stack>
       )
@@ -539,14 +590,34 @@ export default function useTeamStatsColumns({
         display: row.scoutProfileDisplay || {},
         player: row,
       })
+      const hasProfileCorrection = Boolean(
+        row.statsMinutesCorrection?.addedProfiles?.length ||
+        row.statsMinutesCorrection?.removedProfiles?.length
+      )
 
       return (
         <Box sx={sx.profileWrap}>
           <ScoutStoryChip
             player={row}
-            label={scoutView.label}
+            label={scoutView.compactLabel}
             fontSize={10}
           />
+          {hasProfileCorrection ? (
+            <Tooltip title={getMinutesCorrectionImpactLabel(row)} arrow>
+              <Chip
+                size='sm'
+                variant='soft'
+                color={row.statsMinutesCorrection.addedProfiles?.length
+                  ? 'success'
+                  : row.statsMinutesCorrection.removedProfiles?.length
+                    ? 'danger'
+                    : 'neutral'}
+                sx={sx.profileCorrectionChip}
+              >
+                +{row.statsMinutesCorrection.addedProfiles?.length || 0}/-{row.statsMinutesCorrection.removedProfiles?.length || 0}
+              </Chip>
+            </Tooltip>
+          ) : null}
         </Box>
       )
     },
@@ -574,4 +645,118 @@ export default function useTeamStatsColumns({
     startsColumn,
     statusColumn,
   ])
+}
+
+function NameMatchPopover({
+  value,
+  selectedValue,
+  message,
+  options,
+  playerUrl,
+  onChange,
+}) {
+  const [open, setOpen] = React.useState(false)
+
+  return (
+    <Box sx={sx.matchRow}>
+      <Dropdown open={open} onOpenChange={(event, nextOpen) => setOpen(nextOpen)}>
+        <Tooltip title={message}>
+          <MenuButton size='sm' color='neutral' variant='plain' sx={sx.invalidNameButton}>
+            {value || 'בחר שחקן'}
+          </MenuButton>
+        </Tooltip>
+        <Menu size='sm' variant='outlined' placement='bottom-start'>
+        <Stack sx={sx.nameMatchPopover} spacing={0.65}>
+          <Typography level='body-xs'>{message}</Typography>
+          <Select size='sm' value={selectedValue || null} placeholder='בחר שחקן מהסגל' onChange={(event, nextValue) => { onChange(nextValue || ''); setOpen(false) }}>
+            {options.map(option => <Option key={option.value} value={option.value}>{option.label}</Option>)}
+          </Select>
+        </Stack>
+        </Menu>
+      </Dropdown>
+      <PlayerUrlIcon playerUrl={playerUrl} />
+    </Box>
+  )
+}
+
+function IdentityResolutionPopover({
+  row,
+  rowIndex,
+  column,
+  onCellChange,
+  mode,
+  label,
+}) {
+  const [open, setOpen] = React.useState(false)
+  const candidates = Array.isArray(row.identityCandidates) ? row.identityCandidates : []
+  const systemCandidate = candidates[0] || null
+  const originalFullName = row.originalFullName || row.fullName || '-'
+  const approveCandidate = candidate => {
+    if (!candidate?.playerId || typeof onCellChange !== 'function') return
+
+    onCellChange({
+      row,
+      rowIndex,
+      column: { ...column, key: 'systemCandidateApproval' },
+      value: candidate.candidateKey || candidate.playerId,
+    })
+    setOpen(false)
+  }
+
+  return (
+    <Dropdown open={open} onOpenChange={(event, nextOpen) => setOpen(nextOpen)}>
+      <MenuButton
+        size='sm'
+        variant='soft'
+        color='warning'
+        sx={sx.identityResolutionButton}
+      >
+        {label}
+      </MenuButton>
+      <Menu size='sm' variant='outlined' placement='bottom-start'>
+        <Stack sx={sx.identityResolutionPopover} spacing={0.7}>
+          <Typography level='body-xs' sx={sx.identityResolutionName}>
+            {originalFullName}
+          </Typography>
+          {mode === 'systemCandidate' ? (
+            <>
+              <Typography level='body-xs'>
+                {systemCandidate?.displayName || systemCandidate?.fullName || systemCandidate?.playerDocumentId || 'לא נמצאה התאמה מאושרת'}
+              </Typography>
+              {systemCandidate?.playerId ? (
+                <Button size='sm' onClick={() => approveCandidate(systemCandidate)}>
+                  אשר התאמה
+                </Button>
+              ) : (
+                <Typography level='body-xs' color='warning'>
+                  קיים במערכת אך חסר קישור זהות קנוני
+                </Typography>
+              )}
+            </>
+          ) : null}
+          {mode === 'ambiguous' ? (
+            <Select
+              size='sm'
+              value={null}
+              placeholder='בחר התאמה קיימת'
+              onChange={(event, candidateKey) => {
+                const candidate = candidates.find(item => item.candidateKey === candidateKey)
+                if (candidate) approveCandidate(candidate)
+              }}
+            >
+              {candidates.map(candidate => (
+                <Option
+                  key={candidate.candidateKey || candidate.playerId || candidate.playerDocumentId}
+                  value={candidate.candidateKey}
+                  disabled={!candidate.playerId}
+                >
+                  {candidate.displayName || candidate.fullName || candidate.playerDocumentId || candidate.playerId}
+                </Option>
+              ))}
+            </Select>
+          ) : null}
+        </Stack>
+      </Menu>
+    </Dropdown>
+  )
 }

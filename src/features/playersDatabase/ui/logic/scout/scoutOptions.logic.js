@@ -6,7 +6,6 @@ import {
 } from '../../../../../shared/scouting/players/index.js'
 import { TEAM_SCOUT_PRIORITY_LEVEL } from '../../../../../shared/scouting/teams/index.js'
 import {
-  SCOUT_INTEREST_DISPLAY,
   SCOUT_PROFILE_GROUP_LABELS,
 } from './scoutDisplay.constants.js'
 import {
@@ -44,9 +43,8 @@ export function buildPlayerScoutProfileOptions(profiles = SCOUT_PROFILES) {
 
   const combinationOptions = SCOUT_PROFILE_COMBINATIONS.map(combination => {
     const explanation = cleanScoutDisplayValue(combination.description) || buildScoutCombinationDescription(combination)
-    const interest = resolveScoutDisplayLabel(SCOUT_INTEREST_DISPLAY, combination.interest)
     const groupLabel = SCOUT_PROFILE_GROUP_LABELS[combination.group] || ''
-    const description = [groupLabel, interest].filter(Boolean).join(' · ')
+    const description = groupLabel
 
     return {
       value: combination.id,

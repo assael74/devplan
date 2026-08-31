@@ -52,6 +52,7 @@ export default function PlayerProfileMobile({
   const navigate = useNavigate()
 
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
+  const [gamesImportRequest, setGamesImportRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
@@ -94,6 +95,7 @@ export default function PlayerProfileMobile({
     taskContext,
     isPrivatePlayer,
     onOpenGamesInsights: () => setGamesInsightsRequest((v) => v + 1),
+    onImportGames: () => setGamesImportRequest((v) => v + 1),
     onOpenPerformanceInsights: () => setPerformanceInsightsRequest((v) => v + 1),
     onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),
     onOpenVideoInsights: () => setVideoInsightsRequest((v) => v + 1),
@@ -145,6 +147,7 @@ export default function PlayerProfileMobile({
               profileData={profileData}
               modulesMap={modulesMap}
               gamesInsightsRequest={gamesInsightsRequest}
+              gamesImportRequest={gamesImportRequest}
               performanceInsightsRequest={performanceInsightsRequest}
               abilitiesInsightsRequest={abilitiesInsightsRequest}
               videoInsightsRequest={videoInsightsRequest}

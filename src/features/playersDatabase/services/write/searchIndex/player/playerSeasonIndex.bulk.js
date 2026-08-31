@@ -27,6 +27,7 @@ import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalizati
 import {
   buildPlayerSeasonIndexScope,
   isSamePlayerSeasonIndexContext,
+  resolveTeamSeasonSourceTarget,
 } from './playerSeasonIndex.model.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
@@ -158,9 +159,15 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
 
   snapshot.docs.forEach(indexDoc => {
     const data = indexDoc.data() || {}
-    const target = clean(data.sourceTarget) === 'history' ? 'history' : 'current'
+    const isTeamSeasonSource = clean(data.sourceCollection) === 'birthTeamSeasons'
+    const target = isTeamSeasonSource
+      ? resolveTeamSeasonSourceTarget(season)
+      : (clean(data.sourceTarget) === 'history' ? 'history' : 'current')
     const searchMetrics = buildPlayerSeasonSearchMetrics({
       target,
+      seasonStatus: isTeamSeasonSource
+        ? season.seasonStatus
+        : data.seasonStatus,
       ageGroupId: data.ageGroupId || season.ageGroupId || league.ageGroupId,
       leagueTotalRound: nextLeagueTotalRound,
       teamGamePlayed: toNumberOrZero(
@@ -179,6 +186,7 @@ export async function updatePlayerSeasonSearchIndexesSeasonMeta({
       birthYear: nextBirthYear,
       leagueTotalRound: nextLeagueTotalRound,
       ...searchMetrics,
+      ...(isTeamSeasonSource ? { sourceTarget: target } : {}),
     }
     const unchanged = Object.keys(nextMeta).every(key => (
       data[key] === nextMeta[key]

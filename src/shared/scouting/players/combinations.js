@@ -1,9 +1,5 @@
 // src/shared/scouting/players/combinations.js
 
-import {
-  SCOUT_INTEREST,
-} from './ids.js'
-
 export const SCOUT_PROFILE_COMBINATIONS = [
   {
     id: 'elite_finisher',
@@ -11,7 +7,6 @@ export const SCOUT_PROFILE_COMBINATIONS = [
     label: 'מסיים עילית',
     group: 'attack',
     description: 'שילוב של סקורר ומנצל כל דקה על המגרש',
-    interest: SCOUT_INTEREST.SUPER,
     profileIds: ['clear_scorer', 'killer_efficiency'],
   },
   {
@@ -20,7 +15,6 @@ export const SCOUT_PROFILE_COMBINATIONS = [
     label: 'כישרון מוקפץ תומך',
     group: 'development_attack',
     description: 'שחקן צעיר מהשנתון שמקבל תפקיד התקפי תומך משמעותי',
-    interest: SCOUT_INTEREST.SUPER,
     profileIds: ['promoted_talent', 'attacking_support'],
   },
 ]

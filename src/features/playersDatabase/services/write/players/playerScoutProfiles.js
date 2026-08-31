@@ -21,20 +21,18 @@ import {
   playerDocRef,
 } from './playerDoc.model.js'
 import {
-  buildPlayerSeasonDoc,
-  findPlayerSeasonRowIndex,
-  upsertSeasonRows,
+  buildPlayerSeasonCompactProjection,
+  removePlayerSeasonRow,
 } from './playerSeason.model.js'
 import { upsertProfiledPlayerDoc } from './playerDoc.upsert.js'
-import { ensureScoutingPlayerDoc } from './scoutingPlayerDoc.ensure.js'
 import {
   normalizeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
+  resolvePlayerLifecycleTrackingReason,
   resolvePlayerTrackingReasons,
-  SCOUTING_PLAYER_TRACKING_REASONS,
+  shouldHavePlayerDocument,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
-import { buildPlayerScoutStatsLoadMeasurementHistory } from '../../../model/playerScoutMeasurement.model.js'
 
 import {
   trackedGetDocs,
@@ -130,7 +128,7 @@ const buildCompatibleTracking = data => {
 }
 
 export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}, target = 'current', player = {} } = {}) => {
-  const playerDocumentId = buildPlayerDocumentId(player)
+  const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
   if (!playerDocumentId) return {
     skipped: true,
@@ -172,13 +170,21 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
       seasonKey,
       seasonStatus,
     }
-    const rows = isHistory ? baseDoc.history : baseDoc.current
-    const existingSeasonIndex = findPlayerSeasonRowIndex({
-      rows,
+    const currentWithoutSeason = removePlayerSeasonRow({
+      rows: baseDoc.current,
       season: seasonScope,
       team,
     })
-    if (existingSeasonIndex === -1) {
+    const historyWithoutSeason = removePlayerSeasonRow({
+      rows: baseDoc.history,
+      season: seasonScope,
+      team,
+    })
+    const hadSeasonRow = (
+      currentWithoutSeason.length !== baseDoc.current.length ||
+      historyWithoutSeason.length !== baseDoc.history.length
+    )
+    if (!hadSeasonRow) {
       return {
         playerDocumentId,
         updated: false,
@@ -186,12 +192,7 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
         reason: 'playerSeasonMissing',
       }
     }
-    const existingSeasonRow = rows[existingSeasonIndex] || null
-    const scoutStatsLoadMeasurementHistory = buildPlayerScoutStatsLoadMeasurementHistory({
-      existingHistory: existingSeasonRow?.scoutStatsLoadMeasurementHistory,
-      measurements: player.scoutStatsLoadMeasurements,
-    })
-    const seasonDoc = buildPlayerSeasonDoc({
+    const seasonDoc = buildPlayerSeasonCompactProjection({
       season: seasonScope,
       team,
       player: {
@@ -199,20 +200,19 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
         scoutSignals: [],
         scoutProfiles: [],
         scoutCombinations: [],
-        scoutStatsLoadMeasurementHistory,
       },
     })
-    const nextRows = upsertSeasonRows({
-      rows,
-      season: seasonScope,
-      team,
-      seasonDoc,
-    })
+    const nextCurrent = isHistory
+      ? currentWithoutSeason
+      : [...currentWithoutSeason, seasonDoc]
+    const nextHistory = isHistory
+      ? [...historyWithoutSeason, seasonDoc]
+      : historyWithoutSeason
 
     const nextTrackingSource = {
       ...currentData,
-      current: isHistory ? baseDoc.current : nextRows,
-      history: isHistory ? nextRows : baseDoc.history,
+      current: nextCurrent,
+      history: nextHistory,
     }
 
     const nextPayload = {
@@ -224,7 +224,14 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
         currentData.verification
       ),
       events: normalizeScoutingPlayerEvents(currentData.events),
-      ...(isHistory ? { history: nextRows } : { current: nextRows }),
+      current: nextCurrent,
+      history: nextHistory,
+    }
+    const nextPlayerDocument = {
+      ...currentData,
+      ...nextPayload,
+      current: nextCurrent,
+      history: nextHistory,
     }
     const currentPayload = {
       favorite: currentData.favorite === true,
@@ -234,6 +241,17 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
       ...(isHistory
         ? { history: Array.isArray(currentData.history) ? currentData.history : [] }
         : { current: Array.isArray(currentData.current) ? currentData.current : [] }),
+    }
+
+    if (!shouldHavePlayerDocument(nextPlayerDocument)) {
+      transaction.delete(ref)
+      return {
+        playerDocumentId,
+        updated: true,
+        deleted: true,
+        changed: true,
+        scoutProfilesCount: 0,
+      }
     }
 
     if (isSamePersistedState(currentPayload, nextPayload)) {
@@ -265,12 +283,42 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
   })
 }
 
+export async function clearExistingPlayerSeasonProfilesMany({
+  season = {},
+  team = {},
+  target = 'current',
+  players = [],
+} = {}) {
+  const results = []
+
+  for (const player of (Array.isArray(players) ? players : [])) {
+    if (!clean(player?.playerDocumentId)) continue
+    results.push(await clearExistingPlayerSeasonProfiles({
+      season,
+      team,
+      target,
+      player,
+    }))
+  }
+
+  return {
+    rowsCount: results.filter(result => result.updated && result.changed).length,
+    deletedPlayerDocumentIds: results
+      .filter(result => result.deleted)
+      .map(result => result.playerDocumentId)
+      .filter(Boolean),
+    skippedCount: results.filter(result => result.skipped).length,
+    playerDocumentIds: results.map(result => result.playerDocumentId).filter(Boolean),
+    results,
+  }
+}
+
 export async function upsertProfiledPlayerDocsMany({
   season = {},
   team = {},
   target = 'current',
   players = [],
-  teamDocument = null,
+  teamSeasonDocument = null,
 } = {}) {
   const profiledPlayers = (Array.isArray(players) ? players : [])
     .filter(hasPlayerScoutProfiles)
@@ -282,7 +330,7 @@ export async function upsertProfiledPlayerDocsMany({
       team,
       target,
       player,
-      teamDocument,
+      teamSeasonDocument,
     }))
   }
 
@@ -295,64 +343,26 @@ export async function upsertProfiledPlayerDocsMany({
   }
 }
 
-const resolveTrackingDocReason = player => {
-  if (hasPlayerScoutProfiles(player)) {
-    return SCOUTING_PLAYER_TRACKING_REASONS.PROFILE
-  }
-
-  const reasons = resolvePlayerTrackingReasons(player)
-  const reasonPriority = [
-    SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER,
-    SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE,
-    SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST,
-    SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
-  ]
-
-  return reasonPriority.find(reason => reasons.includes(reason)) || ''
-}
-
-const resolveTransferContext = player => (
-  player?.scoutTransferContext ||
-  player?.scoutTrajectory?.latestTransfer ||
-  {}
-)
+const resolveTrackingDocReason = resolvePlayerLifecycleTrackingReason
 
 export async function syncPlayerRoleAndScoutProfileDoc({
   season = {},
   team = {},
   target = 'current',
   player = {},
-  teamDocument = null,
+  teamSeasonDocument = null,
+  verificationAnswers = null,
+  confirmPositionContext = false,
 } = {}) {
-  const trackingReason = resolveTrackingDocReason(player)
-
-  if (trackingReason === SCOUTING_PLAYER_TRACKING_REASONS.PROFILE) {
-    return upsertProfiledPlayerDoc({
-      season,
-      team,
-      target,
-      player,
-      teamDocument,
-    })
-  }
-
-  if (trackingReason) {
-    return ensureScoutingPlayerDoc({
-      season,
-      team,
-      target,
-      player,
-      teamDocument,
-      reason: trackingReason,
-      transfer: resolveTransferContext(player),
-    })
-  }
-
-  return clearExistingPlayerSeasonProfiles({
+  return upsertProfiledPlayerDoc({
     season,
     team,
     target,
     player,
+    teamSeasonDocument,
+    verificationAnswers,
+    confirmPositionContext,
+    resolveLifecycleAfterCalculation: true,
   })
 }
 
@@ -361,7 +371,7 @@ export async function syncPlayerScoutProfileDocsMany({
   team = {},
   target = 'current',
   players = [],
-  teamDocument = null,
+  teamSeasonDocument = null,
 } = {}) {
   const safePlayers = Array.isArray(players) ? players : []
   const lookupPlayers = safePlayers.filter(player => (
@@ -389,7 +399,7 @@ export async function syncPlayerScoutProfileDocsMany({
         team,
         target,
         player,
-        teamDocument,
+        teamSeasonDocument,
       }))
     } catch (error) {
       failures.push({

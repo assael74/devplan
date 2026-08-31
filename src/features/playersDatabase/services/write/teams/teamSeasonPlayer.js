@@ -1,517 +1,164 @@
 // src/features/playersDatabase/services/write/teams/teamSeasonPlayer.js
 
-
-
 import { db } from '../../../../../services/firebase/firebase.js'
-import {
-  buildSeasonKey,
-  clean,
-} from '../leagues/leagueDoc.js'
+import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
 import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
 import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import {
-  isSameSeason,
-  normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+import { normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { getPlayerMergeKey, normalizeTeamPlayer } from './teamSeason.model.js'
+import { buildTeamPlayerScoutProjection } from '../shared/playerScoutProjection.js'
 import {
-  buildTeamBaseDoc,
-  teamDocRef,
-} from './teamDoc.js'
-import { getPlayerMergeKey } from './teamSeason.model.js'
-import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
-import { removePlayerScoutProfileFromComputedState } from '../../../domain/orchestration/mutatePlayerScoutProfileState.js'
-import { normalizePlayerScoutStory } from '../players/playerDoc.model.js'
-
+  buildTeamSeasonDocumentData,
+  teamSeasonDocRef,
+} from './teamSeasonDoc.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
+const normalizeComparableValue = value => Array.isArray(value)
+  ? value.map(normalizeComparableValue)
+  : value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype
+    ? Object.keys(value).sort().reduce((result, key) => ({
+      ...result,
+      [key]: normalizeComparableValue(value[key]),
+    }), {})
+    : value
 
 const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
-  Object.keys(patch).every(key => (
-    JSON.stringify(normalizeComparableValue(current[key])) ===
-    JSON.stringify(normalizeComparableValue(patch[key]))
-  ))
+  Object.keys(patch).every(key => JSON.stringify(normalizeComparableValue(current[key])) ===
+    JSON.stringify(normalizeComparableValue(patch[key])))
 )
-export async function updateTeamSeasonPlayerUrl({
-  season = {},
-  team = {},
-  player = {},
-  playerUrl = '',
-  target = 'current',
-} = {}) {
-  const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
-  if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
 
-  const ref = teamDocRef(teamId)
-  const nextPlayerUrl = clean(player.playerUrl || playerUrl)
-  const playerMatchValues = new Set(
-    buildPlayerMatchValues(player)
-      .map(value => clean(value).toLowerCase())
-      .filter(Boolean)
-  )
+const context = ({ team, teamId }) => ({ ...team, id: teamId, birthTeamDocumentId: teamId })
+const targetFor = seasonStatus => (
+  clean(seasonStatus) === 'completed' ? 'history' : 'current'
+)
 
-  return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-
-    if (!snapshot.exists()) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        playerUrl: nextPlayerUrl,
-        target: fieldKey,
-        updated: false,
-        reason: 'teamDocMissing',
-      }
-    }
-
-    const currentData = snapshot.data() || {}
-    const rows = Array.isArray(currentData[fieldKey]) ? currentData[fieldKey] : []
-    const seasonIndex = rows.findIndex(row => isSameSeason(row, {
-      seasonId,
-      seasonKey,
-    }))
-
-    if (seasonIndex === -1) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        playerUrl: nextPlayerUrl,
-        target: fieldKey,
-        updated: false,
-        reason: 'teamSeasonMissing',
-      }
-    }
-
-    const seasonRow = rows[seasonIndex] || {}
-    const teamPlayers = Array.isArray(seasonRow.teamPlayers)
-      ? seasonRow.teamPlayers
-      : []
-    const playerIndex = teamPlayers.findIndex(row => (
-      buildPlayerMatchValues(row)
-        .map(value => clean(value).toLowerCase())
-        .some(value => playerMatchValues.has(value))
-    ))
-
-    if (playerIndex === -1) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        playerUrl: nextPlayerUrl,
-        target: fieldKey,
-        updated: false,
-        reason: 'teamPlayerMissing',
-      }
-    }
-
-    const currentPlayer = teamPlayers[playerIndex] || {}
-    if (clean(currentPlayer.playerUrl) === nextPlayerUrl) {
-      return {
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-        seasonId,
-        seasonKey,
-        playerUrl: nextPlayerUrl,
-        target: fieldKey,
-        playerDocumentId: clean(player.playerDocumentId),
-        externalPlayerId: clean(player.externalPlayerId),
-        updated: true,
-        changed: false,
-        writeSkipped: true,
-      }
-    }
-
-    const nextPlayers = teamPlayers.map((row, index) => (
-      index === playerIndex
-        ? {
-            ...row,
-            playerUrl: nextPlayerUrl,
-            updatedAt: new Date().toISOString(),
-          }
-        : row
-    ))
-    const nextSeasonWithoutBalance = {
-      ...seasonRow,
-      teamPlayers: nextPlayers,
-      updatedAt: new Date().toISOString(),
-    }
-    const nextSeason = withTeamBalanceSnapshot({
-      seasonDoc: nextSeasonWithoutBalance,
-      teamDocument: currentData,
-      seasonTarget: fieldKey,
-    })
-    const nextRows = rows.map((row, index) => (
-      index === seasonIndex ? nextSeason : row
-    ))
-
-    transaction.set(
-      ref,
-      {
-        [fieldKey]: nextRows,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    )
-
-    return {
-      birthTeamDocumentId: teamId,
-      teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      playerUrl: nextPlayerUrl,
-      target: fieldKey,
-      playerDocumentId: clean(player.playerDocumentId),
-      externalPlayerId: clean(player.externalPlayerId),
-      updated: true,
-      changed: true,
-      writeSkipped: false,
-    }
-  })
-}
-
-const buildTeamPlayerUpdateResult = ({
-  teamId,
-  seasonId,
-  seasonKey,
-  target,
-  updated,
-  scoutProfilesSummary,
-  teamDocument = null,
-  player = null,
-  reason = '',
-  changed,
-  writeSkipped,
-}) => ({
+const result = ({ teamId, ref, seasonId, seasonKey, target, updated, reason = '', changed, writeSkipped, scoutProfilesSummary, seasonDocument, player }) => ({
   birthTeamDocumentId: teamId,
   teamDocumentId: teamId,
+  teamSeasonDocumentId: ref?.id || '',
   seasonId,
   seasonKey,
   target,
   updated,
+  ...(reason ? { reason } : {}),
   ...(typeof changed === 'boolean' ? { changed } : {}),
   ...(typeof writeSkipped === 'boolean' ? { writeSkipped } : {}),
-  ...(reason ? { reason } : {}),
-  ...(scoutProfilesSummary
-    ? { scoutProfilesSummary }
-    : {}),
-  ...(teamDocument ? { teamDocument } : {}),
+  ...(scoutProfilesSummary ? { scoutProfilesSummary } : {}),
+  ...(seasonDocument ? { seasonDocument } : {}),
   ...(player ? { player } : {}),
 })
 
-const patchTeamSeasonPlayer = async ({
-  season = {},
-  team = {},
-  target = 'current',
-  player = {},
-  buildPatch,
-  includeScoutSummary = false,
-} = {}) => {
+const persistSeason = ({ transaction, ref, team, teamId, season, current, next }) => {
+  const persisted = buildTeamSeasonDocumentData({
+    team: { ...team, birthTeamDocumentId: teamId },
+    season,
+    seasonDoc: next,
+    existingData: current,
+  })
+  transaction.set(ref, persisted)
+  return persisted
+}
+
+const updateSeasonPlayer = async ({ season = {}, team = {}, player = {}, buildPatch, includeScoutSummary = false } = {}) => {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const playerKey = getPlayerMergeKey(player)
-
   if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
-  if (!playerKey) throw new Error('Missing player id')
-  if (typeof buildPatch !== 'function') {
-    throw new Error('Missing team player patch builder')
-  }
+  if (!seasonId || !playerKey || typeof buildPatch !== 'function') throw new Error('Missing Team Season player update identity')
 
-  const ref = teamDocRef(teamId)
-
+  const ref = teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey })
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-
-    if (!snapshot.exists()) {
-      return buildTeamPlayerUpdateResult({
-        teamId,
-        seasonId,
-        seasonKey,
-        target: fieldKey,
-        updated: false,
-        reason: 'teamDocMissing',
-        scoutProfilesSummary: includeScoutSummary
-          ? {
-            total: 0,
-            profileCounts: {},
-          }
-          : null,
-      })
-    }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc(
-      {
-        ...team,
-        teamDocumentId: teamId,
-      },
-      currentData
-    )
-    const rows = Array.isArray(baseDoc[fieldKey])
-      ? baseDoc[fieldKey]
-      : []
-    const updatedAt = new Date().toISOString()
-    let playerFound = false
-    let playerChanged = false
+    if (!snapshot.exists()) return result({ teamId, ref, seasonId, seasonKey, target: targetFor(season.seasonStatus), updated: false, reason: 'teamSeasonMissing' })
+    const current = snapshot.data() || {}
+    const sourceTarget = targetFor(current.seasonStatus || season.seasonStatus)
+    const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
+    let found = false
+    let changed = false
     let updatedPlayer = null
-
-    const nextRows = rows.map(row => {
-      if (!isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      })) return row
-
-      const teamPlayers = Array.isArray(row.teamPlayers)
-        ? row.teamPlayers
-        : []
-      const nextPlayers = teamPlayers.map(nextPlayer => {
-        if (getPlayerMergeKey(nextPlayer) !== playerKey) {
-          return nextPlayer
-        }
-
-        playerFound = true
-        const playerPatch = buildPatch(nextPlayer, row, baseDoc)
-
-        if (isPatchUnchanged({
-          current: nextPlayer,
-          patch: playerPatch,
-        })) {
-          updatedPlayer = nextPlayer
-          return nextPlayer
-        }
-
-        playerChanged = true
-        const nextUpdatedPlayer = {
-          ...nextPlayer,
-          ...playerPatch,
-          updatedAt,
-        }
-        updatedPlayer = nextUpdatedPlayer
-
-        return nextUpdatedPlayer
-      })
-
-      if (!playerChanged) return row
-
-      const nextSeasonWithoutBalance = {
-        ...row,
-        teamPlayers: nextPlayers,
-        updatedAt,
+    const nextPlayers = players.map(existing => {
+      if (getPlayerMergeKey(existing) !== playerKey) return existing
+      found = true
+      const patch = buildPatch(existing, current)
+      if (isPatchUnchanged({ current: existing, patch })) {
+        updatedPlayer = existing
+        return existing
       }
-
-      return withTeamBalanceSnapshot({
-        seasonDoc: nextSeasonWithoutBalance,
-        teamDocument: baseDoc,
-        seasonTarget: fieldKey,
-      })
+      changed = true
+      updatedPlayer = normalizeTeamPlayer({ ...existing, ...patch }, current)
+      return updatedPlayer
     })
-
-    const seasonDoc = nextRows.find(row => (
-      isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      })
-    )) || null
-    const teamPlayers = Array.isArray(seasonDoc?.teamPlayers)
-      ? seasonDoc.teamPlayers
-      : []
-    const scoutProfilesSummary = includeScoutSummary
-      ? buildScoutProfilesSummary(teamPlayers)
-      : null
-
-    const nextTeamDocument = playerChanged
-      ? {
-          ...baseDoc,
-          [fieldKey]: nextRows,
-          updatedAt,
-        }
-      : baseDoc
-
-    if (playerChanged) {
-      transaction.set(
-        ref,
-        {
-          [fieldKey]: nextRows,
-          updatedAt,
-        },
-        { merge: true }
-      )
-    }
-
-    return buildTeamPlayerUpdateResult({
-      teamId,
-      seasonId,
-      seasonKey,
-      target: fieldKey,
-      updated: playerFound,
-      changed: playerChanged,
-      writeSkipped: playerFound && !playerChanged,
-      scoutProfilesSummary,
-      teamDocument: nextTeamDocument,
-      player: updatedPlayer,
+    const scoutProfilesSummary = includeScoutSummary ? buildScoutProfilesSummary(nextPlayers) : null
+    if (!changed) return result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: found, changed: false, writeSkipped: found, scoutProfilesSummary, seasonDocument: current, player: updatedPlayer })
+    const next = withTeamBalanceSnapshot({
+      seasonDoc: { ...current, teamPlayers: nextPlayers, playersCount: nextPlayers.length, ...(scoutProfilesSummary ? { scoutProfilesSummary } : {}), updatedAt: new Date().toISOString() },
+      teamRoot: context({ team, teamId }),
     })
+    const persisted = persistSeason({ transaction, ref, team, teamId, season: { ...season, seasonId, seasonKey }, current, next })
+    return result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: true, writeSkipped: false, scoutProfilesSummary, seasonDocument: persisted, player: updatedPlayer })
   })
 }
 
-
-export async function removeTeamSeasonPlayerScoutProfile({ profileId = '', player = {}, ...payload } = {}) {
-  const removeProfileId = clean(profileId)
-  if (!removeProfileId) throw new Error('Missing scout profile id')
-
-  return patchTeamSeasonPlayer({
-    ...payload,
-    includeScoutSummary: true,
-    player,
-    buildPatch: currentPlayer => {
-      const nextPlayer = removePlayerScoutProfileFromComputedState({
-        player: currentPlayer,
-        profileId: removeProfileId,
-      })
-
-      return {
-        scoutProfiles: Array.isArray(nextPlayer.scoutProfiles)
-          ? nextPlayer.scoutProfiles
-          : [],
-        scoutCombinations: Array.isArray(nextPlayer.scoutCombinations)
-          ? nextPlayer.scoutCombinations
-          : [],
-        bestScoutSignal: null,
-        ...normalizePlayerScoutStory(nextPlayer),
-      }
-    },
+export async function updateTeamSeasonPlayerUrl({ season = {}, team = {}, player = {}, playerUrl = '' } = {}) {
+  const nextPlayerUrl = clean(player.playerUrl || playerUrl)
+  const matches = new Set(buildPlayerMatchValues(player).map(value => clean(value).toLowerCase()).filter(Boolean))
+  return updateSeasonPlayer({
+    season, team, player,
+    buildPatch: existing => (
+      buildPlayerMatchValues(existing).some(value => matches.has(clean(value).toLowerCase()))
+        ? { playerUrl: nextPlayerUrl, updatedAt: new Date().toISOString() }
+        : {}
+    ),
   })
 }
 
+export async function removeTeamSeasonPlayerScoutProfile({ player = {}, ...payload } = {}) {
+  return updateSeasonPlayer({ ...payload, includeScoutSummary: true, player, buildPatch: () => buildTeamPlayerScoutProjection(player) })
+}
 
-export async function updateTeamSeasonPlayerVerificationAndScout({
-  season = {},
-  team = {},
-  target = 'current',
-  player = {},
-  verificationAnswers = [],
-  ...payload
-} = {}) {
-  return patchTeamSeasonPlayer({
-    ...payload,
-    season,
-    team,
-    target,
-    player,
-    includeScoutSummary: true,
-    buildPatch: (currentPlayer, seasonRow) => {
-      const calculatedPlayer = buildPlayerScoutState({
-        player: currentPlayer,
-        team: {
-          ...team,
-          ...seasonRow,
-        },
-        season: {
-          ...season,
-          ...seasonRow,
-        },
-        perspective: 'players_database_verification_update',
-        verificationAnswers: Array.isArray(verificationAnswers)
-          ? verificationAnswers
-          : [],
-      })
+export async function updateTeamSeasonPlayerScoutProjection({ player = {}, ...payload } = {}) {
+  return updateSeasonPlayer({ ...payload, includeScoutSummary: true, player, buildPatch: () => buildTeamPlayerScoutProjection(player) })
+}
 
-      return {
-        scoutProfiles: Array.isArray(calculatedPlayer.scoutProfiles)
-          ? calculatedPlayer.scoutProfiles
-          : [],
-        scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
-          ? calculatedPlayer.scoutCombinations
-          : [],
-        bestScoutSignal: null,
-        ...normalizePlayerScoutStory(calculatedPlayer),
-      }
-    },
+const findScoutedPlayer = ({ player = {}, scoutedPlayers = [] } = {}) => {
+  const keys = new Set(buildPlayerMatchValues(player).map(value => clean(value).toLowerCase()).filter(Boolean))
+  return (Array.isArray(scoutedPlayers) ? scoutedPlayers : []).find(candidate => (
+    buildPlayerMatchValues(candidate).some(value => keys.has(clean(value).toLowerCase()))
+  )) || null
+}
+
+export async function updateTeamSeasonPlayersScoutProjections({ season = {}, team = {}, scoutedPlayers = [] } = {}) {
+  const teamId = resolveTeamLookupKey(team)
+  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
+  if (!teamId || !seasonId) throw new Error('Missing Team Season identity')
+  const ref = teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey })
+  return trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) return result({ teamId, ref, seasonId, seasonKey, target: targetFor(season.seasonStatus), updated: false, reason: 'teamSeasonMissing' })
+    const current = snapshot.data() || {}
+    const sourceTarget = targetFor(current.seasonStatus || season.seasonStatus)
+    const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
+    const nextPlayers = players.map(player => {
+      const scouted = findScoutedPlayer({ player, scoutedPlayers })
+      return scouted ? { ...player, ...buildTeamPlayerScoutProjection(scouted) } : player
+    })
+    const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
+    const changed = JSON.stringify(normalizeComparableValue(players)) !== JSON.stringify(normalizeComparableValue(nextPlayers)) ||
+      JSON.stringify(normalizeComparableValue(current.scoutProfilesSummary || {})) !== JSON.stringify(normalizeComparableValue(scoutProfilesSummary))
+    if (!changed) return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: false, writeSkipped: true, scoutProfilesSummary, seasonDocument: current }), players, playersCount: players.length, teamBalance: current.teamBalance || null }
+    const next = { ...current, teamPlayers: nextPlayers, playersCount: nextPlayers.length, scoutProfilesSummary, updatedAt: new Date().toISOString() }
+    const persisted = persistSeason({ transaction, ref, team, teamId, season, current, next })
+    return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: true, writeSkipped: false, scoutProfilesSummary, seasonDocument: persisted }), players: nextPlayers, playersCount: nextPlayers.length, teamBalance: persisted.teamBalance || null }
   })
 }
 
-export async function updateTeamSeasonPlayerRoleAndScoutProfiles({
-  season = {},
-  team = {},
-  target = 'current',
-  player = {},
-  primaryPosition = '',
-  positionLayer = '',
-  numShirt = '',
-  ...payload
-} = {}) {
-  return patchTeamSeasonPlayer({
-    ...payload,
-    season,
-    team,
-    target,
-    player,
-    includeScoutSummary: true,
-    buildPatch: (currentPlayer, seasonRow) => {
-      const rolePlayer = {
-        ...currentPlayer,
-        primaryPosition: clean(primaryPosition),
-        positionLayer: clean(positionLayer),
-        numShirt: clean(numShirt),
-      }
-      const calculatedPlayer = buildPlayerScoutState({
-        player: rolePlayer,
-        team: {
-          ...team,
-          ...seasonRow,
-        },
-        season: {
-          ...season,
-          ...seasonRow,
-        },
-        perspective: 'players_database_role_update',
-      })
+export async function updateTeamSeasonPlayerVerificationAndScout({ player = {}, ...payload } = {}) {
+  return updateSeasonPlayer({ ...payload, player, buildPatch: () => ({}) })
+}
 
-      return {
-        primaryPosition: calculatedPlayer.primaryPosition,
-        positionLayer: calculatedPlayer.positionLayer,
-        numShirt: calculatedPlayer.numShirt,
-        scoutProfiles: Array.isArray(calculatedPlayer.scoutProfiles)
-          ? calculatedPlayer.scoutProfiles
-          : [],
-        scoutCombinations: Array.isArray(calculatedPlayer.scoutCombinations)
-          ? calculatedPlayer.scoutCombinations
-          : [],
-        bestScoutSignal: null,
-        ...normalizePlayerScoutStory(calculatedPlayer),
-      }
-    },
-  })
+export async function updateTeamSeasonPlayerRoleAndScoutProfiles({ player = {}, primaryPosition = '', positionLayer = '', numShirt = '', ...payload } = {}) {
+  return updateSeasonPlayer({ ...payload, player, buildPatch: () => ({ primaryPosition: clean(primaryPosition), positionLayer: clean(positionLayer), numShirt: clean(numShirt) }) })
 }

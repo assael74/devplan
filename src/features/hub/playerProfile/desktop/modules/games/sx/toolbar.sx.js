@@ -14,18 +14,15 @@ export const toolbarSx = {
   },
 
   toolbarTop: {
-    display: 'flex',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(170px, 220px) repeat(5, minmax(148px, 180px)) minmax(0, 1fr) auto',
     gap: 0.75,
     alignItems: 'center',
-    flexWrap: 'nowrap',
-    overflowX: 'auto',
-    overflowY: 'hidden',
+    overflow: 'visible',
     minWidth: 0,
-    scrollbarWidth: 'none',
-    '&::-webkit-scrollbar': {
-      width: 0,
-      height: 0,
-      display: 'none',
+
+    '& > *': {
+      minWidth: 0,
     },
   },
 

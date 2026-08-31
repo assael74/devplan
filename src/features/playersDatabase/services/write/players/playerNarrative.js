@@ -9,6 +9,7 @@ import {
   buildApprovedNarrative,
   normalizePlayerNarrative,
 } from '../../../domain/narrative/narrativeState.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
 import { playerDocRef } from './playerDoc.model.js'
 
 const upsertSeasonNarrative = ({ seasons, seasonId, seasonKey, snapshot }) => {
@@ -37,10 +38,16 @@ export const saveApprovedNarrative = async ({
   seasonSnapshot = null,
   careerSnapshot = null,
 } = {}) => {
-  if (!playerDocumentId) throw new Error('Missing player document id')
+  const canonicalPlayerDocumentId = resolveWritablePlayerDocumentId({
+    playerDocumentId,
+  })
+
+  if (!canonicalPlayerDocumentId) {
+    throw new Error('Missing canonical player document id')
+  }
   if (!seasonSnapshot && !careerSnapshot) throw new Error('Missing approved narrative')
 
-  const ref = playerDocRef(playerDocumentId)
+  const ref = playerDocRef(canonicalPlayerDocumentId)
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
@@ -87,9 +94,15 @@ export const saveApprovedNarrative = async ({
 
 
 export const deleteApprovedNarrative = async ({ playerDocumentId } = {}) => {
-  if (!playerDocumentId) throw new Error('Missing player document id')
+  const canonicalPlayerDocumentId = resolveWritablePlayerDocumentId({
+    playerDocumentId,
+  })
 
-  const ref = playerDocRef(playerDocumentId)
+  if (!canonicalPlayerDocumentId) {
+    throw new Error('Missing canonical player document id')
+  }
+
+  const ref = playerDocRef(canonicalPlayerDocumentId)
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)

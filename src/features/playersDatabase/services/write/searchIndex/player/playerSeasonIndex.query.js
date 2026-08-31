@@ -113,3 +113,56 @@ export const findPlayerSeasonIndexDocForPayload = async ({
   }).snapshot
 }
 
+// Resolve the one canonical-or-legacy index target before a coordinated
+// lifecycle transaction starts.  A duplicate identity is not safe to mutate:
+// selecting the first candidate would turn a repairable data issue into data
+// loss, so callers must abort before any lifecycle write.
+export const resolvePlayerSeasonIndexTargetForPayload = async ({
+  league = {},
+  season = {},
+  team = {},
+  player = {},
+} = {}) => {
+  const leagueId = clean(league.id || season.leagueId || team.leagueId)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const teamScope = buildPlayerSeasonScope({
+    season: { ...season, seasonId, seasonKey },
+    team,
+  })
+  const teamId = teamScope.birthTeamId
+  if (!teamId || !seasonKey) return {
+    snapshot: null,
+    duplicateSnapshots: [],
+    identity: {},
+  }
+
+  const indexScope = buildPlayerSeasonIndexScope({
+    league,
+    season: { ...season, seasonId, seasonKey, leagueId },
+    team,
+  })
+  const snapshot = await readSearchIndexes(query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    where('birthTeamId', '==', teamId),
+    where('seasonKey', '==', seasonKey),
+    where('entityType', '==', 'playerSeason')
+  ))
+  const existingDocs = snapshot.docs.filter(playerDocument => (
+    isSamePlayerSeasonIndexContext(playerDocument.data() || {}, indexScope)
+  ))
+  const match = findExistingPlayerSeasonIndexDoc({
+    lookup: buildPlayerSeasonIndexLookup(existingDocs),
+    player,
+    season: { ...season, seasonId, seasonKey },
+    team,
+  })
+  if (match.duplicateSnapshots.length) {
+    const error = new Error('Ambiguous Player Season SearchIndex identity')
+    error.code = 'PLAYER_SEASON_INDEX_AMBIGUOUS'
+    error.documentIds = [match.snapshot?.id, ...match.duplicateSnapshots.map(item => item.id)]
+      .filter(Boolean)
+    throw error
+  }
+  return match
+}

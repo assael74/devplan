@@ -30,6 +30,7 @@ export default function PlayerProfileDesktop({
   const [abilitiesInsightsRequest, setAbilitiesInsightsRequest] = useState(0)
   const [videoInsightsRequest, setVideoInsightsRequest] = useState(0)
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
+  const [gamesImportRequest, setGamesImportRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
   const [trainingsInsightsRequest, setTrainingsInsightsRequest] = useState(0)
 
@@ -59,6 +60,7 @@ export default function PlayerProfileDesktop({
         abilitiesInsightsRequest,
         videoInsightsRequest,
         gamesInsightsRequest,
+        gamesImportRequest,
         performanceInsightsRequest,
         trainingsInsightsRequest,
       }}
@@ -69,6 +71,7 @@ export default function PlayerProfileDesktop({
         onOpenAbilitiesInsights: () => setAbilitiesInsightsRequest((v) => v + 1),
         onOpenVideoInsights: () => setVideoInsightsRequest((v) => v + 1),
         onOpenGamesInsights: () => setGamesInsightsRequest((v) => v + 1),
+        onImportGames: () => setGamesImportRequest((v) => v + 1),
         onOpenPerformanceInsights: () => setPerformanceInsightsRequest((v) => v + 1),
         onOpenTrainingsInsights: () => setTrainingsInsightsRequest((v) => v + 1),
       }}

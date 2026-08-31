@@ -7,6 +7,7 @@ import {
   isValidExternalPlayerId,
   resolvePlayerIdentityBirthYear,
 } from '../../../../model/playerIdentity.model.js'
+import { buildTeamSeasonDocumentId } from '../../../../model/teamIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
@@ -36,6 +37,12 @@ import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalizati
 
 export * from './playerSeasonIndex.identity.js'
 export * from './playerSeasonIndex.scout.js'
+
+export const resolveTeamSeasonSourceTarget = season => (
+  clean(season?.seasonStatus).toLowerCase() === 'completed'
+    ? 'history'
+    : 'current'
+)
 
 export const buildPlayerSeasonIndexDoc = ({
   league = {},
@@ -78,9 +85,13 @@ export const buildPlayerSeasonIndexDoc = ({
   const playerDocumentId = clean(player.playerDocumentId) || (hasPlayerScoutProfiles(player)
     ? buildPlayerDocumentId(player)
     : '')
+  const teamSeasonTarget = resolveTeamSeasonSourceTarget(season)
+  const sourceTarget = playerDocumentId
+    ? (clean(target) === 'history' ? 'history' : 'current')
+    : teamSeasonTarget
   const scoutIndexFields = buildPlayerScoutIndexFields(player)
   const normalization = buildPlayerSeasonSearchMetrics({
-    target,
+    target: sourceTarget,
     seasonStatus: season.seasonStatus,
     ageGroupId: team.ageGroupId || league.ageGroupId,
     leagueTotalRound: season.leagueTotalRound,
@@ -182,9 +193,12 @@ export const buildPlayerSeasonIndexDoc = ({
 
     ...scoutIndexFields,
 
-    sourceCollection: playerDocumentId ? 'players' : 'birthTeams',
-    sourceDocumentId: playerDocumentId || teamScope.birthTeamDocumentId,
-    sourceTarget: clean(target) === 'history' ? 'history' : 'current',
+    sourceCollection: playerDocumentId ? 'players' : 'birthTeamSeasons',
+    sourceDocumentId: playerDocumentId || buildTeamSeasonDocumentId(
+      teamScope.birthTeamDocumentId,
+      seasonKey,
+    ),
+    sourceTarget,
 
     updatedAt: serverTimestamp(),
   }

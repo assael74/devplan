@@ -6,6 +6,7 @@ import {
   buildLeaguesMasterCacheKey,
   buildPlayerDocumentCacheKey,
   buildTeamDocumentCacheKey,
+  buildTeamSeasonDocumentCacheKey,
   PLAYERS_DATABASE_CACHE_PREFIXES,
 } from './cacheKeys.js'
 import {
@@ -56,6 +57,14 @@ export const invalidateTeamDocumentCache = teamId => {
   }
 
   invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
+  invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teamSeason)
+}
+
+export const invalidateTeamSeasonDocumentCache = teamSeasonDocumentId => {
+  const safeTeamSeasonDocumentId = clean(teamSeasonDocumentId)
+  if (safeTeamSeasonDocumentId) {
+    deleteDocumentCacheValue(buildTeamSeasonDocumentCacheKey(safeTeamSeasonDocumentId))
+  }
 }
 
 export const invalidatePlayerDocumentCache = playerId => {
@@ -84,6 +93,7 @@ const TEAM_ACTIONS = new Set([
   'pasteTeamPlayerStats',
   'updateTeamUrl',
   'clearTeamSeasonPlayers',
+  'clearTeamSeasonStats',
   'deleteTeamFromSeason',
   'deleteTeamPlayerFromSeason',
   'createTeamDisplayPlayer',

@@ -34,7 +34,7 @@ export const normalizeScoutSignalsForIndex = player => {
     .map(profile => ({
       ...profile,
       profileId: clean(profile.profileId || profile.id),
-      profileStrength: profile.profileStrength || null,
+      profileStrength: profile.profileStrength || profile.strength || null,
       score: toNullableNumber(profile.score),
     }))
 }
@@ -84,7 +84,11 @@ export const buildPlayerScoutIndexFields = player => {
       ? []
       : Array.isArray(player?.scoutCombinations)
         ? player.scoutCombinations
-        : [],
+        : Array.isArray(player?.scoutCombinationIds)
+          ? player.scoutCombinationIds.map(combinationId => ({
+              id: clean(combinationId),
+            })).filter(combination => combination.id)
+          : [],
     scoutEvidence: profilesRemoved
       ? []
       : Array.isArray(player?.scoutEvidence)
@@ -133,7 +137,6 @@ export const buildPlayerScoutIndexFields = player => {
       prefix: 'primary',
       profile: primaryProfile,
     }),
-    primaryScoutInterestLevel: clean(primaryProfile?.interest),
     primaryScoutTeamGateMode: clean(
       primaryProfile?.scoutContext?.teamGate?.mode
     ),
@@ -141,6 +144,7 @@ export const buildPlayerScoutIndexFields = player => {
     nearScoutProfileDistancePct: toNullableNumber(nearestProfile?.distancePct),
     nearScoutProfileTrend: clean(nearestProfile?.trend),
     scoutEffectiveImmediacyStatus: clean(opportunity?.effectiveActionStatus),
+    scoutPlayerInterestLevel: clean(player?.scoutPlayerInterest?.interestLevel),
     scoutEngineVersion: clean(player?.scoutEngineVersion),
     ...buildProfileIndexFields({
       prefix: 'secondary',

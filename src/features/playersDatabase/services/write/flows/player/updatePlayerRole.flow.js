@@ -6,7 +6,30 @@ import {
   updatePlayerSeasonSearchIndexRole,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import { updateTeamSeasonPlayerRoleAndScoutProfiles } from '../../teams/index.js'
+import {
+  updateTeamSeasonPlayerRoleAndScoutProfiles,
+  updateTeamSeasonPlayerScoutProjection,
+} from '../../teams/index.js'
+
+const PRELIMINARY_LOW_OUTPUT_PROFILE_ID = 'preliminary_low_output'
+
+const hasPreliminaryScoutProfile = (player = {}) => {
+  const signals = Array.isArray(player?.scoutSignals)
+    ? player.scoutSignals
+    : Array.isArray(player?.scoutProfiles)
+      ? player.scoutProfiles
+      : []
+  const hasPreliminarySignal = signals.some(signal => (
+    signal?.profileId === PRELIMINARY_LOW_OUTPUT_PROFILE_ID ||
+    signal?.id === PRELIMINARY_LOW_OUTPUT_PROFILE_ID ||
+    signal?.profileIdentity === 'preliminary'
+  ))
+
+  return hasPreliminarySignal || (
+    Array.isArray(player?.preliminaryScoutProfileIds) &&
+    player.preliminaryScoutProfileIds.includes(PRELIMINARY_LOW_OUTPUT_PROFILE_ID)
+  )
+}
 
 const buildPlayerSyncResult = result => ({
   rowsCount: result && !result.skipped ? 1 : 0,
@@ -85,6 +108,12 @@ export async function updatePlayerRoleFlow(payload = {}) {
     primaryPosition: player.primaryPosition || '',
     positionLayer: player.positionLayer || '',
     numShirt: player.numShirt || '',
+    // Updating a role or layer is the additional professional indication that
+    // lets a Preliminary profile be recalculated and reclassified.
+    confirmPositionContext: (
+      hasPreliminaryScoutProfile(player) &&
+      Boolean(player.primaryPosition || player.positionLayer)
+    ),
   }
 
   const projectionResults = {
@@ -93,6 +122,7 @@ export async function updatePlayerRoleFlow(payload = {}) {
     playerSeasonIndexResult: null,
     leagueTableRankScoutProfilesResult: null,
     teamSeasonIndexScoutProfilesResult: null,
+    teamSeasonProjectionResult: null,
   }
 
   // Reuse the team document already read and updated in the team transaction.
@@ -100,7 +130,7 @@ export async function updatePlayerRoleFlow(payload = {}) {
   try {
     projectionResults.playerSeasonResult = await syncPlayerRoleAndScoutProfileDoc({
       ...rolePayload,
-      teamDocument: teamSeasonResult.teamDocument || null,
+      teamSeasonDocument: teamSeasonResult.seasonDocument || null,
     })
     projectionResults.playerScoutProfileDocsResult = buildPlayerSyncResult(
       projectionResults.playerSeasonResult
@@ -114,8 +144,48 @@ export async function updatePlayerRoleFlow(payload = {}) {
     })
   }
 
+  const scoutedPlayer = projectionResults.playerSeasonResult?.scoutedPlayer
+  if (!scoutedPlayer) {
+    return buildCommittedProjectionFailure({
+      stage: 'playerDocument',
+      error: new Error('Player scout calculation did not return a rich result'),
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
   try {
-    projectionResults.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexRole(rolePayload)
+    projectionResults.teamSeasonProjectionResult =
+      await updateTeamSeasonPlayerScoutProjection({
+        ...rolePayload,
+        player: scoutedPlayer,
+      })
+    if (!projectionResults.teamSeasonProjectionResult?.updated) {
+      return buildCommittedProjectionFailure({
+        stage: 'teamSeasonProjection',
+        error: new Error(
+          projectionResults.teamSeasonProjectionResult?.reason ||
+          'Team season player is missing'
+        ),
+        teamSeasonResult,
+        results: projectionResults,
+      })
+    }
+    teamSeasonResult = projectionResults.teamSeasonProjectionResult
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'teamSeasonProjection',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
+  try {
+    projectionResults.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexRole({
+      ...rolePayload,
+      player: scoutedPlayer,
+    })
 
     if (!projectionResults.playerSeasonIndexResult?.updated) {
       return buildCommittedProjectionFailure({
@@ -165,6 +235,7 @@ export async function updatePlayerRoleFlow(payload = {}) {
     projectionResults.teamSeasonIndexScoutProfilesResult =
       await updateTeamSeasonSearchIndexScoutProfilesSummary({
         ...rolePayload,
+        teamSeasonDocumentId: teamSeasonResult.teamSeasonDocumentId,
         scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
       })
     if (!projectionResults.teamSeasonIndexScoutProfilesResult?.updated) {

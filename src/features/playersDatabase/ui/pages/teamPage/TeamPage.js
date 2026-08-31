@@ -46,6 +46,7 @@ import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
 import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
+import useTeamSeasonStatsDelete from './hooks/useTeamSeasonStatsDelete.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useTeamReport } from './report/index.js'
@@ -167,10 +168,12 @@ function TeamPageContent() {
     hasTeamPlayers,
   })
   const playersDelete = useTeamSeasonPlayersDelete(sharedActionContext)
+  const statsDelete = useTeamSeasonStatsDelete(sharedActionContext)
   const statsColumns = useTeamStatsColumns({
     players,
     rosterLookup: statsImport.rosterLookup,
     getRowStatus: statsImport.getRowStatus,
+    getCellStatus: statsImport.getCellStatus,
   })
 
   const pageSearchParams = React.useMemo(
@@ -392,7 +395,9 @@ function TeamPageContent() {
           ...team,
           ...(selectedTeamSeason || {}),
         },
-        target: selectedTeamSeason?.__sourceTarget || 'current',
+        target: selectedTeamSeason?.seasonStatus === 'completed'
+          ? 'history'
+          : 'current',
         player: {
           ...player,
           playerDocumentId,
@@ -540,6 +545,7 @@ function TeamPageContent() {
             onProfileFilterChange={handleProfileFilterChange}
             onPlayersImport={() => rosterImport.setOpen(true)}
             onStatsImport={() => statsImport.setOpen(true)}
+            onDeleteStats={() => statsDelete.setOpen(true)}
             onDeletePlayers={() => playersDelete.setOpen(true)}
             onReport={teamReport.openPreview}
             onTeamLink={() => teamUrlEditor.open(team)}
@@ -640,14 +646,31 @@ function TeamPageContent() {
 
 
       <SeasonDeleteConfirmModal
+        open={statsDelete.open}
+        title='מחיקת סטטיסטיקת העונה'
+        description='הסגל נשאר. הסטטיסטיקה והמידע הנגזר ממנה יימחקו מהעונה הנבחרת.'
+        seasonKey={selectedSeasonKey}
+        busy={statsDelete.busy}
+        confirmLabel='מחיקת סטטיסטיקת העונה'
+        onConfirm={statsDelete.confirm}
+        onClose={statsDelete.close}
+      />
+
+      <SeasonDeleteConfirmModal
         open={playersDelete.open}
         title='מחיקת שחקני העונה'
-        description='כל השחקנים והסטטיסטיקה שלהם יוסרו מהקבוצה בעונה הנבחרת בלבד.'
+        description='טעינת הקבוצה בעונה הנבחרת תימחק במלואה, כולל הסגל והסטטיסטיקה.'
         seasonKey={selectedSeasonKey}
         busy={playersDelete.busy}
         confirmLabel='מחיקת שחקני העונה'
         onConfirm={playersDelete.confirm}
         onClose={playersDelete.close}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(statsDelete.writeReport)}
+        report={statsDelete.writeReport}
+        onClose={statsDelete.closeWriteReport}
       />
 
       <WriteFlowReportModal

@@ -13,6 +13,11 @@ export {
   getTeamById,
 } from './team.js'
 
+export {
+  getTeamSeason,
+  listTeamSeasons,
+} from './teamSeason.js'
+
 export { readTeamPageData } from './teamPage.read.js'
 export { readLeaguePageData } from './leaguePage.read.js'
 export { readLeagueCenterData } from './leagueCenter.read.js'
@@ -22,6 +27,12 @@ export {
   readPlayerPageData,
   readPlayerSource,
 } from './playerPage.read.js'
+export {
+  canReadPlayerSearchIndexExport,
+  canReadTeamSearchIndexExport,
+  readPlayerSearchIndexExport,
+  readTeamSearchIndexExport,
+} from './playerSearchIndexExport.read.js'
 export { readPlayerNarrativePlan } from './playerNarrative.read.js'
 export { readPlayerScoutMeasurementHistory } from './playerScoutHistory.read.js'
 export { readPlayerIdentityReview } from './playerIdentityReview.read.js'

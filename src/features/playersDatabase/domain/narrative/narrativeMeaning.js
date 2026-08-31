@@ -54,8 +54,6 @@ const buildPlayerInterestMeaning = value => {
   return {
     assessmentScope: clean(value.assessmentScope),
     interestLevel: clean(value.interestLevel),
-    profileInterestLevel: clean(value.profileInterestLevel),
-    combinationInterestLevel: clean(value.combinationInterestLevel),
     primaryProfileId: clean(value.primaryProfileId),
     reasons: unique(Array.isArray(value.reasons) ? value.reasons.map(clean) : []),
     limitingFactors: unique(

@@ -102,6 +102,10 @@ export default function PlayerHeader({ entity, context, backAction }) {
   const navigate = useNavigate()
   const photoSrc = entity?.photo || playerImage
   const ifaLink = entity?.ifaLink || entity?.playerIfaLink || null
+  const imageEntityType =
+    entity?.isPrivatePlayer === true || entity?.playerSource === 'private'
+      ? 'privates'
+      : 'players'
   const image = useProfileHeaderImage({
     entityId: entity?.id,
     source: photoSrc,
@@ -141,7 +145,7 @@ export default function PlayerHeader({ entity, context, backAction }) {
       />
       <ProfileHeaderImageModal
         image={image}
-        entityType="players"
+        entityType={imageEntityType}
         entityId={entity?.id}
         entityName={fullName}
       />

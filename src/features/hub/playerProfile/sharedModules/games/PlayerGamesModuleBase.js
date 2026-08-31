@@ -11,6 +11,7 @@ import {
 
 import EmptyState from '../../../sharedProfile/EmptyState.js'
 import GameStatsCreateForm from '../../../../../ui/forms/gameStats/GameStatsCreateForm.js'
+import { BulkPasteDrawer } from '../../../../bulkActions/publicApi.js'
 
 import usePlayerGamesModuleModel from './usePlayerGamesModuleModel.js'
 import { playerGamesModuleSx } from './playerGamesModule.sx.js'
@@ -29,6 +30,7 @@ export default function PlayerGamesModuleBase({
   entity,
   context,
   profileData,
+  gamesImportRequest = 0,
   gamesInsightsRequest = 0,
   seasonStartYear = 2025,
 
@@ -45,6 +47,7 @@ export default function PlayerGamesModuleBase({
     entity,
     context,
     profileData,
+    gamesImportRequest,
     gamesInsightsRequest,
     seasonStartYear,
   })
@@ -67,6 +70,10 @@ export default function PlayerGamesModuleBase({
     editingEntryGame,
     editingGame,
 
+    gamesImportOpen,
+    gamesImportSaving,
+    gamesImportError,
+
     statsFormLoading,
     statsFormLoadingText,
     editingStatsGame,
@@ -87,6 +94,9 @@ export default function PlayerGamesModuleBase({
     handleChangeSortBy,
     handleChangeSortDirection,
     handleEditGame,
+
+    handleCloseGamesImport,
+    handleGamesImportPreviewReady,
 
     handleOpenStatsGame,
     handleSaveStats,
@@ -163,6 +173,15 @@ export default function PlayerGamesModuleBase({
         team={liveTeam}
         scoring={playerScoring}
         profileData={profileData}
+      />
+
+      <BulkPasteDrawer
+        open={gamesImportOpen}
+        onClose={handleCloseGamesImport}
+        title="ייבוא משחקים לשחקן"
+        onPreviewReady={handleGamesImportPreviewReady}
+        saving={gamesImportSaving}
+        error={gamesImportError}
       />
 
       <Modal open={statsFormLoading}>

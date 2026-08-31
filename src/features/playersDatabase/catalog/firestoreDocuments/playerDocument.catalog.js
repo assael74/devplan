@@ -1,17 +1,15 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/playerDocument.catalog.js
 
 // Firestore source of truth: tracked player document.
-// The complete player scout shape is kept here so this document can be read in one place.
+// Player Seasons persist only the compact V3 scout snapshot. The full scouting
+// engine result remains runtime/domain state and rich V2 fields are not part of
+// canonical Player persistence.
 
 export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
   'scoutOpportunity',
-  'scoutVerification',
   'scoutProfileProgression',
   'scoutProfileHierarchy',
-  'scoutProfileCaseStrength',
   'scoutPlayerInterest',
-  'scoutTrajectory',
-  'scoutTransferContext',
 ]
 
 const PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT = {
@@ -62,188 +60,43 @@ const PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT = {
 }
 
 const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
-  scoutCandidateSignals: [
-    {
-      id: 'near_profile',
-      profileId: '',
-      profileLabel: '',
-      profileShortLabel: '',
-      distance: null,
-      distancePct: null,
-      status: '',
-      trend: '',
-      distanceDelta: null,
-      distanceDeltaPct: null,
-    },
-  ],
-  scoutEvidence: [
-    {
-      id: '',
-      category: '',
-      metric: '',
-      value: null,
-      op: '',
-      threshold: null,
-    },
-  ],
-  scoutSpotlights: [
-    {
-      id: '',
-      confidence: '',
-      effect: '',
-      evidence: [],
-      details: {},
-    },
-  ],
   scoutOpportunity: {
     effectiveActionStatus: '',
-    baseActionStatus: 'watch',
-    automaticActionStatus: 'watch',
-    manualActionStatus: '',
-    hasManualDecision: false,
-    profilesRemoved: false,
-    manualDecision: {
-      hasDecision: false,
-      actionStatus: '',
-      reason: '',
-      note: '',
-      decidedAt: null,
-      seasonKey: '',
-      profileIds: [],
-    },
-    source: '',
-    boostScore: 0,
-    reductionScore: 0,
-    netScore: 0,
-    boosts: [
-      {
-        id: '',
-        points: 0,
-        details: {},
-      },
-    ],
-    reductions: [
-      {
-        id: '',
-        points: 0,
-        details: {},
-      },
-    ],
-    evaluations: [
-      {
-        id: '',
-        result: '',
-        points: 0,
-        reason: '',
-        profileId: '',
-        details: {},
-      },
-    ],
-    signalPersistence: {
-      profileRepeat: {
-        profileId: '',
-        seasons: 0,
-      },
-      combinationRepeat: {
-        combinationId: '',
-        profileIds: [],
-        seasons: 0,
-      },
-      decay: {
-        seasonsWithoutSignal: 0,
-        profileIds: [],
-        lastSignalSeasonKey: '',
-        currentSeasonKey: '',
-        currentSeasonCounted: false,
-      },
-      reasons: [],
-    },
     exposureLevel: '',
+    netScore: null,
     reasons: [],
-    profileIds: [],
-    candidateProfileIds: [],
-    bestProfileId: '',
-  },
-  scoutVerification: {
-    checks: [],
-    answeredChecks: [],
-    missingChecks: [],
-    nextBestCheck: null,
-    dimensions: {},
-    completion: {
-      answered: 0,
-      total: 0,
-      complete: false,
-    },
   },
   scoutProfileProgression: {
-    distances: [],
-    nearProfiles: [],
-    nearestProfile: null,
+    distances: [
+      {
+        profileId: '',
+        distancePct: null,
+        status: '',
+        matched: false,
+      },
+    ],
   },
   scoutProfileHierarchy: {
     primaryProfileId: '',
-    primarySignal: null,
+    primaryPreliminaryProfileId: '',
+    primaryProfileIdentity: '',
+    professionalProfileIds: [],
     supportingProfileIds: [],
-    supportingSignals: [],
+    supportingEvidenceProfileIds: [],
+    opportunityProfileIds: [],
+    preliminaryProfileIds: [],
     orderedProfileIds: [],
     suppressedProfileIds: [],
     exclusiveFamilyWinners: {
       goal_output: '',
     },
   },
-  scoutProfileCaseStrength: {
-    primaryProfileId: '',
-    primaryProfileStrength: {
-      depth: 0,
-      depthPct: 0,
-      measurableRuleCount: 0,
-    },
-    profileCount: 0,
-    profileIds: [],
-    supportingProfileIds: [],
-    hasDefinedCombination: false,
-    combinationCount: 0,
-    combinationIds: [],
-  },
   scoutPlayerInterest: {
-    assessmentScope: 'player_career',
     interestLevel: '',
-    profileInterestLevel: '',
-    combinationInterestLevel: '',
-    primaryProfileId: '',
     reasons: [],
     limitingFactors: [],
-    upgradeConditions: [],
   },
-  scoutTrajectory: {
-    direction: '',
-    confidence: '',
-    evidence: [],
-    stintsCount: 0,
-    seasonsCount: 0,
-    latestTransfer: null,
-    transferEvents: [],
-  },
-  futureCompetitionPath: null,
-  scoutTransferContext: null,
   scoutEngineVersion: 'scouting-v2',
-};
-
-export const PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT = {
-  snapshotKey: '',
-  capturedAt: '',
-  engineVersion: 'scouting-v2',
-  primaryProfileId: '',
-  profileIds: [],
-  profileStates: [
-    {
-      profileId: '',
-      matched: false,
-      depth: null,
-      distance: null,
-    },
-  ],
 };
 
 const PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT = {
@@ -256,99 +109,17 @@ const PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT = {
 
 const PLAYER_SCOUT_PROFILE_GENERIC_OBJECT = {
   profileId: '',
-  profileLabel: '',
-  profileShortLabel: '',
   profileIdentity: '',
-  classificationState: '',
-  sourcePreliminaryProfileId: '',
-  reclassifiedToProfileId: '',
-  reclassificationReason: '',
-  perspective: '',
-  teamFilter: '',
-  positionContext: '',
-  interestLevel: '',
-  profileDepth: {
-    depth: 0,
-    depthPct: 0,
-    measurableRuleCount: 0,
-    rules: [
-      {
-        metric: '',
-        reason: '',
-        depth: 0,
-        depthPct: 0,
-      },
-    ],
+  strength: {
+    depthPct: null,
+    baseDepthPct: null,
+    contextAdjustmentPct: null,
   },
-  profileStrength: {
-    depth: 0,
-    depthPct: 0,
-    measurableRuleCount: 0,
-  },
-  profileConfidence: {
-    level: 'unknown',
+  confidence: {
+    level: '',
     reason: '',
   },
-  warnings: [],
-  score: null,
   reasons: [],
-  requiredReview: [],
-  matchEvidence: [
-    {
-      metric: '',
-      actual: null,
-      op: '',
-      threshold: null,
-      reason: '',
-      matched: false,
-    },
-  ],
-  scoutContext: {
-    team: {
-      classification: '',
-      relevantSide: '',
-      attack: {
-        classification: '',
-        priorityLevel: '',
-        score: null,
-      },
-      defense: {
-        classification: '',
-        priorityLevel: '',
-        score: null,
-      },
-      legacyFilter: '',
-    },
-    competition: {
-      classification: '',
-      clubLevel: null,
-      clubStrengthLevel: null,
-      leagueLevel: null,
-      levelGap: null,
-    },
-    position: {
-      evidence: '',
-      requiredContext: '',
-      positionValue: '',
-    },
-    teamGate: {
-      passed: false,
-      mode: '',
-      reason: '',
-      legacyFilterPassed: null,
-      clubStrengthLevel: null,
-      leagueLevel: null,
-    },
-  },
-  spotlights: [
-    {
-      id: '',
-      confidence: '',
-      effect: '',
-      evidence: [],
-      details: {},
-    },
-  ],
 };
 
 const PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT = {
@@ -528,9 +299,8 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         teamDefensePerformance: null,
       },
       scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
-      scoutCombinations: [],
+      scoutCombinationIds: [],
       ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
-      scoutStatsLoadMeasurementHistory: [PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT],
       updatedAt: null,
     },
   ],
@@ -582,13 +352,11 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         teamDefensePerformance: null,
       },
       scoutProfiles: [PLAYER_SCOUT_PROFILE_GENERIC_OBJECT],
-      scoutCombinations: [],
+      scoutCombinationIds: [],
       ...PLAYER_SCOUT_STATE_GENERIC_OBJECT,
-      scoutStatsLoadMeasurementHistory: [PLAYER_SCOUT_STATS_LOAD_MEASUREMENT_GENERIC_OBJECT],
       updatedAt: null,
     },
   ],
 
   updatedAt: null,
 };
-

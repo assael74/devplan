@@ -175,7 +175,7 @@ export default function usePlayerNarrative({ player, reload, notify }) {
       })
 
       await saveApprovedNarrative({
-        playerDocumentId: player.id,
+        playerDocumentId: player.domain?.identity?.playerDocumentId || '',
         careerSnapshot: snapshot,
       })
 
@@ -207,7 +207,7 @@ export default function usePlayerNarrative({ player, reload, notify }) {
 
     try {
       await deleteApprovedNarrative({
-        playerDocumentId: player.id,
+        playerDocumentId: player.domain?.identity?.playerDocumentId || '',
       })
 
       notify({

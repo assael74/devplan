@@ -35,6 +35,7 @@ export {
 } from './teamSeasonIndex.upsert.js'
 
 export {
+  resetTeamSeasonSearchIndexToLeagueOnly,
   updateTeamSeasonSearchIndexRosterMeta,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
   updateTeamSeasonSearchIndexTeamUrl,

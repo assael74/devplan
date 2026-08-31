@@ -3,17 +3,14 @@
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
-import { adaptTeamSearchIndexDocument } from '../../../domain/index.js'
-import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import { isSameSeason } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
+import { buildTeamSeasonDocumentData, teamSeasonDocRef } from './teamSeasonDoc.js'
+import { buildTeamPlayerSeasonalScoutProjection } from '../shared/playerScoutProjection.js'
 import {
-  buildTeamBaseDoc,
-  teamDocRef,
-} from './teamDoc.js'
-import { normalizeTeamPlayer } from './teamSeason.model.js'
+  buildCanonicalLeagueTeamScoutContexts,
+} from '../shared/leagueTeamScoutContext.js'
 
 const isPlainObject = value => Boolean(
   value &&
@@ -22,9 +19,8 @@ const isPlainObject = value => Boolean(
   Object.getPrototypeOf(value) === Object.prototype
 )
 
-const stripTeamScoutContextTechnicalTimestamps = rows => (
-  Array.isArray(rows) ? rows : []
-).map(row => {
+const stripTeamScoutContextTechnicalTimestamps = value => {
+  const row = value && typeof value === 'object' ? value : {}
   const nextRow = isPlainObject(row) ? { ...row } : row
   if (!isPlainObject(nextRow)) return nextRow
 
@@ -48,7 +44,7 @@ const stripTeamScoutContextTechnicalTimestamps = rows => (
   }
 
   return nextRow
-})
+}
 
 const normalizeComparableValue = value => {
   if (Array.isArray(value)) {
@@ -74,97 +70,88 @@ const isSameTeamScoutContextRows = (currentRows, nextRows) => (
   ))
 )
 
-const buildTeamScoutContext = ({ teamIndexDocument = {}, season = {} } = {}) => {
-  const domainTeam = adaptTeamSearchIndexDocument(teamIndexDocument)
-  const performance = domainTeam.performance || {}
-  const actualStats = domainTeam.stats?.actual || {}
-  const seasonStatus = clean(season.seasonStatus) === 'completed' ||
-    domainTeam.lifecycle?.isFinal === true
+export const buildCanonicalTeamSeasonScoutContext = ({
+  league = {},
+  season = {},
+  row = {},
+  teamPerformance = null,
+  scoutPerformance = null,
+} = {}) => {
+  const performance = scoutPerformance || {}
+  const officialPerformance = teamPerformance || {}
+  const seasonStatus = clean(season.seasonStatus) === 'completed'
     ? 'completed'
     : 'active'
 
   return {
-    ...teamIndexDocument,
-    clubId: clean(domainTeam.identity?.clubId || teamIndexDocument.clubId),
-    clubLevel: teamIndexDocument.clubLevel,
-    clubStrengthLevel: teamIndexDocument.clubStrengthLevel,
+    displayName: clean(row.displayName || row.teamName),
+    teamName: clean(row.teamName || row.displayName),
+    clubId: clean(row.clubId),
+    clubLevel: Number(row.clubLevel) || 0,
+    clubStrengthLevel: Number(row.clubStrengthLevel || row.clubLevel) || 0,
     birthTeamId: clean(
-      domainTeam.identity?.teamId ||
-      teamIndexDocument.birthTeamId ||
-      teamIndexDocument.teamId
+      row.birthTeamId ||
+      row.teamId
     ),
     birthTeamDocumentId: clean(
-      domainTeam.identity?.teamDocumentId ||
-      teamIndexDocument.birthTeamDocumentId ||
-      teamIndexDocument.teamDocumentId
+      row.birthTeamDocumentId ||
+      row.teamDocumentId ||
+      row.birthTeamId ||
+      row.teamId
     ),
     birthTeamSlot: Number(
-      domainTeam.identity?.teamSlot ||
-      teamIndexDocument.birthTeamSlot ||
+      row.birthTeamSlot ||
       1
     ),
     teamId: clean(
-      domainTeam.identity?.teamId ||
-      teamIndexDocument.teamId
+      row.teamId || row.birthTeamId
     ),
     teamDocumentId: clean(
-      domainTeam.identity?.teamDocumentId ||
-      teamIndexDocument.teamDocumentId
+      row.birthTeamDocumentId ||
+      row.teamDocumentId ||
+      row.birthTeamId ||
+      row.teamId
     ),
     ageGroupId: clean(
-      domainTeam.league?.ageGroupId ||
-      teamIndexDocument.ageGroupId
+      row.ageGroupId || league.ageGroupId
     ),
     ageGroupLabel: clean(
-      domainTeam.league?.ageGroupLabel ||
-      teamIndexDocument.ageGroupLabel
+      row.ageGroupLabel || league.ageGroupLabel
     ),
-    birthYear: Number(
-      domainTeam.season?.birthYear ||
-      teamIndexDocument.birthYear ||
-      season.birthYear ||
-      0
-    ),
+    birthYear: Number(season.birthYear || 0),
     leagueId: clean(
-      domainTeam.league?.leagueId ||
-      teamIndexDocument.leagueId
+      league.id || league.leagueId || season.leagueId
     ),
     leagueLevel: Number(
-      domainTeam.league?.leagueLevel ||
-      teamIndexDocument.leagueLevel ||
+      league.level || league.leagueLevel || season.leagueLevel ||
       0
     ),
-    expectedLevelDelta: domainTeam.expectedLeagueLevelChange?.expectedLevelDelta === null
-      || domainTeam.expectedLeagueLevelChange?.expectedLevelDelta === undefined
-      ? teamIndexDocument.expectedLevelDelta === null
-        || teamIndexDocument.expectedLevelDelta === undefined
-        ? null
-        : Number(teamIndexDocument.expectedLevelDelta)
-      : Number(domainTeam.expectedLeagueLevelChange.expectedLevelDelta),
-    leagueTotalRound: Number(
-      domainTeam.league?.leagueGames ||
-      teamIndexDocument.leagueTotalRound ||
-      season.leagueTotalRound ||
-      0
-    ),
+    expectedLevelDelta: row.expectedLevelDelta === null || row.expectedLevelDelta === undefined
+      ? null
+      : Number(row.expectedLevelDelta),
+    leagueTotalRound: Number(season.leagueTotalRound || 0),
+    leagueName: clean(league.leagueName || league.name),
+    region: clean(league.region),
+    teamUrl: clean(row.teamUrl),
+    seasonUrl: clean(season.seasonUrl),
     seasonStatus,
-    tableRank: domainTeam.ranking?.tableRank,
-    tableAttackRank: domainTeam.ranking?.attackRank,
-    tableDefenseRank: domainTeam.ranking?.defenseRank,
-    gamesPlayed: Number(actualStats.gamesPlayed) || 0,
-    teamGamePlayed: Number(actualStats.gamesPlayed) || 0,
-    goalsFor: Number(actualStats.goalsFor) || 0,
-    goalsAgainst: Number(actualStats.goalsAgainst) || 0,
-    goalsForPerGame: Number(actualStats.goalsForPerGame) || 0,
+    tableRank: officialPerformance.tableRank ?? null,
+    tableAttackRank: officialPerformance.tableAttackRank ?? null,
+    tableDefenseRank: officialPerformance.tableDefenseRank ?? null,
+    gamesPlayed: Number(officialPerformance.teamGamePlayed) || 0,
+    teamGamePlayed: Number(officialPerformance.teamGamePlayed) || 0,
+    goalsFor: Number(officialPerformance.goalsFor) || 0,
+    goalsAgainst: Number(officialPerformance.goalsAgainst) || 0,
+    goalsForPerGame: Number(officialPerformance.goalsForPerGame) || 0,
     performance,
     teamScout: performance,
     offense: performance.offense || {},
     defense: performance.defense || {},
     teamStats: {
-      points: Number(actualStats.points) || 0,
-      goalsFor: Number(actualStats.goalsFor) || 0,
-      goalsAgainst: Number(actualStats.goalsAgainst) || 0,
-      teamGamePlayed: Number(actualStats.gamesPlayed) || 0,
+      points: Number(row.teamStats?.points || row.points) || 0,
+      goalsFor: Number(officialPerformance.goalsFor) || 0,
+      goalsAgainst: Number(officialPerformance.goalsAgainst) || 0,
+      teamGamePlayed: Number(officialPerformance.teamGamePlayed) || 0,
     },
   }
 }
@@ -184,14 +171,19 @@ const buildContextPlayer = ({ player = {}, teamContext = {} } = {}) => ({
   },
 })
 
-export async function updateTeamSeasonPlayersScoutContext({ season = {}, target = 'current', teamIndexDocument = {} } = {}) {
-  const teamContext = buildTeamScoutContext({
-    teamIndexDocument,
+export async function updateTeamSeasonPlayersScoutContext({
+  league = {},
+  season = {},
+  teamContextInput = {},
+} = {}) {
+  const teamContext = buildCanonicalTeamSeasonScoutContext({
+    league,
     season,
+    ...teamContextInput,
   })
   const teamId = resolveTeamLookupKey(teamContext)
-  const seasonId = clean(season.seasonId || teamIndexDocument.seasonId)
-  const seasonKey = clean(season.seasonKey || teamIndexDocument.seasonKey)
+  const seasonId = clean(season.seasonId)
+  const seasonKey = clean(season.seasonKey || seasonId)
 
   if (!teamId) {
     return {
@@ -202,34 +194,14 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
   }
   if (!seasonId && !seasonKey) throw new Error('Missing season id')
 
-  const ref = teamDocRef(teamId)
+  const ref = teamSeasonDocRef({
+    birthTeamDocumentId: teamId,
+    seasonKey: seasonKey || seasonId,
+  })
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    const isHistory = clean(target) === 'history'
-    const fieldKey = isHistory ? 'history' : 'current'
-
     if (!snapshot.exists()) {
-      return {
-        teamDocumentId: teamId,
-        updated: false,
-        skipped: true,
-        reason: 'teamDocMissing',
-      }
-    }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({
-      ...teamContext,
-      teamDocumentId: teamId,
-    }, currentData)
-    const rows = Array.isArray(baseDoc[fieldKey]) ? baseDoc[fieldKey] : []
-    const seasonIndex = rows.findIndex(row => isSameSeason(row, {
-      seasonId,
-      seasonKey,
-    }))
-
-    if (seasonIndex === -1) {
       return {
         teamDocumentId: teamId,
         updated: false,
@@ -238,15 +210,18 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       }
     }
 
-    const currentSeason = rows[seasonIndex] || {}
+    const currentSeason = snapshot.data() || {}
+    const sourceTarget = clean(currentSeason.seasonStatus || season.seasonStatus) === 'completed'
+      ? 'history'
+      : 'current'
     const effectiveSeason = {
       ...season,
       ...currentSeason,
       seasonId: clean(currentSeason.seasonId || seasonId),
       seasonKey: clean(currentSeason.seasonKey || seasonKey),
-      seasonStatus: clean(currentSeason.seasonStatus) === 'completed' || isHistory
+      seasonStatus: clean(currentSeason.seasonStatus || season.seasonStatus) === 'completed'
         ? 'completed'
-        : teamContext.seasonStatus,
+        : 'active',
       leagueLevel: teamContext.leagueLevel,
       expectedLevelDelta: teamContext.expectedLevelDelta,
       leagueTotalRound: teamContext.leagueTotalRound,
@@ -259,14 +234,14 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
         player,
         teamContext,
       })
-      const calculatedPlayer = buildPlayerScoutState({
+      return {
+        ...player,
+        ...buildTeamPlayerSeasonalScoutProjection({
         player: contextPlayer,
         team: teamContext,
         season: effectiveSeason,
-        perspective: 'players_database_team_context_update',
-      })
-
-      return normalizeTeamPlayer(calculatedPlayer, effectiveSeason)
+        }),
+      }
     })
     const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
     const updatedAt = new Date().toISOString()
@@ -294,44 +269,31 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
     }
     const nextSeason = withTeamBalanceSnapshot({
       seasonDoc: nextSeasonWithoutBalance,
-      teamDocument: baseDoc,
-      seasonTarget: fieldKey,
+      teamRoot: { ...teamContext, id: teamId, birthTeamDocumentId: teamId },
     })
-    const nextRows = rows.map((row, index) => (
-      index === seasonIndex ? nextSeason : row
-    ))
-    const nextTeamDocument = {
-      ...baseDoc,
-      [fieldKey]: nextRows,
-      updatedAt,
-    }
     const writeSkipped = isSameTeamScoutContextRows(
-      currentData[fieldKey],
-      nextRows
+      currentSeason,
+      nextSeason
     )
     const persistedSeason = writeSkipped
       ? currentSeason
-      : nextSeason
-    const persistedTeamDocument = writeSkipped
-      ? currentData
-      : nextTeamDocument
+      : buildTeamSeasonDocumentData({
+        team: { ...teamContext, birthTeamDocumentId: teamId },
+        season: effectiveSeason,
+        seasonDoc: nextSeason,
+        existingData: currentSeason,
+      })
 
     if (!writeSkipped) {
-      transaction.set(
-        ref,
-        {
-          [fieldKey]: nextRows,
-          updatedAt,
-        },
-        { merge: true }
-      )
+      transaction.set(ref, persistedSeason)
     }
 
     return {
       teamDocumentId: teamId,
+      teamSeasonDocumentId: ref.id,
       seasonId: effectiveSeason.seasonId,
       seasonKey: effectiveSeason.seasonKey,
-      target: fieldKey,
+      target: sourceTarget,
       updated: true,
       changed: !writeSkipped,
       writeSkipped,
@@ -348,29 +310,40 @@ export async function updateTeamSeasonPlayersScoutContext({ season = {}, target 
       },
       teamBalance: persistedSeason?.teamBalance || null,
       teamContext,
-      teamDocument: persistedTeamDocument,
+      seasonDocument: persistedSeason,
     }
   })
 }
 
-export async function updateLeagueTeamPlayersScoutContextMany({ season = {}, target = 'current', teamIndexDocuments = [] } = {}) {
+export async function updateLeagueTeamPlayersScoutContextMany({
+  league = {},
+  season = {},
+  target = 'current',
+  rows = [],
+} = {}) {
   const results = []
   const failures = []
+  const { contexts } = buildCanonicalLeagueTeamScoutContexts({
+    league,
+    season,
+    target,
+    rows,
+  })
 
-  for (const teamIndexDocument of Array.isArray(teamIndexDocuments) ? teamIndexDocuments : []) {
+  for (const context of contexts) {
     try {
       results.push(await updateTeamSeasonPlayersScoutContext({
+        league,
         season,
-        target,
-        teamIndexDocument,
+        teamContextInput: context,
       }))
     } catch (error) {
       failures.push({
         teamDocumentId: clean(
-          teamIndexDocument.birthTeamDocumentId ||
-          teamIndexDocument.teamDocumentId ||
-          teamIndexDocument.birthTeamId ||
-          teamIndexDocument.teamId
+          context.row?.birthTeamDocumentId ||
+          context.row?.teamDocumentId ||
+          context.row?.birthTeamId ||
+          context.row?.teamId
         ),
         message: clean(error?.message) || 'Team context scout recalculation failed',
       })

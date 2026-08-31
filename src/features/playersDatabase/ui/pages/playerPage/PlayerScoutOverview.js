@@ -193,6 +193,7 @@ export default function PlayerScoutOverview({
   narrativeLoading = false,
   narrativeDeleting = false,
   playerJsonLoading = false,
+  searchIndexJsonLoading = false,
   reportLoading = false,
   onContextChange,
   onNarrativeGenerate,
@@ -200,7 +201,13 @@ export default function PlayerScoutOverview({
   onNarrativeDelete,
   onPlayerJson,
   onTeamJson,
+  onTeamSeasonJson,
+  onPlayerSearchIndexJson,
+  onTeamSearchIndexJson,
   teamJsonAvailable = false,
+  teamSeasonJsonAvailable = false,
+  playerSearchIndexJsonAvailable = false,
+  teamSearchIndexJsonAvailable = false,
   onReport,
 }) {
   const [storyOpen, setStoryOpen] = React.useState(false)
@@ -271,7 +278,7 @@ export default function PlayerScoutOverview({
               <IconButton
                 size='sm'
                 variant='outlined'
-                loading={playerJsonLoading}
+                loading={playerJsonLoading || searchIndexJsonLoading}
                 sx={sx.headerIconButton}
                 onClick={event => setDownloadAnchor(event.currentTarget)}
               >
@@ -286,6 +293,7 @@ export default function PlayerScoutOverview({
               onClose={() => setDownloadAnchor(null)}
             >
               <MenuItem
+                disabled={playerJsonLoading}
                 onClick={() => {
                   setDownloadAnchor(null)
                   onPlayerJson()
@@ -296,14 +304,47 @@ export default function PlayerScoutOverview({
               </MenuItem>
 
               <MenuItem
-                disabled={!teamJsonAvailable}
+                disabled={!teamJsonAvailable || playerJsonLoading}
                 onClick={() => {
                   setDownloadAnchor(null)
                   onTeamJson()
                 }}
               >
                 {iconUi({id: 'team', size: 'sm'})}
-                מסמך קבוצה
+                JSON שנתון
+              </MenuItem>
+
+              <MenuItem
+                disabled={!teamSeasonJsonAvailable || playerJsonLoading}
+                onClick={() => {
+                  setDownloadAnchor(null)
+                  onTeamSeasonJson()
+                }}
+              >
+                {iconUi({id: 'team', size: 'sm'})}
+                JSON נתוני קבוצה
+              </MenuItem>
+
+              <MenuItem
+                disabled={!playerSearchIndexJsonAvailable || searchIndexJsonLoading}
+                onClick={() => {
+                  setDownloadAnchor(null)
+                  onPlayerSearchIndexJson()
+                }}
+              >
+                {iconUi({id: 'search', size: 'sm'})}
+                אינדקס שחקן
+              </MenuItem>
+
+              <MenuItem
+                disabled={!teamSearchIndexJsonAvailable || searchIndexJsonLoading}
+                onClick={() => {
+                  setDownloadAnchor(null)
+                  onTeamSearchIndexJson()
+                }}
+              >
+                {iconUi({id: 'search', size: 'sm'})}
+                אינדקס קבוצה
               </MenuItem>
             </Menu>
           </Box>

@@ -6,6 +6,7 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   players: 'dbPlayers',
   leagues: 'dbLeagues',
   teams: 'dbBirthTeams',
+  teamSeasons: 'dbBirthTeamSeasons',
   searchIndexes: 'dbSearchIndexes',
   leaguesMaster: 'dbLeaguesMaster',
   favorites: 'dbFavorites',

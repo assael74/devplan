@@ -1,7 +1,7 @@
 // src/features/playersDatabase/ui/pages/searchPage/SearchPage.js
 
 import * as React from 'react'
-import { Box } from '@mui/joy'
+import { Box, Sheet, Stack, Typography } from '@mui/joy'
 import {
   useLocation,
   useNavigate,
@@ -17,12 +17,13 @@ import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
 import { useSearchReport } from './report/index.js'
 import {
+  ConfirmModal,
   PlayerDatabaseAuditModal,
   ReportNameModal,
 } from '../../components/modals/index.js'
 import {
-  applyPlayerDatabaseRepairPlan,
-  buildPlayerDatabaseRepairPlan,
+  previewMissingPlayerDocumentRepair,
+  repairMissingPlayerDocuments,
   runPlayerDatabaseAudit,
 } from '../../../services/audit/index.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
@@ -86,8 +87,8 @@ function SearchPageContent() {
   const [auditBusy, setAuditBusy] = React.useState(false)
   const [auditError, setAuditError] = React.useState('')
   const [auditResult, setAuditResult] = React.useState(null)
-  const [auditRepairPlan, setAuditRepairPlan] = React.useState(null)
-  const [auditApplyResult, setAuditApplyResult] = React.useState(null)
+  const [repairPlan, setRepairPlan] = React.useState(null)
+  const [repairPreviewBusy, setRepairPreviewBusy] = React.useState(false)
   const search = useSearchPage()
 
   const partialAuditDefaults = React.useMemo(
@@ -161,8 +162,6 @@ function SearchPageContent() {
     try {
       const result = await runPlayerDatabaseAudit({ scope })
       setAuditResult(result)
-      setAuditRepairPlan(null)
-      setAuditApplyResult(null)
     } catch (error) {
       console.error('[playersDatabase] Data audit failed:', error)
       setAuditError(
@@ -175,48 +174,37 @@ function SearchPageContent() {
     }
   }
 
-  const handlePrepareRepair = () => {
-    if (!auditResult || auditBusy) return
-
+  const handleRepairRequest = async findings => {
+    if (auditBusy || repairPreviewBusy) return
+    setRepairPreviewBusy(true)
+    setAuditError('')
     try {
-      const plan = buildPlayerDatabaseRepairPlan({
-        audit: auditResult,
-      })
-      setAuditRepairPlan(plan)
-      setAuditApplyResult(null)
-      setAuditError('')
+      const plan = await previewMissingPlayerDocumentRepair({ findings })
+      if (!plan.playersCount) {
+        setAuditError('לא נמצאו מסמכי שחקן חסרים שמוכנים לתיקון.')
+        return
+      }
+      setRepairPlan({ findings: Array.isArray(findings) ? findings : [], ...plan })
     } catch (error) {
-      console.error('[playersDatabase] Repair plan failed:', error)
-      setAuditError(
-        error instanceof Error
-          ? error.message
-          : 'הכנת תוכנית התיקון נכשלה'
-      )
+      console.error('[playersDatabase] Player document repair preview failed:', error)
+      setAuditError(error instanceof Error ? error.message : 'טעינת רשימת התיקון נכשלה')
+    } finally {
+      setRepairPreviewBusy(false)
     }
   }
 
-
-  const handleApplyRepair = async () => {
-    if (!auditResult || !auditRepairPlan || auditBusy) return
-
+  const handleRepairConfirm = async () => {
+    if (!repairPlan?.findings?.length || auditBusy) return
     setAuditBusy(true)
     setAuditError('')
-
     try {
-      const result = await applyPlayerDatabaseRepairPlan({
-        audit: auditResult,
-        plan: auditRepairPlan,
-        confirmed: true,
-        verify: true,
-      })
-      setAuditApplyResult(result)
+      await repairMissingPlayerDocuments({ findings: repairPlan.findings })
+      const result = await runPlayerDatabaseAudit({ scope: auditResult?.scope })
+      setAuditResult(result)
+      setRepairPlan(null)
     } catch (error) {
-      console.error('[playersDatabase] Automatic repair failed:', error)
-      setAuditError(
-        error instanceof Error
-          ? error.message
-          : 'ביצוע התיקון האוטומטי נכשל'
-      )
+      console.error('[playersDatabase] Player document repair failed:', error)
+      setAuditError(error instanceof Error ? error.message : 'תיקון מסמכי השחקן נכשל')
     } finally {
       setAuditBusy(false)
     }
@@ -250,18 +238,35 @@ function SearchPageContent() {
 
       <PlayerDatabaseAuditModal
         open={auditOpen}
-        busy={auditBusy}
+        busy={auditBusy || repairPreviewBusy}
         error={auditError}
         result={auditResult}
-        repairPlan={auditRepairPlan}
-        applyResult={auditApplyResult}
         defaultTeamDocumentId={partialAuditDefaults.teamDocumentId}
         defaultSeasonKey={partialAuditDefaults.seasonKey}
         onRun={handleAuditRun}
-        onPrepareRepair={handlePrepareRepair}
-        onApplyRepair={handleApplyRepair}
+        onRepair={handleRepairRequest}
         onClose={() => setAuditOpen(false)}
       />
+
+      <ConfirmModal
+        open={Boolean(repairPlan)}
+        busy={auditBusy}
+        title='תיקון מסמכי שחקן חסרים'
+        message={`נמצאו ${repairPlan?.playersCount || 0} מסמכי שחקן חסרים ב־${repairPlan?.groupsCount || 0} קבוצות. רק הפריטים המפורטים כאן נטענו ואושרו לתיקון.`}
+        confirmLabel='בצע תיקון'
+        cancelLabel='ביטול'
+        onConfirm={handleRepairConfirm}
+        onClose={() => !auditBusy && setRepairPlan(null)}
+      >
+        <Stack spacing={1} sx={{ maxHeight: 300, overflowY: 'auto' }}>
+          {(repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={{ p: 1.25, borderRadius: 'sm' }}>
+            {group.players.map(player => <Typography key={player.playerDocumentId} level='body-sm'>
+              {player.fullName || player.playerDocumentId} — {group.teamName || 'קבוצה ללא שם'}{Number(group.teamSlot) > 1 ? ` · סלוט ${group.teamSlot}` : ''} · {group.leagueName || group.leagueId} · {group.seasonKey} · {group.ageGroup || 'קבוצת גיל לא ידועה'} · שנתון {group.birthYear || 'לא ידוע'}
+            </Typography>)}
+            <Typography level='body-xs' color='success'>נטען ומוכן לתיקון</Typography>
+          </Sheet>)}
+        </Stack>
+      </ConfirmModal>
     </>
   )
 }

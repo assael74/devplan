@@ -8,17 +8,21 @@ import {
   clean,
 } from '../leagues/leagueDoc.js'
 import {
-  buildPlayerDocumentId,
-  normalizePlayerScoutCombinations,
+  normalizePlayerScoutCombinationIds,
   normalizePlayerScoutProfiles,
   normalizePlayerScoutStory,
   playerDocRef,
 } from './playerDoc.model.js'
-import { findPlayerSeasonRowIndex } from './playerSeason.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+import {
+  buildPlayerSeasonCompactProjection,
+  findPlayerSeasonRowIndex,
+} from './playerSeason.model.js'
 import { removePlayerScoutProfileFromComputedState } from '../../../domain/orchestration/mutatePlayerScoutProfileState.js'
 import {
   normalizeScoutingPlayerTracking,
   resolvePlayerTrackingReasons,
+  shouldHavePlayerDocument,
 } from './scoutingPlayerLifecycle.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
@@ -56,12 +60,10 @@ export const patchPlayerSeason = async ({
   player = {},
   target = 'current',
   patch = {},
+  buildPatch = null,
   buildRootPatch = null,
 } = {}) => {
-  const playerDocumentId = clean(
-    player.playerDocumentId ||
-    buildPlayerDocumentId(player)
-  )
+  const playerDocumentId = clean(resolveWritablePlayerDocumentId(player))
   const seasonId = clean(season.seasonId)
   if (!playerDocumentId) throw new Error('Missing player document id')
   if (!seasonId) throw new Error('Missing season id')
@@ -104,16 +106,49 @@ export const patchPlayerSeason = async ({
     }
 
     const currentSeasonRow = rows[seasonIndex] || {}
-    const seasonChanged = !isPatchUnchanged({
-      current: currentSeasonRow,
-      patch,
+    const resolvedPatch = typeof buildPatch === 'function'
+      ? buildPatch({
+          data,
+          currentSeasonRow,
+          fieldKey,
+          season: {
+            ...season,
+            seasonId,
+            seasonKey,
+          },
+        })
+      : patch
+    const compactSeasonRow = buildPlayerSeasonCompactProjection({
+      season: {
+        ...currentSeasonRow,
+        ...season,
+        seasonId,
+        seasonKey,
+        seasonStatus: isHistory ? 'completed' : 'active',
+      },
+      team: {
+        ...currentSeasonRow,
+        ...team,
+      },
+      player: {
+        ...currentSeasonRow,
+        ...resolvedPatch,
+      },
     })
+    const legacySeasonFieldsChanged = (
+      JSON.stringify(normalizeComparableValue(currentSeasonRow)) !==
+      JSON.stringify(normalizeComparableValue(compactSeasonRow))
+    )
+    const seasonChanged = (
+      !isPatchUnchanged({
+        current: currentSeasonRow,
+        patch: resolvedPatch,
+      }) ||
+      legacySeasonFieldsChanged
+    )
     const candidateRows = rows.map((row, index) => (
       index === seasonIndex
-        ? {
-            ...row,
-            ...patch,
-          }
+        ? compactSeasonRow
         : row
     ))
 
@@ -137,6 +172,7 @@ export const patchPlayerSeason = async ({
         updated: true,
         changed: false,
         writeSkipped: true,
+        player: currentSeasonRow,
       }
     }
 
@@ -150,6 +186,7 @@ export const patchPlayerSeason = async ({
             : row
         ))
       : rows
+    const nextSeasonRow = nextRows[seasonIndex] || currentSeasonRow
 
     transaction.set(
       ref,
@@ -168,6 +205,7 @@ export const patchPlayerSeason = async ({
       updated: true,
       changed: true,
       writeSkipped: false,
+      player: nextSeasonRow,
     }
   })
 }
@@ -188,45 +226,101 @@ export const updatePlayerSeasonUrl = ({ playerUrl = '', ...payload } = {}) =>
     },
   })
 
-export const removePlayerSeasonScoutProfile = ({ profileId = '', ...payload } = {}) => {
+// This is deliberately a pure state builder.  The profile-removal flow uses it
+// together with the Team Season and SearchIndex writes in one transaction; the
+// small wrapper below remains available to callers that only own Player state.
+export const buildPlayerSeasonScoutProfileRemoval = ({
+  profileId = '',
+  season = {},
+  team = {},
+  player = {},
+  target = 'current',
+  data = {},
+} = {}) => {
   const removeProfileId = clean(profileId)
   if (!removeProfileId) throw new Error('Missing scout profile id')
 
+  const playerDocumentId = clean(resolveWritablePlayerDocumentId(player))
+  const seasonId = clean(season.seasonId)
+  if (!playerDocumentId) throw new Error('Missing player document id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const isHistory = clean(target) === 'history'
+  const fieldKey = isHistory ? 'history' : 'current'
+  const rows = Array.isArray(data[fieldKey]) ? data[fieldKey] : []
+  const seasonIndex = findPlayerSeasonRowIndex({
+    rows,
+    season: { ...season, seasonId, seasonKey },
+    team,
+  })
+
+  if (seasonIndex === -1) {
+    return {
+      playerDocumentId,
+      seasonId,
+      seasonKey,
+      updated: false,
+      reason: 'playerSeasonMissing',
+    }
+  }
+
+  const currentSeasonRow = rows[seasonIndex] || {}
   const nextPlayer = removePlayerScoutProfileFromComputedState({
-    player: payload.player || {},
+    player: {
+      ...player,
+      ...data,
+      ...currentSeasonRow,
+    },
     profileId: removeProfileId,
   })
-
-  return patchPlayerSeason({
-    ...payload,
+  const compactSeasonRow = buildPlayerSeasonCompactProjection({
+    season: {
+      ...currentSeasonRow,
+      ...season,
+      seasonId,
+      seasonKey,
+      seasonStatus: isHistory ? 'completed' : 'active',
+    },
+    team: {
+      ...currentSeasonRow,
+      ...team,
+    },
     player: nextPlayer,
-    patch: {
-      scoutProfiles: normalizePlayerScoutProfiles(nextPlayer),
-      scoutCombinations: normalizePlayerScoutCombinations(nextPlayer),
-      ...normalizePlayerScoutStory(nextPlayer),
-    },
-    buildRootPatch: ({ data, fieldKey, nextRows }) => {
-      const currentTracking = normalizeScoutingPlayerTracking({
-        ...(data.tracking || {}),
-        favorite:
-          data.tracking?.favorite === true ||
-          data.favorite === true,
-        watchlist:
-          data.tracking?.watchlist === true ||
-          data.watchlist === true,
-      })
-      const nextDocument = {
-        ...data,
-        [fieldKey]: nextRows,
-        tracking: currentTracking,
-      }
-
-      return {
-        tracking: {
-          ...currentTracking,
-          trackingReasons: resolvePlayerTrackingReasons(nextDocument),
-        },
-      }
-    },
   })
+  const nextRows = rows.map((row, index) => (
+    index === seasonIndex ? compactSeasonRow : row
+  ))
+  const currentTracking = normalizeScoutingPlayerTracking({
+    ...(data.tracking || {}),
+    favorite: data.tracking?.favorite === true || data.favorite === true,
+    watchlist: data.tracking?.watchlist === true || data.watchlist === true,
+  })
+  const nextDocument = {
+    ...data,
+    [fieldKey]: nextRows,
+    tracking: currentTracking,
+  }
+  const tracking = {
+    ...currentTracking,
+    trackingReasons: resolvePlayerTrackingReasons(nextDocument),
+  }
+  const lifecycleDocument = {
+    ...nextDocument,
+    tracking,
+  }
+
+  return {
+    playerDocumentId,
+    seasonId,
+    seasonKey,
+    fieldKey,
+    currentSeasonRow,
+    player: nextPlayer,
+    seasonRow: compactSeasonRow,
+    tracking,
+    nextDocument: lifecycleDocument,
+    shouldDelete: !shouldHavePlayerDocument(lifecycleDocument),
+    updated: true,
+  }
 }

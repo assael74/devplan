@@ -28,6 +28,7 @@ export const monthYearPickerSx = {
   },
   listbox: {
     maxHeight: 200,
+    zIndex: 1400,
   },
 };
 

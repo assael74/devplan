@@ -1,7 +1,6 @@
 // src/features/playersDatabase/ui/logic/scout/scoutDisplay.constants.js
 
 import {
-  SCOUT_INTEREST,
   SCOUT_REVIEW,
   TEAM_FILTER,
 } from '../../../../../shared/scouting/players/index.js'
@@ -42,12 +41,6 @@ export const SCOUT_PROFILE_GROUP_LABELS = {
 export const POSITION_CONTEXT_LABELS = {
   defense_midfield: 'הגנתי / קישור',
   not_attack: 'לא התקפי',
-}
-
-export const SCOUT_INTEREST_DISPLAY = {
-  [SCOUT_INTEREST.REASONABLE]: { label: 'סביר' },
-  [SCOUT_INTEREST.INTERESTING]: { label: 'מעניין' },
-  [SCOUT_INTEREST.SUPER]: { label: 'עניין גבוה' },
 }
 
 export const TEAM_FILTER_DISPLAY = {

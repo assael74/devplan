@@ -44,7 +44,6 @@ export const createEmptyPlayerScoutProfile = () => ({
   sourcePreliminaryProfileId: '',
   reclassifiedToProfileId: '',
   reclassificationReason: '',
-  interest: '',
   score: null,
   match: {
     passed: false,
@@ -131,9 +130,6 @@ export const normalizePlayerScoutProfile = profile => {
     sourcePreliminaryProfileId: cleanDomainValue(source.sourcePreliminaryProfileId),
     reclassifiedToProfileId: cleanDomainValue(source.reclassifiedToProfileId),
     reclassificationReason: cleanDomainValue(source.reclassificationReason),
-    interest: cleanDomainValue(
-      source.interestLevel || source.interest || catalogProfile.interest
-    ),
     score: toDomainNumber(
       source.score !== undefined ? source.score : source.profileScore
     ),
@@ -152,12 +148,20 @@ export const normalizePlayerScoutProfile = profile => {
     profileDepth: source.profileDepth && typeof source.profileDepth === 'object'
       ? source.profileDepth
       : null,
-    profileStrength: source.profileStrength && typeof source.profileStrength === 'object'
-      ? source.profileStrength
-      : null,
-    profileConfidence: source.profileConfidence && typeof source.profileConfidence === 'object'
-      ? source.profileConfidence
-      : null,
+    profileStrength: (
+      source.profileStrength && typeof source.profileStrength === 'object'
+        ? source.profileStrength
+        : source.strength && typeof source.strength === 'object'
+          ? source.strength
+          : null
+    ),
+    profileConfidence: (
+      source.profileConfidence && typeof source.profileConfidence === 'object'
+        ? source.profileConfidence
+        : source.confidence && typeof source.confidence === 'object'
+          ? source.confidence
+          : null
+    ),
     scoutContext: source.scoutContext && typeof source.scoutContext === 'object'
       ? source.scoutContext
       : null,
@@ -187,7 +191,6 @@ export const normalizePlayerScoutCombination = combination => {
     idIcon: cleanDomainValue(source.idIcon || catalogCombination.idIcon),
     label: cleanDomainValue(source.label || catalogCombination.label || combinationId),
     group: cleanDomainValue(source.group || catalogCombination.group),
-    interest: cleanDomainValue(source.interest || catalogCombination.interest),
     description: cleanDomainValue(
       source.description || catalogCombination.description
     ),

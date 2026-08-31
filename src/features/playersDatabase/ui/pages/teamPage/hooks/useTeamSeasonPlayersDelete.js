@@ -44,10 +44,15 @@ export default function useTeamSeasonPlayersDelete({
         },
       })
 
+      const removedPlayersCount = result.removedPlayersCount || 0
       notify({
         status: SNACK_STATUS.SUCCESS,
-        title: 'שחקני העונה נמחקו',
-        message: `${result.removedPlayersCount || 0} שחקנים הוסרו`,
+        title: removedPlayersCount
+          ? 'שחקני העונה נמחקו'
+          : 'מצב הקבוצה עודכן',
+        message: removedPlayersCount
+          ? `${removedPlayersCount} שחקנים הוסרו`
+          : 'עונת הקבוצה נורמלה ונשמרה מחדש',
       })
       setOpen(false)
       reload()

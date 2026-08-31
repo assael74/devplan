@@ -6,7 +6,11 @@ import {
   Button,
   Chip,
   Divider,
+  Dropdown,
   IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
   Option,
   Select,
   Tooltip,
@@ -55,6 +59,7 @@ export default function TeamActionsPanel({
   onProfileFilterChange,
   onPlayersImport,
   onStatsImport,
+  onDeleteStats,
   onDeletePlayers,
   onReport,
   onTeamLink,
@@ -332,18 +337,29 @@ export default function TeamActionsPanel({
           </IconButton>
         </Tooltip>
 
-        <Tooltip title='מחיקת שחקנים'>
-          <IconButton
-            variant='outlined'
-            aria-label='מחיקת שחקנים'
-            disabled={!hasTeamPlayers}
-            sx={sx.dangerIconButton}
-            onClick={onDeletePlayers}
-            size='sm'
-          >
-            {iconUi({id: 'delete', size: 'sm'})}
-          </IconButton>
-        </Tooltip>
+        <Dropdown>
+          <Tooltip title='מחיקת נתוני עונה'>
+            <span>
+              <MenuButton
+                variant='outlined'
+                aria-label='מחיקת נתוני עונה'
+                disabled={!hasSeason || !hasTeamPlayers}
+                sx={sx.dangerIconButton}
+                size='sm'
+              >
+                {iconUi({id: 'delete', size: 'sm'})}
+              </MenuButton>
+            </span>
+          </Tooltip>
+          <Menu placement='bottom-end'>
+            <MenuItem disabled={!hasTeamStats} onClick={onDeleteStats}>
+              מחיקת סטטיסטיקה בלבד
+            </MenuItem>
+            <MenuItem onClick={onDeletePlayers}>
+              מחיקת סגל מלא
+            </MenuItem>
+          </Menu>
+        </Dropdown>
       </Box>
 
       <Divider sx={sx.actionDivider} />

@@ -79,6 +79,7 @@ export default function PlayerProfileFab({
   onOpenGamesInsights,
   onOpenPerformanceInsights,
   onOpenTrainingsInsights,
+  onImportGames,
 }) {
   const { openCreate } = useCreateModal()
 
@@ -126,6 +127,8 @@ export default function PlayerProfileFab({
             buildGameContext({ entity, context, isPrivatePlayer })
           )
         },
+
+        onImportGames: () => onImportGames?.(),
 
         onAddVideoAnalysis: () => {
           openCreate('videoAnalysis', presetForTab('videoAnalysis', entity, context), {
@@ -188,6 +191,7 @@ export default function PlayerProfileFab({
     onOpenGamesInsights,
     onOpenPerformanceInsights,
     onOpenTrainingsInsights,
+    onImportGames,
   ])
 
   if (!actions?.length) return null

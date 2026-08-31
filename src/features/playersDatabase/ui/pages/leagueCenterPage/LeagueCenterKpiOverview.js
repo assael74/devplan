@@ -32,6 +32,30 @@ export default function LeagueCenterKpiOverview({ summary }) {
         tone='warning'
         sx={sx.summaryCard}
       />
+      <KpiCard
+        title='שחקנים בסגל'
+        value={summary.playersCount}
+        caption='בכל הליגות המוצגות'
+        iconId='playersDatabase'
+        tone='info'
+        sx={sx.summaryCard}
+      />
+      <KpiCard
+        title='שחקנים עם פרופיל'
+        value={summary.playersWithScoutProfileCount}
+        caption='בכל הליגות המוצגות'
+        iconId='scouting'
+        tone='success'
+        sx={sx.summaryCard}
+      />
+      <KpiCard
+        title='פרופילים'
+        value={summary.scoutProfilesCount}
+        caption='בכל הליגות המוצגות'
+        iconId='scouting'
+        tone='info'
+        sx={sx.summaryCard}
+      />
     </Box>
   )
 }

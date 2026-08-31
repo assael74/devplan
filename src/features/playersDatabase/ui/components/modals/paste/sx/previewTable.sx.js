@@ -22,6 +22,7 @@ export const previewTableSx = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 1,
     borderBottom: '1px solid #dbe5f4',
   },
@@ -37,8 +38,13 @@ export const previewTableSx = {
   },
 
   summaryChips: {
-    flexShrink: 0,
+    flex: '1 1 540px',
     flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+
+  summaryActionChip: {
+    cursor: 'pointer',
   },
 
   sortableHeader: {
@@ -113,4 +119,5 @@ export const previewTableSx = {
     minWidth: 48,
     maxWidth: 48,
   },
+
 }

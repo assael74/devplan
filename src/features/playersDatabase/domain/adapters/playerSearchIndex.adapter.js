@@ -20,7 +20,6 @@ const buildIndexProfiles = document => [
   {
     profileId: document.primaryScoutProfileId,
     profileScore: document.primaryScoutScore,
-    interestLevel: document.primaryScoutInterestLevel,
     profileStrength: document.primaryScoutProfileStrengthDepthPct !== null &&
       document.primaryScoutProfileStrengthDepthPct !== undefined
       ? {
@@ -182,6 +181,11 @@ export const adaptPlayerSearchIndexDocument = document => {
             hasDefinedCombination: Boolean(source.scoutProfileCaseHasCombination),
             combinationIds: toDomainArray(source.scoutProfileCaseCombinationIds),
             primaryProfileId: cleanDomainValue(source.primaryScoutProfileId),
+          }
+        : null,
+      playerInterest: cleanDomainValue(source.scoutPlayerInterestLevel)
+        ? {
+            interestLevel: cleanDomainValue(source.scoutPlayerInterestLevel),
           }
         : null,
       verification: cleanDomainValue(source.scoutNextBestCheckId)

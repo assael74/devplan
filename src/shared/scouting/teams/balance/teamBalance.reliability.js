@@ -17,9 +17,12 @@ const toKnownNonNegativeNumber = value => {
   return number
 }
 
+// Balance persistence describes the season's observed participation. A player
+// who left mid-season still consumed minutes and belongs in historical minutes,
+// rotation, and production measures. Current-roster depth must be derived by
+// its own current-relevant-roster selector, not by removing this evidence.
 const isOperationalRosterPlayer = player => ![
   'retired',
-  'transferredOut',
 ].includes(clean(player?.rosterStatus))
 
 const isStatsLoaded = player => (

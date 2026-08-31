@@ -1,6 +1,9 @@
 // features/playersDatabase/domain/adapters/birthTeamDocument.adapter.js
 
-import { normalizeTeamIdentity } from '../../model/teamIdentity.model.js'
+import {
+  buildTeamSeasonDocumentId,
+  normalizeTeamIdentity,
+} from '../../model/teamIdentity.model.js'
 import { normalizeTeamStats } from '../../model/teamStats.model.js'
 import { normalizeSeasonIdentity } from '../../model/season.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
@@ -39,10 +42,15 @@ const hasTeamStats = seasonDocument => {
   ].some(key => hasOwn(seasonDocument, key))
 }
 
+const resolveTeamSeasonLifecycleTarget = seasonStatus => (
+  cleanDomainValue(seasonStatus) === 'completed'
+    ? 'history'
+    : 'current'
+)
+
 export const adaptBirthTeamDocumentSeason = ({
   teamDocument = {},
   seasonDocument = {},
-  target = 'current',
   league = {},
 } = {}) => {
   const identity = normalizeTeamIdentity({
@@ -55,7 +63,10 @@ export const adaptBirthTeamDocumentSeason = ({
   const stats = normalizeTeamStats(
     seasonDocument.teamStats || seasonDocument
   )
-  const lifecycle = createLifecycle(target)
+  const lifecycle = createLifecycle(
+    resolveTeamSeasonLifecycleTarget(seasonDocument.seasonStatus),
+    seasonDocument.seasonStatus,
+  )
   const result = createEmptyTeamSeason()
 
   return {
@@ -156,11 +167,11 @@ export const adaptBirthTeamDocumentSeason = ({
         )
       ),
       seasonUrl: cleanDomainValue(seasonDocument.seasonUrl),
-      sourceCollection: 'birthTeams',
+      sourceCollection: 'birthTeamSeasons',
       sourceDocumentId: cleanDomainValue(
-        firstDomainValue(
-          identity.birthTeamDocumentId,
-          identity.teamDocumentId
+        seasonDocument.id || buildTeamSeasonDocumentId(
+          firstDomainValue(identity.birthTeamDocumentId, identity.teamDocumentId),
+          seasonIdentity.seasonKey,
         )
       ),
       sourceTarget: lifecycle.type,

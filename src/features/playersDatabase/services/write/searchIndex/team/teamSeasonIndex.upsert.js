@@ -5,7 +5,6 @@ import { createTrackedWriteBatch } from '../../../../../../services/firestore/us
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { clean } from '../../leagues/leagueDoc.js'
-import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
 import { buildTeamScoutShadowAudit } from '../../../../domain/orchestration/buildTeamScoutShadowAudit.js'
 import {
   buildSearchIndexWriteResult,
@@ -13,22 +12,16 @@ import {
 } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import {
-  buildTeamScoutLeagueModel,
-  TEAM_SCOUT_NORMALIZATION_MODE,
-  TEAM_SCOUT_SORT_MODE,
-} from '../../../../../../shared/scouting/teams/index.js'
-import {
-  buildRankMap,
   buildTeamSeasonIndexDoc,
-  getRowGoalsAgainst,
-  getRowGoalsFor,
-  resolveClubLevel,
-  resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
+import {
+  buildCanonicalLeagueTeamScoutContexts,
+} from '../../shared/leagueTeamScoutContext.js'
 
 const TEAM_SEARCH_INDEX_TEAM_OWNED_FIELDS = new Set([
   'playersCount',
   'scoutProfilesSummary',
+  'teamSeasonDocumentId',
   'teamUrl',
 ])
 
@@ -40,63 +33,23 @@ const stripTeamOwnedFieldsFromLeagueProjection = indexDoc => (
   )
 )
 
-const buildScoutRows = rows => (
-  (Array.isArray(rows) ? rows : []).map(row => {
-    const clubLevel = resolveClubLevel({
-      clubId: row.clubId,
-      clubLevel: row.clubLevel,
-    })
-    const clubStrengthLevel = resolveClubStrengthLevel({
-      clubId: row.clubId,
-      clubLevel,
-      clubStrengthLevel: row.clubStrengthLevel,
-    })
-
-    return {
-      ...row,
-      clubLevel,
-      clubStrengthLevel,
-    }
-  })
-)
-
 export const buildTeamSeasonSearchIndexDocuments = ({ league = {}, season = {}, target = 'current', rows = [] } = {}) => {
-  const safeRows = Array.isArray(rows) ? rows : []
-  const scoutRows = buildScoutRows(safeRows)
-  const tableAttackRanks = buildRankMap({
-    rows: safeRows,
-    valueGetter: getRowGoalsFor,
-    direction: 'desc',
+  const { scoutRows, contexts } = buildCanonicalLeagueTeamScoutContexts({
+    league,
+    season,
+    target,
+    rows,
   })
-  const tableDefenseRanks = buildRankMap({
-    rows: safeRows,
-    valueGetter: getRowGoalsAgainst,
-    direction: 'asc',
-  })
-  const scoutResultMap = new Map(
-    buildTeamScoutLeagueModel({
-      leagueLevel: league.level,
-      leagueNumGames: season.leagueTotalRound || 30,
-      rows: scoutRows,
-      normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
-      sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
-    }).rows.map(row => [
-      clean(resolveTeamLookupKey(row) || row.clubId || row.rank),
-      row,
-    ])
-  )
-  const documents = safeRows
-    .map(row => {
-      const rowKey = clean(resolveTeamLookupKey(row) || row.clubId)
+  const documents = contexts
+    .map(({ row, teamPerformance, scoutResult }) => {
 
       return buildTeamSeasonIndexDoc({
         league,
         season,
         target,
         row,
-        tableAttackRank: tableAttackRanks[rowKey],
-        tableDefenseRank: tableDefenseRanks[rowKey],
-        scoutResult: scoutResultMap.get(rowKey) || null,
+        teamPerformance,
+        scoutResult,
       })
     })
     .filter(row => row.id && row.leagueId && row.seasonId && (row.teamId || row.clubId))

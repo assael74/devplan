@@ -14,7 +14,7 @@
  *
  * teamSeason.model.js
  * - Normalizes roster players and team-season data.
- * - Builds team-season rows and merges current/history records.
+ * - Builds and normalizes one canonical Team Season document.
  * - Contains shared matching and statistics-merging helpers.
  *
  * teamSeasonRoster.js
@@ -26,7 +26,7 @@
  * - Merges imported statistics with the existing roster.
  *
  * teamSeasonPlayer.js
- * - Applies season-specific player updates inside a team document.
+ * - Applies season-specific player updates directly to a Team Season document.
  * - Updates player URL, position, layer, shirt number and scout profiles.
  *
  * teamSeasonScoutContext.js
@@ -47,9 +47,16 @@ export {
 } from './teamDoc.js'
 
 export {
+  teamSeasonDocRef,
+  teamSeasonDocRefById,
+} from './teamSeasonDoc.js'
+
+export {
   appendTeamSeasonPlayer,
   updateTeamSeasonPlayerStats,
   removeTeamSeasonPlayerScoutProfile,
+  updateTeamSeasonPlayerScoutProjection,
+  updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
   updateTeamSeasonPlayerVerificationAndScout,
   upsertTeamSeasonPlayers,
@@ -62,7 +69,8 @@ export {
 
 export {
   buildTeamPlayersScoutProfilesSummary,
-  clearTeamSeasonPlayers,
+  clearTeamSeasonStats,
+  clearTeamSeasonPlayerDocumentIds,
   removeTeamPlayerFromSeason,
   removeTeamSeason,
 } from './teamDelete.js'

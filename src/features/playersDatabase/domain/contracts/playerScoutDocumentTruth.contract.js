@@ -7,21 +7,13 @@ export const PLAYER_SCOUT_DOCUMENT_ROLE = Object.freeze({
 })
 
 export const PLAYER_SCOUT_TEAM_SEASON_FIELDS = Object.freeze([
-  'scoutProfiles',
-  'scoutCombinations',
-  'scoutCandidateSignals',
-  'scoutSpotlights',
-  'scoutOpportunity',
-  'scoutVerification',
-  'scoutProfileProgression',
-  'scoutProfileHierarchy',
-  'scoutProfileCaseStrength',
-  'scoutPlayerInterest',
-  'scoutTrajectory',
-  'scoutTransferContext',
-  'futureCompetitionPath',
+  'primaryScoutProfileId',
+  'primaryScoutProfileStrengthDepthPct',
+  'professionalScoutProfileIds',
+  'preliminaryScoutProfileIds',
+  'scoutEffectiveImmediacyStatus',
+  'scoutPlayerInterestLevel',
   'scoutEngineVersion',
-  'scoutStatsLoadMeasurements',
 ])
 
 export const PLAYER_SCOUT_PLAYER_ROOT_FIELDS = Object.freeze([
@@ -36,20 +28,12 @@ export const PLAYER_SCOUT_PLAYER_ROOT_FIELDS = Object.freeze([
 
 export const PLAYER_SCOUT_PLAYER_SEASON_FIELDS = Object.freeze([
   'scoutProfiles',
-  'scoutCombinations',
-  'scoutCandidateSignals',
-  'scoutSpotlights',
+  'scoutCombinationIds',
   'scoutOpportunity',
-  'scoutVerification',
   'scoutProfileProgression',
   'scoutProfileHierarchy',
-  'scoutProfileCaseStrength',
   'scoutPlayerInterest',
-  'scoutTrajectory',
-  'scoutTransferContext',
-  'futureCompetitionPath',
   'scoutEngineVersion',
-  'scoutStatsLoadMeasurementHistory',
 ])
 
 export const PLAYER_SCOUT_SEARCH_INDEX_FIELDS = Object.freeze([
@@ -57,7 +41,6 @@ export const PLAYER_SCOUT_SEARCH_INDEX_FIELDS = Object.freeze([
   'primaryScoutProfileStrengthDepthPct',
   'primaryScoutWarnings',
   'primaryScoutScore',
-  'primaryScoutInterestLevel',
   'primaryScoutTeamGateMode',
   'secondaryScoutProfileId',
   'secondaryScoutProfileStrengthDepthPct',
@@ -67,6 +50,7 @@ export const PLAYER_SCOUT_SEARCH_INDEX_FIELDS = Object.freeze([
   'nearScoutProfileDistancePct',
   'nearScoutProfileTrend',
   'scoutEffectiveImmediacyStatus',
+  'scoutPlayerInterestLevel',
   'scoutEngineVersion',
   'scoutProfileIds',
   'scoutPreliminaryProfileIds',

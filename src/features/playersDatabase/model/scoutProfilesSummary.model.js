@@ -2,6 +2,11 @@
 
 const clean = value => String(value || '').trim()
 
+const hasOwn = (source, key) => (
+  Boolean(source) &&
+  Object.prototype.hasOwnProperty.call(source, key)
+)
+
 const uniqueCleanValues = values => [
   ...new Set(
     (Array.isArray(values) ? values : [])
@@ -29,6 +34,17 @@ const resolveProfileIdentity = profile => clean(
 )
 
 const resolveActiveProfessionalProfileIds = player => {
+  // Team players own this compact projection. Its explicit empty state must
+  // not revive stale rich Team fields from older documents.
+  if (hasOwn(player, 'professionalScoutProfileIds')) {
+    return uniqueCleanValues(player.professionalScoutProfileIds)
+  }
+
+  const projectedPrimaryProfileId = clean(player?.primaryScoutProfileId)
+  if (hasOwn(player, 'primaryScoutProfileId')) {
+    return projectedPrimaryProfileId ? [projectedPrimaryProfileId] : []
+  }
+
   const hierarchy = player?.scoutProfileHierarchy &&
     typeof player.scoutProfileHierarchy === 'object'
     ? player.scoutProfileHierarchy

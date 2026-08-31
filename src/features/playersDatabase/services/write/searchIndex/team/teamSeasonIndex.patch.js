@@ -2,6 +2,7 @@
 
 import {
   collection,
+  deleteField,
   doc,
   query,
   serverTimestamp,
@@ -11,6 +12,7 @@ import {
   createTrackedWriteBatch,
   trackedGetDoc,
   trackedGetDocs,
+  trackedDeleteDoc,
   trackedUpdateDoc,
 } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
@@ -27,10 +29,18 @@ import {
 } from '../../leagues/leagueDoc.js'
 import {
   buildTeamSeasonIndexId,
+  buildTeamSearchIndexLeagueScoutProjection,
   resolveClubLevel,
   resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
 import { buildTeamBalanceSearchIndexProjection } from './teamSeasonIndex.balance.js'
+import {
+  buildLeagueTeamPerformanceProjection,
+  buildTeamSearchIndexPerformanceProjection,
+} from '../../shared/teamPerformanceProjection.js'
+import {
+  buildCanonicalLeagueTeamScoutContext,
+} from '../../shared/leagueTeamScoutContext.js'
 import {
   buildSearchIndexWriteResult,
   SEARCH_INDEX_ENTITY_TYPES,
@@ -51,6 +61,15 @@ const teamSeasonIndexUpdateUsage = {
     collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
     action: 'teamSeasonIndex-update',
     operationSubtype: 'maintenance-updateDoc',
+  },
+}
+
+const teamSeasonIndexDeleteUsage = {
+  __firestoreUsageContext: {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    action: 'teamSeasonIndex-reset-league-only',
+    operationSubtype: 'maintenance-deleteDoc',
   },
 }
 
@@ -77,6 +96,131 @@ const areScoutProfilesSummariesEqual = (left, right) => (
   JSON.stringify(normalizeScoutProfilesSummary(right))
 )
 
+const hasSameTeamPerformanceProjection = ({ existing = {}, projection = {} } = {}) => (
+  Object.entries(projection).every(([field, value]) => existing[field] === value)
+)
+
+const buildTeamSearchIndexBalanceDerivedReset = () => ({
+  balanceDependencyKey: '',
+  balancePersistenceContractVersion: '',
+  balanceReliability: '',
+  balanceMinutesTop5Band: '',
+  balanceMinutesTop10Band: '',
+  balanceMinutesTop14Band: '',
+  balanceUsage70Band: '',
+  balanceUsage50Band: '',
+  balanceUsage30Band: '',
+  balanceUsage10Band: '',
+  balanceProductionTop1Band: '',
+  balanceProductionTop3Band: '',
+  balanceRotationStartsTop5Band: '',
+  balanceRotationStartsTop10Band: '',
+  balanceRotationStartsTop14Band: '',
+  balanceRotationSubInTop5Band: '',
+  balanceRotationSubInTop10Band: '',
+  balanceRotationSubInTop14Band: '',
+})
+
+// Team Season ownership only: roster, player-profile summary and the balance
+// snapshot that is derived from roster/stats. This is the League-only reset.
+export const buildTeamSearchIndexTeamSeasonDerivedReset = () => ({
+  playersCount: 0,
+  scoutProfilesSummary: { total: 0, profileCounts: {} },
+  ...buildTeamSearchIndexBalanceDerivedReset(),
+})
+
+// Kept for callers that explicitly need to remove every derived field. Do not
+// use this when rolling a linked Team SearchIndex back to League-only.
+export const buildTeamSearchIndexStatsDerivedReset = () => ({
+  attackScoutPriorityScore: null,
+  attackPriorityLevel: '',
+  attackOpportunityType: '',
+  defenseScoutPriorityScore: null,
+  defensePriorityLevel: '',
+  defenseOpportunityType: '',
+  teamScoutEngineVersion: '',
+  scoutCompetitionRelation: '',
+  scoutCompetitionGap: null,
+  attackingNeedLevel: 'none',
+  defensiveNeedLevel: 'none',
+  balanceProblemLevel: 'none',
+  recruitmentWindow: 'none',
+  ...buildTeamSearchIndexTeamSeasonDerivedReset(),
+})
+
+// League Load creates the Team SearchIndex. Team Season writers add only
+// roster/scout/balance projections, which can be removed without deleting the
+// independent League projection.
+export async function resetTeamSeasonSearchIndexToLeagueOnly({
+  league = {},
+  season = {},
+  team = {},
+  target = 'current',
+} = {}) {
+  const leagueId = clean(league.id || season.leagueId || team.leagueId)
+  const seasonIdentity = normalizeSeasonIdentity({ season })
+  const seasonKey = seasonIdentity.seasonKey
+  const teamIdentity = normalizeTeamIdentity({ team })
+  const teamId = clean(teamIdentity.birthTeamId || teamIdentity.teamId)
+  const id = buildTeamSeasonIndexId({
+    leagueId,
+    seasonKey,
+    teamId,
+    clubId: clean(team.clubId),
+  })
+  if (!id) throw new Error('Missing team season index id')
+
+  const performance = buildLeagueTeamPerformanceProjection({
+    league,
+    season,
+    target,
+    team,
+  }) || buildLeagueTeamPerformanceProjection({
+    league,
+    season,
+    target: clean(target) === 'history' ? 'current' : 'history',
+    team,
+  })
+  const leagueScoutContext = buildCanonicalLeagueTeamScoutContext({
+    league,
+    season,
+    target,
+    team,
+  })
+  const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id)
+
+  if (!performance || !leagueScoutContext) {
+    await trackedDeleteDoc(ref, teamSeasonIndexDeleteUsage)
+    return buildSearchIndexWriteResult({
+      entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
+      operation: 'resetLeagueOnly',
+      rowsCount: 1,
+      id,
+      deleted: true,
+      reason: 'leagueTeamMissing',
+    })
+  }
+
+  await trackedUpdateDoc(ref, {
+    teamSeasonDocumentId: deleteField(),
+    ...buildTeamSearchIndexTeamSeasonDerivedReset(),
+    ...buildTeamSearchIndexLeagueScoutProjection({
+      league,
+      season,
+      scoutResult: leagueScoutContext.scoutResult,
+    }),
+    ...buildTeamSearchIndexPerformanceProjection(performance),
+    updatedAt: serverTimestamp(),
+  }, teamSeasonIndexUpdateUsage)
+
+  return buildSearchIndexWriteResult({
+    entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
+    operation: 'resetLeagueOnly',
+    rowsCount: 1,
+    id,
+    reset: true,
+  })
+}
 
 export async function updateTeamSeasonSearchIndexRosterMeta({
   league = {},
@@ -87,6 +231,9 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
   playerSeasonIndexCount = 0,
   scoutProfilesSummary = null,
   teamBalance = null,
+  teamPerformance = null,
+  teamSeasonDocumentId = '',
+  resetStatsDerived = false,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const rawSeasonId = clean(season.seasonId)
@@ -95,6 +242,7 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
   const teamIdentity = normalizeTeamIdentity({ team })
   const teamId = clean(teamIdentity.birthTeamId || teamIdentity.teamId)
   const clubId = clean(team.clubId)
+  const linkedTeamSeasonDocumentId = clean(teamSeasonDocumentId)
   const id = buildTeamSeasonIndexId({
     leagueId,
     seasonKey,
@@ -102,6 +250,9 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
     clubId,
   })
   if (!id) throw new Error('Missing team season index id')
+  const performanceProjection = buildTeamSearchIndexPerformanceProjection(
+    teamPerformance
+  )
 
   const batch = createTrackedWriteBatch(db, {
     feature: 'playersDatabase',
@@ -118,6 +269,12 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
       leagueId,
       seasonId,
       seasonKey,
+      seasonStatus: clean(season.seasonStatus) === 'completed'
+        ? 'completed'
+        : 'active',
+      seasonDataStatus: clean(season.seasonStatus) === 'completed'
+        ? 'historical'
+        : 'current',
       clubId,
       clubLevel: resolveClubLevel({
         clubId,
@@ -133,15 +290,21 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
       birthTeamSlot: toNumberOrZero(team.birthTeamSlot || team.teamSlot) || 1,
       teamId,
       teamDocumentId: teamIdentity.birthTeamDocumentId || teamIdentity.teamDocumentId || teamId,
+      ...(linkedTeamSeasonDocumentId
+        ? { teamSeasonDocumentId: linkedTeamSeasonDocumentId }
+        : {}),
       teamUrl: clean(team.teamUrl),
       seasonUrl: clean(season.seasonUrl),
       birthYear: toNumberOrZero(season.birthYear),
       leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
       playersCount: toNumberOrZero(playersCount),
+      ...performanceProjection,
       ...(scoutProfilesSummary !== null && scoutProfilesSummary !== undefined
         ? { scoutProfilesSummary: normalizeScoutProfilesSummary(scoutProfilesSummary) }
         : {}),
-      ...buildTeamBalanceSearchIndexProjection(teamBalance),
+      ...(resetStatsDerived
+        ? buildTeamSearchIndexStatsDerivedReset()
+        : buildTeamBalanceSearchIndexProjection(teamBalance)),
       sourceTarget: clean(target) === 'history' ? 'history' : 'current',
       updatedAt: serverTimestamp(),
     },
@@ -164,6 +327,7 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
   league = {},
   season = {},
   team = {},
+  teamSeasonDocumentId = '',
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonIdentity = normalizeSeasonIdentity({ season })
@@ -171,6 +335,7 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
   const seasonKey = seasonIdentity.seasonKey
   const birthTeamId = clean(team.birthTeamId || team.teamId)
   const teamUrl = clean(team.teamUrl)
+  const linkedTeamSeasonDocumentId = clean(teamSeasonDocumentId)
   const requestedEntityId = clean(
     team.entityId ||
     team.searchIndexId ||
@@ -210,7 +375,11 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
       )
 
       if (isMatchingIndex) {
-        if (clean(data.teamUrl) === teamUrl) {
+        if (
+          clean(data.teamUrl) === teamUrl &&
+          (!linkedTeamSeasonDocumentId ||
+            clean(data.teamSeasonDocumentId) === linkedTeamSeasonDocumentId)
+        ) {
           return buildSearchIndexWriteResult({
             entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
             operation: 'updateTeamUrl',
@@ -225,6 +394,9 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
 
         await trackedUpdateDoc(directRef, {
           teamUrl,
+          ...(linkedTeamSeasonDocumentId
+            ? { teamSeasonDocumentId: linkedTeamSeasonDocumentId }
+            : {}),
           updatedAt: serverTimestamp(),
         }, teamSeasonIndexUpdateUsage)
 
@@ -279,7 +451,11 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
   }
 
   const matchingData = matchingDoc.data() || {}
-  if (clean(matchingData.teamUrl) === teamUrl) {
+  if (
+    clean(matchingData.teamUrl) === teamUrl &&
+    (!linkedTeamSeasonDocumentId ||
+      clean(matchingData.teamSeasonDocumentId) === linkedTeamSeasonDocumentId)
+  ) {
     return buildSearchIndexWriteResult({
       entityType: SEARCH_INDEX_ENTITY_TYPES.teamSeason,
       operation: 'updateTeamUrl',
@@ -294,6 +470,9 @@ export async function updateTeamSeasonSearchIndexTeamUrl({
 
   await trackedUpdateDoc(matchingDoc.ref, {
     teamUrl,
+    ...(linkedTeamSeasonDocumentId
+      ? { teamSeasonDocumentId: linkedTeamSeasonDocumentId }
+      : {}),
     updatedAt: serverTimestamp(),
   }, teamSeasonIndexUpdateUsage)
 
@@ -315,6 +494,8 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   scoutProfilesSummary = {},
   teamBalance = null,
   playersCount = null,
+  teamPerformance = null,
+  teamSeasonDocumentId = '',
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -322,6 +503,7 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   const teamIdentity = normalizeTeamIdentity({ team })
   const teamId = clean(teamIdentity.birthTeamId || teamIdentity.teamId)
   const clubId = clean(team.clubId)
+  const linkedTeamSeasonDocumentId = clean(teamSeasonDocumentId)
   const id = buildTeamSeasonIndexId({
     leagueId,
     seasonKey,
@@ -339,6 +521,9 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   })
   const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
   const balanceProjection = buildTeamBalanceSearchIndexProjection(teamBalance)
+  const performanceProjection = buildTeamSearchIndexPerformanceProjection(
+    teamPerformance
+  )
 
   if (!snapshot.exists()) {
     const batch = createTrackedWriteBatch(db, {
@@ -374,6 +559,9 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
           teamIdentity.birthTeamDocumentId ||
           teamIdentity.teamDocumentId ||
           teamId,
+        ...(linkedTeamSeasonDocumentId
+          ? { teamSeasonDocumentId: linkedTeamSeasonDocumentId }
+          : {}),
         teamUrl: clean(team.teamUrl),
         seasonUrl: clean(season.seasonUrl),
         birthYear: toNumberOrZero(season.birthYear),
@@ -381,6 +569,7 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
         ...(playersCount !== null && playersCount !== undefined
           ? { playersCount: toNumberOrZero(playersCount) }
           : {}),
+        ...performanceProjection,
         scoutProfilesSummary: normalizedSummary,
         ...balanceProjection,
         sourceTarget: clean(target) === 'history' ? 'history' : 'current',
@@ -414,12 +603,20 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   const normalizedPlayersCount = hasPlayersCount
     ? toNumberOrZero(playersCount)
     : null
+  const teamSeasonLinkUnchanged = !linkedTeamSeasonDocumentId || (
+    clean(existingData.teamSeasonDocumentId) === linkedTeamSeasonDocumentId
+  )
   const playersCountUnchanged = !hasPlayersCount || (
     toNumberOrZero(existingData.playersCount) === normalizedPlayersCount
   )
 
   if (
+    teamSeasonLinkUnchanged &&
     playersCountUnchanged &&
+    hasSameTeamPerformanceProjection({
+      existing: existingData,
+      projection: performanceProjection,
+    }) &&
     areScoutProfilesSummariesEqual(
       existingData.scoutProfilesSummary,
       normalizedSummary
@@ -438,9 +635,13 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
   }
 
   await trackedUpdateDoc(ref, {
+    ...(linkedTeamSeasonDocumentId
+      ? { teamSeasonDocumentId: linkedTeamSeasonDocumentId }
+      : {}),
     ...(hasPlayersCount
       ? { playersCount: normalizedPlayersCount }
       : {}),
+    ...performanceProjection,
     scoutProfilesSummary: normalizedSummary,
     ...balanceProjection,
     sourceTarget: clean(target) === 'history' ? 'history' : 'current',

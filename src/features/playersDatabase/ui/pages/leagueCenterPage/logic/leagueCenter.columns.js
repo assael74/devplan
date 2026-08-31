@@ -2,6 +2,7 @@
 
 import {
   Button,
+  Chip,
   Stack,
   Tooltip,
 } from '@mui/joy'
@@ -33,6 +34,18 @@ const coveragePill = ({ value, completeCount, targetCount }) => (
     )}
   />
 )
+
+const countPill = ({ count, targetCount }) => (
+  <Chip size='sm' variant='soft' color='neutral'>
+    <span dir='ltr'>{coverageLabel({ completeCount: count, targetCount })}</span>
+  </Chip>
+)
+
+const statusSortValue = value => ({
+  full: 2,
+  partial: 1,
+  missing: 0,
+}[value] ?? -1)
 
 const BASE_COLUMNS = [
   {
@@ -67,6 +80,7 @@ const BASE_COLUMNS = [
   {
     key: 'tableStatus',
     label: 'טבלה',
+    getSortValue: row => statusSortValue(row.tableStatus),
     render: row => (
       <StatusPill
         value={row.tableStatus}
@@ -77,6 +91,7 @@ const BASE_COLUMNS = [
   {
     key: 'playersStatsStatus',
     label: 'שחקנים + סטטס',
+    getSortValue: row => statusSortValue(row.playersStatsStatus),
     render: row => coveragePill({
       value: row.playersStatsStatus,
       completeCount: row.playersStatsCompleteCount,
@@ -86,18 +101,18 @@ const BASE_COLUMNS = [
   {
     key: 'offensePriorityStatus',
     label: 'עדיפות התקפית',
-    render: row => coveragePill({
-      value: row.offensePriorityStatus,
-      completeCount: row.offensePriorityCompleteCount,
+    getSortValue: row => Number(row.offensePriorityCount || 0),
+    render: row => countPill({
+      count: row.offensePriorityCount,
       targetCount: row.offensePriorityTargetCount,
     }),
   },
   {
     key: 'defensePriorityStatus',
     label: 'עדיפות הגנתית',
-    render: row => coveragePill({
-      value: row.defensePriorityStatus,
-      completeCount: row.defensePriorityCompleteCount,
+    getSortValue: row => Number(row.defensePriorityCount || 0),
+    render: row => countPill({
+      count: row.defensePriorityCount,
       targetCount: row.defensePriorityTargetCount,
     }),
   },

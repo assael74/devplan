@@ -1,6 +1,6 @@
 // src/features/playersDatabase/services/write/flows/player/updatePlayerScoutReview.flow.js
 
-import { getTeamById } from '../../../read/team.js'
+import { getTeamSeason } from '../../../read/teamSeason.js'
 import {
   ensureManualScoutingPlayerDoc,
   updateScoutingPlayerReview,
@@ -21,10 +21,13 @@ const ensureReviewPlayerDocument = async payload => {
   if (firstResult.reason !== 'playerDocMissing') return firstResult
 
   const teamDocumentId = resolveTeamDocumentId(payload.team || {})
-  const teamDocument = teamDocumentId ? await getTeamById(teamDocumentId) : null
+  const teamSeasonDocument = teamDocumentId ? await getTeamSeason({
+    birthTeamDocumentId: teamDocumentId,
+    seasonKey: payload.season?.seasonKey || payload.season?.seasonId,
+  }) : null
   const ensureResult = await ensureManualScoutingPlayerDoc({
     ...payload,
-    teamDocument,
+    teamSeasonDocument,
   })
 
   if (ensureResult.skipped) {

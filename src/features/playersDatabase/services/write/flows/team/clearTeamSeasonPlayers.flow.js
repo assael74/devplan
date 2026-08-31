@@ -5,16 +5,14 @@ import {
 } from '../../leagues/index.js'
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
-  deletePlayerSearchIndexesForTeamSeason,
+  deleteSearchIndexesForTeamSeason,
   getSearchIndexMetaForTeamSeason,
-  updateTeamSeasonSearchIndexRosterMeta,
 } from '../../searchIndex/index.js'
-import { clearTeamSeasonPlayers } from '../../teams/index.js'
+import { removeTeamSeason } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const FLOW = 'clearTeamSeasonPlayers'
-
 const mergePlayerDocumentIds = (...groups) => Array.from(new Set(
   groups
     .flatMap(group => (Array.isArray(group) ? group : []))
@@ -38,7 +36,6 @@ const runStage = async ({ stage, results, action }) => {
 
 export async function clearTeamSeasonPlayersFlow(payload = {}) {
   const results = {}
-
   const searchIndexMetaResult = await runStage({
     stage: 'getSearchIndexMetaForTeamSeason',
     results,
@@ -46,9 +43,9 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
   })
 
   const teamSeasonResult = await runStage({
-    stage: 'clearTeamSeasonPlayers',
+    stage: 'removeTeamSeason',
     results,
-    action: () => clearTeamSeasonPlayers(payload),
+    action: () => removeTeamSeason(payload),
   })
 
   const playerDocumentIds = mergePlayerDocumentIds(
@@ -66,9 +63,9 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
   })
 
   const playerIndexesResult = await runStage({
-    stage: 'deletePlayerSearchIndexesForTeamSeason',
+    stage: 'deleteSearchIndexesForTeamSeason',
     results,
-    action: () => deletePlayerSearchIndexesForTeamSeason(payload),
+    action: () => deleteSearchIndexesForTeamSeason(payload),
   })
 
   const leagueTeamMetaResult = await runStage({
@@ -89,23 +86,6 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
   const leagueRosterResult = leagueTeamMetaResult
   const leagueProfilesResult = leagueTeamMetaResult
 
-  const teamIndexRosterResult = await runStage({
-    stage: 'updateTeamSeasonSearchIndexRosterMeta',
-    results,
-    action: () => updateTeamSeasonSearchIndexRosterMeta({
-      ...payload,
-      playersCount: 0,
-      playerSeasonIndexCount: 0,
-      scoutProfilesSummary: {
-        total: 0,
-        profileCounts: {},
-      },
-      teamBalance: teamSeasonResult.teamBalance,
-    }),
-  })
-
-
-
   return {
     status: 'complete',
     syncStatus: 'complete',
@@ -119,7 +99,5 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     playerIndexesResult,
     leagueRosterResult,
     leagueProfilesResult,
-    teamIndexRosterResult,
-    teamIndexProfilesResult: teamIndexRosterResult,
   }
 }

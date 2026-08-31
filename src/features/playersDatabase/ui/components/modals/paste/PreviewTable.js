@@ -56,7 +56,9 @@ export default function PreviewTable({
   rows,
   onCellChange,
   getRowStatus,
+  getCellStatus,
   summary = [],
+  showSummaryCounts = true,
 }) {
   const [sort, setSort] = React.useState(null)
   const visibleRows = React.useMemo(() => sortRows({
@@ -104,31 +106,47 @@ export default function PreviewTable({
           spacing={0.75}
           sx={sx.summaryChips}
         >
-          <Chip
-            size='sm'
-            variant='soft'
-            color='success'
-          >
-            {rows.length} שורות
-          </Chip>
+          {summary.map(item => (
+            item.render ? (
+              <React.Fragment key={item.key || item.label}>
+                {item.render()}
+              </React.Fragment>
+            ) : null
+          ))}
 
-          <Chip
-            size='sm'
-            variant='soft'
-            color='neutral'
-          >
-            {columns.length} עמודות
-          </Chip>
+          {showSummaryCounts ? (
+            <>
+              <Chip
+                size='sm'
+                variant='soft'
+                color='success'
+              >
+                {rows.length} שורות
+              </Chip>
+
+              <Chip
+                size='sm'
+                variant='soft'
+                color='neutral'
+              >
+                {columns.length} עמודות
+              </Chip>
+            </>
+          ) : null}
 
           {summary.map(item => (
-            <Chip
-              key={item.key || item.label}
-              size='sm'
-              variant='soft'
-              color={item.color || 'neutral'}
-            >
-              {item.label}
-            </Chip>
+            !item.render ? (
+              <Chip
+                key={item.key || item.label}
+                size='sm'
+                variant='soft'
+                color={item.color || 'neutral'}
+                onClick={item.onClick}
+                sx={item.onClick ? sx.summaryActionChip : null}
+              >
+                {item.label}
+              </Chip>
+            ) : null
           ))}
         </Stack>
       </Box>
@@ -201,13 +219,16 @@ export default function PreviewTable({
                     <Box
                       component='td'
                       key={column.key}
-                      sx={column.sx}
+                      sx={[
+                        column.sx,
+                      ]}
                     >
                       <PreviewCell
                         column={column}
                         row={row}
                         rowIndex={rowIndex}
                         onCellChange={onCellChange}
+                        cellStatus={getCellStatus?.(row, rowIndex, column)}
                       />
                     </Box>
                   ))}

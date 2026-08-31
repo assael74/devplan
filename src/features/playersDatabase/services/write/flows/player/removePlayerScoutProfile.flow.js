@@ -1,12 +1,10 @@
 // src/features/playersDatabase/services/write/flows/player/removePlayerScoutProfile.flow.js
 
 import { updateLeagueSeasonTableRankScoutProfilesSummary } from '../../leagues/index.js'
-import { removePlayerSeasonScoutProfile } from '../../players/index.js'
 import {
-  updatePlayerSeasonSearchIndexScoutProfiles,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
-import { removeTeamSeasonPlayerScoutProfile } from '../../teams/index.js'
+import { removePlayerScoutProfileCoordinated } from './removePlayerScoutProfile.coordinated.js'
 
 const clean = value => String(value || '').trim()
 
@@ -31,54 +29,6 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
   if (!profileId) throw new Error('Missing scout profile id')
 
   let teamSeasonResult = null
-
-  try {
-    teamSeasonResult = await removeTeamSeasonPlayerScoutProfile({
-      ...payload,
-      profileId,
-    })
-  } catch (error) {
-    return {
-      playerSeasonResult: null,
-      teamSeasonResult: null,
-      playerSeasonIndexResult: null,
-      leagueTableRankScoutProfilesResult: null,
-      teamSeasonIndexScoutProfilesResult: null,
-      rowsCount: 0,
-      teamCanonicalCommitted: false,
-      projectionsCompleted: false,
-      completed: false,
-      stoppedAt: 'teamSeason',
-      error: clean(error?.message || 'Remove profile team update failed'),
-    }
-  }
-
-  if (!teamSeasonResult.updated || !teamSeasonResult.player) {
-    return {
-      playerSeasonResult: null,
-      teamSeasonResult,
-      playerSeasonIndexResult: null,
-      leagueTableRankScoutProfilesResult: null,
-      teamSeasonIndexScoutProfilesResult: null,
-      rowsCount: 0,
-      teamCanonicalCommitted: false,
-      projectionsCompleted: false,
-      completed: false,
-      stoppedAt: 'teamSeason',
-    }
-  }
-
-  const nextPayload = {
-    ...payload,
-    profileId,
-    player: teamSeasonResult.player,
-    scoutProfiles: Array.isArray(teamSeasonResult.player.scoutProfiles)
-      ? teamSeasonResult.player.scoutProfiles
-      : [],
-    scoutCombinations: Array.isArray(teamSeasonResult.player.scoutCombinations)
-      ? teamSeasonResult.player.scoutCombinations
-      : [],
-  }
   const projectionResults = {
     playerSeasonResult: null,
     playerSeasonIndexResult: null,
@@ -87,34 +37,75 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
   }
 
   try {
-    projectionResults.playerSeasonResult = await removePlayerSeasonScoutProfile(nextPayload)
+    const coordinatedResult = await removePlayerScoutProfileCoordinated({
+      ...payload,
+      profileId,
+    })
+    projectionResults.playerSeasonResult = coordinatedResult.playerSeasonResult || coordinatedResult
+    projectionResults.playerSeasonIndexResult = coordinatedResult.playerSeasonIndexResult || null
+    teamSeasonResult = coordinatedResult.teamSeasonResult || null
   } catch (error) {
+    return {
+      ...projectionResults,
+      teamSeasonResult: null,
+      rowsCount: 0,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
+      completed: false,
+      stoppedAt: 'playerDocument',
+      error: clean(error?.message || 'Remove profile player update failed'),
+    }
+  }
+
+  if (!projectionResults.playerSeasonResult.updated) {
+    return {
+      ...projectionResults,
+      teamSeasonResult: null,
+      rowsCount: 0,
+      teamCanonicalCommitted: false,
+      projectionsCompleted: false,
+      completed: false,
+      stoppedAt: 'playerDocument',
+    }
+  }
+
+  const nextPayload = {
+    ...payload,
+    profileId,
+    player: teamSeasonResult?.player || projectionResults.playerSeasonResult.player,
+    scoutProfiles: Array.isArray(projectionResults.playerSeasonResult.player?.scoutProfiles)
+      ? projectionResults.playerSeasonResult.player.scoutProfiles
+      : [],
+    scoutCombinations: Array.isArray(projectionResults.playerSeasonResult.player?.scoutCombinations)
+      ? projectionResults.playerSeasonResult.player.scoutCombinations
+      : [],
+  }
+
+  if (!teamSeasonResult.updated || !teamSeasonResult.player) {
+    if (teamSeasonResult?.reason === 'teamPlayerMissing') {
+      return {
+        ...projectionResults,
+        teamSeasonResult,
+        rowsCount: 1,
+        teamCanonicalCommitted: true,
+        projectionsCompleted: true,
+        completed: true,
+      }
+    }
     return buildCommittedProjectionFailure({
-      stage: 'playerDocument',
-      error,
+      stage: 'teamSeasonProjection',
+      error: new Error(teamSeasonResult.reason || 'Team season player is missing'),
       teamSeasonResult,
       results: projectionResults,
     })
   }
 
-  try {
-    projectionResults.playerSeasonIndexResult =
-      await updatePlayerSeasonSearchIndexScoutProfiles(nextPayload)
-
-    if (!projectionResults.playerSeasonIndexResult?.updated) {
-      return buildCommittedProjectionFailure({
-        stage: 'playerSearchIndex',
-        error: new Error(
-          projectionResults.playerSeasonIndexResult?.reason || 'Player season SearchIndex is missing'
-        ),
-        teamSeasonResult,
-        results: projectionResults,
-      })
-    }
-  } catch (error) {
+  if (!projectionResults.playerSeasonIndexResult?.updated) {
     return buildCommittedProjectionFailure({
       stage: 'playerSearchIndex',
-      error,
+      error: new Error(
+        projectionResults.playerSeasonIndexResult?.reason || 'Player season SearchIndex is missing'
+      ),
       teamSeasonResult,
       results: projectionResults,
     })
@@ -122,6 +113,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
 
   const summaryPayload = {
     ...nextPayload,
+    teamSeasonDocumentId: teamSeasonResult.teamSeasonDocumentId,
     scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
   }
 

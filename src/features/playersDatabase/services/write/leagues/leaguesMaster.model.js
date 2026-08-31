@@ -29,19 +29,19 @@ export const getLeagueSeasonRows = league => {
   return rows
 }
 
-const countPlayers = tableRank =>
+export const countPlayers = tableRank =>
   (Array.isArray(tableRank) ? tableRank : []).reduce(
     (total, row) => total + toNumber(row?.playersCount),
     0
   )
 
-const countProfiledPlayers = tableRank =>
+export const countProfiledPlayers = tableRank =>
   (Array.isArray(tableRank) ? tableRank : []).reduce(
     (total, row) => total + toNumber(row?.scoutProfilesSummary?.total),
     0
   )
 
-const countScoutProfiles = tableRank =>
+export const countScoutProfiles = tableRank =>
   (Array.isArray(tableRank) ? tableRank : []).reduce((total, row) => {
     const profileCounts = row?.scoutProfilesSummary?.profileCounts
     if (!profileCounts || typeof profileCounts !== 'object') return total

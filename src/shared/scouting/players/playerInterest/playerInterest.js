@@ -10,17 +10,13 @@ import {
 } from '../verification/index.js'
 
 import {
-  PLAYER_INTEREST_LEVEL,
-  PLAYER_INTEREST_LIMIT,
-  PLAYER_INTEREST_REASON,
-  PLAYER_INTEREST_UPGRADE_CONDITION,
-} from './playerInterest.model.js'
+  PLAYER_SCOUT_IMMEDIACY_BOOST,
+} from '../opportunity/playerOpportunity.model.js'
 
-const INTEREST_RANK = {
-  [PLAYER_INTEREST_LEVEL.SUPER_INTERESTING]: 3,
-  [PLAYER_INTEREST_LEVEL.INTERESTING]: 2,
-  [PLAYER_INTEREST_LEVEL.REASONABLE]: 1,
-}
+import {
+  PLAYER_INTEREST_LEVEL,
+  PLAYER_INTEREST_REASON,
+} from './playerInterest.model.js'
 
 const clean = value => String(value || '').trim()
 
@@ -30,15 +26,6 @@ const toNullableNumber = value => {
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
-
-const strongestInterestLevel = values => (
-  (Array.isArray(values) ? values : [])
-    .map(clean)
-    .filter(Boolean)
-    .sort((left, right) => (
-      (INTEREST_RANK[right] || 0) - (INTEREST_RANK[left] || 0)
-    ))[0] || ''
-)
 
 const resolvePrimarySignal = ({ signals, profileHierarchy }) => {
   const primaryProfileId = clean(profileHierarchy?.primaryProfileId)
@@ -107,23 +94,12 @@ export const buildPlayerInterest = ({
   playerReview = null,
 } = {}) => {
   const primarySignal = resolvePrimarySignal({ signals, profileHierarchy })
-  const profileInterestLevel = clean(primarySignal?.interestLevel)
-  const combinationInterestLevel = strongestInterestLevel(
-    (Array.isArray(combinations) ? combinations : [])
-      .map(combination => combination?.interestLevel || combination?.interest)
-  )
-  const sourceInterestLevel = strongestInterestLevel([
-    profileInterestLevel,
-    combinationInterestLevel,
-  ])
   const primaryProfileId = clean(primarySignal?.profileId)
 
-  if (!primarySignal || !sourceInterestLevel) {
+  if (!primarySignal) {
     return {
       assessmentScope: 'player_career',
       interestLevel: '',
-      profileInterestLevel,
-      combinationInterestLevel,
       primaryProfileId,
       reasons: [],
       limitingFactors: [],
@@ -146,58 +122,50 @@ export const buildPlayerInterest = ({
   const actionStatus = clean(opportunity?.effectiveActionStatus)
   const hasHighImmediacy = actionStatus === 'priority' || actionStatus === 'immediate'
   const hasStrongDepth = primaryStrengthPct !== null && primaryStrengthPct >= 50
+  const immediacyBoostIds = new Set(
+    (Array.isArray(opportunity?.boosts) ? opportunity.boosts : [])
+      .map(boost => clean(boost?.id || boost))
+      .filter(Boolean)
+  )
+  const duplicateImmediacyBoostIds = new Set([
+    hasPersistence ? PLAYER_SCOUT_IMMEDIACY_BOOST.PROFILE_PERSISTENCE : '',
+    hasDefinedCombination ? PLAYER_SCOUT_IMMEDIACY_BOOST.PROFILE_COMBINATION : '',
+    hasDefinedCombination
+      ? PLAYER_SCOUT_IMMEDIACY_BOOST.PROFILE_COMBINATION_PERSISTENCE
+      : '',
+  ].filter(Boolean))
+  const hasIndependentHighImmediacy = hasHighImmediacy && (
+    !immediacyBoostIds.size ||
+    [...immediacyBoostIds].some(boostId => !duplicateImmediacyBoostIds.has(boostId))
+  )
   const position = resolvePositionState({
     primarySignal,
     verification,
   })
-  const reasons = []
-  const limitingFactors = []
-  const upgradeConditions = []
-
-  if (position.verified) reasons.push(PLAYER_INTEREST_REASON.POSITION_VERIFIED)
-  if (hasPersistence) reasons.push(PLAYER_INTEREST_REASON.PROFILE_PERSISTENCE)
-  if (hasDefinedCombination) reasons.push(PLAYER_INTEREST_REASON.DEFINED_COMBINATION)
-  if (hasHighImmediacy) reasons.push(PLAYER_INTEREST_REASON.HIGH_IMMEDIACY)
-  if (hasStrongDepth) reasons.push(PLAYER_INTEREST_REASON.STRONG_PROFILE_DEPTH)
-
-  let interestLevel = sourceInterestLevel
-
-  if (sourceInterestLevel === PLAYER_INTEREST_LEVEL.SUPER_INTERESTING) {
-    if (position.requiredContext && !position.verified) {
-      interestLevel = PLAYER_INTEREST_LEVEL.INTERESTING
-      reasons.push(PLAYER_INTEREST_REASON.PROFILE_INTEREST_CAPPED)
-      limitingFactors.push(
-        position.mismatch
-          ? PLAYER_INTEREST_LIMIT.POSITION_MISMATCH
-          : PLAYER_INTEREST_LIMIT.POSITION_NOT_VERIFIED
-      )
-      upgradeConditions.push(PLAYER_INTEREST_UPGRADE_CONDITION.POSITION_VERIFICATION)
-    } else {
-      const hasWholePlayerSupport = (
-        position.verified ||
-        hasPersistence ||
-        hasDefinedCombination ||
-        hasHighImmediacy ||
-        hasStrongDepth
-      )
-
-      if (!hasWholePlayerSupport) {
-        interestLevel = PLAYER_INTEREST_LEVEL.INTERESTING
-        reasons.push(PLAYER_INTEREST_REASON.PROFILE_INTEREST_CAPPED)
-        limitingFactors.push(PLAYER_INTEREST_LIMIT.WHOLE_PLAYER_SUPPORT_MISSING)
-        upgradeConditions.push(PLAYER_INTEREST_UPGRADE_CONDITION.WHOLE_PLAYER_CONFIRMATION)
-      }
-    }
-  }
+  const hasRelevantPositionVerification = Boolean(
+    position.requiredContext && position.verified
+  )
+  const reasons = [
+    hasRelevantPositionVerification
+      ? PLAYER_INTEREST_REASON.POSITION_VERIFIED
+      : '',
+    hasPersistence ? PLAYER_INTEREST_REASON.PROFILE_PERSISTENCE : '',
+    hasDefinedCombination ? PLAYER_INTEREST_REASON.DEFINED_COMBINATION : '',
+    hasIndependentHighImmediacy ? PLAYER_INTEREST_REASON.HIGH_IMMEDIACY : '',
+    hasStrongDepth ? PLAYER_INTEREST_REASON.STRONG_PROFILE_DEPTH : '',
+  ].filter(Boolean)
+  const interestLevel = reasons.length >= 2
+    ? PLAYER_INTEREST_LEVEL.SUPER_INTERESTING
+    : reasons.length === 1
+      ? PLAYER_INTEREST_LEVEL.INTERESTING
+      : PLAYER_INTEREST_LEVEL.REASONABLE
 
   return {
     assessmentScope: 'player_career',
     interestLevel,
-    profileInterestLevel,
-    combinationInterestLevel,
     primaryProfileId,
     reasons,
-    limitingFactors,
-    upgradeConditions,
+    limitingFactors: [],
+    upgradeConditions: [],
   }
 }

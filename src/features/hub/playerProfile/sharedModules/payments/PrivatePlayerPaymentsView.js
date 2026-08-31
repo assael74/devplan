@@ -58,6 +58,9 @@ function AgreementCard({ payment }) {
   const [amount, setAmount] = useState('')
   const [paidAt, setPaidAt] = useState(moment().format('YYYY-MM-DD'))
   const [error, setError] = useState('')
+  const [agreementOpen, setAgreementOpen] = useState(false)
+  const [totalAmount, setTotalAmount] = useState('')
+  const [agreementError, setAgreementError] = useState('')
   const [editingInstallment, setEditingInstallment] = useState(null)
   const [deleteInstallment, setDeleteInstallment] = useState(null)
   const { run, pending } = usePaymentHubUpdate(payment)
@@ -91,6 +94,39 @@ function AgreementCard({ payment }) {
     setPaidAt(item?.paidAt || moment().format('YYYY-MM-DD'))
     setError('')
     setOpen(true)
+  }
+
+  const openAgreementEdit = () => {
+    setTotalAmount(String(payment?.totalAmount ?? payment?.price ?? ''))
+    setAgreementError('')
+    setAgreementOpen(true)
+  }
+
+  const handleSaveAgreement = async () => {
+    const numericTotal = cleanAmount(totalAmount)
+    const paidAmount = Number(payment?.paidAmount || 0)
+
+    if (!Number.isFinite(numericTotal) || numericTotal <= 0) {
+      setAgreementError('יש להזין סכום כולל תקין')
+      return
+    }
+
+    if (numericTotal < paidAmount) {
+      setAgreementError(`הסכום הכולל לא יכול להיות נמוך מהסכום שכבר שולם: ${money(paidAmount)}`)
+      return
+    }
+
+    const result = await run('privatePaymentAgreementUpdate', {
+      totalAmount: numericTotal,
+      price: numericTotal,
+    }, {
+      section: 'privatePaymentAgreementUpdate',
+      paymentId: payment.id,
+      createIfMissing: false,
+    })
+
+    if (result?.ok === false) return
+    setAgreementOpen(false)
   }
 
   const handleSaveInstallment = async () => {
@@ -178,7 +214,12 @@ function AgreementCard({ payment }) {
       <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} justifyContent="space-between">
         <Box>
           <Typography level="body-xs" textColor="text.tertiary">סכום כולל</Typography>
-          <Typography level="title-lg">{money(payment.totalAmount)}</Typography>
+          <Stack direction="row" alignItems="center" gap={0.5}>
+            <Typography level="title-lg">{money(payment.totalAmount)}</Typography>
+            <IconButton size="sm" variant="plain" onClick={openAgreementEdit}>
+              <EditRoundedIcon fontSize="small" />
+            </IconButton>
+          </Stack>
         </Box>
         <Box>
           <Typography level="body-xs" textColor="text.tertiary">סה״כ שולם</Typography>
@@ -214,16 +255,14 @@ function AgreementCard({ payment }) {
                 <Typography level="body-sm">{item.paidAt ? moment(item.paidAt).format('DD/MM/YYYY') : '—'}</Typography>
                 <Stack direction="row" alignItems="center" gap={0.5}>
                   <Typography level="title-sm">{money(item.amount)}</Typography>
-                  {!closed ? (
-                    <>
-                      <IconButton size="sm" variant="plain" onClick={() => openEdit(item)}>
-                        <EditRoundedIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="sm" variant="plain" color="danger" onClick={() => setDeleteInstallment(item)}>
-                        <DeleteOutlineRoundedIcon fontSize="small" />
-                      </IconButton>
-                    </>
-                  ) : null}
+                  <>
+                    <IconButton size="sm" variant="plain" onClick={() => openEdit(item)}>
+                      <EditRoundedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="sm" variant="plain" color="danger" onClick={() => setDeleteInstallment(item)}>
+                      <DeleteOutlineRoundedIcon fontSize="small" />
+                    </IconButton>
+                  </>
                 </Stack>
               </Stack>
             ))}
@@ -281,6 +320,40 @@ function AgreementCard({ payment }) {
 
           {error ? <Typography level="body-xs" color="danger">{error}</Typography> : null}
         </Stack>
+      </AnimatedModal>
+
+      <AnimatedModal
+        open={agreementOpen}
+        size="sm"
+        busy={pending}
+        disabled={!totalAmount}
+        persistent={pending}
+        title="עריכת סכום ההתקשרות"
+        description={`שולם עד כה: ${money(payment.paidAmount)}`}
+        iconId="payments"
+        confirmLabel="שמירת סכום"
+        confirmIconId="save"
+        cancelLabel="ביטול"
+        onConfirm={handleSaveAgreement}
+        onClose={() => {
+          if (pending) return
+          setAgreementError('')
+          setAgreementOpen(false)
+        }}
+      >
+        <FormControl required error={Boolean(agreementError)}>
+          <FormLabel>סכום כולל</FormLabel>
+          <Input
+            type="number"
+            value={totalAmount}
+            onChange={event => {
+              setTotalAmount(event.target.value)
+              setAgreementError('')
+            }}
+            slotProps={{ input: { min: Number(payment.paidAmount || 0) } }}
+          />
+          {agreementError ? <Typography level="body-xs" color="danger">{agreementError}</Typography> : null}
+        </FormControl>
       </AnimatedModal>
 
       <AnimatedModal

@@ -21,6 +21,53 @@ import {
 } from '../logic/teamStatsMatch.logic.js'
 import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
+import { buildLeagueTeamPerformanceProjection } from '../../../../services/write/shared/teamPerformanceProjection.js'
+import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
+
+const cleanProfileId = value => clean(value)
+
+const withoutStatsMinutesCorrection = row => {
+  const nextRow = { ...(row || {}) }
+  delete nextRow.statsMinutesCorrection
+  return nextRow
+}
+
+const getScoutProfileMap = row => {
+  const profiles = Array.isArray(row?.scoutProfiles) ? row.scoutProfiles : []
+  const hierarchyIds = Array.isArray(row?.scoutProfileHierarchy?.orderedProfileIds)
+    ? row.scoutProfileHierarchy.orderedProfileIds
+    : []
+  const profileMap = new Map()
+
+  profiles.forEach(profile => {
+    const profileId = cleanProfileId(profile?.profileId || profile?.id)
+    if (!profileId) return
+    profileMap.set(profileId, clean(profile?.profileLabel || profile?.label || profileId))
+  })
+  hierarchyIds.forEach(profileId => {
+    const cleanId = cleanProfileId(profileId)
+    if (cleanId && !profileMap.has(cleanId)) profileMap.set(cleanId, cleanId)
+  })
+
+  return profileMap
+}
+
+const buildMinutesCorrectionImpact = ({ before, after, amount }) => {
+  const beforeProfiles = getScoutProfileMap(before)
+  const afterProfiles = getScoutProfileMap(after)
+  const addedProfiles = [...afterProfiles.entries()]
+    .filter(([profileId]) => !beforeProfiles.has(profileId))
+    .map(([profileId, label]) => ({ profileId, label }))
+  const removedProfiles = [...beforeProfiles.entries()]
+    .filter(([profileId]) => !afterProfiles.has(profileId))
+    .map(([profileId, label]) => ({ profileId, label }))
+
+  return {
+    amount,
+    addedProfiles,
+    removedProfiles,
+  }
+}
 
 export default function useTeamStatsImport({
   leagueId,
@@ -38,6 +85,7 @@ export default function useTeamStatsImport({
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
+  const transferredOutTraceRowRef = React.useRef('')
 
   const rosterLookup = React.useMemo(() => buildRosterLookup(players), [players])
 
@@ -65,19 +113,39 @@ export default function useTeamStatsImport({
     team.birthYear,
   ])
 
+  const teamPerformance = React.useMemo(() => buildLeagueTeamPerformanceProjection({
+    league: leagueDoc || {},
+    season: seasonContext,
+    target: selectedSeasonOption?.target || 'current',
+    team,
+  }), [leagueDoc, seasonContext, selectedSeasonOption?.target, team])
+
+  const scoutTeam = React.useMemo(() => ({
+    ...team,
+    teamGamePlayed: teamPerformance?.teamGamePlayed,
+    goalsFor: teamPerformance?.goalsFor,
+    goalsAgainst: teamPerformance?.goalsAgainst,
+    teamStats: {
+      ...(team.teamStats || {}),
+      teamGamePlayed: teamPerformance?.teamGamePlayed,
+      goalsFor: teamPerformance?.goalsFor,
+      goalsAgainst: teamPerformance?.goalsAgainst,
+    },
+  }), [team, teamPerformance])
+
   const enrichWithScout = React.useCallback(row => ({
     ...row,
     ...buildStatsScoutPreview({
       row,
-      team,
+      team: scoutTeam,
       season: seasonContext,
     }),
-  }), [seasonContext, team])
+  }), [scoutTeam, seasonContext])
 
-  const getRowStatus = React.useCallback(row => {
+  const getIdentityRowStatus = React.useCallback(row => {
     const status = clean(row.rosterStatus || 'unresolved')
     const identityStatus = clean(row.identityStatus)
-    const isException = STATS_ROSTER_STATUS_OPTIONS.some(option => (
+    const hasExplicitRosterStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
       option.value === status
     ))
 
@@ -95,35 +163,37 @@ export default function useTeamStatsImport({
       }
     }
 
-    if (status === 'transferredOut') {
+    if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE) {
       return {
-        valid: true,
-        message: 'סווג כשחקן שעבר קבוצה',
-      }
-    }
-
-    if (identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER && isException) {
-      return {
-        valid: true,
-        message: 'שחקן חדש סווג במפורש בסגל העונה',
+        valid: false,
+        message: 'נדרש אישור התאמה',
       }
     }
 
     if (identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER) {
+      if (hasExplicitRosterStatus) {
+        return {
+          valid: true,
+          message: 'שחקן חדש סווג בסגל העונה',
+        }
+      }
+
       return {
         valid: false,
-        message: 'יש לבחור סטטוס בסגל העונה',
+        message: 'בחר סטטוס בסגל',
       }
     }
 
-    if (identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH && status === 'regular') {
+    if (identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH && hasExplicitRosterStatus) {
       return {
         valid: true,
-        message: 'זוהה כשחקן סגל',
+        message: status === 'regular'
+          ? 'זוהה כשחקן סגל'
+          : 'זוהה בסגל וסווג לעונת הנתונים',
       }
     }
 
-    if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH && isException) {
+    if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH && hasExplicitRosterStatus) {
       return {
         valid: true,
         message: 'זוהה במערכת וסווג בסגל העונה',
@@ -133,7 +203,7 @@ export default function useTeamStatsImport({
     if (identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH) {
       return {
         valid: false,
-        message: 'יש לבחור סטטוס בסגל העונה',
+        message: 'בחר סטטוס בסגל',
       }
     }
 
@@ -143,9 +213,63 @@ export default function useTeamStatsImport({
     }
   }, [])
 
+  const validation = React.useMemo(() => validatePlayerStatsAgainstLeague({
+    players: rows,
+    teamPerformance,
+    ageGroupId: seasonContext.ageGroupId || team.ageGroupId,
+  }), [rows, seasonContext.ageGroupId, team.ageGroupId, teamPerformance])
+
+  const getRowStatus = React.useCallback((row, rowIndex) => {
+    const identityStatus = getIdentityRowStatus(row)
+    if (!identityStatus.valid) return identityStatus
+
+    const rowIssues = validation.rowIssues[rowIndex] || []
+    return rowIssues.length
+      ? { valid: false, message: rowIssues[0].message }
+      : { valid: true, message: identityStatus.message }
+  }, [getIdentityRowStatus, validation.rowIssues])
+
+  React.useEffect(() => {
+    const traceTarget = transferredOutTraceRowRef.current
+    if (!traceTarget) return
+
+    const rowIndex = rows.findIndex((row, index) => (
+      traceTarget.rowId
+        ? String(row.id) === traceTarget.rowId
+        : index === traceTarget.rowIndex
+    ))
+    const row = rowIndex >= 0 ? rows[rowIndex] : null
+
+    if (row) {
+      console.debug('[stats-import/transferred-out-trace]', {
+        rowIndex,
+        identityStatus: row.identityStatus,
+        identityResolution: row.identityResolution,
+        rosterStatus: row.rosterStatus,
+        getIdentityRowStatus: getIdentityRowStatus(row),
+        getRowStatus: getRowStatus(row, rowIndex),
+      })
+    }
+
+    transferredOutTraceRowRef.current = null
+  }, [getIdentityRowStatus, getRowStatus, rows])
+
+  const getCellStatus = React.useCallback((row, rowIndex, column) => {
+    const key = column?.key || ''
+    const identityStatus = getIdentityRowStatus(row)
+    if (!identityStatus.valid && (key === 'fullName' || key === 'identityStatus')) {
+      return { valid: false, message: identityStatus.message }
+    }
+
+    const issue = (validation.rowIssues[rowIndex] || []).find(item => item.field === key)
+    return issue
+      ? { valid: false, message: issue.message }
+      : { valid: true, message: '' }
+  }, [getIdentityRowStatus, validation.rowIssues])
+
   const hasInvalidRows = React.useMemo(() => (
-    rows.some(row => !getRowStatus(row).valid)
-  ), [getRowStatus, rows])
+    !validation.valid || rows.some((row, index) => !getRowStatus(row, index).valid)
+  ), [getRowStatus, rows, validation.valid])
   const exceptionRowsCount = React.useMemo(() => (
     rows.filter(row => STATS_ROSTER_STATUS_OPTIONS.some(option => (
       option.value === clean(row.rosterStatus)
@@ -201,6 +325,17 @@ export default function useTeamStatsImport({
       if (index !== rowIndex) return row
 
       if (column.key === 'fullNameRosterMatch') {
+        if (value === '__createNew') {
+          return enrichWithScout({
+            ...row,
+            fullName: row.originalFullName || row.fullName || '',
+            matchedPlayerId: '',
+            matchedPlayerName: '',
+            identityResolution: 'createNew',
+            identityStatus: STATS_IDENTITY_STATUS.NEW_PLAYER,
+            identityMessage: 'אושר במפורש כשחקן חדש',
+          })
+        }
         const matchedPlayer = findRosterPlayerByValue(players, value)
 
         if (!matchedPlayer) {
@@ -210,6 +345,7 @@ export default function useTeamStatsImport({
             matchedPlayerName: '',
             rosterStatus: 'unresolved',
             identityStatus: STATS_IDENTITY_STATUS.UNRESOLVED,
+            identityResolution: '',
             identityMessage: 'לא נבחר שחקן',
           })
         }
@@ -232,12 +368,36 @@ export default function useTeamStatsImport({
           isYoungerAgeGroup: false,
           isNameAlias: aliases.length > 0,
           identityStatus: STATS_IDENTITY_STATUS.ROSTER_MATCH,
+          identityResolution: '',
           identityMessage: 'נבחר ידנית מתוך הסגל',
         })
       }
 
+      if (column.key === 'systemCandidateApproval') {
+        const candidateKey = clean(value)
+        const candidate = (Array.isArray(row.identityCandidates)
+          ? row.identityCandidates
+          : []).find(item => (
+          clean(item.candidateKey || item.playerDocumentId || item.playerId) === candidateKey
+        ))
+
+        if (!candidate || !clean(candidate.playerId)) return row
+
+        return enrichWithScout({
+          ...row,
+          playerDocumentId: candidate.playerDocumentId,
+          approvedPlayerDocumentId: candidate.playerDocumentId,
+          approvedIdentityCandidateId: candidate.playerId,
+          approvedCanonicalPlayerId: candidate.playerId,
+          identityResolution: 'useSystemCandidate',
+          identityStatus: STATS_IDENTITY_STATUS.SYSTEM_MATCH,
+          identityMessage: 'התאמה קיימת אושרה; בחר סטטוס בסגל',
+        })
+      }
+
+      const rowWithoutMinutesCorrection = withoutStatsMinutesCorrection(row)
       const nextRow = {
-        ...row,
+        ...rowWithoutMinutesCorrection,
         [column.key]: value,
       }
 
@@ -247,6 +407,26 @@ export default function useTeamStatsImport({
         nextRow.manualTransferDirection = isTransferRosterStatus(value)
           ? clean(row.manualTransferDirection) || 'unknown'
           : ''
+
+        if (row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER) {
+          const hasExplicitRosterStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
+            option.value === nextRow.rosterStatus
+          ))
+
+          nextRow.identityResolution = hasExplicitRosterStatus
+            ? 'createNew'
+            : ''
+          nextRow.identityMessage = hasExplicitRosterStatus
+            ? 'שחקן חדש אושר לפי סטטוס הסגל'
+            : 'בחר סטטוס בסגל'
+        }
+
+        if (value === 'transferredOut') {
+          transferredOutTraceRowRef.current = {
+            rowId: row.id ? String(row.id) : '',
+            rowIndex,
+          }
+        }
       }
 
       return enrichWithScout(nextRow)
@@ -257,18 +437,49 @@ export default function useTeamStatsImport({
     const nextStatus = ['active', 'completed'].includes(value) ? value : ''
 
     setSeasonStatus(nextStatus)
-    setRows(currentRows => currentRows.map(row => ({
-      ...row,
-      ...buildStatsScoutPreview({
-        row,
-        team,
-        season: {
-          ...seasonContext,
-          seasonStatus: nextStatus || seasonContext.seasonStatus,
-        },
-      }),
-    })))
-  }, [seasonContext, team])
+    setRows(currentRows => currentRows.map(row => {
+      const rowWithoutMinutesCorrection = withoutStatsMinutesCorrection(row)
+
+      return {
+        ...rowWithoutMinutesCorrection,
+        ...buildStatsScoutPreview({
+          row: rowWithoutMinutesCorrection,
+          team: scoutTeam,
+          season: {
+            ...seasonContext,
+            seasonStatus: nextStatus || seasonContext.seasonStatus,
+          },
+        }),
+      }
+    }))
+  }, [scoutTeam, seasonContext])
+
+  const applyEqualMinutesReduction = React.useCallback(adjustment => {
+    const amountPerPlayer = Number(adjustment?.amountPerPlayer)
+    if (!Number.isInteger(amountPerPlayer) || amountPerPlayer <= 0) return
+
+    setRows(currentRows => {
+      if (!currentRows.length || currentRows.some(row => Number(row?.minutes) < amountPerPlayer)) {
+        return currentRows
+      }
+
+      return currentRows.map(row => {
+        const nextRow = enrichWithScout({
+          ...row,
+          minutes: Number(row.minutes) - amountPerPlayer,
+        })
+
+        return {
+          ...nextRow,
+          statsMinutesCorrection: buildMinutesCorrectionImpact({
+            before: row,
+            after: nextRow,
+            amount: amountPerPlayer,
+          }),
+        }
+      })
+    })
+  }, [enrichWithScout])
 
 
   const clearPaste = React.useCallback(() => {
@@ -293,7 +504,9 @@ export default function useTeamStatsImport({
   const confirm = React.useCallback(async () => {
     if (!selectedSeasonOption || !hasTeamPlayers || hasInvalidRows || !seasonStatus) return
 
-    const validRows = rows.filter(row => getRowStatus(row).valid)
+    const validRows = rows
+      .filter((row, index) => getRowStatus(row, index).valid)
+      .map(withoutStatsMinutesCorrection)
     setBusy(true)
 
     try {
@@ -336,6 +549,8 @@ export default function useTeamStatsImport({
     }
   }, [
     getRowStatus,
+    getCellStatus,
+    validation,
     hasInvalidRows,
     hasTeamPlayers,
     leagueDoc,
@@ -365,7 +580,10 @@ export default function useTeamStatsImport({
     changeSeasonStatus,
     parse,
     changeCell,
+    applyEqualMinutesReduction,
     getRowStatus,
+    getCellStatus,
+    validation,
     close,
     closeWriteReport,
     confirm,

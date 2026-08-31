@@ -2,13 +2,11 @@
 
 import {
   collection,
-  doc,
   query,
   where,
 } from 'firebase/firestore'
 import {
   createTrackedWriteBatch,
-  trackedDeleteDoc,
   trackedGetDocs,
 } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
@@ -19,7 +17,7 @@ import {
   clean,
   toNumberOrZero,
 } from '../../leagues/leagueDoc.js'
-import { buildTeamSeasonIndexId } from '../team/teamSeasonIndex.model.js'
+import { resetTeamSeasonSearchIndexToLeagueOnly } from '../team/index.js'
 import {
   collectIndexMeta,
   dataMatchesPlayer,
@@ -92,7 +90,6 @@ export async function deleteSearchIndexesForTeamSeason({
   const teamIdentity = normalizeTeamIdentity({ team })
   const teamId = clean(teamIdentity.birthTeamId || teamIdentity.teamId)
   const birthTeamSlot = teamIdentity.birthTeamSlot || 1
-  const clubId = clean(team.clubId)
   if (!seasonKey) throw new Error('Missing season key')
   if (!teamId) throw new Error('Missing birth team id')
 
@@ -114,31 +111,20 @@ export async function deleteSearchIndexesForTeamSeason({
   }
   const meta = collectIndexMeta(matchingPlayerDocs)
   const playerRowsCount = await deleteSnapshotDocs(matchingPlayerDocs)
-  const teamSeasonIndexId = buildTeamSeasonIndexId({
-    leagueId,
-    seasonKey,
-    teamId,
-    clubId,
+  const teamIndexResult = await resetTeamSeasonSearchIndexToLeagueOnly({
+    league,
+    season,
+    team,
+    target: clean(season.seasonStatus) === 'completed' ? 'history' : 'current',
   })
-  let teamRowsCount = 0
-
-  if (teamSeasonIndexId) {
-    await trackedDeleteDoc(
-      doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, teamSeasonIndexId),
-      {
-        feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
-        action: 'delete-team-season-index',
-      }
-    )
-    teamRowsCount = 1
-  }
+  const teamRowsCount = teamIndexResult.rowsCount
 
   return buildSearchIndexWriteResult({
     operation: 'deleteTeamSeason',
     rowsCount: playerRowsCount + teamRowsCount,
     playerRowsCount,
     teamRowsCount,
+    teamIndexResult,
     ...meta,
   })
 }

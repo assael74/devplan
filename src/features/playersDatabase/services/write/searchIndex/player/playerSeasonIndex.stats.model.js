@@ -5,6 +5,7 @@ import {
   buildPlayerIdentityKey,
   resolvePlayerIdentityBirthYear,
 } from '../../../../model/playerIdentity.model.js'
+import { buildTeamSeasonDocumentId } from '../../../../model/teamIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
@@ -27,6 +28,7 @@ import {
   normalizeText,
   resolveClubLevel,
   resolveClubStrengthLevel,
+  resolveTeamSeasonSourceTarget,
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.model.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
@@ -158,6 +160,10 @@ export const buildPlayerSeasonStatsMutation = ({
       })
       : ''
   )
+  const teamSeasonTarget = resolveTeamSeasonSourceTarget(season)
+  const sourceTarget = playerDocumentId
+    ? (clean(target) === 'history' ? 'history' : 'current')
+    : teamSeasonTarget
   const scoutIndexFields = buildPlayerScoutIndexFields(player)
   const playerStats = normalizePlayerStats(player)
   const resolvedAgeGroupId = clean(
@@ -180,7 +186,7 @@ export const buildPlayerSeasonStatsMutation = ({
     )
   )
   const normalization = buildPlayerSeasonSearchMetrics({
-    target,
+    target: sourceTarget,
     seasonStatus: season.seasonStatus,
     ageGroupId: resolvedAgeGroupId,
     leagueTotalRound: resolvedLeagueTotalRound,
@@ -306,13 +312,13 @@ export const buildPlayerSeasonStatsMutation = ({
       ),
       numShirt: clean(player.numShirt || existingData.numShirt),
       teamTableRank: toNumberOrZero(
-        team.tableRank || existingData.teamTableRank
+        pickDefinedValue(team.tableRank, existingData.teamTableRank)
       ),
       teamTableAttackRank: toNumberOrZero(
-        team.tableAttackRank || existingData.teamTableAttackRank
+        pickDefinedValue(team.tableAttackRank, existingData.teamTableAttackRank)
       ),
       teamTableDefenseRank: toNumberOrZero(
-        team.tableDefenseRank || existingData.teamTableDefenseRank
+        pickDefinedValue(team.tableDefenseRank, existingData.teamTableDefenseRank)
       ),
       teamGoalsFor: toNumberOrZero(
         pickDefinedValue(team.teamStats?.goalsFor, team.goalsFor, existingData.teamGoalsFor)
@@ -344,10 +350,13 @@ export const buildPlayerSeasonStatsMutation = ({
       },
       ...normalization,
       ...scoutIndexFields,
-      sourceCollection: playerDocumentId ? 'players' : 'birthTeams',
+      sourceCollection: playerDocumentId ? 'players' : 'birthTeamSeasons',
       sourceDocumentId:
-        playerDocumentId || teamScope.birthTeamDocumentId,
-      sourceTarget: clean(target) === 'history' ? 'history' : 'current',
+        playerDocumentId || buildTeamSeasonDocumentId(
+          teamScope.birthTeamDocumentId,
+          seasonKey,
+        ),
+      sourceTarget,
     },
   }
 }

@@ -77,6 +77,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
   team = {},
   target = 'current',
   players = [],
+  clearPlayerDocumentIds = [],
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -126,6 +127,11 @@ export async function upsertPlayerSeasonSearchIndexMany({
     isSamePlayerSeasonIndexContext(playerDoc.data() || {}, indexScope)
   ))
   const existingLookup = buildPlayerSeasonIndexLookup(existingDocs)
+  const clearedPlayerDocumentIds = new Set(
+    (Array.isArray(clearPlayerDocumentIds) ? clearPlayerDocumentIds : [])
+      .map(clean)
+      .filter(Boolean)
+  )
   const batch = createTrackedWriteBatch(db, {
     feature: 'playersDatabase',
     collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
@@ -175,6 +181,9 @@ export async function upsertPlayerSeasonSearchIndexMany({
     }
 
     const existingData = existingDoc?.data?.() || {}
+    const shouldClearPlayerDocumentId = clearedPlayerDocumentIds.has(clean(
+      player.playerDocumentId || existingData.playerDocumentId
+    ))
     const indexDoc = buildPlayerSeasonIndexDoc({
       league,
       season: {
@@ -201,7 +210,9 @@ export async function upsertPlayerSeasonSearchIndexMany({
         displayName: indexDoc.displayName,
         existingAliases: existingData.aliases,
       }),
-      playerDocumentId: clean(indexDoc.playerDocumentId || existingData.playerDocumentId),
+      playerDocumentId: shouldClearPlayerDocumentId
+        ? ''
+        : clean(indexDoc.playerDocumentId || existingData.playerDocumentId),
       playerUrl: clean(indexDoc.playerUrl || existingData.playerUrl),
       rosterStatus: getRosterStatus(player) || clean(existingData.rosterStatus || 'regular'),
       notes: clean(player.notes || existingData.notes),

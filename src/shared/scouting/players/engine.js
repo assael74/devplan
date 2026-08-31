@@ -154,7 +154,6 @@ const buildSignal = ({
     positionContext: profile.positionContext || '',
     scoutContext,
     spotlights,
-    interestLevel: profile.interest,
     profileDepth,
     profileStrength,
     score,

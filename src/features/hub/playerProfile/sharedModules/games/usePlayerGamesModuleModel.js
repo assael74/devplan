@@ -2,6 +2,7 @@
 
 import {
   usePlayerGamesCoreModel,
+  usePlayerGamesImportActions,
   usePlayerGamesStatsActions,
   usePlayerGamesUiState,
 } from './model/index.js'
@@ -10,6 +11,7 @@ export default function usePlayerGamesModuleModel({
   entity,
   context,
   profileData,
+  gamesImportRequest = 0,
   gamesInsightsRequest = 0,
   seasonStartYear = 2025,
 }) {
@@ -46,6 +48,13 @@ export default function usePlayerGamesModuleModel({
     },
   })
 
+  const importActions = usePlayerGamesImportActions({
+    livePlayer: core.livePlayer,
+    liveTeam: core.liveTeam,
+    context,
+    gamesImportRequest,
+  })
+
   return {
     livePlayer: core.livePlayer,
     liveTeam: core.liveTeam,
@@ -65,6 +74,10 @@ export default function usePlayerGamesModuleModel({
     insightsOpen: ui.insightsOpen,
     editingEntryGame: ui.editingEntryGame,
     editingGame: ui.editingGame,
+
+    gamesImportOpen: importActions.gamesImportOpen,
+    gamesImportSaving: importActions.gamesImportSaving,
+    gamesImportError: importActions.gamesImportError,
 
     statsFormLoading: ui.statsFormLoading,
     statsFormLoadingText: ui.statsFormLoadingText,
@@ -87,6 +100,9 @@ export default function usePlayerGamesModuleModel({
     handleChangeSortBy: ui.handleChangeSortBy,
     handleChangeSortDirection: ui.handleChangeSortDirection,
     handleEditGame: ui.handleEditGame,
+
+    handleCloseGamesImport: importActions.handleCloseGamesImport,
+    handleGamesImportPreviewReady: importActions.handleGamesImportPreviewReady,
 
     handleOpenStatsGame: stats.handleOpenStatsGame,
     handleSaveStats: stats.handleSaveStats,

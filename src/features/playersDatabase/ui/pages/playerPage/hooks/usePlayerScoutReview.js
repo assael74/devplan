@@ -84,7 +84,7 @@ const buildWritePayload = ({ player, draft }) => {
     player: {
       ...(activeSeason.identity || {}),
       playerId: player.playerId || player.id || '',
-      playerDocumentId: player.id || player.playerId || '',
+      playerDocumentId: activeSeason.identity?.playerDocumentId || '',
       externalPlayerId: player.externalPlayerId || activeSeason.identity?.externalPlayerId || '',
       fullName: player.fullName || activeSeason.identity?.displayName || '',
       birthYear: player.birthYear || season.birthYear || null,

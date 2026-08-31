@@ -1,7 +1,6 @@
 // src/shared/scouting/players/profiles.js
 
 import {
-  SCOUT_INTEREST,
   SCOUT_LEVEL,
   SCOUT_PROFILE_IDENTITY,
   SCOUT_REVIEW,
@@ -36,7 +35,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'סקורר',
     group: 'attack',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
@@ -56,9 +54,9 @@ export const SCOUT_PROFILES = [
     id: 'killer_efficiency',
     idIcon: 'killerEfficiency',
     label: 'ניצול מצבים קטלני',
+    shortLabel: 'סקורר יעיל',
     group: 'attack',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
     rules: [
@@ -94,7 +92,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'מחפש זהות',
     group: 'all',
     profileIdentity: SCOUT_PROFILE_IDENTITY.PRELIMINARY,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
     openContext: {
@@ -130,7 +127,6 @@ export const SCOUT_PROFILES = [
     group: 'defense_keeper',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     reclassificationOnly: true,
-    interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
     positionContext: 'defense_midfield',
@@ -149,7 +145,6 @@ export const SCOUT_PROFILES = [
     group: 'attack',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
     reclassificationOnly: true,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
     positionContext: 'attacking_support',
@@ -167,7 +162,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'איום מאחור',
     group: 'defense_keeper',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.SUPER,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,
     positionContext: 'defense_midfield',
@@ -201,7 +195,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'כישרון מוקפץ',
     group: 'all',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
@@ -229,7 +222,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'איום משני',
     group: 'attack',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
@@ -254,7 +246,6 @@ export const SCOUT_PROFILES = [
     shortLabel: 'דו־ספרתי',
     group: 'attack',
     profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ATTACK_POSITIVE_OR_GOALS_GTE_10,
     rules: [
@@ -276,9 +267,9 @@ export const SCOUT_PROFILES = [
     id: 'underused_prospect',
     idIcon: 'underusedProspect',
     label: 'שחקן איכותי שלא מקבל הזדמנות',
+    shortLabel: 'לא מנוצל',
     group: 'opportunity',
     profileIdentity: SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY,
     rules: [
@@ -309,9 +300,9 @@ export const SCOUT_PROFILES = [
     id: 'blocked_top_team',
     idIcon: 'blockedTopTeam',
     label: 'שחקן איכותי שלא מצליח לפרוץ',
+    shortLabel: 'טרם פרץ',
     group: 'opportunity',
     profileIdentity: SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
-    interest: SCOUT_INTEREST.INTERESTING,
     searchLevels: sameBelow,
     teamFilter: TEAM_FILTER.ANY_POSITIVE,
     rules: [

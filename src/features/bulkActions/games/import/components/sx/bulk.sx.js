@@ -37,7 +37,8 @@ export const bulkSx = {
 
   drawerBody: {
     minHeight: 0,
-    overflow: 'auto',
+    overflowY: 'auto',
+    overflowX: 'hidden',
     display: 'grid',
     alignContent: 'start',
     gap: 1.5,
@@ -127,18 +128,20 @@ export const bulkSx = {
 
   tableWrap: {
     borderRadius: 'md',
-    overflow: 'auto',
+    overflowY: 'auto',
+    overflowX: 'hidden',
     maxHeight: '32dvh',
   },
 
   previewTable: {
-    minWidth: 720,
-    '& th': {
-      whiteSpace: 'nowrap',
-    },
-    '& td': {
+    width: '100%',
+    tableLayout: 'fixed',
+    '& th, & td': {
       whiteSpace: 'nowrap',
       verticalAlign: 'top',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      px: 0.5,
     },
   },
 }

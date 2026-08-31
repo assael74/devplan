@@ -21,6 +21,9 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   birthTeamSlot: 1,
   teamId: '',
   teamDocumentId: '',
+  // Optional relation projection. Present only after a canonical Team Season
+  // exists; League-only indexes intentionally leave it empty.
+  teamSeasonDocumentId: '',
   teamUrl: '',
   seasonUrl: '',
 

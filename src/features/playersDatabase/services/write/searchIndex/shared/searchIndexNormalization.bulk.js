@@ -34,9 +34,15 @@ const SEARCH_INDEX_ENTITY_TYPES = {
   team: 'birthTeamSeason',
 }
 
-const resolveTarget = data => (
-  clean(data?.sourceTarget) === 'history' ? 'history' : 'current'
-)
+const resolveTarget = data => {
+  if (clean(data?.sourceCollection) === 'birthTeamSeasons') {
+    return clean(data?.seasonStatus).toLowerCase() === 'completed'
+      ? 'history'
+      : 'current'
+  }
+
+  return clean(data?.sourceTarget) === 'history' ? 'history' : 'current'
+}
 
 const buildPlayerNormalizationPatch = ({ data = {}, teamDeltaByKey = new Map() } = {}) => ({
   ...buildPlayerSeasonSearchMetrics({

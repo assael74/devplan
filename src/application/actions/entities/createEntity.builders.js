@@ -230,20 +230,26 @@ export const createExternalGameShorts = async ({ draft, context }) => {
 export const createExternalGamesShorts = async ({ draft, context }) => {
   const rows = Array.isArray(draft?.games) ? draft.games : []
 
-  const created = await Promise.all(rows.map(row => createExternalGameShorts({
-    draft: {
-      ...draft,
-      ...row,
-      gameHour: row?.gameHour || draft?.defaults?.gameHour || DEFAULT_GAME_HOUR,
-      gameLeagueNum: row?.gameLeagueNum ?? draft?.gameLeagueNum ?? '',
-      type: row?.type || draft?.defaults?.type || '',
-      gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
-      home: row?.home ?? draft?.defaults?.home ?? true,
-      goalsFor: row?.goalsFor ?? draft?.goalsFor ?? 0,
-      goalsAgainst: row?.goalsAgainst ?? draft?.goalsAgainst ?? 0,
-    },
-    context,
-  })))
+  const created = []
+
+  for (const row of rows) {
+    const item = await createExternalGameShorts({
+      draft: {
+        ...draft,
+        ...row,
+        gameHour: row?.gameHour || draft?.defaults?.gameHour || DEFAULT_GAME_HOUR,
+        gameLeagueNum: row?.gameLeagueNum ?? draft?.gameLeagueNum ?? '',
+        type: row?.type || draft?.defaults?.type || '',
+        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
+        home: row?.home ?? draft?.defaults?.home ?? true,
+        goalsFor: row?.goalsFor ?? draft?.goalsFor ?? 0,
+        goalsAgainst: row?.goalsAgainst ?? draft?.goalsAgainst ?? 0,
+      },
+      context,
+    })
+
+    created.push(item)
+  }
 
   return { total: created.length, items: created }
 }

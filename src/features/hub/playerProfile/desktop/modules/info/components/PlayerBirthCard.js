@@ -24,7 +24,7 @@ export default function PlayerBirthCard({ draft, setDraft, pending }) {
   }
 
   return (
-    <Sheet variant="outlined" sx={sx.card}>
+    <Sheet variant="outlined" sx={{ ...sx.card, overflow: 'visible', position: 'relative', zIndex: 2 }}>
       <Box sx={sx.cardHead}>
         <Box sx={sx.cardTitle}>
           <Typography level="title-md" noWrap>

@@ -70,6 +70,7 @@ const buildComparableExternalGameDraft = (draft = {}) => {
     gameDate: safe(draft?.gameDate),
     gameHour: safe(draft?.gameHour),
     gameLeagueNum: toNumOrEmpty(draft?.gameLeagueNum),
+    vLink: safe(draft?.vLink),
     rivel: safe(draft?.rivel),
     home: toBool(draft?.home, true),
     difficulty: safe(draft?.difficulty),
@@ -201,10 +202,19 @@ export function buildExternalGameEntryLimits(draft = {}) {
   }
 }
 
-export function buildExternalGameEditPatch({ draft }) {
+const hasChanged = (draft = {}, initial = {}, key, normalize = safe) => {
+  return normalize(draft?.[key]) !== normalize(initial?.[key])
+}
+
+const hasAnyChanged = (draft = {}, initial = {}, fields = []) => {
+  return fields.some(({ key, normalize }) => hasChanged(draft, initial, key, normalize))
+}
+
+export function buildExternalGameEditPatch({ draft, initial = {} }) {
   const goalsFor = toNumOrZero(draft?.goalsFor)
   const goalsAgainst = toNumOrZero(draft?.goalsAgainst)
   const gameStatus = safe(draft?.gameStatus) || GAME_STATUS_SCHEDULED
+  const initialGameStatus = safe(initial?.gameStatus) || GAME_STATUS_SCHEDULED
 
   const result = isPlayedStatus(gameStatus)
     ? calcResultByGoals(goalsFor, goalsAgainst)
@@ -213,21 +223,48 @@ export function buildExternalGameEditPatch({ draft }) {
   const playerGoals = Math.min(toNumOrZero(draft?.goals), goalsFor)
   const playerAssists = Math.min(toNumOrZero(draft?.assists), goalsFor)
 
-  return {
-    rivel: safe(draft?.rivel),
-    home: toBool(draft?.home, true),
-    difficulty: safe(draft?.difficulty),
-    type: safe(draft?.type),
-    gameDate: safe(draft?.gameDate),
-    gameHour: safe(draft?.gameHour),
-    gameLeagueNum: safe(draft?.gameLeagueNum),
-    gameDuration: safe(draft?.gameDuration),
-    gameStatus,
-    goalsFor,
-    goalsAgainst,
-    result,
+  const patch = {}
 
-    gamePlayers: {
+  if (hasChanged(draft, initial, 'rivel')) patch.rivel = safe(draft?.rivel)
+  if (hasChanged(draft, initial, 'home', value => toBool(value, true))) {
+    patch.home = toBool(draft?.home, true)
+  }
+  if (hasChanged(draft, initial, 'difficulty')) patch.difficulty = safe(draft?.difficulty)
+  if (hasChanged(draft, initial, 'type')) patch.type = safe(draft?.type)
+  if (hasChanged(draft, initial, 'gameDate')) patch.gameDate = safe(draft?.gameDate)
+  if (hasChanged(draft, initial, 'gameHour')) patch.gameHour = safe(draft?.gameHour)
+  if (hasChanged(draft, initial, 'gameLeagueNum', toNumOrEmpty)) {
+    patch.gameLeagueNum = safe(draft?.gameLeagueNum)
+  }
+  if (hasChanged(draft, initial, 'vLink')) patch.vLink = safe(draft?.vLink)
+  if (hasChanged(draft, initial, 'gameDuration')) {
+    patch.gameDuration = safe(draft?.gameDuration)
+  }
+
+  const scoreChanged =
+    hasChanged(draft, initial, 'goalsFor', toNumOrEmpty) ||
+    hasChanged(draft, initial, 'goalsAgainst', toNumOrEmpty)
+  const statusChanged = gameStatus !== initialGameStatus
+
+  if (statusChanged) patch.gameStatus = gameStatus
+  if (hasChanged(draft, initial, 'goalsFor', toNumOrEmpty)) patch.goalsFor = goalsFor
+  if (hasChanged(draft, initial, 'goalsAgainst', toNumOrEmpty)) {
+    patch.goalsAgainst = goalsAgainst
+  }
+  if (scoreChanged || statusChanged || safe(draft?.result) !== safe(initial?.result)) {
+    patch.result = result
+  }
+
+  const entryChanged = hasAnyChanged(draft, initial, [
+    { key: 'isSelected', normalize: value => toBool(value, true) },
+    { key: 'isStarting', normalize: value => toBool(value, false) },
+    { key: 'goals', normalize: toNumOrZero },
+    { key: 'assists', normalize: toNumOrZero },
+    { key: 'timePlayed', normalize: toNumOrZero },
+  ])
+
+  if (entryChanged) {
+    patch.gamePlayers = {
       playerId: safe(draft?.playerId),
       isSelected: toBool(draft?.isSelected, true),
       isStarting: toBool(draft?.isStarting, false),
@@ -236,6 +273,8 @@ export function buildExternalGameEditPatch({ draft }) {
       goals: playerGoals,
       assists: playerAssists,
       timePlayed: toNumOrZero(draft?.timePlayed),
-    },
+    }
   }
+
+  return patch
 }

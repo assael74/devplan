@@ -20,6 +20,11 @@ import {
   TEAM_SCOUT_SORT_MODE,
 } from '../../../shared/scouting/teams/index.js'
 import { enrichTeamScoutInputRows } from '../domain/adapters/teamScoutInput.adapter.js'
+import {
+  countPlayers,
+  countProfiledPlayers,
+  countScoutProfiles,
+} from '../services/write/leagues/leaguesMaster.model.js'
 
 export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
 export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
@@ -148,8 +153,8 @@ const buildTableRowTeamNames = rows => (
 
 const PRIORITY_TARGET_LEVELS = new Set(['positive', 'high', 'elite'])
 
-const isPlayerStatsComplete = row => (
-  Boolean(row?.hasPlayers) && Boolean(row?.statsComplete)
+const hasTeamStats = row => (
+  Boolean(row?.hasPlayers) && Boolean(row?.hasStats)
 )
 
 const getCoverageStatus = ({ completeCount = 0, targetCount = 0 } = {}) => {
@@ -161,12 +166,6 @@ const getCoverageStatus = ({ completeCount = 0, targetCount = 0 } = {}) => {
 
 const getTableStatus = rows => (rows.length ? 'full' : 'missing')
 
-const getProfiledPlayersCount = rows => (
-  rows.reduce((total, row) => (
-    total + toNumber(row?.scoutProfilesSummary?.total)
-  ), 0)
-)
-
 const buildPriorityCoverage = ({
   tableRows = [],
   leagueLevel,
@@ -175,8 +174,8 @@ const buildPriorityCoverage = ({
   if (!tableRows.length) {
     return {
       combined: { completeCount: 0, targetCount: 0, status: 'missing' },
-      offense: { completeCount: 0, targetCount: 0, status: 'missing' },
-      defense: { completeCount: 0, targetCount: 0, status: 'missing' },
+      offense: { count: 0, targetCount: 0 },
+      defense: { count: 0, targetCount: 0 },
     }
   }
 
@@ -188,78 +187,35 @@ const buildPriorityCoverage = ({
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })
   const scoutRows = Array.isArray(result?.rows) ? result.rows : []
-  const combinedTargets = new Set()
-  let offenseTargetCount = 0
-  let offenseCompleteCount = 0
-  let defenseTargetCount = 0
-  let defenseCompleteCount = 0
+  let offensePriorityCount = 0
+  let defensePriorityCount = 0
 
-  scoutRows.forEach((row, index) => {
-    const source = row?.source || {}
-    const rowKey = clean(
-      source?.birthTeamId ||
-      source?.teamId ||
-      row?.teamId ||
-      source?.clubId ||
-      `${source?.rank || row?.position || index}`
-    )
-    const complete = isPlayerStatsComplete(source)
+  scoutRows.forEach(row => {
     const offenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.offense?.priorityLevel))
     const defenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.defense?.priorityLevel))
 
-    if (offenseTarget) {
-      offenseTargetCount += 1
-      if (complete) offenseCompleteCount += 1
-      if (rowKey) combinedTargets.add(rowKey)
-    }
-
-    if (defenseTarget) {
-      defenseTargetCount += 1
-      if (complete) defenseCompleteCount += 1
-      if (rowKey) combinedTargets.add(rowKey)
-    }
+    if (offenseTarget) offensePriorityCount += 1
+    if (defenseTarget) defensePriorityCount += 1
   })
 
-  const combinedTargetCount = combinedTargets.size
-  const completeTargetKeys = new Set(
-    tableRows
-      .filter(isPlayerStatsComplete)
-      .map((row, index) => clean(
-        row?.birthTeamId ||
-        row?.teamId ||
-        row?.clubId ||
-        `${row?.rank || index}`
-      ))
-      .filter(Boolean)
-  )
-  const combinedCompleteCount = Array.from(combinedTargets).filter(
-    key => completeTargetKeys.has(key)
-  ).length
+  const teamsWithStatsCount = tableRows.filter(hasTeamStats).length
 
   return {
     combined: {
-      completeCount: combinedCompleteCount,
-      targetCount: combinedTargetCount,
+      completeCount: teamsWithStatsCount,
+      targetCount: tableRows.length,
       status: getCoverageStatus({
-        completeCount: combinedCompleteCount,
-        targetCount: combinedTargetCount,
+        completeCount: teamsWithStatsCount,
+        targetCount: tableRows.length,
       }),
     },
     offense: {
-      completeCount: offenseCompleteCount,
-      targetCount: offenseTargetCount,
-      status: getCoverageStatus({
-        completeCount: offenseCompleteCount,
-        targetCount: offenseTargetCount,
-      }),
+      count: offensePriorityCount,
+      targetCount: tableRows.length,
     },
     defense: {
-      completeCount: defenseCompleteCount,
-      targetCount: defenseTargetCount,
-      status: getCoverageStatus({
-        completeCount: defenseCompleteCount,
-        targetCount: defenseTargetCount,
-      }),
+      count: defensePriorityCount,
+      targetCount: tableRows.length,
     },
   }
 }
@@ -305,9 +261,15 @@ const buildLeagueCenterRow = ({
   const ageGroupId = clean(league?.ageGroupId || catalog?.ageGroupId)
   const birthYear = toNumber(season?.birthYear)
   const seasonIdentity = normalizeSeasonIdentity({ season: season || {} })
-  const playersCount = toNumber(season?.playersCount)
-  const playersWithScoutProfileCount = toNumber(season?.playersWithScoutProfileCount)
-  const scoutProfilesCount = toNumber(season?.scoutProfilesCount)
+  const playersCount = tableRows.length
+    ? countPlayers(tableRows)
+    : toNumber(season?.playersCount)
+  const playersWithScoutProfileCount = tableRows.length
+    ? countProfiledPlayers(tableRows)
+    : toNumber(season?.playersWithScoutProfileCount)
+  const scoutProfilesCount = tableRows.length
+    ? countScoutProfiles(tableRows)
+    : toNumber(season?.scoutProfilesCount)
   const teamNames = buildTableRowTeamNames(tableRows)
 
   return {
@@ -337,27 +299,24 @@ const buildLeagueCenterRow = ({
     playersStatsStatus: priorityCoverage.combined.status,
     playersStatsCompleteCount: priorityCoverage.combined.completeCount,
     playersStatsTargetCount: priorityCoverage.combined.targetCount,
-    offensePriorityStatus: priorityCoverage.offense.status,
-    offensePriorityCompleteCount: priorityCoverage.offense.completeCount,
+    offensePriorityCount: priorityCoverage.offense.count,
     offensePriorityTargetCount: priorityCoverage.offense.targetCount,
-    defensePriorityStatus: priorityCoverage.defense.status,
-    defensePriorityCompleteCount: priorityCoverage.defense.completeCount,
+    defensePriorityCount: priorityCoverage.defense.count,
     defensePriorityTargetCount: priorityCoverage.defense.targetCount,
     dataStatus: (() => {
       const statuses = [
         tableStatus,
         priorityCoverage.combined.status,
-        priorityCoverage.offense.status,
-        priorityCoverage.defense.status,
       ]
 
       if (statuses.every(status => status === 'full')) return 'full'
       if (tableStatus === 'missing') return 'missing'
       return 'partial'
     })(),
-    playersWithProfiles: tableRows.length
-      ? getProfiledPlayersCount(tableRows)
-      : playersWithScoutProfileCount,
+    playersWithProfiles: playersWithScoutProfileCount,
+    playersCount,
+    playersWithScoutProfileCount,
+    scoutProfilesCount,
     teamNames,
     teamSearchText: teamNames.join(' '),
     hasLeagueDoc,
@@ -650,6 +609,34 @@ export const buildLeagueCenterSummary = rows => ({
   partialStats: rows.filter(row => row.playersStatsStatus !== 'full').length,
   profiledPlayers: rows.reduce(
     (sum, row) => sum + toNumber(row.playersWithProfiles),
+    0
+  ),
+  playersCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.playersCount),
+    0
+  ),
+  playersWithScoutProfileCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.playersWithScoutProfileCount),
+    0
+  ),
+  scoutProfilesCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.scoutProfilesCount),
+    0
+  ),
+  teamsWithStatsCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.playersStatsCompleteCount),
+    0
+  ),
+  teamsCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.teamsCount),
+    0
+  ),
+  offensePriorityCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.offensePriorityCount),
+    0
+  ),
+  defensePriorityCount: rows.reduce(
+    (sum, row) => sum + toNumber(row.defensePriorityCount),
     0
   ),
   catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG.length,

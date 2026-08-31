@@ -427,8 +427,21 @@ export const teamActionsPanelSx = {
   actionsRow: {
     width: '100%',
     display: 'grid',
-    gridTemplateColumns: '0.9fr auto auto auto',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: 0.5,
+
+    '& > :first-child': {
+      gridColumn: '1 / -1',
+    },
+
+    '& > *': {
+      minWidth: 0,
+    },
+
+    '& button': {
+      width: '100%',
+      minWidth: 0,
+    },
   },
 
   primaryActionButton: {
@@ -438,6 +451,11 @@ export const teamActionsPanelSx = {
     color: '#fff',
     fontSize: 11.5,
     fontWeight: 700,
+    whiteSpace: 'nowrap',
+
+    '& .MuiButton-startDecorator': {
+      flexShrink: 0,
+    },
 
     '& svg': {
       color: '#fff',

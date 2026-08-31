@@ -1,147 +1,49 @@
-// src/features/playersDatabase/services/audit/audit.contract.js
-
-const clean = value => String(
-  value === undefined || value === null ? '' : value
-).trim()
-
-export const AUDIT_ISSUE_CONTRACT_VERSION = 1
-
-export const AUDIT_ISSUE_CATEGORY = Object.freeze({
-  STRUCTURE: 'structure',
-  IDENTITY: 'identity',
-  COMPUTED_STATE: 'computedState',
-  RELATION: 'relation',
-  OTHER: 'other',
+export const AUDIT_FINDING_TYPE = Object.freeze({
+  MISSING_DOCUMENT: 'missing_document',
+  SOURCE_MISMATCH: 'source_mismatch',
+  BROKEN_RELATION: 'broken_relation',
+  UNEXPECTED_DOCUMENT: 'unexpected_document',
 })
 
-export const AUDIT_REPAIR_STATUS = Object.freeze({
-  AUTOMATIC: 'automatic',
-  REVIEW: 'review',
-  REPORT: 'report',
-})
+const clean = value => String(value ?? '').trim()
 
-const resolveCategory = ({ issue, scope } = {}) => {
-  const type = clean(issue?.type)
-  const scopeType = clean(scope?.type)
-
-  if (scopeType === 'relations' || clean(issue?.relationId)) {
-    return AUDIT_ISSUE_CATEGORY.RELATION
-  }
-
-  if (type.startsWith('schema_') || type.includes('_schema_')) {
-    return AUDIT_ISSUE_CATEGORY.STRUCTURE
-  }
-
-  if (
-    type.includes('identity') ||
-    type === 'document_id_mismatch' ||
-    type === 'entity_type_mismatch'
-  ) {
-    return AUDIT_ISSUE_CATEGORY.IDENTITY
-  }
-
-  if (
-    type.includes('scout_state') ||
-    type.includes('reliability') ||
-    type.includes('tracking') ||
-    type.includes('measurement') ||
-    type.includes('season_status') ||
-    type.includes('projection_mismatch') ||
-    type.includes('context_outdated') ||
-    type.includes('state_outdated') ||
-    type.includes('mismatch') ||
-    type.includes('outdated')
-  ) {
-    return AUDIT_ISSUE_CATEGORY.COMPUTED_STATE
-  }
-
-  return AUDIT_ISSUE_CATEGORY.OTHER
-}
-
-const resolveRepairStatus = issue => {
-  if (issue?.repair?.status) return clean(issue.repair.status)
-  if (issue?.repairable === true) return AUDIT_REPAIR_STATUS.AUTOMATIC
-  if (issue?.repairable === false) return AUDIT_REPAIR_STATUS.REPORT
-  return AUDIT_REPAIR_STATUS.REVIEW
-}
-
-export const normalizeAuditIssueV1 = ({
-  issue,
-  scope,
-  collectionName = '',
-  relationId = '',
-  index = 0,
-} = {}) => {
-  const source = issue && typeof issue === 'object' ? issue : {}
-  const documentIds = Array.isArray(source.documentIds)
-    ? source.documentIds.map(clean).filter(Boolean)
-    : []
-  const documentId = clean(source.documentId) || documentIds[0] || ''
-  const type = clean(source.type) || 'audit_issue'
-
-  return {
-    issueId: clean(source.issueId) || [
-      clean(scope?.type) || 'audit',
-      clean(relationId) || clean(scope?.collectionScope),
-      type,
-      documentId,
-      clean(source.seasonKey),
-      index,
-    ].filter(value => value !== '').join('::'),
-    contractVersion: AUDIT_ISSUE_CONTRACT_VERSION,
-    scope: scope || null,
-    category: resolveCategory({ issue: source, scope }),
-    type,
-    collection: clean(source.collectionName) || clean(collectionName),
-    collections: Array.isArray(source.collectionNames)
-      ? source.collectionNames.map(clean).filter(Boolean)
-      : [],
-    documentId,
-    documentIds,
-    playerDocumentId: clean(source.playerDocumentId),
-    teamDocumentId: clean(
-      source.teamDocumentId ||
-      source.birthTeamDocumentId
-    ),
-    searchIndexDocumentId: clean(
-      source.searchIndexDocumentId ||
-      source.searchDocumentId
-    ),
-    seasonKey: clean(source.seasonKey),
-    title: clean(source.title) || clean(source.message) || 'נמצא פער בנתונים',
-    explanation: clean(source.detail) || clean(source.message),
-    expected: source.expected ?? null,
-    actual: source.actual ?? null,
-    fields: source.fields ?? source.mismatchedFields ?? [],
-    severity: clean(source.severity) || 'medium',
-    repair: {
-      status: resolveRepairStatus(source),
-      action: clean(source?.repair?.action),
-    },
-    sourceIssue: source,
-  }
-}
-
-export const buildAuditResultV1 = ({
-  scope,
-  generatedAt,
-  readsUsed = 0,
-  checked = 0,
-  exact = 0,
-  affected = 0,
-  issues = [],
+export const buildAuditFinding = ({
+  type,
+  entityType = '',
+  documentId = '',
+  relatedDocumentId = '',
+  teamDocumentId = '',
+  playerDocumentId = '',
+  seasonKey = '',
+  title = '',
+  explanation = '',
   source = '',
-  details = null,
+  expected = null,
+  actual = null,
+  lifecycleStatus = '',
+  severity = 'medium',
 } = {}) => ({
-  contractVersion: AUDIT_ISSUE_CONTRACT_VERSION,
-  generatedAt: generatedAt || new Date().toISOString(),
-  scope,
-  source,
-  readsUsed: Number(readsUsed || 0),
-  checked: Number(checked || 0),
-  exact: Number(exact || 0),
-  affected: Number(affected || 0),
-  issuesCount: issues.length,
-  issues,
-  details,
+  type,
+  entityType: clean(entityType),
+  documentId: clean(documentId),
+  relatedDocumentId: clean(relatedDocumentId),
+  teamDocumentId: clean(teamDocumentId),
+  playerDocumentId: clean(playerDocumentId),
+  seasonKey: clean(seasonKey),
+  title: clean(title),
+  explanation: clean(explanation),
+  source: clean(source),
+  expected,
+  actual,
+  lifecycleStatus: clean(lifecycleStatus),
+  severity: clean(severity) || 'medium',
 })
+
+export const buildAuditResult = ({ scope, generatedAt, readsUsed = 0, checked = 0, findings = [], lifecycle = [], coverage = {} } = {}) => {
+  const summary = Object.values(AUDIT_FINDING_TYPE).reduce((result, type) => ({
+    ...result,
+    [type]: findings.filter(finding => finding.type === type).length,
+  }), { checked: Number(checked) || 0, reads: Number(readsUsed) || 0 })
+
+  return { generatedAt: generatedAt || new Date().toISOString(), scope, readsUsed: Number(readsUsed) || 0, checked: Number(checked) || 0, summary, lifecycle, coverage, findings, issues: findings, issuesCount: findings.length }
+}

@@ -51,7 +51,7 @@ const normalizeValue = value => String(value || '')
   .trim()
   .toLowerCase()
 
-const resolveVerifiedRoleValue = (player = {}) => {
+const resolveVerifiedRoleValues = (player = {}) => {
   const values = [
     player.verifiedRole,
     player.verifiedPosition,
@@ -66,7 +66,7 @@ const resolveVerifiedRoleValue = (player = {}) => {
 
   return values
     .map(normalizeValue)
-    .find(Boolean) || ''
+    .filter(Boolean)
 }
 
 const isPositionVerificationConfirmed = verification => (
@@ -80,10 +80,17 @@ const isPositionVerificationConfirmed = verification => (
 const resolveTargetProfileId = ({ player, verification } = {}) => {
   if (!isPositionVerificationConfirmed(verification)) return ''
 
-  const roleValue = resolveVerifiedRoleValue(player)
+  const roleValues = resolveVerifiedRoleValues(player)
 
-  if (DEFENSIVE_ROLE_VALUES.has(roleValue)) return 'last_station'
-  if (ATTACKING_SUPPORT_ROLE_VALUES.has(roleValue)) return 'attacking_support'
+  // A specific position wins over a broad layer because the values are kept in
+  // that order. When the position itself is not mapped, the selected layer is
+  // still a valid professional indication for the reclassification.
+  if (roleValues.some(roleValue => DEFENSIVE_ROLE_VALUES.has(roleValue))) {
+    return 'last_station'
+  }
+  if (roleValues.some(roleValue => ATTACKING_SUPPORT_ROLE_VALUES.has(roleValue))) {
+    return 'attacking_support'
+  }
 
   return ''
 }
@@ -99,7 +106,6 @@ const buildReclassifiedSignal = ({ preliminarySignal, targetProfile } = {}) => (
   profileShortLabel: targetProfile.shortLabel || '',
   profileIdentity: SCOUT_PROFILE_IDENTITY.CORE,
   positionContext: targetProfile.positionContext || '',
-  interestLevel: targetProfile.interest,
   warnings: targetProfile.warnings || [],
   requiredReview: [],
   classificationState: 'reclassified',

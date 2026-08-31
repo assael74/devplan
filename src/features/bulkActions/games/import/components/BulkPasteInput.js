@@ -11,6 +11,8 @@ export default function BulkPasteInput({
   placeholder = '',
   minRows = 8,
 }) {
+  const hasPastedData = Boolean(value.trim())
+
   return (
     <Box sx={sx.inputRoot}>
       <Typography level="title-sm">
@@ -18,10 +20,16 @@ export default function BulkPasteInput({
       </Typography>
 
       <Textarea
-        minRows={minRows}
+        minRows={hasPastedData ? 3 : minRows}
+        maxRows={hasPastedData ? 3 : undefined}
         value={value}
         placeholder={placeholder}
         onChange={event => onChange(event.target.value)}
+        slotProps={{
+          textarea: {
+            className: 'dpScrollThin',
+          },
+        }}
         sx={sx.pasteTextarea}
       />
 

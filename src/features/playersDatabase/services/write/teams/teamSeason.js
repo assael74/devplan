@@ -18,6 +18,8 @@ export {
 
 export {
   removeTeamSeasonPlayerScoutProfile,
+  updateTeamSeasonPlayerScoutProjection,
+  updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
   updateTeamSeasonPlayerVerificationAndScout,
   updateTeamSeasonPlayerUrl,

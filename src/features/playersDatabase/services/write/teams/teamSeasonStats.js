@@ -7,20 +7,24 @@ import {
   buildSeasonKey,
   clean,
 } from '../leagues/leagueDoc.js'
-import { isSameSeason } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import {
-  buildTeamBaseDoc,
-  teamDocRef,
-} from './teamDoc.js'
+import { buildTeamRootWithSeasonIndex, teamDocRef } from './teamDoc.js'
 import {
   buildTeamSeasonDoc,
   mergeTeamPlayerStats,
-  upsertSeasonRows,
 } from './teamSeason.model.js'
+import {
+  buildTeamSeasonDocumentData,
+  teamSeasonDocRef,
+} from './teamSeasonDoc.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
+import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
+import {
+  applyTeamPerformanceProjection,
+  buildPersistedTeamPerformanceFallback,
+} from '../shared/teamPerformanceProjection.js'
 
 const hasNumberValue = value => (
   value !== undefined &&
@@ -60,49 +64,22 @@ const stripTeamTechnicalTimestamps = value => {
 
   delete next.updatedAt
 
-  ;['current', 'history'].forEach(fieldKey => {
-    if (!Array.isArray(next[fieldKey])) return
-
-    next[fieldKey] = next[fieldKey].map(row => {
-      if (!isPlainObject(row)) return row
-
-      const nextRow = {
-        ...row,
-      }
-
-      delete nextRow.updatedAt
-
-      if (Array.isArray(nextRow.teamPlayers)) {
-        nextRow.teamPlayers = nextRow.teamPlayers.map(player => {
-          if (!isPlainObject(player)) return player
-
-          const nextPlayer = {
-            ...player,
-          }
-
-          delete nextPlayer.updatedAt
-          return nextPlayer
-        })
-      }
-
-      if (isPlainObject(nextRow.teamBalance)) {
-        nextRow.teamBalance = {
-          ...nextRow.teamBalance,
-          source: isPlainObject(nextRow.teamBalance.source)
-            ? {
-                ...nextRow.teamBalance.source,
-              }
-            : nextRow.teamBalance.source,
-        }
-
-        if (isPlainObject(nextRow.teamBalance.source)) {
-          delete nextRow.teamBalance.source.updatedAt
-        }
-      }
-
-      return nextRow
+  if (Array.isArray(next.teamPlayers)) {
+    next.teamPlayers = next.teamPlayers.map(player => {
+      if (!isPlainObject(player)) return player
+      const nextPlayer = { ...player }
+      delete nextPlayer.updatedAt
+      return nextPlayer
     })
-  })
+  }
+
+  if (isPlainObject(next.teamBalance?.source)) {
+    next.teamBalance = {
+      ...next.teamBalance,
+      source: { ...next.teamBalance.source },
+    }
+    delete next.teamBalance.source.updatedAt
+  }
 
   return next
 }
@@ -129,38 +106,163 @@ const stripUndefined = value => {
   }, {})
 }
 
-export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, target = 'current', players = [] } = {}) {
+const firstDefined = (...values) => values.find(value => (
+  value !== undefined && value !== null && value !== ''
+))
+
+const resolvePersistedSeasonStatus = ({ existingStatus, incomingStatus } = {}) => (
+  clean(existingStatus) === 'completed' || clean(incomingStatus) === 'completed'
+    ? 'completed'
+    : 'active'
+)
+
+const requireLeagueSeasonLifecycle = seasonStatus => {
+  const normalizedStatus = clean(seasonStatus)
+
+  if (['active', 'completed'].includes(normalizedStatus)) {
+    return normalizedStatus
+  }
+
+  const error = new Error('League season lifecycle could not be resolved')
+  error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
+  throw error
+}
+
+const toNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0
+
+// Performance is retained only as canonical calculation/history context. Its
+// rank is the same league-table fact exposed by the compact top-level fields;
+// keep the snapshot internally consistent without making the nested value a
+// separate source of truth.
+const withCanonicalPerformanceRank = ({ performance, tableRank } = {}) => {
+  if (!isPlainObject(performance)) return performance || null
+
+  const rank = firstDefined(tableRank, performance.rank)
+  if (rank === undefined) return performance
+
+  return {
+    ...performance,
+    rank: toNumber(rank),
+  }
+}
+
+// Player Stats Load owns player statistics, balance and scouting only. Official
+// team performance is supplied by the league-table projection (or, defensively,
+// retained from the stored season when no league document reached this writer).
+export const buildCanonicalTeamSeasonContext = ({
+  team = {},
+  season = {},
+  baseSeasonDoc = {},
+  teamDocumentId = '',
+  teamPerformance = null,
+} = {}) => {
+  const storedStats = baseSeasonDoc.teamStats || {}
+  const incomingStats = team.teamStats || {}
+  const performance = teamPerformance || buildPersistedTeamPerformanceFallback(baseSeasonDoc)
+  const performanceTeam = applyTeamPerformanceProjection({ team, performance })
+  const teamGamePlayed = toNumber(performance.teamGamePlayed)
+  const goalsFor = toNumber(performance.goalsFor)
+  const goalsAgainst = toNumber(performance.goalsAgainst)
+  const goalsForPerGame = toNumber(performanceTeam.goalsForPerGame)
+  const goalsAgainstPerGame = toNumber(performanceTeam.goalsAgainstPerGame)
+  const tableAttackRank = firstDefined(
+    performanceTeam.tableAttackRank,
+    baseSeasonDoc.tableAttackRank,
+    storedStats.tableAttackRank,
+  )
+  const tableDefenseRank = firstDefined(
+    performanceTeam.tableDefenseRank,
+    baseSeasonDoc.tableDefenseRank,
+    storedStats.tableDefenseRank,
+  )
+  const teamAttackPerformance = withCanonicalPerformanceRank({
+    performance: firstDefined(
+      team.teamAttackPerformance,
+      team.offense,
+      baseSeasonDoc.teamAttackPerformance,
+      storedStats.teamAttackPerformance,
+    ),
+    tableRank: tableAttackRank,
+  })
+  const teamDefensePerformance = withCanonicalPerformanceRank({
+    performance: firstDefined(
+      team.teamDefensePerformance,
+      team.defense,
+      baseSeasonDoc.teamDefensePerformance,
+      storedStats.teamDefensePerformance,
+    ),
+    tableRank: tableDefenseRank,
+  })
+
+  return {
+    ...performanceTeam,
+    birthTeamDocumentId: teamDocumentId,
+    teamDocumentId,
+    seasonId: season.seasonId,
+    seasonKey: season.seasonKey,
+    tableRank: firstDefined(performanceTeam.tableRank, baseSeasonDoc.tableRank, storedStats.tableRank),
+    tableAttackRank,
+    tableDefenseRank,
+    goalsFor,
+    goalsAgainst,
+    goalsForPerGame,
+    goalsAgainstPerGame,
+    teamGamePlayed,
+    gamesPlayed: teamGamePlayed,
+    teamAttackPerformance,
+    teamDefensePerformance,
+    offense: teamAttackPerformance || {},
+    defense: teamDefensePerformance || {},
+    teamStats: {
+      points: toNumber(firstDefined(
+        incomingStats.points,
+        storedStats.points,
+      )),
+      teamGamePlayed,
+      goalsFor,
+      goalsAgainst,
+    },
+  }
+}
+
+export async function updateTeamSeasonPlayerStats({
+  season = {},
+  team = {},
+  players = [],
+  teamPerformance = null,
+} = {}) {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
   if (!teamId) throw new Error('Missing birth team id')
   if (!seasonId) throw new Error('Missing season id')
 
-  const ref = teamDocRef(teamId)
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const seasonStatus = requireLeagueSeasonLifecycle(season.seasonStatus)
+  const inputSeason = {
+    ...season,
+    seasonId,
+    seasonKey,
+    seasonStatus,
+  }
+  const ref = teamSeasonDocRef({
+    birthTeamDocumentId: teamId,
+    seasonKey,
+  })
+  const rootRef = teamDocRef(teamId)
 
   return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildTeamBaseDoc({
-      ...team,
-      teamDocumentId: teamId,
-    }, currentData)
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-    const isHistory = clean(target) === 'history'
-    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
-      ? 'completed'
-      : 'active'
+    const [rootSnapshot, snapshot] = await Promise.all([
+      transaction.get(rootRef),
+      transaction.get(ref),
+    ])
+    const existingSeason = snapshot.exists() ? snapshot.data() || {} : null
     const effectiveSeason = {
-      ...season,
-      seasonId,
-      seasonKey,
-      seasonStatus,
+      ...inputSeason,
+      seasonStatus: resolvePersistedSeasonStatus({
+        existingStatus: existingSeason?.seasonStatus,
+        incomingStatus: inputSeason.seasonStatus,
+      }),
     }
-    const rows = isHistory ? baseDoc.history : baseDoc.current
-    const existingSeason = (Array.isArray(rows) ? rows : [])
-      .find(row => isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      }))
     const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
       season: effectiveSeason,
       team: {
@@ -170,51 +272,58 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
       },
       players: [],
     })
+    const canonicalTeamContext = buildCanonicalTeamSeasonContext({
+      team,
+      season: effectiveSeason,
+      baseSeasonDoc,
+      teamDocumentId: teamId,
+      teamPerformance,
+    })
+    const nextPlayers = mergeTeamPlayerStats({
+      existingPlayers: baseSeasonDoc.teamPlayers,
+      players,
+      team: canonicalTeamContext,
+      season: effectiveSeason,
+    })
     const seasonDocWithoutBalance = stripUndefined({
       ...baseSeasonDoc,
-      seasonStatus,
+      seasonStatus: effectiveSeason.seasonStatus,
+      tableRank: canonicalTeamContext.tableRank,
+      tableAttackRank: canonicalTeamContext.tableAttackRank,
+      tableDefenseRank: canonicalTeamContext.tableDefenseRank,
+      goalsForPerGame: canonicalTeamContext.goalsForPerGame,
+      goalsAgainstPerGame: canonicalTeamContext.goalsAgainstPerGame,
+      teamStats: canonicalTeamContext.teamStats,
+      teamAttackPerformance: canonicalTeamContext.teamAttackPerformance,
+      teamDefensePerformance: canonicalTeamContext.teamDefensePerformance,
       leagueTotalRound: hasNumberValue(season.leagueTotalRound)
         ? Number(season.leagueTotalRound)
         : Number(baseSeasonDoc.leagueTotalRound) || 0,
-      teamPlayers: mergeTeamPlayerStats({
-        existingPlayers: baseSeasonDoc.teamPlayers,
-        players,
-        team,
-        season: effectiveSeason,
-      }),
+      teamPlayers: nextPlayers,
+      playersCount: nextPlayers.length,
+      scoutProfilesSummary: buildScoutProfilesSummary(nextPlayers),
       updatedAt: new Date().toISOString(),
     })
     const seasonDoc = withTeamBalanceSnapshot({
       seasonDoc: seasonDocWithoutBalance,
-      teamDocument: baseDoc,
-      seasonTarget: isHistory ? 'history' : 'current',
+      teamRoot: {
+        ...team,
+        id: teamId,
+        birthTeamDocumentId: teamId,
+      },
     })
-    const nextData = stripUndefined(isHistory
-      ? {
-          ...baseDoc,
-          history: upsertSeasonRows({
-            rows: baseDoc.history,
-            season: {
-              seasonId,
-              seasonKey,
-            },
-            seasonDoc,
-          }),
-        }
-      : {
-          ...baseDoc,
-          current: upsertSeasonRows({
-            rows: baseDoc.current,
-            season: {
-              seasonId,
-              seasonKey,
-            },
-            seasonDoc,
-          }),
-        })
+    const nextData = buildTeamSeasonDocumentData({
+      team: {
+        ...team,
+        birthTeamDocumentId: teamId,
+      },
+      season: effectiveSeason,
+      seasonDoc: stripUndefined(seasonDoc),
+      existingData: existingSeason || {},
+    })
 
     const writeSkipped = snapshot.exists() && isSamePersistedTeamState(
-      currentData,
+      existingSeason,
       nextData
     )
 
@@ -223,18 +332,27 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
     }
 
     const persistedSeason = writeSkipped
-      ? existingSeason || seasonDoc
-      : seasonDoc
-    const persistedTeamDocument = writeSkipped
-      ? currentData
+      ? existingSeason || nextData
       : nextData
+
+    const createdTeam = !rootSnapshot.exists()
+    transaction.set(rootRef, buildTeamRootWithSeasonIndex({
+      team: {
+        ...team,
+        birthTeamDocumentId: teamId,
+      },
+      currentData: rootSnapshot.exists() ? rootSnapshot.data() || {} : {},
+      season: persistedSeason,
+    }))
 
     return {
       birthTeamDocumentId: teamId,
       teamDocumentId: teamId,
+      teamSeasonDocumentId: ref.id,
       seasonId,
       seasonKey,
-      target: isHistory ? 'history' : 'current',
+      target: effectiveSeason.seasonStatus === 'completed' ? 'history' : 'current',
+      createdTeam,
       rowsCount: (Array.isArray(players) ? players : []).length,
       playersCount: Array.isArray(persistedSeason.teamPlayers)
         ? persistedSeason.teamPlayers.length
@@ -243,7 +361,8 @@ export async function updateTeamSeasonPlayerStats({ season = {}, team = {}, targ
         ? persistedSeason.teamPlayers
         : [],
       teamBalance: persistedSeason.teamBalance || null,
-      teamDocument: persistedTeamDocument,
+      canonicalTeamContext,
+      seasonDocument: persistedSeason,
       updated: true,
       changed: !writeSkipped,
       writeSkipped,

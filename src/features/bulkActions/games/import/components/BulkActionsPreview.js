@@ -11,11 +11,16 @@ import {
 
 import BulkActionsStatusChip from './BulkActionsStatusChip.js'
 import { bulkSx as sx } from './sx/bulk.sx.js'
+import { GAME_TYPE } from '../../../../../shared/games/games.constants.js'
 
 const homeLabel = value => {
   if (value === true) return 'בית'
   if (value === false) return 'חוץ'
   return 'לא תקין'
+}
+
+const gameTypeLabel = value => {
+  return GAME_TYPE.find(type => type.id === value)?.labelH || value || '—'
 }
 
 function SummaryChips({ summary }) {
@@ -84,8 +89,19 @@ export default function BulkActionsPreview({ preview }) {
           </Typography>
         </Sheet>
       ) : (
-        <Sheet variant="outlined" sx={sx.tableWrap}>
+        <Sheet className="dpScrollThin" variant="outlined" sx={sx.tableWrap}>
           <Table size="sm" stickyHeader sx={sx.previewTable}>
+            <colgroup>
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '10%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>סטטוס</th>
@@ -95,7 +111,7 @@ export default function BulkActionsPreview({ preview }) {
                 <th>שעה</th>
                 <th>יריבה</th>
                 <th>בית/חוץ</th>
-                <th>סוג</th>
+                <th>סוג משחק</th>
                 <th>משך</th>
               </tr>
             </thead>
@@ -116,7 +132,7 @@ export default function BulkActionsPreview({ preview }) {
                     <td>{data.gameHour || '—'}</td>
                     <td>{data.rivel || '—'}</td>
                     <td>{homeLabel(data.home)}</td>
-                    <td>{data.type || '—'}</td>
+                    <td title={gameTypeLabel(data.type)}>{gameTypeLabel(data.type)}</td>
                     <td>{data.gameDuration || '—'}</td>
                   </tr>
                 )

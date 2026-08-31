@@ -57,7 +57,13 @@ export const collectIndexMeta = snapshot => {
   snapshot.docs.forEach(indexDoc => {
     const data = indexDoc.data() || {}
     const playerDocumentId = clean(data.playerDocumentId || (clean(data.sourceCollection) === 'players' ? data.sourceDocumentId : ''))
-    const teamDocumentId = clean(data.teamDocumentId || (['teams', 'birthTeams'].includes(clean(data.sourceCollection)) ? data.sourceDocumentId : ''))
+    const teamDocumentId = clean(data.teamDocumentId || (
+      ['teams', 'birthTeams'].includes(clean(data.sourceCollection))
+        ? data.sourceDocumentId
+        : clean(data.sourceCollection) === 'birthTeamSeasons'
+          ? data.birthTeamDocumentId
+          : ''
+    ))
 
     if (playerDocumentId) playerDocumentIds.push(playerDocumentId)
     if (teamDocumentId) teamDocumentIds.push(teamDocumentId)

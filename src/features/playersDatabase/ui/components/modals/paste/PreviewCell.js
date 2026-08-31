@@ -39,6 +39,7 @@ export default function PreviewCell({
   row,
   rowIndex,
   onCellChange,
+  cellStatus,
 }) {
   const value = row[column.key] || ''
   const isChangedTeamSlot = column.key === 'teamSlot' && Number(value) > 1
@@ -55,12 +56,13 @@ export default function PreviewCell({
   }
 
   if (typeof column.render === 'function') {
-    return column.render({
+      return column.render({
       row,
       rowIndex,
       column,
       value,
       onCellChange,
+      cellStatus,
     })
   }
 
@@ -75,6 +77,15 @@ export default function PreviewCell({
       >
         {value || '-'}
       </Typography>
+    )
+  }
+
+  if (cellStatus?.valid === false) {
+    return (
+      <InvalidCellEditor
+        value={value}
+        onChange={emitChange}
+      />
     )
   }
 
@@ -141,6 +152,18 @@ export default function PreviewCell({
         baseSx: sx.cellInput,
         columnSx: column.inputSx,
       })}
+    />
+  )
+}
+
+function InvalidCellEditor({ value, onChange }) {
+  return (
+    <Input
+      variant='plain'
+      value={value}
+      inputMode='numeric'
+      onChange={event => onChange(event.target.value)}
+      sx={sx.cellInput}
     />
   )
 }

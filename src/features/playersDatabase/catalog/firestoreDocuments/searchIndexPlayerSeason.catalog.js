@@ -107,12 +107,12 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   primaryScoutProfileStrengthDepthPct: null,
   primaryScoutWarnings: [],
   primaryScoutScore: null,
-  primaryScoutInterestLevel: '',
   primaryScoutTeamGateMode: '',
   nearScoutProfileId: '',
   nearScoutProfileDistancePct: null,
   nearScoutProfileTrend: '',
   scoutEffectiveImmediacyStatus: '',
+  scoutPlayerInterestLevel: '',
   scoutEngineVersion: 'scouting-v2',
 
   secondaryScoutProfileId: '',
@@ -130,4 +130,3 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
 
   updatedAt: null,
 };
-

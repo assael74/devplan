@@ -36,6 +36,11 @@ const resolveProfileLabel = profile => clean(
   resolveProfileId(profile)
 ) || 'פרופיל סקאוט'
 
+const resolveProfileShortLabel = profile => clean(
+  profile?.profileShortLabel ||
+  profile?.shortLabel
+)
+
 const resolveCombinationProfileIds = combination => (
   Array.isArray(combination?.profileIds)
     ? combination.profileIds
@@ -118,6 +123,7 @@ export const buildScoutDisplayItems = ({
         id: resolveProfileId(profile),
         iconId: 'performanceProfile',
         label: resolveProfileLabel(profile),
+        shortLabel: resolveProfileShortLabel(profile),
         source: profile,
       })),
   ]
@@ -154,6 +160,10 @@ export const buildScoutCompactView = ({
     buildScoutNearProfileLabel(player) ||
     cleanDisplayLabel(fallbackLabel)
   )
+  const compactBaseLabel = (
+    cleanDisplayLabel(primaryItem?.shortLabel) ||
+    baseLabel
+  )
   const extraCount = displayItems.length
     ? Math.max(0, displayItems.length - 1)
     : isCombination
@@ -168,6 +178,9 @@ export const buildScoutCompactView = ({
     label: extraCount > 0
       ? `${baseLabel} +${extraCount}`
       : baseLabel,
+    compactLabel: extraCount > 0
+      ? `${compactBaseLabel} +${extraCount}`
+      : compactBaseLabel,
     variant: isCombination
       ? 'combination'
       : 'default',

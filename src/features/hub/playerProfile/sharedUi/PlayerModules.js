@@ -14,6 +14,7 @@ export default function PlayerModules({
   abilitiesInsightsRequest = 0,
   videoInsightsRequest = 0,
   gamesInsightsRequest = 0,
+  gamesImportRequest = 0,
   performanceInsightsRequest = 0,
   trainingsInsightsRequest = 0,
 }) {
@@ -29,6 +30,7 @@ export default function PlayerModules({
       abilitiesInsightsRequest={abilitiesInsightsRequest}
       videoInsightsRequest={videoInsightsRequest}
       gamesInsightsRequest={gamesInsightsRequest}
+      gamesImportRequest={gamesImportRequest}
       performanceInsightsRequest={performanceInsightsRequest}
       trainingsInsightsRequest={trainingsInsightsRequest}
     />

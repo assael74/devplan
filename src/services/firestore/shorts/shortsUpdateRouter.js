@@ -33,8 +33,6 @@ export const shortsUpdateRouterMap = {
     formIds: { shortKey: 'players.playersAbilities', path: 'formIds', mode: 'merge' },
     level: { shortKey: 'players.playersAbilities', path: 'level', mode: 'merge' },
     levelPotential: { shortKey: 'players.playersAbilities', path: 'levelPotential', mode: 'merge' },
-
-
   },
 
   teams: {

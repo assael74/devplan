@@ -26,7 +26,6 @@ const buildProfile = profile => {
     label: clean(profile.label || profile.profileLabel),
     group: clean(profile.group),
     profileIdentity: clean(profile.profileIdentity || profile.identity).toLowerCase(),
-    interest: clean(profile.interest || profile.interestLevel),
     score: toNullableNumber(profile.score),
     profileStrength: profile.profileStrength && typeof profile.profileStrength === 'object'
       ? profile.profileStrength

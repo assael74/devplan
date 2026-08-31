@@ -155,19 +155,16 @@ export function buildPlayerSeasonNumbersRow({ row = {}, player = {}, teamSource 
       0
     ),
     teamAttackPerformance: pickPerformance(
-      teamPlayerStats.teamAttackPerformance,
       rowPlayerStats.teamAttackPerformance,
       row.teamAttackPerformance,
       sameSelectedSeason ? teamView.offense : null
     ),
     teamDefensePerformance: pickPerformance(
-      teamPlayerStats.teamDefensePerformance,
       rowPlayerStats.teamDefensePerformance,
       row.teamDefensePerformance,
       sameSelectedSeason ? teamView.defense : null
     ),
     teamAttackRank: Number(
-      teamPlayerStats.teamAttackPerformance?.rank ||
       rowPlayerStats.teamAttackPerformance?.rank ||
       row.teamAttackPerformance?.rank ||
       (sameSelectedSeason ? teamView.offense?.rank : 0) ||
@@ -175,7 +172,6 @@ export function buildPlayerSeasonNumbersRow({ row = {}, player = {}, teamSource 
       0
     ),
     teamDefenseRank: Number(
-      teamPlayerStats.teamDefensePerformance?.rank ||
       rowPlayerStats.teamDefensePerformance?.rank ||
       row.teamDefensePerformance?.rank ||
       (sameSelectedSeason ? teamView.defense?.rank : 0) ||

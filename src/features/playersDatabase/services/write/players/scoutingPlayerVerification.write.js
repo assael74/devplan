@@ -6,9 +6,9 @@ import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { clean } from '../leagues/leagueDoc.js'
 import {
-  buildPlayerDocumentId,
   playerDocRef,
 } from './playerDoc.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
 import {
   buildScoutingPlayerReasonEvents,
   buildScoutingPlayerTracking,
@@ -31,9 +31,7 @@ export const updateScoutingPlayerVerificationAnswer = async ({
   answeredAt = '',
   reviewAfter = null,
 } = {}) => {
-  const playerDocumentId = clean(
-    player.playerDocumentId || buildPlayerDocumentId(player)
-  )
+  const playerDocumentId = clean(resolveWritablePlayerDocumentId(player))
   const normalizedQuestionId = clean(questionId)
 
   if (!playerDocumentId) {

@@ -20,7 +20,12 @@ import {
   cleanValue,
   pickDefinedValue,
 } from '../../model/value.model.js'
-import { buildPlayerMatchValues } from '../../model/playerIdentity.model.js'
+import {
+  buildPlayerDocumentId,
+  buildPlayerMatchValues,
+  isCanonicalPlayerDocumentId,
+  isValidExternalPlayerId,
+} from '../../model/playerIdentity.model.js'
 import {
   buildPlayerDocumentCacheKey,
   readWithDocumentCache,
@@ -32,14 +37,16 @@ const playerDocRef = documentId => (
 
 const resolvePlayerDocumentCandidates = playerId => {
   const safePlayerId = cleanValue(playerId)
-  const candidates = [safePlayerId]
   const legacyExternalMatch = safePlayerId.match(/^player__(?:19|20)\d{2}__(\d+)$/)
 
   if (legacyExternalMatch) {
-    candidates.push(`external__${legacyExternalMatch[1]}`)
+    return [
+      `external__${legacyExternalMatch[1]}`,
+      safePlayerId,
+    ]
   }
 
-  return [...new Set(candidates.filter(Boolean))]
+  return safePlayerId ? [safePlayerId] : []
 }
 
 const normalizeMatchValues = value => (
@@ -60,11 +67,11 @@ const buildFallbackPlayerDocument = async playerId => {
   if (!safePlayerId) return null
 
   const snapshot = await trackedGetDocs(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.teams),
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons),
     {
       feature: 'playersDatabase',
-      action: 'player-fallback-teams-scan',
-      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      action: 'player-fallback-team-seasons-scan',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
       meta: { playerId: safePlayerId },
     }
   )
@@ -74,86 +81,70 @@ const buildFallbackPlayerDocument = async playerId => {
   let identity = null
 
   snapshot.docs.forEach(teamItem => {
-    const teamDocument = {
-      id: teamItem.id,
-      ...teamItem.data(),
-    }
+    const seasonDocument = { id: teamItem.id, ...teamItem.data() }
+    const target = cleanValue(seasonDocument.seasonStatus) === 'completed'
+      ? 'history'
+      : 'current'
+    const teamPlayers = Array.isArray(seasonDocument.teamPlayers)
+      ? seasonDocument.teamPlayers
+      : []
+    const playerRow = teamPlayers.find(candidate => (
+      isSamePlayerSource(candidate, {
+        playerDocumentId: safePlayerId,
+        playerId: safePlayerId,
+      })
+    ))
 
-    const seasonTargets = [
-      ...(Array.isArray(teamDocument.current)
-        ? teamDocument.current.map(seasonDocument => ({
-          seasonDocument,
-          target: 'current',
-        }))
-        : []),
-      ...(Array.isArray(teamDocument.history)
-        ? teamDocument.history.map(seasonDocument => ({
-          seasonDocument,
-          target: 'history',
-        }))
-        : []),
-    ]
+    if (!playerRow) return
 
-    seasonTargets.forEach(({ seasonDocument, target }) => {
-      const teamPlayers = Array.isArray(seasonDocument.teamPlayers)
-        ? seasonDocument.teamPlayers
-        : []
-      const playerRow = teamPlayers.find(candidate => (
-        isSamePlayerSource(candidate, {
-          playerDocumentId: safePlayerId,
-          playerId: safePlayerId,
-        })
-      ))
+    identity = identity || playerRow
 
-      if (!playerRow) return
-
-      identity = identity || playerRow
-
-      const normalizedSeason = {
+    const normalizedSeason = {
         ...seasonDocument,
         ...playerRow,
         playerStats: playerRow.playerStats || {},
         scoutProfiles: Array.isArray(playerRow.scoutProfiles)
           ? playerRow.scoutProfiles
           : [],
-        clubId: seasonDocument.clubId || teamDocument.clubId,
-        leagueId: seasonDocument.leagueId || teamDocument.leagueId,
+        clubId: seasonDocument.clubId,
+        leagueId: seasonDocument.leagueId,
         birthTeamId:
-          teamDocument.birthTeamId ||
-          teamDocument.teamId ||
           seasonDocument.birthTeamId ||
           seasonDocument.teamId,
         birthTeamDocumentId:
-          teamDocument.id ||
-          teamDocument.birthTeamDocumentId ||
           seasonDocument.birthTeamDocumentId,
         birthTeamSlot:
-          teamDocument.birthTeamSlot ||
-          seasonDocument.birthTeamSlot ||
-          1,
-        ageGroupId: seasonDocument.ageGroupId || teamDocument.ageGroupId,
-        ageGroupLabel:
-          seasonDocument.ageGroupLabel || teamDocument.ageGroupLabel,
+          seasonDocument.birthTeamSlot || 1,
+        ageGroupId: seasonDocument.ageGroupId,
+        ageGroupLabel: seasonDocument.ageGroupLabel,
         teamDisplayName:
-          teamDocument.displayName ||
           seasonDocument.displayName ||
           seasonDocument.ageGroupLabel,
-      }
+    }
 
-      if (target === 'current') {
-        current.push(normalizedSeason)
-        return
-      }
+    if (target === 'current') {
+      current.push(normalizedSeason)
+      return
+    }
 
-      history.push(normalizedSeason)
-    })
+    history.push(normalizedSeason)
   })
 
   if (!current.length && !history.length) return null
 
+  const externalPlayerId = cleanValue(identity?.externalPlayerId)
+  const playerDocumentId = isValidExternalPlayerId({
+    externalPlayerId,
+    birthYear: identity?.birthYear,
+  })
+    ? buildPlayerDocumentId({ externalPlayerId })
+    : isCanonicalPlayerDocumentId(identity?.playerDocumentId)
+      ? cleanValue(identity.playerDocumentId)
+      : ''
+
   return {
     id: safePlayerId,
-    playerDocumentId: safePlayerId,
+    playerDocumentId,
     playerId: cleanValue(identity?.playerId || safePlayerId),
     externalPlayerId: cleanValue(identity?.externalPlayerId),
     fullName: cleanValue(

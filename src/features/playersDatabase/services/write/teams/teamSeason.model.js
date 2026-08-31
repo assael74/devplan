@@ -18,16 +18,13 @@ import {
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
 } from '../../../model/playerStats.model.js'
-import {
-  isSameSeason,
-  normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+import { normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { normalizeTeamStats } from '../../../model/teamStats.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
 import {
   pickFirstValue,
   pickDefinedValue,
 } from '../../../model/value.model.js'
-import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
 import { PLAYER_SCOUT_ACTIVE_ENGINE } from '../../../domain/orchestration/buildDbPlayerScoutResult.js'
 import {
   buildPlayerScoutStatsLoadMeasurement,
@@ -36,11 +33,13 @@ import {
 } from '../../../model/playerScoutMeasurement.model.js'
 import {
   buildPlayerDocumentId,
-  hasPlayerScoutProfiles,
-  normalizePlayerScoutCombinations,
-  normalizePlayerScoutProfiles,
-  normalizePlayerScoutStory,
+  shouldHavePlayerDocument,
 } from '../players/index.js'
+import {
+  buildTeamPlayerScoutProjection,
+  buildTeamPlayerSeasonalScoutProjection,
+} from '../shared/playerScoutProjection.js'
+import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
 
 const normalizePlayerName = normalizePlayerNameValue
 const normalizeIdPart = normalizePlayerIdPart
@@ -81,6 +80,9 @@ const uniqueCleanValues = values =>
 export const normalizeTeamPlayer = (player, season = {}) => {
   const identity = normalizePlayerIdentity(player)
   const playerStats = normalizePlayerStats(player)
+  const compactPlayerStats = { ...playerStats }
+  delete compactPlayerStats.teamAttackPerformance
+  delete compactPlayerStats.teamDefensePerformance
   const identityBirthYear = resolvePlayerIdentityBirthYear({
     player,
     season,
@@ -100,9 +102,9 @@ export const normalizeTeamPlayer = (player, season = {}) => {
       player,
       season,
     }),
-    playerDocumentId: hasPlayerScoutProfiles(player)
+    playerDocumentId: shouldHavePlayerDocument(player)
       ? buildPlayerDocumentId(player)
-      : identity.playerDocumentId,
+      : clean(player.playerDocumentId),
     externalPlayerId,
     identityKey,
     fullName: identity.fullName,
@@ -121,7 +123,7 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     numShirt: clean(player.numShirt),
     statsStatus: normalizePlayerStatsStatus(player.statsStatus),
     playerStats: {
-      ...playerStats,
+      ...compactPlayerStats,
       teamRank: pickDefinedValue(player.playerStats?.teamRank, player.teamRank, null),
       teamGoalsFor: toNumberOrZero(
         pickDefinedValue(player.playerStats?.teamGoalsFor, player.teamGoalsFor)
@@ -129,25 +131,8 @@ export const normalizeTeamPlayer = (player, season = {}) => {
       teamGoalsAgainst: toNumberOrZero(
         pickDefinedValue(player.playerStats?.teamGoalsAgainst, player.teamGoalsAgainst)
       ),
-      teamAttackPerformance:
-        pickDefinedValue(
-          player.playerStats?.teamAttackPerformance,
-          player.teamAttackPerformance,
-          null,
-        ),
-      teamDefensePerformance:
-        pickDefinedValue(
-          player.playerStats?.teamDefensePerformance,
-          player.teamDefensePerformance,
-          null,
-        ),
     },
-    scoutProfiles: normalizePlayerScoutProfiles(player),
-    scoutCombinations: normalizePlayerScoutCombinations(player),
-    ...normalizePlayerScoutStory(player),
-    scoutStatsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(
-      player.scoutStatsLoadMeasurements
-    ),
+    ...buildTeamPlayerScoutProjection(player),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -256,6 +241,48 @@ const buildScoutCalculationMeasurements = ({ existingMeasurements = {}, player =
   }
 }
 
+const buildCanonicalTeamPlayerStats = ({ player = {}, team = {} } = {}) => {
+  const playerStats = normalizePlayerStats(player)
+  const compactPlayerStats = { ...playerStats }
+  delete compactPlayerStats.teamAttackPerformance
+  delete compactPlayerStats.teamDefensePerformance
+  const teamStats = normalizeTeamStats(team)
+  const teamGames = toNumberOrZero(pickDefinedValue(
+    team.teamStats?.teamGamePlayed,
+    team.teamStats?.gamesPlayed,
+    team.teamGamePlayed,
+    team.gamesPlayed,
+    teamStats.gamesPlayed,
+  ))
+  const tableRank = pickDefinedValue(team.tableRank, playerStats.teamRank, null)
+  const ageGroupId = clean(pickDefinedValue(
+    team.ageGroupId,
+    team.league?.ageGroupId,
+    team.domain?.league?.ageGroupId,
+  ))
+  const teamMinutes = teamGames * resolvePlayersDatabaseLeagueGameTime(ageGroupId)
+
+  return {
+    ...compactPlayerStats,
+    // League-derived context; never take the parser's missing-value default.
+    teamMinutes,
+    teamGames,
+    teamRank: tableRank === null || tableRank === undefined || tableRank === ''
+      ? null
+      : toNumberOrZero(tableRank),
+    teamGoalsFor: toNumberOrZero(pickDefinedValue(
+      team.teamStats?.goalsFor,
+      team.goalsFor,
+      teamStats.goalsFor,
+    )),
+    teamGoalsAgainst: toNumberOrZero(pickDefinedValue(
+      team.teamStats?.goalsAgainst,
+      team.goalsAgainst,
+      teamStats.goalsAgainst,
+    )),
+  }
+}
+
 const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = {}, season = {} } = {}) => {
   const existingMeasurements = normalizePlayerScoutStatsLoadMeasurements(
     existingPlayer?.scoutStatsLoadMeasurements
@@ -265,30 +292,30 @@ const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = 
     player,
     team,
   })
-  const calculatedPlayer = buildPlayerScoutState({
-    player: {
-      ...player,
-      scoutStatsLoadMeasurements: calculationMeasurements,
-      scoutSignals: undefined,
-      scoutProfiles: undefined,
-      scoutCombinations: undefined,
-      bestScoutSignal: undefined,
-    },
+  const canonicalPlayer = {
+    ...player,
+    playerStats: buildCanonicalTeamPlayerStats({ player, team }),
+  }
+  const seasonalProjection = buildTeamPlayerSeasonalScoutProjection({
+    player: canonicalPlayer,
     team,
     season,
-    perspective: 'players_database_stats_write',
   })
   const scoutStatsLoadMeasurements = buildPlayerScoutStatsLoadMeasurements({
     existingMeasurements,
-    player: calculatedPlayer,
+    player,
     team,
   })
 
   return {
-    ...calculatedPlayer,
-    bestScoutSignal: null,
-    scoutStatsLoadMeasurements,
-    updatedAt: new Date().toISOString(),
+    ...normalizeTeamPlayer({
+      ...canonicalPlayer,
+      ...seasonalProjection,
+      scoutStatsLoadMeasurements,
+    }, season),
+    ...seasonalProjection,
+    scoutEffectiveImmediacyStatus: clean(player.scoutEffectiveImmediacyStatus),
+    scoutPlayerInterestLevel: clean(player.scoutPlayerInterestLevel),
   }
 }
 
@@ -306,14 +333,9 @@ const resetTeamPlayerStats = ({ player = {}, team = {}, season = {} } = {}) => (
 )
 
 export const mergeTeamPlayerStats = ({ existingPlayers = [], players = [], team = {}, season = {} } = {}) => {
-  const sourcePlayers = (Array.isArray(existingPlayers) ? existingPlayers : []).map(player => ({
-    ...normalizeTeamPlayer(player, season),
-    ...player,
-    aliases: normalizeAliases(player.aliases),
-    scoutStatsLoadMeasurements: normalizePlayerScoutStatsLoadMeasurements(
-      player.scoutStatsLoadMeasurements
-    ),
-  }))
+  const sourcePlayers = (Array.isArray(existingPlayers) ? existingPlayers : []).map(player => (
+    normalizeTeamPlayer(player, season)
+  ))
   const nextPlayers = [...sourcePlayers]
   const lookup = buildPlayerLookup(sourcePlayers)
   const updatedIndexes = new Set()
@@ -340,7 +362,6 @@ export const mergeTeamPlayerStats = ({ existingPlayers = [], players = [], team 
         ],
       },
     })
-
     if (existingIndex !== -1) {
       const existingPlayer = sourcePlayers[existingIndex]
       const mergedPlayer = mergeExistingTeamPlayerStats({
@@ -388,8 +409,102 @@ export const mergeTeamPlayerStats = ({ existingPlayers = [], players = [], team 
   return nextPlayers
 }
 
+
+export const normalizeTeamSeasonRosterState = ({
+  seasonDoc = {},
+  season = {},
+  team = {},
+  players,
+} = {}) => {
+  const nextPlayers = Array.isArray(players)
+    ? players
+    : Array.isArray(seasonDoc.teamPlayers)
+      ? seasonDoc.teamPlayers
+      : []
+  const normalizedPlayers = nextPlayers.map(player => normalizeTeamPlayer(player, season))
+  const identity = normalizeSeasonIdentity({
+    season: {
+      seasonId: pickDefinedValue(seasonDoc.seasonId, season.seasonId),
+      seasonKey: pickDefinedValue(seasonDoc.seasonKey, season.seasonKey),
+    },
+  })
+  const leagueLevelValue = pickDefinedValue(
+    seasonDoc.leagueLevel,
+    season.leagueLevel,
+    team.leagueLevel,
+    team.league?.leagueLevel,
+    team.league?.level
+  )
+  const expectedLevelDeltaValue = pickDefinedValue(
+    seasonDoc.expectedLevelDelta,
+    season.expectedLevelDelta,
+    team.expectedLevelDelta
+  )
+  const seasonStatusValue = clean(pickDefinedValue(
+    seasonDoc.seasonStatus,
+    season.seasonStatus
+  ))
+
+  return {
+    ...seasonDoc,
+    seasonId: identity.seasonId,
+    seasonKey: identity.seasonKey,
+    leagueId: clean(pickDefinedValue(
+      seasonDoc.leagueId,
+      season.leagueId,
+      team.leagueId
+    )),
+    ageGroupId: clean(pickDefinedValue(
+      seasonDoc.ageGroupId,
+      season.ageGroupId,
+      team.ageGroupId
+    )),
+    birthYear: toNumberOrZero(pickDefinedValue(
+      seasonDoc.birthYear,
+      season.birthYear,
+      team.birthYear
+    )),
+    leagueTotalRound: toNumberOrZero(pickDefinedValue(
+      seasonDoc.leagueTotalRound,
+      season.leagueTotalRound,
+      team.leagueTotalRound
+    )),
+    leagueLevel: Number.isFinite(Number(leagueLevelValue))
+      ? Number(leagueLevelValue)
+      : 0,
+    expectedLevelDelta: expectedLevelDeltaValue === null || expectedLevelDeltaValue === undefined || expectedLevelDeltaValue === ''
+      ? null
+      : Number.isFinite(Number(expectedLevelDeltaValue))
+        ? Number(expectedLevelDeltaValue)
+        : null,
+    seasonStatus: seasonStatusValue === 'completed'
+      ? 'completed'
+      : 'active',
+    teamUrl: clean(pickDefinedValue(
+      seasonDoc.teamUrl,
+      team.teamUrl
+    )),
+    teamPlayers: normalizedPlayers,
+    playersCount: normalizedPlayers.length,
+    scoutProfilesSummary: buildScoutProfilesSummary(normalizedPlayers),
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}) => {
   const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
+  const teamPlayers = (Array.isArray(players) ? players : [])
+    .map(player => normalizeTeamPlayer(player, season))
+  const leagueLevelValue = pickDefinedValue(
+    season.leagueLevel,
+    team.leagueLevel,
+    team.league?.leagueLevel,
+    team.league?.level
+  )
+  const expectedLevelDeltaValue = pickDefinedValue(
+    season.expectedLevelDelta,
+    team.expectedLevelDelta
+  )
 
   return {
     seasonId,
@@ -398,11 +513,44 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
     ageGroupId: clean(season.ageGroupId || team.ageGroupId),
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+    leagueLevel: Number.isFinite(Number(leagueLevelValue))
+      ? Number(leagueLevelValue)
+      : 0,
+    expectedLevelDelta: expectedLevelDeltaValue === null || expectedLevelDeltaValue === undefined || expectedLevelDeltaValue === ''
+      ? null
+      : Number.isFinite(Number(expectedLevelDeltaValue))
+        ? Number(expectedLevelDeltaValue)
+        : null,
+    tableRank: pickDefinedValue(team.tableRank, null),
+    tableAttackRank: pickDefinedValue(team.tableAttackRank, team.offense?.rank, null),
+    tableDefenseRank: pickDefinedValue(team.tableDefenseRank, team.defense?.rank, null),
+    goalsForPerGame: toNumberOrZero(pickDefinedValue(
+      team.goalsForPerGame,
+      team.teamStats?.goalsForPerGame,
+    )),
+    goalsAgainstPerGame: toNumberOrZero(pickDefinedValue(
+      team.goalsAgainstPerGame,
+      team.teamStats?.goalsAgainstPerGame,
+    )),
+    teamAttackPerformance: pickDefinedValue(
+      team.teamAttackPerformance,
+      team.offense,
+      team.performance?.offense,
+      null,
+    ),
+    teamDefensePerformance: pickDefinedValue(
+      team.teamDefensePerformance,
+      team.defense,
+      team.performance?.defense,
+      null,
+    ),
     seasonStatus: clean(season.seasonStatus) === 'completed'
       ? 'completed'
       : 'active',
     teamUrl: clean(team.teamUrl),
-    teamPlayers: (Array.isArray(players) ? players : []).map(player => normalizeTeamPlayer(player, season)),
+    teamPlayers,
+    playersCount: teamPlayers.length,
+    scoutProfilesSummary: buildScoutProfilesSummary(teamPlayers),
     teamStats: {
       ...(() => {
         const teamStats = normalizeTeamStats(team)
@@ -417,20 +565,4 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
     },
     updatedAt: new Date().toISOString(),
   }
-}
-
-export const upsertSeasonRows = ({ rows = [], season = {}, seasonDoc = {} } = {}) => {
-  const safeRows = Array.isArray(rows) ? rows : []
-  const seasonIndex = safeRows.findIndex(row => isSameSeason(row, season))
-
-  if (seasonIndex === -1) return [...safeRows, seasonDoc]
-
-  return safeRows.map((row, index) => (
-    index === seasonIndex
-      ? {
-        ...row,
-        ...seasonDoc,
-      }
-      : row
-  ))
 }

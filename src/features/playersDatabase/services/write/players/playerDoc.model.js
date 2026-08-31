@@ -106,19 +106,121 @@ const resolveManualImmediacyDecision = ({ player = {}, currentData = {} } = {}) 
   })
 }
 
+
+const PLAYER_SCOUT_V2_SEASON_FIELDS = [
+  'scoutSignals',
+  'scoutCombinations',
+  'scoutCandidateSignals',
+  'scoutEvidence',
+  'scoutSpotlights',
+  'scoutVerification',
+  'scoutProfileCaseStrength',
+  'scoutTrajectory',
+  'scoutTransferContext',
+  'futureCompetitionPath',
+  'scoutStatsLoadMeasurementHistory',
+  'teamPlayers',
+  'teamBalance',
+  'teamStats',
+  'scoutProfilesSummary',
+  'playersCount',
+  'teamUrl',
+  'leagueTotalRound',
+  'tableRank',
+  'tableAttackRank',
+  'tableDefenseRank',
+  'goalsForPerGame',
+  'goalsAgainstPerGame',
+  'teamAttackPerformance',
+  'teamDefensePerformance',
+]
+
+export const stripPlayerScoutV2SeasonFields = row => {
+  const next = row && typeof row === 'object' ? { ...row } : {}
+  PLAYER_SCOUT_V2_SEASON_FIELDS.forEach(field => {
+    delete next[field]
+  })
+  return next
+}
+
 export const normalizePlayerScoutStory = player => ({
-  scoutCandidateSignals: normalizeScoutProfileArray(player?.scoutCandidateSignals),
-  scoutEvidence: normalizeScoutProfileArray(player?.scoutEvidence),
-  scoutSpotlights: normalizeScoutProfileArray(player?.scoutSpotlights),
-  scoutOpportunity: compactScoutValue(player?.scoutOpportunity || null),
-  scoutVerification: compactScoutValue(player?.scoutVerification || null),
-  scoutProfileProgression: compactScoutValue(player?.scoutProfileProgression || null),
-  scoutProfileHierarchy: compactScoutValue(player?.scoutProfileHierarchy || null),
-  scoutProfileCaseStrength: compactScoutValue(player?.scoutProfileCaseStrength || null),
-  scoutPlayerInterest: compactScoutValue(player?.scoutPlayerInterest || null),
-  scoutTrajectory: normalizePlayerScoutTrajectory(player?.scoutTrajectory),
-  scoutTransferContext: compactScoutValue(player?.scoutTransferContext || null),
-  futureCompetitionPath: compactScoutValue(player?.futureCompetitionPath || null),
+  scoutOpportunity: compactScoutValue(
+    player?.scoutOpportunity && typeof player.scoutOpportunity === 'object'
+      ? {
+          effectiveActionStatus: clean(player.scoutOpportunity.effectiveActionStatus),
+          exposureLevel: clean(player.scoutOpportunity.exposureLevel),
+          netScore: Number.isFinite(Number(player.scoutOpportunity.netScore))
+            ? Number(player.scoutOpportunity.netScore)
+            : null,
+          reasons: normalizeScoutProfileArray(player.scoutOpportunity.reasons),
+        }
+      : null
+  ),
+  scoutProfileProgression: compactScoutValue(
+    player?.scoutProfileProgression && typeof player.scoutProfileProgression === 'object'
+      ? {
+          distances: (Array.isArray(player.scoutProfileProgression.distances)
+            ? player.scoutProfileProgression.distances
+            : []
+          ).map(item => ({
+            profileId: clean(item?.profileId),
+            distancePct: Number.isFinite(Number(item?.distancePct))
+              ? Number(item.distancePct)
+              : null,
+            status: clean(item?.status),
+            matched: Boolean(item?.matched),
+          })).filter(item => item.profileId),
+        }
+      : null
+  ),
+  scoutProfileHierarchy: compactScoutValue(
+    player?.scoutProfileHierarchy && typeof player.scoutProfileHierarchy === 'object'
+      ? {
+          primaryProfileId: clean(player.scoutProfileHierarchy.primaryProfileId),
+          primaryPreliminaryProfileId: clean(
+            player.scoutProfileHierarchy.primaryPreliminaryProfileId
+          ),
+          primaryProfileIdentity: clean(
+            player.scoutProfileHierarchy.primaryProfileIdentity
+          ),
+          professionalProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.professionalProfileIds
+          ),
+          supportingProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.supportingProfileIds
+          ),
+          supportingEvidenceProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.supportingEvidenceProfileIds
+          ),
+          opportunityProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.opportunityProfileIds
+          ),
+          preliminaryProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.preliminaryProfileIds
+          ),
+          orderedProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.orderedProfileIds
+          ),
+          suppressedProfileIds: normalizeScoutProfileArray(
+            player.scoutProfileHierarchy.suppressedProfileIds
+          ),
+          exclusiveFamilyWinners: compactScoutValue(
+            player.scoutProfileHierarchy.exclusiveFamilyWinners || {}
+          ),
+        }
+      : null
+  ),
+  scoutPlayerInterest: compactScoutValue(
+    player?.scoutPlayerInterest && typeof player.scoutPlayerInterest === 'object'
+      ? {
+          interestLevel: clean(player.scoutPlayerInterest.interestLevel),
+          reasons: normalizeScoutProfileArray(player.scoutPlayerInterest.reasons),
+          limitingFactors: normalizeScoutProfileArray(
+            player.scoutPlayerInterest.limitingFactors
+          ),
+        }
+      : null
+  ),
   scoutEngineVersion: clean(player?.scoutEngineVersion),
 })
 
@@ -138,48 +240,52 @@ export const normalizePlayerScoutProfiles = player => {
   return sourceProfiles
     .filter(profile => clean(profile.profileId || profile.id))
     .map(profile => {
-      const warnings = [
-        ...new Set(
-          (
-            Array.isArray(profile.warnings)
-              ? profile.warnings
-              : []
-          )
-            .map(clean)
-            .filter(Boolean)
-        ),
-      ]
+      const strength = (
+        profile.profileStrength ||
+        profile.profileDepth ||
+        profile.strength ||
+        {}
+      )
+      const confidence = profile.profileConfidence || profile.confidence || {}
 
       return compactScoutValue({
         profileId: clean(profile.profileId || profile.id),
-        profileLabel: clean(profile.profileLabel || profile.label),
-        profileShortLabel: clean(profile.profileShortLabel || profile.shortLabel),
         profileIdentity: clean(profile.profileIdentity || profile.identity),
-        classificationState: clean(profile.classificationState),
-        sourcePreliminaryProfileId: clean(profile.sourcePreliminaryProfileId),
-        reclassifiedToProfileId: clean(profile.reclassifiedToProfileId),
-        reclassificationReason: clean(profile.reclassificationReason),
-        perspective: clean(profile.perspective),
-        teamFilter: clean(profile.teamFilter),
-        positionContext: clean(profile.positionContext),
-        interestLevel: clean(profile.interestLevel || profile.interest),
-        profileDepth: profile.profileDepth || null,
-        profileStrength: profile.profileStrength || null,
-        profileConfidence: profile.profileConfidence || null,
-        warnings,
-        score: Number.isFinite(Number(profile.score))
-          ? Number(profile.score)
-          : null,
+        strength: {
+          depthPct: Number.isFinite(Number(strength.depthPct))
+            ? Number(strength.depthPct)
+            : null,
+          baseDepthPct: Number.isFinite(Number(strength.baseDepthPct))
+            ? Number(strength.baseDepthPct)
+            : null,
+          contextAdjustmentPct: Number.isFinite(Number(strength.contextAdjustmentPct))
+            ? Number(strength.contextAdjustmentPct)
+            : null,
+        },
+        confidence: {
+          level: clean(confidence.level),
+          reason: clean(confidence.reason),
+        },
         reasons: normalizeScoutProfileArray(profile.reasons),
-        requiredReview: normalizeScoutProfileArray(
-          profile.requiredReview || profile.reviews
-        ),
-        matchEvidence: normalizeScoutProfileArray(profile.matchEvidence),
-        scoutContext: profile.scoutContext || null,
-        spotlights: normalizeScoutProfileArray(profile.spotlights),
       })
     })
 }
+
+export const normalizePlayerScoutCombinationIds = player => (
+  [
+    ...new Set([
+      ...(Array.isArray(player?.scoutCombinationIds)
+        ? player.scoutCombinationIds.map(combinationId => clean(combinationId))
+        : []),
+      ...(Array.isArray(player?.scoutCombinations)
+        ? player.scoutCombinations
+          .map(combination => clean(
+            combination?.id || combination?.combinationId
+          ))
+        : []),
+    ].filter(Boolean)),
+  ]
+)
 
 export const normalizePlayerScoutCombinations = player => {
   const combinations = Array.isArray(player?.scoutCombinations)
@@ -206,9 +312,6 @@ export const normalizePlayerScoutCombinations = player => {
       ),
       group: clean(
         combination.group
-      ),
-      interest: clean(
-        combination.interest
       ),
       description: clean(
         combination.description

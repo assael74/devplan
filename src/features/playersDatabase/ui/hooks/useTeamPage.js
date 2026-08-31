@@ -72,6 +72,7 @@ export function useTeamPage() {
   )
   const [leagueDoc, setLeagueDoc] = useState(null)
   const [teamDoc, setTeamDoc] = useState(null)
+  const [teamSeasons, setTeamSeasons] = useState([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -87,6 +88,7 @@ export function useTeamPage() {
     setError('')
     setLeagueDoc(null)
     setTeamDoc(null)
+    setTeamSeasons([])
 
     readTeamPageData({
       leagueId,
@@ -96,11 +98,13 @@ export function useTeamPage() {
         if (!active) return
         setLeagueDoc(data.leagueDoc)
         setTeamDoc(data.teamDoc)
+        setTeamSeasons(data.teamSeasons || [])
       })
       .catch(err => {
         if (!active) return
         setLeagueDoc(null)
         setTeamDoc(null)
+        setTeamSeasons([])
         setError(err?.message || 'טעינת הקבוצה נכשלה')
       })
       .finally(() => {
@@ -122,11 +126,13 @@ export function useTeamPage() {
     () => buildTeamPageSeasonOptions(
       leagueDoc,
       teamDoc,
+      teamSeasons,
       teamId
     ),
     [
       leagueDoc,
       teamDoc,
+      teamSeasons,
       teamId,
     ]
   )
@@ -175,15 +181,18 @@ export function useTeamPage() {
   ])
   const selectedTeamSeason = useMemo(() => findTeamPageSeasonDoc({
     teamDoc,
+    teamSeasons,
     selectedSeasonOption,
   }), [
     teamDoc,
+    teamSeasons,
     selectedSeasonOption,
   ])
   const team = useMemo(() => buildTeamPageView({
     teamId,
     leagueDoc,
     teamDoc,
+    teamSeasons,
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
@@ -191,6 +200,7 @@ export function useTeamPage() {
     teamId,
     leagueDoc,
     teamDoc,
+    teamSeasons,
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
@@ -248,6 +258,7 @@ export function useTeamPage() {
     leagueDoc,
     team,
     teamDoc,
+    teamSeasons,
     players,
     hasTeamPlayers: players.length > 0,
     seasonOptions,

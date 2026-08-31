@@ -17,6 +17,12 @@ import {
   clean,
   toNumber,
 } from './teamPage.utils.js'
+import { isValidExternalPlayerId } from '../../../../model/playerIdentity.model.js'
+
+const resolvePlayerIdFromUrl = value => {
+  const match = clean(value).match(/[?&]player_id=(\d+)/i)
+  return match?.[1] || ''
+}
 
 const getStatsCell = ({
   cells,
@@ -58,29 +64,44 @@ const buildParsedStatsRow = ({
     fallback,
     key: 'index',
   })
+  const birthYear = toNumber(getStatsCell({
+    cells,
+    headerMap,
+    fallback,
+    key: 'birthYear',
+  }))
+  const playerUrl = clean(getStatsCell({
+    cells,
+    headerMap,
+    fallback,
+    key: 'playerUrl',
+  }))
+  const mappedExternalPlayerId = clean(getStatsCell({
+    cells,
+    headerMap,
+    fallback,
+    key: 'externalPlayerId',
+  }))
+  const urlExternalPlayerId = resolvePlayerIdFromUrl(playerUrl)
+  const externalPlayerId = isValidExternalPlayerId({
+    externalPlayerId: urlExternalPlayerId,
+    birthYear,
+  })
+    ? urlExternalPlayerId
+    : isValidExternalPlayerId({
+      externalPlayerId: mappedExternalPlayerId,
+      birthYear,
+    })
+      ? mappedExternalPlayerId
+      : ''
 
   return {
     id: `${rowIndex + 1}_${fullName || cells[0] || 'player'}`,
     index: index || `${rowIndex + 1}`,
     fullName,
-    birthYear: toNumber(getStatsCell({
-      cells,
-      headerMap,
-      fallback,
-      key: 'birthYear',
-    })),
-    externalPlayerId: clean(getStatsCell({
-      cells,
-      headerMap,
-      fallback,
-      key: 'externalPlayerId',
-    })),
-    playerUrl: clean(getStatsCell({
-      cells,
-      headerMap,
-      fallback,
-      key: 'playerUrl',
-    })),
+    birthYear,
+    externalPlayerId,
+    playerUrl,
     games: toNumber(getStatsCell({
       cells,
       headerMap,
@@ -143,7 +164,7 @@ export const parsePlayerStatsRows = value => {
     ? rows.slice(headerRowIndex + 1)
     : rows
 
-  return dataRows.map((row, index) => {
+  const parsedRows = dataRows.map((row, index) => {
     const cells = splitStatsCells(row)
     const looseRow = (
       !hasMappedStatsHeader(headerMap) &&
@@ -160,4 +181,6 @@ export const parsePlayerStatsRows = value => {
       rowIndex: index,
     })
   })
+
+  return parsedRows
 }

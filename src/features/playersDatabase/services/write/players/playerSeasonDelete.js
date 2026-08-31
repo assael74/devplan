@@ -1,9 +1,6 @@
 // features/playersDatabase/services/write/players/playerSeasonDelete.js
 
-import {
-  doc,
-  serverTimestamp,
-} from 'firebase/firestore'
+import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
@@ -11,6 +8,7 @@ import {
   trackedGetDoc,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
 import {
   buildSeasonKey,
   clean,
@@ -19,6 +17,8 @@ import {
   buildPlayerSeasonScope,
   isSamePlayerSeasonScope,
 } from '../shared/playerSeasonScope.js'
+import { playerDocRef } from './playerDoc.model.js'
+import { shouldHavePlayerDocument } from './scoutingPlayerLifecycle.model.js'
 
 const shouldRemoveSeason = ({
   row = {},
@@ -42,7 +42,13 @@ export async function removePlayerSeasonDocsMany({
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
   const leagueId = clean(season.leagueId || team.leagueId)
-  const ids = [...new Set((Array.isArray(playerDocumentIds) ? playerDocumentIds : []).map(clean).filter(Boolean))]
+  const ids = [...new Set(
+    (Array.isArray(playerDocumentIds) ? playerDocumentIds : [])
+      .map(playerDocumentId => resolveWritablePlayerDocumentId({
+        playerDocumentId,
+      }))
+      .filter(Boolean)
+  )]
   if (!seasonId && !seasonKey) return { rowsCount: 0 }
   if (!ids.length) return { rowsCount: 0 }
 
@@ -57,7 +63,7 @@ export async function removePlayerSeasonDocsMany({
   let deletedCount = 0
 
   for (const playerDocumentId of ids) {
-    const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.players, playerDocumentId)
+    const ref = playerDocRef(playerDocumentId)
     const snapshot = await trackedGetDoc(ref, {
       feature: 'playersDatabase',
       collection: PLAYERS_DATABASE_COLLECTIONS.players,
@@ -91,7 +97,11 @@ export async function removePlayerSeasonDocsMany({
 
     rowsCount += 1
 
-    if (!current.length && !history.length) {
+    if (!shouldHavePlayerDocument({
+      ...data,
+      current,
+      history,
+    })) {
       deletedCount += 1
       batch.delete(ref)
       continue
@@ -120,4 +130,3 @@ export async function removePlayerSeasonDocsMany({
     target: clean(target),
   }
 }
-

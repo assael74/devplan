@@ -1,7 +1,6 @@
 // src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.model.js
 
 import { serverTimestamp } from 'firebase/firestore'
-import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import { adaptTeamScoutEngineRow } from '../../../../domain/index.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
@@ -16,40 +15,21 @@ import {
   toNumberOrZero,
 } from '../../leagues/leagueDoc.js'
 import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import {
+  buildTeamPerformanceProjectionFromTableRows,
+} from '../../shared/teamPerformanceProjection.js'
+import {
+  resolveClubLevel,
+  resolveClubStrengthLevel,
+} from '../../shared/teamClubContext.js'
 
 import { pickDefinedValue } from '../../../../model/value.model.js'
 export const normalizeText = value =>
   clean(value).toLowerCase()
 
-export const resolveClubLevel = ({ clubId = '', clubLevel = null } = {}) => {
-  const directClubLevel = Number(clubLevel)
-  if (Number.isFinite(directClubLevel) && directClubLevel > 0) return directClubLevel
-
-  const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clean(clubId))
-  return toNumberOrZero(club?.clubLevel)
-}
-
-export const resolveClubStrengthLevel = ({
-  clubId = '',
-  clubLevel = null,
-  clubStrengthLevel = null,
-} = {}) => {
-  const directStrengthLevel = Number(clubStrengthLevel)
-  if (Number.isFinite(directStrengthLevel) && directStrengthLevel > 0) {
-    return directStrengthLevel
-  }
-
-  const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === clean(clubId))
-  const catalogStrengthLevel = Number(club?.clubStrengthLevel)
-
-  if (Number.isFinite(catalogStrengthLevel) && catalogStrengthLevel > 0) {
-    return catalogStrengthLevel
-  }
-
-  return resolveClubLevel({
-    clubId,
-    clubLevel,
-  })
+export {
+  resolveClubLevel,
+  resolveClubStrengthLevel,
 }
 
 const resolveNeedLevel = ({ needs = [], id = '' } = {}) => {
@@ -68,6 +48,60 @@ export const roundNumber = (value, digits = 3) => {
 const roundOptionalWholeNumber = value => {
   const number = Number(value)
   return Number.isFinite(number) ? Math.round(number) : null
+}
+
+// These fields are a League-table Scout projection. They remain valid when
+// the Team SearchIndex is League-only and must not be reset with roster state.
+export const buildTeamSearchIndexLeagueScoutProjection = ({
+  league = {},
+  season = {},
+  scoutResult = null,
+} = {}) => {
+  const scoutSource = scoutResult || {}
+  const performance = adaptTeamScoutEngineRow({
+    row: scoutSource,
+    source: {
+      engineVersion: 'scouting-v2',
+      normalization: scoutSource.normalization || {},
+      leagueLevel: league.level,
+      leagueGames: season.leagueTotalRound,
+      calculatedAt: season.updatedAt || null,
+    },
+  })
+  const offense = performance.offense
+  const defense = performance.defense
+
+  return {
+    attackScoutPriorityScore: roundOptionalWholeNumber(
+      pickDefinedValue(offense?.scoutPriorityScore, offense?.scoutPriorityRate)
+    ),
+    attackPriorityLevel: pickDefinedValue(offense?.priorityLevel, ''),
+    attackOpportunityType: pickDefinedValue(offense?.opportunityType, ''),
+    defenseScoutPriorityScore: roundOptionalWholeNumber(
+      pickDefinedValue(defense?.scoutPriorityScore, defense?.scoutPriorityRate)
+    ),
+    defensePriorityLevel: pickDefinedValue(defense?.priorityLevel, ''),
+    defenseOpportunityType: pickDefinedValue(defense?.opportunityType, ''),
+    teamScoutEngineVersion: 'scouting-v2',
+    scoutCompetitionRelation: clean(scoutSource.scoutContext?.competition?.relation),
+    scoutCompetitionGap: scoutSource.scoutContext?.competition?.gap === null ||
+      scoutSource.scoutContext?.competition?.gap === undefined
+      ? null
+      : Number(scoutSource.scoutContext.competition.gap),
+    attackingNeedLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'attacking_need',
+    }),
+    defensiveNeedLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'defensive_need',
+    }),
+    balanceProblemLevel: resolveNeedLevel({
+      needs: scoutSource.needs,
+      id: 'balance_problem',
+    }),
+    recruitmentWindow: clean(scoutSource.recruitmentOpportunity?.window) || 'none',
+  }
 }
 
 export const buildTeamSeasonIndexId = ({
@@ -136,6 +170,7 @@ export const buildTeamSeasonIndexDoc = ({
   row = {},
   tableAttackRank = 0,
   tableDefenseRank = 0,
+  teamPerformance = null,
   scoutResult = null,
 } = {}) => {
   const leagueId = clean(league.id || season.leagueId || row.leagueId)
@@ -155,22 +190,26 @@ export const buildTeamSeasonIndexDoc = ({
     teamId,
     clubId,
   })
-  const games = getRowGames(row)
-  const goalsFor = getRowGoalsFor(row)
-  const goalsAgainst = getRowGoalsAgainst(row)
+  const performanceProjection = teamPerformance ||
+    buildTeamPerformanceProjectionFromTableRows({
+      rows: [row],
+      team: row,
+      tableAttackRank,
+      tableDefenseRank,
+    }) || {
+      tableRank: getRowTableRank(row),
+      tableAttackRank: toNumberOrZero(tableAttackRank),
+      tableDefenseRank: toNumberOrZero(tableDefenseRank),
+      teamGamePlayed: getRowGames(row),
+      goalsFor: getRowGoalsFor(row),
+      goalsAgainst: getRowGoalsAgainst(row),
+      goalsForPerGame: 0,
+      goalsAgainstPerGame: 0,
+    }
+  const games = performanceProjection.teamGamePlayed
+  const goalsFor = performanceProjection.goalsFor
+  const goalsAgainst = performanceProjection.goalsAgainst
   const scoutSource = scoutResult || {}
-  const performance = adaptTeamScoutEngineRow({
-    row: scoutSource,
-    source: {
-      engineVersion: 'scouting-v2',
-      normalization: scoutSource.normalization || {},
-      leagueLevel: league.level,
-      leagueGames: season.leagueTotalRound,
-      calculatedAt: season.updatedAt || null,
-    },
-  })
-  const offense = performance.offense
-  const defense = performance.defense
   const points = getRowPoints(row)
   const normalization = buildTeamSeasonSearchMetrics({
     target,
@@ -231,54 +270,24 @@ export const buildTeamSeasonIndexDoc = ({
     seasonDataStatus: resolveSeasonDataStatus(target),
     seasonDataCompleteness: resolveSeasonDataCompleteness(target),
 
-    tableRank: getRowTableRank(row),
-    tableAttackRank: toNumberOrZero(tableAttackRank),
-    tableDefenseRank: toNumberOrZero(tableDefenseRank),
+    tableRank: performanceProjection.tableRank,
+    tableAttackRank: performanceProjection.tableAttackRank,
+    tableDefenseRank: performanceProjection.tableDefenseRank,
 
     points,
     goalsFor,
     goalsAgainst,
-    goalsForPerGame: games ? roundNumber(goalsFor / games) : 0,
-    goalsAgainstPerGame: games ? roundNumber(goalsAgainst / games) : 0,
+    goalsForPerGame: performanceProjection.goalsForPerGame,
+    goalsAgainstPerGame: performanceProjection.goalsAgainstPerGame,
     teamGamePlayed: games,
     ...normalization,
     teamPerformanceSchemaVersion: 5,
 
-    attackScoutPriorityScore: roundOptionalWholeNumber(
-      pickDefinedValue(offense?.scoutPriorityScore, offense?.scoutPriorityRate)
-    ),
-    attackPriorityLevel: pickDefinedValue(offense?.priorityLevel, ''),
-    attackOpportunityType: pickDefinedValue(offense?.opportunityType, ''),
-
-    defenseScoutPriorityScore: roundOptionalWholeNumber(
-      pickDefinedValue(defense?.scoutPriorityScore, defense?.scoutPriorityRate)
-    ),
-    defensePriorityLevel: pickDefinedValue(defense?.priorityLevel, ''),
-    defenseOpportunityType: pickDefinedValue(defense?.opportunityType, ''),
-
-    teamScoutEngineVersion: 'scouting-v2',
-    scoutCompetitionRelation: clean(
-      scoutSource.scoutContext?.competition?.relation
-    ),
-    scoutCompetitionGap: scoutSource.scoutContext?.competition?.gap === null ||
-      scoutSource.scoutContext?.competition?.gap === undefined
-      ? null
-      : Number(scoutSource.scoutContext.competition.gap),
-    attackingNeedLevel: resolveNeedLevel({
-      needs: scoutSource.needs,
-      id: 'attacking_need',
+    ...buildTeamSearchIndexLeagueScoutProjection({
+      league,
+      season,
+      scoutResult: scoutSource,
     }),
-    defensiveNeedLevel: resolveNeedLevel({
-      needs: scoutSource.needs,
-      id: 'defensive_need',
-    }),
-    balanceProblemLevel: resolveNeedLevel({
-      needs: scoutSource.needs,
-      id: 'balance_problem',
-    }),
-    recruitmentWindow: clean(
-      scoutSource.recruitmentOpportunity?.window
-    ) || 'none',
 
     playersCount: toNumberOrZero(row.playersCount),
     scoutProfilesSummary: {

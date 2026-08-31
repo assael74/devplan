@@ -100,7 +100,12 @@ export async function updateTeamUrlFlow(payload = {}) {
   }
 
   try {
-    results.teamSeasonIndexResult = await updateTeamSeasonSearchIndexTeamUrl(nextPayload)
+    results.teamSeasonIndexResult = await updateTeamSeasonSearchIndexTeamUrl({
+      ...nextPayload,
+      teamSeasonDocumentId: results.teamSeasonResult?.updated
+        ? results.teamSeasonResult.teamSeasonDocumentId
+        : '',
+    })
   } catch (error) {
     throw buildSyncError({
       stage: 'updateTeamSeasonSearchIndexTeamUrl',

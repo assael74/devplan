@@ -23,6 +23,14 @@ export function InfoPlayerSection({ game }) {
     subline: team?.club?.name,
   })
 
+  const handleOpenVideo = event => {
+    event.stopPropagation()
+
+    if (game?.vLink) {
+      window.open(game.vLink, '_blank')
+    }
+  }
+
   return (
     <Box sx={sx.infoCellSx}>
       <Box>
@@ -76,9 +84,7 @@ export function InfoPlayerSection({ game }) {
           <Tooltip title={game?.hasVideo ? 'צפייה בוידאו' : 'אין וידאו'} arrow>
             <Box
               sx={{ display: 'flex', alignItems: 'center', cursor: game?.hasVideo ? 'pointer' : 'default' }}
-              onClick={() => {
-                if (game?.vLink) window.open(game.vLink, '_blank')
-              }}
+              onClick={handleOpenVideo}
             >
               {iconUi({id: game?.videoIcon, size: 'sm', sx: { color: game?.videoColor } })}
             </Box>

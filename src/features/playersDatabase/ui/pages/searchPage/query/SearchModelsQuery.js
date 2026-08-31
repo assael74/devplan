@@ -91,7 +91,6 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
             fields={[
               'parameters',
               'group',
-              'interest',
               'teamFilter',
               'positionContext',
               'positionDependency',

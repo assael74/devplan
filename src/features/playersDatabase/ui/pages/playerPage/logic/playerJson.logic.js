@@ -40,3 +40,30 @@ export function downloadTeamJson(teamDocument = {}) {
 
   downloadJson(teamDocument, `team-${teamId}`)
 }
+
+export function downloadTeamSeasonJson(teamSeasonDocument = {}) {
+  const teamId = safeFilePart(
+    teamSeasonDocument.birthTeamDocumentId ||
+    teamSeasonDocument.birthTeamId ||
+    teamSeasonDocument.teamId ||
+    teamSeasonDocument.id
+  )
+  const seasonKey = safeFilePart(
+    teamSeasonDocument.seasonKey ||
+    teamSeasonDocument.seasonId
+  )
+
+  downloadJson(teamSeasonDocument, `team-season-${teamId}-${seasonKey}`)
+}
+
+export function downloadPlayerSearchIndexJson(searchIndexDocument = {}) {
+  const documentId = safeFilePart(searchIndexDocument.id || searchIndexDocument.entityId)
+
+  downloadJson(searchIndexDocument, `player-search-index-${documentId}`)
+}
+
+export function downloadTeamSearchIndexJson(searchIndexDocument = {}) {
+  const documentId = safeFilePart(searchIndexDocument.id || searchIndexDocument.entityId)
+
+  downloadJson(searchIndexDocument, `team-search-index-${documentId}`)
+}

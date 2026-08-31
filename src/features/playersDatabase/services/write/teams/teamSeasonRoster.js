@@ -1,123 +1,166 @@
 // features/playersDatabase/services/write/teams/teamSeasonRoster.js
 
-
-
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
-import {
-  isSameSeason,
-  normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+import { normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
-import {
-  buildTeamBaseDoc,
-  teamDocRef,
-} from './teamDoc.js'
+import { buildTeamRootWithSeasonIndex, teamDocRef } from './teamDoc.js'
 import {
   buildPlayerLookup,
   buildTeamSeasonDoc,
   findExistingPlayerIndex,
   normalizeTeamPlayer,
-  upsertSeasonRows,
+  normalizeTeamSeasonRosterState,
 } from './teamSeason.model.js'
-
+import {
+  buildTeamSeasonDocumentData,
+  teamSeasonDocRef,
+} from './teamSeasonDoc.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
+import {
+  applyTeamPerformanceProjection,
+  buildPersistedTeamPerformanceFallback,
+} from '../shared/teamPerformanceProjection.js'
+
+const withRosterPerformanceContext = ({
+  seasonDoc = {},
+  existingSeason = null,
+  teamPerformance = null,
+} = {}) => applyTeamPerformanceProjection({
+  team: seasonDoc,
+  performance: teamPerformance || buildPersistedTeamPerformanceFallback(existingSeason || seasonDoc),
+})
+
+const buildEffectiveSeason = ({ season = {} } = {}) => {
+  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
+  if (!seasonId && !seasonKey) throw new Error('Missing season id')
+  const seasonStatus = clean(season.seasonStatus)
+
+  if (!['active', 'completed'].includes(seasonStatus)) {
+    const error = new Error('League season lifecycle could not be resolved')
+    error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
+    throw error
+  }
+
+  return {
+    ...season,
+    seasonId,
+    seasonKey,
+    seasonStatus,
+  }
+}
+
+const resolvePersistedSeasonStatus = ({ existingStatus, incomingStatus } = {}) => (
+  clean(existingStatus) === 'completed' || clean(incomingStatus) === 'completed'
+    ? 'completed'
+    : 'active'
+)
+
+const syncRootSeasonIndexInTransaction = ({
+  transaction,
+  rootRef,
+  team,
+  rootSnapshot,
+  season,
+}) => {
+  transaction.set(rootRef, buildTeamRootWithSeasonIndex({
+    team: {
+      ...team,
+      birthTeamDocumentId: rootRef.id,
+    },
+    currentData: rootSnapshot.exists() ? rootSnapshot.data() || {} : {},
+    season,
+  }))
+
+  return !rootSnapshot.exists()
+}
+
+const buildBalanceRootContext = ({ team, teamId }) => ({
+  ...team,
+  id: teamId,
+  birthTeamDocumentId: teamId,
+})
+
 export async function upsertTeamSeasonPlayers({
   season = {},
   team = {},
-  target = 'current',
   players = [],
+  teamPerformance = null,
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId && !seasonKey) throw new Error('Missing season id')
 
-  const ref = teamDocRef(teamId)
+  const effectiveSeason = buildEffectiveSeason({ season })
+  const rootRef = teamDocRef(teamId)
+  const seasonRef = teamSeasonDocRef({
+    birthTeamDocumentId: teamId,
+    seasonKey: effectiveSeason.seasonKey,
+  })
 
   return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    const currentData = snapshot.exists() ? snapshot.data() || {} : {}
-    const baseDoc = buildTeamBaseDoc({
-      ...team,
-      teamDocumentId: teamId,
-    }, currentData)
-    const isHistory = clean(target) === 'history'
-    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
-      ? 'completed'
-      : 'active'
-    const effectiveSeason = {
-      ...season,
-      seasonId,
-      seasonKey,
-      seasonStatus,
+    const [rootSnapshot, seasonSnapshot] = await Promise.all([
+      transaction.get(rootRef),
+      transaction.get(seasonRef),
+    ])
+    const existingSeason = seasonSnapshot.exists() ? seasonSnapshot.data() || {} : null
+    const persistedSeasonScope = {
+      ...effectiveSeason,
+      seasonStatus: resolvePersistedSeasonStatus({
+        existingStatus: existingSeason?.seasonStatus,
+        incomingStatus: effectiveSeason.seasonStatus,
+      }),
     }
-    const targetRows = isHistory ? baseDoc.history : baseDoc.current
-    const existingSeason = (Array.isArray(targetRows) ? targetRows : [])
-      .find(row => isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      }))
 
     if (Array.isArray(existingSeason?.teamPlayers) && existingSeason.teamPlayers.length > 0) {
       const error = new Error('Team roster already exists for this season')
       error.code = 'TEAM_ROSTER_ALREADY_EXISTS'
-      error.seasonId = seasonId
+      error.seasonId = effectiveSeason.seasonId
       error.teamId = teamId
       throw error
     }
 
-    const seasonDocWithoutBalance = buildTeamSeasonDoc({
-      season: effectiveSeason,
-      team: {
-        ...team,
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-      },
-      players,
+    const seasonDocWithoutBalance = withRosterPerformanceContext({
+      seasonDoc: buildTeamSeasonDoc({
+        season: persistedSeasonScope,
+        team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+        players,
+      }),
+      existingSeason,
+      teamPerformance,
     })
     const seasonDoc = withTeamBalanceSnapshot({
       seasonDoc: seasonDocWithoutBalance,
-      teamDocument: baseDoc,
-      seasonTarget: isHistory ? 'history' : 'current',
+      teamRoot: buildBalanceRootContext({ team, teamId }),
     })
-    const nextData = isHistory
-      ? {
-          ...baseDoc,
-          history: upsertSeasonRows({
-            rows: baseDoc.history,
-            season: {
-              seasonId,
-              seasonKey,
-            },
-            seasonDoc,
-          }),
-        }
-      : {
-          ...baseDoc,
-          current: upsertSeasonRows({
-            rows: baseDoc.current,
-            season: {
-              seasonId,
-              seasonKey,
-            },
-            seasonDoc,
-          }),
-        }
+    const persistedSeason = buildTeamSeasonDocumentData({
+      team: { ...team, birthTeamDocumentId: teamId },
+      season: persistedSeasonScope,
+      seasonDoc,
+      existingData: existingSeason || {},
+    })
 
-    transaction.set(ref, nextData, { merge: true })
+    const createdTeam = syncRootSeasonIndexInTransaction({
+      transaction,
+      rootRef,
+      team,
+      rootSnapshot,
+      season: persistedSeason,
+    })
+    transaction.set(seasonRef, persistedSeason)
 
     return {
       birthTeamDocumentId: teamId,
       teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
-      playersCount: seasonDoc.teamPlayers.length,
-      createdTeam: !snapshot.exists(),
-      players: seasonDoc.teamPlayers,
-      teamBalance: seasonDoc.teamBalance || null,
+      teamSeasonDocumentId: seasonRef.id,
+      seasonId: persistedSeasonScope.seasonId,
+      seasonKey: persistedSeasonScope.seasonKey,
+      target: persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
+      playersCount: persistedSeason.teamPlayers.length,
+      createdTeam,
+      players: persistedSeason.teamPlayers,
+      teamBalance: persistedSeason.teamBalance || null,
+      seasonDocument: persistedSeason,
     }
   })
 }
@@ -125,40 +168,33 @@ export async function upsertTeamSeasonPlayers({
 export async function appendTeamSeasonPlayer({
   season = {},
   team = {},
-  target = 'current',
   player = {},
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
-  const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId && !seasonKey) throw new Error('Missing season id')
 
-  const ref = teamDocRef(teamId)
+  const effectiveSeason = buildEffectiveSeason({ season })
+  const ref = teamSeasonDocRef({
+    birthTeamDocumentId: teamId,
+    seasonKey: effectiveSeason.seasonKey,
+  })
 
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) throw new Error('Team document not found')
+    if (!snapshot.exists()) throw new Error('Team season not found')
 
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildTeamBaseDoc({
-      ...team,
-      teamDocumentId: teamId,
-    }, currentData)
-    const isHistory = clean(target) === 'history'
-    const targetRows = isHistory ? baseDoc.history : baseDoc.current
-    const seasonIndex = (Array.isArray(targetRows) ? targetRows : [])
-      .findIndex(row => isSameSeason(row, {
-        seasonId,
-        seasonKey,
-      }))
-
-    if (seasonIndex === -1) throw new Error('Team season not found')
-
-    const existingSeason = targetRows[seasonIndex] || {}
+    const existingSeason = snapshot.data() || {}
+    const persistedSeasonScope = {
+      ...effectiveSeason,
+      seasonStatus: resolvePersistedSeasonStatus({
+        existingStatus: existingSeason.seasonStatus,
+        incomingStatus: effectiveSeason.seasonStatus,
+      }),
+    }
     const existingPlayers = Array.isArray(existingSeason.teamPlayers)
       ? existingSeason.teamPlayers
       : []
-    const normalizedPlayer = normalizeTeamPlayer(player, season)
+    const normalizedPlayer = normalizeTeamPlayer(player, persistedSeasonScope)
     const existingIndex = findExistingPlayerIndex({
       lookup: buildPlayerLookup(existingPlayers),
       player: normalizedPlayer,
@@ -172,41 +208,35 @@ export async function appendTeamSeasonPlayer({
     }
 
     const nextPlayers = [...existingPlayers, normalizedPlayer]
-    const nextSeasonWithoutBalance = {
-      ...existingSeason,
-      teamPlayers: nextPlayers,
-      updatedAt: new Date().toISOString(),
-    }
     const nextSeason = withTeamBalanceSnapshot({
-      seasonDoc: nextSeasonWithoutBalance,
-      teamDocument: baseDoc,
-      seasonTarget: isHistory ? 'history' : 'current',
+      seasonDoc: normalizeTeamSeasonRosterState({
+        seasonDoc: existingSeason,
+        season: persistedSeasonScope,
+        team: { ...team, birthTeamDocumentId: teamId },
+        players: nextPlayers,
+      }),
+      teamRoot: buildBalanceRootContext({ team, teamId }),
     })
-    const nextRows = targetRows.map((row, index) => (
-      index === seasonIndex ? nextSeason : row
-    ))
-    const nextData = isHistory
-      ? {
-        ...baseDoc,
-        history: nextRows,
-      }
-      : {
-        ...baseDoc,
-        current: nextRows,
-      }
-
-    transaction.set(ref, nextData, { merge: true })
+    const persistedSeason = buildTeamSeasonDocumentData({
+      team: { ...team, birthTeamDocumentId: teamId },
+      season: persistedSeasonScope,
+      seasonDoc: nextSeason,
+      existingData: existingSeason,
+    })
+    transaction.set(ref, persistedSeason)
 
     return {
       birthTeamDocumentId: teamId,
       teamDocumentId: teamId,
-      seasonId,
-      seasonKey,
-      target: isHistory ? 'history' : 'current',
+      teamSeasonDocumentId: ref.id,
+      seasonId: persistedSeasonScope.seasonId,
+      seasonKey: persistedSeasonScope.seasonKey,
+      target: persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
       playersCount: nextPlayers.length,
-      players: nextPlayers,
+      players: persistedSeason.teamPlayers,
       player: normalizedPlayer,
-      teamBalance: nextSeason.teamBalance || null,
+      teamBalance: persistedSeason.teamBalance || null,
+      seasonDocument: persistedSeason,
     }
   })
 }

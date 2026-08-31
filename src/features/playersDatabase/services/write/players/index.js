@@ -34,10 +34,11 @@
 export {
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
+  normalizePlayerScoutCombinationIds,
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
   normalizePlayerScoutStory,
-  removePlayerSeasonScoutProfile,
+  clearExistingPlayerSeasonProfilesMany,
   resolveExistingPlayerDocumentIds,
   syncPlayerScoutProfileDocsMany,
   syncPlayerRoleAndScoutProfileDoc,

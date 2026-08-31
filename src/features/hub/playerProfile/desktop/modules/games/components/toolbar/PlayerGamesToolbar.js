@@ -49,39 +49,27 @@ export default function PlayerGamesToolbar({
   return (
     <Box sx={sx.toolbar}>
       <Box sx={sx.toolbarTop}>
-        <Chip
-          size="sm"
-          variant="soft"
-          color="danger"
-          disabled={!hasActiveFilters}
-          onClick={onResetFilters}
-          startDecorator={iconUi({ id: 'reset' })}
-          sx={{ cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
-        >
-          איפוס
-        </Chip>
-
         <Input
           value={filters?.search || ''}
           onChange={(e) => onChangeFilters({ search: e.target.value })}
           startDecorator={iconUi({ id: 'search' })}
           placeholder="חיפוש לפי יריבה, תוצאה, סוג משחק"
           size="sm"
-          sx={{ width: 240, maxWidth: '100%', flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
         />
 
         <Select
           size="sm"
           value={filters?.typeKey || ''}
           onChange={(_, v) => onChangeFilters({ typeKey: v || '' })}
-          sx={{ minWidth: 122, flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
           slotProps={{ listbox: { sx: sx.listboxSx } }}
           renderValue={() => (
             <PlayerGamesToolbarSelectValue
               label={selectedType?.label || 'כל סוגי המשחקים'}
               icon={selectedType?.idIcon || 'game'}
               count={selectedType?.count ?? totalGames}
-              fixedWidth={{ minWidth: 122 }}
+              fixedWidth="100%"
             />
           )}
         >
@@ -108,7 +96,7 @@ export default function PlayerGamesToolbar({
           size="sm"
           value={filters?.homeKey || ''}
           onChange={(_, v) => onChangeFilters({ homeKey: v || '' })}
-          sx={{ minWidth: 150, flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
           slotProps={{ listbox: { sx: sx.listboxSx } }}
           renderValue={() => (
             <PlayerGamesToolbarSelectValue
@@ -116,7 +104,7 @@ export default function PlayerGamesToolbar({
               icon={selectedHome?.idIcon || 'home'}
               count={selectedHome?.count ?? totalGames}
               color={getHomeOptionColor(selectedHome)}
-              fixedWidth={{ minWidth: 150 }}
+              fixedWidth="100%"
             />
           )}
         >
@@ -147,14 +135,14 @@ export default function PlayerGamesToolbar({
           size="sm"
           value={filters?.resultKey || ''}
           onChange={(_, v) => onChangeFilters({ resultKey: v || '' })}
-          sx={{ minWidth: 156, flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
           slotProps={{ listbox: { sx: sx.listboxSx } }}
           renderValue={() => (
             <PlayerGamesToolbarSelectValue
               label={selectedResult?.label || 'כל התוצאות'}
               icon={selectedResult?.idIcon || 'result'}
               count={selectedResult?.count ?? totalGames}
-              fixedWidth={{ minWidth: 156, flexShrink: 0 }}
+              fixedWidth="100%"
             />
           )}
         >
@@ -181,14 +169,14 @@ export default function PlayerGamesToolbar({
           size="sm"
           value={filters?.difficultyKey || ''}
           onChange={(_, v) => onChangeFilters({ difficultyKey: v || '' })}
-          sx={{ minWidth: 156, flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
           slotProps={{ listbox: { sx: sx.listboxSx } }}
           renderValue={() => (
             <PlayerGamesToolbarSelectValue
               label={selectedDifficulty?.label || 'כל רמות הקושי'}
               icon={selectedDifficulty?.idIcon || 'difficulty'}
               count={selectedDifficulty?.count ?? totalGames}
-              fixedWidth={{ minWidth: 156 }}
+              fixedWidth="100%"
             />
           )}
         >
@@ -215,14 +203,14 @@ export default function PlayerGamesToolbar({
           size="sm"
           value={filters?.ratingKey || ''}
           onChange={(_, v) => onChangeFilters({ ratingKey: v || '' })}
-          sx={{ minWidth: 156, flexShrink: 0 }}
+          sx={{ width: '100%', minWidth: 0 }}
           slotProps={{ listbox: { sx: sx.listboxSx } }}
           renderValue={() => (
             <PlayerGamesToolbarSelectValue
               label={selectedRating?.label || 'כל מדדי היעילות'}
               icon={selectedRating?.idIcon || 'scoringRating'}
               count={selectedRating?.count ?? totalGames}
-              fixedWidth={{ minWidth: 156 }}
+              fixedWidth="100%"
             />
           )}
         >
@@ -244,6 +232,24 @@ export default function PlayerGamesToolbar({
             </Option>
           ))}
         </Select>
+
+        <Chip
+          size="sm"
+          variant="soft"
+          color="danger"
+          disabled={!hasActiveFilters}
+          onClick={onResetFilters}
+          startDecorator={iconUi({ id: 'reset' })}
+          sx={{
+            gridColumn: '-2 / -1',
+            justifySelf: 'end',
+            cursor: 'pointer',
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          איפוס
+        </Chip>
 
       </Box>
 

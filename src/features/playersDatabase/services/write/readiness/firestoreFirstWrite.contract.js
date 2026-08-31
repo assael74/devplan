@@ -10,7 +10,7 @@ export const PLAYERS_DATABASE_FIRST_WRITE_SCENARIOS = {
         'teamPlayers',
         'playersCount',
         'scoutProfilesSummary',
-        'teamBalance',
+        'compact teamBalance summary snapshot',
       ],
       teamSearchIndex: [
         'entityType',
@@ -38,7 +38,7 @@ export const PLAYERS_DATABASE_FIRST_WRITE_SCENARIOS = {
         'teamPlayers with stats',
         'playersCount',
         'scoutProfilesSummary',
-        'teamBalance',
+        'compact teamBalance summary snapshot',
       ],
       teamSearchIndex: [
         'entityType',

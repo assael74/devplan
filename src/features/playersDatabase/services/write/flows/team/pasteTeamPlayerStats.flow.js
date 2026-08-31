@@ -10,11 +10,17 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import {
+  updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerStats,
 } from '../../teams/index.js'
 import { buildScoutProfilesSummary } from '../shared.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
+import {
+  buildLeagueTeamPerformanceProjection,
+  resolveLeagueSeasonStatus,
+} from '../../shared/teamPerformanceProjection.js'
+import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
 
 const buildSyncError = ({ stage, cause, results = {} }) => {
   const error = new Error(cause?.message || `Player stats sync failed at ${stage}`)
@@ -81,21 +87,87 @@ const assertTeamSeasonUpdated = result => {
   }
 }
 
+const assertStatsIdentityDecisions = players => {
+  const unresolved = (Array.isArray(players) ? players : []).filter(player => {
+    const status = String(player?.identityMatchStatus || '').trim()
+    const approvedNew = String(player?.identityResolution || '').trim() === 'createNew'
+
+    return !['provided', 'matched'].includes(status) && !(status === 'created' && approvedNew)
+  })
+
+  if (!unresolved.length) return
+
+  const error = new Error('כל שחקן שאינו מזוהה חייב התאמת מערכת או אישור מפורש ליצירת שחקן חדש')
+  error.code = 'STATS_PLAYER_IDENTITY_DECISION_REQUIRED'
+  error.players = unresolved.map(player => player.originalFullName || player.fullName || '')
+  throw error
+}
+
+const deriveSeasonTarget = season => (
+  String(season?.seasonStatus || '').trim() === 'completed'
+    ? 'history'
+    : 'current'
+)
+
+const resolveLeagueSeasonLifecycleOrThrow = ({ league, season } = {}) => {
+  const seasonStatus = resolveLeagueSeasonStatus({ league, season })
+
+  if (seasonStatus === 'active' || seasonStatus === 'completed') {
+    return seasonStatus
+  }
+
+  const error = new Error('League season lifecycle could not be resolved')
+  error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
+  throw error
+}
+
 export async function pasteTeamPlayerStatsFlow(payload = {}) {
   const results = {}
+  const leagueSeasonStatus = resolveLeagueSeasonLifecycleOrThrow({
+    league: payload.league,
+    season: payload.season,
+  })
+  const season = {
+    ...(payload.season || {}),
+    seasonStatus: leagueSeasonStatus,
+  }
+  const derivedTarget = deriveSeasonTarget(season)
+  const teamPerformance = buildLeagueTeamPerformanceProjection({
+    league: payload.league,
+    season,
+    target: derivedTarget,
+    team: payload.team,
+  })
   const resolvedPlayers = await resolvePlayerIdentities({
     players: payload.players,
-    season: payload.season || {},
+    season,
   })
   const resolvedPayload = {
     ...payload,
+    season,
+    target: derivedTarget,
     players: resolvedPlayers,
+  }
+  assertStatsIdentityDecisions(resolvedPlayers)
+  const validation = validatePlayerStatsAgainstLeague({
+    players: resolvedPlayers,
+    teamPerformance,
+    ageGroupId: payload.season?.ageGroupId || payload.team?.ageGroupId,
+  })
+
+  if (!validation.valid) {
+    throw buildSyncError({
+      stage: 'validatePlayerStatsAgainstLeague',
+      cause: new Error(validation.issues.map(issue => issue.message).join(' ')),
+      results: { validation },
+    })
   }
 
   try {
     results.teamSeasonResult = await updateTeamSeasonPlayerStats({
       ...resolvedPayload,
       team: payload.team || {},
+      teamPerformance,
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
@@ -107,7 +179,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   }
 
   const team = {
-    ...(payload.team || {}),
+    ...(results.teamSeasonResult.canonicalTeamContext || payload.team || {}),
     birthTeamDocumentId: results.teamSeasonResult.birthTeamDocumentId,
     teamDocumentId: results.teamSeasonResult.teamDocumentId,
   }
@@ -124,10 +196,11 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     ...resolvedPayload,
     team: teamWithLoadStatus,
     players: syncedPlayers,
-    teamDocument: results.teamSeasonResult.teamDocument || null,
+    // Player hydration still owns its own migration in Patch 3.  The Team
+    // writer now returns the direct season source rather than a synthetic
+    // legacy multi-season Root container.
+    teamSeasonDocument: results.teamSeasonResult.seasonDocument || null,
   }
-  const scoutProfilesSummary = buildScoutProfilesSummary(teamSeasonPlayers)
-
   try {
     results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany(syncedPayload)
   } catch (error) {
@@ -150,12 +223,48 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   }
 
+  try {
+    results.teamScoutProjectionResult = await updateTeamSeasonPlayersScoutProjections({
+      season: resolvedPayload.season || {},
+      team,
+      scoutedPlayers: results.playerScoutProfileDocsResult.scoutedPlayers,
+    })
+    if (!results.teamScoutProjectionResult?.updated) {
+      return buildCommittedProjectionFailure({
+        stage: 'updateTeamSeasonPlayersScoutProjections',
+        cause: new Error(
+          results.teamScoutProjectionResult?.reason ||
+          'Team scout projection target is missing'
+        ),
+        results,
+        teamSeasonPlayers,
+      })
+    }
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'updateTeamSeasonPlayersScoutProjections',
+      cause: error,
+      results,
+      teamSeasonPlayers,
+    })
+  }
+
+  const finalTeamSeasonPlayers = Array.isArray(
+    results.teamScoutProjectionResult?.players
+  )
+    ? results.teamScoutProjectionResult.players
+    : teamSeasonPlayers
+  const scoutProfilesSummary = results.teamScoutProjectionResult?.scoutProfilesSummary ||
+    buildScoutProfilesSummary(finalTeamSeasonPlayers)
+
   const searchIndexPlayers = mergeScoutedPlayerProjections({
-    players: syncedPlayers,
+    players: finalTeamSeasonPlayers,
     scoutedPlayers: results.playerScoutProfileDocsResult.scoutedPlayers,
   })
+  const canonicalSearchIndexTeam = teamWithLoadStatus
   const searchIndexPayload = {
     ...syncedPayload,
+    team: canonicalSearchIndexTeam,
     players: searchIndexPlayers,
   }
 
@@ -214,9 +323,11 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     results.teamSeasonIndexScoutProfilesResult = await updateTeamSeasonSearchIndexScoutProfilesSummary({
       ...payload,
       team,
+      teamSeasonDocumentId: results.teamSeasonResult.teamSeasonDocumentId,
       playersCount: results.teamSeasonResult.playersCount,
       scoutProfilesSummary,
       teamBalance: results.teamSeasonResult.teamBalance,
+      teamPerformance,
     })
     if (!results.teamSeasonIndexScoutProfilesResult?.updated) {
       return buildCommittedProjectionFailure({

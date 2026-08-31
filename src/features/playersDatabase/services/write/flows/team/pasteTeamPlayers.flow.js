@@ -10,11 +10,27 @@ import { upsertTeamSeasonPlayers } from '../../teams/index.js'
 import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import {
+  buildLeagueTeamPerformanceProjection,
+  resolveLeagueSeasonStatus,
+} from '../../shared/teamPerformanceProjection.js'
+import {
   assertWriteResultClean,
   attachWriteFlowReport,
 } from '../writeFlowReport.js'
 
 const clean = value => String(value || '').trim()
+
+const resolveLeagueSeasonLifecycleOrThrow = ({ league, season } = {}) => {
+  const seasonStatus = resolveLeagueSeasonStatus({ league, season })
+
+  if (seasonStatus === 'active' || seasonStatus === 'completed') {
+    return seasonStatus
+  }
+
+  const error = new Error('League season lifecycle could not be resolved')
+  error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
+  throw error
+}
 
 const buildSyncError = ({ stage, cause, results = {} }) => (
   attachWriteFlowReport({
@@ -41,6 +57,41 @@ const normalizeTeamPlayersPayload = payload => {
   )
   const seasonId = clean(seasonIdentity.seasonId || seasonIdentity.seasonKey)
   const seasonKey = clean(seasonIdentity.seasonKey || seasonIdentity.seasonId)
+  const leagueLevelSource = payload.season?.leagueLevel !== undefined
+    && payload.season?.leagueLevel !== null
+    ? payload.season.leagueLevel
+    : payload.team?.leagueLevel !== undefined
+      && payload.team?.leagueLevel !== null
+      ? payload.team.leagueLevel
+      : payload.league?.leagueLevel !== undefined
+        && payload.league?.leagueLevel !== null
+        ? payload.league.leagueLevel
+        : payload.league?.level
+  const leagueLevel = Number.isFinite(Number(leagueLevelSource))
+    ? Number(leagueLevelSource)
+    : 0
+  const expectedLevelDeltaSource = payload.season?.expectedLevelDelta !== undefined
+    && payload.season?.expectedLevelDelta !== null
+    ? payload.season.expectedLevelDelta
+    : payload.team?.expectedLevelDelta
+  const expectedLevelDelta = expectedLevelDeltaSource === null || expectedLevelDeltaSource === undefined || expectedLevelDeltaSource === ''
+    ? null
+    : Number.isFinite(Number(expectedLevelDeltaSource))
+      ? Number(expectedLevelDeltaSource)
+      : null
+
+  const normalizedSeason = {
+    ...(payload.season || {}),
+    leagueId,
+    leagueLevel,
+    expectedLevelDelta,
+    seasonId,
+    seasonKey,
+  }
+  const leagueSeasonStatus = resolveLeagueSeasonLifecycleOrThrow({
+    league: payload.league,
+    season: normalizedSeason,
+  })
 
   return {
     ...payload,
@@ -50,20 +101,26 @@ const normalizeTeamPlayersPayload = payload => {
       leagueId,
     },
     season: {
-      ...(payload.season || {}),
-      leagueId,
-      seasonId,
-      seasonKey,
+      ...normalizedSeason,
+      seasonStatus: leagueSeasonStatus,
     },
     team: {
       ...(payload.team || {}),
       leagueId,
+      leagueLevel,
+      expectedLevelDelta,
     },
   }
 }
 
 export async function pasteTeamPlayersFlow(payload = {}) {
   const normalizedPayload = normalizeTeamPlayersPayload(payload)
+  const teamPerformance = buildLeagueTeamPerformanceProjection({
+    league: normalizedPayload.league,
+    season: normalizedPayload.season,
+    target: normalizedPayload.target || 'current',
+    team: normalizedPayload.team,
+  })
   const results = {}
   const rawPlayers = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
   let players = rawPlayers
@@ -85,6 +142,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     results.teamSeasonResult = await upsertTeamSeasonPlayers({
       ...normalizedPayload,
       team: normalizedPayload.team || {},
+      teamPerformance,
       players,
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
@@ -152,9 +210,11 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     results.teamSeasonIndexResult = await updateTeamSeasonSearchIndexRosterMeta({
       ...normalizedPayload,
       team: teamWithRosterMeta,
+      teamSeasonDocumentId: results.teamSeasonResult.teamSeasonDocumentId,
       playersCount: results.teamSeasonResult.playersCount,
       playerSeasonIndexCount: results.playerSeasonIndexResult.rowsCount,
       teamBalance: results.teamSeasonResult.teamBalance,
+      teamPerformance,
     })
   } catch (error) {
     throw buildSyncError({

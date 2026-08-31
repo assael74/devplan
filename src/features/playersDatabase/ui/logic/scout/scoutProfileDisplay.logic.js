@@ -2,7 +2,6 @@
 
 import {
   DEPENDENCY_DISPLAY,
-  SCOUT_INTEREST_DISPLAY,
   SCOUT_PROFILE_GROUP_LABELS,
   SCOUT_REVIEW_DISPLAY,
   TEAM_FILTER_DISPLAY,
@@ -26,10 +25,6 @@ export const SCOUT_PROFILE_TOOLTIP_FIELDS = {
   group: {
     label: 'מנטליות',
     resolve: profile => SCOUT_PROFILE_GROUP_LABELS[profile?.group] || '',
-  },
-  interest: {
-    label: 'עניין',
-    resolve: profile => resolveScoutDisplayLabel(SCOUT_INTEREST_DISPLAY, profile?.interest),
   },
   teamFilter: {
     label: 'הקשר ביצוע קבוצתי',
@@ -55,7 +50,6 @@ export const SCOUT_PROFILE_TOOLTIP_FIELDS = {
 export const DEFAULT_SCOUT_PROFILE_TOOLTIP_FIELDS = [
   'parameters',
   'group',
-  'interest',
   'teamFilter',
   'positionContext',
   'positionDependency',
@@ -70,7 +64,6 @@ export const buildScoutProfileTooltip = profile => {
     .join(', ')
   const tooltipItems = [
     groupLabel ? `מנטליות: ${groupLabel}` : '',
-    profile?.interest ? `עניין: ${resolveScoutDisplayLabel(SCOUT_INTEREST_DISPLAY, profile.interest)}` : '',
     profile?.teamFilter ? `הקשר ביצוע קבוצתי: ${resolveScoutDisplayLabel(TEAM_FILTER_DISPLAY, profile.teamFilter)}` : '',
     profile?.positionContext ? `הקשר עמדה: ${resolvePositionContextLabel(profile.positionContext)}` : '',
     profile?.deps?.position ? `תלות עמדה: ${DEPENDENCY_DISPLAY[profile.deps.position] || profile.deps.position}` : '',
@@ -96,11 +89,8 @@ export const buildScoutProfileTooltipFromFields = profile => (
 
 export const resolveScoutProfileDescription = profile => {
   const groupLabel = SCOUT_PROFILE_GROUP_LABELS[profile?.group] || ''
-  const interest = resolveScoutDisplayLabel(SCOUT_INTEREST_DISPLAY, profile?.interest)
 
-  if (groupLabel && interest) return `${groupLabel} · ${interest}`
-
-  return groupLabel || interest || 'פרופיל נבחר'
+  return groupLabel || 'פרופיל נבחר'
 }
 
 export const buildScoutProfileTooltipItems = ({

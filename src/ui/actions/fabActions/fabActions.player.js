@@ -16,6 +16,7 @@ export function buildPlayerFabActions({
     onAddPayment,
     onAddGame,
     onAddGames,
+    onImportGames,
     onAddVideoAnalysis,
     onOpenGamesInsights,
     onOpenVideoInsights,
@@ -40,26 +41,36 @@ export function buildPlayerFabActions({
   }
 
   if (mode === 'games') {
-    const primaryActions = allowGamesCreate
-      ? [
-          {
-            id: 'add-game',
-            label: 'הוסף משחק',
-            icon: iconUi({ id: 'addGame' }),
-            onClick: onAddGame,
-            color: 'player',
-            disabled: !allowCreate,
-          },
-          {
-            id: 'add-multi-game',
-            label: 'הוסף מספר משחקים',
-            icon: iconUi({ id: 'addGames' }),
-            onClick: onAddGames,
-            color: 'player',
-            disabled: !allowCreate,
-          },
-        ]
-      : []
+    const primaryActions = [
+      ...(allowGamesCreate
+        ? [
+            {
+              id: 'add-game',
+              label: 'הוסף משחק',
+              icon: iconUi({ id: 'addGame' }),
+              onClick: onAddGame,
+              color: 'player',
+              disabled: !allowCreate,
+            },
+            {
+              id: 'add-multi-game',
+              label: 'הוסף מספר משחקים',
+              icon: iconUi({ id: 'addGames' }),
+              onClick: onAddGames,
+              color: 'player',
+              disabled: !allowCreate,
+            },
+          ]
+        : []),
+      {
+        id: 'import-games',
+        label: 'הדבקת משחקים מרובים',
+        icon: iconUi({ id: 'upload' }),
+        onClick: onImportGames,
+        color: 'player',
+        disabled: !allowCreate,
+      },
+    ]
 
     return composeFabActions({
       primaryActions,

@@ -193,6 +193,19 @@ export default function ScoutStoryChip({ player = {}, label = '', fontSize = 11 
 
   if (!chipLabel) return null
 
+  if (player.isTeamScoutProjection) {
+    return (
+      <ScoutProfileChip
+        profileId={profileView.primaryItem?.id || ''}
+        label={chipLabel}
+        tooltip='הקרנת סקאוט עונתית'
+        iconId={profileView.primaryItem?.iconId || 'performanceProfile'}
+        variant={profileView.variant}
+        fontSize={fontSize}
+      />
+    )
+  }
+
   return (
     <>
       <Box
