@@ -46,6 +46,11 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
 
   primaryPosition: '',
   positionLayer: '',
+  lineClassificationLine: '',
+  lineClassificationPosition: '',
+  lineClassificationSource: '',
+  lineClassificationEvidenceLevel: '',
+  lineClassificationModelVersion: '',
   numShirt: '',
   statsStatus: 'missing',
 

@@ -33,6 +33,7 @@ import {
   PersonAddAlt1,
   PersonOff,
   Moving,
+  NewReleases,
 } from '@mui/icons-material'
 
 function PositionLetterIcon({ text, fontSize = 'md', sx = {} }) {
@@ -102,6 +103,8 @@ export const playerIcons = {
   rosterLeft: <Logout />,
   rosterRetired: <PersonOff />,
   rosterJoined: <PersonAddAlt1 />,
+  verified: <Verified />,
+  newReleases: <NewReleases />,
 
   defense: <Security />,
   midfield: <Radar />,

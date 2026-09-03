@@ -17,7 +17,7 @@ import {
 import {
   PLAYER_STATS_PLACEHOLDER,
   STATS_SEASON_STATUS_OPTIONS,
-} from '../../../pages/teamPage/logic/teamPage.constants.js'
+} from '../../../pages/teamPageV4/logic/teamPage.constants.js'
 import PasteModal from './PasteModal.js'
 import { statsImportModalSx as sx } from './sx/statsImportModal.sx.js'
 

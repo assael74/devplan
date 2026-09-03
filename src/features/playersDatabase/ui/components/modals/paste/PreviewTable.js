@@ -177,8 +177,8 @@ export default function PreviewTable({
                   sx={column.sx}
                   onClick={() => toggleSort(column)}
                 >
-                  <Box sx={column.sortable ? sx.sortableHeader : null}>
-                    {column.label}
+                  <Box sx={[sx.columnHeaderContent, column.sortable ? sx.sortableHeader : null]}>
+                    {column.headerContent || column.label}
                     {sort?.key === column.key ? (
                       <Typography
                         component='span'
@@ -223,13 +223,15 @@ export default function PreviewTable({
                         column.sx,
                       ]}
                     >
-                      <PreviewCell
-                        column={column}
-                        row={row}
-                        rowIndex={rowIndex}
-                        onCellChange={onCellChange}
-                        cellStatus={getCellStatus?.(row, rowIndex, column)}
-                      />
+                      <Box sx={sx.cellContent}>
+                        <PreviewCell
+                          column={column}
+                          row={row}
+                          rowIndex={rowIndex}
+                          onCellChange={onCellChange}
+                          cellStatus={getCellStatus?.(row, rowIndex, column)}
+                        />
+                      </Box>
                     </Box>
                   ))}
                 </tr>

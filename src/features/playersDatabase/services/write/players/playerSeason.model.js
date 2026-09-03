@@ -94,6 +94,24 @@ const isPlainObject = value => Boolean(
   !Array.isArray(value)
 )
 
+
+const buildLineClassificationProjection = player => {
+  const source = player?.lineClassification && typeof player.lineClassification === 'object'
+    ? player.lineClassification
+    : null
+  const line = clean(source?.line)
+
+  if (!line) return null
+
+  return {
+    line,
+    position: clean(source.position) || null,
+    source: clean(source.source),
+    evidenceLevel: clean(source.evidenceLevel),
+    modelVersion: clean(source.modelVersion),
+  }
+}
+
 const buildTeamPlayerScoutHydration = player => {
   const source = player && typeof player === 'object' ? player : {}
   const primaryProfileId = clean(source.primaryScoutProfileId)
@@ -297,6 +315,7 @@ export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, pla
     notes: clean(player.notes),
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
+    lineClassification: buildLineClassificationProjection(player),
     numShirt: clean(player.numShirt),
     rosterStatus: clean(player.rosterStatus) || 'regular',
     manualTransferDirection: clean(player.manualTransferDirection),

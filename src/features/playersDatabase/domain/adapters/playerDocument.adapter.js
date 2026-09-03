@@ -145,6 +145,10 @@ export const adaptPlayerDocumentSeason = ({
       primary: cleanDomainValue(seasonDocument.primaryPosition),
       shirtNumber: cleanDomainValue(firstDomainValue(seasonDocument.numShirt, seasonDocument.number)),
     },
+    lineClassification: seasonDocument.lineClassification &&
+      typeof seasonDocument.lineClassification === 'object'
+      ? { ...seasonDocument.lineClassification }
+      : null,
     stats: {
       actual: {
         games: stats.games,
@@ -219,6 +223,7 @@ export const adaptPlayerDocumentSeason = ({
       teamUrl: cleanDomainValue(firstDomainValue(seasonDocument.teamUrl, team.teamUrl)),
       seasonUrl: cleanDomainValue(seasonDocument.seasonUrl),
       rosterStatus: cleanDomainValue(seasonDocument.rosterStatus),
+      manualTransferDirection: cleanDomainValue(seasonDocument.manualTransferDirection),
       sourceCollection: 'players',
       sourceDocumentId: cleanDomainValue(identity.playerDocumentId),
       sourceTarget: lifecycle.type,

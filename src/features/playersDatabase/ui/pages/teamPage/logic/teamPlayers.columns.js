@@ -12,35 +12,16 @@ import { dataTableActionsSx as actionSx } from '../../../components/tables/dataT
 import ScoutStoryChip from '../../../components/scout/ScoutStoryChip.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import PlayerPositionChip, {
-  getPlayerLayerLabel,
-  getPlayerPositionLabel,
-} from '../../../components/playerMeta/PlayerPositionChip.js'
+import PlayerLineClassificationChip from '../../../components/playerMeta/PlayerLineClassificationChip.js'
 import playerImage from '../../../../../../ui/core/images/playerImage.jpg'
 import { TEAM_PLAYERS_TABLE_WIDTHS } from './teamTableWidths.js'
 import { teamPlayersColumnsSx as sx } from '../sx/teamPlayers.columns.sx.js'
 
 const PLAYER_STATUS_DISPLAY = {
-  youngerAgeGroup: {
-    label: 'שנתון צעיר',
-    iconId: 'rosterYounger',
-    color: 'primary',
-  },
-  transferredOut: {
-    label: 'עזב במהלך העונה',
-    iconId: 'rosterLeft',
-    color: 'danger',
-  },
-  retired: {
-    label: 'פרש',
-    iconId: 'rosterRetired',
-    color: 'neutral',
-  },
-  transferredIn: {
-    label: 'הצטרף במהלך העונה',
-    iconId: 'rosterJoined',
-    color: 'success',
-  },
+  youngerAgeGroup: { label: 'שנתון צעיר', iconId: 'rosterYounger', color: 'primary' },
+  transferredOut: { label: 'עזב במהלך העונה', iconId: 'rosterLeft', color: 'danger' },
+  retired: { label: 'פרש', iconId: 'rosterRetired', color: 'neutral' },
+  transferredIn: { label: 'הצטרף במהלך העונה', iconId: 'rosterJoined', color: 'success' },
 }
 
 const toCount = value => {
@@ -57,21 +38,11 @@ const renderPlayerName = row => {
 
   return (
     <Box sx={columnSx.nameContent}>
-      <Box component='span' sx={columnSx.nameText}>
-        {row.fullName || '-'}
-      </Box>
-
+      <Box component='span' sx={columnSx.nameText}>{row.fullName || '-'}</Box>
       {status ? (
         <Tooltip title={status.label}>
-          <Box
-            component='span'
-            aria-label={status.label}
-            sx={sx.playerStatusBadge(status.color)}
-          >
-            {iconUi({
-              id: status.iconId,
-              size: 'sm',
-            })}
+          <Box component='span' aria-label={status.label} sx={sx.playerStatusBadge(status.color)}>
+            {iconUi({ id: status.iconId, size: 'sm' })}
           </Box>
         </Tooltip>
       ) : null}
@@ -79,7 +50,7 @@ const renderPlayerName = row => {
   )
 }
 
-export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlEdit }) => [
+export const buildTeamPlayersColumns = ({ onPlayerOpen, onPlayerUrlEdit }) => [
   {
     key: 'number',
     label: '#',
@@ -122,36 +93,19 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlE
     render: renderPlayerName,
   },
   {
-    key: 'positionLayer',
-    label: 'חוליה',
+    key: 'lineClassification',
+    label: 'חוליה / עמדה',
     sx: {
       ...columnSx.numericColumn,
-      ...columnWidth('positionLayer'),
+      ...columnWidth('lineClassification'),
     },
-    getSortValue: row => getPlayerLayerLabel(row.positionLayer),
+    getSortValue: row => [
+      row.lineClassification?.line || '',
+      row.lineClassification?.position || '',
+    ].join(' '),
     render: row => (
-      <PlayerPositionChip
-        type='layer'
-        positionLayer={row.positionLayer}
-        primaryPosition={row.primaryPosition}
-        onClick={() => onRoleOpen(row)}
-      />
-    ),
-  },
-  {
-    key: 'primaryPosition',
-    label: 'עמדה',
-    sx: {
-      ...columnSx.numericColumn,
-      ...columnWidth('primaryPosition'),
-    },
-    getSortValue: row => getPlayerPositionLabel(row.primaryPosition),
-    render: row => (
-      <PlayerPositionChip
-        type='position'
-        positionLayer={row.positionLayer}
-        primaryPosition={row.primaryPosition}
-        onClick={() => onRoleOpen(row)}
+      <PlayerLineClassificationChip
+        classification={row.lineClassification}
       />
     ),
   },
@@ -247,20 +201,22 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onRoleOpen, onPlayerUrlE
     },
     render: row => (
       <Box sx={actionSx.rowActions}>
-        <Tooltip title='כניסה לשחקן'>
-          <IconButton
-            size='sm'
-            variant='outlined'
-            aria-label='כניסה לשחקן'
-            sx={actionSx.actionButton}
-            onClick={() => onPlayerOpen(row)}
-          >
-            {iconUi({
-              id: 'view',
-              size: 'sm',
-            })}
-          </IconButton>
-        </Tooltip>
+        {onPlayerOpen ? (
+          <Tooltip title='כניסה לשחקן'>
+            <IconButton
+              size='sm'
+              variant='outlined'
+              aria-label='כניסה לשחקן'
+              sx={actionSx.actionButton}
+              onClick={() => onPlayerOpen(row)}
+            >
+              {iconUi({
+                id: 'view',
+                size: 'sm',
+              })}
+            </IconButton>
+          </Tooltip>
+        ) : null}
 
         <Tooltip title='פעולות נוספות'>
           <IconButton

@@ -28,6 +28,7 @@ import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import {
   buildPlayerSeasonIndexLookup,
   buildPlayerSeasonIndexScope,
+  buildLineClassificationIndexFields,
   findExistingPlayerSeasonIndexDoc,
   isSamePlayerSeasonIndexContext,
 } from './playerSeasonIndex.model.js'
@@ -173,6 +174,7 @@ export const updatePlayerSeasonSearchIndexRole = payload => {
       primaryPosition: player.primaryPosition,
       positionLayer: player.positionLayer,
       numShirt: player.numShirt,
+      ...buildLineClassificationIndexFields(player),
       ...buildPlayerScoutIndexFields(player),
     },
   })
@@ -184,7 +186,10 @@ export const updatePlayerSeasonSearchIndexScoutProfiles = payload => {
   return updatePlayerSeasonSearchIndexFields({
     ...payload,
     player,
-    fields: buildPlayerScoutIndexFields(player),
+    fields: {
+      ...buildLineClassificationIndexFields(player),
+      ...buildPlayerScoutIndexFields(player),
+    },
   })
 }
 

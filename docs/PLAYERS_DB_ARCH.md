@@ -5,80 +5,92 @@ This document summarizes the current Firestore shape and the scan/database loadi
 ## Collections
 
 - `dbLeagues`
-- `dbLeagueSnapshots`
 - `dbPlayers`
-- `dbPlayerSeasons`
-- `dbPlayerStats`
-- `dbPlayerSearch`
+- `dbBirthTeams`
+- `dbBirthTeamSeasons`
+- `dbSearchIndexes`
+- `dbLeaguesMaster`
+- `dbFavorites`
+
+## Position and line fields
+
+The current Team Season is the operational source of truth for a player's
+seasonal data.
+
+- `dbBirthTeamSeasons.teamPlayers[]` stores `primaryPosition`,
+  `positionLayer`, and `lineClassification`.
+- `dbPlayers.current[]` and `dbPlayers.history[]` store the same seasonal
+  projection for identified players. The root `dbPlayers` document keeps the
+  visually verified `primaryPosition` and `positionLayer`.
+- `dbSearchIndexes` stores `primaryPosition` and `positionLayer`, plus the
+  flat search projection: `lineClassificationLine`,
+  `lineClassificationPosition`, `lineClassificationSource`,
+  `lineClassificationEvidenceLevel`, and `lineClassificationModelVersion`.
+
+`lineClassification` is derived from current-season performance. It is not
+allowed to overwrite the visually verified `primaryPosition` or
+`positionLayer`. A preliminary "מחפש זהות" profile is reclassified from this
+performance classification; a manual position edit does not perform that
+reclassification.
 
 ## Source of truth by area
 
-### League board data
+### Team Balance / Benchmark / Interest
 
-The board is driven by `dbLeagues`, with snapshot metadata pulled from `dbLeagueSnapshots` when needed.
+`dbBirthTeamSeasons.teamBalance` persists derived Team Balance facts,
+the versioned Reference Lineup Benchmark evaluation, and the compact Team
+Interest interpretation. The reference evaluates goalkeeper, defense,
+midfield core, attacking midfielder, and attack. Team Interest V1 uses only
+the attack and defense evaluations with Team Performance; midfield and
+attacking-midfielder deviations remain structural diagnostics only.
 
-### Scan screen data
+Team Balance interpretation has a canonical availability gate. When
+`teamGamePlayed < 8`, it is `unavailable` with
+`availabilityReason: season_sample_insufficient`; facts may still be stored,
+but lineup and classification-coverage benchmarks emit no active state and
+Team Interest/SearchIndex emit no Balance finding. Once the eight-game gate is
+met, cleared or not-yet-loaded statistics use `stats_not_loaded`. Team
+Performance remains independent of this gate.
 
-The scan screen is driven by `dbLeagues` for the summary list and by `dbLeagueSnapshots` only when indicators are loaded.
+Team Interest also aggregates Squad Interest from the independent,
+versioned `classification-coverage-v1` benchmark. It evaluates the classified
+player count against the V1 typical range of 10–13. Below or above the range
+remains a structural fact, but activates Squad Interest only when both offense
+and defense are `positive_or_above` or both are `low`. Typical coverage, mixed
+performance, and unavailable performance do not activate Squad Interest. This
+coverage evaluation does not block Line Interest.
 
-### Player search rows
+The Team SearchIndex projects only compact interpretation fields
+(`scoutInterpretationModelVersion`, attack finding, defense finding, and
+`teamInterest`). It never stores the complete benchmark evaluation.
 
-The search rows shown in scan come from `dbPlayerSearch`, then are enriched with `dbPlayerSeasons` when the UI needs missing link fields like `playerUrl` and `teamUrl`.
+### Team-season player state
 
-## Route loading map
+`dbBirthTeamSeasons.teamPlayers[]` is the operational source of truth for a
+player in a team and season. Stats Load writes the performance classification
+there before rebuilding Team Balance and downstream projections.
 
-### `/players-database`
+### Player history
 
-Loaded on entry:
+`dbPlayers` stores an identified player's seasonal projection in `current[]`
+or `history[]`, as well as the verified role fields at the document root.
 
-- `dbLeagues` via KPI loading
-- `dbLeagues` again via the board hook
-- `dbLeagueSnapshots` only when the board preloads snapshot metadata
+### Search rows
 
-Not loaded on entry:
+`dbSearchIndexes` is a projection for search and list rendering. It receives
+the verified role fields, the flat performance classification fields, and the
+current scout-profile summary. It must never be used as a write source.
 
-- `dbPlayers`
-- `dbPlayerSeasons`
-- `dbPlayerStats`
-- `dbPlayerSearch`
+## Update flow
 
-### `/players-database/scan`
+```text
+Stats Load
+  → dbBirthTeamSeasons.teamPlayers[].lineClassification
+  → dbPlayers current/history projection when a Player Document is required
+  → dbSearchIndexes lineClassification* + scout summary
 
-Loaded on entry:
-
-- `dbLeagues` via `loadSummaries()`
-
-Loaded only after the user requests indicators:
-
-- `dbLeagueSnapshots` via `loadIndicators()`
-
-Not loaded on entry:
-
-- `dbPlayerSearch`
-- `dbPlayerSeasons`
-- `dbPlayers`
-
-### Clicking "Load player documents"
-
-This action reads:
-
-1. `dbPlayerSearch` through `listPlayerSearchByTeamProfile()`
-2. `dbPlayerSeasons` for the matching season ids
-
-It does not read `dbPlayers` in this step.
-
-The visible row links in scan are resolved from:
-
-- `dbPlayerSearch.playerUrl` / `dbPlayerSearch.teamUrl`
-- fallback to `dbPlayerSearch.source.playerUrl` / `dbPlayerSearch.source.teamUrl`
-- fallback to `dbPlayerSeasons.source.playerUrl` / `dbPlayerSeasons.source.teamUrl`
-
-## Row edit modal
-
-The scan row edit modal updates:
-
-- `dbPlayerSeasons`
-- `dbPlayerSearch`
-- `dbPlayers` for `playerUrl` only
-
-This keeps the scan view, season row, and base player row aligned.
+Visual role edit
+  → dbBirthTeamSeasons.teamPlayers[].primaryPosition / positionLayer
+  → dbPlayers verified-role projection
+  → dbSearchIndexes verified-role projection
+```

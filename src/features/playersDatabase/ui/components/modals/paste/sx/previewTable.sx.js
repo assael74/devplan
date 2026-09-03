@@ -47,11 +47,15 @@ export const previewTableSx = {
     cursor: 'pointer',
   },
 
-  sortableHeader: {
-    cursor: 'pointer',
-    display: 'inline-flex',
+  columnHeaderContent: {
+    width: '100%',
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  sortableHeader: {
+    cursor: 'pointer',
     gap: 0.35,
     userSelect: 'none',
   },
@@ -118,6 +122,14 @@ export const previewTableSx = {
     width: 48,
     minWidth: 48,
     maxWidth: 48,
+  },
+
+  cellContent: {
+    width: '100%',
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
 }

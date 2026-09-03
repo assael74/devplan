@@ -352,7 +352,6 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   player = {},
   teamSeasonDocument = null,
   verificationAnswers = null,
-  confirmPositionContext = false,
 } = {}) {
   return upsertProfiledPlayerDoc({
     season,
@@ -361,7 +360,6 @@ export async function syncPlayerRoleAndScoutProfileDoc({
     player,
     teamSeasonDocument,
     verificationAnswers,
-    confirmPositionContext,
     resolveLifecycleAfterCalculation: true,
   })
 }

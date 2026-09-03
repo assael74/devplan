@@ -1,0 +1,68 @@
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+
+export const teamBalanceProfileSx = {
+  section: {
+    p: { xs: 1.25, md: 1.5 },
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 10,
+    bgcolor: devPlanColors.surface,
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    mb: 1.25,
+  },
+  title: { color: devPlanColors.primaryDark, fontSize: 15, fontWeight: 800 },
+  reliability: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.35,
+    color: devPlanColors.secondary,
+    cursor: 'help',
+  },
+  reliabilityLabel: { color: devPlanColors.secondary, fontSize: 11, fontWeight: 700 },
+  metrics: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+  },
+  metric: {
+    minWidth: 0,
+    px: { xs: 0, sm: 1.25 },
+    py: 0.5,
+    display: 'grid',
+    alignContent: 'start',
+    gap: 0.35,
+  },
+  metricHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.5,
+  },
+  metricTitle: { color: devPlanColors.primary, fontSize: 12, fontWeight: 700 },
+  metricValue: { color: devPlanColors.primaryDark, fontSize: 20, lineHeight: 1.2, fontWeight: 800 },
+  metricValueEmpty: { color: devPlanColors.secondary, fontSize: 14, fontWeight: 700 },
+  metricMeaning: { color: devPlanColors.secondary, fontSize: 11.5, lineHeight: 1.4 },
+  info: {
+    display: 'inline-flex',
+    flexShrink: 0,
+    color: devPlanColors.secondary,
+    cursor: 'help',
+  },
+  tooltip: {
+    maxWidth: 300,
+    minWidth: 230,
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    textAlign: 'right',
+    p: 1,
+  },
+  reliabilityTooltip: { maxWidth: 245, textAlign: 'right', p: 1 },
+  tooltipContent: { display: 'grid', gap: 0.55 },
+  tooltipTitle: { color: devPlanColors.primaryDark, fontSize: 13, fontWeight: 800 },
+  tooltipLabel: { color: devPlanColors.primary, fontSize: 10.5, fontWeight: 800, mt: 0.15 },
+  tooltipTechnicalTitle: { color: devPlanColors.primary, fontSize: 11, fontWeight: 800, mt: 0.3 },
+  tooltipText: { color: devPlanColors.secondary, fontSize: 11, lineHeight: 1.45 },
+}

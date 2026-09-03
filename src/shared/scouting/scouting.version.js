@@ -7,13 +7,10 @@ export const SCOUTING_VERSION_SCHEMA = 1
 
 export const PLAYER_SCOUT_LAYER_VERSION = 'players-v2'
 export const TEAM_SCOUT_PERFORMANCE_VERSION = 'team-performance-v1'
-export const TEAM_BALANCE_VERSION = 'team-balance-v1'
-export const TEAM_BALANCE_OUTPUT_CONTRACT_VERSION = 'team-balance-output-v1'
-export const TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION = 'team-balance-persistence-v1'
+export const TEAM_BALANCE_VERSION = 'team-balance-v13'
+export const TEAM_BALANCE_OUTPUT_CONTRACT_VERSION = 'team-balance-output-v21'
+export const TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION = 'team-balance-persistence-v21'
 
-export const TEAM_BALANCE_MINUTES_BENCHMARK_VERSION = 'minutes-distribution-v1'
-export const TEAM_BALANCE_PRODUCTION_BENCHMARK_VERSION = 'production-distribution-v1'
-export const TEAM_BALANCE_ROTATION_BENCHMARK_VERSION = 'rotation-distribution-v1'
 
 export const SCOUTING_LAYER_STATUS = Object.freeze({
   ACTIVE: 'active',
@@ -38,27 +35,18 @@ export const SCOUTING_MODEL_REGISTRY = Object.freeze({
         status: SCOUTING_LAYER_STATUS.ACTIVE,
         sourceOfTruth: 'leagueDocument',
       }),
+      lineClassification: Object.freeze({
+        version: 'player-line-v7',
+        status: SCOUTING_LAYER_STATUS.IN_PROGRESS,
+        sourceOfTruth: 'teamSeasonDocumentStats',
+      }),
       balance: Object.freeze({
         version: TEAM_BALANCE_VERSION,
         outputContractVersion: TEAM_BALANCE_OUTPUT_CONTRACT_VERSION,
         persistenceContractVersion: TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION,
         status: SCOUTING_LAYER_STATUS.IN_PROGRESS,
         domainIntegrationStatus: 'adapter_ready',
-        sourceOfTruth: 'teamDocumentStats',
-        benchmarks: Object.freeze({
-          minutesDistribution: Object.freeze({
-            version: TEAM_BALANCE_MINUTES_BENCHMARK_VERSION,
-            status: 'initial_sample',
-          }),
-          productionDistribution: Object.freeze({
-            version: TEAM_BALANCE_PRODUCTION_BENCHMARK_VERSION,
-            status: 'descriptive_only',
-          }),
-          rotationDistribution: Object.freeze({
-            version: TEAM_BALANCE_ROTATION_BENCHMARK_VERSION,
-            status: 'initial_sample',
-          }),
-        }),
+        sourceOfTruth: 'teamSeasonDocumentStats',
       }),
     }),
   }),

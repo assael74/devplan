@@ -22,6 +22,7 @@ import {
 import {
   buildInternalPlayerId,
   buildPlayerAliases,
+  buildLineClassificationIndexFields,
   buildPlayerSeasonIndexId,
   buildPlayerScoutIndexFields,
   getRosterStatus,
@@ -310,6 +311,7 @@ export const buildPlayerSeasonStatsMutation = ({
       positionLayer: clean(
         player.positionLayer || existingData.positionLayer
       ),
+      ...buildLineClassificationIndexFields(player),
       numShirt: clean(player.numShirt || existingData.numShirt),
       teamTableRank: toNumberOrZero(
         pickDefinedValue(team.tableRank, existingData.teamTableRank)

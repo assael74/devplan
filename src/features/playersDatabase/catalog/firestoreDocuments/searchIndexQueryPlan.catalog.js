@@ -79,10 +79,6 @@ export const SEARCH_INDEX_DYNAMIC_QUERY_FIELDS = {
   teamEquality: [
     'attackPriorityLevel',
     'defensePriorityLevel',
-    'balanceReliability',
-    'balanceMinutesTop5Band',
-    'balanceProductionTop1Band',
-    'balanceRotationStartsTop5Band',
   ],
   range: [
     'expectedLevelDelta',

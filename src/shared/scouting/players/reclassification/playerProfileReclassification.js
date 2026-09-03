@@ -8,88 +8,25 @@ import {
   SCOUT_PROFILES,
 } from '../profiles.js'
 
-import {
-  PLAYER_VERIFICATION_ANSWER,
-  PLAYER_VERIFICATION_QUESTION,
-} from '../verification/playerVerification.model.js'
-
 const PRELIMINARY_LOW_OUTPUT_ID = 'preliminary_low_output'
-
-const DEFENSIVE_ROLE_VALUES = new Set([
-  'cb',
-  'dc',
-  'dcr',
-  'dcl',
-  'fb',
-  'wb',
-  'dr',
-  'dl',
-  'dm',
-  'dmc',
-  'dmr',
-  'dml',
-  'defender',
-  'defensive unit',
-  'defensive role',
-])
-
-const ATTACKING_SUPPORT_ROLE_VALUES = new Set([
-  'winger',
-  'am',
-  'ar',
-  'ac',
-  'al',
-  'attack',
-  'atmidfield',
-  'advanced midfielder',
-  'attacking role',
-  'supporting role',
-  'attacking/supporting role',
-])
 
 const normalizeValue = value => String(value || '')
   .trim()
   .toLowerCase()
 
-const resolveVerifiedRoleValues = (player = {}) => {
-  const values = [
-    player.verifiedRole,
-    player.verifiedPosition,
-    player.primaryPosition,
-    player.position,
-    player.positionId,
-    player.positionLayer,
-    player.positionLayerCode,
-    player.layerCode,
-    player.primaryPositionLayer,
-  ]
+const resolveTargetProfileId = ({ player = {} } = {}) => {
+  const classification = player.lineClassification &&
+    typeof player.lineClassification === 'object'
+    ? player.lineClassification
+    : {}
+  const line = normalizeValue(classification.line)
+  const position = normalizeValue(classification.position)
 
-  return values
-    .map(normalizeValue)
-    .filter(Boolean)
-}
-
-const isPositionVerificationConfirmed = verification => (
-  Array.isArray(verification?.checks) &&
-  verification.checks.some(check => (
-    check?.questionId === PLAYER_VERIFICATION_QUESTION.POSITION_CONTEXT_VERIFIED &&
-    check?.answer === PLAYER_VERIFICATION_ANSWER.YES
-  ))
-)
-
-const resolveTargetProfileId = ({ player, verification } = {}) => {
-  if (!isPositionVerificationConfirmed(verification)) return ''
-
-  const roleValues = resolveVerifiedRoleValues(player)
-
-  // A specific position wins over a broad layer because the values are kept in
-  // that order. When the position itself is not mapped, the selected layer is
-  // still a valid professional indication for the reclassification.
-  if (roleValues.some(roleValue => DEFENSIVE_ROLE_VALUES.has(roleValue))) {
-    return 'last_station'
-  }
-  if (roleValues.some(roleValue => ATTACKING_SUPPORT_ROLE_VALUES.has(roleValue))) {
+  if (line === 'attack' || position === 'attacking_midfielder') {
     return 'attacking_support'
+  }
+  if (line === 'defense' || line === 'midfield') {
+    return 'last_station'
   }
 
   return ''
@@ -110,13 +47,12 @@ const buildReclassifiedSignal = ({ preliminarySignal, targetProfile } = {}) => (
   requiredReview: [],
   classificationState: 'reclassified',
   sourcePreliminaryProfileId: preliminarySignal.profileId,
-  reclassificationReason: 'verified_professional_role',
+  reclassificationReason: 'performance_line_classification',
 })
 
 export const reclassifyPlayerScoutSignals = ({
   signals = [],
   player = {},
-  verification = null,
 } = {}) => {
   const safeSignals = Array.isArray(signals) ? signals : []
   const preliminarySignal = safeSignals.find(signal => (
@@ -131,7 +67,7 @@ export const reclassifyPlayerScoutSignals = ({
     }
   }
 
-  const targetProfileId = resolveTargetProfileId({ player, verification })
+  const targetProfileId = resolveTargetProfileId({ player })
   const targetProfile = getProfileById(targetProfileId)
 
   if (!targetProfile) {
@@ -163,7 +99,7 @@ export const reclassifyPlayerScoutSignals = ({
       state: 'reclassified',
       sourceProfileId: PRELIMINARY_LOW_OUTPUT_ID,
       targetProfileId,
-      reason: 'verified_professional_role',
+      reason: 'performance_line_classification',
     },
   }
 }

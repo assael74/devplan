@@ -44,6 +44,21 @@ export const resolveTeamSeasonSourceTarget = season => (
     : 'current'
 )
 
+export const buildLineClassificationIndexFields = (player = {}) => {
+  const classification = player?.lineClassification &&
+    typeof player.lineClassification === 'object'
+    ? player.lineClassification
+    : {}
+
+  return {
+    lineClassificationLine: clean(classification.line).toUpperCase(),
+    lineClassificationPosition: clean(classification.position).toUpperCase(),
+    lineClassificationSource: clean(classification.source),
+    lineClassificationEvidenceLevel: clean(classification.evidenceLevel),
+    lineClassificationModelVersion: clean(classification.modelVersion),
+  }
+}
+
 export const buildPlayerSeasonIndexDoc = ({
   league = {},
   season = {},
@@ -168,6 +183,7 @@ export const buildPlayerSeasonIndexDoc = ({
 
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
+    ...buildLineClassificationIndexFields(player),
     numShirt: clean(player.numShirt),
     statsStatus: normalizePlayerStatsStatus(player.statsStatus),
 

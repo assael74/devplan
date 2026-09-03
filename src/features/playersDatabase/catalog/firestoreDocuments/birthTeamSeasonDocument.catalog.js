@@ -5,7 +5,7 @@
 // for exactly one team + season identity.
 
 const TEAM_BALANCE_GENERIC_OBJECT = {
-  snapshotFormat: 'team-balance-summary-v2',
+  snapshotFormat: 'team-balance-summary-v14',
   version: '',
   outputContractVersion: '',
   persistenceContractVersion: '',
@@ -13,44 +13,96 @@ const TEAM_BALANCE_GENERIC_OBJECT = {
   source: {
     inputHash: '',
   },
-  reliability: {
-    reliability: 'insufficient',
-    rosterCount: 0,
-    loadedCount: 0,
-    observedLoadedCount: 0,
-    missingCount: 0,
-    loadedCoverage: 0,
-    observedCoverage: 0,
+  lineClassificationCoverage: {
+    playersClassified: 0,
+    playersTotal: 0,
+    playersRate: 0,
+    minutesClassified: 0,
+    minutesTotal: 0,
+    minutesRate: 0,
   },
-  availability: {
-    minutesDistribution: 'unavailable',
-    possibleMinutesUsage: 'unavailable',
-    productionDistribution: 'unavailable',
-    rotationDistribution: 'unavailable',
-    rotationStarts: 'unavailable',
-    rotationSubstituteIn: 'unavailable',
+  lineStructure: {
+    minimumGames: 8,
+    relevantPlayersCount: 0,
+    loadedRelevantPlayersCount: 0,
+    goalkeeperPlayersCount: 0,
+    eligiblePlayersCount: 0,
+    classifiedPlayersCount: 0,
+    unclassifiedSufficientSamplePlayersCount: 0,
+    insufficientSamplePlayersCount: 0,
+    positions: {
+      fullback: {
+        playersCount: 0,
+      },
+      attackingMidfielder: {
+        playersCount: 0,
+      },
+    },
+    lines: {
+      defense: {
+        playersCount: 0,
+      },
+      midfield: {
+        playersCount: 0,
+      },
+      attack: {
+        playersCount: 0,
+      },
+    },
+    composition: {
+      midfieldCorePlayersCount: 0,
+    },
   },
-  benchmarkVersions: {
-    minutesDistribution: '',
-    productionDistribution: '',
-    rotationDistribution: '',
+  balanceAvailability: {
+    availability: '',
+    availabilityReason: null,
   },
-  bands: {
-    minutesTop5: null,
-    minutesTop10: null,
-    minutesTop14: null,
-    usage70: null,
-    usage50: null,
-    usage30: null,
-    usage10: null,
-    productionTop1: null,
-    productionTop3: null,
-    rotationStartsTop5: null,
-    rotationStartsTop10: null,
-    rotationStartsTop14: null,
-    rotationSubInTop5: null,
-    rotationSubInTop10: null,
-    rotationSubInTop14: null,
+  lineupBenchmark: {
+    definitionId: '',
+    definitionVersion: '',
+    availability: '',
+    availabilityReason: null,
+    metrics: {
+      goalkeeper: { actual: 0, reference: 0, delta: null, state: '' },
+      defense: { actual: 0, reference: 0, delta: null, state: '' },
+      midfieldCore: { actual: 0, reference: 0, delta: null, state: '' },
+      attackingMidfielder: { actual: 0, reference: 0, delta: null, state: '' },
+      attack: { actual: 0, reference: 0, delta: null, state: '' },
+    },
+  },
+  classificationCoverageBenchmark: {
+    definitionId: '',
+    definitionVersion: '',
+    availability: '',
+    availabilityReason: null,
+    actual: 0,
+    typicalRange: { min: 0, max: 0 },
+    state: '',
+  },
+  scoutInterpretation: {
+    modelVersion: '',
+    availability: '',
+    availabilityReason: null,
+    offense: {
+      performanceLevel: '',
+      performanceBand: '',
+      benchmarkState: '',
+      finding: null,
+    },
+    defense: {
+      performanceLevel: '',
+      performanceBand: '',
+      benchmarkState: '',
+      finding: null,
+    },
+    teamInterest: {
+      isInteresting: false,
+      lines: {
+        offense: { isInteresting: false, reason: null },
+        defense: { isInteresting: false, reason: null },
+      },
+      squad: { isInteresting: false, reason: null },
+    },
   },
   updatedAt: null,
 }
@@ -111,6 +163,13 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       isYoungerAgeGroup: false,
       primaryPosition: '',
       positionLayer: '',
+      lineClassification: {
+        line: '',
+        position: null,
+        source: '',
+        evidenceLevel: '',
+        modelVersion: 'player-line-v7',
+      },
       playerStats: {
         games: 0,
         goals: 0,

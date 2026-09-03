@@ -132,6 +132,9 @@ const clearTeamPlayerStatsDerivedState = player => {
     interest,
     progression,
     combinations,
+    // Seasonal line classification is derived solely from Stats Load.
+    // Clearing stats must not retain a stale line/position classification.
+    lineClassification,
     ...rosterPlayer
   } = player || {}
 

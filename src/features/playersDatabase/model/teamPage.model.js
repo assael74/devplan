@@ -28,6 +28,7 @@ import {
   TEAM_SCOUT_SORT_MODE,
 } from '../../../shared/scouting/teams/index.js'
 import { enrichTeamScoutInputRows } from '../domain/adapters/teamScoutInput.adapter.js'
+import { buildTeamPerformanceProjectionFromTableRows } from '../services/write/shared/teamPerformanceProjection.js'
 
 const TEAM_PAGE_FUTURE_SEASON_KEY = '26/27'
 
@@ -347,6 +348,7 @@ export const normalizeTeamPagePlayerRow = ({
     externalPlayerId: playerSeason.identity?.externalPlayerId || '',
     playerUrl: playerSeason.metadata?.playerUrl || '',
     rosterStatus: playerSeason.metadata?.rosterStatus || 'regular',
+    manualTransferDirection: playerSeason.metadata?.manualTransferDirection || '',
     statsStatus: playerSeason.statsStatus || PLAYER_STATS_STATUS.MISSING,
     isYoungerAgeGroup: (
       playerSeason.metadata?.rosterStatus === 'youngerAgeGroup'
@@ -357,6 +359,7 @@ export const normalizeTeamPagePlayerRow = ({
     normalizedName: playerSeason.identity?.normalizedName || '',
     positionLayer: playerSeason.position?.layer || '',
     primaryPosition: playerSeason.position?.primary || '',
+    lineClassification: playerSeason.lineClassification || null,
     playerStats: {
       ...actual,
       teamMinutes: playerSeason.stats?.context?.teamMinutes,
@@ -469,6 +472,10 @@ export const buildTeamPageView = ({
     resolveTeamLookupKey(teamRow) || resolveTeamLookupKey(teamIdentity)
   ) || null
 
+  const officialPerformance = buildTeamPerformanceProjectionFromTableRows({
+    rows: tableRank,
+    team: { ...teamRow, ...teamIdentity },
+  })
   const leagueTeamSeason = adaptLeagueTableTeam({
     leagueDocument: leagueDoc || {},
     seasonDocument: leagueSeason,
@@ -481,9 +488,19 @@ export const buildTeamPageView = ({
     league: leagueDoc || {},
   })
 
-  const actual = leagueTeamSeason.completeness?.hasStats
+  const sourceActual = leagueTeamSeason.completeness?.hasStats
     ? leagueTeamSeason.stats.actual
     : birthTeamSeason.stats.actual
+  const actual = officialPerformance
+    ? {
+        ...sourceActual,
+        gamesPlayed: officialPerformance.teamGamePlayed,
+        goalsFor: officialPerformance.goalsFor,
+        goalsAgainst: officialPerformance.goalsAgainst,
+        goalsForPerGame: officialPerformance.goalsForPerGame,
+        goalsAgainstPerGame: officialPerformance.goalsAgainstPerGame,
+      }
+    : sourceActual
   const canonicalTeamSeason = {
     ...birthTeamSeason,
     identity: {
@@ -519,13 +536,15 @@ export const buildTeamPageView = ({
         leagueDoc?.leagueUrl
       ),
     },
-    ranking: leagueTeamSeason.ranking,
+    ranking: officialPerformance
+      ? { ...leagueTeamSeason.ranking, tableRank: officialPerformance.tableRank }
+      : leagueTeamSeason.ranking,
     performance: performance || birthTeamSeason.performance,
     scoutProfilesSummary: leagueTeamSeason.scoutProfilesSummary,
     completeness: {
       ...birthTeamSeason.completeness,
       ...leagueTeamSeason.completeness,
-      hasPerformance: Boolean(performance),
+      hasPerformance: Boolean(performance || officialPerformance),
     },
   }
 
@@ -560,15 +579,15 @@ export const buildTeamPageView = ({
     birthYear: canonicalTeamSeason.season.birthYear || '-',
     seasonKey: canonicalTeamSeason.season.seasonKey || '-',
     tableRank: canonicalTeamSeason.ranking.tableRank || '-',
-    tableAttackRank: Number(canonicalTeamSeason.performance?.offense?.rank) || 0,
-    tableDefenseRank: Number(canonicalTeamSeason.performance?.defense?.rank) || 0,
+    tableAttackRank: officialPerformance?.tableAttackRank ?? (Number(canonicalTeamSeason.performance?.offense?.rank) || null),
+    tableDefenseRank: officialPerformance?.tableDefenseRank ?? (Number(canonicalTeamSeason.performance?.defense?.rank) || null),
     games,
     points,
     successPercent,
     goalsFor,
     goalsAgainst,
-    goalsForPerGame: Number(actual.goalsForPerGame) || 0,
-    goalsAgainstPerGame: Number(actual.goalsAgainstPerGame) || 0,
+    goalsForPerGame: actual.goalsForPerGame ?? null,
+    goalsAgainstPerGame: actual.goalsAgainstPerGame ?? null,
     teamUrl: canonicalTeamSeason.metadata.teamUrl,
     teamStats: {
       teamGamePlayed: games,
@@ -576,8 +595,8 @@ export const buildTeamPageView = ({
       points,
       goalsFor,
       goalsAgainst,
-      goalsForPerGame: Number(actual.goalsForPerGame) || 0,
-      goalsAgainstPerGame: Number(actual.goalsAgainstPerGame) || 0,
+      goalsForPerGame: actual.goalsForPerGame ?? null,
+      goalsAgainstPerGame: actual.goalsAgainstPerGame ?? null,
       attackPerformance: performanceView.offense.priority.score,
       defensePerformance: performanceView.defense.priority.score,
     },

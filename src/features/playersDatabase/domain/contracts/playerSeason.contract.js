@@ -64,6 +64,7 @@ export const createEmptyPlayerSeason = () => ({
     primary: '',
     shirtNumber: '',
   },
+  lineClassification: null,
   statsStatus: PLAYER_STATS_STATUS.MISSING,
   stats: {
     actual: createEmptyPlayerStats(),
@@ -89,6 +90,7 @@ export const createEmptyPlayerSeason = () => ({
     teamUrl: '',
     seasonUrl: '',
     rosterStatus: '',
+    manualTransferDirection: '',
     sourceCollection: '',
     sourceDocumentId: '',
     sourceTarget: '',

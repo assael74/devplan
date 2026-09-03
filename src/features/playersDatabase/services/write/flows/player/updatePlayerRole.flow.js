@@ -11,26 +11,6 @@ import {
   updateTeamSeasonPlayerScoutProjection,
 } from '../../teams/index.js'
 
-const PRELIMINARY_LOW_OUTPUT_PROFILE_ID = 'preliminary_low_output'
-
-const hasPreliminaryScoutProfile = (player = {}) => {
-  const signals = Array.isArray(player?.scoutSignals)
-    ? player.scoutSignals
-    : Array.isArray(player?.scoutProfiles)
-      ? player.scoutProfiles
-      : []
-  const hasPreliminarySignal = signals.some(signal => (
-    signal?.profileId === PRELIMINARY_LOW_OUTPUT_PROFILE_ID ||
-    signal?.id === PRELIMINARY_LOW_OUTPUT_PROFILE_ID ||
-    signal?.profileIdentity === 'preliminary'
-  ))
-
-  return hasPreliminarySignal || (
-    Array.isArray(player?.preliminaryScoutProfileIds) &&
-    player.preliminaryScoutProfileIds.includes(PRELIMINARY_LOW_OUTPUT_PROFILE_ID)
-  )
-}
-
 const buildPlayerSyncResult = result => ({
   rowsCount: result && !result.skipped ? 1 : 0,
   createdCount: result && result.created ? 1 : 0,
@@ -108,12 +88,6 @@ export async function updatePlayerRoleFlow(payload = {}) {
     primaryPosition: player.primaryPosition || '',
     positionLayer: player.positionLayer || '',
     numShirt: player.numShirt || '',
-    // Updating a role or layer is the additional professional indication that
-    // lets a Preliminary profile be recalculated and reclassified.
-    confirmPositionContext: (
-      hasPreliminaryScoutProfile(player) &&
-      Boolean(player.primaryPosition || player.positionLayer)
-    ),
   }
 
   const projectionResults = {

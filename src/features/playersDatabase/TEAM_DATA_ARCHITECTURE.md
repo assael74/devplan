@@ -382,6 +382,16 @@ Before Stats Load:
 - unavailable balance metrics should remain unavailable,
 - balance bands should remain `null`.
 
+Team Balance interpretation is available only when the official
+`teamGamePlayed` is at least 8 **and** relevant player statistics are loaded.
+When `teamGamePlayed < 8`, its canonical state is
+`availability: unavailable` with
+`availabilityReason: season_sample_insufficient`. Once the eight-game gate is
+met, deleted or not-yet-loaded stats use `stats_not_loaded`.
+Performance remains available under its own rules. Balance facts may still be
+computed, but Balance benchmarks, Team Interest and SearchIndex findings must
+remain inactive while Balance is unavailable.
+
 Team Balance must not be treated as an official Team Performance source.
 
 Team Balance population scopes are explicit:
@@ -605,3 +615,249 @@ Before changing a Team/Stats/SearchIndex writer, answer:
 6. Will this change create a second source of truth?
 
 If any answer is unclear, stop and resolve the architecture before implementing the write.
+
+---
+
+# 16. Player line classification and current-team structure
+
+## 16.1 Ownership and stored projection
+
+`lineClassification` is a compact, season-scoped **performance** projection
+for a Team Player and Player Season. It describes the player's role in that
+specific season from the loaded statistics:
+
+```text
+line: DEFENSE | MIDFIELD | ATTACK
+position: FULLBACK | ATTACKING_MIDFIELDER | null
+```
+
+It is not a replacement for the visually verified `positionLayer` and
+`primaryPosition` fields. Those fields preserve the professional/visual
+verification and must never be populated or overwritten by performance
+classification. The classification is the canonical input to current-team
+line analysis and performance-based scout reclassification.
+
+The canonical classification builder is the shared team-line classification
+domain. Writers must call that builder rather than recreate its rules. The
+Team Season owns the current roster's classifications. A Player Season may
+keep the same compact projection as player history, but a prior-season value
+must never be used as a fallback for the current Team Season.
+
+The Team Balance snapshot owns the derived `lineClassificationCoverage`,
+`lineStructure`, `lineupBenchmark`, and compact `scoutInterpretation`
+projections. `lineStructure` contains
+facts only: the current counts, identified goalkeepers, classified players,
+players with an 8+ sample who remain unclassified, and players below the
+8-game sample. All counts exclude `retired`, `transferredOut`, and
+`youngerAgeGroup`. A known goalkeeper is an identified role and is counted as
+classified, while remaining outside the three field lines. `relevantPlayersCount`
+is the real current-squad denominator. SearchIndex remains a projection only
+and must not become a source for any balance value.
+
+## 16.2 Classification decision order
+
+Classification is decided from current-season performance only. It is derived
+when sufficient current-season statistics are available and remains empty when
+they are not. `primaryPosition` and `positionLayer` are not a classification
+input and cannot change the performance result.
+
+A visually verified `goalkeeper` / `GK` is excluded from field-player line
+inference, so a goalkeeper cannot be misclassified as defense solely from
+minutes. This exclusion does not make the visual fields a source of the
+resulting line.
+
+Known goalkeepers are counted separately in `lineStructure.goalkeeperPlayersCount`.
+They are not included in `DEFENSE`, in the statistical-classification population,
+or in the unclassified count.
+
+## 16.3 Statistical inference rules
+
+Statistical inference first identifies the line and only then refines the
+position where the rules prove it:
+
+- Fewer than 8 games: no statistical classification.
+- 8 or more games and `10+` goals: `ATTACK`, with `position: null`.
+- 8 or more games and fewer than 10 goals: continue through the personal
+  minutes gate.
+- Personal minutes rate is `playerMinutes / (playerGames × gameMinutes)`.
+  Fewer than `70%` produces no classification; `70%` and above continues to
+  the existing minutes and substitution matrix.
+- Inside that matrix, `5–9` goals produce `MIDFIELD` and
+  `ATTACKING_MIDFIELDER` only after both gates have passed.
+- The fullback rule may return `FULLBACK` only inside `DEFENSE`.
+
+The model must not infer striker, centre-back, winger, or any other detailed
+position without an explicit rule. `FULLBACK` and `ATTACKING_MIDFIELDER` are
+the only statistical position refinements currently supported.
+
+## 16.4 Current-team line structure
+
+`lineStructure` measures the current team only. Its real-squad population
+excludes `retired`, `transferredOut`, and `youngerAgeGroup`. The three field
+line counts use loaded players that pass the 8-game classification gate;
+goalkeepers come from the separately verified goalkeeper role.
+
+It is intentionally a derived-facts layer:
+
+```text
+Team Balance identifies current-squad facts
+    ↓
+Line Classification assigns line / proven position
+    ↓
+Line Structure counts the composition
+    ↓
+Benchmark Evaluation compares counts to a versioned reference
+    ↓
+Performance + Balance Interpretation may later decide a scouting finding
+```
+
+It must not emit `shortage`, `overload`, `need`, `opportunity`, a target flag,
+or UI text. `FULLBACK` remains a factual position refinement only.
+
+## 16.5 Reference Lineup Benchmark and evaluation
+
+The canonical reference is defined once in:
+
+`src/shared/scouting/teams/balance/benchmark/teamLineupStructureBenchmark.definition.js`
+
+```text
+GOALKEEPER: 1
+DEFENSE: 4
+MIDFIELD CORE: 3
+ATTACKING_MIDFIELDER: 1
+ATTACK: 2
+```
+
+`ATTACKING_MIDFIELDER` is a `MIDFIELD` subtype, so `midfieldCore` is the
+MIDFIELD count less attacking midfielders. The same player is never counted
+twice in the 3 + 1 reference.
+
+The canonical evaluator is:
+
+`src/shared/scouting/teams/balance/benchmark/evaluateTeamLineupStructureBenchmark.js`
+
+It produces the persisted `lineupBenchmark` contract:
+
+```text
+definitionId, definitionVersion, availability, availabilityReason
+metrics.<metric>.actual, reference, delta, state
+```
+
+The only evaluation states are `below_reference`, `at_reference`,
+`above_reference`, and `unavailable`. This is a deterministic structural
+comparison, not a verdict about shortage, quality, need, or opportunity. A
+different age, level, or context can later select another versioned definition
+without rewriting the evaluator.
+
+## 16.6 Performance + balance interpretation and Team Interest V1
+
+An unusual structure is information, not an automatic assertion that a team
+is unbalanced. The versioned interpretation layer joins Team Performance,
+Benchmark Evaluation, and classification coverage.
+
+Team Interest V1 uses **only** the `ATTACK` and `DEFENSE` benchmark metrics.
+`midfieldCore` and `attackingMidfielder` remain persisted structural
+diagnostics and are displayed as `below_reference`, `at_reference`, or
+`above_reference`; they must not generate a team-interest finding.
+
+The performance band is derived from the existing Team Performance priority:
+`POSITIVE`, `HIGH`, and `ELITE` are `positive_or_above`; `NEUTRAL` is
+`regular`; `LOW` is `low`. The attack matrix is:
+
+```text
+positive_or_above + below/at/above = ATTACK_CONCENTRATION / ATTACK_ESTABLISHED / ATTACK_HIGH_COMPETITION
+regular           + below/at/above = ATTACK_DEPTH_REVIEW / NO_CLEAR_FINDING / REVIEW_REQUIRED
+low               + below/at/above = ATTACK_POSSIBLE_GAP / ATTACK_QUALITY_REVIEW / REVIEW_REQUIRED
+```
+
+The defense matrix is:
+
+```text
+positive_or_above + below/at/above = DEFENSE_CONCENTRATION / DEFENSE_ESTABLISHED / REVIEW_REQUIRED
+regular           + below/at/above = DEFENSE_DEPTH_REVIEW / NO_CLEAR_FINDING / REVIEW_REQUIRED
+low               + below/at/above = DEFENSE_POSSIBLE_GAP / DEFENSE_QUALITY_REVIEW / REVIEW_REQUIRED
+```
+
+`REVIEW_REQUIRED` is intentional: no professional conclusion has been
+approved for that combination yet. The canonical `teamInterest.isInteresting`
+is true only for `ATTACK_CONCENTRATION`, `ATTACK_HIGH_COMPETITION`,
+`ATTACK_POSSIBLE_GAP`, `DEFENSE_CONCENTRATION`, and `DEFENSE_POSSIBLE_GAP`.
+There is no separate Agent versus Club Scout interest model.
+
+SearchIndex projects only the interpretation model version, availability,
+attack finding, defense finding, and derived interest flag. It never stores
+the whole benchmark evaluation.
+
+Team Interest also includes a separate Squad Interest source. The canonical
+`classification-coverage-v1` benchmark evaluates `classifiedPlayersCount`
+against the versioned typical range `10–13`, returning `below_typical`,
+`typical`, `above_typical`, or `unavailable`. These are structural facts, not
+Squad Interest by themselves. Squad Interest is active only when coverage is
+below or above typical and both offense and defense performance bands are
+either `positive_or_above` or `low`. Typical coverage, mixed performance, and
+unavailable performance never produce Squad Interest. This evaluation never
+gates the line benchmark.
+
+`teamInterest` is the versioned business summary with three independent
+sources: line offense, line defense, and approved squad coverage/performance
+interpretation. `teamInterest.isInteresting` is the OR of those sources. This mirrors the
+purpose of Player Interest—whether further attention is justified—without
+introducing an Agent versus Club Scout split.
+
+The interpretation layer is unavailable before eight official league games
+(`season_sample_insufficient`); once that gate is met, cleared or not-yet-
+loaded stats use `stats_not_loaded`. In either state all benchmark metric states are
+`unavailable`, Team Interest is false, and the Team SearchIndex receives no
+active Balance finding. These gates never change Team Performance.
+
+## 16.7 Write and invalidation flow
+
+Stats Load derives and persists each Team Player's `lineClassification` from
+the canonical builder before rebuilding Team Balance. The resulting
+classification is passed into scout calculation: it reclassifies
+`preliminary_low_output` ("מחפש זהות") using the performance line, without
+changing `primaryPosition`, `positionLayer`, or visual-verification answers.
+
+A manual role or position change updates only the visual-verification fields
+and must:
+
+```text
+update current Team Player role
+    ↓
+recompute lineClassification with the canonical builder
+    ↓
+invalidate or rebuild the Team Balance snapshot
+    ↓
+recompute lineStructure, lineupBenchmark and their fingerprint
+    ↓
+refresh downstream projections
+```
+
+The Team Balance input fingerprint must include `lineClassification`; a role
+edit must therefore never leave a fresh-looking snapshot with stale line
+structure. Catalog definitions for Team Season and Player Season must remain
+aligned whenever the compact classification or structure projection changes.
+
+## 16.8 SearchIndex projection
+
+`dbSearchIndexes` is a read/search projection and not a source of truth. Each
+Player Season index row carries the flat performance fields:
+
+```text
+lineClassificationLine
+lineClassificationPosition
+lineClassificationSource
+lineClassificationEvidenceLevel
+lineClassificationModelVersion
+```
+
+The same row may also carry `primaryPosition` and `positionLayer`, but those
+remain the visual-verification fields. Stats Load updates the flat
+`lineClassification*` fields and scout-profile summary; it must not replace
+the visual fields.
+
+For Team Balance, the Team Season index stores only the balance dependency
+versions and the compact `scoutInterpretationModelVersion`,
+`scoutInterpretationAvailability`, `scoutInterpretationAvailabilityReason`, `scoutOffenseFinding`,
+`scoutDefenseFinding`, and `teamInterest` projection. It does not duplicate
+the line-structure facts or the full `lineupBenchmark` evaluation.

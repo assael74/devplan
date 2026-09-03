@@ -1,51 +1,40 @@
 // src/shared/scouting/teams/balance/teamBalance.builder.js
 
-import { buildTeamBalanceMinutesDistribution } from './teamBalance.minutesDistribution.js'
-import { buildTeamBalanceDataReliability } from './teamBalance.reliability.js'
-import { buildTeamBalanceMinutesBenchmark } from './teamBalance.minutesBenchmark.js'
-import { buildTeamBalanceProductionDistribution } from './teamBalance.productionDistribution.js'
-import { buildTeamBalanceRotationDistribution } from './teamBalance.rotationDistribution.js'
-import { buildTeamBalanceRotationBenchmark } from './teamBalance.rotationBenchmarkComparison.js'
-import { buildTeamBalanceProductionBenchmark } from './teamBalance.productionBenchmarkComparison.js'
+import {
+  buildTeamLineStructure,
+  buildTeamLineClassificationCoverage,
+} from '../lines/index.js'
+import {
+  evaluateTeamLineupStructureBenchmark,
+} from './benchmark/evaluateTeamLineupStructureBenchmark.js'
+import {
+  evaluateTeamClassificationCoverageBenchmark,
+} from './benchmark/evaluateTeamClassificationCoverageBenchmark.js'
+import { buildTeamBalanceAvailability } from './teamBalanceAvailability.js'
 
-export const buildTeamBalance = ({ players = [] } = {}) => {
-  const reliability = buildTeamBalanceDataReliability({ players })
-  const minutesDistribution = buildTeamBalanceMinutesDistribution({
-    players,
-    reliability,
+export const buildTeamBalance = ({ players = [], teamGamePlayed = 0 } = {}) => {
+  const lineClassificationCoverage = buildTeamLineClassificationCoverage({ players })
+  const lineStructure = buildTeamLineStructure({ players })
+  const balanceAvailability = buildTeamBalanceAvailability({
+    teamGamePlayed,
+    lineStructure,
   })
-  const minutesBenchmark = buildTeamBalanceMinutesBenchmark({
-    minutesDistribution,
-    reliability,
+  const lineupBenchmark = evaluateTeamLineupStructureBenchmark({
+    lineStructure,
+    balanceAvailability,
   })
-  const productionDistribution = buildTeamBalanceProductionDistribution({
-    players,
-    reliability,
-  })
-  const rotationDistribution = buildTeamBalanceRotationDistribution({
-    players,
-    reliability,
-  })
-  const rotationBenchmark = buildTeamBalanceRotationBenchmark({
-    rotationDistribution,
-  })
-  const productionBenchmark = buildTeamBalanceProductionBenchmark({
-    productionDistribution,
+  const classificationCoverageBenchmark = evaluateTeamClassificationCoverageBenchmark({
+    lineStructure,
+    balanceAvailability,
   })
 
   return {
-    version: 'team-balance-v1',
-    reliability,
-    metrics: {
-      minutesDistribution,
-      productionDistribution,
-      rotationDistribution,
-    },
-    benchmarks: {
-      minutesDistribution: minutesBenchmark,
-      productionDistribution: productionBenchmark,
-      rotationDistribution: rotationBenchmark,
-    },
+    version: 'team-balance-v13',
+    lineClassificationCoverage,
+    lineStructure,
+    balanceAvailability,
+    lineupBenchmark,
+    classificationCoverageBenchmark,
     conclusions: [],
     annotations: {},
   }

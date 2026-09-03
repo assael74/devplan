@@ -5,11 +5,8 @@ import {
 } from '../../../domain/adapters/teamBalanceInput.adapter.js'
 import { buildTeamBalanceState } from '../../../domain/orchestration/buildTeamBalanceState.js'
 import {
-  TEAM_BALANCE_MINUTES_BENCHMARK_VERSION,
   TEAM_BALANCE_OUTPUT_CONTRACT_VERSION,
   TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION,
-  TEAM_BALANCE_PRODUCTION_BENCHMARK_VERSION,
-  TEAM_BALANCE_ROTATION_BENCHMARK_VERSION,
   TEAM_BALANCE_VERSION,
 } from '../../../../../shared/scouting/scouting.version.js'
 
@@ -45,44 +42,96 @@ const TEAM_BALANCE_SNAPSHOT_SHAPE = Object.freeze({
   source: {
     inputHash: '',
   },
-  reliability: {
-    reliability: '',
-    rosterCount: 0,
-    loadedCount: 0,
-    observedLoadedCount: 0,
-    missingCount: 0,
-    loadedCoverage: 0,
-    observedCoverage: 0,
+  lineClassificationCoverage: {
+    playersClassified: 0,
+    playersTotal: 0,
+    playersRate: 0,
+    minutesClassified: 0,
+    minutesTotal: 0,
+    minutesRate: 0,
   },
-  availability: {
-    minutesDistribution: '',
-    possibleMinutesUsage: '',
-    productionDistribution: '',
-    rotationDistribution: '',
-    rotationStarts: '',
-    rotationSubstituteIn: '',
+  lineStructure: {
+    minimumGames: 8,
+    relevantPlayersCount: 0,
+    loadedRelevantPlayersCount: 0,
+    goalkeeperPlayersCount: 0,
+    eligiblePlayersCount: 0,
+    classifiedPlayersCount: 0,
+    unclassifiedSufficientSamplePlayersCount: 0,
+    insufficientSamplePlayersCount: 0,
+    positions: {
+      fullback: {
+        playersCount: 0,
+      },
+      attackingMidfielder: {
+        playersCount: 0,
+      },
+    },
+    lines: {
+      defense: {
+        playersCount: 0,
+      },
+      midfield: {
+        playersCount: 0,
+      },
+      attack: {
+        playersCount: 0,
+      },
+    },
+    composition: {
+      midfieldCorePlayersCount: 0,
+    },
   },
-  benchmarkVersions: {
-    minutesDistribution: '',
-    productionDistribution: '',
-    rotationDistribution: '',
+  balanceAvailability: {
+    availability: '',
+    availabilityReason: null,
   },
-  bands: {
-    minutesTop5: null,
-    minutesTop10: null,
-    minutesTop14: null,
-    usage70: null,
-    usage50: null,
-    usage30: null,
-    usage10: null,
-    productionTop1: null,
-    productionTop3: null,
-    rotationStartsTop5: null,
-    rotationStartsTop10: null,
-    rotationStartsTop14: null,
-    rotationSubInTop5: null,
-    rotationSubInTop10: null,
-    rotationSubInTop14: null,
+  lineupBenchmark: {
+    definitionId: '',
+    definitionVersion: '',
+    availability: '',
+    availabilityReason: null,
+    metrics: {
+      goalkeeper: { actual: 0, reference: 0, delta: null, state: '' },
+      defense: { actual: 0, reference: 0, delta: null, state: '' },
+      midfieldCore: { actual: 0, reference: 0, delta: null, state: '' },
+      attackingMidfielder: { actual: 0, reference: 0, delta: null, state: '' },
+      attack: { actual: 0, reference: 0, delta: null, state: '' },
+    },
+  },
+  classificationCoverageBenchmark: {
+    definitionId: '',
+    definitionVersion: '',
+    availability: '',
+    availabilityReason: null,
+    actual: 0,
+    typicalRange: { min: 0, max: 0 },
+    state: '',
+  },
+  scoutInterpretation: {
+    modelVersion: '',
+    availability: '',
+    availabilityReason: null,
+    offense: {
+      performanceLevel: '',
+      performanceBand: '',
+      benchmarkState: '',
+      finding: null,
+    },
+    defense: {
+      performanceLevel: '',
+      performanceBand: '',
+      benchmarkState: '',
+      finding: null,
+    },
+    teamInterest: {
+      isInteresting: false,
+      lines: {
+        offense: { isInteresting: false, reason: null },
+        defense: { isInteresting: false, reason: null },
+      },
+      squad: { isInteresting: false, reason: null },
+    },
   },
   updatedAt: null,
 })
@@ -122,45 +171,45 @@ export const buildBalanceInputFingerprint = seasonDoc => {
       return {
         rosterStatus: player?.rosterStatus || '',
         statsStatus: player?.statsStatus || '',
-        games: stats.games ?? null,
-        goals: stats.goals ?? null,
-        minutes: stats.minutes ?? null,
-        starts: stats.starts ?? null,
-        substituteIn: stats.substituteIn ?? null,
-        substitutedOut: stats.substitutedOut ?? null,
-        teamMinutes: stats.teamMinutes ?? null,
+        games: stats.games === undefined || stats.games === null ? null : stats.games,
+        goals: stats.goals === undefined || stats.goals === null ? null : stats.goals,
+        minutes: stats.minutes === undefined || stats.minutes === null ? null : stats.minutes,
+        starts: stats.starts === undefined || stats.starts === null ? null : stats.starts,
+        substituteIn: stats.substituteIn === undefined || stats.substituteIn === null ? null : stats.substituteIn,
+        substitutedOut: stats.substitutedOut === undefined || stats.substitutedOut === null ? null : stats.substitutedOut,
+        teamMinutes: stats.teamMinutes === undefined || stats.teamMinutes === null ? null : stats.teamMinutes,
+        teamGames: stats.teamGames === undefined || stats.teamGames === null ? null : stats.teamGames,
+        primaryPosition: player?.primaryPosition || '',
+        positionLayer: player?.positionLayer || '',
+        lineClassification: player?.lineClassification || null,
       }
     })
     .map(player => sortValue(player))
     .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)))
 
-  return hashValue({ players })
+  const teamGamePlayed = seasonDoc?.teamStats?.teamGamePlayed ??
+    seasonDoc?.teamStats?.gamesPlayed ??
+    seasonDoc?.teamGamePlayed ??
+    null
+
+  return hashValue({ teamGamePlayed, players })
 }
 
 
-export const TEAM_BALANCE_SNAPSHOT_FORMAT = 'team-balance-summary-v2'
+export const TEAM_BALANCE_SNAPSHOT_FORMAT = 'team-balance-summary-v14'
 
 export const buildBalanceDependencyKey = ({
   version = '',
   outputContractVersion = '',
   persistenceContractVersion = '',
-  benchmarkVersions = {},
 } = {}) => [
   TEAM_BALANCE_SNAPSHOT_FORMAT,
   clean(version),
   clean(outputContractVersion),
   clean(persistenceContractVersion),
-  clean(benchmarkVersions.minutesDistribution),
-  clean(benchmarkVersions.productionDistribution),
-  clean(benchmarkVersions.rotationDistribution),
 ].join('|')
 
 export const buildCurrentTeamBalanceDependency = () => {
-  const benchmarkVersions = {
-    minutesDistribution: TEAM_BALANCE_MINUTES_BENCHMARK_VERSION,
-    productionDistribution: TEAM_BALANCE_PRODUCTION_BENCHMARK_VERSION,
-    rotationDistribution: TEAM_BALANCE_ROTATION_BENCHMARK_VERSION,
-  }
   const version = TEAM_BALANCE_VERSION
   const outputContractVersion = TEAM_BALANCE_OUTPUT_CONTRACT_VERSION
   const persistenceContractVersion = TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION
@@ -170,12 +219,10 @@ export const buildCurrentTeamBalanceDependency = () => {
     version,
     outputContractVersion,
     persistenceContractVersion,
-    benchmarkVersions,
     dependencyKey: buildBalanceDependencyKey({
       version,
       outputContractVersion,
       persistenceContractVersion,
-      benchmarkVersions,
     }),
   }
 }
@@ -203,15 +250,6 @@ export const inspectTeamBalanceFreshness = ({ seasonDoc = {} } = {}) => {
   if (clean(teamBalance.persistenceContractVersion) !== dependency.persistenceContractVersion) {
     reasons.push('persistence_contract')
   }
-  if (clean(teamBalance.benchmarkVersions?.minutesDistribution) !== dependency.benchmarkVersions.minutesDistribution) {
-    reasons.push('minutes_benchmark')
-  }
-  if (clean(teamBalance.benchmarkVersions?.productionDistribution) !== dependency.benchmarkVersions.productionDistribution) {
-    reasons.push('production_benchmark')
-  }
-  if (clean(teamBalance.benchmarkVersions?.rotationDistribution) !== dependency.benchmarkVersions.rotationDistribution) {
-    reasons.push('rotation_benchmark')
-  }
   if (clean(teamBalance.dependencyKey) !== dependency.dependencyKey) {
     reasons.push('dependency_key')
   }
@@ -234,37 +272,24 @@ export const inspectTeamBalanceFreshness = ({ seasonDoc = {} } = {}) => {
   }
 }
 
-const readBand = comparison => {
-  const band = comparison?.band
-  return band === undefined || band === null || band === '' ? null : clean(band)
-}
-
 export const buildTeamBalanceDocumentSnapshot = ({
   balanceState,
   inputHash = '',
   updatedAt = null,
 } = {}) => {
   const source = cleanObject(balanceState)
-  const metrics = cleanObject(source.metrics)
-  const benchmarks = cleanObject(source.benchmarks)
-  const reliability = cleanObject(source.reliability)
-  const minutes = cleanObject(metrics.minutesDistribution)
-  const production = cleanObject(metrics.productionDistribution)
-  const rotation = cleanObject(metrics.rotationDistribution)
-  const minutesBenchmark = cleanObject(benchmarks.minutesDistribution)
-  const productionBenchmark = cleanObject(benchmarks.productionDistribution)
-  const rotationBenchmark = cleanObject(benchmarks.rotationDistribution)
-  const benchmarkVersions = {
-    minutesDistribution: minutesBenchmark.benchmarkVersion || '',
-    productionDistribution: productionBenchmark.benchmarkVersion || '',
-    rotationDistribution: rotationBenchmark.benchmarkVersion || '',
-  }
+  const lineClassificationCoverage = cleanObject(source.lineClassificationCoverage)
+  const lineStructure = cleanObject(source.lineStructure)
+  const balanceAvailability = cleanObject(source.balanceAvailability)
+  const lineupBenchmark = cleanObject(source.lineupBenchmark)
+  const benchmarkMetrics = cleanObject(lineupBenchmark.metrics)
+  const classificationCoverageBenchmark = cleanObject(source.classificationCoverageBenchmark)
+  const scoutInterpretation = cleanObject(source.scoutInterpretation)
   const persistenceContractVersion = TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION
   const dependencyKey = buildBalanceDependencyKey({
     version: source.version,
     outputContractVersion: source.outputContractVersion,
     persistenceContractVersion,
-    benchmarkVersions,
   })
 
   return {
@@ -276,40 +301,114 @@ export const buildTeamBalanceDocumentSnapshot = ({
     source: {
       inputHash,
     },
-    reliability: {
-      reliability: clean(reliability.reliability) || 'insufficient',
-      rosterCount: Number(reliability.rosterCount) || 0,
-      loadedCount: Number(reliability.loadedCount) || 0,
-      observedLoadedCount: Number(reliability.observedLoadedCount) || 0,
-      missingCount: Number(reliability.missingCount) || 0,
-      loadedCoverage: Number(reliability.loadedCoverage) || 0,
-      observedCoverage: Number(reliability.observedCoverage) || 0,
+    lineClassificationCoverage: {
+      playersClassified: Number(lineClassificationCoverage.playersClassified) || 0,
+      playersTotal: Number(lineClassificationCoverage.playersTotal) || 0,
+      playersRate: Number(lineClassificationCoverage.playersRate) || 0,
+      minutesClassified: Number(lineClassificationCoverage.minutesClassified) || 0,
+      minutesTotal: Number(lineClassificationCoverage.minutesTotal) || 0,
+      minutesRate: Number(lineClassificationCoverage.minutesRate) || 0,
     },
-    availability: {
-      minutesDistribution: clean(minutes.availability) || 'unavailable',
-      possibleMinutesUsage: clean(minutes?.possibleMinutesUsage?.availability) || 'unavailable',
-      productionDistribution: clean(production.availability) || 'unavailable',
-      rotationDistribution: clean(rotation.availability) || 'unavailable',
-      rotationStarts: clean(rotation?.starts?.availability) || 'unavailable',
-      rotationSubstituteIn: clean(rotation?.substituteIn?.availability) || 'unavailable',
+    lineStructure: {
+      minimumGames: Number(lineStructure.minimumGames) || 0,
+      relevantPlayersCount: Number(lineStructure.relevantPlayersCount) || 0,
+      loadedRelevantPlayersCount: Number(lineStructure.loadedRelevantPlayersCount) || 0,
+      goalkeeperPlayersCount: Number(lineStructure.goalkeeperPlayersCount) || 0,
+      eligiblePlayersCount: Number(lineStructure.eligiblePlayersCount) || 0,
+      classifiedPlayersCount: Number(lineStructure.classifiedPlayersCount) || 0,
+      unclassifiedSufficientSamplePlayersCount: Number(lineStructure.unclassifiedSufficientSamplePlayersCount) || 0,
+      insufficientSamplePlayersCount: Number(lineStructure.insufficientSamplePlayersCount) || 0,
+      positions: {
+        fullback: {
+          playersCount: Number(lineStructure.positions?.fullback?.playersCount) || 0,
+        },
+        attackingMidfielder: {
+          playersCount: Number(lineStructure.positions?.attackingMidfielder?.playersCount) || 0,
+        },
+      },
+      lines: {
+        defense: {
+          playersCount: Number(lineStructure.lines?.defense?.playersCount) || 0,
+        },
+        midfield: {
+          playersCount: Number(lineStructure.lines?.midfield?.playersCount) || 0,
+        },
+        attack: {
+          playersCount: Number(lineStructure.lines?.attack?.playersCount) || 0,
+        },
+      },
+      composition: {
+        midfieldCorePlayersCount: Number(lineStructure.composition?.midfieldCorePlayersCount) || 0,
+      },
     },
-    benchmarkVersions,
-    bands: {
-      minutesTop5: readBand(minutesBenchmark?.topShares?.[5]),
-      minutesTop10: readBand(minutesBenchmark?.topShares?.[10]),
-      minutesTop14: readBand(minutesBenchmark?.topShares?.[14]),
-      usage70: readBand(minutesBenchmark?.possibleMinutesUsage?.counts?.[70]),
-      usage50: readBand(minutesBenchmark?.possibleMinutesUsage?.counts?.[50]),
-      usage30: readBand(minutesBenchmark?.possibleMinutesUsage?.counts?.[30]),
-      usage10: readBand(minutesBenchmark?.possibleMinutesUsage?.counts?.[10]),
-      productionTop1: readBand(productionBenchmark?.concentration?.top1Share),
-      productionTop3: readBand(productionBenchmark?.concentration?.top3Share),
-      rotationStartsTop5: readBand(rotationBenchmark?.starts?.topShares?.[5]),
-      rotationStartsTop10: readBand(rotationBenchmark?.starts?.topShares?.[10]),
-      rotationStartsTop14: readBand(rotationBenchmark?.starts?.topShares?.[14]),
-      rotationSubInTop5: readBand(rotationBenchmark?.substituteIn?.topShares?.[5]),
-      rotationSubInTop10: readBand(rotationBenchmark?.substituteIn?.topShares?.[10]),
-      rotationSubInTop14: readBand(rotationBenchmark?.substituteIn?.topShares?.[14]),
+    balanceAvailability: {
+      availability: clean(balanceAvailability.availability),
+      availabilityReason: clean(balanceAvailability.availabilityReason) || null,
+    },
+    lineupBenchmark: {
+      definitionId: clean(lineupBenchmark.definitionId),
+      definitionVersion: clean(lineupBenchmark.definitionVersion),
+      availability: clean(lineupBenchmark.availability),
+      availabilityReason: clean(lineupBenchmark.availabilityReason) || null,
+      metrics: Object.keys(TEAM_BALANCE_SNAPSHOT_SHAPE.lineupBenchmark.metrics)
+        .reduce((result, key) => {
+          const metric = cleanObject(benchmarkMetrics[key])
+          return {
+            ...result,
+            [key]: {
+              actual: Number(metric.actual) || 0,
+              reference: Number(metric.reference) || 0,
+              delta: Number.isFinite(Number(metric.delta)) ? Number(metric.delta) : null,
+              state: clean(metric.state),
+            },
+          }
+        }, {}),
+    },
+    classificationCoverageBenchmark: {
+      definitionId: clean(classificationCoverageBenchmark.definitionId),
+      definitionVersion: clean(classificationCoverageBenchmark.definitionVersion),
+      availability: clean(classificationCoverageBenchmark.availability),
+      availabilityReason: clean(classificationCoverageBenchmark.availabilityReason) || null,
+      actual: Number(classificationCoverageBenchmark.actual) || 0,
+      typicalRange: {
+        min: Number(classificationCoverageBenchmark.typicalRange?.min) || 0,
+        max: Number(classificationCoverageBenchmark.typicalRange?.max) || 0,
+      },
+      state: clean(classificationCoverageBenchmark.state),
+    },
+    scoutInterpretation: {
+      modelVersion: clean(scoutInterpretation.modelVersion),
+      availability: clean(scoutInterpretation.availability),
+      availabilityReason: clean(scoutInterpretation.availabilityReason) || null,
+      offense: {
+        performanceLevel: clean(scoutInterpretation.offense?.performanceLevel),
+        performanceBand: clean(scoutInterpretation.offense?.performanceBand),
+        benchmarkState: clean(scoutInterpretation.offense?.benchmarkState),
+        finding: clean(scoutInterpretation.offense?.finding) || null,
+      },
+      defense: {
+        performanceLevel: clean(scoutInterpretation.defense?.performanceLevel),
+        performanceBand: clean(scoutInterpretation.defense?.performanceBand),
+        benchmarkState: clean(scoutInterpretation.defense?.benchmarkState),
+        finding: clean(scoutInterpretation.defense?.finding) || null,
+      },
+      teamInterest: {
+        isInteresting: Boolean(scoutInterpretation.teamInterest?.isInteresting),
+        lines: {
+          offense: {
+            isInteresting: Boolean(scoutInterpretation.teamInterest?.lines?.offense?.isInteresting),
+            reason: clean(scoutInterpretation.teamInterest?.lines?.offense?.reason) || null,
+          },
+          defense: {
+            isInteresting: Boolean(scoutInterpretation.teamInterest?.lines?.defense?.isInteresting),
+            reason: clean(scoutInterpretation.teamInterest?.lines?.defense?.reason) || null,
+          },
+        },
+        squad: {
+          isInteresting: Boolean(scoutInterpretation.teamInterest?.squad?.isInteresting),
+          reason: clean(scoutInterpretation.teamInterest?.squad?.reason) || null,
+        },
+      },
     },
     updatedAt,
   }
@@ -324,7 +423,6 @@ export const withTeamBalanceSnapshot = ({
   if (freshness.fresh) return seasonDoc
 
   const inputHash = freshness.inputHash
-  const previousBalance = freshness.teamBalance
   const balanceState = buildTeamBalanceState({
     teamDocument: teamRoot,
     seasonDocument: seasonDoc,

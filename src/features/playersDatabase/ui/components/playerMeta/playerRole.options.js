@@ -28,12 +28,27 @@ const POSITION_LABELS = {
   GK: 'שוער',
 }
 
-export const POSITION_LAYER_OPTIONS = Object.keys(POSITION_LAYERS).map(key => ({
+// The UI uses the professional pitch order, independently from the storage order.
+const POSITION_LAYER_DISPLAY_ORDER = [
+  'goalkeeper',
+  'defense',
+  'dmMid',
+  'midfield',
+  'atMidfield',
+  'attack',
+]
+
+const orderedPositionLayerKeys = POSITION_LAYER_DISPLAY_ORDER.filter(key => (
+  Array.isArray(POSITION_LAYERS[key])
+))
+
+export const POSITION_LAYER_OPTIONS = orderedPositionLayerKeys.map(key => ({
   value: key,
   label: POSITION_LAYER_LABELS[key] || key,
 }))
 
-export const POSITION_OPTIONS = Object.values(POSITION_LAYERS)
+export const POSITION_OPTIONS = orderedPositionLayerKeys
+  .flatMap(key => POSITION_LAYERS[key])
   .flat()
   .map(position => ({
     value: position.code,

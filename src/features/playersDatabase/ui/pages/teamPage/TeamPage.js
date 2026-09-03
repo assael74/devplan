@@ -3,6 +3,7 @@
 import * as React from 'react'
 import {
   Box,
+  Button,
   CircularProgress,
   Typography,
 } from '@mui/joy'
@@ -24,10 +25,9 @@ import {
 import { buildLeaguePageTeams } from '../../../model/leaguePage.model.js'
 import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
-import TeamHeader from './TeamHeader.js'
-import TeamKpiOverview from './TeamKpiOverview.js'
-import TeamPlayersSection from './TeamPlayersSection.js'
-import TeamActionsPanel from './TeamActionsPanel.js'
+import TeamHeader from '../teamPageV4/TeamHeader.js'
+import TeamOverviewSection from './TeamOverviewSection.js'
+import TeamActionsPanel from '../teamPageV4/TeamActionsPanel.js'
 import {
   PlayerRoleEditModal,
   RosterImportModal,
@@ -39,18 +39,20 @@ import {
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
-import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
+import useTeamRoleEditor from '../teamPageV4/hooks/useTeamRoleEditor.js'
 import useTeamUrlEditor from '../leaguePage/hooks/useTeamUrlEditor.js'
-import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
-import useTeamRosterImport from './hooks/useTeamRosterImport.js'
-import useTeamStatsImport from './hooks/useTeamStatsImport.js'
-import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
-import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
-import useTeamSeasonStatsDelete from './hooks/useTeamSeasonStatsDelete.js'
+import usePlayerUrlEditor from '../teamPageV4/hooks/usePlayerUrlEditor.js'
+import useTeamRosterImport from '../teamPageV4/hooks/useTeamRosterImport.js'
+import useTeamStatsImport from '../teamPageV4/hooks/useTeamStatsImport.js'
+import useTeamStatsColumns from '../teamPageV4/hooks/useTeamStatsColumns.js'
+import useTeamSeasonPlayersDelete from '../teamPageV4/hooks/useTeamSeasonPlayersDelete.js'
+import useTeamSeasonStatsDelete from '../teamPageV4/hooks/useTeamSeasonStatsDelete.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
-import { useTeamReport } from './report/index.js'
+import { useTeamReport } from '../teamPageV4/report/index.js'
 import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import ActivityStatusChip from '../../components/page/ActivityStatusChip.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
 
 const sx = {
@@ -58,6 +60,17 @@ const sx = {
   ...teamPageSx,
 }
 
+const resolveSeasonStatusChip = target => {
+  if (target === 'future') {
+    return { label: 'העונה טרם החלה', active: false, inactiveColor: '#2563EB', inactiveBg: '#EFF6FF' }
+  }
+
+  if (target === 'history') {
+    return { label: 'עונה הסתיימה', active: false, inactiveColor: '#64748B', inactiveBg: '#F1F5F9' }
+  }
+
+  return { label: 'עונה פעילה', active: true }
+}
 const cleanKey = value => String(value || '').trim()
 
 const buildTeamNavigationLabel = teamRow => [
@@ -128,6 +141,7 @@ function TeamPageContent() {
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileOnly, setProfileOnly] = React.useState(false)
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
+  const [activeView, setActiveView] = React.useState('team')
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
   const {
@@ -135,6 +149,7 @@ function TeamPageContent() {
     leagueDoc,
     team,
     teamDoc,
+    teamSeasons,
     players,
     hasTeamPlayers,
     seasonOptions,
@@ -408,6 +423,7 @@ function TeamPageContent() {
     favorites,
     selectedLeagueSeason,
     selectedSeasonKey,
+    selectedSeasonOption,
     selectedTeamSeason,
     team,
   ])
@@ -433,7 +449,7 @@ function TeamPageContent() {
     setEditTask(null)
   }
 
-  const isActiveSeason = selectedSeasonOption?.target === 'current'
+  const seasonStatusChip = resolveSeasonStatusChip(selectedSeasonOption?.target)
   const teamTasks = React.useMemo(() => {
     const teamIds = new Set([
       team.birthTeamId,
@@ -487,7 +503,6 @@ function TeamPageContent() {
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}
-          active={isActiveSeason}
           seasonKey={selectedSeasonKey}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}
@@ -499,35 +514,8 @@ function TeamPageContent() {
         />
 
         <Box sx={sx.contentGrid}>
-          <Box sx={sx.mainColumn}>
-            <TeamKpiOverview team={team} />
-
-            <TeamPlayersSection
-              players={visiblePlayers}
-              team={team}
-              seasonKey={selectedSeasonKey}
-              onRoleOpen={roleEditor.open}
-              onPlayerOpen={row => navigate(
-                PLAYERS_DATABASE_UI_ROUTES.player({
-                  playerId: row.playerDocumentId || row.id,
-                  seasonKey: selectedSeasonKey,
-                  teamId: team.birthTeamId || team.id,
-                  leagueId: selectedSeasonOption?.leagueId || leagueId,
-                  fromTeam: `${location.pathname}${location.search}`,
-                }),
-                {
-                  state: {
-                    playerTeamSource: {
-                      team,
-                      teamDoc,
-                      selectedTeamSeason,
-                    },
-                  },
-                }
-              )}
-              onPlayerUrlEdit={playerUrlEditor.open}
-              onFavoriteToggle={handlePlayerFavoriteToggle}
-            />
+          <Box sx={{ ...sx.mainColumn, ...sx.mainColumnContent }}>
+            <TeamOverviewSection season={selectedTeamSeason} />
           </Box>
 
           <TeamActionsPanel

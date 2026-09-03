@@ -27,14 +27,9 @@ import {
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerLifecycle.model.js'
 import {
-  buildScoutingPlayerVerification,
   normalizeScoutingPlayerVerification,
 } from './scoutingPlayerVerification.model.js'
 import { buildPlayerScoutState } from '../../../domain/orchestration/buildPlayerScoutState.js'
-import {
-  PLAYER_VERIFICATION_ANSWER,
-  PLAYER_VERIFICATION_QUESTION,
-} from '../../../../../shared/scouting/players/verification/playerVerification.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 
@@ -124,7 +119,6 @@ export const upsertProfiledPlayerDoc = async ({
   player = {},
   teamSeasonDocument = null,
   verificationAnswers = null,
-  confirmPositionContext = false,
   resolveLifecycleAfterCalculation = false,
 } = {}) => {
   const playerDocumentId = buildPlayerDocumentId(player)
@@ -163,18 +157,7 @@ export const upsertProfiledPlayerDoc = async ({
         ? { answers: verificationAnswers }
         : {}),
     })
-    // A manual role/layer update is an explicit professional indication. Keep
-    // the evidence with the Player Document so the reclassification remains
-    // stable on every later scout calculation.
-    const verification = confirmPositionContext
-      ? buildScoutingPlayerVerification({
-          currentVerification: incomingVerification,
-          questionId: PLAYER_VERIFICATION_QUESTION.POSITION_CONTEXT_VERIFIED,
-          answer: PLAYER_VERIFICATION_ANSWER.YES,
-          sourceType: 'player_role_update',
-          sourceLabel: 'עדכון עמדה / חוליה',
-        })
-      : incomingVerification
+    const verification = incomingVerification
     const baseDoc = buildPlayerBaseDoc(
       {
         ...player,

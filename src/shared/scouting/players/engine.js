@@ -359,7 +359,6 @@ export const buildPlayerScoutResult = ({
   const reclassificationResult = reclassifyPlayerScoutSignals({
     signals: preliminarySignals,
     player: normalizedInput.player,
-    verification: preliminaryVerification,
   })
   const classifiedSignals = reclassificationResult.signals
   const combinations = buildScoutProfileCombinations({

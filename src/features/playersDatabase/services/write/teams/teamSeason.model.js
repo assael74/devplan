@@ -40,6 +40,7 @@ import {
   buildTeamPlayerSeasonalScoutProjection,
 } from '../shared/playerScoutProjection.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
+import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
 
 const normalizePlayerName = normalizePlayerNameValue
 const normalizeIdPart = normalizePlayerIdPart
@@ -65,6 +66,23 @@ const buildInternalPlayerId = ({ player = {}, season = {} } = {}) => {
   }
 
   return ''
+}
+
+
+const normalizeLineClassification = value => {
+  const source = value && typeof value === 'object' ? value : null
+  if (!source) return null
+
+  const line = clean(source.line)
+  if (!line) return null
+
+  return {
+    line,
+    position: clean(source.position) || null,
+    source: clean(source.source),
+    evidenceLevel: clean(source.evidenceLevel),
+    modelVersion: clean(source.modelVersion),
+  }
 }
 
 const normalizeAliases = aliases =>
@@ -120,6 +138,7 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     ),
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
+    lineClassification: normalizeLineClassification(player.lineClassification),
     numShirt: clean(player.numShirt),
     statsStatus: normalizePlayerStatsStatus(player.statsStatus),
     playerStats: {
@@ -296,8 +315,14 @@ const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = 
     ...player,
     playerStats: buildCanonicalTeamPlayerStats({ player, team }),
   }
-  const seasonalProjection = buildTeamPlayerSeasonalScoutProjection({
+  const lineClassification = buildPlayerLineClassificationState({
     player: canonicalPlayer,
+  })
+  const seasonalProjection = buildTeamPlayerSeasonalScoutProjection({
+    player: {
+      ...canonicalPlayer,
+      lineClassification,
+    },
     team,
     season,
   })
@@ -311,9 +336,11 @@ const buildFullStatsScoutPlayer = ({ player = {}, existingPlayer = null, team = 
     ...normalizeTeamPlayer({
       ...canonicalPlayer,
       ...seasonalProjection,
+      lineClassification,
       scoutStatsLoadMeasurements,
     }, season),
     ...seasonalProjection,
+    lineClassification,
     scoutEffectiveImmediacyStatus: clean(player.scoutEffectiveImmediacyStatus),
     scoutPlayerInterestLevel: clean(player.scoutPlayerInterestLevel),
   }

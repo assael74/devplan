@@ -14,6 +14,7 @@ import {
 } from './teamSeasonDoc.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
+import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
 
 const normalizeComparableValue = value => Array.isArray(value)
   ? value.map(normalizeComparableValue)
@@ -160,5 +161,23 @@ export async function updateTeamSeasonPlayerVerificationAndScout({ player = {}, 
 }
 
 export async function updateTeamSeasonPlayerRoleAndScoutProfiles({ player = {}, primaryPosition = '', positionLayer = '', numShirt = '', ...payload } = {}) {
-  return updateSeasonPlayer({ ...payload, player, buildPatch: () => ({ primaryPosition: clean(primaryPosition), positionLayer: clean(positionLayer), numShirt: clean(numShirt) }) })
+  return updateSeasonPlayer({
+    ...payload,
+    player,
+    buildPatch: existing => {
+      const nextRole = {
+        ...existing,
+        primaryPosition: clean(primaryPosition),
+        positionLayer: clean(positionLayer),
+        numShirt: clean(numShirt),
+      }
+
+      return {
+        primaryPosition: nextRole.primaryPosition,
+        positionLayer: nextRole.positionLayer,
+        numShirt: nextRole.numShirt,
+        lineClassification: buildPlayerLineClassificationState({ player: nextRole }),
+      }
+    },
+  })
 }

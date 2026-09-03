@@ -82,28 +82,13 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
 
   balanceDependencyKey: '',
   balancePersistenceContractVersion: '',
-  balanceReliability: '',
-
-  balanceMinutesTop5Band: '',
-  balanceMinutesTop10Band: '',
-  balanceMinutesTop14Band: '',
-
-  balanceUsage70Band: '',
-  balanceUsage50Band: '',
-  balanceUsage30Band: '',
-  balanceUsage10Band: '',
-
-  balanceProductionTop1Band: '',
-  balanceProductionTop3Band: '',
-
-  balanceRotationStartsTop5Band: '',
-  balanceRotationStartsTop10Band: '',
-  balanceRotationStartsTop14Band: '',
-
-  balanceRotationSubInTop5Band: '',
-  balanceRotationSubInTop10Band: '',
-  balanceRotationSubInTop14Band: '',
-
+  scoutInterpretationModelVersion: '',
+  scoutInterpretationAvailability: '',
+  scoutInterpretationAvailabilityReason: '',
+  scoutOffenseFinding: '',
+  scoutDefenseFinding: '',
+  teamInterest: false,
+  squadInterestReason: '',
   playersCount: 0,
   scoutProfilesSummary: {
     total: 0,

@@ -58,6 +58,9 @@ export const adaptTeamBalancePlayerRow = player => {
     statsStatus: clean(source.statsStatus),
     primaryPosition: clean(source.primaryPosition),
     positionLayer: clean(source.positionLayer),
+    lineClassification: source.lineClassification && typeof source.lineClassification === 'object'
+      ? { ...source.lineClassification }
+      : null,
     isYoungerAgeGroup: source.isYoungerAgeGroup === true,
     playerStats: {
       games: toKnownNonNegativeNumber(resolveStatValue({

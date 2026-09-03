@@ -85,14 +85,14 @@ export default function DataTableHeader({
                   component='button'
                   type='button'
                   onClick={() => onSort(column)}
-                  aria-label={`מיון לפי ${column.label}`}
+                  aria-label={`מיון לפי ${column.headerAriaLabel || column.label}`}
                   sx={[
                     sx.sortButton,
                     active && sx.sortButtonActive,
                   ]}
                 >
                   <Box component='span' sx={sx.sortLabel}>
-                    {column.label}
+                    {column.headerContent || column.label}
                   </Box>
 
                   {active && (
@@ -107,7 +107,7 @@ export default function DataTableHeader({
                     </Box>
                   )}
                 </Box>
-              ) : column.label}
+              ) : (column.headerContent || column.label)}
             </Box>
           )
         })}
