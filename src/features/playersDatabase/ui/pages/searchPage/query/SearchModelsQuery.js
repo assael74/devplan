@@ -9,8 +9,7 @@ import {
 } from '@mui/joy'
 
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
-import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
-import ScoutProfileTooltip from '../../../components/scout/ScoutProfileTooltip.js'
+import ScoutProfileChipV2 from '../../../components/scout/ScoutProfileChipV2.js'
 import {
   SEARCH_PLAYER_IMMEDIACY_LEVELS,
   SEARCH_SCOUT_PROFILES,
@@ -82,25 +81,17 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
       description={option.description}
       onClick={handleToggle}
     >
-      <ScoutProfileChip
+      <ScoutProfileChipV2
         profileId={option.profile?.id || option.id || ''}
         label={option.label}
-        tooltip={option.isCombination ? option.tooltip : (
-          <ScoutProfileTooltip
-            profile={option.profile}
-            fields={[
-              'parameters',
-              'group',
-              'teamFilter',
-              'positionContext',
-              'positionDependency',
-              'reviews',
-            ]}
-          />
-        )}
+        profile={option.profile}
         iconId={option.iconId}
-        fontSize={11}
-        variant={option.variant || 'default'}
+        isFilter
+        isCombination={option.isCombination}
+        selected={selected}
+        showConditions={false}
+        showConditionsDepth={false}
+        shortLabel
       />
     </SelectableModelCard>
   )

@@ -1,5 +1,7 @@
 // src/shared/scouting/teams/lines/teamLineClassificationCoverage.js
 
+import { isTeamLineBalanceRelevantPlayer } from './teamLineBalancePlayerScope.js'
+
 const clean = value => String(value || '').trim()
 
 const toKnownNonNegativeNumber = value => {
@@ -17,14 +19,12 @@ const getPlayerStats = player => (
     : player || {}
 )
 
-const isOperationalPlayer = player => clean(player?.rosterStatus) !== 'retired'
-
 const isClassifiedPlayer = player => Boolean(clean(player?.lineClassification?.line))
 
 export const buildTeamLineClassificationCoverage = ({ players = [] } = {}) => {
   const rosterPlayers = (Array.isArray(players) ? players : [])
     .filter(player => player && typeof player === 'object')
-    .filter(isOperationalPlayer)
+    .filter(isTeamLineBalanceRelevantPlayer)
   const classifiedPlayers = rosterPlayers.filter(isClassifiedPlayer)
   const totalMinutes = rosterPlayers.reduce((sum, player) => {
     const minutes = toKnownNonNegativeNumber(getPlayerStats(player).minutes)

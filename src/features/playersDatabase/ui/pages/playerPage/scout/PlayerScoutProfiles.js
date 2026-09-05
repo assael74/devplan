@@ -5,47 +5,11 @@ import {
   Typography,
 } from '@mui/joy'
 
-import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
+import ScoutProfileChipV2, {
+  resolveScoutProfileDepthPct,
+} from '../../../components/scout/ScoutProfileChipV2.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { playerScoutOverviewSx as sx } from '../sx/playerScoutOverview.sx.js'
-
-function buildProfileTooltip(profile, near = false) {
-  return (
-    <Box sx={sx.profileTooltip}>
-      <Typography level='title-sm' sx={sx.profileTooltipTitle}>
-        {profile.label}
-      </Typography>
-
-      <Typography level='body-xs' sx={sx.profileTooltipText}>
-        {near
-          ? `עדיין לא עבר את הרף · חסרים ${Math.round(Number(profile.distancePct || 0))}%`
-          : profile.depthLabel || 'פרופיל מקצועי פעיל'}
-      </Typography>
-    </Box>
-  )
-}
-
-function resolveProfileDepth(profile = {}) {
-  const strengthDepth = Number(profile.profileStrength?.depthPct)
-
-  if (Number.isFinite(strengthDepth)) {
-    return strengthDepth
-  }
-
-  const profileDepth = Number(profile.profileDepth?.depthPct)
-
-  if (Number.isFinite(profileDepth)) {
-    return profileDepth
-  }
-
-  const directDepth = Number(profile.depthPct)
-
-  if (Number.isFinite(directDepth)) {
-    return directDepth
-  }
-
-  return null
-}
 
 function ProfileTab({
   profile,
@@ -56,20 +20,18 @@ function ProfileTab({
   if (!profile) return null
 
   const canSelect = typeof onSelect === 'function'
-  const depthPct = near
-    ? null
-    : resolveProfileDepth(profile)
+  const depthPct = near ? null : resolveScoutProfileDepthPct(profile)
 
   return (
     <Box sx={sx.profileTabWrap}>
-      <ScoutProfileChip
+      <ScoutProfileChipV2
         profileId={profile.id}
         label={profile.label}
-        tooltip={buildProfileTooltip(profile, near)}
-        variant={near ? 'nearProfile' : 'default'}
-        fontSize={13}
+        profile={profile}
         depthPct={depthPct}
-        selected={selected}
+        isFilter={near}
+        showConditions
+        showConditionsDepth
         onClick={canSelect
           ? () => onSelect(profile.id)
           : undefined}

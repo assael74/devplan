@@ -1,5 +1,6 @@
 // src/features/playersDatabase/ui/pages/teamPage/logic/teamStatsScout.logic.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import {
   adaptPlayerScoutEngineResult,
   buildDbPlayerScoutResult,
@@ -24,7 +25,7 @@ const buildEmptyStatsScoutPreview = () => ({
   scoutProfileHierarchy: null,
   scoutTrajectory: null,
   scoutTransferContext: null,
-  scoutEngineVersion: 'scouting-v2',
+  scoutEngineVersion: SCOUTING_MODEL_VERSION,
   scoutCalculationContract: null,
   lineClassification: null,
 })
@@ -134,7 +135,7 @@ export const buildStatsScoutPreview = ({ row, team, season }) => {
       scoutProfileHierarchy: scout.profileHierarchy,
       scoutTrajectory: scout.trajectory,
       scoutTransferContext: scout.transferContext,
-      scoutEngineVersion: result?.engineVersion || 'scouting-v2',
+      scoutEngineVersion: result?.engineVersion || SCOUTING_MODEL_VERSION,
       scoutCalculationContract: contract.context,
       lineClassification,
     }

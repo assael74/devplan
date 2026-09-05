@@ -96,6 +96,7 @@ const TEAM_BALANCE_SNAPSHOT_SHAPE = Object.freeze({
       defense: { actual: 0, reference: 0, delta: null, state: '' },
       midfieldCore: { actual: 0, reference: 0, delta: null, state: '' },
       attackingMidfielder: { actual: 0, reference: 0, delta: null, state: '' },
+      midfield: { actual: 0, reference: 0, delta: null, state: '' },
       attack: { actual: 0, reference: 0, delta: null, state: '' },
     },
   },

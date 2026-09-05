@@ -29,7 +29,7 @@ import {
   findExistingPlayerSeasonIndexDoc,
   hasCompletePlayerSeasonIndexIdentity,
   isSamePlayerSeasonIndexContext,
-} from './playerSeasonIndex.model.js'
+} from './playerSeasonIndex.identity.js'
 import {
   buildPlayerSeasonStatsDuplicate,
   buildPlayerSeasonStatsFailure,

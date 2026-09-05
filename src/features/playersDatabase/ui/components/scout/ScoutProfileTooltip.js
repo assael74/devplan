@@ -1,133 +1,93 @@
-// features/playersDatabase/ui/components/scout/ScoutProfileTooltip.js
+import { Box, LinearProgress, Typography } from '@mui/joy'
 
-import {
-  Box,
-  Typography,
-} from '@mui/joy'
-
-import {
-  buildScoutProfileTooltipItems,
-  DEFAULT_SCOUT_PROFILE_TOOLTIP_FIELDS,
-} from '../../logic/scoutDisplay.logic.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { buildScoutProfileTooltipModel } from './scoutProfileTooltip.model.js'
 import { scoutProfileTooltipSx as sx } from './sx/scoutProfileTooltip.sx.js'
 
-const DEFAULT_FIELDS = DEFAULT_SCOUT_PROFILE_TOOLTIP_FIELDS
-
-function TooltipBulletItem({ value, bulletSx }) {
-  return (
-    <Box sx={sx.itemRow}>
-      <Box sx={bulletSx} />
-
-      <Typography
-        level='body-sm'
-        sx={sx.itemValue}
-      >
-        {value}
-      </Typography>
-    </Box>
-  )
-}
-
-function PrimaryTooltipItem({ item }) {
-  if (!item) {
-    return null
-  }
-
-  return (
-    <Box sx={sx.primarySection}>
-      <Typography
-        level='body-xs'
-        sx={sx.primaryLabel}
-      >
-        {item.label}
-      </Typography>
-
-      {Array.isArray(item.items) ? (
-        <Box sx={sx.itemsList}>
-          {item.items.map(childItem => (
-            <TooltipBulletItem
-              key={childItem.key}
-              value={childItem.value}
-              bulletSx={sx.primaryBullet}
-            />
-          ))}
+const ConditionList = ({ conditions = [] }) => (
+  <Box sx={sx.conditions}>
+    {conditions.map(condition => (
+      <Box key={condition.key} sx={sx.condition}>
+        <Box sx={sx.conditionMeta}>
+          <Box sx={sx.conditionTitle}>
+            <Box aria-hidden='true' sx={sx.conditionIcon}>
+              {iconUi({ id: condition.iconId, size: 'sm' })}
+            </Box>
+            <Typography sx={sx.conditionLabel}>{condition.label}</Typography>
+          </Box>
+          {condition.progressPct !== null ? (
+            <Typography sx={sx.conditionProgress}>{`${condition.progressPct}%`}</Typography>
+          ) : null}
         </Box>
-      ) : (
-        <Typography
-          level='body-sm'
-          sx={sx.itemValue}
-        >
-          {item.value}
-        </Typography>
-      )}
-    </Box>
-  )
-}
+        {condition.progressPct !== null ? (
+          <LinearProgress determinate value={condition.progressPct} sx={sx.progressTrack} />
+        ) : null}
+      </Box>
+    ))}
+  </Box>
+)
 
-function SecondaryTooltipItem({ item }) {
-  return (
-    <Box sx={sx.itemRow}>
-      <Box sx={sx.secondaryBullet} />
-
-      <Typography
-        level='body-xs'
-        sx={sx.secondaryValue}
-      >
-        <Box
-          component='span'
-          sx={sx.inlineLabel}
-        >
-          {item.label}:
+const ProfileDetails = ({ model, showConditions, showConditionsDepth }) => (
+  <>
+    <Box sx={sx.header}>
+        <Box sx={sx.profileTitle}>
+          <Box aria-hidden='true' sx={sx.profileIcon}>{iconUi({ id: model.iconId, size: 'sm' })}</Box>
+          <Typography sx={sx.title}>{model.label}</Typography>
         </Box>
-
-        {' '}
-
-        {item.value}
-      </Typography>
+        {model.createdAt ? <Typography sx={sx.createdAt}>{model.createdAt}</Typography> : null}
     </Box>
-  )
-}
+
+      {showConditions ? (
+        <>
+          <Typography sx={sx.conditionsLabel}>{model.conditionsLabel}</Typography>
+          {model.conditions.length
+            ? <ConditionList conditions={model.conditions} />
+            : <Typography sx={sx.emptyState}>אין תנאי זיהוי מוגדרים לפרופיל זה.</Typography>}
+        </>
+      ) : null}
+
+      {showConditionsDepth && model.depthConditions.length ? (
+        <>
+          <Typography sx={sx.conditionsLabel}>תנאים שקבעו את עומק הפרופיל</Typography>
+          <ConditionList conditions={model.depthConditions} />
+        </>
+      ) : null}
+  </>
+)
 
 export default function ScoutProfileTooltip({
-  profile = {},
-  fields = DEFAULT_FIELDS,
-  title,
+  profileId = '',
+  profile = null,
+  profiles = [],
+  showConditions = false,
+  showConditionsDepth = false,
 }) {
-  const items = buildScoutProfileTooltipItems({
-    profile,
-    fields,
-  })
+  const candidates = [profile, ...(Array.isArray(profiles) ? profiles : [])]
+  const seen = new Set()
+  const models = candidates
+    .map(candidate => buildScoutProfileTooltipModel({
+      profileId: candidate?.profileId || candidate?.id || profileId,
+      profile: candidate,
+    }))
+    .filter(model => {
+      if (!model || seen.has(model.profileId)) return false
+      seen.add(model.profileId)
+      return true
+    })
 
-  const [ primaryItem, ...secondaryItems ] = items
-
-  const tooltipTitle = (
-    title ||
-    profile?.label ||
-    profile?.id ||
-    'פרופיל סקאוט'
-  )
+  if (!models.length) return null
 
   return (
     <Box sx={sx.root}>
-      <Typography
-        level='title-sm'
-        sx={sx.title}
-      >
-        {tooltipTitle}
-      </Typography>
-
-      <PrimaryTooltipItem item={primaryItem} />
-
-      {secondaryItems.length > 0 && (
-        <Box sx={sx.secondaryList}>
-          {secondaryItems.map(item => (
-            <SecondaryTooltipItem
-              key={item.key}
-              item={item}
-            />
-          ))}
+      {models.map((model, index) => (
+        <Box key={model.profileId || index} sx={sx.profileSection({ divided: index > 0 })}>
+          <ProfileDetails
+            model={model}
+            showConditions={showConditions}
+            showConditionsDepth={showConditionsDepth}
+          />
         </Box>
-      )}
+      ))}
     </Box>
   )
 }

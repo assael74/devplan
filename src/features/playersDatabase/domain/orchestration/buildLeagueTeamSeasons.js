@@ -1,5 +1,6 @@
 // src/features/playersDatabase/domain/orchestration/buildLeagueTeamSeasons.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
@@ -61,7 +62,7 @@ export const buildLeagueTeamSeasons = ({
           normalization: engineResult?.normalization || {},
           leagueLevel: engineResult?.leagueLevel || leagueLevel,
           leagueGames: engineResult?.leagueNumGames || leagueNumGames,
-          engineVersion: 'scouting-v2',
+          engineVersion: SCOUTING_MODEL_VERSION,
           calculatedAt: seasonSource.updatedAt || null,
         },
       }),

@@ -23,7 +23,7 @@ import {
   hasPlayerScoutProfiles,
 } from '../../players/index.js'
 import {
-  buildInternalPlayerId,
+  buildPlayerSeasonIndexInternalPlayerId,
   buildPlayerAliases,
   buildPlayerSeasonIndexId,
   buildPlayerSeasonIndexScope,
@@ -35,8 +35,6 @@ import {
 import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 
-export * from './playerSeasonIndex.identity.js'
-export * from './playerSeasonIndex.scout.js'
 
 export const resolveTeamSeasonSourceTarget = season => (
   clean(season?.seasonStatus).toLowerCase() === 'completed'
@@ -79,7 +77,7 @@ export const buildPlayerSeasonIndexDoc = ({
     player,
     season,
   })
-  const playerId = buildInternalPlayerId({
+  const playerId = buildPlayerSeasonIndexInternalPlayerId({
     player,
     season,
   })
@@ -110,7 +108,7 @@ export const buildPlayerSeasonIndexDoc = ({
     seasonStatus: season.seasonStatus,
     ageGroupId: team.ageGroupId || league.ageGroupId,
     leagueTotalRound: season.leagueTotalRound,
-    teamGamePlayed: team.teamStats?.teamGamePlayed || team.teamGamePlayed || playerStats.teamGames,
+    teamGamePlayed: team.teamStats?.teamGamePlayed || team.teamGamePlayed,
     stats: playerStats,
   })
   const id = buildPlayerSeasonIndexId({

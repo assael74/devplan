@@ -13,7 +13,6 @@
  *
  * playerSeasonIndex.model.js
  * - Builds the complete player-season index document.
- * - Re-exports identity and scout model helpers for compatibility.
  *
  * playerSeasonIndex.upsert.js
  * - Creates or replaces player-season index documents for roster imports.
@@ -34,9 +33,6 @@
  *
  * playerSeasonIndex.query.js
  * - Locates player-season index documents by explicit scope and identity.
- *
- * playerSeasonIndex.write.js
- * - Exposes the low-level document write helper.
  */
 
 export {

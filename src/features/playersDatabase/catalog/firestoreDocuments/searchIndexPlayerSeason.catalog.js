@@ -2,6 +2,7 @@
 
 // Firestore source of truth: player-season SearchIndex document.
 
+import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   id: '',
   entityType: 'playerSeason',
@@ -118,7 +119,7 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   nearScoutProfileTrend: '',
   scoutEffectiveImmediacyStatus: '',
   scoutPlayerInterestLevel: '',
-  scoutEngineVersion: 'scouting-v2',
+  scoutEngineVersion: SCOUTING_MODEL_VERSION,
 
   secondaryScoutProfileId: '',
   secondaryScoutProfileStrengthDepthPct: null,

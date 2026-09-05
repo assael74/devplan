@@ -166,13 +166,11 @@ const buildTeamPerformanceSnapshot = ({
   performanceField = '',
   fallbackField = '',
   tableRankField = '',
-  playerPerformance = null,
 } = {}) => {
   const performance = pickDefinedValue(
     team[performanceField],
     team[fallbackField],
     team.performance?.[fallbackField],
-    playerPerformance,
     null,
   )
 
@@ -264,14 +262,12 @@ export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, pla
     performanceField: 'teamAttackPerformance',
     fallbackField: 'offense',
     tableRankField: 'tableAttackRank',
-    playerPerformance: playerStats.teamAttackPerformance,
   })
   const teamDefensePerformance = buildTeamPerformanceSnapshot({
     team,
     performanceField: 'teamDefensePerformance',
     fallbackField: 'defense',
     tableRankField: 'tableDefenseRank',
-    playerPerformance: playerStats.teamDefensePerformance,
   })
 
   return {

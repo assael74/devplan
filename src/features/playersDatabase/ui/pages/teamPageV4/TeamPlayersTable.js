@@ -16,6 +16,21 @@ const toNumber = value => {
   return Number.isFinite(nextValue) ? nextValue : 0
 }
 
+const ROSTER_STATUS_LABELS = {
+  regular: 'בסגל',
+  youngerAgeGroup: 'שנתון צעיר',
+  transferredOut: 'עזב במהלך העונה',
+  transferredIn: 'הצטרף במהלך העונה',
+  retired: 'פרש',
+}
+
+const TRANSFER_DIRECTION_LABELS = {
+  up: 'עלה ברמה',
+  lateral: 'אותה רמה',
+  down: 'ירד ברמה',
+  unknown: 'לא ידוע',
+}
+
 const resolveActual = row => (
   row?.stats?.actual ||
   row?.playerStats ||
@@ -44,6 +59,18 @@ const buildTeamPlayersExportConfig = ({ players, team, seasonKey }) => ({
       key: 'fullName',
       label: 'שם השחקן',
       value: row => clean(row?.fullName),
+    },
+    {
+      key: 'rosterStatus',
+      label: 'סטטוס סגל',
+      value: row => ROSTER_STATUS_LABELS[clean(row?.rosterStatus)] || 'בסגל',
+    },
+    {
+      key: 'manualTransferDirection',
+      label: 'כיוון מעבר',
+      value: row => clean(row?.rosterStatus) === 'transferredOut'
+        ? (TRANSFER_DIRECTION_LABELS[clean(row?.manualTransferDirection)] || 'לא ידוע')
+        : '',
     },
     {
       key: 'birthYear',

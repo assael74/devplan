@@ -173,7 +173,7 @@ export const getRosterStatus = player =>
 export const shouldSkipNewPlayerSeasonIndex = player =>
   getRosterStatus(player) === 'retired'
 
-export const buildInternalPlayerId = ({
+export const buildPlayerSeasonIndexInternalPlayerId = ({
   player = {},
   season = {},
 } = {}) => {

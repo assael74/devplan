@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.model.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import { serverTimestamp } from 'firebase/firestore'
 import { adaptTeamScoutEngineRow } from '../../../../domain/index.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
@@ -61,7 +62,7 @@ export const buildTeamSearchIndexLeagueScoutProjection = ({
   const performance = adaptTeamScoutEngineRow({
     row: scoutSource,
     source: {
-      engineVersion: 'scouting-v2',
+      engineVersion: SCOUTING_MODEL_VERSION,
       normalization: scoutSource.normalization || {},
       leagueLevel: league.level,
       leagueGames: season.leagueTotalRound,
@@ -82,7 +83,7 @@ export const buildTeamSearchIndexLeagueScoutProjection = ({
     ),
     defensePriorityLevel: pickDefinedValue(defense?.priorityLevel, ''),
     defenseOpportunityType: pickDefinedValue(defense?.opportunityType, ''),
-    teamScoutEngineVersion: 'scouting-v2',
+    teamScoutEngineVersion: SCOUTING_MODEL_VERSION,
     scoutCompetitionRelation: clean(scoutSource.scoutContext?.competition?.relation),
     scoutCompetitionGap: scoutSource.scoutContext?.competition?.gap === null ||
       scoutSource.scoutContext?.competition?.gap === undefined

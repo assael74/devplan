@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
+import { SCOUTING_SHADOW_ENGINE_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import {
   updateLeagueSeasonTableRankTeamSyncMeta,
 } from '../../leagues/index.js'
@@ -19,6 +20,7 @@ import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/bu
 import {
   buildLeagueTeamPerformanceProjection,
   resolveLeagueSeasonStatus,
+  resolveLeagueTeamPoints,
 } from '../../shared/teamPerformanceProjection.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
 
@@ -138,6 +140,12 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     target: derivedTarget,
     team: payload.team,
   })
+  const teamPoints = resolveLeagueTeamPoints({
+    league: payload.league,
+    season,
+    target: derivedTarget,
+    team: payload.team,
+  })
   const resolvedPlayers = await resolvePlayerIdentities({
     players: payload.players,
     season,
@@ -168,6 +176,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       ...resolvedPayload,
       team: payload.team || {},
       teamPerformance,
+      teamPoints,
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
@@ -359,7 +368,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   } catch (error) {
     results.playerScoutShadowResult = {
-      engineVersion: 'scouting-v2-shadow',
+      engineVersion: SCOUTING_SHADOW_ENGINE_VERSION,
       mode: 'shadow',
       status: 'failed',
       error: error?.message || 'Shadow scout calculation failed',

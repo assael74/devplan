@@ -697,6 +697,40 @@ excludes `retired`, `transferredOut`, and `youngerAgeGroup`. The three field
 line counts use loaded players that pass the 8-game classification gate;
 goalkeepers come from the separately verified goalkeeper role.
 
+### Minutes are the evidence chain for squad structure
+
+Current-team structure is not an independent input beside player usage.
+Player minutes are the underlying evidence for every subsequent structural
+layer:
+
+```text
+Current-season player minutes and substitutions
+    ↓
+Personal minutes gate and line-classification matrix
+    ↓
+Proven player line / position
+    ↓
+Line structure and classification coverage
+    ↓
+Lineup benchmark and Team Balance interpretation
+```
+
+Consequently, the model's inability to establish enough proven lines is a
+downstream squad-usage signal: the current allocation of minutes did not
+produce sufficient evidence for a stable line structure. It must not be
+treated as an independent position-data problem or as a manual-position
+verification failure.
+
+The evidence state remains important:
+
+- Fewer than 8 player games is an **insufficient sample**, not a Team Balance
+  conclusion.
+- At 8+ games, a player who does not pass the personal-minutes gate or the
+  classification matrix remains **unclassified with sufficient sample**. That
+  is a structural coverage fact rooted in the minutes distribution; it can
+  motivate balance investigation, but does not by itself assert shortage,
+  quality, or recruitment need.
+
 It is intentionally a derived-facts layer:
 
 ```text

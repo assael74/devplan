@@ -2,12 +2,14 @@
 
 export const SCOUTING_MODEL_ID = 'scouting'
 export const SCOUTING_MODEL_VERSION = 'scouting-v2'
+export const SCOUTING_SHADOW_ENGINE_VERSION = `${SCOUTING_MODEL_VERSION}-shadow`
 export const SCOUTING_MODEL_RELEASE = '2026.08.25'
 export const SCOUTING_VERSION_SCHEMA = 1
 
 export const PLAYER_SCOUT_LAYER_VERSION = 'players-v2'
 export const TEAM_SCOUT_PERFORMANCE_VERSION = 'team-performance-v1'
 export const TEAM_BALANCE_VERSION = 'team-balance-v13'
+export const TEAM_LINE_CLASSIFICATION_VERSION = 'player-line-v7'
 export const TEAM_BALANCE_OUTPUT_CONTRACT_VERSION = 'team-balance-output-v21'
 export const TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION = 'team-balance-persistence-v21'
 
@@ -26,7 +28,7 @@ export const SCOUTING_MODEL_REGISTRY = Object.freeze({
   layers: Object.freeze({
     players: Object.freeze({
       version: PLAYER_SCOUT_LAYER_VERSION,
-      engineVersion: 'scouting-v2',
+      engineVersion: SCOUTING_MODEL_VERSION,
       status: SCOUTING_LAYER_STATUS.ACTIVE,
     }),
     teams: Object.freeze({
@@ -36,7 +38,7 @@ export const SCOUTING_MODEL_REGISTRY = Object.freeze({
         sourceOfTruth: 'leagueDocument',
       }),
       lineClassification: Object.freeze({
-        version: 'player-line-v7',
+        version: TEAM_LINE_CLASSIFICATION_VERSION,
         status: SCOUTING_LAYER_STATUS.IN_PROGRESS,
         sourceOfTruth: 'teamSeasonDocumentStats',
       }),

@@ -23,16 +23,18 @@ import {
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import {
+  buildPlayerSeasonIndexDoc,
+} from './playerSeasonIndex.model.js'
+import {
   buildPlayerAliases,
   hasCompletePlayerSeasonIndexIdentity,
-  buildPlayerSeasonIndexDoc,
   buildPlayerSeasonIndexLookup,
   buildPlayerSeasonIndexScope,
   findExistingPlayerSeasonIndexDoc,
   getRosterStatus,
   isSamePlayerSeasonIndexContext,
   shouldSkipNewPlayerSeasonIndex,
-} from './playerSeasonIndex.model.js'
+} from './playerSeasonIndex.identity.js'
 
 
 const normalizeComparableValue = value => {

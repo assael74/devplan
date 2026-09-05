@@ -17,12 +17,6 @@
  * teamSeasonIndex.bulk.js
  * - Applies season-level updates to multiple team-season index documents.
  *
- * teamSeasonIndex.write.js
- * - Compatibility export that groups upsert, patch and bulk writers.
- *
- * teamSeason.js
- * - Legacy compatibility export for older direct imports.
- * - Contains no business implementation.
  */
 
 export {

@@ -96,14 +96,9 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     })
     teamSeasonResults.push(teamResult)
 
-    const playerDocumentIds = Array.from(new Set([
-      ...(Array.isArray(team.playerDocumentIds)
-        ? team.playerDocumentIds
-        : []),
-      ...(Array.isArray(teamResult.playerDocumentIds)
-        ? teamResult.playerDocumentIds
-        : []),
-    ].filter(Boolean)))
+    const playerDocumentIds = Array.isArray(teamResult.playerDocumentIds)
+      ? teamResult.playerDocumentIds
+      : []
 
     const playerDocsResult = await runStage({
       stage: `removePlayerSeasonDocsMany:${team.birthTeamId}:${team.birthTeamSlot}`,

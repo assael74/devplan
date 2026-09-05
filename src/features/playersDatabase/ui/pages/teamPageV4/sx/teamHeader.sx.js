@@ -13,6 +13,22 @@ export const teamHeaderSx = {
     fontWeight: 700,
   },
 
+  pageTitleLink: {
+    color: 'inherit',
+    textDecoration: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+
+    '&:hover, &:focus-visible': {
+      textDecoration: 'none',
+      outline: 'none',
+    },
+
+    '&:hover [data-team-title], &:focus-visible [data-team-title]': {
+      color: devPlanColors.primary,
+    },
+  },
+
   titleRow: {
     minWidth: 0,
     display: 'flex',

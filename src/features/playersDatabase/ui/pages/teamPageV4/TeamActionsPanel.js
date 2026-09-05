@@ -50,7 +50,6 @@ export default function TeamActionsPanel({
   profileOnly,
   profileFilterKey = 'all',
   profileFilterOptions = [],
-  onSeasonChange,
   teamNavigation,
   onTeamNavigate,
   onProfileOnlyChange,
@@ -103,57 +102,6 @@ export default function TeamActionsPanel({
 
   return (
     <PageSidePanel>
-      <Box sx={sx.actionSeasonBox}>
-        <Typography level='body-xs' sx={sx.actionSeasonLabel}>
-          גרסת קבוצה
-        </Typography>
-
-        <Select
-          size='sm'
-          value={selectedSeasonOptionKey || ''}
-          onChange={(_, value) => onSeasonChange(value || '')}
-          sx={sx.actionSeasonSelect}
-          renderValue={selected => {
-            const option = seasonOptions.find(item => (
-              item.optionKey === selected?.value
-            ))
-            if (!option) return 'בחר גרסת קבוצה'
-
-            return (
-              <Box sx={sx.actionSeasonValue}>
-                <Typography sx={sx.actionSeasonValuePrimary}>
-                  {option.primaryLabel}
-                </Typography>
-                <Typography sx={sx.actionSeasonValueSecondary}>
-                  {option.secondaryLabel}
-                </Typography>
-              </Box>
-            )
-          }}
-        >
-          {seasonOptions.length ? (
-            seasonOptions.map(option => (
-              <Option
-                key={option.optionKey}
-                value={option.optionKey}
-                sx={sx.actionSeasonOption}
-              >
-                <Box sx={sx.actionSeasonOptionContent}>
-                  <Typography sx={sx.actionSeasonOptionPrimary}>
-                    {option.primaryLabel}
-                  </Typography>
-                  <Typography sx={sx.actionSeasonOptionSecondary}>
-                    {option.secondaryLabel}
-                  </Typography>
-                </Box>
-              </Option>
-            ))
-          ) : (
-            <Option value=''>אין עונות</Option>
-          )}
-        </Select>
-      </Box>
-
       {canNavigateTeams ? (
         <Box sx={sx.teamNavigationBox}>
           <Typography level='body-xs' sx={sx.teamNavigationLabel}>

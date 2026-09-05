@@ -20,7 +20,7 @@ import {
   findExistingPlayerSeasonIndexDoc,
   isSamePlayerSeasonIndexContext,
   normalizeText,
-} from './playerSeasonIndex.model.js'
+} from './playerSeasonIndex.identity.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   feature: 'playersDatabase',

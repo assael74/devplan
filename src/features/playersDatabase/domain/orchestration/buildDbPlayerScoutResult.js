@@ -1,8 +1,9 @@
 // src/features/playersDatabase/domain/orchestration/buildDbPlayerScoutResult.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import { buildPlayerScoutResult } from '../../../../shared/scouting/players/index.js'
 
-export const PLAYER_SCOUT_ACTIVE_ENGINE = 'scouting-v2'
+export const PLAYER_SCOUT_ACTIVE_ENGINE = SCOUTING_MODEL_VERSION
 
 export const buildDbPlayerScoutResult = ({
   player,

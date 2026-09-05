@@ -1,5 +1,6 @@
 // src/features/playersDatabase/domain/adapters/teamScoutEngine.adapter.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import { normalizeTeamScout } from '../contracts/teamScout.contract.js'
 import { cleanDomainValue } from '../contracts/domainValue.contract.js'
 
@@ -16,7 +17,7 @@ export const adaptTeamScoutEngineRow = ({ row = {}, source = {} } = {}) => norma
   needs: row.needs || [],
   recruitmentOpportunity: row.recruitmentOpportunity || {},
   source: {
-    engineVersion: cleanDomainValue(source.engineVersion) || 'scouting-v2',
+    engineVersion: cleanDomainValue(source.engineVersion) || SCOUTING_MODEL_VERSION,
     calculatedAt: source.calculatedAt || null,
   },
 })

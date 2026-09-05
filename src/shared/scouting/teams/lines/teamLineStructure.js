@@ -2,6 +2,7 @@
 
 import { TEAM_LINE_STRUCTURE_THRESHOLDS } from '../../config/lineStructureThresholds.js'
 import { TEAM_PLAYER_LINE, TEAM_PLAYER_POSITION } from './teamLineClassification.model.js'
+import { isTeamLineBalanceRelevantPlayer } from './teamLineBalancePlayerScope.js'
 import {
   isTeamPlayerKnownGoalkeeper,
   isTeamPlayerLineClassificationEligible,
@@ -10,17 +11,6 @@ import {
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
-
-const isOperationalPlayer = player => {
-  if (!player || typeof player !== 'object') return false
-
-  const rosterStatus = clean(player.rosterStatus)
-  return (
-    rosterStatus !== 'retired' &&
-    rosterStatus !== 'transferredOut' &&
-    rosterStatus !== 'youngerAgeGroup'
-  )
-}
 
 const isLoadedPlayer = player => clean(player?.statsStatus) === 'loaded'
 
@@ -39,14 +29,14 @@ const isClassifiedPlayer = player => (
 )
 
 const isSufficientSampleUnclassifiedPlayer = player => (
-  isOperationalPlayer(player) &&
+  isTeamLineBalanceRelevantPlayer(player) &&
   isLoadedPlayer(player) &&
   !isClassifiedPlayer(player) &&
   (getPlayerGames(player) || 0) >= TEAM_LINE_STRUCTURE_THRESHOLDS.MINIMUM_GAMES
 )
 
 const isInsufficientSamplePlayer = player => (
-  isOperationalPlayer(player) &&
+  isTeamLineBalanceRelevantPlayer(player) &&
   isLoadedPlayer(player) &&
   !isClassifiedPlayer(player) &&
   (getPlayerGames(player) || 0) < TEAM_LINE_STRUCTURE_THRESHOLDS.MINIMUM_GAMES
@@ -56,15 +46,15 @@ const isInsufficientSamplePlayer = player => (
 // a reference and does not decide shortage, overload, need or opportunity.
 export const buildTeamLineStructure = ({ players = [] } = {}) => {
   const sourcePlayers = Array.isArray(players) ? players : []
-  const operationalPlayers = sourcePlayers.filter(isOperationalPlayer)
+  const operationalPlayers = sourcePlayers.filter(isTeamLineBalanceRelevantPlayer)
   const loadedRelevantPlayers = operationalPlayers.filter(isLoadedPlayer)
   const classificationEligiblePlayers = sourcePlayers.filter(player => (
-    isOperationalPlayer(player) &&
+    isTeamLineBalanceRelevantPlayer(player) &&
     isLoadedPlayer(player) &&
     isTeamPlayerLineClassificationEligible({ player })
   ))
   const classifiedPlayers = sourcePlayers.filter(player => (
-    isOperationalPlayer(player) &&
+    isTeamLineBalanceRelevantPlayer(player) &&
     isLoadedPlayer(player) &&
     isClassifiedPlayer(player)
   ))

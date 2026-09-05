@@ -1,5 +1,8 @@
 // features/playersDatabase/ui/components/scout/scoutDisplay.model.js
 
+import { resolveScoutProfileDefinition } from '../../../../../shared/scouting/players/profiles.js'
+import { buildScoutProfileTooltip } from '../../logic/scout/scoutProfileDisplay.logic.js'
+
 const clean = value => String(value || '').trim()
 
 const cleanDisplayLabel = value => {
@@ -71,20 +74,25 @@ const resolveDisplayProfileIds = display => (
     : []
 ).map(resolveProfileId).filter(Boolean)
 
-const buildProfileTooltipItems = ({ profiles, display }) => {
-  const profileItems = uniqueById(profiles).map(profile => ({
-    id: resolveProfileId(profile),
+const buildProfileTooltipItem = profile => {
+  const id = resolveProfileId(profile)
+  const definition = resolveScoutProfileDefinition(id)
+
+  return {
+    id,
     label: resolveProfileLabel(profile),
-  }))
+    description: clean(profile?.description) || buildScoutProfileTooltip(definition || profile),
+  }
+}
+
+const buildProfileTooltipItems = ({ profiles, display }) => {
+  const profileItems = uniqueById(profiles).map(buildProfileTooltipItem)
   const seen = new Set(profileItems.map(item => item.id))
   const displayItems = (
     Array.isArray(display?.baseProfiles)
       ? display.baseProfiles
       : []
-  ).map(profile => ({
-    id: resolveProfileId(profile),
-    label: resolveProfileLabel(profile),
-  })).filter(item => {
+  ).map(buildProfileTooltipItem).filter(item => {
     if (!item.id || seen.has(item.id)) return false
     seen.add(item.id)
     return true

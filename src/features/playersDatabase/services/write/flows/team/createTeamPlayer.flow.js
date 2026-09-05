@@ -10,7 +10,6 @@ import {
   appendTeamSeasonPlayer,
   ensureTeamDoc,
 } from '../../teams/index.js'
-import { upsertOfficialPlayerDoc } from '../../players/index.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 async function createTeamPlayerFlow({
@@ -70,21 +69,3 @@ export async function createTeamDisplayPlayerFlow(payload = {}) {
     player: payload.player || {},
   })
 }
-
-export async function createTeamOfficialPlayerFlow(payload = {}) {
-  const player = payload.player || {}
-  const officialPlayerResult = await upsertOfficialPlayerDoc(payload)
-  const result = await createTeamPlayerFlow({
-    payload,
-    player: {
-      ...player,
-      playerDocumentId: officialPlayerResult.playerDocumentId,
-    },
-  })
-
-  return {
-    officialPlayerResult,
-    ...result,
-  }
-}
-

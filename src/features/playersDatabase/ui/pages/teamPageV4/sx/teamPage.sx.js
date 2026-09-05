@@ -1,5 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/sx/teamPage.sx.js
 
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+
 export const teamPageSx = {
   loadingState: {
     minHeight: 320,
@@ -27,10 +29,10 @@ export const teamPageSx = {
     alignItems: 'center',
     minHeight: 46,
     p: 0.5,
-    border: '1px solid',
-    borderColor: 'neutral.outlinedBorder',
+    border: '2px solid',
+    borderColor: devPlanColors.border,
     borderRadius: 'md',
-    bgcolor: 'background.surface',
+    bgcolor: devPlanColors.surface,
     boxShadow: 'sm',
     justifyContent: 'space-between',
     gap: 1,

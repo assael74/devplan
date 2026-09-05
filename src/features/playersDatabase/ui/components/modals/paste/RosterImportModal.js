@@ -10,7 +10,7 @@ import RosterIdentityModal from '../RosterIdentityModal.js'
 import {
   PLAYER_ROSTER_COLUMNS,
   PLAYER_ROSTER_PLACEHOLDER,
-} from '../../../pages/teamPageV4/logic/teamPage.constants.js'
+} from '../../../pages/teamPageV3/logic/teamPage.constants.js'
 import PasteModal from './PasteModal.js'
 import { rosterImportModalSx as sx } from './sx/rosterImportModal.sx.js'
 

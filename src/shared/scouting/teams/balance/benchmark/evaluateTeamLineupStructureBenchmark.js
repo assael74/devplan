@@ -90,6 +90,15 @@ export const evaluateTeamLineupStructureBenchmark = ({
         reference: metrics.attackingMidfielder?.reference,
         available,
       }),
+      midfield: buildMetric({
+        actual:
+          numberOrZero(structure.composition?.midfieldCorePlayersCount) +
+          numberOrZero(structure.positions?.attackingMidfielder?.playersCount),
+        reference:
+          numberOrZero(metrics.midfieldCore?.reference) +
+          numberOrZero(metrics.attackingMidfielder?.reference),
+        available,
+      }),
       attack: buildMetric({
         actual: structure.lines?.attack?.playersCount,
         reference: metrics.attack?.reference,

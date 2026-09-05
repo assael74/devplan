@@ -1,91 +1,141 @@
-// features/playersDatabase/ui/components/scout/sx/scoutProfileTooltip.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const scoutProfileTooltipSx = {
   root: {
-    width: 260,
-    maxWidth: 260,
+    width: 300,
+    minHeight: 0,
+    maxHeight: 200,
+    maxWidth: 'min(300px, calc(100vw - 32px))',
     display: 'grid',
+    gap: 0.85,
+    p: 1,
+    overflowY: 'auto',
+    scrollbarWidth: 'thin',
+    scrollbarColor: `${devPlanColors.tertiary} transparent`,
+    '&::-webkit-scrollbar': {
+      width: 5,
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: devPlanColors.tertiary,
+      borderRadius: 99,
+    },
+    color: devPlanColors.primaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    border: `1px solid ${devPlanColors.tertiary}`,
+    borderRadius: 9,
+  },
+  profileSection: ({ divided = false } = {}) => ({
+    display: 'grid',
+    gap: 0.85,
+    ...(divided
+      ? {
+        borderTop: `1px solid rgba(23, 59, 87, 0.18)`,
+        paddingTop: 0.85,
+      }
+      : {}),
+  }),
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 0.75,
-    color: 'inherit',
-    textAlign: 'left',
   },
-
+  profileTitle: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.55,
+  },
+  profileIcon: {
+    width: 23,
+    height: 23,
+    flex: '0 0 auto',
+    display: 'grid',
+    placeItems: 'center',
+    color: devPlanColors.primary,
+    bgcolor: 'rgba(255, 255, 255, 0.78)',
+    border: '1px solid rgba(23, 59, 87, 0.18)',
+    borderRadius: '50%',
+    '& svg': { fontSize: 13 },
+  },
   title: {
-    color: 'inherit',
-    fontWeight: 700,
+    minWidth: 0,
+    color: devPlanColors.primaryDark,
+    fontSize: 13,
+    fontWeight: 800,
     lineHeight: 1.2,
-    textAlign: 'left',
   },
-
-  primarySection: {
-    display: 'grid',
-    gap: 0.3,
-    pb: 0.65,
-    borderBottom: '1px solid rgba(255, 255, 255, 0.22)',
-  },
-
-  primaryLabel: {
-    color: 'rgba(255, 255, 255, 0.74)',
+  createdAt: {
+    flex: '0 0 auto',
+    color: devPlanColors.secondary,
+    fontSize: 10.5,
     fontWeight: 700,
-    lineHeight: 1.2,
-    textAlign: 'left',
+    whiteSpace: 'nowrap',
   },
-
-  itemsList: {
-    display: 'grid',
-    gap: 0.35,
+  conditionsLabel: {
+    display: 'inline-flex',
+    alignSelf: 'start',
+    justifySelf: 'start',
+    width: 'auto',
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 800,
+    lineHeight: 1,
+    borderBottom: `1px solid ${devPlanColors.primaryDark}`,
+    paddingBottom: 0,
   },
-
-  secondaryList: {
+  conditions: {
     display: 'grid',
+    gap: 0.15,
+  },
+  condition: {
+    display: 'grid',
+    gap: 0.05,
+  },
+  conditionMeta: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 0.75,
+  },
+  conditionTitle: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
     gap: 0.45,
   },
-
-  itemRow: {
-    minWidth: 0,
+  conditionIcon: {
+    width: 17,
+    height: 17,
+    flex: '0 0 auto',
     display: 'grid',
-    gridTemplateColumns: '6px minmax(0, 1fr)',
-    alignItems: 'start',
-    gap: 0.65,
+    placeItems: 'center',
+    color: devPlanColors.tertiaryDark,
+    '& svg': { fontSize: 12 },
   },
-
-  primaryBullet: {
-    width: 5,
-    height: 5,
-    mt: 0.75,
-    borderRadius: '50%',
-    bgcolor: '#7CC4F8',
-  },
-
-  secondaryBullet: {
-    width: 5,
-    height: 5,
-    mt: 0.75,
-    borderRadius: '50%',
-    bgcolor: devPlanColors.tertiary,
-  },
-
-  itemValue: {
+  conditionLabel: {
     minWidth: 0,
-    color: 'inherit',
-    lineHeight: 1.35,
-    overflowWrap: 'break-word',
-    textAlign: 'left',
-    whiteSpace: 'normal',
+    color: devPlanColors.primaryDark,
+    fontSize: 10.5,
+    fontWeight: 600,
+    lineHeight: 1.1,
   },
-
-  secondaryValue: {
-    minWidth: 0,
-    color: 'inherit',
-    lineHeight: 1.35,
-    overflowWrap: 'break-word',
-    textAlign: 'left',
-    whiteSpace: 'normal',
+  conditionProgress: {
+    flex: '0 0 auto',
+    color: devPlanColors.primary,
+    fontSize: 10.5,
+    fontWeight: 800,
+    lineHeight: 1,
   },
-
-  inlineLabel: {
-    fontWeight: 700,
+  progressTrack: {
+    '--LinearProgress-trackColor': 'rgba(23, 59, 87, 0.12)',
+    '--LinearProgress-progressColor': devPlanColors.tertiary,
+    '--LinearProgress-thickness': '3px',
+    minHeight: 3,
+    height: 3,
+  },
+  emptyState: {
+    color: devPlanColors.secondary,
+    fontSize: 10.5,
   },
 }

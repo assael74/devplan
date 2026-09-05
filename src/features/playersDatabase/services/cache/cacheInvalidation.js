@@ -83,7 +83,6 @@ const LEAGUE_ONLY_ACTIONS = new Set([
   'upsertLeagueSeason',
   'updateLeagueSeasonTableRank',
   'pasteLeagueTable',
-  'updateLeagueSeasonMeta',
   'updateLeagueSeasonUrl',
   'deleteLeagueSeason',
 ])
@@ -94,10 +93,8 @@ const TEAM_ACTIONS = new Set([
   'updateTeamUrl',
   'clearTeamSeasonPlayers',
   'clearTeamSeasonStats',
-  'deleteTeamFromSeason',
   'deleteTeamPlayerFromSeason',
   'createTeamDisplayPlayer',
-  'createTeamOfficialPlayer',
 ])
 
 const PLAYER_ACTIONS = new Set([
@@ -137,13 +134,6 @@ export const invalidatePlayersDatabaseWriteCache = ({
     if (leagueId) {
       invalidateLeagueDocumentCache(leagueId)
     }
-  }
-
-
-  if (actionType === 'updateLeagueSeasonMeta') {
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.team)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
   }
 
 

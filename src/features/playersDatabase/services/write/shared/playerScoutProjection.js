@@ -1,3 +1,4 @@
+import { SCOUTING_MODEL_VERSION } from '../../../../../shared/scouting/scouting.version.js'
 import { adaptPlayerScoutEngineResult } from '../../../domain/index.js'
 import { buildDbPlayerScoutResult } from '../../../domain/orchestration/buildDbPlayerScoutResult.js'
 import { buildPlayerScoutCalculationContract } from '../../../domain/contracts/playerScoutInput.contract.js'
@@ -75,7 +76,7 @@ export const buildTeamPlayerScoutProjection = (player = {}) => {
     ...compactProfileIds,
     scoutEffectiveImmediacyStatus: clean(opportunity?.effectiveActionStatus),
     scoutPlayerInterestLevel: clean(player?.scoutPlayerInterest?.interestLevel),
-    scoutEngineVersion: clean(player?.scoutEngineVersion) || 'scouting-v2',
+    scoutEngineVersion: clean(player?.scoutEngineVersion) || SCOUTING_MODEL_VERSION,
   }
 }
 

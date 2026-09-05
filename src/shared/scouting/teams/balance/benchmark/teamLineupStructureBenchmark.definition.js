@@ -11,6 +11,6 @@ export const TEAM_LINEUP_STRUCTURE_BENCHMARK = Object.freeze({
     defense: Object.freeze({ reference: 4 }),
     midfieldCore: Object.freeze({ reference: 3 }),
     attackingMidfielder: Object.freeze({ reference: 1 }),
-    attack: Object.freeze({ reference: 2 }),
+    attack: Object.freeze({ reference: 3 }),
   }),
 })

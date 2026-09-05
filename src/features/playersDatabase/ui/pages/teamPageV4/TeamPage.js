@@ -26,8 +26,10 @@ import { buildLeaguePageTeams } from '../../../model/leaguePage.model.js'
 import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
-import TeamPlayersSection from './TeamPlayersSection.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
+import TeamInformationOverview from './TeamInformationOverview.js'
+import TeamYearDevelopment from './TeamYearDevelopment.js'
+import { buildTeamInformationView } from './model/teamInformation.model.js'
 import {
   PlayerRoleEditModal,
   RosterImportModal,
@@ -38,10 +40,8 @@ import {
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
-import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
 import useTeamUrlEditor from '../leaguePage/hooks/useTeamUrlEditor.js'
-import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import useTeamRosterImport from './hooks/useTeamRosterImport.js'
 import useTeamStatsImport from './hooks/useTeamStatsImport.js'
 import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
@@ -51,7 +51,6 @@ import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useTeamReport } from './report/index.js'
 import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
-import ActivityStatusChip from '../../components/page/ActivityStatusChip.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
 
@@ -60,17 +59,6 @@ const sx = {
   ...teamPageSx,
 }
 
-const resolveSeasonStatusChip = target => {
-  if (target === 'future') {
-    return { label: 'העונה טרם החלה', active: false, inactiveColor: '#2563EB', inactiveBg: '#EFF6FF' }
-  }
-
-  if (target === 'history') {
-    return { label: 'עונה הסתיימה', active: false, inactiveColor: '#64748B', inactiveBg: '#F1F5F9' }
-  }
-
-  return { label: 'עונה פעילה', active: true }
-}
 const cleanKey = value => String(value || '').trim()
 
 const buildTeamNavigationLabel = teamRow => [
@@ -158,12 +146,29 @@ function TeamPageContent() {
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
-    setSelectedSeasonKey,
     reload,
     loading,
     error,
     selectionError,
   } = useTeamPage()
+
+  const teamInformationView = React.useMemo(() => buildTeamInformationView({
+    team,
+    teamSeasons,
+    selectedTeamSeason,
+    selectedSeasonKey,
+    selectedSeasonOption,
+    seasonOptions,
+    players,
+  }), [
+    players,
+    selectedSeasonKey,
+    selectedSeasonOption,
+    seasonOptions,
+    selectedTeamSeason,
+    team,
+    teamSeasons,
+  ])
 
   const sharedActionContext = {
     leagueId,
@@ -175,7 +180,6 @@ function TeamPageContent() {
   }
   const roleEditor = useTeamRoleEditor(sharedActionContext)
   const teamUrlEditor = useTeamUrlEditor(sharedActionContext)
-  const playerUrlEditor = usePlayerUrlEditor(sharedActionContext)
   const rosterImport = useTeamRosterImport(sharedActionContext)
   const statsImport = useTeamStatsImport({
     ...sharedActionContext,
@@ -368,66 +372,6 @@ function TeamPageContent() {
     })
   }, [favorites, team.birthTeamId, team.birthYear, team.name])
 
-  const handlePlayerFavoriteToggle = React.useCallback(player => {
-    if (!player?.playerId) return null
-
-    const playerDocumentId = String(
-      player.playerDocumentId || player.id || player.playerId || ''
-    ).trim()
-    const payload = {
-      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
-      entityId: player.playerId,
-    }
-
-    if (favorites.isPlayerFavorite(player.playerId)) {
-      return favorites.removeFavorite({
-        ...payload,
-        scouting: {
-          playerDocumentId,
-        },
-      })
-    }
-
-    return favorites.addFavorite({
-      ...payload,
-      displayName: player.fullName,
-      birthYear: team.birthYear,
-      scouting: {
-        season: {
-          ...(selectedLeagueSeason || {}),
-          ...(selectedTeamSeason || {}),
-          seasonId:
-            selectedTeamSeason?.seasonId ||
-            selectedLeagueSeason?.seasonId ||
-            selectedSeasonKey,
-          seasonKey:
-            selectedTeamSeason?.seasonKey ||
-            selectedLeagueSeason?.seasonKey ||
-            selectedSeasonKey,
-          birthYear: team.birthYear,
-        },
-        team: {
-          ...team,
-          ...(selectedTeamSeason || {}),
-        },
-        target: selectedTeamSeason?.seasonStatus === 'completed'
-          ? 'history'
-          : 'current',
-        player: {
-          ...player,
-          playerDocumentId,
-        },
-      },
-    })
-  }, [
-    favorites,
-    selectedLeagueSeason,
-    selectedSeasonKey,
-    selectedSeasonOption,
-    selectedTeamSeason,
-    team,
-  ])
-
   const handleTaskEditSave = async patch => {
     if (!editTask?.id || taskActions.pending) return
 
@@ -449,7 +393,6 @@ function TeamPageContent() {
     setEditTask(null)
   }
 
-  const seasonStatusChip = resolveSeasonStatusChip(selectedSeasonOption?.target)
   const teamTasks = React.useMemo(() => {
     const teamIds = new Set([
       team.birthTeamId,
@@ -479,6 +422,40 @@ function TeamPageContent() {
     players: visiblePlayers,
     seasonKey: selectedSeasonKey,
   })
+  const handlePlayerOpen = React.useCallback(row => {
+    const source = row?.player || row || {}
+    const playerId = source.playerDocumentId || source.playerId || source.id
+    if (!playerId) return
+
+    navigate(
+      PLAYERS_DATABASE_UI_ROUTES.player({
+        playerId,
+        seasonKey: selectedSeasonKey,
+        teamId: team.birthTeamId || team.id,
+        leagueId: selectedSeasonOption?.leagueId || leagueId,
+        fromTeam: `${location.pathname}${location.search}`,
+      }),
+      {
+        state: {
+          playerTeamSource: {
+            team,
+            teamDoc,
+            selectedTeamSeason,
+          },
+        },
+      }
+    )
+  }, [
+    leagueId,
+    location.pathname,
+    location.search,
+    navigate,
+    selectedSeasonKey,
+    selectedSeasonOption?.leagueId,
+    selectedTeamSeason,
+    team,
+    teamDoc,
+  ])
 
   if (loading) {
     return (
@@ -503,6 +480,12 @@ function TeamPageContent() {
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}
+          teamUrl={
+            selectedTeamSeason?.teamUrl ||
+            team.teamUrl ||
+            selectedSeasonOption?.season?.teamUrl ||
+            ''
+          }
           seasonKey={selectedSeasonKey}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}
@@ -514,7 +497,39 @@ function TeamPageContent() {
         />
 
         <Box sx={sx.contentGrid}>
-          <Box sx={sx.mainColumn} />
+          <Box sx={sx.mainColumn}>
+            <Box sx={sx.viewTabsToolbar}>
+              <Box sx={sx.viewTabs}>
+                <Button
+                  variant={activeView === 'team' ? 'solid' : 'soft'}
+                  color='primary'
+                  onClick={() => setActiveView('team')}
+                >
+                  {`מצב שנתון${team.birthYear ? ` · ${team.birthYear}` : ''} · נוכחי`}
+                </Button>
+                <Button
+                  variant={activeView === 'players' ? 'solid' : 'soft'}
+                  color='primary'
+                  onClick={() => setActiveView('players')}
+                >
+                  {`התפתחות שנתון${team.birthYear ? ` · ${team.birthYear}` : ''}`}
+                </Button>
+              </Box>
+            </Box>
+
+            {activeView === 'team' ? (
+              <TeamInformationOverview
+                view={teamInformationView}
+                onPlayerRoleEdit={roleEditor.open}
+                onPlayerOpen={handlePlayerOpen}
+              />
+            ) : (
+              <TeamYearDevelopment
+                timeline={teamInformationView.developmentTimeline}
+                overview={teamInformationView.yearDevelopment}
+              />
+            )}
+          </Box>
 
           <TeamActionsPanel
             selectedSeasonOptionKey={selectedSeasonOptionKey}
@@ -524,7 +539,6 @@ function TeamPageContent() {
             profileOnly={profileOnly}
             profileFilterKey={profileFilterKey}
             profileFilterOptions={profileFilterOptions}
-            onSeasonChange={setSelectedSeasonKey}
             teamNavigation={leagueTeamsNavigation}
             onTeamNavigate={handleTeamNavigate}
             onProfileOnlyChange={handleProfileOnlyChange}
@@ -574,15 +588,6 @@ function TeamPageContent() {
         saving={teamUrlEditor.saving}
         onSave={teamUrlEditor.save}
         onClose={teamUrlEditor.close}
-      />
-
-      <PlayerUrlEditDrawer
-        open={Boolean(playerUrlEditor.row)}
-        row={playerUrlEditor.row}
-        seasonLabel={selectedSeasonOption?.seasonKey || selectedSeasonKey}
-        saving={playerUrlEditor.saving}
-        onSave={playerUrlEditor.save}
-        onClose={playerUrlEditor.close}
       />
 
       <PlayerRoleEditModal

@@ -1,6 +1,8 @@
 // src/shared/scouting/teams/lines/teamLineClassification.model.js
 
-export const TEAM_LINE_CLASSIFICATION_VERSION = 'player-line-v7'
+import { TEAM_LINE_CLASSIFICATION_VERSION } from '../../scouting.version.js'
+
+export { TEAM_LINE_CLASSIFICATION_VERSION }
 
 export const TEAM_PLAYER_LINE = Object.freeze({
   DEFENSE: 'DEFENSE',

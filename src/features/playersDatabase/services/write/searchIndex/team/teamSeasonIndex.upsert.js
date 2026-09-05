@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.upsert.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import { doc } from 'firebase/firestore'
 import { createTrackedWriteBatch } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
@@ -110,7 +111,7 @@ export async function upsertTeamSeasonSearchIndexMany({ league = {}, season = {}
     })
   } catch (error) {
     shadowAudit = {
-      engineVersion: 'scouting-v2',
+      engineVersion: SCOUTING_MODEL_VERSION,
       mode: 'primary-diagnostics',
       status: 'failed',
       error: error?.message || 'Team shadow scout calculation failed',

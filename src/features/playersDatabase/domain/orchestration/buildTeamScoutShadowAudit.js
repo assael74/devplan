@@ -1,5 +1,6 @@
 // src/features/playersDatabase/domain/orchestration/buildTeamScoutShadowAudit.js
 
+import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
@@ -70,7 +71,7 @@ export const buildTeamScoutShadowAudit = ({ league = {}, season = {}, rows = [] 
   }))
 
   return {
-    engineVersion: 'scouting-v2',
+    engineVersion: SCOUTING_MODEL_VERSION,
     mode: 'primary-diagnostics',
     status: 'complete',
     legacyComparisonAvailable: false,

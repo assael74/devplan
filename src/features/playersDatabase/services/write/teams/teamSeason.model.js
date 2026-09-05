@@ -273,7 +273,7 @@ const buildCanonicalTeamPlayerStats = ({ player = {}, team = {} } = {}) => {
     team.gamesPlayed,
     teamStats.gamesPlayed,
   ))
-  const tableRank = pickDefinedValue(team.tableRank, playerStats.teamRank, null)
+  const tableRank = pickDefinedValue(team.tableRank, null)
   const ageGroupId = clean(pickDefinedValue(
     team.ageGroupId,
     team.league?.ageGroupId,

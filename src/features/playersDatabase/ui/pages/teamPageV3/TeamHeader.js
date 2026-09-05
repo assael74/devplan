@@ -16,6 +16,7 @@ import { teamHeaderSx as sx } from './sx/teamHeader.sx.js'
 export default function TeamHeader({
   breadcrumbs,
   team,
+  teamUrl = '',
   seasonKey,
   favorite = false,
   favoritePending = false,
@@ -23,6 +24,7 @@ export default function TeamHeader({
   onSearch,
   onLeague,
 }) {
+  const resolvedTeamUrl = String(teamUrl || team?.teamUrl || '').trim()
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
 
@@ -60,9 +62,25 @@ export default function TeamHeader({
           sx={sx.teamLogo}
         />
 
-        <Typography level='h1' sx={sx.pageTitle}>
-          {team.name}
-        </Typography>
+        {resolvedTeamUrl ? (
+          <Box
+            component='a'
+            href={resolvedTeamUrl}
+            target='_blank'
+            rel='noopener noreferrer'
+            referrerPolicy='no-referrer'
+            aria-label={`פתיחת קישור הקבוצה ${team.name || ''}`}
+            sx={sx.pageTitleLink}
+          >
+            <Typography data-team-title level='h1' sx={sx.pageTitle}>
+              {team.name}
+            </Typography>
+          </Box>
+        ) : (
+          <Typography level='h1' sx={sx.pageTitle}>
+            {team.name}
+          </Typography>
+        )}
 
         <FavoriteButton
           favorite={favorite}

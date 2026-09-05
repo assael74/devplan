@@ -68,7 +68,6 @@ const normalizeComparableValue = value => {
 
   return value
 }
-
 const stripPlayerDocTechnicalTimestamps = value => {
   if (!value || typeof value !== 'object') return value
 
@@ -400,5 +399,3 @@ export const upsertProfiledPlayerDoc = async ({
     }
   })
 }
-
-export const upsertOfficialPlayerDoc = upsertProfiledPlayerDoc

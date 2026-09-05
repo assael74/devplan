@@ -19,9 +19,25 @@ import { teamPlayersColumnsSx as sx } from '../sx/teamPlayers.columns.sx.js'
 
 const PLAYER_STATUS_DISPLAY = {
   youngerAgeGroup: { label: 'שנתון צעיר', iconId: 'rosterYounger', color: 'primary' },
-  transferredOut: { label: 'עזב במהלך העונה', iconId: 'rosterLeft', color: 'danger' },
   retired: { label: 'פרש', iconId: 'rosterRetired', color: 'neutral' },
   transferredIn: { label: 'הצטרף במהלך העונה', iconId: 'rosterJoined', color: 'success' },
+}
+
+const getPlayerStatusDisplay = row => {
+  if (row.rosterStatus !== 'transferredOut') {
+    return PLAYER_STATUS_DISPLAY[row.rosterStatus]
+  }
+
+  const direction = row.manualTransferDirection || row.transferDirection || 'unknown'
+  const transferDisplay = {
+    up: { label: 'עזב לקבוצה ברמה גבוהה יותר', iconId: 'sortUp', color: 'success' },
+    down: { label: 'עזב לקבוצה ברמה נמוכה יותר', iconId: 'sortDown', color: 'danger' },
+    lateral: { label: 'עזב לקבוצה באותה רמה', iconId: 'swapVert', color: 'primary' },
+  }
+
+  return transferDisplay[direction] || {
+    label: 'עזב במהלך העונה', iconId: 'rosterLeft', color: 'danger',
+  }
 }
 
 const toCount = value => {
@@ -34,7 +50,7 @@ const columnWidth = key => buildTableColumnWidth(
 )
 
 const renderPlayerName = row => {
-  const status = PLAYER_STATUS_DISPLAY[row.rosterStatus]
+  const status = getPlayerStatusDisplay(row)
 
   return (
     <Box sx={columnSx.nameContent}>

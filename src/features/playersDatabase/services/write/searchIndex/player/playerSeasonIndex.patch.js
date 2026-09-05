@@ -26,12 +26,14 @@ import {
 } from '../shared/searchIndexResult.model.js'
 import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import {
+  buildLineClassificationIndexFields,
+} from './playerSeasonIndex.model.js'
+import {
   buildPlayerSeasonIndexLookup,
   buildPlayerSeasonIndexScope,
-  buildLineClassificationIndexFields,
   findExistingPlayerSeasonIndexDoc,
   isSamePlayerSeasonIndexContext,
-} from './playerSeasonIndex.model.js'
+} from './playerSeasonIndex.identity.js'
 import {
   buildPlayerSeasonIndexIdFromPayload,
   findPlayerSeasonIndexDocForPayload,

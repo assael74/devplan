@@ -1,7 +1,10 @@
 // features/playersDatabase/ui/pages/teamPage/logic/teamStatsMatch.logic.js
 
 import { clean } from './teamPage.utils.js'
-
+import {
+  buildPlayerNameVariants,
+  normalizePlayerNameValue,
+} from '../../../../model/playerIdentity.model.js'
 import { pickDefinedValue } from '../../../../model/value.model.js'
 export const STATS_IDENTITY_STATUS = {
   ROSTER_MATCH: 'roster_match',
@@ -10,35 +13,6 @@ export const STATS_IDENTITY_STATUS = {
   NEW_PLAYER: 'new_player',
   AMBIGUOUS: 'ambiguous',
   UNRESOLVED: 'unresolved',
-}
-
-export const normalizePlayerNameValue = value => clean(value)
-  .replace(/[.״"׳']/g, '')
-  .replace(/\s+/g, ' ')
-  .toLowerCase()
-
-const buildPlayerNameVariants = value => {
-  const normalizedName = normalizePlayerNameValue(value)
-  const parts = normalizedName.split(' ').filter(Boolean)
-  const variants = new Set()
-
-  if (normalizedName) variants.add(normalizedName)
-
-  if (parts.length === 2) {
-    variants.add(`${parts[1]} ${parts[0]}`)
-  }
-
-  if (parts.length >= 3 && parts.length <= 4) {
-    variants.add([...parts].reverse().join(' '))
-    variants.add([...parts.slice(1), parts[0]].join(' '))
-    variants.add([parts[parts.length - 1], ...parts.slice(0, -1)].join(' '))
-  }
-
-  if (parts.length === 4) {
-    variants.add([...parts.slice(2), ...parts.slice(0, 2)].join(' '))
-  }
-
-  return variants
 }
 
 const buildRosterNameVariants = player => [

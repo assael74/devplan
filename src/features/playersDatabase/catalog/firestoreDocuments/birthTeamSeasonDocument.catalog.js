@@ -4,6 +4,7 @@
 // Owns roster, statistics, performance, balance and compact scouting projections
 // for exactly one team + season identity.
 
+import { SCOUTING_MODEL_VERSION, TEAM_LINE_CLASSIFICATION_VERSION } from '../../../../shared/scouting/scouting.version.js'
 const TEAM_BALANCE_GENERIC_OBJECT = {
   snapshotFormat: 'team-balance-summary-v14',
   version: '',
@@ -67,6 +68,7 @@ const TEAM_BALANCE_GENERIC_OBJECT = {
       defense: { actual: 0, reference: 0, delta: null, state: '' },
       midfieldCore: { actual: 0, reference: 0, delta: null, state: '' },
       attackingMidfielder: { actual: 0, reference: 0, delta: null, state: '' },
+      midfield: { actual: 0, reference: 0, delta: null, state: '' },
       attack: { actual: 0, reference: 0, delta: null, state: '' },
     },
   },
@@ -114,7 +116,7 @@ const TEAM_PLAYER_SCOUT_PROJECTION_GENERIC_OBJECT = {
   preliminaryScoutProfileIds: [],
   scoutEffectiveImmediacyStatus: '',
   scoutPlayerInterestLevel: '',
-  scoutEngineVersion: 'scouting-v2',
+  scoutEngineVersion: SCOUTING_MODEL_VERSION,
 }
 
 export const BIRTH_TEAM_SEASON_DOCUMENT_OPTIONAL_SCHEMA_PATHS = Object.freeze([])
@@ -168,7 +170,7 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         position: null,
         source: '',
         evidenceLevel: '',
-        modelVersion: 'player-line-v7',
+        modelVersion: TEAM_LINE_CLASSIFICATION_VERSION,
       },
       playerStats: {
         games: 0,

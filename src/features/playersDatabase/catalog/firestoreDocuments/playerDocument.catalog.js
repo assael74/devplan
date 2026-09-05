@@ -5,6 +5,7 @@
 // engine result remains runtime/domain state and rich V2 fields are not part of
 // canonical Player persistence.
 
+import { SCOUTING_MODEL_VERSION, TEAM_LINE_CLASSIFICATION_VERSION } from '../../../../shared/scouting/scouting.version.js'
 export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
   'scoutOpportunity',
   'scoutProfileProgression',
@@ -96,7 +97,7 @@ const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
     reasons: [],
     limitingFactors: [],
   },
-  scoutEngineVersion: 'scouting-v2',
+  scoutEngineVersion: SCOUTING_MODEL_VERSION,
 };
 
 const PLAYER_SCOUT_STATS_LOAD_MEASUREMENTS_GENERIC_OBJECT = {
@@ -282,7 +283,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         position: null,
         source: '',
         evidenceLevel: '',
-        modelVersion: 'player-line-v7',
+        modelVersion: TEAM_LINE_CLASSIFICATION_VERSION,
       },
       numShirt: '',
       rosterStatus: 'regular',
@@ -342,7 +343,7 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
         position: null,
         source: '',
         evidenceLevel: '',
-        modelVersion: 'player-line-v7',
+        modelVersion: TEAM_LINE_CLASSIFICATION_VERSION,
       },
       numShirt: '',
       rosterStatus: 'regular',

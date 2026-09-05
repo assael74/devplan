@@ -553,6 +553,12 @@ function TeamPageContent() {
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}
+          teamUrl={
+            selectedTeamSeason?.teamUrl ||
+            team.teamUrl ||
+            selectedSeasonOption?.season?.teamUrl ||
+            ''
+          }
           seasonKey={selectedSeasonKey}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}

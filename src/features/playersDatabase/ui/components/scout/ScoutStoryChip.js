@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Box } from '@mui/joy'
 
-import ScoutProfileChip from './ScoutProfileChip.js'
+import ScoutProfileChipV2, { resolveScoutProfileDepthPct } from './ScoutProfileChipV2.js'
 import {
   ScoutStoryList,
   ScoutStoryMetrics,
@@ -62,7 +62,10 @@ const resolveChipLabel = ({ profileView, nearProfile, label }) => {
   return `קרוב · ${clean(nearProfile.profileLabel) || getScoutProfileLabel(nearProfile.profileId)}`
 }
 
-export default function ScoutStoryChip({ player = {}, label = '', fontSize = 11 }) {
+export default function ScoutStoryChip({
+  player = {},
+  label = '',
+}) {
   const [open, setOpen] = React.useState(false)
   const [historyReadState, setHistoryReadState] = React.useState({
     key: '',
@@ -195,13 +198,16 @@ export default function ScoutStoryChip({ player = {}, label = '', fontSize = 11 
 
   if (player.isTeamScoutProjection) {
     return (
-      <ScoutProfileChip
+      <ScoutProfileChipV2
         profileId={profileView.primaryItem?.id || ''}
         label={chipLabel}
-        tooltip='הקרנת סקאוט עונתית'
+        profile={profileView.primaryItem?.source || primaryProfile}
+        profiles={profiles}
         iconId={profileView.primaryItem?.iconId || 'performanceProfile'}
-        variant={profileView.variant}
-        fontSize={fontSize}
+        depthPct={resolveScoutProfileDepthPct(profileView.primaryItem?.source || primaryProfile)}
+        isFilter={profileView.isCombination}
+        showConditions
+        showConditionsDepth
       />
     )
   }
@@ -224,15 +230,18 @@ export default function ScoutStoryChip({ player = {}, label = '', fontSize = 11 
           }
         }}
       >
-        <ScoutProfileChip
+        <ScoutProfileChipV2
           profileId={profileView.primaryItem?.id || ''}
           label={chipLabel}
-          tooltip='פתיחת סיפור סקאוט'
+          profile={profileView.primaryItem?.source || primaryProfile || nearProfile}
+          profiles={profiles}
           iconId={isNearProfileOnly
             ? 'search'
             : profileView.primaryItem?.iconId || 'performanceProfile'}
-          variant={isNearProfileOnly ? 'nearProfile' : profileView.variant}
-          fontSize={fontSize}
+          depthPct={resolveScoutProfileDepthPct(profileView.primaryItem?.source || primaryProfile)}
+          isFilter={isNearProfileOnly || profileView.isCombination}
+          showConditions
+          showConditionsDepth
         />
       </Box>
 

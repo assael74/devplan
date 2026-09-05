@@ -20,18 +20,20 @@ import {
   hasPlayerScoutProfiles,
 } from '../../players/index.js'
 import {
-  buildInternalPlayerId,
-  buildPlayerAliases,
   buildLineClassificationIndexFields,
+  resolveTeamSeasonSourceTarget,
+} from './playerSeasonIndex.model.js'
+import {
+  buildPlayerAliases,
   buildPlayerSeasonIndexId,
-  buildPlayerScoutIndexFields,
+  buildPlayerSeasonIndexInternalPlayerId,
   getRosterStatus,
   normalizeText,
   resolveClubLevel,
   resolveClubStrengthLevel,
-  resolveTeamSeasonSourceTarget,
   shouldSkipNewPlayerSeasonIndex,
-} from './playerSeasonIndex.model.js'
+} from './playerSeasonIndex.identity.js'
+import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 import { buildPlayerSeasonStatsSnapshots } from './playerSeasonIndex.snapshot.js'
 
@@ -142,7 +144,7 @@ export const buildPlayerSeasonStatsMutation = ({
     player.matchedPlayerId ||
     player.playerId ||
     existingData.playerId
-  ) || buildInternalPlayerId({
+  ) || buildPlayerSeasonIndexInternalPlayerId({
     player,
     season,
   })
@@ -182,8 +184,7 @@ export const buildPlayerSeasonStatsMutation = ({
     pickDefinedValue(
       team.teamStats?.teamGamePlayed,
       team.teamGamePlayed,
-      existingData.teamGamePlayed,
-      playerStats.teamGames
+      existingData.teamGamePlayed
     )
   )
   const normalization = buildPlayerSeasonSearchMetrics({

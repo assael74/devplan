@@ -3,14 +3,10 @@
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../../services/firestore/usage/index.js'
 import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
-import {
-  buildPlayerSeasonScoutProfileRemoval,
-  playerDocRef,
-} from '../../players/playerDoc.js'
-import {
-  buildPlayerAliases,
-  buildPlayerSeasonIndexDoc,
-} from '../../searchIndex/player/playerSeasonIndex.model.js'
+import { playerDocRef } from '../../players/playerDoc.model.js'
+import { buildPlayerSeasonScoutProfileRemoval } from '../../players/playerSeason.patch.js'
+import { buildPlayerSeasonIndexDoc } from '../../searchIndex/player/playerSeasonIndex.model.js'
+import { buildPlayerAliases } from '../../searchIndex/player/playerSeasonIndex.identity.js'
 import { resolvePlayerSeasonIndexTargetForPayload } from '../../searchIndex/player/playerSeasonIndex.query.js'
 import { buildTeamPlayerScoutProjection } from '../../shared/playerScoutProjection.js'
 import { buildScoutProfilesSummary } from '../../../../model/scoutProfilesSummary.model.js'

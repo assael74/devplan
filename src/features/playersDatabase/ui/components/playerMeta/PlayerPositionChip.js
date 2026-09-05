@@ -1,14 +1,11 @@
 // src/features/playersDatabase/ui/components/playerMeta/PlayerPositionChip.js
 
-import { Chip } from '@mui/joy'
-
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import {
   LAYER_TITLES,
   POSITION_LAYERS,
 } from '../../../../../shared/players/players.constants.js'
 import { getPlayerGeneralPosition } from '../../../../../shared/players/player.positions.utils.js'
-import { playerPositionChipSx as sx } from './sx/playerPositionChip.sx.js'
+import PlayerMetaChip from './PlayerMetaChip.js'
 
 const clean = value => String(value || '').trim()
 
@@ -49,21 +46,13 @@ export default function PlayerPositionChip({
   const selected = Boolean(value && label)
 
   return (
-    <Chip
-      size='sm'
-      variant={selected ? 'soft' : 'outlined'}
-      startDecorator={selected ? iconUi({
-        id: iconId,
-        size: 'sm',
-      }) : null}
+    <PlayerMetaChip
+      label={label || 'לא הוגדרה'}
+      startIconId={selected ? iconId : ''}
+      selected={selected}
+      clickable={Boolean(onClick)}
+      buttonLike={buttonLike}
       onClick={onClick}
-      sx={sx.root({
-        selected,
-        clickable: Boolean(onClick),
-        buttonLike,
-      })}
-    >
-      {label || 'לא הוגדרה'}
-    </Chip>
+    />
   )
 }

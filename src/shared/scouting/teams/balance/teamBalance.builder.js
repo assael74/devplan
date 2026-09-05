@@ -1,5 +1,7 @@
 // src/shared/scouting/teams/balance/teamBalance.builder.js
 
+import { TEAM_BALANCE_VERSION } from '../../scouting.version.js'
+
 import {
   buildTeamLineStructure,
   buildTeamLineClassificationCoverage,
@@ -29,7 +31,7 @@ export const buildTeamBalance = ({ players = [], teamGamePlayed = 0 } = {}) => {
   })
 
   return {
-    version: 'team-balance-v13',
+    version: TEAM_BALANCE_VERSION,
     lineClassificationCoverage,
     lineStructure,
     balanceAvailability,

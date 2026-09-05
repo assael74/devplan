@@ -11,6 +11,17 @@ import {
 } from './teamLineClassification.model.js'
 import { TEAM_LINE_STRUCTURE_THRESHOLDS } from '../../config/lineStructureThresholds.js'
 
+export const TEAM_LINE_CLASSIFICATION_REASON = Object.freeze({
+  KNOWN_GOALKEEPER: 'known_goalkeeper',
+  INSUFFICIENT_GAMES: 'insufficient_games',
+  MISSING_GOALS: 'missing_goals',
+  MISSING_MINUTES_CONTEXT: 'missing_minutes_context',
+  INVALID_MINUTES_CONTEXT: 'invalid_minutes_context',
+  BELOW_MINUTES_THRESHOLD: 'below_minutes_threshold',
+  CLASSIFIED: 'classified',
+  NO_CLASSIFICATION: 'no_classification',
+})
+
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
@@ -116,28 +127,27 @@ const buildInferredClassification = ({ minutesBand, substitutionBand, goals }) =
   return null
 }
 
-export const buildTeamPlayerLineClassification = ({ player = {} } = {}) => {
-  if (hasKnownGoalkeeperRole(player)) return null
+export const buildTeamPlayerLineClassificationEvaluation = ({ player = {} } = {}) => {
+  if (hasKnownGoalkeeperRole(player)) {
+    return { classification: null, eligible: false, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.KNOWN_GOALKEEPER, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null }
+  }
 
   const stats = getPlayerStats(player)
   const games = toKnownNonNegativeNumber(stats.games)
-
   if (games === null || games < TEAM_LINE_STRUCTURE_THRESHOLDS.MINIMUM_GAMES) {
-    return null
+    return { classification: null, eligible: false, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.INSUFFICIENT_GAMES, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null }
   }
 
   const goals = toKnownNonNegativeNumber(stats.goals)
-
-  if (goals === null) return null
+  if (goals === null) {
+    return { classification: null, eligible: true, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.MISSING_GOALS, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null }
+  }
 
   if (goals >= 10) {
     const classification = buildInferredClassification({ goals })
-
     return {
-      ...classification,
-      source: TEAM_LINE_CLASSIFICATION_SOURCE.INFERRED,
-      evidenceLevel: classification.evidenceLevel,
-      modelVersion: TEAM_LINE_CLASSIFICATION_VERSION,
+      classification: { ...classification, source: TEAM_LINE_CLASSIFICATION_SOURCE.INFERRED, evidenceLevel: classification.evidenceLevel, modelVersion: TEAM_LINE_CLASSIFICATION_VERSION },
+      eligible: true, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.CLASSIFIED, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null,
     }
   }
 
@@ -146,39 +156,33 @@ export const buildTeamPlayerLineClassification = ({ player = {} } = {}) => {
   const teamGames = toKnownNonNegativeNumber(stats.teamGames)
   const starts = toKnownNonNegativeNumber(stats.starts)
   const substitutedOut = toKnownNonNegativeNumber(stats.substitutedOut)
-
-  if (
-    minutes === null ||
-    teamMinutes === null ||
-    teamGames === null ||
-    teamGames <= 0 ||
-    starts === null
-  ) {
-    return null
+  if (minutes === null || teamMinutes === null || teamGames === null || teamGames <= 0 || starts === null) {
+    return { classification: null, eligible: true, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.MISSING_MINUTES_CONTEXT, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null }
   }
 
   const gameMinutes = teamMinutes / teamGames
-  if (!Number.isFinite(gameMinutes) || gameMinutes <= 0) return null
+  const possiblePlayerMinutes = games * gameMinutes
+  if (!Number.isFinite(gameMinutes) || gameMinutes <= 0 || !Number.isFinite(possiblePlayerMinutes) || possiblePlayerMinutes <= 0) {
+    return { classification: null, eligible: true, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.INVALID_MINUTES_CONTEXT, gameMinutes: null, possiblePlayerMinutes: null, minutesRate: null, substitutionRate: null, minutesBand: null, substitutionBand: null }
+  }
 
-  const minutesRate = minutes / (games * gameMinutes)
-  const substitutionRate = starts > 0
-    ? (substitutedOut === null ? 0 : substitutedOut) / starts
-    : 0
+  const minutesRate = minutes / possiblePlayerMinutes
+  const substitutionRate = starts > 0 ? (substitutedOut === null ? 0 : substitutedOut) / starts : 0
+  const minutesBand = buildMinutesBand(minutesRate)
+  const substitutionBand = buildSubstitutionBand(substitutionRate)
+  if (minutesRate < 0.7) {
+    return { classification: null, eligible: true, reasonCode: TEAM_LINE_CLASSIFICATION_REASON.BELOW_MINUTES_THRESHOLD, gameMinutes, possiblePlayerMinutes, minutesRate, substitutionRate, minutesBand, substitutionBand }
+  }
 
-  if (minutesRate < 0.7) return null
-
-  const classification = buildInferredClassification({
-    minutesBand: buildMinutesBand(minutesRate),
-    substitutionBand: buildSubstitutionBand(substitutionRate),
-    goals,
-  })
-
-  if (!classification) return null
-
+  const classification = buildInferredClassification({ minutesBand, substitutionBand, goals })
   return {
-    ...classification,
-    source: TEAM_LINE_CLASSIFICATION_SOURCE.INFERRED,
-    evidenceLevel: classification.evidenceLevel,
-    modelVersion: TEAM_LINE_CLASSIFICATION_VERSION,
+    classification: classification ? { ...classification, source: TEAM_LINE_CLASSIFICATION_SOURCE.INFERRED, evidenceLevel: classification.evidenceLevel, modelVersion: TEAM_LINE_CLASSIFICATION_VERSION } : null,
+    eligible: true,
+    reasonCode: classification ? TEAM_LINE_CLASSIFICATION_REASON.CLASSIFIED : TEAM_LINE_CLASSIFICATION_REASON.NO_CLASSIFICATION,
+    gameMinutes, possiblePlayerMinutes, minutesRate, substitutionRate, minutesBand, substitutionBand,
   }
 }
+
+export const buildTeamPlayerLineClassification = ({ player = {} } = {}) => (
+  buildTeamPlayerLineClassificationEvaluation({ player }).classification
+)

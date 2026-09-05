@@ -1,5 +1,6 @@
 // src/features/playersDatabase/domain/orchestration/buildPlayerScoutShadowAudit.js
 
+import { SCOUTING_SHADOW_ENGINE_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import { buildPlayerScoutResult } from '../../../../shared/scouting/players/index.js'
 import { normalizePlayerStats } from '../../model/playerStats.model.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
@@ -253,7 +254,7 @@ export const buildPlayerScoutShadowAudit = ({
   })
 
   return {
-    engineVersion: 'scouting-v2-shadow',
+    engineVersion: SCOUTING_SHADOW_ENGINE_VERSION,
     mode: 'shadow',
     status: 'complete',
     totalPlayers: rows.length,

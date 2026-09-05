@@ -59,7 +59,7 @@ export const buildPlayerSeasonSearchMetrics = ({
   const starts = Math.max(0, toSafeNumber(stats.starts))
   const safeTeamGamePlayed = Math.max(
     0,
-    toSafeNumber(teamGamePlayed || stats.teamGames)
+    toSafeNumber(teamGamePlayed)
   )
   const gameMinutes = resolvePlayersDatabaseLeagueGameTime(ageGroupId)
   const state = resolveSeasonProjectionState({

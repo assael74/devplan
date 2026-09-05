@@ -68,12 +68,12 @@ export const DEPENDENCY_DISPLAY = {
 export const SCOUT_RULE_OPERATOR_DISPLAY = {
   truthy: 'קיים',
   falsy: 'לא קיים',
-  eq: '=',
-  gte: '>=',
-  lte: '<=',
+  eq: 'שווה ל',
+  gte: 'מעל',
+  lte: 'מתחת',
   in: 'בתוך',
-  gt: '>',
-  lt: '<',
+  gt: 'מעל',
+  lt: 'מתחת',
   between: 'בין',
 }
 

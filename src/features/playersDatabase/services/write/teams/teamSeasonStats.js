@@ -155,9 +155,9 @@ export const buildCanonicalTeamSeasonContext = ({
   baseSeasonDoc = {},
   teamDocumentId = '',
   teamPerformance = null,
+  teamPoints = null,
 } = {}) => {
   const storedStats = baseSeasonDoc.teamStats || {}
-  const incomingStats = team.teamStats || {}
   const performance = teamPerformance || buildPersistedTeamPerformanceFallback(baseSeasonDoc)
   const performanceTeam = applyTeamPerformanceProjection({ team, performance })
   const teamGamePlayed = toNumber(performance.teamGamePlayed)
@@ -215,7 +215,7 @@ export const buildCanonicalTeamSeasonContext = ({
     defense: teamDefensePerformance || {},
     teamStats: {
       points: toNumber(firstDefined(
-        incomingStats.points,
+        teamPoints,
         storedStats.points,
       )),
       teamGamePlayed,
@@ -230,6 +230,7 @@ export async function updateTeamSeasonPlayerStats({
   team = {},
   players = [],
   teamPerformance = null,
+  teamPoints = null,
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
@@ -278,6 +279,7 @@ export async function updateTeamSeasonPlayerStats({
       baseSeasonDoc,
       teamDocumentId: teamId,
       teamPerformance,
+      teamPoints,
     })
     const nextPlayers = mergeTeamPlayerStats({
       existingPlayers: baseSeasonDoc.teamPlayers,

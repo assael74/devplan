@@ -12,7 +12,7 @@
  * - Manages current/history row matching, replacement and hydration from a team document.
  *
  * playerDoc.upsert.js
- * - Creates or updates a player document when a player becomes profiled/official.
+ * - Creates or updates a player document when the canonical lifecycle requires it.
  * - Ensures the requested season exists in only one current/history partition.
  *
  * playerSeason.patch.js
@@ -27,8 +27,6 @@
  * - Removes one team-season context from player documents.
  * - Deletes the whole player document when current and history are both empty afterward.
  *
- * playerDoc.js
- * - Compatibility barrel that preserves existing imports during the refactor.
  */
 
 export {
@@ -38,15 +36,20 @@ export {
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
   normalizePlayerScoutStory,
+} from './playerDoc.model.js'
+
+export {
+  updatePlayerSeasonNotes,
+  updatePlayerSeasonUrl,
+} from './playerSeason.patch.js'
+
+export {
   clearExistingPlayerSeasonProfilesMany,
   resolveExistingPlayerDocumentIds,
   syncPlayerScoutProfileDocsMany,
   syncPlayerRoleAndScoutProfileDoc,
-  updatePlayerSeasonNotes,
-  updatePlayerSeasonUrl,
-  upsertOfficialPlayerDoc,
   upsertProfiledPlayerDocsMany,
-} from './playerDoc.js'
+} from './playerScoutProfiles.js'
 
 export {
   removePlayerSeasonDocsMany,

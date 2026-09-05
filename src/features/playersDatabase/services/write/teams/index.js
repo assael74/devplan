@@ -53,19 +53,31 @@ export {
 
 export {
   appendTeamSeasonPlayer,
+  upsertTeamSeasonPlayers,
+} from './teamSeasonRoster.js'
+
+export {
   updateTeamSeasonPlayerStats,
+} from './teamSeasonStats.js'
+
+export {
   removeTeamSeasonPlayerScoutProfile,
   updateTeamSeasonPlayerScoutProjection,
   updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerRoleAndScoutProfiles,
   updateTeamSeasonPlayerVerificationAndScout,
-  upsertTeamSeasonPlayers,
+  updateTeamSeasonPlayerUrl,
+} from './teamSeasonPlayer.js'
+
+export {
   updateTeamSeasonsMetaMany,
   updateTeamSeasonTeamUrl,
-  updateTeamSeasonPlayerUrl,
+} from './teamSeasonMeta.js'
+
+export {
   updateLeagueTeamPlayersScoutContextMany,
   updateTeamSeasonPlayersScoutContext,
-} from './teamSeason.js'
+} from './teamSeasonScoutContext.js'
 
 export {
   buildTeamPlayersScoutProfilesSummary,

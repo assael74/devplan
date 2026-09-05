@@ -14,8 +14,9 @@ import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import LeagueName from '../../../components/entities/LeagueName.js'
 import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
-import ScoutCompactTooltip from '../../../components/scout/ScoutCompactTooltip.js'
-import ScoutProfileChip from '../../../components/scout/ScoutProfileChip.js'
+import ScoutProfileChipV2, {
+  resolveScoutProfileDepthPct,
+} from '../../../components/scout/ScoutProfileChipV2.js'
 import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
@@ -223,18 +224,17 @@ export function buildPlayerSearchColumns({ onEntityOpen, onFavoriteToggle } = {}
 
         return (
           <Box sx={sx.profileCell}>
-            <ScoutProfileChip
+            <ScoutProfileChipV2
               profileId={profileView.primaryItem?.id || ''}
               label={profileView.label}
-              tooltip={(
-                <ScoutCompactTooltip
-                  title={profileView.tooltipTitle}
-                  items={profileView.tooltipItems}
-                  isCombination={profileView.isCombination}
-                />
-              )}
-              variant={profileView.variant}
-              fontSize={11}
+              profile={profileView.primaryItem?.source}
+              profiles={profileView.displayItems
+                .filter(item => item.type === 'profile')
+                .map(item => item.source)}
+              depthPct={resolveScoutProfileDepthPct(profileView.primaryItem?.source)}
+              isFilter={profileView.isCombination}
+              showConditions
+              showConditionsDepth
             />
           </Box>
         )

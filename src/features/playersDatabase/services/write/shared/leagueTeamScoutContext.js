@@ -1,3 +1,4 @@
+import { SCOUTING_MODEL_VERSION } from '../../../../../shared/scouting/scouting.version.js'
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
@@ -125,7 +126,7 @@ export const buildCanonicalLeagueTeamScoutContexts = ({
           normalization: engineResult?.normalization || {},
           leagueLevel: engineResult?.leagueLevel || league.level,
           leagueGames: engineResult?.leagueNumGames || season.leagueTotalRound,
-          engineVersion: 'scouting-v2',
+          engineVersion: SCOUTING_MODEL_VERSION,
           calculatedAt: season.updatedAt || null,
         },
       })

@@ -25,10 +25,12 @@ import {
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
 import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
 import {
-  buildPlayerSeasonIndexScope,
-  isSamePlayerSeasonIndexContext,
   resolveTeamSeasonSourceTarget,
 } from './playerSeasonIndex.model.js'
+import {
+  buildPlayerSeasonIndexScope,
+  isSamePlayerSeasonIndexContext,
+} from './playerSeasonIndex.identity.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   feature: 'playersDatabase',

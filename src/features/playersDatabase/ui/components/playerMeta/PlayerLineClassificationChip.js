@@ -1,9 +1,8 @@
 // src/features/playersDatabase/ui/components/playerMeta/PlayerLineClassificationChip.js
 
-import { Chip, Tooltip } from '@mui/joy'
+import { Tooltip } from '@mui/joy'
 
-import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { playerPositionChipSx as sx } from './sx/playerPositionChip.sx.js'
+import PlayerMetaChip from './PlayerMetaChip.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -36,6 +35,7 @@ export default function PlayerLineClassificationChip({
   tooltipDetail = '',
   clickable = false,
   buttonLike = false,
+  compact = false,
 }) {
   const line = clean(classification?.line)
   const position = clean(classification?.position)
@@ -43,13 +43,7 @@ export default function PlayerLineClassificationChip({
   const isGoalkeeper = positionCode === 'GK' || clean(positionLayer).toLowerCase() === 'goalkeeper'
   const lineDisplay = LINE_DISPLAY[line]
   const positionLabel = POSITION_LABELS[position] || position
-  const positionIcon = positionCode
-    ? iconUi({ id: positionCode, size: 'sm' })
-    : null
-  const classificationPositionIcon = position
-    ? iconUi({ id: CLASSIFICATION_POSITION_ICON_IDS[position], size: 'sm' })
-    : null
-  const resolvedPositionIcon = positionIcon || classificationPositionIcon
+  const endIconId = positionCode || CLASSIFICATION_POSITION_ICON_IDS[position] || ''
   const tooltip = [
     [lineDisplay?.label, positionLabel].filter(Boolean).join(' · '),
     getSourceLabel(classification?.source),
@@ -58,16 +52,15 @@ export default function PlayerLineClassificationChip({
 
   if (isGoalkeeper) {
     return (
-      <Tooltip title={['שוער', 'עמדה ידועה', clean(tooltipDetail)].filter(Boolean).join(' · ')}>
-        <Chip
-          size='sm'
-          variant='soft'
-          startDecorator={iconUi({ id: 'goalkeeper', size: 'sm' })}
-          sx={sx.root({ selected: true, clickable, buttonLike })}
-        >
-          שוער
-        </Chip>
-      </Tooltip>
+      <PlayerMetaChip
+        label='שוער'
+        startIconId='goalkeeper'
+        tooltip={['שוער', 'עמדה ידועה', clean(tooltipDetail)].filter(Boolean).join(' · ')}
+        selected
+        clickable={clickable}
+        buttonLike={buttonLike}
+        compact={compact}
+      />
     )
   }
 
@@ -80,19 +73,15 @@ export default function PlayerLineClassificationChip({
   }
 
   return (
-    <Tooltip title={tooltip}>
-      <Chip
-        size='sm'
-        variant='soft'
-        startDecorator={iconUi({
-          id: lineDisplay.iconId,
-          size: 'sm',
-        })}
-        endDecorator={resolvedPositionIcon}
-        sx={sx.root({ selected: true, clickable, buttonLike })}
-      >
-        {lineDisplay.label}{resolvedPositionIcon ? ' · ' : ''}
-      </Chip>
-    </Tooltip>
+    <PlayerMetaChip
+      label={`${lineDisplay.label}${endIconId ? ' · ' : ''}`}
+      startIconId={lineDisplay.iconId}
+      endIconId={endIconId}
+      tooltip={tooltip}
+      selected
+      clickable={clickable}
+      buttonLike={buttonLike}
+      compact={compact}
+    />
   )
 }

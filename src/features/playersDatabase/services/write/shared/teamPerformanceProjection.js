@@ -184,6 +184,23 @@ export const buildLeagueTeamPerformanceProjection = ({
   return buildTeamPerformanceProjectionFromTableRows({ rows, team })
 }
 
+// Points are an official League fact but are intentionally kept outside the
+// compact 8-field Team Performance projection contract. Stats writers can use
+// this resolver without accepting points from an import payload.
+export const resolveLeagueTeamPoints = ({
+  league = {},
+  season = {},
+  target = 'current',
+  team = {},
+} = {}) => {
+  const leagueSeason = resolveLeagueSeason({ league, season, target })
+  const rows = Array.isArray(leagueSeason?.tableRank) ? leagueSeason.tableRank : []
+  const row = findTeamTableRow({ rows, team })
+  if (!row) return null
+
+  return getLeagueTableRowStats(row).points
+}
+
 // Used only when the caller did not receive the league document.  This keeps
 // an existing persisted projection intact, but never promotes an import payload
 // to an authority over official performance.

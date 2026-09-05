@@ -98,13 +98,17 @@ export const devPlanColors = {
   tertiaryDark: '#176BA6',
   tertiaryLight: '#EAF5FC',
 
+  petrol: '#2B7C82',
+  petrolDark: '#1F5F64',
+  petrolLight: '#EAF5F5',
+
   border: '#D6E0E7',
   surface: '#FFFFFF',
   body: '#F6F8FA',
 
   text: '#173B57',
   subText: '#657684',
-}
+};
 
 export function getEntityColors(type) {
   return COLORS.entity[type] || COLORS.entity.player

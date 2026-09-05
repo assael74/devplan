@@ -25,7 +25,6 @@ export * from './selectors/lifecycle.selectors.js'
 
 export * from './orchestration/buildLeagueTeamSeasons.js'
 export * from './orchestration/buildDbPlayerScoutResult.js'
-export * from './orchestration/buildDbPlayerScoutLegacyResult.js'
 
 export * from './orchestration/buildPlayerScoutShadowAudit.js'
 export * from './orchestration/buildTeamScoutShadowAudit.js'

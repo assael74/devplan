@@ -1,14 +1,9 @@
 // src/shared/scouting/players/team.js
 
 import {
-  DRILLDOWN_STATUS,
-  SCOUT_LEVEL,
   TEAM_FILTER,
 } from './ids.js'
 
-import {
-  SCOUT_PROFILES,
-} from './profiles.js'
 
 const toNum = (value, fallback = null) => {
   if (value === null || value === undefined || value === '') return fallback
@@ -52,22 +47,6 @@ const defenseEdge = (teamAgainst, leagueAgainst) => {
   const league = Number(leagueAgainst)
 
   return Number.isFinite(team) && league > 0 ? round((league - team) / league) : null
-}
-
-const getSearchDistance = ({ sourceLevel, targetLevel }) => {
-  const source = Number(sourceLevel)
-  const target = Number(targetLevel)
-
-  if (!Number.isFinite(source) || !Number.isFinite(target)) return 0
-
-  return source - target
-}
-
-const getScoutLevelByDistance = distance => {
-  if (distance < 0) return SCOUT_LEVEL.ABOVE
-  if (distance === 0) return SCOUT_LEVEL.SAME
-
-  return SCOUT_LEVEL.BELOW
 }
 
 const getGames = (row = {}) => {
@@ -207,112 +186,4 @@ export const buildLeagueScoutContext = (rows = []) => {
     avgGoalsForPerGame: round(avg(items.map((item) => item.goalsForPerGame))),
     avgGoalsAgainstPerGame: round(avg(items.map((item) => item.goalsAgainstPerGame))),
   }
-}
-
-export const normalizeScoutSettings = (settings = {}) => {
-  const hasValue = (value) => value !== null && value !== undefined && value !== ''
-  const searchDistance = Number.isFinite(Number(settings.searchDistance))
-    ? Number(settings.searchDistance)
-    : getSearchDistance({
-      sourceLevel: settings.sourceLeagueLevel,
-      targetLevel: settings.targetLeagueLevel,
-    })
-  const performanceThreshold = Number.isFinite(Number(settings.performanceThreshold))
-    ? Number(settings.performanceThreshold)
-    : null
-  const deepAttackPerformanceThreshold = Number.isFinite(Number(settings.deepAttackPerformanceThreshold))
-    ? Number(settings.deepAttackPerformanceThreshold)
-    : 0.2
-  const deepDefensePerformanceThreshold = Number.isFinite(Number(settings.deepDefensePerformanceThreshold))
-    ? Number(settings.deepDefensePerformanceThreshold)
-    : 0.2
-
-  return {
-    perspective: settings.perspective || 'default',
-    sourceLeagueLevel: Number.isFinite(Number(settings.sourceLeagueLevel))
-      ? Number(settings.sourceLeagueLevel)
-      : null,
-    targetLeagueLevel: Number.isFinite(Number(settings.targetLeagueLevel))
-      ? Number(settings.targetLeagueLevel)
-      : null,
-    searchDistance,
-    activeScoutLevel: getScoutLevelByDistance(searchDistance),
-    performanceThreshold,
-    attackPerformanceThreshold: hasValue(settings.attackPerformanceThreshold) &&
-      Number.isFinite(Number(settings.attackPerformanceThreshold))
-      ? Number(settings.attackPerformanceThreshold)
-      : performanceThreshold,
-    defensePerformanceThreshold: hasValue(settings.defensePerformanceThreshold) &&
-      Number.isFinite(Number(settings.defensePerformanceThreshold))
-      ? Number(settings.defensePerformanceThreshold)
-      : performanceThreshold,
-    clearPerformanceThreshold: Number.isFinite(Number(settings.clearPerformanceThreshold))
-      ? Number(settings.clearPerformanceThreshold)
-      : 0.1,
-    deepAttackPerformanceThreshold,
-    deepDefensePerformanceThreshold,
-    deepClearPerformanceThreshold: Number.isFinite(Number(settings.deepClearPerformanceThreshold))
-      ? Number(settings.deepClearPerformanceThreshold)
-      : 0.2,
-    includeUniversal: settings.includeUniversal !== false,
-    enabledLevels: Array.isArray(settings.enabledLevels) && settings.enabledLevels.length
-      ? settings.enabledLevels
-      : [SCOUT_LEVEL.BELOW, SCOUT_LEVEL.SAME],
-  }
-}
-
-const levelEnabled = ({ profile, settings }) => {
-  const levels = Array.isArray(profile.searchLevels) ? profile.searchLevels : []
-  if (!levels.length) return true
-
-  return levels.some((level) => settings.enabledLevels.includes(level))
-}
-
-export const buildTeamDrilldown = ({
-  team,
-  league = {},
-  settings,
-  profiles = SCOUT_PROFILES,
-} = {}) => {
-  const cfg = normalizeScoutSettings(settings)
-  const metrics = buildTeamScoutMetrics({ team, league })
-  const eligible = profiles.filter((profile) => levelEnabled({ profile, settings: cfg }))
-  const universal = eligible.filter((profile) => profile.teamFilter === TEAM_FILTER.ANY)
-  const contextual = eligible.filter((profile) => profile.teamFilter !== TEAM_FILTER.ANY)
-  const matchedContextual = contextual.filter((profile) => {
-    return passesPlayerScoutTeamFilter({ profile, team, metrics })
-  })
-  const universalAllowed = cfg.includeUniversal ? universal : []
-  const status = matchedContextual.length
-    ? DRILLDOWN_STATUS.STRONG
-    : universalAllowed.length
-      ? DRILLDOWN_STATUS.OPEN
-      : DRILLDOWN_STATUS.HIDDEN
-
-  return {
-    teamId: team?.id || team?.teamId || '',
-    team,
-    status,
-    perspective: cfg.perspective,
-    settings: cfg,
-    metrics,
-    profiles: [...matchedContextual, ...universalAllowed],
-    contextualProfiles: matchedContextual,
-    universalProfiles: universalAllowed,
-    blockedContextualProfiles: contextual.filter((profile) => {
-      return !matchedContextual.some((item) => item.id === profile.id)
-    }),
-  }
-}
-
-export const buildTeamsDrilldown = ({ rows, settings, profiles = SCOUT_PROFILES } = {}) => {
-  const tableRows = Array.isArray(rows) ? rows : []
-  const league = buildLeagueScoutContext(tableRows)
-
-  return tableRows.map((team) => buildTeamDrilldown({
-    team,
-    league,
-    settings,
-    profiles,
-  }))
 }

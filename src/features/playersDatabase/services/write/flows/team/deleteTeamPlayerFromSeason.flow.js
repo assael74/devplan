@@ -7,7 +7,6 @@ import {
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import {
   deleteSearchIndexForTeamPlayerSeason,
-  getSearchIndexMetaForTeamPlayerSeason,
   updateTeamSeasonSearchIndexRosterMeta,
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
@@ -36,15 +35,6 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
   const player = payload.player || {}
   const results = {}
 
-  const searchIndexMetaResult = await runDeleteStage({
-    stage: 'getSearchIndexMetaForTeamPlayerSeason',
-    results,
-    action: () => getSearchIndexMetaForTeamPlayerSeason({
-      ...payload,
-      player,
-    }),
-  })
-
   const teamPlayerResult = await runDeleteStage({
     stage: 'removeTeamPlayerFromSeason',
     results,
@@ -62,12 +52,9 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
     throw error
   }
 
-  const playerDocumentIds = [
-    ...(Array.isArray(searchIndexMetaResult.playerDocumentIds)
-      ? searchIndexMetaResult.playerDocumentIds
-      : []),
-    player.playerDocumentId,
-  ].filter(Boolean)
+  const playerDocumentIds = Array.isArray(teamPlayerResult.playerDocumentIds)
+    ? teamPlayerResult.playerDocumentIds
+    : []
 
   const playerSeasonDocsResult = await runDeleteStage({
     stage: 'removePlayerSeasonDocsMany',
@@ -136,7 +123,6 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
   })
 
   return {
-    searchIndexMetaResult,
     teamPlayerResult,
     playerSeasonDocsResult,
     searchIndexResult,
