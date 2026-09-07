@@ -304,6 +304,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       ...payload,
       team: teamWithLoadStatus,
       scoutProfilesSummary,
+      teamTaskSignals: results.teamSeasonResult?.teamBalance?.teamTaskSignals,
     })
     results.leagueTableRankLoadStatusResult = results.leagueTableRankTeamMetaResult
     results.leagueTableRankScoutProfilesResult = results.leagueTableRankTeamMetaResult

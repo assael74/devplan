@@ -35,7 +35,6 @@ const IMMEDIACY_OPTIONS = [
 const MANUAL_REASON_OPTIONS = [
   { value: 'goal_distribution', label: 'פיזור שערים' },
   { value: 'minutes_distribution', label: 'חלוקת דקות' },
-  { value: 'visual_review', label: 'צפייה מקצועית' },
   { value: 'agent_status', label: 'מצב סוכן' },
   { value: 'transfer_context', label: 'מעבר קבוצה' },
   { value: 'agent_path_fit', label: 'התאמה למסלול סוכן' },
@@ -289,14 +288,6 @@ export default function PlayerScoutReviewModal({
           <ReviewObservationField
             label='חלוקת דקות'
             fieldId='minutes_distribution'
-            draft={safeDraft}
-            busy={busy}
-            onChange={updateReviewField}
-          />
-
-          <ReviewObservationField
-            label='צפייה בשחקן'
-            fieldId='visual_review'
             draft={safeDraft}
             busy={busy}
             onChange={updateReviewField}

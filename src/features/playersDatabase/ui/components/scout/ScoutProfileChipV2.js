@@ -20,6 +20,7 @@ export default function ScoutProfileChipV2({
   isCombination = false,
   shortLabel = false,
   selected = false,
+  tooltipSize = 'default',
   tooltip = '',
   profile = null,
   profiles = [],
@@ -27,6 +28,7 @@ export default function ScoutProfileChipV2({
   showConditionsDepth = false,
   onClick,
   size = 'default',
+  width,
 }) {
   const model = buildScoutProfileChipV2Model({
     profileId,
@@ -51,6 +53,7 @@ export default function ScoutProfileChipV2({
       profiles={profiles}
       showConditions={showConditions}
       showConditionsDepth={showConditionsDepth}
+      compact={tooltipSize === 'compact'}
     />
   )
 
@@ -70,6 +73,7 @@ export default function ScoutProfileChipV2({
         sx={sx.root({
           interactive,
           compact,
+          width,
           isFilter: model.isFilter,
           isCombination: model.isCombination,
           selected,

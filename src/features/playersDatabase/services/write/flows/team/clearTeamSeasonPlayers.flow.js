@@ -65,6 +65,10 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
         total: 0,
         profileCounts: {},
       },
+      teamTaskSignals: {
+        offense: false,
+        defense: false,
+      },
     }),
   })
   const leagueRosterResult = leagueTeamMetaResult

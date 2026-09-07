@@ -1,6 +1,6 @@
 const TEAM_LINE_INTEREST_PRESENTATION = Object.freeze({
   ATTACK_CONCENTRATION: Object.freeze({
-    label: 'התקפה טובה עם באנקרים',
+    label: 'ביצוע התקפי גבוה עם באנקרים',
     explanation: 'ביצוע התקפי גבוה עם מעט שחקני התקפה',
   }),
   ATTACK_HIGH_COMPETITION: Object.freeze({
@@ -11,13 +11,21 @@ const TEAM_LINE_INTEREST_PRESENTATION = Object.freeze({
     label: 'מחסור בשחקני התקפה',
     explanation: 'ביצוע התקפי נמוך עם מעט שחקני התקפה',
   }),
+  ATTACK_CLASSIFICATION_MISSING: Object.freeze({
+    label: 'אין שחקנים מסווגים להתקפה',
+    explanation: 'נדרש סיווג של שחקני התקפה לפני שאפשר להסיק על עומק או באנקרים בחוליה.',
+  }),
   DEFENSE_CONCENTRATION: Object.freeze({
-    label: 'הגנה טובה עם באנקרים',
+    label: 'ביצוע הגנתי גבוה עם באנקרים',
     explanation: 'ביצוע הגנתי גבוה עם מעט שחקני הגנה',
   }),
   DEFENSE_POSSIBLE_GAP: Object.freeze({
     label: 'מחסור בשחקני הגנה',
     explanation: 'ביצוע הגנתי נמוך עם מעט שחקני הגנה',
+  }),
+  DEFENSE_CLASSIFICATION_MISSING: Object.freeze({
+    label: 'אין שחקנים מסווגים להגנה',
+    explanation: 'נדרש סיווג של שחקני הגנה לפני שאפשר להסיק על עומק או באנקרים בחוליה.',
   }),
 })
 

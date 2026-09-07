@@ -126,6 +126,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
       season,
       team: finalTeamWithLoadStatus,
       scoutProfilesSummary,
+      teamTaskSignals: teamSeasonResult.teamBalance?.teamTaskSignals,
     }),
   })
   const teamSearchIndexResult = await runStage({

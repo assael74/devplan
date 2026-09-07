@@ -47,6 +47,11 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
           total: 0,
           profileCounts: {},
         },
+        teamTaskSignals: {
+          offense: false,
+          defense: false,
+          updatedAt: null,
+        },
         updatedAt: null,
       },
     ],
@@ -83,6 +88,11 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
           scoutProfilesSummary: {
             total: 0,
             profileCounts: {},
+          },
+          teamTaskSignals: {
+            offense: false,
+            defense: false,
+            updatedAt: null,
           },
           updatedAt: null,
         },

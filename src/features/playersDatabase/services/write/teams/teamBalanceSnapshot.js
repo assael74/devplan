@@ -134,6 +134,10 @@ const TEAM_BALANCE_SNAPSHOT_SHAPE = Object.freeze({
       squad: { isInteresting: false, reason: null },
     },
   },
+  teamTaskSignals: {
+    offense: false,
+    defense: false,
+  },
   updatedAt: null,
 })
 
@@ -286,6 +290,7 @@ export const buildTeamBalanceDocumentSnapshot = ({
   const benchmarkMetrics = cleanObject(lineupBenchmark.metrics)
   const classificationCoverageBenchmark = cleanObject(source.classificationCoverageBenchmark)
   const scoutInterpretation = cleanObject(source.scoutInterpretation)
+  const teamTaskSignals = cleanObject(source.teamTaskSignals)
   const persistenceContractVersion = TEAM_BALANCE_PERSISTENCE_CONTRACT_VERSION
   const dependencyKey = buildBalanceDependencyKey({
     version: source.version,
@@ -410,6 +415,10 @@ export const buildTeamBalanceDocumentSnapshot = ({
           reason: clean(scoutInterpretation.teamInterest?.squad?.reason) || null,
         },
       },
+    },
+    teamTaskSignals: {
+      offense: Boolean(teamTaskSignals.offense),
+      defense: Boolean(teamTaskSignals.defense),
     },
     updatedAt,
   }

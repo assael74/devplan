@@ -24,3 +24,8 @@ export {
 export {
   updatePlayerScoutReviewFlow,
 } from './updatePlayerScoutReview.flow.js'
+
+export {
+  updatePlayerAgentFlow,
+  updatePlayerSeasonGoalDistributionFlow,
+} from './updatePlayerManualData.flow.js'

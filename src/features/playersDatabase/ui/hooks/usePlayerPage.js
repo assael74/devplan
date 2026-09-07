@@ -17,6 +17,7 @@ import {
   buildEmptyPlayerPageView,
   buildPlayerPageView,
 } from '../../model/playerPage.model.js'
+import { LEAGUE_CENTER_CURRENT_SEASON_KEY } from '../../model/leagueCenter.model.js'
 import { normalizeSeasonLookupKey } from '../../model/season.model.js'
 import { readPlayerPageData } from '../../services/read/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../logic/routeBuilders.js'
@@ -134,6 +135,7 @@ export function usePlayerPage() {
   return {
     player,
     teamSource: location.state?.playerTeamSource || null,
+    catalogSeasonKey: LEAGUE_CENTER_CURRENT_SEASON_KEY,
     selectedSeasonKey: player.seasonKey || requestedSeasonKey,
     setSelectedSeasonKey,
     setSelectedSeasonContext,

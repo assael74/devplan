@@ -95,6 +95,7 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
       ...payload,
       team: payload.team || {},
       scoutProfilesSummary: teamPlayerResult.scoutProfilesSummary,
+      teamTaskSignals: teamPlayerResult.teamBalance?.teamTaskSignals,
     }),
   })
 

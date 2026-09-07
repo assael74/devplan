@@ -163,6 +163,7 @@ export async function repairMissingPlayerDocuments({ findings = [] } = {}) {
       season: group.season,
       team: teamWithLoadStatus,
       scoutProfilesSummary,
+      teamTaskSignals: teamProjection.teamBalance?.teamTaskSignals,
     })
     await updateTeamSeasonSearchIndexScoutProfilesSummary({
       league: group.league,

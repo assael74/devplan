@@ -82,6 +82,92 @@ const normalizeScoutProfileArray = values => (
     : []
 )
 
+const normalizeImmediacyEvaluation = value => {
+  const source = value && typeof value === 'object' ? value : {}
+  const id = clean(source.id)
+
+  if (!id) return null
+
+  return compactScoutValue({
+    id,
+    result: clean(source.result),
+    points: Number.isFinite(Number(source.points))
+      ? Number(source.points)
+      : 0,
+    reason: clean(source.reason),
+    ...(clean(source.profileId) ? { profileId: clean(source.profileId) } : {}),
+    details: source.details && typeof source.details === 'object'
+      ? source.details
+      : {},
+  })
+}
+
+const normalizeImmediacyEvaluations = values => (
+  (Array.isArray(values) ? values : [])
+    .map(normalizeImmediacyEvaluation)
+    .filter(Boolean)
+)
+
+const normalizeImmediacySignalPersistence = value => {
+  const source = value && typeof value === 'object' ? value : {}
+
+  return compactScoutValue({
+    profileRepeat: source.profileRepeat && typeof source.profileRepeat === 'object'
+      ? source.profileRepeat
+      : {},
+    combinationRepeat: source.combinationRepeat && typeof source.combinationRepeat === 'object'
+      ? source.combinationRepeat
+      : {},
+    attackingOutputUpgrade: source.attackingOutputUpgrade && typeof source.attackingOutputUpgrade === 'object'
+      ? source.attackingOutputUpgrade
+      : {},
+    decay: source.decay && typeof source.decay === 'object'
+      ? source.decay
+      : {},
+    reasons: normalizeScoutProfileArray(source.reasons),
+  })
+}
+
+const normalizePlayerScoutOpportunity = value => {
+  const source = value && typeof value === 'object' ? value : null
+
+  if (!source) return null
+
+  const evaluations = normalizeImmediacyEvaluations(source.evaluations)
+
+  return compactScoutValue({
+    effectiveActionStatus: clean(source.effectiveActionStatus),
+    baseActionStatus: clean(source.baseActionStatus),
+    automaticActionStatus: clean(source.automaticActionStatus),
+    manualActionStatus: clean(source.manualActionStatus),
+    hasManualDecision: Boolean(source.hasManualDecision),
+    profilesRemoved: Boolean(source.profilesRemoved),
+    manualDecision: compactScoutValue(
+      source.manualDecision && typeof source.manualDecision === 'object'
+        ? source.manualDecision
+        : null
+    ),
+    source: clean(source.source),
+    exposureLevel: clean(source.exposureLevel),
+    boostScore: Number.isFinite(Number(source.boostScore))
+      ? Number(source.boostScore)
+      : 0,
+    reductionScore: Number.isFinite(Number(source.reductionScore))
+      ? Number(source.reductionScore)
+      : 0,
+    netScore: Number.isFinite(Number(source.netScore))
+      ? Number(source.netScore)
+      : null,
+    evaluations,
+    signalPersistence: normalizeImmediacySignalPersistence(source.signalPersistence),
+    // Retain this legacy fallback only for documents created before evaluations
+    // were persisted. New rich snapshots derive their active factors from evaluations.
+    ...(!evaluations.length
+      ? { reasons: normalizeScoutProfileArray(source.reasons) }
+      : {}),
+  })
+}
+
 const cloneScoutContractValue = value => compactScoutValue(value)
 
 const resolvePlayerManualReview = ({ player = {}, currentData = {} } = {}) => (
@@ -144,18 +230,7 @@ export const stripPlayerScoutV2SeasonFields = row => {
 }
 
 export const normalizePlayerScoutStory = player => ({
-  scoutOpportunity: compactScoutValue(
-    player?.scoutOpportunity && typeof player.scoutOpportunity === 'object'
-      ? {
-          effectiveActionStatus: clean(player.scoutOpportunity.effectiveActionStatus),
-          exposureLevel: clean(player.scoutOpportunity.exposureLevel),
-          netScore: Number.isFinite(Number(player.scoutOpportunity.netScore))
-            ? Number(player.scoutOpportunity.netScore)
-            : null,
-          reasons: normalizeScoutProfileArray(player.scoutOpportunity.reasons),
-        }
-      : null
-  ),
+  scoutOpportunity: normalizePlayerScoutOpportunity(player?.scoutOpportunity),
   scoutProfileProgression: compactScoutValue(
     player?.scoutProfileProgression && typeof player.scoutProfileProgression === 'object'
       ? {
@@ -212,8 +287,17 @@ export const normalizePlayerScoutStory = player => ({
   ),
   scoutPlayerInterest: compactScoutValue(
     player?.scoutPlayerInterest && typeof player.scoutPlayerInterest === 'object'
-      ? {
+        ? {
           interestLevel: clean(player.scoutPlayerInterest.interestLevel),
+          score: Number.isFinite(Number(player.scoutPlayerInterest.score))
+            ? Number(player.scoutPlayerInterest.score)
+            : 0,
+          maxScore: Number.isFinite(Number(player.scoutPlayerInterest.maxScore))
+            ? Number(player.scoutPlayerInterest.maxScore)
+            : 8,
+          factors: Array.isArray(player.scoutPlayerInterest.factors)
+            ? player.scoutPlayerInterest.factors
+            : [],
           reasons: normalizeScoutProfileArray(player.scoutPlayerInterest.reasons),
           limitingFactors: normalizeScoutProfileArray(
             player.scoutPlayerInterest.limitingFactors

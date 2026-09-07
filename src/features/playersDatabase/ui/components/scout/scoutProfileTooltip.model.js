@@ -73,6 +73,18 @@ const resolveRuleEvidence = ({ profile, rule }) => (
     .find(evidence => evidence?.metric === rule.metric && evidence?.op === rule.op) || null
 )
 
+const isRuleMatched = ({ profile, rule, evidence }) => {
+  if (evidence?.matched === true) return true
+
+  const matchedReasons = [
+    ...(Array.isArray(profile?.match?.passedRules) ? profile.match.passedRules : []),
+    ...(Array.isArray(profile?.match?.reasons) ? profile.match.reasons : []),
+    ...(Array.isArray(profile?.reasons) ? profile.reasons : []),
+  ].map(clean)
+
+  return Boolean(rule?.reason && matchedReasons.includes(rule.reason))
+}
+
 const DEPTH_FACTOR_BY_METRIC = {
   goals: ['goalsDepth', 'lowGoalsDepth', 'goalsSampleDepth'],
   minutesPct: ['minutesDepth'],
@@ -136,15 +148,17 @@ export const buildScoutProfileTooltipModel = ({
     label: clean(source?.profileLabel || source?.label) || definition?.label || resolvedProfileId,
     iconId: clean(definition?.idIcon) || 'performanceProfile',
     createdAt,
-    conditionsLabel: 'תנאים שיצרו את הפרופיל',
+    conditionsLabel: 'תנאי הפרופיל שהתקיימו',
     conditions: rules.map((rule, index) => {
       const evidence = resolveRuleEvidence({ profile: source, rule })
+      const matched = isRuleMatched({ profile: source, rule, evidence })
 
       return {
         key: `${rule.metric || 'rule'}-${index}`,
         iconId: CONDITION_ICON_BY_METRIC[rule.metric] || 'stats',
         label: formatScoutRule(rule) || clean(rule.reason),
-        progressPct: resolveRuleProgress({ rule, evidence }),
+        matched,
+        progressPct: matched ? 100 : resolveRuleProgress({ rule, evidence }),
       }
     }),
     depthConditions: buildDepthConditions({

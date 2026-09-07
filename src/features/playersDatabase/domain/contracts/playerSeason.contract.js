@@ -86,6 +86,8 @@ export const createEmptyPlayerSeason = () => ({
   completeness: createEmptyCompleteness(),
   metadata: {
     notes: '',
+    goalDistribution: null,
+    agent: null,
     playerUrl: '',
     teamUrl: '',
     seasonUrl: '',

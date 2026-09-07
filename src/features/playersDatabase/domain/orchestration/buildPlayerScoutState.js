@@ -58,19 +58,32 @@ const isEarlyAgeGroup = ageGroupId => {
   return Number(match[1]) <= 14
 }
 
+const resolveNextAgeGroupId = ageGroupId => {
+  const match = String(ageGroupId || '').trim().toLowerCase().match(/^u(\d+)$/)
+  if (!match) return ''
+
+  return `u${Number(match[1]) + 1}`
+}
+
 const resolveImmediacyContext = ({ player, team, season, immediacyContext }) => {
   const seasonStatus = String(season?.seasonStatus || team?.seasonStatus || '').trim().toLowerCase()
-  const isCurrentSeason = seasonStatus !== 'completed'
+  const isCompletedSeason = seasonStatus === 'completed'
+  const ageGroupId = season?.ageGroupId || team?.ageGroupId
+  const evaluatedAgeGroupId = isCompletedSeason
+    ? resolveNextAgeGroupId(ageGroupId)
+    : ageGroupId
 
   return {
     ...(immediacyContext && typeof immediacyContext === 'object' ? immediacyContext : {}),
-    isEarlyAgeGroup: isCurrentSeason && (
-      immediacyContext?.isEarlyAgeGroup === true ||
-      player?.isEarlyAgeGroup === true ||
-      team?.isEarlyAgeGroup === true ||
-      season?.isEarlyAgeGroup === true ||
-      isEarlyAgeGroup(season?.ageGroupId || team?.ageGroupId)
-    ),
+    isEarlyAgeGroup: isCompletedSeason
+      ? isEarlyAgeGroup(evaluatedAgeGroupId)
+      : (
+        immediacyContext?.isEarlyAgeGroup === true ||
+        player?.isEarlyAgeGroup === true ||
+        team?.isEarlyAgeGroup === true ||
+        season?.isEarlyAgeGroup === true ||
+        isEarlyAgeGroup(evaluatedAgeGroupId)
+      ),
     leagueLevel:
       immediacyContext?.leagueLevel ||
       team?.leagueLevel ||

@@ -102,6 +102,8 @@ const PLAYER_ACTIONS = new Set([
   'updatePlayerSeasonRole',
   'removePlayerScoutProfile',
   'updatePlayerSeasonUrl',
+  'updatePlayerAgent',
+  'updatePlayerSeasonGoalDistribution',
 ])
 
 export const invalidatePlayersDatabaseWriteCache = ({

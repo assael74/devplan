@@ -53,6 +53,7 @@ export const adaptLeagueTableTeam = ({
   const result = createEmptyTeamSeason()
   const stats = tableRow.teamStats || {}
   const summary = tableRow.scoutProfilesSummary || {}
+  const teamTaskSignals = tableRow.teamTaskSignals || {}
 
   return {
     ...result,
@@ -139,6 +140,11 @@ export const adaptLeagueTableTeam = ({
       profileCounts: summary.profileCounts && typeof summary.profileCounts === 'object'
         ? summary.profileCounts
         : {},
+    },
+    teamTaskSignals: {
+      offense: Boolean(teamTaskSignals.offense),
+      defense: Boolean(teamTaskSignals.defense),
+      updatedAt: teamTaskSignals.updatedAt || null,
     },
     playersCount: toDomainNumberOrZero(
       firstDomainValue(

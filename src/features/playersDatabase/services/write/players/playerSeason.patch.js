@@ -226,6 +226,92 @@ export const updatePlayerSeasonUrl = ({ playerUrl = '', ...payload } = {}) =>
     },
   })
 
+const normalizeNonNegativeInteger = value => {
+  if (value === '' || value === null || value === undefined) return null
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0
+    ? Math.floor(parsed)
+    : null
+}
+
+export const updatePlayerSeasonGoalDistribution = ({ scoringGames, ...payload } = {}) =>
+  patchPlayerSeason({
+    ...payload,
+    buildPatch: ({ currentSeasonRow }) => {
+      const stats = currentSeasonRow?.playerStats || {}
+      const games = normalizeNonNegativeInteger(stats.games) || 0
+      const goals = normalizeNonNegativeInteger(stats.goals) || 0
+      const nextScoringGames = normalizeNonNegativeInteger(scoringGames)
+
+      if (nextScoringGames !== null && nextScoringGames > games) {
+        throw new Error('Scoring games cannot exceed season appearances')
+      }
+
+      if (nextScoringGames !== null && nextScoringGames > goals) {
+        throw new Error('Scoring games cannot exceed season goals')
+      }
+
+      return {
+        goalDistribution: {
+          scoringGames: nextScoringGames,
+          distributionPct: nextScoringGames === null || !games
+            ? null
+            : Math.round((nextScoringGames / games) * 100),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    },
+  })
+
+export const updatePlayerAgent = async ({ player = {}, agent = {} } = {}) => {
+  const playerDocumentId = clean(resolveWritablePlayerDocumentId(player))
+  if (!playerDocumentId) throw new Error('Missing player document id')
+
+  const status = ['yes', 'no', 'unknown'].includes(clean(agent.status))
+    ? clean(agent.status)
+    : 'unknown'
+  const phones = clean(agent.phones)
+  const ref = playerDocRef(playerDocumentId)
+
+  return trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) {
+      return {
+        playerDocumentId,
+        updated: false,
+        reason: 'playerDocMissing',
+      }
+    }
+
+    const current = snapshot.data()?.agent || {}
+    if (clean(current.status) === status && clean(current.phones) === phones) {
+      return {
+        playerDocumentId,
+        updated: true,
+        changed: false,
+        writeSkipped: true,
+      }
+    }
+
+    transaction.set(ref, {
+      agent: {
+        status,
+        phones,
+        updatedAt: new Date().toISOString(),
+      },
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+
+    return {
+      playerDocumentId,
+      updated: true,
+      changed: true,
+      writeSkipped: false,
+    }
+  })
+}
+
 // This is deliberately a pure state builder.  The profile-removal flow uses it
 // together with the Team Season and SearchIndex writes in one transaction; the
 // small wrapper below remains available to callers that only own Player state.

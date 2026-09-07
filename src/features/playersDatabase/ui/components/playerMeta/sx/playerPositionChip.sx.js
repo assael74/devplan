@@ -7,6 +7,8 @@ export const playerPositionChipSx = {
     minHeight: buttonLike ? 30 : compact ? 22 : 25,
     width: buttonLike ? '100%' : 'auto',
     maxWidth: '100%',
+    display: 'inline-flex',
+    alignItems: 'center',
     px: buttonLike ? 1 : compact ? 0.5 : 0.75,
     borderRadius: buttonLike ? 7 : 999,
     justifyContent: buttonLike ? 'center' : 'flex-start',
@@ -18,6 +20,11 @@ export const playerPositionChipSx = {
     boxShadow: buttonLike ? '0 2px 7px rgba(16, 43, 64, 0.08)' : 'none',
     cursor: clickable ? 'pointer' : 'default',
     transition: 'background-color 140ms ease, border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease',
+    '& .MuiChip-label': {
+      display: 'inline-flex',
+      alignItems: 'center',
+      pt: '0.5px',
+    },
     '& .MuiChip-startDecorator': {
       color: selected ? devPlanColors.petrol : devPlanColors.secondary,
       fontSize: compact ? 12 : undefined,

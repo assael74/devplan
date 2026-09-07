@@ -6,7 +6,6 @@ export const PLAYER_MANUAL_REVIEW_FIELD = {
   TRANSFER_HISTORY: 'transfer_history',
   GOAL_DISTRIBUTION: 'goal_distribution',
   MINUTES_DISTRIBUTION: 'minutes_distribution',
-  VISUAL_REVIEW: 'visual_review',
   AGENT_PATH_FIT: 'agent_path_fit',
   SCOUT_PATH_FIT: 'scout_path_fit',
 }

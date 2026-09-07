@@ -435,21 +435,9 @@ export default function useTeamStatsColumns({
     key: 'substitutedOut',
     label: 'הוחלף',
     headerContent: <TableHeaderIcon id='swapVert' label='הוחלף במהלך המשחק' />,
-    readOnly: true,
     sortable: true,
     sx: TEAM_STATS_IMPORT_TABLE_WIDTHS.substitutedOut,
     sortValue: row => toFiniteNumber(row.substitutedOut) || 0,
-    render: ({ row }) => {
-      const substitutedOut = toFiniteNumber(row.substitutedOut)
-
-      return (
-        <Tooltip title='מספר הפעמים שהשחקן הוחלף במהלך המשחק'>
-          <Typography level='body-sm'>
-            {substitutedOut ?? 0}
-          </Typography>
-        </Tooltip>
-      )
-    },
   }), [])
 
   const minutesPctColumn = React.useMemo(() => ({
@@ -661,6 +649,7 @@ export default function useTeamStatsColumns({
         <PlayerLineClassificationChip
           classification={classification}
           primaryPosition={row?.primaryPosition}
+          compact
         />
       )
     },
@@ -698,7 +687,8 @@ export default function useTeamStatsColumns({
           <ScoutStoryChip
             player={row}
             label={scoutView.compactLabel}
-            fontSize={10}
+            size='compact'
+            tooltipSize='compact'
           />
           {hasProfileCorrection ? (
             <Tooltip title={getMinutesCorrectionImpactLabel(row)} arrow>

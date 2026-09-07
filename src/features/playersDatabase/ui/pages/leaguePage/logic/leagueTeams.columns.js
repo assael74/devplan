@@ -13,8 +13,9 @@ import { buildTableRankColumn } from '../../../components/tables/tableRankColumn
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import ScoutBadge from '../../../components/scout/ScoutBadge.js'
 import TeamName from '../../../components/entities/TeamName.js'
+import TeamTaskIndicator from '../../../components/teamTaskIndicator/TeamTaskIndicator.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { buildFallbackAvatar } from '../../../../../../ui/core/avatars/fallbackAvatar.js'
+import teamLogo from '../../../../../../ui/core/images/teamLogo.png'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
 import { leagueTeamsColumnsSx as sx } from '../sx/leagueTeams.columns.sx.js'
 
@@ -167,19 +168,10 @@ export const buildLeagueTeamsColumns = ({
       ...columnWidth('teamAvatar'),
     },
     render: row => (
-      <Box
-        component='img'
-        src={buildFallbackAvatar({
-          entityType: 'team',
-          id: row.id,
-          name: row.name,
-          subline: row.teamSlot && row.teamSlot !== '1'
-            ? row.teamSlot
-            : '',
-        })}
-        alt=''
-        sx={sx.teamAvatar}
-      />
+      <Box sx={sx.teamLogoWrap}>
+        <Box component='img' src={teamLogo} alt='' sx={sx.teamLogo} />
+        <TeamTaskIndicator signals={row.teamTaskSignals} />
+      </Box>
     ),
   },
   {

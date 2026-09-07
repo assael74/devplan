@@ -48,6 +48,7 @@ const result = ({ teamId, ref, seasonId, seasonKey, target, updated, reason = ''
   ...(typeof writeSkipped === 'boolean' ? { writeSkipped } : {}),
   ...(scoutProfilesSummary ? { scoutProfilesSummary } : {}),
   ...(seasonDocument ? { seasonDocument } : {}),
+  ...(seasonDocument?.teamBalance ? { teamBalance: seasonDocument.teamBalance } : {}),
   ...(player ? { player } : {}),
 })
 

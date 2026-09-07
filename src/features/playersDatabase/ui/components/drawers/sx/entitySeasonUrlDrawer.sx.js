@@ -17,11 +17,19 @@ export const entitySeasonUrlDrawerSx = {
     dialogContent: {
       bgcolor: devPlanColors.tertiaryLight,
       p: 0,
+      width: '100%',
+      minWidth: 0,
+      overflowX: 'hidden',
     },
     content: {
       p: 2,
       pl: 2,
       bgcolor: devPlanColors.tertiaryLight,
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box',
+      overflowX: 'hidden',
     },
     footer: {
       bgcolor: '#FFFFFF',
@@ -100,6 +108,10 @@ export const entitySeasonUrlDrawerSx = {
 
   fieldCard: {
     p: 1.75,
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+    overflow: 'hidden',
     borderRadius: '12px',
     bgcolor: '#FFFFFF',
     border: '1px solid',
@@ -109,6 +121,7 @@ export const entitySeasonUrlDrawerSx = {
 
   formControl: {
     width: '100%',
+    minWidth: 0,
     gap: 0.75,
 
     '& label': {
@@ -122,6 +135,9 @@ export const entitySeasonUrlDrawerSx = {
   },
 
   input: {
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
     minHeight: 42,
     bgcolor: '#FFFFFF',
     borderColor: '#C9D6DF',

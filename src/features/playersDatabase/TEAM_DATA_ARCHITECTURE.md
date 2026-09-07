@@ -511,6 +511,7 @@ Player Stats must not become the canonical Team Performance source.
 | `goalsAgainstPerGame` | League-derived | canonical normalized value | preserve canonical | projection |
 | `playerStats` | Stats Load | empty/missing | source of truth | projection if needed |
 | `teamBalance` | Player Stats-derived | insufficient | calculate | projection |
+| `teamTaskSignals` | Team Balance interpretation | clear/refresh | calculate and project | not required |
 | Scout profile projection | Scouting | empty | calculate | projection |
 | Projected season finish | League actual + projection rules | may project | preserve/recompute canonically | projection |
 
@@ -601,6 +602,11 @@ Player Season persistence keeps compact fields such as:
 
 Rich runtime-only fields should not be restored into Player persistence unless this architecture document is intentionally changed.
 
+`scoutPlayerInterest` is the compact player-level projection of the deterministic
+interest calculation. It may persist the automatic score, maximum score, level,
+and factor breakdown needed by the Player page; the calculation itself remains
+owned by the shared scouting domain and is refreshed by Stats Load.
+
 ---
 
 # 15. Rule for future changes
@@ -682,6 +688,9 @@ position where the rules prove it:
 - Personal minutes rate is `playerMinutes / (playerGames × gameMinutes)`.
   Fewer than `70%` produces no classification; `70%` and above continues to
   the existing minutes and substitution matrix.
+- Personal substitution rate is `substitutedOut / starts`. It is independent
+  of the minutes context and is available whenever both the substitution count
+  and at least one start are known.
 - Inside that matrix, `5–9` goals produce `MIDFIELD` and
   `ATTACKING_MIDFIELDER` only after both gates have passed.
 - The fullback rule may return `FULLBACK` only inside `DEFENSE`.
@@ -807,15 +816,16 @@ low               + below/at/above = ATTACK_POSSIBLE_GAP / ATTACK_QUALITY_REVIEW
 The defense matrix is:
 
 ```text
-positive_or_above + below/at/above = DEFENSE_CONCENTRATION / DEFENSE_ESTABLISHED / REVIEW_REQUIRED
+positive_or_above + below/at/above = DEFENSE_CONCENTRATION / DEFENSE_ESTABLISHED / DEFENSE_QUALITY_SEARCH
 regular           + below/at/above = DEFENSE_DEPTH_REVIEW / NO_CLEAR_FINDING / REVIEW_REQUIRED
-low               + below/at/above = DEFENSE_POSSIBLE_GAP / DEFENSE_QUALITY_REVIEW / REVIEW_REQUIRED
+low               + below/at/above = DEFENSE_POSSIBLE_GAP / DEFENSE_QUALITY_REVIEW / DEFENSE_LOW_QUALITY_OVERLOAD
 ```
 
 `REVIEW_REQUIRED` is intentional: no professional conclusion has been
 approved for that combination yet. The canonical `teamInterest.isInteresting`
-is true only for `ATTACK_CONCENTRATION`, `ATTACK_HIGH_COMPETITION`,
-`ATTACK_POSSIBLE_GAP`, `DEFENSE_CONCENTRATION`, and `DEFENSE_POSSIBLE_GAP`.
+is true only for the approved line findings in the domain; its list is
+intentionally explicit in `isTeamInterpretationFindingInteresting` and must
+not be inferred from a UI label.
 There is no separate Agent versus Club Scout interest model.
 
 SearchIndex projects only the interpretation model version, availability,
@@ -827,16 +837,44 @@ Team Interest also includes a separate Squad Interest source. The canonical
 against the versioned typical range `10–13`, returning `below_typical`,
 `typical`, `above_typical`, or `unavailable`. These are structural facts, not
 Squad Interest by themselves. Squad Interest is active only when coverage is
-below or above typical and both offense and defense performance bands are
-either `positive_or_above` or `low`. Typical coverage, mixed performance, and
-unavailable performance never produce Squad Interest. This evaluation never
-gates the line benchmark.
+below or above typical and the two performance bands form one of these
+combinations:
+
+```text
+two_positive     = offense positive_or_above + defense positive_or_above
+positive_and_low = one positive_or_above + one low
+two_low          = offense low + defense low
+```
+
+If either performance band is `regular`, or a performance band is unavailable,
+no Squad Interest event is produced. This evaluation never gates the line
+benchmark.
+
+For an active Squad Interest event, the domain derives two non-persisted action
+contexts from the coverage reason and the performance combination:
+
+- `teamNeed`: the current team's quality/depth need;
+- `marketOpportunity`: an opportunity to identify or monitor quality players
+  for other teams.
+
+Each action has a stable action id and optional `targetSides` (`offense`,
+`defense`). These are runtime interpretation outputs only. They must not be
+written to Team Season documents or SearchIndex merely to support display;
+the persisted coverage reason and performance inputs remain the source data.
+
+The same action shape is used by approved attack and defense findings. A line
+finding may derive a `teamNeed`, a `marketOpportunity`, both, or neither. For
+example, line concentration derives depth-building for the current team and
+monitoring of its leading players for the market; line quality search derives
+a market opportunity only. The action mapping is domain-owned and runtime-only,
+while Hebrew labels remain a presentation concern.
 
 `teamInterest` is the versioned business summary with three independent
 sources: line offense, line defense, and approved squad coverage/performance
 interpretation. `teamInterest.isInteresting` is the OR of those sources. This mirrors the
-purpose of Player Interest—whether further attention is justified—without
-introducing an Agent versus Club Scout split.
+purpose of Player Interest—whether further attention is justified. The
+interest decision remains singular; `teamNeed` and `marketOpportunity` are
+separate action contexts derived after that decision.
 
 The interpretation layer is unavailable before eight official league games
 (`season_sample_insufficient`); once that gate is met, cleared or not-yet-
@@ -895,3 +933,30 @@ versions and the compact `scoutInterpretationModelVersion`,
 `scoutInterpretationAvailability`, `scoutInterpretationAvailabilityReason`, `scoutOffenseFinding`,
 `scoutDefenseFinding`, and `teamInterest` projection. It does not duplicate
 the line-structure facts or the full `lineupBenchmark` evaluation.
+
+## 17. League task-signal projection
+
+`teamBalance.scoutInterpretation` is the canonical professional analysis for a
+Team Season. The domain derives a compact `teamTaskSignals` object from its
+line findings:
+
+```js
+{ offense: boolean, defense: boolean }
+```
+
+The value is `true` when the relevant line has either a team-need task or a
+market-opportunity task. It is not an "interest" flag and it deliberately does
+not persist task labels, task text, or player lists.
+
+The Team Season snapshot keeps this calculated object under
+`teamBalance.teamTaskSignals`. The League Document mirrors it to the matching
+`current/history.tableRank[].teamTaskSignals` row with an `updatedAt` value.
+This compact read-model projection lets the League Page render its task badge
+from the existing single League-document read, without loading Team Season or
+SearchIndex documents for every table row.
+
+Every writer that recalculates Team Balance (stats load/clear, roster changes,
+manual role changes, and audit repair) must pass the new projection to the
+League table-row writer. The League projection is never used as an input to
+Team Balance; missing legacy fields render as `false` until the next relevant
+write refreshes them.

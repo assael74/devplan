@@ -22,23 +22,31 @@ const TRANSFER_DIRECTION_LABELS = {
 }
 
 const EXPORT_COLUMNS = Object.freeze([
-  ['אינדקס', (_, index) => index + 1],
+  // Keep this import-compatible block first, in the same order as the Stats Load modal.
+  ['אינדקס', (row, index) => row.sourceIndex || index + 1],
   ['שם שחקן', row => row.name],
+  ['קישור שחקן', row => row.playerUrl],
+  ['מס. משחקים', row => row.games],
+  ['שערים', row => row.goals],
+  ['כ. צהובים', row => row.yellowCards],
+  ['טוטו', row => row.toto],
+  ['כ. אדומים', row => row.redCards],
+  ['הרכב פותח', row => row.starts],
+  ['נכנס כמחליף', row => row.substituteIn],
+  ['הוחלף', row => row.substitutedOut],
+  ['דקות משחק', row => row.minutes],
+
+  // Enriched squad, classification, and derived-statistics fields follow the source block.
   ['סטטוס סגל', row => ROSTER_STATUS_LABELS[clean(row.rosterStatus)] || 'בסגל'],
   ['כיוון מעבר', row => clean(row.rosterStatus) === 'transferredOut'
     ? (TRANSFER_DIRECTION_LABELS[clean(row.manualTransferDirection)] || 'לא ידוע')
     : ''],
-  ['משחקים', row => row.games],
-  ['הרכב פותח', row => row.starts],
-  ['כמות דקות', row => row.minutes],
   ['דקות קבוצה', row => row.teamMinutes],
   ['דקות אפשריות אישיות', row => row.possiblePlayerMinutes],
   ['אחוז דקות אישי', row => row.minutesRate],
   ['טווח דקות', row => row.minutesBand],
-  ['כמות חילופים', row => row.substitutedOut],
   ['שיעור חילופים', row => row.substitutionRate],
   ['טווח חילופים', row => row.substitutionBand],
-  ['שערים', row => row.goals],
   ['חוליה', row => clean(row.classification?.line)],
   ['עמדה', row => clean(row.classification?.position)],
   ['כלל הסיווג', row => row.rule],
@@ -79,8 +87,11 @@ export default function exportTeamPositionClassificationToXlsx({
       e: { c: headers.length - 1, r: dataRows.length },
     }),
   }
-  worksheet['!cols'] = headers.map((header, index) => ({
-    wch: Math.max(header.length + 2, index === 1 || index === 14 ? 26 : 14),
+  worksheet['!cols'] = headers.map(header => ({
+    wch: Math.max(
+      header.length + 2,
+      header === 'שם שחקן' ? 26 : header === 'קישור שחקן' ? 48 : 14
+    ),
   }))
 
   headers.forEach((_, columnIndex) => {

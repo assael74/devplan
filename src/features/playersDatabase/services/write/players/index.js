@@ -41,6 +41,8 @@ export {
 export {
   updatePlayerSeasonNotes,
   updatePlayerSeasonUrl,
+  updatePlayerSeasonGoalDistribution,
+  updatePlayerAgent,
 } from './playerSeason.patch.js'
 
 export {

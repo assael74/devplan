@@ -129,10 +129,14 @@ export default function DataTable({
     />
   )
 
+  const wrapSxItems = Array.isArray(wrapSx)
+    ? wrapSx
+    : [wrapSx]
+
   const splitWrapSx = [
     sx.wrap,
     sx.splitWrap,
-    wrapSx,
+    ...wrapSxItems,
   ]
 
   const headerTableSx = [
@@ -154,7 +158,7 @@ export default function DataTable({
 
   const regularWrapSx = [
     sx.wrap,
-    wrapSx,
+    ...wrapSxItems,
   ]
 
   const regularTableSx = [

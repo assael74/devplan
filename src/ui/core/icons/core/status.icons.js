@@ -98,6 +98,7 @@ export const statusIcons = {
   category: <Category />,
   leadingTarget: <LooksOne />,
   highPriority: <WorkspacePremium />,
+  immediateReview: <FactCheck />,
   positivePriority: <Done />,
   regularPriority: <TrendingFlat />,
   lowPriority: <SentimentVeryDissatisfied />,

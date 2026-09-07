@@ -139,6 +139,7 @@ const buildSeasonContextView = (season, identity = {}) => {
     externalPlayerId: cleanValue(identity.externalPlayerId),
     fullName: cleanValue(identity.displayName),
     playerUrl: cleanValue(season?.metadata?.playerUrl || season?.playerUrl),
+    goalDistribution: season?.metadata?.goalDistribution || null,
     clubId: cleanValue(season?.team?.clubId),
     clubName: getClubShortName(season?.team?.clubId) || '-',
     teamId: cleanValue(season?.team?.teamId),
@@ -154,7 +155,12 @@ const buildSeasonContextView = (season, identity = {}) => {
       ageGroupLabel: season?.team?.ageGroupLabel,
     }),
     birthTeamSlot: Number(season?.team?.birthTeamSlot) || 0,
-    isYoungerAgeGroup: Boolean(season?.scout?.profileHierarchy?.primarySignal?.metrics?.isYoungerAgeGroup),
+    rosterStatus: cleanValue(season?.rosterStatus) || 'regular',
+    manualTransferDirection: cleanValue(season?.manualTransferDirection),
+    isYoungerAgeGroup: Boolean(
+      season?.isYoungerAgeGroup ||
+      season?.scout?.profileHierarchy?.primarySignal?.metrics?.isYoungerAgeGroup
+    ),
     leagueId: cleanValue(season?.team?.leagueId),
     leagueName: cleanValue(
       league?.name || season?.team?.leagueId || '-'
@@ -163,8 +169,10 @@ const buildSeasonContextView = (season, identity = {}) => {
     starts: Number(stats.starts) || 0,
     minutes: Number(stats.minutes) || 0,
     goals: Number(stats.goals) || 0,
+    substitutedOut: Number(stats.substitutedOut) || 0,
     yellowCards: Number(stats.yellowCards) || 0,
     teamGames: Number(season?.stats?.context?.teamGames) || 0,
+    teamMinutes: Number(season?.stats?.context?.teamMinutes) || 0,
     teamRank: Number(season?.stats?.context?.teamRank) || 0,
     teamGoalsFor: Number(season?.stats?.context?.teamGoalsFor) || 0,
     teamGoalsAgainst: Number(season?.stats?.context?.teamGoalsAgainst) || 0,
@@ -180,6 +188,11 @@ const buildSeasonContextView = (season, identity = {}) => {
     clubLevel: Number(season?.team?.clubLevel) || 0,
     clubStrengthLevel: Number(season?.team?.clubStrengthLevel) || 0,
     leagueLevel: Number(season?.team?.leagueLevel) || 0,
+    primaryPosition: cleanValue(season?.position?.primary),
+    positionLayer: cleanValue(season?.position?.layer),
+    lineClassification: season?.lineClassification && typeof season.lineClassification === 'object'
+      ? { ...season.lineClassification }
+      : null,
     seasonStatus: cleanValue(season?.season?.seasonStatus),
     teamAttackRank: Number(season?.teamPerformance?.offense?.rank) || 0,
     teamDefenseRank: Number(season?.teamPerformance?.defense?.rank) || 0,
@@ -266,6 +279,7 @@ export const buildPlayerPageView = (
     birthDate: pickFirstValue(
       playerDomain.identity?.birthDate
     ) || null,
+    agent: season?.metadata?.agent || null,
     clubName: getClubShortName(season.team?.clubId) || '-',
     teamName: resolveAgeGroupLabel({
       ageGroupId: season.team?.ageGroupId,

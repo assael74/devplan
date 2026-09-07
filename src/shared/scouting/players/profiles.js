@@ -3,7 +3,6 @@
 import {
   SCOUT_LEVEL,
   SCOUT_PROFILE_IDENTITY,
-  SCOUT_REVIEW,
   SCOUT_WARNING,
   TEAM_FILTER,
 } from './ids.js'
@@ -117,7 +116,6 @@ export const SCOUT_PROFILES = [
       team: DEP_MED,
     },
     warnings: [SCOUT_WARNING.POSITION_MISSING],
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'last_station',
@@ -136,7 +134,6 @@ export const SCOUT_PROFILES = [
       position: DEP_HIGH,
       team: DEP_MED,
     },
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'attacking_support',
@@ -155,7 +152,6 @@ export const SCOUT_PROFILES = [
       position: DEP_HIGH,
       team: DEP_MED,
     },
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'back_threat',
@@ -188,7 +184,6 @@ export const SCOUT_PROFILES = [
       team: DEP_MED,
     },
     warnings: [SCOUT_WARNING.ROLE_INFERENCE],
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'promoted_talent',

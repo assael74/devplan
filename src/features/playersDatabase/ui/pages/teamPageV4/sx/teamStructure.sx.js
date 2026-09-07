@@ -105,10 +105,10 @@ export const teamStructureSx = {
     },
   },
   lineCardSelected: {
-    border: `1px solid ${devPlanColors.primary}`,
-    borderColor: devPlanColors.primary,
-    bgcolor: devPlanColors.primaryLight,
-    boxShadow: `0 6px 14px rgba(23, 59, 87, 0.18), inset 0 0 0 1px ${devPlanColors.primary}`,
+    border: `1px solid ${devPlanColors.secondary}`,
+    borderColor: devPlanColors.secondary,
+    bgcolor: 'rgba(101, 118, 132, 0.24)',
+    boxShadow: '0 5px 12px rgba(78, 91, 102, 0.16), inset 0 0 0 1px rgba(78, 91, 102, 0.22)',
   },
   lineCardReviewSelected: {
     border: `1px solid ${devPlanColors.petrol}`,
@@ -120,7 +120,8 @@ export const teamStructureSx = {
     minWidth: 0,
     p: 0.75,
     display: 'grid',
-    alignContent: 'start',
+    gridTemplateRows: 'auto minmax(0, 1fr)',
+    minHeight: 78,
     gap: 0.25,
   },
   lineHeader: {
@@ -152,6 +153,19 @@ export const teamStructureSx = {
     fontWeight: 800,
   },
   lineStatus: {
+    appearance: 'none',
+    font: 'inherit',
+    cursor: 'pointer',
+    transition: 'transform 150ms ease, box-shadow 150ms ease',
+    boxShadow: '0 2px 5px rgba(16, 43, 64, 0.12)',
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 9px rgba(16, 43, 64, 0.18)',
+    },
+    '&:focus-visible': {
+      outline: `2px solid ${devPlanColors.tertiary}`,
+      outlineOffset: 2,
+    },
     flexShrink: 0,
     display: 'inline-flex',
     alignItems: 'center',
@@ -181,7 +195,10 @@ export const teamStructureSx = {
   lineMetricRow: {
     display: 'flex',
     alignItems: 'flex-end',
+    alignSelf: 'center',
+    justifyContent: 'space-between',
     gap: 0.6,
+    px: 1.1,
     mt: 0.2,
   },
   lineValue: {

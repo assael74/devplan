@@ -219,6 +219,12 @@ export const adaptPlayerDocumentSeason = ({
     },
     metadata: {
       notes: cleanDomainValue(firstDomainValue(seasonDocument.notes, playerDocument.notes)),
+      goalDistribution: seasonDocument.goalDistribution && typeof seasonDocument.goalDistribution === 'object'
+        ? { ...seasonDocument.goalDistribution }
+        : null,
+      agent: playerDocument.agent && typeof playerDocument.agent === 'object'
+        ? { ...playerDocument.agent }
+        : null,
       playerUrl: cleanDomainValue(firstDomainValue(seasonDocument.playerUrl, playerDocument.playerUrl)),
       teamUrl: cleanDomainValue(firstDomainValue(seasonDocument.teamUrl, team.teamUrl)),
       seasonUrl: cleanDomainValue(seasonDocument.seasonUrl),

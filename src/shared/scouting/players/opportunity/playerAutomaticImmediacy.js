@@ -99,24 +99,11 @@ const buildReductionEvaluation = ({ id, points = 1, profileId = '', details = {}
   })
 )
 
-const buildEarlyAgeGroupEvaluation = ({ immediacyContext, currentSeasonStatus }) => {
+const buildEarlyAgeGroupEvaluation = ({ immediacyContext }) => {
   if (immediacyContext.isEarlyAgeGroup === true) {
     return buildBoostEvaluation({
       id: PLAYER_SCOUT_IMMEDIACY_BOOST.EARLY_AGE_GROUP,
       details: {},
-    })
-  }
-
-  const seasonStatus = String(currentSeasonStatus || '').trim().toLowerCase()
-
-  if (seasonStatus === 'completed') {
-    return buildNotApplicableEvaluation({
-      id: PLAYER_SCOUT_IMMEDIACY_BOOST.EARLY_AGE_GROUP,
-      reason: 'completed_season',
-      details: {
-        isEarlyAgeGroup: false,
-        currentSeasonStatus: seasonStatus,
-      },
     })
   }
 
@@ -469,7 +456,6 @@ export const buildPlayerAutomaticImmediacy = ({
   const positiveEvaluations = [
     buildEarlyAgeGroupEvaluation({
       immediacyContext,
-      currentSeasonStatus,
     }),
     buildProfileCombinationEvaluation({
       profileCaseStrength,

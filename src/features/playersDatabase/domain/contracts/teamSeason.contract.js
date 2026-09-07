@@ -47,6 +47,11 @@ export const createEmptyTeamSeason = () => ({
     total: 0,
     profileCounts: {},
   },
+  teamTaskSignals: {
+    offense: false,
+    defense: false,
+    updatedAt: null,
+  },
   playersCount: 0,
   completeness: createEmptyCompleteness(),
   metadata: {

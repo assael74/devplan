@@ -1,9 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/playerDocument.catalog.js
 
 // Firestore source of truth: tracked player document.
-// Player Seasons persist only the compact V3 scout snapshot. The full scouting
-// engine result remains runtime/domain state and rich V2 fields are not part of
-// canonical Player persistence.
+// Player Seasons persist a compact scout snapshot, including the canonical
+// immediacy evaluation trace needed to explain each season's decision.
 
 import { SCOUTING_MODEL_VERSION, TEAM_LINE_CLASSIFICATION_VERSION } from '../../../../shared/scouting/scouting.version.js'
 export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
@@ -63,9 +62,34 @@ const PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT = {
 const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
   scoutOpportunity: {
     effectiveActionStatus: '',
+    baseActionStatus: '',
+    automaticActionStatus: '',
+    manualActionStatus: '',
+    hasManualDecision: false,
+    profilesRemoved: false,
+    manualDecision: null,
+    source: '',
     exposureLevel: '',
+    boostScore: 0,
+    reductionScore: 0,
     netScore: null,
-    reasons: [],
+    evaluations: [
+      {
+        id: '',
+        result: '',
+        points: 0,
+        reason: '',
+        profileId: '',
+        details: {},
+      },
+    ],
+    signalPersistence: {
+      profileRepeat: {},
+      combinationRepeat: {},
+      attackingOutputUpgrade: {},
+      decay: {},
+      reasons: [],
+    },
   },
   scoutProfileProgression: {
     distances: [
@@ -94,6 +118,9 @@ const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
   },
   scoutPlayerInterest: {
     interestLevel: '',
+    score: 0,
+    maxScore: 8,
+    factors: [],
     reasons: [],
     limitingFactors: [],
   },
@@ -152,10 +179,6 @@ const PLAYER_MANUAL_REVIEW_GENERIC_OBJECT = {
     ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
     status: 'unknown',
   },
-  visual_review: {
-    ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
-    status: 'unknown',
-  },
   agent_path_fit: {
     ...PLAYER_MANUAL_REVIEW_BASE_GENERIC_OBJECT,
     value: 'unknown',
@@ -194,6 +217,12 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   primaryPosition: '',
   positionLayer: '',
   numShirt: '',
+
+  agent: {
+    status: 'unknown',
+    phones: '',
+    updatedAt: null,
+  },
 
   tracking: {
     favorite: false,
@@ -276,6 +305,11 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       birthYear: null,
       playerUrl: '',
       notes: '',
+      goalDistribution: {
+        scoringGames: null,
+        distributionPct: null,
+        updatedAt: null,
+      },
       primaryPosition: '',
       positionLayer: '',
       lineClassification: {
@@ -336,6 +370,11 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       birthYear: null,
       playerUrl: '',
       notes: '',
+      goalDistribution: {
+        scoringGames: null,
+        distributionPct: null,
+        updatedAt: null,
+      },
       primaryPosition: '',
       positionLayer: '',
       lineClassification: {

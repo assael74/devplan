@@ -309,6 +309,9 @@ export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, pla
     ) || null,
     playerUrl: clean(player.playerUrl),
     notes: clean(player.notes),
+    goalDistribution: player.goalDistribution && typeof player.goalDistribution === 'object'
+      ? { ...player.goalDistribution }
+      : null,
     primaryPosition: clean(player.primaryPosition),
     positionLayer: clean(player.positionLayer),
     lineClassification: buildLineClassificationProjection(player),

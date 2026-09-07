@@ -4,6 +4,7 @@ import { Box, Button, Tooltip, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamInformationSx as sx } from './sx/teamInformation.sx.js'
 import TeamKpiOverview from './TeamKpiOverview.js'
+import TeamPerformanceContextBar from './TeamPerformanceContextBar.js'
 import TeamPositionClassificationTable from './TeamPositionClassificationTable.js'
 import TeamScoutingSummary from './TeamScoutingSummary.js'
 import TeamStructureSection from './TeamStructureSection.js'
@@ -85,9 +86,25 @@ export default function TeamInformationOverview({
   onPlayerOpen,
 }) {
   const [structureFilter, setStructureFilter] = React.useState(TEAM_STRUCTURE_FILTER.CLASSIFIED)
+  const [showPerformanceContext, setShowPerformanceContext] = React.useState(false)
+  const contentRef = React.useRef(null)
+  const performanceRef = React.useRef(null)
 
   React.useEffect(() => {
     setStructureFilter(TEAM_STRUCTURE_FILTER.CLASSIFIED)
+  }, [view.selectedSeasonKey])
+
+  React.useEffect(() => {
+    const root = contentRef.current
+    const target = performanceRef.current
+    if (!root || !target) return undefined
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowPerformanceContext(!entry.isIntersecting)
+    }, { root, threshold: 0.05 })
+
+    observer.observe(target)
+    return () => observer.disconnect()
   }, [view.selectedSeasonKey])
 
   const latestExistingSeasonKey = (view.seasonTimeline || [])
@@ -101,19 +118,35 @@ export default function TeamInformationOverview({
     })
   }, [view.positionClassificationRows, view.selectedSeasonKey, view.team?.name])
 
+  const handleReturnToPerformance = React.useCallback(() => {
+    performanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
   return (
-    <Box className='dpScrollThin' sx={sx.content}>
-      <TeamKpiOverview
-        team={view.team}
-        title={`ביצוע השנתון בעונת ${latestExistingSeasonKey}`}
-        tablePositionTimeline={view.seasonTimeline}
-        offensePriorityTimeline={view.offensePriorityTimeline}
-        defensePriorityTimeline={view.defensePriorityTimeline}
-        presentation={performancePresentation}
-      />
+    <Box ref={contentRef} className='dpScrollThin' sx={sx.content}>
+      <Box ref={performanceRef} sx={sx.performanceAnchor}>
+        <TeamKpiOverview
+          team={view.team}
+          title={`ביצוע השנתון בעונת ${latestExistingSeasonKey}`}
+          tablePositionTimeline={view.seasonTimeline}
+          offensePriorityTimeline={view.offensePriorityTimeline}
+          defensePriorityTimeline={view.defensePriorityTimeline}
+          presentation={performancePresentation}
+        />
+      </Box>
+
+      {showPerformanceContext ? (
+        <TeamPerformanceContextBar
+          offensePriority={view.offensePriorityTimeline?.[0]?.level}
+          defensePriority={view.defensePriorityTimeline?.[0]?.level}
+          squadUsageState={view.structure?.classificationCoverageBenchmark?.state}
+          onReturnToPerformance={handleReturnToPerformance}
+        />
+      ) : null}
 
       <TeamScoutingSummary
         structure={view.structure}
+        balance={view.balance}
         title={`איזון חלוקת הדקות בעונת ${latestExistingSeasonKey}`}
         selectedFilter={structureFilter}
         onFilterChange={setStructureFilter}

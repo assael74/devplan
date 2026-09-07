@@ -1,14 +1,14 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const scoutProfileTooltipSx = {
-  root: {
-    width: 300,
+  root: ({ compact = false } = {}) => ({
+    width: compact ? 300 : 340,
     minHeight: 0,
-    maxHeight: 200,
-    maxWidth: 'min(300px, calc(100vw - 32px))',
+    maxHeight: compact ? 250 : 300,
+    maxWidth: compact ? 'min(300px, calc(100vw - 32px))' : 'min(340px, calc(100vw - 32px))',
     display: 'grid',
-    gap: 0.85,
-    p: 1,
+    gap: compact ? 0.55 : 0.85,
+    p: compact ? 0.75 : 1,
     overflowY: 'auto',
     scrollbarWidth: 'thin',
     scrollbarColor: `${devPlanColors.tertiary} transparent`,
@@ -23,32 +23,32 @@ export const scoutProfileTooltipSx = {
     bgcolor: devPlanColors.tertiaryLight,
     border: `1px solid ${devPlanColors.tertiary}`,
     borderRadius: 9,
-  },
-  profileSection: ({ divided = false } = {}) => ({
+  }),
+  profileSection: ({ divided = false, compact = false } = {}) => ({
     display: 'grid',
-    gap: 0.85,
+    gap: compact ? 0.55 : 0.85,
     ...(divided
       ? {
         borderTop: `1px solid rgba(23, 59, 87, 0.18)`,
-        paddingTop: 0.85,
+        paddingTop: compact ? 0.55 : 0.85,
       }
       : {}),
   }),
-  header: {
+  header: () => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0.75,
-  },
-  profileTitle: {
+  }),
+  profileTitle: () => ({
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     gap: 0.55,
-  },
-  profileIcon: {
-    width: 23,
-    height: 23,
+  }),
+  profileIcon: ({ compact = false } = {}) => ({
+    width: compact ? 19 : 23,
+    height: compact ? 19 : 23,
     flex: '0 0 auto',
     display: 'grid',
     placeItems: 'center',
@@ -56,86 +56,94 @@ export const scoutProfileTooltipSx = {
     bgcolor: 'rgba(255, 255, 255, 0.78)',
     border: '1px solid rgba(23, 59, 87, 0.18)',
     borderRadius: '50%',
-    '& svg': { fontSize: 13 },
-  },
-  title: {
+    '& svg': { fontSize: compact ? 11 : 13 },
+  }),
+  title: ({ compact = false } = {}) => ({
     minWidth: 0,
     color: devPlanColors.primaryDark,
-    fontSize: 13,
+    fontSize: compact ? 11.5 : 13,
     fontWeight: 800,
     lineHeight: 1.2,
-  },
-  createdAt: {
+  }),
+  createdAt: ({ compact = false } = {}) => ({
     flex: '0 0 auto',
     color: devPlanColors.secondary,
-    fontSize: 10.5,
+    fontSize: compact ? 9.5 : 10.5,
     fontWeight: 700,
     whiteSpace: 'nowrap',
-  },
-  conditionsLabel: {
+  }),
+  conditionsLabel: ({ compact = false } = {}) => ({
     display: 'inline-flex',
     alignSelf: 'start',
     justifySelf: 'start',
     width: 'auto',
     color: devPlanColors.primaryDark,
-    fontSize: 11,
+    fontSize: compact ? 10 : 11,
     fontWeight: 800,
     lineHeight: 1,
     borderBottom: `1px solid ${devPlanColors.primaryDark}`,
     paddingBottom: 0,
-  },
+  }),
   conditions: {
     display: 'grid',
     gap: 0.15,
   },
-  condition: {
+  condition: () => ({
     display: 'grid',
     gap: 0.05,
-  },
-  conditionMeta: {
+  }),
+  conditionMeta: () => ({
     display: 'flex',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0.75,
-  },
-  conditionTitle: {
+  }),
+  conditionTitle: () => ({
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     gap: 0.45,
-  },
-  conditionIcon: {
-    width: 17,
-    height: 17,
+  }),
+  conditionIcon: ({ compact = false } = {}) => ({
+    width: compact ? 15 : 17,
+    height: compact ? 15 : 17,
     flex: '0 0 auto',
     display: 'grid',
     placeItems: 'center',
     color: devPlanColors.tertiaryDark,
-    '& svg': { fontSize: 12 },
-  },
-  conditionLabel: {
+    '& svg': { fontSize: compact ? 10 : 12 },
+  }),
+  conditionLabel: ({ compact = false } = {}) => ({
     minWidth: 0,
     color: devPlanColors.primaryDark,
-    fontSize: 10.5,
+    fontSize: compact ? 9.5 : 10.5,
     fontWeight: 600,
     lineHeight: 1.1,
-  },
-  conditionProgress: {
+  }),
+  conditionProgress: ({ compact = false } = {}) => ({
     flex: '0 0 auto',
     color: devPlanColors.primary,
-    fontSize: 10.5,
+    fontSize: compact ? 9.5 : 10.5,
     fontWeight: 800,
     lineHeight: 1,
-  },
-  progressTrack: {
+  }),
+  conditionStatus: ({ compact = false } = {}) => ({
+    flex: '0 0 auto',
+    color: devPlanColors.successDark,
+    fontSize: compact ? 9 : 10,
+    fontWeight: 800,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  }),
+  progressTrack: ({ compact = false } = {}) => ({
     '--LinearProgress-trackColor': 'rgba(23, 59, 87, 0.12)',
     '--LinearProgress-progressColor': devPlanColors.tertiary,
-    '--LinearProgress-thickness': '3px',
-    minHeight: 3,
-    height: 3,
-  },
-  emptyState: {
+    '--LinearProgress-thickness': compact ? '2px' : '3px',
+    minHeight: compact ? 2 : 3,
+    height: compact ? 2 : 3,
+  }),
+  emptyState: ({ compact = false } = {}) => ({
     color: devPlanColors.secondary,
-    fontSize: 10.5,
-  },
+    fontSize: compact ? 9.5 : 10.5,
+  }),
 }

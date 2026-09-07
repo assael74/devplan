@@ -106,6 +106,10 @@ const TEAM_BALANCE_GENERIC_OBJECT = {
       squad: { isInteresting: false, reason: null },
     },
   },
+  teamTaskSignals: {
+    offense: false,
+    defense: false,
+  },
   updatedAt: null,
 }
 

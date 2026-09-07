@@ -55,6 +55,15 @@ const resolveNearProfile = player => (
 )
 
 const resolveChipLabel = ({ profileView, nearProfile, label }) => {
+  // פרופיל קומבינציה הוא פרופיל עצמאי: אין לצרף אליו את מספר
+  // הפרופילים שמרכיבים אותו או פרופילים נלווים.
+  if (profileView?.isCombination) {
+    return clean(
+      profileView?.primaryItem?.shortLabel ||
+      profileView?.primaryItem?.label
+    )
+  }
+
   if (clean(label)) return clean(label)
   if (clean(profileView?.label)) return clean(profileView.label)
   if (!nearProfile) return ''
@@ -65,6 +74,8 @@ const resolveChipLabel = ({ profileView, nearProfile, label }) => {
 export default function ScoutStoryChip({
   player = {},
   label = '',
+  size = 'default',
+  tooltipSize = 'default',
 }) {
   const [open, setOpen] = React.useState(false)
   const [historyReadState, setHistoryReadState] = React.useState({
@@ -206,6 +217,9 @@ export default function ScoutStoryChip({
         iconId={profileView.primaryItem?.iconId || 'performanceProfile'}
         depthPct={resolveScoutProfileDepthPct(profileView.primaryItem?.source || primaryProfile)}
         isFilter={profileView.isCombination}
+        isCombination={profileView.isCombination}
+        size={size}
+        tooltipSize={tooltipSize}
         showConditions
         showConditionsDepth
       />
@@ -240,6 +254,9 @@ export default function ScoutStoryChip({
             : profileView.primaryItem?.iconId || 'performanceProfile'}
           depthPct={resolveScoutProfileDepthPct(profileView.primaryItem?.source || primaryProfile)}
           isFilter={isNearProfileOnly || profileView.isCombination}
+          isCombination={profileView.isCombination}
+          size={size}
+          tooltipSize={tooltipSize}
           showConditions
           showConditionsDepth
         />

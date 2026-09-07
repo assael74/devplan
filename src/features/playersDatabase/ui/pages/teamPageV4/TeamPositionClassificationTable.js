@@ -13,6 +13,18 @@ import { teamPositionClassificationTableSx as sx } from './sx/teamPositionClassi
 
 const displayValue = value => value === null || value === undefined ? '—' : value
 
+const getInterestLevel = player => String(
+  player?.scoutPlayerInterestLevel || player?.scoutPlayerInterest?.interestLevel || 'unavailable'
+).trim().toLowerCase()
+
+const getInterestLabel = level => ({
+  reasonable: 'עניין סביר',
+  curious: 'מסקרן',
+  interesting: 'מעניין',
+  super_interesting: 'מעניין מאוד',
+  unavailable: 'רמת עניין טרם חושבה',
+}[level] || 'רמת עניין טרם חושבה')
+
 const PLAYER_STATUS_DISPLAY = {
   youngerAgeGroup: { label: 'שנתון צעיר', iconId: 'rosterYounger', color: 'primary' },
   retired: { label: 'פרש', iconId: 'rosterRetired', color: 'neutral' },
@@ -243,17 +255,26 @@ const buildTableScoutProfileChip = player => {
   const profile = buildPlayerScoutProfile(player)
   const primaryProfile = profile.view.primaryItem
 
-  if (!primaryProfile || primaryProfile.type !== 'profile') return null
+  if (!primaryProfile) return null
+
+  const isCombination = primaryProfile.type === 'combination'
+  const displayDepthPct = resolveProfileDepthPct(
+    isCombination
+      ? { profileStrength: profile.player?.scoutProfileDisplay?.profileStrength }
+      : primaryProfile.source
+  )
 
   const chipProps = {
     profileId: primaryProfile.id,
     label: primaryProfile.shortLabel || primaryProfile.label,
+    iconId: primaryProfile.iconId,
     profile: primaryProfile.source,
-    profiles: profile.view.displayItems
-      .filter(item => item.type === 'profile')
-      .map(item => item.source),
-    depthPct: resolveProfileDepthPct(primaryProfile.source),
-    extraCount: Math.max(0, (profile.view.displayItems?.length || 0) - 1),
+    profiles: Array.isArray(profile.player?.scoutProfiles)
+      ? profile.player.scoutProfiles
+      : [],
+    depthPct: displayDepthPct,
+    extraCount: isCombination ? 0 : Math.max(0, (profile.view.displayItems?.length || 0) - 1),
+    isCombination,
   }
 
   return buildScoutProfileChipV2Model(chipProps) ? chipProps : null
@@ -321,6 +342,9 @@ export default function TeamPositionClassificationTable({
   const getRowSx = structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
     ? row => sx.squadClassificationRow(row.squadClassificationStatus)
     : undefined
+  const tableWrapSx = embedded
+    ? [sx.tableWrap, sx.tableWrapEmbedded]
+    : sx.tableWrap
 
   const columns = React.useMemo(() => [
     {
@@ -335,13 +359,19 @@ export default function TeamPositionClassificationTable({
       label: '',
       sortable: false,
       sx: sx.avatarColumn,
-      render: () => (
-        <Box
-          component='img'
-          src={playerImage}
-          alt=''
-          sx={sx.avatar}
-        />
+      render: row => (
+        <Box sx={sx.avatarWrap}>
+          <Box
+            component='img'
+            src={playerImage}
+            alt=''
+            sx={sx.avatar}
+          />
+          <Box
+            aria-label={getInterestLabel(getInterestLevel(row.player))}
+            sx={sx.avatarInterestBadge(getInterestLevel(row.player))}
+          />
+        </Box>
       ),
     },
     {
@@ -393,28 +423,26 @@ export default function TeamPositionClassificationTable({
         ] ?? 4
       },
       render: row => (
-        <Tooltip title='עריכת חוליה ועמדה' placement='bottom'>
-          <Box
-            component='button'
-            type='button'
-            disabled={!row.player || !onPlayerRoleEdit}
-            onClick={event => {
-              event.stopPropagation()
-              onPlayerRoleEdit?.(row.player)
-            }}
-            sx={sx.classificationEdit}
-            aria-label={`עריכת חוליה ועמדה עבור ${row.name}`}
-          >
-            <PlayerLineClassificationChip
-              classification={row.classification}
-              primaryPosition={row.primaryPosition}
-              positionLayer={row.positionLayer}
-              clickable
-              compact
-              tooltipDetail={`כלל הסיווג: ${row.rule}`}
-            />
-          </Box>
-        </Tooltip>
+        <Box
+          component='button'
+          type='button'
+          disabled={!row.player || !onPlayerRoleEdit}
+          onClick={event => {
+            event.stopPropagation()
+            onPlayerRoleEdit?.(row.player)
+          }}
+          sx={sx.classificationEdit}
+          aria-label={`עריכת חוליה ועמדה עבור ${row.name}`}
+        >
+          <PlayerLineClassificationChip
+            classification={row.classification}
+            primaryPosition={row.primaryPosition}
+            positionLayer={row.positionLayer}
+            clickable
+            compact
+            tooltipDetail={`כלל הסיווג: ${row.rule}`}
+          />
+        </Box>
       ),
     },
     {
@@ -430,22 +458,20 @@ export default function TeamPositionClassificationTable({
       sortable: false,
       sx: sx.openPlayerColumn,
       render: row => (
-        <Tooltip title='כניסה לשחקן' placement='bottom'>
-          <IconButton
-            size='sm'
-            variant='outlined'
-            color='neutral'
-            aria-label={`כניסה לעמוד השחקן ${row.name}`}
-            disabled={!row.player || !onPlayerOpen}
-            sx={sx.openPlayerButton}
-            onClick={event => {
-              event.stopPropagation()
-              onPlayerOpen?.(row.player)
-            }}
-          >
-            {iconUi({ id: 'view', size: 'sm' })}
-          </IconButton>
-        </Tooltip>
+        <IconButton
+          size='sm'
+          variant='outlined'
+          color='neutral'
+          aria-label={`כניסה לעמוד השחקן ${row.name}`}
+          disabled={!row.player || !onPlayerOpen}
+          sx={sx.openPlayerButton}
+          onClick={event => {
+            event.stopPropagation()
+            onPlayerOpen?.(row.player)
+          }}
+        >
+          {iconUi({ id: 'view', size: 'sm' })}
+        </IconButton>
       ),
     },
   ], [onPlayerOpen, onPlayerRoleEdit])
@@ -489,7 +515,7 @@ export default function TeamPositionClassificationTable({
           : { key: 'lineClassification', direction: 'asc' }}
         emptyText='אין שחקנים להצגה'
         getRowSx={getRowSx}
-        wrapSx={sx.tableWrap}
+        wrapSx={tableWrapSx}
         tableSx={sx.table}
       />
     </Box>

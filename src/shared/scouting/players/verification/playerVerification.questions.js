@@ -59,8 +59,7 @@ export const PLAYER_VERIFICATION_QUESTIONS = [
     priority: PLAYER_VERIFICATION_PRIORITY.HIGH,
     appliesTo: ({ signals }) => (
       hasPositionContext(signals) ||
-      hasReview(signals, SCOUT_REVIEW.POSITION) ||
-      hasReview(signals, SCOUT_REVIEW.VIDEO_POSITION)
+      hasReview(signals, SCOUT_REVIEW.POSITION)
     ),
     yesEffects: [
       effect(

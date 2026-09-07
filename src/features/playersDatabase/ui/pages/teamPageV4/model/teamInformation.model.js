@@ -1,6 +1,7 @@
 import { buildTeamLineInterpretationState } from '../../../../domain/index.js'
 import {
   getTeamLineInterestPresentation,
+  getTeamSquadActionsPresentation,
   getTeamSquadInterestPresentation,
 } from './teamInterest.presentation.js'
 import { TEAM_STRUCTURE_FILTER } from './teamStructureFilter.model.js'
@@ -13,6 +14,8 @@ import {
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 const numberOrNull = value => {
+  if (value === null || value === undefined || value === '') return null
+
   const next = Number(value)
   return Number.isFinite(next) ? next : null
 }
@@ -154,8 +157,9 @@ const buildBalance = ({ seasonDoc }) => {
   }
 }
 
-const buildStructure = ({ seasonDoc }) => {
+const buildStructure = ({ seasonDoc, lineInterpretation = null }) => {
   const balance = seasonDoc?.teamBalance
+  const interpretation = lineInterpretation || balance?.scoutInterpretation || null
   const structure = balance?.lineStructure
   if (!structure || typeof structure !== 'object') return null
 
@@ -174,10 +178,10 @@ const buildStructure = ({ seasonDoc }) => {
   )
 
   return {
-    availability: balance?.scoutInterpretation?.availability ||
+    availability: interpretation?.availability ||
       balance?.balanceAvailability?.availability ||
       'unavailable',
-    availabilityReason: balance?.scoutInterpretation?.availabilityReason ||
+    availabilityReason: interpretation?.availabilityReason ||
       balance?.balanceAvailability?.availabilityReason ||
       null,
     conclusion: 'מבנה שחקנים מזוהים',
@@ -201,19 +205,25 @@ const buildStructure = ({ seasonDoc }) => {
         : 'הערכת המבנה מבוססת על השחקנים העומדים בתנאי הסיווג בעונה.',
     benchmark: balance?.lineupBenchmark || null,
     classificationCoverageBenchmark: balance?.classificationCoverageBenchmark || null,
-    teamInterest: balance?.scoutInterpretation?.teamInterest || null,
+    lineInterpretation: {
+      offense: interpretation?.offense || null,
+      defense: interpretation?.defense || null,
+    },
+    teamInterest: interpretation?.teamInterest || null,
     interestPresentation: {
       offense: getTeamLineInterestPresentation(
-        balance?.scoutInterpretation?.teamInterest?.lines?.offense?.reason
+        interpretation?.teamInterest?.lines?.offense?.reason
       ),
       defense: getTeamLineInterestPresentation(
-        balance?.scoutInterpretation?.teamInterest?.lines?.defense?.reason
+        interpretation?.teamInterest?.lines?.defense?.reason
       ),
       squad: getTeamSquadInterestPresentation({
-        reason: balance?.scoutInterpretation?.teamInterest?.squad?.reason,
-        offensePerformanceBand: balance?.scoutInterpretation?.offense?.performanceBand,
-        defensePerformanceBand: balance?.scoutInterpretation?.defense?.performanceBand,
+        reason: interpretation?.teamInterest?.squad?.reason,
+        performanceState: interpretation?.teamInterest?.squad?.performanceState,
       }),
+      squadActions: getTeamSquadActionsPresentation(
+        interpretation?.teamInterest?.squad?.actions
+      ),
     },
     details: [],
   }
@@ -344,6 +354,7 @@ const attachScoutProfilePresentation = ({ player, scoutProfileLookup }) => {
     scoutCombinations: presentationPlayer.scoutCombinations,
     scoutCandidateSignals: presentationPlayer.scoutCandidateSignals,
     scoutProfileDisplay: presentationPlayer.scoutProfileDisplay,
+    scoutPlayerInterestLevel: presentationPlayer.scoutPlayerInterestLevel,
     profile: presentationPlayer.profile,
   }
 }
@@ -368,8 +379,24 @@ const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => {
       const evaluation = buildTeamPlayerLineClassificationEvaluation({ player })
       const gameMinutes = numberOrNull(evaluation.gameMinutes)
       const possiblePlayerMinutes = numberOrNull(evaluation.possiblePlayerMinutes)
-      const minutesRate = percent(evaluation.minutesRate)
-      const substitutionRate = percent(evaluation.substitutionRate)
+      // Presentation of personal usage must not depend on whether the player
+      // passed every line-classification gate. It is derived from the same
+      // displayed player and team context.
+      const minutesRate = (
+        minutes !== null && games !== null && games > 0 &&
+        teamMinutes !== null && teamMinutes > 0 &&
+        teamGames !== null && teamGames > 0
+          ? Math.round((minutes / (games * (teamMinutes / teamGames))) * 100)
+          : null
+      )
+      // Substitution rate is independent of the minutes context used for
+      // line classification. Keeping it local prevents a missing team-minute
+      // value from turning a known substitution count into an apparent 0%.
+      const substitutionRate = (
+        starts !== null && starts > 0 && substitutedOut !== null
+          ? Math.round((substitutedOut / starts) * 100)
+          : null
+      )
       const primaryPosition = clean(player?.primaryPosition).toUpperCase()
       const positionLayer = clean(player?.positionLayer).toLowerCase()
       const classification = player?.lineClassification || evaluation.classification || null
@@ -377,6 +404,7 @@ const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => {
 
       return {
         id: clean(player?.playerId || player?.playerDocumentId || player?.id || index),
+        sourceIndex: clean(player?.index || player?.statsIndex),
         player: playerWithScoutProfile,
         name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',
         playerUrl: clean(player?.playerUrl),
@@ -384,6 +412,9 @@ const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => {
         manualTransferDirection: clean(player?.manualTransferDirection || player?.transferDirection),
         games,
         goals: numberOrNull(stats.goals),
+        yellowCards: numberOrNull(stats.yellowCards),
+        toto: numberOrNull(stats.toto),
+        redCards: numberOrNull(stats.redCards),
         minutes,
         teamMinutes,
         teamGames,
@@ -392,6 +423,7 @@ const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => {
         minutesRate,
         minutesBand: resolveMinutesBand(evaluation.minutesBand),
         starts,
+        substituteIn: numberOrNull(stats.substituteIn),
         substitutedOut,
         substitutionRate,
         substitutionBand: resolveSubstitutionBand(evaluation.substitutionBand),
@@ -731,7 +763,6 @@ export const buildTeamInformationView = ({
   const previousSeason = findPreviousSeason({ teamSeasons, selectedSeasonKey })
   const balance = buildBalance({ seasonDoc: selectedTeamSeason })
   const previousBalance = buildBalance({ seasonDoc: previousSeason })
-  const structure = buildStructure({ seasonDoc: selectedTeamSeason })
   const positionClassificationRows = buildPositionClassificationRows({
     seasonDoc: selectedTeamSeason,
     players,
@@ -743,6 +774,10 @@ export const buildTeamInformationView = ({
       balanceState: selectedTeamSeason.teamBalance || null,
     })
     : null
+  const structure = buildStructure({
+    seasonDoc: selectedTeamSeason,
+    lineInterpretation,
+  })
 
   return {
     team,

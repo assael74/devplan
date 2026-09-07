@@ -3,7 +3,6 @@
 import {
   SCOUT_INTEREST,
   SCOUT_LEVEL,
-  SCOUT_REVIEW,
   SCOUT_WARNING,
   TEAM_FILTER,
 } from './ids.js'
@@ -143,7 +142,6 @@ export const SCOUT_PROFILES = [
       position: DEP_HIGH,
       team: DEP_MED,
     },
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'back_threat',
@@ -175,7 +173,6 @@ export const SCOUT_PROFILES = [
       team: DEP_MED,
     },
     warnings: [SCOUT_WARNING.ROLE_INFERENCE],
-    reviews: [SCOUT_REVIEW.VIDEO_POSITION],
   },
   {
     id: 'promoted_talent',

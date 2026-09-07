@@ -13,6 +13,7 @@ export default function PlayerMetaChip({
   buttonLike = false,
   compact = false,
   onClick,
+  tooltipSx,
 }) {
   const chip = (
     <Chip
@@ -27,5 +28,14 @@ export default function PlayerMetaChip({
     </Chip>
   )
 
-  return tooltip ? <Tooltip title={tooltip}>{chip}</Tooltip> : chip
+  return tooltip ? (
+    <Tooltip
+      title={tooltip}
+      variant={tooltipSx ? 'plain' : undefined}
+      color={tooltipSx ? 'neutral' : undefined}
+      slotProps={tooltipSx ? { tooltip: { sx: tooltipSx } } : undefined}
+    >
+      {chip}
+    </Tooltip>
+  ) : chip
 }

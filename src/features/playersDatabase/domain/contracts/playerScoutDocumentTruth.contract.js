@@ -18,6 +18,7 @@ export const PLAYER_SCOUT_TEAM_SEASON_FIELDS = Object.freeze([
 
 export const PLAYER_SCOUT_PLAYER_ROOT_FIELDS = Object.freeze([
   'tracking',
+  'agent',
   'playerReview',
   'manualImmediacyDecision',
   'manualImmediacyHistory',
@@ -34,6 +35,7 @@ export const PLAYER_SCOUT_PLAYER_SEASON_FIELDS = Object.freeze([
   'scoutProfileHierarchy',
   'scoutPlayerInterest',
   'scoutEngineVersion',
+  'goalDistribution',
 ])
 
 export const PLAYER_SCOUT_SEARCH_INDEX_FIELDS = Object.freeze([

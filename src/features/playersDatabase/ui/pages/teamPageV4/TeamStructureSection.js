@@ -10,6 +10,21 @@ const BENCHMARK_ICONS = Object.freeze({
   above_reference: 'sortUp',
 })
 
+const CLASSIFICATION_COVERAGE_CARD_STATE = Object.freeze({
+  below_typical: Object.freeze({
+    tone: 'review',
+    benchmarkIconId: 'sortDown',
+  }),
+  typical: Object.freeze({
+    tone: 'clear',
+    benchmarkIconId: 'equal',
+  }),
+  above_typical: Object.freeze({
+    tone: 'review',
+    benchmarkIconId: 'sortUp',
+  }),
+})
+
 const LINE_DEFINITIONS = Object.freeze([
   {
     key: 'goalkeeper',
@@ -46,22 +61,12 @@ const resolveLineState = ({ definition, structure }) => {
   const interest = definition.interestKey
     ? structure?.teamInterest?.lines?.[definition.interestKey]
     : null
-  const presentation = definition.interestKey
-    ? structure?.interestPresentation?.[definition.interestKey]
-    : null
   const isInteresting = Boolean(interest?.isInteresting)
-
   return {
     count: structure?.lines?.[definition.key],
     reference: metric?.reference ?? null,
     benchmarkState: metric?.state || '',
     isInteresting,
-    status: isInteresting ? 'לבדיקה' : 'אין ממצא לבדיקה',
-    conclusion: isInteresting
-      ? (presentation?.explanation || 'נמצא שילוב נתונים שמצדיק בחינה ממוקדת.')
-      : definition.interestKey
-        ? 'לא נמצא כרגע שילוב של מבנה הסגל והביצועים שמצדיק העמקה.'
-        : 'אין כרגע סימן שמצדיק העמקה.',
   }
 }
 
@@ -69,12 +74,17 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
   const state = resolveLineState({ definition, structure })
   const selected = definition.filterKey === selectedFilter
   const clickable = Boolean(onFilterChange)
+  const handleCardKeyDown = event => {
+    if (!clickable || !['Enter', ' '].includes(event.key)) return
+    event.preventDefault()
+    onFilterChange(definition.filterKey)
+  }
 
   return (
     <Box
-      component={clickable ? 'button' : 'div'}
-      type={clickable ? 'button' : undefined}
+      component='div'
       onClick={clickable ? () => onFilterChange(definition.filterKey) : undefined}
+      onKeyDown={handleCardKeyDown}
       sx={[
         sx.lineCard,
         state.isInteresting ? sx.lineCardReview : sx.lineCardClear,
@@ -82,6 +92,8 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
         selected && (state.isInteresting ? sx.lineCardReviewSelected : sx.lineCardSelected),
       ]}
       aria-pressed={clickable ? selected : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `הצגת שחקני ${definition.label}` : undefined}
     >
       <Box sx={sx.lineBody}>
@@ -89,15 +101,6 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
           <Box sx={sx.lineHeading}>
             <Box sx={sx.lineIcon}>{iconUi({ id: definition.iconId, size: 'sm' })}</Box>
             <Typography sx={sx.lineLabel}>{definition.label}</Typography>
-          </Box>
-          <Box sx={[
-            sx.lineStatus,
-            state.isInteresting ? sx.lineStatusReview : sx.lineStatusClear,
-          ]}>
-            {state.isInteresting
-              ? iconUi({ id: 'scouting', size: 'sm' })
-              : iconUi({ id: 'verified', size: 'sm' })}
-            <Typography component='span' sx={sx.lineStatusText}>{state.status}</Typography>
           </Box>
         </Box>
 
@@ -114,8 +117,6 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
             </Box>
           ) : null}
         </Box>
-
-        <Typography sx={sx.lineConclusion}>{state.conclusion}</Typography>
       </Box>
     </Box>
   )
@@ -123,33 +124,31 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
 
 const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
   const classified = structure?.lines?.classified
-  const relevant = [
-    structure?.lines?.classified,
-    structure?.lines?.unclassifiedSufficientSample,
-    structure?.lines?.insufficientSample,
-  ].reduce((sum, value) => sum + (Number(value) || 0), 0)
-  const coverageRate = relevant > 0 && Number.isFinite(Number(classified))
-    ? Math.round((Number(classified) / relevant) * 100)
-    : structure?.rates?.classified
-  const missing = (Number(structure?.lines?.unclassifiedSufficientSample) || 0) +
-    (Number(structure?.lines?.insufficientSample) || 0)
-
   const selected = selectedFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
-  const needsReview = missing > 0
+  const coverageState = CLASSIFICATION_COVERAGE_CARD_STATE[
+    String(structure?.classificationCoverageBenchmark?.state || '').trim()
+  ] || CLASSIFICATION_COVERAGE_CARD_STATE.typical
   const clickable = Boolean(onFilterChange)
+  const handleCardKeyDown = event => {
+    if (!clickable || !['Enter', ' '].includes(event.key)) return
+    event.preventDefault()
+    onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD)
+  }
 
   return (
     <Box
-      component={clickable ? 'button' : 'div'}
-      type={clickable ? 'button' : undefined}
+      component='div'
       onClick={clickable ? () => onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD) : undefined}
+      onKeyDown={handleCardKeyDown}
       sx={[
         sx.lineCard,
-        needsReview ? sx.lineCardReview : sx.lineCardClear,
+        coverageState.tone === 'review' ? sx.lineCardReview : sx.lineCardClear,
         clickable && sx.lineCardClickable,
-        selected && (needsReview ? sx.lineCardReviewSelected : sx.lineCardSelected),
+        selected && (coverageState.tone === 'review' ? sx.lineCardReviewSelected : sx.lineCardSelected),
       ]}
       aria-pressed={clickable ? selected : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? 'הצגת כל שחקני הסגל' : undefined}
     >
       <Box sx={sx.lineBody}>
@@ -158,23 +157,17 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
             <Box sx={sx.lineIcon}>{iconUi({ id: 'verified', size: 'sm' })}</Box>
             <Typography sx={sx.lineLabel}>פיזור דקות מסווגות</Typography>
           </Box>
-          <Box sx={[sx.lineStatus, needsReview ? sx.lineStatusReview : sx.lineStatusClear]}>
-            {needsReview ? iconUi({ id: 'scouting', size: 'sm' }) : iconUi({ id: 'verified', size: 'sm' })}
-            <Typography component='span' sx={sx.lineStatusText}>
-              {needsReview ? 'לבדיקה' : 'אין ממצא לבדיקה'}
-            </Typography>
-          </Box>
         </Box>
 
         <Box sx={sx.lineMetricRow}>
-          <Typography sx={sx.lineValue}>
-            {coverageRate !== null && coverageRate !== undefined ? `${coverageRate}%` : '—'}
-          </Typography>
+          <Typography sx={sx.lineValue}>{classified ?? '—'}</Typography>
+          <Box sx={sx.referenceChip}>
+            <Box sx={sx.referenceChipIcon}>
+              {iconUi({ id: coverageState.benchmarkIconId, size: 'sm' })}
+            </Box>
+            <Typography component='span' sx={sx.referenceChipText}>יעד 10–13</Typography>
+          </Box>
         </Box>
-
-        <Typography sx={sx.lineConclusion}>
-          {classified ?? '—'} שחקנים מסווגים{missing > 0 ? ` · ${missing} שחקנים דורשים השלמה` : ' · אין שחקנים שממתינים להשלמה'}
-        </Typography>
       </Box>
     </Box>
   )
@@ -216,15 +209,6 @@ export default function TeamStructureSection({
         <Box sx={sx.titleRow}>
           <Box sx={sx.titleIcon}>{iconUi({ id: 'players', size: 'sm' })}</Box>
           <Typography sx={sx.title}>{title}</Typography>
-        </Box>
-        <Box sx={sx.headerActions}>
-          {structure.conclusionDetail ? (
-            <Tooltip title={structure.conclusionDetail} placement='bottom' variant='soft'>
-              <Box sx={sx.info} aria-label='הסבר על מבנה הסגל'>
-                {iconUi({ id: 'info', size: 'sm' })}
-              </Box>
-            </Tooltip>
-          ) : null}
         </Box>
       </Box>
 

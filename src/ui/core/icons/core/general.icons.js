@@ -4,6 +4,7 @@ import {
   AccessTime,
   Attribution,
   AddLocationAlt,
+  Bolt,
   Bookmarks,
   Forward,
   History,
@@ -20,12 +21,15 @@ import {
   ViewWeek,
   ScheduleSend,
   Summarize,
+  Stars,
   FamilyRestroom
 } from '@mui/icons-material';
 
 export const generalIcons = {
   addLocation: <AddLocationAlt />,
   age: <PermContactCalendar />,
+  immediacy: <Bolt />,
+  interest: <Stars />,
   date: <Today />,
   details: <Details />,
   help: <LiveHelp />,

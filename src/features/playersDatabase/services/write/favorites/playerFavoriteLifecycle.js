@@ -28,6 +28,7 @@ import {
 } from '../players/playerDoc.model.js'
 import {
   buildPlayerSeasonDoc,
+  findPlayerSeasonRowIndex,
   removePlayerSeasonRow,
 } from '../players/playerSeason.model.js'
 import {
@@ -61,6 +62,26 @@ const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => (
   birthTeamId: clean(team.birthTeamId || team.teamId),
   detectedAt: trackedAt || null,
 })
+
+const resolveSeasonScoutOpportunity = ({
+  player = {},
+  currentData = {},
+  target = 'current',
+  season = {},
+  team = {},
+} = {}) => {
+  const incoming = player.scoutOpportunity && typeof player.scoutOpportunity === 'object'
+    ? player.scoutOpportunity
+    : null
+
+  if (Array.isArray(incoming?.evaluations)) return incoming
+
+  const rows = Array.isArray(currentData[target]) ? currentData[target] : []
+  const index = findPlayerSeasonRowIndex({ rows, season, team })
+  const persisted = index >= 0 ? rows[index]?.scoutOpportunity : null
+
+  return persisted && typeof persisted === 'object' ? persisted : incoming
+}
 
 const buildPlayerFavoriteDocData = ({ currentData = {}, scouting = {}, trackedAt = '', playerExists = false } = {}) => {
   const season = scouting.season || {}
@@ -131,7 +152,16 @@ const buildPlayerFavoriteDocData = ({ currentData = {}, scouting = {}, trackedAt
   const seasonDoc = buildPlayerSeasonDoc({
     season: seasonScope,
     team,
-    player,
+    player: {
+      ...player,
+      scoutOpportunity: resolveSeasonScoutOpportunity({
+        player,
+        currentData,
+        target,
+        season: seasonScope,
+        team,
+      }),
+    },
   })
   const currentWithoutSeason = removePlayerSeasonRow({
     rows: baseDoc.current,

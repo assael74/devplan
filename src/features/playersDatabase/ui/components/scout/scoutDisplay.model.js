@@ -1,9 +1,15 @@
 // features/playersDatabase/ui/components/scout/scoutDisplay.model.js
 
 import { resolveScoutProfileDefinition } from '../../../../../shared/scouting/players/profiles.js'
+import { SCOUT_PROFILE_COMBINATIONS } from '../../../../../shared/scouting/players/combinations.js'
 import { buildScoutProfileTooltip } from '../../logic/scout/scoutProfileDisplay.logic.js'
 
 const clean = value => String(value || '').trim()
+
+const COMBINATION_BY_ID = SCOUT_PROFILE_COMBINATIONS.reduce((result, combination) => {
+  result[combination.id] = combination
+  return result
+}, {})
 
 const cleanDisplayLabel = value => {
   const label = clean(value)
@@ -43,6 +49,17 @@ const resolveProfileShortLabel = profile => clean(
   profile?.profileShortLabel ||
   profile?.shortLabel
 )
+
+const resolveProfileIconId = profile => {
+  const definition = resolveScoutProfileDefinition(resolveProfileId(profile))
+
+  return clean(profile?.idIcon) || definition?.idIcon || 'performanceProfile'
+}
+
+const resolveCombinationIconId = combination => {
+  const id = clean(combination?.id || combination?.combinationId)
+  return clean(combination?.idIcon) || clean(COMBINATION_BY_ID[id]?.idIcon) || 'performanceProfile'
+}
 
 const resolveCombinationProfileIds = combination => (
   Array.isArray(combination?.profileIds)
@@ -118,7 +135,7 @@ export const buildScoutDisplayItems = ({
     ...safeCombinations.map(combination => ({
       type: 'combination',
       id: clean(combination.id || combination.combinationId),
-      iconId: clean(combination.idIcon) || 'performanceProfile',
+      iconId: resolveCombinationIconId(combination),
       label: clean(combination.label || combination.id) || 'פרופיל משולב',
       description: clean(combination.description),
       profileIds: resolveCombinationProfileIds(combination),
@@ -129,7 +146,7 @@ export const buildScoutDisplayItems = ({
       .map(profile => ({
         type: 'profile',
         id: resolveProfileId(profile),
-        iconId: 'performanceProfile',
+        iconId: resolveProfileIconId(profile),
         label: resolveProfileLabel(profile),
         shortLabel: resolveProfileShortLabel(profile),
         source: profile,
@@ -148,19 +165,21 @@ export const buildScoutCompactView = ({
     profiles,
     combinations,
   })
-  const isDisplayCombination = display.type === 'combination'
+  const isDisplayCombination = display.type === 'combination' || Boolean(
+    COMBINATION_BY_ID[clean(display.id || display.combinationId)]
+  )
   const displayProfileIds = new Set(resolveDisplayProfileIds(display))
   const fallbackCombination = isDisplayCombination
     ? {
       type: 'combination',
       id: clean(display.id),
-      iconId: 'performanceProfile',
+      iconId: resolveCombinationIconId(display),
       label: clean(display.label) || 'פרופיל משולב',
       profileIds: Array.from(displayProfileIds),
       source: display,
     }
     : null
-  const primaryItem = displayItems[0] || fallbackCombination
+  const primaryItem = fallbackCombination || displayItems[0]
   const isCombination = primaryItem?.type === 'combination'
   const baseLabel = (
     cleanDisplayLabel(primaryItem?.label) ||

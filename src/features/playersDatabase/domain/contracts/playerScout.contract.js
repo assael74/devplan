@@ -246,6 +246,7 @@ const buildDisplay = ({ primaryProfile, combinations }) => {
     return {
       type: 'combination',
       id: primaryCombination.id,
+      idIcon: primaryCombination.idIcon,
       label: primaryCombination.label,
       score: primaryProfile && primaryProfile.score !== undefined ? primaryProfile.score : null,
       profileStrength: primaryProfile?.profileStrength || null,

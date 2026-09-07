@@ -185,6 +185,7 @@ export async function updatePlayerRoleFlow(payload = {}) {
       await updateLeagueSeasonTableRankScoutProfilesSummary({
         ...rolePayload,
         scoutProfilesSummary: teamSeasonResult.scoutProfilesSummary,
+        teamTaskSignals: teamSeasonResult.teamBalance?.teamTaskSignals,
       })
     if (!projectionResults.leagueTableRankScoutProfilesResult?.updated) {
       return buildCommittedProjectionFailure({

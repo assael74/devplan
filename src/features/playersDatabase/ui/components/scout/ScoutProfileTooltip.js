@@ -1,55 +1,52 @@
-import { Box, LinearProgress, Typography } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { buildScoutProfileTooltipModel } from './scoutProfileTooltip.model.js'
 import { scoutProfileTooltipSx as sx } from './sx/scoutProfileTooltip.sx.js'
 
-const ConditionList = ({ conditions = [] }) => (
+const ConditionList = ({ conditions = [], compact = false }) => (
   <Box sx={sx.conditions}>
     {conditions.map(condition => (
-      <Box key={condition.key} sx={sx.condition}>
-        <Box sx={sx.conditionMeta}>
-          <Box sx={sx.conditionTitle}>
-            <Box aria-hidden='true' sx={sx.conditionIcon}>
+      <Box key={condition.key} sx={sx.condition({ compact })}>
+        <Box sx={sx.conditionMeta({ compact })}>
+          <Box sx={sx.conditionTitle({ compact })}>
+            <Box aria-hidden='true' sx={sx.conditionIcon({ compact })}>
               {iconUi({ id: condition.iconId, size: 'sm' })}
             </Box>
-            <Typography sx={sx.conditionLabel}>{condition.label}</Typography>
+            <Typography sx={sx.conditionLabel({ compact })}>{condition.label}</Typography>
           </Box>
-          {condition.progressPct !== null ? (
-            <Typography sx={sx.conditionProgress}>{`${condition.progressPct}%`}</Typography>
+          {condition.matched ? (
+            <Typography sx={sx.conditionStatus({ compact })}>התקיים</Typography>
           ) : null}
         </Box>
-        {condition.progressPct !== null ? (
-          <LinearProgress determinate value={condition.progressPct} sx={sx.progressTrack} />
-        ) : null}
       </Box>
     ))}
   </Box>
 )
 
-const ProfileDetails = ({ model, showConditions, showConditionsDepth }) => (
+const ProfileDetails = ({ model, showConditions, showConditionsDepth, compact }) => (
   <>
-    <Box sx={sx.header}>
-        <Box sx={sx.profileTitle}>
-          <Box aria-hidden='true' sx={sx.profileIcon}>{iconUi({ id: model.iconId, size: 'sm' })}</Box>
-          <Typography sx={sx.title}>{model.label}</Typography>
+    <Box sx={sx.header({ compact })}>
+        <Box sx={sx.profileTitle({ compact })}>
+          <Box aria-hidden='true' sx={sx.profileIcon({ compact })}>{iconUi({ id: model.iconId, size: 'sm' })}</Box>
+          <Typography sx={sx.title({ compact })}>{model.label}</Typography>
         </Box>
-        {model.createdAt ? <Typography sx={sx.createdAt}>{model.createdAt}</Typography> : null}
+        {model.createdAt ? <Typography sx={sx.createdAt({ compact })}>{model.createdAt}</Typography> : null}
     </Box>
 
       {showConditions ? (
         <>
-          <Typography sx={sx.conditionsLabel}>{model.conditionsLabel}</Typography>
+          <Typography sx={sx.conditionsLabel({ compact })}>{model.conditionsLabel}</Typography>
           {model.conditions.length
-            ? <ConditionList conditions={model.conditions} />
-            : <Typography sx={sx.emptyState}>אין תנאי זיהוי מוגדרים לפרופיל זה.</Typography>}
+            ? <ConditionList conditions={model.conditions} compact={compact} />
+            : <Typography sx={sx.emptyState({ compact })}>אין תנאי זיהוי מוגדרים לפרופיל זה.</Typography>}
         </>
       ) : null}
 
       {showConditionsDepth && model.depthConditions.length ? (
         <>
-          <Typography sx={sx.conditionsLabel}>תנאים שקבעו את עומק הפרופיל</Typography>
-          <ConditionList conditions={model.depthConditions} />
+          <Typography sx={sx.conditionsLabel({ compact })}>תנאים שקבעו את עומק הפרופיל</Typography>
+          <ConditionList conditions={model.depthConditions} compact={compact} />
         </>
       ) : null}
   </>
@@ -61,6 +58,7 @@ export default function ScoutProfileTooltip({
   profiles = [],
   showConditions = false,
   showConditionsDepth = false,
+  compact = false,
 }) {
   const candidates = [profile, ...(Array.isArray(profiles) ? profiles : [])]
   const seen = new Set()
@@ -78,13 +76,14 @@ export default function ScoutProfileTooltip({
   if (!models.length) return null
 
   return (
-    <Box sx={sx.root}>
+    <Box sx={sx.root({ compact })}>
       {models.map((model, index) => (
-        <Box key={model.profileId || index} sx={sx.profileSection({ divided: index > 0 })}>
+        <Box key={model.profileId || index} sx={sx.profileSection({ divided: index > 0, compact })}>
           <ProfileDetails
             model={model}
             showConditions={showConditions}
             showConditionsDepth={showConditionsDepth}
+            compact={compact}
           />
         </Box>
       ))}

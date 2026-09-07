@@ -90,6 +90,9 @@ export const removePlayerScoutProfileFromComputedState = ({ player = {}, profile
     opportunity,
     verification,
     playerReview: player.playerReview,
+    playerTrajectory: player.scoutTrajectory,
+    playerSeasonStints: player.playerSeasonStints || player.seasonStints || player.history || [],
+    currentSeasonKey: player.seasonKey || player.season || '',
   })
 
   return {

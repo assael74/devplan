@@ -2,14 +2,15 @@
 
 export const PLAYER_INTEREST_LEVEL = {
   REASONABLE: 'reasonable',
+  CURIOUS: 'curious',
   INTERESTING: 'interesting',
   SUPER_INTERESTING: 'super_interesting',
 }
 
 export const PLAYER_INTEREST_REASON = {
-  POSITION_VERIFIED: 'position_verified_or_not_required',
-  PROFILE_PERSISTENCE: 'profile_persistence',
-  DEFINED_COMBINATION: 'defined_profile_combination',
-  HIGH_IMMEDIACY: 'high_immediacy',
-  STRONG_PROFILE_DEPTH: 'strong_profile_depth',
+  IMMEDIACY: 'immediacy',
+  CURRENT_PROFILE_PERSISTENCE: 'current_profile_persistence',
+  HISTORICAL_PROFILE_PERSISTENCE: 'historical_profile_persistence',
+  PROFILE_COMBINATION: 'profile_combination',
+  COMBINATION_PROFILE_DEPTH: 'combination_profile_depth',
 }

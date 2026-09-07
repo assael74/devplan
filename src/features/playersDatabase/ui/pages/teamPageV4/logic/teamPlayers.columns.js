@@ -45,6 +45,18 @@ const toCount = value => {
   return Number.isFinite(nextValue) ? nextValue : 0
 }
 
+const getInterestLevel = row => String(
+  row?.scoutPlayerInterestLevel || row?.scoutPlayerInterest?.interestLevel || 'unavailable'
+).trim().toLowerCase()
+
+const getInterestLabel = level => ({
+  reasonable: 'עניין סביר',
+  curious: 'מסקרן',
+  interesting: 'מעניין',
+  super_interesting: 'מעניין מאוד',
+  unavailable: 'רמת עניין טרם חושבה',
+}[level] || 'רמת עניין טרם חושבה')
+
 const columnWidth = key => buildTableColumnWidth(
   TEAM_PLAYERS_TABLE_WIDTHS[key]
 )
@@ -86,12 +98,18 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onPlayerUrlEdit }) => [
       ...columnWidth('avatar'),
     },
     render: row => (
-      <Box
-        component='img'
-        src={row.avatarUrl || playerImage}
-        alt=''
-        sx={columnSx.avatarImage}
-      />
+      <Box sx={sx.avatarWrap}>
+        <Box
+          component='img'
+          src={row.avatarUrl || playerImage}
+          alt=''
+          sx={columnSx.avatarImage}
+        />
+        <Box
+          aria-label={getInterestLabel(getInterestLevel(row))}
+          sx={sx.avatarInterestBadge(getInterestLevel(row))}
+        />
+      </Box>
     ),
   },
   {
@@ -122,6 +140,7 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onPlayerUrlEdit }) => [
     render: row => (
       <PlayerLineClassificationChip
         classification={row.lineClassification}
+        showTooltip={false}
       />
     ),
   },
@@ -217,20 +236,18 @@ export const buildTeamPlayersColumns = ({ onPlayerOpen, onPlayerUrlEdit }) => [
     },
     render: row => (
       <Box sx={actionSx.rowActions}>
-        <Tooltip title='כניסה לשחקן'>
-          <IconButton
-            size='sm'
-            variant='outlined'
-            aria-label='כניסה לשחקן'
-            sx={actionSx.actionButton}
-            onClick={() => onPlayerOpen(row)}
-          >
-            {iconUi({
-              id: 'view',
-              size: 'sm',
-            })}
-          </IconButton>
-        </Tooltip>
+        <IconButton
+          size='sm'
+          variant='outlined'
+          aria-label='כניסה לשחקן'
+          sx={actionSx.actionButton}
+          onClick={() => onPlayerOpen(row)}
+        >
+          {iconUi({
+            id: 'view',
+            size: 'sm',
+          })}
+        </IconButton>
 
         <Tooltip title='פעולות נוספות'>
           <IconButton

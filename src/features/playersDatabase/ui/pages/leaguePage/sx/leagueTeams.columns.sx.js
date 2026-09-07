@@ -3,10 +3,18 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueTeamsColumnsSx = {
-  teamAvatar: {
+  teamLogoWrap: {
+    width: 28,
+    height: 28,
+    mx: 'auto',
+    position: 'relative',
+    display: 'grid',
+    placeItems: 'center',
+  },
+
+  teamLogo: {
     width: 26,
     height: 26,
-    mx: 'auto',
     display: 'block',
     objectFit: 'contain',
     borderRadius: '50%',

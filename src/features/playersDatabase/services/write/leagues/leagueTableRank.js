@@ -55,6 +55,22 @@ const areScoutProfilesSummariesEqual = (left, right) => (
   JSON.stringify(normalizeScoutProfilesSummary(right))
 )
 
+const normalizeTeamTaskSignals = signals => ({
+  offense: Boolean(signals?.offense),
+  defense: Boolean(signals?.defense),
+  updatedAt: signals?.updatedAt || null,
+})
+
+const areTeamTaskSignalsEqual = (left, right) => {
+  const normalizedLeft = normalizeTeamTaskSignals(left)
+  const normalizedRight = normalizeTeamTaskSignals(right)
+
+  return (
+    normalizedLeft.offense === normalizedRight.offense &&
+    normalizedLeft.defense === normalizedRight.defense
+  )
+}
+
 const findExistingTableRankRow = ({ tableRank = [], row = {} } = {}) => {
   const identity = normalizeTeamIdentity({ team: row })
   const teamId = clean(identity.birthTeamId)
@@ -115,6 +131,7 @@ const buildTableRankRow = ({ row = {}, existingRow = null } = {}) => {
       total: toNumberOrZero(existingRow?.scoutProfilesSummary?.total),
       profileCounts: existingRow?.scoutProfilesSummary?.profileCounts || {},
     },
+    teamTaskSignals: normalizeTeamTaskSignals(existingRow?.teamTaskSignals),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -338,9 +355,18 @@ const updateHistorySeasonTableRankTeamUrl = ({ history = [], season = {}, team =
     },
   })
 
-const updateTableRankRowScoutProfilesSummary = ({ tableRank = [], team = {}, scoutProfilesSummary = {} } = {}) => {
+const updateTableRankRowScoutProfilesSummary = ({
+  tableRank = [],
+  team = {},
+  scoutProfilesSummary = {},
+  teamTaskSignals = null,
+} = {}) => {
   const teamId = normalizeTeamIdentity({ team }).birthTeamId
   const clubId = clean(team.clubId)
+  const hasTeamTaskSignals = Boolean(
+    teamTaskSignals && typeof teamTaskSignals === 'object'
+  )
+  const normalizedTaskSignals = normalizeTeamTaskSignals(teamTaskSignals)
 
   return (Array.isArray(tableRank) ? tableRank : []).map(row => {
     const rowTeamId = normalizeTeamIdentity({ team: row }).birthTeamId
@@ -356,6 +382,14 @@ const updateTableRankRowScoutProfilesSummary = ({ tableRank = [], team = {}, sco
         total: toNumberOrZero(scoutProfilesSummary.total),
         profileCounts: scoutProfilesSummary.profileCounts || {},
       },
+      ...(hasTeamTaskSignals
+        ? {
+            teamTaskSignals: {
+              ...normalizedTaskSignals,
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        : {}),
       updatedAt: new Date().toISOString(),
     }
   })
@@ -644,6 +678,7 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
   target = 'current',
   team = {},
   scoutProfilesSummary = {},
+  teamTaskSignals = null,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -661,6 +696,10 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
   const clubId = clean(teamIdentity.clubId || team.clubId)
   const teamUrl = clean(team.teamUrl)
   const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+  const hasTeamTaskSignals = Boolean(
+    teamTaskSignals && typeof teamTaskSignals === 'object'
+  )
+  const normalizedTaskSignals = normalizeTeamTaskSignals(teamTaskSignals)
 
   if (!leagueId) throw new Error('Missing league id')
   if (!seasonId && !seasonKey) throw new Error('Missing season id')
@@ -796,13 +835,20 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
       currentTeamRow.scoutProfilesSummary,
       normalizedSummary
     )
+    const taskSignalsUnchanged = !hasTeamTaskSignals || (
+      hasOwn(currentTeamRow, 'teamTaskSignals') &&
+      areTeamTaskSignalsEqual(
+        currentTeamRow.teamTaskSignals,
+        normalizedTaskSignals
+      )
+    )
     const playersCountChanged = (
       hasFiniteNumberValue(effectivePlayersCount) &&
       toNumberOrZero(currentTeamRow.playersCount) !== Number(effectivePlayersCount)
     )
     const masterSyncRequired = playersCountChanged || !scoutSummaryUnchanged
 
-    if (loadStatusUnchanged && scoutSummaryUnchanged) {
+    if (loadStatusUnchanged && scoutSummaryUnchanged && taskSignalsUnchanged) {
       const seasonPlayersCount = hasTableRankPlayersCount(tableRank)
         ? sumTableRankPlayersCount(tableRank)
         : undefined
@@ -819,6 +865,7 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
         statsComplete: effectiveStatsComplete,
         seasonPlayersCount,
         scoutProfilesSummary: normalizedSummary,
+        teamTaskSignals: normalizeTeamTaskSignals(currentTeamRow.teamTaskSignals),
         sourceTarget,
         target: sourceTarget,
         teamId: birthTeamId,
@@ -848,6 +895,14 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
               ? { statsComplete: effectiveStatsComplete }
               : {}),
             scoutProfilesSummary: normalizedSummary,
+            ...(hasTeamTaskSignals
+              ? {
+                  teamTaskSignals: {
+                    ...normalizedTaskSignals,
+                    updatedAt,
+                  },
+                }
+              : {}),
             updatedAt,
           }
         : row
@@ -898,6 +953,12 @@ export async function updateLeagueSeasonTableRankTeamSyncMeta({
       statsComplete: effectiveStatsComplete,
       seasonPlayersCount: hasPlayersCount ? playersCount : undefined,
       scoutProfilesSummary: normalizedSummary,
+      teamTaskSignals: hasTeamTaskSignals
+        ? {
+            ...normalizedTaskSignals,
+            updatedAt,
+          }
+        : normalizeTeamTaskSignals(currentTeamRow.teamTaskSignals),
       sourceTarget,
       target: sourceTarget,
       teamId: birthTeamId,
@@ -927,6 +988,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
   target = 'current',
   team = {},
   scoutProfilesSummary = {},
+  teamTaskSignals = null,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -1014,13 +1076,25 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
       )
     }) || null
     const normalizedSummary = normalizeScoutProfilesSummary(scoutProfilesSummary)
+    const hasTeamTaskSignals = Boolean(
+      teamTaskSignals && typeof teamTaskSignals === 'object'
+    )
+    const normalizedTaskSignals = normalizeTeamTaskSignals(teamTaskSignals)
+    const taskSignalsUnchanged = !hasTeamTaskSignals || (
+      hasOwn(existingTeamRow, 'teamTaskSignals') &&
+      areTeamTaskSignalsEqual(
+        existingTeamRow?.teamTaskSignals,
+        normalizedTaskSignals
+      )
+    )
 
     if (
       existingTeamRow &&
       areScoutProfilesSummariesEqual(
         existingTeamRow.scoutProfilesSummary,
         normalizedSummary
-      )
+      ) &&
+      taskSignalsUnchanged
     ) {
       return {
         leagueId,
@@ -1029,6 +1103,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
         target: isHistory ? 'history' : 'current',
         teamId,
         scoutProfilesSummary: normalizedSummary,
+        teamTaskSignals: normalizeTeamTaskSignals(existingTeamRow.teamTaskSignals),
         updated: true,
         changed: false,
         writeSkipped: true,
@@ -1040,6 +1115,7 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
       tableRank,
       team,
       scoutProfilesSummary,
+      teamTaskSignals,
     })
 
     if (isHistory) {
@@ -1083,6 +1159,9 @@ export async function updateLeagueSeasonTableRankScoutProfilesSummary({
       target: isHistory ? 'history' : 'current',
       teamId,
       scoutProfilesSummary,
+      teamTaskSignals: hasTeamTaskSignals
+        ? normalizedTaskSignals
+        : normalizeTeamTaskSignals(existingTeamRow?.teamTaskSignals),
       updated: true,
     }
   })

@@ -85,9 +85,6 @@ export const buildPlayerManualReview = ({ review = {} } = {}) => {
     [PLAYER_MANUAL_REVIEW_FIELD.MINUTES_DISTRIBUTION]: normalizeReviewedObservation(
       safeReview[PLAYER_MANUAL_REVIEW_FIELD.MINUTES_DISTRIBUTION]
     ),
-    [PLAYER_MANUAL_REVIEW_FIELD.VISUAL_REVIEW]: normalizeReviewedObservation(
-      safeReview[PLAYER_MANUAL_REVIEW_FIELD.VISUAL_REVIEW]
-    ),
     [PLAYER_MANUAL_REVIEW_FIELD.AGENT_PATH_FIT]: normalizeFit(
       safeReview[PLAYER_MANUAL_REVIEW_FIELD.AGENT_PATH_FIT]
     ),

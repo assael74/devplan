@@ -55,7 +55,6 @@ export const TEAM_FILTER_DISPLAY = {
 export const SCOUT_REVIEW_DISPLAY = {
   [SCOUT_REVIEW.POSITION]: { label: 'בדיקת עמדה' },
   [SCOUT_REVIEW.TEAM_CONTEXT]: { label: 'בדיקת הקשר ביצוע קבוצתי' },
-  [SCOUT_REVIEW.VIDEO_POSITION]: { label: 'אימות עמדה ותפקיד בווידאו' },
   [SCOUT_REVIEW.PROFILE_RELEVANCE]: { label: 'בדיקת רלוונטיות הפרופיל' },
 }
 
@@ -81,6 +80,7 @@ export const SCOUT_RULE_METRIC_DISPLAY = {
   games: 'הופעות',
   goals: 'שערים',
   goalsPer90: 'שערים ל-90',
+  goalsPerGameDuration: 'שערים לדקת משחק',
   goalsShareOfTeam: 'חלק משערי הקבוצה',
   minutes: 'דקות',
   minutesPct: 'אחוז דקות',

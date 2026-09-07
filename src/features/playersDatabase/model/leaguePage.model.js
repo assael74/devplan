@@ -146,6 +146,11 @@ const buildTeamRow = teamSeason => {
     performance,
     performanceView,
     scoutSummary,
+    teamTaskSignals: teamSeason?.teamTaskSignals || {
+      offense: false,
+      defense: false,
+      updatedAt: null,
+    },
     scoutStatus: profilesCount > 0 ? 'full' : 'missing',
     source: teamSeason,
   }

@@ -3,6 +3,7 @@
 import { Tooltip } from '@mui/joy'
 
 import PlayerMetaChip from './PlayerMetaChip.js'
+import { playerLineClassificationTooltipSx as tooltipSx } from './sx/playerLineClassificationTooltip.sx.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -33,6 +34,8 @@ export default function PlayerLineClassificationChip({
   primaryPosition = '',
   positionLayer = '',
   tooltipDetail = '',
+  tooltipContent = null,
+  showTooltip = false,
   clickable = false,
   buttonLike = false,
   compact = false,
@@ -44,7 +47,7 @@ export default function PlayerLineClassificationChip({
   const lineDisplay = LINE_DISPLAY[line]
   const positionLabel = POSITION_LABELS[position] || position
   const endIconId = positionCode || CLASSIFICATION_POSITION_ICON_IDS[position] || ''
-  const tooltip = [
+  const tooltip = tooltipContent || [
     [lineDisplay?.label, positionLabel].filter(Boolean).join(' · '),
     getSourceLabel(classification?.source),
     clean(tooltipDetail),
@@ -55,7 +58,8 @@ export default function PlayerLineClassificationChip({
       <PlayerMetaChip
         label='שוער'
         startIconId='goalkeeper'
-        tooltip={['שוער', 'עמדה ידועה', clean(tooltipDetail)].filter(Boolean).join(' · ')}
+        tooltip={showTooltip ? (tooltipContent || ['שוער', 'עמדה ידועה', clean(tooltipDetail)].filter(Boolean).join(' · ')) : ''}
+        tooltipSx={tooltipSx.tooltip}
         selected
         clickable={clickable}
         buttonLike={buttonLike}
@@ -65,7 +69,7 @@ export default function PlayerLineClassificationChip({
   }
 
   if (!lineDisplay) {
-    return tooltipDetail ? (
+    return showTooltip && tooltipDetail ? (
       <Tooltip title={clean(tooltipDetail)}>
         <span>—</span>
       </Tooltip>
@@ -77,7 +81,8 @@ export default function PlayerLineClassificationChip({
       label={`${lineDisplay.label}${endIconId ? ' · ' : ''}`}
       startIconId={lineDisplay.iconId}
       endIconId={endIconId}
-      tooltip={tooltip}
+      tooltip={showTooltip ? tooltip : ''}
+      tooltipSx={tooltipSx.tooltip}
       selected
       clickable={clickable}
       buttonLike={buttonLike}

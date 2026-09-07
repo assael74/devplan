@@ -1,9 +1,9 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const scoutProfileChipV2Sx = {
-  root: ({ interactive, compact, isFilter = false, selected = false }) => ({
+  root: ({ interactive, compact, width, isFilter = false, selected = false }) => ({
     position: 'relative',
-    width: compact ? 146 : 176,
+    width: width || (compact ? 146 : 176),
     maxWidth: '100%',
     minHeight: compact ? 22 : 30,
     overflow: 'hidden',
@@ -54,9 +54,9 @@ export const scoutProfileChipV2Sx = {
     borderRadius: '50%',
     border: isFilter ? 'none' : '1px solid rgba(23, 59, 87, 0.28)',
     bgcolor: isFilter ? 'transparent' : 'rgba(255, 255, 255, 0.9)',
-    color: isFilter ? (isCombination ? '#F2B84B' : '#fff') : devPlanColors.primary,
+    color: isCombination ? '#F2B84B' : isFilter ? '#fff' : devPlanColors.primary,
     '& svg': {
-      color: isFilter ? (isCombination ? '#F2B84B' : '#fff') : 'inherit',
+      color: isCombination ? '#F2B84B' : isFilter ? '#fff' : 'inherit',
       fontSize: compact ? 11 : 14,
     },
   }),

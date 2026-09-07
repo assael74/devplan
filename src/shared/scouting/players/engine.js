@@ -414,6 +414,9 @@ export const buildPlayerScoutResult = ({
     opportunity,
     verification,
     playerReview,
+    playerTrajectory: resolvedPlayerTrajectory,
+    playerSeasonStints,
+    currentSeasonKey: season?.seasonKey || season?.season || '',
   })
 
   return {

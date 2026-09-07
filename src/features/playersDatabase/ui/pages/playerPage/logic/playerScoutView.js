@@ -956,7 +956,6 @@ const PLAYER_REVIEW_LABELS = {
   transfer_history: 'היסטוריית מעבר קבוצות',
   goal_distribution: 'פיזור שערים',
   minutes_distribution: 'חלוקת דקות',
-  visual_review: 'צפייה בשחקן',
   agent_path_fit: 'התאמה למסלול סוכן',
   scout_path_fit: 'התאמה למסלול סקאוט',
 }
@@ -1175,16 +1174,6 @@ const buildNextActions = ({ interest, questions }) => {
   }))
 
   if (actions.length) return actions
-
-  if (interest.status === 'immediate' || interest.status === 'priority') {
-    return [{
-      id: 'visual_review',
-      title: 'צפייה מקצועית ממוקדת',
-      description: 'השלב הבא הוא לאמת את המקרה בצפייה מקצועית.',
-      quickAnswer: false,
-      type: 'review',
-    }]
-  }
 
   return [{
     id: 'continue_watch',
