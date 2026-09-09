@@ -6,7 +6,7 @@ import {
   Typography,
 } from '@mui/joy'
 
-import ScoutBadge from '../../../scout/ScoutBadge.js'
+import ScoutBadge from '../../../scout/shared/ScoutBadge.js'
 import { isPositiveLevel } from '../workTask.model.js'
 import { workTaskCardsSx as sx } from '../sx/workTaskCards.sx.js'
 

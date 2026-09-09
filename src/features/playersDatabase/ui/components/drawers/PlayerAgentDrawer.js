@@ -77,13 +77,13 @@ export default function PlayerAgentDrawer({
       <Box sx={sx.fieldCard}>
         <FormControl sx={sx.formControl}>
           <FormLabel>סטטוס סוכן</FormLabel>
-          <Box sx={{ display: 'flex', gap: 0.75 }}>
+          <Box sx={sx.inlineRow}>
             <Chip
               component='button'
               size='md'
               variant={draft.status === 'yes' ? 'solid' : 'outlined'}
               onClick={() => setDraft(current => ({ ...current, status: 'yes' }))}
-              sx={{ cursor: 'pointer' }}
+              sx={sx.clickable}
             >
               יש סוכן
             </Chip>
@@ -92,7 +92,7 @@ export default function PlayerAgentDrawer({
               size='md'
               variant={draft.status === 'no' ? 'solid' : 'outlined'}
               onClick={() => setDraft({ status: 'no', phones: '' })}
-              sx={{ cursor: 'pointer' }}
+              sx={sx.clickable}
             >
               אין סוכן
             </Chip>

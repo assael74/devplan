@@ -4,7 +4,11 @@ import {
   Box,
   Button,
   Divider,
+  Dropdown,
   IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
   Option,
   Select,
   Tooltip,
@@ -28,11 +32,17 @@ export default function LeagueActionsPanel({
   onAttackPriorityFilterChange,
   onDefensePriorityFilterChange,
   onLoad,
+  onDataRepair,
+  onLeagueJsonDownload,
+  leagueJsonDownloading = false,
   onLeagueUrlEdit,
   hasLeagueUrl = false,
   loadDisabled = false,
   loadDisabledReason = '',
   onDeleteTeams,
+  onDeleteSeason,
+  deleteTeamsDisabled = false,
+  deleteSeasonDisabled = false,
   onReport,
   tasks = [],
   tasksLoading,
@@ -126,7 +136,7 @@ export default function LeagueActionsPanel({
 
       <Divider sx={sx.sidePanelDivider} />
 
-      <Box sx={sx.actionsRow}>
+      <Box sx={sx.primaryActionsRow}>
         <Button
           variant='outlined'
           startDecorator={iconUi({id: 'addTeams', size: 'sm'})}
@@ -138,6 +148,31 @@ export default function LeagueActionsPanel({
           טעינת נתוני ליגה
         </Button>
 
+        <Dropdown>
+          <Tooltip title='פעולות מחיקה לעונה'>
+            <span>
+              <MenuButton
+                variant='outlined'
+                aria-label='פעולות מחיקה לעונה'
+                sx={sx.sideDeleteButton}
+              >
+                {iconUi({id: 'delete', size: 'sm'})}
+              </MenuButton>
+            </span>
+          </Tooltip>
+
+          <Menu placement='bottom-end'>
+            <MenuItem disabled={deleteTeamsDisabled} onClick={onDeleteTeams}>
+              מחיקת קבוצות העונה
+            </MenuItem>
+            <MenuItem disabled={deleteSeasonDisabled} onClick={onDeleteSeason}>
+              מחיקת עונה
+            </MenuItem>
+          </Menu>
+        </Dropdown>
+      </Box>
+
+      <Box sx={sx.secondaryActionsRow}>
         <Tooltip title={hasLeagueUrl ? 'עריכת קישור לליגה' : 'הוספת קישור לליגה'}>
           <IconButton
             variant='outlined'
@@ -160,14 +195,29 @@ export default function LeagueActionsPanel({
           </IconButton>
         </Tooltip>
 
-        <Tooltip title='מחיקת קבוצות לעונה'>
+        <Tooltip title='הורדת מסמך הליגה כ-JSON'>
+          <span>
+            <IconButton
+              variant='outlined'
+              aria-label='הורדת מסמך הליגה כ-JSON'
+              loading={leagueJsonDownloading}
+              disabled={leagueJsonDownloading}
+              sx={sx.sideDownloadButton}
+              onClick={onLeagueJsonDownload}
+            >
+              {iconUi({id: 'download', size: 'sm'})}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title='תיקוני דאטה לליגה'>
           <IconButton
             variant='outlined'
-            aria-label='מחיקת קבוצות לעונה'
-            sx={sx.sideDeleteButton}
-            onClick={onDeleteTeams}
+            aria-label='תיקוני דאטה לליגה'
+            sx={sx.sideDataRepairButton}
+            onClick={onDataRepair}
           >
-            {iconUi({id: 'delete', size: 'sm'})}
+            {iconUi({id: 'search', size: 'sm'})}
           </IconButton>
         </Tooltip>
       </Box>

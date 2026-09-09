@@ -75,6 +75,7 @@ export default function usePlayerHistoryView(player) {
     rows,
     visibleRows: rows,
     selectedRow,
+    latestRow: defaultRow,
     selectedContextId: selectedRow?.id || '',
     selectedSeasonKey: selectedRow?.seasonKey || defaultRow?.seasonKey || '',
     latestSeasonKey: defaultRow?.seasonKey || '',

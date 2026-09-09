@@ -12,7 +12,7 @@ import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 import {
   buildLeagueTeamPerformanceProjection,
   resolveLeagueSeasonStatus,
-} from '../../shared/teamPerformanceProjection.js'
+} from '../../../../domain/projections/teamPerformance.projection.js'
 import {
   assertWriteResultClean,
   attachWriteFlowReport,

@@ -14,6 +14,7 @@ export default function SeasonDeleteConfirmModal({
   seasonKey,
   busy,
   confirmLabel,
+  mayRemoveLeagueRoot = false,
   onConfirm,
   onClose,
 }) {
@@ -32,7 +33,11 @@ export default function SeasonDeleteConfirmModal({
     >
       <Alert color='danger' variant='soft'>
         <Box>
-          <Typography level='title-sm'>הפעולה משפיעה על עונה אחת בלבד</Typography>
+          <Typography level='title-sm'>
+            {mayRemoveLeagueRoot
+              ? 'אם זו העונה האחרונה, גם הליגה תוסר ממרכז הליגות'
+              : 'הפעולה משפיעה על עונה אחת בלבד'}
+          </Typography>
           <Typography level='body-sm'>עונה: {seasonKey || '—'}</Typography>
         </Box>
       </Alert>

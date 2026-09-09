@@ -50,6 +50,7 @@ export const playerHeaderSx = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 0.55,
     borderRadius: 999,
     bgcolor: '#fff',
     border: `1px solid ${devPlanColors.border}`,
@@ -58,6 +59,14 @@ export const playerHeaderSx = {
     fontWeight: 700,
     lineHeight: 1,
     whiteSpace: 'nowrap',
+  },
+  teamAvatar: {
+    width: 21,
+    height: 21,
+    borderRadius: '50%',
+    border: `1px solid ${devPlanColors.border}`,
+    objectFit: 'cover',
+    flexShrink: 0,
   },
 
   birthYearChip: {
@@ -91,6 +100,24 @@ export const playerHeaderSx = {
     fontWeight: 700,
     lineHeight: 1,
     whiteSpace: 'nowrap',
+  },
+  leagueChip: {
+    minHeight: 30,
+    maxWidth: 290,
+    px: 1.15,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.primary}`,
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 
   headerActionsPanel: {

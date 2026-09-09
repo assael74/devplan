@@ -38,8 +38,9 @@ import {
 import {
   buildTeamPlayerScoutProjection,
   buildTeamPlayerSeasonalScoutProjection,
-} from '../shared/playerScoutProjection.js'
+} from '../../../domain/projections/playerScout.projection.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
+import { normalizeSeasonStatus } from '../../../model/season.model.js'
 import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
 
 const normalizePlayerName = normalizePlayerNameValue
@@ -504,9 +505,7 @@ export const normalizeTeamSeasonRosterState = ({
       : Number.isFinite(Number(expectedLevelDeltaValue))
         ? Number(expectedLevelDeltaValue)
         : null,
-    seasonStatus: seasonStatusValue === 'completed'
-      ? 'completed'
-      : 'active',
+    seasonStatus: normalizeSeasonStatus(seasonStatusValue),
     teamUrl: clean(pickDefinedValue(
       seasonDoc.teamUrl,
       team.teamUrl
@@ -571,9 +570,7 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
       team.performance?.defense,
       null,
     ),
-    seasonStatus: clean(season.seasonStatus) === 'completed'
-      ? 'completed'
-      : 'active',
+    seasonStatus: normalizeSeasonStatus(season.seasonStatus),
     teamUrl: clean(team.teamUrl),
     teamPlayers,
     playersCount: teamPlayers.length,

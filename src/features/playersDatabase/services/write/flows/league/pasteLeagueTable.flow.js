@@ -15,6 +15,7 @@ import {
 import {
   updatePlayerSeasonSearchIndexScoutContextMany,
   upsertTeamSeasonSearchIndexMany,
+  reconcileExpectedLevelDeltaAfterLeagueLoad,
 } from '../../searchIndex/index.js'
 import { updateLeagueTeamPlayersScoutContextMany } from '../../teams/index.js'
 import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
@@ -22,6 +23,21 @@ import {
   assertWriteResultClean,
   attachWriteFlowReport,
 } from '../writeFlowReport.js'
+
+const isNotStartedSeason = season => (
+  String(season?.seasonStatus || '').trim() === 'not_started'
+)
+
+const buildSkippedWriteResult = reason => ({
+  updated: true,
+  changed: false,
+  writeSkipped: true,
+  skipped: true,
+  reason,
+  rowsCount: 0,
+  failedCount: 0,
+  failures: [],
+})
 
 const buildRowsWithScoutSummaries = ({ rows = [], contextResults = [] } = {}) => {
   const summaryByTeam = new Map(
@@ -202,6 +218,7 @@ const buildPlayerScoutContextReport = result => ({
 
 export async function pasteLeagueTableFlow(payload = {}) {
   const results = {}
+  const notStartedSeason = isNotStartedSeason(payload.season)
   let stage = 'leagueDocument'
 
   try {
@@ -217,45 +234,55 @@ export async function pasteLeagueTableFlow(payload = {}) {
     })
 
     stage = 'playerScoutContext'
-    const playerScoutContextResult = await updateLeagueTeamPlayersScoutContextMany({
-      league: payload.league || {},
-      season: payload.season || {},
-      target: payload.target || 'current',
-      rows: payload.rows || [],
-    })
-    results.playerScoutContext = buildPlayerScoutContextReport(playerScoutContextResult)
+    const playerScoutContextResult = notStartedSeason
+      ? { results: [] }
+      : await updateLeagueTeamPlayersScoutContextMany({
+        league: payload.league || {},
+        season: payload.season || {},
+        target: payload.target || 'current',
+        rows: payload.rows || [],
+      })
+    results.playerScoutContext = notStartedSeason
+      ? buildSkippedWriteResult('seasonNotStarted')
+      : buildPlayerScoutContextReport(playerScoutContextResult)
     assertWriteResultClean({
       result: results.playerScoutContext,
       stage,
     })
 
     stage = 'playerDocuments'
-    results.playerDocuments = await syncPlayerDocumentsFromContext({
-      payload,
-      contextResults: playerScoutContextResult.results,
-    })
+    results.playerDocuments = notStartedSeason
+      ? buildSkippedWriteResult('seasonNotStarted')
+      : await syncPlayerDocumentsFromContext({
+        payload,
+        contextResults: playerScoutContextResult.results,
+      })
     assertWriteResultClean({
       result: results.playerDocuments,
       stage,
     })
 
     stage = 'playerIndexes'
-    results.playerIndexes = await syncPlayerIndexesFromContext({
-      payload,
-      contextResults: playerScoutContextResult.results,
-    })
+    results.playerIndexes = notStartedSeason
+      ? buildSkippedWriteResult('seasonNotStarted')
+      : await syncPlayerIndexesFromContext({
+        payload,
+        contextResults: playerScoutContextResult.results,
+      })
     assertWriteResultClean({
       result: results.playerIndexes,
       stage,
     })
 
     stage = 'leagueScoutSummaries'
-    results.leagueScoutSummaries = await updateLeagueSeasonTableRankScoutProfilesSummaries({
-      league: payload.league || {},
-      season: payload.season || {},
-      target: payload.target || 'current',
-      summaries: buildScoutSummaryRows(playerScoutContextResult.results),
-    })
+    results.leagueScoutSummaries = notStartedSeason
+      ? buildSkippedWriteResult('seasonNotStarted')
+      : await updateLeagueSeasonTableRankScoutProfilesSummaries({
+        league: payload.league || {},
+        season: payload.season || {},
+        target: payload.target || 'current',
+        summaries: buildScoutSummaryRows(playerScoutContextResult.results),
+      })
 
     const rowsWithScoutSummaries = buildRowsWithScoutSummaries({
       rows: payload.rows,
@@ -269,6 +296,18 @@ export async function pasteLeagueTableFlow(payload = {}) {
     })
     assertWriteResultClean({
       result: results.teamIndexes,
+      stage,
+    })
+
+    stage = 'expectedLevelDelta'
+    // A not-started season has no player/scout context, but it can still
+    // change the age-progression relation with the adjacent birth year.
+    results.expectedLevelDelta = await reconcileExpectedLevelDeltaAfterLeagueLoad({
+      birthYear: payload.season?.birthYear,
+      syncTeamSeasonContexts: !notStartedSeason,
+    })
+    assertWriteResultClean({
+      result: results.expectedLevelDelta,
       stage,
     })
 

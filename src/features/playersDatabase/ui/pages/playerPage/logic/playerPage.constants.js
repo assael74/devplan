@@ -1,5 +1,10 @@
 // features/playersDatabase/ui/pages/playerPage/logic/playerPage.constants.js
 
+import {
+  getSeasonCatalogOptions,
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY,
+} from '../../../../catalog/seasons.catalog.js'
+
 export const PLAYER_HISTORY_FILTERS = {
   ALL: 'all',
   CURRENT: 'current',
@@ -24,7 +29,7 @@ export const PLAYER_HISTORY_FILTER_OPTIONS = [
 export const PLAYER_HISTORY_PLACEHOLDER_ROWS = [
   {
     id: 'placeholder-current',
-    seasonKey: '25/26',
+    seasonKey: PLAYERS_DATABASE_CURRENT_SEASON_KEY,
     isCurrentSeason: true,
     clubName: 'מועדון נוכחי',
     teamName: 'קבוצת שנתון',
@@ -39,7 +44,7 @@ export const PLAYER_HISTORY_PLACEHOLDER_ROWS = [
   },
   {
     id: 'placeholder-history',
-    seasonKey: '24/25',
+    seasonKey: getSeasonCatalogOptions()[1]?.seasonKey || '',
     isCurrentSeason: false,
     clubName: 'מועדון קודם',
     teamName: 'קבוצה קודמת',

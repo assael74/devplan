@@ -229,7 +229,7 @@ export const stripPlayerScoutV2SeasonFields = row => {
   return next
 }
 
-export const normalizePlayerScoutStory = player => ({
+export const normalizePlayerScoutState = player => ({
   scoutOpportunity: normalizePlayerScoutOpportunity(player?.scoutOpportunity),
   scoutProfileProgression: compactScoutValue(
     player?.scoutProfileProgression && typeof player.scoutProfileProgression === 'object'

@@ -196,4 +196,22 @@ export const entitySeasonUrlDrawerSx = {
       bgcolor: devPlanColors.tertiaryLight,
     },
   },
+
+  inlineRow: { display: 'flex', gap: 0.75 },
+  clickable: { cursor: 'pointer' },
+  goalGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 1,
+    minWidth: 0,
+  },
+  goalSummary: {
+    mt: 2,
+    px: 1.25,
+    py: 1,
+    borderRadius: '9px',
+    bgcolor: 'rgba(47, 134, 199, 0.10)',
+  },
+  goalSummaryLabel: { color: 'text.tertiary' },
+  goalSummaryValue: { color: 'primary.700', fontWeight: 700 },
 }

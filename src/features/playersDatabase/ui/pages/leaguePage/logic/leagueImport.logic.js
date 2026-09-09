@@ -58,6 +58,7 @@ export const buildServiceSeason = ({
   league = {},
   leagueDoc = {},
   selectedSeasonOption = {},
+  seasonStatus = '',
 } = {}) => {
   const season = selectedSeasonOption?.season || {}
 
@@ -68,6 +69,7 @@ export const buildServiceSeason = ({
     seasonKey: clean(season.seasonKey || league.seasonKey),
     birthYear: toNumber(season.birthYear || league.birthYear),
     leagueTotalRound: toNumber(season.leagueTotalRound || league.leagueTotalRound),
+    seasonStatus: clean(seasonStatus),
   }
 }
 

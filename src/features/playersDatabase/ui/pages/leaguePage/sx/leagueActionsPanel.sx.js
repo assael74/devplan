@@ -105,12 +105,21 @@ export const leagueActionsPanelSx = {
     borderColor: devPlanColors.border,
   },
 
-  actionsRow: {
+  primaryActionsRow: {
     width: '100%',
     display: 'grid',
-    gridTemplateColumns: '3fr repeat(3, 0.75fr)',
+    gridTemplateColumns: 'minmax(0, 1fr) 58px',
     gap: 0.5,
     alignItems: 'stretch',
+  },
+
+  secondaryActionsRow: {
+    width: '100%',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: 0.5,
+    alignItems: 'stretch',
+    flexWrap: 'nowrap',
   },
 
   sideLoadButton: {
@@ -159,6 +168,24 @@ export const leagueActionsPanelSx = {
       bgcolor: '#dcebff',
       borderColor: devPlanColors.tertiaryDark,
     },
+  },
+
+  sideDownloadButton: {
+    width: '100%',
+    minWidth: 0,
+    minHeight: 38,
+    color: devPlanColors.primary,
+    bgcolor: '#fff',
+    borderColor: devPlanColors.primary,
+  },
+
+  sideDataRepairButton: {
+    width: '100%',
+    minWidth: 0,
+    minHeight: 38,
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    borderColor: devPlanColors.tertiary,
   },
 
   sideDeleteButton: {

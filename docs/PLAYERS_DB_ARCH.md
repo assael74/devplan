@@ -17,6 +17,31 @@ This document summarizes the current Firestore shape and the scan/database loadi
 The current Team Season is the operational source of truth for a player's
 seasonal data.
 
+## League season lifecycle
+
+`catalog/seasons.catalog.js` is the single UI configuration source for season
+keys, their default placement and display order. It does not claim that a
+season exists: `dbLeagues` remains the source of truth for seasons created for
+each league, and `dbLeaguesMaster` is its read projection.
+
+The League-to-Team and Team-to-Player navigation opens the receiving page at
+its latest available season. A seasonal query parameter is reserved for an
+explicit selection made inside that receiving page; it is not inherited from
+the page that opened it.
+
+`dbLeagues.current` stores a `seasonStatus` selected during league-table
+import: `not_started` or `active`. `dbLeagues.history[]` stores completed
+seasons with `seasonStatus: completed`. The import modal starts without a
+selection, so saving is blocked until the user explicitly chooses a state.
+`not_started` is available only when every imported performance metric is
+zero; it preserves zeroes as a league-frame placeholder rather than player
+statistics or a professional performance signal.
+
+The season-creation modal can place a season in the active or historical
+target. Re-saving the same season in the other target moves it, so the same
+season identity cannot exist in both `current` and `history[]`; a different
+active season must be moved to history before another active season is opened.
+
 - `dbBirthTeamSeasons.teamPlayers[]` stores `primaryPosition`,
   `positionLayer`, and `lineClassification`.
 - `dbPlayers.current[]` and `dbPlayers.history[]` store the same seasonal
@@ -75,6 +100,21 @@ there before rebuilding Team Balance and downstream projections.
 `dbPlayers` stores an identified player's seasonal projection in `current[]`
 or `history[]`, as well as the verified role fields at the document root.
 
+### Expected league-level path
+
+`expectedLevelDelta` is the projected change in league level for a birth year
+in the following age category. A row for birth year `Y` is compared with the
+same club, season and team slot in birth year `Y - 1`; a lower numeric league
+level is a positive progression. If that adjacent source is unavailable, the
+value is `null` (`unknown`) and is never treated as zero.
+
+After every league-table load for `Y`, the write flow reconciles both `Y` and
+`Y + 1`. This makes load order immaterial: loading `Y + 1` first leaves its
+path unknown; loading `Y` later recalculates and writes the dependent `Y + 1`
+path. The reconciliation writes the Team Season and identified Player
+projections, then rebuilds the team and player SearchIndex projections from
+`dbLeagues`.
+
 ### Search rows
 
 `dbSearchIndexes` is a projection for search and list rendering. It receives
@@ -94,3 +134,14 @@ Visual role edit
   → dbPlayers verified-role projection
   → dbSearchIndexes verified-role projection
 ```
+
+## League season deletion
+
+The league-page deletion menu is ordered by dependency: deleting teams is
+disabled while any rostered player exists; deleting a season is disabled while
+any team remains. Deleting the season is also guarded in the write flow and
+requires its table, team-season documents and SearchIndex rows to be empty.
+After deleting the final season, a league that no longer exists in the league
+catalog is deleted from `dbLeagues` and removed from `dbLeaguesMaster/all` in
+the same flow. Catalog leagues retain an empty root document so they remain
+available for a future season.

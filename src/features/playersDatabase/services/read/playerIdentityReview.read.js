@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/read/playerIdentityReview.read.js
 
+import { chunkValues } from '../shared/chunkValues.js'
 import {
   collection,
   query,
@@ -15,15 +16,6 @@ const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
 
-const chunkValues = (values = [], size = 10) => {
-  const chunks = []
-
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size))
-  }
-
-  return chunks
-}
 
 const uniqueValues = values => [
   ...new Set(

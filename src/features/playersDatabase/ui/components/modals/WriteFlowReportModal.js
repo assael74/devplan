@@ -67,6 +67,13 @@ export default function WriteFlowReportModal({
         </Box>
       </Alert>
 
+      {report?.recoveryRequired ? (
+        <Alert color='warning' variant='soft'>
+          מסמך עונת הקבוצה נשמר. המסך נטען מחדש כדי להציג את המצב הקנוני;
+          יש להשלים את הסנכרון דרך תיקוני הדאטה או האודיט הממוקד.
+        </Alert>
+      ) : null}
+
       <Box sx={sx.summary}>
         <Sheet variant='soft' sx={sx.summaryItem}>
           <Typography level='body-xs' sx={sx.label}>תהליך</Typography>

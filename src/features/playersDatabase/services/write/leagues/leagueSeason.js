@@ -1,6 +1,7 @@
 // features/playersDatabase/services/write/leagues/leagueSeason.js
 
 import { pickDefinedValue } from '../../../model/value.model.js'
+import { normalizeSeasonStatus } from '../../../model/season.model.js'
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -32,6 +33,10 @@ export const buildSeasonDoc = (season = {}) => {
     seasonUrl: clean(season.seasonUrl),
     birthYear: toNumberOrZero(season.birthYear),
     leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+    seasonStatus: normalizeSeasonStatus(
+      season.seasonStatus,
+      clean(season.seasonStatus) === 'completed' ? 'completed' : 'active'
+    ),
     tableRank: normalizeSeasonTableRank(season.tableRank),
     updatedAt: new Date().toISOString(),
   }
@@ -67,6 +72,12 @@ const upsertHistorySeason = (history = [], seasonDoc = {}) => {
   ))
 }
 
+const removeHistorySeason = (history = [], season = {}) => (
+  (Array.isArray(history) ? history : []).filter(row => (
+    !isSameSeason(row, season)
+  ))
+)
+
 export const findHistorySeason = (history = [], seasonKey = '') =>
   (Array.isArray(history) ? history : [])
     .find(row => isSameSeason(row, {
@@ -95,7 +106,21 @@ export async function upsertLeagueSeason({
       id: leagueId,
     }, currentData)
     const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-    const isHistory = clean(target) === 'history'
+    // A user's "season completed" choice is authoritative. Keeping this
+    // together with the target makes the transition resilient to callers
+    // that still pass the default target by mistake.
+    const isHistory = (
+      clean(target) === 'history' ||
+      normalizeSeasonStatus(season.seasonStatus) === 'completed'
+    )
+    const currentSeasonKey = clean(baseDoc.current?.seasonKey || baseDoc.current?.seasonId)
+
+    if (!isHistory && currentSeasonKey && currentSeasonKey !== seasonKey) {
+      throw new Error(
+        `League ${leagueId} already has an active season (${currentSeasonKey}). Move it to history before creating ${seasonKey}.`
+      )
+    }
+
     const existingSeason = isHistory
       ? findHistorySeason(baseDoc.history, seasonKey)
       : clean(baseDoc.current?.seasonKey) === seasonKey || clean(baseDoc.current?.seasonId) === seasonId
@@ -105,23 +130,36 @@ export async function upsertLeagueSeason({
       season,
       'tableRank'
     )
+    const requestedCurrentStatus = clean(season.seasonStatus)
     const seasonDoc = buildSeasonDoc({
       ...(existingSeason || {}),
       ...season,
       seasonId,
       seasonKey,
+      seasonStatus: isHistory
+        ? 'completed'
+        : ['active', 'not_started'].includes(requestedCurrentStatus)
+          ? requestedCurrentStatus
+          : 'active',
       tableRank: hasIncomingTableRank
         ? season.tableRank
         : existingSeason?.tableRank,
     })
+    const matchesCurrent = isSameSeason(baseDoc.current, seasonDoc)
     const nextData = isHistory
       ? {
           ...baseDoc,
+          // Selecting history for the existing active season is a lifecycle
+          // transition, not a duplicate season record.
+          current: matchesCurrent ? null : baseDoc.current,
           history: upsertHistorySeason(baseDoc.history, seasonDoc),
         }
       : {
           ...baseDoc,
           current: seasonDoc,
+          // Selecting active for an existing historical season moves it back
+          // to current so one identity cannot exist in both targets.
+          history: removeHistorySeason(baseDoc.history, seasonDoc),
         }
 
     transaction.set(ref, nextData, { merge: true })

@@ -3,6 +3,11 @@
 import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
 import {
+  getSeasonCatalogOptions,
+  getSeasonCatalogTarget,
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY,
+} from '../catalog/seasons.catalog.js'
+import {
   isSameSeason,
   normalizeSeasonIdentity,
   normalizeSeasonLookupKey,
@@ -24,12 +29,12 @@ import {
   countPlayers,
   countProfiledPlayers,
   countScoutProfiles,
-} from '../services/write/leagues/leaguesMaster.model.js'
+} from '../domain/projections/leaguesMaster.projection.js'
 
 export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
 export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
-const DEFAULT_SEASON_OPTIONS = ['26/27', '25/26', '24/25', '23/24', '22/23']
-export const LEAGUE_CENTER_CURRENT_SEASON_KEY = DEFAULT_SEASON_OPTIONS[0]
+export const LEAGUE_CENTER_CURRENT_SEASON_KEY =
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY
 
 const clean = cleanValue
 const toNumber = toNumberOrZero
@@ -57,8 +62,7 @@ const isSameSeasonKey = (left, right) => isSameSeason(
 export const resolveLeagueCenterSeasonTarget = seasonKey =>
   normalizeSeasonKey(seasonKey) === LEAGUE_CENTER_ALL_SEASONS_KEY
     ? 'all'
-    :
-  normalizeSeasonKey(seasonKey) === '26/27' ? 'current' : 'history'
+    : getSeasonCatalogTarget(normalizeSeasonKey(seasonKey), 'history')
 
 const getLeagueIds = league => [
   league?.catalogLeagueId,
@@ -493,7 +497,10 @@ export const buildLeagueCenterRows = ({
 }
 
 export const buildLeagueCenterSeasonOptions = leagueDocs => {
-  const keys = new Set([LEAGUE_CENTER_ALL_SEASONS_KEY, ...DEFAULT_SEASON_OPTIONS])
+  const keys = new Set([
+    LEAGUE_CENTER_ALL_SEASONS_KEY,
+    ...getSeasonCatalogOptions().map(season => season.seasonKey),
+  ])
 
   leagueDocs.forEach(league => {
     getLeagueSeasons(league).forEach(({ season }) => {

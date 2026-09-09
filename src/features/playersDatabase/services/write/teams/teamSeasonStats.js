@@ -2,6 +2,7 @@
 
 
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
   buildSeasonKey,
@@ -24,7 +25,7 @@ import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.m
 import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,
-} from '../shared/teamPerformanceProjection.js'
+} from '../../../domain/projections/teamPerformance.projection.js'
 
 const hasNumberValue = value => (
   value !== undefined &&
@@ -41,20 +42,6 @@ const isPlainObject = value => (
 )
 
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (!isPlainObject(value)) return value
-
-  return Object.keys(value)
-    .sort()
-    .reduce((result, key) => {
-      result[key] = normalizeComparableValue(value[key])
-      return result
-    }, {})
-}
 
 const stripTeamTechnicalTimestamps = value => {
   const source = isPlainObject(value) ? value : {}

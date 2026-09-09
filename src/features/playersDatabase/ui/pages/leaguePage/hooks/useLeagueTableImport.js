@@ -25,6 +25,13 @@ const toImportNumber = value => {
   return Number.isFinite(nextValue) ? nextValue : null
 }
 
+const hasStartedSeasonData = rows => (
+  (Array.isArray(rows) ? rows : []).some(row => (
+    ['games', 'wins', 'draws', 'losses', 'goalsFor', 'goalsAgainst', 'points']
+      .some(field => (toImportNumber(row?.[field]) || 0) > 0)
+  ))
+)
+
 const isImportRowReady = row => {
   if (!clean(row?.clubId)) return false
   if (!clean(row?.teamSlot)) return false
@@ -57,9 +64,17 @@ export function useLeagueTableImport({
   const [busy, setBusy] = React.useState(false)
   const [previewMessage, setPreviewMessage] = React.useState('')
   const [writeReport, setWriteReport] = React.useState(null)
+  const [seasonStatus, setSeasonStatus] = React.useState('')
+  const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
   const canConfirm = React.useMemo(() => {
-    return rows.length > 0 && rows.every(isImportRowReady)
-  }, [rows])
+    return Boolean(seasonStatus) && rows.length > 0 && rows.every(isImportRowReady)
+  }, [rows, seasonStatus])
+
+  React.useEffect(() => {
+    if (seasonStatus === 'not_started' && hasStartedData) {
+      setSeasonStatus('')
+    }
+  }, [hasStartedData, seasonStatus])
 
   const handlePreview = React.useCallback(() => {
     const preview = buildLeagueImportPreview({
@@ -79,6 +94,7 @@ export function useLeagueTableImport({
     setPasteValue('')
     setRows([])
     setPreviewMessage('')
+    setSeasonStatus('')
   }, [busy])
 
   const handleCellChange = React.useCallback(({ rowIndex, column, value }) => {
@@ -117,6 +133,7 @@ export function useLeagueTableImport({
       league,
       leagueDoc,
       selectedSeasonOption,
+      seasonStatus,
     })
     const serviceRows = buildServiceRows({
       rows,
@@ -132,7 +149,7 @@ export function useLeagueTableImport({
         payload: {
           league: serviceLeague,
           season: serviceSeason,
-          target: selectedSeasonOption?.target || 'current',
+          target: seasonStatus === 'completed' ? 'history' : 'current',
           rows: serviceRows,
         },
       })
@@ -173,7 +190,7 @@ export function useLeagueTableImport({
     } finally {
       setBusy(false)
     }
-  }, [league, leagueDoc, selectedSeasonOption, rows, notify, reload])
+  }, [league, leagueDoc, selectedSeasonOption, rows, seasonStatus, notify, reload])
 
   return {
     open,
@@ -181,8 +198,11 @@ export function useLeagueTableImport({
     rows,
     canConfirm,
     busy,
+    seasonStatus,
+    hasStartedData,
     previewMessage,
     setOpen,
+    setSeasonStatus,
     setPasteValue,
     handlePreview,
     handleClear,

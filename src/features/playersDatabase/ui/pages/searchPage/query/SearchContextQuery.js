@@ -13,6 +13,7 @@ import ArrowUpwardRounded from '@mui/icons-material/ArrowUpwardRounded'
 import RemoveRounded from '@mui/icons-material/RemoveRounded'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { getSeasonCatalogOptions } from '../../../../catalog/seasons.catalog.js'
 import {
   SEARCH_CONTEXT_TYPES,
   SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS,
@@ -20,7 +21,7 @@ import {
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchContextQuerySx as sx } from './sx/searchContextQuery.sx.js'
 
-const seasonOptions = ['26/27', '25/26', '24/25']
+const seasonOptions = getSeasonCatalogOptions().map(option => option.seasonKey)
 const birthYearOptions = ['2008', '2009', '2010', '2011', '2012', '2013']
 const leagueLevelOptions = ['1', '2', '3', '4']
 

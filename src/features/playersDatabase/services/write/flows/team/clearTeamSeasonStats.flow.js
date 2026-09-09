@@ -13,10 +13,54 @@ import {
   clearTeamSeasonStats,
 } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
-import { resolveLeagueSeasonStatus } from '../../shared/teamPerformanceProjection.js'
+import { resolveLeagueSeasonStatus } from '../../../../domain/projections/teamPerformance.projection.js'
 
 const FLOW = 'clearTeamSeasonStats'
+
+const buildCommittedProjectionFailure = ({
+  stage,
+  cause,
+  results = {},
+} = {}) => buildWriteFlowSyncError({
+  name: 'ClearTeamSeasonStatsProjectionSyncError',
+  fallbackMessage: 'Team stats were cleared, but projection synchronization failed',
+  stage,
+  cause,
+  results: {
+    ...results,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: false,
+    completed: false,
+    syncStatus: 'projection_failed',
+    recoveryRequired: true,
+    stoppedAt: stage,
+    projectionError: String(cause?.message || `Projection sync failed at ${stage}`).trim(),
+  },
+})
+
+const runProjectionStage = async ({ stage, results, action }) => {
+  try {
+    const result = await action()
+    results[stage] = result
+
+    if (result?.updated === false || (result?.failedCount || 0) > 0) {
+      throw new Error(
+        result?.reason ||
+        `${result.failedCount} projection record(s) failed`
+      )
+    }
+
+    return result
+  } catch (error) {
+    throw buildCommittedProjectionFailure({
+      stage,
+      cause: error,
+      results,
+    })
+  }
+}
 
 const runStage = async ({ stage, results, action }) => {
   try {
@@ -76,7 +120,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
   }
   const scoutProfilesSummary = { total: 0, profileCounts: {} }
 
-  const playerDocumentsResult = await runStage({
+  const playerDocumentsResult = await runProjectionStage({
     stage: 'clearExistingPlayerSeasonProfilesMany',
     results,
     action: () => clearExistingPlayerSeasonProfilesMany({
@@ -88,7 +132,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
   })
   const deletedPlayerDocumentIds = playerDocumentsResult.deletedPlayerDocumentIds || []
   if (deletedPlayerDocumentIds.length) {
-    const teamRelationResult = await runStage({
+    const teamRelationResult = await runProjectionStage({
       stage: 'clearTeamSeasonPlayerDocumentIds',
       results,
       action: () => clearTeamSeasonPlayerDocumentIds({
@@ -106,7 +150,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
     ...team,
     ...buildTeamLoadStatus(players),
   }
-  const playerSearchIndexesResult = await runStage({
+  const playerSearchIndexesResult = await runProjectionStage({
     stage: 'upsertPlayerSeasonSearchIndexMany',
     results,
     action: () => upsertPlayerSeasonSearchIndexMany({
@@ -118,7 +162,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
       clearPlayerDocumentIds: deletedPlayerDocumentIds,
     }),
   })
-  const leagueTeamMetaResult = await runStage({
+  const leagueTeamMetaResult = await runProjectionStage({
     stage: 'updateLeagueSeasonTableRankTeamSyncMeta',
     results,
     action: () => updateLeagueSeasonTableRankTeamSyncMeta({
@@ -129,7 +173,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
       teamTaskSignals: teamSeasonResult.teamBalance?.teamTaskSignals,
     }),
   })
-  const teamSearchIndexResult = await runStage({
+  const teamSearchIndexResult = await runProjectionStage({
     stage: 'updateTeamSeasonSearchIndexRosterMeta',
     results,
     action: () => updateTeamSeasonSearchIndexRosterMeta({
@@ -149,6 +193,9 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
   return {
     ...results,
     completed: true,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    recoveryRequired: false,
     syncStatus: 'complete',
     clearedPlayersCount: players.length,
   }

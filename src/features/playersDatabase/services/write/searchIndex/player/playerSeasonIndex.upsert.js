@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.upsert.js
 
+import { normalizeComparableValue } from '../../../shared/valueComparison.js'
 import {
   collection,
   doc,
@@ -37,24 +38,6 @@ import {
 } from './playerSeasonIndex.identity.js'
 
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) return value.map(normalizeComparableValue)
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
 
 const isPlayerSeasonIndexWriteUnchanged = ({
   existingData = {},

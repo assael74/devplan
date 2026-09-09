@@ -7,6 +7,7 @@ const resolveSeasonStatus = (target, seasonStatus) => {
 
   if (normalizedStatus === 'completed') return 'completed'
   if (normalizedStatus === 'active') return 'active'
+  if (normalizedStatus === 'not_started') return 'not_started'
 
   return cleanDomainValue(target) === 'history'
     ? 'completed'
@@ -22,6 +23,9 @@ export const createLifecycle = (target, seasonStatus = '') => {
     type,
     seasonStatus: resolvedSeasonStatus,
     isFinal,
-    usesProjection: !isFinal,
+    // A future season lives in `current`, but has no actual data from which
+    // a projection can be calculated.  Only an explicitly active season can
+    // use projected values.
+    usesProjection: resolvedSeasonStatus === 'active',
   }
 }

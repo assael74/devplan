@@ -14,7 +14,7 @@ import {
   buildLeaguesMasterSummary,
   normalizeLeaguesMasterIds,
   sortLeaguesMasterEntries,
-} from './leaguesMaster.model.js'
+} from '../../../domain/projections/leaguesMaster.projection.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const MASTER_DOC_ID = 'all'

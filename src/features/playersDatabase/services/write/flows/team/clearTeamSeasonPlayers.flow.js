@@ -7,9 +7,53 @@ import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import { deleteSearchIndexesForTeamSeason } from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
 
 const FLOW = 'clearTeamSeasonPlayers'
+
+const buildCommittedProjectionFailure = ({
+  stage,
+  cause,
+  results = {},
+} = {}) => buildWriteFlowSyncError({
+  name: 'ClearTeamSeasonPlayersProjectionSyncError',
+  fallbackMessage: 'Team roster was cleared, but projection synchronization failed',
+  stage,
+  cause,
+  results: {
+    ...results,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: false,
+    completed: false,
+    syncStatus: 'projection_failed',
+    recoveryRequired: true,
+    stoppedAt: stage,
+    projectionError: String(cause?.message || `Projection sync failed at ${stage}`).trim(),
+  },
+})
+
+const runProjectionStage = async ({ stage, results, action }) => {
+  try {
+    const result = await action()
+    results[stage] = result
+
+    if (result?.updated === false || (result?.failedCount || 0) > 0) {
+      throw new Error(
+        result?.reason ||
+        `${result.failedCount} projection record(s) failed`
+      )
+    }
+
+    return result
+  } catch (error) {
+    throw buildCommittedProjectionFailure({
+      stage,
+      cause: error,
+      results,
+    })
+  }
+}
 const runStage = async ({ stage, results, action }) => {
   try {
     const result = await action()
@@ -37,7 +81,7 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     ? teamSeasonResult.playerDocumentIds
     : []
 
-  const playerSeasonDocsResult = await runStage({
+  const playerSeasonDocsResult = await runProjectionStage({
     stage: 'removePlayerSeasonDocsMany',
     results,
     action: () => removePlayerSeasonDocsMany({
@@ -46,13 +90,13 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     }),
   })
 
-  const playerIndexesResult = await runStage({
+  const playerIndexesResult = await runProjectionStage({
     stage: 'deleteSearchIndexesForTeamSeason',
     results,
     action: () => deleteSearchIndexesForTeamSeason(payload),
   })
 
-  const leagueTeamMetaResult = await runStage({
+  const leagueTeamMetaResult = await runProjectionStage({
     stage: 'updateLeagueSeasonTableRankTeamSyncMeta',
     results,
     action: () => updateLeagueSeasonTableRankTeamSyncMeta({
@@ -78,6 +122,9 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     status: 'complete',
     syncStatus: 'complete',
     completed: true,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    recoveryRequired: false,
     removedPlayersCount: teamSeasonResult.removedPlayersCount || 0,
     rowsCount: playerIndexesResult.rowsCount || 0,
     teamSeasonResult,

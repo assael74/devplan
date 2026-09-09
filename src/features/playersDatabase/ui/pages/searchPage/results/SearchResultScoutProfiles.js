@@ -9,9 +9,9 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import ScoutProfileChipV2, {
+import ScoutProfileChip, {
   resolveScoutProfileDepthPct,
-} from '../../../components/scout/ScoutProfileChipV2.js'
+} from '../../../components/scout/profile/ScoutProfileChip.js'
 import { searchResultScoutProfilesSx as sx } from './sx/searchResultScoutProfiles.sx.js'
 
 const clean = value => String(value || '').trim()
@@ -45,7 +45,7 @@ export default function SearchResultScoutProfiles({ row, onRemove }) {
 
           return (
             <Box key={profile.id} sx={sx.profileItem}>
-              <ScoutProfileChipV2
+              <ScoutProfileChip
                 profileId={profile.id}
                 label={profile.label || profile.id}
                 profile={profile}

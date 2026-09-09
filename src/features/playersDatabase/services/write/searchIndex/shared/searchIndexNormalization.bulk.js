@@ -18,7 +18,7 @@ import {
 } from '../../leagues/leagueDoc.js'
 import { rebuildTeamSeasonSearchIndexesFromLeagues } from '../team/teamSeasonIndex.rebuild.js'
 import { buildExpectedLevelKey } from './expectedLevelDelta.model.js'
-import { buildPlayerSeasonSearchMetrics } from './searchIndexNormalization.model.js'
+import { buildPlayerSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   feature: 'playersDatabase',

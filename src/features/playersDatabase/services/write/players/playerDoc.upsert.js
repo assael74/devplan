@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/players/playerDoc.upsert.js
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { getTeamSeason } from '../../read/teamSeason.js'
 import {
@@ -48,26 +49,6 @@ const buildCreatedEvent = ({ season = {}, team = {}, trackedAt = '' } = {}) => (
   detectedAt: trackedAt || null,
 })
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
 const stripPlayerDocTechnicalTimestamps = value => {
   if (!value || typeof value !== 'object') return value
 

@@ -1,5 +1,7 @@
 // src/features/playersDatabase/services/write/teams/teamBalanceSnapshot.js
 
+import { pickDefinedValue } from '../../../model/value.model.js'
+
 import {
   adaptTeamBalanceInput,
 } from '../../../domain/adapters/teamBalanceInput.adapter.js'
@@ -192,10 +194,12 @@ export const buildBalanceInputFingerprint = seasonDoc => {
     .map(player => sortValue(player))
     .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)))
 
-  const teamGamePlayed = seasonDoc?.teamStats?.teamGamePlayed ??
-    seasonDoc?.teamStats?.gamesPlayed ??
-    seasonDoc?.teamGamePlayed ??
+  const teamGamePlayed = pickDefinedValue(
+    seasonDoc?.teamStats?.teamGamePlayed,
+    seasonDoc?.teamStats?.gamesPlayed,
+    seasonDoc?.teamGamePlayed,
     null
+  )
 
   return hashValue({ teamGamePlayed, players })
 }

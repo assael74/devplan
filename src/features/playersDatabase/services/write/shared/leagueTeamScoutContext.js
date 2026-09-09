@@ -5,7 +5,10 @@ import {
   TEAM_SCOUT_SORT_MODE,
 } from '../../../../../shared/scouting/teams/index.js'
 import { adaptTeamScoutEngineRow } from '../../../domain/adapters/teamScoutEngine.adapter.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import {
+  normalizeTeamIdentity,
+  resolveTeamLookupKey,
+} from '../../../model/teamIdentity.model.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
@@ -13,7 +16,7 @@ import {
 import { clean } from '../leagues/leagueDoc.js'
 import {
   buildLeagueTeamPerformanceProjection,
-} from './teamPerformanceProjection.js'
+} from '../../../domain/projections/teamPerformance.projection.js'
 import {
   resolveClubLevel,
   resolveClubStrengthLevel,
@@ -155,9 +158,29 @@ export const buildCanonicalLeagueTeamScoutContext = ({
     target,
     rows: resolveLeagueTableRankRows({ league, season, target }),
   })
-  const lookupKey = clean(resolveTeamLookupKey(team) || team?.clubId)
+  const teamIdentity = normalizeTeamIdentity({ team })
+  const teamIds = new Set([
+    teamIdentity.birthTeamDocumentId,
+    teamIdentity.birthTeamId,
+    teamIdentity.teamDocumentId,
+    teamIdentity.teamId,
+  ].map(clean).filter(Boolean))
+  if (!teamIds.size) return null
 
-  return contexts.find(context => (
-    clean(resolveTeamLookupKey(context?.row) || context?.row?.clubId) === lookupKey
-  )) || null
+  // Team resolution is intentionally identity-only: a club may own several
+  // teams, so clubId is never a matching criterion or a fallback.
+  const matches = contexts.filter(context => {
+    const rowIdentity = normalizeTeamIdentity({ team: context?.row || {} })
+    return (
+      [
+        rowIdentity.birthTeamDocumentId,
+        rowIdentity.birthTeamId,
+        rowIdentity.teamDocumentId,
+        rowIdentity.teamId,
+      ].map(clean).some(id => teamIds.has(id)) &&
+      rowIdentity.birthTeamSlot === teamIdentity.birthTeamSlot
+    )
+  })
+
+  return matches.length === 1 ? matches[0] : null
 }

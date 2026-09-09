@@ -19,6 +19,7 @@ export {
 } from './teamSeason.js'
 
 export { readTeamPageData } from './teamPage.read.js'
+export { buildLeagueTeamPerformanceProjection } from './teamPerformance.projection.js'
 export { readLeaguePageData } from './leaguePage.read.js'
 export { readLeagueCenterData } from './leagueCenter.read.js'
 export { readLeaguesMasterDocument } from './leaguesMaster.read.js'
@@ -32,6 +33,7 @@ export {
   canReadTeamSearchIndexExport,
   readPlayerSearchIndexExport,
   readTeamSearchIndexExport,
+  readTeamSearchIndexesExport,
 } from './playerSearchIndexExport.read.js'
 export { readPlayerNarrativePlan } from './playerNarrative.read.js'
 export { readPlayerScoutMeasurementHistory } from './playerScoutHistory.read.js'

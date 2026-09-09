@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/players/playerScoutProfiles.js
 
+import { chunkValues } from '../../shared/chunkValues.js'
 import {
   collection,
   documentId,
@@ -9,6 +10,7 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
+import { areComparableValuesEqual } from '../../shared/valueComparison.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import {
   buildSeasonKey,
@@ -42,15 +44,6 @@ import {
 
 const PLAYER_DOCUMENT_LOOKUP_LIMIT = 30
 
-const chunkValues = (values, size) => {
-  const chunks = []
-
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size))
-  }
-
-  return chunks
-}
 
 export async function resolveExistingPlayerDocumentIds(players = []) {
   const playerDocumentIds = [...new Set(
@@ -80,31 +73,8 @@ export async function resolveExistingPlayerDocumentIds(players = []) {
   return existingIds
 }
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        if (key === 'updatedAt') return result
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
-
 const isSamePersistedState = (current = {}, next = {}) => (
-  JSON.stringify(normalizeComparableValue(current)) ===
-  JSON.stringify(normalizeComparableValue(next))
+  areComparableValuesEqual(current, next, { omitKeys: ['updatedAt'] })
 )
 
 const buildCompatibleTracking = data => {

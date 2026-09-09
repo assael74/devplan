@@ -8,7 +8,7 @@ import { buildPlayerSeasonScoutProfileRemoval } from '../../players/playerSeason
 import { buildPlayerSeasonIndexDoc } from '../../searchIndex/player/playerSeasonIndex.model.js'
 import { buildPlayerAliases } from '../../searchIndex/player/playerSeasonIndex.identity.js'
 import { resolvePlayerSeasonIndexTargetForPayload } from '../../searchIndex/player/playerSeasonIndex.query.js'
-import { buildTeamPlayerScoutProjection } from '../../shared/playerScoutProjection.js'
+import { buildTeamPlayerScoutProjection } from '../../../../domain/projections/playerScout.projection.js'
 import { buildScoutProfilesSummary } from '../../../../model/scoutProfilesSummary.model.js'
 import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
 import { resolveWritablePlayerDocumentId } from '../../../../model/playerIdentity.model.js'

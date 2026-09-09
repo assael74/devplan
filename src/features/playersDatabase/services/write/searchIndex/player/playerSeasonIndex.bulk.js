@@ -23,7 +23,7 @@ import {
   SEARCH_INDEX_ENTITY_TYPES,
 } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
-import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import { buildPlayerSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 import {
   resolveTeamSeasonSourceTarget,
 } from './playerSeasonIndex.model.js'

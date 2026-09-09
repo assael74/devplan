@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/flows/team/pasteTeamPlayerStats.flow.js
 
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { SCOUTING_SHADOW_ENGINE_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import {
   updateLeagueSeasonTableRankTeamSyncMeta,
@@ -21,19 +22,9 @@ import {
   buildLeagueTeamPerformanceProjection,
   resolveLeagueSeasonStatus,
   resolveLeagueTeamPoints,
-} from '../../shared/teamPerformanceProjection.js'
+} from '../../../../domain/projections/teamPerformance.projection.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `Player stats sync failed at ${stage}`)
-
-  error.name = 'PlayerStatsSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
 
 
 const buildCommittedProjectionFailure = ({
@@ -41,21 +32,31 @@ const buildCommittedProjectionFailure = ({
   cause,
   results = {},
   teamSeasonPlayers = [],
-} = {}) => ({
-  ...results,
-  rowsCount: Array.isArray(teamSeasonPlayers) ? teamSeasonPlayers.length : 0,
-  calculatedPlayersCount: Array.isArray(teamSeasonPlayers) ? teamSeasonPlayers.length : 0,
-  syncedPlayersCount: Number.isFinite(
-    Number(results.playerScoutProfileDocsResult?.rowsCount)
-  )
-    ? Number(results.playerScoutProfileDocsResult.rowsCount)
-    : null,
-  teamCanonicalCommitted: true,
-  projectionsCompleted: false,
-  completed: true,
-  syncStatus: 'projection_failed',
-  stoppedAt: stage,
-  projectionError: String(cause?.message || `Projection sync failed at ${stage}`).trim(),
+} = {}) => buildWriteFlowSyncError({
+  name: 'PlayerStatsProjectionSyncError',
+  fallbackMessage: 'Player stats were saved, but projection synchronization failed',
+  stage,
+  cause,
+  // The canonical Team Season has already committed.  This must be an error,
+  // not a successful result: callers need a repair/retry path and must never
+  // display a false "load completed" confirmation.
+  results: {
+    ...results,
+    rowsCount: Array.isArray(teamSeasonPlayers) ? teamSeasonPlayers.length : 0,
+    calculatedPlayersCount: Array.isArray(teamSeasonPlayers) ? teamSeasonPlayers.length : 0,
+    syncedPlayersCount: Number.isFinite(
+      Number(results.playerScoutProfileDocsResult?.rowsCount)
+    )
+      ? Number(results.playerScoutProfileDocsResult.rowsCount)
+      : null,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: false,
+    completed: false,
+    syncStatus: 'projection_failed',
+    recoveryRequired: true,
+    stoppedAt: stage,
+    projectionError: String(cause?.message || `Projection sync failed at ${stage}`).trim(),
+  },
 })
 
 
@@ -164,7 +165,9 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   })
 
   if (!validation.valid) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerStatsSyncError',
+      fallbackMessage: 'Player stats sync failed',
       stage: 'validatePlayerStatsAgainstLeague',
       cause: new Error(validation.issues.map(issue => issue.message).join(' ')),
       results: { validation },
@@ -180,7 +183,9 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerStatsSyncError',
+      fallbackMessage: 'Player stats sync failed',
       stage: 'updateTeamSeasonPlayerStats',
       cause: error,
       results,
@@ -213,7 +218,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   try {
     results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany(syncedPayload)
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'syncPlayerScoutProfileDocsMany',
       cause: error,
       results,
@@ -222,7 +227,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   }
 
   if (results.playerScoutProfileDocsResult.failedCount) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'playerScoutProfileDocsPartialFailure',
       cause: new Error(
         `${results.playerScoutProfileDocsResult.failedCount} player documents failed to sync`
@@ -239,7 +244,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       scoutedPlayers: results.playerScoutProfileDocsResult.scoutedPlayers,
     })
     if (!results.teamScoutProjectionResult?.updated) {
-      return buildCommittedProjectionFailure({
+      throw buildCommittedProjectionFailure({
         stage: 'updateTeamSeasonPlayersScoutProjections',
         cause: new Error(
           results.teamScoutProjectionResult?.reason ||
@@ -250,7 +255,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       })
     }
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'updateTeamSeasonPlayersScoutProjections',
       cause: error,
       results,
@@ -280,7 +285,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   try {
     results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(searchIndexPayload)
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'updatePlayerSeasonSearchIndexStatsMany',
       cause: error,
       results,
@@ -289,7 +294,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   }
 
   if (results.playerSeasonIndexResult?.failedCount) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'playerSeasonIndexPartialFailure',
       cause: new Error(
         `${results.playerSeasonIndexResult.failedCount} player SearchIndex rows failed to sync`
@@ -310,7 +315,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     results.leagueTableRankScoutProfilesResult = results.leagueTableRankTeamMetaResult
 
     if (!results.leagueTableRankTeamMetaResult?.updated) {
-      return buildCommittedProjectionFailure({
+      throw buildCommittedProjectionFailure({
         stage: 'updateLeagueSeasonTableRankTeamMeta',
         cause: new Error(
           results.leagueTableRankTeamMetaResult?.reason ||
@@ -321,7 +326,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       })
     }
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'updateLeagueSeasonTableRankTeamMeta',
       cause: error,
       results,
@@ -340,7 +345,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       teamPerformance,
     })
     if (!results.teamSeasonIndexScoutProfilesResult?.updated) {
-      return buildCommittedProjectionFailure({
+      throw buildCommittedProjectionFailure({
         stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
         cause: new Error(
           results.teamSeasonIndexScoutProfilesResult?.reason ||
@@ -351,7 +356,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       })
     }
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
       cause: error,
       results,

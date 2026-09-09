@@ -16,18 +16,17 @@ import {
 } from '../../logic/routeBuilders.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import PlayerHeader from './PlayerHeader.js'
-import PlayerScoutOverview from './PlayerScoutOverview.js'
+import PlayerDecisionContent from './PlayerDecisionContent.js'
 import PlayerActionsPanel from './PlayerActionsPanel.js'
 import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js'
-import {
-  PlayerNarrativeModal,
-  PlayerScoutReviewModal,
-  TaskEditModal,
-} from '../../components/modals/index.js'
+import PlayerAgentDrawer from '../../components/drawers/PlayerAgentDrawer.js'
+import PlayerGoalDistributionDrawer from '../../components/drawers/PlayerGoalDistributionDrawer.js'
+import PlayerTaskCreateModal from './PlayerTaskCreateModal.js'
+import { PlayerDataRepairModal, TaskEditModal } from '../../components/modals/index.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
-import usePlayerNarrative from './hooks/usePlayerNarrative.js'
-import usePlayerScoutReview from './hooks/usePlayerScoutReview.js'
+import usePlayerDataRepair from './hooks/usePlayerDataRepair.js'
+import usePlayerPageTasks from './hooks/usePlayerPageTasks.js'
 import {
   canReadPlayerSearchIndexExport,
   canReadTeamSearchIndexExport,
@@ -43,12 +42,13 @@ import {
   downloadTeamSearchIndexJson,
 } from './logic/playerJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
-import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { playerPageSx } from './sx/playerPage.sx.js'
-import { buildPlayerScoutView } from './logic/playerScoutView.js'
-import { buildPlayerSeasonNumbersRow } from './logic/playerTeamSource.logic.js'
+import {
+  PLAYERS_DATABASE_WRITE_ACTIONS,
+  runPlayersDatabaseWriteAction,
+} from '../../../services/write/index.js'
 
 function getPathParam(path, key) {
   const queryIndex = String(path || '').indexOf('?')
@@ -68,15 +68,21 @@ function PlayerPageContent() {
   const {
     player,
     teamSource,
+    requestedSeasonKey,
+    requestedTeamId,
+    catalogSeasonKey,
     fromTeam,
     reload,
   } = usePlayerPage()
   const favorites = usePlayersDatabaseFavorites()
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
-  const [editTask, setEditTask] = React.useState(null)
   const [playerJsonLoading, setPlayerJsonLoading] = React.useState(false)
   const [searchIndexJsonLoading, setSearchIndexJsonLoading] = React.useState(false)
+  const [agentDrawerOpen, setAgentDrawerOpen] = React.useState(false)
+  const [additionalDrawerOpen, setAdditionalDrawerOpen] = React.useState(false)
+  const [agentSaving, setAgentSaving] = React.useState(false)
+  const [goalDistributionSaving, setGoalDistributionSaving] = React.useState(false)
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -85,11 +91,6 @@ function PlayerPageContent() {
   )
   const historyView = usePlayerHistoryView(player)
   const selectedSeasonRow = historyView.selectedRow
-  const selectedNumbersRow = React.useMemo(() => buildPlayerSeasonNumbersRow({
-    row: selectedSeasonRow || {},
-    player,
-    teamSource: teamSource || {},
-  }), [player, selectedSeasonRow, teamSource])
   const playerUrlEditor = usePlayerUrlEditor({
     player,
     selectedSeasonRow,
@@ -100,20 +101,22 @@ function PlayerPageContent() {
     player,
     historyRows: historyView.visibleRows,
   })
-  const narrative = usePlayerNarrative({
+  const playerPageTasks = usePlayerPageTasks({
     player,
-    reload,
+    historyView,
+    tasksModel,
+    taskActions,
     notify,
   })
-  const scoutReview = usePlayerScoutReview({
+  const playerDataRepair = usePlayerDataRepair({
     player,
+    playerId,
+    requestedSeasonKey,
+    requestedTeamId,
     notify,
     reload,
+    navigate,
   })
-  const scoutView = React.useMemo(() => buildPlayerScoutView({
-    player,
-    historyRows: historyView.rows,
-  }), [player, historyView.rows])
 
   const fallbackLeaguePath = player.leagueId
     ? PLAYERS_DATABASE_UI_ROUTES.league(
@@ -215,58 +218,6 @@ function PlayerPageContent() {
     player.fullName,
     player.id,
     playerId,
-  ])
-
-  const handleTaskEditSave = async patch => {
-    if (!editTask?.id || taskActions.pending) return
-
-    const nextPatch = {
-      ...patch,
-      doneAt: patch.status === TASK_STATUS.DONE
-        ? Date.now()
-        : null,
-    }
-
-    await taskActions.updateTask(editTask, nextPatch)
-    setEditTask(null)
-  }
-
-  const handleTaskEditDone = async task => {
-    if (!task?.id || taskActions.pending) return
-
-    await taskActions.markDone(task)
-    setEditTask(null)
-  }
-
-  const playerTasks = React.useMemo(() => {
-    const playerIds = new Set([
-      player.playerId,
-      player.id,
-      player.externalPlayerId,
-    ].map(value => String(value || '').trim()).filter(Boolean))
-
-    return tasksModel.tasks.filter(task => {
-      const context = task?.workContext || {}
-      const taskPlayerId = String(
-        context.playerId ||
-        context.playerDocumentId ||
-        context.externalPlayerId ||
-        ''
-      ).trim()
-      const samePlayer = taskPlayerId && playerIds.has(taskPlayerId)
-      const sameSeason = !historyView.selectedSeasonKey || (
-        String(context.seasonKey || '') ===
-        String(historyView.selectedSeasonKey || '')
-      )
-
-      return samePlayer && sameSeason
-    })
-  }, [
-    historyView.selectedSeasonKey,
-    player.externalPlayerId,
-    player.id,
-    player.playerId,
-    tasksModel.tasks,
   ])
 
   const handlePlayerJson = React.useCallback(async () => {
@@ -398,8 +349,13 @@ function PlayerPageContent() {
       return
     }
 
-    if (actionId === 'review') {
-      scoutReview.open()
+    if (actionId === 'agent' || actionId === 'agent_status') {
+      setAgentDrawerOpen(true)
+      return
+    }
+
+    if (actionId === 'additional' || actionId === 'goal_distribution') {
+      setAdditionalDrawerOpen(true)
       return
     }
 
@@ -412,7 +368,7 @@ function PlayerPageContent() {
         <PlayerHeader
           breadcrumbs={breadcrumbs}
           player={player}
-          seasonLabel={historyView.latestSeasonKey || 'כל העונות'}
+          seasonContext={historyView.latestRow}
           favorite={playerFavorite}
           favoriteLoading={playerFavoriteLoading}
           onFavoriteToggle={() => {
@@ -424,76 +380,141 @@ function PlayerPageContent() {
 
         <Box sx={sx.contentGrid}>
           <Box className='dpScrollThin' sx={[sx.mainColumn, playerPageSx.mainColumn]}>
-            <PlayerScoutOverview
+            <PlayerDecisionContent
               player={player}
               historyRows={historyView.rows}
-              selectedRow={selectedNumbersRow}
-              selectedContextId={historyView.selectedContextId}
-              contextOptions={historyView.contextOptions}
-              narrativeView={narrative.view}
-              narrativeLoading={narrative.loading}
-              narrativeDeleting={narrative.deleting}
-              playerJsonLoading={playerJsonLoading}
-              searchIndexJsonLoading={searchIndexJsonLoading}
-              reportLoading={playerReport.busy}
-              onContextChange={historyView.setSelectedContextId}
-              onNarrativeGenerate={narrative.generate}
-              onNarrativeRefine={narrative.editApproved}
-              onNarrativeDelete={narrative.removeApproved}
-              onPlayerJson={handlePlayerJson}
-              onTeamJson={handleTeamJson}
-              onTeamSeasonJson={handleTeamSeasonJson}
-              onPlayerSearchIndexJson={() => handleSearchIndexJson({ type: 'player' })}
-              onTeamSearchIndexJson={() => handleSearchIndexJson({ type: 'team' })}
-              teamJsonAvailable={Boolean(teamSource?.teamDoc)}
-              teamSeasonJsonAvailable={Boolean(teamSource?.selectedTeamSeason)}
-              playerSearchIndexJsonAvailable={canReadPlayerSearchIndexExport(player)}
-              teamSearchIndexJsonAvailable={canReadTeamSearchIndexExport(player)}
-              onReport={playerReport.openPreview}
+              catalogSeasonKey={catalogSeasonKey}
             />
           </Box>
 
           <PlayerActionsPanel
-            recommendedActions={scoutView.nextActions}
-            tasks={playerTasks}
+            tasks={playerPageTasks.tasks}
             tasksLoading={tasksModel.loading}
             onAction={handleAction}
-            onTaskEdit={setEditTask}
+            onTaskCreate={playerPageTasks.openCreate}
+            onTaskEdit={playerPageTasks.openEdit}
+            playerJsonLoading={playerJsonLoading}
+            searchIndexJsonLoading={searchIndexJsonLoading}
+            teamJsonAvailable={Boolean(teamSource?.teamDoc)}
+            teamSeasonJsonAvailable={Boolean(teamSource?.selectedTeamSeason)}
+            playerSearchIndexJsonAvailable={canReadPlayerSearchIndexExport(player)}
+            teamSearchIndexJsonAvailable={canReadTeamSearchIndexExport(player)}
+            onPlayerJson={handlePlayerJson}
+            onTeamJson={handleTeamJson}
+            onTeamSeasonJson={handleTeamSeasonJson}
+            onPlayerSearchIndexJson={() => handleSearchIndexJson({ type: 'player' })}
+            onTeamSearchIndexJson={() => handleSearchIndexJson({ type: 'team' })}
+            onDataRepair={playerDataRepair.openRepair}
           />
         </Box>
       </Box>
 
-      <PlayerScoutReviewModal
-        open={Boolean(scoutReview.draft)}
+      <PlayerAgentDrawer
+        open={agentDrawerOpen}
         playerName={player.fullName}
-        seasonKey={scoutReview.seasonKey}
-        draft={scoutReview.draft}
-        busy={scoutReview.saving}
-        changed={scoutReview.changed}
-        onDraftChange={scoutReview.setDraft}
-        onConfirm={scoutReview.save}
-        onClose={scoutReview.close}
+        value={player.agent}
+        saving={agentSaving}
+        onClose={() => !agentSaving && setAgentDrawerOpen(false)}
+        onSave={async agent => {
+          if (agentSaving) return
+          setAgentSaving(true)
+          try {
+            await runPlayersDatabaseWriteAction({
+              actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_AGENT,
+              payload: {
+                player: {
+                  playerId: player.playerId || player.id,
+                  playerDocumentId: player.domain?.identity?.playerDocumentId || player.id,
+                  externalPlayerId: player.externalPlayerId,
+                },
+                agent,
+              },
+            })
+            notify({ status: 'success', message: 'פרטי הסוכן נשמרו.' })
+            setAgentDrawerOpen(false)
+            reload()
+          } catch (error) {
+            notify({ status: 'error', message: error?.message || 'שמירת פרטי הסוכן נכשלה.' })
+          } finally {
+            setAgentSaving(false)
+          }
+        }}
+      />
+
+      <PlayerGoalDistributionDrawer
+        open={additionalDrawerOpen}
+        playerName={player.fullName}
+        seasonLabel={historyView.selectedRow?.seasonKey || ''}
+        seasonGoals={historyView.selectedRow?.goals}
+        seasonGames={historyView.selectedRow?.games}
+        value={historyView.selectedRow?.goalDistribution}
+        saving={goalDistributionSaving}
+        onClose={() => !goalDistributionSaving && setAdditionalDrawerOpen(false)}
+        onSave={async goalDistribution => {
+          const row = historyView.selectedRow
+          if (!row || goalDistributionSaving) return
+          setGoalDistributionSaving(true)
+          try {
+            await runPlayersDatabaseWriteAction({
+              actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_GOAL_DISTRIBUTION,
+              payload: {
+                target: row.target || 'current',
+                season: {
+                  seasonId: row.seasonId || row.seasonKey,
+                  seasonKey: row.seasonKey,
+                },
+                team: {
+                  teamId: row.teamId,
+                  birthTeamId: row.birthTeamId || row.teamId,
+                  teamDocumentId: row.birthTeamDocumentId || row.teamId,
+                  birthTeamDocumentId: row.birthTeamDocumentId || row.teamId,
+                },
+                player: {
+                  playerId: player.playerId || player.id,
+                  playerDocumentId: player.domain?.identity?.playerDocumentId || player.id,
+                  externalPlayerId: player.externalPlayerId,
+                },
+                ...goalDistribution,
+              },
+            })
+            notify({ status: 'success', message: 'פיזור השערים נשמר.' })
+            setAdditionalDrawerOpen(false)
+            reload()
+          } catch (error) {
+            notify({ status: 'error', message: error?.message || 'שמירת פיזור השערים נכשלה.' })
+          } finally {
+            setGoalDistributionSaving(false)
+          }
+        }}
+      />
+
+      <PlayerDataRepairModal
+        open={playerDataRepair.open}
+        busy={playerDataRepair.busy}
+        error={playerDataRepair.error}
+        contexts={playerDataRepair.contexts}
+        onRepair={playerDataRepair.repair}
+        onTeamOpen={playerDataRepair.openTeam}
+        onClose={playerDataRepair.close}
       />
 
       <TaskEditModal
-        open={Boolean(editTask)}
-        task={editTask}
-        busy={taskActions.pending}
-        onSave={handleTaskEditSave}
-        onDone={handleTaskEditDone}
-        onClose={() => setEditTask(null)}
+        open={Boolean(playerPageTasks.editTask)}
+        task={playerPageTasks.editTask}
+        busy={playerPageTasks.pending}
+        onSave={playerPageTasks.saveEdit}
+        onDone={playerPageTasks.markDone}
+        onClose={playerPageTasks.closeEdit}
       />
 
-      <PlayerNarrativeModal
-        open={narrative.open}
-        session={narrative.session}
-        presentation={narrative.presentation}
-        refining={narrative.refining}
-        saving={narrative.saving}
-        onRefine={narrative.refine}
-        onClose={narrative.close}
-        onApprove={narrative.approve}
+      <PlayerTaskCreateModal
+        open={playerPageTasks.createOpen}
+        busy={playerPageTasks.createSaving}
+        onClose={playerPageTasks.closeCreate}
+        onCreate={playerPageTasks.createTask}
       />
+
+
 
       <PlayerUrlEditDrawer
         open={Boolean(playerUrlEditor.row)}

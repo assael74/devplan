@@ -15,6 +15,11 @@ import { attachWriteFlowReport } from '../writeFlowReport.js'
 
 const FLOW = 'clearLeagueSeasonTeams'
 
+const hasLoadedPlayers = team => (
+  Boolean(team?.hasPlayers) ||
+  Number(team?.playersCount || 0) > 0
+)
+
 const runStage = async ({ stage, results, action }) => {
   try {
     const result = await action()
@@ -54,6 +59,19 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
   const leagueTeams = Array.isArray(leagueSeasonSnapshot.teams)
     ? leagueSeasonSnapshot.teams
     : []
+
+  if (leagueTeams.some(hasLoadedPlayers)) {
+    const error = new Error('League teams cannot be deleted while player rosters exist')
+    error.code = 'league-season-has-players'
+
+    throw attachWriteFlowReport({
+      error,
+      stage: 'validateLeagueSeasonTeamsDelete',
+      results,
+      flow: FLOW,
+    })
+  }
+
   const teamMap = new Map(indexedTeamMap)
 
   leagueTeams.forEach(team => {

@@ -17,14 +17,11 @@ import {
   toNumberOrZero,
 } from '../../../model/value.model.js'
 import { clean } from '../leagues/leagueDoc.js'
+import { normalizeSeasonStatus } from '../../../model/season.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 
 const getBirthTeamId = team => resolveBirthTeamDocumentId(team)
-
-const normalizeSeasonStatus = value => (
-  clean(value) === 'completed' ? 'completed' : 'active'
-)
 
 const buildSeasonIndexEntry = ({ birthTeamDocumentId, season = {} } = {}) => {
   const seasonKey = clean(season.seasonKey)

@@ -15,10 +15,10 @@ import {
   clean,
   toNumberOrZero,
 } from '../../leagues/leagueDoc.js'
-import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import { buildTeamSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 import {
   buildTeamPerformanceProjectionFromTableRows,
-} from '../../shared/teamPerformanceProjection.js'
+} from '../../../../domain/projections/teamPerformance.projection.js'
 import {
   resolveClubLevel,
   resolveClubStrengthLevel,

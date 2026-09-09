@@ -76,8 +76,8 @@ export const playerActionsPanelSx = {
     gap: 0.55,
     p: 0.8,
     borderRadius: 8,
-    bgcolor: devPlanColors.tertiaryLight,
-    border: `1px solid ${devPlanColors.border}`,
+    bgcolor: '#E8F3FB',
+    border: '1px solid #9CC8E8',
   },
 
   editableLabel: {
@@ -92,6 +92,13 @@ export const playerActionsPanelSx = {
 
   actionList: {
     display: 'grid',
+    gap: 0.25,
+  },
+
+  dataActionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 0.25,
   },
 

@@ -12,6 +12,7 @@ import {
   cleanValue,
   pickFirstValue,
 } from './value.model.js'
+import { formatPerGameRate } from './rate.model.js'
 
 
 function findPlayerActiveSeason(playerDomain, selectedSeasonKey, selectedTeamId) {
@@ -302,7 +303,7 @@ export const buildPlayerPageView = (
     profileStrength,
     minutes,
     goals,
-    goalsPerGame: games ? (goals / games).toFixed(2) : '0.00',
+    goalsPerGame: games ? formatPerGameRate(goals / games) : '0',
     startsPct: games ? Math.round((starts / games) * 100) : 0,
     scoutProfiles: profiles,
     scoutProfileDisplay: display,

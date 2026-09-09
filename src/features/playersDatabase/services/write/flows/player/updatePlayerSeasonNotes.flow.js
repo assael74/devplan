@@ -1,18 +1,9 @@
 // features/playersDatabase/services/write/flows/player/updatePlayerSeasonNotes.flow.js
 
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { updatePlayerSeasonNotes } from '../../players/index.js'
 import { updatePlayerSeasonSearchIndexNotes } from '../../searchIndex/index.js'
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `Player season notes sync failed at ${stage}`)
-
-  error.name = 'PlayerSeasonNotesSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
 
 export async function updatePlayerSeasonNotesFlow(payload = {}) {
   const results = {}
@@ -20,7 +11,9 @@ export async function updatePlayerSeasonNotesFlow(payload = {}) {
   try {
     results.playerSeasonResult = await updatePlayerSeasonNotes(payload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerSeasonNotesSyncError',
+      fallbackMessage: 'Player season notes sync failed',
       stage: 'updatePlayerSeasonNotes',
       cause: error,
       results,
@@ -30,7 +23,9 @@ export async function updatePlayerSeasonNotesFlow(payload = {}) {
   try {
     results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexNotes(payload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerSeasonNotesSyncError',
+      fallbackMessage: 'Player season notes sync failed',
       stage: 'updatePlayerSeasonSearchIndexNotes',
       cause: error,
       results,

@@ -10,9 +10,13 @@ import {
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from '../../hooks/useLeaguePage.js'
+import { readLeaguePageData, readLeaguesMasterDocument } from '../../../services/read/index.js'
+import { invalidateLeagueDocumentCache } from '../../../services/cache/index.js'
+import { syncLeaguesMasterDocument } from '../../../services/write/leagues/index.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -27,20 +31,23 @@ import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js'
 import {
   LeagueImportModal,
+  LeagueDataRepairModal,
   SeasonDeleteConfirmModal,
   TaskEditModal,
   WorkTaskModal,
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
-import useTeamUrlEditor from './hooks/useTeamUrlEditor.js'
+import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
 import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
 import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
+import useLeagueSeasonDelete from './hooks/useLeagueSeasonDelete.js'
 import {
   buildLeagueImportColumns,
   LEAGUE_IMPORT_PLACEHOLDER,
 } from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
+import { downloadLeagueDocumentJson } from './logic/leagueJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useLeagueReport } from './report/index.js'
@@ -84,6 +91,11 @@ function LeaguePageContent() {
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
+  const [leagueDataRepairOpen, setLeagueDataRepairOpen] = React.useState(false)
+  const [leagueDataRepairBusy, setLeagueDataRepairBusy] = React.useState(false)
+  const [leagueDataRepairError, setLeagueDataRepairError] = React.useState('')
+  const [leagueDataRepairSources, setLeagueDataRepairSources] = React.useState({ leagueDocument: null, leaguesMaster: null })
+  const [leagueJsonDownloading, setLeagueJsonDownloading] = React.useState(false)
   const {
     league,
     leagueDoc,
@@ -144,6 +156,83 @@ function LeaguePageContent() {
     selectedSeasonOption,
     reload,
   })
+
+  const handleLeagueJsonDownload = React.useCallback(async () => {
+    if (leagueJsonDownloading) return
+    setLeagueJsonDownloading(true)
+    try {
+      const leagueId = String(league.id || league.leagueId || '').trim()
+      if (!leagueId) throw new Error('חסר מזהה ליגה להורדה')
+      invalidateLeagueDocumentCache(leagueId)
+      const [leagueResult, leaguesMaster] = await Promise.all([
+        readLeaguePageData({ leagueId }),
+        readLeaguesMasterDocument({ fresh: true }),
+      ])
+      downloadLeagueDocumentJson({
+        leagueDocument: leagueResult.leagueDoc || leagueDoc || league,
+        leaguesMaster,
+      })
+      notify('מסמכי הליגה והמאסטר הורדו', 'success')
+    } catch (downloadError) {
+      notify(downloadError?.message || 'הורדת מסמך הליגה נכשלה', 'danger')
+    } finally {
+      setLeagueJsonDownloading(false)
+    }
+  }, [league, leagueDoc, leagueJsonDownloading, notify])
+
+  const handleLeagueDataRepairLoad = React.useCallback(() => {
+    setLeagueDataRepairOpen(false)
+    leagueImport.handleOpen()
+  }, [leagueImport])
+
+  const handleLeagueDataRepairOpen = React.useCallback(async () => {
+    const leagueId = String(league.id || league.leagueId || '').trim()
+    if (!leagueId || leagueDataRepairBusy) return
+    setLeagueDataRepairOpen(true)
+    setLeagueDataRepairBusy(true)
+    setLeagueDataRepairError('')
+    try {
+      invalidateLeagueDocumentCache(leagueId)
+      const [leagueResult, leaguesMaster] = await Promise.all([
+        readLeaguePageData({ leagueId }),
+        readLeaguesMasterDocument({ fresh: true }),
+      ])
+      setLeagueDataRepairSources({
+        leagueDocument: leagueResult.leagueDoc || null,
+        leaguesMaster: leaguesMaster || null,
+      })
+    } catch (repairError) {
+      setLeagueDataRepairSources({ leagueDocument: null, leaguesMaster: null })
+      setLeagueDataRepairError(repairError?.message || 'טעינת מסמכי הליגה להשוואה נכשלה')
+    } finally {
+      setLeagueDataRepairBusy(false)
+    }
+  }, [league, leagueDataRepairBusy])
+
+  const handleLeaguesMasterSync = React.useCallback(async () => {
+    const leagueId = String(league.id || league.leagueId || '').trim()
+    if (!leagueId || leagueDataRepairBusy) return
+    setLeagueDataRepairBusy(true)
+    setLeagueDataRepairError('')
+    try {
+      await syncLeaguesMasterDocument({ leagues: [{ id: leagueId }] })
+      invalidateLeagueDocumentCache(leagueId)
+      const [leagueResult, leaguesMaster] = await Promise.all([
+        readLeaguePageData({ leagueId }),
+        readLeaguesMasterDocument({ fresh: true }),
+      ])
+      setLeagueDataRepairSources({
+        leagueDocument: leagueResult.leagueDoc || null,
+        leaguesMaster: leaguesMaster || null,
+      })
+      await reload()
+      notify('מאסטר הליגות סונכרן', 'success')
+    } catch (repairError) {
+      setLeagueDataRepairError(repairError?.message || 'סנכרון מאסטר הליגות נכשל')
+    } finally {
+      setLeagueDataRepairBusy(false)
+    }
+  }, [league, leagueDataRepairBusy, notify, reload])
 
   const importColumns = React.useMemo(() => (
     buildLeagueImportColumns(leagueImport.rows)
@@ -212,6 +301,42 @@ function LeaguePageContent() {
       ? pageSearchParams.get('centerLevel') || 'all'
       : pageSearchParams.get('level'),
   })
+  const playersCount = teams.reduce(
+    (total, team) => total + Number(team?.playersCount || 0),
+    0
+  )
+  const hasTeams = teams.length > 0
+  const seasonDelete = useLeagueSeasonDelete({
+    league,
+    leagueDoc,
+    selectedSeasonOption,
+    onSuccess: async result => {
+      if (result?.leagueSeasonResult?.removedLeagueDocument) {
+        navigate(centerBackPath, {
+          replace: true,
+          state: null,
+        })
+        return
+      }
+
+      const nextSeason = seasonOptions.find(option => (
+        option.seasonKey !== selectedSeasonKey
+      ))
+      if (!nextSeason) {
+        navigate(centerBackPath, {
+          replace: true,
+          state: null,
+        })
+        return
+      }
+
+      setSelectedSeasonKey(nextSeason.seasonKey)
+      await reload()
+    },
+  })
+  const mayRemoveLeagueRoot = !PLAYERS_DATABASE_LEAGUES_CATALOG.some(
+    catalogLeague => catalogLeague.id === league.id
+  )
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
@@ -243,7 +368,6 @@ function LeaguePageContent() {
     const path = PLAYERS_DATABASE_UI_ROUTES.team({
       leagueId: league.id,
       teamId: team.id,
-      seasonKey: selectedSeasonKey,
       fromLeague: `${location.pathname}${location.search}`,
     })
 
@@ -260,7 +384,6 @@ function LeaguePageContent() {
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
       leagueId: league.id,
       teamId: team.id,
-      seasonKey: selectedSeasonKey,
       fromLeague: `${location.pathname}${location.search}`,
     }))
   }
@@ -352,11 +475,17 @@ function LeaguePageContent() {
             onAttackPriorityFilterChange={setAttackPriorityFilter}
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
+            onDataRepair={handleLeagueDataRepairOpen}
+            onLeagueJsonDownload={handleLeagueJsonDownload}
+            leagueJsonDownloading={leagueJsonDownloading}
             onLeagueUrlEdit={leagueUrlEditor.show}
             hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
             loadDisabled={isHistoricalLoadedLeague}
             loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
             onDeleteTeams={() => teamsDelete.setOpen(true)}
+            onDeleteSeason={() => seasonDelete.setOpen(true)}
+            deleteTeamsDisabled={!selectedSeasonOption || playersCount > 0}
+            deleteSeasonDisabled={!selectedSeasonOption || hasTeams}
             onReport={leagueReport.openPreview}
             tasks={leagueTasks}
             tasksLoading={tasksModel.loading}
@@ -412,12 +541,24 @@ function LeaguePageContent() {
       <SeasonDeleteConfirmModal
         open={teamsDelete.open}
         title='מחיקת קבוצות העונה'
-        description='עונת הליגה תישאר קיימת, אך כל עונות הקבוצות והאינדקסים של העונה הנבחרת יימחקו.'
+        description='אפשר למחוק קבוצות רק כאשר אין שחקנים טעונים בעונה. מחיקת השחקנים מתבצעת קודם מתוך עמודי הקבוצות.'
         seasonKey={selectedSeasonKey}
         busy={teamsDelete.busy}
         confirmLabel='מחיקת קבוצות העונה'
         onConfirm={teamsDelete.confirm}
         onClose={teamsDelete.close}
+      />
+
+      <SeasonDeleteConfirmModal
+        open={seasonDelete.open}
+        title='מחיקת עונת ליגה'
+        description='העונה תימחק רק לאחר שמסירים את כל הקבוצות ממנה. ליגה ריקה שאינה קיימת בקטלוג תימחק לחלוטין גם ממרכז הליגות.'
+        seasonKey={selectedSeasonKey}
+        busy={seasonDelete.busy}
+        confirmLabel='מחיקת עונה'
+        mayRemoveLeagueRoot={mayRemoveLeagueRoot}
+        onConfirm={seasonDelete.confirm}
+        onClose={seasonDelete.close}
       />
 
       <WriteFlowReportModal
@@ -426,11 +567,29 @@ function LeaguePageContent() {
         onClose={teamsDelete.closeWriteReport}
       />
 
+      <WriteFlowReportModal
+        open={Boolean(seasonDelete.writeReport)}
+        report={seasonDelete.writeReport}
+        onClose={seasonDelete.closeWriteReport}
+      />
+
       <LeagueImportModal
         league={league}
         columns={importColumns}
         leagueImport={leagueImport}
         placeholder={LEAGUE_IMPORT_PLACEHOLDER}
+      />
+
+      <LeagueDataRepairModal
+        open={leagueDataRepairOpen}
+        busy={leagueDataRepairBusy}
+        error={leagueDataRepairError}
+        leagueDocument={leagueDataRepairSources.leagueDocument || leagueDoc || league}
+        leaguesMaster={leagueDataRepairSources.leaguesMaster || {}}
+        seasonKey={selectedSeasonKey}
+        onOpenLeagueLoad={handleLeagueDataRepairLoad}
+        onSyncLeaguesMaster={handleLeaguesMasterSync}
+        onClose={() => setLeagueDataRepairOpen(false)}
       />
 
       <WriteFlowReportModal

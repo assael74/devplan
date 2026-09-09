@@ -21,4 +21,6 @@ export const searchPageSx = {
       gap: 1.25,
       overflow: 'hidden',
     },
+  repairPlanList: { maxHeight: 300, overflowY: 'auto' },
+  repairPlanGroup: { p: 1.25, borderRadius: 'sm' },
 }

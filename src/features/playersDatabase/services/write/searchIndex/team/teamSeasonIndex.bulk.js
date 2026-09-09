@@ -22,7 +22,7 @@ import {
   SEARCH_INDEX_ENTITY_TYPES,
 } from '../shared/searchIndexResult.model.js'
 import { commitBatchWhenNeeded } from '../shared/searchIndexBatch.write.js'
-import { buildTeamSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import { buildTeamSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
   feature: 'playersDatabase',

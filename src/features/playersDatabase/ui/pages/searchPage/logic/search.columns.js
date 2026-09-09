@@ -14,10 +14,10 @@ import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import LeagueName from '../../../components/entities/LeagueName.js'
 import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
-import ScoutProfileChipV2, {
+import ScoutProfileChip, {
   resolveScoutProfileDepthPct,
-} from '../../../components/scout/ScoutProfileChipV2.js'
-import { buildScoutCompactView } from '../../../components/scout/scoutDisplay.model.js'
+} from '../../../components/scout/profile/ScoutProfileChip.js'
+import { buildScoutCompactView } from '../../../components/scout/shared/scoutDisplay.model.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
@@ -224,7 +224,7 @@ export function buildPlayerSearchColumns({ onEntityOpen, onFavoriteToggle } = {}
 
         return (
           <Box sx={sx.profileCell}>
-            <ScoutProfileChipV2
+            <ScoutProfileChip
               profileId={profileView.primaryItem?.id || ''}
               label={profileView.label}
               profile={profileView.primaryItem?.source}

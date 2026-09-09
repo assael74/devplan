@@ -3,6 +3,7 @@
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../catalog/clubs.catalog.js'
 import { resolveAgeGroupLabel } from '../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../catalog/leagues.catalog.js'
+import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../catalog/seasons.catalog.js'
 import { buildTeamDisplayName } from '../catalog/teamDisplay.js'
 import {
   adaptBirthTeamDocumentSeason,
@@ -22,15 +23,23 @@ import {
 } from './teamIdentity.model.js'
 import { cleanValue } from './value.model.js'
 import { buildTeamPerformanceViewModel } from './teamPerformance.viewModel.js'
+import { formatPerGameRate } from './rate.model.js'
+
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
   TEAM_SCOUT_SORT_MODE,
 } from '../../../shared/scouting/teams/index.js'
 import { enrichTeamScoutInputRows } from '../domain/adapters/teamScoutInput.adapter.js'
-import { buildTeamPerformanceProjectionFromTableRows } from '../services/write/shared/teamPerformanceProjection.js'
+import {
+  buildTeamPerformanceProjectionFromTableRows,
+} from '../domain/projections/teamPerformance.projection.js'
 
-const TEAM_PAGE_FUTURE_SEASON_KEY = '26/27'
+const nullishFallback = (value, fallbackValue) => (
+  value === null || value === undefined ? fallbackValue : value
+)
+
+const TEAM_PAGE_FUTURE_SEASON_KEY = PLAYERS_DATABASE_CURRENT_SEASON_KEY
 
 const resolveSeasonStartYear = seasonKey => {
   const match = cleanValue(seasonKey).match(/^(\d{2})[\/_-](\d{2})$/)
@@ -579,15 +588,15 @@ export const buildTeamPageView = ({
     birthYear: canonicalTeamSeason.season.birthYear || '-',
     seasonKey: canonicalTeamSeason.season.seasonKey || '-',
     tableRank: canonicalTeamSeason.ranking.tableRank || '-',
-    tableAttackRank: officialPerformance?.tableAttackRank ?? (Number(canonicalTeamSeason.performance?.offense?.rank) || null),
-    tableDefenseRank: officialPerformance?.tableDefenseRank ?? (Number(canonicalTeamSeason.performance?.defense?.rank) || null),
+    tableAttackRank: nullishFallback(officialPerformance?.tableAttackRank, Number(canonicalTeamSeason.performance?.offense?.rank) || null),
+    tableDefenseRank: nullishFallback(officialPerformance?.tableDefenseRank, Number(canonicalTeamSeason.performance?.defense?.rank) || null),
     games,
     points,
     successPercent,
     goalsFor,
     goalsAgainst,
-    goalsForPerGame: actual.goalsForPerGame ?? null,
-    goalsAgainstPerGame: actual.goalsAgainstPerGame ?? null,
+    goalsForPerGame: nullishFallback(actual.goalsForPerGame, null),
+    goalsAgainstPerGame: nullishFallback(actual.goalsAgainstPerGame, null),
     teamUrl: canonicalTeamSeason.metadata.teamUrl,
     teamStats: {
       teamGamePlayed: games,
@@ -595,13 +604,15 @@ export const buildTeamPageView = ({
       points,
       goalsFor,
       goalsAgainst,
-      goalsForPerGame: actual.goalsForPerGame ?? null,
-      goalsAgainstPerGame: actual.goalsAgainstPerGame ?? null,
+      goalsForPerGame: nullishFallback(actual.goalsForPerGame, null),
+      goalsAgainstPerGame: nullishFallback(actual.goalsAgainstPerGame, null),
       attackPerformance: performanceView.offense.priority.score,
       defensePerformance: performanceView.defense.priority.score,
     },
-    attackPerGame: games ? (goalsFor / games).toFixed(2) : '-',
-    defensePerGame: games ? (goalsAgainst / games).toFixed(2) : '-',
+    // Match the persisted Team Performance contract: a pace value carries at
+    // most one decimal place and is never a second, two-decimal calculation.
+    attackPerGame: games ? formatPerGameRate(goalsFor / games) : '-',
+    defensePerGame: games ? formatPerGameRate(goalsAgainst / games) : '-',
     offense: canonicalTeamSeason.performance?.offense || {},
     defense: canonicalTeamSeason.performance?.defense || {},
     performanceView,

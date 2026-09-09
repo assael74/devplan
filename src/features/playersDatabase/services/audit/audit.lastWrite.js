@@ -1,5 +1,5 @@
 import { AUDIT_SCOPE_TYPE, buildAuditTeamSeasonScope, buildAuditTeamSeasonsScope, normalizeAuditScope } from './audit.scope.js'
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
 export const buildLastWriteAuditScope = result => {
   const scopes = new Map()
   const visit = value => { if (!value || typeof value !== 'object') return; if (Array.isArray(value)) return value.forEach(visit); const teamDocumentId = clean(value.teamDocumentId || value.birthTeamDocumentId); const seasonKey = clean(value.seasonKey || value.seasonId); if (teamDocumentId && seasonKey) scopes.set(`${teamDocumentId}::${seasonKey}`, buildAuditTeamSeasonScope({ teamDocumentId, seasonKey })); Object.values(value).forEach(visit) }

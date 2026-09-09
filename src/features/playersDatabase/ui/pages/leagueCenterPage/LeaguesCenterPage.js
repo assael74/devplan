@@ -141,8 +141,6 @@ export default function LeaguesCenterPage() {
         open={Boolean(seasonCreate.league)}
         league={seasonCreate.league}
         defaultSeasonKey={model.seasonKey}
-        lockSeason
-        lockTarget
         busy={seasonCreate.busy}
         onClose={seasonCreate.close}
         onConfirm={seasonCreate.confirm}

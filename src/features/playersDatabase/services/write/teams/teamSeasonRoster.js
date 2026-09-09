@@ -2,7 +2,10 @@
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
-import { normalizeSeasonIdentity } from '../../../model/season.model.js'
+import {
+  normalizeSeasonIdentity,
+  normalizeSeasonStatus,
+} from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { buildTeamRootWithSeasonIndex, teamDocRef } from './teamDoc.js'
 import {
@@ -21,7 +24,7 @@ import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,
-} from '../shared/teamPerformanceProjection.js'
+} from '../../../domain/projections/teamPerformance.projection.js'
 
 const withRosterPerformanceContext = ({
   seasonDoc = {},
@@ -35,9 +38,9 @@ const withRosterPerformanceContext = ({
 const buildEffectiveSeason = ({ season = {} } = {}) => {
   const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   if (!seasonId && !seasonKey) throw new Error('Missing season id')
-  const seasonStatus = clean(season.seasonStatus)
+  const seasonStatus = normalizeSeasonStatus(season.seasonStatus, '')
 
-  if (!['active', 'completed'].includes(seasonStatus)) {
+  if (!seasonStatus) {
     const error = new Error('League season lifecycle could not be resolved')
     error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
     throw error
@@ -54,7 +57,7 @@ const buildEffectiveSeason = ({ season = {} } = {}) => {
 const resolvePersistedSeasonStatus = ({ existingStatus, incomingStatus } = {}) => (
   clean(existingStatus) === 'completed' || clean(incomingStatus) === 'completed'
     ? 'completed'
-    : 'active'
+    : normalizeSeasonStatus(incomingStatus)
 )
 
 const syncRootSeasonIndexInTransaction = ({

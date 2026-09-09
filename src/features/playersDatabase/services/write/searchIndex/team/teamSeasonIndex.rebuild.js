@@ -77,6 +77,12 @@ const collectLeagueSeasons = leagueData => {
 
 const isRebuildableSeason = hasSeasonTable
 
+const normalizeBirthYearSet = birthYears => new Set(
+  (Array.isArray(birthYears) ? birthYears : [])
+    .map(value => Number(value))
+    .filter(Number.isFinite)
+)
+
 const collectRebuildEntries = leaguesSnapshot => {
   const entries = []
   let scannedSeasonsCount = 0
@@ -171,28 +177,34 @@ const attachExpectedLevelDelta = entries => {
 
 export async function rebuildTeamSeasonSearchIndexesFromLeagues({
   dryRun = false,
+  birthYears = [],
 } = {}) {
   const leaguesSnapshot = await readSearchIndexes(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.leagues)
   )
   const collected = collectRebuildEntries(leaguesSnapshot)
   const deltaResult = attachExpectedLevelDelta(collected.entries)
+  const requestedBirthYears = normalizeBirthYearSet(birthYears)
+  const reconciledEntries = requestedBirthYears.size
+    ? collected.entries.filter(entry => requestedBirthYears.has(Number(entry.indexDoc.birthYear)))
+    : collected.entries
   const result = {
     scannedLeaguesCount: leaguesSnapshot.docs.length,
     scannedSeasonsCount: collected.scannedSeasonsCount,
     skippedSeasonsCount: collected.skippedSeasonsCount,
-    teamRowsCount: collected.entries.length,
+    teamRowsCount: reconciledEntries.length,
     updatedRowsCount: 0,
     teamDeltaCalculatedCount: deltaResult.teamDeltaCalculatedCount,
     teamDeltaUnknownCount: deltaResult.teamDeltaUnknownCount,
     teamDeltaByKey: deltaResult.teamDeltaByKey,
+    reconciledEntries,
     dryRun: Boolean(dryRun),
   }
 
   if (dryRun) return result
 
   const groups = new Map()
-  collected.entries.forEach(entry => {
+  reconciledEntries.forEach(entry => {
     const key = `${entry.league.id}::${entry.season.seasonId}::${entry.target}`
     if (!groups.has(key)) {
       groups.set(key, {

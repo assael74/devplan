@@ -20,6 +20,8 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
   current: {
     seasonId: '',
     seasonKey: '',
+    // not_started | active. Completed seasons are stored under history.
+    seasonStatus: '',
     seasonUrl: '',
     birthYear: 0, // חובה
     leagueTotalRound: 0,
@@ -62,6 +64,8 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
     {
       seasonId: '',
       seasonKey: '',
+      // completed
+      seasonStatus: '',
       seasonUrl: '',
       birthYear: 0, // חובה
       leagueTotalRound: 0,

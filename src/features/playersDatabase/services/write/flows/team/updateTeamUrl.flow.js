@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/flows/team/updateTeamUrl.flow.js
 
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
 import {
   updatePlayerSeasonSearchIndexTeamUrl,
@@ -9,16 +10,6 @@ import { updateTeamSeasonTeamUrl } from '../../teams/index.js'
 
 const clean = value => String(value || '').trim()
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `Team URL sync failed at ${stage}`)
-
-  error.name = 'TeamUrlSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
 
 const assertLeagueRowUpdated = result => {
   if (result?.updated) return
@@ -82,7 +73,9 @@ export async function updateTeamUrlFlow(payload = {}) {
     results.leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl(nextPayload)
     assertLeagueRowUpdated(results.leagueTableRankResult)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'TeamUrlSyncError',
+      fallbackMessage: 'Team URL sync failed',
       stage: 'updateLeagueSeasonTableRankTeamUrl',
       cause: error,
       results,
@@ -92,7 +85,9 @@ export async function updateTeamUrlFlow(payload = {}) {
   try {
     results.teamSeasonResult = await updateTeamSeasonTeamUrl(nextPayload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'TeamUrlSyncError',
+      fallbackMessage: 'Team URL sync failed',
       stage: 'updateTeamSeasonTeamUrl',
       cause: error,
       results,
@@ -107,7 +102,9 @@ export async function updateTeamUrlFlow(payload = {}) {
         : '',
     })
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'TeamUrlSyncError',
+      fallbackMessage: 'Team URL sync failed',
       stage: 'updateTeamSeasonSearchIndexTeamUrl',
       cause: error,
       results,
@@ -117,7 +114,9 @@ export async function updateTeamUrlFlow(payload = {}) {
   try {
     results.playerSeasonIndexesResult = await updatePlayerSeasonSearchIndexTeamUrl(nextPayload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'TeamUrlSyncError',
+      fallbackMessage: 'Team URL sync failed',
       stage: 'updatePlayerSeasonSearchIndexTeamUrl',
       cause: error,
       results,

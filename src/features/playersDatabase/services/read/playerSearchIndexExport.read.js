@@ -201,3 +201,27 @@ export const readTeamSearchIndexExport = async ({ player = {} } = {}) => {
     matches: () => true,
   })
 }
+
+export const readTeamSearchIndexesExport = async ({ birthTeamId = '' } = {}) => {
+  const safeBirthTeamId = clean(birthTeamId)
+  if (!safeBirthTeamId) return []
+
+  const snapshot = await trackedGetDocs(
+    query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', '==', 'birthTeamSeason'),
+      where('birthTeamId', '==', safeBirthTeamId),
+    ),
+    {
+      feature: 'playersDatabase',
+      action: 'team-search-indexes-json-read',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      meta: { birthTeamId: safeBirthTeamId },
+    }
+  )
+
+  return snapshot.docs.map(item => ({
+    id: item.id,
+    ...item.data(),
+  }))
+}

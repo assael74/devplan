@@ -1,5 +1,6 @@
 // features/playersDatabase/services/read/searchPage.read.js
 
+import { chunkValues } from '../shared/chunkValues.js'
 import {
   collection,
   limit,
@@ -82,15 +83,6 @@ const toUniqueNumbers = values => (
     .filter(Number.isFinite))]
 )
 
-const chunkValues = (values = [], size = FIRESTORE_IN_MAX_VALUES) => {
-  const chunks = []
-
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size))
-  }
-
-  return chunks
-}
 
 const hasSearchIndexField = (entityType, field) => (
   SEARCH_INDEX_FIELDS_BY_ENTITY[entityType]?.has(field)

@@ -34,7 +34,7 @@ import {
   shouldSkipNewPlayerSeasonIndex,
 } from './playerSeasonIndex.identity.js'
 import { buildPlayerScoutIndexFields } from './playerSeasonIndex.scout.js'
-import { buildPlayerSeasonSearchMetrics } from '../shared/searchIndexNormalization.model.js'
+import { buildPlayerSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 import { buildPlayerSeasonStatsSnapshots } from './playerSeasonIndex.snapshot.js'
 
 

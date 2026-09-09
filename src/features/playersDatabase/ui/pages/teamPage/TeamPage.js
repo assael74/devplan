@@ -1,0 +1,621 @@
+// src/features/playersDatabase/ui/pages/teamPage/TeamPage.js
+
+import * as React from 'react'
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Typography,
+} from '@mui/joy'
+import {
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
+
+import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
+import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
+import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
+import { useTeamPage } from '../../hooks/useTeamPage.js'
+import { readTeamSearchIndexesExport } from '../../../services/read/index.js'
+import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
+import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
+import {
+  buildPlayersDatabaseBreadcrumbs,
+  PLAYERS_DATABASE_UI_ROUTES,
+} from '../../logic/routeBuilders.js'
+import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
+import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
+import TeamHeader from './TeamHeader.js'
+import TeamActionsPanel from './TeamActionsPanel.js'
+import TeamInformationOverview from './TeamInformationOverview.js'
+import TeamYearDevelopment from './TeamYearDevelopment.js'
+import { buildTeamInformationView } from './model/teamInformation.model.js'
+import { buildTeamPageLeagueNavigation } from './model/teamPageNavigation.model.js'
+import {
+  buildTeamProfileFilterOptions,
+  filterTeamPlayersByProfile,
+} from './model/teamPlayerFilters.model.js'
+import {
+  PlayerRoleEditModal,
+  RosterImportModal,
+  SeasonDeleteConfirmModal,
+  StatsImportModal,
+  TaskEditModal,
+  TeamDataRepairModal,
+  WorkTaskModal,
+  WriteFlowReportModal,
+} from '../../components/modals/index.js'
+import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
+import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
+import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
+import useTeamRosterImport from './hooks/useTeamRosterImport.js'
+import useTeamStatsImport from './hooks/useTeamStatsImport.js'
+import useTeamDataRepair from './hooks/useTeamDataRepair.js'
+import useTeamPageTasks from './hooks/useTeamPageTasks.js'
+import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
+import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
+import useTeamSeasonStatsDelete from './hooks/useTeamSeasonStatsDelete.js'
+import { ReportPreviewModal } from '../../../../reports/publicApi.js'
+import { useTeamReport } from './report/index.js'
+import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { teamPageSx } from './sx/teamPage.sx.js'
+import { downloadTeamDataBundleJson } from './logic/teamJson.logic.js'
+
+const sx = {
+  ...pageCoreLayoutSx,
+  ...teamPageSx,
+}
+
+const cleanKey = value => String(value || '').trim()
+
+function TeamPageContent() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { notify } = useSnackbar()
+  const favorites = usePlayersDatabaseFavorites()
+  const tasksModel = usePlayersDatabaseTasks()
+  const taskActions = usePlayersDatabaseTaskActions()
+  const [profileOnly, setProfileOnly] = React.useState(false)
+  const [profileFilterKey, setProfileFilterKey] = React.useState('all')
+  const [activeView, setActiveView] = React.useState('team')
+  const [teamJsonDownloading, setTeamJsonDownloading] = React.useState(false)
+  const {
+    leagueId,
+    leagueDoc,
+    team,
+    teamDoc,
+    teamSeasons,
+    players,
+    hasTeamPlayers,
+    seasonOptions,
+    selectedSeasonKey,
+    selectedSeasonOptionKey,
+    selectedSeasonOption,
+    selectedLeagueSeason,
+    selectedTeamSeason,
+    reload,
+    loading,
+    error,
+    selectionError,
+  } = useTeamPage()
+
+  const teamInformationView = React.useMemo(() => buildTeamInformationView({
+    team,
+    teamSeasons,
+    selectedTeamSeason,
+    selectedSeasonKey,
+    selectedSeasonOption,
+    seasonOptions,
+    players,
+  }), [
+    players,
+    selectedSeasonKey,
+    selectedSeasonOption,
+    seasonOptions,
+    selectedTeamSeason,
+    team,
+    teamSeasons,
+  ])
+
+  const sharedActionContext = {
+    leagueId,
+    leagueDoc,
+    team,
+    selectedSeasonOption,
+    notify,
+    reload,
+  }
+  const roleEditor = useTeamRoleEditor(sharedActionContext)
+  const teamUrlEditor = useTeamUrlEditor(sharedActionContext)
+  const rosterImport = useTeamRosterImport(sharedActionContext)
+  const statsImport = useTeamStatsImport({
+    ...sharedActionContext,
+    players,
+    hasTeamPlayers,
+  })
+  const playersDelete = useTeamSeasonPlayersDelete(sharedActionContext)
+  const statsDelete = useTeamSeasonStatsDelete(sharedActionContext)
+  const teamDataRepair = useTeamDataRepair({
+    team,
+    teamDoc,
+    teamSeasons,
+    leagueDoc,
+    selectedLeagueSeason,
+    notify,
+    reload,
+  })
+  const teamPageTasks = useTeamPageTasks({
+    team,
+    selectedSeasonKey,
+    tasksModel,
+    taskActions,
+  })
+  const statsColumns = useTeamStatsColumns({
+    players,
+    rosterLookup: statsImport.rosterLookup,
+    getRowStatus: statsImport.getRowStatus,
+    getCellStatus: statsImport.getCellStatus,
+  })
+
+  const pageSearchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+  const fromLeaguePath = pageSearchParams.get('fromLeague') || ''
+  const leagueFallbackPath = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
+    seasonKey: selectedSeasonKey,
+  })
+  const leagueBackPath = fromLeaguePath || leagueFallbackPath
+  const leagueTeamsNavigation = React.useMemo(() => (
+    buildTeamPageLeagueNavigation({
+      selectedLeagueSeason,
+      leagueDoc,
+      selectedSeasonOption,
+      team,
+    })
+  ), [
+    leagueDoc,
+    selectedLeagueSeason,
+    selectedSeasonOption,
+    team,
+  ])
+  const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
+    {
+      label: 'מרכז ליגות',
+      to: PLAYERS_DATABASE_UI_ROUTES.leagues({
+        seasonKey: selectedSeasonKey,
+        birthYear: team.birthYear,
+        level: team.league?.leagueLevel || team.leagueLevel,
+      }),
+    },
+    {
+      label: team.leagueName,
+      to: leagueBackPath,
+    },
+    {
+      label: team.name,
+    },
+  ])
+  const profileFilterOptions = React.useMemo(
+    () => buildTeamProfileFilterOptions(players),
+    [players]
+  )
+  const visiblePlayers = React.useMemo(() => {
+    const filteredPlayers = filterTeamPlayersByProfile({
+      players,
+      profileFilterKey,
+      profileOnly,
+    })
+
+    return filteredPlayers.map(player => ({
+      ...player,
+      favorite: favorites.isPlayerFavorite(player.playerId),
+      favoritePending: favorites.isFavoritePending(
+        PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+        player.playerId
+      ),
+    }))
+  }, [
+    favorites.pendingKeysRevision,
+    favorites.playerFavoritesMap,
+    players,
+    profileFilterKey,
+    profileOnly,
+  ])
+  const handleProfileOnlyChange = React.useCallback(nextValue => {
+    setProfileOnly(nextValue)
+    if (!nextValue) setProfileFilterKey('all')
+  }, [])
+  const handleProfileFilterChange = React.useCallback(nextValue => {
+    const value = cleanKey(nextValue) || 'all'
+
+    setProfileFilterKey(value)
+    if (value !== 'all') setProfileOnly(true)
+  }, [])
+  const hasTeamStats = React.useMemo(() => (
+    players.some(player => (
+      player.statsStatus === PLAYER_STATS_STATUS.LOADED ||
+      Number(player.games || 0) > 0 ||
+      Number(player.minutes || 0) > 0
+    ))
+  ), [players])
+  const teamFavorite = favorites.isBirthTeamFavorite(team.birthTeamId)
+  const teamFavoritePending = favorites.isFavoritePending(
+    PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+    team.birthTeamId
+  )
+
+  const handleBackToLeague = () => {
+    navigate(leagueBackPath, {
+      replace: true,
+      state: null,
+    })
+  }
+
+  const handleTeamNavigate = React.useCallback(nextTeamId => {
+    const cleanTeamId = cleanKey(nextTeamId)
+    if (!cleanTeamId || cleanTeamId === leagueTeamsNavigation.value) return
+
+    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId,
+      teamId: cleanTeamId,
+      seasonKey: selectedSeasonKey,
+      fromLeague: leagueBackPath,
+    }), {
+      state: location.state,
+    })
+  }, [
+    leagueBackPath,
+    leagueId,
+    leagueTeamsNavigation.value,
+    location.state,
+    navigate,
+    selectedSeasonKey,
+  ])
+
+  const handleTeamFavoriteToggle = React.useCallback(() => {
+    const payload = {
+      favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
+      entityId: team.birthTeamId,
+    }
+
+    if (!team.birthTeamId) return null
+    if (favorites.isBirthTeamFavorite(team.birthTeamId)) {
+      return favorites.removeFavorite(payload)
+    }
+
+    return favorites.addFavorite({
+      ...payload,
+      displayName: team.name,
+      birthYear: team.birthYear,
+    })
+  }, [favorites, team.birthTeamId, team.birthYear, team.name])
+
+  const handleTeamJsonDownload = React.useCallback(async () => {
+    const birthTeamId = cleanKey(
+      team.birthTeamId ||
+      team.teamDocumentId ||
+      team.id
+    )
+    if (!birthTeamId || teamJsonDownloading) return
+
+    setTeamJsonDownloading(true)
+    try {
+      const teamSearchIndexes = await readTeamSearchIndexesExport({
+        birthTeamId,
+      })
+      downloadTeamDataBundleJson({
+        teamDocument: teamDoc || team,
+        teamSeasons,
+        teamSearchIndexes,
+      })
+      notify('קובץ JSON של הקבוצה הורד', 'success')
+    } catch (downloadError) {
+      notify(downloadError?.message || 'הורדת קובץ הקבוצה נכשלה', 'danger')
+    } finally {
+      setTeamJsonDownloading(false)
+    }
+  }, [
+    notify,
+    team,
+    teamDoc,
+    teamJsonDownloading,
+    teamSeasons,
+  ])
+
+  const teamReport = useTeamReport({
+    team,
+    players: visiblePlayers,
+    seasonKey: selectedSeasonKey,
+  })
+  const handlePlayerOpen = React.useCallback(row => {
+    const source = row?.player || row || {}
+    const playerId = source.playerDocumentId || source.playerId || source.id
+    if (!playerId) return
+
+    navigate(
+      PLAYERS_DATABASE_UI_ROUTES.player({
+        playerId,
+        teamId: team.birthTeamId || team.id,
+        leagueId: selectedSeasonOption?.leagueId || leagueId,
+        fromTeam: `${location.pathname}${location.search}`,
+      }),
+      {
+        state: {
+          playerTeamSource: {
+            team,
+            teamDoc,
+            selectedTeamSeason,
+          },
+        },
+      }
+    )
+  }, [
+    leagueId,
+    location.pathname,
+    location.search,
+    navigate,
+    selectedSeasonKey,
+    selectedSeasonOption?.leagueId,
+    selectedTeamSeason,
+    team,
+    teamDoc,
+  ])
+
+  if (loading) {
+    return (
+      <Box sx={sx.loadingState}>
+        <CircularProgress size='sm' />
+        <Typography level='body-sm'>טוען את גרסת הקבוצה...</Typography>
+      </Box>
+    )
+  }
+
+  if (error || selectionError) {
+    return (
+      <Box sx={sx.loadingState}>
+        <Typography level='body-sm'>{error || selectionError}</Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <>
+      <Box sx={sx.page}>
+        <TeamHeader
+          breadcrumbs={breadcrumbs}
+          team={team}
+          teamUrl={
+            selectedTeamSeason?.teamUrl ||
+            team.teamUrl ||
+            selectedSeasonOption?.season?.teamUrl ||
+            ''
+          }
+          seasonKey={selectedSeasonKey}
+          favorite={teamFavorite}
+          favoritePending={teamFavoritePending}
+          onFavoriteToggle={() => {
+            Promise.resolve(handleTeamFavoriteToggle()).catch(() => {})
+          }}
+          onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
+          onLeague={handleBackToLeague}
+        />
+
+        <Box sx={sx.contentGrid}>
+          <Box sx={sx.mainColumn}>
+            <Box sx={sx.viewTabsToolbar}>
+              <Box sx={sx.viewTabs}>
+                <Button
+                  variant={activeView === 'team' ? 'solid' : 'soft'}
+                  color='primary'
+                  onClick={() => setActiveView('team')}
+                >
+                  {`מצב שנתון${team.birthYear ? ` · ${team.birthYear}` : ''} · נוכחי`}
+                </Button>
+                <Button
+                  variant={activeView === 'players' ? 'solid' : 'soft'}
+                  color='primary'
+                  onClick={() => setActiveView('players')}
+                >
+                  {`התפתחות שנתון${team.birthYear ? ` · ${team.birthYear}` : ''}`}
+                </Button>
+              </Box>
+            </Box>
+
+            {activeView === 'team' ? (
+              <TeamInformationOverview
+                view={teamInformationView}
+                onPlayerRoleEdit={roleEditor.open}
+                onPlayerOpen={handlePlayerOpen}
+              />
+            ) : (
+              <TeamYearDevelopment
+                timeline={teamInformationView.developmentTimeline}
+                overview={teamInformationView.yearDevelopment}
+              />
+            )}
+          </Box>
+
+          <TeamActionsPanel
+            selectedSeasonOptionKey={selectedSeasonOptionKey}
+            seasonOptions={seasonOptions}
+            hasTeamPlayers={hasTeamPlayers}
+            hasTeamStats={hasTeamStats}
+            profileOnly={profileOnly}
+            profileFilterKey={profileFilterKey}
+            profileFilterOptions={profileFilterOptions}
+            teamNavigation={leagueTeamsNavigation}
+            onTeamNavigate={handleTeamNavigate}
+            onProfileOnlyChange={handleProfileOnlyChange}
+            onProfileFilterChange={handleProfileFilterChange}
+            onPlayersImport={() => rosterImport.setOpen(true)}
+            onStatsImport={() => statsImport.setOpen(true)}
+            onDeleteStats={() => statsDelete.setOpen(true)}
+            onDeletePlayers={() => playersDelete.setOpen(true)}
+            onReport={teamReport.openPreview}
+            onTeamLink={() => teamUrlEditor.open(team)}
+            onTeamJsonDownload={handleTeamJsonDownload}
+            teamJsonDownloading={teamJsonDownloading}
+            onTeamDataRepair={teamDataRepair.openRepair}
+            tasks={teamPageTasks.tasks}
+            tasksLoading={tasksModel.loading}
+            onTaskCreate={teamPageTasks.openCreate}
+            onTaskEdit={teamPageTasks.openEdit}
+          />
+        </Box>
+      </Box>
+
+      <ReportPreviewModal
+        open={teamReport.open}
+        draft={teamReport.draft}
+        busy={teamReport.busy}
+        publication={teamReport.publication}
+        onPublish={teamReport.publish}
+        onClose={teamReport.closePreview}
+      />
+
+      <TeamDataRepairModal
+        open={teamDataRepair.open}
+        busy={teamDataRepair.busy}
+        error={teamDataRepair.error}
+        teamDocument={teamDoc}
+        teamSeasons={teamSeasons}
+        teamSearchIndexes={teamDataRepair.teamSearchIndexes}
+        indexesLoaded={teamDataRepair.indexesLoaded}
+        leagueDocument={leagueDoc}
+        selectedLeagueSeason={selectedLeagueSeason}
+        onRepair={teamDataRepair.repair}
+        onClose={teamDataRepair.close}
+      />
+
+      <TaskEditModal
+        open={Boolean(teamPageTasks.editTask)}
+        task={teamPageTasks.editTask}
+        busy={teamPageTasks.pending}
+        onSave={teamPageTasks.saveEdit}
+        onDone={teamPageTasks.markDone}
+        onClose={teamPageTasks.closeEdit}
+      />
+
+      <WorkTaskModal
+        open={teamPageTasks.createOpen}
+        mode='team'
+        onClose={teamPageTasks.closeCreate}
+      />
+
+      <TeamUrlEditDrawer
+        open={Boolean(teamUrlEditor.row)}
+        row={teamUrlEditor.row}
+        seasonLabel={selectedSeasonOption?.seasonKey || selectedSeasonKey}
+        saving={teamUrlEditor.saving}
+        onSave={teamUrlEditor.save}
+        onClose={teamUrlEditor.close}
+      />
+
+      <PlayerRoleEditModal
+        open={Boolean(roleEditor.row)}
+        playerName={roleEditor.row?.fullName || ''}
+        draft={roleEditor.draft}
+        busy={roleEditor.busy}
+        changed={roleEditor.changed}
+        onDraftChange={roleEditor.setDraft}
+        onConfirm={roleEditor.confirm}
+        onClose={roleEditor.close}
+      />
+
+      <RosterImportModal
+        team={team}
+        seasonKey={selectedSeasonKey}
+        hasTeamPlayers={hasTeamPlayers}
+        controller={rosterImport}
+      />
+
+      <StatsImportModal
+        team={team}
+        seasonKey={selectedSeasonKey}
+        hasTeamPlayers={hasTeamPlayers}
+        columns={statsColumns}
+        source={{
+          teamUrl:
+            selectedTeamSeason?.teamUrl ||
+            team.teamUrl ||
+            selectedSeasonOption?.season?.teamUrl ||
+            '',
+          leagueName:
+            selectedSeasonOption?.leagueName ||
+            team.leagueName ||
+            '',
+          leagueUrl:
+            selectedLeagueSeason?.season?.seasonUrl ||
+            selectedLeagueSeason?.season?.leagueUrl ||
+            selectedSeasonOption?.season?.seasonUrl ||
+            selectedSeasonOption?.season?.leagueUrl ||
+            team.domain?.metadata?.seasonUrl ||
+            leagueDoc?.leagueUrl ||
+            '',
+        }}
+        controller={statsImport}
+      />
+
+
+      <SeasonDeleteConfirmModal
+        open={statsDelete.open}
+        title='מחיקת סטטיסטיקת העונה'
+        description='הסגל נשאר. הסטטיסטיקה והמידע הנגזר ממנה יימחקו מהעונה הנבחרת.'
+        seasonKey={selectedSeasonKey}
+        busy={statsDelete.busy}
+        confirmLabel='מחיקת סטטיסטיקת העונה'
+        onConfirm={statsDelete.confirm}
+        onClose={statsDelete.close}
+      />
+
+      <SeasonDeleteConfirmModal
+        open={playersDelete.open}
+        title='מחיקת שחקני העונה'
+        description='טעינת הקבוצה בעונה הנבחרת תימחק במלואה, כולל הסגל והסטטיסטיקה.'
+        seasonKey={selectedSeasonKey}
+        busy={playersDelete.busy}
+        confirmLabel='מחיקת שחקני העונה'
+        onConfirm={playersDelete.confirm}
+        onClose={playersDelete.close}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(statsDelete.writeReport)}
+        report={statsDelete.writeReport}
+        onClose={statsDelete.closeWriteReport}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(playersDelete.writeReport)}
+        report={playersDelete.writeReport}
+        onClose={playersDelete.closeWriteReport}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(rosterImport.writeReport)}
+        report={rosterImport.writeReport}
+        onClose={rosterImport.closeWriteReport}
+      />
+
+      <WriteFlowReportModal
+        open={Boolean(statsImport.writeReport)}
+        report={statsImport.writeReport}
+        onClose={statsImport.closeWriteReport}
+      />
+    </>
+  )
+}
+
+export default function TeamPage() {
+  return (
+    <PlayersDatabaseLayout>
+      <TeamPageContent />
+    </PlayersDatabaseLayout>
+  )
+}
+
+
+
+

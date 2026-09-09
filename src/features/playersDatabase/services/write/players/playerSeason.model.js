@@ -16,7 +16,7 @@ import {
   isSamePlayerSource,
   normalizePlayerScoutCombinationIds,
   normalizePlayerScoutProfiles,
-  normalizePlayerScoutStory,
+  normalizePlayerScoutState,
   stripPlayerScoutV2SeasonFields,
 } from './playerDoc.model.js'
 import { isSamePlayerSeasonScope } from '../shared/playerSeasonScope.js'
@@ -341,7 +341,7 @@ export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, pla
     },
     scoutProfiles: normalizePlayerScoutProfiles(player),
     scoutCombinationIds: normalizePlayerScoutCombinationIds(player),
-    ...normalizePlayerScoutStory(player),
+    ...normalizePlayerScoutState(player),
     updatedAt: new Date().toISOString(),
   }
 }

@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/teams/teamSeasonPlayer.js
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
 import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
@@ -7,7 +8,10 @@ import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.m
 import { normalizeSeasonIdentity } from '../../../model/season.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { getPlayerMergeKey, normalizeTeamPlayer } from './teamSeason.model.js'
-import { buildTeamPlayerScoutProjection } from '../shared/playerScoutProjection.js'
+import {
+  buildTeamPlayerScoutProjection,
+  buildTeamPlayerSeasonalScoutProjection,
+} from '../../../domain/projections/playerScout.projection.js'
 import {
   buildTeamSeasonDocumentData,
   teamSeasonDocRef,
@@ -16,14 +20,6 @@ import { trackedRunTransaction } from '../../../../../services/firestore/usage/i
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
 
-const normalizeComparableValue = value => Array.isArray(value)
-  ? value.map(normalizeComparableValue)
-  : value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype
-    ? Object.keys(value).sort().reduce((result, key) => ({
-      ...result,
-      [key]: normalizeComparableValue(value[key]),
-    }), {})
-    : value
 
 const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
   Object.keys(patch).every(key => JSON.stringify(normalizeComparableValue(current[key])) ===
@@ -63,7 +59,7 @@ const persistSeason = ({ transaction, ref, team, teamId, season, current, next }
   return persisted
 }
 
-const updateSeasonPlayer = async ({ season = {}, team = {}, player = {}, buildPatch, includeScoutSummary = false } = {}) => {
+const updateSeasonPlayer = async ({ season = {}, team = {}, player = {}, buildPatch, includeScoutSummary = false, preservePatch = false } = {}) => {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
   const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
@@ -90,7 +86,13 @@ const updateSeasonPlayer = async ({ season = {}, team = {}, player = {}, buildPa
         return existing
       }
       changed = true
-      updatedPlayer = normalizeTeamPlayer({ ...existing, ...patch }, current)
+      const normalizedPlayer = normalizeTeamPlayer({ ...existing, ...patch }, current)
+      // The seasonal repair supplies a canonical season-aware projection.
+      // normalizeTeamPlayer normally derives the generic projection again,
+      // so preserve that explicit patch only for this isolated write flow.
+      updatedPlayer = preservePatch
+        ? { ...normalizedPlayer, ...patch }
+        : normalizedPlayer
       return updatedPlayer
     })
     const scoutProfilesSummary = includeScoutSummary ? buildScoutProfilesSummary(nextPlayers) : null
@@ -123,6 +125,22 @@ export async function removeTeamSeasonPlayerScoutProfile({ player = {}, ...paylo
 
 export async function updateTeamSeasonPlayerScoutProjection({ player = {}, ...payload } = {}) {
   return updateSeasonPlayer({ ...payload, includeScoutSummary: true, player, buildPatch: () => buildTeamPlayerScoutProjection(player) })
+}
+
+// Unlike the generic scout projection, this recalculates the compact fields
+// with the exact Team Season context. It is used by the team repair catalog.
+export async function updateTeamSeasonPlayerSeasonalScoutProjection({ player = {}, ...payload } = {}) {
+  return updateSeasonPlayer({
+    ...payload,
+    includeScoutSummary: true,
+    player,
+    preservePatch: true,
+    buildPatch: existing => buildTeamPlayerSeasonalScoutProjection({
+      player: existing,
+      team: payload.team,
+      season: payload.season,
+    }),
+  })
 }
 
 const findScoutedPlayer = ({ player = {}, scoutedPlayers = [] } = {}) => {

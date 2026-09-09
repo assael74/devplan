@@ -12,6 +12,7 @@ import FavoriteButton from '../../components/actions/FavoriteButton.js'
 import TeamName from '../../components/entities/TeamName.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+import teamLogo from '../../../../../ui/core/images/teamLogo.png'
 import { resolvePlayerHeaderMeta } from './logic/playerPage.utils.js'
 import { playerHeaderSx as sx } from './sx/playerHeader.sx.js'
 
@@ -20,7 +21,7 @@ const clean = value => String(value === null || value === undefined ? '' : value
 export default function PlayerHeader({
   breadcrumbs = [],
   player = {},
-  seasonLabel = 'כל העונות',
+  seasonContext = null,
   favorite = false,
   favoriteLoading = false,
   onFavoriteToggle,
@@ -33,6 +34,10 @@ export default function PlayerHeader({
   } = resolvePlayerHeaderMeta(player)
   const clubName = clean(player.clubName)
   const teamSlot = Number(player.birthTeamSlot || player.teamSlot || 1) || 1
+  const leagueContextLabel = [
+    clean(seasonContext?.leagueName),
+    clean(seasonContext?.ageGroupLabel),
+  ].filter(value => value && value !== '-').join(' · ')
 
   const canNavigateToTeam = !!player.leagueId && !!player.teamId
   const actions = (
@@ -86,12 +91,13 @@ export default function PlayerHeader({
 
         {birthYear ? (
           <Box sx={sx.birthYearChip}>
-            {birthYear}
+            שנתון {birthYear}
           </Box>
         ) : null}
 
         {clubName && clubName !== '-' ? (
           <Box sx={sx.teamChip}>
+            <Box component='img' src={teamLogo} alt='' sx={sx.teamAvatar} />
             <TeamName
               value={clubName}
               slot={teamSlot}
@@ -100,9 +106,9 @@ export default function PlayerHeader({
           </Box>
         ) : null}
 
-        <Box sx={sx.seasonChip}>
-          {seasonLabel}
-        </Box>
+        {leagueContextLabel ? (
+          <Box sx={sx.leagueChip}>{leagueContextLabel}</Box>
+        ) : null}
       </Box>
     </PageHeader>
   )

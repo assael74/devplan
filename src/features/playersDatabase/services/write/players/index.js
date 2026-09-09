@@ -35,7 +35,7 @@ export {
   normalizePlayerScoutCombinationIds,
   normalizePlayerScoutCombinations,
   normalizePlayerScoutProfiles,
-  normalizePlayerScoutStory,
+  normalizePlayerScoutState,
 } from './playerDoc.model.js'
 
 export {

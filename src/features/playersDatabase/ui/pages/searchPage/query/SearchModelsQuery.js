@@ -8,8 +8,8 @@ import {
   Typography,
 } from '@mui/joy'
 
-import ScoutBadge from '../../../components/scout/ScoutBadge.js'
-import ScoutProfileChipV2 from '../../../components/scout/ScoutProfileChipV2.js'
+import ScoutBadge from '../../../components/scout/shared/ScoutBadge.js'
+import ScoutProfileChip from '../../../components/scout/profile/ScoutProfileChip.js'
 import {
   SEARCH_PLAYER_IMMEDIACY_LEVELS,
   SEARCH_SCOUT_PROFILES,
@@ -81,7 +81,7 @@ function PlayerModelCard({ option, selected, locked, onToggle }) {
       description={option.description}
       onClick={handleToggle}
     >
-      <ScoutProfileChipV2
+      <ScoutProfileChip
         profileId={option.profile?.id || option.id || ''}
         label={option.label}
         profile={option.profile}

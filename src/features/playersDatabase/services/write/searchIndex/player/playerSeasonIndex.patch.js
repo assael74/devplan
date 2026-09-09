@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.patch.js
 
+import { normalizeComparableValue } from '../../../shared/valueComparison.js'
 import {
   collection,
   doc,
@@ -39,26 +40,6 @@ import {
   findPlayerSeasonIndexDocForPayload,
 } from './playerSeasonIndex.query.js'
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
 
 const isPatchUnchanged = ({ existingData = {}, fields = {} } = {}) => (
   Object.keys(fields).every(key => (

@@ -5,7 +5,7 @@ export const AUDIT_FINDING_TYPE = Object.freeze({
   UNEXPECTED_DOCUMENT: 'unexpected_document',
 })
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 export const buildAuditFinding = ({
   type,

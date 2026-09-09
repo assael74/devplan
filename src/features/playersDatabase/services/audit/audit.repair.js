@@ -6,12 +6,12 @@ import { buildTeamLoadStatus } from '../../model/teamLoadStatus.model.js'
 import { buildTeamDisplayName } from '../../catalog/teamDisplay.js'
 import { resolveAgeGroupLabel } from '../../catalog/ageGroups.catalog.js'
 import { buildScoutProfilesSummary } from '../write/flows/shared.js'
-import { buildLeagueTeamPerformanceProjection } from '../write/shared/teamPerformanceProjection.js'
+import { buildLeagueTeamPerformanceProjection } from '../../domain/projections/teamPerformance.projection.js'
 import { shouldHavePlayerDocument } from '../write/players/scoutingPlayerLifecycle.model.js'
 import { AUDIT_FINDING_TYPE } from './audit.contract.js'
 import { readPlayerDatabaseAuditSnapshot } from './audit.read.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
 const seasonKeyOf = row => clean(row?.seasonKey || row?.seasonId)
 const teamIdOf = row => clean(row?.birthTeamDocumentId || row?.teamDocumentId)
 const playerKeyOf = player => clean(player?.playerDocumentId || player?.playerId || player?.externalPlayerId)

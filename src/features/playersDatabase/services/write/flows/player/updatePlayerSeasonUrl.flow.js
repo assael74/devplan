@@ -1,19 +1,10 @@
 // features/playersDatabase/services/write/flows/player/updatePlayerSeasonUrl.flow.js
 
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { updatePlayerSeasonUrl } from '../../players/index.js'
 import { updatePlayerSeasonSearchIndexPlayerUrl } from '../../searchIndex/index.js'
 import { updateTeamSeasonPlayerUrl } from '../../teams/index.js'
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `Player season URL sync failed at ${stage}`)
-
-  error.name = 'PlayerSeasonUrlSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
 
 const assertTeamPlayerUpdated = result => {
   if (result?.updated) return
@@ -39,7 +30,9 @@ export async function updatePlayerSeasonUrlFlow(payload = {}) {
     results.teamSeasonResult = await updateTeamSeasonPlayerUrl(nextPayload)
     assertTeamPlayerUpdated(results.teamSeasonResult)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerSeasonUrlSyncError',
+      fallbackMessage: 'Player season URL sync failed',
       stage: 'updateTeamSeasonPlayerUrl',
       cause: error,
       results,
@@ -49,7 +42,9 @@ export async function updatePlayerSeasonUrlFlow(payload = {}) {
   try {
     results.playerSeasonResult = await updatePlayerSeasonUrl(nextPayload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerSeasonUrlSyncError',
+      fallbackMessage: 'Player season URL sync failed',
       stage: 'updatePlayerSeasonUrl',
       cause: error,
       results,
@@ -59,7 +54,9 @@ export async function updatePlayerSeasonUrlFlow(payload = {}) {
   try {
     results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexPlayerUrl(nextPayload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'PlayerSeasonUrlSyncError',
+      fallbackMessage: 'Player season URL sync failed',
       stage: 'updatePlayerSeasonSearchIndexPlayerUrl',
       cause: error,
       results,

@@ -13,14 +13,18 @@ import {
 } from '@mui/joy'
 
 import RegularModal from './RegularModal.js'
+import {
+  getSeasonCatalogOptions,
+  getSeasonCatalogEntry,
+  getSeasonCatalogTarget,
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY,
+} from '../../../catalog/seasons.catalog.js'
 import { createSeasonModalSx as sx } from './sx/createSeasonModal.sx.js'
 
-const CURRENT_SEASON_KEY = '26/27'
-const SEASON_OPTIONS = ['26/27', '25/26', '24/25', '23/24', '22/23']
 const TARGET_OPTIONS = [
   {
     value: 'current',
-    label: 'נוכחי',
+    label: 'פעילה',
   },
   {
     value: 'history',
@@ -35,14 +39,13 @@ const toNumberOrZero = value => {
   return Number.isFinite(n) ? n : 0
 }
 
-const resolveSeasonTarget = seasonKey =>
-  clean(seasonKey) === CURRENT_SEASON_KEY ? 'current' : 'history'
-
 const getInitialState = ({ league, defaultSeasonKey }) => {
-  const seasonKey = clean(defaultSeasonKey) || CURRENT_SEASON_KEY
+  const requestedSeasonKey = clean(defaultSeasonKey)
+  const seasonKey = getSeasonCatalogEntry(requestedSeasonKey)?.seasonKey ||
+    PLAYERS_DATABASE_CURRENT_SEASON_KEY
 
   return {
-    target: resolveSeasonTarget(seasonKey),
+    target: getSeasonCatalogTarget(seasonKey, 'current'),
     seasonKey,
     birthYear: '',
     leagueTotalRound: '',
@@ -82,7 +85,7 @@ export default function CreateSeasonModal({
       setForm(current => ({
         ...current,
         seasonKey: value,
-        target: resolveSeasonTarget(value),
+        target: getSeasonCatalogTarget(value, current.target),
       }))
       return
     }
@@ -99,9 +102,10 @@ export default function CreateSeasonModal({
     onConfirm({
       league,
       season: {
-        target: resolveSeasonTarget(form.seasonKey),
+        target: form.target,
         seasonKey: clean(form.seasonKey),
         seasonId: clean(form.seasonKey),
+        seasonStatus: form.target === 'history' ? 'completed' : 'active',
         birthYear: toNumberOrZero(form.birthYear),
         leagueTotalRound: toNumberOrZero(form.leagueTotalRound),
         seasonUrl: clean(form.seasonUrl),
@@ -189,12 +193,12 @@ export default function CreateSeasonModal({
               }}
               sx={sx.control}
             >
-              {SEASON_OPTIONS.map(option => (
+              {getSeasonCatalogOptions().map(option => (
                 <Option
-                  key={option}
-                  value={option}
+                  key={option.seasonKey}
+                  value={option.seasonKey}
                 >
-                  {option}
+                  {option.label}
                 </Option>
               ))}
             </Select>
@@ -253,7 +257,7 @@ export default function CreateSeasonModal({
             level='body-sm'
             sx={sx.noteText}
           >
-            העונה וסוג העונה נקבעים לפי הפילטר במסך. 26/27 היא עונה נוכחית, וכל עונה אחרת נשמרת כהיסטוריה.
+            סוג העונה נשמר לפי הבחירה כאן. ניתן להחזיק עונה פעילה אחת בלבד לכל ליגה; עונות היסטוריות נשמרות בנפרד.
           </Typography>
         </Box>
       </Stack>

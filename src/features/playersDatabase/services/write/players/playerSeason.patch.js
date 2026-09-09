@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/players/playerSeason.patch.js
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -10,7 +11,6 @@ import {
 import {
   normalizePlayerScoutCombinationIds,
   normalizePlayerScoutProfiles,
-  normalizePlayerScoutStory,
   playerDocRef,
 } from './playerDoc.model.js'
 import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
@@ -27,26 +27,6 @@ import {
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
 
 const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
   Object.keys(patch).every(key => (

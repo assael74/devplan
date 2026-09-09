@@ -41,11 +41,15 @@ const countPill = ({ count, targetCount }) => (
   </Chip>
 )
 
-const statusSortValue = value => ({
-  full: 2,
-  partial: 1,
-  missing: 0,
-}[value] ?? -1)
+const statusSortValue = value => {
+  const sortValue = {
+    full: 2,
+    partial: 1,
+    missing: 0,
+  }[value]
+
+  return sortValue === undefined || sortValue === null ? -1 : sortValue
+}
 
 const BASE_COLUMNS = [
   {

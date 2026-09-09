@@ -174,6 +174,50 @@ function SearchPageContent() {
     }
   }
 
+  const handleAuditPlayerOpen = (finding, context = {}) => {
+    const playerId = clean(finding?.playerDocumentId || finding?.documentId)
+    if (!playerId) return
+
+    const target = PLAYERS_DATABASE_UI_ROUTES.player({
+      playerId,
+      seasonKey: clean(context?.seasonKey),
+      teamId: clean(context?.teamDocumentId),
+      leagueId: clean(context?.leagueId),
+    })
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }
+
+  const handleAuditTeamOpen = (finding, context = {}) => {
+    const teamId = clean(context?.teamDocumentId || finding?.teamDocumentId)
+    const seasonKey = clean(context?.seasonKey || finding?.seasonKey)
+    const leagueId = clean(context?.leagueId || finding?.actual?.leagueId)
+    if (!teamId || !seasonKey || !leagueId) {
+      setAuditError('חסרים פרטי קבוצה, עונה או ליגה למעבר לתיקון.')
+      return
+    }
+    const target = PLAYERS_DATABASE_UI_ROUTES.team({ leagueId, teamId, seasonKey })
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }
+
+  const handleAuditLeagueOpen = finding => {
+    const leagueId = clean(finding?.actual?.leagueId || finding?.relatedDocumentId)
+    const seasonKey = clean(finding?.seasonKey)
+    if (!leagueId) {
+      setAuditError('חסר מזהה ליגה למעבר לתיקון.')
+      return
+    }
+    const target = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, seasonKey ? { seasonKey } : {})
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }
+
+  const handleAuditLeaguesCenterOpen = () => {
+    window.open(
+      PLAYERS_DATABASE_UI_ROUTES.leagues(),
+      '_blank',
+      'popup=yes,width=1280,height=900,noopener,noreferrer'
+    )
+  }
+
   const handleRepairRequest = async findings => {
     if (auditBusy || repairPreviewBusy) return
     setRepairPreviewBusy(true)
@@ -245,6 +289,10 @@ function SearchPageContent() {
         defaultSeasonKey={partialAuditDefaults.seasonKey}
         onRun={handleAuditRun}
         onRepair={handleRepairRequest}
+        onPlayerOpen={handleAuditPlayerOpen}
+        onTeamOpen={handleAuditTeamOpen}
+        onLeagueOpen={handleAuditLeagueOpen}
+        onLeaguesCenterOpen={handleAuditLeaguesCenterOpen}
         onClose={() => setAuditOpen(false)}
       />
 
@@ -258,8 +306,8 @@ function SearchPageContent() {
         onConfirm={handleRepairConfirm}
         onClose={() => !auditBusy && setRepairPlan(null)}
       >
-        <Stack spacing={1} sx={{ maxHeight: 300, overflowY: 'auto' }}>
-          {(repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={{ p: 1.25, borderRadius: 'sm' }}>
+        <Stack spacing={1} sx={sx.repairPlanList}>
+          {(repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={sx.repairPlanGroup}>
             {group.players.map(player => <Typography key={player.playerDocumentId} level='body-sm'>
               {player.fullName || player.playerDocumentId} — {group.teamName || 'קבוצה ללא שם'}{Number(group.teamSlot) > 1 ? ` · סלוט ${group.teamSlot}` : ''} · {group.leagueName || group.leagueId} · {group.seasonKey} · {group.ageGroup || 'קבוצת גיל לא ידועה'} · שנתון {group.birthYear || 'לא ידוע'}
             </Typography>)}
@@ -267,6 +315,7 @@ function SearchPageContent() {
           </Sheet>)}
         </Stack>
       </ConfirmModal>
+
     </>
   )
 }

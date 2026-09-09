@@ -11,7 +11,7 @@ import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataT
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
-import ScoutBadge from '../../../components/scout/ScoutBadge.js'
+import ScoutBadge from '../../../components/scout/shared/ScoutBadge.js'
 import TeamName from '../../../components/entities/TeamName.js'
 import TeamTaskIndicator from '../../../components/teamTaskIndicator/TeamTaskIndicator.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'

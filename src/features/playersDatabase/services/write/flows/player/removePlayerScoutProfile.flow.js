@@ -5,6 +5,7 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { removePlayerScoutProfileCoordinated } from './removePlayerScoutProfile.coordinated.js'
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 
 const clean = value => String(value || '').trim()
 
@@ -13,15 +14,23 @@ const buildCommittedProjectionFailure = ({
   error,
   teamSeasonResult,
   results = {},
-} = {}) => ({
-  ...results,
-  teamSeasonResult,
-  rowsCount: 1,
-  teamCanonicalCommitted: true,
-  projectionsCompleted: false,
-  completed: true,
-  stoppedAt: stage,
-  projectionError: clean(error?.message || `Remove profile projection failed at ${stage}`),
+} = {}) => buildWriteFlowSyncError({
+  name: 'RemovePlayerScoutProfileProjectionSyncError',
+  fallbackMessage: 'Scout profile was removed, but projection synchronization failed',
+  stage,
+  cause: error,
+  results: {
+    ...results,
+    teamSeasonResult,
+    rowsCount: 1,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: false,
+    completed: false,
+    syncStatus: 'projection_failed',
+    recoveryRequired: true,
+    stoppedAt: stage,
+    projectionError: clean(error?.message || `Remove profile projection failed at ${stage}`),
+  },
 })
 
 export async function removePlayerScoutProfileFlow(payload = {}) {
@@ -92,7 +101,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
         completed: true,
       }
     }
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'teamSeasonProjection',
       error: new Error(teamSeasonResult.reason || 'Team season player is missing'),
       teamSeasonResult,
@@ -101,7 +110,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
   }
 
   if (!projectionResults.playerSeasonIndexResult?.updated) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'playerSearchIndex',
       error: new Error(
         projectionResults.playerSeasonIndexResult?.reason || 'Player season SearchIndex is missing'
@@ -121,7 +130,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
     projectionResults.leagueTableRankScoutProfilesResult =
       await updateLeagueSeasonTableRankScoutProfilesSummary(summaryPayload)
     if (!projectionResults.leagueTableRankScoutProfilesResult?.updated) {
-      return buildCommittedProjectionFailure({
+      throw buildCommittedProjectionFailure({
         stage: 'leagueScoutSummary',
         error: new Error(
           projectionResults.leagueTableRankScoutProfilesResult?.reason || 'League scout summary target is missing'
@@ -131,7 +140,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
       })
     }
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'leagueScoutSummary',
       error,
       teamSeasonResult,
@@ -143,7 +152,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
     projectionResults.teamSeasonIndexScoutProfilesResult =
       await updateTeamSeasonSearchIndexScoutProfilesSummary(summaryPayload)
     if (!projectionResults.teamSeasonIndexScoutProfilesResult?.updated) {
-      return buildCommittedProjectionFailure({
+      throw buildCommittedProjectionFailure({
         stage: 'teamSearchIndexSummary',
         error: new Error(
           projectionResults.teamSeasonIndexScoutProfilesResult?.reason || 'Team season SearchIndex is missing'
@@ -153,7 +162,7 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
       })
     }
   } catch (error) {
-    return buildCommittedProjectionFailure({
+    throw buildCommittedProjectionFailure({
       stage: 'teamSearchIndexSummary',
       error,
       teamSeasonResult,

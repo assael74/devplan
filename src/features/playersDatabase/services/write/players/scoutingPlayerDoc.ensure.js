@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/write/players/scoutingPlayerDoc.ensure.js
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import {
   serverTimestamp,
 } from 'firebase/firestore'
@@ -37,26 +38,6 @@ import {
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
 
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (
-    value &&
-    typeof value === 'object' &&
-    Object.getPrototypeOf(value) === Object.prototype
-  ) {
-    return Object.keys(value)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = normalizeComparableValue(value[key])
-        return result
-      }, {})
-  }
-
-  return value
-}
 
 const stripPlayerDocTechnicalTimestamps = value => {
   if (!value || typeof value !== 'object') return value

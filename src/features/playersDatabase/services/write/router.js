@@ -93,7 +93,25 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     throw new Error(`Unknown players database write action: ${actionType}`)
   }
 
-  const result = await runAction(payload)
+  let result
+  try {
+    result = await runAction(payload)
+  } catch (error) {
+    // A coordinated flow may commit its canonical source before a later
+    // projection fails.  Do not leave the UI/cache on the pre-write snapshot;
+    // invalidate it and attach the narrow audit scope to the error so the
+    // caller can present a real recovery path.
+    if (error?.results?.teamCanonicalCommitted) {
+      invalidatePlayersDatabaseWriteCache({
+        actionType,
+        payload,
+        result: error.results,
+      })
+      const auditScope = rememberLastWriteAuditScopeFromResult(error.results)
+      if (auditScope) error.auditScope = auditScope
+    }
+    throw error
+  }
 
   invalidatePlayersDatabaseWriteCache({
     actionType,

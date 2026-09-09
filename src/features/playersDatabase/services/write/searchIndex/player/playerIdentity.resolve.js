@@ -1,5 +1,6 @@
 // features/playersDatabase/services/write/searchIndex/player/playerIdentity.resolve.js
 
+import { chunkValues } from '../../../shared/chunkValues.js'
 import {
   collection,
   documentId,
@@ -33,15 +34,6 @@ const readIdentityMatches = queryRef => trackedGetDocs(queryRef, {
 
 const IDENTITY_LOOKUP_LIMIT = 10
 
-const chunkValues = (values = [], size = IDENTITY_LOOKUP_LIMIT) => {
-  const chunks = []
-
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size))
-  }
-
-  return chunks
-}
 
 const readIdentityFieldMatchesMany = async ({
   field,

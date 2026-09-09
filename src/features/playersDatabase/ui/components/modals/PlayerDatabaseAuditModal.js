@@ -9,8 +9,9 @@ import {
   getLastWriteAuditScope,
 } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
+import { playerDatabaseAuditModalSx as sx } from './sx/playerDatabaseAuditModal.sx.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
 const PAGE_SIZE = 40
 const TYPE_LABELS = Object.freeze({
   [AUDIT_FINDING_TYPE.MISSING_DOCUMENT]: 'מסמכים חסרים',
@@ -41,9 +42,13 @@ const sourceLabel = source => {
   if (source === 'League table → buildLeagueTeamPerformanceProjection') return 'טבלת הליגה'
   if (source === 'Team Season teamBalance → buildTeamBalanceSearchIndexProjection') return 'מאזן הקבוצה בעונה'
   if (source === 'Team Season player scout state → buildPlayerScoutIndexFields') return 'נתוני הסקאוט של השחקן'
+  if (source === 'Team Season player scout profile → Player Document') return 'פרופיל הסקאוט בעונת הקבוצה'
+  if (source === 'Team Season player scout profile → Player SearchIndex') return 'פרופיל הסקאוט בעונת הקבוצה'
+  if (source === 'Player and Team Season data → Team Season player scout profile') return 'נתוני השחקן והקבוצה בעונה'
   if (source === 'Team Season scout profile lifecycle') return 'כללי יצירת מסמך שחקן'
   if (source === 'League Documents → buildLeaguesMasterLeagueEntry') return 'מסמכי הליגה'
   if (source === 'League Documents → buildLeaguesMasterSummary') return 'מסמכי הליגה'
+  if (source === 'League season lifecycle') return 'מחזור החיים של עונת הליגה'
   return clean(source)
 }
 
@@ -79,9 +84,48 @@ const downloadFindings = result => {
   window.setTimeout(() => window.URL.revokeObjectURL(url), 0)
 }
 
+const playerDetailsOf = finding => {
+  if (finding?.entityType !== 'player' || !finding?.actual || typeof finding.actual !== 'object') return null
+  const contexts = Array.isArray(finding.actual.contexts) ? finding.actual.contexts : []
+  return {
+    name: clean(finding.actual.playerName),
+    contexts,
+  }
+}
+
+// The league provides the expected lifecycle, but this finding belongs to
+// one concrete Team SearchIndex document.  Open its owning team so the
+// isolated index repair is available from the entity page.
+const isTeamSearchIndexLifecycleMismatch = finding => (
+  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH &&
+  finding?.entityType === 'teamSearchIndex' &&
+  finding?.source === 'League season → buildTeamSeasonSearchMetrics' &&
+  clean(finding?.documentId) &&
+  clean(finding?.teamDocumentId) &&
+  clean(finding?.seasonKey)
+)
+
+const isLeagueDocumentFinding = finding => (
+  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH &&
+  finding?.entityType === 'leaguesMasterLeague' &&
+  clean(finding?.relatedDocumentId)
+)
+
+const isLeagueLifecycleDocumentFinding = finding => (
+  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH &&
+  finding?.entityType === 'leagueSeason' &&
+  finding?.source === 'League season lifecycle' &&
+  clean(finding?.actual?.leagueId)
+)
+
+const isLeaguesMasterSummaryFinding = finding => (
+  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH &&
+  finding?.entityType === 'leaguesMaster'
+)
+
 export default function PlayerDatabaseAuditModal({
   open = false, busy = false, error = '', result = null,
-  defaultTeamDocumentId = '', defaultSeasonKey = '', onRun, onRepair, onClose,
+  defaultTeamDocumentId = '', defaultSeasonKey = '', onRun, onRepair, onPlayerOpen, onTeamOpen, onLeagueOpen, onLeaguesCenterOpen, onClose,
 }) {
   const [mode, setMode] = React.useState(AUDIT_SCOPE_TYPE.FULL_SYSTEM)
   const [teamDocumentId, setTeamDocumentId] = React.useState('')
@@ -133,29 +177,43 @@ export default function PlayerDatabaseAuditModal({
           {lastWriteScope ? <Button size='sm' variant={mode === 'lastWrite' ? 'solid' : 'outlined'} onClick={() => setMode('lastWrite')}>העדכון האחרון</Button> : null}
         </Stack>
         {teamScope ? <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <FormControl sx={{ flex: 1 }}><FormLabel>מסמך קבוצה</FormLabel><Input value={teamDocumentId} onChange={event => setTeamDocumentId(event.target.value)} /></FormControl>
-          <FormControl sx={{ flex: 1 }}><FormLabel>עונה</FormLabel><Input value={seasonKey} onChange={event => setSeasonKey(event.target.value)} /></FormControl>
+          <FormControl sx={sx.flexField}><FormLabel>מסמך קבוצה</FormLabel><Input value={teamDocumentId} onChange={event => setTeamDocumentId(event.target.value)} /></FormControl>
+          <FormControl sx={sx.flexField}><FormLabel>עונה</FormLabel><Input value={seasonKey} onChange={event => setSeasonKey(event.target.value)} /></FormControl>
         </Stack> : null}
-        {result ? <Sheet variant='soft' sx={{ p: 2, borderRadius: 'md' }}><Stack spacing={1}>
+        {result ? <Sheet variant='soft' sx={sx.resultSheet}><Stack spacing={1}>
           <Typography level='title-md'>סיכום</Typography>
           {Object.entries(TYPE_LABELS).map(([type, label]) => <Typography key={type} level='body-sm'>{label}: {Number(result.summary?.[type] || 0)}</Typography>)}
           <Typography level='body-sm'>נבדקו: {Number(result.checked || 0)} · קריאות למסד הנתונים: {Number(result.readsUsed || 0)}</Typography>
           {result.coverage?.leaguesMaster?.checked ? <Typography level='body-sm'>מאסטר הליגות מול מסמכי הליגה: {result.coverage.leaguesMaster.available ? 'נבדק' : 'לא נבדק — מסמך מאסטר לא נמצא'}</Typography> : null}
           {Object.keys(lifecycleSummary).length ? <><Divider /><Typography level='title-sm'>מצב הנתונים</Typography><Typography level='body-sm'>{Object.entries(lifecycleSummary).map(([status, count]) => `${lifecycleLabel(status)}: ${count}`).join(' · ')}</Typography></> : null}
-          <Button size='sm' variant='outlined' sx={{ alignSelf: 'flex-start' }} onClick={() => downloadFindings(result)}>ייצוא JSON</Button>
-          {repairableFindings.length ? <Button size='sm' color='warning' variant='solid' sx={{ alignSelf: 'flex-start' }} onClick={() => onRepair?.(repairableFindings)}>תקן מסמכי שחקן חסרים ({repairableFindings.length})</Button> : null}
+          <Button size='sm' variant='outlined' sx={sx.actionButton} onClick={() => downloadFindings(result)}>ייצוא JSON</Button>
+          {repairableFindings.length ? <Button size='sm' color='warning' variant='solid' sx={sx.actionButton} onClick={() => onRepair?.(repairableFindings)}>תקן מסמכי שחקן חסרים ({repairableFindings.length})</Button> : null}
           {findings.length ? <><Divider /><Stack direction='row' spacing={0.75} flexWrap='wrap' useFlexGap>
             <Button size='sm' variant={filter === 'all' ? 'solid' : 'outlined'} onClick={() => setFilter('all')}>הכול ({findings.length})</Button>
             {Object.entries(TYPE_LABELS).map(([type, label]) => <Button key={type} size='sm' variant={filter === type ? 'solid' : 'outlined'} onClick={() => setFilter(type)}>{label} ({Number(result.summary?.[type] || 0)})</Button>)}
-          </Stack><Stack spacing={1} sx={{ maxHeight: 430, overflowY: 'auto' }}>
-            {displayed.map((finding, index) => <Sheet key={`${finding.type}-${finding.documentId}-${index}`} variant='outlined' sx={{ p: 1.25, borderRadius: 'sm' }}><Stack spacing={0.5}>
+          </Stack><Stack spacing={1} sx={sx.findingsList}>
+            {displayed.map((finding, index) => {
+              const playerDetails = playerDetailsOf(finding)
+              return <Sheet key={`${finding.type}-${finding.documentId}-${index}`} variant='outlined' sx={sx.findingSheet}><Stack spacing={0.5}>
               <Typography level='title-sm'>{finding.title}</Typography>
               {finding.explanation ? <Typography level='body-sm'>{finding.explanation}</Typography> : null}
               <Typography level='body-xs'>מסמך: {finding.documentId || 'לא ידוע'}{finding.relatedDocumentId ? ` · קשור: ${finding.relatedDocumentId}` : ''}{finding.seasonKey ? ` · עונה: ${finding.seasonKey}` : ''}</Typography>
+              {playerDetails?.name ? <Typography level='body-sm'>שחקן: {playerDetails.name}</Typography> : null}
+              {playerDetails?.contexts.map((context, contextIndex) => <Typography key={`${context.teamDocumentId}-${context.seasonKey}-${contextIndex}`} level='body-xs'>קבוצה: {context.teamName || context.teamDocumentId || 'לא ידועה'}{context.seasonKey ? ` · עונה: ${context.seasonKey}` : ''}{context.leagueId ? ` · ליגה: ${context.leagueId}` : ''}</Typography>)}
+              {finding.entityType === 'teamSeasonPlayer' && clean(finding.teamDocumentId) ? <Button size='sm' variant='outlined' sx={sx.actionButton} onClick={() => onTeamOpen?.(finding, { teamDocumentId: finding.teamDocumentId, seasonKey: finding.seasonKey, leagueId: finding.actual?.leagueId })}>מעבר לקבוצה</Button> : clean(finding.playerDocumentId) ? <Button size='sm' variant='outlined' sx={sx.actionButton} onClick={() => onPlayerOpen?.(finding, finding.teamDocumentId ? { teamDocumentId: finding.teamDocumentId, seasonKey: finding.seasonKey, leagueId: finding.actual?.leagueId } : playerDetails?.contexts[0] || {})}>מעבר לשחקן</Button> : null}
               {finding.source ? <Typography level='body-xs'>מקור הנתונים: {sourceLabel(finding.source)}</Typography> : null}
               {finding.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH ? <Typography level='body-xs'>שמורה בפועל: {formatValue(finding.actual)} · אמור להיות: {formatValue(finding.expected)}</Typography> : null}
+              {isTeamSearchIndexLifecycleMismatch(finding) ? <Button size='sm' color='warning' variant='solid' disabled={busy} sx={sx.actionButton} onClick={() => onTeamOpen?.(finding, {
+                teamDocumentId: finding.teamDocumentId,
+                seasonKey: finding.seasonKey,
+                leagueId: finding.actual?.leagueId,
+              })}>מעבר לעמוד קבוצה</Button> : null}
+              {isLeagueDocumentFinding(finding) ? <Button size='sm' color='warning' variant='solid' disabled={busy} sx={sx.actionButton} onClick={() => onLeagueOpen?.(finding)}>מעבר לעמוד ליגה</Button> : null}
+              {isLeagueLifecycleDocumentFinding(finding) ? <Button size='sm' color='warning' variant='solid' disabled={busy} sx={sx.actionButton} onClick={() => onLeagueOpen?.(finding)}>מעבר לעמוד ליגה</Button> : null}
+              {isLeaguesMasterSummaryFinding(finding) ? <Button size='sm' color='warning' variant='solid' disabled={busy} sx={sx.actionButton} onClick={() => onLeaguesCenterOpen?.()}>מעבר למרכז הליגות</Button> : null}
               {finding.lifecycleStatus ? <Typography level='body-xs'>מצב: {lifecycleLabel(finding.lifecycleStatus)}</Typography> : null}
-            </Stack></Sheet>)}
+            </Stack></Sheet>
+            })}
           </Stack>{filtered.length > visible ? <Button size='sm' variant='plain' onClick={() => setVisible(value => value + PAGE_SIZE)}>הצג עוד</Button> : null}</> : <Typography level='body-sm'>לא נמצאו פערים בהיקף שנבדק.</Typography>}
         </Stack></Sheet> : null}
         {error ? <Typography level='body-sm' color='danger'>{error}</Typography> : null}

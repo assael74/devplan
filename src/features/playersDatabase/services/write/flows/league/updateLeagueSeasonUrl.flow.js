@@ -1,17 +1,8 @@
 // features/playersDatabase/services/write/flows/league/updateLeagueSeasonUrl.flow.js
 
+import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { updateLeagueSeasonUrl } from '../../leagues/index.js'
 
-const buildSyncError = ({ stage, cause, results = {} }) => {
-  const error = new Error(cause?.message || `League season URL sync failed at ${stage}`)
-
-  error.name = 'LeagueSeasonUrlSyncError'
-  error.stage = stage
-  error.cause = cause
-  error.results = results
-
-  return error
-}
 
 export async function updateLeagueSeasonUrlFlow(payload = {}) {
   const results = {}
@@ -19,7 +10,9 @@ export async function updateLeagueSeasonUrlFlow(payload = {}) {
   try {
     results.leagueSeasonResult = await updateLeagueSeasonUrl(payload)
   } catch (error) {
-    throw buildSyncError({
+    throw buildWriteFlowSyncError({
+      name: 'LeagueSeasonUrlSyncError',
+      fallbackMessage: 'League season URL sync failed',
       stage: 'updateLeagueSeasonUrl',
       cause: error,
       results,

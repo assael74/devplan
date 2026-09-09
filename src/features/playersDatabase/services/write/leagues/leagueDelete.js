@@ -9,6 +9,7 @@ import {
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import {
   buildLeagueBaseDoc,
   buildSeasonKey,
@@ -40,6 +41,17 @@ const getLeagueSeasonRow = ({ leagueData = {}, season = {}, target = 'current' }
     ? leagueData.current
     : null
 }
+
+const CATALOG_LEAGUE_IDS = new Set(
+  PLAYERS_DATABASE_LEAGUES_CATALOG.map(league => clean(league?.id)).filter(Boolean)
+)
+
+const hasPersistedLeagueSeasons = leagueData => (
+  Boolean(leagueData?.current?.seasonId || leagueData?.current?.seasonKey) ||
+  (Array.isArray(leagueData?.history) && leagueData.history.some(season => (
+    Boolean(season?.seasonId || season?.seasonKey)
+  )))
+)
 
 export async function getLeagueSeasonDeleteDependencies({
   league = {},
@@ -79,6 +91,18 @@ export async function getLeagueSeasonDeleteDependencies({
     action: 'league-delete-dependencies',
     operationSubtype: 'maintenance-query',
   })
+  const teamSeasonsSnapshot = await trackedGetDocs(
+    query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons),
+      where('seasonKey', '==', seasonKey)
+    ),
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      action: 'league-delete-dependencies',
+      operationSubtype: 'maintenance-query',
+    }
+  )
   let teamIndexesCount = 0
   let playerIndexesCount = 0
 
@@ -91,6 +115,9 @@ export async function getLeagueSeasonDeleteDependencies({
 
   const dependencies = {
     tableTeamsCount: tableRank.length,
+    teamSeasonsCount: teamSeasonsSnapshot.docs.filter(teamSeason => (
+      clean(teamSeason.data()?.leagueId) === leagueId
+    )).length,
     teamIndexesCount,
     playerIndexesCount,
     searchIndexesCount: searchSnapshot.size,
@@ -163,7 +190,16 @@ export async function removeLeagueSeason({
           }) ? null : baseDoc.current,
         }
 
-    transaction.set(ref, nextData, { merge: true })
+    const removedLeagueDocument = (
+      !hasPersistedLeagueSeasons(nextData) &&
+      !CATALOG_LEAGUE_IDS.has(leagueId)
+    )
+
+    if (removedLeagueDocument) {
+      transaction.delete(ref)
+    } else {
+      transaction.set(ref, nextData, { merge: true })
+    }
 
     return {
       leagueId,
@@ -171,11 +207,13 @@ export async function removeLeagueSeason({
       seasonKey,
       target: isHistory ? 'history' : 'current',
       removed: true,
+      removedLeagueDocument,
     }
   })
 
   await syncLeaguesMasterDocument({
-    leagues: [league],
+    leagues: result.removedLeagueDocument ? [] : [league],
+    removedLeagueIds: result.removedLeagueDocument ? [leagueId] : [],
   })
 
   return result

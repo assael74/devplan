@@ -1,4 +1,4 @@
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 export const AUDIT_SCOPE_TYPE = Object.freeze({ TEAM_SEASON: 'teamSeason', TEAM_SEASONS: 'teamSeasons', FULL_SYSTEM: 'fullSystem' })
 export const AUDIT_COLLECTION_SCOPE = Object.freeze({})

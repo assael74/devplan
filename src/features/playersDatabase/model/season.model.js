@@ -5,6 +5,26 @@ import {
   pickFirstValue,
 } from './value.model.js'
 
+export const SEASON_STATUS = Object.freeze({
+  NOT_STARTED: 'not_started',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+})
+
+export const normalizeSeasonStatus = (value, fallback = SEASON_STATUS.ACTIVE) => {
+  const status = cleanValue(value).toLowerCase()
+
+  return Object.values(SEASON_STATUS).includes(status)
+    ? status
+    : fallback
+}
+
+export const getSeasonTarget = seasonStatus => (
+  normalizeSeasonStatus(seasonStatus) === SEASON_STATUS.COMPLETED
+    ? 'history'
+    : 'current'
+)
+
 export const buildSeasonKey = seasonId =>
   cleanValue(seasonId).replace(/[^0-9a-zA-Z]+/g, '_')
 

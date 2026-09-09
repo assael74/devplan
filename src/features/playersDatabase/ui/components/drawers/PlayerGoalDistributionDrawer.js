@@ -87,7 +87,7 @@ export default function PlayerGoalDistributionDrawer({
       resetButtonProps={{ sx: sx.resetButton }}
     >
       <Box sx={sx.fieldCard}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1, minWidth: 0 }}>
+        <Box sx={sx.goalGrid}>
           <FormControl sx={[sx.formControl, { minWidth: 0 }]}>
             <FormLabel>שערים בעונה</FormLabel>
             <Input value={toDisplayNumber(goals)} readOnly sx={sx.input} />
@@ -115,11 +115,11 @@ export default function PlayerGoalDistributionDrawer({
           </FormHelperText>
         </FormControl>
 
-        <Box sx={{ mt: 2, px: 1.25, py: 1, borderRadius: '9px', bgcolor: 'rgba(47, 134, 199, 0.10)' }}>
-          <Typography level='body-xs' sx={{ color: 'text.tertiary' }}>
+        <Box sx={sx.goalSummary}>
+          <Typography level='body-xs' sx={sx.goalSummaryLabel}>
             אחוז פיזור שערים
           </Typography>
-          <Typography level='title-lg' sx={{ color: 'primary.700', fontWeight: 700 }}>
+          <Typography level='title-lg' sx={sx.goalSummaryValue}>
             {distributionPct === null ? '—' : `${distributionPct}%`}
           </Typography>
         </Box>

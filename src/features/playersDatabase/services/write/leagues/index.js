@@ -12,10 +12,16 @@
  * - Updates season URL and season metadata by leagueId + seasonId.
  *
  * leagueTableRank.js
- * - Writes the tableRank array for a specific league season.
- * - Updates a team row URL and roster metadata inside that season.
- * - Updates scout-profile summaries for the matching team row.
- * - Does not orchestrate team-index or master-document writes.
+ * - Writes the canonical tableRank array for a specific league season.
+ *
+ * leagueTableRankTeamSync.js
+ * - Updates URL, roster/stats sync metadata for a matching team row.
+ *
+ * leagueTableRankScoutSummary.js
+ * - Updates scout-profile summaries and task signals for matching team rows.
+ *
+ * leagueTableRank.model.js
+ * - Pure table-rank transformations and persisted-state comparison helpers.
  *
  * leagueDelete.js
  * - Removes or clears league data at season scope.
@@ -44,12 +50,18 @@ export {
 } from './leagueSeason.js'
 
 export {
-  updateLeagueSeasonTableRankScoutProfilesSummary,
-  updateLeagueSeasonTableRankScoutProfilesSummaries,
-  updateLeagueSeasonTableRankTeamSyncMeta,
-  updateLeagueSeasonTableRankTeamUrl,
   updateLeagueSeasonTableRank,
 } from './leagueTableRank.js'
+
+export {
+  updateLeagueSeasonTableRankTeamSyncMeta,
+  updateLeagueSeasonTableRankTeamUrl,
+} from './leagueTableRankTeamSync.js'
+
+export {
+  updateLeagueSeasonTableRankScoutProfilesSummary,
+  updateLeagueSeasonTableRankScoutProfilesSummaries,
+} from './leagueTableRankScoutSummary.js'
 
 export {
   clearLeagueSeasonTeams,

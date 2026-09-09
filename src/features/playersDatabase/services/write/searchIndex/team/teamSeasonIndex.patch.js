@@ -33,11 +33,11 @@ import {
   resolveClubLevel,
   resolveClubStrengthLevel,
 } from './teamSeasonIndex.model.js'
-import { buildTeamBalanceSearchIndexProjection } from './teamSeasonIndex.balance.js'
+import { buildTeamBalanceSearchIndexProjection } from '../../../../domain/projections/teamBalanceSearchIndex.projection.js'
 import {
   buildLeagueTeamPerformanceProjection,
   buildTeamSearchIndexPerformanceProjection,
-} from '../../shared/teamPerformanceProjection.js'
+} from '../../../../domain/projections/teamPerformance.projection.js'
 import {
   buildCanonicalLeagueTeamScoutContext,
 } from '../../shared/leagueTeamScoutContext.js'
@@ -45,6 +45,10 @@ import {
   buildSearchIndexWriteResult,
   SEARCH_INDEX_ENTITY_TYPES,
 } from '../shared/searchIndexResult.model.js'
+import {
+  areScoutProfilesSummariesEqual,
+  normalizeScoutProfilesSummary,
+} from '../../../../domain/projections/teamScoutSummary.projection.js'
 
 const readSearchIndexes = queryRef => {
   return trackedGetDocs(queryRef, {
@@ -72,29 +76,6 @@ const teamSeasonIndexDeleteUsage = {
     operationSubtype: 'maintenance-deleteDoc',
   },
 }
-
-const normalizeScoutProfilesSummary = summary => {
-  const profileCounts =
-    summary?.profileCounts &&
-    typeof summary.profileCounts === 'object'
-      ? summary.profileCounts
-      : {}
-
-  return {
-    total: toNumberOrZero(summary?.total),
-    profileCounts: Object.keys(profileCounts)
-      .sort()
-      .reduce((result, profileId) => {
-        result[profileId] = toNumberOrZero(profileCounts[profileId])
-        return result
-      }, {}),
-  }
-}
-
-const areScoutProfilesSummariesEqual = (left, right) => (
-  JSON.stringify(normalizeScoutProfilesSummary(left)) ===
-  JSON.stringify(normalizeScoutProfilesSummary(right))
-)
 
 const hasSameTeamPerformanceProjection = ({ existing = {}, projection = {} } = {}) => (
   Object.entries(projection).every(([field, value]) => existing[field] === value)
@@ -588,7 +569,9 @@ export async function updateTeamSeasonSearchIndexScoutProfilesSummary({
 
   const existingBalanceProjection = Object.keys(balanceProjection).reduce((result, key) => ({
     ...result,
-    [key]: existingData[key] ?? '',
+    [key]: existingData[key] === undefined || existingData[key] === null
+      ? ''
+      : existingData[key],
   }), {})
   const hasPlayersCount = playersCount !== null && playersCount !== undefined
   const normalizedPlayersCount = hasPlayersCount

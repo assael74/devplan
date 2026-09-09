@@ -1,13 +1,15 @@
 // src/features/playersDatabase/services/write/teams/teamSeasonScoutContext.js
 
+import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
 import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
+import { normalizeSeasonStatus } from '../../../model/season.model.js'
 import { buildTeamSeasonDocumentData, teamSeasonDocRef } from './teamSeasonDoc.js'
-import { buildTeamPlayerSeasonalScoutProjection } from '../shared/playerScoutProjection.js'
+import { buildTeamPlayerSeasonalScoutProjection } from '../../../domain/projections/playerScout.projection.js'
 import {
   buildCanonicalLeagueTeamScoutContexts,
 } from '../shared/leagueTeamScoutContext.js'
@@ -46,20 +48,6 @@ const stripTeamScoutContextTechnicalTimestamps = value => {
   return nextRow
 }
 
-const normalizeComparableValue = value => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeComparableValue)
-  }
-
-  if (!isPlainObject(value)) return value
-
-  return Object.keys(value)
-    .sort()
-    .reduce((acc, key) => {
-      acc[key] = normalizeComparableValue(value[key])
-      return acc
-    }, {})
-}
 
 const isSameTeamScoutContextRows = (currentRows, nextRows) => (
   JSON.stringify(normalizeComparableValue(
@@ -79,9 +67,7 @@ export const buildCanonicalTeamSeasonScoutContext = ({
 } = {}) => {
   const performance = scoutPerformance || {}
   const officialPerformance = teamPerformance || {}
-  const seasonStatus = clean(season.seasonStatus) === 'completed'
-    ? 'completed'
-    : 'active'
+  const seasonStatus = normalizeSeasonStatus(season.seasonStatus)
 
   return {
     displayName: clean(row.displayName || row.teamName),
@@ -135,9 +121,9 @@ export const buildCanonicalTeamSeasonScoutContext = ({
     teamUrl: clean(row.teamUrl),
     seasonUrl: clean(season.seasonUrl),
     seasonStatus,
-    tableRank: officialPerformance.tableRank ?? null,
-    tableAttackRank: officialPerformance.tableAttackRank ?? null,
-    tableDefenseRank: officialPerformance.tableDefenseRank ?? null,
+    tableRank: officialPerformance.tableRank !== undefined && officialPerformance.tableRank !== null ? officialPerformance.tableRank : null,
+    tableAttackRank: officialPerformance.tableAttackRank !== undefined && officialPerformance.tableAttackRank !== null ? officialPerformance.tableAttackRank : null,
+    tableDefenseRank: officialPerformance.tableDefenseRank !== undefined && officialPerformance.tableDefenseRank !== null ? officialPerformance.tableDefenseRank : null,
     gamesPlayed: Number(officialPerformance.teamGamePlayed) || 0,
     teamGamePlayed: Number(officialPerformance.teamGamePlayed) || 0,
     goalsFor: Number(officialPerformance.goalsFor) || 0,
@@ -219,9 +205,9 @@ export async function updateTeamSeasonPlayersScoutContext({
       ...currentSeason,
       seasonId: clean(currentSeason.seasonId || seasonId),
       seasonKey: clean(currentSeason.seasonKey || seasonKey),
-      seasonStatus: clean(currentSeason.seasonStatus || season.seasonStatus) === 'completed'
-        ? 'completed'
-        : 'active',
+      seasonStatus: normalizeSeasonStatus(
+        currentSeason.seasonStatus || season.seasonStatus
+      ),
       leagueLevel: teamContext.leagueLevel,
       expectedLevelDelta: teamContext.expectedLevelDelta,
       leagueTotalRound: teamContext.leagueTotalRound,

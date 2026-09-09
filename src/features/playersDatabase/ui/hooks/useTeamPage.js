@@ -53,7 +53,8 @@ function findRequestedSeasonOption({
     return leagueMatch || seasonMatches[0] || null
   }
 
-  return seasonOptions[0]
+  return seasonOptions.find(option => option.target !== 'future') ||
+    seasonOptions[0]
 }
 
 export function useTeamPage() {
