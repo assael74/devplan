@@ -1,7 +1,10 @@
 // features/playersDatabase/ui/pages/teamPage/hooks/useTeamStatsColumns.sx.js
 
 export const teamStatsColumnsSx = {
-  tableHeaderIcon: { display: 'inline-flex', alignItems: 'center' },
+  tableHeaderIcon: {
+    display: 'inline-flex',
+    alignItems: 'center',
+  },
 
   markedNumber: {
     fontWeight: 700,

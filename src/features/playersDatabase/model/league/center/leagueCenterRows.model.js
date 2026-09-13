@@ -1,0 +1,497 @@
+// src/features/playersDatabase/model/league/center/leagueCenterRows.model.js
+
+import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../../../catalog/ageGroups.catalog.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
+import {
+  getSeasonCatalogOptions,
+  getSeasonCatalogTarget,
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY,
+} from '../../../catalog/seasons.catalog.js'
+import {
+  isSameSeason,
+  normalizeSeasonIdentity,
+  normalizeSeasonLookupKey,
+  resolveSeasonLookupKey,
+} from '../../shared/season.model.js'
+import { normalizeTeamStats } from '../../team/teamStats.model.js'
+import {
+  cleanValue,
+  toNumberOrZero,
+  pickDefinedValue,
+} from '../../shared/value.model.js'
+import {
+  buildTeamScoutLeagueModel,
+  TEAM_SCOUT_NORMALIZATION_MODE,
+  TEAM_SCOUT_SORT_MODE,
+} from '../../../../../shared/scouting/teams/index.js'
+import { enrichTeamScoutInputRows } from '../../../domain/adapters/teamScoutInput.adapter.js'
+import {
+  countPlayers,
+  countProfiledPlayers,
+  countScoutProfiles,
+} from '../../../domain/projections/leaguesMaster.projection.js'
+
+export const LEAGUE_CENTER_ALL_SEASONS_KEY = 'all'
+export const LEAGUE_CENTER_DEFAULT_SEASON_KEY = LEAGUE_CENTER_ALL_SEASONS_KEY
+export const LEAGUE_CENTER_CURRENT_SEASON_KEY =
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY
+
+const clean = cleanValue
+const toNumber = toNumberOrZero
+
+const toAgeGroupLabel = value => {
+  const ageGroupId = clean(value)
+  if (!ageGroupId) return ''
+
+  return ageGroupId.toUpperCase()
+}
+
+const normalizeSeasonKey = normalizeSeasonLookupKey
+
+const isSameSeasonKey = (left, right) => isSameSeason(
+  {
+    seasonId: left,
+    seasonKey: left,
+  },
+  {
+    seasonId: right,
+    seasonKey: right,
+  }
+)
+
+export const resolveLeagueCenterSeasonTarget = seasonKey =>
+  normalizeSeasonKey(seasonKey) === LEAGUE_CENTER_ALL_SEASONS_KEY
+    ? 'all'
+    : getSeasonCatalogTarget(normalizeSeasonKey(seasonKey), 'history')
+
+const getLeagueIds = league => [
+  league?.catalogLeagueId,
+  league?.leagueId,
+  league?.id,
+].map(clean).filter(Boolean)
+
+const getCatalogLeague = league => {
+  const ids = getLeagueIds(league)
+
+  return PLAYERS_DATABASE_LEAGUES_CATALOG.find(item => ids.includes(item.id)) || null
+}
+
+const buildLeagueDocsMap = leagueDocs => {
+  const map = new Map()
+
+  leagueDocs.forEach(league => {
+    getLeagueIds(league).forEach(id => {
+      if (!map.has(id)) {
+        map.set(id, league)
+      }
+    })
+  })
+
+  return map
+}
+
+export const getLeagueSeasons = league => {
+  const rows = []
+
+  if (league?.current?.seasonId || league?.current?.seasonKey) {
+    rows.push({
+      target: 'current',
+      season: league.current,
+    })
+  }
+
+  const history = Array.isArray(league?.history) ? league.history : []
+  history.forEach(season => {
+    if (season?.seasonId || season?.seasonKey) {
+      rows.push({
+        target: 'history',
+        season,
+      })
+    }
+  })
+
+  return rows
+}
+
+const getSelectedSeason = (league, selectedSeasonKey) => {
+  const seasons = getLeagueSeasons(league)
+  if (!seasons.length) {
+    return {
+      target: 'missing',
+      season: null,
+    }
+  }
+
+  const selected = seasons.find(row => (
+    isSameSeasonKey(row.season?.seasonKey, selectedSeasonKey) ||
+    isSameSeasonKey(row.season?.seasonId, selectedSeasonKey)
+  ))
+
+  if (selected) return selected
+
+  return {
+    target: 'missing',
+    season: null,
+  }
+}
+
+const getTableRows = season =>
+  Array.isArray(season?.tableRank)
+    ? season.tableRank.filter(row => row && (row.teamId || row.clubId || row.rank))
+    : []
+
+const resolveTableRowTeamName = row => clean(
+  row?.teamName ||
+  row?.name ||
+  row?.displayName ||
+  row?.clubName
+)
+
+const buildTableRowTeamNames = rows => (
+  Array.from(new Set(
+    rows
+      .map(resolveTableRowTeamName)
+      .filter(Boolean)
+  ))
+)
+
+const PRIORITY_TARGET_LEVELS = new Set(['positive', 'high', 'elite'])
+
+const hasTeamStats = row => (
+  Boolean(row?.hasPlayers) && Boolean(row?.hasStats)
+)
+
+const getCoverageStatus = ({ completeCount = 0, targetCount = 0 } = {}) => {
+  if (!targetCount) return 'full'
+  if (completeCount >= targetCount) return 'full'
+  if (completeCount > 0) return 'partial'
+  return 'missing'
+}
+
+const getTableStatus = rows => (rows.length ? 'full' : 'missing')
+
+const buildPriorityCoverage = ({
+  tableRows = [],
+  leagueLevel,
+  leagueNumGames,
+} = {}) => {
+  if (!tableRows.length) {
+    return {
+      combined: { completeCount: 0, targetCount: 0, status: 'missing' },
+      offense: { count: 0, targetCount: 0 },
+      defense: { count: 0, targetCount: 0 },
+    }
+  }
+
+  const result = buildTeamScoutLeagueModel({
+    leagueLevel,
+    leagueNumGames: leagueNumGames || 30,
+    rows: enrichTeamScoutInputRows(tableRows),
+    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
+  })
+  const scoutRows = Array.isArray(result?.rows) ? result.rows : []
+  let offensePriorityCount = 0
+  let defensePriorityCount = 0
+
+  scoutRows.forEach(row => {
+    const offenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.offense?.priorityLevel))
+    const defenseTarget = PRIORITY_TARGET_LEVELS.has(clean(row?.defense?.priorityLevel))
+
+    if (offenseTarget) offensePriorityCount += 1
+    if (defenseTarget) defensePriorityCount += 1
+  })
+
+  const teamsWithStatsCount = tableRows.filter(hasTeamStats).length
+
+  return {
+    combined: {
+      completeCount: teamsWithStatsCount,
+      targetCount: tableRows.length,
+      status: getCoverageStatus({
+        completeCount: teamsWithStatsCount,
+        targetCount: tableRows.length,
+      }),
+    },
+    offense: {
+      count: offensePriorityCount,
+      targetCount: tableRows.length,
+    },
+    defense: {
+      count: defensePriorityCount,
+      targetCount: tableRows.length,
+    },
+  }
+}
+
+const buildLeagueName = ({ league, catalog }) => {
+  const ageLabel = clean(league?.ageGroupLabel || catalog?.ageGroupLabel)
+  const name = clean(league?.name || league?.leagueName || catalog?.name)
+
+  return [ageLabel, name].filter(Boolean).join(' ')
+}
+
+const buildCleanLeagueName = ({ league, catalog }) =>
+  clean(league?.name || league?.leagueName || catalog?.name)
+
+const buildLeagueCenterRow = ({
+  league,
+  catalog,
+  hasLeagueDoc,
+  selectedSeasonKey,
+}) => {
+  const { target, season } = getSelectedSeason(league, selectedSeasonKey)
+  const tableRows = getTableRows(season)
+  const tableRankCount = toNumber(season?.tableRankCount)
+  const expectedTeamsCount = toNumber(
+    league?.clubsCount ||
+    league?.teamsCount ||
+    season?.clubsCount ||
+    season?.teamsCount ||
+    season?.tableRankCount
+  )
+  const teamsCount = expectedTeamsCount || tableRows.length
+  const leagueLevel = toNumber(
+    league?.level !== undefined && league?.level !== null
+      ? league.level
+      : catalog?.level
+  ) || ''
+  const priorityCoverage = buildPriorityCoverage({
+    tableRows,
+    leagueLevel,
+    leagueNumGames: toNumber(season?.leagueTotalRound),
+  })
+  const tableStatus = getTableStatus(tableRows)
+  const ageGroupId = clean(league?.ageGroupId || catalog?.ageGroupId)
+  const birthYear = toNumber(season?.birthYear)
+  const seasonIdentity = normalizeSeasonIdentity({ season: season || {} })
+  const playersCount = tableRows.length
+    ? countPlayers(tableRows)
+    : toNumber(season?.playersCount)
+  const playersWithScoutProfileCount = tableRows.length
+    ? countProfiledPlayers(tableRows)
+    : toNumber(season?.playersWithScoutProfileCount)
+  const scoutProfilesCount = tableRows.length
+    ? countScoutProfiles(tableRows)
+    : toNumber(season?.scoutProfilesCount)
+  const teamNames = buildTableRowTeamNames(tableRows)
+
+  return {
+    id: clean(league?.id || league?.leagueId || catalog?.id),
+    leagueId: clean(league?.leagueId || league?.id || catalog?.id),
+    catalogLeagueId: clean(catalog?.id || league?.catalogLeagueId),
+    name: buildLeagueName({
+      league,
+      catalog,
+    }),
+    leagueName: buildCleanLeagueName({
+      league,
+      catalog,
+    }),
+    ageGroup: toAgeGroupLabel(ageGroupId),
+    ageGroupId,
+    ageGroupLabel: clean(league?.ageGroupLabel || catalog?.ageGroupLabel),
+    level: leagueLevel,
+    region: clean(league?.region || catalog?.region),
+    order: toNumber(catalog?.order),
+    birthYear: birthYear || '',
+    seasonKey: resolveSeasonLookupKey(seasonIdentity) || selectedSeasonKey,
+    seasonId: seasonIdentity.seasonId,
+    selectedTarget: target,
+    teamsCount,
+    tableStatus,
+    playersStatsStatus: priorityCoverage.combined.status,
+    playersStatsCompleteCount: priorityCoverage.combined.completeCount,
+    playersStatsTargetCount: priorityCoverage.combined.targetCount,
+    offensePriorityCount: priorityCoverage.offense.count,
+    offensePriorityTargetCount: priorityCoverage.offense.targetCount,
+    defensePriorityCount: priorityCoverage.defense.count,
+    defensePriorityTargetCount: priorityCoverage.defense.targetCount,
+    dataStatus: (() => {
+      const statuses = [
+        tableStatus,
+        priorityCoverage.combined.status,
+      ]
+
+      if (statuses.every(status => status === 'full')) return 'full'
+      if (tableStatus === 'missing') return 'missing'
+      return 'partial'
+    })(),
+    playersWithProfiles: playersWithScoutProfileCount,
+    playersCount,
+    playersWithScoutProfileCount,
+    scoutProfilesCount,
+    teamNames,
+    teamSearchText: teamNames.join(' '),
+    hasLeagueDoc,
+    hasSelectedSeason: Boolean(season),
+    catalog,
+    sourceLeague: league,
+  }
+}
+
+const buildMasterLeagueSeasonRows = league => {
+  const seasons = Array.isArray(league?.seasons) ? league.seasons : []
+  const currentSeason =
+    seasons.find(season => clean(season?.currentDocRef)) ||
+    seasons.find(season => normalizeSeasonKey(season?.seasonKey) === LEAGUE_CENTER_CURRENT_SEASON_KEY) ||
+    seasons[0] ||
+    null
+
+  return {
+    current: currentSeason ? { ...currentSeason } : null,
+    history: seasons.filter(season => season !== currentSeason).map(season => ({ ...season })),
+  }
+}
+
+export const buildMasterLeagueDoc = league => {
+  const leagueDocumentId = clean(league?.leagueDocumentId || league?.leagueId)
+  const leagueId = clean(league?.leagueId || leagueDocumentId)
+  const { current, history } = buildMasterLeagueSeasonRows(league)
+
+  return {
+    id: leagueDocumentId || leagueId,
+    leagueId: leagueDocumentId || leagueId,
+    catalogLeagueId: leagueId,
+    leagueDocumentId,
+    name: clean(league?.leagueName || league?.name),
+    leagueName: clean(league?.leagueName || league?.name),
+    ageGroupId: clean(league?.ageGroupId),
+    ageGroupLabel: clean(league?.ageGroupLabel),
+    region: clean(league?.region),
+    level: pickDefinedValue(league?.level, null),
+    current,
+    history,
+    hasLeagueDoc: Boolean(leagueDocumentId),
+  }
+}
+
+export const buildLeagueCenterLeagueDocsFromMasterDocument = ({
+  leaguesMasterDoc = {},
+} = {}) => (
+  Array.isArray(leaguesMasterDoc?.leagues)
+    ? leaguesMasterDoc.leagues.map(buildMasterLeagueDoc)
+    : []
+)
+
+export const buildLeagueCenterLeagueDocuments = ({
+  leaguesMasterDoc = {},
+  leagueDocuments = [],
+} = {}) => {
+  const masterDocs = buildLeagueCenterLeagueDocsFromMasterDocument({
+    leaguesMasterDoc,
+  })
+  const liveDocs = Array.isArray(leagueDocuments)
+    ? leagueDocuments.filter(Boolean)
+    : []
+  const liveMap = buildLeagueDocsMap(liveDocs)
+
+  const mergedDocs = masterDocs.map(masterDoc => {
+    const liveDoc = getLeagueIds(masterDoc)
+      .map(id => liveMap.get(id))
+      .find(Boolean)
+
+    if (!liveDoc) return masterDoc
+
+    return {
+      ...masterDoc,
+      ...liveDoc,
+      id: clean(liveDoc.id || masterDoc.id),
+      leagueId: clean(liveDoc.leagueId || liveDoc.id || masterDoc.leagueId),
+      catalogLeagueId: clean(masterDoc.catalogLeagueId || liveDoc.catalogLeagueId),
+      hasLeagueDoc: true,
+    }
+  })
+
+  const mergedIds = new Set(
+    mergedDocs.flatMap(getLeagueIds)
+  )
+  const extraLiveDocs = liveDocs.filter(league => (
+    !getLeagueIds(league).some(id => mergedIds.has(id))
+  ))
+
+  return [...mergedDocs, ...extraLiveDocs]
+}
+
+export const buildLeagueCenterRowsFromMasterDocument = ({
+  leaguesMasterDoc = {},
+  selectedSeasonKey,
+} = {}) => {
+  return buildLeagueCenterRows({
+    leagueDocs: buildLeagueCenterLeagueDocsFromMasterDocument({ leaguesMasterDoc }),
+    selectedSeasonKey,
+  })
+}
+
+export const buildLeagueCenterRowsFromIndex = ({
+  leagueIndexDoc = {},
+} = {}) => {
+  if (Array.isArray(leagueIndexDoc?.rows) && leagueIndexDoc.rows.length) {
+    return leagueIndexDoc.rows.filter(row => row && row.id)
+  }
+
+  return buildLeagueCenterRows({
+    leagueDocs: [],
+  })
+}
+
+export const buildLeagueCenterRows = ({
+  leagueDocs,
+  selectedSeasonKey,
+}) => {
+  const leagueDocsMap = buildLeagueDocsMap(leagueDocs)
+  const catalogIds = new Set(PLAYERS_DATABASE_LEAGUES_CATALOG.map(item => item.id))
+  const shouldShowAllSeasons = normalizeSeasonKey(selectedSeasonKey) === LEAGUE_CENTER_ALL_SEASONS_KEY
+
+  const buildRowsForLeague = ({ league, catalog, hasLeagueDoc }) => {
+    if (!shouldShowAllSeasons) {
+      return [buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey,
+      })]
+    }
+
+    const seasons = getLeagueSeasons(league)
+    if (!seasons.length) {
+      return [buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey: '',
+      })]
+    }
+
+    return seasons.map(({ season }) => (
+      buildLeagueCenterRow({
+        league,
+        catalog,
+        hasLeagueDoc,
+        selectedSeasonKey: resolveSeasonLookupKey(season),
+      })
+    ))
+  }
+
+  const catalogRows = PLAYERS_DATABASE_LEAGUES_CATALOG.flatMap(catalog => {
+    const league = leagueDocsMap.get(catalog.id) || catalog
+
+    return buildRowsForLeague({
+      league,
+      catalog,
+      hasLeagueDoc: pickDefinedValue(league?.hasLeagueDoc, league !== catalog),
+    })
+  })
+
+  const extraRows = leagueDocs
+    .filter(league => !getLeagueIds(league).some(id => catalogIds.has(id)))
+    .flatMap(league => (
+      buildRowsForLeague({
+        league,
+        catalog: getCatalogLeague(league),
+        hasLeagueDoc: pickDefinedValue(league?.hasLeagueDoc, true),
+      })
+    ))
+
+  return [...catalogRows, ...extraRows].filter(row => row.id)
+}

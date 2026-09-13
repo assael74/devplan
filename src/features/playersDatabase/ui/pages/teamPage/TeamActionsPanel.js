@@ -325,7 +325,7 @@ export default function TeamActionsPanel({
               onClick={onTeamJsonDownload}
               size='sm'
             >
-              {iconUi({id: 'download', size: 'sm'})}
+              {iconUi({id: 'dataShow', size: 'sm'})}
             </IconButton>
           </span>
         </Tooltip>

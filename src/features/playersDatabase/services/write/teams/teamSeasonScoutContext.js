@@ -4,10 +4,10 @@ import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
-import { normalizeSeasonStatus } from '../../../model/season.model.js'
+import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { buildTeamSeasonDocumentData, teamSeasonDocRef } from './teamSeasonDoc.js'
 import { buildTeamPlayerSeasonalScoutProjection } from '../../../domain/projections/playerScout.projection.js'
 import {
@@ -57,6 +57,14 @@ const isSameTeamScoutContextRows = (currentRows, nextRows) => (
     stripTeamScoutContextTechnicalTimestamps(nextRows)
   ))
 )
+
+const buildCompactTeamPerformanceSide = side => {
+  const priorityLevel = clean(side?.priorityLevel)
+
+  return priorityLevel && priorityLevel !== 'unavailable'
+    ? { priorityLevel }
+    : null
+}
 
 export const buildCanonicalTeamSeasonScoutContext = ({
   league = {},
@@ -129,6 +137,7 @@ export const buildCanonicalTeamSeasonScoutContext = ({
     goalsFor: Number(officialPerformance.goalsFor) || 0,
     goalsAgainst: Number(officialPerformance.goalsAgainst) || 0,
     goalsForPerGame: Number(officialPerformance.goalsForPerGame) || 0,
+    goalsAgainstPerGame: Number(officialPerformance.goalsAgainstPerGame) || 0,
     performance,
     teamScout: performance,
     offense: performance.offense || {},
@@ -244,6 +253,13 @@ export async function updateTeamSeasonPlayersScoutContext({
       leagueLevel: Number(teamContext.leagueLevel || currentSeason.leagueLevel || 0),
       expectedLevelDelta: teamContext.expectedLevelDelta,
       seasonStatus: effectiveSeason.seasonStatus,
+      tableRank: teamContext.tableRank,
+      tableAttackRank: teamContext.tableAttackRank,
+      tableDefenseRank: teamContext.tableDefenseRank,
+      goalsForPerGame: teamContext.goalsForPerGame,
+      goalsAgainstPerGame: Number(teamContext.goalsAgainstPerGame) || 0,
+      teamAttackPerformance: buildCompactTeamPerformanceSide(teamContext.offense),
+      teamDefensePerformance: buildCompactTeamPerformanceSide(teamContext.defense),
       teamPlayers: nextPlayers,
       playersCount: nextPlayers.length,
       scoutProfilesSummary,

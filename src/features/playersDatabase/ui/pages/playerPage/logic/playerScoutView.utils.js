@@ -1,6 +1,6 @@
 // Shared formatting helpers for the player scout view model.
 
-import { formatPerGameRate } from '../../../../model/rate.model.js'
+import { formatPerGameRate } from '../../../../model/shared/rate.model.js'
 
 export const clean = value => String(
   value === null || value === undefined ? '' : value

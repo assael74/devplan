@@ -6,9 +6,13 @@ import {
 import { removePlayerSeasonDocsMany } from '../../players/index.js'
 import { deleteSearchIndexesForTeamSeason } from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
+import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
-import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
 
 const FLOW = 'clearTeamSeasonPlayers'
 
@@ -38,7 +42,11 @@ const runProjectionStage = async ({ stage, results, action }) => {
     const result = await action()
     results[stage] = result
 
-    if (result?.updated === false || (result?.failedCount || 0) > 0) {
+    if (
+      result?.updated === false ||
+      (result?.failedCount || 0) > 0 ||
+      (stage === 'clubProjection' && result?.completed !== true)
+    ) {
       throw new Error(
         result?.reason ||
         `${result.failedCount} projection record(s) failed`
@@ -76,6 +84,14 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     results,
     action: () => removeTeamSeason(payload),
   })
+  // removeTeamSeason owns the canonical identity after the document is gone.
+  // Preserve it for every following projection; the page model may expose only
+  // birthTeamDocumentId, while Club requires teamId explicitly.
+  const teamForProjections = {
+    ...(payload.team || {}),
+    teamId: payload.team?.teamId || teamSeasonResult.teamDocumentId || teamSeasonResult.birthTeamDocumentId || '',
+    birthTeamId: payload.team?.birthTeamId || teamSeasonResult.birthTeamDocumentId || teamSeasonResult.teamDocumentId || '',
+  }
 
   const playerDocumentIds = Array.isArray(teamSeasonResult.playerDocumentIds)
     ? teamSeasonResult.playerDocumentIds
@@ -102,7 +118,7 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     action: () => updateLeagueSeasonTableRankTeamSyncMeta({
       ...payload,
       team: {
-        ...(payload.team || {}),
+        ...teamForProjections,
         ...buildTeamLoadStatus([]),
       },
       scoutProfilesSummary: {
@@ -117,6 +133,28 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
   })
   const leagueRosterResult = leagueTeamMetaResult
   const leagueProfilesResult = leagueTeamMetaResult
+
+
+  const clubProjectionResult = await runProjectionStage({
+    stage: 'clubProjection',
+    results,
+    action: async () => ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: payload.league || {},
+      season: payload.season || {},
+      team: {
+        ...teamForProjections,
+        ...buildTeamLoadStatus([]),
+      },
+      teamSeason: {
+        ...(teamSeasonResult.seasonDocument || {}),
+        teamPlayers: [],
+        playersCount: 0,
+        scoutProfilesSummary: { total: 0, profileCounts: {} },
+      },
+      canonicalCommitted: true,
+      lastWriteAction: 'CLEAR_TEAM_SEASON_PLAYERS',
+    })),
+  })
 
   return {
     status: 'complete',
@@ -133,5 +171,6 @@ export async function clearTeamSeasonPlayersFlow(payload = {}) {
     playerIndexesResult,
     leagueRosterResult,
     leagueProfilesResult,
+    clubProjectionResult,
   }
 }

@@ -222,13 +222,13 @@ export default function CreateSeasonModal({
 
           <FormControl>
             <FormLabel sx={sx.label}>
-              משחקי עונה
+              משחקי עונה (אופציונלי)
             </FormLabel>
 
             <Input
               value={form.leagueTotalRound}
               type='number'
-              placeholder='ברירת מחדל 30'
+              placeholder='הזן רק אם המספר ידוע'
               onChange={event => {
                 updateField('leagueTotalRound', event.target.value)
               }}

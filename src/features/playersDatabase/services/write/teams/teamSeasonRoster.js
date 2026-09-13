@@ -5,8 +5,8 @@ import { clean } from '../leagues/leagueDoc.js'
 import {
   normalizeSeasonIdentity,
   normalizeSeasonStatus,
-} from '../../../model/season.model.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+} from '../../../model/shared/season.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { buildTeamRootWithSeasonIndex, teamDocRef } from './teamDoc.js'
 import {
   buildPlayerLookup,

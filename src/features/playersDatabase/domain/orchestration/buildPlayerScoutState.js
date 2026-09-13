@@ -4,10 +4,10 @@ import {
   buildDbPlayerScoutResult,
   PLAYER_SCOUT_ACTIVE_ENGINE,
 } from './buildDbPlayerScoutResult.js'
-import { normalizePlayerStats } from '../../model/playerStats.model.js'
+import { normalizePlayerStats } from '../../model/player/playerStats.model.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
 import { resolvePlayerFutureCompetitionPath } from './playerFutureCompetitionPath.js'
-import { buildPreviousProfileDistancesFromMeasurement } from '../../model/playerScoutMeasurement.model.js'
+import { buildPreviousProfileDistancesFromMeasurement } from '../../model/scout/playerScoutMeasurement.model.js'
 
 const buildScoutPlayer = ({ player = {}, primaryPosition = '', positionLayer = '', numShirt = '' } = {}) => {
   const playerStats = normalizePlayerStats(player)

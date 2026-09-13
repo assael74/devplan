@@ -12,6 +12,7 @@ export const PLAYERS_DATABASE_CACHE_PREFIXES = {
   teamSeason: 'teamSeason',
   player: 'player',
   leaguesMaster: 'leaguesMaster',
+  clubsMaster: 'clubsMaster',
 }
 
 export const buildLeaguesCollectionCacheKey = () => (
@@ -40,4 +41,8 @@ export const buildPlayerDocumentCacheKey = playerId => (
 
 export const buildLeaguesMasterCacheKey = () => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.leaguesMaster, 'all')
+)
+
+export const buildClubsMasterCacheKey = () => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.clubsMaster, 'all')
 )

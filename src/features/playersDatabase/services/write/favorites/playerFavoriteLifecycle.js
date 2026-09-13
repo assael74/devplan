@@ -16,8 +16,8 @@ import {
 import {
   buildFavoriteItem,
   normalizeFavoriteItems,
-} from '../../../model/favorite.model.js'
-import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+} from '../../../model/player/favorite.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/player/playerIdentity.model.js'
 import {
   buildSeasonKey,
   clean,

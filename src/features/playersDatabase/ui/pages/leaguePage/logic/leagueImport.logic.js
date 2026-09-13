@@ -5,7 +5,7 @@ import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalo
 import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
 import { buildLeagueTablePastePreview } from '../../../../import/logic/leagueTablePastePreview.js'
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumber = value => {
@@ -138,6 +138,8 @@ export const shouldShowDisplayName = row => {
 
 const mapPreviewRow = row => {
   const data = row.data || {}
+  // Team 1 is always the neutral default. The importer may suggest a club,
+  // but the operator explicitly decides whether a row is a second team.
   const teamSlot = '1'
 
   return {

@@ -44,12 +44,18 @@ export const buildLeagueTeamSeasons = ({
     : []
   const leagueLevel = leagueSource.level || leagueSource.leagueLevel || null
   const leagueNumGames = seasonSource.leagueTotalRound || 30
+  const persistedPerformanceContext = seasonSource.teamPerformanceContext || {}
+  const persistedFactor = Number(persistedPerformanceContext.appliedFactor)
+  const hasPersistedFactor = Number.isFinite(persistedFactor) && persistedFactor > 0
 
   const engineResult = buildTeamScoutLeagueModel({
     leagueLevel,
     leagueNumGames,
     rows: enrichTeamScoutInputRows(tableRows),
-    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    normalizationMode: hasPersistedFactor
+      ? TEAM_SCOUT_NORMALIZATION_MODE.MANUAL
+      : TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    normalizationFactor: hasPersistedFactor ? persistedFactor : undefined,
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })
 
@@ -59,7 +65,15 @@ export const buildLeagueTeamSeasons = ({
       adaptTeamScoutEngineRow({
         row,
         source: {
-          normalization: engineResult?.normalization || {},
+          normalization: {
+            mode: persistedPerformanceContext.normalizationMode || engineResult?.normalization?.mode,
+            factor: hasPersistedFactor
+              ? persistedFactor
+              : engineResult?.normalization?.appliedFactor,
+            applied: hasPersistedFactor
+              ? persistedFactor !== 1
+              : Boolean(engineResult?.normalization?.applied),
+          },
           leagueLevel: engineResult?.leagueLevel || leagueLevel,
           leagueGames: engineResult?.leagueNumGames || leagueNumGames,
           engineVersion: SCOUTING_MODEL_VERSION,

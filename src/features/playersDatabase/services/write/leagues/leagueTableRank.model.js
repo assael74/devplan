@@ -1,6 +1,6 @@
-import { pickDefinedValue } from '../../../model/value.model.js'
-import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
-import { normalizeTeamStats } from '../../../model/teamStats.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
+import { normalizeTeamIdentity } from '../../../model/team/teamIdentity.model.js'
+import { normalizeTeamStats } from '../../../model/team/teamStats.model.js'
 import {
   clean,
   toNumberOrZero,
@@ -89,15 +89,22 @@ export const isSameLeagueSeasonPersistedState = (currentSeason, nextSeason) => (
   })
 )
 
-export const updateHistorySeasonTableRank = ({ history = [], season = {}, tableRank = [] } = {}) => (
+export const updateHistorySeasonTableRank = ({
+  history = [],
+  season = {},
+  tableRank = [],
+  teamPerformanceContext = {},
+} = {}) => (
   updateHistorySeason({
     history,
     season,
     patch: {
       birthYear: toNumberOrZero(season.birthYear),
       leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+      competitionRules: season?.competitionRules || {},
       seasonStatus: 'completed',
       tableRank,
+      teamPerformanceContext,
       updatedAt: new Date().toISOString(),
     },
   })

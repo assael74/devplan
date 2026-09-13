@@ -1,12 +1,14 @@
 // src/features/playersDatabase/ui/pages/leaguePage/LeagueHeader.js
 
 import {
+  Avatar,
   Box,
   Button,
   Stack,
   Typography,
 } from '@mui/joy'
 
+import leagueLogo from '../../../../../ui/core/images/leagueLogo.png'
 import PageHeader from '../../components/page/PageHeader.js'
 import ActivityStatusChip from '../../components/page/ActivityStatusChip.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
@@ -33,6 +35,7 @@ export default function LeagueHeader({
   birthYear = '',
   active = false,
   seasonKey = '',
+  seasonUrl = '',
   onSearch,
   onBack,
 }) {
@@ -77,6 +80,16 @@ export default function LeagueHeader({
       actions={actions}
     >
       <Box sx={sx.titleRow}>
+        <Avatar
+          component={seasonUrl ? 'a' : 'div'}
+          href={seasonUrl || undefined}
+          target={seasonUrl ? '_blank' : undefined}
+          rel={seasonUrl ? 'noreferrer' : undefined}
+          src={leagueLogo}
+          alt='לוגו ליגה'
+          aria-label={seasonUrl ? 'פתיחת קישור עונת הליגה' : 'לוגו ליגה'}
+          sx={[sx.leagueAvatar, seasonUrl ? sx.leagueAvatarLink : null]}
+        />
         <Typography level='h1' sx={sx.pageTitle}>
           {title}
           {region ? (

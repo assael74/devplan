@@ -36,11 +36,7 @@
  * teamSeasonMeta.js
  * - Updates team-season URL and season metadata.
  * - Applies metadata updates across multiple team documents.
- *
- * teamSeason.js
- * - Temporary compatibility barrel for existing imports.
- * - Contains no business logic.
- */
+ * */
 
 export {
   ensureTeamDoc,

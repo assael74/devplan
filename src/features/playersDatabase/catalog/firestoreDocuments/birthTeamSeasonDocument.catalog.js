@@ -205,4 +205,6 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   teamBalance: TEAM_BALANCE_GENERIC_OBJECT,
   createdAt: null,
   updatedAt: null,
+  lastWriteAction: '',
+  lastWriteAt: null,
 }

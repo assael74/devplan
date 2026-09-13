@@ -1,16 +1,16 @@
 // src/features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.stats.model.js
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 import {
   buildPlayerIdentityKey,
   resolvePlayerIdentityBirthYear,
-} from '../../../../model/playerIdentity.model.js'
-import { buildTeamSeasonDocumentId } from '../../../../model/teamIdentity.model.js'
+} from '../../../../model/player/playerIdentity.model.js'
+import { buildTeamSeasonDocumentId } from '../../../../model/team/teamIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
-} from '../../../../model/playerStats.model.js'
+} from '../../../../model/player/playerStats.model.js'
 import {
   clean,
   toNumberOrZero,

@@ -1,48 +1,51 @@
 // src/features/playersDatabase/services/read/index.js
 
-export { readFavorites } from './favorites.read.js'
+export { readFavorites } from './entities/favorites.read.js'
 
 export {
   getLeagueById,
   hasLeagueById,
   listLeagues,
   listLeaguesByIds,
-} from './league.js'
+} from './entities/league.js'
 
 export {
   getTeamById,
-} from './team.js'
+} from './entities/team.js'
 
 export {
   getTeamSeason,
   listTeamSeasons,
-} from './teamSeason.js'
+} from './entities/teamSeason.js'
 
-export { readTeamPageData } from './teamPage.read.js'
-export { buildLeagueTeamPerformanceProjection } from './teamPerformance.projection.js'
-export { readLeaguePageData } from './leaguePage.read.js'
-export { readLeagueCenterData } from './leagueCenter.read.js'
-export { readLeaguesMasterDocument } from './leaguesMaster.read.js'
+export { readTeamPageData } from './pages/teamPage.read.js'
+export { buildLeagueTeamPerformanceProjection } from './projections/teamPerformance.projection.js'
+export { readLeaguePageData } from './pages/leaguePage.read.js'
+export { readLeagueCenterData } from './pages/leagueCenter.read.js'
+export { readLeaguesMasterDocument } from './masters/leaguesMaster.read.js'
+export { readClubsMasterDocument } from './masters/clubsMaster.read.js'
+export { readClubSeasonIdentityIndex } from './masters/clubSeasonIdentityIndex.read.js'
+export { readClubPageDocument } from './pages/clubPage.read.js'
 
 export {
   readPlayerPageData,
   readPlayerSource,
-} from './playerPage.read.js'
+} from './pages/playerPage.read.js'
 export {
   canReadPlayerSearchIndexExport,
   canReadTeamSearchIndexExport,
   readPlayerSearchIndexExport,
+  readSearchIndexExportById,
   readTeamSearchIndexExport,
   readTeamSearchIndexesExport,
-} from './playerSearchIndexExport.read.js'
-export { readPlayerNarrativePlan } from './playerNarrative.read.js'
-export { readPlayerScoutMeasurementHistory } from './playerScoutHistory.read.js'
-export { readPlayerIdentityReview } from './playerIdentityReview.read.js'
+} from './indexes/playerSearchIndexExport.read.js'
+export { readPlayerScoutMeasurementHistory } from './indexes/playerScoutHistory.read.js'
+export { readPlayerIdentityReview } from './indexes/playerIdentityReview.read.js'
 export {
   readSearchPageCount,
   readSearchPageData,
   readSearchPageRows,
-} from './searchPage.read.js'
+} from './pages/searchPage.read.js'
 
 export {
   clearPlayersDatabaseDocumentCache,
@@ -52,5 +55,5 @@ export {
 export {
   buildLeagueTeamsForBirthYear,
   readLeagueTeamsForBirthYear,
-} from './workTasks.read.js'
-export { subscribePlayersDatabaseTasks } from './tasks.read.js'
+} from './tasks/workTasks.read.js'
+export { subscribePlayersDatabaseTasks } from './tasks/tasks.read.js'

@@ -10,6 +10,7 @@ import {
   readPlayerSource,
 } from '../../../../services/read/index.js'
 import { repairPlayerDataIssue } from '../../../../services/dataRepair/player/index.js'
+import { readActiveAuditFindingById } from '../../../../services/audit/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 
 const clean = value => String(value || '').trim()
@@ -79,6 +80,7 @@ export default function usePlayerDataRepair({
   playerId,
   requestedSeasonKey,
   requestedTeamId,
+  auditFindingId = '',
   notify,
   reload,
   navigate,
@@ -87,6 +89,7 @@ export default function usePlayerDataRepair({
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
   const [contexts, setContexts] = React.useState([])
+  const [auditFinding, setAuditFinding] = React.useState(null)
 
   const loadSources = React.useCallback(async () => {
     const playerDocument = await readPlayerSource({ playerId })
@@ -169,13 +172,19 @@ export default function usePlayerDataRepair({
     setError('')
 
     try {
-      await loadSources()
+      const [finding] = await Promise.all([
+        clean(auditFindingId)
+          ? readActiveAuditFindingById({ findingId: auditFindingId })
+          : Promise.resolve(null),
+        loadSources(),
+      ])
+      setAuditFinding(finding)
     } catch (loadError) {
       setError(loadError?.message || 'טעינת נתוני השחקן לבדיקה נכשלה.')
     } finally {
       setBusy(false)
     }
-  }, [busy, loadSources])
+  }, [auditFindingId, busy, loadSources])
 
   const handleRepair = React.useCallback(async (issue, context) => {
     if (busy) return
@@ -221,6 +230,7 @@ export default function usePlayerDataRepair({
     busy,
     error,
     contexts,
+    auditFinding,
     openRepair: handleOpen,
     repair: handleRepair,
     openTeam: handleTeamOpen,

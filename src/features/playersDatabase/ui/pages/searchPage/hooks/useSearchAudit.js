@@ -1,0 +1,348 @@
+import * as React from 'react'
+
+import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
+import {
+  previewMissingPlayerDocumentRepair,
+  buildAuditFindingId,
+  repairMissingPlayerDocuments,
+  runPlayerDatabaseAudit,
+} from '../../../../services/audit/index.js'
+import {
+  repairPlayerSearchIndexesFromAuditFindings,
+  repairTeamSearchIndexesFromAuditFindings,
+  deleteOrphanPlayerSearchIndexesFromAuditFindings,
+  resetOrphanTeamSearchIndexesFromAuditFindings,
+} from '../../../../services/dataRepair/searchIndex/searchIndexBulkRepair.js'
+import {
+  rebuildAllClubsMasterDocument,
+  rebuildClubProjectionsFromAuditFindings,
+  rebuildClubProjectionsFromAllLeagueTables,
+  repairOrphanedClubCompetitionPathSeasons,
+} from '../../../../services/dataRepair/club/index.js'
+import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
+
+const clean = value => String(
+  value === undefined || value === null ? '' : value
+).trim()
+
+export default function useSearchAudit({ rows }) {
+  const [open, setOpen] = React.useState(false)
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [result, setResult] = React.useState(null)
+  const [repairPlan, setRepairPlan] = React.useState(null)
+  const [orphanIndexDeletePlan, setOrphanIndexDeletePlan] = React.useState(null)
+  const [repairPreviewBusy, setRepairPreviewBusy] = React.useState(false)
+
+  const partialAuditDefaults = React.useMemo(
+    () => buildPartialAuditDefaults(rows),
+    [rows]
+  )
+
+  const refreshAudit = React.useCallback(async () => {
+    const nextResult = await runPlayerDatabaseAudit({
+      scope: result?.scope,
+    })
+    setResult(nextResult)
+    return nextResult
+  }, [result])
+
+  const openAudit = React.useCallback(() => {
+    setOpen(true)
+    setError('')
+  }, [])
+
+  const closeAudit = React.useCallback(() => {
+    setOpen(false)
+  }, [])
+
+  const handleScopeChange = React.useCallback(() => {
+    setResult(null)
+  }, [])
+
+  const runAudit = React.useCallback(async scope => {
+    if (busy) return
+    setBusy(true)
+    setError('')
+
+    try {
+      setResult(await runPlayerDatabaseAudit({ scope }))
+    } catch (auditError) {
+      console.error('[playersDatabase] Data audit failed:', auditError)
+      setError(
+        auditError instanceof Error
+          ? auditError.message
+          : 'בדיקת מצב הנתונים נכשלה'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }, [busy])
+
+  const openPlayer = React.useCallback((finding, context = {}) => {
+    const playerId = clean(finding?.playerDocumentId || finding?.documentId)
+    if (!playerId) return
+
+    const target = PLAYERS_DATABASE_UI_ROUTES.player({
+      playerId,
+      seasonKey: clean(context?.seasonKey),
+      teamId: clean(context?.teamDocumentId),
+      leagueId: clean(context?.leagueId),
+      auditFindingId:
+        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
+    })
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }, [])
+
+  const openTeam = React.useCallback((finding, context = {}) => {
+    const teamId = clean(context?.teamDocumentId || finding?.teamDocumentId)
+    const seasonKey = clean(context?.seasonKey || finding?.seasonKey)
+    const leagueId = clean(context?.leagueId || finding?.actual?.leagueId)
+
+    if (!teamId || !seasonKey || !leagueId) {
+      setError('חסרים פרטי קבוצה, עונה או ליגה למעבר לתיקון.')
+      return
+    }
+
+    const target = PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId,
+      teamId,
+      seasonKey,
+      auditFindingId:
+        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
+    })
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }, [])
+
+  const openLeague = React.useCallback(finding => {
+    const leagueId = clean(finding?.actual?.leagueId || finding?.relatedDocumentId)
+    const seasonKey = clean(finding?.seasonKey)
+
+    if (!leagueId) {
+      setError('חסר מזהה ליגה למעבר לתיקון.')
+      return
+    }
+
+    const target = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
+      ...(seasonKey ? { seasonKey } : {}),
+      auditFindingId:
+        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
+    })
+    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
+  }, [])
+
+  const openLeaguesCenter = React.useCallback(() => {
+    window.open(
+      PLAYERS_DATABASE_UI_ROUTES.leagues(),
+      '_blank',
+      'popup=yes,width=1280,height=900,noopener,noreferrer'
+    )
+  }, [])
+
+  const requestRepair = React.useCallback(async findings => {
+    if (busy || repairPreviewBusy) return
+    setRepairPreviewBusy(true)
+    setError('')
+
+    try {
+      const plan = await previewMissingPlayerDocumentRepair({ findings })
+      if (!plan.playersCount) {
+        setError('לא נמצאו מסמכי שחקן חסרים שמוכנים לתיקון.')
+        return
+      }
+      setRepairPlan({
+        findings: Array.isArray(findings) ? findings : [],
+        ...plan,
+      })
+    } catch (repairError) {
+      console.error('[playersDatabase] Player document repair preview failed:', repairError)
+      setError(
+        repairError instanceof Error
+          ? repairError.message
+          : 'טעינת רשימת התיקון נכשלה'
+      )
+    } finally {
+      setRepairPreviewBusy(false)
+    }
+  }, [busy, repairPreviewBusy])
+
+  const confirmRepair = React.useCallback(async () => {
+    if (!repairPlan?.findings?.length || busy) return
+    setBusy(true)
+    setError('')
+
+    try {
+      await repairMissingPlayerDocuments({ findings: repairPlan.findings })
+      await refreshAudit()
+      setRepairPlan(null)
+    } catch (repairError) {
+      console.error('[playersDatabase] Player document repair failed:', repairError)
+      setError(
+        repairError instanceof Error
+          ? repairError.message
+          : 'תיקון מסמכי השחקן נכשל'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, refreshAudit, repairPlan])
+
+  const runRepair = React.useCallback(async ({ action, failureMessage }) => {
+    if (busy) return
+    setBusy(true)
+    setError('')
+
+    try {
+      await action()
+      await refreshAudit()
+    } catch (repairError) {
+      setError(
+        repairError instanceof Error
+          ? repairError.message
+          : failureMessage
+      )
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, refreshAudit])
+
+  const repairPlayerIndexes = React.useCallback(findings => runRepair({
+    action: async () => {
+      const repairResult = await repairPlayerSearchIndexesFromAuditFindings({ findings })
+      if (repairResult.failures.length) {
+        setError(`${repairResult.failures.length} אינדקסי שחקנים לא תוקנו. התיקונים האחרים הושלמו.`)
+      }
+    },
+    failureMessage: 'תיקון אינדקסי השחקנים נכשל',
+  }), [runRepair])
+
+  const requestOrphanPlayerIndexDelete = React.useCallback(findings => {
+    if (busy) return
+    const safeFindings = Array.isArray(findings) ? findings : []
+    if (safeFindings.length) setOrphanIndexDeletePlan(safeFindings)
+  }, [busy])
+
+  const confirmOrphanPlayerIndexDelete = React.useCallback(async () => {
+    if (!orphanIndexDeletePlan?.length || busy) return
+    setBusy(true)
+    setError('')
+
+    try {
+      const deleteResult = await deleteOrphanPlayerSearchIndexesFromAuditFindings({
+        findings: orphanIndexDeletePlan,
+      })
+      if (deleteResult.skipped.length) {
+        setError(`${deleteResult.skipped.length} אינדקסים לא נמחקו כי מקור הנתונים השתנה מאז האודיט.`)
+      }
+      await refreshAudit()
+      setOrphanIndexDeletePlan(null)
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'מחיקת אינדקסי השחקנים נכשלה'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, orphanIndexDeletePlan, refreshAudit])
+
+  const repairTeamIndexes = React.useCallback(findings => runRepair({
+    action: async () => {
+      const repairResult = await repairTeamSearchIndexesFromAuditFindings({ findings })
+      if (repairResult.failures.length) {
+        setError(`${repairResult.failures.length} אינדקסי קבוצות לא תוקנו. התיקונים האחרים הושלמו.`)
+      }
+    },
+    failureMessage: 'תיקון אינדקסי הקבוצות נכשל',
+  }), [runRepair])
+
+  const resetOrphanTeamIndexes = React.useCallback(findings => runRepair({
+    action: async () => {
+      const resetResult = await resetOrphanTeamSearchIndexesFromAuditFindings({ findings })
+      if (resetResult.skipped.length) {
+        setError(`${resetResult.skipped.length} אינדקסי קבוצה לא אופסו כי המקור הקנוני חסר או השתנה.`)
+      }
+    },
+    failureMessage: 'איפוס אינדקסי הקבוצות נכשל',
+  }), [runRepair])
+
+  const repairClubsMaster = React.useCallback(() => runRepair({
+    action: () => rebuildAllClubsMasterDocument({
+      lastWriteAction: 'REPAIR_CLUBS_MASTER',
+    }),
+    failureMessage: 'סנכרון Clubs Master נכשל',
+  }), [runRepair])
+
+  const refreshClubsMaster = React.useCallback(() => runRepair({
+    action: () => rebuildAllClubsMasterDocument({
+      lastWriteAction: 'REFRESH_CLUBS_MASTER',
+    }),
+    failureMessage: 'רענון Clubs Master נכשל',
+  }), [runRepair])
+
+  const refreshClubProjections = React.useCallback(() => runRepair({
+    action: async () => {
+      const repairResult = await rebuildClubProjectionsFromAllLeagueTables({
+        lastWriteAction: 'REFRESH_ALL_CLUB_PROJECTIONS',
+      })
+      if (!repairResult.completed) {
+        setError(`${repairResult.failures.length} קבוצות לא רועננו. Clubs Master לא עודכן.`)
+      }
+    },
+    failureMessage: 'רענון מסמכי המועדונים נכשל',
+  }), [runRepair])
+
+  const repairClubProjections = React.useCallback(findings => runRepair({
+    action: async () => {
+      const repairResult = await rebuildClubProjectionsFromAuditFindings({ findings })
+      if (!repairResult.completed) {
+        setError(`${repairResult.failures.length} קבוצות לא סונכרנו למועדונים. לא בוצע סנכרון Clubs Master.`)
+      }
+    },
+    failureMessage: 'סנכרון קבוצות הליגה למועדונים נכשל',
+  }), [runRepair])
+
+  const repairClubCompetitionPaths = React.useCallback(findings => runRepair({
+    action: async () => {
+      const repairResult = await repairOrphanedClubCompetitionPathSeasons({ findings })
+      if (repairResult.failures.length) {
+        setError(`${repairResult.failures.length} מסמכי מועדון לא נוקו. התיקונים האחרים הושלמו.`)
+      }
+    },
+    failureMessage: 'ניקוי מסלולי ליגה יתומים נכשל',
+  }), [runRepair])
+
+  return {
+    open,
+    busy,
+    error,
+    result,
+    repairPlan,
+    orphanIndexDeletePlan,
+    repairPreviewBusy,
+    partialAuditDefaults,
+    openAudit,
+    closeAudit,
+    handleScopeChange,
+    runAudit,
+    openPlayer,
+    openTeam,
+    openLeague,
+    openLeaguesCenter,
+    requestRepair,
+    confirmRepair,
+    repairPlayerIndexes,
+    requestOrphanPlayerIndexDelete,
+    confirmOrphanPlayerIndexDelete,
+    repairTeamIndexes,
+    resetOrphanTeamIndexes,
+    repairClubsMaster,
+    refreshClubsMaster,
+    refreshClubProjections,
+    repairClubProjections,
+    repairClubCompetitionPaths,
+    clearRepairPlan: () => setRepairPlan(null),
+    clearOrphanIndexDeletePlan: () => setOrphanIndexDeletePlan(null),
+  }
+}

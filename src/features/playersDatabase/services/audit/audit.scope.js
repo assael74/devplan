@@ -1,6 +1,14 @@
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 export const AUDIT_SCOPE_TYPE = Object.freeze({ TEAM_SEASON: 'teamSeason', TEAM_SEASONS: 'teamSeasons', FULL_SYSTEM: 'fullSystem' })
+export const AUDIT_DOMAIN = Object.freeze({
+  TEAM_RELATIONS: 'team_relations',
+  PLAYER_RELATIONS: 'player_relations',
+  LEAGUE_LIFECYCLE: 'league_lifecycle',
+  LEAGUES_MASTER: 'leagues_master',
+  CLUB_RELATIONS: 'club_relations',
+  CLUBS_MASTER: 'clubs_master',
+})
 export const AUDIT_COLLECTION_SCOPE = Object.freeze({})
 export const AUDIT_RELATION_SCOPE = Object.freeze({})
 export const AUDIT_SCOPE_LABELS = Object.freeze({ [AUDIT_SCOPE_TYPE.TEAM_SEASON]: 'קבוצה ועונה', [AUDIT_SCOPE_TYPE.TEAM_SEASONS]: 'העדכון האחרון', [AUDIT_SCOPE_TYPE.FULL_SYSTEM]: 'כל המערכת' })
@@ -24,4 +32,23 @@ export const normalizeAuditScope = value => {
     return scope
   }
   return { type: AUDIT_SCOPE_TYPE.FULL_SYSTEM }
+}
+
+export const buildAuditScopeKey = ({ teamDocumentId = '', seasonKey = '', auditDomain = '' } = {}) => {
+  const teamId = clean(teamDocumentId)
+  const season = clean(seasonKey)
+  const domain = clean(auditDomain)
+  return teamId && season && domain ? `teamSeason__${domain}__${teamId}__${season}` : ''
+}
+
+export const getAuditScopeKeys = (scope, auditDomains = []) => {
+  const normalizedScope = normalizeAuditScope(scope)
+  if (normalizedScope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM) return []
+
+  const scopes = normalizedScope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON
+    ? [normalizedScope]
+    : normalizedScope.scopes
+  return [...new Set(scopes.flatMap(item => auditDomains.map(auditDomain => (
+    buildAuditScopeKey({ ...item, auditDomain })
+  )).filter(Boolean)))]
 }

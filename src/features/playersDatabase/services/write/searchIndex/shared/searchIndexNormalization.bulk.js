@@ -16,8 +16,6 @@ import {
   clean,
   toNumberOrZero,
 } from '../../leagues/leagueDoc.js'
-import { rebuildTeamSeasonSearchIndexesFromLeagues } from '../team/teamSeasonIndex.rebuild.js'
-import { buildExpectedLevelKey } from './expectedLevelDelta.model.js'
 import { buildPlayerSeasonSearchMetrics } from '../../../../domain/projections/searchIndexNormalization.projection.js'
 
 const readSearchIndexes = queryRef => trackedGetDocs(queryRef, {
@@ -44,7 +42,7 @@ const resolveTarget = data => {
   return clean(data?.sourceTarget) === 'history' ? 'history' : 'current'
 }
 
-const buildPlayerNormalizationPatch = ({ data = {}, teamDeltaByKey = new Map() } = {}) => ({
+const buildPlayerNormalizationPatch = ({ data = {} } = {}) => ({
   ...buildPlayerSeasonSearchMetrics({
     target: resolveTarget(data),
     ageGroupId: data.ageGroupId,
@@ -58,11 +56,6 @@ const buildPlayerNormalizationPatch = ({ data = {}, teamDeltaByKey = new Map() }
       teamGames: toNumberOrZero(data.teamGames),
     },
   }),
-  expectedLevelDelta: data.isYoungerAgeGroup
-    ? null
-    : teamDeltaByKey.has(buildExpectedLevelKey(data))
-      ? teamDeltaByKey.get(buildExpectedLevelKey(data))
-      : null,
 })
 
 const commitNormalizationRows = async rows => {
@@ -91,7 +84,7 @@ const commitNormalizationRows = async rows => {
   return updatedRowsCount
 }
 
-const rebuildPlayerRows = async ({ dryRun = false, teamDeltaByKey = new Map() } = {}) => {
+const rebuildPlayerRows = async ({ dryRun = false } = {}) => {
   const rowsQuery = query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('entityType', '==', SEARCH_INDEX_ENTITY_TYPES.player)
@@ -101,13 +94,7 @@ const rebuildPlayerRows = async ({ dryRun = false, teamDeltaByKey = new Map() } 
   let playerDeltaUnknownCount = 0
   const rows = snapshot.docs.map(indexDoc => {
     const data = indexDoc.data() || {}
-    const patch = buildPlayerNormalizationPatch({
-      data,
-      teamDeltaByKey,
-    })
-
-    if (patch.expectedLevelDelta === null) playerDeltaUnknownCount += 1
-    else playerDeltaMatchedCount += 1
+    const patch = buildPlayerNormalizationPatch({ data })
 
     return {
       ref: indexDoc.ref,
@@ -154,14 +141,9 @@ export async function rebuildSearchIndexNormalization({
   const includePlayers = !normalizedEntityType || normalizedEntityType === SEARCH_INDEX_ENTITY_TYPES.player
   const includeTeams = !normalizedEntityType || normalizedEntityType === SEARCH_INDEX_ENTITY_TYPES.team
 
-  const teamResult = includeTeams || includePlayers
-    ? await rebuildTeamSeasonSearchIndexesFromLeagues({ dryRun: includeTeams ? dryRun : true })
-    : emptyTeamResult
+  const teamResult = emptyTeamResult
   const playerResult = includePlayers
-    ? await rebuildPlayerRows({
-      dryRun,
-      teamDeltaByKey: teamResult.teamDeltaByKey,
-    })
+    ? await rebuildPlayerRows({ dryRun })
     : emptyPlayerResult
 
   return {

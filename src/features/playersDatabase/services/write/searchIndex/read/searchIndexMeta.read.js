@@ -11,9 +11,9 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constant
 import {
   buildPlayerMatchValues,
   normalizePlayerNameValue,
-} from '../../../../model/playerIdentity.model.js'
-import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
-import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
+} from '../../../../model/player/playerIdentity.model.js'
+import { normalizeSeasonIdentity } from '../../../../model/shared/season.model.js'
+import { normalizeTeamIdentity } from '../../../../model/team/teamIdentity.model.js'
 import {
   clean,
   toNumberOrZero,

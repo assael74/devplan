@@ -21,80 +21,17 @@ import {
   PlayerDatabaseAuditModal,
   ReportNameModal,
 } from '../../components/modals/index.js'
-import {
-  previewMissingPlayerDocumentRepair,
-  repairMissingPlayerDocuments,
-  runPlayerDatabaseAudit,
-} from '../../../services/audit/index.js'
+import useSearchAudit from './hooks/useSearchAudit.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
-
-const clean = value => String(
-  value === undefined || value === null ? '' : value
-).trim()
-
-const getRowTeamDocumentId = row => clean(
-  row?.teamDocumentId ||
-  row?.birthTeamDocumentId ||
-  row?.birthTeamId ||
-  row?.teamId
-)
-
-const getRowSeasonKey = row => clean(
-  row?.seasonKey ||
-  row?.seasonId
-)
-
-const buildPartialAuditDefaults = rows => {
-  const safeRows = Array.isArray(rows)
-    ? rows
-    : []
-
-  const scopeKeys = [
-    ...new Set(
-      safeRows
-        .map(row => {
-          const teamDocumentId = getRowTeamDocumentId(row)
-          const seasonKey = getRowSeasonKey(row)
-
-          return teamDocumentId && seasonKey
-            ? `${teamDocumentId}::${seasonKey}`
-            : ''
-        })
-        .filter(Boolean)
-    ),
-  ]
-
-  if (scopeKeys.length !== 1) {
-    return {
-      teamDocumentId: '',
-      seasonKey: '',
-    }
-  }
-
-  const [teamDocumentId, seasonKey] = scopeKeys[0].split('::')
-
-  return {
-    teamDocumentId,
-    seasonKey,
-  }
-}
 
 function SearchPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
-  const [auditOpen, setAuditOpen] = React.useState(false)
-  const [auditBusy, setAuditBusy] = React.useState(false)
-  const [auditError, setAuditError] = React.useState('')
-  const [auditResult, setAuditResult] = React.useState(null)
-  const [repairPlan, setRepairPlan] = React.useState(null)
-  const [repairPreviewBusy, setRepairPreviewBusy] = React.useState(false)
   const search = useSearchPage()
-
-  const partialAuditDefaults = React.useMemo(
-    () => buildPartialAuditDefaults(search.rows),
-    [search.rows]
-  )
+  const audit = useSearchAudit({
+    rows: search.rows,
+  })
 
   const searchReport = useSearchReport({
     rows: search.rows,
@@ -148,111 +85,6 @@ function SearchPageContent() {
     }
   }
 
-  const handleAuditOpen = () => {
-    setAuditOpen(true)
-    setAuditError('')
-  }
-
-  const handleAuditRun = async scope => {
-    if (auditBusy) return
-
-    setAuditBusy(true)
-    setAuditError('')
-
-    try {
-      const result = await runPlayerDatabaseAudit({ scope })
-      setAuditResult(result)
-    } catch (error) {
-      console.error('[playersDatabase] Data audit failed:', error)
-      setAuditError(
-        error instanceof Error
-          ? error.message
-          : 'בדיקת מצב הנתונים נכשלה'
-      )
-    } finally {
-      setAuditBusy(false)
-    }
-  }
-
-  const handleAuditPlayerOpen = (finding, context = {}) => {
-    const playerId = clean(finding?.playerDocumentId || finding?.documentId)
-    if (!playerId) return
-
-    const target = PLAYERS_DATABASE_UI_ROUTES.player({
-      playerId,
-      seasonKey: clean(context?.seasonKey),
-      teamId: clean(context?.teamDocumentId),
-      leagueId: clean(context?.leagueId),
-    })
-    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
-  }
-
-  const handleAuditTeamOpen = (finding, context = {}) => {
-    const teamId = clean(context?.teamDocumentId || finding?.teamDocumentId)
-    const seasonKey = clean(context?.seasonKey || finding?.seasonKey)
-    const leagueId = clean(context?.leagueId || finding?.actual?.leagueId)
-    if (!teamId || !seasonKey || !leagueId) {
-      setAuditError('חסרים פרטי קבוצה, עונה או ליגה למעבר לתיקון.')
-      return
-    }
-    const target = PLAYERS_DATABASE_UI_ROUTES.team({ leagueId, teamId, seasonKey })
-    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
-  }
-
-  const handleAuditLeagueOpen = finding => {
-    const leagueId = clean(finding?.actual?.leagueId || finding?.relatedDocumentId)
-    const seasonKey = clean(finding?.seasonKey)
-    if (!leagueId) {
-      setAuditError('חסר מזהה ליגה למעבר לתיקון.')
-      return
-    }
-    const target = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, seasonKey ? { seasonKey } : {})
-    window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
-  }
-
-  const handleAuditLeaguesCenterOpen = () => {
-    window.open(
-      PLAYERS_DATABASE_UI_ROUTES.leagues(),
-      '_blank',
-      'popup=yes,width=1280,height=900,noopener,noreferrer'
-    )
-  }
-
-  const handleRepairRequest = async findings => {
-    if (auditBusy || repairPreviewBusy) return
-    setRepairPreviewBusy(true)
-    setAuditError('')
-    try {
-      const plan = await previewMissingPlayerDocumentRepair({ findings })
-      if (!plan.playersCount) {
-        setAuditError('לא נמצאו מסמכי שחקן חסרים שמוכנים לתיקון.')
-        return
-      }
-      setRepairPlan({ findings: Array.isArray(findings) ? findings : [], ...plan })
-    } catch (error) {
-      console.error('[playersDatabase] Player document repair preview failed:', error)
-      setAuditError(error instanceof Error ? error.message : 'טעינת רשימת התיקון נכשלה')
-    } finally {
-      setRepairPreviewBusy(false)
-    }
-  }
-
-  const handleRepairConfirm = async () => {
-    if (!repairPlan?.findings?.length || auditBusy) return
-    setAuditBusy(true)
-    setAuditError('')
-    try {
-      await repairMissingPlayerDocuments({ findings: repairPlan.findings })
-      const result = await runPlayerDatabaseAudit({ scope: auditResult?.scope })
-      setAuditResult(result)
-      setRepairPlan(null)
-    } catch (error) {
-      console.error('[playersDatabase] Player document repair failed:', error)
-      setAuditError(error instanceof Error ? error.message : 'תיקון מסמכי השחקן נכשל')
-    } finally {
-      setAuditBusy(false)
-    }
-  }
 
   return (
     <>
@@ -261,7 +93,7 @@ function SearchPageContent() {
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onReport={() => setReportNameOpen(true)}
-          onScoutAudit={handleAuditOpen}
+          onScoutAudit={audit.openAudit}
           reportDisabled={!search.hasLoaded || !search.rows.length}
         />
 
@@ -281,33 +113,43 @@ function SearchPageContent() {
       />
 
       <PlayerDatabaseAuditModal
-        open={auditOpen}
-        busy={auditBusy || repairPreviewBusy}
-        error={auditError}
-        result={auditResult}
-        defaultTeamDocumentId={partialAuditDefaults.teamDocumentId}
-        defaultSeasonKey={partialAuditDefaults.seasonKey}
-        onRun={handleAuditRun}
-        onRepair={handleRepairRequest}
-        onPlayerOpen={handleAuditPlayerOpen}
-        onTeamOpen={handleAuditTeamOpen}
-        onLeagueOpen={handleAuditLeagueOpen}
-        onLeaguesCenterOpen={handleAuditLeaguesCenterOpen}
-        onClose={() => setAuditOpen(false)}
+        open={audit.open}
+        busy={audit.busy || audit.repairPreviewBusy}
+        error={audit.error}
+        result={audit.result}
+        defaultTeamDocumentId={audit.partialAuditDefaults.teamDocumentId}
+        defaultSeasonKey={audit.partialAuditDefaults.seasonKey}
+        onRun={audit.runAudit}
+        onScopeChange={audit.handleScopeChange}
+        onRepair={audit.requestRepair}
+        onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}
+        onRepairPlayerIndexes={audit.repairPlayerIndexes}
+        onRepairTeamIndexes={audit.repairTeamIndexes}
+        onResetOrphanTeamIndexes={audit.resetOrphanTeamIndexes}
+        onRepairClubProjections={audit.repairClubProjections}
+        onRepairClubCompetitionPaths={audit.repairClubCompetitionPaths}
+        onRepairClubsMaster={audit.repairClubsMaster}
+        onRefreshClubProjections={audit.refreshClubProjections}
+        onRefreshClubsMaster={audit.refreshClubsMaster}
+        onPlayerOpen={audit.openPlayer}
+        onTeamOpen={audit.openTeam}
+        onLeagueOpen={audit.openLeague}
+        onLeaguesCenterOpen={audit.openLeaguesCenter}
+        onClose={audit.closeAudit}
       />
 
       <ConfirmModal
-        open={Boolean(repairPlan)}
-        busy={auditBusy}
+        open={Boolean(audit.repairPlan)}
+        busy={audit.busy}
         title='תיקון מסמכי שחקן חסרים'
-        message={`נמצאו ${repairPlan?.playersCount || 0} מסמכי שחקן חסרים ב־${repairPlan?.groupsCount || 0} קבוצות. רק הפריטים המפורטים כאן נטענו ואושרו לתיקון.`}
+        message={`נמצאו ${audit.repairPlan?.playersCount || 0} מסמכי שחקן חסרים ב־${audit.repairPlan?.groupsCount || 0} קבוצות. רק הפריטים המפורטים כאן נטענו ואושרו לתיקון.`}
         confirmLabel='בצע תיקון'
         cancelLabel='ביטול'
-        onConfirm={handleRepairConfirm}
-        onClose={() => !auditBusy && setRepairPlan(null)}
+        onConfirm={audit.confirmRepair}
+        onClose={() => !audit.busy && audit.clearRepairPlan()}
       >
         <Stack spacing={1} sx={sx.repairPlanList}>
-          {(repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={sx.repairPlanGroup}>
+          {(audit.repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={sx.repairPlanGroup}>
             {group.players.map(player => <Typography key={player.playerDocumentId} level='body-sm'>
               {player.fullName || player.playerDocumentId} — {group.teamName || 'קבוצה ללא שם'}{Number(group.teamSlot) > 1 ? ` · סלוט ${group.teamSlot}` : ''} · {group.leagueName || group.leagueId} · {group.seasonKey} · {group.ageGroup || 'קבוצת גיל לא ידועה'} · שנתון {group.birthYear || 'לא ידוע'}
             </Typography>)}
@@ -315,6 +157,17 @@ function SearchPageContent() {
           </Sheet>)}
         </Stack>
       </ConfirmModal>
+
+      <ConfirmModal
+        open={Boolean(audit.orphanIndexDeletePlan)}
+        busy={audit.busy}
+        title='מחיקת אינדקסי שחקנים יתומים'
+        message={`הפעולה תמחק רק ${audit.orphanIndexDeletePlan?.length || 0} מסמכי Player SearchIndex שסומנו באודיט. לפני כל מחיקה תתבצע בדיקה חוזרת שהשחקן עדיין אינו מופיע ב-Team Season. מסמכי שחקן וסגל לא יימחקו.`}
+        confirmLabel='מחק אינדקסים יתומים'
+        cancelLabel='ביטול'
+        onConfirm={audit.confirmOrphanPlayerIndexDelete}
+        onClose={() => !audit.busy && audit.clearOrphanIndexDeletePlan()}
+      />
 
     </>
   )

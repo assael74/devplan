@@ -12,12 +12,12 @@ import {
   leagueDocRef,
 } from './leagueDoc.js'
 import { buildSeasonDoc } from './leagueSeason.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
-import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
+} from '../../../model/shared/season.model.js'
+import { normalizeTeamIdentity } from '../../../model/team/teamIdentity.model.js'
 import {
   applyScoutProfilesSummaries,
   isSameLeagueSeasonPersistedState,

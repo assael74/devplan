@@ -8,7 +8,7 @@ export const entryRouteCardsSx = {
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
-      lg: 'repeat(2, minmax(0, 1fr))',
+      lg: 'repeat(3, minmax(0, 1fr))',
     },
     gap: 2,
   },
@@ -16,10 +16,11 @@ export const entryRouteCardsSx = {
   actionCard: {
     position: 'relative',
     minWidth: 0,
+    direction: 'rtl',
     minHeight: 174,
     p: 2.25,
     display: 'grid',
-    gridTemplateColumns: '150px minmax(0, 1fr)',
+    gridTemplateColumns: '132px minmax(0, 1fr)',
     gridTemplateRows: 'minmax(0, 1fr) auto',
     columnGap: 2,
     overflow: 'hidden',
@@ -63,15 +64,43 @@ export const entryRouteCardsSx = {
     gridColumn: 2,
     gridRow: 1,
     minWidth: 0,
-    alignItems: 'flex-start',
-    textAlign: 'right',
+    alignItems: 'flex-end',
+    direction: 'rtl',
+    textAlign: 'left',
   },
+
+  routeImageFrame: {
+    position: 'relative',
+    zIndex: 1,
+    gridColumn: 1,
+    gridRow: '1 / span 2',
+    alignSelf: 'center',
+    justifySelf: 'center',
+    width: 128,
+    height: 132,
+    display: 'grid',
+    placeItems: 'center',
+  },
+
+  routeImage: variant => ({
+    display: 'block',
+    width: variant === 'search' ? '90%' : '100%',
+    height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    transform: `scale(${variant === 'search' ? 1.4 : 1.14})`,
+  }),
 
   actionTitle: {
     minWidth: 0,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    direction: 'rtl',
+    overflow: 'visible',
+    overflowWrap: 'anywhere',
+    textAlign: 'left',
+    textOverflow: 'clip',
+    whiteSpace: 'normal',
     color: '#fff',
     fontSize: {
       xs: 28,
@@ -83,8 +112,9 @@ export const entryRouteCardsSx = {
   actionText: {
     maxWidth: 480,
     color: '#dce8ff',
+    direction: 'rtl',
     lineHeight: 1.45,
-    textAlign: 'right',
+    textAlign: 'left',
   },
 
   actionButton: {
@@ -97,6 +127,7 @@ export const entryRouteCardsSx = {
     minHeight: 36,
     bgcolor: '#fff',
     color: devPlanColors.primaryDark,
+    direction: 'rtl',
 
     '&:hover': {
       bgcolor: '#edf4ff',

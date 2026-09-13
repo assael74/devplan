@@ -15,15 +15,18 @@ import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.
 import {
   LEAGUE_CENTER_ALL_SEASONS_KEY,
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
-  buildLeagueCenterBirthYearOptions,
   buildLeagueCenterLeagueDocuments,
-  buildLeagueCenterLevelOptions,
   buildLeagueCenterRows,
-  buildLeagueCenterSeasonOptions,
-  buildLeagueCenterSummary,
   resolveLeagueCenterSeasonTarget,
-} from '../../model/leagueCenter.model.js'
-import { normalizeSeasonLookupKey } from '../../model/season.model.js'
+} from '../../model/league/center/leagueCenterRows.model.js'
+import {
+  buildLeagueCenterAgeGroupOptions,
+  buildLeagueCenterBirthYearOptions,
+  buildLeagueCenterLevelOptions,
+  buildLeagueCenterSeasonOptions,
+} from '../../model/league/center/leagueCenterOptions.model.js'
+import { buildLeagueCenterSummary } from '../../model/league/center/leagueCenterSummary.model.js'
+import { normalizeSeasonLookupKey } from '../../model/shared/season.model.js'
 import { readLeagueCenterData } from '../../services/read/index.js'
 import {
   filterByText,
@@ -43,10 +46,10 @@ export function useLeagueCenter() {
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedSeasonKey = cleanSeasonKey(searchParams.get('season'))
   const birthYear = cleanFilterValue(searchParams.get('birthYear'))
+  const ageGroupId = cleanFilterValue(searchParams.get('ageGroup'))
   const leagueLevel = cleanFilterValue(searchParams.get('level'))
   const seasonKey = requestedSeasonKey || LEAGUE_CENTER_ALL_SEASONS_KEY
   const [query, setQuery] = useState('')
-  const [dataStatus, setDataStatus] = useState('all')
   const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
   const [leagueDocuments, setLeagueDocuments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -113,6 +116,10 @@ export function useLeagueCenter() {
     () => buildLeagueCenterLevelOptions(allRows),
     [allRows]
   )
+  const ageGroupOptions = useMemo(
+    () => buildLeagueCenterAgeGroupOptions(allRows),
+    [allRows]
+  )
   const contextRows = useMemo(() => {
     const bySeason = filterByValue(
       allRows,
@@ -125,14 +132,17 @@ export function useLeagueCenter() {
       birthYear
     )
 
-    return filterByValue(
+    const byLevel = filterByValue(
       byBirthYear,
       'level',
       leagueLevel
     )
+
+    return filterByValue(byLevel, 'ageGroupId', ageGroupId)
   }, [
     allRows,
     birthYear,
+    ageGroupId,
     leagueLevel,
     seasonKey,
   ])
@@ -143,14 +153,9 @@ export function useLeagueCenter() {
       ['teamSearchText']
     )
 
-    return filterByValue(
-      byText,
-      'dataStatus',
-      dataStatus
-    )
+    return byText
   }, [
     contextRows,
-    dataStatus,
     query,
   ])
   const summary = useMemo(
@@ -197,6 +202,12 @@ export function useLeagueCenter() {
     )
   }, [updateParam])
 
+  const setAgeGroupId = useCallback(value => {
+    if (value === null || value === undefined || value === '') return
+
+    updateParam('ageGroup', cleanFilterValue(value))
+  }, [updateParam])
+
   const setLeagueLevel = useCallback(value => {
     if (value === null || value === undefined || value === '') return
 
@@ -211,6 +222,7 @@ export function useLeagueCenter() {
 
     nextSearchParams.delete('season')
     nextSearchParams.delete('birthYear')
+    nextSearchParams.delete('ageGroup')
     nextSearchParams.delete('level')
 
     setSearchParams(nextSearchParams, {
@@ -225,7 +237,6 @@ export function useLeagueCenter() {
 
   const resetContext = useCallback(() => {
     setQuery('')
-    setDataStatus('all')
     setSearchParams(new URLSearchParams(), {
       replace: true,
       state: location.state,
@@ -238,11 +249,12 @@ export function useLeagueCenter() {
   return {
     query,
     setQuery,
-    dataStatus,
-    setDataStatus,
     birthYear,
     setBirthYear,
     birthYearOptions,
+    ageGroupId,
+    setAgeGroupId,
+    ageGroupOptions,
     leagueLevel,
     setLeagueLevel,
     levelOptions,

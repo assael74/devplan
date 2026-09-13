@@ -1,6 +1,6 @@
 // src/features/playersDatabase/ui/pages/teamPage/model/teamPageNavigation.model.js
 
-import { buildLeaguePageTeams } from '../../../../model/leaguePage.model.js'
+import { buildLeaguePageTeams } from '../../../../model/league/page/leaguePage.model.js'
 
 const cleanKey = value => String(value || '').trim()
 

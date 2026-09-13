@@ -4,7 +4,7 @@ import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalo
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 const toNumberOrZero = value => {

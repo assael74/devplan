@@ -18,6 +18,27 @@ import { teamDataRepairModalSx as sx } from './sx/teamDataRepairModal.sx.js'
 
 const severityLabel = severity => severity === 'danger' ? 'לתיקון' : 'לבדיקה'
 
+const buildAuditReferralIssue = auditFinding => {
+  const entityType = String(auditFinding?.entityType || '').trim()
+  const title = String(auditFinding?.title || '').trim()
+
+  if (
+    entityType === 'teamSearchIndex' &&
+    title === 'מצב עונת האינדקס אינו תואם למסמך הליגה'
+  ) {
+    return {
+      severity: 'danger',
+      code: 'season_status_mismatch',
+      seasonKey: String(auditFinding?.seasonKey || '').trim(),
+      title,
+      description: auditFinding?.explanation || 'סטטוס עונת האינדקס שונה מהחישוב הקנוני של מסמך הליגה.',
+      action: 'לעדכן רק את שדות הסטטוס המחושבים במסמך אינדקס הקבוצה.',
+    }
+  }
+
+  return null
+}
+
 export default function TeamDataRepairModal({
   open = false,
   busy = false,
@@ -26,6 +47,7 @@ export default function TeamDataRepairModal({
   teamSeasons = [],
   teamSearchIndexes = [],
   indexesLoaded = false,
+  auditFinding = null,
   leagueDocument = {},
   selectedLeagueSeason = null,
   onRepair,
@@ -44,6 +66,18 @@ export default function TeamDataRepairModal({
     teamSeasons,
     teamSearchIndexes,
   ])
+  const auditReferralIssue = React.useMemo(
+    () => buildAuditReferralIssue(auditFinding),
+    [auditFinding]
+  )
+  const displayedIssues = React.useMemo(() => {
+    if (!auditReferralIssue) return issues
+    const alreadyDiagnosed = issues.some(issue => (
+      issue.code === auditReferralIssue.code &&
+      String(issue.seasonKey || '').trim() === auditReferralIssue.seasonKey
+    ))
+    return alreadyDiagnosed ? issues : [auditReferralIssue, ...issues]
+  }, [auditReferralIssue, issues])
 
   const repairContext = React.useMemo(() => ({
     teamDocument,
@@ -73,11 +107,16 @@ export default function TeamDataRepairModal({
     >
       <Stack spacing={1.25}>
         {error ? <Alert color='danger' variant='soft'>{error}</Alert> : null}
+        {auditFinding ? <Alert color='warning' variant='soft'>
+          <Typography level='title-sm'>תקלה שאומתה באודיט: {auditFinding.title || auditFinding.id}</Typography>
+          {auditFinding.explanation ? <Typography level='body-sm'>{auditFinding.explanation}</Typography> : null}
+          <Typography level='body-xs'>מסמך: {auditFinding.documentId || 'לא ידוע'}{auditFinding.seasonKey ? ` · עונה: ${auditFinding.seasonKey}` : ''}</Typography>
+        </Alert> : null}
         {busy ? <Typography level='body-sm'>בודק את נתוני הקבוצה...</Typography> : null}
-        {!busy && !issues.length ? (
+        {!busy && !displayedIssues.length ? (
           <Alert color='success' variant='soft'>לא נמצאו תקלות בנתונים שנטענו.</Alert>
         ) : null}
-        {!busy ? issues.map((issue, index) => (
+        {!busy ? displayedIssues.map((issue, index) => (
           <Sheet
             key={`${issue.title}-${index}`}
             variant='outlined'

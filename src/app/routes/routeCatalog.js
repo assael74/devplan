@@ -24,6 +24,8 @@ export const ADMIN_ROUTES = {
   playersDatabase: '/players-database',
   playersDatabaseLeagues: '/players-database/leagues',
   playersDatabaseSearch: '/players-database/search',
+  playersDatabaseClubs: '/players-database/clubs',
+  playersDatabaseClub: '/players-database/clubs/:clubId',
   playersDatabaseProfiles: '/players-database/profiles',
   playersDatabaseLegacyScan: '/players-database/scan',
   playersDatabaseLeague: '/players-database/leagues/:leagueId',

@@ -11,8 +11,8 @@ import {
 } from '../../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
-import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
+import { normalizeSeasonIdentity } from '../../../../model/shared/season.model.js'
+import { normalizeTeamIdentity } from '../../../../model/team/teamIdentity.model.js'
 import {
   clean,
   toNumberOrZero,

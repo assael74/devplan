@@ -1,5 +1,3 @@
-// features/playersDatabase/ui/pages/searchPage/sx/SearchWorkspace.sx.js
-
 export const searchWorkspaceSx = {
   workspace: {
       minWidth: 0,

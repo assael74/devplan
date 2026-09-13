@@ -21,6 +21,7 @@ export default function PasteArea({
   onPaste,
   onFileSelect,
   onClear,
+  onViewSourceJson,
 }) {
   const fileInputRef = React.useRef(null)
 
@@ -115,6 +116,17 @@ export default function PasteArea({
           >
             הצג נתונים
           </Button>
+
+          {onViewSourceJson ? (
+            <Button
+              size='sm'
+              variant='outlined'
+              startDecorator={iconUi({id: 'dataShow', size: 'sm'})}
+              onClick={onViewSourceJson}
+            >
+              מסמך זיהוי
+            </Button>
+          ) : null}
         </Box>
       </Box>
     </Card>

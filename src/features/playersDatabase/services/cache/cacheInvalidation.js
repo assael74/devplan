@@ -2,6 +2,7 @@
 
 import {
   buildLeagueDocumentCacheKey,
+  buildClubsMasterCacheKey,
   buildLeaguesCollectionCacheKey,
   buildLeaguesMasterCacheKey,
   buildPlayerDocumentCacheKey,
@@ -78,12 +79,17 @@ export const invalidateLeaguesMasterDocumentCache = () => {
   deleteDocumentCacheValue(buildLeaguesMasterCacheKey())
 }
 
+export const invalidateClubsMasterDocumentCache = () => {
+  deleteDocumentCacheValue(buildClubsMasterCacheKey())
+}
+
 const LEAGUE_ONLY_ACTIONS = new Set([
   'ensureLeagueDoc',
   'upsertLeagueSeason',
   'updateLeagueSeasonTableRank',
   'pasteLeagueTable',
   'updateLeagueSeasonUrl',
+  'updateLeagueSeasonSettings',
   'deleteLeagueSeason',
 ])
 

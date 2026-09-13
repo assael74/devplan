@@ -2,7 +2,7 @@
 
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
-import { pickDefinedValue } from '../../model/value.model.js'
+import { pickDefinedValue } from '../../model/shared/value.model.js'
 import {
   buildTeamIdentity,
   inferTeamSlotByLeagueLevel,

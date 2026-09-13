@@ -11,13 +11,13 @@ import {
   buildTeamSeasonDocumentId,
   normalizeTeamIdentity,
   resolveBirthTeamDocumentId,
-} from '../../../model/teamIdentity.model.js'
+} from '../../../model/team/teamIdentity.model.js'
 import {
   pickFirstValue,
   toNumberOrZero,
-} from '../../../model/value.model.js'
+} from '../../../model/shared/value.model.js'
 import { clean } from '../leagues/leagueDoc.js'
-import { normalizeSeasonStatus } from '../../../model/season.model.js'
+import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 

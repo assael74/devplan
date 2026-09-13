@@ -60,7 +60,6 @@ export const searchStatsQuerySx = {
     fontSize: 12,
   },
 
-
   resetButton: {
     mt: 0.75,
     width: '100%',

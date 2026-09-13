@@ -15,10 +15,15 @@ import {
 import {
   updatePlayerSeasonSearchIndexScoutContextMany,
   upsertTeamSeasonSearchIndexMany,
-  reconcileExpectedLevelDeltaAfterLeagueLoad,
 } from '../../searchIndex/index.js'
+import {
+  syncLeagueClubSeasonIdentityIndex,
+  syncClubProjectionsFromLeagueTable,
+  syncClubsMasterDocument,
+} from '../../clubs/index.js'
+import { buildLeagueRowsWithScoutPerformance } from '../../shared/leagueTeamScoutContext.js'
 import { updateLeagueTeamPlayersScoutContextMany } from '../../teams/index.js'
-import { resolveTeamLookupKey } from '../../../../model/teamIdentity.model.js'
+import { resolveTeamLookupKey } from '../../../../model/team/teamIdentity.model.js'
 import {
   assertWriteResultClean,
   attachWriteFlowReport,
@@ -39,35 +44,9 @@ const buildSkippedWriteResult = reason => ({
   failures: [],
 })
 
-const buildRowsWithScoutSummaries = ({ rows = [], contextResults = [] } = {}) => {
-  const summaryByTeam = new Map(
-    (Array.isArray(contextResults) ? contextResults : [])
-      .filter(result => result?.updated)
-      .map(result => [
-        resolveTeamLookupKey(result.teamContext || {}),
-        result.scoutProfilesSummary || {
-          total: 0,
-          profileCounts: {},
-        },
-      ])
-      .filter(([teamId]) => teamId)
-  )
-
-  return (Array.isArray(rows) ? rows : []).map(row => {
-    const summary = summaryByTeam.get(resolveTeamLookupKey(row))
-
-    return summary
-      ? {
-          ...row,
-          scoutProfilesSummary: summary,
-        }
-      : row
-  })
-}
-
 const buildScoutSummaryRows = contextResults => (
   (Array.isArray(contextResults) ? contextResults : [])
-    .filter(result => result?.updated)
+    .filter(result => result?.updated && !result?.skipped)
     .map(result => ({
       team: result.teamContext || {},
       scoutProfilesSummary: result.scoutProfilesSummary || {
@@ -77,22 +56,31 @@ const buildScoutSummaryRows = contextResults => (
     }))
 )
 
+const withScoutSummaries = ({ rows = [], contextResults = [] } = {}) => {
+  const summariesByTeam = new Map(buildScoutSummaryRows(contextResults).map(summary => [
+    resolveTeamLookupKey(summary.team),
+    summary.scoutProfilesSummary,
+  ]))
+
+  return (Array.isArray(rows) ? rows : []).map(row => (
+    summariesByTeam.has(resolveTeamLookupKey(row))
+      ? { ...row, scoutProfilesSummary: summariesByTeam.get(resolveTeamLookupKey(row)) }
+      : row
+  ))
+}
+
 const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [] } = {}) => {
   const updatedResults = (Array.isArray(contextResults) ? contextResults : [])
-    .filter(result => result?.updated)
-  const allPlayers = updatedResults.flatMap(result => (
-    Array.isArray(result.players) ? result.players : []
-  ))
-  const unknownPlayerDocuments = allPlayers.filter(player => (
-    !hasPlayerScoutProfiles(player) &&
-    !player.playerDocumentId
-  ))
-  const existingPlayerDocumentIds = await resolveExistingPlayerDocumentIds(unknownPlayerDocuments)
+    .filter(result => result?.updated && !result?.skipped)
+  const players = updatedResults.flatMap(result => Array.isArray(result.players) ? result.players : [])
+  const existingPlayerDocumentIds = await resolveExistingPlayerDocumentIds(
+    players.filter(player => !hasPlayerScoutProfiles(player) && !player.playerDocumentId)
+  )
   const results = []
   const failures = []
 
   for (const contextResult of updatedResults) {
-    const players = (Array.isArray(contextResult.players) ? contextResult.players : [])
+    const contextPlayers = (Array.isArray(contextResult.players) ? contextResult.players : [])
       .filter(player => (
         hasPlayerScoutProfiles(player) ||
         Boolean(player.playerDocumentId) ||
@@ -100,18 +88,13 @@ const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [
       ))
       .map(player => {
         if (player.playerDocumentId) return player
-
         const playerDocumentId = buildPlayerDocumentId(player)
-        if (!existingPlayerDocumentIds.has(playerDocumentId)) return player
-
-        return {
-          ...player,
-          playerDocumentId,
-        }
+        return existingPlayerDocumentIds.has(playerDocumentId)
+          ? { ...player, playerDocumentId }
+          : player
       })
-
     try {
-      const result = await syncPlayerScoutProfileDocsMany({
+      results.push(await syncPlayerScoutProfileDocsMany({
         season: {
           ...(payload.season || {}),
           seasonId: contextResult.seasonId,
@@ -122,15 +105,8 @@ const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [
         },
         team: contextResult.teamContext || {},
         target: contextResult.target || payload.target || 'current',
-        players,
-        teamDocument: contextResult.teamDocument || null,
-      })
-
-      results.push({
-        teamDocumentId: contextResult.teamDocumentId,
-        ...result,
-      })
-      failures.push(...(Array.isArray(result.failures) ? result.failures : []))
+        players: contextPlayers,
+      }))
     } catch (error) {
       failures.push({
         teamDocumentId: contextResult.teamDocumentId,
@@ -141,9 +117,6 @@ const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [
 
   return {
     rowsCount: results.reduce((total, result) => total + Number(result.rowsCount || 0), 0),
-    createdCount: results.reduce((total, result) => total + Number(result.createdCount || 0), 0),
-    clearedCount: results.reduce((total, result) => total + Number(result.clearedCount || 0), 0),
-    skippedCount: results.reduce((total, result) => total + Number(result.skippedCount || 0), 0),
     failedCount: failures.length,
     failures,
     results,
@@ -153,12 +126,10 @@ const syncPlayerDocumentsFromContext = async ({ payload = {}, contextResults = [
 const syncPlayerIndexesFromContext = async ({ payload = {}, contextResults = [] } = {}) => {
   const results = []
   const failures = []
-
   for (const contextResult of Array.isArray(contextResults) ? contextResults : []) {
-    if (!contextResult?.updated) continue
-
+    if (!contextResult?.updated || contextResult?.skipped) continue
     try {
-      const result = await updatePlayerSeasonSearchIndexScoutContextMany({
+      results.push(await updatePlayerSeasonSearchIndexScoutContextMany({
         league: payload.league || {},
         season: {
           ...(payload.season || {}),
@@ -170,12 +141,7 @@ const syncPlayerIndexesFromContext = async ({ payload = {}, contextResults = [] 
         },
         team: contextResult.teamContext || {},
         players: contextResult.players || [],
-      })
-
-      results.push({
-        teamDocumentId: contextResult.teamDocumentId,
-        ...result,
-      })
+      }))
     } catch (error) {
       failures.push({
         teamDocumentId: contextResult.teamDocumentId,
@@ -183,38 +149,13 @@ const syncPlayerIndexesFromContext = async ({ payload = {}, contextResults = [] 
       })
     }
   }
-
   return {
     rowsCount: results.reduce((total, result) => total + Number(result.rowsCount || 0), 0),
-    updatedCount: results.reduce((total, result) => total + Number(result.updatedCount || 0), 0),
-    missingCount: results.reduce((total, result) => total + Number(result.missingCount || 0), 0),
     failedCount: failures.length,
     failures,
     results,
   }
 }
-
-
-const buildPlayerScoutContextReport = result => ({
-  rowsCount: Number(result?.rowsCount) || 0,
-  skippedCount: Number(result?.skippedCount) || 0,
-  failedCount: Number(result?.failedCount) || 0,
-  failures: Array.isArray(result?.failures) ? result.failures : [],
-  teams: (Array.isArray(result?.results) ? result.results : []).map(teamResult => ({
-    teamDocumentId: teamResult.teamDocumentId || '',
-    seasonId: teamResult.seasonId || '',
-    seasonKey: teamResult.seasonKey || '',
-    target: teamResult.target || '',
-    updated: teamResult.updated === true,
-    skipped: teamResult.skipped === true,
-    reason: teamResult.reason || '',
-    playersCount: Number(teamResult.playersCount) || 0,
-    scoutProfilesSummary: teamResult.scoutProfilesSummary || {
-      total: 0,
-      profileCounts: {},
-    },
-  })),
-})
 
 export async function pasteLeagueTableFlow(payload = {}) {
   const results = {}
@@ -233,20 +174,27 @@ export async function pasteLeagueTableFlow(payload = {}) {
       syncMaster: false,
     })
 
-    stage = 'playerScoutContext'
-    const playerScoutContextResult = notStartedSeason
-      ? { results: [] }
-      : await updateLeagueTeamPlayersScoutContextMany({
-        league: payload.league || {},
-        season: payload.season || {},
-        target: payload.target || 'current',
-        rows: payload.rows || [],
-      })
-    results.playerScoutContext = notStartedSeason
-      ? buildSkippedWriteResult('seasonNotStarted')
-      : buildPlayerScoutContextReport(playerScoutContextResult)
+    const canonicalRows = results.leagueTable?.seasonDocument?.tableRank || []
+    const canonicalSeason = results.leagueTable?.seasonDocument || payload.season || {}
+
+    stage = 'clubSeasonIdentityIndex'
+    results.clubSeasonIdentityIndex = await syncLeagueClubSeasonIdentityIndex({
+      league: payload.league || {},
+      season: canonicalSeason,
+      rows: canonicalRows,
+      lastWriteAction: 'PASTE_LEAGUE_TABLE',
+    })
+    assertWriteResultClean({ result: results.clubSeasonIdentityIndex, stage })
+
+    stage = 'teamSeasonProjections'
+    results.teamSeasonProjections = await updateLeagueTeamPlayersScoutContextMany({
+      league: payload.league || {},
+      season: canonicalSeason,
+      target: results.leagueTable?.target || payload.target || 'current',
+      rows: canonicalRows,
+    })
     assertWriteResultClean({
-      result: results.playerScoutContext,
+      result: results.teamSeasonProjections,
       stage,
     })
 
@@ -255,43 +203,41 @@ export async function pasteLeagueTableFlow(payload = {}) {
       ? buildSkippedWriteResult('seasonNotStarted')
       : await syncPlayerDocumentsFromContext({
         payload,
-        contextResults: playerScoutContextResult.results,
+        contextResults: results.teamSeasonProjections.results,
       })
-    assertWriteResultClean({
-      result: results.playerDocuments,
-      stage,
-    })
+    assertWriteResultClean({ result: results.playerDocuments, stage })
 
     stage = 'playerIndexes'
     results.playerIndexes = notStartedSeason
       ? buildSkippedWriteResult('seasonNotStarted')
       : await syncPlayerIndexesFromContext({
         payload,
-        contextResults: playerScoutContextResult.results,
+        contextResults: results.teamSeasonProjections.results,
       })
-    assertWriteResultClean({
-      result: results.playerIndexes,
-      stage,
-    })
+    assertWriteResultClean({ result: results.playerIndexes, stage })
 
     stage = 'leagueScoutSummaries'
     results.leagueScoutSummaries = notStartedSeason
       ? buildSkippedWriteResult('seasonNotStarted')
       : await updateLeagueSeasonTableRankScoutProfilesSummaries({
         league: payload.league || {},
-        season: payload.season || {},
-        target: payload.target || 'current',
-        summaries: buildScoutSummaryRows(playerScoutContextResult.results),
+        season: canonicalSeason,
+        target: results.leagueTable?.target || payload.target || 'current',
+        summaries: buildScoutSummaryRows(results.teamSeasonProjections.results),
       })
 
-    const rowsWithScoutSummaries = buildRowsWithScoutSummaries({
-      rows: payload.rows,
-      contextResults: playerScoutContextResult.results,
+    const rowsWithScoutSummaries = withScoutSummaries({
+      rows: canonicalRows,
+      contextResults: results.teamSeasonProjections.results,
     })
 
     stage = 'teamIndexes'
     results.teamIndexes = await upsertTeamSeasonSearchIndexMany({
       ...payload,
+      // The League table write resolves the canonical schedule. Index metrics
+      // such as remainingTeamGames must use that committed season, not the
+      // pre-import form values.
+      season: canonicalSeason,
       rows: rowsWithScoutSummaries,
     })
     assertWriteResultClean({
@@ -299,16 +245,46 @@ export async function pasteLeagueTableFlow(payload = {}) {
       stage,
     })
 
-    stage = 'expectedLevelDelta'
-    // A not-started season has no player/scout context, but it can still
-    // change the age-progression relation with the adjacent birth year.
-    results.expectedLevelDelta = await reconcileExpectedLevelDeltaAfterLeagueLoad({
-      birthYear: payload.season?.birthYear,
-      syncTeamSeasonContexts: !notStartedSeason,
+    stage = 'clubProjections'
+    const clubProjectionRows = buildLeagueRowsWithScoutPerformance({
+      league: payload.league || {},
+      season: canonicalSeason,
+      target: results.leagueTable?.target || payload.target || 'current',
+      rows: rowsWithScoutSummaries,
+    })
+    results.clubProjections = await syncClubProjectionsFromLeagueTable({
+      league: payload.league || {},
+      season: payload.season || {},
+      rows: clubProjectionRows,
+      leagueSeasonDocument: results.leagueTable?.seasonDocument || {},
+      teamSeasonsByKey: new Map(
+        (results.teamSeasonProjections?.results || [])
+          .filter(result => result?.seasonDocument && result?.teamDocumentId && result?.seasonKey)
+          .flatMap(result => {
+            const team = result.seasonDocument || {}
+            const teamIds = [
+              result.teamDocumentId,
+              team.birthTeamDocumentId,
+              team.birthTeamId,
+              team.teamDocumentId,
+              team.teamId,
+            ].filter(Boolean)
+            return teamIds.map(teamId => [`${teamId}::${result.seasonKey}`, team])
+          })
+      ),
+      canonicalCommitted: true,
+      lastWriteAction: 'PASTE_LEAGUE_TABLE',
+      syncMaster: false,
     })
     assertWriteResultClean({
-      result: results.expectedLevelDelta,
+      result: results.clubProjections,
       stage,
+    })
+
+    stage = 'clubsMaster'
+    results.clubsMaster = await syncClubsMasterDocument({
+      clubIds: (results.clubProjections?.results || []).map(result => result.clubId),
+      lastWriteAction: 'PASTE_LEAGUE_TABLE',
     })
 
     stage = 'leaguesMaster'

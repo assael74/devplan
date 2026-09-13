@@ -11,7 +11,11 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { removeTeamPlayerFromSeason } from '../../teams/index.js'
-import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
+import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
 
 const runDeleteStage = async ({
   stage,
@@ -21,6 +25,10 @@ const runDeleteStage = async ({
   try {
     const result = await action()
     results[stage] = result
+
+    if (stage === 'clubProjection' && result?.completed !== true) {
+      throw new Error(result?.reason || 'Required Club projection did not complete')
+    }
 
     return result
   } catch (error) {
@@ -123,6 +131,20 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
     }),
   })
 
+
+  const clubProjectionResult = await runDeleteStage({
+    stage: 'clubProjection',
+    results,
+    action: async () => ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: payload.league || {},
+      season: payload.season || {},
+      team: teamWithRosterMeta,
+      teamSeason: teamPlayerResult.seasonDocument || {},
+      canonicalCommitted: true,
+      lastWriteAction: 'DELETE_TEAM_PLAYER_FROM_SEASON',
+    })),
+  })
+
   return {
     teamPlayerResult,
     playerSeasonDocsResult,
@@ -131,7 +153,11 @@ export async function deleteTeamPlayerFromSeasonFlow(payload = {}) {
     leagueTableRankScoutProfilesResult,
     teamSeasonIndexResult,
     teamSeasonIndexScoutProfilesResult,
+    clubProjectionResult,
     rowsCount: searchIndexResult.rowsCount,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    completed: true,
     syncStatus: 'complete',
   }
 }

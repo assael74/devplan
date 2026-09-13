@@ -33,6 +33,7 @@ export const leagueNameSx = {
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 0.2,
       flexShrink: 0,
       borderRadius: 5,
       bgcolor: '#F4F6FF',

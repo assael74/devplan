@@ -39,6 +39,7 @@ export default function EntryPage() {
         <EntryRouteCards
           onNavigateToLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onNavigateToSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
+          onNavigateToClubs={() => navigate(PLAYERS_DATABASE_UI_ROUTES.clubs)}
         />
 
         <Box sx={sx.infoGrid}>

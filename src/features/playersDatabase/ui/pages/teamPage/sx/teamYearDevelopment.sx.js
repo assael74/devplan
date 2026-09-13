@@ -11,6 +11,7 @@ export const teamYearDevelopmentSx = {
     pr: 0.25,
     alignContent: 'start',
   },
+
   empty: {
     minHeight: 280,
     display: 'grid',
@@ -19,6 +20,7 @@ export const teamYearDevelopmentSx = {
     gap: 0.75,
     color: devPlanColors.secondary,
   },
+
   emptyText: {
     color: devPlanColors.secondary,
     fontSize: 13,

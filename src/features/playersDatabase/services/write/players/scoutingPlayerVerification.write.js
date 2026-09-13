@@ -8,7 +8,7 @@ import { clean } from '../leagues/leagueDoc.js'
 import {
   playerDocRef,
 } from './playerDoc.model.js'
-import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/player/playerIdentity.model.js'
 import {
   buildScoutingPlayerReasonEvents,
   buildScoutingPlayerTracking,

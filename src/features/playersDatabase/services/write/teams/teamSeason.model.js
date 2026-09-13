@@ -12,25 +12,25 @@ import {
   normalizePlayerNameValue,
   normalizePlayerIdPart,
   resolvePlayerIdentityBirthYear,
-} from '../../../model/playerIdentity.model.js'
+} from '../../../model/player/playerIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
-} from '../../../model/playerStats.model.js'
-import { normalizeSeasonIdentity } from '../../../model/season.model.js'
-import { normalizeTeamStats } from '../../../model/teamStats.model.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
+} from '../../../model/player/playerStats.model.js'
+import { normalizeSeasonIdentity } from '../../../model/shared/season.model.js'
+import { normalizeTeamStats } from '../../../model/team/teamStats.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
 import {
   pickFirstValue,
   pickDefinedValue,
-} from '../../../model/value.model.js'
+} from '../../../model/shared/value.model.js'
 import { PLAYER_SCOUT_ACTIVE_ENGINE } from '../../../domain/orchestration/buildDbPlayerScoutResult.js'
 import {
   buildPlayerScoutStatsLoadMeasurement,
   buildPlayerScoutStatsLoadMeasurements,
   normalizePlayerScoutStatsLoadMeasurements,
-} from '../../../model/playerScoutMeasurement.model.js'
+} from '../../../model/scout/playerScoutMeasurement.model.js'
 import {
   buildPlayerDocumentId,
   shouldHavePlayerDocument,
@@ -40,7 +40,7 @@ import {
   buildTeamPlayerSeasonalScoutProjection,
 } from '../../../domain/projections/playerScout.projection.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
-import { normalizeSeasonStatus } from '../../../model/season.model.js'
+import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
 
 const normalizePlayerName = normalizePlayerNameValue

@@ -139,13 +139,13 @@ export default function LeagueActionsPanel({
       <Box sx={sx.primaryActionsRow}>
         <Button
           variant='outlined'
-          startDecorator={iconUi({id: 'addTeams', size: 'sm'})}
+          startDecorator={iconUi({id: 'addTeams', size: 'lg'})}
           disabled={loadDisabled}
           sx={sx.sideLoadButton}
           title={loadDisabled ? loadDisabledReason : undefined}
           onClick={onLoad}
         >
-          טעינת נתוני ליגה
+          טעינת נתוני הליגה
         </Button>
 
         <Dropdown>
@@ -156,7 +156,7 @@ export default function LeagueActionsPanel({
                 aria-label='פעולות מחיקה לעונה'
                 sx={sx.sideDeleteButton}
               >
-                {iconUi({id: 'delete', size: 'sm'})}
+                {iconUi({id: 'delete', size: 'md'})}
               </MenuButton>
             </span>
           </Tooltip>
@@ -173,14 +173,14 @@ export default function LeagueActionsPanel({
       </Box>
 
       <Box sx={sx.secondaryActionsRow}>
-        <Tooltip title={hasLeagueUrl ? 'עריכת קישור לליגה' : 'הוספת קישור לליגה'}>
+        <Tooltip title={hasLeagueUrl ? 'עריכת הגדרות וקישור העונה' : 'הגדרות העונה וכללי התחרות'}>
           <IconButton
             variant='outlined'
-            aria-label={hasLeagueUrl ? 'עריכת קישור לליגה' : 'הוספת קישור לליגה'}
+            aria-label={hasLeagueUrl ? 'עריכת הגדרות וקישור העונה' : 'הגדרות העונה וכללי התחרות'}
             sx={sx.sideLinkButton}
             onClick={onLeagueUrlEdit}
           >
-            {iconUi({id: 'link', size: 'sm'})}
+            {iconUi({id: 'edit', size: 'md'})}
           </IconButton>
         </Tooltip>
 
@@ -191,21 +191,21 @@ export default function LeagueActionsPanel({
             sx={sx.sideReportButton}
             onClick={onReport}
           >
-            {iconUi({id: 'print', size: 'sm'})}
+            {iconUi({id: 'print', size: 'md'})}
           </IconButton>
         </Tooltip>
 
-        <Tooltip title='הורדת מסמך הליגה כ-JSON'>
+        <Tooltip title='הצגת מסמך הליגה כ-JSON'>
           <span>
             <IconButton
               variant='outlined'
-              aria-label='הורדת מסמך הליגה כ-JSON'
+              aria-label='הצגת מסמך הליגה כ-JSON'
               loading={leagueJsonDownloading}
               disabled={leagueJsonDownloading}
               sx={sx.sideDownloadButton}
               onClick={onLeagueJsonDownload}
             >
-              {iconUi({id: 'download', size: 'sm'})}
+              {iconUi({id: 'dataShow', size: 'md'})}
             </IconButton>
           </span>
         </Tooltip>
@@ -217,7 +217,7 @@ export default function LeagueActionsPanel({
             sx={sx.sideDataRepairButton}
             onClick={onDataRepair}
           >
-            {iconUi({id: 'search', size: 'sm'})}
+            {iconUi({id: 'search', size: 'md'})}
           </IconButton>
         </Tooltip>
       </Box>

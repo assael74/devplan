@@ -12,7 +12,11 @@ import { statusCellSx as sx } from './sx/statusCell.sx.js'
 export default function StatusCell({ valid, message }) {
   const content = (
     <Box sx={sx.statusCell}>
-      {iconUi({id: valid ? 'completed' : 'warning', size: 'sm', sx: valid ? sx.statusIconValid : sx.statusIconInvalid})}
+      {iconUi({
+        id: valid ? 'completed' : 'warning',
+        size: 'sm',
+        sx: valid ? sx.statusIconValid : sx.statusIconInvalid,
+      })}
     </Box>
   )
 
@@ -20,8 +24,17 @@ export default function StatusCell({ valid, message }) {
 
   return (
     <Tooltip
-      title={message}
+      title={(
+        <Box sx={sx.tooltipContent}>
+          {message}
+        </Box>
+      )}
       arrow
+      slotProps={{
+        tooltip: {
+          sx: sx.tooltip,
+        },
+      }}
     >
       {content}
     </Tooltip>

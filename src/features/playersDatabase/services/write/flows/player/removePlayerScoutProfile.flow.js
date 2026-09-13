@@ -5,6 +5,10 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import { removePlayerScoutProfileCoordinated } from './removePlayerScoutProfile.coordinated.js'
+import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
 import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 
 const clean = value => String(value || '').trim()
@@ -164,6 +168,25 @@ export async function removePlayerScoutProfileFlow(payload = {}) {
   } catch (error) {
     throw buildCommittedProjectionFailure({
       stage: 'teamSearchIndexSummary',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
+
+  try {
+    projectionResults.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: nextPayload.league || {},
+      season: nextPayload.season || {},
+      team: nextPayload.team || {},
+      teamSeason: teamSeasonResult.seasonDocument || {},
+      canonicalCommitted: true,
+      lastWriteAction: 'REMOVE_PLAYER_SCOUT_PROFILE',
+    }))
+  } catch (error) {
+    throw buildCommittedProjectionFailure({
+      stage: 'clubProjection',
       error,
       teamSeasonResult,
       results: projectionResults,

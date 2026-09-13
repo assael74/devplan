@@ -2,7 +2,7 @@
 
 import { SCOUTING_SHADOW_ENGINE_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import { buildPlayerScoutResult } from '../../../../shared/scouting/players/index.js'
-import { normalizePlayerStats } from '../../model/playerStats.model.js'
+import { normalizePlayerStats } from '../../model/player/playerStats.model.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
 
 const clean = value => String(value || '').trim()

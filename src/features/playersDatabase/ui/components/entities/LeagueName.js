@@ -17,29 +17,34 @@ export default function LeagueName({
   fontSize = 13,
   levelFontSize = null,
   nameSx,
+  levelSx,
+  levelEndDecorator = null,
+  showName = true,
 }) {
   const leagueLevel = Number(level)
   const hasLevel = showLevel && Number.isFinite(leagueLevel) && leagueLevel > 0
 
   return (
     <Box sx={sx.root}>
-      <Typography
-        component='span'
-        sx={[sx.name(fontSize), nameSx]}
-      >
-        {clean(value) || '-'}
-      </Typography>
+      {showName ? (
+        <Typography
+          component='span'
+          sx={[sx.name(fontSize), nameSx]}
+        >
+          {clean(value) || '-'}
+        </Typography>
+      ) : null}
 
       {hasLevel ? (
         <Box
           component='span'
-          title={`רמת ליגה ${leagueLevel}`}
-          sx={sx.level({
-            fontSize,
-            levelFontSize,
-          })}
+          sx={[
+            sx.level({ fontSize, levelFontSize }),
+            levelSx,
+          ]}
         >
           {`L${leagueLevel}`}
+          {levelEndDecorator}
         </Box>
       ) : null}
     </Box>

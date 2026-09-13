@@ -16,7 +16,7 @@ import {
 import {
   buildFavoriteItem,
   normalizeFavoriteItems,
-} from '../../../model/favorite.model.js'
+} from '../../../model/player/favorite.model.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 const resolveFavoriteDocumentId = favoriteType => {

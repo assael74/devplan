@@ -1,7 +1,7 @@
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
-import { normalizeSeasonIdentity } from '../../../model/season.model.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { normalizeSeasonIdentity } from '../../../model/shared/season.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { teamSeasonDocRef, buildTeamSeasonDocumentData } from './teamSeasonDoc.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 

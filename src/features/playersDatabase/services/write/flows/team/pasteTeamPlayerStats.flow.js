@@ -12,11 +12,15 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
+import {
   updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerStats,
 } from '../../teams/index.js'
 import { buildScoutProfilesSummary } from '../shared.js'
-import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
 import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
 import {
   buildLeagueTeamPerformanceProjection,
@@ -358,6 +362,27 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   } catch (error) {
     throw buildCommittedProjectionFailure({
       stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
+      cause: error,
+      results,
+      teamSeasonPlayers,
+    })
+  }
+
+
+  try {
+    results.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: resolvedPayload.league || payload.league || {},
+      season: resolvedPayload.season || {},
+      team: teamWithLoadStatus,
+      teamSeason: results.teamSeasonResult?.seasonDocument || {},
+      performance: teamPerformance,
+      points: teamPoints,
+      canonicalCommitted: true,
+      lastWriteAction: 'PASTE_TEAM_PLAYER_STATS',
+    }))
+  } catch (error) {
+    throw buildCommittedProjectionFailure({
+      stage: 'clubProjection',
       cause: error,
       results,
       teamSeasonPlayers,

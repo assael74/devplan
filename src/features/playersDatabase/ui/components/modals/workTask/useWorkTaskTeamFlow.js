@@ -6,7 +6,7 @@ import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalo
 import {
   buildLeagueTeamsForBirthYear,
   readLeagueTeamsForBirthYear,
-} from '../../../../services/read/workTasks.read.js'
+} from '../../../../services/read/tasks/workTasks.read.js'
 import {
   TEAM_ROUTE,
   clean,

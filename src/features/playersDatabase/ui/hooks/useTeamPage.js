@@ -14,13 +14,11 @@ import {
 } from 'react-router-dom'
 
 import {
-  adaptTeamPagePlayerRow,
-  buildTeamPageSeasonOptions,
   buildTeamPageView,
-  findTeamPageLeagueSeasonDoc,
-  findTeamPageSeasonDoc,
-} from '../../model/teamPage.model.js'
-import { normalizeSeasonLookupKey } from '../../model/season.model.js'
+} from '../../model/team/page/teamPageView.model.js'
+import { buildTeamPageSeasonOptions, findTeamPageLeagueSeasonDoc, findTeamPageSeasonDoc } from '../../model/team/page/teamPageSeason.model.js'
+import { adaptTeamPagePlayerRow } from '../../model/team/page/teamPagePlayer.model.js'
+import { normalizeSeasonLookupKey } from '../../model/shared/season.model.js'
 import { readTeamPageData } from '../../services/read/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../logic/routeBuilders.js'
 
@@ -71,6 +69,7 @@ export function useTeamPage() {
   const fromLeague = cleanValue(
     searchParams.get('fromLeague')
   )
+  const fromClubs = searchParams.get('fromClubs') === '1'
   const [leagueDoc, setLeagueDoc] = useState(null)
   const [teamDoc, setTeamDoc] = useState(null)
   const [teamSeasons, setTeamSeasons] = useState([])
@@ -239,6 +238,7 @@ export function useTeamPage() {
       seasonKey: nextOption.seasonKey,
       versionKey: nextOption.optionKey,
       fromLeague,
+      fromClubs,
     })
 
     navigate(nextPath, {
@@ -247,6 +247,7 @@ export function useTeamPage() {
     })
   }, [
     fromLeague,
+    fromClubs,
     leagueId,
     location.state,
     navigate,

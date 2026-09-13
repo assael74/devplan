@@ -1,5 +1,3 @@
-// features/playersDatabase/ui/pages/searchPage/sx/searchHeader.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const searchHeaderSx = {

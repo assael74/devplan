@@ -16,14 +16,13 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useTeamPage } from '../../hooks/useTeamPage.js'
-import { readTeamSearchIndexesExport } from '../../../services/read/index.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
-import { PLAYER_STATS_STATUS } from '../../../model/playerStats.model.js'
+import { PLAYER_STATS_STATUS } from '../../../model/player/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
@@ -60,7 +59,7 @@ import { useTeamReport } from './report/index.js'
 import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
-import { downloadTeamDataBundleJson } from './logic/teamJson.logic.js'
+import useTeamJsonExport from './hooks/useTeamJsonExport.js'
 
 const sx = {
   ...pageCoreLayoutSx,
@@ -79,7 +78,6 @@ function TeamPageContent() {
   const [profileOnly, setProfileOnly] = React.useState(false)
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
   const [activeView, setActiveView] = React.useState('team')
-  const [teamJsonDownloading, setTeamJsonDownloading] = React.useState(false)
   const {
     leagueId,
     leagueDoc,
@@ -99,6 +97,9 @@ function TeamPageContent() {
     error,
     selectionError,
   } = useTeamPage()
+  const auditFindingId = React.useMemo(() => (
+    new URLSearchParams(location.search).get('auditFinding') || ''
+  ), [location.search])
 
   const teamInformationView = React.useMemo(() => buildTeamInformationView({
     team,
@@ -142,6 +143,7 @@ function TeamPageContent() {
     teamSeasons,
     leagueDoc,
     selectedLeagueSeason,
+    auditFindingId,
     notify,
     reload,
   })
@@ -163,10 +165,13 @@ function TeamPageContent() {
     [location.search]
   )
   const fromLeaguePath = pageSearchParams.get('fromLeague') || ''
+  const fromClubs = pageSearchParams.get('fromClubs') === '1'
   const leagueFallbackPath = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
     seasonKey: selectedSeasonKey,
   })
-  const leagueBackPath = fromLeaguePath || leagueFallbackPath
+  const leagueBackPath = fromClubs
+    ? PLAYERS_DATABASE_UI_ROUTES.clubs
+    : fromLeaguePath || leagueFallbackPath
   const leagueTeamsNavigation = React.useMemo(() => (
     buildTeamPageLeagueNavigation({
       selectedLeagueSeason,
@@ -180,23 +185,29 @@ function TeamPageContent() {
     selectedSeasonOption,
     team,
   ])
-  const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
-    {
-      label: 'מרכז ליגות',
-      to: PLAYERS_DATABASE_UI_ROUTES.leagues({
-        seasonKey: selectedSeasonKey,
-        birthYear: team.birthYear,
-        level: team.league?.leagueLevel || team.leagueLevel,
-      }),
-    },
-    {
-      label: team.leagueName,
-      to: leagueBackPath,
-    },
-    {
-      label: team.name,
-    },
-  ])
+  const breadcrumbs = buildPlayersDatabaseBreadcrumbs(fromClubs
+    ? [
+      {
+        label: 'מועדונים',
+        to: PLAYERS_DATABASE_UI_ROUTES.clubs,
+      },
+      { label: team.name },
+    ]
+    : [
+      {
+        label: 'מרכז ליגות',
+        to: PLAYERS_DATABASE_UI_ROUTES.leagues({
+          seasonKey: selectedSeasonKey,
+          birthYear: team.birthYear,
+          level: team.league?.leagueLevel || team.leagueLevel,
+        }),
+      },
+      {
+        label: team.leagueName,
+        to: leagueBackPath,
+      },
+      { label: team.name },
+    ])
   const profileFilterOptions = React.useMemo(
     () => buildTeamProfileFilterOptions(players),
     [players]
@@ -261,11 +272,13 @@ function TeamPageContent() {
       leagueId,
       teamId: cleanTeamId,
       seasonKey: selectedSeasonKey,
-      fromLeague: leagueBackPath,
+      fromLeague: fromClubs ? '' : leagueBackPath,
+      fromClubs,
     }), {
       state: location.state,
     })
   }, [
+    fromClubs,
     leagueBackPath,
     leagueId,
     leagueTeamsNavigation.value,
@@ -292,37 +305,12 @@ function TeamPageContent() {
     })
   }, [favorites, team.birthTeamId, team.birthYear, team.name])
 
-  const handleTeamJsonDownload = React.useCallback(async () => {
-    const birthTeamId = cleanKey(
-      team.birthTeamId ||
-      team.teamDocumentId ||
-      team.id
-    )
-    if (!birthTeamId || teamJsonDownloading) return
-
-    setTeamJsonDownloading(true)
-    try {
-      const teamSearchIndexes = await readTeamSearchIndexesExport({
-        birthTeamId,
-      })
-      downloadTeamDataBundleJson({
-        teamDocument: teamDoc || team,
-        teamSeasons,
-        teamSearchIndexes,
-      })
-      notify('קובץ JSON של הקבוצה הורד', 'success')
-    } catch (downloadError) {
-      notify(downloadError?.message || 'הורדת קובץ הקבוצה נכשלה', 'danger')
-    } finally {
-      setTeamJsonDownloading(false)
-    }
-  }, [
-    notify,
+  const teamJsonExport = useTeamJsonExport({
     team,
     teamDoc,
-    teamJsonDownloading,
     teamSeasons,
-  ])
+    notify,
+  })
 
   const teamReport = useTeamReport({
     team,
@@ -400,6 +388,7 @@ function TeamPageContent() {
           }}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
           onLeague={handleBackToLeague}
+          backLabel={fromClubs ? 'חזרה למועדונים' : 'חזרה לליגה'}
         />
 
         <Box sx={sx.contentGrid}>
@@ -455,8 +444,8 @@ function TeamPageContent() {
             onDeletePlayers={() => playersDelete.setOpen(true)}
             onReport={teamReport.openPreview}
             onTeamLink={() => teamUrlEditor.open(team)}
-            onTeamJsonDownload={handleTeamJsonDownload}
-            teamJsonDownloading={teamJsonDownloading}
+            onTeamJsonDownload={teamJsonExport.download}
+            teamJsonDownloading={teamJsonExport.downloading}
             onTeamDataRepair={teamDataRepair.openRepair}
             tasks={teamPageTasks.tasks}
             tasksLoading={tasksModel.loading}
@@ -483,6 +472,7 @@ function TeamPageContent() {
         teamSeasons={teamSeasons}
         teamSearchIndexes={teamDataRepair.teamSearchIndexes}
         indexesLoaded={teamDataRepair.indexesLoaded}
+        auditFinding={teamDataRepair.auditFinding}
         leagueDocument={leagueDoc}
         selectedLeagueSeason={selectedLeagueSeason}
         onRepair={teamDataRepair.repair}
@@ -615,7 +605,4 @@ export default function TeamPage() {
     </PlayersDatabaseLayout>
   )
 }
-
-
-
 

@@ -25,7 +25,6 @@ export const playerScoutReviewModalSx = {
     backgroundColor: devPlanColors.primaryLight,
   },
 
-
   profileRelevanceSection: {
     backgroundColor: devPlanColors.primaryLight,
   },

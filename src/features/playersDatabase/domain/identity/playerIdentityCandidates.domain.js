@@ -5,7 +5,7 @@ import {
   isValidExternalPlayerId,
   normalizePlayerIdentity,
   resolvePlayerIdentityBirthYear,
-} from '../../model/playerIdentity.model.js'
+} from '../../model/player/playerIdentity.model.js'
 
 const clean = value => String(value || '').trim()
 

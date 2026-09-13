@@ -8,18 +8,18 @@ import {
   isSameSeason,
   normalizeSeasonIdentity,
   normalizeSeasonStatus,
-} from '../../model/season.model.js'
+} from '../../model/shared/season.model.js'
 import {
   normalizeTeamIdentity,
   resolveTeamLookupKey,
-} from '../../model/teamIdentity.model.js'
-import { normalizeTeamStats } from '../../model/teamStats.model.js'
+} from '../../model/team/teamIdentity.model.js'
+import { normalizeTeamStats } from '../../model/team/teamStats.model.js'
 import {
   cleanValue as clean,
   pickDefinedValue,
   toNumberOrZero,
-} from '../../model/value.model.js'
-import { roundPerGameRate } from '../../model/rate.model.js'
+} from '../../model/shared/value.model.js'
+import { roundPerGameRate } from '../../model/shared/rate.model.js'
 
 const isDefined = value => value !== undefined && value !== null && value !== ''
 

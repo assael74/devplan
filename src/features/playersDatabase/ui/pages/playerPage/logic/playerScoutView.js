@@ -1,21 +1,65 @@
 // src/features/playersDatabase/ui/pages/playerPage/logic/playerScoutView.js
 
 import { buildContext, buildTrajectory } from './playerScoutContextView.js'
+import { resolveCurrentSeasonContext } from './playerPage.utils.js'
 import { buildImmediacyFactors } from './playerScoutImmediacyView.js'
+import {
+  isCoreProfile,
+  resolveProfileId,
+} from './playerScoutProfileIdentity.js'
+import { buildProfilesView } from './playerScoutProfiles.view.js'
 import {
   buildMainReasons,
   buildProfileStrengthDetails,
-  buildProfilesView,
-  buildSeasonStats,
   buildWhyView,
-  isCoreProfile,
-  resolveProfileId,
-  resolveScoutRow,
-} from './playerScoutProfileView.js'
+} from './playerScoutEvidence.view.js'
 import { buildQuestions } from './playerScoutQuestionsView.js'
 import { buildBadges, buildDataDepth, buildNextActions } from './playerScoutSupportView.js'
 import { ACTION_COLORS, ACTION_LABELS, ACTION_NOTES } from './playerScoutView.constants.js'
-import { clean, toNumber } from './playerScoutView.utils.js'
+import { clean, formatRate, toNumber } from './playerScoutView.utils.js'
+
+export const resolveScoutRow = (rows, selectedSeasonKey) => {
+  const safeRows = Array.isArray(rows) ? rows : []
+
+  if (selectedSeasonKey) {
+    return safeRows.find(row => row.seasonKey === selectedSeasonKey) || {}
+  }
+
+  return resolveCurrentSeasonContext(safeRows)
+}
+
+export const buildSeasonStats = row => {
+  const games = Number(row.games || 0)
+  const goals = Number(row.goals || 0)
+
+  return [
+    {
+      label: 'משחקים',
+      value: games,
+    },
+    {
+      label: 'שערים',
+      value: goals,
+    },
+    {
+      label: 'דקות',
+      value: Number(row.minutes || 0),
+    },
+    {
+      label: 'פתיחות',
+      value: Number(row.starts || 0),
+    },
+    {
+      label: 'שערים למשחק',
+      value: games ? formatRate(goals / games) : '-',
+    },
+    {
+      label: 'פרופילים',
+      value: Number(row.scoutProfileCount || 0),
+    },
+  ]
+}
+
 
 export const buildPlayerScoutView = ({ player, historyRows, selectedSeasonKey, selectedRow = null }) => {
   const row = selectedRow || resolveScoutRow(historyRows, selectedSeasonKey)

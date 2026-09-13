@@ -3,7 +3,7 @@
 import {
   buildPlayerStatsSnapshot,
   hasPlayerStatsSnapshotData,
-} from '../../../../model/playerStatsSnapshot.model.js'
+} from '../../../../model/player/playerStatsSnapshot.model.js'
 
 const clean = value => String(value || '').trim()
 

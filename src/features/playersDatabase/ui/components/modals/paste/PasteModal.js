@@ -30,6 +30,7 @@ export default function PasteModal({
   onPaste,
   onFileSelect,
   onClear,
+  onViewSourceJson,
   onCellChange,
   getRowStatus,
   getCellStatus,
@@ -76,6 +77,7 @@ export default function PasteModal({
           onPaste={onPaste}
           onFileSelect={onFileSelect}
           onClear={onClear}
+          onViewSourceJson={onViewSourceJson}
         />
 
         {rows.length ? (

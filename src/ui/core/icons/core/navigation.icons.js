@@ -41,6 +41,7 @@ export const navigationIcons = {
   squadSimulator: <AccountTree />,
   playerDatabase: <ManageSearch />,
   playersDatabase: <ManageSearch />,
+  dataShow: <DataObject />,
   firestoreUsage: <DataObject />,
   viewLeague: <Visibility />,
   view: <Visibility />,

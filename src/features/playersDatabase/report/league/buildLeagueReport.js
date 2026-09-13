@@ -4,7 +4,7 @@ import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,
 } from '../../../reports/publicApi.js'
-import { buildTeamPerformanceSideViewModel } from '../../model/teamPerformance.viewModel.js'
+import { buildTeamPerformanceSideViewModel } from '../../model/team/teamPerformance.viewModel.js'
 
 function clean(value) {
   return String(value || '').trim()

@@ -15,6 +15,10 @@ import {
   updateTeamSeasonPlayerScoutProjection,
 } from '../../teams/index.js'
 import { clean } from '../../leagues/leagueDoc.js'
+import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
 const ensureVerificationPlayerDocument = async payload => {
   let verificationResult = await updateScoutingPlayerVerificationAnswer(payload)
 
@@ -322,6 +326,39 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     }
   }
 
+
+  let clubProjectionResult = null
+  try {
+    clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: payload.league || {},
+      season: payload.season || {},
+      team: payload.team || {},
+      teamSeason: teamSeasonResult.seasonDocument || {},
+      canonicalCommitted: true,
+      lastWriteAction: 'UPDATE_PLAYER_VERIFICATION',
+    }))
+  } catch (error) {
+    return {
+      verificationResult,
+      teamSeasonResult,
+      playerSeasonResult,
+      playerSeasonIndexResult,
+      leagueTableRankScoutProfilesResult,
+      teamSeasonIndexScoutProfilesResult,
+      clubProjectionResult,
+      humanStateCommitted: true,
+      teamCanonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: false,
+      recoveryRequired: true,
+      reason: error?.reason || '',
+      recoveryScope: error?.recoveryScope || null,
+      syncStatus: 'projection_failed',
+      stoppedAt: 'clubProjection',
+      projectionError: clean(error?.message) || 'Verification club projection failed',
+    }
+  }
+
   return {
     verificationResult,
     teamSeasonResult,
@@ -329,6 +366,7 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     playerSeasonIndexResult,
     leagueTableRankScoutProfilesResult,
     teamSeasonIndexScoutProfilesResult,
+    clubProjectionResult,
     humanStateCommitted: true,
     teamCanonicalCommitted: true,
     projectionsCompleted: true,

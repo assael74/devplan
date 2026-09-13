@@ -21,6 +21,9 @@ export default function LeagueCenterContext({ model }) {
   const hasLevelOption = model.levelOptions.some(
     option => option.value === model.leagueLevel
   )
+  const hasAgeGroupOption = model.ageGroupOptions.some(
+    option => option.value === model.ageGroupId
+  )
   const hasSeasonOption = model.seasonOptions.includes(model.seasonKey)
 
   const handleBirthYearChange = (event, value) => {
@@ -38,8 +41,9 @@ export default function LeagueCenterContext({ model }) {
     model.setSeasonKey(value)
   }
 
-  const handleDataStatusChange = (event, value) => {
-    model.setDataStatus(value || 'all')
+  const handleAgeGroupChange = (event, value) => {
+    if (!value) return
+    model.setAgeGroupId(value)
   }
 
   return (
@@ -139,18 +143,21 @@ export default function LeagueCenterContext({ model }) {
         </Box>
 
         <Box sx={sx.contextField}>
-          <Typography level='body-xs' sx={sx.contextLabel}>מצב נתונים</Typography>
+          <Typography level='body-xs' sx={sx.contextLabel}>קבוצת גיל</Typography>
           <Select
             size='sm'
             indicator={null}
-            value={model.dataStatus}
+            value={model.ageGroupId}
             sx={sx.contextSelect}
-            onChange={handleDataStatusChange}
+            onChange={handleAgeGroupChange}
           >
             <Option value='all'>הכל</Option>
-            <Option value='full'>מלא</Option>
-            <Option value='partial'>חלקי</Option>
-            <Option value='missing'>חסר</Option>
+            {model.ageGroupId !== 'all' && !hasAgeGroupOption && (
+              <Option value={model.ageGroupId}>{model.ageGroupId}</Option>
+            )}
+            {model.ageGroupOptions.map(option => (
+              <Option key={option.value} value={option.value}>{option.label}</Option>
+            ))}
           </Select>
         </Box>
       </Box>

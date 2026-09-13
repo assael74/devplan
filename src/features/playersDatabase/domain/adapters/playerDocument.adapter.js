@@ -1,12 +1,12 @@
 // src/features/playersDatabase/domain/adapters/playerDocument.adapter.js
 
-import { normalizePlayerIdentity } from '../../model/playerIdentity.model.js'
+import { normalizePlayerIdentity } from '../../model/player/playerIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
-} from '../../model/playerStats.model.js'
-import { normalizeSeasonIdentity } from '../../model/season.model.js'
+} from '../../model/player/playerStats.model.js'
+import { normalizeSeasonIdentity } from '../../model/shared/season.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyPlayerSeason } from '../contracts/playerSeason.contract.js'
 import { normalizePlayerScout } from '../contracts/playerScout.contract.js'

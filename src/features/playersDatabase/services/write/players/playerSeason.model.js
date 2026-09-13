@@ -7,11 +7,11 @@ import {
 } from '../leagues/leagueDoc.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
-import { pickDefinedValue } from '../../../model/value.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
-} from '../../../model/playerStats.model.js'
+} from '../../../model/player/playerStats.model.js'
 import {
   isSamePlayerSource,
   normalizePlayerScoutCombinationIds,

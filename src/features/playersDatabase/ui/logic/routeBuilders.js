@@ -14,6 +14,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     return query ? `${basePath}?${query}` : basePath
   },
   search: '/players-database/search',
+  clubs: '/players-database/clubs',
+  club: clubId => `/players-database/clubs/${clubId || ''}`,
   league: (leagueId, {
     seasonKey,
     birthYear,
@@ -21,6 +23,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     centerSeasonKey,
     centerBirthYear,
     centerLevel,
+    auditFindingId,
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}`
     const params = new URLSearchParams()
@@ -32,6 +35,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     if (centerSeasonKey) params.set('centerSeason', centerSeasonKey)
     if (centerBirthYear) params.set('centerBirthYear', centerBirthYear)
     if (centerLevel) params.set('centerLevel', centerLevel)
+    if (auditFindingId) params.set('auditFinding', auditFindingId)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
@@ -42,6 +46,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     seasonKey,
     versionKey,
     fromLeague,
+    fromClubs = false,
+    auditFindingId,
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}/teams/${teamId || ''}`
     const params = new URLSearchParams()
@@ -49,6 +55,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     if (seasonKey) params.set('season', seasonKey)
     if (versionKey) params.set('version', versionKey)
     if (fromLeague) params.set('fromLeague', fromLeague)
+    if (fromClubs) params.set('fromClubs', '1')
+    if (auditFindingId) params.set('auditFinding', auditFindingId)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
@@ -59,6 +67,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     teamId,
     leagueId,
     fromTeam,
+    auditFindingId,
   } = {}) => {
     const basePath = `/players-database/players/${playerId || ''}`
     const params = new URLSearchParams()
@@ -67,6 +76,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     if (teamId) params.set('team', teamId)
     if (leagueId) params.set('league', leagueId)
     if (fromTeam) params.set('fromTeam', fromTeam)
+    if (auditFindingId) params.set('auditFinding', auditFindingId)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath

@@ -133,8 +133,13 @@ export async function updateTeamSeasonSearchIndexesSeasonMeta({
   snapshot.docs.forEach(indexDoc => {
     const data = indexDoc.data() || {}
     const target = clean(data.sourceTarget) === 'history' ? 'history' : 'current'
+    // Lifecycle belongs to the League Season.  Keeping the old value here
+    // leaves a Team SearchIndex marked `completed` after the League Season
+    // has been moved back to `current` / `active`.
+    const seasonStatus = clean(season.seasonStatus) || clean(data.seasonStatus)
     const searchMetrics = buildTeamSeasonSearchMetrics({
       target,
+      seasonStatus,
       leagueTotalRound: nextLeagueTotalRound,
       teamGamePlayed: toNumberOrZero(data.teamGamePlayed),
       points: toNumberOrZero(data.points),

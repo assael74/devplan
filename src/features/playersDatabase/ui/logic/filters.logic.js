@@ -1,6 +1,6 @@
 // features/playersDatabase/ui/logic/filters.logic.js
 
-import { pickDefinedValue } from '../../model/value.model.js'
+import { pickDefinedValue } from '../../model/shared/value.model.js'
 const clean = value => String(value === null || value === undefined ? '' : value).trim().toLowerCase()
 
 export function filterByText(rows = [], query = '', fields = []) {

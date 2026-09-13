@@ -234,7 +234,8 @@ export const buildTeamDataRepairIssues = ({
 
     if (
       clean(index?.seasonStatus) !== clean(expected.seasonStatus) ||
-      clean(index?.normalizationStatus) !== clean(expected.normalizationStatus)
+      clean(index?.normalizationStatus) !== clean(expected.normalizationStatus) ||
+      Number(index?.remainingTeamGames) !== Number(expected.remainingTeamGames)
     ) {
       issues.push({
         severity: 'danger',

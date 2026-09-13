@@ -9,7 +9,11 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   teamSeasons: 'dbBirthTeamSeasons',
   searchIndexes: 'dbSearchIndexes',
   leaguesMaster: 'dbLeaguesMaster',
+  clubs: 'dbClubs',
+  clubsMaster: 'dbClubsMaster',
   favorites: 'dbFavorites',
+  auditFindings: 'dbAuditFindings',
+  writeActions: 'dbWriteActions',
 }
 
 export const PLAYERS_DATABASE_FAVORITES_DOCUMENTS = {
@@ -148,4 +152,3 @@ export const PLAYERS_DATABASE_FILTERS = [
     placeholder: 'הכל',
   },
 ]
-

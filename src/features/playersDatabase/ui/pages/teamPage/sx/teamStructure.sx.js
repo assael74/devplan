@@ -2,12 +2,16 @@ import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamStructureSx = {
   section: {
-    p: { xs: 1.25, md: 1.5 },
+    p: {
+      xs: 1.25,
+      md: 1.5,
+    },
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 10,
     bgcolor: devPlanColors.surface,
     minWidth: 0,
   },
+
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -15,11 +19,13 @@ export const teamStructureSx = {
     gap: 1,
     mb: 0.75,
   },
+
   titleRow: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.65,
   },
+
   titleIcon: {
     display: 'grid',
     placeItems: 'center',
@@ -34,28 +40,33 @@ export const teamStructureSx = {
       fontSize: 14,
     },
   },
+
   title: {
     color: devPlanColors.primaryDark,
     fontSize: 15,
     fontWeight: 800,
   },
+
   meta: {
     color: devPlanColors.secondary,
     fontSize: 11,
     mt: 0.2,
   },
+
   info: {
     color: devPlanColors.secondary,
     display: 'inline-flex',
     cursor: 'help',
     mt: 0.25,
   },
+
   headerActions: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.5,
     flexShrink: 0,
   },
+
   exportButton: {
     minHeight: 28,
     px: 0.8,
@@ -65,6 +76,7 @@ export const teamStructureSx = {
     fontSize: 11,
     fontWeight: 700,
   },
+
   linesGrid: {
     display: 'grid',
     gridTemplateColumns: {
@@ -74,6 +86,7 @@ export const teamStructureSx = {
     },
     gap: 1,
   },
+
   lineCard: {
     position: 'relative',
     minWidth: 0,
@@ -87,12 +100,15 @@ export const teamStructureSx = {
     font: 'inherit',
     bgcolor: devPlanColors.surface,
   },
+
   lineCardReview: {
     bgcolor: devPlanColors.petrolLight,
   },
+
   lineCardClear: {
     bgcolor: 'rgba(101, 118, 132, 0.16)',
   },
+
   lineCardClickable: {
     cursor: 'pointer',
     transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease',
@@ -104,18 +120,21 @@ export const teamStructureSx = {
       transform: 'translateY(0)',
     },
   },
+
   lineCardSelected: {
     border: `1px solid ${devPlanColors.secondary}`,
     borderColor: devPlanColors.secondary,
     bgcolor: 'rgba(101, 118, 132, 0.24)',
     boxShadow: '0 5px 12px rgba(78, 91, 102, 0.16), inset 0 0 0 1px rgba(78, 91, 102, 0.22)',
   },
+
   lineCardReviewSelected: {
     border: `1px solid ${devPlanColors.petrol}`,
     borderColor: devPlanColors.petrol,
     bgcolor: devPlanColors.petrolLight,
     boxShadow: `0 6px 14px rgba(43, 124, 130, 0.18), inset 0 0 0 1px ${devPlanColors.petrol}`,
   },
+
   lineBody: {
     minWidth: 0,
     p: 0.75,
@@ -124,6 +143,7 @@ export const teamStructureSx = {
     minHeight: 78,
     gap: 0.25,
   },
+
   lineHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -131,12 +151,14 @@ export const teamStructureSx = {
     gap: 0.6,
     minWidth: 0,
   },
+
   lineHeading: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.5,
     minWidth: 0,
   },
+
   lineIcon: {
     width: 24,
     height: 24,
@@ -147,11 +169,13 @@ export const teamStructureSx = {
     bgcolor: devPlanColors.primaryLight,
     color: devPlanColors.primary,
   },
+
   lineLabel: {
     color: devPlanColors.primaryDark,
     fontSize: 12,
     fontWeight: 800,
   },
+
   lineStatus: {
     appearance: 'none',
     font: 'inherit',
@@ -174,24 +198,32 @@ export const teamStructureSx = {
     py: 0.25,
     borderRadius: 99,
     bgcolor: devPlanColors.surface,
-    '& svg': { fontSize: 12 },
+    '& svg': {
+      fontSize: 12,
+    },
   },
+
   lineStatusReview: {
     color: devPlanColors.surface,
     bgcolor: devPlanColors.petrol,
     border: `1px solid ${devPlanColors.petrolDark}`,
-    '& svg, & p': { color: `${devPlanColors.surface} !important` },
+    '& svg, & p': {
+      color: `${devPlanColors.surface} !important`,
+    },
   },
+
   lineStatusClear: {
     color: devPlanColors.secondary,
     border: `1px solid ${devPlanColors.border}`,
   },
+
   lineStatusText: {
     color: 'inherit',
     fontSize: 9.5,
     fontWeight: 900,
     whiteSpace: 'nowrap',
   },
+
   lineMetricRow: {
     display: 'flex',
     alignItems: 'flex-end',
@@ -201,12 +233,14 @@ export const teamStructureSx = {
     px: 1.1,
     mt: 0.2,
   },
+
   lineValue: {
     color: devPlanColors.primaryDark,
     fontSize: 30,
     lineHeight: 1,
     fontWeight: 800,
   },
+
   referenceChip: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -219,22 +253,28 @@ export const teamStructureSx = {
     bgcolor: devPlanColors.surface,
     color: devPlanColors.secondary,
   },
+
   referenceChipIcon: {
     display: 'inline-flex',
-    '& svg': { fontSize: 11 },
+    '& svg': {
+      fontSize: 11,
+    },
   },
+
   referenceChipText: {
     color: 'inherit',
     fontSize: 9.5,
     fontWeight: 800,
     whiteSpace: 'nowrap',
   },
+
   lineConclusion: {
     color: devPlanColors.secondary,
     fontSize: 10.5,
     lineHeight: 1.4,
     minHeight: 0,
   },
+
   coverageStrip: {
     minWidth: 0,
     p: 0.75,
@@ -245,16 +285,19 @@ export const teamStructureSx = {
     alignContent: 'start',
     gap: 0.45,
   },
+
   coverageStripSelected: {
     borderColor: devPlanColors.primary,
     boxShadow: `inset 0 0 0 1px ${devPlanColors.primary}`,
   },
+
   coverageContent: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: 0.65,
     minWidth: 0,
   },
+
   coverageIcon: {
     width: 27,
     height: 27,
@@ -265,16 +308,19 @@ export const teamStructureSx = {
     bgcolor: devPlanColors.primaryLight,
     color: devPlanColors.primary,
   },
+
   coverageTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 11.5,
     fontWeight: 800,
   },
+
   coverageText: {
     color: devPlanColors.secondary,
     fontSize: 10.5,
     lineHeight: 1.4,
   },
+
   coverageAction: {
     border: 0,
     bgcolor: 'transparent',
@@ -287,16 +333,21 @@ export const teamStructureSx = {
     px: 0.35,
     py: 0.2,
     borderRadius: 6,
-    '&:hover': { bgcolor: devPlanColors.primaryLight },
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+    },
   },
+
   coverageActionSelected: {
     bgcolor: devPlanColors.primaryLight,
   },
+
   tableContent: {
     mt: 1.25,
     pt: 1.25,
     borderTop: `1px solid ${devPlanColors.border}`,
   },
+
   tableIntro: {
     display: 'flex',
     alignItems: 'center',
@@ -304,11 +355,13 @@ export const teamStructureSx = {
     gap: 1,
     mb: 0.75,
   },
+
   tableTitleRow: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.55,
   },
+
   tableTitleIcon: {
     display: 'grid',
     placeItems: 'center',
@@ -323,11 +376,13 @@ export const teamStructureSx = {
       fontSize: 13,
     },
   },
+
   tableTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 14,
     fontWeight: 800,
   },
+
   tableMeta: {
     color: devPlanColors.secondary,
     fontSize: 10.5,

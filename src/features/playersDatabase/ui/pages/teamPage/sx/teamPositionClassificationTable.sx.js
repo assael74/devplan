@@ -9,18 +9,23 @@ const squadRowColors = {
 
 export const teamPositionClassificationTableSx = {
   section: {
-    p: { xs: 1.25, md: 1.5 },
+    p: {
+      xs: 1.25,
+      md: 1.5,
+    },
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 10,
     bgcolor: devPlanColors.surface,
     minWidth: 0,
   },
+
   sectionEmbedded: {
     p: 0,
     border: 0,
     borderRadius: 0,
     bgcolor: 'transparent',
   },
+
   header: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -28,22 +33,45 @@ export const teamPositionClassificationTableSx = {
     gap: 1,
     mb: 1,
   },
-  title: { color: devPlanColors.primaryDark, fontSize: 15, fontWeight: 800 },
-  meta: { color: devPlanColors.secondary, fontSize: 11, mt: 0.25 },
+
+  title: {
+    color: devPlanColors.primaryDark,
+    fontSize: 15,
+    fontWeight: 800,
+  },
+
+  meta: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    mt: 0.25,
+  },
+
   actions: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 1.25,
     flexShrink: 0,
   },
+
   filterControl: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 0.5,
   },
-  filterLabel: { color: devPlanColors.secondary, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' },
-  exportButton: { borderColor: devPlanColors.border, color: devPlanColors.primary },
+
+  filterLabel: {
+    color: devPlanColors.secondary,
+    fontSize: 10.5,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  exportButton: {
+    borderColor: devPlanColors.border,
+    color: devPlanColors.primary,
+  },
+
   tableWrap: {
     mt: 0.75,
     maxHeight: 'min(52vh, 520px)',
@@ -52,10 +80,12 @@ export const teamPositionClassificationTableSx = {
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 8,
   },
+
   tableWrapEmbedded: {
     width: 'calc(100% + 24px)',
     mx: -1.5,
   },
+
   table: {
     width: '100%',
     tableLayout: 'fixed',
@@ -81,23 +111,62 @@ export const teamPositionClassificationTableSx = {
       overflowWrap: 'anywhere',
     },
   },
-  indexColumn: { width: '5%', whiteSpace: 'nowrap' },
-  avatarColumn: { width: '3%', textAlign: 'center' },
-  playerColumn: { width: '12%' },
-  gamesStartsColumn: { width: '9%' },
-  minutesColumn: { width: '12%' },
-  substitutionsColumn: { width: '11%' },
-  goalsColumn: { width: '7%' },
-  scoutProfileColumn: { width: '16%' },
-  lineClassificationColumn: { width: '15%' },
-  openPlayerColumn: { width: '5%', textAlign: 'center' },
-  openPlayerButton: { borderColor: devPlanColors.border, color: devPlanColors.primary },
+
+  indexColumn: {
+    width: '5%',
+    whiteSpace: 'nowrap',
+  },
+
+  avatarColumn: {
+    width: '3%',
+    textAlign: 'center',
+  },
+
+  playerColumn: {
+    width: '12%',
+  },
+
+  gamesStartsColumn: {
+    width: '9%',
+  },
+
+  minutesColumn: {
+    width: '12%',
+  },
+
+  substitutionsColumn: {
+    width: '11%',
+  },
+
+  goalsColumn: {
+    width: '7%',
+  },
+
+  scoutProfileColumn: {
+    width: '16%',
+  },
+
+  lineClassificationColumn: {
+    width: '15%',
+  },
+
+  openPlayerColumn: {
+    width: '5%',
+    textAlign: 'center',
+  },
+
+  openPlayerButton: {
+    borderColor: devPlanColors.border,
+    color: devPlanColors.primary,
+  },
+
   avatarWrap: {
     position: 'relative',
     width: 28,
     height: 28,
     mx: 'auto',
   },
+
   avatar: {
     width: 28,
     height: 28,
@@ -106,6 +175,7 @@ export const teamPositionClassificationTableSx = {
     borderRadius: '50%',
     border: `1px solid ${devPlanColors.primaryLight}`,
   },
+
   avatarInterestBadge: level => ({
     position: 'absolute',
     insetInlineStart: -1,
@@ -124,6 +194,7 @@ export const teamPositionClassificationTableSx = {
     boxShadow: '0 1px 3px rgba(16, 43, 64, 0.22)',
     zIndex: 1,
   }),
+
   classificationEdit: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -157,13 +228,20 @@ export const teamPositionClassificationTableSx = {
       opacity: 0.65,
     },
   },
-  player: { color: devPlanColors.primaryDark, fontSize: 12, fontWeight: 700 },
+
+  player: {
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    fontWeight: 700,
+  },
+
   playerNameContent: {
     minWidth: 0,
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.55,
   },
+
   playerStatusBadge: color => ({
     width: 20,
     height: 20,
@@ -176,8 +254,11 @@ export const teamPositionClassificationTableSx = {
     bgcolor: `var(--joy-palette-${color}-100)`,
     border: `1px solid var(--joy-palette-${color}-300)`,
     lineHeight: 1,
-    '& svg': { fontSize: 13 },
+    '& svg': {
+      fontSize: 13,
+    },
   }),
+
   scoutProfileCell: {
     minWidth: 0,
     display: 'flex',
@@ -192,7 +273,13 @@ export const teamPositionClassificationTableSx = {
       whiteSpace: 'nowrap',
     },
   },
-  index: { color: devPlanColors.secondary, fontSize: 12, fontWeight: 700 },
+
+  index: {
+    color: devPlanColors.secondary,
+    fontSize: 12,
+    fontWeight: 700,
+  },
+
   squadClassificationRow: status => {
     const colors = squadRowColors[status] || squadRowColors.irrelevant
 
@@ -205,12 +292,14 @@ export const teamPositionClassificationTableSx = {
       },
     }
   },
+
   minutesProgress: {
     width: '100%',
     minWidth: 0,
     display: 'grid',
     gap: 0.55,
   },
+
   minutesValues: {
     display: 'flex',
     alignItems: 'baseline',
@@ -218,8 +307,19 @@ export const teamPositionClassificationTableSx = {
     gap: 0.4,
     whiteSpace: 'nowrap',
   },
-  minutesValue: { color: devPlanColors.primaryDark, fontSize: 12, fontWeight: 800 },
-  minutesRate: { color: devPlanColors.secondary, fontSize: 11, fontWeight: 600 },
+
+  minutesValue: {
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    fontWeight: 800,
+  },
+
+  minutesRate: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: 600,
+  },
+
   minutesProgressTrack: {
     width: 72,
     maxWidth: '100%',
@@ -229,6 +329,7 @@ export const teamPositionClassificationTableSx = {
     borderRadius: 999,
     bgcolor: '#E6EDF2',
   },
+
   minutesProgressValue: ({ progress, tone }) => ({
     width: `${progress}%`,
     height: '100%',
@@ -242,17 +343,20 @@ export const teamPositionClassificationTableSx = {
     })[tone] || '#AAB7C2',
     transition: 'width 180ms ease',
   }),
+
   progressTooltip: {
     border: '1px solid rgba(22, 42, 59, 0.34)',
     fontSize: 11,
     fontWeight: 700,
   },
+
   substitutionsProgress: {
     width: '100%',
     minWidth: 0,
     display: 'grid',
     gap: 0.55,
   },
+
   substitutionsValues: {
     display: 'flex',
     alignItems: 'baseline',
@@ -260,8 +364,19 @@ export const teamPositionClassificationTableSx = {
     gap: 0.4,
     whiteSpace: 'nowrap',
   },
-  substitutionsValue: { color: devPlanColors.primaryDark, fontSize: 12, fontWeight: 800 },
-  substitutionsRate: { color: devPlanColors.secondary, fontSize: 11, fontWeight: 600 },
+
+  substitutionsValue: {
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    fontWeight: 800,
+  },
+
+  substitutionsRate: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: 600,
+  },
+
   substitutionsProgressTrack: {
     width: 72,
     maxWidth: '100%',
@@ -271,6 +386,7 @@ export const teamPositionClassificationTableSx = {
     borderRadius: 999,
     bgcolor: '#E6EDF2',
   },
+
   substitutionsProgressValue: ({ progress, tone }) => ({
     width: `${progress}%`,
     height: '100%',

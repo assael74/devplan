@@ -3,7 +3,6 @@
 import {
   Box,
   IconButton,
-  Tooltip,
 } from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
@@ -19,7 +18,7 @@ import teamLogo from '../../../../../../ui/core/images/teamLogo.png'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
 import { leagueTeamsColumnsSx as sx } from '../sx/leagueTeams.columns.sx.js'
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 const toCount = value => {
   const nextValue = Number(value)
   return Number.isFinite(nextValue) ? nextValue : 0
@@ -355,8 +354,7 @@ export const buildLeagueTeamsColumns = ({
     headerSx: sx.actionHeader,
     render: row => (
       <Box sx={sx.rowActions}>
-        <Tooltip title='כניסה לקבוצה'>
-          <IconButton
+        <IconButton
             size='sm'
             variant='outlined'
             aria-label='כניסה לקבוצה'
@@ -368,10 +366,8 @@ export const buildLeagueTeamsColumns = ({
               size: 'sm',
             })}
           </IconButton>
-        </Tooltip>
 
-        <Tooltip title='פעולות נוספות'>
-          <IconButton
+        <IconButton
             size='sm'
             variant='outlined'
             aria-label='פעולות נוספות'
@@ -386,7 +382,6 @@ export const buildLeagueTeamsColumns = ({
               size: 'sm',
             })}
           </IconButton>
-        </Tooltip>
       </Box>
     ),
   },

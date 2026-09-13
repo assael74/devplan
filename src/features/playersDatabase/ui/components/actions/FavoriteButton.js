@@ -3,7 +3,6 @@
 import {
   CircularProgress,
   IconButton,
-  Tooltip,
 } from '@mui/joy'
 import {
   Star,
@@ -24,8 +23,7 @@ export default function FavoriteButton({
     : actionLabel
 
   return (
-    <Tooltip title={actionLabel} placement='top'>
-      <IconButton
+    <IconButton
         size='sm'
         variant='plain'
         aria-label={accessibleLabel}
@@ -44,6 +42,5 @@ export default function FavoriteButton({
           <StarBorder />
         )}
       </IconButton>
-    </Tooltip>
   )
 }

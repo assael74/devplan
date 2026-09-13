@@ -147,6 +147,29 @@ The following values are derived from the canonical league table data:
 
 All persisted per-game values must use a maximum of one decimal place.
 
+## 2.3 Team Performance calculation context
+
+Each League Season persists a compact `teamPerformanceContext`. It records the
+Team Performance engine version and the league-wide normalization values used
+for that season. The table rows remain the canonical official facts; the
+context makes their derived Team Performance projection reproducible without
+serializing the full offense/defense engine result into every row.
+
+When a League table is loaded or changed, calculate the Team Performance
+projection once for the whole table. That one result feeds the Team SearchIndex,
+existing Team Season documents, Club Document and Clubs Master projections.
+Roster and Stats loads must reuse the League-derived projection and must not
+recalculate the whole League table.
+
+Reloading a League Excel file follows the same path. It refreshes data that can
+be sourced from the League table (official performance, scouting priority,
+profiles and related projections). It must not fabricate balance or transfer
+data: those remain available only when the matching Team Season source exists.
+
+The Team Season and Club projections persist only the compact
+`{ priorityLevel }` offense/defense sides. The complete calculation remains a
+runtime view derived from the League table and its season context.
+
 Examples:
 
 - `5.542` → `5.5`
@@ -960,3 +983,23 @@ manual role changes, and audit repair) must pass the new projection to the
 League table-row writer. The League projection is never used as an input to
 Team Balance; missing legacy fields render as `false` until the next relevant
 write refreshes them.
+
+## 18. Club-season identity index
+
+`dbClubsMaster/all` is a full display projection and must not be read merely
+to validate a pasted league table. The same collection also contains compact
+advisory identity-index documents, one per `seasonKey + birthYear`, for example
+`identity__26-27__2011`.
+
+Each index stores only the identity needed by the import preflight:
+`clubId`, `ageGroupId`, `teamId`, `teamSlot`, `leagueId`, `leagueName`, and
+`leagueLevel`. League Documents remain the canonical source. The index is
+updated once after a League table is committed, replacing only entries of that
+League in its season/year document. Clearing or deleting a League season
+removes its entries. A full Club-projection refresh also backfills the index
+from existing League Documents.
+
+The Level-2-and-below import modal reads one matching index document to flag a
+club already present in the same season/year/age group in another League. The
+warning requires an explicit team-slot confirmation. Level 1 skips this read:
+those entries are treated as first teams.

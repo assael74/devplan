@@ -10,7 +10,8 @@ import {
   appendTeamSeasonPlayer,
   ensureTeamDoc,
 } from '../../teams/index.js'
-import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
+import { syncClubProjectionFromTeamSeason } from '../../clubs/index.js'
 
 async function createTeamPlayerFlow({
   payload = {},
@@ -52,6 +53,33 @@ async function createTeamPlayerFlow({
     playerSeasonIndexCount: playerSeasonIndexResult.rowsCount,
     teamBalance: teamSeasonResult.teamBalance,
   })
+  const clubProjectionResult = await syncClubProjectionFromTeamSeason({
+    league: payload.league || {},
+    season: payload.season || {},
+    team: teamWithRosterMeta,
+    teamSeason: teamSeasonResult.seasonDocument || {},
+    canonicalCommitted: true,
+    lastWriteAction: 'CREATE_TEAM_PLAYER',
+  })
+
+  if (clubProjectionResult?.completed !== true) {
+    return {
+      teamDocResult,
+      teamSeasonResult,
+      leagueTableRankResult,
+      playerSeasonIndexResult,
+      teamSeasonIndexResult,
+      clubProjectionResult,
+      teamCanonicalCommitted: true,
+      canonicalCommitted: true,
+      projectionsCompleted: false,
+      completed: false,
+      recoveryRequired: true,
+      reason: clubProjectionResult?.reason || 'CLUB_PROJECTION_INCOMPLETE',
+      recoveryScope: clubProjectionResult?.recoveryScope || null,
+      rowsCount: 1,
+    }
+  }
 
   return {
     teamDocResult,
@@ -59,6 +87,11 @@ async function createTeamPlayerFlow({
     leagueTableRankResult,
     playerSeasonIndexResult,
     teamSeasonIndexResult,
+    clubProjectionResult,
+    teamCanonicalCommitted: true,
+    canonicalCommitted: true,
+    projectionsCompleted: true,
+    completed: true,
     rowsCount: 1,
   }
 }

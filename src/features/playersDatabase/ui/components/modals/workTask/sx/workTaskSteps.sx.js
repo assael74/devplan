@@ -50,7 +50,6 @@ export const workTaskStepsSx = {
       borderBottom: `1px solid ${devPlanColors.border}`,
     },
 
-
   fieldWrap: {
       mt: 1.25,
       display: 'grid',
@@ -203,7 +202,6 @@ export const workTaskStepsSx = {
       boxShadow: `0 0 0 1px ${devPlanColors.tertiaryDark}`,
     },
 
-
   taskTypeIcon: {
       width: 34,
       height: 34,
@@ -260,7 +258,6 @@ export const workTaskStepsSx = {
       justifyContent: 'flex-start',
       gap: 0.75,
     },
-
 
   teamContextGrid: {
     mt: 1.5,

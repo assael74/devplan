@@ -3,7 +3,7 @@
 import {
   normalizePlayerStatsStatus,
   PLAYER_STATS_STATUS,
-} from '../../model/playerStats.model.js'
+} from '../../model/player/playerStats.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyPlayerSeason } from '../contracts/playerSeason.contract.js'
 import { normalizePlayerScout } from '../contracts/playerScout.contract.js'

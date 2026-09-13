@@ -7,6 +7,10 @@ import {
   updateTeamSeasonSearchIndexScoutProfilesSummary,
 } from '../../searchIndex/index.js'
 import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
+import {
   updateTeamSeasonPlayerRoleAndScoutProfiles,
   updateTeamSeasonPlayerScoutProjection,
 } from '../../teams/index.js'
@@ -34,7 +38,11 @@ const buildCommittedProjectionFailure = ({
   rowsCount: 1,
   teamCanonicalCommitted: true,
   projectionsCompleted: false,
-  completed: true,
+  completed: false,
+  recoveryRequired: true,
+  reason: error?.reason || '',
+  recoveryScope: error?.recoveryScope || null,
+  syncStatus: 'projection_failed',
   stoppedAt: stage,
   projectionError: String(error?.message || `Role projection failed at ${stage}`).trim(),
 })
@@ -226,6 +234,25 @@ export async function updatePlayerRoleFlow(payload = {}) {
   } catch (error) {
     return buildCommittedProjectionFailure({
       stage: 'teamSearchIndexSummary',
+      error,
+      teamSeasonResult,
+      results: projectionResults,
+    })
+  }
+
+
+  try {
+    projectionResults.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: rolePayload.league || {},
+      season: rolePayload.season || {},
+      team: rolePayload.team || {},
+      teamSeason: teamSeasonResult.seasonDocument || {},
+      canonicalCommitted: true,
+      lastWriteAction: 'UPDATE_PLAYER_ROLE',
+    }))
+  } catch (error) {
+    return buildCommittedProjectionFailure({
+      stage: 'clubProjection',
       error,
       teamSeasonResult,
       results: projectionResults,

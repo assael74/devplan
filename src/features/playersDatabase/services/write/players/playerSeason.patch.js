@@ -13,7 +13,7 @@ import {
   normalizePlayerScoutProfiles,
   playerDocRef,
 } from './playerDoc.model.js'
-import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/player/playerIdentity.model.js'
 import {
   buildPlayerSeasonCompactProjection,
   findPlayerSeasonRowIndex,

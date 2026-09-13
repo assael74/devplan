@@ -11,9 +11,9 @@ import {
   toNumberOrZero,
 } from './leagueDoc.js'
 import { updateHistorySeason } from './leagueSeason.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
-import { isSameSeason } from '../../../model/season.model.js'
-import { normalizeTeamIdentity } from '../../../model/teamIdentity.model.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
+import { isSameSeason } from '../../../model/shared/season.model.js'
+import { normalizeTeamIdentity } from '../../../model/team/teamIdentity.model.js'
 import {
   areScoutProfilesSummariesEqual,
   areTeamTaskSignalsEqual,

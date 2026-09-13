@@ -4,17 +4,17 @@ import {
   cleanValue,
   pickFirstValue,
   toNumberOrZero,
-} from '../../../model/value.model.js'
+} from '../../../model/shared/value.model.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+} from '../../../model/shared/season.model.js'
 import {
   normalizeTeamIdentity,
   resolveBirthTeamDocumentId,
   resolveBirthTeamId,
   resolveBirthTeamSlot,
-} from '../../../model/teamIdentity.model.js'
+} from '../../../model/team/teamIdentity.model.js'
 
 export {
   resolveBirthTeamDocumentId,

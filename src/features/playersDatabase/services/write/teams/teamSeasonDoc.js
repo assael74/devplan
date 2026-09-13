@@ -10,7 +10,7 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.j
 import {
   buildTeamSeasonDocumentId,
   normalizeTeamIdentity,
-} from '../../../model/teamIdentity.model.js'
+} from '../../../model/team/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
 
 export const teamSeasonDocRefById = teamSeasonDocumentId =>

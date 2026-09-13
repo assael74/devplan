@@ -118,7 +118,7 @@ test('clear roster success requires all projection stages', async () => {
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: false, statsLoaded: false }),
       },
     },
@@ -154,7 +154,7 @@ test('clear roster exposes recovery metadata after canonical deletion', async ()
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: false, statsLoaded: false }),
       },
     },
@@ -190,7 +190,7 @@ test('clear roster does not report completion when league metadata returns an un
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: false, statsLoaded: false }),
       },
     },
@@ -235,7 +235,7 @@ test('clear stats reports complete only after all projections finish', async () 
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: true, statsLoaded: false }),
       },
       '../../../../domain/projections/teamPerformance.projection.js': {
@@ -283,7 +283,7 @@ test('clear stats exposes recovery metadata when a later projection fails', asyn
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: true, statsLoaded: false }),
       },
       '../../../../domain/projections/teamPerformance.projection.js': {
@@ -331,7 +331,7 @@ test('clear stats does not report completion when player SearchIndex sync report
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: true, statsLoaded: false }),
       },
       '../../../../domain/projections/teamPerformance.projection.js': {
@@ -396,7 +396,7 @@ test('clear roster canonical failure keeps recovery contract off', async () => {
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: false, statsLoaded: false }),
       },
     },
@@ -435,7 +435,7 @@ test('clear stats canonical failure keeps recovery contract off', async () => {
       },
       '../writeFlowReport.js': { attachWriteFlowReport: attachWriteReport },
       '../writeFlowSyncError.js': { buildWriteFlowSyncError: buildSyncError },
-      '../../../../model/teamLoadStatus.model.js': {
+      '../../../../model/team/teamLoadStatus.model.js': {
         buildTeamLoadStatus: () => ({ rosterLoaded: true, statsLoaded: false }),
       },
       '../../../../domain/projections/teamPerformance.projection.js': {

@@ -20,8 +20,8 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constant
 import {
   isSameSeason,
   normalizeSeasonIdentity,
-} from '../../../../model/season.model.js'
-import { normalizeTeamIdentity } from '../../../../model/teamIdentity.model.js'
+} from '../../../../model/shared/season.model.js'
+import { normalizeTeamIdentity } from '../../../../model/team/teamIdentity.model.js'
 import {
   buildSeasonKey,
   clean,

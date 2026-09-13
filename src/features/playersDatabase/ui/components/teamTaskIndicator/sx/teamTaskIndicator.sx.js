@@ -6,11 +6,13 @@ const toneByKind = {
     border: '#5EEAD4',
     color: '#0F766E',
   },
+
   defense: {
     background: '#EFF6FF',
     border: '#93C5FD',
     color: '#1D4ED8',
   },
+
   combined: {
     background: '#FFF7ED',
     border: '#FCD34D',

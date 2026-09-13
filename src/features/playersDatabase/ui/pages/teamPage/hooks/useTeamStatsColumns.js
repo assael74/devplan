@@ -35,8 +35,6 @@ import {
   TableHeaderIcon,
   getIdentityColor,
   getMinutesCorrectionImpactLabel,
-  getMinutesPct,
-  getMinutesPctMark,
   getNextTransferDirection,
   getTransferDirectionColor,
   getTransferDirectionIcon,
@@ -44,8 +42,12 @@ import {
   isTransferRosterStatus,
   renderMarkedNumber,
   resolveScoutProfileSortLabel,
-  toFiniteNumber,
 } from './teamStatsColumns.presentation.js'
+import {
+  getMinutesPct,
+  getMinutesPctMark,
+  toFiniteNumber,
+} from '../logic/teamStatsScoutMarks.logic.js'
 
 export default function useTeamStatsColumns({
   players,

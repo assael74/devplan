@@ -11,9 +11,9 @@ import {
   cleanValue,
   toNumberOrZero,
   pickDefinedValue,
-} from '../../../model/value.model.js'
-import { buildSeasonKey } from '../../../model/season.model.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
+} from '../../../model/shared/value.model.js'
+import { buildSeasonKey } from '../../../model/shared/season.model.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export { buildSeasonKey, toNumberOrZero }

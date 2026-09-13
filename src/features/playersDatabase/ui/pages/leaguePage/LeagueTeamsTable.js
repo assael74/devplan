@@ -1,9 +1,11 @@
 // src/features/playersDatabase/ui/pages/leaguePage/LeagueTeamsTable.js
 
 import * as React from 'react'
+import { Stack, Typography } from '@mui/joy'
 
 import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
+import { getFullDateTimeIl } from '../../../../../shared/format/dateUtils.js'
 import { buildLeagueTeamsColumns } from './logic/leagueTeams.columns.js'
 import { leagueTeamsTableSx as sx } from './sx/leagueTeamsTable.sx.js'
 
@@ -31,6 +33,32 @@ const resolveTeamUrl = row => clean(row?.teamUrl || row?.teamStats?.teamUrl)
 const resolveTeamName = row => clean(row?.name || row?.teamName || row?.displayName)
 const resolveTeamStats = row => row?.teamStats || {}
 const resolvePriorityLabel = value => PRIORITY_LABELS[clean(value)] || clean(value)
+const normalizePlaces = values => new Set((Array.isArray(values) ? values : [])
+  .map(value => Number(value))
+  .filter(value => Number.isInteger(value) && value > 0))
+
+const buildCompetitionRowSx = rules => {
+  const promotion = normalizePlaces(rules?.promotion?.directPlaces)
+  const promotionPlayoff = normalizePlaces(rules?.promotion?.playoffPlaces)
+  const relegation = normalizePlaces(rules?.relegation?.directPlaces)
+  const relegationPlayoff = normalizePlaces(rules?.relegation?.playoffPlaces)
+
+  return row => {
+    const rank = toNumber(row?.tableRank)
+    const backgroundColor = promotion.has(rank)
+      ? 'rgba(46, 125, 50, 0.14)'
+      : relegation.has(rank)
+        ? 'rgba(237, 108, 2, 0.15)'
+        : promotionPlayoff.has(rank) || relegationPlayoff.has(rank)
+          ? 'rgba(25, 118, 210, 0.12)'
+          : ''
+
+    return backgroundColor ? {
+      '& > td': { bgcolor: backgroundColor },
+      '&:hover > td': { bgcolor: backgroundColor },
+    } : {}
+  }
+}
 
 const buildLeagueTableExportConfig = ({
   selectedSeasonOption,
@@ -44,6 +72,7 @@ const buildLeagueTableExportConfig = ({
   placementColumnKey: 'actions',
   align: 'end',
   buttonLabel: 'Excel',
+  showLabel: true,
   tooltip: 'הורדת טבלת הליגה המלאה',
   fileName: [
     safeFilePart(leagueName) || 'ליגה',
@@ -185,11 +214,21 @@ export default function LeagueTeamsTable({
       selectedSeasonOption,
     ]
   )
+  const lastUpdated = selectedSeasonOption?.season?.updatedAt
+  const competitionRowSx = React.useMemo(() => (
+    buildCompetitionRowSx(selectedSeasonOption?.season?.competitionRules)
+  ), [selectedSeasonOption?.season?.competitionRules])
+  const headerActions = (
+    <Stack sx={sx.headerInfo}>
+      <Typography level='body-xs' sx={sx.headerInfoText}>טבלת הליגה היא מקור האמת לביצועי הקבוצה</Typography>
+      <Typography level='body-xs' sx={sx.headerInfoText}>עדכון אחרון: {getFullDateTimeIl(lastUpdated)}</Typography>
+    </Stack>
+  )
 
   return (
     <PageContentPanel
       title='טבלת ליגה'
-      meta={`${rows.length} קבוצות`}
+      headerActions={headerActions}
     >
       <DataTable
         className='dpScrollThin'
@@ -206,6 +245,7 @@ export default function LeagueTeamsTable({
             : error || 'אין נתוני טבלה לעונה שנבחרה'
         }
         wrapSx={sx.tableWrap}
+        getRowSx={competitionRowSx}
         exportConfig={exportConfig}
       />
     </PageContentPanel>

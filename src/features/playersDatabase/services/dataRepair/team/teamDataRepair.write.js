@@ -326,6 +326,7 @@ export async function repairTeamSearchIndexSeasonStatus({
     const patch = {
       seasonStatus: expected.seasonStatus,
       normalizationStatus: expected.normalizationStatus,
+      remainingTeamGames: expected.remainingTeamGames,
     }
     const changed = Object.entries(patch).some(([field, value]) => (
       current[field] !== value
@@ -402,6 +403,7 @@ export async function repairTeamSearchIndexLifecycleById({
     const patch = {
       seasonStatus: expected.seasonStatus,
       normalizationStatus: expected.normalizationStatus,
+      remainingTeamGames: expected.remainingTeamGames,
     }
     const changed = Object.entries(patch).some(([field, value]) => (
       current[field] !== value
@@ -435,7 +437,8 @@ export async function repairTeamSearchIndexLifecycleById({
   })
   if (
     verifiedData.seasonStatus !== verifiedExpected.seasonStatus ||
-    verifiedData.normalizationStatus !== verifiedExpected.normalizationStatus
+    verifiedData.normalizationStatus !== verifiedExpected.normalizationStatus ||
+    Number(verifiedData.remainingTeamGames) !== Number(verifiedExpected.remainingTeamGames)
   ) {
     throw new Error('אימות כתיבת סטטוס האינדקס נכשל')
   }

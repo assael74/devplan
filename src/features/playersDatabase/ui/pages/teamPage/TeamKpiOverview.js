@@ -11,7 +11,7 @@ import {
 } from './logic/teamPage.utils.js'
 import { teamKpiOverviewSx as sx } from './sx/teamKpiOverview.sx.js'
 
-import { pickDefinedValue } from '../../../model/value.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
 
 const resolveSide = (team, side) => (
   team?.performanceView?.[side] || {}

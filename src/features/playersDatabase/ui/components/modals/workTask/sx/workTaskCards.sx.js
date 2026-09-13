@@ -331,7 +331,6 @@ export const workTaskCardsSx = {
       fontWeight: 700,
     },
 
-
   taskStateIcon: {
       width: 24,
       height: 24,
@@ -351,7 +350,6 @@ export const workTaskCardsSx = {
       bgcolor: '#FEF2F2',
       color: '#DC2626',
     },
-
 
   teamAppearanceCard: {
     minWidth: 0,

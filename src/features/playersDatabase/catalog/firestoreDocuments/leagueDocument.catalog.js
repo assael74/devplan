@@ -25,6 +25,29 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
     seasonUrl: '',
     birthYear: 0, // חובה
     leagueTotalRound: 0,
+    competitionRules: {
+      configured: false,
+      promotion: {
+        enabled: true,
+        directPlaces: [],
+        playoffPlaces: [],
+      },
+      relegation: {
+        enabled: true,
+        directPlaces: [],
+        playoffPlaces: [],
+      },
+    },
+    // Persisted calculation context for the compact Team Performance
+    // projections of this league season. Table rows remain official raw facts.
+    teamPerformanceContext: {
+      version: '',
+      normalizationMode: '',
+      appliedFactor: 1,
+      benchmarkGoalsPerTeamGame: null,
+      leagueGoalsPerTeamGame: null,
+      calculatedAt: null,
+    },
     // Contract: null = not loaded yet; [] = loaded and empty; rows = loaded table.
     tableRank: [
       {
@@ -69,6 +92,27 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasonUrl: '',
       birthYear: 0, // חובה
       leagueTotalRound: 0,
+      competitionRules: {
+        configured: false,
+        promotion: {
+          enabled: true,
+          directPlaces: [],
+          playoffPlaces: [],
+        },
+        relegation: {
+          enabled: true,
+          directPlaces: [],
+          playoffPlaces: [],
+        },
+      },
+      teamPerformanceContext: {
+        version: '',
+        normalizationMode: '',
+        appliedFactor: 1,
+        benchmarkGoalsPerTeamGame: null,
+        leagueGoalsPerTeamGame: null,
+        calculatedAt: null,
+      },
       // Contract: null = not loaded yet; [] = loaded and empty; rows = loaded table.
       tableRank: [
         {
@@ -106,4 +150,6 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
   ],
 
   updatedAt: null,
+  lastWriteAction: '',
+  lastWriteAt: null,
 };

@@ -38,6 +38,26 @@ export default function DataTableBody({
             toggleExpanded: () => onToggleExpandedRow(rowKey),
           }
 
+          if (row?.fullWidthMessage) {
+            return (
+              <tr key={rowKey} data-full-width-message='true'>
+                <DataTableCell
+                  column={columns[0]}
+                  row={row}
+                  index={index}
+                  rowContext={rowContext}
+                />
+                {columns.length > 1 ? (
+                  <td colSpan={columns.length - 1}>
+                    <Typography level='body-sm' sx={sx.fullWidthMessage}>
+                      {row.fullWidthMessage}
+                    </Typography>
+                  </td>
+                ) : null}
+              </tr>
+            )
+          }
+
           return (
             <React.Fragment key={rowKey}>
               <Box

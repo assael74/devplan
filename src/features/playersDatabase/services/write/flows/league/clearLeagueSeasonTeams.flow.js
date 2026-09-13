@@ -11,6 +11,10 @@ import {
   getSearchIndexMetaForLeagueSeason,
 } from '../../searchIndex/index.js'
 import { removeTeamSeason } from '../../teams/index.js'
+import {
+  removeClubProjectionsForLeagueSeason,
+  removeLeagueClubSeasonIdentityIndex,
+} from '../../clubs/index.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 
 const FLOW = 'clearLeagueSeasonTeams'
@@ -26,6 +30,25 @@ const runStage = async ({ stage, results, action }) => {
     results[stage] = result
     return result
   } catch (error) {
+    throw attachWriteFlowReport({
+      error,
+      stage,
+      results,
+      flow: FLOW,
+    })
+  }
+}
+
+const runPostCanonicalProjectionStage = async ({ stage, results, action }) => {
+  try {
+    const result = await action()
+    results[stage] = result
+    return result
+  } catch (error) {
+    error.canonicalCommitted = true
+    error.projectionsCompleted = false
+    error.recoveryRequired = true
+    error.completed = false
     throw attachWriteFlowReport({
       error,
       stage,
@@ -142,7 +165,34 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     action: () => clearLeagueSeasonTeams(payload),
   })
 
-  const masterResult = await runStage({
+  const clubSeasonIdentityIndexResult = await runPostCanonicalProjectionStage({
+    stage: 'removeClubSeasonIdentityIndex',
+    results,
+    action: () => removeLeagueClubSeasonIdentityIndex({
+      league: payload.league || {},
+      season: payload.season || {},
+      lastWriteAction: 'CLEAR_LEAGUE_SEASON_TEAMS',
+    }),
+  })
+
+  const clubProjectionTeams = leagueTeams.map(team => {
+    const teamId = String(team?.teamId || team?.birthTeamId || '').trim()
+    const teamSlot = Number(team?.birthTeamSlot || team?.teamSlot || 1) || 1
+    return teamMap.get(`${teamId}__${teamSlot}`) || team
+  })
+  const clubProjectionsResult = await runPostCanonicalProjectionStage({
+    stage: 'removeClubProjectionsForLeagueSeason',
+    results,
+    action: () => removeClubProjectionsForLeagueSeason({
+      league: payload.league || {},
+      season: payload.season || {},
+      teams: clubProjectionTeams,
+      canonicalCommitted: true,
+      lastWriteAction: 'CLEAR_LEAGUE_SEASON_TEAMS',
+    }),
+  })
+
+  const masterResult = await runPostCanonicalProjectionStage({
     stage: 'syncLeaguesMasterDocument',
     results,
     action: () => syncLeaguesMasterDocument({
@@ -153,7 +203,10 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
   return {
     status: 'complete',
     syncStatus: 'complete',
-    completed: true,
+    canonicalCommitted: true,
+    projectionsCompleted: Boolean(clubProjectionsResult.projectionsCompleted),
+    recoveryRequired: false,
+    completed: Boolean(clubProjectionsResult.completed),
     removedTeamsCount:
       leagueSeasonResult.removedTeamsCount ||
       teams.length,
@@ -163,6 +216,8 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     playerSeasonDocsResults,
     searchIndexesResult,
     leagueSeasonResult,
+    clubSeasonIdentityIndexResult,
+    clubProjectionsResult,
     masterResult,
   }
 }

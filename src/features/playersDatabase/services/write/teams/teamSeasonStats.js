@@ -8,7 +8,7 @@ import {
   buildSeasonKey,
   clean,
 } from '../leagues/leagueDoc.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { buildTeamRootWithSeasonIndex, teamDocRef } from './teamDoc.js'
 import {
   buildTeamSeasonDoc,
@@ -21,7 +21,7 @@ import {
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
 import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,

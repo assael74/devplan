@@ -1,6 +1,6 @@
 // features/playersDatabase/services/write/flows/league/updateLeagueSeasonMeta.flow.js
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 import { updateLeagueSeasonMeta } from '../../leagues/index.js'
 import {
   updatePlayerSeasonSearchIndexesSeasonMeta,

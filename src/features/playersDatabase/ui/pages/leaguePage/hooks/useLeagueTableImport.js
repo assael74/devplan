@@ -10,6 +10,8 @@ import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
+import { readClubSeasonIdentityIndex } from '../../../../services/read/index.js'
+import { resolveLeagueClubIdentityIndex } from '../../../../import/logic/leagueClubMasterWarnings.js'
 import {
   buildLeagueImportPreview,
   buildServiceLeague,
@@ -19,6 +21,12 @@ import {
 } from '../logic/leagueImport.logic.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
+
+const resolveLeagueLevel = (...values) => (
+  values
+    .map(value => Number(value))
+    .find(value => Number.isFinite(value) && value > 0) || 0
+)
 
 const toImportNumber = value => {
   const nextValue = Number(clean(value).replace(/\u200E/g, ''))
@@ -65,10 +73,50 @@ export function useLeagueTableImport({
   const [previewMessage, setPreviewMessage] = React.useState('')
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
+  const [clubMasterWarnings, setClubMasterWarnings] = React.useState([])
+  const [identityIndexDocument, setIdentityIndexDocument] = React.useState(null)
+  const identityIndexRef = React.useRef(null)
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
   const canConfirm = React.useMemo(() => {
-    return Boolean(seasonStatus) && rows.length > 0 && rows.every(isImportRowReady)
+    return Boolean(seasonStatus) && rows.length > 0 && rows.every(row => (
+      row.valid !== false && isImportRowReady(row)
+    ))
   }, [rows, seasonStatus])
+
+  const applyClubMasterWarnings = React.useCallback(({ previewRows = [], identityIndex = {} } = {}) => {
+    const identityResolution = resolveLeagueClubIdentityIndex({
+      rows: previewRows,
+      identityIndex,
+      // The catalog identity is authoritative here. A Firestore document id can
+      // be season-scoped, while identity-index entries use the catalog league id.
+      leagueId: league.id || league.leagueId || leagueDoc.leagueId || leagueDoc.id,
+      seasonKey: selectedSeasonOption?.season?.seasonKey || league.seasonKey,
+      birthYear: selectedSeasonOption?.season?.birthYear || league.birthYear,
+      ageGroupId: league.ageGroupId || leagueDoc.ageGroupId,
+      // Prefer the catalog's numeric level. Some persisted league documents
+      // expose a different, non-numeric `level` field.
+      leagueLevel: resolveLeagueLevel(league.level, leagueDoc.level, leagueDoc.leagueLevel),
+    })
+    const warnings = identityResolution.warnings
+    setClubMasterWarnings(warnings)
+    const warningByRowIndex = new Map(warnings.map(warning => [warning.rowIndex, warning]))
+
+    return identityResolution.rows.map((row, rowIndex) => {
+      const warning = warningByRowIndex.get(rowIndex)
+      // Another team from the same club is valid when it has a different slot.
+      // Block only an actual identity collision: same club, season, age group,
+      // and team slot in another league.
+      if (!warning?.selectedSlotConflict) return row
+
+      return {
+        ...row,
+        requiresTeamSlotResolution: true,
+        valid: false,
+        status: 'error',
+        errors: [warning.message],
+      }
+    })
+  }, [league, leagueDoc, selectedSeasonOption])
 
   React.useEffect(() => {
     if (seasonStatus === 'not_started' && hasStartedData) {
@@ -76,7 +124,7 @@ export function useLeagueTableImport({
     }
   }, [hasStartedData, seasonStatus])
 
-  const handlePreview = React.useCallback(() => {
+  const handlePreview = React.useCallback(async () => {
     const preview = buildLeagueImportPreview({
       text: pasteValue,
       league,
@@ -84,9 +132,28 @@ export function useLeagueTableImport({
       selectedSeasonOption,
     })
 
-    setRows(preview.rows || [])
+    try {
+      const identityIndex = resolveLeagueLevel(league.level, leagueDoc.level, leagueDoc.leagueLevel) >= 2
+        ? await readClubSeasonIdentityIndex({
+            seasonKey: selectedSeasonOption?.season?.seasonKey || league.seasonKey,
+            birthYear: selectedSeasonOption?.season?.birthYear || league.birthYear,
+          })
+        : null
+      identityIndexRef.current = identityIndex
+      setIdentityIndexDocument(identityIndex)
+      setRows(applyClubMasterWarnings({
+        previewRows: preview.rows || [],
+        identityIndex,
+      }))
+    } catch (error) {
+      setClubMasterWarnings([])
+      setIdentityIndexDocument(null)
+      setRows(preview.rows || [])
+      setPreviewMessage('לא ניתן היה לבדוק הופעות קודמות של המועדון; בדוק את מספר הקבוצה ידנית.')
+      return
+    }
     setPreviewMessage(preview.message || '')
-  }, [pasteValue, league, leagueDoc, selectedSeasonOption])
+  }, [pasteValue, league, leagueDoc, selectedSeasonOption, applyClubMasterWarnings])
 
   const handleClear = React.useCallback(() => {
     if (busy) return
@@ -95,10 +162,13 @@ export function useLeagueTableImport({
     setRows([])
     setPreviewMessage('')
     setSeasonStatus('')
+    setClubMasterWarnings([])
+    identityIndexRef.current = null
+    setIdentityIndexDocument(null)
   }, [busy])
 
   const handleCellChange = React.useCallback(({ rowIndex, column, value }) => {
-    setRows(currentRows => currentRows.map((row, index) => {
+    const changedRows = rows.map((row, index) => {
       if (index !== rowIndex) return row
 
       const nextRow = {
@@ -109,20 +179,34 @@ export function useLeagueTableImport({
       if (column.key === 'clubId') {
         const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === value)
         nextRow.clubName = club?.name || ''
+        // A manual club match is valid on its own. Only the identity-index
+        // check may block it when this exact team slot already exists elsewhere.
+        nextRow.requiresTeamSlotResolution = false
       }
 
-      if (column.key === 'teamSlot') nextRow.teamSlot = value || '1'
+      if (column.key === 'teamSlot') {
+        nextRow.teamSlot = value || '1'
+        nextRow.requiresTeamSlotResolution = false
+        nextRow.teamSlotConfirmed = true
+      }
       if (column.key === 'goalDifference') {
         nextRow.goalDifference = formatGoalDifference(value)
       }
 
-      const valid = isImportRowReady(nextRow)
+      const valid = isImportRowReady(nextRow) && !nextRow.requiresTeamSlotResolution
       nextRow.valid = valid
-      nextRow.errors = valid ? [] : (Array.isArray(nextRow.errors) ? nextRow.errors : [])
+      nextRow.errors = valid
+        ? []
+        : (Array.isArray(nextRow.errors) ? nextRow.errors : [])
 
       return nextRow
+    })
+
+    setRows(applyClubMasterWarnings({
+      previewRows: changedRows,
+      identityIndex: identityIndexRef.current,
     }))
-  }, [])
+  }, [rows, applyClubMasterWarnings])
 
   const handleConfirm = React.useCallback(async () => {
     const serviceLeague = buildServiceLeague({
@@ -201,6 +285,8 @@ export function useLeagueTableImport({
     seasonStatus,
     hasStartedData,
     previewMessage,
+    clubMasterWarnings,
+    identityIndexDocument,
     setOpen,
     setSeasonStatus,
     setPasteValue,

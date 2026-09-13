@@ -1,5 +1,3 @@
-// src/features/playersDatabase/ui/pages/teamPage/sx/teamActionsPanel.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamActionsPanelSx = {

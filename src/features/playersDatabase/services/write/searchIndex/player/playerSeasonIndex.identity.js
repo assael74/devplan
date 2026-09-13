@@ -7,7 +7,7 @@ import {
   normalizePlayerNameValue,
   resolveInternalPlayerId,
   resolvePlayerIdentityBirthYear,
-} from '../../../../model/playerIdentity.model.js'
+} from '../../../../model/player/playerIdentity.model.js'
 import {
   buildSeasonKey,
   clean,

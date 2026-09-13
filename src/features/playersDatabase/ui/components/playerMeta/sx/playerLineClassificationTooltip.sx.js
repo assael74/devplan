@@ -11,6 +11,7 @@ export const playerLineClassificationTooltipSx = {
     p: '0 !important',
     boxShadow: '0 8px 22px rgba(31, 95, 100, 0.16)',
   },
+
   root: ({ compact = false } = {}) => ({
     width: compact ? 260 : 300,
     maxWidth: 'calc(100vw - 32px)',
@@ -23,17 +24,20 @@ export const playerLineClassificationTooltipSx = {
     borderRadius: 9,
     boxShadow: '0 8px 22px rgba(31, 95, 100, 0.16)',
   }),
+
   title: ({ compact = false } = {}) => ({
     color: devPlanColors.petrolDark,
     fontSize: compact ? 11.5 : 13,
     fontWeight: 800,
     lineHeight: 1.1,
   }),
+
   header: () => ({
     display: 'flex',
     alignItems: 'center',
     gap: 0.55,
   }),
+
   lineIcon: ({ compact = false } = {}) => ({
     width: compact ? 19 : 23,
     height: compact ? 19 : 23,
@@ -43,8 +47,11 @@ export const playerLineClassificationTooltipSx = {
     bgcolor: 'rgba(255, 255, 255, 0.78)',
     border: '1px solid rgba(43, 124, 130, 0.2)',
     borderRadius: '50%',
-    '& svg': { fontSize: compact ? 11 : 13 },
+    '& svg': {
+      fontSize: compact ? 11 : 13,
+    },
   }),
+
   subtitle: ({ compact = false } = {}) => ({
     color: devPlanColors.petrolDark,
     fontSize: compact ? 9.5 : 10.5,
@@ -53,23 +60,44 @@ export const playerLineClassificationTooltipSx = {
     borderBottom: `1px solid ${devPlanColors.petrol}`,
     justifySelf: 'start',
   }),
-  conditions: { display: 'grid', gap: 0.15 },
-  condition: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.75 },
-  conditionTitle: () => ({ minWidth: 0, display: 'flex', alignItems: 'center', gap: 0.45 }),
+
+  conditions: {
+    display: 'grid',
+    gap: 0.15,
+  },
+
+  condition: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.75,
+  },
+
+  conditionTitle: () => ({
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.45,
+  }),
+
   conditionIcon: ({ compact = false } = {}) => ({
     width: compact ? 15 : 17,
     height: compact ? 15 : 17,
     display: 'grid',
     placeItems: 'center',
     color: devPlanColors.petrol,
-    '& svg': { fontSize: compact ? 10 : 12 },
+    '& svg': {
+      fontSize: compact ? 10 : 12,
+    },
   }),
+
   conditionLabel: ({ compact = false } = {}) => ({
     minWidth: 0,
     color: devPlanColors.petrolDark,
     fontSize: compact ? 9.5 : 10.5,
     fontWeight: 700,
   }),
+
   conditionStatus: ({ compact = false } = {}) => ({
     flexShrink: 0,
     color: devPlanColors.petrolDark,
@@ -77,6 +105,7 @@ export const playerLineClassificationTooltipSx = {
     fontWeight: 800,
     whiteSpace: 'nowrap',
   }),
+
   empty: ({ compact = false } = {}) => ({
     color: devPlanColors.petrolDark,
     fontSize: compact ? 9.5 : 10.5,

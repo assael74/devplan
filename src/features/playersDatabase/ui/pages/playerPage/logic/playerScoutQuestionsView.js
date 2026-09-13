@@ -1,7 +1,7 @@
 // Player review questions presentation for the player scout view model.
 
 import { SCOUT_REVIEW } from '../../../../../../shared/scouting/players/ids.js'
-import { resolveProfileId, resolveProfileLabel } from './playerScoutProfileView.js'
+import { resolveProfileId, resolveProfileLabel } from './playerScoutProfileIdentity.js'
 import { clean } from './playerScoutView.utils.js'
 
 const PLAYER_REVIEW_LABELS = {

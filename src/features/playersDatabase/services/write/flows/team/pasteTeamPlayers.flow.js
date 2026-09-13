@@ -7,11 +7,16 @@ import {
 } from '../../searchIndex/index.js'
 import { resolveTeamPlayerIdentities } from '../../players/index.js'
 import { upsertTeamSeasonPlayers } from '../../teams/index.js'
-import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
-import { buildTeamLoadStatus } from '../../../../model/teamLoadStatus.model.js'
+import {
+  ensureRequiredClubProjectionCompleted,
+  syncClubProjectionFromTeamSeason,
+} from '../../clubs/index.js'
+import { normalizeSeasonIdentity } from '../../../../model/shared/season.model.js'
+import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
 import {
   buildLeagueTeamPerformanceProjection,
   resolveLeagueSeasonStatus,
+  resolveLeagueTeamPoints,
 } from '../../../../domain/projections/teamPerformance.projection.js'
 import {
   assertWriteResultClean,
@@ -121,6 +126,12 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     target: normalizedPayload.target || 'current',
     team: normalizedPayload.team,
   })
+  const teamPoints = resolveLeagueTeamPoints({
+    league: normalizedPayload.league,
+    season: normalizedPayload.season,
+    target: normalizedPayload.target || 'current',
+    team: normalizedPayload.team,
+  })
   const results = {}
   const rawPlayers = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
   let players = rawPlayers
@@ -224,9 +235,36 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     })
   }
 
+  try {
+    results.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
+      league: normalizedPayload.league || {},
+      season: normalizedPayload.season || {},
+      team: teamWithRosterMeta,
+      teamSeason: results.teamSeasonResult.seasonDocument || {},
+      performance: teamPerformance,
+      points: teamPoints,
+      canonicalCommitted: true,
+      lastWriteAction: 'PASTE_TEAM_PLAYERS',
+    }))
+  } catch (error) {
+    const syncError = buildSyncError({
+      stage: 'clubProjection',
+      cause: error,
+      results,
+    })
+    syncError.teamCanonicalCommitted = true
+    syncError.projectionsCompleted = false
+    syncError.completed = false
+    syncError.recoveryRequired = true
+    throw syncError
+  }
+
   return {
     ...results,
     rowsCount: results.playerSeasonIndexResult.rowsCount,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    completed: true,
     syncStatus: 'complete',
   }
 }

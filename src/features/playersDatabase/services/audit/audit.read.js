@@ -1,6 +1,8 @@
-import { collection, getDocs, limit, query, startAfter } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, limit, query, startAfter, where } from 'firebase/firestore'
 import { db } from '../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../constants/pdb.constants.js'
+import { buildTeamSeasonDocumentId } from '../../model/team/teamIdentity.model.js'
+import { normalizeAuditScope, AUDIT_SCOPE_TYPE } from './audit.scope.js'
 
 const PAGE_SIZE = 1000
 const READ_LIMIT = 49000
@@ -23,12 +25,101 @@ const readCollection = async collectionName => {
   throw new Error(`ה־Audit נעצר: ${collectionName} הגיע למגבלת ${READ_LIMIT} מסמכים.`)
 }
 
-// Integrity checks never run against a partial side of a relation. Scoped
-// filtering happens after this consistent evidence set is assembled.
-export async function readPlayerDatabaseAuditSnapshot() {
+const toRows = documents => documents
+  .filter(item => item?.exists())
+  .map(item => ({ id: item.id, data: item.data() || {} }))
+
+const uniqueRows = rows => [...new Map(rows.map(row => [row.id, row])).values()]
+
+const readDocumentsById = async ({ collectionName, ids = [] } = {}) => {
+  const uniqueIds = [...new Set(ids.filter(Boolean))]
+  const snapshots = await Promise.all(uniqueIds.map(id => getDoc(doc(db, collectionName, id))))
+  return { rows: toRows(snapshots), readsUsed: uniqueIds.length }
+}
+
+const readSearchIndexesForTeam = async teamDocumentId => {
+  const source = collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes)
+  // Both fields are read because pre-normalization documents may only have the
+  // legacy teamDocumentId. The rows are de-duplicated by document id.
+  const snapshots = await Promise.all([
+    getDocs(query(source, where('birthTeamDocumentId', '==', teamDocumentId))),
+    getDocs(query(source, where('teamDocumentId', '==', teamDocumentId))),
+  ])
+  return {
+    rows: uniqueRows(snapshots.flatMap(snapshot => toRows(snapshot.docs))),
+    readsUsed: snapshots.reduce((total, snapshot) => total + snapshot.size, 0),
+  }
+}
+
+const readScopedSnapshot = async scope => {
+  const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
+  const teamIds = [...new Set(scopes.map(item => item.teamDocumentId))]
+  const rootResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teams,
+    ids: teamIds,
+  })
+  const seasonIds = scopes.map(item => buildTeamSeasonDocumentId(item.teamDocumentId, item.seasonKey))
+  const seasonResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+    ids: seasonIds,
+  })
+  const indexResults = await Promise.all(teamIds.map(readSearchIndexesForTeam))
+  const searchIndexes = uniqueRows(indexResults.flatMap(result => result.rows)).filter(row => (
+    scopes.some(item => (
+      String(row.data?.birthTeamDocumentId || row.data?.teamDocumentId || '').trim() === item.teamDocumentId &&
+      String(row.data?.seasonKey || row.data?.seasonId || '').trim() === item.seasonKey
+    ))
+  ))
+  const playerIds = [...new Set(seasonResult.rows.flatMap(row => (
+    (Array.isArray(row.data?.teamPlayers) ? row.data.teamPlayers : [])
+      .map(player => player?.playerDocumentId)
+      .filter(Boolean)
+  )))]
+  const playerResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.players,
+    ids: playerIds,
+  })
+  const leagueIds = [...new Set(seasonResult.rows.map(row => row.data?.leagueId).filter(Boolean))]
+  const leagueResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues,
+    ids: leagueIds,
+  })
+  const favoritesResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.favorites,
+    ids: ['players'],
+  })
+
+  return {
+    generatedAt: new Date().toISOString(),
+    readsUsed: rootResult.readsUsed + seasonResult.readsUsed +
+      indexResults.reduce((total, result) => total + result.readsUsed, 0) +
+      playerResult.readsUsed + leagueResult.readsUsed + favoritesResult.readsUsed,
+    rows: {
+      leagues: leagueResult.rows,
+      leaguesMaster: [],
+      clubs: [],
+      clubsMaster: [],
+      teams: rootResult.rows,
+      teamSeasons: seasonResult.rows,
+      players: playerResult.rows,
+      favorites: favoritesResult.rows,
+      searchIndexes,
+    },
+  }
+}
+
+// A full-system audit reads every canonical collection. A Team/Season audit
+// assembles only the explicit relation set needed for that Team/Season.
+export async function readPlayerDatabaseAuditSnapshot({ scope } = {}) {
+  const normalizedScope = normalizeAuditScope(scope)
+  if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) {
+    return readScopedSnapshot(normalizedScope)
+  }
   const entries = await Promise.all([
     ['leagues', PLAYERS_DATABASE_COLLECTIONS.leagues],
     ['leaguesMaster', PLAYERS_DATABASE_COLLECTIONS.leaguesMaster],
+    ['clubs', PLAYERS_DATABASE_COLLECTIONS.clubs],
+    ['clubsMaster', PLAYERS_DATABASE_COLLECTIONS.clubsMaster],
     ['teams', PLAYERS_DATABASE_COLLECTIONS.teams],
     ['teamSeasons', PLAYERS_DATABASE_COLLECTIONS.teamSeasons],
     ['players', PLAYERS_DATABASE_COLLECTIONS.players],

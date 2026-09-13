@@ -4,6 +4,12 @@ import { dataTableColumnsSx as columnSx } from '../../../../components/tables/da
 import { buildTableColumnWidth } from '../../../../components/tables/tableWidths.js'
 
 export const searchResultsTableSx = {
+  resultLink: {
+    '& [data-link-indicator]': {
+      display: 'none',
+    },
+  },
+
   profileCell: {
     minWidth: 0,
     display: 'flex',

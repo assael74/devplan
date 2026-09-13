@@ -6,7 +6,9 @@ import {
   TouchApp,
   Visibility,
   Leaderboard,
-  LocationSearching
+  LocationSearching,
+  VerticalAlignBottom,
+  VerticalAlignTop
 } from '@mui/icons-material';
 
 export const teamIcons = {
@@ -17,5 +19,7 @@ export const teamIcons = {
   technical: <TouchApp />,
   training: <PlayLesson />,
   league: <Leaderboard />,
-  leaguePos: <LocationSearching />
+  leaguePos: <LocationSearching />,
+  leagueDownPathDirection: <VerticalAlignBottom />,
+  leagueUpPathDirection: <VerticalAlignTop />
 };

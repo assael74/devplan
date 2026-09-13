@@ -14,10 +14,12 @@ export const teamDiagnosticSignalsModalSx = {
       bgcolor: devPlanColors.primaryLight,
     },
   },
+
   content: {
     display: 'grid',
     gap: 1.25,
   },
+
   group: {
     display: 'grid',
     gap: 0.5,
@@ -26,16 +28,19 @@ export const teamDiagnosticSignalsModalSx = {
     borderRadius: 9,
     bgcolor: devPlanColors.surface,
   },
+
   groupTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 13,
     fontWeight: 800,
   },
+
   item: {
     display: 'grid',
     gap: 0.25,
     py: 0.2,
   },
+
   itemMain: {
     display: 'flex',
     alignItems: 'center',
@@ -44,12 +49,14 @@ export const teamDiagnosticSignalsModalSx = {
     fontSize: 12,
     lineHeight: 1.35,
   },
+
   conditions: {
     pr: 2.1,
     color: devPlanColors.secondary,
     fontSize: 10.5,
     lineHeight: 1.35,
   },
+
   signalId: {
     color: devPlanColors.primaryDark,
     fontFamily: 'monospace',
@@ -57,11 +64,15 @@ export const teamDiagnosticSignalsModalSx = {
     fontWeight: 800,
     direction: 'ltr',
   },
+
   itemIcon: {
     display: 'inline-flex',
     color: devPlanColors.secondary,
-    '& svg': { fontSize: 12 },
+    '& svg': {
+      fontSize: 12,
+    },
   },
+
   itemIconReview: {
     color: `${COLORS.status.success.solid} !important`,
     '& svg, & svg *': {
@@ -69,12 +80,14 @@ export const teamDiagnosticSignalsModalSx = {
       fill: `${COLORS.status.success.solid} !important`,
     },
   },
+
   itemSelected: {
     mx: -0.45,
     px: 0.45,
     borderRadius: 6,
     bgcolor: devPlanColors.primaryLight,
   },
+
   matrix: {
     display: 'grid',
     gridTemplateColumns: 'minmax(72px, 0.8fr) repeat(3, minmax(0, 1fr))',
@@ -82,9 +95,11 @@ export const teamDiagnosticSignalsModalSx = {
     borderRadius: 8,
     overflow: 'hidden',
   },
+
   squadMatrix: {
     gridTemplateColumns: 'minmax(100px, 0.85fr) repeat(2, minmax(0, 1fr))',
   },
+
   matrixHeader: {
     p: 0.65,
     bgcolor: devPlanColors.secondaryLight,
@@ -95,9 +110,22 @@ export const teamDiagnosticSignalsModalSx = {
     borderLeft: `1px solid ${devPlanColors.border}`,
     borderBottom: `1px solid ${devPlanColors.border}`,
   },
-  headerBelow: { color: COLORS.status.danger.solid, fontWeight: 900 },
-  headerAt: { color: COLORS.status.success.solid, fontWeight: 900 },
-  headerAbove: { color: COLORS.status.warning.solid, fontWeight: 900 },
+
+  headerBelow: {
+    color: COLORS.status.danger.solid,
+    fontWeight: 900,
+  },
+
+  headerAt: {
+    color: COLORS.status.success.solid,
+    fontWeight: 900,
+  },
+
+  headerAbove: {
+    color: COLORS.status.warning.solid,
+    fontWeight: 900,
+  },
+
   matrixPerformance: {
     display: 'flex',
     alignItems: 'center',
@@ -111,6 +139,7 @@ export const teamDiagnosticSignalsModalSx = {
     borderLeft: `1px solid ${devPlanColors.border}`,
     borderBottom: `1px solid ${devPlanColors.border}`,
   },
+
   matrixCell: {
     minWidth: 0,
     minHeight: 92,
@@ -120,12 +149,15 @@ export const teamDiagnosticSignalsModalSx = {
     borderLeft: `1px solid ${devPlanColors.border}`,
     borderBottom: `1px solid ${devPlanColors.border}`,
   },
+
   matrixCellEmpty: {
     bgcolor: devPlanColors.surface,
   },
+
   matrixCellSelected: {
     bgcolor: COLORS.status.success.softBg,
   },
+
   matrixItem: {
     display: 'grid',
     minWidth: 0,
@@ -135,6 +167,7 @@ export const teamDiagnosticSignalsModalSx = {
     lineHeight: 1.3,
     textAlign: 'center',
   },
+
   matrixItemTitle: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -145,6 +178,7 @@ export const teamDiagnosticSignalsModalSx = {
     fontWeight: 700,
     lineHeight: 1.4,
   },
+
   matrixTask: {
     color: devPlanColors.tertiaryDark,
     fontSize: 9.5,
@@ -152,12 +186,14 @@ export const teamDiagnosticSignalsModalSx = {
     lineHeight: 1.35,
     textAlign: 'center',
   },
+
   matrixExplanation: {
     color: devPlanColors.secondary,
     fontSize: 9.5,
     lineHeight: 1.35,
     textAlign: 'center',
   },
+
   matrixAction: {
     minWidth: 0,
     color: devPlanColors.tertiaryDark,
@@ -167,14 +203,17 @@ export const teamDiagnosticSignalsModalSx = {
     textAlign: 'center',
     overflowWrap: 'anywhere',
   },
+
   matrixActionLabel: {
     color: devPlanColors.primaryDark,
     fontWeight: 900,
   },
+
   matrixTaskUrgent: {
     color: COLORS.status.danger.solid,
     fontWeight: 900,
   },
+
   matrixSignalId: {
     display: 'block',
     justifySelf: 'center',
@@ -185,12 +224,14 @@ export const teamDiagnosticSignalsModalSx = {
     fontWeight: 500,
     direction: 'ltr',
   },
+
   matrixItemSelected: {
     mx: -0.25,
     px: 0.25,
     borderRadius: 5,
     bgcolor: COLORS.status.success.softBg,
   },
+
   classificationNote: {
     p: 0.85,
     borderRadius: 8,
@@ -199,6 +240,7 @@ export const teamDiagnosticSignalsModalSx = {
     fontSize: 11,
     lineHeight: 1.4,
   },
+
   classificationNoteSelected: {
     bgcolor: COLORS.status.success.softBg,
   },

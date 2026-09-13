@@ -1,4 +1,7 @@
-import { SCOUTING_MODEL_VERSION } from '../../../../../shared/scouting/scouting.version.js'
+import {
+  SCOUTING_MODEL_VERSION,
+  TEAM_SCOUT_PERFORMANCE_VERSION,
+} from '../../../../../shared/scouting/scouting.version.js'
 import {
   buildTeamScoutLeagueModel,
   TEAM_SCOUT_NORMALIZATION_MODE,
@@ -8,15 +11,17 @@ import { adaptTeamScoutEngineRow } from '../../../domain/adapters/teamScoutEngin
 import {
   normalizeTeamIdentity,
   resolveTeamLookupKey,
-} from '../../../model/teamIdentity.model.js'
+} from '../../../model/team/teamIdentity.model.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
-} from '../../../model/season.model.js'
+} from '../../../model/shared/season.model.js'
 import { clean } from '../leagues/leagueDoc.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
 import {
   buildLeagueTeamPerformanceProjection,
 } from '../../../domain/projections/teamPerformance.projection.js'
+import { buildLeagueTeamSeasons } from '../../../domain/orchestration/buildLeagueTeamSeasons.js'
 import {
   resolveClubLevel,
   resolveClubStrengthLevel,
@@ -83,6 +88,44 @@ const resolveLeagueTableRankRows = ({ league = {}, season = {}, target = 'curren
     : []
 }
 
+const buildTeamPerformanceContext = ({
+  engineResult = {},
+  season = {},
+  reusePersistedContext = true,
+} = {}) => {
+  const existingContext = season?.teamPerformanceContext
+  const existingFactor = Number(existingContext?.appliedFactor)
+  if (
+    reusePersistedContext &&
+    existingContext?.version &&
+    Number.isFinite(existingFactor) &&
+    existingFactor > 0
+  ) {
+    return {
+      ...existingContext,
+      appliedFactor: existingFactor,
+      calculatedAt: existingContext.calculatedAt || season.updatedAt || new Date().toISOString(),
+    }
+  }
+
+  const normalization = engineResult?.normalization || {}
+
+  return {
+    version: TEAM_SCOUT_PERFORMANCE_VERSION,
+    normalizationMode: clean(normalization.mode) || TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    appliedFactor: Number(normalization.appliedFactor) || 1,
+    benchmarkGoalsPerTeamGame: pickDefinedValue(
+      normalization.benchmarkGoalsPerTeamGame,
+      null
+    ),
+    leagueGoalsPerTeamGame: pickDefinedValue(
+      normalization.leagueGoalsPerTeamGame,
+      null
+    ),
+    calculatedAt: season.updatedAt || new Date().toISOString(),
+  }
+}
+
 // Canonical League table context for both Team Season enrichment and the
 // Team SearchIndex projection. SearchIndex documents are never an input here.
 export const buildCanonicalLeagueTeamScoutContexts = ({
@@ -90,8 +133,13 @@ export const buildCanonicalLeagueTeamScoutContexts = ({
   season = {},
   target = 'current',
   rows = [],
+  reusePersistedContext = true,
 } = {}) => {
   const scoutRows = buildScoutRows(rows)
+  const persistedFactor = Number(season?.teamPerformanceContext?.appliedFactor)
+  const hasPersistedFactor = reusePersistedContext &&
+    Number.isFinite(persistedFactor) &&
+    persistedFactor > 0
   const canonicalLeague = buildCanonicalLeagueSeason({
     league,
     season,
@@ -102,7 +150,10 @@ export const buildCanonicalLeagueTeamScoutContexts = ({
     leagueLevel: league.level,
     leagueNumGames: season.leagueTotalRound || 30,
     rows: scoutRows,
-    normalizationMode: TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    normalizationMode: hasPersistedFactor
+      ? TEAM_SCOUT_NORMALIZATION_MODE.MANUAL
+      : TEAM_SCOUT_NORMALIZATION_MODE.AUTO,
+    normalizationFactor: hasPersistedFactor ? persistedFactor : undefined,
     sortMode: TEAM_SCOUT_SORT_MODE.TABLE,
   })
   const scoutResultByTeam = new Map(
@@ -111,9 +162,15 @@ export const buildCanonicalLeagueTeamScoutContexts = ({
       row,
     ])
   )
+  const teamPerformanceContext = buildTeamPerformanceContext({
+    engineResult,
+    season,
+    reusePersistedContext,
+  })
 
   return {
     scoutRows,
+    teamPerformanceContext,
     contexts: scoutRows.map(row => {
       const rowKey = clean(resolveTeamLookupKey(row) || row.clubId)
       const scoutResult = scoutResultByTeam.get(rowKey) || null
@@ -126,7 +183,11 @@ export const buildCanonicalLeagueTeamScoutContexts = ({
       const scoutPerformance = adaptTeamScoutEngineRow({
         row: scoutResult || {},
         source: {
-          normalization: engineResult?.normalization || {},
+          normalization: {
+            mode: teamPerformanceContext.normalizationMode,
+            factor: teamPerformanceContext.appliedFactor,
+            applied: Number(teamPerformanceContext.appliedFactor) !== 1,
+          },
           leagueLevel: engineResult?.leagueLevel || league.level,
           leagueGames: engineResult?.leagueNumGames || season.leagueTotalRound,
           engineVersion: SCOUTING_MODEL_VERSION,
@@ -183,4 +244,33 @@ export const buildCanonicalLeagueTeamScoutContext = ({
   })
 
   return matches.length === 1 ? matches[0] : null
+}
+
+// Club projections and the Audit must use the same League-derived priority
+// result. This adapter keeps the full engine output runtime-only and adds only
+// the compact sides needed by Club persistence.
+export const buildLeagueRowsWithScoutPerformance = ({
+  league = {},
+  season = {},
+  target = 'current',
+  rows = [],
+} = {}) => {
+  const safeRows = Array.isArray(rows) ? rows : []
+  const performanceByTeamId = new Map(buildLeagueTeamSeasons({
+    leagueDocument: league,
+    seasonDocument: { ...season, tableRank: safeRows },
+    target,
+  }).map(item => [
+    clean(item?.identity?.teamId || item?.identity?.teamDocumentId),
+    item?.performance || null,
+  ]))
+
+  return safeRows.map(row => {
+    const performance = performanceByTeamId.get(clean(resolveTeamLookupKey(row))) || null
+    return {
+      ...row,
+      teamAttackPerformance: performance?.offense || null,
+      teamDefensePerformance: performance?.defense || null,
+    }
+  })
 }

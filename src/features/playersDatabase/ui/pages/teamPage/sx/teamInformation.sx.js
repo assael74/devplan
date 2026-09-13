@@ -11,9 +11,11 @@ export const teamInformationSx = {
     alignContent: 'start',
     gap: 1.25,
   },
+
   performanceAnchor: {
     scrollMarginTop: 52,
   },
+
   performanceContextBar: {
     position: 'sticky',
     top: 0,
@@ -22,31 +24,44 @@ export const teamInformationSx = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
-    px: { xs: 0.9, sm: 1.25 },
+    px: {
+      xs: 0.9,
+      sm: 1.25,
+    },
     py: 0.6,
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 9,
     bgcolor: devPlanColors.surface,
     boxShadow: '0 6px 16px rgba(17, 58, 90, 0.12)',
   },
+
   performanceContextContent: {
     display: 'flex',
     alignItems: 'center',
-    gap: { xs: 0.7, sm: 1.25 },
+    gap: {
+      xs: 0.7,
+      sm: 1.25,
+    },
     minWidth: 0,
   },
+
   performanceContextTitle: {
     flexShrink: 0,
     color: devPlanColors.primaryDark,
     fontSize: 11,
     fontWeight: 800,
   },
+
   performanceContextItems: {
     display: 'flex',
     alignItems: 'center',
-    gap: { xs: 0.5, sm: 0.9 },
+    gap: {
+      xs: 0.5,
+      sm: 0.9,
+    },
     minWidth: 0,
   },
+
   performanceContextItem: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -54,22 +69,28 @@ export const teamInformationSx = {
     minWidth: 0,
     whiteSpace: 'nowrap',
   },
+
   performanceContextIcon: {
     display: 'grid',
     placeItems: 'center',
     color: devPlanColors.secondary,
-    '& svg': { fontSize: 13 },
+    '& svg': {
+      fontSize: 13,
+    },
   },
+
   performanceContextLabel: {
     color: devPlanColors.secondary,
     fontSize: 10,
     fontWeight: 700,
   },
+
   performanceContextValue: {
     color: devPlanColors.primaryDark,
     fontSize: 11,
     fontWeight: 800,
   },
+
   performanceContextAction: {
     flexShrink: 0,
     minHeight: 24,
@@ -78,12 +99,17 @@ export const teamInformationSx = {
     fontSize: 10,
     fontWeight: 800,
   },
+
   section: {
-    p: { xs: 1.25, md: 1.5 },
+    p: {
+      xs: 1.25,
+      md: 1.5,
+    },
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 10,
     bgcolor: devPlanColors.surface,
   },
+
   sectionHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -91,11 +117,13 @@ export const teamInformationSx = {
     gap: 1,
     mb: 0.75,
   },
+
   sectionTitleRow: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.65,
   },
+
   sectionTitleIcon: {
     display: 'grid',
     placeItems: 'center',
@@ -110,11 +138,13 @@ export const teamInformationSx = {
       fontSize: 14,
     },
   },
+
   sectionTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 15,
     fontWeight: 800,
   },
+
   sectionExportButton: {
     minHeight: 28,
     px: 0.8,
@@ -124,15 +154,22 @@ export const teamInformationSx = {
     fontSize: 11,
     fontWeight: 700,
   },
+
   sectionMeta: {
     color: devPlanColors.secondary,
     fontSize: 11,
   },
+
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      lg: 'repeat(4, minmax(0, 1fr))',
+    },
     gap: 1,
   },
+
   kpi: {
     p: 1,
     borderRadius: 9,
@@ -142,12 +179,14 @@ export const teamInformationSx = {
     gap: 0.45,
     minHeight: 90,
   },
+
   kpiHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: 0.55,
     minWidth: 0,
   },
+
   kpiIcon: {
     width: 25,
     height: 25,
@@ -158,11 +197,44 @@ export const teamInformationSx = {
     bgcolor: devPlanColors.primaryLight,
     color: devPlanColors.primary,
   },
-  kpiStatusRow: { display: 'flex', alignItems: 'center', gap: 0.5, minHeight: 24 },
-  kpiValue: { color: devPlanColors.primaryDark, fontSize: 23, lineHeight: 1.15, fontWeight: 700 },
-  kpiLabel: { color: devPlanColors.primary, fontSize: 13, lineHeight: 1.3, fontWeight: 700, whiteSpace: 'nowrap' },
-  kpiMeaningRow: { display: 'flex', alignItems: 'flex-start', gap: 0.4, minWidth: 0 },
-  kpiMeta: { flex: 1, color: devPlanColors.secondary, fontSize: 11.5, lineHeight: 1.4, fontWeight: 400 },
+
+  kpiStatusRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+    minHeight: 24,
+  },
+
+  kpiValue: {
+    color: devPlanColors.primaryDark,
+    fontSize: 23,
+    lineHeight: 1.15,
+    fontWeight: 700,
+  },
+
+  kpiLabel: {
+    color: devPlanColors.primary,
+    fontSize: 13,
+    lineHeight: 1.3,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  kpiMeaningRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 0.4,
+    minWidth: 0,
+  },
+
+  kpiMeta: {
+    flex: 1,
+    color: devPlanColors.secondary,
+    fontSize: 11.5,
+    lineHeight: 1.4,
+    fontWeight: 400,
+  },
+
   kpiInfo: {
     display: 'inline-flex',
     flexShrink: 0,
@@ -170,6 +242,7 @@ export const teamInformationSx = {
     cursor: 'help',
     mt: '1px',
   },
+
   kpiTooltip: {
     maxWidth: 228,
     minWidth: 190,
@@ -191,13 +264,18 @@ export const teamInformationSx = {
     bgcolor: devPlanColors.primaryLight,
     color: devPlanColors.tertiaryDark,
   },
+
   kpiOpportunityLabel: { color: devPlanColors.tertiaryDark, fontSize: 10, fontWeight: 800 },  usageGrid: {
     mt: 1.25,
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(0, 1fr))' },
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(4, minmax(0, 1fr))',
+    },
     borderTop: `1px solid ${devPlanColors.border}`,
     borderInlineStart: `1px solid ${devPlanColors.border}`,
   },
+
   usageCell: {
     minHeight: 70,
     p: 0.9,
@@ -207,8 +285,18 @@ export const teamInformationSx = {
     borderInlineEnd: `1px solid ${devPlanColors.border}`,
     borderBottom: `1px solid ${devPlanColors.border}`,
   },
-  usageValue: { color: devPlanColors.primaryDark, fontSize: 18, fontWeight: 800 },
-  usageLabel: { color: devPlanColors.secondary, fontSize: 10 },
+
+  usageValue: {
+    color: devPlanColors.primaryDark,
+    fontSize: 18,
+    fontWeight: 800,
+  },
+
+  usageLabel: {
+    color: devPlanColors.secondary,
+    fontSize: 10,
+  },
+
   reliability: {
     mt: 1,
     display: 'flex',
@@ -217,11 +305,16 @@ export const teamInformationSx = {
     color: devPlanColors.secondary,
     fontSize: 11,
   },
+
   twoColumn: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+    gridTemplateColumns: {
+      xs: '1fr',
+      lg: 'repeat(2, minmax(0, 1fr))',
+    },
     gap: 1.25,
   },
+
   metricRow: {
     display: 'grid',
     gridTemplateColumns: '1fr auto',
@@ -229,12 +322,26 @@ export const teamInformationSx = {
     gap: 1,
     py: 0.8,
     borderBottom: `1px solid ${devPlanColors.border}`,
-    '&:last-of-type': { borderBottom: 0 },
+    '&:last-of-type': {
+      borderBottom: 0,
+    },
   },
-  metricLabel: { color: devPlanColors.secondary, fontSize: 11 },
-  metricValue: { color: devPlanColors.primaryDark, fontSize: 13, fontWeight: 800 },
-  empty: { p: 2, textAlign: 'center', color: devPlanColors.secondary, fontSize: 12 },
+
+  metricLabel: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+  },
+
+  metricValue: {
+    color: devPlanColors.primaryDark,
+    fontSize: 13,
+    fontWeight: 800,
+  },
+
+  empty: {
+    p: 2,
+    textAlign: 'center',
+    color: devPlanColors.secondary,
+    fontSize: 12,
+  },
 }
-
-
-

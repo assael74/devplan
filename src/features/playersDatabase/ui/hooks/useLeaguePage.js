@@ -17,8 +17,8 @@ import {
   buildLeaguePageSummary,
   buildLeaguePageTeams,
   buildLeaguePageView,
-} from '../../model/leaguePage.model.js'
-import { normalizeSeasonLookupKey } from '../../model/season.model.js'
+} from '../../model/league/page/leaguePage.model.js'
+import { normalizeSeasonLookupKey } from '../../model/shared/season.model.js'
 import { readLeaguePageData } from '../../services/read/index.js'
 
 function isSameSeasonKey(left, right) {

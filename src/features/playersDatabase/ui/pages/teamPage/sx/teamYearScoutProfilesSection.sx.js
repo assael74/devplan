@@ -7,6 +7,7 @@ export const teamYearScoutProfilesSectionSx = {
     fontWeight: 900,
     textAlign: 'center',
   },
+
   profileDistributionFill: width => ({
     width: `${width}%`,
     minWidth: width ? 4 : 0,
@@ -14,6 +15,7 @@ export const teamYearScoutProfilesSectionSx = {
     borderRadius: 99,
     bgcolor: devPlanColors.tertiary,
   }),
+
   profileDistributionLabel: {
     display: 'flex',
     alignItems: 'center',
@@ -33,10 +35,12 @@ export const teamYearScoutProfilesSectionSx = {
       whiteSpace: 'nowrap',
     },
   },
+
   profileDistributionList: {
     display: 'grid',
     gap: 0.45,
   },
+
   profileDistributionRow: {
     display: 'grid',
     gridTemplateColumns: 'minmax(110px, .9fr) minmax(80px, 1.4fr) 24px',
@@ -44,6 +48,7 @@ export const teamYearScoutProfilesSectionSx = {
     gap: 0.65,
     minWidth: 0,
   },
+
   profileDistributionTrack: {
     height: 8,
     overflow: 'hidden',

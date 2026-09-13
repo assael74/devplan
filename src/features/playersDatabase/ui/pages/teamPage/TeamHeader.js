@@ -23,6 +23,7 @@ export default function TeamHeader({
   onFavoriteToggle,
   onSearch,
   onLeague,
+  backLabel = 'חזרה לליגה',
 }) {
   const resolvedTeamUrl = String(teamUrl || team?.teamUrl || '').trim()
   const actions = (
@@ -43,7 +44,7 @@ export default function TeamHeader({
           startDecorator={iconUi({id: 'back', size: 'sm'})}
           onClick={onLeague}
         >
-          חזרה לליגה
+          {backLabel}
         </Button>
       </Stack>
     </Stack>

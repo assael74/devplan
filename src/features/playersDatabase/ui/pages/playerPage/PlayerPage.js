@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { usePlayerPage } from '../../hooks/usePlayerPage.js'
@@ -27,28 +27,13 @@ import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import usePlayerDataRepair from './hooks/usePlayerDataRepair.js'
 import usePlayerPageTasks from './hooks/usePlayerPageTasks.js'
-import {
-  canReadPlayerSearchIndexExport,
-  canReadTeamSearchIndexExport,
-  readPlayerSearchIndexExport,
-  readPlayerSource,
-  readTeamSearchIndexExport,
-} from '../../../services/read/index.js'
-import {
-  downloadPlayerJson,
-  downloadPlayerSearchIndexJson,
-  downloadTeamJson,
-  downloadTeamSeasonJson,
-  downloadTeamSearchIndexJson,
-} from './logic/playerJson.logic.js'
+import usePlayerJsonActions from './hooks/usePlayerJsonActions.js'
+import usePlayerAgentEditor from './hooks/usePlayerAgentEditor.js'
+import usePlayerGoalDistributionEditor from './hooks/usePlayerGoalDistributionEditor.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { playerPageSx } from './sx/playerPage.sx.js'
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../services/write/index.js'
 
 function getPathParam(path, key) {
   const queryIndex = String(path || '').indexOf('?')
@@ -64,6 +49,7 @@ function getPathParam(path, key) {
 
 function PlayerPageContent() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { notify } = useSnackbar()
   const {
     player,
@@ -77,12 +63,6 @@ function PlayerPageContent() {
   const favorites = usePlayersDatabaseFavorites()
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
-  const [playerJsonLoading, setPlayerJsonLoading] = React.useState(false)
-  const [searchIndexJsonLoading, setSearchIndexJsonLoading] = React.useState(false)
-  const [agentDrawerOpen, setAgentDrawerOpen] = React.useState(false)
-  const [additionalDrawerOpen, setAdditionalDrawerOpen] = React.useState(false)
-  const [agentSaving, setAgentSaving] = React.useState(false)
-  const [goalDistributionSaving, setGoalDistributionSaving] = React.useState(false)
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -91,6 +71,23 @@ function PlayerPageContent() {
   )
   const historyView = usePlayerHistoryView(player)
   const selectedSeasonRow = historyView.selectedRow
+  const jsonActions = usePlayerJsonActions({
+    player,
+    playerId,
+    teamSource,
+    notify,
+  })
+  const agentEditor = usePlayerAgentEditor({
+    player,
+    notify,
+    reload,
+  })
+  const goalDistributionEditor = usePlayerGoalDistributionEditor({
+    player,
+    selectedRow: selectedSeasonRow,
+    notify,
+    reload,
+  })
   const playerUrlEditor = usePlayerUrlEditor({
     player,
     selectedSeasonRow,
@@ -113,6 +110,7 @@ function PlayerPageContent() {
     playerId,
     requestedSeasonKey,
     requestedTeamId,
+    auditFindingId: new URLSearchParams(location.search).get('auditFinding') || '',
     notify,
     reload,
     navigate,
@@ -220,124 +218,6 @@ function PlayerPageContent() {
     playerId,
   ])
 
-  const handlePlayerJson = React.useCallback(async () => {
-    if (!playerId || playerJsonLoading) return
-
-    setPlayerJsonLoading(true)
-
-    try {
-      const playerDocument = await readPlayerSource({ playerId })
-
-      if (!playerDocument) {
-        notify({
-          status: 'error',
-          message: 'לא נמצא מסמך שחקן ליצוא.',
-        })
-        return
-      }
-
-      downloadPlayerJson(playerDocument)
-      notify({
-        status: 'success',
-        message: 'קובץ JSON נוצר בהצלחה.',
-      })
-    } catch (error) {
-      console.error('Player JSON export failed', error)
-      notify({
-        status: 'error',
-        message: 'יצירת קובץ JSON נכשלה.',
-      })
-    } finally {
-      setPlayerJsonLoading(false)
-    }
-  }, [notify, playerId, playerJsonLoading])
-
-
-  const handleTeamJson = React.useCallback(() => {
-    const teamDocument = teamSource?.teamDoc
-
-    if (!teamDocument) {
-      notify({
-        status: 'warning',
-        message: 'מסמך הקבוצה אינו זמין כרגע להורדה.',
-      })
-      return
-    }
-
-    downloadTeamJson(teamDocument)
-    notify({
-      status: 'success',
-      message: 'מסמך הקבוצה הורד בהצלחה.',
-    })
-  }, [notify, teamSource])
-
-  const handleTeamSeasonJson = React.useCallback(() => {
-    const teamSeasonDocument = teamSource?.selectedTeamSeason
-
-    if (!teamSeasonDocument) {
-      notify({
-        status: 'warning',
-        message: 'נתוני קבוצת העונה אינם זמינים כרגע להורדה.',
-      })
-      return
-    }
-
-    downloadTeamSeasonJson(teamSeasonDocument)
-    notify({
-      status: 'success',
-      message: 'נתוני קבוצת העונה הורדו בהצלחה.',
-    })
-  }, [notify, teamSource])
-
-  const handleSearchIndexJson = React.useCallback(async ({ type } = {}) => {
-    if (searchIndexJsonLoading) return
-
-    const isPlayerIndex = type === 'player'
-    const canRead = isPlayerIndex
-      ? canReadPlayerSearchIndexExport(player)
-      : canReadTeamSearchIndexExport(player)
-
-    if (!canRead) {
-      notify({
-        status: 'warning',
-        message: 'אין הקשר עונה מלא לטעינת מסמך האינדקס.',
-      })
-      return
-    }
-
-    setSearchIndexJsonLoading(true)
-
-    try {
-      const searchIndexDocument = isPlayerIndex
-        ? await readPlayerSearchIndexExport({ player })
-        : await readTeamSearchIndexExport({ player })
-
-      if (!searchIndexDocument) {
-        notify({
-          status: 'warning',
-          message: 'לא נמצא מסמך אינדקס עבור ההקשר הנבחר.',
-        })
-        return
-      }
-
-      if (isPlayerIndex) downloadPlayerSearchIndexJson(searchIndexDocument)
-      else downloadTeamSearchIndexJson(searchIndexDocument)
-
-      notify({
-        status: 'success',
-        message: 'מסמך האינדקס הורד בהצלחה.',
-      })
-    } catch (error) {
-      console.error('Search index JSON export failed', error)
-      notify({
-        status: 'error',
-        message: 'הורדת מסמך האינדקס נכשלה.',
-      })
-    } finally {
-      setSearchIndexJsonLoading(false)
-    }
-  }, [notify, player, searchIndexJsonLoading])
-
   const handleAction = actionId => {
     if (actionId === 'report') {
       playerReport.openPreview()
@@ -350,12 +230,12 @@ function PlayerPageContent() {
     }
 
     if (actionId === 'agent' || actionId === 'agent_status') {
-      setAgentDrawerOpen(true)
+      agentEditor.show()
       return
     }
 
     if (actionId === 'additional' || actionId === 'goal_distribution') {
-      setAdditionalDrawerOpen(true)
+      goalDistributionEditor.show()
       return
     }
 
@@ -393,99 +273,41 @@ function PlayerPageContent() {
             onAction={handleAction}
             onTaskCreate={playerPageTasks.openCreate}
             onTaskEdit={playerPageTasks.openEdit}
-            playerJsonLoading={playerJsonLoading}
-            searchIndexJsonLoading={searchIndexJsonLoading}
-            teamJsonAvailable={Boolean(teamSource?.teamDoc)}
-            teamSeasonJsonAvailable={Boolean(teamSource?.selectedTeamSeason)}
-            playerSearchIndexJsonAvailable={canReadPlayerSearchIndexExport(player)}
-            teamSearchIndexJsonAvailable={canReadTeamSearchIndexExport(player)}
-            onPlayerJson={handlePlayerJson}
-            onTeamJson={handleTeamJson}
-            onTeamSeasonJson={handleTeamSeasonJson}
-            onPlayerSearchIndexJson={() => handleSearchIndexJson({ type: 'player' })}
-            onTeamSearchIndexJson={() => handleSearchIndexJson({ type: 'team' })}
+            playerJsonLoading={jsonActions.playerJsonLoading}
+            searchIndexJsonLoading={jsonActions.searchIndexJsonLoading}
+            teamJsonAvailable={jsonActions.teamJsonAvailable}
+            teamSeasonJsonAvailable={jsonActions.teamSeasonJsonAvailable}
+            playerSearchIndexJsonAvailable={jsonActions.playerSearchIndexJsonAvailable}
+            teamSearchIndexJsonAvailable={jsonActions.teamSearchIndexJsonAvailable}
+            onPlayerJson={jsonActions.downloadPlayer}
+            onTeamJson={jsonActions.downloadTeam}
+            onTeamSeasonJson={jsonActions.downloadTeamSeason}
+            onPlayerSearchIndexJson={() => jsonActions.downloadSearchIndex({ type: 'player' })}
+            onTeamSearchIndexJson={() => jsonActions.downloadSearchIndex({ type: 'team' })}
             onDataRepair={playerDataRepair.openRepair}
           />
         </Box>
       </Box>
 
       <PlayerAgentDrawer
-        open={agentDrawerOpen}
+        open={agentEditor.open}
         playerName={player.fullName}
         value={player.agent}
-        saving={agentSaving}
-        onClose={() => !agentSaving && setAgentDrawerOpen(false)}
-        onSave={async agent => {
-          if (agentSaving) return
-          setAgentSaving(true)
-          try {
-            await runPlayersDatabaseWriteAction({
-              actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_AGENT,
-              payload: {
-                player: {
-                  playerId: player.playerId || player.id,
-                  playerDocumentId: player.domain?.identity?.playerDocumentId || player.id,
-                  externalPlayerId: player.externalPlayerId,
-                },
-                agent,
-              },
-            })
-            notify({ status: 'success', message: 'פרטי הסוכן נשמרו.' })
-            setAgentDrawerOpen(false)
-            reload()
-          } catch (error) {
-            notify({ status: 'error', message: error?.message || 'שמירת פרטי הסוכן נכשלה.' })
-          } finally {
-            setAgentSaving(false)
-          }
-        }}
+        saving={agentEditor.saving}
+        onClose={agentEditor.close}
+        onSave={agentEditor.save}
       />
 
       <PlayerGoalDistributionDrawer
-        open={additionalDrawerOpen}
+        open={goalDistributionEditor.open}
         playerName={player.fullName}
         seasonLabel={historyView.selectedRow?.seasonKey || ''}
         seasonGoals={historyView.selectedRow?.goals}
         seasonGames={historyView.selectedRow?.games}
         value={historyView.selectedRow?.goalDistribution}
-        saving={goalDistributionSaving}
-        onClose={() => !goalDistributionSaving && setAdditionalDrawerOpen(false)}
-        onSave={async goalDistribution => {
-          const row = historyView.selectedRow
-          if (!row || goalDistributionSaving) return
-          setGoalDistributionSaving(true)
-          try {
-            await runPlayersDatabaseWriteAction({
-              actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_GOAL_DISTRIBUTION,
-              payload: {
-                target: row.target || 'current',
-                season: {
-                  seasonId: row.seasonId || row.seasonKey,
-                  seasonKey: row.seasonKey,
-                },
-                team: {
-                  teamId: row.teamId,
-                  birthTeamId: row.birthTeamId || row.teamId,
-                  teamDocumentId: row.birthTeamDocumentId || row.teamId,
-                  birthTeamDocumentId: row.birthTeamDocumentId || row.teamId,
-                },
-                player: {
-                  playerId: player.playerId || player.id,
-                  playerDocumentId: player.domain?.identity?.playerDocumentId || player.id,
-                  externalPlayerId: player.externalPlayerId,
-                },
-                ...goalDistribution,
-              },
-            })
-            notify({ status: 'success', message: 'פיזור השערים נשמר.' })
-            setAdditionalDrawerOpen(false)
-            reload()
-          } catch (error) {
-            notify({ status: 'error', message: error?.message || 'שמירת פיזור השערים נכשלה.' })
-          } finally {
-            setGoalDistributionSaving(false)
-          }
-        }}
+        saving={goalDistributionEditor.saving}
+        onClose={goalDistributionEditor.close}
+        onSave={goalDistributionEditor.save}
       />
 
       <PlayerDataRepairModal
@@ -493,6 +315,7 @@ function PlayerPageContent() {
         busy={playerDataRepair.busy}
         error={playerDataRepair.error}
         contexts={playerDataRepair.contexts}
+        auditFinding={playerDataRepair.auditFinding}
         onRepair={playerDataRepair.repair}
         onTeamOpen={playerDataRepair.openTeam}
         onClose={playerDataRepair.close}

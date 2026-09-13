@@ -23,14 +23,14 @@ export default function useLeagueUrlEditor({
     setOpen(false)
   }, [saving])
 
-  const save = React.useCallback(async seasonUrl => {
+  const save = React.useCallback(async changes => {
     if (!selectedSeasonOption) return
 
     setSaving(true)
 
     try {
       await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL,
+        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_SETTINGS,
         payload: {
           target: selectedSeasonOption.target,
           league: leagueDoc || league,
@@ -40,13 +40,13 @@ export default function useLeagueUrlEditor({
             seasonId: selectedSeasonOption.seasonId,
             seasonKey: selectedSeasonOption.seasonKey,
           },
-          seasonUrl,
+          ...(changes || {}),
         },
       })
 
       notify({
         status: SNACK_STATUS.SUCCESS,
-        title: 'קישור הליגה נשמר',
+        title: 'הגדרות עונת הליגה נשמרו',
         message: league.name || '',
       })
 
@@ -55,8 +55,8 @@ export default function useLeagueUrlEditor({
     } catch (error) {
       notify({
         status: SNACK_STATUS.ERROR,
-        title: 'שמירת קישור הליגה נכשלה',
-        message: error?.message || 'שגיאה בעדכון קישור הליגה',
+        title: 'שמירת הגדרות עונת הליגה נכשלה',
+        message: error?.message || 'שגיאה בעדכון הגדרות עונת הליגה',
       })
     } finally {
       setSaving(false)

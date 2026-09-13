@@ -15,4 +15,16 @@ export const statusCellSx = {
   statusIconInvalid: {
     color: '#b45309',
   },
+
+  tooltipContent: {
+    width: 260,
+    maxWidth: 'calc(100vw - 32px)',
+    whiteSpace: 'pre-line',
+    textAlign: 'left',
+    direction: 'ltr',
+  },
+
+  tooltip: {
+    maxWidth: 'calc(100vw - 32px)',
+  },
 }

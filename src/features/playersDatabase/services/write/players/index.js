@@ -77,11 +77,6 @@ export {
   SCOUTING_PLAYER_TRACKING_REASONS,
 } from './scoutingPlayerDoc.js'
 
-export {
-  deleteApprovedNarrative,
-  saveApprovedNarrative,
-} from './playerNarrative.js'
-
 
 export {
   updateScoutingPlayerReview,

@@ -1,3 +1,5 @@
 export const leagueImportModalSx = {
-  seasonStatusField: { maxWidth: 360 },
+  seasonStatusField: {
+    maxWidth: 360,
+  },
 }

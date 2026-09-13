@@ -24,7 +24,6 @@ export const PLAYER_SCOUT_PLAYER_ROOT_FIELDS = Object.freeze([
   'manualImmediacyHistory',
   'verification',
   'events',
-  'scoutNarrative',
 ])
 
 export const PLAYER_SCOUT_PLAYER_SEASON_FIELDS = Object.freeze([

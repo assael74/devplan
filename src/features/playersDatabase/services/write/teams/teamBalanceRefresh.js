@@ -2,7 +2,7 @@ import { collection, doc, limit, query, serverTimestamp, where } from 'firebase/
 import { createTrackedWriteBatch, trackedGetDocs, trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { buildTeamSeasonDocumentId } from '../../../model/teamIdentity.model.js'
+import { buildTeamSeasonDocumentId } from '../../../model/team/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
 import { buildTeamBalanceSearchIndexProjection } from '../../../domain/projections/teamBalanceSearchIndex.projection.js'
 import { commitBatchWhenNeeded } from '../searchIndex/shared/searchIndexBatch.write.js'

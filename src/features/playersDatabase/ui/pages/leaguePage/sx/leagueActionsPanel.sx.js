@@ -129,7 +129,7 @@ export const leagueActionsPanelSx = {
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,
-    fontSize: 11.5,
+    fontSize: 13,
     fontWeight: 700,
 
     '&:hover': {
@@ -156,6 +156,7 @@ export const leagueActionsPanelSx = {
       borderColor: devPlanColors.primaryDark,
     },
   },
+
   sideReportButton: {
     width: '100%',
     minWidth: 0,

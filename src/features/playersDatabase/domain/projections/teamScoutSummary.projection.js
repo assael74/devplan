@@ -1,4 +1,4 @@
-import { toNumberOrZero } from '../../model/value.model.js'
+import { toNumberOrZero } from '../../model/shared/value.model.js'
 
 export const normalizeScoutProfilesSummary = summary => {
   const profileCounts =

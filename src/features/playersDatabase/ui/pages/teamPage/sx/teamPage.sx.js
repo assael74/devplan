@@ -1,5 +1,3 @@
-// src/features/playersDatabase/ui/pages/teamPage/sx/teamPage.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamPageSx = {
@@ -10,6 +8,7 @@ export const teamPageSx = {
     justifyContent: 'center',
     gap: 1,
   },
+
   viewTabs: {
     display: 'flex',
     alignItems: 'center',
@@ -21,6 +20,7 @@ export const teamPageSx = {
     borderRadius: 'md',
     bgcolor: 'background.level1',
   },
+
   viewTabsToolbar: {
     width: 'calc(100% - 4px)',
     boxSizing: 'border-box',
@@ -37,6 +37,7 @@ export const teamPageSx = {
     justifyContent: 'space-between',
     gap: 1,
   },
+
   seasonPath: {
     minWidth: 0,
     display: 'flex',
@@ -45,19 +46,28 @@ export const teamPageSx = {
     px: 1,
     overflow: 'hidden',
   },
-  seasonPathArrow: { color: 'neutral.500', display: 'inline-flex' },
-  seasonStatusChip: { flexShrink: 0, ml: 1.25 },
+
+  seasonPathArrow: {
+    color: 'neutral.500',
+    display: 'inline-flex',
+  },
+
+  seasonStatusChip: {
+    flexShrink: 0,
+    ml: 1.25,
+  },
+
   seasonPathCurrent: {
     color: 'primary.700',
     fontSize: 14,
     fontWeight: 800,
     whiteSpace: 'nowrap',
   },
-  seasonPathPrevious: { color: 'neutral.500', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' },
+
+  seasonPathPrevious: {
+    color: 'neutral.500',
+    fontSize: 11,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
 }
-
-
-
-
-
-

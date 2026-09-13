@@ -1,6 +1,6 @@
 // src/features/playersDatabase/services/write/flows/player/updatePlayerScoutReview.flow.js
 
-import { getTeamSeason } from '../../../read/teamSeason.js'
+import { getTeamSeason } from '../../../read/entities/teamSeason.js'
 import {
   ensureManualScoutingPlayerDoc,
   updateScoutingPlayerReview,

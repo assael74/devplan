@@ -17,6 +17,7 @@ export default function PageContentPanel({
   children,
   panelSx,
   contentSx,
+  contentClassName,
 }) {
   return (
     <Card sx={[sx.panel, panelSx]}>
@@ -28,7 +29,7 @@ export default function PageContentPanel({
         actions={headerActions}
       />
 
-      <Box sx={[sx.content, contentSx]}>
+      <Box className={contentClassName} sx={[sx.content, contentSx]}>
         {children}
       </Box>
     </Card>

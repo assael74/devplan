@@ -3,6 +3,7 @@
 import * as React from 'react'
 import {
   Box,
+  Button,
   IconButton,
   Tooltip,
 } from '@mui/joy'
@@ -61,23 +62,41 @@ export default function DataTableHeader({
                   ]}
                 >
                   <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
-                    <IconButton
-                      size='sm'
-                      variant='outlined'
-                      color='neutral'
-                      aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
-                      sx={sx.headerActionButton}
-                      disabled={!canExport}
-                      onClick={event => {
-                        event.stopPropagation()
-                        onExport()
-                      }}
-                    >
-                      {iconUi({
-                        id: exportConfig.iconId || 'download',
-                        size: 'sm',
-                      })}
-                    </IconButton>
+                    {exportConfig.showLabel ? (
+                      <Button
+                        size='sm'
+                        variant='outlined'
+                        color='neutral'
+                        aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                        sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
+                        disabled={!canExport}
+                        startDecorator={iconUi({ id: exportConfig.iconId || 'download', size: 'sm' })}
+                        onClick={event => {
+                          event.stopPropagation()
+                          onExport()
+                        }}
+                      >
+                        {exportConfig.buttonLabel || 'Excel'}
+                      </Button>
+                    ) : (
+                      <IconButton
+                        size='sm'
+                        variant='outlined'
+                        color='neutral'
+                        aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                        sx={sx.headerActionButton}
+                        disabled={!canExport}
+                        onClick={event => {
+                          event.stopPropagation()
+                          onExport()
+                        }}
+                      >
+                        {iconUi({
+                          id: exportConfig.iconId || 'download',
+                          size: 'sm',
+                        })}
+                      </IconButton>
+                    )}
                   </Tooltip>
                 </Box>
               ) : sortable ? (

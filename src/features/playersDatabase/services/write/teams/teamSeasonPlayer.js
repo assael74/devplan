@@ -3,10 +3,10 @@
 import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
-import { buildPlayerMatchValues } from '../../../model/playerIdentity.model.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
-import { normalizeSeasonIdentity } from '../../../model/season.model.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { buildPlayerMatchValues } from '../../../model/player/playerIdentity.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
+import { normalizeSeasonIdentity } from '../../../model/shared/season.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { getPlayerMergeKey, normalizeTeamPlayer } from './teamSeason.model.js'
 import {
   buildTeamPlayerScoutProjection,

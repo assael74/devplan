@@ -24,6 +24,7 @@ export const scoutProfileTooltipSx = {
     border: `1px solid ${devPlanColors.tertiary}`,
     borderRadius: 9,
   }),
+
   profileSection: ({ divided = false, compact = false } = {}) => ({
     display: 'grid',
     gap: compact ? 0.55 : 0.85,
@@ -34,18 +35,21 @@ export const scoutProfileTooltipSx = {
       }
       : {}),
   }),
+
   header: () => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0.75,
   }),
+
   profileTitle: () => ({
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     gap: 0.55,
   }),
+
   profileIcon: ({ compact = false } = {}) => ({
     width: compact ? 19 : 23,
     height: compact ? 19 : 23,
@@ -56,8 +60,11 @@ export const scoutProfileTooltipSx = {
     bgcolor: 'rgba(255, 255, 255, 0.78)',
     border: '1px solid rgba(23, 59, 87, 0.18)',
     borderRadius: '50%',
-    '& svg': { fontSize: compact ? 11 : 13 },
+    '& svg': {
+      fontSize: compact ? 11 : 13,
+    },
   }),
+
   title: ({ compact = false } = {}) => ({
     minWidth: 0,
     color: devPlanColors.primaryDark,
@@ -65,6 +72,7 @@ export const scoutProfileTooltipSx = {
     fontWeight: 800,
     lineHeight: 1.2,
   }),
+
   createdAt: ({ compact = false } = {}) => ({
     flex: '0 0 auto',
     color: devPlanColors.secondary,
@@ -72,6 +80,7 @@ export const scoutProfileTooltipSx = {
     fontWeight: 700,
     whiteSpace: 'nowrap',
   }),
+
   conditionsLabel: ({ compact = false } = {}) => ({
     display: 'inline-flex',
     alignSelf: 'start',
@@ -84,26 +93,31 @@ export const scoutProfileTooltipSx = {
     borderBottom: `1px solid ${devPlanColors.primaryDark}`,
     paddingBottom: 0,
   }),
+
   conditions: {
     display: 'grid',
     gap: 0.15,
   },
+
   condition: () => ({
     display: 'grid',
     gap: 0.05,
   }),
+
   conditionMeta: () => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0.75,
   }),
+
   conditionTitle: () => ({
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
     gap: 0.45,
   }),
+
   conditionIcon: ({ compact = false } = {}) => ({
     width: compact ? 15 : 17,
     height: compact ? 15 : 17,
@@ -111,8 +125,11 @@ export const scoutProfileTooltipSx = {
     display: 'grid',
     placeItems: 'center',
     color: devPlanColors.tertiaryDark,
-    '& svg': { fontSize: compact ? 10 : 12 },
+    '& svg': {
+      fontSize: compact ? 10 : 12,
+    },
   }),
+
   conditionLabel: ({ compact = false } = {}) => ({
     minWidth: 0,
     color: devPlanColors.primaryDark,
@@ -120,6 +137,7 @@ export const scoutProfileTooltipSx = {
     fontWeight: 600,
     lineHeight: 1.1,
   }),
+
   conditionProgress: ({ compact = false } = {}) => ({
     flex: '0 0 auto',
     color: devPlanColors.primary,
@@ -127,6 +145,7 @@ export const scoutProfileTooltipSx = {
     fontWeight: 800,
     lineHeight: 1,
   }),
+
   conditionStatus: ({ compact = false } = {}) => ({
     flex: '0 0 auto',
     color: devPlanColors.successDark,
@@ -135,6 +154,7 @@ export const scoutProfileTooltipSx = {
     lineHeight: 1,
     whiteSpace: 'nowrap',
   }),
+
   progressTrack: ({ compact = false } = {}) => ({
     '--LinearProgress-trackColor': 'rgba(23, 59, 87, 0.12)',
     '--LinearProgress-progressColor': devPlanColors.tertiary,
@@ -142,6 +162,7 @@ export const scoutProfileTooltipSx = {
     minHeight: compact ? 2 : 3,
     height: compact ? 2 : 3,
   }),
+
   emptyState: ({ compact = false } = {}) => ({
     color: devPlanColors.secondary,
     fontSize: compact ? 9.5 : 10.5,

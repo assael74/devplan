@@ -7,14 +7,17 @@ export const teamYearDevelopmentSharedSx = {
     borderRadius: 7,
     bgcolor: devPlanColors.primaryLight,
   },
+
   evolutionCollapseBody: {
     display: 'grid',
     gap: 0.55,
     p: 0.75,
   },
+
   evolutionCollapseContent: {
     borderTop: `1px solid ${devPlanColors.border}`,
   },
+
   evolutionCollapseEmptySummary: {
     px: 0.65,
     py: 0.25,
@@ -25,6 +28,7 @@ export const teamYearDevelopmentSharedSx = {
     fontWeight: 700,
     whiteSpace: 'nowrap',
   },
+
   evolutionCollapseFacts: {
     display: 'flex',
     alignItems: 'center',
@@ -33,6 +37,7 @@ export const teamYearDevelopmentSharedSx = {
     flexWrap: 'wrap',
     color: devPlanColors.secondary,
   },
+
   evolutionCollapseHeader: {
     px: 0.75,
     py: 0.7,
@@ -41,12 +46,14 @@ export const teamYearDevelopmentSharedSx = {
       bgcolor: '#DCE8F0',
     },
   },
+
   evolutionCollapseSeason: {
     color: devPlanColors.primaryDark,
     fontSize: 12,
     fontWeight: 900,
     whiteSpace: 'nowrap',
   },
+
   evolutionCollapseSummary: {
     display: 'flex',
     alignItems: 'center',
@@ -54,15 +61,18 @@ export const teamYearDevelopmentSharedSx = {
     minWidth: 0,
     flexWrap: 'nowrap',
   },
+
   evolutionGroup: {
     display: 'grid',
     gap: 0.65,
     minWidth: 0,
   },
+
   evolutionRows: {
     display: 'grid',
     gap: 0.4,
   },
+
   evolutionSummaryChip: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -85,6 +95,7 @@ export const teamYearDevelopmentSharedSx = {
       fontWeight: 800,
     },
   },
+
   evolutionSummarySeparator: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -95,6 +106,7 @@ export const teamYearDevelopmentSharedSx = {
     fontWeight: 900,
     lineHeight: 1,
   },
+
   evolutionSummaryValue: {
     display: 'grid',
     placeItems: 'center',
@@ -112,6 +124,7 @@ export const teamYearDevelopmentSharedSx = {
       lineHeight: 1,
     },
   },
+
   header: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -119,27 +132,35 @@ export const teamYearDevelopmentSharedSx = {
     gap: 1,
     mb: 0.75,
   },
+
   section: {
-    p: { xs: 1, md: 1.15 },
+    p: {
+      xs: 1,
+      md: 1.15,
+    },
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 10,
     bgcolor: devPlanColors.surface,
     minWidth: 0,
   },
+
   title: {
     color: devPlanColors.primaryDark,
     fontSize: 15,
     fontWeight: 800,
   },
+
   titleContainer: {
     width: '100%',
     minWidth: 0,
   },
+
   titleExtra: {
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
   },
+
   titleIcon: {
     display: 'grid',
     placeItems: 'center',
@@ -154,12 +175,14 @@ export const teamYearDevelopmentSharedSx = {
       fontSize: 14,
     },
   },
+
   titleIdentity: {
     display: 'flex',
     alignItems: 'center',
     gap: 0.65,
     minWidth: 0,
   },
+
   titleRow: {
     display: 'flex',
     alignItems: 'center',

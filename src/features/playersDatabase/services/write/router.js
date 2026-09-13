@@ -2,8 +2,10 @@
 
 import { invalidatePlayersDatabaseWriteCache } from '../cache/index.js'
 import {
+  buildLastWriteAuditScope,
   rememberLastWriteAuditScopeFromResult,
 } from '../audit/audit.lastWrite.js'
+import { recordPlayersDatabaseWriteAction } from '../audit/audit.writeJournal.js'
 import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
@@ -23,6 +25,7 @@ import {
   removeFavoriteFlow,
   removePlayerScoutProfileFlow,
   updateLeagueSeasonUrlFlow,
+  updateLeagueSeasonSettingsFlow,
   updatePlayerRoleFlow,
   updatePlayerScoutReviewFlow,
   updatePlayerAgentFlow,
@@ -54,6 +57,7 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   REMOVE_PLAYER_SCOUT_PROFILE: 'removePlayerScoutProfile',
   UPDATE_PLAYER_SEASON_URL: 'updatePlayerSeasonUrl',
   UPDATE_LEAGUE_SEASON_URL: 'updateLeagueSeasonUrl',
+  UPDATE_LEAGUE_SEASON_SETTINGS: 'updateLeagueSeasonSettings',
   ADD_FAVORITE: 'addFavorite',
   REMOVE_FAVORITE: 'removeFavorite',
 }
@@ -82,6 +86,7 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_PLAYER_SCOUT_PROFILE]: removePlayerScoutProfileFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_URL]: updatePlayerSeasonUrlFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_URL]: updateLeagueSeasonUrlFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_SETTINGS]: updateLeagueSeasonSettingsFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.ADD_FAVORITE]: addFavoriteFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_FAVORITE]: removeFavoriteFlow,
 }
@@ -101,7 +106,7 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     // projection fails.  Do not leave the UI/cache on the pre-write snapshot;
     // invalidate it and attach the narrow audit scope to the error so the
     // caller can present a real recovery path.
-    if (error?.results?.teamCanonicalCommitted) {
+    if (error?.results?.teamCanonicalCommitted || error?.results?.leagueCanonicalCommitted) {
       invalidatePlayersDatabaseWriteCache({
         actionType,
         payload,
@@ -120,6 +125,17 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
   })
 
   const auditScope = rememberLastWriteAuditScopeFromResult(result)
+
+  // Provenance is diagnostic only: a journal outage must never turn a
+  // successful business write into a failed user action.
+  try {
+    await recordPlayersDatabaseWriteAction({
+      actionType,
+      auditScope: auditScope || buildLastWriteAuditScope(result),
+    })
+  } catch {
+    // The canonical write has already completed successfully.
+  }
 
   return auditScope
     ? {

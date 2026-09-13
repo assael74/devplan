@@ -3,7 +3,7 @@
 import {
   buildPlayerScoutProfileOptions,
   buildTeamScoutPriorityOptions,
-} from '../../../logic/scoutDisplay.logic.js'
+} from '../../../logic/scout/index.js'
 
 export const SEARCH_CONTEXT_TYPES = [
   {

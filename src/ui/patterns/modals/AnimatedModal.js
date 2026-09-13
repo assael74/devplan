@@ -36,6 +36,7 @@ export default function AnimatedModal({
   hideFooter = false,
   persistent = false,
   contentSx,
+  headerSx,
   footerSx,
   onConfirm,
   onClose,
@@ -60,8 +61,8 @@ export default function AnimatedModal({
             {...motionProps}
             sx={sx.motionWrap[size] || sx.motionWrap.md}
           >
-            <ModalDialog variant='outlined' sx={sx.dialog}>
-              <DialogTitle sx={sx.header}>
+            <ModalDialog variant='plain' sx={sx.dialog}>
+              <DialogTitle sx={{ ...sx.header, ...(headerSx || {}) }}>
                 <Box sx={sx.headerContent}>
                   {iconId ? (
                     <Box sx={sx.headerIcon}>

@@ -11,6 +11,9 @@ export const buildWriteFlowSyncError = ({
   error.stage = stage
   error.cause = cause
   error.results = results
+  error.reason = cause?.reason || ''
+  error.completion = cause?.completion || null
+  error.recoveryScope = cause?.recoveryScope || null
 
   return error
 }

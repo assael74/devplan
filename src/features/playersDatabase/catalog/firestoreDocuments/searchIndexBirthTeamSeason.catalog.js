@@ -100,6 +100,8 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   sourceTarget: '',
 
   updatedAt: null,
+  lastWriteAction: '',
+  lastWriteAt: null,
 };
 
 // Birth-team-season search projection only.

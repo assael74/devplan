@@ -7,7 +7,7 @@ import {
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
-import { getTeamSeason } from '../../read/teamSeason.js'
+import { getTeamSeason } from '../../read/entities/teamSeason.js'
 import {
   buildSeasonKey,
   clean,
@@ -17,7 +17,7 @@ import {
   buildPlayerDocumentId,
   playerDocRef,
 } from './playerDoc.model.js'
-import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/player/playerIdentity.model.js'
 import {
   buildPlayerSeasonCompactProjection,
   buildPlayerSeasonRowsFromTeamSeasonDocument,

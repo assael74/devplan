@@ -11,12 +11,15 @@ import {
   toNumberOrZero,
 } from './leagueDoc.js'
 import { buildSeasonDoc } from './leagueSeason.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
+import { resolveLeagueScheduleProjection } from '../../../domain/projections/leagueSchedule.projection.js'
+import { normalizeCompetitionRules } from '../../../domain/projections/club/clubCompetition.projection.js'
+import { buildCanonicalLeagueTeamScoutContexts } from '../shared/leagueTeamScoutContext.js'
 import {
   isSameSeason,
   normalizeSeasonIdentity,
   normalizeSeasonStatus,
-} from '../../../model/season.model.js'
+} from '../../../model/shared/season.model.js'
 import {
   buildTableRank,
   isSameLeagueSeasonPersistedState,
@@ -75,6 +78,31 @@ export async function updateLeagueSeasonTableRank({
       rows,
       existingTableRank: existingSeason?.tableRank || [],
     })
+    const canonicalLeagueTotalRound = toNumberOrZero(
+      existingSeason?.leagueTotalRound
+    ) || toNumberOrZero(season?.leagueTotalRound)
+    const scheduleProjection = resolveLeagueScheduleProjection({
+      teamsCount: tableRank.length,
+      leagueTotalRound: canonicalLeagueTotalRound,
+    })
+    const resolvedLeagueTotalRound = scheduleProjection.leagueTotalRound
+    const { teamPerformanceContext } = buildCanonicalLeagueTeamScoutContexts({
+      league: baseDoc,
+      season: {
+        ...season,
+        seasonId,
+        seasonKey,
+        leagueTotalRound: resolvedLeagueTotalRound,
+      },
+      target: isHistory ? 'history' : 'current',
+      rows: tableRank,
+      // A League table import is the calculation boundary.  A previous
+      // context must not freeze normalization after the official rows change.
+      reusePersistedContext: false,
+    })
+    const competitionRules = normalizeCompetitionRules(
+      season?.competitionRules || existingSeason?.competitionRules || {}
+    )
     const nextData = isHistory
       ? {
           ...baseDoc,
@@ -85,8 +113,11 @@ export async function updateLeagueSeasonTableRank({
               ...season,
               seasonId,
               seasonKey,
+              leagueTotalRound: resolvedLeagueTotalRound,
+              competitionRules,
             },
             tableRank,
+            teamPerformanceContext,
           }),
         }
       : {
@@ -100,12 +131,14 @@ export async function updateLeagueSeasonTableRank({
           seasonId,
           seasonKey,
           birthYear: toNumberOrZero(season.birthYear),
-          leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
+          leagueTotalRound: resolvedLeagueTotalRound,
+          competitionRules,
           seasonStatus: normalizeSeasonStatus(
             season.seasonStatus,
             clean(season.seasonStatus) === 'completed' ? 'completed' : 'active'
           ),
           tableRank,
+          teamPerformanceContext,
           updatedAt: new Date().toISOString(),
         },
       }
@@ -133,6 +166,9 @@ export async function updateLeagueSeasonTableRank({
       updated: true,
       changed: !writeSkipped,
       writeSkipped,
+      seasonDocument: nextSeason,
+      leagueTotalRound: resolvedLeagueTotalRound,
+      expectedGamesPerTeam: scheduleProjection.expectedGamesPerTeam,
     }
   })
 

@@ -11,7 +11,7 @@ import {
   clean,
   toNumberOrZero,
 } from '../leagues/leagueDoc.js'
-import { pickDefinedValue } from '../../../model/value.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
 import {
   normalizeScoutingPlayerEvents,
   normalizeScoutingPlayerTracking,
@@ -22,7 +22,7 @@ import {
   buildPlayerMatchValues,
   normalizePlayerNameValue,
   resolvePlayerIdentityBirthYear,
-} from '../../../model/playerIdentity.model.js'
+} from '../../../model/player/playerIdentity.model.js'
 import { PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG } from '../../../catalog/firestoreDocuments/playerDocument.catalog.js'
 import { buildPlayerManualReview } from '../../../../../shared/scouting/players/manualReview/playerManualReview.js'
 

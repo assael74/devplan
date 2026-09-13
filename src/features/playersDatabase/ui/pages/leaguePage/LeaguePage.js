@@ -14,9 +14,6 @@ import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catal
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from '../../hooks/useLeaguePage.js'
-import { readLeaguePageData, readLeaguesMasterDocument } from '../../../services/read/index.js'
-import { invalidateLeagueDocumentCache } from '../../../services/cache/index.js'
-import { syncLeaguesMasterDocument } from '../../../services/write/leagues/index.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -32,12 +29,20 @@ import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js
 import {
   LeagueImportModal,
   LeagueDataRepairModal,
+  JsonViewerModal,
   SeasonDeleteConfirmModal,
   TaskEditModal,
   WorkTaskModal,
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
+import useLeagueJsonViewer from './hooks/useLeagueJsonViewer.js'
+import useLeagueDataRepair from './hooks/useLeagueDataRepair.js'
+import {
+  buildPriorityCounts,
+  filterTeamsByPriority,
+} from './logic/leaguePriorityFilters.logic.js'
+import { downloadLeagueDocumentJson } from './logic/leagueJson.logic.js'
 import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
 import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
 import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
@@ -47,38 +52,11 @@ import {
   LEAGUE_IMPORT_PLACEHOLDER,
 } from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
-import { downloadLeagueDocumentJson } from './logic/leagueJson.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import { useLeagueReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 
-
-const PRIORITY_RANK = {
-  low: 1,
-  neutral: 2,
-  positive: 3,
-  high: 4,
-  elite: 5,
-}
-
-const matchesPriorityThreshold = (level, threshold) => {
-  if (!threshold) return true
-  return (PRIORITY_RANK[level] || 0) >= (PRIORITY_RANK[threshold] || 0)
-}
-
-const buildPriorityCounts = (teams, side) => {
-  const getLevel = team => side === 'attack'
-    ? team.performanceView?.offense?.priority?.level || ''
-    : team.performanceView?.defense?.priority?.level || ''
-
-  return {
-    all: teams.length,
-    positive: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'positive')).length,
-    high: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'high')).length,
-    elite: teams.filter(team => matchesPriorityThreshold(getLevel(team), 'elite')).length,
-  }
-}
 
 function LeaguePageContent() {
   const location = useLocation()
@@ -91,11 +69,6 @@ function LeaguePageContent() {
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
-  const [leagueDataRepairOpen, setLeagueDataRepairOpen] = React.useState(false)
-  const [leagueDataRepairBusy, setLeagueDataRepairBusy] = React.useState(false)
-  const [leagueDataRepairError, setLeagueDataRepairError] = React.useState('')
-  const [leagueDataRepairSources, setLeagueDataRepairSources] = React.useState({ leagueDocument: null, leaguesMaster: null })
-  const [leagueJsonDownloading, setLeagueJsonDownloading] = React.useState(false)
   const {
     league,
     leagueDoc,
@@ -110,7 +83,6 @@ function LeaguePageContent() {
     error,
     selectionError,
   } = useLeaguePage()
-
   const teamsWithFavorites = React.useMemo(() => (
     teams.map(team => ({
       ...team,
@@ -157,96 +129,29 @@ function LeaguePageContent() {
     reload,
   })
 
-  const handleLeagueJsonDownload = React.useCallback(async () => {
-    if (leagueJsonDownloading) return
-    setLeagueJsonDownloading(true)
-    try {
-      const leagueId = String(league.id || league.leagueId || '').trim()
-      if (!leagueId) throw new Error('חסר מזהה ליגה להורדה')
-      invalidateLeagueDocumentCache(leagueId)
-      const [leagueResult, leaguesMaster] = await Promise.all([
-        readLeaguePageData({ leagueId }),
-        readLeaguesMasterDocument({ fresh: true }),
-      ])
-      downloadLeagueDocumentJson({
-        leagueDocument: leagueResult.leagueDoc || leagueDoc || league,
-        leaguesMaster,
-      })
-      notify('מסמכי הליגה והמאסטר הורדו', 'success')
-    } catch (downloadError) {
-      notify(downloadError?.message || 'הורדת מסמך הליגה נכשלה', 'danger')
-    } finally {
-      setLeagueJsonDownloading(false)
-    }
-  }, [league, leagueDoc, leagueJsonDownloading, notify])
-
-  const handleLeagueDataRepairLoad = React.useCallback(() => {
-    setLeagueDataRepairOpen(false)
-    leagueImport.handleOpen()
-  }, [leagueImport])
-
-  const handleLeagueDataRepairOpen = React.useCallback(async () => {
-    const leagueId = String(league.id || league.leagueId || '').trim()
-    if (!leagueId || leagueDataRepairBusy) return
-    setLeagueDataRepairOpen(true)
-    setLeagueDataRepairBusy(true)
-    setLeagueDataRepairError('')
-    try {
-      invalidateLeagueDocumentCache(leagueId)
-      const [leagueResult, leaguesMaster] = await Promise.all([
-        readLeaguePageData({ leagueId }),
-        readLeaguesMasterDocument({ fresh: true }),
-      ])
-      setLeagueDataRepairSources({
-        leagueDocument: leagueResult.leagueDoc || null,
-        leaguesMaster: leaguesMaster || null,
-      })
-    } catch (repairError) {
-      setLeagueDataRepairSources({ leagueDocument: null, leaguesMaster: null })
-      setLeagueDataRepairError(repairError?.message || 'טעינת מסמכי הליגה להשוואה נכשלה')
-    } finally {
-      setLeagueDataRepairBusy(false)
-    }
-  }, [league, leagueDataRepairBusy])
-
-  const handleLeaguesMasterSync = React.useCallback(async () => {
-    const leagueId = String(league.id || league.leagueId || '').trim()
-    if (!leagueId || leagueDataRepairBusy) return
-    setLeagueDataRepairBusy(true)
-    setLeagueDataRepairError('')
-    try {
-      await syncLeaguesMasterDocument({ leagues: [{ id: leagueId }] })
-      invalidateLeagueDocumentCache(leagueId)
-      const [leagueResult, leaguesMaster] = await Promise.all([
-        readLeaguePageData({ leagueId }),
-        readLeaguesMasterDocument({ fresh: true }),
-      ])
-      setLeagueDataRepairSources({
-        leagueDocument: leagueResult.leagueDoc || null,
-        leaguesMaster: leaguesMaster || null,
-      })
-      await reload()
-      notify('מאסטר הליגות סונכרן', 'success')
-    } catch (repairError) {
-      setLeagueDataRepairError(repairError?.message || 'סנכרון מאסטר הליגות נכשל')
-    } finally {
-      setLeagueDataRepairBusy(false)
-    }
-  }, [league, leagueDataRepairBusy, notify, reload])
+  const leagueJsonViewer = useLeagueJsonViewer({
+    league,
+    leagueDoc,
+    notify,
+  })
+  const leagueDataRepair = useLeagueDataRepair({
+    league,
+    leagueDoc,
+    selectedSeasonKey,
+    leagueImport,
+    notify,
+    reload,
+  })
 
   const importColumns = React.useMemo(() => (
     buildLeagueImportColumns(leagueImport.rows)
   ), [leagueImport.rows])
 
   const filteredTeams = React.useMemo(() => (
-    teamsWithFavorites.filter(team => {
-      const attackLevel = team.performanceView?.offense?.priority?.level || ''
-      const defenseLevel = team.performanceView?.defense?.priority?.level || ''
-
-      return (
-        matchesPriorityThreshold(attackLevel, attackPriorityFilter)
-        && matchesPriorityThreshold(defenseLevel, defensePriorityFilter)
-      )
+    filterTeamsByPriority({
+      teams: teamsWithFavorites,
+      attackThreshold: attackPriorityFilter,
+      defenseThreshold: defensePriorityFilter,
     })
   ), [
     teamsWithFavorites,
@@ -438,6 +343,7 @@ function LeaguePageContent() {
           birthYear={league.birthYear}
           active={isActiveLeague}
           seasonKey={selectedSeasonKey}
+          seasonUrl={selectedSeasonOption?.season?.seasonUrl || ''}
           onSearch={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
           onBack={handleBackToCenter}
         />
@@ -475,9 +381,9 @@ function LeaguePageContent() {
             onAttackPriorityFilterChange={setAttackPriorityFilter}
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
-            onDataRepair={handleLeagueDataRepairOpen}
-            onLeagueJsonDownload={handleLeagueJsonDownload}
-            leagueJsonDownloading={leagueJsonDownloading}
+            onDataRepair={leagueDataRepair.openRepair}
+            onLeagueJsonDownload={leagueJsonViewer.open}
+            leagueJsonDownloading={leagueJsonViewer.downloading}
             onLeagueUrlEdit={leagueUrlEditor.show}
             hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
             loadDisabled={isHistoricalLoadedLeague}
@@ -581,15 +487,29 @@ function LeaguePageContent() {
       />
 
       <LeagueDataRepairModal
-        open={leagueDataRepairOpen}
-        busy={leagueDataRepairBusy}
-        error={leagueDataRepairError}
-        leagueDocument={leagueDataRepairSources.leagueDocument || leagueDoc || league}
-        leaguesMaster={leagueDataRepairSources.leaguesMaster || {}}
+        open={leagueDataRepair.open}
+        busy={leagueDataRepair.busy}
+        error={leagueDataRepair.error}
+        leagueDocument={leagueDataRepair.sources.leagueDocument || leagueDoc || league}
+        leaguesMaster={leagueDataRepair.sources.leaguesMaster || {}}
+        auditFinding={leagueDataRepair.auditFinding}
         seasonKey={selectedSeasonKey}
-        onOpenLeagueLoad={handleLeagueDataRepairLoad}
-        onSyncLeaguesMaster={handleLeaguesMasterSync}
-        onClose={() => setLeagueDataRepairOpen(false)}
+        onOpenLeagueLoad={leagueDataRepair.openLeagueLoad}
+        onSyncLeaguesMaster={leagueDataRepair.syncLeaguesMaster}
+        onSyncClubProjections={leagueDataRepair.syncClubProjections}
+        onClose={leagueDataRepair.close}
+      />
+
+      <JsonViewerModal
+        open={Boolean(leagueJsonViewer.data)}
+        title={`${league.name || 'ליגה'} · נתוני JSON`}
+        description='תצוגה לקריאה בלבד של מסמך הליגה ושל Leagues Master'
+        data={leagueJsonViewer.data || {}}
+        onClose={leagueJsonViewer.close}
+        onDownload={() => downloadLeagueDocumentJson({
+          leagueDocument: leagueJsonViewer.data?.leagueDocument || {},
+          leaguesMaster: leagueJsonViewer.data?.leaguesMaster || {},
+        })}
       />
 
       <WriteFlowReportModal

@@ -1,6 +1,6 @@
 // features/playersDatabase/report/search/buildSearchReport.js
 
-import { pickDefinedValue } from '../../model/value.model.js'
+import { pickDefinedValue } from '../../model/shared/value.model.js'
 import {
   REPORT_ENTITY_TYPES,
   REPORT_TYPES,

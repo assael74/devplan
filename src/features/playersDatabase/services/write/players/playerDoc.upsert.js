@@ -2,7 +2,7 @@
 
 import { normalizeComparableValue } from '../../shared/valueComparison.js'
 import { db } from '../../../../../services/firebase/firebase.js'
-import { getTeamSeason } from '../../read/teamSeason.js'
+import { getTeamSeason } from '../../read/entities/teamSeason.js'
 import {
   buildSeasonKey,
   clean,

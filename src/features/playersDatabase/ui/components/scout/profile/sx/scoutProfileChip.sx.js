@@ -20,12 +20,17 @@ export const scoutProfileChipSx = {
     font: 'inherit',
     textAlign: 'inherit',
     appearance: 'none',
-    '&:hover': interactive ? { borderColor: devPlanColors.tertiaryDark } : {},
+    '&:hover': interactive
+      ? {
+          borderColor: devPlanColors.tertiaryDark,
+        }
+      : {},
     '&:focus-visible': interactive ? {
       outline: `2px solid ${devPlanColors.primary}`,
       outlineOffset: 2,
     } : {},
   }),
+
   fill: ({ depthPct }) => ({
     position: 'absolute',
     zIndex: 0,
@@ -34,6 +39,7 @@ export const scoutProfileChipSx = {
     bgcolor: devPlanColors.tertiary,
     transition: 'width 220ms ease',
   }),
+
   content: ({ compact }) => ({
     position: 'relative',
     zIndex: 1,
@@ -46,6 +52,7 @@ export const scoutProfileChipSx = {
     alignItems: 'center',
     gap: compact ? 0.4 : 0.55,
   }),
+
   icon: ({ compact, isFilter = false, isCombination = false }) => ({
     width: compact ? 18 : 24,
     height: compact ? 18 : 24,
@@ -60,6 +67,7 @@ export const scoutProfileChipSx = {
       fontSize: compact ? 11 : 14,
     },
   }),
+
   label: ({ compact, isFilter = false }) => ({
     minWidth: 0,
     overflow: 'hidden',
@@ -70,6 +78,7 @@ export const scoutProfileChipSx = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   }),
+
   endLabel: ({ compact }) => ({
     minWidth: compact ? 24 : 28,
     height: compact ? 17 : 22,
@@ -85,6 +94,7 @@ export const scoutProfileChipSx = {
     fontWeight: 800,
     fontVariantNumeric: 'tabular-nums',
   }),
+
   tooltip: {
     color: `${devPlanColors.primaryDark} !important`,
     bgcolor: `${devPlanColors.tertiaryLight} !important`,

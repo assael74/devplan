@@ -12,53 +12,6 @@ export const PLAYER_SCOUT_NULLABLE_STRUCTURED_FIELDS = [
   'scoutPlayerInterest',
 ]
 
-const PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT = {
-  version: 2,
-  inputHash: '',
-  scope: '',
-  seasonKeys: [],
-  profileRefs: [
-    {
-      seasonKey: '',
-      birthTeamId: '',
-      birthTeamDocumentId: '',
-      birthTeamSlot: 0,
-      profileId: '',
-    },
-  ],
-  revision: 0,
-  generatedAt: null,
-  approvedAt: null,
-  source: 'ai',
-  generator: {
-    model: '',
-    promptVersion: '',
-  },
-  content: {
-    title: '',
-    summary: '',
-    conclusion: null,
-    whyInteresting: '',
-    professionalContext: '',
-    strengths: [],
-    unknowns: [],
-    action: null,
-    evidenceRefs: [],
-  },
-}
-
-const PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT = {
-  version: 2,
-  seasons: [
-    {
-      seasonId: '',
-      seasonKey: '',
-      approved: PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT,
-    },
-  ],
-  career: PLAYER_SCOUT_NARRATIVE_SNAPSHOT_GENERIC_OBJECT,
-}
-
 const PLAYER_SCOUT_STATE_GENERIC_OBJECT = {
   scoutOpportunity: {
     effectiveActionStatus: '',
@@ -277,10 +230,10 @@ export const PLAYERS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     },
   ],
 
-  scoutNarrative: PLAYER_SCOUT_NARRATIVE_GENERIC_OBJECT,
-
   createdAt: null,
   updatedAt: null,
+  lastWriteAction: '',
+  lastWriteAt: null,
 
   current: [
     {

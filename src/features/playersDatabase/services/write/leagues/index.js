@@ -33,10 +33,7 @@
  *
  * leaguesMaster.sync.js
  * - Reads source league documents and synchronizes the master catalog transaction.
- *
- * leaguesMaster.js
- * - Compatibility export for existing imports.
- */
+ * */
 
 export {
   buildSeasonKey,
@@ -45,6 +42,7 @@ export {
 
 export {
   updateLeagueSeasonMeta,
+  updateLeagueSeasonSettings,
   updateLeagueSeasonUrl,
   upsertLeagueSeason,
 } from './leagueSeason.js'
@@ -73,4 +71,4 @@ export {
 
 export {
   syncLeaguesMasterDocument,
-} from './leaguesMaster.js'
+} from './leaguesMaster.sync.js'

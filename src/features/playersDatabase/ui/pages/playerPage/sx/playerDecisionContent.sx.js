@@ -10,119 +10,878 @@ const tertiaryLight = '#EAF5FC'
 const warningLight = '#FFF4E5'
 
 export const playerDecisionContentSx = {
-  root: { display: 'flex', flexDirection: 'column', gap: 1.25, pb: 2 },
-  heroGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, alignItems: 'stretch', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } },
-  heroCard: { display: 'flex', flexDirection: 'column', minWidth: 0, height: { xs: 'auto', md: 360 }, bgcolor: surface, border: `1px solid ${border}`, borderRadius: 10, overflow: 'hidden' },
-  heroHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, px: { xs: 1.25, md: 1.5 }, py: { xs: 1.15, md: 1.25 } },
-  heroTitleRow: { display: 'flex', alignItems: 'center', gap: 0.65 },
-  heroTitle: { color: text, fontWeight: 800 },
-  heroIcon: { width: 23, height: 23, borderRadius: 7, border: `1px solid ${devPlanColors.primaryDark}`, bgcolor: devPlanColors.primary, color: surface, display: 'grid', placeItems: 'center', flexShrink: 0, '& svg': { color: `${surface} !important`, fontSize: 14 } },
-  heroStatusArea: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 0.35, flexShrink: 0 },
-  manualNote: { color: subText },
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1.25,
+    pb: 2,
+  },
+
+  heroGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 1.5,
+    alignItems: 'stretch',
+    '@media (max-width: 900px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+
+  heroCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    height: {
+      xs: 'auto',
+      md: 360,
+    },
+    bgcolor: surface,
+    border: `1px solid ${border}`,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+
+  heroHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    px: {
+      xs: 1.25,
+      md: 1.5,
+    },
+    py: {
+      xs: 1.15,
+      md: 1.25,
+    },
+  },
+
+  heroTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+  },
+
+  heroTitle: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  heroIcon: {
+    width: 23,
+    height: 23,
+    borderRadius: 7,
+    border: `1px solid ${devPlanColors.primaryDark}`,
+    bgcolor: devPlanColors.primary,
+    color: surface,
+    display: 'grid',
+    placeItems: 'center',
+    flexShrink: 0,
+    '& svg': {
+      color: `${surface} !important`,
+      fontSize: 14,
+    },
+  },
+
+  heroStatusArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 0.35,
+    flexShrink: 0,
+  },
+
+  manualNote: {
+    color: subText,
+  },
+
   heroReasonsArea: { flex: 1, minHeight: 0, display: 'flex', px: { xs: 1.25, md: 1.5 }, py: 1.25 },
-  factorSections: { display: 'flex', flexDirection: 'column', gap: 1.15 },
-  factorSection: { display: 'flex', flexDirection: 'column', gap: 0.65 },
-  factorSectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 },
-  factorSectionTitle: { color: text, fontWeight: 800 },
-  factorSectionCount: { minWidth: 24, height: 22, px: 0.65, borderRadius: '999px', bgcolor: primaryLight, color: text, display: 'grid', placeItems: 'center', fontWeight: 800 },
-  factorSectionEmpty: { color: subText, px: 0.25 },
-  factorGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 0.75, '@media (max-width: 760px)': { gridTemplateColumns: '1fr' } },
-  activeFactorList: { display: 'flex', flexDirection: 'column', borderTop: `1px solid ${border}` },
-  activeFactorRow: { minHeight: 38, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: 1.25, alignItems: 'center', py: 0.65, borderBottom: `1px solid ${border}` },
-  activeFactorName: { color: text, fontWeight: 700, lineHeight: 1.35 },
-  activeFactorPoints: { color: '#176BA6', fontWeight: 800, whiteSpace: 'nowrap' },
-  activeFactorPointsReduction: { color: '#9A5D00' },
-  activeFactorExplanation: { gridColumn: '1 / -1', color: subText, mt: 0.15, lineHeight: 1.35 },
-  factorRow: { minHeight: 50, px: 1, py: 0.75, border: `1px solid ${border}`, borderRadius: '10px', bgcolor: body, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 },
-  factorCopy: { minWidth: 0 },
-  factorText: { color: text, fontWeight: 700, lineHeight: 1.35 },
-  factorExplanation: { color: subText, mt: 0.25, lineHeight: 1.35 },
-  factorTextMuted: { color: subText, fontWeight: 600 },
-  factorState: { flexShrink: 0, minWidth: 58, px: 0.75, py: 0.35, borderRadius: '999px', textAlign: 'center', fontSize: '0.68rem', fontWeight: 800, border: `1px solid ${border}`, color: subText, bgcolor: surface },
-  factorState_boost: { color: '#176BA6', bgcolor: tertiaryLight, borderColor: '#BFDDF1' },
-  factorState_reduction: { color: '#9A5D00', bgcolor: warningLight, borderColor: '#F0D6A6' },
-  factorState_no_change: { color: subText, bgcolor: surface },
-  factorState_not_applicable: { color: subText, bgcolor: '#F8FAFB' },
-  factorState_context: { color: text, bgcolor: primaryLight },
-  factorState_missed: { color: '#7A5A10', bgcolor: '#FFF8E8', borderColor: '#E8D49A' },
-  factorState_missing: { color: '#7B4B00', bgcolor: '#FFF4E5', borderColor: '#F0D6A6' },
-  factorState_prerequisite: { color: subText, bgcolor: '#F8FAFB', borderColor: border },
-  factorState_active: { color: '#176BA6', bgcolor: tertiaryLight, borderColor: '#BFDDF1' },
-  factorState_inactive: { color: subText, bgcolor: surface },
-  immediacyTable: { flex: 1, minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable', scrollbarWidth: 'thin', scrollbarColor: `${devPlanColors.secondaryLight} transparent`, '&::-webkit-scrollbar': { width: 5 }, '&::-webkit-scrollbar-thumb': { borderRadius: 99, bgcolor: devPlanColors.secondaryLight } },
-  immediacyRow: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: 1, rowGap: 0.2, alignItems: 'center', minHeight: 46, px: 1, py: 0.55, borderBottom: `1px solid ${border}` },
-  immediacyParameter: { color: text, fontWeight: 800, lineHeight: 1.35 },
-  immediacyScore: { display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.65, whiteSpace: 'nowrap' },
-  immediacyState: { fontWeight: 700, lineHeight: 1.35 },
-  immediacyState_boost: { color: '#176BA6' },
-  immediacyState_reduction: { color: '#9A5D00' },
-  immediacyState_missed: { color: '#7A5A10' },
-  immediacyState_notApplicable: { color: subText },
-  immediacyState_context: { color: text },
-  immediacyPoints: { minWidth: 30, height: 23, px: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid', borderRadius: 999, fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
-  immediacyPoints_positive: { color: devPlanColors.tertiaryDark, bgcolor: devPlanColors.tertiaryLight, borderColor: devPlanColors.tertiary },
-  immediacyPoints_zero: { color: COLORS.status.warning.text, bgcolor: COLORS.status.warning.softBg, borderColor: COLORS.status.warning.solid },
-  immediacyPoints_negative: { color: devPlanColors.petrolDark, bgcolor: devPlanColors.petrolLight, borderColor: devPlanColors.petrol },
-  immediacyPoints_empty: { color: devPlanColors.primary, bgcolor: devPlanColors.primaryLight, borderColor: devPlanColors.border },
-  immediacyExplanation: { gridColumn: '1 / -1', color: subText, lineHeight: 1.3 },
-  immediacyCollapse: { borderBottom: `1px solid ${border}` },
-  immediacyCollapseHeader: { minHeight: 40, px: 1, py: 0.65, bgcolor: surface, color: devPlanColors.tertiaryDark, '&:hover': { bgcolor: surface, color: devPlanColors.tertiaryDark }, '& .MuiTypography-root': { color: 'inherit', fontSize: '0.75rem', fontWeight: 800 } },
-  immediacyCollapseIndicator: { display: 'none' },
-  immediacyCollapseInner: { px: 0 },
-  interestRows: { flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable', scrollbarWidth: 'thin', scrollbarColor: `${devPlanColors.secondaryLight} transparent`, '&::-webkit-scrollbar': { width: 5 }, '&::-webkit-scrollbar-thumb': { borderRadius: 99, bgcolor: devPlanColors.secondaryLight } },
-  interestRow: { minHeight: 46, px: 1, py: 0.55, borderBottom: `1px solid ${border}` },
-  interestRowTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 },
-  interestExplanation: { color: subText, mt: 0.2, lineHeight: 1.3 },
-  heroFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 1.25, md: 1.5 }, minHeight: 44, bgcolor: body, borderTop: `1px solid ${border}` },
-  footerText: { color: subText },
-  footerValue: { color: text, fontWeight: 800 },
-  immediacyTotalBadge: { minWidth: 44, height: 32, px: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999, bgcolor: devPlanColors.tertiary, color: surface, fontSize: '1rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', boxShadow: '0 3px 8px rgba(47, 134, 199, 0.24)' },
-  interestTotalBadge: { minWidth: 44, height: 32, px: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999, bgcolor: devPlanColors.petrol, color: surface, fontSize: '1rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', boxShadow: '0 3px 8px rgba(43, 124, 130, 0.24)' },
-  sectionCard: { minWidth: 0, bgcolor: surface, border: `1px solid ${border}`, borderRadius: 10, p: { xs: 1.25, md: 1.5 } },
-  sectionHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 1 },
-  sectionTitleContainer: { minWidth: 0 },
-  sectionTitleRow: { display: 'flex', alignItems: 'center', gap: 0.65 },
-  sectionTitleIcon: { display: 'grid', placeItems: 'center', width: 23, height: 23, borderRadius: 7, border: `1px solid ${devPlanColors.primaryDark}`, bgcolor: devPlanColors.primary, color: surface, flexShrink: 0, '& svg': { color: `${surface} !important`, fontSize: 14 } },
-  sectionTitle: { color: text, fontWeight: 800 },
-  summaryChips: { display: 'flex', gap: 0.75, flexWrap: 'wrap' },
-  seasonsGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.25, '@media (max-width: 1100px)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, '@media (max-width: 760px)': { gridTemplateColumns: '1fr' } },
-  seasonCard: { border: `1px solid ${border}`, borderRadius: 9, overflow: 'hidden', minWidth: 0, bgcolor: surface },
-  futureSeasonCard: { borderStyle: 'dashed', bgcolor: body },
-  seasonHeader: { px: 1.5, py: 1.25, bgcolor: body, borderBottom: `1px solid ${border}` },
-  seasonMetaLine: { display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 },
-  seasonKey: { color: text, fontWeight: 800, whiteSpace: 'nowrap' },
-  seasonContextMeta: { minWidth: 0, display: 'flex', alignItems: 'center', gap: 0.45, overflow: 'hidden' },
-  metaItem: { color: subText, fontWeight: 700, whiteSpace: 'nowrap' },
-  metaSeparator: { color: subText, flexShrink: 0 },
-  leagueItem: { color: subText, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  teamLine: { display: 'flex', alignItems: 'center', gap: 0.8, mt: 1, pt: 1, borderTop: `1px solid ${border}`, flexWrap: 'nowrap', minWidth: 0 },
-  teamAvatarWrap: { position: 'relative', width: 30, height: 30, flexShrink: 0 },
-  teamAvatar: { width: 30, height: 30, borderRadius: '50%', bgcolor: surface, border: `1px solid ${border}`, objectFit: 'cover' },
-  clubStrengthBadge: { position: 'absolute', insetInlineStart: -7, bottom: -5, minWidth: 22, height: 18, px: 0.45, display: 'grid', placeItems: 'center', borderRadius: 999, bgcolor: devPlanColors.primary, color: surface, border: `2px solid ${body}`, fontSize: '0.64rem', lineHeight: 1, fontWeight: 900, fontVariantNumeric: 'tabular-nums' },
-  teamIdentity: { flex: 1, minWidth: 0, overflow: 'hidden' },
-  teamName: { color: text, fontWeight: 800 },
-  teamPerformanceGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, max-content)', gap: 0.35, flexShrink: 0, borderInlineStart: `1px solid ${border}`, paddingInlineStart: 0.55 },
-  teamPerformanceItem: { minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.2 },
-  teamPerformanceLabel: { color: subText, fontWeight: 700, fontSize: '0.58rem', lineHeight: 1.1, whiteSpace: 'nowrap' },
-  seasonStatusBadge: { flexShrink: 0 },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', borderBottom: `1px solid ${border}` },
-  statCell: { minHeight: 64, px: 0.5, py: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', '& + &': { borderRight: `1px solid ${border}` } },
-  statValueRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4 },
-  statValue: { color: text, fontSize: '0.98rem', fontWeight: 800, lineHeight: 1.1 },
-  statTrendBadge: { width: 17, height: 17, display: 'grid', placeItems: 'center', borderRadius: 999, fontSize: '0.68rem', fontWeight: 900, lineHeight: 1, '& svg': { fontSize: 11 } },
-  statTrend_up: { color: COLORS.status.success.text, bgcolor: COLORS.status.success.softBg },
-  statTrend_down: { color: COLORS.status.danger.text, bgcolor: COLORS.status.danger.softBg },
-  statTrend_equal: { color: subText, bgcolor: body },
-  statTrend_unavailable: { color: subText, bgcolor: body },
-  statLabel: { color: subText, fontSize: '0.68rem', mt: 0.5 },
-  profileArea: { px: 1.5, py: 1.25, minHeight: 84 },
-  profileHeader: { minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.65, mb: 0.75 },
-  futureSeasonContent: { minHeight: 178, px: 1.5, py: 1.25, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 0.75 },
-  checksGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1, '@media (max-width: 760px)': { gridTemplateColumns: '1fr' } },
-  checkCard: { display: 'flex', gap: 1.25, alignItems: 'flex-start', p: 1.25, bgcolor: body, border: `1px solid ${border}`, borderRadius: 9 },
-  checkNumber: { width: 28, height: 28, borderRadius: 7, bgcolor: primaryLight, color: text, display: 'grid', placeItems: 'center', fontWeight: 900, flexShrink: 0 },
-  checkBody: { minWidth: 0 },
-  checkTitle: { color: text, fontWeight: 800 },
-  checkExplanation: { color: subText, mt: 0.45, lineHeight: 1.55 },
-  emptyText: { color: subText },
+  factorSections: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1.15,
+  },
+
+  factorSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.65,
+  },
+
+  factorSectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  factorSectionTitle: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  factorSectionCount: {
+    minWidth: 24,
+    height: 22,
+    px: 0.65,
+    borderRadius: '999px',
+    bgcolor: primaryLight,
+    color: text,
+    display: 'grid',
+    placeItems: 'center',
+    fontWeight: 800,
+  },
+
+  factorSectionEmpty: {
+    color: subText,
+    px: 0.25,
+  },
+
+  factorGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.75,
+    '@media (max-width: 760px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+
+  activeFactorList: {
+    display: 'flex',
+    flexDirection: 'column',
+    borderTop: `1px solid ${border}`,
+  },
+
+  activeFactorRow: {
+    minHeight: 38,
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    columnGap: 1.25,
+    alignItems: 'center',
+    py: 0.65,
+    borderBottom: `1px solid ${border}`,
+  },
+
+  activeFactorName: {
+    color: text,
+    fontWeight: 700,
+    lineHeight: 1.35,
+  },
+
+  activeFactorPoints: {
+    color: '#176BA6',
+    fontWeight: 800,
+    whiteSpace: 'nowrap',
+  },
+
+  activeFactorPointsReduction: {
+    color: '#9A5D00',
+  },
+
+  activeFactorExplanation: {
+    gridColumn: '1 / -1',
+    color: subText,
+    mt: 0.15,
+    lineHeight: 1.35,
+  },
+
+  factorRow: {
+    minHeight: 50,
+    px: 1,
+    py: 0.75,
+    border: `1px solid ${border}`,
+    borderRadius: '10px',
+    bgcolor: body,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  factorCopy: {
+    minWidth: 0,
+  },
+
+  factorText: {
+    color: text,
+    fontWeight: 700,
+    lineHeight: 1.35,
+  },
+
+  factorExplanation: {
+    color: subText,
+    mt: 0.25,
+    lineHeight: 1.35,
+  },
+
+  factorTextMuted: {
+    color: subText,
+    fontWeight: 600,
+  },
+
+  factorState: {
+    flexShrink: 0,
+    minWidth: 58,
+    px: 0.75,
+    py: 0.35,
+    borderRadius: '999px',
+    textAlign: 'center',
+    fontSize: '0.68rem',
+    fontWeight: 800,
+    border: `1px solid ${border}`,
+    color: subText,
+    bgcolor: surface,
+  },
+
+  factorState_boost: {
+    color: '#176BA6',
+    bgcolor: tertiaryLight,
+    borderColor: '#BFDDF1',
+  },
+
+  factorState_reduction: {
+    color: '#9A5D00',
+    bgcolor: warningLight,
+    borderColor: '#F0D6A6',
+  },
+
+  factorState_no_change: {
+    color: subText,
+    bgcolor: surface,
+  },
+
+  factorState_not_applicable: {
+    color: subText,
+    bgcolor: '#F8FAFB',
+  },
+
+  factorState_context: {
+    color: text,
+    bgcolor: primaryLight,
+  },
+
+  factorState_missed: {
+    color: '#7A5A10',
+    bgcolor: '#FFF8E8',
+    borderColor: '#E8D49A',
+  },
+
+  factorState_missing: {
+    color: '#7B4B00',
+    bgcolor: '#FFF4E5',
+    borderColor: '#F0D6A6',
+  },
+
+  factorState_prerequisite: {
+    color: subText,
+    bgcolor: '#F8FAFB',
+    borderColor: border,
+  },
+
+  factorState_active: {
+    color: '#176BA6',
+    bgcolor: tertiaryLight,
+    borderColor: '#BFDDF1',
+  },
+
+  factorState_inactive: {
+    color: subText,
+    bgcolor: surface,
+  },
+
+  immediacyTable: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    scrollbarGutter: 'stable',
+    scrollbarWidth: 'thin',
+    scrollbarColor: `${devPlanColors.secondaryLight} transparent`,
+    '&::-webkit-scrollbar': {
+      width: 5,
+    },
+    '&::-webkit-scrollbar-thumb': {
+      borderRadius: 99,
+      bgcolor: devPlanColors.secondaryLight,
+    },
+  },
+
+  immediacyRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    columnGap: 1,
+    rowGap: 0.2,
+    alignItems: 'center',
+    minHeight: 46,
+    px: 1,
+    py: 0.55,
+    borderBottom: `1px solid ${border}`,
+  },
+
+  immediacyParameter: {
+    color: text,
+    fontWeight: 800,
+    lineHeight: 1.35,
+  },
+
+  immediacyScore: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 0.65,
+    whiteSpace: 'nowrap',
+  },
+
+  immediacyState: {
+    fontWeight: 700,
+    lineHeight: 1.35,
+  },
+
+  immediacyState_boost: {
+    color: '#176BA6',
+  },
+
+  immediacyState_reduction: {
+    color: '#9A5D00',
+  },
+
+  immediacyState_missed: {
+    color: '#7A5A10',
+  },
+
+  immediacyState_notApplicable: {
+    color: subText,
+  },
+
+  immediacyState_context: {
+    color: text,
+  },
+
+  immediacyPoints: {
+    minWidth: 30,
+    height: 23,
+    px: 0.7,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid',
+    borderRadius: 999,
+    fontWeight: 900,
+    whiteSpace: 'nowrap',
+    fontVariantNumeric: 'tabular-nums',
+  },
+
+  immediacyPoints_positive: {
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    borderColor: devPlanColors.tertiary,
+  },
+
+  immediacyPoints_zero: {
+    color: COLORS.status.warning.text,
+    bgcolor: COLORS.status.warning.softBg,
+    borderColor: COLORS.status.warning.solid,
+  },
+
+  immediacyPoints_negative: {
+    color: devPlanColors.petrolDark,
+    bgcolor: devPlanColors.petrolLight,
+    borderColor: devPlanColors.petrol,
+  },
+
+  immediacyPoints_empty: {
+    color: devPlanColors.primary,
+    bgcolor: devPlanColors.primaryLight,
+    borderColor: devPlanColors.border,
+  },
+
+  immediacyExplanation: {
+    gridColumn: '1 / -1',
+    color: subText,
+    lineHeight: 1.3,
+  },
+
+  immediacyCollapse: {
+    borderBottom: `1px solid ${border}`,
+  },
+
+  immediacyCollapseHeader: {
+    minHeight: 40,
+    px: 1,
+    py: 0.65,
+    bgcolor: surface,
+    color: devPlanColors.tertiaryDark,
+    '&:hover': {
+      bgcolor: surface,
+      color: devPlanColors.tertiaryDark,
+    },
+    '& .MuiTypography-root': {
+      color: 'inherit',
+      fontSize: '0.75rem',
+      fontWeight: 800,
+    },
+  },
+
+  immediacyCollapseIndicator: {
+    display: 'none',
+  },
+
+  immediacyCollapseInner: {
+    px: 0,
+  },
+
+  interestRows: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+    overflowY: 'auto',
+    scrollbarGutter: 'stable',
+    scrollbarWidth: 'thin',
+    scrollbarColor: `${devPlanColors.secondaryLight} transparent`,
+    '&::-webkit-scrollbar': {
+      width: 5,
+    },
+    '&::-webkit-scrollbar-thumb': {
+      borderRadius: 99,
+      bgcolor: devPlanColors.secondaryLight,
+    },
+  },
+
+  interestRow: {
+    minHeight: 46,
+    px: 1,
+    py: 0.55,
+    borderBottom: `1px solid ${border}`,
+  },
+
+  interestRowTop: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  interestExplanation: {
+    color: subText,
+    mt: 0.2,
+    lineHeight: 1.3,
+  },
+
+  heroFooter: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    px: {
+      xs: 1.25,
+      md: 1.5,
+    },
+    minHeight: 44,
+    bgcolor: body,
+    borderTop: `1px solid ${border}`,
+  },
+
+  footerText: {
+    color: subText,
+  },
+
+  footerValue: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  immediacyTotalBadge: {
+    minWidth: 44,
+    height: 32,
+    px: 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    bgcolor: devPlanColors.tertiary,
+    color: surface,
+    fontSize: '1rem',
+    fontWeight: 900,
+    fontVariantNumeric: 'tabular-nums',
+    boxShadow: '0 3px 8px rgba(47, 134, 199, 0.24)',
+  },
+
+  interestTotalBadge: {
+    minWidth: 44,
+    height: 32,
+    px: 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    bgcolor: devPlanColors.petrol,
+    color: surface,
+    fontSize: '1rem',
+    fontWeight: 900,
+    fontVariantNumeric: 'tabular-nums',
+    boxShadow: '0 3px 8px rgba(43, 124, 130, 0.24)',
+  },
+
+  sectionCard: {
+    minWidth: 0,
+    bgcolor: surface,
+    border: `1px solid ${border}`,
+    borderRadius: 10,
+    p: {
+      xs: 1.25,
+      md: 1.5,
+    },
+  },
+
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 2,
+    mb: 1,
+  },
+
+  sectionTitleContainer: {
+    minWidth: 0,
+  },
+
+  sectionTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.65,
+  },
+
+  sectionTitleIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    width: 23,
+    height: 23,
+    borderRadius: 7,
+    border: `1px solid ${devPlanColors.primaryDark}`,
+    bgcolor: devPlanColors.primary,
+    color: surface,
+    flexShrink: 0,
+    '& svg': {
+      color: `${surface} !important`,
+      fontSize: 14,
+    },
+  },
+
+  sectionTitle: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  summaryChips: {
+    display: 'flex',
+    gap: 0.75,
+    flexWrap: 'wrap',
+  },
+
+  seasonsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 1.25,
+    '@media (max-width: 1100px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media (max-width: 760px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+
+  seasonCard: {
+    border: `1px solid ${border}`,
+    borderRadius: 9,
+    overflow: 'hidden',
+    minWidth: 0,
+    bgcolor: surface,
+  },
+
+  futureSeasonCard: {
+    borderStyle: 'dashed',
+    bgcolor: body,
+  },
+
+  seasonHeader: {
+    px: 1.5,
+    py: 1.25,
+    bgcolor: body,
+    borderBottom: `1px solid ${border}`,
+  },
+
+  seasonMetaLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    minWidth: 0,
+  },
+
+  seasonKey: {
+    color: text,
+    fontWeight: 800,
+    whiteSpace: 'nowrap',
+  },
+
+  seasonContextMeta: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.45,
+    overflow: 'hidden',
+  },
+
+  metaItem: {
+    color: subText,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  metaSeparator: {
+    color: subText,
+    flexShrink: 0,
+  },
+
+  leagueItem: {
+    color: subText,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+
+  teamLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.8,
+    mt: 1,
+    pt: 1,
+    borderTop: `1px solid ${border}`,
+    flexWrap: 'nowrap',
+    minWidth: 0,
+  },
+
+  teamAvatarWrap: {
+    position: 'relative',
+    width: 30,
+    height: 30,
+    flexShrink: 0,
+  },
+
+  teamAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: '50%',
+    bgcolor: surface,
+    border: `1px solid ${border}`,
+    objectFit: 'cover',
+  },
+
+  clubStrengthBadge: {
+    position: 'absolute',
+    insetInlineStart: -7,
+    bottom: -5,
+    minWidth: 22,
+    height: 18,
+    px: 0.45,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 999,
+    bgcolor: devPlanColors.primary,
+    color: surface,
+    border: `2px solid ${body}`,
+    fontSize: '0.64rem',
+    lineHeight: 1,
+    fontWeight: 900,
+    fontVariantNumeric: 'tabular-nums',
+  },
+
+  teamIdentity: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+
+  teamName: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  teamPerformanceGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, max-content)',
+    gap: 0.35,
+    flexShrink: 0,
+    borderInlineStart: `1px solid ${border}`,
+    paddingInlineStart: 0.55,
+  },
+
+  teamPerformanceItem: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 0.2,
+  },
+
+  teamPerformanceLabel: {
+    color: subText,
+    fontWeight: 700,
+    fontSize: '0.58rem',
+    lineHeight: 1.1,
+    whiteSpace: 'nowrap',
+  },
+
+  seasonStatusBadge: {
+    flexShrink: 0,
+  },
+
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    borderBottom: `1px solid ${border}`,
+  },
+
+  statCell: {
+    minHeight: 64,
+    px: 0.5,
+    py: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    '& + &': {
+      borderRight: `1px solid ${border}`,
+    },
+  },
+
+  statValueRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0.4,
+  },
+
+  statValue: {
+    color: text,
+    fontSize: '0.98rem',
+    fontWeight: 800,
+    lineHeight: 1.1,
+  },
+
+  statTrendBadge: {
+    width: 17,
+    height: 17,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 999,
+    fontSize: '0.68rem',
+    fontWeight: 900,
+    lineHeight: 1,
+    '& svg': {
+      fontSize: 11,
+    },
+  },
+
+  statTrend_up: {
+    color: COLORS.status.success.text,
+    bgcolor: COLORS.status.success.softBg,
+  },
+
+  statTrend_down: {
+    color: COLORS.status.danger.text,
+    bgcolor: COLORS.status.danger.softBg,
+  },
+
+  statTrend_equal: {
+    color: subText,
+    bgcolor: body,
+  },
+
+  statTrend_unavailable: {
+    color: subText,
+    bgcolor: body,
+  },
+
+  statLabel: {
+    color: subText,
+    fontSize: '0.68rem',
+    mt: 0.5,
+  },
+
+  profileArea: {
+    px: 1.5,
+    py: 1.25,
+    minHeight: 84,
+  },
+
+  profileHeader: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0.65,
+    mb: 0.75,
+  },
+
+  futureSeasonContent: {
+    minHeight: 178,
+    px: 1.5,
+    py: 1.25,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: 0.75,
+  },
+
+  checksGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 1,
+    '@media (max-width: 760px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+
+  checkCard: {
+    display: 'flex',
+    gap: 1.25,
+    alignItems: 'flex-start',
+    p: 1.25,
+    bgcolor: body,
+    border: `1px solid ${border}`,
+    borderRadius: 9,
+  },
+
+  checkNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    bgcolor: primaryLight,
+    color: text,
+    display: 'grid',
+    placeItems: 'center',
+    fontWeight: 900,
+    flexShrink: 0,
+  },
+
+  checkBody: {
+    minWidth: 0,
+  },
+
+  checkTitle: {
+    color: text,
+    fontWeight: 800,
+  },
+
+  checkExplanation: {
+    color: subText,
+    mt: 0.45,
+    lineHeight: 1.55,
+  },
+
+  emptyText: {
+    color: subText,
+  },
 }

@@ -19,6 +19,7 @@ export default function RegularModal({
         ...sx.content,
         ...(contentSx || {}),
       }}
+      headerSx={sx.header}
     >
       {headerActions ? (
         <Box sx={sx.headerActions}>

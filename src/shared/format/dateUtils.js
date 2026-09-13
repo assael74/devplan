@@ -10,7 +10,12 @@ const clean = (v) => String(v ?? '').trim()
 // ---- existing exports remain as-is ----
 export function getFullDateIl(dateObject, isMobile) {
   if (!dateObject) return '—'
-  const date = new Date(dateObject)
+  const normalizedDate = typeof dateObject?.toDate === 'function'
+    ? dateObject.toDate()
+    : Number.isFinite(Number(dateObject?.seconds))
+      ? new Date(Number(dateObject.seconds) * 1000)
+      : dateObject
+  const date = new Date(normalizedDate)
   if (isNaN(date.getTime())) return '—'
 
   const day = String(date.getDate()).padStart(2, '0')
@@ -19,6 +24,25 @@ export function getFullDateIl(dateObject, isMobile) {
   const yy = String(year % 100).padStart(2, '0')
 
   return `${day}-${month}-${isMobile ? yy : year}`
+}
+
+// Full local date plus a 24-hour time, e.g. 10-09-2026 · 08:09.
+export function getFullDateTimeIl(dateObject) {
+  if (!dateObject) return '—'
+  const normalizedDate = typeof dateObject?.toDate === 'function'
+    ? dateObject.toDate()
+    : Number.isFinite(Number(dateObject?.seconds))
+      ? new Date(Number(dateObject.seconds) * 1000)
+      : dateObject
+  const date = new Date(normalizedDate)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day}-${month}-${date.getFullYear()} · ${hour}:${minute}`
 }
 
 export function getDayName(dateStr, isMobile) {

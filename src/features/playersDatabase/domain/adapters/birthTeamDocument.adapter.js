@@ -3,9 +3,9 @@
 import {
   buildTeamSeasonDocumentId,
   normalizeTeamIdentity,
-} from '../../model/teamIdentity.model.js'
-import { normalizeTeamStats } from '../../model/teamStats.model.js'
-import { normalizeSeasonIdentity } from '../../model/season.model.js'
+} from '../../model/team/teamIdentity.model.js'
+import { normalizeTeamStats } from '../../model/team/teamStats.model.js'
+import { normalizeSeasonIdentity } from '../../model/shared/season.model.js'
 import { createLifecycle } from '../contracts/lifecycle.contract.js'
 import { createEmptyTeamSeason } from '../contracts/teamSeason.contract.js'
 import {

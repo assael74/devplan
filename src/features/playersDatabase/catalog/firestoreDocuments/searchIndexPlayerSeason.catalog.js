@@ -135,4 +135,6 @@ export const SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT = {
   sourceTarget: '',
 
   updatedAt: null,
+  lastWriteAction: '',
+  lastWriteAt: null,
 };

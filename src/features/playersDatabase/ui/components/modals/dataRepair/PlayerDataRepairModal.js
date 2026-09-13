@@ -15,6 +15,7 @@ export default function PlayerDataRepairModal({
   busy = false,
   error = '',
   contexts = [],
+  auditFinding = null,
   onClose,
   onRepair,
   onTeamOpen,
@@ -35,6 +36,11 @@ export default function PlayerDataRepairModal({
     >
       <Stack spacing={1.25}>
         {error ? <Alert color='danger' variant='soft'>{error}</Alert> : null}
+        {auditFinding ? <Alert color='warning' variant='soft'>
+          <Typography level='title-sm'>תקלה שאומתה באודיט: {auditFinding.title || auditFinding.id}</Typography>
+          {auditFinding.explanation ? <Typography level='body-sm'>{auditFinding.explanation}</Typography> : null}
+          <Typography level='body-xs'>מסמך: {auditFinding.documentId || 'לא ידוע'}{auditFinding.seasonKey ? ` · עונה: ${auditFinding.seasonKey}` : ''}</Typography>
+        </Alert> : null}
         {!busy && !issues.length ? (
           <Alert color='success' variant='soft'>לא נמצאו תקלות בנתונים שנבדקו.</Alert>
         ) : null}

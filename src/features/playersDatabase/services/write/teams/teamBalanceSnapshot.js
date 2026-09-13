@@ -1,6 +1,6 @@
 // src/features/playersDatabase/services/write/teams/teamBalanceSnapshot.js
 
-import { pickDefinedValue } from '../../../model/value.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
 
 import {
   adaptTeamBalanceInput,

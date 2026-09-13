@@ -1,7 +1,7 @@
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
-import { normalizeSeasonIdentity } from '../../../model/season.model.js'
-import { resolveTeamLookupKey } from '../../../model/teamIdentity.model.js'
+import { normalizeSeasonIdentity } from '../../../model/shared/season.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { getPlayerMergeKey } from './teamSeason.model.js'
 import { teamSeasonDocRef, buildTeamSeasonDocumentData } from './teamSeasonDoc.js'
 import {
@@ -11,7 +11,7 @@ import {
 } from './teamDoc.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
-import { buildScoutProfilesSummary } from '../../../model/scoutProfilesSummary.model.js'
+import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
 
 export const buildTeamPlayersScoutProfilesSummary = buildScoutProfilesSummary
 

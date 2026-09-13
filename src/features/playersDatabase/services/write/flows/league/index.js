@@ -44,5 +44,9 @@ export {
 } from './updateLeagueSeasonUrl.flow.js'
 
 export {
+  updateLeagueSeasonSettingsFlow,
+} from './updateLeagueSeasonSettings.flow.js'
+
+export {
   clearLeagueSeasonTeamsFlow,
 } from './clearLeagueSeasonTeams.flow.js'

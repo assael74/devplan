@@ -43,7 +43,7 @@ export const animatedModalSx = {
     overflow: 'hidden',
     borderRadius: 18,
     bgcolor: '#FFFFFF',
-    border: '1px solid #D9E2E8',
+    border: 0,
     boxShadow: '0 26px 80px rgba(16, 43, 64, 0.22)',
   },
 

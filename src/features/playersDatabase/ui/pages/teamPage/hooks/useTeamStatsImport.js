@@ -18,7 +18,7 @@ import {
   enrichStatsRowForPreview,
   findRosterPlayerByValue,
 } from '../logic/teamStatsMatch.logic.js'
-import { normalizePlayerNameValue } from '../../../../model/playerIdentity.model.js'
+import { normalizePlayerNameValue } from '../../../../model/player/playerIdentity.model.js'
 import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 import { buildLeagueTeamPerformanceProjection } from '../../../../services/read/index.js'

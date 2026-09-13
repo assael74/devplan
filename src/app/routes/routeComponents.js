@@ -51,6 +51,15 @@ const loadPlayersDatabaseSearchPage = () =>
     default: module.SearchPage,
   }))
 
+
+const loadPlayersDatabaseClubsPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.ClubsPage,
+  }))
+const loadPlayersDatabaseClubPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.ClubPage,
+  }))
 const loadPlayersDatabaseProfilesPage = () =>
   import('../../features/playersDatabase/index.js').then(module => ({
     default: module.ProfilesPage,
@@ -80,6 +89,8 @@ export const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePag
 export const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
 export const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
 export const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
+export const PlayersDatabaseClubsPage = React.lazy(loadPlayersDatabaseClubsPage)
+export const PlayersDatabaseClubPage = React.lazy(loadPlayersDatabaseClubPage)
 export const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)
 
 export const HubPage = React.lazy(loadHubPage)

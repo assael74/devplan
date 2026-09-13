@@ -21,7 +21,7 @@ import {
   buildSeasonDoc,
   isSameSeason,
 } from './leagueSeason.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
 
 
 import {
@@ -144,6 +144,7 @@ export async function removeLeagueSeason({
   league = {},
   season = {},
   target = 'current',
+  syncMaster = true,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId)
   const seasonId = clean(season.seasonId)
@@ -211,10 +212,12 @@ export async function removeLeagueSeason({
     }
   })
 
-  await syncLeaguesMasterDocument({
-    leagues: result.removedLeagueDocument ? [] : [league],
-    removedLeagueIds: result.removedLeagueDocument ? [leagueId] : [],
-  })
+  if (syncMaster) {
+    await syncLeaguesMasterDocument({
+      leagues: result.removedLeagueDocument ? [] : [league],
+      removedLeagueIds: result.removedLeagueDocument ? [leagueId] : [],
+    })
+  }
 
   return result
 }

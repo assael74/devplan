@@ -19,7 +19,9 @@ import {
   SportsSoccer,
   CrisisAlert,
   AssignmentInd,
-  RemoveCircleOutline
+  RemoveCircleOutline,
+  ArrowCircleUp,
+  ArrowCircleDown,
 } from '@mui/icons-material';
 
 export const performanceIcons = {
@@ -48,4 +50,6 @@ export const performanceIcons = {
   complementaryScorer: <ControlPoint />,
   occasionalScorer: <Adjust />,
   noGoalTarget: <RemoveCircleOutline />,
+  clubLevelAbove: <ArrowCircleUp />,
+  clubLevelBelow: <ArrowCircleDown />,
 };

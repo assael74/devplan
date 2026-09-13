@@ -1,9 +1,9 @@
-import { cleanValue as clean, pickDefinedValue } from '../../model/value.model.js'
+import { cleanValue as clean, pickDefinedValue } from '../../model/shared/value.model.js'
 import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'
 import { adaptPlayerScoutEngineResult } from '../index.js'
 import { buildDbPlayerScoutResult } from '../orchestration/buildDbPlayerScoutResult.js'
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
-import { normalizePlayerStats } from '../../model/playerStats.model.js'
+import { normalizePlayerStats } from '../../model/player/playerStats.model.js'
 import { isProfessionalScoutProfile } from '../../../../shared/scouting/players/profiles.js'
 
 const toNullableNumber = value => (

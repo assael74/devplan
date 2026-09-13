@@ -15,7 +15,7 @@ import {
   isValidExternalPlayerId,
   normalizePlayerIdentity,
   normalizePlayerIdPart,
-} from '../../../model/playerIdentity.model.js'
+} from '../../../model/player/playerIdentity.model.js'
 import {
   buildPlayerIdentityCandidateKeys,
 } from '../../../domain/identity/playerIdentityCandidates.domain.js'

@@ -9,11 +9,13 @@ export default function LeagueDataRepairModal({
   open = false,
   busy = false,
   error = '',
+  auditFinding = null,
   leagueDocument = {},
   leaguesMaster = {},
   seasonKey = '',
   onOpenLeagueLoad,
   onSyncLeaguesMaster,
+  onSyncClubProjections,
   onClose,
 }) {
   const issues = React.useMemo(() => buildLeagueDataRepairIssues({
@@ -21,6 +23,13 @@ export default function LeagueDataRepairModal({
     leaguesMaster,
     seasonKey,
   }), [leagueDocument, leaguesMaster, seasonKey])
+  const selectedSeason = React.useMemo(() => {
+    const current = leagueDocument?.current
+    if (String(current?.seasonKey || current?.seasonId || '') === String(seasonKey || '')) return current
+    return (Array.isArray(leagueDocument?.history) ? leagueDocument.history : [])
+      .find(season => String(season?.seasonKey || season?.seasonId || '') === String(seasonKey || '')) || null
+  }, [leagueDocument, seasonKey])
+  const hasLeagueTable = Array.isArray(selectedSeason?.tableRank) && selectedSeason.tableRank.length > 0
 
   return (
     <RegularModal
@@ -34,6 +43,13 @@ export default function LeagueDataRepairModal({
     >
       <Stack spacing={1.25}>
         {error ? <Typography level='body-sm' color='danger'>{error}</Typography> : null}
+        {auditFinding ? <Sheet variant='soft' color='warning' sx={sx.issueSheet}>
+          <Stack spacing={0.45}>
+            <Typography level='title-sm'>תקלה שאומתה באודיט: {auditFinding.title || auditFinding.id}</Typography>
+            {auditFinding.explanation ? <Typography level='body-sm'>{auditFinding.explanation}</Typography> : null}
+            <Typography level='body-xs'>מסמך: {auditFinding.documentId || 'לא ידוע'}{auditFinding.seasonKey ? ` · עונה: ${auditFinding.seasonKey}` : ''}</Typography>
+          </Stack>
+        </Sheet> : null}
         {issues.length ? issues.map(issue => (
           <Sheet key={issue.title} variant='outlined' sx={sx.issueSheet}>
             <Stack spacing={0.75}>
@@ -67,6 +83,16 @@ export default function LeagueDataRepairModal({
         )) : (
           <Typography level='body-sm'>לא נמצאה בעיית מחזור חיים בעונת הליגה הנבחרת.</Typography>
         )}
+        <Sheet variant='outlined' sx={sx.issueSheet}>
+          <Stack spacing={0.75}>
+            <Typography level='title-sm'>סנכרון קבוצות הליגה למועדונים</Typography>
+            <Typography level='body-sm'>מעדכן רק את מסמכי המועדון ואת Clubs Master מתוך טבלת הליגה הקנונית של העונה הנבחרת. קבוצות ללא Team Season נכללות גם הן.</Typography>
+            <Button size='sm' color='warning' variant='solid' disabled={busy || !hasLeagueTable} sx={sx.actionButton} onClick={onSyncClubProjections}>
+              סנכרן את קבוצות הליגה למועדונים
+            </Button>
+            {!hasLeagueTable ? <Typography level='body-xs'>אין טבלת ליגה זמינה בעונה הנבחרת.</Typography> : null}
+          </Stack>
+        </Sheet>
       </Stack>
     </RegularModal>
   )

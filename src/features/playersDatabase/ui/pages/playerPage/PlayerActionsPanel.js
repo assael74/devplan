@@ -102,7 +102,7 @@ export default function PlayerActionsPanel({
 
       <Box sx={sx.actionList}>
         <Box sx={sx.dataActionsRow}>
-          <Button size='sm' variant='plain' startDecorator={iconUi({id: 'download', size: 'sm'})} sx={sx.actionButton} loading={playerJsonLoading || searchIndexJsonLoading} onClick={event => setDownloadAnchor(event.currentTarget)}>
+          <Button size='sm' variant='plain' startDecorator={iconUi({id: 'dataShow', size: 'sm'})} sx={sx.actionButton} loading={playerJsonLoading || searchIndexJsonLoading} onClick={event => setDownloadAnchor(event.currentTarget)}>
             הורדת נתונים
           </Button>
           <Button size='sm' variant='plain' startDecorator={iconUi({id: 'search', size: 'sm'})} sx={sx.actionButton} onClick={onDataRepair}>
@@ -123,7 +123,7 @@ export default function PlayerActionsPanel({
               onPlayerJson()
             }}
           >
-            {iconUi({id: 'playerDatabase', size: 'sm'})}
+            {iconUi({id: 'dataShow', size: 'sm'})}
             מסמך שחקן
           </MenuItem>
 
@@ -134,7 +134,7 @@ export default function PlayerActionsPanel({
               onTeamJson()
             }}
           >
-            {iconUi({id: 'team', size: 'sm'})}
+            {iconUi({id: 'dataShow', size: 'sm'})}
             JSON שנתון
           </MenuItem>
 
@@ -145,7 +145,7 @@ export default function PlayerActionsPanel({
               onTeamSeasonJson()
             }}
           >
-            {iconUi({id: 'team', size: 'sm'})}
+            {iconUi({id: 'dataShow', size: 'sm'})}
             JSON נתוני קבוצה
           </MenuItem>
 
@@ -156,7 +156,7 @@ export default function PlayerActionsPanel({
               onPlayerSearchIndexJson()
             }}
           >
-            {iconUi({id: 'search', size: 'sm'})}
+            {iconUi({id: 'dataShow', size: 'sm'})}
             אינדקס שחקן
           </MenuItem>
 
@@ -167,7 +167,7 @@ export default function PlayerActionsPanel({
               onTeamSearchIndexJson()
             }}
           >
-            {iconUi({id: 'search', size: 'sm'})}
+            {iconUi({id: 'dataShow', size: 'sm'})}
             אינדקס קבוצה
           </MenuItem>
         </Menu>

@@ -4,6 +4,7 @@ import React from 'react'
 import { Box, Typography, Avatar, IconButton } from '@mui/joy'
 
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { listSx as sx } from '../list.sx.js'
 
 function ColorDot({ active }) {

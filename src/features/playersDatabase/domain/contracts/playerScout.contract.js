@@ -16,7 +16,7 @@ import {
   buildPlayerScoutStatsLoadMeasurementsFromHistory,
   normalizePlayerScoutStatsLoadMeasurementHistory,
   normalizePlayerScoutStatsLoadMeasurements,
-} from '../../model/playerScoutMeasurement.model.js'
+} from '../../model/scout/playerScoutMeasurement.model.js'
 
 const PROFILE_BY_ID = SCOUT_PROFILES.reduce((map, profile) => {
   map[profile.id] = profile

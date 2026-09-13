@@ -1,5 +1,3 @@
-// src/features/playersDatabase/ui/pages/playerPage/sx/playerHeader.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const playerHeaderSx = {
@@ -60,6 +58,7 @@ export const playerHeaderSx = {
     lineHeight: 1,
     whiteSpace: 'nowrap',
   },
+
   teamAvatar: {
     width: 21,
     height: 21,
@@ -101,6 +100,7 @@ export const playerHeaderSx = {
     lineHeight: 1,
     whiteSpace: 'nowrap',
   },
+
   leagueChip: {
     minHeight: 30,
     maxWidth: 290,

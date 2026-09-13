@@ -4,7 +4,7 @@ import { createEmptyCompleteness } from './completeness.contract.js'
 import { createLifecycle } from './lifecycle.contract.js'
 import { createEmptyPlayerScout } from './playerScout.contract.js'
 import { createEmptyTeamScout } from './teamScout.contract.js'
-import { PLAYER_STATS_STATUS } from '../../model/playerStats.model.js'
+import { PLAYER_STATS_STATUS } from '../../model/player/playerStats.model.js'
 
 const createEmptyPlayerStats = () => ({
   games: 0,

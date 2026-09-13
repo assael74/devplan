@@ -73,4 +73,12 @@ export const dataTableBodySx = {
     textAlign: 'center',
     color: devPlanColors.secondary,
   },
+
+  fullWidthMessage: {
+    py: 0.35,
+    textAlign: 'center',
+    color: devPlanColors.secondary,
+    fontSize: 10,
+    fontWeight: 650,
+  },
 }

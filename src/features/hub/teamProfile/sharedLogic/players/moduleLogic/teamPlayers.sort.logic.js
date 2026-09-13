@@ -1,4 +1,4 @@
-﻿// teamProfile/sharedLogic/players/moduleLogic/teamPlayers.sort.logic.js
+// teamProfile/sharedLogic/players/moduleLogic/teamPlayers.sort.logic.js
 
 const safe = (v) => (v == null ? '' : String(v))
 const lower = (v) => safe(v).trim().toLowerCase()

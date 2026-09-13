@@ -7,6 +7,7 @@ export const writeReportModalSx = {
     gap: 1.5,
     minHeight: 0,
   },
+
   summary: {
     display: 'grid',
     gridTemplateColumns: {
@@ -15,20 +16,24 @@ export const writeReportModalSx = {
     },
     gap: 1,
   },
+
   summaryItem: {
     p: 1.25,
     borderRadius: 'sm',
     border: '1px solid',
     borderColor: 'divider',
   },
+
   label: {
     color: 'text.tertiary',
   },
+
   section: {
     display: 'flex',
     flexDirection: 'column',
     gap: 0.75,
   },
+
   tableWrap: {
     overflow: 'auto',
     maxHeight: 280,
@@ -36,6 +41,7 @@ export const writeReportModalSx = {
     borderColor: 'divider',
     borderRadius: 'sm',
   },
+
   technical: {
     m: 0,
     p: 1.25,
@@ -45,6 +51,7 @@ export const writeReportModalSx = {
     wordBreak: 'break-word',
     fontSize: 12,
   },
+
   actions: {
     display: 'flex',
     justifyContent: 'flex-end',

@@ -16,6 +16,19 @@ It answers only five questions:
 The source-of-truth and persistence rules remain in
 [`TEAM_DATA_ARCHITECTURE.md`](./TEAM_DATA_ARCHITECTURE.md).
 
+## Finding timeline and write provenance
+
+Each finding in an Audit result includes `detectedAt`, `firstDetectedAt`,
+`sourceUpdatedAt` and `indexUpdatedAt`. The Audit persists a stable finding
+fingerprint in `dbAuditFindings`; this allows the next run to retain the first
+time a still-open finding was detected.
+
+All writes routed through `runPlayersDatabaseWriteAction` are recorded in
+`dbWriteActions` with the action type, completion time and affected Audit
+scope. The Audit uses that journal to display the latest known action for the
+finding's team and season. This is scope provenance, not proof that one exact
+field caused the mismatch.
+
 ## Boundaries
 
 - Audit does **not** validate Firestore schema, field presence, field type,
@@ -51,6 +64,15 @@ Only these projection comparisons are currently valid:
 | Team SearchIndex balance | Team Season balance | `buildTeamBalanceSearchIndexProjection` |
 | League Master entry and totals | League Documents | `buildLeaguesMasterLeagueEntry` and `buildLeaguesMasterSummary` |
 
+The Team Performance comparison also uses the League Season's compact
+`teamPerformanceContext` so that priority projections are evaluated against
+the same engine version and normalization context as the League load.
+
+The Club-performance audit is evaluated from the canonical League table and
+that context. A refresh after a League Excel reload therefore fills only fields
+whose source exists in the League table; balance and transfers remain checked
+against the Team Season source.
+
 The Team Season keeps a compact scout projection. It does not preserve enough
 source data to reconstruct the full Player SearchIndex scout projection, so
 Audit must not compare those two representations directly.
@@ -85,3 +107,10 @@ source. A new Audit runs after Repair.
 
 The reader loads a complete snapshot before evaluating relations, so the Audit
 does not infer broken relations from a partial data set.
+
+## Club-season identity index
+
+The identity index is an import-preflight projection, not a canonical source
+and not a daily Audit source. It is refreshed after a League-table write and
+can be backfilled by the explicit full Club-projection refresh. Audit must
+derive any identity expectation from League Documents, never from the index.

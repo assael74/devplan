@@ -4,8 +4,8 @@ import { clean } from './teamPage.utils.js'
 import {
   buildPlayerNameVariants,
   normalizePlayerNameValue,
-} from '../../../../model/playerIdentity.model.js'
-import { pickDefinedValue } from '../../../../model/value.model.js'
+} from '../../../../model/player/playerIdentity.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 export const STATS_IDENTITY_STATUS = {
   ROSTER_MATCH: 'roster_match',
   SYSTEM_MATCH: 'system_match',

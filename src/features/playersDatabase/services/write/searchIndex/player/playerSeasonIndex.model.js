@@ -1,17 +1,17 @@
 // features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.model.js
 
 import { serverTimestamp } from 'firebase/firestore'
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 import {
   buildPlayerIdentityKey,
   isValidExternalPlayerId,
   resolvePlayerIdentityBirthYear,
-} from '../../../../model/playerIdentity.model.js'
-import { buildTeamSeasonDocumentId } from '../../../../model/teamIdentity.model.js'
+} from '../../../../model/player/playerIdentity.model.js'
+import { buildTeamSeasonDocumentId } from '../../../../model/team/teamIdentity.model.js'
 import {
   normalizePlayerStats,
   normalizePlayerStatsStatus,
-} from '../../../../model/playerStats.model.js'
+} from '../../../../model/player/playerStats.model.js'
 import {
   buildSeasonKey,
   clean,

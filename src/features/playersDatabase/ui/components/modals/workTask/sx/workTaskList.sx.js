@@ -140,6 +140,7 @@ export const workTaskListSx = {
     color: devPlanColors.secondary,
     lineHeight: 1.2,
   },
+
   metaText: {
     color: devPlanColors.secondary,
     lineHeight: 1.2,

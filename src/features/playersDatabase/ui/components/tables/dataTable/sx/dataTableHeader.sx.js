@@ -70,6 +70,12 @@ export const dataTableHeaderSx = {
     },
   },
 
+  headerActionButtonLabeled: {
+    width: 'auto',
+    minWidth: 70,
+    px: 0.8,
+  },
+
   headerActionButton: {
     width: 28,
     height: 28,

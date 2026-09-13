@@ -1,6 +1,12 @@
 // src/features/playersDatabase/ui/components/modals/sx/regularModal.sx.js
 
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+
 export const regularModalSx = {
+  header: {
+    bgcolor: devPlanColors.primaryLight,
+  },
+
   content: {
     minWidth: 0,
   },

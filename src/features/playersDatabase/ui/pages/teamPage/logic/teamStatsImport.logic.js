@@ -17,7 +17,7 @@ import {
   clean,
   toNumber,
 } from './teamPage.utils.js'
-import { isValidExternalPlayerId } from '../../../../model/playerIdentity.model.js'
+import { isValidExternalPlayerId } from '../../../../model/player/playerIdentity.model.js'
 
 const resolvePlayerIdFromUrl = value => {
   const match = clean(value).match(/[?&]player_id=(\d+)/i)

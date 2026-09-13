@@ -10,12 +10,35 @@ export const leagueHeaderSx = {
     },
   },
 
-
   titleNameRow: {
     minWidth: 0,
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.5,
+  },
+
+  leagueAvatar: {
+    width: {
+      xs: 42,
+      md: 52,
+    },
+    height: {
+      xs: 42,
+      md: 52,
+    },
+    flexShrink: 0,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.primaryLight}`,
+  },
+
+  leagueAvatarLink: {
+    cursor: 'pointer',
+    transition: 'transform 140ms ease, box-shadow 140ms ease',
+
+    '&:hover': {
+      transform: 'scale(1.06)',
+      boxShadow: `0 0 0 3px ${devPlanColors.primaryLight}`,
+    },
   },
 
   pageTitle: {
@@ -44,7 +67,10 @@ export const leagueHeaderSx = {
 
   titleRegion: {
     color: devPlanColors.tertiary,
-    fontSize: { xs: 34, md: 44 },
+    fontSize: {
+      xs: 34,
+      md: 44,
+    },
     fontWeight: 700,
     lineHeight: 1.05,
   },

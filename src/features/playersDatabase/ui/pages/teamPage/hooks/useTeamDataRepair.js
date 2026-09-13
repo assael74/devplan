@@ -2,7 +2,11 @@
 
 import * as React from 'react'
 
-import { readTeamSearchIndexesExport } from '../../../../services/read/index.js'
+import {
+  readSearchIndexExportById,
+  readTeamSearchIndexesExport,
+} from '../../../../services/read/index.js'
+import { readActiveAuditFindingById } from '../../../../services/audit/index.js'
 import { repairTeamDataIssue } from '../../../../services/dataRepair/team/index.js'
 
 const cleanKey = value => String(value || '').trim()
@@ -13,6 +17,7 @@ export default function useTeamDataRepair({
   teamSeasons,
   leagueDoc,
   selectedLeagueSeason,
+  auditFindingId = '',
   notify,
   reload,
 }) {
@@ -21,6 +26,7 @@ export default function useTeamDataRepair({
   const [error, setError] = React.useState('')
   const [teamSearchIndexes, setTeamSearchIndexes] = React.useState([])
   const [indexesLoaded, setIndexesLoaded] = React.useState(false)
+  const [auditFinding, setAuditFinding] = React.useState(null)
 
   const resolveBirthTeamId = React.useCallback(() => cleanKey(
     team.birthTeamId ||
@@ -28,15 +34,27 @@ export default function useTeamDataRepair({
     team.id
   ), [team.birthTeamId, team.id, team.teamDocumentId])
 
-  const refreshIndexes = React.useCallback(async () => {
+  const refreshIndexes = React.useCallback(async ({ finding = auditFinding } = {}) => {
     const birthTeamId = resolveBirthTeamId()
     if (!birthTeamId) return []
 
-    const indexes = await readTeamSearchIndexesExport({ birthTeamId })
+    const referredIndexId = cleanKey(
+      finding?.entityType === 'teamSearchIndex'
+        ? finding?.documentId
+        : ''
+    )
+    // A referral already identifies the exact index. Do not scan every alias
+    // merely to rediscover the document selected in the audit.
+    const referredIndex = referredIndexId
+      ? await readSearchIndexExportById({ documentId: referredIndexId })
+      : null
+    const indexes = referredIndex
+      ? [referredIndex]
+      : await readTeamSearchIndexesExport({ birthTeamId })
     setTeamSearchIndexes(indexes)
     setIndexesLoaded(true)
     return indexes
-  }, [resolveBirthTeamId])
+  }, [auditFinding, resolveBirthTeamId])
 
   const handleOpen = React.useCallback(async () => {
     const birthTeamId = resolveBirthTeamId()
@@ -48,14 +66,18 @@ export default function useTeamDataRepair({
     setIndexesLoaded(false)
 
     try {
-      await refreshIndexes()
+      const finding = cleanKey(auditFindingId)
+        ? await readActiveAuditFindingById({ findingId: auditFindingId })
+        : null
+      setAuditFinding(finding)
+      await refreshIndexes({ finding })
     } catch (repairError) {
       setTeamSearchIndexes([])
       setError(repairError?.message || 'טעינת האינדקסים של הקבוצה נכשלה')
     } finally {
       setBusy(false)
     }
-  }, [refreshIndexes, resolveBirthTeamId])
+  }, [auditFindingId, refreshIndexes, resolveBirthTeamId])
 
   const handleRepair = React.useCallback(async issue => {
     if (busy) return
@@ -111,6 +133,7 @@ export default function useTeamDataRepair({
     error,
     teamSearchIndexes,
     indexesLoaded,
+    auditFinding,
     openRepair: handleOpen,
     repair: handleRepair,
     close: handleClose,

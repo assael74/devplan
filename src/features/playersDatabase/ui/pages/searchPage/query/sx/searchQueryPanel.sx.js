@@ -54,7 +54,6 @@ export const searchQueryPanelSx = {
     },
   }),
 
-
   collapseHeader: expanded => ({
     minHeight: 48,
     px: 1.15,

@@ -8,7 +8,7 @@ import {
   trackedGetDoc,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { resolveWritablePlayerDocumentId } from '../../../model/playerIdentity.model.js'
+import { resolveWritablePlayerDocumentId } from '../../../model/player/playerIdentity.model.js'
 import {
   buildSeasonKey,
   clean,

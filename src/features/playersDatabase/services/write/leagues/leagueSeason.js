@@ -1,7 +1,8 @@
 // features/playersDatabase/services/write/leagues/leagueSeason.js
 
-import { pickDefinedValue } from '../../../model/value.model.js'
-import { normalizeSeasonStatus } from '../../../model/season.model.js'
+import { pickDefinedValue } from '../../../model/shared/value.model.js'
+import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
+import { normalizeCompetitionRules } from '../../../domain/projections/club/clubCompetition.projection.js'
 
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -13,7 +14,7 @@ import {
   leagueDocRef,
   toNumberOrZero,
 } from './leagueDoc.js'
-import { syncLeaguesMasterDocument } from './leaguesMaster.js'
+import { syncLeaguesMasterDocument } from './leaguesMaster.sync.js'
 
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 export { buildSeasonKey } from './leagueDoc.js'
@@ -130,12 +131,19 @@ export async function upsertLeagueSeason({
       season,
       'tableRank'
     )
+    const resolvedLeagueTotalRound = toNumberOrZero(
+      existingSeason?.leagueTotalRound
+    ) || toNumberOrZero(season?.leagueTotalRound)
     const requestedCurrentStatus = clean(season.seasonStatus)
     const seasonDoc = buildSeasonDoc({
       ...(existingSeason || {}),
       ...season,
       seasonId,
       seasonKey,
+      // Upserting a season without schedule metadata must not erase a
+      // canonical schedule that was already persisted for it. Deliberate
+      // schedule edits go through updateLeagueSeasonMeta.
+      leagueTotalRound: resolvedLeagueTotalRound,
       seasonStatus: isHistory
         ? 'completed'
         : ['active', 'not_started'].includes(requestedCurrentStatus)
@@ -249,6 +257,112 @@ export async function updateLeagueSeasonUrl({
   await syncLeaguesMasterDocument({
     leagues: [league],
   })
+
+  return result
+}
+
+export async function updateLeagueSeasonSettings(payload = {}) {
+  const {
+    league = {},
+    season = {},
+    target = 'current',
+  } = payload
+  const leagueId = clean(league.id || season.leagueId)
+  const seasonId = clean(season.seasonId)
+  const resolvedSeasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  if (!leagueId) throw new Error('Missing league id')
+  if (!seasonId) throw new Error('Missing season id')
+
+  const ref = leagueDocRef(leagueId)
+  const hasSeasonUrlPatch = Object.prototype.hasOwnProperty.call(payload, 'seasonUrl')
+  const hasCompetitionRulesPatch = Object.prototype.hasOwnProperty.call(payload, 'competitionRules')
+
+  const result = await trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    const currentData = snapshot.exists() ? snapshot.data() || {} : {}
+    const baseDoc = buildLeagueBaseDoc({
+      ...league,
+      id: leagueId,
+    }, currentData)
+    const isHistory = clean(target) === 'history'
+    const existingSeason = isHistory
+      ? findHistorySeason(baseDoc.history, resolvedSeasonKey)
+      : baseDoc.current || {}
+    const nextSeasonUrl = clean(payload.seasonUrl)
+    const existingRules = normalizeCompetitionRules(existingSeason?.competitionRules || {})
+    const normalizedRules = normalizeCompetitionRules(payload.competitionRules || {})
+    const seasonUrlChanged = hasSeasonUrlPatch && clean(existingSeason?.seasonUrl) !== nextSeasonUrl
+    const competitionRulesChanged = hasCompetitionRulesPatch && (
+      JSON.stringify(existingRules) !== JSON.stringify(normalizedRules)
+    )
+    const patch = {
+      ...(seasonUrlChanged ? { seasonUrl: nextSeasonUrl } : {}),
+      ...(competitionRulesChanged ? { competitionRules: normalizedRules } : {}),
+      ...((seasonUrlChanged || competitionRulesChanged)
+        ? { updatedAt: new Date().toISOString() }
+        : {}),
+    }
+    const nextData = isHistory
+      ? {
+          ...baseDoc,
+          history: updateHistorySeason({
+            history: baseDoc.history,
+            season: {
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            },
+            patch,
+          }),
+        }
+      : {
+          ...baseDoc,
+          current: {
+            ...cleanSeasonComputedFields(baseDoc.current || buildSeasonDoc({
+              ...season,
+              seasonId,
+              seasonKey: resolvedSeasonKey,
+            })),
+            seasonId,
+            seasonKey: resolvedSeasonKey,
+            ...patch,
+          },
+        }
+
+    if (seasonUrlChanged || competitionRulesChanged) {
+      // The active season is a map, so Firestore can merge only the changed
+      // settings. A historical season lives inside an array and must be
+      // replaced as that one array field.
+      transaction.set(ref, isHistory
+        ? { history: nextData.history }
+        : { current: patch }, { merge: true })
+    }
+
+    const seasonDocument = isHistory
+      ? findHistorySeason(nextData.history, resolvedSeasonKey)
+      : nextData.current
+
+    return {
+      leagueId,
+      seasonId,
+      seasonKey: resolvedSeasonKey,
+      seasonUrl: clean(seasonDocument?.seasonUrl),
+      competitionRules: normalizeCompetitionRules(seasonDocument?.competitionRules || {}),
+      seasonDocument,
+      seasonUrlChanged,
+      competitionRulesChanged,
+      changed: seasonUrlChanged || competitionRulesChanged,
+      updated: true,
+      writeSkipped: !seasonUrlChanged && !competitionRulesChanged,
+      target: isHistory ? 'history' : 'current',
+    }
+  })
+
+  if (result.seasonUrlChanged) {
+    await syncLeaguesMasterDocument({
+      leagues: [league],
+    })
+  }
 
   return result
 }

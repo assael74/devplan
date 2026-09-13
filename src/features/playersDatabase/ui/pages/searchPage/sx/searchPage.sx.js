@@ -1,5 +1,3 @@
-// features/playersDatabase/ui/pages/searchPage/sx/SearchPage.sx.js
-
 export const searchPageSx = {
   page: {
       width: '100%',
@@ -21,6 +19,13 @@ export const searchPageSx = {
       gap: 1.25,
       overflow: 'hidden',
     },
-  repairPlanList: { maxHeight: 300, overflowY: 'auto' },
-  repairPlanGroup: { p: 1.25, borderRadius: 'sm' },
+  repairPlanList: {
+    maxHeight: 300,
+    overflowY: 'auto',
+  },
+
+  repairPlanGroup: {
+    p: 1.25,
+    borderRadius: 'sm',
+  },
 }

@@ -27,6 +27,8 @@ import {
   RolesPage,
   ScoutPage,
   PlayerProfilePage,
+  PlayersDatabaseClubsPage,
+  PlayersDatabaseClubPage,
   PlayersDatabaseLeaguePage,
   PlayersDatabaseLeaguesCenterPage,
   PlayersDatabasePage,
@@ -65,6 +67,8 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
       <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
       <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
+      <Route path={ADMIN_ROUTES.playersDatabaseClubs} element={lazyRoute(<PlayersDatabaseClubsPage />)} />
+      <Route path={ADMIN_ROUTES.playersDatabaseClub} element={lazyRoute(<PlayersDatabaseClubPage />)} />
       <Route path={ADMIN_ROUTES.playersDatabaseProfiles} element={lazyRoute(<PlayersDatabaseProfilesPage />)} />
       <Route path={ADMIN_ROUTES.playersDatabaseLegacyScan} element={<Navigate to={ROUTE_REDIRECTS.playersDatabaseSearch} replace />} />
       <Route path={ADMIN_ROUTES.playersDatabaseLeague} element={lazyRoute(<PlayersDatabaseLeaguePage />)} />

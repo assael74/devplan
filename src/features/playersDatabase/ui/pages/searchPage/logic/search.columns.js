@@ -38,12 +38,6 @@ const toNumberOrZero = value => {
   return Number.isFinite(number) ? number : 0
 }
 
-const searchResultLinkSx = {
-  '& [data-link-indicator]': {
-    display: 'none',
-  },
-}
-
 const buildFavoriteColumn = ({ width, onFavoriteToggle }) => ({
   key: 'favorite',
   label: '',
@@ -127,7 +121,7 @@ export function buildPlayerSearchColumns({ onEntityOpen, onFavoriteToggle } = {}
         ...columnSx.nameColumn,
         ...playerColumnWidth('playerName'),
       },
-      linkSx: searchResultLinkSx,
+      linkSx: sx.resultLink,
       getHref: row => row.playerUrl,
       getLinkAriaLabel: row => `פתיחת קישור השחקן ${row.playerName || ''}`,
     },
@@ -281,7 +275,7 @@ export function buildTeamSearchColumns({ onEntityOpen, onFavoriteToggle } = {}) 
         ...columnSx.nameColumn,
         ...teamColumnWidth('teamName'),
       },
-      linkSx: searchResultLinkSx,
+      linkSx: sx.resultLink,
       getHref: row => row.teamUrl,
       getLinkAriaLabel: row => `פתיחת קישור הקבוצה ${row.teamName || ''}`,
     },

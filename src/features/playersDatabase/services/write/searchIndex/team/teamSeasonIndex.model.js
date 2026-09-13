@@ -4,12 +4,12 @@ import { SCOUTING_MODEL_VERSION } from '../../../../../../shared/scouting/scouti
 import { serverTimestamp } from 'firebase/firestore'
 import { adaptTeamScoutEngineRow } from '../../../../domain/index.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
-import { normalizeSeasonIdentity } from '../../../../model/season.model.js'
+import { normalizeSeasonIdentity } from '../../../../model/shared/season.model.js'
 import {
   normalizeTeamIdentity,
   resolveTeamLookupKey,
-} from '../../../../model/teamIdentity.model.js'
-import { normalizeTeamStats } from '../../../../model/teamStats.model.js'
+} from '../../../../model/team/teamIdentity.model.js'
+import { normalizeTeamStats } from '../../../../model/team/teamStats.model.js'
 import {
   buildSeasonKey,
   clean,
@@ -24,7 +24,7 @@ import {
   resolveClubStrengthLevel,
 } from '../../shared/teamClubContext.js'
 
-import { pickDefinedValue } from '../../../../model/value.model.js'
+import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 export const normalizeText = value =>
   clean(value).toLowerCase()
 

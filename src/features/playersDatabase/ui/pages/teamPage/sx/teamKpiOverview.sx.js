@@ -8,13 +8,18 @@ export const teamKpiOverviewSx = {
     gap: 1.25,
     alignItems: 'stretch',
   },
+
   performanceSection: {
     minWidth: 0,
-    p: { xs: 1.25, md: 1.5 },
+    p: {
+      xs: 1.25,
+      md: 1.5,
+    },
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 10,
     bgcolor: devPlanColors.surface,
   },
+
   performanceHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -22,11 +27,13 @@ export const teamKpiOverviewSx = {
     gap: 1,
     mb: 0.75,
   },
+
   performanceTitleRow: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.65,
   },
+
   performanceTitleIcon: {
     display: 'grid',
     placeItems: 'center',
@@ -41,11 +48,13 @@ export const teamKpiOverviewSx = {
       fontSize: 14,
     },
   },
+
   performanceTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 15,
     fontWeight: 800,
   },
+
   performanceMeta: {
     color: devPlanColors.secondary,
     fontSize: 11,
@@ -56,22 +65,26 @@ export const teamKpiOverviewSx = {
       lg: 'repeat(3, minmax(0, 1fr))',
     },
   },
+
   positionTimeline: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.35,
     minHeight: 32,
   },
+
   positionTimelineEntry: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.35,
   },
+
   positionTimelineArrow: {
     display: 'inline-flex',
     color: devPlanColors.secondary,
     opacity: 0.65,
   },
+
   positionCurrent: {
     minWidth: 28,
     minHeight: 30,
@@ -83,24 +96,28 @@ export const teamKpiOverviewSx = {
     lineHeight: 1,
     fontWeight: 800,
   },
+
   priorityTimeline: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.35,
     minHeight: 32,
   },
+
   priorityCurrentGroup: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.5,
     minHeight: 32,
   },
+
   priorityCurrentScore: {
     color: devPlanColors.primaryDark,
     fontSize: 26,
     fontWeight: 800,
     lineHeight: 1,
   },
+
   priorityPrevious: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -108,6 +125,7 @@ export const teamKpiOverviewSx = {
     minWidth: 19,
     minHeight: 24,
   },
+
   priorityPreviousScore: {
     color: devPlanColors.secondary,
     fontSize: 16,
@@ -125,7 +143,3 @@ export const teamKpiOverviewSx = {
     fontWeight: 700,
   },
 }
-
-
-
-

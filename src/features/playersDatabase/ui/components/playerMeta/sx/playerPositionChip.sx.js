@@ -29,7 +29,9 @@ export const playerPositionChipSx = {
       color: selected ? devPlanColors.petrol : devPlanColors.secondary,
       fontSize: compact ? 12 : undefined,
     },
-    '& .MuiChip-endDecorator': { fontSize: compact ? 12 : undefined },
+    '& .MuiChip-endDecorator': {
+      fontSize: compact ? 12 : undefined,
+    },
     '&:hover': clickable
       ? {
           bgcolor: selected ? 'rgba(43, 124, 130, 0.14)' : 'neutral.100',

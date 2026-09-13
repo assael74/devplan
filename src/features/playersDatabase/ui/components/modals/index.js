@@ -2,10 +2,10 @@
 
 export { default as ConfirmModal } from './ConfirmModal.js'
 export { default as CreateSeasonModal } from './CreateSeasonModal.js'
+export { default as JsonViewerModal } from './JsonViewerModal.js'
 export { default as PlayerRoleEditModal } from './PlayerRoleEditModal.js'
 export { default as PlayerDatabaseAuditModal } from './PlayerDatabaseAuditModal.js'
 export { default as PlayerScoutReviewModal } from './PlayerScoutReviewModal.js'
-export { default as PlayerNarrativeModal } from './PlayerNarrativeModal.js'
 export { default as RegularModal } from './RegularModal.js'
 export { default as ReportNameModal } from './ReportNameModal.js'
 export { default as RosterIdentityModal } from './RosterIdentityModal.js'
