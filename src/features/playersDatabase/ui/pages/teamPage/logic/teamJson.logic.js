@@ -20,21 +20,30 @@ const downloadJson = (data = {}, fileName = 'data') => {
   URL.revokeObjectURL(url)
 }
 
-export const downloadTeamDataBundleJson = ({
+export const buildTeamDataBundleJson = ({
   teamDocument = {},
   teamSeasons = [],
   teamSearchIndexes = [],
+  documentLoadState = null,
+  teamPageData = null,
 } = {}) => {
+  return {
+    exportedAt: new Date().toISOString(),
+    documentLoadState,
+    teamPageData,
+    team: teamDocument,
+    teamSeasons,
+    teamSearchIndexes,
+  }
+}
+
+export const downloadTeamDataBundleJson = (input = {}) => {
+  const teamDocument = input.teamDocument || {}
   const teamId = safeFilePart(
     teamDocument.birthTeamId ||
     teamDocument.teamId ||
     teamDocument.id
   )
 
-  downloadJson({
-    exportedAt: new Date().toISOString(),
-    team: teamDocument,
-    teamSeasons,
-    teamSearchIndexes,
-  }, `team-data-${teamId}`)
+  downloadJson(buildTeamDataBundleJson(input), `team-data-${teamId}`)
 }

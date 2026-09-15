@@ -35,6 +35,10 @@ import {
   shouldHavePlayerDocument,
 } from './scoutingPlayerLifecycle.model.js'
 import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
+import {
+  buildPlayerScoutState,
+  isScoutCalculationExcludedRosterStatus,
+} from '../../../domain/orchestration/buildPlayerScoutState.js'
 
 import {
   trackedGetDocs,
@@ -97,7 +101,13 @@ const buildCompatibleTracking = data => {
   }
 }
 
-export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}, target = 'current', player = {} } = {}) => {
+export const clearExistingPlayerSeasonProfiles = async ({
+  season = {},
+  team = {},
+  target = 'current',
+  player = {},
+  retainPlayerDocument = false,
+} = {}) => {
   const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
   const seasonId = clean(season.seasonId)
   if (!playerDocumentId) return {
@@ -213,7 +223,14 @@ export const clearExistingPlayerSeasonProfiles = async ({ season = {}, team = {}
         : { current: Array.isArray(currentData.current) ? currentData.current : [] }),
     }
 
-    if (!shouldHavePlayerDocument(nextPlayerDocument)) {
+    const hasRetainedSeasonHistory = (
+      currentWithoutSeason.length > 0 ||
+      historyWithoutSeason.length > 0
+    )
+    if (
+      !shouldHavePlayerDocument(nextPlayerDocument) &&
+      (!retainPlayerDocument || !hasRetainedSeasonHistory)
+    ) {
       transaction.delete(ref)
       return {
         playerDocumentId,
@@ -291,6 +308,7 @@ export async function upsertProfiledPlayerDocsMany({
   teamSeasonDocument = null,
 } = {}) {
   const profiledPlayers = (Array.isArray(players) ? players : [])
+    .filter(player => !isScoutCalculationExcludedRosterStatus(player))
     .filter(hasPlayerScoutProfiles)
   const results = []
 
@@ -323,6 +341,48 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   teamSeasonDocument = null,
   verificationAnswers = null,
 } = {}) {
+  // A retired player remains in the Team Season roster for historical
+  // completeness, but must not become a tracked/scouted Player document.
+  // Returning the cleared scout state is important: the caller uses it to
+  // clear a previously calculated profile from the Team Season projection.
+  if (isScoutCalculationExcludedRosterStatus(player)) {
+    const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
+    const existingPlayerDocumentIds = playerDocumentId
+      ? await resolveExistingPlayerDocumentIds([{
+          ...player,
+          playerDocumentId,
+        }])
+      : new Set()
+    const playerDocumentExists = existingPlayerDocumentIds.has(playerDocumentId)
+    const cleared = playerDocumentExists
+      ? await clearExistingPlayerSeasonProfiles({
+          season,
+          team,
+          target,
+          retainPlayerDocument: true,
+          player: {
+            ...player,
+            playerDocumentId,
+          },
+        })
+      : {
+          skipped: true,
+          reason: 'retiredPlayerDocumentNotCreated',
+        }
+
+    return {
+      ...cleared,
+      playerDocumentId,
+      created: false,
+      scoutProfilesCount: 0,
+      lifecycle: 'retired',
+      scoutedPlayer: {
+        ...buildPlayerScoutState({ player, team, season }),
+        ...(playerDocumentExists ? { playerDocumentId } : {}),
+      },
+    }
+  }
+
   return upsertProfiledPlayerDoc({
     season,
     team,
@@ -351,6 +411,7 @@ export async function syncPlayerScoutProfileDocsMany({
     ? await resolveExistingPlayerDocumentIds(lookupPlayers)
     : new Set()
   const playersToSync = safePlayers.filter(player => (
+    isScoutCalculationExcludedRosterStatus(player) ||
     hasPlayerScoutProfiles(player) ||
     Boolean(resolveTrackingDocReason(player)) ||
     Boolean(clean(player.playerDocumentId)) ||

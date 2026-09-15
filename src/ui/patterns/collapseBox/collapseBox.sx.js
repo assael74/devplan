@@ -1,7 +1,8 @@
 export const collapseBoxSx = {
-  header: (open, disabled = false) => ({
-    px: 1.25,
-    py: 0.75,
+  header: (open, disabled = false, disableHover = false) => ({
+    pr: 1.25,
+    py: 0.5,
+    pl: 0.5,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -16,10 +17,12 @@ export const collapseBoxSx = {
     userSelect: 'none',
     opacity: disabled ? 0.55 : 1,
     transition: 'background-color .16s ease, color .16s ease',
-    '&:hover': {
-      bgcolor: disabled ? open ? 'background.level1' : 'transparent' : 'background.level1',
-      color: disabled ? (open ? 'text.primary' : 'text.secondary') : 'text.primary',
-    },
+    ...(disableHover ? {} : {
+      '&:hover': {
+        bgcolor: disabled ? open ? 'background.level1' : 'transparent' : 'background.level1',
+        color: disabled ? (open ? 'text.primary' : 'text.secondary') : 'text.primary',
+      },
+    }),
     '&:focus-visible': {
       outline: '2px solid',
       outlineColor: 'primary.400',

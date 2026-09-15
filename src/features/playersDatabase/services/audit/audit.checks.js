@@ -24,11 +24,12 @@ import {
   appendPlayerDocumentAuditFindings,
 } from './checks/auditPlayer.checks.js'
 import { appendSearchIndexAuditFindings } from './checks/auditSearchIndex.checks.js'
+import { appendWriteRecoveryAuditFindings } from './checks/auditWriteRecovery.checks.js'
 
 export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
   const normalizedScope = normalizeAuditScope(scope)
   const snapshot = await readPlayerDatabaseAuditSnapshot({ scope: normalizedScope })
-  const { leagues, leaguesMaster, clubs, clubsMaster, teams, teamSeasons, players, favorites, searchIndexes } = snapshot.rows
+  const { leagues, leaguesMaster, clubs, clubsMaster, teams, teamSeasons, players, favorites, searchIndexes, writeActions } = snapshot.rows
   const rootsById = new Map(teams.map(row => [row.id, row.data]))
   const teamSeasonsByTeamSeasonKey = new Map(teamSeasons.map(row => [keyOf(row.data), row.data]))
   const playerDocsById = new Map(players.map(row => [row.id, row.data]))
@@ -58,6 +59,7 @@ export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
     teamIndexes,
     playerIndexes,
     favoriteIds,
+    writeActions,
     findings,
     lifecycle,
     helpers: auditHelpers,
@@ -86,6 +88,7 @@ export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
 
   appendPlayerDocumentAuditFindings(context)
   appendSearchIndexAuditFindings(context)
+  appendWriteRecoveryAuditFindings(context)
   const detectedAt = snapshot.generatedAt
   const timelineFindings = attachFindingTimeline({
     findings: uniqueFindings(findings),

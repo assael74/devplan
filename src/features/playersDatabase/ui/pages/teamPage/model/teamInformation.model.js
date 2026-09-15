@@ -98,6 +98,7 @@ export const buildTeamInformationView = ({
   selectedSeasonOption = null,
   seasonOptions = [],
   players = [],
+  playerIdsFilter = null,
 } = {}) => {
   const previousSeason = findPreviousSeason({ teamSeasons, selectedSeasonKey })
   const balance = buildBalance({ seasonDoc: selectedTeamSeason })
@@ -105,6 +106,7 @@ export const buildTeamInformationView = ({
   const positionClassificationRows = buildPositionClassificationRows({
     seasonDoc: selectedTeamSeason,
     players,
+    playerIdsFilter,
   })
   const lineInterpretation = selectedTeamSeason
     ? buildTeamLineInterpretationState({
@@ -127,8 +129,8 @@ export const buildTeamInformationView = ({
     lineInterpretation,
     performance: buildPerformance(team),
     seasonTimeline: buildSeasonTimeline({ team, teamSeasons, selectedSeasonKey, selectedSeasonOption }),
-    developmentTimeline: buildDevelopmentTimeline({ team, teamSeasons, seasonOptions, selectedSeasonKey, selectedSeasonOption }),
-    yearDevelopment: buildYearDevelopmentOverview({ team, teamSeasons, seasonOptions, selectedSeasonKey, selectedSeasonOption }),
+    developmentTimeline: buildDevelopmentTimeline({ team, teamSeasons, seasonOptions }),
+    yearDevelopment: buildYearDevelopmentOverview({ team, teamSeasons, seasonOptions }),
     offensePriorityTimeline: buildPriorityTimeline({
       side: 'offense', team, teamSeasons, selectedSeasonKey, selectedSeasonOption,
     }),

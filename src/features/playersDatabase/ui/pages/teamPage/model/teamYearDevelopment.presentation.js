@@ -1,12 +1,12 @@
 import { resolveScoutProfileDefinition } from '../../../../../../shared/scouting/players/profiles.js'
 
 export const TEAM_YEAR_METRICS = Object.freeze([
-  { key: 'tableRank', label: 'מיקום בטבלה', iconId: 'league', presentation: 'tableRank' },
+  { key: 'tableRank', label: 'מיקום בטבלה', iconId: 'league', presentation: 'tableRank', betterDirection: 'lower' },
   { key: 'games', label: 'משחקים', iconId: 'gamesCount' },
   { key: 'goalsForPerGame', label: 'שערים למשחק', iconId: 'goals', decimal: true },
-  { key: 'goalsAgainstPerGame', label: 'ספיגה למשחק', iconId: 'defensive', decimal: true },
-  { key: 'tableAttackRank', label: 'דירוג התקפה', iconId: 'offensive', priorityKey: 'offensePriorityLevel' },
-  { key: 'tableDefenseRank', label: 'דירוג הגנה', iconId: 'defensive', priorityKey: 'defensePriorityLevel' },
+  { key: 'goalsAgainstPerGame', label: 'ספיגה למשחק', iconId: 'defensive', decimal: true, betterDirection: 'lower' },
+  { key: 'tableAttackRank', label: 'תיעדוף התקפה', iconId: 'offensive', priorityKey: 'offensePriorityLevel' },
+  { key: 'tableDefenseRank', label: 'תיעדוף הגנה', iconId: 'defensive', priorityKey: 'defensePriorityLevel' },
 ])
 
 export const LINE_DISTRIBUTION_COLORS = Object.freeze({

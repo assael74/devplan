@@ -15,12 +15,14 @@ import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 export default function useTeamRosterImport({
   leagueId,
   leagueDoc,
+  leagueDocuments = [],
   team,
-  selectedSeasonOption,
+  seasonOptions = [],
   notify,
   reload,
 }) {
   const [open, setOpen] = React.useState(false)
+  const [selectedSeasonOptionKey, setSelectedSeasonOptionKey] = React.useState('')
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
@@ -34,14 +36,36 @@ export default function useTeamRosterImport({
     error: '',
   })
 
+  const selectedSeasonOption = React.useMemo(() => (
+    seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
+  ), [seasonOptions, selectedSeasonOptionKey])
+  const actionLeagueId = selectedSeasonOption?.leagueId || leagueId
+  const actionLeagueDoc = React.useMemo(() => (
+    leagueDocuments.find(document => (
+      String(document?.id || document?.leagueId || '').trim() === String(actionLeagueId || '').trim()
+    )) || leagueDoc
+  ), [actionLeagueId, leagueDoc, leagueDocuments])
+
   const buildSeason = React.useCallback(() => ({
     ...(selectedSeasonOption?.season || {}),
-    leagueId,
+    leagueId: actionLeagueId,
     ageGroupId: team.ageGroupId,
     birthYear: team.birthYear,
     seasonId: selectedSeasonOption?.seasonId,
     seasonKey: selectedSeasonOption?.seasonKey,
-  }), [leagueId, selectedSeasonOption, team.ageGroupId, team.birthYear])
+  }), [actionLeagueId, selectedSeasonOption, team.ageGroupId, team.birthYear])
+
+  const selectSeasonOption = React.useCallback(optionKey => {
+    setSelectedSeasonOptionKey(optionKey)
+    setRows([])
+  }, [])
+
+  const openModal = React.useCallback(() => {
+    setSelectedSeasonOptionKey('')
+    setPasteValue('')
+    setRows([])
+    setOpen(true)
+  }, [])
 
   const parse = React.useCallback(async () => {
     const parsedRows = parsePlayerRosterRows(pasteValue)
@@ -246,7 +270,11 @@ export default function useTeamRosterImport({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
         payload: {
           target: selectedSeasonOption.target,
-          league: leagueDoc || { id: leagueId },
+          league: {
+            ...(actionLeagueDoc || {}),
+            id: actionLeagueId,
+            leagueId: actionLeagueId,
+          },
           season: buildSeason(),
           team,
           players: rows,
@@ -282,8 +310,8 @@ export default function useTeamRosterImport({
   }, [
     buildSeason,
     hasIdentityErrors,
-    leagueDoc,
-    leagueId,
+    actionLeagueDoc,
+    actionLeagueId,
     notify,
     reload,
     rows,
@@ -293,12 +321,16 @@ export default function useTeamRosterImport({
 
   return {
     open,
+    seasonOptions,
+    selectedSeasonOptionKey,
+    selectedSeasonOption,
     pasteValue,
     rows,
     busy,
     writeReport,
     hasIdentityErrors,
-    setOpen,
+    openModal,
+    selectSeasonOption,
     setPasteValue,
     clearPaste,
     parse,

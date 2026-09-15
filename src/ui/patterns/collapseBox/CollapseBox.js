@@ -11,9 +11,14 @@ function handleCollapseKeyDown(event, onToggle) {
   onToggle?.(event)
 }
 
+function asSxArray(value) {
+  return Array.isArray(value) ? value : [value]
+}
+
 export default function CollapseBox({
   open = false,
   disabled = false,
+  disableHover = false,
   onToggle,
   title,
   subtitle,
@@ -41,7 +46,7 @@ export default function CollapseBox({
         tabIndex={disabled ? -1 : 0}
         aria-expanded={open}
         aria-disabled={disabled || undefined}
-        sx={[sx.header(open, disabled), headerSx]}
+        sx={[sx.header(open, disabled, disableHover), ...asSxArray(headerSx)]}
         onClick={disabled ? undefined : onToggle}
         onKeyDown={disabled ? undefined : event => handleCollapseKeyDown(event, onToggle)}
       >
@@ -52,14 +57,14 @@ export default function CollapseBox({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
           {headerRight ? <Box>{headerRight}</Box> : null}
 
-          <Box sx={[sx.indicator(open), indicatorSx]}>
+          <Box sx={[sx.indicator(open), ...asSxArray(indicatorSx)]}>
             {iconUi({ id: iconId, size: 'sm' })}
           </Box>
         </Box>
       </Box>
 
-      <Box sx={[sx.content(open), contentSx]}>
-        <Box sx={[sx.inner, innerSx]}>
+      <Box sx={[sx.content(open), ...asSxArray(contentSx)]}>
+        <Box sx={[sx.inner, ...asSxArray(innerSx)]}>
           {children}
         </Box>
       </Box>

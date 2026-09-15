@@ -20,7 +20,10 @@ export const teamPositionClassificationTableSx = {
   },
 
   sectionEmbedded: {
-    p: 0,
+    p: {
+      xs: 0,
+      md: 0,
+    },
     border: 0,
     borderRadius: 0,
     bgcolor: 'transparent',
@@ -81,9 +84,21 @@ export const teamPositionClassificationTableSx = {
     borderRadius: 8,
   },
 
+  tableContainer: {
+    minWidth: 0,
+  },
+
+  tableToolbar: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    pt: 0,
+    pb: 0.75,
+  },
+
   tableWrapEmbedded: {
-    width: 'calc(100% + 24px)',
-    mx: -1.5,
+    width: '100%',
+    maxWidth: '100%',
+    mx: 0,
   },
 
   table: {

@@ -125,12 +125,70 @@ export const teamYearDevelopmentSharedSx = {
     },
   },
 
+  seasonSummaryChip: {
+    maxWidth: '100%',
+    px: 0.6,
+    py: 0.15,
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 99,
+    bgcolor: devPlanColors.secondaryLight,
+    color: devPlanColors.primaryDark,
+  },
+
+  seasonSummary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.35,
+    minWidth: 0,
+    whiteSpace: 'nowrap',
+  },
+
+  seasonSummaryChipAgeGroup: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    alignSelf: 'center',
+    color: devPlanColors.secondary,
+    fontSize: 10,
+    fontWeight: 700,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  },
+
+  seasonSummaryChipContent: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.4,
+    minWidth: 0,
+    whiteSpace: 'nowrap',
+  },
+
+  seasonSummaryChipLevel: {
+    fontSize: 9,
+  },
+
+  seasonSummaryChipLeague: {
+    gap: 0,
+  },
+
+  seasonSummaryChipSeparator: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: 900,
+  },
+
+  seasonSummaryChipText: {
+    color: devPlanColors.primaryDark,
+    fontSize: 10.5,
+    fontWeight: 800,
+    whiteSpace: 'nowrap',
+  },
+
   header: {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
-    mb: 0.75,
+    mb: 2,
   },
 
   section: {

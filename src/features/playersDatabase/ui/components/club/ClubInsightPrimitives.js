@@ -9,10 +9,10 @@ const displayCount = value => (
 )
 
 const pathStatusTooltip = node => [
-  node.hasLeagueLevelDecline
+  node.hasCrossAgePathLevelDecline
     ? `ירידה ברמת הליגה ביחס ל${node.comparisonAgeGroupLabel}`
     : '',
-  node.hasLeagueLevelIncrease
+  node.hasCrossAgePathLevelIncrease
     ? `עלייה ברמת הליגה ביחס ל${node.comparisonAgeGroupLabel}`
     : '',
   node.clubLevelDirection === 'above'
@@ -22,18 +22,18 @@ const pathStatusTooltip = node => [
       : '',
 ].filter(Boolean).join('. ')
 
-const renderPath = path => (
-  <Box sx={sx.pathLine}>
+const renderPath = (path, compact = false) => (
+  <Box sx={[sx.pathLine, compact && sx.pathLineCompact]}>
     {path.map((node, index) => (
       <Box
         key={`${node.birthYear}-${index}`}
-        sx={sx.pathLine}
+        sx={[sx.pathLine, compact && sx.pathLineCompact]}
       >
-          <Box sx={sx.pathNode}>
-            <Box component='span' sx={sx.pathYear}>
+          <Box sx={[sx.pathNode, compact && sx.pathNodeCompact]}>
+            <Box component='span' sx={[sx.pathYear, compact && sx.pathYearCompact]}>
             {node.ageGroupLabel}
           </Box>
-          <Box component='span' sx={sx.pathBirthYear}>
+          <Box component='span' sx={[sx.pathBirthYear, compact && sx.pathBirthYearCompact]}>
             {node.birthYear || '?'}
           </Box>
           <Box sx={sx.pathLevelRow}>
@@ -42,11 +42,11 @@ const renderPath = path => (
                 level={node.level}
                 showLevel
                 showName={false}
-                fontSize={16}
-                levelFontSize={14}
-                levelSx={node.hasLeagueLevelIncrease
+                fontSize={compact ? 14 : 16}
+                levelFontSize={compact ? 12 : 14}
+                levelSx={node.hasCrossAgePathLevelIncrease
                   ? sx.pathLeagueLevelIncrease
-                  : node.hasLeagueLevelDecline
+                  : node.hasCrossAgePathLevelDecline
                     ? sx.pathLeagueLevelDecline
                     : null}
               />
@@ -88,7 +88,7 @@ const renderPath = path => (
   </Box>
 )
 
-export function LeaguePath({ model, showSecondary = true, sx: rootSx }) {
+export function LeaguePath({ model, showSecondary = true, compact = false, sx: rootSx }) {
   if (!model?.primary?.length && !(showSecondary && model?.secondary?.length)) {
     return (
       <Typography level='body-xs' sx={sx.metricItem}>
@@ -99,14 +99,14 @@ export function LeaguePath({ model, showSecondary = true, sx: rootSx }) {
 
   return (
     <Box sx={[sx.path, rootSx]}>
-      {model.primary?.length ? renderPath(model.primary) : null}
+      {model.primary?.length ? renderPath(model.primary, compact) : null}
 
       {showSecondary ? model.secondary?.map(item => (
         <Box key={item.slot} sx={sx.pathLine}>
           <Typography level='body-xs' sx={sx.metricLabel}>
             {`קבוצה ${item.slot}`}
           </Typography>
-          {renderPath(item.path)}
+          {renderPath(item.path, compact)}
         </Box>
       )) : null}
     </Box>

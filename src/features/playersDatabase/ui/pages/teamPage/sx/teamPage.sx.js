@@ -38,6 +38,31 @@ export const teamPageSx = {
     gap: 1,
   },
 
+  viewTab: {
+    minHeight: 36,
+    px: 1.5,
+    bgcolor: '#E2E8EC',
+    color: devPlanColors.secondary,
+    border: `1px solid ${devPlanColors.secondary}`,
+    fontWeight: 800,
+    '&:hover': {
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.secondary,
+    },
+  },
+
+  viewTabActive: {
+    backgroundColor: '#465967 !important',
+    color: `${devPlanColors.surface} !important`,
+    borderColor: '#465967 !important',
+    boxShadow: '0 2px 6px rgba(17, 24, 39, 0.24)',
+    '&:hover': {
+      backgroundColor: `${devPlanColors.secondary} !important`,
+      borderColor: `${devPlanColors.secondary} !important`,
+      color: `${devPlanColors.surface} !important`,
+    },
+  },
+
   seasonPath: {
     minWidth: 0,
     display: 'flex',

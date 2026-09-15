@@ -4,7 +4,7 @@ import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'
 import playerImage from '../../../../../ui/core/images/playerImage.jpg'
 import { directionPresentation, linePresentation } from './model/teamYearDevelopment.presentation.js'
-import { SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
+import { SeasonSummaryChip, SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
 import { teamYearDevelopmentSharedSx } from './sx/teamYearDevelopmentShared.sx.js'
 import { teamYearMovementsSectionSx } from './sx/teamYearMovementsSection.sx.js'
 
@@ -30,7 +30,7 @@ export default function TeamYearMovementsSection({ seasons = [], openSeasonKey =
             .filter(item => item.count > 0)
           const headerLeft = (
             <Box sx={sx.evolutionCollapseSummary}>
-              <Typography sx={sx.evolutionCollapseSeason}>{season.seasonKey}</Typography>
+              <SeasonSummaryChip season={season} />
               {season.isUpcoming ? <Typography sx={sx.evolutionCollapseEmptySummary}>טרם החלה</Typography> : (
                 <SummaryFacts>
                   <SummaryChip iconId='rosterLeft' label='עזבו' value={season.leftCount} />

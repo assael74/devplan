@@ -109,10 +109,30 @@ const resolveItemState = ({ structure, item }) => {
 export default function TeamScoutingSummary({
   structure = null,
   title = 'תמונת סקאוטינג',
+  titleMeta = null,
   selectedFilter = null,
   onFilterChange,
 }) {
-  if (!structure || structure.availability === 'unavailable') return null
+  const unavailableMessage = !structure
+    ? 'לא נטענו עדיין שחקנים לעונה זאת.'
+    : structure.availabilityReason === 'season_sample_insufficient'
+      ? 'אין עדיין מספיק נתונים — ניתוח חלוקת הדקות יהיה זמין לאחר 8 משחקי ליגה.'
+      : 'לא נטענו עדיין נתוני סטטיסטיקה לעונה זאת.'
+
+  if (!structure || structure.availability === 'unavailable') {
+    return (
+      <Box sx={sx.section}>
+        <Box sx={sx.header}>
+          <Box sx={sx.titleRow}>
+            <Box sx={sx.titleIcon}>{iconUi({ id: 'scouting', size: 'sm' })}</Box>
+            <Typography sx={sx.title}>{title}</Typography>
+            {titleMeta}
+          </Box>
+        </Box>
+        <Typography sx={sx.meta}>{unavailableMessage}</Typography>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={sx.section}>
@@ -120,6 +140,7 @@ export default function TeamScoutingSummary({
         <Box sx={sx.titleRow}>
           <Box sx={sx.titleIcon}>{iconUi({ id: 'scouting', size: 'sm' })}</Box>
           <Typography sx={sx.title}>{title}</Typography>
+          {titleMeta}
         </Box>
       </Box>
 

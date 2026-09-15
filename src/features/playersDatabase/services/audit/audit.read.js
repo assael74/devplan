@@ -51,6 +51,15 @@ const readSearchIndexesForTeam = async teamDocumentId => {
   }
 }
 
+// Recovery records are exceptional and therefore stay small. Querying only
+// active records keeps a Team/Season Audit narrow without reading successful
+// writes from the normal journal.
+const readActiveWriteRecoveryActions = async () => {
+  const source = collection(db, PLAYERS_DATABASE_COLLECTIONS.writeActions)
+  const snapshot = await getDocs(query(source, where('recoveryRequired', '==', true)))
+  return { rows: toRows(snapshot.docs), readsUsed: snapshot.size }
+}
+
 const readScopedSnapshot = async scope => {
   const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
   const teamIds = [...new Set(scopes.map(item => item.teamDocumentId))]
@@ -88,12 +97,14 @@ const readScopedSnapshot = async scope => {
     collectionName: PLAYERS_DATABASE_COLLECTIONS.favorites,
     ids: ['players'],
   })
+  const writeActionsResult = await readActiveWriteRecoveryActions()
 
   return {
     generatedAt: new Date().toISOString(),
     readsUsed: rootResult.readsUsed + seasonResult.readsUsed +
       indexResults.reduce((total, result) => total + result.readsUsed, 0) +
-      playerResult.readsUsed + leagueResult.readsUsed + favoritesResult.readsUsed,
+      playerResult.readsUsed + leagueResult.readsUsed + favoritesResult.readsUsed +
+      writeActionsResult.readsUsed,
     rows: {
       leagues: leagueResult.rows,
       leaguesMaster: [],
@@ -104,6 +115,7 @@ const readScopedSnapshot = async scope => {
       players: playerResult.rows,
       favorites: favoritesResult.rows,
       searchIndexes,
+      writeActions: writeActionsResult.rows,
     },
   }
 }
@@ -115,18 +127,28 @@ export async function readPlayerDatabaseAuditSnapshot({ scope } = {}) {
   if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) {
     return readScopedSnapshot(normalizedScope)
   }
-  const entries = await Promise.all([
-    ['leagues', PLAYERS_DATABASE_COLLECTIONS.leagues],
-    ['leaguesMaster', PLAYERS_DATABASE_COLLECTIONS.leaguesMaster],
-    ['clubs', PLAYERS_DATABASE_COLLECTIONS.clubs],
-    ['clubsMaster', PLAYERS_DATABASE_COLLECTIONS.clubsMaster],
-    ['teams', PLAYERS_DATABASE_COLLECTIONS.teams],
-    ['teamSeasons', PLAYERS_DATABASE_COLLECTIONS.teamSeasons],
-    ['players', PLAYERS_DATABASE_COLLECTIONS.players],
-    ['favorites', PLAYERS_DATABASE_COLLECTIONS.favorites],
-    ['searchIndexes', PLAYERS_DATABASE_COLLECTIONS.searchIndexes],
-  ].map(async ([key, collectionName]) => [key, await readCollection(collectionName)]))
+  const [entries, writeActionsResult] = await Promise.all([
+    Promise.all([
+      ['leagues', PLAYERS_DATABASE_COLLECTIONS.leagues],
+      ['leaguesMaster', PLAYERS_DATABASE_COLLECTIONS.leaguesMaster],
+      ['clubs', PLAYERS_DATABASE_COLLECTIONS.clubs],
+      ['clubsMaster', PLAYERS_DATABASE_COLLECTIONS.clubsMaster],
+      ['teams', PLAYERS_DATABASE_COLLECTIONS.teams],
+      ['teamSeasons', PLAYERS_DATABASE_COLLECTIONS.teamSeasons],
+      ['players', PLAYERS_DATABASE_COLLECTIONS.players],
+      ['favorites', PLAYERS_DATABASE_COLLECTIONS.favorites],
+      ['searchIndexes', PLAYERS_DATABASE_COLLECTIONS.searchIndexes],
+    ].map(async ([key, collectionName]) => [key, await readCollection(collectionName)])),
+    readActiveWriteRecoveryActions(),
+  ])
 
-  const rows = Object.fromEntries(entries.map(([key, documents]) => [key, documents.map(document => ({ id: document.id, data: document.data() || {} }))]))
-  return { generatedAt: new Date().toISOString(), readsUsed: entries.reduce((total, [, documents]) => total + documents.length, 0), rows }
+  const rows = {
+    ...Object.fromEntries(entries.map(([key, documents]) => [key, documents.map(document => ({ id: document.id, data: document.data() || {} }))])),
+    writeActions: writeActionsResult.rows,
+  }
+  return {
+    generatedAt: new Date().toISOString(),
+    readsUsed: entries.reduce((total, [, documents]) => total + documents.length, 0) + writeActionsResult.readsUsed,
+    rows,
+  }
 }

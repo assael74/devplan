@@ -20,7 +20,12 @@ describe('Clubs page rows', () => {
     })
 
     expect(filterClubsPageRows({ groups })).toEqual([
-      { club: baseClub, teams: [] },
+      {
+        club: baseClub,
+        intelligence: null,
+        previousTeams: [],
+        teams: [],
+      },
     ])
   })
 

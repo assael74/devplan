@@ -23,6 +23,8 @@ import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 import { buildLeagueTeamPerformanceProjection } from '../../../../services/read/index.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
+import { findTeamPageSeasonDoc } from '../../../../model/team/page/teamPageSeason.model.js'
+import { adaptTeamPagePlayerRow } from '../../../../model/team/page/teamPagePlayer.model.js'
 
 const cleanProfileId = value => clean(value)
 
@@ -72,14 +74,17 @@ const buildMinutesCorrectionImpact = ({ before, after, amount }) => {
 export default function useTeamStatsImport({
   leagueId,
   leagueDoc,
+  leagueDocuments = [],
   team,
-  players,
-  hasTeamPlayers,
-  selectedSeasonOption,
+  teamDoc,
+  teamSeasons,
+  seasonOptions = [],
+  selectedSeasonOption: pageSelectedSeasonOption = null,
   notify,
   reload,
 }) {
   const [open, setOpen] = React.useState(false)
+  const [selectedSeasonOptionKey, setSelectedSeasonOptionKey] = React.useState('')
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
@@ -87,26 +92,70 @@ export default function useTeamStatsImport({
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const transferredOutTraceRowRef = React.useRef('')
 
+  const selectedSeasonOption = React.useMemo(() => (
+    seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
+  ), [seasonOptions, selectedSeasonOptionKey])
+  const actionLeagueId = selectedSeasonOption?.leagueId || leagueId
+  const actionLeagueDoc = React.useMemo(() => (
+    leagueDocuments.find(document => (
+      String(document?.id || document?.leagueId || '').trim() === String(actionLeagueId || '').trim()
+    )) || leagueDoc
+  ), [actionLeagueId, leagueDoc, leagueDocuments])
+
+  const selectedTeamSeason = React.useMemo(() => findTeamPageSeasonDoc({
+    teamDoc,
+    teamSeasons,
+    selectedSeasonOption,
+  }), [selectedSeasonOption, teamDoc, teamSeasons])
+  const players = React.useMemo(() => (
+    Array.isArray(selectedTeamSeason?.teamPlayers)
+      ? selectedTeamSeason.teamPlayers.map((player, index) => adaptTeamPagePlayerRow({
+        player,
+        index,
+        selectedSeasonOption,
+        teamSeason: selectedTeamSeason,
+      }))
+      : []
+  ), [selectedSeasonOption, selectedTeamSeason])
+  const hasTeamPlayers = players.length > 0
   const rosterLookup = React.useMemo(() => buildRosterLookup(players), [players])
 
   React.useEffect(() => {
-    if (open) setSeasonStatus('')
+    if (open) {
+      setSeasonStatus('')
+      setRows([])
+      setPasteValue('')
+    }
   }, [
     open,
-    selectedSeasonOption?.seasonId,
-    selectedSeasonOption?.target,
   ])
+
+  const selectSeasonOption = React.useCallback(optionKey => {
+    setSelectedSeasonOptionKey(optionKey)
+    setRows([])
+    setPasteValue('')
+    setSeasonStatus('')
+  }, [])
+
+  const openModal = React.useCallback(() => {
+    const pageSeasonOptionKey = String(pageSelectedSeasonOption?.optionKey || '').trim()
+    const pageSeasonIsAvailable = seasonOptions.some(option => (
+      option.optionKey === pageSeasonOptionKey
+    ))
+    setSelectedSeasonOptionKey(pageSeasonIsAvailable ? pageSeasonOptionKey : '')
+    setOpen(true)
+  }, [pageSelectedSeasonOption?.optionKey, seasonOptions])
 
   const seasonContext = React.useMemo(() => ({
     ...(selectedSeasonOption?.season || {}),
     seasonStatus,
-    leagueId,
+    leagueId: actionLeagueId,
     ageGroupId: team.ageGroupId,
     birthYear: team.birthYear,
     seasonId: selectedSeasonOption?.seasonId,
     seasonKey: selectedSeasonOption?.seasonKey,
   }), [
-    leagueId,
+    actionLeagueId,
     seasonStatus,
     selectedSeasonOption,
     team.ageGroupId,
@@ -114,11 +163,11 @@ export default function useTeamStatsImport({
   ])
 
   const teamPerformance = React.useMemo(() => buildLeagueTeamPerformanceProjection({
-    league: leagueDoc || {},
+    league: actionLeagueDoc || {},
     season: seasonContext,
     target: selectedSeasonOption?.target || 'current',
     team,
-  }), [leagueDoc, seasonContext, selectedSeasonOption?.target, team])
+  }), [actionLeagueDoc, seasonContext, selectedSeasonOption?.target, team])
 
   const scoutTeam = React.useMemo(() => ({
     ...team,
@@ -270,16 +319,42 @@ export default function useTeamStatsImport({
   const hasInvalidRows = React.useMemo(() => (
     !validation.valid || rows.some((row, index) => !getRowStatus(row, index).valid)
   ), [getRowStatus, rows, validation.valid])
-  const exceptionRowsCount = React.useMemo(() => (
-    rows.filter(row => STATS_ROSTER_STATUS_OPTIONS.some(option => (
-      option.value === clean(row.rosterStatus)
-    ))).length
-  ), [rows])
 
   const isTransferRosterStatus = React.useCallback(status => (
     status === 'transferredOut' ||
     status === 'transferredIn'
   ), [])
+  const rosterExceptionsSummary = React.useMemo(() => {
+    const directions = {
+      up: 0,
+      lateral: 0,
+      down: 0,
+      unknown: 0,
+    }
+    const exceptionRows = rows.filter(row => (
+      STATS_ROSTER_STATUS_OPTIONS.some(option => (
+        option.value === clean(row.rosterStatus) &&
+        option.value !== 'regular'
+      ))
+    ))
+    const transferRows = exceptionRows.filter(row => (
+      isTransferRosterStatus(clean(row.rosterStatus))
+    ))
+
+    transferRows.forEach(row => {
+      const direction = clean(row.manualTransferDirection)
+      directions[Object.prototype.hasOwnProperty.call(directions, direction)
+        ? direction
+        : 'unknown'] += 1
+    })
+
+    return {
+      exceptionRowsCount: exceptionRows.length,
+      transferRowsCount: transferRows.length,
+      directions,
+    }
+  }, [isTransferRosterStatus, rows])
+  const exceptionRowsCount = rosterExceptionsSummary.exceptionRowsCount
 
   const parse = React.useCallback(async () => {
     if (!seasonStatus) {
@@ -517,7 +592,11 @@ export default function useTeamStatsImport({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
         payload: {
           target: selectedSeasonOption.target,
-          league: leagueDoc || { id: leagueId },
+          league: {
+            ...(actionLeagueDoc || {}),
+            id: actionLeagueId,
+            leagueId: actionLeagueId,
+          },
           season: seasonContext,
           team,
           players: validRows,
@@ -560,8 +639,8 @@ export default function useTeamStatsImport({
     validation,
     hasInvalidRows,
     hasTeamPlayers,
-    leagueDoc,
-    leagueId,
+    actionLeagueDoc,
+    actionLeagueId,
     notify,
     reload,
     rows,
@@ -573,15 +652,22 @@ export default function useTeamStatsImport({
 
   return {
     open,
+    seasonOptions,
+    selectedSeasonOptionKey,
+    selectedSeasonOption,
     pasteValue,
     rows,
     busy,
     writeReport,
     seasonStatus,
+    players,
+    hasTeamPlayers,
     rosterLookup,
     hasInvalidRows,
     exceptionRowsCount,
-    setOpen,
+    rosterExceptionsSummary,
+    openModal,
+    selectSeasonOption,
     setPasteValue,
     clearPaste,
     changeSeasonStatus,

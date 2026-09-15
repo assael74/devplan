@@ -16,6 +16,7 @@ export default function FavoriteButton({
   loading = false,
   onToggle,
   label = '',
+  sx: rootSx,
 }) {
   const actionLabel = favorite ? 'הסרה מהמועדפים' : 'הוספה למועדפים'
   const accessibleLabel = label
@@ -28,7 +29,7 @@ export default function FavoriteButton({
         variant='plain'
         aria-label={accessibleLabel}
         disabled={loading}
-        sx={sx.button({ favorite })}
+        sx={[sx.button({ favorite }), rootSx]}
         onClick={event => {
           event.stopPropagation()
           onToggle?.()

@@ -53,9 +53,11 @@ export default function PasteArea({
             הדבקת נתונים
           </Typography>
 
-          <Typography level='body-xs' sx={sx.description}>
-            הדביקו נתונים שהועתקו מאקסל או ממקור טבלאי אחר.
-          </Typography>
+          {!compact ? (
+            <Typography level='body-xs' sx={sx.description}>
+              הדביקו נתונים שהועתקו מאקסל או ממקור טבלאי אחר.
+            </Typography>
+          ) : null}
         </Box>
 
         <Button
@@ -90,9 +92,11 @@ export default function PasteArea({
       />
 
       <Box sx={sx.footer}>
-        <Typography level='body-xs' sx={sx.hint}>
-          השורה הראשונה יכולה לשמש כשורת כותרות.
-        </Typography>
+        {!compact ? (
+          <Typography level='body-xs' sx={sx.hint}>
+            השורה הראשונה יכולה לשמש כשורת כותרות.
+          </Typography>
+        ) : null}
 
         <Box sx={sx.actions}>
           <Button

@@ -5,6 +5,7 @@ export const AUDIT_FINDING_TYPE = Object.freeze({
   SOURCE_MISMATCH: 'source_mismatch',
   BROKEN_RELATION: 'broken_relation',
   UNEXPECTED_DOCUMENT: 'unexpected_document',
+  PARTIAL_WRITE: 'partial_write',
 })
 
 export const AUDIT_REPAIR_TYPE = Object.freeze({
@@ -44,6 +45,7 @@ const resolveAuditDomain = ({ auditDomain = '', entityType = '' } = {}) => {
   if (entity.startsWith('leaguesMaster')) return AUDIT_DOMAIN.LEAGUES_MASTER
   if (entity.startsWith('league')) return AUDIT_DOMAIN.LEAGUE_LIFECYCLE
   if (entity.startsWith('player')) return AUDIT_DOMAIN.PLAYER_RELATIONS
+  if (entity === 'writeAction') return AUDIT_DOMAIN.WRITE_RECOVERY
   return AUDIT_DOMAIN.TEAM_RELATIONS
 }
 

@@ -24,10 +24,12 @@ export const CLUBS_MASTER_DATABASE_GENERIC_OBJECTS_CATALOG = {
       competitionPaths: [
         {
           birthYear: 0,
+          sourceBirthYear: 0,
           currentLeagueLevel: null,
           projectedNextLeagueLevel: null,
           status: 'UNKNOWN',
           source: 'AUTOMATIC',
+          reason: null,
         },
       ],
       updatedAt: null,

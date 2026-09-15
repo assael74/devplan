@@ -4,6 +4,7 @@
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
 import { cleanValue, pickDefinedValue } from '../../../model/shared/value.model.js'
 import { buildTeamLoadStatus } from '../../../model/team/teamLoadStatus.model.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import {
   buildTeamPerformanceProjectionFromTableRows,
   getLeagueTableRowStats,
@@ -73,7 +74,10 @@ export const buildClubIdentityFromTeam = (team = {}) => {
   return {
     clubId,
     externalClubId: clean(team?.externalClubId || catalogClub?.externalClubId),
-    name: clean(team?.clubName || team?.name || catalogClub?.name),
+    // `team.name` is a display name and may contain a team slot (for example,
+    // "Club 2").  The Club document represents the parent club, so prefer
+    // its canonical catalog name whenever the League row did not provide one.
+    name: clean(team?.clubName || catalogClub?.name || team?.name),
     shortName: clean(team?.shortName || catalogClub?.shortName),
     sourceName: clean(team?.sourceName || catalogClub?.sourceName),
     clubUrl: clean(team?.clubUrl || catalogClub?.clubUrl),
@@ -105,6 +109,9 @@ export const syncClubProjectionFromTeamSeason = async ({
   season = {},
   team = {},
   teamSeason = {},
+  performance,
+  points,
+  leagueScoutProfilesSummary,
   canonicalCommitted = true,
   lastWriteAction = '',
   syncMaster = true,
@@ -130,7 +137,10 @@ export const syncClubProjectionFromTeamSeason = async ({
       recoveryScope,
     }
   }
-  if (!clean(team?.teamId || teamSeason?.teamId)) {
+  // Team writers persist a birth-team identity.  A Team Page model may expose
+  // it as `birthTeamId` rather than `teamId`, so resolve the shared canonical
+  // lookup key instead of requiring one display-specific field.
+  if (!resolveTeamLookupKey(team) && !resolveTeamLookupKey(teamSeason)) {
     throw new Error('Missing team id for Club projection')
   }
 
@@ -139,6 +149,9 @@ export const syncClubProjectionFromTeamSeason = async ({
     league,
     team,
     teamSeason,
+    performance,
+    points,
+    leagueScoutProfilesSummary,
     transferCoverageStatus: resolveClubTransferCoverageStatus(teamSeason),
   })
 
@@ -265,6 +278,7 @@ export const syncClubProjectionsFromLeagueTable = async ({
         competitionPathUpdates,
         propagateCompetitionFromBirthYear: birthYear,
         propagateCompetitionSeasonKey: competitionSeason?.seasonKey || season?.seasonKey,
+        propagateCompetitionTeamId: competitionSeason?.teamId || row?.teamId,
         lastWriteAction,
         syncMaster: false,
       })

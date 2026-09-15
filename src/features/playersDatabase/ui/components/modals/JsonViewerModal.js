@@ -53,6 +53,7 @@ function JsonTreeNode({
     ? value.map((item, index) => [index, item])
     : Object.entries(value)
   const marker = Array.isArray(value) ? `[${entries.length}]` : `{${entries.length}}`
+  const shouldRenderChildren = isOpen || Boolean(normalizedQuery)
 
   return (
     <Box
@@ -74,18 +75,20 @@ function JsonTreeNode({
         </Typography>
       </Box>
 
-      <Box>
-        {entries.map(([childLabel, childValue]) => (
-          <JsonTreeNode
-            key={`${path}.${childLabel}`}
-            label={Array.isArray(value) ? `[${childLabel}]` : childLabel}
-            value={childValue}
-            depth={depth + 1}
-            query={query}
-            path={`${path}.${childLabel}`}
-          />
-        ))}
-      </Box>
+      {shouldRenderChildren ? (
+        <Box>
+          {entries.map(([childLabel, childValue]) => (
+            <JsonTreeNode
+              key={`${path}.${childLabel}`}
+              label={Array.isArray(value) ? `[${childLabel}]` : childLabel}
+              value={childValue}
+              depth={depth + 1}
+              query={query}
+              path={`${path}.${childLabel}`}
+            />
+          ))}
+        </Box>
+      ) : null}
     </Box>
   )
 }
@@ -100,7 +103,6 @@ export default function JsonViewerModal({
 }) {
   const [query, setQuery] = React.useState('')
   const [copied, setCopied] = React.useState(false)
-  const json = React.useMemo(() => formatJson(data), [data])
 
   React.useEffect(() => {
     if (!open) return
@@ -110,7 +112,7 @@ export default function JsonViewerModal({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(json)
+      await navigator.clipboard.writeText(formatJson(data))
       setCopied(true)
     } catch (error) {
       setCopied(false)

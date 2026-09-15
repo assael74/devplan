@@ -77,6 +77,7 @@ const PriorityTimeline = ({ seasons = [] }) => (
 export default function TeamKpiOverview({
   team,
   title = 'ביצוע הקבוצה',
+  titleMeta = null,
   tablePositionTimeline = [],
   offensePriorityTimeline = [],
   defensePriorityTimeline = [],
@@ -92,6 +93,7 @@ export default function TeamKpiOverview({
         <Box sx={sx.performanceTitleRow}>
           <Box sx={sx.performanceTitleIcon}>{iconUi({ id: 'stats', size: 'sm' })}</Box>
           <Typography sx={sx.performanceTitle}>{title}</Typography>
+          {titleMeta}
         </Box>
       </Box>
       <KpiRow sx={sx.kpiRow}>
@@ -155,7 +157,6 @@ export default function TeamKpiOverview({
     </Box>
   )
 }
-
 
 
 

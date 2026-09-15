@@ -17,6 +17,7 @@ export default function TeamPerformanceContextBar({
   offensePriority,
   defensePriority,
   squadUsageState,
+  seasonChip = null,
   onReturnToPerformance,
 }) {
   return (
@@ -36,6 +37,7 @@ export default function TeamPerformanceContextBar({
             </Typography>
           </ContextItem>
         </Box>
+        {seasonChip}
       </Box>
       <Button
         size='sm'

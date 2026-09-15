@@ -12,6 +12,7 @@ import {
   PLAYER_ROSTER_PLACEHOLDER,
 } from '../../../pages/teamPage/logic/teamPage.constants.js'
 import PasteModal from './PasteModal.js'
+import TeamSeasonSelect from '../TeamSeasonSelect.js'
 import { rosterImportModalSx as sx } from './sx/rosterImportModal.sx.js'
 
 export default function RosterImportModal({
@@ -61,8 +62,16 @@ export default function RosterImportModal({
         value={controller.pasteValue}
         placeholder={PLAYER_ROSTER_PLACEHOLDER}
         busy={controller.busy}
-        disabled={controller.hasIdentityErrors}
+        disabled={controller.hasIdentityErrors || !controller.selectedSeasonOption}
         confirmLabel='אישור טעינת סגל'
+        beforePaste={(
+          <TeamSeasonSelect
+            seasonOptions={controller.seasonOptions}
+            value={controller.selectedSeasonOptionKey}
+            onChange={controller.selectSeasonOption}
+          />
+        )}
+        pasteDisabled={!controller.selectedSeasonOption}
         onValueChange={controller.setPasteValue}
         onPaste={controller.parse}
         onClear={controller.clearPaste}

@@ -182,7 +182,13 @@ export const findLeagueTableTeamContext = ({ leagues = [], teamId = '', seasonKe
 export const auditDomainsForScope = scope => (
   scope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM
     ? Object.values(AUDIT_DOMAIN)
-    : [AUDIT_DOMAIN.TEAM_RELATIONS, AUDIT_DOMAIN.PLAYER_RELATIONS]
+    : [
+        AUDIT_DOMAIN.TEAM_RELATIONS,
+        AUDIT_DOMAIN.PLAYER_RELATIONS,
+        // Partial writes are scoped by Team Season, even when the failed
+        // downstream projection belongs to a Club.
+        AUDIT_DOMAIN.WRITE_RECOVERY,
+      ]
 )
 export const uniqueFindings = findings => {
   const seen = new Set()

@@ -279,6 +279,12 @@ It may update:
 
 Stats Load must not use Player Stats totals to overwrite official Team Performance.
 
+For a player whose canonical `rosterStatus` is `retired`, Stats Load must keep the
+Team Season roster row but must not create a Player Document or Scout Profile. If
+the player already has a Player Document, it must clear the current season's scout
+projection. The document is retained only when another season/history or an
+independent tracking reason remains; otherwise it is removed.
+
 ## 5.1 Pre-commit validation
 
 Before a Stats Load commit, the League table projection is the mandatory
@@ -991,7 +997,8 @@ to validate a pasted league table. The same collection also contains compact
 advisory identity-index documents, one per `seasonKey + birthYear`, for example
 `identity__26-27__2011`.
 
-Each index stores only the identity needed by the import preflight:
+Each index stores only the identity needed by the import preflight and by
+targeted multi-season Team-page discovery:
 `clubId`, `ageGroupId`, `teamId`, `teamSlot`, `leagueId`, `leagueName`, and
 `leagueLevel`. League Documents remain the canonical source. The index is
 updated once after a League table is committed, replacing only entries of that
@@ -1003,3 +1010,10 @@ The Level-2-and-below import modal reads one matching index document to flag a
 club already present in the same season/year/age group in another League. The
 warning requires an explicit team-slot confirmation. Level 1 skips this read:
 those entries are treated as first teams.
+
+The Team Page may read the compact index documents for one birth year to locate
+candidate League Documents across seasons. Every candidate must then be read
+from its exact League Document and verified against that season's table before
+it is displayed. An absent index entry is never proof that a League-table team
+does not exist; the source League Document used to open the page remains a
+valid fallback.

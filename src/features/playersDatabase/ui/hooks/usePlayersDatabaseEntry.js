@@ -6,7 +6,11 @@ import {
   useState,
 } from 'react'
 
-import { readLeaguesMasterDocument } from '../../services/read/index.js'
+import {
+  buildClubSeasonIdentityScopesFromLeaguesMaster,
+  readClubSeasonIdentityIndexes,
+  readLeaguesMasterDocument,
+} from '../../services/read/index.js'
 
 export function usePlayersDatabaseEntry() {
   const [masterDocument, setMasterDocument] = useState(null)
@@ -23,6 +27,14 @@ export function usePlayersDatabaseEntry() {
       .then(doc => {
         if (!active) return
         setMasterDocument(doc)
+
+        // Warm the compact locator documents in the background. This never
+        // blocks the entry screen and does not read the large Clubs Master.
+        readClubSeasonIdentityIndexes({
+          scopes: buildClubSeasonIdentityScopesFromLeaguesMaster({
+            leaguesMasterDoc: doc,
+          }),
+        }).catch(() => {})
       })
       .catch(nextError => {
         if (!active) return

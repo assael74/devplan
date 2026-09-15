@@ -11,14 +11,30 @@ import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
 export default function useTeamSeasonStatsDelete({
   leagueId,
   leagueDoc,
+  leagueDocuments = [],
   team,
-  selectedSeasonOption,
+  seasonOptions = [],
   notify,
   reload,
 }) {
   const [open, setOpen] = React.useState(false)
+  const [selectedSeasonOptionKey, setSelectedSeasonOptionKey] = React.useState('')
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
+  const selectedSeasonOption = React.useMemo(() => (
+    seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
+  ), [seasonOptions, selectedSeasonOptionKey])
+  const actionLeagueId = selectedSeasonOption?.leagueId || leagueId
+  const actionLeagueDoc = React.useMemo(() => (
+    leagueDocuments.find(document => (
+      String(document?.id || document?.leagueId || '').trim() === String(actionLeagueId || '').trim()
+    )) || leagueDoc
+  ), [actionLeagueId, leagueDoc, leagueDocuments])
+
+  const openModal = React.useCallback(() => {
+    setSelectedSeasonOptionKey('')
+    setOpen(true)
+  }, [])
   const close = React.useCallback(() => {
     if (!busy) setOpen(false)
   }, [busy])
@@ -31,10 +47,14 @@ export default function useTeamSeasonStatsDelete({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_TEAM_SEASON_STATS,
         payload: {
           target: selectedSeasonOption.target,
-          league: leagueDoc || { id: leagueId },
+          league: {
+            ...(actionLeagueDoc || {}),
+            id: actionLeagueId,
+            leagueId: actionLeagueId,
+          },
           season: {
             ...(selectedSeasonOption.season || {}),
-            leagueId,
+            leagueId: actionLeagueId,
             seasonId: selectedSeasonOption.seasonId,
             seasonKey: selectedSeasonOption.seasonKey,
           },
@@ -64,13 +84,17 @@ export default function useTeamSeasonStatsDelete({
     } finally {
       setBusy(false)
     }
-  }, [leagueDoc, leagueId, notify, reload, selectedSeasonOption, team])
+  }, [actionLeagueDoc, actionLeagueId, notify, reload, selectedSeasonOption, team])
 
   return {
     open,
+    seasonOptions,
+    selectedSeasonOptionKey,
+    selectedSeasonOption,
     busy,
     writeReport,
-    setOpen,
+    openModal,
+    setSelectedSeasonOptionKey,
     close,
     confirm,
     closeWriteReport: () => setWriteReport(null),

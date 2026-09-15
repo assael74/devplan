@@ -34,12 +34,14 @@ export async function readLeaguesMasterDocument({ fresh = false } = {}) {
       if (!snapshot.exists()) {
         return {
           id: MASTER_DOC_ID,
+          documentExists: false,
           ...PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG,
         }
       }
 
       return {
         id: snapshot.id,
+        documentExists: true,
         ...snapshot.data(),
       }
     },

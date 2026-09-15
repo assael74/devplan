@@ -197,6 +197,10 @@ export const clubSharedSx = {
     gap: 1.25,
   },
 
+  pathLineCompact: {
+    gap: 1,
+  },
+
   pathNode: {
     display: 'inline-flex',
     flexDirection: 'column',
@@ -207,16 +211,29 @@ export const clubSharedSx = {
     fontWeight: 800,
   },
 
+  pathNodeCompact: {
+    minWidth: 52,
+    fontSize: 13,
+  },
+
   pathYear: {
     color: devPlanColors.secondary,
     fontSize: 12,
     fontWeight: 700,
   },
 
+  pathYearCompact: {
+    fontSize: 11,
+  },
+
   pathBirthYear: {
     color: devPlanColors.secondary,
     fontSize: 12,
     fontWeight: 700,
+  },
+
+  pathBirthYearCompact: {
+    fontSize: 11,
   },
 
   pathLevel: {

@@ -6,6 +6,22 @@ moment.locale('he')
 
 const to2 = (n) => String(n).padStart(2, '0')
 const clean = (v) => String(v ?? '').trim()
+const IL_TIME_ZONE = 'Asia/Jerusalem'
+const ilDateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: IL_TIME_ZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+const dateTimePartsInIsrael = date => Object.fromEntries(
+  ilDateTimeFormatter.formatToParts(date)
+    .filter(part => part.type !== 'literal')
+    .map(part => [part.type, part.value])
+)
 
 // ---- existing exports remain as-is ----
 export function getFullDateIl(dateObject, isMobile) {
@@ -18,15 +34,16 @@ export function getFullDateIl(dateObject, isMobile) {
   const date = new Date(normalizedDate)
   if (isNaN(date.getTime())) return '—'
 
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
+  const parts = dateTimePartsInIsrael(date)
+  const day = parts.day
+  const month = parts.month
+  const year = parts.year
   const yy = String(year % 100).padStart(2, '0')
 
-  return `${day}-${month}-${isMobile ? yy : year}`
+  return `${day}.${month}.${isMobile ? yy : year}`
 }
 
-// Full local date plus a 24-hour time, e.g. 10-09-2026 · 08:09.
+// Full Israel date plus a 24-hour time, e.g. 10.09.2026 · 08:09.
 export function getFullDateTimeIl(dateObject) {
   if (!dateObject) return '—'
   const normalizedDate = typeof dateObject?.toDate === 'function'
@@ -37,12 +54,9 @@ export function getFullDateTimeIl(dateObject) {
   const date = new Date(normalizedDate)
   if (Number.isNaN(date.getTime())) return '—'
 
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
+  const parts = dateTimePartsInIsrael(date)
 
-  return `${day}-${month}-${date.getFullYear()} · ${hour}:${minute}`
+  return `${parts.day}.${parts.month}.${parts.year} · ${parts.hour}:${parts.minute}`
 }
 
 export function getDayName(dateStr, isMobile) {

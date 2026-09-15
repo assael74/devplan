@@ -16,7 +16,7 @@ export const teamScoutingSummarySx = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
-    mb: 0.75,
+    mb: 2,
   },
 
   titleRow: {

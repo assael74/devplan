@@ -1,5 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/model/teamPlayerFilters.model.js
 
+import { resolveScoutProfileDefinition } from '../../../../../../shared/scouting/players/profiles.js'
+
 const cleanKey = value => String(value || '').trim()
 
 export const resolveScoutProfileId = profile => cleanKey(
@@ -13,6 +15,12 @@ const resolveScoutProfileLabel = profile => cleanKey(
   profile?.name ||
   resolveScoutProfileId(profile)
 ) || 'פרופיל סקאוט'
+
+const resolveScoutProfileIconId = profile => (
+  cleanKey(profile?.idIcon) ||
+  resolveScoutProfileDefinition(resolveScoutProfileId(profile))?.idIcon ||
+  'profile'
+)
 
 export const buildTeamProfileFilterOptions = players => {
   const profileMap = new Map()
@@ -32,6 +40,7 @@ export const buildTeamProfileFilterOptions = players => {
       const current = profileMap.get(id) || {
         value: id,
         label: resolveScoutProfileLabel(profile),
+        iconId: resolveScoutProfileIconId(profile),
         count: 0,
       }
 
@@ -46,6 +55,7 @@ export const buildTeamProfileFilterOptions = players => {
     {
       value: 'all',
       label: 'כל הפרופילים',
+      iconId: 'profile',
       count: playersWithProfilesCount,
     },
     ...Array.from(profileMap.values()).sort((left, right) => (

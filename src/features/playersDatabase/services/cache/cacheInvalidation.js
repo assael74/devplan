@@ -2,6 +2,7 @@
 
 import {
   buildLeagueDocumentCacheKey,
+  buildClubSeasonIdentityIndexCacheKey,
   buildClubsMasterCacheKey,
   buildLeaguesCollectionCacheKey,
   buildLeaguesMasterCacheKey,
@@ -41,6 +42,20 @@ const resolvePlayerId = payload => clean(
   payload?.player?.playerId ||
   payload?.playerId
 )
+
+const resolveSeasonKey = payload => clean(
+  payload?.season?.seasonKey ||
+  payload?.season?.seasonId ||
+  payload?.seasonKey ||
+  payload?.seasonId
+)
+
+const resolveBirthYear = payload => Number(
+  payload?.season?.birthYear ||
+  payload?.birthYear ||
+  payload?.team?.birthYear ||
+  0
+) || 0
 
 export const invalidateLeagueDocumentCache = leagueId => {
   const safeLeagueId = clean(leagueId)
@@ -83,6 +98,18 @@ export const invalidateClubsMasterDocumentCache = () => {
   deleteDocumentCacheValue(buildClubsMasterCacheKey())
 }
 
+export const invalidateClubSeasonIdentityIndexCache = ({
+  seasonKey,
+  birthYear,
+} = {}) => {
+  if (!clean(seasonKey) || !Number(birthYear)) return
+
+  deleteDocumentCacheValue(buildClubSeasonIdentityIndexCacheKey({
+    seasonKey,
+    birthYear,
+  }))
+}
+
 const LEAGUE_ONLY_ACTIONS = new Set([
   'ensureLeagueDoc',
   'upsertLeagueSeason',
@@ -119,10 +146,14 @@ export const invalidatePlayersDatabaseWriteCache = ({
   const leagueId = resolveLeagueId(payload)
   const teamId = resolveTeamId(payload)
   const playerId = resolvePlayerId(payload)
+  const seasonKey = resolveSeasonKey(payload)
+  const birthYear = resolveBirthYear(payload)
 
   if (LEAGUE_ONLY_ACTIONS.has(actionType)) {
     invalidateLeagueDocumentCache(leagueId)
     invalidateLeaguesMasterDocumentCache()
+    invalidateClubsMasterDocumentCache()
+    invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
   }
 
   if (TEAM_ACTIONS.has(actionType)) {
@@ -151,5 +182,7 @@ export const invalidatePlayersDatabaseWriteCache = ({
     invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
     invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
     invalidateLeaguesMasterDocumentCache()
+    invalidateClubsMasterDocumentCache()
+    invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
   }
 }

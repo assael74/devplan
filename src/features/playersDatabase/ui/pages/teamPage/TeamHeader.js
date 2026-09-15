@@ -18,6 +18,7 @@ export default function TeamHeader({
   team,
   teamUrl = '',
   seasonKey,
+  latestSeason = null,
   favorite = false,
   favoritePending = false,
   onFavoriteToggle,
@@ -26,6 +27,11 @@ export default function TeamHeader({
   backLabel = 'חזרה לליגה',
 }) {
   const resolvedTeamUrl = String(teamUrl || team?.teamUrl || '').trim()
+  const headerLeagueContext = [
+    latestSeason?.leagueName || team?.leagueName,
+    latestSeason?.ageGroupLabel || latestSeason?.ageGroupId || team?.ageGroupLabel || team?.ageGroupId,
+    latestSeason?.seasonKey || seasonKey,
+  ].filter(Boolean).join(' · ') || '-'
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
 
@@ -88,6 +94,7 @@ export default function TeamHeader({
           loading={favoritePending}
           label={team.name}
           onToggle={onFavoriteToggle}
+          sx={sx.favoriteButton}
         />
 
         <Box sx={[sx.contextChip, sx.birthYearChip]}>
@@ -95,9 +102,7 @@ export default function TeamHeader({
         </Box>
 
         <Box sx={sx.contextChip}>
-          {[team.leagueName, team.ageGroupLabel || team.ageGroupId]
-            .filter(Boolean)
-            .join(' · ') || '-'}
+          {headerLeagueContext}
         </Box>
       </Box>
     </PageHeader>

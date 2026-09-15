@@ -101,7 +101,8 @@ export const adaptLeagueTableTeam = ({
       leagueLevel: toDomainNumber(
         firstDomainValue(
           seasonDocument.leagueLevel,
-          leagueDocument.leagueLevel
+          leagueDocument.leagueLevel,
+          leagueDocument.level
         )
       ),
       ageGroupId: cleanDomainValue(

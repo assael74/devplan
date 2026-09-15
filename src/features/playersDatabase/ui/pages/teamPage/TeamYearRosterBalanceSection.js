@@ -6,7 +6,7 @@ import {
   LINE_DISTRIBUTION_COLORS,
   linePresentation,
 } from './model/teamYearDevelopment.presentation.js'
-import { SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
+import { SeasonSummaryChip, SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
 import { teamYearDevelopmentSharedSx } from './sx/teamYearDevelopmentShared.sx.js'
 import { teamYearRosterBalanceSectionSx } from './sx/teamYearRosterBalanceSection.sx.js'
 
@@ -56,7 +56,7 @@ export default function TeamYearRosterBalanceSection({ overview = {}, openSeason
                 : ''
               const headerLeft = (
                 <Box sx={sx.evolutionCollapseSummary}>
-                  <Typography sx={sx.evolutionCollapseSeason}>{seasonKey}</Typography>
+                  <SeasonSummaryChip season={overview.rosterTimeline?.[index] || { seasonKey }} />
                   <Typography sx={sx.evolutionCollapseEmptySummary}>אין נתוני סיווג לעונה זו</Typography>
                 </Box>
               )
@@ -76,7 +76,7 @@ export default function TeamYearRosterBalanceSection({ overview = {}, openSeason
             const total = season.total === null || season.total === undefined ? totalInBar : season.total
             const headerLeft = (
               <Box sx={sx.evolutionCollapseSummary}>
-                <Typography sx={sx.evolutionCollapseSeason}>{season.seasonKey}</Typography>
+                <SeasonSummaryChip season={season} />
                 <SummaryFacts>
                   <SummaryChip iconId='players' label='סגל' value={total} />
                   {season.categories.map(item => (

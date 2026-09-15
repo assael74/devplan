@@ -16,6 +16,7 @@ export default function LeagueName({
   showLevel = false,
   fontSize = 13,
   levelFontSize = null,
+  rootSx,
   nameSx,
   levelSx,
   levelEndDecorator = null,
@@ -25,7 +26,7 @@ export default function LeagueName({
   const hasLevel = showLevel && Number.isFinite(leagueLevel) && leagueLevel > 0
 
   return (
-    <Box sx={sx.root}>
+    <Box sx={[sx.root, rootSx]}>
       {showName ? (
         <Typography
           component='span'

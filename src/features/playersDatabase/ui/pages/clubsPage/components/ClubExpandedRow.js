@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -22,6 +22,10 @@ import {
 } from '../../../../services/read/index.js'
 import { downloadJson } from '../logic/clubsMasterDownload.logic.js'
 import { buildClubExpandedTeamColumns } from '../logic/clubExpandedTeamTable.columns.js'
+import { buildClubExpandedModel } from '../../../../model/pages/clubPresentation.model.js'
+import {
+  getClubCollapseView,
+} from '../../../../domain/clubIntelligence/index.js'
 import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
 
 function ClubTeamsTable({ title, teams, onOpenTeam, onOpenTeamDocumentJson }) {
@@ -61,7 +65,14 @@ export default function ClubExpandedRow({
   const [teamDocumentJson, setTeamDocumentJson] = useState(null)
   const [openSecondaryLeaguePaths, setOpenSecondaryLeaguePaths] = useState({})
   const [seasonView, setSeasonView] = useState('current')
-  const selectedSeasonModel = model.expandedModels?.[seasonView] || model.expandedModels?.current || { seasons: [] }
+  const collapseView = useMemo(() => getClubCollapseView(model.intelligence), [model.intelligence])
+  const selectedSeasonModel = useMemo(() => buildClubExpandedModel({
+    teams: seasonView === 'previous'
+      ? collapseView.previousTeams
+      : collapseView.currentTeams,
+    seasonKey: (model.seasonOptions || []).find(option => option.value === seasonView)?.seasonKey,
+    levelSpotlights: collapseView.spotlightGroups.leagueVsClubLevel,
+  }), [collapseView, model.seasonOptions, seasonView])
 
   const handleOpenClubDocumentJson = async () => {
     setClubDocumentJson({ data: { status: 'loading' } })
@@ -95,7 +106,7 @@ export default function ClubExpandedRow({
   }
 
   return (
-    <Box sx={sx.expanded}>
+    <Box className="dpScrollThin" sx={sx.expanded}>
       {selectedSeasonModel.seasons.map(season => {
         const secondaryPath = season.path?.secondary?.find(item => (
           Number(item?.slot) === 2 && item?.path?.length

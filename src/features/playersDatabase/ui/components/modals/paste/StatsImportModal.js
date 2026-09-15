@@ -19,6 +19,7 @@ import {
   STATS_SEASON_STATUS_OPTIONS,
 } from '../../../pages/teamPage/logic/teamPage.constants.js'
 import PasteModal from './PasteModal.js'
+import TeamSeasonSelect from '../TeamSeasonSelect.js'
 import { statsImportModalSx as sx } from './sx/statsImportModal.sx.js'
 
 function clean(value) {
@@ -94,6 +95,32 @@ function ValidationCheckChip({ check, onApplyMinutesAdjustment }) {
   )
 }
 
+function RosterExceptionsChip({ summary = {} }) {
+  const count = Number(summary.exceptionRowsCount || 0)
+  const transferRowsCount = Number(summary.transferRowsCount || 0)
+  const directions = summary.directions || {}
+  if (!count) return null
+
+  const directionLabels = [
+    ['up', 'עלו רמה'],
+    ['lateral', 'אותה רמה'],
+    ['down', 'ירדו רמה'],
+    ['unknown', 'ללא כיוון'],
+  ].filter(([key]) => Number(directions[key] || 0) > 0)
+    .map(([key, label]) => `${label}: ${directions[key]}`)
+  const directionSummary = directionLabels.length
+    ? `כיווני מעבר — ${directionLabels.join(', ')}`
+    : 'אין חריגי מעבר'
+
+  return (
+    <Tooltip title={directionSummary} arrow>
+      <Chip size='sm' variant='soft' color='warning' sx={sx.rosterExceptionsChip}>
+        {`חריגי סגל: ${count} · חריגי מעבר: ${transferRowsCount}`}
+      </Chip>
+    </Tooltip>
+  )
+}
+
 export default function StatsImportModal({
   team,
   seasonKey,
@@ -142,11 +169,18 @@ export default function StatsImportModal({
   )
 
   const beforePaste = (
-    <>
+    <Box sx={sx.selectionRow}>
+      <TeamSeasonSelect
+        seasonOptions={controller.seasonOptions}
+        value={controller.selectedSeasonOptionKey}
+        onChange={controller.selectSeasonOption}
+        hideHelperText={hasPreviewRows}
+        sx={sx.seasonSelect}
+      />
       <FormControl
         size='sm'
         required
-        sx={[sx.seasonStatus, hasPreviewRows ? sx.seasonStatusCompact : null]}
+        sx={sx.seasonStatus}
       >
         <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
         <Select value={controller.seasonStatus || null} placeholder='בחר סוג טעינה' onChange={(event, value) => controller.changeSeasonStatus(value)}>
@@ -154,7 +188,7 @@ export default function StatsImportModal({
         </Select>
         {!hasPreviewRows ? <FormHelperText>{seasonStatusOption?.description || 'בחירה חובה לפני הצגת הנתונים'}</FormHelperText> : null}
       </FormControl>
-    </>
+    </Box>
   )
 
   const validationChecks = controller.validation.checks || []
@@ -171,12 +205,18 @@ export default function StatsImportModal({
       value={controller.pasteValue}
       placeholder={PLAYER_STATS_PLACEHOLDER}
       busy={controller.busy}
-      disabled={!hasTeamPlayers || controller.hasInvalidRows || !controller.seasonStatus}
+      disabled={!hasTeamPlayers || controller.hasInvalidRows || !controller.selectedSeasonOption || !controller.seasonStatus}
       confirmLabel='אישור טעינת סטטיסטיקות'
       beforePaste={beforePaste}
-      pasteDisabled={!controller.seasonStatus}
+      pasteDisabled={!controller.selectedSeasonOption || !controller.seasonStatus}
       showSummaryCounts={false}
       previewSummary={[
+        {
+          key: 'roster-exceptions',
+          render: () => (
+            <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
+          ),
+        },
         ...validationChecks.map(check => ({
           key: check.code,
           render: () => (

@@ -9,6 +9,7 @@ import {
 } from '../../write/clubs/index.js'
 import { readPlayerDatabaseAuditSnapshot } from '../../audit/audit.read.js'
 import { AUDIT_REPAIR_TYPE, normalizeLegacyAuditRepairType } from '../../audit/audit.contract.js'
+import { resolvePlayersDatabaseWriteActionFailures } from '../../audit/audit.writeJournal.js'
 import { buildLeagueRowsWithScoutPerformance } from '../../write/shared/leagueTeamScoutContext.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
@@ -255,6 +256,18 @@ export async function rebuildClubProjectionsFromAuditFindings({
     ? null
     : await rebuildClubsMasterFromClubIds({ clubIds: [...repairedClubIds], lastWriteAction })
 
+  // Only close a partial-write finding after every Club projection and the
+  // dependent Clubs Master projection completed successfully.
+  const writeActionIds = (Array.isArray(findings) ? findings : [])
+    .filter(finding => clean(finding?.entityType) === 'writeAction')
+    .map(finding => finding?.documentId)
+  const recoveredWriteActionIds = failures.length || !masterResult || !writeActionIds.length
+    ? []
+    : await resolvePlayersDatabaseWriteActionFailures({
+        writeActionIds,
+        recoveryAction: lastWriteAction,
+      })
+
   return {
     completed: failures.length === 0,
     targets,
@@ -262,6 +275,7 @@ export async function rebuildClubProjectionsFromAuditFindings({
     results,
     failures,
     masterResult,
+    recoveredWriteActionIds,
   }
 }
 

@@ -128,6 +128,32 @@ export const teamYearMetricsSectionSx = {
     fontWeight: 900,
   },
 
+  valueContent: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.45,
+    minWidth: 0,
+  },
+
+  valueMain: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+
+  valueChangeChip: {
+    minHeight: 20,
+    px: 0.45,
+    fontSize: 10,
+    fontWeight: 800,
+    '& .MuiChip-startDecorator': {
+      marginInlineEnd: 0.2,
+      '& svg': {
+        fontSize: 12,
+      },
+    },
+  },
+
   valueCell: {
     display: 'flex',
     alignItems: 'center',

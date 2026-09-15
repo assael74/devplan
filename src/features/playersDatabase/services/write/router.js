@@ -106,7 +106,12 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     // projection fails.  Do not leave the UI/cache on the pre-write snapshot;
     // invalidate it and attach the narrow audit scope to the error so the
     // caller can present a real recovery path.
-    if (error?.results?.teamCanonicalCommitted || error?.results?.leagueCanonicalCommitted) {
+    if (
+      error?.teamCanonicalCommitted ||
+      error?.leagueCanonicalCommitted ||
+      error?.results?.teamCanonicalCommitted ||
+      error?.results?.leagueCanonicalCommitted
+    ) {
       invalidatePlayersDatabaseWriteCache({
         actionType,
         payload,
@@ -114,6 +119,21 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
       })
       const auditScope = rememberLastWriteAuditScopeFromResult(error.results)
       if (auditScope) error.auditScope = auditScope
+
+      // The canonical write is already durable. Persist a recovery contract
+      // so Audit can expose a safe repair instead of requiring a reload.
+      try {
+        await recordPlayersDatabaseWriteAction({
+          actionType,
+          auditScope: auditScope || buildLastWriteAuditScope(error.results),
+          status: 'failed_after_canonical_commit',
+          failedStage: error?.stage || error?.results?.failedStage || '',
+          errorMessage: String(error?.message || 'כתיבה חלקית לאחר שמירת הנתונים הקנוניים'),
+          recoveryRequired: true,
+        })
+      } catch {
+        // Diagnostic journaling must never mask the original write failure.
+      }
     }
     throw error
   }

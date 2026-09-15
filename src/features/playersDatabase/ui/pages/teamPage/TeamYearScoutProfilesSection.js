@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'
 import { profilePresentation } from './model/teamYearDevelopment.presentation.js'
-import { SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
+import { SeasonSummaryChip, SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
 import { teamYearDevelopmentSharedSx } from './sx/teamYearDevelopmentShared.sx.js'
 import { teamYearScoutProfilesSectionSx } from './sx/teamYearScoutProfilesSection.sx.js'
 
@@ -27,7 +27,7 @@ export default function TeamYearScoutProfilesSection({ overview = {}, openSeason
                 : ''
               const headerLeft = (
                 <Box sx={sx.evolutionCollapseSummary}>
-                  <Typography sx={sx.evolutionCollapseSeason}>{seasonKey}</Typography>
+                  <SeasonSummaryChip season={overview.profileTimeline?.[index] || { seasonKey }} />
                   <Typography sx={sx.evolutionCollapseEmptySummary}>אין נתוני פרופילים לעונה זו</Typography>
                 </Box>
               )
@@ -48,7 +48,7 @@ export default function TeamYearScoutProfilesSection({ overview = {}, openSeason
             const total = season.total === null || season.total === undefined ? 0 : season.total
             const headerLeft = (
               <Box sx={sx.evolutionCollapseSummary}>
-                <Typography sx={sx.evolutionCollapseSeason}>{season.seasonKey}</Typography>
+                <SeasonSummaryChip season={season} />
                 <SummaryFacts>
                   <SummaryChip iconId='scouting' label='פרופילים פעילים' value={total} />
                   <SummaryChip iconId='performanceProfile' label='סוגי פרופיל' value={season.profiles.length} />

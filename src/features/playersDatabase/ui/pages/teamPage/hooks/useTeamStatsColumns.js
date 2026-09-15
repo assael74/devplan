@@ -48,6 +48,7 @@ import {
   getMinutesPctMark,
   toFiniteNumber,
 } from '../logic/teamStatsScoutMarks.logic.js'
+import { clean } from '../logic/teamPage.utils.js'
 
 export default function useTeamStatsColumns({
   players,
@@ -235,16 +236,6 @@ export default function useTeamStatsColumns({
       ...TEAM_STATS_IMPORT_TABLE_WIDTHS.rosterStatus,
     },
     render: ({ row, rowIndex, column, onCellChange }) => {
-      if (row.identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH) {
-        return (
-          <Tooltip title='שחקן סגל'>
-            <Box component='span' aria-label='שחקן סגל' sx={sx.statusIcon}>
-              {iconUi({ id: 'isSquad', size: 'sm' })}
-            </Box>
-          </Tooltip>
-        )
-      }
-
       const selectedStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
         option.value === row.rosterStatus
       ))
@@ -425,4 +416,3 @@ export default function useTeamStatsColumns({
     substitutionsColumn,
   ])
 }
-

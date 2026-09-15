@@ -8,6 +8,7 @@ export const AUDIT_DOMAIN = Object.freeze({
   LEAGUES_MASTER: 'leagues_master',
   CLUB_RELATIONS: 'club_relations',
   CLUBS_MASTER: 'clubs_master',
+  WRITE_RECOVERY: 'write_recovery',
 })
 export const AUDIT_COLLECTION_SCOPE = Object.freeze({})
 export const AUDIT_RELATION_SCOPE = Object.freeze({})

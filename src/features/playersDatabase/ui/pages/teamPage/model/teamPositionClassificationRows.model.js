@@ -137,11 +137,21 @@ const attachScoutProfilePresentation = ({ player, scoutProfileLookup }) => {
   }
 }
 
-export const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => {
+export const buildPositionClassificationRows = ({
+  seasonDoc,
+  players = [],
+  playerIdsFilter = null,
+}) => {
   const teamPlayers = Array.isArray(seasonDoc?.teamPlayers) ? seasonDoc.teamPlayers : []
   const scoutProfileLookup = buildScoutProfileLookup(players)
+  const allowedPlayerIds = Array.isArray(playerIdsFilter)
+    ? new Set(playerIdsFilter.map(clean).filter(Boolean))
+    : null
 
   return teamPlayers
+    .filter(player => (
+      !allowedPlayerIds || getPlayerIdentityKeys(player).some(id => allowedPlayerIds.has(id))
+    ))
     .map((player, index) => {
       const playerWithScoutProfile = attachScoutProfilePresentation({
         player,
@@ -235,4 +245,3 @@ export const buildPositionClassificationRows = ({ seasonDoc, players = [] }) => 
       return leftOrder - rightOrder || left.name.localeCompare(right.name, 'he')
     })
 }
-

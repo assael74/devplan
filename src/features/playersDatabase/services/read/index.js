@@ -24,7 +24,11 @@ export { readLeaguePageData } from './pages/leaguePage.read.js'
 export { readLeagueCenterData } from './pages/leagueCenter.read.js'
 export { readLeaguesMasterDocument } from './masters/leaguesMaster.read.js'
 export { readClubsMasterDocument } from './masters/clubsMaster.read.js'
-export { readClubSeasonIdentityIndex } from './masters/clubSeasonIdentityIndex.read.js'
+export {
+  buildClubSeasonIdentityScopesFromLeaguesMaster,
+  readClubSeasonIdentityIndex,
+  readClubSeasonIdentityIndexes,
+} from './masters/clubSeasonIdentityIndex.read.js'
 export { readClubPageDocument } from './pages/clubPage.read.js'
 
 export {

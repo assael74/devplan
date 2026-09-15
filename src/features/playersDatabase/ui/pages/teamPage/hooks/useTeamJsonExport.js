@@ -9,6 +9,8 @@ export default function useTeamJsonExport({
   team,
   teamDoc,
   teamSeasons,
+  documentLoadState,
+  teamPageData,
   notify,
 }) {
   const [downloading, setDownloading] = React.useState(false)
@@ -30,6 +32,8 @@ export default function useTeamJsonExport({
         teamDocument: teamDoc || team,
         teamSeasons,
         teamSearchIndexes,
+        documentLoadState,
+        teamPageData,
       })
       notify('קובץ JSON של הקבוצה הורד', 'success')
     } catch (downloadError) {
@@ -46,6 +50,8 @@ export default function useTeamJsonExport({
     team,
     teamDoc,
     teamSeasons,
+    documentLoadState,
+    teamPageData,
   ])
 
   return {

@@ -10,6 +10,10 @@ import {
   readClubsMasterDocument,
 } from '../../../../services/read/index.js'
 import { buildClubPageModel } from '../../../../model/pages/clubPresentation.model.js'
+import {
+  buildClubIntelligenceFromMaster,
+  enrichClubIntelligenceFromClubDocument,
+} from '../../../../domain/clubIntelligence/index.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
@@ -43,16 +47,27 @@ export default function useClubPage({ clubId } = {}) {
     reload().catch(() => {})
   }, [reload])
 
-  const club = useMemo(() => (
-    clubsMasterDoc?.clubDocument ||
+  const clubMasterEntry = useMemo(() => (
     (Array.isArray(clubsMasterDoc?.masterDocument?.clubs) ? clubsMasterDoc.masterDocument.clubs : [])
       .find(item => clean(item?.clubId) === normalizedClubId) || null
   ), [clubsMasterDoc, normalizedClubId])
+  const intelligence = useMemo(() => {
+    if (!clubMasterEntry) return null
 
-  const page = useMemo(() => buildClubPageModel({ club }), [club])
+    const base = buildClubIntelligenceFromMaster({ club: clubMasterEntry })
+    return clubsMasterDoc?.clubDocument
+      ? enrichClubIntelligenceFromClubDocument({
+          intelligence: base,
+          clubDocument: clubsMasterDoc.clubDocument,
+        })
+      : base
+  }, [clubMasterEntry, clubsMasterDoc])
+  const club = intelligence?.club || clubMasterEntry || null
+  const page = useMemo(() => buildClubPageModel({ intelligence }), [intelligence])
 
   return {
     club,
+    intelligence,
     page,
     loading,
     error,

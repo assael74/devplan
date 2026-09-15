@@ -41,6 +41,7 @@ const buildSummaryAreas = ({ club, model }) => ([
         <LeaguePath
           model={model.leaguePath}
           showSecondary={false}
+          compact
           sx={sx.summaryLeaguePathContent}
         />
       </Metric>

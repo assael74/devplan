@@ -13,9 +13,11 @@ import {
   filterClubsPageRows,
 } from '../../model/pages/clubsPage.model.js'
 import {
-  buildClubExpandedModel,
   buildClubSummaryModel,
 } from '../../model/pages/clubPresentation.model.js'
+import {
+  buildClubIntelligenceFromMaster,
+} from '../../domain/clubIntelligence/index.js'
 import {
   PLAYERS_DATABASE_CURRENT_SEASON_KEY,
   PLAYERS_DATABASE_SEASONS_CATALOG,
@@ -51,7 +53,6 @@ export default function useClubsPage() {
   const [leaguePathDirections, setLeaguePathDirections] = useState([])
   const [leagueLevelDirections, setLeagueLevelDirections] = useState([])
   const currentSeasonOption = CLUBS_PAGE_SEASON_OPTIONS[0]
-  const previousSeasonOption = CLUBS_PAGE_SEASON_OPTIONS[1]
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -74,15 +75,16 @@ export default function useClubsPage() {
     reload().catch(() => {})
   }, [reload])
 
+  const intelligencesByClubId = useMemo(() => new Map(
+    (Array.isArray(clubsMasterDoc?.clubs) ? clubsMasterDoc.clubs : [])
+      .map(club => [club?.clubId, buildClubIntelligenceFromMaster({ club })])
+      .filter(([clubId]) => Boolean(clubId))
+  ), [clubsMasterDoc])
   const allGroups = useMemo(() => buildClubsPageRows({
     clubsMasterDoc,
     seasonView: 'current',
-  }), [clubsMasterDoc])
-  const previousTeamsByClubId = useMemo(() => new Map(
-    buildClubsPageRows({ clubsMasterDoc, seasonView: 'previous' })
-      .map(group => [group.club?.clubId, group.teams])
-  ), [clubsMasterDoc])
-
+    intelligencesByClubId,
+  }), [clubsMasterDoc, intelligencesByClubId])
   const groups = useMemo(() => filterClubsPageRows({
     groups: allGroups,
     query,
@@ -100,26 +102,11 @@ export default function useClubsPage() {
   const presentationGroups = useMemo(() => groups.map(group => ({
     ...group,
     summaryModel: buildClubSummaryModel({
-      club: group.club,
-      teams: group.teams,
-      previousTeams: group.previousTeams,
-      seasonKey: currentSeasonOption?.seasonKey,
-      seasonView: 'current',
+      intelligence: group.intelligence,
     }),
-    expandedModels: {
-      current: buildClubExpandedModel({
-        club: group.club,
-        teams: group.teams,
-        seasonKey: currentSeasonOption?.seasonKey,
-      }),
-      previous: buildClubExpandedModel({
-        club: group.club,
-        teams: previousTeamsByClubId.get(group.club?.clubId) || [],
-        seasonKey: previousSeasonOption?.seasonKey,
-      }),
-    },
+    previousTeams: group.previousTeams,
     seasonOptions: CLUBS_PAGE_SEASON_OPTIONS,
-  })), [groups, currentSeasonOption?.seasonKey, previousSeasonOption?.seasonKey, previousTeamsByClubId])
+  })), [groups, currentSeasonOption?.seasonKey])
 
   const summary = useMemo(() => buildClubsPageSummary(groups), [groups])
 

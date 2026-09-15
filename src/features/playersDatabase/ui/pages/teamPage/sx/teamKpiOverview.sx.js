@@ -25,7 +25,7 @@ export const teamKpiOverviewSx = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
-    mb: 0.75,
+    mb: 2,
   },
 
   performanceTitleRow: {

@@ -3,6 +3,7 @@
 import { cleanValue, pickDefinedValue, toNumberOrZero } from '../../../model/shared/value.model.js'
 import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { resolveAgeGroupLabel } from '../../../catalog/ageGroups.catalog.js'
+import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { buildClubTransferSummary } from './clubTransfers.projection.js'
 import { CLUB_TRANSFER_COVERAGE_STATUS } from '../../contracts/club.contract.js'
 
@@ -16,9 +17,25 @@ const normalizeScoutProfilesSummary = value => ({
 const normalizeTeamTaskSignals = value => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
 
+  const signals = {}
+
+  if (typeof value.offense === 'boolean') {
+    signals.offense = value.offense
+  }
+
+  if (typeof value.defense === 'boolean') {
+    signals.defense = value.defense
+  }
+
+  return Object.keys(signals).length ? signals : undefined
+}
+
+const normalizeTeamTaskAvailability = value => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+
   return {
-    offense: Boolean(value.offense),
-    defense: Boolean(value.defense),
+    availability: cleanValue(value.availability),
+    reason: cleanValue(value.availabilityReason) || null,
   }
 }
 
@@ -94,7 +111,11 @@ export const buildClubAgeGroupSeasonProjection = ({
   updatedAt = null,
 } = {}) => {
   const ageGroupId = cleanValue(league?.ageGroupId || teamSeason?.ageGroupId)
-  const teamId = cleanValue(team?.teamId || teamSeason?.teamId)
+  // Keep the Club projection keyed by the same birth-team identity used by
+  // Team Season persistence.  Page models may expose this as birthTeamId.
+  const teamId = cleanValue(
+    resolveTeamLookupKey(team) || resolveTeamLookupKey(teamSeason)
+  )
   const ageGroupLabel = resolveAgeGroupLabel({
     ageGroupId,
     ageGroupLabel: league?.ageGroupLabel,
@@ -108,6 +129,9 @@ export const buildClubAgeGroupSeasonProjection = ({
     clearMissing: leagueTeam !== undefined,
   })
   const teamTaskSignals = normalizeTeamTaskSignals(teamSeason?.teamTaskSignals)
+  const teamTaskAvailability = normalizeTeamTaskAvailability(
+    teamSeason?.teamBalance?.balanceAvailability
+  )
   const lineStructure = normalizeLineStructure(
     teamSeason?.teamBalance?.lineStructure || teamSeason?.lineStructure
   )
@@ -134,6 +158,7 @@ export const buildClubAgeGroupSeasonProjection = ({
         : {}),
       playersCount: toNumberOrZero(teamSeason?.playersCount),
       ...(teamTaskSignals ? { teamTaskSignals } : {}),
+      ...(teamTaskAvailability ? { teamTaskAvailability } : {}),
       ...(lineStructure ? { lineStructure } : {}),
       ...(leagueScoutProfilesSummary !== undefined
         ? { scoutProfilesSummary: normalizeScoutProfilesSummary(leagueScoutProfilesSummary) }

@@ -89,6 +89,8 @@ const mergeRosterPlayerContext = ({ row, player }) => ({
   normalizedName: clean(player?.normalizedName || player?.fullName),
   birthYear: pickDefinedValue(player?.birthYear, player?.yearOfBirth, row.birthYear),
   yearOfBirth: pickDefinedValue(player?.yearOfBirth, player?.birthYear, row.yearOfBirth),
+  rosterStatus: clean(player?.rosterStatus) || 'regular',
+  manualTransferDirection: clean(player?.manualTransferDirection || player?.transferDirection),
   primaryPosition: clean(player?.primaryPosition || row.primaryPosition),
   positionLayer: clean(player?.positionLayer || row.positionLayer),
   positions: Array.isArray(player?.positions)

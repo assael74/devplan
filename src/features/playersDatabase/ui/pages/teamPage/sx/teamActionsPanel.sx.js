@@ -330,8 +330,30 @@ export const teamActionsPanelSx = {
   },
 
   actionDivider: {
-    my: 0.15,
+    my: 0.75,
     borderColor: '#dbe5f4',
+  },
+
+  actionsSection: {
+    width: '100%',
+    display: 'grid',
+    gap: 0.65,
+    p: 0.75,
+    borderRadius: 9,
+    bgcolor: '#f8fbff',
+    border: `1px solid ${devPlanColors.primaryLight}`,
+  },
+
+  sectionLabel: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: 800,
+  },
+
+  tasksSection: {
+    width: '100%',
+    display: 'grid',
+    gap: 0.5,
   },
 
   actionsRow: {

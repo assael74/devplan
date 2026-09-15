@@ -112,16 +112,20 @@ export const teamInformationSx = {
 
   sectionHeader: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
-    mb: 0.75,
+    pt: 0,
+    pr: 0,
+    mb: 2,
   },
 
   sectionTitleRow: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.65,
+    minWidth: 0,
+    flexWrap: 'nowrap',
   },
 
   sectionTitleIcon: {
@@ -145,14 +149,190 @@ export const teamInformationSx = {
     fontWeight: 800,
   },
 
+  rosterSeasonChips: {
+    display: 'flex',
+    flexWrap: 'nowrap',
+    gap: 0.35,
+  },
+
+  rosterSeasonChip: {
+    minHeight: 20,
+    px: 0.6,
+    fontSize: 10,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    color: devPlanColors.secondary,
+    bgcolor: '#fff',
+    border: `1px solid ${devPlanColors.border}`,
+    cursor: 'pointer',
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primary,
+    },
+  },
+
+  rosterSeasonChipSelected: {
+    color: devPlanColors.primary,
+    bgcolor: '#fff',
+    borderColor: devPlanColors.primary,
+    boxShadow: 'none',
+  },
+
+  rosterSeasonChipStatic: {
+    cursor: 'default',
+  },
+
+  rosterSeasonChipContent: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.3,
+    minWidth: 0,
+  },
+
+  rosterSeasonChipText: {
+    color: 'inherit',
+    fontSize: 10,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
+
+  rosterSeasonChipSeparator: {
+    color: 'inherit',
+    fontSize: 10,
+    fontWeight: 700,
+  },
+
+  rosterSeasonLeagueLevel: {
+    px: 0.3,
+    py: 0.05,
+    borderRadius: 99,
+    bgcolor: devPlanColors.primaryLight,
+    color: devPlanColors.primary,
+  },
+
   sectionExportButton: {
-    minHeight: 28,
     px: 0.8,
     borderColor: devPlanColors.border,
     color: devPlanColors.primaryDark,
     bgcolor: devPlanColors.surface,
     fontSize: 11,
     fontWeight: 700,
+  },
+
+  rosterTableToolbar: {
+    display: 'flex',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0.6,
+  },
+
+  rosterProfileFilterSelect: {
+    width: 210,
+    bgcolor: '#fff',
+    color: devPlanColors.primaryDark,
+    border: `1px solid ${devPlanColors.primary}`,
+    fontWeight: 700,
+
+    '& .MuiSelect-button': {
+      justifyContent: 'flex-start',
+      textAlign: 'start',
+    },
+
+    '& .MuiSelect-indicator': {
+      display: 'none',
+    },
+  },
+
+  rosterProfileFilterValue: {
+    width: '100%',
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: '18px minmax(0, 1fr) auto',
+    gap: 0.5,
+    alignItems: 'center',
+    justifyItems: 'start',
+    textAlign: 'start',
+  },
+
+  rosterProfileFilterIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    color: devPlanColors.primary,
+    '& svg': {
+      fontSize: 15,
+    },
+  },
+
+  rosterProfileFilterValuePrimary: {
+    minWidth: 0,
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 800,
+    lineHeight: 1.2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  rosterProfileFilterValueCount: {
+    minWidth: 0,
+    p: 0,
+    color: devPlanColors.primary,
+    fontSize: 11,
+    fontWeight: 800,
+    lineHeight: 1,
+    justifySelf: 'end',
+  },
+
+  rosterProfileFilterListbox: {
+    width: 210,
+    minWidth: '210px !important',
+    maxWidth: 210,
+    maxHeight: 320,
+    overflowX: 'hidden',
+    overflowY: 'auto',
+  },
+
+  rosterProfileFilterOption: {
+    minHeight: 38,
+    py: 0.45,
+
+    '&:hover': {
+      bgcolor: '#eaf4ff',
+    },
+
+    '&[aria-selected="true"]': {
+      bgcolor: '#dcecf8',
+    },
+  },
+
+  rosterProfileFilterOptionContent: {
+    width: '100%',
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: '18px minmax(0, 1fr) auto',
+    gap: 0.6,
+    alignItems: 'center',
+  },
+
+  rosterProfileFilterOptionLabel: {
+    minWidth: 0,
+    color: devPlanColors.primaryDark,
+    fontSize: 12,
+    fontWeight: 700,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  rosterProfileFilterOptionCount: {
+    minWidth: 0,
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 800,
+    lineHeight: 1,
+    justifySelf: 'end',
   },
 
   sectionMeta: {

@@ -28,22 +28,24 @@ export const statsImportModalSx = {
     gap: 0.5,
   },
 
-  seasonStatus: {
-    maxWidth: 320,
+  selectionRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(220px, 360px) minmax(200px, 300px)',
+    gap: 1.25,
+    alignItems: 'start',
+    justifyContent: 'start',
+
+    '@media (max-width: 620px)': {
+      gridTemplateColumns: '1fr',
+    },
   },
 
-  seasonStatusCompact: {
-    maxWidth: 260,
+  seasonSelect: {
+    minWidth: 0,
+  },
 
-    '& .MuiFormLabel-root': {
-      fontSize: 12,
-      lineHeight: 1.2,
-    },
-
-    '& .MuiSelect-root': {
-      minHeight: 30,
-      fontSize: 12,
-    },
+  seasonStatus: {
+    minWidth: 0,
   },
 
   validationIssuesChip: {
@@ -90,6 +92,14 @@ export const statsImportModalSx = {
     minHeight: 21,
     px: 0.65,
     fontSize: 10,
+    fontWeight: 700,
+  },
+
+  rosterExceptionsChip: {
+    borderRadius: 999,
+    minHeight: 23,
+    px: 0.85,
+    fontSize: 11,
     fontWeight: 700,
   },
 }

@@ -59,14 +59,25 @@ export default function ClubsPage() {
   const handleOpenClubsMasterJson = () => setClubsMasterJsonOpen(true)
 
   const actions = (
-    <Stack direction='row' spacing={1}>
-      <Button
-        variant='outlined'
-        startDecorator={iconUi({ id: 'back', size: 'sm' })}
-        onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.entry)}
-      >
-        חזרה לדף הפתיחה
-      </Button>
+    <Stack sx={sx.headerActionsPanel}>
+      <Stack direction='row' spacing={1} sx={sx.headerActions}>
+        <Button
+          sx={sx.primaryButton}
+          startDecorator={iconUi({ id: 'playerDatabase', size: 'sm' })}
+          onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
+        >
+          מעבר לעמוד חיפוש
+        </Button>
+
+        <Button
+          variant='outlined'
+          sx={sx.secondaryButton}
+          startDecorator={iconUi({ id: 'back', size: 'sm' })}
+          onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.entry)}
+        >
+          חזרה לדף הפתיחה
+        </Button>
+      </Stack>
     </Stack>
   )
 
@@ -107,7 +118,7 @@ export default function ClubsPage() {
         <Box sx={sx.contentGrid}>
           <Box sx={[sx.mainColumn, sx.clubsMainColumn]}>
             <PageContentPanel
-              title='מועדונים וקבוצות'
+              title='רשימת כל המועדונים'
               subtitle={summaryText}
               headerActions={clubsHeaderActions}
               panelSx={sx.clubsPanel}

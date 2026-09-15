@@ -377,6 +377,10 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       teamSeason: results.teamSeasonResult?.seasonDocument || {},
       performance: teamPerformance,
       points: teamPoints,
+      // The League row was refreshed immediately above from this exact
+      // summary. Pass it into the Club projection as well, rather than
+      // waiting for a future League-table reload to refresh Clubs Master.
+      leagueScoutProfilesSummary: scoutProfilesSummary,
       canonicalCommitted: true,
       lastWriteAction: 'PASTE_TEAM_PLAYER_STATS',
     }))

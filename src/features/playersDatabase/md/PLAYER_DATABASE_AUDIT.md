@@ -29,6 +29,13 @@ scope. The Audit uses that journal to display the latest known action for the
 finding's team and season. This is scope provenance, not proof that one exact
 field caused the mismatch.
 
+If a flow commits canonical data and then a required projection fails, the
+journal stores a `failed_after_canonical_commit` recovery record. The Audit
+turns it into a **partial write** finding. For a failed Club projection it
+offers the existing Club rebuild: it rebuilds from the canonical League table,
+syncs Clubs Master, and only then marks the recovery record as resolved. No
+roster deletion or reload is required.
+
 ## Boundaries
 
 - Audit does **not** validate Firestore schema, field presence, field type,
@@ -47,11 +54,16 @@ field caused the mismatch.
 | League table loaded | League Document and Team SearchIndex | A Team SearchIndex without a Team Season is valid `league_only`. |
 | Roster loaded | Team Root, Team Season and Player SearchIndexes | Player Documents are not required merely because a player is in the roster. |
 | Stats loaded | Updated Team Season and SearchIndexes | Statistics, Team Balance and scouting projections are refreshed. |
+| Retired roster player | No new Player Document or scout profile | The Team Season keeps the player for history. An existing Player Document is retained only when it contains another season/history or an independent tracking reason; otherwise it is removed. |
 | Player has any scout profile | Player Document | This includes Professional and Preliminary profiles. |
 | Player is Favorite, Watchlist, Manual or Transfer tracked | Player Document | These are independent lifecycle reasons for a Player Document. |
 
 Team Root without a season is a valid lifecycle state. It is not an unexpected
 document by itself.
+
+A Player Document linked to a retired roster player is not an `unexpected_document`
+when it retains historical seasons. A retired player with no remaining history or
+independent tracking reason must not retain a Player Document.
 
 ## Canonical source comparisons
 
@@ -110,7 +122,9 @@ does not infer broken relations from a partial data set.
 
 ## Club-season identity index
 
-The identity index is an import-preflight projection, not a canonical source
-and not a daily Audit source. It is refreshed after a League-table write and
-can be backfilled by the explicit full Club-projection refresh. Audit must
-derive any identity expectation from League Documents, never from the index.
+The identity index is an import-preflight and Team-page discovery projection,
+not a canonical source and not a daily Audit source. It is refreshed after a
+League-table write and can be backfilled by the explicit full Club-projection
+refresh. The Team Page may use it only to locate candidate League Documents;
+Audit must derive any identity expectation from League Documents, never from
+the index.

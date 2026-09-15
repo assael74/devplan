@@ -176,6 +176,7 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
 export default function TeamStructureSection({
   structure = null,
   title = 'מבנה הסגל',
+  titleMeta = null,
   seasonKey = '',
   selectedFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   onFilterChange,
@@ -183,7 +184,20 @@ export default function TeamStructureSection({
   exportDisabled = false,
   children,
 }) {
-  if (!structure) return null
+  if (!structure) {
+    return (
+      <Box sx={sx.section}>
+        <Box sx={sx.header}>
+          <Box sx={sx.titleRow}>
+            <Box sx={sx.titleIcon}>{iconUi({ id: 'players', size: 'sm' })}</Box>
+            <Typography sx={sx.title}>{title}</Typography>
+            {titleMeta}
+          </Box>
+        </Box>
+        <Typography sx={sx.coverageText}>לא נטענו עדיין שחקנים לעונה זאת.</Typography>
+      </Box>
+    )
+  }
 
   if (structure.availability === 'unavailable') {
     const message = structure.availabilityReason === 'season_sample_insufficient'
@@ -196,6 +210,7 @@ export default function TeamStructureSection({
           <Box sx={sx.titleRow}>
             <Box sx={sx.titleIcon}>{iconUi({ id: 'players', size: 'sm' })}</Box>
             <Typography sx={sx.title}>{title}</Typography>
+            {titleMeta}
           </Box>
         </Box>
         <Typography sx={sx.coverageText}>{message}</Typography>
@@ -209,6 +224,7 @@ export default function TeamStructureSection({
         <Box sx={sx.titleRow}>
           <Box sx={sx.titleIcon}>{iconUi({ id: 'players', size: 'sm' })}</Box>
           <Typography sx={sx.title}>{title}</Typography>
+          {titleMeta}
         </Box>
       </Box>
 

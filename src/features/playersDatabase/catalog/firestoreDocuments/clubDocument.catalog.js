@@ -44,6 +44,10 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
             offense: false,
             defense: false,
           },
+          teamTaskAvailability: {
+            availability: '',
+            reason: null,
+          },
           lineStructure: {
             lines: {
               attack: { playersCount: 0 },

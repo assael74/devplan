@@ -24,6 +24,22 @@ const compactPerformanceSide = value => {
   return priorityLevel ? { priorityLevel } : undefined
 }
 
+const compactTeamTaskSignals = value => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+
+  const signals = {}
+
+  if (typeof value.offense === 'boolean') {
+    signals.offense = value.offense
+  }
+
+  if (typeof value.defense === 'boolean') {
+    signals.defense = value.defense
+  }
+
+  return Object.keys(signals).length ? signals : undefined
+}
+
 const seasonKeyOf = season => normalizeSeasonLookupKey(
   season?.seasonKey || season?.seasonId
 )
@@ -118,6 +134,8 @@ export const selectClubsMasterAgeGroupSeasons = seasons => {
 const compactSeason = season => {
   if (!season) return null
 
+  const teamTaskSignals = compactTeamTaskSignals(season?.teamTaskSignals)
+
   return {
     teamId: clean(season?.teamId),
     seasonId: clean(season?.seasonId),
@@ -145,11 +163,12 @@ const compactSeason = season => {
         : {}),
     },
     playersCount: toNumberOrZero(season?.playersCount),
-    ...(season?.teamTaskSignals && typeof season.teamTaskSignals === 'object'
+    ...(teamTaskSignals ? { teamTaskSignals } : {}),
+    ...(season?.teamTaskAvailability && typeof season.teamTaskAvailability === 'object'
       ? {
-          teamTaskSignals: {
-            offense: Boolean(season.teamTaskSignals.offense),
-            defense: Boolean(season.teamTaskSignals.defense),
+          teamTaskAvailability: {
+            availability: clean(season.teamTaskAvailability.availability),
+            reason: clean(season.teamTaskAvailability.reason) || null,
           },
         }
       : {}),
@@ -200,6 +219,7 @@ export const buildClubsMasterCompetitionPathEntry = path => {
 
   return {
     birthYear: toNumberOrZero(path?.birthYear),
+    sourceBirthYear: toNumberOrZero(nextPath?.sourceBirthYear),
     currentLeagueLevel: Number(currentSeason?.leagueLevel) || null,
     projectedNextLeagueLevel: Number(nextPath?.projectedNextLeagueLevel) || null,
     status: normalizeClubCompetitionStatus(
@@ -210,6 +230,7 @@ export const buildClubsMasterCompetitionPathEntry = path => {
       nextPath?.source,
       CLUB_COMPETITION_PROJECTION_SOURCE.AUTOMATIC
     ),
+    reason: clean(nextPath?.reason) || null,
   }
 }
 

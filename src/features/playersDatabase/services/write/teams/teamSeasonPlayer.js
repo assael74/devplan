@@ -19,6 +19,10 @@ import {
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
+import {
+  buildPlayerScoutState,
+  isScoutCalculationExcludedRosterStatus,
+} from '../../../domain/orchestration/buildPlayerScoutState.js'
 
 
 const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
@@ -162,6 +166,16 @@ export async function updateTeamSeasonPlayersScoutProjections({ season = {}, tea
     const sourceTarget = targetFor(current.seasonStatus || season.seasonStatus)
     const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
     const nextPlayers = players.map(player => {
+      if (isScoutCalculationExcludedRosterStatus(player)) {
+        return {
+          ...player,
+          ...buildTeamPlayerScoutProjection(buildPlayerScoutState({
+            player,
+            team,
+            season,
+          })),
+        }
+      }
       const scouted = findScoutedPlayer({ player, scoutedPlayers })
       return scouted ? { ...player, ...buildTeamPlayerScoutProjection(scouted) } : player
     })

@@ -45,6 +45,14 @@ export const teamHeaderSx = {
     p: 0.25,
   },
 
+  favoriteButton: {
+    width: 34,
+    height: 34,
+    minWidth: 34,
+    minHeight: 34,
+    '--Icon-fontSize': '25px',
+  },
+
   contextChip: {
     minHeight: 34,
     px: 1.4,

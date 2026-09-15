@@ -137,7 +137,14 @@ export const findTeamPageTableRow = ({ season, teamId }) => {
   }) || null
 }
 
-export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamSeasons = [], teamId = '') => {
+const toLeagueDocuments = leagueDocumentsOrLeague => (
+  (Array.isArray(leagueDocumentsOrLeague)
+    ? leagueDocumentsOrLeague
+    : [leagueDocumentsOrLeague]
+  ).filter(Boolean)
+)
+
+export const buildTeamPageSeasonOptions = (leagueDocumentsOrLeague, teamDoc = {}, teamSeasons = [], teamId = '') => {
   const options = []
   const seen = new Set()
   const expectedBirthYear = resolveExpectedBirthYear({
@@ -166,31 +173,34 @@ export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamSeasons = [
     }))
   })
 
-  const leagueId = cleanValue(league?.leagueId || league?.id)
-  const pushLeagueOption = ({ season, target }) => {
+  const pushLeagueOption = ({ league, season, target }) => {
     if (!season?.seasonId && !season?.seasonKey) return
     if (!findTeamPageTableRow({ season, teamId })) return
 
     pushOption(buildSeasonOption({
       season,
       target,
-      leagueId,
+      leagueId: cleanValue(league?.leagueId || league?.id),
       teamDoc,
     }))
   }
 
-  if (league?.current?.seasonId || league?.current?.seasonKey) {
-    pushLeagueOption({
-      season: league.current,
-      target: 'current',
-    })
-  }
+  toLeagueDocuments(leagueDocumentsOrLeague).forEach(league => {
+    if (league?.current?.seasonId || league?.current?.seasonKey) {
+      pushLeagueOption({
+        league,
+        season: league.current,
+        target: 'current',
+      })
+    }
 
-  const history = Array.isArray(league?.history) ? league.history : []
-  history.forEach(season => {
-    pushLeagueOption({
-      season,
-      target: 'history',
+    const history = Array.isArray(league?.history) ? league.history : []
+    history.forEach(season => {
+      pushLeagueOption({
+        league,
+        season,
+        target: 'history',
+      })
     })
   })
 
@@ -199,18 +209,29 @@ export const buildTeamPageSeasonOptions = (league, teamDoc = {}, teamSeasons = [
   ))
 
   if (expectedBirthYear && !hasFutureSeason) {
-    const routeLeagueId = cleanValue(league?.leagueId || league?.id)
+    const routeLeagueId = cleanValue(
+      toLeagueDocuments(leagueDocumentsOrLeague)[0]?.leagueId ||
+      toLeagueDocuments(leagueDocumentsOrLeague)[0]?.id
+    )
+    const latestKnownOption = [...options]
+      .filter(option => option.seasonKey !== TEAM_PAGE_FUTURE_SEASON_KEY)
+      .sort((left, right) => (
+        resolveSeasonSortValue(right.seasonKey) - resolveSeasonSortValue(left.seasonKey)
+      ))[0]
+    const fallbackLeagueId = cleanValue(latestKnownOption?.leagueId || routeLeagueId)
 
     pushOption(buildSeasonOption({
       season: {
         seasonId: TEAM_PAGE_FUTURE_SEASON_KEY,
         seasonKey: TEAM_PAGE_FUTURE_SEASON_KEY,
         birthYear: expectedBirthYear,
-        leagueId: routeLeagueId,
-        leagueName: 'ליגה טרם הוגדרה',
+        leagueId: fallbackLeagueId,
+        leagueName: latestKnownOption?.leagueName || 'ליגה טרם הוגדרה',
+        ageGroupId: latestKnownOption?.season?.ageGroupId || '',
+        ageGroupLabel: latestKnownOption?.ageGroupLabel || '',
       },
       target: 'future',
-      leagueId: routeLeagueId,
+      leagueId: fallbackLeagueId,
       teamDoc,
     }))
   }
@@ -233,29 +254,44 @@ export const findTeamPageSeasonDoc = ({ teamSeasons = [], selectedSeasonOption }
   return rows.find(row => isSameSeason(row, selectedSeasonOption)) || null
 }
 
-export const findTeamPageLeagueSeasonDoc = ({ leagueDoc, selectedSeasonOption }) => {
-  if (!leagueDoc || !selectedSeasonOption) return null
+export const findTeamPageLeagueSeasonDoc = ({
+  leagueDoc,
+  leagueDocuments,
+  selectedSeasonOption,
+}) => {
+  if (!selectedSeasonOption) return null
 
-  const current = leagueDoc?.current
-  if (
-    current &&
-    typeof current === 'object' &&
-    isSameSeason(current, selectedSeasonOption)
-  ) {
-    return {
-      season: current,
-      target: 'current',
+  const documents = toLeagueDocuments(
+    leagueDocuments?.length ? leagueDocuments : leagueDoc
+  ).sort((left, right) => (
+    Number(cleanValue(right?.id || right?.leagueId) === cleanValue(selectedSeasonOption?.leagueId)) -
+    Number(cleanValue(left?.id || left?.leagueId) === cleanValue(selectedSeasonOption?.leagueId))
+  ))
+
+  for (const document of documents) {
+    const current = document?.current
+    if (
+      current &&
+      typeof current === 'object' &&
+      isSameSeason(current, selectedSeasonOption)
+    ) {
+      return {
+        leagueDoc: document,
+        season: current,
+        target: 'current',
+      }
+    }
+
+    const history = Array.isArray(document?.history) ? document.history : []
+    const historySeason = history.find(row => isSameSeason(row, selectedSeasonOption))
+    if (historySeason) {
+      return {
+        leagueDoc: document,
+        season: historySeason,
+        target: 'history',
+      }
     }
   }
 
-  const history = Array.isArray(leagueDoc?.history) ? leagueDoc.history : []
-  const historySeason = history.find(row => isSameSeason(row, selectedSeasonOption))
-
-  return historySeason
-    ? {
-      season: historySeason,
-      target: 'history',
-    }
-    : null
+  return null
 }
-

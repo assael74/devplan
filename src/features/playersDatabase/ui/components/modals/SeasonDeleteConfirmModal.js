@@ -6,16 +6,20 @@ import {
   Typography,
 } from '@mui/joy'
 import ConfirmModal from './ConfirmModal.js'
+import TeamSeasonSelect from './TeamSeasonSelect.js'
 
 export default function SeasonDeleteConfirmModal({
   open,
   title,
   description,
   seasonKey,
+  seasonOptions,
+  selectedSeasonOptionKey,
   busy,
   confirmLabel,
   mayRemoveLeagueRoot = false,
   onConfirm,
+  onSeasonOptionChange,
   onClose,
 }) {
   return (
@@ -27,10 +31,16 @@ export default function SeasonDeleteConfirmModal({
       confirmLabel={confirmLabel}
       confirmIconId='delete'
       busy={busy}
+      disabled={!selectedSeasonOptionKey}
       persistent
       onConfirm={onConfirm}
       onClose={onClose}
     >
+      <TeamSeasonSelect
+        seasonOptions={seasonOptions}
+        value={selectedSeasonOptionKey}
+        onChange={onSeasonOptionChange}
+      />
       <Alert color='danger' variant='soft'>
         <Box>
           <Typography level='title-sm'>

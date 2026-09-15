@@ -19,6 +19,7 @@ export default function TeamPositionClassificationTable({
   onPlayerOpen,
   structureFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   embedded = false,
+  toolbar = null,
 }) {
   const filteredRows = rows.filter(row => (
     Array.isArray(row.structureFilterKeys) && row.structureFilterKeys.includes(structureFilter)
@@ -70,19 +71,22 @@ export default function TeamPositionClassificationTable({
         </Box>
       ) : null}
 
-      <DataTable
-        className='dpScrollThin'
-        columns={columns}
-        rows={visibleRows}
-        getRowKey={row => row.id}
-        defaultSort={structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
-          ? { key: '', direction: 'asc' }
-          : { key: 'lineClassification', direction: 'asc' }}
-        emptyText='אין שחקנים להצגה'
-        getRowSx={getRowSx}
-        wrapSx={tableWrapSx}
-        tableSx={sx.table}
-      />
+      <Box sx={sx.tableContainer}>
+        {toolbar ? <Box sx={sx.tableToolbar}>{toolbar}</Box> : null}
+        <DataTable
+          className='dpScrollThin'
+          columns={columns}
+          rows={visibleRows}
+          getRowKey={row => row.id}
+          defaultSort={structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
+            ? { key: '', direction: 'asc' }
+            : { key: 'lineClassification', direction: 'asc' }}
+          emptyText='אין שחקנים להצגה'
+          getRowSx={getRowSx}
+          wrapSx={tableWrapSx}
+          tableSx={sx.table}
+        />
+      </Box>
     </Box>
   )
 }

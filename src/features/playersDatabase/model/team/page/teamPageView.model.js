@@ -63,6 +63,27 @@ const getClubById = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
   club => cleanValue(club.id) === cleanValue(clubId)
 ) || null
 
+const resolveBirthYear = ({
+  teamId = '',
+  teamDoc = {},
+  selectedSeasonOption = {},
+  canonicalTeamSeason = {},
+} = {}) => {
+  const directValue = [
+    canonicalTeamSeason?.season?.birthYear,
+    selectedSeasonOption?.birthYear,
+    selectedSeasonOption?.season?.birthYear,
+    teamDoc?.birthYear,
+    teamDoc?.identity?.birthYear,
+    teamDoc?.metadata?.birthYear,
+  ].find(value => Number(value) >= 1900)
+
+  if (directValue) return Number(directValue)
+
+  const match = cleanValue(teamId).match(/(?:^|_)((?:19|20)\d{2})(?:_|$)/)
+  return match ? Number(match[1]) : '-'
+}
+
 const resolveTeamName = ({ teamRow = {}, teamDoc = {}, teamId = '' } = {}) => {
   const identity = normalizeTeamIdentity({
     team: teamRow,
@@ -206,6 +227,12 @@ export const buildTeamPageView = ({
   const performanceView = buildTeamPerformanceViewModel(canonicalTeamSeason.performance)
   const clubId = canonicalTeamSeason.identity.clubId || getClubIdFromTeamId(teamId)
   const club = getClubById(clubId)
+  const birthYear = resolveBirthYear({
+    teamId,
+    teamDoc,
+    selectedSeasonOption,
+    canonicalTeamSeason,
+  })
 
   return {
     ...canonicalTeamSeason,
@@ -218,11 +245,17 @@ export const buildTeamPageView = ({
     birthTeamSlot: canonicalTeamSeason.identity.teamSlot || 1,
     teamSlot: canonicalTeamSeason.identity.teamSlot || 1,
     name: canonicalTeamSeason.identity.displayName,
-    leagueId: canonicalTeamSeason.league.leagueId,
-    leagueName: cleanValue(leagueDoc?.leagueName || leagueDoc?.name || leagueDoc?.id || '-'),
-    ageGroupId: canonicalTeamSeason.league.ageGroupId,
-    ageGroupLabel: canonicalTeamSeason.league.ageGroupLabel,
-    birthYear: canonicalTeamSeason.season.birthYear || '-',
+    leagueId: cleanValue(selectedSeasonOption?.leagueId || canonicalTeamSeason.league.leagueId),
+    leagueName: cleanValue(
+      selectedSeasonOption?.leagueName ||
+      leagueDoc?.leagueName ||
+      leagueDoc?.name ||
+      leagueDoc?.id ||
+      '-'
+    ),
+    ageGroupId: cleanValue(selectedSeasonOption?.season?.ageGroupId || canonicalTeamSeason.league.ageGroupId),
+    ageGroupLabel: cleanValue(selectedSeasonOption?.ageGroupLabel || canonicalTeamSeason.league.ageGroupLabel),
+    birthYear,
     seasonKey: canonicalTeamSeason.season.seasonKey || '-',
     tableRank: canonicalTeamSeason.ranking.tableRank || '-',
     tableAttackRank: nullishFallback(officialPerformance?.tableAttackRank, Number(canonicalTeamSeason.performance?.offense?.rank) || null),

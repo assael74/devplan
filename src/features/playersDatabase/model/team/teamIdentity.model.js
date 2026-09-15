@@ -77,6 +77,19 @@ export const resolveBirthTeamDocumentId = team =>
 export const resolveBirthTeamSlot = team =>
   normalizeTeamIdentity({ team }).birthTeamSlot
 
+export const resolveTeamBirthYear = ({ teamId = '', team = {} } = {}) => {
+  const directBirthYear = Number(
+    team?.birthYear ||
+    team?.identity?.birthYear ||
+    team?.metadata?.birthYear ||
+    0
+  )
+  if (directBirthYear >= 1900) return directBirthYear
+
+  const match = cleanValue(teamId).match(/(?:^|_)((?:19|20)\d{2})(?:_|$)/)
+  return match ? Number(match[1]) : null
+}
+
 export const resolveTeamLookupKey = team => {
   const identity = normalizeTeamIdentity({ team })
 

@@ -1,5 +1,6 @@
 import {
   buildClubsMasterAgeGroupEntry,
+  buildClubsMasterCompetitionPathEntry,
 } from './clubsMaster.projection.js'
 
 const season = ({
@@ -24,6 +25,59 @@ const buildEntry = seasons => buildClubsMasterAgeGroupEntry({
 const keysOf = rows => rows.map(row => row.seasonKey)
 
 describe('Clubs Master age-group season selection', () => {
+  test('keeps compact competition reason and team-task availability metadata', () => {
+    const entry = buildClubsMasterAgeGroupEntry({
+      ageGroupId: 'u15',
+      ageGroupLabel: 'U15',
+      seasons: [
+        {
+          ...season({ seasonKey: '26/27', seasonStatus: 'active' }),
+          teamTaskSignals: { offense: true, defense: false },
+          teamTaskAvailability: {
+            availability: 'unavailable',
+            reason: 'stats_not_loaded',
+          },
+        },
+      ],
+    })
+    const path = buildClubsMasterCompetitionPathEntry({
+      birthYear: 2012,
+      nextCompetitionPath: {
+        sourceBirthYear: 2011,
+        projectedNextLeagueLevel: null,
+        status: 'UNKNOWN',
+        source: 'AUTOMATIC',
+        reason: 'SOURCE_COHORT_NOT_LOADED',
+      },
+    })
+
+    expect(entry.current[0].teamTaskAvailability).toEqual({
+      availability: 'unavailable',
+      reason: 'stats_not_loaded',
+    })
+    expect(path.reason).toBe('SOURCE_COHORT_NOT_LOADED')
+    expect(path.sourceBirthYear).toBe(2011)
+  })
+
+  test('preserves only explicit team-task signal booleans', () => {
+    const offenseTrue = buildEntry([{
+      ...season({ seasonKey: '26/27', seasonStatus: 'active' }),
+      teamTaskSignals: { offense: true },
+    }])
+    const offenseFalse = buildEntry([{
+      ...season({ seasonKey: '26/27', seasonStatus: 'active' }),
+      teamTaskSignals: { offense: false },
+    }])
+    const missingSignals = buildEntry([{
+      ...season({ seasonKey: '26/27', seasonStatus: 'active' }),
+      teamTaskSignals: {},
+    }])
+
+    expect(offenseTrue.current[0].teamTaskSignals).toEqual({ offense: true })
+    expect(offenseFalse.current[0].teamTaskSignals).toEqual({ offense: false })
+    expect(missingSignals.current[0]).not.toHaveProperty('teamTaskSignals')
+  })
+
   test('selects only catalog current and previous seasons', () => {
     const entry = buildEntry([
       season({ seasonKey: '24/25', seasonStatus: 'completed' }),

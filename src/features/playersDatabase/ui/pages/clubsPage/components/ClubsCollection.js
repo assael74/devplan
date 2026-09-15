@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/joy'
 
 import { CollapseBox } from '../../../../../../ui/patterns/collapseBox/index.js'
@@ -6,19 +6,32 @@ import ClubExpandedRow from './ClubExpandedRow.js'
 import ClubSummaryRow from './ClubSummaryRow.js'
 import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
 
+const COLLAPSE_TRANSITION_MS = 240
+
 const ClubCollectionItem = memo(function ClubCollectionItem({
   group,
   expanded,
-  hasExpandedClub,
   onToggleClub,
   onOpenTeam,
   onOpenClub,
 }) {
   const clubId = group.club.clubId
+  const [keepExpandedContent, setKeepExpandedContent] = useState(expanded)
+
+  useEffect(() => {
+    if (expanded) {
+      setKeepExpandedContent(true)
+      return undefined
+    }
+
+    const timeoutId = setTimeout(() => setKeepExpandedContent(false), COLLAPSE_TRANSITION_MS)
+    return () => clearTimeout(timeoutId)
+  }, [expanded])
 
   return (
     <CollapseBox
       open={expanded}
+      disableHover
       onToggle={() => onToggleClub(clubId)}
       headerLeft={(
         <ClubSummaryRow
@@ -28,18 +41,22 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
       )}
       rootSx={[
         sx.collectionItem,
-        hasExpandedClub && !expanded && sx.collectionItemMuted,
+        expanded && sx.collectionItemOpen,
       ]}
-      headerSx={[sx.collectionSummaryHeader, sx.summaryHeader]}
+      headerSx={[
+        sx.collectionSummaryHeader,
+        sx.summaryHeader,
+        expanded && sx.collectionSummaryHeaderOpen,
+      ]}
+      contentSx={sx.collectionContent}
       indicatorSx={sx.collectionIndicator}
-      contentSx={sx.collectionContent(expanded)}
       innerSx={sx.collectionInner}
     >
-      {expanded ? (
+      {expanded || keepExpandedContent ? (
         <ClubExpandedRow
           club={group.club}
           model={{
-            expandedModels: group.expandedModels,
+            intelligence: group.intelligence,
             seasonOptions: group.seasonOptions,
           }}
           onOpenTeam={onOpenTeam}
@@ -97,7 +114,6 @@ export default function ClubsCollection({
           key={group.club.clubId}
           group={group}
           expanded={expandedClubId === group.club.clubId}
-          hasExpandedClub={Boolean(expandedClubId)}
           onToggleClub={onToggleClub}
           onOpenTeam={onOpenTeam}
           onOpenClub={onOpenClub}

@@ -13,6 +13,7 @@ export const PLAYERS_DATABASE_CACHE_PREFIXES = {
   player: 'player',
   leaguesMaster: 'leaguesMaster',
   clubsMaster: 'clubsMaster',
+  clubSeasonIdentity: 'clubSeasonIdentity',
 }
 
 export const buildLeaguesCollectionCacheKey = () => (
@@ -45,4 +46,12 @@ export const buildLeaguesMasterCacheKey = () => (
 
 export const buildClubsMasterCacheKey = () => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.clubsMaster, 'all')
+)
+
+export const buildClubSeasonIdentityIndexCacheKey = ({ seasonKey, birthYear } = {}) => (
+  joinKey(
+    PLAYERS_DATABASE_CACHE_PREFIXES.clubSeasonIdentity,
+    String(seasonKey || '').replaceAll('/', '-'),
+    Number(birthYear) || 0
+  )
 )

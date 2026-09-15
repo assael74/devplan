@@ -8,6 +8,7 @@ export const TYPE_LABELS = Object.freeze({
   [AUDIT_FINDING_TYPE.SOURCE_MISMATCH]: 'נתונים לא תואמים',
   [AUDIT_FINDING_TYPE.BROKEN_RELATION]: 'קשרים שבורים',
   [AUDIT_FINDING_TYPE.UNEXPECTED_DOCUMENT]: 'מסמכים מיותרים',
+  [AUDIT_FINDING_TYPE.PARTIAL_WRITE]: 'כתיבות חלקיות',
 })
 
 const LIFECYCLE_LABELS = Object.freeze({
@@ -16,6 +17,7 @@ const LIFECYCLE_LABELS = Object.freeze({
   roster_loaded: 'סגל נטען',
   stats_loaded: 'סטטיסטיקות נטענו',
   roster_only: 'שחקן בסגל ללא פרופיל סקאוט',
+  retired: 'שחקן שפרש',
   profiled: 'שחקן עם פרופיל סקאוט',
   tracked_outside_current_roster: 'שחקן במעקב מחוץ לסגל הנוכחי',
   unknown: 'מצב לא ידוע',
@@ -51,6 +53,7 @@ export const sourceLabel = source => {
   if (source === 'League Documents → buildLeaguesMasterLeagueEntry') return 'מסמכי הליגה'
   if (source === 'League Documents → buildLeaguesMasterSummary') return 'מסמכי הליגה'
   if (source === 'League season lifecycle') return 'מחזור החיים של עונת הליגה'
+  if (source === 'Write flow recovery journal') return 'יומן התאוששות כתיבה'
   return clean(source)
 }
 

@@ -5,7 +5,47 @@ export const clubsPageSx = {
   ...pageCoreLayoutSx,
   pageTitle: {
     color: devPlanColors.primaryDark,
-    fontWeight: 800,
+    fontSize: {
+      xs: 34,
+      md: 44,
+    },
+    lineHeight: 1.05,
+    fontWeight: 700,
+  },
+
+  headerActionsPanel: {
+    gap: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+  },
+
+  headerActions: {
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
+  primaryButton: {
+    minHeight: 38,
+    px: 2,
+    bgcolor: devPlanColors.primary,
+    color: '#fff',
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryDark,
+    },
+  },
+
+  secondaryButton: {
+    minHeight: 38,
+    px: 2,
+    bgcolor: '#fff',
+    color: devPlanColors.primary,
+    borderColor: devPlanColors.primary,
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primaryDark,
+    },
   },
 
   panelContent: {
@@ -14,11 +54,13 @@ export const clubsPageSx = {
     p: 0,
     overflowY: 'auto',
     overflowX: 'hidden',
+    bgcolor: '#F4F7FA',
   },
 
   filterChipGroup: {
     flexWrap: 'wrap',
     gap: 0.5,
+    justifyContent: 'center',
   },
 
   filterChip: {
@@ -46,8 +88,10 @@ export const clubsPageSx = {
   leaguePathFilterChip: {
     '--Chip-minHeight': '30px',
     '--Chip-paddingInline': '9px',
-    width: '100%',
-    justifyContent: 'flex-start',
+    width: 'fit-content',
+    maxWidth: '100%',
+    mx: 'auto',
+    justifyContent: 'center',
     cursor: 'pointer',
     fontWeight: 700,
   },
@@ -277,23 +321,33 @@ export const clubsPageSx = {
   sideTitle: {
     color: devPlanColors.primaryDark,
     fontWeight: 800,
+    alignSelf: 'stretch',
   },
 
   sideSubtitle: {
     mt: 0.25,
     color: devPlanColors.secondary,
     lineHeight: 1.5,
+    alignSelf: 'stretch',
   },
 
   filterLabel: {
     mb: 0.45,
     color: devPlanColors.secondary,
     fontWeight: 700,
+    alignSelf: 'stretch',
   },
 
   filterControl: {
     width: '100%',
     bgcolor: devPlanColors.surface,
+  },
+
+  sideSection: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 
   switchRow: {
@@ -309,7 +363,9 @@ export const clubsPageSx = {
   },
 
   resetButton: {
-    width: '100%',
+    width: '86%',
+    maxWidth: 220,
+    mx: 'auto',
   },
 
   stateBox: {
@@ -325,8 +381,54 @@ export const clubsPageSx = {
   collection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 1,
+    gap: 0.5,
     p: 1.25,
+  },
+
+  collectionItem: {
+    contentVisibility: 'auto',
+    containIntrinsicSize: '74px',
+    overflow: 'hidden',
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 10,
+    bgcolor: devPlanColors.surface,
+    transition: 'box-shadow 180ms ease, border-color 180ms ease',
+  },
+
+  collectionItemOpen: {
+    position: 'relative',
+    zIndex: 1,
+    overflow: 'visible',
+    borderColor: devPlanColors.petrol,
+    boxShadow: `0 8px 20px ${devPlanColors.primaryDark}40`,
+  },
+
+  collectionSummaryHeader: {
+    p: 0.4,
+  },
+
+  collectionSummaryHeaderOpen: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 3,
+    bgcolor: devPlanColors.petrolLight,
+    borderBottom: `2px solid ${devPlanColors.petrol}`,
+    boxShadow: `0 8px 12px -5px ${devPlanColors.primaryDark}99`,
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      zIndex: 1,
+      right: 0,
+      bottom: -10,
+      left: 0,
+      height: 10,
+      pointerEvents: 'none',
+      background: `linear-gradient(to bottom, ${devPlanColors.primaryDark}33, transparent)`,
+    },
+  },
+
+  collectionContent: {
+    overflow: 'hidden',
   },
 
   summaryRow: {
@@ -392,6 +494,7 @@ export const clubsPageSx = {
     width: '100%',
     minWidth: 0,
     maxWidth: '100%',
+    pr: 1.25,
     display: 'flex',
     flexWrap: 'nowrap',
     justifyContent: 'flex-start',
@@ -419,7 +522,7 @@ export const clubsPageSx = {
   },
 
   summaryAreaBox: {
-    minHeight: 48,
+    minHeight: 42,
     display: 'grid',
     placeItems: 'center',
   },
@@ -440,7 +543,7 @@ export const clubsPageSx = {
   },
 
   summaryClubAreaContentBox: {
-    minHeight: 58,
+    minHeight: 50,
     pb: 1,
     boxSizing: 'border-box',
   },
@@ -451,9 +554,28 @@ export const clubsPageSx = {
     height: '100%',
     alignSelf: 'stretch',
     boxSizing: 'border-box',
+    '& > :first-of-type': {
+      width: 36,
+      height: 36,
+    },
+    '& [aria-label^="רמת מועדון"]': {
+      left: -4,
+      bottom: -4,
+      minWidth: 18,
+      height: 18,
+      px: 0.25,
+      pt: 0.2,
+      borderRadius: 9,
+      fontSize: 8,
+    },
   },
 
   summaryLeaguePathContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    '& > *': {
+      justifyContent: 'center',
+    },
   },
 
   summaryAreaPlaceholder: {
@@ -476,12 +598,13 @@ export const clubsPageSx = {
 
   expanded: {
     mx: 0,
-    mt: -1,
+    mt: 0,
+    height: 320,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    boxSizing: 'border-box',
     p: 1.5,
     pt: 1.75,
-    border: `1px solid ${devPlanColors.border}`,
-    borderTop: 0,
-    borderRadius: '0 0 8px 8px',
     bgcolor: '#FBFCFD',
   },
 

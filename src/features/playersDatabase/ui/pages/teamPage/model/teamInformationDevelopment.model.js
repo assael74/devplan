@@ -5,6 +5,48 @@ const seasonOrder = season => {
   return match ? Number(match[1]) : 0
 }
 
+const buildAllDevelopmentSeasons = ({ teamSeasons = [], seasonOptions = [] } = {}) => {
+  const optionsByKey = new Map(
+    (Array.isArray(seasonOptions) ? seasonOptions : []).map(option => [
+      clean(option?.seasonKey),
+      option,
+    ]).filter(([seasonKey]) => seasonKey)
+  )
+  const seasonsByKey = new Map()
+  const addSeason = (source, option = null) => {
+    const seasonKey = clean(source?.seasonKey || source?.seasonId || option?.seasonKey)
+    if (!seasonKey) return
+
+    const existing = seasonsByKey.get(seasonKey) || {}
+    const resolvedOption = option || optionsByKey.get(seasonKey) || null
+    seasonsByKey.set(seasonKey, {
+      ...existing,
+      ...source,
+      seasonKey,
+      leagueName: source?.leagueName || existing.leagueName || resolvedOption?.leagueName || '',
+      ageGroupLabel: source?.ageGroupLabel || existing.ageGroupLabel || resolvedOption?.ageGroupLabel || '',
+      leagueLevel: source?.leagueLevel || existing.leagueLevel || resolvedOption?.leagueLevel || null,
+      isCurrent: resolvedOption?.target === 'current',
+      isUpcoming: resolvedOption?.target === 'future',
+    })
+  }
+
+  ;(Array.isArray(teamSeasons) ? teamSeasons : []).filter(Boolean).forEach(season => addSeason(season))
+  ;(Array.isArray(seasonOptions) ? seasonOptions : [])
+    .filter(option => option?.target === 'future')
+    .forEach(option => addSeason(option.season || option, option))
+
+  return Array.from(seasonsByKey.values())
+    .sort((left, right) => seasonOrder(right) - seasonOrder(left))
+}
+
+const seasonSummaryMeta = season => ({
+  seasonKey: clean(season?.seasonKey || season?.seasonId),
+  leagueName: clean(season?.leagueName || season?.league?.leagueName || season?.league?.name),
+  leagueLevel: numberOrNull(season?.leagueLevel || season?.league?.leagueLevel),
+  ageGroupLabel: clean(season?.ageGroupLabel || season?.ageGroup?.label),
+})
+
 export const findPreviousSeason = ({ teamSeasons, selectedSeasonKey }) => {
   const rows = (Array.isArray(teamSeasons) ? teamSeasons : [])
     .filter(Boolean)
@@ -36,74 +78,37 @@ export const buildSeasonTimeline = ({ team = {}, teamSeasons = [], selectedSeaso
   ].filter(entry => entry.seasonKey)
 }
 
-export const buildDevelopmentTimeline = ({ team = {}, teamSeasons = [], seasonOptions = [], selectedSeasonKey = '', selectedSeasonOption = null } = {}) => {
-  const selectedKey = clean(selectedSeasonKey)
-  const selectedOrder = seasonOrder({ seasonKey: selectedKey })
-  const rows = (Array.isArray(teamSeasons) ? teamSeasons : []).filter(Boolean)
-  const selectedSeason = rows.find(row => clean(row.seasonKey || row.seasonId) === selectedKey) || null
-  const previousSeasons = rows
-    .filter(row => seasonOrder(row) < selectedOrder)
-    .sort((left, right) => seasonOrder(right) - seasonOrder(left))
-    .slice(0, 3)
-  const metric = (season, key, isSelected) => (
-    isSelected
-      ? withFallback(numberOrNull(team?.[key]), numberOrNull(season?.[key]))
-      : numberOrNull(season?.[key])
+export const buildDevelopmentTimeline = ({ team = {}, teamSeasons = [], seasonOptions = [] } = {}) => {
+  const rows = buildAllDevelopmentSeasons({ teamSeasons, seasonOptions })
+  const metric = (season, key) => withFallback(
+    numberOrNull(season?.[key]),
+    season.isCurrent ? numberOrNull(team?.[key]) : null
   )
-  const toEntry = (season, isSelected = false, isUpcoming = false) => ({
-    seasonKey: clean(season?.seasonKey || season?.seasonId || selectedKey),
-    isCurrent: isSelected,
-    status: isUpcoming || (isSelected && selectedSeasonOption?.target === 'future') ? 'upcoming' : 'available',
-    tableRank: metric(season, 'tableRank', isSelected),
-    games: withFallback(metric(season, 'games', isSelected), numberOrNull(season?.teamStats?.teamGamePlayed)),
-    goalsForPerGame: metric(season, 'goalsForPerGame', isSelected),
-    goalsAgainstPerGame: metric(season, 'goalsAgainstPerGame', isSelected),
-    tableAttackRank: metric(season, 'tableAttackRank', isSelected),
-    tableDefenseRank: metric(season, 'tableDefenseRank', isSelected),
+  const toEntry = season => ({
+    ...seasonSummaryMeta(season),
+    isCurrent: Boolean(season.isCurrent),
+    status: season.isUpcoming ? 'upcoming' : 'available',
+    tableRank: metric(season, 'tableRank'),
+    games: withFallback(metric(season, 'games'), numberOrNull(season?.teamStats?.teamGamePlayed)),
+    goalsForPerGame: metric(season, 'goalsForPerGame'),
+    goalsAgainstPerGame: metric(season, 'goalsAgainstPerGame'),
+    tableAttackRank: metric(season, 'tableAttackRank'),
+    tableDefenseRank: metric(season, 'tableDefenseRank'),
     offensePriorityLevel: clean(
-      isSelected
-        ? team?.performanceView?.offense?.priority?.level || season?.performance?.offense?.priorityLevel
-        : season?.performance?.offense?.priorityLevel
+      season?.performance?.offense?.priorityLevel ||
+      (season.isCurrent ? team?.performanceView?.offense?.priority?.level : '')
     ),
     defensePriorityLevel: clean(
-      isSelected
-        ? team?.performanceView?.defense?.priority?.level || season?.performance?.defense?.priorityLevel
-        : season?.performance?.defense?.priorityLevel
+      season?.performance?.defense?.priorityLevel ||
+      (season.isCurrent ? team?.performanceView?.defense?.priority?.level : '')
     ),
   })
 
-  return [
-    toEntry(selectedSeason || { seasonKey: selectedKey }, true),
-    ...previousSeasons.map(season => toEntry(season)),
-    ...(Array.isArray(seasonOptions) ? seasonOptions : [])
-      .filter(option => option?.target === 'future' && clean(option?.seasonKey) !== selectedKey)
-      .map(option => toEntry(option.season || option, false, true)),
-  ].filter(entry => entry.seasonKey).sort((left, right) => seasonOrder(right) - seasonOrder(left))
+  return rows.map(toEntry).filter(entry => entry.seasonKey)
 }
 
-export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seasonOptions = [], selectedSeasonKey = '', selectedSeasonOption = null } = {}) => {
-  const selectedKey = clean(selectedSeasonKey)
-  const selectedOrder = seasonOrder({ seasonKey: selectedKey })
-  const rows = (Array.isArray(teamSeasons) ? teamSeasons : []).filter(Boolean)
-  const selectedSeason = rows.find(row => clean(row.seasonKey || row.seasonId) === selectedKey) || null
-  const seasons = [
-    { ...(selectedSeason || { seasonKey: selectedKey }), isCurrent: true },
-    ...rows
-      .filter(row => seasonOrder(row) < selectedOrder)
-      .sort((left, right) => seasonOrder(right) - seasonOrder(left))
-      .slice(0, 3)
-      .map(row => ({ ...row, isCurrent: false })),
-    ...(Array.isArray(seasonOptions) ? seasonOptions : [])
-      .filter(option => option?.target === 'future' && clean(option?.seasonKey) !== selectedKey)
-      .map(option => ({
-        ...(option.season || option),
-        leagueName: option.leagueName || option.season?.leagueName,
-        ageGroupLabel: option.ageGroupLabel || option.season?.ageGroupLabel,
-        isCurrent: false,
-        isUpcoming: true,
-      })),
-  ].filter(season => clean(season.seasonKey || season.seasonId))
-    .sort((left, right) => seasonOrder(right) - seasonOrder(left))
+export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seasonOptions = [] } = {}) => {
+  const seasons = buildAllDevelopmentSeasons({ teamSeasons, seasonOptions })
 
   const seasonKey = season => clean(season.seasonKey || season.seasonId)
   const seasonOptionByKey = new Map(
@@ -133,7 +138,7 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
     }
 
     return {
-      seasonKey: seasonKey(season),
+      ...seasonSummaryMeta(season),
       isCurrent: season.isCurrent,
       total: numberOrNull(structure.relevantPlayersCount),
       categories: categories.map(([key, label, count]) => ({ key, label, count })),
@@ -148,7 +153,7 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
       : {}
 
     return {
-      seasonKey: seasonKey(season),
+      ...seasonSummaryMeta(season),
       isCurrent: season.isCurrent,
       total: numberOrNull(summary.total),
       profiles: Object.entries(profileCounts)
@@ -184,10 +189,8 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
     }, {})
 
     return {
-      seasonKey: seasonKey(season),
-      isUpcoming: Boolean(season.isUpcoming) || (
-        season.isCurrent && selectedSeasonOption?.target === 'future'
-      ),
+      ...seasonSummaryMeta(season),
+      isUpcoming: Boolean(season.isUpcoming),
       leftCount: left.length,
       joinedCount: joined.length,
       directionCounts,
@@ -218,20 +221,19 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
       ),
       ageGroupLabel: clean(
         season?.ageGroupLabel || season?.ageGroup?.label ||
-        seasonOptionByKey.get(seasonKey(season))?.ageGroupLabel ||
-        (season.isCurrent ? selectedSeasonOption?.ageGroupLabel : '')
+        seasonOptionByKey.get(seasonKey(season))?.ageGroupLabel
       ),
       leagueLevel: numberOrNull(season?.leagueLevel),
       isCurrent: season.isCurrent,
-      status: season.isUpcoming || (season.isCurrent && selectedSeasonOption?.target === 'future') ? 'upcoming' : 'available',
+      status: season.isUpcoming ? 'upcoming' : 'available',
     })),
     profileTimeline: seasons.map(season => ({
-      seasonKey: seasonKey(season),
+      ...seasonSummaryMeta(season),
       count: profilesCount(season),
       isCurrent: season.isCurrent,
     })),
     rosterTimeline: seasons.map(season => ({
-      seasonKey: seasonKey(season),
+      ...seasonSummaryMeta(season),
       count: countPlayers(season),
       isCurrent: season.isCurrent,
     })),
@@ -293,4 +295,3 @@ export const buildSeasonChange = ({ balance, previousBalance, season, previousSe
     ['רוטציה', previousCard('rotation')?.value, currentCard('rotation')?.value],
   ]
 }
-

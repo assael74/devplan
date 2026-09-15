@@ -4,9 +4,8 @@ import { cleanValue, pickDefinedValue, toNumberOrZero } from '../shared/value.mo
 import { buildTeamPerformanceViewModel } from '../team/teamPerformance.viewModel.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import {
-  clubHasLeagueLevelDirection,
-  clubHasLeaguePathDirection,
-} from './clubPresentation.model.js'
+  CLUB_SPOTLIGHT_TYPE,
+} from '../../domain/clubIntelligence/index.js'
 
 const clean = cleanValue
 const CATALOG_ORDER_BY_CLUB_ID = new Map(
@@ -70,12 +69,14 @@ const getSeasonEntries = (club, seasonView) => (
 export const buildClubsPageRows = ({
   clubsMasterDoc,
   seasonView = 'current',
+  intelligencesByClubId = new Map(),
 } = {}) => {
   const clubs = Array.isArray(clubsMasterDoc?.clubs) ? clubsMasterDoc.clubs : []
 
   return clubs
     .map(club => ({
       club,
+      intelligence: intelligencesByClubId.get(clean(club?.clubId)) || null,
       teams: getSeasonEntries(club, seasonView),
       previousTeams: seasonView === 'current'
         ? getSeasonEntries(club, 'previous')
@@ -115,13 +116,23 @@ export const filterClubsPageRows = ({
     }
 
     if (selectedLeaguePathDirections.length && !selectedLeaguePathDirections.every(direction => (
-      clubHasLeaguePathDirection({ teams: group.teams, direction })
+      (Array.isArray(group?.intelligence?.spotlights) ? group.intelligence.spotlights : [])
+        .some(spotlight => (
+          direction === 'up'
+            ? spotlight?.type === CLUB_SPOTLIGHT_TYPE.FUTURE_LEAGUE_PATH_RISE
+            : spotlight?.type === CLUB_SPOTLIGHT_TYPE.FUTURE_LEAGUE_PATH_DROP
+        ))
     ))) {
       return result
     }
 
     if (selectedLeagueLevelDirections.length && !selectedLeagueLevelDirections.every(direction => (
-      clubHasLeagueLevelDirection({ club: group.club, teams: group.teams, direction })
+      (Array.isArray(group?.intelligence?.spotlights) ? group.intelligence.spotlights : [])
+        .some(spotlight => (
+          direction === 'above'
+            ? spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_ABOVE_CLUB_LEVEL
+            : spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_BELOW_CLUB_LEVEL
+        ))
     ))) {
       return result
     }

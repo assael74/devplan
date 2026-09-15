@@ -15,7 +15,7 @@ import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
 export default function ClubsFilters({ model }) {
   return (
     <PageSidePanel scrollable>
-      <Box>
+      <Box sx={sx.sideSection}>
         <Typography level='title-sm' sx={sx.sideTitle}>סינון מועדונים</Typography>
         <Typography level='body-xs' sx={sx.sideSubtitle}>
           הסינון חל על רשימת המועדונים בעונה הנוכחית.
@@ -23,9 +23,10 @@ export default function ClubsFilters({ model }) {
       </Box>
       <Divider />
       <Stack spacing={1.15}>
-        <Box>
+        <Box sx={sx.sideSection}>
           <Typography level='body-xs' sx={sx.filterLabel}>חיפוש</Typography>
           <Input
+            size='sm'
             value={model.query}
             onChange={event => model.setQuery(event.target.value)}
             placeholder='מועדון או ליגה'
@@ -34,7 +35,7 @@ export default function ClubsFilters({ model }) {
           />
         </Box>
         <Divider />
-        <Box>
+        <Box sx={sx.sideSection}>
           <Typography level='body-xs' sx={sx.filterLabel}>רמת מועדון</Typography>
           <Stack direction='row' sx={sx.filterChipGroup}>
             {model.clubLevelOptions.map(option => {
@@ -58,8 +59,8 @@ export default function ClubsFilters({ model }) {
           </Stack>
         </Box>
         <Divider />
-        <Box>
-          <Typography level='body-xs' sx={sx.filterLabel}>מסלול ליגה</Typography>
+        <Box sx={sx.sideSection}>
+          <Typography level='body-xs' sx={sx.filterLabel}>מסלול ליגה עתידי</Typography>
           <Stack spacing={0.55}>
             <Chip
               size='sm'
@@ -70,7 +71,7 @@ export default function ClubsFilters({ model }) {
               aria-pressed={model.leaguePathDirections.includes('down')}
               onClick={() => model.toggleLeaguePathDirection('down')}
             >
-              איתור ירידה במסלול הליגה
+              איתור ירידה צפויה ברמת הליגה
             </Chip>
             <Chip
               size='sm'
@@ -81,12 +82,12 @@ export default function ClubsFilters({ model }) {
               aria-pressed={model.leaguePathDirections.includes('up')}
               onClick={() => model.toggleLeaguePathDirection('up')}
             >
-              איתור עלייה במסלול הליגה
+              איתור עלייה צפויה ברמת הליגה
             </Chip>
           </Stack>
         </Box>
         <Divider />
-        <Box>
+        <Box sx={sx.sideSection}>
           <Typography level='body-xs' sx={sx.filterLabel}>יחס רמת ליגה למועדון</Typography>
           <Stack spacing={0.55}>
             <Chip
