@@ -92,7 +92,6 @@ export const createEmptyPlayerSeason = () => ({
     teamUrl: '',
     seasonUrl: '',
     rosterStatus: '',
-    manualTransferDirection: '',
     sourceCollection: '',
     sourceDocumentId: '',
     sourceTarget: '',

@@ -38,6 +38,7 @@ export default function AnimatedModal({
   contentSx,
   headerSx,
   footerSx,
+  footerActions = null,
   onConfirm,
   onClose,
 }) {
@@ -115,6 +116,8 @@ export default function AnimatedModal({
                   >
                     {confirmLabel}
                   </Button>
+
+                  {footerActions}
 
                   <Button
                     variant='outlined'

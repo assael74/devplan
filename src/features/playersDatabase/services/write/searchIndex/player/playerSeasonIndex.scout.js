@@ -120,7 +120,29 @@ export const buildPlayerScoutIndexFields = player => {
     ...signalPreliminaryProfileIds,
   ])
   const preliminaryProfileIdSet = new Set(scoutPreliminaryProfileIds)
-  const scoutProfileIds = uniqueCleanValues(scout.profileIds)
+  // Roster reloads carry the canonical compact profile fields from the Team
+  // Season (`professionalScoutProfileIds` / `preliminaryScoutProfileIds`),
+  // rather than the full Scout Engine signals.  They are still authoritative
+  // for the SearchIndex and must not be erased by an otherwise harmless roster
+  // import.
+  const storedProfessionalProfileIds = profilesRemoved
+    ? []
+    : uniqueCleanValues([
+      ...(Array.isArray(player?.professionalScoutProfileIds)
+        ? player.professionalScoutProfileIds
+        : []),
+      ...(Array.isArray(player?.scoutProfileIds)
+        ? player.scoutProfileIds
+        : []),
+    ])
+  const storedPreliminaryProfileIds = profilesRemoved
+    ? []
+    : uniqueCleanValues(player?.preliminaryScoutProfileIds)
+  storedPreliminaryProfileIds.forEach(profileId => preliminaryProfileIdSet.add(profileId))
+  const scoutProfileIds = uniqueCleanValues([
+    ...scout.profileIds,
+    ...storedProfessionalProfileIds,
+  ])
     .filter(profileId => !preliminaryProfileIdSet.has(profileId))
   const scoutCombinationIds = scout.combinationIds
   const nearestProfile = opportunity?.profilesRemoved === true
@@ -137,21 +159,32 @@ export const buildPlayerScoutIndexFields = player => {
       prefix: 'primary',
       profile: primaryProfile,
     }),
+    primaryScoutProfileId: clean(primaryProfile?.id || player?.primaryScoutProfileId),
+    primaryScoutProfileStrengthDepthPct: primaryProfile
+      ? toNullableNumber(primaryProfile?.profileStrength?.depthPct)
+      : toNullableNumber(player?.primaryScoutProfileStrengthDepthPct),
     primaryScoutTeamGateMode: clean(
       primaryProfile?.scoutContext?.teamGate?.mode
     ),
     nearScoutProfileId: clean(nearestProfile?.profileId),
     nearScoutProfileDistancePct: toNullableNumber(nearestProfile?.distancePct),
     nearScoutProfileTrend: clean(nearestProfile?.trend),
-    scoutEffectiveImmediacyStatus: clean(opportunity?.effectiveActionStatus),
-    scoutPlayerInterestLevel: clean(player?.scoutPlayerInterest?.interestLevel),
+    scoutEffectiveImmediacyStatus: clean(
+      opportunity?.effectiveActionStatus || player?.scoutEffectiveImmediacyStatus
+    ),
+    scoutPlayerInterestLevel: clean(
+      player?.scoutPlayerInterest?.interestLevel || player?.scoutPlayerInterestLevel
+    ),
     scoutEngineVersion: clean(player?.scoutEngineVersion),
     ...buildProfileIndexFields({
       prefix: 'secondary',
       profile: secondaryProfile,
     }),
     scoutProfileIds,
-    scoutPreliminaryProfileIds,
+    scoutPreliminaryProfileIds: uniqueCleanValues([
+      ...scoutPreliminaryProfileIds,
+      ...storedPreliminaryProfileIds,
+    ]),
     scoutCombinationIds,
     scoutProfileSearchIds: buildScoutProfileSearchIds({
       scoutProfileIds,

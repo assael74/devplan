@@ -21,7 +21,10 @@ import {
 import { normalizePlayerNameValue } from '../../../../model/player/playerIdentity.model.js'
 import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
 import { buildWriteReportFromError } from '../logic/writeFlowReport.logic.js'
-import { buildLeagueTeamPerformanceProjection } from '../../../../services/read/index.js'
+import {
+  buildLeagueTeamPerformanceProjection,
+  listExistingTeamRootOptions,
+} from '../../../../services/read/index.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
 import { findTeamPageSeasonDoc } from '../../../../model/team/page/teamPageSeason.model.js'
 import { adaptTeamPagePlayerRow } from '../../../../model/team/page/teamPagePlayer.model.js'
@@ -90,7 +93,7 @@ export default function useTeamStatsImport({
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
-  const transferredOutTraceRowRef = React.useRef('')
+  const [teamRootOptions, setTeamRootOptions] = React.useState([])
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -194,14 +197,34 @@ export default function useTeamStatsImport({
   const getIdentityRowStatus = React.useCallback(row => {
     const status = clean(row.rosterStatus || 'unresolved')
     const identityStatus = clean(row.identityStatus)
-    const hasExplicitRosterStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
-      option.value === status
-    ))
+    const identityMatchStatus = clean(row.identityMatchStatus)
+    const hasCanonicalIdentityDecision = (
+      ['provided', 'matched'].includes(identityMatchStatus) ||
+      (identityMatchStatus === 'created' && clean(row.identityResolution) === 'createNew')
+    )
+    const hasExplicitRosterStatus = ['regular', 'left', 'youngerAgeGroup'].includes(status)
 
     if (!clean(row.fullName)) {
       return {
         valid: false,
         message: 'חסר שם שחקן',
+      }
+    }
+
+    if (row.requiresStatsMovementDecision) {
+      return {
+        valid: false,
+        message: 'יש לסווג את השתתפות השחקן בעונה',
+      }
+    }
+
+    if (
+      identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH &&
+      !hasCanonicalIdentityDecision
+    ) {
+      return {
+        valid: false,
+        message: 'נדרש אישור התאמת זהות או יצירת שחקן חדש',
       }
     }
 
@@ -278,30 +301,6 @@ export default function useTeamStatsImport({
       : { valid: true, message: identityStatus.message }
   }, [getIdentityRowStatus, validation.rowIssues])
 
-  React.useEffect(() => {
-    const traceTarget = transferredOutTraceRowRef.current
-    if (!traceTarget) return
-
-    const rowIndex = rows.findIndex((row, index) => (
-      traceTarget.rowId
-        ? String(row.id) === traceTarget.rowId
-        : index === traceTarget.rowIndex
-    ))
-    const row = rowIndex >= 0 ? rows[rowIndex] : null
-
-    if (row) {
-      console.debug('[stats-import/transferred-out-trace]', {
-        rowIndex,
-        identityStatus: row.identityStatus,
-        identityResolution: row.identityResolution,
-        rosterStatus: row.rosterStatus,
-        getIdentityRowStatus: getIdentityRowStatus(row),
-        getRowStatus: getRowStatus(row, rowIndex),
-      })
-    }
-
-    transferredOutTraceRowRef.current = null
-  }, [getIdentityRowStatus, getRowStatus, rows])
 
   const getCellStatus = React.useCallback((row, rowIndex, column) => {
     const key = column?.key || ''
@@ -320,41 +319,55 @@ export default function useTeamStatsImport({
     !validation.valid || rows.some((row, index) => !getRowStatus(row, index).valid)
   ), [getRowStatus, rows, validation.valid])
 
-  const isTransferRosterStatus = React.useCallback(status => (
-    status === 'transferredOut' ||
-    status === 'transferredIn'
-  ), [])
   const rosterExceptionsSummary = React.useMemo(() => {
-    const directions = {
-      up: 0,
-      lateral: 0,
-      down: 0,
-      unknown: 0,
-    }
-    const exceptionRows = rows.filter(row => (
+    const exceptionRowsCount = rows.filter(row => (
       STATS_ROSTER_STATUS_OPTIONS.some(option => (
         option.value === clean(row.rosterStatus) &&
         option.value !== 'regular'
       ))
-    ))
-    const transferRows = exceptionRows.filter(row => (
-      isTransferRosterStatus(clean(row.rosterStatus))
-    ))
-
-    transferRows.forEach(row => {
-      const direction = clean(row.manualTransferDirection)
-      directions[Object.prototype.hasOwnProperty.call(directions, direction)
-        ? direction
-        : 'unknown'] += 1
-    })
+    )).length
 
     return {
-      exceptionRowsCount: exceptionRows.length,
-      transferRowsCount: transferRows.length,
-      directions,
+      exceptionRowsCount,
     }
-  }, [isTransferRosterStatus, rows])
+  }, [rows])
   const exceptionRowsCount = rosterExceptionsSummary.exceptionRowsCount
+
+  const movementPreview = React.useMemo(() => {
+    const existingIncomingCount = rows.filter(row => (
+      row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH
+    )).length
+    const newPlayerCount = rows.filter(row => (
+      row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER
+    )).length
+    const decisionRequiredCount = rows.filter(row => (
+      row.requiresStatsMovementDecision || [
+        STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE,
+        STATS_IDENTITY_STATUS.AMBIGUOUS,
+        STATS_IDENTITY_STATUS.UNRESOLVED,
+      ].includes(row.identityStatus)
+    )).length
+    const leftCount = rows.filter(row => (
+      clean(row.statsMovementDecision) === 'left' ||
+      clean(row.rosterStatus) === 'left'
+    )).length
+    const joinedCount = rows.filter(row => (
+      clean(row.statsMovementDecision) === 'joined'
+    )).length
+    const youngerAgeGroupCount = rows.filter(row => (
+      clean(row.rosterStatus) === 'youngerAgeGroup'
+    )).length
+
+    return {
+      existingIncomingCount,
+      newPlayerCount,
+      decisionRequiredCount,
+      leftCount,
+      joinedCount,
+      youngerAgeGroupCount,
+      requiresDecision: decisionRequiredCount > 0,
+    }
+  }, [rows])
 
   const parse = React.useCallback(async () => {
     if (!seasonStatus) {
@@ -371,16 +384,41 @@ export default function useTeamStatsImport({
     try {
       const previewRows = parsePlayerStatsRows(pasteValue)
         .map(row => enrichStatsRowForPreview(row, rosterLookup))
-      const resolvedRows = await resolvePlayerIdentities({
-        players: previewRows,
-        season: seasonContext,
+      const unresolvedEntries = previewRows
+        .map((row, index) => ({ row, index }))
+        .filter(entry => entry.row.identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH)
+      const resolvedRows = unresolvedEntries.length
+        ? await resolvePlayerIdentities({
+            players: unresolvedEntries.map(entry => entry.row),
+            season: seasonContext,
+          })
+        : []
+      const resolvedByIndex = new Map(
+        unresolvedEntries.map((entry, index) => [entry.index, resolvedRows[index]])
+      )
+      const nextRows = previewRows.map((row, index) => {
+        const resolved = row.identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH
+          ? row
+          : applyResolvedStatsIdentity({
+                row,
+                resolvedPlayer: resolvedByIndex.get(index),
+              })
+        return enrichWithScout({
+          ...resolved,
+          requiresStatsMovementDecision: seasonStatus === 'completed' &&
+            row.identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH,
+        })
       })
-      const nextRows = previewRows.map((row, index) => (
-        enrichWithScout(applyResolvedStatsIdentity({
-          row,
-          resolvedPlayer: resolvedRows[index],
-        }))
-      ))
+
+      if (seasonStatus === 'completed' && nextRows.some(row => row.requiresStatsMovementDecision)) {
+        const currentTeamId = clean(team.birthTeamDocumentId || team.teamDocumentId || team.birthTeamId || team.teamId)
+        setTeamRootOptions((await listExistingTeamRootOptions({
+          seasonKey: seasonContext.seasonKey,
+          ageGroupId: team.ageGroupId,
+          birthYear: team.birthYear,
+          excludedBirthTeamDocumentId: currentTeamId,
+        })))
+      }
 
       setRows(nextRows)
     } catch (error) {
@@ -393,7 +431,7 @@ export default function useTeamStatsImport({
     } finally {
       setBusy(false)
     }
-  }, [enrichWithScout, notify, pasteValue, rosterLookup, seasonContext, seasonStatus])
+  }, [enrichWithScout, notify, pasteValue, rosterLookup, seasonContext, seasonStatus, team])
 
   const changeCell = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => {
@@ -407,6 +445,7 @@ export default function useTeamStatsImport({
             matchedPlayerId: '',
             matchedPlayerName: '',
             identityResolution: 'createNew',
+            rosterStatus: 'regular',
             identityStatus: STATS_IDENTITY_STATUS.NEW_PLAYER,
             identityMessage: 'אושר במפורש כשחקן חדש',
           })
@@ -451,6 +490,29 @@ export default function useTeamStatsImport({
         })
       }
 
+      if (column.key === 'statsMovementDecision') {
+        const decision = clean(value?.decision)
+        const selectedTeam = value?.team && typeof value.team === 'object'
+          ? value.team
+          : null
+        const requiresTeam = ['joined', 'left'].includes(decision)
+        if (!['joined', 'left', 'youngerAgeGroup'].includes(decision) || (requiresTeam && !clean(selectedTeam?.birthTeamDocumentId))) {
+          return row
+        }
+
+        return enrichWithScout({
+          ...row,
+          rosterStatus: decision === 'left' ? 'left' : decision === 'youngerAgeGroup' ? 'youngerAgeGroup' : 'regular',
+          isYoungerAgeGroup: decision === 'youngerAgeGroup',
+          statsMovementDecision: decision,
+          statsMovementTeam: requiresTeam ? selectedTeam : null,
+          requiresStatsMovementDecision: false,
+          identityResolution: clean(row.playerId) ? 'useSystemCandidate' : 'createNew',
+          identityMatchStatus: clean(row.playerId) ? 'matched' : 'created',
+          identityMessage: decision === 'left' ? 'עזיבה אושרה ידנית' : decision === 'joined' ? 'הצטרפות אושרה ידנית' : 'שחקן צעיר אושר ידנית',
+        })
+      }
+
       if (column.key === 'systemCandidateApproval') {
         const candidateKey = clean(value)
         const candidate = (Array.isArray(row.identityCandidates)
@@ -468,8 +530,9 @@ export default function useTeamStatsImport({
           approvedIdentityCandidateId: candidate.playerId,
           approvedCanonicalPlayerId: candidate.playerId,
           identityResolution: 'useSystemCandidate',
+          rosterStatus: 'regular',
           identityStatus: STATS_IDENTITY_STATUS.SYSTEM_MATCH,
-          identityMessage: 'התאמה קיימת אושרה; בחר סטטוס בסגל',
+          identityMessage: 'התאמה קיימת אושרה',
         })
       }
 
@@ -480,36 +543,50 @@ export default function useTeamStatsImport({
       }
 
       if (column.key === 'rosterStatus') {
+        if (['left', 'joined'].includes(value)) {
+          return enrichWithScout({
+            ...nextRow,
+            rosterStatus: value === 'left' ? 'left' : 'regular',
+            isYoungerAgeGroup: false,
+            statsMovementDecision: value,
+            statsMovementTeam: null,
+            requiresStatsMovementDecision: true,
+            identityMessage: value === 'left'
+              ? 'בחר קבוצת יעד כדי לאשר עזיבה'
+              : 'בחר קבוצת מקור כדי לאשר הצטרפות',
+          })
+        }
+
         nextRow.rosterStatus = value || 'unresolved'
         nextRow.isYoungerAgeGroup = value === 'youngerAgeGroup'
-        nextRow.manualTransferDirection = isTransferRosterStatus(value)
-          ? clean(row.manualTransferDirection) || 'unknown'
-          : ''
+        nextRow.statsMovementDecision = ''
+        nextRow.statsMovementTeam = null
+        nextRow.requiresStatsMovementDecision = false
+        const canExplicitlyCreateNewPlayer = [
+          STATS_IDENTITY_STATUS.NEW_PLAYER,
+          STATS_IDENTITY_STATUS.UNRESOLVED,
+        ].includes(row.identityStatus)
 
-        if (row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER) {
-          const hasExplicitRosterStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
-            option.value === nextRow.rosterStatus
-          ))
+        if (canExplicitlyCreateNewPlayer) {
+          const hasExplicitRosterStatus = ['regular', 'left', 'youngerAgeGroup'].includes(nextRow.rosterStatus)
 
           nextRow.identityResolution = hasExplicitRosterStatus
             ? 'createNew'
             : ''
+          nextRow.identityMatchStatus = hasExplicitRosterStatus ? 'created' : ''
+          nextRow.identityStatus = hasExplicitRosterStatus
+            ? STATS_IDENTITY_STATUS.NEW_PLAYER
+            : row.identityStatus
           nextRow.identityMessage = hasExplicitRosterStatus
-            ? 'שחקן חדש אושר לפי סטטוס הסגל'
+            ? 'יצירת שחקן חדש אושרה לפי סטטוס הסגל'
             : 'בחר סטטוס בסגל'
         }
 
-        if (value === 'transferredOut') {
-          transferredOutTraceRowRef.current = {
-            rowId: row.id ? String(row.id) : '',
-            rowIndex,
-          }
-        }
       }
 
       return enrichWithScout(nextRow)
     }))
-  }, [enrichWithScout, isTransferRosterStatus, players])
+  }, [enrichWithScout, players])
 
   const changeSeasonStatus = React.useCallback(value => {
     const nextStatus = ['active', 'completed'].includes(value) ? value : ''
@@ -579,28 +656,52 @@ export default function useTeamStatsImport({
     setRows([])
   }, [busy])
 
+  // Keep the dry-run output and the real write on exactly the same payload
+  // contract. This makes identity-decision issues inspectable without any
+  // Firestore write.
+  const buildStatsWritePayload = React.useCallback(playersForWrite => ({
+    target: selectedSeasonOption?.target,
+    league: {
+      ...(actionLeagueDoc || {}),
+      id: actionLeagueId,
+      leagueId: actionLeagueId,
+    },
+    season: seasonContext,
+    team,
+    players: playersForWrite,
+  }), [actionLeagueDoc, actionLeagueId, seasonContext, selectedSeasonOption?.target, team])
+
   const confirm = React.useCallback(async () => {
-    if (!selectedSeasonOption || !hasTeamPlayers || hasInvalidRows || !seasonStatus) return
+    if (
+      !selectedSeasonOption ||
+      !hasTeamPlayers ||
+      hasInvalidRows ||
+      movementPreview.requiresDecision ||
+      !seasonStatus
+    ) return
 
     const validRows = rows
       .filter((row, index) => getRowStatus(row, index).valid)
       .map(withoutStatsMinutesCorrection)
+    const payload = buildStatsWritePayload(validRows)
     setBusy(true)
 
     try {
+      console.groupCollapsed('[playersDatabase/stats-import] payload לפני אישור טעינה')
+      console.info('זהו ה-payload הקנוני שנשלח ל-write flow.', payload)
+      console.info('[playersDatabase/stats-import] PAYLOAD_JSON\n%s', JSON.stringify(payload, null, 2))
+      console.table(payload.players.map(player => ({
+        player: player.originalFullName || player.fullName || '',
+        playerId: player.playerId || '',
+        rosterStatus: player.rosterStatus || '',
+        identityMatchStatus: player.identityMatchStatus || '',
+        identityResolution: player.identityResolution || '',
+        movement: player.statsMovementDecision || '',
+      })))
+      console.groupEnd()
       await runPlayersDatabaseWriteAction({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
-        payload: {
-          target: selectedSeasonOption.target,
-          league: {
-            ...(actionLeagueDoc || {}),
-            id: actionLeagueId,
-            leagueId: actionLeagueId,
-          },
-          season: seasonContext,
-          team,
-          players: validRows,
-        },
+        payload,
       })
 
       notify({
@@ -635,9 +736,9 @@ export default function useTeamStatsImport({
     }
   }, [
     getRowStatus,
-    getCellStatus,
-    validation,
+    buildStatsWritePayload,
     hasInvalidRows,
+    movementPreview.requiresDecision,
     hasTeamPlayers,
     actionLeagueDoc,
     actionLeagueId,
@@ -648,6 +749,85 @@ export default function useTeamStatsImport({
     seasonStatus,
     selectedSeasonOption,
     team,
+  ])
+
+  const runPreflight = React.useCallback(() => {
+    if (
+      !selectedSeasonOption ||
+      !hasTeamPlayers ||
+      !seasonStatus
+    ) {
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: 'בדיקת הטעינה חסומה',
+        message: 'יש להשלים את כל השורות והגדרות העונה לפני בדיקה.',
+      })
+      return
+    }
+
+    const evaluatedRows = rows.map((row, index) => ({
+      row: withoutStatsMinutesCorrection(row),
+      status: getRowStatus(row, index),
+    }))
+    const rowsForReview = evaluatedRows.map(item => item.row)
+    const payload = buildStatsWritePayload(rowsForReview)
+    const blockingRows = evaluatedRows.filter(item => !item.status.valid)
+    const countByStatus = status => rowsForReview.filter(row => clean(row.rosterStatus) === status).length
+    const countByMovement = decision => rowsForReview.filter(row => (
+      clean(row.statsMovementDecision) === decision
+    )).length
+    const summary = {
+      mode: 'DRY_RUN',
+      writesPerformed: false,
+      team: team.name || team.teamId || '',
+      season: seasonContext.seasonKey || '',
+      target: selectedSeasonOption.target || '',
+      rows: rowsForReview.length,
+      blockingRows: blockingRows.length,
+      regular: countByStatus('regular'),
+      left: countByStatus('left'),
+      youngerAgeGroup: countByStatus('youngerAgeGroup'),
+      transfersIn: countByMovement('joined'),
+      transfersOut: countByMovement('left'),
+    }
+
+    console.groupCollapsed('[playersDatabase/stats-import] בדיקת טעינה — ללא כתיבה')
+    console.info('סיכום', summary)
+    console.info('payload שהיה נשלח אילו כל השורות היו תקינות:', payload)
+    console.info('[playersDatabase/stats-import] PAYLOAD_JSON\n%s', JSON.stringify(payload, null, 2))
+    console.table(evaluatedRows.map(({ row, status }) => ({
+      player: row.fullName,
+      playerId: row.playerId || '',
+      rosterStatus: row.rosterStatus,
+      movement: row.statsMovementDecision || '',
+      counterpartClubId: row.statsMovementTeam?.clubId || '',
+      counterpartSlot: row.statsMovementTeam?.birthTeamSlot || '',
+      identityMatchStatus: row.identityMatchStatus || '',
+      identityResolution: row.identityResolution || '',
+      valid: status.valid,
+      blockedBy: status.valid ? '' : status.message,
+    })))
+    console.info('לא בוצעה כתיבה ל־Firestore. reconciliation קנוני וכתיבת counterpart מתבצעים רק באישור הטעינה.')
+    console.groupEnd()
+
+    notify({
+      status: blockingRows.length ? SNACK_STATUS.ERROR : SNACK_STATUS.SUCCESS,
+      title: 'בדיקת הטעינה הושלמה',
+      message: blockingRows.length
+        ? `${blockingRows.length} שורות עדיין חוסמות טעינה. הסיבה מופיעה בקונסול.`
+        : 'לא בוצעה כתיבה. הסיכום זמין בקונסול הדפדפן.',
+    })
+  }, [
+    buildStatsWritePayload,
+    getRowStatus,
+    hasTeamPlayers,
+    notify,
+    rows,
+    seasonContext.seasonKey,
+    seasonStatus,
+    selectedSeasonOption,
+    team.name,
+    team.teamId,
   ])
 
   return {
@@ -664,6 +844,8 @@ export default function useTeamStatsImport({
     hasTeamPlayers,
     rosterLookup,
     hasInvalidRows,
+    movementPreview,
+    teamRootOptions,
     exceptionRowsCount,
     rosterExceptionsSummary,
     openModal,
@@ -679,6 +861,7 @@ export default function useTeamStatsImport({
     validation,
     close,
     closeWriteReport,
+    runPreflight,
     confirm,
   }
 }

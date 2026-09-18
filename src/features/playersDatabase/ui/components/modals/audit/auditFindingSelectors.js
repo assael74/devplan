@@ -77,5 +77,6 @@ export const selectRepairFindings = findings => {
     clubsMaster: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUBS_MASTER) && clean(finding.relatedDocumentId)),
     clubCompetitionPath: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_COMPETITION_PATH)),
     clubPerformance: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE)),
+    movementCounterpart: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.RETRY_MOVEMENT_COUNTERPART)),
   }
 }

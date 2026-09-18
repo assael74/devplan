@@ -12,6 +12,7 @@ import {
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { withTeamBalanceSnapshot } from './teamBalanceSnapshot.js'
 import { buildScoutProfilesSummary } from '../../../model/scout/scoutProfilesSummary.model.js'
+import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 export const buildTeamPlayersScoutProfilesSummary = buildScoutProfilesSummary
 
@@ -75,7 +76,7 @@ const updatePlayers = async ({
       : 'current'
     const result = mutate(Array.isArray(current.teamPlayers) ? current.teamPlayers : [])
     const next = withTeamBalanceSnapshot({
-      seasonDoc: { ...current, seasonStatus, teamPlayers: result.players, playersCount: result.players.length, scoutProfilesSummary: buildScoutProfilesSummary(result.players), updatedAt: new Date().toISOString() },
+      seasonDoc: { ...current, seasonStatus, teamPlayers: result.players, playersCount: countCurrentRosterPlayers(result.players), scoutProfilesSummary: buildScoutProfilesSummary(result.players), updatedAt: new Date().toISOString() },
       teamRoot: { ...team, id: teamId, birthTeamDocumentId: teamId },
     })
     const persisted = buildTeamSeasonDocumentData({ team: { ...team, birthTeamDocumentId: teamId }, season: { ...season, seasonId, seasonKey }, seasonDoc: next, existingData: current })
@@ -87,7 +88,7 @@ const updatePlayers = async ({
         season: persisted,
       }))
     }
-    return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: persistedTarget, updated: true, players: persisted.teamPlayers, playersCount: persisted.teamPlayers.length, removedPlayersCount: result.removed.length, playerDocumentIds: playerDocumentIds(result.removed), scoutProfilesSummary: persisted.scoutProfilesSummary, teamBalance: persisted.teamBalance || null, seasonDocument: persisted }
+    return { birthTeamDocumentId: teamId, teamDocumentId: teamId, teamSeasonDocumentId: ref.id, seasonId, seasonKey, target: persistedTarget, updated: true, players: persisted.teamPlayers, playersCount: countCurrentRosterPlayers(persisted.teamPlayers), removedPlayersCount: result.removed.length, playerDocumentIds: playerDocumentIds(result.removed), scoutProfilesSummary: persisted.scoutProfilesSummary, teamBalance: persisted.teamBalance || null, seasonDocument: persisted }
   })
 }
 

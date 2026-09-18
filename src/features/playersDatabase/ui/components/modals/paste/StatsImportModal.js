@@ -97,27 +97,68 @@ function ValidationCheckChip({ check, onApplyMinutesAdjustment }) {
 
 function RosterExceptionsChip({ summary = {} }) {
   const count = Number(summary.exceptionRowsCount || 0)
-  const transferRowsCount = Number(summary.transferRowsCount || 0)
-  const directions = summary.directions || {}
   if (!count) return null
 
-  const directionLabels = [
-    ['up', 'עלו רמה'],
-    ['lateral', 'אותה רמה'],
-    ['down', 'ירדו רמה'],
-    ['unknown', 'ללא כיוון'],
-  ].filter(([key]) => Number(directions[key] || 0) > 0)
-    .map(([key, label]) => `${label}: ${directions[key]}`)
-  const directionSummary = directionLabels.length
-    ? `כיווני מעבר — ${directionLabels.join(', ')}`
-    : 'אין חריגי מעבר'
+  return (
+    <Chip size='sm' variant='soft' color='warning' sx={sx.rosterExceptionsChip}>
+      {`חריגי סגל: ${count}`}
+    </Chip>
+  )
+}
+
+function MovementPreviewChips({ preview = {} }) {
+  const existingIncomingCount = Number(preview.existingIncomingCount || 0)
+  const newPlayerCount = Number(preview.newPlayerCount || 0)
+  const decisionRequiredCount = Number(preview.decisionRequiredCount || 0)
+  const leftCount = Number(preview.leftCount || 0)
+  const joinedCount = Number(preview.joinedCount || 0)
+  const youngerAgeGroupCount = Number(preview.youngerAgeGroupCount || 0)
 
   return (
-    <Tooltip title={directionSummary} arrow>
-      <Chip size='sm' variant='soft' color='warning' sx={sx.rosterExceptionsChip}>
-        {`חריגי סגל: ${count} · חריגי מעבר: ${transferRowsCount}`}
-      </Chip>
-    </Tooltip>
+    <>
+      {existingIncomingCount ? (
+        <Tooltip title='שחקנים מזוהים שאינם בסגל הנוכחי. באישור הם ייכנסו לסגל, והמערכת תתעד מעבר אוטומטי רק אם מקור קודם ודאי נמצא.'>
+          <Chip size='sm' variant='soft' color='primary' sx={sx.rosterExceptionsChip}>
+            {`כניסות מזוהות: ${existingIncomingCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+      {newPlayerCount ? (
+        <Tooltip title='שחקנים חדשים ללא עבר מזוהה. הם ייכנסו לסגל, ללא עובדת מעבר מומצאת.'>
+          <Chip size='sm' variant='soft' color='neutral' sx={sx.rosterExceptionsChip}>
+            {`שחקנים חדשים: ${newPlayerCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+      {decisionRequiredCount ? (
+        <Tooltip title='יש לפתור את זהות השחקן לפני טעינת הסטטיסטיקה.'>
+          <Chip size='sm' variant='soft' color='danger' sx={sx.rosterExceptionsChip}>
+            {`דורש הכרעה: ${decisionRequiredCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+      {leftCount ? (
+        <Tooltip title='שחקנים שסווגו כמי שעזבו במהלך העונה.'>
+          <Chip size='sm' variant='soft' color='neutral' sx={sx.rosterExceptionsChip}>
+            {`עזבו: ${leftCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+      {joinedCount ? (
+        <Tooltip title='שחקנים שסווגו כמי שהצטרפו במהלך העונה.'>
+          <Chip size='sm' variant='soft' color='primary' sx={sx.rosterExceptionsChip}>
+            {`הצטרפו: ${joinedCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+      {youngerAgeGroupCount ? (
+        <Tooltip title='שחקנים משנתון צעיר שהשתתפו בעונה.'>
+          <Chip size='sm' variant='soft' color='success' sx={sx.rosterExceptionsChip}>
+            {`צעירים: ${youngerAgeGroupCount}`}
+          </Chip>
+        </Tooltip>
+      ) : null}
+    </>
   )
 }
 
@@ -133,9 +174,14 @@ export default function StatsImportModal({
   const leagueName = clean(source.leagueName || team.leagueName)
   const leagueUrl = clean(source.leagueUrl || team?.domain?.metadata?.seasonUrl)
   const hasPreviewRows = controller.rows.length > 0
+  const [settingsOpen, setSettingsOpen] = React.useState(true)
   const seasonStatusOption = STATS_SEASON_STATUS_OPTIONS.find(option => (
     option.value === controller.seasonStatus
   ))
+
+  React.useEffect(() => {
+    if (hasPreviewRows) setSettingsOpen(false)
+  }, [hasPreviewRows])
 
   const description = (
     <Box sx={sx.description}>
@@ -168,7 +214,7 @@ export default function StatsImportModal({
     </Box>
   )
 
-  const beforePaste = (
+  const selectionControls = (
     <Box sx={sx.selectionRow}>
       <TeamSeasonSelect
         seasonOptions={controller.seasonOptions}
@@ -191,6 +237,23 @@ export default function StatsImportModal({
     </Box>
   )
 
+  const beforePaste = hasPreviewRows && !settingsOpen ? (
+    <Box sx={sx.settingsActions}>
+      <Button
+        size='sm'
+        variant='soft'
+        color='neutral'
+        onClick={controller.runPreflight}
+        sx={sx.settingsAction}
+      >
+        בדיקת טעינה
+      </Button>
+      <Button size='sm' variant='soft' onClick={() => setSettingsOpen(true)} sx={sx.settingsAction}>
+        שינוי הגדרות טעינה
+      </Button>
+    </Box>
+  ) : selectionControls
+
   const validationChecks = controller.validation.checks || []
 
   return (
@@ -205,7 +268,7 @@ export default function StatsImportModal({
       value={controller.pasteValue}
       placeholder={PLAYER_STATS_PLACEHOLDER}
       busy={controller.busy}
-      disabled={!hasTeamPlayers || controller.hasInvalidRows || !controller.selectedSeasonOption || !controller.seasonStatus}
+      disabled={!hasTeamPlayers || controller.hasInvalidRows || controller.movementPreview.requiresDecision || !controller.selectedSeasonOption || !controller.seasonStatus}
       confirmLabel='אישור טעינת סטטיסטיקות'
       beforePaste={beforePaste}
       pasteDisabled={!controller.selectedSeasonOption || !controller.seasonStatus}
@@ -215,6 +278,12 @@ export default function StatsImportModal({
           key: 'roster-exceptions',
           render: () => (
             <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
+          ),
+        },
+        {
+          key: 'movement-preview',
+          render: () => (
+            <MovementPreviewChips preview={controller.movementPreview} />
           ),
         },
         ...validationChecks.map(check => ({

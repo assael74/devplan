@@ -13,6 +13,7 @@ import { buildTeamPlayerSeasonalScoutProjection } from '../../../domain/projecti
 import {
   buildCanonicalLeagueTeamScoutContexts,
 } from '../shared/leagueTeamScoutContext.js'
+import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 const isPlainObject = value => Boolean(
   value &&
@@ -261,7 +262,7 @@ export async function updateTeamSeasonPlayersScoutContext({
       teamAttackPerformance: buildCompactTeamPerformanceSide(teamContext.offense),
       teamDefensePerformance: buildCompactTeamPerformanceSide(teamContext.defense),
       teamPlayers: nextPlayers,
-      playersCount: nextPlayers.length,
+      playersCount: countCurrentRosterPlayers(nextPlayers),
       scoutProfilesSummary,
       teamStats: {
         ...(currentSeason.teamStats || {}),
@@ -303,9 +304,7 @@ export async function updateTeamSeasonPlayersScoutContext({
       players: Array.isArray(persistedSeason?.teamPlayers)
         ? persistedSeason.teamPlayers
         : [],
-      playersCount: Array.isArray(persistedSeason?.teamPlayers)
-        ? persistedSeason.teamPlayers.length
-        : 0,
+      playersCount: countCurrentRosterPlayers(persistedSeason?.teamPlayers),
       scoutProfilesSummary: persistedSeason?.scoutProfilesSummary || {
         total: 0,
         profileCounts: {},

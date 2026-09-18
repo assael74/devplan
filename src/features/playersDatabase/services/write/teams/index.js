@@ -53,6 +53,11 @@ export {
 } from './teamSeasonRoster.js'
 
 export {
+  reconcileTeamSeasonMovementCounterpart,
+  reconcileTeamSeasonMovementCounterparts,
+} from './teamSeasonMovement.js'
+
+export {
   updateTeamSeasonPlayerStats,
 } from './teamSeasonStats.js'
 
@@ -88,3 +93,7 @@ export {
 export {
   refreshTeamBalancesByDependency,
 } from './teamBalanceRefresh.js'
+
+export {
+  retryTeamSeasonMovementCounterparts,
+} from './teamSeasonMovementRecovery.js'

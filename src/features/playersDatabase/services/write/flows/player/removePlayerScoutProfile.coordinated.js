@@ -15,6 +15,7 @@ import { resolveWritablePlayerDocumentId } from '../../../../model/player/player
 import { buildTeamSeasonDocumentData, teamSeasonDocRef } from '../../teams/teamSeasonDoc.js'
 import { getPlayerMergeKey, normalizeTeamPlayer } from '../../teams/teamSeason.model.js'
 import { withTeamBalanceSnapshot } from '../../teams/teamBalanceSnapshot.js'
+import { countCurrentRosterPlayers } from '../../../../model/team/rosterStatus.model.js'
 
 const buildRosterOnlyOrLinkedIndex = ({
   existingData = {},
@@ -147,7 +148,7 @@ export const removePlayerScoutProfileCoordinated = async ({
       seasonDoc: {
         ...currentTeamSeason,
         teamPlayers: nextPlayers,
-        playersCount: nextPlayers.length,
+        playersCount: countCurrentRosterPlayers(nextPlayers),
         scoutProfilesSummary,
         updatedAt: new Date().toISOString(),
       },

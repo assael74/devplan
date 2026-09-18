@@ -57,6 +57,7 @@ const buildSpotlightGroups = intelligence => {
 
 export const getClubSummaryView = intelligence => ({
   club: intelligence?.club || {},
+  signalCoverage: intelligence?.signalCoverage || {},
   primarySpotlight: getPrimaryClubSpotlight(intelligence),
   spotlights: getOrderedClubSpotlights(intelligence),
   spotlightGroups: buildSpotlightGroups(intelligence),

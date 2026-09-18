@@ -93,6 +93,9 @@ export const pasteAreaSx = {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
+    // Keep the import actions on the physical right edge even after the hint
+    // is hidden once a preview has been created.
+    marginLeft: 'auto',
   },
 
   pasteButton: {

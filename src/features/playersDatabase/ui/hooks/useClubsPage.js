@@ -22,7 +22,9 @@ import {
   PLAYERS_DATABASE_CURRENT_SEASON_KEY,
   PLAYERS_DATABASE_SEASONS_CATALOG,
 } from '../../catalog/seasons.catalog.js'
-import { readClubsMasterDocument } from '../../services/read/index.js'
+import {
+  readClubsMasterDocument,
+} from '../../services/read/index.js'
 
 const currentSeason = PLAYERS_DATABASE_SEASONS_CATALOG.find(season => (
   season.target === 'current'
@@ -76,10 +78,13 @@ export default function useClubsPage() {
   }, [reload])
 
   const intelligencesByClubId = useMemo(() => new Map(
-    (Array.isArray(clubsMasterDoc?.clubs) ? clubsMasterDoc.clubs : [])
+    (Array.isArray(clubsMasterDoc?.clubs)
+      ? clubsMasterDoc.clubs
+      : [])
       .map(club => [club?.clubId, buildClubIntelligenceFromMaster({ club })])
       .filter(([clubId]) => Boolean(clubId))
   ), [clubsMasterDoc])
+
   const allGroups = useMemo(() => buildClubsPageRows({
     clubsMasterDoc,
     seasonView: 'current',

@@ -6,25 +6,44 @@ const safeFileName = value => clean(value)
   .replace(/[\\/:*?"<>|]/g, '-')
   .replace(/\s+/g, '-')
 
+export const buildTeamPositionClassificationFileName = ({
+  teamName = '',
+  seasonKey = '',
+  birthYear = '',
+  ageGroupLabel = '',
+} = {}) => (
+  safeFileName([
+    'סיווג-עמדה',
+    teamName,
+    birthYear ? `שנתון-${birthYear}` : '',
+    ageGroupLabel,
+    seasonKey,
+  ].filter(Boolean).join('-')) || 'סיווג-עמדה'
+)
+
 const ROSTER_STATUS_LABELS = {
   regular: 'בסגל',
   youngerAgeGroup: 'שנתון צעיר',
-  transferredOut: 'עזב במהלך העונה',
-  transferredIn: 'הצטרף במהלך העונה',
-  retired: 'פרש',
+  left: 'עזב',
 }
 
-const TRANSFER_DIRECTION_LABELS = {
-  up: 'עלה ברמה',
-  lateral: 'אותה רמה',
-  down: 'ירד ברמה',
-  unknown: 'לא ידוע',
-}
+const externalPlayerIdOf = row => clean(
+  row?.externalPlayerId || row?.player?.externalPlayerId
+)
 
-const EXPORT_COLUMNS = Object.freeze([
+const playerIdentifierOf = row => clean(
+  row?.player?.playerId || row?.player?.playerDocumentId || row?.playerId || row?.id
+)
+
+const transferCheckOf = row => clean(
+  row?.transferCheck || row?.player?.transferCheck
+)
+
+export const TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS = Object.freeze([
   // Keep this import-compatible block first, in the same order as the Stats Load modal.
   ['אינדקס', (row, index) => row.sourceIndex || index + 1],
   ['שם שחקן', row => row.name],
+  ['מזהה שחקן חיצוני', externalPlayerIdOf],
   ['קישור שחקן', row => row.playerUrl],
   ['מס. משחקים', row => row.games],
   ['שערים', row => row.goals],
@@ -38,9 +57,6 @@ const EXPORT_COLUMNS = Object.freeze([
 
   // Enriched squad, classification, and derived-statistics fields follow the source block.
   ['סטטוס סגל', row => ROSTER_STATUS_LABELS[clean(row.rosterStatus)] || 'בסגל'],
-  ['כיוון מעבר', row => clean(row.rosterStatus) === 'transferredOut'
-    ? (TRANSFER_DIRECTION_LABELS[clean(row.manualTransferDirection)] || 'לא ידוע')
-    : ''],
   ['דקות קבוצה', row => row.teamMinutes],
   ['דקות אפשריות אישיות', row => row.possiblePlayerMinutes],
   ['אחוז דקות אישי', row => row.minutesRate],
@@ -53,6 +69,11 @@ const EXPORT_COLUMNS = Object.freeze([
   ['מקור סיווג', row => clean(row.classification?.source)],
   ['רמת ראיה', row => clean(row.classification?.evidenceLevel)],
   ['גרסת מודל', row => clean(row.classification?.modelVersion)],
+
+  // QA-only columns. They are included for controlled Excel comparison and
+  // never participate in Movement reconciliation or identity resolution.
+  ['בקרת העברה', transferCheckOf],
+  ['מזהה שחקן פנימי', playerIdentifierOf],
 ])
 
 const HEADER_STYLE = {
@@ -71,13 +92,15 @@ export default function exportTeamPositionClassificationToXlsx({
   rows = [],
   teamName = '',
   seasonKey = '',
+  birthYear = '',
+  ageGroupLabel = '',
 } = {}) {
   const safeRows = Array.isArray(rows) ? rows : []
   if (!safeRows.length) return false
 
-  const headers = EXPORT_COLUMNS.map(([label]) => label)
+  const headers = TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS.map(([label]) => label)
   const dataRows = safeRows.map((row, index) => (
-    EXPORT_COLUMNS.map(([, getValue]) => {
+    TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS.map(([, getValue]) => {
       const value = getValue(row, index)
       return value === undefined || value === null ? '' : value
     })
@@ -107,7 +130,12 @@ export default function exportTeamPositionClassificationToXlsx({
   XLSX.utils.book_append_sheet(workbook, worksheet, 'סיווג עמדה')
   XLSX.writeFile(
     workbook,
-    `${safeFileName(['סיווג-עמדה', teamName, seasonKey].filter(Boolean).join('-')) || 'סיווג-עמדה'}.xlsx`
+    `${buildTeamPositionClassificationFileName({
+      teamName,
+      seasonKey,
+      birthYear,
+      ageGroupLabel,
+    })}.xlsx`
   )
 
   return true

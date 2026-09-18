@@ -2,6 +2,7 @@
 
 import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
+import { buildLeagueCenterExportConfig } from './logic/leagueCenter.export.js'
 import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({ columns, model }) {
@@ -11,6 +12,7 @@ export default function LeagueCenterTable({ columns, model }) {
     : model.error || (hasContext
       ? 'לא נמצאו ליגות בהקשר שנבחר'
       : 'בחר שנתון ורמת ליגה כדי להתחיל')
+  const exportConfig = buildLeagueCenterExportConfig({ rows: model.allRows })
 
   return (
     <PageContentPanel
@@ -27,6 +29,7 @@ export default function LeagueCenterTable({ columns, model }) {
         wrapSx={sx.tableScroll}
         tableSx={sx.noRowHoverTable}
         bodyScrollSx={sx.tableBodyScroll}
+        exportConfig={exportConfig}
       />
     </PageContentPanel>
   )

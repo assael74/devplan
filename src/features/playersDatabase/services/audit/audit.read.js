@@ -60,6 +60,30 @@ const readActiveWriteRecoveryActions = async () => {
   return { rows: toRows(snapshot.docs), readsUsed: snapshot.size }
 }
 
+// A scoped audit follows only explicit counterpart references. It intentionally
+// does not query the collection: a missing counterpart remains legal and must
+// never cause a broad scan.
+export const buildScopedMovementCounterpartSeasonIds = ({ teamSeasons = [] } = {}) => {
+  const ids = new Set()
+
+  ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(row => {
+    const season = row?.data || {}
+    const seasonKey = String(season.seasonKey || season.seasonId || '').trim()
+    if (!seasonKey) return
+
+    ;(Array.isArray(season.transfersIn) ? season.transfersIn : []).forEach(incoming => {
+      const sourceTeamId = String(incoming?.fromBirthTeamDocumentId || '').trim()
+      if (sourceTeamId) ids.add(buildTeamSeasonDocumentId(sourceTeamId, seasonKey))
+    })
+    ;(Array.isArray(season.transfersOut) ? season.transfersOut : []).forEach(outgoing => {
+      const targetTeamId = String(outgoing?.toBirthTeamDocumentId || '').trim()
+      if (targetTeamId) ids.add(buildTeamSeasonDocumentId(targetTeamId, seasonKey))
+    })
+  })
+
+  return [...ids].filter(Boolean)
+}
+
 const readScopedSnapshot = async scope => {
   const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
   const teamIds = [...new Set(scopes.map(item => item.teamDocumentId))]
@@ -71,6 +95,13 @@ const readScopedSnapshot = async scope => {
   const seasonResult = await readDocumentsById({
     collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
     ids: seasonIds,
+  })
+  const counterpartSeasonIds = buildScopedMovementCounterpartSeasonIds({
+    teamSeasons: seasonResult.rows,
+  }).filter(id => !seasonIds.includes(id))
+  const counterpartSeasonResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+    ids: counterpartSeasonIds,
   })
   const indexResults = await Promise.all(teamIds.map(readSearchIndexesForTeam))
   const searchIndexes = uniqueRows(indexResults.flatMap(result => result.rows)).filter(row => (
@@ -101,7 +132,7 @@ const readScopedSnapshot = async scope => {
 
   return {
     generatedAt: new Date().toISOString(),
-    readsUsed: rootResult.readsUsed + seasonResult.readsUsed +
+    readsUsed: rootResult.readsUsed + seasonResult.readsUsed + counterpartSeasonResult.readsUsed +
       indexResults.reduce((total, result) => total + result.readsUsed, 0) +
       playerResult.readsUsed + leagueResult.readsUsed + favoritesResult.readsUsed +
       writeActionsResult.readsUsed,
@@ -111,7 +142,7 @@ const readScopedSnapshot = async scope => {
       clubs: [],
       clubsMaster: [],
       teams: rootResult.rows,
-      teamSeasons: seasonResult.rows,
+      teamSeasons: uniqueRows([...seasonResult.rows, ...counterpartSeasonResult.rows]),
       players: playerResult.rows,
       favorites: favoritesResult.rows,
       searchIndexes,

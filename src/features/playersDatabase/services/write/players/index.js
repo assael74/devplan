@@ -67,7 +67,6 @@ export {
   ensureFavoriteScoutingPlayerDoc,
   ensureManualScoutingPlayerDoc,
   ensureScoutingPlayerDoc,
-  ensureTransferredScoutingPlayerDoc,
   ensureWatchlistScoutingPlayerDoc,
   updateScoutingPlayerFavoriteState,
   updateScoutingPlayerVerificationAnswer,

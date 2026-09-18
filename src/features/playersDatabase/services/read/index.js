@@ -12,11 +12,16 @@ export {
 export {
   getTeamById,
 } from './entities/team.js'
+export { listExistingTeamRootOptions } from './entities/teamRoots.read.js'
 
 export {
   getTeamSeason,
   listTeamSeasons,
 } from './entities/teamSeason.js'
+
+export {
+  readTeamSeasonRosterHistory,
+} from './entities/teamSeasonRosterHistory.js'
 
 export { readTeamPageData } from './pages/teamPage.read.js'
 export { buildLeagueTeamPerformanceProjection } from './projections/teamPerformance.projection.js'

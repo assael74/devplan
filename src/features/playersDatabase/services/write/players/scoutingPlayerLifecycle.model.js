@@ -7,7 +7,6 @@ export const SCOUTING_PLAYER_TRACKING_REASONS = Object.freeze({
   FAVORITE: 'FAVORITE',
   WATCHLIST: 'WATCHLIST',
   MANUAL: 'MANUAL',
-  TRANSFER: 'TRANSFER',
 })
 
 export const SCOUTING_PLAYER_EVENT_TYPES = Object.freeze({
@@ -16,7 +15,6 @@ export const SCOUTING_PLAYER_EVENT_TYPES = Object.freeze({
   FAVORITE_ADDED: 'FAVORITE_ADDED',
   WATCHLIST_ADDED: 'WATCHLIST_ADDED',
   MANUAL_TRACKING: 'MANUAL_TRACKING',
-  TRANSFER_DETECTED: 'TRANSFER_DETECTED',
 })
 
 const TRACKING_REASON_VALUES = new Set(
@@ -32,8 +30,6 @@ const EVENT_TYPE_BY_REASON = Object.freeze({
     SCOUTING_PLAYER_EVENT_TYPES.WATCHLIST_ADDED,
   [SCOUTING_PLAYER_TRACKING_REASONS.MANUAL]:
     SCOUTING_PLAYER_EVENT_TYPES.MANUAL_TRACKING,
-  [SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER]:
-    SCOUTING_PLAYER_EVENT_TYPES.TRANSFER_DETECTED,
 })
 
 export const normalizeScoutingPlayerTrackingReason = value => {
@@ -95,8 +91,7 @@ export const resolvePlayerTrackingReasons = player => {
     : [])
     .map(normalizeScoutingPlayerTrackingReason)
     .filter(reason => (
-      reason === SCOUTING_PLAYER_TRACKING_REASONS.MANUAL ||
-      reason === SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER
+      reason === SCOUTING_PLAYER_TRACKING_REASONS.MANUAL
     ))
   const favorite = tracking.favorite === true || player?.favorite === true
   const watchlist = tracking.watchlist === true || player?.watchlist === true
@@ -121,7 +116,6 @@ export const resolvePlayerLifecycleTrackingReason = player => {
 
   const reasons = resolvePlayerTrackingReasons(player)
   const reasonPriority = [
-    SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER,
     SCOUTING_PLAYER_TRACKING_REASONS.FAVORITE,
     SCOUTING_PLAYER_TRACKING_REASONS.WATCHLIST,
     SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
@@ -252,38 +246,6 @@ export const buildScoutingPlayerReasonEvents = ({
       })
   }
 
-  if (normalizedReason === SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER) {
-    const event = {
-      ...baseEvent,
-      fromClubId: clean(transfer.fromClubId || team.clubId),
-      fromClubName: clean(transfer.fromClubName || team.clubName || team.displayName),
-      toClubId: clean(transfer.toClubId),
-      toClubName: clean(transfer.toClubName),
-      fromBirthTeamId: clean(
-        transfer.fromBirthTeamId ||
-        team.birthTeamId ||
-        team.teamId
-      ),
-      fromBirthTeamDocumentId: clean(
-        transfer.fromBirthTeamDocumentId ||
-        team.birthTeamDocumentId ||
-        team.teamDocumentId
-      ),
-      toBirthTeamId: clean(transfer.toBirthTeamId),
-      toBirthTeamDocumentId: clean(transfer.toBirthTeamDocumentId),
-      direction: clean(transfer.direction),
-      moveType: clean(transfer.moveType),
-      fromClubStrengthLevel: transfer.fromClubStrengthLevel || null,
-      toClubStrengthLevel: transfer.toClubStrengthLevel || null,
-      fromLeagueLevel: transfer.fromLeagueLevel || null,
-      toLeagueLevel: transfer.toLeagueLevel || null,
-    }
-
-    return [{
-      ...event,
-      eventKey: buildScoutingPlayerEventKey(event),
-    }]
-  }
 
   const event = {
     ...baseEvent,

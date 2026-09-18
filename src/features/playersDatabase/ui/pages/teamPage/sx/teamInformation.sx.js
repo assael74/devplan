@@ -524,4 +524,15 @@ export const teamInformationSx = {
     color: devPlanColors.secondary,
     fontSize: 12,
   },
+
+  rosterSampleNotice: {
+    mb: 1,
+    px: 1,
+    py: 0.65,
+    borderRadius: 7,
+    bgcolor: devPlanColors.secondaryLight,
+    color: devPlanColors.secondary,
+    fontSize: 12,
+    fontWeight: 700,
+  },
 }

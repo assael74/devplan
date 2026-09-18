@@ -317,7 +317,6 @@ export const buildPlayerSeasonCompactProjection = ({ season = {}, team = {}, pla
     lineClassification: buildLineClassificationProjection(player),
     numShirt: clean(player.numShirt),
     rosterStatus: clean(player.rosterStatus) || 'regular',
-    manualTransferDirection: clean(player.manualTransferDirection),
     isYoungerAgeGroup: Boolean(
       player.isYoungerAgeGroup ||
       clean(player.rosterStatus) === 'youngerAgeGroup'

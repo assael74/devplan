@@ -151,6 +151,50 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     total: 0,
     profileCounts: {},
   },
+  rosterImport: {
+    mode: 'AUTHORITATIVE_SNAPSHOT',
+    sourceSnapshotKey: '',
+    contentHash: '',
+    effectiveAt: null,
+  },
+  transfersIn: [
+    {
+      movementId: '',
+      playerId: '',
+      fromClubId: '',
+      fromBirthTeamId: '',
+      fromBirthTeamDocumentId: '',
+      fromBirthTeamSlot: 1,
+      timing: 'UNKNOWN',
+      targetSnapshotKey: '',
+      effectiveAt: null,
+    },
+  ],
+  transfersOut: [
+    {
+      movementId: '',
+      playerId: '',
+      toClubId: '',
+      toBirthTeamId: '',
+      toBirthTeamDocumentId: '',
+      toBirthTeamSlot: 1,
+      timing: 'UNKNOWN',
+      targetSnapshotKey: '',
+      effectiveAt: null,
+    },
+  ],
+  pendingPlayers: [
+    {
+      pendingId: '',
+      playerId: '',
+      externalPlayerId: '',
+      identityKey: '',
+      fullName: '',
+      previousSeasonKey: '',
+      previousBirthTeamDocumentId: '',
+      detectedSnapshotKey: '',
+    },
+  ],
   teamPlayers: [
     {
       playerId: '',
@@ -165,7 +209,6 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       numShirt: '',
       statsStatus: 'missing',
       rosterStatus: 'regular',
-      manualTransferDirection: '',
       isYoungerAgeGroup: false,
       primaryPosition: '',
       positionLayer: '',

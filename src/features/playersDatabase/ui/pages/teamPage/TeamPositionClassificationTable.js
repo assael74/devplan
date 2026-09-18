@@ -15,6 +15,8 @@ export default function TeamPositionClassificationTable({
   rows = [],
   teamName = '',
   seasonKey = '',
+  birthYear = '',
+  ageGroupLabel = '',
   onPlayerRoleEdit,
   onPlayerOpen,
   structureFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
@@ -62,7 +64,13 @@ export default function TeamPositionClassificationTable({
                 aria-label='ייצוא נתוני סיווג העמדה ל־Excel'
                 sx={sx.exportButton}
                 disabled={!rows.length}
-                onClick={() => exportTeamPositionClassificationToXlsx({ rows, teamName, seasonKey })}
+                onClick={() => exportTeamPositionClassificationToXlsx({
+                  rows,
+                  teamName,
+                  seasonKey,
+                  birthYear,
+                  ageGroupLabel,
+                })}
               >
                 {iconUi({ id: 'download', size: 'sm' })}
               </IconButton>

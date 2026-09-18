@@ -23,6 +23,7 @@ import {
   buildPlayerScoutState,
   isScoutCalculationExcludedRosterStatus,
 } from '../../../domain/orchestration/buildPlayerScoutState.js'
+import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 
 const isPatchUnchanged = ({ current = {}, patch = {} } = {}) => (
@@ -102,7 +103,7 @@ const updateSeasonPlayer = async ({ season = {}, team = {}, player = {}, buildPa
     const scoutProfilesSummary = includeScoutSummary ? buildScoutProfilesSummary(nextPlayers) : null
     if (!changed) return result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: found, changed: false, writeSkipped: found, scoutProfilesSummary, seasonDocument: current, player: updatedPlayer })
     const next = withTeamBalanceSnapshot({
-      seasonDoc: { ...current, teamPlayers: nextPlayers, playersCount: nextPlayers.length, ...(scoutProfilesSummary ? { scoutProfilesSummary } : {}), updatedAt: new Date().toISOString() },
+      seasonDoc: { ...current, teamPlayers: nextPlayers, playersCount: countCurrentRosterPlayers(nextPlayers), ...(scoutProfilesSummary ? { scoutProfilesSummary } : {}), updatedAt: new Date().toISOString() },
       teamRoot: context({ team, teamId }),
     })
     const persisted = persistSeason({ transaction, ref, team, teamId, season: { ...season, seasonId, seasonKey }, current, next })
@@ -182,10 +183,10 @@ export async function updateTeamSeasonPlayersScoutProjections({ season = {}, tea
     const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
     const changed = JSON.stringify(normalizeComparableValue(players)) !== JSON.stringify(normalizeComparableValue(nextPlayers)) ||
       JSON.stringify(normalizeComparableValue(current.scoutProfilesSummary || {})) !== JSON.stringify(normalizeComparableValue(scoutProfilesSummary))
-    if (!changed) return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: false, writeSkipped: true, scoutProfilesSummary, seasonDocument: current }), players, playersCount: players.length, teamBalance: current.teamBalance || null }
-    const next = { ...current, teamPlayers: nextPlayers, playersCount: nextPlayers.length, scoutProfilesSummary, updatedAt: new Date().toISOString() }
+    if (!changed) return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: false, writeSkipped: true, scoutProfilesSummary, seasonDocument: current }), players, playersCount: countCurrentRosterPlayers(players), teamBalance: current.teamBalance || null }
+    const next = { ...current, teamPlayers: nextPlayers, playersCount: countCurrentRosterPlayers(nextPlayers), scoutProfilesSummary, updatedAt: new Date().toISOString() }
     const persisted = persistSeason({ transaction, ref, team, teamId, season, current, next })
-    return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: true, writeSkipped: false, scoutProfilesSummary, seasonDocument: persisted }), players: nextPlayers, playersCount: nextPlayers.length, teamBalance: persisted.teamBalance || null }
+    return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: true, writeSkipped: false, scoutProfilesSummary, seasonDocument: persisted }), players: nextPlayers, playersCount: countCurrentRosterPlayers(nextPlayers), teamBalance: persisted.teamBalance || null }
   })
 }
 

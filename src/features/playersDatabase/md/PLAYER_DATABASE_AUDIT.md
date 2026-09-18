@@ -46,6 +46,12 @@ roster deletion or reload is required.
   It may be used only to display a human-readable repair preview.
 - Audit must use an existing canonical builder or domain calculation. It must
   not reproduce business formulas inside the Audit.
+- Team Season Movement is canonical local state. A missing counterpart Team
+  Season is legal; Audit must not classify it as a canonical failure or create
+  the missing Team Season. Counterpart retry/diagnostics are reconciliation,
+  not a second source of truth.
+- Audit must not use legacy `transferredIn`, `transferredOut`,
+  `manualTransferDirection`, or Excel `transferCheck` to derive Movement truth.
 
 ## Lifecycle contracts
 
@@ -54,16 +60,15 @@ roster deletion or reload is required.
 | League table loaded | League Document and Team SearchIndex | A Team SearchIndex without a Team Season is valid `league_only`. |
 | Roster loaded | Team Root, Team Season and Player SearchIndexes | Player Documents are not required merely because a player is in the roster. |
 | Stats loaded | Updated Team Season and SearchIndexes | Statistics, Team Balance and scouting projections are refreshed. |
-| Retired roster player | No new Player Document or scout profile | The Team Season keeps the player for history. An existing Player Document is retained only when it contains another season/history or an independent tracking reason; otherwise it is removed. |
+| Left / younger season participant | No current-team scout profile | The Team Season keeps the participant and statistics for history; current roster scope is `regular` only. |
 | Player has any scout profile | Player Document | This includes Professional and Preliminary profiles. |
-| Player is Favorite, Watchlist, Manual or Transfer tracked | Player Document | These are independent lifecycle reasons for a Player Document. |
+| Player is Favorite, Watchlist or Manual tracked | Player Document | These are independent lifecycle reasons for a Player Document. |
 
 Team Root without a season is a valid lifecycle state. It is not an unexpected
 document by itself.
 
-A Player Document linked to a retired roster player is not an `unexpected_document`
-when it retains historical seasons. A retired player with no remaining history or
-independent tracking reason must not retain a Player Document.
+A Player Document linked to a left or younger season participant is not an
+`unexpected_document` when it retains historical seasons or independent tracking.
 
 ## Canonical source comparisons
 
@@ -92,10 +97,12 @@ Audit must not compare those two representations directly.
 ## Repair
 
 Repair is separate from Audit and always requires explicit user confirmation.
-It is available only for the proven case of a missing Player Document whose
-lifecycle requires one.
+It supports only findings with an explicit `AUDIT_REPAIR_TYPE`. In addition to
+the proven missing-Player-Document flow, `retry_movement_counterpart` retries
+the selected canonical `transfersIn` facts through the Movement writer.
 
-Before writing, Repair performs a fresh read and groups eligible findings by:
+For missing Player Documents, Repair performs a fresh read and groups eligible
+findings by:
 
 `league → season → team → players`
 
@@ -103,19 +110,22 @@ The confirmation preview displays every player together with team, slot (only
 when greater than one), league, season, age group and birth year. It writes
 only the validated entries shown in that preview.
 
-Repair uses canonical writers to create the Player Document and refresh the
+Repair uses canonical writers to create the Player Document, refresh the
 affected Team Season scouting projection, Player SearchIndex, Team SearchIndex
-and League team summary. It never creates a document from Audit output alone,
-does not perform schema repair, and does not use SearchIndex as the write
-source. A new Audit runs after Repair.
+and League team summary, or retry an existing Movement counterpart. Movement
+retry never creates a Team Root or Team Season; a missing counterpart remains
+legal. Repair never creates a document from Audit output alone, does not
+perform schema repair, and does not use SearchIndex as the write source. A new
+Audit runs after Repair.
 
 ## Scopes
 
 - **Full system** checks all loaded Player Database collections, including the
   League Master projection against the live League Documents.
-- **Team and season** limits findings to one Team Season.
+- **Team and season** limits findings to one Team Season, plus only the exact
+  counterpart Team Seasons referenced by its `transfersIn` facts.
 - **Last write** limits findings to Team Seasons recorded by the last write
-  result.
+  result, plus only their explicitly referenced Movement counterparts.
 
 The reader loads a complete snapshot before evaluating relations, so the Audit
 does not infer broken relations from a partial data set.

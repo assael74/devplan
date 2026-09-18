@@ -60,13 +60,13 @@ const buildCompetitionRowSx = rules => {
   }
 }
 
-const buildLeagueTableExportConfig = ({
+export const buildLeagueTableExportConfig = ({
   selectedSeasonOption,
   leagueName = '',
+  region = '',
   ageGroup = '',
   birthYear = '',
   rowsCount = 0,
-  buildTeamLink,
 } = {}) => ({
   enabled: rowsCount > 0,
   placementColumnKey: 'actions',
@@ -76,9 +76,10 @@ const buildLeagueTableExportConfig = ({
   tooltip: 'הורדת טבלת הליגה המלאה',
   fileName: [
     safeFilePart(leagueName) || 'ליגה',
+    safeFilePart(region) || 'אזור',
     safeFilePart(ageGroup) || 'קבוצת גיל',
-    safeFilePart(selectedSeasonOption?.seasonKey) || 'עונה',
     safeFilePart(birthYear) || 'שנתון',
+    safeFilePart(selectedSeasonOption?.seasonKey) || 'עונה',
   ].join(' - '),
   sheetName: 'League Table',
   getRows: rows => rows,
@@ -162,13 +163,8 @@ const buildLeagueTableExportConfig = ({
       value: row => toNumber(row?.profileAssignmentsCount),
     },
     {
-      key: 'teamPageLink',
-      label: 'קישור לקבוצה',
-      value: row => clean(buildTeamLink?.(row)),
-    },
-    {
       key: 'teamUrl',
-      label: 'קישור מועדון',
+      label: 'קישור קבוצה',
       value: row => resolveTeamUrl(row),
     },
   ],
@@ -180,9 +176,9 @@ export default function LeagueTeamsTable({
   error = '',
   selectedSeasonOption = null,
   leagueName = '',
+  region = '',
   ageGroup = '',
   birthYear = '',
-  buildTeamLink,
   onTeamOpen,
   onTeamUrlEdit,
   onFavoriteToggle,
@@ -200,16 +196,16 @@ export default function LeagueTeamsTable({
     () => buildLeagueTableExportConfig({
       selectedSeasonOption,
       leagueName,
+      region,
       ageGroup,
       birthYear,
       rowsCount: rows.length,
-      buildTeamLink,
     }),
     [
       ageGroup,
       birthYear,
-      buildTeamLink,
       leagueName,
+      region,
       rows.length,
       selectedSeasonOption,
     ]

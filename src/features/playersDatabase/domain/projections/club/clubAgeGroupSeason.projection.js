@@ -52,6 +52,21 @@ const normalizeLineStructure = value => {
   }
 }
 
+const teamSlotOf = ({ team = {}, teamSeason = {} } = {}) => {
+  const value = [
+    team?.birthTeamSlot,
+    team?.teamSlot,
+    team?.identity?.birthTeamSlot,
+    team?.identity?.teamSlot,
+    teamSeason?.birthTeamSlot,
+    teamSeason?.teamSlot,
+    teamSeason?.identity?.birthTeamSlot,
+    teamSeason?.identity?.teamSlot,
+  ].find(candidate => Number.isInteger(Number(candidate)) && Number(candidate) > 0)
+
+  return value ? Number(value) : null
+}
+
 // Scouting priority is projected from the League table row. Keeping its shape
 // explicit prevents a Team Season update from becoming a competing source.
 export const normalizeClubScoutPerformanceSide = value => {
@@ -141,6 +156,7 @@ export const buildClubAgeGroupSeasonProjection = ({
     ageGroupLabel,
     season: {
       teamId,
+      teamSlot: teamSlotOf({ team, teamSeason }),
       seasonId: cleanValue(season?.seasonId || teamSeason?.seasonId),
       seasonKey: cleanValue(season?.seasonKey || teamSeason?.seasonKey),
       seasonStatus: normalizeSeasonStatus(
@@ -167,7 +183,10 @@ export const buildClubAgeGroupSeasonProjection = ({
         ? {}
         : {
             transfers: buildClubTransferSummary({
-              teamPlayers: teamSeason?.teamPlayers,
+              transfersIn: teamSeason?.transfersIn,
+              transfersOut: teamSeason?.transfersOut,
+              pendingPlayers: teamSeason?.pendingPlayers,
+              clubId: team?.clubId || teamSeason?.clubId || teamSeason?.identity?.clubId,
               coverageStatus: transferCoverageStatus,
             }),
           }),

@@ -42,25 +42,33 @@ export const teamSeasonDocRef = ({ birthTeamDocumentId, seasonKey } = {}) => {
   return teamSeasonDocRefById(teamSeasonDocumentId)
 }
 
-export async function getTeamSeason({ birthTeamDocumentId, seasonKey } = {}) {
+export async function getTeamSeason({
+  birthTeamDocumentId,
+  seasonKey,
+  bypassCache = false,
+} = {}) {
   const ref = teamSeasonDocRef({ birthTeamDocumentId, seasonKey })
   if (!ref) return null
 
+  const read = async () => {
+    const snapshot = await trackedGetDoc(ref, {
+      feature: 'playersDatabase',
+      action: 'team-season-read',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+    })
+    if (!snapshot.exists()) return null
+
+    return {
+      id: snapshot.id,
+      ...snapshot.data(),
+    }
+  }
+
+  if (bypassCache) return read()
+
   return readWithDocumentCache({
     key: buildTeamSeasonDocumentCacheKey(ref.id),
-    read: async () => {
-      const snapshot = await trackedGetDoc(ref, {
-        feature: 'playersDatabase',
-        action: 'team-season-read',
-        collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
-      })
-      if (!snapshot.exists()) return null
-
-      return {
-        id: snapshot.id,
-        ...snapshot.data(),
-      }
-    },
+    read,
   })
 }
 

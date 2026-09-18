@@ -3,6 +3,7 @@ jest.mock('../../write/clubs/index.js', () => ({
   syncClubProjectionsFromLeagueTable: jest.fn(),
   rebuildAllClubsMasterDocument: jest.fn(),
   syncClubsMasterDocument: jest.fn(),
+  syncLeagueClubSeasonIdentityIndex: jest.fn(),
   recoverClubProjectionPersistence: jest.fn(),
   removeClubDocumentOrphanedCompetitionPathSeasons: jest.fn(),
 }))
@@ -12,9 +13,14 @@ jest.mock('../../audit/audit.read.js', () => ({
 }))
 
 import { readPlayerDatabaseAuditSnapshot } from '../../audit/audit.read.js'
-import { syncClubProjectionsFromLeagueTable } from '../../write/clubs/index.js'
+import {
+  rebuildAllClubsMasterDocument,
+  syncClubProjectionsFromLeagueTable,
+  syncLeagueClubSeasonIdentityIndex,
+} from '../../write/clubs/index.js'
 import {
   rebuildClubProjectionsFromAuditFindings,
+  rebuildClubProjectionsFromAllLeagueTables,
   resolveClubProjectionAuditTargets,
 } from './clubDataRepair.repair.js'
 
@@ -104,5 +110,49 @@ describe('Club projection audit targets', () => {
 
     expect(syncClubProjectionsFromLeagueTable).not.toHaveBeenCalled()
     expect(result.failures).toEqual([expect.objectContaining({ reason: 'AMBIGUOUS_AUDIT_TARGET' })])
+  })
+
+  test('reports completed projections and actual writes during a full rebuild', async () => {
+    readPlayerDatabaseAuditSnapshot.mockResolvedValue({
+      rows: {
+        teamSeasons: [],
+        leagues: [{
+          id: 'league-a',
+          data: {
+            leagueId: 'league-a',
+            ageGroupId: 'u15',
+            current: {
+              seasonKey: '2025',
+              tableRank: [{ teamId: 'team-a', clubId: 'club-a' }],
+            },
+          },
+        }],
+      },
+    })
+    syncLeagueClubSeasonIdentityIndex.mockResolvedValue({ updated: true })
+    syncClubProjectionsFromLeagueTable.mockImplementation(async ({ onProjection }) => {
+      const result = {
+        clubId: 'club-a',
+        results: { club: { updated: true } },
+      }
+      onProjection({ result, failed: false })
+      return { results: [result], failures: [] }
+    })
+    rebuildAllClubsMasterDocument.mockResolvedValue({ updated: true })
+    const progress = []
+
+    await rebuildClubProjectionsFromAllLeagueTables({
+      onProgress: update => progress.push(update),
+    })
+
+    expect(progress.at(-1)).toEqual(expect.objectContaining({
+      phase: 'completed',
+      completed: true,
+      completedLeagueSeasons: 1,
+      totalLeagueSeasons: 1,
+      completedTeams: 1,
+      totalTeams: 1,
+      writesCount: 3,
+    }))
   })
 })

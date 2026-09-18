@@ -1,5 +1,7 @@
 // src/features/playersDatabase/domain/adapters/teamBalanceInput.adapter.js
 
+import { isCurrentRosterPlayer } from '../../model/team/rosterStatus.model.js'
+
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
@@ -111,5 +113,6 @@ export const adaptTeamBalancePlayerRow = player => {
 
 export const adaptTeamBalanceInput = ({ teamPlayers = [] } = {}) => ({
   players: (Array.isArray(teamPlayers) ? teamPlayers : [])
+    .filter(isCurrentRosterPlayer)
     .map(adaptTeamBalancePlayerRow),
 })

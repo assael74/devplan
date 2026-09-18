@@ -170,8 +170,7 @@ export const findExistingPlayerSeasonIndexDoc = ({
 export const getRosterStatus = player =>
   clean(player.rosterStatus || 'regular')
 
-export const shouldSkipNewPlayerSeasonIndex = player =>
-  getRosterStatus(player) === 'retired'
+export const shouldSkipNewPlayerSeasonIndex = () => false
 
 export const buildPlayerSeasonIndexInternalPlayerId = ({
   player = {},

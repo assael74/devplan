@@ -12,6 +12,17 @@ export const playerDatabaseAuditModalSx = {
     alignSelf: 'flex-start',
   },
 
+  progressSheet: {
+    display: 'grid',
+    gap: 0.75,
+    p: 1.25,
+    borderRadius: 'sm',
+  },
+
+  progressBar: {
+    '--LinearProgress-thickness': '7px',
+  },
+
   collectionTab: {
     minHeight: 25,
     px: 0.85,

@@ -16,11 +16,21 @@ import {
   syncClubProjectionFromTeamSeason,
 } from '../../clubs/index.js'
 import {
+  reconcileTeamSeasonMovementCounterparts,
   updateTeamSeasonPlayersScoutProjections,
   updateTeamSeasonPlayerStats,
 } from '../../teams/index.js'
 import { buildScoutProfilesSummary } from '../shared.js'
+import { readTeamSeasonRosterHistory } from '../../../read/entities/teamSeasonRosterHistory.js'
+import { resolveTeamLookupKey } from '../../../../model/team/teamIdentity.model.js'
+import {
+  ROSTER_IMPORT_MODE,
+  mergeLocalAndResolvedPlayers,
+  reconcileRosterMovement,
+  resolveRosterPlayersLocally,
+} from '../../../../domain/movement/index.js'
 import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
+import { resolveInternalPlayerId } from '../../../../model/player/playerIdentity.model.js'
 import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
 import {
   buildLeagueTeamPerformanceProjection,
@@ -98,8 +108,11 @@ const assertStatsIdentityDecisions = players => {
   const unresolved = (Array.isArray(players) ? players : []).filter(player => {
     const status = String(player?.identityMatchStatus || '').trim()
     const approvedNew = String(player?.identityResolution || '').trim() === 'createNew'
+    const hasCanonicalPlayerId = Boolean(resolveInternalPlayerId(player))
 
-    return !['provided', 'matched'].includes(status) && !(status === 'created' && approvedNew)
+    return !hasCanonicalPlayerId &&
+      !['provided', 'matched'].includes(status) &&
+      !(status === 'created' && approvedNew)
   })
 
   if (!unresolved.length) return
@@ -151,9 +164,40 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     target: derivedTarget,
     team: payload.team,
   })
-  const resolvedPlayers = await resolvePlayerIdentities({
-    players: payload.players,
-    season,
+  const rawPlayers = Array.isArray(payload.players) ? payload.players : []
+  const birthTeamDocumentId = resolveTeamLookupKey(payload.team || {})
+  const rosterHistory = await readTeamSeasonRosterHistory({
+    birthTeamDocumentId,
+    seasonKey: season.seasonKey || season.seasonId,
+  })
+  const currentKnownPlayers = [
+    ...(Array.isArray(rosterHistory.currentSeason?.teamPlayers)
+      ? rosterHistory.currentSeason.teamPlayers
+      : []),
+    ...(Array.isArray(rosterHistory.currentSeason?.pendingPlayers)
+      ? rosterHistory.currentSeason.pendingPlayers
+      : []),
+  ]
+  const previousPlayers = Array.isArray(rosterHistory.previousSeason?.teamPlayers)
+    ? rosterHistory.previousSeason.teamPlayers
+    : []
+  const localResolution = resolveRosterPlayersLocally({
+    players: rawPlayers,
+    currentPlayers: currentKnownPlayers,
+    previousPlayers,
+  })
+  const unresolvedPlayers = localResolution.unresolved.map(entry => entry.player)
+  const broadResolvedPlayers = unresolvedPlayers.length
+    ? await resolvePlayerIdentities({
+        players: unresolvedPlayers,
+        season,
+      })
+    : []
+  const resolvedPlayers = mergeLocalAndResolvedPlayers({
+    totalCount: rawPlayers.length,
+    localResolved: localResolution.resolved,
+    broadResolved: broadResolvedPlayers,
+    unresolved: localResolution.unresolved,
   })
   const resolvedPayload = {
     ...payload,
@@ -184,6 +228,23 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       team: payload.team || {},
       teamPerformance,
       teamPoints,
+      reconcileMovement: ({ currentSeason, previousSeason }) => reconcileRosterMovement({
+        seasonKey: season.seasonKey || season.seasonId,
+        team: {
+          ...(payload.team || {}),
+          birthTeamDocumentId,
+        },
+        incomingPlayers: resolvedPlayers,
+        currentSeason,
+        previousSeason,
+        rosterImport: {
+          mode: ROSTER_IMPORT_MODE.PATCH,
+          sourceSnapshotKey: currentSeason?.rosterImport?.sourceSnapshotKey ||
+            `stats__${season.seasonKey || season.seasonId}`,
+          contentHash: currentSeason?.rosterImport?.contentHash || '',
+          effectiveAt: currentSeason?.rosterImport?.effectiveAt || null,
+        },
+      }),
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
@@ -195,6 +256,10 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
       results,
     })
   }
+
+  results.counterpartReconciliation = await reconcileTeamSeasonMovementCounterparts({
+    requests: results.teamSeasonResult.movementState?.counterpartRequests,
+  })
 
   const team = {
     ...(results.teamSeasonResult.canonicalTeamContext || payload.team || {}),

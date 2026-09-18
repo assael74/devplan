@@ -18,14 +18,12 @@ const catalogOrderOf = club => pickDefinedValue(
 
 const getClubLevel = club => Number(club?.clubStrengthLevel || club?.clubLevel) || 0
 
-// teamId is the canonical team identity and already ends with its slot.
-// A league-level filter is intended to compare the Club's primary teams only.
-const isPrimaryTeam = teamId => {
-  const lastPart = clean(teamId).split('_').filter(Boolean).at(-1)
-  const slot = Number(lastPart)
-
-  return !Number.isInteger(slot) || slot <= 1
+const positiveTeamSlotOrNull = value => {
+  const slot = Number(value)
+  return Number.isInteger(slot) && slot > 0 ? slot : null
 }
+
+const isPrimaryTeam = teamSlot => positiveTeamSlotOrNull(teamSlot) === 1
 
 const getSeasonEntries = (club, seasonView) => (
   (Array.isArray(club?.ageGroups) ? club.ageGroups : []).flatMap(ageGroup => {
@@ -40,7 +38,8 @@ const getSeasonEntries = (club, seasonView) => (
       ageGroupId: clean(ageGroup?.ageGroupId),
       ageGroupLabel: clean(ageGroup?.ageGroupLabel),
       teamId: clean(team?.teamId),
-      slot: pickDefinedValue(team?.slot, null),
+      teamSlot: positiveTeamSlotOrNull(team?.teamSlot || team?.birthTeamSlot),
+      slot: positiveTeamSlotOrNull(team?.teamSlot || team?.birthTeamSlot),
       seasonKey: clean(team?.seasonKey),
       seasonStatus: clean(team?.seasonStatus),
       birthYear: toNumberOrZero(team?.birthYear),
@@ -145,7 +144,7 @@ export const filterClubsPageRows = ({
     const teams = group.teams.filter(team => {
       if (ageGroupId !== 'all' && clean(team.ageGroupId) !== clean(ageGroupId)) return false
       if (leagueLevel !== 'all' && (
-        !isPrimaryTeam(team.teamId) ||
+        !isPrimaryTeam(team.teamSlot) ||
         String(team.leagueLevel || '') !== String(leagueLevel)
       )) return false
       if (withScoutProfiles && team.scoutProfilesCount <= 0) return false

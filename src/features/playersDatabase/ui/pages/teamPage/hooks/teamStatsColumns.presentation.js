@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {
-  Box, Button, Chip, Dropdown, IconButton, Menu, MenuButton, Option, Select, Stack, Tooltip, Typography,
+  Autocomplete, Box, Button, Chip, Dropdown, IconButton, Menu, MenuButton, Option, Select, Stack, Tooltip, Typography,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -34,25 +34,6 @@ export const resolvePlayerUrl = value => {
   return `https://www.football.org.il${path}`
 }
 
-export const TRANSFER_DIRECTIONS = ['unknown', 'up', 'lateral', 'down']
-
-export const getNextTransferDirection = value => {
-  const currentIndex = TRANSFER_DIRECTIONS.indexOf(value)
-  return TRANSFER_DIRECTIONS[(currentIndex + 1) % TRANSFER_DIRECTIONS.length]
-}
-
-export const getTransferDirectionIcon = value => ({
-  up: 'sortUp',
-  lateral: 'swapVert',
-  down: 'sortDown',
-}[value] || 'swapVert')
-
-export const getTransferDirectionColor = value => ({
-  up: 'success',
-  lateral: 'primary',
-  down: 'danger',
-}[value] || 'neutral')
-
 export const TableHeaderIcon = ({ id, label }) => (
   <Tooltip title={label}>
     <Box
@@ -84,13 +65,6 @@ export const getMinutesCorrectionImpactLabel = row => {
     removedLabel,
   ].filter(Boolean).join(' · ')
 }
-
-export const getTransferDirectionLabel = value => ({
-  unknown: 'כיוון מעבר: לא ידוע',
-  up: 'כיוון מעבר: התקדם לרמה גבוהה יותר',
-  lateral: 'כיוון מעבר: אותה רמה',
-  down: 'כיוון מעבר: ירד רמה',
-}[value] || 'כיוון מעבר: לא ידוע')
 
 export const renderMarkedNumber = ({ value, mark }) => {
   if (!mark) {
@@ -160,17 +134,146 @@ export const resolveScoutProfileSortLabel = row => {
   return scoutView.label || ''
 }
 
-export const isTransferRosterStatus = status => (
-  status === 'transferredOut' ||
-  status === 'transferredIn'
-)
-
 export const ROSTER_STATUS_SHORT_LABELS = {
   regular: 'בסגל',
-  transferredOut: 'עזב',
-  transferredIn: 'הצטרף',
-  retired: 'פרש',
+  joined: 'הצטרף',
+  left: 'עזב',
   youngerAgeGroup: 'צעיר',
+}
+
+export function StatsRosterStatusControl({
+  row,
+  rowIndex,
+  column,
+  onCellChange,
+  options,
+  teamRootOptions = [],
+}) {
+  const movementDecision = ['left', 'joined'].includes(row.statsMovementDecision)
+    ? row.statsMovementDecision
+    : ''
+  const needsManualClassification = Boolean(row.requiresStatsMovementDecision) && !movementDecision
+  const selectedStatus = !needsManualClassification && (movementDecision || options.some(option => option.value === row.rosterStatus))
+    ? movementDecision || row.rosterStatus
+    : null
+  const [selectedClub, setSelectedClub] = React.useState(null)
+  const resolvedClub = selectedClub || (row.statsMovementTeam
+    ? teamRootOptions.find(option => option.clubId === row.statsMovementTeam.clubId) || null
+    : null)
+  const availableTeams = Array.isArray(resolvedClub?.availableTeams)
+    ? resolvedClub.availableTeams
+    : []
+
+  const setStatus = value => {
+    if (typeof onCellChange !== 'function') return
+
+    setSelectedClub(null)
+
+    if (value === 'youngerAgeGroup' && row.requiresStatsMovementDecision) {
+      onCellChange({
+        row,
+        rowIndex,
+        column: { ...column, key: 'statsMovementDecision' },
+        value: { decision: value, team: null },
+      })
+      return
+    }
+
+    onCellChange({
+      row,
+      rowIndex,
+      column,
+      value: value || 'unresolved',
+    })
+  }
+
+  const selectMovementTeam = movementTeam => {
+    if (!movementDecision || !movementTeam?.birthTeamDocumentId) return
+
+    onCellChange?.({
+      row,
+      rowIndex,
+      column: { ...column, key: 'statsMovementDecision' },
+      value: { decision: movementDecision, team: movementTeam },
+    })
+  }
+
+  const selectClub = club => {
+    setSelectedClub(club || null)
+    const defaultTeam = (Array.isArray(club?.availableTeams) ? club.availableTeams : [])
+      .find(team => Number(team.birthTeamSlot) === 1) || null
+
+    if (defaultTeam) selectMovementTeam(defaultTeam)
+  }
+
+  return (
+    <Stack direction='row' spacing={0.45} sx={sx.statusMovementControls}>
+      <Select
+        size='sm'
+        indicator={null}
+        value={selectedStatus}
+        placeholder={needsManualClassification ? 'לא מזוהה' : 'סטטוס'}
+        sx={sx.statusSelect}
+        onChange={(event, nextValue) => setStatus(nextValue)}
+      >
+        {options.map(option => (
+          <Option key={option.value} value={option.value}>
+            {ROSTER_STATUS_SHORT_LABELS[option.value] || option.label}
+          </Option>
+        ))}
+      </Select>
+      {movementDecision ? (
+        <>
+          <Autocomplete
+            size='sm'
+            options={teamRootOptions}
+            value={resolvedClub}
+            forcePopupIcon={false}
+            slotProps={{
+              clearIndicator: {
+                sx: {
+                  width: 18,
+                  height: 18,
+                  '--Icon-fontSize': '14px',
+                },
+              },
+              listbox: {
+                className: 'dpScrollThin',
+                sx: {
+                  fontSize: '0.72rem',
+                  '--ListItem-minHeight': '26px',
+                  py: 0.25,
+                },
+              },
+            }}
+            getOptionLabel={option => option?.label || option?.clubName || option?.displayName || ''}
+            isOptionEqualToValue={(option, value) => option?.clubId === value?.clubId}
+            onChange={(event, value) => selectClub(value)}
+            placeholder={movementDecision === 'left' ? 'יעד' : 'מקור'}
+            sx={sx.statusMovementTeamSelect}
+          />
+          <Select
+            size='sm'
+            indicator={null}
+            value={row.statsMovementTeam?.birthTeamDocumentId || null}
+            placeholder='1'
+            disabled={!availableTeams.length}
+            sx={sx.statusMovementSlotSelect}
+            onChange={(event, teamId) => {
+              const team = availableTeams.find(item => item.birthTeamDocumentId === teamId)
+              if (team) selectMovementTeam(team)
+            }}
+          >
+            {availableTeams.map(team => (
+              <Option key={team.birthTeamDocumentId} value={team.birthTeamDocumentId}>
+                {team.birthTeamSlot}
+              </Option>
+            ))}
+          </Select>
+        </>
+      ) : null}
+    </Stack>
+  )
 }
 
 export function NameMatchPopover({
@@ -179,6 +282,7 @@ export function NameMatchPopover({
   message,
   options,
   playerUrl,
+  allowCreateNew = false,
   onChange,
 }) {
   const [open, setOpen] = React.useState(false)
@@ -197,6 +301,16 @@ export function NameMatchPopover({
           <Select size='sm' value={selectedValue || null} placeholder='בחר שחקן מהסגל' onChange={(event, nextValue) => { onChange(nextValue || ''); setOpen(false) }}>
             {options.map(option => <Option key={option.value} value={option.value}>{option.label}</Option>)}
           </Select>
+          {allowCreateNew ? (
+            <Button
+              size='sm'
+              variant='soft'
+              color='warning'
+              onClick={() => { onChange('__createNew'); setOpen(false) }}
+            >
+              אשר כשחקן חדש
+            </Button>
+          ) : null}
         </Stack>
         </Menu>
       </Dropdown>
@@ -212,11 +326,21 @@ export function IdentityResolutionPopover({
   onCellChange,
   mode,
   label,
+  teamRootOptions = [],
 }) {
   const [open, setOpen] = React.useState(false)
   const candidates = Array.isArray(row.identityCandidates) ? row.identityCandidates : []
   const systemCandidate = candidates[0] || null
   const originalFullName = row.originalFullName || row.fullName || '-'
+  const [movementDecision, setMovementDecision] = React.useState(row.statsMovementDecision || '')
+  const [movementTeam, setMovementTeam] = React.useState(null)
+
+  React.useEffect(() => {
+    if (!open || mode !== 'statsMovement') return
+
+    setMovementDecision(row.statsMovementDecision || '')
+    setMovementTeam(null)
+  }, [mode, open, row.statsMovementDecision])
   const approveCandidate = candidate => {
     if (!candidate?.playerId || typeof onCellChange !== 'function') return
 
@@ -225,6 +349,18 @@ export function IdentityResolutionPopover({
       rowIndex,
       column: { ...column, key: 'systemCandidateApproval' },
       value: candidate.candidateKey || candidate.playerId,
+    })
+    setOpen(false)
+  }
+  const approveMovementDecision = () => {
+    const requiresTeam = ['joined', 'left'].includes(movementDecision)
+    if (!movementDecision || (requiresTeam && !movementTeam?.birthTeamDocumentId)) return
+
+    onCellChange?.({
+      row,
+      rowIndex,
+      column: { ...column, key: 'statsMovementDecision' },
+      value: { decision: movementDecision, team: movementTeam },
     })
     setOpen(false)
   }
@@ -280,6 +416,44 @@ export function IdentityResolutionPopover({
                 </Option>
               ))}
             </Select>
+          ) : null}
+          {mode === 'statsMovement' ? (
+            <>
+              <Typography level='body-xs'>השחקן מופיע בסטטיסטיקה אך לא בסגל המקורי של העונה.</Typography>
+              <Select
+                size='sm'
+                value={movementDecision || null}
+                placeholder='בחר סיווג'
+                onChange={(event, value) => { setMovementDecision(value || ''); setMovementTeam(null) }}
+              >
+                <Option value='left'>עזב במהלך העונה</Option>
+                <Option value='joined'>הצטרף במהלך העונה</Option>
+                <Option value='youngerAgeGroup'>שנתון צעיר</Option>
+              </Select>
+              {['left', 'joined'].includes(movementDecision) ? (
+                <Autocomplete
+                  size='sm'
+                  options={teamRootOptions}
+                  value={movementTeam}
+                  getOptionLabel={option => option
+                    ? `${option.displayName || option.birthTeamId} · ${option.birthYear || '-'} · קבוצה ${option.birthTeamSlot || 1}`
+                    : ''}
+                  isOptionEqualToValue={(option, value) => option?.birthTeamDocumentId === value?.birthTeamDocumentId}
+                  onChange={(event, value) => setMovementTeam(value || null)}
+                  placeholder={movementDecision === 'left' ? 'בחר קבוצת יעד' : 'בחר קבוצת מקור'}
+                />
+              ) : null}
+              <Button
+                size='sm'
+                disabled={!movementDecision || (['left', 'joined'].includes(movementDecision) && !movementTeam?.birthTeamDocumentId)}
+                onClick={approveMovementDecision}
+              >
+                אשר סיווג
+              </Button>
+              <Button size='sm' variant='plain' color='neutral' onClick={() => setOpen(false)}>
+                סגור
+              </Button>
+            </>
           ) : null}
         </Stack>
       </Menu>

@@ -45,8 +45,8 @@ describe('Clubs page rows', () => {
           ageGroups: [{
             ageGroupId: 'u15',
             current: [
-              { teamId: 'club-a_2012_1', league: { leagueLevel: 1 } },
-              { teamId: 'club-a_2012_2', league: { leagueLevel: 2 } },
+              { teamId: 'club-a_2012_1', teamSlot: 1, league: { leagueLevel: 1 } },
+              { teamId: 'club-a_2012_2', teamSlot: 2, league: { leagueLevel: 2 } },
             ],
             previous: [
               { teamId: 'club-a_2011_1', league: { leagueLevel: 2 } },

@@ -19,6 +19,7 @@ import {
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
+import { countCurrentRosterPlayers } from '../../../../model/team/rosterStatus.model.js'
 import { resolveLeagueSeasonStatus } from '../../../../domain/projections/teamPerformance.projection.js'
 
 const FLOW = 'clearTeamSeasonStats'
@@ -192,7 +193,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
       team: finalTeamWithLoadStatus,
       target: teamSeasonResult.target,
       teamSeasonDocumentId: teamSeasonResult.teamSeasonDocumentId,
-      playersCount: players.length,
+      playersCount: countCurrentRosterPlayers(players),
       playerSeasonIndexCount: players.length,
       scoutProfilesSummary,
       teamBalance: teamSeasonResult.teamBalance,
@@ -211,7 +212,7 @@ export async function clearTeamSeasonStatsFlow(payload = {}) {
       teamSeason: {
         ...(teamSeasonResult.seasonDocument || {}),
         teamPlayers: players,
-        playersCount: players.length,
+        playersCount: countCurrentRosterPlayers(players),
         scoutProfilesSummary,
       },
       canonicalCommitted: true,

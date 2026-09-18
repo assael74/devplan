@@ -48,6 +48,19 @@ export const statsImportModalSx = {
     minWidth: 0,
   },
 
+  settingsAction: {
+    minHeight: 28,
+    px: 1,
+    fontSize: 11,
+    alignSelf: 'flex-start',
+  },
+
+  settingsActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
   validationIssuesChip: {
     borderRadius: 999,
     minHeight: 23,

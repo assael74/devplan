@@ -28,15 +28,15 @@ export function appendPlayerSeasonAuditFindings({
 
   ;(Array.isArray(season.teamPlayers) ? season.teamPlayers : []).forEach(player => {
     const playerDocumentId = clean(player.playerDocumentId)
-    const isRetired = clean(player.rosterStatus) === 'retired'
-    const profiled = !isRetired && profilesOf(player).length > 0
+    const isOutOfRosterScope = clean(player.rosterStatus || 'regular') !== 'regular'
+    const profiled = !isOutOfRosterScope && profilesOf(player).length > 0
     lifecycle.push({
       entityType: 'player',
       documentId: playerDocumentId || clean(player.playerId || player.externalPlayerId),
       teamDocumentId: teamId,
       playerDocumentId,
       seasonKey,
-      status: isRetired ? 'retired' : profiled ? 'profiled' : 'roster_only',
+      status: isOutOfRosterScope ? 'out_of_roster_scope' : profiled ? 'profiled' : 'roster_only',
     })
     if (profiled && (!playerDocumentId || !playerDocsById.has(playerDocumentId))) {
       findings.push(buildAuditFinding({
@@ -103,7 +103,7 @@ export function appendPlayerSeasonAuditFindings({
     const playerIndex = expectedIndexKey
       ? playerIndexes.find(index => playerIndexKey(index.data) === expectedIndexKey)
       : null
-    if (clean(player.rosterStatus) !== 'retired' && expectedIndexKey && !playerIndex) {
+    if (expectedIndexKey && !playerIndex) {
       findings.push(buildAuditFinding({
         type: AUDIT_FINDING_TYPE.MISSING_DOCUMENT,
         entityType: 'playerSearchIndex',
@@ -182,7 +182,7 @@ export function appendPlayerDocumentAuditFindings({
 
   players.forEach(({ id, data }) => {
     const favorite = favoriteIds.has(clean(data.playerId))
-    // A retired roster player can retain a Player document purely as an
+    // A non-current season participant can retain a Player document purely as an
     // archive of prior seasons.  It is not an active tracking document and
     // must not be reported as an unexpected document after its current
     // season's scout profile is cleared.
@@ -190,14 +190,14 @@ export function appendPlayerDocumentAuditFindings({
       (Array.isArray(data.history) && data.history.length > 0) ||
       (Array.isArray(data.current) && data.current.length > 1)
     )
-    const retainedForRetiredRoster = hasArchivedSeasonHistory && scopedSeasons.some(season => (
+    const retainedForOutOfRosterScope = hasArchivedSeasonHistory && scopedSeasons.some(season => (
       (Array.isArray(season.data?.teamPlayers) ? season.data.teamPlayers : [])
         .some(player => (
           clean(player.playerDocumentId) === id &&
-          clean(player.rosterStatus) === 'retired'
+          clean(player.rosterStatus || 'regular') !== 'regular'
         ))
     ))
-    if (!hasTracking(data) && !favorite && !retainedForRetiredRoster) {
+    if (!hasTracking(data) && !favorite && !retainedForOutOfRosterScope) {
       const details = playerAuditDetails({ player: data, rootsById })
       findings.push(buildAuditFinding({
         type: AUDIT_FINDING_TYPE.UNEXPECTED_DOCUMENT,

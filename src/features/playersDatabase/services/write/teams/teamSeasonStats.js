@@ -26,6 +26,8 @@ import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,
 } from '../../../domain/projections/teamPerformance.projection.js'
+import { compareSeasonKeys } from '../../../domain/movement/index.js'
+import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 const hasNumberValue = value => (
   value !== undefined &&
@@ -116,6 +118,12 @@ const requireLeagueSeasonLifecycle = seasonStatus => {
 }
 
 const toNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0
+
+const resolvePreviousSeasonEntry = ({ seasons = [], seasonKey = '' } = {}) => (
+  (Array.isArray(seasons) ? seasons : [])
+    .filter(entry => compareSeasonKeys(entry?.seasonKey, seasonKey) < 0)
+    .sort((left, right) => compareSeasonKeys(right?.seasonKey, left?.seasonKey))[0] || null
+)
 
 // Performance is retained only as canonical calculation/history context. Its
 // rank is the same league-table fact exposed by the compact top-level fields;
@@ -218,6 +226,7 @@ export async function updateTeamSeasonPlayerStats({
   players = [],
   teamPerformance = null,
   teamPoints = null,
+  reconcileMovement = null,
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
   const seasonId = clean(season.seasonId)
@@ -251,6 +260,23 @@ export async function updateTeamSeasonPlayerStats({
         incomingStatus: inputSeason.seasonStatus,
       }),
     }
+    const previousEntry = resolvePreviousSeasonEntry({
+      seasons: rootSnapshot.exists() ? rootSnapshot.data()?.seasons : [],
+      seasonKey,
+    })
+    const previousRef = previousEntry?.seasonKey
+      ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousEntry.seasonKey })
+      : null
+    const previousSnapshot = previousRef ? await transaction.get(previousRef) : null
+    const previousSeason = previousSnapshot?.exists()
+      ? previousSnapshot.data() || {}
+      : null
+    const movementState = typeof reconcileMovement === 'function'
+      ? reconcileMovement({
+          currentSeason: existingSeason,
+          previousSeason,
+        })
+      : null
     const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
       season: effectiveSeason,
       team: {
@@ -289,7 +315,14 @@ export async function updateTeamSeasonPlayerStats({
         ? Number(season.leagueTotalRound)
         : Number(baseSeasonDoc.leagueTotalRound) || 0,
       teamPlayers: nextPlayers,
-      playersCount: nextPlayers.length,
+      playersCount: countCurrentRosterPlayers(nextPlayers),
+      ...(movementState
+        ? {
+            transfersIn: movementState.transfersIn || [],
+            transfersOut: movementState.transfersOut || [],
+            pendingPlayers: movementState.pendingPlayers || [],
+          }
+        : {}),
       scoutProfilesSummary: buildScoutProfilesSummary(nextPlayers),
       updatedAt: new Date().toISOString(),
     })
@@ -343,15 +376,14 @@ export async function updateTeamSeasonPlayerStats({
       target: effectiveSeason.seasonStatus === 'completed' ? 'history' : 'current',
       createdTeam,
       rowsCount: (Array.isArray(players) ? players : []).length,
-      playersCount: Array.isArray(persistedSeason.teamPlayers)
-        ? persistedSeason.teamPlayers.length
-        : 0,
+      playersCount: countCurrentRosterPlayers(persistedSeason.teamPlayers),
       players: Array.isArray(persistedSeason.teamPlayers)
         ? persistedSeason.teamPlayers
         : [],
       teamBalance: persistedSeason.teamBalance || null,
       canonicalTeamContext,
       seasonDocument: persistedSeason,
+      movementState,
       updated: true,
       changed: !writeSkipped,
       writeSkipped,

@@ -15,14 +15,26 @@ import {
   removeClubProjectionsForLeagueSeason,
   removeLeagueClubSeasonIdentityIndex,
 } from '../../clubs/index.js'
+import { getTeamSeason } from '../../../read/entities/teamSeason.js'
 import { attachWriteFlowReport } from '../writeFlowReport.js'
 
 const FLOW = 'clearLeagueSeasonTeams'
 
-const hasLoadedPlayers = team => (
-  Boolean(team?.hasPlayers) ||
-  Number(team?.playersCount || 0) > 0
-)
+const resolveTeamIdentity = team => {
+  const birthTeamDocumentId = String(
+    team?.birthTeamId ||
+    team?.teamId ||
+    team?.birthTeamDocumentId ||
+    team?.teamDocumentId ||
+    team?.id ||
+    ''
+  ).trim()
+
+  return birthTeamDocumentId
+}
+
+const hasCanonicalPlayers = teamSeason =>
+  Array.isArray(teamSeason?.teamPlayers) && teamSeason.teamPlayers.length > 0
 
 const runStage = async ({ stage, results, action }) => {
   try {
@@ -83,7 +95,24 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
     ? leagueSeasonSnapshot.teams
     : []
 
-  if (leagueTeams.some(hasLoadedPlayers)) {
+  // League table flags are projections and may be stale after an interrupted
+  // roster clear. Deletion safety must be decided by Team Season itself.
+  const canonicalTeamSeasons = await runStage({
+    stage: 'getCanonicalTeamSeasonsForDeleteValidation',
+    results,
+    action: async () => Promise.all(leagueTeams.map(async team => {
+      const birthTeamDocumentId = resolveTeamIdentity(team)
+      if (!birthTeamDocumentId) return null
+
+      return getTeamSeason({
+        birthTeamDocumentId,
+        seasonKey: payload.season?.seasonKey || payload.season?.seasonId,
+        bypassCache: true,
+      })
+    })),
+  })
+
+  if (canonicalTeamSeasons.some(hasCanonicalPlayers)) {
     const error = new Error('League teams cannot be deleted while player rosters exist')
     error.code = 'league-season-has-players'
 

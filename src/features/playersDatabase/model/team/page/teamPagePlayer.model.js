@@ -18,7 +18,6 @@ export const normalizeTeamPagePlayerRow = ({
     externalPlayerId: playerSeason.identity?.externalPlayerId || '',
     playerUrl: playerSeason.metadata?.playerUrl || '',
     rosterStatus: playerSeason.metadata?.rosterStatus || 'regular',
-    manualTransferDirection: playerSeason.metadata?.manualTransferDirection || '',
     statsStatus: playerSeason.statsStatus || PLAYER_STATS_STATUS.MISSING,
     isYoungerAgeGroup: (
       playerSeason.metadata?.rosterStatus === 'youngerAgeGroup'

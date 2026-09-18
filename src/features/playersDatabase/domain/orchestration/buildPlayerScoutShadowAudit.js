@@ -8,7 +8,7 @@ import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInp
 const clean = value => String(value || '').trim()
 
 const isScoutExcludedRosterStatus = player => (
-  clean(player?.rosterStatus) === 'retired'
+  clean(player?.rosterStatus || 'regular') !== 'regular'
 )
 
 const uniqueValues = values => Array.from(new Set(

@@ -4,9 +4,6 @@ import * as React from 'react'
 import {
   Box,
   Chip,
-  Option,
-  Select,
-  Stack,
   Tooltip,
   Typography,
 } from '@mui/joy'
@@ -32,14 +29,10 @@ import {
   NameMatchPopover,
   PlayerUrlIcon,
   ROSTER_STATUS_SHORT_LABELS,
+  StatsRosterStatusControl,
   TableHeaderIcon,
   getIdentityColor,
   getMinutesCorrectionImpactLabel,
-  getNextTransferDirection,
-  getTransferDirectionColor,
-  getTransferDirectionIcon,
-  getTransferDirectionLabel,
-  isTransferRosterStatus,
   renderMarkedNumber,
   resolveScoutProfileSortLabel,
 } from './teamStatsColumns.presentation.js'
@@ -53,6 +46,7 @@ import { clean } from '../logic/teamPage.utils.js'
 export default function useTeamStatsColumns({
   players,
   rosterLookup,
+  teamRootOptions = [],
   getRowStatus,
   getCellStatus,
 }) {
@@ -65,6 +59,10 @@ export default function useTeamStatsColumns({
 
   const nameColumn = React.useMemo(() => ({
     ...PLAYER_STATS_BASE_COLUMNS[1],
+    sx: {
+      ...PLAYER_STATS_BASE_COLUMNS[1].sx,
+      ...sx.playerNameColumn,
+    },
     render: ({ row, rowIndex, column, value, onCellChange, cellStatus }) => {
       const matchedPlayer = findStatsRosterMatch(row, rosterLookup)
       const rowValid = cellStatus?.valid !== false
@@ -90,6 +88,7 @@ export default function useTeamStatsColumns({
         message={cellStatus?.message || 'בחר שחקן מהסגל'}
         options={rosterPlayerOptions}
         playerUrl={row.playerUrl}
+        allowCreateNew={row.identityStatus === STATS_IDENTITY_STATUS.UNRESOLVED}
         onChange={nextValue => onCellChange?.({ row, rowIndex, column: { ...column, key: 'fullNameRosterMatch' }, value: nextValue })}
       />
     },
@@ -162,9 +161,10 @@ export default function useTeamStatsColumns({
 
   const identityColumn = React.useMemo(() => ({
     key: 'identityStatus',
-    label: 'זיהוי שחקן',
+    label: 'זיהוי',
     readOnly: true,
     sortable: true,
+    invalidFirst: true,
     sortValue: row => getStatsIdentityLabel(row.identityStatus),
     sx: {
       ...sx.identityColumn,
@@ -176,15 +176,30 @@ export default function useTeamStatsColumns({
         row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER && isInvalidIdentity
       )
       const isNewPlayer = row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER
+      const isExistingIncomingPlayer = row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH
       const isIdentifiedPlayer = row.identityStatus === STATS_IDENTITY_STATUS.ROSTER_MATCH ||
-        row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH
+        isExistingIncomingPlayer
       const requiresSystemCandidateApproval = row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE
       const requiresAmbiguousChoice = row.identityStatus === STATS_IDENTITY_STATUS.AMBIGUOUS
+      const requiresStatsMovementDecision = Boolean(row.requiresStatsMovementDecision)
       const identityLabel = isUnidentifiedPlayer
         ? 'לא זוהה שחקן'
         : isInvalidIdentity
         ? cellStatus.message || 'נדרשת הכרעת זהות'
         : getStatsIdentityLabel(row.identityStatus)
+      const identityTooltip = isExistingIncomingPlayer
+        ? 'שחקן מזוהה שאינו בסגל. באישור הוא ייכנס לסגל, והמערכת תתעד מעבר אוטומטי רק כאשר מקור קודם ודאי נמצא.'
+        : cellStatus?.message || row.identityMessage || identityLabel
+
+      if (requiresStatsMovementDecision) {
+        return (
+          <Tooltip title={cellStatus?.message || 'יש לבחור סטטוס השתתפות בעמודה הסמוכה'}>
+            <Box component='span' aria-label='נדרש סיווג השתתפות' sx={sx.unidentifiedIdentityIcon}>
+              {iconUi({ id: 'newReleases', size: 'sm', sx: { color: 'warning.500' } })}
+            </Box>
+          </Tooltip>
+        )
+      }
 
       if (requiresSystemCandidateApproval || requiresAmbiguousChoice) {
         return (
@@ -200,13 +215,17 @@ export default function useTeamStatsColumns({
       }
 
       return (
-        <Tooltip title={cellStatus?.message || row.identityMessage || identityLabel}>
+        <Tooltip title={identityTooltip}>
           {isUnidentifiedPlayer ? (
             <Box component='span' aria-label='לא זוהה שחקן' sx={sx.unidentifiedIdentityIcon}>
               {iconUi({ id: 'newReleases', size: 'sm', sx: { color: 'danger.500' } })}
             </Box>
           ) : isNewPlayer ? (
             <Box component='span' aria-label='שחקן חדש' sx={sx.newPlayerIdentityIcon}>
+              {iconUi({ id: 'rosterJoined', size: 'sm', sx: { color: 'neutral.500' } })}
+            </Box>
+          ) : isExistingIncomingPlayer ? (
+            <Box component='span' aria-label='כניסה מזוהה לסגל' sx={sx.newPlayerIdentityIcon}>
               {iconUi({ id: 'rosterJoined', size: 'sm', sx: { color: 'primary.500' } })}
             </Box>
           ) : isIdentifiedPlayer ? (
@@ -226,89 +245,29 @@ export default function useTeamStatsColumns({
         </Tooltip>
       )
     },
-  }), [])
+  }), [teamRootOptions])
 
   const statusColumn = React.useMemo(() => ({
     key: 'rosterStatus',
     label: 'סטטוס בסגל',
+    sortable: true,
+    invalidFirst: true,
+    sortValue: row => row.statsMovementDecision || row.rosterStatus || '',
     sx: {
       ...sx.statusColumn,
       ...TEAM_STATS_IMPORT_TABLE_WIDTHS.rosterStatus,
     },
-    render: ({ row, rowIndex, column, onCellChange }) => {
-      const selectedStatus = STATS_ROSTER_STATUS_OPTIONS.some(option => (
-        option.value === row.rosterStatus
-      ))
-        ? row.rosterStatus
-        : null
-      const showTransferDirection = isTransferRosterStatus(row.rosterStatus)
-
-      return (
-        <Stack direction='row' spacing={0.5} sx={sx.statusStack}>
-          <Select
-            size='sm'
-            indicator={null}
-            value={selectedStatus}
-            placeholder='בחר סטטוס'
-            sx={sx.statusSelect}
-            onChange={(event, nextValue) => {
-              if (typeof onCellChange !== 'function') return
-
-              onCellChange({
-                row,
-                rowIndex,
-                column,
-                value: nextValue || 'unresolved',
-              })
-            }}
-          >
-            {STATS_ROSTER_STATUS_OPTIONS.map(option => (
-              <Option key={option.value} value={option.value}>
-                {ROSTER_STATUS_SHORT_LABELS[option.value] || option.label}
-              </Option>
-            ))}
-          </Select>
-
-          {showTransferDirection ? (
-            <Tooltip title={getTransferDirectionLabel(
-              row.manualTransferDirection || 'unknown'
-            )}>
-              <Chip
-                size='sm'
-                variant='soft'
-                color={getTransferDirectionColor(
-                  row.manualTransferDirection || 'unknown'
-                )}
-                sx={sx.transferDirectionChip}
-                onClick={() => {
-                if (typeof onCellChange !== 'function') return
-
-                onCellChange({
-                  row,
-                  rowIndex,
-                  column: {
-                    ...column,
-                    key: 'manualTransferDirection',
-                  },
-                  value: getNextTransferDirection(
-                    row.manualTransferDirection || 'unknown'
-                  ),
-                })
-              }}
-              >
-                {iconUi({
-                  id: getTransferDirectionIcon(
-                    row.manualTransferDirection || 'unknown'
-                  ),
-                  size: 'sm',
-                })}
-              </Chip>
-            </Tooltip>
-          ) : null}
-        </Stack>
-      )
-    },
-  }), [])
+    render: ({ row, rowIndex, column, onCellChange }) => (
+      <StatsRosterStatusControl
+        row={row}
+        rowIndex={rowIndex}
+        column={column}
+        onCellChange={onCellChange}
+        options={STATS_ROSTER_STATUS_OPTIONS}
+        teamRootOptions={teamRootOptions}
+      />
+    ),
+  }), [teamRootOptions])
 
 
   const lineClassificationColumn = React.useMemo(() => ({

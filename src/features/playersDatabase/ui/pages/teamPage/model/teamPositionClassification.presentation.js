@@ -14,21 +14,12 @@ export const getPlayerInterestLabel = level => ({
 
 export const PLAYER_STATUS_DISPLAY = Object.freeze({
   youngerAgeGroup: { label: 'שנתון צעיר', iconId: 'rosterYounger', color: 'primary' },
-  retired: { label: 'פרש', iconId: 'rosterRetired', color: 'neutral' },
-  transferredIn: { label: 'הצטרף במהלך העונה', iconId: 'rosterJoined', color: 'success' },
+  left: { label: 'עזב', iconId: 'rosterLeft', color: 'neutral' },
 })
 
-export const getPlayerStatusPresentation = row => {
-  const direction = row.manualTransferDirection || 'unknown'
-
-  return row.rosterStatus === 'transferredOut'
-    ? ({
-        up: { label: 'עזב לקבוצה ברמה גבוהה יותר', iconId: 'sortUp', color: 'success' },
-        down: { label: 'עזב לקבוצה ברמה נמוכה יותר', iconId: 'sortDown', color: 'danger' },
-        lateral: { label: 'עזב לקבוצה באותה רמה', iconId: 'swapVert', color: 'primary' },
-      }[direction] || { label: 'עזב במהלך העונה', iconId: 'rosterLeft', color: 'danger' })
-    : PLAYER_STATUS_DISPLAY[row.rosterStatus]
-}
+export const getPlayerStatusPresentation = row => (
+  PLAYER_STATUS_DISPLAY[row.rosterStatus]
+)
 
 export const displayGamesStarts = row => (
   `${displayClassificationValue(row.games)} / ${displayClassificationValue(row.starts)}`
@@ -96,7 +87,6 @@ export const getSubstitutionPresentation = row => {
 }
 
 export const getAllSquadRosterOrder = row => {
-  if (row.rosterStatus === 'transferredOut') return 5
   if (row.rosterStatus === 'youngerAgeGroup') return 4
   if (row.squadClassificationStatus === 'irrelevant') return 3
   if (row.squadClassificationStatus === 'insufficientSample') return 2

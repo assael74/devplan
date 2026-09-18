@@ -156,6 +156,7 @@ function TeamPageContent() {
   const statsColumns = useTeamStatsColumns({
     players: statsImport.players,
     rosterLookup: statsImport.rosterLookup,
+    teamRootOptions: statsImport.teamRootOptions,
     getRowStatus: statsImport.getRowStatus,
     getCellStatus: statsImport.getCellStatus,
   })

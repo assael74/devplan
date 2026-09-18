@@ -378,6 +378,7 @@ export const rebuildAllClubsMasterDocument = ({
 // Master is synchronized once, only after every Club write has succeeded.
 export async function rebuildClubProjectionsFromAllLeagueTables({
   lastWriteAction = 'REPAIR_CLUBS_FROM_ALL_LEAGUE_TABLES',
+  onProgress = null,
 } = {}) {
   const snapshot = await readPlayerDatabaseAuditSnapshot()
   const repairedClubIds = new Set()
@@ -422,9 +423,39 @@ export async function rebuildClubProjectionsFromAllLeagueTables({
     })
   })
 
+  const progressTotals = snapshot.rows.leagues.reduce((totals, { id, data }) => {
+    const league = { ...(data || {}), id: clean(data?.leagueId || id) }
+    leagueSeasons(league).forEach(({ season }) => {
+      const rows = Array.isArray(season?.tableRank) ? season.tableRank : []
+      if (!rows.length) return
+
+      totals.leagueSeasons += 1
+      totals.teams += rows.filter(row => !conflictedRowKeys.has(leagueRowKey({
+        league,
+        season,
+        row,
+      }))).length
+    })
+    return totals
+  }, { leagueSeasons: 0, teams: 0 })
+
   let processedLeagueSeasons = 0
   let processedTeams = 0
+  let writesCount = 0
   const identityIndexResults = []
+  const reportProgress = ({ phase = 'projections', completed = false } = {}) => {
+    onProgress?.({
+      phase,
+      completedLeagueSeasons: processedLeagueSeasons,
+      totalLeagueSeasons: progressTotals.leagueSeasons,
+      completedTeams: processedTeams,
+      totalTeams: progressTotals.teams,
+      writesCount,
+      completed,
+    })
+  }
+
+  reportProgress({ phase: 'preparing' })
 
   for (const { id, data } of snapshot.rows.leagues) {
     const league = { ...(data || {}), id: clean(data?.leagueId || id) }
@@ -434,13 +465,15 @@ export async function rebuildClubProjectionsFromAllLeagueTables({
       if (!rows.length) continue
 
       processedLeagueSeasons += 1
-      processedTeams += rows.length
-      identityIndexResults.push(await syncLeagueClubSeasonIdentityIndex({
+      const identityIndexResult = await syncLeagueClubSeasonIdentityIndex({
         league,
         season,
         rows,
         lastWriteAction,
-      }))
+      })
+      identityIndexResults.push(identityIndexResult)
+      if (identityIndexResult?.updated) writesCount += 1
+      reportProgress({ phase: 'identity' })
       const excludedTeamIds = rows
         .filter(row => conflictedRowKeys.has(leagueRowKey({ league, season, row })))
         .map(row => clean(row?.teamId || row?.birthTeamId))
@@ -457,6 +490,11 @@ export async function rebuildClubProjectionsFromAllLeagueTables({
         syncMaster: false,
         excludedTeamIds,
         teamSeasonsByKey,
+        onProjection: ({ result }) => {
+          processedTeams += 1
+          if (result?.results?.club?.updated) writesCount += 1
+          reportProgress()
+        },
       })
 
       result.results.forEach(item => {
@@ -475,6 +513,7 @@ export async function rebuildClubProjectionsFromAllLeagueTables({
   ))
 
   if (hasClubWriteFailures) {
+    reportProgress({ phase: 'failed', completed: true })
     return {
       completed: false,
       canonicalCommitted: true,
@@ -492,6 +531,8 @@ export async function rebuildClubProjectionsFromAllLeagueTables({
   const masterResult = repairedClubIds.size
     ? await rebuildAllClubsMasterDocument({ lastWriteAction })
     : null
+  if (masterResult?.updated) writesCount += 1
+  reportProgress({ phase: 'completed', completed: true })
 
   return {
     completed: failures.length === 0,

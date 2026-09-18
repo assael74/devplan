@@ -105,15 +105,6 @@ export const buildPlayerSeasonStatsMutation = ({
     player.isYoungerAgeGroup || rosterStatus === 'youngerAgeGroup'
   )
 
-  if (rosterStatus === 'retired') {
-    return existingDoc
-      ? {
-        type: 'delete',
-        ref: existingDoc.ref,
-      }
-      : { type: 'skip' }
-  }
-
   if (!existingDoc && shouldSkipNewPlayerSeasonIndex(player)) {
     return { type: 'skip' }
   }

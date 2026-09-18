@@ -1,6 +1,8 @@
 import {
   buildClubIntelligenceFromMaster,
   CLUB_INTELLIGENCE_AVAILABILITY,
+  CLUB_SIGNAL_COVERAGE_STATUS,
+  buildClubSignalCoverage,
   enrichClubIntelligenceFromClubDocument,
   getClubCollapseView,
   getClubPageView,
@@ -13,12 +15,14 @@ import {
 const buildTeam = ({
   birthYear,
   teamId = `club_${birthYear}_1`,
+  teamSlot = 1,
   leagueLevel = 2,
   offense = false,
   defense = false,
   availability = CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE,
 } = {}) => ({
   teamId,
+  ...(teamSlot ? { teamSlot } : {}),
   birthYear,
   league: {
     leagueLevel,
@@ -59,12 +63,214 @@ const spotlightTypes = intelligence => (
 )
 
 describe('Club Intelligence', () => {
+  test('reports full coverage independently for every signal family', () => {
+    const team = ({ ageGroupId, birthYear, teamId, leagueLevel = 2 }) => ({
+      ageGroupId,
+      birthYear,
+      teamId,
+      teamSlot: 1,
+      league: { leagueLevel },
+      teamTaskAvailability: {
+        availability: CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE,
+        reason: null,
+      },
+    })
+    const coverage = buildClubSignalCoverage({
+      club: { clubLevel: 2 },
+      birthYearTeams: [
+        {
+          birthYear: 2013,
+          seasons: { current: { teams: [team({ ageGroupId: 'u14', birthYear: 2013, teamId: 'u14-1' })] } },
+          competition: {
+            sourceTeamId: 'u15-1',
+            sourceTeamSlot: 1,
+            currentLeagueLevel: 2,
+            projectedNextLeagueLevel: 2,
+            status: 'CURRENT_LEVEL',
+            availability: { availability: CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE },
+          },
+        },
+        {
+          birthYear: 2012,
+          seasons: { current: { teams: [team({ ageGroupId: 'u15', birthYear: 2012, teamId: 'u15-1' })] } },
+          competition: {
+            sourceTeamId: 'u16-1',
+            sourceTeamSlot: 1,
+            currentLeagueLevel: 2,
+            projectedNextLeagueLevel: 2,
+            status: 'CURRENT_LEVEL',
+            availability: { availability: CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE },
+          },
+        },
+        {
+          birthYear: 2011,
+          seasons: { current: { teams: [team({ ageGroupId: 'u16', birthYear: 2011, teamId: 'u16-1' })] } },
+        },
+      ],
+    })
+
+    expect(coverage.futureLeaguePath).toEqual(expect.objectContaining({
+      status: CLUB_SIGNAL_COVERAGE_STATUS.FULL,
+      coveredFocusAgeGroups: [
+        { ageGroupId: 'u14', ageGroupLabel: 'ילדים א׳' },
+        { ageGroupId: 'u15', ageGroupLabel: 'נערים ג׳' },
+      ],
+      missingFocusAgeGroups: [],
+      reasons: [],
+    }))
+    expect(coverage.leagueVsClubLevel.status).toBe(CLUB_SIGNAL_COVERAGE_STATUS.FULL)
+    expect(coverage.squadTask.status).toBe(CLUB_SIGNAL_COVERAGE_STATUS.FULL)
+  })
+
+  test('reports Future League Path coverage from calculable focus paths only', () => {
+    const team = ({ ageGroupId, birthYear, teamId }) => ({
+      ageGroupId,
+      birthYear,
+      teamId,
+      teamSlot: 1,
+      league: { leagueLevel: 2 },
+    })
+    const partial = buildClubSignalCoverage({
+      birthYearTeams: [
+        {
+          birthYear: 2013,
+          seasons: { current: { teams: [team({ ageGroupId: 'u14', birthYear: 2013, teamId: 'u14-1' })] } },
+          competition: {
+            sourceTeamId: 'u15-1',
+            sourceTeamSlot: 1,
+            currentLeagueLevel: 2,
+            projectedNextLeagueLevel: 2,
+            status: 'CURRENT_LEVEL',
+            availability: { availability: CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE },
+          },
+        },
+        {
+          birthYear: 2012,
+          seasons: { current: { teams: [team({ ageGroupId: 'u15', birthYear: 2012, teamId: 'u15-1' })] } },
+        },
+      ],
+    })
+    const none = buildClubSignalCoverage({
+      birthYearTeams: [
+        {
+          birthYear: 2013,
+          seasons: { current: { teams: [team({ ageGroupId: 'u14', birthYear: 2013, teamId: 'u14-1' })] } },
+        },
+        {
+          birthYear: 2011,
+          seasons: { current: { teams: [team({ ageGroupId: 'u16', birthYear: 2011, teamId: 'u16-1' })] } },
+        },
+      ],
+    })
+
+    expect(partial.futureLeaguePath).toEqual(expect.objectContaining({
+      status: CLUB_SIGNAL_COVERAGE_STATUS.PARTIAL,
+      coveredFocusAgeGroups: [{ ageGroupId: 'u14', ageGroupLabel: 'ילדים א׳' }],
+      missingFocusAgeGroups: [{ ageGroupId: 'u15', ageGroupLabel: 'נערים ג׳' }],
+    }))
+    expect(none.futureLeaguePath.status).toBe(CLUB_SIGNAL_COVERAGE_STATUS.NONE)
+    expect(none.futureLeaguePath.reasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ageGroup: { ageGroupId: 'u14', ageGroupLabel: 'ילדים א׳' },
+        requiredAgeGroup: { ageGroupId: 'u15', ageGroupLabel: 'נערים ג׳' },
+        reason: 'source_focus_team_missing',
+      }),
+    ]))
+  })
+
+  test('uses canonical squad availability and refuses an ambiguous primary focus team', () => {
+    const team = ({ ageGroupId, birthYear, teamId, availability, reason = null }) => ({
+      ageGroupId,
+      birthYear,
+      teamId,
+      teamSlot: 1,
+      league: { leagueLevel: 2 },
+      teamTaskAvailability: { availability, reason },
+    })
+    const coverage = buildClubSignalCoverage({
+      club: { clubLevel: 2 },
+      birthYearTeams: [{
+        birthYear: 2013,
+        seasons: {
+          current: {
+            teams: [
+              team({
+                ageGroupId: 'u14',
+                birthYear: 2013,
+                teamId: 'u14-1',
+                availability: CLUB_INTELLIGENCE_AVAILABILITY.UNAVAILABLE,
+                reason: 'season_sample_insufficient',
+              }),
+              team({
+                ageGroupId: 'u14',
+                birthYear: 2013,
+                teamId: 'u14-duplicate',
+                availability: CLUB_INTELLIGENCE_AVAILABILITY.AVAILABLE,
+              }),
+              team({
+                ageGroupId: 'u15',
+                birthYear: 2012,
+                teamId: 'u15-1',
+                availability: CLUB_INTELLIGENCE_AVAILABILITY.UNAVAILABLE,
+                reason: 'season_sample_insufficient',
+              }),
+            ],
+          },
+        },
+      }],
+    })
+
+    expect(coverage.squadTask).toEqual(expect.objectContaining({
+      status: CLUB_SIGNAL_COVERAGE_STATUS.NONE,
+      coveredFocusAgeGroups: [],
+      reasons: expect.arrayContaining([expect.objectContaining({
+        ageGroup: { ageGroupId: 'u14', ageGroupLabel: 'ילדים א׳' },
+        reason: 'focus_primary_team_ambiguous',
+      }), expect.objectContaining({
+        ageGroup: { ageGroupId: 'u15', ageGroupLabel: 'נערים ג׳' },
+        reason: 'season_sample_insufficient',
+      })]),
+    }))
+  })
+
+  test('does not let partial coverage suppress an existing spotlight', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: {
+        ...buildClub({
+          clubLevel: 1,
+          teams: [buildTeam({ birthYear: 2012, leagueLevel: 2 })],
+        }),
+        ageGroups: [{
+          ageGroupId: 'u14',
+          ageGroupLabel: 'ילדים א׳',
+          current: [buildTeam({ birthYear: 2013, leagueLevel: 2 })],
+          previous: [],
+        }, {
+          ageGroupId: 'u15',
+          ageGroupLabel: 'נערים ג׳',
+          current: [buildTeam({ birthYear: 2012, leagueLevel: 2 })],
+          previous: [],
+        }],
+      },
+    })
+
+    expect(spotlightTypes(intelligence)).toContain('LEAGUE_BELOW_CLUB_LEVEL')
+    expect(intelligence.signalCoverage.futureLeaguePath.status)
+      .toBe(CLUB_SIGNAL_COVERAGE_STATUS.NONE)
+  })
+
   test('builds future league path rise, drop, stable and unavailable states', () => {
     const intelligence = buildClubIntelligenceFromMaster({
       club: buildClub({
+        teams: [
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_1' }),
+          buildTeam({ birthYear: 2011, teamId: 'club_2011_1' }),
+        ],
         paths: [
           {
             birthYear: 2012,
+            sourceTeamId: 'club_2012_1',
+            sourceTeamSlot: 1,
             currentLeagueLevel: 2,
             projectedNextLeagueLevel: 1,
             status: 'PROMOTION_POSSIBLE',
@@ -72,6 +278,8 @@ describe('Club Intelligence', () => {
           },
           {
             birthYear: 2011,
+            sourceTeamId: 'club_2011_1',
+            sourceTeamSlot: 1,
             currentLeagueLevel: 1,
             projectedNextLeagueLevel: 2,
             status: 'RELEGATION_RISK',
@@ -79,6 +287,8 @@ describe('Club Intelligence', () => {
           },
           {
             birthYear: 2010,
+            sourceTeamId: 'club_2010_1',
+            sourceTeamSlot: 1,
             currentLeagueLevel: 2,
             projectedNextLeagueLevel: 2,
             status: 'STABLE',
@@ -86,6 +296,8 @@ describe('Club Intelligence', () => {
           },
           {
             birthYear: 2009,
+            sourceTeamId: 'club_2009_1',
+            sourceTeamSlot: 1,
             currentLeagueLevel: 2,
             projectedNextLeagueLevel: 3,
             status: 'UNKNOWN',
@@ -100,6 +312,13 @@ describe('Club Intelligence', () => {
       'FUTURE_LEAGUE_PATH_RISE',
       'FUTURE_LEAGUE_PATH_DROP',
     ])
+    expect(intelligence.spotlights).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'FUTURE_LEAGUE_PATH_RISE',
+        teamId: 'club_2012_1',
+        context: expect.objectContaining({ teamSlot: 1 }),
+      }),
+    ]))
     expect(intelligence.birthYearTeams.find(item => item.birthYear === 2009).competition.availability)
       .toEqual({
         availability: CLUB_INTELLIGENCE_AVAILABILITY.UNAVAILABLE,
@@ -188,6 +407,8 @@ describe('Club Intelligence', () => {
         teams: [buildTeam({ birthYear: 2012 })],
         paths: [{
           birthYear: 2012,
+          sourceTeamId: 'club_2012_1',
+          sourceTeamSlot: 1,
           currentLeagueLevel: 2,
           projectedNextLeagueLevel: null,
           status: 'UNKNOWN',
@@ -224,6 +445,8 @@ describe('Club Intelligence', () => {
     expect(base.spotlights).toEqual([])
     expect(enriched.birthYearTeams[0].competition).toEqual({
       sourceBirthYear: 2011,
+      sourceTeamId: 'club_2012_1',
+      sourceTeamSlot: 1,
       currentLeagueLevel: 2,
       projectedNextLeagueLevel: 3,
       status: 'RELEGATION_RISK',
@@ -236,8 +459,9 @@ describe('Club Intelligence', () => {
     })
     expect(enriched.spotlights).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        id: 'FUTURE_LEAGUE_PATH_DROP:2012:competition-source-birth-year:2011',
+        id: 'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1',
         type: 'FUTURE_LEAGUE_PATH_DROP',
+        teamId: 'club_2012_1',
       }),
     ]))
   })
@@ -247,6 +471,8 @@ describe('Club Intelligence', () => {
       club: buildClub({
         paths: [{
           birthYear: 2012,
+          sourceTeamId: 'club_2012_1',
+          sourceTeamSlot: 1,
           currentLeagueLevel: 2,
           projectedNextLeagueLevel: 3,
           status: 'RELEGATION_RISK',
@@ -340,6 +566,8 @@ describe('Club Intelligence', () => {
         teams: [buildTeam({ birthYear: 2012, leagueLevel: 2, offense: true })],
         paths: [{
           birthYear: 2012,
+          sourceTeamId: 'club_2012_1',
+          sourceTeamSlot: 1,
           currentLeagueLevel: 2,
           projectedNextLeagueLevel: 3,
           status: 'RELEGATION_RISK',
@@ -419,6 +647,7 @@ describe('Club Intelligence', () => {
         buildTeam({
           birthYear: 2012,
           teamId: 'team-b',
+          teamSlot: 2,
           leagueLevel: 2,
           defense: true,
         }),
@@ -426,6 +655,8 @@ describe('Club Intelligence', () => {
       paths: [{
         birthYear: 2012,
         sourceBirthYear: 2011,
+        sourceTeamId: 'team-a',
+        sourceTeamSlot: 1,
         currentLeagueLevel: 2,
         projectedNextLeagueLevel: 3,
         status: 'RELEGATION_RISK',
@@ -439,11 +670,162 @@ describe('Club Intelligence', () => {
     expect(firstIds).toEqual(second.spotlights.map(item => item.id))
     expect(new Set(firstIds).size).toBe(firstIds.length)
     expect(firstIds).toEqual(expect.arrayContaining([
-      'FUTURE_LEAGUE_PATH_DROP:2012:competition-source-birth-year:2011',
+      'FUTURE_LEAGUE_PATH_DROP:2012:team:team-a',
       'LEAGUE_BELOW_CLUB_LEVEL:2012:team:team-a',
-      'LEAGUE_BELOW_CLUB_LEVEL:2012:team:team-b',
       'OFFENSE_SQUAD_TASK:2012:team:team-a',
-      'DEFENSE_SQUAD_TASK:2012:team:team-b',
     ]))
+  })
+
+  test('does not emit Future League Path for an explicit secondary team', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        teams: [
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_1' }),
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_2' }),
+        ],
+        paths: [{
+          birthYear: 2012,
+          sourceBirthYear: 2011,
+          sourceTeamId: 'club_2012_2',
+          sourceTeamSlot: 2,
+          currentLeagueLevel: 2,
+          projectedNextLeagueLevel: 1,
+          status: 'PROMOTION_POSSIBLE',
+          source: 'AUTOMATIC',
+        }],
+      }),
+    })
+
+    expect(spotlightTypes(intelligence)).not.toContain('FUTURE_LEAGUE_PATH_RISE')
+  })
+
+  test('does not emit League or Squad Task spotlights for a secondary team', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        clubLevel: 1,
+        teams: [
+          buildTeam({
+            birthYear: 2012,
+            teamId: 'club_2012_1',
+            teamSlot: 1,
+            leagueLevel: 2,
+            offense: true,
+          }),
+          buildTeam({
+            birthYear: 2012,
+            teamId: 'club_2012_2',
+            teamSlot: 2,
+            leagueLevel: 2,
+            offense: true,
+            defense: true,
+          }),
+        ],
+      }),
+    })
+
+    expect(intelligence.spotlights).toEqual([
+      expect.objectContaining({
+        type: 'LEAGUE_BELOW_CLUB_LEVEL',
+        teamId: 'club_2012_1',
+      }),
+      expect.objectContaining({
+        type: 'OFFENSE_SQUAD_TASK',
+        teamId: 'club_2012_1',
+      }),
+    ])
+  })
+
+  test('does not emit Future League Path without an explicit source team identity', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        teams: [
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_1' }),
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_2' }),
+        ],
+        paths: [{
+          birthYear: 2012,
+          currentLeagueLevel: 2,
+          projectedNextLeagueLevel: 1,
+          status: 'PROMOTION_POSSIBLE',
+          source: 'AUTOMATIC',
+        }],
+      }),
+    })
+
+    expect(spotlightTypes(intelligence)).not.toContain('FUTURE_LEAGUE_PATH_RISE')
+  })
+
+  test('uses the target cohort team with the same canonical slot for an early-season path', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        teams: [
+          buildTeam({ birthYear: 2012, teamId: 'club_2012_1', leagueLevel: 1 }),
+          buildTeam({ birthYear: 2011, teamId: 'club_2011_1', leagueLevel: 2 }),
+        ],
+        paths: [{
+          birthYear: 2012,
+          sourceBirthYear: 2011,
+          sourceTeamId: 'club_2011_1',
+          sourceTeamSlot: 1,
+          currentLeagueLevel: 1,
+          projectedNextLeagueLevel: 2,
+          status: 'CURRENT_LEVEL',
+          source: 'AUTOMATIC',
+        }],
+      }),
+    })
+
+    expect(intelligence.spotlights).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1',
+        type: 'FUTURE_LEAGUE_PATH_DROP',
+        teamId: 'club_2012_1',
+        context: expect.objectContaining({
+          sourceBirthYear: 2011,
+          sourceTeamId: 'club_2011_1',
+          sourceTeamSlot: 1,
+          teamSlot: 1,
+        }),
+      }),
+    ]))
+  })
+
+  test('does not emit Future League Path while its source league is unavailable', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        teams: [buildTeam({ birthYear: 2012, teamId: 'club_2012_1' })],
+        paths: [{
+          birthYear: 2012,
+          sourceTeamId: 'club_2011_1',
+          sourceTeamSlot: 1,
+          currentLeagueLevel: 1,
+          projectedNextLeagueLevel: 2,
+          status: 'UNKNOWN',
+          source: 'AUTOMATIC',
+          reason: 'SOURCE_COHORT_NOT_LOADED',
+        }],
+      }),
+    })
+
+    expect(spotlightTypes(intelligence)).not.toContain('FUTURE_LEAGUE_PATH_DROP')
+  })
+
+  test('does not emit a spotlight when a team has no explicit primary slot', () => {
+    const intelligence = buildClubIntelligenceFromMaster({
+      club: buildClub({
+        clubLevel: 1,
+        teams: [{
+          ...buildTeam({
+            birthYear: 2012,
+            teamId: 'club_2012_unknown',
+            leagueLevel: 2,
+            offense: true,
+          }),
+          teamSlot: null,
+        }],
+      }),
+    })
+
+    expect(intelligence.spotlights).toEqual([])
   })
 })

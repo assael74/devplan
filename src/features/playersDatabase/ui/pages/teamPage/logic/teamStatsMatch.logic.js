@@ -3,6 +3,7 @@
 import { clean } from './teamPage.utils.js'
 import {
   buildPlayerNameVariants,
+  isValidExternalPlayerId,
   normalizePlayerNameValue,
 } from '../../../../model/player/playerIdentity.model.js'
 import { pickDefinedValue } from '../../../../model/shared/value.model.js'
@@ -85,12 +86,12 @@ const mergeRosterPlayerContext = ({ row, player }) => ({
   playerId: clean(player?.playerId),
   playerDocumentId: clean(player?.playerDocumentId),
   externalPlayerId: clean(player?.externalPlayerId),
+  identityMatchStatus: clean(player?.playerId) ? 'provided' : clean(row?.identityMatchStatus),
   identityKey: clean(player?.identityKey),
   normalizedName: clean(player?.normalizedName || player?.fullName),
   birthYear: pickDefinedValue(player?.birthYear, player?.yearOfBirth, row.birthYear),
   yearOfBirth: pickDefinedValue(player?.yearOfBirth, player?.birthYear, row.yearOfBirth),
   rosterStatus: clean(player?.rosterStatus) || 'regular',
-  manualTransferDirection: clean(player?.manualTransferDirection || player?.transferDirection),
   primaryPosition: clean(player?.primaryPosition || row.primaryPosition),
   positionLayer: clean(player?.positionLayer || row.positionLayer),
   positions: Array.isArray(player?.positions)
@@ -154,6 +155,7 @@ export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
     return {
       ...row,
       ...resolvedPlayer,
+      rosterStatus: 'regular',
       identityStatus: STATS_IDENTITY_STATUS.SYSTEM_MATCH,
       identityMessage: 'זוהה שחקן קיים במערכת',
     }
@@ -187,9 +189,29 @@ export const applyResolvedStatsIdentity = ({ row, resolvedPlayer }) => {
     }
   }
 
+  const externalPlayerId = clean(resolvedPlayer?.externalPlayerId || row.externalPlayerId)
+  const birthYear = resolvedPlayer?.birthYear || row.birthYear
+  const hasVerifiedExternalIdentity = isValidExternalPlayerId({
+    externalPlayerId,
+    birthYear,
+  })
+
+  if (!hasVerifiedExternalIdentity) {
+    return {
+      ...row,
+      ...resolvedPlayer,
+      rosterStatus: 'unresolved',
+      identityResolution: '',
+      identityStatus: STATS_IDENTITY_STATUS.UNRESOLVED,
+      identityMessage: 'לא נמצאה זהות קיימת ואין מזהה שחקן חיצוני תקין; נדרש אישור ידני',
+    }
+  }
+
   return {
     ...row,
     ...resolvedPlayer,
+    rosterStatus: 'regular',
+    identityResolution: 'createNew',
     identityStatus: STATS_IDENTITY_STATUS.NEW_PLAYER,
     identityMessage: 'לא נמצאה זהות קיימת במערכת',
   }

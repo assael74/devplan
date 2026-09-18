@@ -155,7 +155,6 @@ function SeasonCard({ player, row, previousRow = null }) {
           </Box>
           <PlayerRosterStatusBadge
             rosterStatus={row.rosterStatus}
-            manualTransferDirection={row.manualTransferDirection}
             isYoungerAgeGroup={row.isYoungerAgeGroup}
             sx={sx.seasonStatusBadge}
           />

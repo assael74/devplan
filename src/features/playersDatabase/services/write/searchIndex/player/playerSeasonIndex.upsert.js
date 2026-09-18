@@ -63,6 +63,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
   target = 'current',
   players = [],
   clearPlayerDocumentIds = [],
+  replaceScope = false,
 } = {}) {
   const leagueId = clean(league.id || season.leagueId || team.leagueId)
   const seasonId = clean(season.seasonId)
@@ -127,8 +128,10 @@ export async function upsertPlayerSeasonSearchIndexMany({
   let createdCount = 0
   let updatedCount = 0
   let unchangedCount = 0
+  let deletedCount = 0
   const failures = []
   const duplicates = []
+  const matchedDocumentIds = new Set()
 
   safePlayers.forEach(player => {
     const match = findExistingPlayerSeasonIndexDoc({
@@ -142,6 +145,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
       team,
     })
     const existingDoc = match.snapshot
+    if (existingDoc?.id) matchedDocumentIds.add(existingDoc.id)
 
     if (!hasCompletePlayerSeasonIndexIdentity(match.identity)) {
       failures.push({
@@ -224,9 +228,17 @@ export async function upsertPlayerSeasonSearchIndexMany({
     )
   })
 
+  if (replaceScope) {
+    existingDocs.forEach(existingDoc => {
+      if (matchedDocumentIds.has(existingDoc.id)) return
+      batch.delete(existingDoc.ref)
+      deletedCount += 1
+    })
+  }
+
   await commitBatchWhenNeeded({
     batch,
-    operationsCount: rowsCount,
+    operationsCount: rowsCount + deletedCount,
   })
 
   return buildSearchIndexWriteResult({
@@ -235,6 +247,7 @@ export async function upsertPlayerSeasonSearchIndexMany({
     rowsCount,
     createdCount,
     updatedCount,
+    deletedCount,
     unchangedCount,
     failedCount: failures.length,
     duplicateCount: duplicates.length,

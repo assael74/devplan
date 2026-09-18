@@ -19,6 +19,7 @@ const sortRows = ({
   rows,
   columns,
   sort,
+  getRowStatus,
 }) => {
   const indexedRows = rows.map((row, index) => ({
     row,
@@ -27,16 +28,36 @@ const sortRows = ({
 
   if (!sort?.key) return indexedRows
 
+  const itemKey = item => item.row?.id
+    ? `id:${item.row.id}`
+    : `index:${item.rowIndex}`
+
+  if (Array.isArray(sort.frozenOrder) && sort.frozenOrder.length === indexedRows.length) {
+    const rankByKey = new Map(sort.frozenOrder.map((key, index) => [key, index]))
+    const canReuseFrozenOrder = indexedRows.every(item => rankByKey.has(itemKey(item)))
+
+    if (canReuseFrozenOrder) {
+      return [...indexedRows].sort((left, right) => (
+        rankByKey.get(itemKey(left)) - rankByKey.get(itemKey(right))
+      ))
+    }
+  }
+
+  const isValiditySort = sort.key === '__rowValidity'
   const column = columns.find(item => item.key === sort.key)
-  if (!column?.sortable) return indexedRows
+  if (!isValiditySort && !column?.sortable) return indexedRows
 
   const direction = sort.direction === 'desc' ? -1 : 1
   const getValue = item => {
+    const rowValidity = getRowStatus?.(item.row, item.rowIndex)?.valid !== false
+    if (isValiditySort) return rowValidity ? '1' : '0'
+
+    const invalidFirstPrefix = column.invalidFirst ? (rowValidity ? '1-' : '0-') : ''
     if (typeof column.sortValue === 'function') {
-      return column.sortValue(item.row)
+      return `${invalidFirstPrefix}${column.sortValue(item.row) || ''}`
     }
 
-    return item.row?.[column.key]
+    return `${invalidFirstPrefix}${item.row?.[column.key] || ''}`
   }
 
   return [...indexedRows].sort((left, right) => (
@@ -51,6 +72,11 @@ const sortRows = ({
   ))
 }
 
+const freezeSortOrder = ({ rows, columns, sort, getRowStatus }) => (
+  sortRows({ rows, columns, sort, getRowStatus })
+    .map(item => item.row?.id ? `id:${item.row.id}` : `index:${item.rowIndex}`)
+)
+
 export default function PreviewTable({
   columns,
   rows,
@@ -59,14 +85,22 @@ export default function PreviewTable({
   getCellStatus,
   summary = [],
   showSummaryCounts = true,
+  hoverRow = true,
+  statusColumnSx = null,
+  tableSx = null,
 }) {
   const [sort, setSort] = React.useState(null)
+  const resolvedStatusColumnSx = statusColumnSx
+    ? [sx.statusColumn, statusColumnSx]
+    : sx.statusColumn
   const visibleRows = React.useMemo(() => sortRows({
     rows,
     columns,
     sort,
+    getRowStatus,
   }), [
     columns,
+    getRowStatus,
     rows,
     sort,
   ])
@@ -76,15 +110,25 @@ export default function PreviewTable({
 
     setSort(current => {
       if (current?.key !== column.key) {
-        return {
+        const next = {
           key: column.key,
           direction: 'asc',
         }
+
+        return {
+          ...next,
+          frozenOrder: freezeSortOrder({ rows, columns, sort: next, getRowStatus }),
+        }
+      }
+
+      const next = {
+        key: column.key,
+        direction: current.direction === 'asc' ? 'desc' : 'asc',
       }
 
       return {
-        key: column.key,
-        direction: current.direction === 'asc' ? 'desc' : 'asc',
+        ...next,
+        frozenOrder: freezeSortOrder({ rows, columns, sort: next, getRowStatus }),
       }
     })
   }
@@ -157,17 +201,25 @@ export default function PreviewTable({
       >
         <Table
           stickyHeader
-          hoverRow
+          hoverRow={hoverRow}
           size='sm'
-          sx={sx.table}
+          sx={[sx.table, tableSx]}
         >
           <thead>
             <tr>
               <Box
                 component='th'
-                sx={sx.statusColumn}
+                sx={resolvedStatusColumnSx}
+                onClick={() => toggleSort({ key: '__rowValidity', sortable: true })}
               >
-                תקין
+                <Box sx={[sx.columnHeaderContent, sx.sortableHeader]}>
+                  תקין
+                  {sort?.key === '__rowValidity' ? (
+                    <Typography component='span' level='body-xs' sx={sx.sortIndicator}>
+                      {sort.direction === 'asc' ? '↑' : '↓'}
+                    </Typography>
+                  ) : null}
+                </Box>
               </Box>
 
               {columns.map(column => (
@@ -207,7 +259,7 @@ export default function PreviewTable({
                 <tr key={row.id || rowIndex}>
                   <Box
                     component='td'
-                    sx={sx.statusColumn}
+                    sx={resolvedStatusColumnSx}
                   >
                     <StatusCell
                       valid={rowStatus.valid}

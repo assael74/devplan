@@ -25,6 +25,67 @@ const buildEntry = seasons => buildClubsMasterAgeGroupEntry({
 const keysOf = rows => rows.map(row => row.seasonKey)
 
 describe('Clubs Master age-group season selection', () => {
+  test('uses the canonical slot for a competition path current level', () => {
+    const path = buildClubsMasterCompetitionPathEntry({
+      birthYear: 2011,
+      nextCompetitionPath: {
+        sourceBirthYear: 2010,
+        sourceTeamId: 'team-2010-1',
+        sourceTeamSlot: 1,
+        projectedNextLeagueLevel: 1,
+        status: 'CURRENT_LEVEL',
+      },
+      // Secondary comes first deliberately: input order must not decide the
+      // current level used by the Future League Path spotlight.
+      seasons: [
+        {
+          ...season({
+            seasonKey: '26/27',
+            seasonStatus: 'not_started',
+            teamId: 'team-2011-2',
+            leagueId: 'league-level-2',
+          }),
+          teamSlot: 2,
+          leagueLevel: 2,
+        },
+        {
+          ...season({
+            seasonKey: '26/27',
+            seasonStatus: 'active',
+            teamId: 'team-2011-1',
+            leagueId: 'league-level-1',
+          }),
+          teamSlot: 1,
+          leagueLevel: 1,
+        },
+      ],
+    })
+
+    expect(path.currentLeagueLevel).toBe(1)
+    expect(path.sourceTeamSlot).toBe(1)
+  })
+
+  test('does not infer a competition path current level without a canonical slot', () => {
+    const path = buildClubsMasterCompetitionPathEntry({
+      birthYear: 2011,
+      nextCompetitionPath: {
+        sourceBirthYear: 2010,
+        sourceTeamId: 'team-2010-1',
+        projectedNextLeagueLevel: 1,
+        status: 'CURRENT_LEVEL',
+      },
+      seasons: [
+        {
+          ...season({ seasonKey: '26/27', seasonStatus: 'active' }),
+          teamSlot: 1,
+          leagueLevel: 1,
+        },
+      ],
+    })
+
+    expect(path.currentLeagueLevel).toBeNull()
+  })
+
   test('keeps compact competition reason and team-task availability metadata', () => {
     const entry = buildClubsMasterAgeGroupEntry({
       ageGroupId: 'u15',
@@ -44,6 +105,8 @@ describe('Clubs Master age-group season selection', () => {
       birthYear: 2012,
       nextCompetitionPath: {
         sourceBirthYear: 2011,
+        sourceTeamId: 'team-secondary',
+        sourceTeamSlot: 2,
         projectedNextLeagueLevel: null,
         status: 'UNKNOWN',
         source: 'AUTOMATIC',
@@ -57,6 +120,8 @@ describe('Clubs Master age-group season selection', () => {
     })
     expect(path.reason).toBe('SOURCE_COHORT_NOT_LOADED')
     expect(path.sourceBirthYear).toBe(2011)
+    expect(path.sourceTeamId).toBe('team-secondary')
+    expect(path.sourceTeamSlot).toBe(2)
   })
 
   test('preserves only explicit team-task signal booleans', () => {

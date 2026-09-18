@@ -18,6 +18,7 @@ export const AUDIT_REPAIR_TYPE = Object.freeze({
   REBUILD_CLUB_PERFORMANCE: 'rebuild_club_performance',
   REBUILD_CLUB_COMPETITION_PATH: 'rebuild_club_competition_path',
   REBUILD_CLUBS_MASTER: 'rebuild_clubs_master',
+  RETRY_MOVEMENT_COUNTERPART: 'retry_movement_counterpart',
 })
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()

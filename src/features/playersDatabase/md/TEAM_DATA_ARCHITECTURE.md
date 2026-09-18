@@ -117,6 +117,97 @@ catalog/firestoreDocuments
 ```
 
 
+# 1.2 Canonical Team identity in Club projections
+
+`teamId` together with `teamSlot` (also named `birthTeamSlot` at source
+boundaries) is the canonical identity of a team inside a Club projection.
+The slot is not a display heuristic and must never be reconstructed from a
+team name, array position, league level, birth year, or parsing `teamId`.
+
+Competition Path keeps this identity end to end:
+
+```text
+League / Team identity
+  -> Club age-group season and Competition Path season
+  -> nextCompetitionPath.sourceTeamId + sourceTeamSlot
+  -> Clubs Master compact projection
+  -> ClubIntelligence Future League Path Spotlight
+```
+
+`nextCompetitionPath` records the source team. The Spotlight belongs to the
+target cohort (`competitionPaths[].birthYear`): it resolves only the current
+target team with the same canonical `teamSlot`. Both source and target must be
+explicit; a consumer must never choose a candidate by name, array position,
+league level, birth year, or parsing `teamId`.
+
+The compact `Clubs Master` Competition Path follows the same rule:
+`currentLeagueLevel` is taken only from the target team's catalog-current
+season where `teamSlot === nextCompetitionPath.sourceTeamSlot`. It must never
+be taken from the first item of a seasons array. Once a full Club/Clubs Master
+identity backfill is complete, the Clubs page consumes `teamSlot` directly
+from `Clubs Master` and does not load identity-index documents as a UI fallback.
+
+## 1.3 Future League Path timing
+
+The source cohort is the year immediately above the target cohort. Before the
+source cohort has played 50% of its expected league games, its current league
+level is the canonical early-season path (`CURRENT_LEVEL`). From 50% onward,
+the path uses its calculated promotion/relegation projection.
+
+`UNKNOWN` is reserved for a missing source team or missing loaded league table;
+it is not used merely because the season is in its first half. A Future League
+Path Spotlight is emitted for `CURRENT_LEVEL` and calculated statuses, but not
+for `UNKNOWN`.
+
+## 1.4 ClubIntelligence Signal Coverage
+
+`ClubIntelligence.signalCoverage` is a runtime Domain contract. It is not a
+Firestore field, not a Signal, and it never filters, changes, ranks, or
+replaces a Spotlight.
+
+Coverage reports whether the system had enough canonical information to check
+the fixed focus age groups: `u14` (ילדים א׳) and `u15` (נערים ג׳). Signals for
+all other age groups continue to be calculated and displayed normally, but do
+not affect Coverage.
+
+Each signal family returns this shape:
+
+```text
+{
+  status: 'full' | 'partial' | 'none',
+  coveredFocusAgeGroups: [{ ageGroupId, ageGroupLabel }],
+  missingFocusAgeGroups: [{ ageGroupId, ageGroupLabel }],
+  reasons: [{ ageGroup, requiredAgeGroup, reason }]
+}
+```
+
+The independent families are `futureLeaguePath`, `leagueVsClubLevel`, and
+`squadTask`. Offense and defense share the single `squadTask` availability
+calculation because their canonical availability contract is the same.
+
+For Future League Path, `u14` is covered only when the `u14 → u15` path is
+calculable and `u15` only when the `u15 → u16` path is calculable. This
+requires the primary team and league level for both age groups, plus the
+canonical Competition Path with matching `sourceTeamId` and `sourceTeamSlot`.
+`CURRENT_LEVEL` is a valid calculated path and therefore counts as covered.
+When a Future Path requirement is missing, `requiredAgeGroup` identifies the
+specific team age group that must be completed; it is not inferred by the UI.
+
+For League Level vs Club Level, a focus group is covered only when the
+canonical club level and that primary team's league level exist. A comparison
+with no meaningful gap remains covered; it simply produces no Signal.
+
+For Squad Task, coverage uses `teamTaskAvailability` directly, including its
+canonical minimum-eight-games rule and reason. Coverage does not recreate that
+availability logic.
+
+The Summary always prioritizes a real Primary Signal. When none exists, it
+shows `אין איתותים` only if all families are `full`; it shows `כיסוי חלקי` when
+at least one family is `partial` and none is `none`. When all three families
+are `none`, the fixed focus groups have no coverage in any signal family and
+the Summary shows `אין כיסוי`. A mixed result that includes `none` is not
+aggregated into `אין כיסוי` automatically.
+
 # 2. Team Performance source of truth
 
 ## 2.1 Canonical source
@@ -243,9 +334,10 @@ Then:
 
 Roster Load is responsible for:
 
-- resolving player identities,
+- resolving player identities locally from the current/previous Team Season before broad identity lookup,
 - writing the Team roster,
 - creating/updating the Team Season snapshot,
+- reconciling canonical Team Season movement state in `transfersIn`, `transfersOut` and open-only `pendingPlayers`,
 - updating roster-related Team SearchIndex metadata,
 - preserving canonical Team Performance,
 - keeping scouting and balance state empty/insufficient when stats do not exist.
@@ -261,6 +353,83 @@ Roster Load must not:
 When a Team Season is created for the first time, canonical Team Performance must be supplied from the League table context. The writer must not depend only on `existingSeason`.
 
 `existingSeason` may be used as a defensive fallback, but not as the primary source of truth.
+
+## 4.1 Roster snapshot and Movement contract
+
+Roster reload is a supported canonical operation. It must not fail only because
+`teamPlayers` already exists. Every roster import carries compact metadata:
+
+- `mode`: `AUTHORITATIVE_SNAPSHOT` or `PATCH`;
+- `sourceSnapshotKey`: source-provided, unique snapshot/event identity when
+  available. A generated key is allowed only as a fallback; it is reused for
+  an identical `contentHash` reload and must not be used to infer timing;
+- `contentHash`: deterministic roster-content fingerprint used only to detect
+  an identical reload, never as the sole identity of a Movement event;
+- `effectiveAt`: optional source-effective time.
+
+The current paste flow is an `AUTHORITATIVE_SNAPSHOT`. When the source does not
+provide a revision key, the UI derives a deterministic key from the Team Season
+identity and roster identities. Identical reloads therefore reuse the same key.
+A changed key alone does not prove an in-season transfer. Without reliable
+source ordering/effective time, movement timing remains `UNKNOWN`.
+
+Movement ownership is Team Season scoped:
+
+- `transfersIn` and `transfersOut` are canonical movement facts for the season
+  in which the movement took effect;
+- `pendingPlayers` contains unresolved/open absences only;
+- a certain counterpart is written automatically only when the counterpart
+  Team Season already exists;
+- a missing counterpart Team Season is legal and must never be created only to
+  complete a movement;
+- counterpart failure does not invalidate a successful local canonical write.
+
+In Roster Import, identity verification is completed first for players present
+in the incoming snapshot. The modal then presents only `regular` participants
+from the previous season who are absent from that snapshot. A user-selected
+destination Team Root and slot confirms `transfersOut`; an absent player with
+no selected destination remains `pendingPlayers`. The snapshot must never
+invent a destination or a Movement fact for an unchecked absence.
+
+In the Roster Import review, an explicit `unknown` decision is a completed
+manual decision: the row is approved for import and becomes `pendingPlayers`.
+It creates no Movement fact and retains no invented destination.
+
+For a player present in the incoming roster but absent from the immediately
+previous Team Season, the review may explicitly classify the row as `joined`,
+`priorAgeException` (the player had played as an age exception in the lower
+age group), or `confirmedInRoster` (a manually confirmed prior-roster match).
+Only `joined` requires a canonical source Team Root and slot and can create
+`transfersIn`; the two internal confirmations create no Movement fact.
+
+When no previous roster exists at all, incoming rows are accepted as the first
+known roster snapshot: they are `regular` participants and require neither a
+source classification nor a Movement fact.
+
+An explicit `olderAgeException` resolution is internal: it means a player who
+was allowed to play up/down as an age exception in the prior season has simply
+returned to the applicable age group. It records a `resolvedRosterAbsences`
+audit entry, creates neither a Movement fact nor a `pendingPlayers` entry, and
+requires no destination Team Root or slot.
+
+Movement identity/timing rules live in `domain/movement`. SearchIndex may help
+resolve an unresolved player identity, but it is never the Movement source of
+truth. Legacy `rosterStatus` transfer values and `manualTransferDirection` are removed.
+`teamPlayers` contains every Season Participant, including a player who left
+after contributing statistics. `rosterStatus` is only a membership/scope state:
+`regular`, `left`, or `youngerAgeGroup`. Movement truth comes only from the Team
+Season `transfersIn` and `transfersOut` arrays. Current Roster, `playersCount`,
+Team Balance, line structure and scout summary scope include `regular` only.
+
+## 4.2 Clean-reset Excel input contract
+
+The clean-reset source files must preserve source data rather than Firestore
+projection fields. Roster input must provide player name and should provide the
+IFA player URL and/or external player id; position and shirt number may also be
+provided. The parser may read `transferCheck` for QA display, but Movement
+Domain, writers and projections must never use it to create a movement fact.
+League/Team identity must remain resolvable from the selected League/Team
+context. Snapshot metadata belongs to the import request, not to transfer QA.
 
 ---
 
@@ -279,8 +448,24 @@ It may update:
 
 Stats Load must not use Player Stats totals to overwrite official Team Performance.
 
-For a player whose canonical `rosterStatus` is `retired`, Stats Load must keep the
-Team Season roster row but must not create a Player Document or Scout Profile. If
+For a completed/historical season, a Stats row that is not in that Team
+Season's original roster is blocked in the import modal until the user chooses
+one of three participation facts: `left`, `joined`, or `youngerAgeGroup`.
+`left` keeps the participant and statistics, sets `rosterStatus: left`, and
+requires a canonical destination Team identity before writing `transfersOut`.
+`joined` keeps `rosterStatus: regular` and requires a canonical source Team
+identity before writing `transfersIn`. `youngerAgeGroup` writes no Movement.
+This Stats-specific classification never creates `pendingPlayers`.
+
+Both manual source and destination choices resolve to an existing Team Root's
+full identity (`clubId`, `birthTeamId`, `birthTeamDocumentId`,
+`birthTeamSlot`). A counterpart is written only when that Team Season already
+exists. Outgoing-to-incoming and incoming-to-outgoing counterpart retries use
+the same canonical reconciliation path.
+
+For a player whose canonical `rosterStatus` is `left` or `youngerAgeGroup`, Stats
+Load must keep the Team Season participant row and its historical statistics, but
+must not include it in current-roster Balance or team scout scope. If
 the player already has a Player Document, it must clear the current season's scout
 projection. The document is retained only when another season/history or an
 independent tracking reason remains; otherwise it is removed.
@@ -425,15 +610,13 @@ Team Balance must not be treated as an official Team Performance source.
 
 Team Balance population scopes are explicit:
 
-- **Season Participants**: every player with season minutes, including
-  `regular`, `transferredOut`, and `youngerAgeGroup`. Historical minutes,
-  rotation, and production metrics use this scope.
-- **Current Relevant Roster**: the current squad state; `transferredOut` is
-  excluded. Current depth and recruitment-need views use this scope.
+- **Season Participants**: Team Season players with season minutes. Movement
+  facts do not change or replace their statistical evidence.
+- **Current Relevant Roster**: `teamPlayers` whose `rosterStatus` is exactly
+  `regular`. `left` and `youngerAgeGroup` remain season participants but are out
+  of current-roster scope. Transfer state is never inferred from `rosterStatus`.
 
-`playersCount` remains the existing persisted count of `teamPlayers` until a
-separate schema decision maps every consumer to a named scope; it must not be
-repurposed implicitly.
+`playersCount` is the persisted Current Roster count: only `regular` players.
 
 ---
 
@@ -683,8 +866,7 @@ The Team Balance snapshot owns the derived `lineClassificationCoverage`,
 projections. `lineStructure` contains
 facts only: the current counts, identified goalkeepers, classified players,
 players with an 8+ sample who remain unclassified, and players below the
-8-game sample. All counts exclude `retired`, `transferredOut`, and
-`youngerAgeGroup`. A known goalkeeper is an identified role and is counted as
+8-game sample. All counts include `regular` players only. A known goalkeeper is an identified role and is counted as
 classified, while remaining outside the three field lines. `relevantPlayersCount`
 is the real current-squad denominator. SearchIndex remains a projection only
 and must not become a source for any balance value.
@@ -731,7 +913,7 @@ the only statistical position refinements currently supported.
 ## 16.4 Current-team line structure
 
 `lineStructure` measures the current team only. Its real-squad population
-excludes `retired`, `transferredOut`, and `youngerAgeGroup`. The three field
+includes `regular` players only. The three field
 line counts use loaded players that pass the 8-game classification gate;
 goalkeepers come from the separately verified goalkeeper role.
 
@@ -1017,3 +1199,11 @@ from its exact League Document and verified against that season's table before
 it is displayed. An absent index entry is never proof that a League-table team
 does not exist; the source League Document used to open the page remains a
 valid fallback.
+
+## Clean reset and Movement recovery
+
+The clean reset is Excel-first. League, Roster and Stats are loaded through the normal application flows; Audit validates those writes and must not synthesize the reset state.
+
+Movement counterpart recovery is non-blocking. When a local `transfersIn` fact exists and the source Team Season also exists, Audit may report a missing `transfersOut` counterpart. A missing source Team Season is legal. Recovery may retry the counterpart write, but it must never create a Team Root or Team Season solely to complete Movement.
+
+See `CLEAN_RESET_RUNBOOK.md` for the operational acceptance sequence.

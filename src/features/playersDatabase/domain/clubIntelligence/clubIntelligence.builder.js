@@ -5,6 +5,7 @@ import {
   isClubIntelligenceAvailability,
 } from './clubIntelligence.contract.js'
 import { buildClubSpotlights } from './clubSpotlights.builder.js'
+import { buildClubSignalCoverage } from './clubSignalCoverage.builder.js'
 import {
   CLUB_COMPETITION_PROJECTION_SOURCE,
   CLUB_COMPETITION_STATUS,
@@ -131,6 +132,12 @@ const normalizeCompetition = ({
       masterValue: masterCompetition?.sourceBirthYear,
       clubDocumentValue: clubDocumentNextPath?.sourceBirthYear,
     }),
+    sourceTeamId: clean(
+      clubDocumentNextPath?.sourceTeamId || masterCompetition?.sourceTeamId
+    ) || null,
+    sourceTeamSlot: toPositiveNumberOrNull(
+      clubDocumentNextPath?.sourceTeamSlot || masterCompetition?.sourceTeamSlot
+    ),
     currentLeagueLevel: toPositiveNumberOrNull(
       masterCompetition?.currentLeagueLevel
     ),
@@ -192,6 +199,8 @@ const buildBirthYearTeam = birthYear => ({
   },
   competition: {
     sourceBirthYear: null,
+    sourceTeamId: null,
+    sourceTeamSlot: null,
     currentLeagueLevel: null,
     projectedNextLeagueLevel: null,
     status: 'UNKNOWN',
@@ -284,10 +293,15 @@ export const buildClubIntelligenceFromMaster = ({ club = {} } = {}) => {
     },
     birthYearTeams,
     spotlights: [],
+    signalCoverage: {},
   }
 
   return {
     ...intelligence,
+    signalCoverage: buildClubSignalCoverage({
+      club: intelligence.club,
+      birthYearTeams,
+    }),
     spotlights: buildClubSpotlights({
       club: intelligence.club,
       birthYearTeams,
@@ -376,6 +390,16 @@ export const enrichClubIntelligenceFromClubDocument = ({
       }),
     },
     birthYearTeams: enrichedBirthYearTeams,
+    signalCoverage: buildClubSignalCoverage({
+      club: {
+        ...intelligence.club,
+        ...buildClubIdentity({
+          ...intelligence.club,
+          ...clubDocument,
+        }),
+      },
+      birthYearTeams: enrichedBirthYearTeams,
+    }),
   }
 
   return {

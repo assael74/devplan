@@ -6,7 +6,11 @@ import {
   upsertPlayerSeasonSearchIndexMany,
 } from '../../searchIndex/index.js'
 import { resolveTeamPlayerIdentities } from '../../players/index.js'
-import { upsertTeamSeasonPlayers } from '../../teams/index.js'
+import {
+  reconcileTeamSeasonMovementCounterparts,
+  upsertTeamSeasonPlayers,
+} from '../../teams/index.js'
+import { readTeamSeasonRosterHistory } from '../../../read/entities/teamSeasonRosterHistory.js'
 import {
   ensureRequiredClubProjectionCompleted,
   syncClubProjectionFromTeamSeason,
@@ -22,6 +26,16 @@ import {
   assertWriteResultClean,
   attachWriteFlowReport,
 } from '../writeFlowReport.js'
+import {
+  ROSTER_IMPORT_MODE,
+  buildRosterSnapshotContentHash,
+  buildRosterSnapshotEventKey,
+  mergeLocalAndResolvedPlayers,
+  normalizeRosterImport,
+  reconcileRosterMovement,
+  resolveRosterPlayersLocally,
+} from '../../../../domain/movement/index.js'
+import { resolveTeamLookupKey } from '../../../../model/team/teamIdentity.model.js'
 
 const clean = value => String(value || '').trim()
 
@@ -134,12 +148,56 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   })
   const results = {}
   const rawPlayers = Array.isArray(normalizedPayload.players) ? normalizedPayload.players : []
+  const birthTeamDocumentId = resolveTeamLookupKey(normalizedPayload.team || {})
+  let rosterHistory = {
+    currentSeason: null,
+    previousSeason: null,
+  }
   let players = rawPlayers
 
   try {
-    players = await resolveTeamPlayerIdentities({
+    rosterHistory = await readTeamSeasonRosterHistory({
+      birthTeamDocumentId,
+      seasonKey: normalizedPayload.season.seasonKey,
+    })
+  } catch (error) {
+    throw buildSyncError({
+      stage: 'readTeamSeasonRosterHistory',
+      cause: error,
+      results,
+    })
+  }
+
+  try {
+    const currentKnownPlayers = [
+      ...(Array.isArray(rosterHistory.currentSeason?.teamPlayers)
+        ? rosterHistory.currentSeason.teamPlayers
+        : []),
+      ...(Array.isArray(rosterHistory.currentSeason?.pendingPlayers)
+        ? rosterHistory.currentSeason.pendingPlayers
+        : []),
+    ]
+    const previousPlayers = Array.isArray(rosterHistory.previousSeason?.teamPlayers)
+      ? rosterHistory.previousSeason.teamPlayers
+      : []
+    const localResolution = resolveRosterPlayersLocally({
       players: rawPlayers,
-      season: normalizedPayload.season,
+      currentPlayers: currentKnownPlayers,
+      previousPlayers,
+    })
+    const unresolvedPlayers = localResolution.unresolved.map(entry => entry.player)
+    const broadResolvedPlayers = unresolvedPlayers.length
+      ? await resolveTeamPlayerIdentities({
+        players: unresolvedPlayers,
+        season: normalizedPayload.season,
+      })
+      : []
+
+    players = mergeLocalAndResolvedPlayers({
+      totalCount: rawPlayers.length,
+      localResolved: localResolution.resolved,
+      broadResolved: broadResolvedPlayers,
+      unresolved: localResolution.unresolved,
     })
   } catch (error) {
     throw buildSyncError({
@@ -149,12 +207,43 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     })
   }
 
+  const contentHash = normalizedPayload.rosterImport?.contentHash || buildRosterSnapshotContentHash({
+    seasonKey: normalizedPayload.season.seasonKey,
+    birthTeamDocumentId,
+    players,
+  })
+  const sourceSnapshotKeyExplicit = Boolean(clean(
+    normalizedPayload.rosterImport?.sourceSnapshotKey
+  )) && normalizedPayload.rosterImport?.sourceSnapshotKeyExplicit !== false
+  const incomingRosterImport = normalizeRosterImport({
+    mode: normalizedPayload.rosterImport?.mode || ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT,
+    sourceSnapshotKey: normalizedPayload.rosterImport?.sourceSnapshotKey || buildRosterSnapshotEventKey({ contentHash }),
+    contentHash,
+    effectiveAt: normalizedPayload.rosterImport?.effectiveAt,
+  })
+
   try {
     results.teamSeasonResult = await upsertTeamSeasonPlayers({
       ...normalizedPayload,
       team: normalizedPayload.team || {},
       teamPerformance,
       players,
+      rosterImport: incomingRosterImport,
+      sourceSnapshotKeyExplicit,
+      reconcileMovement: ({ currentSeason, previousSeason, rosterImport }) => (
+        reconcileRosterMovement({
+          seasonKey: normalizedPayload.season.seasonKey,
+          team: {
+            ...(normalizedPayload.team || {}),
+            birthTeamDocumentId,
+          },
+          incomingPlayers: players,
+          missingPlayers: normalizedPayload.missingPlayers,
+          currentSeason,
+          previousSeason,
+          rosterImport,
+        })
+      ),
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
     results.teamDocResult = {
@@ -169,6 +258,10 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       results,
     })
   }
+
+  results.counterpartReconciliation = await reconcileTeamSeasonMovementCounterparts({
+    requests: results.teamSeasonResult.movementState?.counterpartRequests,
+  })
 
   const team = {
     ...(normalizedPayload.team || {}),
@@ -204,6 +297,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       ...normalizedPayload,
       team: teamWithRosterMeta,
       players: indexedPlayers,
+      replaceScope: incomingRosterImport.mode === ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT,
     })
     assertWriteResultClean({
       result: results.playerSeasonIndexResult,

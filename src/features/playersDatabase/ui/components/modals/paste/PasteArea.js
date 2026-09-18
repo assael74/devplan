@@ -22,6 +22,7 @@ export default function PasteArea({
   onFileSelect,
   onClear,
   onViewSourceJson,
+  formatHint = '',
 }) {
   const fileInputRef = React.useRef(null)
 
@@ -56,6 +57,11 @@ export default function PasteArea({
           {!compact ? (
             <Typography level='body-xs' sx={sx.description}>
               הדביקו נתונים שהועתקו מאקסל או ממקור טבלאי אחר.
+            </Typography>
+          ) : null}
+          {formatHint ? (
+            <Typography level='body-xs' sx={sx.description}>
+              {formatHint}
             </Typography>
           ) : null}
         </Box>

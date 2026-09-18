@@ -1,6 +1,10 @@
 // features/playersDatabase/model/team/teamLoadStatus.model.js
 
 import { PLAYER_STATS_STATUS } from '../player/playerStats.model.js'
+import {
+  countCurrentRosterPlayers,
+  isCurrentRosterPlayer,
+} from './rosterStatus.model.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -8,8 +12,9 @@ const clean = value => String(
 
 export const buildTeamLoadStatus = teamPlayers => {
   const players = Array.isArray(teamPlayers) ? teamPlayers : []
-  const playersCount = players.length
-  const loadedPlayersCount = players.filter(player => (
+  const currentRosterPlayers = players.filter(isCurrentRosterPlayer)
+  const playersCount = countCurrentRosterPlayers(players)
+  const loadedPlayersCount = currentRosterPlayers.filter(player => (
     clean(player?.statsStatus) === PLAYER_STATS_STATUS.LOADED
   )).length
 

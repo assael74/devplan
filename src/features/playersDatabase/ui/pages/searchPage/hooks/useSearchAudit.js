@@ -19,6 +19,7 @@ import {
   rebuildClubProjectionsFromAllLeagueTables,
   repairOrphanedClubCompetitionPathSeasons,
 } from '../../../../services/dataRepair/club/index.js'
+import { retryMovementCounterpartsFromAuditFindings } from '../../../../services/dataRepair/team/index.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
@@ -33,6 +34,7 @@ export default function useSearchAudit({ rows }) {
   const [repairPlan, setRepairPlan] = React.useState(null)
   const [orphanIndexDeletePlan, setOrphanIndexDeletePlan] = React.useState(null)
   const [repairPreviewBusy, setRepairPreviewBusy] = React.useState(false)
+  const [repairProgress, setRepairProgress] = React.useState(null)
 
   const partialAuditDefaults = React.useMemo(
     () => buildPartialAuditDefaults(rows),
@@ -64,6 +66,7 @@ export default function useSearchAudit({ rows }) {
     if (busy) return
     setBusy(true)
     setError('')
+    setRepairProgress(null)
 
     try {
       setResult(await runPlayerDatabaseAudit({ scope }))
@@ -191,9 +194,10 @@ export default function useSearchAudit({ rows }) {
     if (busy) return
     setBusy(true)
     setError('')
+    setRepairProgress(null)
 
     try {
-      await action()
+      await action({ onProgress: setRepairProgress })
       await refreshAudit()
     } catch (repairError) {
       setError(
@@ -257,6 +261,16 @@ export default function useSearchAudit({ rows }) {
     failureMessage: 'תיקון אינדקסי הקבוצות נכשל',
   }), [runRepair])
 
+  const retryMovementCounterparts = React.useCallback(findings => runRepair({
+    action: async () => {
+      const repairResult = await retryMovementCounterpartsFromAuditFindings({ findings })
+      if (repairResult.failures.length) {
+        setError(`${repairResult.failures.length} השלמות Movement נכשלו. העובדות המקומיות נשארו תקינות.`)
+      }
+    },
+    failureMessage: 'השלמת counterparts של Movements נכשלה',
+  }), [runRepair])
+
   const resetOrphanTeamIndexes = React.useCallback(findings => runRepair({
     action: async () => {
       const resetResult = await resetOrphanTeamSearchIndexesFromAuditFindings({ findings })
@@ -282,9 +296,10 @@ export default function useSearchAudit({ rows }) {
   }), [runRepair])
 
   const refreshClubProjections = React.useCallback(() => runRepair({
-    action: async () => {
+    action: async ({ onProgress }) => {
       const repairResult = await rebuildClubProjectionsFromAllLeagueTables({
         lastWriteAction: 'REFRESH_ALL_CLUB_PROJECTIONS',
+        onProgress,
       })
       if (!repairResult.completed) {
         setError(`${repairResult.failures.length} קבוצות לא רועננו. Clubs Master לא עודכן.`)
@@ -321,6 +336,7 @@ export default function useSearchAudit({ rows }) {
     repairPlan,
     orphanIndexDeletePlan,
     repairPreviewBusy,
+    repairProgress,
     partialAuditDefaults,
     openAudit,
     closeAudit,
@@ -336,6 +352,7 @@ export default function useSearchAudit({ rows }) {
     requestOrphanPlayerIndexDelete,
     confirmOrphanPlayerIndexDelete,
     repairTeamIndexes,
+    retryMovementCounterparts,
     resetOrphanTeamIndexes,
     repairClubsMaster,
     refreshClubsMaster,

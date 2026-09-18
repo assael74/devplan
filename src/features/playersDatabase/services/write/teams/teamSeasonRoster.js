@@ -25,6 +25,13 @@ import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,
 } from '../../../domain/projections/teamPerformance.projection.js'
+import {
+  createEmptyMovementState,
+  normalizeRosterImport,
+  ROSTER_IMPORT_MODE,
+  compareSeasonKeys,
+} from '../../../domain/movement/index.js'
+import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 const withRosterPerformanceContext = ({
   seasonDoc = {},
@@ -85,11 +92,129 @@ const buildBalanceRootContext = ({ team, teamId }) => ({
   birthTeamDocumentId: teamId,
 })
 
+const mergeRosterPlayer = ({ existingPlayer = {}, incomingPlayer = {} } = {}) => ({
+  ...existingPlayer,
+  ...incomingPlayer,
+  playerDocumentId: clean(incomingPlayer.playerDocumentId || existingPlayer.playerDocumentId),
+  aliases: Array.isArray(existingPlayer.aliases) && existingPlayer.aliases.length
+    ? existingPlayer.aliases
+    : incomingPlayer.aliases,
+  notes: clean(existingPlayer.notes || incomingPlayer.notes),
+  primaryPosition: clean(incomingPlayer.primaryPosition || existingPlayer.primaryPosition),
+  positionLayer: clean(incomingPlayer.positionLayer || existingPlayer.positionLayer),
+  lineClassification: existingPlayer.lineClassification || incomingPlayer.lineClassification,
+  statsStatus: existingPlayer.statsStatus || incomingPlayer.statsStatus,
+  playerStats: existingPlayer.playerStats || incomingPlayer.playerStats,
+  primaryScoutProfileId: existingPlayer.primaryScoutProfileId || incomingPlayer.primaryScoutProfileId,
+  primaryScoutProfileStrengthDepthPct: existingPlayer.primaryScoutProfileStrengthDepthPct !== undefined && existingPlayer.primaryScoutProfileStrengthDepthPct !== null
+    ? existingPlayer.primaryScoutProfileStrengthDepthPct
+    : incomingPlayer.primaryScoutProfileStrengthDepthPct,
+  professionalScoutProfileIds: existingPlayer.professionalScoutProfileIds || incomingPlayer.professionalScoutProfileIds,
+  preliminaryScoutProfileIds: existingPlayer.preliminaryScoutProfileIds || incomingPlayer.preliminaryScoutProfileIds,
+  scoutEffectiveImmediacyStatus: existingPlayer.scoutEffectiveImmediacyStatus || incomingPlayer.scoutEffectiveImmediacyStatus,
+  scoutPlayerInterestLevel: existingPlayer.scoutPlayerInterestLevel || incomingPlayer.scoutPlayerInterestLevel,
+  scoutEngineVersion: existingPlayer.scoutEngineVersion || incomingPlayer.scoutEngineVersion,
+})
+
+const normalizeIncomingRoster = ({ players = [], season = {} } = {}) => {
+  const nextPlayers = []
+  const lookup = new Map()
+
+  ;(Array.isArray(players) ? players : []).forEach(player => {
+    const normalizedPlayer = normalizeTeamPlayer(player, season)
+    const existingIndex = findExistingPlayerIndex({ lookup, player: normalizedPlayer })
+
+    if (existingIndex === -1) {
+      nextPlayers.push(normalizedPlayer)
+      lookup.clear()
+      buildPlayerLookup(nextPlayers).forEach((value, key) => lookup.set(key, value))
+      return
+    }
+
+    nextPlayers[existingIndex] = mergeRosterPlayer({
+      existingPlayer: nextPlayers[existingIndex],
+      incomingPlayer: normalizedPlayer,
+    })
+  })
+
+  return nextPlayers
+}
+
+export const mergeRosterImportPlayers = ({
+  existingPlayers = [],
+  players = [],
+  season = {},
+  mode = ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT,
+} = {}) => {
+  const incomingPlayers = normalizeIncomingRoster({ players, season })
+  const existingLookup = buildPlayerLookup(existingPlayers)
+
+  const mergedIncoming = incomingPlayers.map(incomingPlayer => {
+    const existingIndex = findExistingPlayerIndex({
+      lookup: existingLookup,
+      player: incomingPlayer,
+    })
+
+    return existingIndex === -1
+      ? incomingPlayer
+      : mergeRosterPlayer({
+        existingPlayer: existingPlayers[existingIndex],
+        incomingPlayer,
+      })
+  })
+
+  if (mode === ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT) return mergedIncoming
+
+  const nextPlayers = [...existingPlayers]
+  const nextLookup = buildPlayerLookup(nextPlayers)
+  mergedIncoming.forEach(player => {
+    const existingIndex = findExistingPlayerIndex({ lookup: nextLookup, player })
+    if (existingIndex === -1) {
+      nextPlayers.push(player)
+      nextLookup.clear()
+      buildPlayerLookup(nextPlayers).forEach((value, key) => nextLookup.set(key, value))
+      return
+    }
+    nextPlayers[existingIndex] = player
+  })
+
+  return nextPlayers
+}
+
+const resolvePreviousSeasonEntry = ({ seasons = [], seasonKey = '' } = {}) => (
+  (Array.isArray(seasons) ? seasons : [])
+    .filter(entry => compareSeasonKeys(entry?.seasonKey, seasonKey) < 0)
+    .sort((left, right) => compareSeasonKeys(right?.seasonKey, left?.seasonKey))[0] || null
+)
+
+const resolvePersistedRosterImport = ({
+  rosterImport = {},
+  existingSeason = null,
+  sourceSnapshotKeyExplicit = false,
+} = {}) => {
+  const incoming = normalizeRosterImport(rosterImport)
+  const existing = normalizeRosterImport(existingSeason?.rosterImport)
+  const sameGeneratedSnapshot = !sourceSnapshotKeyExplicit &&
+    Boolean(existing.sourceSnapshotKey) &&
+    Boolean(incoming.contentHash) &&
+    existing.contentHash === incoming.contentHash &&
+    existing.effectiveAt === incoming.effectiveAt
+
+  return sameGeneratedSnapshot
+    ? { ...incoming, sourceSnapshotKey: existing.sourceSnapshotKey }
+    : incoming
+}
+
+
 export async function upsertTeamSeasonPlayers({
   season = {},
   team = {},
   players = [],
   teamPerformance = null,
+  rosterImport = {},
+  movementState = null,
+  sourceSnapshotKeyExplicit = false,
+  reconcileMovement = null,
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
   if (!teamId) throw new Error('Missing birth team id')
@@ -115,20 +240,59 @@ export async function upsertTeamSeasonPlayers({
       }),
     }
 
-    if (Array.isArray(existingSeason?.teamPlayers) && existingSeason.teamPlayers.length > 0) {
-      const error = new Error('Team roster already exists for this season')
-      error.code = 'TEAM_ROSTER_ALREADY_EXISTS'
-      error.seasonId = effectiveSeason.seasonId
-      error.teamId = teamId
-      throw error
-    }
-
-    const seasonDocWithoutBalance = withRosterPerformanceContext({
-      seasonDoc: buildTeamSeasonDoc({
+    const previousEntry = resolvePreviousSeasonEntry({
+      seasons: rootSnapshot.exists() ? rootSnapshot.data()?.seasons : [],
+      seasonKey: effectiveSeason.seasonKey,
+    })
+    const previousRef = previousEntry?.seasonKey
+      ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousEntry.seasonKey })
+      : null
+    const previousSnapshot = previousRef ? await transaction.get(previousRef) : null
+    const previousSeason = previousSnapshot?.exists() ? previousSnapshot.data() || {} : null
+    const persistedRosterImport = resolvePersistedRosterImport({
+      rosterImport,
+      existingSeason,
+      sourceSnapshotKeyExplicit,
+    })
+    const normalizedMovementState = typeof reconcileMovement === 'function'
+      ? reconcileMovement({
+        currentSeason: existingSeason,
+        previousSeason,
+        rosterImport: persistedRosterImport,
+      })
+      : movementState && typeof movementState === 'object'
+        ? movementState
+        : createEmptyMovementState()
+    const existingPlayers = Array.isArray(existingSeason?.teamPlayers)
+      ? existingSeason.teamPlayers
+      : []
+    const nextPlayers = mergeRosterImportPlayers({
+      existingPlayers,
+      players,
+      season: persistedSeasonScope,
+      mode: persistedRosterImport.mode,
+    })
+    const baseSeasonDoc = existingSeason
+      ? normalizeTeamSeasonRosterState({
+        seasonDoc: existingSeason,
+        season: persistedSeasonScope,
+        team: { ...team, birthTeamDocumentId: teamId },
+        players: nextPlayers,
+      })
+      : buildTeamSeasonDoc({
         season: persistedSeasonScope,
         team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
-        players,
-      }),
+        players: nextPlayers,
+      })
+    const seasonDocWithoutBalance = withRosterPerformanceContext({
+      seasonDoc: {
+        ...baseSeasonDoc,
+        rosterImport: persistedRosterImport,
+        transfersIn: normalizedMovementState.transfersIn || [],
+        transfersOut: normalizedMovementState.transfersOut || [],
+        pendingPlayers: normalizedMovementState.pendingPlayers || [],
+        resolvedRosterAbsences: normalizedMovementState.resolvedRosterAbsences || [],
+      },
       existingSeason,
       teamPerformance,
     })
@@ -159,11 +323,13 @@ export async function upsertTeamSeasonPlayers({
       seasonId: persistedSeasonScope.seasonId,
       seasonKey: persistedSeasonScope.seasonKey,
       target: persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
-      playersCount: persistedSeason.teamPlayers.length,
+      playersCount: countCurrentRosterPlayers(persistedSeason.teamPlayers),
       createdTeam,
       players: persistedSeason.teamPlayers,
       teamBalance: persistedSeason.teamBalance || null,
       seasonDocument: persistedSeason,
+      movementState: normalizedMovementState,
+      rosterImport: persistedRosterImport,
     }
   })
 }
@@ -235,7 +401,7 @@ export async function appendTeamSeasonPlayer({
       seasonId: persistedSeasonScope.seasonId,
       seasonKey: persistedSeasonScope.seasonKey,
       target: persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
-      playersCount: nextPlayers.length,
+      playersCount: countCurrentRosterPlayers(nextPlayers),
       players: persistedSeason.teamPlayers,
       player: normalizedPlayer,
       teamBalance: persistedSeason.teamBalance || null,

@@ -4,7 +4,6 @@ export {
   ensureFavoriteScoutingPlayerDoc,
   ensureManualScoutingPlayerDoc,
   ensureScoutingPlayerDoc,
-  ensureTransferredScoutingPlayerDoc,
   ensureWatchlistScoutingPlayerDoc,
   updateScoutingPlayerFavoriteState,
 } from './scoutingPlayerDoc.ensure.js'

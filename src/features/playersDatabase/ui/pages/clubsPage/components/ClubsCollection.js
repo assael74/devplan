@@ -12,7 +12,6 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
   group,
   expanded,
   onToggleClub,
-  onOpenTeam,
   onOpenClub,
 }) {
   const clubId = group.club.clubId
@@ -59,7 +58,6 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
             intelligence: group.intelligence,
             seasonOptions: group.seasonOptions,
           }}
-          onOpenTeam={onOpenTeam}
           onOpenClub={onOpenClub}
         />
       ) : null}
@@ -73,7 +71,6 @@ export default function ClubsCollection({
   groups,
   expandedClubId,
   onToggleClub,
-  onOpenTeam,
   onOpenClub,
 }) {
   if (loading) {
@@ -115,7 +112,6 @@ export default function ClubsCollection({
           group={group}
           expanded={expandedClubId === group.club.clubId}
           onToggleClub={onToggleClub}
-          onOpenTeam={onOpenTeam}
           onOpenClub={onOpenClub}
         />
       ))}

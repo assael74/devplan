@@ -19,6 +19,11 @@ import {
 
 const clean = cleanValue
 
+const positiveNumberOrNull = value => {
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : null
+}
+
 const compactPerformanceSide = value => {
   const priorityLevel = clean(value?.priorityLevel)
   return priorityLevel ? { priorityLevel } : undefined
@@ -138,6 +143,7 @@ const compactSeason = season => {
 
   return {
     teamId: clean(season?.teamId),
+    teamSlot: positiveNumberOrNull(season?.teamSlot || season?.birthTeamSlot),
     seasonId: clean(season?.seasonId),
     seasonKey: clean(season?.seasonKey),
     seasonStatus: normalizeSeasonStatus(season?.seasonStatus),
@@ -214,12 +220,23 @@ export const buildClubsMasterAgeGroupEntry = ageGroup => {
 
 export const buildClubsMasterCompetitionPathEntry = path => {
   const seasons = sortSeasonsNewestFirst(path?.seasons)
-  const currentSeason = seasons[0] || null
   const nextPath = path?.nextCompetitionPath || null
+  const sourceTeamSlot = positiveNumberOrNull(nextPath?.sourceTeamSlot)
+  const currentSeasonKey = normalizeSeasonLookupKey(
+    PLAYERS_DATABASE_CURRENT_SEASON_KEY
+  )
+  const currentSeason = sourceTeamSlot
+    ? seasons.find(season => (
+      seasonKeyOf(season) === currentSeasonKey &&
+      positiveNumberOrNull(season?.teamSlot) === sourceTeamSlot
+    )) || null
+    : null
 
   return {
     birthYear: toNumberOrZero(path?.birthYear),
     sourceBirthYear: toNumberOrZero(nextPath?.sourceBirthYear),
+    sourceTeamId: clean(nextPath?.sourceTeamId),
+    sourceTeamSlot,
     currentLeagueLevel: Number(currentSeason?.leagueLevel) || null,
     projectedNextLeagueLevel: Number(nextPath?.projectedNextLeagueLevel) || null,
     status: normalizeClubCompetitionStatus(

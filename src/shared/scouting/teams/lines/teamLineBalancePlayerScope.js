@@ -7,10 +7,5 @@ const clean = value => String(
 export const isTeamLineBalanceRelevantPlayer = player => {
   if (!player || typeof player !== 'object') return false
 
-  const rosterStatus = clean(player.rosterStatus)
-  return (
-    rosterStatus !== 'retired' &&
-    rosterStatus !== 'transferredOut' &&
-    rosterStatus !== 'youngerAgeGroup'
-  )
+  return clean(player.rosterStatus || 'regular') === 'regular'
 }

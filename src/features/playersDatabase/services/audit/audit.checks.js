@@ -25,6 +25,7 @@ import {
 } from './checks/auditPlayer.checks.js'
 import { appendSearchIndexAuditFindings } from './checks/auditSearchIndex.checks.js'
 import { appendWriteRecoveryAuditFindings } from './checks/auditWriteRecovery.checks.js'
+import { appendTeamSeasonMovementAuditFindings } from './checks/auditMovement.checks.js'
 
 export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
   const normalizedScope = normalizeAuditScope(scope)
@@ -83,6 +84,7 @@ export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
     }
 
     appendTeamSeasonAuditFindings(seasonContext)
+    appendTeamSeasonMovementAuditFindings(seasonContext)
     appendPlayerSeasonAuditFindings(seasonContext)
   })
 

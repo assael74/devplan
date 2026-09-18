@@ -15,6 +15,7 @@ export default function SeasonDeleteConfirmModal({
   seasonKey,
   seasonOptions,
   selectedSeasonOptionKey,
+  showSeasonSelect = true,
   busy,
   confirmLabel,
   mayRemoveLeagueRoot = false,
@@ -31,16 +32,18 @@ export default function SeasonDeleteConfirmModal({
       confirmLabel={confirmLabel}
       confirmIconId='delete'
       busy={busy}
-      disabled={!selectedSeasonOptionKey}
+      disabled={showSeasonSelect && !selectedSeasonOptionKey}
       persistent
       onConfirm={onConfirm}
       onClose={onClose}
     >
-      <TeamSeasonSelect
-        seasonOptions={seasonOptions}
-        value={selectedSeasonOptionKey}
-        onChange={onSeasonOptionChange}
-      />
+      {showSeasonSelect ? (
+        <TeamSeasonSelect
+          seasonOptions={seasonOptions}
+          value={selectedSeasonOptionKey}
+          onChange={onSeasonOptionChange}
+        />
+      ) : null}
       <Alert color='danger' variant='soft'>
         <Box>
           <Typography level='title-sm'>

@@ -341,8 +341,8 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   teamSeasonDocument = null,
   verificationAnswers = null,
 } = {}) {
-  // A retired player remains in the Team Season roster for historical
-  // completeness, but must not become a tracked/scouted Player document.
+  // A non-current participant remains in the Team Season for historical
+  // completeness, but is outside the current-team scout scope.
   // Returning the cleared scout state is important: the caller uses it to
   // clear a previously calculated profile from the Team Season projection.
   if (isScoutCalculationExcludedRosterStatus(player)) {
@@ -367,7 +367,7 @@ export async function syncPlayerRoleAndScoutProfileDoc({
         })
       : {
           skipped: true,
-          reason: 'retiredPlayerDocumentNotCreated',
+          reason: 'outOfRosterScopePlayerDocumentNotCreated',
         }
 
     return {
@@ -375,7 +375,7 @@ export async function syncPlayerRoleAndScoutProfileDoc({
       playerDocumentId,
       created: false,
       scoutProfilesCount: 0,
-      lifecycle: 'retired',
+      lifecycle: 'out_of_roster_scope',
       scoutedPlayer: {
         ...buildPlayerScoutState({ player, team, season }),
         ...(playerDocumentExists ? { playerDocumentId } : {}),

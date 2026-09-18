@@ -164,7 +164,7 @@ export const buildCompetitionProjection = ({
   const expectedGamesPerTeam = toNumberOrZero(suppliedExpectedGamesPerTeam) ||
     buildExpectedLeagueGamesPerTeam(safeRows.length)
 
-  if (!targetRow || !expectedGamesPerTeam || !normalizedRules.configured) {
+  if (!targetRow || !expectedGamesPerTeam) {
     return {
       projectedNextLeagueLevel: toNumberOrZero(leagueLevel) || null,
       status: CLUB_COMPETITION_STATUS.UNKNOWN,
@@ -179,11 +179,11 @@ export const buildCompetitionProjection = ({
     (targetStats.gamesPlayed / expectedGamesPerTeam) * 100
   )
 
-  if (seasonProgressPct < 50) {
+  if (seasonProgressPct < 50 || !normalizedRules.configured) {
     return {
       projectedNextLeagueLevel: toNumberOrZero(leagueLevel) || null,
-      status: CLUB_COMPETITION_STATUS.UNKNOWN,
-      projectedRank: null,
+      status: CLUB_COMPETITION_STATUS.CURRENT_LEVEL,
+      projectedRank: getLeagueTableRowRank(targetRow),
       seasonProgressPct,
     }
   }

@@ -1,4 +1,5 @@
 import { clean, numberOrNull, withFallback } from './teamInformation.utils.js'
+import { countCurrentRosterPlayers } from '../../../../model/team/rosterStatus.model.js'
 
 const seasonOrder = season => {
   const match = clean(season?.seasonKey || season?.seasonId).match(/^(\d{2})[/_-](\d{2})$/)
@@ -116,7 +117,7 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
   )
   const countPlayers = season => withFallback(
     numberOrNull(season?.playersCount),
-    Array.isArray(season?.teamPlayers) ? season.teamPlayers.length : null
+    Array.isArray(season?.teamPlayers) ? countCurrentRosterPlayers(season.teamPlayers) : null
   )
   const profilesCount = season => numberOrNull(season?.scoutProfilesSummary?.total)
   const buildLineDistribution = season => {
@@ -162,7 +163,15 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
         .sort((left, right) => right.count - left.count || left.profileId.localeCompare(right.profileId)),
     }
   }
-  const resolveMovementLine = player => {
+  const playerById = new Map()
+  seasons.forEach(season => {
+    ;(Array.isArray(season?.teamPlayers) ? season.teamPlayers : []).forEach(player => {
+      const playerId = clean(player?.playerId)
+      if (playerId) playerById.set(playerId, player)
+    })
+  })
+  const resolveMovementLine = fact => {
+    const player = playerById.get(clean(fact?.playerId)) || {}
     const value = clean(
       player?.lineClassification?.line ||
       player?.line ||
@@ -176,15 +185,14 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
     return 'UNKNOWN'
   }
   const movementSeasons = seasons.map(season => {
-    const players = Array.isArray(season?.teamPlayers) ? season.teamPlayers : []
-    const left = players.filter(player => clean(player?.rosterStatus) === 'transferredOut')
-    const joined = players.filter(player => clean(player?.rosterStatus) === 'transferredIn')
-    const directionCounts = left.reduce((counts, player) => {
-      const direction = clean(player?.manualTransferDirection || player?.transferDirection) || 'unknown'
+    const left = Array.isArray(season?.transfersOut) ? season.transfersOut : []
+    const joined = Array.isArray(season?.transfersIn) ? season.transfersIn : []
+    const directionCounts = left.reduce((counts, fact) => {
+      const direction = clean(fact?.direction) || 'unknown'
       return { ...counts, [direction]: (counts[direction] || 0) + 1 }
     }, {})
-    const lineCounts = left.reduce((counts, player) => {
-      const line = resolveMovementLine(player)
+    const lineCounts = left.reduce((counts, fact) => {
+      const line = resolveMovementLine(fact)
       return { ...counts, [line]: (counts[line] || 0) + 1 }
     }, {})
 
@@ -195,16 +203,20 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
       joinedCount: joined.length,
       directionCounts,
       lineCounts,
-      movements: left.map(player => ({
-        seasonKey: seasonKey(season),
-        name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',
-        direction: clean(player?.manualTransferDirection || player?.transferDirection) || 'unknown',
-        line: resolveMovementLine(player),
-        hasScoutProfile: Boolean(
-          clean(player?.primaryScoutProfileId) ||
-          (Array.isArray(player?.professionalScoutProfileIds) && player.professionalScoutProfileIds.length)
-        ),
-      })),
+      movements: left.map(fact => {
+        const player = playerById.get(clean(fact?.playerId)) || {}
+
+        return {
+          seasonKey: seasonKey(season),
+          name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',
+          direction: clean(fact?.direction) || 'unknown',
+          line: resolveMovementLine(fact),
+          hasScoutProfile: Boolean(
+            clean(player?.primaryScoutProfileId) ||
+            (Array.isArray(player?.professionalScoutProfileIds) && player.professionalScoutProfileIds.length)
+          ),
+        }
+      }),
     }
   })
   const movements = movementSeasons.flatMap(season => (
@@ -282,8 +294,8 @@ export const buildPerformance = team => [
 
 export const buildSeasonChange = ({ balance, previousBalance, season, previousSeason }) => {
   if (!previousSeason || !previousBalance || !balance) return []
-  const playersCount = Array.isArray(season?.teamPlayers) ? season.teamPlayers.length : null
-  const previousPlayersCount = Array.isArray(previousSeason?.teamPlayers) ? previousSeason.teamPlayers.length : null
+  const playersCount = Array.isArray(season?.teamPlayers) ? countCurrentRosterPlayers(season.teamPlayers) : null
+  const previousPlayersCount = Array.isArray(previousSeason?.teamPlayers) ? countCurrentRosterPlayers(previousSeason.teamPlayers) : null
   const previousCard = key => previousBalance.cards.find(card => card.key === key)
   const currentCard = key => balance.cards.find(card => card.key === key)
 

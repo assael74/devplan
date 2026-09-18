@@ -99,6 +99,21 @@ export const isValidExternalPlayerId = ({
   return true
 }
 
+// External provider IDs are stable across imports.  Whenever they are
+// available, use the same deterministic internal player ID in every write
+// flow instead of generating a fresh UUID for the same person.
+export const buildInternalPlayerIdFromExternalIdentity = ({
+  externalPlayerId = '',
+  birthYear = '',
+} = {}) => {
+  if (!isValidExternalPlayerId({ externalPlayerId, birthYear })) return ''
+
+  return ['player', birthYear, externalPlayerId]
+    .map(normalizePlayerIdPart)
+    .filter(Boolean)
+    .join('__')
+}
+
 export const resolvePlayerDisplayName = player => cleanValue(
   pickFirstValue(
     player?.matchedPlayerName,

@@ -17,22 +17,24 @@ export const teamStatsColumnsSx = {
 
   validNameRow: {
     display: 'flex',
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 0.5,
     minWidth: 0,
   },
 
   validName: {
     fontWeight: 600,
-    textAlign: 'center',
+    textAlign: 'left',
     minWidth: 0,
   },
 
   matchRow: {
     display: 'flex',
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 0.5,
     minWidth: 0,
   },
@@ -80,24 +82,36 @@ export const teamStatsColumnsSx = {
 
   identityColumn: {},
 
+  playerNameColumn: {
+    textAlign: 'left !important',
+
+    '& > div': {
+      justifyContent: 'flex-start',
+      textAlign: 'left',
+    },
+  },
+
   identityChip: {
     fontWeight: 600,
   },
 
   unidentifiedIdentityIcon: {
-    display: 'inline-flex',
+    display: 'flex',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   newPlayerIdentityIcon: {
-    display: 'inline-flex',
+    display: 'flex',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   identifiedIdentityIcon: {
-    display: 'inline-flex',
+    display: 'flex',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -128,14 +142,14 @@ export const teamStatsColumnsSx = {
 
   statusSelect: {
     minWidth: 0,
-    width: '100%',
-    maxWidth: 'none',
-    flex: 1,
+    width: 62,
+    maxWidth: 62,
+    flex: '0 0 62px',
     minHeight: 24,
 
     '& button': {
       minHeight: 24,
-      px: 0.5,
+      px: 0.35,
       fontSize: 10,
       overflow: 'hidden',
       textOverflow: 'ellipsis',
@@ -150,6 +164,39 @@ export const teamStatsColumnsSx = {
     justifyContent: 'center',
   },
 
+  statusMovementControls: {
+    width: '100%',
+    minWidth: 0,
+    alignItems: 'center',
+  },
+
+  statusMovementTeamSelect: {
+    minWidth: 0,
+    flex: 1,
+    '--Input-minHeight': '26px',
+    '--Input-paddingInline': '0.35rem',
+
+    '& input, & button': {
+      fontSize: 10,
+      px: 0.35,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
+
+  statusMovementSlotSelect: {
+    width: 42,
+    minWidth: 42,
+    '--Select-minHeight': '26px',
+
+    '& button': {
+      px: 0.35,
+      fontSize: 10,
+      whiteSpace: 'nowrap',
+    },
+  },
+
   statusIcon: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -157,23 +204,6 @@ export const teamStatsColumnsSx = {
     color: 'success.500',
   },
 
-  transferDirectionChip: {
-    width: 28,
-    minWidth: 28,
-    height: 24,
-    p: 0,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    '& .MuiChip-label': {
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      p: 0,
-    },
-  },
 
   scoutProfileColumn: {},
 

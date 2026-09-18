@@ -1,5 +1,7 @@
 // features/playersDatabase/model/scout/scoutProfilesSummary.model.js
 
+import { isCurrentRosterPlayer } from '../team/rosterStatus.model.js'
+
 const clean = value => String(value || '').trim()
 
 const hasOwn = (source, key) => (
@@ -72,7 +74,7 @@ export const buildScoutProfilesSummary = (players = []) => {
   const profileCounts = {}
   let total = 0
 
-  ;(Array.isArray(players) ? players : []).forEach(player => {
+  ;(Array.isArray(players) ? players : []).filter(isCurrentRosterPlayer).forEach(player => {
     const profileIds = resolveActiveProfessionalProfileIds(player)
     if (!profileIds.length) return
 

@@ -96,6 +96,7 @@ export async function upsertClubDocument({
   propagateCompetitionFromBirthYear = 0,
   propagateCompetitionSeasonKey = '',
   propagateCompetitionTeamId = '',
+  propagateCompetitionTeamSlot = null,
   requiredCompetitionTarget = null,
   projectionVersion = 1,
   lastWriteAction = '',
@@ -162,6 +163,8 @@ export async function upsertClubDocument({
           birthYear: sourceBirthYear + 1,
           nextCompetitionPath: buildNextCompetitionPath({
             sourceBirthYear,
+            sourceTeamId: sourceSeason?.teamId || propagateCompetitionTeamId,
+            sourceTeamSlot: sourceSeason?.teamSlot || propagateCompetitionTeamSlot,
             effectiveProjection,
             reason: effectiveProjection ? null : 'SOURCE_COHORT_NOT_LOADED',
           }),

@@ -20,6 +20,7 @@ import { buildTeamPerformanceViewModel } from '../teamPerformance.viewModel.js'
 import { formatPerGameRate } from '../../shared/rate.model.js'
 import { findTeamPageTableRow } from './teamPageSeason.model.js'
 import { PLAYER_STATS_STATUS } from '../../player/playerStats.model.js'
+import { countCurrentRosterPlayers } from '../rosterStatus.model.js'
 
 import {
   buildTeamScoutLeagueModel,
@@ -223,7 +224,7 @@ export const buildTeamPageView = ({
   const teamPlayers = Array.isArray(selectedTeamSeason?.teamPlayers)
     ? selectedTeamSeason.teamPlayers
     : []
-  const playersCount = teamPlayers.length
+  const playersCount = countCurrentRosterPlayers(teamPlayers)
   const performanceView = buildTeamPerformanceViewModel(canonicalTeamSeason.performance)
   const clubId = canonicalTeamSeason.identity.clubId || getClubIdFromTeamId(teamId)
   const club = getClubById(clubId)

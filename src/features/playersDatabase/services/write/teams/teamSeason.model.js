@@ -6,11 +6,11 @@ import {
 } from '../leagues/leagueDoc.js'
 import {
   buildPlayerIdentityKey,
+  buildInternalPlayerIdFromExternalIdentity,
   buildPlayerMatchValues,
   isValidExternalPlayerId,
   normalizePlayerIdentity,
   normalizePlayerNameValue,
-  normalizePlayerIdPart,
   resolvePlayerIdentityBirthYear,
 } from '../../../model/player/playerIdentity.model.js'
 import {
@@ -42,9 +42,12 @@ import {
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
 import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { buildPlayerLineClassificationState } from '../../../domain/orchestration/buildPlayerLineClassificationState.js'
+import {
+  countCurrentRosterPlayers,
+  normalizeRosterStatus,
+} from '../../../model/team/rosterStatus.model.js'
 
 const normalizePlayerName = normalizePlayerNameValue
-const normalizeIdPart = normalizePlayerIdPart
 
 const buildInternalPlayerId = ({ player = {}, season = {} } = {}) => {
   const identity = normalizePlayerIdentity(player)
@@ -59,12 +62,10 @@ const buildInternalPlayerId = ({ player = {}, season = {} } = {}) => {
     birthYear,
   }) ? identity.externalPlayerId : ''
 
-  if (externalPlayerId) {
-    return ['player', birthYear, externalPlayerId]
-      .map(normalizeIdPart)
-      .filter(Boolean)
-      .join('__')
-  }
+  if (externalPlayerId) return buildInternalPlayerIdFromExternalIdentity({
+    externalPlayerId,
+    birthYear,
+  })
 
   return ''
 }
@@ -131,8 +132,7 @@ export const normalizeTeamPlayer = (player, season = {}) => {
     aliases: normalizeAliases(player.aliases),
     playerUrl: clean(player.playerUrl),
     notes: clean(player.notes),
-    rosterStatus: clean(player.rosterStatus) || 'regular',
-    manualTransferDirection: clean(player.manualTransferDirection),
+    rosterStatus: normalizeRosterStatus(player.rosterStatus),
     isYoungerAgeGroup: Boolean(
       player.isYoungerAgeGroup ||
       clean(player.rosterStatus) === 'youngerAgeGroup'
@@ -221,10 +221,10 @@ const mergeExistingTeamPlayerStats = ({ existingPlayer = {}, statsPlayer = {} } 
   }),
   playerUrl: clean(statsPlayer.playerUrl || existingPlayer.playerUrl),
   notes: clean(existingPlayer.notes || statsPlayer.notes),
-  rosterStatus: clean(statsPlayer.rosterStatus || existingPlayer.rosterStatus) || 'regular',
-  manualTransferDirection: clean(
-    statsPlayer.manualTransferDirection ||
-    existingPlayer.manualTransferDirection
+  rosterStatus: normalizeRosterStatus(
+    statsPlayer.hasExplicitRosterStatus
+      ? statsPlayer.rosterStatus
+      : existingPlayer.rosterStatus
   ),
   isYoungerAgeGroup: Boolean(
     statsPlayer.isYoungerAgeGroup ||
@@ -372,6 +372,7 @@ export const mergeTeamPlayerStats = ({ existingPlayers = [], players = [], team 
   ;(Array.isArray(players) ? players : []).forEach(player => {
     const statsPlayer = {
       ...normalizeTeamPlayer(player, season),
+      hasExplicitRosterStatus: Boolean(clean(player.rosterStatus)),
       aliases: uniqueCleanValues([
         ...(Array.isArray(player.aliases) ? player.aliases : []),
         player.originalFullName,
@@ -511,7 +512,7 @@ export const normalizeTeamSeasonRosterState = ({
       team.teamUrl
     )),
     teamPlayers: normalizedPlayers,
-    playersCount: normalizedPlayers.length,
+    playersCount: countCurrentRosterPlayers(normalizedPlayers),
     scoutProfilesSummary: buildScoutProfilesSummary(normalizedPlayers),
     updatedAt: new Date().toISOString(),
   }
@@ -573,7 +574,7 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
     seasonStatus: normalizeSeasonStatus(season.seasonStatus),
     teamUrl: clean(team.teamUrl),
     teamPlayers,
-    playersCount: teamPlayers.length,
+    playersCount: countCurrentRosterPlayers(teamPlayers),
     scoutProfilesSummary: buildScoutProfilesSummary(teamPlayers),
     teamStats: {
       ...(() => {

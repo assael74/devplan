@@ -47,6 +47,12 @@ The first family uses the persisted `competitionPaths` values. It does not
 recalculate a competition forecast. When the projection is unavailable, it
 preserves status and reason but emits no spotlight.
 
+For a Future League Path, `sourceTeamId` and `sourceTeamSlot` travel from the
+Competition Path source season through Clubs Master. The resulting Spotlight
+uses that canonical `teamId`; it is not attached to a team by cohort, order,
+name, league level, or an inferred ID suffix. A missing source identity emits
+no Future League Path Spotlight.
+
 The league-versus-club family uses the single canonical threshold
 `CLUB_LEAGUE_LEVEL_GAP_THRESHOLD = 1` and preserves the numeric gap in
 spotlight context.

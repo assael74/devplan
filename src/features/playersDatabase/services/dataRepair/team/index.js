@@ -9,6 +9,10 @@ export {
   repairTeamSearchIndexLifecycleMany,
 } from './teamDataRepair.write.js'
 
+export {
+  retryMovementCounterpartsFromAuditFindings,
+} from './teamMovementRepair.js'
+
 // UI diagnostics use this service boundary rather than importing write-layer
 // projection builders directly.
 export { buildTeamSeasonSearchMetrics } from '../../../domain/projections/searchIndexNormalization.projection.js'

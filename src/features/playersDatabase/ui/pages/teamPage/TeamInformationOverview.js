@@ -101,7 +101,12 @@ export default function TeamInformationOverview({
   onPlayerRoleEdit,
   onPlayerOpen,
 }) {
-  const defaultStructureFilter = view?.structure?.availabilityReason === 'stats_not_loaded'
+  const hasInsufficientSeasonSample = view?.structure?.availabilityReason ===
+    'season_sample_insufficient'
+  const defaultStructureFilter = (
+    view?.structure?.availabilityReason === 'stats_not_loaded' ||
+    hasInsufficientSeasonSample
+  )
     ? TEAM_STRUCTURE_FILTER.ALL_SQUAD
     : TEAM_STRUCTURE_FILTER.CLASSIFIED
   const [structureFilter, setStructureFilter] = React.useState(defaultStructureFilter)
@@ -128,6 +133,8 @@ export default function TeamInformationOverview({
         ].filter(Boolean).join(' · '),
         leagueName: season?.leagueName || season?.league?.leagueName || '',
         leagueLevel: season?.leagueLevel || season?.league?.leagueLevel || null,
+        birthYear: season?.birthYear || '',
+        ageGroupLabel: season?.ageGroupLabel || season?.ageGroupId || '',
         selected: String(season?.seasonKey || season?.seasonId || '').trim() === String(view.selectedSeasonKey || '').trim(),
         leagueId: String(season?.leagueId || '').trim(),
       }))
@@ -198,8 +205,17 @@ export default function TeamInformationOverview({
       rows: view.positionClassificationRows,
       teamName: view.team?.name,
       seasonKey: view.selectedSeasonKey,
+      birthYear: selectedSeasonChip?.birthYear || view.team?.birthYear,
+      ageGroupLabel: selectedSeasonChip?.ageGroupLabel,
     })
-  }, [view.positionClassificationRows, view.selectedSeasonKey, view.team?.name])
+  }, [
+    selectedSeasonChip?.ageGroupLabel,
+    selectedSeasonChip?.birthYear,
+    view.positionClassificationRows,
+    view.selectedSeasonKey,
+    view.team?.birthYear,
+    view.team?.name,
+  ])
 
   const handleReturnToPerformance = React.useCallback(() => {
     performanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -311,6 +327,8 @@ export default function TeamInformationOverview({
             rows={view.positionClassificationRows}
             teamName={view.team?.name}
             seasonKey={view.selectedSeasonKey}
+            birthYear={selectedSeasonChip?.birthYear || view.team?.birthYear}
+            ageGroupLabel={selectedSeasonChip?.ageGroupLabel}
             onPlayerRoleEdit={onPlayerRoleEdit}
             onPlayerOpen={onPlayerOpen}
             structureFilter={structureFilter}
@@ -330,10 +348,17 @@ export default function TeamInformationOverview({
             title='שחקני סגל'
             titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
           >
+            {hasInsufficientSeasonSample ? (
+              <Typography sx={sx.rosterSampleNotice}>
+                המדגם עדיין קטן — נתוני השחקנים מוצגים, אך ניתוח הסגל והביצועים הוא ראשוני ותחזיתי.
+              </Typography>
+            ) : null}
             <TeamPositionClassificationTable
               rows={view.positionClassificationRows}
               teamName={view.team?.name}
               seasonKey={view.selectedSeasonKey}
+              birthYear={selectedSeasonChip?.birthYear || view.team?.birthYear}
+              ageGroupLabel={selectedSeasonChip?.ageGroupLabel}
               onPlayerRoleEdit={onPlayerRoleEdit}
               onPlayerOpen={onPlayerOpen}
               structureFilter={structureFilter}

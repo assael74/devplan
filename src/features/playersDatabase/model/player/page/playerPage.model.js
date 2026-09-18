@@ -157,7 +157,6 @@ const buildSeasonContextView = (season, identity = {}) => {
     }),
     birthTeamSlot: Number(season?.team?.birthTeamSlot) || 0,
     rosterStatus: cleanValue(season?.rosterStatus) || 'regular',
-    manualTransferDirection: cleanValue(season?.manualTransferDirection),
     isYoungerAgeGroup: Boolean(
       season?.isYoungerAgeGroup ||
       season?.scout?.profileHierarchy?.primarySignal?.metrics?.isYoungerAgeGroup

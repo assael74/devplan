@@ -10,50 +10,18 @@ const ROSTER_STATUS_PRESENTATION = Object.freeze({
     iconId: 'rosterYounger',
     color: 'primary',
   }),
-  retired: Object.freeze({
-    label: 'פרש',
-    iconId: 'rosterRetired',
+  left: Object.freeze({
+    label: 'עזב',
+    iconId: 'rosterLeft',
     color: 'neutral',
-  }),
-  transferredin: Object.freeze({
-    label: 'הצטרף במהלך העונה',
-    iconId: 'rosterJoined',
-    color: 'success',
-  }),
-})
-
-const TRANSFER_DIRECTION_PRESENTATION = Object.freeze({
-  up: Object.freeze({
-    label: 'עבר לקבוצה ברמה גבוהה יותר',
-    iconId: 'sortUp',
-    color: 'success',
-  }),
-  down: Object.freeze({
-    label: 'עבר לקבוצה ברמה נמוכה יותר',
-    iconId: 'sortDown',
-    color: 'danger',
-  }),
-  lateral: Object.freeze({
-    label: 'עבר לקבוצה באותה רמה',
-    iconId: 'swapVert',
-    color: 'primary',
   }),
 })
 
 export const resolvePlayerRosterStatusPresentation = ({
   rosterStatus = '',
-  manualTransferDirection = '',
   isYoungerAgeGroup = false,
 } = {}) => {
   const status = clean(rosterStatus)
-
-  if (status === 'transferredout') {
-    return TRANSFER_DIRECTION_PRESENTATION[clean(manualTransferDirection)] || {
-      label: 'עבר קבוצה במהלך העונה',
-      iconId: 'rosterLeft',
-      color: 'danger',
-    }
-  }
 
   if (isYoungerAgeGroup || status === 'youngeragegroup') {
     return ROSTER_STATUS_PRESENTATION.youngerAgeGroup
@@ -79,14 +47,12 @@ const badgeSx = ({ color }, size) => ({
 
 export default function PlayerRosterStatusBadge({
   rosterStatus = '',
-  manualTransferDirection = '',
   isYoungerAgeGroup = false,
   size = 20,
   sx,
 }) {
   const presentation = resolvePlayerRosterStatusPresentation({
     rosterStatus,
-    manualTransferDirection,
     isYoungerAgeGroup,
   })
 

@@ -206,10 +206,6 @@ function LeaguePageContent() {
       ? pageSearchParams.get('centerLevel') || 'all'
       : pageSearchParams.get('level'),
   })
-  const playersCount = teams.reduce(
-    (total, team) => total + Number(team?.playersCount || 0),
-    0
-  )
   const hasTeams = teams.length > 0
   const seasonDelete = useLeagueSeasonDelete({
     league,
@@ -268,22 +264,6 @@ function LeaguePageContent() {
       state: null,
     })
   }
-
-  const buildTeamLink = React.useCallback(team => {
-    const path = PLAYERS_DATABASE_UI_ROUTES.team({
-      leagueId: league.id,
-      teamId: team.id,
-      fromLeague: `${location.pathname}${location.search}`,
-    })
-
-    if (typeof window === 'undefined') return path
-    return `${window.location.origin}${path}`
-  }, [
-    league.id,
-    location.pathname,
-    location.search,
-    selectedSeasonKey,
-  ])
 
   const handleTeamOpen = team => {
     navigate(PLAYERS_DATABASE_UI_ROUTES.team({
@@ -361,9 +341,9 @@ function LeaguePageContent() {
               error={error || selectionError}
               selectedSeasonOption={selectedSeasonOption}
               leagueName={titleParts.name}
+              region={titleParts.region}
               ageGroup={league.ageGroup}
               birthYear={league.birthYear}
-              buildTeamLink={buildTeamLink}
               onTeamOpen={handleTeamOpen}
               onTeamUrlEdit={teamUrlEditor.open}
               onFavoriteToggle={handleFavoriteToggle}
@@ -390,7 +370,7 @@ function LeaguePageContent() {
             loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
             onDeleteTeams={() => teamsDelete.setOpen(true)}
             onDeleteSeason={() => seasonDelete.setOpen(true)}
-            deleteTeamsDisabled={!selectedSeasonOption || playersCount > 0}
+            deleteTeamsDisabled={!selectedSeasonOption}
             deleteSeasonDisabled={!selectedSeasonOption || hasTeams}
             onReport={leagueReport.openPreview}
             tasks={leagueTasks}
@@ -447,8 +427,9 @@ function LeaguePageContent() {
       <SeasonDeleteConfirmModal
         open={teamsDelete.open}
         title='מחיקת קבוצות העונה'
-        description='אפשר למחוק קבוצות רק כאשר אין שחקנים טעונים בעונה. מחיקת השחקנים מתבצעת קודם מתוך עמודי הקבוצות.'
+        description='המחיקה אפשרית רק כאשר אין שחקנים במסמכי הקבוצה של העונה. הבדיקה מתבצעת בעת האישור; אם קיימים שחקנים, יש למחוק אותם תחילה מעמודי הקבוצות.'
         seasonKey={selectedSeasonKey}
+        showSeasonSelect={false}
         busy={teamsDelete.busy}
         confirmLabel='מחיקת קבוצות העונה'
         onConfirm={teamsDelete.confirm}
@@ -460,6 +441,7 @@ function LeaguePageContent() {
         title='מחיקת עונת ליגה'
         description='העונה תימחק רק לאחר שמסירים את כל הקבוצות ממנה. ליגה ריקה שאינה קיימת בקטלוג תימחק לחלוטין גם ממרכז הליגות.'
         seasonKey={selectedSeasonKey}
+        showSeasonSelect={false}
         busy={seasonDelete.busy}
         confirmLabel='מחיקת עונה'
         mayRemoveLeagueRoot={mayRemoveLeagueRoot}

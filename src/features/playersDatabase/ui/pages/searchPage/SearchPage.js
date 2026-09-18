@@ -117,6 +117,7 @@ function SearchPageContent() {
         busy={audit.busy || audit.repairPreviewBusy}
         error={audit.error}
         result={audit.result}
+        repairProgress={audit.repairProgress}
         defaultTeamDocumentId={audit.partialAuditDefaults.teamDocumentId}
         defaultSeasonKey={audit.partialAuditDefaults.seasonKey}
         onRun={audit.runAudit}
@@ -125,6 +126,7 @@ function SearchPageContent() {
         onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}
         onRepairPlayerIndexes={audit.repairPlayerIndexes}
         onRepairTeamIndexes={audit.repairTeamIndexes}
+        onRetryMovementCounterparts={audit.retryMovementCounterparts}
         onResetOrphanTeamIndexes={audit.resetOrphanTeamIndexes}
         onRepairClubProjections={audit.repairClubProjections}
         onRepairClubCompetitionPaths={audit.repairClubCompetitionPaths}

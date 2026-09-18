@@ -61,7 +61,7 @@ const buildStatsPlayer = row => {
 export const buildStatsScoutPreview = ({ row, team, season }) => {
   const status = clean(row?.rosterStatus || 'regular')
 
-  if (!clean(row?.fullName) || status === 'retired') {
+  if (!clean(row?.fullName) || status !== 'regular') {
     return buildEmptyStatsScoutPreview()
   }
 

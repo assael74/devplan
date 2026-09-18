@@ -174,6 +174,7 @@ export const syncClubProjectionsFromLeagueTable = async ({
   syncMaster = true,
   excludedTeamIds = [],
   teamSeasonsByKey = new Map(),
+  onProjection = null,
 } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
   const excludedIds = new Set((Array.isArray(excludedTeamIds) ? excludedTeamIds : [])
@@ -279,17 +280,35 @@ export const syncClubProjectionsFromLeagueTable = async ({
         propagateCompetitionFromBirthYear: birthYear,
         propagateCompetitionSeasonKey: competitionSeason?.seasonKey || season?.seasonKey,
         propagateCompetitionTeamId: competitionSeason?.teamId || row?.teamId,
+        propagateCompetitionTeamSlot: competitionSeason?.teamSlot ||
+          row?.birthTeamSlot ||
+          row?.teamSlot ||
+          null,
         lastWriteAction,
         syncMaster: false,
       })
       results.push({ clubId: clubIdentity.clubId, ...result })
+      onProjection?.({
+        teamId: clean(row?.teamId),
+        clubId: clubIdentity.clubId,
+        result,
+        failed: false,
+      })
     } catch (error) {
-      failures.push({
+      const failure = {
         clubId: clubIdentity.clubId,
         message: error?.message || 'Club projection failed',
         stage: error?.stage || '',
         recoveryScope: error?.recoveryScope || null,
         completion: error?.completion || null,
+      }
+      failures.push(failure)
+      onProjection?.({
+        teamId: clean(row?.teamId),
+        clubId: clubIdentity.clubId,
+        result: null,
+        failure,
+        failed: true,
       })
     }
   }

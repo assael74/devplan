@@ -25,6 +25,8 @@ export const CLUBS_MASTER_DATABASE_GENERIC_OBJECTS_CATALOG = {
         {
           birthYear: 0,
           sourceBirthYear: 0,
+          sourceTeamId: '',
+          sourceTeamSlot: null,
           currentLeagueLevel: null,
           projectedNextLeagueLevel: null,
           status: 'UNKNOWN',

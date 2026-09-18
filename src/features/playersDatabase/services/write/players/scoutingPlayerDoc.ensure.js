@@ -410,8 +410,3 @@ export const ensureManualScoutingPlayerDoc = payload =>
     reason: SCOUTING_PLAYER_TRACKING_REASONS.MANUAL,
   })
 
-export const ensureTransferredScoutingPlayerDoc = payload =>
-  ensureScoutingPlayerDoc({
-    ...payload,
-    reason: SCOUTING_PLAYER_TRACKING_REASONS.TRANSFER,
-  })

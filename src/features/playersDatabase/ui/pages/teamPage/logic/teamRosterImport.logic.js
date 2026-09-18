@@ -42,6 +42,27 @@ const HEADER_ALIASES = {
     'מס חולצה',
     'חולצה',
   ],
+  primaryPosition: [
+    'עמדה',
+    'עמדה ראשית',
+    'primaryposition',
+  ],
+  transferCheck: [
+    'בקרת העברה',
+    'סימון העברה',
+    'transfercheck',
+  ],
+  sourceSnapshotKey: [
+    'מזהה snapshot',
+    'מזהה תמונת מצב',
+    'sourcesnapshotkey',
+    'snapshotkey',
+  ],
+  effectiveAt: [
+    'תאריך תחולה',
+    'effectiveat',
+    'effectivedate',
+  ],
 }
 
 const normalizeHeader = value => clean(value)
@@ -120,6 +141,10 @@ const parseMappedRow = ({ cells, headerMap, rowIndex }) => {
     externalPlayerId,
     playerUrl,
     numShirt: getMappedCell(cells, headerMap, 'numShirt'),
+    primaryPosition: getMappedCell(cells, headerMap, 'primaryPosition'),
+    transferCheck: getMappedCell(cells, headerMap, 'transferCheck'),
+    sourceSnapshotKey: getMappedCell(cells, headerMap, 'sourceSnapshotKey'),
+    effectiveAt: getMappedCell(cells, headerMap, 'effectiveAt'),
   }
 }
 
@@ -145,8 +170,29 @@ const parsePositionalRow = ({ cells, rowIndex }) => {
     externalPlayerId,
     playerUrl,
     numShirt,
+    primaryPosition: '',
+    transferCheck: '',
+    sourceSnapshotKey: '',
+    effectiveAt: '',
   }
 }
+
+const oneImportValue = ({ rows = [], field }) => {
+  const values = [...new Set((Array.isArray(rows) ? rows : [])
+    .map(row => clean(row?.[field]))
+    .filter(Boolean))]
+
+  if (values.length > 1) {
+    throw new Error(`ערך ${field} חייב להיות אחיד לכל שורות הסגל`)
+  }
+
+  return values[0] || ''
+}
+
+export const resolveRosterImportMetadata = ({ rows = [] } = {}) => ({
+  sourceSnapshotKey: oneImportValue({ rows, field: 'sourceSnapshotKey' }),
+  effectiveAt: oneImportValue({ rows, field: 'effectiveAt' }),
+})
 
 export const parsePlayerRosterRows = value => {
   const tableRows = clean(value)

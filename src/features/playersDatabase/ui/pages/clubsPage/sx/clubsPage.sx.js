@@ -381,7 +381,7 @@ export const clubsPageSx = {
   collection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 0.5,
+    gap: 0.75,
     p: 1.25,
   },
 
@@ -449,27 +449,14 @@ export const clubsPageSx = {
       boxSizing: 'border-box',
     },
     '& > :nth-of-type(1)': {
-      flex: '0 0 25%',
-      width: '25%',
-      maxWidth: '25%',
+      flex: '0 0 30%',
+      width: '30%',
+      maxWidth: '30%',
     },
     '& > :nth-of-type(2)': {
-      flex: '0 0 40%',
-      width: '40%',
-      maxWidth: '40%',
-    },
-    '& > :nth-of-type(n+3)': {
-      flex: '0 0 10%',
-      width: '10%',
-      maxWidth: '10%',
-    },
-    '& > :nth-of-type(3), & > :nth-of-type(4)': {
-      paddingInlineStart: 0,
-    },
-    '& > :nth-of-type(5)': {
-      flex: '0 0 15%',
-      width: '15%',
-      maxWidth: '15%',
+      flex: '0 0 70%',
+      width: '70%',
+      maxWidth: '70%',
     },
     '& > * + *': {
       minHeight: 48,
@@ -583,6 +570,160 @@ export const clubsPageSx = {
     fontWeight: 700,
   },
 
+  summarySpotlightAreaContentBox: {
+    minHeight: 50,
+    px: 1.25,
+    py: 0.4,
+    boxSizing: 'border-box',
+  },
+
+  summarySpotlightContent: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    gap: 0.75,
+  },
+
+  summarySpotlightCopy: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 0.25,
+  },
+
+  summarySpotlightSignalLine: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.75,
+  },
+
+  summarySpotlightSignalIcon: {
+    width: 42,
+    height: 42,
+    flex: '0 0 auto',
+    objectFit: 'contain',
+    alignSelf: 'center',
+  },
+
+  summarySpotlightTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 800,
+    fontSize: 15,
+    lineHeight: 1.25,
+    minWidth: 0,
+  },
+
+  summarySpotlightDirectionWord: {
+    fontWeight: 700,
+  },
+
+  summarySpotlightDirectionRise: {
+    color: 'success.500',
+  },
+
+  summarySpotlightDirectionDrop: {
+    color: 'warning.500',
+  },
+
+  summarySpotlightDirectionBelow: {
+    color: 'danger.600',
+  },
+
+  summarySpotlightTeamIdentity: {
+    color: 'neutral.500',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
+  summarySpotlightTeamIdentities: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.5,
+  },
+
+  summarySpotlightTeamIdentityItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+  },
+
+  summarySpotlightTeamIdentitySeparator: {
+    color: 'neutral.500',
+    fontSize: 12,
+  },
+
+  summarySpotlightAdditionalTeams: {
+    '--Chip-minHeight': '20px',
+    '--Chip-paddingInline': '6px',
+    border: '1px solid',
+    borderColor: 'neutral.300',
+    fontSize: 11,
+    fontWeight: 800,
+  },
+
+  summarySpotlightEmpty: {
+    color: devPlanColors.secondary,
+    fontWeight: 700,
+  },
+
+  summarySpotlightNoSignal: {
+    color: 'neutral.500',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
+  summarySpotlightCoverageContent: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0.75,
+  },
+
+  summarySpotlightCoverageIcon: {
+    width: 42,
+    height: 42,
+    flex: '0 0 auto',
+    objectFit: 'contain',
+  },
+
+  summarySpotlightCoverageCopy: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 0.25,
+  },
+
+  summarySpotlightCoverageTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 800,
+    fontSize: 14,
+    lineHeight: 1.25,
+  },
+
+  summarySpotlightCoverageAction: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.75,
+  },
+
+  summarySpotlightCoverageActionChip: {
+    px: 0.75,
+    fontWeight: 700,
+  },
+
+  summarySpotlightCoverageActionText: {
+    color: 'neutral.500',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
   summaryActions: {
     display: 'flex',
     alignItems: 'center',
@@ -659,130 +800,162 @@ export const clubsPageSx = {
     fontSize: 12,
   },
 
-  secondaryLeaguePath: {
-    mt: 0.65,
+  ageGroupSignalCards: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.75,
   },
 
-  secondaryLeaguePathButton: {
-    px: 0,
-    minHeight: 24,
-    color: devPlanColors.tertiaryDark,
-    fontSize: 11,
-    fontWeight: 700,
-    '&:hover': {
-      bgcolor: 'transparent',
-      textDecoration: 'underline',
+  ageGroupSignalFocusCards: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(2, minmax(0, 1fr))',
     },
+    gap: 1,
   },
 
-  secondaryLeaguePathContent: {
-    mt: 0.45,
-    px: 0.75,
-    py: 0.55,
-    borderInlineStart: `2px solid ${devPlanColors.border}`,
-    bgcolor: '#F4F7FA',
-  },
-
-  teamTableSection: {
-    '& + &': {
-      mt: 1.25,
+  ageGroupSignalAdditionalCards: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      md: 'repeat(3, minmax(0, 1fr))',
     },
+    gap: 0.75,
   },
 
-  teamTableTitle: {
-    mt: 0.9,
+  ageGroupSignalCard: {
+    minWidth: 0,
+    border: '1px solid',
+    borderColor: 'neutral.200',
+    borderRadius: 'sm',
+    bgcolor: 'background.surface',
+    overflow: 'hidden',
+  },
+
+  ageGroupSignalFocusCard: {
+    borderColor: 'primary.300',
+    boxShadow: 'sm',
+  },
+
+  ageGroupSignalCardHeader: {
+    minWidth: 0,
+    px: 1,
+    py: 0.75,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    borderBottom: '1px solid',
+    borderColor: 'neutral.100',
+  },
+
+  ageGroupSignalCardIdentity: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 0.5,
+  },
+
+  ageGroupSignalCardTitle: {
     color: devPlanColors.primaryDark,
     fontWeight: 800,
+    fontSize: 13,
   },
 
-  expandedTableWrap: {
-    height: 'auto',
-    minHeight: 0,
-    overflow: 'hidden',
-    borderRadius: 8,
+  ageGroupSignalBirthYear: {
+    color: 'neutral.500',
+    fontSize: 11,
+    fontWeight: 600,
+    minHeight: 19,
+    px: 0.55,
   },
 
-  expandedTable: {
-    mt: 0,
-    '& th': {
-      color: devPlanColors.secondary,
-      fontSize: 10,
-      textAlign: 'right',
-    },
-    '& td': {
-      fontSize: 12,
-      textAlign: 'center',
-    },
-    '& tbody tr:hover': {
-      bgcolor: 'transparent !important',
-    },
-    '& tbody tr[data-full-width-message="true"] td, & tbody tr[data-full-width-message="true"]:hover td': {
-      bgcolor: '#F1F3F5 !important',
-    },
-    '& tbody tr[data-full-width-message="true"] td > *': {
-      fontSize: 9,
-      textAlign: 'left',
-    },
+  ageGroupSignalMeta: {
+    flex: '0 0 auto',
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+    fontSize: 10,
+    whiteSpace: 'nowrap',
   },
 
-  teamTableTeamColumn: {
-    textAlign: 'right !important',
-  },
-
-  teamTableTeamHeader: {
-    textAlign: 'left !important',
-  },
-
-  teamTableHeader: {
-    textAlign: 'center !important',
-  },
-
-  teamTableLeagueColumn: {
-  },
-
-  teamTableNumericColumn: {
-  },
-
-  teamTablePriorityColumn: {
-  },
-
-  teamTableActionColumn: {
-  },
-
-  teamTableIdentity: {
+  ageGroupSignalSection: {
     minWidth: 0,
-    minHeight: 30,
+    px: 1,
+    pt: 0.75,
+    pb: 0.85,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 0.4,
+  },
+
+  ageGroupSignalSectionLabel: {
+    color: 'neutral.500',
+    fontWeight: 700,
+    fontSize: 10,
+  },
+
+  ageGroupSignalContent: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.5,
+  },
+
+  ageGroupSignalIcon: {
+    width: 30,
+    height: 30,
+    flex: '0 0 auto',
+    objectFit: 'contain',
+  },
+
+  ageGroupSignalTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 800,
+    fontSize: 13,
+    lineHeight: 1.25,
+  },
+
+  ageGroupSignalEmpty: {
+    color: 'neutral.500',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+
+  ageGroupSignalCoverage: {
+    minWidth: 0,
+    px: 1,
+    pb: 0.85,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 0.35,
+  },
+
+  ageGroupSignalCoverageMessage: {
+    minWidth: 0,
+    width: '100%',
+    px: 0.75,
+    py: 0.45,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 0.55,
-    cursor: 'pointer',
+    gap: 0.45,
+    borderRadius: 'sm',
+    bgcolor: 'neutral.100',
   },
 
-  missingTeamTableIdentity: {
-    cursor: 'default',
-  },
-
-  teamTableLogo: {
-    flex: '0 0 auto',
-    width: 25,
-    height: 25,
-    objectFit: 'contain',
-    borderRadius: '50%',
-  },
-
-  teamTableBirthYear: {
-    flex: '0 0 auto',
-    color: devPlanColors.secondary,
-    fontSize: 11,
+  ageGroupSignalCoverageTitle: {
+    color: 'neutral.500',
+    fontSize: 10,
     fontWeight: 700,
   },
 
-  expandedFooter: {
-    mt: 1.1,
-    display: 'flex',
-    gap: 0.5,
-    justifyContent: 'flex-start',
+  ageGroupSignalCoverageDetail: {
+    color: devPlanColors.primaryDark,
+    fontSize: 10,
+    fontWeight: 700,
   },
 
   clubDocumentMenuButton: {

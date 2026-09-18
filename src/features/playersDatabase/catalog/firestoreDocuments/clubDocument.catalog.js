@@ -20,6 +20,7 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasons: [
         {
           teamId: '',
+          teamSlot: null,
           seasonId: '',
           seasonKey: '',
           seasonStatus: '',
@@ -67,6 +68,7 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
               lateral: 0,
               down: 0,
               unknown: 0,
+              clubIds: [],
             },
             out: {
               total: 0,
@@ -74,6 +76,13 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
               lateral: 0,
               down: 0,
               unknown: 0,
+              clubIds: [],
+            },
+            internal: {
+              total: 0,
+            },
+            pending: {
+              total: 0,
             },
           },
           updatedAt: null,
@@ -88,6 +97,7 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       seasons: [
         {
           teamId: '',
+          teamSlot: null,
           seasonId: '',
           seasonKey: '',
           seasonStatus: '',
@@ -112,6 +122,8 @@ export const CLUBS_DATABASE_GENERIC_OBJECTS_CATALOG = {
       ],
       nextCompetitionPath: {
         sourceBirthYear: 0,
+        sourceTeamId: '',
+        sourceTeamSlot: null,
         projectedNextLeagueLevel: null,
         status: 'UNKNOWN',
         source: 'AUTOMATIC',

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import {
   Box,
   Button,
+  Chip,
   IconButton,
   Stack,
   Tooltip,
@@ -29,20 +30,11 @@ export default function ClubsPage() {
   const model = useClubsPage()
   const [expandedClubId, setExpandedClubId] = useState(null)
   const [clubsMasterJsonOpen, setClubsMasterJsonOpen] = useState(false)
+  const [onlyClubsWithSignals, setOnlyClubsWithSignals] = useState(false)
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'מועדונים' },
   ])
-
-  const handleOpenTeam = useCallback(team => {
-    if (!team?.leagueId || !team?.teamId) return
-
-    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
-      leagueId: team.leagueId,
-      teamId: team.teamId,
-      fromClubs: true,
-    }))
-  }, [navigate])
 
   const handleOpenClub = useCallback(club => {
     if (!club?.clubId) return
@@ -57,6 +49,10 @@ export default function ClubsPage() {
   }, [])
 
   const handleOpenClubsMasterJson = () => setClubsMasterJsonOpen(true)
+
+  const handleToggleOnlyClubsWithSignals = () => {
+    setOnlyClubsWithSignals(currentValue => !currentValue)
+  }
 
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
@@ -82,19 +78,33 @@ export default function ClubsPage() {
   )
 
   const clubsHeaderActions = (
-    <Tooltip title='הורדת מסמך מאסטר מועדונים כ-JSON'>
-      <span>
-        <IconButton
+    <Stack direction='row' spacing={0.75} alignItems='center'>
+      <Tooltip title='הצגת מועדונים עם איתותים בלבד'>
+        <Chip
           size='sm'
-          variant='outlined'
-          disabled={!model.clubsMasterDoc}
-          aria-label='הורדת מסמך מאסטר מועדונים כ-JSON'
-          onClick={handleOpenClubsMasterJson}
+          variant={onlyClubsWithSignals ? 'solid' : 'outlined'}
+          color='primary'
+          aria-label='סינון מועדונים עם איתותים בלבד'
+          onClick={handleToggleOnlyClubsWithSignals}
         >
-          {iconUi({ id: 'dataShow', size: 'sm' })}
-        </IconButton>
-      </span>
-    </Tooltip>
+          עם איתותים בלבד
+        </Chip>
+      </Tooltip>
+
+      <Tooltip title='הורדת מסמך מאסטר מועדונים כ-JSON'>
+        <span>
+          <IconButton
+            size='sm'
+            variant='outlined'
+            disabled={!model.clubsMasterDoc}
+            aria-label='הורדת מסמך מאסטר מועדונים כ-JSON'
+            onClick={handleOpenClubsMasterJson}
+          >
+            {iconUi({ id: 'dataShow', size: 'sm' })}
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Stack>
   )
 
   const summaryText = [
@@ -126,12 +136,13 @@ export default function ClubsPage() {
               contentClassName='dpScrollThin'
             >
               <ClubsCollection
-                groups={model.groups}
+                groups={onlyClubsWithSignals
+                  ? model.groups.filter(group => group.intelligence?.spotlights?.length)
+                  : model.groups}
                 loading={model.loading}
                 error={model.error}
                 expandedClubId={expandedClubId}
                 onToggleClub={handleToggleClub}
-                onOpenTeam={handleOpenTeam}
                 onOpenClub={handleOpenClub}
               />
             </PageContentPanel>

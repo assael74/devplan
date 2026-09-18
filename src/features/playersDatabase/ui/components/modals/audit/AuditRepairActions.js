@@ -120,6 +120,18 @@ export default function AuditRepairActions({ busy, findings, actions }) {
           תקן כל אינדקסי הקבוצות ({findings.teamIndex.length})
         </Button>
       ) : null}
+      {findings.movementCounterpart.length ? (
+        <Button
+          size='sm'
+          color='warning'
+          variant='solid'
+          disabled={busy}
+          sx={sx.actionButton}
+          onClick={() => actions.onRetryMovementCounterparts?.(findings.movementCounterpart)}
+        >
+          נסה להשלים counterparts של Movements ({findings.movementCounterpart.length})
+        </Button>
+      ) : null}
       {findings.clubsMaster.length ? (
         <Button
           size='sm'

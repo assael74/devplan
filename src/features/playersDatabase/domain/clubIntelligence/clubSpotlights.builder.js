@@ -3,6 +3,7 @@ import {
   CLUB_LEAGUE_LEVEL_GAP_THRESHOLD,
   CLUB_SPOTLIGHT_TYPE,
 } from './clubIntelligence.contract.js'
+import { CLUB_COMPETITION_STATUS } from '../contracts/club.contract.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -10,6 +11,10 @@ const positiveNumberOrNull = value => {
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? number : null
 }
+
+const isPrimaryTeam = team => (
+  positiveNumberOrNull(team?.birthTeamSlot || team?.teamSlot) === 1
+)
 
 const buildSpotlightId = ({ type, birthYear, sourceIdentity }) => (
   [
@@ -35,6 +40,17 @@ const isTaskSourceUnavailable = availability => (
   availability?.availability === CLUB_INTELLIGENCE_AVAILABILITY.UNAVAILABLE
 )
 
+const resolveFutureLeaguePathTargetTeam = ({ birthYearTeam, sourceTeamSlot }) => {
+  const targetTeams = Array.isArray(birthYearTeam?.seasons?.current?.teams)
+    ? birthYearTeam.seasons.current.teams
+    : []
+  const candidates = targetTeams.filter(team => (
+    positiveNumberOrNull(team?.birthTeamSlot || team?.teamSlot) === sourceTeamSlot
+  ))
+
+  return candidates.length === 1 ? candidates[0] : null
+}
+
 const buildFutureLeaguePathSpotlight = birthYearTeam => {
   if (
     birthYearTeam?.competition?.availability?.availability ===
@@ -47,9 +63,28 @@ const buildFutureLeaguePathSpotlight = birthYearTeam => {
   const projectedNextLeagueLevel = positiveNumberOrNull(
     birthYearTeam?.competition?.projectedNextLeagueLevel
   )
+  const teamId = clean(birthYearTeam?.competition?.sourceTeamId)
+  const teamSlot = positiveNumberOrNull(
+    birthYearTeam?.competition?.sourceTeamSlot
+  )
+  const status = clean(birthYearTeam?.competition?.status).toUpperCase()
 
-  if (!currentLeagueLevel || !projectedNextLeagueLevel) return null
+  if (
+    !currentLeagueLevel ||
+    !projectedNextLeagueLevel ||
+    !teamId ||
+    teamSlot !== 1 ||
+    status === CLUB_COMPETITION_STATUS.UNKNOWN
+  ) return null
   if (currentLeagueLevel === projectedNextLeagueLevel) return null
+
+  const targetTeam = resolveFutureLeaguePathTargetTeam({
+    birthYearTeam,
+    sourceTeamSlot: teamSlot,
+  })
+  const targetTeamId = clean(targetTeam?.teamId)
+
+  if (!targetTeamId || !isPrimaryTeam(targetTeam)) return null
 
   const type = projectedNextLeagueLevel < currentLeagueLevel
     ? CLUB_SPOTLIGHT_TYPE.FUTURE_LEAGUE_PATH_RISE
@@ -62,12 +97,16 @@ const buildFutureLeaguePathSpotlight = birthYearTeam => {
     id: buildSpotlightId({
       type,
       birthYear: birthYearTeam.birthYear,
-      sourceIdentity: `competition-source-birth-year:${sourceBirthYear || 'unknown'}`,
+      sourceIdentity: `team:${targetTeamId}`,
     }),
     type,
     birthYear: birthYearTeam.birthYear,
-    teamId: null,
+    teamId: targetTeamId,
     context: {
+      teamSlot: positiveNumberOrNull(targetTeam?.birthTeamSlot || targetTeam?.teamSlot),
+      sourceBirthYear,
+      sourceTeamId: teamId,
+      sourceTeamSlot: teamSlot,
       currentLeagueLevel,
       projectedNextLeagueLevel,
       status: clean(birthYearTeam?.competition?.status) || 'UNKNOWN',
@@ -78,6 +117,8 @@ const buildFutureLeaguePathSpotlight = birthYearTeam => {
 }
 
 const buildLeagueLevelSpotlight = ({ birthYear, clubLevel, team }) => {
+  if (!isPrimaryTeam(team)) return null
+
   const leagueLevel = positiveNumberOrNull(team?.league?.leagueLevel)
   if (!clubLevel || !leagueLevel) return null
 
@@ -106,6 +147,8 @@ const buildLeagueLevelSpotlight = ({ birthYear, clubLevel, team }) => {
 }
 
 const buildSquadTaskSpotlights = ({ birthYear, team }) => {
+  if (!isPrimaryTeam(team)) return []
+
   const taskSignals = team?.teamTaskSignals || {}
   const availability = team?.teamTaskAvailability || null
   if (isTaskSourceUnavailable(availability)) return []

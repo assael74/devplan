@@ -197,7 +197,6 @@ export const buildPositionClassificationRows = ({
         name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',
         playerUrl: clean(player?.playerUrl),
         rosterStatus: clean(player?.rosterStatus),
-        manualTransferDirection: clean(player?.manualTransferDirection || player?.transferDirection),
         games,
         goals: numberOrNull(stats.goals),
         yellowCards: numberOrNull(stats.yellowCards),

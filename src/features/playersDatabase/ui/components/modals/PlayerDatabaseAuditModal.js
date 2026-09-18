@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button, Divider, FormControl, FormLabel, Input, Stack, Typography } from '@mui/joy'
+import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Sheet, Stack, Typography } from '@mui/joy'
 import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
@@ -41,6 +41,7 @@ export default function PlayerDatabaseAuditModal(props) {
     busy = false,
     error = '',
     result = null,
+    repairProgress = null,
     defaultTeamDocumentId = '',
     defaultSeasonKey = '',
     onRun,
@@ -95,6 +96,10 @@ export default function PlayerDatabaseAuditModal(props) {
   }
 
   const canRun = !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
+  const hasRepairProgress = repairProgress && Number(repairProgress.totalTeams) > 0
+  const repairProgressValue = hasRepairProgress
+    ? Math.min(100, (Number(repairProgress.completedTeams) / Number(repairProgress.totalTeams)) * 100)
+    : 0
 
   return (
     <RegularModal
@@ -113,6 +118,23 @@ export default function PlayerDatabaseAuditModal(props) {
       onClose={onClose}
     >
       <Stack spacing={2}>
+        {repairProgress ? (
+          <Sheet variant='soft' sx={sx.progressSheet}>
+            <Typography level='title-sm'>התקדמות עדכון הנתונים</Typography>
+            {hasRepairProgress ? (
+              <>
+                <LinearProgress determinate value={repairProgressValue} sx={sx.progressBar} />
+                <Typography level='body-sm'>
+                  קבוצות שטופלו: {Number(repairProgress.completedTeams)} מתוך {Number(repairProgress.totalTeams)}
+                </Typography>
+              </>
+            ) : (
+              <Typography level='body-sm'>מכין את פעולת העדכון…</Typography>
+            )}
+            <Typography level='body-sm'>כתיבות שבוצעו: {Number(repairProgress.writesCount || 0)}</Typography>
+          </Sheet>
+        ) : null}
+
         <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
           <Button
             size='sm'

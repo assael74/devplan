@@ -5,6 +5,7 @@ import { buildDbPlayerScoutResult } from '../orchestration/buildDbPlayerScoutRes
 import { buildPlayerScoutCalculationContract } from '../contracts/playerScoutInput.contract.js'
 import { normalizePlayerStats } from '../../model/player/playerStats.model.js'
 import { isProfessionalScoutProfile } from '../../../../shared/scouting/players/profiles.js'
+import { isCurrentRosterPlayer } from '../../model/team/rosterStatus.model.js'
 
 const toNullableNumber = value => (
   Number.isFinite(Number(value))
@@ -87,6 +88,15 @@ export const buildTeamPlayerSeasonalScoutProjection = ({
   team = {},
   season = {},
 } = {}) => {
+  if (!isCurrentRosterPlayer(player)) {
+    return {
+      primaryScoutProfileId: '',
+      primaryScoutProfileStrengthDepthPct: null,
+      professionalScoutProfileIds: [],
+      preliminaryScoutProfileIds: [],
+    }
+  }
+
   // Team persistence owns only the compact projection, but it must enter the
   // engine through the same canonical input contract as the stats preview and
   // Player Document calculation.

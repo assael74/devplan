@@ -151,6 +151,8 @@ const buildIdentityCandidate = (row = {}) => ({
   playerUrl: clean(row.playerUrl),
   seasonId: clean(row.seasonId),
   seasonKey: clean(row.seasonKey),
+  clubId: clean(row.clubId),
+  birthTeamSlot: Number(row.birthTeamSlot || row.teamSlot) || 1,
   ageGroupId: clean(row.ageGroupId),
   ageGroupLabel: clean(row.ageGroupLabel),
   birthTeamDocumentId: clean(row.birthTeamDocumentId),
@@ -194,11 +196,19 @@ const buildIdentityPreview = ({
     birthYear,
   })
   const externalPlayerId = validExternalId ? identity.externalPlayerId : ''
+  const externalCandidates = externalPlayerId
+    ? lookup.byExternalId.get(externalPlayerId) || []
+    : []
+  const identityCandidates = lookup.byIdentityKey.get(identityKey) || []
+  const membershipsFor = candidate => buildIdentityMemberships({
+    candidates: [...externalCandidates, ...identityCandidates],
+    playerId: candidate?.playerId,
+  })
 
   try {
     if (externalPlayerId) {
       const externalCandidate = resolveExistingCandidate({
-        candidates: lookup.byExternalId.get(externalPlayerId) || [],
+        candidates: externalCandidates,
         displayName: identity.fullName,
         identityKey,
       })
@@ -208,11 +218,12 @@ const buildIdentityPreview = ({
           identityStatus: 'זוהה שחקן קיים',
           identityMessage: `לפי מזהה התאחדות ${externalPlayerId}`,
           identityValid: true,
+          identityMemberships: membershipsFor(externalCandidate),
         }
       }
 
       const identityCandidate = resolveExistingCandidate({
-        candidates: lookup.byIdentityKey.get(identityKey) || [],
+        candidates: identityCandidates,
         displayName: identity.fullName,
         identityKey,
       })
@@ -223,6 +234,7 @@ const buildIdentityPreview = ({
           identityStatus: 'זוהה שחקן קיים',
           identityMessage: `לפי שם ושנתון; יתווסף מזהה התאחדות ${externalPlayerId}`,
           identityValid: true,
+          identityMemberships: membershipsFor(identityCandidate),
         }
       }
 
@@ -244,11 +256,12 @@ const buildIdentityPreview = ({
         identityStatus: 'שחקן חדש',
         identityMessage: `מזהה התאחדות חדש ${externalPlayerId}`,
         identityValid: true,
+        identityMemberships: [],
       }
     }
 
     const candidate = resolveExistingCandidate({
-      candidates: lookup.byIdentityKey.get(identityKey) || [],
+      candidates: identityCandidates,
       displayName: identity.fullName,
       identityKey,
     })
@@ -261,6 +274,7 @@ const buildIdentityPreview = ({
         ? 'לפי שם ושנתון'
         : 'ללא מזהה התאחדות',
       identityValid: true,
+      identityMemberships: membershipsFor(candidate),
     }
   } catch (error) {
     const identityCandidates = Array.isArray(error.details?.candidates)
@@ -275,6 +289,12 @@ const buildIdentityPreview = ({
     }
   }
 }
+
+const buildIdentityMemberships = ({ candidates = [], playerId = '' } = {}) => (
+  (Array.isArray(candidates) ? candidates : [])
+    .filter(candidate => clean(candidate.playerId) === clean(playerId))
+    .map(buildIdentityCandidate)
+)
 
 const resolvePlayerIdentity = ({
   player = {},
@@ -297,6 +317,11 @@ const resolvePlayerIdentity = ({
     playerId: identity.playerId,
     birthYear,
   })) {
+    const membershipCandidates = [
+      ...(externalPlayerId ? lookup.byExternalId.get(externalPlayerId) || [] : []),
+      ...(lookup.byIdentityKey.get(identityKey) || []),
+    ]
+
     return {
       ...player,
       playerId: identity.playerId,
@@ -305,6 +330,10 @@ const resolvePlayerIdentity = ({
         : identity.playerDocumentId,
       externalPlayerId,
       identityKey,
+      identityMemberships: buildIdentityMemberships({
+        candidates: membershipCandidates,
+        playerId: identity.playerId,
+      }),
     }
   }
 
@@ -342,12 +371,21 @@ const resolvePlayerIdentity = ({
       .filter(Boolean)
       .join('__')
 
+    const membershipCandidates = [
+      ...(lookup.byExternalId.get(externalPlayerId) || []),
+      ...(lookup.byIdentityKey.get(identityKey) || []),
+    ]
+
     return {
       ...player,
       playerId,
       playerDocumentId: `external__${normalizePlayerIdPart(externalPlayerId)}`,
       externalPlayerId,
       identityKey,
+      identityMemberships: buildIdentityMemberships({
+        candidates: membershipCandidates,
+        playerId,
+      }),
     }
   }
 
@@ -359,12 +397,18 @@ const resolvePlayerIdentity = ({
       identityKey,
     })
 
+  const playerId = clean(candidate?.playerId) || createInternalPlayerId(birthYear)
+
   return {
     ...player,
-    playerId: clean(candidate?.playerId) || createInternalPlayerId(birthYear),
+    playerId,
     playerDocumentId: clean(candidate?.playerDocumentId),
     externalPlayerId: clean(candidate?.externalPlayerId),
     identityKey,
+    identityMemberships: buildIdentityMemberships({
+      candidates: lookup.byIdentityKey.get(identityKey) || [],
+      playerId,
+    }),
   }
 }
 

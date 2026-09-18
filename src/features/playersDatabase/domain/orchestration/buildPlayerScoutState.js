@@ -94,13 +94,13 @@ const resolveImmediacyContext = ({ player, team, season, immediacyContext }) => 
 }
 
 export const isScoutCalculationExcludedRosterStatus = player => (
-  String(player?.rosterStatus || '').trim() === 'retired'
+  String(player?.rosterStatus || 'regular').trim() !== 'regular'
 )
 
 export const isOperationalRosterPlayer = player => {
   const rosterStatus = String(player?.rosterStatus || '').trim()
 
-  return rosterStatus !== 'retired' && rosterStatus !== 'transferredOut'
+  return rosterStatus === 'regular'
 }
 
 export const createEmptyPlayerScoutComputedState = () => ({

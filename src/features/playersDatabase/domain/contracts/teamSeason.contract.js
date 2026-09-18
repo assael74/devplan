@@ -4,6 +4,15 @@ import { createEmptyCompleteness } from './completeness.contract.js'
 import { createLifecycle } from './lifecycle.contract.js'
 import { createEmptyTeamScout } from './teamScout.contract.js'
 
+// teamPlayers are Season Participants. Roster membership and current-team
+// projections are scoped only to `regular`; Movement facts remain separate.
+export const TEAM_SEASON_ROSTER_STATUS_CONTRACT = Object.freeze({
+  values: Object.freeze(['regular', 'left', 'youngerAgeGroup']),
+  currentRosterStatus: 'regular',
+  teamPlayersMeaning: 'season_participants',
+  movementSource: 'transfersIn/transfersOut',
+})
+
 export const createEmptyTeamSeason = () => ({
   identity: {
     teamId: '',
@@ -47,6 +56,15 @@ export const createEmptyTeamSeason = () => ({
     total: 0,
     profileCounts: {},
   },
+  rosterImport: {
+    mode: 'AUTHORITATIVE_SNAPSHOT',
+    sourceSnapshotKey: '',
+    contentHash: '',
+    effectiveAt: null,
+  },
+  transfersIn: [],
+  transfersOut: [],
+  pendingPlayers: [],
   teamTaskSignals: {
     offense: false,
     defense: false,

@@ -17,7 +17,7 @@ const LIFECYCLE_LABELS = Object.freeze({
   roster_loaded: 'סגל נטען',
   stats_loaded: 'סטטיסטיקות נטענו',
   roster_only: 'שחקן בסגל ללא פרופיל סקאוט',
-  retired: 'שחקן שפרש',
+  out_of_roster_scope: 'שחקן מחוץ לסגל הנוכחי',
   profiled: 'שחקן עם פרופיל סקאוט',
   tracked_outside_current_roster: 'שחקן במעקב מחוץ לסגל הנוכחי',
   unknown: 'מצב לא ידוע',

@@ -1,28 +1,8 @@
 import { Box, Typography } from '@mui/joy'
 
 import ClubIdentity from '../../../components/club/ClubIdentity.js'
-import {
-  LeaguePath,
-  PerformancePriorityChips,
-  TransferSummary,
-} from '../../../components/club/ClubInsightPrimitives.js'
-import { clubSharedSx } from '../../../components/club/sx/clubShared.sx.js'
-import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import ClubSummarySpotlight from './ClubSummarySpotlight.js'
 import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
-
-const Metric = ({ label, iconId = '', hideLabel = false, blockSx, children }) => (
-  <Box sx={[sx.metricBlock, blockSx]}>
-    {!hideLabel ? (
-      <Box sx={clubSharedSx.metricLabelRow}>
-        <Typography level='body-xs' sx={clubSharedSx.metricLabel}>
-          {label}
-        </Typography>
-        {iconId ? iconUi({ id: iconId, size: 'sm' }) : null}
-      </Box>
-    ) : null}
-    {children}
-  </Box>
-)
 
 const buildSummaryAreas = ({ club, model }) => ([
   {
@@ -33,36 +13,15 @@ const buildSummaryAreas = ({ club, model }) => ([
     content: <ClubIdentity club={club} sx={sx.summaryClubIdentityContent} />,
   },
   {
-    id: 'league-path',
-    label: 'מסלול ליגות',
+    id: 'spotlight',
+    label: 'איתות מרכזי',
     connected: true,
+    contentSx: sx.summarySpotlightAreaContentBox,
     content: (
-      <Metric label='מסלול ליגות' hideLabel blockSx={sx.leaguePathMetric}>
-        <LeaguePath
-          model={model.leaguePath}
-          showSecondary={false}
-          compact
-          sx={sx.summaryLeaguePathContent}
-        />
-      </Metric>
+      <ClubSummarySpotlight
+        model={model.primarySpotlight}
+      />
     ),
-  },
-  {
-    id: 'defense',
-    label: 'ביצוע הגנתי',
-    connected: true,
-    content: <PerformancePriorityChips model={model.defense} iconId='defensive' distribute />,
-  },
-  {
-    id: 'offense',
-    label: 'ביצוע התקפי',
-    connected: true,
-    content: <PerformancePriorityChips model={model.offense} iconId='offensive' distribute />,
-  },
-  {
-    id: 'transfers',
-    label: 'העברות',
-    content: <TransferSummary model={model.transfers} />,
   },
 ])
 

@@ -12,6 +12,7 @@ import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import {
   buildPlayerIdentityKey,
+  buildInternalPlayerIdFromExternalIdentity,
   createInternalPlayerId,
   isValidExternalPlayerId,
   normalizePlayerNameValue,
@@ -361,6 +362,22 @@ const resolveExistingPlayerIds = async ({
   })
 }
 
+const buildIdentityMemberships = ({ candidates = [], playerId = '' } = {}) => (
+  (Array.isArray(candidates) ? candidates : [])
+    .filter(candidate => clean(candidate?.playerId) === clean(playerId))
+    .map(candidate => ({
+      playerId: clean(candidate?.playerId),
+      seasonId: clean(candidate?.seasonId),
+      seasonKey: clean(candidate?.seasonKey),
+      clubId: clean(candidate?.clubId),
+      birthTeamId: clean(candidate?.birthTeamId || candidate?.teamId),
+      birthTeamDocumentId: clean(
+        candidate?.birthTeamDocumentId || candidate?.teamDocumentId
+      ),
+      birthTeamSlot: Number(candidate?.birthTeamSlot || candidate?.teamSlot) || 1,
+    }))
+)
+
 const enrichResolvedPlayer = ({
   player = {},
   season = {},
@@ -368,6 +385,7 @@ const enrichResolvedPlayer = ({
   matchStatus = '',
   candidateIds = [],
   candidates = [],
+  identityMemberships = [],
 } = {}) => ({
   ...player,
   playerId,
@@ -382,6 +400,7 @@ const enrichResolvedPlayer = ({
   identityMatchStatus: matchStatus,
   identityCandidateIds: candidateIds,
   identityCandidates: buildPlayerIdentityCandidateMetadata(candidates),
+  identityMemberships: Array.isArray(identityMemberships) ? identityMemberships : [],
 })
 
 const buildResolutionKey = ({
@@ -527,6 +546,7 @@ export async function resolvePlayerIdentities({
         matchStatus: previous.identityMatchStatus,
         candidateIds: previous.identityCandidateIds,
         candidates: previous.identityCandidates,
+        identityMemberships: previous.identityMemberships,
       }))
       return
     }
@@ -578,7 +598,10 @@ export async function resolvePlayerIdentities({
           : resolution.status === 'matched' && matches.length === 1
           ? matches[0]
           : resolution.status === 'unresolved' && canCreate
-            ? createInternalPlayerId()
+            ? buildInternalPlayerIdFromExternalIdentity({
+              externalPlayerId: player.externalPlayerId,
+              birthYear: resolvePlayerIdentityBirthYear({ player, season }),
+            }) || createInternalPlayerId(resolvePlayerIdentityBirthYear({ player, season }))
             : '',
         matchStatus: approvedCandidate
           ? 'provided'
@@ -595,6 +618,14 @@ export async function resolvePlayerIdentities({
           candidate.playerId || candidate.playerDocumentId || candidate.id
         )).filter(Boolean),
         candidates: resolution.candidates,
+        identityMemberships: buildIdentityMemberships({
+          candidates: resolution.candidates,
+          playerId: approvedCandidate
+            ? approvedPlayerId
+            : resolution.status === 'matched' && matches.length === 1
+              ? matches[0]
+              : '',
+        }),
       })
     }
 

@@ -10,6 +10,11 @@ import {
 } from '../../contracts/club.contract.js'
 import { buildCompetitionProjectionState } from './clubCompetition.projection.js'
 
+const positiveNumberOrNull = value => {
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : null
+}
+
 export const buildClubCompetitionPathSeason = ({
   season = {},
   ageGroupId = '',
@@ -33,6 +38,9 @@ export const buildClubCompetitionPathSeason = ({
 
   return {
     teamId: cleanValue(team?.teamId),
+    teamSlot: positiveNumberOrNull(
+      team?.birthTeamSlot || team?.teamSlot || team?.identity?.birthTeamSlot || team?.identity?.teamSlot
+    ),
     seasonId: cleanValue(season?.seasonId),
     seasonKey: cleanValue(season?.seasonKey),
     seasonStatus: normalizeSeasonStatus(season?.seasonStatus),
@@ -47,6 +55,8 @@ export const buildClubCompetitionPathSeason = ({
 
 export const buildNextCompetitionPath = ({
   sourceBirthYear = 0,
+  sourceTeamId = '',
+  sourceTeamSlot = null,
   effectiveProjection = null,
   reason = null,
   updatedAt = null,
@@ -54,6 +64,8 @@ export const buildNextCompetitionPath = ({
   if (!effectiveProjection) {
     return {
       sourceBirthYear: toNumberOrZero(sourceBirthYear),
+      sourceTeamId: cleanValue(sourceTeamId),
+      sourceTeamSlot: positiveNumberOrNull(sourceTeamSlot),
       projectedNextLeagueLevel: null,
       status: CLUB_COMPETITION_STATUS.UNKNOWN,
       source: CLUB_COMPETITION_PROJECTION_SOURCE.AUTOMATIC,
@@ -64,6 +76,8 @@ export const buildNextCompetitionPath = ({
 
   return {
     sourceBirthYear: toNumberOrZero(sourceBirthYear),
+    sourceTeamId: cleanValue(sourceTeamId),
+    sourceTeamSlot: positiveNumberOrNull(sourceTeamSlot),
     projectedNextLeagueLevel: Number(effectiveProjection?.projectedNextLeagueLevel) || null,
     status: normalizeClubCompetitionStatus(effectiveProjection?.status),
     source: normalizeClubCompetitionProjectionSource(effectiveProjection?.source),

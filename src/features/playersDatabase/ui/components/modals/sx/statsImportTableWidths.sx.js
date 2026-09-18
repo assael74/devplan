@@ -11,11 +11,11 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   identityStatus: {
-    width: '6%',
+    width: '3%',
   },
 
   rosterStatus: {
-    width: '11%',
+    width: '20%',
   },
 
   scoutProfiles: {
@@ -23,7 +23,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   lineClassification: {
-    width: '12%',
+    width: '8%',
   },
 
   games: {
@@ -43,7 +43,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   minutes: {
-    width: '8%',
+    width: '6%',
   },
 
   minutesPct: {
