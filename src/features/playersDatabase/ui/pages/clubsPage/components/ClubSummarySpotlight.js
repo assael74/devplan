@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubSummarySpotlight.js
 import { Box, Chip, Typography } from '@mui/joy'
 
 import coveragePartial from '../../../../../../ui/core/images/clubSignals/club-coverage-partial.png'
@@ -8,7 +9,7 @@ import {
   ClubSignalIcon,
   ClubSignalTitle,
 } from './ClubSignalDisplay.js'
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubSignalsSx as sx } from './sx/clubSignals.sx.js'
 
 const COVERAGE_ICON_BY_STATE = Object.freeze({
   partialCoverage: coveragePartial,

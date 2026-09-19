@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/audit/audit.lastWrite.js
+
 import { AUDIT_SCOPE_TYPE, buildAuditTeamSeasonScope, buildAuditTeamSeasonsScope, normalizeAuditScope } from './audit.scope.js'
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 export const buildLastWriteAuditScope = result => {
@@ -17,7 +19,4 @@ export const rememberLastWriteAuditScopeFromResult = result => {
   const scope = buildLastWriteAuditScope(result)
   if (scope) rememberLastWriteAuditScope(scope)
   return scope
-}
-export const clearLastWriteAuditScope = () => {
-  try { storage()?.removeItem(STORAGE_KEY); return true } catch { return false }
 }

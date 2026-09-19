@@ -49,10 +49,21 @@ const resolveLeagueLevel = ({ player = {}, team = {}, leagueLevel } = {}) => {
   ])
 }
 
+const resolveAgeGroupId = ({ player = {}, team = {}, ageGroupId } = {}) => {
+  return firstDefined([
+    ageGroupId,
+    player.ageGroupId,
+    player.team?.ageGroupId,
+    team.ageGroupId,
+    team.ageGroup?.id,
+  ])
+}
+
 export const buildPlayerScoutContext = ({
   profile,
   player,
   team,
+  ageGroupId,
   clubLevel,
   clubStrengthLevel,
   leagueLevel,
@@ -65,10 +76,12 @@ export const buildPlayerScoutContext = ({
     clubLevel: resolvedClubLevel,
   })
   const resolvedLeagueLevel = resolveLeagueLevel({ player, team, leagueLevel })
+  const resolvedAgeGroupId = resolveAgeGroupId({ player, team, ageGroupId })
 
   return {
     team: buildPlayerTeamContext({ profile, team }),
     competition: buildPlayerCompetitionContext({
+      ageGroupId: resolvedAgeGroupId,
       clubLevel: resolvedClubLevel,
       clubStrengthLevel: resolvedClubStrengthLevel,
       leagueLevel: resolvedLeagueLevel,

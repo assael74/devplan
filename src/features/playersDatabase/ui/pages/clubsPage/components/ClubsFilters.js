@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubsFilters.js
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
 
 import PageSidePanel from '../../../components/page/PageSidePanel.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubsFiltersSx as sx } from './sx/clubsFilters.sx.js'
 
 export default function ClubsFilters({ model }) {
   return (

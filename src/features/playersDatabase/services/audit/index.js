@@ -1,5 +1,7 @@
+// src/features/playersDatabase/services/audit/index.js
+
 export { AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE, buildAuditFinding, buildAuditResult, normalizeLegacyAuditRepairType } from './audit.contract.js'
-export { AUDIT_SCOPE_TYPE, AUDIT_DOMAIN, AUDIT_COLLECTION_SCOPE, AUDIT_RELATION_SCOPE, AUDIT_SCOPE_LABELS, AUDIT_RELATION_LABELS, buildAuditCollectionScope, buildAuditRelationsScope, buildAuditTeamSeasonScope, buildAuditTeamSeasonsScope, buildAuditScopeKey, getAuditScopeKeys, normalizeAuditScope } from './audit.scope.js'
+export { AUDIT_SCOPE_TYPE, AUDIT_DOMAIN, AUDIT_SCOPE_LABELS, buildAuditTeamSeasonScope, buildAuditTeamSeasonsScope, buildAuditScopeKey, getAuditScopeKeys, normalizeAuditScope } from './audit.scope.js'
 export { runPlayerDatabaseAudit } from './audit.service.js'
 export { previewMissingPlayerDocumentRepair, repairMissingPlayerDocuments, summarizePlayerDocumentRepair } from './audit.repair.js'
 export { getLastWriteAuditScope, buildLastWriteAuditScope, rememberLastWriteAuditScopeFromResult } from './audit.lastWrite.js'

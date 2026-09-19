@@ -103,7 +103,7 @@ export const buildTeamSearchIndexTeamSeasonDerivedReset = () => ({
 
 // Kept for callers that explicitly need to remove every derived field. Do not
 // use this when rolling a linked Team SearchIndex back to League-only.
-export const buildTeamSearchIndexStatsDerivedReset = () => ({
+export const buildTeamSearchIndexStatsDerivedReset = ({ teamBalance = null } = {}) => ({
   attackScoutPriorityScore: null,
   attackPriorityLevel: '',
   attackOpportunityType: '',
@@ -118,6 +118,7 @@ export const buildTeamSearchIndexStatsDerivedReset = () => ({
   balanceProblemLevel: 'none',
   recruitmentWindow: 'none',
   ...buildTeamSearchIndexTeamSeasonDerivedReset(),
+  ...buildTeamBalanceSearchIndexProjection(teamBalance),
 })
 
 // League Load creates the Team SearchIndex. Team Season writers add only
@@ -275,7 +276,7 @@ export async function updateTeamSeasonSearchIndexRosterMeta({
         ? { scoutProfilesSummary: normalizeScoutProfilesSummary(scoutProfilesSummary) }
         : {}),
       ...(resetStatsDerived
-        ? buildTeamSearchIndexStatsDerivedReset()
+        ? buildTeamSearchIndexStatsDerivedReset({ teamBalance })
         : buildTeamBalanceSearchIndexProjection(teamBalance)),
       sourceTarget: clean(target) === 'history' ? 'history' : 'current',
       updatedAt: serverTimestamp(),

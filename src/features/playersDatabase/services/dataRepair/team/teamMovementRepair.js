@@ -28,9 +28,9 @@ const movementFindingGroups = findings => {
   return [...groups.values()]
 }
 
-// This repair retries only existing incoming facts selected by audit findings.
-// It never builds a Team Season and leaves the local canonical fact untouched
-// when its source counterpart is absent or the retry fails.
+// This repair retries only the local facts selected by audit findings, on both
+// sides of a movement. It never builds a Team Season and leaves the local
+// canonical fact untouched when its counterpart is absent or the retry fails.
 export async function retryMovementCounterpartsFromAuditFindings({ findings = [] } = {}) {
   const groups = movementFindingGroups(findings)
   const results = []
@@ -49,13 +49,15 @@ export async function retryMovementCounterpartsFromAuditFindings({ findings = []
 
     const transfersIn = (Array.isArray(teamSeason.transfersIn) ? teamSeason.transfersIn : [])
       .filter(incoming => group.movementIds.has(clean(incoming?.movementId)))
-    if (!transfersIn.length) {
+    const transfersOut = (Array.isArray(teamSeason.transfersOut) ? teamSeason.transfersOut : [])
+      .filter(outgoing => group.movementIds.has(clean(outgoing?.movementId)))
+    if (!transfersIn.length && !transfersOut.length) {
       skipped.push({ ...group, reason: 'MOVEMENT_ALREADY_CHANGED' })
       continue
     }
 
     const result = await retryTeamSeasonMovementCounterparts({
-      teamSeason: { ...teamSeason, transfersIn },
+      teamSeason: { ...teamSeason, transfersIn, transfersOut },
     })
     results.push({ ...group, result })
     ;(Array.isArray(result?.results) ? result.results : [])

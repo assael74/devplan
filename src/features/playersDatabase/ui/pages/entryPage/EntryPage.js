@@ -14,7 +14,7 @@ import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
-import { usePlayersDatabaseEntry } from '../../hooks/usePlayersDatabaseEntry.js'
+import { usePlayersDatabaseEntry } from './hooks/usePlayersDatabaseEntry.js'
 import EntryHeader from './EntryHeader.js'
 import EntryRouteCards from './EntryRouteCards.js'
 import { entryPageSx as sx } from './sx/entryPage.sx.js'

@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/league/clearLeagueSeasonTeams.flow.js
+// src/features/playersDatabase/services/write/flows/league/clearLeagueSeasonTeams.flow.js
 
 import {
   clearLeagueSeasonTeams,
@@ -57,7 +57,7 @@ const runPostCanonicalProjectionStage = async ({ stage, results, action }) => {
     results[stage] = result
     return result
   } catch (error) {
-    error.canonicalCommitted = true
+    error.leagueCanonicalCommitted = true
     error.projectionsCompleted = false
     error.recoveryRequired = true
     error.completed = false
@@ -232,10 +232,10 @@ export async function clearLeagueSeasonTeamsFlow(payload = {}) {
   return {
     status: 'complete',
     syncStatus: 'complete',
-    canonicalCommitted: true,
+    leagueCanonicalCommitted: true,
     projectionsCompleted: Boolean(clubProjectionsResult.projectionsCompleted),
-    recoveryRequired: false,
-    completed: Boolean(clubProjectionsResult.completed),
+    recoveryRequired: !clubProjectionsResult.projectionsCompleted,
+    completed: Boolean(clubProjectionsResult.projectionsCompleted),
     removedTeamsCount:
       leagueSeasonResult.removedTeamsCount ||
       teams.length,

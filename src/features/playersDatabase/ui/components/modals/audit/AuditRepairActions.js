@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/modals/audit/AuditRepairActions.js
+
 import { Button, Stack } from '@mui/joy'
 
 import { playerDatabaseAuditModalSx as sx } from '../sx/playerDatabaseAuditModal.sx.js'
@@ -70,18 +72,6 @@ export default function AuditRepairActions({ busy, findings, actions }) {
           onClick={() => actions.onRepairClubProjections?.(findings.clubProjection)}
         >
           סנכרן קבוצות ליגה למועדונים ({findings.clubProjection.length})
-        </Button>
-      ) : null}
-      {findings.clubPerformance.length ? (
-        <Button
-          size='sm'
-          color='warning'
-          variant='solid'
-          disabled={busy}
-          sx={sx.actionButton}
-          onClick={() => actions.onRepairClubProjections?.(findings.clubPerformance)}
-        >
-          סנכרן ביצועים התקפיים והגנתיים במועדונים ({findings.clubPerformance.length})
         </Button>
       ) : null}
       {findings.clubCompetitionPath.length ? (

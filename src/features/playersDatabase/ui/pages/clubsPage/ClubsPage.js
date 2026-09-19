@@ -1,9 +1,9 @@
+// src/features/playersDatabase/ui/pages/clubsPage/ClubsPage.js
 import { useCallback, useState } from 'react'
 import {
   Box,
   Button,
   Chip,
-  IconButton,
   Stack,
   Tooltip,
   Typography,
@@ -13,8 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import PageContentPanel from '../../components/page/PageContentPanel.js'
 import PageHeader from '../../components/page/PageHeader.js'
-import JsonViewerModal from '../../components/modals/JsonViewerModal.js'
-import useClubsPage from '../../hooks/useClubsPage.js'
+import useClubsPage from './hooks/useClubsPage.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
@@ -22,14 +21,12 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ClubsCollection from './components/ClubsCollection.js'
 import ClubsFilters from './components/ClubsFilters.js'
-import { downloadClubsMasterJson } from './logic/clubsMasterDownload.logic.js'
 import { clubsPageSx as sx } from './sx/clubsPage.sx.js'
 
 export default function ClubsPage() {
   const navigate = useNavigate()
   const model = useClubsPage()
   const [expandedClubId, setExpandedClubId] = useState(null)
-  const [clubsMasterJsonOpen, setClubsMasterJsonOpen] = useState(false)
   const [onlyClubsWithSignals, setOnlyClubsWithSignals] = useState(false)
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
@@ -47,8 +44,6 @@ export default function ClubsPage() {
       currentId === clubId ? null : clubId
     ))
   }, [])
-
-  const handleOpenClubsMasterJson = () => setClubsMasterJsonOpen(true)
 
   const handleToggleOnlyClubsWithSignals = () => {
     setOnlyClubsWithSignals(currentValue => !currentValue)
@@ -89,20 +84,6 @@ export default function ClubsPage() {
         >
           עם איתותים בלבד
         </Chip>
-      </Tooltip>
-
-      <Tooltip title='הורדת מסמך מאסטר מועדונים כ-JSON'>
-        <span>
-          <IconButton
-            size='sm'
-            variant='outlined'
-            disabled={!model.clubsMasterDoc}
-            aria-label='הורדת מסמך מאסטר מועדונים כ-JSON'
-            onClick={handleOpenClubsMasterJson}
-          >
-            {iconUi({ id: 'dataShow', size: 'sm' })}
-          </IconButton>
-        </span>
       </Tooltip>
     </Stack>
   )
@@ -151,14 +132,6 @@ export default function ClubsPage() {
           <ClubsFilters model={model} />
         </Box>
 
-        <JsonViewerModal
-          open={clubsMasterJsonOpen}
-          title='Clubs Master · נתוני JSON'
-          description='תצוגה לקריאה בלבד של מסמך מאסטר המועדונים'
-          data={model.clubsMasterDoc || {}}
-          onClose={() => setClubsMasterJsonOpen(false)}
-          onDownload={() => downloadClubsMasterJson(model.clubsMasterDoc || {})}
-        />
       </Box>
     </PlayersDatabaseLayout>
   )

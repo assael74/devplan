@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubSignalDisplay.js
 import { Box, Typography } from '@mui/joy'
 
 import futurePathUp from '../../../../../../ui/core/images/clubSignals/signal_futurePath_up.png'
@@ -7,7 +8,7 @@ import leagueVsClubBelow from '../../../../../../ui/core/images/clubSignals/sign
 import squadTaskOffense from '../../../../../../ui/core/images/clubSignals/signal_squadTask_offense.png'
 import squadTaskDefense from '../../../../../../ui/core/images/clubSignals/signal_squadTask_defense.png'
 
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubSignalsSx as sx } from './sx/clubSignals.sx.js'
 
 const SIGNAL_ICON_BY_TYPE = Object.freeze({
   FUTURE_LEAGUE_PATH_RISE: futurePathUp,

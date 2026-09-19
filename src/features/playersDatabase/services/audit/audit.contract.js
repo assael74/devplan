@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/audit/audit.contract.js
+
 import { AUDIT_DOMAIN } from './audit.scope.js'
 
 export const AUDIT_FINDING_TYPE = Object.freeze({
@@ -15,15 +17,20 @@ export const AUDIT_REPAIR_TYPE = Object.freeze({
   REBUILD_PLAYER_SEARCH_INDEX: 'rebuild_player_search_index',
   REBUILD_TEAM_SEARCH_INDEX: 'rebuild_team_search_index',
   REBUILD_CLUB_PROJECTION: 'rebuild_club_projection',
-  REBUILD_CLUB_PERFORMANCE: 'rebuild_club_performance',
   REBUILD_CLUB_COMPETITION_PATH: 'rebuild_club_competition_path',
   REBUILD_CLUBS_MASTER: 'rebuild_clubs_master',
   RETRY_MOVEMENT_COUNTERPART: 'retry_movement_counterpart',
 })
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
+const LEGACY_REBUILD_CLUB_PERFORMANCE = 'rebuild_club_performance'
+
 export const normalizeLegacyAuditRepairType = ({ repairType = '', type = '', entityType = '', source = '' } = {}) => {
-  if (clean(repairType)) return clean(repairType)
+  const persistedRepairType = clean(repairType)
+  if (persistedRepairType === LEGACY_REBUILD_CLUB_PERFORMANCE) {
+    return AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION
+  }
+  if (persistedRepairType) return persistedRepairType
 
   const legacySource = clean(source)
   if (type === AUDIT_FINDING_TYPE.MISSING_DOCUMENT && entityType === 'player') return AUDIT_REPAIR_TYPE.CREATE_PLAYER_DOCUMENT
@@ -32,7 +39,7 @@ export const normalizeLegacyAuditRepairType = ({ repairType = '', type = '', ent
   if (entityType === 'playerSearchIndex' && legacySource === 'Team Season player scout profile → Player SearchIndex') return AUDIT_REPAIR_TYPE.REBUILD_PLAYER_SEARCH_INDEX
   if (entityType === 'teamSearchIndex' && legacySource === 'League season → buildTeamSeasonSearchMetrics') return AUDIT_REPAIR_TYPE.REBUILD_TEAM_SEARCH_INDEX
   if ((entityType === 'clubDocument' || entityType === 'clubAgeGroupSeason') && legacySource === 'League table → Club Document') return AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION
-  if (entityType === 'clubAgeGroupSeason' && (legacySource === 'League table → Club performance' || legacySource === 'Team Season scout performance → Club performance')) return AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE
+  if (entityType === 'clubAgeGroupSeason' && (legacySource === 'League table → Club performance' || legacySource === 'Team Season scout performance → Club performance')) return AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION
   if (entityType === 'clubCompetitionPathSeason' && legacySource === 'Club ageGroups → competitionPaths') return AUDIT_REPAIR_TYPE.REBUILD_CLUB_COMPETITION_PATH
   if (entityType === 'clubsMasterClub' && legacySource === 'Club Document → buildClubsMasterClubProjection') return AUDIT_REPAIR_TYPE.REBUILD_CLUBS_MASTER
   return ''

@@ -10,7 +10,12 @@ const toLevel = (value) => {
   return Number.isFinite(level) && level > 0 ? level : null
 }
 
-export const buildPlayerCompetitionContext = ({ clubLevel, clubStrengthLevel, leagueLevel } = {}) => {
+export const buildPlayerCompetitionContext = ({
+  ageGroupId,
+  clubLevel,
+  clubStrengthLevel,
+  leagueLevel,
+} = {}) => {
   const normalizedClubLevel = toLevel(clubLevel)
   const normalizedClubStrengthLevel = toLevel(clubStrengthLevel) || normalizedClubLevel
   const normalizedLeagueLevel = toLevel(leagueLevel)
@@ -18,6 +23,7 @@ export const buildPlayerCompetitionContext = ({ clubLevel, clubStrengthLevel, le
   if (!normalizedClubStrengthLevel || !normalizedLeagueLevel) {
     return {
       classification: PLAYER_COMPETITION_CONTEXT.UNAVAILABLE,
+      ageGroupId: String(ageGroupId || '').trim(),
       clubLevel: normalizedClubLevel,
       clubStrengthLevel: normalizedClubStrengthLevel,
       leagueLevel: normalizedLeagueLevel,
@@ -30,6 +36,7 @@ export const buildPlayerCompetitionContext = ({ clubLevel, clubStrengthLevel, le
   if (levelGap > 0) {
     return {
       classification: PLAYER_COMPETITION_CONTEXT.ABOVE_CLUB_LEVEL,
+      ageGroupId: String(ageGroupId || '').trim(),
       clubLevel: normalizedClubLevel,
       clubStrengthLevel: normalizedClubStrengthLevel,
       leagueLevel: normalizedLeagueLevel,
@@ -40,6 +47,7 @@ export const buildPlayerCompetitionContext = ({ clubLevel, clubStrengthLevel, le
   if (levelGap < 0) {
     return {
       classification: PLAYER_COMPETITION_CONTEXT.BELOW_CLUB_LEVEL,
+      ageGroupId: String(ageGroupId || '').trim(),
       clubLevel: normalizedClubLevel,
       clubStrengthLevel: normalizedClubStrengthLevel,
       leagueLevel: normalizedLeagueLevel,
@@ -49,6 +57,7 @@ export const buildPlayerCompetitionContext = ({ clubLevel, clubStrengthLevel, le
 
   return {
     classification: PLAYER_COMPETITION_CONTEXT.AT_CLUB_LEVEL,
+    ageGroupId: String(ageGroupId || '').trim(),
     clubLevel: normalizedClubLevel,
     clubStrengthLevel: normalizedClubStrengthLevel,
     leagueLevel: normalizedLeagueLevel,

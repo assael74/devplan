@@ -50,7 +50,6 @@ export default function TeamActionsPanel({
   onDeletePlayers,
   onReport,
   onTeamLink,
-  onTeamDocumentsView,
   onTeamDataRepair,
   tasks = [],
   tasksLoading,
@@ -154,18 +153,6 @@ export default function TeamActionsPanel({
             size='sm'
           >
             {iconUi({id: 'print', size: 'sm'})}
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title='צפייה במסמכים שנטענו לעמוד הקבוצה'>
-          <IconButton
-            variant='outlined'
-            aria-label='צפייה במסמכי הקבוצה'
-            sx={sx.secondaryIconButton}
-            onClick={onTeamDocumentsView}
-            size='sm'
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
           </IconButton>
         </Tooltip>
 

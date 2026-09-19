@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/leaguePage/hooks/useLeagueDataRepair.js
+
 import * as React from 'react'
 
 import {
@@ -7,12 +9,37 @@ import {
 import { invalidateLeagueDocumentCache } from '../../../../services/cache/index.js'
 import { syncLeaguesMasterDocument } from '../../../../services/write/leagues/index.js'
 import { rebuildClubProjectionsForLeagueTable } from '../../../../services/dataRepair/club/index.js'
+import { readActiveAuditFindingById } from '../../../../services/audit/index.js'
+
+const clean = value => String(value || '').trim()
+
+export const leagueAuditFindingBelongsToLeague = ({ finding, leagueId } = {}) => {
+  const findingLeagueId = clean(
+    finding?.leagueId ||
+    finding?.actual?.leagueId ||
+    finding?.relatedDocumentId
+  )
+
+  return Boolean(findingLeagueId && findingLeagueId === clean(leagueId))
+}
+
+export const loadLeagueAuditFinding = async ({
+  auditFindingId = '',
+  leagueId = '',
+  readFinding = readActiveAuditFindingById,
+} = {}) => {
+  if (!clean(auditFindingId) || !clean(leagueId)) return null
+
+  const finding = await readFinding({ findingId: auditFindingId })
+  return leagueAuditFindingBelongsToLeague({ finding, leagueId }) ? finding : null
+}
 
 export default function useLeagueDataRepair({
   league,
   leagueDoc,
   selectedSeasonKey,
   leagueImport,
+  auditFindingId = '',
   notify,
   reload,
 }) {
@@ -24,6 +51,10 @@ export default function useLeagueDataRepair({
     leagueDocument: null,
     leaguesMaster: null,
   })
+
+  React.useEffect(() => {
+    setAuditFinding(null)
+  }, [auditFindingId, league.id, league.leagueId])
 
   const loadSources = React.useCallback(async leagueId => {
     invalidateLeagueDocumentCache(leagueId)
@@ -47,6 +78,11 @@ export default function useLeagueDataRepair({
     setError('')
 
     try {
+      const finding = await loadLeagueAuditFinding({
+        auditFindingId,
+        leagueId,
+      })
+      setAuditFinding(finding)
       await loadSources(leagueId)
     } catch (repairError) {
       setSources({
@@ -61,7 +97,7 @@ export default function useLeagueDataRepair({
     } finally {
       setBusy(false)
     }
-  }, [busy, league, loadSources])
+  }, [auditFindingId, busy, league, loadSources])
 
   const close = React.useCallback(() => {
     setOpen(false)

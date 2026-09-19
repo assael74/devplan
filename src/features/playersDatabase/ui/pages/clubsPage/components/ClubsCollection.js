@@ -1,10 +1,11 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubsCollection.js
 import { memo, useEffect, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/joy'
 
 import { CollapseBox } from '../../../../../../ui/patterns/collapseBox/index.js'
 import ClubExpandedRow from './ClubExpandedRow.js'
 import ClubSummaryRow from './ClubSummaryRow.js'
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubsCollectionSx as sx } from './sx/clubsCollection.sx.js'
 
 const COLLAPSE_TRANSITION_MS = 240
 
@@ -48,8 +49,6 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
         expanded && sx.collectionSummaryHeaderOpen,
       ]}
       contentSx={sx.collectionContent}
-      indicatorSx={sx.collectionIndicator}
-      innerSx={sx.collectionInner}
     >
       {expanded || keepExpandedContent ? (
         <ClubExpandedRow

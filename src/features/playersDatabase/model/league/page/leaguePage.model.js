@@ -1,4 +1,4 @@
-// features/playersDatabase/model/league/page/leaguePage.model.js
+// src/features/playersDatabase/model/league/page/leaguePage.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../../../catalog/teamDisplay.js'
@@ -137,22 +137,17 @@ const buildTeamRow = teamSeason => {
     teamStats: stats,
     playersCount: toNumberOrZero(teamSeason?.playersCount),
     hasPlayers: Boolean(teamSeason?.loadStatus?.hasPlayers),
-    hasStats: Boolean(teamSeason?.loadStatus?.hasStats),
     statsComplete: Boolean(teamSeason?.loadStatus?.statsComplete),
     profilesCount,
     profileAssignmentsCount,
     attackPriority: performanceView.offense.priority.level,
     defensePriority: performanceView.defense.priority.level,
-    performance,
     performanceView,
-    scoutSummary,
     teamTaskSignals: teamSeason?.teamTaskSignals || {
       offense: false,
       defense: false,
       updatedAt: null,
     },
-    scoutStatus: profilesCount > 0 ? 'full' : 'missing',
-    source: teamSeason,
   }
 }
 
@@ -208,7 +203,6 @@ export const buildLeaguePageSummary = ({ teams, league }) => {
 
   return {
     teamsCount: teams.length,
-    birthYear: league.birthYear,
     goalsCount: teams.reduce(
       (total, team) => total + toNumberOrZero(team.goalsFor),
       0
@@ -218,14 +212,8 @@ export const buildLeaguePageSummary = ({ teams, league }) => {
       0
     ),
     attackPositive: attackTargets.length,
-    attackComplete,
     attackMissing: Math.max(0, attackTargets.length - attackComplete),
     defensePositive: defenseTargets.length,
-    defenseComplete,
     defenseMissing: Math.max(0, defenseTargets.length - defenseComplete),
-    recommendedTeams: teams.filter(team => (
-      ['elite', 'high'].includes(team.attackPriority) ||
-      ['elite', 'high'].includes(team.defensePriority)
-    )).length,
   }
 }

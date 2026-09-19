@@ -15,7 +15,7 @@ import {
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import { useTeamPage } from '../../hooks/useTeamPage.js'
+import { useTeamPage } from './hooks/useTeamPage.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -26,19 +26,16 @@ import { PLAYER_STATS_STATUS } from '../../../model/player/playerStats.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
-import TeamInformationOverview from './TeamInformationOverview.js'
-import TeamYearDevelopment from './TeamYearDevelopment.js'
-import { buildTeamInformationView } from './model/teamInformation.model.js'
+import TeamInformationOverview from './information/components/TeamInformationOverview.js'
+import TeamYearDevelopment from './yearDevelopment/components/TeamYearDevelopment.js'
+import { buildTeamInformationView } from './information/model/teamInformation.model.js'
 import {
   buildTeamProfileFilterOptions,
   filterTeamPlayersByProfile,
 } from './model/teamPlayerFilters.model.js'
 import {
   PlayerRoleEditModal,
-  JsonViewerModal,
-  RosterImportModal,
   SeasonDeleteConfirmModal,
-  StatsImportModal,
   TaskEditModal,
   TeamDataRepairModal,
   WorkTaskModal,
@@ -47,19 +44,20 @@ import {
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
 import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
-import useTeamRosterImport from './hooks/useTeamRosterImport.js'
-import useTeamStatsImport from './hooks/useTeamStatsImport.js'
+import useTeamRosterImport from './roster/import/hooks/useTeamRosterImport.js'
+import RosterImportModal from './roster/import/components/RosterImportModal.js'
+import useTeamStatsImport from './stats/import/hooks/useTeamStatsImport.js'
+import StatsImportModal from './stats/import/components/StatsImportModal.js'
 import useTeamDataRepair from './hooks/useTeamDataRepair.js'
 import useTeamPageTasks from './hooks/useTeamPageTasks.js'
-import useTeamStatsColumns from './hooks/useTeamStatsColumns.js'
+import useTeamStatsColumns from './stats/table/hooks/useTeamStatsColumns.js'
 import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
 import useTeamSeasonStatsDelete from './hooks/useTeamSeasonStatsDelete.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
-import { useTeamReport } from './report/index.js'
+import useTeamReport from './report/useTeamReport.js'
 import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
-import useTeamJsonExport from './hooks/useTeamJsonExport.js'
 
 const sx = {
   ...pageCoreLayoutSx,
@@ -77,17 +75,14 @@ function TeamPageContent() {
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
   const [activeView, setActiveView] = React.useState('team')
-  const [teamDocumentsOpen, setTeamDocumentsOpen] = React.useState(false)
   const {
     leagueId,
     leagueDoc,
     leagueDocuments,
-    documentLoadState,
     team,
     teamDoc,
     teamSeasons,
     seasonSnapshots,
-    teamPageData,
     players,
     hasTeamPlayers,
     seasonOptions,
@@ -290,15 +285,6 @@ function TeamPageContent() {
     })
   }, [favorites, team.birthTeamId, team.birthYear, team.name])
 
-  const teamJsonExport = useTeamJsonExport({
-    team,
-    teamDoc,
-    teamSeasons,
-    documentLoadState,
-    teamPageData,
-    notify,
-  })
-
   const teamReport = useTeamReport({
     team,
     players: visiblePlayers,
@@ -434,7 +420,6 @@ function TeamPageContent() {
             onDeletePlayers={playersDelete.openModal}
             onReport={teamReport.openPreview}
             onTeamLink={() => teamUrlEditor.open(team)}
-            onTeamDocumentsView={() => setTeamDocumentsOpen(true)}
             onTeamDataRepair={teamDataRepair.openRepair}
             tasks={teamPageTasks.tasks}
             tasksLoading={tasksModel.loading}
@@ -451,18 +436,6 @@ function TeamPageContent() {
         publication={teamReport.publication}
         onPublish={teamReport.publish}
         onClose={teamReport.closePreview}
-      />
-
-      <JsonViewerModal
-        open={teamDocumentsOpen}
-        title='מסמכי עמוד הקבוצה'
-        description='מוצגים מסמכי המקור שנבדקו ומודל התצוגה המאוחד. מסמך חסר מסומן ב־documentExists: false, ושדה חסר במודל מסומן ב־availability: missing.'
-        data={{
-          documentLoadState: documentLoadState || { loading: true },
-          teamPageData: teamPageData || { loading: true },
-        }}
-        onClose={() => setTeamDocumentsOpen(false)}
-        onDownload={teamJsonExport.download}
       />
 
       <TeamDataRepairModal

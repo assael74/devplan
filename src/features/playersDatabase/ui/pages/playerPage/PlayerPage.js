@@ -5,7 +5,7 @@ import { Box } from '@mui/joy'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import { usePlayerPage } from '../../hooks/usePlayerPage.js'
+import { usePlayerPage } from './hooks/usePlayerPage.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
@@ -27,7 +27,6 @@ import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
 import usePlayerDataRepair from './hooks/usePlayerDataRepair.js'
 import usePlayerPageTasks from './hooks/usePlayerPageTasks.js'
-import usePlayerJsonActions from './hooks/usePlayerJsonActions.js'
 import usePlayerAgentEditor from './hooks/usePlayerAgentEditor.js'
 import usePlayerGoalDistributionEditor from './hooks/usePlayerGoalDistributionEditor.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
@@ -53,7 +52,6 @@ function PlayerPageContent() {
   const { notify } = useSnackbar()
   const {
     player,
-    teamSource,
     requestedSeasonKey,
     requestedTeamId,
     catalogSeasonKey,
@@ -71,12 +69,6 @@ function PlayerPageContent() {
   )
   const historyView = usePlayerHistoryView(player)
   const selectedSeasonRow = historyView.selectedRow
-  const jsonActions = usePlayerJsonActions({
-    player,
-    playerId,
-    teamSource,
-    notify,
-  })
   const agentEditor = usePlayerAgentEditor({
     player,
     notify,
@@ -273,17 +265,6 @@ function PlayerPageContent() {
             onAction={handleAction}
             onTaskCreate={playerPageTasks.openCreate}
             onTaskEdit={playerPageTasks.openEdit}
-            playerJsonLoading={jsonActions.playerJsonLoading}
-            searchIndexJsonLoading={jsonActions.searchIndexJsonLoading}
-            teamJsonAvailable={jsonActions.teamJsonAvailable}
-            teamSeasonJsonAvailable={jsonActions.teamSeasonJsonAvailable}
-            playerSearchIndexJsonAvailable={jsonActions.playerSearchIndexJsonAvailable}
-            teamSearchIndexJsonAvailable={jsonActions.teamSearchIndexJsonAvailable}
-            onPlayerJson={jsonActions.downloadPlayer}
-            onTeamJson={jsonActions.downloadTeam}
-            onTeamSeasonJson={jsonActions.downloadTeamSeason}
-            onPlayerSearchIndexJson={() => jsonActions.downloadSearchIndex({ type: 'player' })}
-            onTeamSearchIndexJson={() => jsonActions.downloadSearchIndex({ type: 'team' })}
             onDataRepair={playerDataRepair.openRepair}
           />
         </Box>

@@ -75,7 +75,7 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: false,
       teamCanonicalCommitted: false,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
       stoppedAt: 'teamSeason',
       projectionError: clean(error?.message) || 'Verification team projection failed',
     }
@@ -92,7 +92,7 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: false,
       teamCanonicalCommitted: false,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
       stoppedAt: 'teamSeason',
     }
   }
@@ -146,7 +146,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'playerDocument',
       projectionError: clean(error?.message) || 'Verification player document sync failed',
     }
@@ -165,7 +166,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'playerDocument',
       projectionError: 'Player scout calculation did not return a rich result',
     }
@@ -194,7 +196,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'teamSeasonProjection',
       projectionError: clean(error?.message) || 'Verification team projection failed',
     }
@@ -216,7 +219,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
         humanStateCommitted: true,
         teamCanonicalCommitted: true,
         projectionsCompleted: false,
-        completed: true,
+        completed: false,
+        recoveryRequired: true,
         stoppedAt: 'playerSearchIndex',
         projectionError: clean(
           playerSeasonIndexResult?.reason ||
@@ -235,7 +239,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'playerSearchIndex',
       projectionError: clean(error?.message) || 'Verification search index sync failed',
     }
@@ -262,7 +267,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
         humanStateCommitted: true,
         teamCanonicalCommitted: true,
         projectionsCompleted: false,
-        completed: true,
+        completed: false,
+        recoveryRequired: true,
         stoppedAt: 'leagueScoutSummary',
         projectionError: clean(
           leagueTableRankScoutProfilesResult?.reason ||
@@ -281,7 +287,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'leagueScoutSummary',
       projectionError: clean(error?.message) || 'Verification league summary sync failed',
     }
@@ -301,7 +308,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
         humanStateCommitted: true,
         teamCanonicalCommitted: true,
         projectionsCompleted: false,
-        completed: true,
+        completed: false,
+        recoveryRequired: true,
         stoppedAt: 'teamSearchIndexSummary',
         projectionError: clean(
           teamSeasonIndexScoutProfilesResult?.reason ||
@@ -320,7 +328,8 @@ export async function updatePlayerVerificationFlow(payload = {}) {
       humanStateCommitted: true,
       teamCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'teamSearchIndexSummary',
       projectionError: clean(error?.message) || 'Verification team summary sync failed',
     }
@@ -371,5 +380,6 @@ export async function updatePlayerVerificationFlow(payload = {}) {
     teamCanonicalCommitted: true,
     projectionsCompleted: true,
     completed: true,
+    recoveryRequired: false,
   }
 }

@@ -33,8 +33,6 @@ export default function LeagueActionsPanel({
   onDefensePriorityFilterChange,
   onLoad,
   onDataRepair,
-  onLeagueJsonDownload,
-  leagueJsonDownloading = false,
   onLeagueUrlEdit,
   hasLeagueUrl = false,
   loadDisabled = false,
@@ -193,21 +191,6 @@ export default function LeagueActionsPanel({
           >
             {iconUi({id: 'print', size: 'md'})}
           </IconButton>
-        </Tooltip>
-
-        <Tooltip title='הצגת מסמך הליגה כ-JSON'>
-          <span>
-            <IconButton
-              variant='outlined'
-              aria-label='הצגת מסמך הליגה כ-JSON'
-              loading={leagueJsonDownloading}
-              disabled={leagueJsonDownloading}
-              sx={sx.sideDownloadButton}
-              onClick={onLeagueJsonDownload}
-            >
-              {iconUi({id: 'dataShow', size: 'md'})}
-            </IconButton>
-          </span>
         </Tooltip>
 
         <Tooltip title='תיקוני דאטה לליגה'>

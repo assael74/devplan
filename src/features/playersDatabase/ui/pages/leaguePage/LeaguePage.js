@@ -13,7 +13,7 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import { useLeaguePage } from '../../hooks/useLeaguePage.js'
+import { useLeaguePage } from './hooks/useLeaguePage.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -29,20 +29,17 @@ import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js
 import {
   LeagueImportModal,
   LeagueDataRepairModal,
-  JsonViewerModal,
   SeasonDeleteConfirmModal,
   TaskEditModal,
   WorkTaskModal,
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
-import useLeagueJsonViewer from './hooks/useLeagueJsonViewer.js'
 import useLeagueDataRepair from './hooks/useLeagueDataRepair.js'
 import {
   buildPriorityCounts,
   filterTeamsByPriority,
 } from './logic/leaguePriorityFilters.logic.js'
-import { downloadLeagueDocumentJson } from './logic/leagueJson.logic.js'
 import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
 import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
 import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
@@ -54,7 +51,7 @@ import {
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
-import { useLeagueReport } from './report/index.js'
+import useLeagueReport from './report/useLeagueReport.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 
 
@@ -83,6 +80,9 @@ function LeaguePageContent() {
     error,
     selectionError,
   } = useLeaguePage()
+  const auditFindingId = React.useMemo(() => (
+    new URLSearchParams(location.search).get('auditFinding') || ''
+  ), [location.search])
   const teamsWithFavorites = React.useMemo(() => (
     teams.map(team => ({
       ...team,
@@ -129,16 +129,12 @@ function LeaguePageContent() {
     reload,
   })
 
-  const leagueJsonViewer = useLeagueJsonViewer({
-    league,
-    leagueDoc,
-    notify,
-  })
   const leagueDataRepair = useLeagueDataRepair({
     league,
     leagueDoc,
     selectedSeasonKey,
     leagueImport,
+    auditFindingId,
     notify,
     reload,
   })
@@ -362,8 +358,6 @@ function LeaguePageContent() {
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDataRepair={leagueDataRepair.openRepair}
-            onLeagueJsonDownload={leagueJsonViewer.open}
-            leagueJsonDownloading={leagueJsonViewer.downloading}
             onLeagueUrlEdit={leagueUrlEditor.show}
             hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
             loadDisabled={isHistoricalLoadedLeague}
@@ -480,18 +474,6 @@ function LeaguePageContent() {
         onSyncLeaguesMaster={leagueDataRepair.syncLeaguesMaster}
         onSyncClubProjections={leagueDataRepair.syncClubProjections}
         onClose={leagueDataRepair.close}
-      />
-
-      <JsonViewerModal
-        open={Boolean(leagueJsonViewer.data)}
-        title={`${league.name || 'ליגה'} · נתוני JSON`}
-        description='תצוגה לקריאה בלבד של מסמך הליגה ושל Leagues Master'
-        data={leagueJsonViewer.data || {}}
-        onClose={leagueJsonViewer.close}
-        onDownload={() => downloadLeagueDocumentJson({
-          leagueDocument: leagueJsonViewer.data?.leagueDocument || {},
-          leaguesMaster: leagueJsonViewer.data?.leaguesMaster || {},
-        })}
       />
 
       <WriteFlowReportModal

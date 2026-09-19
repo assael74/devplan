@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leaguePage/hooks/useLeagueTableImport.js
+// src/features/playersDatabase/ui/pages/leaguePage/hooks/useLeagueTableImport.js
 
 import * as React from 'react'
 
@@ -70,10 +70,8 @@ export function useLeagueTableImport({
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
-  const [previewMessage, setPreviewMessage] = React.useState('')
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
-  const [clubMasterWarnings, setClubMasterWarnings] = React.useState([])
   const [identityIndexDocument, setIdentityIndexDocument] = React.useState(null)
   const identityIndexRef = React.useRef(null)
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
@@ -98,7 +96,6 @@ export function useLeagueTableImport({
       leagueLevel: resolveLeagueLevel(league.level, leagueDoc.level, leagueDoc.leagueLevel),
     })
     const warnings = identityResolution.warnings
-    setClubMasterWarnings(warnings)
     const warningByRowIndex = new Map(warnings.map(warning => [warning.rowIndex, warning]))
 
     return identityResolution.rows.map((row, rowIndex) => {
@@ -145,14 +142,11 @@ export function useLeagueTableImport({
         previewRows: preview.rows || [],
         identityIndex,
       }))
-    } catch (error) {
-      setClubMasterWarnings([])
+    } catch {
       setIdentityIndexDocument(null)
       setRows(preview.rows || [])
-      setPreviewMessage('לא ניתן היה לבדוק הופעות קודמות של המועדון; בדוק את מספר הקבוצה ידנית.')
       return
     }
-    setPreviewMessage(preview.message || '')
   }, [pasteValue, league, leagueDoc, selectedSeasonOption, applyClubMasterWarnings])
 
   const handleClear = React.useCallback(() => {
@@ -160,9 +154,7 @@ export function useLeagueTableImport({
 
     setPasteValue('')
     setRows([])
-    setPreviewMessage('')
     setSeasonStatus('')
-    setClubMasterWarnings([])
     identityIndexRef.current = null
     setIdentityIndexDocument(null)
   }, [busy])
@@ -247,7 +239,6 @@ export function useLeagueTableImport({
       setOpen(false)
       setPasteValue('')
       setRows([])
-      setPreviewMessage('')
       reload()
     } catch (error) {
       setOpen(false)
@@ -284,8 +275,6 @@ export function useLeagueTableImport({
     busy,
     seasonStatus,
     hasStartedData,
-    previewMessage,
-    clubMasterWarnings,
     identityIndexDocument,
     setOpen,
     setSeasonStatus,

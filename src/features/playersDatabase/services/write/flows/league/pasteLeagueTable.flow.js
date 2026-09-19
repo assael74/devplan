@@ -161,6 +161,7 @@ export async function pasteLeagueTableFlow(payload = {}) {
   const results = {}
   const notStartedSeason = isNotStartedSeason(payload.season)
   let stage = 'leagueDocument'
+  let leagueCanonicalCommitted = false
 
   try {
     results.leagueDocument = await ensureLeagueDoc(
@@ -173,6 +174,7 @@ export async function pasteLeagueTableFlow(payload = {}) {
       ...payload,
       syncMaster: false,
     })
+    leagueCanonicalCommitted = true
 
     const canonicalRows = results.leagueTable?.seasonDocument?.tableRank || []
     const canonicalSeason = results.leagueTable?.seasonDocument || payload.season || {}
@@ -309,11 +311,21 @@ export async function pasteLeagueTableFlow(payload = {}) {
     return {
       status: 'complete',
       ...results.leagueTable,
+      leagueCanonicalCommitted: true,
+      projectionsCompleted: true,
+      completed: true,
+      recoveryRequired: false,
       leagueResult: results.leagueTable,
       searchIndexResult: results.teamIndexes,
       results,
     }
   } catch (error) {
+    if (leagueCanonicalCommitted) {
+      error.leagueCanonicalCommitted = true
+      error.projectionsCompleted = false
+      error.completed = false
+      error.recoveryRequired = true
+    }
     throw attachWriteFlowReport({
       error,
       stage,

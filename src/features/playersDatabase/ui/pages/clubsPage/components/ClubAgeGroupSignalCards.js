@@ -1,7 +1,8 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubAgeGroupSignalCards.js
 import { Box, Chip, Typography } from '@mui/joy'
 
 import ClubSignalDisplay from './ClubSignalDisplay.js'
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubSignalsSx as sx } from './sx/clubSignals.sx.js'
 
 const metaValue = value => (
   value === null || value === undefined || value === '' ? null : value

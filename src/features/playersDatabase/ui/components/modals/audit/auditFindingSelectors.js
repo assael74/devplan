@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/modals/audit/auditFindingSelectors.js
+
 import { AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE, normalizeLegacyAuditRepairType } from '../../../../services/audit/index.js'
 import { clean } from './auditFindingPresentation.js'
 
@@ -76,7 +78,6 @@ export const selectRepairFindings = findings => {
     teamIndex: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_TEAM_SEARCH_INDEX)),
     clubsMaster: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUBS_MASTER) && clean(finding.relatedDocumentId)),
     clubCompetitionPath: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_COMPETITION_PATH)),
-    clubPerformance: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE)),
     movementCounterpart: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.RETRY_MOVEMENT_COUNTERPART)),
   }
 }

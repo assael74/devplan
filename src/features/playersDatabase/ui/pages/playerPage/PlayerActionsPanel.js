@@ -4,11 +4,8 @@ import {
   Box,
   Button,
   Divider,
-  Menu,
-  MenuItem,
   Typography,
 } from '@mui/joy'
-import * as React from 'react'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import PageSidePanel from '../../components/page/PageSidePanel.js'
@@ -21,21 +18,8 @@ export default function PlayerActionsPanel({
   onAction = () => {},
   onTaskCreate,
   onTaskEdit,
-  playerJsonLoading = false,
-  searchIndexJsonLoading = false,
-  teamJsonAvailable = false,
-  teamSeasonJsonAvailable = false,
-  playerSearchIndexJsonAvailable = false,
-  teamSearchIndexJsonAvailable = false,
-  onPlayerJson = () => {},
-  onTeamJson = () => {},
-  onTeamSeasonJson = () => {},
-  onPlayerSearchIndexJson = () => {},
-  onTeamSearchIndexJson = () => {},
   onDataRepair = () => {},
 }) {
-  const [downloadAnchor, setDownloadAnchor] = React.useState(null)
-
   return (
     <PageSidePanel>
       <Box sx={sx.recommendedBox}>
@@ -102,76 +86,10 @@ export default function PlayerActionsPanel({
 
       <Box sx={sx.actionList}>
         <Box sx={sx.dataActionsRow}>
-          <Button size='sm' variant='plain' startDecorator={iconUi({id: 'dataShow', size: 'sm'})} sx={sx.actionButton} loading={playerJsonLoading || searchIndexJsonLoading} onClick={event => setDownloadAnchor(event.currentTarget)}>
-            הורדת נתונים
-          </Button>
           <Button size='sm' variant='plain' startDecorator={iconUi({id: 'search', size: 'sm'})} sx={sx.actionButton} onClick={onDataRepair}>
             תיקוני דאטה
           </Button>
         </Box>
-
-        <Menu
-          anchorEl={downloadAnchor}
-          open={Boolean(downloadAnchor)}
-          placement='bottom-start'
-          onClose={() => setDownloadAnchor(null)}
-        >
-          <MenuItem
-            disabled={playerJsonLoading}
-            onClick={() => {
-              setDownloadAnchor(null)
-              onPlayerJson()
-            }}
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
-            מסמך שחקן
-          </MenuItem>
-
-          <MenuItem
-            disabled={!teamJsonAvailable || playerJsonLoading}
-            onClick={() => {
-              setDownloadAnchor(null)
-              onTeamJson()
-            }}
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
-            JSON שנתון
-          </MenuItem>
-
-          <MenuItem
-            disabled={!teamSeasonJsonAvailable || playerJsonLoading}
-            onClick={() => {
-              setDownloadAnchor(null)
-              onTeamSeasonJson()
-            }}
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
-            JSON נתוני קבוצה
-          </MenuItem>
-
-          <MenuItem
-            disabled={!playerSearchIndexJsonAvailable || searchIndexJsonLoading}
-            onClick={() => {
-              setDownloadAnchor(null)
-              onPlayerSearchIndexJson()
-            }}
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
-            אינדקס שחקן
-          </MenuItem>
-
-          <MenuItem
-            disabled={!teamSearchIndexJsonAvailable || searchIndexJsonLoading}
-            onClick={() => {
-              setDownloadAnchor(null)
-              onTeamSearchIndexJson()
-            }}
-          >
-            {iconUi({id: 'dataShow', size: 'sm'})}
-            אינדקס קבוצה
-          </MenuItem>
-        </Menu>
-
       </Box>
 
       <Divider sx={sx.divider} />

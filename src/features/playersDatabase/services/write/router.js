@@ -91,6 +91,58 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_FAVORITE]: removeFavoriteFlow,
 }
 
+const resolveCompletionResult = value => value?.results || value || {}
+
+const hasCanonicalCommit = value => {
+  const result = resolveCompletionResult(value)
+
+  return Boolean(
+    value?.teamCanonicalCommitted ||
+    value?.leagueCanonicalCommitted ||
+    value?.playerCanonicalCommitted ||
+    result?.teamCanonicalCommitted ||
+    result?.leagueCanonicalCommitted ||
+    result?.playerCanonicalCommitted
+  )
+}
+
+const isPostCanonicalPartialResult = result => (
+  hasCanonicalCommit(result) && (
+    result?.completed === false ||
+    result?.recoveryRequired === true
+  )
+)
+
+const recordPostCanonicalFailure = async ({ actionType, payload, result, error = null }) => {
+  invalidatePlayersDatabaseWriteCache({
+    actionType,
+    payload,
+    result,
+  })
+
+  const auditScope = rememberLastWriteAuditScopeFromResult(result)
+  if (auditScope && error) error.auditScope = auditScope
+
+  try {
+    await recordPlayersDatabaseWriteAction({
+      actionType,
+      auditScope: auditScope || buildLastWriteAuditScope(result),
+      status: 'failed_after_canonical_commit',
+      failedStage: error?.stage || result?.failedStage || result?.stoppedAt || '',
+      errorMessage: String(
+        error?.message ||
+        result?.projectionError ||
+        'כתיבה חלקית לאחר שמירת הנתונים הקנוניים'
+      ),
+      recoveryRequired: true,
+    })
+  } catch {
+    // Diagnostic journaling must never mask the write result or error.
+  }
+
+  return auditScope
+}
+
 export async function runPlayersDatabaseWriteAction({ actionType = '', payload = {} } = {}) {
   const runAction = WRITE_ACTION_RUNNERS[actionType]
 
@@ -106,36 +158,27 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     // projection fails.  Do not leave the UI/cache on the pre-write snapshot;
     // invalidate it and attach the narrow audit scope to the error so the
     // caller can present a real recovery path.
-    if (
-      error?.teamCanonicalCommitted ||
-      error?.leagueCanonicalCommitted ||
-      error?.results?.teamCanonicalCommitted ||
-      error?.results?.leagueCanonicalCommitted
-    ) {
-      invalidatePlayersDatabaseWriteCache({
+    if (hasCanonicalCommit(error)) {
+      await recordPostCanonicalFailure({
         actionType,
         payload,
-        result: error.results,
+        result: resolveCompletionResult(error),
+        error,
       })
-      const auditScope = rememberLastWriteAuditScopeFromResult(error.results)
-      if (auditScope) error.auditScope = auditScope
-
-      // The canonical write is already durable. Persist a recovery contract
-      // so Audit can expose a safe repair instead of requiring a reload.
-      try {
-        await recordPlayersDatabaseWriteAction({
-          actionType,
-          auditScope: auditScope || buildLastWriteAuditScope(error.results),
-          status: 'failed_after_canonical_commit',
-          failedStage: error?.stage || error?.results?.failedStage || '',
-          errorMessage: String(error?.message || 'כתיבה חלקית לאחר שמירת הנתונים הקנוניים'),
-          recoveryRequired: true,
-        })
-      } catch {
-        // Diagnostic journaling must never mask the original write failure.
-      }
     }
     throw error
+  }
+
+  if (isPostCanonicalPartialResult(result)) {
+    const auditScope = await recordPostCanonicalFailure({
+      actionType,
+      payload,
+      result,
+    })
+
+    return auditScope
+      ? { ...result, auditScope }
+      : result
   }
 
   invalidatePlayersDatabaseWriteCache({

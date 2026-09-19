@@ -1,4 +1,7 @@
+// src/features/playersDatabase/services/dataRepair/searchIndex/searchIndexBulkRepair.js
+
 import { readPlayerDatabaseAuditSnapshot } from '../../audit/audit.read.js'
+import { AUDIT_REPAIR_TYPE, normalizeLegacyAuditRepairType } from '../../audit/audit.contract.js'
 import { doc, getDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -22,13 +25,13 @@ const samePlayer = (left, right) => [...playerKeys(left)].some(key => playerKeys
 
 export const isPlayerSearchIndexScoutProfileFinding = finding => (
   clean(finding?.entityType) === 'playerSearchIndex' &&
-  clean(finding?.source) === 'Team Season player scout profile → Player SearchIndex' &&
+  normalizeLegacyAuditRepairType(finding) === AUDIT_REPAIR_TYPE.REBUILD_PLAYER_SEARCH_INDEX &&
   clean(finding?.documentId) && clean(finding?.relatedDocumentId)
 )
 
 export const isTeamSearchIndexLifecycleFinding = finding => (
   clean(finding?.entityType) === 'teamSearchIndex' &&
-  clean(finding?.source) === 'League season → buildTeamSeasonSearchMetrics' &&
+  normalizeLegacyAuditRepairType(finding) === AUDIT_REPAIR_TYPE.REBUILD_TEAM_SEARCH_INDEX &&
   clean(finding?.documentId) && clean(finding?.teamDocumentId) && clean(finding?.seasonKey)
 )
 

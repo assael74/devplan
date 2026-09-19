@@ -80,8 +80,10 @@ export async function updatePlayerScoutReviewFlow(payload = {}) {
       reviewResult,
       playerSeasonIndexResult: null,
       humanStateCommitted: true,
+      playerCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       stoppedAt: 'playerSeasonMissing',
     }
   }
@@ -97,8 +99,10 @@ export async function updatePlayerScoutReviewFlow(payload = {}) {
         reviewResult,
         playerSeasonIndexResult,
         humanStateCommitted: true,
+        playerCanonicalCommitted: true,
         projectionsCompleted: false,
-        completed: true,
+        completed: false,
+        recoveryRequired: true,
         stoppedAt: 'playerSearchIndex',
         projectionError: clean(
           playerSeasonIndexResult?.reason ||
@@ -111,16 +115,20 @@ export async function updatePlayerScoutReviewFlow(payload = {}) {
       reviewResult,
       playerSeasonIndexResult,
       humanStateCommitted: true,
+      playerCanonicalCommitted: true,
       projectionsCompleted: true,
       completed: true,
+      recoveryRequired: false,
     }
   } catch (error) {
     return {
       reviewResult,
       playerSeasonIndexResult: null,
       humanStateCommitted: true,
+      playerCanonicalCommitted: true,
       projectionsCompleted: false,
-      completed: true,
+      completed: false,
+      recoveryRequired: true,
       projectionError: clean(error?.message) || 'Player review projection sync failed',
     }
   }

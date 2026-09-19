@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/audit/checks/auditClub.checks.js
+
 import { buildLeagueTeamPerformanceProjection, resolveLeagueTeamPoints } from '../audit.projections.js'
 import { buildAuditFinding, AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE } from '../audit.contract.js'
 import { AUDIT_SCOPE_TYPE } from '../audit.scope.js'
@@ -260,7 +262,7 @@ export function appendClubAuditFindings({
             title: 'ביצועי המועדון אינם תואמים לטבלת הליגה',
             explanation: 'performance ב-Club Document הוא projection של League Document בלבד.',
             source: 'League table → Club performance',
-            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE,
+            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION,
             expected: expectedPerformance,
             actual: actualPerformance,
           }))
@@ -294,7 +296,7 @@ export function appendClubAuditFindings({
             title: 'עדיפות התקפית או הגנתית במועדון אינה תואמת לטבלת הליגה',
             explanation: 'עדיפות התקפית והגנתית עוברת משורת הקבוצה בליגה אל Club Document ואל Clubs Master.',
             source: 'League table → Club performance',
-            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE,
+            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION,
             expected: expectedScoutPerformance,
             actual: actualScoutPerformance,
           }))
@@ -319,7 +321,7 @@ export function appendClubAuditFindings({
             title: 'פרופילי הקבוצה במועדון אינם תואמים לטבלת הליגה',
             explanation: 'סיכום הפרופילים עובר משורת הקבוצה בליגה אל Club Document ואל Clubs Master.',
             source: 'League table → Club performance',
-            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PERFORMANCE,
+            repairType: AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION,
             expected: expectedProfiles,
             actual: actualProfiles,
           }))

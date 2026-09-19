@@ -1,8 +1,9 @@
+// src/features/playersDatabase/ui/pages/clubsPage/components/ClubSummaryRow.js
 import { Box, Typography } from '@mui/joy'
 
 import ClubIdentity from '../../../components/club/ClubIdentity.js'
 import ClubSummarySpotlight from './ClubSummarySpotlight.js'
-import { clubsPageSx as sx } from '../sx/clubsPage.sx.js'
+import { clubSummaryRowSx as sx } from './sx/clubSummaryRow.sx.js'
 
 const buildSummaryAreas = ({ club, model }) => ([
   {

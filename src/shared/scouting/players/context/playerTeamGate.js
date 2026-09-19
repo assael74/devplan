@@ -11,6 +11,7 @@ export const PLAYER_TEAM_GATE_MODE = {
 
 export const PLAYER_TEAM_GATE_REASON = {
   LEAGUE_LEVEL: 'league_level_1_2',
+  YOUTH_LEAGUE_LEVEL: 'youth_league_level_1_3',
   CLUB_STRENGTH: 'club_strength_1_1_5',
   PROFILE_LEAGUE_LEVEL: 'profile_league_level_open_context',
   PROFILE_CLUB_STRENGTH: 'profile_club_strength_open_context',
@@ -23,7 +24,19 @@ const toLevel = (value) => {
   return Number.isFinite(level) && level > 0 ? level : null
 }
 
-const resolveOpenContextReason = ({ profile, clubStrengthLevel, leagueLevel } = {}) => {
+const isYouthAgeGroup = ageGroupId => {
+  const match = String(ageGroupId || '').trim().toLowerCase().match(/^u(\d+)$/)
+  const age = Number(match?.[1])
+
+  return Number.isFinite(age) && age <= 15
+}
+
+const resolveOpenContextReason = ({
+  profile,
+  ageGroupId,
+  clubStrengthLevel,
+  leagueLevel,
+} = {}) => {
   const normalizedClubStrengthLevel = toLevel(clubStrengthLevel)
   const normalizedLeagueLevel = toLevel(leagueLevel)
   const profileLeagueLevelMax = toLevel(profile?.openContext?.leagueLevelMax)
@@ -45,6 +58,14 @@ const resolveOpenContextReason = ({ profile, clubStrengthLevel, leagueLevel } = 
     return PLAYER_TEAM_GATE_REASON.PROFILE_CLUB_STRENGTH
   }
 
+  if (
+    isYouthAgeGroup(ageGroupId) &&
+    normalizedLeagueLevel &&
+    normalizedLeagueLevel <= 3
+  ) {
+    return PLAYER_TEAM_GATE_REASON.YOUTH_LEAGUE_LEVEL
+  }
+
   if (normalizedLeagueLevel && normalizedLeagueLevel <= 2) {
     return PLAYER_TEAM_GATE_REASON.LEAGUE_LEVEL
   }
@@ -59,8 +80,10 @@ const resolveOpenContextReason = ({ profile, clubStrengthLevel, leagueLevel } = 
 export const evaluatePlayerScoutTeamGate = ({ profile, team, metrics, competitionContext } = {}) => {
   const clubStrengthLevel = competitionContext?.clubStrengthLevel
   const leagueLevel = competitionContext?.leagueLevel
+  const ageGroupId = competitionContext?.ageGroupId
   const openReason = resolveOpenContextReason({
     profile,
+    ageGroupId,
     clubStrengthLevel,
     leagueLevel,
   })

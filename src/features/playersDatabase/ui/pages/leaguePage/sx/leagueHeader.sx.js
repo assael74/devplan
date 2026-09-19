@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leaguePage/sx/LeagueHeader.sx.js
+// src/features/playersDatabase/ui/pages/leaguePage/sx/leagueHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
@@ -8,13 +8,6 @@ export const leagueHeaderSx = {
       xs: '1fr',
       lg: 'minmax(760px, 1fr) auto',
     },
-  },
-
-  titleNameRow: {
-    minWidth: 0,
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.5,
   },
 
   leagueAvatar: {

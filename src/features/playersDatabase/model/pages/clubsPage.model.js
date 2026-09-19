@@ -1,4 +1,4 @@
-// src/features/playersDatabase/model/clubsPage.model.js
+// src/features/playersDatabase/model/pages/clubsPage.model.js
 
 import { cleanValue, pickDefinedValue, toNumberOrZero } from '../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../team/teamPerformance.viewModel.js'
@@ -39,7 +39,6 @@ const getSeasonEntries = (club, seasonView) => (
       ageGroupLabel: clean(ageGroup?.ageGroupLabel),
       teamId: clean(team?.teamId),
       teamSlot: positiveTeamSlotOrNull(team?.teamSlot || team?.birthTeamSlot),
-      slot: positiveTeamSlotOrNull(team?.teamSlot || team?.birthTeamSlot),
       seasonKey: clean(team?.seasonKey),
       seasonStatus: clean(team?.seasonStatus),
       birthYear: toNumberOrZero(team?.birthYear),
@@ -56,7 +55,6 @@ const getSeasonEntries = (club, seasonView) => (
       teamGamePlayed: toNumberOrZero(team?.performance?.teamGamePlayed),
       goalsFor: toNumberOrZero(team?.performance?.goalsFor),
       goalsAgainst: toNumberOrZero(team?.performance?.goalsAgainst),
-      playersCount: toNumberOrZero(team?.playersCount),
       scoutProfilesCount: toNumberOrZero(team?.scoutProfilesSummary?.total),
       performance: team?.performance || {},
       transfers: team?.transfers || null,
@@ -77,9 +75,6 @@ export const buildClubsPageRows = ({
       club,
       intelligence: intelligencesByClubId.get(clean(club?.clubId)) || null,
       teams: getSeasonEntries(club, seasonView),
-      previousTeams: seasonView === 'current'
-        ? getSeasonEntries(club, 'previous')
-        : [],
     }))
     .filter(group => clean(group?.club?.clubId))
     .sort((left, right) => (
@@ -178,7 +173,6 @@ export const buildClubsPageSummary = groups => {
   return {
     clubsCount: groups.length,
     teamsCount: teams.length,
-    playersCount: teams.reduce((sum, team) => sum + team.playersCount, 0),
     scoutProfilesCount: teams.reduce((sum, team) => sum + team.scoutProfilesCount, 0),
     clubsWithScoutProfilesCount: groups.filter(group => (group.teams || []).some(team => team.scoutProfilesCount > 0)).length,
   }

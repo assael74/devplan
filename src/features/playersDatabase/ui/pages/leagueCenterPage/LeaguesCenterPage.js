@@ -5,7 +5,7 @@ import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
-import { useLeagueCenter } from '../../hooks/useLeagueCenter.js'
+import { useLeagueCenter } from './hooks/useLeagueCenter.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {

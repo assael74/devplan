@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/team/updateTeamUrl.flow.js
+// src/features/playersDatabase/services/write/flows/team/updateTeamUrl.flow.js
 
 import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { updateLeagueSeasonTableRankTeamUrl } from '../../leagues/index.js'
@@ -25,6 +25,51 @@ const assertLeagueRowUpdated = result => {
   )
   error.code = result?.reason || 'league-team-url-not-updated'
   throw error
+}
+
+const assertTeamSeasonUpdated = result => {
+  if (result?.updated) return
+
+  const error = new Error('עונת הקבוצה לא נמצאה')
+  error.code = result?.reason || 'team-season-url-not-updated'
+  throw error
+}
+
+const assertTeamSeasonIndexUpdated = result => {
+  if (result?.updated) return
+
+  const error = new Error('אינדקס עונת הקבוצה לא נמצא')
+  error.code = result?.reason || 'team-season-index-url-not-updated'
+  throw error
+}
+
+const buildPreCanonicalSyncError = ({ stage, cause, results }) => {
+  const error = buildWriteFlowSyncError({
+    name: 'TeamUrlSyncError',
+    fallbackMessage: 'Team URL sync failed',
+    stage,
+    cause,
+    results,
+  })
+
+  error.completed = false
+  return error
+}
+
+const buildPostCanonicalSyncError = ({ stage, cause, results }) => {
+  const error = buildWriteFlowSyncError({
+    name: 'TeamUrlSyncError',
+    fallbackMessage: 'Team URL sync failed',
+    stage,
+    cause,
+    results,
+  })
+
+  error.teamCanonicalCommitted = true
+  error.completed = false
+  error.projectionsCompleted = false
+  error.recoveryRequired = true
+  return error
 }
 
 export async function updateTeamUrlFlow(payload = {}) {
@@ -70,25 +115,22 @@ export async function updateTeamUrlFlow(payload = {}) {
   if (!birthTeamId) throw new Error('Missing birth team id')
 
   try {
-    results.leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl(nextPayload)
-    assertLeagueRowUpdated(results.leagueTableRankResult)
+    results.teamSeasonResult = await updateTeamSeasonTeamUrl(nextPayload)
+    assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
-    throw buildWriteFlowSyncError({
-      name: 'TeamUrlSyncError',
-      fallbackMessage: 'Team URL sync failed',
-      stage: 'updateLeagueSeasonTableRankTeamUrl',
+    throw buildPreCanonicalSyncError({
+      stage: 'updateTeamSeasonTeamUrl',
       cause: error,
       results,
     })
   }
 
   try {
-    results.teamSeasonResult = await updateTeamSeasonTeamUrl(nextPayload)
+    results.leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl(nextPayload)
+    assertLeagueRowUpdated(results.leagueTableRankResult)
   } catch (error) {
-    throw buildWriteFlowSyncError({
-      name: 'TeamUrlSyncError',
-      fallbackMessage: 'Team URL sync failed',
-      stage: 'updateTeamSeasonTeamUrl',
+    throw buildPostCanonicalSyncError({
+      stage: 'updateLeagueSeasonTableRankTeamUrl',
       cause: error,
       results,
     })
@@ -101,10 +143,9 @@ export async function updateTeamUrlFlow(payload = {}) {
         ? results.teamSeasonResult.teamSeasonDocumentId
         : '',
     })
+    assertTeamSeasonIndexUpdated(results.teamSeasonIndexResult)
   } catch (error) {
-    throw buildWriteFlowSyncError({
-      name: 'TeamUrlSyncError',
-      fallbackMessage: 'Team URL sync failed',
+    throw buildPostCanonicalSyncError({
       stage: 'updateTeamSeasonSearchIndexTeamUrl',
       cause: error,
       results,
@@ -114,9 +155,7 @@ export async function updateTeamUrlFlow(payload = {}) {
   try {
     results.playerSeasonIndexesResult = await updatePlayerSeasonSearchIndexTeamUrl(nextPayload)
   } catch (error) {
-    throw buildWriteFlowSyncError({
-      name: 'TeamUrlSyncError',
-      fallbackMessage: 'Team URL sync failed',
+    throw buildPostCanonicalSyncError({
       stage: 'updatePlayerSeasonSearchIndexTeamUrl',
       cause: error,
       results,
@@ -129,6 +168,10 @@ export async function updateTeamUrlFlow(payload = {}) {
     seasonId,
     birthTeamId,
     teamUrl,
+    teamCanonicalCommitted: true,
+    projectionsCompleted: true,
+    completed: true,
+    recoveryRequired: false,
     syncStatus: 'complete',
     optionalSync: {
       teamDocumentUpdated: Boolean(results.teamSeasonResult?.updated),

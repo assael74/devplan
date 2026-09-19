@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/flows/league/deleteLeagueSeason.flow.js
+// src/features/playersDatabase/services/write/flows/league/deleteLeagueSeason.flow.js
 
 import {
   getLeagueSeasonDeleteDependencies,
@@ -36,7 +36,7 @@ export async function deleteLeagueSeasonFlow(payload = {}) {
     if (!validation.seasonExists) {
       return {
         syncStatus: 'complete',
-        canonicalCommitted: true,
+        leagueCanonicalCommitted: true,
         projectionsCompleted: true,
         recoveryRequired: false,
         completed: true,
@@ -95,10 +95,10 @@ export async function deleteLeagueSeasonFlow(payload = {}) {
 
     return {
       syncStatus: 'complete',
-      canonicalCommitted,
+      leagueCanonicalCommitted: canonicalCommitted,
       projectionsCompleted: Boolean(clubProjectionsResult.projectionsCompleted),
-      recoveryRequired: false,
-      completed: Boolean(clubProjectionsResult.completed),
+      recoveryRequired: !clubProjectionsResult.projectionsCompleted,
+      completed: Boolean(clubProjectionsResult.projectionsCompleted),
       validation,
       leagueSeasonResult,
       clubProjectionsResult,
@@ -106,7 +106,7 @@ export async function deleteLeagueSeasonFlow(payload = {}) {
     }
   } catch (error) {
     if (canonicalCommitted) {
-      error.canonicalCommitted = true
+      error.leagueCanonicalCommitted = true
       error.projectionsCompleted = false
       error.recoveryRequired = true
       error.completed = false

@@ -1,3 +1,5 @@
+// src/features/playersDatabase/model/pages/clubsPage.model.test.js
+
 import {
   buildClubsPageRows,
   filterClubsPageRows,
@@ -23,7 +25,6 @@ describe('Clubs page rows', () => {
       {
         club: baseClub,
         intelligence: null,
-        previousTeams: [],
         teams: [],
       },
     ])
