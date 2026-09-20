@@ -8,8 +8,8 @@ import {
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import RegularModal from '../RegularModal.js'
+import ModalStepper from '../ModalStepper.js'
 import WorkTaskLeagueFlow from './WorkTaskLeagueFlow.js'
-import WorkTaskStepper from './WorkTaskStepper.js'
 import WorkTaskTeamFlow from './WorkTaskTeamFlow.js'
 import useWorkTaskModal from './useWorkTaskModal.js'
 import {
@@ -97,7 +97,7 @@ export default function WorkTaskModal({
       onClose={onClose}
     >
       <Box sx={sx.modalBody}>
-        <WorkTaskStepper
+        <ModalStepper
           activeStep={teamMode ? 0 : work.activeStep}
           steps={teamMode ? ['סוג משימה'] : work.steps}
         />

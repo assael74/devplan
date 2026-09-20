@@ -11,6 +11,8 @@ import {
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import ScoutProfileChip from '../../../../../components/scout/profile/ScoutProfileChip.js'
 import PlayerLineClassificationChip from '../../../../../components/playerMeta/PlayerLineClassificationChip.js'
+import PlayerNameLink from '../../../../../components/playerMeta/PlayerNameLink.js'
+import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
 import { buildTableScoutProfileChip } from '../../../positionClassification/model/teamPositionScoutProfile.presentation.js'
 import { PLAYER_STATS_BASE_COLUMNS } from '../presentation/statsTable.constants.js'
 import { STATS_ROSTER_STATUS_OPTIONS } from '../../shared/stats.constants.js'
@@ -25,7 +27,6 @@ import { teamStatsColumnsSx as sx } from '../sx/useTeamStatsColumns.sx.js'
 import {
   IdentityResolutionPopover,
   NameMatchPopover,
-  PlayerUrlIcon,
   ROSTER_STATUS_SHORT_LABELS,
   StatsRosterStatusControl,
   TableHeaderIcon,
@@ -67,16 +68,10 @@ export default function useTeamStatsColumns({
 
       if (rowValid) {
         return (
-          <Box sx={sx.validNameRow}>
-            <Typography
-              level='body-sm'
-              sx={sx.validName}
-            >
-              {row.originalFullName || value || '-'}
-            </Typography>
-
-            <PlayerUrlIcon playerUrl={row.playerUrl} />
-          </Box>
+          <PlayerNameLink
+            name={row.originalFullName || value}
+            url={resolvePlayerUrl(row.playerUrl)}
+          />
         )
       }
 

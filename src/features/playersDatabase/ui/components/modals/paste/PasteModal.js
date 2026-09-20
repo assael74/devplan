@@ -23,14 +23,11 @@ export default function PasteModal({
   disabled = false,
   beforePaste = null,
   headerActions = null,
-  pasteDisabled = false,
+  footerActions = null,
   previewSummary = [],
   showSummaryCounts = true,
   onValueChange,
-  onPaste,
-  onFileSelect,
   onClear,
-  onViewSourceJson,
   onCellChange,
   getRowStatus,
   getCellStatus,
@@ -62,6 +59,7 @@ export default function PasteModal({
       disabled={disabled || !rows.length}
       contentSx={sx.modalContent}
       headerActions={headerActions}
+      footerActions={footerActions}
       onConfirm={onConfirm}
       onClose={handleClose}
     >
@@ -72,12 +70,7 @@ export default function PasteModal({
           value={value}
           placeholder={placeholder}
           compact={Boolean(rows.length)}
-          pasteDisabled={pasteDisabled}
           onChange={onValueChange}
-          onPaste={onPaste}
-          onFileSelect={onFileSelect}
-          onClear={onClear}
-          onViewSourceJson={onViewSourceJson}
         />
 
         {rows.length ? (

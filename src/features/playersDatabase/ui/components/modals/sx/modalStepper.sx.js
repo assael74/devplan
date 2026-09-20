@@ -1,6 +1,6 @@
-// src/features/playersDatabase/ui/components/modals/workTask/sx/workTaskStepper.sx.js
+// src/features/playersDatabase/ui/components/modals/sx/modalStepper.sx.js
 
-import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const stepNumber = {
   width: 28,
@@ -23,7 +23,7 @@ const stepLabel = {
   textAlign: 'center',
 }
 
-export const workTaskStepperSx = {
+export const modalStepperSx = {
   stepBar: {
     px: 2,
     py: 1.25,
@@ -41,7 +41,7 @@ export const workTaskStepperSx = {
     gap: 0.5,
   },
 
-  resolveStepNumber: (active, complete) => ({
+  resolveStepNumber: (active, complete, disabled) => ({
     ...stepNumber,
     ...(active ? {
       bgcolor: devPlanColors.primary,
@@ -51,13 +51,19 @@ export const workTaskStepperSx = {
       bgcolor: devPlanColors.tertiaryLight,
       color: devPlanColors.tertiaryDark,
     } : {}),
+    ...(disabled ? {
+      opacity: 0.55,
+    } : {}),
   }),
 
-  resolveStepLabel: active => ({
+  resolveStepLabel: (active, disabled) => ({
     ...stepLabel,
     ...(active ? {
       color: devPlanColors.primaryDark,
       fontWeight: 700,
+    } : {}),
+    ...(disabled ? {
+      opacity: 0.55,
     } : {}),
   }),
 }

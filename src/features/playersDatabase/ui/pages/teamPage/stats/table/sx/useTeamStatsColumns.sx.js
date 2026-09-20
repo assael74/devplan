@@ -10,26 +10,6 @@ export const teamStatsColumnsSx = {
     fontWeight: 700,
   },
 
-  playerUrlIcon: {
-    minWidth: 26,
-    minHeight: 26,
-  },
-
-  validNameRow: {
-    display: 'flex',
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 0.5,
-    minWidth: 0,
-  },
-
-  validName: {
-    fontWeight: 600,
-    textAlign: 'left',
-    minWidth: 0,
-  },
-
   matchRow: {
     display: 'flex',
     width: '100%',

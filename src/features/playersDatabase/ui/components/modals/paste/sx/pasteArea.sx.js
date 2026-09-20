@@ -31,22 +31,6 @@ export const pasteAreaSx = {
     color: devPlanColors.secondary,
   },
 
-  fileButton: {
-    flexShrink: 0,
-    color: devPlanColors.primary,
-    borderColor: devPlanColors.primaryLight,
-    bgcolor: '#fff',
-
-    '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-      borderColor: devPlanColors.primary,
-    },
-  },
-
-  hiddenFileInput: {
-    display: 'none',
-  },
-
   input: {
     width: '100%',
     minHeight: 110,
@@ -77,38 +61,7 @@ export const pasteAreaSx = {
     maxHeight: 54,
   },
 
-  footer: {
-    minWidth: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-  },
-
   hint: {
     color: devPlanColors.secondary,
-  },
-
-  actions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    // Keep the import actions on the physical right edge even after the hint
-    // is hidden once a preview has been created.
-    marginLeft: 'auto',
-  },
-
-  pasteButton: {
-    minWidth: 120,
-    bgcolor: devPlanColors.primary,
-    color: '#fff',
-
-    '& svg': {
-      color: '#fff',
-    },
-
-    '&:hover': {
-      bgcolor: devPlanColors.primaryDark,
-    },
   },
 }

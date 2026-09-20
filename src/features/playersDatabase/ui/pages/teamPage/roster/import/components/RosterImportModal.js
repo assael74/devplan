@@ -3,7 +3,8 @@ import { Autocomplete, Box, Button, Card, CircularProgress, Option, Select, Tabl
 
 import RosterIdentityModal from './RosterIdentityModal.js'
 import RegularModal from '../../../../../components/modals/RegularModal.js'
-import WorkTaskStepper from '../../../../../components/modals/workTask/WorkTaskStepper.js'
+import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
+import ModalStepper from '../../../../../components/modals/ModalStepper.js'
 import TeamSeasonSelect from '../../../../../components/modals/TeamSeasonSelect.js'
 import { PLAYER_ROSTER_COLUMNS, PLAYER_ROSTER_PLACEHOLDER } from '../logic/rosterImport.constants.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
@@ -11,7 +12,8 @@ import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js
 import StatusCell from '../../../../../components/modals/paste/StatusCell.js'
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { rosterImportModalSx as sx } from '../sx/rosterImportModal.sx.js'
-import { PlayerUrlIcon } from '../../../stats/table/presentation/teamStatsColumns.presentation.js'
+import PlayerNameLink from '../../../../../components/playerMeta/PlayerNameLink.js'
+import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../../../catalog/clubs.catalog.js'
 
 const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור']
@@ -159,12 +161,10 @@ function MissingRosterStep({ controller }) {
                   </Box>
                   <Box component='td' sx={sx.missingIndexColumn}>{index + 1}</Box>
                   <td>
-                    <Box sx={sx.playerNameCell}>
-                      <Typography level='body-sm' sx={{ minWidth: 0, textAlign: 'left' }}>
-                        {playerName(player) || '-'}
-                      </Typography>
-                      <PlayerUrlIcon playerUrl={player?.playerUrl} />
-                    </Box>
+                    <PlayerNameLink
+                      name={playerName(player)}
+                      url={resolvePlayerUrl(player?.playerUrl)}
+                    />
                   </td>
                   <td>{player?.externalPlayerId || '-'}</td>
                   <td>
@@ -322,12 +322,10 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
           sx: sx.playerNameColumn,
           headerContent: <Box sx={sx.playerNameHeader}>שם השחקן</Box>,
           render: ({ row }) => (
-            <Box sx={sx.playerNameCell}>
-              <Typography level='body-sm' sx={{ minWidth: 0, textAlign: 'left' }}>
-                {row.fullName || '-'}
-              </Typography>
-              <PlayerUrlIcon playerUrl={row.playerUrl} />
-            </Box>
+            <PlayerNameLink
+              name={row.fullName}
+              url={resolvePlayerUrl(row.playerUrl)}
+            />
           ),
         }
       }),
@@ -398,6 +396,28 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
   const confirmLabel = activeStep === 0
     ? 'המשך להדבקה'
     : activeStep === 1 ? 'הצג בדיקת זהות' : reviewStep === 'present' ? 'המשך לבדיקת חסרים' : 'אישור טעינת סגל'
+  const pasteActions = activeStep === 1 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'clear',
+          label: 'ניקוי מלא',
+          iconId: 'delete',
+          presentationRole: 'clear',
+          disabled: !controller.pasteValue,
+          onClick: controller.clearPaste,
+        },
+        {
+          id: 'preview',
+          label: 'הצג נתונים',
+          iconId: 'addStats',
+          presentationRole: 'primary',
+          disabled: !controller.pasteValue || !controller.selectedSeasonOption,
+          onClick: previewRoster,
+        },
+      ]}
+    />
+  ) : null
 
   return (
     <>
@@ -411,6 +431,7 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
         busy={controller.busy}
         disabled={disabled}
         contentSx={pasteSx.modalContent}
+        footerActions={pasteActions}
         headerActions={activeStep > 0 ? (
           <Button size='sm' variant='plain' disabled={controller.busy} onClick={() => {
             if (activeStep === 2 && reviewStep === 'missing') return setReviewStep('present')
@@ -433,7 +454,7 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
             overflow: 'hidden',
           } : {}),
         }}>
-          <WorkTaskStepper activeStep={reviewStep === 'missing' ? 3 : activeStep} steps={STEPS} />
+          <ModalStepper activeStep={reviewStep === 'missing' ? 3 : activeStep} steps={STEPS} />
 
           {activeStep === 0 ? <PreviousRosterStep controller={controller} /> : null}
 
@@ -442,10 +463,7 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
               value={controller.pasteValue}
               placeholder={PLAYER_ROSTER_PLACEHOLDER}
               formatHint='סדר עמודות: אינדקס שחקן · שם שחקן · מזהה חיצוני · קישור שחקן'
-              pasteDisabled={!controller.selectedSeasonOption}
               onChange={controller.setPasteValue}
-              onPaste={previewRoster}
-              onClear={controller.clearPaste}
             />
           ) : null}
 

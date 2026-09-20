@@ -18,9 +18,16 @@ import {
   PLAYER_STATS_PLACEHOLDER,
   STATS_SEASON_STATUS_OPTIONS,
 } from '../logic/statsImport.constants.js'
-import PasteModal from '../../../../../components/modals/paste/PasteModal.js'
+import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
+import ModalStepper from '../../../../../components/modals/ModalStepper.js'
+import RegularModal from '../../../../../components/modals/RegularModal.js'
 import TeamSeasonSelect from '../../../../../components/modals/TeamSeasonSelect.js'
+import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
+import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
+import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { statsImportModalSx as sx } from '../sx/statsImportModal.sx.js'
+
+const STEPS = ['הקשר טעינה', 'הדבקה וניתוח', 'בדיקה ואישור']
 
 function clean(value) {
   return String(value || '').trim()
@@ -174,14 +181,14 @@ export default function StatsImportModal({
   const leagueName = clean(source.leagueName || team.leagueName)
   const leagueUrl = clean(source.leagueUrl || team?.domain?.metadata?.seasonUrl)
   const hasPreviewRows = controller.rows.length > 0
-  const [settingsOpen, setSettingsOpen] = React.useState(true)
+  const [activeStep, setActiveStep] = React.useState(0)
   const seasonStatusOption = STATS_SEASON_STATUS_OPTIONS.find(option => (
     option.value === controller.seasonStatus
   ))
 
   React.useEffect(() => {
-    if (hasPreviewRows) setSettingsOpen(false)
-  }, [hasPreviewRows])
+    if (controller.open) setActiveStep(0)
+  }, [controller.open])
 
   const description = (
     <Box sx={sx.description}>
@@ -237,65 +244,151 @@ export default function StatsImportModal({
     </Box>
   )
 
-  const beforePaste = hasPreviewRows && !settingsOpen ? (
-    <Box sx={sx.settingsActions}>
-      <Button size='sm' variant='soft' onClick={() => setSettingsOpen(true)} sx={sx.settingsAction}>
-        שינוי הגדרות טעינה
-      </Button>
-    </Box>
-  ) : selectionControls
-
   const validationChecks = controller.validation.checks || []
+  const contextReady = Boolean(controller.selectedSeasonOption && controller.seasonStatus)
+  const finalConfirmDisabled = (
+    !hasTeamPlayers ||
+    controller.hasInvalidRows ||
+    controller.movementPreview.requiresDecision ||
+    !contextReady
+  )
+  const confirmDisabled = activeStep === 0
+    ? !contextReady
+    : activeStep === 1
+      ? !hasPreviewRows
+      : finalConfirmDisabled || !hasPreviewRows
+  const footerActions = activeStep === 1 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה',
+          iconId: 'forward',
+          presentationRole: 'back',
+          disabled: controller.busy,
+          onClick: () => setActiveStep(0),
+        },
+        {
+          id: 'clear',
+          label: 'ניקוי מלא',
+          iconId: 'delete',
+          presentationRole: 'clear',
+          disabled: !controller.pasteValue,
+          onClick: controller.clearPaste,
+        },
+        {
+          id: 'preview',
+          label: 'הצג נתונים',
+          iconId: 'addStats',
+          presentationRole: 'primary',
+          disabled: !controller.pasteValue || !contextReady,
+          onClick: controller.parse,
+        },
+      ]}
+    />
+  ) : activeStep === 2 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה',
+          iconId: 'forward',
+          presentationRole: 'back',
+          disabled: controller.busy,
+          onClick: () => setActiveStep(1),
+        },
+      ]}
+    />
+  ) : null
+  const handleConfirm = () => {
+    if (activeStep === 0) {
+      setActiveStep(1)
+      return
+    }
+
+    if (activeStep === 1) {
+      setActiveStep(2)
+      return
+    }
+
+    controller.confirm()
+  }
+  const handleClose = () => {
+    if (controller.busy) return
+
+    controller.clearPaste()
+    controller.close()
+  }
+  const confirmLabel = activeStep === 0
+    ? 'המשך'
+    : activeStep === 1
+      ? 'המשך'
+      : 'אישור טעינת סטטיסטיקות'
 
   return (
-    <>
-      <PasteModal
+    <RegularModal
       open={controller.open}
       title={`טעינת סטטיסטיקות - ${team.name}`}
       description={description}
       iconId='addStats'
-      columns={columns}
-      rows={controller.rows}
-      value={controller.pasteValue}
-      placeholder={PLAYER_STATS_PLACEHOLDER}
       busy={controller.busy}
-      disabled={!hasTeamPlayers || controller.hasInvalidRows || controller.movementPreview.requiresDecision || !controller.selectedSeasonOption || !controller.seasonStatus}
-      confirmLabel='אישור טעינת סטטיסטיקות'
-      beforePaste={beforePaste}
-      pasteDisabled={!controller.selectedSeasonOption || !controller.seasonStatus}
-      showSummaryCounts={false}
-      previewSummary={[
-        {
-          key: 'roster-exceptions',
-          render: () => (
-            <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
-          ),
-        },
-        {
-          key: 'movement-preview',
-          render: () => (
-            <MovementPreviewChips preview={controller.movementPreview} />
-          ),
-        },
-        ...validationChecks.map(check => ({
-          key: check.code,
-          render: () => (
-            <ValidationCheckChip
-              check={check}
-              onApplyMinutesAdjustment={controller.applyEqualMinutesReduction}
-            />
-          ),
-        })),
-      ]}
-      onValueChange={controller.setPasteValue}
-      onPaste={controller.parse}
-      onClear={controller.clearPaste}
-      onCellChange={controller.changeCell}
-      getRowStatus={controller.getRowStatus}
-      getCellStatus={controller.getCellStatus}
-      onConfirm={controller.confirm}
-      onClose={controller.close}
-      />
-    </>
+      disabled={confirmDisabled}
+      confirmLabel={confirmLabel}
+      confirmIconId={activeStep === 2 ? 'upload' : 'next'}
+      size='xl'
+      contentSx={pasteSx.modalContent}
+      footerActions={footerActions}
+      onConfirm={handleConfirm}
+      onClose={handleClose}
+    >
+      <Box sx={pasteSx.content}>
+        <ModalStepper activeStep={activeStep} steps={STEPS} />
+
+        {activeStep === 0 ? selectionControls : null}
+
+        {activeStep === 1 ? (
+          <PasteArea
+            value={controller.pasteValue}
+            placeholder={PLAYER_STATS_PLACEHOLDER}
+            compact={hasPreviewRows}
+            onChange={controller.setPasteValue}
+          />
+        ) : null}
+
+        {activeStep === 2 ? (
+          <PreviewTable
+            columns={columns}
+            rows={controller.rows}
+            onCellChange={controller.changeCell}
+            getRowStatus={controller.getRowStatus}
+            getCellStatus={controller.getCellStatus}
+            showSummaryCounts={false}
+            summary={[
+              {
+                key: 'roster-exceptions',
+                render: () => (
+                  <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
+                ),
+              },
+              {
+                key: 'movement-preview',
+                render: () => (
+                  <MovementPreviewChips preview={controller.movementPreview} />
+                ),
+              },
+              ...validationChecks.map(check => ({
+                key: check.code,
+                render: () => (
+                  <ValidationCheckChip
+                    check={check}
+                    onApplyMinutesAdjustment={controller.applyEqualMinutesReduction}
+                  />
+                ),
+              })),
+            ]}
+          />
+        ) : null}
+      </Box>
+    </RegularModal>
   )
 }

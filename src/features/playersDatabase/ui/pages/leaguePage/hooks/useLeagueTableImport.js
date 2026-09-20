@@ -103,10 +103,21 @@ export function useLeagueTableImport({
       // Another team from the same club is valid when it has a different slot.
       // Block only an actual identity collision: same club, season, age group,
       // and team slot in another league.
-      if (!warning?.selectedSlotConflict) return row
+      if (!warning) {
+        const { identityWarningMessage, ...rowWithoutIdentityWarning } = row
+        return rowWithoutIdentityWarning
+      }
+
+      if (!warning.selectedSlotConflict) {
+        return {
+          ...row,
+          identityWarningMessage: warning.message,
+        }
+      }
 
       return {
         ...row,
+        identityWarningMessage: '',
         requiresTeamSlotResolution: true,
         valid: false,
         status: 'error',

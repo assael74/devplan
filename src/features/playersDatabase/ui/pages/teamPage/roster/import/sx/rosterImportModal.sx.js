@@ -54,15 +54,6 @@ export const rosterImportModalSx = {
     justifyContent: 'flex-start',
   },
 
-  playerNameCell: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 0,
-    minWidth: 0,
-  },
-
   rosterMembershipColumn: {
     width: '40%',
     minWidth: '40%',

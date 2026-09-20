@@ -1,10 +1,12 @@
 import * as React from 'react'
 import {
-  Autocomplete, Box, Button, Chip, Dropdown, IconButton, Menu, MenuButton, Option, Select, Stack, Tooltip, Typography,
+  Autocomplete, Box, Button, Chip, Dropdown, Menu, MenuButton, Option, Select, Stack, Tooltip, Typography,
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { buildScoutCompactView } from '../../../../../components/scout/shared/scoutDisplay.model.js'
+import ExternalLinkIcon from '../../../../../components/modals/ExternalLinkIcon.js'
+import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
 import { STATS_IDENTITY_STATUS } from '../../shared/logic/teamStatsMatch.logic.js'
 import { teamStatsColumnsSx as sx } from '../sx/useTeamStatsColumns.sx.js'
 
@@ -19,19 +21,6 @@ export function getIdentityColor(status) {
   }
 
   return colors[status] || 'neutral'
-}
-
-export const resolvePlayerUrl = value => {
-  const playerUrl = String(value || '').trim()
-
-  if (!playerUrl) return ''
-  if (/^https?:\/\//i.test(playerUrl)) return playerUrl
-
-  const path = playerUrl.startsWith('/')
-    ? playerUrl
-    : `/${playerUrl}`
-
-  return `https://www.football.org.il${path}`
 }
 
 export const TableHeaderIcon = ({ id, label }) => (
@@ -85,34 +74,6 @@ export const renderMarkedNumber = ({ value, mark }) => {
       >
         {value || value === 0 ? value : '-'}
       </Chip>
-    </Tooltip>
-  )
-}
-
-export const PlayerUrlIcon = ({ playerUrl }) => {
-  const href = resolvePlayerUrl(playerUrl)
-
-  if (!href) return null
-
-  return (
-    <Tooltip title={href}>
-      <IconButton
-        component='a'
-        href={href}
-        target='_blank'
-        rel='noopener noreferrer'
-        referrerPolicy='no-referrer'
-        size='sm'
-        variant='plain'
-        color='primary'
-        sx={sx.playerUrlIcon}
-        onClick={event => event.stopPropagation()}
-      >
-        {iconUi({
-          id: 'link',
-          size: 'sm',
-        })}
-      </IconButton>
     </Tooltip>
   )
 }
@@ -314,7 +275,10 @@ export function NameMatchPopover({
         </Stack>
         </Menu>
       </Dropdown>
-      <PlayerUrlIcon playerUrl={playerUrl} />
+      <ExternalLinkIcon
+        href={resolvePlayerUrl(playerUrl)}
+        onClick={event => event.stopPropagation()}
+      />
     </Box>
   )
 }

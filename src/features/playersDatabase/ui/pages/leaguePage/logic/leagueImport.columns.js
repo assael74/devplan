@@ -1,12 +1,8 @@
 // features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.columns.js
 
-import * as React from 'react'
-import {
-  Autocomplete,
-  Typography,
-} from '@mui/joy'
-
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
+import { LeagueClubSlotField } from '../components/LeagueClubSlotField.js'
+import { LeagueTeamNameLink } from '../components/LeagueTeamNameLink.js'
 import { leagueImportColumnsSx as sx } from './leagueImport.columns.sx.js'
 
 function clean(value) {
@@ -57,10 +53,10 @@ const filterClubOptions = (options, state) => {
   ).includes(query))
 }
 
-const emitClubChange = ({
+const emitCellChange = ({
   row,
   rowIndex,
-  column,
+  columnKey,
   value,
   onCellChange,
 }) => {
@@ -69,66 +65,68 @@ const emitClubChange = ({
   onCellChange({
     row,
     rowIndex,
-    column,
+    column: {
+      key: columnKey,
+    },
     value,
   })
 }
 
-const renderClubCell = ({
+function getIdentityErrorMessage(row) {
+  if (!row?.requiresTeamSlotResolution) return ''
+
+  return Array.isArray(row.errors)
+    ? row.errors.filter(Boolean).join(' ')
+    : ''
+}
+
+const renderTeamNameCell = ({
+  row,
+  value,
+}) => (
+  <LeagueTeamNameLink
+    teamName={value}
+    teamUrl={row.teamUrl}
+  />
+)
+
+const renderTeamIdentityCell = ({
   row,
   rowIndex,
-  column,
-  value,
   onCellChange,
 }) => {
-  const selectedOption = clubOptions.find(option => option.value === value) || null
-
-  if (selectedOption) {
-    return (
-      <Typography
-        level="body-sm"
-        noWrap
-        title={selectedOption.label}
-        sx={sx.selectedClub}
-      >
-        {selectedOption.displayLabel}
-      </Typography>
-    )
-  }
-
   return (
-    <Autocomplete
-      size="sm"
-      options={clubOptions}
-      value={null}
-      placeholder="חיפוש מועדון"
-      getOptionLabel={option => option.displayLabel || option.label || ''}
-      isOptionEqualToValue={(option, selected) => option.value === selected.value}
+    <LeagueClubSlotField
+      clubId={row.clubId}
+      clubOptions={clubOptions}
+      teamSlot={row.teamSlot}
+      teamSlotOptions={teamSlotOptions}
+      clubError={!clean(row.clubId)}
+      slotError={!clean(row.teamSlot)}
+      errorMessage={getIdentityErrorMessage(row)}
+      warningMessage={row.identityWarningMessage || ''}
       filterOptions={filterClubOptions}
-      sx={column.inputSx}
-      onChange={(event, nextOption) => {
-        emitClubChange({
+      onClubChange={value => {
+        emitCellChange({
           row,
           rowIndex,
-          column,
-          value: nextOption ? nextOption.value : '',
+          columnKey: 'clubId',
+          value,
+          onCellChange,
+        })
+      }}
+      onTeamSlotChange={value => {
+        emitCellChange({
+          row,
+          rowIndex,
+          columnKey: 'teamSlot',
+          value,
           onCellChange,
         })
       }}
     />
   )
 }
-
-
-const renderTeamUrlCell = ({ value }) => (
-  <Typography
-    level='body-sm'
-    title={value ? 'קיים קישור לקבוצה' : 'אין קישור לקבוצה'}
-    sx={sx.teamUrlIndicator}
-  >
-    {value ? '✓' : '—'}
-  </Typography>
-)
 
 const baseImportColumns = [
   {
@@ -140,36 +138,17 @@ const baseImportColumns = [
     inputSx: sx.numberInput,
   },
   {
-    key: 'clubId',
-    required: true,
-    label: 'שם מערכת',
-    options: clubOptions,
-    sx: sx.clubColumn,
-    inputSx: sx.clubInput,
-    render: renderClubCell,
-  },
-  {
     key: 'teamName',
-    label: 'שם שנקלט',
+    label: 'שם קבוצה',
     readOnly: true,
     sx: sx.teamNameColumn,
-    inputSx: sx.teamNameInput,
+    render: renderTeamNameCell,
   },
   {
-    key: 'teamSlot',
-    required: true,
-    label: 'קבוצה',
-    type: 'select',
-    options: teamSlotOptions,
-    sx: sx.teamSlotColumn,
-    inputSx: sx.teamSlotInput,
-  },
-  {
-    key: 'teamUrl',
-    label: 'קישור',
-    readOnly: true,
-    sx: sx.teamUrlColumn,
-    render: renderTeamUrlCell,
+    key: 'teamIdentity',
+    label: 'זיהוי קבוצה',
+    sx: sx.teamIdentityColumn,
+    render: renderTeamIdentityCell,
   },
   {
     key: 'games',

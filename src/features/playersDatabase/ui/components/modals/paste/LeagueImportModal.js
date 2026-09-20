@@ -3,6 +3,7 @@
 import * as React from 'react'
 
 import {
+  Box,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -10,10 +11,17 @@ import {
   Select,
 } from '@mui/joy'
 
-import PasteModal from './PasteModal.js'
+import ImportActionArea from '../ImportActionArea.js'
 import JsonViewerModal from '../JsonViewerModal.js'
+import ModalStepper from '../ModalStepper.js'
+import RegularModal from '../RegularModal.js'
 import { downloadLeagueIdentityIndexJson } from '../../../pages/leaguePage/logic/leagueIdentityIndexJson.logic.js'
+import PasteArea from './PasteArea.js'
+import PreviewTable from './PreviewTable.js'
 import { leagueImportModalSx as sx } from './sx/leagueImportModal.sx.js'
+import { pasteModalSx as pasteSx } from './sx/pasteModal.sx.js'
+
+const STEPS = ['מצב עונה', 'הדבקה וניתוח', 'זיהוי קבוצות ואישור']
 
 const SEASON_STATUS_OPTIONS = [
   {
@@ -39,6 +47,7 @@ export default function LeagueImportModal({
   leagueImport,
   placeholder = '',
 }) {
+  const [activeStep, setActiveStep] = React.useState(0)
   const [identityJsonOpen, setIdentityJsonOpen] = React.useState(false)
   const leagueContext = [
     league.name,
@@ -50,11 +59,16 @@ export default function LeagueImportModal({
     option.value === leagueImport.seasonStatus
   ))
   const hasPreviewRows = Array.isArray(leagueImport.rows) && leagueImport.rows.length > 0
+  const seasonStatusReady = Boolean(leagueImport.seasonStatus)
   const getLeagueImportRowStatus = React.useCallback(row => ({
     valid: row?.valid !== false,
     message: Array.isArray(row?.errors) ? row.errors.filter(Boolean).join(' ') : '',
   }), [])
-  const beforePaste = (
+  React.useEffect(() => {
+    if (leagueImport.open) setActiveStep(0)
+  }, [leagueImport.open])
+
+  const seasonStatusControl = (
     <FormControl size='sm' required sx={sx.seasonStatusField}>
       <FormLabel>מצב העונה</FormLabel>
       <Select
@@ -77,41 +91,140 @@ export default function LeagueImportModal({
       </FormHelperText> : null}
     </FormControl>
   )
+  const confirmDisabled = activeStep === 0
+    ? !seasonStatusReady
+    : activeStep === 1
+      ? !hasPreviewRows
+      : !leagueImport.canConfirm
+  const footerActions = activeStep === 1 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה',
+          iconId: 'forward',
+          presentationRole: 'back',
+          disabled: leagueImport.busy,
+          onClick: () => setActiveStep(0),
+        },
+        {
+          id: 'clear',
+          label: 'ניקוי מלא',
+          iconId: 'delete',
+          presentationRole: 'clear',
+          disabled: !leagueImport.pasteValue,
+          onClick: () => {
+            if (leagueImport.busy) return
+
+            leagueImport.handleClear()
+            setActiveStep(0)
+          },
+        },
+        {
+          id: 'preview',
+          label: 'הצג נתונים',
+          iconId: 'addStats',
+          presentationRole: 'primary',
+          disabled: !leagueImport.pasteValue || !leagueImport.seasonStatus,
+          onClick: leagueImport.handlePreview,
+        },
+      ]}
+    />
+  ) : activeStep === 2 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה',
+          iconId: 'forward',
+          presentationRole: 'back',
+          disabled: leagueImport.busy,
+          onClick: () => setActiveStep(1),
+        },
+        leagueImport.identityIndexDocument ? {
+          id: 'identity-json',
+          label: 'מסמך זיהוי',
+          iconId: 'dataShow',
+          presentationRole: 'secondary',
+          onClick: () => setIdentityJsonOpen(true),
+        } : null,
+      ]}
+    />
+  ) : null
+  const handleConfirm = () => {
+    if (activeStep === 0) {
+      setActiveStep(1)
+      return
+    }
+
+    if (activeStep === 1) {
+      setActiveStep(2)
+      return
+    }
+
+    leagueImport.handleConfirm()
+  }
+  const handleClose = () => {
+    if (leagueImport.busy) return
+
+    leagueImport.handleClear()
+    leagueImport.handleClose()
+  }
+  const confirmLabel = activeStep === 0
+    ? 'המשך'
+    : activeStep === 1
+      ? 'המשך'
+      : 'אישור טעינה'
 
   return (
     <>
-    <PasteModal
-      open={leagueImport.open}
-      title='טעינת נתוני ליגה'
-      description={leagueContext}
-      columns={columns}
-      rows={leagueImport.rows}
-      value={leagueImport.pasteValue}
-      placeholder={placeholder}
-      busy={leagueImport.busy}
-      disabled={!leagueImport.canConfirm}
-      beforePaste={beforePaste}
-      pasteDisabled={!leagueImport.seasonStatus}
-      confirmLabel='אישור טעינה'
-      onValueChange={leagueImport.setPasteValue}
-      onPaste={leagueImport.handlePreview}
-      onClear={leagueImport.handleClear}
-      onViewSourceJson={leagueImport.identityIndexDocument
-        ? () => setIdentityJsonOpen(true)
-        : null}
-      onCellChange={leagueImport.handleCellChange}
-      getRowStatus={getLeagueImportRowStatus}
-      onConfirm={leagueImport.handleConfirm}
-      onClose={leagueImport.handleClose}
-    />
-    <JsonViewerModal
-      open={identityJsonOpen}
-      title='אינדקס זיהוי קבוצות · JSON'
-      description='זהו מסמך ה־JSON שנקרא בפועל לצורך זיהוי הופעת מועדון בליגה אחרת באותה עונה ושנתון.'
-      data={leagueImport.identityIndexDocument || {}}
-      onClose={() => setIdentityJsonOpen(false)}
-      onDownload={() => downloadLeagueIdentityIndexJson(leagueImport.identityIndexDocument || {})}
-    />
+      <RegularModal
+        open={leagueImport.open}
+        title='טעינת נתוני ליגה'
+        description={leagueContext}
+        iconId='upload'
+        busy={leagueImport.busy}
+        disabled={confirmDisabled}
+        confirmLabel={confirmLabel}
+        confirmIconId={activeStep === 2 ? 'upload' : 'next'}
+        size='xl'
+        contentSx={pasteSx.modalContent}
+        footerActions={footerActions}
+        onConfirm={handleConfirm}
+        onClose={handleClose}
+      >
+        <Box sx={pasteSx.content}>
+          <ModalStepper activeStep={activeStep} steps={STEPS} />
+
+          {activeStep === 0 ? seasonStatusControl : null}
+
+          {activeStep === 1 ? (
+            <PasteArea
+              value={leagueImport.pasteValue}
+              placeholder={placeholder}
+              compact={hasPreviewRows}
+              onChange={leagueImport.setPasteValue}
+            />
+          ) : null}
+
+          {activeStep === 2 ? (
+            <PreviewTable
+              columns={columns}
+              rows={leagueImport.rows}
+              onCellChange={leagueImport.handleCellChange}
+              getRowStatus={getLeagueImportRowStatus}
+            />
+          ) : null}
+        </Box>
+      </RegularModal>
+      <JsonViewerModal
+        open={identityJsonOpen}
+        title='אינדקס זיהוי קבוצות · JSON'
+        description='זהו מסמך ה־JSON שנקרא בפועל לצורך זיהוי הופעת מועדון בליגה אחרת באותה עונה ושנתון.'
+        data={leagueImport.identityIndexDocument || {}}
+        onClose={() => setIdentityJsonOpen(false)}
+        onDownload={() => downloadLeagueIdentityIndexJson(leagueImport.identityIndexDocument || {})}
+      />
     </>
   )
 }

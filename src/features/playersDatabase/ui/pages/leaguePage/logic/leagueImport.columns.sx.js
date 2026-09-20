@@ -21,46 +21,13 @@ export const leagueImportColumnsSx = {
     },
   },
 
-  selectedClub: {
-    minWidth: 0,
-    fontWeight: 700,
-  },
-
-  clubColumn: {
-    width: 210,
-    minWidth: 210,
-  },
-
-  clubInput: {
-    minWidth: 190,
-  },
-
   teamNameColumn: {
-    width: 170,
-    minWidth: 170,
+    width: 220,
+    minWidth: 220,
   },
 
-  teamNameInput: {
-    minWidth: 150,
-  },
-
-  teamSlotColumn: {
-    width: 64,
-    minWidth: 64,
-  },
-
-  teamSlotInput: {
-    minWidth: 48,
-  },
-
-  teamUrlColumn: {
-    width: 64,
-    minWidth: 64,
-    textAlign: 'center',
-  },
-
-  teamUrlIndicator: {
-    textAlign: 'center',
-    fontWeight: 700,
+  teamIdentityColumn: {
+    width: 280,
+    minWidth: 280,
   },
 }
