@@ -14,6 +14,9 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   favorites: 'dbFavorites',
   auditFindings: 'dbAuditFindings',
   writeActions: 'dbWriteActions',
+  leagueProjectionJobs: 'dbLeagueProjectionJobs',
+  teamStatsProjectionJobs: 'dbTeamStatsProjectionJobs',
+  teamRosterProjectionJobs: 'dbTeamRosterProjectionJobs',
 }
 
 export const PLAYERS_DATABASE_FAVORITES_DOCUMENTS = {

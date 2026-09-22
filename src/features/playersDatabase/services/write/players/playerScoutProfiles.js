@@ -400,6 +400,7 @@ export async function syncPlayerScoutProfileDocsMany({
   target = 'current',
   players = [],
   teamSeasonDocument = null,
+  beforeEach = null,
 } = {}) {
   const safePlayers = Array.isArray(players) ? players : []
   const lookupPlayers = safePlayers.filter(player => (
@@ -423,6 +424,7 @@ export async function syncPlayerScoutProfileDocsMany({
 
   for (const player of playersToSync) {
     try {
+      if (typeof beforeEach === 'function') await beforeEach(player)
       results.push(await syncPlayerRoleAndScoutProfileDoc({
         season,
         team,

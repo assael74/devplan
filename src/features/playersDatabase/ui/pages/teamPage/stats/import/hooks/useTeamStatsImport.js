@@ -3,6 +3,13 @@
 import * as React from 'react'
 
 import {
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore'
+
+import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   resolvePlayerIdentities,
   runPlayersDatabaseWriteAction,
@@ -27,6 +34,8 @@ import {
 import { validatePlayerStatsAgainstLeague } from '../../../../../../domain/validation/playerStatsLeague.validation.js'
 import { findTeamPageSeasonDoc } from '../../../../../../model/team/page/teamPageSeason.model.js'
 import { adaptTeamPagePlayerRow } from '../../../../../../model/team/page/teamPagePlayer.model.js'
+import { db } from '../../../../../../../../services/firebase/firebase.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../../../constants/pdb.constants.js'
 
 const cleanProfileId = value => clean(value)
 
@@ -93,6 +102,10 @@ export default function useTeamStatsImport({
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
+  const [projectionJobId, setProjectionJobId] = React.useState('')
+  const [writeActionId, setWriteActionId] = React.useState('')
+  const [projectionJob, setProjectionJob] = React.useState(null)
+  const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -127,10 +140,22 @@ export default function useTeamStatsImport({
       setSeasonStatus('')
       setRows([])
       setPasteValue('')
+      setProjectionJobId('')
+      setWriteActionId('')
+      setProjectionJob(null)
     }
   }, [
     open,
   ])
+
+  React.useEffect(() => {
+    if (!projectionJobId) return undefined
+    return onSnapshot(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs, projectionJobId),
+      snapshot => setProjectionJob(snapshot.exists ? { id: snapshot.id, ...snapshot.data() } : null),
+      () => setProjectionJob(null)
+    )
+  }, [projectionJobId])
 
   const selectSeasonOption = React.useCallback(optionKey => {
     setSelectedSeasonOptionKey(optionKey)
@@ -501,6 +526,9 @@ export default function useTeamStatsImport({
 
     setPasteValue('')
     setRows([])
+    setProjectionJobId('')
+    setWriteActionId('')
+    setProjectionJob(null)
   }, [busy])
 
   const closeWriteReport = React.useCallback(() => {
@@ -558,21 +586,20 @@ export default function useTeamStatsImport({
         movement: player.statsMovementDecision || '',
       })))
       console.groupEnd()
-      await runPlayersDatabaseWriteAction({
+      const result = await runPlayersDatabaseWriteAction({
         actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
         payload,
       })
 
       notify({
         status: SNACK_STATUS.SUCCESS,
-        title: 'טעינת סטטיסטיקות הושלמה',
-        message: `${validRows.length} שורות עודכנו`,
+        title: 'נתוני הסטטיסטיקה נשמרו',
+        message: 'בדיקת סנכרון ממוקדת לקבוצה ולעונה ממשיכה ברקע',
       })
-
-      setOpen(false)
-      setPasteValue('')
-      setRows([])
+      setProjectionJobId(String(result?.projectionJob?.id || ''))
+      setWriteActionId(String(result?.writeActionId || ''))
       reload()
+      return result
     } catch (error) {
       // The canonical Team Season can be committed before a derived document
       // fails to synchronize. Refresh it before showing the recovery report
@@ -610,6 +637,29 @@ export default function useTeamStatsImport({
     team,
   ])
 
+  const retryProjectionJob = React.useCallback(async () => {
+    if (!projectionJobId || projectionJob?.status !== 'failed') return
+    setRetryingProjectionJob(true)
+    try {
+      const batch = writeBatch(db)
+      const jobReference = doc(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs, projectionJobId)
+      batch.update(jobReference, {
+        status: 'queued', attemptToken: null, leaseExpiresAt: null, error: null, failedAt: null,
+        retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      })
+      if (projectionJob?.writeActionId) {
+        batch.update(doc(db, PLAYERS_DATABASE_COLLECTIONS.writeActions, projectionJob.writeActionId), {
+          status: 'in_progress', recoveryRequired: false,
+          projectionAttemptToken: null,
+          retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        })
+      }
+      await batch.commit()
+    } finally {
+      setRetryingProjectionJob(false)
+    }
+  }, [projectionJobId, projectionJob?.status, projectionJob?.writeActionId])
+
 
   return {
     open,
@@ -627,6 +677,10 @@ export default function useTeamStatsImport({
     hasInvalidRows,
     movementPreview,
     teamRootOptions,
+    projectionJobId,
+    writeActionId,
+    projectionJob,
+    retryingProjectionJob,
     rosterExceptionsSummary,
     openModal,
     selectSeasonOption,
@@ -642,5 +696,6 @@ export default function useTeamStatsImport({
     close,
     closeWriteReport,
     confirm,
+    retryProjectionJob,
   }
 }

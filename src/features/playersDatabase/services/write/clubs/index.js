@@ -34,6 +34,8 @@ export {
   buildClubIdentityFromTeam,
   CLUB_PROJECTION_REASON,
   ensureRequiredClubProjectionCompleted,
+  findClubIdsWithLeagueProjection,
+  reconcileClubProjectionsFromLeagueTable,
   resolveClubTransferCoverageStatus,
   syncClubProjectionFromTeamSeason,
   syncClubProjectionsFromLeagueTable,

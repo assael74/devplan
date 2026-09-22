@@ -1,4 +1,7 @@
-import { buildTeamPlayerSeasonalScoutProjection } from '../audit.projections.js'
+import {
+  buildTeamPlayerScoutContext,
+  buildTeamPlayerSeasonalScoutProjection,
+} from '../audit.projections.js'
 import { buildAuditFinding, AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE } from '../audit.contract.js'
 
 export function appendPlayerSeasonAuditFindings({
@@ -7,6 +10,7 @@ export function appendPlayerSeasonAuditFindings({
   teamId,
   seasonKey,
   root,
+  leagues,
   rootsById,
   playerDocsById,
   playerIndexes,
@@ -24,10 +28,42 @@ export function appendPlayerSeasonAuditFindings({
     samePlayerSearchIndexProfiles,
     profileIdsOf,
     normalizedProfilesOf,
+    findLeagueSeason,
   } = helpers
+
+  const leagueSource = findLeagueSeason({
+    leagues,
+    leagueId: season.leagueId,
+    seasonKey,
+  })
+  const teamScoutContext = {
+    ...(root || {}),
+    ...season,
+    teamGamePlayed: Number(season?.teamGamePlayed || season?.teamStats?.teamGamePlayed) || 0,
+    goalsFor: Number(season?.goalsFor || season?.teamStats?.goalsFor) || 0,
+    goalsAgainst: Number(season?.goalsAgainst || season?.teamStats?.goalsAgainst) || 0,
+    offense: season?.offense || season?.teamAttackPerformance || {},
+    defense: season?.defense || season?.teamDefensePerformance || {},
+  }
+  const scoutSeason = {
+    ...(leagueSource?.season || {}),
+    ...season,
+    seasonId: season.seasonId || seasonKey,
+    seasonKey,
+    seasonStatus: season.seasonStatus || leagueSource?.season?.seasonStatus,
+    leagueTotalRound: Number(
+      season?.leagueTotalRound || leagueSource?.season?.leagueTotalRound || 0
+    ),
+  }
 
   ;(Array.isArray(season.teamPlayers) ? season.teamPlayers : []).forEach(player => {
     const playerDocumentId = clean(player.playerDocumentId)
+    const playerIdentity = {
+      playerDocumentId,
+      playerId: clean(player.playerId),
+      externalPlayerId: clean(player.externalPlayerId),
+      playerDisplayName: clean(player.fullName || player.matchedPlayerName || player.displayName),
+    }
     const isOutOfRosterScope = clean(player.rosterStatus || 'regular') !== 'regular'
     const profiled = !isOutOfRosterScope && profilesOf(player).length > 0
     lifecycle.push({
@@ -44,7 +80,7 @@ export function appendPlayerSeasonAuditFindings({
         entityType: 'player',
         documentId: playerDocumentId,
         teamDocumentId: teamId,
-        playerDocumentId,
+        ...playerIdentity,
         seasonKey,
         title: 'חסר מסמך שחקן',
         explanation: 'לשחקן שקיבל פרופיל סקאוט, כולל Preliminary, חייב להיות Player Document.',
@@ -68,7 +104,7 @@ export function appendPlayerSeasonAuditFindings({
           documentId: playerDocumentId,
           relatedDocumentId: id,
           teamDocumentId: teamId,
-          playerDocumentId,
+          ...playerIdentity,
           seasonKey,
           title: 'למסמך השחקן חסרה עונה תואמת',
           explanation: 'לשחקן עם פרופיל בעונה זו חייבת להיות אותה קבוצה ועונה גם במסמך השחקן.',
@@ -80,7 +116,7 @@ export function appendPlayerSeasonAuditFindings({
           documentId: playerDocumentId,
           relatedDocumentId: id,
           teamDocumentId: teamId,
-          playerDocumentId,
+          ...playerIdentity,
           seasonKey,
           title: 'מסמך השחקן אינו תואם לעונת הקבוצה',
           explanation: 'פרופיל הסקאוט של אותה עונה וקבוצה חסר או שונה במסמך השחקן.',
@@ -109,7 +145,7 @@ export function appendPlayerSeasonAuditFindings({
         entityType: 'playerSearchIndex',
         documentId: '',
         teamDocumentId: teamId,
-        playerDocumentId,
+        ...playerIdentity,
         seasonKey,
         title: 'חסר אינדקס שחקן',
         explanation: 'שחקן סגל עם זהות מלאה מחייב Player SearchIndex.',
@@ -121,7 +157,7 @@ export function appendPlayerSeasonAuditFindings({
       documentId: playerIndex.id,
       relatedDocumentId: id,
       teamDocumentId: teamId,
-      playerDocumentId,
+      ...playerIdentity,
       seasonKey,
       title: 'אינדקס השחקן אינו תואם לעונת הקבוצה',
       explanation: 'פרופיל הסקאוט של אותה עונה וקבוצה חסר או שונה באינדקס השחקן.',
@@ -140,14 +176,9 @@ export function appendPlayerSeasonAuditFindings({
       },
     }))
     const calculatedTeamPlayer = buildTeamPlayerSeasonalScoutProjection({
-      player,
-      season: {
-        seasonId: season.seasonId || seasonKey,
-        seasonKey,
-        seasonStatus: season.seasonStatus,
-        leagueId: season.leagueId,
-      },
-      team: { ...(root || {}), ...season },
+      player: buildTeamPlayerScoutContext({ player, teamContext: teamScoutContext }),
+      season: scoutSeason,
+      team: teamScoutContext,
     })
     if (!sameProfiles(player, calculatedTeamPlayer)) findings.push(buildAuditFinding({
       type: AUDIT_FINDING_TYPE.SOURCE_MISMATCH,
@@ -155,7 +186,7 @@ export function appendPlayerSeasonAuditFindings({
       documentId: id,
       relatedDocumentId: playerDocumentId,
       teamDocumentId: teamId,
-      playerDocumentId,
+      ...playerIdentity,
       seasonKey,
       title: 'שחקן בעונת הקבוצה אינו תואם לחישוב הסקאוט',
       explanation: 'פרופיל הסקאוט השמור בשורת השחקן שונה מהחישוב על בסיס נתוני השחקן והקבוצה.',
@@ -171,45 +202,14 @@ export function appendPlayerSeasonAuditFindings({
 
 export function appendPlayerDocumentAuditFindings({
   players,
-  favoriteIds,
-  rootsById,
   scopedSeasons,
-  findings,
   lifecycle,
   helpers,
 }) {
-  const { clean, hasTracking, playerAuditDetails } = helpers
+  const { clean, hasTracking } = helpers
 
-  players.forEach(({ id, data }) => {
-    const favorite = favoriteIds.has(clean(data.playerId))
-    // A non-current season participant can retain a Player document purely as an
-    // archive of prior seasons.  It is not an active tracking document and
-    // must not be reported as an unexpected document after its current
-    // season's scout profile is cleared.
-    const hasArchivedSeasonHistory = (
-      (Array.isArray(data.history) && data.history.length > 0) ||
-      (Array.isArray(data.current) && data.current.length > 1)
-    )
-    const retainedForOutOfRosterScope = hasArchivedSeasonHistory && scopedSeasons.some(season => (
-      (Array.isArray(season.data?.teamPlayers) ? season.data.teamPlayers : [])
-        .some(player => (
-          clean(player.playerDocumentId) === id &&
-          clean(player.rosterStatus || 'regular') !== 'regular'
-        ))
-    ))
-    if (!hasTracking(data) && !favorite && !retainedForOutOfRosterScope) {
-      const details = playerAuditDetails({ player: data, rootsById })
-      findings.push(buildAuditFinding({
-        type: AUDIT_FINDING_TYPE.UNEXPECTED_DOCUMENT,
-        entityType: 'player',
-        documentId: id,
-        playerDocumentId: id,
-        title: 'מסמך שחקן ללא סיבת מעקב',
-        explanation: 'אין פרופיל סקאוט, Favorite, Watchlist או סיבת מעקב אחרת.',
-        actual: details,
-      }))
-    }
-  })
+  // A Player document may be retained as history or as a deliberate manual
+  // record.  Its existence alone is not a data-integrity failure.
   players.forEach(({ id, data }) => {
     const appearsInRoster = scopedSeasons.some(season => (season.data.teamPlayers || []).some(player => clean(player.playerDocumentId) === id))
     if (!appearsInRoster && hasTracking(data)) {

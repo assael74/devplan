@@ -491,6 +491,7 @@ function TeamPageContent() {
       <RosterImportModal
         team={team}
         seasonKey={rosterImport.selectedSeasonOption?.seasonKey}
+        activeSeasonOptionKey={selectedSeasonOptionKey}
         hasTeamPlayers={hasTeamPlayers}
         controller={rosterImport}
       />
@@ -498,6 +499,7 @@ function TeamPageContent() {
       <StatsImportModal
         team={team}
         seasonKey={statsImport.selectedSeasonOption?.seasonKey}
+        activeSeasonOptionKey={selectedSeasonOptionKey}
         hasTeamPlayers={statsImport.hasTeamPlayers}
         columns={statsColumns}
         source={{
@@ -505,6 +507,8 @@ function TeamPageContent() {
             statsImport.selectedSeasonOption?.season?.teamUrl ||
             selectedTeamSeason?.teamUrl ||
             team.teamUrl ||
+            team.domain?.metadata?.teamUrl ||
+            team.metadata?.teamUrl ||
             selectedSeasonOption?.season?.teamUrl ||
             '',
           leagueName:
@@ -520,6 +524,7 @@ function TeamPageContent() {
             selectedSeasonOption?.season?.seasonUrl ||
             selectedSeasonOption?.season?.leagueUrl ||
             team.domain?.metadata?.seasonUrl ||
+            team.metadata?.seasonUrl ||
             selectedLeagueDocument?.leagueUrl ||
             '',
         }}

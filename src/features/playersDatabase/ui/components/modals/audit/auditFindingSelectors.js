@@ -60,7 +60,10 @@ export const selectRepairFindings = findings => {
   )
 
   return {
-    repairable: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.CREATE_PLAYER_DOCUMENT) && clean(finding.playerDocumentId)),
+    repairable: findings.filter(finding => (
+      hasRepairType(finding, AUDIT_REPAIR_TYPE.CREATE_PLAYER_DOCUMENT) &&
+      clean(finding.playerDocumentId || finding.playerId || finding.externalPlayerId || finding.playerDisplayName)
+    )),
     clubProjection: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION)),
     playerIndex: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_PLAYER_SEARCH_INDEX)),
     orphanPlayerIndex: findings.filter(finding => (

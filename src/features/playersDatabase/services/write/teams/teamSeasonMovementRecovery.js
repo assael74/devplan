@@ -5,8 +5,8 @@ import {
   COUNTERPART_RECONCILIATION,
 } from '../../../domain/movement/index.js'
 import {
-  reconcileTeamSeasonMovementCounterparts,
-} from './teamSeasonMovement.js'
+  reconcileTeamSeasonMovementCounterpartsWithClubRefresh,
+} from './teamSeasonMovementProjection.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -33,6 +33,8 @@ const buildCounterpartRequest = ({ season = {}, incoming = {} } = {}) => {
     movementId,
     playerId,
     seasonKey,
+    counterpartSeasonKey: clean(incoming.counterpartSeasonKey),
+    counterpartSeasonUnknown: !clean(incoming.counterpartSeasonKey),
     sourceBirthTeamDocumentId,
     outgoing: {
       movementId,
@@ -66,6 +68,8 @@ const buildIncomingCounterpartRequest = ({ season = {}, outgoing = {} } = {}) =>
     movementId,
     playerId,
     seasonKey,
+    counterpartSeasonKey: clean(outgoing.counterpartSeasonKey),
+    counterpartSeasonUnknown: !clean(outgoing.counterpartSeasonKey),
     counterpartBirthTeamDocumentId: targetBirthTeamDocumentId,
     incoming: {
       movementId,
@@ -113,5 +117,5 @@ export async function retryTeamSeasonMovementCounterparts({
     }
   }
 
-  return reconcileTeamSeasonMovementCounterparts({ requests })
+  return reconcileTeamSeasonMovementCounterpartsWithClubRefresh({ requests })
 }

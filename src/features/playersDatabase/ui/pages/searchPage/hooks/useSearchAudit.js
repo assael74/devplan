@@ -4,6 +4,8 @@ import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 import {
   previewMissingPlayerDocumentRepair,
   buildAuditFindingId,
+  getPlayersDatabaseWriteAction,
+  listRecentPlayersDatabaseWriteActions,
   repairMissingPlayerDocuments,
   runPlayerDatabaseAudit,
 } from '../../../../services/audit/index.js'
@@ -35,6 +37,8 @@ export default function useSearchAudit({ rows }) {
   const [orphanIndexDeletePlan, setOrphanIndexDeletePlan] = React.useState(null)
   const [repairPreviewBusy, setRepairPreviewBusy] = React.useState(false)
   const [repairProgress, setRepairProgress] = React.useState(null)
+  const [recentWriteActions, setRecentWriteActions] = React.useState([])
+  const [recentWriteActionsBusy, setRecentWriteActionsBusy] = React.useState(false)
 
   const partialAuditDefaults = React.useMemo(
     () => buildPartialAuditDefaults(rows),
@@ -49,10 +53,23 @@ export default function useSearchAudit({ rows }) {
     return nextResult
   }, [result])
 
+  const loadRecentWriteActions = React.useCallback(async () => {
+    setRecentWriteActionsBusy(true)
+    try {
+      setRecentWriteActions(await listRecentPlayersDatabaseWriteActions({ maxResults: 5 }))
+    } catch (recentActionsError) {
+      console.error('[playersDatabase] Recent write actions read failed:', recentActionsError)
+      setRecentWriteActions([])
+    } finally {
+      setRecentWriteActionsBusy(false)
+    }
+  }, [])
+
   const openAudit = React.useCallback(() => {
     setOpen(true)
     setError('')
-  }, [])
+    void loadRecentWriteActions()
+  }, [loadRecentWriteActions])
 
   const closeAudit = React.useCallback(() => {
     setOpen(false)
@@ -77,6 +94,34 @@ export default function useSearchAudit({ rows }) {
           ? auditError.message
           : 'בדיקת מצב הנתונים נכשלה'
       )
+    } finally {
+      setBusy(false)
+    }
+  }, [busy])
+
+  const runAuditForWriteAction = React.useCallback(async writeActionId => {
+    if (busy) return
+    const id = clean(writeActionId)
+    if (!id) {
+      setError('יש להזין מזהה טעינה.')
+      return
+    }
+
+    setBusy(true)
+    setError('')
+    setRepairProgress(null)
+    try {
+      const writeAction = await getPlayersDatabaseWriteAction({ writeActionId: id })
+      if (!writeAction) throw new Error('מזהה הטעינה לא נמצא.')
+      if (!writeAction.auditScope) {
+        throw new Error('לפעולה זו עדיין אין היקף Audit. היא טרם הגיעה לשלב הכתיבה הקנונית.')
+      }
+      setResult(await runPlayerDatabaseAudit({
+        scope: writeAction.auditScope,
+        includeWriteRecovery: false,
+      }))
+    } catch (auditError) {
+      setError(auditError instanceof Error ? auditError.message : 'בדיקת מזהה הטעינה נכשלה')
     } finally {
       setBusy(false)
     }
@@ -111,6 +156,7 @@ export default function useSearchAudit({ rows }) {
       leagueId,
       teamId,
       seasonKey,
+      auditSeasonKey: seasonKey,
       auditFindingId:
         clean(finding?.auditFindingId) || buildAuditFindingId(finding),
     })
@@ -337,11 +383,15 @@ export default function useSearchAudit({ rows }) {
     orphanIndexDeletePlan,
     repairPreviewBusy,
     repairProgress,
+    recentWriteActions,
+    recentWriteActionsBusy,
     partialAuditDefaults,
     openAudit,
     closeAudit,
     handleScopeChange,
     runAudit,
+    runAuditForWriteAction,
+    loadRecentWriteActions,
     openPlayer,
     openTeam,
     openLeague,

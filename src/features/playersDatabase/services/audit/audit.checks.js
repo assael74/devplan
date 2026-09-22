@@ -27,9 +27,12 @@ import { appendSearchIndexAuditFindings } from './checks/auditSearchIndex.checks
 import { appendWriteRecoveryAuditFindings } from './checks/auditWriteRecovery.checks.js'
 import { appendTeamSeasonMovementAuditFindings } from './checks/auditMovement.checks.js'
 
-export async function runPlayerDatabaseAuditChecks({ scope } = {}) {
+export async function runPlayerDatabaseAuditChecks({ scope, includeWriteRecovery = true } = {}) {
   const normalizedScope = normalizeAuditScope(scope)
-  const snapshot = await readPlayerDatabaseAuditSnapshot({ scope: normalizedScope })
+  const snapshot = await readPlayerDatabaseAuditSnapshot({
+    scope: normalizedScope,
+    includeWriteRecovery,
+  })
   const { leagues, leaguesMaster, clubs, clubsMaster, teams, teamSeasons, players, favorites, searchIndexes, writeActions } = snapshot.rows
   const rootsById = new Map(teams.map(row => [row.id, row.data]))
   const teamSeasonsByTeamSeasonKey = new Map(teamSeasons.map(row => [keyOf(row.data), row.data]))

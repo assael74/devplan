@@ -390,3 +390,26 @@ describe('Movement reconciliation', () => {
   })
 
 })
+test('derives an internal move direction from Team slots', () => {
+  const down = reconcileRosterMovement({
+    seasonKey: '26/27',
+    team: { clubId: 'club-a', clubLevel: 1, birthTeamDocumentId: 'club-a_2', birthTeamSlot: 2 },
+    incomingPlayers: [{
+      playerId: 'p1', statsMovementDecision: 'joined',
+      statsMovementTeam: { clubId: 'club-a', clubLevel: 1, birthTeamDocumentId: 'club-a_1', birthTeamSlot: 1 },
+    }],
+    rosterImport: { mode: ROSTER_IMPORT_MODE.PATCH },
+  })
+  expect(down.transfersIn[0].direction).toBe('down')
+
+  const up = reconcileRosterMovement({
+    seasonKey: '26/27',
+    team: { clubId: 'club-a', clubLevel: 1, birthTeamDocumentId: 'club-a_1', birthTeamSlot: 1 },
+    incomingPlayers: [{
+      playerId: 'p1', statsMovementDecision: 'joined',
+      statsMovementTeam: { clubId: 'club-a', clubLevel: 1, birthTeamDocumentId: 'club-a_3', birthTeamSlot: 3 },
+    }],
+    rosterImport: { mode: ROSTER_IMPORT_MODE.PATCH },
+  })
+  expect(up.transfersIn[0].direction).toBe('up')
+})

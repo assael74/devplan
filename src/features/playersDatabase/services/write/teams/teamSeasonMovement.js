@@ -1,7 +1,9 @@
-// features/playersDatabase/services/write/teams/teamSeasonMovement.js
+// Counterpart reconciliation never owns the local Movement fact. It only
+// applies a proven counterpart to an already existing Team Season.
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
+import { getTeamById } from '../../read/entities/team.js'
 import {
   COUNTERPART_RECONCILIATION,
 } from '../../../domain/movement/index.js'
@@ -9,156 +11,163 @@ import { teamSeasonDocRef } from './teamSeasonDoc.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
-// A roster can be loaded from either side of a transfer.  In that case each
-// import creates its own movementId, even though both records describe the
-// same player moving between the same two teams in the same season.  Match the
-// counterpart semantically before appending, so the later import closes that
-// circle instead of creating a second transfer fact.
-const findSemanticCounterpartIndex = ({ rows = [], fact = {}, side = '' } = {}) => {
-  const playerId = clean(fact.playerId)
-  if (!playerId) return -1
-
-  const counterpartTeamId = side === 'transfersIn'
+const movementCounterpartTeamId = ({ fact = {}, side = '' } = {}) => (
+  side === 'transfersIn'
     ? clean(fact.fromBirthTeamDocumentId)
     : clean(fact.toBirthTeamDocumentId)
+)
 
-  if (!counterpartTeamId) return -1
+const isSameEpisode = ({ row = {}, fact = {}, side = '' } = {}) => {
+  const sameSnapshot = clean(row.targetSnapshotKey) &&
+    clean(row.targetSnapshotKey) === clean(fact.targetSnapshotKey)
+  const sameEffectiveAt = clean(row.effectiveAt) &&
+    clean(row.effectiveAt) === clean(fact.effectiveAt)
 
-  return (Array.isArray(rows) ? rows : []).findIndex(row => (
-    clean(row?.playerId) === playerId &&
-    clean(side === 'transfersIn'
-      ? row?.fromBirthTeamDocumentId
-      : row?.toBirthTeamDocumentId) === counterpartTeamId
-  ))
+  return clean(row.playerId) === clean(fact.playerId) &&
+    movementCounterpartTeamId({ fact: row, side }) === movementCounterpartTeamId({ fact, side }) &&
+    clean(row.timing) === clean(fact.timing) &&
+    Boolean(sameSnapshot || sameEffectiveAt)
 }
 
-const reconcileCounterpartFact = ({ rows = [], fact = {}, side = '' } = {}) => {
+const findFactState = ({ rows = [], fact = {}, side = '' } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
-  const exactMatchIndex = safeRows.findIndex(row => (
-    clean(row?.movementId) === clean(fact?.movementId)
+  const exactIndex = safeRows.findIndex(row => clean(row.movementId) === clean(fact.movementId))
+  if (exactIndex >= 0) return { kind: 'exact', index: exactIndex }
+
+  const equivalentIndex = safeRows.findIndex(row => isSameEpisode({ row, fact, side }))
+  if (equivalentIndex >= 0) return { kind: 'equivalent', index: equivalentIndex }
+
+  const conflicting = safeRows.some(row => (
+    clean(row.playerId) === clean(fact.playerId) &&
+    movementCounterpartTeamId({ fact: row, side }) !== movementCounterpartTeamId({ fact, side })
   ))
-  const semanticMatchIndex = exactMatchIndex === -1
-    ? findSemanticCounterpartIndex({ rows: safeRows, fact, side })
-    : -1
-  const matchedIndex = exactMatchIndex !== -1 ? exactMatchIndex : semanticMatchIndex
-
-  if (matchedIndex === -1) {
-    return {
-      rows: [...safeRows, fact],
-      closedExistingMovement: false,
-    }
-  }
-
-  return {
-    rows: safeRows.map((row, index) => (
-      index === matchedIndex ? { ...row, ...fact } : row
-    )),
-    closedExistingMovement: semanticMatchIndex !== -1,
-  }
+  return conflicting ? { kind: 'conflict', index: -1 } : { kind: 'append', index: -1 }
 }
 
-export async function reconcileTeamSeasonMovementCounterpart({
-  request = {},
-} = {}) {
-  const counterpartBirthTeamDocumentId = clean(
-    request.counterpartBirthTeamDocumentId || request.sourceBirthTeamDocumentId
+const isPendingForFact = ({ pending = {}, fact = {}, counterpartTeamSeason = {} } = {}) => {
+  if (clean(pending.playerId) !== clean(fact.playerId)) return false
+  const pendingTeamId = clean(pending.previousBirthTeamDocumentId)
+  const counterpartTeamId = clean(
+    counterpartTeamSeason.birthTeamDocumentId || counterpartTeamSeason.teamDocumentId
   )
-  const seasonKey = clean(request.seasonKey)
-  const outgoing = request.outgoing && typeof request.outgoing === 'object'
-    ? request.outgoing
-    : null
-  const incoming = request.incoming && typeof request.incoming === 'object'
-    ? request.incoming
-    : null
+  // Older Pending rows did not persist their Team relation. They remain safe
+  // to close only after this exact counterpart candidate was selected.
+  return !pendingTeamId || pendingTeamId === counterpartTeamId
+}
+
+const resolveCandidateSeasonKeys = async ({ counterpartBirthTeamDocumentId = '', request = {} } = {}) => {
+  const explicitSeasonKey = clean(request.counterpartSeasonKey)
+  if (explicitSeasonKey) return [explicitSeasonKey]
+
+  // The counterpart season is not known. Use the Team Root navigation index,
+  // never a collection scan, and prefer the local season when it exists.
+  const root = await getTeamById(counterpartBirthTeamDocumentId)
+  const rootSeasonKeys = (Array.isArray(root?.seasons) ? root.seasons : [])
+    .map(row => clean(row?.seasonKey || row?.seasonId))
+    .filter(Boolean)
+  return [...new Set([clean(request.seasonKey), ...rootSeasonKeys].filter(Boolean))]
+}
+
+async function reconcileCandidate({ counterpartBirthTeamDocumentId, seasonKey, fact, side }) {
+  const ref = teamSeasonDocRef({ birthTeamDocumentId: counterpartBirthTeamDocumentId, seasonKey })
+  return trackedRunTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref)
+    if (!snapshot.exists()) return { status: COUNTERPART_RECONCILIATION.NOT_FOUND, teamSeasonDocumentId: ref.id }
+
+    const current = snapshot.data() || {}
+    const factState = findFactState({ rows: current[side], fact, side })
+    if (factState.kind === 'conflict') {
+      return { status: COUNTERPART_RECONCILIATION.CONFLICT, teamSeasonDocumentId: ref.id, changed: false }
+    }
+
+    const pendingPlayers = Array.isArray(current.pendingPlayers) ? current.pendingPlayers : []
+    // A legacy document can contain more than one Pending row for one player.
+    // Reconciliation is entitled to close only the one episode it proved.
+    const pendingIndex = pendingPlayers.findIndex(pending => isPendingForFact({
+      pending,
+      fact,
+      counterpartTeamSeason: current,
+    }))
+    const nextPendingPlayers = pendingIndex < 0
+      ? pendingPlayers
+      : pendingPlayers.filter((_pending, index) => index !== pendingIndex)
+    const pendingChanged = pendingIndex >= 0
+    const rows = Array.isArray(current[side]) ? current[side] : []
+    const nextRows = factState.kind === 'append' ? [...rows, fact] : rows
+    const changed = pendingChanged || factState.kind === 'append'
+
+    if (changed) {
+      transaction.set(ref, { [side]: nextRows, pendingPlayers: nextPendingPlayers }, { merge: true })
+    }
+
+    return {
+      status: factState.kind === 'append' ? COUNTERPART_RECONCILIATION.COMPLETE : COUNTERPART_RECONCILIATION.NO_OP,
+      teamSeasonDocumentId: ref.id,
+      changed,
+      teamSeason: changed ? { ...current, [side]: nextRows, pendingPlayers: nextPendingPlayers } : current,
+    }
+  })
+}
+
+export async function reconcileTeamSeasonMovementCounterpart({ request = {} } = {}) {
+  const counterpartBirthTeamDocumentId = clean(request.counterpartBirthTeamDocumentId || request.sourceBirthTeamDocumentId)
+  const outgoing = request.outgoing && typeof request.outgoing === 'object' ? request.outgoing : null
+  const incoming = request.incoming && typeof request.incoming === 'object' ? request.incoming : null
   const side = outgoing ? 'transfersOut' : incoming ? 'transfersIn' : ''
   const fact = outgoing || incoming
 
-  if (!counterpartBirthTeamDocumentId || !seasonKey || !fact || !side) {
-    return {
-      status: COUNTERPART_RECONCILIATION.NOT_REQUIRED,
-    }
+  if (!counterpartBirthTeamDocumentId || !fact || !side) {
+    return { status: COUNTERPART_RECONCILIATION.NOT_REQUIRED, changed: false }
   }
 
-  const ref = teamSeasonDocRef({
-    birthTeamDocumentId: counterpartBirthTeamDocumentId,
-    seasonKey,
-  })
-
   try {
-    return await trackedRunTransaction(db, async transaction => {
-      const snapshot = await transaction.get(ref)
+    const explicitSeasonKey = clean(request.counterpartSeasonKey)
+    if (explicitSeasonKey) {
+      return reconcileCandidate({ counterpartBirthTeamDocumentId, seasonKey: explicitSeasonKey, fact, side })
+    }
 
-      if (!snapshot.exists()) {
-        return {
-          status: COUNTERPART_RECONCILIATION.NOT_FOUND,
-          teamSeasonDocumentId: ref.id,
-        }
-      }
-
-      const current = snapshot.data() || {}
-      const counterpartResult = reconcileCounterpartFact({
-        rows: current[side],
-        fact,
-        side,
+    const sameSeasonKey = clean(request.seasonKey)
+    let sameSeasonResult = { status: COUNTERPART_RECONCILIATION.NOT_FOUND, changed: false }
+    if (sameSeasonKey) {
+      sameSeasonResult = await reconcileCandidate({
+        counterpartBirthTeamDocumentId, seasonKey: sameSeasonKey, fact, side,
       })
-      const pendingPlayers = (Array.isArray(current.pendingPlayers)
-        ? current.pendingPlayers
-        : [])
-        .filter(row => clean(row.playerId) !== clean(fact.playerId))
+      if (sameSeasonResult.status !== COUNTERPART_RECONCILIATION.NOT_FOUND) return sameSeasonResult
+    }
 
-      transaction.set(ref, {
-        [side]: counterpartResult.rows,
-        pendingPlayers,
-      }, { merge: true })
+    if (request.counterpartSeasonUnknown !== true) return sameSeasonResult
 
-      return {
-        status: COUNTERPART_RECONCILIATION.COMPLETE,
-        teamSeasonDocumentId: ref.id,
-        closedExistingMovement: counterpartResult.closedExistingMovement,
-      }
-    })
+    const seasonKeys = await resolveCandidateSeasonKeys({ counterpartBirthTeamDocumentId, request })
+    for (const seasonKey of seasonKeys.filter(key => key !== sameSeasonKey)) {
+      const result = await reconcileCandidate({ counterpartBirthTeamDocumentId, seasonKey, fact, side })
+      if (result.status !== COUNTERPART_RECONCILIATION.NOT_FOUND) return result
+    }
+    return { status: COUNTERPART_RECONCILIATION.NOT_FOUND, changed: false }
   } catch (error) {
+    const failedSeasonKey = clean(request.counterpartSeasonKey || request.seasonKey)
+    const failedRef = failedSeasonKey
+      ? teamSeasonDocRef({ birthTeamDocumentId: counterpartBirthTeamDocumentId, seasonKey: failedSeasonKey })
+      : null
     return {
       status: COUNTERPART_RECONCILIATION.FAILED,
-      teamSeasonDocumentId: ref.id,
+      changed: false,
+      ...(failedRef ? { teamSeasonDocumentId: failedRef.id } : {}),
       errorCode: clean(error?.code),
       errorMessage: error instanceof Error ? error.message : 'Counterpart reconciliation failed',
     }
   }
 }
 
-export async function reconcileTeamSeasonMovementCounterparts({
-  requests = [],
-} = {}) {
+export async function reconcileTeamSeasonMovementCounterparts({ requests = [] } = {}) {
   const results = []
-
   for (const request of Array.isArray(requests) ? requests : []) {
     results.push(await reconcileTeamSeasonMovementCounterpart({ request }))
   }
 
-  if (!results.length) {
-    return {
-      status: COUNTERPART_RECONCILIATION.NOT_REQUIRED,
-      results,
-    }
-  }
-
-  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.FAILED)) {
-    return {
-      status: COUNTERPART_RECONCILIATION.FAILED,
-      results,
-    }
-  }
-
-  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.NOT_FOUND)) {
-    return {
-      status: COUNTERPART_RECONCILIATION.NOT_FOUND,
-      results,
-    }
-  }
-
-  return {
-    status: COUNTERPART_RECONCILIATION.COMPLETE,
-    results,
-  }
+  if (!results.length) return { status: COUNTERPART_RECONCILIATION.NOT_REQUIRED, results }
+  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.FAILED)) return { status: COUNTERPART_RECONCILIATION.FAILED, results }
+  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.CONFLICT)) return { status: COUNTERPART_RECONCILIATION.CONFLICT, results }
+  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.COMPLETE)) return { status: COUNTERPART_RECONCILIATION.COMPLETE, results }
+  if (results.some(result => result.status === COUNTERPART_RECONCILIATION.NOT_FOUND)) return { status: COUNTERPART_RECONCILIATION.NOT_FOUND, results }
+  return { status: COUNTERPART_RECONCILIATION.NO_OP, results }
 }

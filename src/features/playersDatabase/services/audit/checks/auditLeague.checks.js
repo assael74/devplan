@@ -9,7 +9,7 @@ export function appendLeagueAuditFindings({
   findings,
   helpers,
 }) {
-  if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) return
+  if (![AUDIT_SCOPE_TYPE.FULL_SYSTEM, AUDIT_SCOPE_TYPE.LEAGUE_SEASON].includes(normalizedScope.type)) return
 
   const { clean, seasonKeyOf, masterLeagueCounts, masterSummaryCounts, same } = helpers
 
@@ -50,6 +50,7 @@ export function appendLeagueAuditFindings({
       }
     })
 
+    if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) return
     const master = leaguesMaster.find(row => row.id === 'all')?.data
     if (master) {
       const expectedEntries = leagues.map(({ id, data }) => buildLeaguesMasterLeagueEntry({ id, ...data }))

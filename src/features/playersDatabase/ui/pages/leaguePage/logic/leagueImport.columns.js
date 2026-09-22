@@ -86,7 +86,7 @@ const renderTeamNameCell = ({
 }) => (
   <LeagueTeamNameLink
     teamName={value}
-    teamUrl={row.teamUrl}
+    teamUrl={row.displayTeamUrl || row.teamUrl}
   />
 )
 
@@ -134,7 +134,7 @@ const baseImportColumns = [
     required: true,
     label: 'מיקום',
     readOnly: true,
-    sx: sx.compactColumn,
+    sx: sx.rankColumn,
     inputSx: sx.numberInput,
   },
   {
@@ -142,16 +142,21 @@ const baseImportColumns = [
     label: 'שם קבוצה',
     readOnly: true,
     sx: sx.teamNameColumn,
+    headerSx: sx.textHeader,
+    cellContentSx: sx.textCellContent,
     render: renderTeamNameCell,
   },
   {
     key: 'teamIdentity',
     label: 'זיהוי קבוצה',
     sx: sx.teamIdentityColumn,
+    headerSx: sx.textHeader,
+    cellContentSx: sx.textCellContent,
     render: renderTeamIdentityCell,
   },
   {
     key: 'games',
+    readOnly: true,
     required: true,
     label: 'משחקים',
     sx: sx.compactColumn,
@@ -159,24 +164,28 @@ const baseImportColumns = [
   },
   {
     key: 'wins',
+    readOnly: true,
     label: 'ניצחונות',
     sx: sx.compactColumn,
     inputSx: sx.numberInput,
   },
   {
     key: 'draws',
+    readOnly: true,
     label: 'תיקו',
     sx: sx.compactColumn,
     inputSx: sx.numberInput,
   },
   {
     key: 'losses',
+    readOnly: true,
     label: 'הפסדים',
     sx: sx.compactColumn,
     inputSx: sx.numberInput,
   },
   {
     key: 'goalsFor',
+    readOnly: true,
     required: true,
     label: 'זכות',
     sx: sx.compactColumn,
@@ -184,6 +193,7 @@ const baseImportColumns = [
   },
   {
     key: 'goalsAgainst',
+    readOnly: true,
     required: true,
     label: 'חובה',
     sx: sx.compactColumn,
@@ -191,12 +201,14 @@ const baseImportColumns = [
   },
   {
     key: 'goalDifference',
+    readOnly: true,
     label: 'הפרש',
     sx: sx.compactColumn,
     inputSx: sx.ltrNumberInput,
   },
   {
     key: 'points',
+    readOnly: true,
     required: true,
     label: 'נקודות',
     sx: sx.compactColumn,

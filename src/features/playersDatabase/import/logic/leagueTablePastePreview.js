@@ -3,10 +3,7 @@
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { pickDefinedValue } from '../../model/shared/value.model.js'
-import {
-  buildTeamIdentity,
-  inferTeamSlotByLeagueLevel,
-} from '../../catalog/teamIdentity.js'
+import { buildTeamIdentity } from '../../catalog/teamIdentity.js'
 
 const clean = (value) => String(value === null || value === undefined ? '' : value).trim()
 
@@ -243,8 +240,7 @@ const normalizeRow = (row = {}, options = {}) => {
   const data = row.data || {}
   const clubOverrides = options.clubOverrides || {}
   const teamSlotOverrides = options.teamSlotOverrides || {}
-  const teamSlot = toNumber(teamSlotOverrides[row.displayIndex]) ||
-    inferTeamSlotByLeagueLevel(options.leagueLevel)
+  const teamSlot = toNumber(teamSlotOverrides[row.displayIndex]) || 1
   const goals = data.goalsCombined
     ? splitGoals(data.goalsCombined)
     : {

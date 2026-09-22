@@ -115,6 +115,7 @@ export async function updateLeagueSeasonTableRank({
               seasonKey,
               leagueTotalRound: resolvedLeagueTotalRound,
               competitionRules,
+              sourceRevision: clean(season.sourceRevision) || clean(existingSeason?.sourceRevision),
             },
             tableRank,
             teamPerformanceContext,
@@ -137,6 +138,7 @@ export async function updateLeagueSeasonTableRank({
             season.seasonStatus,
             clean(season.seasonStatus) === 'completed' ? 'completed' : 'active'
           ),
+          sourceRevision: clean(season.sourceRevision) || clean(existingSeason?.sourceRevision),
           tableRank,
           teamPerformanceContext,
           updatedAt: new Date().toISOString(),

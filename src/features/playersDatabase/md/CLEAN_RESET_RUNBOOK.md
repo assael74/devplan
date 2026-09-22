@@ -34,14 +34,19 @@ Keep the exact statistical source columns accepted by Stats Import. Stats Import
 1. Freeze writes.
 2. Validate League, Roster and Stats Excel files.
 3. Delete the Players Database data selected for the clean reset.
-4. Import one League.
-5. Validate the League write and run Audit.
-6. Import one Team Roster.
-7. Validate Team Season, Movement and SearchIndex projections and run Audit.
-8. Import Team Stats.
-9. Validate scouting, balance and projections and run Audit.
-10. Continue team by team / league by league only after the previous step is clean.
-11. Run a full-system Audit at the end.
+4. Import one League. Confirm that the canonical League table was saved.
+5. Wait for its `dbLeagueProjectionJobs` record to leave `queued` / `processing`.
+   `completed` means the deferred Team Season and Team SearchIndex performance projection finished;
+   `failed` requires targeted reconciliation before proceeding. A stuck
+   `processing` lease is automatically requeued after expiry; it does not scan
+   Team or Player documents.
+6. Validate the League write and run Audit.
+7. Import one Team Roster.
+8. Validate Team Season, Movement and SearchIndex projections and run Audit.
+9. Import Team Stats.
+10. Validate scouting, balance and projections and run Audit.
+11. Continue team by team / league by league only after the previous step is clean.
+12. Run a full-system Audit at the end.
 
 ## Acceptance rules
 

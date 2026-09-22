@@ -114,6 +114,10 @@ export const playerIndexKey = row => [
 ].join('::')
 export const inScope = ({ scope, row }) => {
   if (scope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM) return true
+  if (scope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON) {
+    return clean(row?.leagueId || row?.league?.leagueId) === clean(scope.leagueId) &&
+      seasonKeyOf(row) === clean(scope.seasonKey)
+  }
   const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
   return scopes.some(item => item.teamDocumentId === teamIdOf(row) && item.seasonKey === seasonKeyOf(row))
 }
@@ -182,6 +186,8 @@ export const findLeagueTableTeamContext = ({ leagues = [], teamId = '', seasonKe
 export const auditDomainsForScope = scope => (
   scope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM
     ? Object.values(AUDIT_DOMAIN)
+    : scope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON
+      ? [AUDIT_DOMAIN.LEAGUE_LIFECYCLE]
     : [
         AUDIT_DOMAIN.TEAM_RELATIONS,
         AUDIT_DOMAIN.PLAYER_RELATIONS,

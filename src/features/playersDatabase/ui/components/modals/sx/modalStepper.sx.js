@@ -1,5 +1,3 @@
-// src/features/playersDatabase/ui/components/modals/sx/modalStepper.sx.js
-
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const stepNumber = {
@@ -29,8 +27,15 @@ export const modalStepperSx = {
     py: 1.25,
     display: 'flex',
     gap: 0.75,
-    borderBottom: `1px solid ${devPlanColors.border}`,
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 12,
     bgcolor: devPlanColors.secondaryLight,
+    overflow: 'hidden',
+  },
+
+  stepBarCompact: {
+    px: 2,
+    py: 0.75,
   },
 
   stepItem: {
@@ -41,8 +46,17 @@ export const modalStepperSx = {
     gap: 0.5,
   },
 
-  resolveStepNumber: (active, complete, disabled) => ({
+  stepItemCompact: {
+    gap: 0.25,
+  },
+
+  resolveStepNumber: (active, complete, disabled, compact = false) => ({
     ...stepNumber,
+    ...(compact ? {
+      width: 24,
+      height: 24,
+      fontSize: 11,
+    } : {}),
     ...(active ? {
       bgcolor: devPlanColors.primary,
       color: '#fff',

@@ -48,14 +48,26 @@ export function appendTeamLifecycleAuditFindings({
       })
       if (!source) return
 
+      const performance = buildLeagueTeamPerformanceProjection({
+        league: source.league.data,
+        season: source.season,
+        target: source.target,
+        team: {
+          ...row.data,
+          birthTeamId: teamIdOf(row.data),
+          teamId: teamIdOf(row.data),
+        },
+      })
+      const metricsSource = performance || row.data
+
       const expected = buildTeamSeasonSearchMetrics({
         target: source.target,
         seasonStatus: source.season.seasonStatus,
         leagueTotalRound: source.season.leagueTotalRound,
-        teamGamePlayed: row.data?.teamGamePlayed,
-        points: row.data?.points,
-        goalsFor: row.data?.goalsFor,
-        goalsAgainst: row.data?.goalsAgainst,
+        teamGamePlayed: metricsSource.teamGamePlayed,
+        points: metricsSource.points,
+        goalsFor: metricsSource.goalsFor,
+        goalsAgainst: metricsSource.goalsAgainst,
       })
       const fields = [
         'seasonStatus',
@@ -216,6 +228,7 @@ export function appendTeamSeasonAuditFindings({
           seasonKey,
           title: 'אינדקס הקבוצה אינו תואם לטבלת הליגה',
           source: 'League table → buildLeagueTeamPerformanceProjection',
+          repairType: AUDIT_REPAIR_TYPE.REBUILD_TEAM_SEARCH_INDEX,
           expected,
           actual: indexActual,
         }))

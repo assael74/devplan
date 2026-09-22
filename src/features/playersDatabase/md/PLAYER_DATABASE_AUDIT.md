@@ -36,6 +36,12 @@ offers the existing Club rebuild: it rebuilds from the canonical League table,
 syncs Clubs Master, and only then marks the recovery record as resolved. No
 roster deletion or reload is required.
 
+League Import writes its canonical table first and queues its bounded Team
+Season performance projection. The job's `sourceRevision` and per-attempt
+token prevent an old background attempt from overwriting a later League load;
+Audit should treat a `queued` or `processing` job as pending work, not as a
+canonical League-table failure.
+
 ## Boundaries
 
 - Audit does **not** validate Firestore schema, field presence, field type,
@@ -67,8 +73,9 @@ roster deletion or reload is required.
 Team Root without a season is a valid lifecycle state. It is not an unexpected
 document by itself.
 
-A Player Document linked to a left or younger season participant is not an
-`unexpected_document` when it retains historical seasons or independent tracking.
+A Player Document is a durable history/manual record. Its existence alone is
+not an `unexpected_document`, even when it currently has no scout profile,
+Favorite, Watchlist or other active tracking reason.
 
 ## Canonical source comparisons
 
@@ -110,9 +117,11 @@ The confirmation preview displays every player together with team, slot (only
 when greater than one), league, season, age group and birth year. It writes
 only the validated entries shown in that preview.
 
-Repair uses canonical writers to create the Player Document, refresh the
-affected Team Season scouting projection, Player SearchIndex, Team SearchIndex
-and League team summary, or retry an existing Movement counterpart. Movement
+Repair uses canonical writers to create a Player Document when absent, or to
+reuse an existing canonical Player Document from an earlier season and attach
+the missing season relation. It then refreshes the affected Team Season
+scouting projection, Player SearchIndex, Team SearchIndex and League team
+summary, or retries an existing Movement counterpart. Movement
 retry never creates a Team Root or Team Season; a missing counterpart remains
 legal. Repair never creates a document from Audit output alone, does not
 perform schema repair, and does not use SearchIndex as the write source. A new

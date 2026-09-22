@@ -25,9 +25,10 @@ export default function ModalStepper({
   completedSteps,
   disabledSteps,
   steps = [],
+  compact = false,
 }) {
   return (
-    <Stack direction='row' sx={sx.stepBar}>
+    <Stack direction='row' sx={[sx.stepBar, compact ? sx.stepBarCompact : null]}>
       {steps.map((step, index) => {
         const definition = normalizeStep(step)
         const active = index === activeStep
@@ -37,8 +38,8 @@ export default function ModalStepper({
         const disabled = definition.disabled === true || hasStepState(disabledSteps, index)
 
         return (
-          <Box key={definition.id || definition.label || index} sx={sx.stepItem}>
-            <Box sx={sx.resolveStepNumber(active, complete, disabled)}>
+          <Box key={definition.id || definition.label || index} sx={[sx.stepItem, compact ? sx.stepItemCompact : null]}>
+            <Box sx={sx.resolveStepNumber(active, complete, disabled, compact)}>
               {index + 1}
             </Box>
 

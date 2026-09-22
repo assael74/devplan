@@ -47,7 +47,7 @@ export const leagueCenterContextSx = {
     width: '100%',
     minWidth: 0,
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, 1fr)',
+    gridTemplateColumns: 'minmax(0, 1.35fr) repeat(2, minmax(0, 1fr))',
     gap: 0.6,
   },
 

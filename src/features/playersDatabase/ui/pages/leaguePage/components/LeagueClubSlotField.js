@@ -1,13 +1,8 @@
 // src/features/playersDatabase/ui/pages/leaguePage/components/LeagueClubSlotField.js
 
-import {
-  Autocomplete,
-  Box,
-  Option,
-  Select,
-  Typography,
-} from '@mui/joy'
+import { Box, Tooltip } from '@mui/joy'
 
+import ClubSlotSelect from '../../../components/modals/components/ClubSlotSelect.js'
 import { leagueClubSlotFieldSx as sx } from './sx/leagueClubSlotField.sx.js'
 
 export function LeagueClubSlotField({
@@ -23,51 +18,46 @@ export function LeagueClubSlotField({
   errorMessage = '',
   warningMessage = '',
 }) {
-  const selectedClub = clubOptions.find(option => option.value === clubId) || null
-
-  return (
-    <Box sx={sx.root}>
-      <Autocomplete
-        size="sm"
-        options={clubOptions}
-        value={selectedClub}
-        placeholder="חיפוש מועדון"
-        getOptionLabel={option => option.displayLabel || option.label || ''}
-        isOptionEqualToValue={(option, selected) => option.value === selected?.value}
-        filterOptions={filterClubOptions}
-        color={clubError ? 'danger' : 'neutral'}
-        sx={sx.clubAutocomplete}
-        onChange={(event, nextOption) => onClubChange(nextOption ? nextOption.value : '')}
+  const clubColor = clubError || errorMessage
+    ? 'danger'
+    : warningMessage
+      ? 'warning'
+      : 'neutral'
+  const clubField = (
+    <Box sx={sx.tooltipAnchor}>
+      <ClubSlotSelect
+        clubOptions={clubOptions}
+        clubValue={clubId}
+        slotOptions={teamSlotOptions}
+        slotValue={teamSlot}
+        clubColor={clubColor}
+        slotColor={slotError ? 'danger' : 'neutral'}
+        filterClubOptions={filterClubOptions}
+        getClubValue={option => option?.value || ''}
+        getClubLabel={option => option?.displayLabel || option?.label || ''}
+        getSlotValue={option => option?.value || ''}
+        getSlotLabel={option => option?.label || ''}
+        onClubChange={nextOption => onClubChange(nextOption?.value || '')}
+        onSlotChange={nextValue => onTeamSlotChange(nextValue || '')}
+        rootSx={sx.root}
+        clubSx={sx.clubAutocomplete}
+        slotSx={sx.slotSelect}
       />
-
-      <Select
-        size="sm"
-        value={teamSlot}
-        color={slotError ? 'danger' : 'neutral'}
-        sx={[
-          sx.slotSelect,
-          Number(teamSlot) > 1 ? sx.slotSelectChanged : null,
-        ]}
-        onChange={(event, nextValue) => onTeamSlotChange(nextValue || '')}
-      >
-        {teamSlotOptions.map(option => (
-          <Option key={option.value} value={option.value}>
-            {option.label}
-          </Option>
-        ))}
-      </Select>
-
-      {errorMessage ? (
-        <Typography level="body-xs" color="danger" sx={[sx.message, sx.errorMessage]}>
-          {errorMessage}
-        </Typography>
-      ) : null}
-
-      {!errorMessage && warningMessage ? (
-        <Typography level="body-xs" color="warning" sx={[sx.message, sx.warningMessage]}>
-          {warningMessage}
-        </Typography>
-      ) : null}
     </Box>
   )
+
+  return errorMessage ? (
+    <Tooltip
+      title={errorMessage}
+      placement='bottom-end'
+      variant='soft'
+      slotProps={{
+        tooltip: {
+          sx: sx.errorTooltip,
+        },
+      }}
+    >
+      {clubField}
+    </Tooltip>
+  ) : clubField
 }

@@ -5,11 +5,10 @@ import {
   Box,
   Button,
   Chip,
-  FormControl,
-  FormHelperText,
-  FormLabel,
-  Option,
-  Select,
+  CircularProgress,
+  Divider,
+  RadioGroup,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/joy'
@@ -19,51 +18,34 @@ import {
   STATS_SEASON_STATUS_OPTIONS,
 } from '../logic/statsImport.constants.js'
 import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
+import ImportModalContextDescription from '../../../../../components/modals/ImportModalContextDescription.js'
 import ModalStepper from '../../../../../components/modals/ModalStepper.js'
 import RegularModal from '../../../../../components/modals/RegularModal.js'
-import TeamSeasonSelect from '../../../../../components/modals/TeamSeasonSelect.js'
+import ImportChoiceCard from '../../../../../components/modals/paste/ImportChoiceCard.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
 import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
+import TeamSeasonChoiceCards from '../../../../../components/modals/paste/TeamSeasonChoiceCards.js'
+import { importModalChromeSx as chromeSx } from '../../../../../components/modals/paste/sx/importModalChrome.sx.js'
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { statsImportModalSx as sx } from '../sx/statsImportModal.sx.js'
+import leagueActiveImage from '../../../../../../../../ui/core/images/modals/leagueActive.png'
+import leagueCompletedImage from '../../../../../../../../ui/core/images/modals/leagueCompleted.png'
 
-const STEPS = ['הקשר טעינה', 'הדבקה וניתוח', 'בדיקה ואישור']
+const STEPS = ['הקשר טעינה', 'קליטת נתונים', 'זיהוי ואישור', 'סנכרון']
+
+const PROJECTION_JOB_STATUS = {
+  queued: { color: 'neutral', label: 'ממתין', title: 'הסנכרון ממתין להתחלה', description: 'נתוני הסטטיסטיקה נשמרו. בדיקת הסנכרון תתחיל אוטומטית.' },
+  processing: { color: 'primary', label: 'בתהליך', title: 'סנכרון נתוני הסטטיסטיקה מתבצע', description: 'המערכת בודקת מסמכי שחקנים, אינדקסים והשלכות של הקבוצה והעונה.' },
+  completed: { color: 'success', label: 'הושלם', title: 'סנכרון נתוני הסטטיסטיקה הושלם', description: 'המסמכים הנגזרים נבדקו מול נתוני הקבוצה והעונה שנשמרו.' },
+  failed: { color: 'danger', label: 'נכשל', title: 'סנכרון נתוני הסטטיסטיקה נכשל', description: 'נתוני הסטטיסטיקה נשמרו; אפשר לנסות שוב את הסנכרון בלבד.' },
+  superseded: { color: 'neutral', label: 'הוחלף', title: 'הטעינה הוחלפה בטעינה חדשה יותר', description: 'לא בוצעו עדכונים נוספים מהטעינה הישנה.' },
+}
 
 function clean(value) {
   return String(value || '').trim()
 }
 
 const formatValidationNumber = value => new Intl.NumberFormat('en-US').format(value)
-
-function MetaLink({ href, children }) {
-  const safeHref = clean(href)
-  const missingLabel = children
-
-  if (!safeHref) {
-    return (
-      <Typography component='span' level='body-sm' sx={sx.missingLink}>
-        {missingLabel || 'לא הוגדר קישור למקור'}
-      </Typography>
-    )
-  }
-
-  return (
-    <Tooltip title={safeHref} placement='top' arrow>
-      <Typography
-        component='a'
-        href={safeHref}
-        target='_blank'
-        rel='noopener noreferrer'
-        referrerPolicy='no-referrer'
-        level='body-sm'
-        dir='ltr'
-        sx={sx.metaLink}
-      >
-        {children}
-      </Typography>
-    </Tooltip>
-  )
-}
 
 function ValidationCheckChip({ check, onApplyMinutesAdjustment }) {
   const isValid = check?.valid === true
@@ -172,6 +154,7 @@ function MovementPreviewChips({ preview = {} }) {
 export default function StatsImportModal({
   team,
   seasonKey,
+  activeSeasonOptionKey,
   hasTeamPlayers,
   columns,
   source,
@@ -181,66 +164,83 @@ export default function StatsImportModal({
   const leagueName = clean(source.leagueName || team.leagueName)
   const leagueUrl = clean(source.leagueUrl || team?.domain?.metadata?.seasonUrl)
   const hasPreviewRows = controller.rows.length > 0
+  const projectionJobStatus = PROJECTION_JOB_STATUS[controller.projectionJob?.status] || PROJECTION_JOB_STATUS.queued
   const [activeStep, setActiveStep] = React.useState(0)
-  const seasonStatusOption = STATS_SEASON_STATUS_OPTIONS.find(option => (
-    option.value === controller.seasonStatus
-  ))
-
+  const previewAdvanceRequestedRef = React.useRef(false)
   React.useEffect(() => {
-    if (controller.open) setActiveStep(0)
+    if (controller.open) {
+      previewAdvanceRequestedRef.current = false
+      setActiveStep(0)
+    }
   }, [controller.open])
 
+  React.useEffect(() => {
+    if (controller.projectionJobId) setActiveStep(3)
+  }, [controller.projectionJobId])
+
+  React.useEffect(() => {
+    if (!previewAdvanceRequestedRef.current || !hasPreviewRows) return
+
+    previewAdvanceRequestedRef.current = false
+    setActiveStep(2)
+  }, [hasPreviewRows])
+
   const description = (
-    <Box sx={sx.description}>
-      <MetaLink href={teamUrl} missingLabel='לא הוגדר קישור לקבוצה'>
-        {team.name || 'קבוצה'}
-      </MetaLink>
-
-      <Typography component='span' level='body-sm'>·</Typography>
-      <MetaLink href={leagueUrl} missingLabel='לא הוגדר קישור לליגה'>
-        {leagueName || 'ליגה'}
-      </MetaLink>
-
-      {seasonKey ? (
-        <>
-          <Typography component='span' level='body-sm'>·</Typography>
-          <Typography component='span' level='body-sm'>
-            עונה {seasonKey}
-          </Typography>
-        </>
-      ) : null}
-
-      {team.birthYear ? (
-        <>
-          <Typography component='span' level='body-sm'>·</Typography>
-          <Typography component='span' level='body-sm'>
-            שנתון {team.birthYear}
-          </Typography>
-        </>
-      ) : null}
-    </Box>
+    <ImportModalContextDescription
+      items={[
+        { label: team.name || 'קבוצה', href: teamUrl },
+        { label: leagueName || 'ליגה', href: leagueUrl },
+        { label: seasonKey ? `עונה ${seasonKey}` : '' },
+        { label: team.birthYear ? `שנתון ${team.birthYear}` : '' },
+      ]}
+    />
   )
 
   const selectionControls = (
-    <Box sx={sx.selectionRow}>
-      <TeamSeasonSelect
-        seasonOptions={controller.seasonOptions}
-        value={controller.selectedSeasonOptionKey}
-        onChange={controller.selectSeasonOption}
-        hideHelperText={hasPreviewRows}
-        sx={sx.seasonSelect}
-      />
-      <FormControl
-        size='sm'
-        required
-        sx={sx.seasonStatus}
-      >
-        <FormLabel>סוג טעינת הסטטיסטיקה</FormLabel>
-        <Select value={controller.seasonStatus || null} placeholder='בחר סוג טעינה' onChange={(event, value) => controller.changeSeasonStatus(value)}>
-          {STATS_SEASON_STATUS_OPTIONS.map(option => <Option key={option.value} value={option.value}>{option.label}</Option>)}
-        </Select>
-        {!hasPreviewRows ? <FormHelperText>{seasonStatusOption?.description || 'בחירה חובה לפני הצגת הנתונים'}</FormHelperText> : null}
-      </FormControl>
+    <Box sx={sx.selectionPanel}>
+      <Box sx={sx.choiceSection}>
+        <Typography level='title-sm' sx={sx.choiceSectionTitle}>
+          עונת פעולה
+        </Typography>
+        <TeamSeasonChoiceCards
+          seasonOptions={controller.seasonOptions}
+          activeSeasonOptionKey={activeSeasonOptionKey}
+          value={controller.selectedSeasonOptionKey}
+          onChange={controller.selectSeasonOption}
+          sx={sx.seasonCards}
+        />
+      </Box>
+
+      <Box sx={sx.choiceSection}>
+        <Typography level='title-sm' sx={sx.choiceSectionTitle}>
+          סוג טעינת הסטטיסטיקה
+        </Typography>
+        <RadioGroup
+          value={controller.seasonStatus || ''}
+          sx={sx.statsTypeCards}
+          onChange={event => controller.changeSeasonStatus(event.target.value)}
+        >
+          {STATS_SEASON_STATUS_OPTIONS.map(option => {
+            const selected = option.value === controller.seasonStatus
+            const image = option.value === 'completed'
+              ? leagueCompletedImage
+              : leagueActiveImage
+
+            return (
+              <ImportChoiceCard
+                key={option.value}
+                value={option.value}
+                label={option.label}
+                description={option.description}
+                descriptionLevel='body-sm'
+                image={image}
+                selected={selected}
+                size='large'
+              />
+            )
+          })}
+        </RadioGroup>
+      </Box>
     </Box>
   )
 
@@ -252,37 +252,24 @@ export default function StatsImportModal({
     controller.movementPreview.requiresDecision ||
     !contextReady
   )
-  const confirmDisabled = activeStep === 0
+  const confirmDisabled = activeStep === 3
+    ? false
+    : activeStep === 0
     ? !contextReady
     : activeStep === 1
-      ? !hasPreviewRows
+      ? !controller.pasteValue || !contextReady
       : finalConfirmDisabled || !hasPreviewRows
   const footerActions = activeStep === 1 ? (
     <ImportActionArea
       actions={[
         {
           id: 'back',
-          label: 'חזרה',
+          label: 'חזרה להקשר טעינה',
           iconId: 'forward',
           presentationRole: 'back',
           disabled: controller.busy,
+          sx: chromeSx.backButton,
           onClick: () => setActiveStep(0),
-        },
-        {
-          id: 'clear',
-          label: 'ניקוי מלא',
-          iconId: 'delete',
-          presentationRole: 'clear',
-          disabled: !controller.pasteValue,
-          onClick: controller.clearPaste,
-        },
-        {
-          id: 'preview',
-          label: 'הצג נתונים',
-          iconId: 'addStats',
-          presentationRole: 'primary',
-          disabled: !controller.pasteValue || !contextReady,
-          onClick: controller.parse,
         },
       ]}
     />
@@ -291,10 +278,11 @@ export default function StatsImportModal({
       actions={[
         {
           id: 'back',
-          label: 'חזרה',
+          label: 'חזרה לקליטת נתונים',
           iconId: 'forward',
           presentationRole: 'back',
           disabled: controller.busy,
+          sx: chromeSx.backButton,
           onClick: () => setActiveStep(1),
         },
       ]}
@@ -307,7 +295,18 @@ export default function StatsImportModal({
     }
 
     if (activeStep === 1) {
-      setActiveStep(2)
+      if (hasPreviewRows) {
+        setActiveStep(2)
+        return
+      }
+
+      previewAdvanceRequestedRef.current = true
+      controller.parse()
+      return
+    }
+
+    if (activeStep === 3) {
+      handleClose()
       return
     }
 
@@ -320,10 +319,10 @@ export default function StatsImportModal({
     controller.close()
   }
   const confirmLabel = activeStep === 0
-    ? 'המשך'
+    ? 'המשך לקליטת נתונים'
     : activeStep === 1
-      ? 'המשך'
-      : 'אישור טעינת סטטיסטיקות'
+      ? 'המשך לזיהוי ואישור'
+      : activeStep === 2 ? 'אישור טעינת סטטיסטיקות' : 'סגור'
 
   return (
     <RegularModal
@@ -334,15 +333,17 @@ export default function StatsImportModal({
       busy={controller.busy}
       disabled={confirmDisabled}
       confirmLabel={confirmLabel}
-      confirmIconId={activeStep === 2 ? 'upload' : 'next'}
+      confirmIconId={activeStep === 2 ? 'upload' : activeStep === 3 ? 'next' : 'next'}
       size='xl'
       contentSx={pasteSx.modalContent}
+      headerIconSx={sx.modalHeaderIcon}
+      footerSx={chromeSx.footer}
       footerActions={footerActions}
       onConfirm={handleConfirm}
       onClose={handleClose}
     >
       <Box sx={pasteSx.content}>
-        <ModalStepper activeStep={activeStep} steps={STEPS} />
+        <ModalStepper activeStep={activeStep} steps={STEPS} compact />
 
         {activeStep === 0 ? selectionControls : null}
 
@@ -352,6 +353,8 @@ export default function StatsImportModal({
             placeholder={PLAYER_STATS_PLACEHOLDER}
             compact={hasPreviewRows}
             onChange={controller.setPasteValue}
+            inputVariant='tall'
+            templateText={PLAYER_STATS_PLACEHOLDER}
           />
         ) : null}
 
@@ -387,6 +390,57 @@ export default function StatsImportModal({
               })),
             ]}
           />
+        ) : null}
+
+        {activeStep === 3 ? (
+          <Box sx={sx.syncPanel}>
+            <Stack direction='row' spacing={1.25} alignItems='center'>
+              {!['completed', 'failed'].includes(controller.projectionJob?.status) ? (
+                <CircularProgress size='sm' color={projectionJobStatus.color} />
+              ) : null}
+              <Box sx={sx.syncHeading}>
+                <Chip size='sm' variant='soft' color={projectionJobStatus.color}>{projectionJobStatus.label}</Chip>
+                <Typography level='title-lg' color={projectionJobStatus.color}>
+                  {projectionJobStatus.title}
+                </Typography>
+              </Box>
+            </Stack>
+            <Typography level='body-sm' sx={sx.syncDescription}>{projectionJobStatus.description}</Typography>
+            <Divider />
+            <Box sx={sx.syncScope}>
+              <Typography level='title-sm'>מה מסתנכרן?</Typography>
+              <Typography level='body-sm'>
+                פרופילי סקאוט, עמדות, איזון, דקות משחק, העברות ואינדקסי שחקנים — לפי נתוני הסטטיסטיקה שנשמרו.
+              </Typography>
+              <Typography level='body-xs' sx={sx.syncScopeHint}>
+                הסנכרון אינו טוען נתונים חדשים ואינו משנה את טבלת הליגה.
+              </Typography>
+            </Box>
+            {controller.projectionJob?.stageResults?.canonicalSource ? (
+              <Stack direction='row' spacing={1} useFlexGap flexWrap='wrap'>
+                <Chip size='sm' variant='soft' color='neutral'>
+                  {controller.projectionJob.stageResults.canonicalSource.playersCount || 0} שחקנים
+                </Chip>
+                <Chip size='sm' variant='soft' color='neutral'>
+                  {controller.projectionJob.stageResults.playerIndexes?.playerIndexCount || 0} אינדקסים
+                </Chip>
+              </Stack>
+            ) : null}
+            {controller.projectionJob?.error?.message ? (
+              <Typography level='body-xs' color='danger' sx={sx.syncError}>{controller.projectionJob.error.message}</Typography>
+            ) : null}
+            {controller.projectionJob?.status === 'failed' ? (
+              <Button
+                color='danger'
+                variant='soft'
+                loading={controller.retryingProjectionJob}
+                onClick={controller.retryProjectionJob}
+                sx={sx.syncRetryButton}
+              >
+                נסה שוב
+              </Button>
+            ) : null}
+          </Box>
         ) : null}
       </Box>
     </RegularModal>

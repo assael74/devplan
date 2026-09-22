@@ -2,7 +2,7 @@
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
-export const AUDIT_SCOPE_TYPE = Object.freeze({ TEAM_SEASON: 'teamSeason', TEAM_SEASONS: 'teamSeasons', FULL_SYSTEM: 'fullSystem' })
+export const AUDIT_SCOPE_TYPE = Object.freeze({ TEAM_SEASON: 'teamSeason', TEAM_SEASONS: 'teamSeasons', LEAGUE_SEASON: 'leagueSeason', FULL_SYSTEM: 'fullSystem' })
 export const AUDIT_DOMAIN = Object.freeze({
   TEAM_RELATIONS: 'team_relations',
   PLAYER_RELATIONS: 'player_relations',
@@ -12,10 +12,11 @@ export const AUDIT_DOMAIN = Object.freeze({
   CLUBS_MASTER: 'clubs_master',
   WRITE_RECOVERY: 'write_recovery',
 })
-export const AUDIT_SCOPE_LABELS = Object.freeze({ [AUDIT_SCOPE_TYPE.TEAM_SEASON]: 'קבוצה ועונה', [AUDIT_SCOPE_TYPE.TEAM_SEASONS]: 'העדכון האחרון', [AUDIT_SCOPE_TYPE.FULL_SYSTEM]: 'כל המערכת' })
+export const AUDIT_SCOPE_LABELS = Object.freeze({ [AUDIT_SCOPE_TYPE.TEAM_SEASON]: 'קבוצה ועונה', [AUDIT_SCOPE_TYPE.TEAM_SEASONS]: 'העדכון האחרון', [AUDIT_SCOPE_TYPE.LEAGUE_SEASON]: 'ליגה ועונה', [AUDIT_SCOPE_TYPE.FULL_SYSTEM]: 'כל המערכת' })
 
 export const buildAuditTeamSeasonScope = ({ teamDocumentId, seasonKey }) => ({ type: AUDIT_SCOPE_TYPE.TEAM_SEASON, teamDocumentId: clean(teamDocumentId), seasonKey: clean(seasonKey) })
 export const buildAuditTeamSeasonsScope = scopes => ({ type: AUDIT_SCOPE_TYPE.TEAM_SEASONS, scopes: (Array.isArray(scopes) ? scopes : []).map(buildAuditTeamSeasonScope).filter(scope => scope.teamDocumentId && scope.seasonKey) })
+export const buildAuditLeagueSeasonScope = ({ leagueId, seasonKey }) => ({ type: AUDIT_SCOPE_TYPE.LEAGUE_SEASON, leagueId: clean(leagueId), seasonKey: clean(seasonKey) })
 export const normalizeAuditScope = value => {
   const source = value && typeof value === 'object' ? value : {}
   if (source.type === AUDIT_SCOPE_TYPE.TEAM_SEASON) {
@@ -28,19 +29,28 @@ export const normalizeAuditScope = value => {
     if (!scope.scopes.length) throw new Error('לא נמצאו קבוצות ועונות לבדיקה.')
     return scope
   }
+  if (source.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON) {
+    const scope = buildAuditLeagueSeasonScope(source)
+    if (!scope.leagueId || !scope.seasonKey) throw new Error('חסרים מזהה ליגה או עונה.')
+    return scope
+  }
   return { type: AUDIT_SCOPE_TYPE.FULL_SYSTEM }
 }
 
-export const buildAuditScopeKey = ({ teamDocumentId = '', seasonKey = '', auditDomain = '' } = {}) => {
+export const buildAuditScopeKey = ({ teamDocumentId = '', leagueId = '', seasonKey = '', auditDomain = '' } = {}) => {
   const teamId = clean(teamDocumentId)
   const season = clean(seasonKey)
   const domain = clean(auditDomain)
-  return teamId && season && domain ? `teamSeason__${domain}__${teamId}__${season}` : ''
+  if (teamId && season && domain) return `teamSeason__${domain}__${teamId}__${season}`
+  return clean(leagueId) && season && domain ? `leagueSeason__${domain}__${clean(leagueId)}__${season}` : ''
 }
 
 export const getAuditScopeKeys = (scope, auditDomains = []) => {
   const normalizedScope = normalizeAuditScope(scope)
   if (normalizedScope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM) return []
+  if (normalizedScope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON) {
+    return auditDomains.map(auditDomain => buildAuditScopeKey({ ...normalizedScope, auditDomain })).filter(Boolean)
+  }
 
   const scopes = normalizedScope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON
     ? [normalizedScope]

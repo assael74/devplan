@@ -135,13 +135,9 @@ function AuditFindingCard({ finding, busy, actions }) {
         variant='solid'
         disabled={busy}
         sx={sx.actionButton}
-        onClick={() => actions.onTeamOpen?.(finding, {
-          teamDocumentId: finding.teamDocumentId,
-          seasonKey: finding.seasonKey,
-          leagueId: finding.actual?.leagueId,
-        })}
+        onClick={() => actions.onLeagueOpen?.(finding)}
       >
-        מעבר לעמוד קבוצה
+        מעבר לעמוד ליגה
       </Button>
     ) : null}
     {isLeagueDocumentFinding(finding) || isLeagueLifecycleDocumentFinding(finding) ? (

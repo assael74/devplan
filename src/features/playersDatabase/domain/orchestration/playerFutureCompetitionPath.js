@@ -1,6 +1,6 @@
 // src/features/playersDatabase/domain/orchestration/playerFutureCompetitionPath.js
 
-import { scoutingCommon } from '../../../../shared/scouting/index.js'
+import { scoutingCommon } from '@devplan/players-scout-engine/index.js'
 
 const toPositiveNumber = value => {
   const number = Number(value)

@@ -1,52 +1,68 @@
 // src/features/playersDatabase/ui/pages/teamPage/stats/import/sx/statsImportModal.sx.js
 
+import { devPlanColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { importModalChromeSx } from '../../../../../components/modals/paste/sx/importModalChrome.sx.js'
+import { leagueImportModalSx } from '../../../../../components/modals/paste/sx/leagueImportModal.sx.js'
+
 export const statsImportModalSx = {
-  missingLink: {
-    color: 'neutral.500',
-  },
+  // Keep the background-sync step visually identical to League import.
+  syncPanel: leagueImportModalSx.syncPanel,
+  syncHeading: leagueImportModalSx.syncHeading,
+  syncDescription: leagueImportModalSx.syncDescription,
+  syncScope: leagueImportModalSx.syncScope,
+  syncScopeHint: leagueImportModalSx.syncScopeHint,
+  syncError: leagueImportModalSx.syncError,
+  syncRetryButton: leagueImportModalSx.syncRetryButton,
+  modalHeaderIcon: {
+    ...importModalChromeSx.modalHeaderIcon,
+    color: devPlanColors.tertiaryDark,
 
-  metaLink: {
-    display: 'inline-block',
-    maxWidth: 260,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    color: 'primary.700',
-    fontWeight: 600,
-    textDecoration: 'none',
-    verticalAlign: 'bottom',
-
-    '&:hover': {
-      textDecoration: 'underline',
+    '& svg': {
+      fontSize: 28,
+      color: `${devPlanColors.tertiaryDark} !important`,
     },
   },
 
-  description: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 0.5,
-  },
-
-  selectionRow: {
+  selectionPanel: {
+    width: '100%',
+    alignSelf: 'start',
+    p: {
+      xs: 1,
+      md: 1.5,
+    },
     display: 'grid',
-    gridTemplateColumns: 'minmax(220px, 360px) minmax(200px, 300px)',
-    gap: 1.25,
-    alignItems: 'start',
-    justifyContent: 'start',
+    gap: 3.5,
+  },
 
-    '@media (max-width: 620px)': {
-      gridTemplateColumns: '1fr',
+  choiceSection: {
+    display: 'grid',
+    gap: 0.75,
+  },
+
+  choiceSectionTitle: {
+    color: devPlanColors.primaryDark,
+    fontWeight: 700,
+  },
+
+  seasonCards: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 300px))',
     },
+    justifyContent: 'start',
+    gap: 1,
   },
 
-  seasonSelect: {
-    minWidth: 0,
+  statsTypeCards: {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 1,
   },
 
-  seasonStatus: {
-    minWidth: 0,
-  },
 
   validationIssuesChip: {
     borderRadius: 999,

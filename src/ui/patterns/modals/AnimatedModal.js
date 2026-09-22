@@ -26,10 +26,12 @@ export default function AnimatedModal({
   title = '',
   description = '',
   iconId = '',
+  headerIconSx,
   children,
   confirmLabel = 'שמירה',
   cancelLabel = 'ביטול',
   confirmIconId = '',
+  confirmLoadingPosition = 'center',
   size = 'md',
   busy = false,
   disabled = false,
@@ -39,6 +41,7 @@ export default function AnimatedModal({
   headerSx,
   footerSx,
   footerActions = null,
+  oppositeFooterActions = null,
   onConfirm,
   onClose,
 }) {
@@ -66,7 +69,7 @@ export default function AnimatedModal({
               <DialogTitle sx={{ ...sx.header, ...(headerSx || {}) }}>
                 <Box sx={sx.headerContent}>
                   {iconId ? (
-                    <Box sx={sx.headerIcon}>
+                    <Box sx={{ ...sx.headerIcon, ...(headerIconSx || {}) }}>
                       {iconUi({ id: iconId, size: 'md' })}
                     </Box>
                   ) : null}
@@ -105,6 +108,7 @@ export default function AnimatedModal({
                   <Button
                     variant='solid'
                     loading={busy}
+                    loadingPosition={confirmLoadingPosition}
                     disabled={disabled || busy}
                     startDecorator={
                       !busy && confirmIconId
@@ -127,6 +131,12 @@ export default function AnimatedModal({
                   >
                     {cancelLabel}
                   </Button>
+
+                  {oppositeFooterActions ? (
+                    <Box sx={{ marginInlineStart: 'auto' }}>
+                      {oppositeFooterActions}
+                    </Box>
+                  ) : null}
                 </Box>
               ) : null}
             </ModalDialog>

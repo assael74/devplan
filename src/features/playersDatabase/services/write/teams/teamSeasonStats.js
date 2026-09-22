@@ -99,6 +99,16 @@ const firstDefined = (...values) => values.find(value => (
   value !== undefined && value !== null && value !== ''
 ))
 
+export const buildScoutIdentityContext = ({ team = {}, baseSeasonDoc = {} } = {}) => ({
+  clubId: clean(firstDefined(team.clubId, baseSeasonDoc?.scoutIdentityContext?.clubId)),
+  birthTeamSlot: toNumber(firstDefined(
+    team.birthTeamSlot,
+    team.teamSlot,
+    baseSeasonDoc?.scoutIdentityContext?.birthTeamSlot,
+    1,
+  )) || 1,
+})
+
 const resolvePersistedSeasonStatus = ({ existingStatus, incomingStatus } = {}) => (
   clean(existingStatus) === 'completed' || clean(incomingStatus) === 'completed'
     ? 'completed'
@@ -220,6 +230,110 @@ export const buildCanonicalTeamSeasonContext = ({
   }
 }
 
+const resolveStatsCommitIdentity = ({ season = {}, team = {} } = {}) => {
+  const teamId = resolveTeamLookupKey(team)
+  const seasonId = clean(season.seasonId)
+  if (!teamId) throw new Error('Missing birth team id')
+  if (!seasonId) throw new Error('Missing season id')
+  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const seasonStatus = requireLeagueSeasonLifecycle(season.seasonStatus)
+  return { teamId, seasonId, seasonKey, inputSeason: { ...season, seasonId, seasonKey, seasonStatus } }
+}
+
+// Pure preparation for the future atomic canonical commit. The caller provides
+// already-read snapshots; this builder emits only Team Season and Team Root data.
+export const buildTeamStatsCanonicalCommit = ({
+  season = {}, team = {}, players = [], teamPerformance = null, teamPoints = null,
+  reconcileMovement = null, statsProjectionRevision = '', existingSeason = null,
+  existingRoot = null, previousSeason = null,
+} = {}) => {
+  const { teamId, seasonId, seasonKey, inputSeason } = resolveStatsCommitIdentity({ season, team })
+  const effectiveSeason = {
+    ...inputSeason,
+    seasonStatus: resolvePersistedSeasonStatus({
+      existingStatus: existingSeason?.seasonStatus,
+      incomingStatus: inputSeason.seasonStatus,
+    }),
+  }
+  const movementState = typeof reconcileMovement === 'function'
+    ? reconcileMovement({ currentSeason: existingSeason, previousSeason })
+    : null
+  const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
+    season: effectiveSeason,
+    team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+    players: [],
+  })
+  const canonicalTeamContext = buildCanonicalTeamSeasonContext({
+    team, season: effectiveSeason, baseSeasonDoc, teamDocumentId: teamId, teamPerformance, teamPoints,
+  })
+  const nextPlayers = mergeTeamPlayerStats({
+    existingPlayers: baseSeasonDoc.teamPlayers, players, team: canonicalTeamContext, season: effectiveSeason,
+  })
+  const seasonDocWithoutBalance = stripUndefined({
+    ...baseSeasonDoc,
+    seasonStatus: effectiveSeason.seasonStatus,
+    tableRank: canonicalTeamContext.tableRank,
+    tableAttackRank: canonicalTeamContext.tableAttackRank,
+    tableDefenseRank: canonicalTeamContext.tableDefenseRank,
+    goalsForPerGame: canonicalTeamContext.goalsForPerGame,
+    goalsAgainstPerGame: canonicalTeamContext.goalsAgainstPerGame,
+    teamStats: canonicalTeamContext.teamStats,
+    teamAttackPerformance: canonicalTeamContext.teamAttackPerformance,
+    teamDefensePerformance: canonicalTeamContext.teamDefensePerformance,
+    leagueTotalRound: hasNumberValue(season.leagueTotalRound)
+      ? Number(season.leagueTotalRound)
+      : Number(baseSeasonDoc.leagueTotalRound) || 0,
+    teamPlayers: nextPlayers,
+    scoutIdentityContext: buildScoutIdentityContext({ team, baseSeasonDoc }),
+    playersCount: countCurrentRosterPlayers(nextPlayers),
+    ...(movementState ? {
+      transfersIn: movementState.transfersIn || [],
+      transfersOut: movementState.transfersOut || [],
+      pendingPlayers: movementState.pendingPlayers || [],
+    } : {}),
+    scoutProfilesSummary: buildScoutProfilesSummary(nextPlayers),
+    statsProjectionRevision: clean(statsProjectionRevision) || clean(baseSeasonDoc.statsProjectionRevision),
+    updatedAt: new Date().toISOString(),
+  })
+  const seasonDoc = withTeamBalanceSnapshot({
+    seasonDoc: seasonDocWithoutBalance,
+    teamRoot: { ...team, id: teamId, birthTeamDocumentId: teamId },
+  })
+  const seasonData = buildTeamSeasonDocumentData({
+    team: { ...team, birthTeamDocumentId: teamId },
+    season: effectiveSeason,
+    seasonDoc: stripUndefined(seasonDoc),
+    existingData: existingSeason || {},
+  })
+  const writeSkipped = Boolean(existingSeason) && isSamePersistedTeamState(existingSeason, seasonData)
+  const persistedSeason = writeSkipped ? existingSeason : seasonData
+  const rootData = buildTeamRootWithSeasonIndex({
+    team: { ...team, birthTeamDocumentId: teamId },
+    currentData: existingRoot || {},
+    season: persistedSeason,
+  })
+  return {
+    birthTeamDocumentId: teamId,
+    teamDocumentId: teamId,
+    teamSeasonDocumentId: seasonData.id,
+    seasonId,
+    seasonKey,
+    target: effectiveSeason.seasonStatus === 'completed' ? 'history' : 'current',
+    createdTeam: !existingRoot,
+    rowsCount: (Array.isArray(players) ? players : []).length,
+    playersCount: countCurrentRosterPlayers(persistedSeason.teamPlayers),
+    players: Array.isArray(persistedSeason.teamPlayers) ? persistedSeason.teamPlayers : [],
+    teamBalance: persistedSeason.teamBalance || null,
+    canonicalTeamContext,
+    seasonDocument: persistedSeason,
+    seasonData,
+    rootData,
+    movementState,
+    updated: true,
+    changed: !writeSkipped,
+    writeSkipped,
+  }
+}
 export async function updateTeamSeasonPlayerStats({
   season = {},
   team = {},
@@ -227,24 +341,10 @@ export async function updateTeamSeasonPlayerStats({
   teamPerformance = null,
   teamPoints = null,
   reconcileMovement = null,
+  statsProjectionRevision = '',
 } = {}) {
-  const teamId = resolveTeamLookupKey(team)
-  const seasonId = clean(season.seasonId)
-  if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
-
-  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-  const seasonStatus = requireLeagueSeasonLifecycle(season.seasonStatus)
-  const inputSeason = {
-    ...season,
-    seasonId,
-    seasonKey,
-    seasonStatus,
-  }
-  const ref = teamSeasonDocRef({
-    birthTeamDocumentId: teamId,
-    seasonKey,
-  })
+  const { teamId, seasonKey } = resolveStatsCommitIdentity({ season, team })
+  const ref = teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey })
   const rootRef = teamDocRef(teamId)
 
   return trackedRunTransaction(db, async transaction => {
@@ -253,140 +353,19 @@ export async function updateTeamSeasonPlayerStats({
       transaction.get(ref),
     ])
     const existingSeason = snapshot.exists() ? snapshot.data() || {} : null
-    const effectiveSeason = {
-      ...inputSeason,
-      seasonStatus: resolvePersistedSeasonStatus({
-        existingStatus: existingSeason?.seasonStatus,
-        incomingStatus: inputSeason.seasonStatus,
-      }),
-    }
-    const previousEntry = resolvePreviousSeasonEntry({
-      seasons: rootSnapshot.exists() ? rootSnapshot.data()?.seasons : [],
-      seasonKey,
-    })
+    const existingRoot = rootSnapshot.exists() ? rootSnapshot.data() || {} : null
+    const previousEntry = resolvePreviousSeasonEntry({ seasons: existingRoot?.seasons || [], seasonKey })
     const previousRef = previousEntry?.seasonKey
       ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousEntry.seasonKey })
       : null
     const previousSnapshot = previousRef ? await transaction.get(previousRef) : null
-    const previousSeason = previousSnapshot?.exists()
-      ? previousSnapshot.data() || {}
-      : null
-    const movementState = typeof reconcileMovement === 'function'
-      ? reconcileMovement({
-          currentSeason: existingSeason,
-          previousSeason,
-        })
-      : null
-    const baseSeasonDoc = existingSeason || buildTeamSeasonDoc({
-      season: effectiveSeason,
-      team: {
-        ...team,
-        birthTeamDocumentId: teamId,
-        teamDocumentId: teamId,
-      },
-      players: [],
+    const previousSeason = previousSnapshot?.exists() ? previousSnapshot.data() || {} : null
+    const commit = buildTeamStatsCanonicalCommit({
+      season, team, players, teamPerformance, teamPoints, reconcileMovement,
+      statsProjectionRevision, existingSeason, existingRoot, previousSeason,
     })
-    const canonicalTeamContext = buildCanonicalTeamSeasonContext({
-      team,
-      season: effectiveSeason,
-      baseSeasonDoc,
-      teamDocumentId: teamId,
-      teamPerformance,
-      teamPoints,
-    })
-    const nextPlayers = mergeTeamPlayerStats({
-      existingPlayers: baseSeasonDoc.teamPlayers,
-      players,
-      team: canonicalTeamContext,
-      season: effectiveSeason,
-    })
-    const seasonDocWithoutBalance = stripUndefined({
-      ...baseSeasonDoc,
-      seasonStatus: effectiveSeason.seasonStatus,
-      tableRank: canonicalTeamContext.tableRank,
-      tableAttackRank: canonicalTeamContext.tableAttackRank,
-      tableDefenseRank: canonicalTeamContext.tableDefenseRank,
-      goalsForPerGame: canonicalTeamContext.goalsForPerGame,
-      goalsAgainstPerGame: canonicalTeamContext.goalsAgainstPerGame,
-      teamStats: canonicalTeamContext.teamStats,
-      teamAttackPerformance: canonicalTeamContext.teamAttackPerformance,
-      teamDefensePerformance: canonicalTeamContext.teamDefensePerformance,
-      leagueTotalRound: hasNumberValue(season.leagueTotalRound)
-        ? Number(season.leagueTotalRound)
-        : Number(baseSeasonDoc.leagueTotalRound) || 0,
-      teamPlayers: nextPlayers,
-      playersCount: countCurrentRosterPlayers(nextPlayers),
-      ...(movementState
-        ? {
-            transfersIn: movementState.transfersIn || [],
-            transfersOut: movementState.transfersOut || [],
-            pendingPlayers: movementState.pendingPlayers || [],
-          }
-        : {}),
-      scoutProfilesSummary: buildScoutProfilesSummary(nextPlayers),
-      updatedAt: new Date().toISOString(),
-    })
-    const seasonDoc = withTeamBalanceSnapshot({
-      seasonDoc: seasonDocWithoutBalance,
-      teamRoot: {
-        ...team,
-        id: teamId,
-        birthTeamDocumentId: teamId,
-      },
-    })
-    const nextData = buildTeamSeasonDocumentData({
-      team: {
-        ...team,
-        birthTeamDocumentId: teamId,
-      },
-      season: effectiveSeason,
-      seasonDoc: stripUndefined(seasonDoc),
-      existingData: existingSeason || {},
-    })
-
-    const writeSkipped = snapshot.exists() && isSamePersistedTeamState(
-      existingSeason,
-      nextData
-    )
-
-    if (!writeSkipped) {
-      transaction.set(ref, nextData, { merge: true })
-    }
-
-    const persistedSeason = writeSkipped
-      ? existingSeason || nextData
-      : nextData
-
-    const createdTeam = !rootSnapshot.exists()
-    transaction.set(rootRef, buildTeamRootWithSeasonIndex({
-      team: {
-        ...team,
-        birthTeamDocumentId: teamId,
-      },
-      currentData: rootSnapshot.exists() ? rootSnapshot.data() || {} : {},
-      season: persistedSeason,
-    }))
-
-    return {
-      birthTeamDocumentId: teamId,
-      teamDocumentId: teamId,
-      teamSeasonDocumentId: ref.id,
-      seasonId,
-      seasonKey,
-      target: effectiveSeason.seasonStatus === 'completed' ? 'history' : 'current',
-      createdTeam,
-      rowsCount: (Array.isArray(players) ? players : []).length,
-      playersCount: countCurrentRosterPlayers(persistedSeason.teamPlayers),
-      players: Array.isArray(persistedSeason.teamPlayers)
-        ? persistedSeason.teamPlayers
-        : [],
-      teamBalance: persistedSeason.teamBalance || null,
-      canonicalTeamContext,
-      seasonDocument: persistedSeason,
-      movementState,
-      updated: true,
-      changed: !writeSkipped,
-      writeSkipped,
-    }
+    if (!commit.writeSkipped) transaction.set(ref, commit.seasonData, { merge: true })
+    transaction.set(rootRef, commit.rootData)
+    return commit
   })
 }

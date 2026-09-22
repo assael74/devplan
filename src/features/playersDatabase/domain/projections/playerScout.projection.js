@@ -17,6 +17,24 @@ const uniqueCleanValues = values => [
   ...new Set((Array.isArray(values) ? values : []).map(clean).filter(Boolean)),
 ]
 
+// The player engine needs the same team facts in every caller: persistence,
+// background projection, and audit. Keeping this small enrichment here avoids
+// an audit calculation that silently loses team performance context.
+export const buildTeamPlayerScoutContext = ({ player = {}, teamContext = {} } = {}) => ({
+  ...player,
+  playerStats: {
+    ...(player.playerStats || {}),
+    teamGames: Number(teamContext.teamGamePlayed) || 0,
+    teamRank: teamContext.tableRank === null || teamContext.tableRank === undefined
+      ? null
+      : Number(teamContext.tableRank),
+    teamGoalsFor: Number(teamContext.goalsFor) || 0,
+    teamGoalsAgainst: Number(teamContext.goalsAgainst) || 0,
+    teamAttackPerformance: teamContext.offense || null,
+    teamDefensePerformance: teamContext.defense || null,
+  },
+})
+
 const resolveCompactScoutProfileIds = ({ scout = {}, player = {} } = {}) => {
   const hierarchy = scout.profileHierarchy && typeof scout.profileHierarchy === 'object'
     ? scout.profileHierarchy

@@ -70,21 +70,6 @@ export const resolveLeagueClubIdentityIndex = ({
       clean(item?.clubId) === clubId &&
       clean(item?.ageGroupId) === safeAgeGroupId
     ))
-    const sameLeagueAppearances = clubAppearances.filter(item => (
-      clean(item?.leagueId) === safeLeagueId
-    ))
-
-    // A team already written to this league is the strongest signal. Reuse its
-    // slot instead of reporting it as a cross-league ambiguity.
-    if (clubId && sameLeagueAppearances.length) {
-      const existingSlot = Number(sameLeagueAppearances[0]?.teamSlot) || 1
-      return {
-        ...row,
-        teamSlot: String(existingSlot),
-        teamSlotConfirmed: true,
-      }
-    }
-
     const otherLeagueAppearances = clubAppearances.filter(item => (
       clean(item?.leagueId) !== safeLeagueId
     ))

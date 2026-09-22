@@ -118,9 +118,12 @@ function SearchPageContent() {
         error={audit.error}
         result={audit.result}
         repairProgress={audit.repairProgress}
+        recentWriteActions={audit.recentWriteActions}
+        recentWriteActionsBusy={audit.recentWriteActionsBusy}
         defaultTeamDocumentId={audit.partialAuditDefaults.teamDocumentId}
         defaultSeasonKey={audit.partialAuditDefaults.seasonKey}
         onRun={audit.runAudit}
+        onRunWriteAction={audit.runAuditForWriteAction}
         onScopeChange={audit.handleScopeChange}
         onRepair={audit.requestRepair}
         onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}

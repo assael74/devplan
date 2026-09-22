@@ -58,8 +58,16 @@ export {
 } from './teamSeasonMovement.js'
 
 export {
+  reconcileTeamSeasonMovementCounterpartsWithClubRefresh,
+} from './teamSeasonMovementProjection.js'
+
+export {
   updateTeamSeasonPlayerStats,
 } from './teamSeasonStats.js'
+
+export {
+  commitTeamStatsCanonical,
+} from './commitTeamStatsCanonical.js'
 
 export {
   removeTeamSeasonPlayerScoutProfile,

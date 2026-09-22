@@ -238,55 +238,30 @@ test('paste League table exposes a League completion envelope', async () => {
   const source = await readFile(resolveFlow('league', 'pasteLeagueTable.flow.js'), 'utf8');
 
   assert.equal(source.includes('leagueCanonicalCommitted'), true);
-  assert.match(source, /canonicalCommitted: true/);
+  assert.match(source, /status: 'canonical_complete'/);
   assert.equal(source.includes('projectionsCompleted'), true);
+  assert.equal(source.includes('backgroundSyncPending'), true);
   assert.equal(source.includes('recoveryRequired'), true);
   assert.equal(source.includes('completed:'), true);
-  assert.match(source, /syncClubProjectionsFromLeagueTable/);
+  assert.match(source, /queueLeagueProjectionJob/);
 });
 
 test('paste League table returns completion on success and throws a League recovery contract after canonical failure', async () => {
-  let teamIndexesResult = writeResult({ failedCount: 0 });
   const { pasteLeagueTableFlow } = await loadFlowModule({
     entryPath: resolveFlow('league', 'pasteLeagueTable.flow.js'),
     mocks: {
       '../../leagues/index.js': {
         ensureLeagueDoc: async () => writeResult({ changed: false }),
-        syncLeaguesMasterDocument: async () => writeResult(),
         updateLeagueSeasonTableRank: async () => writeResult({
           seasonDocument: { tableRank: [] },
           changed: false,
         }),
-        updateLeagueSeasonTableRankScoutProfilesSummaries: async () => writeResult(),
-      },
-      '../../players/index.js': {
-        buildPlayerDocumentId: () => '',
-        hasPlayerScoutProfiles: () => false,
-        resolveExistingPlayerDocumentIds: async () => new Set(),
-        syncPlayerScoutProfileDocsMany: async () => writeResult(),
-      },
-      '../../searchIndex/index.js': {
-        updatePlayerSeasonSearchIndexScoutContextMany: async () => writeResult(),
-        upsertTeamSeasonSearchIndexMany: async () => teamIndexesResult,
       },
       '../../clubs/index.js': {
         syncLeagueClubSeasonIdentityIndex: async () => writeResult({ failedCount: 0 }),
-        syncClubProjectionsFromLeagueTable: async () => ({
-          failedCount: 0,
-          results: [],
-          projectionsCompleted: true,
-          completed: true,
-        }),
-        syncClubsMasterDocument: async () => writeResult(),
       },
-      '../../shared/leagueTeamScoutContext.js': {
-        buildLeagueRowsWithScoutPerformance: ({ rows }) => rows,
-      },
-      '../../teams/index.js': {
-        updateLeagueTeamPlayersScoutContextMany: async () => ({ failedCount: 0, results: [] }),
-      },
-      '../../../../model/team/teamIdentity.model.js': {
-        resolveTeamLookupKey: () => '',
+      '../../leagueProjectionJobs/leagueProjectionJob.write.js': {
+        queueLeagueProjectionJob: async () => ({ id: 'job-1' }),
       },
       '../writeFlowReport.js': {
         assertWriteResultClean: ({ result, stage }) => {
@@ -306,18 +281,10 @@ test('paste League table returns completion on success and throws a League recov
   const payload = { league: { id: 'league-1' }, season: { seasonStatus: 'not_started' } }
   const success = await pasteLeagueTableFlow(payload)
   assert.equal(success.leagueCanonicalCommitted, true)
-  assert.equal(success.projectionsCompleted, true)
-  assert.equal(success.completed, true)
+  assert.equal(success.projectionsCompleted, false)
+  assert.equal(success.backgroundSyncPending, true)
+  assert.equal(success.completed, false)
   assert.equal(success.recoveryRequired, false)
-
-  teamIndexesResult = writeResult({ failedCount: 1 })
-  await assert.rejects(() => pasteLeagueTableFlow(payload), (error) => {
-    assert.equal(error.leagueCanonicalCommitted, true)
-    assert.equal(error.projectionsCompleted, false)
-    assert.equal(error.completed, false)
-    assert.equal(error.recoveryRequired, true)
-    return true
-  })
 });
 
 const teamUrlPayload = {

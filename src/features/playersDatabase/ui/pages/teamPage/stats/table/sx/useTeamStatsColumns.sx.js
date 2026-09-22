@@ -150,6 +150,14 @@ export const teamStatsColumnsSx = {
     alignItems: 'center',
   },
 
+  statusMovementTeamPicker: {
+    flex: 1,
+    width: 'auto',
+    minWidth: 0,
+    gridTemplateColumns: 'minmax(0, 1fr) 42px',
+    gap: 0.45,
+  },
+
   statusMovementTeamSelect: {
     minWidth: 0,
     flex: 1,

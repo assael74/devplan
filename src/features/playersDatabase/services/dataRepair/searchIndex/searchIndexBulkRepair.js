@@ -174,7 +174,7 @@ export async function repairPlayerSearchIndexesFromAuditFindings({ findings = []
       const playerSearchIndex = indexes.get(clean(finding.documentId))
       const playerDocument = players.get(clean(finding.playerDocumentId)) || {}
       const teamPlayer = (Array.isArray(teamSeason?.teamPlayers) ? teamSeason.teamPlayers : [])
-        .find(player => samePlayer(player, { ...playerDocument, playerDocumentId: finding.playerDocumentId })) || null
+        .find(player => samePlayer(player, { ...playerDocument, ...playerSearchIndex, playerDocumentId: finding.playerDocumentId })) || null
       const issue = { code: PLAYER_DATA_ISSUE_CODE.PLAYER_SEARCH_INDEX_SCOUT_PROFILE_MISMATCH }
       const context = { teamSeason, teamDocument, teamPlayer, playerDocument, playerSearchIndex, selectedRow: { leagueId: teamSeason?.leagueId } }
       if (!canRepairPlayerDataIssue({ issue, context })) {

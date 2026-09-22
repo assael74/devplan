@@ -17,6 +17,10 @@ import {
 import {
   CLUB_TRANSFER_COVERAGE_STATUS,
 } from '../../../domain/contracts/club.contract.js'
+import {
+  readClubDocument,
+  removeClubDocumentAgeGroupSeasonProjections,
+} from './clubDoc.js'
 import { syncClubProjectionPersistence } from './clubProjectionSync.js'
 import { syncClubsMasterDocument } from './clubsMaster.js'
 import {
@@ -96,6 +100,34 @@ export const buildClubIdentityFromTeam = (team = {}) => {
   }
 }
 
+export const findClubIdsWithLeagueProjection = ({
+  clubsMaster = {},
+  league = {},
+  season = {},
+} = {}) => {
+  const leagueId = clean(league?.id || league?.leagueId || season?.leagueId)
+  const seasonKey = clean(season?.seasonKey || season?.seasonId)
+  const ageGroupId = clean(league?.ageGroupId || season?.ageGroupId)
+
+  if (!leagueId || !seasonKey || !ageGroupId) return []
+
+  const clubIds = new Set()
+  ;(Array.isArray(clubsMaster?.clubs) ? clubsMaster.clubs : []).forEach(club => {
+    const ageGroup = (Array.isArray(club?.ageGroups) ? club.ageGroups : [])
+      .find(group => clean(group?.ageGroupId) === ageGroupId)
+    const hasLeagueProjection = ['current', 'previous'].some(key => (
+      (Array.isArray(ageGroup?.[key]) ? ageGroup[key] : []).some(entry => (
+        clean(entry?.seasonKey || entry?.seasonId) === seasonKey &&
+        clean(entry?.league?.leagueId) === leagueId
+      ))
+    ))
+    const clubId = clean(club?.clubId || club?.id)
+    if (clubId && hasLeagueProjection) clubIds.add(clubId)
+  })
+
+  return [...clubIds]
+}
+
 export const resolveClubTransferCoverageStatus = teamSeason => {
   const loadStatus = buildTeamLoadStatus(teamSeason?.teamPlayers)
 
@@ -162,6 +194,100 @@ export const syncClubProjectionFromTeamSeason = async ({
     lastWriteAction,
     syncMaster,
   })
+}
+
+export const reconcileClubProjectionsFromLeagueTable = async ({
+  league = {},
+  season = {},
+  rows = [],
+  removedLeagueEntries = [],
+  legacyClubIds = [],
+  projectionVersion = 1,
+  lastWriteAction = '',
+} = {}) => {
+  const leagueId = clean(league?.id || league?.leagueId || season?.leagueId)
+  const seasonKey = clean(season?.seasonKey || season?.seasonId)
+  const ageGroupId = clean(league?.ageGroupId || season?.ageGroupId)
+  const canonicalTeamIdsByClub = new Map()
+
+  ;(Array.isArray(rows) ? rows : []).forEach(row => {
+    const clubId = clean(row?.clubId)
+    const teamId = clean(row?.teamId || row?.birthTeamId)
+    if (!clubId || !teamId) return
+
+    const teamIds = canonicalTeamIdsByClub.get(clubId) || new Set()
+    teamIds.add(teamId)
+    canonicalTeamIdsByClub.set(clubId, teamIds)
+  })
+
+  // The identity-index update retains the prior entries that disappeared from
+  // this League table. Include their Clubs with an empty canonical set so a
+  // full re-import also removes projections for teams replaced by other Clubs.
+  ;(Array.isArray(removedLeagueEntries) ? removedLeagueEntries : []).forEach(entry => {
+    const clubId = clean(entry?.clubId)
+    if (clubId && !canonicalTeamIdsByClub.has(clubId)) {
+      canonicalTeamIdsByClub.set(clubId, new Set())
+    }
+  })
+
+  // This fallback is supplied from the single Clubs Master document only when
+  // an older import has already replaced its identity-index entries.
+  ;(Array.isArray(legacyClubIds) ? legacyClubIds : []).forEach(value => {
+    const clubId = clean(value)
+    if (clubId && !canonicalTeamIdsByClub.has(clubId)) {
+      canonicalTeamIdsByClub.set(clubId, new Set())
+    }
+  })
+
+  if (!leagueId || !seasonKey || !ageGroupId || !canonicalTeamIdsByClub.size) {
+    return {
+      checkedClubCount: 0,
+      removedProjectionCount: 0,
+      results: [],
+    }
+  }
+
+  const results = []
+  let removedProjectionCount = 0
+
+  for (const [clubId, canonicalTeamIds] of canonicalTeamIdsByClub) {
+    const current = await readClubDocument({ clubId })
+    const ageGroup = (Array.isArray(current?.club?.ageGroups) ? current.club.ageGroups : [])
+      .find(group => clean(group?.ageGroupId) === ageGroupId)
+    const removals = (Array.isArray(ageGroup?.seasons) ? ageGroup.seasons : [])
+      .filter(candidate => (
+        clean(candidate?.seasonKey || candidate?.seasonId) === seasonKey &&
+        clean(candidate?.league?.leagueId) === leagueId &&
+        !canonicalTeamIds.has(clean(candidate?.teamId))
+      ))
+      .map(candidate => ({
+        ageGroupId,
+        seasonKey,
+        leagueId,
+        teamId: clean(candidate?.teamId),
+      }))
+
+    if (!removals.length) continue
+
+    const result = await removeClubDocumentAgeGroupSeasonProjections({
+      clubId,
+      removals,
+      projectionVersion,
+      lastWriteAction,
+    })
+    removedProjectionCount += removals.length
+    results.push({
+      clubId,
+      removals,
+      result,
+    })
+  }
+
+  return {
+    checkedClubCount: canonicalTeamIdsByClub.size,
+    removedProjectionCount,
+    results,
+  }
 }
 
 export const syncClubProjectionsFromLeagueTable = async ({

@@ -7,7 +7,7 @@ import { buildTeamDisplayName } from '../../catalog/teamDisplay.js'
 import { resolveAgeGroupLabel } from '../../catalog/ageGroups.catalog.js'
 import { buildScoutProfilesSummary } from '../write/flows/shared.js'
 import { buildLeagueTeamPerformanceProjection } from '../../domain/projections/teamPerformance.projection.js'
-import { shouldHavePlayerDocument } from '../write/players/scoutingPlayerLifecycle.model.js'
+import { buildPlayerDocumentId } from '../../model/player/playerIdentity.model.js'
 import { AUDIT_FINDING_TYPE } from './audit.contract.js'
 import { readPlayerDatabaseAuditSnapshot } from './audit.read.js'
 
@@ -15,6 +15,19 @@ const clean = value => String(value === undefined || value === null ? '' : value
 const seasonKeyOf = row => clean(row?.seasonKey || row?.seasonId)
 const teamIdOf = row => clean(row?.birthTeamDocumentId || row?.teamDocumentId)
 const playerKeyOf = player => clean(player?.playerDocumentId || player?.playerId || player?.externalPlayerId)
+const playerIdentityKeys = player => new Set([
+  player?.playerDocumentId,
+  player?.playerId,
+  player?.externalPlayerId,
+  player?.fullName,
+  player?.matchedPlayerName,
+  player?.displayName,
+  player?.playerDisplayName,
+].map(clean).filter(Boolean))
+const samePlayerIdentity = (left, right) => (
+  [...playerIdentityKeys(left)].some(key => playerIdentityKeys(right).has(key))
+)
+const hasPlayerIdentity = player => playerIdentityKeys(player).size > 0
 const repairTarget = season => clean(season?.seasonStatus) === 'completed' ? 'history' : 'current'
 
 const buildRepairGroups = ({ findings = [], snapshot }) => {
@@ -27,21 +40,30 @@ const buildRepairGroups = ({ findings = [], snapshot }) => {
     .filter(finding => (
       finding?.type === AUDIT_FINDING_TYPE.MISSING_DOCUMENT &&
       finding?.entityType === 'player' &&
-      clean(finding?.playerDocumentId)
+      hasPlayerIdentity(finding)
     ))
     .forEach(finding => {
       const teamId = clean(finding.teamDocumentId)
       const seasonKey = clean(finding.seasonKey)
-      const playerDocumentId = clean(finding.playerDocumentId)
       const seasonRow = teamSeasons.find(row => (
         teamIdOf(row.data) === teamId && seasonKeyOf(row.data) === seasonKey
       ))
-      if (!seasonRow || playerDocumentIds.has(playerDocumentId)) return
+      if (!seasonRow) return
 
       const player = (seasonRow.data.teamPlayers || []).find(row => (
-        playerKeyOf(row) === playerDocumentId
+        samePlayerIdentity(row, finding)
       ))
-      if (!player || !shouldHavePlayerDocument(player)) return
+      const playerDocumentId = clean(buildPlayerDocumentId(player))
+      const currentPlayerDocumentId = clean(player?.playerDocumentId)
+      // A canonical Player document can already exist from an earlier season.
+      // In that case this finding needs a season relation and a Team Season
+      // pointer repair, not a second root document.  Skip only when the Team
+      // Season already points to that existing canonical document.
+      if (
+        !player ||
+        !playerDocumentId ||
+        (playerDocumentIds.has(playerDocumentId) && currentPlayerDocumentId === playerDocumentId)
+      ) return
 
       const leagueRow = leagues.find(row => clean(row.data.leagueId || row.id) === clean(seasonRow.data.leagueId))
       const leagueSeason = [leagueRow?.data?.current, ...(leagueRow?.data?.history || [])]
@@ -63,7 +85,7 @@ const buildRepairGroups = ({ findings = [], snapshot }) => {
         teamSeasonDocumentId: seasonRow.id,
         players: [],
       }
-      existing.players.push(player)
+      existing.players.push({ ...player, playerDocumentId })
       groups.set(groupKey, existing)
     })
 
@@ -180,7 +202,7 @@ export async function repairMissingPlayerDocuments({ findings = [] } = {}) {
       leagueId: clean(group.league.id || group.league.leagueId),
       seasonKey: seasonKeyOf(group.season),
       teamDocumentId: teamIdOf(group.team),
-      repairedPlayersCount: playerDocs.createdCount,
+      repairedPlayersCount: playerDocs.rowsCount,
     })
   }
 

@@ -18,6 +18,10 @@ import {
 } from '../../write/searchIndex/team/index.js'
 import { buildTeamSeasonSearchMetrics } from '../../../domain/projections/searchIndexNormalization.projection.js'
 import {
+  buildLeagueTeamPerformanceProjection,
+  buildTeamSearchIndexPerformanceProjection,
+} from '../../../domain/projections/teamPerformance.projection.js'
+import {
   buildCanonicalLeagueTeamScoutContext,
 } from '../../write/shared/leagueTeamScoutContext.js'
 
@@ -374,6 +378,19 @@ export async function repairTeamSearchIndexLifecycleById({
   const league = await getLeagueById(leagueId)
   const leagueSeason = resolveLeagueSeason({ league, seasonKey: expectedSeasonKey })
   if (!leagueSeason) throw new Error('העונה לא נמצאה במסמך הליגה')
+  const target = clean(leagueSeason.season.seasonStatus) === 'completed' ? 'history' : 'current'
+  const performance = buildLeagueTeamPerformanceProjection({
+    league,
+    season: leagueSeason.season,
+    target,
+    team: {
+      ...initialData,
+      birthTeamId: expectedTeamId,
+      teamId: expectedTeamId,
+    },
+  })
+  if (!performance) throw new Error('הקבוצה לא נמצאה בטבלת הליגה של העונה')
+  const performancePatch = buildTeamSearchIndexPerformanceProjection(performance)
 
   const result = await trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
@@ -392,15 +409,16 @@ export async function repairTeamSearchIndexLifecycleById({
     const expected = buildTeamSeasonSearchMetrics({
       // The audit normalizes completed seasons as history even when the
       // League document still holds the row under `current`.
-      target: clean(leagueSeason.season.seasonStatus) === 'completed' ? 'history' : 'current',
+      target,
       seasonStatus: leagueSeason.season.seasonStatus,
       leagueTotalRound: leagueSeason.season.leagueTotalRound,
-      teamGamePlayed: current.teamGamePlayed,
-      points: current.points,
-      goalsFor: current.goalsFor,
-      goalsAgainst: current.goalsAgainst,
+      teamGamePlayed: performance.teamGamePlayed,
+      points: performance.points,
+      goalsFor: performance.goalsFor,
+      goalsAgainst: performance.goalsAgainst,
     })
     const patch = {
+      ...performancePatch,
       seasonStatus: expected.seasonStatus,
       normalizationStatus: expected.normalizationStatus,
       remainingTeamGames: expected.remainingTeamGames,
@@ -427,15 +445,16 @@ export async function repairTeamSearchIndexLifecycleById({
   })
   const verifiedData = verified.exists() ? verified.data() || {} : {}
   const verifiedExpected = buildTeamSeasonSearchMetrics({
-    target: clean(leagueSeason.season.seasonStatus) === 'completed' ? 'history' : 'current',
+    target,
     seasonStatus: leagueSeason.season.seasonStatus,
     leagueTotalRound: leagueSeason.season.leagueTotalRound,
-    teamGamePlayed: verifiedData.teamGamePlayed,
-    points: verifiedData.points,
-    goalsFor: verifiedData.goalsFor,
-    goalsAgainst: verifiedData.goalsAgainst,
+    teamGamePlayed: performance.teamGamePlayed,
+    points: performance.points,
+    goalsFor: performance.goalsFor,
+    goalsAgainst: performance.goalsAgainst,
   })
   if (
+    Object.entries(performancePatch).some(([field, value]) => verifiedData[field] !== value) ||
     verifiedData.seasonStatus !== verifiedExpected.seasonStatus ||
     verifiedData.normalizationStatus !== verifiedExpected.normalizationStatus ||
     Number(verifiedData.remainingTeamGames) !== Number(verifiedExpected.remainingTeamGames)

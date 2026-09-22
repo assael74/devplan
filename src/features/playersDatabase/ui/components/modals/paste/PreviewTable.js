@@ -88,6 +88,8 @@ export default function PreviewTable({
   hoverRow = true,
   statusColumnSx = null,
   tableSx = null,
+  title = 'תצוגה ועריכת נתונים',
+  statusLabel = 'תקין',
 }) {
   const [sort, setSort] = React.useState(null)
   const resolvedStatusColumnSx = statusColumnSx
@@ -141,7 +143,7 @@ export default function PreviewTable({
             level='title-md'
             sx={sx.sectionTitle}
           >
-            תצוגה ועריכת נתונים
+            {title}
           </Typography>
         </Box>
 
@@ -213,7 +215,7 @@ export default function PreviewTable({
                 onClick={() => toggleSort({ key: '__rowValidity', sortable: true })}
               >
                 <Box sx={[sx.columnHeaderContent, sx.sortableHeader]}>
-                  תקין
+                  {statusLabel}
                   {sort?.key === '__rowValidity' ? (
                     <Typography component='span' level='body-xs' sx={sx.sortIndicator}>
                       {sort.direction === 'asc' ? '↑' : '↓'}
@@ -229,7 +231,7 @@ export default function PreviewTable({
                   sx={column.sx}
                   onClick={() => toggleSort(column)}
                 >
-                  <Box sx={[sx.columnHeaderContent, column.sortable ? sx.sortableHeader : null]}>
+                  <Box sx={[sx.columnHeaderContent, column.headerSx, column.sortable ? sx.sortableHeader : null]}>
                     {column.headerContent || column.label}
                     {sort?.key === column.key ? (
                       <Typography
@@ -275,7 +277,7 @@ export default function PreviewTable({
                         column.sx,
                       ]}
                     >
-                      <Box sx={sx.cellContent}>
+                      <Box sx={[sx.cellContent, column.cellContentSx]}>
                         <PreviewCell
                           column={column}
                           row={row}

@@ -103,6 +103,7 @@ export const updateHistorySeasonTableRank = ({
       leagueTotalRound: toNumberOrZero(season.leagueTotalRound),
       competitionRules: season?.competitionRules || {},
       seasonStatus: 'completed',
+      sourceRevision: clean(season.sourceRevision),
       tableRank,
       teamPerformanceContext,
       updatedAt: new Date().toISOString(),

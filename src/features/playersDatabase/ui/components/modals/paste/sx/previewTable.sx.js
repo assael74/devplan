@@ -17,14 +17,18 @@ export const previewTableSx = {
 
   previewHeader: {
     minWidth: 0,
+    minHeight: {
+      md: 40,
+    },
     px: 1,
-    py: 0.85,
+    py: 0.35,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 1,
     borderBottom: '1px solid #dbe5f4',
+    bgcolor: devPlanColors.secondaryLight,
   },
 
   sectionTitle: {
@@ -74,7 +78,9 @@ export const previewTableSx = {
     minWidth: 0,
     minHeight: 0,
     height: '100%',
+    pt: 0,
     overflow: 'auto',
+    mt: -1.5,
   },
 
   table: {
@@ -112,7 +118,7 @@ export const previewTableSx = {
 
     '& td': {
       px: 0.45,
-      py: 0.35,
+      py: 0.6,
       verticalAlign: 'middle',
       textAlign: 'center',
     },

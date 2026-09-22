@@ -21,6 +21,25 @@ const normalizeName = value => clean(value)
 const stripTrailingSlot = teamName =>
   clean(teamName).replace(/\s+[2-3]$/, '').trim()
 
+const buildExistingTeamUrlKey = ({ clubId = '', teamSlot = '' } = {}) => (
+  `${clean(clubId)}::${clean(teamSlot || '1') || '1'}`
+)
+
+export const resolveExistingLeagueTeamUrl = ({
+  existingTableRank = [],
+  clubId = '',
+  teamSlot = '',
+} = {}) => {
+  const targetKey = buildExistingTeamUrlKey({ clubId, teamSlot })
+
+  return clean((Array.isArray(existingTableRank) ? existingTableRank : [])
+    .find(row => buildExistingTeamUrlKey({
+      clubId: row?.clubId,
+      teamSlot: row?.teamSlot || row?.birthTeamSlot,
+    }) === targetKey)
+    ?.teamUrl)
+}
+
 export const normalizeSignedNumberText = value => {
   const text = clean(value).replace(/\u200E/g, '')
   if (!text) return ''
@@ -136,11 +155,12 @@ export const shouldShowDisplayName = row => {
   return normalizeName(sourceName) !== normalizeName(expectedName)
 }
 
-const mapPreviewRow = row => {
+const mapPreviewRow = ({ row, existingTableRank = [] } = {}) => {
   const data = row.data || {}
   // Team 1 is always the neutral default. The importer may suggest a club,
   // but the operator explicitly decides whether a row is a second team.
   const teamSlot = '1'
+  const pastedTeamUrl = clean(data.teamUrl)
 
   return {
     id: `league_table_${row.displayIndex}`,
@@ -149,7 +169,13 @@ const mapPreviewRow = row => {
     clubName: data.clubCatalogName || data.clubName || '',
     teamSlot,
     teamName: data.clubName || data.clubCatalogName || '',
-    teamUrl: clean(data.teamUrl),
+    teamUrl: pastedTeamUrl,
+    displayTeamUrl: pastedTeamUrl || resolveExistingLeagueTeamUrl({
+      existingTableRank,
+      clubId: data.clubId,
+      teamSlot,
+    }),
+    pastedTeamUrl,
     games: pickDefinedValue(data.games, ''),
     wins: pickDefinedValue(data.wins, ''),
     draws: pickDefinedValue(data.draws, ''),
@@ -190,6 +216,9 @@ export const buildLeagueImportPreview = ({
 
   return {
     ...preview,
-    rows: (preview.rows || []).map(mapPreviewRow),
+    rows: (preview.rows || []).map(row => mapPreviewRow({
+      row,
+      existingTableRank: selectedSeasonOption?.season?.tableRank || [],
+    })),
   }
 }

@@ -6,6 +6,7 @@ import {
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { buildScoutCompactView } from '../../../../../components/scout/shared/scoutDisplay.model.js'
 import ExternalLinkIcon from '../../../../../components/modals/ExternalLinkIcon.js'
+import ClubSlotSelect from '../../../../../components/modals/components/ClubSlotSelect.js'
 import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
 import { STATS_IDENTITY_STATUS } from '../../shared/logic/teamStatsMatch.logic.js'
 import { teamStatsColumnsSx as sx } from '../sx/useTeamStatsColumns.sx.js'
@@ -185,52 +186,25 @@ export function StatsRosterStatusControl({
       </Select>
       {movementDecision ? (
         <>
-          <Autocomplete
-            size='sm'
-            options={teamRootOptions}
-            value={resolvedClub}
-            forcePopupIcon={false}
-            slotProps={{
-              clearIndicator: {
-                sx: {
-                  width: 18,
-                  height: 18,
-                  '--Icon-fontSize': '14px',
-                },
-              },
-              listbox: {
-                className: 'dpScrollThin',
-                sx: {
-                  fontSize: '0.72rem',
-                  '--ListItem-minHeight': '26px',
-                  py: 0.25,
-                },
-              },
-            }}
-            getOptionLabel={option => option?.label || option?.clubName || option?.displayName || ''}
-            isOptionEqualToValue={(option, value) => option?.clubId === value?.clubId}
-            onChange={(event, value) => selectClub(value)}
-            placeholder={movementDecision === 'left' ? 'יעד' : 'מקור'}
-            sx={sx.statusMovementTeamSelect}
-          />
-          <Select
-            size='sm'
-            indicator={null}
-            value={row.statsMovementTeam?.birthTeamDocumentId || null}
-            placeholder='1'
-            disabled={!availableTeams.length}
-            sx={sx.statusMovementSlotSelect}
-            onChange={(event, teamId) => {
+          <ClubSlotSelect
+            clubOptions={teamRootOptions}
+            clubValue={resolvedClub?.clubId || ''}
+            slotOptions={availableTeams}
+            slotValue={row.statsMovementTeam?.birthTeamDocumentId || ''}
+            clubPlaceholder={movementDecision === 'left' ? 'יעד' : 'מקור'}
+            getClubValue={option => String(option?.clubId || '').trim()}
+            getClubLabel={option => option?.label || option?.clubName || option?.displayName || ''}
+            getSlotValue={option => String(option?.birthTeamDocumentId || '').trim()}
+            getSlotLabel={option => Number(option?.birthTeamSlot || 1)}
+            onClubChange={selectClub}
+            onSlotChange={teamId => {
               const team = availableTeams.find(item => item.birthTeamDocumentId === teamId)
               if (team) selectMovementTeam(team)
             }}
-          >
-            {availableTeams.map(team => (
-              <Option key={team.birthTeamDocumentId} value={team.birthTeamDocumentId}>
-                {team.birthTeamSlot}
-              </Option>
-            ))}
-          </Select>
+            rootSx={sx.statusMovementTeamPicker}
+            clubSx={sx.statusMovementTeamSelect}
+            slotSx={sx.statusMovementSlotSelect}
+          />
         </>
       ) : null}
     </Stack>

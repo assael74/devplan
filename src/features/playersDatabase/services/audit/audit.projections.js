@@ -7,7 +7,10 @@ export {
 } from '../../domain/projections/teamPerformance.projection.js'
 export { buildTeamBalanceSearchIndexProjection } from '../../domain/projections/teamBalanceSearchIndex.projection.js'
 export { buildTeamSeasonSearchMetrics } from '../../domain/projections/searchIndexNormalization.projection.js'
-export { buildTeamPlayerSeasonalScoutProjection } from '../../domain/projections/playerScout.projection.js'
+export {
+  buildTeamPlayerScoutContext,
+  buildTeamPlayerSeasonalScoutProjection,
+} from '../../domain/projections/playerScout.projection.js'
 export { resolvePlayerTrackingReasons } from '../write/players/scoutingPlayerLifecycle.model.js'
 export {
   buildLeaguesMasterLeagueEntry,

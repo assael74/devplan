@@ -7,6 +7,7 @@ export const pasteAreaSx = {
     minWidth: 0,
     p: 1,
     display: 'grid',
+    alignContent: 'start',
     gap: 1,
     borderRadius: 10,
     border: '1px solid #dbe5f4',
@@ -21,9 +22,34 @@ export const pasteAreaSx = {
     gap: 1,
   },
 
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.75,
+  },
+
   title: {
     color: devPlanColors.primaryDark,
     fontWeight: 700,
+  },
+
+  templateButton: {
+    minHeight: 28,
+    px: 0.75,
+    color: devPlanColors.primary,
+    fontWeight: 600,
+  },
+
+  clearButton: {
+    minWidth: 28,
+    minHeight: 28,
+    color: devPlanColors.secondary,
+
+    '&:hover': {
+      color: devPlanColors.primaryDark,
+      bgcolor: devPlanColors.secondaryLight,
+    },
   },
 
   description: {
@@ -59,6 +85,15 @@ export const pasteAreaSx = {
   inputCompact: {
     minHeight: 42,
     maxHeight: 54,
+  },
+
+  inputVariant: {
+    tall: {
+      minHeight: {
+        xs: 240,
+        md: 230,
+      },
+    },
   },
 
   hint: {

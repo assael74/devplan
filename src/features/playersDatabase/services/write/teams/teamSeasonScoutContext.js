@@ -9,10 +9,14 @@ import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
 import { clean } from '../leagues/leagueDoc.js'
 import { normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { buildTeamSeasonDocumentData, teamSeasonDocRef } from './teamSeasonDoc.js'
-import { buildTeamPlayerSeasonalScoutProjection } from '../../../domain/projections/playerScout.projection.js'
+import {
+  buildTeamPlayerScoutContext,
+  buildTeamPlayerSeasonalScoutProjection,
+} from '../../../domain/projections/playerScout.projection.js'
 import {
   buildCanonicalLeagueTeamScoutContexts,
 } from '../shared/leagueTeamScoutContext.js'
+import { runWithConcurrency } from '../shared/runWithConcurrency.js'
 import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
 
 const isPlainObject = value => Boolean(
@@ -152,21 +156,6 @@ export const buildCanonicalTeamSeasonScoutContext = ({
   }
 }
 
-const buildContextPlayer = ({ player = {}, teamContext = {} } = {}) => ({
-  ...player,
-  playerStats: {
-    ...(player.playerStats || {}),
-    teamGames: Number(teamContext.teamGamePlayed) || 0,
-    teamRank: teamContext.tableRank === null || teamContext.tableRank === undefined
-      ? null
-      : Number(teamContext.tableRank),
-    teamGoalsFor: Number(teamContext.goalsFor) || 0,
-    teamGoalsAgainst: Number(teamContext.goalsAgainst) || 0,
-    teamAttackPerformance: teamContext.offense || null,
-    teamDefensePerformance: teamContext.defense || null,
-  },
-})
-
 export async function updateTeamSeasonPlayersScoutContext({
   league = {},
   season = {},
@@ -226,7 +215,7 @@ export async function updateTeamSeasonPlayersScoutContext({
       ? currentSeason.teamPlayers
       : []
     const nextPlayers = currentPlayers.map(player => {
-      const contextPlayer = buildContextPlayer({
+      const contextPlayer = buildTeamPlayerScoutContext({
         player,
         teamContext,
       })
@@ -331,25 +320,37 @@ export async function updateLeagueTeamPlayersScoutContextMany({
     rows,
   })
 
-  for (const context of contexts) {
-    try {
-      results.push(await updateTeamSeasonPlayersScoutContext({
-        league,
-        season,
-        teamContextInput: context,
-      }))
-    } catch (error) {
-      failures.push({
-        teamDocumentId: clean(
-          context.row?.birthTeamDocumentId ||
-          context.row?.teamDocumentId ||
-          context.row?.birthTeamId ||
-          context.row?.teamId
-        ),
-        message: clean(error?.message) || 'Team context scout recalculation failed',
-      })
+  const contextResults = await runWithConcurrency({
+    values: contexts,
+    worker: async context => {
+      try {
+        return await updateTeamSeasonPlayersScoutContext({
+          league,
+          season,
+          teamContextInput: context,
+        })
+      } catch (error) {
+        return {
+          failed: true,
+          teamDocumentId: clean(
+            context.row?.birthTeamDocumentId ||
+            context.row?.teamDocumentId ||
+            context.row?.birthTeamId ||
+            context.row?.teamId
+          ),
+          message: clean(error?.message) || 'Team context scout recalculation failed',
+        }
+      }
+    },
+  })
+
+  contextResults.forEach(result => {
+    if (result?.failed) {
+      failures.push(result)
+      return
     }
-  }
+    results.push(result)
+  })
 
   return {
     rowsCount: results.filter(result => result.updated).length,

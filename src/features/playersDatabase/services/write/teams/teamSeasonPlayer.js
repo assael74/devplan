@@ -178,7 +178,17 @@ export async function updateTeamSeasonPlayersScoutProjections({ season = {}, tea
         }
       }
       const scouted = findScoutedPlayer({ player, scoutedPlayers })
-      return scouted ? { ...player, ...buildTeamPlayerScoutProjection(scouted) } : player
+      // The Player writer may resolve an older internal player id to the
+      // canonical document id (for example external__12345).  Persist that
+      // resolved id back to Team Season so future reads and audits reference
+      // the same Player document.
+      return scouted ? {
+        ...player,
+        ...(clean(scouted.playerDocumentId)
+          ? { playerDocumentId: clean(scouted.playerDocumentId) }
+          : {}),
+        ...buildTeamPlayerScoutProjection(scouted),
+      } : player
     })
     const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
     const changed = JSON.stringify(normalizeComparableValue(players)) !== JSON.stringify(normalizeComparableValue(nextPlayers)) ||

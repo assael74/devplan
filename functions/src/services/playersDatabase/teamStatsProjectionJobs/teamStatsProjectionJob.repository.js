@@ -1,0 +1,106 @@
+const { admin, db } = require('../../../config/admin')
+const { randomUUID } = require('crypto')
+
+const COLLECTION = 'dbTeamStatsProjectionJobs'
+const LEASE_MS = 10 * 60 * 1000
+const ref = id => db.collection(COLLECTION).doc(id)
+
+const isCurrentAttempt = ({ job = {}, sourceRevision, attemptToken }) => (
+  job.status === 'processing' &&
+  String(job.sourceRevision || '') === String(sourceRevision || '') &&
+  String(job.attemptToken || '') === String(attemptToken || '')
+)
+
+async function claimTeamStatsProjectionJob(jobId) {
+  return db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(ref(jobId))
+    const job = snapshot.exists ? snapshot.data() || {} : null
+    if (!job) return null
+    const expired = (job.leaseExpiresAt?.toMillis?.() || 0) <= Date.now()
+    if (job.status !== 'queued' && !(job.status === 'processing' && expired)) return null
+    const sourceRevision = String(job.sourceRevision || randomUUID())
+    const attemptToken = randomUUID()
+    transaction.update(ref(jobId), {
+      status: 'processing', sourceRevision, attemptToken,
+      attempts: Number(job.attempts || 0) + 1,
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      leaseExpiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + LEASE_MS),
+      error: null,
+    })
+    return { id: jobId, ...job, sourceRevision, attemptToken }
+  })
+}
+
+async function withCurrentAttempt({ jobId, sourceRevision, attemptToken, callback }) {
+  return db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(ref(jobId))
+    const job = snapshot.exists ? snapshot.data() || {} : null
+    if (!isCurrentAttempt({ job, sourceRevision, attemptToken })) return { applied: false, reason: 'staleAttempt' }
+    return callback({ transaction, job, reference: ref(jobId) })
+  })
+}
+
+async function updateStage({ jobId, sourceRevision, attemptToken, stage, result }) {
+  return withCurrentAttempt({ jobId, sourceRevision, attemptToken, callback: ({ transaction, reference }) => {
+    transaction.update(reference, {
+      [`stages.${stage}`]: 'completed',
+      [`stageResults.${stage}`]: result,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    })
+    return { applied: true }
+  } })
+}
+
+async function complete({ jobId, sourceRevision, attemptToken }) {
+  return withCurrentAttempt({ jobId, sourceRevision, attemptToken, callback: ({ transaction, reference }) => {
+    transaction.update(reference, {
+      status: 'completed', completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(), leaseExpiresAt: null, error: null,
+    })
+    return { applied: true }
+  } })
+}
+
+async function supersede({ jobId, sourceRevision, attemptToken }) {
+  return withCurrentAttempt({ jobId, sourceRevision, attemptToken, callback: ({ transaction, reference }) => {
+    transaction.update(reference, {
+      status: 'superseded', supersededAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(), leaseExpiresAt: null,
+    })
+    return { applied: true }
+  } })
+}
+
+async function fail({ jobId, sourceRevision, attemptToken, error }) {
+  return withCurrentAttempt({ jobId, sourceRevision, attemptToken, callback: ({ transaction, reference }) => {
+    transaction.update(reference, {
+      status: 'failed', failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(), leaseExpiresAt: null,
+      error: { message: String(error?.message || 'Team stats projection job failed'), code: String(error?.code || '') },
+    })
+    return { applied: true }
+  } })
+}
+
+async function requeueExpiredTeamStatsProjectionJobs() {
+  const snapshot = await db.collection(COLLECTION)
+    .where('status', '==', 'processing')
+    .where('leaseExpiresAt', '<=', admin.firestore.Timestamp.now())
+    .limit(25)
+    .get()
+  await Promise.all(snapshot.docs.map(item => db.runTransaction(async transaction => {
+    const current = await transaction.get(item.ref)
+    const job = current.exists ? current.data() || {} : null
+    if (job?.status !== 'processing' || (job.leaseExpiresAt?.toMillis?.() || 0) > Date.now()) return false
+    transaction.update(item.ref, {
+      status: 'queued', attemptToken: null, leaseExpiresAt: null,
+      recoveryRequestedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    })
+    return true
+  })))
+  return { scannedCount: snapshot.size }
+}
+
+module.exports = { claimTeamStatsProjectionJob, updateStage, complete, supersede, fail, requeueExpiredTeamStatsProjectionJobs }

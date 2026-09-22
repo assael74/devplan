@@ -1,8 +1,23 @@
 // Firestore write-action journal. Records the operation that last touched a scope.
 export const WRITE_ACTION_DOCUMENT_GENERIC_OBJECT = {
   id: '',
+  writeActionId: '',
   actionType: '',
-  status: 'completed', // completed | failed_after_canonical_commit
+  status: 'in_progress', // in_progress | completed | failed | failed_after_canonical_commit | superseded
+  leagueId: '',
+  seasonKey: '',
+  teamId: '',
+  teamSeasonDocumentId: '',
+  sourceRevision: '',
+  projectionJobId: '',
+  projectionJobType: '',
+  projectionAttemptToken: '',
+  startedAt: null,
+  updatedAt: null,
+  projectionStartedAt: null,
+  projectionCompletedAt: null,
+  supersededAt: null,
+  retryRequestedAt: null,
   completedAt: null,
   failedAt: null,
   auditScope: null,

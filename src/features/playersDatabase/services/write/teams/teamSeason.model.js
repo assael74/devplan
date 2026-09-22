@@ -548,6 +548,10 @@ export const buildTeamSeasonDoc = ({ season = {}, team = {}, players = [] } = {}
       : Number.isFinite(Number(expectedLevelDeltaValue))
         ? Number(expectedLevelDeltaValue)
         : null,
+    scoutIdentityContext: {
+      clubId: clean(team.clubId),
+      birthTeamSlot: Number(team.birthTeamSlot || team.teamSlot || 1) || 1,
+    },
     tableRank: pickDefinedValue(team.tableRank, null),
     tableAttackRank: pickDefinedValue(team.tableAttackRank, team.offense?.rank, null),
     tableDefenseRank: pickDefinedValue(team.tableDefenseRank, team.defense?.rank, null),

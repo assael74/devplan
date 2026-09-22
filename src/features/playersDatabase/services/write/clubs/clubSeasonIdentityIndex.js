@@ -73,9 +73,21 @@ export async function syncLeagueClubSeasonIdentityIndex({
     const ref = indexRef({ seasonKey, birthYear })
     const snapshot = await transaction.get(ref)
     const existing = snapshot.exists() ? snapshot.data() || {} : CLUB_SEASON_IDENTITY_INDEX_DOCUMENT_CATALOG
-    const retained = (Array.isArray(existing.entries) ? existing.entries : [])
+    const existingEntries = Array.isArray(existing.entries) ? existing.entries : []
+    const previousEntriesForLeague = existingEntries
+      .filter(entry => clean(entry?.leagueId) === leagueId)
+    const retained = existingEntries
       .filter(entry => clean(entry?.leagueId) !== leagueId)
     const entries = sortEntries([...retained, ...entriesForLeague])
+    // A team can move to another Club without changing its team id. Treat the
+    // old Club/team pair as removed as well, otherwise its Club projection is
+    // never cleaned during a corrected League import.
+    const currentClubTeamKeys = new Set(entriesForLeague.map(entry => (
+      `${clean(entry?.clubId)}::${clean(entry?.teamId)}`
+    )))
+    const removedEntries = previousEntriesForLeague.filter(entry => (
+      !currentClubTeamKeys.has(`${clean(entry?.clubId)}::${clean(entry?.teamId)}`)
+    ))
     const changed = !snapshot.exists() || JSON.stringify(existing.entries || []) !== JSON.stringify(entries)
 
     if (changed) {
@@ -91,7 +103,14 @@ export async function syncLeagueClubSeasonIdentityIndex({
       })
     }
 
-    return { id, changed, updated: changed, writeSkipped: !changed, entriesCount: entries.length }
+    return {
+      id,
+      changed,
+      updated: changed,
+      writeSkipped: !changed,
+      entriesCount: entries.length,
+      removedEntries,
+    }
   }, {
     feature: 'playersDatabase',
     action: 'club-season-identity-index-sync',

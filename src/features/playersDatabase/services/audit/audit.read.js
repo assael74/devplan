@@ -84,7 +84,7 @@ export const buildScopedMovementCounterpartSeasonIds = ({ teamSeasons = [] } = {
   return [...ids].filter(Boolean)
 }
 
-const readScopedSnapshot = async scope => {
+const readScopedSnapshot = async (scope, { includeWriteRecovery = true } = {}) => {
   const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
   const teamIds = [...new Set(scopes.map(item => item.teamDocumentId))]
   const rootResult = await readDocumentsById({
@@ -128,7 +128,9 @@ const readScopedSnapshot = async scope => {
     collectionName: PLAYERS_DATABASE_COLLECTIONS.favorites,
     ids: ['players'],
   })
-  const writeActionsResult = await readActiveWriteRecoveryActions()
+  const writeActionsResult = includeWriteRecovery
+    ? await readActiveWriteRecoveryActions()
+    : { rows: [], readsUsed: 0 }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -151,12 +153,49 @@ const readScopedSnapshot = async scope => {
   }
 }
 
+const readLeagueSeasonScopedSnapshot = async scope => {
+  const leagueResult = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues,
+    ids: [scope.leagueId],
+  })
+  const league = leagueResult.rows[0]
+  const data = league?.data || {}
+  const current = data.current || {}
+  const season = String(current.seasonKey || current.seasonId || '').trim() === scope.seasonKey
+    ? current
+    : (Array.isArray(data.history) ? data.history : []).find(item => (
+      String(item?.seasonKey || item?.seasonId || '').trim() === scope.seasonKey
+    )) || {}
+  const teamScopes = (Array.isArray(season.tableRank) ? season.tableRank : [])
+    .map(row => ({
+      teamDocumentId: String(row?.birthTeamDocumentId || row?.teamDocumentId || row?.birthTeamId || row?.teamId || '').trim(),
+      seasonKey: scope.seasonKey,
+    }))
+    .filter(item => item.teamDocumentId)
+
+  // A League receipt Audit reads one exact League document and the explicit
+  // Team Seasons listed in its table. It deliberately excludes the global
+  // recovery-journal query, so this path never expands into a broad scan.
+  const scoped = await readScopedSnapshot(
+    { type: AUDIT_SCOPE_TYPE.TEAM_SEASONS, scopes: teamScopes },
+    { includeWriteRecovery: false }
+  )
+  return {
+    ...scoped,
+    readsUsed: scoped.readsUsed + leagueResult.readsUsed,
+    rows: { ...scoped.rows, leagues: leagueResult.rows },
+  }
+}
+
 // A full-system audit reads every canonical collection. A Team/Season audit
 // assembles only the explicit relation set needed for that Team/Season.
-export async function readPlayerDatabaseAuditSnapshot({ scope } = {}) {
+export async function readPlayerDatabaseAuditSnapshot({ scope, includeWriteRecovery = true } = {}) {
   const normalizedScope = normalizeAuditScope(scope)
+  if (normalizedScope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON) {
+    return readLeagueSeasonScopedSnapshot(normalizedScope)
+  }
   if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) {
-    return readScopedSnapshot(normalizedScope)
+    return readScopedSnapshot(normalizedScope, { includeWriteRecovery })
   }
   const [entries, writeActionsResult] = await Promise.all([
     Promise.all([

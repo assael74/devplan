@@ -2,10 +2,13 @@
 
 import {
   Box,
+  Button,
   Card,
+  IconButton,
   Typography,
 } from '@mui/joy'
 
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { pasteAreaSx as sx } from './sx/pasteArea.sx.js'
 
 export default function PasteArea({
@@ -14,11 +17,22 @@ export default function PasteArea({
   compact = false,
   onChange,
   formatHint = '',
+  headerActions = null,
+  templateText = '',
+  templateLabel = 'העתק תבנית',
+  showClearAction = true,
+  inputVariant = 'default',
+  inputSx = null,
 }) {
   const handleValueChange = event => {
     if (typeof onChange === 'function') {
       onChange(event.target.value)
     }
+  }
+
+  const handleCopyTemplate = async () => {
+    if (!templateText) return
+    await navigator.clipboard?.writeText(templateText)
   }
 
   return (
@@ -41,14 +55,54 @@ export default function PasteArea({
           ) : null}
         </Box>
 
+        {headerActions ? (
+          <Box sx={sx.headerActions}>
+            {headerActions}
+          </Box>
+        ) : null}
+
+        {templateText || showClearAction ? (
+          <Box sx={sx.headerActions}>
+            {templateText ? (
+              <Button
+                size='sm'
+                variant='plain'
+                onClick={handleCopyTemplate}
+                sx={sx.templateButton}
+              >
+                {templateLabel}
+              </Button>
+            ) : null}
+            {showClearAction ? (
+              <IconButton
+                size='sm'
+                variant='soft'
+                color='neutral'
+                aria-label='ניקוי ההדבקה'
+                title='ניקוי ההדבקה'
+                disabled={!value}
+                onClick={() => onChange?.('')}
+                sx={sx.clearButton}
+              >
+                {iconUi({ id: 'clear', size: 'sm' })}
+              </IconButton>
+            ) : null}
+          </Box>
+        ) : null}
       </Box>
 
       <Box
         component='textarea'
+        className='dpScrollThin'
         value={value}
         placeholder={placeholder || 'הדביקו כאן את הנתונים באמצעות Ctrl+V'}
         onChange={handleValueChange}
-        sx={[sx.input, compact ? sx.inputCompact : null]}
+        sx={[
+          sx.input,
+          sx.inputVariant[inputVariant] || null,
+          compact ? sx.inputCompact : null,
+          inputSx,
+        ]}
       />
 
       {!compact ? (

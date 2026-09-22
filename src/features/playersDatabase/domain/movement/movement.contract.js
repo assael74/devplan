@@ -15,6 +15,8 @@ export const MOVEMENT_TIMING = Object.freeze({
 
 export const COUNTERPART_RECONCILIATION = Object.freeze({
   COMPLETE: 'complete',
+  NO_OP: 'no_op',
+  CONFLICT: 'conflict',
   FAILED: 'failed',
   NOT_FOUND: 'not_found',
   NOT_REQUIRED: 'not_required',
@@ -27,8 +29,21 @@ export const resolveMovementDirection = ({
   toClubId = '',
   fromClubLevel = 0,
   toClubLevel = 0,
+  fromBirthTeamSlot = 1,
   toBirthTeamSlot = 1,
 } = {}) => {
+  const fromSlot = Number(fromBirthTeamSlot)
+  const toSlot = Number(toBirthTeamSlot)
+
+  // An internal move remains a real movement. Team slots are the canonical
+  // hierarchy inside one Club and therefore determine its direction.
+  if (clean(fromClubId) && clean(fromClubId) === clean(toClubId)) {
+    if (Number.isFinite(fromSlot) && Number.isFinite(toSlot) && fromSlot > 0 && toSlot > 0) {
+      if (toSlot < fromSlot) return 'up'
+      if (toSlot > fromSlot) return 'down'
+    }
+  }
+
   const from = Number(fromClubLevel)
   const to = Number(toClubLevel)
 

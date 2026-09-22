@@ -8,6 +8,7 @@ import {
   PLAYERS_DATABASE_CURRENT_SEASON_KEY,
 } from '../../../catalog/seasons.catalog.js'
 import {
+  SEASON_STATUS,
   isSameSeason,
   normalizeSeasonIdentity,
   normalizeSeasonLookupKey,
@@ -275,6 +276,15 @@ const buildLeagueCenterRow = ({
     ? countScoutProfiles(tableRows)
     : toNumber(season?.scoutProfilesCount)
   const teamNames = buildTableRowTeamNames(tableRows)
+  const seasonStatus = target === 'history'
+    ? SEASON_STATUS.COMPLETED
+    : [
+      SEASON_STATUS.NOT_STARTED,
+      SEASON_STATUS.ACTIVE,
+      SEASON_STATUS.COMPLETED,
+    ].includes(clean(season?.seasonStatus).toLowerCase())
+      ? clean(season.seasonStatus).toLowerCase()
+      : ''
 
   return {
     id: clean(league?.id || league?.leagueId || catalog?.id),
@@ -297,6 +307,7 @@ const buildLeagueCenterRow = ({
     birthYear: birthYear || '',
     seasonKey: resolveSeasonLookupKey(seasonIdentity) || selectedSeasonKey,
     seasonId: seasonIdentity.seasonId,
+    seasonStatus,
     selectedTarget: target,
     teamsCount,
     tableStatus,

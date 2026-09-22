@@ -1,20 +1,20 @@
-// src/features/playersDatabase/ui/pages/leaguePage/components/sx/leagueTeamNameLink.sx.js
-
 export const leagueTeamNameLinkSx = {
   root: {
+    minWidth: 0,
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 0.5,
-    minWidth: 0,
+    textAlign: 'right',
   },
 
   name: {
     minWidth: 0,
     flex: 1,
+    textAlign: 'right',
   },
 
-  urlIndicator: {
+  link: {
     flexShrink: 0,
-    fontWeight: 700,
   },
 }

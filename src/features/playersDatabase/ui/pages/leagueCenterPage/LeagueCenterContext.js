@@ -46,6 +46,11 @@ export default function LeagueCenterContext({ model }) {
     model.setAgeGroupId(value)
   }
 
+  const handleLeagueStatusChange = (event, value) => {
+    if (!value) return
+    model.setLeagueStatus(value)
+  }
+
   return (
     <Stack spacing={1} sx={sx.contextSection}>
       <Box sx={sx.sectionHeader}>
@@ -158,6 +163,22 @@ export default function LeagueCenterContext({ model }) {
             {model.ageGroupOptions.map(option => (
               <Option key={option.value} value={option.value}>{option.label}</Option>
             ))}
+          </Select>
+        </Box>
+
+        <Box sx={sx.contextField}>
+          <Typography level='body-xs' sx={sx.contextLabel}>מצב ליגה</Typography>
+          <Select
+            size='sm'
+            indicator={null}
+            value={model.leagueStatus}
+            sx={sx.contextSelect}
+            onChange={handleLeagueStatusChange}
+          >
+            <Option value='all'>הכל</Option>
+            <Option value='not_started'>ליגות שלא החלו</Option>
+            <Option value='active'>ליגות פעילות</Option>
+            <Option value='completed'>ליגות שהסתיימו</Option>
           </Select>
         </Box>
       </Box>

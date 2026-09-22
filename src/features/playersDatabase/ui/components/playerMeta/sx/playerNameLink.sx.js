@@ -3,7 +3,8 @@
 export const playerNameLinkSx = {
   root: {
     display: 'flex',
-    width: '100%',
+    width: 'fit-content',
+    maxWidth: '100%',
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: 0.5,
@@ -11,9 +12,26 @@ export const playerNameLinkSx = {
   },
 
   name: {
-    flex: 1,
+    flex: '0 1 auto',
     minWidth: 0,
     fontWeight: 600,
     textAlign: 'left',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  avatar: {
+    width: 26,
+    height: 26,
+    flex: '0 0 auto',
+  },
+
+  nameLink: {
+    color: 'primary.700',
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'underline',
+    },
   },
 }

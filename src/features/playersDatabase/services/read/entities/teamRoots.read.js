@@ -1,7 +1,11 @@
 import { readClubsMasterDocument } from '../masters/clubsMaster.read.js'
+import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
 import { buildBirthTeamId } from '../../../catalog/teamIdentity.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
+const catalogOrderByClubId = new Map(
+  PLAYERS_DATABASE_CLUBS_CATALOG.map((club, index) => [clean(club?.id), index])
+)
 
 // The all-Club Master supplies the user-facing club list. A club's valid
 // slots are derived only after it is chosen, from its matching age group and
@@ -86,8 +90,12 @@ export async function listExistingTeamRootOptions({
     })
     .filter(option => option.clubId && option.clubName)
     .sort((left, right) => {
-      const levelDifference = left.clubLevel - right.clubLevel
-      if (levelDifference) return levelDifference
+      const leftOrder = catalogOrderByClubId.get(left.clubId)
+      const rightOrder = catalogOrderByClubId.get(right.clubId)
+      const leftRank = Number.isInteger(leftOrder) ? leftOrder : Number.MAX_SAFE_INTEGER
+      const rightRank = Number.isInteger(rightOrder) ? rightOrder : Number.MAX_SAFE_INTEGER
+
+      if (leftRank !== rightRank) return leftRank - rightRank
 
       return String(left.label || '').localeCompare(String(right.label || ''), 'he', {
         numeric: true,

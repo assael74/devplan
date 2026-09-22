@@ -214,6 +214,7 @@ export async function upsertTeamSeasonPlayers({
   rosterImport = {},
   movementState = null,
   sourceSnapshotKeyExplicit = false,
+  rosterProjectionRevision = '',
   reconcileMovement = null,
 } = {}) {
   const teamId = resolveTeamLookupKey(team)
@@ -288,6 +289,7 @@ export async function upsertTeamSeasonPlayers({
       seasonDoc: {
         ...baseSeasonDoc,
         rosterImport: persistedRosterImport,
+        ...(rosterProjectionRevision ? { rosterProjectionRevision } : {}),
         transfersIn: normalizedMovementState.transfersIn || [],
         transfersOut: normalizedMovementState.transfersOut || [],
         pendingPlayers: normalizedMovementState.pendingPlayers || [],
@@ -330,6 +332,7 @@ export async function upsertTeamSeasonPlayers({
       seasonDocument: persistedSeason,
       movementState: normalizedMovementState,
       rosterImport: persistedRosterImport,
+      rosterProjectionRevision: persistedSeason.rosterProjectionRevision || '',
     }
   })
 }

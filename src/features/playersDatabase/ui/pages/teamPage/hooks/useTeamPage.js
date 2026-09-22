@@ -53,6 +53,7 @@ export function useTeamPage() {
   const fromLeague = cleanValue(
     searchParams.get('fromLeague')
   )
+  const auditSeasonKey = cleanValue(searchParams.get('auditSeason'))
   const fromClubs = searchParams.get('fromClubs') === '1'
   const [leagueDoc, setLeagueDoc] = useState(null)
   const [leagueDocuments, setLeagueDocuments] = useState([])
@@ -158,6 +159,15 @@ export function useTeamPage() {
       teamId,
     ]
   )
+  useEffect(() => {
+    if (selectedOptionKey || !auditSeasonKey || !seasonOptions.length) return
+
+    const auditOption = seasonOptions.find(option => (
+      option.seasonKey === auditSeasonKey && option.leagueId === leagueId
+    )) || seasonOptions.find(option => option.seasonKey === auditSeasonKey)
+
+    if (auditOption) setSelectedOptionKey(auditOption.optionKey)
+  }, [auditSeasonKey, leagueId, seasonOptions, selectedOptionKey])
   const selectedSeasonOption = useMemo(() => findRequestedSeasonOption({
     seasonOptions,
     selectedOptionKey,

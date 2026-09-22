@@ -2,7 +2,7 @@
 
 import {
   buildTeamBalance,
-} from '../../../../shared/scouting/teams/index.js'
+} from '@devplan/players-scout-engine/teams/index.js'
 import {
   buildTeamLinePerformanceInterpretation,
   buildTeamTaskSignals,

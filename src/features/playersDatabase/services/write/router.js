@@ -3,9 +3,14 @@
 import { invalidatePlayersDatabaseWriteCache } from '../cache/index.js'
 import {
   buildLastWriteAuditScope,
-  rememberLastWriteAuditScopeFromResult,
+  rememberLastWriteAuditScope,
 } from '../audit/audit.lastWrite.js'
-import { recordPlayersDatabaseWriteAction } from '../audit/audit.writeJournal.js'
+import { buildAuditLeagueSeasonScope } from '../audit/audit.scope.js'
+import {
+  beginPlayersDatabaseWriteAction,
+  recordPlayersDatabaseWriteAction,
+  updatePlayersDatabaseWriteAction,
+} from '../audit/audit.writeJournal.js'
 import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
@@ -20,6 +25,7 @@ import {
   deleteLeagueSeasonFlow,
   deleteTeamPlayerFromSeasonFlow,
   pasteLeagueTableFlow,
+  retryLeagueProjectionSyncFlow,
   pasteTeamPlayerStatsFlow,
   pasteTeamPlayersFlow,
   removeFavoriteFlow,
@@ -40,6 +46,7 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   UPSERT_LEAGUE_SEASON: 'upsertLeagueSeason',
   UPDATE_LEAGUE_SEASON_TABLE_RANK: 'updateLeagueSeasonTableRank',
   PASTE_LEAGUE_TABLE: 'pasteLeagueTable',
+  RETRY_LEAGUE_PROJECTION_SYNC: 'retryLeagueProjectionSync',
   PASTE_TEAM_PLAYERS: 'pasteTeamPlayers',
   PASTE_TEAM_PLAYER_STATS: 'pasteTeamPlayerStats',
   UPDATE_TEAM_URL: 'updateTeamUrl',
@@ -69,6 +76,7 @@ const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON]: createLeagueSeasonFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_TABLE_RANK]: updateLeagueSeasonTableRank,
   [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE]: pasteLeagueTableFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC]: retryLeagueProjectionSyncFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS]: pasteTeamPlayersFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS]: pasteTeamPlayerStatsFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL]: updateTeamUrlFlow,
@@ -93,6 +101,54 @@ const WRITE_ACTION_RUNNERS = {
 
 const resolveCompletionResult = value => value?.results || value || {}
 
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
+
+const buildWriteActionIdentity = ({ payload = {}, result = {} } = {}) => {
+  const resolved = resolveCompletionResult(result)
+  const job = resolved?.projectionJob || resolved?.results?.projectionJob || {}
+  const teamSeason = resolved?.teamSeasonResult || resolved?.results?.teamSeasonResult || {}
+  const leagueResult = resolved?.leagueResult || resolved?.results?.leagueResult || resolved
+  const season = payload.season || resolved?.season || {}
+  const team = payload.team || resolved?.team || {}
+  const league = payload.league || resolved?.league || {}
+
+  return {
+    leagueId: clean(leagueResult?.leagueId || league?.id || league?.leagueId || season?.leagueId),
+    seasonKey: clean(teamSeason?.seasonKey || leagueResult?.seasonKey || season?.seasonKey || season?.seasonId),
+    teamId: clean(teamSeason?.birthTeamDocumentId || teamSeason?.teamDocumentId || team?.birthTeamDocumentId || team?.teamDocumentId || team?.teamId),
+    teamSeasonDocumentId: clean(teamSeason?.teamSeasonDocumentId),
+    sourceRevision: clean(job?.sourceRevision || resolved?.sourceRevision),
+    projectionJobId: clean(job?.id),
+    projectionJobType: clean(job?.id ? job?.jobType : '') || (job?.id ? clean(job?.jobType || 'projection') : ''),
+  }
+}
+
+const buildActionAuditScope = ({ actionType = '', payload = {}, result = {} } = {}) => {
+  if ([
+    PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
+    PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC,
+  ].includes(actionType)) {
+    const identity = buildWriteActionIdentity({ payload, result })
+    return buildAuditLeagueSeasonScope({
+      leagueId: identity.leagueId,
+      seasonKey: identity.seasonKey,
+    })
+  }
+  return buildLastWriteAuditScope(result)
+}
+
+const buildWriteActionResult = result => {
+  const resolved = resolveCompletionResult(result)
+  return {
+    projectionJob: resolved?.projectionJob || resolved?.results?.projectionJob || null,
+    backgroundSyncPending: Boolean(resolved?.backgroundSyncPending),
+    rowsCount: Number(resolved?.rowsCount || 0),
+    syncedPlayersCount: Number(resolved?.syncedPlayersCount || 0),
+    failedStage: clean(resolved?.failedStage || resolved?.stoppedAt),
+    syncStatus: clean(resolved?.syncStatus),
+  }
+}
+
 const hasCanonicalCommit = value => {
   const result = resolveCompletionResult(value)
 
@@ -110,32 +166,42 @@ const isPostCanonicalPartialResult = result => (
   hasCanonicalCommit(result) && (
     result?.completed === false ||
     result?.recoveryRequired === true
-  )
+  ) && !result?.backgroundSyncPending
 )
 
-const recordPostCanonicalFailure = async ({ actionType, payload, result, error = null }) => {
+const recordPostCanonicalFailure = async ({ actionType, payload, result, error = null, writeActionId = '' }) => {
   invalidatePlayersDatabaseWriteCache({
     actionType,
     payload,
     result,
   })
 
-  const auditScope = rememberLastWriteAuditScopeFromResult(result)
+  const auditScope = buildActionAuditScope({ actionType, payload, result })
+  if (auditScope) rememberLastWriteAuditScope(auditScope)
   if (auditScope && error) error.auditScope = auditScope
 
   try {
-    await recordPlayersDatabaseWriteAction({
-      actionType,
+    const superseded = Boolean(
+      error?.superseded ||
+      ['STATS_PROJECTION_SUPERSEDED', 'ROSTER_PROJECTION_SUPERSEDED'].includes(error?.code)
+    )
+    const journalEntry = {
       auditScope: auditScope || buildLastWriteAuditScope(result),
-      status: 'failed_after_canonical_commit',
+      status: superseded ? 'superseded' : 'failed_after_canonical_commit',
       failedStage: error?.stage || result?.failedStage || result?.stoppedAt || '',
       errorMessage: String(
         error?.message ||
         result?.projectionError ||
         'כתיבה חלקית לאחר שמירת הנתונים הקנוניים'
       ),
-      recoveryRequired: true,
-    })
+      recoveryRequired: !superseded,
+      result: buildWriteActionResult(result),
+    }
+    if (writeActionId) {
+      await updatePlayersDatabaseWriteAction({ writeActionId, ...journalEntry })
+    } else {
+      await recordPlayersDatabaseWriteAction({ actionType, ...journalEntry })
+    }
   } catch {
     // Diagnostic journaling must never mask the write result or error.
   }
@@ -150,9 +216,28 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     throw new Error(`Unknown players database write action: ${actionType}`)
   }
 
+  const continuationWriteActionId = actionType === PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC
+    ? clean(payload.continuationWriteActionId)
+    : ''
+  // A recovery keeps the original business receipt. Other actions receive a
+  // new receipt before they begin their business writes.
+  const writeActionId = continuationWriteActionId || await beginPlayersDatabaseWriteAction({ actionType })
+
+  if (continuationWriteActionId) {
+    await updatePlayersDatabaseWriteAction({
+      writeActionId,
+      status: 'in_progress',
+      recoveryRequired: false,
+    })
+  }
+
+  const actionPayload = writeActionId
+    ? { ...payload, writeActionId }
+    : payload
+
   let result
   try {
-    result = await runAction(payload)
+    result = await runAction(actionPayload)
   } catch (error) {
     // A coordinated flow may commit its canonical source before a later
     // projection fails.  Do not leave the UI/cache on the pre-write snapshot;
@@ -161,10 +246,25 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     if (hasCanonicalCommit(error)) {
       await recordPostCanonicalFailure({
         actionType,
-        payload,
+        payload: actionPayload,
         result: resolveCompletionResult(error),
         error,
+        writeActionId,
       })
+    } else {
+      try {
+        const isRecovery = actionType === PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC &&
+          Boolean(continuationWriteActionId)
+        await updatePlayersDatabaseWriteAction({
+          writeActionId,
+          status: isRecovery ? 'failed_after_canonical_commit' : 'failed',
+          failedStage: error?.stage || 'retryLeagueProjectionSync',
+          errorMessage: String(error?.message || 'כתיבה נכשלה'),
+          recoveryRequired: isRecovery,
+        })
+      } catch {
+        // The original write error remains the source of truth.
+      }
     }
     throw error
   }
@@ -172,29 +272,51 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
   if (isPostCanonicalPartialResult(result)) {
     const auditScope = await recordPostCanonicalFailure({
       actionType,
-      payload,
+      payload: actionPayload,
       result,
+      writeActionId,
     })
 
     return auditScope
-      ? { ...result, auditScope }
-      : result
+      ? { ...result, auditScope, writeActionId }
+      : { ...result, writeActionId }
+  }
+
+  if (result?.backgroundSyncPending) {
+    const auditScope = buildActionAuditScope({ actionType, payload: actionPayload, result })
+    if (auditScope) rememberLastWriteAuditScope(auditScope)
+    if (!result?.writeActionLinkedInCanonicalCommit) {
+      await updatePlayersDatabaseWriteAction({
+        writeActionId,
+        auditScope,
+        identity: buildWriteActionIdentity({ payload: actionPayload, result }),
+        result: {
+          ...buildWriteActionResult(result),
+          backgroundSyncPending: true,
+        },
+      })
+    }
+    return auditScope
+      ? { ...result, auditScope, writeActionId }
+      : { ...result, writeActionId }
   }
 
   invalidatePlayersDatabaseWriteCache({
     actionType,
-    payload,
+    payload: actionPayload,
     result,
   })
 
-  const auditScope = rememberLastWriteAuditScopeFromResult(result)
+  const auditScope = buildActionAuditScope({ actionType, payload, result })
+  if (auditScope) rememberLastWriteAuditScope(auditScope)
 
-  // Provenance is diagnostic only: a journal outage must never turn a
-  // successful business write into a failed user action.
   try {
-    await recordPlayersDatabaseWriteAction({
-      actionType,
-      auditScope: auditScope || buildLastWriteAuditScope(result),
+    await updatePlayersDatabaseWriteAction({
+      writeActionId,
+      auditScope: auditScope || buildActionAuditScope({ actionType, payload, result }),
+      status: 'completed',
+      identity: buildWriteActionIdentity({ payload: actionPayload, result }),
+      result: buildWriteActionResult(result),
     })
   } catch {
     // The canonical write has already completed successfully.
@@ -204,6 +326,7 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     ? {
         ...result,
         auditScope,
+        writeActionId,
       }
-    : result
+    : { ...result, writeActionId }
 }

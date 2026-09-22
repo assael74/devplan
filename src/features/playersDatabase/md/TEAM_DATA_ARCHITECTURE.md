@@ -247,15 +247,33 @@ context makes their derived Team Performance projection reproducible without
 serializing the full offense/defense engine result into every row.
 
 When a League table is loaded or changed, calculate the Team Performance
-projection once for the whole table. That one result feeds the Team SearchIndex,
-existing Team Season documents, Club Document and Clubs Master projections.
-Roster and Stats loads must reuse the League-derived projection and must not
-recalculate the whole League table.
+projection once for the whole table. The interactive request commits only the
+canonical League Document and the compact Club-season identity index, then
+queues a `dbLeagueProjectionJobs` record. This keeps League Import bounded and
+allows the user to continue working.
 
-Reloading a League Excel file follows the same path. It refreshes data that can
-be sourced from the League table (official performance, scouting priority,
-profiles and related projections). It must not fabricate balance or transfer
-data: those remain available only when the matching Team Season source exists.
+The deployed background worker claims the job and applies the League-derived
+performance to existing Team Season documents and their existing Team
+SearchIndexes. It does not create Team Roots, Team Seasons, indexes, Player
+Documents, Balance, or scout state. Club and Clubs Master projections are
+refreshed by their explicit canonical rebuild flow. Roster and Stats loads must
+reuse the League-derived projection and must not recalculate the whole League
+table.
+
+The current job lifecycle is `queued → processing → completed | failed`.
+`completed` means the worker finished its defined scope (existing Team Season
+performance), not that it owns every derived Players Database projection.
+Each League write carries a `sourceRevision`; an attempt token and the
+canonical League revision are checked before every Team Season write chunk, so
+an older job cannot overwrite a newer League load. A 10-minute lease protects
+the worker, and only expired leases are requeued by the narrow scheduled
+recovery query.
+
+Reloading a League Excel file follows the same path. It refreshes official
+League-derived performance and existing Team SearchIndexes only for Team
+Seasons that already exist. It does not fabricate Player Documents, missing
+indexes, Club projections, balance or transfer data; those remain owned by
+their matching explicit source flows.
 
 The Team Season and Club projections persist only the compact
 `{ priorityLevel }` offense/defense sides. The complete calculation remains a
@@ -1207,3 +1225,50 @@ The clean reset is Excel-first. League, Roster and Stats are loaded through the 
 Movement counterpart recovery is non-blocking. When a local `transfersIn` fact exists and the source Team Season also exists, Audit may report a missing `transfersOut` counterpart. A missing source Team Season is legal. Recovery may retry the counterpart write, but it must never create a Team Root or Team Season solely to complete Movement.
 
 See `CLEAN_RESET_RUNBOOK.md` for the operational acceptance sequence.
+
+## 19. Team Stats projection receipt
+
+Every Players Database write starts by creating a central operational receipt:
+`dbWriteActions/{writeActionId}`. This receipt is intentionally separate from
+the Team Root and Team Season business documents: a failed import can be
+identified even when neither target document exists. It records the action
+type, lifecycle (`in_progress`, `completed`, `failed`, or
+`failed_after_canonical_commit`), the narrow Audit scope when one exists, and
+the relevant target and projection-job ids.
+
+The receipt is mandatory. If it cannot be created, the business write does not
+start. A receipt must never be best-effort because that would permit a write
+which cannot be traced, audited, or repaired as one operation. A queued
+background Job keeps its receipt in `in_progress`; it is not a failed partial
+write. Its Cloud Function updates that same receipt to `completed`,
+`failed_after_canonical_commit`, or `superseded` only after an attempt with the
+same job id, source revision, and attempt token reaches that outcome. A lease
+retry replaces the attempt token when it claims the Job; a late attempt can
+therefore neither complete the Job nor change its receipt.
+
+Each Stats Load atomically commits the canonical Team Season, Team Root season index,
+`statsProjectionRevision`, one scoped
+`dbTeamStatsProjectionJobs/{teamId}__{seasonKey}__{revision}` document in `queued`, and
+the receipt linkage through `writeActionId`. Before that transaction writes anything, the
+receipt must be the matching `pasteTeamPlayerStats` action, remain `in_progress`, and have
+no prior Job/revision linkage. The job has the same contract for active and completed
+seasons; only `target` differs (`current` versus `history`).
+
+The worker always re-reads the Team Season and accepts it only when its
+revision equals the job source revision. A newer Stats Load supersedes an
+older queued or processing attempt, so a stale job cannot report or apply an
+outdated result. The receipt records the canonical Team Season id, the player
+document ids in scope, and the Player Season search-index ids. The import
+modal displays the job id and outcome, and a failed job can be retried without
+reloading the pasted data.
+
+The operational receipt is the handoff identity for a targeted Audit: the
+Audit modal accepts its `writeActionId`, resolves its stored scope, and runs
+only that scope. It is not a full-database scan.
+
+Roster Loads use the same ownership rule. Every canonical roster write stores
+`rosterProjectionRevision` in Team Season. Each downstream roster projection
+re-reads that canonical document without the client cache and stops when a
+newer roster load owns the revision. Any downstream roster failure after the
+canonical Team Season commit is recorded as
+`failed_after_canonical_commit`, never as an early write failure.

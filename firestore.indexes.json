@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "dbLeagueProjectionJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "leaseExpiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dbTeamStatsProjectionJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "leaseExpiresAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

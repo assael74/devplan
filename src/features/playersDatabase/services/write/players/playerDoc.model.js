@@ -317,9 +317,26 @@ export const normalizePlayerScoutProfiles = player => {
     ? player.scoutProfiles
     : []
 
-  const sourceProfiles = scoutSignals.length > 0
-    ? scoutSignals
-    : scoutProfiles
+  // Some import paths retain the calculated profile IDs rather than the
+  // expanded profile objects.  They are equally valid evidence of a scout
+  // profile and must create the same Player document lifecycle.
+  const storedProfileIds = [
+    ...(Array.isArray(player?.professionalScoutProfileIds)
+      ? player.professionalScoutProfileIds
+      : []),
+    ...(Array.isArray(player?.preliminaryScoutProfileIds)
+      ? player.preliminaryScoutProfileIds
+      : []),
+    player?.primaryScoutProfileId,
+  ]
+    .map(profileId => clean(profileId))
+    .filter(Boolean)
+    .map(profileId => ({ profileId }))
+
+  const sourceProfiles = [
+    ...(scoutSignals.length > 0 ? scoutSignals : scoutProfiles),
+    ...storedProfileIds,
+  ]
 
   return sourceProfiles
     .filter(profile => clean(profile.profileId || profile.id))

@@ -36,6 +36,10 @@ export {
 } from './pasteLeagueTable.flow.js'
 
 export {
+  retryLeagueProjectionSyncFlow,
+} from './retryLeagueProjectionSync.flow.js'
+
+export {
   updateLeagueSeasonMetaFlow,
 } from './updateLeagueSeasonMeta.flow.js'
 

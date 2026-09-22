@@ -48,6 +48,7 @@ export function useLeagueCenter() {
   const birthYear = cleanFilterValue(searchParams.get('birthYear'))
   const ageGroupId = cleanFilterValue(searchParams.get('ageGroup'))
   const leagueLevel = cleanFilterValue(searchParams.get('level'))
+  const leagueStatus = cleanFilterValue(searchParams.get('status'))
   const seasonKey = requestedSeasonKey || LEAGUE_CENTER_ALL_SEASONS_KEY
   const [query, setQuery] = useState('')
   const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
@@ -138,11 +139,14 @@ export function useLeagueCenter() {
       leagueLevel
     )
 
-    return filterByValue(byLevel, 'ageGroupId', ageGroupId)
+    const byAgeGroup = filterByValue(byLevel, 'ageGroupId', ageGroupId)
+
+    return filterByValue(byAgeGroup, 'seasonStatus', leagueStatus)
   }, [
     allRows,
     birthYear,
     ageGroupId,
+    leagueStatus,
     leagueLevel,
     seasonKey,
   ])
@@ -217,6 +221,12 @@ export function useLeagueCenter() {
     )
   }, [updateParam])
 
+  const setLeagueStatus = useCallback(value => {
+    if (value === null || value === undefined || value === '') return
+
+    updateParam('status', cleanFilterValue(value))
+  }, [updateParam])
+
   const resetPrimaryFilters = useCallback(() => {
     const nextSearchParams = new URLSearchParams(searchParams)
 
@@ -224,6 +234,7 @@ export function useLeagueCenter() {
     nextSearchParams.delete('birthYear')
     nextSearchParams.delete('ageGroup')
     nextSearchParams.delete('level')
+    nextSearchParams.delete('status')
 
     setSearchParams(nextSearchParams, {
       replace: true,
@@ -258,6 +269,8 @@ export function useLeagueCenter() {
     leagueLevel,
     setLeagueLevel,
     levelOptions,
+    leagueStatus,
+    setLeagueStatus,
     seasonKey,
     setSeasonKey,
     seasonTarget: resolveLeagueCenterSeasonTarget(seasonKey),

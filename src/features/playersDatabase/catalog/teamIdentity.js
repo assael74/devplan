@@ -12,10 +12,6 @@ const normalizeBirthYear = value => {
   return Number.isInteger(n) && n > 0 ? n : 0
 }
 
-export const inferTeamSlotByLeagueLevel = level => (
-  Number(level) === 1 ? 1 : 2
-)
-
 export const buildBirthTeamId = ({
   clubId,
   birthYear,

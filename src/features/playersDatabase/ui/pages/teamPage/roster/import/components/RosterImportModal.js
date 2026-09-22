@@ -1,26 +1,91 @@
 import * as React from 'react'
-import { Autocomplete, Box, Button, Card, CircularProgress, Option, Select, Table, Typography } from '@mui/joy'
+import {
+  Box,
+  Button,
+  Card,
+  Chip,
+  CircularProgress,
+  Divider,
+  Option,
+  Select,
+  Stack,
+  Table,
+  Typography,
+} from '@mui/joy'
 
 import RosterIdentityModal from './RosterIdentityModal.js'
 import RegularModal from '../../../../../components/modals/RegularModal.js'
 import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
+import ClubSlotSelect from '../../../../../components/modals/components/ClubSlotSelect.js'
+import ImportModalContextDescription from '../../../../../components/modals/ImportModalContextDescription.js'
 import ModalStepper from '../../../../../components/modals/ModalStepper.js'
-import TeamSeasonSelect from '../../../../../components/modals/TeamSeasonSelect.js'
 import { PLAYER_ROSTER_COLUMNS, PLAYER_ROSTER_PLACEHOLDER } from '../logic/rosterImport.constants.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
 import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
 import StatusCell from '../../../../../components/modals/paste/StatusCell.js'
+import TeamSeasonChoiceCards from '../../../../../components/modals/paste/TeamSeasonChoiceCards.js'
+import { importModalChromeSx as chromeSx } from '../../../../../components/modals/paste/sx/importModalChrome.sx.js'
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { rosterImportModalSx as sx } from '../sx/rosterImportModal.sx.js'
 import PlayerNameLink from '../../../../../components/playerMeta/PlayerNameLink.js'
 import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../../../catalog/clubs.catalog.js'
+import { PLAYERS_DATABASE_UI_ROUTES } from '../../../../../logic/routeBuilders.js'
+import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
-const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור']
+const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור', 'סנכרון']
+
+const PROJECTION_JOB_STATUS = {
+  queued: { color: 'neutral', label: 'ממתין', title: 'הסנכרון ממתין להתחלה', description: 'נתוני הסגל נשמרו. בדיקת הסנכרון תתחיל אוטומטית.' },
+  processing: { color: 'primary', label: 'בתהליך', title: 'סנכרון נתוני הסגל מתבצע', description: 'המערכת בודקת את מסמכי הסגל, אינדקסי השחקנים ואת שני הצדדים של העברות.' },
+  completed: { color: 'success', label: 'הושלם', title: 'סנכרון נתוני הסגל הושלם', description: 'המסמכים הנגזרים וההעברות שנוצרו נבדקו מול הסגל שנשמר.' },
+  failed: { color: 'danger', label: 'נכשל', title: 'סנכרון נתוני הסגל נכשל', description: 'הסגל נשמר; אפשר לנסות שוב את בדיקת הסנכרון בלבד.' },
+  superseded: { color: 'neutral', label: 'הוחלף', title: 'הטעינה הוחלפה בטעינה חדשה יותר', description: 'לא בוצעו עדכונים נוספים מהטעינה הישנה.' },
+}
 
 const playerName = player => String(
   player?.fullName || player?.displayName || player?.name || ''
 ).trim()
+
+const clubIdOf = club => String(club?.clubId || '').trim()
+const teamIdOf = team => String(team?.birthTeamDocumentId || '').trim()
+const teamSlotOf = team => Number(team?.birthTeamSlot || team?.teamSlot || 1)
+
+function RosterClubSlotSelect({
+  clubOptions,
+  clubId,
+  teamId,
+  clubPlaceholder,
+  disabled,
+  onChange,
+}) {
+  const selectedClub = clubOptions.find(club => clubIdOf(club) === String(clubId || '').trim()) || null
+  const teamOptions = Array.isArray(selectedClub?.availableTeams) ? selectedClub.availableTeams : []
+
+  return (
+    <ClubSlotSelect
+      clubOptions={clubOptions}
+      clubValue={clubId}
+      slotOptions={teamOptions}
+      slotValue={teamId}
+      disabled={disabled}
+      clubPlaceholder={clubPlaceholder}
+      getClubValue={clubIdOf}
+      getClubLabel={club => club?.label || club?.clubName || ''}
+      getSlotValue={teamIdOf}
+      getSlotLabel={teamSlotOf}
+      onClubChange={club => {
+        const team = (club?.availableTeams || []).find(item => teamSlotOf(item) === 1) || null
+        onChange?.({ club, team })
+      }}
+      onSlotChange={nextTeamId => {
+        const team = teamOptions.find(item => teamIdOf(item) === String(nextTeamId || '').trim()) || null
+        onChange?.({ club: selectedClub, team })
+      }}
+    />
+  )
+}
 
 const clubLabelById = new Map(PLAYERS_DATABASE_CLUBS_CATALOG.map(club => [
   String(club.id || '').trim(),
@@ -58,17 +123,95 @@ function PlayerIdentityMembership({ row }) {
   )
 }
 
-function PreviousRosterStep({ controller }) {
+function PreviousRosterPlayerCell({ player, team, controller }) {
+  const playerDocumentId = String(player?.playerDocumentId || '').trim()
+  const playerHref = playerDocumentId
+    ? PLAYERS_DATABASE_UI_ROUTES.player({
+        playerId: playerDocumentId,
+        seasonKey: controller.selectedSeasonOption?.seasonKey,
+        teamId: team?.birthTeamId || team?.id,
+        leagueId: controller.selectedSeasonOption?.leagueId,
+        fromTeam: true,
+      })
+    : ''
+
+  return (
+    <Box sx={sx.previousRosterPlayer}>
+      <PlayerNameLink
+        name={playerName(player)}
+        url={resolvePlayerUrl(player?.playerUrl)}
+        internalHref={playerHref}
+        internalTarget='_blank'
+        avatarSrc={playerImage}
+        avatarAlt=''
+      />
+    </Box>
+  )
+}
+
+function RosterSyncStep({ controller }) {
+  const status = PROJECTION_JOB_STATUS[controller.projectionJob?.status] || PROJECTION_JOB_STATUS.queued
+  const stageResults = controller.projectionJob?.stageResults || {}
+  const transferResult = stageResults.transfers || {}
+
+  return (
+    <Box sx={sx.syncPanel}>
+      <Stack direction='row' spacing={1.25} alignItems='center'>
+        {!['completed', 'failed', 'superseded'].includes(controller.projectionJob?.status) ? (
+          <CircularProgress size='sm' color={status.color} />
+        ) : null}
+        <Box sx={sx.syncHeading}>
+          <Chip size='sm' variant='soft' color={status.color}>{status.label}</Chip>
+          <Typography level='title-lg' color={status.color}>{status.title}</Typography>
+        </Box>
+      </Stack>
+      <Typography level='body-sm' sx={sx.syncDescription}>{status.description}</Typography>
+      <Divider />
+      <Box sx={sx.syncScope}>
+        <Typography level='title-sm'>מה מסתנכרן?</Typography>
+        <Typography level='body-sm'>מסמכי שחקנים, אינדקסי שחקן ועונה, נתוני קבוצה ומועדון, ושני הצדדים של כל העברה שאושרה.</Typography>
+        <Typography level='body-xs' sx={sx.syncScopeHint}>מסמך קבוצה־עונה חסר בצד השני של העברה נשאר תקין; הסנכרון אינו יוצר אותו באופן מלאכותי.</Typography>
+      </Box>
+      {stageResults.canonicalSource ? (
+        <Stack direction='row' spacing={1} useFlexGap flexWrap='wrap'>
+          <Chip size='sm' variant='soft' color='neutral'>{stageResults.canonicalSource.playersCount || 0} שחקנים</Chip>
+          <Chip size='sm' variant='soft' color='neutral'>{stageResults.playerIndexes?.playerIndexCount || 0} אינדקסים</Chip>
+          <Chip size='sm' variant='soft' color='neutral'>העברות: {transferResult.synchronizedCount || 0}</Chip>
+          {transferResult.optionalMissingTeamSeasonCount ? (
+            <Chip size='sm' variant='soft' color='warning'>ללא מסמך קבוצה: {transferResult.optionalMissingTeamSeasonCount}</Chip>
+          ) : null}
+        </Stack>
+      ) : null}
+      {controller.projectionJob?.error?.message ? (
+        <Typography level='body-xs' color='danger' sx={sx.syncError}>{controller.projectionJob.error.message}</Typography>
+      ) : null}
+      {controller.projectionJob?.status === 'failed' ? (
+        <Button color='danger' variant='soft' loading={controller.retryingProjectionJob} onClick={controller.retryProjectionJob} sx={sx.syncRetryButton}>
+          נסה שוב
+        </Button>
+      ) : null}
+    </Box>
+  )
+}
+
+function PreviousRosterStep({ controller, activeSeasonOptionKey, team }) {
   const previousRoster = controller.previousRoster || {}
   const players = Array.isArray(previousRoster.players) ? previousRoster.players : []
 
   return (
-    <Box sx={{ display: 'grid', gap: 1.5, minWidth: 0 }}>
-      <TeamSeasonSelect
+    <Box sx={sx.selectionPanel}>
+      <Box sx={sx.choiceSection}>
+        <Typography level='title-sm' sx={sx.choiceSectionTitle}>
+          עונת פעולה
+        </Typography>
+        <TeamSeasonChoiceCards
         seasonOptions={controller.seasonOptions}
+        activeSeasonOptionKey={activeSeasonOptionKey}
         value={controller.selectedSeasonOptionKey}
         onChange={controller.selectSeasonOption}
-      />
+        sx={sx.seasonCards}
+        />
+      </Box>
 
       {!controller.selectedSeasonOption ? (
         <Card variant='soft'>
@@ -91,18 +234,28 @@ function PreviousRosterStep({ controller }) {
       ) : null}
 
       {controller.selectedSeasonOption && !previousRoster.loading && players.length ? (
-        <Card sx={{ minWidth: 0, overflow: 'hidden' }}>
+          <Card sx={sx.previousRosterCard}>
           <Typography level='title-sm' sx={{ mb: 0.75 }}>
             סגל עונת {previousRoster.seasonKey || 'קודמת'} · {players.length} שחקנים
           </Typography>
-          <Box className='dpScrollThin' sx={{ maxHeight: 310, overflow: 'auto' }}>
-            <Table stickyHeader size='sm'>
-              <thead><tr><th>שחקן</th><th>מזהה חיצוני</th><th>עמדה</th></tr></thead>
+          <Box className='dpScrollThin' sx={sx.previousRosterScroll}>
+            <Table stickyHeader size='sm' sx={sx.previousRosterTable}>
+              <thead><tr>
+                <Box component='th' sx={sx.previousRosterIndexColumn} aria-label='אינדקס פנימי' title='אינדקס פנימי'>
+                  {iconUi({ id: 'tag', size: 'sm' })}
+                </Box>
+                <Box component='th' sx={sx.previousRosterPlayerColumn}>שחקן</Box>
+                <Box component='th' sx={sx.previousRosterExternalIdColumn}>מזהה חיצוני</Box>
+                <th>עמדה</th>
+              </tr></thead>
               <tbody>
                 {players.map((player, index) => (
                   <tr key={player?.playerId || player?.externalPlayerId || `${playerName(player)}-${index}`}>
-                    <td>{playerName(player) || '-'}</td>
-                    <td>{player?.externalPlayerId || '-'}</td>
+                    <Box component='td' sx={sx.previousRosterIndexColumn}>{index + 1}</Box>
+                    <Box component='td' sx={sx.previousRosterPlayerColumn}>
+                      <PreviousRosterPlayerCell player={player} team={team} controller={controller} />
+                    </Box>
+                    <Box component='td' sx={sx.previousRosterExternalIdColumn}>{player?.externalPlayerId || '-'}</Box>
                     <td>{player?.primaryPosition || '-'}</td>
                   </tr>
                 ))}
@@ -118,6 +271,18 @@ function PreviousRosterStep({ controller }) {
 function MissingRosterStep({ controller }) {
   const players = Array.isArray(controller.missingRosterPlayers) ? controller.missingRosterPlayers : []
   const options = Array.isArray(controller.teamRootOptions) ? controller.teamRootOptions : []
+  const missingRosterSummary = {
+    left: players.filter(player => player?.missingResolution === 'left').length,
+    unresolved: players.filter(player => ![
+      'left',
+      'unknown',
+      'olderAgeException',
+    ].includes(player?.missingResolution)).length,
+    olderAgeException: players.filter(player => (
+      player?.missingResolution === 'olderAgeException'
+    )).length,
+    unknown: players.filter(player => player?.missingResolution === 'unknown').length,
+  }
 
   if (!players.length) {
     return (
@@ -129,22 +294,41 @@ function MissingRosterStep({ controller }) {
 
   return (
     <Card sx={{ minWidth: 0, overflow: 'hidden' }}>
-      <Typography level='title-sm'>חסרים מהסגל הקודם · {players.length} שחקנים</Typography>
-      <Typography level='body-xs' sx={{ mt: 0.35, mb: 1 }}>
-        יש לבחור זיהוי לכל שחקן: „עזב” מחייב יעד וסלוט; „חריג גיל” פנימי; „לא ידוע” נשאר לבדיקה ללא Movement.
-      </Typography>
-      <Box className='dpScrollThin' sx={{ maxHeight: 360, overflow: 'auto' }}>
-            <Table stickyHeader size='sm'>
+      <Box sx={sx.missingRosterHeader}>
+        <Box>
+          <Typography level='title-sm'>חסרים מהסגל הקודם · {players.length} שחקנים</Typography>
+          <Typography level='body-xs' sx={sx.missingRosterDescription}>
+            יש לבחור זיהוי לכל שחקן: „עזב” מחייב יעד; „חריג גיל” פנימי; „לא ידוע” נשאר לבדיקה ללא Movement.
+          </Typography>
+        </Box>
+        <Stack direction='row' spacing={0.75} sx={sx.missingRosterSummaryChips}>
+          <Chip size='sm' variant='soft' color={missingRosterSummary.left ? 'primary' : 'neutral'}>
+            {`עזבו: ${missingRosterSummary.left}`}
+          </Chip>
+          <Chip size='sm' variant='soft' color={missingRosterSummary.unresolved ? 'danger' : 'neutral'}>
+            {`סטטוס חריג: ${missingRosterSummary.unresolved}`}
+          </Chip>
+          <Chip size='sm' variant='soft' color={missingRosterSummary.olderAgeException ? 'warning' : 'neutral'}>
+            {`חריגי גיל שנה שעברה: ${missingRosterSummary.olderAgeException}`}
+          </Chip>
+          <Chip size='sm' variant='soft' color='neutral'>
+            {`לא ידוע: ${missingRosterSummary.unknown}`}
+          </Chip>
+        </Stack>
+      </Box>
+      <Box className='dpScrollThin' sx={sx.missingRosterScroll}>
+        <Table stickyHeader size='sm' sx={sx.missingRosterTable}>
           <thead><tr>
             <Box component='th' sx={sx.missingStatusColumn}>תקין</Box>
             <Box component='th' sx={sx.missingIndexColumn}>אינדקס</Box>
-            <th>שחקן</th><th>מזהה חיצוני</th><th>זיהוי</th><th>קבוצת יעד</th><th>סלוט</th>
+            <Box component='th' sx={sx.missingPlayerColumn}>שחקן</Box>
+            <Box component='th' sx={sx.missingExternalPlayerIdColumn}>מזהה חיצוני</Box>
+            <Box component='th' sx={sx.missingResolutionColumn}>זיהוי</Box>
+            <Box component='th' sx={sx.missingTargetColumn}>קבוצת יעד</Box>
           </tr></thead>
           <tbody>
             {players.map((player, index) => {
               const playerKey = String(player?.playerId || player?.externalPlayerId || index)
-              const selectedClub = options.find(option => option.clubId === player?.statsMovementTeam?.clubId) || null
-              const availableTeams = Array.isArray(selectedClub?.availableTeams) ? selectedClub.availableTeams : []
               const isOlderAgeException = player?.missingResolution === 'olderAgeException'
               const hasConfirmedExit = player?.missingResolution === 'left' && Boolean(
                 player?.statsMovementTeam?.birthTeamDocumentId
@@ -160,14 +344,16 @@ function MissingRosterStep({ controller }) {
                     <StatusCell valid={isResolved} message={statusMessage} />
                   </Box>
                   <Box component='td' sx={sx.missingIndexColumn}>{index + 1}</Box>
-                  <td>
+                  <Box component='td' sx={sx.missingPlayerColumn}>
                     <PlayerNameLink
                       name={playerName(player)}
                       url={resolvePlayerUrl(player?.playerUrl)}
+                      avatarSrc={playerImage}
+                      avatarAlt=''
                     />
-                  </td>
-                  <td>{player?.externalPlayerId || '-'}</td>
-                  <td>
+                  </Box>
+                  <Box component='td' sx={sx.missingExternalPlayerIdColumn}>{player?.externalPlayerId || '-'}</Box>
+                  <Box component='td' sx={sx.missingResolutionColumn}>
                     <Select
                       size='sm'
                       value={player?.missingResolution || null}
@@ -184,42 +370,19 @@ function MissingRosterStep({ controller }) {
                       <Option value='olderAgeException'>חריג גיל</Option>
                       <Option value='left'>עזב</Option>
                     </Select>
-                  </td>
-                  <td>
-                    <Autocomplete
-                      size='sm'
-                      options={options}
-                      value={selectedClub}
-                      placeholder='בחר מועדון יעד'
+                  </Box>
+                  <Box component='td' sx={sx.missingTargetColumn}>
+                    <RosterClubSlotSelect
+                      clubOptions={options}
+                      clubId={player?.statsMovementTeam?.clubId}
+                      teamId={player?.statsMovementTeam?.birthTeamDocumentId}
+                      clubPlaceholder='בחר מועדון יעד'
                       disabled={player?.missingResolution !== 'left'}
-                      getOptionLabel={option => option?.label || option?.clubName || ''}
-                      isOptionEqualToValue={(option, value) => option?.clubId === value?.clubId}
-                      onChange={(event, club) => {
-                        const target = (club?.availableTeams || []).find(team => Number(team.birthTeamSlot) === 1) || null
+                      onChange={({ team: target }) => {
                         controller.setMissingRosterPlayerTarget({ playerKey, team: target })
                       }}
-                      slotProps={{ listbox: { className: 'dpScrollThin', sx: { fontSize: '0.72rem' } } }}
-                      sx={{ minWidth: 160, fontSize: '0.75rem' }}
                     />
-                  </td>
-                  <td>
-                    <Select
-                      size='sm'
-                      indicator={null}
-                      value={player?.statsMovementTeam?.birthTeamDocumentId || null}
-                      placeholder='1'
-                      disabled={player?.missingResolution !== 'left' || !availableTeams.length}
-                      onChange={(event, teamId) => {
-                        const target = availableTeams.find(team => team.birthTeamDocumentId === teamId)
-                        controller.setMissingRosterPlayerTarget({ playerKey, team: target || null })
-                      }}
-                      sx={{ minWidth: 42 }}
-                    >
-                      {availableTeams.map(team => (
-                        <Option key={team.birthTeamDocumentId} value={team.birthTeamDocumentId}>{team.birthTeamSlot}</Option>
-                      ))}
-                    </Select>
-                  </td>
+                  </Box>
                 </tr>
               )
             })}
@@ -240,65 +403,84 @@ function JoinedRosterSourceControl({ row, rowIndex, controller }) {
   }
 
   const options = Array.isArray(controller.teamRootOptions) ? controller.teamRootOptions : []
-  const selectedClub = options.find(option => option.clubId === row?.statsMovementTeam?.clubId) || null
-  const availableTeams = Array.isArray(selectedClub?.availableTeams) ? selectedClub.availableTeams : []
-  const resolution = row?.rosterImportResolution || ''
-  const isJoined = resolution === 'joined'
+  const isJoined = row?.rosterImportResolution === 'joined'
 
   return (
-    <Box sx={{ display: 'flex', gap: 0.4, minWidth: 0 }}>
-      <Select
-        size='sm'
-        indicator={null}
-        value={resolution || null}
-        placeholder='בחר זיהוי'
-        onChange={(event, value) => {
-          controller.setIncomingRosterPlayerResolution({ rowIndex, resolution: value || '' })
-        }}
-        sx={{ minWidth: 86, fontSize: '0.72rem' }}
-      >
-        <Option value='joined'>הצטרף</Option>
-        <Option value='priorAgeException'>חריג גיל בשנה קודמת</Option>
-        <Option value='confirmedInRoster'>כן, בסגל</Option>
-      </Select>
-      <Autocomplete
-        size='sm'
-        options={options}
-        value={selectedClub}
-        placeholder='מקור'
+    <Box sx={{ minWidth: 0 }}>
+      <RosterClubSlotSelect
+        clubOptions={options}
+        clubId={row?.statsMovementTeam?.clubId}
+        teamId={row?.statsMovementTeam?.birthTeamDocumentId}
+        clubPlaceholder='מקור'
         disabled={!isJoined}
-        getOptionLabel={option => option?.label || option?.clubName || ''}
-        isOptionEqualToValue={(option, value) => option?.clubId === value?.clubId}
-        onChange={(event, club) => {
-          const source = (club?.availableTeams || []).find(team => Number(team.birthTeamSlot) === 1) || null
+        onChange={({ team: source }) => {
           controller.setIncomingRosterPlayerSource({ rowIndex, team: source })
         }}
-        slotProps={{ listbox: { className: 'dpScrollThin', sx: { fontSize: '0.72rem' } } }}
-        sx={{ minWidth: 190, fontSize: '0.72rem' }}
       />
-      <Select
-        size='sm'
-        indicator={null}
-        value={row?.statsMovementTeam?.birthTeamDocumentId || null}
-        placeholder='1'
-        disabled={!isJoined || !availableTeams.length}
-        onChange={(event, teamId) => {
-          const source = availableTeams.find(team => team.birthTeamDocumentId === teamId)
-          controller.setIncomingRosterPlayerSource({ rowIndex, team: source || null })
-        }}
-        sx={{ minWidth: 38 }}
-      >
-        {availableTeams.map(team => (
-          <Option key={team.birthTeamDocumentId} value={team.birthTeamDocumentId}>{team.birthTeamSlot}</Option>
-        ))}
-      </Select>
     </Box>
   )
 }
 
-export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, controller }) {
+function RosterImportResolutionControl({ row, rowIndex, controller }) {
+  if (row?.rosterPreviousMatch === true || row?.rosterPreviousMatch !== false) {
+    return <Typography level='body-xs' color='neutral'>-</Typography>
+  }
+
+  return (
+    <Select
+      size='sm'
+      indicator={null}
+      value={row?.rosterImportResolution || null}
+      placeholder='בחר זיהוי'
+      onChange={(event, value) => {
+        controller.setIncomingRosterPlayerResolution({ rowIndex, resolution: value || '' })
+      }}
+      sx={{ width: '100%', minWidth: 0, fontSize: '0.72rem' }}
+    >
+      <Option value='joined'>הצטרף</Option>
+      <Option value='priorAgeException'>חריג גיל בשנה קודמת</Option>
+      <Option value='confirmedInRoster'>כן, בסגל</Option>
+    </Select>
+  )
+}
+
+export default function RosterImportModal({
+  team,
+  seasonKey,
+  activeSeasonOptionKey,
+  hasTeamPlayers,
+  controller,
+}) {
   const [activeStep, setActiveStep] = React.useState(0)
   const [reviewStep, setReviewStep] = React.useState('present')
+  const teamUrl = String(
+    controller.selectedSeasonOption?.season?.teamUrl || team?.teamUrl || ''
+  ).trim()
+  const description = (
+    <ImportModalContextDescription
+      items={[
+        { label: team?.name || 'קבוצה', href: teamUrl },
+        { label: seasonKey ? `עונה ${seasonKey}` : '' },
+      ]}
+    />
+  )
+  const rosterSummary = React.useMemo(() => {
+    const rows = Array.isArray(controller.rows) ? controller.rows : []
+    const attentionCount = rows.filter((row, rowIndex) => (
+      controller.getRowStatus(row, rowIndex)?.valid === false
+    )).length
+    const joinedCount = rows.filter(row => row?.rosterImportResolution === 'joined').length
+    const ageExceptionCount = rows.filter(row => (
+      row?.rosterImportResolution === 'priorAgeException'
+    )).length
+
+    return [
+      { key: 'roster-players', label: `בסגל: ${rows.length}`, color: 'success' },
+      { key: 'roster-attention', label: `חריגים לטיפול: ${attentionCount}`, color: attentionCount ? 'danger' : 'neutral' },
+      { key: 'roster-joined', label: `הצטרפו: ${joinedCount}`, color: joinedCount ? 'primary' : 'neutral' },
+      { key: 'roster-age-exceptions', label: `חריגי גיל: ${ageExceptionCount}`, color: ageExceptionCount ? 'warning' : 'neutral' },
+    ]
+  }, [controller.getRowStatus, controller.rows])
   const columns = React.useMemo(() => [
     ...PLAYER_ROSTER_COLUMNS
       .filter(column => column.key !== 'playerUrl')
@@ -320,15 +502,28 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
         return {
           ...column,
           sx: sx.playerNameColumn,
+          headerSx: sx.playerNameColumnHeader,
           headerContent: <Box sx={sx.playerNameHeader}>שם השחקן</Box>,
+          cellContentSx: sx.playerNameCellContent,
           render: ({ row }) => (
             <PlayerNameLink
               name={row.fullName}
               url={resolvePlayerUrl(row.playerUrl)}
+              avatarSrc={playerImage}
+              avatarAlt=''
             />
           ),
         }
       }),
+    {
+      key: 'rosterResolution',
+      label: 'זיהוי שחקן',
+      readOnly: true,
+      sx: sx.rosterResolutionColumn,
+      render: ({ row, rowIndex }) => (
+        <RosterImportResolutionControl row={row} rowIndex={rowIndex} controller={controller} />
+      ),
+    },
     {
       key: 'rosterMembership',
       label: 'סגל קודם',
@@ -369,6 +564,10 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
     }
   }, [controller.open])
 
+  React.useEffect(() => {
+    if (controller.projectionJobId) setActiveStep(3)
+  }, [controller.projectionJobId])
+
   const close = () => {
     if (controller.busy) return
     controller.clearPaste()
@@ -381,39 +580,41 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
   const confirm = () => {
     if (activeStep === 0) return setActiveStep(1)
     if (activeStep === 1) return previewRoster()
+    if (activeStep === 3) return close()
     if (reviewStep === 'present') return setReviewStep('missing')
     return controller.confirm()
   }
-  const disabled = controller.busy || (
-    activeStep === 0
+  const disabled = activeStep === 3
+    ? false
+    : controller.busy || Boolean(controller.projectionJobId) || (
+      activeStep === 0
       ? !controller.selectedSeasonOption || controller.previousRoster?.loading
       : activeStep === 1
         ? !controller.selectedSeasonOption || !controller.pasteValue
-        : controller.hasIdentityErrors ||
+      : controller.hasIdentityErrors ||
           !controller.rows.length ||
           (reviewStep === 'missing' && !controller.hasMissingRosterApprovals)
-  )
+    )
   const confirmLabel = activeStep === 0
     ? 'המשך להדבקה'
-    : activeStep === 1 ? 'הצג בדיקת זהות' : reviewStep === 'present' ? 'המשך לבדיקת חסרים' : 'אישור טעינת סגל'
-  const pasteActions = activeStep === 1 ? (
+    : activeStep === 1 ? 'הצג בדיקת זהות' : activeStep === 3 ? 'סגור' : reviewStep === 'present' ? 'המשך לבדיקת חסרים' : 'אישור טעינת סגל'
+  const footerActions = activeStep === 1 || activeStep === 2 ? (
     <ImportActionArea
       actions={[
         {
-          id: 'clear',
-          label: 'ניקוי מלא',
-          iconId: 'delete',
-          presentationRole: 'clear',
-          disabled: !controller.pasteValue,
-          onClick: controller.clearPaste,
-        },
-        {
-          id: 'preview',
-          label: 'הצג נתונים',
-          iconId: 'addStats',
-          presentationRole: 'primary',
-          disabled: !controller.pasteValue || !controller.selectedSeasonOption,
-          onClick: previewRoster,
+          id: 'back',
+          label: activeStep === 1 ? 'חזרה לסגל קודם' : 'חזרה לקליטת נתונים',
+          iconId: 'back',
+          presentationRole: 'back',
+          disabled: controller.busy,
+          sx: chromeSx.backButton,
+          onClick: () => {
+            if (activeStep === 2 && reviewStep === 'missing') {
+              setReviewStep('present')
+              return
+            }
+            setActiveStep(current => Math.max(0, current - 1))
+          },
         },
       ]}
     />
@@ -424,22 +625,17 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
       <RegularModal
         open={controller.open}
         title={hasTeamPlayers ? 'טעינת סגל מעודכן' : 'טעינת סגל'}
-        description={`${team.name} · עונה ${seasonKey || '-'}`}
+        description={description}
+        iconId='addPlayers'
         confirmLabel={confirmLabel}
-        confirmIconId={activeStep === 2 ? 'upload' : 'next'}
+        confirmIconId={activeStep === 2 && reviewStep === 'missing' ? 'upload' : 'next'}
         size='xl'
         busy={controller.busy}
         disabled={disabled}
         contentSx={pasteSx.modalContent}
-        footerActions={pasteActions}
-        headerActions={activeStep > 0 ? (
-          <Button size='sm' variant='plain' disabled={controller.busy} onClick={() => {
-            if (activeStep === 2 && reviewStep === 'missing') return setReviewStep('present')
-            return setActiveStep(current => Math.max(0, current - 1))
-          }}>
-            חזרה
-          </Button>
-        ) : null}
+        headerIconSx={chromeSx.modalHeaderIcon}
+        footerSx={chromeSx.footer}
+        footerActions={footerActions}
         onConfirm={confirm}
         onClose={close}
       >
@@ -447,16 +643,22 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
           display: 'grid',
           minWidth: 0,
           gap: 1.5,
-          ...(activeStep === 2 ? {
-            height: 'min(680px, calc(100dvh - 270px))',
+          ...(activeStep === 0 || activeStep === 2 || activeStep === 3 ? {
+            height: 'min(720px, calc(100dvh - 230px))',
             minHeight: 0,
             gridTemplateRows: 'auto minmax(0, 1fr)',
             overflow: 'hidden',
           } : {}),
         }}>
-          <ModalStepper activeStep={reviewStep === 'missing' ? 3 : activeStep} steps={STEPS} />
+          <ModalStepper activeStep={activeStep === 3 ? 4 : reviewStep === 'missing' ? 3 : activeStep} steps={STEPS} />
 
-          {activeStep === 0 ? <PreviousRosterStep controller={controller} /> : null}
+          {activeStep === 0 ? (
+            <PreviousRosterStep
+              controller={controller}
+              activeSeasonOptionKey={activeSeasonOptionKey}
+              team={team}
+            />
+          ) : null}
 
           {activeStep === 1 ? (
             <PasteArea
@@ -464,6 +666,8 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
               placeholder={PLAYER_ROSTER_PLACEHOLDER}
               formatHint='סדר עמודות: אינדקס שחקן · שם שחקן · מזהה חיצוני · קישור שחקן'
               onChange={controller.setPasteValue}
+              inputVariant='tall'
+              templateText={PLAYER_ROSTER_PLACEHOLDER}
             />
           ) : null}
 
@@ -471,6 +675,8 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
             <PreviewTable
               columns={columns}
               rows={controller.rows}
+              summary={rosterSummary}
+              showSummaryCounts={false}
               onCellChange={controller.changeCell}
               getRowStatus={controller.getRowStatus}
               hoverRow={false}
@@ -480,6 +686,10 @@ export default function RosterImportModal({ team, seasonKey, hasTeamPlayers, con
           ) : null}
 
           {activeStep === 2 && reviewStep === 'missing' ? <MissingRosterStep controller={controller} /> : null}
+
+          {activeStep === 3 ? (
+            <RosterSyncStep controller={controller} />
+          ) : null}
         </Box>
       </RegularModal>
 

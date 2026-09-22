@@ -12,13 +12,10 @@ export const pasteModalSx = {
   content: {
     minWidth: 0,
     height: {
-      xs: 'min(560px, calc(100dvh - 220px))',
-      md: 'min(700px, calc(100dvh - 240px))',
+      xs: 'min(560px, calc(100dvh - 290px))',
+      md: 'min(700px, calc(100dvh - 310px))',
     },
-    minHeight: {
-      xs: 0,
-      md: 520,
-    },
+    minHeight: 0,
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr)',
     gap: 1.5,

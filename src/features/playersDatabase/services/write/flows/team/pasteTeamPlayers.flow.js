@@ -7,10 +7,11 @@ import {
 } from '../../searchIndex/index.js'
 import { resolveTeamPlayerIdentities } from '../../players/index.js'
 import {
-  reconcileTeamSeasonMovementCounterparts,
+  reconcileTeamSeasonMovementCounterpartsWithClubRefresh,
   upsertTeamSeasonPlayers,
 } from '../../teams/index.js'
 import { readTeamSeasonRosterHistory } from '../../../read/entities/teamSeasonRosterHistory.js'
+import { getTeamSeason } from '../../../read/entities/teamSeason.js'
 import {
   ensureRequiredClubProjectionCompleted,
   syncClubProjectionFromTeamSeason,
@@ -36,6 +37,11 @@ import {
   resolveRosterPlayersLocally,
 } from '../../../../domain/movement/index.js'
 import { resolveTeamLookupKey } from '../../../../model/team/teamIdentity.model.js'
+import {
+  activateTeamRosterProjectionJob,
+  createTeamRosterProjectionRevision,
+  queueTeamRosterProjectionJob,
+} from '../../teamRosterProjectionJobs/index.js'
 
 const clean = value => String(value || '').trim()
 
@@ -59,6 +65,29 @@ const buildSyncError = ({ stage, cause, results = {} }) => (
     flow: 'pasteTeamPlayers',
   })
 )
+
+const buildCommittedSyncError = ({ stage, cause, results = {} }) => {
+  const error = buildSyncError({ stage, cause, results })
+  error.superseded = Boolean(cause?.superseded || cause?.code === 'ROSTER_PROJECTION_SUPERSEDED')
+  error.teamCanonicalCommitted = true
+  error.projectionsCompleted = false
+  error.completed = false
+  error.recoveryRequired = !error.superseded
+  error.syncStatus = error.superseded ? 'superseded' : 'projection_failed'
+  return error
+}
+
+const assertCurrentRosterProjectionRevision = async ({
+  teamId = '', seasonKey = '', sourceRevision = '',
+} = {}) => {
+  const current = await getTeamSeason({ birthTeamDocumentId: teamId, seasonKey, bypassCache: true })
+  if (String(current?.rosterProjectionRevision || '') === String(sourceRevision || '')) return
+
+  const error = new Error('Roster projection was superseded by a newer load')
+  error.code = 'ROSTER_PROJECTION_SUPERSEDED'
+  error.superseded = true
+  throw error
+}
 
 const assertTeamSeasonUpdated = result => {
   if (!result?.teamDocumentId || !result?.seasonId) {
@@ -133,6 +162,7 @@ const normalizeTeamPlayersPayload = payload => {
 }
 
 export async function pasteTeamPlayersFlow(payload = {}) {
+  const rosterProjectionRevision = createTeamRosterProjectionRevision()
   const normalizedPayload = normalizeTeamPlayersPayload(payload)
   const teamPerformance = buildLeagueTeamPerformanceProjection({
     league: normalizedPayload.league,
@@ -230,6 +260,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       players,
       rosterImport: incomingRosterImport,
       sourceSnapshotKeyExplicit,
+      rosterProjectionRevision,
       reconcileMovement: ({ currentSeason, previousSeason, rosterImport }) => (
         reconcileRosterMovement({
           seasonKey: normalizedPayload.season.seasonKey,
@@ -259,9 +290,40 @@ export async function pasteTeamPlayersFlow(payload = {}) {
     })
   }
 
-  results.counterpartReconciliation = await reconcileTeamSeasonMovementCounterparts({
-    requests: results.teamSeasonResult.movementState?.counterpartRequests,
+  const projectionGuard = () => assertCurrentRosterProjectionRevision({
+    teamId: results.teamSeasonResult.birthTeamDocumentId,
+    seasonKey: results.teamSeasonResult.seasonKey,
+    sourceRevision: rosterProjectionRevision,
   })
+
+  try {
+    results.projectionJob = await queueTeamRosterProjectionJob({
+      league: normalizedPayload.league || {},
+      season: normalizedPayload.season || {},
+      team: {
+        ...(normalizedPayload.team || {}),
+        birthTeamDocumentId: results.teamSeasonResult.birthTeamDocumentId,
+        teamDocumentId: results.teamSeasonResult.teamDocumentId,
+      },
+      teamSeasonDocumentId: results.teamSeasonResult.teamSeasonDocumentId,
+      sourceRevision: rosterProjectionRevision,
+      counterpartRequests: results.teamSeasonResult.movementState?.counterpartRequests,
+      writeActionId: normalizedPayload.writeActionId,
+    })
+  } catch (error) {
+    throw buildCommittedSyncError({ stage: 'queueTeamRosterProjectionJob', cause: error, results })
+  }
+
+  try {
+    await projectionGuard()
+    results.counterpartReconciliation = await reconcileTeamSeasonMovementCounterpartsWithClubRefresh({
+      requests: results.teamSeasonResult.movementState?.counterpartRequests,
+    })
+  } catch (error) {
+    throw buildCommittedSyncError({
+      stage: 'reconcileTeamSeasonMovementCounterparts', cause: error, results,
+    })
+  }
 
   const team = {
     ...(normalizedPayload.team || {}),
@@ -280,12 +342,13 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   }
 
   try {
+    await projectionGuard()
     results.leagueTableRankResult = await updateLeagueSeasonTableRankTeamUrl({
       ...normalizedPayload,
       team: teamWithRosterMeta,
     })
   } catch (error) {
-    throw buildSyncError({
+    throw buildCommittedSyncError({
       stage: 'updateLeagueSeasonTableRankTeamUrl',
       cause: error,
       results,
@@ -293,6 +356,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   }
 
   try {
+    await projectionGuard()
     results.playerSeasonIndexResult = await upsertPlayerSeasonSearchIndexMany({
       ...normalizedPayload,
       team: teamWithRosterMeta,
@@ -304,7 +368,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       stage: 'playerSeasonIndexes',
     })
   } catch (error) {
-    throw buildSyncError({
+    throw buildCommittedSyncError({
       stage: 'upsertPlayerSeasonSearchIndexMany',
       cause: error,
       results,
@@ -312,6 +376,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   }
 
   try {
+    await projectionGuard()
     results.teamSeasonIndexResult = await updateTeamSeasonSearchIndexRosterMeta({
       ...normalizedPayload,
       team: teamWithRosterMeta,
@@ -322,7 +387,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       teamPerformance,
     })
   } catch (error) {
-    throw buildSyncError({
+    throw buildCommittedSyncError({
       stage: 'updateTeamSeasonSearchIndexRosterMeta',
       cause: error,
       results,
@@ -330,6 +395,7 @@ export async function pasteTeamPlayersFlow(payload = {}) {
   }
 
   try {
+    await projectionGuard()
     results.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
       league: normalizedPayload.league || {},
       season: normalizedPayload.season || {},
@@ -341,24 +407,32 @@ export async function pasteTeamPlayersFlow(payload = {}) {
       lastWriteAction: 'PASTE_TEAM_PLAYERS',
     }))
   } catch (error) {
-    const syncError = buildSyncError({
+    const syncError = buildCommittedSyncError({
       stage: 'clubProjection',
       cause: error,
       results,
     })
-    syncError.teamCanonicalCommitted = true
-    syncError.projectionsCompleted = false
-    syncError.completed = false
-    syncError.recoveryRequired = true
     throw syncError
+  }
+
+  try {
+    await projectionGuard()
+    await activateTeamRosterProjectionJob({
+      id: results.projectionJob?.id,
+      sourceRevision: rosterProjectionRevision,
+    })
+  } catch (error) {
+    throw buildCommittedSyncError({ stage: 'activateTeamRosterProjectionJob', cause: error, results })
   }
 
   return {
     ...results,
     rowsCount: results.playerSeasonIndexResult.rowsCount,
     teamCanonicalCommitted: true,
-    projectionsCompleted: true,
-    completed: true,
-    syncStatus: 'complete',
+    projectionsCompleted: false,
+    completed: false,
+    backgroundSyncPending: true,
+    sourceRevision: rosterProjectionRevision,
+    syncStatus: 'background_sync_pending',
   }
 }

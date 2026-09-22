@@ -5,27 +5,24 @@ import {
   Typography,
 } from '@mui/joy'
 
+import ExternalLinkIcon from '../../../components/modals/ExternalLinkIcon.js'
 import { leagueTeamNameLinkSx as sx } from './sx/leagueTeamNameLink.sx.js'
 
 export function LeagueTeamNameLink({
   teamName,
   teamUrl,
 }) {
-  const hasTeamUrl = Boolean(String(teamUrl || '').trim())
-
   return (
     <Box sx={sx.root}>
-      <Typography level="body-sm" noWrap title={teamName || ''} sx={sx.name}>
+      <Typography level='body-sm' noWrap title={teamName || ''} sx={sx.name}>
         {teamName || '—'}
       </Typography>
 
-      <Typography
-        level="body-sm"
-        title={hasTeamUrl ? 'קיים קישור לקבוצה' : 'אין קישור לקבוצה'}
-        sx={sx.urlIndicator}
-      >
-        {hasTeamUrl ? '✓' : '—'}
-      </Typography>
+      <ExternalLinkIcon
+        href={teamUrl}
+        tooltip='פתיחת עמוד הקבוצה'
+        sx={sx.link}
+      />
     </Box>
   )
 }

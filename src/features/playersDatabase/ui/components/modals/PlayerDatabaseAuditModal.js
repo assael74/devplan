@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Sheet, Stack, Typography } from '@mui/joy'
+import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
 import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
@@ -11,6 +11,44 @@ import { playerDatabaseAuditModalSx as sx } from './sx/playerDatabaseAuditModal.
 
 const PAGE_SIZE = 40
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
+const WRITE_ACTION_LABELS = {
+  pasteLeagueTable: 'טעינת טבלת ליגה',
+  pasteTeamPlayers: 'טעינת סגל קבוצה',
+  pasteTeamPlayerStats: 'טעינת סטטיסטיקות',
+  clearTeamSeasonStats: 'ניקוי סטטיסטיקות',
+  clearTeamSeasonPlayers: 'ניקוי סגל קבוצה',
+  clearLeagueSeasonTeams: 'ניקוי קבוצות ליגה',
+  updateLeagueSeasonTableRank: 'עדכון טבלת ליגה',
+}
+const WRITE_ACTION_STATUS_LABELS = {
+  in_progress: 'בתהליך',
+  completed: 'הושלמה',
+  failed: 'נכשלה',
+  failed_after_canonical_commit: 'דורשת סנכרון',
+  superseded: 'הוחלפה',
+}
+const formatWriteActionTime = value => {
+  const date = typeof value?.toDate === 'function'
+    ? value.toDate()
+    : value instanceof Date
+      ? value
+      : null
+  return date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    }).format(date)
+    : 'כעת'
+}
+const formatWriteActionOption = action => {
+  const actionLabel = WRITE_ACTION_LABELS[clean(action?.actionType)] || clean(action?.actionType) || 'פעולה'
+  const subject = clean(action?.teamSeasonDocumentId)
+    || clean(action?.leagueId)
+    || clean(action?.seasonKey)
+  const status = WRITE_ACTION_STATUS_LABELS[clean(action?.status)] || clean(action?.status)
+  return [actionLabel, subject, status, formatWriteActionTime(action?.updatedAt)]
+    .filter(Boolean)
+    .join(' · ')
+}
 const downloadFindings = result => {
   if (!result || typeof window === 'undefined') return
   const payload = {
@@ -45,6 +83,8 @@ export default function PlayerDatabaseAuditModal(props) {
     defaultTeamDocumentId = '',
     defaultSeasonKey = '',
     onRun,
+    recentWriteActions = [],
+    recentWriteActionsBusy = false,
     onScopeChange,
     onClose,
   } = props
@@ -55,6 +95,7 @@ export default function PlayerDatabaseAuditModal(props) {
   const [mismatchCollection, setMismatchCollection] = React.useState('playerSearchIndex')
   const [visible, setVisible] = React.useState(PAGE_SIZE)
   const [lastWriteScope, setLastWriteScope] = React.useState(null)
+  const [writeActionId, setWriteActionId] = React.useState('')
   const previousDefaultsRef = React.useRef(null)
   React.useEffect(() => {
     if (!open) return
@@ -71,6 +112,7 @@ export default function PlayerDatabaseAuditModal(props) {
     setTeamDocumentId(defaults.teamDocumentId)
     setSeasonKey(defaults.seasonKey)
     setLastWriteScope(getLastWriteAuditScope())
+    setWriteActionId('')
     setFilter('all')
     setMismatchCollection('playerSearchIndex')
     setVisible(PAGE_SIZE)
@@ -80,6 +122,7 @@ export default function PlayerDatabaseAuditModal(props) {
   }, [open, defaultTeamDocumentId, defaultSeasonKey, onScopeChange])
 
   const teamScope = mode === AUDIT_SCOPE_TYPE.TEAM_SEASON
+  const writeActionScope = mode === 'writeAction'
   const scope = mode === 'lastWrite' && lastWriteScope
     ? lastWriteScope
     : teamScope
@@ -95,7 +138,9 @@ export default function PlayerDatabaseAuditModal(props) {
     onScopeChange?.()
   }
 
-  const canRun = !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
+  const canRun = writeActionScope
+    ? Boolean(clean(writeActionId))
+    : !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
   const hasRepairProgress = repairProgress && Number(repairProgress.totalTeams) > 0
   const repairProgressValue = hasRepairProgress
     ? Math.min(100, (Number(repairProgress.completedTeams) / Number(repairProgress.totalTeams)) * 100)
@@ -114,7 +159,11 @@ export default function PlayerDatabaseAuditModal(props) {
       confirmLabel='בדוק עכשיו'
       confirmIconId='search'
       cancelLabel='סגור'
-      onConfirm={() => canRun && onRun?.(scope)}
+      onConfirm={() => {
+        if (!canRun) return
+        if (writeActionScope) return props.onRunWriteAction?.(writeActionId)
+        return onRun?.(scope)
+      }}
       onClose={onClose}
     >
       <Stack spacing={2}>
@@ -159,6 +208,13 @@ export default function PlayerDatabaseAuditModal(props) {
               העדכון האחרון
             </Button>
           ) : null}
+          <Button
+            size='sm'
+            variant={writeActionScope ? 'solid' : 'outlined'}
+            onClick={() => changeScopeValue('writeAction', mode, setMode)}
+          >
+            טעינות אחרונות
+          </Button>
         </Stack>
 
         {teamScope ? (
@@ -183,6 +239,34 @@ export default function PlayerDatabaseAuditModal(props) {
                   seasonKey,
                   setSeasonKey
                 )}
+              />
+            </FormControl>
+          </Stack>
+        ) : null}
+
+        {writeActionScope ? (
+          <Stack spacing={1}>
+            <FormControl>
+              <FormLabel>בחר טעינה לבדיקה</FormLabel>
+              <Select
+                value={writeActionId || null}
+                placeholder={recentWriteActionsBusy ? 'טוען טעינות אחרונות…' : 'בחר אחת מחמש הטעינות האחרונות'}
+                disabled={recentWriteActionsBusy}
+                onChange={(_event, value) => changeScopeValue(value || '', writeActionId, setWriteActionId)}
+              >
+                {recentWriteActions.map(action => (
+                  <Option key={action.id} value={action.id}>
+                    {formatWriteActionOption(action)}
+                  </Option>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl>
+              <FormLabel>מזהה טעינה ידני (לפעולה ישנה)</FormLabel>
+              <Input
+                value={writeActionId}
+                placeholder='הדבק מזהה רק אם הפעולה אינה מופיעה ברשימה'
+                onChange={event => changeScopeValue(event.target.value, writeActionId, setWriteActionId)}
               />
             </FormControl>
           </Stack>

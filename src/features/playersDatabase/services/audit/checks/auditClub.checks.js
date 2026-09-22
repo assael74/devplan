@@ -208,21 +208,11 @@ export function appendClubAuditFindings({
           source: 'Club Document → League Document',
         }))
         const canonicalTeamSeason = teamSeasonsByTeamSeasonKey.get(`${teamId}::${seasonKey}`) || {}
-        if (teamId && !Object.keys(canonicalTeamSeason).length && !leagueSeasonHasTeam({
-          leagueSeason: leagueSource?.season,
-          teamId,
-        })) findings.push(buildAuditFinding({
-          type: AUDIT_FINDING_TYPE.BROKEN_RELATION,
-          entityType: 'clubAgeGroupSeason',
-          documentId: id,
-          relatedDocumentId: teamId,
-          teamDocumentId: teamId,
-          seasonKey,
-          relationKey: identity,
-          title: 'עונת קבוצת גיל מצביעה לעונת קבוצה שאינה קיימת',
-          explanation: 'Club age-group season חייבת להפנות ל-Team Season, או לשורת קבוצה קנונית בטבלת הליגה של אותה עונה.',
-          source: 'Club Document → Team Season',
-        }))
+        // Team Season is intentionally optional.  A Club age-group season is
+        // valid when its Team Root exists (or, before roster loading, when the
+        // team still exists only as a canonical League-table row).  Requiring
+        // a Team Season here created false positives for clubs that do not
+        // have a roster in this season.
         const canonicalPerformance = leagueSource && team
           ? buildLeagueTeamPerformanceProjection({
               league: leagueSource.league.data,
