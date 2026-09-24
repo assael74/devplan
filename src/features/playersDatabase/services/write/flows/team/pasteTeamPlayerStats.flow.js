@@ -3,45 +3,14 @@
 import { buildWriteFlowSyncError } from '../writeFlowSyncError.js'
 import { SCOUTING_SHADOW_ENGINE_VERSION } from '../../../../../../shared/scouting/scouting.version.js'
 import {
-  updateLeagueSeasonTableRankTeamSyncMeta,
-} from '../../leagues/index.js'
-import { syncPlayerScoutProfileDocsMany } from '../../players/index.js'
-import {
-  resolvePlayerIdentities,
-  updatePlayerSeasonSearchIndexStatsMany,
-  updateTeamSeasonSearchIndexScoutProfilesSummary,
-} from '../../searchIndex/index.js'
-import {
-  ensureRequiredClubProjectionCompleted,
-  syncClubProjectionFromTeamSeason,
-} from '../../clubs/index.js'
-import {
-  reconcileTeamSeasonMovementCounterpartsWithClubRefresh,
-  updateTeamSeasonPlayersScoutProjections,
   commitTeamStatsCanonical,
 } from '../../teams/index.js'
-import { buildScoutProfilesSummary } from '../shared.js'
 import {
-  createTeamStatsProjectionRevision,
+  activateTeamStatsProjectionJob,
+  failTeamStatsProjectionJobFromClient,
 } from '../../teamStatsProjectionJobs/index.js'
-import { readTeamSeasonRosterHistory } from '../../../read/entities/teamSeasonRosterHistory.js'
 import { getTeamSeason } from '../../../read/entities/teamSeason.js'
-import { resolveTeamLookupKey } from '../../../../model/team/teamIdentity.model.js'
-import {
-  ROSTER_IMPORT_MODE,
-  mergeLocalAndResolvedPlayers,
-  reconcileRosterMovement,
-  resolveRosterPlayersLocally,
-} from '../../../../domain/movement/index.js'
-import { buildTeamLoadStatus } from '../../../../model/team/teamLoadStatus.model.js'
-import { resolveInternalPlayerId } from '../../../../model/player/playerIdentity.model.js'
 import { buildPlayerScoutShadowAudit } from '../../../../domain/orchestration/buildPlayerScoutShadowAudit.js'
-import {
-  buildLeagueTeamPerformanceProjection,
-  resolveLeagueSeasonStatus,
-  resolveLeagueTeamPoints,
-} from '../../../../domain/projections/teamPerformance.projection.js'
-import { validatePlayerStatsAgainstLeague } from '../../../../domain/validation/playerStatsLeague.validation.js'
 
 
 
@@ -77,6 +46,27 @@ const buildCommittedProjectionFailure = ({
   },
 })
 
+const buildDeferredPlayerDocumentSyncResult = approvedPlan => {
+  const entries = Array.isArray(approvedPlan?.entries) ? approvedPlan.entries : []
+  const activeEntries = entries.filter(entry => entry?.approvedPlan?.skipped !== true)
+
+  return {
+    owner: 'functions',
+    deferred: true,
+    rowsCount: activeEntries.length,
+    createdCount: entries.filter(entry => entry?.approvedPlan?.action === 'create').length,
+    updatedCount: entries.filter(entry => entry?.approvedPlan?.action === 'update').length,
+    unchangedCount: entries.filter(entry => entry?.approvedPlan?.action === 'retain').length,
+    skippedCount: Number(approvedPlan?.skippedUntrackedCount || 0) +
+      entries.filter(entry => entry?.approvedPlan?.action === 'skip').length,
+    failedCount: 0,
+    failures: [],
+    scoutedPlayers: Array.isArray(approvedPlan?.scoutedPlayers)
+      ? approvedPlan.scoutedPlayers
+      : [],
+  }
+}
+
 
 const resolvePlayerProjectionKey = player => String(
   player?.playerId ||
@@ -108,43 +98,6 @@ const assertTeamSeasonUpdated = result => {
   }
 }
 
-const assertStatsIdentityDecisions = players => {
-  const unresolved = (Array.isArray(players) ? players : []).filter(player => {
-    const status = String(player?.identityMatchStatus || '').trim()
-    const approvedNew = String(player?.identityResolution || '').trim() === 'createNew'
-    const hasCanonicalPlayerId = Boolean(resolveInternalPlayerId(player))
-
-    return !hasCanonicalPlayerId &&
-      !['provided', 'matched'].includes(status) &&
-      !(status === 'created' && approvedNew)
-  })
-
-  if (!unresolved.length) return
-
-  const error = new Error('כל שחקן שאינו מזוהה חייב התאמת מערכת או אישור מפורש ליצירת שחקן חדש')
-  error.code = 'STATS_PLAYER_IDENTITY_DECISION_REQUIRED'
-  error.players = unresolved.map(player => player.originalFullName || player.fullName || '')
-  throw error
-}
-
-const deriveSeasonTarget = season => (
-  String(season?.seasonStatus || '').trim() === 'completed'
-    ? 'history'
-    : 'current'
-)
-
-const resolveLeagueSeasonLifecycleOrThrow = ({ league, season } = {}) => {
-  const seasonStatus = resolveLeagueSeasonStatus({ league, season })
-
-  if (seasonStatus === 'active' || seasonStatus === 'completed') {
-    return seasonStatus
-  }
-
-  const error = new Error('League season lifecycle could not be resolved')
-  error.code = 'LEAGUE_SEASON_LIFECYCLE_UNRESOLVED'
-  throw error
-}
-
 const assertCurrentStatsProjectionRevision = async ({
   teamId = '',
   seasonKey = '',
@@ -165,112 +118,48 @@ const assertCurrentStatsProjectionRevision = async ({
 
 export async function pasteTeamPlayerStatsFlow(payload = {}) {
   const results = {}
-  const statsProjectionRevision = createTeamStatsProjectionRevision()
-  const leagueSeasonStatus = resolveLeagueSeasonLifecycleOrThrow({
-    league: payload.league,
-    season: payload.season,
-  })
-  const season = {
-    ...(payload.season || {}),
-    seasonStatus: leagueSeasonStatus,
+  const approvedStatsPlan = payload.approvedStatsPlan
+
+  if (approvedStatsPlan?.planType !== 'approvedStatsPlan') {
+    const error = new Error('Missing approved stats plan')
+    error.code = 'APPROVED_STATS_PLAN_REQUIRED'
+    throw error
   }
-  const derivedTarget = deriveSeasonTarget(season)
-  const teamPerformance = buildLeagueTeamPerformanceProjection({
-    league: payload.league,
-    season,
-    target: derivedTarget,
-    team: payload.team,
-  })
-  const teamPoints = resolveLeagueTeamPoints({
-    league: payload.league,
-    season,
-    target: derivedTarget,
-    team: payload.team,
-  })
-  const rawPlayers = Array.isArray(payload.players) ? payload.players : []
-  const birthTeamDocumentId = resolveTeamLookupKey(payload.team || {})
-  const rosterHistory = await readTeamSeasonRosterHistory({
-    birthTeamDocumentId,
-    seasonKey: season.seasonKey || season.seasonId,
-  })
-  const currentKnownPlayers = [
-    ...(Array.isArray(rosterHistory.currentSeason?.teamPlayers)
-      ? rosterHistory.currentSeason.teamPlayers
-      : []),
-    ...(Array.isArray(rosterHistory.currentSeason?.pendingPlayers)
-      ? rosterHistory.currentSeason.pendingPlayers
-      : []),
-  ]
-  const previousPlayers = Array.isArray(rosterHistory.previousSeason?.teamPlayers)
-    ? rosterHistory.previousSeason.teamPlayers
+
+  const canonicalPlan = approvedStatsPlan.canonical || {}
+  const canonicalCommit = canonicalPlan.canonicalCommit || {}
+  const statsProjectionRevision = String(approvedStatsPlan.statsProjectionRevision || '').trim()
+  const season = canonicalPlan.season || payload.season || {}
+  const resolvedPlayers = Array.isArray(canonicalCommit.players)
+    ? canonicalCommit.players
     : []
-  const localResolution = resolveRosterPlayersLocally({
-    players: rawPlayers,
-    currentPlayers: currentKnownPlayers,
-    previousPlayers,
-  })
-  const unresolvedPlayers = localResolution.unresolved.map(entry => entry.player)
-  const broadResolvedPlayers = unresolvedPlayers.length
-    ? await resolvePlayerIdentities({
-        players: unresolvedPlayers,
-        season,
-      })
-    : []
-  const resolvedPlayers = mergeLocalAndResolvedPlayers({
-    totalCount: rawPlayers.length,
-    localResolved: localResolution.resolved,
-    broadResolved: broadResolvedPlayers,
-    unresolved: localResolution.unresolved,
-  })
   const resolvedPayload = {
     ...payload,
+    league: canonicalPlan.league || payload.league || {},
     season,
-    target: derivedTarget,
+    target: canonicalCommit.target || payload.target,
+    team: canonicalPlan.team || payload.team || {},
     players: resolvedPlayers,
   }
-  assertStatsIdentityDecisions(resolvedPlayers)
-  const validation = validatePlayerStatsAgainstLeague({
-    players: resolvedPlayers,
-    teamPerformance,
-    ageGroupId: payload.season?.ageGroupId || payload.team?.ageGroupId,
-  })
+  const teamPerformance = approvedStatsPlan.teamPerformance || null
+  const teamPoints = approvedStatsPlan.teamPoints
 
-  if (!validation.valid) {
-    throw buildWriteFlowSyncError({
-      name: 'PlayerStatsSyncError',
-      fallbackMessage: 'Player stats sync failed',
-      stage: 'validatePlayerStatsAgainstLeague',
-      cause: new Error(validation.issues.map(issue => issue.message).join(' ')),
-      results: { validation },
-    })
+  if (!statsProjectionRevision) {
+    const error = new Error('Missing stats projection revision in approved plan')
+    error.code = 'APPROVED_STATS_PLAN_REVISION_REQUIRED'
+    throw error
   }
+
+  results.approvedStatsPlan = approvedStatsPlan
+  results.approvedStatsCanonicalPlan = approvedStatsPlan.canonical
+  results.approvedPlayerScoutPlan = approvedStatsPlan.playerScout
+  results.approvedTeamScoutProjectionPlan = approvedStatsPlan.teamScout
 
   try {
     results.teamSeasonResult = await commitTeamStatsCanonical({
-      ...resolvedPayload,
-      team: payload.team || {},
-      teamPerformance,
-      teamPoints,
-      statsProjectionRevision,
+      approvedPlan: approvedStatsPlan.canonical,
+      projectionManifest: approvedStatsPlan.projectionManifest,
       writeActionId: payload.writeActionId,
-      league: resolvedPayload.league || payload.league || {},
-      reconcileMovement: ({ currentSeason, previousSeason }) => reconcileRosterMovement({
-        seasonKey: season.seasonKey || season.seasonId,
-        team: {
-          ...(payload.team || {}),
-          birthTeamDocumentId,
-        },
-        incomingPlayers: resolvedPlayers,
-        currentSeason,
-        previousSeason,
-        rosterImport: {
-          mode: ROSTER_IMPORT_MODE.PATCH,
-          sourceSnapshotKey: currentSeason?.rosterImport?.sourceSnapshotKey ||
-            `stats__${season.seasonKey || season.seasonId}`,
-          contentHash: currentSeason?.rosterImport?.contentHash || '',
-          effectiveAt: currentSeason?.rosterImport?.effectiveAt || null,
-        },
-      }),
     })
     assertTeamSeasonUpdated(results.teamSeasonResult)
   } catch (error) {
@@ -283,17 +172,33 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     })
   }
 
-  const projectionGuard = () => assertCurrentStatsProjectionRevision({
+  try {
+    const projectionGuard = () => assertCurrentStatsProjectionRevision({
     teamId: results.teamSeasonResult.birthTeamDocumentId,
     seasonKey: results.teamSeasonResult.seasonKey,
     sourceRevision: statsProjectionRevision,
   })
 
   results.projectionJob = results.teamSeasonResult.projectionJob
-  await projectionGuard()
-  results.counterpartReconciliation = await reconcileTeamSeasonMovementCounterpartsWithClubRefresh({
-    requests: results.teamSeasonResult.movementState?.counterpartRequests,
-  })
+  results.counterpartReconciliation = {
+    owner: 'functions',
+    deferred: true,
+    movementOperationsCount: Array.isArray(
+      results.approvedStatsPlan.projectionManifest?.operations?.counterpartMovement
+    )
+      ? results.approvedStatsPlan.projectionManifest.operations.counterpartMovement.length
+      : 0,
+    clubProjectionOperationsCount: Array.isArray(
+      results.approvedStatsPlan.projectionManifest?.operations?.counterpartClubProjection
+    )
+      ? results.approvedStatsPlan.projectionManifest.operations.counterpartClubProjection.length
+      : 0,
+    clubsMasterOperationsCount: Array.isArray(
+      results.approvedStatsPlan.projectionManifest?.operations?.counterpartClubsMaster
+    )
+      ? results.approvedStatsPlan.projectionManifest.operations.counterpartClubsMaster.length
+      : 0,
+  }
 
   const team = {
     ...(results.teamSeasonResult.canonicalTeamContext || payload.team || {}),
@@ -307,7 +212,7 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
   const syncedPlayers = teamSeasonPlayers
   const teamWithLoadStatus = {
     ...team,
-    ...buildTeamLoadStatus(syncedPlayers),
+    ...(results.approvedStatsPlan.teamLoadStatus || {}),
   }
   const syncedPayload = {
     ...resolvedPayload,
@@ -318,66 +223,26 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     // legacy multi-season Root container.
     teamSeasonDocument: results.teamSeasonResult.seasonDocument || null,
   }
-  try {
-    await projectionGuard()
-    results.playerScoutProfileDocsResult = await syncPlayerScoutProfileDocsMany({
-      ...syncedPayload,
-      beforeEach: projectionGuard,
-    })
-  } catch (error) {
-    throw buildCommittedProjectionFailure({
-      stage: 'syncPlayerScoutProfileDocsMany',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
-  }
+  await projectionGuard()
+  results.playerScoutProfileDocsResult = buildDeferredPlayerDocumentSyncResult(
+    results.approvedPlayerScoutPlan
+  )
 
-  if (results.playerScoutProfileDocsResult.failedCount) {
-    throw buildCommittedProjectionFailure({
-      stage: 'playerScoutProfileDocsPartialFailure',
-      cause: new Error(
-        `${results.playerScoutProfileDocsResult.failedCount} player documents failed to sync`
-      ),
-      results,
-      teamSeasonPlayers,
-    })
-  }
-
-  try {
-    await projectionGuard()
-    results.teamScoutProjectionResult = await updateTeamSeasonPlayersScoutProjections({
-      season: resolvedPayload.season || {},
-      team,
-      scoutedPlayers: results.playerScoutProfileDocsResult.scoutedPlayers,
-    })
-    if (!results.teamScoutProjectionResult?.updated) {
-      throw buildCommittedProjectionFailure({
-        stage: 'updateTeamSeasonPlayersScoutProjections',
-        cause: new Error(
-          results.teamScoutProjectionResult?.reason ||
-          'Team scout projection target is missing'
-        ),
-        results,
-        teamSeasonPlayers,
-      })
-    }
-  } catch (error) {
-    throw buildCommittedProjectionFailure({
-      stage: 'updateTeamSeasonPlayersScoutProjections',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
+  results.teamScoutProjectionResult = {
+    owner: 'functions',
+    deferred: true,
+    changed: results.approvedTeamScoutProjectionPlan?.changed === true,
+    players: Array.isArray(results.approvedTeamScoutProjectionPlan?.players)
+      ? results.approvedTeamScoutProjectionPlan.players
+      : teamSeasonPlayers,
   }
 
   const finalTeamSeasonPlayers = Array.isArray(
-    results.teamScoutProjectionResult?.players
+    results.approvedTeamScoutProjectionPlan?.players
   )
-    ? results.teamScoutProjectionResult.players
+    ? results.approvedTeamScoutProjectionPlan.players
     : teamSeasonPlayers
-  const scoutProfilesSummary = results.teamScoutProjectionResult?.scoutProfilesSummary ||
-    buildScoutProfilesSummary(finalTeamSeasonPlayers)
+  const scoutProfilesSummary = results.approvedStatsPlan.scoutProfilesSummary
 
   const searchIndexPlayers = mergeScoutedPlayerProjections({
     players: finalTeamSeasonPlayers,
@@ -390,115 +255,100 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     players: searchIndexPlayers,
   }
 
-  try {
-    await projectionGuard()
-    results.playerSeasonIndexResult = await updatePlayerSeasonSearchIndexStatsMany(searchIndexPayload)
-  } catch (error) {
-    throw buildCommittedProjectionFailure({
-      stage: 'updatePlayerSeasonSearchIndexStatsMany',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
+  const approvedPlayerSeasonIndexPlan = results.approvedStatsPlan.playerSeasonIndexes || {}
+  const playerSeasonIndexOperations = Array.isArray(approvedPlayerSeasonIndexPlan.operations)
+    ? approvedPlayerSeasonIndexPlan.operations
+    : []
+  results.playerSeasonIndexResult = {
+    owner: 'functions',
+    deferred: true,
+    rowsCount: playerSeasonIndexOperations.filter(operation => operation?.changed === true).length,
+    createdCount: playerSeasonIndexOperations.filter(operation => (
+      operation?.action === 'set' && operation?.created === true && operation?.changed === true
+    )).length,
+    updatedCount: playerSeasonIndexOperations.filter(operation => (
+      operation?.action === 'set' && operation?.created !== true && operation?.changed === true
+    )).length,
+    deletedCount: playerSeasonIndexOperations.filter(operation => operation?.action === 'delete').length,
+    unchangedCount: playerSeasonIndexOperations.filter(operation => (
+      operation?.action === 'set' && operation?.changed !== true
+    )).length,
+    failedCount: Array.isArray(approvedPlayerSeasonIndexPlan.failures)
+      ? approvedPlayerSeasonIndexPlan.failures.length
+      : 0,
+    failures: Array.isArray(approvedPlayerSeasonIndexPlan.failures)
+      ? approvedPlayerSeasonIndexPlan.failures
+      : [],
+    duplicates: Array.isArray(approvedPlayerSeasonIndexPlan.duplicates)
+      ? approvedPlayerSeasonIndexPlan.duplicates
+      : [],
+    snapshotRows: Array.isArray(approvedPlayerSeasonIndexPlan.snapshotRows)
+      ? approvedPlayerSeasonIndexPlan.snapshotRows
+      : [],
   }
 
-  if (results.playerSeasonIndexResult?.failedCount) {
+  if (results.playerSeasonIndexResult.failedCount) {
     throw buildCommittedProjectionFailure({
       stage: 'playerSeasonIndexPartialFailure',
       cause: new Error(
-        `${results.playerSeasonIndexResult.failedCount} player SearchIndex rows failed to sync`
+        `${results.playerSeasonIndexResult.failedCount} player SearchIndex rows failed to plan`
       ),
       results,
       teamSeasonPlayers,
     })
   }
 
-  try {
-    await projectionGuard()
-    results.leagueTableRankTeamMetaResult = await updateLeagueSeasonTableRankTeamSyncMeta({
-      ...payload,
-      team: teamWithLoadStatus,
-      scoutProfilesSummary,
-      teamTaskSignals: results.teamSeasonResult?.teamBalance?.teamTaskSignals,
-    })
-    results.leagueTableRankLoadStatusResult = results.leagueTableRankTeamMetaResult
-    results.leagueTableRankScoutProfilesResult = results.leagueTableRankTeamMetaResult
+  const approvedLeagueMetadataPlan = results.approvedStatsPlan.leagueMetadata || {}
+  const leagueMetadataOperations = Array.isArray(approvedLeagueMetadataPlan.operations)
+    ? approvedLeagueMetadataPlan.operations
+    : []
+  const leaguesMasterOperations = Array.isArray(approvedLeagueMetadataPlan.leaguesMasterOperations)
+    ? approvedLeagueMetadataPlan.leaguesMasterOperations
+    : []
+  const leagueMetadataFailures = Array.isArray(approvedLeagueMetadataPlan.failures)
+    ? approvedLeagueMetadataPlan.failures
+    : []
 
-    if (!results.leagueTableRankTeamMetaResult?.updated) {
-      throw buildCommittedProjectionFailure({
-        stage: 'updateLeagueSeasonTableRankTeamMeta',
-        cause: new Error(
-          results.leagueTableRankTeamMetaResult?.reason ||
-          'League team metadata projection target is missing'
-        ),
-        results,
-        teamSeasonPlayers,
-      })
-    }
-  } catch (error) {
+  results.leagueTableRankTeamMetaResult = {
+    owner: 'functions',
+    deferred: true,
+    operationsCount: leagueMetadataOperations.length,
+    leaguesMasterOperationsCount: leaguesMasterOperations.length,
+    failedCount: leagueMetadataFailures.length,
+    failures: leagueMetadataFailures,
+  }
+  results.leagueTableRankLoadStatusResult = results.leagueTableRankTeamMetaResult
+  results.leagueTableRankScoutProfilesResult = results.leagueTableRankTeamMetaResult
+
+  if (leagueMetadataFailures.length) {
     throw buildCommittedProjectionFailure({
       stage: 'updateLeagueSeasonTableRankTeamMeta',
-      cause: error,
+      cause: new Error(leagueMetadataFailures[0]?.reason || 'League metadata projection planning failed'),
       results,
       teamSeasonPlayers,
     })
   }
 
-  try {
-    await projectionGuard()
-    results.teamSeasonIndexScoutProfilesResult = await updateTeamSeasonSearchIndexScoutProfilesSummary({
-      ...payload,
-      team,
-      teamSeasonDocumentId: results.teamSeasonResult.teamSeasonDocumentId,
-      playersCount: results.teamSeasonResult.playersCount,
-      scoutProfilesSummary,
-      teamBalance: results.teamSeasonResult.teamBalance,
-      teamPerformance,
-    })
-    if (!results.teamSeasonIndexScoutProfilesResult?.updated) {
-      throw buildCommittedProjectionFailure({
-        stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
-        cause: new Error(
-          results.teamSeasonIndexScoutProfilesResult?.reason ||
-          'Team season SearchIndex is missing'
-        ),
-        results,
-        teamSeasonPlayers,
-      })
-    }
-  } catch (error) {
-    throw buildCommittedProjectionFailure({
-      stage: 'updateTeamSeasonSearchIndexScoutProfilesSummary',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
+  results.teamSeasonIndexScoutProfilesResult = {
+    updated: true,
+    owner: 'functions',
+    deferred: true,
+    operationsCount: approvedStatsPlan.teamSeasonIndex?.operation ? 1 : 0,
   }
 
 
-  try {
-    await projectionGuard()
-    results.clubProjectionResult = ensureRequiredClubProjectionCompleted(await syncClubProjectionFromTeamSeason({
-      league: resolvedPayload.league || payload.league || {},
-      season: resolvedPayload.season || {},
-      team: teamWithLoadStatus,
-      teamSeason: results.teamSeasonResult?.seasonDocument || {},
-      performance: teamPerformance,
-      points: teamPoints,
-      // The League row was refreshed immediately above from this exact
-      // summary. Pass it into the Club projection as well, rather than
-      // waiting for a future League-table reload to refresh Clubs Master.
-      leagueScoutProfilesSummary: scoutProfilesSummary,
-      canonicalCommitted: true,
-      lastWriteAction: 'PASTE_TEAM_PLAYER_STATS',
-    }))
-  } catch (error) {
-    throw buildCommittedProjectionFailure({
-      stage: 'clubProjection',
-      cause: error,
-      results,
-      teamSeasonPlayers,
-    })
+  results.clubProjectionResult = {
+    updated: true,
+    owner: 'functions',
+    deferred: true,
+    operationsCount: Array.isArray(approvedStatsPlan.mainClubProjection?.operations)
+      ? approvedStatsPlan.mainClubProjection.operations.length
+      : 0,
+    clubsMasterOperationsCount: Array.isArray(
+      approvedStatsPlan.mainClubProjection?.clubsMasterOperations
+    )
+      ? approvedStatsPlan.mainClubProjection.clubsMasterOperations.length
+      : 0,
   }
 
 
@@ -519,6 +369,20 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     }
   }
 
+  try {
+    results.projectionJobActivation = await activateTeamStatsProjectionJob({
+      jobId: results.projectionJob?.id,
+      sourceRevision: statsProjectionRevision,
+    })
+  } catch (error) {
+    throw buildCommittedProjectionFailure({
+      stage: 'activateTeamStatsProjectionJob',
+      cause: error,
+      results,
+      teamSeasonPlayers,
+    })
+  }
+
   return {
     ...results,
     rowsCount: results.playerSeasonIndexResult.rowsCount,
@@ -532,5 +396,30 @@ export async function pasteTeamPlayerStatsFlow(payload = {}) {
     backgroundSyncPending: true,
     syncStatus: 'background_sync_pending',
     shadowStatus: results.playerScoutShadowResult?.status || 'complete',
+  }
+  } catch (error) {
+    const failedStage = String(
+      error?.stage ||
+      error?.results?.stoppedAt ||
+      error?.cause?.stage ||
+      'clientProjection'
+    ).trim()
+
+    try {
+      results.projectionJobFailure = await failTeamStatsProjectionJobFromClient({
+        jobId: results.projectionJob?.id,
+        sourceRevision: statsProjectionRevision,
+        failedStage,
+        error,
+      })
+    } catch (jobFailureError) {
+      results.projectionJobFailure = {
+        applied: false,
+        reason: 'jobFailureUpdateFailed',
+        error: String(jobFailureError?.message || 'Failed to mark stats projection job as failed'),
+      }
+    }
+
+    throw error
   }
 }

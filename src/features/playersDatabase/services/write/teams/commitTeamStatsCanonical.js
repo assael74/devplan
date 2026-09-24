@@ -2,20 +2,12 @@ import { doc, serverTimestamp } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { resolveTeamLookupKey } from '../../../model/team/teamIdentity.model.js'
-import { buildSeasonKey, clean } from '../leagues/leagueDoc.js'
+import { clean } from '../leagues/leagueDoc.js'
 import { buildQueuedTeamStatsProjectionJob } from '../teamStatsProjectionJobs/index.js'
 import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { teamDocRef } from './teamDoc.js'
 import { teamSeasonDocRef } from './teamSeasonDoc.js'
-import { buildTeamStatsCanonicalCommit } from './teamSeasonStats.js'
-import { compareSeasonKeys } from '../../../domain/movement/index.js'
-
-const resolvePreviousSeasonEntry = ({ seasons = [], seasonKey = '' } = {}) => (
-  (Array.isArray(seasons) ? seasons : [])
-    .filter(entry => compareSeasonKeys(entry?.seasonKey, seasonKey) < 0)
-    .sort((left, right) => compareSeasonKeys(right?.seasonKey, left?.seasonKey))[0] || null
-)
+import { buildStatsSourceFingerprint } from './statsPlanFingerprint.js'
 
 const STATS_WRITE_ACTION_TYPE = 'pasteTeamPlayerStats'
 
@@ -39,26 +31,60 @@ const assertStatsWriteActionLinkable = ({ receipt = {}, writeActionId = '' } = {
     throwReceiptGuardError('Write action receipt is already linked to a projection job', 'WRITE_ACTION_ALREADY_LINKED')
   }
 }
-// One transaction for the canonical Stats source, Root navigation index, durable
-// projection intent and its already-created write-action receipt linkage.
+
+const throwStalePlan = source => {
+  const error = new Error(`Approved stats plan is stale: ${source}`)
+  error.code = 'STATS_IMPORT_PLAN_STALE'
+  error.source = source
+  throw error
+}
+
+const assertFingerprint = ({ expected = '', actual = null, source = '' } = {}) => {
+  if (String(expected || '') === buildStatsSourceFingerprint(actual)) return
+  throwStalePlan(source)
+}
+
+// Commits a canonical result that was already calculated by the CLIENT planner.
+// The transaction validates the snapshots used by the plan; it does not rerun
+// Stats, Movement, Balance or other business rules.
 export async function commitTeamStatsCanonical({
-  league = {}, season = {}, team = {}, players = [], teamPerformance = null,
-  teamPoints = null, reconcileMovement = null, statsProjectionRevision = '', writeActionId = '',
+  approvedPlan = null,
+  projectionManifest = null,
+  writeActionId = '',
 } = {}) {
-  const teamId = resolveTeamLookupKey(team)
-  const seasonId = clean(season.seasonId)
-  const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
+  const plan = approvedPlan || {}
+  const commit = plan.canonicalCommit || null
+  const teamId = clean(plan.birthTeamDocumentId || commit?.birthTeamDocumentId)
+  const seasonKey = clean(plan.seasonKey || commit?.seasonKey)
+  const sourceRevision = clean(plan.statsProjectionRevision)
+
+  if (!commit || plan.planType !== 'approvedStatsCanonicalPlan') {
+    throw new Error('Missing approved stats canonical plan')
+  }
   if (!teamId) throw new Error('Missing birth team id')
-  if (!seasonId) throw new Error('Missing season id')
+  if (!seasonKey) throw new Error('Missing season key')
+  if (!sourceRevision) throw new Error('Missing stats projection revision')
+  if (!projectionManifest || typeof projectionManifest !== 'object') {
+    throw new Error('Missing stats projection manifest')
+  }
+  if (clean(projectionManifest.sourceRevision) !== sourceRevision) {
+    throw new Error('Stats projection manifest revision does not match canonical plan')
+  }
   if (!clean(writeActionId)) throw new Error('Missing write action id for canonical stats commit')
 
   const seasonRef = teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey })
   const rootRef = teamDocRef(teamId)
   const actionRef = doc(db, PLAYERS_DATABASE_COLLECTIONS.writeActions, clean(writeActionId))
+  const previousSeasonKey = clean(plan.sourceFingerprints?.previousSeasonKey)
+  const previousRef = previousSeasonKey
+    ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousSeasonKey })
+    : null
 
   return trackedRunTransaction(db, async transaction => {
     const [rootSnapshot, seasonSnapshot, actionSnapshot] = await Promise.all([
-      transaction.get(rootRef), transaction.get(seasonRef), transaction.get(actionRef),
+      transaction.get(rootRef),
+      transaction.get(seasonRef),
+      transaction.get(actionRef),
     ])
     if (!actionSnapshot.exists()) throw new Error('Write action receipt was not found')
     assertStatsWriteActionLinkable({
@@ -66,24 +92,35 @@ export async function commitTeamStatsCanonical({
       writeActionId,
     })
 
-    const existingRoot = rootSnapshot.exists() ? rootSnapshot.data() || {} : null
-    const existingSeason = seasonSnapshot.exists() ? seasonSnapshot.data() || {} : null
-    const previousEntry = resolvePreviousSeasonEntry({ seasons: existingRoot?.seasons || [], seasonKey })
-    const previousRef = previousEntry?.seasonKey
-      ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousEntry.seasonKey })
-      : null
+    const currentRoot = rootSnapshot.exists() ? rootSnapshot.data() || {} : null
+    const currentSeason = seasonSnapshot.exists() ? seasonSnapshot.data() || {} : null
     const previousSnapshot = previousRef ? await transaction.get(previousRef) : null
     const previousSeason = previousSnapshot?.exists() ? previousSnapshot.data() || {} : null
-    const commit = buildTeamStatsCanonicalCommit({
-      season, team, players, teamPerformance, teamPoints, reconcileMovement,
-      statsProjectionRevision, existingSeason, existingRoot, previousSeason,
+
+    assertFingerprint({
+      expected: plan.sourceFingerprints?.teamRoot,
+      actual: currentRoot,
+      source: 'teamRoot',
     })
+    assertFingerprint({
+      expected: plan.sourceFingerprints?.currentSeason,
+      actual: currentSeason,
+      source: 'currentSeason',
+    })
+    assertFingerprint({
+      expected: plan.sourceFingerprints?.previousSeason,
+      actual: previousSeason,
+      source: 'previousSeason',
+    })
+
     const projectionJob = buildQueuedTeamStatsProjectionJob({
-      league, season: { ...season, seasonKey: commit.seasonKey },
-      team: { ...team, birthTeamDocumentId: commit.birthTeamDocumentId },
+      league: plan.league || {},
+      season: { ...(plan.season || {}), seasonKey: commit.seasonKey },
+      team: { ...(plan.team || {}), birthTeamDocumentId: commit.birthTeamDocumentId },
       teamSeasonDocumentId: commit.teamSeasonDocumentId,
-      sourceRevision: statsProjectionRevision,
+      sourceRevision,
       writeActionId,
+      projectionManifest,
     })
     const jobRef = doc(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs, projectionJob.id)
 

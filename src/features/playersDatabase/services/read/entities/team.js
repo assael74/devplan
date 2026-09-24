@@ -15,24 +15,28 @@ const clean = value => String(value === undefined || value === null ? '' : value
 const teamDocRef = teamId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.teams, clean(teamId))
 
-export async function getTeamById(teamId) {
+export async function getTeamById(teamId, { bypassCache = false } = {}) {
   const safeTeamId = clean(teamId)
   if (!safeTeamId) return null
 
+  const read = async () => {
+    const snapshot = await trackedGetDoc(teamDocRef(safeTeamId), {
+        feature: 'playersDatabase',
+      action: 'team-read',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+    })
+    if (!snapshot.exists()) return null
+
+    return {
+      id: snapshot.id,
+      ...snapshot.data(),
+    }
+  }
+
+  if (bypassCache) return read()
+
   return readWithDocumentCache({
     key: buildTeamDocumentCacheKey(safeTeamId),
-    read: async () => {
-      const snapshot = await trackedGetDoc(teamDocRef(safeTeamId), {
-        feature: 'playersDatabase',
-        action: 'team-read',
-        collection: PLAYERS_DATABASE_COLLECTIONS.teams,
-      })
-      if (!snapshot.exists()) return null
-
-      return {
-        id: snapshot.id,
-        ...snapshot.data(),
-      }
-    },
+    read,
   })
 }

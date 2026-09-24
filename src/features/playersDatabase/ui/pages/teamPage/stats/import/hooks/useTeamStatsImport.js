@@ -11,9 +11,12 @@ import {
 
 import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
+  createTeamStatsProjectionRevision,
+  prepareApprovedStatsPlan,
   resolvePlayerIdentities,
   runPlayersDatabaseWriteAction,
 } from '../../../../../../services/write/index.js'
+import { invalidatePlayersDatabaseWriteCache } from '../../../../../../services/cache/index.js'
 import { SNACK_STATUS } from '../../../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { STATS_ROSTER_STATUS_OPTIONS } from '../../shared/stats.constants.js'
 import { clean } from '../../../logic/teamPage.utils.js'
@@ -25,19 +28,22 @@ import {
   enrichStatsRowForPreview,
 } from '../../shared/logic/teamStatsMatch.logic.js'
 import { updateStatsImportRow } from '../logic/teamStatsRowEdit.logic.js'
-import { buildStatsScoutPreview } from '../logic/teamStatsScout.logic.js'
+import {
+  buildStatsMovementPreviewModel,
+  buildStatsPreviewModel,
+  snapshotStatsPreviewProfiles,
+} from '../logic/teamStatsPreview.model.js'
 import { buildWriteReportFromError } from '../../../logic/writeFlowReport.logic.js'
 import {
   buildLeagueTeamPerformanceProjection,
   listExistingTeamRootOptions,
 } from '../../../../../../services/read/index.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../../../domain/validation/playerStatsLeague.validation.js'
+import { resolveLeagueTeamPoints } from '../../../../../../domain/projections/teamPerformance.projection.js'
 import { findTeamPageSeasonDoc } from '../../../../../../model/team/page/teamPageSeason.model.js'
 import { adaptTeamPagePlayerRow } from '../../../../../../model/team/page/teamPagePlayer.model.js'
 import { db } from '../../../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../../../constants/pdb.constants.js'
-
-const cleanProfileId = value => clean(value)
 
 const withoutStatsMinutesCorrection = row => {
   const nextRow = { ...(row || {}) }
@@ -45,42 +51,6 @@ const withoutStatsMinutesCorrection = row => {
   return nextRow
 }
 
-const getScoutProfileMap = row => {
-  const profiles = Array.isArray(row?.scoutProfiles) ? row.scoutProfiles : []
-  const hierarchyIds = Array.isArray(row?.scoutProfileHierarchy?.orderedProfileIds)
-    ? row.scoutProfileHierarchy.orderedProfileIds
-    : []
-  const profileMap = new Map()
-
-  profiles.forEach(profile => {
-    const profileId = cleanProfileId(profile?.profileId || profile?.id)
-    if (!profileId) return
-    profileMap.set(profileId, clean(profile?.profileLabel || profile?.label || profileId))
-  })
-  hierarchyIds.forEach(profileId => {
-    const cleanId = cleanProfileId(profileId)
-    if (cleanId && !profileMap.has(cleanId)) profileMap.set(cleanId, cleanId)
-  })
-
-  return profileMap
-}
-
-const buildMinutesCorrectionImpact = ({ before, after, amount }) => {
-  const beforeProfiles = getScoutProfileMap(before)
-  const afterProfiles = getScoutProfileMap(after)
-  const addedProfiles = [...afterProfiles.entries()]
-    .filter(([profileId]) => !beforeProfiles.has(profileId))
-    .map(([profileId, label]) => ({ profileId, label }))
-  const removedProfiles = [...beforeProfiles.entries()]
-    .filter(([profileId]) => !afterProfiles.has(profileId))
-    .map(([profileId, label]) => ({ profileId, label }))
-
-  return {
-    amount,
-    addedProfiles,
-    removedProfiles,
-  }
-}
 
 export default function useTeamStatsImport({
   leagueId,
@@ -106,6 +76,14 @@ export default function useTeamStatsImport({
   const [writeActionId, setWriteActionId] = React.useState('')
   const [projectionJob, setProjectionJob] = React.useState(null)
   const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
+  const [approvedStatsPlan, setApprovedStatsPlan] = React.useState(null)
+  const [approvedStatsPlanPreparing, setApprovedStatsPlanPreparing] = React.useState(false)
+  const [approvedStatsPlanError, setApprovedStatsPlanError] = React.useState(null)
+  const [approvedStatsPlanSourceKey, setApprovedStatsPlanSourceKey] = React.useState('')
+  const [approvedStatsPlanRetryNonce, setApprovedStatsPlanRetryNonce] = React.useState(0)
+  const approvedStatsPlanGenerationRef = React.useRef(0)
+  const confirmInFlightRef = React.useRef(false)
+  const completedProjectionJobRef = React.useRef('')
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -143,6 +121,9 @@ export default function useTeamStatsImport({
       setProjectionJobId('')
       setWriteActionId('')
       setProjectionJob(null)
+      setApprovedStatsPlan(null)
+      setApprovedStatsPlanError(null)
+      setApprovedStatsPlanSourceKey('')
     }
   }, [
     open,
@@ -162,6 +143,9 @@ export default function useTeamStatsImport({
     setRows([])
     setPasteValue('')
     setSeasonStatus('')
+    setApprovedStatsPlan(null)
+    setApprovedStatsPlanError(null)
+    setApprovedStatsPlanSourceKey('')
   }, [])
 
   const openModal = React.useCallback(() => {
@@ -196,27 +180,14 @@ export default function useTeamStatsImport({
     team,
   }), [actionLeagueDoc, seasonContext, selectedSeasonOption?.target, team])
 
-  const scoutTeam = React.useMemo(() => ({
-    ...team,
-    teamGamePlayed: teamPerformance?.teamGamePlayed,
-    goalsFor: teamPerformance?.goalsFor,
-    goalsAgainst: teamPerformance?.goalsAgainst,
-    teamStats: {
-      ...(team.teamStats || {}),
-      teamGamePlayed: teamPerformance?.teamGamePlayed,
-      goalsFor: teamPerformance?.goalsFor,
-      goalsAgainst: teamPerformance?.goalsAgainst,
-    },
-  }), [team, teamPerformance])
+  const teamPoints = React.useMemo(() => resolveLeagueTeamPoints({
+    league: actionLeagueDoc || {},
+    season: seasonContext,
+    target: selectedSeasonOption?.target || 'current',
+    team,
+  }), [actionLeagueDoc, seasonContext, selectedSeasonOption?.target, team])
 
-  const enrichWithScout = React.useCallback(row => ({
-    ...row,
-    ...buildStatsScoutPreview({
-      row,
-      team: scoutTeam,
-      season: seasonContext,
-    }),
-  }), [scoutTeam, seasonContext])
+
 
   const getIdentityRowStatus = React.useCallback(row => {
     const status = clean(row.rosterStatus || 'unresolved')
@@ -355,41 +326,117 @@ export default function useTeamStatsImport({
       exceptionRowsCount,
     }
   }, [rows])
-  const movementPreview = React.useMemo(() => {
-    const existingIncomingCount = rows.filter(row => (
-      row.identityStatus === STATS_IDENTITY_STATUS.SYSTEM_MATCH
-    )).length
-    const newPlayerCount = rows.filter(row => (
-      row.identityStatus === STATS_IDENTITY_STATUS.NEW_PLAYER
-    )).length
-    const decisionRequiredCount = rows.filter(row => (
-      row.requiresStatsMovementDecision || [
-        STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE,
-        STATS_IDENTITY_STATUS.AMBIGUOUS,
-        STATS_IDENTITY_STATUS.UNRESOLVED,
-      ].includes(row.identityStatus)
-    )).length
-    const leftCount = rows.filter(row => (
-      clean(row.statsMovementDecision) === 'left' ||
-      clean(row.rosterStatus) === 'left'
-    )).length
-    const joinedCount = rows.filter(row => (
-      clean(row.statsMovementDecision) === 'joined'
-    )).length
-    const youngerAgeGroupCount = rows.filter(row => (
-      clean(row.rosterStatus) === 'youngerAgeGroup'
-    )).length
+  const movementPreview = React.useMemo(() => buildStatsMovementPreviewModel({
+    rows,
+    approvedStatsPlan,
+  }), [approvedStatsPlan, rows])
 
-    return {
-      existingIncomingCount,
-      newPlayerCount,
-      decisionRequiredCount,
-      leftCount,
-      joinedCount,
-      youngerAgeGroupCount,
-      requiresDecision: decisionRequiredCount > 0,
+
+  const approvedPlanPlayers = React.useMemo(() => rows
+    .filter((row, index) => getRowStatus(row, index).valid)
+    .map(withoutStatsMinutesCorrection), [getRowStatus, rows])
+
+  const approvedPlanSourceKey = React.useMemo(() => JSON.stringify({
+    leagueId: actionLeagueId,
+    season: seasonContext,
+    teamId: clean(
+      team.birthTeamDocumentId ||
+      team.teamDocumentId ||
+      team.birthTeamId ||
+      team.teamId
+    ),
+    players: approvedPlanPlayers,
+    teamPerformance,
+    teamPoints,
+  }), [
+    actionLeagueId,
+    approvedPlanPlayers,
+    seasonContext,
+    team.birthTeamDocumentId,
+    team.birthTeamId,
+    team.teamDocumentId,
+    team.teamId,
+    teamPerformance,
+    teamPoints,
+  ])
+
+  React.useEffect(() => {
+    const generation = approvedStatsPlanGenerationRef.current + 1
+    approvedStatsPlanGenerationRef.current = generation
+    setApprovedStatsPlan(null)
+    setApprovedStatsPlanError(null)
+    setApprovedStatsPlanSourceKey('')
+
+    const canPreparePlan = Boolean(
+      selectedSeasonOption &&
+      hasTeamPlayers &&
+      seasonStatus &&
+      rows.length &&
+      !hasInvalidRows &&
+      !movementPreview.requiresDecision
+    )
+
+    if (!canPreparePlan) {
+      setApprovedStatsPlanPreparing(false)
+      return undefined
     }
-  }, [rows])
+
+    setApprovedStatsPlanPreparing(true)
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const plan = await prepareApprovedStatsPlan({
+          league: {
+            ...(actionLeagueDoc || {}),
+            id: actionLeagueId,
+            leagueId: actionLeagueId,
+          },
+          season: seasonContext,
+          team,
+          players: approvedPlanPlayers,
+          teamPerformance,
+          teamPoints,
+          statsProjectionRevision: createTeamStatsProjectionRevision(),
+          trackedAt: new Date().toISOString(),
+        })
+
+        if (approvedStatsPlanGenerationRef.current !== generation) return
+        setApprovedStatsPlan(plan)
+        setApprovedStatsPlanSourceKey(approvedPlanSourceKey)
+      } catch (error) {
+        if (approvedStatsPlanGenerationRef.current !== generation) return
+        console.error('[playersDatabase/stats-plan-preview]', error)
+        setApprovedStatsPlanError(error)
+      } finally {
+        if (approvedStatsPlanGenerationRef.current === generation) {
+          setApprovedStatsPlanPreparing(false)
+        }
+      }
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [
+    actionLeagueDoc,
+    actionLeagueId,
+    approvedPlanPlayers,
+    approvedPlanSourceKey,
+    hasInvalidRows,
+    hasTeamPlayers,
+    movementPreview.requiresDecision,
+    rows.length,
+    seasonContext,
+    seasonStatus,
+    selectedSeasonOption,
+    team,
+    teamPerformance,
+    teamPoints,
+    approvedStatsPlanRetryNonce,
+  ])
+
+  const retryApprovedStatsPlan = React.useCallback(() => {
+    if (approvedStatsPlanPreparing) return
+
+    setApprovedStatsPlanRetryNonce(current => current + 1)
+  }, [approvedStatsPlanPreparing])
 
   const parse = React.useCallback(async () => {
     if (!seasonStatus) {
@@ -425,11 +472,11 @@ export default function useTeamStatsImport({
                 row,
                 resolvedPlayer: resolvedByIndex.get(index),
               })
-        return enrichWithScout({
+        return {
           ...resolved,
           requiresStatsMovementDecision: seasonStatus === 'completed' &&
             row.identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH,
-        })
+        }
       })
 
       if (seasonStatus === 'completed' && nextRows.some(row => row.requiresStatsMovementDecision)) {
@@ -453,7 +500,7 @@ export default function useTeamStatsImport({
     } finally {
       setBusy(false)
     }
-  }, [enrichWithScout, notify, pasteValue, rosterLookup, seasonContext, seasonStatus, team])
+  }, [notify, pasteValue, rosterLookup, seasonContext, seasonStatus, team])
 
   const changeCell = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => {
@@ -466,32 +513,21 @@ export default function useTeamStatsImport({
         players,
       })
 
-      return nextRow === row
-        ? row
-        : enrichWithScout(nextRow)
+      return nextRow
     }))
-  }, [enrichWithScout, players])
+  }, [players])
 
   const changeSeasonStatus = React.useCallback(value => {
     const nextStatus = ['active', 'completed'].includes(value) ? value : ''
 
     setSeasonStatus(nextStatus)
-    setRows(currentRows => currentRows.map(row => {
-      const rowWithoutMinutesCorrection = withoutStatsMinutesCorrection(row)
+    setRows(currentRows => currentRows.map(withoutStatsMinutesCorrection))
+  }, [])
 
-      return {
-        ...rowWithoutMinutesCorrection,
-        ...buildStatsScoutPreview({
-          row: rowWithoutMinutesCorrection,
-          team: scoutTeam,
-          season: {
-            ...seasonContext,
-            seasonStatus: nextStatus || seasonContext.seasonStatus,
-          },
-        }),
-      }
-    }))
-  }, [scoutTeam, seasonContext])
+  const previewRows = React.useMemo(() => buildStatsPreviewModel({
+    rows,
+    approvedStatsPlan,
+  }), [approvedStatsPlan, rows])
 
   const applyEqualMinutesReduction = React.useCallback(adjustment => {
     const amountPerPlayer = Number(adjustment?.amountPerPlayer)
@@ -502,23 +538,16 @@ export default function useTeamStatsImport({
         return currentRows
       }
 
-      return currentRows.map(row => {
-        const nextRow = enrichWithScout({
-          ...row,
-          minutes: Number(row.minutes) - amountPerPlayer,
-        })
-
-        return {
-          ...nextRow,
-          statsMinutesCorrection: buildMinutesCorrectionImpact({
-            before: row,
-            after: nextRow,
-            amount: amountPerPlayer,
-          }),
-        }
-      })
+      return currentRows.map((row, index) => ({
+        ...row,
+        minutes: Number(row.minutes) - amountPerPlayer,
+        statsMinutesCorrection: {
+          amount: amountPerPlayer,
+          beforeProfiles: snapshotStatsPreviewProfiles(previewRows[index] || row),
+        },
+      }))
     })
-  }, [enrichWithScout])
+  }, [previewRows])
 
 
   const clearPaste = React.useCallback(() => {
@@ -546,7 +575,7 @@ export default function useTeamStatsImport({
   // Keep the dry-run output and the real write on exactly the same payload
   // contract. This makes identity-decision issues inspectable without any
   // Firestore write.
-  const buildStatsWritePayload = React.useCallback(playersForWrite => ({
+  const buildStatsWritePayload = React.useCallback((playersForWrite, approvedPlan) => ({
     target: selectedSeasonOption?.target,
     league: {
       ...(actionLeagueDoc || {}),
@@ -556,6 +585,7 @@ export default function useTeamStatsImport({
     season: seasonContext,
     team,
     players: playersForWrite,
+    approvedStatsPlan: approvedPlan,
   }), [actionLeagueDoc, actionLeagueId, seasonContext, selectedSeasonOption?.target, team])
 
   const confirm = React.useCallback(async () => {
@@ -567,10 +597,22 @@ export default function useTeamStatsImport({
       !seasonStatus
     ) return
 
-    const validRows = rows
-      .filter((row, index) => getRowStatus(row, index).valid)
-      .map(withoutStatsMinutesCorrection)
-    const payload = buildStatsWritePayload(validRows)
+    if (approvedStatsPlanPreparing) return
+
+    if (!approvedStatsPlan || approvedStatsPlanSourceKey !== approvedPlanSourceKey) {
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: 'תוכנית הטעינה עדיין לא מוכנה',
+        message: approvedStatsPlanError?.message || 'יש להמתין לסיום הכנת תוכנית הטעינה ולנסות שוב',
+      })
+      return
+    }
+
+    if (confirmInFlightRef.current) return
+    confirmInFlightRef.current = true
+
+    const validRows = approvedPlanPlayers
+    const payload = buildStatsWritePayload(validRows, approvedStatsPlan)
     setBusy(true)
 
     try {
@@ -618,10 +660,16 @@ export default function useTeamStatsImport({
         message: 'נפתח דוח כתיבה מפורט לבדיקה',
       })
     } finally {
+      confirmInFlightRef.current = false
       setBusy(false)
     }
   }, [
-    getRowStatus,
+    approvedPlanPlayers,
+    approvedStatsPlan,
+    approvedStatsPlanError?.message,
+    approvedStatsPlanPreparing,
+    approvedStatsPlanSourceKey,
+    approvedPlanSourceKey,
     buildStatsWritePayload,
     hasInvalidRows,
     movementPreview.requiresDecision,
@@ -630,7 +678,6 @@ export default function useTeamStatsImport({
     actionLeagueId,
     notify,
     reload,
-    rows,
     seasonContext,
     seasonStatus,
     selectedSeasonOption,
@@ -661,13 +708,31 @@ export default function useTeamStatsImport({
   }, [projectionJobId, projectionJob?.status, projectionJob?.writeActionId])
 
 
+  React.useEffect(() => {
+    const status = projectionJob?.status || ''
+    const completionKey = `${projectionJobId}:${status}`
+    if (!['completed', 'failed', 'superseded', 'partial_superseded'].includes(status) ||
+        completedProjectionJobRef.current === completionKey) return
+
+    completedProjectionJobRef.current = completionKey
+    invalidatePlayersDatabaseWriteCache({
+      actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
+      payload: {
+        league: { id: actionLeagueId },
+        season: seasonContext,
+        team,
+      },
+    })
+    reload()
+  }, [actionLeagueId, projectionJob?.status, projectionJobId, reload, seasonContext, team])
+
   return {
     open,
     seasonOptions,
     selectedSeasonOptionKey,
     selectedSeasonOption,
     pasteValue,
-    rows,
+    rows: previewRows,
     busy,
     writeReport,
     seasonStatus,
@@ -681,6 +746,10 @@ export default function useTeamStatsImport({
     writeActionId,
     projectionJob,
     retryingProjectionJob,
+    approvedStatsPlan,
+    approvedStatsPlanPreparing,
+    approvedStatsPlanError,
+    approvedStatsPlanSourceKey,
     rosterExceptionsSummary,
     openModal,
     selectSeasonOption,
@@ -696,6 +765,7 @@ export default function useTeamStatsImport({
     close,
     closeWriteReport,
     confirm,
+    retryApprovedStatsPlan,
     retryProjectionJob,
   }
 }

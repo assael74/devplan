@@ -49,12 +49,18 @@ export {
 
 export {
   appendTeamSeasonPlayer,
+  buildPreparedTeamSeasonRoster,
+  commitApprovedTeamSeasonRoster,
+  resolvePersistedRosterImport,
   upsertTeamSeasonPlayers,
 } from './teamSeasonRoster.js'
 
 export {
   reconcileTeamSeasonMovementCounterpart,
+  resolveTeamSeasonMovementCounterpartCandidate,
   reconcileTeamSeasonMovementCounterparts,
+  prepareTeamSeasonMovementCounterpartPlans,
+  applyApprovedTeamSeasonMovementCounterpartPlans,
 } from './teamSeasonMovement.js'
 
 export {

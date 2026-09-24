@@ -1,5 +1,7 @@
 // features/playersDatabase/services/write/teams/teamSeasonRoster.js
 
+import { doc } from 'firebase/firestore'
+
 import { db } from '../../../../../services/firebase/firebase.js'
 import { clean } from '../leagues/leagueDoc.js'
 import {
@@ -32,6 +34,9 @@ import {
   compareSeasonKeys,
 } from '../../../domain/movement/index.js'
 import { countCurrentRosterPlayers } from '../../../model/team/rosterStatus.model.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { buildRosterSourceFingerprint } from './rosterSourceFingerprint.js'
+import { validatePlayerIdentityQueryManifest } from '../players/playerIdentity.resolve.js'
 
 const withRosterPerformanceContext = ({
   seasonDoc = {},
@@ -187,7 +192,7 @@ const resolvePreviousSeasonEntry = ({ seasons = [], seasonKey = '' } = {}) => (
     .sort((left, right) => compareSeasonKeys(right?.seasonKey, left?.seasonKey))[0] || null
 )
 
-const resolvePersistedRosterImport = ({
+export const resolvePersistedRosterImport = ({
   rosterImport = {},
   existingSeason = null,
   sourceSnapshotKeyExplicit = false,
@@ -203,6 +208,92 @@ const resolvePersistedRosterImport = ({
   return sameGeneratedSnapshot
     ? { ...incoming, sourceSnapshotKey: existing.sourceSnapshotKey }
     : incoming
+}
+
+
+export const buildPreparedTeamSeasonRoster = ({
+  season = {},
+  team = {},
+  players = [],
+  teamPerformance = null,
+  rosterImport = {},
+  movementState = null,
+  sourceSnapshotKeyExplicit = false,
+  rosterProjectionRevision = '',
+  existingSeason = null,
+} = {}) => {
+  const teamId = resolveTeamLookupKey(team)
+  if (!teamId) throw new Error('Missing birth team id')
+
+  const effectiveSeason = buildEffectiveSeason({ season })
+  const persistedSeasonScope = {
+    ...effectiveSeason,
+    seasonStatus: resolvePersistedSeasonStatus({
+      existingStatus: existingSeason?.seasonStatus,
+      incomingStatus: effectiveSeason.seasonStatus,
+    }),
+  }
+  const persistedRosterImport = resolvePersistedRosterImport({
+    rosterImport,
+    existingSeason,
+    sourceSnapshotKeyExplicit,
+  })
+  const normalizedMovementState = movementState && typeof movementState === 'object'
+    ? movementState
+    : createEmptyMovementState()
+  const existingPlayers = Array.isArray(existingSeason?.teamPlayers)
+    ? existingSeason.teamPlayers
+    : []
+  const nextPlayers = mergeRosterImportPlayers({
+    existingPlayers,
+    players,
+    season: persistedSeasonScope,
+    mode: persistedRosterImport.mode,
+  })
+  const baseSeasonDoc = existingSeason
+    ? normalizeTeamSeasonRosterState({
+      seasonDoc: existingSeason,
+      season: persistedSeasonScope,
+      team: { ...team, birthTeamDocumentId: teamId },
+      players: nextPlayers,
+    })
+    : buildTeamSeasonDoc({
+      season: persistedSeasonScope,
+      team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
+      players: nextPlayers,
+    })
+  const seasonDocWithoutBalance = withRosterPerformanceContext({
+    seasonDoc: {
+      ...baseSeasonDoc,
+      rosterImport: persistedRosterImport,
+      ...(rosterProjectionRevision ? { rosterProjectionRevision } : {}),
+      transfersIn: normalizedMovementState.transfersIn || [],
+      transfersOut: normalizedMovementState.transfersOut || [],
+      pendingPlayers: normalizedMovementState.pendingPlayers || [],
+      movementProjectionRevision: clean(rosterProjectionRevision),
+      resolvedRosterAbsences: normalizedMovementState.resolvedRosterAbsences || [],
+    },
+    existingSeason,
+    teamPerformance,
+  })
+  const seasonDoc = withTeamBalanceSnapshot({
+    seasonDoc: seasonDocWithoutBalance,
+    teamRoot: buildBalanceRootContext({ team, teamId }),
+  })
+  const persistedSeason = buildTeamSeasonDocumentData({
+    team: { ...team, birthTeamDocumentId: teamId },
+    season: persistedSeasonScope,
+    seasonDoc,
+    existingData: existingSeason || {},
+  })
+
+  return {
+    teamId,
+    persistedSeasonScope,
+    persistedRosterImport,
+    movementState: normalizedMovementState,
+    persistedSeason,
+  }
 }
 
 
@@ -233,14 +324,6 @@ export async function upsertTeamSeasonPlayers({
       transaction.get(seasonRef),
     ])
     const existingSeason = seasonSnapshot.exists() ? seasonSnapshot.data() || {} : null
-    const persistedSeasonScope = {
-      ...effectiveSeason,
-      seasonStatus: resolvePersistedSeasonStatus({
-        existingStatus: existingSeason?.seasonStatus,
-        incomingStatus: effectiveSeason.seasonStatus,
-      }),
-    }
-
     const previousEntry = resolvePreviousSeasonEntry({
       seasons: rootSnapshot.exists() ? rootSnapshot.data()?.seasons : [],
       seasonKey: effectiveSeason.seasonKey,
@@ -255,59 +338,180 @@ export async function upsertTeamSeasonPlayers({
       existingSeason,
       sourceSnapshotKeyExplicit,
     })
-    const normalizedMovementState = typeof reconcileMovement === 'function'
+    const resolvedMovementState = typeof reconcileMovement === 'function'
       ? reconcileMovement({
         currentSeason: existingSeason,
         previousSeason,
         rosterImport: persistedRosterImport,
       })
-      : movementState && typeof movementState === 'object'
-        ? movementState
-        : createEmptyMovementState()
-    const existingPlayers = Array.isArray(existingSeason?.teamPlayers)
-      ? existingSeason.teamPlayers
-      : []
-    const nextPlayers = mergeRosterImportPlayers({
-      existingPlayers,
+      : movementState
+    const prepared = buildPreparedTeamSeasonRoster({
+      season,
+      team,
       players,
-      season: persistedSeasonScope,
-      mode: persistedRosterImport.mode,
-    })
-    const baseSeasonDoc = existingSeason
-      ? normalizeTeamSeasonRosterState({
-        seasonDoc: existingSeason,
-        season: persistedSeasonScope,
-        team: { ...team, birthTeamDocumentId: teamId },
-        players: nextPlayers,
-      })
-      : buildTeamSeasonDoc({
-        season: persistedSeasonScope,
-        team: { ...team, birthTeamDocumentId: teamId, teamDocumentId: teamId },
-        players: nextPlayers,
-      })
-    const seasonDocWithoutBalance = withRosterPerformanceContext({
-      seasonDoc: {
-        ...baseSeasonDoc,
-        rosterImport: persistedRosterImport,
-        ...(rosterProjectionRevision ? { rosterProjectionRevision } : {}),
-        transfersIn: normalizedMovementState.transfersIn || [],
-        transfersOut: normalizedMovementState.transfersOut || [],
-        pendingPlayers: normalizedMovementState.pendingPlayers || [],
-        resolvedRosterAbsences: normalizedMovementState.resolvedRosterAbsences || [],
-      },
-      existingSeason,
       teamPerformance,
+      rosterImport: persistedRosterImport,
+      movementState: resolvedMovementState,
+      sourceSnapshotKeyExplicit: true,
+      rosterProjectionRevision,
+      existingSeason,
     })
-    const seasonDoc = withTeamBalanceSnapshot({
-      seasonDoc: seasonDocWithoutBalance,
-      teamRoot: buildBalanceRootContext({ team, teamId }),
+
+    const createdTeam = syncRootSeasonIndexInTransaction({
+      transaction,
+      rootRef,
+      team,
+      rootSnapshot,
+      season: prepared.persistedSeason,
     })
-    const persistedSeason = buildTeamSeasonDocumentData({
-      team: { ...team, birthTeamDocumentId: teamId },
-      season: persistedSeasonScope,
-      seasonDoc,
-      existingData: existingSeason || {},
+    transaction.set(seasonRef, prepared.persistedSeason)
+
+    return {
+      birthTeamDocumentId: teamId,
+      teamDocumentId: teamId,
+      teamSeasonDocumentId: seasonRef.id,
+      seasonId: prepared.persistedSeasonScope.seasonId,
+      seasonKey: prepared.persistedSeasonScope.seasonKey,
+      target: prepared.persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
+      playersCount: countCurrentRosterPlayers(prepared.persistedSeason.teamPlayers),
+      createdTeam,
+      players: prepared.persistedSeason.teamPlayers,
+      teamBalance: prepared.persistedSeason.teamBalance || null,
+      seasonDocument: prepared.persistedSeason,
+      movementState: prepared.movementState,
+      rosterImport: prepared.persistedRosterImport,
+      rosterProjectionRevision: prepared.persistedSeason.rosterProjectionRevision || '',
+    }
+  })
+}
+
+
+export async function commitApprovedTeamSeasonRoster({
+  plan = {},
+  team = {},
+} = {}) {
+  const teamId = clean(plan.birthTeamDocumentId || resolveTeamLookupKey(team))
+  const seasonKey = clean(plan.seasonKey)
+  const persistedSeason = plan.persistedSeason && typeof plan.persistedSeason === 'object'
+    ? plan.persistedSeason
+    : null
+
+  if (!teamId || !seasonKey || !persistedSeason) {
+    throw new Error('Missing approved roster import plan')
+  }
+
+  const identityManifestCurrent = await validatePlayerIdentityQueryManifest(
+    plan.identityQueryManifest || []
+  )
+  if (!identityManifestCurrent) {
+    const error = new Error('נתוני זיהוי השחקנים השתנו מאז בדיקת הסגל. יש להציג את הנתונים מחדש.')
+    error.code = 'ROSTER_IMPORT_PLAN_STALE'
+    error.staleSources = ['playerIdentity']
+    throw error
+  }
+
+  const rootRef = teamDocRef(teamId)
+  const seasonRef = teamSeasonDocRef({
+    birthTeamDocumentId: teamId,
+    seasonKey,
+  })
+
+  return trackedRunTransaction(db, async transaction => {
+    const leagueId = clean(plan.leagueId)
+    const leagueRef = leagueId
+      ? doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, leagueId)
+      : null
+    const [rootSnapshot, seasonSnapshot, leagueSnapshot] = await Promise.all([
+      transaction.get(rootRef),
+      transaction.get(seasonRef),
+      leagueRef ? transaction.get(leagueRef) : Promise.resolve(null),
+    ])
+    const currentRoot = rootSnapshot.exists() ? rootSnapshot.data() || {} : null
+    const currentLeague = leagueSnapshot?.exists() ? leagueSnapshot.data() || {} : null
+    const currentSeason = seasonSnapshot.exists() ? seasonSnapshot.data() || {} : null
+    const previousSeasonKey = clean(plan.previousSeasonKey)
+    const previousRef = previousSeasonKey
+      ? teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey: previousSeasonKey })
+      : null
+    const previousSnapshot = previousRef ? await transaction.get(previousRef) : null
+    const previousSeason = previousSnapshot?.exists() ? previousSnapshot.data() || {} : null
+    const identitySourceDocuments = Array.isArray(plan.identitySourceDocuments)
+      ? plan.identitySourceDocuments
+      : []
+    const identitySnapshots = await Promise.all(identitySourceDocuments.map(async source => {
+      const sourceId = clean(source.id)
+      const sourceRef = sourceId
+        ? doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, sourceId)
+        : null
+      const snapshot = sourceRef ? await transaction.get(sourceRef) : null
+
+      return {
+        expected: source,
+        data: snapshot?.exists() ? snapshot.data() || {} : null,
+      }
+    }))
+    const counterpartStates = Array.isArray(plan.counterpartStates)
+      ? plan.counterpartStates
+      : []
+    const counterpartSnapshots = await Promise.all(counterpartStates.map(async counterpart => {
+      const counterpartTeamId = clean(counterpart.birthTeamDocumentId)
+      const counterpartRootRef = counterpartTeamId ? teamDocRef(counterpartTeamId) : null
+      const counterpartRootSnapshot = counterpartRootRef
+        ? await transaction.get(counterpartRootRef)
+        : null
+      const checkedSeasons = Array.isArray(counterpart.checkedSeasons)
+        ? counterpart.checkedSeasons
+        : []
+      const seasonSnapshots = await Promise.all(checkedSeasons.map(async checked => {
+        const checkedSeasonKey = clean(checked.seasonKey)
+        const ref = counterpartTeamId && checkedSeasonKey
+          ? teamSeasonDocRef({
+            birthTeamDocumentId: counterpartTeamId,
+            seasonKey: checkedSeasonKey,
+          })
+          : null
+        const snapshot = ref ? await transaction.get(ref) : null
+        return {
+          expected: checked,
+          data: snapshot?.exists() ? snapshot.data() || {} : null,
+        }
+      }))
+
+      return {
+        expected: counterpart,
+        teamRoot: counterpartRootSnapshot?.exists() ? counterpartRootSnapshot.data() || {} : null,
+        seasonSnapshots,
+      }
+    }))
+    const fingerprints = plan.sourceFingerprints || {}
+    const staleSources = []
+    if (buildRosterSourceFingerprint(currentRoot) !== clean(fingerprints.teamRoot)) staleSources.push('teamRoot')
+    if (buildRosterSourceFingerprint(currentSeason) !== clean(fingerprints.currentSeason)) staleSources.push('currentSeason')
+    if (buildRosterSourceFingerprint(previousSeason) !== clean(fingerprints.previousSeason)) staleSources.push('previousSeason')
+    if (buildRosterSourceFingerprint(currentLeague) !== clean(fingerprints.league)) staleSources.push('league')
+    identitySnapshots.forEach(row => {
+      if (buildRosterSourceFingerprint(row.data) !== clean(row.expected.fingerprint)) {
+        staleSources.push('identity:' + clean(row.expected.id))
+      }
     })
+    counterpartSnapshots.forEach(row => {
+      const counterpartKey = clean(row.expected.birthTeamDocumentId) + ':' + clean(row.expected.seasonKey)
+      if (buildRosterSourceFingerprint(row.teamRoot) !== clean(row.expected.teamRootFingerprint)) {
+        staleSources.push('counterpartRoot:' + counterpartKey)
+      }
+      row.seasonSnapshots.forEach(seasonRow => {
+        if (buildRosterSourceFingerprint(seasonRow.data) !== clean(seasonRow.expected.fingerprint)) {
+          staleSources.push('counterpartSeason:' + counterpartKey + ':' + clean(seasonRow.expected.seasonKey))
+        }
+      })
+    })
+
+    if (staleSources.length) {
+      const error = new Error('נתוני הקבוצה השתנו מאז בדיקת הסגל. יש להציג את הנתונים מחדש.')
+      error.code = 'ROSTER_IMPORT_PLAN_STALE'
+      error.staleSources = staleSources
+      throw error
+    }
 
     const createdTeam = syncRootSeasonIndexInTransaction({
       transaction,
@@ -322,17 +526,17 @@ export async function upsertTeamSeasonPlayers({
       birthTeamDocumentId: teamId,
       teamDocumentId: teamId,
       teamSeasonDocumentId: seasonRef.id,
-      seasonId: persistedSeasonScope.seasonId,
-      seasonKey: persistedSeasonScope.seasonKey,
-      target: persistedSeasonScope.seasonStatus === 'completed' ? 'history' : 'current',
+      seasonId: clean(persistedSeason.seasonId),
+      seasonKey,
+      target: clean(persistedSeason.seasonStatus) === 'completed' ? 'history' : 'current',
       playersCount: countCurrentRosterPlayers(persistedSeason.teamPlayers),
       createdTeam,
-      players: persistedSeason.teamPlayers,
+      players: persistedSeason.teamPlayers || [],
       teamBalance: persistedSeason.teamBalance || null,
       seasonDocument: persistedSeason,
-      movementState: normalizedMovementState,
-      rosterImport: persistedRosterImport,
-      rosterProjectionRevision: persistedSeason.rosterProjectionRevision || '',
+      movementState: plan.movementState || createEmptyMovementState(),
+      rosterImport: persistedSeason.rosterImport || {},
+      rosterProjectionRevision: clean(persistedSeason.rosterProjectionRevision),
     }
   })
 }

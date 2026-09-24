@@ -59,7 +59,9 @@ export {
 
 export {
   resolveTeamPlayerIdentities,
+  resolveTeamPlayerIdentitiesWithSources,
   resolveTeamPlayerIdentityPreview,
+  validatePlayerIdentityQueryManifest,
 } from './playerIdentity.resolve.js'
 
 

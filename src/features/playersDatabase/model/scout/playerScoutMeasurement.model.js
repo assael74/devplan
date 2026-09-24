@@ -313,17 +313,7 @@ export const buildPlayerScoutStatsLoadMeasurementHistoryEvents = history => {
     .sort((left, right) => right.currentIndex - left.currentIndex)
 }
 
-export const buildPreviousProfileDistancesFromMeasurement = measurement => {
-  const normalized = normalizePlayerScoutStatsLoadMeasurement(measurement)
-  if (!normalized) return []
-
-  return normalized.profileStates
-    .filter(state => Number.isFinite(state.distance))
-    .map(state => ({
-      profileId: state.profileId,
-      distance: state.distance,
-    }))
-}
+export { buildPreviousProfileDistancesFromMeasurement } from '@devplan/players-scout-engine/players/index.js'
 
 export const buildPlayerScoutStatsLoadMeasurement = ({ player = {}, team = {}, capturedAt = '' } = {}) => {
   const statsSnapshot = buildPlayerStatsSnapshot({

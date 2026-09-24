@@ -125,6 +125,7 @@ export async function syncClubsMasterDocument({
   removedClubIds = [],
   projectionVersion = 1,
   lastWriteAction = '',
+  transactionGuard = null,
 } = {}) {
   const safeClubIds = [...new Set(
     (Array.isArray(clubIds) ? clubIds : []).map(clean).filter(Boolean)
@@ -137,6 +138,9 @@ export async function syncClubsMasterDocument({
 
   const result = await trackedRunTransaction(db, async transaction => {
     // Firestore transactions require all reads before writes.
+    const guardSnapshot = transactionGuard?.ref
+      ? await transaction.get(transactionGuard.ref)
+      : null
     const masterSnapshot = await transaction.get(masterRef())
     const clubSnapshots = []
 
@@ -145,6 +149,26 @@ export async function syncClubsMasterDocument({
         clubId,
         snapshot: await transaction.get(clubRef(clubId)),
       })
+    }
+
+    if (guardSnapshot) {
+      const guardField = clean(transactionGuard.field)
+      const expectedGuardValue = clean(transactionGuard.expected)
+      const currentGuardValue = clean(guardSnapshot.exists()
+        ? guardSnapshot.data()?.[guardField]
+        : '')
+
+      if (!guardSnapshot.exists() || !guardField || currentGuardValue !== expectedGuardValue) {
+        return {
+          updated: false,
+          changed: false,
+          writeSkipped: true,
+          guardSuperseded: true,
+          clubsCount: 0,
+          clubIds: safeClubIds,
+          removedClubIds: [...removedIds],
+        }
+      }
     }
 
     const existingMaster = masterSnapshot.exists()

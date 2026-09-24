@@ -5,7 +5,7 @@ import {
   PLAYER_TEAM_GATE_REASON,
 } from './playerTeamGate.js'
 import { TEAM_FILTER } from '../ids.js'
-import { buildPlayerScoutSignals } from '../engine.js'
+import { buildPlayerScoutResult, buildPlayerScoutSignals } from '../engine.js'
 
 const backThreatProfile = {
   teamFilter: TEAM_FILTER.DEFENSE_POSITIVE,

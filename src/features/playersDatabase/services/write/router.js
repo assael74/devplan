@@ -283,6 +283,14 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
   }
 
   if (result?.backgroundSyncPending) {
+    // The canonical source has already changed. The projection job may take
+    // longer, but the next UI read must never reuse the pre-write snapshot.
+    invalidatePlayersDatabaseWriteCache({
+      actionType,
+      payload: actionPayload,
+      result,
+    })
+
     const auditScope = buildActionAuditScope({ actionType, payload: actionPayload, result })
     if (auditScope) rememberLastWriteAuditScope(auditScope)
     if (!result?.writeActionLinkedInCanonicalCommit) {

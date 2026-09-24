@@ -19,14 +19,17 @@ const serializeCounterpartRequests = requests => (Array.isArray(requests) ? requ
     movementId: clean(request?.movementId),
     playerId: clean(request?.playerId),
     seasonKey: clean(request?.seasonKey),
+    counterpartSeasonKey: clean(request?.counterpartSeasonKey || request?.seasonKey),
     counterpartBirthTeamDocumentId: clean(request?.counterpartBirthTeamDocumentId || request?.sourceBirthTeamDocumentId),
+    counterpartRosterProjectionRevision: clean(request?.counterpartRosterProjectionRevision),
+    counterpartMovementProjectionRevision: clean(request?.counterpartMovementProjectionRevision),
     side: request?.incoming ? 'transfersIn' : request?.outgoing ? 'transfersOut' : '',
   }))
-  .filter(request => request.movementId && request.playerId && request.seasonKey && request.counterpartBirthTeamDocumentId && request.side)
+  .filter(request => request.movementId && request.playerId && request.seasonKey && request.counterpartSeasonKey && request.counterpartBirthTeamDocumentId && request.side)
 
 export async function queueTeamRosterProjectionJob({
   league = {}, season = {}, team = {}, teamSeasonDocumentId = '', sourceRevision = '',
-  counterpartRequests = [], writeActionId = '',
+  counterpartRequests = [], approvedSyncPayload = null, writeActionId = '',
 } = {}) {
   const teamId = clean(team.birthTeamDocumentId || team.teamDocumentId || team.birthTeamId || team.teamId)
   const seasonId = clean(season.seasonId)
@@ -47,6 +50,9 @@ export async function queueTeamRosterProjectionJob({
       team: { id: teamId, birthTeamDocumentId: teamId },
     },
     counterpartRequests: serializeCounterpartRequests(counterpartRequests),
+    approvedSyncPayload: approvedSyncPayload && typeof approvedSyncPayload === 'object'
+      ? approvedSyncPayload
+      : null,
     stages: {
       canonicalSource: 'pending', playerIndexes: 'pending',
       teamAndLeagueIndexes: 'pending', clubProjection: 'pending', transfers: 'pending',

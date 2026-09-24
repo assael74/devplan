@@ -3,6 +3,7 @@ const { randomUUID } = require('crypto')
 
 const COLLECTION = 'dbTeamRosterProjectionJobs'
 const LEASE_MS = 10 * 60 * 1000
+const PREPARING_RECOVERY_GRACE_MS = 2 * 60 * 1000
 const ref = id => db.collection(COLLECTION).doc(id)
 
 const isCurrentAttempt = ({ job = {}, sourceRevision, attemptToken }) => (
@@ -82,21 +83,54 @@ async function fail({ jobId, sourceRevision, attemptToken, error }) {
 }
 
 async function requeueExpiredTeamRosterProjectionJobs() {
-  const snapshot = await db.collection(COLLECTION)
-    .where('status', '==', 'processing')
-    .where('leaseExpiresAt', '<=', admin.firestore.Timestamp.now()).limit(25).get()
-  await Promise.all(snapshot.docs.map(item => db.runTransaction(async transaction => {
+  const now = Date.now()
+  const [processingSnapshot, preparingSnapshot] = await Promise.all([
+    db.collection(COLLECTION)
+      .where('status', '==', 'processing')
+      .where('leaseExpiresAt', '<=', admin.firestore.Timestamp.now())
+      .limit(25)
+      .get(),
+    db.collection(COLLECTION)
+      .where('status', '==', 'preparing')
+      .limit(25)
+      .get(),
+  ])
+
+  const candidates = [...processingSnapshot.docs, ...preparingSnapshot.docs]
+  const recovered = await Promise.all(candidates.map(item => db.runTransaction(async transaction => {
     const current = await transaction.get(item.ref)
     const job = current.exists ? current.data() || {} : null
-    if (job?.status !== 'processing' || (job.leaseExpiresAt?.toMillis?.() || 0) > Date.now()) return false
+    if (!job) return false
+
+    const processingExpired = (
+      job.status === 'processing' &&
+      (job.leaseExpiresAt?.toMillis?.() || 0) <= Date.now()
+    )
+    const preparingSince = job.updatedAt?.toMillis?.() || job.requestedAt?.toMillis?.() || 0
+    const preparingAbandoned = (
+      job.status === 'preparing' &&
+      preparingSince > 0 &&
+      preparingSince <= Date.now() - PREPARING_RECOVERY_GRACE_MS
+    )
+
+    if (!processingExpired && !preparingAbandoned) return false
+
     transaction.update(item.ref, {
-      status: 'queued', attemptToken: null, leaseExpiresAt: null,
+      status: 'queued',
+      attemptToken: null,
+      leaseExpiresAt: null,
       recoveryRequestedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     })
     return true
   })))
-  return { scannedCount: snapshot.size }
+
+  return {
+    scannedCount: candidates.length,
+    recoveredCount: recovered.filter(Boolean).length,
+    expiredProcessingCount: processingSnapshot.size,
+    preparingCandidateCount: preparingSnapshot.size,
+  }
 }
 
 module.exports = { claimTeamRosterProjectionJob, updateStage, complete, supersede, fail, requeueExpiredTeamRosterProjectionJobs }

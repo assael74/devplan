@@ -5,45 +5,28 @@ import {
   collection,
   documentId,
   query,
-  serverTimestamp,
   where,
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { areComparableValuesEqual } from '../../shared/valueComparison.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { clean } from '../leagues/leagueDoc.js'
 import {
-  buildSeasonKey,
-  clean,
-} from '../leagues/leagueDoc.js'
-import {
-  buildPlayerBaseDoc,
   buildPlayerDocumentId,
   hasPlayerScoutProfiles,
-  playerDocRef,
 } from './playerDoc.model.js'
 import {
-  buildPlayerSeasonCompactProjection,
-  removePlayerSeasonRow,
-} from './playerSeason.model.js'
+  buildClearPlayerSeasonProfilesPlan,
+  buildProfiledPlayerDocPlan,
+} from './playerDoc.plan.js'
 import { upsertProfiledPlayerDoc } from './playerDoc.upsert.js'
-import {
-  normalizeScoutingPlayerEvents,
-  normalizeScoutingPlayerTracking,
-  resolvePlayerLifecycleTrackingReason,
-  resolvePlayerTrackingReasons,
-  shouldHavePlayerDocument,
-} from './scoutingPlayerLifecycle.model.js'
-import { normalizeScoutingPlayerVerification } from './scoutingPlayerVerification.model.js'
+import { resolvePlayerLifecycleTrackingReason } from './scoutingPlayerLifecycle.model.js'
 import {
   buildPlayerScoutState,
   isScoutCalculationExcludedRosterStatus,
 } from '../../../domain/orchestration/buildPlayerScoutState.js'
 
-import {
-  trackedGetDocs,
-  trackedRunTransaction,
-} from '../../../../../services/firestore/usage/index.js'
+import { trackedGetDocs } from '../../../../../services/firestore/usage/index.js'
 
 
 const PLAYER_DOCUMENT_LOOKUP_LIMIT = 30
@@ -77,29 +60,36 @@ export async function resolveExistingPlayerDocumentIds(players = []) {
   return existingIds
 }
 
-const isSamePersistedState = (current = {}, next = {}) => (
-  areComparableValuesEqual(current, next, { omitKeys: ['updatedAt'] })
-)
+export async function resolvePlayerDocumentSnapshots(players = []) {
+  const playerDocumentIds = [...new Set(
+    (Array.isArray(players) ? players : [])
+      .map(player => buildPlayerDocumentId(player))
+      .filter(Boolean)
+  )]
+  const documents = new Map()
 
-const buildCompatibleTracking = data => {
-  const current = normalizeScoutingPlayerTracking({
-    ...(data?.tracking || {}),
-    favorite:
-      data?.tracking?.favorite === true ||
-      data?.favorite === true,
-    watchlist:
-      data?.tracking?.watchlist === true ||
-      data?.watchlist === true,
-  })
+  for (const idChunk of chunkValues(playerDocumentIds, PLAYER_DOCUMENT_LOOKUP_LIMIT)) {
+    const snapshot = await trackedGetDocs(
+      query(
+        collection(db, PLAYERS_DATABASE_COLLECTIONS.players),
+        where(documentId(), 'in', idChunk)
+      ),
+      {
+        feature: 'playersDatabase',
+        collection: PLAYERS_DATABASE_COLLECTIONS.players,
+        action: 'playerScoutProfileDocs-snapshots',
+        operationSubtype: 'maintenance-query',
+      }
+    )
 
-  return {
-    ...current,
-    trackingReasons: resolvePlayerTrackingReasons({
-      ...data,
-      tracking: current,
-    }),
+    snapshot.docs.forEach(playerDocument => {
+      documents.set(playerDocument.id, playerDocument.data() || {})
+    })
   }
+
+  return documents
 }
+
 
 export const clearExistingPlayerSeasonProfiles = async ({
   season = {},
@@ -107,167 +97,28 @@ export const clearExistingPlayerSeasonProfiles = async ({
   target = 'current',
   player = {},
   retainPlayerDocument = false,
+  approvedPlan = null,
 } = {}) => {
-  const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
-  const seasonId = clean(season.seasonId)
-  if (!playerDocumentId) return {
-    skipped: true,
-    reason: 'missingPlayerDocumentId',
-  }
-  if (!seasonId) throw new Error('Missing season id')
+  let plan = approvedPlan
 
-  const ref = playerDocRef(playerDocumentId)
+  if (!plan) {
+    const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
+    if (!playerDocumentId) return { skipped: true, reason: 'missingPlayerDocumentId' }
 
-  return trackedRunTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) {
-      return {
-        playerDocumentId,
-        updated: false,
-        skipped: true,
-        reason: 'playerDocMissing',
-      }
-    }
-
-    const currentData = snapshot.data() || {}
-    const baseDoc = buildPlayerBaseDoc(
-      {
-        ...player,
-        playerDocumentId,
-      },
-      currentData,
+    const playerDocuments = await resolvePlayerDocumentSnapshots([{ ...player, playerDocumentId }])
+    const currentData = playerDocuments.get(playerDocumentId) || {}
+    plan = buildClearPlayerSeasonProfilesPlan({
       season,
-      team
-    )
-    const seasonKey = clean(season.seasonKey) || buildSeasonKey(seasonId)
-    const isHistory = clean(target) === 'history'
-    const seasonStatus = isHistory || clean(season.seasonStatus) === 'completed'
-      ? 'completed'
-      : 'active'
-    const seasonScope = {
-      ...season,
-      seasonId,
-      seasonKey,
-      seasonStatus,
-    }
-    const currentWithoutSeason = removePlayerSeasonRow({
-      rows: baseDoc.current,
-      season: seasonScope,
       team,
+      target,
+      player: { ...player, playerDocumentId },
+      currentData,
+      playerDocumentExists: playerDocuments.has(playerDocumentId),
+      retainPlayerDocument,
     })
-    const historyWithoutSeason = removePlayerSeasonRow({
-      rows: baseDoc.history,
-      season: seasonScope,
-      team,
-    })
-    const hadSeasonRow = (
-      currentWithoutSeason.length !== baseDoc.current.length ||
-      historyWithoutSeason.length !== baseDoc.history.length
-    )
-    if (!hadSeasonRow) {
-      return {
-        playerDocumentId,
-        updated: false,
-        skipped: true,
-        reason: 'playerSeasonMissing',
-      }
-    }
-    const seasonDoc = buildPlayerSeasonCompactProjection({
-      season: seasonScope,
-      team,
-      player: {
-        ...player,
-        scoutSignals: [],
-        scoutProfiles: [],
-        scoutCombinations: [],
-      },
-    })
-    const nextCurrent = isHistory
-      ? currentWithoutSeason
-      : [...currentWithoutSeason, seasonDoc]
-    const nextHistory = isHistory
-      ? [...historyWithoutSeason, seasonDoc]
-      : historyWithoutSeason
+  }
 
-    const nextTrackingSource = {
-      ...currentData,
-      current: nextCurrent,
-      history: nextHistory,
-    }
-
-    const nextPayload = {
-      favorite:
-        currentData.favorite === true ||
-        currentData.tracking?.favorite === true,
-      tracking: buildCompatibleTracking(nextTrackingSource),
-      verification: normalizeScoutingPlayerVerification(
-        currentData.verification
-      ),
-      events: normalizeScoutingPlayerEvents(currentData.events),
-      current: nextCurrent,
-      history: nextHistory,
-    }
-    const nextPlayerDocument = {
-      ...currentData,
-      ...nextPayload,
-      current: nextCurrent,
-      history: nextHistory,
-    }
-    const currentPayload = {
-      favorite: currentData.favorite === true,
-      tracking: currentData.tracking || {},
-      verification: currentData.verification || {},
-      events: currentData.events || [],
-      ...(isHistory
-        ? { history: Array.isArray(currentData.history) ? currentData.history : [] }
-        : { current: Array.isArray(currentData.current) ? currentData.current : [] }),
-    }
-
-    const hasRetainedSeasonHistory = (
-      currentWithoutSeason.length > 0 ||
-      historyWithoutSeason.length > 0
-    )
-    if (
-      !shouldHavePlayerDocument(nextPlayerDocument) &&
-      (!retainPlayerDocument || !hasRetainedSeasonHistory)
-    ) {
-      transaction.delete(ref)
-      return {
-        playerDocumentId,
-        updated: true,
-        deleted: true,
-        changed: true,
-        scoutProfilesCount: 0,
-      }
-    }
-
-    if (isSamePersistedState(currentPayload, nextPayload)) {
-      return {
-        playerDocumentId,
-        updated: true,
-        changed: false,
-        writeSkipped: true,
-        scoutProfilesCount: 0,
-      }
-    }
-
-    transaction.set(
-      ref,
-      {
-        ...nextPayload,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    )
-
-    return {
-      playerDocumentId,
-      updated: true,
-      changed: true,
-      writeSkipped: false,
-      scoutProfilesCount: 0,
-    }
-  })
+  return upsertProfiledPlayerDoc({ approvedPlan: plan })
 }
 
 export async function clearExistingPlayerSeasonProfilesMany({
@@ -310,16 +161,27 @@ export async function upsertProfiledPlayerDocsMany({
   const profiledPlayers = (Array.isArray(players) ? players : [])
     .filter(player => !isScoutCalculationExcludedRosterStatus(player))
     .filter(hasPlayerScoutProfiles)
-  const results = []
+  const playerDocuments = await resolvePlayerDocumentSnapshots(profiledPlayers)
+  const trackedAt = new Date().toISOString()
+  const plans = profiledPlayers.map(player => {
+    const playerDocumentId = buildPlayerDocumentId(player)
+    const currentData = playerDocuments.get(playerDocumentId) || {}
 
-  for (const player of profiledPlayers) {
-    results.push(await upsertProfiledPlayerDoc({
+    return buildProfiledPlayerDocPlan({
       season,
       team,
       target,
       player,
       teamSeasonDocument,
-    }))
+      currentData,
+      playerDocumentExists: playerDocuments.has(playerDocumentId),
+      trackedAt,
+    })
+  })
+  const results = []
+
+  for (const approvedPlan of plans) {
+    results.push(await upsertProfiledPlayerDoc({ approvedPlan }))
   }
 
   return {
@@ -347,15 +209,20 @@ export async function syncPlayerRoleAndScoutProfileDoc({
   // clear a previously calculated profile from the Team Season projection.
   if (isScoutCalculationExcludedRosterStatus(player)) {
     const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
-    const existingPlayerDocumentIds = playerDocumentId
-      ? await resolveExistingPlayerDocumentIds([{
+    const playerDocuments = playerDocumentId
+      ? await resolvePlayerDocumentSnapshots([{
           ...player,
           playerDocumentId,
         }])
-      : new Set()
-    const playerDocumentExists = existingPlayerDocumentIds.has(playerDocumentId)
-    const cleared = playerDocumentExists
-      ? await clearExistingPlayerSeasonProfiles({
+      : new Map()
+    const playerDocumentExists = playerDocuments.has(playerDocumentId)
+    const currentData = playerDocuments.get(playerDocumentId) || {}
+    const scoutedPlayer = {
+      ...buildPlayerScoutState({ player, team, season }),
+      ...(playerDocumentExists ? { playerDocumentId } : {}),
+    }
+    const approvedPlan = playerDocumentExists
+      ? buildClearPlayerSeasonProfilesPlan({
           season,
           team,
           target,
@@ -364,7 +231,12 @@ export async function syncPlayerRoleAndScoutProfileDoc({
             ...player,
             playerDocumentId,
           },
+          currentData,
+          playerDocumentExists,
         })
+      : null
+    const cleared = approvedPlan
+      ? await upsertProfiledPlayerDoc({ approvedPlan })
       : {
           skipped: true,
           reason: 'outOfRosterScopePlayerDocumentNotCreated',
@@ -376,22 +248,117 @@ export async function syncPlayerRoleAndScoutProfileDoc({
       created: false,
       scoutProfilesCount: 0,
       lifecycle: 'out_of_roster_scope',
-      scoutedPlayer: {
-        ...buildPlayerScoutState({ player, team, season }),
-        ...(playerDocumentExists ? { playerDocumentId } : {}),
-      },
+      scoutedPlayer,
     }
   }
 
-  return upsertProfiledPlayerDoc({
+  const playerDocumentId = buildPlayerDocumentId(player)
+  const playerDocuments = await resolvePlayerDocumentSnapshots([player])
+  const currentData = playerDocuments.get(playerDocumentId) || {}
+  const approvedPlan = buildProfiledPlayerDocPlan({
     season,
     team,
     target,
     player,
     teamSeasonDocument,
+    currentData,
+    playerDocumentExists: playerDocuments.has(playerDocumentId),
     verificationAnswers,
     resolveLifecycleAfterCalculation: true,
+    trackedAt: new Date().toISOString(),
   })
+
+  return upsertProfiledPlayerDoc({ approvedPlan })
+}
+
+export async function preparePlayerScoutProfileDocsPlan({
+  season = {},
+  team = {},
+  target = 'current',
+  players = [],
+  teamSeasonDocument = null,
+  trackedAt = '',
+} = {}) {
+  const safePlayers = Array.isArray(players) ? players : []
+  const effectiveTrackedAt = clean(trackedAt) || new Date().toISOString()
+  const playerDocuments = await resolvePlayerDocumentSnapshots(safePlayers)
+  const entries = []
+  let skippedUntrackedCount = 0
+
+  for (const player of safePlayers) {
+    const playerDocumentId = clean(player.playerDocumentId) || buildPlayerDocumentId(player)
+    const playerDocumentExists = playerDocuments.has(playerDocumentId)
+    const currentData = playerDocuments.get(playerDocumentId) || {}
+    const shouldSync = (
+      isScoutCalculationExcludedRosterStatus(player) ||
+      hasPlayerScoutProfiles(player) ||
+      Boolean(resolveTrackingDocReason(player)) ||
+      Boolean(clean(player.playerDocumentId)) ||
+      playerDocumentExists
+    )
+
+    if (!shouldSync) {
+      skippedUntrackedCount += 1
+      continue
+    }
+
+    if (isScoutCalculationExcludedRosterStatus(player)) {
+      const scoutedPlayer = {
+        ...buildPlayerScoutState({ player, team, season }),
+        ...(playerDocumentExists ? { playerDocumentId } : {}),
+      }
+      const approvedPlan = playerDocumentExists
+        ? buildClearPlayerSeasonProfilesPlan({
+            season,
+            team,
+            target,
+            retainPlayerDocument: true,
+            player: { ...player, playerDocumentId },
+            currentData,
+            playerDocumentExists,
+          })
+        : {
+            playerDocumentId,
+            action: 'skip',
+            skipped: true,
+            reason: 'outOfRosterScopePlayerDocumentNotCreated',
+          }
+
+      entries.push({
+        player,
+        approvedPlan,
+        scoutedPlayer,
+        lifecycle: 'out_of_roster_scope',
+      })
+      continue
+    }
+
+    const approvedPlan = buildProfiledPlayerDocPlan({
+      season,
+      team,
+      target,
+      player,
+      teamSeasonDocument,
+      currentData,
+      playerDocumentExists,
+      resolveLifecycleAfterCalculation: true,
+      trackedAt: effectiveTrackedAt,
+    })
+
+    entries.push({
+      player,
+      approvedPlan,
+      scoutedPlayer: approvedPlan.scoutedPlayer || null,
+      lifecycle: approvedPlan.lifecycle || '',
+    })
+  }
+
+  return {
+    trackedAt: effectiveTrackedAt,
+    skippedUntrackedCount,
+    entries,
+    scoutedPlayers: entries.map(entry => entry.scoutedPlayer).filter(Boolean),
+  }
 }
 
 export async function syncPlayerScoutProfileDocsMany({
@@ -401,37 +368,31 @@ export async function syncPlayerScoutProfileDocsMany({
   players = [],
   teamSeasonDocument = null,
   beforeEach = null,
+  approvedPlan = null,
 } = {}) {
-  const safePlayers = Array.isArray(players) ? players : []
-  const lookupPlayers = safePlayers.filter(player => (
-    !hasPlayerScoutProfiles(player) &&
-    !clean(player.playerDocumentId) &&
-    !resolveTrackingDocReason(player)
-  ))
-  const existingPlayerDocumentIds = lookupPlayers.length
-    ? await resolveExistingPlayerDocumentIds(lookupPlayers)
-    : new Set()
-  const playersToSync = safePlayers.filter(player => (
-    isScoutCalculationExcludedRosterStatus(player) ||
-    hasPlayerScoutProfiles(player) ||
-    Boolean(resolveTrackingDocReason(player)) ||
-    Boolean(clean(player.playerDocumentId)) ||
-    existingPlayerDocumentIds.has(buildPlayerDocumentId(player))
-  ))
-  const skippedUntrackedCount = safePlayers.length - playersToSync.length
+  const prepared = approvedPlan || await preparePlayerScoutProfileDocsPlan({
+    season,
+    team,
+    target,
+    players,
+    teamSeasonDocument,
+  })
   const results = []
   const failures = []
 
-  for (const player of playersToSync) {
+  for (const entry of (Array.isArray(prepared.entries) ? prepared.entries : [])) {
+    const { player = {}, approvedPlan: playerPlan, scoutedPlayer = null, lifecycle = '' } = entry
     try {
       if (typeof beforeEach === 'function') await beforeEach(player)
-      results.push(await syncPlayerRoleAndScoutProfileDoc({
-        season,
-        team,
-        target,
-        player,
-        teamSeasonDocument,
-      }))
+      const written = await upsertProfiledPlayerDoc({ approvedPlan: playerPlan })
+      results.push({
+        ...written,
+        ...(scoutedPlayer ? { scoutedPlayer } : {}),
+        ...(lifecycle ? { lifecycle } : {}),
+        scoutProfilesCount: Number.isFinite(written?.scoutProfilesCount)
+          ? written.scoutProfilesCount
+          : (Array.isArray(scoutedPlayer?.scoutProfiles) ? scoutedPlayer.scoutProfiles.length : 0),
+      })
     } catch (error) {
       failures.push({
         playerDocumentId: clean(
@@ -452,7 +413,7 @@ export async function syncPlayerScoutProfileDocsMany({
       result => result.updated && result.scoutProfilesCount === 0
     ).length,
     unchangedCount: results.filter(result => result.writeSkipped).length,
-    skippedCount: skippedUntrackedCount + results.filter(result => result.skipped).length,
+    skippedCount: Number(prepared.skippedUntrackedCount || 0) + results.filter(result => result.skipped).length,
     failedCount: failures.length,
     failures,
     playerDocumentIds: results
@@ -465,8 +426,8 @@ export async function syncPlayerScoutProfileDocsMany({
         clean(result.playerDocumentId)
       ))
       .map(result => clean(result.playerDocumentId)),
-    scoutedPlayers: results
-      .map(result => result.scoutedPlayer)
-      .filter(Boolean),
+    scoutedPlayers: Array.isArray(prepared.scoutedPlayers)
+      ? prepared.scoutedPlayers
+      : results.map(result => result.scoutedPlayer).filter(Boolean),
   }
 }

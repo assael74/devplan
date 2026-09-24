@@ -250,6 +250,8 @@ export default function StatsImportModal({
     !hasTeamPlayers ||
     controller.hasInvalidRows ||
     controller.movementPreview.requiresDecision ||
+    controller.approvedStatsPlanPreparing ||
+    !controller.approvedStatsPlan ||
     !contextReady
   )
   const confirmDisabled = activeStep === 3
@@ -359,37 +361,55 @@ export default function StatsImportModal({
         ) : null}
 
         {activeStep === 2 ? (
-          <PreviewTable
-            columns={columns}
-            rows={controller.rows}
-            onCellChange={controller.changeCell}
-            getRowStatus={controller.getRowStatus}
-            getCellStatus={controller.getCellStatus}
-            showSummaryCounts={false}
-            summary={[
-              {
-                key: 'roster-exceptions',
-                render: () => (
-                  <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
-                ),
-              },
-              {
-                key: 'movement-preview',
-                render: () => (
-                  <MovementPreviewChips preview={controller.movementPreview} />
-                ),
-              },
-              ...validationChecks.map(check => ({
-                key: check.code,
-                render: () => (
-                  <ValidationCheckChip
-                    check={check}
-                    onApplyMinutesAdjustment={controller.applyEqualMinutesReduction}
-                  />
-                ),
-              })),
-            ]}
-          />
+          <>
+            {controller.approvedStatsPlanError ? (
+              <Stack spacing={1} alignItems='flex-start'>
+                <Typography level='body-sm' color='danger'>
+                  הכנת תוכנית הטעינה נכשלה. אפשר לנסות שוב ללא שינוי הנתונים.
+                </Typography>
+                <Button
+                  size='sm'
+                  color='danger'
+                  variant='soft'
+                  loading={controller.approvedStatsPlanPreparing}
+                  onClick={controller.retryApprovedStatsPlan}
+                >
+                  נסה שוב
+                </Button>
+              </Stack>
+            ) : null}
+            <PreviewTable
+              columns={columns}
+              rows={controller.rows}
+              onCellChange={controller.changeCell}
+              getRowStatus={controller.getRowStatus}
+              getCellStatus={controller.getCellStatus}
+              showSummaryCounts={false}
+              summary={[
+                {
+                  key: 'roster-exceptions',
+                  render: () => (
+                    <RosterExceptionsChip summary={controller.rosterExceptionsSummary} />
+                  ),
+                },
+                {
+                  key: 'movement-preview',
+                  render: () => (
+                    <MovementPreviewChips preview={controller.movementPreview} />
+                  ),
+                },
+                ...validationChecks.map(check => ({
+                  key: check.code,
+                  render: () => (
+                    <ValidationCheckChip
+                      check={check}
+                      onApplyMinutesAdjustment={controller.applyEqualMinutesReduction}
+                    />
+                  ),
+                })),
+              ]}
+            />
+          </>
         ) : null}
 
         {activeStep === 3 ? (

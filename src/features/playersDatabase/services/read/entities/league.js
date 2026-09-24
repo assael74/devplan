@@ -70,9 +70,11 @@ export async function hasLeagueById(leagueId) {
   return Boolean(await getLeagueById(leagueId))
 }
 
-export async function getLeagueById(leagueId) {
+export async function getLeagueById(leagueId, { bypassCache = false } = {}) {
   const safeLeagueId = clean(leagueId)
   if (!safeLeagueId) return null
+
+  if (bypassCache) return readLeagueDocumentFromFirestore(safeLeagueId)
 
   return readWithDocumentCache({
     key: buildLeagueDocumentCacheKey(safeLeagueId),

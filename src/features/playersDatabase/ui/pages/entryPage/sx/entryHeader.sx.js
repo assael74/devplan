@@ -1,7 +1,5 @@
 // features/playersDatabase/ui/pages/entryPage/sx/EntryHeader.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
-
 export const entryHeaderSx = {
   header: {
     minWidth: 0,
@@ -39,20 +37,14 @@ export const entryHeaderSx = {
     justifyContent: 'flex-end',
   },
 
-  pageTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 40,
-      md: 54,
+  scoutIqImage: {
+    width: {
+      xs: 'min(100%, 410px)',
+      md: 460,
     },
-    lineHeight: 1.05,
-    fontWeight: 700,
-  },
-
-  pageDescription: {
-    maxWidth: 680,
-    color: devPlanColors.secondary,
-    lineHeight: 1.55,
-    textAlign: 'left',
+    maxWidth: '100%',
+    height: 'auto',
+    display: 'block',
+    objectFit: 'contain',
   },
 }

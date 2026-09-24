@@ -40,6 +40,7 @@ export async function syncClubProjectionPersistence({
   lastWriteAction = '',
   recoveryScope = {},
   syncMaster = true,
+  transactionGuard = null,
 } = {}) {
   const scope = buildClubProjectionRecoveryScope({
     clubId: clubIdentity?.clubId || clubIdentity?.id,
@@ -67,6 +68,7 @@ export async function syncClubProjectionPersistence({
       propagateCompetitionTeamSlot,
       projectionVersion,
       lastWriteAction,
+      transactionGuard,
     })
   } catch (cause) {
     const completion = buildClubProjectionCompletion({
@@ -83,6 +85,23 @@ export async function syncClubProjectionPersistence({
       recoveryScope: scope,
       results: { club: clubResult, master: masterResult },
     })
+  }
+
+  if (clubResult?.guardSuperseded) {
+    return {
+      canonicalCommitted: Boolean(canonicalCommitted),
+      projectionsCompleted: false,
+      clubDocumentCompleted: false,
+      clubsMasterCompleted: false,
+      recoveryRequired: false,
+      completed: false,
+      guardSuperseded: true,
+      recoveryScope: scope,
+      results: {
+        club: clubResult,
+        master: null,
+      },
+    }
   }
 
   if (!syncMaster) {
@@ -107,6 +126,7 @@ export async function syncClubProjectionPersistence({
       clubIds: [clubResult.clubId],
       projectionVersion,
       lastWriteAction,
+      transactionGuard,
     })
   } catch (cause) {
     const completion = buildClubProjectionCompletion({
@@ -123,6 +143,23 @@ export async function syncClubProjectionPersistence({
       recoveryScope: scope,
       results: { club: clubResult, master: masterResult },
     })
+  }
+
+  if (masterResult?.guardSuperseded) {
+    return {
+      canonicalCommitted: Boolean(canonicalCommitted),
+      projectionsCompleted: false,
+      clubDocumentCompleted: true,
+      clubsMasterCompleted: false,
+      recoveryRequired: false,
+      completed: false,
+      guardSuperseded: true,
+      recoveryScope: scope,
+      results: {
+        club: clubResult,
+        master: masterResult,
+      },
+    }
   }
 
   return {

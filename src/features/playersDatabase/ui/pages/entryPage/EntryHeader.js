@@ -3,10 +3,10 @@
 import {
   Box,
   Stack,
-  Typography,
 } from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
+import scoutIqTextImage from '../../../../../ui/core/images/scoutIQ&text.png'
 import { DataPreviewGraphic } from './EntryVisuals.js'
 import { entryHeaderSx as sx } from './sx/entryHeader.sx.js'
 
@@ -20,15 +20,12 @@ export default function EntryHeader({ breadcrumbs }) {
       <Stack spacing={1.25} sx={sx.headerContent}>
         <Breadcrumbs items={breadcrumbs} />
 
-        <Typography level='h1' sx={sx.pageTitle}>
-          מאגר שחקנים חיצוני
-        </Typography>
-
-        <Typography level='body-lg' sx={sx.pageDescription}>
-          כל המידע במקום אחד: ליגות, קבוצות, סגלים,
-          סטטיסטיקות ואיתור מועמדים שמתאימים לפרופיל
-          הסקאוט שלכם.
-        </Typography>
+        <Box
+          component='img'
+          src={scoutIqTextImage}
+          alt='ScoutIQ'
+          sx={sx.scoutIqImage}
+        />
       </Stack>
     </Box>
   )

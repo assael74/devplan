@@ -1,10 +1,6 @@
 // features/playersDatabase/ui/pages/entryPage/EntryPage.js
 
-import {
-  Box,
-  Stack,
-  Typography,
-} from '@mui/joy'
+import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
@@ -70,20 +66,6 @@ export default function EntryPage() {
                 iconId='stats'
               />
             </Box>
-          </InfoPanel>
-
-          <InfoPanel title='מה אפשר לעשות כאן?'>
-            <Stack spacing={1.1} className='dpScrollThin' sx={sx.capabilities}>
-              <Typography level='body-md'>
-                לזהות קבוצות חריגות לפי ביצועים מול מיקום בטבלה.
-              </Typography>
-              <Typography level='body-md'>
-                לטענן סגלים וסטטיסטיקות בלי לפתוח מסמכי שחקן כל פעם.
-              </Typography>
-              <Typography level='body-md'>
-                לאתר מועדונים לפי פרופילי סקאוט ושכבת עונה.
-              </Typography>
-            </Stack>
           </InfoPanel>
         </Box>
       </Box>

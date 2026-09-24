@@ -38,12 +38,14 @@ export async function readClubsMasterDocument({ fresh = false } = {}) {
       if (!snapshot.exists()) {
         return {
           id: CLUBS_MASTER_DOCUMENT_ID,
+          exists: false,
           ...CLUBS_MASTER_DATABASE_GENERIC_OBJECTS_CATALOG,
         }
       }
 
       return {
         id: snapshot.id,
+        exists: true,
         ...snapshot.data(),
       }
     },

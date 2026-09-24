@@ -155,48 +155,149 @@ const findScoutedPlayer = ({ player = {}, scoutedPlayers = [] } = {}) => {
   )) || null
 }
 
-export async function updateTeamSeasonPlayersScoutProjections({ season = {}, team = {}, scoutedPlayers = [] } = {}) {
+export function buildTeamSeasonPlayersScoutProjectionPlan({
+  current = {},
+  season = {},
+  team = {},
+  scoutedPlayers = [],
+} = {}) {
+  const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
+  const nextPlayers = players.map(player => {
+    if (isScoutCalculationExcludedRosterStatus(player)) {
+      return {
+        ...player,
+        ...buildTeamPlayerScoutProjection(buildPlayerScoutState({
+          player,
+          team,
+          season,
+        })),
+      }
+    }
+
+    const scouted = findScoutedPlayer({ player, scoutedPlayers })
+    return scouted ? {
+      ...player,
+      ...(clean(scouted.playerDocumentId)
+        ? { playerDocumentId: clean(scouted.playerDocumentId) }
+        : {}),
+      ...buildTeamPlayerScoutProjection(scouted),
+    } : player
+  })
+  const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
+  const changed = (
+    JSON.stringify(normalizeComparableValue(players)) !==
+      JSON.stringify(normalizeComparableValue(nextPlayers)) ||
+    JSON.stringify(normalizeComparableValue(current.scoutProfilesSummary || {})) !==
+      JSON.stringify(normalizeComparableValue(scoutProfilesSummary))
+  )
+
+  return {
+    planType: 'approvedTeamSeasonScoutProjectionPlan',
+    planVersion: 1,
+    players: nextPlayers,
+    playersCount: countCurrentRosterPlayers(nextPlayers),
+    scoutProfilesSummary,
+    changed,
+  }
+}
+
+export async function updateTeamSeasonPlayersScoutProjections({
+  season = {},
+  team = {},
+  scoutedPlayers = [],
+  approvedPlan = null,
+} = {}) {
   const teamId = resolveTeamLookupKey(team)
   const { seasonId, seasonKey } = normalizeSeasonIdentity({ season })
   if (!teamId || !seasonId) throw new Error('Missing Team Season identity')
   const ref = teamSeasonDocRef({ birthTeamDocumentId: teamId, seasonKey })
+
   return trackedRunTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref)
-    if (!snapshot.exists()) return result({ teamId, ref, seasonId, seasonKey, target: targetFor(season.seasonStatus), updated: false, reason: 'teamSeasonMissing' })
+    if (!snapshot.exists()) {
+      return result({
+        teamId,
+        ref,
+        seasonId,
+        seasonKey,
+        target: targetFor(season.seasonStatus),
+        updated: false,
+        reason: 'teamSeasonMissing',
+      })
+    }
+
     const current = snapshot.data() || {}
     const sourceTarget = targetFor(current.seasonStatus || season.seasonStatus)
-    const players = Array.isArray(current.teamPlayers) ? current.teamPlayers : []
-    const nextPlayers = players.map(player => {
-      if (isScoutCalculationExcludedRosterStatus(player)) {
-        return {
-          ...player,
-          ...buildTeamPlayerScoutProjection(buildPlayerScoutState({
-            player,
-            team,
-            season,
-          })),
-        }
-      }
-      const scouted = findScoutedPlayer({ player, scoutedPlayers })
-      // The Player writer may resolve an older internal player id to the
-      // canonical document id (for example external__12345).  Persist that
-      // resolved id back to Team Season so future reads and audits reference
-      // the same Player document.
-      return scouted ? {
-        ...player,
-        ...(clean(scouted.playerDocumentId)
-          ? { playerDocumentId: clean(scouted.playerDocumentId) }
-          : {}),
-        ...buildTeamPlayerScoutProjection(scouted),
-      } : player
+    const plan = approvedPlan || buildTeamSeasonPlayersScoutProjectionPlan({
+      current,
+      season,
+      team,
+      scoutedPlayers,
     })
-    const scoutProfilesSummary = buildScoutProfilesSummary(nextPlayers)
-    const changed = JSON.stringify(normalizeComparableValue(players)) !== JSON.stringify(normalizeComparableValue(nextPlayers)) ||
-      JSON.stringify(normalizeComparableValue(current.scoutProfilesSummary || {})) !== JSON.stringify(normalizeComparableValue(scoutProfilesSummary))
-    if (!changed) return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: false, writeSkipped: true, scoutProfilesSummary, seasonDocument: current }), players, playersCount: countCurrentRosterPlayers(players), teamBalance: current.teamBalance || null }
-    const next = { ...current, teamPlayers: nextPlayers, playersCount: countCurrentRosterPlayers(nextPlayers), scoutProfilesSummary, updatedAt: new Date().toISOString() }
-    const persisted = persistSeason({ transaction, ref, team, teamId, season, current, next })
-    return { ...result({ teamId, ref, seasonId, seasonKey, target: sourceTarget, updated: true, changed: true, writeSkipped: false, scoutProfilesSummary, seasonDocument: persisted }), players: nextPlayers, playersCount: countCurrentRosterPlayers(nextPlayers), teamBalance: persisted.teamBalance || null }
+    const nextPlayers = Array.isArray(plan.players) ? plan.players : []
+    const scoutProfilesSummary = approvedPlan
+      ? plan.scoutProfilesSummary
+      : (plan.scoutProfilesSummary || buildScoutProfilesSummary(nextPlayers))
+    const changed = Boolean(plan.changed)
+
+    if (!changed) {
+      return {
+        ...result({
+          teamId,
+          ref,
+          seasonId,
+          seasonKey,
+          target: sourceTarget,
+          updated: true,
+          changed: false,
+          writeSkipped: true,
+          scoutProfilesSummary,
+          seasonDocument: current,
+        }),
+        players: nextPlayers.length ? nextPlayers : (current.teamPlayers || []),
+        playersCount: Number.isFinite(Number(plan.playersCount))
+          ? Number(plan.playersCount)
+          : countCurrentRosterPlayers(current.teamPlayers || []),
+        teamBalance: current.teamBalance || null,
+      }
+    }
+
+    const next = {
+      ...current,
+      teamPlayers: nextPlayers,
+      playersCount: Number.isFinite(Number(plan.playersCount))
+        ? Number(plan.playersCount)
+        : countCurrentRosterPlayers(nextPlayers),
+      scoutProfilesSummary,
+      updatedAt: new Date().toISOString(),
+    }
+    const persisted = persistSeason({
+      transaction,
+      ref,
+      team,
+      teamId,
+      season,
+      current,
+      next,
+    })
+
+    return {
+      ...result({
+        teamId,
+        ref,
+        seasonId,
+        seasonKey,
+        target: sourceTarget,
+        updated: true,
+        changed: true,
+        writeSkipped: false,
+        scoutProfilesSummary,
+        seasonDocument: persisted,
+      }),
+      players: nextPlayers,
+      playersCount: countCurrentRosterPlayers(nextPlayers),
+      teamBalance: persisted.teamBalance || null,
+    }
   })
 }
 

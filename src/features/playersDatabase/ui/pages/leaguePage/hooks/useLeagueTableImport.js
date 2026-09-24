@@ -17,6 +17,7 @@ import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   runPlayersDatabaseWriteAction,
 } from '../../../../services/write/index.js'
+import { invalidatePlayersDatabaseWriteCache } from '../../../../services/cache/index.js'
 import { readClubSeasonIdentityIndex } from '../../../../services/read/index.js'
 import { resolveLeagueClubIdentityIndex } from '../../../../import/logic/leagueClubMasterWarnings.js'
 import {
@@ -85,6 +86,7 @@ export function useLeagueTableImport({
   const [projectionJob, setProjectionJob] = React.useState(null)
   const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
   const identityIndexRef = React.useRef(null)
+  const completedProjectionJobRef = React.useRef('')
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
   const canConfirm = React.useMemo(() => {
     return Boolean(seasonStatus) && rows.length > 0 && rows.every(row => (
@@ -339,6 +341,26 @@ export function useLeagueTableImport({
       setRetryingProjectionJob(false)
     }
   }, [notify, projectionJob, projectionJobId])
+
+  React.useEffect(() => {
+    const status = projectionJob?.status || ''
+    const completionKey = `${projectionJobId}:${status}`
+    if (!['completed', 'failed', 'superseded', 'partial_superseded'].includes(status) ||
+        completedProjectionJobRef.current === completionKey) return
+
+    completedProjectionJobRef.current = completionKey
+    invalidatePlayersDatabaseWriteCache({
+      actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
+      payload: {
+        league: { id: league.id || league.leagueId || leagueDoc.id || leagueDoc.leagueId },
+        season: {
+          ...(selectedSeasonOption?.season || {}),
+          seasonKey: selectedSeasonOption?.seasonKey,
+        },
+      },
+    })
+    reload()
+  }, [league, leagueDoc, projectionJob?.status, projectionJobId, reload, selectedSeasonOption])
 
   return {
     open,

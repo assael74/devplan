@@ -120,6 +120,11 @@ const LEAGUE_ONLY_ACTIONS = new Set([
   'deleteLeagueSeason',
 ])
 
+const LEAGUE_PROJECTION_ACTIONS = new Set([
+  'pasteLeagueTable',
+  'retryLeagueProjectionSync',
+])
+
 const TEAM_ACTIONS = new Set([
   'pasteTeamPlayers',
   'pasteTeamPlayerStats',
@@ -156,11 +161,17 @@ export const invalidatePlayersDatabaseWriteCache = ({
     invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
   }
 
+  if (LEAGUE_PROJECTION_ACTIONS.has(actionType)) {
+    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.team)
+    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
+  }
+
   if (TEAM_ACTIONS.has(actionType)) {
     invalidateLeagueDocumentCache(leagueId)
     invalidateTeamDocumentCache(teamId)
     invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
     invalidateLeaguesMasterDocumentCache()
+    invalidateClubsMasterDocumentCache()
   }
 
   if (PLAYER_ACTIONS.has(actionType)) {

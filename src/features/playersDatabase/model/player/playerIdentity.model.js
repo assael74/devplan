@@ -1,3 +1,4 @@
+import { buildPlayerDocumentId as buildSharedPlayerDocumentId } from '@devplan/players-scout-engine/players/index.js'
 // features/playersDatabase/model/player/playerIdentity.model.js
 
 import {
@@ -143,28 +144,7 @@ export const isCanonicalPlayerDocumentId = value => (
   /^(?:external|name)__(?:.+)$/.test(cleanValue(value))
 )
 
-export const buildPlayerDocumentId = (player = {}) => {
-  const externalPlayerId = resolveExternalPlayerId(player)
-  if (isValidExternalPlayerId({
-    externalPlayerId,
-    birthYear: player?.birthYear,
-  })) {
-    return `external__${normalizePlayerIdPart(externalPlayerId)}`
-  }
-
-  const existingDocumentId = resolvePlayerDocumentId(player)
-  if (isCanonicalPlayerDocumentId(existingDocumentId)) {
-    return existingDocumentId
-  }
-
-  const normalizedName = normalizePlayerNameValue(
-    pickFirstValue(player.normalizedName, player.fullName)
-  )
-
-  return normalizedName
-    ? `name__${normalizePlayerIdPart(normalizedName)}`
-    : ''
-}
+export const buildPlayerDocumentId = buildSharedPlayerDocumentId
 
 export const resolveWritablePlayerDocumentId = player => (
   buildPlayerDocumentId(player)

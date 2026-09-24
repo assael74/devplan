@@ -290,6 +290,7 @@ export const buildTeamStatsCanonicalCommit = ({
       transfersIn: movementState.transfersIn || [],
       transfersOut: movementState.transfersOut || [],
       pendingPlayers: movementState.pendingPlayers || [],
+      movementProjectionRevision: clean(statsProjectionRevision),
     } : {}),
     scoutProfilesSummary: buildScoutProfilesSummary(nextPlayers),
     statsProjectionRevision: clean(statsProjectionRevision) || clean(baseSeasonDoc.statsProjectionRevision),

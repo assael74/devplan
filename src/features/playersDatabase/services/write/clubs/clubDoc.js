@@ -100,6 +100,7 @@ export async function upsertClubDocument({
   requiredCompetitionTarget = null,
   projectionVersion = 1,
   lastWriteAction = '',
+  transactionGuard = null,
 } = {}) {
   const clubId = clean(clubIdentity?.clubId || clubIdentity?.id)
   if (!clubId) throw new Error('Missing club id')
@@ -107,7 +108,29 @@ export async function upsertClubDocument({
   const ref = clubDocRef(clubId)
 
   return trackedRunTransaction(db, async transaction => {
+    const guardSnapshot = transactionGuard?.ref
+      ? await transaction.get(transactionGuard.ref)
+      : null
     const snapshot = await transaction.get(ref)
+
+    if (guardSnapshot) {
+      const guardField = clean(transactionGuard.field)
+      const expectedGuardValue = clean(transactionGuard.expected)
+      const currentGuardValue = clean(guardSnapshot.exists()
+        ? guardSnapshot.data()?.[guardField]
+        : '')
+
+      if (!guardSnapshot.exists() || !guardField || currentGuardValue !== expectedGuardValue) {
+        return {
+          clubId,
+          updated: false,
+          changed: false,
+          writeSkipped: true,
+          guardSuperseded: true,
+        }
+      }
+    }
+
     const currentData = snapshot.exists() ? snapshot.data() || {} : {}
     if (requiredCompetitionTarget && !hasRequiredCompetitionTarget({
       club: currentData,

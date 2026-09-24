@@ -278,6 +278,8 @@ export const normalizePlayerCreateDraft = (draft = {}) => ({
   clubId: clean(draft.clubId),
   teamId: clean(draft.teamId),
   birth: clean(resolveValue(draft.birth, draft.birthYear)),
+  month: clean(draft.month),
+  year: clean(draft.year),
   ifaLink: clean(draft.ifaLink),
   active: draft.active !== false,
 })

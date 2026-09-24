@@ -9,6 +9,7 @@ const clean = value => String(value === undefined || value === null ? '' : value
 export async function readTeamSeasonRosterHistory({
   birthTeamDocumentId = '',
   seasonKey = '',
+  bypassCache = false,
 } = {}) {
   const safeTeamId = clean(birthTeamDocumentId)
   const safeSeasonKey = clean(seasonKey)
@@ -21,7 +22,7 @@ export async function readTeamSeasonRosterHistory({
     }
   }
 
-  const team = await getTeamById(safeTeamId)
+  const team = await getTeamById(safeTeamId, { bypassCache })
   const seasons = Array.isArray(team?.seasons) ? team.seasons : []
   const previousCandidates = seasons
     .filter(row => compareSeasonKeys(row.seasonKey, safeSeasonKey) < 0)
@@ -31,18 +32,22 @@ export async function readTeamSeasonRosterHistory({
     getTeamSeason({
       birthTeamDocumentId: safeTeamId,
       seasonKey: safeSeasonKey,
+      bypassCache,
     }),
     previousSeasonKey
       ? getTeamSeason({
         birthTeamDocumentId: safeTeamId,
         seasonKey: previousSeasonKey,
+        bypassCache,
       })
       : Promise.resolve(null),
   ])
 
   return {
+    teamRoot: team || null,
     currentSeason,
     previousSeason,
+    previousSeasonKey,
     seasons: previousSeasonKey ? [safeSeasonKey, previousSeasonKey] : [safeSeasonKey],
   }
 }

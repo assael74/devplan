@@ -34,7 +34,7 @@ import { PLAYERS_DATABASE_UI_ROUTES } from '../../../../../logic/routeBuilders.j
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
-const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור', 'סנכרון']
+const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור', 'תצוגה מקדימה', 'סנכרון']
 
 const PROJECTION_JOB_STATUS = {
   queued: { color: 'neutral', label: 'ממתין', title: 'הסנכרון ממתין להתחלה', description: 'נתוני הסגל נשמרו. בדיקת הסנכרון תתחיל אוטומטית.' },
@@ -51,6 +51,103 @@ const playerName = player => String(
 const clubIdOf = club => String(club?.clubId || '').trim()
 const teamIdOf = team => String(team?.birthTeamDocumentId || '').trim()
 const teamSlotOf = team => Number(team?.birthTeamSlot || team?.teamSlot || 1)
+
+
+function RosterImportSummary({ controller, onBackToMissing }) {
+  const plan = controller.rosterImportPlan
+  const preview = plan?.preview || {}
+  const counterparts = Array.isArray(plan?.counterpartStates) ? plan.counterpartStates : []
+
+  if (!plan) {
+    return controller.busy ? (
+      <Stack alignItems='center' justifyContent='center' sx={{ minHeight: 220 }}>
+        <CircularProgress size='sm' />
+        <Typography level='body-sm'>מכין סיכום סגל מלא...</Typography>
+      </Stack>
+    ) : (
+      <Card variant='soft' color='danger'>
+        <Typography level='title-sm'>הסיכום אינו עדכני</Typography>
+        <Typography level='body-sm'>נתוני הקבוצה השתנו. חזור לבדיקת החסרים כדי להכין Preview חדש.</Typography>
+        <Button size='sm' variant='soft' color='danger' onClick={onBackToMissing} sx={{ alignSelf: 'flex-start', mt: 1 }}>
+          חזרה לבדיקת חסרים
+        </Button>
+      </Card>
+    )
+  }
+
+  return (
+    <Stack spacing={1.5} sx={{ minHeight: 0, overflow: 'auto' }}>
+      <Card variant='soft'>
+        <Typography level='title-md'>סיכום לפני טעינה</Typography>
+        <Typography level='body-sm'>
+          {preview.playersCount || 0} שחקנים בסגל · {preview.transfersInCount || 0} הצטרפו · {preview.transfersOutCount || 0} עזבו · {preview.pendingPlayersCount || 0} ממתינים
+        </Typography>
+      </Card>
+
+      <Card variant='outlined'>
+        <Typography level='title-sm'>הסגל הסופי</Typography>
+        <Typography level='body-xs' sx={{ mb: 1 }}>
+          זה הסגל שיישמר במקור האמת לאחר האישור.
+        </Typography>
+        <Stack spacing={0.5}>
+          {(Array.isArray(plan.persistedSeason?.teamPlayers)
+            ? plan.persistedSeason.teamPlayers
+            : []).map((player, index) => (
+            <Typography
+              key={player.playerId || `${playerName(player)}-${index}`}
+              level='body-sm'
+            >
+              {index + 1}. {playerName(player) || player.playerId || 'שחקן'}
+            </Typography>
+          ))}
+        </Stack>
+      </Card>
+
+      <Card variant='outlined'>
+        <Typography level='title-sm'>איזון הסגל לאחר העדכון</Typography>
+        {preview.teamBalance ? (
+          <Stack spacing={0.5} sx={{ mt: 0.75 }}>
+            <Typography level='body-sm'>
+              הגנה: {preview.teamBalance?.lineStructure?.lines?.defense?.playersCount || 0} · קשר: {preview.teamBalance?.lineStructure?.lines?.midfield?.playersCount || 0} · התקפה: {preview.teamBalance?.lineStructure?.lines?.attack?.playersCount || 0}
+            </Typography>
+            <Typography level='body-xs'>
+              שחקנים ללא שיוך: {preview.teamBalance?.lineStructure?.unassignedPlayersCount || 0}
+            </Typography>
+          </Stack>
+        ) : (
+          <Typography level='body-xs'>אין עדיין נתוני איזון זמינים לסגל הזה.</Typography>
+        )}
+      </Card>
+
+      {counterparts.length ? (
+        <Card variant='outlined'>
+          <Typography level='title-sm'>מעברים ומסמכים מקבילים</Typography>
+          <Stack spacing={1} sx={{ mt: 1 }}>
+            {counterparts.map((row, index) => (
+              <Box key={`${row.movementId || row.playerId}-${index}`}>
+                <Typography level='body-sm' fontWeight='lg'>
+                  {row.playerName || row.playerId || 'שחקן'} · {row.teamName || row.birthTeamDocumentId}
+                </Typography>
+                <Typography level='body-xs' color={row.exists ? 'success' : 'neutral'}>
+                  {row.exists
+                    ? 'נמצא מסמך קבוצה מקביל — מתוכנן עדכון לאחר שמירת מקור האמת'
+                    : 'לא נמצא מסמך קבוצה מקביל לעדכון'}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </Card>
+      ) : null}
+
+      <Card variant='outlined'>
+        <Typography level='title-sm'>השפעה על המערכת</Typography>
+        <Typography level='body-xs'>
+          מקור האמת יעודכן ראשון. לאחר מכן יסונכרנו מעברים, אינדקסי שחקנים, נתוני ליגה, אינדקס הקבוצה ונתוני המועדון.
+        </Typography>
+      </Card>
+    </Stack>
+  )
+}
 
 function RosterClubSlotSelect({
   clubOptions,
@@ -453,6 +550,7 @@ export default function RosterImportModal({
 }) {
   const [activeStep, setActiveStep] = React.useState(0)
   const [reviewStep, setReviewStep] = React.useState('present')
+  const isBlockedByProjectionSync = activeStep !== 3 && controller.isProjectionSyncPending
   const teamUrl = String(
     controller.selectedSeasonOption?.season?.teamUrl || team?.teamUrl || ''
   ).trim()
@@ -568,6 +666,26 @@ export default function RosterImportModal({
     if (controller.projectionJobId) setActiveStep(3)
   }, [controller.projectionJobId])
 
+  React.useEffect(() => {
+    console.info('[playersDatabase/roster-import-debug]', {
+      event: 'wizard-step',
+      at: new Date().toISOString(),
+      wizardState: { activeStep, reviewStep },
+      systemAction: activeStep === 0
+        ? 'choose-season'
+        : activeStep === 1
+          ? 'paste-and-start-identity-check'
+          : activeStep === 3
+            ? 'watch-projection-sync'
+            : reviewStep === 'present'
+              ? 'review-identities-in-state'
+              : reviewStep === 'missing'
+                ? 'review-missing-players-in-state'
+                : 'preview-approved-plan-in-state',
+      state: controller.debugState,
+    })
+  }, [activeStep, controller.debugState, reviewStep])
+
   const close = () => {
     if (controller.busy) return
     controller.clearPaste()
@@ -577,27 +695,50 @@ export default function RosterImportModal({
     const previewRows = await controller.parse()
     if (Array.isArray(previewRows) && previewRows.length) setActiveStep(2)
   }
-  const confirm = () => {
+  const confirm = async () => {
     if (activeStep === 0) return setActiveStep(1)
     if (activeStep === 1) return previewRoster()
     if (activeStep === 3) return close()
-    if (reviewStep === 'present') return setReviewStep('missing')
-    return controller.confirm()
+    if (reviewStep === 'present') {
+      console.info('[playersDatabase/roster-import-debug]', {
+        event: 'continue-to-missing-review',
+        state: controller.debugState,
+        systemAction: { type: 'state-only-transition', writes: false, reads: false },
+      })
+      return setReviewStep('missing')
+    }
+    if (reviewStep === 'missing') {
+      const plan = await controller.preparePlan()
+      if (plan) setReviewStep('summary')
+      return plan
+    }
+    const result = await controller.confirm()
+    if (result?.stale) setReviewStep('missing')
+    return result
   }
   const disabled = activeStep === 3
     ? false
-    : controller.busy || Boolean(controller.projectionJobId) || (
+    : isBlockedByProjectionSync || controller.busy || Boolean(controller.projectionJobId) || (
       activeStep === 0
       ? !controller.selectedSeasonOption || controller.previousRoster?.loading
       : activeStep === 1
         ? !controller.selectedSeasonOption || !controller.pasteValue
       : controller.hasIdentityErrors ||
           !controller.rows.length ||
-          (reviewStep === 'missing' && !controller.hasMissingRosterApprovals)
+          (reviewStep === 'missing' && !controller.hasMissingRosterApprovals) ||
+          (reviewStep === 'summary' && !controller.rosterImportPlan)
     )
   const confirmLabel = activeStep === 0
     ? 'המשך להדבקה'
-    : activeStep === 1 ? 'הצג בדיקת זהות' : activeStep === 3 ? 'סגור' : reviewStep === 'present' ? 'המשך לבדיקת חסרים' : 'אישור טעינת סגל'
+    : activeStep === 1
+      ? 'הצג בדיקת זהות'
+      : activeStep === 3
+        ? 'סגור'
+        : reviewStep === 'present'
+          ? 'המשך לבדיקת חסרים'
+          : reviewStep === 'missing'
+            ? 'הצג סיכום לפני טעינה'
+            : 'טען נתונים'
   const footerActions = activeStep === 1 || activeStep === 2 ? (
     <ImportActionArea
       actions={[
@@ -609,6 +750,10 @@ export default function RosterImportModal({
           disabled: controller.busy,
           sx: chromeSx.backButton,
           onClick: () => {
+            if (activeStep === 2 && reviewStep === 'summary') {
+              setReviewStep('missing')
+              return
+            }
             if (activeStep === 2 && reviewStep === 'missing') {
               setReviewStep('present')
               return
@@ -628,7 +773,7 @@ export default function RosterImportModal({
         description={description}
         iconId='addPlayers'
         confirmLabel={confirmLabel}
-        confirmIconId={activeStep === 2 && reviewStep === 'missing' ? 'upload' : 'next'}
+        confirmIconId={activeStep === 2 && reviewStep === 'summary' ? 'upload' : 'next'}
         size='xl'
         busy={controller.busy}
         disabled={disabled}
@@ -646,11 +791,26 @@ export default function RosterImportModal({
           ...(activeStep === 0 || activeStep === 2 || activeStep === 3 ? {
             height: 'min(720px, calc(100dvh - 230px))',
             minHeight: 0,
-            gridTemplateRows: 'auto minmax(0, 1fr)',
+            gridTemplateRows: isBlockedByProjectionSync ? 'auto auto minmax(0, 1fr)' : 'auto minmax(0, 1fr)',
             overflow: 'hidden',
           } : {}),
         }}>
-          <ModalStepper activeStep={activeStep === 3 ? 4 : reviewStep === 'missing' ? 3 : activeStep} steps={STEPS} />
+          <ModalStepper
+            activeStep={activeStep === 3 ? 5 : reviewStep === 'summary' ? 4 : reviewStep === 'missing' ? 3 : activeStep}
+            steps={STEPS}
+          />
+
+          {isBlockedByProjectionSync ? (
+            <Card variant='soft' color='warning'>
+              <Stack direction='row' spacing={1} alignItems='center'>
+                <CircularProgress size='sm' color='warning' />
+                <Box>
+                  <Typography level='title-sm'>ממתין לסיום סנכרון קודם</Typography>
+                  <Typography level='body-xs'>הקבוצה מתעדכנת ברקע. אפשר להמשיך להכין Preview מיד כשהסנכרון יסתיים.</Typography>
+                </Box>
+              </Stack>
+            </Card>
+          ) : null}
 
           {activeStep === 0 ? (
             <PreviousRosterStep
@@ -686,6 +846,10 @@ export default function RosterImportModal({
           ) : null}
 
           {activeStep === 2 && reviewStep === 'missing' ? <MissingRosterStep controller={controller} /> : null}
+
+          {activeStep === 2 && reviewStep === 'summary' ? (
+            <RosterImportSummary controller={controller} onBackToMissing={() => setReviewStep('missing')} />
+          ) : null}
 
           {activeStep === 3 ? (
             <RosterSyncStep controller={controller} />

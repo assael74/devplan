@@ -26,9 +26,10 @@ const clean = value => String(value || '').trim()
 const readIdentityFieldMatches = async ({
   field,
   values = [],
+  includeManifest = false,
 } = {}) => {
   const safeValues = [...new Set(values.map(clean).filter(Boolean))]
-  if (!safeValues.length) return []
+  if (!safeValues.length) return includeManifest ? { docs: [], queries: [] } : []
 
   const snapshots = await Promise.all(
     chunkValues(safeValues).map(valueChunk => trackedGetDocs(
@@ -46,12 +47,39 @@ const readIdentityFieldMatches = async ({
     ))
   )
 
-  return snapshots.flatMap(snapshot => snapshot.docs)
+  const docs = snapshots.flatMap(snapshot => snapshot.docs)
+  if (!includeManifest) return docs
+
+  return {
+    docs,
+    queries: chunkValues(safeValues).map((valueChunk, index) => ({
+      field,
+      values: [...valueChunk].sort(),
+      resultIds: (snapshots[index]?.docs || []).map(row => row.id).sort(),
+    })),
+  }
 }
+
+export const validatePlayerIdentityQueryManifest = async (manifest = []) => {
+  const rows = Array.isArray(manifest) ? manifest : []
+  for (const row of rows) {
+    const current = await readIdentityFieldMatches({
+      field: clean(row?.field),
+      values: Array.isArray(row?.values) ? row.values : [],
+      includeManifest: true,
+    })
+    const actual = current.queries?.[0]?.resultIds || []
+    const expected = Array.isArray(row?.resultIds) ? [...row.resultIds].sort() : []
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) return false
+  }
+  return true
+}
+
 
 const readPlayerIdentities = async ({
   players = [],
   birthYear = '',
+  includeManifest = false,
 } = {}) => {
   const externalIds = []
   const identityKeys = []
@@ -76,20 +104,34 @@ const readPlayerIdentities = async ({
     readIdentityFieldMatches({
       field: 'externalPlayerId',
       values: externalIds,
+      includeManifest,
     }),
     readIdentityFieldMatches({
       field: 'identityKey',
       values: identityKeys,
+      includeManifest,
     }),
   ])
+  const externalRows = includeManifest ? externalDocs.docs : externalDocs
+  const identityRows = includeManifest ? identityDocs.docs : identityDocs
   const docsById = new Map()
 
-  ;[...externalDocs, ...identityDocs].forEach(snapshot => {
+  ;[...externalRows, ...identityRows].forEach(snapshot => {
     docsById.set(snapshot.id, snapshot)
   })
 
-  return [...docsById.values()]
+  const documents = [...docsById.values()]
+  if (!includeManifest) return documents
+
+  return {
+    documents,
+    queryManifest: [
+      ...(externalDocs.queries || []),
+      ...(identityDocs.queries || []),
+    ],
+  }
 }
+
 
 const uniqueByPlayerId = rows => {
   const lookup = new Map()
@@ -437,24 +479,41 @@ export async function resolveTeamPlayerIdentityPreview({
   }))
 }
 
-export async function resolveTeamPlayerIdentities({
+export async function resolveTeamPlayerIdentitiesWithSources({
   players = [],
   season = {},
 } = {}) {
   const birthYear = clean(season.birthYear)
   const safePlayers = Array.isArray(players) ? players : []
 
-  if (!birthYear || !safePlayers.length) return safePlayers
+  if (!birthYear || !safePlayers.length) {
+    return { players: safePlayers, sourceDocuments: [] }
+  }
 
-  const documents = await readPlayerIdentities({
+  const identityRead = await readPlayerIdentities({
     players: safePlayers,
     birthYear,
+    includeManifest: true,
   })
+  const documents = identityRead.documents
   const lookup = buildExistingIdentityLookup(documents)
 
-  return safePlayers.map(player => resolvePlayerIdentity({
-    player,
-    birthYear,
-    lookup,
-  }))
+  return {
+    players: safePlayers.map(player => resolvePlayerIdentity({
+      player,
+      birthYear,
+      lookup,
+    })),
+    sourceDocuments: documents.map(snapshot => ({
+      id: snapshot.id,
+      data: snapshot.data() || {},
+    })),
+    queryManifest: identityRead.queryManifest || [],
+  }
+}
+
+
+export async function resolveTeamPlayerIdentities(args = {}) {
+  const result = await resolveTeamPlayerIdentitiesWithSources(args)
+  return result.players
 }

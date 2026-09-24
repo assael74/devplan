@@ -1,7 +1,5 @@
 // features/playersDatabase/ui/pages/entryPage/sx/EntryPage.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
-
 export const entryPageSx = {
   page: {
     width: '100%',
@@ -29,10 +27,7 @@ export const entryPageSx = {
     minHeight: 0,
     height: '100%',
     display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      xl: 'minmax(0, 1fr) 360px',
-    },
+    gridTemplateColumns: 'minmax(0, 1fr)',
     gap: 2,
     alignItems: 'stretch',
     overflow: 'hidden',
@@ -41,19 +36,6 @@ export const entryPageSx = {
       minWidth: 0,
       minHeight: 0,
       height: '100%',
-    },
-  },
-
-  capabilities: {
-    height: 100,
-    minHeight: 0,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    color: devPlanColors.secondary,
-    pr: 0.75,
-
-    '& p': {
-      lineHeight: 1.55,
     },
   },
 
