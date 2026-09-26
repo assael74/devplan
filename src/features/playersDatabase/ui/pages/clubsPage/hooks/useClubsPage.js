@@ -159,6 +159,7 @@ export default function useClubsPage() {
   }, [])
 
   return {
+    clubsMasterDoc,
     loading,
     error,
     query,

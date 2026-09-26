@@ -519,7 +519,6 @@ export function useLeagueTableImport({
 
     await closeWriteActionReceiptV2({
       receiptId,
-      allowPartialAudit: auditResult.coverage?.complete !== true,
     })
 
     setOpen(false)

@@ -35,7 +35,7 @@ describe('WriteAction V2 receipt lifecycle', () => {
     expect(patchWriteActionReceiptV2).not.toHaveBeenCalled()
   })
 
-  test('requires explicit approval to close with partial Audit', async () => {
+  test('does not close a receipt with partial Audit coverage', async () => {
     readWriteActionReceiptV2.mockResolvedValue({
       id: 'receipt-1',
       status: 'open',
@@ -48,18 +48,20 @@ describe('WriteAction V2 receipt lifecycle', () => {
 
     await expect(closeWriteActionReceiptV2({
       receiptId: 'receipt-1',
-    })).rejects.toThrow('partial Audit requires explicit approval')
+    })).rejects.toThrow(
+      'WriteAction V2 receipt cannot close before a complete Audit'
+    )
 
     expect(patchWriteActionReceiptV2).not.toHaveBeenCalled()
   })
 
-  test('allows explicitly approved close with partial Audit', async () => {
+  test('closes a receipt after a complete clean Audit', async () => {
     readWriteActionReceiptV2.mockResolvedValue({
       id: 'receipt-1',
       status: 'open',
       canonicalStatus: 'reported',
       lastAuditSummary: {
-        coverage: 'partial',
+        coverage: 'complete',
         findingsCount: 0,
       },
     })
@@ -67,7 +69,6 @@ describe('WriteAction V2 receipt lifecycle', () => {
 
     await expect(closeWriteActionReceiptV2({
       receiptId: 'receipt-1',
-      allowPartialAudit: true,
     })).resolves.toBe('receipt-1')
 
     expect(patchWriteActionReceiptV2).toHaveBeenCalledWith({
@@ -77,6 +78,26 @@ describe('WriteAction V2 receipt lifecycle', () => {
       },
     })
   })
+
+  test('does not close a receipt while Audit findings remain', async () => {
+    readWriteActionReceiptV2.mockResolvedValue({
+      id: 'receipt-1',
+      status: 'open',
+      lastAuditSummary: {
+        coverage: 'complete',
+        findingsCount: 2,
+      },
+    })
+
+    await expect(closeWriteActionReceiptV2({
+      receiptId: 'receipt-1',
+    })).rejects.toThrow(
+      'WriteAction V2 receipt cannot close while Audit findings remain'
+    )
+
+    expect(patchWriteActionReceiptV2).not.toHaveBeenCalled()
+  })
+
 
 
 })

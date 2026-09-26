@@ -18,13 +18,25 @@ export default function AuditSummary({ result, lifecycleSummary, onDownload }) {
             <Typography level='body-sm'>
               כיסוי: {result.coverage?.complete ? 'מלא' : 'חלקי'}
             </Typography>
-            <Typography level='body-sm'>
-              אינדקסי קבוצות צפויים: {Number(result.summary?.expectedTeamSearchIndexes || 0)}
-              {' · '}
-              נבדקו: {Number(result.summary?.checkedTeamSearchIndexes || 0)}
-              {' · '}
-              פערים: {Number(result.summary?.findingsCount || result.findings?.length || 0)}
-            </Typography>
+            {result.flowType === 'roster' ? (
+              <Typography level='body-sm'>
+                אינדקסי שחקנים צפויים: {Number(result.summary?.expectedPlayerSearchIndexes || 0)}
+                {' · '}
+                נבדקו: {Number(result.summary?.checkedPlayerSearchIndexes || 0)}
+                {' · '}
+                מועדונים שנבדקו: {Number(result.summary?.checkedClubs || 0)}
+                {' · '}
+                פערים: {Number(result.summary?.findingsCount || result.findings?.length || 0)}
+              </Typography>
+            ) : (
+              <Typography level='body-sm'>
+                אינדקסי קבוצות צפויים: {Number(result.summary?.expectedTeamSearchIndexes || 0)}
+                {' · '}
+                נבדקו: {Number(result.summary?.checkedTeamSearchIndexes || 0)}
+                {' · '}
+                פערים: {Number(result.summary?.findingsCount || result.findings?.length || 0)}
+              </Typography>
+            )}
             <Typography level='body-sm'>
               תחומים שנבדקו: {coveredTargets.length ? coveredTargets.join(' · ') : 'אין'}
             </Typography>

@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Stack,
   Tooltip,
   Typography,
@@ -21,6 +22,7 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ClubsCollection from './components/ClubsCollection.js'
 import ClubsFilters from './components/ClubsFilters.js'
+import { downloadClubsMasterJson } from './logic/clubsMasterJson.logic.js'
 import { clubsPageSx as sx } from './sx/clubsPage.sx.js'
 
 export default function ClubsPage() {
@@ -84,6 +86,21 @@ export default function ClubsPage() {
         >
           עם איתותים בלבד
         </Chip>
+      </Tooltip>
+
+      <Tooltip title='הורדת Clubs Master כ־JSON'>
+        <span>
+          <IconButton
+            size='sm'
+            variant='outlined'
+            color='neutral'
+            aria-label='הורדת Clubs Master כ־JSON'
+            disabled={model.loading || !model.clubsMasterDoc}
+            onClick={() => downloadClubsMasterJson(model.clubsMasterDoc)}
+          >
+            {iconUi({ id: 'download', size: 'sm' })}
+          </IconButton>
+        </span>
       </Tooltip>
     </Stack>
   )

@@ -89,7 +89,6 @@ export async function saveWriteActionAuditSummaryV2({
 
 export async function closeWriteActionReceiptV2({
   receiptId = '',
-  allowPartialAudit = false,
 } = {}) {
   const receipt = await readWriteActionReceiptV2({
     receiptId,
@@ -105,12 +104,15 @@ export async function closeWriteActionReceiptV2({
     throw new Error('WriteAction V2 receipt cannot close before Audit')
   }
 
-  if (
-    receipt.lastAuditSummary.coverage === 'partial'
-    && allowPartialAudit !== true
-  ) {
+  if (receipt.lastAuditSummary.coverage !== 'complete') {
     throw new Error(
-      'Closing a WriteAction V2 receipt with partial Audit requires explicit approval'
+      'WriteAction V2 receipt cannot close before a complete Audit'
+    )
+  }
+
+  if (Number(receipt.lastAuditSummary.findingsCount) > 0) {
+    throw new Error(
+      'WriteAction V2 receipt cannot close while Audit findings remain'
     )
   }
 

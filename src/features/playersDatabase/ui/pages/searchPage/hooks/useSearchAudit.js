@@ -24,11 +24,12 @@ import {
 import { retryMovementCounterpartsFromAuditFindings } from '../../../../services/dataRepair/team/index.js'
 import { syncRosterTeamProjectionFromCanonicalV2 } from '../../../../services/writeV2/roster/index.js'
 import {
+  closeWriteActionReceiptV2,
   getWriteActionReceiptV2,
   listWriteActionReceiptsV2,
   saveWriteActionAuditSummaryV2,
 } from '../../../../services/writeV2/index.js'
-import { auditLeagueV2 } from '../../../../services/auditV2/index.js'
+import { auditLeagueV2, auditRosterV2 } from '../../../../services/auditV2/index.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
@@ -166,24 +167,45 @@ export default function useSearchAudit({ rows }) {
       const receipt = await getWriteActionReceiptV2({ receiptId: id })
       if (!receipt) throw new Error('Receipt V2 לא נמצא.')
 
-      if (receipt.flowType !== 'league') {
+      const auditTarget = receipt.auditTarget || {}
+      let nextResult = null
+
+      if (receipt.flowType === 'league') {
+        nextResult = await auditLeagueV2({
+          leagueId: clean(auditTarget.leagueId),
+          seasonKey: clean(auditTarget.seasonKey),
+        })
+      } else if (receipt.flowType === 'roster') {
+        nextResult = await auditRosterV2({
+          birthTeamDocumentId: clean(auditTarget.birthTeamDocumentId),
+          seasonKey: clean(auditTarget.seasonKey),
+        })
+      } else {
         throw new Error(`Audit V2 עבור ${receipt.flowType || 'flow לא ידוע'} עדיין לא מיושם.`)
       }
-
-      const auditTarget = receipt.auditTarget || {}
-      const nextResult = await auditLeagueV2({
-        leagueId: clean(auditTarget.leagueId),
-        seasonKey: clean(auditTarget.seasonKey),
-      })
       const ranAt = new Date().toISOString()
+
+      const findingsCount = nextResult.findings?.length || 0
+      const auditComplete = nextResult.coverage?.complete === true
 
       await saveWriteActionAuditSummaryV2({
         receiptId: id,
         ranAt,
-        coverage: nextResult.coverage?.complete ? 'complete' : 'partial',
-        findingsCount: nextResult.findings?.length || 0,
+        coverage: auditComplete ? 'complete' : 'partial',
+        findingsCount,
         checkedDomains: nextResult.coverage?.coveredTargets || [],
       })
+
+      if (
+        receipt.status === 'open' &&
+        auditComplete &&
+        findingsCount === 0
+      ) {
+        await closeWriteActionReceiptV2({
+          receiptId: id,
+        })
+        await loadRecentWriteActionReceiptsV2()
+      }
 
       setResult({
         ...nextResult,
@@ -196,7 +218,7 @@ export default function useSearchAudit({ rows }) {
     } finally {
       setBusy(false)
     }
-  }, [busy])
+  }, [busy, loadRecentWriteActionReceiptsV2])
 
   const openPlayer = React.useCallback((finding, context = {}) => {
     const playerId = clean(finding?.playerDocumentId || finding?.documentId)
