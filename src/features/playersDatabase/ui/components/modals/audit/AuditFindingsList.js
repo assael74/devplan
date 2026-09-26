@@ -16,15 +16,30 @@ import {
 } from './auditFindingPresentation.js'
 import { playerDatabaseAuditModalSx as sx } from '../sx/playerDatabaseAuditModal.sx.js'
 
+const findingTitle = finding =>
+  finding.title
+  || finding.target
+  || finding.type
+  || 'פער Audit'
+
+const findingExplanation = finding =>
+  finding.explanation
+  || finding.reason
+  || ''
+
+const hasExpectedActual = finding =>
+  finding.expected !== undefined
+  || finding.actual !== undefined
+
 function AuditFindingCard({ finding, busy, actions }) {
   const playerDetails = playerDetailsOf(finding)
   const conflictingLeagueIds = conflictingLeagueIdsOf(finding)
   return (
     <Sheet variant='outlined' sx={sx.findingSheet}>
     <Stack spacing={0.5}>
-    <Typography level='title-sm'>{finding.title}</Typography>
-    {finding.explanation ? (
-      <Typography level='body-sm'>{finding.explanation}</Typography>
+    <Typography level='title-sm'>{findingTitle(finding)}</Typography>
+    {findingExplanation(finding) ? (
+      <Typography level='body-sm'>{findingExplanation(finding)}</Typography>
     ) : null}
     <Typography level='body-xs'>
       מסמך: {finding.documentId || 'לא ידוע'}
@@ -115,7 +130,7 @@ function AuditFindingCard({ finding, busy, actions }) {
         ? ` · פעולה אחרונה: ${finding.sourceLastWriteAction} (${formatAuditDate(finding.sourceLastWriteAt)})`
         : ''}
     </Typography>
-    {finding.entityType.endsWith('SearchIndex') ? (
+    {typeof finding?.entityType === 'string' && finding.entityType.endsWith('SearchIndex') ? (
       <Typography level='body-xs'>
         עדכון אינדקס: {formatAuditDate(finding.indexUpdatedAt)}
         {finding.indexLastWriteAction
@@ -123,7 +138,10 @@ function AuditFindingCard({ finding, busy, actions }) {
           : ''}
       </Typography>
     ) : null}
-    {finding.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH ? (
+    {(
+      finding.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH
+      || (!finding.entityType && hasExpectedActual(finding))
+    ) ? (
       <Typography level='body-xs'>
         שמורה בפועל: {formatValue(finding.actual)} · אמור להיות: {formatValue(finding.expected)}
       </Typography>

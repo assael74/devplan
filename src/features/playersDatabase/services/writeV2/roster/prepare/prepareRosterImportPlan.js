@@ -163,32 +163,19 @@ const readCounterpartState = async ({ request = {} } = {}) => {
   }
 }
 
-const buildClubSyncOperations = async ({
+const buildClubSyncOperations = ({
   league = {}, season = {}, team = {}, teamSeason = {}, performance = null, points = 0,
-  operationSuffix = 'local',
 } = {}) => {
   const clubIdentity = buildClubIdentityFromTeam(team)
-  if (!clubIdentity?.clubId) return { clubProjectionOperations: [], clubsMasterOperations: [] }
+  if (!clubIdentity?.clubId) return { clubProjectionOperations: [] }
 
   const ageGroupSeasonProjection = buildClubAgeGroupSeasonProjection({
     season, league, team, teamSeason, performance, points,
     transferCoverageStatus: resolveClubTransferCoverageStatus(teamSeason),
   })
-  const currentClub = await readClubDocument({ clubId: clubIdentity.clubId })
-  const projectedClub = buildClubDocumentProjection({
-    existingClub: currentClub.club || {}, clubIdentity, ageGroupSeasonProjection, projectionVersion: 1,
-    updatedAt: currentClub.club?.updatedAt || null,
-  })
-  const masterEntry = buildClubsMasterClubProjection({ club: projectedClub })
-  const masterAgeGroupEntry = (Array.isArray(masterEntry?.ageGroups) ? masterEntry.ageGroups : [])
-    .find(row => clean(row?.ageGroupId) === clean(ageGroupSeasonProjection?.ageGroupId)) || null
-  const key = [clubIdentity.clubId, ageGroupSeasonProjection?.ageGroupId,
-    ageGroupSeasonProjection?.season?.seasonKey, ageGroupSeasonProjection?.season?.teamId, operationSuffix]
-    .map(clean).filter(Boolean).join('::')
 
   return {
     clubProjectionOperations: [{
-      operationKey: key,
       target: {
         clubId: clubIdentity.clubId,
         ageGroupId: clean(ageGroupSeasonProjection?.ageGroupId),
@@ -196,18 +183,6 @@ const buildClubSyncOperations = async ({
         teamId: clean(ageGroupSeasonProjection?.season?.teamId),
       },
       patch: { clubIdentity, ageGroupSeasonProjection },
-    }],
-    clubsMasterOperations: [{
-      operationKey: clean(clubIdentity.clubId),
-      target: { clubId: clean(clubIdentity.clubId) },
-      patch: {
-        clubIdentity: {
-          clubId: masterEntry.clubId, externalClubId: masterEntry.externalClubId, clubUrl: masterEntry.clubUrl,
-          name: masterEntry.name, shortName: masterEntry.shortName, clubLevel: masterEntry.clubLevel,
-          clubStrengthLevel: masterEntry.clubStrengthLevel,
-        },
-        ageGroupEntry: masterAgeGroupEntry,
-      },
     }],
   }
 }
@@ -389,13 +364,12 @@ export async function prepareRosterImportPlan(payload = {}) {
     summary: leaguesMasterSummary,
     leagues: nextLeaguesMasterEntries,
   }
-  const localClubOps = await buildClubSyncOperations({
+  const localClubOps = buildClubSyncOperations({
     league: effectivePayload.league, season: effectivePayload.season,
     team: { ...(effectivePayload.team || {}), birthTeamDocumentId },
     teamSeason: prepared.persistedSeason, performance: teamPerformance, points: teamPoints,
-    operationSuffix: 'local',
   })
-  const counterpartClubOps = { clubProjectionOperations: [], clubsMasterOperations: [] }
+  const counterpartClubOps = { clubProjectionOperations: [] }
   const approvedCounterpartStates = []
   const counterpartGroups = new Map()
 
@@ -463,17 +437,15 @@ export async function prepareRosterImportPlan(payload = {}) {
       target: 'current',
       team: counterpartTeam,
     })
-    const ops = await buildClubSyncOperations({
+    const ops = buildClubSyncOperations({
       league: counterpartLeague,
       season: counterpartSeason,
       team: counterpartTeam,
       teamSeason: simulatedTeamSeason,
       performance: counterpartPerformance,
       points: counterpartPoints,
-      operationSuffix: [firstState.birthTeamDocumentId, firstState.seasonKey].map(clean).join('::'),
     })
     counterpartClubOps.clubProjectionOperations.push(...ops.clubProjectionOperations)
-    counterpartClubOps.clubsMasterOperations.push(...ops.clubsMasterOperations)
   }
 
   const approvedClubPatches = [

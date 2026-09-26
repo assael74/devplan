@@ -476,12 +476,14 @@ id
 flowType
 label
 
-canonicalWritten
+auditTarget
+
+canonicalStatus
 
 lastAuditAt
-lastAuditResult
+lastAuditSummary
 
-closed
+status
 createdAt
 updatedAt
 ```
@@ -1124,7 +1126,7 @@ Dependency Audit
 
 ---
 
-## 27. מה לא נבנה כרגע
+## 28. מה לא נבנה כרגע
 
 הדברים הבאים מחוץ ל־Scope ללא צורך חדש ומוכח:
 
@@ -1147,7 +1149,7 @@ Dependency Audit
 
 ---
 
-## 28. כללי פשטות
+## 29. כללי פשטות
 
 ### כלל 1
 
@@ -1185,7 +1187,7 @@ Projection לעולם אינו מקור אמת לתיקון Projection אחר.
 
 ---
 
-## 29. יעד התהליך
+## 30. יעד התהליך
 
 היעד:
 
@@ -1215,7 +1217,7 @@ Debugging difficulty        ↓
 
 ---
 
-## 30. הצעד הבא המאושר
+## 31. הצעד הבא המאושר
 
 השלב הבא אינו בניית Audit V2 מלא מקצה לקצה.
 
@@ -1263,3 +1265,74 @@ Explicit Reconciliation
 ↓
 Legacy Removal
 ```
+
+---
+
+## 32. הבהרות מחייבות ל-Receipt ולתוצאת Audit
+
+auditTarget הוא locator קטן בלבד, ולא payload עסקי. הוא מכיל את הזהויות
+הקנוניות הדרושות להפעלת Audit לאחר Refresh, למשל leagueId, seasonKey
+ו-birthTeamDocumentId כאשר רלוונטי.
+
+canonicalStatus מתאר את מה שה-Receipt הצליח לדווח, ולא הוכחה מוחלטת למה
+שהתרחש ב-Firestore:
+
+~~~
+pending
+reported
+failed_or_unknown
+~~~
+
+כך, אם הכתיבה הקנונית הצליחה אך עדכון ה-Receipt נכשל, המערכת אינה מסיקה
+בטעות שה-Canonical לא נכתב.
+
+lastAuditSummary נשאר קטן ואינו שומר Findings מלאים, Expected State או
+Actual State:
+
+~~~
+ranAt
+coverage
+findingsCount
+checkedDomains
+~~~
+
+ה-Findings המלאים מחושבים מחדש על ידי Audit V2 בזמן הבדיקה.
+
+status מייצג את חיי ה-Receipt:
+
+~~~
+open
+closed
+abandoned
+~~~
+
+### Coverage ותוצאת Audit
+
+Coverage ופערים הם שני ממדים נפרדים:
+
+~~~
+coverage: partial | complete
+findingsCount: 0 | n
+~~~
+
+clean הוא תצוגת UX מותרת רק כאשר הכיסוי complete ו-findingsCount הוא אפס.
+Audit עם כיסוי חלקי עדיין יכול לכלול Findings אמיתיים; אין להסתיר אותם או
+להציג את הפעולה כנקייה.
+
+בשלבי המעבר, המשתמש רשאי לסגור פעולה לאחר אישור מפורש של תוצאת partial.
+הפעולה נסגרת עם סיכום Audit חלקי, ולא כפעולה נקייה. פעולה שנכשלה לפני
+Canonical יכולה להינטש במפורש.
+
+### גבולות בעלות
+
+Roster אינו יוצר Player Document רק משום ששחקן נמצא בסגל. בדיקות ותיקונים
+של Player Document עבור Stats או Scouting שייכים בעיקר ל-Stats Audit V2,
+אלא אם חוזה Architecture/Catalog מפורש יגדיר בעתיד שדה בבעלות Roster.
+
+Expected Clubs Master נבנה מ-Expected Club projections שחושבו מהמקורות
+הקנוניים, ולא מ-Club Documents קיימים שעלולים להיות שגויים. סדר הכתיבה יכול
+להישאר Clubs ואז Clubs Master, אך Projection קיים אינו מקור אמת לתיקון
+Projection אחר.
+
+auditV2 נשאר Read Only. שמירת lastAuditSummary ב-WriteAction נעשית על ידי
+שכבת UI orchestration או שירות Receipt נפרד לאחר ש-Audit V2 החזיר תוצאה.

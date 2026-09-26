@@ -13,6 +13,7 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   clubsMaster: 'dbClubsMaster',
   favorites: 'dbFavorites',
   auditFindings: 'dbAuditFindings',
+  writeActionsV2: 'dbWriteActionsV2',
 
   // Target operation contract.
   operations: 'dbPlayersDatabaseOperations',

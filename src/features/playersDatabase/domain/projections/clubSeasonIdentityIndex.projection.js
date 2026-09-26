@@ -32,7 +32,6 @@ export const buildLeagueClubSeasonIdentityEntries = ({
     const teamSlot = Number(row?.birthTeamSlot || row?.teamSlot || 1) || 1
     const entry = {
       clubId,
-      clubName: clean(row?.clubName || row?.club || row?.teamName),
       ageGroupId,
       teamId,
       teamSlot,

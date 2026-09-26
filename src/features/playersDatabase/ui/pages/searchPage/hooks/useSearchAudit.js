@@ -23,6 +23,12 @@ import {
 } from '../../../../services/dataRepair/club/index.js'
 import { retryMovementCounterpartsFromAuditFindings } from '../../../../services/dataRepair/team/index.js'
 import { syncRosterTeamProjectionFromCanonicalV2 } from '../../../../services/writeV2/roster/index.js'
+import {
+  getWriteActionReceiptV2,
+  listWriteActionReceiptsV2,
+  saveWriteActionAuditSummaryV2,
+} from '../../../../services/writeV2/index.js'
+import { auditLeagueV2 } from '../../../../services/auditV2/index.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
@@ -40,6 +46,8 @@ export default function useSearchAudit({ rows }) {
   const [repairProgress, setRepairProgress] = React.useState(null)
   const [recentWriteActions, setRecentWriteActions] = React.useState([])
   const [recentWriteActionsBusy, setRecentWriteActionsBusy] = React.useState(false)
+  const [recentWriteActionReceiptsV2, setRecentWriteActionReceiptsV2] = React.useState([])
+  const [recentWriteActionReceiptsV2Busy, setRecentWriteActionReceiptsV2Busy] = React.useState(false)
 
   const partialAuditDefaults = React.useMemo(
     () => buildPartialAuditDefaults(rows),
@@ -66,11 +74,24 @@ export default function useSearchAudit({ rows }) {
     }
   }, [])
 
+  const loadRecentWriteActionReceiptsV2 = React.useCallback(async () => {
+    setRecentWriteActionReceiptsV2Busy(true)
+    try {
+      setRecentWriteActionReceiptsV2(await listWriteActionReceiptsV2({ maxResults: 5 }))
+    } catch (receiptError) {
+      console.error('[playersDatabase] Recent V2 receipts read failed:', receiptError)
+      setRecentWriteActionReceiptsV2([])
+    } finally {
+      setRecentWriteActionReceiptsV2Busy(false)
+    }
+  }, [])
+
   const openAudit = React.useCallback(() => {
     setOpen(true)
     setError('')
     void loadRecentWriteActions()
-  }, [loadRecentWriteActions])
+    void loadRecentWriteActionReceiptsV2()
+  }, [loadRecentWriteActions, loadRecentWriteActionReceiptsV2])
 
   const closeAudit = React.useCallback(() => {
     setOpen(false)
@@ -123,6 +144,55 @@ export default function useSearchAudit({ rows }) {
       }))
     } catch (auditError) {
       setError(auditError instanceof Error ? auditError.message : 'בדיקת מזהה הטעינה נכשלה')
+    } finally {
+      setBusy(false)
+    }
+  }, [busy])
+
+  const runAuditForReceiptV2 = React.useCallback(async receiptId => {
+    if (busy) return
+
+    const id = clean(receiptId)
+    if (!id) {
+      setError('יש לבחור Receipt V2.')
+      return
+    }
+
+    setBusy(true)
+    setError('')
+    setRepairProgress(null)
+
+    try {
+      const receipt = await getWriteActionReceiptV2({ receiptId: id })
+      if (!receipt) throw new Error('Receipt V2 לא נמצא.')
+
+      if (receipt.flowType !== 'league') {
+        throw new Error(`Audit V2 עבור ${receipt.flowType || 'flow לא ידוע'} עדיין לא מיושם.`)
+      }
+
+      const auditTarget = receipt.auditTarget || {}
+      const nextResult = await auditLeagueV2({
+        leagueId: clean(auditTarget.leagueId),
+        seasonKey: clean(auditTarget.seasonKey),
+      })
+      const ranAt = new Date().toISOString()
+
+      await saveWriteActionAuditSummaryV2({
+        receiptId: id,
+        ranAt,
+        coverage: nextResult.coverage?.complete ? 'complete' : 'partial',
+        findingsCount: nextResult.findings?.length || 0,
+        checkedDomains: nextResult.coverage?.coveredTargets || [],
+      })
+
+      setResult({
+        ...nextResult,
+        auditVersion: 'v2',
+        receiptId: id,
+      })
+    } catch (auditError) {
+      console.error('[playersDatabase] Receipt V2 Audit failed:', auditError)
+      setError(auditError instanceof Error ? auditError.message : 'בדיקת Receipt V2 נכשלה')
     } finally {
       setBusy(false)
     }
@@ -415,13 +485,17 @@ export default function useSearchAudit({ rows }) {
     repairProgress,
     recentWriteActions,
     recentWriteActionsBusy,
+    recentWriteActionReceiptsV2,
+    recentWriteActionReceiptsV2Busy,
     partialAuditDefaults,
     openAudit,
     closeAudit,
     handleScopeChange,
     runAudit,
     runAuditForWriteAction,
+    runAuditForReceiptV2,
     loadRecentWriteActions,
+    loadRecentWriteActionReceiptsV2,
     openPlayer,
     openTeam,
     openLeague,

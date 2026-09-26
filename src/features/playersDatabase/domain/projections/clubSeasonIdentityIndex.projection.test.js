@@ -26,6 +26,7 @@ describe('clubSeasonIdentityIndex projection', () => {
     })
 
     expect(entries.map(entry => entry.clubId)).toEqual(['club-a', 'club-b'])
+    expect(entries[0]).not.toHaveProperty('clubName')
     expect(entries[0]).toMatchObject({
       teamId: 'team-a',
       leagueId: 'league-a',

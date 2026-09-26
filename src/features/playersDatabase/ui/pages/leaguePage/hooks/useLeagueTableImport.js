@@ -7,6 +7,12 @@ import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/s
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import {
+  WRITE_ACTION_V2_CANONICAL_STATUS,
+  WRITE_ACTION_V2_FLOW_TYPE,
+  closeWriteActionReceiptV2,
+  createWriteActionReceiptV2,
+  reportWriteActionCanonicalStatusV2,
+  saveWriteActionAuditSummaryV2,
   syncClubsMasterV2,
   syncLeagueClubsV2,
   syncLeagueIdentityV2,
@@ -14,6 +20,7 @@ import {
   syncLeaguesMasterV2,
   writeLeagueV2,
 } from '../../../../services/writeV2/index.js'
+import { auditLeagueV2 } from '../../../../services/auditV2/index.js'
 import { readClubSeasonIdentityIndex } from '../../../../services/read/index.js'
 import { resolveLeagueClubIdentityIndex } from '../../../../import/logic/leagueClubMasterWarnings.js'
 import {
@@ -96,6 +103,10 @@ const buildStructuralLeagueDiff = ({ existingRows = [], nextRows = [] } = {}) =>
     if (!nextByKey.has(key)) removed.push(row)
   })
 
+
+
+
+
   return {
     added,
     removed,
@@ -120,6 +131,8 @@ export function useLeagueTableImport({
   const [identityIndexDocument, setIdentityIndexDocument] = React.useState(null)
   const [identityValidationError, setIdentityValidationError] = React.useState(false)
   const [approvedPayload, setApprovedPayload] = React.useState(null)
+  const [receiptId, setReceiptId] = React.useState('')
+  const [auditResult, setAuditResult] = React.useState(null)
   const [syncState, setSyncState] = React.useState({})
   const [syncResults, setSyncResults] = React.useState({})
   const [structuralAcknowledged, setStructuralAcknowledged] = React.useState(false)
@@ -247,6 +260,8 @@ export function useLeagueTableImport({
     setIdentityIndexDocument(null)
     setIdentityValidationError(false)
     setApprovedPayload(null)
+    setReceiptId('')
+    setAuditResult(null)
     setSyncState({})
     setSyncResults({})
     syncCacheRefreshRef.current = false
@@ -332,6 +347,8 @@ export function useLeagueTableImport({
 
     syncCacheRefreshRef.current = false
     setApprovedPayload(buildApprovedPayload())
+    setReceiptId('')
+    setAuditResult(null)
     setSyncState({})
     setSyncResults({})
     return true
@@ -381,8 +398,40 @@ export function useLeagueTableImport({
   const syncLeagueCanonical = React.useCallback(() => runSyncStep({
     key: 'league',
     successTitle: 'טבלת הליגה נשמרה',
-    action: payload => writeLeagueV2(payload),
-  }), [runSyncStep])
+    action: async payload => {
+      let activeReceiptId = receiptId
+
+      if (!activeReceiptId) {
+        activeReceiptId = await createWriteActionReceiptV2({
+          flowType: WRITE_ACTION_V2_FLOW_TYPE.LEAGUE,
+          label: 'טעינת קבוצות ליגה',
+          auditTarget: {
+            leagueId: payload.league?.id || payload.league?.leagueId,
+            seasonKey: payload.season?.seasonKey,
+          },
+        })
+        setReceiptId(activeReceiptId)
+      }
+
+      try {
+        const result = await writeLeagueV2(payload)
+
+        await reportWriteActionCanonicalStatusV2({
+          receiptId: activeReceiptId,
+          canonicalStatus: WRITE_ACTION_V2_CANONICAL_STATUS.REPORTED,
+        })
+
+        return result
+      } catch (error) {
+        await reportWriteActionCanonicalStatusV2({
+          receiptId: activeReceiptId,
+          canonicalStatus: WRITE_ACTION_V2_CANONICAL_STATUS.FAILED_OR_UNKNOWN,
+        }).catch(() => null)
+
+        throw error
+      }
+    },
+  }), [receiptId, runSyncStep])
 
   const syncLeaguesMaster = React.useCallback(() => runSyncStep({
     key: 'leaguesMaster',
@@ -421,8 +470,40 @@ export function useLeagueTableImport({
     action: () => syncClubsMasterV2(),
   }), [runSyncStep])
 
-  const syncComplete = ['league', 'leaguesMaster', 'identity', 'teams', 'clubs', 'clubsMaster']
-    .every(key => syncState[key]?.status === 'completed')
+  const runLeagueAudit = React.useCallback(() => runSyncStep({
+    key: 'audit',
+    successTitle: 'בדיקת הסנכרון הושלמה',
+    action: async payload => {
+      if (!receiptId) throw new Error('Missing League WriteAction V2 receipt')
+
+      const result = await auditLeagueV2({
+        leagueId: payload.league?.id || payload.league?.leagueId,
+        seasonKey: payload.season?.seasonKey,
+      })
+      const ranAt = new Date().toISOString()
+
+      await saveWriteActionAuditSummaryV2({
+        receiptId,
+        ranAt,
+        coverage: result.coverage?.complete ? 'complete' : 'partial',
+        findingsCount: result.findings?.length || 0,
+        checkedDomains: result.coverage?.coveredTargets || [],
+      })
+
+      setAuditResult(result)
+      return result
+    },
+  }), [receiptId, runSyncStep])
+
+  const syncComplete = [
+    'league',
+    'leaguesMaster',
+    'identity',
+    'teams',
+    'clubs',
+    'clubsMaster',
+    'audit',
+  ].every(key => syncState[key]?.status === 'completed')
 
   React.useEffect(() => {
     if (!syncComplete || syncCacheRefreshRef.current || typeof reload !== 'function') return
@@ -430,6 +511,27 @@ export function useLeagueTableImport({
     syncCacheRefreshRef.current = true
     reload()
   }, [reload, syncComplete])
+
+
+
+  const finishLeagueImport = React.useCallback(async () => {
+    if (busy || !syncComplete || !receiptId || !auditResult) return false
+
+    await closeWriteActionReceiptV2({
+      receiptId,
+      allowPartialAudit: auditResult.coverage?.complete !== true,
+    })
+
+    setOpen(false)
+    if (typeof reload === 'function') reload()
+    return true
+  }, [
+    auditResult,
+    busy,
+    receiptId,
+    reload,
+    syncComplete,
+  ])
 
 
   return {
@@ -446,6 +548,8 @@ export function useLeagueTableImport({
     syncState,
     syncResults,
     syncComplete,
+    receiptId,
+    auditResult,
     structuralChanges,
     structuralAcknowledged,
     setOpen,
@@ -462,6 +566,8 @@ export function useLeagueTableImport({
     syncLeagueTeams,
     syncLeagueClubs,
     syncClubsMaster,
+    runLeagueAudit,
+    finishLeagueImport,
     handleClose: () => {
       setOpen(false)
       reload()

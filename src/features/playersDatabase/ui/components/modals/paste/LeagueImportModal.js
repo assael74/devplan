@@ -257,7 +257,9 @@ export default function LeagueImportModal({
       return
     }
 
-    if (activeStep === 3 && leagueImport.syncComplete) handleClose()
+    if (activeStep === 3 && leagueImport.syncComplete) {
+      leagueImport.finishLeagueImport()
+    }
   }
   const handleClose = () => {
     if (leagueImport.busy) return
@@ -274,7 +276,11 @@ export default function LeagueImportModal({
     ? 'המשך לטעינת נתונים'
     : activeStep === 1
       ? hasPreviewRows ? 'המשך לזיהוי ואישור' : 'המשך לבדיקת נתונים'
-      : activeStep === 2 ? 'אישור ומעבר לסנכרון' : 'סגור'
+      : activeStep === 2
+        ? 'אישור ומעבר לסנכרון'
+        : leagueImport.auditResult?.coverage?.complete === false
+          ? 'סגור עם Audit חלקי'
+          : 'סגור'
 
   return (
     <>
@@ -392,6 +398,13 @@ export default function LeagueImportModal({
                     action: leagueImport.syncClubsMaster,
                     enabled: leagueImport.syncState.clubs?.status === 'completed',
                   },
+                  {
+                    key: 'audit',
+                    title: 'בדיקת סנכרון',
+                    description: 'השוואת ההקרנות הקיימות למקורות האמת הקנוניים ושמירת סיכום הבדיקה ב־Receipt.',
+                    action: leagueImport.runLeagueAudit,
+                    enabled: leagueImport.syncState.clubsMaster?.status === 'completed',
+                  },
                 ].map((step, index) => {
                   const state = leagueImport.syncState[step.key] || {}
                   const completed = state.status === 'completed'
@@ -437,7 +450,9 @@ export default function LeagueImportModal({
                     כל שלבי טעינת הליגה הושלמו
                   </Typography>
                   <Typography level='body-sm' sx={sx.syncScopeHint}>
-                    התהליך הסתיים. כעת נשאר רק לסגור את המודאל.
+                    {leagueImport.auditResult?.coverage?.complete === false
+                      ? 'הסנכרון הסתיים. כיסוי ה־Audit עדיין חלקי; סגירה מהכפתור למטה מהווה אישור מפורש לסגור במצב זה.'
+                      : 'הסנכרון והבדיקה הסתיימו. כעת נשאר רק לסגור את המודאל.'}
                   </Typography>
                 </Box>
               ) : null}

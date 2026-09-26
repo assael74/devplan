@@ -19,7 +19,6 @@ export const CLUB_SEASON_IDENTITY_INDEX_DOCUMENT_CATALOG = {
   entries: [
     {
       clubId: '',
-      clubName: '',
       ageGroupId: '',
       teamId: '',
       teamSlot: 1,
