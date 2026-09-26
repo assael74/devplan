@@ -168,6 +168,11 @@ export const reconcileRosterMovement = ({
     const key = playerKey(player)
     if (!key) return
 
+    // A player already present in the canonical Team Season was only
+    // confirmed while rebuilding the import plan. Leave all existing
+    // transfer and pending state untouched.
+    if (clean(player.rosterImportResolution) === 'confirmedInRoster') return
+
     pendingPlayers = pendingPlayers.filter(pending => clean(pending.playerId) !== clean(player.playerId))
 
     const decision = clean(player.statsMovementDecision)

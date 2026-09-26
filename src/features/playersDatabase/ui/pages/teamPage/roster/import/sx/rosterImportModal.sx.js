@@ -106,8 +106,11 @@ export const rosterImportModalSx = {
     minWidth: '5%',
     maxWidth: '5%',
     px: 0.4,
-    textAlign: 'center',
+    textAlign: 'center !important',
+    verticalAlign: 'middle',
     whiteSpace: 'nowrap',
+
+    '& > *': { marginInline: 'auto' },
   },
 
   missingIndexColumn: {
@@ -115,30 +118,27 @@ export const rosterImportModalSx = {
     minWidth: '5%',
     maxWidth: '5%',
     px: 0.4,
-    textAlign: 'center',
+    textAlign: 'center !important',
+    verticalAlign: 'middle',
     whiteSpace: 'nowrap',
+
+    '& > *': { marginInline: 'auto' },
   },
 
   missingRosterHeader: {
     minWidth: 0,
     px: 1,
     py: 0.75,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 1,
-    borderBottom: '1px solid #dbe5f4',
-  },
-
-  missingRosterDescription: {
-    mt: 0.35,
-    color: 'neutral.600',
+    display: 'grid',
+    gap: 0.75,
+    bgcolor: '#edf6ff',
+    borderBottom: '1px solid #c9ddec',
   },
 
   missingRosterSummaryChips: {
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
+    mt: 0.25,
   },
 
   missingRosterScroll: {
@@ -223,24 +223,49 @@ export const rosterImportModalSx = {
   },
 
   syncPanel: {
+    width: '100%',
     minHeight: 0,
     height: '100%',
     display: 'grid',
-    alignContent: 'center',
-    justifyItems: 'start',
+    alignContent: 'start',
+    justifyItems: 'stretch',
     gap: 1.25,
     p: { xs: 2, md: 3 },
     border: '1px solid #d5e1ef',
     borderRadius: 'md',
+    overflowY: 'auto',
   },
 
-  syncHeading: {
-    display: 'grid',
-    justifyItems: 'start',
-    gap: 0.4,
+  syncCards: {
+    width: '100%',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+    gap: 1,
   },
 
-  syncDescription: { color: 'neutral.700' },
+  syncCard: {
+    minWidth: 0,
+    flex: {
+      xs: '0 0 100%',
+      sm: '0 0 calc(50% - 4px)',
+      md: '0 0 calc(33.333% - 6px)',
+      lg: '0 0 calc(25% - 6px)',
+    },
+  },
+
+  syncCardContent: {
+    height: '100%',
+  },
+
+  syncCardActive: {
+    borderColor: devPlanColors.primary,
+    boxShadow: '0 8px 18px rgba(23, 76, 123, 0.18)',
+  },
+
+  syncCardAction: {
+    alignSelf: 'flex-start',
+  },
 
   syncScope: {
     display: 'grid',

@@ -427,6 +427,20 @@ export const teamActionsPanelSx = {
     },
   },
 
+  statsActionButton: {
+    width: '100%',
+    minWidth: 0,
+    px: 0.75,
+    color: devPlanColors.primary,
+    borderColor: devPlanColors.primaryLight,
+    fontSize: 11.5,
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+
+    '& .MuiButton-startDecorator': {
+      flexShrink: 0,
+    },
+  },
   secondaryIconButton: {
     color: devPlanColors.tertiaryDark,
     bgcolor: devPlanColors.tertiaryLight,

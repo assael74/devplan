@@ -5,7 +5,6 @@ import {
   Card,
   Chip,
   CircularProgress,
-  Divider,
   Option,
   Select,
   Stack,
@@ -36,13 +35,15 @@ import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור', 'תצוגה מקדימה', 'סנכרון']
 
-const PROJECTION_JOB_STATUS = {
-  queued: { color: 'neutral', label: 'ממתין', title: 'הסנכרון ממתין להתחלה', description: 'נתוני הסגל נשמרו. בדיקת הסנכרון תתחיל אוטומטית.' },
-  processing: { color: 'primary', label: 'בתהליך', title: 'סנכרון נתוני הסגל מתבצע', description: 'המערכת בודקת את מסמכי הסגל, אינדקסי השחקנים ואת שני הצדדים של העברות.' },
-  completed: { color: 'success', label: 'הושלם', title: 'סנכרון נתוני הסגל הושלם', description: 'המסמכים הנגזרים וההעברות שנוצרו נבדקו מול הסגל שנשמר.' },
-  failed: { color: 'danger', label: 'נכשל', title: 'סנכרון נתוני הסגל נכשל', description: 'הסגל נשמר; אפשר לנסות שוב את בדיקת הסנכרון בלבד.' },
-  superseded: { color: 'neutral', label: 'הוחלף', title: 'הטעינה הוחלפה בטעינה חדשה יותר', description: 'לא בוצעו עדכונים נוספים מהטעינה הישנה.' },
-}
+const ROSTER_SYNC_STAGES = [
+  { id: 'canonical', label: 'שמירת הסגל', description: 'Team Root + Team Season' },
+  { id: 'counterparts', label: 'סנכרון העברות', description: 'קבוצות היעד שהושפעו מהעברות' },
+  { id: 'playerIndexes', label: 'סנכרון אינדקס שחקנים', description: 'Replace scope של Team + Season' },
+  { id: 'teamProjection', label: 'סנכרון נתוני קבוצה', description: 'Team SearchIndex + League roster metadata' },
+  { id: 'leaguesMaster', label: 'סנכרון Leagues Master', description: 'עדכון אינדקס הליגות' },
+  { id: 'clubs', label: 'סנכרון מועדונים', description: 'המועדון הראשי ומועדונים שהושפעו מהעברות' },
+  { id: 'clubsMaster', label: 'סנכרון Clubs Master', description: 'עדכון אינדקס המועדונים' },
+]
 
 const playerName = player => String(
   player?.fullName || player?.displayName || player?.name || ''
@@ -247,45 +248,74 @@ function PreviousRosterPlayerCell({ player, team, controller }) {
 }
 
 function RosterSyncStep({ controller }) {
-  const status = PROJECTION_JOB_STATUS[controller.projectionJob?.status] || PROJECTION_JOB_STATUS.queued
-  const stageResults = controller.projectionJob?.stageResults || {}
-  const transferResult = stageResults.transfers || {}
+  const syncState = controller.syncState || {}
+  const completedStages = Array.isArray(syncState.completedStages)
+    ? syncState.completedStages
+    : []
+  const completedSet = new Set(completedStages)
+  const allCompleted = ROSTER_SYNC_STAGES.every(stage => completedSet.has(stage.id))
 
   return (
     <Box sx={sx.syncPanel}>
-      <Stack direction='row' spacing={1.25} alignItems='center'>
-        {!['completed', 'failed', 'superseded'].includes(controller.projectionJob?.status) ? (
-          <CircularProgress size='sm' color={status.color} />
-        ) : null}
-        <Box sx={sx.syncHeading}>
-          <Chip size='sm' variant='soft' color={status.color}>{status.label}</Chip>
-          <Typography level='title-lg' color={status.color}>{status.title}</Typography>
-        </Box>
-      </Stack>
-      <Typography level='body-sm' sx={sx.syncDescription}>{status.description}</Typography>
-      <Divider />
-      <Box sx={sx.syncScope}>
-        <Typography level='title-sm'>מה מסתנכרן?</Typography>
-        <Typography level='body-sm'>מסמכי שחקנים, אינדקסי שחקן ועונה, נתוני קבוצה ומועדון, ושני הצדדים של כל העברה שאושרה.</Typography>
-        <Typography level='body-xs' sx={sx.syncScopeHint}>מסמך קבוצה־עונה חסר בצד השני של העברה נשאר תקין; הסנכרון אינו יוצר אותו באופן מלאכותי.</Typography>
+      <Box sx={sx.syncCards}>
+        {ROSTER_SYNC_STAGES.map((stage, index) => {
+          const completed = completedSet.has(stage.id)
+          const running = syncState.activeStage === stage.id
+          const previousCompleted = index === 0 || completedSet.has(ROSTER_SYNC_STAGES[index - 1].id)
+          const enabled = previousCompleted && !completed && !controller.busy
+          const activeCard = running || (previousCompleted && !completed)
+          const failed = syncState.error?.stageId === stage.id
+
+          return (
+            <Card
+              key={stage.id}
+              variant='outlined'
+              sx={[sx.syncCard, activeCard ? sx.syncCardActive : null]}
+            >
+              <Stack spacing={1} sx={sx.syncCardContent}>
+                <Box>
+                  <Stack direction='row' spacing={0.75} alignItems='center'>
+                    <Chip
+                      size='sm'
+                      variant='soft'
+                      color={completed ? 'success' : failed ? 'danger' : running ? 'primary' : 'neutral'}
+                    >
+                      {completed ? 'הושלם' : failed ? 'נכשל' : running ? 'בתהליך' : `${index + 1}`}
+                    </Chip>
+                    <Typography level='title-sm'>{stage.label}</Typography>
+                  </Stack>
+                  <Typography level='body-xs' sx={{ mt: 0.5 }}>
+                    {stage.description}
+                  </Typography>
+                  {failed ? (
+                    <Typography level='body-xs' color='danger' sx={{ mt: 0.5 }}>
+                      {syncState.error?.message || 'השלב נכשל. ניתן לנסות שוב.'}
+                    </Typography>
+                  ) : null}
+                </Box>
+
+                <Button
+                  size='sm'
+                  variant={completed ? 'soft' : 'solid'}
+                  color={completed ? 'success' : failed ? 'danger' : 'primary'}
+                  loading={running}
+                  disabled={!enabled}
+                  onClick={() => controller.runSyncStage(stage.id)}
+                  sx={sx.syncCardAction}
+                >
+                  {completed ? 'הושלם' : failed ? 'נסה שוב' : 'בצע'}
+                </Button>
+              </Stack>
+            </Card>
+          )
+        })}
       </Box>
-      {stageResults.canonicalSource ? (
-        <Stack direction='row' spacing={1} useFlexGap flexWrap='wrap'>
-          <Chip size='sm' variant='soft' color='neutral'>{stageResults.canonicalSource.playersCount || 0} שחקנים</Chip>
-          <Chip size='sm' variant='soft' color='neutral'>{stageResults.playerIndexes?.playerIndexCount || 0} אינדקסים</Chip>
-          <Chip size='sm' variant='soft' color='neutral'>העברות: {transferResult.synchronizedCount || 0}</Chip>
-          {transferResult.optionalMissingTeamSeasonCount ? (
-            <Chip size='sm' variant='soft' color='warning'>ללא מסמך קבוצה: {transferResult.optionalMissingTeamSeasonCount}</Chip>
-          ) : null}
-        </Stack>
-      ) : null}
-      {controller.projectionJob?.error?.message ? (
-        <Typography level='body-xs' color='danger' sx={sx.syncError}>{controller.projectionJob.error.message}</Typography>
-      ) : null}
-      {controller.projectionJob?.status === 'failed' ? (
-        <Button color='danger' variant='soft' loading={controller.retryingProjectionJob} onClick={controller.retryProjectionJob} sx={sx.syncRetryButton}>
-          נסה שוב
-        </Button>
+
+      {allCompleted ? (
+        <Card variant='soft' color='success'>
+          <Typography level='title-sm'>טעינת הסגל הושלמה</Typography>
+          <Typography level='body-xs'>כל שלבי הסנכרון הסתיימו. ניתן לסגור את המודאל.</Typography>
+        </Card>
       ) : null}
     </Box>
   )
@@ -394,24 +424,21 @@ function MissingRosterStep({ controller }) {
       <Box sx={sx.missingRosterHeader}>
         <Box>
           <Typography level='title-sm'>חסרים מהסגל הקודם · {players.length} שחקנים</Typography>
-          <Typography level='body-xs' sx={sx.missingRosterDescription}>
-            יש לבחור זיהוי לכל שחקן: „עזב” מחייב יעד; „חריג גיל” פנימי; „לא ידוע” נשאר לבדיקה ללא Movement.
-          </Typography>
+          <Stack direction='row' spacing={0.75} sx={sx.missingRosterSummaryChips}>
+            <Chip size='sm' variant='soft' color={missingRosterSummary.left ? 'primary' : 'neutral'}>
+              {`עזבו: ${missingRosterSummary.left}`}
+            </Chip>
+            <Chip size='sm' variant='soft' color={missingRosterSummary.unresolved ? 'danger' : 'neutral'}>
+              {`סטטוס חריג: ${missingRosterSummary.unresolved}`}
+            </Chip>
+            <Chip size='sm' variant='soft' color={missingRosterSummary.olderAgeException ? 'warning' : 'neutral'}>
+              {`חריגי גיל שנה שעברה: ${missingRosterSummary.olderAgeException}`}
+            </Chip>
+            <Chip size='sm' variant='soft' color='neutral'>
+              {`לא ידוע: ${missingRosterSummary.unknown}`}
+            </Chip>
+          </Stack>
         </Box>
-        <Stack direction='row' spacing={0.75} sx={sx.missingRosterSummaryChips}>
-          <Chip size='sm' variant='soft' color={missingRosterSummary.left ? 'primary' : 'neutral'}>
-            {`עזבו: ${missingRosterSummary.left}`}
-          </Chip>
-          <Chip size='sm' variant='soft' color={missingRosterSummary.unresolved ? 'danger' : 'neutral'}>
-            {`סטטוס חריג: ${missingRosterSummary.unresolved}`}
-          </Chip>
-          <Chip size='sm' variant='soft' color={missingRosterSummary.olderAgeException ? 'warning' : 'neutral'}>
-            {`חריגי גיל שנה שעברה: ${missingRosterSummary.olderAgeException}`}
-          </Chip>
-          <Chip size='sm' variant='soft' color='neutral'>
-            {`לא ידוע: ${missingRosterSummary.unknown}`}
-          </Chip>
-        </Stack>
       </Box>
       <Box className='dpScrollThin' sx={sx.missingRosterScroll}>
         <Table stickyHeader size='sm' sx={sx.missingRosterTable}>
@@ -491,6 +518,14 @@ function MissingRosterStep({ controller }) {
 }
 
 function JoinedRosterSourceControl({ row, rowIndex, controller }) {
+  if (row?.rosterImportResolution === 'confirmedInRoster') {
+    return (
+      <Typography level='body-xs' color='success'>
+        כבר בסגל
+      </Typography>
+    )
+  }
+
   if (row?.rosterPreviousMatch === true) {
     return <Typography level='body-xs' color='success'>היה בסגל</Typography>
   }
@@ -519,6 +554,14 @@ function JoinedRosterSourceControl({ row, rowIndex, controller }) {
 }
 
 function RosterImportResolutionControl({ row, rowIndex, controller }) {
+  if (row?.rosterImportResolution === 'confirmedInRoster') {
+    return (
+      <Typography level='body-xs' color='success'>
+        כבר בסגל
+      </Typography>
+    )
+  }
+
   if (row?.rosterPreviousMatch === true || row?.rosterPreviousMatch !== false) {
     return <Typography level='body-xs' color='neutral'>-</Typography>
   }
@@ -550,7 +593,6 @@ export default function RosterImportModal({
 }) {
   const [activeStep, setActiveStep] = React.useState(0)
   const [reviewStep, setReviewStep] = React.useState('present')
-  const isBlockedByProjectionSync = activeStep !== 3 && controller.isProjectionSyncPending
   const teamUrl = String(
     controller.selectedSeasonOption?.season?.teamUrl || team?.teamUrl || ''
   ).trim()
@@ -663,10 +705,6 @@ export default function RosterImportModal({
   }, [controller.open])
 
   React.useEffect(() => {
-    if (controller.projectionJobId) setActiveStep(3)
-  }, [controller.projectionJobId])
-
-  React.useEffect(() => {
     console.info('[playersDatabase/roster-import-debug]', {
       event: 'wizard-step',
       at: new Date().toISOString(),
@@ -676,7 +714,7 @@ export default function RosterImportModal({
         : activeStep === 1
           ? 'paste-and-start-identity-check'
           : activeStep === 3
-            ? 'watch-projection-sync'
+            ? 'manual-v2-sync'
             : reviewStep === 'present'
               ? 'review-identities-in-state'
               : reviewStep === 'missing'
@@ -698,7 +736,10 @@ export default function RosterImportModal({
   const confirm = async () => {
     if (activeStep === 0) return setActiveStep(1)
     if (activeStep === 1) return previewRoster()
-    if (activeStep === 3) return close()
+    if (activeStep === 3) {
+      controller.completeSync()
+      return close()
+    }
     if (reviewStep === 'present') {
       console.info('[playersDatabase/roster-import-debug]', {
         event: 'continue-to-missing-review',
@@ -712,15 +753,23 @@ export default function RosterImportModal({
       if (plan) setReviewStep('summary')
       return plan
     }
-    const result = await controller.confirm()
-    if (result?.stale) setReviewStep('missing')
+    const result = controller.enterSync()
+    if (result?.readyForSync) setActiveStep(3)
     return result
   }
+  const syncCompleted = ROSTER_SYNC_STAGES.every(stage => (
+    controller.syncState?.completedStages?.includes(stage.id)
+  ))
+  const hasSyncAttempt = Boolean(
+    controller.syncState?.activeStage ||
+    controller.syncState?.error ||
+    controller.syncState?.completedStages?.length
+  )
   const disabled = activeStep === 3
-    ? false
-    : isBlockedByProjectionSync || controller.busy || Boolean(controller.projectionJobId) || (
+    ? !syncCompleted || controller.busy
+    : controller.busy || (
       activeStep === 0
-      ? !controller.selectedSeasonOption || controller.previousRoster?.loading
+      ? !controller.selectedSeasonOption
       : activeStep === 1
         ? !controller.selectedSeasonOption || !controller.pasteValue
       : controller.hasIdentityErrors ||
@@ -738,7 +787,7 @@ export default function RosterImportModal({
           ? 'המשך לבדיקת חסרים'
           : reviewStep === 'missing'
             ? 'הצג סיכום לפני טעינה'
-            : 'טען נתונים'
+            : 'עבור לסנכרון'
   const footerActions = activeStep === 1 || activeStep === 2 ? (
     <ImportActionArea
       actions={[
@@ -763,6 +812,23 @@ export default function RosterImportModal({
         },
       ]}
     />
+  ) : activeStep === 3 ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה לתצוגה מקדימה',
+          iconId: 'back',
+          presentationRole: 'back',
+          disabled: controller.busy || hasSyncAttempt,
+          sx: chromeSx.backButton,
+          onClick: () => {
+            setReviewStep('summary')
+            setActiveStep(2)
+          },
+        },
+      ]}
+    />
   ) : null
 
   return (
@@ -774,6 +840,7 @@ export default function RosterImportModal({
         iconId='addPlayers'
         confirmLabel={confirmLabel}
         confirmIconId={activeStep === 2 && reviewStep === 'summary' ? 'upload' : 'next'}
+        confirmLoadingPosition='start'
         size='xl'
         busy={controller.busy}
         disabled={disabled}
@@ -791,7 +858,7 @@ export default function RosterImportModal({
           ...(activeStep === 0 || activeStep === 2 || activeStep === 3 ? {
             height: 'min(720px, calc(100dvh - 230px))',
             minHeight: 0,
-            gridTemplateRows: isBlockedByProjectionSync ? 'auto auto minmax(0, 1fr)' : 'auto minmax(0, 1fr)',
+            gridTemplateRows: 'auto minmax(0, 1fr)',
             overflow: 'hidden',
           } : {}),
         }}>
@@ -799,18 +866,6 @@ export default function RosterImportModal({
             activeStep={activeStep === 3 ? 5 : reviewStep === 'summary' ? 4 : reviewStep === 'missing' ? 3 : activeStep}
             steps={STEPS}
           />
-
-          {isBlockedByProjectionSync ? (
-            <Card variant='soft' color='warning'>
-              <Stack direction='row' spacing={1} alignItems='center'>
-                <CircularProgress size='sm' color='warning' />
-                <Box>
-                  <Typography level='title-sm'>ממתין לסיום סנכרון קודם</Typography>
-                  <Typography level='body-xs'>הקבוצה מתעדכנת ברקע. אפשר להמשיך להכין Preview מיד כשהסנכרון יסתיים.</Typography>
-                </Box>
-              </Stack>
-            </Card>
-          ) : null}
 
           {activeStep === 0 ? (
             <PreviousRosterStep

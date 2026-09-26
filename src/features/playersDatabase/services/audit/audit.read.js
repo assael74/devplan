@@ -69,15 +69,16 @@ export const buildScopedMovementCounterpartSeasonIds = ({ teamSeasons = [] } = {
   ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(row => {
     const season = row?.data || {}
     const seasonKey = String(season.seasonKey || season.seasonId || '').trim()
+    const localTeamId = String(season.birthTeamDocumentId || season.teamDocumentId || '').trim()
     if (!seasonKey) return
 
     ;(Array.isArray(season.transfersIn) ? season.transfersIn : []).forEach(incoming => {
       const sourceTeamId = String(incoming?.fromBirthTeamDocumentId || '').trim()
-      if (sourceTeamId) ids.add(buildTeamSeasonDocumentId(sourceTeamId, seasonKey))
+      if (sourceTeamId && sourceTeamId !== localTeamId) ids.add(buildTeamSeasonDocumentId(sourceTeamId, seasonKey))
     })
     ;(Array.isArray(season.transfersOut) ? season.transfersOut : []).forEach(outgoing => {
       const targetTeamId = String(outgoing?.toBirthTeamDocumentId || '').trim()
-      if (targetTeamId) ids.add(buildTeamSeasonDocumentId(targetTeamId, seasonKey))
+      if (targetTeamId && targetTeamId !== localTeamId) ids.add(buildTeamSeasonDocumentId(targetTeamId, seasonKey))
     })
   })
 
@@ -153,6 +154,46 @@ const readScopedSnapshot = async (scope, { includeWriteRecovery = true } = {}) =
   }
 }
 
+const readClubTeamSeasonScopedSnapshot = async (scope, { includeWriteRecovery = true } = {}) => {
+  const base = await readScopedSnapshot({
+    type: AUDIT_SCOPE_TYPE.TEAM_SEASON,
+    teamDocumentId: scope.teamDocumentId,
+    seasonKey: scope.seasonKey,
+  }, { includeWriteRecovery })
+  const counterpartTeamIds = base.rows.teamSeasons
+    .map(row => String(row.data?.birthTeamDocumentId || row.data?.teamDocumentId || '').trim())
+    .filter(Boolean)
+  const knownTeamIds = new Set(base.rows.teams.map(row => row.id))
+  const counterpartRoots = await readDocumentsById({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teams,
+    ids: counterpartTeamIds.filter(id => !knownTeamIds.has(id)),
+  })
+  const teams = uniqueRows([...base.rows.teams, ...counterpartRoots.rows])
+  const clubIds = [...new Set([
+    scope.clubId,
+    ...teams.map(row => String(row.data?.clubId || '').trim()),
+  ].filter(Boolean))]
+  const [clubResult, clubsMasterResult, leagueResult] = await Promise.all([
+    readDocumentsById({ collectionName: PLAYERS_DATABASE_COLLECTIONS.clubs, ids: clubIds }),
+    readDocumentsById({ collectionName: PLAYERS_DATABASE_COLLECTIONS.clubsMaster, ids: ['all'] }),
+    readDocumentsById({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      ids: [...new Set(base.rows.teamSeasons.map(row => row.data?.leagueId).filter(Boolean))],
+    }),
+  ])
+
+  return {
+    ...base,
+    readsUsed: base.readsUsed + counterpartRoots.readsUsed + clubResult.readsUsed + clubsMasterResult.readsUsed + leagueResult.readsUsed,
+    rows: {
+      ...base.rows,
+      leagues: leagueResult.rows,
+      clubs: clubResult.rows,
+      clubsMaster: clubsMasterResult.rows,
+      teams,
+    },
+  }
+}
 const readLeagueSeasonScopedSnapshot = async scope => {
   const leagueResult = await readDocumentsById({
     collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues,
@@ -193,6 +234,9 @@ export async function readPlayerDatabaseAuditSnapshot({ scope, includeWriteRecov
   const normalizedScope = normalizeAuditScope(scope)
   if (normalizedScope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON) {
     return readLeagueSeasonScopedSnapshot(normalizedScope)
+  }
+  if (normalizedScope.type === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON) {
+    return readClubTeamSeasonScopedSnapshot(normalizedScope, { includeWriteRecovery })
   }
   if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) {
     return readScopedSnapshot(normalizedScope, { includeWriteRecovery })

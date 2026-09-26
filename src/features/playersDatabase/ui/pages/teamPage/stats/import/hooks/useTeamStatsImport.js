@@ -2,21 +2,10 @@
 
 import * as React from 'react'
 
-import {
-  doc,
-  onSnapshot,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore'
+import useStatsV2FinalSync from './useStatsV2FinalSync.js'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  createTeamStatsProjectionRevision,
-  prepareApprovedStatsPlan,
-  resolvePlayerIdentities,
-  runPlayersDatabaseWriteAction,
-} from '../../../../../../services/write/index.js'
-import { invalidatePlayersDatabaseWriteCache } from '../../../../../../services/cache/index.js'
+import { prepareStatsImportPlanV2 } from '../../../../../../services/writeV2/stats/index.js'
+import { resolveTeamPlayerIdentities } from '../../../../../../services/read/identity/playerIdentityPreview.read.js'
 import { SNACK_STATUS } from '../../../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { STATS_ROSTER_STATUS_OPTIONS } from '../../shared/stats.constants.js'
 import { clean } from '../../../logic/teamPage.utils.js'
@@ -42,8 +31,6 @@ import { validatePlayerStatsAgainstLeague } from '../../../../../../domain/valid
 import { resolveLeagueTeamPoints } from '../../../../../../domain/projections/teamPerformance.projection.js'
 import { findTeamPageSeasonDoc } from '../../../../../../model/team/page/teamPageSeason.model.js'
 import { adaptTeamPagePlayerRow } from '../../../../../../model/team/page/teamPagePlayer.model.js'
-import { db } from '../../../../../../../../services/firebase/firebase.js'
-import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../../../constants/pdb.constants.js'
 
 const withoutStatsMinutesCorrection = row => {
   const nextRow = { ...(row || {}) }
@@ -72,18 +59,16 @@ export default function useTeamStatsImport({
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
-  const [projectionJobId, setProjectionJobId] = React.useState('')
-  const [writeActionId, setWriteActionId] = React.useState('')
-  const [projectionJob, setProjectionJob] = React.useState(null)
-  const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
+  const [reloadDecisions, setReloadDecisions] = React.useState({})
+  const [reloadDecisionState, setReloadDecisionState] = React.useState(null)
   const [approvedStatsPlan, setApprovedStatsPlan] = React.useState(null)
   const [approvedStatsPlanPreparing, setApprovedStatsPlanPreparing] = React.useState(false)
   const [approvedStatsPlanError, setApprovedStatsPlanError] = React.useState(null)
   const [approvedStatsPlanSourceKey, setApprovedStatsPlanSourceKey] = React.useState('')
   const [approvedStatsPlanRetryNonce, setApprovedStatsPlanRetryNonce] = React.useState(0)
+  const [approvedForSync, setApprovedForSync] = React.useState(null)
   const approvedStatsPlanGenerationRef = React.useRef(0)
   const confirmInFlightRef = React.useRef(false)
-  const completedProjectionJobRef = React.useRef('')
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -118,44 +103,33 @@ export default function useTeamStatsImport({
       setSeasonStatus('')
       setRows([])
       setPasteValue('')
-      setProjectionJobId('')
-      setWriteActionId('')
-      setProjectionJob(null)
+      setReloadDecisions({})
+      setReloadDecisionState(null)
       setApprovedStatsPlan(null)
       setApprovedStatsPlanError(null)
       setApprovedStatsPlanSourceKey('')
+      setApprovedForSync(null)
     }
   }, [
     open,
   ])
 
-  React.useEffect(() => {
-    if (!projectionJobId) return undefined
-    return onSnapshot(
-      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs, projectionJobId),
-      snapshot => setProjectionJob(snapshot.exists ? { id: snapshot.id, ...snapshot.data() } : null),
-      () => setProjectionJob(null)
-    )
-  }, [projectionJobId])
-
   const selectSeasonOption = React.useCallback(optionKey => {
+    const option = seasonOptions.find(item => item.optionKey === optionKey) || null
     setSelectedSeasonOptionKey(optionKey)
     setRows([])
     setPasteValue('')
-    setSeasonStatus('')
+    setSeasonStatus(option?.target === 'history' ? 'completed' : 'active')
     setApprovedStatsPlan(null)
     setApprovedStatsPlanError(null)
     setApprovedStatsPlanSourceKey('')
-  }, [])
+  }, [seasonOptions])
 
   const openModal = React.useCallback(() => {
-    const pageSeasonOptionKey = String(pageSelectedSeasonOption?.optionKey || '').trim()
-    const pageSeasonIsAvailable = seasonOptions.some(option => (
-      option.optionKey === pageSeasonOptionKey
-    ))
-    setSelectedSeasonOptionKey(pageSeasonIsAvailable ? pageSeasonOptionKey : '')
+    const defaultOption = seasonOptions.find(option => option.optionKey === pageSelectedSeasonOption?.optionKey) || seasonOptions[0] || null
+    if (defaultOption) selectSeasonOption(defaultOption.optionKey)
     setOpen(true)
-  }, [pageSelectedSeasonOption?.optionKey, seasonOptions])
+  }, [pageSelectedSeasonOption?.optionKey, seasonOptions, selectSeasonOption])
 
   const seasonContext = React.useMemo(() => ({
     ...(selectedSeasonOption?.season || {}),
@@ -384,20 +358,20 @@ export default function useTeamStatsImport({
     setApprovedStatsPlanPreparing(true)
     const timeoutId = window.setTimeout(async () => {
       try {
-        const plan = await prepareApprovedStatsPlan({
-          league: {
-            ...(actionLeagueDoc || {}),
-            id: actionLeagueId,
-            leagueId: actionLeagueId,
-          },
+        const plan = await prepareStatsImportPlanV2({
+          league: { ...(actionLeagueDoc || {}), id: actionLeagueId, leagueId: actionLeagueId },
           season: seasonContext,
-          team,
-          players: approvedPlanPlayers,
-          teamPerformance,
-          teamPoints,
-          statsProjectionRevision: createTeamStatsProjectionRevision(),
-          trackedAt: new Date().toISOString(),
+          team: { ...team, birthTeamDocumentId: clean(team.birthTeamDocumentId || team.teamDocumentId || team.birthTeamId || team.teamId) },
+          teamRoot: { ...(teamDoc || {}), id: clean(teamDoc?.id || team.birthTeamDocumentId || team.teamDocumentId || team.birthTeamId || team.teamId) },
+          teamSeason: selectedTeamSeason,
+          incomingPlayers: approvedPlanPlayers,
+          reloadDecisions,
+          movementState: null,
+          performance: teamPerformance,
+          points: teamPoints,
+          approvedAt: 'preview',
         })
+        setReloadDecisionState(null)
 
         if (approvedStatsPlanGenerationRef.current !== generation) return
         setApprovedStatsPlan(plan)
@@ -405,6 +379,7 @@ export default function useTeamStatsImport({
       } catch (error) {
         if (approvedStatsPlanGenerationRef.current !== generation) return
         console.error('[playersDatabase/stats-plan-preview]', error)
+        if (error?.reloadDecisionState) setReloadDecisionState(error.reloadDecisionState)
         setApprovedStatsPlanError(error)
       } finally {
         if (approvedStatsPlanGenerationRef.current === generation) {
@@ -430,9 +405,12 @@ export default function useTeamStatsImport({
     teamPerformance,
     teamPoints,
     approvedStatsPlanRetryNonce,
+    reloadDecisions,
+    selectedTeamSeason,
+    teamDoc,
   ])
 
-  const retryApprovedStatsPlan = React.useCallback(() => {
+  const rebuildApprovedStatsPlan = React.useCallback(() => {
     if (approvedStatsPlanPreparing) return
 
     setApprovedStatsPlanRetryNonce(current => current + 1)
@@ -457,7 +435,7 @@ export default function useTeamStatsImport({
         .map((row, index) => ({ row, index }))
         .filter(entry => entry.row.identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH)
       const resolvedRows = unresolvedEntries.length
-        ? await resolvePlayerIdentities({
+        ? await resolveTeamPlayerIdentities({
             players: unresolvedEntries.map(entry => entry.row),
             season: seasonContext,
           })
@@ -555,176 +533,53 @@ export default function useTeamStatsImport({
 
     setPasteValue('')
     setRows([])
-    setProjectionJobId('')
-    setWriteActionId('')
-    setProjectionJob(null)
+    setReloadDecisions({})
+    setReloadDecisionState(null)
   }, [busy])
 
   const closeWriteReport = React.useCallback(() => {
     setWriteReport(null)
   }, [])
 
+  const finalSync = useStatsV2FinalSync({
+    approvedState: approvedForSync,
+    onCanonicalWritten: reload,
+  })
+
   const close = React.useCallback(() => {
     if (busy) return
+    if (approvedForSync) {
+      const syncComplete = finalSync.stages.every(
+        stage => finalSync.results?.[stage]?.status === 'completed'
+      )
+      if (!syncComplete) return
+    }
 
     setOpen(false)
     setPasteValue('')
     setRows([])
-  }, [busy])
-
-  // Keep the dry-run output and the real write on exactly the same payload
-  // contract. This makes identity-decision issues inspectable without any
-  // Firestore write.
-  const buildStatsWritePayload = React.useCallback((playersForWrite, approvedPlan) => ({
-    target: selectedSeasonOption?.target,
-    league: {
-      ...(actionLeagueDoc || {}),
-      id: actionLeagueId,
-      leagueId: actionLeagueId,
-    },
-    season: seasonContext,
-    team,
-    players: playersForWrite,
-    approvedStatsPlan: approvedPlan,
-  }), [actionLeagueDoc, actionLeagueId, seasonContext, selectedSeasonOption?.target, team])
+  }, [approvedForSync, busy, finalSync.results, finalSync.stages])
 
   const confirm = React.useCallback(async () => {
-    if (
-      !selectedSeasonOption ||
-      !hasTeamPlayers ||
-      hasInvalidRows ||
-      movementPreview.requiresDecision ||
-      !seasonStatus
-    ) return
-
-    if (approvedStatsPlanPreparing) return
-
-    if (!approvedStatsPlan || approvedStatsPlanSourceKey !== approvedPlanSourceKey) {
+    if (!approvedStatsPlan || approvedStatsPlanPreparing || approvedStatsPlanSourceKey !== approvedPlanSourceKey) {
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'תוכנית הטעינה עדיין לא מוכנה',
-        message: approvedStatsPlanError?.message || 'יש להמתין לסיום הכנת תוכנית הטעינה ולנסות שוב',
+        message: approvedStatsPlanError?.message || 'יש להשלים את כל ההחלטות לפני האישור',
       })
-      return
+      return null
     }
-
-    if (confirmInFlightRef.current) return
-    confirmInFlightRef.current = true
-
-    const validRows = approvedPlanPlayers
-    const payload = buildStatsWritePayload(validRows, approvedStatsPlan)
-    setBusy(true)
-
-    try {
-      console.groupCollapsed('[playersDatabase/stats-import] payload לפני אישור טעינה')
-      console.info('זהו ה-payload הקנוני שנשלח ל-write flow.', payload)
-      console.info('[playersDatabase/stats-import] PAYLOAD_JSON\n%s', JSON.stringify(payload, null, 2))
-      console.table(payload.players.map(player => ({
-        player: player.originalFullName || player.fullName || '',
-        playerId: player.playerId || '',
-        rosterStatus: player.rosterStatus || '',
-        identityMatchStatus: player.identityMatchStatus || '',
-        identityResolution: player.identityResolution || '',
-        movement: player.statsMovementDecision || '',
-      })))
-      console.groupEnd()
-      const result = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
-        payload,
-      })
-
-      notify({
-        status: SNACK_STATUS.SUCCESS,
-        title: 'נתוני הסטטיסטיקה נשמרו',
-        message: 'בדיקת סנכרון ממוקדת לקבוצה ולעונה ממשיכה ברקע',
-      })
-      setProjectionJobId(String(result?.projectionJob?.id || ''))
-      setWriteActionId(String(result?.writeActionId || ''))
-      reload()
-      return result
-    } catch (error) {
-      // The canonical Team Season can be committed before a derived document
-      // fails to synchronize. Refresh it before showing the recovery report
-      // so the user never works against a stale pre-write screen.
-      if (error?.results?.teamCanonicalCommitted) reload()
-      console.error('[playersDatabase/write-flow]', error?.writeReport || error)
-      setOpen(false)
-      setWriteReport(buildWriteReportFromError({
-        error,
-        flow: 'pasteTeamPlayerStats',
-      }))
-
-      notify({
-        status: SNACK_STATUS.ERROR,
-        title: 'טעינת סטטיסטיקות נכשלה',
-        message: 'נפתח דוח כתיבה מפורט לבדיקה',
-      })
-    } finally {
-      confirmInFlightRef.current = false
-      setBusy(false)
+    const approvedState = {
+      ...approvedStatsPlan,
+      approvedAt: new Date().toISOString(),
     }
-  }, [
-    approvedPlanPlayers,
-    approvedStatsPlan,
-    approvedStatsPlanError?.message,
-    approvedStatsPlanPreparing,
-    approvedStatsPlanSourceKey,
-    approvedPlanSourceKey,
-    buildStatsWritePayload,
-    hasInvalidRows,
-    movementPreview.requiresDecision,
-    hasTeamPlayers,
-    actionLeagueDoc,
-    actionLeagueId,
-    notify,
-    reload,
-    seasonContext,
-    seasonStatus,
-    selectedSeasonOption,
-    team,
-  ])
+    setApprovedForSync(approvedState)
+    return approvedState
+  }, [approvedPlanSourceKey, approvedStatsPlan, approvedStatsPlanError?.message, approvedStatsPlanPreparing, approvedStatsPlanSourceKey, notify])
 
-  const retryProjectionJob = React.useCallback(async () => {
-    if (!projectionJobId || projectionJob?.status !== 'failed') return
-    setRetryingProjectionJob(true)
-    try {
-      const batch = writeBatch(db)
-      const jobReference = doc(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs, projectionJobId)
-      batch.update(jobReference, {
-        status: 'queued', attemptToken: null, leaseExpiresAt: null, error: null, failedAt: null,
-        retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      })
-      if (projectionJob?.writeActionId) {
-        batch.update(doc(db, PLAYERS_DATABASE_COLLECTIONS.writeActions, projectionJob.writeActionId), {
-          status: 'in_progress', recoveryRequired: false,
-          projectionAttemptToken: null,
-          retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
-        })
-      }
-      await batch.commit()
-    } finally {
-      setRetryingProjectionJob(false)
-    }
-  }, [projectionJobId, projectionJob?.status, projectionJob?.writeActionId])
-
-
-  React.useEffect(() => {
-    const status = projectionJob?.status || ''
-    const completionKey = `${projectionJobId}:${status}`
-    if (!['completed', 'failed', 'superseded', 'partial_superseded'].includes(status) ||
-        completedProjectionJobRef.current === completionKey) return
-
-    completedProjectionJobRef.current = completionKey
-    invalidatePlayersDatabaseWriteCache({
-      actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
-      payload: {
-        league: { id: actionLeagueId },
-        season: seasonContext,
-        team,
-      },
-    })
-    reload()
-  }, [actionLeagueId, projectionJob?.status, projectionJobId, reload, seasonContext, team])
+  const setReloadDecision = React.useCallback((playerKey, decision) => {
+    setReloadDecisions(current => ({ ...current, [playerKey]: decision }))
+  }, [])
 
   return {
     open,
@@ -742,14 +597,14 @@ export default function useTeamStatsImport({
     hasInvalidRows,
     movementPreview,
     teamRootOptions,
-    projectionJobId,
-    writeActionId,
-    projectionJob,
-    retryingProjectionJob,
     approvedStatsPlan,
     approvedStatsPlanPreparing,
     approvedStatsPlanError,
     approvedStatsPlanSourceKey,
+    reloadDecisionState,
+    approvedForSync,
+    finalSync,
+    reloadDecisions,
     rosterExceptionsSummary,
     openModal,
     selectSeasonOption,
@@ -765,7 +620,7 @@ export default function useTeamStatsImport({
     close,
     closeWriteReport,
     confirm,
-    retryApprovedStatsPlan,
-    retryProjectionJob,
+    rebuildApprovedStatsPlan,
+    setReloadDecision,
   }
 }

@@ -74,7 +74,7 @@ const appendCounterpartFindings = ({ season, teamSeasons, context, findings }) =
   ;(Array.isArray(season.transfersIn) ? season.transfersIn : []).forEach(incoming => {
     const movementId = clean(incoming?.movementId)
     const sourceTeamId = clean(incoming?.fromBirthTeamDocumentId)
-    if (!movementId || !sourceTeamId) return
+    if (!movementId || !sourceTeamId || sourceTeamId === context.teamId) return
 
     const counterpartSeason = findCounterpartSeason({
       teamSeasons,
@@ -114,7 +114,7 @@ const appendCounterpartFindings = ({ season, teamSeasons, context, findings }) =
   ;(Array.isArray(season.transfersOut) ? season.transfersOut : []).forEach(outgoing => {
     const movementId = clean(outgoing?.movementId)
     const targetTeamId = clean(outgoing?.toBirthTeamDocumentId)
-    if (!movementId || !targetTeamId) return
+    if (!movementId || !targetTeamId || targetTeamId === context.teamId) return
 
     const counterpartSeason = findCounterpartSeason({
       teamSeasons,

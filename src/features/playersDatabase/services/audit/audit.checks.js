@@ -43,6 +43,7 @@ export async function runPlayerDatabaseAuditChecks({ scope, includeWriteRecovery
   const teamIndexes = searchIndexes.filter(row => row.data?.entityType === 'birthTeamSeason')
   const playerIndexes = searchIndexes.filter(row => row.data?.entityType === 'playerSeason')
   const favoriteIds = new Set((favorites.find(row => row.id === 'players')?.data?.items || []).map(item => clean(item?.entityId)).filter(Boolean))
+  const clubScopedAudit = normalizedScope.type === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
   const masterChecked = normalizedScope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM
   const masterAvailable = leaguesMaster.some(row => row.id === 'all')
 
@@ -148,7 +149,7 @@ export async function runPlayerDatabaseAuditChecks({ scope, includeWriteRecovery
         label: 'מאסטר הליגות מול מסמכי הליגה',
       },
       clubs: {
-        checked: normalizedScope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM,
+        checked: normalizedScope.type === AUDIT_SCOPE_TYPE.FULL_SYSTEM || clubScopedAudit,
         documents: clubs.length,
         masterAvailable: clubsMaster.some(row => row.id === 'all'),
         label: 'מסמכי מועדון ו-Clubs Master מול Team/League',

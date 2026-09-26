@@ -17,7 +17,11 @@ export function appendClubAuditFindings({
   findings,
   helpers,
 }) {
-  if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM) return
+  const scopedClubIds = normalizedScope.type === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
+    ? new Set([normalizedScope.clubId, ...[...rootsById.values()].map(team => String(team?.clubId || '').trim()).filter(Boolean)])
+    : null
+  const scopedTeamIds = scopedClubIds ? new Set([...rootsById.keys()]) : null
+  if (normalizedScope.type !== AUDIT_SCOPE_TYPE.FULL_SYSTEM && !scopedClubIds) return
 
   const {
     clean,
@@ -32,7 +36,8 @@ export function appendClubAuditFindings({
   // canonical Team/League relation and the pure Master builder; no repair is
   // attempted from this read-only flow.
   const clubsMasterDocument = clubsMaster.find(row => row.id === 'all')?.data || null
-  const masterClubEntries = Array.isArray(clubsMasterDocument?.clubs) ? clubsMasterDocument.clubs : []
+  const masterClubEntries = (Array.isArray(clubsMasterDocument?.clubs) ? clubsMasterDocument.clubs : [])
+    .filter(entry => !scopedClubIds || scopedClubIds.has(clean(entry?.clubId)))
   const clubsById = new Map(clubs.map(row => [clean(row.data?.clubId || row.id), row]))
   const masterClubsById = new Map(masterClubEntries
     .map(entry => [clean(entry?.clubId), entry])
@@ -144,6 +149,8 @@ export function appendClubAuditFindings({
       const ageGroupId = clean(ageGroup?.ageGroupId)
       ;(Array.isArray(ageGroup?.seasons) ? ageGroup.seasons : []).forEach(season => {
         const teamId = clean(season?.teamId)
+        if (scopedTeamIds && !scopedTeamIds.has(teamId)) return
+        if (scopedClubIds && String(season?.birthYear || '').trim() !== String(normalizedScope.birthYear || '').trim()) return
         const seasonKey = seasonKeyOf(season)
         const leagueId = clean(season?.league?.leagueId)
         const identity = clubSeasonKeyOf({ ageGroupId, season })
@@ -321,6 +328,9 @@ export function appendClubAuditFindings({
 
     ;(Array.isArray(club?.competitionPaths) ? club.competitionPaths : []).forEach(path => {
       ;(Array.isArray(path?.seasons) ? path.seasons : []).forEach(season => {
+        const pathTeamId = clean(season?.teamId)
+        if (scopedTeamIds && !scopedTeamIds.has(pathTeamId)) return
+        if (scopedClubIds && String(season?.birthYear || '').trim() !== String(normalizedScope.birthYear || '').trim()) return
         const identity = clubSeasonKeyOf({ ageGroupId: season?.ageGroupId, season })
         if (identity && !clubSeasonKeys.has(identity)) findings.push(buildAuditFinding({
           type: AUDIT_FINDING_TYPE.BROKEN_RELATION,
@@ -363,7 +373,9 @@ export function appendClubAuditFindings({
     leagueSeasons.forEach(leagueSeason => {
       const seasonKey = seasonKeyOf(leagueSeason)
       ;(Array.isArray(leagueSeason?.tableRank) ? leagueSeason.tableRank : []).forEach(teamRow => {
+        if (scopedClubIds && !scopedClubIds.has(clean(teamRow?.clubId))) return
         const teamId = clean(teamRow?.teamId || teamRow?.birthTeamId)
+        if (scopedTeamIds && !scopedTeamIds.has(teamId)) return
         const identity = [ageGroupId, seasonKey, teamId].join('::')
         if (!ageGroupId || !seasonKey || !teamId) return
         const rows = leagueRowsByClubIdentity.get(identity) || []
@@ -384,8 +396,10 @@ export function appendClubAuditFindings({
     leagueSeasons.forEach(leagueSeason => {
       const seasonKey = seasonKeyOf(leagueSeason)
       ;(Array.isArray(leagueSeason?.tableRank) ? leagueSeason.tableRank : []).forEach(teamRow => {
+        if (scopedClubIds && !scopedClubIds.has(clean(teamRow?.clubId))) return
         const clubId = clean(teamRow?.clubId)
         const teamId = clean(teamRow?.teamId || teamRow?.birthTeamId)
+        if (scopedTeamIds && !scopedTeamIds.has(teamId)) return
         const relationKey = [ageGroupId, seasonKey, teamId].join('::')
         const matchingLeagueRows = leagueRowsByClubIdentity.get(relationKey) || []
         const distinctLeagueIds = [...new Set(matchingLeagueRows.map(item => item.leagueId))]

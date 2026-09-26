@@ -33,6 +33,7 @@ export {
 
 export {
   pasteLeagueTableFlow,
+  pasteLeagueTableTargetFlow,
 } from './pasteLeagueTable.flow.js'
 
 export {

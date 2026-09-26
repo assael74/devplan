@@ -5,6 +5,7 @@
 // for exactly one team + season identity.
 
 import { SCOUTING_MODEL_VERSION, TEAM_LINE_CLASSIFICATION_VERSION } from '../../../../shared/scouting/scouting.version.js'
+
 const TEAM_BALANCE_GENERIC_OBJECT = {
   snapshotFormat: 'team-balance-summary-v14',
   version: '',
@@ -132,6 +133,7 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
   seasonId: '',
   seasonKey: '',
   seasonStatus: '',
+  generation: '',
   ageGroupId: '',
   leagueId: '',
   teamUrl: '',

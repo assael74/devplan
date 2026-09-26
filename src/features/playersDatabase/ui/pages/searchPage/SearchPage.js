@@ -128,6 +128,7 @@ function SearchPageContent() {
         onRepair={audit.requestRepair}
         onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}
         onRepairPlayerIndexes={audit.repairPlayerIndexes}
+        onRepairRosterTeamProjectionFromCanonical={audit.repairRosterTeamProjectionFromCanonical}
         onRepairTeamIndexes={audit.repairTeamIndexes}
         onRetryMovementCounterparts={audit.retryMovementCounterparts}
         onResetOrphanTeamIndexes={audit.resetOrphanTeamIndexes}

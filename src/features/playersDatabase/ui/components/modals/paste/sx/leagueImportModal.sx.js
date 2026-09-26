@@ -36,9 +36,7 @@ export const leagueImportModalSx = {
 
   syncPanel: {
     width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
-    justifySelf: 'center',
+    maxWidth: 760,
     p: {
       xs: 2,
       md: 3,
@@ -49,6 +47,20 @@ export const leagueImportModalSx = {
     borderRadius: 14,
     bgcolor: devPlanColors.surface,
     boxShadow: '0 8px 22px rgba(16, 43, 64, 0.08)',
+  },
+
+  syncStepArea: {
+    minHeight: 0,
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    display: 'grid',
+    justifyItems: 'center',
+    alignContent: 'start',
+    px: {
+      xs: 0,
+      md: 1,
+    },
+    pb: 1,
   },
 
   syncHeading: {
@@ -77,6 +89,69 @@ export const leagueImportModalSx = {
 
   syncRetryButton: {
     justifySelf: 'start',
+  },
+
+  syncHeader: {
+    display: 'grid',
+    gap: 0.5,
+  },
+
+  syncTitle: {
+    color: devPlanColors.primaryDark,
+  },
+
+  syncStep: {
+    display: 'grid',
+    gridTemplateColumns: '36px minmax(0, 1fr) auto',
+    gap: 1.25,
+    alignItems: 'center',
+    p: 1.25,
+    borderRadius: 10,
+    bgcolor: devPlanColors.secondaryLight,
+  },
+
+  syncStepNumber: {
+    width: 32,
+    height: 32,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: '50%',
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.primary,
+    fontWeight: 700,
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  syncStepContent: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.35,
+  },
+
+  syncComplete: {
+    p: 1.5,
+    display: 'grid',
+    gap: 0.35,
+    borderRadius: 10,
+    bgcolor: devPlanColors.secondaryLight,
+  },
+
+  structuralReview: {
+    width: '100%',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    gap: 1.5,
+    alignItems: 'center',
+    p: 1.5,
+    borderRadius: 10,
+    bgcolor: devPlanColors.secondaryLight,
+    border: `1px solid ${devPlanColors.border}`,
+  },
+
+  structuralReviewContent: {
+    minWidth: 0,
+    display: 'grid',
+    gap: 0.35,
   },
 
 }

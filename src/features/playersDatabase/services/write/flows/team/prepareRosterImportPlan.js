@@ -1,6 +1,7 @@
 import { getLeagueById } from '../../../read/entities/league.js'
 import { readPlayerSeasonIndexScopeRows } from '../../../read/indexes/teamRosterSyncSources.read.js'
 import { readLeaguesMasterDocument } from '../../../read/masters/leaguesMaster.read.js'
+import { readClubsMasterDocument } from '../../../read/masters/clubsMaster.read.js'
 import { readClubDocument } from '../../clubs/clubDoc.js'
 import { buildClubIdentityFromTeam, resolveClubTransferCoverageStatus } from '../../clubs/clubFlowProjection.js'
 import { buildPlayerSeasonIndexSyncPlan } from '../../searchIndex/player/playerSeasonIndex.plan.js'
@@ -351,6 +352,15 @@ export async function prepareRosterImportPlan(payload = {}) {
     replaceScope: true,
     existingRows: playerIndexRows,
   })
+  const approvedPlayerIndexState = {
+    upserts: playerIndexPlan.operations
+      .filter(operation => operation.type === 'upsert')
+      .map(operation => ({ docId: operation.docId, fields: operation.patch })),
+    deletes: playerIndexPlan.operations
+      .filter(operation => operation.type === 'delete')
+      .map(operation => operation.docId),
+  }
+
   const teamIndexPlan = buildTeamSeasonRosterMetaSyncPlan({
     league: effectivePayload.league,
     season: effectivePayload.season,
@@ -360,6 +370,7 @@ export async function prepareRosterImportPlan(payload = {}) {
     playerSeasonIndexCount: playerIndexPlan.operations.filter(operation => operation.type !== 'delete').length,
     teamBalance: prepared.persistedSeason.teamBalance || null,
     teamPerformance,
+    points: teamPoints,
     teamSeasonDocumentId: buildTeamSeasonDocumentId(birthTeamDocumentId, effectivePayload.season.seasonKey),
   })
   const leagueTeamPlan = buildLeagueTeamRosterSyncPlan({
@@ -382,6 +393,22 @@ export async function prepareRosterImportPlan(payload = {}) {
     leaguesMasterEntry,
   ])
   const leaguesMasterSummary = buildLeaguesMasterSummary(nextLeaguesMasterEntries)
+  const approvedTeamProjectionState = {
+    searchIndex: {
+      docId: teamIndexPlan.docId,
+      fields: teamIndexPlan.patch,
+    },
+    league: {
+      leagueId: clean(effectivePayload.league?.id || effectivePayload.league?.leagueId),
+      document: leagueTeamPlan.projectedLeague,
+    },
+  }
+  const approvedLeaguesMasterState = {
+    id: 'all',
+    docType: 'leagues_master',
+    summary: leaguesMasterSummary,
+    leagues: nextLeaguesMasterEntries,
+  }
   const localClubOps = await buildClubSyncOperations({
     league: effectivePayload.league, season: effectivePayload.season,
     team: { ...(effectivePayload.team || {}), birthTeamDocumentId },
@@ -389,6 +416,7 @@ export async function prepareRosterImportPlan(payload = {}) {
     sourceRevision: rosterProjectionRevision, operationSuffix: 'local',
   })
   const counterpartClubOps = { clubProjectionOperations: [], clubsMasterOperations: [] }
+  const approvedCounterpartStates = []
   const counterpartGroups = new Map()
 
   counterpartStates.filter(row => row.exists && row.teamSeason).forEach(state => {
@@ -423,6 +451,13 @@ export async function prepareRosterImportPlan(payload = {}) {
     }
 
     if (!changed || conflict) continue
+    approvedCounterpartStates.push({
+      birthTeamDocumentId: clean(firstState.birthTeamDocumentId),
+      seasonKey: clean(firstState.seasonKey),
+      transfersIn: Array.isArray(simulatedTeamSeason.transfersIn) ? simulatedTeamSeason.transfersIn : [],
+      transfersOut: Array.isArray(simulatedTeamSeason.transfersOut) ? simulatedTeamSeason.transfersOut : [],
+      pendingPlayers: Array.isArray(simulatedTeamSeason.pendingPlayers) ? simulatedTeamSeason.pendingPlayers : [],
+    })
     const counterpartTeam = {
       ...(firstState.teamRoot || {}),
       birthTeamDocumentId: firstState.birthTeamDocumentId,
@@ -470,6 +505,67 @@ export async function prepareRosterImportPlan(payload = {}) {
     counterpartClubOps.clubsMasterOperations.push(...ops.clubsMasterOperations)
   }
 
+  const approvedClubPatches = [
+    ...localClubOps.clubProjectionOperations,
+    ...counterpartClubOps.clubProjectionOperations,
+  ].map(operation => ({
+    target: { ...(operation.target || {}) },
+    clubIdentity: { ...(operation.patch?.clubIdentity || {}) },
+    ageGroupSeasonProjection: operation.patch?.ageGroupSeasonProjection || null,
+  })).filter(operation => (
+    clean(operation.target?.clubId) && operation.ageGroupSeasonProjection
+  ))
+  const approvedClubIds = [...new Set(approvedClubPatches
+    .map(operation => clean(operation.target?.clubId))
+    .filter(Boolean))]
+  const approvedClubDocuments = []
+
+  for (const clubId of approvedClubIds) {
+    const currentClub = await readClubDocument({ clubId })
+    let projectedClub = currentClub.club || {}
+
+    approvedClubPatches
+      .filter(operation => clean(operation.target?.clubId) === clubId)
+      .forEach(operation => {
+        projectedClub = buildClubDocumentProjection({
+          existingClub: projectedClub,
+          clubIdentity: operation.clubIdentity,
+          ageGroupSeasonProjection: operation.ageGroupSeasonProjection,
+          projectionVersion: 1,
+          updatedAt: projectedClub?.updatedAt || null,
+        })
+      })
+
+    approvedClubDocuments.push({
+      clubId,
+      document: projectedClub,
+    })
+  }
+
+  const currentClubsMaster = await readClubsMasterDocument({ fresh: true })
+  const projectedMasterByClubId = new Map(
+    (Array.isArray(currentClubsMaster?.clubs) ? currentClubsMaster.clubs : [])
+      .map(club => [clean(club?.clubId), club])
+      .filter(([clubId]) => clubId)
+  )
+  approvedClubDocuments.forEach(({ clubId, document }) => {
+    projectedMasterByClubId.set(
+      clubId,
+      buildClubsMasterClubProjection({ club: document })
+    )
+  })
+  const approvedClubProjectionState = {
+    documents: approvedClubDocuments,
+  }
+  const approvedClubsMasterState = {
+    id: clean(currentClubsMaster?.id) || 'all',
+    projectionVersion: 1,
+    clubs: [...projectedMasterByClubId.values()].sort((left, right) => (
+      clean(left?.name).localeCompare(clean(right?.name), 'he') ||
+      clean(left?.clubId).localeCompare(clean(right?.clubId))
+    )),
+  }
+
   const approvedSyncPayload = buildApprovedRosterSyncPayload({
     sourceRevision: rosterProjectionRevision,
     leagueId: clean(effectivePayload.league?.id || effectivePayload.league?.leagueId),
@@ -511,6 +607,12 @@ export async function prepareRosterImportPlan(payload = {}) {
     },
     counterpartStates: counterpartStates.map(({ teamRoot, teamSeason, ...state }) => state),
     approvedCounterpartRequests,
+    approvedCounterpartStates,
+    approvedPlayerIndexState,
+    approvedTeamProjectionState,
+    approvedLeaguesMasterState,
+    approvedClubProjectionState,
+    approvedClubsMasterState,
     persistedSeason: prepared.persistedSeason,
     rosterImport: prepared.persistedRosterImport,
     rosterProjectionRevision,

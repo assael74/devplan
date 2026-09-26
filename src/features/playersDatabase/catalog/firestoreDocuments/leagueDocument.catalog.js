@@ -23,6 +23,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
     // not_started | active. Completed seasons are stored under history.
     seasonStatus: '',
     seasonUrl: '',
+    generation: '',
     birthYear: 0, // חובה
     leagueTotalRound: 0,
     competitionRules: {
@@ -90,6 +91,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
       // completed
       seasonStatus: '',
       seasonUrl: '',
+      generation: '',
       birthYear: 0, // חובה
       leagueTotalRound: 0,
       competitionRules: {
@@ -132,7 +134,7 @@ export const LEAGUES_DATABASE_GENERIC_OBJECTS_CATALOG = {
             goalsFor: 0,
             goalsAgainst: 0,
             teamGamePlayed: 0,
-                    },
+          },
           scoutProfilesSummary: {
             total: 0,
             profileCounts: {},

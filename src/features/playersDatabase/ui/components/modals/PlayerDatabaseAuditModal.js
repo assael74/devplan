@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
-import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
+import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditClubTeamSeasonScope, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
 import AuditRepairActions from './audit/AuditRepairActions.js'
@@ -89,7 +89,9 @@ export default function PlayerDatabaseAuditModal(props) {
     onClose,
   } = props
   const [mode, setMode] = React.useState(AUDIT_SCOPE_TYPE.FULL_SYSTEM)
+  const [clubId, setClubId] = React.useState('')
   const [teamDocumentId, setTeamDocumentId] = React.useState('')
+  const [birthYear, setBirthYear] = React.useState('')
   const [seasonKey, setSeasonKey] = React.useState('')
   const [filter, setFilter] = React.useState('all')
   const [mismatchCollection, setMismatchCollection] = React.useState('playerSearchIndex')
@@ -122,11 +124,14 @@ export default function PlayerDatabaseAuditModal(props) {
   }, [open, defaultTeamDocumentId, defaultSeasonKey, onScopeChange])
 
   const teamScope = mode === AUDIT_SCOPE_TYPE.TEAM_SEASON
+  const clubTeamScope = mode === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
   const writeActionScope = mode === 'writeAction'
   const scope = mode === 'lastWrite' && lastWriteScope
     ? lastWriteScope
-    : teamScope
-      ? buildAuditTeamSeasonScope({ teamDocumentId, seasonKey })
+    : clubTeamScope
+      ? buildAuditClubTeamSeasonScope({ clubId, teamDocumentId, birthYear, seasonKey })
+      : teamScope
+        ? buildAuditTeamSeasonScope({ teamDocumentId, seasonKey })
       : { type: AUDIT_SCOPE_TYPE.FULL_SYSTEM }
   const findings = Array.isArray(result?.findings) ? result.findings : []
   const findingView = selectFindingView({ findings, filter, mismatchCollection })
@@ -140,7 +145,9 @@ export default function PlayerDatabaseAuditModal(props) {
 
   const canRun = writeActionScope
     ? Boolean(clean(writeActionId))
-    : !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
+    : clubTeamScope
+      ? Boolean(clean(clubId) && clean(teamDocumentId) && clean(birthYear) && clean(seasonKey))
+      : !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
   const hasRepairProgress = repairProgress && Number(repairProgress.totalTeams) > 0
   const repairProgressValue = hasRepairProgress
     ? Math.min(100, (Number(repairProgress.completedTeams) / Number(repairProgress.totalTeams)) * 100)
@@ -199,7 +206,13 @@ export default function PlayerDatabaseAuditModal(props) {
           >
             קבוצה ועונה
           </Button>
-          {lastWriteScope ? (
+          <Button
+            size='sm'
+            variant={clubTeamScope ? 'solid' : 'outlined'}
+            onClick={() => changeScopeValue(AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON, mode, setMode)}
+          >
+            מועדון + קבוצה + שנתון + עונה
+          </Button>          {lastWriteScope ? (
             <Button
               size='sm'
               variant={mode === 'lastWrite' ? 'solid' : 'outlined'}
@@ -217,8 +230,20 @@ export default function PlayerDatabaseAuditModal(props) {
           </Button>
         </Stack>
 
-        {teamScope ? (
+        {teamScope || clubTeamScope ? (
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+            {clubTeamScope ? (
+              <>
+                <FormControl sx={sx.flexField}>
+                  <FormLabel>מזהה מועדון</FormLabel>
+                  <Input value={clubId} placeholder='למשל maccabi-beer-sheva' onChange={event => changeScopeValue(event.target.value, clubId, setClubId)} />
+                </FormControl>
+                <FormControl sx={sx.flexField}>
+                  <FormLabel>שנתון</FormLabel>
+                  <Input value={birthYear} placeholder='למשל 2012' onChange={event => changeScopeValue(event.target.value, birthYear, setBirthYear)} />
+                </FormControl>
+              </>
+            ) : null}
             <FormControl sx={sx.flexField}>
               <FormLabel>מסמך קבוצה</FormLabel>
               <Input

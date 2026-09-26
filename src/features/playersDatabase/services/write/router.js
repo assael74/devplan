@@ -11,6 +11,7 @@ import {
   recordPlayersDatabaseWriteAction,
   updatePlayersDatabaseWriteAction,
 } from '../audit/audit.writeJournal.js'
+import { assertNoActiveOperation } from './operations/index.js'
 import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
@@ -24,7 +25,7 @@ import {
   createTeamDisplayPlayerFlow,
   deleteLeagueSeasonFlow,
   deleteTeamPlayerFromSeasonFlow,
-  pasteLeagueTableFlow,
+  pasteLeagueTableTargetFlow,
   retryLeagueProjectionSyncFlow,
   pasteTeamPlayerStatsFlow,
   pasteTeamPlayersFlow,
@@ -69,13 +70,19 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   REMOVE_FAVORITE: 'removeFavorite',
 }
 
+const MAJOR_IMPORT_ACTIONS = new Set([
+  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
+  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
+  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
+])
+
 const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_LEAGUE_DOC]: payload => (
     ensureLeagueDoc(payload.league || {})
   ),
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON]: createLeagueSeasonFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_TABLE_RANK]: updateLeagueSeasonTableRank,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE]: pasteLeagueTableFlow,
+  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE]: pasteLeagueTableTargetFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC]: retryLeagueProjectionSyncFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS]: pasteTeamPlayersFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS]: pasteTeamPlayerStatsFlow,
@@ -214,6 +221,10 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
 
   if (!runAction) {
     throw new Error(`Unknown players database write action: ${actionType}`)
+  }
+
+  if (MAJOR_IMPORT_ACTIONS.has(actionType)) {
+    await assertNoActiveOperation()
   }
 
   const continuationWriteActionId = actionType === PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC

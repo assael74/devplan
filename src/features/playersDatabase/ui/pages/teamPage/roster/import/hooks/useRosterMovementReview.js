@@ -12,7 +12,7 @@ export default function useRosterMovementReview({
   const hasMissingRosterApprovals = missingRosterPlayers.every(player => {
     const resolution = clean(player?.missingResolution)
 
-    if (resolution === 'olderAgeException' || resolution === 'unknown') {
+    if (['olderAgeException', 'unknown'].includes(resolution)) {
       return true
     }
 

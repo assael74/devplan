@@ -13,6 +13,13 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   clubsMaster: 'dbClubsMaster',
   favorites: 'dbFavorites',
   auditFindings: 'dbAuditFindings',
+
+  // Target operation contract.
+  operations: 'dbPlayersDatabaseOperations',
+  jobs: 'dbPlayersDatabaseJobs',
+  jobActions: 'actions',
+
+  // Legacy collections. Keep them only until all callers use `jobs`.
   writeActions: 'dbWriteActions',
   leagueProjectionJobs: 'dbLeagueProjectionJobs',
   teamStatsProjectionJobs: 'dbTeamStatsProjectionJobs',

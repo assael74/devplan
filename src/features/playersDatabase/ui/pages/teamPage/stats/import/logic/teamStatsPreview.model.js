@@ -12,8 +12,8 @@ const getPlayerKeys = player => [
 
 const buildScoutLookup = approvedStatsPlan => {
   const lookup = new Map()
-  const scoutedPlayers = Array.isArray(approvedStatsPlan?.playerScout?.scoutedPlayers)
-    ? approvedStatsPlan.playerScout.scoutedPlayers
+  const scoutedPlayers = Array.isArray(approvedStatsPlan?.teamSeason?.finalTeamSeasonPreview?.teamPlayers)
+    ? approvedStatsPlan.teamSeason.finalTeamSeasonPreview.teamPlayers
     : []
 
   scoutedPlayers.forEach(player => {
@@ -103,9 +103,9 @@ export const buildStatsPreviewModel = ({ rows = [], approvedStatsPlan = null } =
 
 export const buildStatsMovementPreviewModel = ({ rows = [], approvedStatsPlan = null } = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
-  const movementState = approvedStatsPlan?.canonical?.canonicalCommit?.movementState || null
-  const canonicalPlayers = Array.isArray(approvedStatsPlan?.canonical?.canonicalCommit?.players)
-    ? approvedStatsPlan.canonical.canonicalCommit.players
+  const movementState = approvedStatsPlan?.teamSeason?.localMovementPatch || null
+  const canonicalPlayers = Array.isArray(approvedStatsPlan?.teamSeason?.finalTeamSeasonPreview?.teamPlayers)
+    ? approvedStatsPlan.teamSeason.finalTeamSeasonPreview.teamPlayers
     : []
   const decisionRequiredCount = safeRows.filter(row => (
     row.requiresStatsMovementDecision || [

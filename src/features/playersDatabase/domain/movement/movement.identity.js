@@ -50,10 +50,11 @@ export const resolveRosterPlayersLocally = ({
   const unresolved = []
 
   ;(Array.isArray(players) ? players : []).forEach((player, index) => {
-    const knownPlayer = resolveUniqueKnownPlayer({
+    const currentKnownPlayer = resolveUniqueKnownPlayer({
       player,
       lookup: currentLookup,
-    }) || resolveUniqueKnownPlayer({
+    })
+    const knownPlayer = currentKnownPlayer || resolveUniqueKnownPlayer({
       player,
       lookup: previousLookup,
     })
@@ -77,6 +78,12 @@ export const resolveRosterPlayersLocally = ({
         // to prove it again or reject it as an unresolved Stats identity.
         identityMatchStatus: 'provided',
         identityResolutionSource: 'teamSeason',
+        // The canonical Team Season already contains this player. This is a
+        // roster confirmation only: it must not create, remove, or resolve
+        // any existing Movement/Pending state.
+        rosterImportResolution: currentKnownPlayer
+          ? 'confirmedInRoster'
+          : clean(player.rosterImportResolution),
       },
     })
   })

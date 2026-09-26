@@ -143,7 +143,9 @@ export const buildClubAgeGroupSeasonProjection = ({
     leagueTeam,
     clearMissing: leagueTeam !== undefined,
   })
-  const teamTaskSignals = normalizeTeamTaskSignals(teamSeason?.teamTaskSignals)
+  const teamTaskSignals = normalizeTeamTaskSignals(
+    teamSeason?.teamBalance?.teamTaskSignals || teamSeason?.teamTaskSignals
+  )
   const teamTaskAvailability = normalizeTeamTaskAvailability(
     teamSeason?.teamBalance?.balanceAvailability
   )

@@ -22,6 +22,7 @@ import {
   repairOrphanedClubCompetitionPathSeasons,
 } from '../../../../services/dataRepair/club/index.js'
 import { retryMovementCounterpartsFromAuditFindings } from '../../../../services/dataRepair/team/index.js'
+import { syncRosterTeamProjectionFromCanonicalV2 } from '../../../../services/writeV2/roster/index.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
@@ -297,6 +298,35 @@ export default function useSearchAudit({ rows }) {
     }
   }, [busy, orphanIndexDeletePlan, refreshAudit])
 
+  const repairRosterTeamProjectionFromCanonical = React.useCallback(findings => runRepair({
+    action: async () => {
+      const targets = [...new Map((Array.isArray(findings) ? findings : [])
+        .map(finding => {
+          const birthTeamDocumentId = clean(finding?.teamDocumentId)
+          const seasonKey = clean(finding?.seasonKey)
+          return [`${birthTeamDocumentId}__${seasonKey}`, { birthTeamDocumentId, seasonKey }]
+        })
+        .filter(([key, target]) => key !== '__' && target.birthTeamDocumentId && target.seasonKey)
+      ).values()]
+      const failures = []
+
+      for (const target of targets) {
+        try {
+          await syncRosterTeamProjectionFromCanonicalV2(target)
+        } catch (repairError) {
+          failures.push({
+            ...target,
+            message: repairError?.message || 'סנכרון נתוני הקבוצה נכשל',
+          })
+        }
+      }
+
+      if (failures.length) {
+        setError(`${failures.length} תיקוני Team Projection נכשלו.`)
+      }
+    },
+    failureMessage: 'סנכרון נתוני קבוצה מהקנוני נכשל',
+  }), [runRepair])
   const repairTeamIndexes = React.useCallback(findings => runRepair({
     action: async () => {
       const repairResult = await repairTeamSearchIndexesFromAuditFindings({ findings })
@@ -401,6 +431,7 @@ export default function useSearchAudit({ rows }) {
     repairPlayerIndexes,
     requestOrphanPlayerIndexDelete,
     confirmOrphanPlayerIndexDelete,
+    repairRosterTeamProjectionFromCanonical,
     repairTeamIndexes,
     retryMovementCounterparts,
     resetOrphanTeamIndexes,

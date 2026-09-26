@@ -101,6 +101,18 @@ export default function AuditRepairActions({ busy, findings, actions }) {
       {findings.teamIndex.length ? (
         <Button
           size='sm'
+          color='primary'
+          variant='solid'
+          disabled={busy}
+          sx={sx.actionButton}
+          onClick={() => actions.onRepairRosterTeamProjectionFromCanonical?.(findings.teamIndex)}
+        >
+          סנכרן נתוני קבוצה מהקנוני (V2) ({findings.teamIndex.length})
+        </Button>
+      ) : null}
+      {findings.teamIndex.length ? (
+        <Button
+          size='sm'
           color='warning'
           variant='solid'
           disabled={busy}

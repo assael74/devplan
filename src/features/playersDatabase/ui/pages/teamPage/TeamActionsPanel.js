@@ -19,25 +19,12 @@ import PageSidePanel from '../../components/page/PageSidePanel.js'
 import { WorkTaskList } from '../../components/modals/index.js'
 import { teamActionsPanelSx as sx } from './sx/teamActionsPanel.sx.js'
 
-const buildPrimaryAction = ({ hasTeamPlayers, hasTeamStats, hasSeason }) => {
-  if (!hasTeamPlayers) {
-    return {
-      label: 'טעינת סגל',
-      iconId: 'addPlayers',
-      disabled: !hasSeason,
-      action: 'players',
-      disabledReason: 'יש לבחור גרסת קבוצה',
-    }
-  }
-
-  return {
-    label: hasTeamStats ? 'טעינת סטטיסטיקה מחדש' : 'טעינת סטטיסטיקה',
-    iconId: 'addStats',
-    disabled: !hasSeason,
-    action: 'stats',
-    disabledReason: 'יש לבחור גרסת קבוצה',
-  }
-}
+const buildRosterAction = ({ hasSeason }) => ({
+  label: 'טעינת סגל',
+  iconId: 'addPlayers',
+  disabled: !hasSeason,
+  disabledReason: 'יש לבחור גרסת קבוצה',
+})
 
 export default function TeamActionsPanel({
   selectedSeasonOptionKey,
@@ -60,28 +47,7 @@ export default function TeamActionsPanel({
   const selectedSeason = seasonOptions.find(option => (
     option.optionKey === selectedSeasonOptionKey
   ))
-  const primaryAction = React.useMemo(() => buildPrimaryAction({
-    hasTeamPlayers,
-    hasTeamStats,
-    hasSeason,
-  }), [
-    hasSeason,
-    hasTeamPlayers,
-    hasTeamStats,
-  ])
-
-  const handlePrimaryAction = () => {
-    if (primaryAction.disabled) return
-
-    if (primaryAction.action === 'players') {
-      onPlayersImport()
-      return
-    }
-
-    if (primaryAction.action === 'stats') {
-      onStatsImport()
-    }
-  }
+  const rosterAction = React.useMemo(() => buildRosterAction({ hasSeason }), [hasSeason])
 
   return (
     <PageSidePanel>
@@ -91,19 +57,30 @@ export default function TeamActionsPanel({
         </Typography>
         <Box sx={sx.actionsRow}>
         <Box sx={sx.primaryActionsRow}>
-        <Tooltip title={primaryAction.disabled ? primaryAction.disabledReason : ''}>
+        {!hasTeamPlayers ? <Tooltip title={rosterAction.disabled ? rosterAction.disabledReason : ''}>
           <Button
             variant='outlined'
-            disabled={primaryAction.disabled}
-            startDecorator={iconUi({id: primaryAction.iconId, size: 'md'})}
+            disabled={rosterAction.disabled}
+            startDecorator={iconUi({id: rosterAction.iconId, size: 'md'})}
             sx={sx.primaryActionButton}
-            onClick={handlePrimaryAction}
+            onClick={onPlayersImport}
             size='sm'
           >
-            {primaryAction.label}
+            {rosterAction.label}
           </Button>
-        </Tooltip>
-
+        </Tooltip> : null}
+        {hasTeamPlayers ? (
+          <Button
+            variant='outlined'
+            disabled={!hasSeason}
+            startDecorator={iconUi({id: 'addStats', size: 'md'})}
+            sx={sx.primaryActionButton}
+            onClick={onStatsImport}
+            size='sm'
+          >
+            {hasTeamStats ? 'טעינת סטטיסטיקה מחדש' : 'טעינת סטטיסטיקה'}
+          </Button>
+        ) : null}
         <Dropdown>
           <Tooltip title='מחיקת נתוני עונה'>
             <span>
@@ -128,6 +105,7 @@ export default function TeamActionsPanel({
           </Menu>
         </Dropdown>
         </Box>
+
 
         <Box sx={sx.secondaryActionsRow}>
 

@@ -1,27 +1,28 @@
 // features/playersDatabase/ui/pages/teamPage/roster/import/hooks/useTeamRosterImport.js
 
 import * as React from 'react'
-import { collection, doc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
-
 import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
   prepareRosterImportPlan,
-  runPlayersDatabaseWriteAction,
-} from '../../../../../../services/write/index.js'
-import { invalidatePlayersDatabaseWriteCache } from '../../../../../../services/cache/index.js'
-import { resolveTeamPlayerIdentityPreview } from '../../../../../../services/write/players/index.js'
+  syncRosterClubsMasterV2,
+  syncRosterClubsV2,
+  syncRosterCounterpartsV2,
+  syncRosterLeaguesMasterV2,
+  syncRosterPlayerIndexesV2,
+  syncRosterTeamProjectionV2,
+  writeRosterV2,
+} from '../../../../../../services/writeV2/roster/index.js'
+import { resolveTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/playerIdentityPreview.read.js'
 import {
   listExistingTeamRootOptions,
   readTeamSeasonRosterHistory,
 } from '../../../../../../services/read/index.js'
+import { buildCleanApprovedRosterState } from '../../../../../../domain/builders/approvedRosterState.builder.js'
 import {
   ROSTER_IMPORT_MODE,
   mergeLocalAndResolvedPlayers,
   resolveRosterPlayersLocally,
 } from '../../../../../../domain/movement/index.js'
 import { resolveTeamLookupKey } from '../../../../../../model/team/teamIdentity.model.js'
-import { db } from '../../../../../../../../services/firebase/firebase.js'
-import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../../../constants/pdb.constants.js'
 import { SNACK_STATUS } from '../../../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import {
   parsePlayerRosterRows,
@@ -32,8 +33,16 @@ import useRosterIdentityReview from './useRosterIdentityReview.js'
 import useRosterMovementReview from './useRosterMovementReview.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-const ACTIVE_PROJECTION_JOB_STATUSES = new Set(['preparing', 'waiting_for_client', 'queued', 'processing'])
 const ROSTER_IMPORT_DEBUG_PREFIX = '[playersDatabase/roster-import-debug]'
+const ROSTER_SYNC_STAGE_IDS = [
+  'canonical',
+  'counterparts',
+  'playerIndexes',
+  'teamProjection',
+  'leaguesMaster',
+  'clubs',
+  'clubsMaster',
+]
 const logRosterImportDebug = (event, details = {}) => {
   console.info(ROSTER_IMPORT_DEBUG_PREFIX, {
     event,
@@ -75,25 +84,19 @@ export default function useTeamRosterImport({
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [writeReport, setWriteReport] = React.useState(null)
-  const [projectionJobId, setProjectionJobId] = React.useState('')
-  const [projectionJob, setProjectionJob] = React.useState(null)
-  const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
   const [rosterImportPlan, setRosterImportPlan] = React.useState(null)
-  const [activeProjectionJobs, setActiveProjectionJobs] = React.useState([])
-  const completedProjectionJobRef = React.useRef('')
+  const [syncState, setSyncState] = React.useState({
+    activeStage: '',
+    completedStages: [],
+    error: null,
+    results: {},
+  })
+  const syncCacheRefreshRef = React.useRef(false)
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
   ), [seasonOptions, selectedSeasonOptionKey])
 
-  React.useEffect(() => {
-    if (!projectionJobId) return undefined
-    return onSnapshot(
-      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRosterProjectionJobs, projectionJobId),
-      snapshot => setProjectionJob(snapshot.exists ? { id: snapshot.id, ...snapshot.data() } : null),
-      () => setProjectionJob(null)
-    )
-  }, [projectionJobId])
   const actionLeagueId = selectedSeasonOption?.leagueId || leagueId
   const actionLeagueDoc = React.useMemo(() => (
     leagueDocuments.find(document => (
@@ -128,26 +131,19 @@ export default function useTeamRosterImport({
     },
     plan: rosterImportPlan ? {
       planType: clean(rosterImportPlan?.planType),
-      revision: clean(rosterImportPlan?.rosterProjectionRevision),
       playersCount: rosterImportPlan?.preview?.playersCount || 0,
       movement: rosterImportPlan?.movementState || null,
     } : null,
     runtime: {
       busy,
-      projectionJobId: clean(projectionJobId),
-      projectionJobStatus: clean(projectionJob?.status),
-      activeProjectionJobs: activeProjectionJobs.map(job => ({
-        id: clean(job?.id), type: clean(job?.jobType), status: clean(job?.status),
-      })),
+      syncState,
     },
   }), [
-    activeProjectionJobs,
     busy,
     missingRosterPlayers,
     open,
     pasteValue.length,
-    projectionJob?.status,
-    projectionJobId,
+    syncState,
     rosterImportPlan,
     rows,
     selectedSeasonOption?.seasonKey,
@@ -159,49 +155,6 @@ export default function useTeamRosterImport({
     logRosterImportDebug('state-updated', { state: debugState })
   }, [debugState])
 
-  React.useEffect(() => {
-    const teamId = resolveTeamLookupKey(team)
-    const seasonKey = clean(selectedSeasonOption?.seasonKey)
-    const leagueKey = clean(actionLeagueId)
-    if (!teamId || !seasonKey || !leagueKey) {
-      setActiveProjectionJobs([])
-      return undefined
-    }
-
-    const snapshotsByScope = new Map()
-    const updateScope = (scope, snapshot) => {
-      const activeJobs = snapshot.docs
-        .map(item => ({ id: item.id, ...item.data() }))
-        .filter(job => clean(job.seasonKey) === seasonKey)
-        .filter(job => ACTIVE_PROJECTION_JOB_STATUSES.has(clean(job.status)))
-      snapshotsByScope.set(scope, activeJobs)
-      setActiveProjectionJobs([...snapshotsByScope.values()].flat())
-    }
-    const clearScope = scope => {
-      snapshotsByScope.set(scope, [])
-      setActiveProjectionJobs([...snapshotsByScope.values()].flat())
-    }
-
-    const unsubscribers = [
-      onSnapshot(
-        query(collection(db, PLAYERS_DATABASE_COLLECTIONS.teamRosterProjectionJobs), where('teamId', '==', teamId)),
-        snapshot => updateScope('roster', snapshot),
-        () => clearScope('roster')
-      ),
-      onSnapshot(
-        query(collection(db, PLAYERS_DATABASE_COLLECTIONS.teamStatsProjectionJobs), where('teamId', '==', teamId)),
-        snapshot => updateScope('stats', snapshot),
-        () => clearScope('stats')
-      ),
-      onSnapshot(
-        query(collection(db, PLAYERS_DATABASE_COLLECTIONS.leagueProjectionJobs), where('leagueId', '==', leagueKey)),
-        snapshot => updateScope('league', snapshot),
-        () => clearScope('league')
-      ),
-    ]
-
-    return () => unsubscribers.forEach(unsubscribe => unsubscribe())
-  }, [actionLeagueId, selectedSeasonOption?.seasonKey, team])
 
   const buildSeason = React.useCallback(() => ({
     ...(selectedSeasonOption?.season || {}),
@@ -253,23 +206,12 @@ export default function useTeamRosterImport({
   }, [debugState, seasonOptions, team])
 
   const openModal = React.useCallback(() => {
-    setPasteValue('')
-    setRows([])
-    setMissingRosterPlayers([])
-    setTeamRootOptions([])
-    setPreviousRoster({ loading: false, seasonKey: '', players: [] })
-    setProjectionJobId('')
-    setProjectionJob(null)
+    const defaultOption = seasonOptions.find(option => (
+      option.optionKey === pageSelectedSeasonOption?.optionKey
+    )) || null
+
+    if (defaultOption) selectSeasonOption(defaultOption.optionKey)
     setOpen(true)
-    const pageOptionKey = clean(pageSelectedSeasonOption?.optionKey)
-    const pageSeasonIsAvailable = seasonOptions.some(option => (
-      clean(option?.optionKey) === pageOptionKey
-    ))
-    if (pageSeasonIsAvailable) {
-      selectSeasonOption(pageOptionKey)
-      return
-    }
-    setSelectedSeasonOptionKey('')
   }, [pageSelectedSeasonOption?.optionKey, seasonOptions, selectSeasonOption])
 
   const parse = React.useCallback(async () => {
@@ -296,21 +238,19 @@ export default function useTeamRosterImport({
         birthTeamDocumentId: resolveTeamLookupKey(team),
         seasonKey: season.seasonKey,
       })
-      const currentKnownPlayers = [
-        ...(Array.isArray(rosterHistory.currentSeason?.teamPlayers)
-          ? rosterHistory.currentSeason.teamPlayers
-          : []),
-        ...(Array.isArray(rosterHistory.currentSeason?.pendingPlayers)
-          ? rosterHistory.currentSeason.pendingPlayers
-          : []),
-      ]
+      // Only a canonical roster membership confirms a player is already in
+      // this Team Season. Pending is a separate Movement-owned state and
+      // must never be silently treated as roster membership.
+      const currentRosterPlayers = Array.isArray(rosterHistory.currentSeason?.teamPlayers)
+        ? rosterHistory.currentSeason.teamPlayers
+        : []
       const previousPlayers = Array.isArray(rosterHistory.previousSeason?.teamPlayers)
         ? rosterHistory.previousSeason.teamPlayers
         : []
       const hasPreviousRoster = previousPlayers.length > 0
       const localResolution = resolveRosterPlayersLocally({
         players: parsedRows,
-        currentPlayers: currentKnownPlayers,
+        currentPlayers: currentRosterPlayers,
         previousPlayers,
       })
       const unresolvedPlayers = localResolution.unresolved.map(entry => entry.player)
@@ -325,7 +265,9 @@ export default function useTeamRosterImport({
         player: {
           ...entry.player,
           identityStatus: 'זוהה שחקן קיים',
-          identityMessage: 'לפי סגל הקבוצה',
+          identityMessage: entry.player.rosterImportResolution === 'confirmedInRoster'
+            ? 'כבר נמצא בסגל הקנוני הנוכחי'
+            : 'לפי סגל הקבוצה',
           identityValid: true,
         },
       }))
@@ -464,9 +406,13 @@ export default function useTeamRosterImport({
 
     setPasteValue('')
     setRows([])
-    setProjectionJobId('')
-    setProjectionJob(null)
     setRosterImportPlan(null)
+    setSyncState({
+      activeStage: '',
+      completedStages: [],
+      error: null,
+      results: {},
+    })
   }, [busy])
 
 
@@ -486,7 +432,7 @@ export default function useTeamRosterImport({
 
     try {
       const rosterMetadata = resolveRosterImportMetadata({ rows })
-      const plan = await prepareRosterImportPlan({
+      const rawPlan = await prepareRosterImportPlan({
         target: selectedSeasonOption.target,
         league: {
           ...(actionLeagueDoc || {}),
@@ -510,10 +456,11 @@ export default function useTeamRosterImport({
           )),
       })
 
+      const plan = buildCleanApprovedRosterState(rawPlan)
       setRosterImportPlan(plan)
       logRosterImportDebug('plan-preparation-completed', {
         state: debugState,
-        result: { revision: clean(plan?.rosterProjectionRevision), preview: plan?.preview || null },
+        result: { preview: plan?.preview || null },
         systemAction: { type: 'stored-approved-plan-in-state', writes: false },
       })
       return plan
@@ -543,137 +490,114 @@ export default function useTeamRosterImport({
     team,
   ])
 
-  const confirm = React.useCallback(async () => {
+  const enterSync = React.useCallback(() => {
     if (!selectedSeasonOption || !rosterImportPlan) return null
 
-    logRosterImportDebug('canonical-write-started', {
-      state: debugState,
-      systemAction: {
-        type: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
-        planRevision: clean(rosterImportPlan?.rosterProjectionRevision),
-        writes: true,
-      },
+    syncCacheRefreshRef.current = false
+    setSyncState({
+      activeStage: '',
+      completedStages: [],
+      error: null,
+      results: {},
     })
+
+    return { readyForSync: true }
+  }, [rosterImportPlan, selectedSeasonOption])
+
+  const syncComplete = ROSTER_SYNC_STAGE_IDS.every(stageId => (
+    syncState.completedStages.includes(stageId)
+  ))
+
+  React.useEffect(() => {
+    if (!syncComplete || syncCacheRefreshRef.current || typeof reload !== 'function') return
+
+    syncCacheRefreshRef.current = true
+    // Close first. Reloading while this wizard is open remounts it at the
+    // initial step and makes a completed sync look like a new import.
+    setOpen(false)
+    const reloadTimer = window.setTimeout(reload, 0)
+    return () => window.clearTimeout(reloadTimer)
+  }, [reload, syncComplete])
+
+  const runSyncStage = React.useCallback(async stageId => {
+    if (!rosterImportPlan || busy) return null
+
+    const stageRunners = {
+      canonical: () => writeRosterV2({
+        team,
+        persistedSeason: rosterImportPlan.persistedSeason,
+      }),
+      counterparts: () => syncRosterCounterpartsV2({
+        approvedCounterpartStates: rosterImportPlan.approvedCounterpartStates,
+      }),
+      playerIndexes: () => syncRosterPlayerIndexesV2({
+        approvedPlayerIndexState: rosterImportPlan.approvedPlayerIndexState,
+      }),
+      teamProjection: () => syncRosterTeamProjectionV2({
+        approvedTeamProjectionState: rosterImportPlan.approvedTeamProjectionState,
+      }),
+      leaguesMaster: () => syncRosterLeaguesMasterV2({
+        approvedLeaguesMasterState: rosterImportPlan.approvedLeaguesMasterState,
+      }),
+      clubs: () => syncRosterClubsV2({
+        approvedClubProjectionState: rosterImportPlan.approvedClubProjectionState,
+      }),
+      clubsMaster: () => syncRosterClubsMasterV2({
+        approvedClubsMasterState: rosterImportPlan.approvedClubsMasterState,
+      }),
+    }
+    const runner = stageRunners[stageId]
+    if (!runner) return null
+
     setBusy(true)
+    setSyncState(current => ({
+      ...current,
+      activeStage: stageId,
+      error: null,
+    }))
 
     try {
-      const result = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
-        payload: {
-          target: selectedSeasonOption.target,
-          league: {
-            ...(actionLeagueDoc || {}),
-            id: actionLeagueId,
-            leagueId: actionLeagueId,
-          },
-          season: buildSeason(),
-          team,
-          rosterImportPlan,
+      const result = await runner()
+      setSyncState(current => ({
+        ...current,
+        activeStage: '',
+        completedStages: current.completedStages.includes(stageId)
+          ? current.completedStages
+          : [...current.completedStages, stageId],
+        error: null,
+        results: {
+          ...current.results,
+          [stageId]: result || {},
         },
-      })
-
-      notify({
-        status: SNACK_STATUS.SUCCESS,
-        title: 'נתוני הסגל נשמרו',
-        message: 'בדיקת סנכרון של הסגל וההעברות ממשיכה ברקע',
-      })
-      setProjectionJobId(String(result?.projectionJob?.id || ''))
-      logRosterImportDebug('canonical-write-completed', {
-        state: debugState,
-        result: { projectionJobId: clean(result?.projectionJob?.id), status: clean(result?.status) },
-        systemAction: { type: 'activate-projection-job-and-refresh-cache' },
-      })
-      reload()
+      }))
       return result
     } catch (error) {
-      console.error('[playersDatabase/write-flow]', error?.writeReport || error)
-
-      if (error?.code === 'ROSTER_IMPORT_PLAN_STALE') {
-        logRosterImportDebug('canonical-write-stale-plan', {
-          state: debugState,
-          error: error?.message || String(error),
-          staleSources: error?.staleSources || [],
-          staleSourceList: Array.isArray(error?.staleSources) ? error.staleSources.join(', ') : '',
-          systemAction: { type: 'keep-input-and-decisions-then-rebuild-preview', writes: false },
-        })
-        setRosterImportPlan(null)
-        notify({
-          status: SNACK_STATUS.ERROR,
-          title: 'נתוני הקבוצה השתנו',
-          message: 'יש להציג מחדש את הסיכום לפני טעינת הסגל',
-        })
-        return { stale: true }
-      }
-
-      logRosterImportDebug('canonical-write-failed', {
-        state: debugState,
-        error: error?.message || String(error),
-        systemAction: { type: 'keep-wizard-state-for-retry', writes: false },
-      })
-      setWriteReport(buildWriteReportFromError({
-        error,
-        flow: 'pasteTeamPlayers',
+      console.error('[playersDatabase/roster-v2-sync]', stageId, error)
+      setSyncState(current => ({
+        ...current,
+        activeStage: '',
+        error: {
+          stageId,
+          message: error?.message || 'הסנכרון נכשל',
+        },
       }))
-
       notify({
         status: SNACK_STATUS.ERROR,
-        title: 'טעינת סגל נכשלה',
-        message: 'נפתח דוח כתיבה מפורט לבדיקה',
+        title: 'שלב הסנכרון נכשל',
+        message: error?.message || 'ניתן לנסות שוב את אותו שלב',
       })
       return null
     } finally {
       setBusy(false)
     }
-  }, [
-    actionLeagueDoc,
-    actionLeagueId,
-    buildSeason,
-    debugState,
-    notify,
-    reload,
-    rosterImportPlan,
-    selectedSeasonOption,
-    team,
-  ])
+  }, [busy, notify, rosterImportPlan, team])
 
-  const retryProjectionJob = React.useCallback(async () => {
-    if (!projectionJobId || projectionJob?.status !== 'failed') return
-    setRetryingProjectionJob(true)
-    try {
-      const batch = writeBatch(db)
-      batch.update(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRosterProjectionJobs, projectionJobId), {
-        status: 'queued', attemptToken: null, leaseExpiresAt: null, error: null, failedAt: null,
-        retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      })
-      if (projectionJob?.writeActionId) {
-        batch.update(doc(db, PLAYERS_DATABASE_COLLECTIONS.writeActions, projectionJob.writeActionId), {
-          status: 'in_progress', recoveryRequired: false, projectionAttemptToken: null,
-          retryRequestedAt: serverTimestamp(), updatedAt: serverTimestamp(),
-        })
-      }
-      await batch.commit()
-    } finally {
-      setRetryingProjectionJob(false)
-    }
-  }, [projectionJob?.status, projectionJob?.writeActionId, projectionJobId])
+  const completeSync = React.useCallback(() => {
+    if (syncCacheRefreshRef.current || typeof reload !== 'function') return
 
-  React.useEffect(() => {
-    const status = projectionJob?.status || ''
-    const completionKey = `${projectionJobId}:${status}`
-    if (!['completed', 'failed', 'superseded', 'partial_superseded'].includes(status) ||
-        completedProjectionJobRef.current === completionKey) return
-
-    completedProjectionJobRef.current = completionKey
-    invalidatePlayersDatabaseWriteCache({
-      actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
-      payload: {
-        league: { id: actionLeagueId },
-        season: buildSeason(),
-        team,
-      },
-    })
+    syncCacheRefreshRef.current = true
     reload()
-  }, [actionLeagueId, buildSeason, projectionJob?.status, projectionJobId, reload, team])
+  }, [reload])
 
   return {
     open,
@@ -688,12 +612,8 @@ export default function useTeamRosterImport({
     rosterImportPlan,
     busy,
     writeReport,
-    projectionJobId,
-    projectionJob,
-    retryingProjectionJob,
-    activeProjectionJobs,
+    syncState,
     debugState,
-    isProjectionSyncPending: activeProjectionJobs.length > 0,
     hasIdentityErrors,
     hasMissingRosterApprovals,
     openModal,
@@ -714,7 +634,8 @@ export default function useTeamRosterImport({
     close,
     closeWriteReport,
     preparePlan,
-    confirm,
-    retryProjectionJob,
+    enterSync,
+    runSyncStage,
+    completeSync,
   }
 }

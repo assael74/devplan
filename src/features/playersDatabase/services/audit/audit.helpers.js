@@ -118,7 +118,7 @@ export const inScope = ({ scope, row }) => {
     return clean(row?.leagueId || row?.league?.leagueId) === clean(scope.leagueId) &&
       seasonKeyOf(row) === clean(scope.seasonKey)
   }
-  const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON ? [scope] : scope.scopes
+  const scopes = scope.type === AUDIT_SCOPE_TYPE.TEAM_SEASON || scope.type === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON ? [scope] : scope.scopes
   return scopes.some(item => item.teamDocumentId === teamIdOf(row) && item.seasonKey === seasonKeyOf(row))
 }
 export const findLeagueSeason = ({ leagues = [], leagueId = '', seasonKey = '' } = {}) => {
@@ -188,6 +188,8 @@ export const auditDomainsForScope = scope => (
     ? Object.values(AUDIT_DOMAIN)
     : scope.type === AUDIT_SCOPE_TYPE.LEAGUE_SEASON
       ? [AUDIT_DOMAIN.LEAGUE_LIFECYCLE]
+      : scope.type === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
+        ? [AUDIT_DOMAIN.TEAM_RELATIONS, AUDIT_DOMAIN.PLAYER_RELATIONS, AUDIT_DOMAIN.CLUB_RELATIONS, AUDIT_DOMAIN.CLUBS_MASTER, AUDIT_DOMAIN.WRITE_RECOVERY]
     : [
         AUDIT_DOMAIN.TEAM_RELATIONS,
         AUDIT_DOMAIN.PLAYER_RELATIONS,

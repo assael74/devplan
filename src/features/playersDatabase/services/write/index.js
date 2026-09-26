@@ -54,3 +54,6 @@ export {
 export {
   createTeamStatsProjectionRevision,
 } from './teamStatsProjectionJobs/index.js'
+
+export * from './operations/index.js'
+export * from './jobs/index.js'

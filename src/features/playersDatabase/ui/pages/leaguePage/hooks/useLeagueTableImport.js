@@ -2,22 +2,18 @@
 
 import * as React from 'react'
 
-import {
-  doc,
-  onSnapshot,
-} from 'firebase/firestore'
-
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/snackbar/snackbar.format.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
-import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
-import { db } from '../../../../../../services/firebase/firebase.js'
 import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../../services/write/index.js'
-import { invalidatePlayersDatabaseWriteCache } from '../../../../services/cache/index.js'
+  syncClubsMasterV2,
+  syncLeagueClubsV2,
+  syncLeagueIdentityV2,
+  syncLeagueTeamsV2,
+  syncLeaguesMasterV2,
+  writeLeagueV2,
+} from '../../../../services/writeV2/index.js'
 import { readClubSeasonIdentityIndex } from '../../../../services/read/index.js'
 import { resolveLeagueClubIdentityIndex } from '../../../../import/logic/leagueClubMasterWarnings.js'
 import {
@@ -68,6 +64,46 @@ const isImportRowReady = row => {
   })
 }
 
+const buildStructuralLeagueDiff = ({ existingRows = [], nextRows = [] } = {}) => {
+  const identityKey = row => clean(row?.teamId || row?.birthTeamId) || [
+    clean(row?.clubId),
+    clean(row?.teamSlot || row?.birthTeamSlot || '1'),
+  ].join('__')
+  const existingByKey = new Map((Array.isArray(existingRows) ? existingRows : [])
+    .map(row => [identityKey(row), row])
+    .filter(([key]) => key))
+  const nextByKey = new Map((Array.isArray(nextRows) ? nextRows : [])
+    .map(row => [identityKey(row), row])
+    .filter(([key]) => key))
+  const added = []
+  const removed = []
+  const changed = []
+
+  nextByKey.forEach((row, key) => {
+    const existing = existingByKey.get(key)
+    if (!existing) {
+      added.push(row)
+      return
+    }
+
+    const clubChanged = clean(existing.clubId) !== clean(row.clubId)
+    const slotChanged = clean(existing.teamSlot || existing.birthTeamSlot || '1') !==
+      clean(row.teamSlot || row.birthTeamSlot || '1')
+    if (clubChanged || slotChanged) changed.push({ before: existing, after: row })
+  })
+
+  existingByKey.forEach((row, key) => {
+    if (!nextByKey.has(key)) removed.push(row)
+  })
+
+  return {
+    added,
+    removed,
+    changed,
+    hasChanges: added.length > 0 || removed.length > 0 || changed.length > 0,
+  }
+}
+
 export function useLeagueTableImport({
   league = {},
   leagueDoc = {},
@@ -82,17 +118,28 @@ export function useLeagueTableImport({
   const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [identityIndexDocument, setIdentityIndexDocument] = React.useState(null)
-  const [projectionJobId, setProjectionJobId] = React.useState('')
-  const [projectionJob, setProjectionJob] = React.useState(null)
-  const [retryingProjectionJob, setRetryingProjectionJob] = React.useState(false)
+  const [identityValidationError, setIdentityValidationError] = React.useState(false)
+  const [approvedPayload, setApprovedPayload] = React.useState(null)
+  const [syncState, setSyncState] = React.useState({})
+  const [syncResults, setSyncResults] = React.useState({})
+  const [structuralAcknowledged, setStructuralAcknowledged] = React.useState(false)
   const identityIndexRef = React.useRef(null)
-  const completedProjectionJobRef = React.useRef('')
+  const syncCacheRefreshRef = React.useRef(false)
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
+  const structuralChanges = React.useMemo(() => buildStructuralLeagueDiff({
+    existingRows: selectedSeasonOption?.season?.tableRank || [],
+    nextRows: rows,
+  }), [rows, selectedSeasonOption])
   const canConfirm = React.useMemo(() => {
-    return Boolean(seasonStatus) && rows.length > 0 && rows.every(row => (
+    const rowsReady = Boolean(seasonStatus) && rows.length > 0 && rows.every(row => (
       row.valid !== false && isImportRowReady(row)
     ))
-  }, [rows, seasonStatus])
+    return !identityValidationError && rowsReady
+  }, [
+    identityValidationError,
+    rows,
+    seasonStatus,
+  ])
 
   const applyClubMasterWarnings = React.useCallback(({ previewRows = [], identityIndex = {} } = {}) => {
     const identityResolution = resolveLeagueClubIdentityIndex({
@@ -145,17 +192,9 @@ export function useLeagueTableImport({
     }
   }, [hasStartedData, seasonStatus])
 
-  React.useEffect(() => {
-    if (!projectionJobId) return undefined
-
-    return onSnapshot(
-      doc(db, PLAYERS_DATABASE_COLLECTIONS.leagueProjectionJobs, projectionJobId),
-      snapshot => setProjectionJob(snapshot.exists ? { id: snapshot.id, ...snapshot.data() } : null),
-      () => setProjectionJob(null)
-    )
-  }, [projectionJobId])
-
   const handlePreview = React.useCallback(async () => {
+    setStructuralAcknowledged(false)
+    setIdentityValidationError(false)
     const preview = buildLeagueImportPreview({
       text: pasteValue,
       league,
@@ -176,12 +215,27 @@ export function useLeagueTableImport({
         previewRows: preview.rows || [],
         identityIndex,
       }))
-    } catch {
+    } catch (error) {
+      identityIndexRef.current = null
       setIdentityIndexDocument(null)
+      setIdentityValidationError(true)
       setRows(preview.rows || [])
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: 'בדיקת הזהויות נכשלה',
+        message: 'לא ניתן להמשיך לפני טעינת נתוני הזיהוי. נסה שוב.',
+        details: mapFirestoreErrorToDetails(error),
+      })
       return
     }
-  }, [pasteValue, league, leagueDoc, selectedSeasonOption, applyClubMasterWarnings])
+  }, [
+    pasteValue,
+    league,
+    leagueDoc,
+    selectedSeasonOption,
+    applyClubMasterWarnings,
+    notify,
+  ])
 
   const handleClear = React.useCallback(() => {
     if (busy) return
@@ -191,11 +245,16 @@ export function useLeagueTableImport({
     setSeasonStatus('')
     identityIndexRef.current = null
     setIdentityIndexDocument(null)
-    setProjectionJobId('')
-    setProjectionJob(null)
+    setIdentityValidationError(false)
+    setApprovedPayload(null)
+    setSyncState({})
+    setSyncResults({})
+    syncCacheRefreshRef.current = false
+    setStructuralAcknowledged(false)
   }, [busy])
 
   const handleCellChange = React.useCallback(({ rowIndex, column, value }) => {
+    setStructuralAcknowledged(false)
     const changedRows = rows.map((row, index) => {
       if (index !== rowIndex) return row
 
@@ -243,7 +302,7 @@ export function useLeagueTableImport({
     }))
   }, [rows, applyClubMasterWarnings, selectedSeasonOption])
 
-  const handleConfirm = React.useCallback(async () => {
+  const buildApprovedPayload = React.useCallback(() => {
     const serviceLeague = buildServiceLeague({
       league,
       leagueDoc,
@@ -260,107 +319,118 @@ export function useLeagueTableImport({
       season: serviceSeason,
     })
 
+    return {
+      league: serviceLeague,
+      season: serviceSeason,
+      target: seasonStatus === 'completed' ? 'history' : 'current',
+      rows: serviceRows,
+    }
+  }, [league, leagueDoc, selectedSeasonOption, seasonStatus, rows])
+
+  const handleApproveForSync = React.useCallback(() => {
+    if (!canConfirm) return false
+
+    syncCacheRefreshRef.current = false
+    setApprovedPayload(buildApprovedPayload())
+    setSyncState({})
+    setSyncResults({})
+    return true
+  }, [buildApprovedPayload, canConfirm])
+
+  const runSyncStep = React.useCallback(async ({ key, action, successTitle }) => {
+    if (!approvedPayload || busy) return null
+
     setBusy(true)
+    setSyncState(current => ({
+      ...current,
+      [key]: { status: 'running', error: '' },
+    }))
 
     try {
-      const result = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
-        payload: {
-          league: serviceLeague,
-          season: serviceSeason,
-          target: seasonStatus === 'completed' ? 'history' : 'current',
-          rows: serviceRows,
-        },
-      })
-
+      const result = await action(approvedPayload, syncResults)
+      setSyncResults(current => ({ ...current, [key]: result }))
+      setSyncState(current => ({
+        ...current,
+        [key]: { status: 'completed', error: '' },
+      }))
       notify({
         status: SNACK_STATUS.SUCCESS,
-        title: 'טבלת הליגה נשמרה',
-        message: 'סנכרון ביצועי הקבוצות ממשיך ברקע',
+        title: successTitle,
       })
-
-      setProjectionJobId(String(result?.projectionJob?.id || ''))
-      reload()
       return result
     } catch (error) {
-      setOpen(false)
-      setWriteReport(error?.writeReport || {
-        flow: 'pasteLeagueTable',
-        status: 'failed',
-        failedStage: error?.stage || 'unknown',
-        message: error?.message || 'טעינת טבלת הליגה נכשלה',
-        completedStages: Object.keys(error?.results || {}),
-        failures: [{
-          code: error?.code || 'WRITE_FLOW_FAILED',
-          message: error?.message || 'טעינת טבלת הליגה נכשלה',
-        }],
-        duplicates: [],
-        results: error?.results || {},
-      })
-
+      setSyncState(current => ({
+        ...current,
+        [key]: {
+          status: 'failed',
+          error: error?.message || 'הפעולה נכשלה',
+        },
+      }))
       notify({
         status: SNACK_STATUS.ERROR,
-        title: 'טעינת טבלת הליגה נכשלה',
-        message: serviceLeague.name || 'ליגה',
+        title: 'הסנכרון נכשל',
+        message: error?.message || successTitle,
         details: mapFirestoreErrorToDetails(error),
       })
+      return null
     } finally {
       setBusy(false)
     }
-  }, [league, leagueDoc, selectedSeasonOption, rows, seasonStatus, notify, reload])
+  }, [approvedPayload, busy, notify, syncResults])
 
-  const retryProjectionJob = React.useCallback(async () => {
-    if (!projectionJobId || projectionJob?.status !== 'failed') return
+  const syncLeagueCanonical = React.useCallback(() => runSyncStep({
+    key: 'league',
+    successTitle: 'טבלת הליגה נשמרה',
+    action: payload => writeLeagueV2(payload),
+  }), [runSyncStep])
 
-    setRetryingProjectionJob(true)
-    try {
-      const result = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC,
-        payload: {
-          leagueId: projectionJob.leagueId,
-          seasonKey: projectionJob.seasonKey,
-          target: projectionJob.target,
-          retryOfJobId: projectionJobId,
-          continuationWriteActionId: projectionJob.writeActionId,
-        },
-      })
-      setProjectionJobId(String(result?.projectionJob?.id || ''))
-      notify({
-        status: SNACK_STATUS.SUCCESS,
-        title: 'סנכרון הליגה הופעל מחדש',
-        message: 'המקור נקרא מחדש ממסמך הליגה העדכני',
-      })
-    } catch (error) {
-      notify({
-        status: SNACK_STATUS.ERROR,
-        title: 'ניסיון הסנכרון נכשל',
-        message: error?.message || 'לא ניתן ליצור סנכרון חדש לליגה',
-        details: mapFirestoreErrorToDetails(error),
-      })
-    } finally {
-      setRetryingProjectionJob(false)
-    }
-  }, [notify, projectionJob, projectionJobId])
+  const syncLeaguesMaster = React.useCallback(() => runSyncStep({
+    key: 'leaguesMaster',
+    successTitle: 'אינדקס הליגות סונכרן',
+    action: () => syncLeaguesMasterV2(),
+  }), [runSyncStep])
+
+  const syncLeagueIdentity = React.useCallback(() => runSyncStep({
+    key: 'identity',
+    successTitle: 'אינדקס הזיהוי סונכרן',
+    action: payload => syncLeagueIdentityV2(payload),
+  }), [runSyncStep])
+
+  const syncLeagueTeams = React.useCallback(() => runSyncStep({
+    key: 'teams',
+    successTitle: 'נתוני הקבוצות סונכרנו',
+    action: (payload, results) => syncLeagueTeamsV2({
+      ...payload,
+      removedLeagueEntries: results.identity?.removedEntries || [],
+    }),
+  }), [runSyncStep])
+
+  const syncLeagueClubs = React.useCallback(() => runSyncStep({
+    key: 'clubs',
+    successTitle: 'נתוני המועדונים סונכרנו',
+    action: (payload, results) => syncLeagueClubsV2({
+      ...payload,
+      leagueSeasonDocument: results.league?.seasonDocument || {},
+      removedLeagueEntries: results.identity?.removedEntries || [],
+    }),
+  }), [runSyncStep])
+
+  const syncClubsMaster = React.useCallback(() => runSyncStep({
+    key: 'clubsMaster',
+    successTitle: 'אינדקס המועדונים סונכרן',
+    action: () => syncClubsMasterV2(),
+  }), [runSyncStep])
+
+  const syncComplete = ['league', 'leaguesMaster', 'identity', 'teams', 'clubs', 'clubsMaster']
+    .every(key => syncState[key]?.status === 'completed')
 
   React.useEffect(() => {
-    const status = projectionJob?.status || ''
-    const completionKey = `${projectionJobId}:${status}`
-    if (!['completed', 'failed', 'superseded', 'partial_superseded'].includes(status) ||
-        completedProjectionJobRef.current === completionKey) return
+    if (!syncComplete || syncCacheRefreshRef.current || typeof reload !== 'function') return
 
-    completedProjectionJobRef.current = completionKey
-    invalidatePlayersDatabaseWriteCache({
-      actionType: PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
-      payload: {
-        league: { id: league.id || league.leagueId || leagueDoc.id || leagueDoc.leagueId },
-        season: {
-          ...(selectedSeasonOption?.season || {}),
-          seasonKey: selectedSeasonOption?.seasonKey,
-        },
-      },
-    })
+    syncCacheRefreshRef.current = true
     reload()
-  }, [league, leagueDoc, projectionJob?.status, projectionJobId, reload, selectedSeasonOption])
+  }, [reload, syncComplete])
+
 
   return {
     open,
@@ -371,18 +441,31 @@ export function useLeagueTableImport({
     seasonStatus,
     hasStartedData,
     identityIndexDocument,
-    projectionJob,
-    projectionJobId,
-    retryingProjectionJob,
+    identityValidationError,
+    approvedPayload,
+    syncState,
+    syncResults,
+    syncComplete,
+    structuralChanges,
+    structuralAcknowledged,
     setOpen,
     setSeasonStatus,
     setPasteValue,
+    setStructuralAcknowledged,
     handlePreview,
     handleClear,
     handleCellChange,
-    handleConfirm,
-    retryProjectionJob,
-    handleClose: () => setOpen(false),
+    handleApproveForSync,
+    syncLeagueCanonical,
+    syncLeaguesMaster,
+    syncLeagueIdentity,
+    syncLeagueTeams,
+    syncLeagueClubs,
+    syncClubsMaster,
+    handleClose: () => {
+      setOpen(false)
+      reload()
+    },
     handleOpen: () => setOpen(true),
     writeReport,
     closeWriteReport: () => setWriteReport(null),

@@ -39,3 +39,5 @@ export * from './projections/leagueSchedule.projection.js'
 export * from './projections/club/index.js'
 
 export * from './movement/index.js'
+
+export * from './statsV2/index.js'

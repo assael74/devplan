@@ -89,3 +89,57 @@ export async function pasteLeagueTableFlow(payload = {}) {
     })
   }
 }
+
+
+/**
+ * Target League import flow.
+ *
+ * This flow is intentionally not wired to the active write router/UI yet.
+ * The target dbPlayersDatabaseJobs consumer must exist before activation.
+ */
+export async function pasteLeagueTableTargetFlow(payload = {}) {
+  const results = {}
+  const stage = 'atomicCommit'
+
+  try {
+    const { commitLeagueImport } = await import('./commitLeagueImport.js')
+    const commitResult = await commitLeagueImport({
+      league: payload.league || {},
+      season: payload.season || {},
+      target: payload.target || 'current',
+      rows: Array.isArray(payload.rows) ? payload.rows : [],
+      approvedPlan: payload.approvedPlan || {},
+    })
+
+    const projectionJob = {
+      ...(commitResult.projectionJob || {}),
+      jobType: commitResult.projectionJob?.jobType || commitResult.projectionJob?.type || 'league',
+      sourceGeneration: commitResult.generation || '',
+    }
+
+    results.atomicCommit = commitResult
+    results.projectionJob = projectionJob
+
+    return {
+      status: 'canonical_complete',
+      ...commitResult,
+      leagueCanonicalCommitted: true,
+      projectionsCompleted: false,
+      backgroundSyncPending: true,
+      completed: false,
+      recoveryRequired: false,
+      generation: commitResult.generation || '',
+      sourceGeneration: commitResult.generation || '',
+      leagueResult: commitResult,
+      projectionJob,
+      results,
+    }
+  } catch (error) {
+    throw attachWriteFlowReport({
+      error,
+      stage,
+      results,
+      flow: 'pasteLeagueTableTarget',
+    })
+  }
+}
