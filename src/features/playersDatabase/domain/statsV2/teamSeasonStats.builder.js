@@ -18,6 +18,10 @@ import {
   resolveStatsPlayerIdentityKey,
   STATS_RELOAD_DECISION,
 } from './statsReloadDecision.builder.js'
+import {
+  buildStatsAbsentPlayerState,
+  STATS_OWNED_RICH_SCOUT_FIELDS,
+} from './statsAbsence.builder.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -63,27 +67,10 @@ const resolveIncomingLookup = players => {
   return new Map(entries)
 }
 
-const clearStatsOwnedScoutFields = player => ({
-  ...player,
-  statsStatus: 'missing',
-  playerStats: {},
-  lineClassification: null,
-  scoutSignals: [],
-  scoutProfiles: [],
-  scoutProfileHierarchy: null,
-  scoutOpportunity: null,
-  scoutPlayerInterest: null,
-  primaryScoutProfileId: '',
-  primaryScoutProfileStrengthDepthPct: null,
-  professionalScoutProfileIds: [],
-  preliminaryScoutProfileIds: [],
-  scoutEffectiveImmediacyStatus: '',
-  scoutPlayerInterestLevel: '',
-})
 
-const buildScoutedPlayer = ({ player, team, season }) => {
+export const buildStatsScoutedPlayer = ({ player, team, season }) => {
   if (clean(player?.statsStatus) !== 'loaded') {
-    return clearStatsOwnedScoutFields(player)
+    return buildStatsAbsentPlayerState(player)
   }
 
   const lineClassification = buildPlayerLineClassificationState({ player })
@@ -210,7 +197,7 @@ const mergeResolvedPlayers = ({
     const decision = decisionLookup.get(playerKey)
 
     if (decision === STATS_RELOAD_DECISION.REMOVE_STATS) {
-      return clearStatsOwnedScoutFields(existingPlayer)
+      return buildStatsAbsentPlayerState(existingPlayer)
     }
 
     return existingPlayer
@@ -235,24 +222,29 @@ const buildPlayerOwnedPatches = ({ previousPlayers, nextPlayers }) => {
     if (!playerKey) return patches
 
     const previous = previousLookup.get(playerKey) || {}
-    const patch = {
-      playerKey,
+    const setFields = {
       statsStatus: clean(player.statsStatus),
       playerStats: clone(player.playerStats || {}),
       lineClassification: player.lineClassification || null,
       ...buildTeamPlayerScoutProjection(player),
     }
-
+    const unsetFields = STATS_OWNED_RICH_SCOUT_FIELDS.filter(field => (
+      Object.prototype.hasOwnProperty.call(previous, field) &&
+      !Object.prototype.hasOwnProperty.call(player, field)
+    ))
     const comparablePrevious = {
-      playerKey,
       statsStatus: clean(previous.statsStatus),
       playerStats: clone(previous.playerStats || {}),
       lineClassification: previous.lineClassification || null,
       ...buildTeamPlayerScoutProjection(previous),
     }
 
-    if (!sameValue(patch, comparablePrevious)) {
-      patches.push(patch)
+    if (!sameValue(setFields, comparablePrevious) || unsetFields.length > 0) {
+      patches.push({
+        playerKey,
+        setFields,
+        unsetFields,
+      })
     }
 
     return patches
@@ -326,7 +318,7 @@ export const buildFinalStatsTeamSeasonState = ({
     incomingPlayers,
     reloadDecisionState,
   })
-  const scoutedPlayers = mergedPlayers.map(player => buildScoutedPlayer({
+  const scoutedPlayers = mergedPlayers.map(player => buildStatsScoutedPlayer({
     player,
     team: effectiveTeam,
     season: effectiveSeason,

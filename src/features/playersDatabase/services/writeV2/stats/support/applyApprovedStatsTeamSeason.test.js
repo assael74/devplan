@@ -35,11 +35,14 @@ describe('applyApprovedStatsTeamSeason', () => {
       approvedTeamSeason: approved({
         playerOwnedPatches: [{
           playerKey: 'p1',
-          statsStatus: 'loaded',
-          playerStats: { games: 9 },
-          lineClassification: { line: 'DEFENSE' },
-          rosterStatus: 'left',
-          position: 'FW',
+          setFields: {
+            statsStatus: 'loaded',
+            playerStats: { games: 9 },
+            lineClassification: { line: 'DEFENSE' },
+            rosterStatus: 'left',
+            position: 'FW',
+          },
+          unsetFields: [],
         }],
       }),
     })
@@ -85,17 +88,127 @@ describe('applyApprovedStatsTeamSeason', () => {
     expect(result.transfersOut).toEqual([{ movementId: 'out' }])
   })
 
+
+  test('missing Stats patch removes stale rich scouting from the persisted player state', () => {
+    const result = applyApprovedStatsTeamSeason({
+      currentSeason: {
+        teamPlayers: [player({
+          statsStatus: 'loaded',
+          playerStats: { games: 4, goals: 1 },
+          scoutSignals: [{ id: 'signal-1' }],
+          scoutCombinations: [{ id: 'combination-1' }],
+          scoutCombinationIds: ['combination-1'],
+          scoutEvidence: [{ id: 'evidence-1' }],
+          scoutCandidateSignals: [{ id: 'candidate-1' }],
+          scoutProfileCaseStrength: { score: 80 },
+          scoutProfileProgression: { direction: 'up' },
+          hierarchy: { primary: 'profile-1' },
+          opportunity: { status: 'watch' },
+          interest: { level: 'interesting' },
+          progression: { level: 'rising' },
+          combinations: [{ id: 'legacy-combination' }],
+        })],
+      },
+      approvedTeamSeason: approved({
+        playerOwnedPatches: [{
+          playerKey: 'p1',
+          setFields: {
+            statsStatus: 'missing',
+            playerStats: {
+              games: 0,
+              goals: 0,
+              yellowCards: 0,
+              minutes: 0,
+              starts: 0,
+              substituteIn: 0,
+              substitutedOut: 0,
+              teamMinutes: 0,
+              teamGames: 0,
+              teamRank: null,
+              teamGoalsFor: 0,
+              teamGoalsAgainst: 0,
+              minutesPerGame: 0,
+              goalsPer90: 0,
+            },
+            lineClassification: {
+              line: '',
+              position: null,
+              source: '',
+              evidenceLevel: '',
+              modelVersion: 'test',
+            },
+            primaryScoutProfileId: '',
+            primaryScoutProfileStrengthDepthPct: null,
+            professionalScoutProfileIds: [],
+            preliminaryScoutProfileIds: [],
+            scoutEffectiveImmediacyStatus: '',
+            scoutPlayerInterestLevel: '',
+            scoutEngineVersion: 'test',
+          },
+          unsetFields: [
+            'scoutSignals',
+            'scoutCombinations',
+            'scoutCombinationIds',
+            'scoutEvidence',
+            'scoutCandidateSignals',
+            'scoutProfileCaseStrength',
+            'scoutProfileProgression',
+            'hierarchy',
+            'opportunity',
+            'interest',
+            'progression',
+            'combinations',
+          ],
+        }],
+      }),
+    })
+
+    const persistedPlayer = result.teamPlayers[0]
+
+    expect(persistedPlayer.statsStatus).toBe('missing')
+    expect(persistedPlayer.scoutSignals).toBeUndefined()
+    expect(persistedPlayer.scoutCombinations).toBeUndefined()
+    expect(persistedPlayer.scoutCombinationIds).toBeUndefined()
+    expect(persistedPlayer.scoutEvidence).toBeUndefined()
+    expect(persistedPlayer.scoutCandidateSignals).toBeUndefined()
+    expect(persistedPlayer.scoutProfileCaseStrength).toBeUndefined()
+    expect(persistedPlayer.scoutProfileProgression).toBeUndefined()
+    expect(persistedPlayer.hierarchy).toBeUndefined()
+    expect(persistedPlayer.opportunity).toBeUndefined()
+    expect(persistedPlayer.interest).toBeUndefined()
+    expect(persistedPlayer.progression).toBeUndefined()
+    expect(persistedPlayer.combinations).toBeUndefined()
+    expect(persistedPlayer.rosterStatus).toBe('regular')
+    expect(persistedPlayer.position).toBe('CB')
+  })
+
   test('fails when an approved player patch has no canonical or approved participant target', () => {
     expect(() => applyApprovedStatsTeamSeason({
       currentSeason: { teamPlayers: [player()] },
       approvedTeamSeason: approved({
         playerOwnedPatches: [{
           playerKey: 'missing-player',
-          statsStatus: 'loaded',
-          playerStats: { games: 1 },
+          setFields: {
+            statsStatus: 'loaded',
+            playerStats: { games: 1 },
+          },
+          unsetFields: [],
         }],
       }),
     })).toThrow('Approved Stats player patch target was not found')
+  })
+
+  test('rejects an approved unset field outside Stats ownership', () => {
+    expect(() => applyApprovedStatsTeamSeason({
+      currentSeason: { teamPlayers: [player()] },
+      approvedTeamSeason: approved({
+        playerOwnedPatches: [{
+          playerKey: 'p1',
+          setFields: {},
+          unsetFields: ['rosterStatus'],
+        }],
+      }),
+    })).toThrow('Approved Stats unset field is not Stats-owned')
   })
 
   test('uses approved playersCount and preserves Team Season fields outside Stats ownership', () => {

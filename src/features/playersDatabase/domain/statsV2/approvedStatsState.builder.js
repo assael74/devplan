@@ -209,14 +209,17 @@ const validateFinalTeamSeasonState = ({ teamSeason = {}, reloadDecisions = [], c
     .forEach(row => {
       const patch = playerOwnedPatches.find(candidate => clean(candidate?.playerKey) === row.playerKey)
 
-      if (!patch || clean(patch.statsStatus) !== 'missing' || hasMeaningfulStats(patch.playerStats)) {
+      const setFields = patch?.setFields
+
+      if (!patch || !setFields || typeof setFields !== 'object' || Array.isArray(setFields) ||
+          clean(setFields.statsStatus) !== 'missing' || hasMeaningfulStats(setFields.playerStats)) {
         const error = new Error(`removeStats is not reflected in final Team Season for ${row.playerKey}`)
         error.code = 'STATS_REMOVE_DECISION_NOT_APPLIED'
         throw error
       }
 
-      if (Object.prototype.hasOwnProperty.call(patch, 'rosterStatus') ||
-          Object.prototype.hasOwnProperty.call(patch, 'movement')) {
+      if (Object.prototype.hasOwnProperty.call(setFields, 'rosterStatus') ||
+          Object.prototype.hasOwnProperty.call(setFields, 'movement')) {
         const error = new Error(`removeStats cannot change roster or Movement for ${row.playerKey}`)
         error.code = 'STATS_REMOVE_DECISION_SCOPE_INVALID'
         throw error

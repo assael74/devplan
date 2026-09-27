@@ -1,6 +1,7 @@
 // src/features/playersDatabase/domain/statsV2/approvedStatsState.builder.test.js
 
 import { buildApprovedStatsState } from './approvedStatsState.builder.js'
+import { buildFinalStatsTeamSeasonState } from './teamSeasonStats.builder.js'
 
 const finalTeamSeason = {
   seasonStatus: 'active',
@@ -123,14 +124,67 @@ describe('approvedStatsState.builder', () => {
         ...finalTeamSeason,
         playerOwnedPatches: [{
           playerKey: 'player-1',
-          statsStatus: 'missing',
-          playerStats: null,
+          setFields: {
+            statsStatus: 'missing',
+            playerStats: {
+              games: 0,
+              goals: 0,
+            },
+          },
+          unsetFields: [],
         }],
       },
     })
 
-    expect(state.teamSeason.playerOwnedPatches[0]).not.toHaveProperty('rosterStatus')
-    expect(state.teamSeason.playerOwnedPatches[0]).not.toHaveProperty('movement')
+    expect(state.teamSeason.playerOwnedPatches[0].setFields).not.toHaveProperty('rosterStatus')
+    expect(state.teamSeason.playerOwnedPatches[0].setFields).not.toHaveProperty('movement')
+  })
+
+  test('accepts the player patch produced by buildFinalStatsTeamSeasonState', () => {
+    const previousPlayer = {
+      playerId: 'player-1',
+      rosterStatus: 'active',
+      statsStatus: 'loaded',
+      playerStats: { games: 4, goals: 1 },
+      scoutSignals: ['legacy'],
+    }
+    const canonical = {
+      teamRoot: { id: 'team-1' },
+      teamSeason: {
+        id: 'team-1__2026-2027',
+        seasonId: 'season-1',
+        seasonKey: '2026-2027',
+        teamPlayers: [previousPlayer],
+      },
+      league: baseInput.canonical.league,
+    }
+    const reloadDecisionState = {
+      missingPlayers: [{ playerKey: 'player-1', player: previousPlayer }],
+      isComplete: true,
+      resolved: [{ playerKey: 'player-1', player: previousPlayer, decision: 'removeStats' }],
+      unresolved: [],
+    }
+    const teamSeason = buildFinalStatsTeamSeasonState({
+      canonical,
+      season: {
+        seasonId: 'season-1',
+        seasonKey: '2026-2027',
+      },
+      team: {
+        birthTeamDocumentId: 'team-1',
+        teamDocumentId: 'team-1',
+      },
+      incomingPlayers: [],
+      reloadDecisionState,
+      statsLoadState: { status: 'loaded' },
+    })
+
+    expect(() => buildApprovedStatsState({
+      ...baseInput,
+      canonical,
+      reloadDecisionState,
+      teamSeason,
+    })).not.toThrow()
   })
 
   test('derives seasonStatus from canonical League and rejects a mismatch', () => {
@@ -174,8 +228,11 @@ describe('approvedStatsState.builder', () => {
         ...finalTeamSeason,
         playerOwnedPatches: [{
           playerKey: 'player-1',
-          statsStatus: 'missing',
-          playerStats: { games: 4, goals: 1 },
+          setFields: {
+            statsStatus: 'missing',
+            playerStats: { games: 4, goals: 1 },
+          },
+          unsetFields: [],
         }],
       },
     })).toThrow('removeStats is not reflected in final Team Season')

@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/writeV2/stats/support/applyApprovedStatsTeamSeason.js
 
+import { STATS_OWNED_RICH_SCOUT_FIELDS } from '../../../../domain/statsV2/statsAbsence.builder.js'
 import { resolveStatsPlayerIdentityKey } from '../../../../domain/statsV2/statsReloadDecision.builder.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
@@ -19,13 +20,27 @@ const PLAYER_STATS_OWNED_FIELDS = Object.freeze([
 
 const clone = value => JSON.parse(JSON.stringify(value))
 
-const buildOwnedPlayerPatch = patch => PLAYER_STATS_OWNED_FIELDS.reduce((result, field) => {
-  if (Object.prototype.hasOwnProperty.call(patch || {}, field)) {
-    result[field] = clone(patch[field])
+const buildOwnedSetFields = setFields => PLAYER_STATS_OWNED_FIELDS.reduce((result, field) => {
+  if (Object.prototype.hasOwnProperty.call(setFields || {}, field)) {
+    result[field] = clone(setFields[field])
   }
 
   return result
 }, {})
+
+const STATS_OWNED_UNSET_FIELDS = new Set(STATS_OWNED_RICH_SCOUT_FIELDS)
+
+const buildOwnedUnsetFields = unsetFields => (
+  Array.isArray(unsetFields) ? unsetFields : []
+).map(clean).filter(field => {
+  if (!STATS_OWNED_UNSET_FIELDS.has(field)) {
+    const error = new Error(`Approved Stats unset field is not Stats-owned: ${field || 'missing'}`)
+    error.code = 'STATS_PLAYER_UNSET_FIELD_NOT_OWNED'
+    throw error
+  }
+
+  return true
+})
 
 const buildPlayerLookup = players => new Map(
   (Array.isArray(players) ? players : [])
@@ -57,7 +72,14 @@ const mergeApprovedPlayers = ({ currentPlayers = [], approvedNewParticipants = [
       throw error
     }
 
-    Object.assign(currentPlayer, buildOwnedPlayerPatch(patch))
+    const setFields = buildOwnedSetFields(patch?.setFields)
+    const unsetFields = buildOwnedUnsetFields(patch?.unsetFields)
+
+    unsetFields.forEach(field => {
+      delete currentPlayer[field]
+    })
+
+    Object.assign(currentPlayer, setFields)
   })
 
   return nextPlayers

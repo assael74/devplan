@@ -157,6 +157,9 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     total: 0,
     profileCounts: {},
   },
+  statsLoadState: {
+    status: 'missing',
+  },
   rosterImport: {
     mode: 'AUTHORITATIVE_SNAPSHOT',
     sourceSnapshotKey: '',

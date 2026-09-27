@@ -3,3 +3,5 @@
 export * from './approvedStatsState.builder.js'
 export * from './statsReloadDecision.builder.js'
 export * from './teamSeasonStats.builder.js'
+export * from './statsAbsence.builder.js'
+export * from './teamSeasonStatsState.js'

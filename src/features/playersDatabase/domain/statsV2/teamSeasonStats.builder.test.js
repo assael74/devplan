@@ -97,7 +97,22 @@ describe('teamSeasonStats.builder', () => {
 
     expect(player.rosterStatus).toBe('regular')
     expect(player.statsStatus).toBe('missing')
-    expect(player.playerStats).toEqual({})
+    expect(player.playerStats).toEqual({
+      games: 0,
+      goals: 0,
+      yellowCards: 0,
+      minutes: 0,
+      starts: 0,
+      substituteIn: 0,
+      substitutedOut: 0,
+      teamMinutes: 0,
+      teamGames: 0,
+      teamRank: null,
+      teamGoalsFor: 0,
+      teamGoalsAgainst: 0,
+      minutesPerGame: 0,
+      goalsPer90: 0,
+    })
     expect(result.localMovementPatch).toBeNull()
   })
 
