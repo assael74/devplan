@@ -47,6 +47,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     fromClubs = false,
     auditFindingId,
     auditSeasonKey,
+    openStatsImport = false,
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}/teams/${teamId || ''}`
     const params = new URLSearchParams()
@@ -55,6 +56,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     if (fromClubs) params.set('fromClubs', '1')
     if (auditFindingId) params.set('auditFinding', auditFindingId)
     if (auditSeasonKey) params.set('auditSeason', auditSeasonKey)
+    if (openStatsImport) params.set('openStatsImport', '1')
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath

@@ -101,15 +101,6 @@ export const STATS_TEAM_INDEX_OWNED_FIELDS = new Set([
   'squadInterestReason',
 ])
 
-export const STATS_LEAGUE_TEAM_OWNED_FIELDS = new Set([
-  'playersCount',
-  'hasPlayers',
-  'hasStats',
-  'statsComplete',
-  'scoutProfilesSummary',
-  'teamTaskSignals',
-])
-
 export const pickOwnedFields = ({ fields = {}, allowed = new Set(), code = 'STATS_PATCH_SCOPE_INVALID' } = {}) => {
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
     const error = new Error('Approved Stats patch must be an object')

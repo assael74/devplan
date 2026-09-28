@@ -1,89 +1,107 @@
+// src/features/playersDatabase/services/writeV2/stats/flows/syncStatsClubs.flow.test.js
+
 jest.mock('firebase/firestore', () => ({
   doc: jest.fn((db, collection, id) => ({ collection, id })),
-  getDoc: jest.fn(),
   serverTimestamp: jest.fn(() => 'SERVER_TS'),
   writeBatch: jest.fn(),
 }))
 jest.mock('../../../../../../services/firebase/firebase.js', () => ({ db: {} }))
 jest.mock('../../../cache/index.js', () => ({ invalidateClubsMasterDocumentCache: jest.fn() }))
 
-import { getDoc, writeBatch } from 'firebase/firestore'
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { invalidateClubsMasterDocumentCache } from '../../../cache/index.js'
 import { syncStatsClubsV2 } from './syncStatsClubs.flow.js'
 
 const approved = {
-  planType: 'approvedStatsState', planVersion: 1,
-  clubProjectionPatches: [{ clubId: 'c1', fields: { ageGroups: [{ ageGroupId: 'u15' }] } }],
-  clubsMasterPatch: { id: 'all', entries: [{ clubId: 'c1', fields: { name: 'Club 1', ageGroups: [] } }] },
+  planType: 'approvedStatsState',
+  planVersion: 1,
+  clubProjectionPatches: [{
+    clubId: 'c1',
+    fields: { ageGroups: [{ ageGroupId: 'u15', seasons: [] }], competitionPaths: [] },
+  }],
+  clubsMasterPatch: {
+    id: 'all',
+    clubs: [{ clubId: 'c1', name: 'Club 1', notes: 'keep' }],
+  },
 }
 
 describe('syncStatsClubsV2', () => {
-  test('preserves non-owned Club and Clubs Master fields', async () => {
-    getDoc
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ clubId: 'c1', manualNote: 'keep', ageGroups: [] }) })
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ id: 'all', external: 'keep', clubs: [{ clubId: 'c1', notes: 'keep', name: 'Old' }] }) })
-    const set = jest.fn(); const commit = jest.fn().mockResolvedValue()
-    writeBatch.mockReturnValue({ set, commit })
-    await syncStatsClubsV2({ approvedState: approved })
-    expect(set.mock.calls[0][1].manualNote).toBe('keep')
-    expect(set.mock.calls[1][1].external).toBe('keep')
-    expect(set.mock.calls[1][1].clubs[0].notes).toBe('keep')
+  beforeEach(() => {
+    jest.clearAllMocks()
+    doc.mockImplementation((db, collection, id) => ({ collection, id }))
+    serverTimestamp.mockImplementation(() => 'SERVER_TS')
   })
 
-  test('rejects fields outside Stats ownership', async () => {
-    const invalid = { ...approved, clubProjectionPatches: [{ clubId: 'c1', fields: { manualNote: 'overwrite' } }] }
-    getDoc
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ clubId: 'c1' }) })
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ id: 'all', clubs: [] }) })
-    await expect(syncStatsClubsV2({ approvedState: invalid })).rejects.toMatchObject({ code: 'STATS_CLUB_OWNERSHIP_INVALID' })
+  test('writes approved Club ownership and final Clubs Master without Firestore reads', async () => {
+    const update = jest.fn()
+    const commit = jest.fn().mockResolvedValue()
+    writeBatch.mockReturnValue({ update, commit })
+
+    const result = await syncStatsClubsV2({ approvedState: approved })
+
+    expect(update).toHaveBeenCalledTimes(2)
+    expect(update.mock.calls[0]).toEqual([
+      { collection: 'dbClubs', id: 'c1' },
+      {
+        ageGroups: [{ ageGroupId: 'u15', seasons: [] }],
+        competitionPaths: [],
+        updatedAt: 'SERVER_TS',
+      },
+    ])
+    expect(update.mock.calls[1]).toEqual([
+      { collection: 'dbClubsMaster', id: 'all' },
+      {
+        clubs: [{ clubId: 'c1', name: 'Club 1', notes: 'keep' }],
+        updatedAt: 'SERVER_TS',
+      },
+    ])
+    expect(commit).toHaveBeenCalledTimes(1)
+    expect(invalidateClubsMasterDocumentCache).toHaveBeenCalledTimes(1)
+    expect(result).toEqual({ updatedClubs: 1, masterUpdated: true, skipped: false })
   })
 
-  test('writes both local and counterpart Club patches in the same clubs stage', async () => {
-    const twoClubs = {
+  test('writes local and counterpart Club patches in the same deterministic batch', async () => {
+    const update = jest.fn()
+    const commit = jest.fn().mockResolvedValue()
+    writeBatch.mockReturnValue({ update, commit })
+    const state = {
       ...approved,
       clubProjectionPatches: [
-        { clubId: 'c1', fields: { ageGroups: [{ ageGroupId: 'u15' }] } },
-        { clubId: 'c2', fields: { ageGroups: [{ ageGroupId: 'u15' }] } },
+        { clubId: 'c1', fields: { ageGroups: [], competitionPaths: [] } },
+        { clubId: 'c2', fields: { ageGroups: [], competitionPaths: [] } },
       ],
-      clubsMasterPatch: {
-        id: 'all',
-        entries: [
-          { clubId: 'c1', fields: { name: 'Club 1', ageGroups: [] } },
-          { clubId: 'c2', fields: { name: 'Club 2', ageGroups: [] } },
-        ],
-      },
+      clubsMasterPatch: { id: 'all', clubs: [{ clubId: 'c1' }, { clubId: 'c2' }] },
     }
-    getDoc
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ clubId: 'c1', ageGroups: [] }) })
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ clubId: 'c2', ageGroups: [] }) })
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ id: 'all', clubs: [] }) })
-    const set = jest.fn(); const commit = jest.fn().mockResolvedValue()
-    writeBatch.mockReturnValue({ set, commit })
 
-    await syncStatsClubsV2({ approvedState: twoClubs })
+    await syncStatsClubsV2({ approvedState: state })
 
-    expect(set).toHaveBeenCalledTimes(3)
+    expect(update).toHaveBeenCalledTimes(3)
     expect(commit).toHaveBeenCalledTimes(1)
   })
 
-  test('does not create a missing counterpart Club', async () => {
-    const twoClubs = {
+  test('rejects fields outside Stats Club ownership', async () => {
+    writeBatch.mockReturnValue({ update: jest.fn(), commit: jest.fn() })
+    const invalid = {
       ...approved,
-      clubProjectionPatches: [
-        { clubId: 'c1', fields: { ageGroups: [] } },
-        { clubId: 'c2', fields: { ageGroups: [] } },
-      ],
-      clubsMasterPatch: { id: 'all', entries: [] },
+      clubProjectionPatches: [{ clubId: 'c1', fields: { manualNote: 'overwrite' } }],
     }
-    getDoc
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ clubId: 'c1' }) })
-      .mockResolvedValueOnce({ exists: () => false, data: () => ({}) })
-      .mockResolvedValueOnce({ exists: () => true, data: () => ({ id: 'all', clubs: [] }) })
-    const set = jest.fn(); const commit = jest.fn().mockResolvedValue()
-    writeBatch.mockReturnValue({ set, commit })
-
-    await expect(syncStatsClubsV2({ approvedState: twoClubs })).rejects.toMatchObject({ code: 'STATS_CLUB_NOT_FOUND' })
-    expect(set).not.toHaveBeenCalled()
-    expect(commit).not.toHaveBeenCalled()
+    await expect(syncStatsClubsV2({ approvedState: invalid }))
+      .rejects.toMatchObject({ code: 'STATS_CLUB_OWNERSHIP_INVALID' })
   })
 
+  test('rerun sends the same business payload to the same targets', async () => {
+    const firstUpdate = jest.fn()
+    writeBatch
+      .mockReturnValueOnce({ update: firstUpdate, commit: jest.fn().mockResolvedValue() })
+    await syncStatsClubsV2({ approvedState: approved })
+    const first = firstUpdate.mock.calls.map(([ref, payload]) => [ref, { ...payload, updatedAt: undefined }])
+
+    const secondUpdate = jest.fn()
+    writeBatch
+      .mockReturnValueOnce({ update: secondUpdate, commit: jest.fn().mockResolvedValue() })
+    await syncStatsClubsV2({ approvedState: approved })
+    const second = secondUpdate.mock.calls.map(([ref, payload]) => [ref, { ...payload, updatedAt: undefined }])
+
+    expect(second).toEqual(first)
+  })
 })

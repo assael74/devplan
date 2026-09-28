@@ -96,13 +96,21 @@ export const playerActionsPanelSx = {
   dataActionsRow: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 0.25,
+    justifyContent: 'flex-start',
+    gap: 0.5,
+    width: 'fit-content',
   },
 
   actionButton: {
     justifyContent: 'flex-start',
     color: devPlanColors.primary,
     fontWeight: 700,
+  },
+
+  actionIconButton: {
+    width: 'auto',
+    minWidth: 'auto',
+    flex: '0 0 auto',
+    color: devPlanColors.primary,
   },
 }

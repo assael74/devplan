@@ -5,6 +5,7 @@ import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
 import AuditRepairActions from './audit/AuditRepairActions.js'
 import AuditSummary from './audit/AuditSummary.js'
+import StatsV2SyncStages from './audit/StatsV2SyncStages.js'
 import { TYPE_LABELS } from './audit/auditFindingPresentation.js'
 import { MISMATCH_COLLECTION_TABS, selectFindingView, selectLifecycleSummary, selectRepairFindings } from './audit/auditFindingSelectors.js'
 import { playerDatabaseAuditModalSx as sx } from './sx/playerDatabaseAuditModal.sx.js'
@@ -56,9 +57,12 @@ const WRITE_ACTION_V2_FLOW_LABELS = {
 }
 const formatWriteActionReceiptV2Option = receipt => {
   const target = receipt?.auditTarget || {}
+  const flowLabel = clean(receipt?.operationType) === 'clear' && clean(receipt?.flowType) === 'stats'
+    ? 'מחיקת סטטיסטיקה'
+    : WRITE_ACTION_V2_FLOW_LABELS[clean(receipt?.flowType)] || clean(receipt?.label) || 'פעולת V2'
 
   return [
-    WRITE_ACTION_V2_FLOW_LABELS[clean(receipt?.flowType)] || clean(receipt?.label) || 'פעולת V2',
+    flowLabel,
     clean(target.leagueId) || clean(target.birthTeamDocumentId) || clean(target.seasonKey),
     clean(receipt?.status),
     formatWriteActionTime(receipt?.updatedAt),
@@ -140,7 +144,7 @@ export default function PlayerDatabaseAuditModal(props) {
     if (defaultsChanged && mode === AUDIT_SCOPE_TYPE.TEAM_SEASON) {
       onScopeChange?.()
     }
-  }, [open, defaultTeamDocumentId, defaultSeasonKey, onScopeChange])
+  }, [open, defaultTeamDocumentId, defaultSeasonKey, mode, onScopeChange])
 
   const teamScope = mode === AUDIT_SCOPE_TYPE.TEAM_SEASON
   const clubTeamScope = mode === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
@@ -249,7 +253,7 @@ export default function PlayerDatabaseAuditModal(props) {
             variant={receiptV2Scope ? 'solid' : 'outlined'}
             onClick={() => changeScopeValue('receiptV2', mode, setMode)}
           >
-            טעינות V2
+            פעולות V2
           </Button>
           <Button
             size='sm'
@@ -302,7 +306,7 @@ export default function PlayerDatabaseAuditModal(props) {
         {receiptV2Scope ? (
           <Stack spacing={1}>
             <FormControl>
-              <FormLabel>בחר Receipt V2 לבדיקה</FormLabel>
+              <FormLabel>בחר פעולת V2 לבדיקה</FormLabel>
               <Select
                 value={receiptV2Id || null}
                 placeholder={recentWriteActionReceiptsV2Busy ? 'טוען פעולות V2…' : 'בחר פעולה V2'}
@@ -361,6 +365,24 @@ export default function PlayerDatabaseAuditModal(props) {
               lifecycleSummary={selectLifecycleSummary(result)}
               onDownload={() => downloadFindings(result)}
             />
+            {result.auditVersion === 'v2' && result.flowType === 'stats' ? (
+              <StatsV2SyncStages
+                result={result}
+                busy={busy}
+                error={error}
+                onSyncStage={stage => props.onReconcileStatsAuditStage?.({
+                  receiptId: result.receiptId,
+                  stage,
+                })}
+                onRepairCanonical={finding => props.onTeamOpen?.(finding, {
+                  teamDocumentId: result.birthTeamDocumentId,
+                  seasonKey: result.seasonKey,
+                  leagueId: result.leagueId,
+                  openStatsImport: true,
+                })}
+                onCheckSync={() => props.onRunReceiptV2?.(result.receiptId)}
+              />
+            ) : null}
             {result.auditVersion === 'v2' ? null : (
               <AuditRepairActions
                 busy={busy}

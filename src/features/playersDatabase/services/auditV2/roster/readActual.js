@@ -6,15 +6,15 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { trackedGetDoc, trackedGetDocs } from '../../../../../services/firestore/usage/index.js'
+import { trackedGetDocFromServer, trackedGetDocsFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 
 const readDoc = async (collectionName, id, action) => {
-  const snapshot = await trackedGetDoc(doc(db, collectionName, id), {
+  const snapshot = await trackedGetDocFromServer(doc(db, collectionName, id), {
     feature: 'playersDatabase',
     collection: collectionName,
     action,
-    operationSubtype: 'audit-getDoc',
+    operationSubtype: 'audit-getDocFromServer',
   })
   return snapshot.exists() ? { id: snapshot.id, ...(snapshot.data() || {}) } : null
 }
@@ -23,7 +23,7 @@ export async function readActualRosterAuditV2({
   expected = {},
   canonical = {},
 } = {}) {
-  const playerSnapshot = await trackedGetDocs(query(
+  const playerSnapshot = await trackedGetDocsFromServer(query(
     collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
     where('birthTeamId', '==', canonical.birthTeamDocumentId),
     where('seasonKey', '==', canonical.seasonKey),
@@ -32,7 +32,7 @@ export async function readActualRosterAuditV2({
     feature: 'playersDatabase',
     collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
     action: 'audit-v2-roster-list-player-indexes',
-    operationSubtype: 'audit-getDocs',
+    operationSubtype: 'audit-getDocsFromServer',
   })
 
   const [teamSearchIndex, league] = await Promise.all([

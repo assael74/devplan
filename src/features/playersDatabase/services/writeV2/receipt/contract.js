@@ -17,7 +17,7 @@ export const WRITE_ACTION_V2_STATUS = Object.freeze({
   CLOSED: 'closed',
 })
 
-export const WRITE_ACTION_V2_AUDIT_COVERAGE = Object.freeze({
+const WRITE_ACTION_V2_AUDIT_COVERAGE = Object.freeze({
   PARTIAL: 'partial',
   COMPLETE: 'complete',
 })

@@ -25,7 +25,7 @@ const buildSource = () => ({
     points: 20,
     goalsFor: 21,
     goalsAgainst: 9,
-    teamGamePlayed: 10,
+    teamGamePlayed: 1,
   },
   teamPlayers: [
     {
@@ -106,6 +106,9 @@ describe('stats absence contract', () => {
       availability: 'unavailable',
       availabilityReason: 'stats_not_loaded',
     })
+    expect(absent.teamBalance.lineupBenchmark.availabilityReason).toBe('stats_not_loaded')
+    expect(absent.teamBalance.classificationCoverageBenchmark.availabilityReason).toBe('stats_not_loaded')
+    expect(absent.teamBalance.scoutInterpretation.availabilityReason).toBe('stats_not_loaded')
     expect(absent.teamBalance.dependencyKey).not.toBe('')
     expect(absent.teamBalance.source.inputHash).not.toBe('')
   })

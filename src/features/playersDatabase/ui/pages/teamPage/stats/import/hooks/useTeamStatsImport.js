@@ -5,11 +5,15 @@ import * as React from 'react'
 import useStatsV2FinalSync from './useStatsV2FinalSync.js'
 
 import { prepareStatsImportPlanV2 } from '../../../../../../services/writeV2/stats/index.js'
+import { invalidateStatsImportCacheV2 } from '../../../../../../services/writeV2/stats/invalidateStatsImportCache.js'
 import { resolveTeamPlayerIdentities } from '../../../../../../services/read/identity/playerIdentityPreview.read.js'
 import { SNACK_STATUS } from '../../../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { STATS_ROSTER_STATUS_OPTIONS } from '../../shared/stats.constants.js'
 import { clean } from '../../../logic/teamPage.utils.js'
-import { parsePlayerStatsRows } from '../logic/teamStatsImport.logic.js'
+import {
+  buildApprovedStatsImportPlayer,
+  parsePlayerStatsRows,
+} from '../logic/teamStatsImport.logic.js'
 import {
   STATS_IDENTITY_STATUS,
   applyResolvedStatsIdentity,
@@ -22,7 +26,6 @@ import {
   buildStatsPreviewModel,
   snapshotStatsPreviewProfiles,
 } from '../logic/teamStatsPreview.model.js'
-import { buildWriteReportFromError } from '../../../logic/writeFlowReport.logic.js'
 import {
   buildLeagueTeamPerformanceProjection,
   listExistingTeamRootOptions,
@@ -56,7 +59,6 @@ export default function useTeamStatsImport({
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
-  const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
   const [reloadDecisions, setReloadDecisions] = React.useState({})
@@ -68,7 +70,6 @@ export default function useTeamStatsImport({
   const [approvedStatsPlanRetryNonce, setApprovedStatsPlanRetryNonce] = React.useState(0)
   const [approvedForSync, setApprovedForSync] = React.useState(null)
   const approvedStatsPlanGenerationRef = React.useRef(0)
-  const confirmInFlightRef = React.useRef(false)
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -100,7 +101,6 @@ export default function useTeamStatsImport({
 
   React.useEffect(() => {
     if (open) {
-      setSeasonStatus('')
       setRows([])
       setPasteValue('')
       setReloadDecisions({})
@@ -308,7 +308,8 @@ export default function useTeamStatsImport({
 
   const approvedPlanPlayers = React.useMemo(() => rows
     .filter((row, index) => getRowStatus(row, index).valid)
-    .map(withoutStatsMinutesCorrection), [getRowStatus, rows])
+    .map(withoutStatsMinutesCorrection)
+    .map(buildApprovedStatsImportPlayer), [getRowStatus, rows])
 
   const approvedPlanSourceKey = React.useMemo(() => JSON.stringify({
     leagueId: actionLeagueId,
@@ -358,6 +359,7 @@ export default function useTeamStatsImport({
     setApprovedStatsPlanPreparing(true)
     const timeoutId = window.setTimeout(async () => {
       try {
+        const planApprovedAt = new Date().toISOString()
         const plan = await prepareStatsImportPlanV2({
           league: { ...(actionLeagueDoc || {}), id: actionLeagueId, leagueId: actionLeagueId },
           season: seasonContext,
@@ -369,7 +371,7 @@ export default function useTeamStatsImport({
           movementState: null,
           performance: teamPerformance,
           points: teamPoints,
-          approvedAt: 'preview',
+          approvedAt: planApprovedAt,
         })
         setReloadDecisionState(null)
 
@@ -505,7 +507,8 @@ export default function useTeamStatsImport({
   const previewRows = React.useMemo(() => buildStatsPreviewModel({
     rows,
     approvedStatsPlan,
-  }), [approvedStatsPlan, rows])
+    seasonMinutes: validation.context?.canonicalPlayerMinutesLimit,
+  }), [approvedStatsPlan, rows, validation.context?.canonicalPlayerMinutesLimit])
 
   const applyEqualMinutesReduction = React.useCallback(adjustment => {
     const amountPerPlayer = Number(adjustment?.amountPerPlayer)
@@ -537,13 +540,12 @@ export default function useTeamStatsImport({
     setReloadDecisionState(null)
   }, [busy])
 
-  const closeWriteReport = React.useCallback(() => {
-    setWriteReport(null)
-  }, [])
-
   const finalSync = useStatsV2FinalSync({
     approvedState: approvedForSync,
-    onCanonicalWritten: reload,
+    onAuditClean: () => {
+      invalidateStatsImportCacheV2({ approvedState: approvedForSync })
+      reload?.()
+    },
   })
 
   const close = React.useCallback(() => {
@@ -552,13 +554,25 @@ export default function useTeamStatsImport({
       const syncComplete = finalSync.stages.every(
         stage => finalSync.results?.[stage]?.status === 'completed'
       )
-      if (!syncComplete) return
+      const auditClean = (
+        finalSync.auditResult?.coverage?.complete === true &&
+        (finalSync.auditResult?.findings?.length || 0) === 0
+      )
+
+      if (!syncComplete || !auditClean) return
     }
 
     setOpen(false)
     setPasteValue('')
     setRows([])
-  }, [approvedForSync, busy, finalSync.results, finalSync.stages])
+  }, [
+    approvedForSync,
+    busy,
+    finalSync.auditResult?.coverage?.complete,
+    finalSync.auditResult?.findings?.length,
+    finalSync.results,
+    finalSync.stages,
+  ])
 
   const confirm = React.useCallback(async () => {
     if (!approvedStatsPlan || approvedStatsPlanPreparing || approvedStatsPlanSourceKey !== approvedPlanSourceKey) {
@@ -569,12 +583,8 @@ export default function useTeamStatsImport({
       })
       return null
     }
-    const approvedState = {
-      ...approvedStatsPlan,
-      approvedAt: new Date().toISOString(),
-    }
-    setApprovedForSync(approvedState)
-    return approvedState
+    setApprovedForSync(approvedStatsPlan)
+    return approvedStatsPlan
   }, [approvedPlanSourceKey, approvedStatsPlan, approvedStatsPlanError?.message, approvedStatsPlanPreparing, approvedStatsPlanSourceKey, notify])
 
   const setReloadDecision = React.useCallback((playerKey, decision) => {
@@ -589,7 +599,6 @@ export default function useTeamStatsImport({
     pasteValue,
     rows: previewRows,
     busy,
-    writeReport,
     seasonStatus,
     players,
     hasTeamPlayers,
@@ -618,7 +627,6 @@ export default function useTeamStatsImport({
     getCellStatus,
     validation,
     close,
-    closeWriteReport,
     confirm,
     rebuildApprovedStatsPlan,
     setReloadDecision,

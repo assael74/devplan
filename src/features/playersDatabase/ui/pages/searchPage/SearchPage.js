@@ -128,6 +128,7 @@ function SearchPageContent() {
         onRunWriteAction={audit.runAuditForWriteAction}
         onRunReceiptV2={audit.runAuditForReceiptV2}
         onScopeChange={audit.handleScopeChange}
+        onReconcileStatsAuditStage={audit.reconcileStatsAuditStage}
         onRepair={audit.requestRepair}
         onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}
         onRepairPlayerIndexes={audit.repairPlayerIndexes}
@@ -189,3 +190,4 @@ export default function SearchPage() {
     </PlayersDatabaseLayout>
   )
 }
+

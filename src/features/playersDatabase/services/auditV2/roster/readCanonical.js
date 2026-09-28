@@ -1,17 +1,17 @@
 import { doc } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { trackedGetDoc } from '../../../../../services/firestore/usage/index.js'
+import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { cleanValue } from '../../../model/shared/value.model.js'
 import { buildTeamSeasonDocumentId } from '../../../model/team/teamIdentity.model.js'
 
 const readDoc = async (collectionName, id, action) => {
-  const snapshot = await trackedGetDoc(doc(db, collectionName, id), {
+  const snapshot = await trackedGetDocFromServer(doc(db, collectionName, id), {
     feature: 'playersDatabase',
     collection: collectionName,
     action,
-    operationSubtype: 'audit-getDoc',
+    operationSubtype: 'audit-getDocFromServer',
   })
   return snapshot.exists() ? { id: snapshot.id, ...(snapshot.data() || {}) } : null
 }

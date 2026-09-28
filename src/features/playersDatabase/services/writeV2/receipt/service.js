@@ -125,6 +125,62 @@ export async function closeWriteActionReceiptV2({
 }
 
 
+export async function reopenWriteActionReceiptV2({
+  receiptId = '',
+} = {}) {
+  const receipt = await readWriteActionReceiptV2({ receiptId })
+
+  if (!receipt) throw new Error('WriteAction V2 receipt not found')
+
+  if (receipt.status !== WRITE_ACTION_V2_STATUS.CLOSED) {
+    throw new Error('Only a closed WriteAction V2 receipt can be reopened')
+  }
+
+  return patchWriteActionReceiptV2({
+    receiptId,
+    patch: {
+      status: assertWriteActionStatusV2(WRITE_ACTION_V2_STATUS.OPEN),
+    },
+  })
+}
+
+
+
+export async function persistWriteActionAuditResultV2({
+  receiptId = '',
+  audit = {},
+  ranAt = null,
+} = {}) {
+  const receipt = await readWriteActionReceiptV2({ receiptId })
+  if (!receipt) throw new Error('WriteAction V2 receipt not found')
+
+  const findingsCount = Array.isArray(audit?.findings)
+    ? audit.findings.length
+    : 0
+  const auditComplete = audit?.coverage?.complete === true
+  const auditClean = auditComplete && findingsCount === 0
+
+  await saveWriteActionAuditSummaryV2({
+    receiptId,
+    ranAt: ranAt || new Date().toISOString(),
+    coverage: auditComplete ? 'complete' : 'partial',
+    findingsCount,
+    checkedDomains: audit?.coverage?.coveredTargets || [],
+  })
+
+  if (receipt.status === WRITE_ACTION_V2_STATUS.OPEN && auditClean) {
+    await closeWriteActionReceiptV2({ receiptId })
+    return WRITE_ACTION_V2_STATUS.CLOSED
+  }
+
+  if (receipt.status === WRITE_ACTION_V2_STATUS.CLOSED && !auditClean) {
+    await reopenWriteActionReceiptV2({ receiptId })
+    return WRITE_ACTION_V2_STATUS.OPEN
+  }
+
+  return receipt.status
+}
+
 export async function getWriteActionReceiptV2({
   receiptId = '',
 } = {}) {

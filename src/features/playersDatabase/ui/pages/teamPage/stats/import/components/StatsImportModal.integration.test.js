@@ -1,11 +1,16 @@
 import * as React from 'react'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import StatsImportModal from './StatsImportModal.js'
 import useTeamStatsImport from '../hooks/useTeamStatsImport.js'
 
 const mockPrepareStatsImportPlanV2 = jest.fn()
 const mockRunStatsFinalSyncStageV2 = jest.fn()
+const mockCreateWriteActionReceiptV2 = jest.fn()
+const mockReportWriteActionCanonicalStatusV2 = jest.fn()
+const mockSaveWriteActionAuditSummaryV2 = jest.fn()
+const mockCloseWriteActionReceiptV2 = jest.fn()
+const mockAuditStatsV2 = jest.fn()
 
 jest.mock('../../../../../../services/writeV2/stats/index.js', () => ({
   STATS_FINAL_SYNC_STAGES: [
@@ -18,6 +23,22 @@ jest.mock('../../../../../../services/writeV2/stats/index.js', () => ({
   ],
   prepareStatsImportPlanV2: (...args) => mockPrepareStatsImportPlanV2(...args),
   runStatsFinalSyncStageV2: (...args) => mockRunStatsFinalSyncStageV2(...args),
+}))
+
+jest.mock('../../../../../../services/writeV2/receipt/index.js', () => ({
+  WRITE_ACTION_V2_CANONICAL_STATUS: {
+    REPORTED: 'reported',
+    FAILED_OR_UNKNOWN: 'failed_or_unknown',
+  },
+  WRITE_ACTION_V2_FLOW_TYPE: { STATS: 'stats' },
+  createWriteActionReceiptV2: (...args) => mockCreateWriteActionReceiptV2(...args),
+  reportWriteActionCanonicalStatusV2: (...args) => mockReportWriteActionCanonicalStatusV2(...args),
+  saveWriteActionAuditSummaryV2: (...args) => mockSaveWriteActionAuditSummaryV2(...args),
+  closeWriteActionReceiptV2: (...args) => mockCloseWriteActionReceiptV2(...args),
+}))
+
+jest.mock('../../../../../../services/auditV2/index.js', () => ({
+  auditStatsV2: (...args) => mockAuditStatsV2(...args),
 }))
 
 jest.mock('../../../../../../services/read/identity/playerIdentityPreview.read.js', () => ({
@@ -39,29 +60,40 @@ jest.mock('../../../../../../domain/projections/teamPerformance.projection.js', 
 }))
 
 jest.mock('../../../../../../domain/validation/playerStatsLeague.validation.js', () => ({
-  validatePlayerStatsAgainstLeague: jest.fn(() => ({
+  validatePlayerStatsAgainstLeague: () => ({
     valid: true,
     checks: [],
-  })),
+    rowIssues: [],
+    context: {},
+  }),
 }))
 
 jest.mock('../../../../../../model/team/page/teamPageSeason.model.js', () => ({
-  findTeamPageSeasonDoc: jest.fn(({ teamSeasons }) => teamSeasons[0] || null),
+  findTeamPageSeasonDoc: ({ teamSeasons }) => teamSeasons[0] || null,
 }))
 
 jest.mock('../../../../../../model/team/page/teamPagePlayer.model.js', () => ({
-  adaptTeamPagePlayerRow: jest.fn(({ player }) => player),
+  adaptTeamPagePlayerRow: ({ player }) => player,
 }))
 
 jest.mock('../logic/teamStatsImport.logic.js', () => ({
-  parsePlayerStatsRows: jest.fn(() => [{
+  buildApprovedStatsImportPlayer: row => ({
+    ...row,
+    statsStatus: 'loaded',
+    playerStats: {
+      games: row.games,
+      goals: row.goals,
+      minutes: row.minutes,
+    },
+  }),
+  parsePlayerStatsRows: () => [{
     playerId: 'player-1',
     fullName: 'שחקן בדיקה',
     games: 1,
     minutes: 90,
     goals: 0,
     assists: 0,
-  }]),
+  }],
 }))
 
 jest.mock('../../shared/logic/teamStatsMatch.logic.js', () => ({
@@ -72,29 +104,25 @@ jest.mock('../../shared/logic/teamStatsMatch.logic.js', () => ({
     NEW_PLAYER: 'new_player',
     SYSTEM_MATCH: 'system_match',
   },
-  buildRosterLookup: jest.fn(() => new Map()),
-  enrichStatsRowForPreview: jest.fn(row => ({
+  buildRosterLookup: () => new Map(),
+  enrichStatsRowForPreview: row => ({
     ...row,
     identityStatus: 'roster_match',
     rosterStatus: 'regular',
-  })),
-  applyResolvedStatsIdentity: jest.fn(({ row }) => row),
+  }),
+  applyResolvedStatsIdentity: ({ row }) => row,
 }))
 
 jest.mock('../logic/teamStatsRowEdit.logic.js', () => ({
-  updateStatsImportRow: jest.fn(({ row }) => row),
+  updateStatsImportRow: ({ row }) => row,
 }))
 
 jest.mock('../logic/teamStatsPreview.model.js', () => ({
-  buildStatsPreviewModel: jest.fn(({ rows }) => rows),
-  buildStatsMovementPreviewModel: jest.fn(() => ({
+  buildStatsPreviewModel: ({ rows }) => rows,
+  buildStatsMovementPreviewModel: () => ({
     requiresDecision: false,
-  })),
-  snapshotStatsPreviewProfiles: jest.fn(() => ({})),
-}))
-
-jest.mock('../../../logic/writeFlowReport.logic.js', () => ({
-  buildWriteReportFromError: jest.fn(() => null),
+  }),
+  snapshotStatsPreviewProfiles: () => ({}),
 }))
 
 const team = {
@@ -179,18 +207,31 @@ function Harness() {
 describe('StatsImportModal V2 integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    jest.useFakeTimers()
-
-    mockPrepareStatsImportPlanV2.mockResolvedValue(approvedPlan)
-    mockRunStatsFinalSyncStageV2.mockResolvedValue({ completed: true })
-  })
-
-  afterEach(() => {
-    jest.runOnlyPendingTimers()
     jest.useRealTimers()
+
+    mockPrepareStatsImportPlanV2.mockImplementation(async input => ({
+      ...approvedPlan,
+      approvedAt: input.approvedAt,
+      playerSearchIndexStates: [{
+        fields: {
+          statsSnapshots: {
+            current: { capturedAt: input.approvedAt },
+          },
+        },
+      }],
+    }))
+    mockRunStatsFinalSyncStageV2.mockResolvedValue({ completed: true })
+    mockCreateWriteActionReceiptV2.mockResolvedValue('receipt-1')
+    mockReportWriteActionCanonicalStatusV2.mockResolvedValue()
+    mockSaveWriteActionAuditSummaryV2.mockResolvedValue()
+    mockCloseWriteActionReceiptV2.mockResolvedValue()
+    mockAuditStatsV2.mockResolvedValue({
+      coverage: { complete: true, coveredTargets: [], uncoveredTargets: [] },
+      findings: [],
+    })
   })
 
-  test('Approval opens manual Final Sync and Close stays blocked until all six stages complete', async () => {
+  test('Approval runs six writers plus Audit and Close stays blocked until clean Audit', async () => {
     render(<Harness />)
 
     expect(screen.queryByText('סנכרון סופי')).not.toBeInTheDocument()
@@ -202,22 +243,28 @@ describe('StatsImportModal V2 integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'המשך לזיהוי ואישור' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'אישור טעינת סטטיסטיקות' })).toBeInTheDocument()
-    })
-
-    await act(async () => {
-      jest.advanceTimersByTime(300)
-      await Promise.resolve()
-    })
-
-    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'אישור טעינת סטטיסטיקות' })).toBeEnabled()
       expect(mockPrepareStatsImportPlanV2).toHaveBeenCalled()
     })
+
+    expect(mockPrepareStatsImportPlanV2.mock.calls[0][0].incomingPlayers[0])
+      .toMatchObject({
+        statsStatus: 'loaded',
+        playerStats: {
+          games: 1,
+          goals: 0,
+          minutes: 90,
+        },
+      })
+
+    const preparedInput = mockPrepareStatsImportPlanV2.mock.calls[0][0]
+    expect(preparedInput.approvedAt).not.toBe('preview')
+    expect(Number.isNaN(Date.parse(preparedInput.approvedAt))).toBe(false)
 
     fireEvent.click(screen.getByRole('button', { name: 'אישור טעינת סטטיסטיקות' }))
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: 'הפעל שלב' })).toHaveLength(6)
+      expect(screen.getAllByRole('button', { name: 'הפעל שלב' })).toHaveLength(7)
     })
 
     const closeButton = screen.getByRole('button', { name: 'סגור' })
@@ -250,18 +297,30 @@ describe('StatsImportModal V2 integration', () => {
       expect(mockRunStatsFinalSyncStageV2.mock.calls[index][0].stage).toBe(stages[index])
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: 'הפעל שלב' })[index]).toBeDisabled()
-      })
+        const updatedButtons = screen.getAllByRole('button', { name: 'הפעל שלב' })
 
-      if (index + 1 < stages.length) {
-        expect(mockRunStatsFinalSyncStageV2).toHaveBeenCalledTimes(index + 1)
-      }
+        expect(updatedButtons[index]).toBeDisabled()
+        expect(updatedButtons[index + 1]).toBeEnabled()
+      })
     }
 
+    expect(screen.getByRole('button', { name: 'סגור' })).toBeDisabled()
+    expect(mockRunStatsFinalSyncStageV2).toHaveBeenCalledTimes(6)
+
+    const auditButton = screen.getAllByRole('button', { name: 'הפעל שלב' })[6]
+    expect(auditButton).toBeEnabled()
+    fireEvent.click(auditButton)
+
     await waitFor(() => {
+      expect(mockAuditStatsV2).toHaveBeenCalledTimes(1)
+      expect(mockCloseWriteActionReceiptV2).toHaveBeenCalledWith({ receiptId: 'receipt-1' })
+      expect(screen.getByText('הסנכרון תקין · הקבלה נסגרה')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'סגור' })).toBeEnabled()
     })
 
-    expect(mockRunStatsFinalSyncStageV2).toHaveBeenCalledTimes(6)
+    const preparedPlan = await mockPrepareStatsImportPlanV2.mock.results[0].value
+    expect(preparedPlan.approvedAt).not.toBe('preview')
+    expect(preparedPlan.playerSearchIndexStates[0].fields.statsSnapshots.current.capturedAt)
+      .not.toBe('preview')
   })
 })

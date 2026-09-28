@@ -2,7 +2,7 @@
 
 import { clean } from '../../../logic/teamPage.utils.js'
 
-export const normalizeImportHeader = value => clean(value)
+const normalizeImportHeader = value => clean(value)
   .replace(/[.״"׳']/g, '')
   .replace(/\s+/g, ' ')
 

@@ -3,6 +3,7 @@
 import {
   getCountFromServer,
   getDoc,
+  getDocFromServer,
   getDocs,
   getDocsFromServer,
   setDoc,
@@ -79,6 +80,48 @@ export async function trackedGetDoc(ref, context = {}) {
       }),
     })
 
+    throw error
+  }
+}
+
+export async function trackedGetDocFromServer(ref, context = {}) {
+  const startedAt = now()
+  const collection = context.collection || getCollectionFromRef(ref)
+
+  try {
+    const snapshot = await getDocFromServer(ref)
+    const exists = snapshot.exists()
+    const data = exists ? snapshot.data() : null
+
+    trackFirestoreRead({
+      ...context,
+      collection,
+      operationSubtype: context.operationSubtype || 'getDocFromServer',
+      docs: data,
+      docsCount: exists ? 1 : 0,
+      readsCount: 1,
+      durationMs: now() - startedAt,
+      meta: buildReadMeta({
+        meta: { ...(context.meta || {}), source: 'server' },
+        billingEstimate: exists ? 'document-read' : 'missing-document-read',
+      }),
+    })
+
+    return snapshot
+  } catch (error) {
+    trackFirestoreRead({
+      ...context,
+      collection,
+      operationSubtype: context.operationSubtype || 'getDocFromServer',
+      readsCount: 0,
+      durationMs: now() - startedAt,
+      status: 'error',
+      errorCode: getErrorCode(error),
+      meta: buildReadMeta({
+        meta: { ...(context.meta || {}), source: 'server' },
+        billingEstimate: 'unknown-on-error',
+      }),
+    })
     throw error
   }
 }

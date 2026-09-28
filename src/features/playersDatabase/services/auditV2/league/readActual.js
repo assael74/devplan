@@ -6,11 +6,11 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { trackedGetDoc, trackedGetDocs } from '../../../../../services/firestore/usage/index.js'
+import { trackedGetDocFromServer, trackedGetDocsFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 
 const readDoc = async (collectionName, id, action) => {
-  const snapshot = await trackedGetDoc(doc(db, collectionName, id), {
+  const snapshot = await trackedGetDocFromServer(doc(db, collectionName, id), {
     feature: 'playersDatabase',
     collection: collectionName,
     action,
@@ -20,7 +20,7 @@ const readDoc = async (collectionName, id, action) => {
 }
 
 const readByLeague = async (collectionName, leagueId, action) => {
-  const snapshot = await trackedGetDocs(
+  const snapshot = await trackedGetDocsFromServer(
     query(collection(db, collectionName), where('leagueId', '==', leagueId)),
     {
       feature: 'playersDatabase',

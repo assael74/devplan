@@ -214,7 +214,13 @@ export default function StatsImportModal({
     (controller.reloadDecisionState?.unresolved?.length || 0) > 0 ||
     !contextReady
   )
-  const syncComplete = activeStep === 3 && controller.finalSync?.stages?.every(stage => controller.finalSync.results?.[stage]?.status === 'completed')
+  const syncComplete = (
+    activeStep === 3 &&
+    controller.finalSync?.receiptClosed === true &&
+    controller.finalSync?.stages?.every(
+      stage => controller.finalSync.results?.[stage]?.status === 'completed'
+    )
+  )
   const confirmDisabled = activeStep === 3
     ? !syncComplete
     : activeStep === 0

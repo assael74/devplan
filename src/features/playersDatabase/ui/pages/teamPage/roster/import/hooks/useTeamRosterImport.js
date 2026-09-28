@@ -20,6 +20,7 @@ import {
   saveWriteActionAuditSummaryV2,
 } from '../../../../../../services/writeV2/receipt/index.js'
 import { auditRosterV2 } from '../../../../../../services/auditV2/index.js'
+import { invalidateRosterImportCacheV2 } from '../../../../../../services/writeV2/roster/invalidateRosterImportCache.js'
 import { resolveTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/playerIdentityPreview.read.js'
 import {
   listExistingTeamRootOptions,
@@ -37,12 +38,10 @@ import {
   parsePlayerRosterRows,
   resolveRosterImportMetadata,
 } from '../logic/teamRosterImport.logic.js'
-import { buildWriteReportFromError } from '../../../logic/writeFlowReport.logic.js'
 import useRosterIdentityReview from './useRosterIdentityReview.js'
 import useRosterMovementReview from './useRosterMovementReview.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-const ROSTER_IMPORT_DEBUG_PREFIX = '[playersDatabase/roster-import-debug]'
 const ROSTER_SYNC_STAGE_IDS = [
   'canonical',
   'counterparts',
@@ -53,13 +52,6 @@ const ROSTER_SYNC_STAGE_IDS = [
   'clubsMaster',
   'audit',
 ]
-const logRosterImportDebug = (event, details = {}) => {
-  console.info(ROSTER_IMPORT_DEBUG_PREFIX, {
-    event,
-    at: new Date().toISOString(),
-    ...details,
-  })
-}
 const playerMatchKeys = player => [
   clean(player?.playerId),
   clean(player?.externalPlayerId),
@@ -93,7 +85,6 @@ export default function useTeamRosterImport({
   const [missingRosterPlayers, setMissingRosterPlayers] = React.useState([])
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
   const [busy, setBusy] = React.useState(false)
-  const [writeReport, setWriteReport] = React.useState(null)
   const [rosterImportPlan, setRosterImportPlan] = React.useState(null)
   const [receiptId, setReceiptId] = React.useState('')
   const [auditResult, setAuditResult] = React.useState(null)
@@ -103,7 +94,6 @@ export default function useTeamRosterImport({
     error: null,
     results: {},
   })
-  const syncCacheRefreshRef = React.useRef(false)
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -116,58 +106,6 @@ export default function useTeamRosterImport({
     )) || leagueDoc
   ), [actionLeagueId, leagueDoc, leagueDocuments])
 
-  const debugState = React.useMemo(() => ({
-    open,
-    season: {
-      optionKey: selectedSeasonOptionKey,
-      seasonKey: clean(selectedSeasonOption?.seasonKey),
-      target: clean(selectedSeasonOption?.target),
-    },
-    input: {
-      pastedCharacters: pasteValue.length,
-      rows: rows.map(row => ({
-        playerId: clean(row?.playerId),
-        externalPlayerId: clean(row?.externalPlayerId),
-        fullName: clean(row?.fullName),
-        identityValid: row?.identityValid !== false,
-        identityResolution: clean(row?.identityResolution),
-        rosterImportResolution: clean(row?.rosterImportResolution),
-      })),
-      missingPlayers: missingRosterPlayers.map(player => ({
-        playerId: clean(player?.playerId),
-        externalPlayerId: clean(player?.externalPlayerId),
-        fullName: clean(player?.fullName),
-        resolution: clean(player?.missingResolution),
-        targetTeamId: clean(player?.statsMovementTeam?.birthTeamDocumentId),
-      })),
-    },
-    plan: rosterImportPlan ? {
-      planType: clean(rosterImportPlan?.planType),
-      playersCount: rosterImportPlan?.preview?.playersCount || 0,
-      movement: rosterImportPlan?.movementState || null,
-    } : null,
-    runtime: {
-      busy,
-      syncState,
-    },
-  }), [
-    busy,
-    missingRosterPlayers,
-    open,
-    pasteValue.length,
-    syncState,
-    rosterImportPlan,
-    rows,
-    selectedSeasonOption?.seasonKey,
-    selectedSeasonOption?.target,
-    selectedSeasonOptionKey,
-  ])
-
-  React.useEffect(() => {
-    logRosterImportDebug('state-updated', { state: debugState })
-  }, [debugState])
-
-
   const buildSeason = React.useCallback(() => ({
     ...(selectedSeasonOption?.season || {}),
     leagueId: actionLeagueId,
@@ -178,10 +116,6 @@ export default function useTeamRosterImport({
   }), [actionLeagueId, selectedSeasonOption, team.ageGroupId, team.birthYear])
 
   const selectSeasonOption = React.useCallback(optionKey => {
-    logRosterImportDebug('season-selected', {
-      state: debugState,
-      systemAction: { type: 'read-previous-roster', optionKey: clean(optionKey) },
-    })
     setSelectedSeasonOptionKey(optionKey)
     setRows([])
     setMissingRosterPlayers([])
@@ -217,7 +151,7 @@ export default function useTeamRosterImport({
         console.error('[playersDatabase/previous-roster-preview]', error)
         setPreviousRoster({ loading: false, seasonKey: '', players: [] })
       })
-  }, [debugState, seasonOptions, team])
+  }, [seasonOptions, team])
 
   const openModal = React.useCallback(() => {
     const defaultOption = seasonOptions.find(option => (
@@ -230,14 +164,6 @@ export default function useTeamRosterImport({
 
   const parse = React.useCallback(async () => {
     const parsedRows = parsePlayerRosterRows(pasteValue)
-    logRosterImportDebug('identity-check-started', {
-      state: debugState,
-      systemAction: {
-        type: 'read-roster-and-player-identities',
-        parsedPlayers: parsedRows.length,
-        writes: false,
-      },
-    })
 
     if (!parsedRows.length || !selectedSeasonOption) {
       setRows(parsedRows)
@@ -316,14 +242,8 @@ export default function useTeamRosterImport({
         birthYear: team.birthYear,
         excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
       }))
-      logRosterImportDebug('identity-check-completed', {
-        state: debugState,
-        result: { rows: previewRowsWithRosterMembership.length, missingFromPreviousRoster: previousPlayers.length - matchedPreviousPlayers.length },
-        systemAction: { type: 'stored-in-wizard-state', writes: false },
-      })
       return previewRowsWithRosterMembership
     } catch (error) {
-      logRosterImportDebug('identity-check-failed', { state: debugState, error: error?.message || String(error) })
       console.error('[playersDatabase/identity-preview]', error)
       const failedRows = parsedRows.map(row => ({
         ...row,
@@ -339,7 +259,6 @@ export default function useTeamRosterImport({
     }
   }, [
     buildSeason,
-    debugState,
     pasteValue,
     selectedSeasonOption,
     team,
@@ -411,10 +330,6 @@ export default function useTeamRosterImport({
     setRosterImportPlan(null)
   }, [rows, missingRosterPlayers])
 
-  const closeWriteReport = React.useCallback(() => {
-    setWriteReport(null)
-  }, [])
-
   const clearPaste = React.useCallback(() => {
     if (busy) return
 
@@ -440,10 +355,6 @@ export default function useTeamRosterImport({
   const preparePlan = React.useCallback(async () => {
     if (!selectedSeasonOption || hasIdentityErrors || !hasMissingRosterApprovals) return null
 
-    logRosterImportDebug('plan-preparation-started', {
-      state: debugState,
-      systemAction: { type: 'prepare-approved-roster-plan', writes: false },
-    })
     setBusy(true)
 
     try {
@@ -474,14 +385,8 @@ export default function useTeamRosterImport({
 
       const plan = buildCleanApprovedRosterState(rawPlan)
       setRosterImportPlan(plan)
-      logRosterImportDebug('plan-preparation-completed', {
-        state: debugState,
-        result: { preview: plan?.preview || null },
-        systemAction: { type: 'stored-approved-plan-in-state', writes: false },
-      })
       return plan
     } catch (error) {
-      logRosterImportDebug('plan-preparation-failed', { state: debugState, error: error?.message || String(error) })
       console.error('[playersDatabase/roster-plan]', error)
       notify({
         status: SNACK_STATUS.ERROR,
@@ -496,7 +401,6 @@ export default function useTeamRosterImport({
     actionLeagueDoc,
     actionLeagueId,
     buildSeason,
-    debugState,
     hasIdentityErrors,
     hasMissingRosterApprovals,
     missingRosterPlayers,
@@ -508,8 +412,6 @@ export default function useTeamRosterImport({
 
   const enterSync = React.useCallback(() => {
     if (!selectedSeasonOption || !rosterImportPlan) return null
-
-    syncCacheRefreshRef.current = false
     setSyncState({
       activeStage: '',
       completedStages: [],
@@ -661,12 +563,12 @@ export default function useTeamRosterImport({
       return false
     }
 
-    await closeWriteActionReceiptV2({ receiptId })
-    syncCacheRefreshRef.current = true
+    await closeWriteActionReceiptV2({ receiptId })
+    invalidateRosterImportCacheV2({ plan: rosterImportPlan })
     setOpen(false)
     if (typeof reload === 'function') reload()
     return true
-  }, [auditResult, busy, notify, receiptId, reload, syncComplete])
+  }, [auditResult, busy, notify, receiptId, reload, rosterImportPlan, syncComplete])
 
   return {
     open,
@@ -683,9 +585,7 @@ export default function useTeamRosterImport({
     auditResult,
     syncComplete,
     busy,
-    writeReport,
     syncState,
-    debugState,
     hasIdentityErrors,
     hasMissingRosterApprovals,
     openModal,
@@ -704,10 +604,10 @@ export default function useTeamRosterImport({
     setMissingRosterPlayerTarget,
     setMissingRosterPlayerResolution,
     close,
-    closeWriteReport,
     preparePlan,
     enterSync,
     runSyncStage,
     completeSync,
   }
 }
+

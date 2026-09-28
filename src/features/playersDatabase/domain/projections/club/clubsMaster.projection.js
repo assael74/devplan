@@ -136,7 +136,7 @@ export const selectClubsMasterAgeGroupSeasons = seasons => {
   return { current, previous }
 }
 
-const compactSeason = season => {
+export const buildClubsMasterAgeGroupSeasonProjection = season => {
   if (!season) return null
 
   const teamTaskSignals = compactTeamTaskSignals(season?.teamTaskSignals)
@@ -203,7 +203,7 @@ const compactSeason = season => {
 export const buildClubsMasterAgeGroupEntry = ageGroup => {
   const { current, previous } = selectClubsMasterAgeGroupSeasons(ageGroup?.seasons)
   const compactGroup = group => (group?.seasons || [])
-    .map(compactSeason)
+    .map(buildClubsMasterAgeGroupSeasonProjection)
     .sort((left, right) => {
       const teamDifference = clean(left?.teamId).localeCompare(clean(right?.teamId))
       if (teamDifference) return teamDifference

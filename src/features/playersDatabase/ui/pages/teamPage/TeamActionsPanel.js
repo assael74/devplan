@@ -38,6 +38,11 @@ export default function TeamActionsPanel({
   onReport,
   onTeamLink,
   onTeamDataRepair,
+  onDownloadJson,
+  onDownloadIndexesJson,
+  jsonDownloadDisabled = false,
+  indexesDownloadDisabled = false,
+  jsonDownloadBusy = false,
   tasks = [],
   tasksLoading,
   onTaskCreate,
@@ -87,7 +92,7 @@ export default function TeamActionsPanel({
               <MenuButton
                 variant='outlined'
                 aria-label='מחיקת נתוני עונה'
-                disabled={!hasSeason || !hasTeamPlayers}
+                disabled={!hasSeason}
                 sx={sx.dangerIconButton}
                 size='sm'
               >
@@ -96,10 +101,10 @@ export default function TeamActionsPanel({
             </span>
           </Tooltip>
           <Menu placement='bottom-end'>
-            <MenuItem disabled={!hasTeamStats} onClick={onDeleteStats}>
-              מחיקת סטטיסטיקה בלבד
+            <MenuItem onClick={onDeleteStats}>
+              מחיקת נתוני סטטיסטיקה
             </MenuItem>
-            <MenuItem onClick={onDeletePlayers}>
+            <MenuItem disabled={!hasTeamPlayers} onClick={onDeletePlayers}>
               מחיקת סגל מלא
             </MenuItem>
           </Menu>
@@ -145,6 +150,41 @@ export default function TeamActionsPanel({
             {iconUi({id: 'search', size: 'sm'})}
           </IconButton>
         </Tooltip>
+
+        <Dropdown>
+          <Tooltip title='הורדת נתוני הקבוצה כ־JSON'>
+            <span>
+              <MenuButton
+                variant='outlined'
+                aria-label='הורדת נתוני הקבוצה כ־JSON'
+                disabled={
+                  jsonDownloadBusy ||
+                  (jsonDownloadDisabled && indexesDownloadDisabled)
+                }
+                sx={sx.secondaryIconButton}
+                size='sm'
+              >
+                {iconUi({id: 'download', size: 'sm'})}
+              </MenuButton>
+            </span>
+          </Tooltip>
+          <Menu placement='bottom-end'>
+            <MenuItem
+              disabled={jsonDownloadBusy || jsonDownloadDisabled}
+              onClick={onDownloadJson}
+            >
+              הורדת כל מסמכי העמוד
+            </MenuItem>
+            <MenuItem
+              disabled={jsonDownloadBusy || indexesDownloadDisabled}
+              onClick={onDownloadIndexesJson}
+            >
+              {jsonDownloadBusy
+                ? 'טוען את אינדקסי הקבוצה...'
+                : 'הורדת אינדקסי הקבוצה'}
+            </MenuItem>
+          </Menu>
+        </Dropdown>
         </Box>
         </Box>
       </Box>

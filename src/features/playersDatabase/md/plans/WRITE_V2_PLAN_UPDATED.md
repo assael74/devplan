@@ -2,7 +2,7 @@
 
 # Players Database V2 — Greenfield Write, Audit & Reconciliation Plan
 
-> **סטטוס: תהליך מיגרציה פעיל**
+> **סטטוס: תהליך מיגרציה פעיל — מסלול Stats V2 הגיע לבסיס תפעולי שניתן לסגור בשלב זה**
 >
 > מסמך זה הוא מקור האמת לתהליך החלפת שכבות הכתיבה, הבדיקה והתיקון הישנות של
 > Players Database.
@@ -1217,47 +1217,61 @@ Debugging difficulty        ↓
 
 ---
 
-## 31. הצעד הבא המאושר
+## 31. סטטוס נוכחי והשלב הבא המאושר
 
-השלב הבא אינו בניית Audit V2 מלא מקצה לקצה.
+נכון ל־27.09.2026, מסלול Stats V2 הגיע לבסיס תפעולי שניתן לסגור בשלב זה.
 
-יש להתחיל ב־Wave 1:
-
-```text
-Minimal WriteAction V2
-+
-Audit V2 foundation
-+
-clean / findings / partial contract
-+
-חיבור בסיסי ל-League / Roster / Stats
-```
-
-המטרה היא להוכיח שהבסיס עובד:
+המימוש כולל:
 
 ```text
-פעולה נפתחת
+Prepare + Approved State
 ↓
-Canonical נכתב
+Canonical Writer
 ↓
-Audit V2 מופעל גם לאחר הצלחה רגילה
+Counterparts Writer
 ↓
-תוצאת הבדיקה נשמרת
+Player Documents Writer
 ↓
-כיסוי חסר מדווח כ-partial
+Player SearchIndexes Writer
+↓
+Team / League Writer
+↓
+Clubs / Clubs Master Writer
+↓
+Audit V2 מלא למסלול Stats
+↓
+תיקון מפורש של שלבים שבהם נמצאו פערים
+↓
+Recheck
+↓
+סגירת Receipt
 ```
 
-לאחר מכן ממשיכים את תהליך Greenfield של הכתיבות.
+ה־Writers מקבלים state מאושר ומבצעים כתיבה דטרמיניסטית בתחומי הבעלות שלהם.
+עיצוב הנתונים וההחלטות העסקיות מתבצעים לפני גבול הכתיבה. Audit V2 קורא את
+ה־Actual State ישירות מהשרת, בונה Expected State באופן קנוני, ומאפשר להפעיל
+מחדש מתוך אותו Modal רק את שלבי הסנכרון שבהם נמצאו פערים. ה־Receipt נסגר רק
+לאחר Audit בעל כיסוי מלא וללא Findings.
 
-Audit V2 יורחב ויתוקן תוך כדי העבודה על כל Flow, בהתאם ל־Projections
-ולתרחישים שמתגלים בפועל.
+המסלול עובד בפועל ו־Audit V2 מסוגל לזהות ולתקן פערים. עדיין ייתכנו תקלות
+תפעוליות או פערי UX נקודתיים, אך הם אינם מצדיקים השארת שלב הפיתוח של Stats
+פתוח ללא גבול. שיפורי הקשחה, תיעוד תקלות וניתוח Root Cause יתועדו כמשימות
+המשך נפרדות.
 
-אין לדרוש בשלב זה הוכחת Audit מלאה End-to-End לכל המערכת.
+סגירת שלב Stats V2 אינה אומרת:
+
+- שכל Players Database הועבר ל־V2.
+- ש־League ו־Roster קיבלו כבר Audit/Reconcile מקביל ומלא.
+- שניתן למחוק את שכבות ה־Legacy.
+- שכל תרחיש קצה תפעולי הושלם.
+
+השלב הבא הוא להחיל את אותו עיקרון Greenfield על זרימות League ו־Roster,
+מבלי ליצור Framework כללי חדש לפני שקיימת חזרתיות מוכחת.
 
 היעד הסופי נשאר:
 
 ```text
-Write V2
+Write V2 לכל שלוש הזרימות
 +
 Audit V2 complete coverage
 +

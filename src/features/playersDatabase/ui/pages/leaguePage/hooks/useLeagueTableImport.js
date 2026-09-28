@@ -21,6 +21,7 @@ import {
   writeLeagueV2,
 } from '../../../../services/writeV2/index.js'
 import { auditLeagueV2 } from '../../../../services/auditV2/index.js'
+import { invalidateLeagueImportCacheV2 } from '../../../../services/writeV2/league/invalidateLeagueImportCache.js'
 import { readClubSeasonIdentityIndex } from '../../../../services/read/index.js'
 import { resolveLeagueClubIdentityIndex } from '../../../../import/logic/leagueClubMasterWarnings.js'
 import {
@@ -126,7 +127,6 @@ export function useLeagueTableImport({
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
   const [busy, setBusy] = React.useState(false)
-  const [writeReport, setWriteReport] = React.useState(null)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [identityIndexDocument, setIdentityIndexDocument] = React.useState(null)
   const [identityValidationError, setIdentityValidationError] = React.useState(false)
@@ -137,7 +137,6 @@ export function useLeagueTableImport({
   const [syncResults, setSyncResults] = React.useState({})
   const [structuralAcknowledged, setStructuralAcknowledged] = React.useState(false)
   const identityIndexRef = React.useRef(null)
-  const syncCacheRefreshRef = React.useRef(false)
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
   const structuralChanges = React.useMemo(() => buildStructuralLeagueDiff({
     existingRows: selectedSeasonOption?.season?.tableRank || [],
@@ -264,7 +263,6 @@ export function useLeagueTableImport({
     setAuditResult(null)
     setSyncState({})
     setSyncResults({})
-    syncCacheRefreshRef.current = false
     setStructuralAcknowledged(false)
   }, [busy])
 
@@ -344,8 +342,6 @@ export function useLeagueTableImport({
 
   const handleApproveForSync = React.useCallback(() => {
     if (!canConfirm) return false
-
-    syncCacheRefreshRef.current = false
     setApprovedPayload(buildApprovedPayload())
     setReceiptId('')
     setAuditResult(null)
@@ -505,12 +501,6 @@ export function useLeagueTableImport({
     'audit',
   ].every(key => syncState[key]?.status === 'completed')
 
-  React.useEffect(() => {
-    if (!syncComplete || syncCacheRefreshRef.current || typeof reload !== 'function') return
-
-    syncCacheRefreshRef.current = true
-    reload()
-  }, [reload, syncComplete])
 
 
 
@@ -521,10 +511,17 @@ export function useLeagueTableImport({
       receiptId,
     })
 
+    invalidateLeagueImportCacheV2({
+      leagueId: approvedPayload.league?.id || approvedPayload.league?.leagueId,
+      seasonKey: approvedPayload.season?.seasonKey,
+      birthYear: approvedPayload.season?.birthYear,
+      rows: approvedPayload.rows,
+    })
     setOpen(false)
     if (typeof reload === 'function') reload()
     return true
   }, [
+    approvedPayload,
     auditResult,
     busy,
     receiptId,
@@ -572,7 +569,6 @@ export function useLeagueTableImport({
       reload()
     },
     handleOpen: () => setOpen(true),
-    writeReport,
-    closeWriteReport: () => setWriteReport(null),
   }
 }
+

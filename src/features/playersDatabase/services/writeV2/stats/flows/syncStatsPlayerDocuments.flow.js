@@ -2,12 +2,12 @@
 
 import {
   doc,
-  getDoc,
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore'
 
 import { db } from '../../../../../../services/firebase/firebase.js'
+import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { APPROVED_STATS_STATE_VERSION } from '../../../../domain/statsV2/approvedStatsState.builder.js'
 
@@ -114,7 +114,7 @@ const sanitizeSeasonRow = ({ row, playerDocumentId }) => {
     throw error
   }
 
-  return { ...row }
+  return row
 }
 
 const mergeSeasonRows = ({ currentRows, approvedRows, playerDocumentId }) => {
@@ -190,7 +190,7 @@ export async function syncStatsPlayerDocumentsV2({ approvedState } = {}) {
     }
 
     const ref = doc(db, PLAYERS_DATABASE_COLLECTIONS.players, playerDocumentId)
-    const snapshot = await getDoc(ref)
+    const snapshot = await trackedGetDocFromServer(ref)
     const exists = snapshot.exists()
 
     if ((action === 'update' || action === 'retain') && !exists) {

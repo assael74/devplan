@@ -104,6 +104,41 @@ describe('compareRosterAuditV2', () => {
     ))).toBe(true)
   })
 
+  test('reports stale League roster metadata instead of accepting a clean audit', () => {
+    const findings = compareRosterAuditV2({
+      expected: {
+        ...expected,
+        leagueRosterMetadata: {
+          ...expected.leagueRosterMetadata,
+          fields: {
+            playersCount: 22,
+            hasPlayers: true,
+          },
+        },
+      },
+      actual: {
+        ...actual,
+        league: {
+          current: {
+            seasonKey: '26_27',
+            tableRank: [{
+              birthTeamDocumentId: 'team-1',
+              playersCount: 0,
+              hasPlayers: false,
+            }],
+          },
+        },
+      },
+    })
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'projection_mismatch',
+        target: 'leagueRosterMetadata',
+      }),
+    ]))
+  })
+
   test('reports a real Roster-owned Team SearchIndex mismatch', () => {
     const findings = compareRosterAuditV2({
       expected,

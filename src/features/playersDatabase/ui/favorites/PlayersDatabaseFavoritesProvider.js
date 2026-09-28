@@ -9,8 +9,7 @@ import {
   PLAYERS_DATABASE_WRITE_ACTIONS,
   runPlayersDatabaseWriteAction,
 } from '../../services/write/index.js'
-
-const PlayersDatabaseFavoritesContext = React.createContext(null)
+import PlayersDatabaseFavoritesContext from './PlayersDatabaseFavoritesContext.js'
 
 const buildPendingKey = (favoriteType, entityId) => (
   `${favoriteType}:${String(entityId || '').trim()}`

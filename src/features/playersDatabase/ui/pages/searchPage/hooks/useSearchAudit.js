@@ -24,12 +24,17 @@ import {
 import { retryMovementCounterpartsFromAuditFindings } from '../../../../services/dataRepair/team/index.js'
 import { syncRosterTeamProjectionFromCanonicalV2 } from '../../../../services/writeV2/roster/index.js'
 import {
-  closeWriteActionReceiptV2,
   getWriteActionReceiptV2,
   listWriteActionReceiptsV2,
-  saveWriteActionAuditSummaryV2,
+  persistWriteActionAuditResultV2,
 } from '../../../../services/writeV2/index.js'
-import { auditLeagueV2, auditRosterV2 } from '../../../../services/auditV2/index.js'
+import {
+  auditClearStatsReceiptV2,
+  auditLeagueV2,
+  auditRosterV2,
+  auditStatsV2,
+} from '../../../../services/auditV2/index.js'
+import { reconcileStatsAuditStageV2 } from '../../../../services/auditV2/stats/reconcileStage.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
@@ -180,30 +185,23 @@ export default function useSearchAudit({ rows }) {
           birthTeamDocumentId: clean(auditTarget.birthTeamDocumentId),
           seasonKey: clean(auditTarget.seasonKey),
         })
+      } else if (receipt.flowType === 'stats') {
+        const auditInput = {
+          birthTeamDocumentId: clean(auditTarget.birthTeamDocumentId),
+          seasonKey: clean(auditTarget.seasonKey),
+        }
+        nextResult = clean(receipt.operationType) === 'clear'
+          ? await auditClearStatsReceiptV2(auditInput)
+          : await auditStatsV2(auditInput)
       } else {
         throw new Error(`Audit V2 עבור ${receipt.flowType || 'flow לא ידוע'} עדיין לא מיושם.`)
       }
-      const ranAt = new Date().toISOString()
-
-      const findingsCount = nextResult.findings?.length || 0
-      const auditComplete = nextResult.coverage?.complete === true
-
-      await saveWriteActionAuditSummaryV2({
+      const nextReceiptStatus = await persistWriteActionAuditResultV2({
         receiptId: id,
-        ranAt,
-        coverage: auditComplete ? 'complete' : 'partial',
-        findingsCount,
-        checkedDomains: nextResult.coverage?.coveredTargets || [],
+        audit: nextResult,
       })
 
-      if (
-        receipt.status === 'open' &&
-        auditComplete &&
-        findingsCount === 0
-      ) {
-        await closeWriteActionReceiptV2({
-          receiptId: id,
-        })
+      if (nextReceiptStatus !== receipt.status) {
         await loadRecentWriteActionReceiptsV2()
       }
 
@@ -215,6 +213,55 @@ export default function useSearchAudit({ rows }) {
     } catch (auditError) {
       console.error('[playersDatabase] Receipt V2 Audit failed:', auditError)
       setError(auditError instanceof Error ? auditError.message : 'בדיקת Receipt V2 נכשלה')
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, loadRecentWriteActionReceiptsV2])
+
+  const reconcileStatsAuditStage = React.useCallback(async ({ receiptId = '', stage = '' } = {}) => {
+    if (busy) return
+
+    const id = clean(receiptId)
+    if (!id) {
+      setError('חסר Receipt V2 לתיקון Stats.')
+      return
+    }
+
+    setBusy(true)
+    setError('')
+
+    try {
+      const receipt = await getWriteActionReceiptV2({ receiptId: id })
+      if (!receipt) throw new Error('Receipt V2 לא נמצא.')
+
+      const auditTarget = receipt.auditTarget || {}
+      const reconcileResult = await reconcileStatsAuditStageV2({
+        birthTeamDocumentId: clean(auditTarget.birthTeamDocumentId),
+        seasonKey: clean(auditTarget.seasonKey),
+        stage,
+        receiptId: id,
+      })
+
+      await loadRecentWriteActionReceiptsV2()
+      setResult({
+        ...reconcileResult.audit,
+        auditVersion: 'v2',
+        receiptId: id,
+      })
+    } catch (reconcileError) {
+      console.error('[playersDatabase] Stats V2 stage repair failed:', reconcileError)
+      if (reconcileError?.audit) {
+        setResult({
+          ...reconcileError.audit,
+          auditVersion: 'v2',
+          receiptId: id,
+        })
+      }
+      setError(
+        reconcileError instanceof Error
+          ? reconcileError.message
+          : 'סנכרון שלב Stats נכשל'
+      )
     } finally {
       setBusy(false)
     }
@@ -252,6 +299,7 @@ export default function useSearchAudit({ rows }) {
       auditSeasonKey: seasonKey,
       auditFindingId:
         clean(finding?.auditFindingId) || buildAuditFindingId(finding),
+      openStatsImport: context?.openStatsImport === true,
     })
     window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
   }, [])
@@ -516,8 +564,6 @@ export default function useSearchAudit({ rows }) {
     runAudit,
     runAuditForWriteAction,
     runAuditForReceiptV2,
-    loadRecentWriteActions,
-    loadRecentWriteActionReceiptsV2,
     openPlayer,
     openTeam,
     openLeague,
@@ -525,6 +571,7 @@ export default function useSearchAudit({ rows }) {
     requestRepair,
     confirmRepair,
     repairPlayerIndexes,
+    reconcileStatsAuditStage,
     requestOrphanPlayerIndexDelete,
     confirmOrphanPlayerIndexDelete,
     repairRosterTeamProjectionFromCanonical,

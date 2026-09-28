@@ -93,9 +93,41 @@ export const buildStatsAbsentPlayerState = (player = {}) => ({
 
 const buildStatsAbsentTeamBalance = teamSeason => {
   const inputHash = buildBalanceInputFingerprint(teamSeason)
-  const balanceState = buildTeamBalanceState({
-    seasonDocument: teamSeason,
+  const balanceSeason = {
+    ...teamSeason,
+    teamStats: {
+      ...(teamSeason.teamStats || {}),
+      teamGamePlayed: 0,
+      gamesPlayed: 0,
+    },
+    teamGamePlayed: 0,
+  }
+  const calculatedBalanceState = buildTeamBalanceState({
+    seasonDocument: balanceSeason,
   })
+  const balanceState = {
+    ...calculatedBalanceState,
+    balanceAvailability: {
+      ...(calculatedBalanceState.balanceAvailability || {}),
+      availability: 'unavailable',
+      availabilityReason: 'stats_not_loaded',
+    },
+    lineupBenchmark: {
+      ...(calculatedBalanceState.lineupBenchmark || {}),
+      availability: 'unavailable',
+      availabilityReason: 'stats_not_loaded',
+    },
+    classificationCoverageBenchmark: {
+      ...(calculatedBalanceState.classificationCoverageBenchmark || {}),
+      availability: 'unavailable',
+      availabilityReason: 'stats_not_loaded',
+    },
+    scoutInterpretation: {
+      ...(calculatedBalanceState.scoutInterpretation || {}),
+      availability: 'unavailable',
+      availabilityReason: 'stats_not_loaded',
+    },
+  }
 
   return buildTeamBalanceDocumentSnapshot({
     balanceState,

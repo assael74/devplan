@@ -4,6 +4,11 @@ import {
   Box,
   Button,
   Divider,
+  Dropdown,
+  Menu,
+  MenuButton,
+  MenuItem,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
@@ -19,6 +24,10 @@ export default function PlayerActionsPanel({
   onTaskCreate,
   onTaskEdit,
   onDataRepair = () => {},
+  onDownloadDocuments = () => {},
+  onDownloadIndexes = () => {},
+  downloadDisabled = false,
+  downloadBusy = false,
 }) {
   return (
     <PageSidePanel>
@@ -89,6 +98,29 @@ export default function PlayerActionsPanel({
           <Button size='sm' variant='plain' startDecorator={iconUi({id: 'search', size: 'sm'})} sx={sx.actionButton} onClick={onDataRepair}>
             תיקוני דאטה
           </Button>
+          <Dropdown>
+            <Tooltip title='הורדת מסמכים'>
+              <span>
+                <MenuButton
+                  size='md'
+                  variant='plain'
+                  aria-label='הורדת מסמכים'
+                  sx={sx.actionIconButton}
+                  disabled={downloadDisabled || downloadBusy}
+                >
+                  {iconUi({id: 'download', size: 'md'})}
+                </MenuButton>
+              </span>
+            </Tooltip>
+            <Menu placement='bottom-end'>
+              <MenuItem disabled={downloadBusy} onClick={onDownloadDocuments}>
+                הורדת מסמכי העמוד
+              </MenuItem>
+              <MenuItem disabled={downloadBusy} onClick={onDownloadIndexes}>
+                {downloadBusy ? 'טוען מסמכים...' : 'הורדת אינדקסי שחקן'}
+              </MenuItem>
+            </Menu>
+          </Dropdown>
         </Box>
       </Box>
 

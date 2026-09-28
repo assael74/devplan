@@ -476,11 +476,6 @@ function LeaguePageContent() {
         onClose={leagueDataRepair.close}
       />
 
-      <WriteFlowReportModal
-        open={Boolean(leagueImport.writeReport)}
-        report={leagueImport.writeReport}
-        onClose={leagueImport.closeWriteReport}
-      />
     </>
   )
 }

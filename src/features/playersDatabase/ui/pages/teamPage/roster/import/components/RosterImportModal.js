@@ -714,26 +714,6 @@ export default function RosterImportModal({
     }
   }, [controller.open])
 
-  React.useEffect(() => {
-    console.info('[playersDatabase/roster-import-debug]', {
-      event: 'wizard-step',
-      at: new Date().toISOString(),
-      wizardState: { activeStep, reviewStep },
-      systemAction: activeStep === 0
-        ? 'choose-season'
-        : activeStep === 1
-          ? 'paste-and-start-identity-check'
-          : activeStep === 3
-            ? 'manual-v2-sync'
-            : reviewStep === 'present'
-              ? 'review-identities-in-state'
-              : reviewStep === 'missing'
-                ? 'review-missing-players-in-state'
-                : 'preview-approved-plan-in-state',
-      state: controller.debugState,
-    })
-  }, [activeStep, controller.debugState, reviewStep])
-
   const close = () => {
     if (controller.busy) return
     controller.clearPaste()
@@ -750,11 +730,6 @@ export default function RosterImportModal({
       return controller.completeSync()
     }
     if (reviewStep === 'present') {
-      console.info('[playersDatabase/roster-import-debug]', {
-        event: 'continue-to-missing-review',
-        state: controller.debugState,
-        systemAction: { type: 'state-only-transition', writes: false, reads: false },
-      })
       return setReviewStep('missing')
     }
     if (reviewStep === 'missing') {

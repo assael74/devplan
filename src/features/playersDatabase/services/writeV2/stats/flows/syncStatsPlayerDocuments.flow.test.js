@@ -1,7 +1,13 @@
+// src/features/playersDatabase/services/writeV2/stats/flows/syncStatsPlayerDocuments.flow.test.js
+
 import {
-  getDoc,
+  doc,
   setDoc,
 } from 'firebase/firestore'
+
+import {
+  trackedGetDocFromServer,
+} from '../../../../../../services/firestore/usage/index.js'
 
 import {
   APPROVED_STATS_STATE_VERSION,
@@ -11,12 +17,15 @@ import { syncStatsPlayerDocumentsV2 } from './syncStatsPlayerDocuments.flow.js'
 
 jest.mock('firebase/firestore', () => ({
   doc: jest.fn((db, collectionName, id) => ({ collectionName, id })),
-  getDoc: jest.fn(),
   setDoc: jest.fn(),
   serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP'),
 }))
 
 jest.mock('../../../../../../services/firebase/firebase.js', () => ({ db: {} }))
+
+jest.mock('../../../../../../services/firestore/usage/index.js', () => ({
+  trackedGetDocFromServer: jest.fn(),
+}))
 
 const snapshot = ({ exists = true, data = {} } = {}) => ({
   exists: () => exists,
@@ -28,9 +37,16 @@ const approvedState = plans => ({
   planVersion: APPROVED_STATS_STATE_VERSION,
   playerDocumentPlans: plans,
   playerSearchIndexStates: [],
-  teamSearchIndexPatch: { docId: 'team-index-1', fields: {} },
+  teamSearchIndexPatch: { action: 'update', docId: 'team-index-1', fields: {} },
   leagueMetadataPatch: { fields: {} },
+  leaguePatch: {
+    leagueId: 'league-1',
+    seasonKey: '2026-2027',
+    target: 'current',
+    tableRank: [{ teamDocumentId: 'team-1' }],
+  },
   leaguesMasterPatch: { id: 'all', leagues: [], summary: {} },
+  clubsMasterPatch: { id: 'all', baselineClubs: [], touchedClubIds: [], clubs: [] },
 })
 
 const seasonRow = (overrides = {}) => ({
@@ -54,7 +70,11 @@ const fullApprovedState = plans => buildApprovedStatsState({
     teamSeason: { id: 'team-1__2026-2027' },
     league: {
       id: 'league-1',
-      current: { seasonKey: '2026-2027', seasonStatus: 'active' },
+      current: {
+        seasonKey: '2026-2027',
+        seasonStatus: 'active',
+        tableRank: [{ teamDocumentId: 'team-1' }],
+      },
       history: [],
     },
   },
@@ -78,16 +98,52 @@ const fullApprovedState = plans => buildApprovedStatsState({
   },
   playerDocumentPlans: plans,
   playerSearchIndexStates: [],
-  teamSearchIndexPatch: { docId: 'team-index-1', fields: {} },
+  teamSearchIndexPatch: { action: 'update', docId: 'team-index-1', fields: {} },
   leagueMetadataPatch: { fields: {} },
+  leaguePatch: {
+    leagueId: 'league-1',
+    seasonKey: '2026-2027',
+    target: 'current',
+    tableRank: [{ teamDocumentId: 'team-1' }],
+  },
   leaguesMasterPatch: { id: 'all', leagues: [], summary: {} },
+  clubsMasterPatch: { id: 'all', baselineClubs: [], touchedClubIds: [], clubs: [] },
 })
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  jest.clearAllMocks()
+  doc.mockImplementation((db, collectionName, id) => ({ collectionName, id }))
+})
 
 describe('syncStatsPlayerDocumentsV2', () => {
+  test('preflight reads Player Document from server before changed/skipped decision', async () => {
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({
+      data: {
+        current: [
+          {
+            seasonKey: '2026-2027',
+            statsStatus: 'missing',
+          },
+        ],
+      },
+    }))
+
+    await syncStatsPlayerDocumentsV2({
+      approvedState: approvedState([{
+        action: 'update',
+        playerDocumentId: 'player-1',
+        ownedPatch: {
+          current: [seasonRow()],
+        },
+      }]),
+    })
+
+    expect(trackedGetDocFromServer).toHaveBeenCalledTimes(1)
+    expect(setDoc).toHaveBeenCalledTimes(1)
+  })
+
   test('creates from approved identity and season state only', async () => {
-    getDoc.mockResolvedValueOnce(snapshot({ exists: false }))
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({ exists: false }))
 
     await syncStatsPlayerDocumentsV2({
       approvedState: approvedState([{
@@ -111,7 +167,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
   })
 
   test('rejects protected root fields instead of trusting the Approved State', async () => {
-    getDoc.mockResolvedValueOnce(snapshot({ data: { current: [] } }))
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({ data: { current: [] } }))
 
     await expect(syncStatsPlayerDocumentsV2({
       approvedState: approvedState([{
@@ -128,7 +184,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
   })
 
   test('merges the approved season without replacing other seasons or protected season fields', async () => {
-    getDoc.mockResolvedValueOnce(snapshot({
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({
       data: {
         tracking: { favorite: true },
         current: [
@@ -157,8 +213,9 @@ describe('syncStatsPlayerDocumentsV2', () => {
     expect(setDoc.mock.calls[0][1]).not.toHaveProperty('tracking')
   })
 
+
   test('rejects protected fields inside a season patch', async () => {
-    getDoc.mockResolvedValueOnce(snapshot({ data: { current: [] } }))
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({ data: { current: [] } }))
 
     await expect(syncStatsPlayerDocumentsV2({
       approvedState: approvedState([{
@@ -177,7 +234,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
       fullName: 'Player One',
       current: [seasonRow()],
     }
-    getDoc.mockResolvedValueOnce(snapshot({ data: patch }))
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({ data: patch }))
 
     const result = await syncStatsPlayerDocumentsV2({
       approvedState: approvedState([{
@@ -192,7 +249,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
   })
 
   test('repeated create still rejects an existing document with different owned state', async () => {
-    getDoc.mockResolvedValueOnce(snapshot({
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({
       data: {
         id: 'player-1',
         fullName: 'Different Name',
@@ -214,7 +271,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
   })
 
   test('retain performs no write', async () => {
-    getDoc.mockResolvedValueOnce(snapshot())
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot())
 
     const result = await syncStatsPlayerDocumentsV2({
       approvedState: approvedState([{ action: 'retain', playerDocumentId: 'player-1' }]),
@@ -225,7 +282,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
   })
 
   test('preflights all plans before writing so a missing update target stops the step', async () => {
-    getDoc
+    trackedGetDocFromServer
       .mockResolvedValueOnce(snapshot({ exists: false }))
       .mockResolvedValueOnce(snapshot({ exists: false }))
 
@@ -253,7 +310,7 @@ describe('syncStatsPlayerDocumentsV2', () => {
       playerDocumentId: 'player-1',
       ownedPatch: { current: [seasonRow()] },
     }])
-    getDoc.mockResolvedValueOnce(snapshot({
+    trackedGetDocFromServer.mockResolvedValueOnce(snapshot({
       data: { current: [{ seasonKey: '2026-2027', statsStatus: 'missing' }] },
     }))
 

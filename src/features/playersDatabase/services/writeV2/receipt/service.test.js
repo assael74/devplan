@@ -13,6 +13,8 @@ import {
 } from './repository.js'
 import {
   closeWriteActionReceiptV2,
+  reopenWriteActionReceiptV2,
+  persistWriteActionAuditResultV2,
 } from './service.js'
 
 describe('WriteAction V2 receipt lifecycle', () => {
@@ -99,5 +101,74 @@ describe('WriteAction V2 receipt lifecycle', () => {
   })
 
 
+  test('reopens a closed receipt', async () => {
+    readWriteActionReceiptV2.mockResolvedValue({
+      id: 'receipt-1',
+      status: 'closed',
+    })
+    patchWriteActionReceiptV2.mockResolvedValue('receipt-1')
+
+    await expect(reopenWriteActionReceiptV2({
+      receiptId: 'receipt-1',
+    })).resolves.toBe('receipt-1')
+
+    expect(patchWriteActionReceiptV2).toHaveBeenCalledWith({
+      receiptId: 'receipt-1',
+      patch: { status: 'open' },
+    })
+  })
+
+  test('does not reopen an open receipt', async () => {
+    readWriteActionReceiptV2.mockResolvedValue({
+      id: 'receipt-1',
+      status: 'open',
+    })
+
+    await expect(reopenWriteActionReceiptV2({
+      receiptId: 'receipt-1',
+    })).rejects.toThrow('Only a closed WriteAction V2 receipt can be reopened')
+
+    expect(patchWriteActionReceiptV2).not.toHaveBeenCalled()
+  })
+
+
+  test('shared Audit lifecycle closes an open receipt after a complete clean Audit', async () => {
+    readWriteActionReceiptV2
+      .mockResolvedValueOnce({ id: 'receipt-1', status: 'open' })
+      .mockResolvedValueOnce({
+        id: 'receipt-1',
+        status: 'open',
+        lastAuditSummary: { coverage: 'complete', findingsCount: 0 },
+      })
+    patchWriteActionReceiptV2.mockResolvedValue('receipt-1')
+
+    await expect(persistWriteActionAuditResultV2({
+      receiptId: 'receipt-1',
+      audit: { coverage: { complete: true }, findings: [] },
+      ranAt: '2026-09-26T00:00:00.000Z',
+    })).resolves.toBe('closed')
+  })
+
+  test('shared Audit lifecycle reopens a closed receipt when a Finding exists', async () => {
+    readWriteActionReceiptV2
+      .mockResolvedValueOnce({ id: 'receipt-1', status: 'closed' })
+      .mockResolvedValueOnce({ id: 'receipt-1', status: 'closed' })
+    patchWriteActionReceiptV2.mockResolvedValue('receipt-1')
+
+    await expect(persistWriteActionAuditResultV2({
+      receiptId: 'receipt-1',
+      audit: {
+        coverage: { complete: true },
+        findings: [{ target: 'teamSearchIndex' }],
+      },
+    })).resolves.toBe('open')
+
+    expect(patchWriteActionReceiptV2).toHaveBeenLastCalledWith({
+      receiptId: 'receipt-1',
+      patch: {
+        status: 'open',
+      },
+    })
+  })
 
 })

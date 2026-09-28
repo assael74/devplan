@@ -44,6 +44,7 @@ export {
   canReadPlayerSearchIndexExport,
   canReadTeamSearchIndexExport,
   readPlayerSearchIndexExport,
+  readPlayerSearchIndexesExport,
   readSearchIndexExportById,
   readTeamSearchIndexExport,
   readTeamSearchIndexesExport,

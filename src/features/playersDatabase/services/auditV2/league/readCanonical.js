@@ -1,7 +1,7 @@
 import { doc } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
-import { trackedGetDoc } from '../../../../../services/firestore/usage/index.js'
+import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { cleanValue } from '../../../model/shared/value.model.js'
 
@@ -27,7 +27,7 @@ export async function readLeagueCanonicalV2({ leagueId = '', seasonKey = '' } = 
   if (!safeLeagueId) throw new Error('Missing league id')
   if (!safeSeasonKey) throw new Error('Missing season key')
 
-  const snapshot = await trackedGetDoc(
+  const snapshot = await trackedGetDocFromServer(
     doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, safeLeagueId),
     {
       feature: 'playersDatabase',

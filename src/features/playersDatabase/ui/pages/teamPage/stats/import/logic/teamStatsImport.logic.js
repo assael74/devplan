@@ -24,6 +24,29 @@ const resolvePlayerIdFromUrl = value => {
   return match?.[1] || ''
 }
 
+const PLAYER_STATS_FIELDS = Object.freeze([
+  'games',
+  'goals',
+  'yellowCards',
+  'minutes',
+  'starts',
+  'substituteIn',
+  'substitutedOut',
+])
+
+export const buildApprovedStatsImportPlayer = row => ({
+  ...row,
+  statsStatus: 'loaded',
+  playerStats: PLAYER_STATS_FIELDS.reduce((stats, field) => ({
+    ...stats,
+    [field]: toNumber(row?.[field]),
+  }), {
+    ...((row?.playerStats && typeof row.playerStats === 'object')
+      ? row.playerStats
+      : {}),
+  }),
+})
+
 const getStatsCell = ({
   cells,
   headerMap,

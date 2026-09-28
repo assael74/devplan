@@ -1,155 +1,152 @@
-import { getDoc, writeBatch } from 'firebase/firestore'
+// src/features/playersDatabase/services/writeV2/stats/flows/syncStatsTeamLeague.flow.test.js
 
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+
+import { SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT } from '../../../../catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js'
 import { buildApprovedStatsState } from '../../../../domain/statsV2/approvedStatsState.builder.js'
-import { applyLeagueMetadataPatch, syncStatsTeamLeagueV2 } from './syncStatsTeamLeague.flow.js'
+import { syncStatsTeamLeagueV2 } from './syncStatsTeamLeague.flow.js'
 
 const batchSet = jest.fn()
+const batchUpdate = jest.fn()
 const batchCommit = jest.fn()
 
 jest.mock('firebase/firestore', () => ({
   doc: jest.fn((db, collectionName, id) => ({ collectionName, id })),
-  getDoc: jest.fn(),
   serverTimestamp: jest.fn(() => 'SERVER_TIMESTAMP'),
   writeBatch: jest.fn(),
 }))
 
 jest.mock('../../../../../../services/firebase/firebase.js', () => ({ db: {} }))
 
-const snapshot = ({ id = '', exists = true, data = {} } = {}) => ({
-  id,
-  exists: () => exists,
-  data: () => data,
-})
-
-const buildApproved = () => buildApprovedStatsState({
-  identity: { birthTeamDocumentId: 'team-1', seasonKey: '2026-2027', leagueId: 'league-1' },
+const buildApproved = ({ target = 'current', teamAction = 'update' } = {}) => buildApprovedStatsState({
+  identity: { birthTeamDocumentId: 'team-1', seasonKey: '26/27', leagueId: 'league-1' },
   approvedAt: '2026-09-25T12:00:00.000Z',
   canonical: {
     teamRoot: { id: 'team-1' },
-    teamSeason: { id: 'team-1__2026-2027' },
-    league: { id: 'league-1', current: { seasonKey: '2026-2027', seasonStatus: 'active' }, history: [] },
+    teamSeason: { id: 'team-1__26_27' },
+    league: target === 'current'
+      ? { id: 'league-1', current: { seasonKey: '26/27', tableRank: [{ birthTeamDocumentId: 'team-1' }] }, history: [] }
+      : { id: 'league-1', current: { seasonKey: '27/28', tableRank: [] }, history: [{ seasonKey: '26/27', tableRank: [{ birthTeamDocumentId: 'team-1' }] }] },
   },
   reloadDecisionState: { isComplete: true, missingPlayers: [], resolved: [], unresolved: [] },
   teamSeason: {
-    seasonStatus: 'active', playersCount: 21, playerOwnedPatches: [], approvedNewParticipants: [],
-    localMovementPatch: null, teamBalance: { status: 'available' }, teamScout: { players: [] },
-    scoutProfilesSummary: { total: 2 }, statsLoadState: { status: 'loaded' },
-    finalTeamSeasonPreview: { id: 'team-1__2026-2027', teamPlayers: [] },
+    seasonStatus: target === 'history' ? 'completed' : 'active',
+    playersCount: 21,
+    playerOwnedPatches: [],
+    approvedNewParticipants: [],
+    localMovementPatch: null,
+    teamBalance: { status: 'available' },
+    teamScout: { players: [] },
+    scoutProfilesSummary: { total: 2 },
+    statsLoadState: { status: 'loaded' },
+    finalTeamSeasonPreview: { id: 'team-1__26_27', teamPlayers: [] },
   },
   playerSearchIndexStates: [],
-  teamSearchIndexPatch: { docId: 'team-index-1', fields: { playersCount: 21 } },
-  leagueMetadataPatch: { fields: { playersCount: 21, hasStats: true } },
-  leaguesMasterPatch: {
-    id: 'all',
-    leagues: [{ id: 'league-1', playersCount: 21 }],
-    summary: { playersCount: 21 },
+  teamSearchIndexPatch: {
+    docId: 'birthTeamSeason__league-1__26_27__team-1',
+    action: teamAction,
+    fields: teamAction === 'create'
+      ? {
+        ...SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
+        id: 'birthTeamSeason__league-1__26_27__team-1',
+        entityId: 'birthTeamSeason__league-1__26_27__team-1',
+        entityType: 'birthTeamSeason',
+        leagueId: 'league-1',
+        seasonKey: '26/27',
+        birthTeamDocumentId: 'team-1',
+      }
+      : { playersCount: 21 },
   },
+  leagueMetadataPatch: { seasonKey: '26/27', birthTeamDocumentId: 'team-1', fields: { playersCount: 21 } },
+  leaguePatch: target === 'current'
+    ? { leagueId: 'league-1', seasonKey: '26/27', target, tableRank: [{ birthTeamDocumentId: 'team-1', playersCount: 21 }] }
+    : { leagueId: 'league-1', seasonKey: '26/27', target, history: [{ seasonKey: '26/27', tableRank: [{ birthTeamDocumentId: 'team-1', playersCount: 21 }] }] },
+  leaguesMasterPatch: { id: 'all', docType: 'leagues_master', leagues: [{ id: 'league-1' }], summary: { total: 1 } },
+  clubsMasterPatch: { id: 'all', entries: [] },
 })
 
 beforeEach(() => {
   jest.clearAllMocks()
-  writeBatch.mockReturnValue({ set: batchSet, commit: batchCommit })
+  doc.mockImplementation((db, collectionName, id) => ({ collectionName, id }))
+  serverTimestamp.mockReturnValue('SERVER_TIMESTAMP')
+  writeBatch.mockReturnValue({ set: batchSet, update: batchUpdate, commit: batchCommit })
   batchCommit.mockResolvedValue(undefined)
 })
 
-describe('syncStatsTeamLeagueV2 ownership', () => {
-  test('patches Stats metadata without changing official League facts', () => {
-    const league = {
-      id: 'league-1',
-      current: {
-        seasonKey: '2026-2027',
-        tableRank: [{
-          birthTeamDocumentId: 'team-1', rank: 2,
-          teamStats: { points: 9, goalsFor: 7, goalsAgainst: 4, teamGamePlayed: 4 },
-          playersCount: 20, hasStats: false,
-        }],
-      },
-      history: [],
-    }
-    const approved = {
-      identity: { birthTeamDocumentId: 'team-1', seasonKey: '2026-2027' },
-      leagueMetadataPatch: { fields: { playersCount: 21, hasStats: true, statsComplete: true } },
-    }
+describe('syncStatsTeamLeagueV2', () => {
+  test('writes approved update payloads without reading Firestore', async () => {
+    const result = await syncStatsTeamLeagueV2({ approved: buildApproved() })
 
-    const row = applyLeagueMetadataPatch({ league, approved }).current.tableRank[0]
-    expect(row.playersCount).toBe(21)
-    expect(row.hasStats).toBe(true)
-    expect(row.rank).toBe(2)
-    expect(row.teamStats).toEqual(league.current.tableRank[0].teamStats)
-  })
-
-  test('rejects official League facts outside Stats ownership', () => {
-    expect(() => applyLeagueMetadataPatch({
-      league: { current: { seasonKey: '2026-2027', tableRank: [{ birthTeamDocumentId: 'team-1', rank: 2 }] } },
-      approved: {
-        identity: { birthTeamDocumentId: 'team-1', seasonKey: '2026-2027' },
-        leagueMetadataPatch: { fields: { rank: 1 } },
-      },
-    })).toThrow('outside ownership')
-  })
-
-  test('writes Approved State and merges Leagues Master to preserve external fields', async () => {
-    const approved = buildApproved()
-    getDoc
-      .mockResolvedValueOnce(snapshot({ data: { playersCount: 20, externalTeamField: 'keep' } }))
-      .mockResolvedValueOnce(snapshot({ id: 'league-1', data: {
-        federationMeta: { keep: true },
-        current: {
-          seasonKey: '2026-2027',
-          tableRank: [{
-            birthTeamDocumentId: 'team-1', rank: 2,
-            teamStats: { points: 9, teamGamePlayed: 4 }, playersCount: 20, hasStats: false,
-          }],
-        },
-        history: [],
-      } }))
-      .mockResolvedValueOnce(snapshot({ data: {
-        id: 'all', docType: 'leagues_master', externalMasterField: { keep: true },
-        leagues: [], summary: {},
-      } }))
-
-    const result = await syncStatsTeamLeagueV2({ approved })
-
+    expect(batchSet).toHaveBeenCalledTimes(2)
+    expect(batchUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'league-1' }), {
+      'current.tableRank': [{ birthTeamDocumentId: 'team-1', playersCount: 21 }],
+      updatedAt: 'SERVER_TIMESTAMP',
+    })
     expect(batchCommit).toHaveBeenCalledTimes(1)
-    const masterCall = batchSet.mock.calls.find(call => call[0]?.id === 'all')
-    expect(masterCall).toBeTruthy()
-    expect(masterCall[2]).toEqual({ merge: true })
-    expect(masterCall[1]).not.toHaveProperty('externalMasterField')
     expect(result).toEqual({ teamSearchIndexUpdated: true, leagueUpdated: true, leaguesMasterUpdated: true })
   })
 
-  test('fails before writing when a required shared document is missing', async () => {
-    const approved = buildApproved()
-    getDoc
-      .mockResolvedValueOnce(snapshot({ data: {} }))
-      .mockResolvedValueOnce(snapshot({ id: 'league-1', exists: false }))
-      .mockResolvedValueOnce(snapshot({ data: {} }))
+  test('creates a complete Team SearchIndex without merge', async () => {
+    await syncStatsTeamLeagueV2({ approved: buildApproved({ teamAction: 'create' }) })
 
-    await expect(syncStatsTeamLeagueV2({ approved })).rejects.toMatchObject({ code: 'STATS_LEAGUE_NOT_FOUND' })
-    expect(batchSet).not.toHaveBeenCalled()
+    const teamCall = batchSet.mock.calls.find(call => call[0]?.id === 'birthTeamSeason__league-1__26_27__team-1')
+    expect(teamCall[2]).toEqual({ merge: false })
+    expect(Object.keys(teamCall[1]).sort()).toEqual(Object.keys({
+      ...SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT,
+      updatedAt: 'SERVER_TIMESTAMP',
+    }).sort())
+  })
+
+  test('rejects Team SearchIndex create payload with mismatched approved identity', async () => {
+    const approved = buildApproved({ teamAction: 'create' })
+    approved.teamSearchIndexPatch.fields.leagueId = 'wrong-league'
+
+    await expect(syncStatsTeamLeagueV2({ approved })).rejects.toMatchObject({
+      code: 'STATS_TEAM_INDEX_CREATE_IDENTITY_INVALID',
+    })
+  })
+
+  test('writes approved history array atomically for completed season', async () => {
+    const approved = buildApproved({ target: 'history' })
+    await syncStatsTeamLeagueV2({ approved })
+
+    expect(batchUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'league-1' }), {
+      history: approved.leaguePatch.history,
+      updatedAt: 'SERVER_TIMESTAMP',
+    })
+  })
+
+  test('rejects fields outside Stats ownership on Team SearchIndex update', async () => {
+    const approved = buildApproved()
+    approved.teamSearchIndexPatch.fields.rank = 1
+
+    await expect(syncStatsTeamLeagueV2({ approved })).rejects.toMatchObject({
+      code: 'STATS_TEAM_INDEX_SCOPE_INVALID',
+    })
     expect(batchCommit).not.toHaveBeenCalled()
   })
 
-  test('skips all writes when Approved State already matches canonical documents', async () => {
-    const approved = buildApproved()
-    getDoc
-      .mockResolvedValueOnce(snapshot({ data: { playersCount: 21 } }))
-      .mockResolvedValueOnce(snapshot({ id: 'league-1', data: {
-        current: {
-          seasonKey: '2026-2027',
-          tableRank: [{ birthTeamDocumentId: 'team-1', playersCount: 21, hasStats: true }],
-        },
-        history: [],
-      } }))
-      .mockResolvedValueOnce(snapshot({ data: {
-        id: 'all', docType: 'leagues_master',
-        leagues: [{ id: 'league-1', playersCount: 21 }], summary: { playersCount: 21 },
-        externalMasterField: 'keep',
-      } }))
+  test('rejects incomplete Team SearchIndex create payload', async () => {
+    const approved = buildApproved({ teamAction: 'create' })
+    delete approved.teamSearchIndexPatch.fields.entityType
 
-    const result = await syncStatsTeamLeagueV2({ approved })
-
+    await expect(syncStatsTeamLeagueV2({ approved })).rejects.toMatchObject({
+      code: 'STATS_TEAM_INDEX_CREATE_INVALID',
+    })
     expect(batchCommit).not.toHaveBeenCalled()
-    expect(result).toEqual({ teamSearchIndexUpdated: false, leagueUpdated: false, leaguesMasterUpdated: false })
+  })
+
+  test('rerun sends the same approved business payload again', async () => {
+    const approved = buildApproved()
+    await syncStatsTeamLeagueV2({ approved })
+    const firstUpdates = batchUpdate.mock.calls.map(call => call[1])
+
+    batchSet.mockClear()
+    batchUpdate.mockClear()
+    batchCommit.mockClear()
+    await syncStatsTeamLeagueV2({ approved })
+
+    expect(batchUpdate.mock.calls.map(call => call[1])).toEqual(firstUpdates)
+    expect(batchCommit).toHaveBeenCalledTimes(1)
   })
 })

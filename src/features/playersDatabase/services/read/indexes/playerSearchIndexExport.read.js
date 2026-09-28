@@ -249,3 +249,83 @@ export const readTeamSearchIndexesExport = async ({ birthTeamId = '' } = {}) => 
 
   return [...rowsById.values()]
 }
+
+const buildPlayerIndexIdentityValues = ({ player = {}, playerDocument = {} } = {}) => {
+  const playerDocumentIds = new Set()
+  const playerIds = new Set()
+  const externalPlayerIds = new Set()
+  const identityKeys = new Set()
+  const sources = [
+    player,
+    player?.domain?.identity,
+    playerDocument,
+    ...(Array.isArray(playerDocument?.current) ? playerDocument.current : []),
+    ...(Array.isArray(playerDocument?.history) ? playerDocument.history : []),
+  ].filter(Boolean)
+
+  sources.forEach(source => {
+    const playerDocumentId = clean(source?.playerDocumentId || source?.id)
+    const playerId = clean(source?.playerId)
+    const externalPlayerId = clean(source?.externalPlayerId)
+    const identityKey = clean(source?.identityKey)
+
+    if (playerDocumentId) playerDocumentIds.add(playerDocumentId)
+    if (playerId) playerIds.add(playerId)
+    if (externalPlayerId) externalPlayerIds.add(externalPlayerId)
+    if (identityKey) identityKeys.add(identityKey)
+
+    if (playerDocumentId.startsWith('external__')) {
+      externalPlayerIds.add(playerDocumentId.replace(/^external__/, ''))
+    }
+  })
+
+  return {
+    playerDocumentId: [...playerDocumentIds],
+    playerId: [...playerIds],
+    externalPlayerId: [...externalPlayerIds],
+    identityKey: [...identityKeys],
+  }
+}
+
+export const readPlayerSearchIndexesExport = async ({
+  player = {},
+  playerDocument = {},
+} = {}) => {
+  const identityValues = buildPlayerIndexIdentityValues({ player, playerDocument })
+  const requests = Object.entries(identityValues).flatMap(([field, values]) => (
+    values.map(value => ({ field, value }))
+  ))
+
+  if (!requests.length) return []
+
+  const snapshots = await Promise.all(requests.map(({ field, value }) => (
+    trackedGetDocs(
+      query(
+        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+        where('entityType', '==', 'playerSeason'),
+        where(field, '==', value),
+      ),
+      {
+        feature: 'playersDatabase',
+        action: 'player-search-indexes-json-read',
+        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+        meta: { field, value },
+      }
+    )
+  )))
+  const rowsById = new Map()
+
+  snapshots.forEach(snapshot => {
+    snapshot.docs.forEach(item => {
+      const row = { id: item.id, ...item.data() }
+      if (clean(row.entityType) === 'playerSeason') {
+        rowsById.set(row.id, row)
+      }
+    })
+  })
+
+  return [...rowsById.values()].sort((left, right) => (
+    clean(left.seasonKey).localeCompare(clean(right.seasonKey)) ||
+    clean(left.id).localeCompare(clean(right.id))
+  ))
+}

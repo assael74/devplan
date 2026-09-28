@@ -33,6 +33,14 @@ import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { playerPageSx } from './sx/playerPage.sx.js'
+import {
+  readPlayerSearchIndexesExport,
+  readPlayerSource,
+} from '../../../services/read/index.js'
+import {
+  downloadPlayerPageDocumentsJson,
+  downloadPlayerPageIndexesJson,
+} from './logic/playerDocumentsJson.logic.js'
 
 function getPathParam(path, key) {
   const queryIndex = String(path || '').indexOf('?')
@@ -61,6 +69,7 @@ function PlayerPageContent() {
   const favorites = usePlayersDatabaseFavorites()
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
+  const [downloadBusy, setDownloadBusy] = React.useState(false)
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -234,6 +243,63 @@ function PlayerPageContent() {
     console.info('Player placeholder action', actionId)
   }
 
+  const handleDownloadDocuments = React.useCallback(async () => {
+    if (!playerId || downloadBusy) return
+
+    setDownloadBusy(true)
+    try {
+      const playerDocument = await readPlayerSource({ playerId })
+      const downloadedCount = downloadPlayerPageDocumentsJson({ playerDocument })
+      if (!downloadedCount) {
+        notify({
+          status: 'warning',
+          title: 'לא נמצא מסמך להורדה',
+          message: 'מסמך השחקן אינו זמין כרגע',
+        })
+      }
+    } catch {
+      notify({
+        status: 'error',
+        title: 'הורדת מסמך השחקן נכשלה',
+        message: 'לא ניתן היה לקרוא את מסמך השחקן',
+      })
+    } finally {
+      setDownloadBusy(false)
+    }
+  }, [downloadBusy, notify, playerId])
+
+  const handleDownloadIndexes = React.useCallback(async () => {
+    if (!playerId || downloadBusy) return
+
+    setDownloadBusy(true)
+    try {
+      const playerDocument = await readPlayerSource({ playerId })
+      const playerSearchIndexes = await readPlayerSearchIndexesExport({
+        player,
+        playerDocument: playerDocument || {},
+      })
+      const downloadedCount = downloadPlayerPageIndexesJson({
+        playerDocument: playerDocument || player,
+        playerSearchIndexes,
+      })
+      if (!downloadedCount) {
+        notify({
+          status: 'warning',
+          title: 'לא נמצאו אינדקסים להורדה',
+          message: 'לא קיימים אינדקסים עבור השחקן הזה',
+        })
+      }
+    } catch {
+      notify({
+        status: 'error',
+        title: 'הורדת אינדקסי השחקן נכשלה',
+        message: 'לא ניתן היה לקרוא את מסמכי האינדקס',
+      })
+    } finally {
+      setDownloadBusy(false)
+    }
+  }, [downloadBusy, notify, player, playerId])
+
   return (
     <>
       <Box sx={sx.page}>
@@ -266,6 +332,10 @@ function PlayerPageContent() {
             onTaskCreate={playerPageTasks.openCreate}
             onTaskEdit={playerPageTasks.openEdit}
             onDataRepair={playerDataRepair.openRepair}
+            onDownloadDocuments={handleDownloadDocuments}
+            onDownloadIndexes={handleDownloadIndexes}
+            downloadDisabled={!playerId}
+            downloadBusy={downloadBusy}
           />
         </Box>
       </Box>

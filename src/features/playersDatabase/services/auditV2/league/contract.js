@@ -4,7 +4,7 @@ export const LEAGUE_AUDIT_V2_RESULT = Object.freeze({
   PARTIAL: 'partial',
 })
 
-export const LEAGUE_AUDIT_V2_TARGET = Object.freeze({
+const LEAGUE_AUDIT_V2_TARGET = Object.freeze({
   TEAMS: 'teams',
   TEAM_SEASONS: 'teamSeasons',
   TEAM_SEARCH_INDEXES: 'teamSearchIndexes',

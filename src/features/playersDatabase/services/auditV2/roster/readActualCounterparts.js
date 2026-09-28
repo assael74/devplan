@@ -1,6 +1,9 @@
-import { getTeamById } from '../../read/entities/team.js'
-import { getTeamSeason } from '../../read/entities/teamSeason.js'
-import { getLeagueById } from '../../read/entities/league.js'
+import { doc } from 'firebase/firestore'
+
+import { db } from '../../../../../services/firebase/firebase.js'
+import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { buildTeamSeasonDocumentId } from '../../../model/team/teamIdentity.model.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
@@ -10,20 +13,44 @@ const unique = values => [...new Set(
   (Array.isArray(values) ? values : []).map(clean).filter(Boolean)
 )]
 
+const readDoc = async (collectionName, id, action) => {
+  const snapshot = await trackedGetDocFromServer(
+    doc(db, collectionName, id),
+    {
+      feature: 'playersDatabase',
+      collection: collectionName,
+      action,
+      operationSubtype: 'audit-getDocFromServer',
+    }
+  )
+
+  return snapshot.exists()
+    ? { id: snapshot.id, ...(snapshot.data() || {}) }
+    : null
+}
+
 const readCandidate = async ({
   birthTeamDocumentId = '',
   seasonKey = '',
+  teamRoot = null,
 } = {}) => {
-  const teamRoot = await getTeamById(birthTeamDocumentId, { bypassCache: true })
-  const teamSeason = await getTeamSeason({
+  const teamSeasonDocumentId = buildTeamSeasonDocumentId(
     birthTeamDocumentId,
-    seasonKey,
-    bypassCache: true,
-  })
+    seasonKey
+  )
+  const teamSeason = await readDoc(
+    PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+    teamSeasonDocumentId,
+    'audit-v2-roster-read-counterpart-team-season'
+  )
 
   const leagueId = clean(teamSeason?.leagueId || teamRoot?.leagueId)
   const league = leagueId
-    ? await getLeagueById(leagueId, { bypassCache: true })
+    ? await readDoc(
+        PLAYERS_DATABASE_COLLECTIONS.leagues,
+        leagueId,
+        'audit-v2-roster-read-counterpart-league'
+      )
     : null
 
   return {
@@ -52,7 +79,11 @@ export async function readActualRosterCounterpartsV2({
   const actual = []
 
   for (const [teamId, rows] of byTeam.entries()) {
-    const root = await getTeamById(teamId, { bypassCache: true })
+    const root = await readDoc(
+      PLAYERS_DATABASE_COLLECTIONS.teams,
+      teamId,
+      'audit-v2-roster-read-counterpart-team-root'
+    )
     const rootSeasonKeys = (Array.isArray(root?.seasons) ? root.seasons : [])
       .map(row => clean(row?.seasonKey || row?.seasonId))
       .filter(Boolean)
@@ -63,6 +94,7 @@ export async function readActualRosterCounterpartsV2({
       actual.push(await readCandidate({
         birthTeamDocumentId: teamId,
         seasonKey,
+        teamRoot: root,
       }))
     }
   }

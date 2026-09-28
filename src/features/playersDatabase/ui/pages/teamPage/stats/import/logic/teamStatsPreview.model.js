@@ -78,26 +78,51 @@ export const snapshotStatsPreviewProfiles = row => (
   [...getProfileMap(row).entries()].map(([profileId, label]) => ({ profileId, label }))
 )
 
-export const buildStatsPreviewModel = ({ rows = [], approvedStatsPlan = null } = {}) => {
+const withSeasonMinutes = ({ row, seasonMinutes }) => {
+  const safeSeasonMinutes = Number(seasonMinutes)
+  if (!Number.isFinite(safeSeasonMinutes) || safeSeasonMinutes <= 0) return row
+
+  const currentSeasonMinutes = Number(row?.scoutCalculationContract?.seasonMinutes)
+  if (Number.isFinite(currentSeasonMinutes) && currentSeasonMinutes > 0) return row
+
+  return {
+    ...row,
+    scoutCalculationContract: {
+      ...(row?.scoutCalculationContract || {}),
+      seasonMinutes: safeSeasonMinutes,
+    },
+  }
+}
+
+export const buildStatsPreviewModel = ({
+  rows = [],
+  approvedStatsPlan = null,
+  seasonMinutes = null,
+} = {}) => {
   const safeRows = Array.isArray(rows) ? rows : []
-  if (!approvedStatsPlan) return safeRows
+  if (!approvedStatsPlan) {
+    return safeRows.map(row => withSeasonMinutes({ row, seasonMinutes }))
+  }
 
   const scoutLookup = buildScoutLookup(approvedStatsPlan)
 
   return safeRows.map(row => {
     const scoutedPlayer = findScoutedPlayer(row, scoutLookup)
-    if (!scoutedPlayer) return row
+    if (!scoutedPlayer) return withSeasonMinutes({ row, seasonMinutes })
 
     const statsMinutesCorrection = buildMinutesCorrectionImpact({
       correction: row.statsMinutesCorrection,
       player: scoutedPlayer,
     })
 
-    return {
-      ...row,
-      ...scoutedPlayer,
-      ...(statsMinutesCorrection ? { statsMinutesCorrection } : {}),
-    }
+    return withSeasonMinutes({
+      seasonMinutes,
+      row: {
+        ...row,
+        ...scoutedPlayer,
+        ...(statsMinutesCorrection ? { statsMinutesCorrection } : {}),
+      },
+    })
   })
 }
 
@@ -131,3 +156,4 @@ export const buildStatsMovementPreviewModel = ({ rows = [], approvedStatsPlan = 
     requiresDecision: decisionRequiredCount > 0,
   }
 }
+
