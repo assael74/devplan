@@ -72,10 +72,6 @@ export {
 } from './teamSeasonStats.js'
 
 export {
-  commitTeamStatsCanonical,
-} from './commitTeamStatsCanonical.js'
-
-export {
   removeTeamSeasonPlayerScoutProfile,
   updateTeamSeasonPlayerScoutProjection,
   updateTeamSeasonPlayerSeasonalScoutProjection,

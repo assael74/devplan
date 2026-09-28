@@ -23,10 +23,6 @@
  * leagueTableRank.model.js
  * - Pure table-rank transformations and persisted-state comparison helpers.
  *
- * leagueDelete.js
- * - Removes or clears league data at season scope.
- * - Resolves dependencies required by large delete flows.
- *
  * leaguesMaster.model.js
  * - Builds league and season projections for the master catalog.
  * - Calculates summary counts and normalizes master entries.
@@ -60,14 +56,6 @@ export {
   updateLeagueSeasonTableRankScoutProfilesSummary,
   updateLeagueSeasonTableRankScoutProfilesSummaries,
 } from './leagueTableRankScoutSummary.js'
-
-export {
-  clearLeagueSeasonTeams,
-  getLeagueSeasonDeleteDependencies,
-  getLeagueSeasonTeams,
-  removeLeagueSeason,
-  removeLeagueSeasonTeam,
-} from './leagueDelete.js'
 
 export {
   syncLeaguesMasterDocument,

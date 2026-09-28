@@ -114,23 +114,12 @@ const LEAGUE_ONLY_ACTIONS = new Set([
   'ensureLeagueDoc',
   'upsertLeagueSeason',
   'updateLeagueSeasonTableRank',
-  'pasteLeagueTable',
   'updateLeagueSeasonUrl',
   'updateLeagueSeasonSettings',
-  'deleteLeagueSeason',
-])
-
-const LEAGUE_PROJECTION_ACTIONS = new Set([
-  'pasteLeagueTable',
-  'retryLeagueProjectionSync',
 ])
 
 const TEAM_ACTIONS = new Set([
-  'pasteTeamPlayers',
-  'pasteTeamPlayerStats',
   'updateTeamUrl',
-  'clearTeamSeasonPlayers',
-  'clearTeamSeasonStats',
   'deleteTeamPlayerFromSeason',
   'createTeamDisplayPlayer',
 ])
@@ -161,11 +150,6 @@ export const invalidatePlayersDatabaseWriteCache = ({
     invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
   }
 
-  if (LEAGUE_PROJECTION_ACTIONS.has(actionType)) {
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.team)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
-  }
-
   if (TEAM_ACTIONS.has(actionType)) {
     invalidateLeagueDocumentCache(leagueId)
     invalidateTeamDocumentCache(teamId)
@@ -186,14 +170,4 @@ export const invalidatePlayersDatabaseWriteCache = ({
     }
   }
 
-
-  if (actionType === 'clearLeagueSeasonTeams') {
-    invalidateLeagueDocumentCache(leagueId)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.team)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
-    invalidateLeaguesMasterDocumentCache()
-    invalidateClubsMasterDocumentCache()
-    invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
-  }
 }

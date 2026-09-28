@@ -15,16 +15,8 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   auditFindings: 'dbAuditFindings',
   writeActionsV2: 'dbWriteActionsV2',
 
-  // Target operation contract.
-  operations: 'dbPlayersDatabaseOperations',
-  jobs: 'dbPlayersDatabaseJobs',
-  jobActions: 'actions',
-
-  // Legacy collections. Keep them only until all callers use `jobs`.
+  // Legacy collections still used by the remaining Team flows.
   writeActions: 'dbWriteActions',
-  leagueProjectionJobs: 'dbLeagueProjectionJobs',
-  teamStatsProjectionJobs: 'dbTeamStatsProjectionJobs',
-  teamRosterProjectionJobs: 'dbTeamRosterProjectionJobs',
 }
 
 export const PLAYERS_DATABASE_FAVORITES_DOCUMENTS = {

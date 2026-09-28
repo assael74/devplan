@@ -156,137 +156,6 @@ test('Role returns its post-canonical projection failure instead of throwing it'
   assert.equal(result.recoveryRequired, true);
 });
 
-test('clear League season teams returns League recovery for an incomplete Club projection', async () => {
-  const { clearLeagueSeasonTeamsFlow } = await loadFlowModule({
-    entryPath: resolveFlow('league', 'clearLeagueSeasonTeams.flow.js'),
-    mocks: {
-      '../../leagues/index.js': {
-        getLeagueSeasonTeams: async () => [{ id: 'team-1' }],
-        clearLeagueSeasonTeams: async () => writeResult(),
-        syncLeaguesMasterDocument: async () => writeResult(),
-      },
-      '../../teams/index.js': {
-        removeTeamSeason: async () => writeResult(),
-      },
-      '../../players/index.js': {
-        removePlayerSeasonDocsMany: async () => writeResult(),
-      },
-      '../../searchIndex/index.js': {
-        deleteSearchIndexesForLeagueSeason: async () => writeResult(),
-        getSearchIndexMetaForLeagueSeason: async () => ({}),
-      },
-      '../../clubs/index.js': {
-        removeLeagueClubSeasonIdentityIndex: async () => writeResult(),
-        removeClubProjectionsForLeagueSeason: async () => ({
-          completed: false,
-          projectionsCompleted: false,
-        }),
-        syncClubsMasterDocument: async () => writeResult(),
-      },
-      '../../../read/entities/teamSeason.js': { getTeamSeason: async () => ({ players: [] }) },
-      '../writeFlowReport.js': {
-        attachWriteFlowReport: (error) => error,
-      },
-    },
-  });
-
-  const result = await clearLeagueSeasonTeamsFlow({ leagueId: 'league-1', seasonKey: '2025' });
-
-  assert.equal(result.leagueCanonicalCommitted, true);
-  assert.equal(result.projectionsCompleted, false);
-  assert.equal(result.completed, false);
-  assert.equal(result.recoveryRequired, true);
-});
-
-test('delete League season returns League recovery for an incomplete Club projection', async () => {
-  const { deleteLeagueSeasonFlow } = await loadFlowModule({
-    entryPath: resolveFlow('league', 'deleteLeagueSeason.flow.js'),
-    mocks: {
-      '../../leagues/index.js': {
-        getLeagueSeasonDeleteDependencies: async () => ({
-          seasonExists: true,
-          canDelete: true,
-          dependencies: {},
-        }),
-        getLeagueSeasonTeams: async () => [],
-        removeLeagueSeason: async () => writeResult(),
-        syncLeaguesMasterDocument: async () => writeResult(),
-      },
-      '../../clubs/index.js': {
-        removeLeagueClubSeasonIdentityIndex: async () => writeResult(),
-        removeClubProjectionsForLeagueSeason: async () => ({
-          completed: false,
-          projectionsCompleted: false,
-        }),
-        syncClubsMasterDocument: async () => writeResult(),
-      },
-      '../writeFlowReport.js': {
-        attachWriteFlowReport: (error) => error,
-      },
-    },
-  });
-
-  const result = await deleteLeagueSeasonFlow({ leagueId: 'league-1', seasonKey: '2025' });
-
-  assert.equal(result.leagueCanonicalCommitted, true);
-  assert.equal(result.projectionsCompleted, false);
-  assert.equal(result.completed, false);
-  assert.equal(result.recoveryRequired, true);
-});
-
-test('paste League table exposes a League completion envelope', async () => {
-  const source = await readFile(resolveFlow('league', 'pasteLeagueTable.flow.js'), 'utf8');
-
-  assert.equal(source.includes('leagueCanonicalCommitted'), true);
-  assert.match(source, /status: 'canonical_complete'/);
-  assert.equal(source.includes('projectionsCompleted'), true);
-  assert.equal(source.includes('backgroundSyncPending'), true);
-  assert.equal(source.includes('recoveryRequired'), true);
-  assert.equal(source.includes('completed:'), true);
-  assert.match(source, /queueLeagueProjectionJob/);
-});
-
-test('paste League table returns completion on success and throws a League recovery contract after canonical failure', async () => {
-  const { pasteLeagueTableFlow } = await loadFlowModule({
-    entryPath: resolveFlow('league', 'pasteLeagueTable.flow.js'),
-    mocks: {
-      '../../leagues/index.js': {
-        ensureLeagueDoc: async () => writeResult({ changed: false }),
-        updateLeagueSeasonTableRank: async () => writeResult({
-          seasonDocument: { tableRank: [] },
-          changed: false,
-        }),
-      },
-      '../../clubs/index.js': {
-        syncLeagueClubSeasonIdentityIndex: async () => writeResult({ failedCount: 0 }),
-      },
-      '../../leagueProjectionJobs/leagueProjectionJob.write.js': {
-        queueLeagueProjectionJob: async () => ({ id: 'job-1' }),
-      },
-      '../writeFlowReport.js': {
-        assertWriteResultClean: ({ result, stage }) => {
-          if (!result?.failedCount) return
-          const error = new Error('projection failed')
-          error.stage = stage
-          throw error
-        },
-        attachWriteFlowReport: ({ error, results }) => {
-          error.results = results
-          return error
-        },
-      },
-    },
-  });
-
-  const payload = { league: { id: 'league-1' }, season: { seasonStatus: 'not_started' } }
-  const success = await pasteLeagueTableFlow(payload)
-  assert.equal(success.leagueCanonicalCommitted, true)
-  assert.equal(success.projectionsCompleted, false)
-  assert.equal(success.backgroundSyncPending, true)
-  assert.equal(success.completed, false)
-  assert.equal(success.recoveryRequired, false)
-});
-
 const teamUrlPayload = {
   league: { id: 'league-1' },
   season: { seasonKey: '2025' },
@@ -515,10 +384,10 @@ test('router journals thrown team and League post-canonical failures, including 
   let scenario;
   const runner = async () => scenario();
   const flowMocks = Object.fromEntries([
-    'addFavoriteFlow', 'clearLeagueSeasonTeamsFlow', 'clearTeamSeasonPlayersFlow',
-    'clearTeamSeasonStatsFlow', 'createLeagueSeasonFlow', 'createTeamDisplayPlayerFlow',
-    'deleteLeagueSeasonFlow', 'deleteTeamPlayerFromSeasonFlow', 'pasteLeagueTableFlow',
-    'pasteTeamPlayersFlow', 'pasteTeamPlayerStatsFlow', 'removeFavoriteFlow',
+    'addFavoriteFlow',
+    'createLeagueSeasonFlow', 'createTeamDisplayPlayerFlow',
+    'deleteTeamPlayerFromSeasonFlow',
+    'removeFavoriteFlow',
     'removePlayerScoutProfileFlow', 'updateLeagueSeasonUrlFlow', 'updateLeagueSeasonSettingsFlow',
     'updatePlayerRoleFlow', 'updatePlayerScoutReviewFlow', 'updatePlayerAgentFlow',
     'updatePlayerSeasonGoalDistributionFlow', 'updatePlayerSeasonNotesFlow',
@@ -530,10 +399,15 @@ test('router journals thrown team and League post-canonical failures, including 
       '../cache/index.js': { invalidatePlayersDatabaseWriteCache: () => {} },
       '../audit/audit.lastWrite.js': {
         buildLastWriteAuditScope: () => ({ type: 'teamSeason' }),
-        rememberLastWriteAuditScopeFromResult: () => {},
+        rememberLastWriteAuditScope: () => {},
+      },
+      '../audit/audit.scope.js': {
+        buildAuditLeagueSeasonScope: () => null,
       },
       '../audit/audit.writeJournal.js': {
+        beginPlayersDatabaseWriteAction: async () => '',
         recordPlayersDatabaseWriteAction: async (entry) => journalEntries.push(entry),
+        updatePlayersDatabaseWriteAction: async () => {},
       },
       './leagues/index.js': {
         ensureLeagueDoc: runner,
@@ -545,9 +419,9 @@ test('router journals thrown team and League post-canonical failures, including 
 
   for (const { actionType, error } of [
     { actionType: 'updateTeamUrl', error: Object.assign(new Error('team projection'), { teamCanonicalCommitted: true, stage: 'teamProjection' }) },
-    { actionType: 'pasteTeamPlayers', error: Object.assign(new Error('league projection'), { leagueCanonicalCommitted: true, stage: 'leagueProjection' }) },
-    { actionType: 'pasteTeamPlayers', error: Object.assign(new Error('player projection'), { playerCanonicalCommitted: true, stage: 'playerProjection' }) },
-    { actionType: 'pasteTeamPlayers', error: Object.assign(new Error('nested team projection'), { results: { teamCanonicalCommitted: true }, stage: 'nestedProjection' }) },
+    { actionType: 'updatePlayerSeasonRole', error: Object.assign(new Error('league projection'), { leagueCanonicalCommitted: true, stage: 'leagueProjection' }) },
+    { actionType: 'updatePlayerSeasonRole', error: Object.assign(new Error('player projection'), { playerCanonicalCommitted: true, stage: 'playerProjection' }) },
+    { actionType: 'updatePlayerSeasonRole', error: Object.assign(new Error('nested team projection'), { results: { teamCanonicalCommitted: true }, stage: 'nestedProjection' }) },
   ]) {
     scenario = () => { throw error; };
     await assert.rejects(() => runPlayersDatabaseWriteAction({ actionType, payload: {} }));
@@ -572,10 +446,10 @@ test('router journals a returned recovery-required partial result without hiding
   };
   const runner = async () => partialResult;
   const flowMocks = Object.fromEntries([
-    'addFavoriteFlow', 'clearLeagueSeasonTeamsFlow', 'clearTeamSeasonPlayersFlow',
-    'clearTeamSeasonStatsFlow', 'createLeagueSeasonFlow', 'createTeamDisplayPlayerFlow',
-    'deleteLeagueSeasonFlow', 'deleteTeamPlayerFromSeasonFlow', 'pasteLeagueTableFlow',
-    'pasteTeamPlayersFlow', 'pasteTeamPlayerStatsFlow', 'removeFavoriteFlow',
+    'addFavoriteFlow',
+    'createLeagueSeasonFlow', 'createTeamDisplayPlayerFlow',
+    'deleteTeamPlayerFromSeasonFlow',
+    'removeFavoriteFlow',
     'removePlayerScoutProfileFlow', 'updateLeagueSeasonUrlFlow', 'updateLeagueSeasonSettingsFlow',
     'updatePlayerRoleFlow', 'updatePlayerScoutReviewFlow', 'updatePlayerAgentFlow',
     'updatePlayerSeasonGoalDistributionFlow', 'updatePlayerSeasonNotesFlow',
@@ -587,10 +461,15 @@ test('router journals a returned recovery-required partial result without hiding
       '../cache/index.js': { invalidatePlayersDatabaseWriteCache: () => {} },
       '../audit/audit.lastWrite.js': {
         buildLastWriteAuditScope: () => ({ type: 'teamSeason' }),
-        rememberLastWriteAuditScopeFromResult: () => {},
+        rememberLastWriteAuditScope: () => {},
+      },
+      '../audit/audit.scope.js': {
+        buildAuditLeagueSeasonScope: () => null,
       },
       '../audit/audit.writeJournal.js': {
+        beginPlayersDatabaseWriteAction: async () => '',
         recordPlayersDatabaseWriteAction: async (entry) => journalEntries.push(entry),
+        updatePlayersDatabaseWriteAction: async () => {},
       },
       './leagues/index.js': { ensureLeagueDoc: runner, updateLeagueSeasonTableRank: runner },
       './flows/index.js': flowMocks,
@@ -599,7 +478,12 @@ test('router journals a returned recovery-required partial result without hiding
 
   const result = await runPlayersDatabaseWriteAction({ actionType: 'updatePlayerSeasonRole', payload: {} });
 
-  assert.equal(result, partialResult);
+  assert.equal(result.completed, false);
+  assert.equal(result.projectionsCompleted, false);
+  assert.equal(result.recoveryRequired, true);
+  assert.equal(result.teamCanonicalCommitted, true);
+  assert.equal(result.auditScope?.type, 'teamSeason');
+  assert.equal(result.writeActionId, '');
   assert.equal(journalEntries.length, 1);
   assert.equal(journalEntries[0].status, 'failed_after_canonical_commit');
   assert.equal(journalEntries[0].recoveryRequired, true);
@@ -610,9 +494,6 @@ test('required-projection completion contracts cannot report completed with inco
     resolveFlow('player', 'updatePlayerScoutReview.flow.js'),
     resolveFlow('player', 'updatePlayerVerification.flow.js'),
     resolveFlow('player', 'updatePlayerRole.flow.js'),
-    resolveFlow('league', 'clearLeagueSeasonTeams.flow.js'),
-    resolveFlow('league', 'deleteLeagueSeason.flow.js'),
-    resolveFlow('league', 'pasteLeagueTable.flow.js'),
   ]
 
   const sources = await Promise.all(flows.map(filePath => readFile(filePath, 'utf8')))

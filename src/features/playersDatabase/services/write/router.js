@@ -5,30 +5,20 @@ import {
   buildLastWriteAuditScope,
   rememberLastWriteAuditScope,
 } from '../audit/audit.lastWrite.js'
-import { buildAuditLeagueSeasonScope } from '../audit/audit.scope.js'
 import {
   beginPlayersDatabaseWriteAction,
   recordPlayersDatabaseWriteAction,
   updatePlayersDatabaseWriteAction,
 } from '../audit/audit.writeJournal.js'
-import { assertNoActiveOperation } from './operations/index.js'
 import {
   ensureLeagueDoc,
   updateLeagueSeasonTableRank,
 } from './leagues/index.js'
 import {
   addFavoriteFlow,
-  clearLeagueSeasonTeamsFlow,
-  clearTeamSeasonPlayersFlow,
-  clearTeamSeasonStatsFlow,
   createLeagueSeasonFlow,
   createTeamDisplayPlayerFlow,
-  deleteLeagueSeasonFlow,
   deleteTeamPlayerFromSeasonFlow,
-  pasteLeagueTableTargetFlow,
-  retryLeagueProjectionSyncFlow,
-  pasteTeamPlayerStatsFlow,
-  pasteTeamPlayersFlow,
   removeFavoriteFlow,
   removePlayerScoutProfileFlow,
   updateLeagueSeasonUrlFlow,
@@ -46,15 +36,7 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   ENSURE_LEAGUE_DOC: 'ensureLeagueDoc',
   UPSERT_LEAGUE_SEASON: 'upsertLeagueSeason',
   UPDATE_LEAGUE_SEASON_TABLE_RANK: 'updateLeagueSeasonTableRank',
-  PASTE_LEAGUE_TABLE: 'pasteLeagueTable',
-  RETRY_LEAGUE_PROJECTION_SYNC: 'retryLeagueProjectionSync',
-  PASTE_TEAM_PLAYERS: 'pasteTeamPlayers',
-  PASTE_TEAM_PLAYER_STATS: 'pasteTeamPlayerStats',
   UPDATE_TEAM_URL: 'updateTeamUrl',
-  CLEAR_LEAGUE_SEASON_TEAMS: 'clearLeagueSeasonTeams',
-  CLEAR_TEAM_SEASON_PLAYERS: 'clearTeamSeasonPlayers',
-  CLEAR_TEAM_SEASON_STATS: 'clearTeamSeasonStats',
-  DELETE_LEAGUE_SEASON: 'deleteLeagueSeason',
   DELETE_TEAM_PLAYER_FROM_SEASON: 'deleteTeamPlayerFromSeason',
   CREATE_TEAM_DISPLAY_PLAYER: 'createTeamDisplayPlayer',
   UPDATE_PLAYER_SEASON_NOTES: 'updatePlayerSeasonNotes',
@@ -70,27 +52,13 @@ export const PLAYERS_DATABASE_WRITE_ACTIONS = {
   REMOVE_FAVORITE: 'removeFavorite',
 }
 
-const MAJOR_IMPORT_ACTIONS = new Set([
-  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
-  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS,
-  PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS,
-])
-
 const WRITE_ACTION_RUNNERS = {
   [PLAYERS_DATABASE_WRITE_ACTIONS.ENSURE_LEAGUE_DOC]: payload => (
     ensureLeagueDoc(payload.league || {})
   ),
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPSERT_LEAGUE_SEASON]: createLeagueSeasonFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_LEAGUE_SEASON_TABLE_RANK]: updateLeagueSeasonTableRank,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE]: pasteLeagueTableTargetFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC]: retryLeagueProjectionSyncFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYERS]: pasteTeamPlayersFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_TEAM_PLAYER_STATS]: pasteTeamPlayerStatsFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL]: updateTeamUrlFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_LEAGUE_SEASON_TEAMS]: clearLeagueSeasonTeamsFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_TEAM_SEASON_PLAYERS]: clearTeamSeasonPlayersFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.CLEAR_TEAM_SEASON_STATS]: clearTeamSeasonStatsFlow,
-  [PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_LEAGUE_SEASON]: deleteLeagueSeasonFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.DELETE_TEAM_PLAYER_FROM_SEASON]: deleteTeamPlayerFromSeasonFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.CREATE_TEAM_DISPLAY_PLAYER]: createTeamDisplayPlayerFlow,
   [PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_NOTES]: updatePlayerSeasonNotesFlow,
@@ -130,19 +98,9 @@ const buildWriteActionIdentity = ({ payload = {}, result = {} } = {}) => {
   }
 }
 
-const buildActionAuditScope = ({ actionType = '', payload = {}, result = {} } = {}) => {
-  if ([
-    PLAYERS_DATABASE_WRITE_ACTIONS.PASTE_LEAGUE_TABLE,
-    PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC,
-  ].includes(actionType)) {
-    const identity = buildWriteActionIdentity({ payload, result })
-    return buildAuditLeagueSeasonScope({
-      leagueId: identity.leagueId,
-      seasonKey: identity.seasonKey,
-    })
-  }
-  return buildLastWriteAuditScope(result)
-}
+const buildActionAuditScope = ({ result = {} } = {}) => (
+  buildLastWriteAuditScope(result)
+)
 
 const buildWriteActionResult = result => {
   const resolved = resolveCompletionResult(result)
@@ -223,24 +181,7 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
     throw new Error(`Unknown players database write action: ${actionType}`)
   }
 
-  if (MAJOR_IMPORT_ACTIONS.has(actionType)) {
-    await assertNoActiveOperation()
-  }
-
-  const continuationWriteActionId = actionType === PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC
-    ? clean(payload.continuationWriteActionId)
-    : ''
-  // A recovery keeps the original business receipt. Other actions receive a
-  // new receipt before they begin their business writes.
-  const writeActionId = continuationWriteActionId || await beginPlayersDatabaseWriteAction({ actionType })
-
-  if (continuationWriteActionId) {
-    await updatePlayersDatabaseWriteAction({
-      writeActionId,
-      status: 'in_progress',
-      recoveryRequired: false,
-    })
-  }
+  const writeActionId = await beginPlayersDatabaseWriteAction({ actionType })
 
   const actionPayload = writeActionId
     ? { ...payload, writeActionId }
@@ -264,14 +205,12 @@ export async function runPlayersDatabaseWriteAction({ actionType = '', payload =
       })
     } else {
       try {
-        const isRecovery = actionType === PLAYERS_DATABASE_WRITE_ACTIONS.RETRY_LEAGUE_PROJECTION_SYNC &&
-          Boolean(continuationWriteActionId)
         await updatePlayersDatabaseWriteAction({
           writeActionId,
-          status: isRecovery ? 'failed_after_canonical_commit' : 'failed',
-          failedStage: error?.stage || 'retryLeagueProjectionSync',
+          status: 'failed',
+          failedStage: error?.stage || actionType || 'writeAction',
           errorMessage: String(error?.message || 'כתיבה נכשלה'),
-          recoveryRequired: isRecovery,
+          recoveryRequired: false,
         })
       } catch {
         // The original write error remains the source of truth.
