@@ -54,6 +54,7 @@ export const dataTableHeaderSx = {
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
+    gap: 0.5,
   },
 
   headerActionAlign: {

@@ -1,6 +1,11 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/leagueDocument.catalog.js
 
 // Firestore source of truth: league document.
+// DELETE_LEAGUE_SEASON retains this root even with current=null and history=[].
+// Surviving seasons and their updatedAt values are unchanged.
+// Creation and CLEAR_LEAGUE_TEAMS share tableRank=null and no
+// teamPerformanceContext. Null describes absence, not historical proof of Clear.
+// The calculated context below exists only for a loaded table.
 
 export const LEAGUE_DOCUMENT_NULLABLE_ARRAY_PATHS = Object.freeze([
   'current.tableRank',

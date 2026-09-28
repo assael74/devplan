@@ -409,11 +409,13 @@ SearchIndex, בשורת League, ב־Club וב־Clubs Master; סיכומי League
 
 `CLEAR_LEAGUE_TEAMS` הוא Flow של League.
 
-הוא אינו מוחק Team Seasons.
+הוא מוחק Team Seasons נקיים בלבד ואת הפניית העונה ב־Root באותה Transaction לכל קבוצה.
+Team Root עצמו נשמר. אין כתיבה ל־Player Documents או מחיקת Player SearchIndexes.
 
 ### 10.2 תנאי קדם קשיח
 
-אם קיימים Team Seasons רלוונטיים לעונת הליגה:
+אם קיימים Roster או Stats שאינם absent קנוני, כולל שאריות Balance, scouting
+והעברות, או Player SearchIndex בתחום עונת הליגה:
 
 ```text
 BLOCK
@@ -437,10 +439,28 @@ tableRank = []
 
 ```text
 CLEAR_LEAGUE_TEAMS
-→ tableRank = []
+→ tableRank = null
 ```
 
 `CLEAR_LEAGUE_TEAMS` אינו מוחק את League Season.
+
+זו מחיקת קבוצות, לא שחזור או rollback. החלטת Domain מעודכנת: הייצוג שבבעלות
+הטבלה זהה ליצירת עונה באמצעות buildSeasonDoc: tableRank null וללא
+teamPerformanceContext. ה־Builder מסיר את הקשר החישוב מהעונה המוחלפת לפני אישור.
+אין timestamp עסקי חדש עבור הקשר שאינו קיים. עונה חדשה אינה משתנה עסקית.
+null מתאר היעדר טבלה טעונה; הוא אינו מוכיח שבוצעה מחיקה. אותו Audit בודק
+את המצב הנוכחי הן לאחר יצירה והן לאחר Clear, כולל שאריות בכל ההקרנות.
+הפניית Root שבורה בתחום השנתון והעונה חוסמת Prepare לפני Receipt/כתיבה;
+אין ניחוש שיוך לליגה ואין ניקוי Root-only ללא מקור מוכח.
+כללי התחרות, זהויות ועונות אחרות נשמרים. תחזיות ידניות ונגזרות של רשומות היעד
+מוסרות; אם מקור nextCompetitionPath עמום בין עונות, Prepare נחסם ללא ניחוש.
+
+Player SearchIndex חוסם לפי קריאה מהשרת ומפנה ל־Clear Roster/Audit, לא לפי Receipt.
+Retry קורא, מכין ומאשר מחדש ומתחיל מהשלב הראשון באותו Receipt פתוח.
+Receipt מכיל executionStatus, lastCompletedStep, failedStep, failedTarget בלבד כתיעוד ביצוע.
+League, זוגות Season/Root, Team Index, Identity, Clubs, ClubsMaster, LeaguesMaster ואז Audit.
+אין שמירת תוכנית או Approved State ב־Receipt. כשל משאיר אותו פתוח.
+Audit לאחר רענון בודק קשרים נוכחיים בלבד; הוכחת שימור לפני/אחרי מוגבלת לסשן.
 
 ### 10.4 Team SearchIndex
 
@@ -532,77 +552,60 @@ tableRankCount = 0
 
 ## 11. DELETE_LEAGUE_SEASON
 
-### 11.1 בעלות
+### בעלות וזהות
 
-זוהי מחיקת ה־Canonical של League Season.
+הפעולה מסירה עונה בלבד מתוך מסמך הליגה ומעדכנת את LeaguesMaster.
+מסמך הליגה ורשומתו במאסטר נשמרים תמיד, גם אם הליגה אינה בקטלוג.
+לאחר מחיקת העונה האחרונה: current null, history [], ורשומת המאסטר עם seasons [].
+אין העברה אוטומטית של עונה אחרת ל־current. זהויות, הגדרות כלליות ועונות אחרות
+נשמרות במדויק. אין לשנות updatedAt של עונות שנשמרו.
 
-### 11.2 תנאי קדם
+### תנאי קדם
 
-לפני Approval יש לבצע dependency scan קנוני.
+העונה מזוהה באמצעות seasonKey מנורמל. התאמות כפולות או זהויות סותרות חוסמות.
+עונה קיימת חייבת להכיל tableRank === null וללא הקשר ביצועי טבלה שנותר.
+מערך ריק הוא טבלה טעונה ולכן מחייב CLEAR_LEAGUE_TEAMS תחילה.
+Team Seasons, SearchIndexes, Identity, Club ו־ClubsMaster אינם רשאים להכיל
+שאריות של היעד. שארית חוסמת, ללא Cascade. המקור הקנוני נשאר מסמך הליגה;
+הקרנות הן בדיקת שלמות בלבד. הפניית Root שבורה בעונה הנבדקת חוסמת כשאין
+מקור המוכיח את שיוכה. אין להסיק בעלות לפי Projection או Receipt.
 
-תלות קנונית של Domain אחר היא Blocker.
+### הכנה וכתיבה
 
-בפרט:
+Prepare קורא מהשרת את כל מסמכי הליגות ואת יעדי בדיקת השלמות. כל רשומות
+LeaguesMaster והסיכום נבנים מהאוסף הקנוני המלא, ללא שימוש במאסטר כמקור.
+שדות אחרים במסמך המאסטר נשמרים. זמן עדכון מסמך הליגה נקבע לפני האישור
+ומוקרן במדויק למאסטר; הכותב מחיל את הערך המאושר.
+Approved State מועתק לעומק ומוקפא; שלב האישור מאמת בלבד.
+סדר: Receipt → League → LeaguesMaster → Audit → סגירת Receipt.
+בכשל משאירים Receipt פתוח עם שלב ויעד, מפנים מטמון ומרעננים מהשרת.
+אין rollback, אין שמירת תוכנית התאוששות ואין מנגנוני concurrency.
 
-- Team Seasons רלוונטיים אינם קיימים.
-- Roster state רלוונטי אינו קיים.
-- Stats state רלוונטי אינו קיים.
+### Receipt וניסיון חוזר
 
-Projection ישן או שגוי אינו מקור אמת ואינו כשלעצמו הרשאה ל־Cascade.
+זמינות Domain נקבעת ללא קבלות. קבלות ליעדים אחרים אינן חוסמות.
+בעת פתיחת הסשן: Receipt תואם פתוח משמש מחדש; יותר מאחד הוא כשל תיעוד.
+Retry קורא מחדש, מכין ומבקש אישור חדשים, באותו Receipt ומתחילת השלבים.
+שלושת המצבים: season_present, season_absent_master_stale, season_absent_clean.
+כאשר העונה חסרה, אין כתיבת League; עדיין בודקים Master ומבצעים Audit מלא.
+ללא Receipt קודם ניתן למחוק עונה חדשה וריקה.
 
-Stale projection יכול להפוך ל־Audit Finding ולניקוי דרך Reconcile.
+### Audit מפורש
 
-### 11.3 League Document lifecycle
+הסשן וביקורת Receipt של DELETE_LEAGUE_SEASON קוראים ל־League Audit V2 עם
+expectedLifecycle: 'season_absent'. אין הסקת פעולת מחיקה מעונה חסרה.
+הביקורת קוראת את המקורות מהשרת, מוודאת היעדר עונה ותלויות, ובונה את המאסטר
+הצפוי מכל מסמכי הליגות הקנוניים. מסמך ליגה חסר הוא Finding, לעולם לא הצלחה.
+במהלך הסשן נבדק גם שימור הנתונים מול המקור שנקרא לפני האישור.
+לאחר רענון נבדק מצב נוכחי בלבד, ללא טענה להוכחת שימור היסטורי.
+Receipt נסגר רק בכיסוי מלא וללא Findings.
 
-לאחר הסרת העונה יש להשתמש ב־Domain builder יחיד שמכריע אם League Document
-עצמו עדיין נדרש.
+### UI
 
-ההכרעה חייבת להתחשב ב:
-
-- current season.
-- history seasons.
-- League catalog.
-- כללי lifecycle הקנוניים.
-
-ה־Writer אינו ממציא כלל lifecycle משלו.
-
-### 11.4 Audit
-
-בסיום מופעל `League Audit V2` על המצב הקנוני החדש.
-
-`League Audit V2` חייב לתמוך גם ביעד שבו ה־Canonical Season כבר אינו קיים.
-
-ה־audit target נשאר locator קטן:
-
-```text
-{
-  leagueId,
-  seasonKey
-}
-```
-
-וה־Expected State כולל:
-
-```text
-Canonical Season existence → ABSENT
-```
-
-במצב זה Audit אינו נכשל רק משום שה־Season או League Document אינם קיימים.
-הוא בונה Expected absence מתוך ה־locator, ה־Catalog והמצב הקנוני שנותר,
-וסורק אחר projections ישנים השייכים לעונה שנמחקה, לרבות לפי החוזים:
-
-- Identity entries.
-- Team SearchIndexes.
-- Club projections.
-- Clubs Master entries.
-- Leagues Master entries.
-- projections נוספים שבכיסוי League Audit V2.
-
-כך מחיקת Canonical מוצלחת עדיין ניתנת להוכחה באמצעות Audit V2.
-
-אם League Document נשאר בגלל עונות אחרות או Catalog, Audit קורא אותו
-ומוודא שרק העונה שנמחקה נעדרת. אם League Document כולו אינו נדרש עוד
-ונמחק לפי lifecycle, גם היעדרו הוא Expected State תקין.
+החיבור החדש נמצא בפעולת שורה במרכז הליגות בלבד. עמוד הליגה אינו משתנה בגל זה.
+לאחר הצלחה נשארים במרכז ומרעננים מהשרת. Preview מפרט הסרת עונה ושימור זהות,
+מוני מסמכים, ופירוט מתקפל. אין הצגת מזהי מסמכים או קודי שגיאה במודאל.
+אין סגירה בזמן ביצוע. הכותרת בביקורת הכללית: מחיקת עונת ליגה.
 
 ---
 
@@ -846,7 +849,7 @@ Team Season חסר
 
 ### 15.5 CLEAR_LEAGUE_TEAMS שכבר בוצע
 
-אם League Season קיים ו־`tableRank = []`:
+אם League Season קיים ו־`tableRank = null`:
 
 ```text
 → idempotent success
@@ -951,7 +954,7 @@ Team Season אינו קיים
 + Player SearchIndex עדיין קיים
 → unexpected_document / stale_projection
 
-League tableRank = []
+League tableRank = null
 + נשאר League Identity entry
 → stale_projection
 
@@ -1030,7 +1033,7 @@ Approved State ישן.
 | `CLEAR_STATS` | מנקה | שומר | שומר | Stats-owned projection בלבד | מנקה Stats-owned state בלבד; לא מוחק מסמך |
 | `CLEAR_ROSTER` | חייב להיות `absent`; אינו משתנה | מנקה; Team Season נשמר | מעברי עונת הקבוצה ו־pending מתאפסים; אין Counterpart | Roster-owned projection בלבד | לא משנה |
 | `DELETE_PLAYER_FROM_ROSTER` | חייב להיות `absent` לשחקן | מסיר שחקן | מסנכרן | Roster-owned projection בלבד | לא מוחק |
-| `CLEAR_LEAGUE_TEAMS` | Team Seasons חייבים לא להתקיים | Team Seasons חייבים לא להתקיים | — | מנקה קבוצות; `tableRank = []` | — |
+| `CLEAR_LEAGUE_TEAMS` | absent קנוני | absent קנוני | Player Index חוסם | מוחק עונות קבוצה נקיות; `tableRank = null` | Root נשמר |
 | `DELETE_LEAGUE_SEASON` | חייב להיות נקי | Team Seasons חייבים לא להתקיים | — | מוחק Season | — |
 
 ---
@@ -1044,8 +1047,6 @@ Clear Stats
 ↓
 Clear/Delete Roster
 ↓
-מחיקת Team Seasons נפרדת (טרם הוגדרה)
-↓
 Clear League Teams
 ↓
 Delete League Season
@@ -1053,7 +1054,7 @@ Delete League Season
 
 זהו סדר תנאי קדם בלבד.
 
-Clear Roster לבדו אינו מתיר Clear League Teams: הוא משאיר את Team Season.
+Clear League Teams מוחק את Team Season הנקי ואת הפנייתו ב־Root בטרנזקציה אחת לכל קבוצה.
 
 החצים אינם Cascade אוטומטי.
 
@@ -1069,7 +1070,7 @@ D1  Stats Audit V2 עם תמיכה ב-absence
 D2  Clear Stats V2
 D3  Clear Roster V2 רק כאשר Stats absent
 D4  Delete Player עם הפרדה בין Roster ל-Stats
-D5  Clear League Teams רק כאשר אין Team Seasons
+D5  Clear League Teams רק כאשר Roster ו־Stats absent ואין Player SearchIndexes
 D6  Delete League Season
 D7  Reconcile לפערי מחיקה
 D8  מעבר UI והסרת Legacy

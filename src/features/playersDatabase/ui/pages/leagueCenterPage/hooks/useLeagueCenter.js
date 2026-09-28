@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/hooks/useLeagueCenter.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/hooks/useLeagueCenter.js
 
 import {
   useCallback,
@@ -56,7 +56,7 @@ export function useLeagueCenter() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (options = {}) => {
     setLoading(true)
     setError('')
 
@@ -64,7 +64,7 @@ export function useLeagueCenter() {
       const {
         leaguesMasterDoc: nextMasterDoc,
         leagueDocuments: nextLeagueDocuments,
-      } = await readLeagueCenterData()
+      } = await readLeagueCenterData({ fromServer: options?.fromServer === true })
 
       setLeaguesMasterDoc(nextMasterDoc || null)
       setLeagueDocuments(
@@ -281,6 +281,7 @@ export function useLeagueCenter() {
     summary,
     loading,
     error,
+    leaguesMasterDoc,
     leagueDocs,
     leagueDocuments,
     catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,

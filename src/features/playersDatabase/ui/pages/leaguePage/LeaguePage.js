@@ -10,7 +10,6 @@ import {
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constants.js'
-import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from './hooks/useLeaguePage.js'
@@ -29,10 +28,8 @@ import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js
 import {
   LeagueImportModal,
   LeagueDataRepairModal,
-  SeasonDeleteConfirmModal,
   TaskEditModal,
   WorkTaskModal,
-  WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
 import useLeagueDataRepair from './hooks/useLeagueDataRepair.js'
@@ -42,8 +39,8 @@ import {
 } from './logic/leaguePriorityFilters.logic.js'
 import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
 import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
-import useLeagueSeasonTeamsDelete from './hooks/useLeagueSeasonTeamsDelete.js'
-import useLeagueSeasonDelete from './hooks/useLeagueSeasonDelete.js'
+import useClearLeagueTeamsFlow from './clear/useClearLeagueTeamsFlow.js'
+import ClearLeagueTeamsModal from './clear/ClearLeagueTeamsModal.js'
 import {
   buildLeagueImportColumns,
   LEAGUE_IMPORT_PLACEHOLDER,
@@ -53,6 +50,7 @@ import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import useLeagueReport from './report/useLeagueReport.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import { downloadLeaguePageDocumentsJson } from './logic/leagueDocumentsJson.logic.js'
 
 
 function LeaguePageContent() {
@@ -116,11 +114,12 @@ function LeaguePageContent() {
     () => buildPriorityCounts(teamsWithFavorites, 'defense'),
     [teamsWithFavorites]
   )
-  const teamsDelete = useLeagueSeasonTeamsDelete({
+  const teamsDelete = useClearLeagueTeamsFlow({
     league,
     leagueDoc,
     selectedSeasonOption,
     reload,
+    refreshKey: leagueDoc,
   })
   const leagueImport = useLeagueTableImport({
     league,
@@ -202,38 +201,6 @@ function LeaguePageContent() {
       ? pageSearchParams.get('centerLevel') || 'all'
       : pageSearchParams.get('level'),
   })
-  const hasTeams = teams.length > 0
-  const seasonDelete = useLeagueSeasonDelete({
-    league,
-    leagueDoc,
-    selectedSeasonOption,
-    onSuccess: async result => {
-      if (result?.leagueSeasonResult?.removedLeagueDocument) {
-        navigate(centerBackPath, {
-          replace: true,
-          state: null,
-        })
-        return
-      }
-
-      const nextSeason = seasonOptions.find(option => (
-        option.seasonKey !== selectedSeasonKey
-      ))
-      if (!nextSeason) {
-        navigate(centerBackPath, {
-          replace: true,
-          state: null,
-        })
-        return
-      }
-
-      setSelectedSeasonKey(nextSeason.seasonKey)
-      await reload()
-    },
-  })
-  const mayRemoveLeagueRoot = !PLAYERS_DATABASE_LEAGUES_CATALOG.some(
-    catalogLeague => catalogLeague.id === league.id
-  )
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
       label: 'מרכז ליגות',
@@ -269,6 +236,17 @@ function LeaguePageContent() {
     }))
   }
 
+  const handleNextDeleteAction = () => {
+    const teamId = teamsDelete.nextDeleteTargetId
+    if (!teamId) return
+
+    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
+      leagueId: league.id,
+      teamId,
+      fromLeague: `${location.pathname}${location.search}`,
+    }))
+  }
+
   const handleFavoriteToggle = team => {
     const payload = {
       favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM,
@@ -285,6 +263,20 @@ function LeaguePageContent() {
       birthYear: league.birthYear,
     })
   }
+
+  const handleDownloadDocuments = React.useCallback(() => {
+    const downloadedCount = downloadLeaguePageDocumentsJson({
+      leagueDocument: leagueDoc,
+    })
+
+    if (!downloadedCount) {
+      notify({
+        status: 'warning',
+        title: 'לא נמצא מסמך להורדה',
+        message: 'מסמך הליגה אינו זמין כרגע',
+      })
+    }
+  }, [leagueDoc, notify])
 
   const handleTaskEditSave = async patch => {
     if (!editTask?.id || taskActions.pending) return
@@ -358,14 +350,18 @@ function LeaguePageContent() {
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDataRepair={leagueDataRepair.openRepair}
+            onDownloadDocuments={handleDownloadDocuments}
             onLeagueUrlEdit={leagueUrlEditor.show}
             hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
+            downloadDisabled={!leagueDoc || loading}
             loadDisabled={isHistoricalLoadedLeague}
             loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
-            onDeleteTeams={() => teamsDelete.setOpen(true)}
-            onDeleteSeason={() => seasonDelete.setOpen(true)}
-            deleteTeamsDisabled={!selectedSeasonOption}
-            deleteSeasonDisabled={!selectedSeasonOption || hasTeams}
+            onDeleteTeams={teamsDelete.openModal}
+            deleteTeamsDisabled={!selectedSeasonOption || teamsDelete.disabled}
+            deleteTeamsDisabledReason={teamsDelete.disabledReason}
+            onRecheckDeleteTeams={teamsDelete.recheck}
+            nextDeleteAction={teamsDelete.nextDeleteAction}
+            onNextDeleteAction={handleNextDeleteAction}
             onReport={leagueReport.openPreview}
             tasks={leagueTasks}
             tasksLoading={tasksModel.loading}
@@ -418,42 +414,7 @@ function LeaguePageContent() {
       />
 
 
-      <SeasonDeleteConfirmModal
-        open={teamsDelete.open}
-        title='מחיקת קבוצות העונה'
-        description='המחיקה אפשרית רק כאשר אין שחקנים במסמכי הקבוצה של העונה. הבדיקה מתבצעת בעת האישור; אם קיימים שחקנים, יש למחוק אותם תחילה מעמודי הקבוצות.'
-        seasonKey={selectedSeasonKey}
-        showSeasonSelect={false}
-        busy={teamsDelete.busy}
-        confirmLabel='מחיקת קבוצות העונה'
-        onConfirm={teamsDelete.confirm}
-        onClose={teamsDelete.close}
-      />
-
-      <SeasonDeleteConfirmModal
-        open={seasonDelete.open}
-        title='מחיקת עונת ליגה'
-        description='העונה תימחק רק לאחר שמסירים את כל הקבוצות ממנה. ליגה ריקה שאינה קיימת בקטלוג תימחק לחלוטין גם ממרכז הליגות.'
-        seasonKey={selectedSeasonKey}
-        showSeasonSelect={false}
-        busy={seasonDelete.busy}
-        confirmLabel='מחיקת עונה'
-        mayRemoveLeagueRoot={mayRemoveLeagueRoot}
-        onConfirm={seasonDelete.confirm}
-        onClose={seasonDelete.close}
-      />
-
-      <WriteFlowReportModal
-        open={Boolean(teamsDelete.writeReport)}
-        report={teamsDelete.writeReport}
-        onClose={teamsDelete.closeWriteReport}
-      />
-
-      <WriteFlowReportModal
-        open={Boolean(seasonDelete.writeReport)}
-        report={seasonDelete.writeReport}
-        onClose={seasonDelete.closeWriteReport}
-      />
+      <ClearLeagueTeamsModal flow={teamsDelete} seasonKey={selectedSeasonKey} />
 
       <LeagueImportModal
         league={league}

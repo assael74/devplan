@@ -22,6 +22,9 @@ export default function DataTableHeader({
   const exportColumnKey = exportConfig?.placementColumnKey || 'actions'
   const hasExport = Boolean(exportConfig && typeof onExport === 'function')
   const canExport = Boolean(exportConfig?.enabled && typeof onExport === 'function')
+  const headerActions = Array.isArray(exportConfig?.headerActions)
+    ? exportConfig.headerActions
+    : []
   const exportAlign = exportConfig?.align || 'center'
   const exportAlignSx = (
     sx.headerActionAlign[exportAlign] ||
@@ -98,6 +101,45 @@ export default function DataTableHeader({
                       </IconButton>
                     )}
                   </Tooltip>
+                  {headerActions.map(action => (
+                    <Tooltip
+                      key={action.id || action.buttonLabel}
+                      title={action.tooltip || action.buttonLabel}
+                    >
+                      {action.showLabel ? (
+                        <Button
+                          size='sm'
+                          variant='outlined'
+                          color='neutral'
+                          aria-label={action.ariaLabel || action.buttonLabel}
+                          sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
+                          disabled={action.enabled === false}
+                          startDecorator={iconUi({ id: action.iconId || 'download', size: 'sm' })}
+                          onClick={event => {
+                            event.stopPropagation()
+                            action.onClick?.()
+                          }}
+                        >
+                          {action.buttonLabel}
+                        </Button>
+                      ) : (
+                        <IconButton
+                          size='sm'
+                          variant='outlined'
+                          color='neutral'
+                          aria-label={action.ariaLabel || action.buttonLabel}
+                          sx={sx.headerActionButton}
+                          disabled={action.enabled === false}
+                          onClick={event => {
+                            event.stopPropagation()
+                            action.onClick?.()
+                          }}
+                        >
+                          {iconUi({ id: action.iconId || 'download', size: 'sm' })}
+                        </IconButton>
+                      )}
+                    </Tooltip>
+                  ))}
                 </Box>
               ) : sortable ? (
                 <Box

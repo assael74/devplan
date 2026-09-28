@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/searchPage/hooks/useSearchAudit.js
 import * as React from 'react'
 
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
@@ -179,6 +180,8 @@ export default function useSearchAudit({ rows }) {
         nextResult = await auditLeagueV2({
           leagueId: clean(auditTarget.leagueId),
           seasonKey: clean(auditTarget.seasonKey),
+          ...(receipt.operationType === 'delete' && receipt.label === 'DELETE_LEAGUE_SEASON'
+            ? { expectedLifecycle: 'season_absent' } : {}),
         })
       } else if (receipt.flowType === 'roster') {
         nextResult = await auditRosterV2({

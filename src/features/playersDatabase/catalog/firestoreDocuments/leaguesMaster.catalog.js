@@ -1,6 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/leaguesMaster.catalog.js
 
 // Firestore source of truth: leagues master document.
+// DELETE_LEAGUE_SEASON rebuilds entries/summary from all canonical Leagues.
+// A League without seasons still has an entry with seasons=[].
 
 export const PLAYERS_DATABASE_LEAGUES_MASTER_DOCUMENT_CATALOG = {
   id: 'all',

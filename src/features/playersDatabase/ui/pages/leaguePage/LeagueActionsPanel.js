@@ -33,14 +33,18 @@ export default function LeagueActionsPanel({
   onDefensePriorityFilterChange,
   onLoad,
   onDataRepair,
+  onDownloadDocuments,
   onLeagueUrlEdit,
   hasLeagueUrl = false,
+  downloadDisabled = false,
   loadDisabled = false,
   loadDisabledReason = '',
   onDeleteTeams,
-  onDeleteSeason,
   deleteTeamsDisabled = false,
-  deleteSeasonDisabled = false,
+  deleteTeamsDisabledReason = '',
+  onRecheckDeleteTeams,
+  nextDeleteAction = '',
+  onNextDeleteAction,
   onReport,
   tasks = [],
   tasksLoading,
@@ -160,17 +164,42 @@ export default function LeagueActionsPanel({
           </Tooltip>
 
           <Menu placement='bottom-end'>
+            {nextDeleteAction && (
+              <MenuItem onClick={onNextDeleteAction}>
+                {nextDeleteAction === 'stats'
+                  ? 'מעבר למחיקת סטטיסטיקה בקבוצה'
+                  : 'מעבר למחיקת סגל בקבוצה'}
+              </MenuItem>
+            )}
             <MenuItem disabled={deleteTeamsDisabled} onClick={onDeleteTeams}>
               מחיקת קבוצות העונה
-            </MenuItem>
-            <MenuItem disabled={deleteSeasonDisabled} onClick={onDeleteSeason}>
-              מחיקת עונה
             </MenuItem>
           </Menu>
         </Dropdown>
       </Box>
 
+      {deleteTeamsDisabled && deleteTeamsDisabledReason && (
+        <Box>
+          <Typography level='body-xs'>{deleteTeamsDisabledReason}</Typography>
+          <Button size='sm' variant='plain' onClick={onRecheckDeleteTeams}>בדיקה מחדש מהשרת</Button>
+        </Box>
+      )}
+
       <Box sx={sx.secondaryActionsRow}>
+        <Tooltip title='הורדת מסמך הליגה כ־JSON'>
+          <span>
+            <IconButton
+              variant='outlined'
+              aria-label='הורדת מסמך הליגה כ־JSON'
+              disabled={downloadDisabled}
+              sx={sx.sideDownloadButton}
+              onClick={onDownloadDocuments}
+            >
+              {iconUi({id: 'download', size: 'md'})}
+            </IconButton>
+          </span>
+        </Tooltip>
+
         <Tooltip title={hasLeagueUrl ? 'עריכת הגדרות וקישור העונה' : 'הגדרות העונה וכללי התחרות'}>
           <IconButton
             variant='outlined'

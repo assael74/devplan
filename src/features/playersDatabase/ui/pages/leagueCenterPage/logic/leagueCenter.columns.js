@@ -3,6 +3,7 @@
 import {
   Button,
   Chip,
+  IconButton,
   Stack,
   Tooltip,
 } from '@mui/joy'
@@ -126,7 +127,7 @@ const BASE_COLUMNS = [
   },
 ]
 
-export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
+export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague, onDeleteSeason, deleteSeasonAvailability }) => (
   BASE_COLUMNS.map(column => {
     const widthSx = columnWidth(column.key)
 
@@ -140,8 +141,9 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
         },
         headerSx: columnSx.centerColumn,
         cellSx: columnSx.centerColumn,
-        render: row => (
-          <Stack direction='row' spacing={0.5} sx={actionSx.rowActions}>
+        render: row => {
+          const deleteAvailability = deleteSeasonAvailability?.(row)
+          return <Stack direction='row' spacing={0.5} sx={actionSx.rowActions}>
             {!row.hasSelectedSeason ? (
               <Tooltip title='יצירת עונה'>
                 <Button
@@ -155,19 +157,29 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague }) => (
                 </Button>
               </Tooltip>
             ) : (
-              <Button
+              <IconButton
                 size='sm'
                 variant='soft'
                 disabled={!row.hasLeagueDoc}
                 sx={sx.openLeagueButton}
-                endDecorator={iconUi({id: 'viewLeague', size: 'sm'})}
+                aria-label='צפייה בליגה'
                 onClick={() => onOpenLeague(row)}
               >
-                צפה בליגה
-              </Button>
+                {iconUi({id: 'viewLeague', size: 'sm'})}
+              </IconButton>
             )}
+            {row.hasLeagueDoc && row.seasonKey && row.seasonKey !== 'all' && onDeleteSeason && !deleteAvailability?.hidden && <Tooltip title='מחיקת עונה'>
+              <span>
+                <IconButton size='sm' variant='outlined' color='danger'
+                  aria-label={deleteAvailability?.label || 'מחיקת עונה'}
+                  disabled={!deleteAvailability?.allowed}
+                  onClick={() => onDeleteSeason(row)}>
+                  {iconUi({id: 'delete', size: 'sm'})}
+                </IconButton>
+              </span>
+            </Tooltip>}
           </Stack>
-        ),
+        },
       }
     }
 

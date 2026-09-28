@@ -1,25 +1,14 @@
+// src/features/playersDatabase/services/auditV2/league/readCanonical.js
+
 import { doc } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { cleanValue } from '../../../model/shared/value.model.js'
+import { selectLeagueSeason } from '../../../domain/leagueV2/clear/leagueTeamsClearedState.builder.js'
 
 const clean = cleanValue
-
-const resolveLeagueSeason = ({ league = {}, seasonKey = '' } = {}) => {
-  const safeSeasonKey = clean(seasonKey)
-  const current = league?.current && typeof league.current === 'object' ? league.current : null
-
-  if (current && clean(current.seasonKey || current.seasonId) === safeSeasonKey) {
-    return { target: 'current', season: current }
-  }
-
-  const historicalSeason = (Array.isArray(league?.history) ? league.history : [])
-    .find(item => clean(item?.seasonKey || item?.seasonId) === safeSeasonKey)
-
-  return historicalSeason ? { target: 'history', season: historicalSeason } : null
-}
 
 export async function readLeagueCanonicalV2({ leagueId = '', seasonKey = '' } = {}) {
   const safeLeagueId = clean(leagueId)
@@ -39,7 +28,8 @@ export async function readLeagueCanonicalV2({ leagueId = '', seasonKey = '' } = 
   if (!snapshot.exists()) throw new Error(`League canonical document not found: ${safeLeagueId}`)
 
   const league = { ...(snapshot.data() || {}), id: safeLeagueId }
-  const resolvedSeason = resolveLeagueSeason({ league, seasonKey: safeSeasonKey })
+  const selected = selectLeagueSeason(league, safeSeasonKey)
+  const resolvedSeason = { target: selected.field, season: selected.season }
   if (!resolvedSeason) {
     throw new Error(`League canonical season not found: ${safeLeagueId} / ${safeSeasonKey}`)
   }

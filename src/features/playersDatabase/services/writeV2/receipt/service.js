@@ -183,7 +183,13 @@ export async function persistWriteActionAuditResultV2({
     checkedDomains: audit?.coverage?.coveredTargets || [],
   })
 
-  if (receipt.flowType === 'roster' && receipt.operationType === 'clear' &&
+  const trackedDeletion = receipt.flowType === 'league' &&
+    receipt.operationType === 'delete' && receipt.label === 'DELETE_LEAGUE_SEASON'
+  const trackedClear = receipt.operationType === 'clear' && (
+    receipt.flowType === 'roster' ||
+    (receipt.flowType === 'league' && receipt.label === 'CLEAR_LEAGUE_TEAMS')
+  )
+  if ((trackedDeletion || trackedClear) &&
       [WRITE_ACTION_V2_STATUS.OPEN, WRITE_ACTION_V2_STATUS.CLOSED].includes(receipt.status)) {
     const finding = (audit.findings || []).find(item => item.documentId)
     const status = auditClean ? WRITE_ACTION_V2_STATUS.CLOSED : WRITE_ACTION_V2_STATUS.OPEN

@@ -157,6 +157,20 @@ export const leagueActionsPanelSx = {
     },
   },
 
+  sideDownloadButton: {
+    width: '100%',
+    minWidth: 0,
+    minHeight: 38,
+    color: devPlanColors.primary,
+    bgcolor: '#fff',
+    borderColor: devPlanColors.primary,
+
+    '&:hover': {
+      bgcolor: devPlanColors.primaryLight,
+      borderColor: devPlanColors.primaryDark,
+    },
+  },
+
   sideReportButton: {
     width: '100%',
     minWidth: 0,

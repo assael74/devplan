@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/modals/PlayerDatabaseAuditModal.js
+
 import * as React from 'react'
 import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
 import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditClubTeamSeasonScope, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
@@ -70,6 +72,9 @@ const WRITE_ACTION_V2_STEP_LABELS = {
   canonical: 'הנתונים הקנוניים',
   projections: 'המסמכים הנלווים',
   teamSeason: 'עונת הקבוצה',
+  team: 'עונות הקבוצות והפניותיהן',
+  teamIndex: 'אינדקסי הקבוצות',
+  identity: 'שיוך קבוצות למועדונים',
   playerIndex: 'אינדקסי השחקנים',
   teamSearchIndex: 'אינדקס הקבוצה',
   league: 'הליגה',
@@ -81,6 +86,13 @@ const WRITE_ACTION_V2_STEP_LABELS = {
 const WRITE_ACTION_V2_TARGET_LABELS = {
   ...WRITE_ACTION_V2_STEP_LABELS,
   roster: 'הסגל',
+  root: 'מסמך הקבוצה',
+  teamRoot: 'מסמך הקבוצה',
+  teamRoots: 'מסמכי הקבוצות',
+  teamSeasons: 'עונות הקבוצות',
+  teamSearchIndexes: 'אינדקסי הקבוצות',
+  playerSearchIndexes: 'אינדקסי השחקנים',
+  clubs: 'מועדונים',
   playerDocument: 'מסמכי השחקנים',
   playerSearchIndex: 'אינדקסי השחקנים',
   writeAction: 'תיעוד הפעולה',
@@ -89,6 +101,8 @@ const formatWriteActionReceiptV2Label = receipt => {
   const flowType = clean(receipt?.flowType)
   const operationType = clean(receipt?.operationType)
 
+  if (operationType === 'delete' && flowType === 'league') return 'מחיקת עונת ליגה'
+  if (operationType === 'clear' && flowType === 'league') return 'מחיקת קבוצות ליגה'
   if (operationType === 'clear' && flowType === 'stats') return 'מחיקת סטטיסטיקה'
   if (operationType === 'clear' && flowType === 'roster') return 'מחיקת סגל'
   return WRITE_ACTION_V2_FLOW_LABELS[flowType] || clean(receipt?.label) || 'פעולת V2'

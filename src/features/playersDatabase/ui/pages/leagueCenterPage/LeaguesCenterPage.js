@@ -22,6 +22,8 @@ import {
   WorkTaskModal,
   WriteFlowReportModal,
 } from '../../components/modals/index.js'
+import useDeleteLeagueSeason from './deleteSeason/useDeleteLeagueSeason.js'
+import DeleteLeagueSeasonModal from './deleteSeason/DeleteLeagueSeasonModal.js'
 import useLeagueSeasonCreate from './hooks/useLeagueSeasonCreate.js'
 import { buildLeagueCenterColumns } from './logic/leagueCenter.columns.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
@@ -33,6 +35,7 @@ export default function LeaguesCenterPage() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const seasonCreate = useLeagueSeasonCreate({ onSuccess: model.reload })
+  const seasonDelete = useDeleteLeagueSeason({ reload: model.reload, refreshKey: model.leagueDocuments })
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
@@ -41,6 +44,8 @@ export default function LeaguesCenterPage() {
 
   const columns = React.useMemo(() => buildLeagueCenterColumns({
     onCreateSeason: seasonCreate.open,
+    onDeleteSeason: seasonDelete.open,
+    deleteSeasonAvailability: seasonDelete.availability,
     onOpenLeague: row => {
       const rowSeasonKey = row.seasonKey && row.seasonKey !== 'all'
         ? row.seasonKey
@@ -68,6 +73,8 @@ export default function LeaguesCenterPage() {
     model.seasonKey,
     navigate,
     seasonCreate.open,
+    seasonDelete.open,
+    seasonDelete.availability,
   ])
 
   const handleTaskOpen = task => {
@@ -136,6 +143,8 @@ export default function LeaguesCenterPage() {
         model={model}
         onClose={() => setTaskModalOpen(false)}
       />
+
+      <DeleteLeagueSeasonModal flow={seasonDelete} />
 
       <CreateSeasonModal
         open={Boolean(seasonCreate.league)}

@@ -1,4 +1,6 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/writeActionDocument.catalog.js
+// DELETE_LEAGUE_SEASON: flowType league, operationType delete; audit invokes
+// expectedLifecycle season_absent explicitly. Matching open receipts only are reused.
 
 // WriteAction V2 is a small receipt only.
 // It does not persist recovery state, jobs, retries, approved payloads,
@@ -17,7 +19,9 @@ export const WRITE_ACTION_DOCUMENT_GENERIC_OBJECT = {
   updatedAt: null,
 }
 
-// Optional Clear Roster execution summary; no plan or resume payload.
+// Clear Roster / CLEAR_LEAGUE_TEAMS use the same small execution fields.
+// League steps: league, team, teamIndex, identity, club, clubsMaster, leaguesMaster, audit.
+// No plan or resume payload.
 export const CLEAR_ROSTER_RECEIPT_EXECUTION_FIELDS = {
   executionStatus: 'running', // running | failed | succeeded
   lastCompletedStep: null, // teamSeason | playerIndex | teamSearchIndex | league | club | clubsMaster | leaguesMaster | audit

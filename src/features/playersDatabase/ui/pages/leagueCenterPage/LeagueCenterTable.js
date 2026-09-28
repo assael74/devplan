@@ -3,6 +3,7 @@
 import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
 import { buildLeagueCenterExportConfig } from './logic/leagueCenter.export.js'
+import { downloadLeagueCenterDocumentsJson } from './logic/leagueCenterJson.logic.js'
 import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({ columns, model }) {
@@ -12,7 +13,25 @@ export default function LeagueCenterTable({ columns, model }) {
     : model.error || (hasContext
       ? 'לא נמצאו ליגות בהקשר שנבחר'
       : 'בחר שנתון ורמת ליגה כדי להתחיל')
-  const exportConfig = buildLeagueCenterExportConfig({ rows: model.allRows })
+  const hasJsonDocuments = Boolean(
+    model.leaguesMasterDoc || model.leagueDocuments.length
+  )
+  const exportConfig = {
+    ...buildLeagueCenterExportConfig({ rows: model.allRows }),
+    headerActions: [{
+      id: 'json',
+      buttonLabel: 'JSON',
+      tooltip: 'הורדת מסמכי הליגות שנטענו לעמוד',
+      ariaLabel: 'הורדת מסמכי הליגות שנטענו לעמוד כ־JSON',
+      iconId: 'download',
+      showLabel: false,
+      enabled: hasJsonDocuments,
+      onClick: () => downloadLeagueCenterDocumentsJson({
+        leaguesMasterDocument: model.leaguesMasterDoc,
+        leagueDocuments: model.leagueDocuments,
+      }),
+    }],
+  }
 
   return (
     <PageContentPanel
