@@ -35,6 +35,9 @@ export default function TeamActionsPanel({
   onStatsImport,
   onDeleteStats,
   onDeletePlayers,
+  deleteSeasonOptions = [],
+  getDeleteActionFor = () => null,
+  deleteActionsError = '',
   onReport,
   onTeamLink,
   onTeamDataRepair,
@@ -53,6 +56,10 @@ export default function TeamActionsPanel({
     option.optionKey === selectedSeasonOptionKey
   ))
   const rosterAction = React.useMemo(() => buildRosterAction({ hasSeason }), [hasSeason])
+  const deleteActions = deleteSeasonOptions.map(option => ({
+    option,
+    action: getDeleteActionFor(option),
+  })).filter(item => item.action)
 
   return (
     <PageSidePanel>
@@ -87,12 +94,12 @@ export default function TeamActionsPanel({
           </Button>
         ) : null}
         <Dropdown>
-          <Tooltip title='מחיקת נתוני עונה'>
+          <Tooltip title={deleteActionsError || 'מחיקת נתוני עונה'}>
             <span>
               <MenuButton
                 variant='outlined'
                 aria-label='מחיקת נתוני עונה'
-                disabled={!hasSeason}
+                disabled={!deleteActions.length}
                 sx={sx.dangerIconButton}
                 size='sm'
               >
@@ -101,12 +108,23 @@ export default function TeamActionsPanel({
             </span>
           </Tooltip>
           <Menu placement='bottom-end'>
-            <MenuItem onClick={onDeleteStats}>
-              מחיקת נתוני סטטיסטיקה
-            </MenuItem>
-            <MenuItem disabled={!hasTeamPlayers} onClick={onDeletePlayers}>
-              מחיקת סגל מלא
-            </MenuItem>
+            {deleteActions.map(({ option, action }, index) => (
+              <React.Fragment key={option.optionKey || `${option.leagueId}-${option.seasonKey}`}>
+                {index > 0 && <Divider />}
+                <Typography level='body-xs' sx={{ px: 1.5, pt: 1, pb: 0.5 }}>
+                  {`עונה ${option.seasonKey}`}
+                </Typography>
+                <MenuItem
+                  onClick={() => (
+                    action === 'stats'
+                      ? onDeleteStats?.(option)
+                      : onDeletePlayers?.(option)
+                  )}
+                >
+                  {action === 'stats' ? 'מחיקת סטטס' : 'מחיקת סגל'}
+                </MenuItem>
+              </React.Fragment>
+            ))}
           </Menu>
         </Dropdown>
         </Box>

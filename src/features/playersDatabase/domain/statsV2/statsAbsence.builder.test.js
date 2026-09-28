@@ -2,11 +2,9 @@
 
 import {
   STATS_ABSENT_PLAYER_STATS,
+  buildStatsAbsentTeamBalance,
   buildStatsAbsentTeamSeasonState,
 } from './statsAbsence.builder.js'
-import {
-  inspectTeamBalanceFreshness,
-} from '../rosterV2/support/teams/teamBalanceSnapshot.js'
 import { getTeamSeasonStatsState } from './teamSeasonStatsState.js'
 
 const buildSource = () => ({
@@ -95,13 +93,10 @@ describe('stats absence contract', () => {
     expect(getTeamSeasonStatsState(absent)).toBe('absent')
   })
 
-  test('absent Team Balance uses the canonical fresh snapshot contract', () => {
+  test('absent Team Balance uses a fixed canonical snapshot', () => {
     const absent = buildStatsAbsentTeamSeasonState(buildSource())
-    const freshness = inspectTeamBalanceFreshness({
-      seasonDoc: absent,
-    })
 
-    expect(freshness.fresh).toBe(true)
+    expect(absent.teamBalance).toEqual(buildStatsAbsentTeamBalance())
     expect(absent.teamBalance.balanceAvailability).toEqual({
       availability: 'unavailable',
       availabilityReason: 'stats_not_loaded',
@@ -111,6 +106,48 @@ describe('stats absence contract', () => {
     expect(absent.teamBalance.scoutInterpretation.availabilityReason).toBe('stats_not_loaded')
     expect(absent.teamBalance.dependencyKey).not.toBe('')
     expect(absent.teamBalance.source.inputHash).not.toBe('')
+  })
+
+  test('removing roster members does not change Stats absence or Balance', () => {
+    const absent = buildStatsAbsentTeamSeasonState(buildSource())
+    const balance = absent.teamBalance
+    const emptyRoster = { ...absent, teamPlayers: [], playersCount: 0 }
+
+    expect(getTeamSeasonStatsState(emptyRoster)).toBe('absent')
+    expect(emptyRoster.teamBalance).toBe(balance)
+    expect(buildStatsAbsentTeamSeasonState(emptyRoster).teamBalance).toEqual(balance)
+  })
+
+  test('Balance absence is independent of roster, positions and official performance', () => {
+    const source = buildSource()
+    source.teamPlayers[0].primaryPosition = 'GK'
+    source.teamAttackPerformance = { performanceLevel: 'high' }
+    source.teamDefensePerformance = { performanceLevel: 'low' }
+    const absent = buildStatsAbsentTeamSeasonState(source)
+    const empty = buildStatsAbsentTeamSeasonState({ teamPlayers: [] })
+
+    expect(absent.teamBalance).toEqual(empty.teamBalance)
+    expect(absent.teamAttackPerformance).toEqual(source.teamAttackPerformance)
+    expect(absent.teamDefensePerformance).toEqual(source.teamDefensePerformance)
+  })
+
+  test.each([
+    ['fingerprint', balance => { balance.source.inputHash = 'old-roster-hash' }],
+    ['count', balance => { balance.lineStructure.relevantPlayersCount = 1 }],
+    ['scouting', balance => { balance.teamTaskSignals.offense = true }],
+    ['unknown field', balance => { balance.unexpectedStats = 1 }],
+  ])('rejects residual Balance %s even with an empty roster', (name, mutate) => {
+    const absent = buildStatsAbsentTeamSeasonState({ teamPlayers: [] })
+    mutate(absent.teamBalance)
+
+    expect(getTeamSeasonStatsState(absent)).toBe('present')
+  })
+
+  test('fixed Balance returns independent objects', () => {
+    const first = buildStatsAbsentTeamBalance()
+    first.lineStructure.relevantPlayersCount = 9
+
+    expect(buildStatsAbsentTeamBalance().lineStructure.relevantPlayersCount).toBe(0)
   })
 
   test('stale line classification is present', () => {

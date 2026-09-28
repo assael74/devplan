@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/clear/hooks/useClearStatsFlow.test.js
+
 import { act, renderHook, waitFor } from '@testing-library/react'
 
 import { buildClearStatsApprovedStateV2 } from '../../../../../../domain/statsV2/index.js'
@@ -41,13 +43,16 @@ describe('useClearStatsFlow', () => {
 
     const { result } = renderHook(() => useClearStatsFlow({ ...target, reload }))
 
-    act(() => result.current.openModal())
+    act(() => result.current.openModal({
+      seasonKey: '25/26',
+      leagueId: 'league-history',
+    }))
     await waitFor(() => expect(result.current.status).toBe('ready'))
 
     expect(prepareClearStatsForUiV2).toHaveBeenCalledWith({
       birthTeamDocumentId: 'team-1',
-      seasonKey: '2026',
-      leagueId: 'league-1',
+      seasonKey: '25/26',
+      leagueId: 'league-history',
     })
 
     await act(async () => result.current.execute())
@@ -63,11 +68,12 @@ describe('useClearStatsFlow', () => {
     expect(result.current.error).toBe(reloadError)
   })
 
-  test('does not approve or execute a complete no-op', async () => {
+  test('allows explicit receipt creation and Audit when Stats are already clean', async () => {
     prepareClearStatsForUiV2.mockResolvedValue({
       isIdempotent: true,
       projectionPlan: { impact: { operationsRequired: 0 } },
     })
+    executeClearStatsV2.mockResolvedValue({ receiptId: 'verified-empty', status: 'succeeded' })
 
     const { result } = renderHook(() => useClearStatsFlow({
       ...target,
@@ -78,8 +84,9 @@ describe('useClearStatsFlow', () => {
     await waitFor(() => expect(result.current.status).toBe('ready'))
     await act(async () => result.current.execute())
 
-    expect(buildClearStatsApprovedStateV2).not.toHaveBeenCalled()
-    expect(executeClearStatsV2).not.toHaveBeenCalled()
-    expect(result.current.status).toBe('ready')
+    expect(buildClearStatsApprovedStateV2).toHaveBeenCalledTimes(1)
+    expect(executeClearStatsV2).toHaveBeenCalledTimes(1)
+    expect(result.current.status).toBe('succeeded')
+    expect(result.current.result.receiptId).toBe('verified-empty')
   })
 })

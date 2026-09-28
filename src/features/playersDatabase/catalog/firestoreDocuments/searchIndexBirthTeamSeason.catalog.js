@@ -90,6 +90,9 @@ export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {
   teamInterest: false,
   squadInterestReason: '',
   playersCount: 0,
+  // Number of player-season indexes in this team + season scope.
+  // Existing Roster writers persist this counter; Clear Roster resets it to zero.
+  playerSeasonIndexCount: 0,
   scoutProfilesSummary: {
     total: 0,
     profileCounts: {},

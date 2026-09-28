@@ -23,22 +23,33 @@ export default function useClearStatsFlow({
   const [proposedPlan, setProposedPlan] = React.useState(null)
   const [result, setResult] = React.useState(null)
   const [error, setError] = React.useState(null)
+  const [activeTarget, setActiveTarget] = React.useState(null)
+
+  const buildTarget = React.useCallback(seasonOption => ({
+    birthTeamDocumentId: clean(
+      team?.birthTeamDocumentId ||
+      team?.teamDocumentId ||
+      team?.id
+    ),
+    seasonKey: clean(seasonOption?.seasonKey),
+    leagueId: clean(seasonOption?.leagueId || leagueId),
+  }), [leagueId, team])
+
+  const defaultTarget = React.useMemo(
+    () => buildTarget(selectedSeasonOption),
+    [buildTarget, selectedSeasonOption]
+  )
 
   const reset = React.useCallback(() => {
     setStatus(INITIAL_STATE)
     setProposedPlan(null)
     setResult(null)
     setError(null)
+    setActiveTarget(null)
   }, [])
 
-  const loadPreview = React.useCallback(async () => {
-    const birthTeamDocumentId = clean(
-      team?.birthTeamDocumentId ||
-      team?.teamDocumentId ||
-      team?.id
-    )
-    const seasonKey = clean(selectedSeasonOption?.seasonKey)
-    const targetLeagueId = clean(selectedSeasonOption?.leagueId || leagueId)
+  const loadPreview = React.useCallback(async requestedTarget => {
+    const target = requestedTarget || activeTarget || defaultTarget
 
     setStatus('loadingPreview')
     setProposedPlan(null)
@@ -46,11 +57,7 @@ export default function useClearStatsFlow({
     setError(null)
 
     try {
-      const plan = await prepareClearStatsForUiV2({
-        birthTeamDocumentId,
-        seasonKey,
-        leagueId: targetLeagueId,
-      })
+      const plan = await prepareClearStatsForUiV2(target)
 
       setProposedPlan(plan)
       setStatus('ready')
@@ -58,12 +65,17 @@ export default function useClearStatsFlow({
       setError(nextError)
       setStatus('failed')
     }
-  }, [leagueId, selectedSeasonOption, team])
+  }, [activeTarget, defaultTarget])
 
-  const openModal = React.useCallback(() => {
+  const openModal = React.useCallback(seasonOption => {
+    const requestedTarget = seasonOption?.seasonKey
+      ? buildTarget(seasonOption)
+      : defaultTarget
+
+    setActiveTarget(requestedTarget)
     setOpen(true)
-    loadPreview()
-  }, [loadPreview])
+    loadPreview(requestedTarget)
+  }, [buildTarget, defaultTarget, loadPreview])
 
   const close = React.useCallback(() => {
     if (status === 'executing') return
@@ -73,12 +85,6 @@ export default function useClearStatsFlow({
 
   const execute = React.useCallback(async () => {
     if (status !== 'ready' || !proposedPlan) return
-
-    const noWork = (
-      proposedPlan.isIdempotent === true &&
-      Number(proposedPlan.projectionPlan?.impact?.operationsRequired || 0) === 0
-    )
-    if (noWork) return
 
     setStatus('executing')
     setError(null)
@@ -106,8 +112,8 @@ export default function useClearStatsFlow({
   }, [proposedPlan, reload, status])
 
   const retry = React.useCallback(() => {
-    loadPreview()
-  }, [loadPreview])
+    loadPreview(activeTarget || defaultTarget)
+  }, [activeTarget, defaultTarget, loadPreview])
 
   return {
     open,
@@ -115,6 +121,7 @@ export default function useClearStatsFlow({
     proposedPlan,
     result,
     error,
+    target: activeTarget || defaultTarget,
     openModal,
     close,
     execute,

@@ -1,3 +1,7 @@
+// src/features/playersDatabase/services/auditV2/stats/compareCanonicalTeamSeason.js
+
+import { getTeamSeasonStatsState } from '../../../domain/statsV2/teamSeasonStatsState.js'
+
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
@@ -8,6 +12,19 @@ export function compareStatsCanonicalTeamSeasonV2({ canonical = {} } = {}) {
     ? teamSeason.teamPlayers
     : []
   const statsLoadStatus = clean(teamSeason.statsLoadState?.status)
+  if (statsLoadStatus === 'missing') {
+    return getTeamSeasonStatsState(teamSeason) === 'absent'
+      ? []
+      : [{
+        type: 'canonical_invariant_mismatch',
+        target: 'teamSeason',
+        documentId: clean(teamSeason.id),
+        reason: 'Stats are marked missing but canonical Stats or scouting residues remain.',
+        expected: { statsState: 'absent' },
+        actual: { statsState: 'present' },
+      }]
+  }
+
   const loadedPlayers = players.filter(player => (
     clean(player?.statsStatus) === 'loaded'
   ))

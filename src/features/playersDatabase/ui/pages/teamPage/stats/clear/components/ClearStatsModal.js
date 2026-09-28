@@ -12,6 +12,8 @@ import RegularModal from '../../../../../components/modals/RegularModal.js'
 import { clearStatsModalSx as sx } from '../sx/clearStatsModal.sx.js'
 
 const ERROR_MESSAGES = {
+  CLEAR_STATS_MULTIPLE_OPEN_RECEIPTS: 'נמצאו כמה פעולות סטטיסטיקה פתוחות. נדרשת בדיקה לפני המשך.',
+  CLEAR_STATS_OTHER_OPERATION_OPEN: 'קיימת פעולת סטטיסטיקה אחרת שטרם הושלמה. יש להשלים אותה לפני התחלת המחיקה.',
   CLEAR_STATS_PROJECTION_SOURCE_MISMATCH: 'הנתונים השתנו מאז הצגת התצוגה המקדימה. יש לבנות תוכנית חדשה.',
   CLEAR_STATS_PROJECTION_TARGET_NOT_FOUND: 'אחד ממסמכי היעד לא נמצא.',
   CLEAR_STATS_AUDIT_FAILED: 'המחיקה הסתיימה, אך בדיקת הסנכרון מצאה פער.',
@@ -185,7 +187,7 @@ export default function ClearStatsModal({
 
             {noWork ? (
               <Alert color='success' variant='soft'>
-                נתוני הסטטיסטיקה כבר נקיים
+                נתוני הסטטיסטיקה כבר נקיים. ניתן לאשר ביקורת מהשרת ולתעד את השלמת הפעולה, ללא שינוי נתונים שכבר תקינים.
               </Alert>
             ) : (
               <Box sx={sx.summaryGrid}>
@@ -203,11 +205,9 @@ export default function ClearStatsModal({
             )}
 
             <Box sx={sx.actions}>
-              {!noWork ? (
-                <Button color='danger' onClick={execute}>
-                  מחק נתוני סטטיסטיקה
-                </Button>
-              ) : null}
+              <Button color={noWork ? 'primary' : 'danger'} onClick={execute}>
+                {noWork ? 'אישור ביקורת וסיום' : 'מחק נתוני סטטיסטיקה'}
+              </Button>
               <Button variant='plain' color='neutral' onClick={close}>
                 {noWork ? 'סגור' : 'ביטול'}
               </Button>
@@ -225,7 +225,7 @@ export default function ClearStatsModal({
         {status === 'succeeded' ? (
           <>
             <Alert color='success' variant='soft'>
-              נתוני הסטטיסטיקה נמחקו בהצלחה
+              {noWork ? 'נתוני הסטטיסטיקה נקיים והביקורת הושלמה בהצלחה' : 'נתוני הסטטיסטיקה נמחקו בהצלחה'}
             </Alert>
             {error ? (
               <Alert color='warning' variant='soft'>

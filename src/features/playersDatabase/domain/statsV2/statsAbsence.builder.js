@@ -91,17 +91,16 @@ export const buildStatsAbsentPlayerState = (player = {}) => ({
   scoutEngineVersion: SCOUTING_MODEL_VERSION,
 })
 
-const buildStatsAbsentTeamBalance = teamSeason => {
-  const inputHash = buildBalanceInputFingerprint(teamSeason)
+// A cleared Balance represents absence, not a measurement of the current roster.
+// Use a fixed empty input so roster edits cannot turn cleared Stats into present.
+export const buildStatsAbsentTeamBalance = () => {
   const balanceSeason = {
-    ...teamSeason,
+    teamPlayers: [],
     teamStats: {
-      ...(teamSeason.teamStats || {}),
       teamGamePlayed: 0,
-      gamesPlayed: 0,
     },
-    teamGamePlayed: 0,
   }
+  const inputHash = buildBalanceInputFingerprint(balanceSeason)
   const calculatedBalanceState = buildTeamBalanceState({
     seasonDocument: balanceSeason,
   })
@@ -147,6 +146,6 @@ export const buildStatsAbsentTeamSeasonState = (teamSeason = {}) => {
 
   return {
     ...absentTeamSeason,
-    teamBalance: buildStatsAbsentTeamBalance(absentTeamSeason),
+    teamBalance: buildStatsAbsentTeamBalance(),
   }
 }

@@ -22,6 +22,8 @@ import {
   ReportNameModal,
 } from '../../components/modals/index.js'
 import useSearchAudit from './hooks/useSearchAudit.js'
+import useClearStatsFlow from '../teamPage/stats/clear/hooks/useClearStatsFlow.js'
+import ClearStatsModal from '../teamPage/stats/clear/components/ClearStatsModal.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
 
 function SearchPageContent() {
@@ -32,6 +34,37 @@ function SearchPageContent() {
   const audit = useSearchAudit({
     rows: search.rows,
   })
+  const clearStatsRepairTarget = React.useMemo(() => ({
+    birthTeamDocumentId: audit.result?.birthTeamDocumentId || '',
+    seasonKey: audit.result?.seasonKey || '',
+    leagueId: audit.result?.leagueId || '',
+    receiptId: audit.result?.receiptId || '',
+  }), [
+    audit.result?.birthTeamDocumentId,
+    audit.result?.leagueId,
+    audit.result?.receiptId,
+    audit.result?.seasonKey,
+  ])
+  const refreshClearStatsAudit = React.useCallback(async () => {
+    if (clearStatsRepairTarget.receiptId) {
+      await audit.runAuditForReceiptV2(clearStatsRepairTarget.receiptId)
+    }
+  }, [audit.runAuditForReceiptV2, clearStatsRepairTarget.receiptId])
+  const clearStatsRepair = useClearStatsFlow({
+    team: { birthTeamDocumentId: clearStatsRepairTarget.birthTeamDocumentId },
+    selectedSeasonOption: {
+      seasonKey: clearStatsRepairTarget.seasonKey,
+      leagueId: clearStatsRepairTarget.leagueId,
+    },
+    leagueId: clearStatsRepairTarget.leagueId,
+    reload: refreshClearStatsAudit,
+  })
+  const openClearStatsRepair = React.useCallback(target => {
+    clearStatsRepair.openModal({
+      seasonKey: target?.seasonKey || clearStatsRepairTarget.seasonKey,
+      leagueId: target?.leagueId || clearStatsRepairTarget.leagueId,
+    })
+  }, [clearStatsRepair.openModal, clearStatsRepairTarget.leagueId, clearStatsRepairTarget.seasonKey])
 
   const searchReport = useSearchReport({
     rows: search.rows,
@@ -127,6 +160,7 @@ function SearchPageContent() {
         onRun={audit.runAudit}
         onRunWriteAction={audit.runAuditForWriteAction}
         onRunReceiptV2={audit.runAuditForReceiptV2}
+        onRepairClearStats={openClearStatsRepair}
         onScopeChange={audit.handleScopeChange}
         onReconcileStatsAuditStage={audit.reconcileStatsAuditStage}
         onRepair={audit.requestRepair}
@@ -146,6 +180,12 @@ function SearchPageContent() {
         onLeagueOpen={audit.openLeague}
         onLeaguesCenterOpen={audit.openLeaguesCenter}
         onClose={audit.closeAudit}
+      />
+
+      <ClearStatsModal
+        controller={clearStatsRepair}
+        teamName='הקבוצה שנבדקה'
+        seasonKey={clearStatsRepair.target?.seasonKey || clearStatsRepairTarget.seasonKey}
       />
 
       <ConfirmModal

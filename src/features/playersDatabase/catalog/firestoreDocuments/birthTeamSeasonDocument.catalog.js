@@ -6,6 +6,10 @@
 
 import { SCOUTING_MODEL_VERSION, TEAM_LINE_CLASSIFICATION_VERSION } from '../../../../shared/scouting/scouting.version.js'
 
+// When Stats are absent, the complete snapshot is built by
+// buildStatsAbsentTeamBalance() from fixed empty input, never from the roster.
+// source.inputHash then identifies that fixed input. Loaded Stats keep their
+// existing roster-derived Balance contract; the persisted shape is unchanged.
 const TEAM_BALANCE_GENERIC_OBJECT = {
   snapshotFormat: 'team-balance-summary-v14',
   version: '',
@@ -161,6 +165,8 @@ export const BIRTH_TEAM_SEASONS_DATABASE_GENERIC_OBJECTS_CATALOG = {
     status: 'missing',
   },
   rosterImport: {
+    // CLEAR_ROSTER restores these defaults; pendingPlayers and teamPlayers
+    // become empty, transfersIn/transfersOut are cleared and playersCount becomes zero.
     mode: 'AUTHORITATIVE_SNAPSHOT',
     sourceSnapshotKey: '',
     contentHash: '',

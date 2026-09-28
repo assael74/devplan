@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/auditV2/roster/index.js
+
 import {
   ROSTER_AUDIT_V2_COVERED_TARGETS,
   ROSTER_AUDIT_V2_RESULT,
@@ -16,6 +18,8 @@ import { compareRosterLeaguesMasterV2 } from './compareLeaguesMaster.js'
 import { buildExpectedRosterClubsV2 } from './buildExpectedClubs.js'
 import { readActualRosterClubsV2 } from './readActualClubs.js'
 import { compareRosterClubsV2 } from './compareClubs.js'
+import { auditRosterAbsentState } from './auditRosterAbsentState.js'
+import { getTeamSeasonRosterState } from '../../../domain/rosterV2/clear/rosterAbsent.builder.js'
 
 export async function auditRosterV2({
   birthTeamDocumentId = '',
@@ -25,6 +29,9 @@ export async function auditRosterV2({
     birthTeamDocumentId,
     seasonKey,
   })
+  if (getTeamSeasonRosterState(canonical.teamSeason) === 'absent') {
+    return auditRosterAbsentState({ birthTeamDocumentId, seasonKey })
+  }
   const expected = buildExpectedRosterAuditV2({ canonical })
   const expectedCounterparts = buildExpectedRosterCounterpartsV2({ canonical })
   const expectedLeaguesMaster = buildExpectedRosterLeaguesMasterV2({ canonical })

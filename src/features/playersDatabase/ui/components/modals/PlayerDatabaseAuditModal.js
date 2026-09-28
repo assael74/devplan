@@ -55,16 +55,67 @@ const WRITE_ACTION_V2_FLOW_LABELS = {
   roster: 'טעינת סגל',
   stats: 'טעינת סטטיסטיקות',
 }
+const WRITE_ACTION_V2_STATUS_LABELS = {
+  open: 'פתוחה',
+  closed: 'הושלמה',
+  abandoned: 'ננטשה',
+}
+const WRITE_ACTION_V2_EXECUTION_STATUS_LABELS = {
+  running: 'בתהליך',
+  failed: 'נכשלה',
+  succeeded: 'הושלמה בהצלחה',
+}
+const WRITE_ACTION_V2_STEP_LABELS = {
+  receipt: 'תיעוד הפעולה',
+  canonical: 'הנתונים הקנוניים',
+  projections: 'המסמכים הנלווים',
+  teamSeason: 'עונת הקבוצה',
+  playerIndex: 'אינדקסי השחקנים',
+  teamSearchIndex: 'אינדקס הקבוצה',
+  league: 'הליגה',
+  club: 'המועדון',
+  clubsMaster: 'מרכז המועדונים',
+  leaguesMaster: 'מרכז הליגות',
+  audit: 'בדיקת הסנכרון',
+}
+const WRITE_ACTION_V2_TARGET_LABELS = {
+  ...WRITE_ACTION_V2_STEP_LABELS,
+  roster: 'הסגל',
+  playerDocument: 'מסמכי השחקנים',
+  playerSearchIndex: 'אינדקסי השחקנים',
+  writeAction: 'תיעוד הפעולה',
+}
+const formatWriteActionReceiptV2Label = receipt => {
+  const flowType = clean(receipt?.flowType)
+  const operationType = clean(receipt?.operationType)
+
+  if (operationType === 'clear' && flowType === 'stats') return 'מחיקת סטטיסטיקה'
+  if (operationType === 'clear' && flowType === 'roster') return 'מחיקת סגל'
+  return WRITE_ACTION_V2_FLOW_LABELS[flowType] || clean(receipt?.label) || 'פעולת V2'
+}
+const formatWriteActionReceiptV2Progress = receipt => {
+  const failedStep = clean(receipt?.failedStep)
+  const lastCompletedStep = clean(receipt?.lastCompletedStep)
+  const executionStatus = clean(receipt?.executionStatus)
+
+  if (failedStep) {
+    return `נעצרה בשלב ${WRITE_ACTION_V2_STEP_LABELS[failedStep] || 'לא ידוע'}`
+  }
+  if (executionStatus === 'succeeded') return WRITE_ACTION_V2_EXECUTION_STATUS_LABELS.succeeded
+  if (lastCompletedStep) {
+    return `שלב אחרון שהושלם: ${WRITE_ACTION_V2_STEP_LABELS[lastCompletedStep] || 'לא ידוע'}`
+  }
+  return WRITE_ACTION_V2_EXECUTION_STATUS_LABELS[executionStatus] || ''
+}
 const formatWriteActionReceiptV2Option = receipt => {
   const target = receipt?.auditTarget || {}
-  const flowLabel = clean(receipt?.operationType) === 'clear' && clean(receipt?.flowType) === 'stats'
-    ? 'מחיקת סטטיסטיקה'
-    : WRITE_ACTION_V2_FLOW_LABELS[clean(receipt?.flowType)] || clean(receipt?.label) || 'פעולת V2'
+  const status = WRITE_ACTION_V2_STATUS_LABELS[clean(receipt?.status)] || clean(receipt?.status)
 
   return [
-    flowLabel,
-    clean(target.leagueId) || clean(target.birthTeamDocumentId) || clean(target.seasonKey),
-    clean(receipt?.status),
+    formatWriteActionReceiptV2Label(receipt),
+    clean(target.seasonKey),
+    status,
+    formatWriteActionReceiptV2Progress(receipt),
     formatWriteActionTime(receipt?.updatedAt),
   ].filter(Boolean).join(' · ')
 }
@@ -150,6 +201,9 @@ export default function PlayerDatabaseAuditModal(props) {
   const clubTeamScope = mode === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
   const writeActionScope = mode === 'writeAction'
   const receiptV2Scope = mode === 'receiptV2'
+  const selectedReceiptV2 = recentWriteActionReceiptsV2.find(receipt => (
+    clean(receipt?.id) === clean(receiptV2Id)
+  )) || null
   const scope = mode === 'lastWrite' && lastWriteScope
     ? lastWriteScope
     : clubTeamScope
@@ -320,6 +374,26 @@ export default function PlayerDatabaseAuditModal(props) {
                 ))}
               </Select>
             </FormControl>
+            {selectedReceiptV2 ? (
+              <Sheet variant='soft' sx={{ p: 1.5, borderRadius: 'sm' }}>
+                <Typography level='title-sm'>
+                  {formatWriteActionReceiptV2Label(selectedReceiptV2)}
+                </Typography>
+                <Typography level='body-sm'>
+                  מצב: {WRITE_ACTION_V2_STATUS_LABELS[clean(selectedReceiptV2.status)] || clean(selectedReceiptV2.status) || 'לא ידוע'}
+                </Typography>
+                {formatWriteActionReceiptV2Progress(selectedReceiptV2) ? (
+                  <Typography level='body-sm'>
+                    {formatWriteActionReceiptV2Progress(selectedReceiptV2)}
+                  </Typography>
+                ) : null}
+                {selectedReceiptV2.failedTarget?.targetType ? (
+                  <Typography level='body-sm'>
+                    יעד הכשל: {WRITE_ACTION_V2_TARGET_LABELS[clean(selectedReceiptV2.failedTarget.targetType)] || 'רכיב בתהליך'}
+                  </Typography>
+                ) : null}
+              </Sheet>
+            ) : null}
             <FormControl>
               <FormLabel>מזהה Receipt V2 ידני</FormLabel>
               <Input
@@ -374,12 +448,21 @@ export default function PlayerDatabaseAuditModal(props) {
                   receiptId: result.receiptId,
                   stage,
                 })}
-                onRepairCanonical={finding => props.onTeamOpen?.(finding, {
-                  teamDocumentId: result.birthTeamDocumentId,
-                  seasonKey: result.seasonKey,
-                  leagueId: result.leagueId,
-                  openStatsImport: true,
-                })}
+                onRepairCanonical={finding => (
+                  result.operationType === 'clear'
+                    ? props.onRepairClearStats?.({
+                      receiptId: result.receiptId,
+                      birthTeamDocumentId: result.birthTeamDocumentId,
+                      seasonKey: result.seasonKey,
+                      leagueId: result.leagueId,
+                    })
+                    : props.onTeamOpen?.(finding, {
+                      teamDocumentId: result.birthTeamDocumentId,
+                      seasonKey: result.seasonKey,
+                      leagueId: result.leagueId,
+                      openStatsImport: true,
+                    })
+                )}
                 onCheckSync={() => props.onRunReceiptV2?.(result.receiptId)}
               />
             ) : null}

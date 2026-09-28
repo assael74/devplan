@@ -15,6 +15,7 @@ export const WRITE_ACTION_V2_CANONICAL_STATUS = Object.freeze({
 export const WRITE_ACTION_V2_STATUS = Object.freeze({
   OPEN: 'open',
   CLOSED: 'closed',
+  ABANDONED: 'abandoned',
 })
 
 const WRITE_ACTION_V2_AUDIT_COVERAGE = Object.freeze({

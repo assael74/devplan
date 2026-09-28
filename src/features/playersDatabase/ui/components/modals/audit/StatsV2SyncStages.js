@@ -14,6 +14,14 @@ const STAGE_LABELS = Object.freeze({
   [STATS_RECONCILE_STAGE.CLUBS]: 'Clubs + Clubs Master',
 })
 
+const CLEAR_STAGE_LABELS = Object.freeze({
+  [STATS_RECONCILE_STAGE.COUNTERPARTS]: 'בדיקת שמירת העברות',
+  [STATS_RECONCILE_STAGE.PLAYER_DOCUMENTS]: 'ניקוי מסמכי שחקנים',
+  [STATS_RECONCILE_STAGE.PLAYER_INDEXES]: 'ניקוי אינדקסי שחקנים',
+  [STATS_RECONCILE_STAGE.TEAM_LEAGUE]: 'ניקוי Team + League',
+  [STATS_RECONCILE_STAGE.CLUBS]: 'ניקוי Clubs + Clubs Master',
+})
+
 const STATUS_PRESENTATION = Object.freeze({
   clean: {
     label: 'תקין',
@@ -41,6 +49,7 @@ export default function StatsV2SyncStages({
     () => buildStatsReconcileStageStateV2(result),
     [result]
   )
+  const isClear = result?.operationType === 'clear'
   const auditClean = (
     result?.coverage?.complete === true &&
     (result?.findings?.length || 0) === 0
@@ -53,9 +62,13 @@ export default function StatsV2SyncStages({
     <Stack spacing={1.25}>
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack spacing={0.25}>
-          <Typography level='title-sm'>השלמת סנכרון Stats</Typography>
+          <Typography level='title-sm'>
+            {isClear ? 'השלמת מחיקת Stats' : 'השלמת סנכרון Stats'}
+          </Typography>
           <Typography level='body-xs'>
-            כל תיקון נבנה מחדש מהנתונים הקנוניים ונבדק שוב מול Firestore.
+            {isClear
+              ? 'כל תיקון נבנה מחדש ממצב המחיקה הקנוני ונבדק שוב מול Firestore.'
+              : 'כל תיקון נבנה מחדש מהנתונים הקנוניים ונבדק שוב מול Firestore.'}
           </Typography>
         </Stack>
         <Chip size='sm' color='success' variant='soft'>Canonical זמין</Chip>
@@ -77,7 +90,9 @@ export default function StatsV2SyncStages({
           <Stack spacing={0.25}>
             <Typography level='title-sm'>נתוני Stats בקבוצה</Typography>
             <Typography level='body-xs'>
-              הטעינה מסומנת כהושלמה, אך נתוני השחקנים חסרים. נדרשת טעינה מחדש.
+              {isClear
+                ? 'מחיקת ה־Stats אינה במצב הקנוני הנקי. נדרשת הכנה ואישור מחדש של המחיקה.'
+                : 'הטעינה מסומנת כהושלמה, אך נתוני השחקנים חסרים. נדרשת טעינה מחדש.'}
             </Typography>
             <Chip size='sm' color='danger' variant='soft' sx={{ alignSelf: 'flex-start' }}>
               דורש תיקון קנוני
@@ -90,7 +105,7 @@ export default function StatsV2SyncStages({
             disabled={busy}
             onClick={() => onRepairCanonical?.(canonicalFinding)}
           >
-            תקן
+            {isClear ? 'השלם מחיקה' : 'תקן'}
           </Button>
         </Sheet>
       ) : null}
@@ -113,7 +128,7 @@ export default function StatsV2SyncStages({
           >
             <Stack spacing={0.25}>
               <Typography level='title-sm'>
-                {STAGE_LABELS[row.stage] || row.stage}
+                {(isClear ? CLEAR_STAGE_LABELS : STAGE_LABELS)[row.stage] || row.stage}
               </Typography>
               <Chip
                 size='sm'
@@ -157,7 +172,9 @@ export default function StatsV2SyncStages({
             <Typography level='title-sm'>בדיקת סנכרון סופית</Typography>
             <Typography level='body-xs'>
               {auditClean
-                ? 'הבדיקה האחרונה מלאה ונקייה. הקבלה יכולה להישאר סגורה.'
+                ? isClear
+                  ? 'מחיקת ה־Stats מלאה ונקייה. הקבלה יכולה להיסגר.'
+                  : 'הבדיקה האחרונה מלאה ונקייה. הקבלה יכולה להישאר סגורה.'
                 : 'הרץ בדיקה מלאה לאחר השלמת התיקונים כדי לסגור את הקבלה.'}
             </Typography>
           </Stack>

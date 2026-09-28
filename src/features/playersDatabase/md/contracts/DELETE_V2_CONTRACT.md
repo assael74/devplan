@@ -193,6 +193,21 @@ Stats-owned Player Document season state = removed/cleared
 מצב לא תקין לפי Domain builder. Preview, Writers ו־Audit חייבים להשתמש
 באותו builder ובאותה הגדרה.
 
+Balance מנוקה נבנה רק באמצעות `buildStatsAbsentTeamBalance()` מקלט ריק
+וקבוע. הוא אינו תלוי ב־`teamPlayers`, בתפקידים, בטביעת הסגל או בביצועי
+הליגה. `source.inputHash` שלו הוא טביעת הקלט הריק הקבוע, ולא טביעת הסגל.
+כל קריאה מחזירה אובייקט עצמאי במבנה ה־Catalog ובגרסאות המודל הנוכחיות.
+
+`Clear Stats` בונה אותו לפני Approval; ה־Writer מחיל את הערך המאושר בלבד.
+ה־predicate וביקורת Stats משתמשים באותו Builder ומשווים את כל מצב ה־Stats,
+כולל Balance מלא: אין התעלמות ממונים, מטביעה שגויה או משאריות scouting.
+ריקון הסגל לאחר מכן אינו משנה את מצב היעדר הסטטיסטיקה, ואינו מקנה
+ל־`Clear Roster` בעלות על Balance.
+
+Balance מנוקה מהייצוג הישן שתלוי בסגל אינו מקבל פטור מהבדיקה. אם אינו
+תואם לייצוג הקבוע, נדרשת מחיקת Stats מפורשת עם Preview ואישור חדשים.
+אין הסבה אוטומטית, ואין שינוי בחישוב Balance כאשר Stats טעונים.
+
 ### 6.2 Team Season existence
 
 בדיקות Roster ו־League חייבות להסתמך על Team Root + Team Season הקנוניים,
@@ -301,12 +316,17 @@ Roster רשאי להסיר:
 
 - `teamPlayers`.
 - Roster-owned metadata.
-- `transfersIn`.
-- `transfersOut`.
 - `pendingPlayers`.
+- `transfersIn` ו־`transfersOut` של עונת הקבוצה הנמחקת.
 - Roster-owned SearchIndex state.
 
-Movement הוא בבעלות Roster ולכן Counterpart Movement מסונכרן כאשר נדרש.
+ב־`CLEAR_ROSTER`, השדות `transfersIn`, `transfersOut` ו־`pendingPlayers`
+מתאפסים ל־`[]`, משום שהם נגזרו מהסגל של אותה עונה. אין שלב Counterpart:
+אין לקרוא, לבדוק או לשנות את מסמך הקבוצה שבצד השני של מעבר. כל צד עצמאי,
+וחוסר או סתירה בצד השני אינם חוסמים את המחיקה. `rosterImport` מתאפס לערכי Catalog:
+`mode: AUTHORITATIVE_SNAPSHOT`, מפתחות וטביעה ריקים ו־`effectiveAt: null`.
+`teamPlayers = []` ו־`playersCount = 0` מגדירים יחד עם אלה מצב Roster absent.
+ה־predicate של Roster אינו בודק Stats; תנאי Stats absent נבדק בנפרד.
 
 ### 8.4 מידע שאסור למחוק
 
@@ -320,34 +340,18 @@ Roster אינו רשאי למחוק:
 
 ### 8.5 Team Season
 
-Team Season הוא מסמך משותף.
+Team Season ו־Team Root נשמרים תמיד בזרימה זו. אינדקס העונות שב־Root אינו
+משתנה. `teamSeasonDocumentId` נשמר ב־Team SearchIndex. זהויות, ביצועי League,
+Balance ו־scouting נשמרים ללא שינוי. מחיקת הסגל אינה
+מוחקת Player Documents ואינה כותבת בהם. ניקוי Stats שייך ל־Clear Stats בלבד.
 
-Roster רשאי להסיר Team Season רק כאשר הוכח קנונית שאין בו state של Domain
-אחר שמחייב את קיומו, ובפרט Stats state.
+Player SearchIndexes של הקבוצה והעונה נמחקים. מוני הסגל מתעדכנים ב־Team
+SearchIndex, בשורת League, ב־Club וב־Clubs Master; סיכומי Leagues Master
+נגזרים מחדש ממסמכי League קנוניים. סיכומי ההעברות של עונת הקבוצה ב־Club
+וב־Clubs Master מתאפסים מתוך המצב הקנוני הריק, ללא גישה לקבוצות אחרות.
 
-שדות League/Official Team Performance השמורים בתוך Team Season הם Projection
-של League Document. הם אינם, לבדם, סיבה קנונית להשאיר Team Season קיים.
-
-לכן:
-
-```text
-Stats state = absent
-+
-Roster state נוקה
-+
-נשארו רק League-owned projection fields
-→ מותר להסיר Team Season
-```
-
-מקור האמת לביצועי League נשאר League Document.
-
-אם קיים state קנוני אחר שמחייב את Team Season:
-
-```text
-BLOCK
-```
-
-ולא Cascade.
+מסמך משותף או רשומת יעד חסרים/עמומים חוסמים Prepare לפני יצירת Receipt.
+הזרימה אינה יוצרת השלמה חלקית של מסמך חסר. תיקון יעד חסר הוא פעולה נפרדת.
 
 ### 8.6 Audit
 
@@ -754,6 +758,42 @@ abandoned
 
 פעולה שנכשלה לפני Canonical יכולה לעבור ל־`abandoned` באופן מפורש.
 
+אסור לסמן פעולה כ־`abandoned` לאחר כתיבת Canonical או כאשר תוצאת הכתיבה
+אינה ידועה. ב־Clear Roster וב־Clear Stats, Retry אינו נוטש Receipt: הוא קורא מקורות מחדש,
+בונה תוכנית חדשה ומחייב אישור חדש, תוך שימוש באותו Receipt פתוח לאותו יעד.
+גם אחרי רענון עמוד נבחר ה־Receipt הפתוח מהשרת. כמה רשומות פתוחות לאותו
+יעד חוסמות את ההמשך ודורשות בדיקה; אין בחירה שקטה או יצירת רשומה נוספת.
+אין שחזור Approved State ישן, rollback או Resume של רשימת שלבים ישנה.
+
+Clear Stats יוצר Receipt וכל שדות החובה שלו בכתיבה אחת.
+לפני כל ביצוע נבדקות כל פעולות Stats הפתוחות: אין פתוחות — יוצרים Receipt;
+פעולת Clear Stats יחידה לאותו יעד — משתמשים בה מחדש; פעולה ליעד אחר,
+פעולת Stats מסוג אחר או יותר מפעולה פתוחה אחת — חוסמות ללא כתיבה.
+Clear Stats אינו הופך פעולת טעינה פתוחה לפעולת מחיקה.
+
+אין יצירת Receipt ואחריה
+השלמת metadata בכתיבה נפרדת. גם Receipt ישן עם label של CLEAR_STATS וללא
+operationType מזוהה כפעולת מחיקה קיימת, ואינו מצדיק יצירת רשומה נוספת.
+
+Clear Roster שומר תיעוד ביצוע קטן: executionStatus, lastCompletedStep,
+failedStep ו־failedTarget בצורת { targetType, documentId } או null.
+כל שלב שהושלם או דולג באופן תקין מעדכן lastCompletedStep. בכשל נשמרים
+השלב והיעד שנכשלו והפעולה נשארת open. כשל בכתיבת התיעוד עצמו מוצג למשתמש.
+בתחילת ביצוע חוזר מתאפסים פרטי הכשל, lastCompletedStep וסיכום הביקורת הקודם;
+canonicalStatus אינו מתאפס ואינו משמש הוכחה לכך שלא הייתה כתיבה.
+מתחילים שוב מהשלב הראשון עם Approved State חדש, באופן idempotent.
+רק לאחר Audit מלא ותקין נכתבים יחד status closed ו־executionStatus succeeded.
+אין שמירת Approved State, תוכנית התאוששות או מצב Resume ב־Receipt.
+
+Clear Roster דורש בנוסף למצב Stats absent מהשרת: אין פעולת Stats פתוחה,
+והפעולה האחרונה של Stats לקבוצה ולעונה נסגרה עם דיווח Canonical ועם
+ביקורת מלאה ללא ממצאים. בהיעדר הוכחה זו הפעולה חסומה; Receipt אינו מחליף
+את בדיקת המצב הקנוני. בדיקת הקדם חלה גם ב־Prepare ובאישור לפני יצירת Receipt.
+
+כאשר Stats כבר absent וכל ההקרנות תקינות, ממשק Clear Stats מאפשר אישור
+ביקורת וסיום. המסלול יוצר Receipt, מדלג על כתיבות עסקיות שאינן נדרשות,
+קורא Actual מחדש מהשרת וסוגר את ה־Receipt רק לאחר ביקורת מוצלחת.
+
 ---
 
 ## 15. Idempotency ומטרות חסרות
@@ -800,13 +840,9 @@ Team Season חסר
 
 ### 15.4 CLEAR_ROSTER כאשר Team Season חסר
 
-אם היעד הקנוני כבר אינו קיים ואין state סותר:
-
-```text
-→ idempotent success
-```
-
-אין ליצור מסמך לצורך מחיקתו.
+בזרימה הנוכחית Team Root ו־Team Season הם תנאי קדם ונשמרים. יעד חסר מחזיר
+כשל תנאי קדם, ולא נוצר לצורך המחיקה. כאשר המסמך קיים במצב Roster absent,
+כל שלבי ההקרנה והביקורת עדיין זמינים כדי לנקות שאריות מהרצה קודמת.
 
 ### 15.5 CLEAR_LEAGUE_TEAMS שכבר בוצע
 
@@ -992,7 +1028,7 @@ Approved State ישן.
 | פעולה | Stats | Roster | Movement | League | Player Document |
 | --- | --- | --- | --- | --- | --- |
 | `CLEAR_STATS` | מנקה | שומר | שומר | Stats-owned projection בלבד | מנקה Stats-owned state בלבד; לא מוחק מסמך |
-| `CLEAR_ROSTER` | חייב להיות `absent` | מנקה | מסנכרן | Roster-owned projection בלבד | לא מוחק |
+| `CLEAR_ROSTER` | חייב להיות `absent`; אינו משתנה | מנקה; Team Season נשמר | מעברי עונת הקבוצה ו־pending מתאפסים; אין Counterpart | Roster-owned projection בלבד | לא משנה |
 | `DELETE_PLAYER_FROM_ROSTER` | חייב להיות `absent` לשחקן | מסיר שחקן | מסנכרן | Roster-owned projection בלבד | לא מוחק |
 | `CLEAR_LEAGUE_TEAMS` | Team Seasons חייבים לא להתקיים | Team Seasons חייבים לא להתקיים | — | מנקה קבוצות; `tableRank = []` | — |
 | `DELETE_LEAGUE_SEASON` | חייב להיות נקי | Team Seasons חייבים לא להתקיים | — | מוחק Season | — |
@@ -1008,7 +1044,7 @@ Clear Stats
 ↓
 Clear/Delete Roster
 ↓
-אין Team Seasons
+מחיקת Team Seasons נפרדת (טרם הוגדרה)
 ↓
 Clear League Teams
 ↓
@@ -1016,6 +1052,8 @@ Delete League Season
 ```
 
 זהו סדר תנאי קדם בלבד.
+
+Clear Roster לבדו אינו מתיר Clear League Teams: הוא משאיר את Team Season.
 
 החצים אינם Cascade אוטומטי.
 

@@ -56,6 +56,17 @@ const actualState = ({ approved = approvedState(), projections = {} } = {}) => (
 })
 
 describe('auditClearStatsV2', () => {
+  test('does not trust an approved Balance containing the same residue as actual', () => {
+    const approved = approvedState()
+    approved.finalTeamSeasonPreview.teamBalance.source.inputHash = 'old-roster-hash'
+    const actual = actualState({ approved })
+    const result = auditClearStatsV2({ approvedState: approved, actualState: actual })
+
+    expect(result.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ check: 'canonical_stats_absent', status: 'failed' }),
+    ]))
+  })
+
   test('passes when Canonical and projections equal the approved expected state', () => {
     const projectionPlan = basePlan()
     projectionPlan.leagueOperation = {

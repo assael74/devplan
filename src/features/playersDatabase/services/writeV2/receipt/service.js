@@ -21,7 +21,20 @@ export async function createWriteActionReceiptV2({
   flowType = '',
   label = '',
   auditTarget = {},
+  operationType = '',
+  initialFields = {},
 } = {}) {
+  const allowedInitialFields = [
+    'executionStatus', 'lastCompletedStep', 'failedStep', 'failedTarget',
+    'identity', 'approvedAt', 'startedAt', 'completedAt', 'currentStatsState',
+    'canonicalWrite', 'projectionWrite', 'audit', 'error',
+  ]
+  if (Object.keys(initialFields).some(field => !allowedInitialFields.includes(field))) {
+    throw new Error('Invalid WriteAction initial field')
+  }
+  if (operationType && !['import', 'clear', 'delete'].includes(operationType)) {
+    throw new Error('Invalid WriteAction operationType')
+  }
   const resolvedFlowType = assertWriteActionFlowTypeV2(flowType)
   const resolvedLabel = String(label || '').trim()
 
@@ -36,8 +49,10 @@ export async function createWriteActionReceiptV2({
   await writeWriteActionReceiptV2({
     reference,
     receipt: {
+      ...initialFields,
       id: reference.id,
       flowType: resolvedFlowType,
+      ...(operationType ? { operationType } : {}),
       label: resolvedLabel,
       auditTarget: resolvedAuditTarget,
       canonicalStatus: WRITE_ACTION_V2_CANONICAL_STATUS.PENDING,
@@ -167,6 +182,25 @@ export async function persistWriteActionAuditResultV2({
     findingsCount,
     checkedDomains: audit?.coverage?.coveredTargets || [],
   })
+
+  if (receipt.flowType === 'roster' && receipt.operationType === 'clear' &&
+      [WRITE_ACTION_V2_STATUS.OPEN, WRITE_ACTION_V2_STATUS.CLOSED].includes(receipt.status)) {
+    const finding = (audit.findings || []).find(item => item.documentId)
+    const status = auditClean ? WRITE_ACTION_V2_STATUS.CLOSED : WRITE_ACTION_V2_STATUS.OPEN
+    await patchWriteActionReceiptV2({
+      receiptId,
+      patch: {
+        status,
+        executionStatus: auditClean ? 'succeeded' : 'failed',
+        ...(auditClean ? { lastCompletedStep: 'audit' } : {}),
+        failedStep: auditClean ? null : 'audit',
+        failedTarget: !auditClean && finding
+          ? { targetType: finding.target, documentId: finding.documentId }
+          : null,
+      },
+    })
+    return status
+  }
 
   if (receipt.status === WRITE_ACTION_V2_STATUS.OPEN && auditClean) {
     await closeWriteActionReceiptV2({ receiptId })

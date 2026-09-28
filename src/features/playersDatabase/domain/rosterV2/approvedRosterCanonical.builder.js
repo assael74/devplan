@@ -8,6 +8,8 @@ import {
   normalizeTeamSeasonRosterState,
 } from './support/teams/teamSeason.model.js'
 import { withTeamBalanceSnapshot } from './support/teams/teamBalanceSnapshot.js'
+import { buildStatsAbsentTeamSeasonState } from '../statsV2/statsAbsence.builder.js'
+import { getTeamSeasonStatsState } from '../statsV2/teamSeasonStatsState.js'
 import {
   applyTeamPerformanceProjection,
   buildPersistedTeamPerformanceFallback,
@@ -245,10 +247,15 @@ export const buildPreparedTeamSeasonRoster = ({
     existingSeason,
     teamPerformance,
   })
-  const seasonDoc = withTeamBalanceSnapshot({
-    seasonDoc: seasonDocWithoutBalance,
-    teamRoot: buildBalanceRootContext({ team, teamId }),
-  })
+  const statsWereAbsent = existingSeason && (
+    getTeamSeasonStatsState(existingSeason) === 'absent'
+  )
+  const seasonDoc = statsWereAbsent || !existingSeason
+    ? buildStatsAbsentTeamSeasonState(seasonDocWithoutBalance)
+    : withTeamBalanceSnapshot({
+        seasonDoc: seasonDocWithoutBalance,
+        teamRoot: buildBalanceRootContext({ team, teamId }),
+      })
   const persistedSeason = buildTeamSeasonDocumentData({
     team: { ...team, birthTeamDocumentId: teamId },
     season: persistedSeasonScope,

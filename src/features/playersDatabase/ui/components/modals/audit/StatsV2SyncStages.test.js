@@ -98,6 +98,23 @@ describe('StatsV2SyncStages', () => {
     expect(onRepairCanonical).toHaveBeenCalledWith(finding)
   })
 
+  test('presents Clear Stats repair as a deletion continuation', () => {
+    const finding = { target: 'teamSeason', type: 'clear_stats_mismatch' }
+    const onRepairCanonical = jest.fn()
+
+    render(
+      <StatsV2SyncStages
+        result={{ ...auditResult([finding]), operationType: 'clear' }}
+        onRepairCanonical={onRepairCanonical}
+      />
+    )
+
+    expect(screen.getByText('השלמת מחיקת Stats')).toBeInTheDocument()
+    expect(screen.getByText(/נדרשת הכנה ואישור מחדש של המחיקה/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'השלם מחיקה' }))
+    expect(onRepairCanonical).toHaveBeenCalledWith(finding)
+  })
+
   test('offers Team + League repair when Team SearchIndex is missing', () => {
     const onSyncStage = jest.fn()
 

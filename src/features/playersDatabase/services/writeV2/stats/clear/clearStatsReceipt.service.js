@@ -2,11 +2,16 @@
 
 import {
   doc,
+  collection,
+  query,
+  where,
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore'
 
 import { db } from '../../../../../../services/firebase/firebase.js'
+import { trackedGetDocsFromServer } from '../../../../../../services/firestore/usage/index.js'
+import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import {
   WRITE_ACTION_V2_CANONICAL_STATUS,
@@ -25,17 +30,32 @@ const receiptRef = receiptId => doc(
 
 export async function createClearStatsReceiptV2({ approvedState, startedAt }) {
   const identity = approvedState.identity || {}
-  const receiptId = await createWriteActionReceiptV2({
-    flowType: WRITE_ACTION_V2_FLOW_TYPE.STATS,
-    label: 'CLEAR_STATS',
-    auditTarget: {
-      birthTeamDocumentId: identity.birthTeamDocumentId,
-      seasonKey: identity.seasonKey,
-    },
+  const snapshot = await trackedGetDocsFromServer(query(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.writeActionsV2),
+    where('flowType', '==', 'stats')
+  ), {
+    feature: 'playersDatabase',
+    collection: PLAYERS_DATABASE_COLLECTIONS.writeActionsV2,
+    action: 'clear-stats-receipt',
+    operationSubtype: 'getFromServer',
+  })
+  const season = normalizeSeasonLookupKey(identity.seasonKey)
+  const matchingClearReceipts = snapshot.docs.filter(row => {
+    const receipt = row.data()
+    const sameTarget = receipt.auditTarget?.birthTeamDocumentId === identity.birthTeamDocumentId &&
+      season && normalizeSeasonLookupKey(receipt.auditTarget?.seasonKey) === season
+    const isClear = receipt.operationType === 'clear' ||
+      (!receipt.operationType && receipt.label === 'CLEAR_STATS')
+    return receipt.status === 'open' && sameTarget && isClear
   })
 
-  await updateDoc(receiptRef(receiptId), {
-    operationType: 'clear',
+  if (matchingClearReceipts.length > 1) {
+    const error = new Error('Multiple open Stats receipts require review')
+    error.code = 'CLEAR_STATS_MULTIPLE_OPEN_RECEIPTS'
+    throw error
+  }
+
+  const initialFields = {
     executionStatus: 'running',
     identity: {
       birthTeamDocumentId: identity.birthTeamDocumentId,
@@ -65,10 +85,29 @@ export async function createClearStatsReceiptV2({ approvedState, startedAt }) {
     },
     failedStep: null,
     error: null,
-    updatedAt: serverTimestamp(),
-  })
+  }
 
-  return receiptId
+  if (matchingClearReceipts.length === 1) {
+    const receiptId = matchingClearReceipts[0].id
+    // Keep canonicalStatus: pending/unknown never proves that nothing was written.
+    await patchClearStatsReceiptV2({
+      receiptId,
+      patch: { ...initialFields, operationType: 'clear', lastAuditAt: null, lastAuditSummary: null },
+    })
+    return receiptId
+  }
+
+  // One setDoc includes the complete receipt; no follow-up metadata write.
+  return createWriteActionReceiptV2({
+    flowType: WRITE_ACTION_V2_FLOW_TYPE.STATS,
+    operationType: 'clear',
+    label: 'CLEAR_STATS',
+    auditTarget: {
+      birthTeamDocumentId: identity.birthTeamDocumentId,
+      seasonKey: identity.seasonKey,
+    },
+    initialFields,
+  })
 }
 
 export const patchClearStatsReceiptV2 = async ({ receiptId, patch }) => {

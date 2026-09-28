@@ -8,16 +8,47 @@ jest.mock('./repository.js', () => ({
 }))
 
 import {
+  createWriteActionReceiptReferenceV2,
+  writeWriteActionReceiptV2,
   patchWriteActionReceiptV2,
   readWriteActionReceiptV2,
 } from './repository.js'
 import {
+  createWriteActionReceiptV2,
   closeWriteActionReceiptV2,
   reopenWriteActionReceiptV2,
   persistWriteActionAuditResultV2,
 } from './service.js'
 
 describe('WriteAction V2 receipt lifecycle', () => {
+  test('general Audit closes Clear Roster and marks execution succeeded in the same patch', async () => {
+    readWriteActionReceiptV2.mockResolvedValue({
+      flowType: 'roster', operationType: 'clear', status: 'open', executionStatus: 'failed',
+    })
+    await persistWriteActionAuditResultV2({
+      receiptId: 'roster-clear', audit: { coverage: { complete: true, coveredTargets: [] }, findings: [] },
+    })
+    expect(patchWriteActionReceiptV2).toHaveBeenLastCalledWith({
+      receiptId: 'roster-clear', patch: {
+        status: 'closed', executionStatus: 'succeeded', lastCompletedStep: 'audit',
+        failedStep: null, failedTarget: null,
+      },
+    })
+  })
+
+  test('creates a clear receipt with operationType in its initial write', async () => {
+    createWriteActionReceiptReferenceV2.mockReturnValue({ id: 'clear-1' })
+    await createWriteActionReceiptV2({
+      flowType: 'roster', operationType: 'clear', label: 'מחיקת סגל',
+      auditTarget: { birthTeamDocumentId: 'team-1', seasonKey: '26/27' },
+      initialFields: { executionStatus: 'running', failedStep: null },
+    })
+    expect(writeWriteActionReceiptV2).toHaveBeenCalledWith(expect.objectContaining({
+      receipt: expect.objectContaining({ operationType: 'clear', status: 'open', executionStatus: 'running', failedStep: null }),
+    }))
+    expect(patchWriteActionReceiptV2).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     jest.clearAllMocks()
   })

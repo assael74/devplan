@@ -23,6 +23,7 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import { PLAYER_STATS_STATUS } from '../../../model/player/playerStats.model.js'
+import { findTeamPageSeasonDoc } from '../../../model/team/page/teamPageSeason.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
@@ -35,11 +36,9 @@ import {
 } from './model/teamPlayerFilters.model.js'
 import {
   PlayerRoleEditModal,
-  SeasonDeleteConfirmModal,
   TaskEditModal,
   TeamDataRepairModal,
   WorkTaskModal,
-  WriteFlowReportModal,
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
@@ -51,7 +50,8 @@ import StatsImportModal from './stats/import/components/StatsImportModal.js'
 import useTeamDataRepair from './hooks/useTeamDataRepair.js'
 import useTeamPageTasks from './hooks/useTeamPageTasks.js'
 import useTeamStatsColumns from './stats/table/hooks/useTeamStatsColumns.js'
-import useTeamSeasonPlayersDelete from './hooks/useTeamSeasonPlayersDelete.js'
+import useClearRosterFlow from './roster/clear/useClearRosterFlow.js'
+import ClearRosterModal from './roster/clear/ClearRosterModal.js'
 import useClearStatsFlow from './stats/clear/hooks/useClearStatsFlow.js'
 import ClearStatsModal from './stats/clear/components/ClearStatsModal.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
@@ -167,12 +167,25 @@ function TeamPageContent() {
     statsImportRequest,
     team,
   ])
-  const playersDelete = useTeamSeasonPlayersDelete(sharedActionContext)
   const statsDelete = useClearStatsFlow({
     team,
     selectedSeasonOption,
     leagueId,
     reload,
+  })
+  const deleteSeasonOptions = React.useMemo(() => {
+    return seasonOptions.filter(option => Boolean(findTeamPageSeasonDoc({
+      teamSeasons,
+      selectedSeasonOption: option,
+    })))
+  }, [seasonOptions, teamSeasons])
+  const playersDelete = useClearRosterFlow({
+    team,
+    selectedSeasonOption,
+    seasonOptions: deleteSeasonOptions,
+    leagueId,
+    reload,
+    refreshAfterStats: statsDelete.status,
   })
   const teamDataRepair = useTeamDataRepair({
     team,
@@ -505,6 +518,9 @@ function TeamPageContent() {
             onStatsImport={statsImport.openModal}
             onDeleteStats={statsDelete.openModal}
             onDeletePlayers={playersDelete.openModal}
+            deleteSeasonOptions={deleteSeasonOptions}
+            getDeleteActionFor={playersDelete.getDeleteActionFor}
+            deleteActionsError={playersDelete.deleteActionsError}
             onReport={teamReport.openPreview}
             onTeamLink={() => teamUrlEditor.open(team)}
             onTeamDataRepair={teamDataRepair.openRepair}
@@ -640,27 +656,12 @@ function TeamPageContent() {
       <ClearStatsModal
         controller={statsDelete}
         teamName={team?.name || team?.teamName}
-        seasonKey={selectedSeasonOption?.seasonKey}
+        seasonKey={statsDelete.target?.seasonKey || selectedSeasonOption?.seasonKey}
       />
 
-      <SeasonDeleteConfirmModal
-        open={playersDelete.open}
-        title='מחיקת שחקני העונה'
-        description='טעינת הקבוצה בעונה הנבחרת תימחק במלואה, כולל הסגל והסטטיסטיקה.'
-        seasonKey={playersDelete.selectedSeasonOption?.seasonKey}
-        seasonOptions={playersDelete.seasonOptions}
-        selectedSeasonOptionKey={playersDelete.selectedSeasonOptionKey}
-        onSeasonOptionChange={playersDelete.setSelectedSeasonOptionKey}
-        busy={playersDelete.busy}
-        confirmLabel='מחיקת שחקני העונה'
-        onConfirm={playersDelete.confirm}
-        onClose={playersDelete.close}
-      />
-
-      <WriteFlowReportModal
-        open={Boolean(playersDelete.writeReport)}
-        report={playersDelete.writeReport}
-        onClose={playersDelete.closeWriteReport}
+      <ClearRosterModal
+        controller={playersDelete}
+        seasonKey={playersDelete.target?.seasonKey || selectedSeasonOption?.seasonKey}
       />
 
     </>

@@ -70,7 +70,8 @@ describe('ClearStatsModal', () => {
       })}
     />)
 
-    expect(screen.getByText('נתוני הסטטיסטיקה כבר נקיים')).toBeInTheDocument()
+    expect(screen.getByText(/נתוני הסטטיסטיקה כבר נקיים/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'אישור ביקורת וסיום' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: 'מחק נתוני סטטיסטיקה' }))
       .not.toBeInTheDocument()
   })

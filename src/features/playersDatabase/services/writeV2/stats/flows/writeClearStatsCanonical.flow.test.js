@@ -4,7 +4,10 @@ import { updateDoc } from 'firebase/firestore'
 import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
 
 import { buildClearStatsApprovedStateV2 } from '../../../../domain/statsV2/clearStatsApprovedState.builder.js'
-import { buildStatsAbsentTeamSeasonState } from '../../../../domain/statsV2/statsAbsence.builder.js'
+import {
+  buildStatsAbsentTeamBalance,
+  buildStatsAbsentTeamSeasonState,
+} from '../../../../domain/statsV2/statsAbsence.builder.js'
 import { prepareClearStatsPlanV2 } from '../prepare/prepareClearStatsPlanV2.js'
 import { applyApprovedClearStatsTeamSeason } from '../support/applyApprovedClearStatsTeamSeason.js'
 import { writeClearStatsCanonicalV2 } from './writeClearStatsCanonical.flow.js'
@@ -117,6 +120,7 @@ describe('writeClearStatsCanonicalV2', () => {
     ])
     expect(payload.transfersIn).toBeUndefined()
     expect(payload.performance).toBeUndefined()
+    expect(payload.teamBalance).toEqual(buildStatsAbsentTeamBalance())
   })
 
   test('skips the write when the current owned state already matches', async () => {

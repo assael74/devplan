@@ -72,6 +72,21 @@ beforeEach(() => {
 })
 
 describe('executeClearStatsV2', () => {
+  test('creates and closes a receipt after server Audit even when all business writes skip', async () => {
+    writeClearStatsCanonicalV2.mockResolvedValue({ writeSkipped: true, playersAffected: 0 })
+    writeClearStatsProjectionsV2.mockResolvedValue({
+      writesAttempted: 0, writesCompleted: 0, writesSkipped: 0, targets: [],
+    })
+    const result = await executeClearStatsV2({
+      approvedState: { ...approvedState, currentStatsState: 'absent', isIdempotent: true },
+    })
+    expect(createClearStatsReceiptV2).toHaveBeenCalledTimes(1)
+    expect(readClearStatsActualV2).toHaveBeenCalledTimes(1)
+    expect(auditClearStatsV2).toHaveBeenCalledTimes(1)
+    expect(closeClearStatsReceiptV2).toHaveBeenCalledWith({ receiptId: 'receipt-1' })
+    expect(result.status).toBe('succeeded')
+  })
+
   test('runs Receipt, Canonical, Projections and Audit in order', async () => {
     const events = []
     createClearStatsReceiptV2.mockImplementation(async () => { events.push('receipt'); return 'receipt-1' })
