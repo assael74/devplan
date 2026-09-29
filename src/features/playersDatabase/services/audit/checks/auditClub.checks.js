@@ -3,7 +3,6 @@
 import { buildLeagueTeamPerformanceProjection, resolveLeagueTeamPoints } from '../audit.projections.js'
 import { buildAuditFinding, AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE } from '../audit.contract.js'
 import { AUDIT_SCOPE_TYPE } from '../audit.scope.js'
-import { buildClubDataRepairIssues } from '../../dataRepair/club/clubDataRepair.diagnosis.js'
 import { buildClubScoutPerformanceProjection } from '../../../domain/projections/club/clubAgeGroupSeason.projection.js'
 import { buildLeagueTeamSeasons } from '../../../domain/orchestration/buildLeagueTeamSeasons.js'
 
@@ -121,28 +120,6 @@ export function appendClubAuditFindings({
         source: 'Club Document → Clubs Master',
       }))
     }
-
-    buildClubDataRepairIssues({ clubDocument: { ...club, id }, masterEntry }).forEach(issue => {
-      findings.push(buildAuditFinding({
-        type: issue.code === 'master_entry_mismatch'
-          ? AUDIT_FINDING_TYPE.SOURCE_MISMATCH
-          : AUDIT_FINDING_TYPE.UNEXPECTED_DOCUMENT,
-        entityType: issue.code === 'master_entry_mismatch' ? 'clubsMasterClub' : 'clubDocument',
-        documentId: issue.code === 'master_entry_mismatch' ? 'all' : id,
-        relatedDocumentId: issue.code === 'master_entry_mismatch' ? clubId : '',
-        seasonKey: issue.seasonKey,
-        relationKey: [issue.code, issue.ageGroupId, issue.birthYear, issue.teamId].filter(Boolean).join('::'),
-        title: issue.title,
-        explanation: issue.action,
-        source: issue.code === 'master_entry_mismatch'
-          ? 'Club Document → buildClubsMasterClubProjection'
-          : 'Club Document projection identity',
-        repairType: issue.code === 'master_entry_mismatch'
-          ? AUDIT_REPAIR_TYPE.REBUILD_CLUBS_MASTER
-          : '',
-        severity: issue.severity === 'danger' ? 'high' : 'medium',
-      }))
-    })
 
     const clubSeasonKeys = new Set()
     ;(Array.isArray(club?.ageGroups) ? club.ageGroups : []).forEach(ageGroup => {

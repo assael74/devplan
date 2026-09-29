@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/teams/teamSeason.model.js
+// src/features/playersDatabase/domain/rosterV2/support/teams/teamSeason.model.js
 
 import {
   clean,
@@ -502,8 +502,8 @@ export const normalizeTeamSeasonRosterState = ({
         : null,
     seasonStatus: normalizeSeasonStatus(seasonStatusValue),
     teamUrl: clean(pickDefinedValue(
-      seasonDoc.teamUrl,
-      team.teamUrl
+      team.teamUrl,
+      seasonDoc.teamUrl
     )),
     teamPlayers: normalizedPlayers,
     playersCount: countCurrentRosterPlayers(normalizedPlayers),

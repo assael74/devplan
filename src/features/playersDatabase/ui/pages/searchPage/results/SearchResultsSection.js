@@ -22,7 +22,6 @@ const renderExpandedRow = ({
   row,
   onNotesSave,
   onRoleEdit,
-  onScoutProfileRemove,
   onTeamUrlEdit,
 }) => {
   const isPlayer = row?.entityType !== 'birthTeamSeason'
@@ -34,10 +33,7 @@ const renderExpandedRow = ({
     ]}>
       {isPlayer ? (
         <Box sx={sx.expandedScoutProfiles}>
-          <SearchResultScoutProfiles
-            row={row}
-            onRemove={onScoutProfileRemove}
-          />
+          <SearchResultScoutProfiles row={row} />
         </Box>
       ) : null}
 
@@ -62,7 +58,6 @@ export default function SearchResultsSection({
   onFavoriteToggle,
   onNotesSave,
   onRoleEdit,
-  onScoutProfileRemove,
   onTeamUrlEdit,
 }) {
   const columns = React.useMemo(() => buildSearchColumns({
@@ -121,7 +116,6 @@ export default function SearchResultsSection({
             row,
             onNotesSave,
             onRoleEdit,
-            onScoutProfileRemove,
             onTeamUrlEdit,
           })}
         />

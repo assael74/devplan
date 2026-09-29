@@ -174,6 +174,17 @@ export const buildTeamPageView = ({
     identity: {
       ...birthTeamSeason.identity,
       ...leagueTeamSeason.identity,
+      teamDocumentId: cleanValue(
+        birthTeamSeason.identity?.teamDocumentId ||
+        teamDoc?.id ||
+        leagueTeamSeason.identity?.teamDocumentId
+      ),
+      birthTeamDocumentId: cleanValue(
+        birthTeamSeason.identity?.birthTeamDocumentId ||
+        teamDoc?.birthTeamDocumentId ||
+        teamDoc?.id ||
+        leagueTeamSeason.identity?.birthTeamDocumentId
+      ),
       displayName: resolveTeamName({
         teamRow,
         teamDoc,
@@ -195,13 +206,10 @@ export const buildTeamPageView = ({
     metadata: {
       ...birthTeamSeason.metadata,
       teamUrl: cleanValue(
-        birthTeamSeason.metadata?.teamUrl ||
         leagueTeamSeason.metadata?.teamUrl
       ),
       seasonUrl: cleanValue(
-        birthTeamSeason.metadata?.seasonUrl ||
-        leagueTeamSeason.metadata?.seasonUrl ||
-        leagueDoc?.leagueUrl
+        leagueTeamSeason.metadata?.seasonUrl
       ),
     },
     ranking: officialPerformance
@@ -240,7 +248,7 @@ export const buildTeamPageView = ({
     domain: canonicalTeamSeason,
     id: cleanValue(teamId),
     birthTeamId: canonicalTeamSeason.identity.teamId || cleanValue(teamId),
-    teamDocumentId: canonicalTeamSeason.identity.teamDocumentId || cleanValue(teamId),
+    teamDocumentId: cleanValue(canonicalTeamSeason.identity.teamDocumentId),
     clubId,
     clubLevel: Number(club?.clubLevel || canonicalTeamSeason.clubLevel || 0),
     birthTeamSlot: canonicalTeamSeason.identity.teamSlot || 1,

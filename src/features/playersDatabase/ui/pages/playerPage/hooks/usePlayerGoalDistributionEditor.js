@@ -1,9 +1,6 @@
 import * as React from 'react'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../../services/write/index.js'
+import { updatePlayerSeasonGoalDistribution } from '../../../../services/writeV2/edits/player/updateGoalDistribution.js'
 
 export default function usePlayerGoalDistributionEditor({
   player,
@@ -27,31 +24,14 @@ export default function usePlayerGoalDistributionEditor({
 
     setSaving(true)
     try {
-      await runPlayersDatabaseWriteAction({
-        actionType:
-          PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_GOAL_DISTRIBUTION,
-        payload: {
-          target: selectedRow.target || 'current',
-          season: {
-            seasonId: selectedRow.seasonId || selectedRow.seasonKey,
-            seasonKey: selectedRow.seasonKey,
-          },
-          team: {
-            teamId: selectedRow.teamId,
-            birthTeamId: selectedRow.birthTeamId || selectedRow.teamId,
-            teamDocumentId:
-              selectedRow.birthTeamDocumentId || selectedRow.teamId,
-            birthTeamDocumentId:
-              selectedRow.birthTeamDocumentId || selectedRow.teamId,
-          },
-          player: {
-            playerId: player.playerId || player.id,
-            playerDocumentId:
-              player.domain?.identity?.playerDocumentId || player.id,
-            externalPlayerId: player.externalPlayerId,
-          },
-          ...goalDistribution,
-        },
+      await updatePlayerSeasonGoalDistribution({
+        playerDocumentId:
+          player.domain?.identity?.playerDocumentId || player.id,
+        birthTeamId: selectedRow.birthTeamId || selectedRow.teamId,
+        birthTeamDocumentId:
+          selectedRow.birthTeamDocumentId || selectedRow.teamDocumentId,
+        seasonKey: selectedRow.seasonKey,
+        scoringGames: goalDistribution.scoringGames,
       })
       notify({
         status: 'success',

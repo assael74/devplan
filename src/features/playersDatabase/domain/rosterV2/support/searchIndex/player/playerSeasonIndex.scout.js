@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.scout.js
+// src/features/playersDatabase/domain/rosterV2/support/searchIndex/player/playerSeasonIndex.scout.js
 
 import { adaptPlayerScoutEngineResult } from '../../../../index.js'
 import { clean } from '../../leagues/leagueDoc.js'

@@ -16,7 +16,7 @@
 - `md/AGENTS.md`, `md/README.md`, `md/architecture/DATA_ARCHITECTURE.md`.
 - `md/contracts/DELETE_V2_CONTRACT.md`, במיוחד מצב Stats absent, בעלות Clear Stats / Clear Roster ושימור ההיסטוריה.
 - `md/plans/DEFERRED_ISSUES_AND_TASKS.md`, משימה 2: ייצוג עונה בטוח במזהי מסמכים בלבד.
-- `md/plans/WRITE_V2_PLAN_UPDATED.md`, סעיף 32: Receipt קטן, Coverage ודיווח Canonical שאינו הוכחת כתיבה.
+- `md/plans/WRITE_V2_PLAN_UPDATED.md`, סעיפים 9–10: Receipt קטן, Coverage ודיווח Canonical שאינו הוכחת כתיבה.
 - `catalog/firestoreDocuments/`: קטלוגי Team Root, Team Season, Player, שני SearchIndexes, League, Club, שני Masters ו־WriteAction.
 
 אין להעתיק ערכי דוגמה מה־Catalog כתחליף ל־Builder עסקי. ה־Catalog מגדיר מבנה; Architecture וחוזי Domain מגדירים בעלות ומשמעות. Audit התפעולי בודק מצב, קשרים והקרנות, ואינו הופך לסורק סכמות כללי. בדיקות מבנה המוצעות כאן שייכות לבדיקת היישור הנפרדת.

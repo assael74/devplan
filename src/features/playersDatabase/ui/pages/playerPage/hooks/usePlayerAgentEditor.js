@@ -1,9 +1,6 @@
 import * as React from 'react'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../../services/write/index.js'
+import { updatePlayerAgent } from '../../../../services/writeV2/edits/player/updateAgent.js'
 
 export default function usePlayerAgentEditor({
   player,
@@ -26,17 +23,10 @@ export default function usePlayerAgentEditor({
 
     setSaving(true)
     try {
-      await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_AGENT,
-        payload: {
-          player: {
-            playerId: player.playerId || player.id,
-            playerDocumentId:
-              player.domain?.identity?.playerDocumentId || player.id,
-            externalPlayerId: player.externalPlayerId,
-          },
-          agent,
-        },
+      await updatePlayerAgent({
+        playerDocumentId:
+          player.domain?.identity?.playerDocumentId || player.id,
+        agent,
       })
       notify({
         status: 'success',

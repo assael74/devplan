@@ -1,3 +1,8 @@
+// src/features/playersDatabase/catalog/firestoreDocuments/clubsMaster.catalog.js
+// Standalone edits stamp changed owned records and the document with one ISO updatedAt; no-op preserves timestamps.
+
+
+// clubUrl projects Club.clubUrl, including explicit empty string. URL edits preserve every other Club/Master field.
 // Firestore projection contract: compact all-clubs first-look document.
 
 export const CLUBS_MASTER_DOCUMENT_ID = 'all'

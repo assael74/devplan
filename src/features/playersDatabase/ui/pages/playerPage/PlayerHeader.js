@@ -27,6 +27,7 @@ export default function PlayerHeader({
   onFavoriteToggle,
   onSearch,
   onTeam,
+  clubUrl = '',
 }) {
   const {
     fullName,
@@ -98,11 +99,13 @@ export default function PlayerHeader({
         {clubName && clubName !== '-' ? (
           <Box sx={sx.teamChip}>
             <Box component='img' src={teamLogo} alt='' sx={sx.teamAvatar} />
-            <TeamName
-              value={clubName}
-              slot={teamSlot}
-              fontSize={13}
-            />
+            {clean(clubUrl) ? (
+              <Box component='a' href={clean(clubUrl)} target='_blank' rel='noopener noreferrer' sx={{ color: 'inherit', textDecoration: 'none' }}>
+                <TeamName value={clubName} slot={teamSlot} fontSize={13} />
+              </Box>
+            ) : (
+              <TeamName value={clubName} slot={teamSlot} fontSize={13} />
+            )}
           </Box>
         ) : null}
 

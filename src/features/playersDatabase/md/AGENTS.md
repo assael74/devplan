@@ -7,9 +7,9 @@ Before modifying code under this directory, read:
 - `README.md`
 - `architecture/DATA_ARCHITECTURE.md`
 - the relevant file under `contracts/`
-- `plans/WRITE_V2_PLAN_UPDATED.md` when the change is part of Write V2, Audit V2, or Reconcile V2
+- `plans/WRITE_V2_PLAN_UPDATED.md` when the change affects Write V2 or Audit V2
 
-These files define the canonical source-of-truth, persistence ownership and current migration rules for this feature.
+These files define the canonical source-of-truth, persistence ownership, write boundaries and audit rules for this feature.
 
 
 ## Firestore catalog is mandatory
@@ -112,7 +112,7 @@ Architecture rules and implementation plans have different roles.
 
 - `AGENTS.md` defines stable working rules for this feature.
 - `architecture/DATA_ARCHITECTURE.md` defines the canonical architecture and persistence ownership rules.
-- `plans/WRITE_V2_PLAN_UPDATED.md` defines the current implementation sequence and wave-specific decisions for Write V2, Audit V2, and Reconcile V2.
+- `plans/WRITE_V2_PLAN_UPDATED.md` defines the current operating contract for Write V2 and Audit V2.
 - `architecture/WRITE_V2_ARCHITECTURE.md` defines the stable Write V2 execution principles.
 - Read the relevant plan section when the task depends on it; do not treat the entire plan as mandatory reading for every localized task.
 - A task-specific instruction may narrow the work scope, but it must not override canonical architecture, persistence contracts, or source-of-truth rules.

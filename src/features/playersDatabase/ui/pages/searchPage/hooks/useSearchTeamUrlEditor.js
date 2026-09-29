@@ -1,13 +1,13 @@
 // src/features/playersDatabase/ui/pages/searchPage/hooks/useSearchTeamUrlEditor.js
 
 import * as React from 'react'
+import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
+import { saveEditor } from '../../../hooks/saveEditor.js'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../../services/write/index.js'
+import { updateTeamSeasonUrl } from '../../../../services/writeV2/edits/team/updateSeasonUrl.js'
 
-export default function useSearchTeamUrlEditor({ setLoadedRows }) {
+export default function useSearchTeamUrlEditor({ reload }) {
+  const { notify } = useSnackbar()
   const [row, setRow] = React.useState(null)
   const [saving, setSaving] = React.useState(false)
 
@@ -21,78 +21,30 @@ export default function useSearchTeamUrlEditor({ setLoadedRows }) {
     setRow(null)
   }, [saving])
 
-  const save = React.useCallback(async teamUrl => {
-    if (!row || saving) return null
-
-    const rowId = row.id
-    const previousUrl = String(row.teamUrl || row.metadata?.teamUrl || '').trim()
-    const nextUrl = String(teamUrl || '').trim()
-
-    setSaving(true)
-    setLoadedRows(current => current.map(item => (
-      item.id === rowId
-        ? {
-          ...item,
-          teamUrl: nextUrl,
-          metadata: {
-            ...(item.metadata || {}),
-            teamUrl: nextUrl,
-          },
-        }
-        : item
-    )))
-
-    try {
-      const metadata = row.metadata || {}
+  const save = React.useCallback(
+    async teamUrl => {
+      if (!row || saving) return
       const identity = row.identity || {}
-      const season = row.season || {}
-      const league = row.league || {}
-
-      const result = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL,
-        payload: {
-          target: metadata.sourceTarget || row.lifecycle?.type || 'current',
-          league: {
-            ...league,
-            id: league.id || league.leagueId || '',
-          },
-          season: {
-            ...season,
-            seasonId: season.seasonId || row.seasonId || '',
-            seasonKey: season.seasonKey || row.seasonKey || '',
-          },
-          team: {
-            ...identity,
-            birthTeamId: identity.teamId || row.birthTeamId || '',
-            teamId: identity.teamId || row.birthTeamId || '',
-            teamDocumentId: identity.teamDocumentId || row.id || '',
-            name: row.teamName || identity.displayName || '',
-            teamName: row.teamName || identity.displayName || '',
-            teamUrl: nextUrl,
-          },
-        },
+      await saveEditor({
+        write: () =>
+          updateTeamSeasonUrl({
+            leagueId: row.league?.id || row.league?.leagueId || row.leagueId,
+            birthTeamId:
+              identity.birthTeamId || identity.teamId || row.birthTeamId,
+            birthTeamDocumentId:
+              identity.birthTeamDocumentId || identity.teamDocumentId,
+            seasonKey: row.season?.seasonKey || row.seasonKey,
+            teamUrl,
+          }),
+        reload: () => reload(row.id),
+        notify,
+        close: () => setRow(null),
+        setSaving,
+        title: 'קישור הקבוצה נשמר',
       })
-
-      setRow(null)
-      return result
-    } catch (error) {
-      setLoadedRows(current => current.map(item => (
-        item.id === rowId
-          ? {
-            ...item,
-            teamUrl: previousUrl,
-            metadata: {
-              ...(item.metadata || {}),
-              teamUrl: previousUrl,
-            },
-          }
-          : item
-      )))
-      throw error
-    } finally {
-      setSaving(false)
-    }
-  }, [row, saving, setLoadedRows])
+    },
+    [row, saving, reload, notify],
+  )
 
   return {
     row,

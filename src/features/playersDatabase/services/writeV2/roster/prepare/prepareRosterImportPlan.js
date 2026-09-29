@@ -1,3 +1,6 @@
+// src/features/playersDatabase/services/writeV2/roster/prepare/prepareRosterImportPlan.js
+
+import { canonicalTeamUrl, findSeason, seasonKey as editSeasonKey } from '../../../../domain/edits/editIdentity.js'
 import { getLeagueById } from '../../../read/entities/league.js'
 import { readPlayerSeasonIndexScopeRows } from '../../../read/indexes/teamRosterSyncSources.read.js'
 import { readLeaguesMasterDocument } from '../../../read/masters/leaguesMaster.read.js'
@@ -203,6 +206,18 @@ export async function prepareRosterImportPlan(payload = {}) {
     ...normalizedPayload,
     league: canonicalLeague,
   })
+  effectivePayload.season = {
+    ...effectivePayload.season,
+    seasonUrl: clean(findSeason(canonicalLeague, editSeasonKey(effectivePayload.season)).row.seasonUrl),
+  }
+  effectivePayload.team = {
+    ...effectivePayload.team,
+    teamUrl: canonicalTeamUrl({
+      league: canonicalLeague,
+      season: effectivePayload.season,
+      team: effectivePayload.team,
+    }),
+  }
   const rosterHistory = await readTeamSeasonRosterHistory({
     birthTeamDocumentId,
     seasonKey: effectivePayload.season.seasonKey,

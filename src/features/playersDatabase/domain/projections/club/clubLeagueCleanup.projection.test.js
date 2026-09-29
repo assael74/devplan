@@ -5,9 +5,6 @@ import {
 import {
   buildClubsMasterClubProjection,
 } from './clubsMaster.projection.js'
-import {
-  buildClubProjectionCompletion,
-} from '../../../services/write/clubs/projectionCompletion.js'
 
 const removal = ({ teamId }) => ({
   leagueId: 'league-a',
@@ -106,20 +103,6 @@ describe('Club cleanup after League clear/delete', () => {
 
     expect(ageGroup.current.map(item => item.teamId)).toEqual(['1002'])
     expect(ageGroup.previous.map(item => item.teamId)).toEqual(['1001'])
-  })
-
-  test('projection failure after canonical commit cannot be completed', () => {
-    expect(buildClubProjectionCompletion({
-      canonicalCommitted: true,
-      clubDocumentCompleted: false,
-      clubsMasterCompleted: false,
-      errorStage: 'clubDocument',
-    })).toMatchObject({
-      canonicalCommitted: true,
-      projectionsCompleted: false,
-      recoveryRequired: true,
-      completed: false,
-    })
   })
 
   test('same Clear/Delete cleanup is idempotent', () => {

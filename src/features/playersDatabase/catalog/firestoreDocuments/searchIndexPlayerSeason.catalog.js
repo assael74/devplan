@@ -1,5 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js
 
+// URL fields are projections: playerUrl from Team Season player, teamUrl from League team row, seasonUrl from League season.
+// src/features/playersDatabase/catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js
+
 // Firestore source of truth: player-season SearchIndex document.
 
 import { SCOUTING_MODEL_VERSION } from '../../../../shared/scouting/scouting.version.js'

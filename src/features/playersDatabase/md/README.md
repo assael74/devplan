@@ -12,17 +12,17 @@
 3. `catalog/firestoreDocuments` — מבנה מסמכי Firestore.
 4. `contracts/*` — חוזה הזרימה או התחום הרלוונטי.
 5. `architecture/WRITE_V2_ARCHITECTURE.md` — עקרונות שכבת Write V2.
-6. `plans/WRITE_V2_PLAN_UPDATED.md` — תוכנית העבודה הקנונית של Write V2, Audit V2 ו-Reconcile V2.
+6. `plans/WRITE_V2_PLAN_UPDATED.md` — חוזה הכתיבה והבקרה הקנוני של Write V2 ו־Audit V2.
 7. `runbooks/*` — הוראות הפעלה ובדיקות.
 
-בסתירה בין מסמך יציב לבין תוכנית המיגרציה, תוכנית V2 גוברת רק עבור זרימת
-V2 שהיא מגדירה במפורש. היא אינה מבטלת חוזים עסקיים של זרימות שטרם היגרו.
+בסתירה בין מסמכים, חוזי התחום וארכיטקטורת הנתונים קובעים בעלות ומשמעות;
+מסמך Write V2 קובע את גבולות הכתיבה והבקרה התפעוליים.
 
 ## מסמכים פעילים
 
 - [ארכיטקטורת נתונים](./architecture/DATA_ARCHITECTURE.md)
 - [ארכיטקטורת Write V2](./architecture/WRITE_V2_ARCHITECTURE.md)
-- [מפת הדרך הקנונית של Write V2, Audit V2 ו-Reconcile V2](./plans/WRITE_V2_PLAN_UPDATED.md)
+- [חוזה הכתיבה והבקרה של Write V2 ו־Audit V2](./plans/WRITE_V2_PLAN_UPDATED.md)
 - [חוזה League](./contracts/LEAGUE_CONTRACT.md)
 - [חוזה Roster ו־Movement](./contracts/ROSTER_MOVEMENT_CONTRACT.md)
 - [חוזה Stats Load](./contracts/STATS_LOAD_CONTRACT.md)
@@ -34,5 +34,7 @@ V2 שהיא מגדירה במפורש. היא אינה מבטלת חוזים ע�
 
 המסמכים הישנים נשמרים זמנית בתיקיית המקור לצורך תאימות והיסטוריה. אין להוסיף
 בהם החלטות חדשות. מסמכי יעד ותקלות שאינם רלוונטיים נשמרים תחת `archive/`.
-תוכנית העבודה הפעילה עבור Write V2, Audit V2 ו-Reconcile V2 היא
+חוזה הכתיבה והבקרה הפעיל עבור Write V2 ו־Audit V2 הוא
 plans/WRITE_V2_PLAN_UPDATED.md.
+
+- [חוזה פעולות עריכה עצמאיות — ארבע פעולות קישור וחוקי תחרות נפרדים](./contracts/STANDALONE_EDITS_CONTRACT.md)

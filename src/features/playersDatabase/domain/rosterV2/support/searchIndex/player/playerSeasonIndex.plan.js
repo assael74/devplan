@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/rosterV2/support/searchIndex/player/playerSeasonIndex.plan.js
+
 import { normalizeComparableValue } from '../../../../../services/shared/valueComparison.js'
 import { buildPlayerSeasonScope } from '../../shared/playerSeasonScope.js'
 import { buildSeasonKey, clean } from '../../leagues/leagueDoc.js'
@@ -45,6 +47,7 @@ const ROSTER_OWNED_PLAYER_INDEX_FIELDS = [
   'teamId',
   'teamDocumentId',
   'seasonUrl',
+  'teamUrl',
   'ageGroupId',
   'ageGroupLabel',
   'birthYear',

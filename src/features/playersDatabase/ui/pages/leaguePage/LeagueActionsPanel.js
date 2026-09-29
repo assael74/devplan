@@ -32,10 +32,8 @@ export default function LeagueActionsPanel({
   onAttackPriorityFilterChange,
   onDefensePriorityFilterChange,
   onLoad,
-  onDataRepair,
   onDownloadDocuments,
   onLeagueUrlEdit,
-  hasLeagueUrl = false,
   downloadDisabled = false,
   loadDisabled = false,
   loadDisabledReason = '',
@@ -200,10 +198,10 @@ export default function LeagueActionsPanel({
           </span>
         </Tooltip>
 
-        <Tooltip title={hasLeagueUrl ? 'עריכת הגדרות וקישור העונה' : 'הגדרות העונה וכללי התחרות'}>
+        <Tooltip title='הגדרות עונת ליגה'>
           <IconButton
             variant='outlined'
-            aria-label={hasLeagueUrl ? 'עריכת הגדרות וקישור העונה' : 'הגדרות העונה וכללי התחרות'}
+            aria-label='הגדרות עונת ליגה'
             sx={sx.sideLinkButton}
             onClick={onLeagueUrlEdit}
           >
@@ -222,16 +220,6 @@ export default function LeagueActionsPanel({
           </IconButton>
         </Tooltip>
 
-        <Tooltip title='תיקוני דאטה לליגה'>
-          <IconButton
-            variant='outlined'
-            aria-label='תיקוני דאטה לליגה'
-            sx={sx.sideDataRepairButton}
-            onClick={onDataRepair}
-          >
-            {iconUi({id: 'search', size: 'md'})}
-          </IconButton>
-        </Tooltip>
       </Box>
 
       <Box sx={sx.taskSection}>

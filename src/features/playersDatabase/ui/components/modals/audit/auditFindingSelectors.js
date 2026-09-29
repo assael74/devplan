@@ -1,6 +1,6 @@
 // src/features/playersDatabase/ui/components/modals/audit/auditFindingSelectors.js
 
-import { AUDIT_FINDING_TYPE, AUDIT_REPAIR_TYPE, normalizeLegacyAuditRepairType } from '../../../../services/audit/index.js'
+import { AUDIT_FINDING_TYPE } from '../../../../services/audit/index.js'
 import { clean } from './auditFindingPresentation.js'
 
 export const MISMATCH_COLLECTION_TABS = Object.freeze([
@@ -53,34 +53,3 @@ export const selectFindingView = ({ findings = [], filter = 'all', mismatchColle
   return { mismatchCounts, activeMismatchCollection, filtered }
 }
 
-export const selectRepairFindings = findings => {
-  const mismatchFindings = findings.filter(item => item.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH)
-  const hasRepairType = (finding, repairType) => (
-    normalizeLegacyAuditRepairType(finding) === repairType
-  )
-
-  return {
-    repairable: findings.filter(finding => (
-      hasRepairType(finding, AUDIT_REPAIR_TYPE.CREATE_PLAYER_DOCUMENT) &&
-      clean(finding.playerDocumentId || finding.playerId || finding.externalPlayerId || finding.playerDisplayName)
-    )),
-    clubProjection: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_PROJECTION)),
-    playerIndex: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_PLAYER_SEARCH_INDEX)),
-    orphanPlayerIndex: findings.filter(finding => (
-      hasRepairType(finding, AUDIT_REPAIR_TYPE.DELETE_ORPHAN_PLAYER_SEARCH_INDEX) &&
-      clean(finding.documentId) &&
-      clean(finding.teamDocumentId) &&
-      clean(finding.seasonKey)
-    )),
-    orphanTeamIndex: findings.filter(finding => (
-      hasRepairType(finding, AUDIT_REPAIR_TYPE.RESET_ORPHAN_TEAM_SEARCH_INDEX) &&
-      clean(finding.documentId) &&
-      clean(finding.teamDocumentId) &&
-      clean(finding.seasonKey)
-    )),
-    teamIndex: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_TEAM_SEARCH_INDEX)),
-    clubsMaster: mismatchFindings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUBS_MASTER) && clean(finding.relatedDocumentId)),
-    clubCompetitionPath: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.REBUILD_CLUB_COMPETITION_PATH)),
-    movementCounterpart: findings.filter(finding => hasRepairType(finding, AUDIT_REPAIR_TYPE.RETRY_MOVEMENT_COUNTERPART)),
-  }
-}

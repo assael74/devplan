@@ -280,6 +280,7 @@ export const buildPlayerPageView = (
       playerDomain.identity?.birthDate
     ) || null,
     agent: season?.metadata?.agent || null,
+    clubId: cleanValue(season.team?.clubId),
     clubName: getClubShortName(season.team?.clubId) || '-',
     teamName: resolveAgeGroupLabel({
       ageGroupId: season.team?.ageGroupId,

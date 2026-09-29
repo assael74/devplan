@@ -16,7 +16,7 @@ import { teamHeaderSx as sx } from './sx/teamHeader.sx.js'
 export default function TeamHeader({
   breadcrumbs,
   team,
-  teamUrl = '',
+  clubUrl = '',
   seasonKey,
   latestSeason = null,
   favorite = false,
@@ -26,7 +26,7 @@ export default function TeamHeader({
   onLeague,
   backLabel = 'חזרה לליגה',
 }) {
-  const resolvedTeamUrl = String(teamUrl || team?.teamUrl || '').trim()
+  const resolvedClubUrl = String(clubUrl || '').trim()
   const headerLeagueContext = [
     latestSeason?.leagueName || team?.leagueName,
     latestSeason?.ageGroupLabel || latestSeason?.ageGroupId || team?.ageGroupLabel || team?.ageGroupId,
@@ -69,14 +69,14 @@ export default function TeamHeader({
           sx={sx.teamLogo}
         />
 
-        {resolvedTeamUrl ? (
+        {resolvedClubUrl ? (
           <Box
             component='a'
-            href={resolvedTeamUrl}
+            href={resolvedClubUrl}
             target='_blank'
             rel='noopener noreferrer'
             referrerPolicy='no-referrer'
-            aria-label={`פתיחת קישור הקבוצה ${team.name || ''}`}
+            aria-label={`פתיחת קישור המועדון ${team.name || ''}`}
             sx={sx.pageTitleLink}
           >
             <Typography data-team-title level='h1' sx={sx.pageTitle}>

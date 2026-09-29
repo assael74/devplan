@@ -1,4 +1,9 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/leagueDocument.catalog.js
+// Standalone edits stamp changed owned records and the document with one ISO updatedAt; no-op preserves timestamps.
+
+
+// Season seasonUrl and tableRank[].teamUrl are canonical URLs. Standalone settings edits own competitionRules and required competition projections; they preserve table facts.
+// src/features/playersDatabase/catalog/firestoreDocuments/leagueDocument.catalog.js
 
 // Firestore source of truth: league document.
 // DELETE_LEAGUE_SEASON retains this root even with current=null and history=[].

@@ -9,6 +9,13 @@ import {
 } from '@mui/joy'
 
 import RegularModal from '../../../../../components/modals/RegularModal.js'
+import ModalStepper from '../../../../../components/modals/ModalStepper.js'
+import {
+  DELETE_MODAL_STEPS,
+  DeleteModalIds,
+  DeleteModalPreserved,
+  resolveDeleteModalStep,
+} from '../../../../../components/modals/DeleteModalPresentation.js'
 import { clearStatsModalSx as sx } from '../sx/clearStatsModal.sx.js'
 
 const ERROR_MESSAGES = {
@@ -162,6 +169,7 @@ export default function ClearStatsModal({
       open={open}
       title='מחיקת נתוני סטטיסטיקה'
       iconId='delete'
+      appearance='destructive'
       busy={busy}
       persistent={busy}
       hideFooter
@@ -169,6 +177,8 @@ export default function ClearStatsModal({
       onClose={close}
     >
       <Box sx={sx.body}>
+        <Typography level='title-md'>{teamName || 'הקבוצה'} · עונה {seasonKey || proposedPlan?.identity?.seasonKey || '—'}</Typography>
+        <ModalStepper steps={DELETE_MODAL_STEPS} activeStep={resolveDeleteModalStep(status)} compact />
         {status === 'loadingPreview' ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CircularProgress size='sm' />
@@ -181,13 +191,11 @@ export default function ClearStatsModal({
             <Typography level='body-sm'>
               הפעולה תנקה את נתוני הסטטיסטיקה ואת נתוני הסקאוטינג שנגזרו מהם עבור הקבוצה והעונה שנבחרו.
             </Typography>
-            <Alert color='neutral' variant='soft'>
-              הפעולה לא תמחק שחקנים, סגל, תנועות שחקנים, מסמכי שחקנים, נתוני טבלה רשמיים או ביצועי קבוצה.
-            </Alert>
+            <DeleteModalPreserved>שחקנים, הסגל, תנועות שחקנים, מסמכי שחקנים, נתוני הטבלה הרשמיים וביצועי הקבוצה.</DeleteModalPreserved>
 
             {noWork ? (
               <Alert color='success' variant='soft'>
-                נתוני הסטטיסטיקה כבר נקיים. ניתן לאשר ביקורת מהשרת ולתעד את השלמת הפעולה, ללא שינוי נתונים שכבר תקינים.
+                נתוני הסטטיסטיקה כבר נקיים. ניתן לבצע בדיקת סנכרון ולתעד את השלמת הפעולה, ללא שינוי נתונים שכבר תקינים.
               </Alert>
             ) : (
               <Box sx={sx.summaryGrid}>
@@ -206,10 +214,10 @@ export default function ClearStatsModal({
 
             <Box sx={sx.actions}>
               <Button color={noWork ? 'primary' : 'danger'} onClick={execute}>
-                {noWork ? 'אישור ביקורת וסיום' : 'מחק נתוני סטטיסטיקה'}
+                {noWork ? 'בדיקת סנכרון וסיום' : 'אישור מחיקה'}
               </Button>
               <Button variant='plain' color='neutral' onClick={close}>
-                {noWork ? 'סגור' : 'ביטול'}
+                {noWork ? 'סגירה' : 'ביטול'}
               </Button>
             </Box>
           </>
@@ -239,13 +247,13 @@ export default function ClearStatsModal({
               <SummaryItem label='בדיקת תקינות' value={result?.audit?.status === 'passed' ? 'עברה בהצלחה' : 'נכשלה'} />
             </Box>
             <ProjectionExecutionSummary projectionWrite={result?.projectionWrite} />
-            <Box
-              aria-hidden='true'
-              sx={{ display: 'none' }}
-              data-receipt-id={result?.receiptId || ''}
-            />
+            <DeleteModalIds>
+              {proposedPlan?.identity?.birthTeamDocumentId ? <Typography level='body-xs'>מזהה קבוצה: {proposedPlan.identity.birthTeamDocumentId}</Typography> : null}
+              {proposedPlan?.identity?.seasonKey ? <Typography level='body-xs'>מזהה עונה: {proposedPlan.identity.seasonKey}</Typography> : null}
+              {result?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {result.receiptId}</Typography> : null}
+            </DeleteModalIds>
             <Box sx={sx.actions}>
-              <Button variant='plain' color='neutral' onClick={close}>סגור</Button>
+              <Button variant='plain' color='neutral' onClick={close}>סגירה</Button>
             </Box>
           </>
         ) : null}
@@ -287,19 +295,17 @@ export default function ClearStatsModal({
                 </Box>
               </Alert>
             ) : null}
-            <Box
-              aria-hidden='true'
-              sx={{ display: 'none' }}
-              data-receipt-id={error?.receiptId || ''}
-              data-error-code={error?.code || ''}
-              data-failed-document-id={error?.projectionWrite?.failedTarget?.docId || ''}
-            />
+            <DeleteModalIds>
+              {error?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {error.receiptId}</Typography> : null}
+              {error?.code ? <Typography level='body-xs'>קוד תקלה: {error.code}</Typography> : null}
+              {error?.projectionWrite?.failedTarget?.docId ? <Typography level='body-xs'>מזהה יעד שלא הושלם: {error.projectionWrite.failedTarget.docId}</Typography> : null}
+            </DeleteModalIds>
             <Typography level='body-sm'>
               הנתונים לא ימשיכו להימחק אוטומטית. ניסיון נוסף יבנה תוכנית חדשה לפי המצב הנוכחי.
             </Typography>
             <Box sx={sx.actions}>
               <Button color='danger' onClick={retry}>נסה שוב</Button>
-              <Button variant='plain' color='neutral' onClick={close}>סגור</Button>
+              <Button variant='plain' color='neutral' onClick={close}>סגירה</Button>
             </Box>
           </>
         ) : null}

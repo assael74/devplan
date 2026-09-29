@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/auditV2/league/buildExpected.js
+
 import {
   buildClubSeasonIdentityIndexDocumentId,
 } from '../../../catalog/firestoreDocuments/clubSeasonIdentityIndex.catalog.js'
@@ -34,6 +36,7 @@ const pickSearchIndexLeagueFields = document => Object.fromEntries(
 )
 
 const pickTeamSeasonLeagueFields = projection => ({
+  teamUrl: clean(projection?.document?.teamUrl),
   leagueId: clean(projection?.document?.leagueId),
   leagueLevel: Number(projection?.document?.leagueLevel) || 0,
   leagueTotalRound: Number(projection?.document?.leagueTotalRound) || 0,

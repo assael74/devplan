@@ -1,11 +1,6 @@
-// src/features/playersDatabase/ui/pages/teamPage/roster/clear/clearRoster.sx.js
-
 export const clearRosterSx = {
-  dialog: {
-    direction: 'rtl',
-    width: 620,
-    maxWidth: '95vw',
-    maxHeight: '90vh',
-    overflow: 'auto',
-  },
+  content: { width: 'min(660px, calc(100vw - 32px))', direction: 'rtl' },
+  body: { display: 'grid', gap: 2 },
+  loading: { display: 'flex', alignItems: 'center', gap: 1 },
+  actions: { display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', gap: 1, mt: 1 },
 }

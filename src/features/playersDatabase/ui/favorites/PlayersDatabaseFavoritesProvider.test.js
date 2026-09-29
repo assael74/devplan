@@ -11,12 +11,20 @@ jest.mock('../../services/read/index.js', () => ({
   readFavorites: jest.fn(async () => ({ players: [], birthTeams: [] })),
 }))
 
-jest.mock('../../services/write/index.js', () => ({
-  PLAYERS_DATABASE_WRITE_ACTIONS: {
-    ADD_FAVORITE: 'addFavorite',
-    REMOVE_FAVORITE: 'removeFavorite',
-  },
-  runPlayersDatabaseWriteAction: jest.fn(),
+jest.mock('../../services/writeV2/favorites/birthTeam/add.js', () => ({
+  addBirthTeamFavorite: jest.fn(),
+}))
+
+jest.mock('../../services/writeV2/favorites/birthTeam/remove.js', () => ({
+  removeBirthTeamFavorite: jest.fn(),
+}))
+
+jest.mock('../../services/writeV2/favorites/player/add.js', () => ({
+  addPlayerFavorite: jest.fn(),
+}))
+
+jest.mock('../../services/writeV2/favorites/player/remove.js', () => ({
+  removePlayerFavorite: jest.fn(),
 }))
 
 function Consumer() {

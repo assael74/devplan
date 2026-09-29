@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/rosterV2/support/leagues/leagueTeamRoster.plan.js
+
 import { isSameSeason } from '../../../../model/shared/season.model.js'
 import { normalizeTeamIdentity } from '../../../../model/team/teamIdentity.model.js'
 import { buildSeasonKey, clean, toNumberOrZero } from './leagueDoc.js'
@@ -35,7 +37,6 @@ export const buildLeagueTeamRosterSyncPlan = ({ league = {}, season = {}, team =
 
   const currentRow = tableRank[rowIndex] || {}
   const patch = {
-    ...(clean(team.teamUrl) ? { teamUrl: clean(team.teamUrl) } : {}),
     ...(hasFinite(team.playersCount) ? { playersCount: Number(team.playersCount) } : {}),
     ...(hasOwn(team, 'hasPlayers') ? { hasPlayers: Boolean(team.hasPlayers) } : {}),
     ...(hasOwn(team, 'hasStats') ? { hasStats: Boolean(team.hasStats) } : {}),

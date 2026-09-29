@@ -34,7 +34,6 @@ export const FIRESTORE_USAGE_COVERAGE = [
   operation({ id: 'playersDatabase.leaguesMaster.read', feature: 'playersDatabase', collection: 'dbLeaguesMaster', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/leaguesMaster.read.js' }),
   operation({ id: 'playersDatabase.favorites.read', feature: 'playersDatabase', collection: 'dbFavorites', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/favorites.read.js' }),
 
-  operation({ id: 'playersDatabase.maintenance', feature: 'playersDatabase', collection: 'dbSearchIndexes', type: 'read-write', instrumented: true, source: 'features/playersDatabase/services/write/searchIndex' }),
   operation({ id: 'playersDatabase.entities.write', feature: 'playersDatabase', collection: 'dbPlayers/dbBirthTeams/dbLeagues', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write' }),
   operation({ id: 'playersDatabase.favorites.write', feature: 'playersDatabase', collection: 'dbFavorites', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write/favorites' }),
   operation({ id: 'reports.public', feature: 'reports', collection: 'publicReports', type: 'read-write', instrumented: true, source: 'features/reports/service/firestore' }),

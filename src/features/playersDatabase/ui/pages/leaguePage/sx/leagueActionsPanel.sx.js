@@ -185,15 +185,6 @@ export const leagueActionsPanelSx = {
     },
   },
 
-  sideDataRepairButton: {
-    width: '100%',
-    minWidth: 0,
-    minHeight: 38,
-    color: devPlanColors.tertiaryDark,
-    bgcolor: devPlanColors.tertiaryLight,
-    borderColor: devPlanColors.tertiary,
-  },
-
   sideDeleteButton: {
     width: '100%',
     minWidth: 0,

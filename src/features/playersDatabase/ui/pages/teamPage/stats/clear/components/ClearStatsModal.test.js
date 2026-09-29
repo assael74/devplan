@@ -49,7 +49,7 @@ describe('ClearStatsModal', () => {
     expect(screen.getByText('שחקנים שפרופיל הסקאוט שלהם ינוקה')).toBeInTheDocument()
     expect(screen.getByText('1')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'מחק נתוני סטטיסטיקה' }))
+    fireEvent.click(screen.getByRole('button', { name: 'אישור מחיקה' }))
     expect(value.execute).toHaveBeenCalledTimes(1)
   })
 
@@ -71,8 +71,8 @@ describe('ClearStatsModal', () => {
     />)
 
     expect(screen.getByText(/נתוני הסטטיסטיקה כבר נקיים/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'אישור ביקורת וסיום' })).toBeEnabled()
-    expect(screen.queryByRole('button', { name: 'מחק נתוני סטטיסטיקה' }))
+    expect(screen.getByRole('button', { name: 'בדיקת סנכרון וסיום' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'אישור מחיקה' }))
       .not.toBeInTheDocument()
   })
 
@@ -105,7 +105,7 @@ describe('ClearStatsModal', () => {
     expect(screen.getByText('2 נכתבו')).toBeInTheDocument()
     expect(screen.getByText('מסמך הליגה')).toBeInTheDocument()
     expect(screen.getByText('1 כבר היו תקינים')).toBeInTheDocument()
-    expect(screen.queryByText('receipt-1')).not.toBeInTheDocument()
+    expect(screen.getByText('מזהה תיעוד פעולה: receipt-1')).toBeInTheDocument()
   })
 
   test('shows the failed stage, partial progress, Receipt and Audit findings', () => {
@@ -143,7 +143,7 @@ describe('ClearStatsModal', () => {
     />)
 
     expect(screen.getByText('בדיקת תקינות וסנכרון')).toBeInTheDocument()
-    expect(screen.queryByText('receipt-failed-1')).not.toBeInTheDocument()
+    expect(screen.getByText('מזהה תיעוד פעולה: receipt-failed-1')).toBeInTheDocument()
     expect(screen.getByText('פערים שנמצאו בבדיקת התקינות')).toBeInTheDocument()
     expect(screen.getByText('נמצא פער ב־אינדקסי השחקנים')).toBeInTheDocument()
     expect(screen.getByText('העדכון נעצר כאן')).toBeInTheDocument()

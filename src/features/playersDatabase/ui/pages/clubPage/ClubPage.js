@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/clubPage/ClubPage.js
+
 import {
   Box,
   Button,
@@ -14,6 +16,9 @@ import {
   buildPlayersDatabaseBreadcrumbs,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
+import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
+import EntitySeasonUrlDrawer from '../../components/drawers/EntitySeasonUrlDrawer.js'
+import useClubUrlEditor from './hooks/useClubUrlEditor.js'
 import useClubPage from './hooks/useClubPage.js'
 import ClubDevelopment from './components/ClubDevelopment.js'
 import ClubHeader from './components/ClubHeader.js'
@@ -27,6 +32,8 @@ export default function ClubPage() {
   const navigate = useNavigate()
   const { clubId = '' } = useParams()
   const model = useClubPage({ clubId })
+  const { notify } = useSnackbar()
+  const urlEditor = useClubUrlEditor({ clubId, reload: model.reload, notify })
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
@@ -40,6 +47,9 @@ export default function ClubPage() {
 
   const actions = (
     <Stack direction='row' spacing={1}>
+      <Button disabled={!model.club || model.loading} onClick={urlEditor.show}>
+        עריכת קישור מועדון
+      </Button>
       <Button
         variant='outlined'
         onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.clubs)}
@@ -125,6 +135,17 @@ export default function ClubPage() {
 
   return (
     <PlayersDatabaseLayout>
+      <EntitySeasonUrlDrawer
+        open={urlEditor.open}
+        saving={urlEditor.saving}
+        onClose={urlEditor.close}
+        onSave={urlEditor.save}
+        entityType='club'
+        entityName={model.club?.name || ''}
+        value={model.club?.clubUrl || ''}
+        title='עריכת קישור מועדון'
+        fieldLabel='קישור מועדון'
+      />
       <Box sx={sx.page}>
         <PageHeader breadcrumbs={breadcrumbs} actions={actions}>
           <Box>

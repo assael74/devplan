@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/players/playerIdentity.resolve.js
+// features/playersDatabase/services/read/identity/playerIdentityPreview.read.js
 
 import { chunkValues } from '../../shared/chunkValues.js'
 import {

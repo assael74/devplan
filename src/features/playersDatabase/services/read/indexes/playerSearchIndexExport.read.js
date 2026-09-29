@@ -13,8 +13,8 @@ import {
   trackedGetDocs,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
-import { buildPlayerSeasonIndexId } from '../../write/searchIndex/player/playerSeasonIndex.identity.js'
-import { buildTeamSeasonIndexId } from '../../write/searchIndex/team/teamSeasonIndex.model.js'
+import { buildPlayerSeasonIndexId } from '../../../domain/rosterV2/support/searchIndex/player/playerSeasonIndex.identity.js'
+import { buildTeamSeasonIndexId } from '../../../domain/rosterV2/support/searchIndex/team/teamSeasonIndex.model.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value

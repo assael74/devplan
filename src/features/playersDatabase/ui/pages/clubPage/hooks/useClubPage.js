@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/clubPage/hooks/useClubPage.js
+
 import {
   useCallback,
   useEffect,
@@ -67,6 +69,7 @@ export default function useClubPage({ clubId } = {}) {
 
   return {
     club,
+    reload,
     intelligence,
     page,
     loading,

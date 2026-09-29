@@ -35,7 +35,6 @@ export default function SearchWorkspace({ search, onEntityOpen }) {
             onEntityOpen={onEntityOpen}
             onFavoriteToggle={search.toggleFavorite}
             onNotesSave={search.saveNotes}
-            onScoutProfileRemove={search.removeScoutProfile}
             onRoleEdit={search.roleEditor.open}
             onTeamUrlEdit={search.teamUrlEditor.open}
           />

@@ -1,4 +1,9 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/leaguesMaster.catalog.js
+// Standalone edits stamp changed owned records and the document with one ISO updatedAt; no-op preserves timestamps.
+
+
+// leagues[].seasons[].leagueUrl projects League seasonUrl. The parent leagues[].leagueUrl is independent and must not be overwritten by a seasonal URL edit.
+// src/features/playersDatabase/catalog/firestoreDocuments/leaguesMaster.catalog.js
 
 // Firestore source of truth: leagues master document.
 // DELETE_LEAGUE_SEASON rebuilds entries/summary from all canonical Leagues.

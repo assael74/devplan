@@ -23,7 +23,6 @@ export default function PlayerActionsPanel({
   onAction = () => {},
   onTaskCreate,
   onTaskEdit,
-  onDataRepair = () => {},
   onDownloadDocuments = () => {},
   onDownloadIndexes = () => {},
   downloadDisabled = false,
@@ -95,9 +94,6 @@ export default function PlayerActionsPanel({
 
       <Box sx={sx.actionList}>
         <Box sx={sx.dataActionsRow}>
-          <Button size='sm' variant='plain' startDecorator={iconUi({id: 'search', size: 'sm'})} sx={sx.actionButton} onClick={onDataRepair}>
-            תיקוני דאטה
-          </Button>
           <Dropdown>
             <Tooltip title='הורדת מסמכים'>
               <span>

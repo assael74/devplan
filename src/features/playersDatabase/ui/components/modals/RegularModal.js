@@ -11,6 +11,7 @@ export default function RegularModal({
   headerActions = null,
   headerIconSx,
   contentSx,
+  appearance = 'default',
   ...modalProps
 }) {
   return (
@@ -20,8 +21,14 @@ export default function RegularModal({
         ...sx.content,
         ...(contentSx || {}),
       }}
-      headerSx={sx.header}
-      headerIconSx={headerIconSx}
+      headerSx={{
+        ...sx.header,
+        ...(appearance === 'destructive' ? sx.destructiveHeader : {}),
+      }}
+      headerIconSx={{
+        ...(appearance === 'destructive' ? sx.destructiveHeaderIcon : {}),
+        ...(headerIconSx || {}),
+      }}
     >
       {headerActions ? (
         <Box sx={sx.headerActions}>

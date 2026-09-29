@@ -24,15 +24,13 @@ import LeagueKpiOverview from './LeagueKpiOverview.js'
 import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
-import LeagueUrlEditDrawer from '../../components/drawers/LeagueUrlEditDrawer.js'
+import LeagueSeasonSettingsDrawer from '../../components/drawers/LeagueSeasonSettingsDrawer.js'
 import {
   LeagueImportModal,
-  LeagueDataRepairModal,
   TaskEditModal,
   WorkTaskModal,
 } from '../../components/modals/index.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
-import useLeagueDataRepair from './hooks/useLeagueDataRepair.js'
 import {
   buildPriorityCounts,
   filterTeamsByPriority,
@@ -94,14 +92,12 @@ function LeaguePageContent() {
 
   const teamUrlEditor = useTeamUrlEditor({
     leagueId: league.id,
-    leagueDoc,
     selectedSeasonOption,
     notify,
     reload,
   })
   const leagueUrlEditor = useLeagueUrlEditor({
     league,
-    leagueDoc,
     selectedSeasonOption,
     notify,
     reload,
@@ -125,16 +121,6 @@ function LeaguePageContent() {
     league,
     leagueDoc,
     selectedSeasonOption,
-    reload,
-  })
-
-  const leagueDataRepair = useLeagueDataRepair({
-    league,
-    leagueDoc,
-    selectedSeasonKey,
-    leagueImport,
-    auditFindingId,
-    notify,
     reload,
   })
 
@@ -349,10 +335,8 @@ function LeaguePageContent() {
             onAttackPriorityFilterChange={setAttackPriorityFilter}
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
-            onDataRepair={leagueDataRepair.openRepair}
             onDownloadDocuments={handleDownloadDocuments}
             onLeagueUrlEdit={leagueUrlEditor.show}
-            hasLeagueUrl={Boolean(selectedSeasonOption?.season?.seasonUrl)}
             downloadDisabled={!leagueDoc || loading}
             loadDisabled={isHistoricalLoadedLeague}
             loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
@@ -395,14 +379,7 @@ function LeaguePageContent() {
         onClose={leagueReport.closePreview}
       />
 
-      <LeagueUrlEditDrawer
-        open={leagueUrlEditor.open}
-        league={league}
-        season={selectedSeasonOption}
-        saving={leagueUrlEditor.saving}
-        onClose={leagueUrlEditor.close}
-        onSave={leagueUrlEditor.save}
-      />
+      <LeagueSeasonSettingsDrawer editor={leagueUrlEditor} />
 
       <TeamUrlEditDrawer
         open={Boolean(teamUrlEditor.row)}
@@ -421,20 +398,6 @@ function LeaguePageContent() {
         columns={importColumns}
         leagueImport={leagueImport}
         placeholder={LEAGUE_IMPORT_PLACEHOLDER}
-      />
-
-      <LeagueDataRepairModal
-        open={leagueDataRepair.open}
-        busy={leagueDataRepair.busy}
-        error={leagueDataRepair.error}
-        leagueDocument={leagueDataRepair.sources.leagueDocument || leagueDoc || league}
-        leaguesMaster={leagueDataRepair.sources.leaguesMaster || {}}
-        auditFinding={leagueDataRepair.auditFinding}
-        seasonKey={selectedSeasonKey}
-        onOpenLeagueLoad={leagueDataRepair.openLeagueLoad}
-        onSyncLeaguesMaster={leagueDataRepair.syncLeaguesMaster}
-        onSyncClubProjections={leagueDataRepair.syncClubProjections}
-        onClose={leagueDataRepair.close}
       />
 
     </>

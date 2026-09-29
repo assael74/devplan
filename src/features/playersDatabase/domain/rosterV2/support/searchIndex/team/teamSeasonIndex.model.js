@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/searchIndex/team/teamSeasonIndex.model.js
+// src/features/playersDatabase/domain/rosterV2/support/searchIndex/team/teamSeasonIndex.model.js
 
 import { SCOUTING_MODEL_VERSION } from '../../../../../../../shared/scouting/scouting.version.js'
 import { serverTimestamp } from 'firebase/firestore'

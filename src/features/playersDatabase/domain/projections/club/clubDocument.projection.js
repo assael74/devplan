@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/projections/club/clubDocument.projection.js
+
 // Deterministic Club Document assembly. No Firestore reads/writes and no business recalculation.
 
 import { cleanValue, pickDefinedValue, toNumberOrZero } from '../../../model/shared/value.model.js'
@@ -322,7 +324,9 @@ export const buildClubDocumentProjection = ({
     name: clean(clubIdentity?.name || existingClub?.name),
     shortName: clean(clubIdentity?.shortName || existingClub?.shortName),
     sourceName: clean(clubIdentity?.sourceName || existingClub?.sourceName),
-    clubUrl: clean(clubIdentity?.clubUrl || existingClub?.clubUrl),
+    clubUrl: Object.prototype.hasOwnProperty.call(existingClub, 'clubUrl')
+      ? clean(existingClub.clubUrl)
+      : clean(clubIdentity?.clubUrl),
     clubLevel: toNumberOrZero(clubIdentity?.clubLevel || existingClub?.clubLevel),
     clubStrengthLevel: Number(clubIdentity?.clubStrengthLevel || existingClub?.clubStrengthLevel) || 0,
     aliases: Array.isArray(clubIdentity?.aliases)

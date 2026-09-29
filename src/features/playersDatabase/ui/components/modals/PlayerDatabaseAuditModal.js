@@ -1,15 +1,14 @@
 // src/features/playersDatabase/ui/components/modals/PlayerDatabaseAuditModal.js
 
 import * as React from 'react'
-import { Button, Divider, FormControl, FormLabel, Input, LinearProgress, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
+import { Button, Divider, FormControl, FormLabel, Input, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
 import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditClubTeamSeasonScope, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
-import AuditRepairActions from './audit/AuditRepairActions.js'
 import AuditSummary from './audit/AuditSummary.js'
 import StatsV2SyncStages from './audit/StatsV2SyncStages.js'
 import { TYPE_LABELS } from './audit/auditFindingPresentation.js'
-import { MISMATCH_COLLECTION_TABS, selectFindingView, selectLifecycleSummary, selectRepairFindings } from './audit/auditFindingSelectors.js'
+import { MISMATCH_COLLECTION_TABS, selectFindingView, selectLifecycleSummary } from './audit/auditFindingSelectors.js'
 import { playerDatabaseAuditModalSx as sx } from './sx/playerDatabaseAuditModal.sx.js'
 
 const PAGE_SIZE = 40
@@ -21,7 +20,6 @@ const WRITE_ACTION_LABELS = {
   clearTeamSeasonStats: 'ניקוי סטטיסטיקות',
   clearTeamSeasonPlayers: 'ניקוי סגל קבוצה',
   clearLeagueSeasonTeams: 'ניקוי קבוצות ליגה',
-  updateLeagueSeasonTableRank: 'עדכון טבלת ליגה',
 }
 const WRITE_ACTION_STATUS_LABELS = {
   in_progress: 'בתהליך',
@@ -163,7 +161,6 @@ export default function PlayerDatabaseAuditModal(props) {
     busy = false,
     error = '',
     result = null,
-    repairProgress = null,
     defaultTeamDocumentId = '',
     defaultSeasonKey = '',
     onRun,
@@ -242,11 +239,6 @@ export default function PlayerDatabaseAuditModal(props) {
       : clubTeamScope
       ? Boolean(clean(clubId) && clean(teamDocumentId) && clean(birthYear) && clean(seasonKey))
       : !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
-  const hasRepairProgress = repairProgress && Number(repairProgress.totalTeams) > 0
-  const repairProgressValue = hasRepairProgress
-    ? Math.min(100, (Number(repairProgress.completedTeams) / Number(repairProgress.totalTeams)) * 100)
-    : 0
-
   return (
     <RegularModal
       open={open}
@@ -269,23 +261,6 @@ export default function PlayerDatabaseAuditModal(props) {
       onClose={onClose}
     >
       <Stack spacing={2}>
-        {repairProgress ? (
-          <Sheet variant='soft' sx={sx.progressSheet}>
-            <Typography level='title-sm'>התקדמות עדכון הנתונים</Typography>
-            {hasRepairProgress ? (
-              <>
-                <LinearProgress determinate value={repairProgressValue} sx={sx.progressBar} />
-                <Typography level='body-sm'>
-                  קבוצות שטופלו: {Number(repairProgress.completedTeams)} מתוך {Number(repairProgress.totalTeams)}
-                </Typography>
-              </>
-            ) : (
-              <Typography level='body-sm'>מכין את פעולת העדכון…</Typography>
-            )}
-            <Typography level='body-sm'>כתיבות שבוצעו: {Number(repairProgress.writesCount || 0)}</Typography>
-          </Sheet>
-        ) : null}
-
         <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
           <Button
             size='sm'
@@ -480,13 +455,6 @@ export default function PlayerDatabaseAuditModal(props) {
                 onCheckSync={() => props.onRunReceiptV2?.(result.receiptId)}
               />
             ) : null}
-            {result.auditVersion === 'v2' ? null : (
-              <AuditRepairActions
-                busy={busy}
-                findings={selectRepairFindings(findings)}
-                actions={props}
-              />
-            )}
             {findings.length ? (
               <>
                 <Divider />

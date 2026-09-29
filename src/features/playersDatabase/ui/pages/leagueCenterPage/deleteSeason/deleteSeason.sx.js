@@ -1,9 +1,6 @@
-// src/features/playersDatabase/ui/pages/leagueCenterPage/deleteSeason/deleteSeason.sx.js
-
 export const deleteSeasonSx = {
-  body: { display: 'flex', flexDirection: 'column', gap: 2, direction: 'rtl' },
-
-  details: { padding: 1, borderRadius: 'sm', backgroundColor: 'background.level1' },
-
-  actions: { display: 'flex', gap: 1, justifyContent: 'flex-end' },
+  content: { width: 'min(660px, calc(100vw - 32px))', direction: 'rtl' },
+  body: { display: 'grid', gap: 2 },
+  loading: { display: 'flex', alignItems: 'center', gap: 1 },
+  actions: { display: 'flex', gap: 1, justifyContent: 'flex-start', flexWrap: 'wrap', mt: 1 },
 }

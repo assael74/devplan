@@ -37,17 +37,15 @@ import {
 import {
   PlayerRoleEditModal,
   TaskEditModal,
-  TeamDataRepairModal,
   WorkTaskModal,
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
-import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
+import useTeamPageUrlEditor from './hooks/useTeamPageUrlEditor.js'
 import useTeamRosterImport from './roster/import/hooks/useTeamRosterImport.js'
 import RosterImportModal from './roster/import/components/RosterImportModal.js'
 import useTeamStatsImport from './stats/import/hooks/useTeamStatsImport.js'
 import StatsImportModal from './stats/import/components/StatsImportModal.js'
-import useTeamDataRepair from './hooks/useTeamDataRepair.js'
 import useTeamPageTasks from './hooks/useTeamPageTasks.js'
 import useTeamStatsColumns from './stats/table/hooks/useTeamStatsColumns.js'
 import useClearRosterFlow from './roster/clear/useClearRosterFlow.js'
@@ -88,6 +86,7 @@ function TeamPageContent() {
     teamDoc,
     teamSeasons,
     seasonSnapshots,
+    clubDoc,
     players,
     hasTeamPlayers,
     seasonOptions,
@@ -137,7 +136,7 @@ function TeamPageContent() {
     reload,
   }
   const roleEditor = useTeamRoleEditor(sharedActionContext)
-  const teamUrlEditor = useTeamUrlEditor(sharedActionContext)
+  const teamUrlEditor = useTeamPageUrlEditor(sharedActionContext)
   const rosterImport = useTeamRosterImport(sharedActionContext)
   const statsImport = useTeamStatsImport({
     ...sharedActionContext,
@@ -186,16 +185,6 @@ function TeamPageContent() {
     leagueId,
     reload,
     refreshAfterStats: statsDelete.status,
-  })
-  const teamDataRepair = useTeamDataRepair({
-    team,
-    teamDoc,
-    teamSeasons,
-    leagueDoc: selectedLeagueDocument,
-    selectedLeagueSeason,
-    auditFindingId,
-    notify,
-    reload,
   })
   const teamPageTasks = useTeamPageTasks({
     team,
@@ -447,12 +436,7 @@ function TeamPageContent() {
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}
-          teamUrl={
-            selectedTeamSeason?.teamUrl ||
-            team.teamUrl ||
-            selectedSeasonOption?.season?.teamUrl ||
-            ''
-          }
+          clubUrl={clubDoc?.clubUrl || ''}
           seasonKey={selectedSeasonKey}
           latestSeason={seasonSnapshots[0] || null}
           favorite={teamFavorite}
@@ -522,8 +506,7 @@ function TeamPageContent() {
             getDeleteActionFor={playersDelete.getDeleteActionFor}
             deleteActionsError={playersDelete.deleteActionsError}
             onReport={teamReport.openPreview}
-            onTeamLink={() => teamUrlEditor.open(team)}
-            onTeamDataRepair={teamDataRepair.openRepair}
+            onTeamLink={teamUrlEditor.openDrawer}
             onDownloadJson={handleDownloadJson}
             onDownloadIndexesJson={handleDownloadIndexesJson}
             jsonDownloadDisabled={Boolean(
@@ -559,21 +542,6 @@ function TeamPageContent() {
         onClose={teamReport.closePreview}
       />
 
-      <TeamDataRepairModal
-        open={teamDataRepair.open}
-        busy={teamDataRepair.busy}
-        error={teamDataRepair.error}
-        teamDocument={teamDoc}
-        teamSeasons={teamSeasons}
-        teamSearchIndexes={teamDataRepair.teamSearchIndexes}
-        indexesLoaded={teamDataRepair.indexesLoaded}
-        auditFinding={teamDataRepair.auditFinding}
-        leagueDocument={selectedLeagueDocument}
-        selectedLeagueSeason={selectedLeagueSeason}
-        onRepair={teamDataRepair.repair}
-        onClose={teamDataRepair.close}
-      />
-
       <TaskEditModal
         open={Boolean(teamPageTasks.editTask)}
         task={teamPageTasks.editTask}
@@ -590,10 +558,11 @@ function TeamPageContent() {
       />
 
       <TeamUrlEditDrawer
-        open={Boolean(teamUrlEditor.row)}
-        row={teamUrlEditor.row}
-        seasonLabel={selectedSeasonOption?.seasonKey || selectedSeasonKey}
+        open={teamUrlEditor.open}
+        rows={teamUrlEditor.rows}
+        entityName={team.name}
         saving={teamUrlEditor.saving}
+        onChange={teamUrlEditor.change}
         onSave={teamUrlEditor.save}
         onClose={teamUrlEditor.close}
       />

@@ -374,17 +374,6 @@ export const teamActionsPanelSx = {
     },
   },
 
-  dataRepairButton: {
-    color: '#9a6200',
-    bgcolor: '#fff7e8',
-    borderColor: '#e7b86e',
-
-    '&:hover': {
-      bgcolor: '#ffedca',
-      borderColor: '#b97812',
-    },
-  },
-
   secondaryActionsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',

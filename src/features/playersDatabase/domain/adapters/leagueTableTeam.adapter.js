@@ -67,8 +67,7 @@ export const adaptLeagueTableTeam = ({
       teamDocumentId: cleanDomainValue(
         firstDomainValue(
           tableRow.birthTeamDocumentId,
-          tableRow.teamDocumentId,
-          tableRow.birthTeamId
+          tableRow.teamDocumentId
         )
       ),
       clubId: cleanDomainValue(tableRow.clubId),

@@ -19,7 +19,7 @@ import {
 } from '../../../../model/player/page/playerPage.model.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
 import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
-import { readPlayerPageData } from '../../../../services/read/index.js'
+import { readClubPageDocument, readPlayerPageData } from '../../../../services/read/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 
 function cleanValue(value) {
@@ -44,6 +44,7 @@ export function usePlayerPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [clubDoc, setClubDoc] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -81,6 +82,14 @@ export function usePlayerPage() {
     requestedTeamId,
     row,
   ])
+
+  useEffect(() => {
+    let active = true
+    const clubId = cleanValue(player?.clubId)
+    if (!clubId) { setClubDoc(null); return () => { active = false } }
+    readClubPageDocument({ clubId }).then(value => { if (active) setClubDoc(value) }).catch(() => { if (active) setClubDoc(null) })
+    return () => { active = false }
+  }, [player?.clubId, reloadKey])
 
   const setSelectedSeasonKey = useCallback(value => {
     const nextSeasonKey = normalizeSeasonLookupKey(value)
@@ -134,6 +143,7 @@ export function usePlayerPage() {
 
   return {
     player,
+    clubDoc,
     teamSource: location.state?.playerTeamSource || null,
     requestedSeasonKey,
     requestedTeamId,

@@ -40,7 +40,6 @@ export default function TeamActionsPanel({
   deleteActionsError = '',
   onReport,
   onTeamLink,
-  onTeamDataRepair,
   onDownloadJson,
   onDownloadIndexesJson,
   jsonDownloadDisabled = false,
@@ -154,18 +153,6 @@ export default function TeamActionsPanel({
             size='sm'
           >
             {iconUi({id: 'print', size: 'sm'})}
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title='תיקוני דאטה לקבוצה'>
-          <IconButton
-            variant='outlined'
-            aria-label='תיקוני דאטה לקבוצה'
-            sx={sx.dataRepairButton}
-            onClick={onTeamDataRepair}
-            size='sm'
-          >
-            {iconUi({id: 'search', size: 'sm'})}
           </IconButton>
         </Tooltip>
 

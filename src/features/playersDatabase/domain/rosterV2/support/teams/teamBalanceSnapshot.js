@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/teams/teamBalanceSnapshot.js
+// src/features/playersDatabase/domain/rosterV2/support/teams/teamBalanceSnapshot.js
 
 import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 

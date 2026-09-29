@@ -1,4 +1,9 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/birthTeamSeasonDocument.catalog.js
+// Standalone edits stamp changed owned records and the document with one ISO updatedAt; no-op preserves timestamps.
+
+
+// teamPlayers[].playerUrl is canonical for player/team/season. teamUrl projects the League table row and preserves explicit empty strings.
+// src/features/playersDatabase/catalog/firestoreDocuments/birthTeamSeasonDocument.catalog.js
 
 // Firestore source of truth: one birth-team season document.
 // Owns roster, statistics, performance, balance and compact scouting projections

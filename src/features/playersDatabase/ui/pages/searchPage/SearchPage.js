@@ -1,7 +1,7 @@
 // src/features/playersDatabase/ui/pages/searchPage/SearchPage.js
 
 import * as React from 'react'
-import { Box, Sheet, Stack, Typography } from '@mui/joy'
+import { Box } from '@mui/joy'
 import {
   useLocation,
   useNavigate,
@@ -17,7 +17,6 @@ import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
 import { useSearchReport } from './report/index.js'
 import {
-  ConfirmModal,
   PlayerDatabaseAuditModal,
   ReportNameModal,
 } from '../../components/modals/index.js'
@@ -147,10 +146,9 @@ function SearchPageContent() {
 
       <PlayerDatabaseAuditModal
         open={audit.open}
-        busy={audit.busy || audit.repairPreviewBusy}
+        busy={audit.busy}
         error={audit.error}
         result={audit.result}
-        repairProgress={audit.repairProgress}
         recentWriteActions={audit.recentWriteActions}
         recentWriteActionsBusy={audit.recentWriteActionsBusy}
         recentWriteActionReceiptsV2={audit.recentWriteActionReceiptsV2}
@@ -163,18 +161,6 @@ function SearchPageContent() {
         onRepairClearStats={openClearStatsRepair}
         onScopeChange={audit.handleScopeChange}
         onReconcileStatsAuditStage={audit.reconcileStatsAuditStage}
-        onRepair={audit.requestRepair}
-        onDeleteOrphanPlayerIndexes={audit.requestOrphanPlayerIndexDelete}
-        onRepairPlayerIndexes={audit.repairPlayerIndexes}
-        onRepairRosterTeamProjectionFromCanonical={audit.repairRosterTeamProjectionFromCanonical}
-        onRepairTeamIndexes={audit.repairTeamIndexes}
-        onRetryMovementCounterparts={audit.retryMovementCounterparts}
-        onResetOrphanTeamIndexes={audit.resetOrphanTeamIndexes}
-        onRepairClubProjections={audit.repairClubProjections}
-        onRepairClubCompetitionPaths={audit.repairClubCompetitionPaths}
-        onRepairClubsMaster={audit.repairClubsMaster}
-        onRefreshClubProjections={audit.refreshClubProjections}
-        onRefreshClubsMaster={audit.refreshClubsMaster}
         onPlayerOpen={audit.openPlayer}
         onTeamOpen={audit.openTeam}
         onLeagueOpen={audit.openLeague}
@@ -186,37 +172,6 @@ function SearchPageContent() {
         controller={clearStatsRepair}
         teamName='הקבוצה שנבדקה'
         seasonKey={clearStatsRepair.target?.seasonKey || clearStatsRepairTarget.seasonKey}
-      />
-
-      <ConfirmModal
-        open={Boolean(audit.repairPlan)}
-        busy={audit.busy}
-        title='תיקון מסמכי שחקן חסרים'
-        message={`נמצאו ${audit.repairPlan?.playersCount || 0} מסמכי שחקן חסרים ב־${audit.repairPlan?.groupsCount || 0} קבוצות. רק הפריטים המפורטים כאן נטענו ואושרו לתיקון.`}
-        confirmLabel='בצע תיקון'
-        cancelLabel='ביטול'
-        onConfirm={audit.confirmRepair}
-        onClose={() => !audit.busy && audit.clearRepairPlan()}
-      >
-        <Stack spacing={1} sx={sx.repairPlanList}>
-          {(audit.repairPlan?.groups || []).map(group => <Sheet key={`${group.leagueId}-${group.seasonKey}-${group.teamDocumentId}`} variant='soft' sx={sx.repairPlanGroup}>
-            {group.players.map(player => <Typography key={player.playerDocumentId} level='body-sm'>
-              {player.fullName || player.playerDocumentId} — {group.teamName || 'קבוצה ללא שם'}{Number(group.teamSlot) > 1 ? ` · סלוט ${group.teamSlot}` : ''} · {group.leagueName || group.leagueId} · {group.seasonKey} · {group.ageGroup || 'קבוצת גיל לא ידועה'} · שנתון {group.birthYear || 'לא ידוע'}
-            </Typography>)}
-            <Typography level='body-xs' color='success'>נטען ומוכן לתיקון</Typography>
-          </Sheet>)}
-        </Stack>
-      </ConfirmModal>
-
-      <ConfirmModal
-        open={Boolean(audit.orphanIndexDeletePlan)}
-        busy={audit.busy}
-        title='מחיקת אינדקסי שחקנים יתומים'
-        message={`הפעולה תמחק רק ${audit.orphanIndexDeletePlan?.length || 0} מסמכי Player SearchIndex שסומנו באודיט. לפני כל מחיקה תתבצע בדיקה חוזרת שהשחקן עדיין אינו מופיע ב-Team Season. מסמכי שחקן וסגל לא יימחקו.`}
-        confirmLabel='מחק אינדקסים יתומים'
-        cancelLabel='ביטול'
-        onConfirm={audit.confirmOrphanPlayerIndexDelete}
-        onClose={() => !audit.busy && audit.clearOrphanIndexDeletePlan()}
       />
 
     </>

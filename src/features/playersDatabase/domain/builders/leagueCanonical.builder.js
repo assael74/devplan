@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/builders/leagueCanonical.builder.js
+
 import { normalizeTeamTaskSignals } from '../projections/teamScoutSummary.projection.js'
 import { normalizeCompetitionRules } from '../projections/club/clubCompetition.projection.js'
 import { resolveLeagueScheduleProjection } from '../projections/leagueSchedule.projection.js'
@@ -175,7 +177,9 @@ export const buildLeagueCanonicalTableRank = ({
         birthTeamId: identity.birthTeamId,
         birthTeamSlot: identity.birthTeamSlot,
         teamId: identity.birthTeamId,
-        teamUrl: cleanValue(row.teamUrl) || cleanValue(existingRow?.teamUrl),
+        teamUrl: Object.prototype.hasOwnProperty.call(row, 'teamUrl')
+          ? cleanValue(row.teamUrl)
+          : cleanValue(existingRow?.teamUrl),
         playersCount: existingPlayersCount,
         hasPlayers: hasOwn(existingRow, 'hasPlayers')
           ? Boolean(existingRow.hasPlayers)

@@ -19,7 +19,7 @@ import {
 import { buildTeamPageSeasonOptions, findTeamPageLeagueSeasonDoc, findTeamPageSeasonDoc } from '../../../../model/team/page/teamPageSeason.model.js'
 import { adaptTeamPagePlayerRow } from '../../../../model/team/page/teamPagePlayer.model.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
-import { readTeamPageData } from '../../../../services/read/index.js'
+import { readClubPageDocument, readTeamPageData } from '../../../../services/read/index.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 
 function cleanValue(value) {
@@ -62,6 +62,7 @@ export function useTeamPage() {
   const [teamSeasons, setTeamSeasons] = useState([])
   const [seasonSnapshots, setSeasonSnapshots] = useState([])
   const [teamPageData, setTeamPageData] = useState(null)
+  const [clubDoc, setClubDoc] = useState(null)
   const [selectedOptionKey, setSelectedOptionKey] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -97,6 +98,7 @@ export function useTeamPage() {
     setTeamSeasons([])
     setSeasonSnapshots([])
     setTeamPageData(null)
+    setClubDoc(null)
     setSelectedOptionKey('')
 
     readTeamPageData({
@@ -144,6 +146,19 @@ export function useTeamPage() {
     teamId,
     refreshKey,
   ])
+
+  useEffect(() => {
+    let active = true
+    const clubId = cleanValue(teamDoc?.clubId)
+    setClubDoc(null)
+    if (!clubId) return () => { active = false }
+
+    readClubPageDocument({ clubId })
+      .then(data => { if (active) setClubDoc(data || null) })
+      .catch(() => { if (active) setClubDoc(null) })
+
+    return () => { active = false }
+  }, [teamDoc?.clubId])
 
   const seasonOptions = useMemo(
     () => buildTeamPageSeasonOptions(
@@ -291,6 +306,7 @@ export function useTeamPage() {
     teamSeasons,
     seasonSnapshots,
     teamPageData,
+    clubDoc,
     players,
     hasTeamPlayers: players.length > 0,
     seasonOptions,

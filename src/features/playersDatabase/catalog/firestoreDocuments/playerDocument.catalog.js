@@ -1,4 +1,9 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/playerDocument.catalog.js
+// Standalone edits stamp changed owned records and the document with one ISO updatedAt; no-op preserves timestamps.
+
+
+// current/history playerUrl projects the matching Team Season player row; standalone URL edits preserve every other field.
+// src/features/playersDatabase/catalog/firestoreDocuments/playerDocument.catalog.js
 
 // Firestore source of truth: tracked player document.
 // Player Seasons persist a compact scout snapshot, including the canonical

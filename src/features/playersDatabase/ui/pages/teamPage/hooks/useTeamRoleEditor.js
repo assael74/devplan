@@ -2,10 +2,7 @@
 
 import * as React from 'react'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../../../services/write/index.js'
+import { updatePlayerLineClassification } from '../../../../services/writeV2/edits/player/updateLineClassification.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 
 const EMPTY_ROLE_DRAFT = {
@@ -46,24 +43,20 @@ export default function useTeamRoleEditor({
     setBusy(true)
 
     try {
-      await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_PLAYER_SEASON_ROLE,
-        payload: {
-          target: selectedSeasonOption.target,
-          league: leagueDoc || { id: leagueId },
-          season: {
-            ...(selectedSeasonOption.season || {}),
-            leagueId,
-            ageGroupId: team.ageGroupId,
-            seasonId: selectedSeasonOption.seasonId,
-            seasonKey: selectedSeasonOption.seasonKey,
-          },
-          team,
-          player: row,
-          primaryPosition: draft.primaryPosition,
-          positionLayer: draft.positionLayer,
-          numShirt: row.numShirt || row.number || '',
+      await updatePlayerLineClassification({
+        league: leagueDoc || { id: leagueId },
+        season: {
+          ...(selectedSeasonOption.season || {}),
+          leagueId,
+          ageGroupId: team.ageGroupId,
+          seasonId: selectedSeasonOption.seasonId,
+          seasonKey: selectedSeasonOption.seasonKey,
         },
+        team,
+        player: row,
+        primaryPosition: draft.primaryPosition,
+        positionLayer: draft.positionLayer,
+        numShirt: row.numShirt || row.number || '',
       })
 
       notify({

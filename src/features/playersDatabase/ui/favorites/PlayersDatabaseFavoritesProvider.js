@@ -5,10 +5,10 @@ import * as React from 'react'
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../constants/pdb.constants.js'
 import { buildFavoritesMap } from '../../model/player/favorite.model.js'
 import { readFavorites } from '../../services/read/index.js'
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../services/write/index.js'
+import { addBirthTeamFavorite } from '../../services/writeV2/favorites/birthTeam/add.js'
+import { removeBirthTeamFavorite } from '../../services/writeV2/favorites/birthTeam/remove.js'
+import { addPlayerFavorite } from '../../services/writeV2/favorites/player/add.js'
+import { removePlayerFavorite } from '../../services/writeV2/favorites/player/remove.js'
 import PlayersDatabaseFavoritesContext from './PlayersDatabaseFavoritesContext.js'
 
 const buildPendingKey = (favoriteType, entityId) => (
@@ -79,7 +79,6 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     entityId = '',
     displayName = '',
     birthYear = null,
-    scouting = null,
   } = {}) => {
     const normalizedEntityId = String(entityId || '').trim()
     const pendingKey = buildPendingKey(favoriteType, normalizedEntityId)
@@ -107,15 +106,13 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     })
 
     try {
-      const savedItem = await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.ADD_FAVORITE,
-        payload: {
-          favoriteType,
-          entityId: normalizedEntityId,
-          displayName,
-          birthYear,
-          scouting,
-        },
+      const add = favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
+        ? addPlayerFavorite
+        : addBirthTeamFavorite
+      const savedItem = await add({
+        entityId: normalizedEntityId,
+        displayName,
+        birthYear,
       })
 
       setItems(current => replaceFavoriteItem(current, savedItem))
@@ -132,7 +129,6 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
   const removeFavorite = React.useCallback(async ({
     favoriteType = '',
     entityId = '',
-    scouting = null,
   } = {}) => {
     const normalizedEntityId = String(entityId || '').trim()
     const pendingKey = buildPendingKey(favoriteType, normalizedEntityId)
@@ -154,14 +150,10 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     })
 
     try {
-      return await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.REMOVE_FAVORITE,
-        payload: {
-          favoriteType,
-          entityId: normalizedEntityId,
-          scouting,
-        },
-      })
+      const remove = favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
+        ? removePlayerFavorite
+        : removeBirthTeamFavorite
+      return await remove({ entityId: normalizedEntityId })
     } catch (writeError) {
       setItems(previousItems)
       setError(writeError)

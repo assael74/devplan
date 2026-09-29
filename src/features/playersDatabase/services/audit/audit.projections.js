@@ -11,7 +11,7 @@ export {
   buildTeamPlayerScoutContext,
   buildTeamPlayerSeasonalScoutProjection,
 } from '../../domain/projections/playerScout.projection.js'
-export { resolvePlayerTrackingReasons } from '../write/players/scoutingPlayerLifecycle.model.js'
+export { resolvePlayerTrackingReasons } from '@devplan/players-scout-engine/players/index.js'
 export {
   buildLeaguesMasterLeagueEntry,
   buildLeaguesMasterSummary,

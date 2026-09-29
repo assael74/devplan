@@ -22,10 +22,9 @@ import PlayerUrlEditDrawer from '../../components/drawers/PlayerUrlEditDrawer.js
 import PlayerAgentDrawer from '../../components/drawers/PlayerAgentDrawer.js'
 import PlayerGoalDistributionDrawer from '../../components/drawers/PlayerGoalDistributionDrawer.js'
 import PlayerTaskCreateModal from './PlayerTaskCreateModal.js'
-import { PlayerDataRepairModal, TaskEditModal } from '../../components/modals/index.js'
+import { TaskEditModal } from '../../components/modals/index.js'
 import usePlayerHistoryView from './hooks/usePlayerHistoryView.js'
 import usePlayerUrlEditor from './hooks/usePlayerUrlEditor.js'
-import usePlayerDataRepair from './hooks/usePlayerDataRepair.js'
 import usePlayerPageTasks from './hooks/usePlayerPageTasks.js'
 import usePlayerAgentEditor from './hooks/usePlayerAgentEditor.js'
 import usePlayerGoalDistributionEditor from './hooks/usePlayerGoalDistributionEditor.js'
@@ -60,6 +59,7 @@ function PlayerPageContent() {
   const { notify } = useSnackbar()
   const {
     player,
+    clubDoc,
     requestedSeasonKey,
     requestedTeamId,
     catalogSeasonKey,
@@ -91,7 +91,6 @@ function PlayerPageContent() {
   })
   const playerUrlEditor = usePlayerUrlEditor({
     player,
-    selectedSeasonRow,
     notify,
     reload,
   })
@@ -106,17 +105,6 @@ function PlayerPageContent() {
     taskActions,
     notify,
   })
-  const playerDataRepair = usePlayerDataRepair({
-    player,
-    playerId,
-    requestedSeasonKey,
-    requestedTeamId,
-    auditFindingId: new URLSearchParams(location.search).get('auditFinding') || '',
-    notify,
-    reload,
-    navigate,
-  })
-
   const fallbackLeaguePath = player.leagueId
     ? PLAYERS_DATABASE_UI_ROUTES.league(
       player.leagueId,
@@ -172,50 +160,24 @@ function PlayerPageContent() {
   const handleFavoriteToggle = React.useCallback(() => {
     if (!playerId) return null
 
-    const activeSeason = player.activeSeason || {}
-    const scouting = {
-      season: activeSeason.season || {},
-      team: activeSeason.team || {},
-      target: activeSeason.lifecycle?.type || 'current',
-      player: {
-        ...(player.domain?.identity || {}),
-        playerId,
-        playerDocumentId: player.domain?.identity?.playerDocumentId || '',
-        fullName: player.fullName,
-        playerStats: activeSeason.stats?.actual || {},
-        primaryPosition: activeSeason.position?.primary || '',
-        positionLayer: activeSeason.position?.layer || '',
-        scoutProfiles: activeSeason.scout?.profiles || [],
-        scoutSignals: activeSeason.scout?.profiles || [],
-      },
-    }
     const payload = {
       favoriteType: PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
       entityId: playerId,
     }
 
     if (favorites.isPlayerFavorite(playerId)) {
-      return favorites.removeFavorite({
-        ...payload,
-        scouting: {
-          playerDocumentId: player.domain?.identity?.playerDocumentId || '',
-        },
-      })
+      return favorites.removeFavorite(payload)
     }
 
     return favorites.addFavorite({
       ...payload,
       displayName: player.fullName,
       birthYear: player.birthYear,
-      scouting,
     })
   }, [
     favorites,
-    player.activeSeason,
     player.birthYear,
-    player.domain,
     player.fullName,
-    player.id,
     playerId,
   ])
 
@@ -226,7 +188,7 @@ function PlayerPageContent() {
     }
 
     if (actionId === 'link') {
-      playerUrlEditor.open()
+      playerUrlEditor.openDrawer()
       return
     }
 
@@ -314,6 +276,7 @@ function PlayerPageContent() {
           }}
           onSearch={handleNavigateToSearch}
           onTeam={handleNavigateToTeam}
+          clubUrl={clubDoc?.clubUrl || ''}
         />
 
         <Box sx={sx.contentGrid}>
@@ -331,7 +294,6 @@ function PlayerPageContent() {
             onAction={handleAction}
             onTaskCreate={playerPageTasks.openCreate}
             onTaskEdit={playerPageTasks.openEdit}
-            onDataRepair={playerDataRepair.openRepair}
             onDownloadDocuments={handleDownloadDocuments}
             onDownloadIndexes={handleDownloadIndexes}
             downloadDisabled={!playerId}
@@ -361,17 +323,6 @@ function PlayerPageContent() {
         onSave={goalDistributionEditor.save}
       />
 
-      <PlayerDataRepairModal
-        open={playerDataRepair.open}
-        busy={playerDataRepair.busy}
-        error={playerDataRepair.error}
-        contexts={playerDataRepair.contexts}
-        auditFinding={playerDataRepair.auditFinding}
-        onRepair={playerDataRepair.repair}
-        onTeamOpen={playerDataRepair.openTeam}
-        onClose={playerDataRepair.close}
-      />
-
       <TaskEditModal
         open={Boolean(playerPageTasks.editTask)}
         task={playerPageTasks.editTask}
@@ -391,10 +342,11 @@ function PlayerPageContent() {
 
 
       <PlayerUrlEditDrawer
-        open={Boolean(playerUrlEditor.row)}
-        row={playerUrlEditor.row}
-        seasonLabel={historyView.selectedSeasonKey}
+        open={playerUrlEditor.open}
+        rows={playerUrlEditor.rows}
+        entityName={player.fullName}
         saving={playerUrlEditor.saving}
+        onChange={playerUrlEditor.change}
         onSave={playerUrlEditor.save}
         onClose={playerUrlEditor.close}
       />

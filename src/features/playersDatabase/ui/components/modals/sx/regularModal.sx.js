@@ -7,6 +7,18 @@ export const regularModalSx = {
     bgcolor: devPlanColors.primaryLight,
   },
 
+  destructiveHeader: {
+    bgcolor: 'danger.softBg',
+    color: 'danger.softColor',
+  },
+
+  destructiveHeaderIcon: {
+    bgcolor: 'danger.softBg',
+    color: 'danger.600',
+    border: '1px solid',
+    borderColor: 'danger.200',
+  },
+
   content: {
     minWidth: 0,
   },

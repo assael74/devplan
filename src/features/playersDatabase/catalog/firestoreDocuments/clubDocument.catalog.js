@@ -1,3 +1,6 @@
+// src/features/playersDatabase/catalog/firestoreDocuments/clubDocument.catalog.js
+
+// clubUrl is manually owned. Preserve an existing field, including empty string; catalog/Excel may initialize only an absent field. URL edits never change externalClubId.
 // Firestore projection contract: one multi-age-group Club document.
 // Canonical facts remain owned by League / Team Season documents.
 

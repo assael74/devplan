@@ -1,5 +1,7 @@
 // src/features/playersDatabase/services/writeV2/stats/prepare/prepareStatsImportPlanV2.js
 
+import { canonicalTeamUrl, findSeason, seasonKey as editSeasonKey } from '../../../../domain/edits/editIdentity.js'
+
 import { doc, getDoc } from 'firebase/firestore'
 
 import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
@@ -92,6 +94,14 @@ const buildApprovedPlayerSearchIndexStates = async ({
   playerDocumentPlans = [],
   capturedAt = '',
 } = {}) => {
+  team = {
+    ...team,
+    teamUrl: canonicalTeamUrl({ league, season, team }),
+  }
+  season = {
+    ...season,
+    seasonUrl: clean(findSeason(league, editSeasonKey(season)).row.seasonUrl),
+  }
   const baseCandidates = buildStatsPlayerSearchIndexCandidates({
     league,
     players,

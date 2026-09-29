@@ -1,6 +1,10 @@
 // src/features/playersDatabase/ui/pages/searchPage/hooks/useSearchResults.js
 
 import * as React from 'react'
+import { doc } from 'firebase/firestore'
+import { db } from '../../../../../../services/firebase/firebase.js'
+import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../../constants/pdb.constants.js'
 import { readSearchPageRows } from '../../../../services/read/index.js'
@@ -101,9 +105,18 @@ export default function useSearchResults({ queryFilters }) {
 
   const playerActions = useSearchPlayerActions({
     setLoadedRows,
-    setLoadRevision,
   })
-  const teamUrlEditor = useSearchTeamUrlEditor({ setLoadedRows })
+  const reloadEditedTeam = React.useCallback(async id => {
+    const snapshot = await trackedGetDocFromServer(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id),
+      { feature: 'playersDatabase', action: 'reload-edited-team' },
+    )
+    const rows = snapshot.exists()
+      ? normalizeSearchRows([adaptSearchRow({ ...snapshot.data(), id: snapshot.id })])
+      : []
+    setLoadedRows(current => current.flatMap(item => (item.id === id ? rows : [item])))
+  }, [])
+  const teamUrlEditor = useSearchTeamUrlEditor({ reload: reloadEditedTeam })
 
   const rowsWithFavorites = React.useMemo(
     () => loadedRows.map(row => {
@@ -122,9 +135,6 @@ export default function useSearchResults({ queryFilters }) {
         favorite,
         favoritePending: favorites.isFavoritePending(favoriteType, entityId),
         notesPending: playerActions.pendingNoteKeys.has(playerActions.getRowKey(row)),
-        scoutProfilePendingIds: (Array.isArray(row.scoutProfiles) ? row.scoutProfiles : [])
-          .map(profile => profile?.id)
-          .filter(profileId => playerActions.pendingScoutProfileKeys.has(playerActions.getScoutProfileKey(row, profileId))),
       }
     }),
     [
@@ -132,10 +142,8 @@ export default function useSearchResults({ queryFilters }) {
       favorites.pendingKeysRevision,
       favorites.playerFavoritesMap,
       playerActions.getRowKey,
-      playerActions.getScoutProfileKey,
       loadedRows,
       playerActions.pendingNoteKeys,
-      playerActions.pendingScoutProfileKeys,
     ]
   )
 
@@ -182,50 +190,8 @@ export default function useSearchResults({ queryFilters }) {
 
     if (!entityId) return null
 
-    const identity = row?.identity || {}
-    const season = row?.season || {}
-    const team = row?.team || {}
-    const metadata = row?.metadata || {}
-    const scouting = isBirthTeam
-      ? null
-      : {
-          season: {
-            ...season,
-            seasonId: season.seasonId || row?.seasonId || '',
-            seasonKey: season.seasonKey || row?.seasonKey || '',
-            birthYear: season.birthYear || row?.birthYear || null,
-          },
-          team: {
-            ...team,
-            birthTeamId: team.birthTeamId || team.teamId || row?.birthTeamId || '',
-            teamId: team.teamId || team.birthTeamId || row?.birthTeamId || '',
-          },
-          target: metadata.sourceTarget || row?.lifecycle?.type || 'current',
-          player: {
-            ...identity,
-            playerId: row?.playerId || identity.playerId,
-            playerDocumentId:
-              identity.playerDocumentId ||
-              metadata.sourceDocumentId ||
-              row?.playerDocumentId ||
-              row?.id,
-            fullName: row?.playerName || identity.displayName || '',
-            playerStats: row?.stats?.actual || {},
-            primaryPosition: row?.position?.primary || row?.primaryPosition || '',
-            positionLayer: row?.position?.layer || row?.positionLayer || '',
-            scoutProfiles: row?.scout?.profiles || row?.scoutProfiles || [],
-            scoutSignals: row?.scout?.profiles || row?.scoutProfiles || [],
-          },
-        }
-
     if (row.favorite) {
-      return favorites.removeFavorite({
-        favoriteType,
-        entityId,
-        scouting: scouting
-          ? { playerDocumentId: scouting.player.playerDocumentId }
-          : null,
-      })
+      return favorites.removeFavorite({ favoriteType, entityId })
     }
 
     return favorites.addFavorite({
@@ -233,7 +199,6 @@ export default function useSearchResults({ queryFilters }) {
       entityId,
       displayName: isBirthTeam ? row.teamName : row.playerName,
       birthYear: row.birthYear,
-      scouting,
     })
   }, [favorites])
 
@@ -259,7 +224,6 @@ export default function useSearchResults({ queryFilters }) {
     resetResultFilters,
     toggleFavorite,
     saveNotes: playerActions.saveNotes,
-    removeScoutProfile: playerActions.removeScoutProfile,
     teamUrlEditor,
     roleEditor: playerActions.roleEditor,
     loadDocuments,

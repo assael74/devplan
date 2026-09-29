@@ -36,10 +36,4 @@ export const searchResultScoutProfilesSx = {
     fontWeight: 700,
   },
 
-  removeButton: {
-    width: 24,
-    minWidth: 24,
-    minHeight: 24,
-    borderRadius: 999,
-  },
 }

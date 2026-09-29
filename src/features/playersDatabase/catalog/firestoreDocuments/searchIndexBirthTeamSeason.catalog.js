@@ -1,5 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js
 
+// teamUrl and seasonUrl project the League team row and season; empty string means explicit removal.
+// src/features/playersDatabase/catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js
+
 // Firestore source of truth: birth-team-season SearchIndex document.
 
 export const SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT = {

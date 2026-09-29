@@ -1,3 +1,5 @@
+// src/features/playersDatabase/services/auditV2/league/contract.js
+
 export const LEAGUE_AUDIT_V2_RESULT = Object.freeze({
   CLEAN: 'clean',
   FINDINGS: 'findings',
@@ -22,7 +24,6 @@ export const LEAGUE_SEARCH_INDEX_TEAM_OWNED_FIELDS = Object.freeze([
   'playersCount',
   'scoutProfilesSummary',
   'teamSeasonDocumentId',
-  'teamUrl',
 ])
 
 export const LEAGUE_SEARCH_INDEX_IGNORED_FIELDS = Object.freeze([

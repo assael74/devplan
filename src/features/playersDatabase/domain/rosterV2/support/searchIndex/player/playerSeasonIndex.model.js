@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.model.js
+// features/playersDatabase/domain/rosterV2/support/searchIndex/player/playerSeasonIndex.model.js
 
 import { serverTimestamp } from 'firebase/firestore'
 import { pickDefinedValue } from '../../../../../model/shared/value.model.js'

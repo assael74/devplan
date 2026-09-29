@@ -1,4 +1,4 @@
-// features/playersDatabase/services/write/searchIndex/player/playerSeasonIndex.identity.js
+// features/playersDatabase/domain/rosterV2/support/searchIndex/player/playerSeasonIndex.identity.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../../catalog/clubs.catalog.js'
 import {

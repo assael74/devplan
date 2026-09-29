@@ -1,4 +1,4 @@
-// features/playersDatabase/services/cache/cacheInvalidation.js
+// src/features/playersDatabase/services/cache/cacheInvalidation.js
 
 import {
   buildLeagueDocumentCacheKey,
@@ -18,45 +18,6 @@ import {
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
-const resolveLeagueId = payload => clean(
-  payload?.league?.id ||
-  payload?.leagueId ||
-  payload?.season?.leagueId ||
-  payload?.team?.leagueId
-)
-
-const resolveTeamId = payload => clean(
-  payload?.team?.birthTeamDocumentId ||
-  payload?.team?.teamDocumentId ||
-  payload?.team?.birthTeamId ||
-  payload?.team?.teamId ||
-  payload?.birthTeamDocumentId ||
-  payload?.teamDocumentId ||
-  payload?.birthTeamId ||
-  payload?.teamId
-)
-
-const resolvePlayerId = payload => clean(
-  payload?.player?.playerDocumentId ||
-  payload?.playerDocumentId ||
-  payload?.player?.playerId ||
-  payload?.playerId
-)
-
-const resolveSeasonKey = payload => clean(
-  payload?.season?.seasonKey ||
-  payload?.season?.seasonId ||
-  payload?.seasonKey ||
-  payload?.seasonId
-)
-
-const resolveBirthYear = payload => Number(
-  payload?.season?.birthYear ||
-  payload?.birthYear ||
-  payload?.team?.birthYear ||
-  0
-) || 0
-
 export const invalidateLeagueDocumentCache = leagueId => {
   const safeLeagueId = clean(leagueId)
   if (safeLeagueId) {
@@ -65,7 +26,6 @@ export const invalidateLeagueDocumentCache = leagueId => {
 
   deleteDocumentCacheValue(buildLeaguesCollectionCacheKey())
 }
-
 export const invalidateTeamDocumentCache = teamId => {
   const safeTeamId = clean(teamId)
   if (safeTeamId) {
@@ -108,66 +68,4 @@ export const invalidateClubSeasonIdentityIndexCache = ({
     seasonKey,
     birthYear,
   }))
-}
-
-const LEAGUE_ONLY_ACTIONS = new Set([
-  'ensureLeagueDoc',
-  'upsertLeagueSeason',
-  'updateLeagueSeasonTableRank',
-  'updateLeagueSeasonUrl',
-  'updateLeagueSeasonSettings',
-])
-
-const TEAM_ACTIONS = new Set([
-  'updateTeamUrl',
-  'deleteTeamPlayerFromSeason',
-  'createTeamDisplayPlayer',
-])
-
-const PLAYER_ACTIONS = new Set([
-  'updatePlayerSeasonNotes',
-  'updatePlayerSeasonRole',
-  'removePlayerScoutProfile',
-  'updatePlayerSeasonUrl',
-  'updatePlayerAgent',
-  'updatePlayerSeasonGoalDistribution',
-])
-
-export const invalidatePlayersDatabaseWriteCache = ({
-  actionType,
-  payload = {},
-} = {}) => {
-  const leagueId = resolveLeagueId(payload)
-  const teamId = resolveTeamId(payload)
-  const playerId = resolvePlayerId(payload)
-  const seasonKey = resolveSeasonKey(payload)
-  const birthYear = resolveBirthYear(payload)
-
-  if (LEAGUE_ONLY_ACTIONS.has(actionType)) {
-    invalidateLeagueDocumentCache(leagueId)
-    invalidateLeaguesMasterDocumentCache()
-    invalidateClubsMasterDocumentCache()
-    invalidateClubSeasonIdentityIndexCache({ seasonKey, birthYear })
-  }
-
-  if (TEAM_ACTIONS.has(actionType)) {
-    invalidateLeagueDocumentCache(leagueId)
-    invalidateTeamDocumentCache(teamId)
-    invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.player)
-    invalidateLeaguesMasterDocumentCache()
-    invalidateClubsMasterDocumentCache()
-  }
-
-  if (PLAYER_ACTIONS.has(actionType)) {
-    invalidatePlayerDocumentCache(playerId)
-
-    if (teamId) {
-      invalidateTeamDocumentCache(teamId)
-    }
-
-    if (leagueId) {
-      invalidateLeagueDocumentCache(leagueId)
-    }
-  }
-
 }

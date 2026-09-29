@@ -1,16 +1,12 @@
-// features/playersDatabase/ui/pages/leaguePage/hooks/useTeamUrlEditor.js
+// src/features/playersDatabase/ui/hooks/useTeamUrlEditor.js
 
 import * as React from 'react'
 
-import {
-  PLAYERS_DATABASE_WRITE_ACTIONS,
-  runPlayersDatabaseWriteAction,
-} from '../../services/write/index.js'
-import { SNACK_STATUS } from '../../../../ui/core/feedback/snackbar/snackbar.model.js'
+import { updateTeamSeasonUrl } from '../../services/writeV2/edits/team/updateSeasonUrl.js'
+import { saveEditor } from './saveEditor.js'
 
 export default function useTeamUrlEditor({
   leagueId,
-  leagueDoc,
   selectedSeasonOption,
   notify,
   reload,
@@ -27,47 +23,28 @@ export default function useTeamUrlEditor({
     setRow(null)
   }, [saving])
 
-  const save = React.useCallback(async teamUrl => {
-    if (!row || !selectedSeasonOption) return
-
-    setSaving(true)
-
-    try {
-      await runPlayersDatabaseWriteAction({
-        actionType: PLAYERS_DATABASE_WRITE_ACTIONS.UPDATE_TEAM_URL,
-        payload: {
-          target: selectedSeasonOption.target,
-          league: leagueDoc || { id: leagueId },
-          season: {
-            ...(selectedSeasonOption.season || {}),
-            leagueId,
-            seasonId: selectedSeasonOption.seasonId,
+  const save = React.useCallback(
+    async teamUrl => {
+      if (!row || !selectedSeasonOption || saving) return
+      await saveEditor({
+        write: () =>
+          updateTeamSeasonUrl({
+            leagueId: selectedSeasonOption.leagueId || leagueId,
+            birthTeamId: row.birthTeamId || row.teamId,
+            birthTeamDocumentId:
+              row.birthTeamDocumentId || row.teamDocumentId,
             seasonKey: selectedSeasonOption.seasonKey,
-          },
-          team: {
-            ...row,
             teamUrl,
-          },
-        },
-      })
-      notify({
-        status: SNACK_STATUS.SUCCESS,
+          }),
+        reload,
+        notify,
+        close: () => setRow(null),
+        setSaving,
         title: 'קישור הקבוצה נשמר',
-        message: row.name || row.teamName || '',
       })
-
-      await reload()
-      setRow(null)
-    } catch (error) {
-      notify({
-        status: SNACK_STATUS.ERROR,
-        title: 'שמירת הקישור נכשלה',
-        message: error?.message || 'שגיאה בעדכון קישור הקבוצה',
-      })
-    } finally {
-      setSaving(false)
-    }
-  }, [leagueDoc, leagueId, notify, reload, row, selectedSeasonOption])
+    },
+    [leagueId, reload, notify, row, selectedSeasonOption, saving],
+  )
 
   return {
     row,
