@@ -1,15 +1,6 @@
-import { AUDIT_FINDING_TYPE } from '../../../../services/audit/index.js'
 import { getFullDateTimeIl } from '../../../../../../shared/format/dateUtils.js'
 
 export const clean = value => String(value === undefined || value === null ? '' : value).trim()
-
-export const TYPE_LABELS = Object.freeze({
-  [AUDIT_FINDING_TYPE.MISSING_DOCUMENT]: 'מסמכים חסרים',
-  [AUDIT_FINDING_TYPE.SOURCE_MISMATCH]: 'נתונים לא תואמים',
-  [AUDIT_FINDING_TYPE.BROKEN_RELATION]: 'קשרים שבורים',
-  [AUDIT_FINDING_TYPE.UNEXPECTED_DOCUMENT]: 'מסמכים מיותרים',
-  [AUDIT_FINDING_TYPE.PARTIAL_WRITE]: 'כתיבות חלקיות',
-})
 
 const LIFECYCLE_LABELS = Object.freeze({
   league_only: 'קבוצה מטבלת הליגה בלבד',
@@ -84,7 +75,7 @@ export const playerDetailsOf = finding => {
 }
 
 export const isTeamSearchIndexLifecycleMismatch = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH &&
+  finding?.type === 'source_mismatch' &&
   finding?.entityType === 'teamSearchIndex' &&
   finding?.source === 'League season → buildTeamSeasonSearchMetrics' &&
   clean(finding?.documentId) &&
@@ -92,22 +83,22 @@ export const isTeamSearchIndexLifecycleMismatch = finding => (
   clean(finding?.seasonKey)
 )
 export const isLeagueDocumentFinding = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH && finding?.entityType === 'leaguesMasterLeague' && clean(finding?.relatedDocumentId)
+  finding?.type === 'source_mismatch' && finding?.entityType === 'leaguesMasterLeague' && clean(finding?.relatedDocumentId)
 )
 export const isLeagueLifecycleDocumentFinding = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH && finding?.entityType === 'leagueSeason' &&
+  finding?.type === 'source_mismatch' && finding?.entityType === 'leagueSeason' &&
   finding?.source === 'League season lifecycle' && clean(finding?.actual?.leagueId)
 )
 export const isLeagueClubProjectionFinding = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.MISSING_DOCUMENT &&
+  finding?.type === 'missing_document' &&
   (finding?.entityType === 'clubDocument' || finding?.entityType === 'clubAgeGroupSeason') &&
   finding?.source === 'League table → Club Document' && clean(finding?.relatedDocumentId) && clean(finding?.seasonKey)
 )
 export const conflictingLeagueIdsOf = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.BROKEN_RELATION && finding?.source === 'League table identity'
+  finding?.type === 'broken_relation' && finding?.source === 'League table identity'
     ? [...new Set((Array.isArray(finding?.actual?.leagueIds) ? finding.actual.leagueIds : []).map(clean).filter(Boolean))]
     : []
 )
 export const isLeaguesMasterSummaryFinding = finding => (
-  finding?.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH && finding?.entityType === 'leaguesMaster'
+  finding?.type === 'source_mismatch' && finding?.entityType === 'leaguesMaster'
 )

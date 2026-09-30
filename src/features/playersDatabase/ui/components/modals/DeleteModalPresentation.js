@@ -6,8 +6,17 @@ export const DELETE_MODAL_STEPS = [
   { id: 'check', label: 'בדיקה' },
   { id: 'preview', label: 'תצוגה מקדימה' },
   { id: 'sync', label: 'מחיקה וסנכרון' },
-  { id: 'audit', label: 'בדיקה וסיום' },
+  { id: 'audit', label: 'בדיקת סנכרון' },
 ]
+
+
+export const normalizeDeleteModalMessage = message => {
+  if (!message) return message
+  return String(message)
+    .replaceAll('ביקורת הסנכרון', 'בדיקת הסנכרון')
+    .replaceAll('הביקורת', 'בדיקת הסנכרון')
+    .replaceAll('ביקורת', 'בדיקת סנכרון')
+}
 
 export const resolveDeleteModalStep = status => {
   if (status === 'preparing' || status === 'loadingPreview') return 0

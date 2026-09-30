@@ -142,9 +142,9 @@ describe('ClearStatsModal', () => {
       })}
     />)
 
-    expect(screen.getByText('בדיקת תקינות וסנכרון')).toBeInTheDocument()
+    expect(screen.getByText('בדיקת סנכרון')).toBeInTheDocument()
     expect(screen.getByText('מזהה תיעוד פעולה: receipt-failed-1')).toBeInTheDocument()
-    expect(screen.getByText('פערים שנמצאו בבדיקת התקינות')).toBeInTheDocument()
+    expect(screen.getByText('פערים שנמצאו בבדיקת הסנכרון')).toBeInTheDocument()
     expect(screen.getByText('נמצא פער ב־אינדקסי השחקנים')).toBeInTheDocument()
     expect(screen.getByText('העדכון נעצר כאן')).toBeInTheDocument()
     expect(screen.queryByText(/setFields.primaryScoutProfileId/)).not.toBeInTheDocument()

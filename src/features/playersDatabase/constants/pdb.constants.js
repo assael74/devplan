@@ -12,11 +12,7 @@ export const PLAYERS_DATABASE_COLLECTIONS = {
   clubs: 'dbClubs',
   clubsMaster: 'dbClubsMaster',
   favorites: 'dbFavorites',
-  auditFindings: 'dbAuditFindings',
   writeActionsV2: 'dbWriteActionsV2',
-
-  // Legacy collections still used by the remaining Team flows.
-  writeActions: 'dbWriteActions',
 }
 
 export const PLAYERS_DATABASE_FAVORITES_DOCUMENTS = {

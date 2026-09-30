@@ -9,6 +9,7 @@ import {
   DeleteModalProgressRow,
   DeleteModalSummary,
   resolveDeleteModalStep,
+  normalizeDeleteModalMessage,
 } from '../../../components/modals/DeleteModalPresentation.js'
 import { DELETE_SEASON_STEPS } from './useDeleteLeagueSeason.js'
 import { deleteSeasonSx as sx } from './deleteSeason.sx.js'
@@ -58,7 +59,7 @@ export default function DeleteLeagueSeasonModal({ flow }) {
 
         {flow.status === 'writing' ? <Box sx={sx.loading}><CircularProgress size='sm' /><Typography>מבצע את השלב שאושר…</Typography></Box> : null}
         {flow.status === 'steps' ? <Alert color='primary' variant='soft'>השלב הבא: {STEP_LABELS[step?.id] || step?.label || 'בדיקת סנכרון וסיום'}</Alert> : null}
-        {flow.message ? <Alert color={flow.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{flow.message}</Alert> : null}
+        {flow.message ? <Alert color={flow.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{normalizeDeleteModalMessage(flow.message)}</Alert> : null}
 
         <Box sx={sx.actions}>
           {flow.status === 'preview' ? <Button color='danger' onClick={flow.approve}>אישור מחיקה</Button> : null}

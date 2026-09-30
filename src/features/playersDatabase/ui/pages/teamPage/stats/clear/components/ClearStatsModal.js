@@ -32,7 +32,7 @@ const FAILURE_STEP_LABELS = {
   receipt: 'פתיחת תיעוד הפעולה',
   canonical: 'עדכון נתוני הקבוצה והעונה',
   projections: 'עדכון המסמכים הנלווים',
-  audit: 'בדיקת תקינות וסנכרון',
+  audit: 'בדיקת סנכרון',
 }
 
 const TARGET_LABELS = {
@@ -283,7 +283,7 @@ export default function ClearStatsModal({
             {auditFailures.length > 0 ? (
               <Alert color='warning' variant='soft'>
                 <Box>
-                  <Typography level='title-sm'>פערים שנמצאו בבדיקת התקינות</Typography>
+                  <Typography level='title-sm'>פערים שנמצאו בבדיקת הסנכרון</Typography>
                   {auditFailures.slice(0, 3).map((finding, index) => (
                     <Typography key={`${finding.targetType}-${finding.check}-${index}`} level='body-xs'>
                       נמצא פער ב־{AUDIT_TARGET_LABELS[finding.targetType] || 'אחד המסמכים הנלווים'}

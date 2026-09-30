@@ -9,6 +9,7 @@ import {
   DeleteModalProgressRow,
   DeleteModalSummary,
   resolveDeleteModalStep,
+  normalizeDeleteModalMessage,
 } from '../../../../components/modals/DeleteModalPresentation.js'
 import { CLEAR_ROSTER_STEPS } from '../../../../../services/writeV2/roster/clear/clearRosterSession.js'
 import { clearRosterSx as sx } from './clearRoster.sx.js'
@@ -46,7 +47,6 @@ export default function ClearRosterModal({ controller, seasonKey }) {
               { label: 'שחקנים בסגל', value: impact.players },
               { label: 'אינדקסי שחקנים', value: impact.playerIndexes },
               { label: 'מעברים לאיפוס', value: impact.transfers || 0 },
-              { label: 'מסמכי שחקנים למחיקה', value: impact.playerDocuments || 0 },
             ]} />
             <DeleteModalPreserved>עונת הקבוצה וזהותה, נתוני הטבלה, הסטטיסטיקה, איזון הסגל ועונות אחרות. קבוצות אחרות שמופיעות במעברים לא ישתנו.</DeleteModalPreserved>
           </>
@@ -66,7 +66,7 @@ export default function ClearRosterModal({ controller, seasonKey }) {
 
         {c.status === 'writing' ? <Box sx={sx.loading}><CircularProgress size='sm' /><Typography>מבצע את השלב שאושר…</Typography></Box> : null}
         {c.status === 'steps' ? <Alert color='primary' variant='soft'>השלב הבא: {step ? STEP_LABELS[step.id] || step.label : 'בדיקת סנכרון וסיום'}</Alert> : null}
-        {c.message ? <Alert color={c.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{c.message}</Alert> : null}
+        {c.message ? <Alert color={c.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{normalizeDeleteModalMessage(c.message)}</Alert> : null}
 
         <Box sx={sx.actions}>
           {c.status === 'preview' ? <Button color='danger' onClick={c.approve}>אישור מחיקה</Button> : null}

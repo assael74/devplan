@@ -1,5 +1,4 @@
 import { Button, Sheet, Stack, Typography } from '@mui/joy'
-import { AUDIT_FINDING_TYPE } from '../../../../services/audit/index.js'
 import {
   clean,
   conflictingLeagueIdsOf,
@@ -34,6 +33,11 @@ const hasExpectedActual = finding =>
 function AuditFindingCard({ finding, busy, actions }) {
   const playerDetails = playerDetailsOf(finding)
   const conflictingLeagueIds = conflictingLeagueIdsOf(finding)
+  const target = finding?.target && typeof finding.target === 'object' ? finding.target : {}
+  const entityType = finding?.entityType || target.entityType || ''
+  const documentId = finding?.documentId || target.teamSeasonDocumentId || target.playerDocumentId || ''
+  const seasonKey = finding?.seasonKey || target.seasonKey || ''
+  const teamDocumentId = finding?.teamDocumentId || finding?.teamId || target.birthTeamDocumentId || ''
   return (
     <Sheet variant='outlined' sx={sx.findingSheet}>
     <Stack spacing={0.5}>
@@ -42,9 +46,9 @@ function AuditFindingCard({ finding, busy, actions }) {
       <Typography level='body-sm'>{findingExplanation(finding)}</Typography>
     ) : null}
     <Typography level='body-xs'>
-      מסמך: {finding.documentId || 'לא ידוע'}
+      מסמך: {documentId || 'לא ידוע'}
       {finding.relatedDocumentId ? ` · קשור: ${finding.relatedDocumentId}` : ''}
-      {finding.seasonKey ? ` · עונה: ${finding.seasonKey}` : ''}
+      {seasonKey ? ` · עונה: ${seasonKey}` : ''}
     </Typography>
     {finding.entityType === 'playerSearchIndex' ? (
       <Typography level='body-sm'>
@@ -74,15 +78,15 @@ function AuditFindingCard({ finding, busy, actions }) {
         {context.leagueId ? ` · ליגה: ${context.leagueId}` : ''}
       </Typography>
     ))}
-    {finding.entityType === 'teamSeasonPlayer' && clean(finding.teamDocumentId) ? (
+    {entityType === 'teamSeasonPlayer' && clean(teamDocumentId) ? (
       <Button
         size='sm'
         variant='outlined'
         sx={sx.actionButton}
         onClick={() => actions.onTeamOpen?.(finding, {
-          teamDocumentId: finding.teamDocumentId,
-          seasonKey: finding.seasonKey,
-          leagueId: finding.actual?.leagueId,
+          teamDocumentId,
+          seasonKey,
+          leagueId: finding.leagueId || finding.actual?.leagueId,
         })}
       >
         מעבר לקבוצה
@@ -139,7 +143,7 @@ function AuditFindingCard({ finding, busy, actions }) {
       </Typography>
     ) : null}
     {(
-      finding.type === AUDIT_FINDING_TYPE.SOURCE_MISMATCH
+      finding.type === 'source_mismatch'
       || (!finding.entityType && hasExpectedActual(finding))
     ) ? (
       <Typography level='body-xs'>

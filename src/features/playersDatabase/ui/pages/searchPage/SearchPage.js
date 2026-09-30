@@ -149,14 +149,11 @@ function SearchPageContent() {
         busy={audit.busy}
         error={audit.error}
         result={audit.result}
-        recentWriteActions={audit.recentWriteActions}
-        recentWriteActionsBusy={audit.recentWriteActionsBusy}
         recentWriteActionReceiptsV2={audit.recentWriteActionReceiptsV2}
         recentWriteActionReceiptsV2Busy={audit.recentWriteActionReceiptsV2Busy}
         defaultTeamDocumentId={audit.partialAuditDefaults.teamDocumentId}
         defaultSeasonKey={audit.partialAuditDefaults.seasonKey}
-        onRun={audit.runAudit}
-        onRunWriteAction={audit.runAuditForWriteAction}
+        onRunSystemAudit={audit.runSystemAudit}
         onRunReceiptV2={audit.runAuditForReceiptV2}
         onRepairClearStats={openClearStatsRepair}
         onScopeChange={audit.handleScopeChange}

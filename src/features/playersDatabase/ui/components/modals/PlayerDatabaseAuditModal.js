@@ -2,58 +2,26 @@
 
 import * as React from 'react'
 import { Button, Divider, FormControl, FormLabel, Input, Option, Select, Sheet, Stack, Typography } from '@mui/joy'
-import { AUDIT_FINDING_TYPE, AUDIT_SCOPE_TYPE, buildAuditClubTeamSeasonScope, buildAuditTeamSeasonScope, getLastWriteAuditScope } from '../../../services/audit/index.js'
 import RegularModal from './RegularModal.js'
 import AuditFindingsList from './audit/AuditFindingsList.js'
 import AuditSummary from './audit/AuditSummary.js'
 import StatsV2SyncStages from './audit/StatsV2SyncStages.js'
-import { TYPE_LABELS } from './audit/auditFindingPresentation.js'
-import { MISMATCH_COLLECTION_TABS, selectFindingView, selectLifecycleSummary } from './audit/auditFindingSelectors.js'
 import { playerDatabaseAuditModalSx as sx } from './sx/playerDatabaseAuditModal.sx.js'
 
 const PAGE_SIZE = 40
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-const WRITE_ACTION_LABELS = {
-  pasteLeagueTable: 'טעינת טבלת ליגה',
-  pasteTeamPlayers: 'טעינת סגל קבוצה',
-  pasteTeamPlayerStats: 'טעינת סטטיסטיקות',
-  clearTeamSeasonStats: 'ניקוי סטטיסטיקות',
-  clearTeamSeasonPlayers: 'ניקוי סגל קבוצה',
-  clearLeagueSeasonTeams: 'ניקוי קבוצות ליגה',
-}
-const WRITE_ACTION_STATUS_LABELS = {
-  in_progress: 'בתהליך',
-  completed: 'הושלמה',
-  failed: 'נכשלה',
-  failed_after_canonical_commit: 'דורשת סנכרון',
-  superseded: 'הוחלפה',
-}
-const formatWriteActionTime = value => {
-  const date = typeof value?.toDate === 'function'
-    ? value.toDate()
-    : value instanceof Date
-      ? value
-      : null
-  return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat('he-IL', {
-      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-    }).format(date)
-    : 'כעת'
-}
-const formatWriteActionOption = action => {
-  const actionLabel = WRITE_ACTION_LABELS[clean(action?.actionType)] || clean(action?.actionType) || 'פעולה'
-  const subject = clean(action?.teamSeasonDocumentId)
-    || clean(action?.leagueId)
-    || clean(action?.seasonKey)
-  const status = WRITE_ACTION_STATUS_LABELS[clean(action?.status)] || clean(action?.status)
-  return [actionLabel, subject, status, formatWriteActionTime(action?.updatedAt)]
-    .filter(Boolean)
-    .join(' · ')
-}
+
+const MODE = Object.freeze({
+  RECEIPT: 'receiptV2',
+  STRUCTURAL: 'structural',
+  ORPHANS: 'orphans',
+  SCOUTING: 'scouting',
+})
+
 const WRITE_ACTION_V2_FLOW_LABELS = {
-  league: 'טעינת קבוצות ליגה',
-  roster: 'טעינת סגל',
-  stats: 'טעינת סטטיסטיקות',
+  league: 'ליגה',
+  roster: 'סגל',
+  stats: 'סטטיסטיקות',
 }
 const WRITE_ACTION_V2_STATUS_LABELS = {
   open: 'פתוחה',
@@ -95,6 +63,20 @@ const WRITE_ACTION_V2_TARGET_LABELS = {
   playerSearchIndex: 'אינדקסי השחקנים',
   writeAction: 'תיעוד הפעולה',
 }
+
+const formatWriteActionTime = value => {
+  const date = typeof value?.toDate === 'function'
+    ? value.toDate()
+    : value instanceof Date
+      ? value
+      : null
+  return date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    }).format(date)
+    : 'כעת'
+}
+
 const formatWriteActionReceiptV2Label = receipt => {
   const flowType = clean(receipt?.flowType)
   const operationType = clean(receipt?.operationType)
@@ -103,22 +85,20 @@ const formatWriteActionReceiptV2Label = receipt => {
   if (operationType === 'clear' && flowType === 'league') return 'מחיקת קבוצות ליגה'
   if (operationType === 'clear' && flowType === 'stats') return 'מחיקת סטטיסטיקה'
   if (operationType === 'clear' && flowType === 'roster') return 'מחיקת סגל'
-  return WRITE_ACTION_V2_FLOW_LABELS[flowType] || clean(receipt?.label) || 'פעולת V2'
+  return `${operationType === 'clear' ? 'ניקוי' : 'טעינת'} ${WRITE_ACTION_V2_FLOW_LABELS[flowType] || flowType || 'V2'}`
 }
+
 const formatWriteActionReceiptV2Progress = receipt => {
   const failedStep = clean(receipt?.failedStep)
   const lastCompletedStep = clean(receipt?.lastCompletedStep)
   const executionStatus = clean(receipt?.executionStatus)
 
-  if (failedStep) {
-    return `נעצרה בשלב ${WRITE_ACTION_V2_STEP_LABELS[failedStep] || 'לא ידוע'}`
-  }
+  if (failedStep) return `נעצרה בשלב ${WRITE_ACTION_V2_STEP_LABELS[failedStep] || 'לא ידוע'}`
   if (executionStatus === 'succeeded') return WRITE_ACTION_V2_EXECUTION_STATUS_LABELS.succeeded
-  if (lastCompletedStep) {
-    return `שלב אחרון שהושלם: ${WRITE_ACTION_V2_STEP_LABELS[lastCompletedStep] || 'לא ידוע'}`
-  }
+  if (lastCompletedStep) return `שלב אחרון שהושלם: ${WRITE_ACTION_V2_STEP_LABELS[lastCompletedStep] || 'לא ידוע'}`
   return WRITE_ACTION_V2_EXECUTION_STATUS_LABELS[executionStatus] || ''
 }
+
 const formatWriteActionReceiptV2Option = receipt => {
   const target = receipt?.auditTarget || {}
   const status = WRITE_ACTION_V2_STATUS_LABELS[clean(receipt?.status)] || clean(receipt?.status)
@@ -131,24 +111,23 @@ const formatWriteActionReceiptV2Option = receipt => {
     formatWriteActionTime(receipt?.updatedAt),
   ].filter(Boolean).join(' · ')
 }
+
 const downloadFindings = result => {
   if (!result || typeof window === 'undefined') return
   const payload = {
     exportedAt: new Date().toISOString(),
-    scope: result.scope,
+    flowType: result.flowType,
+    auditType: result.auditType,
     summary: result.summary,
     coverage: result.coverage,
-    lifecycle: result.lifecycle,
     findings: result.findings,
   }
   const url = window.URL.createObjectURL(
-    new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json;charset=utf-8',
-    })
+    new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   )
   const link = document.createElement('a')
   link.href = url
-  link.download = `players-database-audit-${new Date().toISOString().slice(0, 10)}.json`
+  link.download = `players-database-audit-v2-${new Date().toISOString().slice(0, 10)}.json`
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -163,82 +142,55 @@ export default function PlayerDatabaseAuditModal(props) {
     result = null,
     defaultTeamDocumentId = '',
     defaultSeasonKey = '',
-    onRun,
-    recentWriteActions = [],
-    recentWriteActionsBusy = false,
     recentWriteActionReceiptsV2 = [],
     recentWriteActionReceiptsV2Busy = false,
     onScopeChange,
     onClose,
   } = props
-  const [mode, setMode] = React.useState(AUDIT_SCOPE_TYPE.FULL_SYSTEM)
-  const [clubId, setClubId] = React.useState('')
+
+  const [mode, setMode] = React.useState(MODE.RECEIPT)
   const [teamDocumentId, setTeamDocumentId] = React.useState('')
-  const [birthYear, setBirthYear] = React.useState('')
   const [seasonKey, setSeasonKey] = React.useState('')
-  const [filter, setFilter] = React.useState('all')
-  const [mismatchCollection, setMismatchCollection] = React.useState('playerSearchIndex')
-  const [visible, setVisible] = React.useState(PAGE_SIZE)
-  const [lastWriteScope, setLastWriteScope] = React.useState(null)
-  const [writeActionId, setWriteActionId] = React.useState('')
   const [receiptV2Id, setReceiptV2Id] = React.useState('')
-  const previousDefaultsRef = React.useRef(null)
+  const [visible, setVisible] = React.useState(PAGE_SIZE)
+
   React.useEffect(() => {
     if (!open) return
-
-    const defaults = {
-      teamDocumentId: clean(defaultTeamDocumentId),
-      seasonKey: clean(defaultSeasonKey),
-    }
-    const defaultsChanged = previousDefaultsRef.current && (
-      previousDefaultsRef.current.teamDocumentId !== defaults.teamDocumentId ||
-      previousDefaultsRef.current.seasonKey !== defaults.seasonKey
-    )
-    previousDefaultsRef.current = defaults
-    setTeamDocumentId(defaults.teamDocumentId)
-    setSeasonKey(defaults.seasonKey)
-    setLastWriteScope(getLastWriteAuditScope())
-    setWriteActionId('')
+    setTeamDocumentId(clean(defaultTeamDocumentId))
+    setSeasonKey(clean(defaultSeasonKey))
     setReceiptV2Id('')
-    setFilter('all')
-    setMismatchCollection('playerSearchIndex')
     setVisible(PAGE_SIZE)
-    if (defaultsChanged && mode === AUDIT_SCOPE_TYPE.TEAM_SEASON) {
-      onScopeChange?.()
-    }
-  }, [open, defaultTeamDocumentId, defaultSeasonKey, mode, onScopeChange])
+  }, [open, defaultTeamDocumentId, defaultSeasonKey])
 
-  const teamScope = mode === AUDIT_SCOPE_TYPE.TEAM_SEASON
-  const clubTeamScope = mode === AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON
-  const writeActionScope = mode === 'writeAction'
-  const receiptV2Scope = mode === 'receiptV2'
   const selectedReceiptV2 = recentWriteActionReceiptsV2.find(receipt => (
     clean(receipt?.id) === clean(receiptV2Id)
   )) || null
-  const scope = mode === 'lastWrite' && lastWriteScope
-    ? lastWriteScope
-    : clubTeamScope
-      ? buildAuditClubTeamSeasonScope({ clubId, teamDocumentId, birthYear, seasonKey })
-      : teamScope
-        ? buildAuditTeamSeasonScope({ teamDocumentId, seasonKey })
-      : { type: AUDIT_SCOPE_TYPE.FULL_SYSTEM }
   const findings = Array.isArray(result?.findings) ? result.findings : []
-  const findingView = selectFindingView({ findings, filter, mismatchCollection })
+  const receiptMode = mode === MODE.RECEIPT
+  const scoutingMode = mode === MODE.SCOUTING
+  const canRun = receiptMode
+    ? Boolean(clean(receiptV2Id))
+    : scoutingMode
+      ? Boolean(clean(teamDocumentId) && clean(seasonKey))
+      : true
 
-  const changeScopeValue = (value, currentValue, setter) => {
-    if (value === currentValue) return
-
-    setter(value)
+  const changeMode = nextMode => {
+    if (nextMode === mode) return
+    setMode(nextMode)
+    setVisible(PAGE_SIZE)
     onScopeChange?.()
   }
 
-  const canRun = receiptV2Scope
-    ? Boolean(clean(receiptV2Id))
-    : writeActionScope
-      ? Boolean(clean(writeActionId))
-      : clubTeamScope
-      ? Boolean(clean(clubId) && clean(teamDocumentId) && clean(birthYear) && clean(seasonKey))
-      : !teamScope || Boolean(clean(teamDocumentId) && clean(seasonKey))
+  const run = () => {
+    if (!canRun) return
+    if (receiptMode) return props.onRunReceiptV2?.(receiptV2Id)
+    return props.onRunSystemAudit?.({
+      type: mode,
+      birthTeamDocumentId: teamDocumentId,
+      seasonKey,
+    })
+  }
+
   return (
     <RegularModal
       open={open}
@@ -246,107 +198,32 @@ export default function PlayerDatabaseAuditModal(props) {
       busy={busy}
       disabled={!canRun}
       persistent={busy}
-      title='בדיקת תקינות נתונים'
-      description='הבדיקה מחפשת מסמכים חסרים או מיותרים, נתונים לא תואמים וקשרים שבורים.'
+      title='Audit V2'
+      description='בדיקות ממוקדות של פעולות V2 ובדיקות מערכת ידניות בלבד.'
       iconId='search'
       confirmLabel='בדוק עכשיו'
       confirmIconId='search'
       cancelLabel='סגור'
-      onConfirm={() => {
-        if (!canRun) return
-        if (receiptV2Scope) return props.onRunReceiptV2?.(receiptV2Id)
-        if (writeActionScope) return props.onRunWriteAction?.(writeActionId)
-        return onRun?.(scope)
-      }}
+      onConfirm={run}
       onClose={onClose}
     >
       <Stack spacing={2}>
         <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
-          <Button
-            size='sm'
-            variant={mode === AUDIT_SCOPE_TYPE.FULL_SYSTEM ? 'solid' : 'outlined'}
-            onClick={() => changeScopeValue(AUDIT_SCOPE_TYPE.FULL_SYSTEM, mode, setMode)}
-          >
-            כל המערכת
-          </Button>
-          <Button
-            size='sm'
-            variant={teamScope ? 'solid' : 'outlined'}
-            onClick={() => changeScopeValue(AUDIT_SCOPE_TYPE.TEAM_SEASON, mode, setMode)}
-          >
-            קבוצה ועונה
-          </Button>
-          <Button
-            size='sm'
-            variant={clubTeamScope ? 'solid' : 'outlined'}
-            onClick={() => changeScopeValue(AUDIT_SCOPE_TYPE.CLUB_TEAM_SEASON, mode, setMode)}
-          >
-            מועדון + קבוצה + שנתון + עונה
-          </Button>          {lastWriteScope ? (
-            <Button
-              size='sm'
-              variant={mode === 'lastWrite' ? 'solid' : 'outlined'}
-              onClick={() => changeScopeValue('lastWrite', mode, setMode)}
-            >
-              העדכון האחרון
-            </Button>
-          ) : null}
-          <Button
-            size='sm'
-            variant={receiptV2Scope ? 'solid' : 'outlined'}
-            onClick={() => changeScopeValue('receiptV2', mode, setMode)}
-          >
+          <Button size='sm' variant={receiptMode ? 'solid' : 'outlined'} onClick={() => changeMode(MODE.RECEIPT)}>
             פעולות V2
           </Button>
-          <Button
-            size='sm'
-            variant={writeActionScope ? 'solid' : 'outlined'}
-            onClick={() => changeScopeValue('writeAction', mode, setMode)}
-          >
-            טעינות אחרונות
+          <Button size='sm' variant={mode === MODE.STRUCTURAL ? 'solid' : 'outlined'} onClick={() => changeMode(MODE.STRUCTURAL)}>
+            מבנה וקשרים
+          </Button>
+          <Button size='sm' variant={mode === MODE.ORPHANS ? 'solid' : 'outlined'} onClick={() => changeMode(MODE.ORPHANS)}>
+            נתונים יתומים
+          </Button>
+          <Button size='sm' variant={scoutingMode ? 'solid' : 'outlined'} onClick={() => changeMode(MODE.SCOUTING)}>
+            מודל סקאוט
           </Button>
         </Stack>
 
-        {teamScope || clubTeamScope ? (
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-            {clubTeamScope ? (
-              <>
-                <FormControl sx={sx.flexField}>
-                  <FormLabel>מזהה מועדון</FormLabel>
-                  <Input value={clubId} placeholder='למשל maccabi-beer-sheva' onChange={event => changeScopeValue(event.target.value, clubId, setClubId)} />
-                </FormControl>
-                <FormControl sx={sx.flexField}>
-                  <FormLabel>שנתון</FormLabel>
-                  <Input value={birthYear} placeholder='למשל 2012' onChange={event => changeScopeValue(event.target.value, birthYear, setBirthYear)} />
-                </FormControl>
-              </>
-            ) : null}
-            <FormControl sx={sx.flexField}>
-              <FormLabel>מסמך קבוצה</FormLabel>
-              <Input
-                value={teamDocumentId}
-                onChange={event => changeScopeValue(
-                  event.target.value,
-                  teamDocumentId,
-                  setTeamDocumentId
-                )}
-              />
-            </FormControl>
-            <FormControl sx={sx.flexField}>
-              <FormLabel>עונה</FormLabel>
-              <Input
-                value={seasonKey}
-                onChange={event => changeScopeValue(
-                  event.target.value,
-                  seasonKey,
-                  setSeasonKey
-                )}
-              />
-            </FormControl>
-          </Stack>
-        ) : null}
-
-        {receiptV2Scope ? (
+        {receiptMode ? (
           <Stack spacing={1}>
             <FormControl>
               <FormLabel>בחר פעולת V2 לבדיקה</FormLabel>
@@ -354,7 +231,10 @@ export default function PlayerDatabaseAuditModal(props) {
                 value={receiptV2Id || null}
                 placeholder={recentWriteActionReceiptsV2Busy ? 'טוען פעולות V2…' : 'בחר פעולה V2'}
                 disabled={recentWriteActionReceiptsV2Busy}
-                onChange={(_event, value) => changeScopeValue(value || '', receiptV2Id, setReceiptV2Id)}
+                onChange={(_event, value) => {
+                  setReceiptV2Id(value || '')
+                  onScopeChange?.()
+                }}
               >
                 {recentWriteActionReceiptsV2.map(receipt => (
                   <Option key={receipt.id} value={receipt.id}>
@@ -365,16 +245,12 @@ export default function PlayerDatabaseAuditModal(props) {
             </FormControl>
             {selectedReceiptV2 ? (
               <Sheet variant='soft' sx={{ p: 1.5, borderRadius: 'sm' }}>
-                <Typography level='title-sm'>
-                  {formatWriteActionReceiptV2Label(selectedReceiptV2)}
-                </Typography>
+                <Typography level='title-sm'>{formatWriteActionReceiptV2Label(selectedReceiptV2)}</Typography>
                 <Typography level='body-sm'>
                   מצב: {WRITE_ACTION_V2_STATUS_LABELS[clean(selectedReceiptV2.status)] || clean(selectedReceiptV2.status) || 'לא ידוע'}
                 </Typography>
                 {formatWriteActionReceiptV2Progress(selectedReceiptV2) ? (
-                  <Typography level='body-sm'>
-                    {formatWriteActionReceiptV2Progress(selectedReceiptV2)}
-                  </Typography>
+                  <Typography level='body-sm'>{formatWriteActionReceiptV2Progress(selectedReceiptV2)}</Typography>
                 ) : null}
                 {selectedReceiptV2.failedTarget?.targetType ? (
                   <Typography level='body-sm'>
@@ -383,39 +259,41 @@ export default function PlayerDatabaseAuditModal(props) {
                 ) : null}
               </Sheet>
             ) : null}
-            <FormControl>
-              <FormLabel>מזהה Receipt V2 ידני</FormLabel>
-              <Input
-                value={receiptV2Id}
-                onChange={event => changeScopeValue(event.target.value, receiptV2Id, setReceiptV2Id)}
-              />
-            </FormControl>
           </Stack>
         ) : null}
 
-        {writeActionScope ? (
-          <Stack spacing={1}>
-            <FormControl>
-              <FormLabel>בחר טעינה לבדיקה</FormLabel>
-              <Select
-                value={writeActionId || null}
-                placeholder={recentWriteActionsBusy ? 'טוען טעינות אחרונות…' : 'בחר אחת מחמש הטעינות האחרונות'}
-                disabled={recentWriteActionsBusy}
-                onChange={(_event, value) => changeScopeValue(value || '', writeActionId, setWriteActionId)}
-              >
-                {recentWriteActions.map(action => (
-                  <Option key={action.id} value={action.id}>
-                    {formatWriteActionOption(action)}
-                  </Option>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl>
-              <FormLabel>מזהה טעינה ידני (לפעולה ישנה)</FormLabel>
+        {mode === MODE.STRUCTURAL ? (
+          <Sheet variant='soft' sx={{ p: 1.5, borderRadius: 'sm' }}>
+            <Typography level='body-sm'>בדיקה ידנית של קשרים קנוניים בין League, Team, Team Season ו-Club, כולל Movement invariants.</Typography>
+          </Sheet>
+        ) : null}
+
+        {mode === MODE.ORPHANS ? (
+          <Sheet variant='soft' sx={{ p: 1.5, borderRadius: 'sm' }}>
+            <Typography level='body-sm'>בדיקה ידנית לאיתור Team/Player SearchIndexes ו-ClubsMaster entries שאין להם מקור קנוני תקין.</Typography>
+          </Sheet>
+        ) : null}
+
+        {scoutingMode ? (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+            <FormControl sx={sx.flexField}>
+              <FormLabel>מסמך קבוצה</FormLabel>
               <Input
-                value={writeActionId}
-                placeholder='הדבק מזהה רק אם הפעולה אינה מופיעה ברשימה'
-                onChange={event => changeScopeValue(event.target.value, writeActionId, setWriteActionId)}
+                value={teamDocumentId}
+                onChange={event => {
+                  setTeamDocumentId(event.target.value)
+                  onScopeChange?.()
+                }}
+              />
+            </FormControl>
+            <FormControl sx={sx.flexField}>
+              <FormLabel>עונה</FormLabel>
+              <Input
+                value={seasonKey}
+                onChange={event => {
+                  setSeasonKey(event.target.value)
+                  onScopeChange?.()
+                }}
               />
             </FormControl>
           </Stack>
@@ -423,12 +301,8 @@ export default function PlayerDatabaseAuditModal(props) {
 
         {result ? (
           <>
-            <AuditSummary
-              result={result}
-              lifecycleSummary={selectLifecycleSummary(result)}
-              onDownload={() => downloadFindings(result)}
-            />
-            {result.auditVersion === 'v2' && result.flowType === 'stats' ? (
+            <AuditSummary result={result} onDownload={() => downloadFindings(result)} />
+            {result.flowType === 'stats' ? (
               <StatsV2SyncStages
                 result={result}
                 busy={busy}
@@ -458,54 +332,11 @@ export default function PlayerDatabaseAuditModal(props) {
             {findings.length ? (
               <>
                 <Divider />
-                {result.auditVersion === 'v2' ? null : (
-                  <>
-                    <Stack direction='row' spacing={0.75} flexWrap='wrap' useFlexGap>
-                      <Button
-                        size='sm'
-                        variant={filter === 'all' ? 'solid' : 'outlined'}
-                        onClick={() => setFilter('all')}
-                      >
-                        הכול ({findings.length})
-                      </Button>
-                      {Object.entries(TYPE_LABELS).map(([type, label]) => (
-                        <Button
-                          key={type}
-                          size='sm'
-                          variant={filter === type ? 'solid' : 'outlined'}
-                          onClick={() => setFilter(type)}
-                        >
-                          {label} ({Number(result.summary?.[type] || 0)})
-                        </Button>
-                      ))}
-                    </Stack>
-                    {filter === AUDIT_FINDING_TYPE.SOURCE_MISMATCH ? (
-                      <Stack direction='row' spacing={0.75} flexWrap='wrap' useFlexGap>
-                        {MISMATCH_COLLECTION_TABS
-                          .filter(tab => Number(findingView.mismatchCounts[tab.id] || 0) > 0)
-                          .map(tab => (
-                            <Button
-                              key={tab.id}
-                              size='sm'
-                              sx={sx.collectionTab}
-                              variant={findingView.activeMismatchCollection === tab.id ? 'soft' : 'plain'}
-                              onClick={() => {
-                                setMismatchCollection(tab.id)
-                                setVisible(PAGE_SIZE)
-                              }}
-                            >
-                              {tab.label} ({Number(findingView.mismatchCounts[tab.id] || 0)})
-                            </Button>
-                          ))}
-                      </Stack>
-                    ) : null}
-                  </>
-                )}
                 <AuditFindingsList
-                  findings={findingView.filtered.slice(0, visible)}
+                  findings={findings.slice(0, visible)}
                   busy={busy}
                   actions={props}
-                  canLoadMore={findingView.filtered.length > visible}
+                  canLoadMore={findings.length > visible}
                   onLoadMore={() => setVisible(value => value + PAGE_SIZE)}
                 />
               </>

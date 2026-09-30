@@ -9,6 +9,7 @@ import {
   DeleteModalProgressRow,
   DeleteModalSummary,
   resolveDeleteModalStep,
+  normalizeDeleteModalMessage,
 } from '../../../components/modals/DeleteModalPresentation.js'
 import { CLEAR_LEAGUE_STEPS } from '../../../../domain/leagueV2/clear/clearLeagueTeamsPlan.builder.js'
 import { clearLeagueTeamsSx as sx } from './clearLeagueTeams.sx.js'
@@ -84,7 +85,7 @@ export default function ClearLeagueTeamsModal({ flow, seasonKey }) {
         {flow.status === 'steps' ? (
           <Alert color='primary' variant='soft'>השלב הבא: {step ? STEP_LABELS[step.id] || step.label : 'בדיקת סנכרון וסיום'}</Alert>
         ) : null}
-        {flow.message ? <Alert color={flow.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{flow.message}</Alert> : null}
+        {flow.message ? <Alert color={flow.status === 'succeeded' ? 'success' : 'danger'} variant='soft'>{normalizeDeleteModalMessage(flow.message)}</Alert> : null}
 
         <Box sx={sx.actions}>
           {flow.status === 'preview' ? <Button color='danger' onClick={flow.approve}>אישור מחיקה</Button> : null}

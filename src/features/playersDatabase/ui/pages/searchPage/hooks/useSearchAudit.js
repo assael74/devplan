@@ -3,12 +3,6 @@ import * as React from 'react'
 
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 import {
-  buildAuditFindingId,
-  getPlayersDatabaseWriteAction,
-  listRecentPlayersDatabaseWriteActions,
-  runPlayerDatabaseAudit,
-} from '../../../../services/audit/index.js'
-import {
   getWriteActionReceiptV2,
   listWriteActionReceiptsV2,
   persistWriteActionAuditResultV2,
@@ -16,23 +10,30 @@ import {
 import {
   auditClearStatsReceiptV2,
   auditLeagueV2,
+  auditOrphanDataV2,
   auditRosterV2,
+  auditScoutingIntegrityV2,
   auditStatsV2,
+  auditStructuralIntegrityV2,
 } from '../../../../services/auditV2/index.js'
-import { reconcileStatsAuditStageV2 } from '../../../../services/auditV2/stats/reconcileStage.js'
+import { reconcileStatsAuditStageV2 } from '../../../../services/writeV2/stats/sync/reconcileStatsAuditStageV2.js'
 import { buildPartialAuditDefaults } from '../logic/searchAuditScope.logic.js'
 
 const clean = value => String(
   value === undefined || value === null ? '' : value
 ).trim()
 
+const withV2Meta = (result, extra = {}) => ({
+  ...result,
+  auditVersion: 'v2',
+  ...extra,
+})
+
 export default function useSearchAudit({ rows }) {
   const [open, setOpen] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
   const [result, setResult] = React.useState(null)
-  const [recentWriteActions, setRecentWriteActions] = React.useState([])
-  const [recentWriteActionsBusy, setRecentWriteActionsBusy] = React.useState(false)
   const [recentWriteActionReceiptsV2, setRecentWriteActionReceiptsV2] = React.useState([])
   const [recentWriteActionReceiptsV2Busy, setRecentWriteActionReceiptsV2Busy] = React.useState(false)
 
@@ -40,18 +41,6 @@ export default function useSearchAudit({ rows }) {
     () => buildPartialAuditDefaults(rows),
     [rows]
   )
-
-  const loadRecentWriteActions = React.useCallback(async () => {
-    setRecentWriteActionsBusy(true)
-    try {
-      setRecentWriteActions(await listRecentPlayersDatabaseWriteActions({ maxResults: 5 }))
-    } catch (recentActionsError) {
-      console.error('[playersDatabase] Recent write actions read failed:', recentActionsError)
-      setRecentWriteActions([])
-    } finally {
-      setRecentWriteActionsBusy(false)
-    }
-  }, [])
 
   const loadRecentWriteActionReceiptsV2 = React.useCallback(async () => {
     setRecentWriteActionReceiptsV2Busy(true)
@@ -68,9 +57,8 @@ export default function useSearchAudit({ rows }) {
   const openAudit = React.useCallback(() => {
     setOpen(true)
     setError('')
-    void loadRecentWriteActions()
     void loadRecentWriteActionReceiptsV2()
-  }, [loadRecentWriteActions, loadRecentWriteActionReceiptsV2])
+  }, [loadRecentWriteActionReceiptsV2])
 
   const closeAudit = React.useCallback(() => {
     setOpen(false)
@@ -78,49 +66,36 @@ export default function useSearchAudit({ rows }) {
 
   const handleScopeChange = React.useCallback(() => {
     setResult(null)
+    setError('')
   }, [])
 
-  const runAudit = React.useCallback(async scope => {
+  const runSystemAudit = React.useCallback(async ({ type = '', birthTeamDocumentId = '', seasonKey = '' } = {}) => {
     if (busy) return
-    setBusy(true)
-    setError('')
-
-    try {
-      setResult(await runPlayerDatabaseAudit({ scope }))
-    } catch (auditError) {
-      console.error('[playersDatabase] Data audit failed:', auditError)
-      setError(
-        auditError instanceof Error
-          ? auditError.message
-          : 'בדיקת מצב הנתונים נכשלה'
-      )
-    } finally {
-      setBusy(false)
-    }
-  }, [busy])
-
-  const runAuditForWriteAction = React.useCallback(async writeActionId => {
-    if (busy) return
-    const id = clean(writeActionId)
-    if (!id) {
-      setError('יש להזין מזהה טעינה.')
-      return
-    }
 
     setBusy(true)
     setError('')
     try {
-      const writeAction = await getPlayersDatabaseWriteAction({ writeActionId: id })
-      if (!writeAction) throw new Error('מזהה הטעינה לא נמצא.')
-      if (!writeAction.auditScope) {
-        throw new Error('לפעולה זו עדיין אין היקף Audit. היא טרם הגיעה לשלב הכתיבה הקנונית.')
+      let nextResult
+      if (type === 'structural') {
+        nextResult = await auditStructuralIntegrityV2()
+      } else if (type === 'orphans') {
+        nextResult = await auditOrphanDataV2()
+      } else if (type === 'scouting') {
+        const teamId = clean(birthTeamDocumentId)
+        const key = clean(seasonKey)
+        if (!teamId || !key) throw new Error('לבדיקת מודל הסקאוט נדרשים מסמך קבוצה ועונה.')
+        nextResult = await auditScoutingIntegrityV2({
+          birthTeamDocumentId: teamId,
+          seasonKey: key,
+        })
+      } else {
+        throw new Error('סוג בדיקת המערכת אינו נתמך.')
       }
-      setResult(await runPlayerDatabaseAudit({
-        scope: writeAction.auditScope,
-        includeWriteRecovery: false,
-      }))
+
+      setResult(withV2Meta(nextResult))
     } catch (auditError) {
-      setError(auditError instanceof Error ? auditError.message : 'בדיקת מזהה הטעינה נכשלה')
+      console.error('[playersDatabase] System Audit V2 failed:', auditError)
+      setError(auditError instanceof Error ? auditError.message : 'בדיקת המערכת נכשלה')
     } finally {
       setBusy(false)
     }
@@ -168,6 +143,7 @@ export default function useSearchAudit({ rows }) {
       } else {
         throw new Error(`Audit V2 עבור ${receipt.flowType || 'flow לא ידוע'} עדיין לא מיושם.`)
       }
+
       const nextReceiptStatus = await persistWriteActionAuditResultV2({
         receiptId: id,
         audit: nextResult,
@@ -177,11 +153,7 @@ export default function useSearchAudit({ rows }) {
         await loadRecentWriteActionReceiptsV2()
       }
 
-      setResult({
-        ...nextResult,
-        auditVersion: 'v2',
-        receiptId: id,
-      })
+      setResult(withV2Meta(nextResult, { receiptId: id }))
     } catch (auditError) {
       console.error('[playersDatabase] Receipt V2 Audit failed:', auditError)
       setError(auditError instanceof Error ? auditError.message : 'בדיקת Receipt V2 נכשלה')
@@ -215,80 +187,67 @@ export default function useSearchAudit({ rows }) {
       })
 
       await loadRecentWriteActionReceiptsV2()
-      setResult({
-        ...reconcileResult.audit,
-        auditVersion: 'v2',
-        receiptId: id,
-      })
+      setResult(withV2Meta(reconcileResult.audit, { receiptId: id }))
     } catch (reconcileError) {
-      console.error('[playersDatabase] Stats V2 stage repair failed:', reconcileError)
+      console.error('[playersDatabase] Stats V2 stage sync failed:', reconcileError)
       if (reconcileError?.audit) {
-        setResult({
-          ...reconcileError.audit,
-          auditVersion: 'v2',
-          receiptId: id,
-        })
+        setResult(withV2Meta(reconcileError.audit, { receiptId: id }))
       }
-      setError(
-        reconcileError instanceof Error
-          ? reconcileError.message
-          : 'סנכרון שלב Stats נכשל'
-      )
+      setError(reconcileError instanceof Error ? reconcileError.message : 'סנכרון שלב Stats נכשל')
     } finally {
       setBusy(false)
     }
   }, [busy, loadRecentWriteActionReceiptsV2])
 
   const openPlayer = React.useCallback((finding, context = {}) => {
-    const playerId = clean(finding?.playerDocumentId || finding?.documentId)
+    const playerId = clean(
+      finding?.playerDocumentId || finding?.documentId || finding?.target?.playerDocumentId
+    )
     if (!playerId) return
 
     const target = PLAYERS_DATABASE_UI_ROUTES.player({
       playerId,
-      seasonKey: clean(context?.seasonKey),
-      teamId: clean(context?.teamDocumentId),
-      leagueId: clean(context?.leagueId),
-      auditFindingId:
-        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
+      seasonKey: clean(context?.seasonKey || finding?.seasonKey || finding?.target?.seasonKey),
+      teamId: clean(context?.teamDocumentId || finding?.teamId || finding?.target?.birthTeamDocumentId),
+      leagueId: clean(context?.leagueId || finding?.leagueId),
     })
     window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
   }, [])
 
   const openTeam = React.useCallback((finding, context = {}) => {
-    const teamId = clean(context?.teamDocumentId || finding?.teamDocumentId)
-    const seasonKey = clean(context?.seasonKey || finding?.seasonKey)
-    const leagueId = clean(context?.leagueId || finding?.actual?.leagueId)
+    const teamId = clean(
+      context?.teamDocumentId || finding?.teamDocumentId || finding?.teamId || finding?.target?.birthTeamDocumentId
+    )
+    const seasonKey = clean(context?.seasonKey || finding?.seasonKey || finding?.target?.seasonKey)
+    const leagueId = clean(context?.leagueId || finding?.leagueId || finding?.actual?.leagueId)
 
     if (!teamId || !seasonKey || !leagueId) {
-      setError('חסרים פרטי קבוצה, עונה או ליגה למעבר לתיקון.')
+      setError('חסרים פרטי קבוצה, עונה או ליגה למעבר.')
       return
     }
 
     const target = PLAYERS_DATABASE_UI_ROUTES.team({
       leagueId,
       teamId,
-      seasonKey,
       auditSeasonKey: seasonKey,
-      auditFindingId:
-        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
       openStatsImport: context?.openStatsImport === true,
     })
     window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
   }, [])
 
   const openLeague = React.useCallback(finding => {
-    const leagueId = clean(finding?.actual?.leagueId || finding?.relatedDocumentId)
+    const leagueId = clean(
+      finding?.leagueId || finding?.actual?.leagueId || finding?.relatedDocumentId
+    )
     const seasonKey = clean(finding?.seasonKey)
 
     if (!leagueId) {
-      setError('חסר מזהה ליגה למעבר לתיקון.')
+      setError('חסר מזהה ליגה למעבר.')
       return
     }
 
     const target = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
       ...(seasonKey ? { seasonKey } : {}),
-      auditFindingId:
-        clean(finding?.auditFindingId) || buildAuditFindingId(finding),
     })
     window.open(target, '_blank', 'popup=yes,width=1280,height=900,noopener,noreferrer')
   }, [])
@@ -306,16 +265,13 @@ export default function useSearchAudit({ rows }) {
     busy,
     error,
     result,
-    recentWriteActions,
-    recentWriteActionsBusy,
     recentWriteActionReceiptsV2,
     recentWriteActionReceiptsV2Busy,
     partialAuditDefaults,
     openAudit,
     closeAudit,
     handleScopeChange,
-    runAudit,
-    runAuditForWriteAction,
+    runSystemAudit,
     runAuditForReceiptV2,
     openPlayer,
     openTeam,

@@ -4,7 +4,7 @@ import { Button, Chip, Sheet, Stack, Typography } from '@mui/joy'
 import {
   buildStatsReconcileStageStateV2,
   STATS_RECONCILE_STAGE,
-} from '../../../../services/auditV2/stats/reconcileStage.js'
+} from '../../../../services/auditV2/stats/reconcileState.js'
 
 const STAGE_LABELS = Object.freeze({
   [STATS_RECONCILE_STAGE.COUNTERPARTS]: 'סנכרון העברות',
